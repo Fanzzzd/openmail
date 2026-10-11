@@ -20,6 +20,7 @@ import {
   SendPreparationState,
   OutgoingMessage,
   Prefs,
+  PrefsPatch,
   ToolbarAction,
   type Signature,
   SignatureKind,
@@ -442,11 +443,12 @@ export function makeComposeStore(
       const f = Prefs.fields;
       const d = DEFAULT_PREFS;
       // Older builds stored a boolean; true loaded remote images in every message.
-      const remoteImages = pref(
-        Schema.Union([f.remoteImages, Schema.Boolean]),
-        stored.get("remoteImages"),
-        d.remoteImages,
-      );
+      // Only a missing row gets the default. An unreadable one fails closed to "ask".
+      const storedImages = stored.get("remoteImages");
+      const remoteImages =
+        storedImages === undefined
+          ? d.remoteImages
+          : pref(Schema.Union([f.remoteImages, Schema.Boolean]), storedImages, "ask");
       const labs = pref(Schema.Record(Schema.String, Schema.Unknown), stored.get("labs"), {});
       const swipes = pref(
         Schema.Record(Schema.String, Schema.Unknown),
@@ -570,7 +572,9 @@ export function makeComposeStore(
           d.specialFolderBadges,
         ),
         showMore: pref(f.showMore, stored.get("showMore"), d.showMore),
-        remoteImages: remoteImages === true ? "always" : remoteImages || "ask",
+        remoteImages:
+          remoteImages === true ? "always" : remoteImages === false ? "ask" : remoteImages,
+        remoteImagesChosen: stored.has("remoteImages"),
         cleanLinks: pref(Schema.Boolean, stored.get("cleanLinks"), true),
         undoSendSeconds: pref(f.undoSendSeconds, stored.get("undoSendSeconds"), d.undoSendSeconds),
         replyFrom: pref(f.replyFrom, stored.get("replyFrom"), d.replyFrom),
@@ -637,11 +641,13 @@ export function makeComposeStore(
     Effect.withSpan("Store.prefs"),
   );
 
-  const setPrefs = Effect.fn("Store.setPrefs")(function* (patch: Partial<Prefs>) {
+  const setPrefs = Effect.fn("Store.setPrefs")(function* (patch: PrefsPatch) {
     yield* sql
       .withTransaction(
         Effect.gen(function* () {
           for (const [key, value] of Object.entries(patch)) {
+            // Derived from the stored mode; a row would only drift from it.
+            if (key === "remoteImagesChosen") continue;
             yield* run(sql`INSERT INTO prefs (key, value_json) VALUES (${key}, ${JSON.stringify(value)})
           ON CONFLICT(key) DO UPDATE SET value_json = excluded.value_json`);
           }

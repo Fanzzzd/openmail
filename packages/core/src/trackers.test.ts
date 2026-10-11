@@ -1,6 +1,9 @@
 import { assert, describe, it } from "@effect/vitest";
 
+import { DEFAULT_PREFS } from "./domain.js";
 import { prepareMessageHtml } from "./reader-html.js";
+import { sanitizeReaderHtml } from "./reader-sanitize.js";
+import { shouldLoadRemote } from "./reading.js";
 import { TRACKERS, trackerFor } from "./trackers.js";
 
 describe("trackerFor", () => {
@@ -83,6 +86,23 @@ describe("prepareMessageHtml", () => {
     // Tracker images are removed whole: no broken-image icon remains.
     assert.strictEqual(out.html.match(/<img/g)?.length, 1);
     assert.include(out.html, "<p>Hi</p>");
+  });
+
+  it("still removes trackers when the default mode loads remote images", () => {
+    const message = { from: { address: "news@shop.example" } };
+    const load = shouldLoadRemote(message, {
+      remoteImages: DEFAULT_PREFS.remoteImages,
+      imageSenders: [],
+      knownSender: false,
+    });
+    assert.isTrue(load);
+    const prepared = prepareMessageHtml(
+      `<img src="https://u1.ct.sendgrid.net/wf/open?upn=a">` +
+        `<img src="https://cdn.example.com/hero.png" alt="Hero">`,
+    );
+    const html = sanitizeReaderHtml(prepared.html, load);
+    assert.notInclude(html, "sendgrid.net");
+    assert.include(html, "https://cdn.example.com/hero.png");
   });
 
   it("treats a remote 1×1 image from an unknown host as a pixel", () => {

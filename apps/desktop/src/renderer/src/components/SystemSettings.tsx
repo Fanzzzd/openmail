@@ -16,7 +16,7 @@ import { Effect } from "effect";
 import { AsyncResult } from "effect/reactivity";
 import { useEffect, useState } from "react";
 
-import type { Account, Prefs } from "../../../shared/api";
+import type { Account, PrefsPatch } from "../../../shared/api";
 import {
   NUMBERED_MAILBOXES,
   isShortcutAction,
@@ -156,7 +156,7 @@ export function NotificationsSettings({ accounts }: { accounts: readonly Account
     window.addEventListener("focus", refresh);
     return () => window.removeEventListener("focus", refresh);
   }, [run]);
-  const save = (patch: Partial<Prefs>) =>
+  const save = (patch: PrefsPatch) =>
     setPrefs({ payload: { patch }, reactivityKeys: [Keys.prefs] });
   return (
     <div className="space-y-6">

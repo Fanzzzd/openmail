@@ -1,4 +1,10 @@
-import { recipientLabel, Mailbox, shouldLoadRemote, type Message } from "@openmail/core/portable";
+import {
+  recipientLabel,
+  Mailbox,
+  remoteImageMode,
+  shouldLoadRemote,
+  type Message,
+} from "@openmail/core/portable";
 import { Effect } from "effect";
 import { useLingui } from "@lingui/react";
 import { router, useLocalSearchParams } from "expo-router";
@@ -279,7 +285,8 @@ export default function Reader() {
             remoteImages={
               imagePolicy.kind === "ready" &&
               shouldLoadRemote(message, {
-                remoteImages: imagePolicy.value.prefs.remoteImages,
+                // Mobile has no first-run prompt, so it keeps asking until the person picks a mode.
+                remoteImages: remoteImageMode(imagePolicy.value.prefs, "ask"),
                 imageSenders: imagePolicy.value.imageSenders,
                 knownSender: messages.value.known.includes(
                   message.from.address.trim().toLowerCase(),

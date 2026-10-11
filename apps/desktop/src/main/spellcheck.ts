@@ -7,7 +7,7 @@ import {
   type WebContents,
   type MenuItem,
 } from "electron";
-import type { Prefs } from "@openmail/core";
+import type { Prefs, PrefsPatch } from "@openmail/core";
 import type { DesktopLabels } from "../shared/desktop-labels";
 
 let current: Pick<Prefs, "spellcheck" | "spellcheckLanguages"> = {
@@ -39,7 +39,7 @@ export function spellingItems(
   contents: SpellingContents,
   params: Pick<Electron.ContextMenuParams, "dictionarySuggestions" | "misspelledWord">,
   labels: DesktopLabels["spelling"],
-  save: (patch: Partial<Prefs>) => void,
+  save: (patch: PrefsPatch) => void,
 ): SpellingMenuItem[] {
   return [
     ...params.dictionarySuggestions.map((word) => ({
@@ -76,7 +76,7 @@ export function spellingItems(
 /** Uses Electron's session checker. macOS selects system languages and downloads no dictionaries. */
 export function installSpellingMenu(
   labels: () => DesktopLabels["spelling"],
-  save: (patch: Partial<Prefs>) => void,
+  save: (patch: PrefsPatch) => void,
 ) {
   const removers = new Set<() => void>();
   const wire = (win: BrowserWindow) => {

@@ -42,6 +42,7 @@ import type {
   Outcome,
   OutgoingAttachment,
   Prefs,
+  PrefsPatch,
   Profile,
   ProfileInput,
   Proposal,
@@ -499,7 +500,7 @@ export class Mailbox extends Context.Service<
       chunk: DerivedChunk,
     ): Effect.Effect<string, NotFound | ProviderError | AuthError | PermanentError>;
     readonly prefs: Effect.Effect<Prefs>;
-    setPrefs(patch: Partial<Prefs>): Effect.Effect<void>;
+    setPrefs(patch: PrefsPatch): Effect.Effect<void>;
     /** Local signatures take precedence over synced Gmail send-as signatures. */
     readonly signatures: Effect.Effect<Signature[]>;
     readonly namedSignatures: Effect.Effect<NamedSignature[]>;

@@ -636,6 +636,10 @@ msgstr "总是引用全文"
 msgid "Always use selection"
 msgstr "总是引用选中文字"
 
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
+msgid "Always, block trackers"
+msgstr "总是加载，拦截跟踪器"
+
 #: src/renderer/src/app/use-native-menu-bridge.ts
 msgid "An attachment changed while reading. Try adding it again."
 msgstr "附件在读取时发生变化，请重新添加。"
@@ -728,6 +732,7 @@ msgstr "询问邮件内容"
 
 #: src/renderer/src/components/ComposeSettings.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
 msgid "Ask each time"
 msgstr "每次询问"
 
@@ -1224,6 +1229,7 @@ msgstr "点击窗口，再选择设备拍照、扫描文稿或添加速写。"
 #: src/renderer/src/components/MediaMatches.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/RawMessage.tsx
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
 #: src/renderer/src/components/SignatureSettings.tsx
 #: src/renderer/src/components/TemplateSettings.tsx
 #: src/renderer/src/components/TriageChip.tsx
@@ -1948,6 +1954,7 @@ msgstr "不重复"
 msgid "Don't attach the original message"
 msgstr "不附上原邮件"
 
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Done"
 msgstr "完成"
@@ -2478,6 +2485,7 @@ msgid "From {from} to {to}"
 msgstr "从 {from} 发给 {to}"
 
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
 msgid "From people I know"
 msgstr "来自我认识的人"
 
@@ -3025,6 +3033,10 @@ msgstr "链接地址"
 msgid "Load images"
 msgstr "加载图片"
 
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
+msgid "Load images in messages?"
+msgstr "加载消息中的图片？"
+
 #: src/renderer/src/components/MessageList.tsx
 msgid "Load older messages"
 msgstr "加载更早的邮件"
@@ -3063,6 +3075,7 @@ msgstr "正在加载更早的邮件…"
 
 #: src/renderer/src/components/MessageBody.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
 msgid "Loading remote images lets the sender see when you open a message and your IP address."
 msgstr "加载远程图片会让发件人知道你何时打开消息，以及你的 IP 地址。"
 
@@ -3800,6 +3813,10 @@ msgstr "这里没有邮件"
 msgid "No messages match the filters"
 msgstr "没有符合筛选的邮件"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "No mode picked yet. Remote images load, and known trackers stay blocked."
+msgstr "尚未选择方式。远程图片会加载，已知跟踪器仍被拦截。"
+
 #: src/renderer/src/components/MessageList.tsx
 msgid "No more messages"
 msgstr "没有更多邮件"
@@ -4051,6 +4068,10 @@ msgstr "打开此链接？"
 #: src/renderer/src/components/Attachments.tsx
 msgid "Open With…"
 msgstr "打开方式…"
+
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
+msgid "OpenMail blocks known tracking pixels in every mode."
+msgstr "无论选哪种方式，OpenMail 都会拦截已知的跟踪像素。"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "OpenMail is the default email app"
@@ -4508,6 +4529,7 @@ msgid "Reminder time"
 msgstr "提醒时间"
 
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
 msgid "Remote images"
 msgstr "远程图片"
 

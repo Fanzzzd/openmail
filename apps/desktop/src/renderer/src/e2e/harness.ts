@@ -9,7 +9,7 @@ import {
   type Account,
   type IncomingMessage,
   type Provider,
-  type Prefs,
+  type PrefsPatch,
   type NotificationBatch,
   type OutgoingMessage,
 } from "@openmail/core/portable";
@@ -121,7 +121,7 @@ export async function flow(
   options: {
     provider?: Provider;
     messages?: IncomingMessage[];
-    prefs?: Partial<Prefs>;
+    prefs?: PrefsPatch;
     agentDraft?: { message: OutgoingMessage; surface: "mcp" | "rule" | "assistant" };
     /** Opens a server draft in the compose window through the real import path. */
     serverDraft?: { providerId: string; raw: Uint8Array };
@@ -166,6 +166,7 @@ export async function flow(
       markReadDelay: "manual",
       undoSendSeconds: 0,
       defaultProfilesPrompted: true,
+      remoteImages: "ask",
       ...options.prefs,
     }),
   );

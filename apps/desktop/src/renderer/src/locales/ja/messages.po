@@ -626,6 +626,10 @@ msgstr "必ずメッセージ全体を引用してください"
 msgid "Always use selection"
 msgstr "常に選択範囲を使用する"
 
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
+msgid "Always, block trackers"
+msgstr "常に読み込み、トラッカーをブロック"
+
 #: src/renderer/src/app/use-native-menu-bridge.ts
 msgid "An attachment changed while reading. Try adding it again."
 msgstr "読み込み中に添付ファイルが変更されました。もう一度追加してください。"
@@ -718,6 +722,7 @@ msgstr "メールについて質問"
 
 #: src/renderer/src/components/ComposeSettings.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
 msgid "Ask each time"
 msgstr "毎回尋ねる"
 
@@ -1214,6 +1219,7 @@ msgstr "このウインドウをクリックし、デバイスを選択して写
 #: src/renderer/src/components/MediaMatches.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/RawMessage.tsx
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
 #: src/renderer/src/components/SignatureSettings.tsx
 #: src/renderer/src/components/TemplateSettings.tsx
 #: src/renderer/src/components/TriageChip.tsx
@@ -1938,6 +1944,7 @@ msgstr "繰り返さない"
 msgid "Don't attach the original message"
 msgstr "元のメッセージを添付しないでください"
 
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Done"
 msgstr "完了"
@@ -2468,6 +2475,7 @@ msgid "From {from} to {to}"
 msgstr "{from} から {to} まで"
 
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
 msgid "From people I know"
 msgstr "知り合いから"
 
@@ -3015,6 +3023,10 @@ msgstr "リンクURL"
 msgid "Load images"
 msgstr "画像の読み込み"
 
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
+msgid "Load images in messages?"
+msgstr "メッセージ内の画像を読み込みますか？"
+
 #: src/renderer/src/components/MessageList.tsx
 msgid "Load older messages"
 msgstr "古いメッセージを読み込む"
@@ -3053,6 +3065,7 @@ msgstr "古いメッセージを読み込み中…"
 
 #: src/renderer/src/components/MessageBody.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
 msgid "Loading remote images lets the sender see when you open a message and your IP address."
 msgstr "リモート画像を読み込むと、メッセージを開いた日時と IP アドレスが送信者に伝わります。"
 
@@ -3790,6 +3803,10 @@ msgstr "ここにはメッセージはありません"
 msgid "No messages match the filters"
 msgstr "フィルターに一致するメッセージはありません"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "No mode picked yet. Remote images load, and known trackers stay blocked."
+msgstr "まだモードを選んでいません。リモート画像は読み込まれ、既知のトラッカーはブロックされたままです。"
+
 #: src/renderer/src/components/MessageList.tsx
 msgid "No more messages"
 msgstr "これ以上メッセージはありません"
@@ -4041,6 +4058,10 @@ msgstr "このリンクを開きますか？"
 #: src/renderer/src/components/Attachments.tsx
 msgid "Open With…"
 msgstr "このアプリケーションで開く…"
+
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
+msgid "OpenMail blocks known tracking pixels in every mode."
+msgstr "OpenMail はどのモードでも既知のトラッキングピクセルをブロックします。"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "OpenMail is the default email app"
@@ -4498,6 +4519,7 @@ msgid "Reminder time"
 msgstr "リマインダー時間"
 
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
 msgid "Remote images"
 msgstr "リモート画像"
 

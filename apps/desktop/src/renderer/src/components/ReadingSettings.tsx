@@ -1,7 +1,12 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { imageSenderKey, MARK_READ_DELAYS, type Prefs, READER_ZOOMS } from "@openmail/core/schema";
+import {
+  imageSenderKey,
+  MARK_READ_DELAYS,
+  type PrefsPatch,
+  READER_ZOOMS,
+} from "@openmail/core/schema";
 import { AsyncResult } from "effect/reactivity";
 import { useState } from "react";
 
@@ -21,7 +26,7 @@ export function ReadingSettings() {
   const readShortcut = useShortcutText()("read");
   const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => null);
   const setPrefsMutation = useAtomSet(setPrefsAtom);
-  const setPrefs = (patch: Partial<Prefs>) =>
+  const setPrefs = (patch: PrefsPatch) =>
     setPrefsMutation({ payload: { patch }, reactivityKeys: [Keys.prefs, Keys.threads] });
   const chooseFolderMutation = useAtomSet(chooseAttachmentFolderAtom);
   // The main process shows the folder picker and stores the path; Settings only displays it.
@@ -296,7 +301,8 @@ export function ReadingSettings() {
         </h3>
         <SegmentedControl
           aria-label={t`Remote images`}
-          value={prefs?.remoteImages ?? null}
+          // Until a mode is stored nothing is selected, so picking the default also records it.
+          value={prefs?.remoteImagesChosen ? prefs.remoteImages : null}
           options={[
             { value: "ask" as const, label: t`Ask each time` },
             { value: "known" as const, label: t`From people I know` },
@@ -307,6 +313,11 @@ export function ReadingSettings() {
           ]}
           onValueChange={(remoteImages) => setPrefs({ remoteImages })}
         />
+        {prefs && !prefs.remoteImagesChosen && (
+          <p className={note}>
+            <Trans>No mode picked yet. Remote images load, and known trackers stay blocked.</Trans>
+          </p>
+        )}
         <p className={note}>
           <Trans>
             Loading remote images lets the sender see when you open a message and your IP address.

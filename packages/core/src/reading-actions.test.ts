@@ -6,7 +6,7 @@ import { Effect, FileSystem, Layer, Path } from "effect";
 import { SqlClient } from "effect/sql";
 import { DatabaseSync } from "node:sqlite";
 import { databaseLayer, MIGRATIONS } from "./platform/node/db.js";
-import { type IncomingMessage } from "./domain.js";
+import { type IncomingMessage, type Prefs } from "./domain.js";
 import { Mailbox } from "./mailbox.js";
 import { Store } from "./services.js";
 import { StoreLive } from "./store.js";
@@ -322,12 +322,35 @@ import { parseAppLink, parseStableReference, privateMailLink, messageLink } from
       }).pipe(Effect.scoped, Effect.provide(Layer.mergeAll(NodeFileSystem.layer, NodePath.layer))),
   );
 
-  it.effect("reads the older boolean remote image preference as a mode", () =>
+  it.effect("loads remote images until the person picks a mode, and keeps a picked one", () =>
     Effect.gen(function* () {
       const store = yield* Store;
       const sql = yield* SqlClient.SqlClient;
-      assert.strictEqual((yield* store.prefs).remoteImages, "ask");
+      const unset = yield* store.prefs;
+      assert.strictEqual(unset.remoteImages, "always");
+      assert.isFalse(unset.remoteImagesChosen);
+      yield* store.setPrefs({ remoteImages: "ask" });
+      const chosen = yield* store.prefs;
+      assert.strictEqual(chosen.remoteImages, "ask");
+      assert.isTrue(chosen.remoteImagesChosen);
+      // The flag is derived from the stored mode; nothing writes a row for it.
+      const forged: Partial<Prefs> = { remoteImagesChosen: false };
+      yield* store.setPrefs(forged);
+      assert.isTrue((yield* store.prefs).remoteImagesChosen);
+      const rows = yield* sql`SELECT key FROM prefs WHERE key='remoteImagesChosen'`;
+      assert.lengthOf(rows, 0);
+    }).pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform())))),
+  );
+
+  it.effect("reads the older boolean remote image preference as a chosen mode", () =>
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const sql = yield* SqlClient.SqlClient;
       yield* sql`INSERT INTO prefs(key,value_json) VALUES ('remoteImages','false')`;
+      assert.strictEqual((yield* store.prefs).remoteImages, "ask");
+      assert.isTrue((yield* store.prefs).remoteImagesChosen);
+      yield* sql`UPDATE prefs SET value_json='"sometimes"' WHERE key='remoteImages'`;
+      // An unreadable stored mode fails closed instead of taking the loading default.
       assert.strictEqual((yield* store.prefs).remoteImages, "ask");
       yield* sql`UPDATE prefs SET value_json='true' WHERE key='remoteImages'`;
       assert.strictEqual((yield* store.prefs).remoteImages, "always");

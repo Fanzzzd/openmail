@@ -33,6 +33,7 @@ import {
 import { PermanentDeletePermission } from "./components/PermanentDeletePermission";
 import { FailedOpNotice } from "./components/FailedOpNotice";
 import { UpdateNotice } from "./components/UpdateNotice";
+import { RemoteImagesPrompt } from "./components/RemoteImagesPrompt";
 import { numberedFavorites } from "./favorite-navigation";
 import { supportsInInboxFilter } from "./folder-actions";
 import { readerThreadKey, type ReaderSelection } from "./reader-selection";
@@ -668,6 +669,7 @@ export function App({ composeId }: { composeId?: string }) {
       <FocusedInboxPermission />
       <FailedOpNotice onOpenDraft={openSavedDraft} />
       <UpdateNotice onSettings={() => setDialog("settings")} />
+      <RemoteImagesPrompt hasAccounts={hasAccounts} />
       {narrow ? (
         // One pane at a time.
         <div className="flex min-h-0 flex-1">

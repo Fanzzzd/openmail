@@ -1,7 +1,13 @@
 import { Effect, Layer, Queue, Schema, Struct } from "effect";
 import { RpcClient, RpcGroup, RpcMessage, RpcSerialization, RpcServer } from "effect/rpc";
 import { expect, it } from "vitest";
-import { DEFAULT_ACTIVE_HOURS, DEFAULT_PREFS, Prefs, Proposal } from "@openmail/core/schema";
+import {
+  DEFAULT_ACTIVE_HOURS,
+  DEFAULT_PREFS,
+  Prefs,
+  PrefsPatch,
+  Proposal,
+} from "@openmail/core/schema";
 import { Mailbox } from "../../../../packages/core/src/mailbox.js";
 import { TestMailbox } from "../../../../packages/core/src/platform/node/testing.js";
 import { MailRpcs } from "./rpc";
@@ -70,7 +76,8 @@ it("every Prefs field survives the real RPC client/server JSON codecs and is sto
         Effect.forkScoped,
       );
       const client = yield* RpcClient.make(group).pipe(Effect.provide(clientProtocol));
-      for (const key of Struct.keys(Prefs.fields)) {
+      // remoteImagesChosen is read only; storing any mode sets it.
+      for (const key of Struct.keys(PrefsPatch.fields)) {
         const patch = { [key]: values[key] };
         yield* client.SetPrefs({ patch });
         expect(received.at(-1)).toEqual(patch);
@@ -78,7 +85,11 @@ it("every Prefs field survives the real RPC client/server JSON codecs and is sto
       }
       yield* client.SetPrefs({ patch: {} });
       expect(received.at(-1)).toEqual({});
-      expect(yield* client.Prefs()).toEqual(values);
+      expect(yield* client.Prefs()).toEqual({ ...values, remoteImagesChosen: true });
+      // The patch schema drops the derived flag, so the renderer cannot hide the prompt.
+      const forged: Partial<Prefs> = { remoteImagesChosen: false };
+      yield* client.SetPrefs({ patch: forged });
+      expect(received.at(-1)).toEqual({});
     }).pipe(Effect.scoped, Effect.provide(TestMailbox())),
   );
 });

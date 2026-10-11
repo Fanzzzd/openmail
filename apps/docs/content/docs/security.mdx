@@ -14,8 +14,8 @@ OpenMail treats message HTML, attachments, links and everything received from a 
 ## Reading mail
 
 - Message HTML renders in a sandboxed frame with scripts, forms, plugins and nested frames disabled.
-- A content security policy inside that frame blocks remote resources. Remote images load only after you allow them, for one message, for known senders, or always. Allowed images load over HTTPS only.
-- Known tracking pixels are blocked, and tracking parameters such as `utm_*`, `fbclid` and `gclid` are removed from links you open. You can turn link cleaning off in **Settings → Reading**.
+- A content security policy inside that frame blocks remote resources unless your remote image setting allows them for that message. Once you add an account, OpenMail asks once how images should load: always, from people you know, or ask each time. Until you pick, images load. Allowed images load over HTTPS only.
+- Known tracking pixels are blocked in every image setting, and tracking parameters such as `utm_*`, `fbclid` and `gclid` are removed from links you open. You can turn link cleaning off in **Settings → Reading**.
 - Before opening a link whose text shows a different domain than its target, or whose host uses international characters, OpenMail asks you to confirm and shows both forms.
 - Sender authentication (SPF, DKIM, DMARC) is read from the top Authentication-Results header added by the receiving server. Lower headers, which a sender could forge, are ignored.
 

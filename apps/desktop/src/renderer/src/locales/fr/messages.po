@@ -626,6 +626,10 @@ msgstr "Citez toujours l’intégralité du message"
 msgid "Always use selection"
 msgstr "Utilisez toujours la sélection"
 
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
+msgid "Always, block trackers"
+msgstr "Toujours, bloquer les traqueurs"
+
 #: src/renderer/src/app/use-native-menu-bridge.ts
 msgid "An attachment changed while reading. Try adding it again."
 msgstr "Une pièce jointe a changé pendant sa lecture. Essayez de l’ajouter à nouveau."
@@ -718,6 +722,7 @@ msgstr "Poser une question sur vos messages"
 
 #: src/renderer/src/components/ComposeSettings.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
 msgid "Ask each time"
 msgstr "Demander à chaque fois"
 
@@ -1214,6 +1219,7 @@ msgstr "Cliquez dans cette fenêtre, puis choisissez un appareil pour prendre un
 #: src/renderer/src/components/MediaMatches.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/RawMessage.tsx
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
 #: src/renderer/src/components/SignatureSettings.tsx
 #: src/renderer/src/components/TemplateSettings.tsx
 #: src/renderer/src/components/TriageChip.tsx
@@ -1938,6 +1944,7 @@ msgstr "Ne se répète pas"
 msgid "Don't attach the original message"
 msgstr "Ne joignez pas le message d’origine"
 
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Done"
 msgstr "Terminé"
@@ -2468,6 +2475,7 @@ msgid "From {from} to {to}"
 msgstr "De {from} à {to}"
 
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
 msgid "From people I know"
 msgstr "Des personnes que je connais"
 
@@ -3015,6 +3023,10 @@ msgstr "URL du lien"
 msgid "Load images"
 msgstr "Charger des images"
 
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
+msgid "Load images in messages?"
+msgstr "Charger les images dans les messages ?"
+
 #: src/renderer/src/components/MessageList.tsx
 msgid "Load older messages"
 msgstr "Charger les anciens messages"
@@ -3053,6 +3065,7 @@ msgstr "Chargement des anciens messages…"
 
 #: src/renderer/src/components/MessageBody.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
 msgid "Loading remote images lets the sender see when you open a message and your IP address."
 msgstr "Charger les images distantes permet à l’expéditeur de savoir quand vous ouvrez un message et de voir votre adresse IP."
 
@@ -3790,6 +3803,10 @@ msgstr "Aucun message ici"
 msgid "No messages match the filters"
 msgstr "Aucun message ne correspond aux filtres"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "No mode picked yet. Remote images load, and known trackers stay blocked."
+msgstr "Aucun mode choisi pour l’instant. Les images distantes se chargent et les traqueurs connus restent bloqués."
+
 #: src/renderer/src/components/MessageList.tsx
 msgid "No more messages"
 msgstr "Plus aucun message"
@@ -4041,6 +4058,10 @@ msgstr "Ouvrir ce lien ?"
 #: src/renderer/src/components/Attachments.tsx
 msgid "Open With…"
 msgstr "Ouvrir avec…"
+
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
+msgid "OpenMail blocks known tracking pixels in every mode."
+msgstr "OpenMail bloque les pixels de suivi connus dans tous les modes."
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "OpenMail is the default email app"
@@ -4498,6 +4519,7 @@ msgid "Reminder time"
 msgstr "Heure de rappel"
 
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
 msgid "Remote images"
 msgstr "Images distantes"
 

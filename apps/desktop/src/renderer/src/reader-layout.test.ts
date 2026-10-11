@@ -161,7 +161,8 @@ beforeEach(() => {
   }));
   fixture.values.clear();
   fixture.frames.length = 0;
-  setPrefs({});
+  // These tests cover the blocked-image notice, which only the ask mode shows by default.
+  setPrefs({ remoteImages: "ask", remoteImagesChosen: true });
   fixture.values.set("accounts", [{ id: "gmail:me", provider: "gmail", email: "me@example.com" }]);
 });
 afterEach(() => {
@@ -225,6 +226,20 @@ it("Load images in single-message mode leaves sibling messages blocked", () => {
 it("offers Always from this sender for an authenticated sender", () => {
   thread([message("m1", { bodyHtml: remoteHtml, security: signed })]);
   expect(screen.getByRole("button", { name: "Always from this sender" })).toBeTruthy();
+});
+
+it("keeps remote images blocked until prefs load, then follows the loading default", () => {
+  for (const pending of [AsyncResult.initial(), AsyncResult.fail(new Error("offline"))]) {
+    fixture.values.set("prefs", pending);
+    thread([message("m1", { bodyHtml: remoteHtml })]);
+    expect(fixture.frames.at(-1)?.remote).toBe(false);
+    expect(screen.getByRole("button", { name: "Load images" })).toBeTruthy();
+    cleanup();
+  }
+  setPrefs({});
+  const view = thread([message("m1", { bodyHtml: remoteHtml })]);
+  expect(view.container.querySelector("[data-images-notice]")).toBeNull();
+  expect(fixture.frames.at(-1)?.remote).toBe(true);
 });
 
 it("loads remote images for authenticated known senders when set to people I know", () => {

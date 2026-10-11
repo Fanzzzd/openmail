@@ -40,6 +40,7 @@ import type {
   Message,
   OutgoingMessage,
   Prefs,
+  PrefsPatch,
   Profile,
   ProfileInput,
   Proposal,
@@ -583,7 +584,7 @@ export class Store extends Context.Service<
     enqueueNotification(id: string, digest: boolean): Effect.Effect<void>;
     takeNotifications(now: number): Effect.Effect<import("./domain.js").NotificationBatch[]>;
     readonly prefs: Effect.Effect<Prefs>;
-    setPrefs(patch: Partial<Prefs>): Effect.Effect<void>;
+    setPrefs(patch: PrefsPatch): Effect.Effect<void>;
     readonly signatures: Effect.Effect<Signature[]>;
     readonly namedSignatures: Effect.Effect<NamedSignature[]>;
     readonly signatureDefaults: Effect.Effect<readonly SignatureDefault[]>;

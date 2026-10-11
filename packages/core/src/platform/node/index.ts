@@ -28,6 +28,7 @@ export {
   PROFILE_COLORS,
   type PerformError,
   Prefs,
+  PrefsPatch,
   Proposal,
   ProposalMailToolkit,
   ProviderDiagnostic,

@@ -86,6 +86,7 @@ import {
   OutgoingMessage,
   OutgoingAttachment,
   Prefs,
+  PrefsPatch,
   Profile,
   ProfileInput,
   Proposal,
@@ -101,7 +102,7 @@ import {
   ThreadQuery,
   ThreadSummary,
 } from "@openmail/core/schema";
-import { Schema, Struct } from "effect";
+import { Schema } from "effect";
 import {
   ComposeMessageFields,
   DefaultClientStatus,
@@ -119,8 +120,6 @@ export const ConnectInput = Schema.Union([
 ]);
 
 const Counts = Schema.Record(Schema.String, Schema.Number);
-/** Only the preferences being changed. */
-const PrefsPatch = Schema.Struct(Struct.map(Prefs.fields, Schema.optionalKey));
 
 /** Header labels for printing, in the UI language. */
 export const PrintHeadings = Schema.Struct({

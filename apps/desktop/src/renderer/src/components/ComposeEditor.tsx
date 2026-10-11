@@ -34,6 +34,7 @@ import {
   type Address,
   type InlineImageSize,
   type Prefs,
+  type PrefsPatch,
   mentionQuery,
   mentionHtml,
   emojiAtCaret,
@@ -112,7 +113,7 @@ export function ComposeEditor({
   const [markdownReplacement, setMarkdownReplacement] = useState(prefs.composeMarkdownReplacement);
   const copiedStyle = useRef("");
   const smartUndo = useRef<{ body: ComposeBody; caret: number } | null>(null);
-  const saveFormatPrefs = (patch: Partial<Prefs>) =>
+  const saveFormatPrefs = (patch: PrefsPatch) =>
     run(withMail((call) => call("SetPrefs", { patch })).pipe(Reactivity.mutation([Keys.prefs])));
   const toggleFormatBar = () => {
     setFormatBar(!formatBar);

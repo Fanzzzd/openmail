@@ -1,6 +1,11 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { DEFAULT_PREFS, SWIPE_ACTIONS, TOOLBAR_ACTIONS, type Prefs } from "@openmail/core/schema";
+import {
+  DEFAULT_PREFS,
+  SWIPE_ACTIONS,
+  TOOLBAR_ACTIONS,
+  type PrefsPatch,
+} from "@openmail/core/schema";
 import { AsyncResult } from "effect/reactivity";
 import { prefsAtom } from "../state/queries";
 import { setPrefsAtom } from "../state/mutations";
@@ -17,7 +22,7 @@ function usePreferences() {
   const set = useAtomSet(setPrefsAtom);
   return {
     prefs,
-    save: (patch: Partial<Prefs>) => set({ payload: { patch }, reactivityKeys: [Keys.prefs] }),
+    save: (patch: PrefsPatch) => set({ payload: { patch }, reactivityKeys: [Keys.prefs] }),
   };
 }
 export function LabsSettings() {

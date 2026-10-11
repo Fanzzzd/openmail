@@ -626,6 +626,10 @@ msgstr "Vždy citujte celou zprávu"
 msgid "Always use selection"
 msgstr "Vždy používejte výběr"
 
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
+msgid "Always, block trackers"
+msgstr "Vždy, blokovat sledovače"
+
 #: src/renderer/src/app/use-native-menu-bridge.ts
 msgid "An attachment changed while reading. Try adding it again."
 msgstr "Příloha se během načítání změnila. Zkuste ji přidat znovu."
@@ -718,6 +722,7 @@ msgstr "Zeptat se na poštu"
 
 #: src/renderer/src/components/ComposeSettings.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
 msgid "Ask each time"
 msgstr "Pokaždé se ptejte"
 
@@ -1214,6 +1219,7 @@ msgstr "Klikněte do tohoto okna a vyberte zařízení pro pořízení fotky, sk
 #: src/renderer/src/components/MediaMatches.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/RawMessage.tsx
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
 #: src/renderer/src/components/SignatureSettings.tsx
 #: src/renderer/src/components/TemplateSettings.tsx
 #: src/renderer/src/components/TriageChip.tsx
@@ -1938,6 +1944,7 @@ msgstr "Neopakuje se"
 msgid "Don't attach the original message"
 msgstr "Nepřipojujte původní zprávu"
 
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Done"
 msgstr "Hotovo"
@@ -2468,6 +2475,7 @@ msgid "From {from} to {to}"
 msgstr "Od {from} do {to}"
 
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
 msgid "From people I know"
 msgstr "Od lidí, které znám"
 
@@ -3015,6 +3023,10 @@ msgstr "URL odkazu"
 msgid "Load images"
 msgstr "Načíst obrázky"
 
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
+msgid "Load images in messages?"
+msgstr "Načítat obrázky ve zprávách?"
+
 #: src/renderer/src/components/MessageList.tsx
 msgid "Load older messages"
 msgstr "Načíst starší zprávy"
@@ -3053,6 +3065,7 @@ msgstr "Načítání starších zpráv…"
 
 #: src/renderer/src/components/MessageBody.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
 msgid "Loading remote images lets the sender see when you open a message and your IP address."
 msgstr "Načtení vzdálených obrázků prozradí odesílateli, kdy zprávu otevřete, a vaši IP adresu."
 
@@ -3790,6 +3803,10 @@ msgstr "Nejsou zde žádné zprávy"
 msgid "No messages match the filters"
 msgstr "Filtrům neodpovídají žádné zprávy"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "No mode picked yet. Remote images load, and known trackers stay blocked."
+msgstr "Režim zatím není vybrán. Vzdálené obrázky se načítají a známé sledovače zůstávají blokované."
+
 #: src/renderer/src/components/MessageList.tsx
 msgid "No more messages"
 msgstr "Žádné další zprávy"
@@ -4041,6 +4058,10 @@ msgstr "Otevřít tento odkaz?"
 #: src/renderer/src/components/Attachments.tsx
 msgid "Open With…"
 msgstr "Otevřít v aplikaci…"
+
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
+msgid "OpenMail blocks known tracking pixels in every mode."
+msgstr "OpenMail v každém režimu blokuje známé sledovací pixely."
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "OpenMail is the default email app"
@@ -4498,6 +4519,7 @@ msgid "Reminder time"
 msgstr "Čas připomenutí"
 
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
 msgid "Remote images"
 msgstr "Vzdálené obrázky"
 

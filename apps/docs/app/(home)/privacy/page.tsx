@@ -149,8 +149,10 @@ export default function PrivacyPage() {
         </li>
         <li>
           <strong>Senders' servers.</strong> Remote images in a message load from the sender's
-          servers only after you allow them. If you confirm a one-click unsubscribe, OpenMail sends
-          one HTTPS request to the address the sender published for that purpose.
+          servers, which can see when you open the message and your IP address. By default images
+          load and known tracking pixels are blocked. You can choose to load images only from people
+          you know, or to ask each time. If you confirm a one-click unsubscribe, OpenMail sends one
+          HTTPS request to the address the sender published for that purpose.
         </li>
         <li>
           <strong>Hugging Face</strong> (<code>huggingface.co</code>), only if you turn on on-device

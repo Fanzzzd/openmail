@@ -3,7 +3,7 @@
  * rows, provider JSON, IPC, MCP tool calls) is decoded with one of these, and
  * the TypeScript types are derived from them.
  */
-import { Schema } from "effect";
+import { Schema, Struct } from "effect";
 import { ReauthReason } from "./errors.js";
 
 /** gmail and outlook use OAuth and their own APIs; imap covers iCloud, Yahoo, QQ, 163, Fastmail and any IMAP/SMTP server. */
@@ -639,7 +639,10 @@ export type MarkReadDelay = (typeof MARK_READ_DELAYS)[number];
 export const READER_ZOOMS = [80, 90, 100, 110, 125, 150, 175] as const;
 export type ReaderZoom = (typeof READER_ZOOMS)[number];
 
-/** When remote images load without asking: never, for authenticated known senders, or always. */
+/**
+ * When remote images load without asking: never, for authenticated known senders, or always.
+ * Known trackers stay blocked in every mode.
+ */
 export const REMOTE_IMAGE_MODES = ["ask", "known", "always"] as const;
 export type RemoteImageMode = (typeof REMOTE_IMAGE_MODES)[number];
 
@@ -747,6 +750,8 @@ export type AttachmentSaveFolder = typeof AttachmentSaveFolder.Type;
 
 export const Prefs = Schema.Struct({
   remoteImages: Schema.Literals(REMOTE_IMAGE_MODES),
+  /** Read only: true once a remote image mode is stored. */
+  remoteImagesChosen: Schema.Boolean,
   cleanLinks: Schema.optionalKey(Schema.Boolean),
   spellcheck: Schema.Boolean,
   spellcheckLanguages: Schema.Array(Schema.String),
@@ -829,8 +834,15 @@ export const Prefs = Schema.Struct({
 });
 export type Prefs = typeof Prefs.Type;
 
+/** The preferences a caller can change. `remoteImagesChosen` follows the stored mode. */
+export const PrefsPatch = Schema.Struct(
+  Struct.map(Struct.omit(Prefs.fields, ["remoteImagesChosen"]), Schema.optionalKey),
+);
+export type PrefsPatch = typeof PrefsPatch.Type;
+
 export const DEFAULT_PREFS: Prefs = {
-  remoteImages: "ask",
+  remoteImages: "always",
+  remoteImagesChosen: false,
   cleanLinks: true,
   spellcheck: true,
   spellcheckLanguages: [],

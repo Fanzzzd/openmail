@@ -9,6 +9,7 @@ import {
   LANGUAGES,
   REMOTE_IMAGE_MODES,
   type Prefs,
+  type PrefsPatch,
 } from "@openmail/core/portable";
 import { Effect } from "effect";
 import { useMailbox, useMailboxQuery } from "../src/mailbox";
@@ -41,7 +42,7 @@ export default function Settings() {
       [runtime],
     ),
   );
-  const update = async (patch: Partial<Prefs>) => {
+  const update = async (patch: PrefsPatch) => {
     try {
       await runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.setPrefs(patch)));
     } catch {
@@ -192,7 +193,8 @@ export default function Settings() {
             {REMOTE_IMAGE_MODES.map((mode) => (
               <Button
                 key={mode}
-                disabled={prefs.value.remoteImages === mode}
+                // Until a mode is stored, every button records a choice.
+                disabled={prefs.value.remoteImagesChosen && prefs.value.remoteImages === mode}
                 label={
                   mode === "ask"
                     ? i18n._({ id: "Ask each time", message: "Ask each time" })

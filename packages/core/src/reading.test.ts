@@ -4,6 +4,7 @@ import {
   imageSenderKey,
   markReadAfter,
   orderThread,
+  remoteImageMode,
   shouldLoadRemote,
   splitRawMessage,
 } from "./reading.js";
@@ -57,7 +58,7 @@ import { prepareMessageHtml } from "./reader-html.js";
     const unchecked = { from: { address: "friend@example.org" } };
     const prefs = { remoteImages: "ask" as const, imageSenders: [], knownSender: false };
 
-    it("asks by default, even for known senders", () => {
+    it("asks in ask mode, even for known senders", () => {
       assert.isFalse(shouldLoadRemote(signed, { ...prefs, knownSender: true }));
     });
 
@@ -73,6 +74,15 @@ import { prepareMessageHtml } from "./reader-html.js";
       const listed = { ...prefs, imageSenders: ["example.org"] };
       assert.isTrue(shouldLoadRemote(signed, listed));
       assert.isFalse(shouldLoadRemote(forged, listed));
+    });
+
+    it("fails closed while prefs load and lets mobile keep asking until a mode is picked", () => {
+      assert.strictEqual(remoteImageMode(null), "ask");
+      const unset = { remoteImages: "always" as const, remoteImagesChosen: false };
+      assert.strictEqual(remoteImageMode(unset), "always");
+      assert.strictEqual(remoteImageMode(unset, "ask"), "ask");
+      const picked = { remoteImages: "always" as const, remoteImagesChosen: true };
+      assert.strictEqual(remoteImageMode(picked, "ask"), "always");
     });
 
     it("always loads when set to always", () => {

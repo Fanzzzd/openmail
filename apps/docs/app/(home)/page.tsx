@@ -40,7 +40,7 @@ const features: { title: string; href: string; body: ReactNode }[] = [
   {
     title: "Safe reading",
     href: "/docs/security",
-    body: "Message HTML renders in a sandbox with scripts disabled. Remote images stay blocked until you allow them, and known trackers are blocked.",
+    body: "Message HTML renders in a sandbox with scripts disabled. You choose when remote images load, and known trackers are blocked in every setting.",
   },
 ];
 

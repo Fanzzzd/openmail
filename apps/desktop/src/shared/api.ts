@@ -21,6 +21,7 @@ export type {
   OutgoingAttachment,
   OutgoingMessage,
   Prefs,
+  PrefsPatch,
   Profile,
   ProfileColor,
   ProfileInput,

@@ -626,6 +626,10 @@ msgstr "Всегда цитируйте все сообщение"
 msgid "Always use selection"
 msgstr "Всегда используйте выделение"
 
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
+msgid "Always, block trackers"
+msgstr "Всегда, блокировать трекеры"
+
 #: src/renderer/src/app/use-native-menu-bridge.ts
 msgid "An attachment changed while reading. Try adding it again."
 msgstr "Вложение изменилось во время чтения. Попробуйте добавить его снова."
@@ -718,6 +722,7 @@ msgstr "Спросить о своей почте"
 
 #: src/renderer/src/components/ComposeSettings.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
 msgid "Ask each time"
 msgstr "Спрашивайте каждый раз"
 
@@ -1214,6 +1219,7 @@ msgstr "Нажмите в этом окне, затем выберите уст�
 #: src/renderer/src/components/MediaMatches.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/RawMessage.tsx
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
 #: src/renderer/src/components/SignatureSettings.tsx
 #: src/renderer/src/components/TemplateSettings.tsx
 #: src/renderer/src/components/TriageChip.tsx
@@ -1938,6 +1944,7 @@ msgstr "Не повторяется"
 msgid "Don't attach the original message"
 msgstr "Не прикрепляйте исходное сообщение"
 
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Done"
 msgstr "Готово"
@@ -2468,6 +2475,7 @@ msgid "From {from} to {to}"
 msgstr "От {from} до {to}"
 
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
 msgid "From people I know"
 msgstr "От знакомых"
 
@@ -3015,6 +3023,10 @@ msgstr "URL-адрес ссылки"
 msgid "Load images"
 msgstr "Загрузить изображения"
 
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
+msgid "Load images in messages?"
+msgstr "Загружать изображения в сообщениях?"
+
 #: src/renderer/src/components/MessageList.tsx
 msgid "Load older messages"
 msgstr "Загрузить старые сообщения"
@@ -3053,6 +3065,7 @@ msgstr "Загрузка старых сообщений…"
 
 #: src/renderer/src/components/MessageBody.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
 msgid "Loading remote images lets the sender see when you open a message and your IP address."
 msgstr "Если загрузить удалённые изображения, отправитель узнает, когда вы открыли сообщение, и ваш IP-адрес."
 
@@ -3790,6 +3803,10 @@ msgstr "Здесь нет сообщений"
 msgid "No messages match the filters"
 msgstr "Нет сообщений, соответствующих фильтрам."
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "No mode picked yet. Remote images load, and known trackers stay blocked."
+msgstr "Режим ещё не выбран. Удалённые изображения загружаются, известные трекеры остаются заблокированными."
+
 #: src/renderer/src/components/MessageList.tsx
 msgid "No more messages"
 msgstr "Больше нет сообщений"
@@ -4041,6 +4058,10 @@ msgstr "Открыть эту ссылку?"
 #: src/renderer/src/components/Attachments.tsx
 msgid "Open With…"
 msgstr "Открыть в программе…"
+
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
+msgid "OpenMail blocks known tracking pixels in every mode."
+msgstr "OpenMail блокирует известные пиксели отслеживания в любом режиме."
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "OpenMail is the default email app"
@@ -4498,6 +4519,7 @@ msgid "Reminder time"
 msgstr "Время напоминания"
 
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
 msgid "Remote images"
 msgstr "Удалённые изображения"
 

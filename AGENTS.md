@@ -11,7 +11,7 @@
 - `messages_fts` 是外部内容 FTS 表，按 rowid 对齐。写消息只能用 `upsertMessage`（`ON CONFLICT DO UPDATE`），不要用 `INSERT OR REPLACE`，否则 rowid 变化会让索引失配。
 - refresh token 只进系统钥匙串（`secrets.ts`），不进数据库和日志。
 - 只碰用户名下账户、用 openmail 自己注册的 client 或用户自己注册的 client、走官方授权页拿 token。不复用别的 app 的凭证和 client ID，不借第一方 client ID，不从别的 app 的钥匙串项里读 token。Outlook 只走 `consumers` 租户（个人账户）；公司 M365 需要租户管理员授权应用，不绕过。
-- 邮件 HTML 是不可信内容。渲染层的 iframe 必须保持 `sandbox` 不含 `allow-scripts`，远程资源默认由 iframe 内的 CSP 拦截。
+- 邮件 HTML 是不可信内容。渲染层的 iframe 必须保持 `sandbox` 不含 `allow-scripts`。iframe 内的 CSP 拦截远程资源，只有用户的远程图片设置放行该消息时才加载图片。默认设置是加载，已知跟踪器在任何设置下都移除。
 - MCP 工具默认只读。新增会改动邮件的工具时，要有显式开关，发送必须经过 app 内人工确认。
 
 ## Electron

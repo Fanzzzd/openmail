@@ -110,6 +110,18 @@ export function imagesAllowed(address: string, allowlist: readonly string[]): bo
 }
 
 /**
+ * The remote image mode to apply. Prefs that have not loaded fail closed to "ask".
+ * `unchosen` replaces the default for people who never picked a mode.
+ */
+export function remoteImageMode(
+  prefs: { readonly remoteImages: RemoteImageMode; readonly remoteImagesChosen: boolean } | null,
+  unchosen?: RemoteImageMode,
+): RemoteImageMode {
+  if (!prefs) return "ask";
+  return prefs.remoteImagesChosen || !unchosen ? prefs.remoteImages : unchosen;
+}
+
+/**
  * Whether a message loads remote images without asking.
  * The allowlist and known senders count only with a DMARC pass, so a forged From
  * unlocks nothing. Trackers stay stripped in every case.

@@ -190,6 +190,7 @@ import { EmailFrame } from "./components/EmailFrame";
 import { AddAccountDialog } from "./components/AddAccountDialog";
 import { SnoozeDialog } from "./components/SnoozeDialog";
 import { LabelEditor } from "./components/OrganizationSettings";
+import { RemoteImagesPrompt } from "./components/RemoteImagesPrompt";
 
 const account: Account = {
   id: "gmail:me",
@@ -521,6 +522,47 @@ it("audits a custom attachment folder shown read-only with a picker button", asy
   expect(field).toHaveProperty("value", "/Users/me/Mail attachments");
   expect(screen.getByRole("button", { name: "Choose…" })).toBeTruthy();
   await audit();
+});
+
+it("asks once how remote images load; closing it stores Always", async () => {
+  const prompt = () => render(localized(h(RemoteImagesPrompt, { hasAccounts: true })));
+  const saved = () => fixture.decide.mock.lastCall?.[0]?.payload?.patch;
+
+  const first = prompt();
+  const region = screen.getByRole("region", { name: "Load images in messages?" });
+  expect(region.textContent).toContain("OpenMail blocks known tracking pixels in every mode.");
+  expect(
+    screen.getByRole("radio", { name: "Always, block trackers" }).getAttribute("aria-checked"),
+  ).toBe("true");
+  await audit();
+  fireEvent.click(screen.getByRole("radio", { name: "From people I know" }));
+  fireEvent.click(screen.getByRole("button", { name: "Done" }));
+  expect(saved()).toEqual({ remoteImages: "known" });
+  expect(screen.queryByRole("region", { name: "Load images in messages?" })).toBeNull();
+  first.unmount();
+
+  const second = prompt();
+  fireEvent.click(screen.getByRole("button", { name: "Close" }));
+  expect(saved()).toEqual({ remoteImages: "always" });
+  expect(screen.queryByRole("region")).toBeNull();
+  second.unmount();
+
+  // A stored choice, from this prompt or Settings, keeps it hidden on every later launch.
+  fixture.values.set("prefsAtom", {
+    ...DEFAULT_PREFS,
+    remoteImages: "ask",
+    remoteImagesChosen: true,
+  });
+  const calls = fixture.decide.mock.calls.length;
+  const chosen = prompt();
+  expect(chosen.container.textContent).toBe("");
+  expect(fixture.decide.mock.calls.length).toBe(calls);
+  chosen.unmount();
+
+  fixture.values.set("prefsAtom", DEFAULT_PREFS);
+  expect(
+    render(localized(h(RemoteImagesPrompt, { hasAccounts: false }))).container.textContent,
+  ).toBe("");
 });
 
 it("audits the mail assistant", async () => {

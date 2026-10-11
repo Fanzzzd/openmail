@@ -9,6 +9,7 @@ import {
   orderThread,
   READER_ZOOMS,
   senderName,
+  remoteImageMode,
   shouldLoadRemote,
   threadExpansion,
   type ReaderZoom,
@@ -324,7 +325,10 @@ export function ThreadView({
   const { t, i18n } = useLingui();
   const run = useRunMail();
   const shortcut = useShortcutText();
-  const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => DEFAULT_PREFS);
+  const prefsResult = useAtomValue(prefsAtom);
+  const prefs = AsyncResult.getOrElse(prefsResult, () => DEFAULT_PREFS);
+  // Images wait for the stored mode; the default would load them for people who chose "ask".
+  const imageMode = remoteImageMode(AsyncResult.isSuccess(prefsResult) ? prefsResult.value : null);
   const setPrefs = useAtomSet(setPrefsAtom);
   const print = useThreadPrint(notify);
   const [raw, setRaw] = useState<string | null>(null);
@@ -418,7 +422,7 @@ export function ThreadView({
   const loadsRemote = (m: Message) =>
     imagesLoaded.has(m.id) ||
     shouldLoadRemote(m, {
-      remoteImages: prefs.remoteImages,
+      remoteImages: imageMode,
       imageSenders,
       knownSender: isKnown(m),
     });
