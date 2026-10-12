@@ -164,7 +164,7 @@ export function ComposerAi({
           />
           {mode === "write" && (
             <textarea
-              className="block w-full rounded border bg-transparent p-2"
+              className="block w-full rounded border bg-transparent p-2 border-separator"
               aria-label={t`Writing instruction`}
               maxLength={4000}
               value={instruction}
@@ -185,7 +185,7 @@ export function ComposerAi({
           )}
           {mode === "translate" && (
             <input
-              className="rounded border bg-transparent p-2"
+              className="rounded border bg-transparent p-2 border-separator"
               aria-label={t`Target language`}
               maxLength={100}
               value={language}

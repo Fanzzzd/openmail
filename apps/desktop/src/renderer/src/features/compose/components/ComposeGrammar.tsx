@@ -131,7 +131,7 @@ export function GrammarResults({ grammar, locked }: { grammar: ComposeGrammar; l
   const { text, result, error, issues, select, replace } = grammar;
   if (!grammar.available || (!error && result?.text !== text)) return null;
   return (
-    <div className="shrink-0 border-b px-4 py-2 text-xs">
+    <div className="shrink-0 border-b px-4 py-2 text-xs border-separator">
       {result?.text === text && (
         <button
           type="button"
@@ -162,7 +162,7 @@ export function GrammarResults({ grammar, locked }: { grammar: ComposeGrammar; l
                     type="button"
                     disabled={locked}
                     onClick={() => replace(issue, suggestion)}
-                    className="ml-2 rounded border px-2 py-1"
+                    className="ml-2 rounded border px-2 py-1 border-separator"
                   >
                     {suggestion}
                   </button>

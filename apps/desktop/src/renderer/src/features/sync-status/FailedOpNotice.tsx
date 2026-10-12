@@ -64,7 +64,7 @@ export function FailedOpNoticeContent({
   const sentCopyTitle = (count: number) =>
     t`${plural(count, { one: "# sent message is missing from Sent", other: "# sent messages are missing from Sent" })}`;
   return (
-    <section className="shrink-0 border-b bg-amber-50 px-4 py-2 dark:bg-amber-950">
+    <section className="shrink-0 border-b bg-amber-50 px-4 py-2 dark:bg-amber-950 border-separator">
       <div className="flex items-center gap-3">
         <output role="alert" className="flex-1">
           {changeCount > 0 && <span className="block">{changeTitle(changeCount)}</span>}

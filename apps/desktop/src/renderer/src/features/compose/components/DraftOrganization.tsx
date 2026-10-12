@@ -63,7 +63,7 @@ export function DraftOrganization({
         </button>
       </Tip>
       {open && (
-        <div className="absolute right-4 bottom-12 z-10 w-64 space-y-2 rounded-card border bg-raised p-3 shadow-lg">
+        <div className="absolute right-4 bottom-12 z-10 w-64 space-y-2 rounded-card border bg-raised p-3 shadow-lg border-separator">
           {provider === "gmail" && (
             <p className="text-xs text-a11y-muted">{t`Gmail draft labels and stars stay on this Mac. Gmail only allows the Draft label on server drafts.`}</p>
           )}
@@ -100,7 +100,7 @@ export function DraftOrganization({
                 <input
                   value={names}
                   onChange={(event) => setNames(event.target.value)}
-                  className="mt-1 w-full rounded border bg-transparent px-2 py-1"
+                  className="mt-1 w-full rounded border bg-transparent px-2 py-1 border-separator"
                   onKeyDown={(event) => {
                     if (event.key === "Enter") {
                       event.preventDefault();

@@ -67,7 +67,7 @@ export function Feedback({
           <Trans>Feedback address</Trans>
           <input
             aria-label={t`Feedback address`}
-            className="my-1 block w-full rounded border p-2"
+            className="my-1 block w-full rounded border p-2 border-separator"
             type="email"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
@@ -92,7 +92,7 @@ export function Feedback({
         </div>
         <textarea
           aria-label={t`Feedback`}
-          className="my-2 w-full rounded border p-2"
+          className="my-2 w-full rounded border p-2 border-separator"
           value={body}
           onChange={(e) => setBody(e.target.value)}
           placeholder={t`Describe what happened`}

@@ -13,7 +13,7 @@ export function UpdateNotice({ onSettings }: { onSettings: () => void }) {
     return null;
   const version = state.version;
   return (
-    <output className="flex shrink-0 items-center justify-between gap-3 border-b px-4 py-2">
+    <output className="flex shrink-0 items-center justify-between gap-3 border-b px-4 py-2 border-separator">
       <span>
         {state.status === "downloaded" ? (
           <Trans>Update {version} is ready. It will install when you quit.</Trans>

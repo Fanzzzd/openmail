@@ -716,7 +716,10 @@ export function ComposeEditor({
       />
       {pasteError && <p role="alert">{t`Could not read clipboard`}</p>}
       {mention && mentionSuggestions.length > 0 && (
-        <div className="shrink-0 border-b px-4 py-2" aria-label={t`Mention suggestions`}>
+        <div
+          className="shrink-0 border-b px-4 py-2 border-separator"
+          aria-label={t`Mention suggestions`}
+        >
           {mentionSuggestions.map((person, index) => (
             <button
               key={person.address}
@@ -745,7 +748,7 @@ export function ComposeEditor({
               setFindQuery(event.target.value);
               setFindIndex(0);
             }}
-            className="min-w-0 flex-1 rounded border px-2 py-1"
+            className="min-w-0 flex-1 rounded border px-2 py-1 border-separator"
           />
           <input
             aria-label={t`Replace with`}
@@ -753,7 +756,7 @@ export function ComposeEditor({
             value={replacement}
             onKeyDown={findKey}
             onChange={(event) => setReplacement(event.target.value)}
-            className="min-w-0 flex-1 rounded border px-2 py-1"
+            className="min-w-0 flex-1 rounded border px-2 py-1 border-separator"
           />
           <output aria-live="polite">
             {matches.length

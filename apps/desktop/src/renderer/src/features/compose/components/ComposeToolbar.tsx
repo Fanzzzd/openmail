@@ -353,7 +353,7 @@ function ColorPopover({ disabled, onStyle }: { disabled: boolean; onStyle: Props
       <div className="flex items-center gap-2">
         <input
           aria-label={t`Custom hex color`}
-          className="min-w-0 flex-1 rounded border px-1.5 py-0.5 text-xs"
+          className="min-w-0 flex-1 rounded border px-1.5 py-0.5 text-xs border-separator"
           value={hex[target]}
           onChange={(event) => setHex((current) => ({ ...current, [target]: event.target.value }))}
         />

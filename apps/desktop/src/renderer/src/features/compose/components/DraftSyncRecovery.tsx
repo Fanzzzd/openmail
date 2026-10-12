@@ -22,7 +22,7 @@ export function DraftSyncRecovery({
   const state = draftSyncNotice(draft);
   if (state === "local")
     return (
-      <div className="shrink-0 border-b px-4 py-2">
+      <div className="shrink-0 border-b px-4 py-2 border-separator">
         <output>{t`Kept on this Mac`}</output>
         <button
           type="button"
@@ -34,7 +34,7 @@ export function DraftSyncRecovery({
     );
   if (state !== "failed") return null;
   return (
-    <div className="shrink-0 border-b px-4 py-2">
+    <div className="shrink-0 border-b px-4 py-2 border-separator">
       <output role="alert">{t`Couldn't sync`}</output>
       <p className="text-a11y-muted">{t`Your changes are saved on this Mac. Try again or keep a local copy.`}</p>
       <div className="mt-1 flex gap-3">

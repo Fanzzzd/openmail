@@ -227,12 +227,12 @@ export function Composer({
 
   const field =
     "h-9 min-w-0 flex-1 bg-transparent text-body outline-none placeholder:text-a11y-muted";
-  // The row draws the one focus ring for its text field; buttons in it keep their own outline.
+  // The row marks its focused text field with an accent underline; buttons in it keep their own outline.
   const row =
-    "flex items-start gap-2 has-[input:focus]:ring-2 has-[input:focus]:ring-inset has-[input:focus]:ring-a11y-focus border-b border-separator px-4";
+    "flex items-start gap-2 border-b border-separator px-4 has-[input:focus]:border-a11y-focus has-[input:focus]:shadow-[inset_0_-1px_0_var(--a11y-focus)]";
   const label = "flex h-9 w-14 shrink-0 items-center text-a11y-muted";
   const quiet =
-    "rounded p-1 text-a11y-muted outline-offset-0 outline-a11y-focus hover:bg-fill-hover focus-visible:outline-[3px] data-popup-open:bg-fill-pressed";
+    "rounded-control p-1 text-a11y-muted outline-offset-0 outline-a11y-focus hover:bg-fill-hover focus-visible:outline-[3px] data-popup-open:bg-fill-pressed";
   const title = i18n._(TITLES[draft.mode]);
 
   return (
@@ -254,7 +254,7 @@ export function Composer({
           data-full-window={standalone || undefined}
           aria-label={title}
           initialFocus={initialFocus}
-          className={`${standalone ? "no-drag fixed inset-0 z-50 flex h-full w-full " : `no-drag fixed right-5 bottom-5 z-50 flex h-[min(680px,calc(100%-40px))] w-[min(680px,calc(100%-40px))] ${narrowSheet} `} flex-col overflow-hidden rounded-sheet bg-raised text-body text-neutral-900 shadow-2xl ring-1 ring-edge outline-none transition-[opacity,translate] duration-150 ease-out data-starting-style:translate-y-2 data-starting-style:opacity-0 motion-reduce:transition-none dark:text-neutral-100`}
+          className={`${standalone ? "no-drag fixed inset-0 z-50 flex h-full w-full " : `no-drag fixed right-5 bottom-5 z-50 flex h-[min(680px,calc(100%-40px))] w-[min(680px,calc(100%-40px))] ${narrowSheet} `} flex-col overflow-hidden rounded-sheet bg-raised text-body text-neutral-900 shadow-sheet outline-none transition-[opacity,translate] duration-150 ease-out data-starting-style:translate-y-2 data-starting-style:opacity-0 motion-reduce:transition-none dark:text-neutral-100`}
         >
           {standalone ? <div className="drag h-8 shrink-0" /> : <SheetDragStrip />}
           {/* oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- The entire composer accepts file drops; the attachment picker provides keyboard access. */}
@@ -432,7 +432,7 @@ export function Composer({
             </div>
 
             {templateForm && (
-              <fieldset className="shrink-0 space-y-2 border-b px-4 py-3">
+              <fieldset className="shrink-0 space-y-2 border-b border-separator px-4 py-3">
                 <legend>{t`Fill template variables`}</legend>
                 {customTemplateVariables(templateForm.subject, templateForm.body).map((name) => (
                   <label key={name} className="flex items-center gap-2">
@@ -440,7 +440,7 @@ export function Composer({
                     <input
                       aria-label={name}
                       value={templateValues[name] ?? ""}
-                      className="min-w-0 flex-1 rounded border px-2 py-1"
+                      className="min-w-0 flex-1 rounded border px-2 py-1 border-separator"
                       onChange={(event) =>
                         setTemplateValues((previous) => ({
                           ...previous,
@@ -492,7 +492,7 @@ export function Composer({
                       setImageUrlOpen(false);
                     }
                   }}
-                  className="min-w-0 flex-1 rounded border bg-transparent px-2 py-1"
+                  className="min-w-0 flex-1 rounded border bg-transparent px-2 py-1 border-separator"
                 />
                 <button
                   type="button"
@@ -502,7 +502,7 @@ export function Composer({
                 <button type="button" onClick={() => setImageUrlOpen(false)}>{t`Cancel`}</button>
               </div>
             )}
-            <div className="flex shrink-0 items-center gap-3 border-b px-4 py-2">
+            <div className="flex shrink-0 items-center gap-3 border-b border-separator px-4 py-2">
               <span className="text-a11y-muted">{t`Signature`}</span>
               <Select
                 aria-label={t`Signature`}

@@ -76,7 +76,7 @@ export function MultiOrganization({
         <label className="block">
           {t`Additional category names, separated by commas`}
           <input
-            className="mt-1 w-full rounded border bg-transparent px-2 py-1"
+            className="mt-1 w-full rounded border bg-transparent px-2 py-1 border-separator"
             value={names}
             onChange={(event) => setNames(event.target.value)}
           />
