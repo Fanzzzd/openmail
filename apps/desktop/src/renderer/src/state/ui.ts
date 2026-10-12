@@ -141,3 +141,34 @@ export const searchScopeAtom = Atom.writable(
       true,
     ),
 );
+
+/**
+ * The thread open in the reader, by any message id in it. Changing it replaces
+ * the history entry and forgets the message picked in the previous thread.
+ */
+export const openThreadAtom = Atom.writable(
+  (get): string | null => get(mailRouteAtom).state.thread ?? null,
+  (ctx, thread: string | null) =>
+    goMail(
+      ctx,
+      ({ view, state: { thread: _thread, message: _message, ...state } }) => ({
+        view,
+        state: { ...state, ...(thread ? { thread } : {}) },
+      }),
+      true,
+    ),
+);
+
+/** The message picked in the open thread, which replies and quotes act on. */
+export const openMessageAtom = Atom.writable(
+  (get): string | null => get(mailRouteAtom).state.message ?? null,
+  (ctx, message: string | null) =>
+    goMail(
+      ctx,
+      ({ view, state: { message: _message, ...state } }) => ({
+        view,
+        state: { ...state, ...(message ? { message } : {}) },
+      }),
+      true,
+    ),
+);

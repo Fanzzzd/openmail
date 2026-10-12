@@ -8,7 +8,15 @@ import {
   rememberedViewsAtom,
   syncLocationAtom,
 } from "./location";
-import { commitSearchAtom, searchAtom, searchScopeAtom, searchTextAtom, viewAtom } from "./ui";
+import {
+  commitSearchAtom,
+  openMessageAtom,
+  openThreadAtom,
+  searchAtom,
+  searchScopeAtom,
+  searchTextAtom,
+  viewAtom,
+} from "./ui";
 
 function setup(href = "/mail/all/inbox") {
   const calls: [string, boolean][] = [];
@@ -66,4 +74,17 @@ it("never turns thread or compose windows into the mail view", () => {
   registry.set(searchScopeAtom, "folder");
   expect(calls).toEqual([]);
   expect(registry.get(locationAtom).href).toBe("/thread/x");
+});
+
+it("replaces the open thread and drops the message picked in the previous one", () => {
+  const { registry, calls } = setup("/mail/all/inbox?thread=a&message=m");
+  expect(registry.get(openThreadAtom)).toBe("a");
+  expect(registry.get(openMessageAtom)).toBe("m");
+  registry.set(openThreadAtom, "b");
+  expect(calls).toEqual([["/mail/all/inbox?thread=b", true]]);
+  expect(registry.get(openMessageAtom)).toBeNull();
+  registry.set(openMessageAtom, "n");
+  expect(calls.at(-1)).toEqual(["/mail/all/inbox?thread=b&message=n", true]);
+  registry.set(openThreadAtom, null);
+  expect(registry.get(locationAtom).href).toBe("/mail/all/inbox");
 });

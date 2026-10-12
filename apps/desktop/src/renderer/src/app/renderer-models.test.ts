@@ -58,7 +58,9 @@ vi.mock("@effect/atom-react", async () => {
           ? { space: "all", mailbox: "inbox" }
           : atom === "filters"
             ? DEFAULT_LIST_FILTERS
-            : "";
+            : atom === "openThread"
+              ? null
+              : "";
       const pair = useState(initial);
       return atom === "threads" ? [state.threads(), state.loadMore] : pair;
     },
@@ -93,6 +95,8 @@ vi.mock("../state/ui", () => ({
   searchScopeAtom: "scope",
   searchAtom: "search",
   commitSearchAtom: "commit",
+  openThreadAtom: "openThread",
+  openMessageAtom: "openMessage",
   filtersAtom: "filters",
 }));
 vi.mock("../state/events", () => ({ syncStateAtom: "sync", syncProgressAtom: "progress" }));
@@ -251,13 +255,10 @@ function Harness() {
   const run = useRunMail();
   const panels = useAppPanels();
   const navigation = useMailSelection({
-    messages,
     setLabelPicker: panels.setLabelPicker,
     accountsReady: true,
     accountList: state.accounts,
     run,
-    composeId: undefined,
-    say: notify,
   });
   const undoRef = useRef<(() => void) | null>(null);
   const [, updateToast] = useState<ToastState | null>(null);
@@ -315,7 +316,6 @@ function Harness() {
     say: notify,
     accountList: state.accounts,
     undoRef,
-    openExternal: navigation.openExternal,
   });
   useEffect(() => {
     model = { panels, navigation, mailActions, composition };

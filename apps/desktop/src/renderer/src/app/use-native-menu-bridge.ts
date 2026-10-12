@@ -21,6 +21,7 @@ import { useDesktopEvents } from "../state/desktop";
 import { saveDraft, useRunMail, withMail } from "../state/mail";
 import { useBatchUndo } from "../state/undo";
 import { ALL, OVERVIEW } from "../lib/view";
+import { mailHref } from "../../../shared/routes";
 import type { useAppPanels } from "./use-app-panels";
 import type { useMailCompose } from "./use-mail-compose";
 import type { useMailSelection } from "./use-mail-selection";
@@ -33,7 +34,6 @@ export function useNativeMenuBridge({
   say,
   accountList,
   undoRef,
-  openExternal,
   messages,
 }: {
   messages: AppMessages;
@@ -45,7 +45,6 @@ export function useNativeMenuBridge({
   say: (next: Omit<ToastState, "id">) => void;
   accountList: readonly Account[];
   undoRef: ReturnType<typeof useBatchUndo>["undoRef"];
-  openExternal: (id: string) => void;
 }) {
   const {
     dialog,
@@ -185,7 +184,7 @@ export function useNativeMenuBridge({
       }
       case "OpenThread":
         if (event.single) run(withMail((call) => call("OpenMessageWindow", { id: event.id })));
-        else openExternal(event.id);
+        else openLinkedThread(event.id);
         break;
       case "Search":
         changeView({ space: ALL, mailbox: "all" });
@@ -209,6 +208,39 @@ export function useNativeMenuBridge({
         break;
     }
   };
+  /** Opens a linked thread in its account's All Mail, or on the web when it is not stored here. */
+  const openLinkedThread = (id: string) =>
+    run(
+      withMail((call) =>
+        Effect.gen(function* () {
+          const result = yield* call("Thread", { id }).pipe(Effect.result);
+          if (result._tag === "Failure") {
+            if (result.failure._tag !== "NotFound") return yield* result.failure;
+            return yield* call("OpenMessageWeb", { id });
+          }
+          const owner = (yield* call("Accounts", undefined)).find(
+            (account) => account.id === result.success[0]?.accountId,
+          );
+          navigation.openLink(
+            mailHref(
+              {
+                space: owner?.profileId ?? ALL,
+                mailbox: "all",
+                ...(owner ? { accountId: owner.id } : {}),
+              },
+              { thread: id },
+            ),
+          );
+          return yield* Effect.void;
+        }),
+      ).pipe(
+        Effect.catchCause((cause) =>
+          Effect.sync(() =>
+            say({ text: messages.cantOpenTheMessage(causeText(i18n, cause)), tone: "error" }),
+          ),
+        ),
+      ),
+    );
   useDesktopEvents((event) => {
     if (event._tag === "ComposeFiles" && accountList.length) {
       receiveDesktop(event);

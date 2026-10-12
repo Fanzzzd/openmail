@@ -2,7 +2,7 @@ import { focusedSenderMessage, threadStateFor } from "../lib/focused-inbox";
 import { Separator, Group, Panel } from "react-resizable-panels";
 import { useCallback, useState, type ComponentProps, useEffect } from "react";
 import type { Label, MailOp } from "../../../shared/api";
-import { useAtomMount, useAtomValue } from "@effect/atom-react";
+import { useAtom, useAtomMount, useAtomValue } from "@effect/atom-react";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
@@ -76,6 +76,7 @@ import {
   unreadCountsAtom,
 } from "../state/queries";
 import { useBatchUndo } from "../state/undo";
+import { openMessageAtom } from "../state/ui";
 import {
   ALL,
   inboxCategoryNames,
@@ -159,13 +160,10 @@ export function App({ composeId }: { composeId?: string }) {
   const profileList = AsyncResult.getOrElse(useAtomValue(profilesAtom), () => []);
   const counts = AsyncResult.getOrElse(useAtomValue(unreadCountsAtom), () => ({}));
   const navigation = useMailSelection({
-    messages: strings,
     setLabelPicker,
     accountsReady: accounts._tag === "Success",
     accountList,
     run,
-    composeId,
-    say,
   });
   const {
     view,
@@ -206,12 +204,17 @@ export function App({ composeId }: { composeId?: string }) {
   const favorites = numberedFavorites(view, accountList, labels, labelPreferences);
   const labelMap = labelsById(labels);
 
-  const [readerSelection, setReaderSelection] = useState<ReaderSelection | null>(null);
+  const [openMessage, setOpenMessage] = useAtom(openMessageAtom);
   const threadResult = useAtomValue(threadAtom(selectedId));
   const openThread = AsyncResult.value(threadResult);
   const messages =
     !messageMissing(threadResult) && openThread._tag === "Some" ? openThread.value : undefined;
   const currentReaderThreadKey = readerThreadKey(selected ?? messages?.[0]);
+  // The route's message belongs to the open thread: opening another thread drops it.
+  const readerSelection: ReaderSelection | null =
+    openMessage && currentReaderThreadKey
+      ? { threadKey: currentReaderThreadKey, id: openMessage }
+      : null;
   const proposals = AsyncResult.getOrElse(useAtomValue(proposalsAtom), () => []);
   const signatures = AsyncResult.getOrElse(useAtomValue(signaturesAtom), () => []);
   /** The unread thread just opened with select(); it is marked read after the delay in preferences. */
@@ -305,7 +308,6 @@ export function App({ composeId }: { composeId?: string }) {
     say,
     accountList,
     undoRef,
-    openExternal: navigation.openExternal,
   });
 
   const { layout } = panels;
@@ -594,7 +596,7 @@ export function App({ composeId }: { composeId?: string }) {
       onMarkUnread={() => setReadTarget(null)}
       onActionDone={({ result, ids, op }) => mailActions.actionDone(result, ids, op)}
       onSelectMessage={(id) => {
-        if (currentReaderThreadKey) setReaderSelection({ threadKey: currentReaderThreadKey, id });
+        if (currentReaderThreadKey) setOpenMessage(id);
       }}
       derivedMatches={selected?.derivedMatches}
       searchMatches={selected?.searchMatches}

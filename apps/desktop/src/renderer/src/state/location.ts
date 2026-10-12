@@ -77,6 +77,12 @@ export function go(ctx: Ctx, href: string, replace: boolean) {
   if (settle(ctx, locationOf(href))) ctx.get(historyAtom).navigate(href, replace);
 }
 
+/** Moves the window to an href, as a new history entry. */
+export const navigateAtom = Atom.writable(
+  (get) => get(locationAtom).href,
+  (ctx, href: string) => go(ctx, href, false),
+);
+
 /** The bridge's write: the router already moved to `href`. */
 export const syncLocationAtom = Atom.writable(
   (get) => get(locationAtom),

@@ -1,8 +1,9 @@
-import { useAtomSet } from "@effect/atom-react";
+import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { type AnyRouter, useRouter } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { parseAppHref } from "../../../shared/routes";
-import { type AppHistory, locationOf, syncLocationAtom } from "../state/location";
+import { mailHref, parseAppHref } from "../../../shared/routes";
+import { type AppHistory, locationAtom, locationOf, syncLocationAtom } from "../state/location";
+import { useRunMail, withMail } from "../state/mail";
 
 type RouterLocation = AnyRouter["history"]["location"];
 const hrefOf = (location: RouterLocation) => `${location.pathname}${location.search}`;
@@ -36,5 +37,16 @@ export function LocationBridge() {
     sync(hrefOf(router.history.location));
     return router.history.subscribe(({ location }) => sync(hrefOf(location)));
   }, [router, sync]);
+
+  // Main saves the view and open thread for restore; search and dialogs start fresh.
+  const { route } = useAtomValue(locationAtom);
+  const saved =
+    route.kind === "mail"
+      ? mailHref(route.view, route.state.thread ? { thread: route.state.thread } : {})
+      : null;
+  const run = useRunMail();
+  useEffect(() => {
+    if (saved) run(withMail((call) => call("SetWindowRoute", { href: saved })));
+  }, [run, saved]);
   return null;
 }

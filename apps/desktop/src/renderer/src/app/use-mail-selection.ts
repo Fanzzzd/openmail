@@ -1,16 +1,11 @@
 import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
-import { useLingui } from "@lingui/react/macro";
 import { DEFAULT_PREFS, markReadAfter } from "@openmail/core/schema";
-import { Effect } from "effect";
 import { constVoid } from "effect/Function";
 import { AsyncResult } from "effect/reactivity";
 import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import type { Account, ThreadSummary } from "../../../shared/api";
-import type { AppMessages } from "./App";
 import { type SelectionSource } from "../features/mail-list/MessageList";
-import type { ToastState } from "../ui/Toast";
-import { causeText } from "../lib/errors";
 import { permanentDeleteFolder } from "../lib/folder-actions";
 import { modifyWithUndo, openThreadWindow, useRunMail, withMail } from "../state/mail";
 import { prefsAtom } from "../state/queries";
@@ -31,15 +26,17 @@ import { listQueryAtom, threadListAtom } from "../state/threads";
 import {
   commitSearchAtom,
   filtersAtom,
+  openThreadAtom,
   rememberedViewsAtom,
   searchAtom,
   searchScopeAtom,
   searchTextAtom,
   viewAtom,
 } from "../state/ui";
-import { ALL, scopeAccountIds, type SpaceId, type View } from "../lib/view";
-import { restoredSelection, settleStartupSelection } from "../state/window-selection";
-import { mailHref } from "../../../shared/routes";
+import { scopeAccountIds, type SpaceId, type View } from "../lib/view";
+import { settleStartupSelection } from "../state/window-selection";
+import { navigateAtom } from "../state/location";
+import { parseAppHref } from "../../../shared/routes";
 
 /** How long typing pauses before the search goes into the route. */
 const SEARCH_COMMIT_MS = 400;
@@ -49,19 +46,12 @@ export function useMailSelection({
   accountsReady,
   accountList,
   run,
-  composeId,
-  say,
-  messages,
 }: {
-  messages: AppMessages;
   setLabelPicker: Dispatch<SetStateAction<boolean>>;
   accountsReady: boolean;
   accountList: readonly Account[];
   run: ReturnType<typeof useRunMail>;
-  composeId: string | undefined;
-  say: (next: Omit<ToastState, "id">) => void;
 }) {
-  const { i18n } = useLingui();
   const [view, setView] = useAtom(viewAtom);
   const remembered = useAtomValue(rememberedViewsAtom);
   const [query, setQuery] = useAtom(searchTextAtom);
@@ -76,10 +66,12 @@ export function useMailSelection({
     const timer = setTimeout(commitSearch, search ? SEARCH_COMMIT_MS : 0);
     return () => clearTimeout(timer);
   }, [search, committedSearch, commitSearch]);
-  const [selection, setSelection] = useState<Selection>(() =>
-    singleSelection(restoredSelection()?.messageId ?? null),
-  );
+  // The open thread lives in the route; a selection of several rows stays here.
+  const [routeThread, setRouteThread] = useAtom(openThreadAtom);
+  const navigate = useAtomSet(navigateAtom);
+  const [selection, setSelection] = useState<Selection>(() => singleSelection(routeThread));
   const selectedId = selection.ids.size === 1 ? ([...selection.ids][0] ?? null) : null;
+  const [readTarget, setReadTarget] = useState<string | null>(null);
   const setSelectedId = (id: string | null) => setSelection(singleSelection(id));
   const [removalNavigation, setRemovalNavigation] = useState<{
     scopeKey: string;
@@ -126,12 +118,27 @@ export function useMailSelection({
     setRestoration(null);
     setSelection(trimSelection(restoration.selection, visibleIds));
   }
-  const [startupTarget, setStartupTarget] = useState<{ id: string; scope: string | null } | null>(
-    () => {
-      const id = restoredSelection()?.messageId;
-      return id ? { id, scope: null } : null;
-    },
-  );
+  /**
+   * A thread the route opened before its list loaded: a restored window, Back,
+   * or a link. It stays selected until the list shows whether it is there.
+   * `read` marks it read once found, as opening a link to an unread thread does.
+   */
+  const [startupTarget, setStartupTarget] = useState<{
+    id: string;
+    scope: string | null;
+    read?: boolean;
+  } | null>(() => (routeThread ? { id: routeThread, scope: null } : null));
+  const [syncedThread, setSyncedThread] = useState(routeThread);
+  if (routeThread !== syncedThread) {
+    // Either this window's selection reached the route, or the route moved on its own, as on
+    // Back; then the list follows it.
+    setSyncedThread(routeThread);
+    if (routeThread !== selectedId) {
+      setSelection(singleSelection(routeThread));
+      setReadTarget(null);
+      setStartupTarget(routeThread ? { id: routeThread, scope: null } : null);
+    }
+  }
   const startupMatchesScope =
     startupTarget?.scope == null || startupTarget.scope === JSON.stringify([view, query]);
   if (!startupMatchesScope) {
@@ -181,6 +188,8 @@ export function useMailSelection({
   );
   if (settled.startupId !== startupSelection) {
     setStartupTarget(null);
+    if (startupTarget?.read && rowMap.get(startupTarget.id)?.isUnread)
+      setReadTarget(startupTarget.id);
   }
   if (settled.selection !== selection) setSelection(settled.selection);
   const batchRows = batchScope(selection, rowMap).rows;
@@ -188,7 +197,6 @@ export function useMailSelection({
 
   const prefsResult = useAtomValue(prefsAtom);
   const prefs = AsyncResult.getOrElse(prefsResult, () => DEFAULT_PREFS);
-  const [readTarget, setReadTarget] = useState<string | null>(null);
   const groupingRef = useRef<boolean | null>(null);
   useEffect(() => {
     if (prefsResult._tag !== "Success") return;
@@ -352,15 +360,9 @@ export function useMailSelection({
   };
 
   useEffect(() => {
-    if (!composeId)
-      run(
-        withMail((call) =>
-          call("SetWindowRoute", {
-            href: mailHref(view, selectedId ? { thread: selectedId } : {}),
-          }),
-        ),
-      );
-  }, [run, composeId, view, selectedId]);
+    // A thread opened here goes into the route, in place: moving through the list adds no history.
+    if (selectedId !== routeThread) setRouteThread(selectedId);
+  }, [selectedId, routeThread, setRouteThread]);
 
   useEffect(() => {
     run(withMail((call) => call("SetActiveSpace", { space: view.space })));
@@ -421,46 +423,22 @@ export function useMailSelection({
     );
   };
 
-  const openExternal = (id: string) => {
-    run(
-      withMail((call) =>
-        Effect.gen(function* () {
-          const result = yield* call("Thread", { id }).pipe(Effect.result);
-          if (result._tag === "Failure") {
-            if (result.failure._tag !== "NotFound") return yield* result.failure;
-            yield* call("OpenMessageWeb", { id });
-            return yield* Effect.void;
-          }
-          const linkedMessages = result.success;
-          const linkedAccounts = yield* call("Accounts", undefined);
-          const owner = linkedAccounts.find(
-            (account) => account.id === linkedMessages[0]?.accountId,
-          );
-          const space = owner?.profileId ?? ALL;
-          const nextView: View = {
-            space,
-            mailbox: "all",
-            ...(owner ? { accountId: owner.id } : {}),
-          };
-          // Keep the requested message selected until the destination query has loaded.
-          setStartupTarget({ id, scope: JSON.stringify([nextView, ""]) });
-          setView(nextView);
-          setQuery("");
-          setFilters((chosen) => ({ ...chosen, enabled: false }));
-          setSelectedId(id);
-          setSelectionSource("mouse");
-          setReadTarget(linkedMessages.some((m) => m.isUnread) ? id : null);
-          return yield* Effect.void;
-        }),
-      ).pipe(
-        Effect.catchCause((cause) =>
-          Effect.sync(() => {
-            const reason = causeText(i18n, cause);
-            say({ text: messages.cantOpenTheMessage(reason), tone: "error" });
-          }),
-        ),
-      ),
-    );
+  /**
+   * Shows the screen a link names, as a new history entry. A thread it opens
+   * shows with list filters off and is marked read like a clicked row.
+   */
+  const openLink = (href: string) => {
+    const route = parseAppHref(href);
+    if (route?.kind !== "mail") return;
+    const thread = route.state.thread ?? null;
+    setSelection(singleSelection(thread));
+    setSelectionSource("mouse");
+    setReadTarget(null);
+    setStartupTarget(thread ? { id: thread, scope: null, read: true } : null);
+    navigate(href);
+    // Text typed but not yet committed belongs to the previous screen.
+    setQuery(route.state.q ?? "");
+    if (thread) setFilters((chosen) => ({ ...chosen, enabled: false }));
   };
   const openWindow = (id: string) => run(openThreadWindow(id));
 
@@ -468,7 +446,7 @@ export function useMailSelection({
     selectAll: selectAllRows,
     move,
     archiveSentReply,
-    openExternal,
+    openLink,
     openWindow,
     selectRow: selectListRow,
     view,

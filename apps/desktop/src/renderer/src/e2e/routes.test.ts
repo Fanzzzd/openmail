@@ -1,6 +1,6 @@
 import { act, fireEvent, screen, within } from "@testing-library/react/pure";
 import { afterEach, expect, it } from "vitest";
-import { eventually, flow } from "./harness";
+import { eventually, flow, row } from "./harness";
 
 let current: Awaited<ReturnType<typeof flow>> | undefined;
 afterEach(async () => {
@@ -49,4 +49,30 @@ it("opens the search a route names and commits typed searches with replace", asy
   expect(h.router.history.length).toBe(length);
   fireEvent.change(field, { target: { value: "" } });
   await eventually(() => expect(h.href()).toBe("/mail/all/inbox"));
+});
+
+it("opens the thread a route names and keeps the open thread in the route", async () => {
+  const h = (current = await flow({ route: "/mail/all/inbox" }));
+  await act(() =>
+    h.router.navigate({ href: `/mail/all/inbox?thread=${encodeURIComponent(h.id("two"))}` }),
+  );
+  await eventually(() =>
+    expect(screen.getByRole("article", { name: "Selected message" }).textContent).toContain(
+      "Original two",
+    ),
+  );
+  expect(row(h.id("two")).getAttribute("aria-selected")).toBe("true");
+  const length = h.router.history.length;
+  fireEvent.click(row(h.id("one")));
+  await eventually(() =>
+    expect(h.href()).toBe(`/mail/all/inbox?thread=${encodeURIComponent(h.id("one"))}`),
+  );
+  expect(h.router.history.length).toBe(length);
+  fireEvent.click(within(mailboxes()).getByRole("button", { name: "Sent" }));
+  await eventually(() => expect(h.href()).toBe("/mail/all/sent"));
+  act(() => h.router.history.back());
+  await eventually(() => expect(row(h.id("one")).getAttribute("aria-selected")).toBe("true"));
+  expect(screen.getByRole("article", { name: "Selected message" }).textContent).toContain(
+    "Original one",
+  );
 });
