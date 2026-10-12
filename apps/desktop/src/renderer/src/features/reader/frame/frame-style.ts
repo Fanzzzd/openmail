@@ -30,26 +30,43 @@ export function fitScale(contentWidth: number, frameWidth: number): number {
   return Math.max(MIN_FIT_SCALE, frameWidth / contentWidth);
 }
 
-const FIT_PROPERTIES = ["width", "transform", "transform-origin"] as const;
+/**
+ * How a page `natural` px wide sits in a frame `frame` px wide: its scale,
+ * whether it is wider than the frame, and whether the frame scrolls sideways.
+ * The frame scrolls only when the scaled page is still wider by more than a
+ * pixel, so fractional widths never leave a sliver to scroll.
+ */
+export function fitLayout(natural: number, frame: number, fit: boolean) {
+  const scale = fit ? fitScale(natural, frame) : 1;
+  return { scale, wide: natural > frame + 1, scrolls: natural * scale > frame + 1 };
+}
+
+const FIT_PROPERTIES = ["width", "zoom"] as const;
 
 /**
  * Lays the mail out at its own width and, when `fit` is on, scales the whole
  * page down to the frame, as Apple Mail does. The page keeps the width it was
  * designed for, so its tables and columns do not reflow. Returns the frame
  * height the page needs and whether the page is wider than the frame.
+ *
+ * The scale is CSS `zoom`, not a transform: a transform leaves the page's
+ * layout width at its natural size, so the frame scrolled sideways into blank
+ * space past the scaled page.
  */
 export function fitDocument(doc: Document, fit: boolean): { height: number; wide: boolean } {
   const root = doc.documentElement;
   for (const property of FIT_PROPERTIES) root.style.removeProperty(property);
   const natural = root.scrollWidth;
-  const frame = root.clientWidth;
-  const scale = fit ? fitScale(natural, frame) : 1;
-  if (scale === 1) return { height: root.scrollHeight, wide: natural > frame + 1 };
+  const { scale, wide, scrolls } = fitLayout(natural, root.clientWidth, fit);
+  // Mail styles can neither hide the sideways overflow nor add some.
+  root.style.setProperty("overflow-x", scrolls ? "auto" : "hidden", "important");
+  // A page scrolled sideways at 100% would stay shifted once it fits.
+  if (!scrolls) (doc.scrollingElement ?? root).scrollLeft = 0;
+  if (scale === 1) return { height: root.scrollHeight, wide };
   root.style.setProperty("width", `${natural}px`, "important");
   // Measured at the natural width but before scaling: a page sized to the
   // frame (html { height: 100% }) would otherwise shrink the frame every pass.
   const height = Math.ceil(root.scrollHeight * scale);
-  root.style.setProperty("transform", `scale(${scale})`, "important");
-  root.style.setProperty("transform-origin", "0 0", "important");
-  return { height, wide: true };
+  root.style.setProperty("zoom", String(scale), "important");
+  return { height, wide };
 }

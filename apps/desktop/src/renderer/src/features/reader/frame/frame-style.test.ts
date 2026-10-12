@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { expect, it } from "vitest";
 import { READER_BASE_CSS } from "@openmail/core/schema";
-import { DARK_CSS, fitDocument, fitScale, MIN_FIT_SCALE, PICTURES } from "./frame-style";
+import { DARK_CSS, fitDocument, fitLayout, fitScale, MIN_FIT_SCALE, PICTURES } from "./frame-style";
 
 it("fits wide mail to the frame and leaves mail that fits alone", () => {
   expect(fitScale(600, 600)).toBe(1);
@@ -12,43 +12,78 @@ it("fits wide mail to the frame and leaves mail that fits alone", () => {
   expect(fitScale(800, 0)).toBe(1);
 });
 
-/** A frame `frame` px wide and `frameHeight` px tall whose page is `height` px tall, styled html { height: 100% }. */
-function frameDocument(natural: number, frame: number, height: number, frameHeight = 300) {
+it("scrolls sideways only when the scaled page is still wider than the frame", () => {
+  // Fit on: a page that scales to the frame has nothing to the side.
+  expect(fitLayout(800, 400, true)).toEqual({ scale: 0.5, wide: true, scrolls: false });
+  expect(fitLayout(742, 632, true)).toMatchObject({ wide: true, scrolls: false });
+  // Past the smallest scale the rest of the page is real content.
+  expect(fitLayout(2000, 400, true)).toEqual({ scale: MIN_FIT_SCALE, wide: true, scrolls: true });
+  // At 100% a wide page scrolls by its full width.
+  expect(fitLayout(800, 400, false)).toEqual({ scale: 1, wide: true, scrolls: true });
+  // A pixel or less of fractional overflow is not worth a scroll.
+  expect(fitLayout(400.8, 400, false)).toEqual({ scale: 1, wide: false, scrolls: false });
+  expect(fitLayout(401, 400, true)).toEqual({ scale: 1, wide: false, scrolls: false });
+  expect(fitLayout(380, 400, true)).toEqual({ scale: 1, wide: false, scrolls: false });
+});
+
+/** A frame `frame` px wide whose page lays out `natural` px wide and `height` px tall. */
+function frameDocument(natural: number, frame: number, height: number) {
   const doc = document.implementation.createHTMLDocument("mail");
   const root = doc.documentElement;
+  // Like Chromium: the root's layout width is its set width times its zoom.
+  const zoom = () => Number(root.style.zoom || 1);
   Object.defineProperty(root, "scrollWidth", {
-    get: () => (root.style.width ? Number.parseFloat(root.style.width) : natural),
+    get: () => (root.style.width ? Number.parseFloat(root.style.width) : natural) * zoom(),
   });
   Object.defineProperty(root, "clientWidth", { value: frame });
-  Object.defineProperty(root, "scrollHeight", { value: height });
-  // The box is as tall as the frame, not the content, and the transform shrinks it.
-  root.getBoundingClientRect = () => {
-    const scale = Number(/scale\(([\d.]+)\)/.exec(root.style.transform)?.[1] ?? 1);
-    return DOMRect.fromRect({ width: frame * scale, height: frameHeight * scale });
-  };
+  Object.defineProperty(root, "scrollHeight", { get: () => height * zoom() });
   return doc;
 }
 
-it("scales the page from its top left corner and sizes the frame to the scaled height", () => {
+it("zooms the page to the frame so its layout width is the scaled width", () => {
   const doc = frameDocument(800, 400, 1000);
   const root = doc.documentElement;
   expect(fitDocument(doc, true)).toEqual({ height: 500, wide: true });
   expect(root.style.width).toBe("800px");
-  expect(root.style.transform).toBe("scale(0.5)");
-  expect(root.style.transformOrigin).toBe("0 0");
-  expect(root.style.getPropertyPriority("transform")).toBe("important");
+  expect(root.style.zoom).toBe("0.5");
+  expect(root.style.getPropertyPriority("zoom")).toBe("important");
+  expect(root.style.transform).toBe("");
+  // Nothing past the scaled page to scroll to.
+  expect(root.scrollWidth).toBe(400);
+  expect(root.style.overflowX).toBe("hidden");
+  expect(root.style.getPropertyPriority("overflow-x")).toBe("important");
   // Measuring again starts from the natural width, not the one it set.
   expect(fitDocument(doc, true)).toEqual({ height: 500, wide: true });
   // At 100% the page keeps its width and scrolls sideways.
   expect(fitDocument(doc, false)).toEqual({ height: 1000, wide: true });
-  expect(root.style.transform).toBe("");
+  expect(root.style.zoom).toBe("");
   expect(root.style.width).toBe("");
+  expect(root.style.overflowX).toBe("auto");
 });
 
-it("reports mail that fits as not wide, so the reader offers no toggle", () => {
-  const doc = frameDocument(380, 400, 700);
+it("returns a page scrolled at 100% to its left edge when it fits again", () => {
+  const doc = frameDocument(800, 400, 1000);
+  const root = doc.documentElement;
+  fitDocument(doc, false);
+  root.scrollLeft = 300;
+  fitDocument(doc, true);
+  expect(root.scrollLeft).toBe(0);
+});
+
+it("lets a page wider than the smallest scale scroll by what is left over", () => {
+  const doc = frameDocument(2000, 400, 1000);
+  const root = doc.documentElement;
+  expect(fitDocument(doc, true)).toEqual({ height: 400, wide: true });
+  expect(root.style.zoom).toBe(String(MIN_FIT_SCALE));
+  expect(root.scrollWidth).toBe(800);
+  expect(root.style.overflowX).toBe("auto");
+});
+
+it("reports mail that fits as not wide and hides sub-pixel overflow", () => {
+  const doc = frameDocument(400.6, 400, 700);
   expect(fitDocument(doc, true)).toEqual({ height: 700, wide: false });
-  expect(doc.documentElement.style.transform).toBe("");
+  expect(doc.documentElement.style.zoom).toBe("");
+  expect(doc.documentElement.style.overflowX).toBe("hidden");
 });
 
 /** How many times dark mode inverts an element: the page once, plus each picture rule that applies. */

@@ -115,6 +115,8 @@ export function EmailFrame({
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(frameDocument.documentElement);
+    // The page's width is pinned while it is scaled; a body that widens still has to refit.
+    observer.observe(frameDocument.body);
     observer.observe(frame);
     return () => observer.disconnect();
   }, [frameDocument, fit]);
@@ -149,9 +151,10 @@ export function EmailFrame({
     if (!frameDoc || !root || frameDoc.URL !== "about:srcdoc") return;
     setFrameDocument(frameDoc);
     externalLinkTargets(frameDoc);
-    // Mail styles cannot hide the viewport's horizontal overflow.
-    root.style.setProperty("overflow-x", "auto", "important");
+    // fitDocument sets overflow-x: the page scrolls sideways only when there is
+    // more of it to show. No rubber band or sideways scroll chaining either.
     root.style.setProperty("overflow-y", "hidden", "important");
+    root.style.setProperty("overscroll-behavior-x", "none", "important");
     frameDoc.body.style.setProperty("overflow", "visible", "important");
     const keydown = (event: KeyboardEvent) => {
       if (event.isTrusted && !isTypingTarget(frameDoc.activeElement)) keys.current?.(event);
