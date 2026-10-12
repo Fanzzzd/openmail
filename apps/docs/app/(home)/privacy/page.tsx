@@ -175,6 +175,13 @@ export default function PrivacyPage() {
         governed by that client and its provider. The MCP server is read-only by default and cannot
         send mail.
       </p>
+      <p>
+        If you turn on remote access, OpenMail on your Mac serves your mail to browsers on your own
+        devices. The data goes from your Mac to those devices over your Tailscale network, encrypted
+        end to end by WireGuard. It does not pass through OpenMail servers. Tailscale's coordination
+        server sees which of your devices connect, but not your mail. Remote access is off by
+        default and never uses Tailscale Funnel, so it is not reachable from the public internet.
+      </p>
 
       <h2 id="ai-features">AI features</h2>
       <p>

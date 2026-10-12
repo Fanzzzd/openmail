@@ -76,3 +76,80 @@ frame 标识依据：[Electron WebFrameMain](https://www.electronjs.org/docs/lat
 每文件默认 256 KiB，另保留最多三份轮转档。Feedback 展示导出预览并让用户选择附件，创建反馈草稿不自动上传；旧日志在预览时重新按白名单编码。RPC 失败仅记录方法名，不记录参数，正常中断不记录。实现见 [provider-diagnostics.ts](../packages/core/src/provider-diagnostics.ts)、[diagnostics.ts](../packages/core/src/platform/node/diagnostics.ts)、[reliability.ts](../apps/desktop/src/main/app/reliability.ts)和 [Feedback.tsx](../apps/desktop/src/renderer/src/features/feedback/Feedback.tsx)，回归见 [provider-diagnostics.test.ts](../packages/core/src/provider-diagnostics.test.ts)。
 
 只读会话的范围只在[架构](architecture.md#只读会话)维护；smoke 的原始 console 和 stderr 不是上述脱敏日志。解析器 fuzz 与无障碍测试的运行方式和限制只在[测试](testing.md#解析器-fuzz-与无障碍)维护。
+
+## 远程访问
+
+用户可以在手机或另一台电脑的浏览器里使用这台 Mac 上的 OpenMail。默认关闭，在 Settings > Remote access 打开。
+
+```
+手机浏览器 ──WireGuard (tailnet)──▶ Mac 上的 Tailscale app
+                                     │  tailscale serve --https=8443
+                                     │  加 Tailscale-User-Login / -Name，保留 Host
+                                     ▼
+                     OpenMail 主进程 http://127.0.0.1:<port>
+                       ├─ GET /、/assets/*   out/web 静态文件
+                       ├─ GET /api/attachment 附件下载
+                       ├─ POST /api/upload    附件上传
+                       └─ WS /rpc             RemoteRpcs（Effect RPC）
+                                     ▼
+                                 packages/core
+```
+
+主进程只做传输：HTTP、WebSocket、会话、Tailscale CLI 调用。邮件逻辑仍在 core，远程 RPC 复用 `shared/mailbox-handlers.ts`。代码在 `main/remote/`。
+
+### 发布
+
+- OpenMail 调用 Tailscale app 自带的 `/Applications/Tailscale.app/Contents/MacOS/Tailscale`，不安装任何东西。未安装时设置页给出 tailscale.com/download 链接。
+- 打开前依次检查：已安装、已登录、tailnet 开了 HTTPS 证书（`status --json` 的 `CertDomains` 非空）。
+- 先读 `serve status --json`。8443 已被别的映射、TCP 转发、前台 serve 或 Funnel 占用时拒绝，不覆盖。之后运行 `tailscale serve --bg --https=8443 http://127.0.0.1:<port>`。
+- 关闭时运行 `tailscale serve --https=8443 off`，只在映射指向本应用端口时执行。
+- 从不运行 `tailscale funnel`。`serve status` 里该端口有 `AllowFunnel` 时拒绝启动。
+- 可选的 Tailscale Service（如 `svc:openmail`）改用 `serve --service=svc:openmail --https=443`。
+
+### 每个请求的检查
+
+`checkRequest`（`remote-auth.ts`）按顺序检查，任一失败返回 403 或 421：
+
+1. TCP 来源是 loopback。服务只监听 127.0.0.1，这一条防止监听地址改错。
+2. 没有 `Tailscale-Funnel-Request`。
+3. 有 `Tailscale-User-Login`。Serve 只给 tailnet 里属于某个用户的设备加这个头；本机直接访问和 tagged 设备都没有，因此被拒。
+4. `Host` 等于 `<magicdns>:8443`（或 Service 的主机名）。挡住 DNS rebinding。
+5. login 在允许列表里，大小写不敏感。列表默认是这台 Mac 自己的 tailnet 登录名，只在第一次打开时写入一次，最多 64 个。
+
+WebSocket 升级和上传还要求 `Origin` 等于 `https://<host>`。
+
+### 会话
+
+- 打开应用页面时签发 `__Host-openmail-session`：HttpOnly、Secure、SameSite=Strict、Path=/。值是随机 id 加 HMAC，密钥每次启动重新生成。
+- 会话绑定 login，12 小时过期，存在主进程内存里，退出即失效。请求的 login 和会话的 login 不一致时拒绝。
+- 设置页列出已登录的浏览器。退出登录或从允许列表删掉 login 会关闭对应 WebSocket（关闭码 4401），浏览器显示会话已结束。
+
+### 远程 RPC 表
+
+`main/remote/remote-rpcs.ts` 的 `REMOTE_RPC_POLICY` 列出允许的 RPC，`RemoteRpcs` 只由这些 RPC 组成。不在表里的 RPC 在远程服务器上没有处理器，请求被拒绝并记日志。`remote-rpcs.test.ts` 固定了完整的允许列表和必须拒绝的列表，并断言新增 RPC 默认被拒。
+
+允许：读取、搜索、撰写、发送（与桌面同一个发件箱和撤销发送）、整理（归档、标签、稍后提醒、删除）、联系人建议、日历邀请回复，以及 `REMOTE_PREF_KEYS` 里的邮件和界面偏好。
+
+拒绝：本机文件和 Finder、打开浏览器、打印、窗口、剪贴板、OAuth 和添加账户、钥匙串、MCP 和 AI key、更新、退出和恢复、默认邮件客户端、Apple 联系人、远程访问设置本身。
+
+`OPENMAIL_READ_ONLY=1` 在 core 的 provider 层生效，远程写入同样被拦截。远程发送不另加确认，和桌面一样走撤销发送。
+
+### 附件
+
+- 下载：`GET /api/attachment?message=<id>&part=<path>`，需要会话。响应 `application/octet-stream`、`Content-Disposition: attachment`、`Content-Security-Policy: sandbox`，浏览器不会在本源下渲染附件。
+- 上传：`POST /api/upload?account=<id>`，需要会话和 Origin。限制和桌面相同：合计 30 MB；Gmail 拒绝的类型返回 415。
+
+### 浏览器页面
+
+- `out/web` 是同一套 renderer 的第二个 Vite 构建，入口 `renderer/web.html`、`renderer/src/web.tsx`。
+- 响应头：`default-src 'self'`、`connect-src 'self'`、`frame-ancestors 'none'`、`object-src 'none'`、`base-uri 'none'`，另有 `X-Content-Type-Options: nosniff`、`Referrer-Policy: no-referrer`、`Cache-Control: no-store`（应用页面）。
+- 邮件 iframe 和桌面一样：`sandbox` 不含 `allow-scripts`，iframe 内 CSP 拦截远程资源。
+- 静态文件按 realpath 限制在 `out/web` 内，拒绝穿越和越界符号链接。
+
+### 不在边界内
+
+- 同一用户下的本机进程可以直连 127.0.0.1 并伪造 Tailscale 头。它们本来就能读数据库和钥匙串授权的进程内存，不在本边界内。浏览器网页不能跨源发自定义头，Host 检查挡住 DNS rebinding。
+- 允许列表里的 login 能在任何属于该用户的 tailnet 设备上登录。限制设备要靠 tailnet 的访问策略。
+- 退出 OpenMail 后 serve 映射仍在，访问会得到 502。关闭开关会移除映射。
+
+验证：`remote-server.test.ts`（认证矩阵、会话、CSP、穿越、附件上下行限制、WebSocket Origin 和吊销）、`remote-rpcs.test.ts`、`tailscale.test.ts`（serve 参数和冲突检测）、`remote-access.test.ts`（假 CLI 下的开关流程）、`e2e/web.test.ts`（浏览器端经 WebSocket 渲染收件箱）。`OPENMAIL_WEB_SHOT=<dir>` 时 `web-shot.test.ts` 用 Electron 的 Chromium 截取 390 px 和 1280 px 的构建产物。
