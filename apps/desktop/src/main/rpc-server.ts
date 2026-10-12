@@ -11,11 +11,18 @@ import { desktopAppleContacts } from "./apple-contacts";
 import { currentUpdateState } from "./update-state";
 import { checkForUpdateState } from "./updates";
 import { switchWindow } from "./window-keys";
+import { DEMO_DOWNLOADS, demoDownloads } from "./downloads-demo";
 import {
+  appDownloads,
   attachmentAction,
+  attachmentApps,
   prepareAttachmentDrag,
   releaseAttachmentDrag,
+  saveAttachmentsTo,
 } from "./attachment-actions";
+import type { DownloadItem } from "../shared/downloads";
+import { textMenuCommand, popupWritingTools } from "./spellcheck";
+import { answerPrompt, windowUiEvents } from "./window-ui";
 import { clipboardAttachments } from "./clipboard-attachments";
 import { chooseAttachmentFolder } from "./attachment-folder";
 import { rendererPrefs } from "../shared/renderer-prefs";
@@ -24,9 +31,10 @@ import { notificationActionCapabilities } from "../shared/desktop";
 import { notificationPermission, openNotificationSettings } from "./notification-permission";
 import { becomeDefaultClient, defaultClientStatus } from "./default-client";
 import { IMAP_PRESETS, Mailbox, senderSearchQuery } from "@openmail/core";
-import { Effect, FiberSet, Layer, Queue } from "effect";
+import { Effect, FiberSet, Layer, Queue, Stream } from "effect";
 import { RpcSerialization, RpcServer } from "effect/rpc";
 import {
+  app,
   BrowserWindow,
   clipboard,
   dialog,
@@ -38,13 +46,7 @@ import {
 
 import { RPC_CHANNEL } from "../shared/channel";
 import { MailRpcs } from "../shared/rpc";
-import {
-  openAttachment,
-  printThread,
-  saveAllAttachments,
-  saveAttachment,
-  saveMessage,
-} from "./files";
+import { openAttachment, printThread, saveMessage } from "./files";
 import { openMeeting } from "./meeting";
 import {
   createMainWindow,
@@ -140,6 +142,7 @@ const Handlers = MailRpcs.toLayer(
     const m = yield* Mailbox;
     const desktop = yield* Desktop;
     const apple = desktopAppleContacts(m);
+    const downloads = appDownloads(m, yield* FiberSet.makeRuntime());
     return MailRpcs.of({
       ...mailboxHandlers(m),
       NotificationPermission: () => Effect.promise(() => notificationPermission()),
@@ -189,12 +192,37 @@ const Handlers = MailRpcs.toLayer(
         releaseAttachmentDrag(windowOf(client.id), request),
       PrepareAttachmentDrag: (request, { client }) =>
         prepareAttachmentDrag(m, windowOf(client.id), request),
-      AttachmentAction: (request, { client }) => attachmentAction(m, windowOf(client.id), request),
-      SaveAttachment: ({ messageId, index }, { client }) =>
-        saveAttachment(m, windowOf(client.id), messageId, index),
+      AttachmentAction: (request, { client }) =>
+        attachmentAction(m, windowOf(client.id), request, downloads),
+      SaveAttachmentsTo: (request, { client }) =>
+        saveAttachmentsTo(m, downloads, windowOf(client.id), request),
+      AttachmentApps: (request) => attachmentApps(m, request),
       OpenAttachment: ({ messageId, index }) => openAttachment(m, messageId, index),
-      SaveAllAttachments: ({ messageId }, { client }) =>
-        saveAllAttachments(m, windowOf(client.id), messageId),
+      Downloads: () =>
+        demoDownloads(app.isPackaged, process.env)
+          ? Stream.concat(Stream.make(DEMO_DOWNLOADS), Stream.never)
+          : Stream.callback<readonly DownloadItem[]>((queue) =>
+              Effect.gen(function* () {
+                Queue.offerUnsafe(queue, downloads.list());
+                const off = downloads.subscribe((items) => {
+                  Queue.offerUnsafe(queue, items);
+                });
+                yield* Effect.addFinalizer(() => Effect.sync(off));
+                yield* Effect.never;
+              }),
+            ),
+      DownloadAction: ({ id, command }) => downloads.command(id, command),
+      ClearDownloads: () => Effect.sync(() => downloads.clear()),
+      WindowUiEvents: (_, { client }) => windowUiEvents(client.id),
+      AnswerPrompt: ({ id, answer }, { client }) =>
+        Effect.sync(() => answerPrompt(client.id, id, answer)),
+      TextMenuCommand: ({ command }, { client }) =>
+        Effect.sync(() => {
+          const win = windowOf(client.id);
+          textMenuCommand(win, command, (state) => {
+            if (win) popupWritingTools(win, state);
+          });
+        }),
       PrintThread: (request, { client }) => printThread(m, windowOf(client.id), request),
       OpenThreadWindow: ({ id }) =>
         Effect.sync(() => {

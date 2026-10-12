@@ -20,7 +20,7 @@ macOS 14 提供 [`NSSpellChecker.showInlinePrediction(forCandidates:client:)`](<
 
 Electron 的 [44.4.5 context-menu 文档](https://github.com/electron/electron/blob/v44.4.5/docs/tutorial/context-menu.md#additional-macos-menu-items-eg-writing-tools) 明确说明：macOS 扩展菜单默认关闭；将 `params.frame` 传给 `Menu.popup({ frame })` 可启用 Writing Tools、AutoFill 和 Services。固定 Chromium 的 [`insertText:replacementRange:`](https://chromium.googlesource.com/chromium/src/+/152.0.7977.130/content/app_shim_remote_cocoa/render_widget_host_view_cocoa.mm#2694) 还处理了 Writing Tools 接受替换时丢失焦点的情况，说明文本写回已有上游路径。
 
-`apps/desktop/src/main/spellcheck.ts` 只给主 frame 的可编辑 composer 消息文本传入 `frame`；`ComposeEditor.tsx` 用 `data-openmail-compose-body` 标识富文本和 textarea。I02 校对、I03 重写／语气及 I05 系统 Compose／ChatGPT 共用这个原生入口。实际菜单项仍由系统功能、语言、地区和用户设置决定；这些操作及写回尚未验证，保持 partial。[Apple Writing Tools 使用说明](https://support.apple.com/guide/mac-help/writing-tools-write-improve-summarize-mchldcd6c260/mac)
+右键菜单由 renderer 用 React 绘制（拼写建议、剪切／拷贝／粘贴、拼写检查开关）。在 composer 消息文本里，React 菜单多一项“Writing Tools and Services…”，点击后主进程才在右键位置弹出原生菜单，因为这些系统项只出现在拿到 `frame` 的原生菜单里。`apps/desktop/src/main/spellcheck.ts` 只给主 frame 的可编辑 composer 消息文本记录 `frame`；`ComposeEditor.tsx` 用 `data-openmail-compose-body` 标识富文本和 textarea。I02 校对、I03 重写／语气及 I05 系统 Compose／ChatGPT 共用这个原生入口。实际菜单项仍由系统功能、语言、地区和用户设置决定；这些操作及写回尚未验证，保持 partial。[Apple Writing Tools 使用说明](https://support.apple.com/guide/mac-help/writing-tools-write-improve-summarize-mchldcd6c260/mac)
 
 I04 目前只有用户选择文本的系统路径。Apple 的完整范围控制依赖原生文本视图／Writing Tools 协调器，例如 `textView(_:writingToolsIgnoredRangesInEnclosingRange:)`；Electron 的 frame 参数不暴露这些 delegate。当前接入没有默认排除签名、引用的能力，I04 保持 partial。[Apple 原生文本视图支持说明](https://developer.apple.com/documentation/appkit/customizing-writing-tools-behavior-for-system-views)
 
@@ -55,3 +55,17 @@ AppKit 的 [`QLPreviewView`](https://developer.apple.com/documentation/quicklook
 本次没有实现 Catalyst app、私有 Markup 服务或私有 selector。M08 保持 missing，原因限于当前 Electron／AppKit 集成，不能据此断言所有 macOS helper 都无法使用系统标注。启动 Preview 并重新导入文件可作为另行设计的外部编辑流程，但尚未实现，也不计入 M08。
 
 验收必须区分编译／无 UI 自检与系统交互。本次不启动 Electron、Photos picker 或 Continuity Camera，不访问真实图库或手机；Writing Tools 的菜单出现、文字范围及写回，图库选中内容、设备照片／扫描／草图，以及签名成品均仍待人工验收。
+
+## 窗口内 UI 和原生例外
+
+窗口里的控件和弹层都用 React 绘制，样式来自 `renderer/src/components/ui/` 的共享组件（Select、Disclosure、Progress、Confirm、Menu）。`apps/desktop/src/main/native-ui-guard.test.ts` 扫描源码：`dialog.showMessageBox`、`window.confirm/alert/prompt`、`<select>`、`<details>`、`<progress>`、`Menu.buildFromTemplate`、`popup()` 只能出现在下列文件里。
+
+保留原生的位置：
+
+- 应用菜单栏、Dock 菜单和菜单栏图标（tray）菜单（`system.ts`）。这些是系统绘制的表面，窗口外没有 React。
+- 系统通知。
+- OS 文件和文件夹选择器：导出 .eml、导出 PDF、附件“存储到…”、选择附件文件夹。renderer 不能自己给出路径，路径必须来自用户在系统选择器里的选择，主进程才写入。普通“存储”不弹窗，直接写入附件文件夹（默认 Downloads），重名时按 `name (2).ext` 递增。
+- macOS 共享菜单（`ShareMenu`），由系统服务提供。
+- Writing Tools、AutoFill 和 Services 的原生菜单，原因见上文 I02–I05。
+- 回退对话框（`native-fallback.ts`）。退出确认和手动检查更新的结果先交给窗口的 React，renderer 绘制后回报 shown；没有窗口订阅或 10 秒内没有回报时，主进程撤回 React 提示，改用原生对话框。提示显示后窗口关闭、重载或 renderer 崩溃，按取消处理，退出不会卡住。崩溃和数据库恢复先打开独立的 React 恢复窗口（`renderer/recovery.html`，同样的 sandbox 和 CSP），4 秒内没有绘制、加载失败或渲染进程退出时，改用原生对话框。恢复流程必须在 renderer 坏掉时也能完成。
+- 启动失败时的 `dialog.showErrorBox`（`index.ts`）。此时还没有窗口，进程随后退出。

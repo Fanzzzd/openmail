@@ -33,6 +33,14 @@ vi.mock("./state/desktop", () => ({
   },
 }));
 vi.mock("./state/events", () => ({ liveUpdatesAtom: "live" }));
+vi.mock("./state/downloads", async () => {
+  const { Atom } = await import("effect/reactivity");
+  return {
+    downloadsAtom: Atom.make([]),
+    downloadsOpenAtom: Atom.make(false),
+    downloadsFeedAtom: "downloadsFeed",
+  };
+});
 vi.mock("./rpc", () => ({ MailClient: { runtime: "runtime" } }));
 vi.mock("./state/undo", () => ({
   useBatchUndo: () => ({ undoRef: { current: vi.fn() }, showUndo: vi.fn() }),
@@ -47,6 +55,7 @@ vi.mock("./state/mail", () => ({
 vi.mock("./components/Reader", () => ({ ThreadView: () => null, useThreadPrint: () => vi.fn() }));
 vi.mock("./components/FocusedInboxActions", () => ({ FocusedInboxPermission: () => null }));
 vi.mock("./components/ThreadActions", () => ({ ThreadActions: () => null }));
+vi.mock("./components/Downloads", () => ({ Downloads: () => null }));
 vi.mock("./components/Toast", () => ({
   Toast: ({ toast }: { toast: { text: string } | null }) =>
     toast ? createElement("div", { role: "status" }, toast.text) : null,
@@ -71,9 +80,11 @@ afterAll(() => {
     "./state/events",
     "./rpc",
     "./state/undo",
+    "./state/downloads",
     "./state/mail",
     "./components/Reader",
     "./components/ThreadActions",
+    "./components/Downloads",
     "./components/FocusedInboxActions",
     "./components/Toast",
     "./components/SystemSettings",

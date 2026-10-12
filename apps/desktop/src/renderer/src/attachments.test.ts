@@ -7,8 +7,12 @@ import { DEFAULT_PREFS, type ReaderAttachment } from "@openmail/core/schema";
 import { beforeAll, expect, it, vi } from "vitest";
 import { testDom } from "./test-dom";
 
-const rpc = vi.hoisted(() => ({ calls: vi.fn(), partial: false }));
-vi.mock("@effect/atom-react", () => ({ useAtomValue: () => AsyncResult.success(DEFAULT_PREFS) }));
+const rpc = vi.hoisted(() => ({ calls: vi.fn(), openDownloads: vi.fn() }));
+vi.mock("@effect/atom-react", () => ({
+  useAtomValue: () => AsyncResult.success(DEFAULT_PREFS),
+  useAtomSet: () => rpc.openDownloads,
+}));
+vi.mock("./state/downloads", () => ({ downloadsOpenAtom: "downloadsOpen" }));
 vi.mock("./state/queries", () => ({ prefsAtom: "prefs" }));
 vi.mock("./state/mail", () => ({
   useRunMail: () => Effect.runSync,
@@ -23,14 +27,9 @@ vi.mock("./state/mail", () => ({
         case "PrepareAttachmentDrag":
           return Effect.void;
         case "AttachmentAction":
-          return Effect.succeed(
-            rpc.partial
-              ? {
-                  count: 1,
-                  failures: [{ path: [0, 1], filename: "same.txt", reason: "Disk failure" }],
-                }
-              : { count: 2, failures: [] },
-          );
+          return Effect.succeed({ count: 2, failures: [] });
+        case "SaveAttachmentsTo":
+          return Effect.succeed(2);
         case "EmbeddedMessage":
           return Effect.succeed({
             subject: "Inside",
@@ -61,6 +60,7 @@ vi.mock("./components/ui/Menu", () => ({
   MenuItem: ({ children, onClick }: { children: ReactNode; onClick: () => void }) =>
     createElement("button", { onClick }, children),
 }));
+vi.mock("./components/OpenWithMenu", () => ({ OpenWithSubmenu: () => null }));
 vi.mock("./components/ui/Tip", () => ({
   Tip: ({ children }: { children: ReactNode }) => children,
 }));
@@ -145,13 +145,27 @@ it("multi-selection saves, copies and drags exact paths; embedded mail uses the 
         [0, 1],
       ],
     });
-    act(() => button("Save selected…").click());
-    rpc.partial = true;
-    act(() => button("Save selected…").click());
-    expect(notify).toHaveBeenCalledWith(
-      expect.objectContaining({ text: expect.stringContaining("same.txt"), tone: "error" }),
-    );
-    rpc.partial = false;
+    // Saving asks nothing: with no Downloads button in this window, a toast says where files go.
+    act(() => button("Save selected").click());
+    expect(notify).toHaveBeenCalledWith({
+      text: "Saving 2 attachments to your attachment folder",
+    });
+    expect(rpc.openDownloads).not.toHaveBeenCalled();
+    const panel = dom.window.document.createElement("div");
+    panel.setAttribute("data-downloads", "");
+    dom.window.document.body.append(panel);
+    act(() => button("Save selected").click());
+    expect(rpc.openDownloads).toHaveBeenCalledWith(true);
+    panel.remove();
+    // Save To is the one path that asks the main process for an OS folder picker.
+    act(() => button("Save selected to…").click());
+    expect(rpc.calls).toHaveBeenCalledWith("SaveAttachmentsTo", {
+      messageId: "gmail:me/message",
+      paths: [
+        [0, 0],
+        [0, 1],
+      ],
+    });
     act(() => button("Copy selected").click());
     act(() => {
       button("Drag selected to Finder").dispatchEvent(
@@ -198,7 +212,7 @@ it("multi-selection saves, copies and drags exact paths; embedded mail uses the 
     expect(html).toContain("img-src data: cid:");
     expect(html).not.toContain("img-src data: cid: https:");
     act(() => button("Clear selection").click());
-    expect(dom.element.textContent).not.toContain("Save selected…");
+    expect(dom.element.textContent).not.toContain("Save selected");
   } finally {
     dom.dispose();
   }

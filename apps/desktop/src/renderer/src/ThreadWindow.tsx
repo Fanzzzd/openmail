@@ -29,6 +29,7 @@ import { trafficLightInset } from "./components/ui/styles";
 import { causeText } from "./errors";
 import { MailClient } from "./rpc";
 import { liveUpdatesAtom } from "./state/events";
+import { Downloads } from "./components/Downloads";
 import { modifyMessages, modifyThreads, modifyWithUndo, useRunMail, withMail } from "./state/mail";
 import { accountsAtom, labelsAtom, prefsAtom, threadAtom, sendAsAtom } from "./state/queries";
 
@@ -311,6 +312,9 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
             onLabelPicker={setLabelPicker}
           />
         )}
+        <div className="ml-auto flex shrink-0 items-center pl-2">
+          <Downloads />
+        </div>
       </header>
       {messages ? (
         <ThreadView

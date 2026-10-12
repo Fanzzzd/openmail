@@ -1,4 +1,5 @@
 import { useLingui } from "@lingui/react/macro";
+import { useId } from "react";
 import { Schema } from "effect";
 import {
   calendarTimeDate,
@@ -11,6 +12,7 @@ import {
 } from "@openmail/core/schema";
 import { ORDINAL_LABELS, recurrenceSummary } from "./recurrence-summary";
 import { formInput } from "./ui/form-styles";
+import { Select } from "./ui/Select";
 
 type Pattern = EventRecurrence["pattern"];
 type Ending = EventRecurrence["ending"];
@@ -38,14 +40,17 @@ function defaultPattern(kind: string, start: CalendarTime): Pattern | undefined 
 function PatternFields({
   pattern,
   updatePattern,
+  disabled,
 }: {
   pattern: Pattern;
   updatePattern: (pattern: Pattern) => void;
+  disabled: boolean;
 }) {
   const { t, i18n } = useLingui();
   const dayName = (value: typeof RecurrenceWeekday.Type) =>
     recurrenceWeekdayName(value, i18n.locale);
   const ordinalName = (ordinal: typeof Ordinal.Type) => i18n._(ORDINAL_LABELS[ordinal]);
+  const ids = { position: useId(), weekday: useId() };
   return (
     <>
       <div className="grid grid-cols-2 gap-2">
@@ -88,40 +93,37 @@ function PatternFields({
         )}
         {(pattern.kind === "monthly-weekday" || pattern.kind === "yearly-weekday") && (
           <>
-            <label>
-              {t`Position`}
-              <select
-                className={formInput}
-                value={pattern.ordinal}
-                onChange={(e) => {
-                  const ordinal = Number(e.target.value);
+            <div className="space-y-1">
+              <label htmlFor={ids.position} className="block">
+                {t`Position`}
+              </label>
+              <Select
+                id={ids.position}
+                variant="field"
+                aria-label={t`Position`}
+                disabled={disabled}
+                value={String(pattern.ordinal)}
+                options={Ordinal.literals.map((n) => ({ value: String(n), label: ordinalName(n) }))}
+                onValueChange={(value) => {
+                  const ordinal = Number(value);
                   if (Schema.is(Ordinal)(ordinal)) updatePattern({ ...pattern, ordinal });
                 }}
-              >
-                {Ordinal.literals.map((n) => (
-                  <option key={n} value={n}>
-                    {ordinalName(n)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              {t`Weekday`}
-              <select
-                className={formInput}
+              />
+            </div>
+            <div className="space-y-1">
+              <label htmlFor={ids.weekday} className="block">
+                {t`Weekday`}
+              </label>
+              <Select
+                id={ids.weekday}
+                variant="field"
+                aria-label={t`Weekday`}
+                disabled={disabled}
                 value={pattern.weekday}
-                onChange={(e) => {
-                  const weekday = weekdays.find((d) => d === e.target.value);
-                  if (weekday) updatePattern({ ...pattern, weekday });
-                }}
-              >
-                {weekdays.map((d) => (
-                  <option key={d} value={d}>
-                    {dayName(d)}
-                  </option>
-                ))}
-              </select>
-            </label>
+                options={weekdays.map((d) => ({ value: d, label: dayName(d) }))}
+                onValueChange={(weekday) => updatePattern({ ...pattern, weekday })}
+              />
+            </div>
           </>
         )}
       </div>
@@ -153,21 +155,34 @@ function EndingFields({
   ending,
   date,
   onChange,
+  disabled,
 }: {
   ending: Ending;
   date: string;
   onChange: (ending: Ending) => void;
+  disabled: boolean;
 }) {
   const { t } = useLingui();
+  const ids = { ends: useId() };
   return (
     <>
-      <label className="block">
-        {t`Ends`}
-        <select
-          className={formInput}
+      <div className="space-y-1">
+        <label htmlFor={ids.ends} className="block">
+          {t`Ends`}
+        </label>
+        <Select
+          id={ids.ends}
+          variant="field"
+          aria-label={t`Ends`}
+          disabled={disabled}
           value={ending.kind}
-          onChange={(e) => {
-            switch (e.target.value) {
+          options={[
+            { value: "never" as const, label: t`Never` },
+            { value: "count" as const, label: t`After a number of occurrences` },
+            { value: "until" as const, label: t`On a date` },
+          ]}
+          onValueChange={(kind) => {
+            switch (kind) {
               case "count":
                 onChange({ kind: "count", count: 10 });
                 break;
@@ -179,12 +194,8 @@ function EndingFields({
                 break;
             }
           }}
-        >
-          <option value="never">{t`Never`}</option>
-          <option value="count">{t`After a number of occurrences`}</option>
-          <option value="until">{t`On a date`}</option>
-        </select>
-      </label>
+        />
+      </div>
       {ending.kind === "count" && (
         <label className="block">
           {t`Occurrences`}
@@ -234,42 +245,47 @@ export function EventRecurrenceEditor({
     >
       {/* Floated, the legend leaves the border and sits above the field like the other labels. */}
       <legend className="float-left mb-0 w-full font-medium">{t`Repeat`}</legend>
-      <select
+      <Select
+        variant="field"
         aria-label={t`Repeat pattern`}
-        className={`${formInput} clear-left`}
+        className="clear-left"
+        disabled={disabled}
         value={rule === undefined ? "keep" : (pattern?.kind ?? "none")}
-        onChange={(e) => {
-          if (e.target.value === "keep") {
+        options={[
+          { value: "keep", label: t`Keep existing rule` },
+          { value: "none", label: t`Does not repeat` },
+          { value: "daily", label: t`Daily` },
+          { value: "weekly", label: t`Weekly` },
+          { value: "monthly-date", label: t`Monthly by date` },
+          { value: "monthly-weekday", label: t`Monthly by weekday` },
+          { value: "yearly-date", label: t`Yearly by date` },
+          { value: "yearly-weekday", label: t`Yearly by weekday` },
+        ]}
+        onValueChange={(value) => {
+          if (value === "keep") {
             onChange(undefined);
             return;
           }
-          if (e.target.value === "none") {
+          if (value === "none") {
             onChange(null);
             return;
           }
-          const selected = defaultPattern(e.target.value, start);
+          const selected = defaultPattern(value, start);
           if (selected) onChange({ pattern: selected, ending: rule?.ending ?? { kind: "never" } });
         }}
-      >
-        <option value="keep">{t`Keep existing rule`}</option>
-        <option value="none">{t`Does not repeat`}</option>
-        <option value="daily">{t`Daily`}</option>
-        <option value="weekly">{t`Weekly`}</option>
-        <option value="monthly-date">{t`Monthly by date`}</option>
-        <option value="monthly-weekday">{t`Monthly by weekday`}</option>
-        <option value="yearly-date">{t`Yearly by date`}</option>
-        <option value="yearly-weekday">{t`Yearly by weekday`}</option>
-      </select>
+      />
       {rule && (
         <>
           <PatternFields
             pattern={rule.pattern}
             updatePattern={(next) => onChange({ ...rule, pattern: next })}
+            disabled={disabled}
           />
           <EndingFields
             ending={rule.ending}
             date={date}
             onChange={(ending) => onChange({ ...rule, ending })}
+            disabled={disabled}
           />
           <p aria-live="polite" className="text-sm">
             {recurrenceSummary(rule, i18n._.bind(i18n), i18n.locale)}

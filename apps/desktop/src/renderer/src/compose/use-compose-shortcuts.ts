@@ -1,6 +1,7 @@
 import type { Prefs } from "@openmail/core/schema";
 import { useEffect, type RefObject } from "react";
 import { matchesShortcut } from "../../../shared/shortcuts";
+import { confirmOpen } from "../components/ui/Confirm";
 import { type Draft } from "../draft";
 import type { useComposeEditor } from "./use-compose-editor";
 import type { useComposeRecipients } from "./use-compose-recipients";
@@ -32,7 +33,8 @@ export function useComposeShortcuts({
     // Bubble phase: fields that handle a key themselves (suggestions) mark it handled first.
     // Escape belongs to the dialog: it closes the innermost popup, then the window.
     const onKey = (e: KeyboardEvent) => {
-      if (e.defaultPrevented || asking || closing || checkingClose || templateForm) return;
+      if (e.defaultPrevented || asking || closing || checkingClose || templateForm || confirmOpen())
+        return;
       if (matchesShortcut(prefs.shortcutSet, "sendArchive", e)) {
         e.preventDefault();
         submit(true);

@@ -894,7 +894,7 @@ export const DEFAULT_PREFS: Prefs = {
   readingPaneVisible: true,
   readerZoom: 100,
   messageBackground: "light",
-  attachmentSaveFolder: { kind: "ask" },
+  attachmentSaveFolder: { kind: "downloads" },
   attachmentOpenFolder: "internal",
   threadGrouping: true,
   threadOrder: "oldest",

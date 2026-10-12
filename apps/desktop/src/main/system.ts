@@ -32,7 +32,6 @@ import {
   app,
   BrowserWindow,
   Menu,
-  dialog,
   nativeImage,
   net,
   Notification,
@@ -43,6 +42,8 @@ import {
 import { menuEdit } from "./menu-edit";
 import { watchOnline } from "./online";
 import { manualUpdateCheck } from "./updates";
+import { nativeAsk } from "./native-fallback";
+import { askWindow, listeningWindow } from "./window-ui";
 import { notificationPermission } from "./notification-permission";
 import { createQuitGuard, createSendState } from "./quit";
 import { shouldBufferDesktopEvent, type DesktopEvent } from "../shared/desktop";
@@ -180,10 +181,7 @@ export const DesktopLive = Layer.effect(
       }, 100);
     };
     for (const file of startupFiles.splice(0)) fileHandler(file);
-    const spellingCleanup = installSpellingMenu(
-      () => labels.spelling,
-      (patch) => run(mailbox.setPrefs(patch)),
-    );
+    const spellingCleanup = installSpellingMenu((patch) => run(mailbox.setPrefs(patch)));
     yield* Effect.addFinalizer(() =>
       Effect.sync(() => {
         fileHandler = undefined;
@@ -649,17 +647,19 @@ export const DesktopLive = Layer.effect(
     };
     let quittingApproved = false;
     approveUpdateQuit(false);
-    const confirmPendingSend = () =>
-      dialog
-        .showMessageBox({
-          type: "warning",
-          message: labels.quitPending,
-          detail: labels.quitPendingDetail,
-          buttons: [labels.cancel, labels.quit],
-          defaultId: 0,
-          cancelId: 0,
-        })
-        .then((result) => result.response === 1);
+    /** Asks in the given window, the focused one or any window whose renderer listens. */
+    const confirmPendingSend = (win?: BrowserWindow) =>
+      askWindow(
+        listeningWindow(win),
+        (id) => ({ _tag: "QuitPrompt", id }),
+        () =>
+          nativeAsk({
+            type: "warning",
+            message: labels.quitPending,
+            detail: labels.quitPendingDetail,
+            buttons: [labels.cancel, labels.quit],
+          }).then((index) => (index === 1 ? "accept" : "cancel")),
+      ).then((answer) => answer === "accept");
     const cancelWaitingDesktopSends = (owner?: string) =>
       new Promise<void>((resolve, reject) => {
         run(
@@ -670,7 +670,7 @@ export const DesktopLive = Layer.effect(
       });
     setRendererReloadGuard(async (win) => {
       const id = win.webContents.id;
-      if (sendStates.get(id)?.pending && !(await confirmPendingSend())) return false;
+      if (sendStates.get(id)?.pending && !(await confirmPendingSend(win))) return false;
       await cancelWaitingDesktopSends(String(id));
       sendStates.remove(id);
       return true;
@@ -681,7 +681,7 @@ export const DesktopLive = Layer.effect(
       const closeGuard = createQuitGuard({
         pending: async () => sendStates.get(id)?.pending ?? 0,
         fallbackPending: () => sendStates.get(id)?.pending ?? 0,
-        confirm: confirmPendingSend,
+        confirm: () => confirmPendingSend(win),
         beforeQuit: () => cancelWaitingDesktopSends(String(id)),
         quit: () => {
           if (!win.isDestroyed()) {
@@ -736,7 +736,7 @@ export const DesktopLive = Layer.effect(
           );
         }),
       fallbackPending: () => sendStates.total(),
-      confirm: confirmPendingSend,
+      confirm: () => confirmPendingSend(),
       beforeQuit: cancelWaitingDesktopSends,
       quit: () => {
         quittingApproved = true;

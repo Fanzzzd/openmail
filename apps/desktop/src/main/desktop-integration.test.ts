@@ -15,7 +15,6 @@ import {
 } from "../shared/native-actions";
 import { KEYMAP, matchesShortcut } from "../shared/shortcuts";
 import { DesktopEvent, desktopEventRoute, shouldBufferDesktopEvent } from "../shared/desktop";
-import { spellingItems } from "./spellcheck";
 vi.mock("electron", () => ({
   app: new EventEmitter(),
   BrowserWindow: { getAllWindows: () => [] },
@@ -92,27 +91,6 @@ it("native mail menus share the keymap and selection/composer capability rules",
       true,
     ),
   ).toBe("drop");
-});
-
-it("spelling suggestions replace the misspelling, dictionary writes use the session, and the toggle persists", () => {
-  const contents = {
-    replaceMisspelling: vi.fn(),
-    session: { addWordToSpellCheckerDictionary: vi.fn() },
-  };
-  const save = vi.fn();
-  // IO seam: this test exercises the callbacks without loading an Electron process.
-  const items = spellingItems(
-    contents,
-    { dictionarySuggestions: ["hello"], misspelledWord: "helo" },
-    undefined,
-    save,
-  );
-  items[0]?.click?.({ checked: false });
-  items[1]?.click?.({ checked: false });
-  items.find((item) => item.type === "checkbox")?.click?.({ checked: false });
-  expect(contents.replaceMisspelling).toHaveBeenCalledWith("hello");
-  expect(contents.session.addWordToSpellCheckerDictionary).toHaveBeenCalledWith("helo");
-  expect(save).toHaveBeenCalledWith({ spellcheck: false });
 });
 
 it("packaged macOS app accepts Dock files without becoming their default handler", () => {

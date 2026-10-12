@@ -6,7 +6,6 @@ vi.mock("electron", () => ({
   BrowserWindow: { getAllWindows: () => [] },
   Menu: {},
 }));
-import type { DesktopLabels } from "../shared/desktop-labels";
 
 it("closed windows release their spelling listener and cleanup closure", async () => {
   // Low-memory runs share module caches with the system test's spelling mock.
@@ -14,7 +13,7 @@ it("closed windows release their spelling listener and cleanup closure", async (
   vi.resetModules();
   const { app } = await import("electron");
   const { installSpellingMenu } = await import("./spellcheck");
-  const stop = installSpellingMenu(vi.fn<() => DesktopLabels["spelling"]>(), vi.fn());
+  const stop = installSpellingMenu(vi.fn());
   const checked = vi.fn(() => false);
   for (let i = 0; i < 1000; i++) {
     const win = Object.assign(new EventEmitter(), {

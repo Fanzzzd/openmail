@@ -29,3 +29,13 @@ export const railTrafficLightInset = "pl-6";
 /** Keyboard shortcut next to a label. */
 export const kbdClass =
   "font-sans text-[11px] tracking-wide text-neutral-600 tabular-nums group-data-highlighted:text-white dark:text-neutral-400";
+
+/**
+ * Push buttons. One size (28 px), one radius (6 px), the shared focus ring,
+ * and a pressed state. Popups use 8 px and sheets 12 px radii above them.
+ */
+const buttonBase =
+  "inline-flex h-7 items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3 text-[13px] font-medium outline-offset-1 outline-a11y-focus transition-colors duration-100 focus-visible:outline-[3px] disabled:pointer-events-none disabled:opacity-50 motion-reduce:transition-none";
+export const buttonSecondary = `${buttonBase} border border-black/10 bg-white text-neutral-900 shadow-xs hover:bg-neutral-50 active:bg-neutral-100 dark:border-white/15 dark:bg-white/5 dark:text-neutral-100 dark:hover:bg-white/10 dark:active:bg-white/15`;
+export const buttonPrimary = `${buttonBase} bg-blue-600 text-white shadow-xs hover:bg-blue-700 active:bg-blue-800`;
+export const buttonDanger = `${buttonBase} bg-red-600 text-white shadow-xs outline-red-500/60 hover:bg-red-700 active:bg-red-800`;

@@ -5,6 +5,7 @@ import type { OutgoingAttachment } from "../../../shared/api";
 import { isEmailAddress } from "@openmail/core/schema";
 import { useRunMail, withMail } from "../state/mail";
 import { Alert, AlertCancel, alertPrimary } from "./ui/Dialog";
+import { Select } from "./ui/Select";
 
 export interface FeedbackInput {
   to: string;
@@ -73,25 +74,22 @@ export function Feedback({
             placeholder={t`Enter the project's feedback address`}
           />
         </label>
-        <label className="block text-sm">
-          <Trans>Category</Trans>
-          <select
+        <div className="space-y-1 text-sm">
+          <span className="block">
+            <Trans>Category</Trans>
+          </span>
+          <Select
+            variant="field"
             aria-label={t`Category`}
-            className="my-1 block w-full rounded border p-2"
             value={category}
-            onChange={(e) => setCategory(e.target.value)}
-          >
-            <option value="Bug report">
-              <Trans>Bug report</Trans>
-            </option>
-            <option value="Feature request">
-              <Trans>Feature request</Trans>
-            </option>
-            <option value="Other feedback">
-              <Trans>Other feedback</Trans>
-            </option>
-          </select>
-        </label>
+            options={[
+              { value: "Bug report", label: t`Bug report` },
+              { value: "Feature request", label: t`Feature request` },
+              { value: "Other feedback", label: t`Other feedback` },
+            ]}
+            onValueChange={setCategory}
+          />
+        </div>
         <textarea
           aria-label={t`Feedback`}
           className="my-2 w-full rounded border p-2"

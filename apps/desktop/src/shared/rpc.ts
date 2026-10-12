@@ -111,6 +111,8 @@ import {
   NotificationActionCapabilities,
 } from "./desktop";
 import { DesktopLabels } from "./desktop-labels";
+import { AttachmentApp, DownloadCommand, DownloadItem } from "./downloads";
+import { PromptAnswer, TextMenuCommand, WindowUiEvent } from "./window-ui";
 import { Rpc, RpcGroup } from "effect/rpc";
 
 export const ConnectInput = Schema.Union([
@@ -359,14 +361,10 @@ export class MailRpcs extends RpcGroup.make(
       messageId: Schema.String,
       paths: Schema.Array(AttachmentPath).check(Schema.isMinLength(1), Schema.isMaxLength(256)),
       action: AttachmentAction,
+      /** For openWith: one of the apps AttachmentApps returned. */
+      application: Schema.optionalKey(Schema.String.check(Schema.isMaxLength(4096))),
     },
     success: AttachmentActionResult,
-    error,
-  }),
-  /** Asks where to save, then writes the attachment. False when the person cancelled. */
-  Rpc.make("SaveAttachment", {
-    payload: { messageId: Schema.String, index: Schema.Int },
-    success: Schema.Boolean,
     error,
   }),
   /** Writes the attachment to a temporary folder and opens it with its default app. */
@@ -374,12 +372,29 @@ export class MailRpcs extends RpcGroup.make(
     payload: { messageId: Schema.String, index: Schema.Int },
     error,
   }),
-  /** Asks for a folder, then writes every attachment. Returns how many were saved. */
-  Rpc.make("SaveAllAttachments", {
-    payload: { messageId: Schema.String },
+  /** Downloads to a folder the person picks in the OS folder picker. 0 when cancelled. */
+  Rpc.make("SaveAttachmentsTo", {
+    payload: {
+      messageId: Schema.String,
+      paths: Schema.Array(AttachmentPath).check(Schema.isMinLength(1), Schema.isMaxLength(256)),
+    },
     success: Schema.Int,
     error,
   }),
+  /** Apps registered for one attachment, for the Open With menu. */
+  Rpc.make("AttachmentApps", {
+    payload: { messageId: Schema.String, path: AttachmentPath },
+    success: Schema.Array(AttachmentApp),
+    error,
+  }),
+  /** The current downloads, then the list again after every change. */
+  Rpc.make("Downloads", { success: Schema.Array(DownloadItem), stream: true }),
+  Rpc.make("DownloadAction", {
+    payload: { id: Schema.String, command: DownloadCommand },
+    error,
+  }),
+  /** Removes finished and failed downloads from the list. Files stay on disk. */
+  Rpc.make("ClearDownloads"),
   /**
    * Prints the thread of `id`, or only message `only`, from a hidden window.
    * With `pdf` it asks where to save and writes a PDF instead. False when
@@ -752,6 +767,10 @@ export class MailRpcs extends RpcGroup.make(
   Rpc.make("BecomeDefaultMailClient", { success: Schema.Boolean }),
   Rpc.make("SetActiveSpace", { payload: { space: Schema.String } }),
   Rpc.make("DesktopEvents", { success: DesktopEvent, stream: true }),
+  /** Menus and prompts this window draws for the main process. */
+  Rpc.make("WindowUiEvents", { success: WindowUiEvent, stream: true }),
+  Rpc.make("AnswerPrompt", { payload: { id: Schema.String, answer: PromptAnswer } }),
+  Rpc.make("TextMenuCommand", { payload: { command: TextMenuCommand } }),
 
   // Sync
   Rpc.make("Sync", { success: Schema.Array(SyncResult) }),

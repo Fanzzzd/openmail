@@ -43,11 +43,6 @@ export function useDesktopLabels() {
                 ),
               ),
             },
-            spelling: {
-              add: t`Add to Dictionary`,
-              check: t`Check spelling while typing`,
-              noSuggestions: t`No suggestions`,
-            },
             checkUpdates: t`Check for Updates…`,
             updatesDisabled: t`Update checks require a signed, installed macOS app and a saved GitHub access token.`,
             updatesCurrent: t`OpenMail is up to date.`,

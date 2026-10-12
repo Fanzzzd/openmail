@@ -607,9 +607,11 @@ export function makeComposeStore(
           stored.get("messageBackground"),
           d.messageBackground,
         ),
-        attachmentSaveFolder: pref(f.attachmentSaveFolder, stored.get("attachmentSaveFolder"), {
-          kind: "ask",
-        }),
+        attachmentSaveFolder: pref(
+          f.attachmentSaveFolder,
+          stored.get("attachmentSaveFolder"),
+          d.attachmentSaveFolder,
+        ),
         attachmentOpenFolder: pref(
           f.attachmentOpenFolder,
           stored.get("attachmentOpenFolder"),

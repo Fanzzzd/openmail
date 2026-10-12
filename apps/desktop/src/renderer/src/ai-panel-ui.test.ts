@@ -71,6 +71,30 @@ vi.mock("./state/mail", () => ({
 }));
 vi.mock("./components/Proposals", () => ({ Proposals: () => null }));
 vi.mock("./state/queries", () => ({ labelsAtom: () => "Labels" }));
+// The real Select is a Base UI popup, covered in ui-primitives.test.ts; here one button per option picks it.
+vi.mock("./components/ui/Select", () => ({
+  Select: (props: {
+    "aria-label": string;
+    options: readonly { value: string; label: string }[];
+    onValueChange: (value: string) => void;
+  }) =>
+    createElement(
+      "div",
+      { role: "group", "aria-label": props["aria-label"] },
+      props.options.map((option) =>
+        createElement(
+          "button",
+          {
+            key: option.value,
+            type: "button",
+            "data-option": option.value,
+            onClick: () => props.onValueChange(option.value),
+          },
+          option.label,
+        ),
+      ),
+    ),
+}));
 vi.mock("./components/ui/Dialog", () => ({
   Dialog: ({ children }: { children: ReactNode }) => createElement("section", null, children),
 }));
@@ -169,12 +193,11 @@ for (const action of ["discard", "undo", "later typing", "unflushed typing"] as 
       act(() => {
         dom.window.dispatchEvent(shortcut);
       });
-      const select = dom.element.querySelector('[aria-label="AI action"]');
-      if (!select) throw new Error("Missing AI action selector");
-      Object.defineProperty(select, "value", { configurable: true, value: "rewrite" });
-      act(() => {
-        select.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
-      });
+      const rewrite = dom.element.querySelector<HTMLButtonElement>(
+        '[aria-label="AI action"] [data-option="rewrite"]',
+      );
+      if (!rewrite) throw new Error("Missing AI action selector");
+      act(() => rewrite.click());
       click("Generate preview");
       expect(compose.requests).toEqual([
         {

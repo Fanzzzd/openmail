@@ -1,4 +1,5 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
+import { ProgressBar } from "./ui/Progress";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { AsyncResult } from "effect/reactivity";
 import { MailClient } from "../rpc";
@@ -49,11 +50,11 @@ export function IndexingSettings() {
         <>
           {progress.models?.kind === "downloading" && (
             <div>
-              <progress
+              <ProgressBar
                 value={progress.models.bytes}
                 max={progress.models.total}
                 aria-label={t`Model download progress`}
-                className="w-full"
+                className="mb-1"
               />
               <p>
                 <Trans>

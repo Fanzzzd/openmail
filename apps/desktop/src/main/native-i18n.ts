@@ -12,6 +12,7 @@ export async function nativeRecoveryLabels() {
 /** Shared catalog for native recovery dialogs, available before the mailbox starts. */
 function recoveryLabels(i18n: I18n) {
   return {
+    locale: i18n.locale,
     upgrading: i18n._(msg`Upgrading local database…`),
     upgradeSpaceTitle: i18n._(msg`More disk space is needed`),
     upgradeSpaceDetail: (size: string) =>

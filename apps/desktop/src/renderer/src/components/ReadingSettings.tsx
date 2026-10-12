@@ -137,13 +137,13 @@ export function ReadingSettings() {
       </section>
       <section className="space-y-2">
         <h3 className={settingsHeading}>
-          <Trans>Attachment save folder</Trans>
+          <Trans>Attachment folder</Trans>
         </h3>
+        {/* Saving never asks, so the legacy "ask" setting shows as Downloads, where it saves. */}
         <SegmentedControl
-          aria-label={t`Attachment save folder`}
-          value={prefs?.attachmentSaveFolder?.kind ?? "ask"}
+          aria-label={t`Attachment folder`}
+          value={prefs?.attachmentSaveFolder?.kind === "custom" ? "custom" : "downloads"}
           options={[
-            { value: "ask" as const, label: t`Ask each time` },
             { value: "downloads" as const, label: t`Downloads` },
             { value: "custom" as const, label: t`Custom folder` },
           ]}

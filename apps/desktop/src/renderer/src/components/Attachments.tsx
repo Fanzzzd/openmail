@@ -14,48 +14,22 @@ import { constVoid } from "effect/Function";
 import { plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Effect } from "effect";
-import { useAtomValue } from "@effect/atom-react";
+import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { AsyncResult } from "effect/reactivity";
-import {
-  Download,
-  Eye,
-  MoreHorizontal,
-  File,
-  FileArchive,
-  FileAudio,
-  FileImage,
-  FileSpreadsheet,
-  FileText,
-  FileVideo,
-  Mail,
-} from "lucide-react";
-import { useEffect, useMemo, useState, useId, useRef, type ComponentType } from "react";
+import { Download, Eye, MoreHorizontal } from "lucide-react";
+import { iconFor } from "./file-icon";
+import { useEffect, useMemo, useState, useId, useRef } from "react";
 import type { Message } from "../../../shared/api";
 import { causeText } from "../errors";
 import { formatBytes } from "../format";
 import { useRunMail, withMail } from "../state/mail";
 import { prefsAtom } from "../state/queries";
+import { downloadsOpenAtom } from "../state/downloads";
+import { OpenWithSubmenu } from "./OpenWithMenu";
 import type { Notify } from "./Reader";
 import { LazyEmailFrame } from "./MessageBodyShell";
 import { DropdownMenu, MenuItem } from "./ui/Menu";
 import { Tip } from "./ui/Tip";
-
-type Icon = ComponentType<{ className?: string }>;
-
-function iconFor(mimeType: string, filename: string): Icon {
-  const type = mimeType.toLowerCase();
-  const ext = filename.toLowerCase().split(".").pop() ?? "";
-  if (type.startsWith("image/")) return FileImage;
-  if (type.startsWith("audio/")) return FileAudio;
-  if (type.startsWith("video/")) return FileVideo;
-  if (type === "message/rfc822" || ext === "eml") return Mail;
-  if (/zip|compressed|tar|gzip|x-7z|rar/.test(type) || /^(zip|rar|7z|gz|tgz|tar)$/.test(ext))
-    return FileArchive;
-  if (/spreadsheet|excel|csv/.test(type) || /^(xlsx?|csv|numbers)$/.test(ext))
-    return FileSpreadsheet;
-  if (type.startsWith("text/") || /pdf|word|document|presentation/.test(type)) return FileText;
-  return File;
-}
 
 export function Attachments({
   message,
@@ -210,7 +184,11 @@ export function AttachmentList({
       ),
     );
   };
-  const action = (kind: AttachmentAction, targets: readonly ReaderAttachment[]) => {
+  const action = (
+    kind: AttachmentAction,
+    targets: readonly ReaderAttachment[],
+    application?: string,
+  ) => {
     if (!targets.length) return;
     if (kind === "open" || kind === "preview") {
       const special = targets.find((file) => attachmentImportKind(file) !== null);
@@ -226,35 +204,45 @@ export function AttachmentList({
           listId,
           paths: targets.map((file) => file.path),
           action: kind,
+          ...(application ? { application } : {}),
         }),
       ).pipe(
         Effect.matchCause({
           onFailure: fail,
-          onSuccess: ({ count, failures }) => {
-            if (failures.length) {
-              const names = failures
-                .map(
-                  (failure) =>
-                    targets.find((file) => pathKey(file.path) === pathKey(failure.path))
-                      ?.filename ?? failure.filename,
-                )
-                .join(", ");
-              notify({
-                text: t`Saved ${count} attachments. Couldn't save: ${names}`,
-                tone: "error",
-              });
-              return;
-            }
-            if (kind === "save" && count)
-              notify({
-                text: plural(count, { one: "Saved # attachment", other: "Saved # attachments" }),
-              });
+          onSuccess: ({ count }) => {
+            if (kind === "save" && count) showDownloads(count);
             if (kind === "copy" && count) notify({ text: t`Copied` });
           },
         }),
       ),
     );
   };
+  const setDownloadsOpen = useAtomSet(downloadsOpenAtom);
+  /** Saving never asks where: the Downloads panel opens, or a toast speaks where no panel is shown. */
+  const showDownloads = (count: number) => {
+    if (document.querySelector("[data-downloads]")) setDownloadsOpen(true);
+    else
+      notify({
+        text: plural(count, {
+          one: "Saving # attachment to your attachment folder",
+          other: "Saving # attachments to your attachment folder",
+        }),
+      });
+  };
+  /** Save To: the only save that shows the OS folder picker. */
+  const saveTo = (targets: readonly ReaderAttachment[]) =>
+    run(
+      withMail((call) =>
+        call("SaveAttachmentsTo", { messageId, paths: targets.map((file) => file.path) }),
+      ).pipe(
+        Effect.matchCause({
+          onFailure: fail,
+          onSuccess: (count) => {
+            if (count) showDownloads(count);
+          },
+        }),
+      ),
+    );
   const toggle = (file: ReaderAttachment, range: boolean) => {
     setReady("");
     pending.current = null;
@@ -353,7 +341,7 @@ export function AttachmentList({
                   <Eye className="size-3.5" />
                 </button>
               </Tip>
-              <Tip label={t`Save…`}>
+              <Tip label={t`Save to attachment folder`}>
                 <button
                   type="button"
                   aria-label={t`Save ${file.filename}`}
@@ -378,15 +366,20 @@ export function AttachmentList({
                   <Trans>Open</Trans>
                 </MenuItem>
                 {share && (
-                  <MenuItem onClick={() => action("openWith", [file])}>
-                    <Trans>Open With…</Trans>
-                  </MenuItem>
+                  <OpenWithSubmenu
+                    messageId={messageId}
+                    path={file.path}
+                    onOpen={(application) => action("openWith", [file], application)}
+                  />
                 )}
                 <MenuItem onClick={() => action("preview", [file])}>
                   <Trans>Quick Look</Trans>
                 </MenuItem>
                 <MenuItem onClick={() => action("copy", [file])}>
                   <Trans>Copy</Trans>
+                </MenuItem>
+                <MenuItem onClick={() => saveTo([file])}>
+                  <Trans>Save To…</Trans>
                 </MenuItem>
                 {share && (
                   <MenuItem onClick={() => action("share", [file])}>
@@ -399,7 +392,7 @@ export function AttachmentList({
         })}
         {files.length > 1 && (
           <button type="button" onClick={() => action("save", files)} className={buttonClass}>
-            <Trans>Save all…</Trans>
+            <Trans>Save all</Trans>
           </button>
         )}
       </div>
@@ -418,7 +411,10 @@ export function AttachmentList({
       {chosen.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-1">
           <button type="button" onClick={() => action("save", chosen)} className={buttonClass}>
-            <Trans>Save selected…</Trans>
+            <Trans>Save selected</Trans>
+          </button>
+          <button type="button" onClick={() => saveTo(chosen)} className={buttonClass}>
+            <Trans>Save selected to…</Trans>
           </button>
           <button type="button" onClick={() => action("copy", chosen)} className={buttonClass}>
             <Trans>Copy selected</Trans>

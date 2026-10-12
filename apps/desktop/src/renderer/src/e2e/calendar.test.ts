@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, afterEach, expect, it, vi } from "vitest";
 import { fireEvent, screen } from "@testing-library/react/pure";
+import userEvent from "@testing-library/user-event";
 import { flow, incoming, row, eventually } from "./harness";
 beforeAll(() => vi.stubEnv("TZ", "UTC"));
 afterAll(() => vi.unstubAllEnvs());
@@ -15,6 +16,14 @@ async function openTextDate() {
   const [item] = await screen.findAllByRole("menuitem");
   if (!item) throw new Error("Missing date menu item");
   fireEvent.click(item);
+}
+/** Picks an option from a Select the way a person does: open the list, click the option. */
+async function choose(label: string, option: string) {
+  const user = userEvent.setup();
+  const trigger = screen.getByRole("combobox", { name: label });
+  await user.click(trigger);
+  await user.click(await screen.findByRole("option", { name: option }));
+  await eventually(() => expect(trigger.textContent).toContain(option));
 }
 afterEach(async () => {
   await current?.dispose();
@@ -57,14 +66,14 @@ it("confirmation edits dates and multi-weekday recurrence through RPC with a rea
   await eventually(() => expect(row(h.id("one"))).toBeTruthy());
   fireEvent.click(row(h.id("one")));
   await openTextDate();
-  fireEvent.change(screen.getByLabelText("Time zone"), { target: { value: "America/New_York" } });
+  await choose("Time zone", "America/New_York");
   fireEvent.change(screen.getByLabelText("Event date or range"), {
     target: { value: "2026-10-26 09:00–10:00" },
   });
-  fireEvent.change(screen.getByLabelText("Repeat pattern"), { target: { value: "weekly" } });
+  await choose("Repeat pattern", "Weekly");
   fireEvent.change(screen.getByLabelText("Interval"), { target: { value: "2" } });
   fireEvent.click(screen.getByRole("checkbox", { name: "Wed" }));
-  fireEvent.change(screen.getByLabelText("Ends"), { target: { value: "until" } });
+  await choose("Ends", "On a date");
   fireEvent.change(screen.getByLabelText("Repeat end date"), { target: { value: "2026-12-31" } });
   expect(screen.getByText("Every 2 weeks on Mon & Wed until Dec 31, 2026")).toBeTruthy();
   expect(h.server.createdEvents).toHaveLength(0);
@@ -108,7 +117,7 @@ it("ambiguous dates block confirmation until the person chooses an explicit date
   expect(
     screen.getByRole("button", { name: "Confirm and add event" }).hasAttribute("disabled"),
   ).toBe(false);
-  fireEvent.change(screen.getByLabelText("Repeat pattern"), { target: { value: "yearly-date" } });
+  await choose("Repeat pattern", "Yearly by date");
   fireEvent.change(screen.getByLabelText("Month"), { target: { value: "0" } });
   expect(screen.getByText("Check the date and repeat settings")).toBeTruthy();
   // A repeat error leaves the parsed date field valid.
@@ -118,7 +127,7 @@ it("ambiguous dates block confirmation until the person chooses an explicit date
     screen.getByRole("button", { name: "Confirm and add event" }).hasAttribute("disabled"),
   ).toBe(true);
   fireEvent.change(screen.getByLabelText("Month"), { target: { value: "10" } });
-  fireEvent.change(screen.getByLabelText("Ends"), { target: { value: "count" } });
+  await choose("Ends", "After a number of occurrences");
   fireEvent.change(screen.getByLabelText("Occurrences"), { target: { value: "3" } });
   fireEvent.click(screen.getByRole("button", { name: "Confirm and add event" }));
   await eventually(() => expect(h.server.createdEvents).toHaveLength(1));
@@ -136,7 +145,7 @@ it("Outlook shows a lossless-mapping error before confirmation for a month-end r
   await eventually(() => expect(row(h.id("one"))).toBeTruthy());
   fireEvent.click(row(h.id("one")));
   await openTextDate();
-  fireEvent.change(screen.getByLabelText("Repeat pattern"), { target: { value: "monthly-date" } });
+  await choose("Repeat pattern", "Monthly by date");
   expect(screen.getByText("This recurrence cannot be represented in Outlook")).toBeTruthy();
   expect(
     screen.getByRole("button", { name: "Confirm and add event" }).hasAttribute("disabled"),
@@ -153,9 +162,12 @@ it("changing the start flags the rule mismatch and leaves the editor available t
   await eventually(() => expect(row(h.id("one"))).toBeTruthy());
   fireEvent.click(row(h.id("one")));
   await openTextDate();
-  expect(screen.getByLabelText("Time zone").tagName).toBe("SELECT");
-  expect(screen.getByRole("option", { name: "America/New_York" })).toBeTruthy();
-  fireEvent.change(screen.getByLabelText("Repeat pattern"), { target: { value: "weekly" } });
+  // A React listbox, not a native <select>.
+  fireEvent.click(screen.getByRole("combobox", { name: "Time zone" }));
+  expect(await screen.findByRole("option", { name: "America/New_York" })).toBeTruthy();
+  fireEvent.keyDown(screen.getByRole("listbox"), { key: "Escape" });
+  await eventually(() => expect(screen.queryByRole("listbox")).toBeNull());
+  await choose("Repeat pattern", "Weekly");
   fireEvent.change(screen.getByLabelText("Event date or range"), {
     target: { value: "2026-10-27 09:00–10:00" },
   });
@@ -185,7 +197,7 @@ it("DST gaps have an explicit offset prompt before any creation", async () => {
   await eventually(() => expect(row(h.id("one"))).toBeTruthy());
   fireEvent.click(row(h.id("one")));
   await openTextDate();
-  fireEvent.change(screen.getByLabelText("Time zone"), { target: { value: "America/New_York" } });
+  await choose("Time zone", "America/New_York");
   expect(
     screen.getByText(
       "This time is skipped or repeated by daylight saving. Enter a date and time with a UTC offset",

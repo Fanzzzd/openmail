@@ -16,24 +16,40 @@ interface Props<T extends string> {
   options: readonly SelectOption<T>[];
   onValueChange: (value: T) => void;
   "aria-label": string;
+  /** For a visible <label htmlFor>; clicking that label then reaches the control. */
+  id?: string;
   disabled?: boolean;
   className?: string;
   /** Classes for the current label in the button, e.g. to hide it in a narrow container. */
   valueClassName?: string;
+  /**
+   * "inline" is a borderless pop-up button for toolbars and setting rows.
+   * "field" is a bordered, full-width control that lines up with text inputs in forms.
+   */
+  variant?: "inline" | "field";
 }
+
+const triggerStyles = {
+  inline:
+    "h-7 gap-2 rounded-md px-1.5 -mx-1.5 outline-offset-0 not-data-disabled:hover:bg-black/[0.04] focus-visible:outline-[3px] data-popup-open:bg-black/[0.06] dark:not-data-disabled:hover:bg-white/5 dark:data-popup-open:bg-white/10",
+  field:
+    "h-8 w-full justify-between gap-2 rounded-md border border-black/15 bg-white px-2.5 shadow-xs outline-offset-1 not-data-disabled:hover:border-black/25 focus-visible:outline-2 data-disabled:opacity-50 data-popup-open:border-blue-600 dark:border-white/15 dark:bg-white/5 dark:not-data-disabled:hover:border-white/25 dark:data-popup-open:border-blue-400",
+} as const;
 
 /**
  * A macOS pop-up button: the list opens over the button with the current
- * item under the pointer. When disabled it reads as plain text.
+ * item under the pointer. Inline, when disabled it reads as plain text.
  */
 export function Select<T extends string>({
   value,
   options,
   onValueChange,
   "aria-label": label,
+  id,
   disabled,
   className = "",
   valueClassName = "",
+  variant = "inline",
 }: Props<T>) {
   const current = options.find((o) => o.value === value);
   return (
@@ -46,12 +62,17 @@ export function Select<T extends string>({
       disabled={disabled}
     >
       <BaseSelect.Trigger
+        id={id}
         aria-label={label}
-        className={`group flex h-7 min-w-0 items-center gap-2 rounded-md px-1.5 -mx-1.5 text-left outline-offset-0 outline-a11y-focus not-data-disabled:hover:bg-black/[0.04] focus-visible:outline-[3px] data-popup-open:bg-black/[0.06] dark:not-data-disabled:hover:bg-white/5 dark:data-popup-open:bg-white/10 ${className}`}
+        className={`group flex min-w-0 items-center text-left outline-a11y-focus ${triggerStyles[variant]} ${className}`}
       >
         {current?.icon}
-        <BaseSelect.Value className={`min-w-0 truncate ${valueClassName}`} />
-        <BaseSelect.Icon className="shrink-0 text-a11y-muted group-data-disabled:hidden">
+        <BaseSelect.Value
+          className={`min-w-0 truncate ${variant === "field" ? "flex-1" : ""} ${valueClassName}`}
+        />
+        <BaseSelect.Icon
+          className={`shrink-0 text-a11y-muted ${variant === "inline" ? "group-data-disabled:hidden" : ""}`}
+        >
           <ChevronsUpDown className="size-3.5" />
         </BaseSelect.Icon>
       </BaseSelect.Trigger>

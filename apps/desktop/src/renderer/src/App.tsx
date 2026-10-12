@@ -34,6 +34,7 @@ import { PermanentDeletePermission } from "./components/PermanentDeletePermissio
 import { FailedOpNotice } from "./components/FailedOpNotice";
 import { UpdateNotice } from "./components/UpdateNotice";
 import { RemoteImagesPrompt } from "./components/RemoteImagesPrompt";
+import { Downloads } from "./components/Downloads";
 import { numberedFavorites } from "./favorite-navigation";
 import { supportsInInboxFilter } from "./folder-actions";
 import { readerThreadKey, type ReaderSelection } from "./reader-selection";
@@ -530,6 +531,7 @@ export function App({ composeId }: { composeId?: string }) {
       onFilters={setFilters}
       folderActions={
         <>
+          <Downloads />
           <UndoHistory entries={undoHistory} onUndo={undoRestored} />
           <FolderActions
             folder={{

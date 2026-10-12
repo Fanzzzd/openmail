@@ -7,6 +7,8 @@ import { App } from "./App";
 import { ThreadWindow } from "./ThreadWindow";
 import { LocaleProvider } from "./components/LocaleProvider";
 import { TipProvider } from "./components/ui/Tip";
+import { ConfirmHost } from "./components/ui/Confirm";
+import { WindowUi } from "./components/WindowUi";
 import "./styles.css";
 
 /** Set in thread windows: the message whose thread the window shows. */
@@ -20,6 +22,8 @@ createRoot(document.getElementById("root")!).render(
       <LocaleProvider>
         <TipProvider>
           <WindowKeys />
+          <WindowUi />
+          <ConfirmHost />
           {thread ? (
             <ThreadWindow
               id={thread}

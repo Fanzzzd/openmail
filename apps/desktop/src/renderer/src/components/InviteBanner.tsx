@@ -26,6 +26,7 @@ import {
 } from "./CalendarEvents";
 import { MeetingLinks } from "./MeetingLinks";
 import { formButton } from "./ui/form-styles";
+import { Disclosure } from "./ui/Disclosure";
 
 export function InviteBanner({ message }: { message: Message }) {
   return (
@@ -107,18 +108,21 @@ function Recurrence({ invite }: { invite: CalendarInvite }) {
               ? t`Repeats yearly`
               : t`Recurring meeting`;
   return (
-    <details>
-      <summary className="cursor-pointer">
-        {invite.recurrenceId ? t`One occurrence of a recurring meeting` : summary}
-        {count && <> · {t`${count} occurrences`}</>}
-      </summary>
+    <Disclosure
+      summary={
+        <>
+          {invite.recurrenceId ? t`One occurrence of a recurring meeting` : summary}
+          {count && <> · {t`${count} occurrences`}</>}
+        </>
+      }
+    >
       {invite.recurrenceId && <p>{formatCalendarTime(invite.recurrenceId, i18n.locale)}</p>}
       <ul className="break-words font-mono text-[11px]">
         {invite.recurrence.map((r) => (
           <li key={r}>{r}</li>
         ))}
       </ul>
-    </details>
+    </Disclosure>
   );
 }
 
@@ -203,8 +207,7 @@ function Invitation({
         </div>
       )}
       {invite.threadStatus && (
-        <details>
-          <summary>{t`Invitation status in this conversation`}</summary>
+        <Disclosure summary={t`Invitation status in this conversation`}>
           {invite.threadStatus.cancelled ? (
             <p>{t`Meeting cancelled`}</p>
           ) : invite.threadStatus.sequence > invite.sequence ? (
@@ -224,7 +227,7 @@ function Invitation({
               </li>
             ))}
           </ul>
-        </details>
+        </Disclosure>
       )}
       {invite.start?.kind === "floating" && (
         <p className="text-a11y-muted">

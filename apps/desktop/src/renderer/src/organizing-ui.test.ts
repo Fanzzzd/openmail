@@ -548,6 +548,12 @@ for (const provider of ["gmail", "outlook"] as const) {
 it("Gmail does not offer undocumented INBOX, UNREAD or SPAM additions", () => {
   const dom = render(createElement(FilterEditor, { account, onClose: vi.fn() }));
   try {
+    const more = [...dom.element.querySelectorAll("button")].find(
+      (button) => button.textContent === "More label actions",
+    );
+    expect(more?.getAttribute("aria-expanded")).toBe("false");
+    act(() => more?.click());
+    expect(more?.getAttribute("aria-expanded")).toBe("true");
     const additions = [...dom.element.querySelectorAll("fieldset")].find(
       (field) => field.querySelector("legend")?.textContent === "Add labels",
     );

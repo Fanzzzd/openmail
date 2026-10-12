@@ -14,6 +14,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Deferred, Effect, Fiber } from "effect";
+import { constVoid } from "effect/Function";
 import { afterAll, beforeAll, beforeEach, expect, it, vi } from "vitest";
 import { Mailbox } from "../../../../packages/core/src/mailbox.js";
 import { buildMime } from "../../../../packages/core/src/platform/node/compose.js";
@@ -25,10 +26,6 @@ const native = vi.hoisted(() => ({
   drag: vi.fn(),
   share: vi.fn(),
   popup: vi.fn(),
-  choose:
-    vi.fn<
-      (...args: unknown[]) => ReturnType<typeof import("./attachment-apps").chooseAttachmentApp>
-    >(),
   copy: vi.fn(),
   open: vi.fn(),
   apps: vi.fn(),
@@ -45,13 +42,18 @@ vi.mock("node:fs/promises", async (original) => {
         return Promise.reject(new Error("Fixture disk failure"));
       return fs.writeFile(...args);
     },
+    open: (...args: Parameters<typeof fs.open>) => {
+      if (native.failFile && typeof args[0] === "string" && args[0].endsWith(native.failFile))
+        return Promise.reject(new Error("Fixture disk failure"));
+      return fs.open(...args);
+    },
   };
 });
 vi.mock("@openmail/core", () => import("../../../../packages/core/src/index.js"));
 vi.mock("./attachment-apps", () => ({
   registeredAttachmentApps: native.apps,
   openAttachmentWith: native.openWith,
-  chooseAttachmentApp: native.choose,
+  attachmentAppLabels: (apps: readonly string[]) => apps.map((app) => path.basename(app, ".app")),
 }));
 vi.mock("electron", () => ({
   app: { getPath: vi.fn(() => "/tmp"), once: vi.fn() },
@@ -79,7 +81,13 @@ vi.mock("electron", () => ({
   session: {},
 }));
 import { app, BrowserWindow, dialog } from "electron";
-import { attachmentAction, prepareAttachmentDrag } from "./attachment-actions";
+import {
+  attachmentAction,
+  attachmentApps,
+  prepareAttachmentDrag,
+  saveAttachmentsTo,
+} from "./attachment-actions";
+import { createDownloads, type Downloads } from "./downloads";
 import {
   AttachmentTemp,
   attachmentTemp,
@@ -105,8 +113,33 @@ beforeEach(() => {
     Effect.succeed(["/Applications/First.app", "/Applications/Second.app"]),
   );
   native.openWith.mockReturnValue(Effect.void);
-  native.choose.mockReturnValue(Effect.succeed("/Applications/Second.app"));
   native.copy.mockResolvedValue(undefined);
+});
+/** A downloads list that runs saves against the test mailbox; `settle` waits for every write. */
+const downloadsFor = (m: Mailbox["Service"]) => {
+  const pending: Promise<void>[] = [];
+  const list = createDownloads({
+    fetch: (source) => m.attachmentPart(source.messageId, source.path),
+    blocked: ({ filename }) => /\.(command|webloc)$/.test(filename),
+    quarantine: () => Effect.void,
+    openPath: native.open,
+    showItem: vi.fn(),
+    run: (effect) => {
+      pending.push(Effect.runPromise(effect));
+    },
+  });
+  const settle = Effect.promise(async () => {
+    while (pending.length) await pending.shift();
+  });
+  return { list, settle };
+};
+const noDownloads: Downloads = createDownloads({
+  fetch: () => Effect.die("unused"),
+  blocked: () => false,
+  quarantine: () => Effect.void,
+  openPath: native.open,
+  showItem: vi.fn(),
+  run: constVoid,
 });
 const original: IncomingMessage = {
   providerId: "files",
@@ -176,19 +209,23 @@ const withFiles = async (
   );
 };
 
-it("dot-only attachment filenames save inside the folder chosen by the current UI", async () => {
+it("dot-only attachment filenames save into the attachment folder without a dialog", async () => {
   const output = await mkdtemp(path.join(folder, "dot-save-"));
-  vi.mocked(dialog).showOpenDialog.mockResolvedValue({ canceled: false, filePaths: [output] });
   await withFiles(
     (m, id, parent) =>
       Effect.gen(function* () {
+        yield* m.setPrefs({ attachmentSaveFolder: { kind: "custom", path: output } });
+        const { list, settle } = downloadsFor(m);
         expect((yield* m.attachmentPart(id, [2])).filename).toBe(" .. ");
         expect(
-          yield* attachmentAction(m, parent, { messageId: id, paths: [[2]], action: "save" }),
+          yield* attachmentAction(m, parent, { messageId: id, paths: [[2]], action: "save" }, list),
         ).toEqual({ count: 1, failures: [] });
+        yield* settle;
+        expect(list.list()).toMatchObject([{ filename: "attachment", status: "done" }]);
       }),
     " .. ",
   );
+  expect(vi.mocked(dialog).showOpenDialog.mock.calls).toHaveLength(0);
   expect(await readdir(output)).toEqual(["attachment"]);
   expect(await readFile(path.join(output, "attachment"), "utf8")).toBe("sh");
 });
@@ -200,7 +237,12 @@ it("dot-only attachment filenames produce a private temp file before drag-out", 
         expect((yield* m.attachmentPart(id, [2])).filename).toBe(" .. ");
         yield* prepareAttachmentDrag(m, parent, { messageId: id, paths: [[2]] });
         expect(
-          yield* attachmentAction(m, parent, { messageId: id, paths: [[2]], action: "drag" }),
+          yield* attachmentAction(
+            m,
+            parent,
+            { messageId: id, paths: [[2]], action: "drag" },
+            noDownloads,
+          ),
         ).toEqual({ count: 1, failures: [] });
         const drag: unknown = native.drag.mock.calls[0]?.[0];
         const file = drag && typeof drag === "object" && "file" in drag ? drag.file : undefined;
@@ -216,7 +258,12 @@ it("dot-only attachment filenames produce a private temp file before drag-out", 
 it("Quick Look previews a private 0600 file; non-macOS and preview errors open the default app", async () => {
   await withFiles((m, id, parent) =>
     Effect.gen(function* () {
-      yield* attachmentAction(m, parent, { messageId: id, paths: [[0]], action: "preview" });
+      yield* attachmentAction(
+        m,
+        parent,
+        { messageId: id, paths: [[0]], action: "preview" },
+        noDownloads,
+      );
       const file: unknown =
         process.platform === "darwin"
           ? native.preview.mock.calls[0]?.[0]
@@ -232,7 +279,12 @@ it("Quick Look previews a private 0600 file; non-macOS and preview errors open t
         native.preview.mockImplementationOnce(() => {
           throw new Error("No Quick Look");
         });
-        yield* attachmentAction(m, parent, { messageId: id, paths: [[1]], action: "preview" });
+        yield* attachmentAction(
+          m,
+          parent,
+          { messageId: id, paths: [[1]], action: "preview" },
+          noDownloads,
+        );
         expect(native.open).toHaveBeenCalledTimes(1);
       }
     }),
@@ -242,7 +294,7 @@ it("multi-copy writes native file URIs; drag uses prepared files without another
   await withFiles((m, id, parent) =>
     Effect.gen(function* () {
       const paths = [[0], [1]];
-      yield* attachmentAction(m, parent, { messageId: id, paths, action: "copy" });
+      yield* attachmentAction(m, parent, { messageId: id, paths, action: "copy" }, noDownloads);
       const items: unknown = native.copy.mock.calls[0]?.[0];
       expect(Array.isArray(items)).toBe(true);
       if (!Array.isArray(items)) throw new Error("No clipboard files");
@@ -264,13 +316,18 @@ it("multi-copy writes native file URIs; drag uses prepared files without another
         yield* Effect.promise(() => Promise.all(files.map((file) => readFile(file, "utf8")))),
       ).toEqual(["one", "two"]);
       expect(
-        (yield* attachmentAction(m, parent, { messageId: id, paths, action: "drag" }).pipe(
-          Effect.result,
-        ))._tag,
+        (yield* attachmentAction(
+          m,
+          parent,
+          { messageId: id, paths, action: "drag" },
+          noDownloads,
+        ).pipe(Effect.result))._tag,
       ).toBe("Failure");
       yield* prepareAttachmentDrag(m, parent, { messageId: id, paths });
       const fetch = vi.spyOn(m, "attachmentParts");
-      expect(yield* attachmentAction(m, parent, { messageId: id, paths, action: "drag" })).toEqual({
+      expect(
+        yield* attachmentAction(m, parent, { messageId: id, paths, action: "drag" }, noDownloads),
+      ).toEqual({
         count: 2,
         failures: [],
       });
@@ -281,15 +338,21 @@ it("multi-copy writes native file URIs; drag uses prepared files without another
         }),
       );
       expect(
-        (yield* attachmentAction(m, parent, { messageId: id, paths: [[0]], action: "drag" }).pipe(
-          Effect.result,
-        ))._tag,
+        (yield* attachmentAction(
+          m,
+          parent,
+          { messageId: id, paths: [[0]], action: "drag" },
+          noDownloads,
+        ).pipe(Effect.result))._tag,
       ).toBe("Failure");
       native.parentDestroyed = true;
       expect(
-        (yield* attachmentAction(m, parent, { messageId: id, paths, action: "drag" }).pipe(
-          Effect.result,
-        ))._tag,
+        (yield* attachmentAction(
+          m,
+          parent,
+          { messageId: id, paths, action: "drag" },
+          noDownloads,
+        ).pipe(Effect.result))._tag,
       ).toBe("Failure");
     }),
   );
@@ -317,40 +380,54 @@ it("a slow previous selection cannot replace the latest prepared drag", async ()
       yield* Deferred.succeed(release, undefined);
       yield* Fiber.join(older);
       expect(
-        yield* attachmentAction(m, parent, { messageId: id, paths: [[1]], action: "drag" }),
+        yield* attachmentAction(
+          m,
+          parent,
+          { messageId: id, paths: [[1]], action: "drag" },
+          noDownloads,
+        ),
       ).toEqual({ count: 1, failures: [] });
     }),
   );
 });
-it("save selected preserves duplicate filenames, and cancel never resolves any parts", async () => {
+it("Save To asks for a folder, keeps duplicate filenames, and cancel fetches nothing", async () => {
   const destination = path.join(folder, "saved");
+  await mkdir(destination, { recursive: true });
   vi.mocked(dialog)
-    .showOpenDialog.mockResolvedValueOnce({ canceled: true, filePaths: [destination] })
+    .showOpenDialog.mockResolvedValueOnce({ canceled: true, filePaths: [] })
     .mockResolvedValueOnce({ canceled: false, filePaths: [destination] });
   await withFiles((m, id, parent) =>
     Effect.gen(function* () {
-      const fetch = vi.spyOn(m, "attachmentParts");
-      expect(
-        yield* attachmentAction(m, parent, { messageId: id, paths: [[0], [1]], action: "save" }),
-      ).toEqual({ count: 0, failures: [] });
+      const { list, settle } = downloadsFor(m);
+      const fetch = vi.spyOn(m, "attachmentPart");
+      const request = { messageId: id, paths: [[0], [1]] };
+      expect(yield* saveAttachmentsTo(m, list, parent, request)).toBe(0);
       expect(fetch).not.toHaveBeenCalled();
-      expect(
-        yield* attachmentAction(m, parent, { messageId: id, paths: [[0], [1]], action: "save" }),
-      ).toEqual({ count: 2, failures: [] });
+      expect(list.list()).toEqual([]);
+      expect(yield* saveAttachmentsTo(m, list, parent, request)).toBe(2);
+      yield* settle;
+      expect(list.list().map((item) => item.status)).toEqual(["done", "done"]);
     }),
   );
-  expect(await readdir(destination)).toEqual(["same (2).txt", "same.txt"]);
-  expect(await readFile(path.join(destination, "same.txt"), "utf8")).toBe("one");
-  expect(await readFile(path.join(destination, "same (2).txt"), "utf8")).toBe("two");
+  expect((await readdir(destination)).toSorted()).toEqual(["same (2).txt", "same.txt"]);
+  const contents = await Promise.all(
+    ["same.txt", "same (2).txt"].map((name) => readFile(path.join(destination, name), "utf8")),
+  );
+  expect(contents.toSorted()).toEqual(["one", "two"]);
 });
 it("share routes resolved files to ShareMenu on macOS", async () => {
   await withFiles((m, id, parent) =>
     Effect.gen(function* () {
-      const result = yield* attachmentAction(m, parent, {
-        messageId: id,
-        paths: [[0], [1]],
-        action: "share",
-      }).pipe(Effect.result);
+      const result = yield* attachmentAction(
+        m,
+        parent,
+        {
+          messageId: id,
+          paths: [[0], [1]],
+          action: "share",
+        },
+        noDownloads,
+      ).pipe(Effect.result);
       if (process.platform === "darwin") {
         expect(result._tag).toBe("Success");
         expect(native.share).toHaveBeenCalledWith({
@@ -366,17 +443,23 @@ it("all preview/open paths preserve the executable block and report shell failur
     Effect.gen(function* () {
       for (const action of ["open", "preview"] as const)
         expect(
-          (yield* attachmentAction(m, parent, { messageId: id, paths: [[2]], action }).pipe(
-            Effect.result,
-          ))._tag,
+          (yield* attachmentAction(
+            m,
+            parent,
+            { messageId: id, paths: [[2]], action },
+            noDownloads,
+          ).pipe(Effect.result))._tag,
         ).toBe("Failure");
       expect(native.open).not.toHaveBeenCalled();
       expect(native.preview).not.toHaveBeenCalled();
       native.open.mockResolvedValueOnce("Cannot open file");
       expect(
-        (yield* attachmentAction(m, parent, { messageId: id, paths: [[0]], action: "open" }).pipe(
-          Effect.result,
-        ))._tag,
+        (yield* attachmentAction(
+          m,
+          parent,
+          { messageId: id, paths: [[0]], action: "open" },
+          noDownloads,
+        ).pipe(Effect.result))._tag,
       ).toBe("Failure");
     }),
   );
@@ -425,7 +508,7 @@ it("replacing a prepared batch removes old files immediately and separates attac
       const outer = { messageId: id, paths: [[0]], listId: "outer" };
       const inner = { messageId: id, paths: [[0]], listId: "embedded" };
       yield* prepareAttachmentDrag(m, parent, outer);
-      yield* attachmentAction(m, parent, { ...outer, action: "drag" });
+      yield* attachmentAction(m, parent, { ...outer, action: "drag" }, noDownloads);
       const old: unknown = native.drag.mock.calls.at(-1)?.[0];
       if (!old || typeof old !== "object" || !("file" in old) || typeof old.file !== "string")
         throw new Error("No drag file");
@@ -441,32 +524,48 @@ it("replacing a prepared batch removes old files immediately and separates attac
       ).toBe(false);
       yield* prepareAttachmentDrag(m, parent, inner);
       expect(
-        (yield* attachmentAction(m, parent, { ...outer, paths: [[1]], action: "drag" }).pipe(
-          Effect.result,
-        ))._tag,
+        (yield* attachmentAction(
+          m,
+          parent,
+          { ...outer, paths: [[1]], action: "drag" },
+          noDownloads,
+        ).pipe(Effect.result))._tag,
       ).toBe("Success");
     }),
   );
 });
 
-it("save-all continues after a disk failure and identifies the failed file", async () => {
+it("save all continues after a disk failure, marks that download failed, and retries it", async () => {
   const destination = path.join(folder, "partial-save");
-  vi.mocked(dialog).showOpenDialog.mockResolvedValue({ canceled: false, filePaths: [destination] });
   await withFiles((m, id, parent) =>
     Effect.gen(function* () {
+      yield* m.setPrefs({ attachmentSaveFolder: { kind: "custom", path: destination } });
+      const { list, settle } = downloadsFor(m);
       native.failFile = "/same.txt";
-      const result = yield* attachmentAction(m, parent, {
-        messageId: id,
-        paths: [[0], [2]],
-        action: "save",
-      });
+      const result = yield* attachmentAction(
+        m,
+        parent,
+        { messageId: id, paths: [[0], [2]], action: "save" },
+        list,
+      );
+      yield* settle;
       native.failFile = "";
-      expect(result.count).toBe(1);
-      expect(result.failures).toEqual([
-        { path: [0], filename: "same.txt", reason: "Fixture disk failure" },
-      ]);
+      expect(result).toEqual({ count: 2, failures: [] });
+      const failed = list.list().find((item) => item.status === "failed");
+      expect(failed).toMatchObject({ filename: "same.txt", failure: "write" });
+      expect(list.list().find((item) => item.filename === "run.command")).toMatchObject({
+        status: "done",
+        blocked: true,
+      });
+      yield* list.command(failed?.id ?? "", "retry");
+      yield* settle;
+      expect(list.list().find((item) => item.id === failed?.id)).toMatchObject({
+        status: "done",
+        filename: "same.txt",
+      });
     }),
   );
+  expect((await readdir(destination)).toSorted()).toEqual(["run.command", "same.txt"]);
   expect(await readFile(path.join(destination, "run.command"), "utf8")).toBe("sh");
 });
 it("startup removes previous-run roots while preserving live roots and unrelated files", async () => {
@@ -539,9 +638,12 @@ it("launchers cannot be shared, copied or prepared for drag; Save remains availa
       Effect.gen(function* () {
         for (const action of ["open", "openWith", "preview", "share", "copy"] as const)
           expect(
-            (yield* attachmentAction(m, parent, { messageId: id, paths: [[2]], action }).pipe(
-              Effect.result,
-            ))._tag,
+            (yield* attachmentAction(
+              m,
+              parent,
+              { messageId: id, paths: [[2]], action },
+              noDownloads,
+            ).pipe(Effect.result))._tag,
           ).toBe("Failure");
         expect(
           (yield* prepareAttachmentDrag(m, parent, { messageId: id, paths: [[2]] }).pipe(
@@ -556,38 +658,63 @@ it("launchers cannot be shared, copied or prepared for drag; Save remains availa
   );
 });
 
-it("Open With lists registered applications, respects cancellation, and blocks launchers before listing", async () => {
+it("Open With lists registered apps, opens only a registered one, and blocks launchers before listing", async () => {
   if (process.platform !== "darwin") return;
   await withFiles((m, id, parent) =>
     Effect.gen(function* () {
-      native.choose.mockReturnValue(Effect.succeed("/Applications/Second.app"));
-      const result = yield* attachmentAction(m, parent, {
-        messageId: id,
-        paths: [[0]],
-        action: "openWith",
-      });
-      expect(result.count).toBe(1);
-      expect(native.apps).toHaveBeenCalledTimes(1);
-      expect(native.openWith.mock.calls[0]?.[0]).toBe("/Applications/Second.app");
-      expect(native.choose.mock.calls[0]?.[0]).toEqual([
-        "/Applications/First.app",
-        "/Applications/Second.app",
+      expect(yield* attachmentApps(m, { messageId: id, path: [0] })).toEqual([
+        { application: "/Applications/First.app", label: "First" },
+        { application: "/Applications/Second.app", label: "Second" },
       ]);
-      native.choose.mockReturnValue(Effect.succeed(undefined));
-      expect(
-        (yield* attachmentAction(m, parent, { messageId: id, paths: [[1]], action: "openWith" }))
-          .count,
-      ).toBe(0);
-      expect(native.openWith).toHaveBeenCalledTimes(1);
-      yield* Effect.flip(
-        attachmentAction(m, parent, { messageId: id, paths: [[2]], action: "openWith" }),
+      const result = yield* attachmentAction(
+        m,
+        parent,
+        {
+          messageId: id,
+          paths: [[0]],
+          action: "openWith",
+          application: "/Applications/Second.app",
+        },
+        noDownloads,
       );
-      expect(native.apps).toHaveBeenCalledTimes(2);
+      expect(result.count).toBe(1);
+      expect(native.openWith.mock.calls[0]?.[0]).toBe("/Applications/Second.app");
+      // The renderer names the app; one not registered for the file is refused.
+      yield* Effect.flip(
+        attachmentAction(
+          m,
+          parent,
+          {
+            messageId: id,
+            paths: [[1]],
+            action: "openWith",
+            application: "/Applications/Evil.app",
+          },
+          noDownloads,
+        ),
+      );
+      expect(native.openWith).toHaveBeenCalledTimes(1);
+      const calls = native.apps.mock.calls.length;
+      yield* Effect.flip(attachmentApps(m, { messageId: id, path: [2] }));
+      yield* Effect.flip(
+        attachmentAction(
+          m,
+          parent,
+          {
+            messageId: id,
+            paths: [[2]],
+            action: "openWith",
+            application: "/Applications/First.app",
+          },
+          noDownloads,
+        ),
+      );
+      expect(native.apps).toHaveBeenCalledTimes(calls);
     }),
   );
 });
 
-for (const failure of ["list", "choose", "launch"] as const)
+for (const failure of ["list", "launch"] as const)
   it(`Open With removes temporary batches when ${failure} fails`, async () => {
     if (process.platform !== "darwin") return;
     await withFiles((m, id, parent) =>
@@ -598,7 +725,6 @@ for (const failure of ["list", "choose", "launch"] as const)
         );
         const fail = Effect.fail(new DeviceError({ message: error.message }));
         if (failure === "list") native.apps.mockReturnValue(fail);
-        else if (failure === "choose") native.choose.mockReturnValue(fail);
         else native.openWith.mockReturnValue(fail);
         const warm = yield* Effect.promise(() => attachmentTemp(app).writeBatch([]));
         yield* Effect.promise(() => attachmentTemp(app).remove(warm));
@@ -607,7 +733,17 @@ for (const failure of ["list", "choose", "launch"] as const)
         );
         {
           const result = yield* Effect.result(
-            attachmentAction(m, parent, { messageId: id, paths: [[0]], action: "openWith" }),
+            attachmentAction(
+              m,
+              parent,
+              {
+                messageId: id,
+                paths: [[0]],
+                action: "openWith",
+                application: "/Applications/First.app",
+              },
+              noDownloads,
+            ),
           );
           expect(result._tag).toBe("Failure");
         }

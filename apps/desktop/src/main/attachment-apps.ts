@@ -4,7 +4,6 @@ import { homedir } from "node:os";
 import path from "node:path";
 import { nativeBinary } from "./native-binary";
 import { Effect, Schema } from "effect";
-import { Menu, type BrowserWindow } from "electron";
 import { DeviceError, deviceFailure } from "@openmail/core";
 
 const trustedRoots = [
@@ -74,41 +73,6 @@ export function attachmentAppLabels(applications: readonly string[]): string[] {
       : name(application),
   );
 }
-export const chooseAttachmentApp = (
-  applications: readonly string[],
-  parent: BrowserWindow | null,
-) =>
-  Effect.tryPromise({
-    try: () =>
-      new Promise<string | undefined>((resolve, reject) => {
-        if (parent?.isDestroyed()) {
-          resolve(undefined);
-          return;
-        }
-        let selected: string | undefined;
-        const closed = () => {
-          parent?.removeListener("closed", closed);
-          resolve(selected);
-        };
-        try {
-          const labels = attachmentAppLabels(applications);
-          const menu = Menu.buildFromTemplate(
-            applications.map((application, index) => ({
-              label: labels[index] ?? application,
-              click: () => {
-                selected = application;
-              },
-            })),
-          );
-          parent?.once("closed", closed);
-          menu.popup({ ...(parent ? { window: parent } : {}), callback: closed });
-        } catch (error) {
-          parent?.removeListener("closed", closed);
-          reject(error);
-        }
-      }),
-    catch: deviceFailure,
-  });
 export const openAttachmentWith = (application: string, file: string, roots = trustedRoots) =>
   Effect.gen(function* () {
     const checked = yield* Effect.tryPromise({

@@ -7,6 +7,7 @@ import type { OutgoingMessage } from "../../../shared/api";
 import type { AppMessages } from "../App";
 import type { useMailSelection } from "../app/use-mail-selection";
 import { type ToastState } from "../components/Toast";
+import { confirmDialog } from "../components/ui/Confirm";
 import type { Draft } from "../draft";
 import { loadDrafts } from "../draft-loader";
 import { causeText } from "../errors";
@@ -36,6 +37,8 @@ export function useComposeDelivery({
   const { prefs } = navigation;
   const { i18n } = useLingui();
   const uncertain = useRef(new Set<string>());
+  /** Drafts whose resend confirmation is open, so a second Send cannot queue another. */
+  const confirming = useRef(new Set<string>());
   const pendingSends = useRef(new Map<string, { token: symbol; undo: (() => void) | null }>());
   const reportSendState = () =>
     run(
@@ -56,19 +59,35 @@ export function useComposeDelivery({
 
   /** Core persists the undo deadline and owns delivery across renderer restarts. */
   const send = (draft: Draft, message: OutgoingMessage, options: { archive: boolean }) => {
-    const confirmResend = uncertain.current.has(draft.id);
-    if (
-      confirmResend &&
-      !window.confirm(
-        i18n._(
+    if (!uncertain.current.has(draft.id)) {
+      deliverDraft(draft, message, options, false);
+      return;
+    }
+    if (confirming.current.has(draft.id)) return;
+    confirming.current.add(draft.id);
+    void (async () => {
+      const confirmed = await confirmDialog({
+        title: i18n._(
           msg({
             message: "Have you checked Sent and confirmed that this message was not sent?",
             comment: "Sent means the Sent mailbox.",
           }),
         ),
-      )
-    )
-      return;
+        description: i18n._(
+          msg`The last attempt may have reached the server. Sending again can deliver a second copy.`,
+        ),
+        confirmLabel: i18n._(msg`Send`),
+      });
+      confirming.current.delete(draft.id);
+      if (confirmed) deliverDraft(draft, message, options, true);
+    })();
+  };
+  const deliverDraft = (
+    draft: Draft,
+    message: OutgoingMessage,
+    options: { archive: boolean },
+    confirmResend: boolean,
+  ) => {
     setCompose(null);
     const reopen = () => setCompose(draft);
     const token = Symbol();

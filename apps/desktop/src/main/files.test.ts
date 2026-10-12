@@ -1,5 +1,3 @@
-import { buildMime } from "../../../../packages/core/src/platform/node/compose.js";
-import { ProviderError } from "../../../../packages/core/src/errors.js";
 import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -19,7 +17,7 @@ vi.mock("electron", () => ({
 }));
 
 import { app, dialog } from "electron";
-import { saveAttachment, saveMessage, saveAllAttachments } from "./files";
+import { saveMessage } from "./files";
 
 let folder: string;
 beforeEach(async () => {
@@ -51,58 +49,6 @@ const serverForTest = () =>
     first,
     { ...first, providerId: "two", subject: "../../Second: message" },
   ]);
-
-it("dot-only attachment filenames cannot change the legacy save dialog directory", async () => {
-  const server = fakeServer("me@gmail.com", [
-    { ...first, attachments: [{ filename: " .. ", mimeType: "text/plain", size: 1 }] },
-  ]);
-  vi.mocked(app).getPath.mockReturnValue(folder);
-  vi.mocked(dialog).showSaveDialog.mockResolvedValue({ canceled: true, filePath: "" });
-  try {
-    await Effect.runPromise(
-      Effect.gen(function* () {
-        const mailbox = yield* Mailbox;
-        const account = yield* mailbox.connect({ provider: "gmail" });
-        yield* mailbox.sync();
-        expect(yield* saveAttachment(mailbox, null, `${account.id}/one`, 0)).toBe(false);
-      }).pipe(Effect.provide(TestMailbox({ gmail: server }))),
-    );
-    expect(vi.mocked(dialog).showSaveDialog.mock.calls[0]?.[0]).toMatchObject({
-      defaultPath: path.join(folder, "attachment"),
-    });
-  } finally {
-    vi.mocked(app).getPath.mockReturnValue("/tmp");
-  }
-});
-
-it("dot-only attachment filenames use a file in the configured save folder", async () => {
-  const part = { filename: " .. ", mimeType: "text/plain", content: "YQ==" };
-  const server = fakeServer("me@gmail.com", [{ ...first, attachments: [{ ...part, size: 1 }] }]);
-  server.raw.set(
-    "one",
-    await Effect.runPromise(
-      buildMime(first.from, {
-        to: [],
-        cc: [],
-        bcc: [],
-        subject: "",
-        text: "",
-        attachments: [part],
-      }),
-    ),
-  );
-  await Effect.runPromise(
-    Effect.gen(function* () {
-      const mailbox = yield* Mailbox;
-      const account = yield* mailbox.connect({ provider: "gmail" });
-      yield* mailbox.sync();
-      yield* mailbox.setPrefs({ attachmentSaveFolder: { kind: "custom", path: folder } });
-      expect(yield* saveAttachment(mailbox, null, `${account.id}/one`, 0)).toBe(true);
-    }).pipe(Effect.provide(TestMailbox({ gmail: server }))),
-  );
-  expect(await readdir(folder)).toEqual(["attachment"]);
-  expect(await readFile(path.join(folder, "attachment"), "utf8")).toBe("a");
-});
 
 it("saves the chosen message byte-for-byte, including non-UTF8 MIME", async () => {
   const server = serverForTest();
@@ -208,81 +154,3 @@ it("EML subjects preserve slash-separated words, use a message fallback and fit 
     vi.mocked(app).getPath.mockReturnValue("/tmp");
   }
 });
-
-it("legacy Save All continues after a provider failure and reports the failed filename", async () => {
-  const files = [
-    { filename: "missing.txt", mimeType: "text/plain", content: "bWlzc2luZw==" },
-    { filename: "saved.txt", mimeType: "text/plain", content: "c2F2ZWQ=" },
-  ];
-  const server = fakeServer("me@gmail.com", [
-    {
-      ...first,
-      attachments: files.map((file) => ({
-        filename: file.filename,
-        mimeType: file.mimeType,
-        size: 7,
-      })),
-    },
-  ]);
-  server.raw.set(
-    "one",
-    await Effect.runPromise(
-      buildMime(first.from, { to: [], cc: [], bcc: [], subject: "", text: "", attachments: files }),
-    ),
-  );
-  vi.mocked(dialog).showOpenDialog.mockResolvedValue({ canceled: false, filePaths: [folder] });
-  await Effect.runPromise(
-    Effect.gen(function* () {
-      const mailbox = yield* Mailbox;
-      const account = yield* mailbox.connect({ provider: "gmail" });
-      yield* mailbox.sync();
-      server.failNext = new ProviderError({ message: "Part unavailable" });
-      const result = yield* saveAllAttachments(mailbox, null, `${account.id}/one`).pipe(
-        Effect.result,
-      );
-      expect(result._tag).toBe("Failure");
-      if (result._tag === "Failure") expect(result.failure.message).toContain("missing.txt");
-    }).pipe(Effect.provide(TestMailbox({ gmail: server }))),
-  );
-  expect(await readFile(path.join(folder, "saved.txt"), "utf8")).toBe("saved");
-});
-
-for (const kind of ["downloads", "custom"] as const) {
-  it(`attachment ${kind} setting saves without a dialog and never overwrites an existing file`, async () => {
-    const listed = { filename: "saved.txt", mimeType: "text/plain", size: 5 };
-    const server = fakeServer("me@gmail.com", [{ ...first, attachments: [listed] }]);
-    server.raw.set(
-      "one",
-      await Effect.runPromise(
-        buildMime(first.from, {
-          to: [],
-          cc: [],
-          bcc: [],
-          subject: "",
-          text: "",
-          attachments: [{ ...listed, content: "c2F2ZWQ=" }],
-        }),
-      ),
-    );
-    vi.mocked(app).getPath.mockReturnValue(folder);
-    await writeFile(path.join(folder, "saved.txt"), "keep");
-    try {
-      await Effect.runPromise(
-        Effect.gen(function* () {
-          const mailbox = yield* Mailbox;
-          const account = yield* mailbox.connect({ provider: "gmail" });
-          yield* mailbox.sync();
-          yield* mailbox.setPrefs({
-            attachmentSaveFolder: kind === "custom" ? { kind, path: folder } : { kind },
-          });
-          expect(yield* saveAttachment(mailbox, null, `${account.id}/one`, 0)).toBe(true);
-        }).pipe(Effect.provide(TestMailbox({ gmail: server }))),
-      );
-      expect(vi.mocked(dialog).showSaveDialog.mock.calls).toHaveLength(0);
-      expect(await readFile(path.join(folder, "saved.txt"), "utf8")).toBe("keep");
-      expect(await readFile(path.join(folder, "saved (2).txt"), "utf8")).toBe("saved");
-    } finally {
-      vi.mocked(app).getPath.mockReturnValue("/tmp");
-    }
-  });
-}

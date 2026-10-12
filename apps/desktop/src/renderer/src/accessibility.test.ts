@@ -136,6 +136,14 @@ vi.mock("./state/mutations", () => ({
   setUpdateTokenAtom: "setUpdateTokenAtom",
   createCalendarEventAtom: "createCalendarEventAtom",
 }));
+vi.mock("./state/downloads", async () => {
+  const { Atom } = await import("effect/reactivity");
+  return {
+    downloadsAtom: Atom.make([]),
+    downloadsOpenAtom: Atom.make(false),
+    downloadsFeedAtom: "downloadsFeed",
+  };
+});
 vi.mock("./rpc", () => ({
   MailClient: { query: (tag: string) => tag, mutation: (tag: string) => tag },
   submitAiKey: () => Effect.void,
@@ -155,7 +163,9 @@ vi.mock("./state/mail", () => ({
                 ? { share: true }
                 : tag === "AttachmentAction"
                   ? { count: 1, failures: [] }
-                  : undefined,
+                  : tag === "AttachmentApps"
+                    ? [{ application: "/Applications/Preview.app", label: "Preview" }]
+                    : undefined,
       ),
     ),
   syncNow: Effect.void,
@@ -859,10 +869,18 @@ it("offers Open With in the keyboard accessible attachment menu", async () => {
   );
   screen.getByRole("button", { name: "Actions for agenda.pdf" }).focus();
   await user.keyboard("{Enter}");
-  const openWith = await screen.findByRole("menuitem", { name: "Open With…" });
+  const openWith = await screen.findByRole("menuitem", { name: "Open With" });
+  expect(openWith.getAttribute("aria-haspopup")).toBe("menu");
   await audit();
   openWith.focus();
-  await user.keyboard("{Enter}");
+  await user.keyboard("{ArrowRight}");
+  // The submenu lists the apps the main process found, as a React menu, not a native popup.
+  const app = await screen.findByRole("menuitem", { name: "Preview" });
+  await waitFor(() => expect(document.activeElement).toBe(app));
+  await audit();
+  await user.keyboard("{ArrowLeft}");
+  await waitFor(() => expect(screen.queryByRole("menuitem", { name: "Preview" })).toBeNull());
+  expect(document.activeElement).toBe(openWith);
 });
 
 it("defaults confirmations to Cancel and restores the opener on Escape", async () => {
@@ -932,6 +950,7 @@ afterAll(() => {
     "./rpc",
     "./state/queries",
     "./state/mutations",
+    "./state/downloads",
     "./state/mail",
   ])
     vi.doUnmock(module);
@@ -1551,12 +1570,13 @@ for (const [choice, name] of [
     expect(screen.getByRole("button", { name: `Sign in with ${name}` })).toBeTruthy();
     expect(screen.getByText("New sign-ins use openmail's built-in client.")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Use the built-in client" })).toBeNull();
-    const summary = screen.getByText("Use your own OAuth client");
-    const details = summary.closest("details");
-    expect(details?.open).toBe(false);
+    const summary = screen.getByRole("button", { name: "Use your own OAuth client" });
+    expect(summary.getAttribute("aria-expanded")).toBe("false");
+    expect(screen.queryByRole("form", { name: `${name} client` })).toBeNull();
     fireEvent.click(summary);
-    expect(details?.open).toBe(true);
-    expect(within(details!).getByRole("form", { name: `${name} client` })).toBeTruthy();
+    expect(summary.getAttribute("aria-expanded")).toBe("true");
+    const panel = document.getElementById(summary.getAttribute("aria-controls") ?? "");
+    expect(within(panel!).getByRole("form", { name: `${name} client` })).toBeTruthy();
     await audit();
   });
 }

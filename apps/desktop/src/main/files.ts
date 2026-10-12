@@ -8,7 +8,7 @@ import { quarantine } from "./file-quarantine";
  * asks where to put it and writes it.
  */
 import { randomUUID } from "node:crypto";
-import { mkdir, mkdtemp, rm, stat, writeFile } from "node:fs/promises";
+import { mkdtemp, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -16,7 +16,6 @@ import {
   type Mailbox,
   type PerformError,
   DeviceError,
-  deviceErrorReason,
   deviceFailure,
   printableThread,
 } from "@openmail/core";
@@ -77,15 +76,6 @@ const freePath = Effect.fnUntraced(function* (folder: string, name: string) {
   return candidate;
 });
 
-const attachmentFolder = Effect.fnUntraced(function* (m: MailboxService) {
-  const setting = (yield* m.prefs).attachmentSaveFolder ?? { kind: "ask" };
-  if (setting.kind === "ask") return null;
-  const folder = setting.kind === "downloads" ? app.getPath("downloads") : setting.path.trim();
-  if (!path.isAbsolute(folder))
-    return yield* new DeviceError({ message: "Choose an absolute attachment folder path" });
-  yield* Effect.tryPromise({ try: () => mkdir(folder, { recursive: true }), catch: deviceFailure });
-  return folder;
-});
 const writeNew = (file: string, data: Uint8Array) =>
   Effect.tryPromise({
     try: () => writeFile(file, data, { flag: "wx" }),
@@ -116,87 +106,6 @@ export const saveMessage: (
   if (choice.canceled || !choice.filePath) return false;
   yield* write(choice.filePath, yield* m.rawMessageBytes(messageId));
   return true;
-});
-
-export const saveAttachment: (
-  m: MailboxService,
-  parent: BrowserWindow | null,
-  messageId: string,
-  index: number,
-) => Effect.Effect<boolean, FileError> = Effect.fnUntraced(function* (
-  m: MailboxService,
-  parent: BrowserWindow | null,
-  messageId: string,
-  index: number,
-): Effect.fn.Return<boolean, FileError> {
-  const [message] = (yield* m.thread(messageId)).filter((x) => x.id === messageId);
-  const listed = message?.attachments[index];
-  const name = safeFilename(listed?.filename ?? "attachment");
-  const folder = yield* attachmentFolder(m);
-  if (folder) {
-    const content = yield* m.attachment(messageId, index);
-    yield* writeNew(yield* freePath(folder, name), content.data);
-    return true;
-  }
-  const options = { defaultPath: path.join(app.getPath("downloads"), name) };
-  const choice = yield* Effect.promise(() =>
-    parent ? dialog.showSaveDialog(parent, options) : dialog.showSaveDialog(options),
-  );
-  if (choice.canceled || !choice.filePath) return false;
-  const content = yield* m.attachment(messageId, index);
-  yield* write(choice.filePath, content.data);
-  return true;
-});
-
-export const saveAllAttachments: (
-  m: MailboxService,
-  parent: BrowserWindow | null,
-  messageId: string,
-) => Effect.Effect<number, FileError> = Effect.fnUntraced(function* (
-  m: MailboxService,
-  parent: BrowserWindow | null,
-  messageId: string,
-): Effect.fn.Return<number, FileError> {
-  const [message] = (yield* m.thread(messageId)).filter((x) => x.id === messageId);
-  const count = message?.attachments.length ?? 0;
-  if (count === 0) return 0;
-  let folder = yield* attachmentFolder(m);
-  if (!folder) {
-    const options = {
-      defaultPath: app.getPath("downloads"),
-      properties: ["openDirectory" as const, "createDirectory" as const],
-    };
-    const choice = yield* Effect.promise(() =>
-      parent ? dialog.showOpenDialog(parent, options) : dialog.showOpenDialog(options),
-    );
-    if (choice.canceled || !choice.filePaths[0]) return 0;
-    folder = choice.filePaths[0];
-  }
-  const parts = yield* m.attachmentParts(
-    messageId,
-    Array.from({ length: count }, (_, index) => [index]),
-  );
-  const errors: string[] = [];
-  let saved = 0;
-  for (const part of parts) {
-    if (part.kind === "failed") {
-      errors.push(`${safeFilename(part.filename)}: ${deviceErrorReason(part.error)}`);
-      continue;
-    }
-    const content = part.content;
-    const result = yield* write(
-      yield* freePath(folder, safeFilename(content.filename)),
-      content.data,
-    ).pipe(Effect.result);
-    if (result._tag === "Failure")
-      errors.push(`${safeFilename(content.filename)}: ${result.failure.message}`);
-    else saved++;
-  }
-  if (errors.length)
-    return yield* new DeviceError({
-      message: `Saved ${saved} attachments. Failed: ${errors.join("; ")}`,
-    });
-  return saved;
 });
 
 /** Writes the attachment to its own temporary folder and opens it with the default app. */

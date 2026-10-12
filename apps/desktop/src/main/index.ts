@@ -186,6 +186,8 @@ if (app.isPackaged && !app.requestSingleInstanceLock()) {
           const error = Cause.squash(cause);
           if (error instanceof DatabaseUpgradeSpaceError) {
             const labels = await nativeRecoveryLabels();
+            // Native on purpose: startup failed, so no window or renderer exists to draw a React
+            // message, and the process exits right after.
             dialog.showErrorBox(
               labels.upgradeSpaceTitle,
               labels.upgradeSpaceDetail(String(Math.ceil(error.requiredBytes / 1024 ** 2))),

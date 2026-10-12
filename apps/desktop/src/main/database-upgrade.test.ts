@@ -76,7 +76,7 @@ it("paints a sandboxed upgrade state before returning its cleanup callback", asy
   const html = decodeURIComponent(state.load.mock.calls[0]?.[0] ?? "");
   expect(html).toContain("Upgrading &lt;local&gt; database…");
   expect(html).toContain("default-src 'none'");
-  expect(html).toContain("<progress");
+  expect(html).toContain('role="progressbar"');
   dismiss();
   expect(state.windows.size).toBe(0);
 });

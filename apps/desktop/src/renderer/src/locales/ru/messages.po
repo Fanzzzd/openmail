@@ -59,6 +59,10 @@ msgstr "{0} секунд"
 msgid "{accountCount, plural, one {# account} other {# accounts}}, {total} unread"
 msgstr "{accountCount, plural, one {# учётная запись} few {# учётные записи} many {# учётных записей} other {# учётной записи}}, непрочитанных: {total}"
 
+#: src/renderer/src/components/Downloads.tsx
+msgid "{active, plural, one {Downloads (# in progress)} other {Downloads (# in progress)}}"
+msgstr "{active, plural, one {Загрузки (# выполняется)} few {Загрузки (# выполняются)} many {Загрузки (# выполняется)} other {Загрузки (# выполняется)}}"
+
 #: src/renderer/src/App.tsx
 msgid "{baseTitle}: {user}"
 msgstr "{baseTitle}: {user}"
@@ -96,8 +100,8 @@ msgid "{count, plural, one {Blocked # tracker} other {Blocked # trackers}}"
 msgstr "{count, plural, one {Заблокирован # трекер} few {Заблокировано # трекера} many {Заблокировано # трекеров} other {Заблокировано # трекера}}"
 
 #: src/renderer/src/components/Attachments.tsx
-msgid "{count, plural, one {Saved # attachment} other {Saved # attachments}}"
-msgstr "{count, plural, one {Сохранено # вложение} few {Сохранено # вложения} many {Сохранено # вложений} other {Сохранено # вложения}}"
+msgid "{count, plural, one {Saving # attachment to your attachment folder} other {Saving # attachments to your attachment folder}}"
+msgstr "{count, plural, one {Сохранение # вложения в папку вложений} few {Сохранение # вложений в папку вложений} many {Сохранение # вложений в папку вложений} other {Сохранение # вложения в папку вложений}}"
 
 #: src/renderer/src/components/ContactSettings.tsx
 msgid "{count} cached contacts"
@@ -166,6 +170,10 @@ msgstr "{op} {count, plural, one {# переписка} few {# переписк�
 #: src/renderer/src/components/MessageBody.tsx
 msgid "{pixels, plural, one {# tracking pixel} other {# tracking pixels}}"
 msgstr "{pixels, plural, one {# пиксель отслеживания} few {# пикселя отслеживания} many {# пикселей отслеживания} other {# пикселя отслеживания}}"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "{received} of {size}"
+msgstr "{received} из {size}"
 
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "{seconds, plural, one {# second} other {# seconds}}"
@@ -380,7 +388,7 @@ msgstr "Добавить в календарь"
 msgid "Add to Contacts"
 msgstr "Добавить в Контакты"
 
-#: src/renderer/src/state/desktop.ts
+#: src/renderer/src/components/WindowUi.tsx
 msgid "Add to Dictionary"
 msgstr "Добавить в словарь"
 
@@ -772,8 +780,8 @@ msgid "Attachment file name"
 msgstr "Имя файла вложения"
 
 #: src/renderer/src/components/ReadingSettings.tsx
-msgid "Attachment save folder"
-msgstr "Папка для сохранения вложений"
+msgid "Attachment folder"
+msgstr "Папка вложений"
 
 #: src/renderer/src/components/SearchSnippet.tsx
 msgctxt "search match source"
@@ -793,6 +801,10 @@ msgstr "Размер вложений превышает лимит в 30 МБ.
 #: src/renderer/src/errors.ts
 msgid "Attachments rejected before sending"
 msgstr "Вложения отклонены перед отправкой"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "Attachments you save appear here."
+msgstr "Сохранённые вложения появятся здесь."
 
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Attendees"
@@ -1009,6 +1021,7 @@ msgstr "Сейчас не удаётся подключиться к почто�
 #: src/renderer/src/components/ProfileEditor.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/ui/Confirm.tsx
 #: src/renderer/src/components/UnsubscribeButton.tsx
 #: src/renderer/src/compose/use-compose-editor.ts
 #: src/renderer/src/state/desktop.ts
@@ -1098,7 +1111,7 @@ msgid "Check grammar on this Mac"
 msgstr "Проверить грамматику на этом Mac"
 
 #: src/renderer/src/components/SpellcheckSettings.tsx
-#: src/renderer/src/state/desktop.ts
+#: src/renderer/src/components/WindowUi.tsx
 msgid "Check spelling while typing"
 msgstr "Проверять орфографию при вводе"
 
@@ -1194,6 +1207,10 @@ msgstr "Выберите своего поставщика электронно�
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Choose…"
 msgstr "Выбрать…"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "Clear"
+msgstr "Очистить"
 
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Clear account cache"
@@ -1460,6 +1477,7 @@ msgstr "Скопировано в папки"
 #: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/MultiOrganization.tsx
 #: src/renderer/src/components/RawMessage.tsx
+#: src/renderer/src/components/WindowUi.tsx
 msgid "Copy"
 msgstr "Копировать"
 
@@ -1504,6 +1522,7 @@ msgstr "Копировать в локальную подпись"
 msgid "Copy webmail link"
 msgstr "Копировать ссылку на веб-почту"
 
+#: src/renderer/src/components/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Could not check for updates. Try again later."
 msgstr "Не удалось проверить наличие обновлений. Повторите попытку позже."
@@ -1622,6 +1641,14 @@ msgstr "Не удалось удалить: {reason}."
 msgid "Couldn't discard: {reason}"
 msgstr "Не удалось удалить: {reason}."
 
+#: src/renderer/src/components/Downloads.tsx
+msgid "Couldn't download {name}"
+msgstr "Не удалось скачать {name}"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "Couldn't get the attachment"
+msgstr "Не удалось получить вложение"
+
 #: src/renderer/src/components/Attachments.tsx
 msgid "Couldn't get the attachment: {reason}"
 msgstr "Не удалось получить вложение: {reason}."
@@ -1678,6 +1705,10 @@ msgstr "Не удалось отправить: {reason}"
 #: src/renderer/src/components/DraftSyncRecovery.tsx
 msgid "Couldn't sync"
 msgstr "Не удалось синхронизировать"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "Couldn't write to the attachment folder"
+msgstr "Не удалось записать в папку вложений"
 
 #: src/renderer/src/components/SyncHealth.tsx
 msgid "Counts compare messages. Matching counts do not verify message contents. Cache windows retain message text; headers remain cached."
@@ -1753,6 +1784,10 @@ msgstr "Пользовательский значок"
 #: src/renderer/src/components/SnoozeDialog.tsx
 msgid "Custom time"
 msgstr "Пользовательское время"
+
+#: src/renderer/src/components/WindowUi.tsx
+msgid "Cut"
+msgstr "Вырезать"
 
 #: src/renderer/src/components/EventRecurrenceEditor.tsx
 msgid "Daily"
@@ -1991,9 +2026,17 @@ msgstr "Скачать модели на устройство, ~226 МБ"
 msgid "Download update"
 msgstr "Загрузить обновление"
 
+#: src/renderer/src/components/Downloads.tsx
+msgid "Downloaded {name}"
+msgstr "{name} скачан"
+
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "Downloaded updates install when you quit, after pending drafts are checked."
 msgstr "Загруженные обновления устанавливаются при выходе из приложения после проверки ожидающих черновиков."
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "Downloading {name}"
+msgstr "Скачивание {name}"
 
 #. placeholder {0}: i18n.number(Math.floor((progress.models.bytes / progress.models.total) * 100))
 #: src/renderer/src/components/IndexingSettings.tsx
@@ -2009,6 +2052,7 @@ msgstr "Загрузка обновления {0}…"
 msgid "Downloading update {version}…"
 msgstr "Загрузка обновления {version}…"
 
+#: src/renderer/src/components/Downloads.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Downloads"
 msgstr "Загрузки"
@@ -2358,6 +2402,10 @@ msgstr "Найти в тексте сообщения"
 msgid "Find in message"
 msgstr "Найти в сообщении"
 
+#: src/renderer/src/components/OpenWithMenu.tsx
+msgid "Finding apps…"
+msgstr "Поиск приложений…"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/OptionalServices.tsx
 #: src/renderer/src/components/Settings.tsx
@@ -2561,6 +2609,10 @@ msgstr "Генерация завершена"
 #: src/renderer/src/components/Settings.tsx
 msgid "Gestures and toolbar"
 msgstr "Жесты и панель инструментов"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "Getting the attachment…"
+msgstr "Получение вложения…"
 
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "GitHub access token"
@@ -3442,6 +3494,7 @@ msgstr "Сообщения от человека"
 msgid "Messages in a folder"
 msgstr "Сообщения в папке"
 
+#: src/renderer/src/components/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Messages in the undo window will remain drafts. A send already in progress may finish."
 msgstr "Сообщения в период отмены отправки останутся черновиками. Уже начавшаяся отправка может завершиться."
@@ -3709,6 +3762,10 @@ msgstr "Вверх"
 msgid "Moved"
 msgstr "Перемещено"
 
+#: src/renderer/src/components/Downloads.tsx
+msgid "Moved or deleted"
+msgstr "Перемещён или удалён"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/ThreadWindow.tsx
 msgid "Moved to Focused"
@@ -3878,6 +3935,10 @@ msgstr "Учётная записьов пока нет"
 msgid "No activity yet."
 msgstr "Пока нет активности."
 
+#: src/renderer/src/components/OpenWithMenu.tsx
+msgid "No app can open this file"
+msgstr "Нет приложения, которое может открыть этот файл"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "No copy"
 msgstr "Не копировать"
@@ -3890,6 +3951,10 @@ msgstr "Текущая ярлык не применяется. Переноси�
 #: src/renderer/src/components/DraftOrganization.tsx
 msgid "No custom labels"
 msgstr "Никаких пользовательских ярлыков"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "No downloads"
+msgstr "Нет загрузок"
 
 #: src/renderer/src/components/MessageList.tsx
 msgid "No drafts"
@@ -3957,7 +4022,7 @@ msgstr "Ответ не требуется"
 msgid "No starred messages. Star a message to find it here."
 msgstr "Нет помеченных сообщений. Добавьте звезду к сообщению, чтобы найти его здесь."
 
-#: src/renderer/src/state/desktop.ts
+#: src/renderer/src/components/WindowUi.tsx
 msgid "No suggestions"
 msgstr "Нет подсказок"
 
@@ -4048,6 +4113,7 @@ msgstr "Число повторений"
 msgid "Off"
 msgstr "Выкл."
 
+#: src/renderer/src/components/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "OK"
 msgstr "ОК"
@@ -4117,8 +4183,13 @@ msgid "Only to me"
 msgstr "Только мне"
 
 #: src/renderer/src/components/Attachments.tsx
+#: src/renderer/src/components/Downloads.tsx
 msgid "Open"
 msgstr "Открыть"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "Open {name}"
+msgstr "Открыть {name}"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Open attachments from"
@@ -4152,6 +4223,10 @@ msgstr "Открыть в Outlook"
 msgid "Open in web mail"
 msgstr "Открыть в веб-почте"
 
+#: src/renderer/src/components/Downloads.tsx
+msgid "Open it from Finder"
+msgstr "Откройте его из Finder"
+
 #: src/renderer/src/components/LinkConfirmDialog.tsx
 msgid "Open link"
 msgstr "Открыть ссылку"
@@ -4180,14 +4255,15 @@ msgstr "Откройте это приглашение в своем кален�
 msgid "Open this link?"
 msgstr "Открыть эту ссылку?"
 
-#: src/renderer/src/components/Attachments.tsx
-msgid "Open With…"
-msgstr "Открыть в программе…"
+#: src/renderer/src/components/OpenWithMenu.tsx
+msgid "Open With"
+msgstr "Открыть в программе"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "OpenMail is the default email app"
 msgstr "OpenMail — почтовое приложение по умолчанию."
 
+#: src/renderer/src/components/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "OpenMail is up to date."
 msgstr "OpenMail обновлен."
@@ -4369,6 +4445,10 @@ msgstr "Частичная доставка"
 msgid "Password"
 msgstr "Пароль"
 
+#: src/renderer/src/components/WindowUi.tsx
+msgid "Paste"
+msgstr "Вставить"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Paste and match style"
@@ -4549,10 +4629,12 @@ msgid "Quick Look"
 msgstr "Быстрый просмотр"
 
 #: src/main/native-i18n.ts
+#: src/renderer/src/components/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Quit"
 msgstr "Выйти"
 
+#: src/renderer/src/components/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Quit with messages waiting to send?"
 msgstr "Выйти с сообщениями, ожидающими отправки?"
@@ -4689,6 +4771,10 @@ msgstr "Удалить {0}"
 msgid "Remove {email}?"
 msgstr "Удалить {email}?"
 
+#: src/renderer/src/components/Downloads.tsx
+msgid "Remove {name} from list"
+msgstr "Убрать {name} из списка"
+
 #: src/renderer/src/components/RecipientField.tsx
 msgid "Remove {text}"
 msgstr "Удалить {text}"
@@ -4715,6 +4801,10 @@ msgstr "Удалить текущую ярлык"
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Remove favorite"
 msgstr "Удалить избранное"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "Remove from list"
+msgstr "Убрать из списка"
 
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Remove from recent searches"
@@ -4941,10 +5031,15 @@ msgstr "Возобновить синхронизацию"
 msgid "Retention windows take precedence. Starred messages, retained message texts, drafts and outbox messages are kept even when the limit is exceeded. Zero disables the budget."
 msgstr "Сроки хранения имеют приоритет. Сообщения со звёздочкой, сохраняемые тексты сообщений, черновики и сообщения в исходящих остаются даже при превышении лимита. Ноль отключает лимит."
 
+#: src/renderer/src/components/Downloads.tsx
 #: src/renderer/src/components/DraftSyncRecovery.tsx
 #: src/renderer/src/components/MessageBodyShell.tsx
 msgid "Retry"
 msgstr "Повторить"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "Retry {name}"
+msgstr "Повторить {name}"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Revert"
@@ -5045,8 +5140,8 @@ msgid "Save {0}"
 msgstr "Сохранить {0}"
 
 #: src/renderer/src/components/Attachments.tsx
-msgid "Save all…"
-msgstr "Сохранить всё…"
+msgid "Save all"
+msgstr "Сохранить все"
 
 #: src/renderer/src/errors.ts
 msgid "Save an Anthropic API key in AI settings."
@@ -5080,8 +5175,12 @@ msgid "Save rule"
 msgstr "Сохранить правило"
 
 #: src/renderer/src/components/Attachments.tsx
-msgid "Save selected…"
-msgstr "Сохранить выбранное…"
+msgid "Save selected"
+msgstr "Сохранить выбранное"
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Save selected to…"
+msgstr "Сохранить выбранное в…"
 
 #: src/renderer/src/components/FailedOpNotice.tsx
 msgid "Save sent copy"
@@ -5095,23 +5194,23 @@ msgstr "Сохранить этот черновик перед закрытие
 msgid "Save this message as a template…"
 msgstr "Сохраните это сообщение как шаблон…"
 
+#: src/renderer/src/components/Attachments.tsx
+msgid "Save to attachment folder"
+msgstr "Сохранить в папку вложений"
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Save To…"
+msgstr "Сохранить в…"
+
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "Save token"
 msgstr "Сохранить токен"
-
-#: src/renderer/src/components/Attachments.tsx
-msgid "Save…"
-msgstr "Сохранить…"
 
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/SignatureSettings.tsx
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Saved"
 msgstr "Сохранено"
-
-#: src/renderer/src/components/Attachments.tsx
-msgid "Saved {count} attachments. Couldn't save: {names}"
-msgstr "Сохранено {count} вложений. Не удалось сохранить: {names}."
 
 #: src/renderer/src/components/reader-actions.ts
 msgid "Saved as EML"
@@ -5208,6 +5307,7 @@ msgstr "Выберите сообщение"
 msgid "Select accounts allowed in Settings > AI Access. The assistant searches mail and proposes drafts, labels or archive. You approve changes in AI suggestions."
 msgstr "Выберите разрешённые учётные записи в «Настройки > Доступ к ИИ». Помощник ищет почту и предлагает черновики, ярлыки или архивирование. Изменения одобряются в предложениях ИИ."
 
+#: src/renderer/src/components/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Select all"
 msgstr "Выбрать все"
@@ -5231,6 +5331,7 @@ msgstr "Семантический поиск недоступен. Полнот
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/compose/use-compose-delivery.ts
 #: src/renderer/src/shortcut-names.ts
 msgid "Send"
 msgstr "Отправить"
@@ -5390,6 +5491,10 @@ msgstr "Короче"
 msgid "Show"
 msgstr "Показать"
 
+#: src/renderer/src/components/Downloads.tsx
+msgid "Show {name} in Finder"
+msgstr "Показать {name} в Finder"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Show account names in unified folders"
 msgstr "Показывать имена учетных записей в объединенных папках"
@@ -5426,6 +5531,10 @@ msgstr "Показать, если не прочитано"
 #: src/renderer/src/components/MessageList.tsx
 msgid "Show important messages"
 msgstr "Показать важные сообщения"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "Show in Finder"
+msgstr "Показать в Finder"
 
 #: src/renderer/src/state/desktop.ts
 msgid "Show Inbox"
@@ -5862,6 +5971,10 @@ msgstr "Шаблоны…"
 msgid "Tentative"
 msgstr "Под вопросом"
 
+#: src/renderer/src/components/WindowUi.tsx
+msgid "Text actions"
+msgstr "Действия с текстом"
+
 #: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Text color"
 msgstr "Цвет текста"
@@ -5905,6 +6018,10 @@ msgstr "Фильтр применяется к будущей почте на с
 #: src/renderer/src/components/MailStatusNotice.tsx
 msgid "The keychain is locked. Unlock your computer and sync resumes on its own."
 msgstr "Связка ключей заблокирована. Разблокируйте компьютер, и синхронизация возобновится сама."
+
+#: src/renderer/src/compose/use-compose-delivery.ts
+msgid "The last attempt may have reached the server. Sending again can deliver a second copy."
+msgstr "Последняя попытка могла дойти до сервера. Повторная отправка может доставить вторую копию."
 
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "The limit includes the database, attachments, WAL and recovery copies. Protected content may exceed it."
@@ -6343,6 +6460,7 @@ msgid "Update {0} is ready. It will install when you quit."
 msgstr "Обновление {0} готово. Оно будет установлено при выходе из приложения."
 
 #: src/renderer/src/components/UpdateNotice.tsx
+#: src/renderer/src/components/WindowUi.tsx
 msgid "Update {version} is available."
 msgstr "Доступно обновление {version}."
 
@@ -6362,6 +6480,7 @@ msgstr "Канал обновлений"
 msgid "Update check or download failed. Try again."
 msgstr "Не удалось проверить или загрузить обновление. Повторите попытку."
 
+#: src/renderer/src/components/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Update checks require a signed, installed macOS app and a saved GitHub access token."
 msgstr "Для проверки обновлений требуется подписанное и установленное приложение macOS и сохраненный токен доступа GitHub."
@@ -6530,6 +6649,10 @@ msgstr "Инструкция для написания"
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Writing mode"
 msgstr "Режим создания"
+
+#: src/renderer/src/components/WindowUi.tsx
+msgid "Writing Tools and Services…"
+msgstr "Инструменты письма и службы…"
 
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Year"

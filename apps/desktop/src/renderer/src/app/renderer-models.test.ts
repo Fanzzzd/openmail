@@ -42,6 +42,8 @@ const state = vi.hoisted(() => {
     cancelGate: vi.fn<() => Promise<void>>(),
     cancelResult: vi.fn<() => "success" | "false" | "failure">(() => "success"),
     deliveryFailure: false,
+    uncertain: false,
+    confirms: new Array<(confirmed: boolean) => void>(),
     toastUpdates: vi.fn<(value: unknown) => void>(),
   };
 });
@@ -92,7 +94,8 @@ vi.mock("../state/ui", () => ({
 vi.mock("../state/events", () => ({ syncStateAtom: "sync", syncProgressAtom: "progress" }));
 vi.mock("../state/mail", async () => {
   const { Effect, Schema } = await import("effect");
-  const { InvalidInput, ProviderError, DraftInput } = await import("@openmail/core/schema");
+  const { InvalidInput, ProviderError, DraftInput, SendUncertain } =
+    await import("@openmail/core/schema");
   const queuedSchema = Schema.Struct({
     draft: DraftInput,
     due: Schema.Number,
@@ -181,9 +184,11 @@ vi.mock("../state/mail", async () => {
     },
     saveDraft: () => Effect.promise(() => state.saveGate()),
     sendMessage: (...args: unknown[]) =>
-      Effect.sync(() => {
-        state.delivered(...args);
-      }),
+      state.uncertain
+        ? Effect.fail(new SendUncertain({ message: "The server did not confirm" }))
+        : Effect.sync(() => {
+            state.delivered(...args);
+          }),
     discardDraft: () => Effect.void,
     openDraft: () => Effect.succeed(null),
     draftStatus: () => Effect.succeed(null),
@@ -191,6 +196,13 @@ vi.mock("../state/mail", async () => {
     syncNow: Effect.void,
   };
 });
+vi.mock("../components/ui/Confirm", () => ({
+  confirmOpen: () => state.confirms.length > 0,
+  confirmDialog: () =>
+    new Promise<boolean>((resolve) => {
+      state.confirms.push(resolve);
+    }),
+}));
 vi.mock("../state/desktop", () => ({
   useDesktopEvents: (receive: (event: DesktopEvent) => void) => {
     state.emit.mockImplementation(receive);
@@ -366,6 +378,8 @@ beforeEach(() => {
   state.cancelGate.mockResolvedValue();
   state.cancelResult.mockReturnValue("success");
   state.deliveryFailure = false;
+  state.uncertain = false;
+  state.confirms = [];
   state.toastUpdates.mockClear();
   state.operations.mockClear();
   state.loadMore.mockClear();
@@ -645,12 +659,10 @@ for (const cancellation of ["false", "failure"] as const) {
             tone: "error",
           });
           expect(model.composition.compose).toEqual(draft);
-          const confirm = vi.fn(() => true);
-          vi.stubGlobal("confirm", confirm);
           state.deliveryFailure = false;
           act(() => model.composition.send(draft, message, { archive: false }));
           await act(() => vi.advanceTimersByTimeAsync(5000));
-          expect(confirm).not.toHaveBeenCalled();
+          expect(state.confirms).toHaveLength(0);
         } else {
           expect(notify.mock.lastCall?.[0]).toEqual({ text: messages.sent });
           expect(model.composition.compose).toBeNull();
@@ -662,6 +674,25 @@ for (const cancellation of ["false", "failure"] as const) {
     });
   }
 }
+
+it("a second Send while the resend confirmation is open neither queues another nor sends twice", async () => {
+  state.prefs.mockReturnValue({ ...state.prefs(), undoSendSeconds: 0 });
+  state.uncertain = true;
+  mount();
+  const draft = { ...emptyDraft(account.id), to: "alice@example.com" };
+  const message = toDraftInput(draft).message;
+  act(() => model.composition.send(draft, message, { archive: false }));
+  await flush();
+  expect(state.delivered).not.toHaveBeenCalled();
+  state.uncertain = false;
+  act(() => model.composition.send(draft, message, { archive: false }));
+  act(() => model.composition.send(draft, message, { archive: false }));
+  expect(state.confirms).toHaveLength(1);
+  act(() => state.confirms.shift()?.(true));
+  await flush();
+  await flush();
+  expect(state.delivered).toHaveBeenCalledOnce();
+});
 
 it("a refused undo clears its toast and undo action while keeping the active send pending", async () => {
   vi.useFakeTimers();
@@ -697,6 +728,7 @@ afterAll(() => {
     "../state/events",
     "../state/mail",
     "../state/desktop",
+    "../components/ui/Confirm",
     "react-resizable-panels",
   ])
     vi.doUnmock(name);

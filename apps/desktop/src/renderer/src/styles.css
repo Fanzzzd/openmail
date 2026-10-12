@@ -6,6 +6,16 @@
     "Microsoft YaHei", system-ui, sans-serif;
   /* MEDIUM_MIN in shared/layout.ts (696px), so max-sm: matches the narrow layout. */
   --breakpoint-sm: 43.5rem;
+  /* Indeterminate progress: a short bar slides across the track. */
+  --animate-indeterminate: indeterminate 1.4s ease-in-out infinite;
+  @keyframes indeterminate {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(300%);
+    }
+  }
 }
 
 @theme inline {

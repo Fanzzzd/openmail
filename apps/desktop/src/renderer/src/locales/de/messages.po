@@ -59,6 +59,10 @@ msgstr "{0} Sekunden"
 msgid "{accountCount, plural, one {# account} other {# accounts}}, {total} unread"
 msgstr "{accountCount, plural, one {# Account} other {# Accounts}}, {total} ungelesen"
 
+#: src/renderer/src/components/Downloads.tsx
+msgid "{active, plural, one {Downloads (# in progress)} other {Downloads (# in progress)}}"
+msgstr "{active, plural, one {Downloads (# läuft)} other {Downloads (# laufen)}}"
+
 #: src/renderer/src/App.tsx
 msgid "{baseTitle}: {user}"
 msgstr "{baseTitle}: {user}"
@@ -96,8 +100,8 @@ msgid "{count, plural, one {Blocked # tracker} other {Blocked # trackers}}"
 msgstr "{count, plural, one {# Tracker blockiert} other {# Tracker blockiert}}"
 
 #: src/renderer/src/components/Attachments.tsx
-msgid "{count, plural, one {Saved # attachment} other {Saved # attachments}}"
-msgstr "{count, plural, one {# Anhang gesichert} other {# Anhänge gesichert}}"
+msgid "{count, plural, one {Saving # attachment to your attachment folder} other {Saving # attachments to your attachment folder}}"
+msgstr "{count, plural, one {# Anhang wird im Anhangsordner gespeichert} other {# Anhänge werden im Anhangsordner gespeichert}}"
 
 #: src/renderer/src/components/ContactSettings.tsx
 msgid "{count} cached contacts"
@@ -166,6 +170,10 @@ msgstr "{op} {count, plural, one {# Konversation} other {# Konversationen}}"
 #: src/renderer/src/components/MessageBody.tsx
 msgid "{pixels, plural, one {# tracking pixel} other {# tracking pixels}}"
 msgstr "{pixels, plural, one {# Tracking-Pixel} other {# Tracking-Pixel}}"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "{received} of {size}"
+msgstr "{received} von {size}"
 
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "{seconds, plural, one {# second} other {# seconds}}"
@@ -380,7 +388,7 @@ msgstr "Zum Kalender hinzufügen"
 msgid "Add to Contacts"
 msgstr "Zu Kontakte hinzufügen"
 
-#: src/renderer/src/state/desktop.ts
+#: src/renderer/src/components/WindowUi.tsx
 msgid "Add to Dictionary"
 msgstr "Zum Wörterbuch hinzufügen"
 
@@ -772,8 +780,8 @@ msgid "Attachment file name"
 msgstr "Name der Anhangsdatei"
 
 #: src/renderer/src/components/ReadingSettings.tsx
-msgid "Attachment save folder"
-msgstr "Ordner für gespeicherte Anhänge"
+msgid "Attachment folder"
+msgstr "Anhangsordner"
 
 #: src/renderer/src/components/SearchSnippet.tsx
 msgctxt "search match source"
@@ -793,6 +801,10 @@ msgstr "Anhänge überschreiten das Erstellungslimit von 30 MB."
 #: src/renderer/src/errors.ts
 msgid "Attachments rejected before sending"
 msgstr "Anhänge wurden vor dem Senden abgelehnt"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "Attachments you save appear here."
+msgstr "Gesicherte Anhänge werden hier angezeigt."
 
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Attendees"
@@ -1009,6 +1021,7 @@ msgstr "Der Mailserver ist derzeit nicht erreichbar."
 #: src/renderer/src/components/ProfileEditor.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/ui/Confirm.tsx
 #: src/renderer/src/components/UnsubscribeButton.tsx
 #: src/renderer/src/compose/use-compose-editor.ts
 #: src/renderer/src/state/desktop.ts
@@ -1098,7 +1111,7 @@ msgid "Check grammar on this Mac"
 msgstr "Grammatik auf diesem Mac prüfen"
 
 #: src/renderer/src/components/SpellcheckSettings.tsx
-#: src/renderer/src/state/desktop.ts
+#: src/renderer/src/components/WindowUi.tsx
 msgid "Check spelling while typing"
 msgstr "Rechtschreibung während der Eingabe prüfen"
 
@@ -1194,6 +1207,10 @@ msgstr "E-Mail-Anbieter auswählen."
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Choose…"
 msgstr "Auswählen…"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "Clear"
+msgstr "Leeren"
 
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Clear account cache"
@@ -1460,6 +1477,7 @@ msgstr "In Ordner kopiert"
 #: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/MultiOrganization.tsx
 #: src/renderer/src/components/RawMessage.tsx
+#: src/renderer/src/components/WindowUi.tsx
 msgid "Copy"
 msgstr "Kopieren"
 
@@ -1504,6 +1522,7 @@ msgstr "In lokale Signatur kopieren"
 msgid "Copy webmail link"
 msgstr "Webmail-Link kopieren"
 
+#: src/renderer/src/components/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Could not check for updates. Try again later."
 msgstr "Es konnte nicht nach Updates gesucht werden. Versuchen Sie es später noch einmal."
@@ -1622,6 +1641,14 @@ msgstr "Konnte nicht gelöscht werden: {reason}"
 msgid "Couldn't discard: {reason}"
 msgstr "Konnte nicht verworfen werden: {reason}"
 
+#: src/renderer/src/components/Downloads.tsx
+msgid "Couldn't download {name}"
+msgstr "{name} konnte nicht geladen werden"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "Couldn't get the attachment"
+msgstr "Anhang konnte nicht abgerufen werden"
+
 #: src/renderer/src/components/Attachments.tsx
 msgid "Couldn't get the attachment: {reason}"
 msgstr "Der Anhang konnte nicht abgerufen werden: {reason}"
@@ -1678,6 +1705,10 @@ msgstr "Konnte nicht gesendet werden: {reason}"
 #: src/renderer/src/components/DraftSyncRecovery.tsx
 msgid "Couldn't sync"
 msgstr "Konnte nicht synchronisiert werden"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "Couldn't write to the attachment folder"
+msgstr "In den Anhangsordner konnte nicht geschrieben werden"
 
 #: src/renderer/src/components/SyncHealth.tsx
 msgid "Counts compare messages. Matching counts do not verify message contents. Cache windows retain message text; headers remain cached."
@@ -1753,6 +1784,10 @@ msgstr "Benutzerdefiniertes Symbol"
 #: src/renderer/src/components/SnoozeDialog.tsx
 msgid "Custom time"
 msgstr "Benutzerdefinierte Zeit"
+
+#: src/renderer/src/components/WindowUi.tsx
+msgid "Cut"
+msgstr "Ausschneiden"
 
 #: src/renderer/src/components/EventRecurrenceEditor.tsx
 msgid "Daily"
@@ -1991,9 +2026,17 @@ msgstr "Lokale Modelle herunterladen, ca. 226 MB"
 msgid "Download update"
 msgstr "Update laden"
 
+#: src/renderer/src/components/Downloads.tsx
+msgid "Downloaded {name}"
+msgstr "{name} geladen"
+
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "Downloaded updates install when you quit, after pending drafts are checked."
 msgstr "Geladene Updates werden beim Beenden der App installiert, nachdem ausstehende Entwürfe geprüft wurden."
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "Downloading {name}"
+msgstr "{name} wird geladen"
 
 #. placeholder {0}: i18n.number(Math.floor((progress.models.bytes / progress.models.total) * 100))
 #: src/renderer/src/components/IndexingSettings.tsx
@@ -2009,6 +2052,7 @@ msgstr "Update {0} wird geladen…"
 msgid "Downloading update {version}…"
 msgstr "Update {version} wird geladen…"
 
+#: src/renderer/src/components/Downloads.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Downloads"
 msgstr "Downloads"
@@ -2358,6 +2402,10 @@ msgstr "In Nachrichtentext suchen"
 msgid "Find in message"
 msgstr "In Nachricht suchen"
 
+#: src/renderer/src/components/OpenWithMenu.tsx
+msgid "Finding apps…"
+msgstr "Apps werden gesucht…"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/OptionalServices.tsx
 #: src/renderer/src/components/Settings.tsx
@@ -2561,6 +2609,10 @@ msgstr "Generierung abgeschlossen"
 #: src/renderer/src/components/Settings.tsx
 msgid "Gestures and toolbar"
 msgstr "Gesten und Symbolleiste"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "Getting the attachment…"
+msgstr "Anhang wird abgerufen…"
 
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "GitHub access token"
@@ -3442,6 +3494,7 @@ msgstr "Nachrichten von einer Person"
 msgid "Messages in a folder"
 msgstr "Nachrichten in einem Ordner"
 
+#: src/renderer/src/components/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Messages in the undo window will remain drafts. A send already in progress may finish."
 msgstr "Nachrichten innerhalb der Frist zum Rückgängigmachen bleiben Entwürfe. Ein bereits laufender Versand kann abgeschlossen werden."
@@ -3709,6 +3762,10 @@ msgstr "Nach oben"
 msgid "Moved"
 msgstr "Verschoben"
 
+#: src/renderer/src/components/Downloads.tsx
+msgid "Moved or deleted"
+msgstr "Bewegt oder gelöscht"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/ThreadWindow.tsx
 msgid "Moved to Focused"
@@ -3878,6 +3935,10 @@ msgstr "Noch keine Accounts"
 msgid "No activity yet."
 msgstr "Noch keine Aktivität."
 
+#: src/renderer/src/components/OpenWithMenu.tsx
+msgid "No app can open this file"
+msgstr "Keine App kann diese Datei öffnen"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "No copy"
 msgstr "Nicht kopieren"
@@ -3890,6 +3951,10 @@ msgstr "Es gilt kein aktuelles Label. In den Papierkorb verschieben."
 #: src/renderer/src/components/DraftOrganization.tsx
 msgid "No custom labels"
 msgstr "Keine benutzerdefinierten Labels"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "No downloads"
+msgstr "Keine Downloads"
 
 #: src/renderer/src/components/MessageList.tsx
 msgid "No drafts"
@@ -3957,7 +4022,7 @@ msgstr "Keine Antwort erforderlich"
 msgid "No starred messages. Star a message to find it here."
 msgstr "Keine Nachrichten mit Stern. Markieren Sie eine Nachricht mit einem Stern, um sie hier zu finden."
 
-#: src/renderer/src/state/desktop.ts
+#: src/renderer/src/components/WindowUi.tsx
 msgid "No suggestions"
 msgstr "Keine Vorschläge"
 
@@ -4048,6 +4113,7 @@ msgstr "Anzahl der Termine"
 msgid "Off"
 msgstr "Aus"
 
+#: src/renderer/src/components/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "OK"
 msgstr "OK"
@@ -4117,8 +4183,13 @@ msgid "Only to me"
 msgstr "Nur an mich"
 
 #: src/renderer/src/components/Attachments.tsx
+#: src/renderer/src/components/Downloads.tsx
 msgid "Open"
 msgstr "Öffnen"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "Open {name}"
+msgstr "{name} öffnen"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Open attachments from"
@@ -4152,6 +4223,10 @@ msgstr "In Outlook öffnen"
 msgid "Open in web mail"
 msgstr "In Webmail öffnen"
 
+#: src/renderer/src/components/Downloads.tsx
+msgid "Open it from Finder"
+msgstr "Im Finder öffnen"
+
 #: src/renderer/src/components/LinkConfirmDialog.tsx
 msgid "Open link"
 msgstr "Link öffnen"
@@ -4180,14 +4255,15 @@ msgstr "Diese Einladung vor dem Antworten im Kalender öffnen und hinzufügen"
 msgid "Open this link?"
 msgstr "Diesen Link öffnen?"
 
-#: src/renderer/src/components/Attachments.tsx
-msgid "Open With…"
-msgstr "Öffnen mit…"
+#: src/renderer/src/components/OpenWithMenu.tsx
+msgid "Open With"
+msgstr "Öffnen mit"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "OpenMail is the default email app"
 msgstr "OpenMail ist die Standard-E-Mail-App"
 
+#: src/renderer/src/components/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "OpenMail is up to date."
 msgstr "OpenMail ist auf dem neuesten Stand."
@@ -4369,6 +4445,10 @@ msgstr "Teilweise Zustellung"
 msgid "Password"
 msgstr "Passwort"
 
+#: src/renderer/src/components/WindowUi.tsx
+msgid "Paste"
+msgstr "Einsetzen"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Paste and match style"
@@ -4549,10 +4629,12 @@ msgid "Quick Look"
 msgstr "Übersicht"
 
 #: src/main/native-i18n.ts
+#: src/renderer/src/components/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Quit"
 msgstr "Beenden"
 
+#: src/renderer/src/components/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Quit with messages waiting to send?"
 msgstr "Beenden Sie den Vorgang mit Nachrichten, die auf den Versand warten?"
@@ -4689,6 +4771,10 @@ msgstr "{0} entfernen"
 msgid "Remove {email}?"
 msgstr "{email} entfernen?"
 
+#: src/renderer/src/components/Downloads.tsx
+msgid "Remove {name} from list"
+msgstr "{name} aus der Liste entfernen"
+
 #: src/renderer/src/components/RecipientField.tsx
 msgid "Remove {text}"
 msgstr "{text} entfernen"
@@ -4715,6 +4801,10 @@ msgstr "Aktuelles Label entfernen"
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Remove favorite"
 msgstr "Favorit entfernen"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "Remove from list"
+msgstr "Aus der Liste entfernen"
 
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Remove from recent searches"
@@ -4941,10 +5031,15 @@ msgstr "Synchronisierung fortsetzen"
 msgid "Retention windows take precedence. Starred messages, retained message texts, drafts and outbox messages are kept even when the limit is exceeded. Zero disables the budget."
 msgstr "Aufbewahrungsfristen haben Vorrang. Markierte Nachrichten, aufbewahrte Nachrichtentexte, Entwürfe und Nachrichten im Postausgang bleiben auch bei Überschreitung des Limits erhalten. Null deaktiviert das Limit."
 
+#: src/renderer/src/components/Downloads.tsx
 #: src/renderer/src/components/DraftSyncRecovery.tsx
 #: src/renderer/src/components/MessageBodyShell.tsx
 msgid "Retry"
 msgstr "Erneut versuchen"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "Retry {name}"
+msgstr "{name} erneut versuchen"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Revert"
@@ -5045,8 +5140,8 @@ msgid "Save {0}"
 msgstr "Speichern {0}"
 
 #: src/renderer/src/components/Attachments.tsx
-msgid "Save all…"
-msgstr "Alle sichern…"
+msgid "Save all"
+msgstr "Alle sichern"
 
 #: src/renderer/src/errors.ts
 msgid "Save an Anthropic API key in AI settings."
@@ -5080,8 +5175,12 @@ msgid "Save rule"
 msgstr "Regel speichern"
 
 #: src/renderer/src/components/Attachments.tsx
-msgid "Save selected…"
-msgstr "Ausgewählte speichern…"
+msgid "Save selected"
+msgstr "Auswahl sichern"
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Save selected to…"
+msgstr "Auswahl sichern unter…"
 
 #: src/renderer/src/components/FailedOpNotice.tsx
 msgid "Save sent copy"
@@ -5095,23 +5194,23 @@ msgstr "Diesen Entwurf vor dem Schließen speichern?"
 msgid "Save this message as a template…"
 msgstr "Diese Nachricht als Vorlage speichern…"
 
+#: src/renderer/src/components/Attachments.tsx
+msgid "Save to attachment folder"
+msgstr "Im Anhangsordner sichern"
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Save To…"
+msgstr "Sichern unter…"
+
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "Save token"
 msgstr "Token sichern"
-
-#: src/renderer/src/components/Attachments.tsx
-msgid "Save…"
-msgstr "Sichern…"
 
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/SignatureSettings.tsx
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Saved"
 msgstr "Gesichert"
-
-#: src/renderer/src/components/Attachments.tsx
-msgid "Saved {count} attachments. Couldn't save: {names}"
-msgstr "{count} Anhänge gespeichert. Konnte nicht gespeichert werden: {names}"
 
 #: src/renderer/src/components/reader-actions.ts
 msgid "Saved as EML"
@@ -5208,6 +5307,7 @@ msgstr "Nachricht auswählen"
 msgid "Select accounts allowed in Settings > AI Access. The assistant searches mail and proposes drafts, labels or archive. You approve changes in AI suggestions."
 msgstr "Erlaubte Accounts unter „Einstellungen > KI-Zugriff“ auswählen. Der Assistent durchsucht Post und schlägt Entwürfe, Labels oder Archivierung vor. Änderungen werden unter „KI-Vorschläge“ genehmigt."
 
+#: src/renderer/src/components/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Select all"
 msgstr "Alles auswählen"
@@ -5231,6 +5331,7 @@ msgstr "Die semantische Suche ist nicht verfügbar. Die Volltextsuche bleibt wei
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/compose/use-compose-delivery.ts
 #: src/renderer/src/shortcut-names.ts
 msgid "Send"
 msgstr "Senden"
@@ -5390,6 +5491,10 @@ msgstr "Kürzer"
 msgid "Show"
 msgstr "Anzeigen"
 
+#: src/renderer/src/components/Downloads.tsx
+msgid "Show {name} in Finder"
+msgstr "{name} im Finder zeigen"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Show account names in unified folders"
 msgstr "Account-Namen in gemeinsamen Ordnern anzeigen"
@@ -5426,6 +5531,10 @@ msgstr "Wenn ungelesen angezeigt"
 #: src/renderer/src/components/MessageList.tsx
 msgid "Show important messages"
 msgstr "Wichtige Nachrichten anzeigen"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "Show in Finder"
+msgstr "Im Finder zeigen"
 
 #: src/renderer/src/state/desktop.ts
 msgid "Show Inbox"
@@ -5862,6 +5971,10 @@ msgstr "Vorlagen…"
 msgid "Tentative"
 msgstr "Mit Vorbehalt"
 
+#: src/renderer/src/components/WindowUi.tsx
+msgid "Text actions"
+msgstr "Textaktionen"
+
 #: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Text color"
 msgstr "Textfarbe"
@@ -5905,6 +6018,10 @@ msgstr "Der Filter gilt für zukünftige E-Mails auf dem Server."
 #: src/renderer/src/components/MailStatusNotice.tsx
 msgid "The keychain is locked. Unlock your computer and sync resumes on its own."
 msgstr "Der Schlüsselbund ist gesperrt. Entsperren Sie Ihren Computer, dann wird die Synchronisierung automatisch fortgesetzt."
+
+#: src/renderer/src/compose/use-compose-delivery.ts
+msgid "The last attempt may have reached the server. Sending again can deliver a second copy."
+msgstr "Der letzte Versuch hat den Server möglicherweise erreicht. Erneutes Senden kann eine zweite Kopie zustellen."
 
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "The limit includes the database, attachments, WAL and recovery copies. Protected content may exceed it."
@@ -6343,6 +6460,7 @@ msgid "Update {0} is ready. It will install when you quit."
 msgstr "Update {0} ist bereit und wird beim Beenden der App installiert."
 
 #: src/renderer/src/components/UpdateNotice.tsx
+#: src/renderer/src/components/WindowUi.tsx
 msgid "Update {version} is available."
 msgstr "Update {version} ist verfügbar."
 
@@ -6362,6 +6480,7 @@ msgstr "Update-Kanal"
 msgid "Update check or download failed. Try again."
 msgstr "Die Suche nach Updates oder das Laden ist fehlgeschlagen. Erneut versuchen."
 
+#: src/renderer/src/components/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Update checks require a signed, installed macOS app and a saved GitHub access token."
 msgstr "Update-Prüfungen erfordern eine signierte, installierte macOS-App und ein gespeichertes GitHub-Zugriffstoken."
@@ -6530,6 +6649,10 @@ msgstr "Schreibanweisung"
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Writing mode"
 msgstr "Schreibmodus"
+
+#: src/renderer/src/components/WindowUi.tsx
+msgid "Writing Tools and Services…"
+msgstr "Schreibtools und Dienste…"
 
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Year"

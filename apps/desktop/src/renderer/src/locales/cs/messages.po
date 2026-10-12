@@ -59,6 +59,10 @@ msgstr "{0} sekund"
 msgid "{accountCount, plural, one {# account} other {# accounts}}, {total} unread"
 msgstr "{accountCount, plural, one {# účet} few {# účty} many {# účtu} other {# účtů}}, nepřečtených: {total}"
 
+#: src/renderer/src/components/Downloads.tsx
+msgid "{active, plural, one {Downloads (# in progress)} other {Downloads (# in progress)}}"
+msgstr "{active, plural, one {Stahování (# probíhá)} few {Stahování (# probíhají)} many {Stahování (# probíhá)} other {Stahování (# probíhá)}}"
+
 #: src/renderer/src/App.tsx
 msgid "{baseTitle}: {user}"
 msgstr "{baseTitle}: {user}"
@@ -96,8 +100,8 @@ msgid "{count, plural, one {Blocked # tracker} other {Blocked # trackers}}"
 msgstr "{count, plural, one {Blokován # sledovací prvek} few {Blokovány # sledovací prvky} many {Blokováno # sledovacích prvků} other {Blokováno # sledovacích prvků}}"
 
 #: src/renderer/src/components/Attachments.tsx
-msgid "{count, plural, one {Saved # attachment} other {Saved # attachments}}"
-msgstr "{count, plural, one {Uložena # příloha} few {Uloženy # přílohy} many {Uloženo # příloh} other {Uloženo # příloh}}"
+msgid "{count, plural, one {Saving # attachment to your attachment folder} other {Saving # attachments to your attachment folder}}"
+msgstr "{count, plural, one {Ukládá se # příloha do složky příloh} few {Ukládají se # přílohy do složky příloh} many {Ukládá se # přílohy do složky příloh} other {Ukládá se # příloh do složky příloh}}"
 
 #: src/renderer/src/components/ContactSettings.tsx
 msgid "{count} cached contacts"
@@ -166,6 +170,10 @@ msgstr "{op} {count, plural, one {# konverzace} few {# konverzace} many {# konve
 #: src/renderer/src/components/MessageBody.tsx
 msgid "{pixels, plural, one {# tracking pixel} other {# tracking pixels}}"
 msgstr "{pixels, plural, one {# sledovací pixel} few {# sledovací pixely} many {# sledovacích pixelů} other {# sledovacích pixelů}}"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "{received} of {size}"
+msgstr "{received} z {size}"
 
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "{seconds, plural, one {# second} other {# seconds}}"
@@ -380,7 +388,7 @@ msgstr "Přidat do kalendáře"
 msgid "Add to Contacts"
 msgstr "Přidat do Kontaktů"
 
-#: src/renderer/src/state/desktop.ts
+#: src/renderer/src/components/WindowUi.tsx
 msgid "Add to Dictionary"
 msgstr "Přidat do slovníku"
 
@@ -772,8 +780,8 @@ msgid "Attachment file name"
 msgstr "Název souboru přílohy"
 
 #: src/renderer/src/components/ReadingSettings.tsx
-msgid "Attachment save folder"
-msgstr "Složka pro ukládání příloh"
+msgid "Attachment folder"
+msgstr "Složka příloh"
 
 #: src/renderer/src/components/SearchSnippet.tsx
 msgctxt "search match source"
@@ -793,6 +801,10 @@ msgstr "Přílohy přesahují limit 30 MB pro psaní."
 #: src/renderer/src/errors.ts
 msgid "Attachments rejected before sending"
 msgstr "Přílohy byly před odesláním odmítnuty"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "Attachments you save appear here."
+msgstr "Uložené přílohy se zobrazí zde."
 
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Attendees"
@@ -1009,6 +1021,7 @@ msgstr "K poštovnímu serveru se nyní nelze připojit."
 #: src/renderer/src/components/ProfileEditor.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/ui/Confirm.tsx
 #: src/renderer/src/components/UnsubscribeButton.tsx
 #: src/renderer/src/compose/use-compose-editor.ts
 #: src/renderer/src/state/desktop.ts
@@ -1098,7 +1111,7 @@ msgid "Check grammar on this Mac"
 msgstr "Zkontrolovat gramatiku na tomto Macu"
 
 #: src/renderer/src/components/SpellcheckSettings.tsx
-#: src/renderer/src/state/desktop.ts
+#: src/renderer/src/components/WindowUi.tsx
 msgid "Check spelling while typing"
 msgstr "Kontrolovat pravopis při psaní"
 
@@ -1194,6 +1207,10 @@ msgstr "Vyberte poskytovatele e-mailu."
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Choose…"
 msgstr "Vybrat…"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "Clear"
+msgstr "Vymazat"
 
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Clear account cache"
@@ -1460,6 +1477,7 @@ msgstr "Zkopírováno do složek"
 #: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/MultiOrganization.tsx
 #: src/renderer/src/components/RawMessage.tsx
+#: src/renderer/src/components/WindowUi.tsx
 msgid "Copy"
 msgstr "Kopírovat"
 
@@ -1504,6 +1522,7 @@ msgstr "Zkopírujte do místního podpisu"
 msgid "Copy webmail link"
 msgstr "Kopírovat odkaz na webovou poštu"
 
+#: src/renderer/src/components/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Could not check for updates. Try again later."
 msgstr "Nelze zkontrolovat aktualizace. Zkuste to znovu později."
@@ -1622,6 +1641,14 @@ msgstr "Nelze smazat: {reason}"
 msgid "Couldn't discard: {reason}"
 msgstr "Nelze zahodit: {reason}"
 
+#: src/renderer/src/components/Downloads.tsx
+msgid "Couldn't download {name}"
+msgstr "{name} se nepodařilo stáhnout"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "Couldn't get the attachment"
+msgstr "Přílohu se nepodařilo získat"
+
 #: src/renderer/src/components/Attachments.tsx
 msgid "Couldn't get the attachment: {reason}"
 msgstr "Nelze získat přílohu: {reason}"
@@ -1678,6 +1705,10 @@ msgstr "Nelze odeslat: {reason}"
 #: src/renderer/src/components/DraftSyncRecovery.tsx
 msgid "Couldn't sync"
 msgstr "Synchronizace se nezdařila"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "Couldn't write to the attachment folder"
+msgstr "Do složky příloh nelze zapisovat"
 
 #: src/renderer/src/components/SyncHealth.tsx
 msgid "Counts compare messages. Matching counts do not verify message contents. Cache windows retain message text; headers remain cached."
@@ -1753,6 +1784,10 @@ msgstr "Vlastní ikona"
 #: src/renderer/src/components/SnoozeDialog.tsx
 msgid "Custom time"
 msgstr "Vlastní čas"
+
+#: src/renderer/src/components/WindowUi.tsx
+msgid "Cut"
+msgstr "Vyjmout"
 
 #: src/renderer/src/components/EventRecurrenceEditor.tsx
 msgid "Daily"
@@ -1991,9 +2026,17 @@ msgstr "Stáhnout modely na zařízení, ~226 MB"
 msgid "Download update"
 msgstr "Stáhnout aktualizaci"
 
+#: src/renderer/src/components/Downloads.tsx
+msgid "Downloaded {name}"
+msgstr "{name} staženo"
+
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "Downloaded updates install when you quit, after pending drafts are checked."
 msgstr "Stažené aktualizace se nainstalují při ukončení aplikace po kontrole nevyřízených konceptů."
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "Downloading {name}"
+msgstr "Stahuje se {name}"
 
 #. placeholder {0}: i18n.number(Math.floor((progress.models.bytes / progress.models.total) * 100))
 #: src/renderer/src/components/IndexingSettings.tsx
@@ -2009,6 +2052,7 @@ msgstr "Stahuje se aktualizace {0}…"
 msgid "Downloading update {version}…"
 msgstr "Stahuje se aktualizace {version}…"
 
+#: src/renderer/src/components/Downloads.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Downloads"
 msgstr "Stahování"
@@ -2358,6 +2402,10 @@ msgstr "Hledat v textu zprávy"
 msgid "Find in message"
 msgstr "Najít ve zprávě"
 
+#: src/renderer/src/components/OpenWithMenu.tsx
+msgid "Finding apps…"
+msgstr "Hledání aplikací…"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/OptionalServices.tsx
 #: src/renderer/src/components/Settings.tsx
@@ -2561,6 +2609,10 @@ msgstr "Generování dokončeno"
 #: src/renderer/src/components/Settings.tsx
 msgid "Gestures and toolbar"
 msgstr "Gesta a panel nástrojů"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "Getting the attachment…"
+msgstr "Získávání přílohy…"
 
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "GitHub access token"
@@ -3442,6 +3494,7 @@ msgstr "Zprávy od osoby"
 msgid "Messages in a folder"
 msgstr "Zprávy ve složce"
 
+#: src/renderer/src/components/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Messages in the undo window will remain drafts. A send already in progress may finish."
 msgstr "Zprávy v době pro vrácení zpět zůstanou koncepty. Již probíhající odesílání se může dokončit."
@@ -3709,6 +3762,10 @@ msgstr "Posuňte se nahoru"
 msgid "Moved"
 msgstr "Přesunuto"
 
+#: src/renderer/src/components/Downloads.tsx
+msgid "Moved or deleted"
+msgstr "Přesunuto nebo smazáno"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/ThreadWindow.tsx
 msgid "Moved to Focused"
@@ -3878,6 +3935,10 @@ msgstr "Zatím žádné účty"
 msgid "No activity yet."
 msgstr "Zatím žádná aktivita."
 
+#: src/renderer/src/components/OpenWithMenu.tsx
+msgid "No app can open this file"
+msgstr "Tento soubor nelze otevřít žádnou aplikací"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "No copy"
 msgstr "Nekopírovat"
@@ -3890,6 +3951,10 @@ msgstr "Neplatí žádný aktuální štítek. Přesouvání do koše."
 #: src/renderer/src/components/DraftOrganization.tsx
 msgid "No custom labels"
 msgstr "Žádné vlastní štítky"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "No downloads"
+msgstr "Žádná stahování"
 
 #: src/renderer/src/components/MessageList.tsx
 msgid "No drafts"
@@ -3957,7 +4022,7 @@ msgstr "Odpověď není nutná"
 msgid "No starred messages. Star a message to find it here."
 msgstr "Žádné zprávy s hvězdičkou. Označte zprávu hvězdičkou a najdete ji tady."
 
-#: src/renderer/src/state/desktop.ts
+#: src/renderer/src/components/WindowUi.tsx
 msgid "No suggestions"
 msgstr "Žádné návrhy"
 
@@ -4048,6 +4113,7 @@ msgstr "Počet opakování"
 msgid "Off"
 msgstr "Vypnuto"
 
+#: src/renderer/src/components/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "OK"
 msgstr "OK"
@@ -4117,8 +4183,13 @@ msgid "Only to me"
 msgstr "Pouze pro mě"
 
 #: src/renderer/src/components/Attachments.tsx
+#: src/renderer/src/components/Downloads.tsx
 msgid "Open"
 msgstr "Otevřít"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "Open {name}"
+msgstr "Otevřít {name}"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Open attachments from"
@@ -4152,6 +4223,10 @@ msgstr "Otevřete v aplikaci Outlook"
 msgid "Open in web mail"
 msgstr "Otevřít ve webové poště"
 
+#: src/renderer/src/components/Downloads.tsx
+msgid "Open it from Finder"
+msgstr "Otevřete jej z Finderu"
+
 #: src/renderer/src/components/LinkConfirmDialog.tsx
 msgid "Open link"
 msgstr "Otevřít odkaz"
@@ -4180,14 +4255,15 @@ msgstr "Než odpovíte, otevřete si tuto pozvánku ve svém kalendáři a přid
 msgid "Open this link?"
 msgstr "Otevřít tento odkaz?"
 
-#: src/renderer/src/components/Attachments.tsx
-msgid "Open With…"
-msgstr "Otevřít v aplikaci…"
+#: src/renderer/src/components/OpenWithMenu.tsx
+msgid "Open With"
+msgstr "Otevřít v aplikaci"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "OpenMail is the default email app"
 msgstr "OpenMail je výchozí e-mailová aplikace"
 
+#: src/renderer/src/components/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "OpenMail is up to date."
 msgstr "OpenMail je aktuální."
@@ -4369,6 +4445,10 @@ msgstr "Částečné doručení"
 msgid "Password"
 msgstr "Heslo"
 
+#: src/renderer/src/components/WindowUi.tsx
+msgid "Paste"
+msgstr "Vložit"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Paste and match style"
@@ -4549,10 +4629,12 @@ msgid "Quick Look"
 msgstr "Rychlý náhled"
 
 #: src/main/native-i18n.ts
+#: src/renderer/src/components/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Quit"
 msgstr "Ukončit"
 
+#: src/renderer/src/components/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Quit with messages waiting to send?"
 msgstr "Ukončit se zprávami čekajícími na odeslání?"
@@ -4689,6 +4771,10 @@ msgstr "Odebrat {0}"
 msgid "Remove {email}?"
 msgstr "Odebrat {email}?"
 
+#: src/renderer/src/components/Downloads.tsx
+msgid "Remove {name} from list"
+msgstr "Odebrat {name} ze seznamu"
+
 #: src/renderer/src/components/RecipientField.tsx
 msgid "Remove {text}"
 msgstr "Odebrat {text}"
@@ -4715,6 +4801,10 @@ msgstr "Odebrat aktuální štítek"
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Remove favorite"
 msgstr "Odebrat oblíbené"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "Remove from list"
+msgstr "Odebrat ze seznamu"
 
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Remove from recent searches"
@@ -4941,10 +5031,15 @@ msgstr "Obnovit synchronizaci"
 msgid "Retention windows take precedence. Starred messages, retained message texts, drafts and outbox messages are kept even when the limit is exceeded. Zero disables the budget."
 msgstr "Doba uchování má přednost. Zprávy s hvězdičkou, uchovávané texty zpráv, koncepty a zprávy ve složce k odeslání zůstanou i při překročení limitu. Nula vypne limit."
 
+#: src/renderer/src/components/Downloads.tsx
 #: src/renderer/src/components/DraftSyncRecovery.tsx
 #: src/renderer/src/components/MessageBodyShell.tsx
 msgid "Retry"
 msgstr "Zkusit znovu"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "Retry {name}"
+msgstr "Zkusit znovu {name}"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Revert"
@@ -5045,8 +5140,8 @@ msgid "Save {0}"
 msgstr "Uložit {0}"
 
 #: src/renderer/src/components/Attachments.tsx
-msgid "Save all…"
-msgstr "Uložit vše…"
+msgid "Save all"
+msgstr "Uložit vše"
 
 #: src/renderer/src/errors.ts
 msgid "Save an Anthropic API key in AI settings."
@@ -5080,8 +5175,12 @@ msgid "Save rule"
 msgstr "Uložit pravidlo"
 
 #: src/renderer/src/components/Attachments.tsx
-msgid "Save selected…"
-msgstr "Uložit vybrané…"
+msgid "Save selected"
+msgstr "Uložit vybrané"
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Save selected to…"
+msgstr "Uložit vybrané do…"
 
 #: src/renderer/src/components/FailedOpNotice.tsx
 msgid "Save sent copy"
@@ -5095,23 +5194,23 @@ msgstr "Uložit tento koncept před uzavřením?"
 msgid "Save this message as a template…"
 msgstr "Uložit tuto zprávu jako šablonu…"
 
+#: src/renderer/src/components/Attachments.tsx
+msgid "Save to attachment folder"
+msgstr "Uložit do složky příloh"
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Save To…"
+msgstr "Uložit do…"
+
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "Save token"
 msgstr "Uložit token"
-
-#: src/renderer/src/components/Attachments.tsx
-msgid "Save…"
-msgstr "Uložit…"
 
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/SignatureSettings.tsx
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Saved"
 msgstr "Uloženo"
-
-#: src/renderer/src/components/Attachments.tsx
-msgid "Saved {count} attachments. Couldn't save: {names}"
-msgstr "Uloženo {count} příloh. Nelze uložit: {names}"
 
 #: src/renderer/src/components/reader-actions.ts
 msgid "Saved as EML"
@@ -5208,6 +5307,7 @@ msgstr "Vyberte zprávu"
 msgid "Select accounts allowed in Settings > AI Access. The assistant searches mail and proposes drafts, labels or archive. You approve changes in AI suggestions."
 msgstr "Vyberte povolené účty v Nastavení > Přístup AI. Asistent hledá v poště a navrhuje koncepty, štítky nebo archivaci. Změny schvalujete v návrzích AI."
 
+#: src/renderer/src/components/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Select all"
 msgstr "Vyberte vše"
@@ -5231,6 +5331,7 @@ msgstr "Sémantické vyhledávání není k dispozici. K dispozici zůstává fu
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/compose/use-compose-delivery.ts
 #: src/renderer/src/shortcut-names.ts
 msgid "Send"
 msgstr "Odeslat"
@@ -5390,6 +5491,10 @@ msgstr "Kratší"
 msgid "Show"
 msgstr "Zobrazit"
 
+#: src/renderer/src/components/Downloads.tsx
+msgid "Show {name} in Finder"
+msgstr "Zobrazit {name} ve Finderu"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Show account names in unified folders"
 msgstr "Zobrazovat názvy účtů ve sjednocených složkách"
@@ -5426,6 +5531,10 @@ msgstr "Zobrazit, pokud není přečteno"
 #: src/renderer/src/components/MessageList.tsx
 msgid "Show important messages"
 msgstr "Zobrazit důležité zprávy"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "Show in Finder"
+msgstr "Zobrazit ve Finderu"
 
 #: src/renderer/src/state/desktop.ts
 msgid "Show Inbox"
@@ -5862,6 +5971,10 @@ msgstr "Šablony…"
 msgid "Tentative"
 msgstr "Předběžně"
 
+#: src/renderer/src/components/WindowUi.tsx
+msgid "Text actions"
+msgstr "Akce s textem"
+
 #: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Text color"
 msgstr "Barva textu"
@@ -5905,6 +6018,10 @@ msgstr "Filtr se vztahuje na budoucí poštu na serveru."
 #: src/renderer/src/components/MailStatusNotice.tsx
 msgid "The keychain is locked. Unlock your computer and sync resumes on its own."
 msgstr "Klíčenka je zamčená. Odemkněte počítač a synchronizace se obnoví sama."
+
+#: src/renderer/src/compose/use-compose-delivery.ts
+msgid "The last attempt may have reached the server. Sending again can deliver a second copy."
+msgstr "Poslední pokus mohl dorazit na server. Opětovné odeslání může doručit druhou kopii."
 
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "The limit includes the database, attachments, WAL and recovery copies. Protected content may exceed it."
@@ -6343,6 +6460,7 @@ msgid "Update {0} is ready. It will install when you quit."
 msgstr "Aktualizace {0} je připravena. Nainstaluje se při ukončení aplikace."
 
 #: src/renderer/src/components/UpdateNotice.tsx
+#: src/renderer/src/components/WindowUi.tsx
 msgid "Update {version} is available."
 msgstr "Je k dispozici aktualizace {version}."
 
@@ -6362,6 +6480,7 @@ msgstr "Kanál aktualizací"
 msgid "Update check or download failed. Try again."
 msgstr "Kontrola nebo stažení aktualizace se nezdařilo. Zkuste to znovu."
 
+#: src/renderer/src/components/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Update checks require a signed, installed macOS app and a saved GitHub access token."
 msgstr "Kontroly aktualizací vyžadují podepsanou nainstalovanou aplikaci pro macOS a uložený přístupový token GitHub."
@@ -6530,6 +6649,10 @@ msgstr "Pokyn k psaní"
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Writing mode"
 msgstr "Režim psaní"
+
+#: src/renderer/src/components/WindowUi.tsx
+msgid "Writing Tools and Services…"
+msgstr "Nástroje pro psaní a služby…"
 
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Year"

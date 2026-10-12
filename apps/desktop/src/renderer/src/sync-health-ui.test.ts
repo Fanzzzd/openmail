@@ -58,7 +58,10 @@ it("account sync health is explicit, renders offline counts and copies a redacte
   );
   expect(fixture.calls).toEqual(["SyncHealth"]);
   expect(screen.getByRole("cell", { name: "3 / 1 / 2" })).toBeTruthy();
-  const report = screen.getByRole("textbox", { name: "Redacted report", hidden: true });
+  const disclosure = screen.getByRole("button", { name: "Redacted report" });
+  expect(disclosure.getAttribute("aria-expanded")).toBe("false");
+  fireEvent.click(disclosure);
+  const report = screen.getByRole("textbox", { name: "Redacted report" });
   expect(report.getAttribute("readonly")).not.toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "Copy redacted report" }));
   await waitFor(() => expect(writeText).toHaveBeenCalledOnce());

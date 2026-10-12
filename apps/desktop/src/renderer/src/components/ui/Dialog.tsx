@@ -4,7 +4,7 @@ import { useLingui } from "@lingui/react/macro";
 import { X } from "lucide-react";
 import { type ComponentProps, type ReactNode, useRef } from "react";
 import { useLayoutMode } from "../../responsive-layout";
-import { iconButton } from "./styles";
+import { buttonDanger, buttonPrimary, buttonSecondary, iconButton } from "./styles";
 
 type InitialFocus = ComponentProps<typeof BaseDialog.Popup>["initialFocus"];
 
@@ -180,12 +180,9 @@ export function Alert({ open, onOpenChange, title, description, children }: Aler
   );
 }
 
-export const alertButton =
-  "h-7 whitespace-nowrap rounded-md border border-black/10 px-3 font-medium outline-offset-1 outline-a11y-focus hover:bg-black/[0.04] focus-visible:outline-[3px] dark:border-white/15 dark:hover:bg-white/5";
-export const alertPrimary =
-  "h-7 whitespace-nowrap rounded-md bg-blue-600 px-3 font-medium text-white outline-offset-1 outline-a11y-focus hover:bg-blue-700 focus-visible:outline-[3px] disabled:opacity-50";
-export const alertDanger =
-  "h-7 whitespace-nowrap rounded-md bg-red-600 px-3 font-medium text-white outline-offset-1 outline-red-500/60 hover:bg-red-700 focus-visible:outline-[3px] disabled:opacity-50";
+export const alertButton = buttonSecondary;
+export const alertPrimary = buttonPrimary;
+export const alertDanger = buttonDanger;
 
 /** Closes the alert without doing anything. */
 export function AlertCancel({ children, disabled }: { children: ReactNode; disabled?: boolean }) {

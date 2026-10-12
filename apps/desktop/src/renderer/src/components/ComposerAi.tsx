@@ -22,6 +22,7 @@ import { withMail } from "../state/mail";
 import { AiOutput, useAiStream } from "./AiPanel";
 import { aiSettingsAtom } from "../state/ai-settings";
 import { Dialog } from "./ui/Dialog";
+import { Select } from "./ui/Select";
 
 const tones = {
   shorter: msg`Shorter`,
@@ -150,23 +151,18 @@ export function ComposerAi({
           <h2 className="font-semibold">
             <Trans>Write with AI</Trans>
           </h2>
-          <select
+          <Select
+            variant="field"
             aria-label={t`AI action`}
             value={mode}
             disabled={result.status === "running"}
-            onChange={(e) => {
-              if (
-                e.target.value === "write" ||
-                e.target.value === "rewrite" ||
-                e.target.value === "translate"
-              )
-                setMode(e.target.value);
-            }}
-          >
-            <option value="write">{t`Write with AI`}</option>
-            <option value="rewrite">{t`Rewrite`}</option>
-            <option value="translate">{t`Translate`}</option>
-          </select>
+            options={[
+              { value: "write" as const, label: t`Write with AI` },
+              { value: "rewrite" as const, label: t`Rewrite` },
+              { value: "translate" as const, label: t`Translate` },
+            ]}
+            onValueChange={setMode}
+          />
           {mode === "write" && (
             <textarea
               className="block w-full rounded border bg-transparent p-2"
@@ -177,20 +173,16 @@ export function ComposerAi({
             />
           )}
           {mode === "rewrite" && (
-            <select
+            <Select
+              variant="field"
               aria-label={t`Tone`}
               value={tone}
-              onChange={(e) => {
-                const next = AI_REWRITE_TONES.find((value) => value === e.target.value);
-                if (next) setTone(next);
-              }}
-            >
-              {AI_REWRITE_TONES.map((value) => (
-                <option key={value} value={value}>
-                  {i18n._(tones[value])}
-                </option>
-              ))}
-            </select>
+              options={AI_REWRITE_TONES.map((value) => ({
+                value,
+                label: i18n._(tones[value]),
+              }))}
+              onValueChange={setTone}
+            />
           )}
           {mode === "translate" && (
             <input

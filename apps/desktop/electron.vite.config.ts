@@ -2,6 +2,7 @@ import { lingui } from "@lingui/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "electron-vite";
+import { resolve } from "node:path";
 import Icons from "unplugin-icons/vite";
 
 import { describeBuiltInClients, readBuiltInClients } from "./oauth-clients";
@@ -20,10 +21,27 @@ export default defineConfig(({ command }) => {
       define: { __OPENMAIL_OAUTH_CLIENTS__: JSON.stringify(builtInClients.clients) },
     },
     preload: {
-      // Sandboxed preloads cannot be ES modules.
-      build: { rollupOptions: { output: { format: "cjs", entryFileNames: "[name].cjs" } } },
+      // Sandboxed preloads cannot be ES modules. The recovery window has its own preload.
+      build: {
+        rollupOptions: {
+          input: {
+            index: resolve(import.meta.dirname, "src/preload/index.ts"),
+            recovery: resolve(import.meta.dirname, "src/preload/recovery.ts"),
+          },
+          output: { format: "cjs", entryFileNames: "[name].cjs" },
+        },
+      },
     },
     renderer: {
+      // recovery.html is the crash/database recovery prompt, loaded before the app starts.
+      build: {
+        rollupOptions: {
+          input: {
+            index: resolve(import.meta.dirname, "src/renderer/index.html"),
+            recovery: resolve(import.meta.dirname, "src/renderer/recovery.html"),
+          },
+        },
+      },
       plugins: [
         {
           name: "openmail-development-csp",

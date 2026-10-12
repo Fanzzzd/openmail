@@ -1,4 +1,5 @@
 import { Trans, useLingui } from "@lingui/react/macro";
+import { Disclosure } from "./ui/Disclosure";
 import { redactSyncHealth, type HealthVerdict, type SyncHealth } from "@openmail/core/schema";
 import { Effect } from "effect";
 import { useState } from "react";
@@ -135,17 +136,14 @@ export function SyncHealthCheck({ accountId }: { accountId: string }) {
           <button type="button" onClick={copy} className={button}>
             {copied ? t`Copied` : t`Copy redacted report`}
           </button>
-          <details>
-            <summary>
-              <Trans>Redacted report</Trans>
-            </summary>
+          <Disclosure summary={<Trans>Redacted report</Trans>}>
             <textarea
               readOnly
               aria-label={t`Redacted report`}
               value={JSON.stringify(redactSyncHealth(report), null, 2)}
               className="selectable h-40 w-full font-mono text-xs"
             />
-          </details>
+          </Disclosure>
         </>
       )}
     </section>

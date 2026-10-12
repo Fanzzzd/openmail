@@ -45,6 +45,7 @@ import {
 import { filtersListAtom, labelsAtom, sendAsAtom, vacationAtom } from "../state/queries";
 import { MailClient } from "../rpc";
 import { Alert, AlertCancel, alertDanger, alertPrimary, Dialog } from "./ui/Dialog";
+import { Disclosure } from "./ui/Disclosure";
 import { Checkbox } from "./ui/Checkbox";
 import { Select } from "./ui/Select";
 import { ContactSettings } from "./ContactSettings";
@@ -795,8 +796,7 @@ export function FilterEditor({
         )}
         {account.provider === "outlook" && (
           <>
-            <details className="space-y-3">
-              <summary>{t`More conditions`}</summary>
+            <Disclosure summary={t`More conditions`} panelClassName="space-y-3">
               <OutlookPredicatesEditor
                 value={input.criteria.outlook ?? {}}
                 onChange={(outlook) =>
@@ -808,14 +808,13 @@ export function FilterEditor({
                   })
                 }
               />
-            </details>
-            <details className="space-y-3">
-              <summary>{t`More exceptions`}</summary>
+            </Disclosure>
+            <Disclosure summary={t`More exceptions`} panelClassName="space-y-3">
               <OutlookPredicatesEditor
                 value={input.criteria.outlookExceptions ?? {}}
                 onChange={(outlookExceptions) => criteria({ outlookExceptions })}
               />
-            </details>
+            </Disclosure>
           </>
         )}
         {account.provider === "gmail" && (
@@ -966,8 +965,7 @@ export function FilterEditor({
             </>
           )}
           {account.provider === "gmail" && (
-            <details className="space-y-2">
-              <summary>{t`More label actions`}</summary>
+            <Disclosure summary={t`More label actions`} panelClassName="space-y-2">
               {(
                 [
                   { key: "addLabelIds", title: t`Add labels` },
@@ -1011,7 +1009,7 @@ export function FilterEditor({
                     ))}
                 </fieldset>
               ))}
-            </details>
+            </Disclosure>
           )}
           <label className="flex items-center gap-2">
             <Checkbox

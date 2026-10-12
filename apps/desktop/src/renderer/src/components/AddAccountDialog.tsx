@@ -13,6 +13,7 @@ import { clearClientAtom, connectAtom, saveClientAtom } from "../state/mutations
 import { clientSetupAtom, imapPresetsAtom } from "../state/queries";
 import { ProviderIcon, type ProviderIconName } from "./ProviderIcon";
 import { Dialog } from "./ui/Dialog";
+import { Disclosure } from "./ui/Disclosure";
 import { SegmentedControl } from "./ui/SegmentedControl";
 
 /**
@@ -261,14 +262,17 @@ function OAuthStep({
           )}
         </PrimaryButton>
       </Actions>
-      <details className="mt-4">
-        <summary className="cursor-pointer text-[12px] text-a11y-muted">
-          {builtIn ? (
+      <Disclosure
+        className="mt-4"
+        summaryClassName="text-[12px] text-a11y-muted"
+        summary={
+          builtIn ? (
             <Trans>Use your own OAuth client</Trans>
           ) : (
             <Trans>Change your OAuth client</Trans>
-          )}
-        </summary>
+          )
+        }
+      >
         <ClientForm provider={provider}>
           {builtIn ? (
             <Trans>
@@ -282,7 +286,7 @@ function OAuthStep({
             </Trans>
           )}
         </ClientForm>
-      </details>
+      </Disclosure>
     </div>
   );
 }

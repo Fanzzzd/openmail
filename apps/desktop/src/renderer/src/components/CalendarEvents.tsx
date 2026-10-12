@@ -26,11 +26,13 @@ import { Keys } from "../state/keys";
 import { type AppError, resultError, INPUT_ERRORS } from "../errors";
 import { Dialog, alertButton, alertPrimary } from "./ui/Dialog";
 import { DropdownMenu, MenuItem } from "./ui/Menu";
+import { Select } from "./ui/Select";
 import { CalendarDays } from "lucide-react";
 import { EventRecurrenceEditor } from "./EventRecurrenceEditor";
 import { formButton, formInput } from "./ui/form-styles";
 
 const DATE_ZONES = calendarIanaZones();
+const DATE_ZONE_OPTIONS = DATE_ZONES.map((zone) => ({ value: zone, label: zone }));
 function editorTimeZone(event: CalendarEvent): string {
   if (event.start.kind === "zoned") {
     try {
@@ -242,6 +244,7 @@ function EventConfirmation({
   const validationId = useId();
   const [dateInput, setDateInput] = useState<string | null>(event.dateInput ?? null);
   const [timeZone, setTimeZone] = useState(editorTimeZone(event));
+  const zoneId = useId();
   const [recurrence, setRecurrence] = useState<EventRecurrence | null | undefined>(
     event.recurrence.length ? undefined : null,
   );
@@ -322,24 +325,23 @@ function EventConfirmation({
           />
         </label>
         <p className="text-sm">{t`Relative dates use the date of this message.`}</p>
-        <label className="block">
-          {t`Time zone`}
-          <select
-            className={formInput}
+        <div className="space-y-1">
+          <label htmlFor={zoneId} className="block">
+            {t`Time zone`}
+          </label>
+          <Select
+            id={zoneId}
+            variant="field"
+            aria-label={t`Time zone`}
             value={timeZone}
             disabled={result.waiting}
-            onChange={(e) => {
-              setTimeZone(e.target.value);
+            options={DATE_ZONE_OPTIONS}
+            onValueChange={(zone) => {
+              setTimeZone(zone);
               if (dateInput === null) setDateInput(event.start.value);
             }}
-          >
-            {DATE_ZONES.map((zone) => (
-              <option key={zone} value={zone}>
-                {zone}
-              </option>
-            ))}
-          </select>
-        </label>
+          />
+        </div>
         <EventRecurrenceEditor
           rule={recurrence}
           start={datePreview?.start ?? event.start}

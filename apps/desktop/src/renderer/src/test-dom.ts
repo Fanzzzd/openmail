@@ -9,6 +9,9 @@ export function testDom() {
   vi.stubGlobal("window", window);
   vi.stubGlobal("document", window.document);
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  // Base UI and Floating UI type-check nodes against these constructors.
+  for (const name of ["Node", "Element", "HTMLElement", "HTMLInputElement", "HTMLButtonElement"])
+    vi.stubGlobal(name, Reflect.get(window, name));
   const element = window.document.getElementById("root");
   if (!element) throw new Error("Missing test root");
   const root = createRoot(element);

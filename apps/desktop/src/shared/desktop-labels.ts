@@ -3,9 +3,6 @@ import { Schema } from "effect";
 /** Localized by the renderer's Lingui catalog, reused by native menus and notifications. */
 export const DesktopLabels = Schema.Struct({
   menuLabels: Schema.optionalKey(Schema.Record(Schema.String, Schema.String)),
-  spelling: Schema.optionalKey(
-    Schema.Struct({ add: Schema.String, check: Schema.String, noSuggestions: Schema.String }),
-  ),
   checkUpdates: Schema.String,
   updatesDisabled: Schema.String,
   updatesCurrent: Schema.String,

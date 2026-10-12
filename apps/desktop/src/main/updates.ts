@@ -4,6 +4,8 @@ import { Mailbox, isSignedMacApp } from "@openmail/core";
 import { Effect, Layer, Stream } from "effect";
 import { app, BrowserWindow } from "electron";
 import { resolve } from "node:path";
+import { nativeAsk } from "./native-fallback";
+import { askWindow, listeningWindow } from "./window-ui";
 
 /** Neither keychain access nor codesign delay the first window. */
 export const shown = Effect.callback<void>((resume) => {
@@ -91,7 +93,7 @@ export const UpdatesLive = Layer.effectDiscard(
   }),
 );
 
-/** Menu checks report a result without exposing updater errors or release credentials. */
+/** Menu checks report a result in the focused window, without exposing updater errors or release credentials. */
 export function manualUpdateCheck(
   mailbox: Mailbox["Service"],
   labels: import("../shared/desktop-labels").DesktopLabels,
@@ -107,7 +109,6 @@ export function manualUpdateCheck(
             });
           }).pipe(Effect.catchCause(() => Effect.succeed({ status: "error" } as const)))
         : ({ status: "disabled" } as const);
-    const { dialog } = yield* Effect.promise(() => import("electron"));
     const message =
       result.status === "disabled"
         ? labels.updatesDisabled
@@ -117,11 +118,23 @@ export function manualUpdateCheck(
             ? `${labels.updatesAvailable} ${result.version}`
             : labels.updatesFailed;
     yield* Effect.promise(() =>
-      dialog.showMessageBox({
-        type: result.status === "error" ? "error" : "info",
-        message,
-        buttons: [labels.ok],
-      }),
+      askWindow(
+        listeningWindow(),
+        (id) => ({
+          _tag: "UpdateResult",
+          id,
+          result:
+            result.status === "available"
+              ? { status: "available", version: result.version }
+              : { status: result.status },
+        }),
+        () =>
+          nativeAsk({
+            type: result.status === "error" ? "error" : "info",
+            message,
+            buttons: [labels.ok],
+          }).then(() => "accept" as const),
+      ),
     );
   });
 }

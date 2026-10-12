@@ -1,9 +1,10 @@
 import { useAtom, useAtomValue } from "@effect/atom-react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { Select } from "./ui/Select";
 import { AI_MODELS } from "@openmail/core/schema";
 import { AsyncResult } from "effect/reactivity";
 import { Effect } from "effect";
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import type { Account } from "../../../shared/api";
 import { MailClient, submitAiKey } from "../rpc";
 import { errorText, resultError } from "../errors";
@@ -15,6 +16,7 @@ const modelMutation = MailClient.mutation("SetAiModel");
 
 export function AiSettings({ accounts }: { accounts: readonly Account[] }) {
   const { t, i18n } = useLingui();
+  const modelId = useId();
   const settings = AsyncResult.getOrElse(useAtomValue(aiSettingsAtom), () => null);
   // Uncontrolled input: the key is never put in React state, atoms or preferences.
   const keyInput = useRef<HTMLInputElement>(null);
@@ -82,25 +84,19 @@ export function AiSettings({ accounts }: { accounts: readonly Account[] }) {
           MCP.
         </Trans>
       </p>
-      <label className="block">
-        <Trans>Model</Trans>{" "}
-        <select
+      <div className="flex items-center gap-3">
+        <label htmlFor={modelId}>
+          <Trans>Model</Trans>
+        </label>
+        <Select
+          id={modelId}
           aria-label={t`Model`}
           value={settings?.model ?? AI_MODELS[0]}
           disabled={modelResult.waiting}
-          onChange={(event) => {
-            const model = AI_MODELS.find((name) => name === event.target.value);
-            if (model) setModel({ payload: { model }, reactivityKeys: [Keys.ai] });
-          }}
-          className="rounded border border-black/10 bg-transparent p-1 dark:border-white/10"
-        >
-          {AI_MODELS.map((name) => (
-            <option key={name} value={name}>
-              {name}
-            </option>
-          ))}
-        </select>
-      </label>
+          options={AI_MODELS.map((name) => ({ value: name, label: name }))}
+          onValueChange={(model) => setModel({ payload: { model }, reactivityKeys: [Keys.ai] })}
+        />
+      </div>
       {accounts.map((account) => {
         const current = settings?.accounts.find((a) => a.accountId === account.id) ?? {
           accountId: account.id,

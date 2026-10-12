@@ -13,10 +13,13 @@ import {
   InterruptedRecoveryError,
   prepareDatabaseStartup,
 } from "@openmail/core";
-import { app, dialog } from "electron";
+import { app } from "electron";
 import { Logger, Schema } from "effect";
 import { join } from "node:path";
 import { configureWindowRecovery } from "./windows";
+import type { RecoveryPrompt } from "../shared/recovery";
+import { nativeAsk } from "./native-fallback";
+import { openRecoveryWindow, recoveryPrompt, type RecoveryDeps } from "./recovery-window";
 
 let diagnostics: ReturnType<typeof createLocalDiagnostics> | undefined;
 let crashed = false;
@@ -66,44 +69,72 @@ export const dismissCrashReport = () => {
   diagnostics?.acknowledge();
 };
 
+/** The native box is the fallback when the React recovery window cannot paint. */
+const nativeRecoveryPrompt = (prompt: RecoveryPrompt) =>
+  nativeAsk({
+    type: prompt.tone,
+    message: prompt.message,
+    detail: prompt.detail,
+    buttons: prompt.buttons,
+    defaultId: prompt.defaultId,
+    cancelId: prompt.cancelId,
+  });
+let openSurface: RecoveryDeps["open"] = openRecoveryWindow;
+/** Tests replace the window; production always opens renderer/recovery.html. */
+export const setRecoverySurface = (open: RecoveryDeps["open"]) => {
+  openSurface = open;
+};
+const ask = (prompt: Omit<RecoveryPrompt, "defaultId" | "cancelId"> & Partial<RecoveryPrompt>) =>
+  recoveryPrompt(
+    { defaultId: 0, cancelId: 0, ...prompt },
+    { open: openSurface, fallback: nativeRecoveryPrompt },
+  );
+type Labels = Awaited<ReturnType<typeof nativeRecoveryLabels>>;
+const resetFailure = (labels: Labels, error: unknown) =>
+  ask({
+    locale: labels.locale,
+    tone: "error",
+    message: labels.resetFailed,
+    detail:
+      error instanceof InterruptedRecoveryError
+        ? labels.interrupted(error.backups.join("\n"))
+        : error instanceof DatabaseInUseError
+          ? labels.inUse
+          : labels.resetFailedDetail,
+    buttons: [labels.quit],
+  });
+
 async function chooseRecovery(integrity: ReturnType<typeof checkLocalDatabase>) {
   const labels = await nativeRecoveryLabels();
-  const result = await dialog.showMessageBox({
-    type: "warning",
+  const response = await ask({
+    locale: labels.locale,
+    tone: "warning",
     message: integrity === "ok" ? labels.safeMode : labels.integrityFailed,
     detail: integrity === "ok" ? labels.crashDetail : labels.integrityDetail,
     buttons: [labels.continue, labels.reset, labels.quit],
     defaultId: 2,
     cancelId: 2,
+    destructiveId: 1,
   });
-  if (result.response === 2) {
+  if (response === 2) {
     diagnostics?.finish();
     app.exit(0);
     return false;
   }
-  if (result.response === 1) {
+  if (response === 1) {
     try {
       const reset = resetLocalCache(recoveryDirectory);
       if (reset.kind === "recovered")
-        await dialog.showMessageBox({
-          type: "info",
+        await ask({
+          locale: labels.locale,
+          tone: "info",
           message: labels.recovered,
           detail: labels.recoveredDetail(reset.backup, reset.copied, reset.skipped),
           buttons: [labels.continue],
         });
       localLog("cache-reset");
     } catch (error) {
-      await dialog.showMessageBox({
-        type: "error",
-        message: labels.resetFailed,
-        detail:
-          error instanceof DatabaseInUseError
-            ? labels.inUse
-            : error instanceof InterruptedRecoveryError
-              ? labels.interrupted(error.backups.join("\n"))
-              : labels.resetFailedDetail,
-        buttons: [labels.quit],
-      });
+      await resetFailure(labels, error);
       diagnostics?.finish();
       app.exit(1);
       return false;
@@ -122,18 +153,7 @@ export async function prepareReliability(directory: string) {
   try {
     prepareDatabaseStartup(directory);
   } catch (error) {
-    const labels = await nativeRecoveryLabels();
-    await dialog.showMessageBox({
-      type: "error",
-      message: labels.resetFailed,
-      detail:
-        error instanceof InterruptedRecoveryError
-          ? labels.interrupted(error.backups.join("\n"))
-          : error instanceof DatabaseInUseError
-            ? labels.inUse
-            : labels.resetFailedDetail,
-      buttons: [labels.quit],
-    });
+    await resetFailure(await nativeRecoveryLabels(), error);
     diagnostics.finish();
     app.exit(1);
     return false;

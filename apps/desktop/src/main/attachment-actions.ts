@@ -1,5 +1,5 @@
 import { attachmentImportKind } from "@openmail/core/schema";
-import { mkdir, stat, writeFile } from "node:fs/promises";
+import { mkdir, stat } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { Effect } from "effect";
@@ -15,7 +15,6 @@ import {
 } from "electron";
 import {
   DeviceError,
-  deviceErrorReason,
   deviceFailure,
   type AttachmentAction,
   type AttachmentActionResult,
@@ -25,10 +24,12 @@ import {
 import { attachmentTemp, type TempBatch } from "./attachment-temp";
 import { EXECUTABLE, launcherBlockedMessage, safeFilename } from "./attachment-filenames";
 import {
+  attachmentAppLabels,
   registeredAttachmentApps,
   openAttachmentWith,
-  chooseAttachmentApp,
 } from "./attachment-apps";
+import { createDownloads, type Downloads } from "./downloads";
+import type { AttachmentApp } from "../shared/downloads";
 import { quarantine } from "./file-quarantine";
 
 type Request = {
@@ -36,6 +37,7 @@ type Request = {
   paths: readonly (readonly number[])[];
   action: AttachmentAction;
   listId?: string;
+  application?: string;
 };
 type DragRequest = Pick<Request, "messageId" | "paths" | "listId">;
 type Prepared =
@@ -46,18 +48,14 @@ const prepared = new WeakMap<BrowserWindow, Map<string, Prepared>>();
 const slotOf = (request: { messageId: string; listId?: string }) =>
   request.listId ?? request.messageId;
 const countResult = (count: number): AttachmentActionResult => ({ count, failures: [] });
+const isBlocked = (file: { filename: string; mimeType: string }) =>
+  EXECUTABLE.test(safeFilename(file.filename)) || attachmentImportKind(file) !== null;
 const blocked = (parts: readonly { filename: string; mimeType?: string }[]) => {
-  const file = parts.find(
-    (part) =>
-      EXECUTABLE.test(safeFilename(part.filename)) ||
-      attachmentImportKind({ filename: part.filename, mimeType: part.mimeType ?? "" }) !== null,
+  const file = parts.find((part) =>
+    isBlocked({ filename: part.filename, mimeType: part.mimeType ?? "" }),
   );
   return file
-    ? Effect.fail(
-        new DeviceError({
-          message: launcherBlockedMessage(safeFilename(file.filename)),
-        }),
-      )
+    ? Effect.fail(new DeviceError({ message: launcherBlockedMessage(safeFilename(file.filename)) }))
     : Effect.void;
 };
 const resolve = Effect.fnUntraced(function* (m: Mailbox["Service"], request: DragRequest) {
@@ -143,11 +141,82 @@ export const prepareAttachmentDrag: (
   return yield* Effect.void;
 });
 
-const save = Effect.fnUntraced(function* (
+/** Downloads go to the attachment folder setting. "ask" is a legacy value that now means Downloads. */
+export const attachmentFolder: (
+  m: Pick<Mailbox["Service"], "prefs">,
+  downloadsPath: string,
+) => Effect.Effect<string, DeviceError> = Effect.fnUntraced(function* (
+  m: Pick<Mailbox["Service"], "prefs">,
+  downloadsPath: string,
+) {
+  const setting = (yield* m.prefs).attachmentSaveFolder;
+  const folder = setting?.kind === "custom" ? setting.path.trim() : downloadsPath;
+  if (!path.isAbsolute(folder))
+    return yield* new DeviceError({ message: "Choose an absolute attachment folder path" });
+  yield* Effect.tryPromise({ try: () => mkdir(folder, { recursive: true }), catch: deviceFailure });
+  return folder;
+});
+
+let downloads: Downloads | undefined;
+/** One list for the app, shared by every window's Downloads panel. */
+export const appDownloads = (m: Mailbox["Service"], run: (effect: Effect.Effect<void>) => void) =>
+  (downloads ??= createDownloads({
+    fetch: (source) => m.attachmentPart(source.messageId, source.path),
+    blocked: isBlocked,
+    quarantine,
+    openPath: (file) => shell.openPath(file),
+    showItem: (file) => shell.showItemInFolder(file),
+    run,
+  }));
+
+const pathKey = (value: readonly number[]) => value.join(".");
+/** More attachments than one message plausibly has; caps what one renderer call can queue. */
+const MAX_DOWNLOADS_PER_CALL = 500;
+/** Queues downloads with the names and sizes the reader shows, before any content arrives. */
+export const queueDownloads: (
   m: Mailbox["Service"],
+  list: Downloads,
+  request: Pick<Request, "messageId" | "paths">,
+  folder: string,
+) => Effect.Effect<number, DeviceError> = Effect.fnUntraced(function* (
+  m: Mailbox["Service"],
+  list: Downloads,
+  request: Pick<Request, "messageId" | "paths">,
+  folder: string,
+) {
+  if (request.paths.length > MAX_DOWNLOADS_PER_CALL)
+    return yield* new DeviceError({ message: "Too many attachments in one save" });
+  const listed = yield* m.readerAttachments(request.messageId).pipe(Effect.orElseSucceed(() => []));
+  return list.start(
+    request.paths.map((value) => {
+      const known = listed.find((file) => pathKey(file.path) === pathKey(value));
+      return {
+        messageId: request.messageId,
+        path: value,
+        filename: known?.filename ?? "attachment",
+        size: known?.size ?? 0,
+      };
+    }),
+    folder,
+  );
+});
+
+/**
+ * Save As: the OS folder picker is the only way the renderer can name a folder.
+ * The main process receives the path from the system dialog, so a compromised
+ * renderer cannot direct writes elsewhere. Plain Save never shows a dialog.
+ */
+export const saveAttachmentsTo: (
+  m: Mailbox["Service"],
+  list: Downloads,
   parent: BrowserWindow | null,
-  request: Request,
-): Effect.fn.Return<AttachmentActionResult, PerformError | DeviceError> {
+  request: Pick<Request, "messageId" | "paths">,
+) => Effect.Effect<number, DeviceError> = Effect.fnUntraced(function* (
+  m: Mailbox["Service"],
+  list: Downloads,
+  parent: BrowserWindow | null,
+  request: Pick<Request, "messageId" | "paths">,
+) {
   const options = {
     defaultPath: app.getPath("downloads"),
     properties: ["openDirectory", "createDirectory"] satisfies (
@@ -160,47 +229,39 @@ const save = Effect.fnUntraced(function* (
     catch: deviceFailure,
   });
   const folder = choice.filePaths[0];
-  if (choice.canceled || !folder) return countResult(0);
-  const resolved = yield* m.attachmentParts(request.messageId, request.paths);
-  const failures: { path: readonly number[]; filename: string; reason: string }[] = [];
-  let count = 0;
-  for (const entry of resolved) {
-    if (entry.kind === "failed") {
-      failures.push({
-        path: entry.path,
-        filename: safeFilename(entry.filename),
-        reason: deviceErrorReason(entry.error),
-      });
-      continue;
-    }
-    const filename = safeFilename(entry.content.filename);
-    const written = yield* Effect.tryPromise({
-      try: async () => {
-        await mkdir(folder, { recursive: true });
-        const ext = path.extname(filename);
-        const stem = filename.slice(0, filename.length - ext.length);
-        for (let n = 1; n <= 10000; n++) {
-          const target = path.join(folder, n === 1 ? filename : `${stem} (${n})${ext}`);
-          try {
-            await writeFile(target, entry.content.data, { flag: "wx", mode: 0o600 });
-            return target;
-          } catch (error) {
-            if (!(error instanceof Error) || !("code" in error) || error.code !== "EEXIST")
-              throw error;
-          }
-        }
-        throw new Error("Too many duplicate filenames");
-      },
-      catch: deviceFailure,
-    }).pipe(
-      Effect.flatMap((file) => quarantine(file).pipe(Effect.as(file))),
-      Effect.result,
-    );
-    if (written._tag === "Failure")
-      failures.push({ path: entry.path, filename, reason: written.failure.message });
-    else count++;
-  }
-  return { count, failures };
+  if (choice.canceled || !folder) return 0;
+  return yield* queueDownloads(m, list, request, folder);
+});
+
+/** The apps that can open one attachment. The file is written to a temporary folder and removed again. */
+export const attachmentApps: (
+  m: Mailbox["Service"],
+  request: { messageId: string; path: readonly number[] },
+) => Effect.Effect<AttachmentApp[], PerformError | DeviceError> = Effect.fnUntraced(function* (
+  m: Mailbox["Service"],
+  request: { messageId: string; path: readonly number[] },
+) {
+  if (process.platform !== "darwin")
+    return yield* new DeviceError({
+      message: "Choose one attachment on macOS to open with an application.",
+    });
+  const batch = yield* temporary(yield* resolve(m, { ...request, paths: [request.path] }));
+  return yield* Effect.gen(function* () {
+    const file = batch.files[0];
+    if (!file) return [];
+    const applications = yield* registeredAttachmentApps(file);
+    const labels = attachmentAppLabels(applications);
+    return applications.map((application, index) => ({
+      application,
+      label: labels[index] ?? application,
+    }));
+  }).pipe(
+    Effect.ensuring(
+      remove(batch).pipe(
+        Effect.catchCause((cause) => Effect.logWarning("Open With cleanup failed", cause)),
+      ),
+    ),
+  );
 });
 
 /** Only Save exports launchers. Open, preview, sharing, copy and drag all use
@@ -209,9 +270,23 @@ export const attachmentAction: (
   m: Mailbox["Service"],
   parent: BrowserWindow | null,
   request: Request,
+  list: Downloads,
 ) => Effect.Effect<AttachmentActionResult, PerformError | DeviceError> = Effect.fnUntraced(
-  function* (m: Mailbox["Service"], parent: BrowserWindow | null, request: Request) {
-    if (request.action === "save") return yield* save(m, parent, request);
+  function* (
+    m: Mailbox["Service"],
+    parent: BrowserWindow | null,
+    request: Request,
+    list: Downloads,
+  ) {
+    if (request.action === "save")
+      return countResult(
+        yield* queueDownloads(
+          m,
+          list,
+          request,
+          yield* attachmentFolder(m, app.getPath("downloads")),
+        ),
+      );
     if (request.action === "drag") {
       const cached = parent && prepared.get(parent)?.get(slotOf(request));
       if (
@@ -266,13 +341,12 @@ export const attachmentAction: (
             });
           const file = files[0];
           if (!file) return countResult(0);
-          const applications = yield* registeredAttachmentApps(file);
-          if (!applications.length)
+          const application = request.application;
+          // The renderer names an app from AttachmentApps; it must still be registered for this file.
+          if (!application || !(yield* registeredAttachmentApps(file)).includes(application))
             return yield* new DeviceError({
               message: "No application is registered for this file type.",
             });
-          const application = yield* chooseAttachmentApp(applications, parent);
-          if (!application) return countResult(0);
           if (parent?.isDestroyed())
             return yield* new DeviceError({ message: "Attachment window is closed" });
           yield* openAttachmentWith(application, file);

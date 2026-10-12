@@ -59,6 +59,10 @@ msgstr "{0} 秒"
 msgid "{accountCount, plural, one {# account} other {# accounts}}, {total} unread"
 msgstr "{accountCount, plural, other {#個のアカウント}}, 未開封{total}件"
 
+#: src/renderer/src/components/Downloads.tsx
+msgid "{active, plural, one {Downloads (# in progress)} other {Downloads (# in progress)}}"
+msgstr "{active, plural, other {ダウンロード（#件進行中）}}"
+
 #: src/renderer/src/App.tsx
 msgid "{baseTitle}: {user}"
 msgstr "{baseTitle}: {user}"
@@ -96,8 +100,8 @@ msgid "{count, plural, one {Blocked # tracker} other {Blocked # trackers}}"
 msgstr "{count, plural, other {#個のトラッカーをブロック}}"
 
 #: src/renderer/src/components/Attachments.tsx
-msgid "{count, plural, one {Saved # attachment} other {Saved # attachments}}"
-msgstr "{count, plural, other {#個の添付ファイルを保存}}"
+msgid "{count, plural, one {Saving # attachment to your attachment folder} other {Saving # attachments to your attachment folder}}"
+msgstr "{count, plural, other {#件の添付ファイルを添付ファイルフォルダに保存しています}}"
 
 #: src/renderer/src/components/ContactSettings.tsx
 msgid "{count} cached contacts"
@@ -166,6 +170,10 @@ msgstr "{op} {count, plural, other {#件のスレッド}}"
 #: src/renderer/src/components/MessageBody.tsx
 msgid "{pixels, plural, one {# tracking pixel} other {# tracking pixels}}"
 msgstr "{pixels, plural, other {#個のトラッキングピクセル}}"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "{received} of {size}"
+msgstr "{received} / {size}"
 
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "{seconds, plural, one {# second} other {# seconds}}"
@@ -380,7 +388,7 @@ msgstr "カレンダーに追加"
 msgid "Add to Contacts"
 msgstr "連絡先に追加"
 
-#: src/renderer/src/state/desktop.ts
+#: src/renderer/src/components/WindowUi.tsx
 msgid "Add to Dictionary"
 msgstr "辞書に追加"
 
@@ -772,8 +780,8 @@ msgid "Attachment file name"
 msgstr "添付ファイル名"
 
 #: src/renderer/src/components/ReadingSettings.tsx
-msgid "Attachment save folder"
-msgstr "添付ファイルの保存先フォルダ"
+msgid "Attachment folder"
+msgstr "添付ファイルフォルダ"
 
 #: src/renderer/src/components/SearchSnippet.tsx
 msgctxt "search match source"
@@ -793,6 +801,10 @@ msgstr "添付ファイルが 30 MB の作成制限を超えています。"
 #: src/renderer/src/errors.ts
 msgid "Attachments rejected before sending"
 msgstr "送信前の添付ファイルの確認に失敗しました"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "Attachments you save appear here."
+msgstr "保存した添付ファイルがここに表示されます。"
 
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Attendees"
@@ -1009,6 +1021,7 @@ msgstr "現在メールサーバーに接続できません。"
 #: src/renderer/src/components/ProfileEditor.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/ui/Confirm.tsx
 #: src/renderer/src/components/UnsubscribeButton.tsx
 #: src/renderer/src/compose/use-compose-editor.ts
 #: src/renderer/src/state/desktop.ts
@@ -1098,7 +1111,7 @@ msgid "Check grammar on this Mac"
 msgstr "このMacで文法をチェック"
 
 #: src/renderer/src/components/SpellcheckSettings.tsx
-#: src/renderer/src/state/desktop.ts
+#: src/renderer/src/components/WindowUi.tsx
 msgid "Check spelling while typing"
 msgstr "入力中にスペルをチェック"
 
@@ -1194,6 +1207,10 @@ msgstr "電子メールプロバイダーを選択します。"
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Choose…"
 msgstr "選択…"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "Clear"
+msgstr "消去"
 
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Clear account cache"
@@ -1460,6 +1477,7 @@ msgstr "フォルダにコピーしました"
 #: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/MultiOrganization.tsx
 #: src/renderer/src/components/RawMessage.tsx
+#: src/renderer/src/components/WindowUi.tsx
 msgid "Copy"
 msgstr "コピー"
 
@@ -1504,6 +1522,7 @@ msgstr "ローカル署名にコピー"
 msgid "Copy webmail link"
 msgstr "ウェブメールのリンクをコピー"
 
+#: src/renderer/src/components/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Could not check for updates. Try again later."
 msgstr "アップデートを確認できませんでした。後でもう一度試してください。"
@@ -1622,6 +1641,14 @@ msgstr "削除できませんでした: {reason}"
 msgid "Couldn't discard: {reason}"
 msgstr "破棄できませんでした: {reason}"
 
+#: src/renderer/src/components/Downloads.tsx
+msgid "Couldn't download {name}"
+msgstr "{name} をダウンロードできませんでした"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "Couldn't get the attachment"
+msgstr "添付ファイルを取得できませんでした"
+
 #: src/renderer/src/components/Attachments.tsx
 msgid "Couldn't get the attachment: {reason}"
 msgstr "添付ファイルを取得できませんでした: {reason}"
@@ -1678,6 +1705,10 @@ msgstr "送信できませんでした: {reason}"
 #: src/renderer/src/components/DraftSyncRecovery.tsx
 msgid "Couldn't sync"
 msgstr "同期できませんでした"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "Couldn't write to the attachment folder"
+msgstr "添付ファイルフォルダに書き込めませんでした"
 
 #: src/renderer/src/components/SyncHealth.tsx
 msgid "Counts compare messages. Matching counts do not verify message contents. Cache windows retain message text; headers remain cached."
@@ -1753,6 +1784,10 @@ msgstr "カスタムアイコン"
 #: src/renderer/src/components/SnoozeDialog.tsx
 msgid "Custom time"
 msgstr "カスタム時間"
+
+#: src/renderer/src/components/WindowUi.tsx
+msgid "Cut"
+msgstr "カット"
 
 #: src/renderer/src/components/EventRecurrenceEditor.tsx
 msgid "Daily"
@@ -1991,9 +2026,17 @@ msgstr "オンデバイス モデルをダウンロード、約 226 MB"
 msgid "Download update"
 msgstr "アップデートをダウンロード"
 
+#: src/renderer/src/components/Downloads.tsx
+msgid "Downloaded {name}"
+msgstr "{name} をダウンロードしました"
+
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "Downloaded updates install when you quit, after pending drafts are checked."
 msgstr "ダウンロード済みのアップデートは、未処理の下書きを確認した後、アプリの終了時にインストールされます。"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "Downloading {name}"
+msgstr "{name} をダウンロード中"
 
 #. placeholder {0}: i18n.number(Math.floor((progress.models.bytes / progress.models.total) * 100))
 #: src/renderer/src/components/IndexingSettings.tsx
@@ -2009,6 +2052,7 @@ msgstr "アップデート {0} をダウンロード中…"
 msgid "Downloading update {version}…"
 msgstr "アップデート {version} をダウンロード中…"
 
+#: src/renderer/src/components/Downloads.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Downloads"
 msgstr "ダウンロード"
@@ -2358,6 +2402,10 @@ msgstr "本文内を検索"
 msgid "Find in message"
 msgstr "メッセージ内で検索"
 
+#: src/renderer/src/components/OpenWithMenu.tsx
+msgid "Finding apps…"
+msgstr "アプリを検索中…"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/OptionalServices.tsx
 #: src/renderer/src/components/Settings.tsx
@@ -2561,6 +2609,10 @@ msgstr "生成が完了しました"
 #: src/renderer/src/components/Settings.tsx
 msgid "Gestures and toolbar"
 msgstr "ジェスチャーとツールバー"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "Getting the attachment…"
+msgstr "添付ファイルを取得中…"
 
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "GitHub access token"
@@ -3442,6 +3494,7 @@ msgstr "指定した人からのメッセージ"
 msgid "Messages in a folder"
 msgstr "指定したフォルダ内のメッセージ"
 
+#: src/renderer/src/components/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Messages in the undo window will remain drafts. A send already in progress may finish."
 msgstr "送信取り消しの待機時間内のメッセージは下書きとして保持されます。すでに実行中の送信は完了する場合があります。"
@@ -3709,6 +3762,10 @@ msgstr "上に移動"
 msgid "Moved"
 msgstr "移動しました"
 
+#: src/renderer/src/components/Downloads.tsx
+msgid "Moved or deleted"
+msgstr "移動または削除されました"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/ThreadWindow.tsx
 msgid "Moved to Focused"
@@ -3878,6 +3935,10 @@ msgstr "まだアカウントがありません"
 msgid "No activity yet."
 msgstr "まだ活動はありません。"
 
+#: src/renderer/src/components/OpenWithMenu.tsx
+msgid "No app can open this file"
+msgstr "このファイルを開けるアプリがありません"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "No copy"
 msgstr "コピーしない"
@@ -3890,6 +3951,10 @@ msgstr "現在のラベルは適用されません。ゴミ箱に移動します
 #: src/renderer/src/components/DraftOrganization.tsx
 msgid "No custom labels"
 msgstr "カスタムラベルなし"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "No downloads"
+msgstr "ダウンロードはありません"
 
 #: src/renderer/src/components/MessageList.tsx
 msgid "No drafts"
@@ -3957,7 +4022,7 @@ msgstr "返信不要"
 msgid "No starred messages. Star a message to find it here."
 msgstr "スター付きのメッセージはありません。メッセージにスターを付けるとここに表示されます。"
 
-#: src/renderer/src/state/desktop.ts
+#: src/renderer/src/components/WindowUi.tsx
 msgid "No suggestions"
 msgstr "候補がありません"
 
@@ -4048,6 +4113,7 @@ msgstr "回数"
 msgid "Off"
 msgstr "オフ"
 
+#: src/renderer/src/components/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "OK"
 msgstr "OK"
@@ -4117,8 +4183,13 @@ msgid "Only to me"
 msgstr "自分のみに送信"
 
 #: src/renderer/src/components/Attachments.tsx
+#: src/renderer/src/components/Downloads.tsx
 msgid "Open"
 msgstr "開く"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "Open {name}"
+msgstr "{name} を開く"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Open attachments from"
@@ -4152,6 +4223,10 @@ msgstr "Outlook で開く"
 msgid "Open in web mail"
 msgstr "Webメールで開く"
 
+#: src/renderer/src/components/Downloads.tsx
+msgid "Open it from Finder"
+msgstr "Finder から開いてください"
+
 #: src/renderer/src/components/LinkConfirmDialog.tsx
 msgid "Open link"
 msgstr "リンクを開く"
@@ -4180,14 +4255,15 @@ msgstr "返信する前にカレンダーでこの招待状を開いて追加し
 msgid "Open this link?"
 msgstr "このリンクを開きますか？"
 
-#: src/renderer/src/components/Attachments.tsx
-msgid "Open With…"
-msgstr "このアプリケーションで開く…"
+#: src/renderer/src/components/OpenWithMenu.tsx
+msgid "Open With"
+msgstr "このアプリケーションで開く"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "OpenMail is the default email app"
 msgstr "OpenMail はデフォルトの電子メール アプリです"
 
+#: src/renderer/src/components/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "OpenMail is up to date."
 msgstr "OpenMail は最新です。"
@@ -4369,6 +4445,10 @@ msgstr "一部のみ配信"
 msgid "Password"
 msgstr "パスワード"
 
+#: src/renderer/src/components/WindowUi.tsx
+msgid "Paste"
+msgstr "ペースト"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Paste and match style"
@@ -4549,10 +4629,12 @@ msgid "Quick Look"
 msgstr "クイックルック"
 
 #: src/main/native-i18n.ts
+#: src/renderer/src/components/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Quit"
 msgstr "終了"
 
+#: src/renderer/src/components/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Quit with messages waiting to send?"
 msgstr "メッセージの送信を待機している状態で終了しますか?"
@@ -4689,6 +4771,10 @@ msgstr "{0} を削除"
 msgid "Remove {email}?"
 msgstr "{email} を削除しますか?"
 
+#: src/renderer/src/components/Downloads.tsx
+msgid "Remove {name} from list"
+msgstr "{name} をリストから削除"
+
 #: src/renderer/src/components/RecipientField.tsx
 msgid "Remove {text}"
 msgstr "{text} を削除"
@@ -4715,6 +4801,10 @@ msgstr "現在のラベルを削除"
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Remove favorite"
 msgstr "お気に入りを削除"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "Remove from list"
+msgstr "リストから削除"
 
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Remove from recent searches"
@@ -4941,10 +5031,15 @@ msgstr "同期を再開する"
 msgid "Retention windows take precedence. Starred messages, retained message texts, drafts and outbox messages are kept even when the limit is exceeded. Zero disables the budget."
 msgstr "保存期間を優先します。上限を超えても、スター付きメール、保存期間内のメッセージ本文、下書き、送信トレイのメールは保持します。ゼロにすると容量制限を無効にします。"
 
+#: src/renderer/src/components/Downloads.tsx
 #: src/renderer/src/components/DraftSyncRecovery.tsx
 #: src/renderer/src/components/MessageBodyShell.tsx
 msgid "Retry"
 msgstr "再試行"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "Retry {name}"
+msgstr "{name} を再試行"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Revert"
@@ -5045,8 +5140,8 @@ msgid "Save {0}"
 msgstr "{0} を保存"
 
 #: src/renderer/src/components/Attachments.tsx
-msgid "Save all…"
-msgstr "すべて保存…"
+msgid "Save all"
+msgstr "すべて保存"
 
 #: src/renderer/src/errors.ts
 msgid "Save an Anthropic API key in AI settings."
@@ -5080,8 +5175,12 @@ msgid "Save rule"
 msgstr "ルールの保存"
 
 #: src/renderer/src/components/Attachments.tsx
-msgid "Save selected…"
-msgstr "選択したものを保存…"
+msgid "Save selected"
+msgstr "選択したものを保存"
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Save selected to…"
+msgstr "選択したものを保存先を指定して保存…"
 
 #: src/renderer/src/components/FailedOpNotice.tsx
 msgid "Save sent copy"
@@ -5095,23 +5194,23 @@ msgstr "閉じる前にこの下書きを保存しますか?"
 msgid "Save this message as a template…"
 msgstr "このメッセージをテンプレートとして保存します…"
 
+#: src/renderer/src/components/Attachments.tsx
+msgid "Save to attachment folder"
+msgstr "添付ファイルフォルダに保存"
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Save To…"
+msgstr "保存先を指定…"
+
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "Save token"
 msgstr "トークンを保存"
-
-#: src/renderer/src/components/Attachments.tsx
-msgid "Save…"
-msgstr "保存…"
 
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/SignatureSettings.tsx
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Saved"
 msgstr "保存しました"
-
-#: src/renderer/src/components/Attachments.tsx
-msgid "Saved {count} attachments. Couldn't save: {names}"
-msgstr "{count} 件の添付ファイルを保存しました。保存できませんでした: {names}"
 
 #: src/renderer/src/components/reader-actions.ts
 msgid "Saved as EML"
@@ -5208,6 +5307,7 @@ msgstr "メッセージを選択してください"
 msgid "Select accounts allowed in Settings > AI Access. The assistant searches mail and proposes drafts, labels or archive. You approve changes in AI suggestions."
 msgstr "「設定」>「AIアクセス」で許可するアカウントを選択してください。アシスタントはメールを検索し、下書き、ラベル、アーカイブを提案します。「AIによる提案」で変更を承認します。"
 
+#: src/renderer/src/components/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Select all"
 msgstr "すべて選択"
@@ -5231,6 +5331,7 @@ msgstr "セマンティック検索は使用できません。全文検索は引
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/compose/use-compose-delivery.ts
 #: src/renderer/src/shortcut-names.ts
 msgid "Send"
 msgstr "送信"
@@ -5390,6 +5491,10 @@ msgstr "より短く"
 msgid "Show"
 msgstr "表示"
 
+#: src/renderer/src/components/Downloads.tsx
+msgid "Show {name} in Finder"
+msgstr "{name} を Finder に表示"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Show account names in unified folders"
 msgstr "統合フォルダ内のアカウント名を表示する"
@@ -5426,6 +5531,10 @@ msgstr "未開封の場合に表示"
 #: src/renderer/src/components/MessageList.tsx
 msgid "Show important messages"
 msgstr "重要なメッセージを表示する"
+
+#: src/renderer/src/components/Downloads.tsx
+msgid "Show in Finder"
+msgstr "Finder に表示"
 
 #: src/renderer/src/state/desktop.ts
 msgid "Show Inbox"
@@ -5862,6 +5971,10 @@ msgstr "テンプレート…"
 msgid "Tentative"
 msgstr "仮承諾"
 
+#: src/renderer/src/components/WindowUi.tsx
+msgid "Text actions"
+msgstr "テキストの操作"
+
 #: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Text color"
 msgstr "文字の色"
@@ -5905,6 +6018,10 @@ msgstr "フィルターはサーバー上の今後のメールに適用されま
 #: src/renderer/src/components/MailStatusNotice.tsx
 msgid "The keychain is locked. Unlock your computer and sync resumes on its own."
 msgstr "キーチェーンがロックされています。コンピュータのロックを解除すると、同期は自動的に再開します。"
+
+#: src/renderer/src/compose/use-compose-delivery.ts
+msgid "The last attempt may have reached the server. Sending again can deliver a second copy."
+msgstr "前回の試行はサーバに届いた可能性があります。もう一度送信すると、2通目が届くことがあります。"
 
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "The limit includes the database, attachments, WAL and recovery copies. Protected content may exceed it."
@@ -6343,6 +6460,7 @@ msgid "Update {0} is ready. It will install when you quit."
 msgstr "アップデート {0} の準備ができました。アプリの終了時にインストールされます。"
 
 #: src/renderer/src/components/UpdateNotice.tsx
+#: src/renderer/src/components/WindowUi.tsx
 msgid "Update {version} is available."
 msgstr "アップデート {version} が利用可能です。"
 
@@ -6362,6 +6480,7 @@ msgstr "アップデートチャネル"
 msgid "Update check or download failed. Try again."
 msgstr "アップデートの確認またはダウンロードに失敗しました。もう一度お試しください。"
 
+#: src/renderer/src/components/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Update checks require a signed, installed macOS app and a saved GitHub access token."
 msgstr "更新チェックには、署名されインストールされた macOS アプリと保存された GitHub アクセス トークンが必要です。"
@@ -6530,6 +6649,10 @@ msgstr "作成の指示"
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Writing mode"
 msgstr "作成モード"
+
+#: src/renderer/src/components/WindowUi.tsx
+msgid "Writing Tools and Services…"
+msgstr "作文ツールとサービス…"
 
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Year"
