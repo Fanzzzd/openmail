@@ -162,7 +162,15 @@ const searchMatchFields = {
   highlights: Schema.Array(Schema.Struct({ start: Schema.Int, end: Schema.Int })),
 };
 export const SearchMatch = Schema.Union([
-  Schema.Struct({ ...searchMatchFields, source: Schema.Literals(["body", "subject"]) }),
+  /** `sender` snippets are the sender's name and address. */
+  Schema.Struct({ ...searchMatchFields, source: Schema.Literals(["body", "subject", "sender"]) }),
+  /** The query matched an attachment's file name; the snippet is that name. */
+  Schema.Struct({
+    ...searchMatchFields,
+    source: Schema.Literal("filename"),
+    attachmentName: Schema.String,
+    attachmentIndex: Schema.Int,
+  }),
   Schema.Struct({
     ...searchMatchFields,
     source: Schema.Literal("attachment"),
@@ -184,6 +192,8 @@ export const ThreadSummary = Schema.Struct({
   participants: Schema.Array(Address),
   derivedMatches: Schema.optionalKey(Schema.Array(DerivedChunk)),
   searchMatches: Schema.optionalKey(Schema.Array(SearchMatch)),
+  /** Only on-device semantic ranking found it: no query word matched, so nothing is highlighted. */
+  related: Schema.optionalKey(Schema.Boolean),
 });
 export type ThreadSummary = typeof ThreadSummary.Type;
 

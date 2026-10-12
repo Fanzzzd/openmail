@@ -374,6 +374,12 @@ it.effect("three-way RRF keeps an exact hit above a lone vector candidate", () =
       const others = yield* store.listThreads({ messageIds: [`${account.id}/m`] });
       const merged = semanticRankFusion(fts, others, []);
       assert.strictEqual(merged[0]?.id, `${account.id}/other`);
+      // A vector-only candidate has no query words to highlight.
+      assert.strictEqual(merged[0]?.related, undefined);
+      assert.ok(merged[0]?.searchMatches?.length);
+      const related = merged.find((row) => row.id === `${account.id}/m`);
+      assert.strictEqual(related?.related, true);
+      assert.strictEqual(related?.searchMatches, undefined);
     }),
   ),
 );

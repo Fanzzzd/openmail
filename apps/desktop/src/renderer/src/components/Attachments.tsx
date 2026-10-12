@@ -8,7 +8,7 @@ import {
   type EmbeddedMessage,
   type ReaderAttachment,
 } from "@openmail/core/schema";
-import { attachmentMatches, SearchSnippet } from "./SearchSnippet";
+import { attachmentMatches, MatchedText, SearchSnippet } from "./SearchSnippet";
 import { AttachmentImportDialog } from "./AttachmentImportDialog";
 import { constVoid } from "effect/Function";
 import { plural } from "@lingui/core/macro";
@@ -287,12 +287,13 @@ export function AttachmentList({
       <div className="flex flex-wrap items-center gap-2">
         {files.map((file) => {
           const Icon = iconFor(file.mimeType, file.filename);
-          const hit = matches.find(
-            (match) =>
-              match.source === "attachment" &&
-              match.attachmentIndex === file.path[0] &&
-              file.path.length === 1,
-          );
+          // The file's name or its extracted text matched the search.
+          const atFile = (match: SearchMatch) =>
+            (match.source === "attachment" || match.source === "filename") &&
+            match.attachmentIndex === file.path[0] &&
+            file.path.length === 1;
+          const hit = matches.find(atFile);
+          const nameHit = matches.find((match) => match.source === "filename" && atFile(match));
           return (
             <span
               key={pathKey(file.path)}
@@ -327,7 +328,17 @@ export function AttachmentList({
                 className="flex h-full min-w-0 items-center gap-1.5 px-2 hover:bg-black/[0.04] dark:hover:bg-white/5"
               >
                 <Icon className="size-4 shrink-0 text-a11y-muted" />
-                <span className="min-w-0 truncate">{file.filename}</span>
+                <span className="min-w-0 truncate">
+                  <MatchedText text={file.filename} match={nameHit} />
+                </span>
+                {hit && (
+                  <span className="sr-only">
+                    {t({
+                      message: "Matches the search",
+                      comment: "Announced after an attachment name whose name or text matched.",
+                    })}
+                  </span>
+                )}
                 <span className="shrink-0 text-a11y-muted">
                   {formatBytes(file.size, i18n.locale)}
                 </span>

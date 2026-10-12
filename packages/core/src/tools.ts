@@ -268,7 +268,7 @@ const ListThreads = readOnly(
 const Search = readOnly(
   mailTool("search", {
     description:
-      "Search mail with Gmail-style operators (from:, to:, subject:, after:, before:, is:unread, has:attachment, label:, in:attachment). Local search may include opted-in on-device text/image ranking and abbreviated OCR/PDF derivedMatches with message ids and attachment/page/region provenance. searchMatches contains visible snippets, highlight ranges, source (body, subject or attachment), and attachment names/indexes. No binary data or model download. Set server true explicitly to fetch provider search results into the local cache; ignored and errors report unsupported operators and account failures. Up to 200 ranked candidates can be paged with next_cursor on an unchanged cache. truncated means more provider/candidate hits may exist. MCP reads require per-account AI consent and enabled accounts. Mail-derived fields are inside untrusted_mail with a notice.",
+      "Search mail with Gmail-style operators (from:, to:, subject:, after:, before:, is:unread, has:attachment, label:, in:attachment). Local search may include opted-in on-device text/image ranking and abbreviated OCR/PDF derivedMatches with message ids and attachment/page/region provenance. searchMatches contains visible snippets, highlight ranges, source (body, subject, sender, filename or attachment text), and attachment names/indexes. related marks results found only by on-device semantic ranking, without highlights. No binary data or model download. Set server true explicitly to fetch provider search results into the local cache; ignored and errors report unsupported operators and account failures. Up to 200 ranked candidates can be paged with next_cursor on an unchanged cache. truncated means more provider/candidate hits may exist. MCP reads require per-account AI consent and enabled accounts. Mail-derived fields are inside untrusted_mail with a notice.",
     parameters: Schema.Struct({
       query: Schema.String.check(Schema.isMinLength(1), Schema.isMaxLength(4096)).annotate({
         description: "Words and Gmail search operators.",
@@ -796,7 +796,7 @@ const compactThread = (row: ThreadSummary): ThreadSummary => ({
         searchMatches: row.searchMatches
           .slice(0, 3)
           .map((match) =>
-            match.source === "attachment"
+            match.source === "attachment" || match.source === "filename"
               ? { ...match, attachmentName: shortText(match.attachmentName) }
               : match,
           ),

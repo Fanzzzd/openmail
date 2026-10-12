@@ -13,6 +13,7 @@ import type { ConnectInput as ConnectInputSchema } from "../../../shared/rpc";
 import { MailClient } from "../rpc";
 import { Keys, MAIL_KEYS } from "./keys";
 import { decideProposal, reauthAccount, saveDraft, withMail } from "./mail";
+import { recentSearches } from "../recent-searches";
 
 type ConnectInput = typeof ConnectInputSchema.Type;
 
@@ -75,7 +76,11 @@ export const authorizePermanentDeleteAtom = Atom.family((accountId: string) =>
 
 export const removeAccountAtom = Atom.family((accountId: string) =>
   MailClient.runtime.fn(() =>
-    withMail((call) => call("RemoveAccount", { accountId })).pipe(Reactivity.mutation(MAIL_KEYS)),
+    withMail((call) => call("RemoveAccount", { accountId })).pipe(
+      // Recent searches can name the removed account's people; they go with it.
+      Effect.tap(() => Effect.sync(() => recentSearches.clear())),
+      Reactivity.mutation(MAIL_KEYS),
+    ),
   ),
 );
 

@@ -173,6 +173,18 @@ it.effect(
         ["search AROUND 3", "alpha AROUND 3 beta", 475],
       ] as const)
         yield* measure(name, budget, store.listThreads({ search, limit: 50 }));
+      // The search field looks people up from the third typed character, as in "per".
+      for (const [name, query] of [
+        ["people suggestion prefix", "per"],
+        ["people suggestion name", "person42"],
+      ] as const)
+        yield* measure(
+          name,
+          30,
+          store
+            .suggestContacts(query, 2)
+            .pipe(Effect.tap((rows) => Effect.sync(() => assert.strictEqual(rows.length, 2)))),
+        );
       yield* measure(
         "search mixed body+OCR 200",
         100,

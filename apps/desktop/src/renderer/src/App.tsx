@@ -59,6 +59,7 @@ import {
   alertPrimary,
   Drawer,
 } from "./components/ui/Dialog";
+import { recentSearches } from "./recent-searches";
 import { SearchField } from "./components/ui/SearchField";
 import { UndoHistory } from "./components/UndoHistory";
 import { messageMissing, causeText } from "./errors";
@@ -575,6 +576,8 @@ export function App({ composeId }: { composeId?: string }) {
       }}
       onSelect={(id, modifiers) => {
         if (threads.loading) return;
+        // Opening a result keeps its search in Recent.
+        if (search) recentSearches.add(search);
         if (view.mailbox !== "drafts") {
           navigation.selectRow(id, modifiers);
           if (!modifiers.toggle && !modifiers.range) paneNav.openReader();

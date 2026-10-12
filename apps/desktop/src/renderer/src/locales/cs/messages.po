@@ -83,6 +83,10 @@ msgstr "{count, plural, one {# změnu se nepodařilo uložit} few {# změny se n
 msgid "{count, plural, one {# message had rejected recipients} other {# messages had rejected recipients}}"
 msgstr "{count, plural, one {# zpráva měla odmítnuté příjemce} few {# zprávy měly odmítnuté příjemce} other {# zpráv mělo odmítnuté příjemce}}"
 
+#: src/renderer/src/components/SearchHitBar.tsx
+msgid "{count, plural, one {# search match} other {# search matches}}"
+msgstr "{count, plural, one {# shoda s hledáním} few {# shody s hledáním} many {# shody s hledáním} other {# shod s hledáním}}"
+
 #: src/renderer/src/components/FailedOpNotice.tsx
 msgid "{count, plural, one {# sent message is missing from Sent} other {# sent messages are missing from Sent}}"
 msgstr "{count, plural, one {# odeslaná zpráva chybí v odeslané poště} few {# odeslané zprávy chybí v odeslané poště} other {# odeslaných zpráv chybí v odeslané poště}}"
@@ -763,9 +767,18 @@ msgstr "Limit mezipaměti příloh"
 msgid "Attachment exception"
 msgstr "Výjimka pro přílohy"
 
+#: src/renderer/src/search-suggestions.ts
+msgid "Attachment file name"
+msgstr "Název souboru přílohy"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Attachment save folder"
 msgstr "Složka pro ukládání příloh"
+
+#: src/renderer/src/components/SearchSnippet.tsx
+msgctxt "search match source"
+msgid "Attachment text"
+msgstr "Text přílohy"
 
 #: src/renderer/src/components/CacheSettings.tsx
 #: src/renderer/src/components/MessageList.tsx
@@ -1194,6 +1207,10 @@ msgstr "Vymazat všechny mezipaměti"
 #: src/renderer/src/shortcut-names.ts
 msgid "Clear formatting"
 msgstr "Odstranit formátování"
+
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Clear recent searches"
+msgstr "Vymazat nedávná hledání"
 
 #: src/renderer/src/components/MessageList.tsx
 msgid "Clear search"
@@ -1764,6 +1781,10 @@ msgstr "Datum"
 msgid "Date is ambiguous. Enter an explicit date and time"
 msgstr "Datum je nejednoznačné. Zadejte přesné datum a čas"
 
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Dates"
+msgstr "Data"
+
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Day"
 msgstr "Den"
@@ -2308,6 +2329,11 @@ msgstr "Pátý"
 msgid "File"
 msgstr "Soubor"
 
+#: src/renderer/src/components/SearchSnippet.tsx
+msgctxt "search match source"
+msgid "File name"
+msgstr "Název souboru"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Fill template variables"
 msgstr "Vyplňte proměnné šablony"
@@ -2315,6 +2341,10 @@ msgstr "Vyplňte proměnné šablony"
 #: src/renderer/src/components/MessageList.tsx
 msgid "Filter"
 msgstr "Filtr"
+
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Filters"
+msgstr "Filtry"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Find and replace"
@@ -2720,6 +2750,10 @@ msgstr "Podmínka důležitosti"
 msgid "Important"
 msgstr "Důležité"
 
+#: src/renderer/src/search-suggestions.ts
+msgid "Important messages"
+msgstr "Důležité zprávy"
+
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "In “{elsewhere}”"
 msgstr "V „{elsewhere}“"
@@ -2947,6 +2981,7 @@ msgstr "Štítek: {name}"
 #: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/Sidebar.tsx
 #: src/renderer/src/components/ThreadActions.tsx
+#: src/renderer/src/components/ui/SearchField.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Labels"
 msgstr "Štítky"
@@ -3268,6 +3303,11 @@ msgstr "Podle vzhledu aplikace"
 msgid "Matched image region"
 msgstr "Oblast shodného obrázku"
 
+#. Announced after an attachment name whose name or text matched.
+#: src/renderer/src/components/Attachments.tsx
+msgid "Matches the search"
+msgstr "Odpovídá hledání"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Matching times keep that weekday active all day. Overnight periods continue into the next day. Unchecked days stay muted except for overnight periods from the previous day. Repeated daylight-saving times use the same schedule; skipped times are passed over."
 msgstr "Shodné časy udrží tento pracovní den aktivní po celý den. Přenocování pokračuje do dalšího dne. Nezaškrtnuté dny zůstanou bez zvuku s výjimkou období přes noc z předchozího dne. Opakovaný letní čas používá stejný plán; přeskočené časy jsou překročeny."
@@ -3326,8 +3366,10 @@ msgstr "Pozadí zprávy"
 
 #. Email message text, never an anatomical body.
 #. Email message text, never an anatomical body.
+#. Email message text, never an anatomical body.
 #: src/renderer/src/components/MediaMatches.tsx
 #: src/renderer/src/components/MessageList.tsx
+#: src/renderer/src/components/SearchSnippet.tsx
 msgctxt "message text"
 msgid "Message body"
 msgstr "Text zprávy"
@@ -3380,6 +3422,26 @@ msgstr "Text zprávy se nepodařilo obnovit. Zobrazuje se verze z mezipaměti."
 msgid "Message updated"
 msgstr "Zpráva aktualizována"
 
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages after a date"
+msgstr "Zprávy po datu"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages before a date"
+msgstr "Zprávy před datem"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages copied to a person"
+msgstr "Zprávy s osobou v kopii"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages from a person"
+msgstr "Zprávy od osoby"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages in a folder"
+msgstr "Zprávy ve složce"
+
 #: src/renderer/src/state/desktop.ts
 msgid "Messages in the undo window will remain drafts. A send already in progress may finish."
 msgstr "Zprávy v době pro vrácení zpět zůstanou koncepty. Již probíhající odesílání se může dokončit."
@@ -3387,6 +3449,54 @@ msgstr "Zprávy v době pro vrácení zpět zůstanou koncepty. Již probíhají
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Messages keep their other labels."
 msgstr "Zprávy si ponechají své další štítky."
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages larger than a size, such as 5M"
+msgstr "Zprávy větší než velikost, například 5M"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages newer than a period, such as 7d"
+msgstr "Zprávy novější než období, například 7d"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages older than a period, such as 1y"
+msgstr "Zprávy starší než období, například 1y"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages sent to a person"
+msgstr "Zprávy odeslané osobě"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages smaller than a size, such as 1M"
+msgstr "Zprávy menší než velikost, například 1M"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages with a document attachment"
+msgstr "Zprávy s dokumentem v příloze"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages with a label"
+msgstr "Zprávy se štítkem"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages with a PDF attachment"
+msgstr "Zprávy s PDF v příloze"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages with a presentation attachment"
+msgstr "Zprávy s prezentací v příloze"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages with a spreadsheet attachment"
+msgstr "Zprávy s tabulkou v příloze"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages with an image attachment"
+msgstr "Zprávy s obrázkem v příloze"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages with attachments"
+msgstr "Zprávy s přílohami"
 
 #: src/renderer/src/components/FocusedInboxActions.tsx
 msgid "Microsoft will ask for permission to update mail. After signing in, choose the action again."
@@ -3735,6 +3845,7 @@ msgstr "Další níže"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/SearchHitBar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Next match"
 msgstr "Další shoda"
@@ -3992,6 +4103,10 @@ msgstr "Přiložit lze jen běžné soubory. Složky nelze přiložit."
 #: src/renderer/src/components/AppleContactsSettings.tsx
 msgid "Only selected Apple Contacts are available."
 msgstr "K dispozici jsou pouze vybrané kontakty Apple."
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Only text inside attachments"
+msgstr "Jen text v přílohách"
 
 #: src/renderer/src/App.tsx
 msgid "Only the selected messages in this Trash or Spam folder will be permanently deleted. This cannot be undone."
@@ -4281,6 +4396,10 @@ msgstr "Pozastavit indexování"
 msgid "Pending operations"
 msgstr "Čekající operace"
 
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "People"
+msgstr "Lidé"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "People you know are your contacts and people you have sent mail to, when the message passes sender authentication. Known trackers stay blocked."
 msgstr "Lidé, které znáte, jsou vaše kontakty a lidé, kterým jste odeslali poštu, pokud zpráva projde ověřením odesílatele. Známé sledovače zůstávají blokované."
@@ -4327,6 +4446,10 @@ msgstr "Pořadí"
 msgid "Press ? outside a text field to show this list."
 msgstr "Stiskněte tlačítko ? mimo textové pole pro zobrazení tohoto seznamu."
 
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Press Delete to remove it from recent searches."
+msgstr "Stisknutím Delete ji odeberete z nedávných hledání."
+
 #. placeholder {0}: file.filename
 #: src/renderer/src/components/Attachments.tsx
 msgid "Preview {0}"
@@ -4351,6 +4474,7 @@ msgstr "Náhled: {0} zpráv. Při použití na existující poštu se změní po
 
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/SearchHitBar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Previous match"
 msgstr "Předchozí shoda"
@@ -4459,6 +4583,10 @@ msgstr "Stav přečtení"
 msgid "Reading"
 msgstr "Čtení"
 
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Recent"
+msgstr "Nedávné"
+
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Recipient email"
 msgstr "E-mail příjemce"
@@ -4515,6 +4643,12 @@ msgstr "Odmítnout"
 #: src/renderer/src/components/Settings.tsx
 msgid "Reject suggestion"
 msgstr "Odmítnout návrh"
+
+#. A search result found by meaning, without the search words.
+#: src/renderer/src/components/SearchSnippet.tsx
+msgctxt "search match source"
+msgid "Related"
+msgstr "Související"
 
 #: src/renderer/src/components/CalendarEvents.tsx
 msgid "Relative dates use the date of this message."
@@ -4581,6 +4715,10 @@ msgstr "Odebrat aktuální štítek"
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Remove favorite"
 msgstr "Odebrat oblíbené"
+
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Remove from recent searches"
+msgstr "Odebrat z nedávných hledání"
 
 #: src/renderer/src/components/AiSettings.tsx
 msgid "Remove key"
@@ -5017,8 +5155,16 @@ msgid "Search could not finish:"
 msgstr "Hledání nemohlo dokončit:"
 
 #: src/renderer/src/components/ui/SearchField.tsx
+msgid "Search help"
+msgstr "Nápověda k hledání"
+
+#: src/renderer/src/components/ui/SearchField.tsx
 msgid "Search mail"
 msgstr "Hledat v poště"
+
+#: src/renderer/src/components/SearchHitBar.tsx
+msgid "Search matches"
+msgstr "Shody s hledáním"
 
 #: src/renderer/src/components/Reader.tsx
 #: src/renderer/src/shortcut-names.ts
@@ -5134,6 +5280,11 @@ msgstr "Odeslat odkaz na konverzaci do…"
 #: src/renderer/src/shortcut-names.ts
 msgid "Send web mail link to…"
 msgstr "Odeslat odkaz na webovou zprávu do…"
+
+#: src/renderer/src/components/SearchSnippet.tsx
+msgctxt "search match source"
+msgid "Sender"
+msgstr "Odesílatel"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Sender authentication failed (DMARC)"
@@ -5548,6 +5699,10 @@ msgstr "Označit zprávu hvězdičkou"
 msgid "Starred"
 msgstr "S hvězdičkou"
 
+#: src/renderer/src/search-suggestions.ts
+msgid "Starred messages"
+msgstr "Zprávy s hvězdičkou"
+
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Start"
@@ -5582,6 +5737,11 @@ msgstr "Přeškrtnutí"
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/TemplateSettings.tsx
+msgid "Subject"
+msgstr "Předmět"
+
+#: src/renderer/src/components/SearchSnippet.tsx
+msgctxt "search match source"
 msgid "Subject"
 msgstr "Předmět"
 
@@ -6029,6 +6189,10 @@ msgstr "Důvěryhodná ověřovací služba (volitelné)"
 msgid "Try again"
 msgstr "Zkusit znovu"
 
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Try from:name or has:attachment"
+msgstr "Zkuste from:jméno nebo has:attachment"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Tuesday"
 msgstr "Úterý"
@@ -6121,6 +6285,10 @@ msgstr "Neznámé časové pásmo organizátora; ukazuje původní čas."
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Unread"
 msgstr "Nepřečtené"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Unread messages"
+msgstr "Nepřečtené zprávy"
 
 #: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -6342,6 +6510,10 @@ msgstr "Celá zpráva"
 #: src/renderer/src/state/desktop.ts
 msgid "Window"
 msgstr "Okno"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Words in the subject"
+msgstr "Slova v předmětu"
 
 #: src/renderer/src/components/ProfileSettings.tsx
 msgid "Work"

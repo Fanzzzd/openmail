@@ -93,6 +93,10 @@ msgstr "{count, plural, other {# 项更改未能保存}}"
 msgid "{count, plural, one {# message had rejected recipients} other {# messages had rejected recipients}}"
 msgstr "{count, plural, other {# 封邮件有收件人被拒收}}"
 
+#: src/renderer/src/components/SearchHitBar.tsx
+msgid "{count, plural, one {# search match} other {# search matches}}"
+msgstr "{count, plural, other {# 处搜索匹配}}"
+
 #: src/renderer/src/components/FailedOpNotice.tsx
 msgid "{count, plural, one {# sent message is missing from Sent} other {# sent messages are missing from Sent}}"
 msgstr "{count, plural, other {# 封已发送邮件在“已发送”中缺少副本}}"
@@ -773,9 +777,18 @@ msgstr "附件缓存上限"
 msgid "Attachment exception"
 msgstr "附件例外"
 
+#: src/renderer/src/search-suggestions.ts
+msgid "Attachment file name"
+msgstr "附件文件名"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Attachment save folder"
 msgstr "附件保存目录"
+
+#: src/renderer/src/components/SearchSnippet.tsx
+msgctxt "search match source"
+msgid "Attachment text"
+msgstr "附件文本"
 
 #: src/renderer/src/components/CacheSettings.tsx
 #: src/renderer/src/components/MessageList.tsx
@@ -1204,6 +1217,10 @@ msgstr "清除全部缓存"
 #: src/renderer/src/shortcut-names.ts
 msgid "Clear formatting"
 msgstr "清除格式"
+
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Clear recent searches"
+msgstr "清除最近搜索"
 
 #: src/renderer/src/components/MessageList.tsx
 msgid "Clear search"
@@ -1774,6 +1791,10 @@ msgstr "日期"
 msgid "Date is ambiguous. Enter an explicit date and time"
 msgstr "日期有歧义，请输入明确的日期和时间"
 
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Dates"
+msgstr "日期"
+
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Day"
 msgstr "日"
@@ -2318,6 +2339,11 @@ msgstr "第五"
 msgid "File"
 msgstr "文件"
 
+#: src/renderer/src/components/SearchSnippet.tsx
+msgctxt "search match source"
+msgid "File name"
+msgstr "文件名"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Fill template variables"
 msgstr "填写模板变量"
@@ -2325,6 +2351,10 @@ msgstr "填写模板变量"
 #: src/renderer/src/components/MessageList.tsx
 msgid "Filter"
 msgstr "筛选"
+
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Filters"
+msgstr "筛选条件"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Find and replace"
@@ -2730,6 +2760,10 @@ msgstr "重要性条件"
 msgid "Important"
 msgstr "重要"
 
+#: src/renderer/src/search-suggestions.ts
+msgid "Important messages"
+msgstr "重要邮件"
+
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "In “{elsewhere}”"
 msgstr "在「{elsewhere}」"
@@ -2957,6 +2991,7 @@ msgstr "标签：{name}"
 #: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/Sidebar.tsx
 #: src/renderer/src/components/ThreadActions.tsx
+#: src/renderer/src/components/ui/SearchField.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Labels"
 msgstr "标签"
@@ -3278,6 +3313,11 @@ msgstr "跟随外观"
 msgid "Matched image region"
 msgstr "命中的图片区域"
 
+#. Announced after an attachment name whose name or text matched.
+#: src/renderer/src/components/Attachments.tsx
+msgid "Matches the search"
+msgstr "与搜索匹配"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Matching times keep that weekday active all day. Overnight periods continue into the next day. Unchecked days stay muted except for overnight periods from the previous day. Repeated daylight-saving times use the same schedule; skipped times are passed over."
 msgstr "开始与结束相同表示当天全天活跃。跨午夜时段延续到次日；未勾选日期仅保留前一天延续的时段。夏令时重复时刻按同一日程，跳过的时刻不触发通知。"
@@ -3336,8 +3376,10 @@ msgstr "邮件背景"
 
 #. Email message text, never an anatomical body.
 #. Email message text, never an anatomical body.
+#. Email message text, never an anatomical body.
 #: src/renderer/src/components/MediaMatches.tsx
 #: src/renderer/src/components/MessageList.tsx
+#: src/renderer/src/components/SearchSnippet.tsx
 msgctxt "message text"
 msgid "Message body"
 msgstr "正文"
@@ -3390,6 +3432,26 @@ msgstr "消息文本无法刷新。正在显示缓存版本。"
 msgid "Message updated"
 msgstr "邮件已更新"
 
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages after a date"
+msgstr "某日期之后的邮件"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages before a date"
+msgstr "某日期之前的邮件"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages copied to a person"
+msgstr "抄送给某人的邮件"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages from a person"
+msgstr "来自某人的邮件"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages in a folder"
+msgstr "某个文件夹中的邮件"
+
 #: src/renderer/src/state/desktop.ts
 msgid "Messages in the undo window will remain drafts. A send already in progress may finish."
 msgstr "撤销等待中的邮件将保留为草稿。已开始发送的邮件可能发出。"
@@ -3397,6 +3459,54 @@ msgstr "撤销等待中的邮件将保留为草稿。已开始发送的邮件可
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Messages keep their other labels."
 msgstr "邮件保留其他标签。"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages larger than a size, such as 5M"
+msgstr "大于指定大小的邮件，例如 5M"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages newer than a period, such as 7d"
+msgstr "比指定时长更新的邮件，例如 7d"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages older than a period, such as 1y"
+msgstr "比指定时长更早的邮件，例如 1y"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages sent to a person"
+msgstr "发送给某人的邮件"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages smaller than a size, such as 1M"
+msgstr "小于指定大小的邮件，例如 1M"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages with a document attachment"
+msgstr "带文档附件的邮件"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages with a label"
+msgstr "带某个标签的邮件"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages with a PDF attachment"
+msgstr "带 PDF 附件的邮件"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages with a presentation attachment"
+msgstr "带演示文稿附件的邮件"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages with a spreadsheet attachment"
+msgstr "带电子表格附件的邮件"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages with an image attachment"
+msgstr "带图片附件的邮件"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages with attachments"
+msgstr "带附件的邮件"
 
 #: src/renderer/src/components/FocusedInboxActions.tsx
 msgid "Microsoft will ask for permission to update mail. After signing in, choose the action again."
@@ -3745,6 +3855,7 @@ msgstr "下一项"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/SearchHitBar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Next match"
 msgstr "下一处"
@@ -4002,6 +4113,10 @@ msgstr "只能添加普通文件，不能添加文件夹。"
 #: src/renderer/src/components/AppleContactsSettings.tsx
 msgid "Only selected Apple Contacts are available."
 msgstr "仅可使用已选的 Apple 联系人。"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Only text inside attachments"
+msgstr "仅搜索附件内的文本"
 
 #: src/renderer/src/App.tsx
 msgid "Only the selected messages in this Trash or Spam folder will be permanently deleted. This cannot be undone."
@@ -4291,6 +4406,10 @@ msgstr "暂停索引"
 msgid "Pending operations"
 msgstr "待处理操作"
 
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "People"
+msgstr "联系人"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "People you know are your contacts and people you have sent mail to, when the message passes sender authentication. Known trackers stay blocked."
 msgstr "认识的人指你的联系人和你发过邮件的人，且消息需通过发件人认证。已知跟踪器始终拦截。"
@@ -4337,6 +4456,10 @@ msgstr "顺序"
 msgid "Press ? outside a text field to show this list."
 msgstr "在输入框外按 ? 查看快捷键。"
 
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Press Delete to remove it from recent searches."
+msgstr "按 Delete 键可将其从最近搜索中移除。"
+
 #. placeholder {0}: file.filename
 #: src/renderer/src/components/Attachments.tsx
 msgid "Preview {0}"
@@ -4361,6 +4484,7 @@ msgstr "预览：{0} 封邮件。应用到已有邮件时，只修改预览中�
 
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/SearchHitBar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Previous match"
 msgstr "上一处"
@@ -4469,6 +4593,10 @@ msgstr "已读状态"
 msgid "Reading"
 msgstr "阅读"
 
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Recent"
+msgstr "最近"
+
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Recipient email"
 msgstr "收件人邮箱"
@@ -4525,6 +4653,12 @@ msgstr "拒绝"
 #: src/renderer/src/components/Settings.tsx
 msgid "Reject suggestion"
 msgstr "拒绝建议"
+
+#. A search result found by meaning, without the search words.
+#: src/renderer/src/components/SearchSnippet.tsx
+msgctxt "search match source"
+msgid "Related"
+msgstr "相关"
 
 #: src/renderer/src/components/CalendarEvents.tsx
 msgid "Relative dates use the date of this message."
@@ -4591,6 +4725,10 @@ msgstr "移除当前标签"
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Remove favorite"
 msgstr "取消收藏"
+
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Remove from recent searches"
+msgstr "从最近搜索中移除"
 
 #: src/renderer/src/components/AiSettings.tsx
 msgid "Remove key"
@@ -5027,8 +5165,16 @@ msgid "Search could not finish:"
 msgstr "搜索未完成："
 
 #: src/renderer/src/components/ui/SearchField.tsx
+msgid "Search help"
+msgstr "搜索帮助"
+
+#: src/renderer/src/components/ui/SearchField.tsx
 msgid "Search mail"
 msgstr "搜索邮件"
+
+#: src/renderer/src/components/SearchHitBar.tsx
+msgid "Search matches"
+msgstr "搜索匹配"
 
 #: src/renderer/src/components/Reader.tsx
 #: src/renderer/src/shortcut-names.ts
@@ -5144,6 +5290,11 @@ msgstr "发送会话链接到…"
 #: src/renderer/src/shortcut-names.ts
 msgid "Send web mail link to…"
 msgstr "发送网页版邮件链接到…"
+
+#: src/renderer/src/components/SearchSnippet.tsx
+msgctxt "search match source"
+msgid "Sender"
+msgstr "发件人"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Sender authentication failed (DMARC)"
@@ -5558,6 +5709,10 @@ msgstr "为此邮件加星标"
 msgid "Starred"
 msgstr "星标"
 
+#: src/renderer/src/search-suggestions.ts
+msgid "Starred messages"
+msgstr "已加星标的邮件"
+
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Start"
@@ -5592,6 +5747,11 @@ msgstr "删除线"
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/TemplateSettings.tsx
+msgid "Subject"
+msgstr "主题"
+
+#: src/renderer/src/components/SearchSnippet.tsx
+msgctxt "search match source"
 msgid "Subject"
 msgstr "主题"
 
@@ -6039,6 +6199,10 @@ msgstr "可信认证服务（可选）"
 msgid "Try again"
 msgstr "重试"
 
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Try from:name or has:attachment"
+msgstr "试试 from:姓名 或 has:attachment"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Tuesday"
 msgstr "星期二"
@@ -6131,6 +6295,10 @@ msgstr "无法识别组织者时区，显示原始时间。"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Unread"
 msgstr "未读"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Unread messages"
+msgstr "未读邮件"
 
 #: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -6352,6 +6520,10 @@ msgstr "全文"
 #: src/renderer/src/state/desktop.ts
 msgid "Window"
 msgstr "窗口"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Words in the subject"
+msgstr "主题中的字词"
 
 #: src/renderer/src/components/ProfileSettings.tsx
 msgid "Work"

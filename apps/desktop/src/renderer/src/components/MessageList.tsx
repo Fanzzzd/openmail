@@ -1,6 +1,12 @@
 import { labelChipColors } from "../label-colors";
 import { useMessageSwipe } from "../message-swipe-hook";
-import { attachmentMatches, distinctAttachmentMatches, SearchSnippet } from "./SearchSnippet";
+import {
+  attachmentMatches,
+  distinctAttachmentMatches,
+  MatchedText,
+  SearchPreview,
+  SearchSnippet,
+} from "./SearchSnippet";
 import { TriageChip } from "./TriageChip";
 import { swipeMailOp } from "../message-swipe";
 import { actionNames } from "../action-names";
@@ -32,7 +38,7 @@ import {
 } from "react";
 
 import type { Label, MailOp, Mailbox, ThreadSummary, ThreadQuery } from "../../../shared/api";
-import { displayName, previewText, shortDate } from "../format";
+import { displayName, shortDate } from "../format";
 import { AccountBadge } from "./AccountBadge";
 import type { Filters } from "../view";
 import { ContextMenuContent, ContextMenuRoot, ContextMenuTrigger } from "./ui/Menu";
@@ -580,9 +586,16 @@ const Row = memo(function Row({
   const swipe = useMessageSwipe(row, swipeActions, (action) => onSwipe(m, action));
   const muted = accent ? "text-white" : "text-a11y-muted";
   const matchesId = useId();
+  const previewId = useId();
   const attachmentHits = distinctAttachmentMatches(m.searchMatches).slice(0, 2);
   const derivedHits = m.searchMatches?.length ? [] : (m.derivedMatches?.slice(0, 2) ?? []);
   const hasHits = attachmentHits.length > 0 || derivedHits.length > 0;
+  // A search says why each row matched: the fields and marked text, then attachment hits.
+  const searched = !!m.searchMatches?.length || !!m.related;
+  const describedBy = [
+    ...(searched && density.previewLines > 0 ? [previewId] : []),
+    ...(hasHits ? [matchesId] : []),
+  ].join(" ");
   const chips = m.labels
     .flatMap((id) => labels.get(`${m.accountId}/${id}`) ?? [])
     .filter((l) => l.messageListVisibility !== "hide")
@@ -651,7 +664,7 @@ const Row = memo(function Row({
           ...(m.isUnread ? [t`Unread`] : []),
           ...(m.isStarred ? [t`Starred`] : []),
         ].join(", ")}
-        aria-describedby={hasHits ? matchesId : undefined}
+        aria-describedby={describedBy || undefined}
         aria-selected={selected}
         aria-setsize={total}
         aria-posinset={position}
@@ -690,7 +703,14 @@ const Row = memo(function Row({
         </span>
         <span className="mt-0.5 flex items-center gap-1.5 text-[13px]">
           <span className="min-w-0 flex-1 truncate">
-            {m.subject || <Trans>(No subject)</Trans>}
+            {m.subject ? (
+              <MatchedText
+                text={m.subject}
+                match={m.searchMatches?.find((match) => match.source === "subject")}
+              />
+            ) : (
+              <Trans>(No subject)</Trans>
+            )}
           </span>
           {!density.attachments && m.hasAttachments && (
             <Paperclip className={`size-3.5 shrink-0 ${muted}`} />
@@ -705,9 +725,10 @@ const Row = memo(function Row({
         {density.previewLines > 0 && (
           <span className="mt-0.5 flex items-start gap-1.5">
             <span
+              id={previewId}
               className={`min-w-0 flex-1 text-[13px] ${density.previewLines === 2 ? "line-clamp-2" : "truncate"} ${muted}`}
             >
-              {previewText(m.snippet)}
+              <SearchPreview thread={m} lead={density.previewLines === 2 ? undefined : 24} />
             </span>
             {labelChips}
             {star}

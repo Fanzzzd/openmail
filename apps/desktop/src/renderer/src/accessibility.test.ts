@@ -1949,11 +1949,73 @@ it("describes search result rows by their attachment matches and audits the mark
     ),
   );
   const option = screen.getByRole("option");
-  const description = document.getElementById(option.getAttribute("aria-describedby") ?? "");
-  expect(description?.textContent).toMatch(/^In attachment agenda\.pdf:.*budget/);
+  const description = (option.getAttribute("aria-describedby") ?? "")
+    .split(" ")
+    .map((id) => document.getElementById(id)?.textContent)
+    .join(" | ");
+  expect(description).toMatch(/^Attachment text .* \| In attachment agenda\.pdf:.*budget/);
   const mark = option.querySelector("mark");
   expect(mark?.textContent).toBe("budget");
   expect(mark?.className).toContain("text-neutral-950");
+  await audit();
+});
+
+it("says which fields matched, marks the words, and marks nothing on a related result", async () => {
+  const body = {
+    source: "body" as const,
+    messageId: message.id,
+    snippet: "…the quarterly budget review is on Monday",
+    highlights: [{ start: 15, end: 21 }],
+  };
+  const subject = {
+    source: "subject" as const,
+    messageId: message.id,
+    snippet: thread.subject,
+    highlights: [{ start: 0, end: 3 }],
+  };
+  const sender = {
+    source: "sender" as const,
+    messageId: message.id,
+    snippet: "Alice <alice@example.com>",
+    highlights: [{ start: 0, end: 5 }],
+  };
+  render(
+    localized(
+      h(
+        "main",
+        null,
+        h(
+          MessageList,
+          listProps({
+            searching: true,
+            threads: [
+              { ...thread, searchMatches: [subject, sender, body] },
+              {
+                ...thread,
+                id: `${thread.id}-related`,
+                threadId: `${thread.threadId}-related`,
+                snippet: "Plans for the trip",
+                related: true,
+              },
+            ],
+          }),
+        ),
+      ),
+    ),
+  );
+  const [hit, related] = screen.getAllByRole("option");
+  const describe = (option: HTMLElement | undefined) =>
+    (option?.getAttribute("aria-describedby") ?? "")
+      .split(" ")
+      .map((id) => document.getElementById(id)?.textContent)
+      .join(" | ");
+  expect(describe(hit)).toMatch(/^Subject · Sender · Message body .*budget review/);
+  expect([...(hit?.querySelectorAll("mark") ?? [])].map((mark) => mark.textContent)).toEqual([
+    thread.subject.slice(0, 3),
+    "budget",
+  ]);
+  expect(describe(related)).toBe("Related Plans for the trip");
+  expect(related?.querySelector("mark")).toBeNull();
   await audit();
 });
 

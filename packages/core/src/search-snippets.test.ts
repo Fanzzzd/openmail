@@ -2,7 +2,7 @@ import { assert, it } from "@effect/vitest";
 import { Effect, Layer, Option } from "effect";
 import { SqlClient } from "effect/sql";
 import { searchHighlightTerms, searchSnippet } from "./search-snippets.js";
-import type { IncomingMessage } from "./domain.js";
+import type { IncomingMessage, SearchMatch } from "./domain.js";
 import { Store } from "./services.js";
 import { StoreLive } from "./store.js";
 import { MemoryPlatform } from "./platform/node/platform-memory.js";
@@ -358,4 +358,66 @@ it.effect(
         assert.notInclude(JSON.stringify(subject), "hidden preview");
       }
     }).pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform())))),
+);
+
+it.effect("results say whether the sender or an attachment file name matched", () =>
+  Effect.gen(function* () {
+    const store = yield* Store;
+    const account = yield* store.upsertAccount("gmail", "fields@example.com");
+    yield* store.upsertMessage(account.id, {
+      ...fixture("sender", "Lunch plans", 1),
+      from: { name: "Zebulon Quayle", address: "zq@example.com" },
+      snippet: "Lunch plans",
+    });
+    yield* store.upsertMessage(account.id, {
+      ...fixture("named", "Quarterly numbers attached", 2),
+      attachments: [
+        { filename: "notes.txt", mimeType: "text/plain", size: 1 },
+        { filename: "quarterly-report.pdf", mimeType: "application/pdf", size: 1 },
+      ],
+    });
+    const [sender] = yield* store.listThreads({ search: "zebulon" });
+    assert.deepStrictEqual(
+      sender?.searchMatches?.map((match) => [
+        match.source,
+        match.snippet.slice(match.highlights[0]?.start, match.highlights[0]?.end),
+      ]),
+      [["sender", "Zebulon"]],
+    );
+    assert.strictEqual(sender?.snippet, "Lunch plans");
+    const [named] = yield* store.listThreads({ search: "quarterly" });
+    const filename = named?.searchMatches?.find(
+      (match): match is Extract<SearchMatch, { source: "filename" }> => match.source === "filename",
+    );
+    assert.deepStrictEqual(
+      filename && {
+        name: filename.attachmentName,
+        index: filename.attachmentIndex,
+        hit: filename.snippet.slice(filename.highlights[0]?.start, filename.highlights[0]?.end),
+      },
+      { name: "quarterly-report.pdf", index: 1, hit: "quarterly" },
+    );
+    assert.ok(named?.searchMatches?.some((match) => match.source === "body"));
+  }).pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform())))),
+);
+
+it.effect("from: lights up the sender without marking any message text", () =>
+  Effect.gen(function* () {
+    const store = yield* Store;
+    const account = yield* store.upsertAccount("gmail", "from@example.com");
+    yield* store.upsertMessage(account.id, {
+      ...fixture("from", "Dinner on Friday", 1),
+      from: { name: "Alice Smith", address: "alice@example.com" },
+      snippet: "Dinner on Friday",
+    });
+    const [row] = yield* store.listThreads({ search: "from:alice" });
+    assert.deepStrictEqual(
+      row?.searchMatches?.map((match) => [
+        match.source,
+        match.highlights.map(({ start, end }) => match.snippet.slice(start, end)),
+      ]),
+      [["sender", ["Alice", "alice"]]],
+    );
+    assert.strictEqual(row?.snippet, "Dinner on Friday");
+  }).pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform())))),
 );

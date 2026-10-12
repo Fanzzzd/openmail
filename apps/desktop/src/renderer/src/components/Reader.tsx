@@ -14,6 +14,7 @@ import {
   threadExpansion,
   type ReaderZoom,
   type SearchMatch,
+  searchHighlightTerms,
 } from "@openmail/core/schema";
 import {
   useState,
@@ -87,7 +88,8 @@ import {
 } from "../state/mail";
 import { setImageSenderAtom, setPrefsAtom } from "../state/mutations";
 import { imagesLoadedAtom, messageBackgroundAtom } from "../state/ui";
-import { attachmentMatches } from "./SearchSnippet";
+import { NO_SEARCH_HITS, type SearchHits, SearchHitsContext } from "./search-hits";
+import { SearchHitBar } from "./SearchHitBar";
 import { MediaMatches } from "./MediaMatches";
 import { Attachments } from "./Attachments";
 import { LazyMessageBody, useMessageBodyState, type MessageBackground } from "./MessageBodyShell";
@@ -209,6 +211,8 @@ export function Reader({
         <ThreadView
           key={threadKey}
           messages={messages}
+          // Lexical matches only: a related (semantic) result has no words to mark.
+          searchTerms={searchMatches?.length ? searchHighlightTerms({ search: query }) : []}
           selectedId={messageId}
           onSelectMessage={onSelectMessage}
           onMarkUnread={onMarkUnread}
@@ -295,6 +299,7 @@ export function ThreadView({
   messages: stored,
   derivedMatches = [],
   searchMatches = [],
+  searchTerms = [],
   selectedId,
   single,
   onEditDraft,
@@ -309,6 +314,8 @@ export function ThreadView({
   messages: readonly Message[];
   derivedMatches?: readonly DerivedChunk[] | undefined;
   searchMatches?: readonly SearchMatch[] | undefined;
+  /** Words of the search that opened the thread, marked in each body. */
+  searchTerms?: readonly string[];
   selectedId: string;
   /** Show only the selected message (conversation grouping off). */
   single: boolean;
@@ -342,6 +349,12 @@ export function ThreadView({
   const [findIndex, setFindIndex] = useState(0);
   const [findCount, setFindCount] = useState(0);
   const findRef = useRef<HTMLInputElement>(null);
+  const [hitIndex, setHitIndex] = useState(0);
+  const [hitCount, setHitCount] = useState(0);
+  const reportHits = useCallback((count: number) => setHitCount(count), []);
+  const nextHit = (direction: number) =>
+    setHitIndex((index) => (hitCount ? (index + direction + hitCount) % hitCount : 0));
+  const hits = searchTerms.length > 0 && hitCount > 0;
   const scroller = useRef<HTMLDivElement>(null);
   const selectInitial = useEffectEvent((id: string) => onSelectMessage?.(id));
   useEffect(() => {
@@ -353,6 +366,8 @@ export function ThreadView({
       onSelectMessage?.(id);
       setFindIndex(0);
       setFindCount(0);
+      setHitIndex(0);
+      setHitCount(0);
     }
   };
   const reportMatches = useCallback((count: number) => {
@@ -458,7 +473,11 @@ export function ThreadView({
     undefined,
   );
   const matchedIds = [
-    ...new Set(attachmentMatches(searchMatches).map((match) => match.messageId)),
+    ...new Set(
+      searchMatches
+        .filter((match) => match.source === "body" || match.source === "attachment")
+        .map((match) => match.messageId),
+    ),
   ].toSorted();
   const [open, setOpen] = useState(
     () => new Set([selectedId, newest?.id ?? selectedId, ...matchedIds]),
@@ -475,6 +494,8 @@ export function ThreadView({
     setFindQuery("");
     setFindIndex(0);
     setFindCount(0);
+    setHitIndex(0);
+    setHitCount(0);
     setOpen(new Set([...open, activeId]));
   }
   const expand = (expanded: boolean) => {
@@ -543,7 +564,7 @@ export function ThreadView({
     // The helper is duck-typed, so form fields inside a message frame count as typing too.
     const typingFind = isTypingTarget(e.target);
     if (insideReader && (!typingFind || e.target === findRef.current)) {
-      const findAction = readerFindAction(prefs.shortcutSet, e, finding);
+      const findAction = readerFindAction(prefs.shortcutSet, e, finding, hits);
       if (findAction === "jump") {
         e.preventDefault();
         jumpReaderSelection(document, targetMessageId);
@@ -564,14 +585,9 @@ export function ThreadView({
         }
         return;
       }
-      if (findAction === "previous") {
+      if (findAction === "previous" || findAction === "next") {
         e.preventDefault();
-        findNext(-1);
-        return;
-      }
-      if (findAction === "next") {
-        e.preventDefault();
-        findNext(1);
+        (finding ? findNext : nextHit)(findAction === "next" ? 1 : -1);
         return;
       }
     }
@@ -923,6 +939,7 @@ export function ThreadView({
           <button type="button" onClick={closeFind}>{t`Close find`}</button>
         </search>
       )}
+      {!finding && hits && <SearchHitBar index={hitIndex} count={hitCount} onStep={nextHit} />}
       <MediaMatches chunks={derivedMatches} />
       <div className="divide-y divide-black/[0.07] dark:divide-white/[0.08]">
         {messages.map((m) =>
@@ -931,6 +948,15 @@ export function ThreadView({
               key={m.id}
               message={m}
               searchMatches={searchMatches.filter((match) => match.messageId === m.id)}
+              searchHits={
+                searchTerms.length
+                  ? {
+                      terms: searchTerms,
+                      index: activeId === m.id && !finding ? hitIndex : -1,
+                      onCount: activeId === m.id ? reportHits : undefined,
+                    }
+                  : NO_SEARCH_HITS
+              }
               onActivate={() => activate(m.id)}
               active={m.id === activeId}
               onMessageOp={(op) => messageAction(m.id, op)}
@@ -1065,6 +1091,7 @@ function MessageHead({
 function Expanded({
   message: m,
   searchMatches,
+  searchHits,
   zoom,
   defaultBackground,
   onZoomKey,
@@ -1094,6 +1121,7 @@ function Expanded({
 }: {
   message: Message;
   searchMatches: readonly SearchMatch[];
+  searchHits: SearchHits;
   zoom: ReaderZoom;
   defaultBackground: "light" | "theme";
   onZoomKey: (e: KeyboardEvent) => void;
@@ -1298,21 +1326,23 @@ function Expanded({
         <Attachments message={m} notify={notify} matches={searchMatches} />
       )}
 
-      <LazyMessageBody
-        message={m}
-        thread={thread}
-        remote={remote}
-        imageNotice={imageNotice}
-        onLoadImages={onLoadImages}
-        onAlwaysLoad={alwaysLoad}
-        background={background}
-        zoom={zoom}
-        onZoomKey={onZoomKey}
-        onActivate={onActivate}
-        findQuery={findQuery}
-        findIndex={findIndex}
-        onMatches={onMatches}
-      />
+      <SearchHitsContext value={searchHits}>
+        <LazyMessageBody
+          message={m}
+          thread={thread}
+          remote={remote}
+          imageNotice={imageNotice}
+          onLoadImages={onLoadImages}
+          onAlwaysLoad={alwaysLoad}
+          background={background}
+          zoom={zoom}
+          onZoomKey={onZoomKey}
+          onActivate={onActivate}
+          findQuery={findQuery}
+          findIndex={findIndex}
+          onMatches={onMatches}
+        />
+      </SearchHitsContext>
     </article>
   );
 }

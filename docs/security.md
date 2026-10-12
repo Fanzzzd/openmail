@@ -58,6 +58,9 @@ frame 标识依据：[Electron WebFrameMain](https://www.electronjs.org/docs/lat
 
 可见文本提取采用保守静态 CSS 判断，不运行浏览器布局或外部样式表；不能证明任意 CSS 都与实际像素一致。未覆盖覆盖层、元素遮挡及 DARK_CSS 的暗色双重反转；不运行浏览器布局，也不提取 CSS 生成内容。暗色反转由 renderer 单独处理。回归包含 Gmail／Microsoft／Fastmail 格式、顶层失败与低位伪造通过、AR 注释／引用注入、IMAP 信任保存与撤销、MCP snippet 删除、CSS 隐藏方式、Unicode／嵌入式链接标签和签名 query 保留，以及先前的 DKIM、退订、附件和 agent policy 样例。未启动 Electron，也未对真实邮件服务执行退订。
 
+- 搜索词在阅读器中由 core 的 `sanitizeReaderHtml` 标记：只包裹清洗后文本节点里的命中，属性、URL 和样式不变，序列化器转义全部文本；发件人自带的 `openmail-search-hit` class 先被移除，不能伪造命中。实现：[search-highlight.ts](../packages/core/src/search-highlight.ts)。
+- 最近搜索只存在本机 renderer 的 localStorage（`openmail.recentSearches`，最多 8 条），不进数据库、日志或同步，移除任一账户时清空。实现：`apps/desktop/src/renderer/src/recent-searches.ts`。
+
 ## 服务商诊断
 
 桌面在 `OPENMAIL_HOME/diagnostics/diagnostics.jsonl` 记录固定字段，默认数据目录见 [README](../README.md#cli-与-mcp)。Gmail／Graph 的 `provider-failure` 只保存时间、服务商、HTTP 方法、端点模板、可用的 status、failure 分类和账户 ID 的 16 位 SHA-256 前缀。搜索失败还保存 operation=search 和固定枚举的 Graph error.code，未知代码保存 unknown；延期不写事件。不保存完整 URL、query、资源 ID、消息文本、错误正文、堆栈或 token。该格式不提供 IMAP 协议逐条日志，也不证明散列匿名化。

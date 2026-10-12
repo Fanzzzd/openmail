@@ -751,6 +751,7 @@ export function semanticRankFusion(
   flat = false,
 ): ThreadSummary[] {
   const found = new Map<string, { thread: ThreadSummary; score: number }>();
+  const lexical = new Set(fts.map((thread) => keyOf(thread, flat)));
   for (const [index, list] of [fts, text, images].entries())
     for (const [rank, thread] of list.entries()) {
       const key = keyOf(thread, flat);
@@ -763,11 +764,14 @@ export function semanticRankFusion(
         0,
         SEARCH_MATCH_LIMIT,
       );
+      // A lexical hit keeps its highlighted preview; a semantic-only one is marked related.
       found.set(key, {
         thread: {
           ...previous?.thread,
           ...thread,
+          ...(previous ? { snippet: previous.thread.snippet } : {}),
           ...(unique.length ? { derivedMatches: unique } : {}),
+          ...(index > 0 && !lexical.has(key) ? { related: true } : {}),
         },
         score: (previous?.score ?? 0) + (index === 0 ? 2 : 1) / (60 + rank + 1),
       });

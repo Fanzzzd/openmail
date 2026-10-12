@@ -8,6 +8,7 @@ import {
   type EnterOrLeaveFn,
 } from "./css-tree-browser.js";
 import { flattenHtmlChildren, MAX_HTML_DEPTH } from "./html-depth.js";
+import { markSearchHits } from "./search-highlight.js";
 
 // HTML-only output avoids foreign-content/raw-text mutation during browser
 // reparsing. Resource preparation still runs first to resolve CID and bases.
@@ -195,11 +196,15 @@ export function sanitizeReaderCss(input: string, remote: boolean, inline = false
   }
 }
 
-/** Inert, bounded portable reader/print markup. Sandbox and CSP remain required. */
+/**
+ * Inert, bounded portable reader/print markup. Sandbox and CSP remain required.
+ * `searchTerms` marks search hits in the cleaned text (see `markSearchHits`).
+ */
 export function sanitizeReaderHtml(
   input: string,
   remote = false,
   onOmit?: (node: ReturnType<typeof parseDocument>["children"][number]) => void,
+  searchTerms: readonly string[] = [],
 ): string {
   const document = parseDocument(input);
   type Node = (typeof document.children)[number];
@@ -282,5 +287,6 @@ export function sanitizeReaderHtml(
     });
   };
   document.children = clean(document.children);
+  markSearchHits(document, searchTerms);
   return DomUtils.getOuterHTML(document);
 }

@@ -4,7 +4,13 @@ import { type Fragment } from "effect/sql/Statement";
 import { attachmentFilename } from "./attachment-filename.js";
 import { categoryKey } from "./categories.js";
 import { type Label, type SearchMatch, type ThreadQuery, type ThreadSummary } from "./domain.js";
-import { exactSearchPhrase, searchHighlightTerms, searchSnippet } from "./search-snippets.js";
+import {
+  exactSearchPhrase,
+  searchHighlightTerms,
+  searchSnippet,
+  mergeSearchRanges,
+  searchTermRanges,
+} from "./search-snippets.js";
 import { SearchProfile, searchEffect, searchStep, type SearchProfiler } from "./search-profile.js";
 import { DerivedChunk } from "./media.js";
 import {
@@ -592,6 +598,73 @@ export const makeThreadsStore = ({
     return { threads: annotated, exactMail, exactAttachments } satisfies MatchedSearch;
   });
 
+  /**
+   * Sender and file-name hits for the returned page only. They do not change
+   * the ranking, so they skip the wider candidate window. `from:` values count
+   * as sender hits; `filename:` values as file-name hits.
+   */
+  const pageFieldMatches = Effect.fn("Store.pageFieldMatches")(function* (
+    q: LocalQuery,
+    highlights: readonly string[],
+    threads: readonly ThreadSummary[],
+    mailCandidates: ReadonlyMap<string, ThreadSummary>,
+    previews: ReadonlyMap<string, string>,
+  ) {
+    const from = q.criteria?.from;
+    const filenameTerms = q.criteria?.filename ? [...highlights, q.criteria.filename] : highlights;
+    const mailOf = (thread: ThreadSummary) => mailCandidates.get(keyOf(thread, q.flat)) ?? thread;
+    const attachmentRows = filenameTerms.length
+      ? yield* all(
+          Schema.Struct({
+            id: Schema.String,
+            attachments_json: SummaryRow.fields.attachments_json,
+          }),
+        )(
+          sql`SELECT id,attachments_json FROM messages WHERE id IN (SELECT value FROM json_each(${JSON.stringify(threads.map((thread) => mailOf(thread).id))}))`,
+        )
+      : [];
+    const attachments = new Map(attachmentRows.map((row) => [row.id, row.attachments_json]));
+    return threads.map((thread): ThreadSummary => {
+      const mail = mailOf(thread);
+      const matches: SearchMatch[] = [];
+      if (!q.criteria?.attachmentText) {
+        const text = (
+          mail.from.name ? `${mail.from.name} <${mail.from.address}>` : mail.from.address
+        )
+          .replace(/\s+/g, " ")
+          .trim();
+        const ranges = mergeSearchRanges([
+          ...searchTermRanges(text, highlights),
+          ...(from ? searchTermRanges(text, [from], "substring") : []),
+        ]);
+        if (ranges.length)
+          matches.push({ source: "sender", messageId: mail.id, snippet: text, highlights: ranges });
+      }
+      for (const [index, attachment] of (attachments.get(mail.id) ?? []).entries()) {
+        const name = attachmentFilename(attachment.filename);
+        const hit = searchSnippet(name, filenameTerms);
+        if (hit.highlights.length)
+          matches.push({
+            source: "filename",
+            messageId: mail.id,
+            attachmentName: name,
+            attachmentIndex: index,
+            ...hit,
+          });
+      }
+      if (!matches.length) return thread;
+      // A row whose only text hit is its sender keeps the ordinary preview.
+      let snippet = thread.snippet;
+      if (!snippet && matches.some((match) => match.source === "sender"))
+        snippet = previews.get(keyOf(thread, q.flat)) ?? "";
+      return {
+        ...thread,
+        snippet,
+        searchMatches: [...(thread.searchMatches ?? []), ...matches].slice(0, 20),
+      };
+    });
+  });
+
   const listThreads = Effect.fn("Store.listThreads")(function* (raw: ThreadQuery) {
     const profile = yield* SearchProfile;
     const endPreparation = profile?.begin("request preparation");
@@ -761,6 +834,7 @@ export const makeThreadsStore = ({
         reciprocalRankFusion(threads, derived.slice(0, limit), q.flat).slice(0, limit * 2),
       );
     }
+    const previews = new Map(threads.map((thread) => [keyOf(thread, q.flat), thread.snippet]));
     // Only the bounded result window is materialized for visibility and provenance.
     if (highlights.length && threads.length) {
       const context = {
@@ -783,6 +857,12 @@ export const makeThreadsStore = ({
         rankBySource(context, matched, bodies),
       );
     }
+    if (threads.length && (highlights.length || q.criteria?.from || q.criteria?.filename))
+      threads = yield* searchEffect(
+        profile,
+        "page field matches",
+        pageFieldMatches(q, highlights, threads, mailCandidates, previews),
+      );
     // The Drafts list also shows drafts the provider has no copy of yet.
     const filters = q.listFilters;
     const filtered =

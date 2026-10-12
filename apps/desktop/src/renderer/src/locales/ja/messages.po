@@ -83,6 +83,10 @@ msgstr "{count, plural, other {# 件の変更を保存できませんでした}}
 msgid "{count, plural, one {# message had rejected recipients} other {# messages had rejected recipients}}"
 msgstr "{count, plural, other {# 件のメッセージで一部の宛先が拒否されました}}"
 
+#: src/renderer/src/components/SearchHitBar.tsx
+msgid "{count, plural, one {# search match} other {# search matches}}"
+msgstr "{count, plural, other {検索一致 # 件}}"
+
 #: src/renderer/src/components/FailedOpNotice.tsx
 msgid "{count, plural, one {# sent message is missing from Sent} other {# sent messages are missing from Sent}}"
 msgstr "{count, plural, other {# 件の送信済みメッセージが送信済みにありません}}"
@@ -763,9 +767,18 @@ msgstr "添付ファイルのキャッシュ上限"
 msgid "Attachment exception"
 msgstr "添付ファイルの例外"
 
+#: src/renderer/src/search-suggestions.ts
+msgid "Attachment file name"
+msgstr "添付ファイル名"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Attachment save folder"
 msgstr "添付ファイルの保存先フォルダ"
+
+#: src/renderer/src/components/SearchSnippet.tsx
+msgctxt "search match source"
+msgid "Attachment text"
+msgstr "添付ファイルのテキスト"
 
 #: src/renderer/src/components/CacheSettings.tsx
 #: src/renderer/src/components/MessageList.tsx
@@ -1194,6 +1207,10 @@ msgstr "すべてのキャッシュを消去"
 #: src/renderer/src/shortcut-names.ts
 msgid "Clear formatting"
 msgstr "書式をクリア"
+
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Clear recent searches"
+msgstr "最近の検索を消去"
 
 #: src/renderer/src/components/MessageList.tsx
 msgid "Clear search"
@@ -1764,6 +1781,10 @@ msgstr "日付"
 msgid "Date is ambiguous. Enter an explicit date and time"
 msgstr "日時が曖昧です。明確な日時を入力してください"
 
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Dates"
+msgstr "日付"
+
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Day"
 msgstr "日"
@@ -2308,12 +2329,21 @@ msgstr "第5"
 msgid "File"
 msgstr "ファイル"
 
+#: src/renderer/src/components/SearchSnippet.tsx
+msgctxt "search match source"
+msgid "File name"
+msgstr "ファイル名"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Fill template variables"
 msgstr "テンプレート変数を入力する"
 
 #: src/renderer/src/components/MessageList.tsx
 msgid "Filter"
+msgstr "フィルタ"
+
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Filters"
 msgstr "フィルタ"
 
 #: src/renderer/src/components/ComposeEditor.tsx
@@ -2720,6 +2750,10 @@ msgstr "重要度の条件"
 msgid "Important"
 msgstr "重要"
 
+#: src/renderer/src/search-suggestions.ts
+msgid "Important messages"
+msgstr "重要なメッセージ"
+
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "In “{elsewhere}”"
 msgstr "「{elsewhere}」内"
@@ -2947,6 +2981,7 @@ msgstr "ラベル：{name}"
 #: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/Sidebar.tsx
 #: src/renderer/src/components/ThreadActions.tsx
+#: src/renderer/src/components/ui/SearchField.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Labels"
 msgstr "ラベル"
@@ -3268,6 +3303,11 @@ msgstr "アプリの外観に合わせる"
 msgid "Matched image region"
 msgstr "一致した画像領域"
 
+#. Announced after an attachment name whose name or text matched.
+#: src/renderer/src/components/Attachments.tsx
+msgid "Matches the search"
+msgstr "検索に一致"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Matching times keep that weekday active all day. Overnight periods continue into the next day. Unchecked days stay muted except for overnight periods from the previous day. Repeated daylight-saving times use the same schedule; skipped times are passed over."
 msgstr "時間を一致させると、その平日は一日中アクティブになります。夜間の期間は翌日まで続きます。チェックされていない日は、前日からの一晩の期間を除き、ミュートされたままになります。夏時間が繰り返される場合は、同じスケジュールが使用されます。スキップされた時間は引き継がれます。"
@@ -3326,8 +3366,10 @@ msgstr "メッセージの背景"
 
 #. Email message text, never an anatomical body.
 #. Email message text, never an anatomical body.
+#. Email message text, never an anatomical body.
 #: src/renderer/src/components/MediaMatches.tsx
 #: src/renderer/src/components/MessageList.tsx
+#: src/renderer/src/components/SearchSnippet.tsx
 msgctxt "message text"
 msgid "Message body"
 msgstr "本文"
@@ -3380,6 +3422,26 @@ msgstr "メッセージ本文を更新できませんでした。キャッシュ
 msgid "Message updated"
 msgstr "メッセージが更新されました"
 
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages after a date"
+msgstr "指定日以降のメッセージ"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages before a date"
+msgstr "指定日より前のメッセージ"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages copied to a person"
+msgstr "指定した人にCCされたメッセージ"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages from a person"
+msgstr "指定した人からのメッセージ"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages in a folder"
+msgstr "指定したフォルダ内のメッセージ"
+
 #: src/renderer/src/state/desktop.ts
 msgid "Messages in the undo window will remain drafts. A send already in progress may finish."
 msgstr "送信取り消しの待機時間内のメッセージは下書きとして保持されます。すでに実行中の送信は完了する場合があります。"
@@ -3387,6 +3449,54 @@ msgstr "送信取り消しの待機時間内のメッセージは下書きとし
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Messages keep their other labels."
 msgstr "メッセージには他のラベルが保持されます。"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages larger than a size, such as 5M"
+msgstr "指定サイズより大きいメッセージ（例: 5M）"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages newer than a period, such as 7d"
+msgstr "指定期間より新しいメッセージ（例: 7d）"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages older than a period, such as 1y"
+msgstr "指定期間より古いメッセージ（例: 1y）"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages sent to a person"
+msgstr "指定した人に送信したメッセージ"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages smaller than a size, such as 1M"
+msgstr "指定サイズより小さいメッセージ（例: 1M）"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages with a document attachment"
+msgstr "文書が添付されたメッセージ"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages with a label"
+msgstr "ラベルが付いたメッセージ"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages with a PDF attachment"
+msgstr "PDFが添付されたメッセージ"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages with a presentation attachment"
+msgstr "プレゼンテーションが添付されたメッセージ"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages with a spreadsheet attachment"
+msgstr "スプレッドシートが添付されたメッセージ"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages with an image attachment"
+msgstr "画像が添付されたメッセージ"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages with attachments"
+msgstr "添付ファイルのあるメッセージ"
 
 #: src/renderer/src/components/FocusedInboxActions.tsx
 msgid "Microsoft will ask for permission to update mail. After signing in, choose the action again."
@@ -3735,6 +3845,7 @@ msgstr "次は下に"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/SearchHitBar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Next match"
 msgstr "次の一致"
@@ -3992,6 +4103,10 @@ msgstr "通常のファイルのみ添付できます。フォルダは添付で
 #: src/renderer/src/components/AppleContactsSettings.tsx
 msgid "Only selected Apple Contacts are available."
 msgstr "選択したAppleの連絡先のみ利用できます。"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Only text inside attachments"
+msgstr "添付ファイル内のテキストのみ"
 
 #: src/renderer/src/App.tsx
 msgid "Only the selected messages in this Trash or Spam folder will be permanently deleted. This cannot be undone."
@@ -4281,6 +4396,10 @@ msgstr "インデックス作成を一時停止する"
 msgid "Pending operations"
 msgstr "保留中の操作"
 
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "People"
+msgstr "人"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "People you know are your contacts and people you have sent mail to, when the message passes sender authentication. Known trackers stay blocked."
 msgstr "知り合いとは、連絡先とメールを送信したことのある相手で、メッセージが送信者認証に合格した場合に限ります。既知のトラッカーは常にブロックされます。"
@@ -4327,6 +4446,10 @@ msgstr "順番"
 msgid "Press ? outside a text field to show this list."
 msgstr "プレス ？このリストを表示するには、テキストフィールドの外側にクリックします。"
 
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Press Delete to remove it from recent searches."
+msgstr "Delete キーで最近の検索から削除します。"
+
 #. placeholder {0}: file.filename
 #: src/renderer/src/components/Attachments.tsx
 msgid "Preview {0}"
@@ -4351,6 +4474,7 @@ msgstr "プレビュー: {0} メッセージ。既存のメールに適用する
 
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/SearchHitBar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Previous match"
 msgstr "前の一致"
@@ -4459,6 +4583,10 @@ msgstr "既読状態"
 msgid "Reading"
 msgstr "表示"
 
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Recent"
+msgstr "最近"
+
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Recipient email"
 msgstr "受信者の電子メール"
@@ -4515,6 +4643,12 @@ msgstr "拒否する"
 #: src/renderer/src/components/Settings.tsx
 msgid "Reject suggestion"
 msgstr "提案を拒否する"
+
+#. A search result found by meaning, without the search words.
+#: src/renderer/src/components/SearchSnippet.tsx
+msgctxt "search match source"
+msgid "Related"
+msgstr "関連"
 
 #: src/renderer/src/components/CalendarEvents.tsx
 msgid "Relative dates use the date of this message."
@@ -4581,6 +4715,10 @@ msgstr "現在のラベルを削除"
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Remove favorite"
 msgstr "お気に入りを削除"
+
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Remove from recent searches"
+msgstr "最近の検索から削除"
 
 #: src/renderer/src/components/AiSettings.tsx
 msgid "Remove key"
@@ -5017,8 +5155,16 @@ msgid "Search could not finish:"
 msgstr "検索を完了できませんでした:"
 
 #: src/renderer/src/components/ui/SearchField.tsx
+msgid "Search help"
+msgstr "検索のヘルプ"
+
+#: src/renderer/src/components/ui/SearchField.tsx
 msgid "Search mail"
 msgstr "メールを検索"
+
+#: src/renderer/src/components/SearchHitBar.tsx
+msgid "Search matches"
+msgstr "検索の一致"
 
 #: src/renderer/src/components/Reader.tsx
 #: src/renderer/src/shortcut-names.ts
@@ -5134,6 +5280,11 @@ msgstr "スレッドのリンクを送信…"
 #: src/renderer/src/shortcut-names.ts
 msgid "Send web mail link to…"
 msgstr "Webメールのリンクを送信…"
+
+#: src/renderer/src/components/SearchSnippet.tsx
+msgctxt "search match source"
+msgid "Sender"
+msgstr "差出人"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Sender authentication failed (DMARC)"
@@ -5548,6 +5699,10 @@ msgstr "メッセージにスターを付ける"
 msgid "Starred"
 msgstr "スター付き"
 
+#: src/renderer/src/search-suggestions.ts
+msgid "Starred messages"
+msgstr "スター付きのメッセージ"
+
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Start"
@@ -5582,6 +5737,11 @@ msgstr "取り消し線"
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/TemplateSettings.tsx
+msgid "Subject"
+msgstr "件名"
+
+#: src/renderer/src/components/SearchSnippet.tsx
+msgctxt "search match source"
 msgid "Subject"
 msgstr "件名"
 
@@ -6029,6 +6189,10 @@ msgstr "信頼する認証サービス（任意）"
 msgid "Try again"
 msgstr "再試行"
 
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Try from:name or has:attachment"
+msgstr "from:名前 や has:attachment を試してください"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Tuesday"
 msgstr "火曜日"
@@ -6121,6 +6285,10 @@ msgstr "主催者のタイムゾーンが不明。元の時間を表示します
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Unread"
 msgstr "未開封"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Unread messages"
+msgstr "未読のメッセージ"
 
 #: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -6342,6 +6510,10 @@ msgstr "メッセージ全体"
 #: src/renderer/src/state/desktop.ts
 msgid "Window"
 msgstr "ウィンドウ"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Words in the subject"
+msgstr "件名の語句"
 
 #: src/renderer/src/components/ProfileSettings.tsx
 msgid "Work"

@@ -33,6 +33,67 @@ export function searchHighlightTerms(query: ThreadQuery): string[] {
 
 const normalized = (text: string) => text.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 
+export type SearchRange = { start: number; end: number };
+
+/**
+ * UTF-16 ranges of the positive terms in `text`, sorted and merged. Words
+ * compare without case or diacritics; CJK and other non-word terms match as
+ * literal substrings.
+ */
+export function searchTermRanges(
+  text: string,
+  terms: readonly string[],
+  mode: "words" | "substring" = "words",
+): SearchRange[] {
+  // Tokens are normalized once and shared by every term: a 1 MB body has ~150k.
+  let tokens: { index: number; end: number; word: string }[] | undefined;
+  const ranges: SearchRange[] = [];
+  for (const term of terms) {
+    const prefix = term.endsWith("*");
+    const literal = unquoteSearchValue(prefix ? term.slice(0, -1) : term).replace(/\s+/g, " ");
+    if (mode === "substring" || usesSubstringSearch(literal)) {
+      if (!literal) continue;
+      const pattern = new RegExp(literal.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "giu");
+      for (const match of text.matchAll(pattern))
+        ranges.push({ start: match.index, end: match.index + match[0].length });
+      continue;
+    }
+    const words = wordTokens(literal);
+    const [first] = words;
+    if (first === undefined) continue;
+    tokens ??= Array.from(text.matchAll(/[\p{L}\p{N}\p{M}]+/gu), (match) => ({
+      index: match.index,
+      end: match.index + match[0].length,
+      word: normalized(match[0]),
+    }));
+    const last = words.length - 1;
+    const fits = (offset: number, candidate: string) =>
+      prefix && offset === last
+        ? candidate.startsWith(words[offset] ?? "")
+        : candidate === words[offset];
+    for (let index = 0; index + last < tokens.length; index++) {
+      if (!fits(0, tokens[index]?.word ?? "")) continue;
+      let offset = 1;
+      while (offset <= last && fits(offset, tokens[index + offset]?.word ?? "")) offset++;
+      const start = tokens[index]?.index;
+      const end = tokens[index + last]?.end;
+      if (offset > last && start !== undefined && end !== undefined) ranges.push({ start, end });
+    }
+  }
+  return mergeSearchRanges(ranges);
+}
+
+/** Sorted ranges with overlapping and touching ones joined. */
+export function mergeSearchRanges(ranges: readonly SearchRange[]): SearchRange[] {
+  const merged: SearchRange[] = [];
+  for (const range of ranges.toSorted((a, b) => a.start - b.start || b.end - a.end)) {
+    const last = merged.at(-1);
+    if (last && last.end >= range.start) last.end = Math.max(last.end, range.end);
+    else merged.push({ ...range });
+  }
+  return merged;
+}
+
 /** Plain strings only. The same ranges drive React marks and structured tool output. */
 export function searchSnippet(
   text: string,
@@ -40,40 +101,7 @@ export function searchSnippet(
   mode: "words" | "substring" = "words",
 ) {
   const visible = text.replace(/\s+/g, " ").trim();
-  const tokens = [...visible.matchAll(/[\p{L}\p{N}\p{M}]+/gu)];
-  const ranges: { start: number; end: number }[] = [];
-  for (const term of terms) {
-    const prefix = term.endsWith("*");
-    const literal = unquoteSearchValue(prefix ? term.slice(0, -1) : term).replace(/\s+/g, " ");
-    if (mode === "substring" || usesSubstringSearch(literal)) {
-      if (!literal) continue;
-      const pattern = new RegExp(literal.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "giu");
-      for (const match of visible.matchAll(pattern))
-        ranges.push({ start: match.index, end: match.index + match[0].length });
-    } else {
-      const words = wordTokens(literal);
-      if (!words.length) continue;
-      for (const [index, token] of tokens.entries()) {
-        if (
-          !words.every((word, offset) => {
-            const candidate = normalized(tokens[index + offset]?.[0] ?? "");
-            return prefix && offset === words.length - 1
-              ? candidate.startsWith(word)
-              : candidate === word;
-          })
-        )
-          continue;
-        const end = tokens[index + words.length - 1];
-        if (end) ranges.push({ start: token.index, end: end.index + end[0].length });
-      }
-    }
-  }
-  const merged: typeof ranges = [];
-  for (const range of ranges.toSorted((a, b) => a.start - b.start || b.end - a.end)) {
-    const last = merged.at(-1);
-    if (last && last.end >= range.start) last.end = Math.max(last.end, range.end);
-    else merged.push({ ...range });
-  }
+  const merged = searchTermRanges(visible, terms, mode);
   const insideSurrogatePair = (offset: number) =>
     offset > 0 &&
     offset < visible.length &&

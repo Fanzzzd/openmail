@@ -1,5 +1,6 @@
-import { Trans } from "@lingui/react/macro";
-import type { SearchMatch } from "@openmail/core/schema";
+import { Trans, useLingui } from "@lingui/react/macro";
+import type { SearchMatch, ThreadSummary } from "@openmail/core/schema";
+import { previewText } from "../format";
 
 function MarkedSnippet({ match }: { match: SearchMatch }) {
   const parts = match.highlights.flatMap(({ start, end }, index) => {
@@ -89,6 +90,64 @@ export function SearchSnippet({ match: full, lead }: { match: SearchMatch; lead?
     <>
       {source && <>{source} </>}
       <MarkedSnippet match={match} />
+    </>
+  );
+}
+
+const FIELDS = ["subject", "sender", "body", "filename", "attachment"] as const;
+type MatchField = (typeof FIELDS)[number];
+
+/** Where the query matched, in a fixed order, each field once. */
+const matchedFields = (matches: readonly SearchMatch[] = []): MatchField[] =>
+  FIELDS.filter((field) => matches.some((match) => match.source === field));
+
+/** Plain text with the match's marks when the match covers all of it, as for a short subject. */
+export function MatchedText({ text, match }: { text: string; match: SearchMatch | undefined }) {
+  return match && match.snippet === text.replace(/\s+/g, " ").trim() ? (
+    <MarkedSnippet match={match} />
+  ) : (
+    <>{text}</>
+  );
+}
+
+/**
+ * A result row's preview: which fields matched, then the message text around
+ * the first hit with the query words marked. A result found only by meaning
+ * says Related and marks nothing.
+ */
+export function SearchPreview({ thread, lead }: { thread: ThreadSummary; lead?: number }) {
+  const { t } = useLingui();
+  const matches = thread.searchMatches ?? [];
+  const fields = matchedFields(matches);
+  if (!fields.length && !thread.related) return <>{previewText(thread.snippet)}</>;
+  const names: Record<MatchField, string> = {
+    subject: t({ message: "Subject", context: "search match source" }),
+    sender: t({ message: "Sender", context: "search match source" }),
+    body: t({
+      message: "Message body",
+      context: "message text",
+      comment: "Email message text, never an anatomical body.",
+    }),
+    filename: t({ message: "File name", context: "search match source" }),
+    attachment: t({ message: "Attachment text", context: "search match source" }),
+  };
+  const body = matches.find((match) => match.source === "body");
+  return (
+    <>
+      <span className="font-medium">
+        {fields.length
+          ? fields.map((field) => names[field]).join(" · ")
+          : t({
+              message: "Related",
+              context: "search match source",
+              comment: "A search result found by meaning, without the search words.",
+            })}
+      </span>{" "}
+      {body ? (
+        <MarkedSnippet match={lead === undefined ? body : leadIn(body, lead)} />
+      ) : (
+        previewText(thread.snippet)
+      )}
     </>
   );
 }

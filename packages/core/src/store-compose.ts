@@ -775,6 +775,7 @@ export function makeComposeStore(
    * (weight 1), each occurrence discounted by age: weight / (1 + age / 30
    * days). Frequency and recency add up in one score.
    */
+  const CONTACT_MATCH_WINDOW = 5000;
   const suggestContacts = Effect.fn("Store.suggestContacts")(function* (
     query: string,
     limit: number,
@@ -787,8 +788,10 @@ export function makeComposeStore(
     const tokens = query.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [];
     if (query.trim() && tokens.length === 0) return [];
     const match = tokens.map((token) => `"${token}"*`).join(" AND ");
+    // A short prefix can match every message's sender. The newest occurrences
+    // carry the recency-weighted score, so a bounded window keeps typing fast.
     const matching = tokens.length
-      ? sql`c.rowid IN (SELECT rowid FROM contact_completion_fts WHERE contact_completion_fts MATCH ${match})`
+      ? sql`c.rowid IN (SELECT rowid FROM contact_completion_fts WHERE contact_completion_fts MATCH ${match} ORDER BY rowid DESC LIMIT ${CONTACT_MATCH_WINDOW})`
       : sql.literal("1");
     const scope = (alias: "c" | "h") =>
       sql.and([

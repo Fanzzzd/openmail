@@ -1,0 +1,77 @@
+---
+title: Search operators
+description: Every filter you can type in the OpenMail search field, with examples.
+---
+
+Type words to find messages that contain them in the subject, the sender, the message text or the text of an attachment. Add a filter to narrow the results. Filters combine with each other and with plain words.
+
+The search field suggests the common filters when you start typing their name, for example `has` or `is:`. Every filter below works when typed, including those the field does not suggest.
+
+## Words and phrases
+
+| Query                 | Finds                                                                                                                       |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `invoice`             | Messages with the word invoice. Results show where it matched: subject, sender, message text, file name or attachment text. |
+| `"annual report"`     | The exact phrase.                                                                                                           |
+| `budg*`               | Words that start with budg.                                                                                                 |
+| `-newsletter`         | Leaves out messages with the word. A minus sign works before any filter too.                                                |
+| `invoice OR receipt`  | Either word. Parentheses group terms: `(invoice OR receipt) from:alice`.                                                    |
+| `alpha AROUND 3 beta` | The two words at most three words apart.                                                                                    |
+
+## People
+
+| Filter                       | Finds                                                     |
+| ---------------------------- | --------------------------------------------------------- |
+| `from:alice`                 | Messages from a name or address.                          |
+| `to:bob@example.com`         | Messages sent to a name or address.                       |
+| `cc:carol`                   | Messages that copied a name or address.                   |
+| `bcc:dave`                   | Messages you sent with a blind copy to a name or address. |
+| `list:team@example.com`      | Messages from a mailing list.                             |
+| `deliveredto:me@example.com` | Messages by their Delivered-To header.                    |
+
+## Subject and headers
+
+| Filter                         | Finds                                 |
+| ------------------------------ | ------------------------------------- |
+| `subject:dinner`               | Words in the subject.                 |
+| `header:X-Mailer:Postbox`      | Messages with a header value.         |
+| `rfc822msgid:<id@example.com>` | One message by its Message-ID header. |
+
+## State, labels and folders
+
+| Filter                                       | Finds                                                              |
+| -------------------------------------------- | ------------------------------------------------------------------ |
+| `is:unread`, `is:read`                       | Unread or read messages.                                           |
+| `is:starred`                                 | Starred messages.                                                  |
+| `is:important`                               | Messages marked important.                                         |
+| `label:Work`                                 | Messages with a label. `folder:Work` does the same.                |
+| `in:inbox`, `in:sent`, `in:trash`, `in:spam` | Messages in a folder.                                              |
+| `in:anywhere`                                | Includes Spam and Trash.                                           |
+| `category:promotions`                        | Gmail category tabs: primary, social, promotions, updates, forums. |
+| `has:userlabels`, `has:nouserlabels`         | Messages with or without any label of your own.                    |
+
+## Attachments
+
+| Filter                                                                        | Finds                                                                           |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `has:attachment`                                                              | Messages with attachments.                                                      |
+| `has:pdf`, `has:image`, `has:document`, `has:spreadsheet`, `has:presentation` | Messages with an attachment of that type.                                       |
+| `has:drive`                                                                   | Gmail messages with a Google Drive link.                                        |
+| `filename:report.pdf`                                                         | An attachment file name that contains the text.                                 |
+| `in:attachment`                                                               | Searches only the text inside attachments, including recognized text in images. |
+
+## Dates and sizes
+
+| Filter                                  | Finds                                                                     |
+| --------------------------------------- | ------------------------------------------------------------------------- |
+| `after:2026-01-31`, `before:2026-03-01` | Messages after or before a date. `newer:` and `older:` are the same.      |
+| `newer_than:7d`, `older_than:1y`        | Messages newer or older than a period: `d` days, `m` months, `y` years.   |
+| `larger:5M`, `smaller:100K`             | Messages larger or smaller than a size. `size:` is the same as `larger:`. |
+
+## In the app
+
+Click the empty search field to see your recent searches. A search is saved when you press Return or open one of its results. Remove one with the × on its row or by pressing Delete while it is highlighted. Recent searches stay on this Mac and are cleared when you remove an account.
+
+Typing shows matching recent searches, labels, and filters whose name starts with what you typed. From the third letter of a name it also offers people, as `from:` and `to:`.
+
+When you open a result, the search words are marked in the message text and a bar above it shows the number of matches. Press ⌘G and ⌥⌘G to move between them. A result marked **Related** was found by on-device semantic search: it shares meaning with the query but not its words, so nothing is marked.

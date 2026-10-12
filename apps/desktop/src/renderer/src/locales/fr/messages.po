@@ -83,6 +83,10 @@ msgstr "{count, plural, one {# modification n’a pas pu être enregistrée} oth
 msgid "{count, plural, one {# message had rejected recipients} other {# messages had rejected recipients}}"
 msgstr "{count, plural, one {# message avait des destinataires refusés} other {# messages avaient des destinataires refusés}}"
 
+#: src/renderer/src/components/SearchHitBar.tsx
+msgid "{count, plural, one {# search match} other {# search matches}}"
+msgstr "{count, plural, one {# correspondance de recherche} other {# correspondances de recherche}}"
+
 #: src/renderer/src/components/FailedOpNotice.tsx
 msgid "{count, plural, one {# sent message is missing from Sent} other {# sent messages are missing from Sent}}"
 msgstr "{count, plural, one {# message envoyé est absent des messages envoyés} other {# messages envoyés sont absents des messages envoyés}}"
@@ -763,9 +767,18 @@ msgstr "Limite du cache des pièces jointes"
 msgid "Attachment exception"
 msgstr "Exception pour les pièces jointes"
 
+#: src/renderer/src/search-suggestions.ts
+msgid "Attachment file name"
+msgstr "Nom du fichier joint"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Attachment save folder"
 msgstr "Dossier d’enregistrement des pièces jointes"
+
+#: src/renderer/src/components/SearchSnippet.tsx
+msgctxt "search match source"
+msgid "Attachment text"
+msgstr "Texte de la pièce jointe"
 
 #: src/renderer/src/components/CacheSettings.tsx
 #: src/renderer/src/components/MessageList.tsx
@@ -1194,6 +1207,10 @@ msgstr "Vider tous les caches"
 #: src/renderer/src/shortcut-names.ts
 msgid "Clear formatting"
 msgstr "Effacer la mise en forme"
+
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Clear recent searches"
+msgstr "Effacer les recherches récentes"
 
 #: src/renderer/src/components/MessageList.tsx
 msgid "Clear search"
@@ -1764,6 +1781,10 @@ msgstr "Date"
 msgid "Date is ambiguous. Enter an explicit date and time"
 msgstr "La date est ambiguë. Saisissez une date et une heure précises"
 
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Dates"
+msgstr "Dates"
+
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Day"
 msgstr "Jour"
@@ -2308,6 +2329,11 @@ msgstr "Cinquième"
 msgid "File"
 msgstr "Fichier"
 
+#: src/renderer/src/components/SearchSnippet.tsx
+msgctxt "search match source"
+msgid "File name"
+msgstr "Nom du fichier"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Fill template variables"
 msgstr "Remplir les variables du modèle"
@@ -2315,6 +2341,10 @@ msgstr "Remplir les variables du modèle"
 #: src/renderer/src/components/MessageList.tsx
 msgid "Filter"
 msgstr "Filtre"
+
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Filters"
+msgstr "Filtres"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Find and replace"
@@ -2720,6 +2750,10 @@ msgstr "Condition d’importance"
 msgid "Important"
 msgstr "Important"
 
+#: src/renderer/src/search-suggestions.ts
+msgid "Important messages"
+msgstr "Messages importants"
+
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "In “{elsewhere}”"
 msgstr "Dans « {elsewhere} »"
@@ -2947,6 +2981,7 @@ msgstr "Libellé : {name}"
 #: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/Sidebar.tsx
 #: src/renderer/src/components/ThreadActions.tsx
+#: src/renderer/src/components/ui/SearchField.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Labels"
 msgstr "Libellés"
@@ -3268,6 +3303,11 @@ msgstr "Suivre l’apparence"
 msgid "Matched image region"
 msgstr "Région d’image correspondante"
 
+#. Announced after an attachment name whose name or text matched.
+#: src/renderer/src/components/Attachments.tsx
+msgid "Matches the search"
+msgstr "Correspond à la recherche"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Matching times keep that weekday active all day. Overnight periods continue into the next day. Unchecked days stay muted except for overnight periods from the previous day. Repeated daylight-saving times use the same schedule; skipped times are passed over."
 msgstr "Les heures correspondantes maintiennent ce jour de la semaine actif toute la journée. Les périodes de nuit se poursuivent le lendemain. Les jours non cochés restent muets, sauf pour les périodes de nuit de la veille. Les heures d’été répétées utilisent le même horaire ; les temps sautés sont ignorés."
@@ -3326,8 +3366,10 @@ msgstr "Arrière-plan du message"
 
 #. Email message text, never an anatomical body.
 #. Email message text, never an anatomical body.
+#. Email message text, never an anatomical body.
 #: src/renderer/src/components/MediaMatches.tsx
 #: src/renderer/src/components/MessageList.tsx
+#: src/renderer/src/components/SearchSnippet.tsx
 msgctxt "message text"
 msgid "Message body"
 msgstr "Texte du message"
@@ -3380,6 +3422,26 @@ msgstr "Le texte du message n’a pas pu être actualisé. La version en cache e
 msgid "Message updated"
 msgstr "Message mis à jour"
 
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages after a date"
+msgstr "Messages après une date"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages before a date"
+msgstr "Messages avant une date"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages copied to a person"
+msgstr "Messages avec une personne en copie"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages from a person"
+msgstr "Messages d’une personne"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages in a folder"
+msgstr "Messages dans un dossier"
+
 #: src/renderer/src/state/desktop.ts
 msgid "Messages in the undo window will remain drafts. A send already in progress may finish."
 msgstr "Les messages encore dans le délai d’annulation restent des brouillons. Un envoi déjà en cours peut se terminer."
@@ -3387,6 +3449,54 @@ msgstr "Les messages encore dans le délai d’annulation restent des brouillons
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Messages keep their other labels."
 msgstr "Les messages conservent leurs autres libellés."
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages larger than a size, such as 5M"
+msgstr "Messages plus grands qu’une taille, par exemple 5M"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages newer than a period, such as 7d"
+msgstr "Messages plus récents qu’une durée, par exemple 7d"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages older than a period, such as 1y"
+msgstr "Messages plus anciens qu’une durée, par exemple 1y"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages sent to a person"
+msgstr "Messages envoyés à une personne"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages smaller than a size, such as 1M"
+msgstr "Messages plus petits qu’une taille, par exemple 1M"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages with a document attachment"
+msgstr "Messages avec un document joint"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages with a label"
+msgstr "Messages avec un libellé"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages with a PDF attachment"
+msgstr "Messages avec un PDF joint"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages with a presentation attachment"
+msgstr "Messages avec une présentation jointe"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages with a spreadsheet attachment"
+msgstr "Messages avec une feuille de calcul jointe"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages with an image attachment"
+msgstr "Messages avec une image jointe"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Messages with attachments"
+msgstr "Messages avec pièces jointes"
 
 #: src/renderer/src/components/FocusedInboxActions.tsx
 msgid "Microsoft will ask for permission to update mail. After signing in, choose the action again."
@@ -3735,6 +3845,7 @@ msgstr "Suivant ci-dessous"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/SearchHitBar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Next match"
 msgstr "Correspondance suivante"
@@ -3992,6 +4103,10 @@ msgstr "Seuls les fichiers ordinaires peuvent être joints. Les dossiers ne peuv
 #: src/renderer/src/components/AppleContactsSettings.tsx
 msgid "Only selected Apple Contacts are available."
 msgstr "Seuls les contacts Apple sélectionnés sont disponibles."
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Only text inside attachments"
+msgstr "Uniquement le texte des pièces jointes"
 
 #: src/renderer/src/App.tsx
 msgid "Only the selected messages in this Trash or Spam folder will be permanently deleted. This cannot be undone."
@@ -4281,6 +4396,10 @@ msgstr "Suspendre l’indexation"
 msgid "Pending operations"
 msgstr "Opérations en attente"
 
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "People"
+msgstr "Personnes"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "People you know are your contacts and people you have sent mail to, when the message passes sender authentication. Known trackers stay blocked."
 msgstr "Les personnes que vous connaissez sont vos contacts et les personnes à qui vous avez envoyé du courrier, si le message passe l’authentification de l’expéditeur. Les traqueurs connus restent bloqués."
@@ -4327,6 +4446,10 @@ msgstr "Position"
 msgid "Press ? outside a text field to show this list."
 msgstr "Presse ? en dehors d’un champ de texte pour afficher cette liste."
 
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Press Delete to remove it from recent searches."
+msgstr "Appuyez sur Suppr pour la retirer des recherches récentes."
+
 #. placeholder {0}: file.filename
 #: src/renderer/src/components/Attachments.tsx
 msgid "Preview {0}"
@@ -4351,6 +4474,7 @@ msgstr "Aperçu : {0} messages. Seuls les messages prévisualisés seront modif
 
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/SearchHitBar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Previous match"
 msgstr "Correspondance précédente"
@@ -4459,6 +4583,10 @@ msgstr "État de lecture"
 msgid "Reading"
 msgstr "Lecture"
 
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Recent"
+msgstr "Récentes"
+
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Recipient email"
 msgstr "E-mail du destinataire"
@@ -4515,6 +4643,12 @@ msgstr "Rejeter"
 #: src/renderer/src/components/Settings.tsx
 msgid "Reject suggestion"
 msgstr "Rejeter la suggestion"
+
+#. A search result found by meaning, without the search words.
+#: src/renderer/src/components/SearchSnippet.tsx
+msgctxt "search match source"
+msgid "Related"
+msgstr "Apparenté"
 
 #: src/renderer/src/components/CalendarEvents.tsx
 msgid "Relative dates use the date of this message."
@@ -4581,6 +4715,10 @@ msgstr "Supprimer l’libellé actuelle"
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Remove favorite"
 msgstr "Supprimer le favori"
+
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Remove from recent searches"
+msgstr "Retirer des recherches récentes"
 
 #: src/renderer/src/components/AiSettings.tsx
 msgid "Remove key"
@@ -5017,8 +5155,16 @@ msgid "Search could not finish:"
 msgstr "La recherche n’a pas pu se terminer :"
 
 #: src/renderer/src/components/ui/SearchField.tsx
+msgid "Search help"
+msgstr "Aide sur la recherche"
+
+#: src/renderer/src/components/ui/SearchField.tsx
 msgid "Search mail"
 msgstr "Rechercher dans les messages"
+
+#: src/renderer/src/components/SearchHitBar.tsx
+msgid "Search matches"
+msgstr "Correspondances de recherche"
 
 #: src/renderer/src/components/Reader.tsx
 #: src/renderer/src/shortcut-names.ts
@@ -5134,6 +5280,11 @@ msgstr "Envoyer le lien de la conversation à…"
 #: src/renderer/src/shortcut-names.ts
 msgid "Send web mail link to…"
 msgstr "Envoyer le lien du message web à…"
+
+#: src/renderer/src/components/SearchSnippet.tsx
+msgctxt "search match source"
+msgid "Sender"
+msgstr "Expéditeur"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Sender authentication failed (DMARC)"
@@ -5548,6 +5699,10 @@ msgstr "Ajouter une étoile au message"
 msgid "Starred"
 msgstr "Suivis"
 
+#: src/renderer/src/search-suggestions.ts
+msgid "Starred messages"
+msgstr "Messages suivis"
+
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Start"
@@ -5582,6 +5737,11 @@ msgstr "Barré"
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/TemplateSettings.tsx
+msgid "Subject"
+msgstr "Objet"
+
+#: src/renderer/src/components/SearchSnippet.tsx
+msgctxt "search match source"
 msgid "Subject"
 msgstr "Objet"
 
@@ -6029,6 +6189,10 @@ msgstr "Service d’authentification de confiance (facultatif)"
 msgid "Try again"
 msgstr "Réessayer"
 
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Try from:name or has:attachment"
+msgstr "Essayez from:nom ou has:attachment"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Tuesday"
 msgstr "Mardi"
@@ -6121,6 +6285,10 @@ msgstr "Fuseau horaire inconnu de l’organisateur ; montrant l’heure d’ori
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Unread"
 msgstr "Non lus"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Unread messages"
+msgstr "Messages non lus"
 
 #: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -6342,6 +6510,10 @@ msgstr "Message entier"
 #: src/renderer/src/state/desktop.ts
 msgid "Window"
 msgstr "Fenêtre"
+
+#: src/renderer/src/search-suggestions.ts
+msgid "Words in the subject"
+msgstr "Mots de l’objet"
 
 #: src/renderer/src/components/ProfileSettings.tsx
 msgid "Work"

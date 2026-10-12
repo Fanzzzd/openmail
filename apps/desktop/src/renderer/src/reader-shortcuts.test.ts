@@ -36,3 +36,11 @@ it("find previous and selection use the central keymap in each set", () => {
     expect(readerFindAction(set, key("e", { altKey: true }), false)).toBeNull();
   }
 });
+
+it("next and previous step through search hits while find is closed", () => {
+  for (const set of ["mimestream", "apple", "gmail"] as const) {
+    expect(readerFindAction(set, key("g"), false, true)).toBe("next");
+    expect(readerFindAction(set, key("g", { altKey: true }), false, true)).toBe("previous");
+    expect(readerFindAction(set, key("G", { shiftKey: true }), false, true)).toBeNull();
+  }
+});

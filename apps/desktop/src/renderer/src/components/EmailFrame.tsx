@@ -18,6 +18,7 @@ import { sanitizeReaderHtml } from "./reader-html";
 import { isTypingTarget } from "../typing-target";
 import { DARK_CSS, fitDocument } from "./frame-style";
 import { FRAME_INITIAL_HEIGHT, frameSurface, type MessageBackground } from "./MessageBodyShell";
+import { searchTermsOf, useSearchHits } from "./search-hits";
 
 // Mail HTML is untrusted. It renders in a sandboxed iframe with scripts off,
 // and its own CSP blocks remote loads (tracking pixels) until images are
@@ -77,13 +78,16 @@ export function EmailFrame({
   useEffect(() => {
     activate.current = onActivate;
   });
+  const { termsKey, present: presentHits } = useSearchHits();
   useEffect(() => {
     if (!frameDocument || !quotes) return constVoid;
     const view = presentBody(frameDocument.body, quotes, showQuotes, findQuery);
+    // Search hits count after the quotes settle; an open find scrolls last.
+    presentHits(frameDocument.body);
     onMatches?.(view.count);
     view.select(view.count ? findIndex % view.count : 0);
     return () => view.dispose();
-  }, [frameDocument, quotes, showQuotes, findQuery, findIndex, onMatches]);
+  }, [frameDocument, quotes, showQuotes, findQuery, findIndex, onMatches, presentHits]);
   const [height, setHeight] = useState(FRAME_INITIAL_HEIGHT);
   const [fit, setFit] = useState(true);
   const [wide, setWide] = useState(false);
@@ -116,7 +120,10 @@ export function EmailFrame({
     presentation === "compose"
       ? `html, body { background: ${READER_COLOURS.paper}; color: ${READER_COLOURS.ink}; color-scheme: light; }`
       : `${READER_BASE_CSS}${background === "dark" ? DARK_CSS : ""} body { zoom: ${zoom}%; }`;
-  const safeHtml = useMemo(() => sanitizeReaderHtml(html, remote), [html, remote]);
+  const safeHtml = useMemo(
+    () => sanitizeReaderHtml(html, remote, searchTermsOf(termsKey)),
+    [html, remote, termsKey],
+  );
   const doc = `<!doctype html><html lang="${i18n.locale}"><head><meta charset="utf-8">
 <meta http-equiv="x-dns-prefetch-control" content="off">
 <meta http-equiv="Content-Security-Policy" content="${remote ? ALLOWED : BLOCKED}; ${FRAME_RESTRICTIONS}">

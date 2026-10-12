@@ -1,9 +1,16 @@
 import createDOMPurify from "dompurify";
 import { sanitizeReaderHtml as portableSanitize } from "@openmail/core/schema";
 
-/** The browser's HTML parser is the final sanitizer before srcdoc reparse. */
-export function sanitizeReaderHtml(html: string, remote: boolean): string {
-  const clean = portableSanitize(html, remote);
+/**
+ * The browser's HTML parser is the final sanitizer before srcdoc reparse.
+ * Core marks `searchTerms` in the cleaned text before that pass.
+ */
+export function sanitizeReaderHtml(
+  html: string,
+  remote: boolean,
+  searchTerms: readonly string[] = [],
+): string {
+  const clean = portableSanitize(html, remote, undefined, searchTerms);
   const purifier = createDOMPurify(window);
   // The Node component harness has a partial DOM. It still gets the portable
   // allow-list; Chromium and jsdom support the final browser sanitizer.

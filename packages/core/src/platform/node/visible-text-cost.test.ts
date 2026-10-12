@@ -48,3 +48,17 @@ it.each([300, 1000])("%i narrow media rules keep 5000 matching paragraphs hidden
   if (performanceBudgets) expect(performance.now() - start).toBeLessThan(1000);
   expect(result).toEqual({ text: "", hidden: true });
 });
+
+it("a 1 MB message text is tokenized once for eight search terms", async () => {
+  const { searchTermRanges } = await import("../../search-snippets.js");
+  const text = "Quarterly invoice review for the Café team, budget approved. ".repeat(17_000);
+  const terms = ["invoice", "budget", "cafe", '"team budget"', "review*", "quarterly", "x", "zz"];
+  searchTermRanges(text, terms.slice(0, 1));
+  const start = performance.now();
+  const ranges = searchTermRanges(text, terms);
+  const ms = performance.now() - start;
+  expect(text.length).toBeGreaterThan(1_000_000);
+  // Quarterly, invoice, review, Café, and "team, budget" merged with budget.
+  expect(ranges).toHaveLength(17_000 * 5);
+  if (performanceBudgets) expect(ms).toBeLessThan(100);
+});
