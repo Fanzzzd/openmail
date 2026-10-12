@@ -45,7 +45,8 @@ export function fixtureMessage(i: number, large = false): IncomingMessage {
     cc: [],
     date: fixtureNow - (100_000 - i) * 120_000,
     snippet: "weekly alpha beta 预算批准",
-    bodyText: `weekly alpha beta 预算批准，会议通知。\n${"Project update and delivery schedule. ".repeat(8)}\nOn Monday someone wrote:\n> Earlier message`,
+    // One message in a thousand shares a Google Sheet, so has:drive must find sparse rows.
+    bodyText: `weekly alpha beta 预算批准，会议通知。\n${"Project update and delivery schedule. ".repeat(8)}${i % 1000 === 500 ? `\nSheet: https://docs.google.com/spreadsheets/d/${i}/edit` : ""}\nOn Monday someone wrote:\n> Earlier message`,
     bodyHtml: fixtureHtml[i % 2] ?? "",
     rfcMessageId: `<message${i}@example.com>`,
     labels: ["INBOX", folder, ...(i % 4 === 0 ? ["UNREAD"] : [])],

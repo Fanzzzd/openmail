@@ -1148,6 +1148,10 @@ msgstr "Проверка обновлений…"
 msgid "Checking grammar…"
 msgstr "Проверка грамматики…"
 
+#: src/main/app/native-i18n.ts
+msgid "Checking local database…"
+msgstr "Проверка локальной базы данных…"
+
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Checking sync health…"
 msgstr "Проверка синхронизации…"

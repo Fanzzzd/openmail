@@ -1281,7 +1281,9 @@ export function searchIncludesSpecialFolders(query: ThreadQuery): boolean {
   return expressionIncludesSpecialFolders(parseSearchExpression(query.search ?? ""));
 }
 
-export function typedDrivePath(type: AttachmentType): string | null {
+export function typedDrivePath(
+  type: AttachmentType,
+): "document" | "spreadsheets" | "presentation" | null {
   switch (type) {
     case "document":
       return "document";

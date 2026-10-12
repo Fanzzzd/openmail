@@ -14,6 +14,8 @@ const native = vi.hoisted(() => ({
   startup: vi.fn(),
   reset: vi.fn<() => CacheResetResult>(() => ({ kind: "reset" })),
   check: vi.fn(),
+  progress: vi.fn<(kind: string) => void>(),
+  dismissProgress: vi.fn(),
   configured: vi.fn(),
   guardedRelaunch: vi.fn(async () => false),
   recover: (_code: number): boolean => false,
@@ -24,7 +26,7 @@ vi.mock("@openmail/core", async () => ({
   ...(await import("../../../../../packages/core/src/platform/node/database-access.js")),
   ...(await import("../../../../../packages/core/src/platform/node/recovery-files.js")),
   prepareDatabaseStartup: native.startup,
-  checkLocalDatabase: () => {
+  checkLocalDatabaseInWorker: async () => {
     native.check();
     return native.integrity;
   },
@@ -38,6 +40,12 @@ vi.mock("../windows/windows", () => ({
   ) => {
     native.configured(options);
     native.recover = recover;
+  },
+}));
+vi.mock("./database-upgrade", () => ({
+  showDatabaseProgress: async (kind: string) => {
+    native.progress(kind);
+    return native.dismissProgress;
   },
 }));
 vi.mock("./recovery-actions", () => ({ requestRecoveryRelaunch: native.guardedRelaunch }));
@@ -135,10 +143,11 @@ it("debounces shared-process crashes and requests a guarded relaunch without for
   expect(native.reset).not.toHaveBeenCalled();
   expect(recovery.hasCrashReport()).toBe(true);
 });
-it("a clean startup does not perform a synchronous integrity scan", async () => {
+it("a clean startup does not perform an integrity scan", async () => {
   const recovery = await import("./reliability");
   expect(await recovery.prepareReliability(temp())).toBe(true);
   expect(native.check).not.toHaveBeenCalled();
+  expect(native.progress).not.toHaveBeenCalled();
   expect(native.configured).toHaveBeenCalledWith({ safeMode: false });
 });
 it("Continue clears the loop counter and discards saved windows while retaining the report", async () => {
@@ -354,4 +363,15 @@ it("core sync crashes retain safe phase and cause codes", async () => {
   expect(preview).toContain('"phase":"pull"');
   expect(preview).toContain('"causeKind":"defect"');
   expect(preview).not.toContain("private");
+});
+
+it("an abnormal exit checks the database in a worker behind a painted progress window", async () => {
+  const dir = temp();
+  createLocalDiagnostics(join(dir, "diagnostics")).begin();
+  const recovery = await import("./reliability");
+  expect(await recovery.prepareReliability(dir)).toBe(true);
+  expect(native.check).toHaveBeenCalledOnce();
+  expect(native.progress).toHaveBeenCalledWith("checking");
+  expect(native.dismissProgress).toHaveBeenCalledOnce();
+  expect(native.dialogs).not.toHaveBeenCalled();
 });

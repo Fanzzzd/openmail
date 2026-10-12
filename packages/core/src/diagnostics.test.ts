@@ -21,6 +21,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   checkLocalDatabase,
+  checkLocalDatabaseInWorker,
   createLocalDiagnostics,
   CRASH_WINDOW_MS,
   resetLocalCache,
@@ -131,11 +132,13 @@ it("counts renderer crashes globally and prunes only the detection window", () =
   expect(log.preview(true).split("\n")).toHaveLength(3);
 });
 
-it("replaces an unreadable database with a verified migrated file and keeps the original", () => {
+it("replaces an unreadable database with a verified migrated file and keeps the original", async () => {
   const dir = temp();
   const file = join(dir, "mail.db");
+  expect(await checkLocalDatabaseInWorker(dir)).toBe("ok");
   writeFileSync(file, "damaged private database");
   expect(checkLocalDatabase(dir)).not.toBe("ok");
+  expect(await checkLocalDatabaseInWorker(dir)).toBe(checkLocalDatabase(dir));
   const result = resetLocalCache(dir);
   expect(result).toMatchObject({ kind: "recovered" });
   expect(checkLocalDatabase(dir)).toBe("ok");
@@ -336,7 +339,7 @@ it("diagnostic markers cannot block startup when their temporary file is unwrita
   expect(() => log.finish()).not.toThrow();
 });
 
-it("salvages every migrated non-cache table from a database with a damaged cache page", () => {
+it("salvages every migrated non-cache table from a database with a damaged cache page", async () => {
   const dir = temp();
   const file = join(dir, "mail.db");
   const db = openUnversionedMigratedDatabase(file);
@@ -391,9 +394,11 @@ it("salvages every migrated non-cache table from a database with a damaged cache
   bytes[(root - 1) * pageSize] = 0;
   writeFileSync(file, bytes);
   expect(checkLocalDatabase(dir)).toBe("corrupt");
+  expect(await checkLocalDatabaseInWorker(dir)).toBe("corrupt");
   const result = resetLocalCache(dir);
   expect(result.kind).toBe("recovered");
   expect(checkLocalDatabase(dir)).toBe("ok");
+  expect(await checkLocalDatabaseInWorker(dir)).toBe("ok");
   const fresh = new DatabaseSync(file);
   try {
     for (const table of retained)

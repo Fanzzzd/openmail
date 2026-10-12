@@ -213,6 +213,39 @@ export function trackImapBackfill(
   return Option.some(JSON.stringify(previous));
 }
 
+/**
+ * Records a pushed \Seen or \Flagged change in the per-UID flags. Without it the
+ * record keeps the pre-push state, and a later opposite change from another
+ * device compares equal to it and is never reported.
+ */
+export function recordPushedFlags(
+  cursor: Option.Option<string>,
+  providerIds: readonly string[],
+  flag: "read" | "star",
+  value: boolean,
+): Option.Option<string> {
+  if (Option.isNone(cursor)) return Option.none();
+  const previous = readCursor(cursor);
+  const states = new Map<string, FolderState>();
+  for (const providerId of providerIds) {
+    const ref = decodeProviderId(providerId);
+    if (Option.isNone(ref)) continue;
+    const old = previous.folders[ref.value.path];
+    if (!old || old.uidValidity !== ref.value.uidValidity) continue;
+    const state = states.get(ref.value.path) ?? FolderState.from(old);
+    states.set(ref.value.path, state);
+    const flags = state.flags.get(ref.value.uid);
+    if (!flags) continue;
+    state.flags.set(
+      ref.value.uid,
+      flag === "read" ? { ...flags, unread: !value } : { ...flags, starred: value },
+    );
+  }
+  if (!states.size) return Option.none();
+  for (const [folder, state] of states) previous.folders[folder] = state.toCursor();
+  return Option.some(JSON.stringify(previous));
+}
+
 export function folderRegressed(
   previous: FolderCursor | undefined,
   uidValidity: string,

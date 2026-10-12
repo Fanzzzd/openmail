@@ -8,7 +8,7 @@ UIDNEXT 回退且 UIDVALIDITY 未变时，旧 UID 已不可信。core 先失效�
 
 ## IMAP 复制、移动与草稿
 
-两端移动统一先 COPY、确认目标身份，再删除源副本。UIDPLUS 可定向清除源 UID；否则只加 `\Deleted`，不执行全局 EXPUNGE。两端同步、历史拉取与服务端搜索把 `\Deleted` 邮件视为不存在，避免恢复源文件夹副本。没有 UIDPLUS 时，服务器原件待其他客户端或服务器清除；永久删除仍要求 UIDPLUS。其他客户端撤销 `\Deleted` 后，旧 UID 要到重置游标后的完整窗口重扫才会重新出现。无 CONDSTORE 时，已有 UID 的标记最多每十分钟完整扫描一次。
+两端移动统一先 COPY、确认目标身份，再删除源副本。UIDPLUS 可定向清除源 UID；否则只加 `\Deleted`，不执行全局 EXPUNGE。两端同步、历史拉取与服务端搜索把 `\Deleted` 邮件视为不存在，避免恢复源文件夹副本。没有 UIDPLUS 时，服务器原件待其他客户端或服务器清除；永久删除仍要求 UIDPLUS。其他客户端撤销 `\Deleted` 后，旧 UID 要到重置游标后的完整窗口重扫才会重新出现。无 CONDSTORE 时，已有 UID 的标记最多每十分钟完整扫描一次。openmail 推送 `\Seen` 或 `\Flagged` 成功后，core 同时更新完整游标和收件箱游标中该 UID 的标记记录；否则其他设备随后改回原值时，服务器状态与旧记录相同，不会产生 Flags 变更。
 
 COPY 前按排队操作、源 provider ID 和目标文件夹持久记录 issued 进度，成功回复后记录 accepted。首次操作正常复制，即使目标已有相同 Message-ID；重试才按进度查询目标，查到后只重做源副本删除。明确拒绝会清除对应进度；丢失回复时保留。源、目标均不存在且没有进度时返回 PermanentError，终止操作并 reconcile；有进度但结果未确认时继续等待。批量操作逐封记录，不能把一封的进度当作另一封的进度。
 
@@ -104,7 +104,7 @@ Node IMAP adapter 将 ImapFlow SEARCH 返回的 false／undefined 视为 Provide
 
 Drafts 孤立草稿只统计已有 `remote_message_id`、`local_only=0`、`sync_error IS NULL` 且没有对应消息行的草稿，按远端消息 ID 去重；扫描候选使用相同规则。本地未上传、local-only 和同步失败的草稿不计入孤立远端行。404 清理继续保护有待处理 saveDraft 的草稿，不删除尚未上传的编辑内容。
 
-Outlook 同轮出现同 ID 的更新和移除时，只要更新文件夹与移除文件夹重叠，就先把 ID 保存到持久验证队列，再保存游标。拉取不内联验证；随后按共享预算核对当前位置。限流、权限错误和没有明确答案的 ID 留在队列，后续同步续验。这覆盖从后处理文件夹移动到 Inbox、旧文件夹更新覆盖了新位置的情况。
+Outlook 同轮出现同 ID 的更新和移除时，只要更新文件夹与移除文件夹重叠，就先把 ID 保存到持久验证队列，再保存游标。拉取不内联验证；随后按共享预算核对当前位置。限流、权限错误和没有明确答案的 ID 留在队列，后续同步续验。这覆盖从后处理文件夹移动到 Inbox、旧文件夹更新覆盖了新位置的情况。没有被任何文件夹列出的移除同样先入验证队列，不直接删除：文件夹 delta 的 `receivedDateTime` 起点在游标创建时固定，二月的邮件移入六月新建的文件夹后，新文件夹的 delta 不会列出它；验证读取 `parentFolderId` 后把它改到新文件夹。确实删除的邮件由验证确认为 gone 后删除，每 20 个删除多一个只读 batch 请求。Inbox 轮询不处理移除，也不逐个 GET 自定义文件夹；收件箱游标只保留 Inbox 的 delta 链接，文件夹删除仍由完整同步判定。
 
 实现见 [sync-reset.ts](../packages/core/src/sync-reset.ts)、[store-sync-reset.ts](../packages/core/src/store-sync-reset.ts)、[Outlook](../packages/core/src/outlook.ts)和 [store-sync-health.ts](../packages/core/src/store-sync-health.ts)，回归见 [sync-stale.test.ts](../packages/core/src/sync-stale.test.ts)、[sync-reset.test.ts](../packages/core/src/sync-reset.test.ts)及 [outlook.test.ts](../packages/core/src/outlook.test.ts)。
 

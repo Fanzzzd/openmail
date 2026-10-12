@@ -104,23 +104,20 @@ it("migration 37 with foreign keys enabled preserves all dependent projections",
     source.exec(`INSERT INTO messages(id,account_id,provider_id,thread_id,subject,from_name,from_addr,to_json,cc_json,date,snippet,body_text,body_html,labels_json,attachments_json,is_unread,is_starred)
       VALUES('a/one','a','one','a/thread','searchneedle','Person','person@example.com','[]','[]',0,'','text','','["INBOX"]','[]',1,0)`);
     const tables = ["contact_candidates", "message_search_meta", "semantic_jobs", "message_badges"];
-    const before = tables.map((table) =>
-      source
-        .prepare(`SELECT ${table === "contact_candidates" ? "rowid," : ""}* FROM ${table}`)
-        .all(),
-    );
+    // Later migrations add columns; compare the ones that existed at migration 37.
+    const select = (table: string) =>
+      table === "contact_candidates"
+        ? "SELECT rowid,* FROM contact_candidates"
+        : table === "message_search_meta"
+          ? "SELECT row_id,message_id,account_id,thread_id,eligible FROM message_search_meta"
+          : `SELECT * FROM ${table}`;
+    const before = tables.map((table) => source.prepare(select(table)).all());
     expect(before.every((rows) => rows.length > 0)).toBe(true);
     prepareSmokeDatabase(file, target);
     const copy = new DatabaseSync(join(target, "mail.db"));
     try {
       expect(copy.prepare("PRAGMA foreign_keys").get()?.foreign_keys).toBe(1);
-      expect(
-        tables.map((table) =>
-          copy
-            .prepare(`SELECT ${table === "contact_candidates" ? "rowid," : ""}* FROM ${table}`)
-            .all(),
-        ),
-      ).toEqual(before);
+      expect(tables.map((table) => copy.prepare(select(table)).all())).toEqual(before);
       expect(copy.prepare("PRAGMA foreign_key_check").all()).toEqual([]);
       copy.exec("INSERT INTO messages_fts(messages_fts,rank) VALUES('integrity-check',1)");
     } finally {

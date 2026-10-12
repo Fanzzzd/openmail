@@ -18,6 +18,7 @@ import {
 } from "node:fs";
 import { basename, join } from "node:path";
 import { DatabaseSync, type SQLOutputValue } from "node:sqlite";
+import { Worker } from "node:worker_threads";
 import { MIGRATIONS } from "../../db.js";
 import {
   optionalParentChecks,
@@ -33,20 +34,80 @@ export type CacheResetResult =
   | { kind: "reset" }
   | { kind: "recovered"; backup: string; copied: number; skipped: number };
 
-export function databaseQuickCheck(file: string): "ok" | "corrupt" | "unavailable" {
+export type QuickCheckResult = "ok" | "corrupt" | "unavailable";
+
+/** SQLITE_CORRUPT and SQLITE_NOTADB mean a damaged file; other errors leave it unknown. */
+const quickCheckResult = (
+  reply: { readonly rows: readonly unknown[] } | { readonly errcode: unknown },
+): QuickCheckResult => {
+  if ("rows" in reply) {
+    const [row] = reply.rows;
+    return reply.rows.length === 1 &&
+      typeof row === "object" &&
+      row !== null &&
+      "quick_check" in row &&
+      row.quick_check === "ok"
+      ? "ok"
+      : "corrupt";
+  }
+  return typeof reply.errcode === "number" && [11, 26].includes(reply.errcode & 0xff)
+    ? "corrupt"
+    : "unavailable";
+};
+
+export function databaseQuickCheck(file: string): QuickCheckResult {
   if (!existsSync(file)) return "ok";
   let db: DatabaseSync | undefined;
   try {
     db = new DatabaseSync(file, { readOnly: true });
-    const rows = db.prepare("PRAGMA quick_check").all();
-    return rows.length === 1 && rows[0]?.quick_check === "ok" ? "ok" : "corrupt";
+    return quickCheckResult({ rows: db.prepare("PRAGMA quick_check").all() });
   } catch (error) {
-    const code =
-      typeof error === "object" && error !== null && "errcode" in error ? error.errcode : null;
-    return typeof code === "number" && [11, 26].includes(code & 0xff) ? "corrupt" : "unavailable";
+    return quickCheckResult({
+      errcode:
+        typeof error === "object" && error !== null && "errcode" in error ? error.errcode : null,
+    });
   } finally {
     db?.close();
   }
+}
+
+/** The same check on a worker thread, so a caller's event loop keeps running. Falls back inline. */
+export function databaseQuickCheckInWorker(file: string): Promise<QuickCheckResult> {
+  if (!existsSync(file)) return Promise.resolve("ok");
+  let worker: Worker;
+  try {
+    worker = new Worker(new URL("./integrity-worker.mjs", import.meta.url), {
+      workerData: { file },
+      execArgv: [],
+    });
+  } catch {
+    return Promise.resolve(databaseQuickCheck(file));
+  }
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (result: QuickCheckResult) => {
+      if (settled) return;
+      settled = true;
+      void worker.terminate().finally(() => resolve(result));
+    };
+    worker.once("message", (reply: unknown) =>
+      finish(
+        typeof reply === "object" && reply !== null && ("rows" in reply || "errcode" in reply)
+          ? quickCheckResult(
+              "rows" in reply && Array.isArray(reply.rows)
+                ? { rows: reply.rows }
+                : { errcode: "errcode" in reply ? reply.errcode : null },
+            )
+          : "unavailable",
+      ),
+    );
+    // A worker that cannot start or dies early must not turn into a failed check.
+    const inline = () => {
+      if (!settled) finish(databaseQuickCheck(file));
+    };
+    worker.once("error", inline);
+    worker.once("exit", inline);
+  });
 }
 
 /** Salvage one row at a time; a broken page must not prevent later readable rows from copying. */

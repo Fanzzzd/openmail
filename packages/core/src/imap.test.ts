@@ -25,6 +25,7 @@ import {
   encodeProviderId,
   parseUidSet,
   readCursor,
+  recordPushedFlags,
   trackImapBackfill,
   uidSet,
 } from "./imap-cursor.js";
@@ -35,7 +36,12 @@ import {
 import { resolveImapSettings } from "./imap-settings.js";
 import { fetchMessages } from "./platform/node/imap/pull.js";
 import { HtmlText } from "./platform/html-text.js";
-import { Secrets } from "./services.js";
+import { Providers, Secrets, Store } from "./services.js";
+import { Mailbox } from "./mailbox.js";
+import { MailboxLive } from "./mailbox-live.js";
+import { StoreLive } from "./store.js";
+import { MemoryPlatform } from "./platform/node/platform-memory.js";
+import { incoming } from "./platform/node/testing.js";
 const makeImap = unboundMakeImap.pipe(Effect.provideService(MailCodec, nodeMailCodec));
 const makeImapWith = (...args: Parameters<typeof unboundMakeImapWith>) =>
   unboundMakeImapWith(...args).pipe(Effect.provideService(MailCodec, nodeMailCodec));
@@ -2136,3 +2142,104 @@ function fakeImapClient(
 ) {
   return new ImapFlow(options);
 }
+
+it.effect("a pushed read flag updates the UID record, so a later unread elsewhere syncs", () =>
+  testImap((adapter, client) => {
+    // One INBOX message; the server has no CONDSTORE, so each sync after ten
+    // minutes compares a full flag scan against the per-UID record.
+    const server = new Set<string>();
+    vi.spyOn(client, "list").mockResolvedValue([
+      {
+        path: "INBOX",
+        pathAsListed: "INBOX",
+        name: "INBOX",
+        parent: [],
+        parentPath: "",
+        delimiter: "/",
+        flags: new Set<string>(),
+        listed: true,
+        subscribed: true,
+        specialUse: "\\Inbox",
+      },
+    ]);
+    vi.spyOn(client, "mailboxOpen").mockResolvedValue({
+      path: "INBOX",
+      delimiter: "/",
+      flags: new Set<string>(),
+      uidValidity: 7n,
+      uidNext: 2,
+      exists: 1,
+    });
+    vi.spyOn(client, "search").mockResolvedValue([1]);
+    vi.spyOn(client, "fetchAll").mockImplementation(() =>
+      Promise.resolve([{ seq: 1, uid: 1, flags: new Set(server), size: 100 }]),
+    );
+    vi.spyOn(client, "messageFlagsAdd").mockImplementation((_range, flags) => {
+      for (const flag of flags) server.add(flag);
+      return Promise.resolve(true);
+    });
+    vi.spyOn(client, "messageFlagsRemove").mockImplementation((_range, flags) => {
+      for (const flag of flags) server.delete(flag);
+      return Promise.resolve(true);
+    });
+    return Effect.gen(function* () {
+      const store = yield* Store;
+      const mailbox = yield* Mailbox;
+      const saved = yield* store.upsertAccount("imap", account.email);
+      assert.ok(account.imap);
+      yield* store.setImapSettings(saved.id, account.imap);
+      yield* store.saveSyncCursor(saved.id, Option.getOrThrow(testCursor()));
+      yield* store.upsertMessage(saved.id, incoming("7:1:INBOX"));
+      const id = yield* store.messageIdForProvider(saved.id, "7:1:INBOX");
+      assert.ok(id);
+      yield* mailbox.perform(
+        { kind: "modify", threads: [id], op: { kind: "read", value: true } },
+        { kind: "user", surface: "app" },
+      );
+      // perform pushes at once; no flag scan runs between the push and the change below.
+      assert.isTrue(server.has("\\Seen"));
+      assert.deepStrictEqual(yield* store.listPendingOps, []);
+      assert.strictEqual(
+        readCursor(yield* store.getSyncCursor(saved.id)).folders.INBOX?.unread,
+        "",
+      );
+      // Another device marks it unread before the next flag scan.
+      server.delete("\\Seen");
+      yield* TestClock.adjust("11 minutes");
+      yield* mailbox.sync(saved.id);
+      assert.isTrue((yield* store.getMessage(id)).isUnread);
+    }).pipe(
+      Effect.provide(
+        MailboxLive({ backgroundFlush: false, imapIdle: false }).pipe(
+          Layer.provideMerge(
+            Layer.mergeAll(StoreLive, Layer.succeed(Providers, { get: () => adapter })).pipe(
+              Layer.provideMerge(MemoryPlatform()),
+            ),
+          ),
+        ),
+      ),
+    );
+  }),
+);
+
+it("pushed flags update only tracked UIDs in a folder with the same UIDVALIDITY", () => {
+  const cursor = Option.some(
+    JSON.stringify({
+      folders: {
+        INBOX: { uidValidity: "7", lastUid: 3, uids: "1:2", unread: "1:2", starred: "" },
+      },
+    }),
+  );
+  const starred = recordPushedFlags(cursor, ["7:1:INBOX", "7:3:INBOX"], "star", true);
+  assert.deepStrictEqual(readCursor(starred).folders.INBOX, {
+    uidValidity: "7",
+    lastUid: 3,
+    uids: "1:2",
+    unread: "1:2",
+    starred: "1",
+  });
+  const read = recordPushedFlags(starred, ["7:2:INBOX"], "read", true);
+  assert.strictEqual(readCursor(read).folders.INBOX?.unread, "1");
+  assert.isTrue(Option.isNone(recordPushedFlags(cursor, ["6:1:INBOX"], "read", true)));
+  assert.isTrue(Option.isNone(recordPushedFlags(Option.none(), ["7:1:INBOX"], "read", true)));
+});

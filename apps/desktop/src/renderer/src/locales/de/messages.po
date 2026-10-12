@@ -1148,6 +1148,10 @@ msgstr "Nach Updates wird gesucht…"
 msgid "Checking grammar…"
 msgstr "Grammatik wird geprüft…"
 
+#: src/main/app/native-i18n.ts
+msgid "Checking local database…"
+msgstr "Lokale Datenbank wird geprüft…"
+
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Checking sync health…"
 msgstr "Synchronisation wird geprüft…"

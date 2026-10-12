@@ -5,7 +5,7 @@ import {
   ReauthDiagnostic,
   SyncResetDiagnostic,
   SyncCrashDiagnostic,
-  checkLocalDatabase,
+  checkLocalDatabaseInWorker,
   createLocalDiagnostics,
   runtimeDiagnosticReason,
   resetLocalCache,
@@ -17,6 +17,7 @@ import { app } from "electron";
 import { Logger, Schema } from "effect";
 import { join } from "node:path";
 import { configureWindowRecovery } from "../windows/windows";
+import { showDatabaseProgress } from "./database-upgrade";
 import type { RecoveryPrompt } from "../../shared/recovery";
 import { nativeAsk } from "../system/native-fallback";
 import { openRecoveryWindow, recoveryPrompt, type RecoveryDeps } from "./recovery-window";
@@ -104,7 +105,7 @@ const resetFailure = (labels: Labels, error: unknown) =>
     buttons: [labels.quit],
   });
 
-async function chooseRecovery(integrity: ReturnType<typeof checkLocalDatabase>) {
+async function chooseRecovery(integrity: Awaited<ReturnType<typeof checkLocalDatabaseInWorker>>) {
   const labels = await nativeRecoveryLabels();
   const response = await ask({
     locale: labels.locale,
@@ -144,6 +145,16 @@ async function chooseRecovery(integrity: ReturnType<typeof checkLocalDatabase>) 
   // Keep the separate redacted report until the person has decided whether to attach it.
   return true;
 }
+/** quick_check reads every page. A worker runs it while the progress window paints. */
+async function checkWithProgress(directory: string) {
+  const check = checkLocalDatabaseInWorker(directory);
+  const dismiss = await showDatabaseProgress("checking");
+  try {
+    return await check;
+  } finally {
+    dismiss();
+  }
+}
 let recoveryDirectory = "";
 export async function prepareReliability(directory: string) {
   recoveryDirectory = directory;
@@ -159,7 +170,7 @@ export async function prepareReliability(directory: string) {
     return false;
   }
   const needsCheck = health.abnormalExit || health.safeMode;
-  const integrity = needsCheck ? checkLocalDatabase(directory) : "ok";
+  const integrity = needsCheck ? await checkWithProgress(directory) : "ok";
   if (needsCheck) localLog(integrity === "ok" ? "integrity-ok" : "integrity-failed");
   const safeMode = health.safeMode || integrity !== "ok";
   if (safeMode && !(await chooseRecovery(integrity))) return false;

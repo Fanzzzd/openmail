@@ -18,3 +18,8 @@ copyFileSync(
   new URL("../src/platform/node/cache-worker.mjs", import.meta.url),
   new URL("../dist/platform/node/cache-worker.mjs", import.meta.url),
 );
+
+copyFileSync(
+  new URL("../src/platform/node/integrity-worker.mjs", import.meta.url),
+  new URL("../dist/platform/node/integrity-worker.mjs", import.meta.url),
+);

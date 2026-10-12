@@ -449,24 +449,30 @@ it.effect("undo uses captured message IDs and preserves unrelated later flag cha
 });
 
 it.effect("Gmail queue batches identical operations in at most 1000 message IDs", () => {
-  const server = fakeServer(
-    "me@gmail.com",
-    Array.from({ length: 1002 }, (_, index) => message(`m${index}`)),
-  );
+  const messages = Array.from({ length: 1002 }, (_, index) => message(`m${index}`));
+  const server = fakeServer("me@gmail.com", messages);
   return Effect.gen(function* () {
     const mailbox = yield* Mailbox;
-    yield* mailbox.connect({ provider: "gmail" });
-    yield* mailbox.sync();
-    const rows = yield* mailbox.threads({ limit: 1100 });
-    yield* mailbox.modifyWithUndo(
-      rows.map((row) => row.id),
-      { kind: "read", value: true },
+    const store = yield* Store;
+    const account = yield* mailbox.connect({ provider: "gmail" });
+    // Seed the cache and queue directly. A fake sync pulls all 1002 messages per round,
+    // and only the queue flush that starts the sync is under test here.
+    yield* store.transaction(
+      Effect.forEach(messages, (item) => store.upsertMessage(account.id, item), { discard: true }),
+    );
+    yield* store.transaction(
+      Effect.forEach(
+        messages,
+        (item) => store.enqueueOp(account.id, item.providerId, { kind: "read", value: true }),
+        { discard: true },
+      ),
     );
     yield* mailbox.sync();
     assert.deepStrictEqual(
       server.batches.map((batch) => batch.providerIds.length),
       [1000, 2],
     );
+    assert.deepStrictEqual(yield* store.listPendingOps, []);
     assert.ok([...server.messages.values()].every((item) => !item.isUnread));
   }).pipe(
     Effect.provide(TestMailbox({ gmail: server }, { backgroundFlush: false }, { batches: true })),

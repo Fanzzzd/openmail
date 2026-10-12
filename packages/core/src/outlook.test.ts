@@ -4734,6 +4734,126 @@ for (const firstStatus of [200, 403]) {
   );
 }
 
+for (const status of [200, 404] as const) {
+  it.effect(
+    `an old message moved into a newer filtered folder is verified, not deleted (${status})`,
+    () => {
+      const link = (key: string) =>
+        `${GRAPH}/me/mailFolders/${key}/messages/delta?$deltatoken=${key}`;
+      // id-c1 was created in June. Its delta filter starts in June, so it never lists
+      // the February message that the Inbox delta reports as removed.
+      const http = fakeHttp({
+        ...mailbox({
+          inbox: {
+            json: {
+              value: [{ id: "feb", "@removed": { reason: "changed" } }],
+              "@odata.deltaLink": link("inbox"),
+            },
+          },
+        }),
+        "POST /$batch": {
+          json: {
+            responses: [
+              status === 200
+                ? { id: "0", status, body: { id: "feb", parentFolderId: "id-c1" } }
+                : { id: "0", status },
+            ],
+          },
+        },
+      });
+      const services = Layer.mergeAll(
+        StoreLive,
+        Layer.effect(
+          Providers,
+          makeOutlook.pipe(Effect.map((adapter) => ({ get: () => adapter }))),
+        ),
+      ).pipe(Layer.provideMerge(Layer.mergeAll(http.layer, MemoryPlatform(platformOptions))));
+      return Effect.gen(function* () {
+        const store = yield* Store,
+          providers = yield* Providers,
+          mailbox = yield* Mailbox;
+        const saved = yield* store.upsertAccount("outlook", account.email);
+        const cursor = JSON.stringify({
+          __idType: "immutable",
+          ...Object.fromEntries([...WELL_KNOWN, "id-c1", "id-c2"].map((k) => [k, link(k)])),
+        });
+        yield* store.upsertMessage(
+          saved.id,
+          incoming("feb", {
+            subject: "February invoice",
+            date: Date.parse("2026-02-10T09:00:00Z"),
+            labels: ["INBOX", "STARRED"],
+            isUnread: false,
+            isStarred: true,
+          }),
+        );
+        const changes = yield* Stream.runCollect(
+          providers.get("outlook").pull(saved, Option.some(cursor)),
+        );
+        assert.notInclude(tags(changes), "Delete");
+        assert.deepStrictEqual(
+          changes.find((change) => change._tag === "VerifyCandidates"),
+          { _tag: "VerifyCandidates", providerIds: ["feb"] },
+        );
+        yield* store.saveSyncCursor(saved.id, cursor);
+        yield* mailbox.sync(saved.id);
+        const id = yield* store.messageIdForProvider(saved.id, "feb");
+        assert.deepStrictEqual(yield* store.pendingResetCandidates(saved.id), []);
+        if (status === 404) {
+          assert.strictEqual(id, null);
+          return;
+        }
+        assert.strictEqual(id, `${saved.id}/feb`);
+        const moved = yield* store.getMessage(`${saved.id}/feb`);
+        assert.deepStrictEqual(moved.labels.toSorted(), ["STARRED", "id-c1"]);
+        const found = yield* store.listThreads({ search: "February invoice" });
+        assert.deepStrictEqual(
+          found.map((thread) => thread.subject),
+          ["February invoice"],
+        );
+      }).pipe(
+        Effect.provide(
+          MailboxLive({ backgroundFlush: false, imapIdle: false }).pipe(
+            Layer.provideMerge(services),
+          ),
+        ),
+      );
+    },
+  );
+}
+
+it.effect("an inbox poll spends one delta request, whatever the number of custom folders", () => {
+  const link = (key: string) => `${GRAPH}/me/mailFolders/${key}/messages/delta?$deltatoken=${key}`;
+  const custom = Array.from({ length: 100 }, (_, index) => `id-f${index}`);
+  const http = fakeHttp(mailbox({}));
+  return run(http, (adapter) =>
+    Effect.gen(function* () {
+      const changes = yield* Stream.runCollect(
+        adapter.pull(
+          account,
+          Option.some(
+            JSON.stringify({
+              __idType: "immutable",
+              ...Object.fromEntries([...WELL_KNOWN, ...custom].map((k) => [k, link(k)])),
+            }),
+          ),
+          "inbox",
+        ),
+      );
+      assert.deepStrictEqual(
+        http.calls.map((call) => `${call.method} ${call.url.pathname}`),
+        ["GET /v1.0/me/mailFolders/inbox/messages/delta"],
+      );
+      const cursor = changes.findLast((change) => change._tag === "Cursor");
+      assert.ok(cursor?._tag === "Cursor");
+      assert.deepStrictEqual(Object.keys(JSON.parse(cursor.cursor)).toSorted(), [
+        "__idType",
+        "inbox",
+      ]);
+    }),
+  );
+});
+
 for (const status of [200, 403, 404] as const) {
   it.effect(`an unlisted Graph folder is removed only after GET confirms 404 (${status})`, () => {
     const link = `${GRAPH}/me/mailFolders/id-old/messages/delta?token=old`;

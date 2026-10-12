@@ -165,6 +165,18 @@ it.effect(
         store.unreadByLabel(undefined, "INBOX", false),
       );
       yield* measure("list first page", 75, store.listThreads({ mailbox: "inbox", limit: 50 }));
+      // Sparse matches: 100 of 100k messages carry a Google Sheet link.
+      for (const [name, search] of [
+        ["search has:drive", "has:drive"],
+        ["search has:spreadsheet", "has:spreadsheet"],
+      ] as const)
+        yield* measure(
+          name,
+          50,
+          store
+            .listThreads({ search, limit: 50 })
+            .pipe(Effect.tap((rows) => Effect.sync(() => assert.strictEqual(rows.length, 50)))),
+        );
       for (const [name, search, budget] of [
         ["search common", "weekly", 150],
         ["search CJK", "预算批准", 150],
@@ -265,6 +277,16 @@ it.effect(
           assert.strictEqual(structuredMailEvents(largeHtml, "Review").events.length, 1);
         }),
       );
+      // MCP reads only accounts with AI consent; without it both tools return nothing.
+      for (const accountId of fixtureAccounts)
+        yield* mail.setAiAccount({ accountId, allowed: true, autoSummaries: false });
+      const threadCount = (value: unknown) =>
+        typeof value === "object" &&
+        value !== null &&
+        "threads" in value &&
+        Array.isArray(value.threads)
+          ? value.threads.length
+          : 0;
       for (const [name, params] of [
         ["list_threads", { limit: 50 }],
         ["search", { query: "weekly", limit: 20 }],
@@ -276,6 +298,7 @@ it.effect(
             const stream = yield* toolkit.handle(name, params);
             const result = yield* Stream.runLast(stream);
             assert.isTrue(Option.isSome(result) && !result.value.isFailure);
+            assert.isAbove(Option.isSome(result) ? threadCount(result.value.result) : 0, 0);
           }),
         );
       // Roll back each timed mutation, so every repetition sees the same rows, bodies and queue.

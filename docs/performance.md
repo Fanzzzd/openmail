@@ -33,6 +33,7 @@ OPENMAIL_PERF=1 OPENMAIL_PERF_REPORT=/tmp/openmail-performance.json pnpm test:pe
 | 未读账户／标签徽标                     |     100 |
 | list_threads 首页 50 个会话            |      75 |
 | 常见词／CJK／运算符搜索，50 个会话     |     150 |
+| has:drive／has:spreadsheet，50 个会话  |      50 |
 | 消息文本＋OCR 搜索，200 个会话         |     100 |
 | OCR 摘要搜索，50 个会话                |     150 |
 | AROUND 0 搜索，50 个会话               |     500 |
@@ -51,6 +52,10 @@ OPENMAIL_PERF=1 OPENMAIL_PERF_REPORT=/tmp/openmail-performance.json pnpm test:pe
 | 消息文本预算全保护扫描                 |    5000 |
 | 消息文本预算淘汰 1 MiB                 |     500 |
 | 消息文本预算小时门控                   |      25 |
+
+MCP 测量先为三个 fixture 账户打开 AI 权限，并断言 list_threads 和 search 都返回会话。此前没有授权，两项都返回空结果，测得 0.3 ms；授权后中位数约为 16 ms 和 75 ms。
+
+fixture 中千分之一的邮件含 Google Sheet 链接，has:drive 和 has:spreadsheet 都要跳过大量不匹配行。迁移 45 在 `message_search_meta.search_flags` 记录 Drive 链接、附件类型和 `cid:` 内联图片，写入消息时由触发器计算；迁移前的行为 NULL，后台按批回填，查询只对这些行扫描消息文本和附件清单。改动前 has:drive 中位数 161 ms，has:spreadsheet 3021 ms；改动后分别约 12 ms 和 4 ms。附件类型规则冻结在 `SEARCH_FLAG_ATTACHMENT_TYPES_45`，测试要求它与 `ATTACHMENT_TYPES` 相同，规则变化须追加迁移。
 
 预算淘汰测试将 INBOX 保留窗口设为 30 天，并断言实际淘汰了消息文本。小时门控测试在一次检查后再次调用；两者均回滚。完整预算扫描仍允许保留星标、草稿和无限窗口内的消息文本。
 

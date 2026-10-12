@@ -28,7 +28,10 @@ function holdAppDuringUpgrade() {
 const upgradeWindows = new WeakSet<BrowserWindow>();
 export const isDatabaseUpgradeWindow = (window: BrowserWindow) => upgradeWindows.has(window);
 /** Paint before core starts the worker. This window has no IPC or remote resources. */
-export async function showDatabaseUpgrade() {
+export const showDatabaseUpgrade = () => showDatabaseProgress("upgrading");
+
+/** The same window while a worker checks the database after an abnormal exit. */
+export async function showDatabaseProgress(kind: "upgrading" | "checking") {
   holdAppDuringUpgrade();
   const labels = await nativeRecoveryLabels();
   const window = new BrowserWindow({
@@ -38,7 +41,7 @@ export async function showDatabaseUpgrade() {
     minimizable: false,
     maximizable: false,
     show: false,
-    title: labels.upgrading,
+    title: labels[kind],
     webPreferences: {
       ...WINDOW_SECURITY,
       javascript: false,
@@ -48,7 +51,7 @@ export async function showDatabaseUpgrade() {
   });
   denyNavigation(window.webContents);
   upgradeWindows.add(window);
-  const title = escapeHtml(labels.upgrading);
+  const title = escapeHtml(labels[kind]);
   const html = `<!doctype html><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'"><title>${title}</title><style>body{font:13px system-ui;margin:32px 36px;color:CanvasText;background:Canvas;color-scheme:light dark}p{margin:0 0 16px;font-weight:600}.track{height:6px;border-radius:3px;overflow:hidden;background:color-mix(in srgb,CanvasText 12%,transparent)}.bar{width:40%;height:100%;border-radius:3px;background:AccentColor;animation:slide 1.4s ease-in-out infinite}@keyframes slide{from{transform:translateX(-100%)}to{transform:translateX(250%)}}@media (prefers-reduced-motion:reduce){.bar{animation:none;width:100%;opacity:.5}}</style><p>${title}</p><div class="track" role="progressbar" aria-label="${title}"><div class="bar"></div></div>`;
   await window.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
   revealWindow(window);

@@ -18,6 +18,7 @@ import {
   usesSubstringSearch,
   wordTokens,
 } from "./search.js";
+import { SEARCH_FLAG_BITS } from "./db.js";
 import { all } from "./sql-rows.js";
 import { MAILBOX_LABEL } from "./mailbox-labels.js";
 
@@ -116,7 +117,11 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
         : sql`(m.subject LIKE ${like} ESCAPE '\\' OR m.from_name LIKE ${like} ESCAPE '\\' OR m.from_addr LIKE ${like} ESCAPE '\\' OR m.body_text LIKE ${like} ESCAPE '\\')`;
   };
 
-  const attachmentTypeFilter = (type: AttachmentType): Fragment => {
+  /** Rows written or backfilled since migration 45 read their flags; older rows run `scan`. */
+  const flagFilter = (bits: number, scan: Fragment): Fragment =>
+    sql`(m.rowid IN (SELECT row_id FROM message_search_meta WHERE search_flags>0 AND (search_flags & ${bits})!=0) OR (m.rowid IN (SELECT row_id FROM message_search_meta WHERE search_flags IS NULL) AND (${scan})))`;
+
+  const attachmentTypeScan = (type: AttachmentType): Fragment => {
     const spec = ATTACHMENT_TYPES[type];
     const mime = sql`lower(trim(substr(json_extract(a.value,'$.mimeType'), 1, instr(json_extract(a.value,'$.mimeType') || ';', ';') - 1)))`;
     const drivePath = typedDrivePath(type);
@@ -130,6 +135,18 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
     return drivePath
       ? sql`(${attachment} OR m.body_text LIKE ${`%https://docs.google.com/${drivePath}/%`} OR m.body_html LIKE ${`%https://docs.google.com/${drivePath}/%`})`
       : attachment;
+  };
+  const DRIVE_PATH_BITS = {
+    document: SEARCH_FLAG_BITS.driveDocument,
+    spreadsheets: SEARCH_FLAG_BITS.driveSpreadsheet,
+    presentation: SEARCH_FLAG_BITS.drivePresentation,
+  } as const;
+  const attachmentTypeFilter = (type: AttachmentType): Fragment => {
+    const drivePath = typedDrivePath(type);
+    return flagFilter(
+      SEARCH_FLAG_BITS[type] | (drivePath ? DRIVE_PATH_BITS[drivePath] : 0),
+      attachmentTypeScan(type),
+    );
   };
 
   const proximityFilter = (
@@ -217,7 +234,10 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
       where.push(sql`(m.message_size IS NULL OR m.message_size < ${c.sizeSmaller})`);
     if (c.drive)
       where.push(
-        sql`(m.body_text LIKE '%https://drive.google.com/%' OR m.body_html LIKE '%https://drive.google.com/%' OR m.body_text LIKE '%https://docs.google.com/%' OR m.body_html LIKE '%https://docs.google.com/%')`,
+        flagFilter(
+          SEARCH_FLAG_BITS.drive,
+          sql`m.body_text LIKE '%https://drive.google.com/%' OR m.body_html LIKE '%https://drive.google.com/%' OR m.body_text LIKE '%https://docs.google.com/%' OR m.body_html LIKE '%https://docs.google.com/%'`,
+        ),
       );
     if (c.cc)
       where.push(
@@ -236,7 +256,13 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
     if (c.important) where.push(hasLabel("IMPORTANT"));
     if (c.attachmentText)
       where.push(sql`EXISTS(SELECT 1 FROM derived_chunks d WHERE d.message_id=m.id)`);
-    if (c.image) where.push(sql`(${attachmentTypeFilter("image")} OR m.body_html LIKE '%cid:%')`);
+    if (c.image)
+      where.push(
+        flagFilter(
+          SEARCH_FLAG_BITS.image | SEARCH_FLAG_BITS.inlineImage,
+          sql`(${attachmentTypeScan("image")} OR m.body_html LIKE '%cid:%')`,
+        ),
+      );
     if (c.attachment !== undefined)
       where.push(
         c.attachment

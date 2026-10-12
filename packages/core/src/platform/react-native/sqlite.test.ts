@@ -269,6 +269,13 @@ describe("op-sqlite contract", () => {
 it("mobile migration 37 retains FK-dependent records and restores FK enforcement", async () => {
   let before: unknown[] = [];
   const tables = ["contact_candidates", "message_search_meta", "semantic_jobs", "message_badges"];
+  // Later migrations add columns; compare the ones that existed at migration 37.
+  const select = (table: string) =>
+    table === "contact_candidates"
+      ? "SELECT rowid,* FROM contact_candidates"
+      : table === "message_search_meta"
+        ? "SELECT row_id,message_id,account_id,thread_id,eligible FROM message_search_meta"
+        : `SELECT * FROM ${table}`;
   const database = shim(":memory:", false, (db) => {
     for (const [index, migration] of MIGRATIONS.slice(0, 36).entries())
       applyNativeMigration(db, migration, index + 1);
@@ -277,20 +284,13 @@ it("mobile migration 37 retains FK-dependent records and restores FK enforcement
     );
     db.exec(`INSERT INTO messages(id,account_id,provider_id,thread_id,subject,from_name,from_addr,to_json,cc_json,date,snippet,body_text,body_html,labels_json,attachments_json,is_unread,is_starred)
       VALUES('a/m','a','m','a/t','needle','Alice','alice@example.com','[]','[]',0,'','text','','["INBOX"]','[]',1,0)`);
-    before = tables.map((table) =>
-      db.prepare(`SELECT ${table === "contact_candidates" ? "rowid," : ""}* FROM ${table}`).all(),
-    );
+    before = tables.map((table) => db.prepare(select(table)).all());
   });
   await Effect.runPromise(
     Effect.gen(function* () {
       const sql = yield* SqlClient.SqlClient;
       const after = [];
-      for (const table of tables)
-        after.push(
-          yield* sql.unsafe(
-            `SELECT ${table === "contact_candidates" ? "rowid," : ""}* FROM ${table}`,
-          ),
-        );
+      for (const table of tables) after.push(yield* sql.unsafe(select(table)));
       expect(after).toEqual(before);
       expect((yield* sql`PRAGMA foreign_keys`)[0]?.foreign_keys).toBe(1);
       yield* sql`INSERT INTO messages_fts(messages_fts,rank) VALUES('integrity-check',1)`;

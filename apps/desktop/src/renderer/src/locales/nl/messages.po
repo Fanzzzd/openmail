@@ -1148,6 +1148,10 @@ msgstr "Zoeken naar updates…"
 msgid "Checking grammar…"
 msgstr "Grammatica controleren…"
 
+#: src/main/app/native-i18n.ts
+msgid "Checking local database…"
+msgstr "Lokale database wordt gecontroleerd…"
+
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Checking sync health…"
 msgstr "Synchronisatie controleren…"

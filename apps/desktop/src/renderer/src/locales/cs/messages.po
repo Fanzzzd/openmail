@@ -1148,6 +1148,10 @@ msgstr "Kontrolují se aktualizace…"
 msgid "Checking grammar…"
 msgstr "Kontrola gramatiky…"
 
+#: src/main/app/native-i18n.ts
+msgid "Checking local database…"
+msgstr "Probíhá kontrola místní databáze…"
+
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Checking sync health…"
 msgstr "Kontrola synchronizace…"

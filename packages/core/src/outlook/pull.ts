@@ -244,22 +244,26 @@ export const makeOutlookPull = (
                 since,
                 partial: true,
               });
-          const ambiguous: string[] = [];
-          for (const [providerId, removedLabels] of removed) {
-            if (!kept.has(providerId)) yield* Queue.offer(queue, { _tag: "Delete", providerId });
-            else if (
+          // A removal proves absence from one folder only. A move into a folder whose
+          // filtered delta predates the message's receivedDateTime never lists it there,
+          // so every unlisted removal, and every overlap with a listed update, is verified.
+          const unresolved: string[] = [];
+          for (const [providerId, removedLabels] of removed)
+            if (
+              !kept.has(providerId) ||
               [...(changedFolders.get(providerId) ?? [])].some((label) => removedLabels.has(label))
             )
-              ambiguous.push(providerId);
-          }
-          // Delta may repeat an identity across pages. An update does not prove
-          // presence after a removal from the same folder; verify its current location.
-          if (!scope && ambiguous.length)
-            yield* Queue.offer(queue, { _tag: "VerifyCandidates", providerIds: ambiguous });
+              unresolved.push(providerId);
+          // Inbox polls do not reconcile removals; the next full sync verifies them.
+          if (!scope && unresolved.length)
+            yield* Queue.offer(queue, { _tag: "VerifyCandidates", providerIds: unresolved });
           const wellKnown = new Set(WELL_KNOWN.map((f) => f.name));
-          for (const key of Object.keys(previous)) {
+          // The inbox cursor only ever drives inbox polls, so a poll keeps no other folder
+          // links and spends no request per custom folder. Full sync owns folder removal.
+          for (const key of scope ? [] : Object.keys(previous)) {
             if (key === ID_TYPE_KEY || key === WINDOW_KEY || wellKnown.has(key) || key in next)
               continue;
+            const saved = previous[key];
             // Visible folder lists omit hidden folders. Only a direct 404 establishes removal.
             const gone = yield* get(
               account.id,
@@ -270,10 +274,7 @@ export const makeOutlookPull = (
               Effect.catch((error) => Effect.succeed(is404(error))),
             );
             if (gone) yield* Queue.offer(queue, { _tag: "DeleteLabel", label: key, partial: true });
-            else {
-              const saved = previous[key];
-              if (saved !== undefined) next[key] = saved;
-            }
+            else if (saved !== undefined) next[key] = saved;
           }
           yield* Queue.offer(queue, { _tag: "Cursor", cursor: JSON.stringify(next) });
           yield* Queue.end(queue);

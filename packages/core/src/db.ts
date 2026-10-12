@@ -4,6 +4,113 @@ import { isSqlError } from "effect/sql/SqlError";
 
 /** Shared migrations and SQL initialization. Platform drivers provide SqlClient. */
 
+/**
+ * Bits in `message_search_meta.search_flags` for has: operators that would otherwise
+ * scan every body or attachment list. NULL means not computed yet.
+ */
+export const SEARCH_FLAG_BITS = {
+  /** Any https://drive.google.com/ or https://docs.google.com/ link. */
+  drive: 1,
+  /** https://docs.google.com/{document,spreadsheets,presentation}/ links. */
+  driveDocument: 2,
+  driveSpreadsheet: 4,
+  drivePresentation: 8,
+  pdf: 16,
+  image: 32,
+  document: 64,
+  spreadsheet: 128,
+  presentation: 256,
+  /** An inline cid: image reference in body_html. */
+  inlineImage: 512,
+} as const;
+/**
+ * The attachment rules of search.ts ATTACHMENT_TYPES when migration 45 was written.
+ * The migration's triggers embed them, so they never change here; a test keeps
+ * ATTACHMENT_TYPES equal to this copy, and a new rule needs a new migration.
+ */
+export const SEARCH_FLAG_ATTACHMENT_TYPES_45 = {
+  pdf: { mimeTypes: ["application/pdf"], extensions: ["pdf"] },
+  image: {
+    mimeTypes: [],
+    extensions: [
+      "jpg",
+      "jpeg",
+      "png",
+      "gif",
+      "webp",
+      "heic",
+      "heif",
+      "tif",
+      "tiff",
+      "bmp",
+      "svg",
+      "avif",
+    ],
+  },
+  document: {
+    mimeTypes: [
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.oasis.opendocument.text",
+      "application/rtf",
+      "text/rtf",
+      "text/plain",
+    ],
+    extensions: ["doc", "docx", "odt", "rtf", "txt"],
+  },
+  spreadsheet: {
+    mimeTypes: [
+      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "application/vnd.oasis.opendocument.spreadsheet",
+      "text/csv",
+    ],
+    extensions: ["xls", "xlsx", "ods", "csv", "tsv"],
+  },
+  presentation: {
+    mimeTypes: [
+      "application/vnd.ms-powerpoint",
+      "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      "application/vnd.oasis.opendocument.presentation",
+    ],
+    extensions: ["ppt", "pptx", "odp", "key"],
+  },
+} as const;
+const flagBit = (condition: string, value: number) =>
+  `(CASE WHEN ${condition} THEN ${value} ELSE 0 END)`;
+/** LIKE is ASCII case-insensitive, matching the lowercase checks on fetched mail. */
+const searchFlags = (row: string) => {
+  const body = (url: string) =>
+    `${row}.body_text LIKE '%${url}%' OR ${row}.body_html LIKE '%${url}%'`;
+  const mime = `lower(trim(substr(json_extract(a.value,'$.mimeType'), 1, instr(json_extract(a.value,'$.mimeType') || ';', ';') - 1)))`;
+  const attachment = (type: keyof typeof SEARCH_FLAG_ATTACHMENT_TYPES_45) => {
+    const spec = SEARCH_FLAG_ATTACHMENT_TYPES_45[type];
+    const tests = [
+      ...(type === "image" ? [`${mime} LIKE 'image/%'`] : []),
+      ...(spec.mimeTypes.length
+        ? [`${mime} IN (${spec.mimeTypes.map((value) => `'${value}'`).join(",")})`]
+        : []),
+      ...spec.extensions.map((ext) => `lower(json_extract(a.value,'$.filename')) LIKE '%.${ext}'`),
+    ];
+    return `EXISTS (SELECT 1 FROM json_each(${row}.attachments_json) a WHERE ${tests.join(" OR ")})`;
+  };
+  const b = SEARCH_FLAG_BITS;
+  return `(${[
+    flagBit(`${body("https://drive.google.com/")} OR ${body("https://docs.google.com/")}`, b.drive),
+    flagBit(body("https://docs.google.com/document/"), b.driveDocument),
+    flagBit(body("https://docs.google.com/spreadsheets/"), b.driveSpreadsheet),
+    flagBit(body("https://docs.google.com/presentation/"), b.drivePresentation),
+    flagBit(attachment("pdf"), b.pdf),
+    flagBit(attachment("image"), b.image),
+    flagBit(attachment("document"), b.document),
+    flagBit(attachment("spreadsheet"), b.spreadsheet),
+    flagBit(attachment("presentation"), b.presentation),
+    flagBit(`${row}.body_html LIKE '%cid:%'`, b.inlineImage),
+  ].join(" | ")})`;
+};
+/** Fills `search_flags` for rows written before migration 45. */
+export const BACKFILL_SEARCH_FLAGS = `UPDATE message_search_meta SET search_flags=(SELECT ${searchFlags("m")} FROM messages m WHERE m.rowid=message_search_meta.row_id)`;
+
 // Append-only. Each entry runs once, in order, tracked by `PRAGMA user_version`.
 export const MIGRATIONS: readonly string[] = [
   `
@@ -1316,6 +1423,25 @@ CREATE TRIGGER snoozed_list_date_insert AFTER INSERT ON snoozed_messages BEGIN
   `ALTER TABLE accounts ADD COLUMN reauth_reason TEXT;
   ALTER TABLE accounts ADD COLUMN oauth_issued_at INTEGER;
   ALTER TABLE account_optional_services ADD COLUMN enabled_json TEXT NOT NULL DEFAULT '[]';`,
+  // 45: has: operator flags (Drive links, attachment types, inline images), so these
+  // operators read one integer instead of scanning every body and attachment list.
+  // Existing rows stay NULL until the background backfill reaches them; queries scan
+  // bodies and attachments for those rows only.
+  `ALTER TABLE message_search_meta ADD COLUMN search_flags INTEGER;
+   CREATE INDEX message_search_meta_flags ON message_search_meta(search_flags) WHERE search_flags>0;
+   CREATE INDEX message_search_meta_flags_pending ON message_search_meta(row_id) WHERE search_flags IS NULL;
+   DROP TRIGGER message_search_meta_ai;
+   CREATE TRIGGER message_search_meta_ai AFTER INSERT ON messages BEGIN
+     INSERT INTO message_search_meta(row_id,message_id,account_id,thread_id,eligible,search_flags)
+     VALUES(new.rowid,new.id,new.account_id,new.thread_id,
+       NOT EXISTS(SELECT 1 FROM json_each(new.labels_json) WHERE value IN ('SPAM','TRASH')),
+       ${searchFlags("new")});
+   END;
+   CREATE TRIGGER message_search_meta_flags_au AFTER UPDATE OF body_text,body_html,attachments_json ON messages
+     WHEN old.body_text IS NOT new.body_text OR old.body_html IS NOT new.body_html
+       OR old.attachments_json IS NOT new.attachments_json BEGIN
+     UPDATE message_search_meta SET search_flags=${searchFlags("new")} WHERE row_id=new.rowid;
+   END;`,
 ];
 
 /** Index of migration 37, the cache rowid rebuild. It runs when user_version equals this index. */

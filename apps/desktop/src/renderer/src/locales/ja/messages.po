@@ -1148,6 +1148,10 @@ msgstr "アップデートを確認中…"
 msgid "Checking grammar…"
 msgstr "文法をチェック中…"
 
+#: src/main/app/native-i18n.ts
+msgid "Checking local database…"
+msgstr "ローカルデータベースを確認中…"
+
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Checking sync health…"
 msgstr "同期状態を確認中…"

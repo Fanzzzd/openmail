@@ -1,5 +1,6 @@
 import { Effect, Schema } from "effect";
 import type { SqlClient } from "effect/sql";
+import { BACKFILL_SEARCH_FLAGS } from "./db.js";
 import { all, run } from "./sql-rows.js";
 
 const Progress = Schema.Struct({
@@ -56,5 +57,23 @@ export function makeWordIndexStore(sql: SqlClient.SqlClient) {
         }),
       )
       .pipe(Effect.orDie);
-  return { wordIndexReady, backfillWordIndex };
+  /** Rows from before migration 45 get their has: operator flags in small committed batches. */
+  const backfillSearchFlags = (requested = 500) =>
+    sql
+      .withTransaction(
+        Effect.gen(function* () {
+          const batchSize = Math.min(Math.max(Math.floor(requested), 1), 2000);
+          const rows = yield* all(Schema.Struct({ row_id: Schema.Int }))(
+            sql`SELECT row_id FROM message_search_meta INDEXED BY message_search_meta_flags_pending WHERE search_flags IS NULL ORDER BY row_id LIMIT ${batchSize}`,
+          );
+          const last = rows.at(-1)?.row_id;
+          if (last === undefined) return { processed: 0, ready: true };
+          yield* run(
+            sql`${sql.literal(BACKFILL_SEARCH_FLAGS)} WHERE search_flags IS NULL AND row_id<=${last}`,
+          );
+          return { processed: rows.length, ready: rows.length < batchSize };
+        }),
+      )
+      .pipe(Effect.orDie);
+  return { wordIndexReady, backfillWordIndex, backfillSearchFlags };
 }

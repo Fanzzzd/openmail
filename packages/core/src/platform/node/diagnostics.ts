@@ -8,6 +8,7 @@ import { ReauthDiagnostic } from "../../reauth.js";
 export { ReauthDiagnostic } from "../../reauth.js";
 import {
   databaseQuickCheck,
+  databaseQuickCheckInWorker,
   rebuildCorruptDatabase,
   type CacheResetResult,
 } from "./database-recovery.js";
@@ -299,6 +300,11 @@ export type IntegrityResult = "ok" | "corrupt" | "unavailable";
 /** Preflight before the mailbox opens the file. No SQLite text leaves this boundary. */
 export function checkLocalDatabase(directory: string): IntegrityResult {
   return databaseQuickCheck(join(directory, "mail.db"));
+}
+
+/** Startup check after an abnormal exit; the worker leaves the main thread free to paint. */
+export function checkLocalDatabaseInWorker(directory: string): Promise<IntegrityResult> {
+  return databaseQuickCheckInWorker(join(directory, "mail.db"));
 }
 
 /** Cache reset preserves accounts, preferences, drafts, queued user changes and keychain items. */

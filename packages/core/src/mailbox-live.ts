@@ -168,19 +168,21 @@ export const MailboxLive = (
         // write lock for optional, resumable search backfill.
         yield* backgroundReady;
         let indexed = false;
-        let ready = false;
-        while (!ready) {
-          const batch = yield* store.backfillWordIndex().pipe(
-            Effect.result,
-            Effect.catchCause((cause) =>
-              Cause.hasInterrupts(cause)
-                ? Effect.failCause(cause)
-                : Effect.succeed({ _tag: "Failure" } as const),
-            ),
-          );
-          if (batch._tag === "Success" && batch.success.processed) indexed = true;
-          ready = batch._tag === "Success" && batch.success.ready;
-          if (!ready) yield* Effect.sleep(batch._tag === "Success" ? "20 millis" : "5 seconds");
+        for (const step of [store.backfillWordIndex(), store.backfillSearchFlags()]) {
+          let ready = false;
+          while (!ready) {
+            const batch = yield* step.pipe(
+              Effect.result,
+              Effect.catchCause((cause) =>
+                Cause.hasInterrupts(cause)
+                  ? Effect.failCause(cause)
+                  : Effect.succeed({ _tag: "Failure" } as const),
+              ),
+            );
+            if (batch._tag === "Success" && batch.success.processed) indexed = true;
+            ready = batch._tag === "Success" && batch.success.ready;
+            if (!ready) yield* Effect.sleep(batch._tag === "Success" ? "20 millis" : "5 seconds");
+          }
         }
         if (indexed) yield* changed;
       }).pipe(Effect.forkScoped);

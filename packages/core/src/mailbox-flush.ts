@@ -1,7 +1,7 @@
 import { Clock, Effect, FiberSet, Option, Schema } from "effect";
 import { type Account } from "./domain.js";
 import { type ProviderFailure } from "./errors.js";
-import { decodeProviderId, readCursor } from "./imap-cursor.js";
+import { decodeProviderId, readCursor, recordPushedFlags } from "./imap-cursor.js";
 import { type MailboxDependencies, type MailboxRuntimeState } from "./mailbox-runtime.js";
 import { withPendingOps } from "./mailbox-shared.js";
 import { READ_ONLY_MESSAGE } from "./read-only.js";
@@ -139,6 +139,24 @@ export const makeFlushMailbox = (
     });
   });
 
+  /** Both IMAP cursors hold per-UID flags; keep them equal to what the server now has. */
+  const recordImapFlags = Effect.fnUntraced(function* (
+    accountId: string,
+    providerIds: readonly string[],
+    flag: "read" | "star",
+    value: boolean,
+  ) {
+    const full = recordPushedFlags(yield* store.getSyncCursor(accountId), providerIds, flag, value);
+    if (Option.isSome(full)) yield* store.saveSyncCursor(accountId, full.value, false);
+    const inbox = recordPushedFlags(
+      yield* store.getInboxCursor(accountId),
+      providerIds,
+      flag,
+      value,
+    );
+    if (Option.isSome(inbox)) yield* store.saveInboxCursor(accountId, inbox.value);
+  });
+
   const flush = Effect.fn("Mailbox.flush")(
     function* (accountIds?: readonly string[], skipImap = false) {
       const result = { done: 0, failed: 0, reauth: new Array<string>() };
@@ -196,6 +214,18 @@ export const makeFlushMailbox = (
                         });
                       }
                     }
+                    const op = owned[0]?.op;
+                    if (
+                      account.provider === "imap" &&
+                      !needsReconcile &&
+                      (op?.kind === "read" || op?.kind === "star")
+                    )
+                      yield* recordImapFlags(
+                        account.id,
+                        owned.map((item) => item.providerId),
+                        op.kind,
+                        op.value,
+                      );
                     result.done += owned.length;
                     return;
                   }

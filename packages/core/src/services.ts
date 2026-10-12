@@ -366,6 +366,7 @@ export class Store extends Context.Service<
     /** Threads collapsed to their newest message, or full-text results when `search` is set. */
     readonly wordIndexReady: Effect.Effect<WordIndexState>;
     backfillWordIndex(batchSize?: number): Effect.Effect<{ processed: number; ready: boolean }>;
+    backfillSearchFlags(batchSize?: number): Effect.Effect<{ processed: number; ready: boolean }>;
     listThreads(q: ThreadQuery): Effect.Effect<ThreadSummary[], InvalidInput>;
     /** Cached matches without page cursors; counts rows, not conversation members. */
     countThreads(q: ThreadQuery): Effect.Effect<number, InvalidInput>;
