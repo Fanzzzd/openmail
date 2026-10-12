@@ -2,7 +2,8 @@ import { createHash } from "node:crypto";
 
 import { NodeCrypto } from "@effect/platform-node";
 import { assert, it } from "@effect/vitest";
-import { Effect, Layer, Option, Ref } from "effect";
+import { Deferred, Effect, Fiber, Layer, Option, Ref } from "effect";
+import { TestClock } from "effect/testing";
 import { HttpClient, HttpClientError, HttpClientResponse } from "effect/http";
 
 import { OAuthLoopback } from "./platform/node/oauth.js";
@@ -134,3 +135,125 @@ it.effect("an offline token endpoint is a transport failure with status zero", (
     if (error._tag === "ProviderError") assert.strictEqual(error.status, 0);
   }).pipe(Effect.provide(layer));
 });
+
+/** A loopback whose browser runs `visit` with the consent URL instead of consenting. */
+const visiting = (visit: (auth: URL, redirect: URL) => Promise<void>) => {
+  const browser = Layer.succeed(
+    Browser,
+    Browser.of({
+      open: (url) =>
+        Effect.promise(() => {
+          const auth = new URL(url);
+          return visit(auth, new URL(auth.searchParams.get("redirect_uri")!));
+        }),
+    }),
+  );
+  const http = Layer.succeed(HttpClient.HttpClient)(
+    HttpClient.make((request) =>
+      Effect.succeed(
+        HttpClientResponse.fromWeb(
+          request,
+          Response.json({ access_token: "at", refresh_token: "rt", expires_in: 60 }),
+        ),
+      ),
+    ),
+  );
+  return OAuthLoopback.pipe(Layer.provide([browser, http, NodeCrypto.layer]));
+};
+
+const signIn = Effect.gen(function* () {
+  const oauth = yield* OAuth;
+  return yield* oauth.authorize({
+    authUrl: "https://accounts.example.com/auth",
+    tokenUrl: "https://accounts.example.com/token",
+    clientId: "client",
+    scopes: ["mail.read"],
+  });
+});
+
+const withParams = (redirect: URL, params: Record<string, string>, path = "/") => {
+  const url = new URL(path, redirect);
+  for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
+  return url;
+};
+
+it.live("the loopback ignores requests without this sign-in's state", () =>
+  Effect.gen(function* () {
+    const statuses: number[] = [];
+    const layer = visiting(async (auth, redirect) => {
+      const state = auth.searchParams.get("state")!;
+      for (const url of [
+        withParams(redirect, {}, "/favicon.ico"),
+        withParams(redirect, { error: "access_denied" }),
+        withParams(redirect, { error: "access_denied", state: "forged" }),
+        withParams(redirect, { code: "stolen", state: "forged" }),
+        withParams(redirect, { code: "the-code", state }, "/elsewhere"),
+      ])
+        statuses.push((await fetch(url)).status);
+      statuses.push((await fetch(withParams(redirect, { code: "the-code", state }))).status);
+    });
+    const tokens = yield* signIn.pipe(Effect.provide(layer));
+    assert.strictEqual(tokens.accessToken, "at");
+    assert.deepStrictEqual(statuses, [404, 404, 404, 404, 404, 200]);
+  }),
+);
+
+it.live("the loopback page escapes the reflected error", () =>
+  Effect.gen(function* () {
+    let body = "";
+    const layer = visiting(async (auth, redirect) => {
+      const state = auth.searchParams.get("state")!;
+      const res = await fetch(
+        withParams(redirect, { error: "<img src=x onerror=alert(1)>", state }),
+      );
+      body = await res.text();
+    });
+    const error = yield* signIn.pipe(Effect.provide(layer), Effect.flip);
+    assert.strictEqual(error._tag, "AuthError");
+    assert.notInclude(body, "<img");
+    assert.include(body, "&lt;img src=x onerror=alert(1)&gt;");
+  }),
+);
+
+it.live("a denied consent page is a cancelled sign-in", () =>
+  Effect.gen(function* () {
+    const layer = visiting(async (auth, redirect) => {
+      const state = auth.searchParams.get("state")!;
+      await fetch(withParams(redirect, { error: "access_denied", state }));
+    });
+    const error = yield* signIn.pipe(Effect.provide(layer), Effect.flip);
+    assert.strictEqual(error._tag === "AuthError" && error.reason, "cancelled");
+  }),
+);
+
+it.effect("a sign-in without a redirect times out with a timeout reason", () =>
+  Effect.gen(function* () {
+    const fiber = yield* signIn.pipe(
+      Effect.provide(visiting(() => Promise.resolve())),
+      Effect.flip,
+      Effect.forkChild,
+    );
+    yield* TestClock.adjust("5 minutes");
+    const error = yield* Fiber.join(fiber);
+    assert.strictEqual(error._tag === "AuthError" && error.reason, "timeout");
+  }),
+);
+
+it.live("interrupting a sign-in closes the loopback server", () =>
+  Effect.gen(function* () {
+    const opened = yield* Deferred.make<URL>();
+    const layer = visiting(async (_auth, redirect) => {
+      Deferred.doneUnsafe(opened, Effect.succeed(redirect));
+    });
+    const fiber = yield* signIn.pipe(Effect.provide(layer), Effect.forkChild);
+    const redirect = yield* Deferred.await(opened);
+    yield* Fiber.interrupt(fiber);
+    const refused = yield* Effect.promise(() =>
+      fetch(redirect).then(
+        () => false,
+        () => true,
+      ),
+    );
+    assert.isTrue(refused);
+  }),
+);

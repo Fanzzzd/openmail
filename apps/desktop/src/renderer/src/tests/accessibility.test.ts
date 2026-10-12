@@ -1744,7 +1744,7 @@ it("audits the narrow batch bar, whose count badge leaves the full count to scre
   await waitFor(() => expect(document.activeElement).toBe(menuButton));
 });
 
-it("keeps focus on Sync now in an empty list while a sync runs", async () => {
+it("moves focus from Sync now to the syncing status in an empty list", async () => {
   const user = userEvent.setup();
   const onSync = vi.fn();
   const emptyActions = {
@@ -1772,10 +1772,9 @@ it("keeps focus on Sync now in an empty list while a sync runs", async () => {
       ),
     ),
   );
-  expect(sync.getAttribute("aria-disabled")).toBe("true");
-  expect(document.activeElement).toBe(sync);
-  await user.keyboard("{Enter}");
-  expect(onSync).toHaveBeenCalledTimes(1);
+  expect(screen.queryByRole("button", { name: "Sync now" })).toBeNull();
+  const status = screen.getByText("Syncing mail…");
+  await waitFor(() => expect(document.activeElement).toBe(status));
   await audit();
 });
 

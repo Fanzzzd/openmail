@@ -24,7 +24,7 @@ import {
 import { useBatchUndo } from "../state/undo";
 import { useAtom, useAtomSet } from "@effect/atom-react";
 import { snoozeIdsAtom } from "../features/organize/organize-state";
-import { dialogAtom } from "../state/ui";
+import { dialogAtom, signInAgainAtom } from "../state/ui";
 import type { useMailSelection } from "./use-mail-selection";
 export function useMailActions({
   navigation,
@@ -46,6 +46,7 @@ export function useMailActions({
   selectedAccount: Account | undefined;
 }) {
   const setDialog = useAtomSet(dialogAtom);
+  const setSignInAgain = useAtomSet(signInAgainAtom);
   const [snoozeIds, setSnoozeIds] = useAtom(snoozeIdsAtom);
   const {
     deleteFolder,
@@ -206,6 +207,7 @@ export function useMailActions({
 
   const reauth = (account: Account) => {
     if (account.provider === "imap") {
+      setSignInAgain(account.id);
       setDialog("add");
       return;
     }

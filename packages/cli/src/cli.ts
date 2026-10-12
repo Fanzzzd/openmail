@@ -488,21 +488,45 @@ const proposalsList = Command.make(
 
 const proposalId = Argument.Int("proposal-id");
 
+/** An approval from a script is not a person's decision; only an interactive terminal counts. */
 const proposalsApprove = Command.make(
   "approve",
-  { id: proposalId },
-  Effect.fn(function* ({ id }) {
+  {
+    id: proposalId,
+    yes: Flag.Boolean("yes").pipe(
+      Flag.withDescription(
+        "Approve without the confirmation prompt (needed when stdin is not a terminal). Never approves messages.",
+      ),
+      Flag.withDefault(false),
+    ),
+  },
+  Effect.fn(function* ({ id, yes }) {
     const mailbox = yield* Mailbox;
     const proposal = (yield* mailbox.proposals).find((p) => p.id === id);
-    if (proposal && (proposal.command.kind === "send" || proposal.command.kind === "draft")) {
+    if (!proposal) return yield* fail(`No proposal with id ${id}.`);
+    if (proposal.command.kind === "send" || proposal.command.kind === "draft") {
       return yield* fail(
-        `Proposal ${id} is a message (${commandSummary(proposal.command)}). Open openmail to review and send it; the CLI does not send mail.`,
+        `Proposal ${id} is a message (${commandSummary(proposal.command)}). Open openmail to review and send it; the CLI does not approve or send mail.`,
       );
+    }
+    if (!yes) {
+      if (!process.stdin.isTTY)
+        return yield* fail(
+          "Approving needs a confirmation in an interactive terminal. Run it in a terminal, or pass --yes.",
+        );
+      const confirmed = yield* Prompt.run(
+        Prompt.Confirm({
+          message: `Approve proposal ${id}: ${commandSummary(proposal.command)}?`,
+        }),
+      );
+      if (!confirmed) return yield* Console.log(`Proposal ${id} is still pending.`);
     }
     const outcome = yield* mailbox.decideProposal(id, true, "cli");
     return yield* Console.log(outcomeText(outcome, `Approved proposal ${id}.`));
   }),
-).pipe(Command.withDescription("Approve a proposed change; it runs as you (user:cli)"));
+).pipe(
+  Command.withDescription("Approve a proposed change after confirming; it runs as you (user:cli)"),
+);
 
 const proposalsReject = Command.make(
   "reject",

@@ -30,7 +30,8 @@ const TokenJson = Schema.Struct({
 
 // Sign-in failures before there is an account (consent denied, timeout) have
 // no account id to report.
-const signInFailed = (message: string) => new AuthError({ accountId: "", message });
+const signInFailed = (message: string, reason?: "cancelled" | "timeout") =>
+  new AuthError({ accountId: "", message, ...(reason ? { reason } : {}) });
 
 /** A loopback HTTP server on a free port, closed when the scope ends. */
 const loopbackServer = Effect.acquireRelease(
@@ -54,18 +55,25 @@ const loopbackServer = Effect.acquireRelease(
     }),
 );
 
+const escapeHtml = (text: string) =>
+  text.replace(
+    /[&<>"']/g,
+    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] ?? c,
+  );
+
 /**
  * The page the browser shows after the redirect. Core does not know the app's
- * UI language, so it says the same thing in English and Chinese.
+ * UI language, so it says the same thing in English and Chinese. The provider's
+ * error code is reflected, so it is escaped.
  */
-function page(ok: boolean, error: string | null): string {
-  const reason = error ?? "state mismatch";
-  const [en, zh] = ok
-    ? [
-        "Signed in. You can close this page and go back to openmail.",
-        "已登录，可以关闭这个页面回到 openmail。",
-      ]
-    : [`Sign-in failed: ${reason}`, `登录失败：${reason}`];
+function page(error: string | null): string {
+  const [en, zh] =
+    error === null
+      ? [
+          "Signed in. You can close this page and go back to openmail.",
+          "已登录，可以关闭这个页面回到 openmail。",
+        ]
+      : [`Sign-in failed: ${escapeHtml(error)}`, `登录失败：${escapeHtml(error)}`];
   return `<meta charset="utf-8"><body style="font:16px system-ui;padding:3rem"><p lang="en">${en}</p><p lang="zh-CN">${zh}</p></body>`;
 }
 
@@ -130,22 +138,37 @@ export const OAuthLoopback: Layer.Layer<
 
       // Listening starts before the browser opens, so an instant redirect is not lost.
       const code = yield* Deferred.make<string, AuthError>();
+      // Only a request to the redirect path that carries this sign-in's state may
+      // settle it. Anything else (a favicon, another local process probing the
+      // port, a forged ?error=) gets a 404 and the sign-in keeps waiting.
       server.on("request", (incoming, res) => {
         const url = new URL(incoming.url ?? "/", redirectUri);
+        if (
+          incoming.method !== "GET" ||
+          url.pathname !== "/" ||
+          url.searchParams.get("state") !== state
+        ) {
+          res.writeHead(404).end();
+          return;
+        }
         const error = url.searchParams.get("error");
         const got = url.searchParams.get("code");
         if (!error && !got) {
           res.writeHead(404).end();
           return;
         }
-        const ok = !error && url.searchParams.get("state") === state;
-        res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
-        res.end(page(ok, error));
+        res.writeHead(200, {
+          "content-type": "text/html; charset=utf-8",
+          "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'",
+        });
+        res.end(page(error));
         Deferred.doneUnsafe(
           code,
-          ok && got
+          !error && got
             ? Effect.succeed(got)
-            : Effect.fail(signInFailed(`Sign-in failed: ${error ?? "state mismatch"}`)),
+            : error === "access_denied"
+              ? Effect.fail(signInFailed("Sign-in cancelled", "cancelled"))
+              : Effect.fail(signInFailed(`Sign-in failed: ${error}`)),
         );
       });
 
@@ -165,7 +188,7 @@ export const OAuthLoopback: Layer.Layer<
       const got = yield* Deferred.await(code).pipe(
         Effect.timeoutOrElse({
           duration: TIMEOUT,
-          orElse: () => Effect.fail(signInFailed("Sign-in timed out")),
+          orElse: () => Effect.fail(signInFailed("Sign-in timed out", "timeout")),
         }),
       );
       return yield* postToken("", req.tokenUrl, {

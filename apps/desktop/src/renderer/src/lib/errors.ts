@@ -113,6 +113,19 @@ const DEVICE_REASONS: Record<string, MessageDescriptor> = {
 export const OAUTH_CONFIGURATION_ERROR = msg`OAuth client not configured. Set it up before syncing.`;
 const CLIENTS = { gmail: "Google", outlook: "Microsoft" } as const;
 
+const NO_RESPONSE = msg`The mail server didn't respond. Check the server name, the port and your internet connection.`;
+
+/** What to check when a mail server connection fails, by core's ProviderError reason. */
+const CONNECTION_ERRORS: Partial<Record<string, MessageDescriptor>> = {
+  configuration: OAUTH_CONFIGURATION_ERROR,
+  dns: msg`Can't find the mail server. Check the server name and your internet connection.`,
+  refused: msg`The mail server refused the connection. Check the port.`,
+  timeout: NO_RESPONSE,
+  unreachable: NO_RESPONSE,
+  tls: msg`Couldn't set up a secure connection to the mail server. Check the port and the encryption setting.`,
+  unsafe_login: msg`The server blocked the sign-in as unsafe. Turn on IMAP in your email's web settings, then sign in with the authorization code it generates.`,
+};
+
 /**
  * One short sentence for the person, per error tag. Takes the `i18n` from
  * `useLingui()` in components, so the text follows a language switch.
@@ -137,7 +150,17 @@ export function errorText(i18n: I18n, error: AppError): string {
           comment: "Sent means the Sent mailbox.",
         }),
       ),
-    AuthError: () => i18n._(msg`The server rejected the sign-in.`),
+    AuthError: (e) => {
+      if (e.reason === "cancelled") return i18n._(msg`Sign-in was cancelled.`);
+      if (e.reason === "timeout")
+        return i18n._(msg`Sign-in took too long. Try again and finish it in your browser.`);
+      if (e.reason === "account_mismatch") {
+        const signedInAs = e.signedInAs ?? "";
+        const expected = e.expected ?? "";
+        return i18n._(msg`You signed in as ${signedInAs}. Sign in with ${expected} to continue.`);
+      }
+      return i18n._(msg`The server rejected the sign-in.`);
+    },
     ClientNotConfigured: (e) => {
       const client = CLIENTS[e.provider];
       return i18n._(msg`The ${client} OAuth client is not set up yet.`);
@@ -151,9 +174,8 @@ export function errorText(i18n: I18n, error: AppError): string {
     ProviderError: (e) => {
       const message = INPUT_ERRORS[e.message];
       if (message) return i18n._(message);
-      return e.reason === "configuration"
-        ? i18n._(OAUTH_CONFIGURATION_ERROR)
-        : i18n._(msg`Can't reach the mail server right now.`);
+      const reason = e.reason ? CONNECTION_ERRORS[e.reason] : undefined;
+      return i18n._(reason ?? msg`Can't reach the mail server right now.`);
     },
     InvalidInput: (e) => {
       const message = INPUT_ERRORS[e.message];

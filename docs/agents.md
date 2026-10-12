@@ -26,7 +26,7 @@ openmail audit --limit 20
 
 OAuth 注册步骤见 [Google](setup-google.md) 与 [Microsoft](setup-microsoft.md)。IMAP 的 `--preset` 可选 `icloud`、`yahoo`、`qq`、`163`、`fastmail`、`custom`；`custom` 需要 `--imap-host` 和 `--smtp-host`。密码按顺序读取 `--password`、`OPENMAIL_IMAP_PASSWORD`、交互提示；交互提示无需在命令中填写密码。
 
-人工命令的改动以 `user:cli` 进入审计。`agents write-mode` 仅查看权限；传入模式参数会失败，修改须在 app 的设置中完成。`proposals approve` 可批准普通规则的整理提议；MCP 与内置助手提议须在 app 中批准。CLI 没有 send 命令，发送须在 app 中审阅。
+人工命令的改动以 `user:cli` 进入审计。`agents write-mode` 仅查看权限；传入模式参数会失败，修改须在 app 的设置中完成。`proposals approve` 可批准普通规则的整理提议；MCP 与内置助手提议须在 app 中批准。批准前 CLI 在交互终端里显示提议并要求确认；stdin 不是终端时拒绝执行，除非显式传入 `--yes`。消息提议（send、draft）在 CLI 中一律不能批准，`--yes` 也不行，core 的 `decideProposal` 同样拒绝非 app 的批准，因为脚本里的批准不能算作发送所需的 app 内人工确认。CLI 没有 send 命令，发送须在 app 中审阅。
 
 只检查同步时运行 `openmail health --json`，单账户加 `--account <id>`。报告只比较服务商和本地计数，不同步或修复数据；字段解释只在[同步说明](sync-correctness.md#同步健康检查)维护。命令实现见 [cli.ts](../packages/cli/src/cli.ts)。
 

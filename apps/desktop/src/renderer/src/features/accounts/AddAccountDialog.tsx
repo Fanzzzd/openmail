@@ -1,9 +1,9 @@
 import type { MessageDescriptor, I18n } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
-import { useAtom, useAtomValue } from "@effect/atom-react";
+import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Cause, Exit } from "effect";
-import { AsyncResult } from "effect/reactivity";
+import { AsyncResult, Atom } from "effect/reactivity";
 import { ChevronLeft, ExternalLink, X } from "lucide-react";
 import { type ReactNode, useState } from "react";
 
@@ -60,27 +60,52 @@ const tileLabel = (i18n: I18n, label: string | MessageDescriptor) =>
 
 const isOAuth = (c: Choice): c is OAuthProvider => c === "gmail" || c === "outlook";
 
+const IMAP_CHOICES: ReadonlySet<string> = new Set([
+  "icloud",
+  "yahoo",
+  "qq",
+  "163",
+  "fastmail",
+  "custom",
+]);
+const isImapChoice = (preset: string): preset is ImapChoice => IMAP_CHOICES.has(preset);
+
+/** A port field holds a whole number from 1 to 65535. */
+const validPort = (port: string) =>
+  /^\d{1,5}$/.test(port.trim()) && Number(port) >= 1 && Number(port) <= 65535;
+
 interface Props {
-  /** Omit on first run: there is nothing to go back to, so the dialog cannot be dismissed. */
-  onClose?: () => void;
+  onClose: () => void;
   onAdded: (account: Account) => void;
+  /** No account yet: the dialog greets the person. Closing it leaves an empty window with Add account. */
+  firstRun?: boolean;
+  /**
+   * An IMAP account whose password the server rejected. The dialog opens on its
+   * preset with the address and stored server settings filled in, never the password.
+   */
+  signInAgain?: Account;
 }
 
 /**
  * Adds a mail account. Step one picks the provider; step two signs in through
  * the browser (Gmail, Outlook) or with an app password (IMAP providers).
  */
-export function AddAccountDialog({ onClose, onAdded }: Props) {
+export function AddAccountDialog({ onClose, onAdded, firstRun, signInAgain }: Props) {
   const { t, i18n } = useLingui();
-  const [choice, setChoice] = useState<Choice | null>(null);
+  const againPreset = signInAgain?.imap?.preset;
+  const [choice, setChoice] = useState<Choice | null>(
+    signInAgain ? (againPreset && isImapChoice(againPreset) ? againPreset : "custom") : null,
+  );
   const tile = TILES.find((item) => item.id === choice);
 
   const provider = tile ? tileLabel(i18n, tile.label) : "";
-  const title = tile
-    ? t`Add ${provider}`
-    : onClose
-      ? t`Add email account`
-      : t`Add Your First Account`;
+  const title = signInAgain
+    ? t`Sign in again`
+    : tile
+      ? t`Add ${provider}`
+      : firstRun
+        ? t`Add Your First Account`
+        : t`Add email account`;
 
   return (
     <Dialog
@@ -91,7 +116,7 @@ export function AddAccountDialog({ onClose, onAdded }: Props) {
       backdropClassName="bg-black/30 backdrop-blur-[2px]"
     >
       <header className="flex h-7 items-center gap-2">
-        {tile && (
+        {tile && !signInAgain && (
           <button
             type="button"
             aria-label={t`Back`}
@@ -103,28 +128,26 @@ export function AddAccountDialog({ onClose, onAdded }: Props) {
         )}
         {tile && <ProviderIcon provider={tile.icon} className="size-5 shrink-0" />}
         <h2 className="flex-1 text-headline font-semibold">{title}</h2>
-        {onClose && (
-          <button
-            type="button"
-            aria-label={t`Close`}
-            onClick={onClose}
-            className="-mr-1.5 flex size-7 items-center justify-center rounded-control text-a11y-muted hover:bg-fill-hover"
-          >
-            <X className="size-4" />
-          </button>
-        )}
+        <button
+          type="button"
+          aria-label={t`Close`}
+          onClick={onClose}
+          className="-mr-1.5 flex size-7 items-center justify-center rounded-control text-a11y-muted hover:bg-fill-hover"
+        >
+          <X className="size-4" />
+        </button>
       </header>
 
       {choice === null && (
         <>
           <p className="mt-1.5 text-a11y-muted">
-            {onClose ? (
-              <Trans>Choose your email provider.</Trans>
-            ) : (
+            {firstRun ? (
               <Trans>
                 Welcome to openmail. Choose your email provider. Your credentials stay on this
                 computer.
               </Trans>
+            ) : (
+              <Trans>Choose your email provider.</Trans>
             )}
           </p>
           <div className="mt-5 grid grid-cols-4 gap-2">
@@ -150,7 +173,12 @@ export function AddAccountDialog({ onClose, onAdded }: Props) {
         <OAuthStep key={choice} provider={choice} onAdded={onAdded} />
       )}
       {choice !== null && !isOAuth(choice) && (
-        <ImapStep key={choice} preset={choice} onAdded={onAdded} />
+        <ImapStep
+          key={choice}
+          preset={choice}
+          onAdded={onAdded}
+          {...(signInAgain ? { signInAgain } : {})}
+        />
       )}
     </Dialog>
   );
@@ -187,8 +215,11 @@ function OAuthStep({
 }) {
   const setup = AsyncResult.getOrElse(useAtomValue(clientSetupAtom), () => null);
   const [signIn, runSignIn] = useAtom(connectAtom(provider), { mode: "promiseExit" });
+  // Interrupting the call reaches the main process, which closes the loopback server.
+  const control = useAtomSet(connectAtom(provider));
   const { i18n } = useLingui();
-  const signInError = resultError(i18n, signIn);
+  // Cancel interrupts the sign-in; that is not an error to show.
+  const signInError = AsyncResult.isInterrupted(signIn) ? null : resultError(i18n, signIn);
   const { name, doc } = OAUTH_COPY[provider];
 
   const signInNow = async () => {
@@ -255,6 +286,11 @@ function OAuthStep({
       {active === "own" && builtIn && <UseBuiltIn provider={provider} />}
       {signInError && <ErrorLine text={signInError} />}
       <Actions>
+        {signIn.waiting && (
+          <SecondaryButton onClick={() => control(Atom.Interrupt)}>
+            <Trans>Cancel</Trans>
+          </SecondaryButton>
+        )}
         <PrimaryButton disabled={signIn.waiting} onClick={() => void signInNow()}>
           {signIn.waiting ? (
             <Trans>Waiting for sign-in…</Trans>
@@ -348,13 +384,13 @@ function ClientForm({
     >
       <p className="text-a11y-muted">{children}</p>
       <Field
-        label={provider === "gmail" ? "Client ID" : "Application (client) ID"}
+        label={provider === "gmail" ? t`Client ID` : t`Application (client) ID`}
         value={clientId}
         onChange={setClientId}
         autoFocus={autoFocus}
       />
       {provider === "gmail" && (
-        <Field label="Client secret" value={clientSecret} onChange={setClientSecret} password />
+        <Field label={t`Client secret`} value={clientSecret} onChange={setClientSecret} password />
       )}
       {saveError && <ErrorLine text={saveError} />}
       {saveClient._tag === "Success" && (
@@ -376,9 +412,11 @@ function ClientForm({
 function ImapStep({
   preset,
   onAdded,
+  signInAgain,
 }: {
   preset: ImapChoice;
   onAdded: (account: Account) => void;
+  signInAgain?: Account;
 }) {
   const { t, i18n } = useLingui();
   const presets = AsyncResult.getOrElse(useAtomValue(imapPresetsAtom), () => null);
@@ -388,14 +426,19 @@ function ImapStep({
   const custom = preset === "custom";
   const authCode = preset === "qq" || preset === "163";
 
-  const [email, setEmail] = useState("");
+  // Sign in again keeps the stored servers; only the password is typed again.
+  const stored = signInAgain?.imap;
+  const storedEmail = signInAgain?.email ?? "";
+  const [email, setEmail] = useState(storedEmail);
   const [password, setPassword] = useState("");
-  const [username, setUsername] = useState("");
-  const [imapHost, setImapHost] = useState("");
-  const [imapPort, setImapPort] = useState("993");
-  const [smtpHost, setSmtpHost] = useState("");
-  const [smtpPort, setSmtpPort] = useState("465");
-  const [smtpSecure, setSmtpSecure] = useState(true);
+  const [username, setUsername] = useState(
+    stored && stored.username !== storedEmail ? stored.username : "",
+  );
+  const [imapHost, setImapHost] = useState(stored?.imapHost ?? "");
+  const [imapPort, setImapPort] = useState(String(stored?.imapPort ?? 993));
+  const [smtpHost, setSmtpHost] = useState(stored?.smtpHost ?? "");
+  const [smtpPort, setSmtpPort] = useState(String(stored?.smtpPort ?? 465));
+  const [smtpSecure, setSmtpSecure] = useState(stored?.smtpSecure ?? true);
 
   const [add, runAdd] = useAtom(connectAtom(preset), { mode: "promiseExit" });
   const addError = imapErrorText(i18n, add);
@@ -419,8 +462,11 @@ function ImapStep({
     if (Exit.isSuccess(exit)) onAdded(exit.value);
   };
 
+  const portsValid = validPort(imapPort) && validPort(smtpPort);
   const ready =
-    email.includes("@") && password && (!custom || (imapHost.trim() && smtpHost.trim()));
+    email.includes("@") &&
+    password &&
+    (!custom || (imapHost.trim() && smtpHost.trim() && portsValid));
   const secretLabel = custom
     ? t`Password`
     : authCode
@@ -443,8 +489,20 @@ function ImapStep({
         </p>
       )}
 
-      <Field label={t`Email address`} value={email} onChange={setEmail} type="email" autoFocus />
-      <Field label={secretLabel} value={password} onChange={setPassword} password />
+      <Field
+        label={t`Email address`}
+        value={email}
+        onChange={setEmail}
+        type="email"
+        autoFocus={!signInAgain}
+      />
+      <Field
+        label={secretLabel}
+        value={password}
+        onChange={setPassword}
+        password
+        autoFocus={!!signInAgain}
+      />
       {info?.appPasswordUrl && (
         <a
           href={info.appPasswordUrl}
@@ -493,6 +551,11 @@ function ImapStep({
               />
             </div>
           </div>
+          {!portsValid && (
+            <p className="mt-1.5 text-footnote text-a11y-danger">
+              <Trans>Enter port numbers from 1 to 65535.</Trans>
+            </p>
+          )}
           <div className="mt-3">
             <span className="block text-footnote font-medium text-a11y-muted">
               <Trans>SMTP encryption</Trans>
@@ -566,7 +629,19 @@ function ErrorLine({ text }: { text: string }) {
 }
 
 function Actions({ children }: { children: ReactNode }) {
-  return <div className="mt-5 flex justify-end">{children}</div>;
+  return <div className="mt-5 flex justify-end gap-2">{children}</div>;
+}
+
+function SecondaryButton({ children, onClick }: { children: ReactNode; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="h-8 rounded-control bg-white px-4 font-medium text-neutral-900 shadow-control ring-1 ring-edge hover:bg-neutral-50 active:bg-neutral-100 dark:bg-white/[0.08] dark:text-neutral-100 dark:hover:bg-white/[0.12] dark:active:bg-white/[0.16]"
+    >
+      {children}
+    </button>
+  );
 }
 
 function PrimaryButton({

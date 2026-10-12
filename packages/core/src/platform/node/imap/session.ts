@@ -54,23 +54,48 @@ export function describe(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
+const errorCode = (error: unknown) =>
+  Predicate.isObject(error) && "code" in error && Predicate.isString(error.code)
+    ? error.code
+    : undefined;
+
+/**
+ * Which setting a connection failure points at. imapflow passes Node's socket and
+ * TLS codes through on `code`. nodemailer replaces them with its own (EDNS, ETLS,
+ * ETIMEDOUT, ESOCKET), so for ESOCKET the Node code is read from the message.
+ */
+function connectionReason(
+  error: unknown,
+): "dns" | "refused" | "timeout" | "unreachable" | "tls" | undefined {
+  let code = errorCode(error) ?? "";
+  if (code === "ESOCKET" || code === "ECONNECTION")
+    code = /\b(E[A-Z_]+|ERR_[A-Z_]+|CERT_[A-Z_]+)\b/.exec(describe(error))?.[1] ?? code;
+  if (code === "ENOTFOUND" || code === "EAI_AGAIN" || code === "EDNS") return "dns";
+  if (code === "ECONNREFUSED") return "refused";
+  if (code === "ETIMEDOUT" || code === "ETIMEOUT") return "timeout";
+  // A proxy or firewall that resolves every name resets the socket instead of failing DNS.
+  if (/^(?:ECONNRESET|EPIPE|ENETUNREACH|EHOSTUNREACH)$/.test(code)) return "unreachable";
+  if (
+    code === "ETLS" ||
+    code === "EPROTO" ||
+    /^(?:ERR_SSL_|ERR_TLS_|CERT_|UNABLE_TO_|DEPTH_ZERO_|SELF_SIGNED_)/.test(code) ||
+    (!/^E[A-Z]+$/.test(code) && /STARTTLS|TLS|SSL|certificate/i.test(describe(error)))
+  )
+    return "tls";
+  return undefined;
+}
+
 /** Maps a thrown IMAP or SMTP error onto the provider failure types. */
 export function failure(
   accountId: string,
   host: string,
   error: unknown,
 ): AuthError | ProviderError {
-  // "socket disconnected before secure TLS connection was established" is a dropped network.
-  const dropped =
-    Predicate.isObject(error) &&
-    "code" in error &&
-    Predicate.isString(error.code) &&
-    /^(?:ECONNRESET|ECONNREFUSED|ENOTFOUND|EAI_AGAIN|ETIMEDOUT|ETIMEOUT|EPIPE|ENETUNREACH|EHOSTUNREACH)$/.test(
-      error.code,
-    );
-  if (!dropped && /STARTTLS|TLS|certificate/i.test(describe(error)))
+  const reason = connectionReason(error);
+  if (reason === "tls")
     return new ProviderError({
       message: `${host}: TLS is required before authentication. ${describe(error)}`,
+      reason,
     });
   if (isAuthFailure(error)) {
     return new AuthError({
@@ -82,9 +107,13 @@ export function failure(
   if (/unsafe login/i.test(describe(error))) {
     return new ProviderError({
       message: `${host} blocked the session as an unsafe login. Turn on IMAP in the web settings and use the client authorization code.`,
+      reason: "unsafe_login",
     });
   }
-  return new ProviderError({ message: `${host}: ${describe(error)}` });
+  return new ProviderError({
+    message: `${host}: ${describe(error)}`,
+    ...(reason ? { reason } : {}),
+  });
 }
 
 // Connections

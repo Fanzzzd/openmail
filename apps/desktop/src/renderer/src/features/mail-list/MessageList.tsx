@@ -28,6 +28,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { FileText, Inbox, ListFilter, Paperclip, SearchX, Star, TriangleAlert } from "lucide-react";
 import {
   useEffect,
+  useLayoutEffect,
   useCallback,
   useId,
   memo,
@@ -792,6 +793,36 @@ const Row = memo(function Row({
   );
 });
 
+function EmptyListButton({
+  onClick,
+  focusLost,
+  children,
+}: {
+  onClick: () => void;
+  /** Set when the button leaves the document while it has focus. */
+  focusLost: RefObject<boolean>;
+  children: ReactNode;
+}) {
+  const ref = useRef<HTMLButtonElement>(null);
+  // An unmount cleanup in a layout effect runs while the button is still in the document.
+  useLayoutEffect(() => {
+    const button = ref.current;
+    return () => {
+      if (button && document.activeElement === button) focusLost.current = true;
+    };
+  }, [focusLost]);
+  return (
+    <button
+      ref={ref}
+      type="button"
+      onClick={onClick}
+      className="mt-2 rounded-item font-medium text-a11y-accent hover:underline dark:text-blue-400"
+    >
+      {children}
+    </button>
+  );
+}
+
 /** Why the list is empty, with the step that changes it. */
 function EmptyList({
   searching,
@@ -806,14 +837,20 @@ function EmptyList({
   onClearFilters: () => void;
   actions: EmptyActions | undefined;
 }) {
+  // Sync now goes away once the sync starts; focus moves to the status line instead of the body.
+  const status = useRef<HTMLOutputElement>(null);
+  const lostFocus = useRef(false);
+  useEffect(() => {
+    if (!lostFocus.current) return;
+    lostFocus.current = false;
+    status.current?.focus();
+  });
   let text: ReactNode = <Trans>No messages here</Trans>;
   let Icon = Inbox;
-  let button: { label: ReactNode; onClick: () => void; disabled?: boolean } | undefined =
-    actions && {
-      label: <Trans>Sync now</Trans>,
-      onClick: actions.onSync,
-      disabled: actions.syncing,
-    };
+  let button: { label: ReactNode; onClick: () => void } | undefined = actions && {
+    label: <Trans>Sync now</Trans>,
+    onClick: actions.onSync,
+  };
   if (searching) {
     text = <Trans>No matching messages</Trans>;
     Icon = SearchX;
@@ -830,6 +867,10 @@ function EmptyList({
     text = <Trans>No starred messages. Star a message to find it here.</Trans>;
     Icon = Star;
     button = undefined;
+  } else if (actions?.syncing) {
+    // During the first sync the list is empty only because nothing has arrived yet.
+    text = <Trans>Syncing mail…</Trans>;
+    button = undefined;
   }
   return (
     <div className="flex shrink-0 flex-col items-center px-8 pt-16 pb-4 text-center text-a11y-muted">
@@ -838,17 +879,13 @@ function EmptyList({
         strokeWidth={1.5}
         className="mb-3 size-8 text-neutral-300 dark:text-neutral-600"
       />
-      <p className="max-w-56">{text}</p>
+      <output ref={status} tabIndex={-1} className="block max-w-56 outline-none">
+        {text}
+      </output>
       {button && (
-        // aria-disabled keeps focus on Sync now while a sync runs; disabled would drop it.
-        <button
-          type="button"
-          onClick={button.disabled ? undefined : button.onClick}
-          aria-disabled={button.disabled || undefined}
-          className="mt-2 rounded-item font-medium text-a11y-accent hover:underline aria-disabled:no-underline aria-disabled:opacity-50 dark:text-blue-400"
-        >
+        <EmptyListButton onClick={button.onClick} focusLost={lostFocus}>
           {button.label}
-        </button>
+        </EmptyListButton>
       )}
     </div>
   );

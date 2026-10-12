@@ -51,13 +51,14 @@ export const authSession = (config: MobileConfig): MobileAuthSession => ({
     const discovery = { authorizationEndpoint: request.authUrl, tokenEndpoint: request.tokenUrl };
     await auth.makeAuthUrlAsync(discovery);
     const response = await auth.promptAsync(discovery);
+    if (response.type === "cancel" || response.type === "dismiss") return null;
     if (
       response.type !== "success" ||
       response.params.state !== auth.state ||
       !response.params.code ||
       !auth.codeVerifier
     ) {
-      throw new Error("Sign-in cancelled or invalid authorization response");
+      throw new Error("Invalid authorization response");
     }
     return { code: response.params.code, verifier: auth.codeVerifier, redirectUri };
   },

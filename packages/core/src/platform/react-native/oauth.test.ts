@@ -88,3 +88,17 @@ describe("mobile refresh failures", () => {
     );
   });
 });
+
+describe("mobile sign-in failures", () => {
+  const layer = (authorize: () => Promise<null>) =>
+    mobileOAuthLayer({ authorize }).pipe(Layer.provide(FetchHttpClient.layer));
+  it("reports a cancelled browser as a cancelled sign-in", async () => {
+    const error = await Effect.runPromise(
+      Effect.gen(function* () {
+        const oauth = yield* OAuth;
+        return yield* Effect.flip(oauth.authorize(request));
+      }).pipe(Effect.provide(layer(async () => null))),
+    );
+    expect(error._tag === "AuthError" && error.reason).toBe("cancelled");
+  });
+});

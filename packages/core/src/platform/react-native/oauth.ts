@@ -6,12 +6,15 @@ import { tokenEndpointFailure } from "../../reauth.js";
 import { OAuth, type AuthorizeRequest, type TokenResponse } from "../../services.js";
 
 export interface MobileAuthSession {
-  /** AuthSession owns secure state, S256 challenge and system browser completion. */
+  /**
+   * AuthSession owns secure state, S256 challenge and system browser completion.
+   * Resolves null when the person cancels or dismisses the browser.
+   */
   authorize(request: AuthorizeRequest): Promise<{
     code: string;
     verifier: string;
     redirectUri: string;
-  }>;
+  } | null>;
 }
 const TokenJson = Schema.Struct({
   access_token: Schema.String,
@@ -70,20 +73,26 @@ export const mobileOAuthLayer = (session: MobileAuthSession) =>
             const result = yield* Effect.tryPromise({
               try: () => session.authorize(request),
               catch: () =>
-                new AuthError({
-                  accountId: "",
-                  message: "Sign-in cancelled or authorization failed",
-                }),
+                new AuthError({ accountId: "", message: "Sign-in authorization failed" }),
             }).pipe(
-              Effect.timeout("5 minutes"),
-              Effect.mapError(
-                () =>
-                  new AuthError({
-                    accountId: "",
-                    message: "Sign-in cancelled or authorization failed",
-                  }),
-              ),
+              Effect.timeoutOrElse({
+                duration: "5 minutes",
+                orElse: () =>
+                  Effect.fail(
+                    new AuthError({
+                      accountId: "",
+                      message: "Sign-in timed out",
+                      reason: "timeout",
+                    }),
+                  ),
+              }),
             );
+            if (result === null)
+              return yield* new AuthError({
+                accountId: "",
+                message: "Sign-in cancelled",
+                reason: "cancelled",
+              });
             return yield* post("", request.tokenUrl, {
               grant_type: "authorization_code",
               client_id: request.clientId,

@@ -1,6 +1,6 @@
 import { Clock, Effect, FiberSet, Schema } from "effect";
 import { AccountSettings } from "./domain.js";
-import { FeatureScopeMissing, InvalidInput } from "./errors.js";
+import { AuthError, FeatureScopeMissing, InvalidInput } from "./errors.js";
 import { GMAIL_PERMANENT_DELETE_SCOPE } from "./folder-actions.js";
 import { type makeFeatureMailbox } from "./mailbox-features.js";
 import { type MailboxDependencies, type MailboxRuntimeState } from "./mailbox-runtime.js";
@@ -16,6 +16,15 @@ import {
 } from "./optional-services.js";
 import { activeClient } from "./oauth-clients.js";
 import { type ConnectInput } from "./services.js";
+
+const accountMismatch = (signedInAs: string, expected: string) =>
+  new AuthError({
+    accountId: "",
+    message: `Signed in as ${signedInAs}, expected ${expected}.`,
+    reason: "account_mismatch",
+    signedInAs,
+    expected,
+  });
 
 export const makeAccountsMailbox = (
   deps: MailboxDependencies & {
@@ -69,15 +78,10 @@ export const makeAccountsMailbox = (
         .get(input.provider)
         .connect({ ...input, loginHint: existing.email, grantedScopes: previous });
       if (connected.email.toLowerCase() !== existing.email.toLowerCase())
-        return yield* new InvalidInput({
-          message: `Signed in as ${connected.email}, expected ${existing.email}.`,
-        });
+        return yield* accountMismatch(connected.email, existing.email);
     }
-    if (expect && connected.email.toLowerCase() !== expect.toLowerCase()) {
-      return yield* new InvalidInput({
-        message: `Signed in as ${connected.email}, expected ${expect}.`,
-      });
-    }
+    if (expect && connected.email.toLowerCase() !== expect.toLowerCase())
+      return yield* accountMismatch(connected.email, expect);
     const account = yield* store.upsertAccount(input.provider, connected.email);
     yield* secrets.set(account.id, connected.secret);
     if (connected.clientId) yield* issuers.set(account.id, connected.clientId);

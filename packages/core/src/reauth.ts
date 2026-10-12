@@ -1,7 +1,13 @@
 import { Effect, Schema } from "effect";
 
 import type { Provider } from "./domain.js";
-import { AuthError, KEYCHAIN_LOCKED_MESSAGE, ProviderError, ReauthReason } from "./errors.js";
+import {
+  AuthError,
+  isReauthReason,
+  KEYCHAIN_LOCKED_MESSAGE,
+  ProviderError,
+  ReauthReason,
+} from "./errors.js";
 import { sha256Hex } from "./platform/crypto.js";
 
 /**
@@ -88,7 +94,8 @@ export const authFailure = (
       : undefined;
 
 /** The reason to store when an AuthError marks an account. */
-export const reauthReason = (error: AuthError): ReauthReason => error.reason ?? "token_revoked";
+export const reauthReason = (error: AuthError): ReauthReason =>
+  isReauthReason(error.reason) ? error.reason : "token_revoked";
 
 /** Fixed fields only: provider, reason code and the account hash. Never a token or message. */
 export const ReauthDiagnostic = Schema.Struct({

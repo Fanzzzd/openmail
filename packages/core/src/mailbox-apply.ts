@@ -342,6 +342,13 @@ export const makeApplyMailbox = (
     const proposal = yield* store.getProposal(id);
     if (approve && surface !== "app" && isAiProposalActor(proposal.actor))
       return yield* new InvalidInput({ message: "Approve AI proposals in the app." });
+    // Approving a message outside the app would count as the in-app confirmation sending needs.
+    if (
+      approve &&
+      surface !== "app" &&
+      (proposal.command.kind === "send" || proposal.command.kind === "draft")
+    )
+      return yield* new InvalidInput({ message: "Review and send proposed messages in the app." });
     if (proposal.status !== "pending") {
       return yield* new InvalidInput({
         message: `Proposal ${id} is already ${proposal.status}.`,

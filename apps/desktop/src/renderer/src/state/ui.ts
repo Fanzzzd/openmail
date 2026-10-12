@@ -180,6 +180,12 @@ export const openMessageAtom = Atom.writable(
 );
 
 /**
+ * The IMAP account a "Sign in again" opened the Add Account dialog for, or null
+ * for a new account. The dialog prefills its preset, address and servers.
+ */
+export const signInAgainAtom = Atom.make<string | null>(null).pipe(Atom.keepAlive);
+
+/**
  * The app dialog open over the mail view. It replaces the history entry, so
  * opening and closing dialogs adds no Back steps.
  */

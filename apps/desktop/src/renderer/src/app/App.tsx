@@ -2,7 +2,7 @@ import { focusedSenderMessage, threadStateFor } from "../lib/focused-inbox";
 import { Separator, Group, Panel } from "react-resizable-panels";
 import { useCallback, useRef, useState, type ComponentProps, useEffect } from "react";
 import type { Label, MailOp } from "../../../shared/api";
-import { useAtom, useAtomMount, useAtomValue } from "@effect/atom-react";
+import { useAtom, useAtomMount, useAtomRefresh, useAtomValue } from "@effect/atom-react";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
@@ -57,7 +57,12 @@ import { DefaultProfilesPrompt, ProfileSwitcher } from "../features/accounts/Pro
 import { Reader, useThreadPrint } from "../features/reader/Reader";
 import { Sidebar, SidebarToggle } from "../features/sidebar/Sidebar";
 import { SidebarRail } from "../features/sidebar/SidebarRail";
-import { railTrafficLightInset, trafficLightInset } from "../ui/styles";
+import {
+  buttonPrimary,
+  buttonSecondary,
+  railTrafficLightInset,
+  trafficLightInset,
+} from "../ui/styles";
 import { FocusedInboxPermission } from "../features/organize/FocusedInboxActions";
 import { ThreadActions } from "../features/organize/ThreadActions";
 import type { ThreadState } from "../lib/focused-inbox";
@@ -86,7 +91,7 @@ import {
   unreadCountsAtom,
 } from "../state/queries";
 import { useBatchUndo } from "../state/undo";
-import { dialogAtom, openMessageAtom } from "../state/ui";
+import { dialogAtom, openMessageAtom, signInAgainAtom } from "../state/ui";
 import {
   ALL,
   inboxCategoryNames,
@@ -157,7 +162,16 @@ export function App({ composeId }: { composeId?: string }) {
   });
 
   const accounts = useAtomValue(accountsAtom);
+  const refreshAccounts = useAtomRefresh(accountsAtom);
   const accountList = AsyncResult.getOrElse(accounts, () => []);
+  // Closing the first-run dialog leaves an empty window that still offers Add account.
+  const [firstRunClosed, setFirstRunClosed] = useState(false);
+  const [signInAgainId, setSignInAgain] = useAtom(signInAgainAtom);
+  const signInAgain =
+    dialog === "add" ? accountList.find((a) => a.id === signInAgainId) : undefined;
+  useEffect(() => {
+    if (dialog !== "add" && signInAgainId !== null) setSignInAgain(null);
+  }, [dialog, signInAgainId, setSignInAgain]);
   const profileList = AsyncResult.getOrElse(useAtomValue(profilesAtom), () => []);
   const counts = AsyncResult.getOrElse(useAtomValue(unreadCountsAtom), () => ({}));
   const navigation = useMailSelection({
@@ -440,8 +454,28 @@ export function App({ composeId }: { composeId?: string }) {
       navigation.focusList(null);
     };
   const mainPane = !hasAccounts ? (
-    <main className="h-full w-full bg-surface">
-      <div className="drag h-13" />
+    <main className="flex h-full w-full flex-col bg-surface">
+      <div className="drag h-13 shrink-0" />
+      {accounts._tag === "Failure" ? (
+        <div
+          role="alert"
+          className="flex flex-1 flex-col items-center justify-center gap-3 px-8 pb-13 text-center"
+        >
+          <p className="max-w-80 text-a11y-muted">
+            {t`Couldn't load your accounts.`} {causeText(i18n, accounts.cause)}
+          </p>
+          <button type="button" className={buttonSecondary} onClick={refreshAccounts}>
+            {t`Retry`}
+          </button>
+        </div>
+      ) : accounts._tag === "Success" && dialog !== "add" ? (
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 px-8 pb-13 text-center">
+          <p className="text-a11y-muted">{t`No email accounts yet.`}</p>
+          <button type="button" className={buttonPrimary} onClick={() => setDialog("add")}>
+            {t`Add account`}
+          </button>
+        </div>
+      ) : null}
     </main>
   ) : (
     <Overview
@@ -886,9 +920,14 @@ export function App({ composeId }: { composeId?: string }) {
           }}
         />
       )}
-      {(dialog === "add" || (!hasAccounts && accounts._tag !== "Initial")) && (
+      {(dialog === "add" || (!hasAccounts && accounts._tag === "Success" && !firstRunClosed)) && (
         <AddAccountDialog
-          {...(hasAccounts ? { onClose: () => setDialog(null) } : {})}
+          firstRun={!hasAccounts}
+          {...(signInAgain?.provider === "imap" ? { signInAgain } : {})}
+          onClose={() => {
+            setDialog(null);
+            setFirstRunClosed(true);
+          }}
           onAdded={(a) => {
             setDialog(null);
             const email = a.email;

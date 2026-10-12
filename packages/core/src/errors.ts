@@ -14,6 +14,15 @@ export const ReauthReason = Schema.Literals([
   "imap_auth_failed",
 ]);
 export type ReauthReason = typeof ReauthReason.Type;
+export const isReauthReason = Schema.is(ReauthReason);
+
+/**
+ * Why a sign-in failed before there was an account to mark. Never stored on an
+ * account: `cancelled` (the person closed the consent page or the app's sign-in),
+ * `timeout` (no redirect in time), `account_mismatch` (a different address signed in).
+ */
+export const SignInFailure = Schema.Literals(["cancelled", "timeout", "account_mismatch"]);
+export type SignInFailure = typeof SignInFailure.Type;
 
 /** The message a keychain read failure carries; the UI shows it as "Keychain is locked". */
 export const KEYCHAIN_LOCKED_MESSAGE = "The keychain is locked or unavailable";
@@ -32,7 +41,10 @@ export class AuthError extends Schema.TaggedError<AuthError>()("AuthError", {
   accountId: Schema.optionalKey(Schema.String),
   message: Schema.String,
   /** Unset means a provider 401 after a forced refresh, recorded as token_revoked. */
-  reason: Schema.optionalKey(ReauthReason),
+  reason: Schema.optionalKey(Schema.Union([ReauthReason, SignInFailure])),
+  /** account_mismatch: the address that signed in, and the one the app asked for. */
+  signedInAs: Schema.optionalKey(Schema.String),
+  expected: Schema.optionalKey(Schema.String),
 }) {}
 
 /** A request the provider will never accept (unknown id, message gone). Not retried. */
@@ -49,7 +61,23 @@ export class ProviderError extends Schema.TaggedError<ProviderError>()("Provider
   message: Schema.String,
   status: Schema.optionalKey(Schema.Number),
   /** `keychain`: the OS keychain could not be read (locked after sleep). Never a sign-in problem. */
-  reason: Schema.optionalKey(Schema.Literals(["configuration", "connection", "keychain"])),
+  /**
+   * `dns`, `tls`, `refused`, `timeout`, `unreachable` and `unsafe_login` classify an IMAP/SMTP
+   * connection failure so the UI can say which setting to check.
+   */
+  reason: Schema.optionalKey(
+    Schema.Literals([
+      "configuration",
+      "connection",
+      "keychain",
+      "dns",
+      "tls",
+      "refused",
+      "timeout",
+      "unreachable",
+      "unsafe_login",
+    ]),
+  ),
   deferred: Schema.optionalKey(Schema.Boolean),
   retryAfter: Schema.optionalKey(Schema.String),
 }) {}

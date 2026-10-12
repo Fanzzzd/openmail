@@ -340,6 +340,10 @@ msgstr "Přidat"
 msgid "Add {provider}"
 msgstr "Přidat {provider}"
 
+#: src/renderer/src/app/App.tsx
+msgid "Add account"
+msgstr "Přidat účet"
+
 #: src/renderer/src/lib/errors.ts
 msgid "Add an automatic reply message"
 msgstr "Přidejte zprávu s automatickou odpovědí"
@@ -670,6 +674,10 @@ msgstr "Kontakty Apple zůstávají v tomto zařízení a nikdy se neodesílají
 msgid "Apple Mail"
 msgstr "Apple Mail"
 
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+msgid "Application (client) ID"
+msgstr "ID aplikace (klienta)"
+
 #: src/renderer/src/features/compose/components/DraftOrganization.tsx
 #: src/renderer/src/features/organize/MultiOrganization.tsx
 msgid "Apply"
@@ -967,6 +975,10 @@ msgid "Call"
 msgstr "Zavolat"
 
 #: src/renderer/src/lib/errors.ts
+msgid "Can't find the mail server. Check the server name and your internet connection."
+msgstr "Poštovní server nelze najít. Zkontrolujte název serveru a připojení k internetu."
+
+#: src/renderer/src/lib/errors.ts
 msgid "Can't find this account."
 msgstr "Tento účet nelze najít."
 
@@ -1012,6 +1024,7 @@ msgstr "K poštovnímu serveru se nyní nelze připojit."
 
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/ai/AiPanel.tsx
@@ -1253,6 +1266,14 @@ msgstr "U každé zprávy klikněte na „{loadImages}“."
 #: src/renderer/src/features/compose/hooks/use-compose-editor.ts
 msgid "Click in this window, then choose a device to take a photo, scan a document or add a sketch."
 msgstr "Klikněte do tohoto okna a vyberte zařízení pro pořízení fotky, skenování dokumentu nebo přidání náčrtu."
+
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+msgid "Client ID"
+msgstr "ID klienta"
+
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+msgid "Client secret"
+msgstr "Tajný klíč klienta"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
@@ -1673,6 +1694,10 @@ msgstr "Původní přílohy se nepodařilo načíst. Try again."
 msgid "Couldn't load this message."
 msgstr "Tuto zprávu se nepodařilo načíst."
 
+#: src/renderer/src/app/App.tsx
+msgid "Couldn't load your accounts."
+msgstr "Účty se nepodařilo načíst."
+
 #: src/renderer/src/features/reader/Reader.tsx
 msgid "Couldn't print: {reason}"
 msgstr "Nelze vytisknout: {reason}"
@@ -1704,6 +1729,10 @@ msgstr "Soubor PDF nelze uložit: {reason}"
 #: src/renderer/src/app/App.tsx
 msgid "Couldn't send: {reason}"
 msgstr "Nelze odeslat: {reason}"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Couldn't set up a secure connection to the mail server. Check the port and the encryption setting."
+msgstr "K poštovnímu serveru se nepodařilo navázat zabezpečené připojení. Zkontrolujte port a nastavení šifrování."
 
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
@@ -2239,6 +2268,10 @@ msgstr "Zadejte název šablony."
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Enter an OAuth client you registered yourself. New sign-ins use it instead of the built-in client. See {doc} in the repository."
 msgstr "Zadejte klienta OAuth, kterého jste si sami zaregistrovali. Nová přihlášení ho použijí místo vestavěného klienta. Viz {doc} v úložišti."
+
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+msgid "Enter port numbers from 1 to 65535."
+msgstr "Zadejte čísla portů od 1 do 65535."
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Enter the IMAP and SMTP servers your email provider gives you."
@@ -3974,6 +4007,10 @@ msgstr "Žádná stahování"
 msgid "No drafts"
 msgstr "Žádné koncepty"
 
+#: src/renderer/src/app/App.tsx
+msgid "No email accounts yet."
+msgstr "Zatím nemáte žádný e-mailový účet."
+
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "No external replies"
 msgstr "Žádné externí odpovědi"
@@ -5049,6 +5086,7 @@ msgstr "Obnovit synchronizaci"
 msgid "Retention windows take precedence. Starred messages, retained message texts, drafts and outbox messages are kept even when the limit is exceeded. Zero disables the budget."
 msgstr "Doba uchování má přednost. Zprávy s hvězdičkou, uchovávané texty zpráv, koncepty a zprávy ve složce k odeslání zůstanou i při překročení limitu. Nula vypne limit."
 
+#: src/renderer/src/app/App.tsx
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
 #: src/renderer/src/features/downloads/Downloads.tsx
 #: src/renderer/src/features/reader/body/MessageBodyShell.tsx
@@ -5616,6 +5654,7 @@ msgstr "Zobrazit počet nepřečtených v řádku nabídek"
 msgid "Sidebar"
 msgstr "Postranní panel"
 
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 #: src/renderer/src/features/mail-list/MessageList.tsx
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
@@ -5659,6 +5698,14 @@ msgstr "Přihlaste se v prohlížeči svým osobním účtem Microsoft (outlook.
 #: src/renderer/src/app/App.tsx
 msgid "Sign-in failed: {reason}"
 msgstr "Přihlášení se nezdařilo: {reason}"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Sign-in took too long. Try again and finish it in your browser."
+msgstr "Přihlášení trvalo příliš dlouho. Zkuste to znovu a dokončete ho v prohlížeči."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Sign-in was cancelled."
+msgstr "Přihlášení bylo zrušeno."
 
 #: src/renderer/src/features/compose/components/Composer.tsx
 msgid "Signature"
@@ -5957,6 +6004,10 @@ msgstr "Synchronizováno {time}"
 msgid "Syncing {fetched}/{total}"
 msgstr "Synchronizace {fetched}/{total}"
 
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "Syncing mail…"
+msgstr "Synchronizace pošty…"
+
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Syncing normally"
@@ -6057,6 +6108,14 @@ msgstr "Místní databázi se nepodařilo ověřit"
 msgid "The local database was recovered"
 msgstr "Místní databáze byla obnovena"
 
+#: src/renderer/src/lib/errors.ts
+msgid "The mail server didn't respond. Check the server name, the port and your internet connection."
+msgstr "Poštovní server neodpověděl. Zkontrolujte název serveru, port a připojení k internetu."
+
+#: src/renderer/src/lib/errors.ts
+msgid "The mail server refused the connection. Check the port."
+msgstr "Poštovní server odmítl připojení. Zkontrolujte port."
+
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "The mail server rejected the password for {email}. Sync is paused."
 msgstr "Poštovní server odmítl heslo pro {email}. Synchronizace je pozastavena."
@@ -6104,6 +6163,10 @@ msgstr "Vybraná zpráva již není dostupná."
 #: src/renderer/src/features/reader/Reader.tsx
 msgid "The sender name contains a different email address."
 msgstr "Jméno odesílatele obsahuje jinou e-mailovou adresu."
+
+#: src/renderer/src/lib/errors.ts
+msgid "The server blocked the sign-in as unsafe. Turn on IMAP in your email's web settings, then sign in with the authorization code it generates."
+msgstr "Server zablokoval přihlášení jako nebezpečné. Zapněte IMAP v nastavení webové pošty a přihlaste se vygenerovaným autorizačním kódem."
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "The server could not complete this search."
@@ -6709,6 +6772,10 @@ msgstr "Vy (příkazový řádek)"
 #: src/renderer/src/features/settings/sections/UpdateSettings.tsx
 msgid "You are up to date."
 msgstr "Máte nejnovější verzi."
+
+#: src/renderer/src/lib/errors.ts
+msgid "You signed in as {signedInAs}. Sign in with {expected} to continue."
+msgstr "Přihlásili jste se jako {signedInAs}. Pokračujte přihlášením jako {expected}."
 
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "You're offline. Mail syncs again when you reconnect."

@@ -175,14 +175,14 @@ describe("Expo platform services with native mocks", () => {
       ...request,
       clientId: config.googleAndroidClientId,
     });
-    expect(android.redirectUri).toBe(googleRedirect(config.googleAndroidClientId));
+    expect(android?.redirectUri).toBe(googleRedirect(config.googleAndroidClientId));
     const microsoft = await authSession(config).authorize({
       ...request,
       authUrl: "https://login.microsoftonline.com/consumers/oauth2/v2.0/authorize",
       tokenUrl: "https://login.microsoftonline.com/consumers/oauth2/v2.0/token",
       clientId: config.microsoftClientId,
     });
-    expect(microsoft.redirectUri).toBe(config.microsoftAndroidRedirect);
+    expect(microsoft?.redirectUri).toBe(config.microsoftAndroidRedirect);
     await expect(
       authSession(config).authorize({ ...request, clientId: "borrowed-client" }),
     ).rejects.toThrow("registered public client");
@@ -194,10 +194,10 @@ describe("Expo platform services with native mocks", () => {
     ).rejects.toThrow("Unsupported");
     native.os = "ios";
     native.cancelled = true;
-    await expect(authSession(config).authorize(request)).rejects.toThrow("cancelled");
+    await expect(authSession(config).authorize(request)).resolves.toBeNull();
     native.cancelled = false;
     native.mismatched = true;
-    await expect(authSession(config).authorize(request)).rejects.toThrow("invalid authorization");
+    await expect(authSession(config).authorize(request)).rejects.toThrow("Invalid authorization");
     native.mismatched = false;
   });
 });

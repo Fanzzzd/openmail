@@ -121,6 +121,39 @@ import { Store, type ProviderAdapter } from "./services.js";
     ),
   );
 
+  it.effect("signing in again as another address is a typed account mismatch", () =>
+    withGmail([incoming("m1")], (m, server) =>
+      Effect.gen(function* () {
+        const [account] = yield* m.accounts;
+        server.email = "other@gmail.com";
+        const error = yield* Effect.flip(m.reauth(account!.id));
+        assert.strictEqual(error._tag, "AuthError");
+        if (error._tag !== "AuthError") return;
+        assert.strictEqual(error.reason, "account_mismatch");
+        assert.strictEqual(error.signedInAs, "other@gmail.com");
+        assert.strictEqual(error.expected, "me@gmail.com");
+      }),
+    ),
+  );
+
+  it.effect("only the app approves a proposed message", () => {
+    const server = fakeServer("me@gmail.com", []);
+    return Effect.gen(function* () {
+      const m = yield* Mailbox;
+      const store = yield* Store;
+      const rule: Actor = { kind: "agent", surface: "rule", name: "rule", rationale: "auto" };
+      const id = yield* store.insertProposal(rule, {
+        kind: "send",
+        accountId: "gmail:me@gmail.com",
+        message: { to: [], cc: [], bcc: [], subject: "Re", text: "ok", attachments: [] },
+      });
+      const refused = yield* Effect.flip(m.decideProposal(id, true, "cli"));
+      assert.strictEqual(refused._tag, "InvalidInput");
+      assert.strictEqual((yield* m.proposals).find((p) => p.id === id)?.status, "pending");
+      assert.strictEqual(server.sent.length, 0);
+    }).pipe(Effect.provide(TestMailbox({ gmail: server })));
+  });
+
   it.effect("an auth failure pauses the account and keeps the change queued", () =>
     withGmail([incoming("m1")], (m, server) =>
       Effect.gen(function* () {

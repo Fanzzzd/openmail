@@ -340,6 +340,10 @@ msgstr "Добавить"
 msgid "Add {provider}"
 msgstr "Добавьте {provider}"
 
+#: src/renderer/src/app/App.tsx
+msgid "Add account"
+msgstr "Добавить учетную запись"
+
 #: src/renderer/src/lib/errors.ts
 msgid "Add an automatic reply message"
 msgstr "Добавить автоматическое ответное сообщение"
@@ -670,6 +674,10 @@ msgstr "Контакты Apple остаются на этом устройств
 msgid "Apple Mail"
 msgstr "Apple Mail"
 
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+msgid "Application (client) ID"
+msgstr "Идентификатор приложения (клиента)"
+
 #: src/renderer/src/features/compose/components/DraftOrganization.tsx
 #: src/renderer/src/features/organize/MultiOrganization.tsx
 msgid "Apply"
@@ -967,6 +975,10 @@ msgid "Call"
 msgstr "Позвонить"
 
 #: src/renderer/src/lib/errors.ts
+msgid "Can't find the mail server. Check the server name and your internet connection."
+msgstr "Не удаётся найти почтовый сервер. Проверьте имя сервера и подключение к интернету."
+
+#: src/renderer/src/lib/errors.ts
 msgid "Can't find this account."
 msgstr "Не могу найти этот учётная запись."
 
@@ -1012,6 +1024,7 @@ msgstr "Сейчас не удаётся подключиться к почто�
 
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/ai/AiPanel.tsx
@@ -1253,6 +1266,14 @@ msgstr "Нажимайте «{loadImages}» в каждом сообщении."
 #: src/renderer/src/features/compose/hooks/use-compose-editor.ts
 msgid "Click in this window, then choose a device to take a photo, scan a document or add a sketch."
 msgstr "Нажмите в этом окне, затем выберите устройство, чтобы сделать фото, отсканировать документ или добавить рисунок."
+
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+msgid "Client ID"
+msgstr "Идентификатор клиента"
+
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+msgid "Client secret"
+msgstr "Секрет клиента"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
@@ -1673,6 +1694,10 @@ msgstr "Не удалось загрузить исходные вложения
 msgid "Couldn't load this message."
 msgstr "Не удалось загрузить это сообщение."
 
+#: src/renderer/src/app/App.tsx
+msgid "Couldn't load your accounts."
+msgstr "Не удалось загрузить учетные записи."
+
 #: src/renderer/src/features/reader/Reader.tsx
 msgid "Couldn't print: {reason}"
 msgstr "Не удалось распечатать: {reason}."
@@ -1704,6 +1729,10 @@ msgstr "Не удалось сохранить PDF-файл: {reason}."
 #: src/renderer/src/app/App.tsx
 msgid "Couldn't send: {reason}"
 msgstr "Не удалось отправить: {reason}"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Couldn't set up a secure connection to the mail server. Check the port and the encryption setting."
+msgstr "Не удалось установить защищённое соединение с почтовым сервером. Проверьте порт и настройку шифрования."
 
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
@@ -2239,6 +2268,10 @@ msgstr "Введите имя шаблона."
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Enter an OAuth client you registered yourself. New sign-ins use it instead of the built-in client. See {doc} in the repository."
 msgstr "Введите клиент OAuth, который вы зарегистрировали сами. Новые входы будут использовать его вместо встроенного клиента. См. {doc} в репозитории."
+
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+msgid "Enter port numbers from 1 to 65535."
+msgstr "Введите номера портов от 1 до 65535."
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Enter the IMAP and SMTP servers your email provider gives you."
@@ -3974,6 +4007,10 @@ msgstr "Нет загрузок"
 msgid "No drafts"
 msgstr "Нет черновиков"
 
+#: src/renderer/src/app/App.tsx
+msgid "No email accounts yet."
+msgstr "Учетных записей электронной почты пока нет."
+
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "No external replies"
 msgstr "Нет внешних ответов"
@@ -5049,6 +5086,7 @@ msgstr "Возобновить синхронизацию"
 msgid "Retention windows take precedence. Starred messages, retained message texts, drafts and outbox messages are kept even when the limit is exceeded. Zero disables the budget."
 msgstr "Сроки хранения имеют приоритет. Сообщения со звёздочкой, сохраняемые тексты сообщений, черновики и сообщения в исходящих остаются даже при превышении лимита. Ноль отключает лимит."
 
+#: src/renderer/src/app/App.tsx
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
 #: src/renderer/src/features/downloads/Downloads.tsx
 #: src/renderer/src/features/reader/body/MessageBodyShell.tsx
@@ -5616,6 +5654,7 @@ msgstr "Показывать количество непрочитанных в 
 msgid "Sidebar"
 msgstr "Боковая панель"
 
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 #: src/renderer/src/features/mail-list/MessageList.tsx
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
@@ -5659,6 +5698,14 @@ msgstr "Войдите в браузере в свою личную учётну
 #: src/renderer/src/app/App.tsx
 msgid "Sign-in failed: {reason}"
 msgstr "Не удалось войти: {reason}."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Sign-in took too long. Try again and finish it in your browser."
+msgstr "Вход занял слишком много времени. Повторите попытку и завершите вход в браузере."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Sign-in was cancelled."
+msgstr "Вход отменён."
 
 #: src/renderer/src/features/compose/components/Composer.tsx
 msgid "Signature"
@@ -5957,6 +6004,10 @@ msgstr "Синхронизировано {time}"
 msgid "Syncing {fetched}/{total}"
 msgstr "Синхронизация {fetched}/{total}"
 
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "Syncing mail…"
+msgstr "Синхронизация почты…"
+
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Syncing normally"
@@ -6057,6 +6108,14 @@ msgstr "Локальную базу данных не удалось прове�
 msgid "The local database was recovered"
 msgstr "Локальная база данных восстановлена."
 
+#: src/renderer/src/lib/errors.ts
+msgid "The mail server didn't respond. Check the server name, the port and your internet connection."
+msgstr "Почтовый сервер не ответил. Проверьте имя сервера, порт и подключение к интернету."
+
+#: src/renderer/src/lib/errors.ts
+msgid "The mail server refused the connection. Check the port."
+msgstr "Почтовый сервер отклонил подключение. Проверьте порт."
+
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "The mail server rejected the password for {email}. Sync is paused."
 msgstr "Почтовый сервер отклонил пароль для {email}. Синхронизация приостановлена."
@@ -6104,6 +6163,10 @@ msgstr "Выбранное сообщение больше недоступно.
 #: src/renderer/src/features/reader/Reader.tsx
 msgid "The sender name contains a different email address."
 msgstr "Имя отправителя содержит другой адрес электронной почты."
+
+#: src/renderer/src/lib/errors.ts
+msgid "The server blocked the sign-in as unsafe. Turn on IMAP in your email's web settings, then sign in with the authorization code it generates."
+msgstr "Сервер заблокировал вход как небезопасный. Включите IMAP в веб-настройках почты и войдите с помощью созданного кода авторизации."
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "The server could not complete this search."
@@ -6709,6 +6772,10 @@ msgstr "Вы (командная строка)"
 #: src/renderer/src/features/settings/sections/UpdateSettings.tsx
 msgid "You are up to date."
 msgstr "Установлена последняя версия."
+
+#: src/renderer/src/lib/errors.ts
+msgid "You signed in as {signedInAs}. Sign in with {expected} to continue."
+msgstr "Вы вошли как {signedInAs}. Чтобы продолжить, войдите как {expected}."
 
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "You're offline. Mail syncs again when you reconnect."

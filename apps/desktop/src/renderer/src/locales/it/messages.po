@@ -340,6 +340,10 @@ msgstr "Aggiungi"
 msgid "Add {provider}"
 msgstr "Aggiungi {provider}"
 
+#: src/renderer/src/app/App.tsx
+msgid "Add account"
+msgstr "Aggiungi account"
+
 #: src/renderer/src/lib/errors.ts
 msgid "Add an automatic reply message"
 msgstr "Aggiungi un messaggio di risposta automatica"
@@ -670,6 +674,10 @@ msgstr "I contatti Apple rimangono su questo dispositivo e non vengono mai invia
 msgid "Apple Mail"
 msgstr "Apple Mail"
 
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+msgid "Application (client) ID"
+msgstr "ID applicazione (client)"
+
 #: src/renderer/src/features/compose/components/DraftOrganization.tsx
 #: src/renderer/src/features/organize/MultiOrganization.tsx
 msgid "Apply"
@@ -967,6 +975,10 @@ msgid "Call"
 msgstr "Chiama"
 
 #: src/renderer/src/lib/errors.ts
+msgid "Can't find the mail server. Check the server name and your internet connection."
+msgstr "Impossibile trovare il server di posta. Controlla il nome del server e la connessione a Internet."
+
+#: src/renderer/src/lib/errors.ts
 msgid "Can't find this account."
 msgstr "Impossibile trovare questo account."
 
@@ -1012,6 +1024,7 @@ msgstr "Al momento non è possibile raggiungere il server di posta."
 
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/ai/AiPanel.tsx
@@ -1253,6 +1266,14 @@ msgstr "Fai clic su “{loadImages}” in ogni messaggio."
 #: src/renderer/src/features/compose/hooks/use-compose-editor.ts
 msgid "Click in this window, then choose a device to take a photo, scan a document or add a sketch."
 msgstr "Fai clic in questa finestra, poi scegli un dispositivo per scattare una foto, scansionare un documento o aggiungere uno schizzo."
+
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+msgid "Client ID"
+msgstr "ID client"
+
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+msgid "Client secret"
+msgstr "Segreto client"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
@@ -1673,6 +1694,10 @@ msgstr "Impossibile caricare gli allegati originali. Riprova."
 msgid "Couldn't load this message."
 msgstr "Impossibile caricare questo messaggio."
 
+#: src/renderer/src/app/App.tsx
+msgid "Couldn't load your accounts."
+msgstr "Impossibile caricare i tuoi account."
+
 #: src/renderer/src/features/reader/Reader.tsx
 msgid "Couldn't print: {reason}"
 msgstr "Impossibile stampare: {reason}"
@@ -1704,6 +1729,10 @@ msgstr "Impossibile salvare il PDF: {reason}"
 #: src/renderer/src/app/App.tsx
 msgid "Couldn't send: {reason}"
 msgstr "Impossibile inviare: {reason}"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Couldn't set up a secure connection to the mail server. Check the port and the encryption setting."
+msgstr "Impossibile stabilire una connessione sicura con il server di posta. Controlla la porta e l'impostazione di crittografia."
 
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
@@ -2239,6 +2268,10 @@ msgstr "Inserisci un nome per il modello."
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Enter an OAuth client you registered yourself. New sign-ins use it instead of the built-in client. See {doc} in the repository."
 msgstr "Inserisci un client OAuth registrato da te. I nuovi accessi lo usano al posto del client integrato. Vedi {doc} nel repository."
+
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+msgid "Enter port numbers from 1 to 65535."
+msgstr "Inserisci numeri di porta da 1 a 65535."
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Enter the IMAP and SMTP servers your email provider gives you."
@@ -3974,6 +4007,10 @@ msgstr "Nessun download"
 msgid "No drafts"
 msgstr "Nessuna bozza"
 
+#: src/renderer/src/app/App.tsx
+msgid "No email accounts yet."
+msgstr "Nessun account di posta elettronica."
+
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "No external replies"
 msgstr "Nessuna risposta esterna"
@@ -5049,6 +5086,7 @@ msgstr "Riprendi la sincronizzazione"
 msgid "Retention windows take precedence. Starred messages, retained message texts, drafts and outbox messages are kept even when the limit is exceeded. Zero disables the budget."
 msgstr "I periodi di conservazione hanno la precedenza. I messaggi speciali, i testi dei messaggi conservati, le bozze e i messaggi in uscita restano anche oltre il limite. Zero disattiva il limite."
 
+#: src/renderer/src/app/App.tsx
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
 #: src/renderer/src/features/downloads/Downloads.tsx
 #: src/renderer/src/features/reader/body/MessageBodyShell.tsx
@@ -5616,6 +5654,7 @@ msgstr "Mostra il conteggio dei non letti nella barra dei menu"
 msgid "Sidebar"
 msgstr "Barra laterale"
 
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 #: src/renderer/src/features/mail-list/MessageList.tsx
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
@@ -5659,6 +5698,14 @@ msgstr "Accedi con il tuo account Microsoft personale (outlook.com o Hotmail) ne
 #: src/renderer/src/app/App.tsx
 msgid "Sign-in failed: {reason}"
 msgstr "Accesso non riuscito: {reason}"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Sign-in took too long. Try again and finish it in your browser."
+msgstr "L'accesso ha richiesto troppo tempo. Riprova e completalo nel browser."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Sign-in was cancelled."
+msgstr "L'accesso è stato annullato."
 
 #: src/renderer/src/features/compose/components/Composer.tsx
 msgid "Signature"
@@ -5957,6 +6004,10 @@ msgstr "Sincronizzato {time}"
 msgid "Syncing {fetched}/{total}"
 msgstr "Sincronizzazione {fetched}/{total}"
 
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "Syncing mail…"
+msgstr "Sincronizzazione della posta…"
+
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Syncing normally"
@@ -6057,6 +6108,14 @@ msgstr "Impossibile verificare il database locale"
 msgid "The local database was recovered"
 msgstr "Il database locale è stato recuperato"
 
+#: src/renderer/src/lib/errors.ts
+msgid "The mail server didn't respond. Check the server name, the port and your internet connection."
+msgstr "Il server di posta non ha risposto. Controlla il nome del server, la porta e la connessione a Internet."
+
+#: src/renderer/src/lib/errors.ts
+msgid "The mail server refused the connection. Check the port."
+msgstr "Il server di posta ha rifiutato la connessione. Controlla la porta."
+
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "The mail server rejected the password for {email}. Sync is paused."
 msgstr "Il server di posta ha rifiutato la password di {email}. La sincronizzazione è in pausa."
@@ -6104,6 +6163,10 @@ msgstr "Il messaggio selezionato non è più disponibile."
 #: src/renderer/src/features/reader/Reader.tsx
 msgid "The sender name contains a different email address."
 msgstr "Il nome del mittente contiene un indirizzo email diverso."
+
+#: src/renderer/src/lib/errors.ts
+msgid "The server blocked the sign-in as unsafe. Turn on IMAP in your email's web settings, then sign in with the authorization code it generates."
+msgstr "Il server ha bloccato l'accesso perché non sicuro. Attiva IMAP nelle impostazioni web della tua posta, quindi accedi con il codice di autorizzazione generato."
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "The server could not complete this search."
@@ -6709,6 +6772,10 @@ msgstr "Tu (riga di comando)"
 #: src/renderer/src/features/settings/sections/UpdateSettings.tsx
 msgid "You are up to date."
 msgstr "Hai la versione più recente."
+
+#: src/renderer/src/lib/errors.ts
+msgid "You signed in as {signedInAs}. Sign in with {expected} to continue."
+msgstr "Hai effettuato l'accesso come {signedInAs}. Accedi con {expected} per continuare."
 
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "You're offline. Mail syncs again when you reconnect."

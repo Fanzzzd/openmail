@@ -485,6 +485,34 @@ it("IMAP: only a refused login after connecting is imap_auth_failed", () => {
   }
 });
 
+it("IMAP and SMTP connection failures name the setting to check", () => {
+  const coded = (code: string, message = code) => Object.assign(new Error(message), { code });
+  const cases: [unknown, string | undefined][] = [
+    [coded("ENOTFOUND", "getaddrinfo ENOTFOUND imap.example.con"), "dns"],
+    [coded("EAI_AGAIN"), "dns"],
+    [coded("EDNS", "queryA ENOTFOUND smtp.example.con"), "dns"],
+    [coded("ECONNREFUSED"), "refused"],
+    [coded("ESOCKET", "connect ECONNREFUSED 127.0.0.1:465"), "refused"],
+    [coded("ETIMEOUT", "Failed to establish connection in required time"), "timeout"],
+    [coded("ETIMEDOUT"), "timeout"],
+    [coded("ERR_SSL_WRONG_VERSION_NUMBER", "wrong version number"), "tls"],
+    [coded("ESOCKET", "write EPROTO 00:error:SSL routines:wrong version number"), "tls"],
+    [coded("ETLS", "Error initiating TLS"), "tls"],
+    [coded("CERT_HAS_EXPIRED", "certificate has expired"), "tls"],
+    [new Error("Unexpected close"), undefined],
+    [
+      coded("ECONNRESET", "socket disconnected before secure TLS connection was established"),
+      "unreachable",
+    ],
+    [{ responseText: "Unsafe Login. Please contact kefu@188.com for help" }, "unsafe_login"],
+  ];
+  for (const [error, reason] of cases) {
+    const mapped = imapFailure(ID, "imap.example.com", error);
+    assert.strictEqual(mapped._tag, "ProviderError");
+    assert.strictEqual(mapped._tag === "ProviderError" ? mapped.reason : "", reason, String(error));
+  }
+});
+
 it.effect("marking an account records its reason once, logs it, and a sign-in clears it", () => {
   const records: unknown[] = [];
   const logger = Logger.make((options) => {

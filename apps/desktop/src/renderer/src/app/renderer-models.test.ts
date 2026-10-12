@@ -119,6 +119,7 @@ vi.mock("../state/ui", async () => ({
   searchAtom: "search",
   commitSearchAtom: "commit",
   dialogAtom: (await import("effect/reactivity")).Atom.make<string | null>(null),
+  signInAgainAtom: (await import("effect/reactivity")).Atom.make<string | null>(null),
   openThreadAtom: "openThread",
   openMessageAtom: "openMessage",
   filtersAtom: "filters",

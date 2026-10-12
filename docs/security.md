@@ -14,6 +14,8 @@
 | IPC 只接受已登记的应用窗口顶层 frame、准确页面来源和 window 类型；顶层 frame 按 Electron 44 的 frameTreeNodeId 比较，不依赖包装对象身份。Schema 校验有界 envelope，再由每个 RPC 的 Schema 解码参数。preload 只暴露固定频道；错误不传堆栈或原始 provider/OS 细节；保留分类及自有固定 InvalidInput 文案。renderer 按分类显示翻译，e2e 使用同一解码与脱敏路径；renderer 按请求归属路由回复，避免短期密钥客户端在接收循环启动前丢失回复 | `main/security/security.ts`、`main/rpc/rpc-security.ts`、`shared/rpc.ts`、`preload/index.ts`                         |
 | deep link 拒绝超长输入、控制字符、穿越、非法编码和额外 openmail 参数。mailto 只读取可人工检查的五个字段，忽略其他字段，不自动发送。open-file 只接受有界本地绝对路径，不解码为 URL；文件读取拒绝符号链接、非普通文件和超限内容                                                                                                                                                                                                       | core `system.ts`；`main/system/system.ts`、`main/security/security-policy.ts`、`main/files/dock-files.ts`            |
 
+OAuth 回环服务器（core `platform/node/oauth.ts`）只接受 GET `/` 且 `state` 与本次登录一致的请求。路径、方法或 state 不符的请求得到 404，登录继续等待，例如 favicon、其他本机进程或伪造的 `?error=`。页面回显的 provider error 经 HTML 转义，响应带 `default-src 'none'` CSP。界面取消登录时中断 RPC，作用域结束后关闭服务器。回归见 `packages/core/src/oauth.test.ts`。
+
 主进程不启用 Node compile cache。缓存目录可被同一用户的任何进程写入，Node 只用源码 CRC 校验，植入的字节码会在持有钥匙串 token 的签名主进程中运行，绕过 ASAR 完整性和 fuses。
 
 refresh token、IMAP 密码和 AI key 仅持久化于 core 的 `platform/node/secrets.ts` 系统钥匙串。renderer 仅获取配置状态；内置 OAuth 客户端值只编进主进程，renderer 只收到配置状态和来源，不含客户端值，见[发布](release.md#内置-oauth-客户端)；输入中的 key 临时经 IPC 保存，不写浏览器存储。浏览器存储仅保存界面设置，应用无复制凭据接口，主窗口和撰写窗口标题固定为 OpenMail；thread/message 使用去控制字符、最多 200 字符的主题。`main/index.ts` 的文件 logger 不记录原始错误；启动失败的 `Cause.pretty` 仅输出到 stderr；core `platform/node/diagnostics.ts` 在写入和导出时限制字段，账户只保留散列。未启用 crashReporter，并设置 disable-breakpad；系统自行生成的内存转储由操作系统策略管理。联系人和通知设置的系统协议由主进程固定构造，邮件不能指定。

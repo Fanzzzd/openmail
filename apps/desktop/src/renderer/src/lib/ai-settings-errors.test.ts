@@ -78,3 +78,23 @@ it("missing OAuth configuration survives redaction and gives a setup instruction
     "OAuth client not configured. Set it up before syncing.",
   );
 });
+
+it("sign-in and mail server failures say what happened from their reason, not the redacted message", () => {
+  const i18n = setupI18n({ locale: "en", messages: { en: {} } });
+  const auth = (fields: Partial<ConstructorParameters<typeof AuthError>[0]>) =>
+    errorText(i18n, new AuthError({ message: "", ...fields }));
+  expect(auth({ reason: "cancelled" })).toBe("Sign-in was cancelled.");
+  expect(auth({ reason: "timeout" })).toMatch(/^Sign-in took too long/);
+  expect(
+    auth({ reason: "account_mismatch", signedInAs: "b@gmail.com", expected: "a@gmail.com" }),
+  ).toBe("You signed in as b@gmail.com. Sign in with a@gmail.com to continue.");
+  const provider = (reason: ConstructorParameters<typeof ProviderError>[0]["reason"]) =>
+    errorText(i18n, new ProviderError({ message: "", ...(reason ? { reason } : {}) }));
+  expect(provider("dns")).toMatch(/^Can't find the mail server/);
+  expect(provider("refused")).toMatch(/refused the connection/);
+  expect(provider("timeout")).toMatch(/didn.t respond/);
+  expect(provider("unreachable")).toMatch(/didn.t respond/);
+  expect(provider("tls")).toMatch(/secure connection/);
+  expect(provider("unsafe_login")).toMatch(/authorization code/);
+  expect(provider(undefined)).toBe("Can't reach the mail server right now.");
+});

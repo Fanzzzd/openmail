@@ -318,3 +318,51 @@ test.concurrent("MCP and CLI search expose attachment snippets only inside the u
     fromMcp.untrusted_mail.threads[0]?.searchMatches,
   );
 }, 30_000);
+
+async function seedProposals(directory: string) {
+  return Effect.runPromise(
+    Effect.scoped(
+      Effect.gen(function* () {
+        const store = yield* Store;
+        const rule = { kind: "agent", surface: "rule", name: "rule", rationale: "auto" } as const;
+        const archive = yield* store.insertProposal(rule, {
+          kind: "modify",
+          threads: ["gmail:a@example.com/t1"],
+          op: { kind: "archive" },
+        });
+        const send = yield* store.insertProposal(rule, {
+          kind: "send",
+          accountId: "gmail:a@example.com",
+          message: { to: [], cc: [], bcc: [], subject: "Re", text: "ok", attachments: [] },
+        });
+        return { archive, send };
+      }).pipe(
+        Effect.provide(
+          TestMailbox({}, { backgroundFlush: false }, {}, undefined, {
+            database: join(directory, "mail.db"),
+          }),
+        ),
+      ),
+    ),
+  );
+}
+
+test.concurrent("proposals approve needs a terminal or --yes, and never approves a message", async ({
+  expect,
+  onTestFinished,
+}) => {
+  const directory = await home(onTestFinished, "openmail-cli-approve-test-");
+  const { archive, send } = await seedProposals(directory);
+  const options = { env: { ...process.env, OPENMAIL_HOME: directory } };
+  const approve = (...args: string[]) =>
+    run(process.execPath, ["dist/cli.js", "proposals", "approve", ...args], options);
+  // execFile gives the child a pipe for stdin, not a terminal.
+  await expect(approve(String(archive))).rejects.toMatchObject({
+    stderr: expect.stringContaining("interactive terminal"),
+  });
+  await expect(approve(String(send), "--yes")).rejects.toMatchObject({
+    stderr: expect.stringContaining("does not approve or send mail"),
+  });
+  const list = await run(process.execPath, ["dist/cli.js", "proposals", "list"], options);
+  expect(list.stdout.match(/pending/g)).toHaveLength(2);
+});

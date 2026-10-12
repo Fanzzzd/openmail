@@ -350,6 +350,10 @@ msgstr "添加"
 msgid "Add {provider}"
 msgstr "添加 {provider}"
 
+#: src/renderer/src/app/App.tsx
+msgid "Add account"
+msgstr "添加账户"
+
 #: src/renderer/src/lib/errors.ts
 msgid "Add an automatic reply message"
 msgstr "请填写自动回复正文"
@@ -680,6 +684,10 @@ msgstr "Apple 联系人只保留在本机，绝不发送给 AI 模型。"
 msgid "Apple Mail"
 msgstr "Apple 邮件"
 
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+msgid "Application (client) ID"
+msgstr "应用程序（客户端）ID"
+
 #: src/renderer/src/features/compose/components/DraftOrganization.tsx
 #: src/renderer/src/features/organize/MultiOrganization.tsx
 msgid "Apply"
@@ -977,6 +985,10 @@ msgid "Call"
 msgstr "致电"
 
 #: src/renderer/src/lib/errors.ts
+msgid "Can't find the mail server. Check the server name and your internet connection."
+msgstr "找不到邮件服务器。请检查服务器名称和网络连接。"
+
+#: src/renderer/src/lib/errors.ts
 msgid "Can't find this account."
 msgstr "找不到这个账户。"
 
@@ -1022,6 +1034,7 @@ msgstr "暂时无法连接邮件服务器。"
 
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/ai/AiPanel.tsx
@@ -1263,6 +1276,14 @@ msgstr "每封消息都要点“{loadImages}”。"
 #: src/renderer/src/features/compose/hooks/use-compose-editor.ts
 msgid "Click in this window, then choose a device to take a photo, scan a document or add a sketch."
 msgstr "点击窗口，再选择设备拍照、扫描文稿或添加速写。"
+
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+msgid "Client ID"
+msgstr "客户端 ID"
+
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+msgid "Client secret"
+msgstr "客户端密钥"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
@@ -1683,6 +1704,10 @@ msgstr "无法加载原附件，请重试。"
 msgid "Couldn't load this message."
 msgstr "无法加载此邮件。"
 
+#: src/renderer/src/app/App.tsx
+msgid "Couldn't load your accounts."
+msgstr "无法加载你的账户。"
+
 #: src/renderer/src/features/reader/Reader.tsx
 msgid "Couldn't print: {reason}"
 msgstr "无法打印：{reason}"
@@ -1714,6 +1739,10 @@ msgstr "无法保存 PDF：{reason}"
 #: src/renderer/src/app/App.tsx
 msgid "Couldn't send: {reason}"
 msgstr "发送失败：{reason}"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Couldn't set up a secure connection to the mail server. Check the port and the encryption setting."
+msgstr "无法与邮件服务器建立安全连接。请检查端口和加密设置。"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
@@ -2249,6 +2278,10 @@ msgstr "请输入模板名称。"
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Enter an OAuth client you registered yourself. New sign-ins use it instead of the built-in client. See {doc} in the repository."
 msgstr "填入你自己注册的 OAuth 客户端。之后的新登录改用它，不再用内置客户端。参见仓库里的 {doc}。"
+
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+msgid "Enter port numbers from 1 to 65535."
+msgstr "端口号须为 1 到 65535 之间的数字。"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Enter the IMAP and SMTP servers your email provider gives you."
@@ -3984,6 +4017,10 @@ msgstr "没有下载"
 msgid "No drafts"
 msgstr "没有草稿"
 
+#: src/renderer/src/app/App.tsx
+msgid "No email accounts yet."
+msgstr "还没有邮箱账户。"
+
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "No external replies"
 msgstr "关闭外部回复"
@@ -5059,6 +5096,7 @@ msgstr "恢复同步"
 msgid "Retention windows take precedence. Starred messages, retained message texts, drafts and outbox messages are kept even when the limit is exceeded. Zero disables the budget."
 msgstr "保留期限优先。即使超过上限，也会保留星标邮件、期限内的消息文本、草稿和发件箱邮件。设为零可停用容量限制。"
 
+#: src/renderer/src/app/App.tsx
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
 #: src/renderer/src/features/downloads/Downloads.tsx
 #: src/renderer/src/features/reader/body/MessageBodyShell.tsx
@@ -5626,6 +5664,7 @@ msgstr "在菜单栏显示未读数"
 msgid "Sidebar"
 msgstr "侧栏"
 
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 #: src/renderer/src/features/mail-list/MessageList.tsx
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
@@ -5669,6 +5708,14 @@ msgstr "在浏览器里用你的个人 Microsoft 账户（outlook.com 或 Hotmai
 #: src/renderer/src/app/App.tsx
 msgid "Sign-in failed: {reason}"
 msgstr "登录失败：{reason}"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Sign-in took too long. Try again and finish it in your browser."
+msgstr "登录超时。请重试，并在浏览器中完成登录。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Sign-in was cancelled."
+msgstr "已取消登录。"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
 msgid "Signature"
@@ -5967,6 +6014,10 @@ msgstr "已同步 {time}"
 msgid "Syncing {fetched}/{total}"
 msgstr "同步中 {fetched}/{total}"
 
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "Syncing mail…"
+msgstr "正在同步邮件…"
+
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Syncing normally"
@@ -6067,6 +6118,14 @@ msgstr "无法验证本地数据库"
 msgid "The local database was recovered"
 msgstr "本地数据库已恢复"
 
+#: src/renderer/src/lib/errors.ts
+msgid "The mail server didn't respond. Check the server name, the port and your internet connection."
+msgstr "邮件服务器没有响应。请检查服务器名称、端口和网络连接。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "The mail server refused the connection. Check the port."
+msgstr "邮件服务器拒绝了连接。请检查端口。"
+
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "The mail server rejected the password for {email}. Sync is paused."
 msgstr "邮件服务器拒绝了 {email} 的密码，暂停同步。"
@@ -6114,6 +6173,10 @@ msgstr "所选邮件已不存在。"
 #: src/renderer/src/features/reader/Reader.tsx
 msgid "The sender name contains a different email address."
 msgstr "发件人名称含有不同的邮件地址。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "The server blocked the sign-in as unsafe. Turn on IMAP in your email's web settings, then sign in with the authorization code it generates."
+msgstr "服务器把这次登录当作不安全登录拦截了。请在邮箱网页版的设置中开启 IMAP，再用生成的授权码登录。"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "The server could not complete this search."
@@ -6719,6 +6782,10 @@ msgstr "你（命令行）"
 #: src/renderer/src/features/settings/sections/UpdateSettings.tsx
 msgid "You are up to date."
 msgstr "已是最新版本。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "You signed in as {signedInAs}. Sign in with {expected} to continue."
+msgstr "你登录的是 {signedInAs}。请用 {expected} 登录以继续。"
 
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "You're offline. Mail syncs again when you reconnect."
