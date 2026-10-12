@@ -1,0 +1,185 @@
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import type { Prefs } from "@openmail/core/schema";
+import { expect, it } from "vitest";
+import { fakeMessage, runElectron, serveWebApp, webRoot } from "./web-app-harness";
+
+/**
+ * The reader's message frame in real Chromium: synthetic mail opened in the
+ * built web app (`pnpm build` first), whose reader is the desktop reader. Each
+ * frame must end exactly as tall as its page, draw at most two heights per
+ * change, hold still afterwards and never scroll sideways into blank space.
+ */
+const driver = path.join(import.meta.dirname, "reader-frame-driver.cjs");
+
+interface Case {
+  name: string;
+  html: string;
+  pane?: number;
+  steps?: ("viewAt100" | "showQuotes" | "growImage")[];
+  group?: "dark" | "zoom";
+}
+
+const GIF = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+const wide = (marker: string) =>
+  `<p>${marker}: the table below is 742 px wide.</p><table cellpadding="0" cellspacing="0"><tr><td>` +
+  `<div style="width:742px;height:300px;background:#fde">Wide newsletter column</div></td></tr></table>` +
+  `<p>${"Text after the table. ".repeat(20)}</p>`;
+const newsletter = (marker: string) =>
+  `<table width="100%"><tr><td><h1>${marker}</h1>${Array.from(
+    { length: 40 },
+    (_, i) =>
+      `<p>Story ${i}: ${"Lorem ipsum dolor sit amet, consectetur adipiscing. ".repeat(4)}</p>`,
+  ).join("")}</td></tr></table>`;
+const QUOTED = "The quarterly numbers are attached and the review is on Thursday at noon. "
+  .repeat(12)
+  .trim();
+
+const CASES: Case[] = [
+  { name: "plain", html: "<p>plain: a short note.</p>" },
+  { name: "newsletter", html: newsletter("newsletter") },
+  { name: "fit", html: wide("fit"), pane: 480 },
+  { name: "view100", html: wide("view100"), pane: 480, steps: ["viewAt100"] },
+  { name: "pct", html: "<style>html,body{height:100%} body{padding:20px}</style><p>pct body</p>" },
+  {
+    name: "minvh",
+    html: "<style>body{min-height:100vh;padding-bottom:10px}</style><p>minvh body</p>",
+  },
+  { name: "vh100", html: '<div style="height:100vh;background:#eef">vh100 box</div><p>after</p>' },
+  { name: "vh110", html: '<div style="height:110vh;background:#eef">vh110 box</div><p>after</p>' },
+  {
+    name: "fixedwrap",
+    html: '<div style="height:100px"><div style="height:500px;background:#eee">fixedwrap</div></div>',
+  },
+  {
+    name: "absolute",
+    html: '<p>absolute</p><div style="position:absolute;top:400px;height:50px;width:40px;background:#c33"></div>',
+  },
+  {
+    name: "negmargin",
+    html: '<div style="height:340px;margin-bottom:-30px;background:#eee">negmargin</div>',
+  },
+  {
+    name: "growimage",
+    html: `<p>growimage</p><img id="grow" width="100" src="${GIF}"><p>below the image</p>`,
+    steps: ["growImage"],
+  },
+  {
+    name: "quotes",
+    html: `<p>quotes: see you there.</p><div class="gmail_quote"><p>On Monday Dana wrote:</p><blockquote>${QUOTED}</blockquote></div>`,
+    steps: ["showQuotes"],
+  },
+  { name: "ownzoom", html: `<style>html{zoom:1.5}</style>${newsletter("ownzoom")}` },
+  { name: "dark", html: wide("dark") + newsletter("dark news"), group: "dark" },
+  { name: "zoom150", html: wide("zoom150") + newsletter("zoom news"), group: "zoom" },
+];
+
+const GROUPS: { group: Case["group"]; prefs: Partial<Prefs>; dark: boolean }[] = [
+  { group: undefined, prefs: {}, dark: false },
+  { group: "dark", prefs: { messageBackground: "theme" }, dark: true },
+  { group: "zoom", prefs: { readerZoom: 150 }, dark: false },
+];
+
+interface Result {
+  name: string;
+  pane: number;
+  settled: number;
+  heights: { phase: number; t: number; h: number }[];
+  frame: number;
+  extent: number;
+  right: number;
+  clientWidth: number;
+  bar: number;
+  reach: number;
+  paneReach: number;
+  zoom: string;
+  wideButton: boolean;
+}
+
+const subject = (name: string) => `Frame case ${name}`;
+
+it.skipIf(!existsSync(path.join(webRoot, "web.html")))(
+  "sizes each message frame to its page in Chromium",
+  { timeout: 300_000 },
+  async () => {
+    const messages = CASES.map((c, index) =>
+      fakeMessage(String(index + 1), subject(c.name), "Frame Lab", index + 1, {
+        bodyHtml: c.html,
+        bodyText: c.name,
+      }),
+    );
+    // The quote case's thread: the message it quotes comes first.
+    const quoted = messages[CASES.findIndex((c) => c.name === "quotes")];
+    if (!quoted) throw new Error("missing quote case");
+    messages.push(
+      fakeMessage("0", subject("quotes"), "Dana Whitfield", 600, {
+        threadId: quoted.threadId,
+        bodyText: QUOTED,
+        bodyHtml: `<p>${QUOTED}</p>`,
+      }),
+    );
+    const app = await serveWebApp(messages);
+    const work = mkdtempSync(path.join(tmpdir(), "openmail-reader-frame-"));
+    const results: Result[] = [];
+    try {
+      for (const { group, prefs, dark } of GROUPS) {
+        await app.setPrefs({ messageBackground: "light", readerZoom: 100, ...prefs });
+        const cases = CASES.filter((c) => c.group === group).map((c) => ({
+          name: c.name,
+          subject: subject(c.name),
+          marker: c.name,
+          pane: c.pane ?? 600,
+          steps: c.steps ?? [],
+        }));
+        const config = path.join(work, "config.json");
+        const out = path.join(work, "out.json");
+        writeFileSync(
+          config,
+          JSON.stringify({
+            url: app.url,
+            dark,
+            cases,
+            // Opened before each case, so its frame is created while recording.
+            others: [subject("plain"), subject("newsletter")],
+          }),
+        );
+        expect(await runElectron(driver, [config, out], work)).toBe(0);
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- JSON written by the driver
+        results.push(...(JSON.parse(readFileSync(out, "utf8")) as Result[]));
+      }
+    } finally {
+      await app.close();
+      rmSync(work, { recursive: true, force: true });
+    }
+
+    const problems: string[] = [];
+    for (const r of results) {
+      const expected = Math.ceil(r.extent) + r.bar;
+      if (Math.abs(r.frame - expected) > 1)
+        problems.push(`${r.name}: frame ${r.frame}px, page ${expected}px`);
+      // Sideways scroll reveals only content: nothing past the page's right edge.
+      const overflow = Math.max(0, Math.ceil(r.right) - r.clientWidth);
+      if (r.reach > overflow + 1)
+        problems.push(`${r.name}: scrolls ${r.reach}px sideways, content ${overflow}px`);
+      if (r.paneReach > 0) problems.push(`${r.name}: thread pane scrolls ${r.paneReach}px`);
+      // Per phase (load, then each step): at most two heights after the first.
+      for (const phase of new Set(r.heights.map((h) => h.phase))) {
+        const drawn = r.heights.filter((h) => h.phase === phase).map((h) => h.h);
+        const changes = drawn.filter((h, i) => i > 0 && h !== drawn[i - 1]).length;
+        if (changes > 2)
+          problems.push(`${r.name}: ${changes} heights in phase ${phase}: ${drawn.join(",")}`);
+      }
+      const late = r.heights.filter((h) => h.t > r.settled).map((h) => h.h);
+      if (late.length) problems.push(`${r.name}: still changing after settling: ${late.join(",")}`);
+    }
+    const fit = results.find((r) => r.name === "fit");
+    expect(fit?.wideButton).toBe(true);
+    expect(fit?.zoom).not.toBe("");
+    expect(fit?.pane).toBe(480);
+    const view100 = results.find((r) => r.name === "view100");
+    expect(view100?.zoom).toBe("");
+    expect(view100?.reach).toBeGreaterThan(200);
+    expect(problems).toEqual([]);
+  },
+);

@@ -20,7 +20,7 @@ import { type SyntheticEvent, useEffect, useMemo, useRef, useState } from "react
 import { externalLinkTargets, frameLinkTarget, listenForLinkHints } from "./email-links";
 import { sanitizeReaderHtml } from "./reader-html";
 import { isTypingTarget } from "../../../lib/typing-target";
-import { DARK_CSS, fitDocument, growthGuard, keepLeftEdge, pinFrameLayout } from "./frame-style";
+import { DARK_CSS, keepLeftEdge, measureFrame, pinFrameLayout } from "./frame-style";
 import {
   FRAME_INITIAL_HEIGHT,
   frameSurface,
@@ -97,52 +97,51 @@ export function EmailFrame({
     view.select(view.count ? findIndex % view.count : 0);
     return () => view.dispose();
   }, [frameDocument, quotes, showQuotes, findQuery, findIndex, onMatches, presentHits]);
-  const [height, setHeight] = useState(FRAME_INITIAL_HEIGHT);
-  const shown = useRef(FRAME_INITIAL_HEIGHT);
   const [fit, setFit] = useState(true);
   const [wide, setWide] = useState(false);
   const frameRef = useRef<HTMLIFrameElement>(null);
-  // Size the frame to its content so the thread scrolls as one page. Late
-  // images and web fonts change the page after load and the pane can resize,
-  // hence the observer on both.
+  const boxRef = useRef<HTMLDivElement>(null);
+  // Size the frame to its page so the thread scrolls as one page (see
+  // frame-style.ts for the rule). Anything that can change the page re-measures,
+  // at most once per animation frame. It cannot loop: measuring writes the
+  // box's height, which the next reading does not depend on, and the root's
+  // zoom, width and overflow-x, which are outside the observed body and come
+  // out the same when measured again.
   useEffect(() => {
     const frame = frameRef.current;
-    if (!frameDocument || !frame) return constVoid;
-    // A page whose height still follows the frame's would grow it without end.
-    const guard = growthGuard();
-    let width = frame.clientWidth;
+    const box = boxRef.current;
+    if (!frameDocument || !frame || !box) return constVoid;
+    let request = 0;
     const measure = () => {
-      if (frame.clientWidth !== width) guard.refill();
-      width = frame.clientWidth;
-      const size = fitDocument(frameDocument, fit);
-      shown.current = guard.next(shown.current, size.height);
-      setHeight(shown.current);
+      request = 0;
+      const size = measureFrame(frame, frameDocument, fit);
+      box.style.height = `${size.height}px`;
       setWide(size.wide);
     };
+    const schedule = () => {
+      request ||= requestAnimationFrame(measure);
+    };
     measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(frameDocument.documentElement);
-    // The root's box keeps the width fitDocument set, so a body that changes
-    // size without changing the root's height (a mail style or late content
-    // setting its width) is caught here.
-    observer.observe(frameDocument.body);
-    observer.observe(frame);
-    // Changes to the page itself may grow the frame again: quotes and search
-    // marks, late images, web fonts.
-    const mutations = new MutationObserver(guard.refill);
+    // The frame's width, and layout changes nothing else reports.
+    const observer = new ResizeObserver(schedule);
+    for (const element of [frame, frameDocument.documentElement, frameDocument.body])
+      observer.observe(element);
+    // Quotes and search marks, and late images and web fonts.
+    const mutations = new MutationObserver(schedule);
     mutations.observe(frameDocument.body, {
       subtree: true,
       childList: true,
       attributes: true,
       characterData: true,
     });
-    frameDocument.addEventListener("load", guard.refill, true);
-    frameDocument.fonts.addEventListener("loadingdone", guard.refill);
+    for (const type of ["load", "error"]) frameDocument.addEventListener(type, schedule, true);
+    frameDocument.fonts.addEventListener("loadingdone", schedule);
     return () => {
+      cancelAnimationFrame(request);
       observer.disconnect();
       mutations.disconnect();
-      frameDocument.removeEventListener("load", guard.refill, true);
-      frameDocument.fonts.removeEventListener("loadingdone", guard.refill);
+      for (const type of ["load", "error"]) frameDocument.removeEventListener(type, schedule, true);
+      frameDocument.fonts.removeEventListener("loadingdone", schedule);
     };
   }, [frameDocument, fit]);
   const [hint, setHint] = useState<{ document: string; url: string | null } | null>(null);
@@ -176,7 +175,7 @@ export function EmailFrame({
     if (!frameDoc || !root || frameDoc.URL !== "about:srcdoc") return;
     setFrameDocument(frameDoc);
     externalLinkTargets(frameDoc);
-    // fitDocument sets overflow-x: the page scrolls sideways only when there is
+    // measureFrame sets overflow-x: the page scrolls sideways only when there is
     // more of it to show. No rubber band or sideways scroll chaining either.
     pinFrameLayout(frameDoc);
     const keydown = (event: KeyboardEvent) => {
@@ -224,15 +223,16 @@ export function EmailFrame({
 
   return (
     <div onMouseLeave={() => setHint(null)} className={frameSurface(background)}>
-      <iframe
-        ref={frameRef}
-        title={t`Message`}
-        onLoad={onLoad}
-        sandbox="allow-same-origin"
-        srcDoc={doc}
-        style={{ height }}
-        className="block w-full border-0"
-      />
+      <div ref={boxRef} style={{ height: FRAME_INITIAL_HEIGHT }}>
+        <iframe
+          ref={frameRef}
+          title={t`Message`}
+          onLoad={onLoad}
+          sandbox="allow-same-origin"
+          srcDoc={doc}
+          className="block h-full w-full border-0"
+        />
+      </div>
       {wide && (
         <button type="button" onClick={() => setFit(!fit)} className="mt-2 mr-4 text-a11y-accent">
           {fit ? t`View at 100%` : t`Fit to width`}

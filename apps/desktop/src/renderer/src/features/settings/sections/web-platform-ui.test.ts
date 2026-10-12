@@ -76,7 +76,17 @@ it("keeps a centred sheet's top edge below the traffic lights on the Mac", () =>
   // Centred, so a sheet at most the window minus twice the lights' row starts below it.
   const classes = screen.getByRole("dialog").className.split(" ");
   expect(classes).toContain("sm:max-h-[calc(100dvh-2*var(--titlebar-clearance,12px))]");
-  // Callers leave the max height to Dialog; a later sm: class of theirs would fight it.
+  cleanup();
+  // A lower cap goes through Dialog's maxHeight, still bounded by the window.
+  render(
+    localized(
+      h(Dialog, { "aria-label": "Capped", onClose: () => null, maxHeight: "600px", children: "" }),
+    ),
+  );
+  const capped = screen.getByRole("dialog").className.split(" ");
+  expect(capped).toContain("sm:max-h-[min(600px,calc(100dvh-2*var(--titlebar-clearance,12px)))]");
+  expect(capped.filter((name) => name.includes("max-h-"))).toHaveLength(2);
+  // Callers leave the max height to Dialog's maxHeight; a max-h class of theirs would fight it.
   const root = path.join(desktopRoot, "src/renderer/src");
   const sources = readdirSync(root, { recursive: true, encoding: "utf8" }).filter((file) =>
     file.endsWith(".tsx"),

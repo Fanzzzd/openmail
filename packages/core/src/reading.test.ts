@@ -280,6 +280,28 @@ import { prepareMessageHtml } from "./reader-html.js";
     ).toContain("url(https://example.test/x)");
   });
 
+  it("the reader turns viewport-height units into px; other callers keep them", () => {
+    const html =
+      "<style>body{min-height:100vh} .a{height:calc(110dvh - 2svh)} @media (max-height:50lvh){p{margin:1vmin}}</style>" +
+      '<div style="height:100VH;width:50vw;max-height:12.5vmax">x</div><body style="padding:1vb">y</body>';
+    const fixed = sanitizeReaderHtml(html, false, undefined, [], 800);
+    for (const value of [
+      "min-height:800px",
+      "calc(880px - 16px)",
+      "max-height:400px",
+      "margin:8px",
+      "height:800px",
+      "max-height:100px",
+      "padding:8px",
+    ])
+      expect(fixed).toContain(value);
+    // Width units follow the frame's width, which the frame's height never changes.
+    expect(fixed).toContain("width:50vw");
+    expect(fixed).not.toMatch(/\d(?:[sld]?v(?:h|b|min|max))\b/i);
+    expect(sanitizeReaderHtml(html)).toContain("min-height:100vh");
+    expect(sanitizeReaderCss("height:100vh", false, true)).toBe("height:100vh");
+  });
+
   it("raster data image aliases and formats are accepted while SVG stays excluded", () => {
     for (const [type, expected] of [
       ["jpg", "jpeg"],

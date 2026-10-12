@@ -755,7 +755,7 @@ export function ThreadView({
       onScroll={(event) => {
         if (event.currentTarget.scrollLeft !== 0) event.currentTarget.scrollLeft = 0;
       }}
-      className="selectable @container/thread min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-x-none px-4 pb-10 focus-visible:-outline-offset-2 @min-[520px]/thread:px-7"
+      className="selectable @container/thread min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-x-none [scrollbar-gutter:stable] px-4 pb-10 focus-visible:-outline-offset-2 @min-[520px]/thread:px-7"
     >
       <SelectedMessageAnnouncement message={messages.find((m) => m.id === activeId)} />
       {newest && (

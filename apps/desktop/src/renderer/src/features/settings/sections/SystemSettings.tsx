@@ -571,6 +571,7 @@ export function ShortcutHelp({ onClose }: { onClose: () => void }) {
     <Dialog
       aria-label={t`Keyboard shortcuts`}
       onClose={onClose}
+      maxHeight="640px"
       className="flex w-[min(520px,calc(100vw-48px))] flex-col overflow-hidden"
     >
       <h2 className="shrink-0 px-5 pt-4 pb-3 text-headline font-semibold">

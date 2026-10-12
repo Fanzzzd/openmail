@@ -225,6 +225,7 @@ export function Assistant({
       <Dialog
         aria-label={t`Mail assistant`}
         onClose={() => setOpen(false)}
+        maxHeight="720px"
         className="w-[min(620px,calc(100vw-48px))] space-y-4 overflow-y-auto p-5"
       >
         <h2 className="flex items-baseline gap-2 text-headline font-semibold">

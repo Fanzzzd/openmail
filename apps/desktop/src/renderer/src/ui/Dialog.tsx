@@ -32,18 +32,40 @@ interface DialogProps {
   /** Opens over another dialog. Base UI skips a nested dialog's backdrop unless forced, so the
    * dialog underneath would show through undimmed. */
   nested?: boolean;
+  /** A lower cap on the centred sheet's height than the window's (see centredSheet). */
+  maxHeight?: SheetCap;
   children: ReactNode;
 }
 
+/** Height caps a centred sheet may ask for, besides the window's. */
+export type SheetCap = "600px" | "640px" | "720px" | "85vh";
+
+// Written out whole so Tailwind finds every class.
+const SHEET_CAPS: Record<"desktop" | "web", Record<SheetCap | "window", string>> = {
+  desktop: {
+    window: "sm:max-h-[calc(100dvh-2*var(--titlebar-clearance,12px))]",
+    "600px": "sm:max-h-[min(600px,calc(100dvh-2*var(--titlebar-clearance,12px)))]",
+    "640px": "sm:max-h-[min(640px,calc(100dvh-2*var(--titlebar-clearance,12px)))]",
+    "720px": "sm:max-h-[min(720px,calc(100dvh-2*var(--titlebar-clearance,12px)))]",
+    "85vh": "sm:max-h-[min(85vh,calc(100dvh-2*var(--titlebar-clearance,12px)))]",
+  },
+  web: {
+    window: "sm:max-h-[calc(100dvh-24px)]",
+    "600px": "sm:max-h-[min(600px,calc(100dvh-24px))]",
+    "640px": "sm:max-h-[min(640px,calc(100dvh-24px))]",
+    "720px": "sm:max-h-[min(720px,calc(100dvh-24px))]",
+    "85vh": "sm:max-h-[min(85vh,calc(100dvh-24px))]",
+  },
+};
+
 /**
  * The tallest a centred sheet gets, so its top edge clears the Mac's traffic
- * lights; the web build keeps a 12 px margin. Callers set a width and, if the
- * sheet has a fixed size, a height, but no max height: this one wins at `sm`.
+ * lights; the web build keeps a 12 px margin. `maxHeight` lowers it. Callers
+ * set a width and, if the sheet has a fixed size, a height, but no max-h
+ * class: this one wins at `sm`.
  */
-export const centredSheet = () =>
-  isDesktop()
-    ? "sm:max-h-[calc(100dvh-2*var(--titlebar-clearance,12px))]"
-    : "sm:max-h-[calc(100dvh-24px)]";
+export const centredSheet = (maxHeight?: SheetCap) =>
+  SHEET_CAPS[isDesktop() ? "desktop" : "web"][maxHeight ?? "window"];
 
 /**
  * Below MEDIUM_MIN (696 px, Tailwind's `sm`) a sheet fills the window, whatever size the caller asked for.
@@ -75,6 +97,7 @@ export function Dialog({
   finalFocus,
   ownClose = false,
   nested = false,
+  maxHeight,
   children,
 }: DialogProps) {
   const narrow = useLayoutMode() === "narrow";
@@ -95,7 +118,7 @@ export function Dialog({
           aria-label={label}
           initialFocus={initialFocus}
           finalFocus={finalFocus}
-          className={`fixed top-1/2 left-1/2 z-50 -translate-x-1/2 -translate-y-1/2 ${sheet} ${popupMotion} ${className} ${centredSheet()} ${narrowSheet()}`}
+          className={`fixed top-1/2 left-1/2 z-50 -translate-x-1/2 -translate-y-1/2 ${sheet} ${popupMotion} ${className} ${centredSheet(maxHeight)} ${narrowSheet()}`}
         >
           <SheetDragStrip />
           {children}

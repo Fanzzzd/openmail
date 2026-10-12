@@ -115,6 +115,28 @@ it("find navigation and quote toggles never rerun quote detection for the same d
   }
 });
 
+it("a reloaded thread keeps its folded quotes until they are detected again", () => {
+  const dom = testDom();
+  const old = "An original message with enough content for detecting quoted history.";
+  const document = parseHTML(`<html><body><blockquote>${old}</blockquote></body></html>`).document;
+  const seen: (HTMLElement[] | undefined)[] = [];
+  function Frame({ history }: { history: { bodies: string[]; before: number } }) {
+    seen.push(useBodyQuotes(document, history));
+    return null;
+  }
+  try {
+    dom.render(createElement(Frame, { history: { bodies: [normalizeQuote(old)], before: 1 } }));
+    const first = seen.findIndex(Boolean);
+    expect(first).toBeGreaterThanOrEqual(0);
+    // Marking a message read reloads the thread: an equal history, a new object.
+    dom.render(createElement(Frame, { history: { bodies: [normalizeQuote(old)], before: 1 } }));
+    // An undefined list would unfold the quotes for a frame, and the message would jump.
+    expect(seen.slice(first).every(Boolean)).toBe(true);
+  } finally {
+    dom.dispose();
+  }
+});
+
 it("a vanished message clears cached reader content even in the same conversation", () => {
   const dom = testDom();
   let ids: string[] = [];

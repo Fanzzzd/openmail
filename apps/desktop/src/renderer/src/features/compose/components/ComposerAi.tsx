@@ -150,6 +150,7 @@ export function ComposerAi({
         <Dialog
           aria-label={t`Write with AI`}
           onClose={close}
+          maxHeight="85vh"
           className="w-[600px] space-y-3 overflow-y-auto p-5"
         >
           <h2 className="font-semibold">

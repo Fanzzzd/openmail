@@ -49,6 +49,7 @@ export function Proposals({ proposals, accounts, onClose, onOpenDraft }: Props) 
       aria-label={t`AI suggestions`}
       onClose={onClose}
       ownClose
+      maxHeight="600px"
       className="flex w-[600px] flex-col overflow-hidden"
     >
       <header className="flex h-12 shrink-0 items-center gap-2 border-b border-separator px-5">

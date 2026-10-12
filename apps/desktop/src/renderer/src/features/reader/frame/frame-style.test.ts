@@ -3,11 +3,9 @@ import { expect, it } from "vitest";
 import { READER_BASE_CSS } from "@openmail/core/schema";
 import {
   DARK_CSS,
-  fitDocument,
   fitLayout,
-  growthGuard,
   keepLeftEdge,
-  MAX_UNPROMPTED_GROWTH,
+  measureFrame,
   MIN_FIT_SCALE,
   PICTURES,
   pinFrameLayout,
@@ -43,26 +41,25 @@ interface Page {
   view?: number;
   /** A classic scrollbar's height; 0 for overlay scrollbars. */
   bar?: number;
-  /** The page's height once zoomed, when text wraps differently. */
-  wrapped?: number;
 }
 
-/** A frame document whose geometry follows Chromium's for a zoomed root. */
-function frameDocument({ natural, height, frame, own = 1, view = 300, bar = 0, wrapped }: Page) {
+/** A frame and its document, with geometry that follows Chromium's for a zoomed root. */
+function frameDocument({ natural, height, frame, own = 1, view = 300, bar = 0 }: Page) {
+  const iframe = document.createElement("iframe");
   const doc = document.implementation.createHTMLDocument("mail");
   const root = doc.documentElement;
   const zoom = () => Number(root.style.zoom || own);
+  const viewport = () => (iframe.style.height === "0px" ? 0 : view);
   let left = 0;
-  const box = () => wrapped ?? (height * zoom()) / own;
   Object.defineProperties(root, {
     // Like Chromium: the layout width is the set width times the zoom.
     scrollWidth: {
       get: () => (root.style.width ? Number.parseFloat(root.style.width) * zoom() : natural),
     },
     // Like Chromium: never less than the frame.
-    scrollHeight: { get: () => Math.max(box(), root.clientHeight) },
+    scrollHeight: { get: () => Math.max((height * zoom()) / own, viewport()) },
     clientWidth: { value: frame },
-    clientHeight: { get: () => view - (root.style.overflowX === "auto" ? bar : 0) },
+    clientHeight: { get: () => viewport() - (root.style.overflowX === "auto" ? bar : 0) },
     scrollLeft: { get: () => left, set: (value: number) => (left = value) },
   });
   Object.defineProperties(doc, {
@@ -71,14 +68,13 @@ function frameDocument({ natural, height, frame, own = 1, view = 300, bar = 0, w
       value: { innerHeight: view, getComputedStyle: () => ({ zoom: String(own) }) },
     },
   });
-  root.getBoundingClientRect = () => DOMRect.fromRect({ width: frame, height: box() });
-  return doc;
+  return { doc, measure: (fit: boolean) => measureFrame(iframe, doc, fit), iframe };
 }
 
 it("zooms the page to the frame so its layout width is the scaled width", () => {
-  const doc = frameDocument({ natural: 800, height: 1000, frame: 400 });
+  const { doc, measure } = frameDocument({ natural: 800, height: 1000, frame: 400 });
   const root = doc.documentElement;
-  expect(fitDocument(doc, true)).toEqual({ height: 500, wide: true });
+  expect(measure(true)).toEqual({ height: 500, wide: true });
   expect(root.style.width).toBe("800px");
   expect(root.style.zoom).toBe("0.5");
   expect(root.style.getPropertyPriority("zoom")).toBe("important");
@@ -88,34 +84,30 @@ it("zooms the page to the frame so its layout width is the scaled width", () => 
   expect(root.style.overflowX).toBe("hidden");
   expect(root.style.getPropertyPriority("overflow-x")).toBe("important");
   // Measuring again starts from the natural width, not the one it set.
-  expect(fitDocument(doc, true)).toEqual({ height: 500, wide: true });
+  expect(measure(true)).toEqual({ height: 500, wide: true });
   // At 100% the page keeps its width and scrolls sideways.
-  expect(fitDocument(doc, false)).toEqual({ height: 1000, wide: true });
+  expect(measure(false)).toEqual({ height: 1000, wide: true });
   expect(root.style.zoom).toBe("");
   expect(root.style.width).toBe("");
   expect(root.style.overflowX).toBe("auto");
 });
 
 it("multiplies the mail's own html zoom by the fit scale", () => {
-  const doc = frameDocument({ natural: 800, height: 1000, frame: 400, own: 2 });
+  const { doc, measure } = frameDocument({ natural: 800, height: 1000, frame: 400, own: 2 });
   const root = doc.documentElement;
-  expect(fitDocument(doc, true)).toEqual({ height: 500, wide: true });
+  expect(measure(true)).toEqual({ height: 500, wide: true });
   expect(root.style.width).toBe("400px");
   expect(root.style.zoom).toBe("1");
   expect(root.scrollWidth).toBe(400);
 });
 
-it("measures the page once zoomed, where text can wrap taller", () => {
-  const taller = frameDocument({ natural: 800, height: 1000, frame: 400, wrapped: 512.3 });
-  expect(fitDocument(taller, true).height).toBe(513);
-});
-
-it("shrinks the frame to a page shorter than it", () => {
-  // scrollHeight would report the frame's 700 px; the page is 120 px.
+it("reads the page with the frame collapsed, so a frame taller than the page shrinks", () => {
+  // At the frame's 700 px scrollHeight would report 700; the page is 120 px.
   const short = frameDocument({ natural: 300, height: 120, frame: 400, view: 700 });
-  expect(fitDocument(short, true)).toEqual({ height: 120, wide: false });
+  expect(short.measure(true)).toEqual({ height: 120, wide: false });
+  expect(short.iframe.style.height).toBe("");
   const scaled = frameDocument({ natural: 800, height: 240, frame: 400, view: 700 });
-  expect(fitDocument(scaled, true)).toEqual({ height: 120, wide: true });
+  expect(scaled.measure(true)).toEqual({ height: 120, wide: true });
 });
 
 /** Mail styles that size the page to the frame, plus some padding: the page outgrows the frame. */
@@ -142,62 +134,26 @@ it.each(FRAME_SIZED)("sizes the page to its content, not the frame: %s", (css) =
   for (const element of [document.documentElement, document.body]) element.removeAttribute("style");
 });
 
-const FRAME_INITIAL = 120;
-
-/** Runs the reader's measure loop on a page whose height depends on the frame's. */
-function settle(page: (frame: number) => number, guard = growthGuard()) {
-  const heights = [FRAME_INITIAL];
-  for (let pass = 0; pass < 1000; pass++) {
-    const current = heights.at(-1)!;
-    const next = guard.next(current, Math.ceil(page(current)));
-    if (next === current) return heights;
-    heights.push(next);
-  }
-  throw new Error(`No fixed point: ${heights.slice(-3).join(", ")}`);
-}
-
-it("stops growing a frame whose page keeps following it", () => {
-  // A page sized to the frame, plus 40px of padding, outgrows each new frame.
-  expect(settle((frame) => frame + 40)).toEqual(
-    Array.from({ length: MAX_UNPROMPTED_GROWTH + 1 }, (_, step) => FRAME_INITIAL + 40 * step),
-  );
-  // 110% of the frame grows geometrically, and still stops.
-  const ratio = settle((frame) => frame * 1.1);
-  expect(ratio).toHaveLength(MAX_UNPROMPTED_GROWTH + 1);
-  expect(ratio.at(-1)).toBeLessThan(FRAME_INITIAL * 1.1 ** MAX_UNPROMPTED_GROWTH + 10);
-  // Mail that does not follow the frame settles at its height in one step.
-  expect(settle(() => 2400)).toEqual([FRAME_INITIAL, 2400]);
-});
-
-it("lets the page grow again once it changes, and always shrinks", () => {
-  const guard = growthGuard(2);
-  expect(guard.next(100, 200)).toBe(200);
-  expect(guard.next(200, 300)).toBe(300);
-  // Out of steps: growth is ignored until something in the page changes.
-  expect(guard.next(300, 400)).toBe(300);
-  expect(guard.next(300, 250)).toBe(250);
-  guard.refill();
-  expect(guard.next(250, 400)).toBe(400);
-});
-
 it("adds a classic scrollbar's height when the page scrolls sideways", () => {
   const page = { natural: 800, height: 1000, frame: 400, bar: 15 };
-  expect(fitDocument(frameDocument(page), false)).toEqual({ height: 1015, wide: true });
+  expect(frameDocument(page).measure(false)).toEqual({ height: 1015, wide: true });
   // Fitted, it does not scroll and has no scrollbar.
-  expect(fitDocument(frameDocument(page), true)).toEqual({ height: 500, wide: true });
-  const widest = frameDocument({ ...page, natural: 2000 });
-  expect(fitDocument(widest, true)).toEqual({ height: 415, wide: true });
+  expect(frameDocument(page).measure(true)).toEqual({ height: 500, wide: true });
+  expect(frameDocument({ ...page, natural: 2000 }).measure(true)).toEqual({
+    height: 415,
+    wide: true,
+  });
 });
 
 it("keeps a page that fits at its left edge", () => {
-  const doc = frameDocument({ natural: 800, height: 1000, frame: 400 });
+  const { doc, measure } = frameDocument({ natural: 800, height: 1000, frame: 400 });
   const root = doc.documentElement;
-  fitDocument(doc, false);
+  measure(false);
   root.scrollLeft = 300;
   keepLeftEdge(doc);
   // At 100% the sideways scroll is the reader's own.
   expect(root.scrollLeft).toBe(300);
-  fitDocument(doc, true);
+  measure(true);
   expect(root.scrollLeft).toBe(0);
   // scrollIntoView can scroll the hidden axis; the scroll handler puts it back.
   root.scrollLeft = 12;
@@ -206,17 +162,17 @@ it("keeps a page that fits at its left edge", () => {
 });
 
 it("lets a page wider than the smallest scale scroll by what is left over", () => {
-  const doc = frameDocument({ natural: 2000, height: 1000, frame: 400 });
+  const { doc, measure } = frameDocument({ natural: 2000, height: 1000, frame: 400 });
   const root = doc.documentElement;
-  expect(fitDocument(doc, true)).toEqual({ height: 400, wide: true });
+  expect(measure(true)).toEqual({ height: 400, wide: true });
   expect(root.style.zoom).toBe(String(MIN_FIT_SCALE));
   expect(root.scrollWidth).toBe(800);
   expect(root.style.overflowX).toBe("auto");
 });
 
 it("reports mail that fits as not wide and hides sub-pixel overflow", () => {
-  const doc = frameDocument({ natural: 400.6, height: 700, frame: 400 });
-  expect(fitDocument(doc, true)).toEqual({ height: 700, wide: false });
+  const { doc, measure } = frameDocument({ natural: 400.6, height: 700, frame: 400 });
+  expect(measure(true)).toEqual({ height: 700, wide: false });
   expect(doc.documentElement.style.zoom).toBe("");
   expect(doc.documentElement.style.overflowX).toBe("hidden");
 });

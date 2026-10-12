@@ -69,6 +69,7 @@ export function AttachmentImportDialog({
     <Dialog
       aria-label={file.filename}
       onClose={onClose}
+      maxHeight="85vh"
       className="w-[min(90vw,760px)] space-y-4 overflow-auto p-5"
     >
       <h2 className="font-semibold">{file.filename}</h2>

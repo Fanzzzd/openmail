@@ -143,8 +143,20 @@ const unsafeCssValue = (value: CssNode) => {
   return rejected;
 };
 
-/** Parse CSS tokens before filtering resources, including escaped identifiers. */
-export function sanitizeReaderCss(input: string, remote: boolean, inline = false): string {
+/** Viewport-height units, and vmin/vmax, which can be them. */
+const VIEWPORT_HEIGHT_UNIT = /^[sld]?v(?:h|b|min|max)$/i;
+
+/**
+ * Parse CSS tokens before filtering resources, including escaped identifiers.
+ * With `viewportHeight`, viewport-height units become px against that height,
+ * so the page cannot size itself to the frame showing it.
+ */
+export function sanitizeReaderCss(
+  input: string,
+  remote: boolean,
+  inline = false,
+  viewportHeight?: number,
+): string {
   if (input.length > 256 * 1024) return "";
   try {
     const ast = parse(input, {
@@ -185,6 +197,13 @@ export function sanitizeReaderCss(input: string, remote: boolean, inline = false
       } else if (node.type === "Raw" || node.type === "CDO" || node.type === "CDC") {
         list.remove(item);
         return this.skip;
+      } else if (
+        viewportHeight &&
+        node.type === "Dimension" &&
+        VIEWPORT_HEIGHT_UNIT.test(ident.decode(node.unit))
+      ) {
+        node.value = String(Math.round(Number(node.value) * viewportHeight) / 100);
+        node.unit = "px";
       }
       return null;
     };
@@ -196,15 +215,20 @@ export function sanitizeReaderCss(input: string, remote: boolean, inline = false
   }
 }
 
+/** The viewport height the desktop reader resolves `vh` against; its frame takes its height from the page. */
+export const READER_VIEWPORT_HEIGHT = 800;
+
 /**
  * Inert, bounded portable reader/print markup. Sandbox and CSP remain required.
  * `searchTerms` marks search hits in the cleaned text (see `markSearchHits`).
+ * `viewportHeight` fixes viewport-height units (see `sanitizeReaderCss`).
  */
 export function sanitizeReaderHtml(
   input: string,
   remote = false,
   onOmit?: (node: ReturnType<typeof parseDocument>["children"][number]) => void,
   searchTerms: readonly string[] = [],
+  viewportHeight?: number,
 ): string {
   const document = parseDocument(input);
   type Node = (typeof document.children)[number];
@@ -226,7 +250,8 @@ export function sanitizeReaderHtml(
       if (!TAGS.has(node.name)) return flatten ? [] : clean(node.children, depth + 1);
       if (node.name === "style") {
         const text = node.children.filter((child) => child.type === ElementType.Text);
-        for (const child of text) child.data = sanitizeReaderCss(child.data, remote);
+        for (const child of text)
+          child.data = sanitizeReaderCss(child.data, remote, false, viewportHeight);
         node.children = text;
       } else if (!flatten) node.children = clean(node.children, depth + 1);
       for (const [key, raw] of Object.entries(node.attribs)) {
@@ -244,7 +269,7 @@ export function sanitizeReaderHtml(
         )
           delete node.attribs[key];
         else if (key === "style") {
-          const css = sanitizeReaderCss(value, remote, true);
+          const css = sanitizeReaderCss(value, remote, true, viewportHeight);
           if (css) node.attribs[key] = css;
           else delete node.attribs[key];
         } else node.attribs[key] = value;
@@ -261,6 +286,7 @@ export function sanitizeReaderHtml(
             .join(";"),
           remote,
           true,
+          viewportHeight,
         );
         if (style) attrs.style = style;
         const links = [

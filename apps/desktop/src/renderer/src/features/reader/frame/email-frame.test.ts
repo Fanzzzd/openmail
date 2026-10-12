@@ -6,7 +6,6 @@ import { setupI18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
 import { constVoid } from "effect/Function";
 import { EmailFrame } from "./EmailFrame";
-import { MAX_UNPROMPTED_GROWTH } from "./frame-style";
 
 vi.mock("../../../state/mail", () => ({ useRunMail: () => constVoid, withMail: constVoid }));
 
@@ -55,14 +54,10 @@ it.each(["light", "dark"])("a locked preview has a readable page in the %s app t
   expect(frame.getAttribute("sandbox")).toBe("allow-same-origin");
 });
 
-it("stops growing a frame whose mail keeps following its height, until the mail changes", async () => {
-  const observers: (() => void)[] = [];
+it("re-measures the page with the frame collapsed whenever the page changes", async () => {
   vi.stubGlobal(
     "ResizeObserver",
     class {
-      constructor(callback: () => void) {
-        observers.push(callback);
-      }
       observe = constVoid;
       disconnect = constVoid;
     },
@@ -85,7 +80,8 @@ it("stops growing a frame whose mail keeps following its height, until the mail 
     ),
   );
   const frame = screen.getByTitle("Message");
-  if (!(frame instanceof HTMLIFrameElement) || !frame.contentDocument)
+  const box = frame.parentElement;
+  if (!(frame instanceof HTMLIFrameElement) || !frame.contentDocument || !box)
     throw new Error("Missing message frame document");
   const doc = frame.contentDocument;
   doc.open();
@@ -93,31 +89,39 @@ it("stops growing a frame whose mail keeps following its height, until the mail 
   doc.close();
   Object.defineProperty(doc, "URL", { value: "about:srcdoc" });
   // jsdom has no FontFaceSet.
-  Object.defineProperty(doc, "fonts", { value: new EventTarget() });
-  // A page as tall as the frame plus 40px of padding, as Chromium lays out
-  // `html, body { height: 100% } body { padding: 20px }` without the overrides.
-  const height = () => Number.parseFloat(frame.style.height);
-  Object.defineProperty(doc.documentElement, "scrollHeight", { get: () => height() + 40 });
+  const fonts = new EventTarget();
+  Object.defineProperty(doc, "fonts", { value: fonts });
+  // Like Chromium, scrollHeight is never less than the frame: 1000 px here,
+  // unless the frame is collapsed.
+  let page = 200;
+  Object.defineProperty(doc.documentElement, "scrollHeight", {
+    get: () => (frame.style.height === "0px" ? page : Math.max(page, 1000)),
+  });
+  const frameDrawn = () =>
+    act(
+      () =>
+        new Promise<void>((resolve) => {
+          requestAnimationFrame(() => resolve());
+        }),
+    );
   await act(async () => {
     frame.dispatchEvent(new Event("load"));
   });
-  const resize = async () => {
-    await act(async () => {
-      for (const callback of observers) callback();
-    });
-  };
-  for (let pass = 0; pass < 50; pass++) await resize();
-  const stopped = height();
-  // The reader's own quote and search marks count as page changes, hence the extra steps.
-  expect(stopped).toBeLessThanOrEqual(120 + 40 * 2 * MAX_UNPROMPTED_GROWTH);
-  for (let pass = 0; pass < 50; pass++) await resize();
-  expect(height()).toBe(stopped);
-  // New content in the page lets the frame grow to it again, as far as before.
-  await act(async () => {
-    doc.body.append(doc.createElement("p"));
-  });
-  for (let pass = 0; pass < 50; pass++) await resize();
-  expect(height()).toBe(stopped + 40 * MAX_UNPROMPTED_GROWTH);
+  await frameDrawn();
+  expect(box.style.height).toBe("200px");
+  expect(frame.style.height).toBe("");
+  // A late image, a web font and the page's own DOM each measure again.
+  const changes = [
+    () => doc.body.append(doc.createElement("p")),
+    () => doc.body.dispatchEvent(new Event("load")),
+    () => fonts.dispatchEvent(new Event("loadingdone")),
+  ];
+  for (const [index, change] of changes.entries()) {
+    page = 300 + index * 100;
+    await act(async () => change());
+    await frameDrawn();
+    expect(box.style.height).toBe(`${page}px`);
+  }
   // The overrides that keep real mail from following the frame are in place.
   expect(doc.body.style.getPropertyValue("height")).toBe("auto");
   vi.unstubAllGlobals();
