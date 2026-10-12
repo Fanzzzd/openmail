@@ -7,7 +7,8 @@
  * size can follow the frame's height. The reading is then a function of width
  * and content only, so setting the height cannot change the next reading and
  * one measure reaches the fixed point. The page scrolls sideways only while
- * the zoomed page is still more than 1 px wider than the frame.
+ * the zoomed page is still more than 1 px wider than the frame, and never
+ * keeps a vertical scroll of its own: the thread pane does that scrolling.
  */
 
 /** Elements whose colors are pictures: inverted back in dark mode so photos and logos look right. */
@@ -111,4 +112,31 @@ export function keepLeftEdge(doc: Document): void {
   const scroller = doc.scrollingElement ?? doc.documentElement;
   if (doc.documentElement.style.overflowX === "hidden" && scroller.scrollLeft !== 0)
     scroller.scrollLeft = 0;
+}
+
+/** The page's own vertical scroll. Nonzero only after a find or selection jump in a frame not yet grown to its page. */
+export const frameScrollTop = (doc: Document) =>
+  (doc.scrollingElement ?? doc.documentElement).scrollTop;
+
+/**
+ * Moves the page's vertical scroll, `top` as read before the frame grew, to
+ * the pane that scrolls the frame, so whatever was in view stays in view.
+ * scrollIntoView scrolls the page inside a frame shorter than the page; once
+ * the frame grows to the page, that scroll is clamped to 0 and its target
+ * drops by the same amount, out of view. Call it after setting the height.
+ */
+export function keepTopEdge(frame: HTMLIFrameElement, doc: Document, top: number): void {
+  if (top <= 0) return;
+  (doc.scrollingElement ?? doc.documentElement).scrollTop = 0;
+  const pane = scrollParent(frame);
+  if (pane) pane.scrollTop += top;
+}
+
+function scrollParent(element: Element): Element | null {
+  const view = element.ownerDocument.defaultView;
+  for (let node = element.parentElement; node; node = node.parentElement) {
+    const overflow = view?.getComputedStyle(node).overflowY;
+    if (overflow === "auto" || overflow === "scroll") return node;
+  }
+  return element.ownerDocument.scrollingElement;
 }

@@ -2,7 +2,12 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "no
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, it } from "vitest";
-import { fakeMessage as message, runElectron, serveWebApp, webRoot } from "./web-app-harness";
+import {
+  fakeMessage as message,
+  runElectron,
+  serveWebApp,
+  webRoot,
+} from "./test-support/web-app-harness";
 
 /**
  * Screenshots of the built web app at phone and laptop widths, served by the

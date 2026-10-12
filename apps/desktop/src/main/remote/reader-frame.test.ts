@@ -3,13 +3,14 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import type { Prefs } from "@openmail/core/schema";
 import { expect, it } from "vitest";
-import { fakeMessage, runElectron, serveWebApp, webRoot } from "./web-app-harness";
+import { fakeMessage, runElectron, serveWebApp, webRoot } from "./test-support/web-app-harness";
 
 /**
  * The reader's message frame in real Chromium: synthetic mail opened in the
- * built web app (`pnpm build` first), whose reader is the desktop reader. Each
- * frame must end exactly as tall as its page, draw at most two heights per
- * change, hold still afterwards and never scroll sideways into blank space.
+ * built web app (turbo builds it first), whose reader is the desktop reader.
+ * Each frame must end exactly as tall as its page, draw at most two heights per
+ * change, hold still afterwards and never scroll sideways into blank space. A
+ * find hit must end inside the pane, with the frame not scrolled inside.
  */
 const driver = path.join(import.meta.dirname, "reader-frame-driver.cjs");
 
@@ -17,8 +18,12 @@ interface Case {
   name: string;
   html: string;
   pane?: number;
-  steps?: ("viewAt100" | "showQuotes" | "growImage")[];
+  steps?: ("viewAt100" | "showQuotes" | "growImage" | "find" | "findNext" | "findPrevious")[];
+  /** The word the find step types. */
+  find?: string;
   group?: "dark" | "zoom";
+  /** The thread's earlier message, whose text this one quotes. */
+  quotes?: string;
 }
 
 const GIF = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
@@ -35,6 +40,13 @@ const newsletter = (marker: string) =>
 const QUOTED = "The quarterly numbers are attached and the review is on Thursday at noon. "
   .repeat(12)
   .trim();
+
+// A quote far taller than the pane, with the only find hits deep inside it.
+const LONG_QUOTED = Array.from(
+  { length: 400 },
+  (_, i) =>
+    `Line ${i} of the long quoted report${i === 160 || i === 340 ? " zebrafind" : ""} goes here.`,
+).join(" ");
 
 const CASES: Case[] = [
   { name: "plain", html: "<p>plain: a short note.</p>" },
@@ -69,8 +81,20 @@ const CASES: Case[] = [
     name: "quotes",
     html: `<p>quotes: see you there.</p><div class="gmail_quote"><p>On Monday Dana wrote:</p><blockquote>${QUOTED}</blockquote></div>`,
     steps: ["showQuotes"],
+    quotes: QUOTED,
+  },
+  {
+    name: "findquote",
+    html: `<p>findquote: replying below.</p><div class="gmail_quote"><p>On Monday Dana wrote:</p><blockquote>${LONG_QUOTED}</blockquote></div>`,
+    steps: ["find", "findNext", "findPrevious"],
+    find: "zebrafind",
+    quotes: LONG_QUOTED,
   },
   { name: "ownzoom", html: `<style>html{zoom:1.5}</style>${newsletter("ownzoom")}` },
+  {
+    name: "heightquery",
+    html: '<style>@media (min-height:100px){p{margin-top:200px}}</style><div style="height:150px">heightquery</div><p>after</p>',
+  },
   { name: "dark", html: wide("dark") + newsletter("dark news"), group: "dark" },
   { name: "zoom150", html: wide("zoom150") + newsletter("zoom news"), group: "zoom" },
 ];
@@ -95,6 +119,8 @@ interface Result {
   paneReach: number;
   zoom: string;
   wideButton: boolean;
+  /** After each find step: the current hit's top and bottom in the pane, and the frame's own scroll. */
+  hits: { step: string; top: number; bottom: number; pane: number; frameScroll: number }[];
 }
 
 const subject = (name: string) => `Frame case ${name}`;
@@ -109,16 +135,18 @@ it.skipIf(!existsSync(path.join(webRoot, "web.html")))(
         bodyText: c.name,
       }),
     );
-    // The quote case's thread: the message it quotes comes first.
-    const quoted = messages[CASES.findIndex((c) => c.name === "quotes")];
-    if (!quoted) throw new Error("missing quote case");
-    messages.push(
-      fakeMessage("0", subject("quotes"), "Dana Whitfield", 600, {
-        threadId: quoted.threadId,
-        bodyText: QUOTED,
-        bodyHtml: `<p>${QUOTED}</p>`,
-      }),
-    );
+    // A quoting case's thread: the message it quotes comes first.
+    for (const [index, c] of CASES.entries()) {
+      const quoting = messages[index];
+      if (!c.quotes || !quoting) continue;
+      messages.push(
+        fakeMessage(`${index + 1}0`, subject(c.name), "Dana Whitfield", 600 + index, {
+          threadId: quoting.threadId,
+          bodyText: c.quotes,
+          bodyHtml: `<p>${c.quotes}</p>`,
+        }),
+      );
+    }
     const app = await serveWebApp(messages);
     const work = mkdtempSync(path.join(tmpdir(), "openmail-reader-frame-"));
     const results: Result[] = [];
@@ -131,6 +159,7 @@ it.skipIf(!existsSync(path.join(webRoot, "web.html")))(
           marker: c.name,
           pane: c.pane ?? 600,
           steps: c.steps ?? [],
+          find: c.find,
         }));
         const config = path.join(work, "config.json");
         const out = path.join(work, "out.json");
@@ -170,6 +199,12 @@ it.skipIf(!existsSync(path.join(webRoot, "web.html")))(
         if (changes > 2)
           problems.push(`${r.name}: ${changes} heights in phase ${phase}: ${drawn.join(",")}`);
       }
+      // Each find step ends with its hit inside the pane, the frame unscrolled.
+      for (const hit of r.hits)
+        if (hit.top < 0 || hit.bottom > hit.pane || hit.frameScroll !== 0)
+          problems.push(
+            `${r.name}: ${hit.step} hit at ${Math.round(hit.top)}-${Math.round(hit.bottom)}px in a ${hit.pane}px pane, frame scrolled ${hit.frameScroll}px`,
+          );
       const late = r.heights.filter((h) => h.t > r.settled).map((h) => h.h);
       if (late.length) problems.push(`${r.name}: still changing after settling: ${late.join(",")}`);
     }
@@ -180,6 +215,9 @@ it.skipIf(!existsSync(path.join(webRoot, "web.html")))(
     const view100 = results.find((r) => r.name === "view100");
     expect(view100?.zoom).toBe("");
     expect(view100?.reach).toBeGreaterThan(200);
+    expect(results.find((r) => r.name === "findquote")?.hits).toHaveLength(3);
+    // The height query holds at the reader's 800 px viewport, so its margin applies.
+    expect(results.find((r) => r.name === "heightquery")?.frame).toBeGreaterThan(350);
     expect(problems).toEqual([]);
   },
 );

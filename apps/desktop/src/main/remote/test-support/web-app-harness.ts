@@ -7,10 +7,10 @@ import { Mailbox } from "@openmail/core";
 import type { IncomingMessage, Prefs } from "@openmail/core/schema";
 import { fakeServer, TemporaryTestMailbox } from "@openmail/core/testing/node";
 import { Effect, Fiber, Layer, ManagedRuntime } from "effect";
-import { desktopRoot } from "../../renderer/src/test-support/paths";
-import { createSessions, type GateConfig } from "./remote-auth";
-import { createConnectionHub, remoteRpcServer } from "./remote-rpc-server";
-import { startRemoteServer } from "./remote-server";
+import { desktopRoot } from "../../../renderer/src/test-support/paths";
+import { createSessions, type GateConfig } from "../remote-auth";
+import { createConnectionHub, remoteRpcServer } from "../remote-rpc-server";
+import { startRemoteServer } from "../remote-server";
 
 /**
  * Test support: the built web app (`pnpm build` first) with fake mail, served

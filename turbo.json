@@ -33,6 +33,15 @@
         "OPENMAIL_PERF_REPORT"
       ]
     },
+    "@openmail/desktop#test": {
+      "dependsOn": ["^build", "build"],
+      "env": [
+        "OPENMAIL_LOW_MEMORY_TESTS",
+        "VITEST_MAX_WORKERS",
+        "OPENMAIL_PERF",
+        "OPENMAIL_PERF_REPORT"
+      ]
+    },
     "dev": {
       "dependsOn": ["^build"],
       "cache": false,

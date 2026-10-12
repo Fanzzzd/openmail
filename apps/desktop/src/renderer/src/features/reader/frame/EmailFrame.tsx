@@ -20,7 +20,14 @@ import { type SyntheticEvent, useEffect, useMemo, useRef, useState } from "react
 import { externalLinkTargets, frameLinkTarget, listenForLinkHints } from "./email-links";
 import { sanitizeReaderHtml } from "./reader-html";
 import { isTypingTarget } from "../../../lib/typing-target";
-import { DARK_CSS, keepLeftEdge, measureFrame, pinFrameLayout } from "./frame-style";
+import {
+  DARK_CSS,
+  frameScrollTop,
+  keepLeftEdge,
+  keepTopEdge,
+  measureFrame,
+  pinFrameLayout,
+} from "./frame-style";
 import {
   FRAME_INITIAL_HEIGHT,
   frameSurface,
@@ -88,14 +95,26 @@ export function EmailFrame({
     activate.current = onActivate;
   });
   const { termsKey, present: presentHits } = useSearchHits();
+  // Set by the measuring effect: measures on the next animation frame.
+  const remeasure = useRef<() => void>(constVoid);
+  // The current find hit, scrolled to again once the frame has grown to its page.
+  const reveal = useRef<(() => void) | null>(null);
   useEffect(() => {
     if (!frameDocument || !quotes) return constVoid;
     const view = presentBody(frameDocument.body, quotes, showQuotes, findQuery);
     // Search hits count after the quotes settle; an open find scrolls last.
     presentHits(frameDocument.body);
     onMatches?.(view.count);
-    view.select(view.count ? findIndex % view.count : 0);
-    return () => view.dispose();
+    const index = view.count ? findIndex % view.count : 0;
+    view.select(index);
+    if (view.count) {
+      reveal.current = () => view.select(index);
+      remeasure.current();
+    }
+    return () => {
+      reveal.current = null;
+      view.dispose();
+    };
   }, [frameDocument, quotes, showQuotes, findQuery, findIndex, onMatches, presentHits]);
   const [fit, setFit] = useState(true);
   const [wide, setWide] = useState(false);
@@ -106,7 +125,8 @@ export function EmailFrame({
   // at most once per animation frame. It cannot loop: measuring writes the
   // box's height, which the next reading does not depend on, and the root's
   // zoom, width and overflow-x, which are outside the observed body and come
-  // out the same when measured again.
+  // out the same when measured again. A find or selection jump that scrolled
+  // the page inside the frame scrolls the pane instead once the frame has grown.
   useEffect(() => {
     const frame = frameRef.current;
     const box = boxRef.current;
@@ -114,13 +134,20 @@ export function EmailFrame({
     let request = 0;
     const measure = () => {
       request = 0;
+      const top = frameScrollTop(frameDocument);
       const size = measureFrame(frame, frameDocument, fit);
       box.style.height = `${size.height}px`;
       setWide(size.wide);
+      keepTopEdge(frame, frameDocument, top);
+      // Centred in the pane, now that the frame is as tall as its page.
+      const hit = reveal.current;
+      reveal.current = null;
+      hit?.();
     };
     const schedule = () => {
       request ||= requestAnimationFrame(measure);
     };
+    remeasure.current = schedule;
     measure();
     // The frame's width, and layout changes nothing else reports.
     const observer = new ResizeObserver(schedule);
@@ -136,7 +163,14 @@ export function EmailFrame({
     });
     for (const type of ["load", "error"]) frameDocument.addEventListener(type, schedule, true);
     frameDocument.fonts.addEventListener("loadingdone", schedule);
+    // A jump that scrolled the page inside the frame.
+    const scrolled = () => {
+      if (frameScrollTop(frameDocument) > 0) schedule();
+    };
+    frameDocument.addEventListener("scroll", scrolled);
     return () => {
+      remeasure.current = constVoid;
+      frameDocument.removeEventListener("scroll", scrolled);
       cancelAnimationFrame(request);
       observer.disconnect();
       mutations.disconnect();

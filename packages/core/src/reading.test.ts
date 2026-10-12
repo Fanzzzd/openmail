@@ -288,10 +288,10 @@ import { prepareMessageHtml } from "./reader-html.js";
     for (const value of [
       "min-height:800px",
       "calc(880px - 16px)",
-      "max-height:400px",
-      "margin:8px",
+      "@media (not (width>=0px))",
+      "margin:min(1vw,8px)",
       "height:800px",
-      "max-height:100px",
+      "max-height:max(12.5vw,100px)",
       "padding:8px",
     ])
       expect(fixed).toContain(value);
@@ -300,6 +300,74 @@ import { prepareMessageHtml } from "./reader-html.js";
     expect(fixed).not.toMatch(/\d(?:[sld]?v(?:h|b|min|max))\b/i);
     expect(sanitizeReaderHtml(html)).toContain("min-height:100vh");
     expect(sanitizeReaderCss("height:100vh", false, true)).toBe("height:100vh");
+  });
+
+  it("the reader reads vmin and vmax as the smaller or larger of the width and its height", () => {
+    const fixed = (css: string) => sanitizeReaderCss(css, false, true, 800);
+    expect(fixed("width:50vmin")).toBe("width:min(50vw,400px)");
+    expect(fixed("height:10VMAX")).toBe("height:max(10vw,80px)");
+    expect(fixed("margin:calc(2svmin + 1px) 3dvmax")).toBe(
+      "margin:calc(min(2svw,16px) + 1px) max(3dvw,24px)",
+    );
+    expect(sanitizeReaderCss("width:50vmin", false, true)).toBe("width:50vmin");
+  });
+
+  it("the reader evaluates height media queries at its viewport height; width ones stay live", () => {
+    const media = (query: string) =>
+      sanitizeReaderCss(`@media ${query}{p{color:red}}`, false, false, 800).replace(/\{.*$/, "");
+    const always = "@media (width>=0px)";
+    const never = "@media (not (width>=0px))";
+    expect(media("(min-height:100px)")).toBe(always);
+    expect(media("(max-height:100px)")).toBe(never);
+    expect(media("(height:800px)")).toBe(always);
+    expect(media("(height)")).toBe(always);
+    expect(media("(min-height:50em)")).toBe(always);
+    expect(media("(max-height:50vh)")).toBe(never);
+    expect(media("(min-device-height:900px)")).toBe(never);
+    // Range syntax, either way round, and with two bounds.
+    expect(media("(height >= 100px)")).toBe(always);
+    expect(media("(900px < height)")).toBe(never);
+    expect(media("(100px < height <= 800px)")).toBe(always);
+    // Heights that need more than the viewport height count as false.
+    expect(media("(min-height:10vw)")).toBe(never);
+    expect(media("(min-height:calc(1px + 2px))")).toBe(never);
+    // Combined with width features, which keep following the frame.
+    expect(media("screen and (min-height:100px) and (max-width:600px)")).toBe(
+      "@media screen and (width>=0px) and (max-width:600px)",
+    );
+    expect(media("not all and (max-height:100px), (min-width:300px)")).toBe(
+      "@media not all and (not (width>=0px)),(min-width:300px)",
+    );
+    expect(media("(max-width:600px)")).toBe("@media (max-width:600px)");
+    // Aspect ratio and orientation become the width they imply at 800 px tall.
+    expect(media("(min-aspect-ratio:1/1)")).toBe("@media (width>=800px)");
+    expect(media("(aspect-ratio:16/9)")).toBe("@media (width:1422.22px)");
+    expect(media("(1/2 < aspect-ratio < 2)")).toBe("@media ((width>400px) and (width<1600px))");
+    expect(media("(max-device-aspect-ratio:1.5)")).toBe("@media (device-width<=1200px)");
+    expect(media("(orientation:portrait)")).toBe("@media (width<=800px)");
+    expect(media("(orientation:landscape)")).toBe("@media (width>800px)");
+    // Nested in other rules and in a style element's media attribute.
+    expect(
+      sanitizeReaderCss(
+        "@supports (display:grid){@media (min-height:1px){p{color:red}}}",
+        false,
+        false,
+        800,
+      ),
+    ).toContain("@media (width>=0px)");
+    expect(
+      sanitizeReaderHtml(
+        '<style media="(max-height:100px)">p{color:red}</style>',
+        false,
+        undefined,
+        [],
+        800,
+      ),
+    ).toContain('media="(not (width&gt;=0px))"');
+    // Other callers keep the live query.
+    expect(sanitizeReaderCss("@media (min-height:100px){p{color:red}}", false)).toContain(
+      "(min-height:100px)",
+    );
   });
 
   it("raster data image aliases and formats are accepted while SVG stays excluded", () => {

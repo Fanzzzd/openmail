@@ -87,6 +87,42 @@ const clickText = (selector, text) => `(() => {
   return true;
 })()`;
 
+// The current find hit's box in the thread pane's coordinates, and the frame's own vertical scroll.
+const HIT = `(() => {
+  const pane = document.querySelector("[data-reader-text]");
+  const frame = [...pane.querySelectorAll('iframe[title="Message"]')].at(-1);
+  const doc = frame.contentDocument;
+  const mark = [...doc.querySelectorAll("mark")].find((m) => m.style.background.includes("251, 146, 60"));
+  if (!mark) return null;
+  const f = frame.getBoundingClientRect(), m = mark.getBoundingClientRect(), p = pane.getBoundingClientRect();
+  return { top: f.top + m.top - p.top, bottom: f.top + m.bottom - p.top, pane: pane.clientHeight,
+    frameScroll: doc.scrollingElement.scrollTop };
+})()`;
+
+/** Opens find on the last message, as ⌘F does, and types `term`. */
+const find = (term) => `(async () => {
+  const pane = document.querySelector("[data-reader-text]");
+  const message = [...pane.querySelectorAll("[data-message-id]")].at(-1) ?? pane;
+  message.dispatchEvent(new KeyboardEvent("keydown", { key: "f", code: "KeyF", metaKey: true, bubbles: true }));
+  let input = null;
+  for (let i = 0; i < 40 && !input; i++) {
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    input = document.querySelector('input[aria-label="Find in message"]');
+  }
+  if (!input) return false;
+  Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set.call(input, ${JSON.stringify(term)});
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+  return true;
+})()`;
+
+/** Clicks a button without scrolling to it first, as a click on the sticky find bar does. */
+const press = (text) => `(() => {
+  const button = [...document.querySelectorAll("[data-reader-text] button")].find((b) => b.textContent === ${JSON.stringify(text)});
+  if (!button || button.disabled) return false;
+  button.click();
+  return true;
+})()`;
+
 /** Steps run inside the last message frame's document, as the user or a late image would. */
 const STEPS = {
   viewAt100: clickText("button", "View at 100%"),
@@ -99,6 +135,9 @@ const STEPS = {
     doc.getElementById("grow").src = canvas.toDataURL("image/png");
     return true;
   })()`,
+  find: (c) => find(c.find),
+  findNext: press("Next match"),
+  findPrevious: press("Previous match"),
 };
 
 async function paneWidth(win) {
@@ -131,6 +170,32 @@ async function main() {
       }
       throw new Error(`no row for ${subject}`);
     };
+    // Until no frame has been drawn at a new height for QUIET ms.
+    const QUIET = 300;
+    const settle = async (name) => {
+      const start = Date.now();
+      let count = -1;
+      let since = start;
+      for (;;) {
+        const now = Date.now();
+        const next = await js(`window.__heights.length`);
+        if (next !== count) [count, since] = [next, now];
+        else if (now - since >= QUIET) return;
+        if (now - start > 10_000) throw new Error(`${name}: frame height never settled`);
+        await wait(50);
+      }
+    };
+    // Until the pane's width holds for two readings in a row.
+    const settleWidth = async () => {
+      let last = -1;
+      for (let i = 0; i < 40; i++) {
+        await wait(100);
+        const width = await paneWidth(win);
+        if (width === last) return width;
+        last = width;
+      }
+      return last;
+    };
     // Window widths that give each pane width, found by opening the first message.
     const widths = new Map();
     for (const pane of new Set(cases.map((c) => c.pane))) {
@@ -138,8 +203,7 @@ async function main() {
       await open(others[0]);
       for (let k = 0; k < 6; k++) {
         win.setContentSize(width, 1600);
-        await wait(600);
-        const diff = pane - (await paneWidth(win));
+        const diff = pane - (await settleWidth());
         if (diff === 0) break;
         width += diff;
       }
@@ -147,9 +211,10 @@ async function main() {
     }
     for (const c of cases) {
       win.setContentSize(widths.get(c.pane), 1600);
+      await settleWidth();
       // Another message first, so this one's frame is created under the recorder.
       await open(others.find((other) => other !== c.subject));
-      await wait(400);
+      await wait(200);
       await js(RECORDER);
       await open(c.subject);
       for (let i = 0; i < 40; i++) {
@@ -159,22 +224,33 @@ async function main() {
         if (ready) break;
         await wait(100);
       }
-      await wait(1500);
+      await settle(c.name);
+      const hits = [];
       for (const [index, step] of (c.steps ?? []).entries()) {
         await js(`window.__phase = ${index + 1}`);
-        if (!(await js(STEPS[step]))) {
+        const script = typeof STEPS[step] === "function" ? STEPS[step](c) : STEPS[step];
+        if (!(await js(script))) {
           const buttons = await js(
             `[...document.querySelectorAll("[data-reader-text] button")].map((b) => b.textContent).join("|")`,
           );
           throw new Error(`${c.name}: step ${step} failed; buttons: ${buttons}`);
         }
-        await wait(1500);
+        await settle(`${c.name} ${step}`);
+        if (c.find) hits.push({ step, ...(await js(HIT)) });
       }
+      // Settled; anything drawn in the next 400 ms is flicker.
       const settled = await js(`performance.now()`);
-      await wait(1000);
+      await wait(400);
       const measured = await js(MEASURE);
       const heights = (await js(`window.__heights`)).filter((h) => h.frame === measured.id);
-      results.push({ name: c.name, pane: await paneWidth(win), settled, heights, ...measured });
+      results.push({
+        name: c.name,
+        pane: await paneWidth(win),
+        settled,
+        heights,
+        hits,
+        ...measured,
+      });
     }
     win.destroy();
   } catch (error) {

@@ -4,7 +4,9 @@ import { READER_BASE_CSS } from "@openmail/core/schema";
 import {
   DARK_CSS,
   fitLayout,
+  frameScrollTop,
   keepLeftEdge,
+  keepTopEdge,
   measureFrame,
   MIN_FIT_SCALE,
   PICTURES,
@@ -159,6 +161,35 @@ it("keeps a page that fits at its left edge", () => {
   root.scrollLeft = 12;
   keepLeftEdge(doc);
   expect(root.scrollLeft).toBe(0);
+});
+
+it("moves the page's own vertical scroll to the pane that scrolls the frame", () => {
+  const pane = document.createElement("div");
+  pane.style.overflowY = "auto";
+  const box = document.createElement("div");
+  const iframe = document.createElement("iframe");
+  box.append(iframe);
+  pane.append(box);
+  document.body.append(pane);
+  const doc = document.implementation.createHTMLDocument("mail");
+  const root = doc.documentElement;
+  let top = 0;
+  Object.defineProperty(root, "scrollTop", {
+    get: () => top,
+    set: (value: number) => {
+      top = value;
+    },
+  });
+  pane.scrollTop = 100;
+  // Nothing scrolled inside the frame: the pane stays put.
+  keepTopEdge(iframe, doc, frameScrollTop(doc));
+  expect(pane.scrollTop).toBe(100);
+  // A find hit scrolled the page 1345 px inside a frame that has since grown.
+  root.scrollTop = 1345;
+  keepTopEdge(iframe, doc, frameScrollTop(doc));
+  expect(root.scrollTop).toBe(0);
+  expect(pane.scrollTop).toBe(1445);
+  pane.remove();
 });
 
 it("lets a page wider than the smallest scale scroll by what is left over", () => {
