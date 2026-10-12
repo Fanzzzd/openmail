@@ -78,10 +78,8 @@ vi.mock("./frame/EmailFrame", () => ({
     return null;
   },
 }));
-vi.mock("../../app/LazyDialogs", () => ({
-  InviteBanner: () => null,
-  RawMessageDialog: () => null,
-}));
+vi.mock("../calendar/lazy", () => ({ InviteBanner: () => null }));
+vi.mock("./lazy", () => ({ RawMessageDialog: () => null }));
 vi.mock("../ai/AiPanel", () => ({ ThreadSummary: () => null }));
 vi.mock("../ai/TriageChip", () => ({ TriageChip: () => null }));
 vi.mock("./attachments/Attachments", () => ({

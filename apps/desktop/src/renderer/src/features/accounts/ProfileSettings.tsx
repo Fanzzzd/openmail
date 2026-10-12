@@ -7,7 +7,7 @@ import type { Account, Profile } from "../../../../shared/api";
 import { prefsAtom, profilesAtom } from "../../state/queries";
 import { Keys } from "../../state/keys";
 import { useRunMail, withMail } from "../../state/mail";
-import { ProfileEditor } from "../../app/LazyDialogs";
+import { ProfileEditor } from "./lazy";
 import { Dialog } from "../../ui/Dialog";
 import { Select } from "../../ui/Select";
 

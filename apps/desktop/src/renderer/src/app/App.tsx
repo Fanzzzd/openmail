@@ -25,11 +25,11 @@ import {
   CreateLabelDialog,
   Feedback,
   FilterEditor,
-  ProfileEditor,
-  Proposals,
   Settings,
   ShortcutHelp,
 } from "./LazyDialogs";
+import { ProfileEditor } from "../features/accounts/lazy";
+import { Proposals } from "../features/ai/lazy";
 import { PermanentDeletePermission } from "../features/organize/PermanentDeletePermission";
 import { FailedOpNotice } from "../features/sync-status/FailedOpNotice";
 import { UpdateNotice } from "../features/updates/UpdateNotice";

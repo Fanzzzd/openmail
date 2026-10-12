@@ -22,7 +22,7 @@ import {
   DragLabel,
   sidebarDropOperation,
   decodeDrag,
-} from "../organize/organize-drag";
+} from "../organize";
 import { MAIL_KEYS, Keys } from "../../state/keys";
 import { Toolbar } from "@base-ui/react/toolbar";
 import { useAtomValue } from "@effect/atom-react";
@@ -72,12 +72,7 @@ import {
   PROFILE_BG,
 } from "../../lib/format";
 import { type MailEnv, withMail, syncNow, useRunMail } from "../../state/mail";
-import {
-  KeychainNotice,
-  ReauthNotice,
-  SyncStatusAnnouncement,
-  syncFailures,
-} from "../sync-status/MailStatusNotice";
+import { KeychainNotice, ReauthNotice, SyncStatusAnnouncement, syncFailures } from "../sync-status";
 import {
   prefsAtom,
   labelsAtom,

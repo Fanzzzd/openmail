@@ -22,7 +22,7 @@ import {
   frameSurface,
   type MessageBackground,
 } from "../body/MessageBodyShell";
-import { searchTermsOf, useSearchHits } from "../../search/search-hits";
+import { searchTermsOf, useSearchHits } from "../../search";
 
 // Mail HTML is untrusted. It renders in a sandboxed iframe with scripts off,
 // and its own CSP blocks remote loads (tracking pixels) until images are

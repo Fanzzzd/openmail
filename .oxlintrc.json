@@ -171,6 +171,70 @@
       "rules": {
         "eslint/no-restricted-imports": "off"
       }
+    },
+    {
+      "files": ["apps/desktop/src/renderer/src/ui/**"],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["**/app/**", "**/features/**", "**/state/**"],
+                "message": "ui/ holds primitives: pass data in as props instead of importing app, features or state."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["apps/desktop/src/renderer/src/lib/**"],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["**/app/**", "**/features/**", "**/state/**", "**/ui/**"],
+                "message": "lib/ holds pure helpers: it must not import app, features, state or ui."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["apps/desktop/src/renderer/src/state/**", "apps/desktop/src/renderer/src/i18n/**"],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["**/app/**", "**/features/**"],
+                "message": "state/ and i18n/ sit below features: move the shared code down instead of importing app or features."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["apps/desktop/src/renderer/src/features/**"],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["**/app/**"],
+                "message": "features/ must not import app/: move the shared code into the feature, state, ui or lib."
+              }
+            ]
+          }
+        ]
+      }
     }
   ],
   "env": {

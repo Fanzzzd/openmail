@@ -1,3 +1,4 @@
+import { ProfileSettings } from "../accounts";
 import { OptionalServices } from "../accounts/OptionalServices";
 import { AiSettings } from "./sections/AiSettings";
 import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
@@ -40,18 +41,17 @@ import {
 } from "./sections/SystemSettings";
 import { ComposeSettings, Signatures } from "./sections/ComposeSettings";
 import { UpdateSettings } from "./sections/UpdateSettings";
-import { ProfileSettings } from "../accounts/ProfileSettings";
 import { SpellcheckSettings } from "./sections/SpellcheckSettings";
 import { CacheSettings } from "./sections/CacheSettings";
 import { ProviderIcon } from "../../ui/ProviderIcon";
 import { ReadingSettings } from "./sections/ReadingSettings";
-import { reauthText } from "../sync-status/MailStatusNotice";
+import { reauthText } from "../sync-status";
 import { isKeychainLocked } from "@openmail/core/schema";
 import { Alert, AlertCancel, alertDanger, Dialog } from "../../ui/Dialog";
 import { settingsHeading } from "../../ui/form-styles";
 import { Select } from "../../ui/Select";
 
-import { OrganizationSettings } from "../organize/OrganizationSettings";
+import { OrganizationSettings } from "../organize";
 import { ServerSettings } from "./sections/ServerSettings";
 
 type Tab =

@@ -6,12 +6,12 @@ import {
   MatchedText,
   SearchPreview,
   SearchSnippet,
-} from "../search/SearchSnippet";
-import { TriageChip } from "../ai/TriageChip";
+} from "../search";
+import { TriageChip } from "../ai";
 import { swipeMailOp } from "./message-swipe";
 import { actionNames } from "../../i18n/action-names";
 import type { Prefs, SwipeAction } from "@openmail/core/schema";
-import { MESSAGE_DRAG } from "../organize/organize-drag";
+import { MESSAGE_DRAG, ThreadMenuItems } from "../organize";
 import { useAtomValue } from "@effect/atom-react";
 import { AsyncResult } from "effect/reactivity";
 import { prefsAtom } from "../../state/queries";
@@ -43,7 +43,6 @@ import { AccountBadge } from "./AccountBadge";
 import type { Filters } from "../../lib/view";
 import { ContextMenuContent, ContextMenuRoot, ContextMenuTrigger } from "../../ui/Menu";
 import type { ThreadState } from "../../lib/focused-inbox";
-import { ThreadMenuItems } from "../organize/ThreadActions";
 import { Tip } from "../../ui/Tip";
 
 /** How the current selection was made. Keyboard selection gets the solid accent. */

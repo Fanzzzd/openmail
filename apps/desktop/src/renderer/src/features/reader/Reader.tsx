@@ -39,16 +39,21 @@ import {
 } from "../../state/queries";
 import { UnsubscribeButton } from "./UnsubscribeButton";
 import { MailClient } from "../../state/rpc";
-import { AppleContactActions } from "../contacts/AppleContactActions";
-import { InviteBanner, RawMessageDialog } from "../../app/LazyDialogs";
-import { ThreadSummary } from "../ai/AiPanel";
-import { TriageChip } from "../ai/TriageChip";
+import { AppleContactActions } from "../contacts";
+import { RawMessageDialog } from "./lazy";
+import { ThreadSummary, TriageChip } from "../ai";
 import { matchesShortcut, shortcutAction, type ShortcutSet } from "../../../../shared/shortcuts";
 import { readerMessageId, readerThreadKey, useReaderMessages } from "./reader-selection";
 import { readerSelectedText } from "./quote-selection";
 import { jumpReaderSelection } from "../../lib/jump-selection";
 import { readerFindAction } from "./reader-shortcuts";
-import { SearchField } from "../search/SearchField";
+import {
+  NO_SEARCH_HITS,
+  SearchField,
+  SearchHitBar,
+  type SearchHits,
+  SearchHitsContext,
+} from "../search";
 import { iconButton, trafficLightInset } from "../../ui/styles";
 import { Tip } from "../../ui/Tip";
 import { BACK_SHORTCUT, isBackKey } from "../../lib/responsive-layout";
@@ -88,8 +93,6 @@ import {
 } from "../../state/mail";
 import { setImageSenderAtom, setPrefsAtom } from "../../state/mutations";
 import { imagesLoadedAtom, messageBackgroundAtom } from "../../state/ui";
-import { NO_SEARCH_HITS, type SearchHits, SearchHitsContext } from "../search/search-hits";
-import { SearchHitBar } from "../search/SearchHitBar";
 import { MediaMatches } from "./MediaMatches";
 import { Attachments } from "./attachments/Attachments";
 import {
@@ -97,7 +100,7 @@ import {
   useMessageBodyState,
   type MessageBackground,
 } from "./body/MessageBodyShell";
-import { MeetingLinks } from "../calendar/MeetingLinks";
+import { InviteBanner, MeetingLinks } from "../calendar";
 
 import { useShortcutText } from "../../i18n/use-shortcut-text";
 

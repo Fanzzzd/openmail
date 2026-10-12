@@ -21,7 +21,7 @@ import { inlineImagesAtom } from "../../../state/queries";
 import { highlightBody } from "./body-text";
 import { EmailFrame } from "../frame/EmailFrame";
 import type { MessageBackground } from "./MessageBodyShell";
-import { markPlainSearchHits, searchTermsOf, useSearchHits } from "../../search/search-hits";
+import { markPlainSearchHits, searchTermsOf, useSearchHits } from "../../search";
 import { PickerPopover } from "../../../ui/Picker";
 
 // Loaded through MessageBodyShell.tsx: everything here needs core's HTML cleaner.

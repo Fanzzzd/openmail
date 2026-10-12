@@ -6,7 +6,7 @@ import {
   type RecipientDrag,
   type RecipientFieldName,
 } from "../recipient-actions";
-import { AppleContactActions } from "../../contacts/AppleContactActions";
+import { AppleContactActions } from "../../contacts";
 import { DropdownMenu, MenuItem } from "../../../ui/Menu";
 import { recipientLabel, splitAddresses } from "@openmail/core/schema";
 import { Combobox } from "@base-ui/react/combobox";

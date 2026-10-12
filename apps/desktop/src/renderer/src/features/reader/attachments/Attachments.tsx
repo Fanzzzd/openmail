@@ -8,7 +8,7 @@ import {
   type EmbeddedMessage,
   type ReaderAttachment,
 } from "@openmail/core/schema";
-import { attachmentMatches, MatchedText, SearchSnippet } from "../../search/SearchSnippet";
+import { attachmentMatches, MatchedText, SearchSnippet } from "../../search";
 import { AttachmentImportDialog } from "./AttachmentImportDialog";
 import { constVoid } from "effect/Function";
 import { plural } from "@lingui/core/macro";

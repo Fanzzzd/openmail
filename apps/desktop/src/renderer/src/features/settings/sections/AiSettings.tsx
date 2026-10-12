@@ -10,7 +10,7 @@ import { MailClient, submitAiKey } from "../../../state/rpc";
 import { errorText, resultError } from "../../../lib/errors";
 import { Keys } from "../../../state/keys";
 
-import { aiSettingsAtom } from "../../ai/ai-settings";
+import { aiSettingsAtom } from "../../ai";
 const accountMutation = MailClient.mutation("SetAiAccount");
 const modelMutation = MailClient.mutation("SetAiModel");
 

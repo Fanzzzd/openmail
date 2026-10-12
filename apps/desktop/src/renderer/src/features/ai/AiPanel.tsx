@@ -9,7 +9,7 @@ import { MailClient } from "../../state/rpc";
 import { Keys } from "../../state/keys";
 import { useRunMail, withMail, type MailEnv } from "../../state/mail";
 import { aiSettingsAtom } from "./ai-settings";
-import { Proposals } from "../../app/LazyDialogs";
+import { Proposals } from "./lazy";
 import { Dialog } from "../../ui/Dialog";
 
 export function useAiStream() {

@@ -1,4 +1,4 @@
-import { MultiOrganization } from "../organize/MultiOrganization";
+import { MultiOrganization } from "../organize";
 import { moveSourceLabel } from "@openmail/core/schema";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Archive, Mail, MailOpen, Star, Tag, Trash2 } from "lucide-react";

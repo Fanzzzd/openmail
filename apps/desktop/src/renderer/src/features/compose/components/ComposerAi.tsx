@@ -19,8 +19,7 @@ import {
   type ComposeElement,
 } from "../compose-editor-dom";
 import { withMail } from "../../../state/mail";
-import { AiOutput, useAiStream } from "../../ai/AiPanel";
-import { aiSettingsAtom } from "../../ai/ai-settings";
+import { AiOutput, aiSettingsAtom, useAiStream } from "../../ai";
 import { Dialog } from "../../../ui/Dialog";
 import { Select } from "../../../ui/Select";
 
