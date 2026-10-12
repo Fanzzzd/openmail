@@ -76,3 +76,16 @@ it("opens the thread a route names and keeps the open thread in the route", asyn
     "Original one",
   );
 });
+
+it("opens the dialog a route names, and closing it leaves the route in place", async () => {
+  const h = (current = await flow({ route: "/mail/all/sent?dialog=settings" }));
+  const settings = await screen.findByRole("dialog", { name: "Settings" });
+  const length = h.router.history.length;
+  fireEvent.keyDown(settings, { key: "Escape" });
+  await eventually(() => expect(screen.queryByRole("dialog", { name: "Settings" })).toBeNull());
+  expect(h.href()).toBe("/mail/all/sent");
+  expect(h.router.history.length).toBe(length);
+  await h.event({ _tag: "Command", command: "help" });
+  await eventually(() => expect(h.href()).toBe("/mail/all/sent?dialog=help"));
+  expect(h.router.history.length).toBe(length);
+});

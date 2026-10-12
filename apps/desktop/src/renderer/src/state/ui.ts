@@ -6,7 +6,7 @@
  */
 import { Atom } from "effect/reactivity";
 
-import type { MailState } from "../../../shared/routes";
+import type { MailDialog, MailState } from "../../../shared/routes";
 import type { View } from "../lib/view";
 import { makeFolderFiltersAtom } from "./folder-filters";
 import { goMail, mailRouteAtom, sameView } from "./location";
@@ -168,6 +168,23 @@ export const openMessageAtom = Atom.writable(
       ({ view, state: { message: _message, ...state } }) => ({
         view,
         state: { ...state, ...(message ? { message } : {}) },
+      }),
+      true,
+    ),
+);
+
+/**
+ * The app dialog open over the mail view. It replaces the history entry, so
+ * opening and closing dialogs adds no Back steps.
+ */
+export const dialogAtom = Atom.writable(
+  (get): MailDialog | null => get(mailRouteAtom).state.dialog ?? null,
+  (ctx, dialog: MailDialog | null) =>
+    goMail(
+      ctx,
+      ({ view, state: { dialog: _dialog, ...state } }) => ({
+        view,
+        state: { ...state, ...(dialog ? { dialog } : {}) },
       }),
       true,
     ),

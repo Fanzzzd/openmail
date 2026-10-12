@@ -26,10 +26,10 @@ import { discardDraft, openDraft, saveDraft, useRunMail, withMail } from "../sta
 import { accountsAtom, prefsAtom, sendAsAtom, threadAtom } from "../state/queries";
 import { useBatchUndo } from "../state/undo";
 import { scopeAccountIds } from "../lib/view";
-import type { useAppPanels } from "./use-app-panels";
+import { useAtomSet } from "@effect/atom-react";
+import { dialogAtom } from "../state/ui";
 import type { useMailSelection } from "./use-mail-selection";
 export function useMailCompose({
-  panels,
   navigation,
   composeId,
   run,
@@ -43,7 +43,6 @@ export function useMailCompose({
   messages,
 }: {
   messages: AppMessages;
-  panels: ReturnType<typeof useAppPanels>;
   navigation: ReturnType<typeof useMailSelection>;
   composeId: string | undefined;
   run: ReturnType<typeof useRunMail>;
@@ -55,7 +54,7 @@ export function useMailCompose({
   undoRef: ReturnType<typeof useBatchUndo>["undoRef"];
   setToast: Dispatch<SetStateAction<ToastState | null>>;
 }) {
-  const { setDialog } = panels;
+  const setDialog = useAtomSet(dialogAtom);
   const { prefs, view, selectedId } = navigation;
   const { i18n } = useLingui();
 

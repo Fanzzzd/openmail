@@ -1,6 +1,6 @@
 import { focusedSenderMessage, threadStateFor } from "../lib/focused-inbox";
 import { Separator, Group, Panel } from "react-resizable-panels";
-import { useCallback, useState, type ComponentProps, useEffect } from "react";
+import { useCallback, useRef, useState, type ComponentProps, useEffect } from "react";
 import type { Label, MailOp } from "../../../shared/api";
 import { useAtom, useAtomMount, useAtomValue } from "@effect/atom-react";
 import type { MessageDescriptor } from "@lingui/core";
@@ -10,7 +10,17 @@ import { moveSourceLabel } from "@openmail/core/schema";
 import { AsyncResult } from "effect/reactivity";
 import { createPortal } from "react-dom";
 import { PANE_MIN } from "../../../shared/layout";
-import { useAppPanels, usePanelLayout } from "./use-app-panels";
+import { usePanelLayout } from "./use-panel-layout";
+import { useMailLayout } from "../lib/responsive-layout";
+import { editingProfileAtom } from "../features/accounts/profile-editing";
+import {
+  labelCreationAtom,
+  labelPickerAtom,
+  pickerModeAtom,
+  snoozeIdsAtom,
+} from "../features/organize/organize-state";
+import { filterSeedAtom } from "../features/settings/filter-seed";
+import { goToFolderAtom } from "../features/sidebar/go-to-folder";
 import { useMailActions } from "./use-mail-actions";
 import { useMailCompose } from "./use-mail-compose";
 import { useMailSelection } from "./use-mail-selection";
@@ -59,7 +69,7 @@ import { UndoHistory } from "../features/undo/UndoHistory";
 import { messageMissing, causeText } from "../lib/errors";
 import { MailClient } from "../state/rpc";
 import { useDesktopLabels } from "../state/desktop";
-import { liveUpdatesAtom } from "../state/events";
+import { liveUpdatesAtom, syncProgressAtom, syncStateAtom } from "../state/events";
 import { networkChanged, syncNow, useRunMail } from "../state/mail";
 import { MailStatusNotice } from "../features/sync-status/MailStatusNotice";
 import { useOnline } from "../lib/use-online";
@@ -76,7 +86,7 @@ import {
   unreadCountsAtom,
 } from "../state/queries";
 import { useBatchUndo } from "../state/undo";
-import { openMessageAtom } from "../state/ui";
+import { dialogAtom, openMessageAtom } from "../state/ui";
 import {
   ALL,
   inboxCategoryNames,
@@ -101,27 +111,18 @@ export function App({ composeId }: { composeId?: string }) {
   const strings = useAppMessages();
   const { t, i18n } = useLingui();
 
-  const panels = useAppPanels();
-  const {
-    editing,
-    setEditing,
-    syncState,
-    progress,
-    dialog,
-    setDialog,
-    labelPicker,
-    setLabelPicker,
-    pickerMode,
-    goToFolder,
-    setGoToFolder,
-    labelCreation,
-    setLabelCreation,
-    snoozeIds,
-    setSnoozeIds,
-    filterSeed,
-    setFilterSeed,
-    searchRef,
-  } = panels;
+  const layout = useMailLayout();
+  const [editing, setEditing] = useAtom(editingProfileAtom);
+  const syncState = useAtomValue(syncStateAtom);
+  const progress = useAtomValue(syncProgressAtom);
+  const [dialog, setDialog] = useAtom(dialogAtom);
+  const [labelPicker, setLabelPicker] = useAtom(labelPickerAtom);
+  const pickerMode = useAtomValue(pickerModeAtom);
+  const [goToFolder, setGoToFolder] = useAtom(goToFolderAtom);
+  const [labelCreation, setLabelCreation] = useAtom(labelCreationAtom);
+  const [snoozeIds, setSnoozeIds] = useAtom(snoozeIdsAtom);
+  const [filterSeed, setFilterSeed] = useAtom(filterSeedAtom);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   const [optionalAccountId, setOptionalAccountId] = useState<string | null>(null);
   useEffect(() => {
@@ -160,7 +161,6 @@ export function App({ composeId }: { composeId?: string }) {
   const profileList = AsyncResult.getOrElse(useAtomValue(profilesAtom), () => []);
   const counts = AsyncResult.getOrElse(useAtomValue(unreadCountsAtom), () => ({}));
   const navigation = useMailSelection({
-    setLabelPicker,
     accountsReady: accounts._tag === "Success",
     accountList,
     run,
@@ -244,7 +244,6 @@ export function App({ composeId }: { composeId?: string }) {
   const mailActions = useMailActions({
     messages: strings,
     navigation,
-    panels,
     accountList,
     labels,
     run,
@@ -267,7 +266,6 @@ export function App({ composeId }: { composeId?: string }) {
 
   const composition = useMailCompose({
     messages: strings,
-    panels,
     navigation,
     composeId,
     run,
@@ -300,7 +298,7 @@ export function App({ composeId }: { composeId?: string }) {
 
   useNativeMenuBridge({
     messages: strings,
-    panels,
+    searchRef,
     navigation,
     composition,
     run,
@@ -310,10 +308,9 @@ export function App({ composeId }: { composeId?: string }) {
     undoRef,
   });
 
-  const { layout } = panels;
   const paneNav = usePaneNavigation({ layout, navigation, run });
   useMailShortcuts({
-    panels,
+    searchRef,
     navigation,
     panes: paneNav,
     mailActions,

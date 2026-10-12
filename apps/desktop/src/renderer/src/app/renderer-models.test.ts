@@ -13,7 +13,12 @@ import { useRunMail } from "../state/mail";
 import type { ThreadList } from "../state/threads";
 import { testDom } from "../test-support/test-dom";
 import { ALL, OVERVIEW } from "../lib/view";
-import { useAppPanels, usePanelLayout } from "./use-app-panels";
+import { usePanelLayout } from "./use-panel-layout";
+import { useMailLayout } from "../lib/responsive-layout";
+import { pickerModeAtom, snoozeIdsAtom } from "../features/organize/organize-state";
+import { goToFolderAtom } from "../features/sidebar/go-to-folder";
+import { dialogAtom } from "../state/ui";
+import { type Atom, AtomRegistry } from "effect/reactivity";
 import { useMailActions } from "./use-mail-actions";
 import { useMailCompose } from "./use-mail-compose";
 import { useMailSelection } from "./use-mail-selection";
@@ -48,37 +53,56 @@ const state = vi.hoisted(() => {
   };
 });
 vi.mock("@effect/atom-react", async () => {
-  const { useState } = await import("react");
-  const { AsyncResult } = await import("effect/reactivity");
+  const { useCallback, useState, useSyncExternalStore } = await import("react");
+  const { Atom, AsyncResult } = await import("effect/reactivity");
   const { DEFAULT_LIST_FILTERS } = await import("@openmail/core/schema");
+  const unused = Atom.make<unknown>(null);
+  // Real atoms (panel state) share one registry per test; string stand-ins are per hook.
+  // Both hooks run on every call so the hook order never depends on the atom.
+  const useReal = (atom: string | Atom.Atom<unknown>) => {
+    const real = typeof atom === "string" ? unused : atom;
+    return useSyncExternalStore(
+      useCallback((notify: () => void) => registry.subscribe(real, notify), [real]),
+      () => registry.get(real),
+    );
+  };
+  const setReal = (atom: Atom.Writable<unknown, unknown>) => (value: unknown) =>
+    registry.set(atom, typeof value === "function" ? value(registry.get(atom)) : value);
+  const initial = (atom: string) =>
+    atom === "view"
+      ? { space: "all", mailbox: "inbox" }
+      : atom === "filters"
+        ? DEFAULT_LIST_FILTERS
+        : atom === "openThread"
+          ? null
+          : "";
+  const fake = (atom: string) =>
+    atom === "commit"
+      ? state.search
+      : atom === "prefs"
+        ? AsyncResult.success(state.prefs())
+        : atom === "accounts"
+          ? AsyncResult.success(state.accounts)
+          : atom === "remembered"
+            ? new Map([["profile", { space: "profile", mailbox: "sent" }]])
+            : atom === "query"
+              ? { mailbox: "inbox", flat: !state.prefs().threadGrouping }
+              : atom === "search"
+                ? state.search
+                : AsyncResult.initial();
   return {
-    useAtom: (atom: string) => {
-      const initial =
-        atom === "view"
-          ? { space: "all", mailbox: "inbox" }
-          : atom === "filters"
-            ? DEFAULT_LIST_FILTERS
-            : atom === "openThread"
-              ? null
-              : "";
-      const pair = useState(initial);
+    useAtom: (atom: string | Atom.Writable<unknown, unknown>) => {
+      const shared = useReal(atom);
+      const pair = useState(typeof atom === "string" ? initial(atom) : null);
+      if (typeof atom !== "string") return [shared, setReal(atom)];
       return atom === "threads" ? [state.threads(), state.loadMore] : pair;
     },
-    useAtomSet: () => vi.fn(),
-    useAtomValue: (atom: string) =>
-      atom === "commit"
-        ? state.search
-        : atom === "prefs"
-          ? AsyncResult.success(state.prefs())
-          : atom === "accounts"
-            ? AsyncResult.success(state.accounts)
-            : atom === "remembered"
-              ? new Map([["profile", { space: "profile", mailbox: "sent" }]])
-              : atom === "query"
-                ? { mailbox: "inbox", flat: !state.prefs().threadGrouping }
-                : atom === "search"
-                  ? state.search
-                  : AsyncResult.initial(),
+    useAtomSet: (atom: string | Atom.Writable<unknown, unknown>) =>
+      typeof atom === "string" ? vi.fn() : setReal(atom),
+    useAtomValue: (atom: string | Atom.Atom<unknown>) => {
+      const shared = useReal(atom);
+      return typeof atom === "string" ? fake(atom) : shared;
+    },
   };
 });
 vi.mock("../state/queries", () => ({
@@ -88,13 +112,14 @@ vi.mock("../state/queries", () => ({
   threadAtom: () => "thread",
 }));
 vi.mock("../state/threads", () => ({ threadListAtom: "threads", listQueryAtom: "query" }));
-vi.mock("../state/ui", () => ({
+vi.mock("../state/ui", async () => ({
   viewAtom: "view",
   rememberedViewsAtom: "remembered",
   searchTextAtom: "text",
   searchScopeAtom: "scope",
   searchAtom: "search",
   commitSearchAtom: "commit",
+  dialogAtom: (await import("effect/reactivity")).Atom.make<string | null>(null),
   openThreadAtom: "openThread",
   openMessageAtom: "openMessage",
   filtersAtom: "filters",
@@ -253,9 +278,8 @@ const showUndo = vi.fn();
 let undo: (() => void) | null = null;
 function Harness() {
   const run = useRunMail();
-  const panels = useAppPanels();
+  const searchRef = useRef<HTMLInputElement>(null);
   const navigation = useMailSelection({
-    setLabelPicker: panels.setLabelPicker,
     accountsReady: true,
     accountList: state.accounts,
     run,
@@ -268,7 +292,6 @@ function Harness() {
   };
   const composition = useMailCompose({
     messages,
-    panels,
     navigation,
     run,
     composeId: undefined,
@@ -283,7 +306,6 @@ function Harness() {
   const mailActions = useMailActions({
     messages,
     navigation,
-    panels,
     accountList: state.accounts,
     labels: [],
     run,
@@ -291,9 +313,9 @@ function Harness() {
     showUndo,
     selectedAccount: account,
   });
-  const panes = usePaneNavigation({ layout: panels.layout, navigation, run });
+  const panes = usePaneNavigation({ layout: useMailLayout(), navigation, run });
   useMailShortcuts({
-    panels,
+    searchRef,
     navigation,
     panes,
     mailActions,
@@ -308,7 +330,7 @@ function Harness() {
   });
   useNativeMenuBridge({
     messages,
-    panels,
+    searchRef,
     navigation,
     composition,
     run,
@@ -318,17 +340,17 @@ function Harness() {
     undoRef,
   });
   useEffect(() => {
-    model = { panels, navigation, mailActions, composition };
+    model = { navigation, mailActions, composition };
   });
   return null;
 }
 let model: {
-  panels: ReturnType<typeof useAppPanels>;
   navigation: ReturnType<typeof useMailSelection>;
   mailActions: ReturnType<typeof useMailActions>;
   composition: ReturnType<typeof useMailCompose>;
 };
 let dom: ReturnType<typeof testDom>;
+let registry = AtomRegistry.make();
 const mount = () =>
   dom.render(
     createElement(
@@ -394,6 +416,7 @@ beforeEach(() => {
   showUndo.mockImplementation((_result, _ids, _text, restore) => {
     undo = restore;
   });
+  registry = AtomRegistry.make();
   dom = testDom();
   vi.stubGlobal("Element", dom.window.Element);
   vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
@@ -464,11 +487,11 @@ it("keyboard owns typing and modal guards and dispatches the current keymap", as
   key("e", input);
   await flush();
   expect(state.operations).not.toHaveBeenCalled();
-  act(() => model.panels.setDialog("settings"));
+  act(() => registry.set(dialogAtom, "settings"));
   key("e");
   await flush();
   expect(state.operations).not.toHaveBeenCalled();
-  act(() => model.panels.setDialog(null));
+  act(() => registry.set(dialogAtom, null));
   expect(key("e").defaultPrevented).toBe(true);
   await flush();
   expect(model.navigation.selectedId).toBe("two");
@@ -484,7 +507,7 @@ it("keyboard owns typing and modal guards and dispatches the current keymap", as
 it("native bridge defers search while a dialog is open and updates menu state", async () => {
   act(() => {
     model.navigation.select("one", "mouse");
-    model.panels.setDialog("settings");
+    registry.set(dialogAtom, "settings");
   });
   await flush();
   expect(state.calls.filter((call) => call.tag === "SetNativeMenuState").at(-1)?.payload).toEqual({
@@ -492,7 +515,7 @@ it("native bridge defers search while a dialog is open and updates menu state", 
   });
   act(() => state.emit({ _tag: "Search", query: "deferred" }));
   expect(model.navigation.query).toBe("");
-  act(() => model.panels.setDialog(null));
+  act(() => registry.set(dialogAtom, null));
   await flush();
   await flush();
   expect(model.navigation.query).toBe("deferred");
@@ -501,12 +524,12 @@ it("native bridge defers search while a dialog is open and updates menu state", 
 
 it("panels keep independent state and layout persistence follows overview and sidebar preferences", () => {
   act(() => {
-    model.panels.setGoToFolder(true);
-    model.panels.setPickerMode("move");
+    registry.set(goToFolderAtom, true);
+    registry.set(pickerModeAtom, "move");
   });
-  expect(model.panels.goToFolder).toBe(true);
-  expect(model.panels.pickerMode).toBe("move");
-  expect(model.panels.dialog).toBeNull();
+  expect(registry.get(goToFolderAtom)).toBe(true);
+  expect(registry.get(pickerModeAtom)).toBe("move");
+  expect(registry.get(dialogAtom)).toBeNull();
   vi.stubGlobal("localStorage", { getItem: () => null, setItem: vi.fn() });
   function LayoutHarness() {
     usePanelLayout({
@@ -770,7 +793,7 @@ it("label changes keep selection, bulk Trash requires captured confirmation, and
   );
   act(() => {
     model.navigation.select("0", "mouse");
-    model.panels.setSnoozeIds(["0"]);
+    registry.set(snoozeIdsAtom, ["0"]);
   });
   let finish: ReturnType<typeof model.mailActions.startSnooze>;
   act(() => {
@@ -783,7 +806,7 @@ it("label changes keep selection, bulk Trash requires captured confirmation, and
     "Snoozed",
     expect.any(Function),
   );
-  expect(model.panels.snoozeIds).toBeNull();
+  expect(registry.get(snoozeIdsAtom)).toBeNull();
   await flush();
   expect(model.navigation.selectedId).toBe("1");
 });

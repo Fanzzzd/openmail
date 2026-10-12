@@ -22,11 +22,12 @@ import {
   singleSelection,
 } from "../lib/selection";
 import { useBatchUndo } from "../state/undo";
-import type { useAppPanels } from "./use-app-panels";
+import { useAtom, useAtomSet } from "@effect/atom-react";
+import { snoozeIdsAtom } from "../features/organize/organize-state";
+import { dialogAtom } from "../state/ui";
 import type { useMailSelection } from "./use-mail-selection";
 export function useMailActions({
   navigation,
-  panels,
   accountList,
   labels,
   run,
@@ -37,7 +38,6 @@ export function useMailActions({
 }: {
   messages: AppMessages;
   navigation: ReturnType<typeof useMailSelection>;
-  panels: ReturnType<typeof useAppPanels>;
   accountList: readonly Account[];
   labels: readonly Label[];
   run: ReturnType<typeof useRunMail>;
@@ -45,6 +45,8 @@ export function useMailActions({
   showUndo: ReturnType<typeof useBatchUndo>["showUndo"];
   selectedAccount: Account | undefined;
 }) {
+  const setDialog = useAtomSet(dialogAtom);
+  const [snoozeIds, setSnoozeIds] = useAtom(snoozeIdsAtom);
   const {
     deleteFolder,
     prefs,
@@ -204,7 +206,7 @@ export function useMailActions({
 
   const reauth = (account: Account) => {
     if (account.provider === "imap") {
-      panels.setDialog("add");
+      setDialog("add");
       return;
     }
     say({ text: messages.finishSigningInInYourBrowser, duration: 60_000 });
@@ -225,7 +227,7 @@ export function useMailActions({
   };
 
   const startSnooze = () => {
-    const ids = panels.snoozeIds ?? [];
+    const ids = snoozeIds ?? [];
     const before = selection;
     const actionScope = scopeKey;
     const rows = list;
@@ -245,7 +247,7 @@ export function useMailActions({
       showUndo(result, ids, messages.snoozed, () =>
         restoreActionSelection(before, actionScope, rows),
       );
-      panels.setSnoozeIds(null);
+      setSnoozeIds(null);
     };
   };
 

@@ -8,7 +8,7 @@ import { useLingui } from "@lingui/react/macro";
 import { attachmentProblem } from "@openmail/core/schema";
 import { Effect } from "effect";
 import { constVoid } from "effect/Function";
-import { useEffect, useEffectEvent, useState } from "react";
+import { type RefObject, useEffect, useEffectEvent, useState } from "react";
 import type { Account } from "../../../shared/api";
 import { desktopEventRoute, editCommandRoute, type DesktopEvent } from "../../../shared/desktop";
 import type { AppMessages } from "./App";
@@ -22,11 +22,16 @@ import { saveDraft, useRunMail, withMail } from "../state/mail";
 import { useBatchUndo } from "../state/undo";
 import { ALL, OVERVIEW } from "../lib/view";
 import { mailHref } from "../../../shared/routes";
-import type { useAppPanels } from "./use-app-panels";
+import { useAtom, useAtomValue } from "@effect/atom-react";
+import { editingProfileAtom } from "../features/accounts/profile-editing";
+import { labelCreationAtom, snoozeIdsAtom } from "../features/organize/organize-state";
+import { filterSeedAtom } from "../features/settings/filter-seed";
+import { goToFolderAtom } from "../features/sidebar/go-to-folder";
+import { dialogAtom } from "../state/ui";
 import type { useMailCompose } from "./use-mail-compose";
 import type { useMailSelection } from "./use-mail-selection";
 export function useNativeMenuBridge({
-  panels,
+  searchRef,
   navigation,
   composition,
   run,
@@ -37,7 +42,7 @@ export function useNativeMenuBridge({
   messages,
 }: {
   messages: AppMessages;
-  panels: ReturnType<typeof useAppPanels>;
+  searchRef: RefObject<HTMLInputElement | null>;
   navigation: ReturnType<typeof useMailSelection>;
   composition: ReturnType<typeof useMailCompose>;
   run: ReturnType<typeof useRunMail>;
@@ -46,16 +51,12 @@ export function useNativeMenuBridge({
   accountList: readonly Account[];
   undoRef: ReturnType<typeof useBatchUndo>["undoRef"];
 }) {
-  const {
-    dialog,
-    editing,
-    goToFolder,
-    snoozeIds,
-    filterSeed,
-    searchRef,
-    setDialog,
-    labelCreation,
-  } = panels;
+  const [dialog, setDialog] = useAtom(dialogAtom);
+  const editing = useAtomValue(editingProfileAtom);
+  const goToFolder = useAtomValue(goToFolderAtom);
+  const snoozeIds = useAtomValue(snoozeIdsAtom);
+  const filterSeed = useAtomValue(filterSeedAtom);
+  const labelCreation = useAtomValue(labelCreationAtom);
   const { selectedId, prefs, changeView, setQuery, view, threads, setSearchScope } = navigation;
   const {
     compose,

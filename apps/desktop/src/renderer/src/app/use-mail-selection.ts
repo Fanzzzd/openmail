@@ -2,7 +2,6 @@ import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
 import { DEFAULT_PREFS, markReadAfter } from "@openmail/core/schema";
 import { constVoid } from "effect/Function";
 import { AsyncResult } from "effect/reactivity";
-import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import type { Account, ThreadSummary } from "../../../shared/api";
 import { type SelectionSource } from "../features/mail-list/MessageList";
@@ -36,18 +35,17 @@ import {
 import { scopeAccountIds, type SpaceId, type View } from "../lib/view";
 import { settleStartupSelection } from "../state/window-selection";
 import { navigateAtom } from "../state/location";
+import { labelPickerAtom } from "../features/organize/organize-state";
 import { parseAppHref } from "../../../shared/routes";
 
 /** How long typing pauses before the search goes into the route. */
 const SEARCH_COMMIT_MS = 400;
 
 export function useMailSelection({
-  setLabelPicker,
   accountsReady,
   accountList,
   run,
 }: {
-  setLabelPicker: Dispatch<SetStateAction<boolean>>;
   accountsReady: boolean;
   accountList: readonly Account[];
   run: ReturnType<typeof useRunMail>;
@@ -69,6 +67,7 @@ export function useMailSelection({
   // The open thread lives in the route; a selection of several rows stays here.
   const [routeThread, setRouteThread] = useAtom(openThreadAtom);
   const navigate = useAtomSet(navigateAtom);
+  const setLabelPicker = useAtomSet(labelPickerAtom);
   const [selection, setSelection] = useState<Selection>(() => singleSelection(routeThread));
   const selectedId = selection.ids.size === 1 ? ([...selection.ids][0] ?? null) : null;
   const [readTarget, setReadTarget] = useState<string | null>(null);

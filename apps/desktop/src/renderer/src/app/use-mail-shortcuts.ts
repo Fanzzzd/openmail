@@ -1,5 +1,5 @@
 import { Reactivity } from "effect/reactivity";
-import { useEffect, useEffectEvent } from "react";
+import { type RefObject, useEffect, useEffectEvent } from "react";
 import type { Profile } from "../../../shared/api";
 import {
   favoriteShortcut,
@@ -18,7 +18,16 @@ import { Keys } from "../state/keys";
 import { syncNow, useRunMail, withMail } from "../state/mail";
 import { useBatchUndo } from "../state/undo";
 import { ALL, OVERVIEW } from "../lib/view";
-import type { useAppPanels } from "./use-app-panels";
+import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
+import { editingProfileAtom } from "../features/accounts/profile-editing";
+import {
+  labelPickerAtom,
+  pickerModeAtom,
+  snoozeIdsAtom,
+} from "../features/organize/organize-state";
+import { filterSeedAtom } from "../features/settings/filter-seed";
+import { goToFolderAtom } from "../features/sidebar/go-to-folder";
+import { dialogAtom } from "../state/ui";
 import type { useMailActions } from "./use-mail-actions";
 import type { useMailCompose } from "./use-mail-compose";
 import type { useMailSelection } from "./use-mail-selection";
@@ -26,7 +35,7 @@ import type { PaneNavigation } from "./use-pane-navigation";
 import { isBackKey } from "../lib/responsive-layout";
 import { isTypingTarget } from "../lib/typing-target";
 export function useMailShortcuts({
-  panels,
+  searchRef,
   navigation,
   panes,
   mailActions,
@@ -39,7 +48,7 @@ export function useMailShortcuts({
   threadState,
   print,
 }: {
-  panels: ReturnType<typeof useAppPanels>;
+  searchRef: RefObject<HTMLInputElement | null>;
   navigation: ReturnType<typeof useMailSelection>;
   panes: PaneNavigation;
   mailActions: ReturnType<typeof useMailActions>;
@@ -52,18 +61,13 @@ export function useMailShortcuts({
   threadState: ThreadState | null;
   print: ReturnType<typeof useThreadPrint>;
 }) {
-  const {
-    dialog,
-    editing,
-    goToFolder,
-    snoozeIds,
-    filterSeed,
-    searchRef,
-    setDialog,
-    setGoToFolder,
-    setPickerMode,
-    setLabelPicker,
-  } = panels;
+  const [dialog, setDialog] = useAtom(dialogAtom);
+  const editing = useAtomValue(editingProfileAtom);
+  const [goToFolder, setGoToFolder] = useAtom(goToFolderAtom);
+  const snoozeIds = useAtomValue(snoozeIdsAtom);
+  const filterSeed = useAtomValue(filterSeedAtom);
+  const setPickerMode = useAtomSet(pickerModeAtom);
+  const setLabelPicker = useAtomSet(labelPickerAtom);
   const {
     deleteRequest,
     selectedId,
