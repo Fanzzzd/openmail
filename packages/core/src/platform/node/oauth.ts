@@ -259,7 +259,7 @@ export const withAuthorizePage = <E, R>(
           (req.page
             ? Effect.succeed(req.page)
             : Effect.tryPromise(text).pipe(Effect.orElseSucceed((): AuthorizePage => ({})))
-          ).pipe(Effect.flatMap((page) => oauth.authorize({ ...req, page }))),
+          ).pipe(Effect.flatMap((resolved) => oauth.authorize({ ...req, page: resolved }))),
       });
     }),
   ).pipe(Layer.provide(layer));

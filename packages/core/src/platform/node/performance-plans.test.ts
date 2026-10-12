@@ -98,7 +98,9 @@ it.effect("actual health, stale, reset and budget queries use indexed metadata",
     assert.include(labelHealth.plan.join("\n"), "COVERING INDEX messages_thread_state");
     assert.notMatch(labelHealth.plan.join("\n"), /SEARCH m USING INDEX/);
     // A reset reads labels only for candidates, after listing identities from an index.
-    const resetIds = queries.filter((q) => /^SELECT m\.provider_id AS providerId FROM/.test(q.sql));
+    const resetIds = queries.filter((q) =>
+      q.sql.startsWith("SELECT m.provider_id AS providerId FROM"),
+    );
     assert.lengthOf(resetIds, 2);
     const stale = queries.filter((q) => q.sql.includes("draftOnly"));
     assert.isAbove(stale.length, 0);

@@ -140,9 +140,10 @@ it("a quick_check worker that never replies is stopped after 120 s as unavailabl
   try {
     let result: string | undefined;
     void checkLocalDatabaseInWorker(dir, {
-      startWorker: () => ({ once: () => undefined, terminate }),
+      startWorker: () => ({ once: vi.fn(), terminate }),
     }).then((value) => {
       result = value;
+      return value;
     });
     await vi.advanceTimersByTimeAsync(QUICK_CHECK_TIMEOUT_MS - 1);
     expect(result).toBeUndefined();
