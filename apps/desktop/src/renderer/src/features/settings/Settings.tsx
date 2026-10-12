@@ -9,7 +9,24 @@ import { Radio } from "@base-ui/react/radio";
 import { RadioGroup } from "@base-ui/react/radio-group";
 import { Tabs } from "@base-ui/react/tabs";
 import { AsyncResult } from "effect/reactivity";
-import { useRef, useState } from "react";
+import { type ComponentType, type ReactNode, useRef, useState } from "react";
+import {
+  AtSign,
+  Bell,
+  BookOpen,
+  FlaskConical,
+  Hand,
+  HardDrive,
+  History,
+  Keyboard,
+  Layers,
+  Server,
+  Settings as SettingsIcon,
+  Signature,
+  Sparkles,
+  SquarePen,
+  Tags,
+} from "lucide-react";
 import { useLayoutMode } from "../../lib/responsive-layout";
 
 import type { Account, AgentWriteMode, Language } from "../../../../shared/api";
@@ -48,7 +65,8 @@ import { ReadingSettings } from "./sections/ReadingSettings";
 import { reauthText } from "../sync-status";
 import { isKeychainLocked } from "@openmail/core/schema";
 import { Alert, AlertCancel, alertDanger, Dialog } from "../../ui/Dialog";
-import { settingsHeading } from "../../ui/form-styles";
+import { SettingsGroup, SettingsRow } from "../../ui/SettingsRows";
+import { choiceRow, radioDot } from "../../ui/styles";
 import { Select } from "../../ui/Select";
 
 import { OrganizationSettings } from "../organize";
@@ -71,25 +89,39 @@ type Tab =
   | "ai"
   | "log";
 
-const TABS: { id: Tab; label: MessageDescriptor }[] = [
-  { id: "general", label: msg`General` },
-  { id: "labs", label: msg`Labs` },
-  { id: "interactions", label: msg`Gestures and toolbar` },
-  { id: "accounts", label: msg`Accounts` },
-  { id: "profiles", label: msg`Profiles` },
-  { id: "cache", label: msg`Local cache` },
-  { id: "notifications", label: msg`Notifications` },
-  { id: "shortcuts", label: msg`Shortcuts` },
-  { id: "signatures", label: msg`Signatures` },
-  { id: "reading", label: msg`Reading` },
-  { id: "compose", label: msg`Compose` },
-  { id: "organize", label: msg`Organize` },
-  { id: "server", label: msg`Server` },
-  { id: "ai", label: msg`AI Access` },
-  { id: "log", label: msg`Activity` },
+type TabIcon = ComponentType<{ className?: string }>;
+
+/**
+ * Tabs in sidebar order, grouped like System Settings: the app, mail, input, services, history.
+ * `group` starts a new group with a gap above it. Each icon sits on its own colour tile.
+ */
+const TABS: { id: Tab; label: MessageDescriptor; icon: TabIcon; tile: string; group?: true }[] = [
+  { id: "general", label: msg`General`, icon: SettingsIcon, tile: "bg-neutral-500" },
+  { id: "accounts", label: msg`Accounts`, icon: AtSign, tile: "bg-blue-500" },
+  { id: "profiles", label: msg`Profiles`, icon: Layers, tile: "bg-indigo-500" },
+  { id: "reading", label: msg`Reading`, icon: BookOpen, tile: "bg-sky-500", group: true },
+  { id: "compose", label: msg`Compose`, icon: SquarePen, tile: "bg-blue-500" },
+  { id: "signatures", label: msg`Signatures`, icon: Signature, tile: "bg-orange-500" },
+  { id: "organize", label: msg`Organize`, icon: Tags, tile: "bg-green-600" },
+  { id: "notifications", label: msg`Notifications`, icon: Bell, tile: "bg-red-500" },
+  {
+    id: "interactions",
+    label: msg`Gestures and toolbar`,
+    icon: Hand,
+    tile: "bg-cyan-600",
+    group: true,
+  },
+  { id: "shortcuts", label: msg`Shortcuts`, icon: Keyboard, tile: "bg-neutral-500" },
+  { id: "ai", label: msg`AI Access`, icon: Sparkles, tile: "bg-violet-500", group: true },
+  { id: "server", label: msg`Server`, icon: Server, tile: "bg-teal-600" },
+  { id: "cache", label: msg`Local cache`, icon: HardDrive, tile: "bg-neutral-500" },
+  { id: "labs", label: msg`Labs`, icon: FlaskConical, tile: "bg-purple-500", group: true },
+  { id: "log", label: msg`Activity`, icon: History, tile: "bg-neutral-500" },
 ];
 
-const panel = "min-h-0 flex-1 overflow-y-auto p-5 outline-none";
+/** The scrolling content of a tab: its title, then the sections at a readable measure. */
+const panel = "min-h-0 flex-1 overflow-y-auto outline-none @container/settings";
+const measure = "mx-auto max-w-[620px] space-y-6 px-6 pt-4 pb-8 max-sm:px-4";
 
 interface Props {
   accounts: readonly Account[];
@@ -109,16 +141,23 @@ export function Settings({
   const { t, i18n } = useLingui();
   const [tab, setTab] = useState<Tab>(initialTab);
   const narrow = useLayoutMode() === "narrow";
+  const pane = (id: Tab, children: ReactNode, className = "") => (
+    <Tabs.Panel value={id} className={`${panel} ${className}`}>
+      <div className={measure}>
+        <h3 className="text-title font-semibold max-sm:hidden">
+          {i18n._(TABS.find((item) => item.id === id)!.label)}
+        </h3>
+        {children}
+      </div>
+    </Tabs.Panel>
+  );
 
   return (
     <Dialog
       aria-label={t`Settings`}
       onClose={onClose}
-      className="flex h-[560px] max-h-[90vh] w-[880px] max-w-[95vw] flex-col overflow-hidden"
+      className="flex h-[min(640px,calc(100dvh-48px))] w-[min(880px,calc(100vw-48px))] overflow-hidden max-sm:flex-col"
     >
-      <h2 className="border-b border-black/[0.07] px-5 py-3 text-[15px] font-semibold dark:border-white/[0.08]">
-        <Trans>Settings</Trans>
-      </h2>
       <Tabs.Root
         orientation={narrow ? "horizontal" : "vertical"}
         value={tab}
@@ -126,73 +165,74 @@ export function Settings({
           const next = TABS.find((item) => item.id === value);
           if (next) setTab(next.id);
         }}
-        className="flex min-h-0 flex-1 max-sm:flex-col"
+        className="flex min-h-0 min-w-0 flex-1 max-sm:flex-col"
       >
-        <Tabs.List className="flex w-40 shrink-0 flex-col gap-1 overflow-y-auto border-r border-black/[0.07] p-3 max-sm:w-auto max-sm:flex-row max-sm:overflow-x-auto max-sm:border-r-0 max-sm:border-b max-sm:p-2 dark:border-white/[0.08]">
-          {TABS.map((item) => (
-            <Tabs.Tab
-              key={item.id}
-              value={item.id}
-              className="min-h-8 shrink-0 rounded-md px-3 text-left font-medium whitespace-nowrap text-a11y-muted sm:py-1.5 sm:whitespace-normal outline-none hover:bg-black/[0.04] focus-visible:ring-2 focus-visible:ring-a11y-focus data-active:bg-black/[0.07] data-active:text-inherit dark:hover:bg-white/5 dark:data-active:bg-white/10"
-            >
-              {i18n._(item.label)}
-            </Tabs.Tab>
-          ))}
-        </Tabs.List>
-        <Tabs.Panel value="accounts" className={panel}>
+        <div className="flex w-52 shrink-0 flex-col border-r border-separator bg-fill-quiet max-md:w-44 max-sm:w-auto max-sm:border-r-0 max-sm:border-b max-sm:bg-transparent">
+          <h2 className="px-5 pt-4 pb-2 text-headline font-semibold max-sm:px-4 max-sm:pt-1">
+            <Trans>Settings</Trans>
+          </h2>
+          <Tabs.List className="flex min-h-0 flex-1 flex-col overflow-y-auto px-2.5 pb-3 max-sm:flex-none max-sm:flex-row max-sm:gap-1 max-sm:overflow-x-auto max-sm:px-3 max-sm:pb-2">
+            {TABS.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Tabs.Tab
+                  key={item.id}
+                  value={item.id}
+                  className={`flex h-7 shrink-0 items-center gap-2 rounded-control px-2 text-left whitespace-nowrap outline-none hover:bg-fill-hover focus-visible:ring-2 focus-visible:ring-a11y-focus data-active:bg-fill-pressed data-active:font-medium max-sm:pr-2.5 ${item.group ? "sm:mt-3" : "sm:mt-px"}`}
+                >
+                  <span
+                    aria-hidden
+                    className={`flex size-5 shrink-0 items-center justify-center rounded-[5px] text-white shadow-control ${item.tile}`}
+                  >
+                    <Icon className="size-3.5" />
+                  </span>
+                  <span className="min-w-0 truncate">{i18n._(item.label)}</span>
+                </Tabs.Tab>
+              );
+            })}
+          </Tabs.List>
+        </div>
+        {pane(
+          "accounts",
           <Accounts
             optionalAccountId={optionalAccountId}
             accounts={accounts}
             onAddAccount={onAddAccount}
-          />
-        </Tabs.Panel>
-        <Tabs.Panel value="organize" className={panel}>
-          <OrganizationSettings accounts={accounts} />
-        </Tabs.Panel>
-        <Tabs.Panel value="server" className={panel}>
-          <ServerSettings accounts={accounts} />
-        </Tabs.Panel>
-        <Tabs.Panel value="profiles" className={panel}>
-          <ProfileSettings accounts={accounts} />
-        </Tabs.Panel>
-        <Tabs.Panel value="cache" className={panel}>
-          <CacheSettings accounts={accounts} />
-        </Tabs.Panel>
-        <Tabs.Panel value="notifications" className={panel}>
-          <NotificationsSettings accounts={accounts} />
-        </Tabs.Panel>
-        <Tabs.Panel value="shortcuts" className={panel}>
-          <ShortcutsSettings />
-        </Tabs.Panel>
-        <Tabs.Panel value="signatures" className={panel}>
-          <Signatures accounts={accounts} />
-        </Tabs.Panel>
-        <Tabs.Panel value="general" className={panel}>
-          <General />
-
-          <UpdateSettings />
-        </Tabs.Panel>
-        <Tabs.Panel value="labs" className={panel}>
-          <LabsSettings />
-        </Tabs.Panel>
-        <Tabs.Panel value="interactions" className={panel}>
-          <InteractionSettings />
-        </Tabs.Panel>
-        <Tabs.Panel value="reading" className={panel}>
-          <ReadingSettings />
-        </Tabs.Panel>
-        <Tabs.Panel value="compose" className={panel}>
-          <ComposeSettings />
-          <SpellcheckSettings />
-        </Tabs.Panel>
-        <Tabs.Panel value="ai" className={panel}>
-          <AiSettings accounts={accounts} />
-          <AgentPolicy />
-        </Tabs.Panel>
+          />,
+        )}
+        {pane("organize", <OrganizationSettings accounts={accounts} />)}
+        {pane("server", <ServerSettings accounts={accounts} />)}
+        {pane("profiles", <ProfileSettings accounts={accounts} />)}
+        {pane("cache", <CacheSettings accounts={accounts} />)}
+        {pane("notifications", <NotificationsSettings accounts={accounts} />)}
+        {pane("shortcuts", <ShortcutsSettings />)}
+        {pane("signatures", <Signatures accounts={accounts} />)}
+        {pane(
+          "general",
+          <>
+            <General />
+            <UpdateSettings />
+          </>,
+        )}
+        {pane("labs", <LabsSettings />)}
+        {pane("interactions", <InteractionSettings />)}
+        {pane("reading", <ReadingSettings />)}
+        {pane(
+          "compose",
+          <>
+            <ComposeSettings />
+            <SpellcheckSettings />
+          </>,
+        )}
+        {pane(
+          "ai",
+          <>
+            <AiSettings accounts={accounts} />
+            <AgentPolicy />
+          </>,
+        )}
         {/* A narrow panel moves the account under the action instead of cutting off a fourth column. */}
-        <Tabs.Panel value="log" className={`${panel} @container/log`}>
-          <AuditLog accounts={accounts} />
-        </Tabs.Panel>
+        {pane("log", <AuditLog accounts={accounts} />, "@container/log")}
       </Tabs.Root>
     </Dialog>
   );
@@ -238,10 +278,10 @@ function Accounts({
             if (dragged.current) move(dragged.current, profile.id, null);
             dragged.current = null;
           }}
-          className="min-h-16 rounded-lg border border-black/10 p-2 dark:border-white/10"
+          className="min-h-16 rounded-card border border-edge p-2"
         >
           <h3 className="px-3 py-2 font-semibold">{profile.name}</h3>
-          <ul className="divide-y divide-black/[0.07] dark:divide-white/[0.08]">
+          <ul className="divide-y divide-separator">
             {accounts
               .filter((a) => a.profileId === profile.id)
               .map((a) => (
@@ -285,7 +325,7 @@ function Accounts({
       <button
         type="button"
         onClick={onAddAccount}
-        className="h-7 rounded-md border border-black/10 px-3 font-medium dark:border-white/15"
+        className="h-7 rounded-control border border-edge px-3 font-medium"
       >
         <Trans>Add email account</Trans>
       </button>
@@ -347,7 +387,7 @@ function AccountRow({
           {accountName(a)}
         </span>
         <span
-          className={`block truncate text-[12px] ${status.className}`}
+          className={`block truncate text-footnote ${status.className}`}
           title={a.needsReauth ? reauthText(i18n, a) : (a.lastSyncError ?? undefined)}
         >
           {reauth.waiting
@@ -360,14 +400,14 @@ function AccountRow({
         disabled={reauth.waiting}
         // IMAP signs in again by adding the same address with a new password.
         onClick={() => (a.provider === "imap" ? onAddAccount() : runReauth(undefined))}
-        className="h-7 shrink-0 rounded-md px-2.5 text-a11y-accent hover:bg-blue-500/10 disabled:opacity-50 dark:text-blue-400"
+        className="h-7 shrink-0 rounded-control px-2.5 text-a11y-accent hover:bg-blue-500/10 disabled:opacity-50 dark:text-blue-400"
       >
         <Trans>Sign in again</Trans>
       </button>
       <button
         type="button"
         onClick={() => setConfirming(true)}
-        className="h-7 shrink-0 rounded-md px-2.5 text-a11y-danger hover:bg-red-500/10 dark:text-red-400"
+        className="h-7 shrink-0 rounded-control px-2.5 text-a11y-danger hover:bg-red-500/10 dark:text-red-400"
       >
         <Trans>Remove</Trans>
       </button>
@@ -440,26 +480,27 @@ function General() {
   const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => null);
   const setPrefs = useAtomSet(setPrefsAtom);
   return (
-    <section>
-      <h3 className={settingsHeading}>
-        <Trans>Language</Trans>
-      </h3>
-      <Select
-        aria-label={t`Language`}
-        value={prefs?.language ?? "system"}
-        options={LANGUAGES.map((l) => ({
-          value: l.id,
-          label: typeof l.label === "string" ? l.label : i18n._(l.label),
-        }))}
-        onValueChange={(language) =>
-          setPrefs({
-            payload: { patch: { language } },
-            reactivityKeys: [Keys.prefs],
-          })
-        }
-      />
+    <SettingsGroup>
+      <SettingsRow label={<Trans>Language</Trans>}>
+        <Select
+          aria-label={t`Language`}
+          variant="field"
+          className="min-w-40"
+          value={prefs?.language ?? "system"}
+          options={LANGUAGES.map((l) => ({
+            value: l.id,
+            label: typeof l.label === "string" ? l.label : i18n._(l.label),
+          }))}
+          onValueChange={(language) =>
+            setPrefs({
+              payload: { patch: { language } },
+              reactivityKeys: [Keys.prefs],
+            })
+          }
+        />
+      </SettingsRow>
       <DefaultMailClient />
-    </section>
+    </SettingsGroup>
   );
 }
 
@@ -491,9 +532,9 @@ function AgentPolicy() {
             key={m.id}
             value={m.id}
             aria-label={i18n._(m.label)}
-            className="group flex cursor-pointer gap-3 rounded-lg border border-black/10 p-3 outline-offset-1 outline-a11y-focus focus-visible:outline-[3px] data-checked:border-blue-500 data-checked:bg-blue-600/5 dark:border-white/10 dark:data-checked:border-blue-500"
+            className={choiceRow}
           >
-            <span className="mt-0.5 flex size-3.5 shrink-0 items-center justify-center rounded-full bg-white shadow-[0_0.5px_1px_rgb(0_0_0/0.15)] ring-1 ring-black/20 group-data-checked:bg-blue-600 group-data-checked:ring-blue-600 dark:bg-white/10 dark:ring-white/20 dark:group-data-checked:bg-blue-600 dark:group-data-checked:ring-blue-500">
+            <span className={`mt-0.5 ${radioDot}`}>
               <Radio.Indicator className="size-1.5 rounded-full bg-white" />
             </span>
             <span>
@@ -552,7 +593,7 @@ function AuditLog({ accounts }: { accounts: readonly Account[] }) {
     );
   return (
     <table className="w-full text-left">
-      <thead className="text-[12px] text-a11y-muted">
+      <thead className="text-footnote text-a11y-muted">
         <tr>
           <th className="pb-2 font-medium">
             <Trans>Time</Trans>
@@ -570,7 +611,7 @@ function AuditLog({ accounts }: { accounts: readonly Account[] }) {
       </thead>
       <tbody>
         {log.map((e, i) => (
-          <tr key={i} className="border-t border-black/[0.06] dark:border-white/[0.06]">
+          <tr key={i} className="border-t border-separator">
             <td className="py-1.5 pr-3 whitespace-nowrap text-a11y-muted tabular-nums">
               {new Date(e.at).toLocaleString(i18n.locale, {
                 month: "numeric",

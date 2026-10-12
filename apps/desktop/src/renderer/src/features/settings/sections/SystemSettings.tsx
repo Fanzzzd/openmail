@@ -1,4 +1,5 @@
 import type { NotificationPermission, DefaultClientStatus } from "../../../../../shared/desktop";
+import { SettingsRow } from "../../../ui/SettingsRows";
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Button } from "@base-ui/react/button";
 import { Input } from "@base-ui/react/input";
@@ -48,21 +49,28 @@ export function DefaultMailClient() {
     );
   }, [run]);
   return (
-    <section className="mt-6 space-y-2">
-      <h3 className="text-[12px] font-semibold text-a11y-muted">
-        <Trans>Default email app</Trans>
-      </h3>
-      <p className="text-a11y-muted">
-        <Trans>Open email links in a new OpenMail draft.</Trans>
-      </p>
-      {status && !status.available && (
-        <p className="text-a11y-muted">
-          <Trans>
-            Install the packaged app to make it the default. Development builds cannot register
-            email links.
-          </Trans>
-        </p>
-      )}
+    <SettingsRow
+      label={<Trans>Default email app</Trans>}
+      hint={
+        <>
+          <Trans>Open email links in a new OpenMail draft.</Trans>
+          {status && !status.available && (
+            <>
+              {" "}
+              <Trans>
+                Install the packaged app to make it the default. Development builds cannot register
+                email links.
+              </Trans>
+            </>
+          )}
+          {failed && (
+            <output role="alert" className="mt-1 block text-orange-700 dark:text-orange-400">
+              <Trans>Could not register OpenMail. Try again from the installed app.</Trans>
+            </output>
+          )}
+        </>
+      }
+    >
       <Button
         className={alertButton}
         disabled={busy || isDefault || !status?.available}
@@ -88,12 +96,7 @@ export function DefaultMailClient() {
           <Trans>Make OpenMail default</Trans>
         )}
       </Button>
-      {failed && (
-        <output role="alert" className="text-orange-700 dark:text-orange-400">
-          <Trans>Could not register OpenMail. Try again from the installed app.</Trans>
-        </output>
-      )}
-    </section>
+    </SettingsRow>
   );
 }
 
@@ -102,7 +105,7 @@ const timeText = (minute: number) =>
 const timeMinute = (value: string) =>
   /^\d{2}:\d{2}$/.test(value) ? Number(value.slice(0, 2)) * 60 + Number(value.slice(3)) : null;
 
-const timeInput = "rounded border border-black/10 bg-transparent px-2 py-1 dark:border-white/15";
+const timeInput = "rounded border border-edge bg-transparent px-2 py-1";
 const WEEKDAY_NAMES: Record<Weekday, MessageDescriptor> = {
   sunday: msg`Sunday`,
   monday: msg`Monday`,
@@ -442,10 +445,10 @@ function ShortcutTable({ set }: { set: ShortcutSet }) {
         {ACTIONS.map(([action, label]) => {
           if (!isShortcutAction(action)) return null;
           return (
-            <tr key={action} className="border-b border-black/5 dark:border-white/5">
+            <tr key={action} className="border-b border-separator">
               <td className="py-1.5">{i18n._(label)}</td>
               <td className="py-1.5 text-right">
-                <kbd className="font-mono text-[12px] text-a11y-muted">
+                <kbd className="font-mono text-footnote text-a11y-muted">
                   {shortcutText(set, action)}
                 </kbd>
               </td>
@@ -453,7 +456,7 @@ function ShortcutTable({ set }: { set: ShortcutSet }) {
           );
         })}
         {NUMBERED_MAILBOXES.map((mailbox, index) => (
-          <tr key={mailbox} className="border-b border-black/5 dark:border-white/5">
+          <tr key={mailbox} className="border-b border-separator">
             <td className="py-1.5">{i18n._(MAILBOX_NAMES[mailbox])}</td>
             <td className="py-1.5 text-right">
               <kbd>
@@ -531,7 +534,7 @@ export function ShortcutHelp({ onClose }: { onClose: () => void }) {
       onClose={onClose}
       className="flex max-h-[80vh] w-[520px] flex-col p-5"
     >
-      <h2 className="mb-3 text-[15px] font-semibold">
+      <h2 className="mb-3 text-headline font-semibold">
         <Trans>Keyboard shortcuts</Trans>
       </h2>
       <div className="overflow-y-auto">
