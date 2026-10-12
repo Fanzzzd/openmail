@@ -2,11 +2,11 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import Color from "colorjs.io";
 import { AtRule, parse, type Node, type Root, type Rule } from "postcss";
+import { desktopRoot } from "./paths";
 
 /** Inspect the CSS shipped by the preceding build, including Tailwind utility tokens. */
 export function builtStyles() {
-  // Vitest runs in apps/desktop. jsdom tests get a non-file import.meta.url, so use the directory.
-  const assets = join(process.cwd(), "out/renderer/assets");
+  const assets = join(desktopRoot, "out/renderer/assets");
   const files = readdirSync(assets).filter((file) => file.endsWith(".css"));
   if (!files.length) throw new Error("Run pnpm build before testing the shipped CSS");
   return parse(files.map((file) => readFileSync(join(assets, file), "utf8")).join("\n"));

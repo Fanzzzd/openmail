@@ -1,10 +1,10 @@
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { expect, it } from "vitest";
+import { desktopRoot } from "../../renderer/src/test-support/paths";
 
 /** In-window UI is React; native popups and form controls only where docs/native-macos.md allows. */
-// Vitest runs in apps/desktop.
-const root = path.join(process.cwd(), "src");
+const root = path.join(desktopRoot, "src");
 
 const banned: readonly { name: string; pattern: RegExp }[] = [
   { name: "dialog.showMessageBox", pattern: /\bshowMessageBox(Sync)?\b/g },

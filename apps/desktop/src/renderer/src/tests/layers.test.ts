@@ -1,10 +1,11 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
+import { Schema } from "effect";
 import ts from "typescript";
 import { expect, it } from "vitest";
+import { desktopRoot } from "../test-support/paths";
 
-// Vitest runs in apps/desktop. Paths below are relative to the renderer source root.
-const root = join(process.cwd(), "src/renderer/src");
+const root = join(desktopRoot, "src/renderer/src");
 const entries = ["main.tsx", "recovery/main.tsx"];
 const skipped = new Set(["locales", "e2e", "tests", "test-support"]);
 
@@ -74,6 +75,13 @@ function edgesOf(file: string): Edge[] {
       ts.isStringLiteral(node.arguments[0])
     )
       add(node.arguments[0].text, "dynamic");
+    // typeof import("./x") in a type position.
+    if (
+      ts.isImportTypeNode(node) &&
+      ts.isLiteralTypeNode(node.argument) &&
+      ts.isStringLiteral(node.argument.literal)
+    )
+      add(node.argument.literal.text, "type");
     ts.forEachChild(node, visit);
   };
   visit(source);
@@ -124,5 +132,47 @@ it("lets a feature reach another feature through its index, or a lazy-chunk modu
       return edge.to !== `features/${to}/index.ts` && eager.has(edge.to);
     })
     .map((edge) => `${edge.from} imports ${edge.to}`);
+  expect(violations).toEqual([]);
+});
+
+it("applies the oxlint layer rules to import() and typeof import() too", () => {
+  // oxlint's no-restricted-imports sees only import and export declarations.
+  const Config = Schema.Struct({
+    overrides: Schema.Array(
+      Schema.Struct({
+        files: Schema.Array(Schema.String),
+        rules: Schema.Record(Schema.String, Schema.Unknown),
+      }),
+    ),
+  });
+  const Rule = Schema.Tuple([
+    Schema.Literal("error"),
+    Schema.Struct({
+      patterns: Schema.Array(Schema.Struct({ group: Schema.Array(Schema.String) })),
+    }),
+  ]);
+  const config = Schema.decodeUnknownSync(Schema.fromJsonString(Config))(
+    readFileSync(join(desktopRoot, "../../.oxlintrc.json"), "utf8"),
+  );
+  const prefix = "apps/desktop/src/renderer/src/";
+  const forbidden = new Map<string, string[]>();
+  for (const override of config.overrides) {
+    const rule = override.rules["eslint/no-restricted-imports"];
+    if (rule === undefined || !override.files.some((file) => file.startsWith(prefix))) continue;
+    const layers = Schema.decodeUnknownSync(Rule)(rule)[1].patterns.flatMap((pattern) =>
+      pattern.group.flatMap((group) => /^\*\*\/(\w[\w-]*)\/\*\*$/.exec(group)?.[1] ?? []),
+    );
+    for (const file of override.files) {
+      const layer = file.startsWith(prefix)
+        ? /^([\w-]+)\/\*\*$/.exec(file.slice(prefix.length))?.[1]
+        : undefined;
+      if (layer) forbidden.set(layer, layers);
+    }
+  }
+  expect([...forbidden.keys()].toSorted()).toEqual(["features", "i18n", "lib", "state", "ui"]);
+  const layerOf = (file: string) => file.split("/")[0] ?? "";
+  const violations = edges
+    .filter((edge) => forbidden.get(layerOf(edge.from))?.includes(layerOf(edge.to)))
+    .map((edge) => `${edge.from} -> ${edge.to} (${edge.kind})`);
   expect(violations).toEqual([]);
 });

@@ -112,19 +112,19 @@ import { Composer } from "./components/Composer";
 afterAll(() => {
   for (const name of [
     "@effect/atom-react",
-    "./state/queries",
-    "./state/mutations",
-    "./state/mail",
+    "../../state/queries",
+    "../../state/mutations",
+    "../../state/mail",
     "@base-ui/react/dialog",
     "./components/RecipientField",
     "./components/ComposeEditor",
     "./components/ComposerAi",
     "./components/DraftOrganization",
-    "./components/ui/Select",
-    "./components/ui/Tip",
-    "./components/ui/Dialog",
-    "./components/ui/Picker",
-    "./components/ui/Menu",
+    "../../ui/Select",
+    "../../ui/Tip",
+    "../../ui/Dialog",
+    "../../ui/Picker",
+    "../../ui/Menu",
   ])
     vi.doUnmock(name);
   vi.resetModules();

@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { settleStartupSelection } from "./window-selection";
-import { singleSelection } from "./selection";
+import { singleSelection } from "../lib/selection";
 it("keeps a restored id while loading, then clears a missing id after the first list", () => {
   const selection = singleSelection("missing");
   expect(settleStartupSelection("missing", selection, false, new Set()).selection).toBe(selection);

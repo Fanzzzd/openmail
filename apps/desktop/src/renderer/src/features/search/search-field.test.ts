@@ -139,12 +139,12 @@ afterAll(() => {
   for (const module of [
     "@base-ui/react/combobox",
     "@effect/atom-react",
-    "./state/queries",
-    "./state/threads",
-    "./state/mail",
-    "./state/ui",
-    "./components/ui/Select",
-    "./components/ui/Menu",
+    "../../state/queries",
+    "../../state/threads",
+    "../../state/mail",
+    "../../state/ui",
+    "../../ui/Select",
+    "../../ui/Menu",
   ])
     vi.doUnmock(module);
   vi.resetModules();

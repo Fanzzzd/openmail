@@ -10,7 +10,7 @@ import {
 
 it("keeps desktop resource restrictions and adds form/base CSP before untrusted content", () => {
   const desktop = readFileSync(
-    new URL("../../desktop/src/renderer/src/components/EmailFrame.tsx", import.meta.url),
+    new URL("../../desktop/src/renderer/src/features/reader/frame/EmailFrame.tsx", import.meta.url),
     "utf8",
   );
   const base = /const BLOCKED = "([^"]+)"/.exec(desktop)?.[1];

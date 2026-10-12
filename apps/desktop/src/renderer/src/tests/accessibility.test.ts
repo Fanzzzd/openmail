@@ -947,11 +947,11 @@ afterAll(() => {
   for (const entry of moderateAllowlist) expect(auditedFixtures.has(entry.fixture)).toBe(true);
   for (const module of [
     "@effect/atom-react",
-    "./rpc",
-    "./state/queries",
-    "./state/mutations",
-    "./state/downloads",
-    "./state/mail",
+    "../state/rpc",
+    "../state/queries",
+    "../state/mutations",
+    "../state/downloads",
+    "../state/mail",
   ])
     vi.doUnmock(module);
   vi.resetModules();

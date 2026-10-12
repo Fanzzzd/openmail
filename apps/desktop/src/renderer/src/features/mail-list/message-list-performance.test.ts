@@ -36,13 +36,13 @@ import { MessageList } from "./MessageList";
 afterAll(() => {
   for (const module of [
     "@effect/atom-react",
-    "./state/queries",
+    "../../state/queries",
     "./message-swipe-hook",
-    "./components/ui/Menu",
-    "./components/ui/Tip",
-    "./components/ThreadActions",
-    "./components/AccountBadge",
-    "./components/TriageChip",
+    "../../ui/Menu",
+    "../../ui/Tip",
+    "../organize/ThreadActions",
+    "./AccountBadge",
+    "../ai/TriageChip",
     "@base-ui/react/toggle",
   ])
     vi.doUnmock(module);

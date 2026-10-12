@@ -728,7 +728,7 @@ afterAll(() => {
     "../state/events",
     "../state/mail",
     "../state/desktop",
-    "../components/ui/Confirm",
+    "../ui/Confirm",
     "react-resizable-panels",
   ])
     vi.doUnmock(name);

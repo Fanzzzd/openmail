@@ -402,9 +402,9 @@ it("compose shortcuts save the current draft and yield to send confirmation", ()
 afterAll(() => {
   for (const name of [
     "@effect/atom-react",
-    "../state/queries",
-    "../state/mutations",
-    "../state/mail",
+    "../../../state/queries",
+    "../../../state/mutations",
+    "../../../state/mail",
   ])
     vi.doUnmock(name);
   vi.resetModules();

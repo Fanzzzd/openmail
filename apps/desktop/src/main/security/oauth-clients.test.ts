@@ -4,9 +4,9 @@ import { join } from "node:path";
 import { expect, it } from "vitest";
 
 import { describeBuiltInClients, readBuiltInClients } from "../../../oauth-clients";
+import { desktopRoot } from "../../renderer/src/test-support/paths";
 
-// Vitest runs in apps/desktop.
-const out = join(process.cwd(), "out/");
+const out = join(desktopRoot, "out/");
 const filesUnder = (dir: string): string[] =>
   readdirSync(dir, { withFileTypes: true, recursive: true })
     .filter((entry) => entry.isFile())

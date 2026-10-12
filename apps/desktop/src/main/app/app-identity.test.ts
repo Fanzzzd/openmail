@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, expect, it, vi } from "vitest";
+import { desktopRoot } from "../../renderer/src/test-support/paths";
 
 const electron = vi.hoisted(() => ({
   isPackaged: false,
@@ -36,7 +37,7 @@ it("points the dev run at the committed icon-dev.png", async () => {
   // so re-anchor the module-relative path there before checking the icon exists.
   const source = path.dirname(fileURLToPath(import.meta.url));
   if (!DEV_ICON) throw new Error("no dev icon");
-  expect(existsSync(path.resolve(process.cwd(), "out/main", path.relative(source, DEV_ICON)))).toBe(
+  expect(existsSync(path.resolve(desktopRoot, "out/main", path.relative(source, DEV_ICON)))).toBe(
     true,
   );
 });

@@ -1,4 +1,4 @@
-import { trimSelection, type Selection } from "./selection";
+import { trimSelection, type Selection } from "../lib/selection";
 import { Schema } from "effect";
 import { WindowSelection } from "../../../shared/window-state";
 export function restoredSelection(): WindowSelection | null {

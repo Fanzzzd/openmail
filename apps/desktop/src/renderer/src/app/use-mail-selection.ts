@@ -26,7 +26,7 @@ import {
   singleSelection,
   trimSelection,
   type Selection,
-} from "../state/selection";
+} from "../lib/selection";
 import { listQueryAtom, threadListAtom } from "../state/threads";
 import {
   filtersAtom,

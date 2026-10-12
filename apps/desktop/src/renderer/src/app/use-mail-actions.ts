@@ -20,7 +20,7 @@ import {
   requiresBatchDeleteConfirmation,
   selectionAfterRemoval,
   singleSelection,
-} from "../state/selection";
+} from "../lib/selection";
 import { useBatchUndo } from "../state/undo";
 import type { useAppPanels } from "./use-app-panels";
 import type { useMailSelection } from "./use-mail-selection";

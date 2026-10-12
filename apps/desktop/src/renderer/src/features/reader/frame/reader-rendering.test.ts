@@ -2,11 +2,12 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { expect, it } from "vitest";
 import { sanitizeReaderHtml } from "./reader-html";
+import { desktopRoot } from "../../../test-support/paths";
 // @vitest-environment jsdom
 
 const fixture = (name: string) =>
   readFileSync(
-    resolve(process.cwd(), `../../packages/core/src/fixtures/reader/${name}.html`),
+    resolve(desktopRoot, `../../packages/core/src/fixtures/reader/${name}.html`),
     "utf8",
   );
 function render(input: string): HTMLElement {

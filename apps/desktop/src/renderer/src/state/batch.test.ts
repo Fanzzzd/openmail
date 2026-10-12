@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { ThreadSummary } from "../../../shared/api";
 import { DEFAULT_LIST_FILTERS } from "@openmail/core/schema";
 import { leavesList } from "./batch";
-import { reconcileSelection, selectRow, singleSelection } from "./selection";
+import { reconcileSelection, selectRow, singleSelection } from "../lib/selection";
 
 const row: ThreadSummary = {
   id: "a/m1",
