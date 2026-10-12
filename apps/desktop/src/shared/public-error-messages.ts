@@ -174,5 +174,10 @@ export const PUBLIC_ERROR_MESSAGES = new Set([
   "Use a PNG, JPEG, GIF or WebP image up to 8 MB",
   "Wait for pending changes to sync before changing the folder.",
   "no printers are available.",
+  "Enter a tailnet login such as name@github",
+  "Use a service name such as svc:openmail",
+  "Too many tailnet logins",
+  "This setting is only available on the Mac.",
+  "Remote access could not be changed.",
   "the operation failed.",
 ]);

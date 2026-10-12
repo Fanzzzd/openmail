@@ -144,6 +144,18 @@ vi.mock("../state/downloads", async () => {
     downloadsFeedAtom: "downloadsFeed",
   };
 });
+vi.mock("../state/remote-access", async () => {
+  const { Atom } = await import("effect/reactivity");
+  return {
+    remoteAccessAtom: Atom.make(null),
+    remoteAccessFeedAtom: "remoteAccessFeed",
+    refreshRemoteAccessAtom: "RefreshRemoteAccess",
+    setRemoteAccessAtom: "SetRemoteAccess",
+    setRemoteAllowlistAtom: "SetRemoteAllowlist",
+    setRemoteServiceAtom: "SetRemoteService",
+    revokeRemoteSessionAtom: "RevokeRemoteSession",
+  };
+});
 vi.mock("../state/rpc", () => ({
   MailClient: { query: (tag: string) => tag, mutation: (tag: string) => tag },
   submitAiKey: () => Effect.void,

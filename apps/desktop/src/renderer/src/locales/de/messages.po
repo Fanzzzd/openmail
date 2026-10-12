@@ -333,6 +333,7 @@ msgstr "Tatsächliche Größe"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Add"
 msgstr "Hinzufügen"
 
@@ -431,6 +432,10 @@ msgstr "Adresse oder Domain"
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Addresses no longer suggested"
 msgstr "Adressen werden nicht mehr vorgeschlagen"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Advanced: Tailscale Service"
+msgstr "Erweitert: Tailscale Service"
 
 #: src/renderer/src/features/calendar/EventRecurrenceEditor.tsx
 msgid "After a number of occurrences"
@@ -571,6 +576,10 @@ msgstr "Alle Nachrichten"
 #: src/renderer/src/features/organize/FolderActions.tsx
 msgid "All messages currently in this folder, including messages not loaded and Outlook child folders, will be permanently deleted. Messages restored during the operation will be excluded from later batches. This cannot be undone."
 msgstr "Alle Nachrichten, die sich derzeit in diesem Ordner befinden, einschließlich nicht geladener Nachrichten und untergeordneter Outlook-Ordner, werden dauerhaft gelöscht. Während des Vorgangs wiederhergestellte Nachrichten werden von späteren Stapeln ausgeschlossen. Dies kann nicht rückgängig gemacht werden."
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Allow access from my tailnet"
+msgstr "Zugriff aus meinem Tailnet erlauben"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Allow notifications"
@@ -1115,6 +1124,10 @@ msgstr "Schreibmodus ändern?"
 msgid "Change your OAuth client"
 msgstr "Eigenen OAuth-Client ändern"
 
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Check again"
+msgstr "Erneut prüfen"
+
 #: src/renderer/src/features/settings/sections/UpdateSettings.tsx
 msgid "Check for updates"
 msgstr "Nach Updates suchen"
@@ -1135,6 +1148,10 @@ msgstr "Rechtschreibung während der Eingabe prüfen"
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Check sync health"
 msgstr "Synchronisationsstatus prüfen"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Check Tailscale again"
+msgstr "Tailscale erneut prüfen"
 
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 msgid "Check the date and repeat settings"
@@ -1416,6 +1433,14 @@ msgstr "Kalender verbinden"
 msgid "Connect this service in Settings → Accounts → Optional services."
 msgstr "Verbinden Sie diesen Dienst unter Einstellungen → Accounts → Optionale Dienste."
 
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Connected now"
+msgstr "Jetzt verbunden"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Connected to {tailnet}"
+msgstr "Verbunden mit {tailnet}"
+
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 msgid "Connecting also asks for {pendingNames}."
 msgstr "Beim Verbinden wird auch {pendingNames} angefragt."
@@ -1493,6 +1518,7 @@ msgstr "Konversationen"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/RawMessage.tsx
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Copied"
 msgstr "Kopiert"
@@ -1511,6 +1537,7 @@ msgid "Copy"
 msgstr "Kopieren"
 
 #: src/renderer/src/features/compose/components/RecipientField.tsx
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Copy address"
 msgstr "Adresse kopieren"
 
@@ -2051,6 +2078,11 @@ msgstr "Originalnachricht nicht anhängen"
 msgid "Done"
 msgstr "Fertig"
 
+#. placeholder {0}: file.filename
+#: src/renderer/src/features/reader/attachments/Attachments.tsx
+msgid "Download {0}"
+msgstr "{0} laden"
+
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 msgid "Download calendar file"
 msgstr "Kalenderdatei herunterladen"
@@ -2264,6 +2296,10 @@ msgstr "Ein Zugriffstoken eingeben"
 #: src/renderer/src/lib/errors.ts
 msgid "Enter a single API key."
 msgstr "Einen API-Schlüssel eingeben."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Enter a tailnet login such as name@github"
+msgstr "Gib einen Tailnet-Login wie name@github ein"
 
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Enter a template name."
@@ -2651,6 +2687,10 @@ msgstr "Generierung abgeschlossen"
 msgid "Gestures and toolbar"
 msgstr "Gesten und Symbolleiste"
 
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Get Tailscale"
+msgstr "Tailscale laden"
+
 #: src/renderer/src/features/downloads/Downloads.tsx
 msgid "Getting the attachment…"
 msgstr "Anhang wird abgerufen…"
@@ -2774,6 +2814,10 @@ msgstr "Hoch"
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "How long a conversation stays open before it is marked as read. Manually: use {readShortcut} or the toolbar."
 msgstr "Wie lange eine Konversation geöffnet bleibt, bevor sie als gelesen markiert wird. Manuell: Verwenden Sie {readShortcut} oder die Symbolleiste."
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "HTTPS certificates are off"
+msgstr "HTTPS-Zertifikate sind aus"
 
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 msgid "Icon"
@@ -2939,6 +2983,10 @@ msgstr "Variable einfügen…"
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Install the packaged app to make it the default. Development builds cannot register email links."
 msgstr "Installieren Sie die gepackte App, um sie zur Standardanwendung zu machen. Entwicklungs-Builds können keine E-Mail-Links registrieren."
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Install the Tailscale app on this Mac and sign in, then come back here. OpenMail doesn't install anything itself."
+msgstr "Installiere die Tailscale-App auf diesem Mac, melde dich an und komm dann hierher zurück. OpenMail installiert selbst nichts."
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Internal folder"
@@ -3123,6 +3171,10 @@ msgstr "Letzter"
 msgid "Last 7 days"
 msgstr "Letzte 7 Tage"
 
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Last seen {since}"
+msgstr "Zuletzt gesehen {since}"
+
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Last sync failed"
 msgstr "Die letzte Synchronisierung ist fehlgeschlagen"
@@ -3134,6 +3186,10 @@ msgstr "Letzte"
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Layout"
 msgstr "Layout"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Learn more"
+msgstr "Mehr erfahren"
 
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
 msgid "Leave blank unless your mail administrator provides a trusted authserv-id. The IMAP server name is not a trust setting."
@@ -3269,6 +3325,10 @@ msgstr "Standort geändert:"
 #: src/renderer/src/lib/errors.ts
 msgid "Lost the connection to the background process."
 msgstr "Die Verbindung zum Hintergrundprozess wurde unterbrochen."
+
+#: src/renderer/src/features/remote/ConnectionNotice.tsx
+msgid "Lost the connection to your Mac. Reconnecting…"
+msgstr "Verbindung zum Mac verloren. Verbinde neu…"
 
 #: src/renderer/src/i18n/organization-labels.ts
 msgid "Low"
@@ -3990,6 +4050,10 @@ msgstr "Noch keine Aktivität."
 msgid "No app can open this file"
 msgstr "Keine App kann diese Datei öffnen"
 
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "No browser is signed in."
+msgstr "Kein Browser ist angemeldet."
+
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "No copy"
 msgstr "Nicht kopieren"
@@ -4100,6 +4164,10 @@ msgstr "Keine ungelesenen E-Mails"
 #: src/renderer/src/features/overview/Overview.tsx
 msgid "No unread mail in the inbox"
 msgstr "Keine ungelesenen E-Mails im Posteingang"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Nobody can sign in. Add a tailnet login below."
+msgstr "Niemand kann sich anmelden. Füge unten einen Tailnet-Login hinzu."
 
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
@@ -4246,6 +4314,10 @@ msgstr "Öffnen"
 msgid "Open {name}"
 msgstr "{name} öffnen"
 
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Open admin console"
+msgstr "Admin-Konsole öffnen"
+
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Open attachments from"
 msgstr "Anhänge öffnen von"
@@ -4301,6 +4373,14 @@ msgstr "Bereich öffnen"
 #: src/renderer/src/features/settings/sections/AppleContactsSettings.tsx
 msgid "Open System Settings"
 msgstr "Systemeinstellungen öffnen"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Open Tailscale on this Mac and sign in."
+msgstr "Öffne Tailscale auf diesem Mac und melde dich an."
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Open this address on your phone or another computer"
+msgstr "Öffne diese Adresse auf deinem Telefon oder einem anderen Computer"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Open this invitation in your calendar to add it before responding"
@@ -4678,10 +4758,18 @@ msgstr "Profile gruppieren Accounts. Accounts zuordnen und Profile in den Einste
 msgid "Promotions"
 msgstr "Werbung"
 
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Publish OpenMail as a Tailscale Service, such as svc:openmail, with its own name instead of port 8443 on this Mac. Define the service in the Tailscale admin console and approve this Mac as its host first. Leave empty to use this Mac's name."
+msgstr "Veröffentliche OpenMail als Tailscale Service, etwa svc:openmail, mit eigenem Namen statt Port 8443 auf diesem Mac. Lege den Service zuerst in der Tailscale-Admin-Konsole an und bestätige diesen Mac als Host. Leer lassen, um den Namen dieses Macs zu verwenden."
+
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/ui/ProviderIcon.tsx
 msgid "QQ Mail"
 msgstr "QQ Mail"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "QR code for {url}"
+msgstr "QR-Code für {url}"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Quick Look"
@@ -4711,6 +4799,10 @@ msgstr "Ausgewählten Text zitieren"
 msgctxt "incoming message action flag"
 msgid "Read"
 msgstr "Lesemarkierung"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Read and send mail from your phone or another computer through your own tailnet. This Mac stays the host: mail, tokens and keys stay here, and nothing passes through OpenMail servers. OpenMail uses Tailscale Serve, which only devices on your tailnet can reach. It never uses Funnel, so the page is never on the public internet."
+msgstr "Lies und sende E-Mails von deinem Telefon oder einem anderen Computer über dein eigenes Tailnet. Dieser Mac bleibt der Host: E-Mails, Tokens und Schlüssel bleiben hier, und nichts läuft über Server von OpenMail. OpenMail nutzt Tailscale Serve, das nur Geräte in deinem Tailnet erreichen. Funnel wird nie genutzt, die Seite ist also nie im öffentlichen Internet."
 
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Read only"
@@ -4772,6 +4864,10 @@ msgstr "Wiederkehrendes Treffen"
 msgid "Redacted report"
 msgstr "Anonymisierter Bericht"
 
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Refresh"
+msgstr "Aktualisieren"
+
 #: src/renderer/src/features/settings/sections/AppleContactsSettings.tsx
 #: src/renderer/src/features/settings/sections/ContactSettings.tsx
 msgid "Refresh contacts"
@@ -4795,6 +4891,10 @@ msgstr "Ähnlich"
 msgid "Relative dates use the date of this message."
 msgstr "Relative Datumsangaben beziehen sich auf das Datum dieser Nachricht."
 
+#: src/renderer/src/features/remote/ConnectionNotice.tsx
+msgid "Reload"
+msgstr "Neu laden"
+
 #: src/renderer/src/features/organize/SnoozeDialog.tsx
 msgid "Remind me"
 msgstr "Erinnern"
@@ -4802,6 +4902,18 @@ msgstr "Erinnern"
 #: src/renderer/src/features/organize/SnoozeDialog.tsx
 msgid "Reminder time"
 msgstr "Erinnerungszeit"
+
+#: src/renderer/src/features/settings/Settings.tsx
+msgid "Remote access"
+msgstr "Fernzugriff"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Remote access could not be changed."
+msgstr "Der Fernzugriff konnte nicht geändert werden."
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Remote access needs MagicDNS and HTTPS Certificates turned on for your tailnet."
+msgstr "Für den Fernzugriff müssen MagicDNS und HTTPS-Zertifikate in deinem Tailnet aktiviert sein."
 
 #: src/renderer/src/features/reader/RemoteImagesPrompt.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
@@ -4817,6 +4929,7 @@ msgid "Remote writes are disabled in this read-only session"
 msgstr "Remote-Änderungen sind in dieser schreibgeschützten Sitzung deaktiviert"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Remove"
 msgstr "Entfernen"
@@ -4829,6 +4942,10 @@ msgstr "{0} entfernen"
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Remove {email}?"
 msgstr "{email} entfernen?"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Remove {login}"
+msgstr "{login} entfernen"
 
 #: src/renderer/src/features/downloads/Downloads.tsx
 msgid "Remove {name} from list"
@@ -5188,6 +5305,7 @@ msgstr "Samstag"
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
@@ -5699,6 +5817,19 @@ msgstr "Melden Sie sich im Browser mit Ihrem Google-Account an. openmail bewahrt
 msgid "Sign in with your personal Microsoft account (outlook.com or Hotmail) in the browser. openmail keeps the sign-in token in this computer's keychain."
 msgstr "Melden Sie sich im Browser mit Ihrem persönlichen Microsoft-Account (outlook.com oder Hotmail) an. openmail bewahrt das Anmeldetoken im Schlüsselbund dieses Computers auf."
 
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Sign out"
+msgstr "Abmelden"
+
+#. placeholder {0}: session.login
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Sign out {0}"
+msgstr "{0} abmelden"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Sign out ends a browser's session. To keep someone out, remove their login above."
+msgstr "Abmelden beendet die Sitzung eines Browsers. Um jemanden auszuschließen, entferne oben den Login."
+
 #: src/renderer/src/app/App.tsx
 msgid "Sign-in failed: {reason}"
 msgstr "Anmeldung fehlgeschlagen: {reason}"
@@ -5730,6 +5861,14 @@ msgstr "Signaturen"
 #: src/renderer/src/features/settings/sections/UpdateSettings.tsx
 msgid "Signed builds use a GitHub access token to download private releases. The token is stored in your system keychain."
 msgstr "Signierte Builds verwenden ein GitHub-Zugriffstoken, um private Versionen herunterzuladen. Das Token wird in Ihrem System-Schlüsselbund gespeichert."
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Signed in as {login}. This Mac is {device}."
+msgstr "Angemeldet als {login}. Dieser Mac ist {device}."
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Signed-in browsers"
+msgstr "Angemeldete Browser"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Simplify your search query."
@@ -5890,6 +6029,10 @@ msgstr "Nachrichten mit Stern"
 msgid "Start"
 msgstr "Beginn"
 
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Starting…"
+msgstr "Wird gestartet…"
+
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "STARTTLS (usually 587)"
 msgstr "STARTTLS (normalerweise 587)"
@@ -6025,6 +6168,30 @@ msgstr "Synchronisierung…"
 msgid "System notification permission"
 msgstr "Berechtigung zur Systembenachrichtigung"
 
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Tailnet login"
+msgstr "Tailnet-Login"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Tailscale"
+msgstr "Tailscale"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Tailscale isn't connected"
+msgstr "Tailscale ist nicht verbunden"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Tailscale isn't installed"
+msgstr "Tailscale ist nicht installiert"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Tailscale Service name"
+msgstr "Name des Tailscale Service"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Tailscale tells OpenMail who is visiting. Only these tailnet logins get in. The list starts with this Mac's own login."
+msgstr "Tailscale teilt OpenMail mit, wer zugreift. Nur diese Tailnet-Logins kommen herein. Die Liste beginnt mit dem Login dieses Macs."
+
 #: src/renderer/src/features/compose/components/ComposerAi.tsx
 msgid "Target language"
 msgstr "Zielsprache"
@@ -6147,6 +6314,10 @@ msgstr "Die Operation ist fehlgeschlagen."
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "The organizer differs from the message sender. Check the response recipient before replying."
 msgstr "Der Organisator unterscheidet sich vom Absender der Nachricht. Überprüfen Sie den Antwortempfänger, bevor Sie antworten."
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "The other device needs the Tailscale app, signed in to the same tailnet. This Mac must stay on with OpenMail open."
+msgstr "Das andere Gerät braucht die Tailscale-App, angemeldet im selben Tailnet. Dieser Mac muss eingeschaltet bleiben und OpenMail geöffnet haben."
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "The preview checked at most 201 server messages. Matching messages outside this sample may be missing."
@@ -6279,6 +6450,10 @@ msgstr "Diese Regel kann nur auf künftige Nachrichten auf dem Server angewendet
 msgid "This rule deletes messages. Confirm only if the preview matches the messages you intend to delete."
 msgstr "Diese Regel löscht Nachrichten. Bestätigen Sie nur, wenn die Vorschau die Nachrichten zeigt, die Sie löschen möchten."
 
+#: src/renderer/src/lib/errors.ts
+msgid "This setting is only available on the Mac."
+msgstr "Diese Einstellung gibt es nur auf dem Mac."
+
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "This space has no accounts yet."
 msgstr "Dieser Bereich hat noch keine Accounts."
@@ -6363,6 +6538,10 @@ msgstr "Ton"
 #: src/renderer/src/app/use-native-menu-bridge.ts
 msgid "Too many attachments. Attach up to 256 files."
 msgstr "Zu viele Anhänge. Maximal 256 Dateien anhängen."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Too many tailnet logins"
+msgstr "Zu viele Tailnet-Logins"
 
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 msgid "Toolbar actions"
@@ -6591,6 +6770,10 @@ msgstr "Lokale Datenbank wird aktualisiert…"
 msgid "Use {token} for a custom variable. You will be asked for its value when inserting the template."
 msgstr "Verwenden Sie {token} für eine benutzerdefinierte Variable. Beim Einfügen der Vorlage werden Sie nach dem Wert gefragt."
 
+#: src/renderer/src/lib/errors.ts
+msgid "Use a service name such as svc:openmail"
+msgstr "Gib einen Service-Namen wie svc:openmail ein"
+
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
 msgid "Use an http, https or mailto link"
 msgstr "Einen http-, https- oder mailto-Link verwenden"
@@ -6711,6 +6894,10 @@ msgstr "Nach Freigabe eines Accounts werden Fragen sowie ausgewählte Mailtexte,
 msgid "Who"
 msgstr "Wer"
 
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Who can sign in"
+msgstr "Wer sich anmelden kann"
+
 #: src/renderer/src/app/App.tsx
 msgid "Whole message"
 msgstr "Ganze Nachricht"
@@ -6792,6 +6979,10 @@ msgstr "Ihre Änderungen werden auf diesem Mac gespeichert. Versuchen Sie es ern
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "Your draft was kept. Check Sent before sending again."
 msgstr "Ihr Entwurf wurde behalten. Prüfen Sie Gesendet, bevor Sie erneut senden."
+
+#: src/renderer/src/features/remote/ConnectionNotice.tsx
+msgid "Your Mac ended this session."
+msgstr "Dein Mac hat diese Sitzung beendet."
 
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 msgid "Your overlapping events"

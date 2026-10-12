@@ -21,6 +21,11 @@ const NOT_FOUND = {
 } as const;
 const OUTLOOK_UPLOAD_FAILED = msg`Outlook attachment upload failed. Try saving or sending again.`;
 export const INPUT_ERRORS: Record<string, MessageDescriptor> = {
+  "Enter a tailnet login such as name@github": msg`Enter a tailnet login such as name@github`,
+  "Use a service name such as svc:openmail": msg`Use a service name such as svc:openmail`,
+  "Too many tailnet logins": msg`Too many tailnet logins`,
+  "This setting is only available on the Mac.": msg`This setting is only available on the Mac.`,
+  "Remote access could not be changed.": msg`Remote access could not be changed.`,
   "Choose a message from another sender.": msg`Choose a message from another sender.`,
   "This message has no valid sender address.": msg`This message has no valid sender address.`,
   "Focused Inbox requires Outlook.": msg`Focused Inbox requires Outlook.`,

@@ -333,6 +333,7 @@ msgstr "Фактический размер"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Add"
 msgstr "Добавить"
 
@@ -431,6 +432,10 @@ msgstr "Адрес или домен"
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Addresses no longer suggested"
 msgstr "Адреса больше не предлагаются"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Advanced: Tailscale Service"
+msgstr "Дополнительно: Tailscale Service"
 
 #: src/renderer/src/features/calendar/EventRecurrenceEditor.tsx
 msgid "After a number of occurrences"
@@ -571,6 +576,10 @@ msgstr "Вся почта"
 #: src/renderer/src/features/organize/FolderActions.tsx
 msgid "All messages currently in this folder, including messages not loaded and Outlook child folders, will be permanently deleted. Messages restored during the operation will be excluded from later batches. This cannot be undone."
 msgstr "Все сообщения, находящиеся в настоящее время в этой папке, включая незагруженные сообщения и дочерние папки Outlook, будут безвозвратно удалены. Сообщения, восстановленные во время операции, будут исключены из последующих пакетов. Это невозможно отменить."
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Allow access from my tailnet"
+msgstr "Разрешить доступ из моего tailnet"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Allow notifications"
@@ -1115,6 +1124,10 @@ msgstr "Изменить режим записи?"
 msgid "Change your OAuth client"
 msgstr "Сменить клиент OAuth"
 
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Check again"
+msgstr "Проверить снова"
+
 #: src/renderer/src/features/settings/sections/UpdateSettings.tsx
 msgid "Check for updates"
 msgstr "Проверить наличие обновлений"
@@ -1135,6 +1148,10 @@ msgstr "Проверять орфографию при вводе"
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Check sync health"
 msgstr "Проверить синхронизацию"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Check Tailscale again"
+msgstr "Снова проверить Tailscale"
 
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 msgid "Check the date and repeat settings"
@@ -1416,6 +1433,14 @@ msgstr "Подключить календарь"
 msgid "Connect this service in Settings → Accounts → Optional services."
 msgstr "Подключите эту службу в разделе Настройки → Учётные записи → Дополнительные службы."
 
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Connected now"
+msgstr "Подключён сейчас"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Connected to {tailnet}"
+msgstr "Подключено к {tailnet}"
+
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 msgid "Connecting also asks for {pendingNames}."
 msgstr "При подключении также будет запрошен доступ к {pendingNames}."
@@ -1493,6 +1518,7 @@ msgstr "Переписки"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/RawMessage.tsx
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Copied"
 msgstr "Скопировано"
@@ -1511,6 +1537,7 @@ msgid "Copy"
 msgstr "Копировать"
 
 #: src/renderer/src/features/compose/components/RecipientField.tsx
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Copy address"
 msgstr "Копировать адрес"
 
@@ -2051,6 +2078,11 @@ msgstr "Не прикрепляйте исходное сообщение"
 msgid "Done"
 msgstr "Готово"
 
+#. placeholder {0}: file.filename
+#: src/renderer/src/features/reader/attachments/Attachments.tsx
+msgid "Download {0}"
+msgstr "Скачать {0}"
+
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 msgid "Download calendar file"
 msgstr "Скачать файл календаря"
@@ -2264,6 +2296,10 @@ msgstr "Введите единый токен доступа"
 #: src/renderer/src/lib/errors.ts
 msgid "Enter a single API key."
 msgstr "Введите один ключ API."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Enter a tailnet login such as name@github"
+msgstr "Введите логин tailnet, например name@github"
 
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Enter a template name."
@@ -2651,6 +2687,10 @@ msgstr "Генерация завершена"
 msgid "Gestures and toolbar"
 msgstr "Жесты и панель инструментов"
 
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Get Tailscale"
+msgstr "Установить Tailscale"
+
 #: src/renderer/src/features/downloads/Downloads.tsx
 msgid "Getting the attachment…"
 msgstr "Получение вложения…"
@@ -2774,6 +2814,10 @@ msgstr "Высокая"
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "How long a conversation stays open before it is marked as read. Manually: use {readShortcut} or the toolbar."
 msgstr "Как долго переписка остается открытой, прежде чем она будет помечена как прочитанная. Вручную: используйте {readShortcut} или панель инструментов."
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "HTTPS certificates are off"
+msgstr "Сертификаты HTTPS выключены"
 
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 msgid "Icon"
@@ -2939,6 +2983,10 @@ msgstr "Вставить переменную…"
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Install the packaged app to make it the default. Development builds cannot register email links."
 msgstr "Установите упакованное приложение, чтобы сделать его приложением по умолчанию. В разрабатываемых сборках невозможно зарегистрировать ссылки электронной почты."
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Install the Tailscale app on this Mac and sign in, then come back here. OpenMail doesn't install anything itself."
+msgstr "Установите приложение Tailscale на этот Mac и войдите, затем вернитесь сюда. OpenMail сам ничего не устанавливает."
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Internal folder"
@@ -3123,6 +3171,10 @@ msgstr "Последний"
 msgid "Last 7 days"
 msgstr "Последние 7 дней"
 
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Last seen {since}"
+msgstr "Был в сети {since}"
+
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Last sync failed"
 msgstr "Последняя синхронизация не удалась"
@@ -3134,6 +3186,10 @@ msgstr "Последний"
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Layout"
 msgstr "Макет"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Learn more"
+msgstr "Подробнее"
 
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
 msgid "Leave blank unless your mail administrator provides a trusted authserv-id. The IMAP server name is not a trust setting."
@@ -3269,6 +3325,10 @@ msgstr "Местоположение изменено:"
 #: src/renderer/src/lib/errors.ts
 msgid "Lost the connection to the background process."
 msgstr "Потеряно соединение с фоновым процессом."
+
+#: src/renderer/src/features/remote/ConnectionNotice.tsx
+msgid "Lost the connection to your Mac. Reconnecting…"
+msgstr "Связь с Mac потеряна. Переподключение…"
 
 #: src/renderer/src/i18n/organization-labels.ts
 msgid "Low"
@@ -3990,6 +4050,10 @@ msgstr "Пока нет активности."
 msgid "No app can open this file"
 msgstr "Нет приложения, которое может открыть этот файл"
 
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "No browser is signed in."
+msgstr "Ни один браузер не вошёл."
+
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "No copy"
 msgstr "Не копировать"
@@ -4100,6 +4164,10 @@ msgstr "Нет непрочитанных писем"
 #: src/renderer/src/features/overview/Overview.tsx
 msgid "No unread mail in the inbox"
 msgstr "Нет непрочитанных писем во входящих"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Nobody can sign in. Add a tailnet login below."
+msgstr "Никто не может войти. Добавьте логин tailnet ниже."
 
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
@@ -4246,6 +4314,10 @@ msgstr "Открыть"
 msgid "Open {name}"
 msgstr "Открыть {name}"
 
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Open admin console"
+msgstr "Открыть консоль администратора"
+
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Open attachments from"
 msgstr "Открыть вложения из"
@@ -4301,6 +4373,14 @@ msgstr "Открыть пространство"
 #: src/renderer/src/features/settings/sections/AppleContactsSettings.tsx
 msgid "Open System Settings"
 msgstr "Открыть настройки системы"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Open Tailscale on this Mac and sign in."
+msgstr "Откройте Tailscale на этом Mac и войдите."
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Open this address on your phone or another computer"
+msgstr "Откройте этот адрес на телефоне или другом компьютере"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Open this invitation in your calendar to add it before responding"
@@ -4678,10 +4758,18 @@ msgstr "Профили группируют учётные записи. В на
 msgid "Promotions"
 msgstr "Промоакции"
 
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Publish OpenMail as a Tailscale Service, such as svc:openmail, with its own name instead of port 8443 on this Mac. Define the service in the Tailscale admin console and approve this Mac as its host first. Leave empty to use this Mac's name."
+msgstr "Опубликуйте OpenMail как Tailscale Service, например svc:openmail, с собственным именем вместо порта 8443 на этом Mac. Сначала опишите сервис в консоли администратора Tailscale и одобрите этот Mac как его хост. Оставьте пустым, чтобы использовать имя этого Mac."
+
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/ui/ProviderIcon.tsx
 msgid "QQ Mail"
 msgstr "QQ Mail"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "QR code for {url}"
+msgstr "QR-код для {url}"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Quick Look"
@@ -4711,6 +4799,10 @@ msgstr "Цитировать выделенный текст"
 msgctxt "incoming message action flag"
 msgid "Read"
 msgstr "Метка прочтения"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Read and send mail from your phone or another computer through your own tailnet. This Mac stays the host: mail, tokens and keys stay here, and nothing passes through OpenMail servers. OpenMail uses Tailscale Serve, which only devices on your tailnet can reach. It never uses Funnel, so the page is never on the public internet."
+msgstr "Читайте и отправляйте почту с телефона или другого компьютера через собственный tailnet. Этот Mac остаётся хостом: почта, токены и ключи остаются здесь, и ничего не проходит через серверы OpenMail. OpenMail использует Tailscale Serve, доступный только устройствам вашего tailnet. Funnel никогда не используется, поэтому страница никогда не попадает в публичный интернет."
 
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Read only"
@@ -4772,6 +4864,10 @@ msgstr "Повторяющаяся встреча"
 msgid "Redacted report"
 msgstr "Обезличенный отчёт"
 
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Refresh"
+msgstr "Обновить"
+
 #: src/renderer/src/features/settings/sections/AppleContactsSettings.tsx
 #: src/renderer/src/features/settings/sections/ContactSettings.tsx
 msgid "Refresh contacts"
@@ -4795,6 +4891,10 @@ msgstr "Похожее"
 msgid "Relative dates use the date of this message."
 msgstr "Относительные даты отсчитываются от даты этого сообщения."
 
+#: src/renderer/src/features/remote/ConnectionNotice.tsx
+msgid "Reload"
+msgstr "Перезагрузить"
+
 #: src/renderer/src/features/organize/SnoozeDialog.tsx
 msgid "Remind me"
 msgstr "Напомнить"
@@ -4802,6 +4902,18 @@ msgstr "Напомнить"
 #: src/renderer/src/features/organize/SnoozeDialog.tsx
 msgid "Reminder time"
 msgstr "Время напоминания"
+
+#: src/renderer/src/features/settings/Settings.tsx
+msgid "Remote access"
+msgstr "Удалённый доступ"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Remote access could not be changed."
+msgstr "Не удалось изменить удалённый доступ."
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Remote access needs MagicDNS and HTTPS Certificates turned on for your tailnet."
+msgstr "Для удалённого доступа в вашем tailnet должны быть включены MagicDNS и сертификаты HTTPS."
 
 #: src/renderer/src/features/reader/RemoteImagesPrompt.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
@@ -4817,6 +4929,7 @@ msgid "Remote writes are disabled in this read-only session"
 msgstr "Удалённые изменения отключены в этом сеансе только для чтения"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Remove"
 msgstr "Удалить"
@@ -4829,6 +4942,10 @@ msgstr "Удалить {0}"
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Remove {email}?"
 msgstr "Удалить {email}?"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Remove {login}"
+msgstr "Удалить {login}"
 
 #: src/renderer/src/features/downloads/Downloads.tsx
 msgid "Remove {name} from list"
@@ -5188,6 +5305,7 @@ msgstr "Суббота"
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
@@ -5699,6 +5817,19 @@ msgstr "Войдите в браузере в свою учётную запис
 msgid "Sign in with your personal Microsoft account (outlook.com or Hotmail) in the browser. openmail keeps the sign-in token in this computer's keychain."
 msgstr "Войдите в браузере в свою личную учётную запись Microsoft (outlook.com или Hotmail). openmail хранит токен входа в связке ключей этого компьютера."
 
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Sign out"
+msgstr "Выйти"
+
+#. placeholder {0}: session.login
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Sign out {0}"
+msgstr "Выйти: {0}"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Sign out ends a browser's session. To keep someone out, remove their login above."
+msgstr "Выход завершает сеанс браузера. Чтобы не пускать кого-то, удалите его логин выше."
+
 #: src/renderer/src/app/App.tsx
 msgid "Sign-in failed: {reason}"
 msgstr "Не удалось войти: {reason}."
@@ -5730,6 +5861,14 @@ msgstr "Подписи"
 #: src/renderer/src/features/settings/sections/UpdateSettings.tsx
 msgid "Signed builds use a GitHub access token to download private releases. The token is stored in your system keychain."
 msgstr "Подписанные сборки используют токен доступа GitHub для загрузки частных выпусков. Токен хранится в вашей системной связке ключей."
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Signed in as {login}. This Mac is {device}."
+msgstr "Вы вошли как {login}. Этот Mac — {device}."
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Signed-in browsers"
+msgstr "Браузеры со входом"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Simplify your search query."
@@ -5890,6 +6029,10 @@ msgstr "Помеченные сообщения"
 msgid "Start"
 msgstr "Начало"
 
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Starting…"
+msgstr "Запуск…"
+
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "STARTTLS (usually 587)"
 msgstr "СТАРТЛС (обычно 587)"
@@ -6025,6 +6168,30 @@ msgstr "Синхронизация…"
 msgid "System notification permission"
 msgstr "Разрешение на системное уведомление"
 
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Tailnet login"
+msgstr "Логин tailnet"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Tailscale"
+msgstr "Tailscale"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Tailscale isn't connected"
+msgstr "Tailscale не подключён"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Tailscale isn't installed"
+msgstr "Tailscale не установлен"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Tailscale Service name"
+msgstr "Имя Tailscale Service"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Tailscale tells OpenMail who is visiting. Only these tailnet logins get in. The list starts with this Mac's own login."
+msgstr "Tailscale сообщает OpenMail, кто заходит. Войти могут только эти логины tailnet. Список начинается с логина этого Mac."
+
 #: src/renderer/src/features/compose/components/ComposerAi.tsx
 msgid "Target language"
 msgstr "Язык перевода"
@@ -6147,6 +6314,10 @@ msgstr "операция провалилась."
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "The organizer differs from the message sender. Check the response recipient before replying."
 msgstr "Организатор отличается от отправителя сообщения. Прежде чем ответить, проверьте получателя ответа."
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "The other device needs the Tailscale app, signed in to the same tailnet. This Mac must stay on with OpenMail open."
+msgstr "На другом устройстве нужно приложение Tailscale со входом в тот же tailnet. Этот Mac должен оставаться включённым с открытым OpenMail."
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "The preview checked at most 201 server messages. Matching messages outside this sample may be missing."
@@ -6279,6 +6450,10 @@ msgstr "Это правило можно применить только к бу
 msgid "This rule deletes messages. Confirm only if the preview matches the messages you intend to delete."
 msgstr "Это правило удаляет сообщения. Подтверждайте только если предпросмотр соответствует сообщениям, которые вы хотите удалить."
 
+#: src/renderer/src/lib/errors.ts
+msgid "This setting is only available on the Mac."
+msgstr "Эта настройка доступна только на Mac."
+
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "This space has no accounts yet."
 msgstr "В этом пространстве пока нет учётных записей."
@@ -6363,6 +6538,10 @@ msgstr "Тон"
 #: src/renderer/src/app/use-native-menu-bridge.ts
 msgid "Too many attachments. Attach up to 256 files."
 msgstr "Слишком много вложений. Можно прикрепить не более 256 файлов."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Too many tailnet logins"
+msgstr "Слишком много логинов tailnet"
 
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 msgid "Toolbar actions"
@@ -6591,6 +6770,10 @@ msgstr "Обновление локальной базы данных…"
 msgid "Use {token} for a custom variable. You will be asked for its value when inserting the template."
 msgstr "Используйте {token} для пользовательской переменной. При вставке шаблона вам будет предложено указать его значение."
 
+#: src/renderer/src/lib/errors.ts
+msgid "Use a service name such as svc:openmail"
+msgstr "Введите имя сервиса, например svc:openmail"
+
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
 msgid "Use an http, https or mailto link"
 msgstr "Используйте ссылку http, https или mailto."
@@ -6711,6 +6894,10 @@ msgstr "После разрешения для учётной записи во�
 msgid "Who"
 msgstr "Кто"
 
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Who can sign in"
+msgstr "Кто может войти"
+
 #: src/renderer/src/app/App.tsx
 msgid "Whole message"
 msgstr "Все сообщение"
@@ -6792,6 +6979,10 @@ msgstr "Ваши изменения сохраняются на этом Mac. П
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "Your draft was kept. Check Sent before sending again."
 msgstr "Черновик сохранён. Проверьте папку «Отправленные», прежде чем отправлять снова."
+
+#: src/renderer/src/features/remote/ConnectionNotice.tsx
+msgid "Your Mac ended this session."
+msgstr "Ваш Mac завершил этот сеанс."
 
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 msgid "Your overlapping events"

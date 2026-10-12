@@ -23,6 +23,7 @@ import {
   Server,
   Settings as SettingsIcon,
   Signature,
+  Smartphone,
   Sparkles,
   SquarePen,
   Tags,
@@ -79,6 +80,8 @@ import { Select } from "../../ui/Select";
 
 import { OrganizationSettings } from "../organize";
 import { ServerSettings } from "./sections/ServerSettings";
+import { RemoteAccessSettings } from "./sections/RemoteAccessSettings";
+import { isDesktop } from "../../lib/platform";
 
 type Tab =
   | "profiles"
@@ -95,6 +98,7 @@ type Tab =
   | "reading"
   | "compose"
   | "ai"
+  | "remote"
   | "log";
 
 type TabIcon = ComponentType<{ className?: string }>;
@@ -121,11 +125,30 @@ const TABS: { id: Tab; label: MessageDescriptor; icon: TabIcon; tile: string; gr
   },
   { id: "shortcuts", label: msg`Shortcuts`, icon: Keyboard, tile: "bg-neutral-500" },
   { id: "ai", label: msg`AI Access`, icon: Sparkles, tile: "bg-violet-500", group: true },
+  { id: "remote", label: msg`Remote access`, icon: Smartphone, tile: "bg-emerald-600" },
   { id: "server", label: msg`Server`, icon: Server, tile: "bg-teal-600" },
   { id: "cache", label: msg`Local cache`, icon: HardDrive, tile: "bg-neutral-500" },
   { id: "labs", label: msg`Labs`, icon: FlaskConical, tile: "bg-purple-500", group: true },
   { id: "log", label: msg`Activity`, icon: History, tile: "bg-neutral-500" },
 ];
+
+/**
+ * Tabs a browser on the tailnet can use: mail settings only. Accounts, keys,
+ * notifications, caches, updates and remote access itself stay on the Mac.
+ */
+const WEB_TABS: ReadonlySet<Tab> = new Set([
+  "general",
+  "reading",
+  "compose",
+  "signatures",
+  "organize",
+  "server",
+  "interactions",
+  "shortcuts",
+  "labs",
+  "log",
+]);
+const visibleTabs = () => (isDesktop() ? TABS : TABS.filter((item) => WEB_TABS.has(item.id)));
 
 /** The scrolling content of a tab: its title, then the sections at a readable measure. */
 const panel = "min-h-0 flex-1 overflow-y-auto outline-none";
@@ -147,7 +170,9 @@ export function Settings({
   onAddAccount,
 }: Props) {
   const { t, i18n } = useLingui();
-  const [tab, setTab] = useState<Tab>(initialTab);
+  const [tab, setTab] = useState<Tab>(
+    isDesktop() || WEB_TABS.has(initialTab) ? initialTab : "general",
+  );
   const narrow = useLayoutMode() === "narrow";
   const pane = (id: Tab, children: ReactNode, className = "") => (
     <Tabs.Panel value={id} className={`${panel} ${className}`}>
@@ -170,7 +195,7 @@ export function Settings({
         orientation={narrow ? "horizontal" : "vertical"}
         value={tab}
         onValueChange={(value) => {
-          const next = TABS.find((item) => item.id === value);
+          const next = visibleTabs().find((item) => item.id === value);
           if (next) setTab(next.id);
         }}
         className="flex min-h-0 min-w-0 flex-1 max-sm:flex-col"
@@ -180,7 +205,7 @@ export function Settings({
             <Trans>Settings</Trans>
           </h2>
           <Tabs.List className="flex min-h-0 flex-1 flex-col overflow-y-auto px-2.5 pb-3 max-sm:flex-none max-sm:flex-row max-sm:gap-1 max-sm:overflow-x-auto max-sm:px-3 max-sm:pb-2">
-            {TABS.map((item) => {
+            {visibleTabs().map((item) => {
               const Icon = item.icon;
               return (
                 <Tabs.Tab
@@ -200,6 +225,7 @@ export function Settings({
             })}
           </Tabs.List>
         </div>
+        {isDesktop() && pane("remote", <RemoteAccessSettings />)}
         {pane(
           "accounts",
           <Accounts
@@ -219,7 +245,7 @@ export function Settings({
           "general",
           <>
             <General />
-            <UpdateSettings />
+            {isDesktop() && <UpdateSettings />}
           </>,
         )}
         {pane("labs", <LabsSettings />)}
@@ -229,7 +255,7 @@ export function Settings({
           "compose",
           <>
             <ComposeSettings />
-            <SpellcheckSettings />
+            {isDesktop() && <SpellcheckSettings />}
           </>,
         )}
         {pane(
@@ -507,7 +533,7 @@ function General() {
           }
         />
       </SettingsRow>
-      <DefaultMailClient />
+      {isDesktop() && <DefaultMailClient />}
     </SettingsGroup>
   );
 }
