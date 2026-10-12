@@ -288,6 +288,12 @@ it("buffers cold launch links, targets one main window, and keeps each window's 
           .events(first.webContents.id)
           .pipe(Stream.take(1), Stream.runCollect);
         expect([...link]).toEqual([{ _tag: "Navigate", href: allMail("gmail:me@gmail.com/one") }]);
+        // A message stored nowhere, with no account to open it on the web, says so.
+        receiveAppUrl(messageLink("imap:gone@example.com/one"));
+        const missing = yield* desktop
+          .events(first.webContents.id)
+          .pipe(Stream.take(1), Stream.runCollect);
+        expect([...missing]).toEqual([{ _tag: "LinkError", reason: "missing" }]);
         first.focus();
         yield* desktop.setSpace(first.webContents.id, "all");
         expect(observations.testState.badge).toHaveBeenLastCalledWith(1);

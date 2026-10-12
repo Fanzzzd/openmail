@@ -18,6 +18,8 @@ export const DesktopEvent = Schema.Union([
   }),
   Schema.TaggedStruct("ComposeFiles", { attachments: Schema.Array(OutgoingAttachment) }),
   Schema.TaggedStruct("FileError", { reason: DockFileReason }),
+  /** A link, notification or tray item whose message could not be shown. */
+  Schema.TaggedStruct("LinkError", { reason: Schema.Literals(["missing", "failed"]) }),
   Schema.TaggedStruct("UndoSend", {}),
   Schema.TaggedStruct("AttachFiles", {}),
   Schema.TaggedStruct("QuitCheck", {}),
@@ -66,7 +68,7 @@ export type DefaultClientStatus = typeof DefaultClientStatus.Type;
 /** Only navigation survives a missing renderer; send/quit commands describe the current moment. */
 export function shouldBufferDesktopEvent(event: DesktopEvent): boolean {
   return (
-    ["ComposeFiles", "ComposeMessage", "FileError"].includes(event._tag) ||
+    ["ComposeFiles", "ComposeMessage", "FileError", "LinkError"].includes(event._tag) ||
     event._tag === "Navigate" ||
     event._tag === "Compose" ||
     event._tag === "Search"

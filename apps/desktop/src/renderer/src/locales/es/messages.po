@@ -998,6 +998,10 @@ msgstr "No puedo encontrar esta plantilla."
 msgid "Can't open the draft: {reason}"
 msgstr "No se puede abrir el borrador: {reason}"
 
+#: src/renderer/src/app/App.tsx
+msgid "Can't open the message: {reason}"
+msgstr "No se puede abrir el mensaje: {reason}"
+
 #: src/renderer/src/lib/errors.ts
 msgid "Can't reach the mail server right now."
 msgstr "No se puede conectar con el servidor de correo en este momento."
@@ -2935,6 +2939,10 @@ msgstr "Cambios de invitación"
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Invitation status in this conversation"
 msgstr "Estado de la invitación en esta conversación"
+
+#: src/renderer/src/app/use-native-menu-bridge.ts
+msgid "It is no longer stored here and has no web link."
+msgstr "Ya no está guardado aquí y no tiene enlace web."
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -5743,6 +5751,7 @@ msgstr "Algunas condiciones de la regla no se pueden evaluar con el correo en ca
 msgid "Some server predicates were omitted to preserve matches; local filters still apply:"
 msgstr "Se omitieron algunos predicados del servidor para preservar las coincidencias; Los filtros locales aún se aplican:"
 
+#: src/renderer/src/app/use-native-menu-bridge.ts
 #: src/renderer/src/features/ai/TriageChip.tsx
 #: src/renderer/src/lib/errors.ts
 msgid "Something went wrong. Please try again."

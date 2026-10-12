@@ -1004,6 +1004,7 @@ const OP_DONE: Record<MailOp["kind"], (op: MailOp) => MessageDescriptor> = {
 function useAppMessages() {
   const { t, i18n } = useLingui();
   return {
+    cantOpenTheMessage: (reason: string) => t`Can't open the message: ${reason}`,
     opDone: (op: MailOp) => i18n._(OP_DONE[op.kind](op)),
     couldNotLoadTheNextMessage: t`Could not load the next message`,
     actionFailed: (reason: string) => t`Action failed: ${reason}`,

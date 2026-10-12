@@ -998,6 +998,10 @@ msgstr "Ich kann diese Vorlage nicht finden."
 msgid "Can't open the draft: {reason}"
 msgstr "Der Entwurf kann nicht geöffnet werden: {reason}"
 
+#: src/renderer/src/app/App.tsx
+msgid "Can't open the message: {reason}"
+msgstr "Die Nachricht kann nicht geöffnet werden: {reason}"
+
 #: src/renderer/src/lib/errors.ts
 msgid "Can't reach the mail server right now."
 msgstr "Der Mailserver ist derzeit nicht erreichbar."
@@ -2935,6 +2939,10 @@ msgstr "Einladungsänderungen"
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Invitation status in this conversation"
 msgstr "Einladungsstatus in dieser Konversation"
+
+#: src/renderer/src/app/use-native-menu-bridge.ts
+msgid "It is no longer stored here and has no web link."
+msgstr "Sie ist hier nicht mehr gespeichert und hat keinen Weblink."
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -5743,6 +5751,7 @@ msgstr "Einige Regelbedingungen lassen sich anhand zwischengespeicherter Nachric
 msgid "Some server predicates were omitted to preserve matches; local filters still apply:"
 msgstr "Einige Serverprädikate wurden weggelassen, um Übereinstimmungen beizubehalten. Es gelten weiterhin lokale Filter:"
 
+#: src/renderer/src/app/use-native-menu-bridge.ts
 #: src/renderer/src/features/ai/TriageChip.tsx
 #: src/renderer/src/lib/errors.ts
 msgid "Something went wrong. Please try again."

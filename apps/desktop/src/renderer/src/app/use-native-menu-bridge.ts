@@ -111,6 +111,12 @@ export function useNativeMenuBridge({
       case "FileError":
         say({ text: i18n._(DOCK_FILE_MESSAGES[event.reason]), tone: "error" });
         break;
+      case "LinkError":
+        say({
+          text: messages.cantOpenTheMessage(i18n._(LINK_ERROR_MESSAGES[event.reason])),
+          tone: "error",
+        });
+        break;
       case "ComposeMessage":
         startCompose(event.mode, event.asAttachment, event.id);
         break;
@@ -267,6 +273,14 @@ export function useNativeMenuBridge({
 
   return {};
 }
+
+const LINK_ERROR_MESSAGES: Record<
+  Extract<DesktopEvent, { _tag: "LinkError" }>["reason"],
+  MessageDescriptor
+> = {
+  missing: msg`It is no longer stored here and has no web link.`,
+  failed: msg`Something went wrong. Please try again.`,
+};
 
 const DOCK_FILE_MESSAGES: Record<DockFileReason, MessageDescriptor> = {
   tooMany: msg`Too many attachments. Attach up to 256 files.`,

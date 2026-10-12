@@ -22,15 +22,6 @@ export interface MailView {
   readonly label?: { readonly id: string; readonly accountId?: string };
 }
 
-/** The parts of the mail route that are not the view. */
-export interface MailState {
-  readonly q?: string;
-  readonly scope?: "all" | "folder";
-  readonly thread?: string;
-  readonly message?: string;
-  readonly dialog?: MailDialog;
-}
-
 const Value = Schema.String.check(Schema.isMinLength(1), Schema.isMaxLength(MAX_VALUE));
 /** A field that fails to decode is dropped, so a bad link still opens the view it names. */
 const lenient = <S extends Schema.Top>(schema: S) =>
@@ -48,6 +39,9 @@ export const MailSearch = Schema.Struct({
   dialog: lenient(Schema.Literals(MAIL_DIALOGS)),
 });
 export type MailSearch = typeof MailSearch.Type;
+
+/** The parts of the mail route that are not the view. */
+export type MailState = Omit<MailSearch, "account" | "label">;
 
 /** The thread window's search params. */
 export const ThreadSearch = Schema.Struct({
@@ -94,15 +88,12 @@ export function mailSearchOf(view: MailView, state: MailState = {}): MailSearch 
 
 export function mailHref(view: MailView, state: MailState = {}): string {
   const search = mailSearchOf(view, state);
-  return `/mail/${segment(view.space)}/${segment(view.mailbox)}${stringifySearch({
-    account: search.account,
-    label: search.label,
-    q: search.q,
-    scope: search.scope,
-    thread: search.thread,
-    message: search.message,
-    dialog: search.dialog,
-  })}`;
+  // Keys in MailSearch order, so each route has one spelling.
+  return `/mail/${segment(view.space)}/${segment(view.mailbox)}${stringifySearch(
+    Object.fromEntries(
+      Object.keys(MailSearch.fields).map((key) => [key, Reflect.get(search, key)]),
+    ),
+  )}`;
 }
 
 export const threadHref = (threadId: string, single = false) =>
@@ -110,19 +101,20 @@ export const threadHref = (threadId: string, single = false) =>
 
 export const composeHref = (draftId: string) => `/compose/${segment(draftId)}`;
 
-const isMailbox = Schema.is(MailboxView);
+export const isMailbox = Schema.is(MailboxView);
+
+/** `accountId/labelId` is a label or folder; a bare id is a Gmail/Outlook category. */
+function labelOf(raw: string | undefined): MailView["label"] {
+  if (raw === undefined) return undefined;
+  const slash = raw.indexOf("/");
+  if (slash === -1) return { id: raw };
+  if (slash === 0 || slash === raw.length - 1) return undefined;
+  return { id: raw.slice(slash + 1), accountId: raw.slice(0, slash) };
+}
 
 /** The view a mail route names. An unknown mailbox falls back to the inbox. */
 export function mailViewOf(space: string, mailbox: string, search: MailSearch): MailView {
-  const slash = search.label?.indexOf("/") ?? -1;
-  const label =
-    search.label === undefined
-      ? undefined
-      : slash > 0 && slash < search.label.length - 1
-        ? { id: search.label.slice(slash + 1), accountId: search.label.slice(0, slash) }
-        : slash === -1
-          ? { id: search.label }
-          : undefined;
+  const label = labelOf(search.label);
   return {
     space: space || DEFAULT_VIEW.space,
     mailbox: isMailbox(mailbox) ? mailbox : DEFAULT_VIEW.mailbox,
@@ -131,42 +123,39 @@ export function mailViewOf(space: string, mailbox: string, search: MailSearch): 
   };
 }
 
-export function mailStateOf(search: MailSearch): MailState {
-  return {
-    ...(search.q ? { q: search.q } : {}),
-    ...(search.scope ? { scope: search.scope } : {}),
-    ...(search.thread ? { thread: search.thread } : {}),
-    ...(search.message ? { message: search.message } : {}),
-    ...(search.dialog ? { dialog: search.dialog } : {}),
-  };
+/** The route's state without empty values. */
+export function mailStateOf({
+  account: _account,
+  label: _label,
+  ...search
+}: MailSearch): MailState {
+  const state = { ...search };
+  for (const key of Object.keys(state))
+    if (!Reflect.get(state, key)) Reflect.deleteProperty(state, key);
+  return state;
 }
 
 const decodeMailSearch = Schema.decodeUnknownSync(MailSearch);
 
 /**
- * The router's search validators. TanStack merges a route's validated search
- * over the raw params, so a dropped field is set to undefined here; otherwise
- * the raw invalid value would show through.
+ * A router search validator. TanStack merges a route's validated search over
+ * the raw params, so a dropped field is set to undefined here; otherwise the
+ * raw invalid value would show through.
  */
-export function validateMailSearch(raw: unknown): MailSearch {
-  return {
-    account: undefined,
-    label: undefined,
-    q: undefined,
-    scope: undefined,
-    thread: undefined,
-    message: undefined,
-    dialog: undefined,
-    ...Schema.decodeUnknownOption(MailSearch)(raw).pipe(Option.getOrElse(() => ({}))),
-  };
+function validator<S extends Schema.Decoder<object> & { readonly fields: Schema.Struct.Fields }>(
+  schema: S,
+) {
+  const decode = Schema.decodeUnknownOption(schema);
+  const empty = Schema.decodeUnknownSync(schema)({});
+  const dropped = Object.fromEntries(Object.keys(schema.fields).map((key) => [key, undefined]));
+  return (raw: unknown): S["Type"] => ({
+    ...dropped,
+    ...decode(raw).pipe(Option.getOrElse(() => empty)),
+  });
 }
 
-export function validateThreadSearch(raw: unknown): ThreadSearch {
-  return {
-    single: undefined,
-    ...Schema.decodeUnknownOption(ThreadSearch)(raw).pipe(Option.getOrElse(() => ({}))),
-  };
-}
+export const validateMailSearch = validator(MailSearch);
+export const validateThreadSearch = validator(ThreadSearch);
 
 const hasControl = (value: string) => {
   for (let i = 0; i < value.length; i++) {

@@ -201,6 +201,7 @@ export const DesktopLive = Layer.effect(
     const command = (name: "settings" | "help" | "compose" | "inbox") =>
       deliver({ _tag: "Command", command: name });
     const navigate = (href: string) => deliver({ _tag: "Navigate", href });
+    const linkError = (reason: "missing" | "failed") => deliver({ _tag: "LinkError", reason });
     /**
      * Opens a thread in the main window, in its account's All Mail, so any
      * folder finds it. A message no longer stored here opens on the web.
@@ -227,9 +228,13 @@ export const DesktopLive = Layer.effect(
             const prefs = yield* mailbox.prefs;
             const url = yield* mailbox.messageWebUrl(id);
             yield* Effect.promise(() => openExternal(url, prefs.cleanLinks !== false));
-          }),
+          }).pipe(Effect.catch(() => Effect.sync(() => linkError("missing")))),
         ),
-        Effect.catchCause((cause) => Effect.logWarning("could not open the linked thread", cause)),
+        Effect.catchCause((cause) =>
+          Effect.logWarning("could not open the linked thread", cause).pipe(
+            Effect.andThen(Effect.sync(() => linkError("failed"))),
+          ),
+        ),
       );
     const openThread = (id: string) => run(showThread(id));
     const edit = (action: "undo" | "selectAll") => {
@@ -257,7 +262,16 @@ export const DesktopLive = Layer.effect(
                 : link.id;
             if (link.single) openMessageWindow(id);
             else yield* showThread(id);
-          }).pipe(Effect.catch(() => Effect.void)),
+          }).pipe(
+            Effect.catch((error) =>
+              Effect.sync(() => linkError(error._tag === "NotFound" ? "missing" : "failed")),
+            ),
+            Effect.catchCause((cause) =>
+              Effect.logWarning("could not open the link", cause).pipe(
+                Effect.andThen(Effect.sync(() => linkError("failed"))),
+              ),
+            ),
+          ),
         );
     };
 

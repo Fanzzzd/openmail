@@ -27,14 +27,13 @@ import {
   commitSearchAtom,
   filtersAtom,
   openThreadAtom,
-  rememberedViewsAtom,
   searchAtom,
   searchScopeAtom,
   searchTextAtom,
   viewAtom,
 } from "../state/ui";
 import { scopeAccountIds, type SpaceId, type View } from "../lib/view";
-import { navigateAtom } from "../state/location";
+import { navigateAtom, rememberedViewsAtom } from "../state/location";
 import { labelPickerAtom } from "../features/organize/organize-state";
 import { parseAppHref } from "../../../shared/routes";
 
@@ -71,7 +70,7 @@ export function useMailSelection({
   const [selection, setSelection] = useState<Selection>(() => singleSelection(routeThread));
   const selectedId = selection.ids.size === 1 ? ([...selection.ids][0] ?? null) : null;
   const [readTarget, setReadTarget] = useState<string | null>(null);
-  const setSelectedId = (id: string | null) => setSelection(singleSelection(id));
+  const setSelectedId = (id: string | null) => choose(singleSelection(id));
   const [removalNavigation, setRemovalNavigation] = useState<{
     scopeKey: string;
     before: Selection;
@@ -128,6 +127,17 @@ export function useMailSelection({
     read?: boolean;
   } | null>(() => (routeThread ? { id: routeThread, scope: null } : null));
   const [syncedThread, setSyncedThread] = useState(routeThread);
+  /**
+   * Selects rows from an event. The open thread goes into the route in the
+   * same render, in place: moving through the list adds no history, and the
+   * history adapter writes the URL once the selection settles.
+   */
+  const choose = (next: Selection) => {
+    const thread = next.ids.size === 1 ? ([...next.ids][0] ?? null) : null;
+    setSelection(next);
+    setSyncedThread(thread);
+    setRouteThread(thread);
+  };
   if (routeThread !== syncedThread) {
     // Either this window's selection reached the route, or the route moved on its own, as on
     // Back; then the list follows it.
@@ -247,7 +257,7 @@ export function useMailSelection({
         target.focus && !state.rows.some((row) => row.id === target.focus)
           ? trimSelection(pending.fallback, new Set(state.rows.map((row) => row.id)))
           : target;
-      setSelection(next);
+      choose(next);
       setSelectionSource("keyboard");
       focusList(next.focus);
     },
@@ -283,7 +293,7 @@ export function useMailSelection({
   const applyActionSelection = (before: Selection, next: Selection, actionScope: string) => {
     const current = currentSelection.current;
     if (current.scopeKey !== actionScope || current.selection !== before) return;
-    setSelection(next);
+    choose(next);
     setSelectionSource("keyboard");
     focusList(next.focus);
   };
@@ -302,7 +312,7 @@ export function useMailSelection({
       !prefs.threadGrouping,
     );
     const expected = trimSelection(remapped, new Set(current.list.map((row) => row.id)));
-    setSelection(expected);
+    choose(expected);
     setRestoration(
       expected.ids.size === remapped.ids.size
         ? null
@@ -359,7 +369,8 @@ export function useMailSelection({
   };
 
   useEffect(() => {
-    // A thread opened here goes into the route, in place: moving through the list adds no history.
+    // Event handlers write the route themselves; this catches the selection that the list
+    // trims while rendering, such as a thread that disappeared.
     if (selectedId !== routeThread) setRouteThread(selectedId);
   }, [selectedId, routeThread, setRouteThread]);
 
@@ -372,7 +383,7 @@ export function useMailSelection({
       selection,
       list.map((row) => row.id),
     );
-    setSelection(next);
+    choose(next);
     setReadTarget(null);
     setSelectionSource("keyboard");
     focusList(preserveFocus ? (selection.focus ?? list[0]?.id ?? null) : next.focus);
@@ -385,7 +396,7 @@ export function useMailSelection({
       extend,
     );
     if (extend) {
-      setSelection(next);
+      choose(next);
       setReadTarget(null);
       setSelectionSource("keyboard");
     } else select(next.focus, "keyboard");
@@ -394,7 +405,7 @@ export function useMailSelection({
   };
   const archiveSentReply = (replyTo: string | undefined) => {
     if (selectedId !== replyTo) return;
-    setSelection(
+    choose(
       selectionAfterRemoval(
         selection,
         list.map((row) => row.id),
@@ -411,7 +422,7 @@ export function useMailSelection({
       id,
       modifiers,
     );
-    setSelection(next);
+    choose(next);
     if (modifiers.toggle && !next.ids.has(id)) focusList(next.focus);
     setSelectionSource("mouse");
     setLabelPicker(false);
@@ -431,6 +442,7 @@ export function useMailSelection({
     if (route?.kind !== "mail") return;
     const thread = route.state.thread ?? null;
     setSelection(singleSelection(thread));
+    setSyncedThread(thread);
     setSelectionSource("mouse");
     setReadTarget(null);
     setStartupTarget(thread ? { id: thread, scope: null, read: true } : null);

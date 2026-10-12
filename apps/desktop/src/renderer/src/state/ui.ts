@@ -9,9 +9,7 @@ import { Atom } from "effect/reactivity";
 import type { MailDialog, MailState } from "../../../shared/routes";
 import type { View } from "../lib/view";
 import { makeFolderFiltersAtom } from "./folder-filters";
-import { goMail, mailRouteAtom, sameView } from "./location";
-
-export { rememberedViewsAtom } from "./location";
+import { goMail, mailRouteAtom, outsideMovesAtom, sameView } from "./location";
 
 /** A new view keeps the search and dialog, and closes the open thread. */
 const keptForView = ({ q, scope, dialog }: MailState): MailState => ({
@@ -36,10 +34,13 @@ export const filtersAtom = makeFolderFiltersAtom(
   typeof localStorage === "undefined" ? undefined : localStorage,
 );
 
-/** Text typed since the last commit, and the committed search it started from. */
-const searchDraftAtom = Atom.make<{ text: string; base: string } | undefined>(undefined).pipe(
-  Atom.keepAlive,
-);
+/**
+ * Text typed since the last commit, the committed search it started from, and
+ * the route it was typed on. Back or Forward before the commit drops it.
+ */
+const searchDraftAtom = Atom.make<{ text: string; base: string; moves: number } | undefined>(
+  undefined,
+).pipe(Atom.keepAlive);
 const committedSearch = Atom.make((get) => get(mailRouteAtom).state.q ?? "");
 
 /**
@@ -50,9 +51,14 @@ export const searchTextAtom = Atom.writable(
   (get) => {
     const draft = get(searchDraftAtom);
     const q = get(committedSearch);
-    return draft?.base === q ? draft.text : q;
+    return draft?.base === q && draft.moves === get(outsideMovesAtom) ? draft.text : q;
   },
-  (ctx, text: string) => ctx.set(searchDraftAtom, { text, base: ctx.get(committedSearch) }),
+  (ctx, text: string) =>
+    ctx.set(searchDraftAtom, {
+      text,
+      base: ctx.get(committedSearch),
+      moves: ctx.get(outsideMovesAtom),
+    }),
 );
 
 export const searchAtom = Atom.make((get) => get(searchTextAtom).trim());
@@ -71,7 +77,7 @@ export const commitSearchAtom = Atom.writable(
       }),
       true,
     );
-    ctx.set(searchDraftAtom, { text, base: q });
+    ctx.set(searchDraftAtom, { text, base: q, moves: ctx.get(outsideMovesAtom) });
   },
 );
 

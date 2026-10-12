@@ -998,6 +998,10 @@ msgstr "Не могу найти этот шаблон."
 msgid "Can't open the draft: {reason}"
 msgstr "Не могу открыть черновик: {reason}"
 
+#: src/renderer/src/app/App.tsx
+msgid "Can't open the message: {reason}"
+msgstr "Не могу открыть сообщение: {reason}"
+
 #: src/renderer/src/lib/errors.ts
 msgid "Can't reach the mail server right now."
 msgstr "Сейчас не удаётся подключиться к почтовому серверу."
@@ -2935,6 +2939,10 @@ msgstr "Изменения приглашения"
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Invitation status in this conversation"
 msgstr "Статус приглашения в этом переписке"
+
+#: src/renderer/src/app/use-native-menu-bridge.ts
+msgid "It is no longer stored here and has no web link."
+msgstr "Оно больше не хранится здесь, и у него нет веб-ссылки."
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -5743,6 +5751,7 @@ msgstr "Некоторые условия правила нельзя прове
 msgid "Some server predicates were omitted to preserve matches; local filters still apply:"
 msgstr "Некоторые предикаты сервера были опущены для сохранения совпадений; локальные фильтры по-прежнему применяются:"
 
+#: src/renderer/src/app/use-native-menu-bridge.ts
 #: src/renderer/src/features/ai/TriageChip.tsx
 #: src/renderer/src/lib/errors.ts
 msgid "Something went wrong. Please try again."

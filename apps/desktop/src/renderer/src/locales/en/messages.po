@@ -1002,6 +1002,10 @@ msgstr "Can't find this template."
 msgid "Can't open the draft: {reason}"
 msgstr "Can't open the draft: {reason}"
 
+#: src/renderer/src/app/App.tsx
+msgid "Can't open the message: {reason}"
+msgstr "Can't open the message: {reason}"
+
 #: src/renderer/src/lib/errors.ts
 msgid "Can't reach the mail server right now."
 msgstr "Can't reach the mail server right now."
@@ -2939,6 +2943,10 @@ msgstr "Invitation changes"
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Invitation status in this conversation"
 msgstr "Invitation status in this conversation"
+
+#: src/renderer/src/app/use-native-menu-bridge.ts
+msgid "It is no longer stored here and has no web link."
+msgstr "It is no longer stored here and has no web link."
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -5747,6 +5755,7 @@ msgstr "Some rule conditions cannot be evaluated from cached mail"
 msgid "Some server predicates were omitted to preserve matches; local filters still apply:"
 msgstr "Some server predicates were omitted to preserve matches; local filters still apply:"
 
+#: src/renderer/src/app/use-native-menu-bridge.ts
 #: src/renderer/src/features/ai/TriageChip.tsx
 #: src/renderer/src/lib/errors.ts
 msgid "Something went wrong. Please try again."

@@ -998,6 +998,10 @@ msgstr "このテンプレートが見つかりません。"
 msgid "Can't open the draft: {reason}"
 msgstr "下書きを開けません: {reason}"
 
+#: src/renderer/src/app/App.tsx
+msgid "Can't open the message: {reason}"
+msgstr "メッセージを開けません: {reason}"
+
 #: src/renderer/src/lib/errors.ts
 msgid "Can't reach the mail server right now."
 msgstr "現在メールサーバーに接続できません。"
@@ -2935,6 +2939,10 @@ msgstr "招待状の変更"
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Invitation status in this conversation"
 msgstr "このスレッドの招待ステータス"
+
+#: src/renderer/src/app/use-native-menu-bridge.ts
+msgid "It is no longer stored here and has no web link."
+msgstr "ここには保存されておらず、Web リンクもありません。"
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -5743,6 +5751,7 @@ msgstr "一部のルール条件はキャッシュされたメールから判定
 msgid "Some server predicates were omitted to preserve matches; local filters still apply:"
 msgstr "一部のサーバー述語は、一致を保持するために省略されました。ローカル フィルターは引き続き適用されます。"
 
+#: src/renderer/src/app/use-native-menu-bridge.ts
 #: src/renderer/src/features/ai/TriageChip.tsx
 #: src/renderer/src/lib/errors.ts
 msgid "Something went wrong. Please try again."

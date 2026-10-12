@@ -322,9 +322,8 @@ export function createMainWindow(restored?: SavedWindow): BrowserWindow {
     minWidth: WINDOW_MIN.width,
     minHeight: WINDOW_MIN.height,
     restored,
-    ...(restored?.href && parseAppHref(restored.href)?.kind === "mail"
-      ? { href: restored.href }
-      : {}),
+    // window-state.ts keeps only mail routes for main windows.
+    ...(restored?.href ? { href: restored.href } : {}),
   });
   mainWindows.add(win);
   win.once("closed", () => mainWindows.delete(win));

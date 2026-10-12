@@ -22,6 +22,7 @@ function setup(href = "/mail/all/inbox") {
   const calls: [string, boolean][] = [];
   const history: AppHistory = {
     navigate: (to, replace) => calls.push([to, replace]),
+    flush: vi.fn(),
     back: vi.fn(),
     forward: vi.fn(),
   };

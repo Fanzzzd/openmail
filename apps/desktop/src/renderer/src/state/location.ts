@@ -7,6 +7,7 @@
  */
 import { Atom } from "effect/reactivity";
 import {
+  appHref,
   type AppRoute,
   DEFAULT_VIEW,
   mailHref,
@@ -21,17 +22,25 @@ export interface AppLocation {
 }
 
 export interface AppHistory {
+  /** A replace may wait until writes settle; a push writes at once. */
   navigate(href: string, replace: boolean): void;
+  /** Writes a waiting replace now. */
+  flush(): void;
   back(): void;
   forward(): void;
 }
+
+/** The route part of a history location. */
+export const hrefOf = (location: { pathname: string; search: string }) =>
+  `${location.pathname}${location.search}`;
 
 const DEFAULT_HREF = mailHref(DEFAULT_VIEW);
 
 /** A location for an href; anything that is not a route reads as the default view. */
 export function locationOf(href: string): AppLocation {
   const route = parseAppHref(href);
-  return route ? { href, route } : { href: DEFAULT_HREF, route: defaultMail };
+  // One spelling per route, so the router's echo of a write compares equal.
+  return route ? { href: appHref(route), route } : { href: DEFAULT_HREF, route: defaultMail };
 }
 
 type MailRoute = Extract<AppRoute, { kind: "mail" }>;
@@ -40,7 +49,7 @@ const defaultMail: MailRoute = { kind: "mail", view: DEFAULT_VIEW, state: {} };
 const ignore = () => {
   /* No router: the atoms alone hold the location. */
 };
-const detached: AppHistory = { navigate: ignore, back: ignore, forward: ignore };
+const detached: AppHistory = { navigate: ignore, flush: ignore, back: ignore, forward: ignore };
 
 export const locationAtom = Atom.make<AppLocation>(locationOf(DEFAULT_HREF)).pipe(Atom.keepAlive);
 
@@ -74,7 +83,10 @@ function settle(ctx: Ctx, location: AppLocation) {
  * a second write in the same tick builds on the first.
  */
 export function go(ctx: Ctx, href: string, replace: boolean) {
-  if (settle(ctx, locationOf(href))) ctx.get(historyAtom).navigate(href, replace);
+  const history = ctx.get(historyAtom);
+  // A new entry first saves the waiting state of the one it leaves, so Back finds it.
+  if (!replace) history.flush();
+  if (settle(ctx, locationOf(href))) history.navigate(href, replace);
 }
 
 /** Moves the window to an href, as a new history entry. */
@@ -83,11 +95,15 @@ export const navigateAtom = Atom.writable(
   (ctx, href: string) => go(ctx, href, false),
 );
 
+/** Counts route changes that this window's atoms did not make: Back, Forward and redirects. */
+export const outsideMovesAtom = Atom.make(0).pipe(Atom.keepAlive);
+
 /** The bridge's write: the router already moved to `href`. */
 export const syncLocationAtom = Atom.writable(
   (get) => get(locationAtom),
   (ctx, href: string) => {
-    settle(ctx, locationOf(href));
+    // The window's own writes reach here with the href the atoms already hold.
+    if (settle(ctx, locationOf(href))) ctx.set(outsideMovesAtom, ctx.get(outsideMovesAtom) + 1);
   },
 );
 

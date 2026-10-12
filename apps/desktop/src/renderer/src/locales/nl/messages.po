@@ -998,6 +998,10 @@ msgstr "Kan dit sjabloon niet vinden."
 msgid "Can't open the draft: {reason}"
 msgstr "Kan het concept niet openen: {reason}"
 
+#: src/renderer/src/app/App.tsx
+msgid "Can't open the message: {reason}"
+msgstr "Kan het bericht niet openen: {reason}"
+
 #: src/renderer/src/lib/errors.ts
 msgid "Can't reach the mail server right now."
 msgstr "De mailserver is momenteel niet bereikbaar."
@@ -2935,6 +2939,10 @@ msgstr "Wijzigingen in de uitnodiging"
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Invitation status in this conversation"
 msgstr "Uitnodigingsstatus in dit gesprek"
+
+#: src/renderer/src/app/use-native-menu-bridge.ts
+msgid "It is no longer stored here and has no web link."
+msgstr "Het is hier niet meer opgeslagen en heeft geen weblink."
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -5743,6 +5751,7 @@ msgstr "Sommige regelvoorwaarden kunnen niet worden beoordeeld met e-mail uit de
 msgid "Some server predicates were omitted to preserve matches; local filters still apply:"
 msgstr "Sommige serverpredikaten zijn weggelaten om overeenkomsten te behouden; lokale filters zijn nog steeds van toepassing:"
 
+#: src/renderer/src/app/use-native-menu-bridge.ts
 #: src/renderer/src/features/ai/TriageChip.tsx
 #: src/renderer/src/lib/errors.ts
 msgid "Something went wrong. Please try again."

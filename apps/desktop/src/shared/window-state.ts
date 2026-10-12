@@ -1,7 +1,11 @@
 import { Schema } from "effect";
 import { MailboxView } from "@openmail/core/schema";
 
-/** The main window's view and open message before routes; read from old window-state.json. */
+/**
+ * The main window's view and open message before routes; read from old
+ * window-state.json. TODO(after the release that ships routes): remove, with
+ * `SavedWindow.selection` and the migration in main/windows/window-state.ts.
+ */
 export const WindowSelection = Schema.Struct({
   space: Schema.String,
   mailbox: MailboxView,

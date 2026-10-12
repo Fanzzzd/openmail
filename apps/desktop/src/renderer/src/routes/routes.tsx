@@ -10,12 +10,15 @@ import {
   Outlet,
   redirect,
 } from "@tanstack/react-router";
-import { Schema } from "effect";
-import { mailHref, validateMailSearch, validateThreadSearch } from "../../../shared/routes";
+import {
+  isMailbox,
+  mailHref,
+  validateMailSearch,
+  validateThreadSearch,
+} from "../../../shared/routes";
 import { App } from "../app/App";
 import { LocationBridge } from "../app/location-bridge";
 import { ThreadWindow } from "../app/ThreadWindow";
-import { MailboxView } from "@openmail/core/schema";
 
 export interface RouterContext {
   /** Where `/` lands: the remembered view, or All inboxes. */
@@ -36,8 +39,6 @@ const indexRoute = createRoute({
   },
 });
 
-const isMailbox = Schema.is(MailboxView);
-
 export const mailRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "mail/$space/$mailbox",
@@ -47,7 +48,7 @@ export const mailRoute = createRoute({
       // oxlint-disable-next-line typescript/only-throw-error -- TanStack redirects are thrown objects.
       throw redirect({ href: mailHref({ space: params.space, mailbox: "inbox" }), replace: true });
   },
-  component: MailScreen,
+  component: App,
 });
 
 export const threadRoute = createRoute({
@@ -72,10 +73,6 @@ function Root() {
       <Outlet />
     </>
   );
-}
-
-function MailScreen() {
-  return <App />;
 }
 
 function ThreadScreen() {

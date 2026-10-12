@@ -7,11 +7,10 @@ import { LocaleProvider } from "./i18n/LocaleProvider";
 import { TipProvider } from "./ui/Tip";
 import { ConfirmHost } from "./ui/Confirm";
 import { WindowUi } from "./app/WindowUi";
-import { historyFor, initialLocation } from "./app/location-bridge";
 import { historyAtom, locationAtom } from "./state/location";
 import { AppRouterProvider } from "./routes/provider";
 import { createAppHashHistory } from "./routes/hash-history";
-import { createAppRouter } from "./routes/router";
+import { createAppRouter, historyFor, initialLocation } from "./routes/router";
 import "./styles.css";
 
 const router = createAppRouter(createAppHashHistory());

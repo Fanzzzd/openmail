@@ -998,6 +998,10 @@ msgstr "Tuto šablonu nelze najít."
 msgid "Can't open the draft: {reason}"
 msgstr "Koncept nelze otevřít: {reason}"
 
+#: src/renderer/src/app/App.tsx
+msgid "Can't open the message: {reason}"
+msgstr "Zprávu nelze otevřít: {reason}"
+
 #: src/renderer/src/lib/errors.ts
 msgid "Can't reach the mail server right now."
 msgstr "K poštovnímu serveru se nyní nelze připojit."
@@ -2935,6 +2939,10 @@ msgstr "Změny pozvánky"
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Invitation status in this conversation"
 msgstr "Stav pozvánky v této konverzaci"
+
+#: src/renderer/src/app/use-native-menu-bridge.ts
+msgid "It is no longer stored here and has no web link."
+msgstr "Už tu není uložená a nemá webový odkaz."
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -5743,6 +5751,7 @@ msgstr "Některé podmínky pravidla nelze vyhodnotit z pošty v mezipaměti"
 msgid "Some server predicates were omitted to preserve matches; local filters still apply:"
 msgstr "Některé serverové predikáty byly vynechány, aby se zachovaly shody; místní filtry stále platí:"
 
+#: src/renderer/src/app/use-native-menu-bridge.ts
 #: src/renderer/src/features/ai/TriageChip.tsx
 #: src/renderer/src/lib/errors.ts
 msgid "Something went wrong. Please try again."

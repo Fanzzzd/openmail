@@ -155,6 +155,6 @@ oxlint 的 `no-restricted-imports` 执行上表。`tests/layers.test.ts` 从两�
 | `/thread/$threadId`     | 会话或单封窗口 `ThreadWindow` | `single=1` 只显示这一封                                                               |
 | `/compose/$draftId`     | 独立撰写窗口                  |                                                                                       |
 
-`shared/routes.ts` 构造和解析 href，不导入路由库，main 与 renderer 共用。无效 search 参数退回默认值；未知文件夹跳到该空间的收件箱。main 用它生成窗口 URL（`index.html?systemLanguages=…#/thread/x?single=1`），把主窗口路由存进 `windows.json` 的 `href`，并把链接、通知、托盘和 Dock 菜单转成 `Navigate` 事件。renderer 只接受邮件路由。`app/location-bridge.tsx` 把每次 history 变化同步到 `state/location.ts` 的 `locationAtom`，视图、搜索、打开的会话和对话框都从它派生，写入时调用 router。换视图新增历史记录；选会话、提交搜索和开关对话框替换当前记录。多选、标签选择器、稍后提醒等临时状态留在各功能的 atoms 里。
+`shared/routes.ts` 构造和解析 href，不导入路由库，main 与 renderer 共用。无效 search 参数退回默认值；未知文件夹跳到该空间的收件箱。main 用它生成窗口 URL（`index.html?systemLanguages=…#/thread/x?single=1`），把主窗口路由存进 `windows.json` 的 `href`，并把链接、通知、托盘和 Dock 菜单转成 `Navigate` 事件。renderer 只接受邮件路由。`app/location-bridge.tsx` 把每次 history 变化同步到 `state/location.ts` 的 `locationAtom`，视图、搜索、打开的会话和对话框都从它派生，写入时调用 router。换视图新增历史记录，立即写入；选会话、提交搜索和开关对话框替换当前记录，`routes/router.ts` 的 `historyFor` 把连续的替换合并，停 300ms 后写一次 URL。Chromium 每 10 秒只接受约 200 次 history 写入，按住方向键不合并会超限。打不开的链接由 main 发 `LinkError`，renderer 显示提示。多选、标签选择器、稍后提醒等临时状态留在各功能的 atoms 里。
 
 `src/renderer/src/e2e/harness.ts` 在 jsdom 中渲染真实 App，经过 preload 同款 RPC 和共用处理器连接真实 Mailbox 与临时 SQLite。服务商使用 fake，桌面窗口、剪贴板和原生服务使用支架。它验证界面到数据库／provider 的邮件流程；Electron、真实授权和签名验收另列在[路线图](roadmap.md)。测试入口及故障注入只在[测试](testing.md)维护。

@@ -114,7 +114,6 @@ vi.mock("../state/queries", () => ({
 vi.mock("../state/threads", () => ({ threadListAtom: "threads", listQueryAtom: "query" }));
 vi.mock("../state/ui", async () => ({
   viewAtom: "view",
-  rememberedViewsAtom: "remembered",
   searchTextAtom: "text",
   searchScopeAtom: "scope",
   searchAtom: "search",
@@ -123,6 +122,10 @@ vi.mock("../state/ui", async () => ({
   openThreadAtom: "openThread",
   openMessageAtom: "openMessage",
   filtersAtom: "filters",
+}));
+vi.mock("../state/location", async (original) => ({
+  ...(await original<typeof import("../state/location")>()),
+  rememberedViewsAtom: "remembered",
 }));
 vi.mock("../state/events", () => ({ syncStateAtom: "sync", syncProgressAtom: "progress" }));
 vi.mock("../state/mail", async () => {
@@ -812,6 +815,7 @@ it("label changes keep selection, bulk Trash requires captured confirmation, and
 });
 
 const messages = {
+  cantOpenTheMessage: (reason: string) => `Can't open the message: ${reason}`,
   opDone: (op: MailOp) =>
     op.kind === "label" ? (op.value ? "Label added" : "Label removed") : "Done",
   couldNotLoadTheNextMessage: `Could not load the next message`,

@@ -1,5 +1,6 @@
 import { act, fireEvent, screen, within } from "@testing-library/react/pure";
-import { afterEach, expect, it } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
+import { SETTLE_MS } from "../routes/router";
 import { eventually, flow, key, row } from "./harness";
 
 let current: Awaited<ReturnType<typeof flow>> | undefined;
@@ -8,6 +9,10 @@ afterEach(async () => {
   current = undefined;
 });
 
+const wait = (ms: number) =>
+  new Promise<void>((resolve) => {
+    setTimeout(resolve, ms);
+  });
 const title = () => screen.getByRole("heading", { level: 1 }).textContent;
 const mailboxes = () => screen.getAllByRole("navigation", { name: "Mailboxes" })[0]!;
 
@@ -85,7 +90,7 @@ it("opens the dialog a route names, and closing it leaves the route in place", a
   const length = h.router.history.length;
   fireEvent.keyDown(settings, { key: "Escape" });
   await eventually(() => expect(screen.queryByRole("dialog", { name: "Settings" })).toBeNull());
-  expect(h.href()).toBe("/mail/all/sent");
+  await eventually(() => expect(h.href()).toBe("/mail/all/sent"));
   expect(h.router.history.length).toBe(length);
   await h.event({ _tag: "Command", command: "help" });
   await eventually(() => expect(h.href()).toBe("/mail/all/sent?dialog=help"));
@@ -131,4 +136,47 @@ it("⌘[ and ⌘] go Back and Forward between views", async () => {
   field.focus();
   key("[", { metaKey: true }, field);
   expect(title()).toBe("Starred");
+});
+
+it("writes the URL once after rapid selection moves settle", async () => {
+  const h = (current = await flow({ route: "/mail/all/inbox" }));
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  row(h.id("one")).focus();
+  const push = vi.spyOn(h.router.history, "push");
+  const replace = vi.spyOn(h.router.history, "replace");
+  for (let i = 0; i < 300; i++) act(() => key(i % 2 ? "ArrowUp" : "ArrowDown"));
+  await act(() => wait(SETTLE_MS + 50));
+  await eventually(() => expect(h.href()).toContain("thread="));
+  expect(push).not.toHaveBeenCalled();
+  expect(replace.mock.calls.length).toBeLessThanOrEqual(3);
+  // A folder switch still writes at once and keeps its Back entry.
+  fireEvent.click(within(mailboxes()).getByRole("button", { name: "Sent" }));
+  expect(push).toHaveBeenCalledTimes(1);
+  act(() => h.router.history.back());
+  await eventually(() => expect(title()).toBe("Inbox"));
+});
+
+it("drops a search typed but not committed when Back leaves the route", async () => {
+  const h = (current = await flow({ route: "/mail/all/starred" }));
+  await eventually(() => expect(title()).toBe("Starred"));
+  fireEvent.click(within(mailboxes()).getByRole("button", { name: /^Inbox/ }));
+  await eventually(() => expect(title()).toBe("Inbox"));
+  const field = await screen.findByLabelText("Search mail");
+  fireEvent.change(field, { target: { value: "Original" } });
+  act(() => h.router.history.back());
+  await eventually(() => expect(title()).toBe("Starred"));
+  expect(field).toHaveProperty("value", "");
+  await act(() => wait(600));
+  expect(h.href()).toBe("/mail/all/starred");
+});
+
+it("says when a link's message can't be opened", async () => {
+  const h = (current = await flow());
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  await h.event({ _tag: "LinkError", reason: "missing" });
+  await eventually(() =>
+    expect(document.body.textContent).toContain(
+      "Can't open the message: It is no longer stored here and has no web link.",
+    ),
+  );
 });

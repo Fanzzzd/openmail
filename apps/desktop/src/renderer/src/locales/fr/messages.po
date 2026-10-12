@@ -998,6 +998,10 @@ msgstr "Je ne trouve pas ce modèle."
 msgid "Can't open the draft: {reason}"
 msgstr "Impossible d’ouvrir le brouillon : {reason}"
 
+#: src/renderer/src/app/App.tsx
+msgid "Can't open the message: {reason}"
+msgstr "Impossible d’ouvrir le message : {reason}"
+
 #: src/renderer/src/lib/errors.ts
 msgid "Can't reach the mail server right now."
 msgstr "Le serveur de messagerie est momentanément inaccessible."
@@ -2935,6 +2939,10 @@ msgstr "Modifications des invitations"
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Invitation status in this conversation"
 msgstr "Statut de l’invitation dans cette conversation"
+
+#: src/renderer/src/app/use-native-menu-bridge.ts
+msgid "It is no longer stored here and has no web link."
+msgstr "Il n’est plus stocké ici et n’a pas de lien web."
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -5743,6 +5751,7 @@ msgstr "Certaines conditions de la règle ne peuvent pas être évaluées à par
 msgid "Some server predicates were omitted to preserve matches; local filters still apply:"
 msgstr "Certains prédicats de serveur ont été omis pour préserver les correspondances ; les filtres locaux s’appliquent toujours :"
 
+#: src/renderer/src/app/use-native-menu-bridge.ts
 #: src/renderer/src/features/ai/TriageChip.tsx
 #: src/renderer/src/lib/errors.ts
 msgid "Something went wrong. Please try again."

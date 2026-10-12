@@ -52,6 +52,7 @@ it("send and quit commands are dropped when the renderer is missing, while navig
   expect(shouldBufferDesktopEvent({ _tag: "Edit", action: "undo" })).toBe(false);
   expect(shouldBufferDesktopEvent({ _tag: "Command", command: "compose" })).toBe(false);
   expect(shouldBufferDesktopEvent({ _tag: "Navigate", href: "/mail/all/inbox" })).toBe(true);
+  expect(shouldBufferDesktopEvent({ _tag: "LinkError", reason: "missing" })).toBe(true);
   expect(
     shouldBufferDesktopEvent({
       _tag: "Compose",

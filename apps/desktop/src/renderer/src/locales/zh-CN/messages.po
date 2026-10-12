@@ -1008,6 +1008,10 @@ msgstr "找不到这个模板。"
 msgid "Can't open the draft: {reason}"
 msgstr "打不开草稿：{reason}"
 
+#: src/renderer/src/app/App.tsx
+msgid "Can't open the message: {reason}"
+msgstr "无法打开邮件：{reason}"
+
 #: src/renderer/src/lib/errors.ts
 msgid "Can't reach the mail server right now."
 msgstr "暂时无法连接邮件服务器。"
@@ -2945,6 +2949,10 @@ msgstr "邀请变更"
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Invitation status in this conversation"
 msgstr "会话中的邀请状态"
+
+#: src/renderer/src/app/use-native-menu-bridge.ts
+msgid "It is no longer stored here and has no web link."
+msgstr "它已不在本地保存，也没有网页链接。"
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -5753,6 +5761,7 @@ msgstr "部分规则条件无法通过缓存邮件判断"
 msgid "Some server predicates were omitted to preserve matches; local filters still apply:"
 msgstr "为保留匹配，服务器搜索省略了部分条件；本地仍会筛选："
 
+#: src/renderer/src/app/use-native-menu-bridge.ts
 #: src/renderer/src/features/ai/TriageChip.tsx
 #: src/renderer/src/lib/errors.ts
 msgid "Something went wrong. Please try again."

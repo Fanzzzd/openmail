@@ -59,10 +59,15 @@ export function windowStateFile(file: string) {
   };
 }
 
-/** Moves an old `selection` into `href` and drops hrefs that are not app routes. */
+/**
+ * Drops hrefs that are not app routes, and main-window hrefs that are not mail
+ * routes, so restore can load the href as is. Also moves an old `selection`
+ * into `href`.
+ */
 function withHref({ selection, href, ...state }: SavedWindow): SavedWindow {
   const route = href ? parseAppHref(href) : null;
-  if (route) return { ...state, href };
+  if (route && (state.kind !== "main" || route.kind === "mail")) return { ...state, href };
+  // TODO(after the release that ships routes): drop the `selection` migration and WindowSelection.
   if (!selection) return state;
   const { messageId, ...view } = selection;
   return { ...state, href: mailHref(view, messageId ? { thread: messageId } : {}) };
