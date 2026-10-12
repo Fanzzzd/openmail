@@ -118,7 +118,7 @@ export function Dialog({
           aria-label={label}
           initialFocus={initialFocus}
           finalFocus={finalFocus}
-          className={`fixed top-1/2 left-1/2 z-50 -translate-x-1/2 -translate-y-1/2 ${sheet} ${popupMotion} ${className} ${centredSheet(maxHeight)} ${narrowSheet()}`}
+          className={`fixed top-1/2 left-1/2 z-50 -translate-x-1/2 -translate-y-1/2 ${sheet} ${popupMotion} ${className} ${className.includes("overflow-") ? "" : "overflow-y-auto"} ${centredSheet(maxHeight)} ${narrowSheet()}`}
         >
           <SheetDragStrip />
           {children}

@@ -351,7 +351,10 @@ export function sanitizeReaderCss(
         const unit = ident.decode(node.unit);
         const px = String(Math.round(Number(node.value) * viewportHeight) / 100);
         const extreme = VIEWPORT_EXTREME_UNIT.exec(unit);
-        if (VIEWPORT_HEIGHT_UNIT.test(unit)) {
+        // An at-rule prelude (a media feature or range operand) has no list
+        // item to swap for a min()/max() call, so vmin/vmax there fall back
+        // to the height in px.
+        if (VIEWPORT_HEIGHT_UNIT.test(unit) || (extreme && this.atrulePrelude)) {
           node.value = px;
           node.unit = "px";
         } else if (extreme)

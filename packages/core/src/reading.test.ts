@@ -310,6 +310,16 @@ import { prepareMessageHtml } from "./reader-html.js";
       "margin:calc(min(2svw,16px) + 1px) max(3dvw,24px)",
     );
     expect(sanitizeReaderCss("width:50vmin", false, true)).toBe("width:50vmin");
+    // A media feature has no slot for min()/max(); the rest of the sheet must survive.
+    const media = sanitizeReaderCss(
+      "@media (min-width:50vmin){a{color:red}} @media (width > 50vmax){i{color:green}} b{color:blue}",
+      false,
+      false,
+      800,
+    );
+    expect(media).toContain("b{color:blue}");
+    expect(media).toContain("a{color:red}");
+    expect(media).not.toMatch(/vm(?:in|ax)/i);
   });
 
   it("the reader evaluates height media queries at its viewport height; width ones stay live", () => {

@@ -76,6 +76,20 @@ it("keeps a centred sheet's top edge below the traffic lights on the Mac", () =>
   // Centred, so a sheet at most the window minus twice the lights' row starts below it.
   const classes = screen.getByRole("dialog").className.split(" ");
   expect(classes).toContain("sm:max-h-[calc(100dvh-2*var(--titlebar-clearance,12px))]");
+  // Content taller than the cap scrolls, so a confirm button can't fall below a short window.
+  expect(classes).toContain("overflow-y-auto");
+  cleanup();
+  render(
+    localized(
+      h(Dialog, {
+        "aria-label": "Own scroll",
+        onClose: () => null,
+        className: "overflow-hidden",
+        children: "",
+      }),
+    ),
+  );
+  expect(screen.getByRole("dialog").className.split(" ")).not.toContain("overflow-y-auto");
   cleanup();
   // A lower cap goes through Dialog's maxHeight, still bounded by the window.
   render(

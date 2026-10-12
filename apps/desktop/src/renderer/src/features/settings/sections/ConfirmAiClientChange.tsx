@@ -1,7 +1,7 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Effect } from "effect";
 import { Reactivity } from "effect/reactivity";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 import {
   type AiClientChange,
@@ -47,15 +47,22 @@ export function ConfirmChange({
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const proposalsId = useId();
+  // Only the latest preview may land: the diff must match the checkbox.
+  const request = useRef(0);
   const load = (next: AiClientChange) => {
+    const id = ++request.current;
     setCurrent(next);
     setPreview(null);
     setError(null);
     run(
       withMail((call) => call("PreviewAiClientChange", { change: next })).pipe(
         Effect.matchCause({
-          onSuccess: setPreview,
-          onFailure: (cause) => setError(failureText(i18n, cause)),
+          onSuccess: (value) => {
+            if (id === request.current) setPreview(value);
+          },
+          onFailure: (cause) => {
+            if (id === request.current) setError(failureText(i18n, cause));
+          },
         }),
       ),
     );
