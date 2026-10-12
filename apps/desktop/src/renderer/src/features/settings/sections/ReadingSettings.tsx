@@ -17,7 +17,8 @@ import {
   setPrefsAtom,
 } from "../../../state/mutations";
 import { imageSendersAtom, prefsAtom } from "../../../state/queries";
-import { useShortcutText } from "../../../i18n/use-shortcut-text";
+import { shortcutText } from "../../../../../shared/shortcuts";
+import { useShortcutSet } from "../../../i18n/use-shortcut-text";
 import { Checkbox } from "../../../ui/Checkbox";
 import { SettingsCheckRow, SettingsGroup, SettingsRow } from "../../../ui/SettingsRows";
 import { buttonLink, buttonSecondary, formInput, settingsHint } from "../../../ui/styles";
@@ -26,7 +27,8 @@ import { SegmentedControl } from "../../../ui/SegmentedControl";
 /** Settings > Reading: when mail counts as read, conversations, message look, remote images. */
 export function ReadingSettings() {
   const { t } = useLingui();
-  const readShortcut = useShortcutText()("read");
+  // Part of a sentence, not a hint beside a control, so the web build keeps it too.
+  const readShortcut = shortcutText(useShortcutSet(), "read");
   const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => null);
   const setPrefsMutation = useAtomSet(setPrefsAtom);
   const setPrefs = (patch: PrefsPatch) =>

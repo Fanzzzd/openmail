@@ -5,8 +5,8 @@ import { Effect, Fiber, Stream } from "effect";
 import { AsyncResult } from "effect/reactivity";
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import type { Proposal, Account } from "../../../../shared/api";
-import { matchesShortcut, platformShortcutText } from "../../../../shared/shortcuts";
-import { useShortcutSet } from "../../i18n/use-shortcut-text";
+import { matchesShortcut } from "../../../../shared/shortcuts";
+import { platformShortcutHint, useShortcutSet } from "../../i18n/use-shortcut-text";
 import { MailClient } from "../../state/rpc";
 import { Keys } from "../../state/keys";
 import { openMessageWindow, useRunMail, withMail, type MailEnv } from "../../state/mail";
@@ -203,6 +203,7 @@ export function Assistant({
   );
   const ids = selected.filter((id) => eligible.some((a) => a.id === id));
   const shortcutSet = useShortcutSet();
+  const hint = platformShortcutHint(shortcutSet, "assistant");
   const toggleKey = useEffectEvent((event: KeyboardEvent) => {
     if (!matchesShortcut(shortcutSet, "assistant", event)) return;
     event.preventDefault();
@@ -228,9 +229,9 @@ export function Assistant({
       >
         <h2 className="flex items-baseline gap-2 text-headline font-semibold">
           <Trans>Mail assistant</Trans>
-          <kbd className="font-sans text-footnote font-normal text-a11y-muted">
-            {platformShortcutText(shortcutSet, "assistant", navigator.platform)}
-          </kbd>
+          {hint && (
+            <kbd className="font-sans text-footnote font-normal text-a11y-muted">{hint}</kbd>
+          )}
         </h2>
         <p className="text-footnote text-a11y-muted">
           <Trans>

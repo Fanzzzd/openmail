@@ -1,5 +1,6 @@
 import { execFile } from "node:child_process";
 import { access, constants } from "node:fs/promises";
+import { homedir } from "node:os";
 import { delimiter, isAbsolute, join } from "node:path";
 import {
   REMOTE_HTTPS_PORT,
@@ -11,10 +12,23 @@ import {
 const APP_CLI = "/Applications/Tailscale.app/Contents/MacOS/Tailscale";
 /**
  * Where a CLI-only install puts `tailscale`: Homebrew on Apple silicon and on
- * Intel, or the standalone tailscaled package. It talks to the same tailscaled,
- * so status, serve and the identity headers behave as with the app.
+ * Intel, the standalone tailscaled package, or Nix (per-user profile, then
+ * nix-darwin). It talks to the same tailscaled, so status, serve and the
+ * identity headers behave as with the app. A Dock launch inherits launchd's
+ * PATH, which has none of these, so they are listed here.
  */
-const CLI_PATHS = ["/opt/homebrew/bin/tailscale", "/usr/local/bin/tailscale"];
+const CLI_PATHS = [
+  "/opt/homebrew/bin/tailscale",
+  "/usr/local/bin/tailscale",
+  "~/.nix-profile/bin/tailscale",
+  "/run/current-system/sw/bin/tailscale",
+];
+
+/** Expands a leading `~/` to the home directory; drops the path when home isn't absolute. */
+const expandHome = (file: string, home: string): string | null => {
+  if (!file.startsWith("~/")) return file;
+  return isAbsolute(home) ? join(home, file.slice(2)) : null;
+};
 
 export interface CliResult {
   code: number;
@@ -33,12 +47,15 @@ export const NOT_INSTALLED: TailscaleState = {
 };
 
 /** The Tailscale CLIs to try, in order: the app's, the usual install paths, then PATH. */
-export function tailscaleCandidates(pathEnv = process.env.PATH ?? ""): string[] {
+export function tailscaleCandidates(pathEnv = process.env.PATH ?? "", home = homedir()): string[] {
+  const installs = CLI_PATHS.map((file) => expandHome(file, home)).filter(
+    (file): file is string => file !== null,
+  );
   const onPath = pathEnv
     .split(delimiter)
     .filter((dir) => isAbsolute(dir))
     .map((dir) => join(dir, "tailscale"));
-  return [...new Set([APP_CLI, ...CLI_PATHS, ...onPath])];
+  return [...new Set([APP_CLI, ...installs, ...onPath])];
 }
 
 const executable = (file: string) =>

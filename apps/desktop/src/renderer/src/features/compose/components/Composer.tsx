@@ -375,7 +375,7 @@ export function Composer({
                 <button
                   type="button"
                   onClick={() => setShowBcc(true)}
-                  className="h-9 shrink-0 text-a11y-muted hover:text-neutral-800 dark:hover:text-neutral-200"
+                  className={`h-9 shrink-0 text-a11y-muted hover:text-neutral-800 coarse:h-10 dark:hover:text-neutral-200 ${touchTarget}`}
                 >
                   <Trans>Cc/Bcc</Trans>
                 </button>

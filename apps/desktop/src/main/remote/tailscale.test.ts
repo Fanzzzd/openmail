@@ -190,13 +190,29 @@ describe("serve conflicts", () => {
 });
 
 describe("finding the Tailscale CLI", () => {
-  it("tries the app first, then Homebrew and standalone installs, then absolute PATH entries", () => {
-    expect(tailscaleCandidates("/usr/local/bin:relative/bin:/Users/me/bin")).toEqual([
+  it("tries the app first, then Homebrew, standalone and Nix installs, then absolute PATH entries", () => {
+    expect(tailscaleCandidates("/usr/local/bin:relative/bin:/Users/me/bin", "/Users/me")).toEqual([
       "/Applications/Tailscale.app/Contents/MacOS/Tailscale",
       "/opt/homebrew/bin/tailscale",
       "/usr/local/bin/tailscale",
+      "/Users/me/.nix-profile/bin/tailscale",
+      "/run/current-system/sw/bin/tailscale",
       "/Users/me/bin/tailscale",
     ]);
+  });
+
+  it("skips the Nix profile path when the home directory isn't absolute", () => {
+    for (const home of ["", "relative/home", "~"]) {
+      const candidates = tailscaleCandidates("", home);
+      expect(
+        candidates.every((file) => file.startsWith("/")),
+        home,
+      ).toBe(true);
+      expect(
+        candidates.some((file) => file.includes(".nix-profile")),
+        home,
+      ).toBe(false);
+    }
   });
 
   it("uses a Homebrew CLI when the app isn't installed", async () => {

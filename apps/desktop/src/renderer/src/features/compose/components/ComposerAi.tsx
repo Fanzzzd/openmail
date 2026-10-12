@@ -18,12 +18,13 @@ import {
   replaceEditorText,
   type ComposeElement,
 } from "../compose-editor-dom";
-import { matchesShortcut, platformShortcutText } from "../../../../../shared/shortcuts";
-import { useShortcutSet } from "../../../i18n/use-shortcut-text";
+import { matchesShortcut } from "../../../../../shared/shortcuts";
+import { platformShortcutHint, useShortcutSet } from "../../../i18n/use-shortcut-text";
 import { withMail } from "../../../state/mail";
 import { AiOutput, aiSettingsAtom, useAiStream } from "../../ai";
 import { Dialog } from "../../../ui/Dialog";
 import { Select } from "../../../ui/Select";
+import { touchTarget } from "../../../ui/styles";
 
 const tones = {
   shorter: msg`Shorter`,
@@ -89,6 +90,7 @@ export function ComposerAi({
     setSnapshot({ body: current, start, end, accountId, ...(replyTo ? { replyTo } : {}) });
   }, [allowed, accountId, replyTo, body, bodyRef, selectionRef, cancel]);
   const shortcutSet = useShortcutSet();
+  const hint = platformShortcutHint(shortcutSet, "composeAssistant");
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
       if (!matchesShortcut(shortcutSet, "composeAssistant", event)) return;
@@ -123,11 +125,12 @@ export function ComposerAi({
       <div className="flex shrink-0 gap-3 px-4 py-1 text-footnote text-violet-600 dark:text-violet-300">
         <button
           type="button"
+          className={touchTarget}
           disabled={!allowed || !settings?.keyConfigured}
           onClick={() => open()}
         >
-          <Trans>Write with AI</Trans> ·{" "}
-          {platformShortcutText(shortcutSet, "composeAssistant", navigator.platform)}
+          <Trans>Write with AI</Trans>
+          {hint && ` · ${hint}`}
         </button>
         {undo && (
           <button

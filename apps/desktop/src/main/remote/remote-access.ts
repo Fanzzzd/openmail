@@ -40,14 +40,16 @@ export interface RemoteAccessDeps {
   log?: (reason: string) => void;
   /** How long quitting waits for `tailscale serve off`. */
   quitTimeoutMs?: number;
-  /** How often a mapping OpenMail couldn't remove is tried again. */
+  /** First retry delay for a mapping a turn-off couldn't remove; doubles up to retryMaxMs. */
   retryMs?: number;
+  retryMaxMs?: number;
 }
 
 /** Quitting never waits longer than this for the Tailscale CLI. */
 const QUIT_TIMEOUT_MS = 3000;
-/** A mapping left behind is tried again this often until Tailscale answers. */
+/** A mapping a turn-off left behind is tried again after this long, then less often. */
 const RETRY_MS = 30_000;
+const RETRY_MAX_MS = 5 * 60_000;
 
 interface Mapping {
   port: number;
@@ -80,6 +82,7 @@ export function createRemoteAccess(deps: RemoteAccessDeps) {
   /** A mapping that may still point at OpenMail although it is off; removed when Tailscale answers. */
   let leftover: Mapping | null = null;
   let retry: ReturnType<typeof setTimeout> | undefined;
+  let retryDelay = 0;
   const sessions = createSessions();
   const listeners = new Set<(view: RemoteAccessView) => void>();
 
@@ -173,25 +176,37 @@ export function createRemoteAccess(deps: RemoteAccessDeps) {
     leftover = null;
     clearTimeout(retry);
     retry = undefined;
+    retryDelay = 0;
   };
-  /** Tries the leftover mapping again; keeps retrying in the background until it's gone. */
-  const sweep = async () => {
-    if (!leftover) return;
+  /** Tries the leftover mapping once. True when it's gone. */
+  const sweep = async (): Promise<boolean> => {
+    if (!leftover) return true;
     clearTimeout(retry);
-    if (await removeMapping(leftover).catch(() => false)) {
-      forget();
-      if (problem === "removeFailed") {
-        status = "off";
-        problem = null;
-      }
-      return;
+    retry = undefined;
+    if (!(await removeMapping(leftover).catch(() => false))) return false;
+    forget();
+    if (problem === "removeFailed") {
+      status = "off";
+      problem = null;
     }
+    // Off and the mapping is confirmed gone: the next launch has nothing to sweep.
+    if (!settings.enabled && settings.port) await save({ ...settings, port: 0 });
+    return true;
+  };
+  /**
+   * After a turn-off couldn't remove the mapping, retries in the background,
+   * backing off to retryMaxMs. Stops once the status is no longer removeFailed.
+   */
+  const armRetry = () => {
+    const first = deps.retryMs ?? RETRY_MS;
+    retryDelay = retryDelay ? Math.min(retryDelay * 2, deps.retryMaxMs ?? RETRY_MAX_MS) : first;
     retry = setTimeout(() => {
       serial(async () => {
-        await sweep();
+        if (problem !== "removeFailed") return;
+        if (!(await sweep())) armRetry();
         emit();
       }).catch(() => null);
-    }, deps.retryMs ?? RETRY_MS);
+    }, retryDelay);
     retry.unref();
   };
 
@@ -240,11 +255,13 @@ export function createRemoteAccess(deps: RemoteAccessDeps) {
   const unpublish = async () => {
     const port = server?.port ?? settings.port;
     leftover = port ? { port, service: settings.service } : null;
-    await sweep();
+    retryDelay = 0;
+    const gone = await sweep();
     await stopLocal();
     url = null;
-    status = leftover ? "error" : "off";
-    problem = leftover ? "removeFailed" : null;
+    status = gone ? "off" : "error";
+    problem = gone ? null : "removeFailed";
+    if (!gone) armRetry();
     emit();
   };
 
@@ -262,7 +279,8 @@ export function createRemoteAccess(deps: RemoteAccessDeps) {
       serial(async () => {
         settings = await run(mailbox.remoteAccess);
         if (settings.enabled) return start();
-        // Off, but a crash may have left the mapping behind: remove it once Tailscale answers.
+        // Off, but a crash may have left the mapping behind. One try here; Refresh
+        // and the next launch try again. No timer, so a stopped Tailscale isn't polled.
         if (settings.port) {
           leftover = { port: settings.port, service: settings.service };
           await sweep();
@@ -272,7 +290,7 @@ export function createRemoteAccess(deps: RemoteAccessDeps) {
     /** Reads `tailscale status` again; retries a failed start or a mapping left behind. */
     refresh: () =>
       serial(async () => {
-        await sweep();
+        if (!(await sweep()) && problem === "removeFailed") armRetry();
         if (settings.enabled && status === "error") return start();
         tailscale = await detect();
         emit();

@@ -9,7 +9,7 @@ Remote access is off by default.
 
 ## What you need
 
-- The Tailscale app on your Mac, signed in. OpenMail doesn't install it. Get it from [tailscale.com/download](https://tailscale.com/download). A CLI-only install from Homebrew (`brew install tailscale`) or the standalone `tailscaled` package works too: OpenMail finds `tailscale` in `/opt/homebrew/bin`, `/usr/local/bin` or on your `PATH`.
+- The Tailscale app on your Mac, signed in. OpenMail doesn't install it. Get it from [tailscale.com/download](https://tailscale.com/download). A CLI-only install from Homebrew (`brew install tailscale`), the standalone `tailscaled` package or Nix works too. OpenMail looks for `tailscale` in the Tailscale app, `/opt/homebrew/bin`, `/usr/local/bin`, `~/.nix-profile/bin` and `/run/current-system/sw/bin`. It also checks your `PATH`, but only when OpenMail was started from a terminal. Opened from the Dock or Finder, it gets the system's default `PATH`, which has none of these.
 - MagicDNS and HTTPS Certificates turned on for your tailnet. Both are on the [DNS page](https://login.tailscale.com/admin/dns) of the Tailscale admin console.
 - The Tailscale app on the other device, signed in to the same tailnet.
 - Your Mac awake, with OpenMail open.
@@ -21,7 +21,7 @@ Remote access is off by default.
 3. Turn on **Allow access from my tailnet**.
 4. On the other device, scan the QR code or open the address shown, such as `https://macbook-pro.tail1234.ts.net:8443`.
 
-OpenMail runs `tailscale serve --bg --https=8443` to publish itself on your tailnet. If something else already uses port 8443 on this Mac, OpenMail stops and tells you. It doesn't replace another app's setting. Turning remote access off removes the mapping. Quitting OpenMail removes it too, and the next launch adds it again. If Tailscale isn't running when you turn remote access off, Settings says it couldn't remove the mapping. OpenMail removes it as soon as Tailscale responds, and also checks at the next launch.
+OpenMail runs `tailscale serve --bg --https=8443` to publish itself on your tailnet. If something else already uses port 8443 on this Mac, OpenMail stops and tells you. It doesn't replace another app's setting. Turning remote access off removes the mapping. Quitting OpenMail removes it too, and the next launch adds it again. If Tailscale isn't running when you turn remote access off, Settings says it couldn't remove the mapping. OpenMail keeps trying in the background, at most every five minutes, until Tailscale responds or you change the setting. It also tries when you open **Settings > Remote access** or press **Refresh**, and at the next launch.
 
 OpenMail never uses Tailscale Funnel, so the page is never on the public internet.
 

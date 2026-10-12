@@ -11,10 +11,10 @@ import { activeComposeMentions, resizeComposeImage } from "../compose-contacts-d
 import { useAtomValue } from "@effect/atom-react";
 import {
   matchesShortcut,
-  shortcutText,
   type ShortcutAction,
   type ShortcutSet,
 } from "../../../../../shared/shortcuts";
+import { shortcutHint } from "../../../i18n/use-shortcut-text";
 import { Effect } from "effect";
 import { useRunMail, withMail, type MailEnv } from "../../../state/mail";
 import { AsyncResult, Atom, Reactivity } from "effect/reactivity";
@@ -112,7 +112,7 @@ export function ComposeEditor({
   onMentionsChange,
 }: Props) {
   const { t } = useLingui();
-  const shortcut = (action: ShortcutAction) => shortcutText(shortcutSet, action);
+  const shortcut = (action: ShortcutAction) => shortcutHint(shortcutSet, action);
   const run = useRunMail();
   const richRef = useRef<HTMLDivElement>(null);
   const [formatBar, setFormatBar] = useState(prefs.composeFormatBar);

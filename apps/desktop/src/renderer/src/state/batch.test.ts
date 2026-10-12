@@ -2,7 +2,14 @@ import { describe, expect, it } from "vitest";
 import type { ThreadSummary } from "../../../shared/api";
 import { DEFAULT_LIST_FILTERS } from "@openmail/core/schema";
 import { leavesList } from "./batch";
-import { reconcileSelection, selectRow, singleSelection } from "../lib/selection";
+import {
+  moveCursor,
+  moveSelection,
+  reconcileSelection,
+  selectRow,
+  singleSelection,
+  toggleFocused,
+} from "../lib/selection";
 
 const row: ThreadSummary = {
   id: "a/m1",
@@ -152,5 +159,46 @@ describe("batch selection after actions", () => {
     expect(reconcileSelection(singleSelection(row.id), previous, [newer], false)).toEqual(
       singleSelection(newer.id),
     );
+  });
+
+  it("keeps an X-checked thread in a Shift range after a reply changes its ID", () => {
+    const a = row;
+    const [b, c, d] = ["t2", "t3", "t4"].map((threadId, index) => ({
+      ...row,
+      id: `a/${threadId}`,
+      threadId,
+      date: 9 - index,
+    }));
+    if (!b || !c || !d) throw new Error("fixture");
+    const before = [a, b, c, d];
+    // X on A, J to B, then Shift+J: A stays checked, B and C join.
+    let selection = toggleFocused(singleSelection(a.id));
+    selection = moveCursor(
+      selection,
+      before.map((thread) => thread.id),
+      1,
+    );
+    selection = moveSelection(
+      selection,
+      before.map((thread) => thread.id),
+      1,
+      true,
+    );
+    expect(selection.ids).toEqual(new Set([a.id, b.id, c.id]));
+
+    // A reply makes a/m2 thread A's representative.
+    const reply = { ...a, id: "a/m2", date: 20 };
+    const after = [reply, b, c, d];
+    selection = reconcileSelection(selection, new Map(before.map((t) => [t.id, t])), after, false);
+    expect([...(selection.kept ?? [])]).toEqual([reply.id]);
+
+    // Another Shift+J grows the range and still keeps thread A.
+    selection = moveSelection(
+      selection,
+      after.map((thread) => thread.id),
+      1,
+      true,
+    );
+    expect(selection.ids).toEqual(new Set([reply.id, b.id, c.id, d.id]));
   });
 });

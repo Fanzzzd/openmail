@@ -42,13 +42,23 @@ export function reconcileSelection(
       : id;
   };
   const ids = [...selection.ids].map((id) => resolve(id) ?? id);
+  const kept = selection.kept && [...selection.kept].map((id) => resolve(id) ?? id);
   const anchor = resolve(selection.anchor);
   const focus = resolve(selection.focus);
-  return ids.every((id) => selection.ids.has(id)) &&
+  if (
+    ids.every((id) => selection.ids.has(id)) &&
+    (kept ?? []).every((id) => selection.kept?.has(id)) &&
     anchor === selection.anchor &&
     focus === selection.focus
-    ? selection
-    : { ...selection, ids: new Set(ids), anchor, focus };
+  )
+    return selection;
+  return {
+    ...selection,
+    ids: new Set(ids),
+    anchor,
+    focus,
+    ...(kept ? { kept: new Set(kept) } : {}),
+  };
 }
 
 export function selectRow(

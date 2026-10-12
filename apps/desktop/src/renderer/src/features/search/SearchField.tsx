@@ -35,6 +35,7 @@ import { listQueryAtom } from "../../state/threads";
 import { DropdownMenu, MenuItem, MenuSeparator } from "../../ui/Menu";
 
 import { Select } from "../../ui/Select";
+import { isDesktop } from "../../lib/platform";
 import { itemClass, popupOffset, popupSurface } from "../../ui/styles";
 
 /** The operator reference on the docs site, opened in the default browser. */
@@ -221,7 +222,7 @@ export function SearchField({
             }}
             ref={fieldRef}
             aria-label={t`Search mail`}
-            placeholder={chips.length ? undefined : t`Search  /`}
+            placeholder={chips.length ? undefined : isDesktop() ? t`Search  /` : t`Search`}
             className="h-6 min-w-10 flex-1 bg-transparent text-body text-ellipsis outline-none"
           />
         </Combobox.Chips>

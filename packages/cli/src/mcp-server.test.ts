@@ -391,6 +391,61 @@ test.concurrent("CLI mail tools explain a missing account or AI consent; MCP kee
   }
 }, 30_000);
 
+/** A consenting account outside any profile and a Work profile whose one account has no consent. */
+async function seedProfileWithoutConsent(directory: string) {
+  return Effect.runPromise(
+    Effect.scoped(
+      Effect.gen(function* () {
+        const store = yield* Store;
+        const home = yield* store.upsertAccount("gmail", "home@example.com");
+        yield* store.ai.setAccount({ accountId: home.id, allowed: true, autoSummaries: false });
+        yield* store.upsertMessage(home.id, incoming("m1", { subject: "Hello" }));
+        const work = yield* store.upsertAccount("gmail", "work@example.com");
+        yield* store.upsertMessage(work.id, incoming("m2", { subject: "Standup" }));
+        const profile = yield* store.createProfile({ name: "Work", icon: "💼", color: "blue" });
+        yield* store.setAccountProfile(work.id, profile.id);
+        return { profile: profile.id, home: home.id };
+      }).pipe(
+        Effect.provide(
+          TestMailbox({}, { backgroundFlush: false }, {}, undefined, {
+            database: join(directory, "mail.db"),
+          }),
+        ),
+      ),
+    ),
+  );
+}
+
+test.concurrent("CLI list --profile explains a profile without AI consent", async ({
+  expect,
+  onTestFinished,
+}) => {
+  const directory = await home(onTestFinished, "openmail-cli-profile-");
+  const { profile, home: homeAccount } = await seedProfileWithoutConsent(directory);
+  const options = { env: { ...process.env, OPENMAIL_HOME: directory } };
+  const cli = (...args: string[]) =>
+    run(process.execPath, ["dist/cli.js", ...args], options).then(
+      (done) => ({ code: 0, ...done }),
+      (error: unknown) => Schema.decodeUnknownSync(Failure)(error),
+    );
+  const [all, inProfile, unknown, outside] = await Promise.all([
+    cli("list"),
+    cli("list", "--profile", profile),
+    cli("list", "--profile", "nope"),
+    cli("list", "--profile", profile, "--account", homeAccount),
+  ]);
+  // Another account has consent, so the unscoped list works.
+  expect(all.code).toBe(0);
+  expect(inProfile.code).toBe(1);
+  expect(inProfile.stderr).toContain(
+    `No accounts in profile ${profile} allow agent reads. Turn on 'Allow sending mail text to the model' in Settings → AI Access.`,
+  );
+  expect(unknown.code).toBe(1);
+  expect(unknown.stderr).toContain("No profile with id nope.");
+  expect(outside.code).toBe(1);
+  expect(outside.stderr).toContain(`Account ${homeAccount} is not in profile ${profile}.`);
+}, 30_000);
+
 async function seedProposals(directory: string) {
   return Effect.runPromise(
     Effect.scoped(

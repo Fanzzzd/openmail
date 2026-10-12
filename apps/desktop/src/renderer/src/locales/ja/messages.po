@@ -5456,6 +5456,7 @@ msgctxt "in progress"
 msgid "Saving…"
 msgstr "保存中…"
 
+#: src/renderer/src/features/search/SearchField.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Search"
 msgstr "検索"

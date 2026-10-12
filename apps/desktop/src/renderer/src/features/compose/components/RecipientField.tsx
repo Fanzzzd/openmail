@@ -27,7 +27,7 @@ import {
   contactAlternativesAtom,
   suggestionsAtom,
 } from "../../../state/queries";
-import { itemClass, popupMotion, popupSurface } from "../../../ui/styles";
+import { itemClass, popupMotion, popupSurface, touchIcon } from "../../../ui/styles";
 
 type Suggestions = Atom.Atom<AsyncResult.AsyncResult<readonly Address[], AppError>>;
 const none: Suggestions = Atom.make(AsyncResult.success([]));
@@ -201,7 +201,7 @@ export function RecipientField({
                 event.dataTransfer.effectAllowed = "move";
                 onDragChip?.();
               }}
-              className={`group flex h-[22px] max-w-full items-center gap-0.5 rounded-[5px] pr-0.5 pl-1.5 outline-none focus:bg-blue-600 focus:text-white ${
+              className={`group flex h-[22px] max-w-full items-center gap-0.5 rounded-[5px] pr-0.5 pl-1.5 coarse:h-10 coarse:gap-2 coarse:pl-2.5 outline-none focus:bg-blue-600 focus:text-white ${
                 address
                   ? "bg-blue-500/10 text-blue-800 dark:bg-blue-400/15 dark:text-blue-200"
                   : "bg-red-500/10 text-red-700 dark:bg-red-400/15 dark:text-red-300"
@@ -237,7 +237,7 @@ export function RecipientField({
               <Combobox.ChipRemove
                 aria-label={t`Remove ${text}`}
                 tabIndex={-1}
-                className="flex size-4 shrink-0 items-center justify-center rounded-[3px] opacity-0 group-hover:opacity-70 group-focus-within:opacity-100 hover:bg-fill-pressed hover:opacity-100 coarse:size-7 coarse:opacity-70"
+                className="flex size-4 shrink-0 items-center justify-center rounded-[3px] opacity-0 group-hover:opacity-70 group-focus-within:opacity-100 hover:bg-fill-pressed hover:opacity-100 coarse:size-10 coarse:opacity-70"
               >
                 <X className="size-3" />
               </Combobox.ChipRemove>
@@ -321,7 +321,7 @@ export function RecipientField({
                           reactivityKeys: [Keys.contacts],
                         });
                       }}
-                      className="rounded p-0.5 opacity-0 group-hover:opacity-80 focus-visible:opacity-100 hover:bg-white/20 hover:opacity-100 coarse:p-2.5 coarse:opacity-80"
+                      className={`rounded p-0.5 opacity-0 group-hover:opacity-80 focus-visible:opacity-100 hover:bg-white/20 hover:opacity-100 coarse:opacity-80 ${touchIcon}`}
                     >
                       <X className="size-3.5" />
                     </button>
@@ -375,7 +375,7 @@ function ChipActions({
             )
               event.stopPropagation();
           }}
-          className="rounded p-0.5 hover:bg-black/10"
+          className={`rounded p-0.5 hover:bg-black/10 ${touchIcon}`}
         >
           <MoreHorizontal className="size-3" />
         </button>

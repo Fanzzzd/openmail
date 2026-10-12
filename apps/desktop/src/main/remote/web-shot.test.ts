@@ -57,6 +57,8 @@ interface Measured {
   coarse: boolean;
   fields: { label: string; size: string }[];
   small: { label: string; h: number }[];
+  /** Keyboard shortcut text on screen: glyphs in visible text and the "/" search placeholder. */
+  shortcuts: string[];
 }
 const measuredShot = (dir: string, name: string): Measured =>
   // IO boundary: JSON written by the screenshot script.
@@ -181,7 +183,10 @@ const MEASURE = \`(() => {
   const small = [...document.querySelectorAll("button, [role=menuitem], [role=option], [role=tab]")]
     .filter(visible).map((e) => ({ label: e.getAttribute("aria-label") || e.textContent.trim().slice(0, 30), h: Math.round(e.getBoundingClientRect().height) }))
     .filter((e) => e.h < 40);
-  return { coarse: matchMedia("(pointer: coarse)").matches, fields, small };
+  const placeholders = [...document.querySelectorAll("input[placeholder]")].filter(visible)
+    .map((e) => e.getAttribute("placeholder")).filter((p) => p.endsWith(" /"));
+  const shortcuts = [...(document.body.innerText.match(/[⌘⇧⌥⌃][^ ]*/g) ?? []), ...placeholders];
+  return { coarse: matchMedia("(pointer: coarse)").matches, fields, small, shortcuts };
 })()\`;
 async function shot(width, height, mobile, name, steps = []) {
   const win = new BrowserWindow({ width, height, show: false, useContentSize: true,
@@ -271,8 +276,15 @@ app.whenReady().then(async () => {
     ])
       expect(existsSync(path.join(dir, `${name}.png`)), name).toBe(true);
     // On a phone: no field under 16 px (iOS would zoom), and the toolbar,
-    // header, menu and chip controls are at least 40 px tall.
-    for (const name of ["web-390-inbox", "web-390-thread", "web-390-search", "web-390-settings"]) {
+    // header, menu, chip and compose controls are at least 40 px tall. No
+    // keyboard shortcut text either: a phone has no keyboard to press it on.
+    for (const name of [
+      "web-390-inbox",
+      "web-390-thread",
+      "web-390-compose",
+      "web-390-search",
+      "web-390-settings",
+    ]) {
       const measured = measuredShot(dir, name);
       expect(measured.coarse, name).toBe(true);
       expect(
@@ -283,10 +295,8 @@ app.whenReady().then(async () => {
         measured.small.filter((control) => control.label !== "Dana Whitfield"),
         name,
       ).toEqual([]);
+      expect(measured.shortcuts, name).toEqual([]);
     }
-    expect(
-      measuredShot(dir, "web-390-compose").fields.filter((field) => field.size !== "16px"),
-    ).toEqual([]);
     expect(measuredShot(dir, "web-1280-inbox").coarse).toBe(false);
   },
 );

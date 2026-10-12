@@ -8,7 +8,7 @@ import {
 } from "@openmail/core/schema";
 import { Effect } from "effect";
 import { constVoid } from "effect/Function";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { RemoteAccessView } from "../../shared/remote-access";
 import { createRemoteAccess, type RemoteAccessDeps } from "./remote-access";
 import type { CliResult } from "./tailscale";
@@ -34,6 +34,8 @@ function harness(options: {
   serve?: (port: number) => string;
   settings?: Partial<RemoteAccessSettings>;
   failServeOn?: boolean;
+  retryMs?: number;
+  retryMaxMs?: number;
 }) {
   // Set by hang(): serve commands never return, like a stuck CLI.
   let hanging = false;
@@ -71,7 +73,8 @@ function harness(options: {
     },
     webRoot: root,
     quitTimeoutMs: 50,
-    retryMs: 20,
+    retryMs: options.retryMs ?? 20,
+    ...(options.retryMaxMs ? { retryMaxMs: options.retryMaxMs } : {}),
     startRpc: () => {
       rpcRunning++;
       return async () => {
@@ -324,16 +327,72 @@ describe("remote access controller", () => {
     expect(h.last()).toMatchObject({ status: "off" });
   });
 
-  it("removes a crash's mapping when Tailscale comes back after launch", async () => {
-    const h = harness({ serve: ours, settings: { enabled: false, port: 45_678 } });
-    h.tailscaleDown(true);
+  it("tries a crash's mapping once at launch, then only on Refresh, and forgets the port once it's gone", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    try {
+      const h = harness({ serve: ours, settings: { enabled: false, port: 45_678 } });
+      h.tailscaleDown(true);
+      await h.controller.init();
+      // Unknown whether a mapping exists: stay quiet and don't poll a stopped Tailscale.
+      expect(h.last()).toMatchObject({ status: "off", problem: null });
+      expect(h.calls).toEqual([["serve", "status", "--json"]]);
+      await vi.advanceTimersByTimeAsync(60 * 60_000);
+      expect(h.calls).toHaveLength(1);
+      expect(vi.getTimerCount()).toBe(0);
+
+      h.tailscaleDown(false);
+      await h.controller.refresh();
+      expect(h.calls).toContainEqual(["serve", "--https=8443", "off"]);
+      expect(h.stored().port).toBe(0);
+
+      // The next launch with the setting off runs no Tailscale command.
+      const next = harness({ serve: ours, settings: h.stored() });
+      await next.controller.init();
+      expect(next.calls).toEqual([]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("backs off retrying a mapping a turn-off left behind and stops when the status changes", async () => {
+    const h = harness({ serve: ours, retryMs: 1000, retryMaxMs: 4000 });
     await h.controller.init();
-    // Unknown whether a mapping exists: stay quiet, keep trying.
-    expect(h.last()).toMatchObject({ status: "off", problem: null });
-    h.tailscaleDown(false);
-    await expect
-      .poll(() => h.calls.some((args) => args.join(" ") === "serve --https=8443 off"))
-      .toBe(true);
+    await h.controller.setEnabled(true);
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    try {
+      h.tailscaleDown(true);
+      await h.controller.setEnabled(false);
+      expect(h.last()).toMatchObject({ status: "error", problem: "removeFailed" });
+      const sweeps = () =>
+        h.calls.filter((args) => args.join(" ") === "serve status --json").length;
+      const before = sweeps();
+      // Retries at 1 s, then 2 s, 4 s, 4 s later: 1, 3, 7 and 11 s.
+      const counts: number[] = [];
+      for (const at of [999, 1, 1999, 1, 3999, 1, 3999, 1]) {
+        await vi.advanceTimersByTimeAsync(at);
+        counts.push(sweeps() - before);
+      }
+      expect(counts).toEqual([0, 1, 1, 2, 2, 3, 3, 4]);
+
+      // Turning it on again changes the status; the pending retry stops there.
+      await h.controller.setEnabled(true);
+      expect(h.last()).toMatchObject({ status: "error", problem: "notRunning" });
+      const after = h.calls.length;
+      await vi.advanceTimersByTimeAsync(60 * 60_000);
+      expect(h.calls).toHaveLength(after);
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
     await h.controller.dispose();
+  });
+
+  it("forgets the stored port after a clean turn-off", async () => {
+    const h = harness({ serve: ours });
+    await h.controller.init();
+    await h.controller.setEnabled(true);
+    expect(h.stored().port).toBeGreaterThan(0);
+    await h.controller.setEnabled(false);
+    expect(h.stored()).toMatchObject({ enabled: false, port: 0 });
   });
 });
