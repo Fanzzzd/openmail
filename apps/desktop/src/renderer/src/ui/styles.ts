@@ -17,16 +17,23 @@ export const popupMotion =
 /** Every popup that drops from a trigger leaves this gap below it. */
 export const popupOffset = 4;
 
+/**
+ * A 40 px touch target on a phone or tablet in the web build (the `coarse`
+ * variant in styles.css). Desktop sizes don't change.
+ */
+export const touchTarget = "coarse:min-h-10 coarse:min-w-10";
+/** The same for an icon-only button: the icon stays centred in the larger box. */
+export const touchIcon = `coarse:inline-grid coarse:place-items-center ${touchTarget}`;
+
 /** One row in a menu or list. The highlight is the macOS accent with white text. */
 export const itemClass =
-  "flex min-h-[22px] cursor-default items-center gap-2 rounded-item px-2 outline-none select-none data-disabled:opacity-40 data-highlighted:bg-blue-600 data-highlighted:text-white";
+  "flex min-h-[22px] coarse:min-h-10 cursor-default items-center gap-2 rounded-item px-2 outline-none select-none data-disabled:opacity-40 data-highlighted:bg-blue-600 data-highlighted:text-white";
 
 /** Menu separator. */
 export const separatorClass = "mx-2 my-1 h-px bg-separator";
 
 /** A borderless icon button in a header or toolbar. Callers add the text color. */
-export const iconButton =
-  "rounded-control p-1 transition-colors duration-100 hover:bg-fill-hover active:bg-fill-pressed motion-reduce:transition-none";
+export const iconButton = `rounded-control p-1 ${touchIcon} transition-colors duration-100 hover:bg-fill-hover active:bg-fill-pressed motion-reduce:transition-none`;
 
 /** Left padding that keeps a header at the window's leading edge clear of the traffic lights. */
 export const trafficLightInset = "pl-20";
@@ -42,7 +49,7 @@ export const kbdClass =
  * and a pressed state.
  */
 const buttonBase =
-  "inline-flex h-7 items-center justify-center gap-1.5 whitespace-nowrap rounded-control px-3 text-body font-medium outline-offset-1 outline-a11y-focus transition-colors duration-100 focus-visible:outline-[3px] disabled:pointer-events-none disabled:opacity-50 motion-reduce:transition-none";
+  "inline-flex h-7 coarse:min-h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-control px-3 text-body font-medium outline-offset-1 outline-a11y-focus transition-colors duration-100 focus-visible:outline-[3px] disabled:pointer-events-none disabled:opacity-50 motion-reduce:transition-none";
 export const buttonSecondary = `${buttonBase} bg-white text-neutral-900 shadow-control ring-1 ring-edge hover:bg-neutral-50 active:bg-neutral-100 dark:bg-white/[0.08] dark:text-neutral-100 dark:hover:bg-white/[0.12] dark:active:bg-white/[0.16]`;
 export const buttonPrimary = `${buttonBase} bg-blue-600 text-white shadow-control hover:bg-blue-700 active:bg-blue-800`;
 export const buttonDanger = `${buttonBase} bg-red-600 text-white shadow-control outline-red-500/60 hover:bg-red-700 active:bg-red-800`;

@@ -48,6 +48,7 @@ import {
   pickerList,
 } from "../../../ui/Picker";
 import { Select } from "../../../ui/Select";
+import { touchIcon, touchTarget } from "../../../ui/styles";
 import { Tip } from "../../../ui/Tip";
 
 const TITLES: Record<Draft["mode"], MessageDescriptor> = {
@@ -231,8 +232,7 @@ export function Composer({
   const row =
     "flex items-start gap-2 border-b border-separator px-4 has-[input:focus]:border-a11y-focus has-[input:focus]:shadow-[inset_0_-1px_0_var(--a11y-focus)]";
   const label = "flex h-9 w-14 shrink-0 items-center text-a11y-muted";
-  const quiet =
-    "rounded-control p-1 text-a11y-muted outline-offset-0 outline-a11y-focus hover:bg-fill-hover focus-visible:outline-[3px] data-popup-open:bg-fill-pressed";
+  const quiet = `rounded-control p-1 ${touchIcon} text-a11y-muted outline-offset-0 outline-a11y-focus hover:bg-fill-hover focus-visible:outline-[3px] data-popup-open:bg-fill-pressed`;
   const title = i18n._(TITLES[draft.mode]);
 
   return (
@@ -254,7 +254,7 @@ export function Composer({
           data-full-window={standalone || undefined}
           aria-label={title}
           initialFocus={initialFocus}
-          className={`${standalone ? "no-drag fixed inset-0 z-50 flex h-full w-full " : `no-drag fixed right-5 bottom-5 z-50 flex h-[min(680px,calc(100%-40px))] w-[min(680px,calc(100%-40px))] ${narrowSheet} `} flex-col overflow-hidden rounded-sheet bg-raised text-body text-neutral-900 shadow-sheet outline-none transition-[opacity,translate] duration-150 ease-out data-starting-style:translate-y-2 data-starting-style:opacity-0 motion-reduce:transition-none dark:text-neutral-100`}
+          className={`${standalone ? "no-drag fixed inset-0 z-50 flex h-full w-full " : `no-drag fixed right-5 bottom-5 z-50 flex h-[min(680px,calc(100%-40px))] w-[min(680px,calc(100%-40px))] ${narrowSheet()} `} flex-col overflow-hidden rounded-sheet bg-raised text-body text-neutral-900 shadow-sheet outline-none transition-[opacity,translate] duration-150 ease-out data-starting-style:translate-y-2 data-starting-style:opacity-0 motion-reduce:transition-none dark:text-neutral-100`}
         >
           {standalone ? <div className="drag h-8 shrink-0" /> : <SheetDragStrip />}
           {/* oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- The entire composer accepts file drops; the attachment picker provides keyboard access. */}
@@ -665,7 +665,7 @@ export function Composer({
               <Tip label={t`Send`} shortcut={shortcut("send")} side="top">
                 <button
                   type="submit"
-                  className="h-7 rounded-control bg-blue-600 px-3.5 font-medium text-white hover:bg-blue-700"
+                  className={`h-7 rounded-control bg-blue-600 px-3.5 ${touchTarget} font-medium text-white hover:bg-blue-700`}
                 >
                   <Trans>Send</Trans>
                 </button>

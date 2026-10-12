@@ -45,7 +45,7 @@ import type { Filters } from "../../lib/view";
 import { ContextMenuContent, ContextMenuRoot, ContextMenuTrigger } from "../../ui/Menu";
 import type { ThreadState } from "../../lib/focused-inbox";
 import { Tip } from "../../ui/Tip";
-import { noticeRow, noticeTone } from "../../ui/styles";
+import { noticeRow, noticeTone, touchTarget } from "../../ui/styles";
 
 /** How the current selection was made. Keyboard selection gets the solid accent. */
 export type SelectionSource = "keyboard" | "mouse";
@@ -535,7 +535,7 @@ function FilterChip(props: {
       <Toggle
         pressed={props.active}
         onPressedChange={props.onChange}
-        className="h-6 shrink-0 rounded-full px-2.5 whitespace-nowrap text-footnote font-medium text-a11y-muted outline-offset-1 outline-a11y-focus hover:bg-fill-hover focus-visible:outline-[3px] data-pressed:bg-blue-600 data-pressed:text-white dark:data-pressed:text-white"
+        className={`h-6 shrink-0 rounded-full px-2.5 ${touchTarget} whitespace-nowrap text-footnote font-medium text-a11y-muted outline-offset-1 outline-a11y-focus hover:bg-fill-hover focus-visible:outline-[3px] data-pressed:bg-blue-600 data-pressed:text-white dark:data-pressed:text-white`}
       >
         {props.label}
       </Toggle>

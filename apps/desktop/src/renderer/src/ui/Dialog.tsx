@@ -3,6 +3,7 @@ import { Dialog as BaseDialog } from "@base-ui/react/dialog";
 import { useLingui } from "@lingui/react/macro";
 import { X } from "lucide-react";
 import { type ComponentProps, type ReactNode, useRef } from "react";
+import { isDesktop } from "../lib/platform";
 import { useLayoutMode } from "../lib/responsive-layout";
 import { buttonDanger, buttonPrimary, buttonSecondary, iconButton } from "./styles";
 
@@ -33,13 +34,15 @@ interface DialogProps {
 
 /**
  * Below MEDIUM_MIN (696 px, Tailwind's `sm`) a sheet fills the window, whatever size the caller asked for.
- * Its top 32 px stay clear for the traffic lights; pair it with {@link SheetDragStrip}.
+ * On the Mac its top 32 px stay clear for the traffic lights; pair it with {@link SheetDragStrip}.
+ * A browser has no traffic lights, so the web build uses the whole height.
  */
-export const narrowSheet =
-  "max-sm:inset-0 max-sm:h-full max-sm:max-h-none max-sm:w-full max-sm:max-w-none max-sm:translate-x-0 max-sm:translate-y-0 max-sm:rounded-none max-sm:pt-8";
+export const narrowSheet = () =>
+  `max-sm:inset-0 max-sm:h-full max-sm:max-h-none max-sm:w-full max-sm:max-w-none max-sm:translate-x-0 max-sm:translate-y-0 max-sm:rounded-none ${isDesktop() ? "max-sm:pt-8" : ""}`;
 
-/** The titlebar of a full-window sheet: it drags the window, as the titlebar it covers did. */
+/** The titlebar of a full-window sheet: it drags the window, as the titlebar it covers did. None in a browser. */
 export function SheetDragStrip() {
+  if (!isDesktop()) return null;
   return <div aria-hidden className="drag absolute inset-x-0 top-0 h-8 sm:hidden" />;
 }
 
@@ -75,7 +78,7 @@ export function Dialog({
           aria-label={label}
           initialFocus={initialFocus}
           finalFocus={finalFocus}
-          className={`fixed top-1/2 left-1/2 z-50 -translate-x-1/2 -translate-y-1/2 ${sheet} ${popupMotion} ${className} ${narrowSheet}`}
+          className={`fixed top-1/2 left-1/2 z-50 -translate-x-1/2 -translate-y-1/2 ${sheet} ${popupMotion} ${className} ${narrowSheet()}`}
         >
           <SheetDragStrip />
           {children}
@@ -95,7 +98,7 @@ function SheetClose() {
   return (
     <BaseDialog.Close
       aria-label={t`Close`}
-      className={`no-drag absolute top-2.5 right-3 text-a11y-muted ${iconButton}`}
+      className={`no-drag absolute top-2.5 right-3 text-a11y-muted ${iconButton} coarse:top-0 coarse:right-1`}
     >
       <X className="size-4" />
     </BaseDialog.Close>

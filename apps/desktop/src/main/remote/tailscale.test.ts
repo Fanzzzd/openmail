@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
   checkServe,
+  findTailscale,
+  localTailscale,
   parseStatus,
   publicUrl,
   SERVE_STATUS_ARGS,
   serveOffArgs,
   serveOnArgs,
   STATUS_ARGS,
+  tailscaleCandidates,
 } from "./tailscale";
 
 const STATUS = JSON.stringify({
@@ -181,6 +184,41 @@ describe("serve conflicts", () => {
     expect(checkServe(config("http://127.0.0.1:9999"), service)).toEqual({
       kind: "conflict",
       reason: "handlers",
+    });
+  });
+});
+
+describe("finding the Tailscale CLI", () => {
+  it("tries the app first, then Homebrew and standalone installs, then absolute PATH entries", () => {
+    expect(tailscaleCandidates("/usr/local/bin:relative/bin:/Users/me/bin")).toEqual([
+      "/Applications/Tailscale.app/Contents/MacOS/Tailscale",
+      "/opt/homebrew/bin/tailscale",
+      "/usr/local/bin/tailscale",
+      "/Users/me/bin/tailscale",
+    ]);
+  });
+
+  it("uses a Homebrew CLI when the app isn't installed", async () => {
+    const present = new Set(["/opt/homebrew/bin/tailscale", "/usr/local/bin/tailscale"]);
+    expect(await findTailscale(tailscaleCandidates(""), async (file) => present.has(file))).toBe(
+      "/opt/homebrew/bin/tailscale",
+    );
+    expect(await findTailscale(tailscaleCandidates(""), async () => false)).toBeNull();
+  });
+
+  it("reports no CLI as not installed and runs nothing", async () => {
+    const tailscale = localTailscale(async () => null);
+    expect(await tailscale.installed()).toBe(false);
+    expect(await tailscale.runCli(STATUS_ARGS)).toEqual({ code: 127, stdout: "" });
+  });
+
+  it("runs the CLI it found with a fixed argv", async () => {
+    // /bin/echo stands in for the CLI: it prints the argv it was given.
+    const tailscale = localTailscale(async () => "/bin/echo");
+    expect(await tailscale.installed()).toBe(true);
+    expect(await tailscale.runCli(["status", "--json"])).toEqual({
+      code: 0,
+      stdout: "status --json\n",
     });
   });
 });

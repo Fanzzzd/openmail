@@ -237,7 +237,7 @@ export function RecipientField({
               <Combobox.ChipRemove
                 aria-label={t`Remove ${text}`}
                 tabIndex={-1}
-                className="flex size-4 shrink-0 items-center justify-center rounded-[3px] opacity-0 group-hover:opacity-70 group-focus-within:opacity-100 hover:bg-fill-pressed hover:opacity-100"
+                className="flex size-4 shrink-0 items-center justify-center rounded-[3px] opacity-0 group-hover:opacity-70 group-focus-within:opacity-100 hover:bg-fill-pressed hover:opacity-100 coarse:size-7 coarse:opacity-70"
               >
                 <X className="size-3" />
               </Combobox.ChipRemove>
@@ -321,7 +321,7 @@ export function RecipientField({
                           reactivityKeys: [Keys.contacts],
                         });
                       }}
-                      className="rounded p-0.5 opacity-0 group-hover:opacity-80 focus-visible:opacity-100 hover:bg-white/20 hover:opacity-100"
+                      className="rounded p-0.5 opacity-0 group-hover:opacity-80 focus-visible:opacity-100 hover:bg-white/20 hover:opacity-100 coarse:p-2.5 coarse:opacity-80"
                     >
                       <X className="size-3.5" />
                     </button>

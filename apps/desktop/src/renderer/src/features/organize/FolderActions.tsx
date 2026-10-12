@@ -10,6 +10,7 @@ import { MAIL_KEYS } from "../../state/keys";
 import { useRunMail, withMail } from "../../state/mail";
 import { Alert, AlertCancel, alertDanger } from "../../ui/Dialog";
 import { DropdownMenu, MenuItem } from "../../ui/Menu";
+import { touchIcon } from "../../ui/styles";
 
 export function FolderActions({
   folder,
@@ -72,7 +73,7 @@ export function FolderActions({
             type="button"
             disabled={busy}
             aria-label={t`Folder actions`}
-            className="rounded-control p-1 text-a11y-muted hover:bg-black/5"
+            className={`rounded-control p-1 ${touchIcon} text-a11y-muted hover:bg-black/5`}
           >
             <MoreHorizontal className="size-4" />
           </button>

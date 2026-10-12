@@ -56,7 +56,7 @@ import {
   type SearchHits,
   SearchHitsContext,
 } from "../search";
-import { iconButton, trafficLightInset } from "../../ui/styles";
+import { iconButton, touchIcon, trafficLightInset } from "../../ui/styles";
 import { Tip } from "../../ui/Tip";
 import { BACK_SHORTCUT, isBackKey } from "../../lib/responsive-layout";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -793,7 +793,7 @@ export function ThreadView({
             <button
               type="button"
               aria-label={t`More actions`}
-              className="mt-1 rounded-control p-1.5 text-a11y-muted outline-offset-0 outline-a11y-focus hover:bg-fill-hover hover:text-neutral-800 focus-visible:outline-[3px] data-popup-open:bg-fill-pressed dark:hover:text-neutral-100"
+              className={`mt-1 rounded-control p-1.5 ${touchIcon} text-a11y-muted outline-offset-0 outline-a11y-focus hover:bg-fill-hover hover:text-neutral-800 focus-visible:outline-[3px] data-popup-open:bg-fill-pressed dark:hover:text-neutral-100`}
             >
               <MoreHorizontal className="size-4" />
             </button>
@@ -1266,7 +1266,7 @@ function Expanded({
             <button
               type="button"
               aria-label={t`Message actions`}
-              className="size-7 shrink-0 self-start rounded-control p-1.5 text-a11y-muted outline-offset-0 outline-a11y-focus hover:bg-fill-hover hover:text-neutral-800 focus-visible:outline-[3px] data-popup-open:bg-fill-pressed dark:hover:text-neutral-100"
+              className={`size-7 shrink-0 self-start rounded-control p-1.5 ${touchIcon} text-a11y-muted outline-offset-0 outline-a11y-focus hover:bg-fill-hover hover:text-neutral-800 focus-visible:outline-[3px] data-popup-open:bg-fill-pressed dark:hover:text-neutral-100`}
             >
               <MoreHorizontal className="size-4" />
             </button>

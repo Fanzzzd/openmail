@@ -40,10 +40,19 @@ export interface RemoteAccessDeps {
   log?: (reason: string) => void;
   /** How long quitting waits for `tailscale serve off`. */
   quitTimeoutMs?: number;
+  /** How often a mapping OpenMail couldn't remove is tried again. */
+  retryMs?: number;
 }
 
 /** Quitting never waits longer than this for the Tailscale CLI. */
 const QUIT_TIMEOUT_MS = 3000;
+/** A mapping left behind is tried again this often until Tailscale answers. */
+const RETRY_MS = 30_000;
+
+interface Mapping {
+  port: number;
+  service: string;
+}
 
 /** Fails with the Effect's own error (InvalidInput) instead of a wrapped one. */
 async function run<A, E>(effect: Effect.Effect<A, E>): Promise<A> {
@@ -68,6 +77,9 @@ export function createRemoteAccess(deps: RemoteAccessDeps) {
   let server: RemoteServer | undefined;
   let stopRpc: (() => Promise<void>) | undefined;
   let gate: GateConfig | null = null;
+  /** A mapping that may still point at OpenMail although it is off; removed when Tailscale answers. */
+  let leftover: Mapping | null = null;
+  let retry: ReturnType<typeof setTimeout> | undefined;
   const sessions = createSessions();
   const listeners = new Set<(view: RemoteAccessView) => void>();
 
@@ -145,6 +157,44 @@ export function createRemoteAccess(deps: RemoteAccessDeps) {
     return started;
   };
 
+  /**
+   * Removes the serve mapping only when it still points at OpenMail. False
+   * when Tailscale couldn't be asked, so the mapping may still be there.
+   */
+  const removeMapping = async (target: Mapping): Promise<boolean> => {
+    if (!(await deps.installed())) return true;
+    const current = await runCli(SERVE_STATUS_ARGS);
+    if (current.code !== 0) return false;
+    if (checkServe(current.stdout, target).kind !== "ours") return true;
+    return (await runCli(serveOffArgs(target))).code === 0;
+  };
+
+  const forget = () => {
+    leftover = null;
+    clearTimeout(retry);
+    retry = undefined;
+  };
+  /** Tries the leftover mapping again; keeps retrying in the background until it's gone. */
+  const sweep = async () => {
+    if (!leftover) return;
+    clearTimeout(retry);
+    if (await removeMapping(leftover).catch(() => false)) {
+      forget();
+      if (problem === "removeFailed") {
+        status = "off";
+        problem = null;
+      }
+      return;
+    }
+    retry = setTimeout(() => {
+      serial(async () => {
+        await sweep();
+        emit();
+      }).catch(() => null);
+    }, deps.retryMs ?? RETRY_MS);
+    retry.unref();
+  };
+
   const start = async () => {
     status = "starting";
     problem = null;
@@ -180,26 +230,21 @@ export function createRemoteAccess(deps: RemoteAccessDeps) {
     if (check.kind !== "ours" && (await runCli(serveOnArgs(target))).code !== 0)
       return fail("serveFailed");
     gate = { allowlist: settings.allowlist, host, port: httpsPort() };
+    // The check above already replaced any older mapping for this target.
+    if (leftover?.service === settings.service) forget();
     url = publicUrl(tailscale, settings.service);
     status = "on";
     emit();
   };
 
-  /** Removes the serve mapping only when it still points at OpenMail. */
-  const removeMapping = async () => {
-    const port = server?.port ?? settings.port;
-    if (!port) return;
-    const current = await runCli(SERVE_STATUS_ARGS);
-    if (current.code !== 0) return;
-    const target = { port, service: settings.service };
-    if (checkServe(current.stdout, target).kind === "ours") await runCli(serveOffArgs(target));
-  };
   const unpublish = async () => {
-    await removeMapping();
+    const port = server?.port ?? settings.port;
+    leftover = port ? { port, service: settings.service } : null;
+    await sweep();
     await stopLocal();
-    status = "off";
-    problem = null;
     url = null;
+    status = leftover ? "error" : "off";
+    problem = leftover ? "removeFailed" : null;
     emit();
   };
 
@@ -216,12 +261,18 @@ export function createRemoteAccess(deps: RemoteAccessDeps) {
     init: () =>
       serial(async () => {
         settings = await run(mailbox.remoteAccess);
-        if (settings.enabled) await start();
-        else emit();
+        if (settings.enabled) return start();
+        // Off, but a crash may have left the mapping behind: remove it once Tailscale answers.
+        if (settings.port) {
+          leftover = { port: settings.port, service: settings.service };
+          await sweep();
+        }
+        emit();
       }),
-    /** Reads `tailscale status` again; retries a failed start. */
+    /** Reads `tailscale status` again; retries a failed start or a mapping left behind. */
     refresh: () =>
       serial(async () => {
+        await sweep();
         if (settings.enabled && status === "error") return start();
         tailscale = await detect();
         emit();
@@ -258,10 +309,12 @@ export function createRemoteAccess(deps: RemoteAccessDeps) {
      */
     dispose: () =>
       serial(async () => {
-        if (status === "on" || status === "starting") {
+        forget();
+        const port = server?.port ?? settings.port;
+        if ((status === "on" || status === "starting") && port) {
           let timer: ReturnType<typeof setTimeout> | undefined;
           await Promise.race([
-            removeMapping().catch(() => null),
+            removeMapping({ port, service: settings.service }).catch(() => null),
             new Promise<void>((resolve) => {
               timer = setTimeout(resolve, deps.quitTimeoutMs ?? QUIT_TIMEOUT_MS);
             }),

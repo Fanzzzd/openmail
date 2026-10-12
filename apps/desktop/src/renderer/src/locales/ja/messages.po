@@ -1749,6 +1749,10 @@ msgstr "クリップボードの添付ファイルを読み取れませんでし
 msgid "Couldn't read the image."
 msgstr "画像を読み取れませんでした。"
 
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Couldn't remove the Tailscale mapping. Open Tailscale, and OpenMail removes it as soon as Tailscale responds."
+msgstr "Tailscale のマッピングを削除できませんでした。Tailscale を開いてください。Tailscale が応答したら OpenMail がすぐに削除します。"
+
 #: src/renderer/src/features/compose/components/Composer.tsx
 msgid "Couldn't save"
 msgstr "保存できませんでした"
@@ -2664,6 +2668,10 @@ msgstr "知り合いから"
 msgid "From updated"
 msgstr "差出人を更新しました"
 
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Funnel is on for this port, which would put it on the public internet. OpenMail never uses Funnel. Turn Funnel off for this port first."
+msgstr "このポートで Funnel がオンになっており、公開インターネットに出てしまいます。OpenMail は Funnel を使いません。先にこのポートの Funnel をオフにしてください。"
+
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 msgid "Future messages from this sender will appear in Focused. Existing messages keep their classification."
 msgstr "この送信者からの新しいメッセージは優先に表示されます。既存のメッセージの分類は維持されます。"
@@ -2835,6 +2843,10 @@ msgstr "スレッドが既読としてマークされるまでのスレッドを
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "HTTPS certificates are off"
 msgstr "HTTPS 証明書がオフです"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "HTTPS certificates are off for your tailnet. Turn on MagicDNS and HTTPS Certificates on the DNS page of the Tailscale admin console."
+msgstr "tailnet の HTTPS 証明書がオフです。Tailscale 管理コンソールの DNS ページで MagicDNS と HTTPS 証明書をオンにしてください。"
 
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 msgid "Icon"
@@ -4411,6 +4423,10 @@ msgstr "このリンクを開きますか？"
 msgid "Open With"
 msgstr "このアプリケーションで開く"
 
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "OpenMail couldn't start its local server."
+msgstr "OpenMail のローカルサーバーを起動できませんでした。"
+
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "OpenMail is the default email app"
 msgstr "OpenMail はデフォルトの電子メール アプリです"
@@ -5965,6 +5981,10 @@ msgstr "一部のルール条件はキャッシュされたメールから判定
 msgid "Some server predicates were omitted to preserve matches; local filters still apply:"
 msgstr "一部のサーバー述語は、一致を保持するために省略されました。ローカル フィルターは引き続き適用されます。"
 
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Something else on this Mac already uses Tailscale Serve on this port. OpenMail won't replace it. Remove that mapping or use a Tailscale Service name below."
+msgstr "この Mac では、別のものがこのポートで Tailscale Serve をすでに使っています。OpenMail はそれを置き換えません。そのマッピングを削除するか、下で Tailscale Service 名を使ってください。"
+
 #: src/renderer/src/app/use-native-menu-bridge.ts
 #: src/renderer/src/features/ai/TriageChip.tsx
 #: src/renderer/src/lib/errors.ts
@@ -6193,8 +6213,20 @@ msgid "Tailscale isn't connected"
 msgstr "Tailscale が接続されていません"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Tailscale isn't connected. Open Tailscale on this Mac and sign in."
+msgstr "Tailscale が接続されていません。この Mac で Tailscale を開いてサインインしてください。"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Tailscale isn't installed"
 msgstr "Tailscale がインストールされていません"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Tailscale isn't installed on this Mac."
+msgstr "この Mac に Tailscale がインストールされていません。"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Tailscale Serve didn't accept the change. Check the Tailscale app, then try again."
+msgstr "Tailscale Serve が変更を受け付けませんでした。Tailscale アプリを確認して、もう一度お試しください。"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Tailscale Service name"

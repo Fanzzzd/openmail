@@ -37,10 +37,12 @@ function harness(options: {
 }) {
   // Set by hang(): serve commands never return, like a stuck CLI.
   let hanging = false;
+  // Set by down(): Tailscale isn't running, so every CLI call fails.
+  let down = false;
   let stored: RemoteAccessSettings = { ...DEFAULT_REMOTE_ACCESS, ...options.settings };
   const calls: string[][] = [];
   let rpcRunning = 0;
-  let port = 0;
+  let port = stored.port;
   const deps: RemoteAccessDeps = {
     mailbox: {
       remoteAccess: Effect.sync(() => stored),
@@ -60,6 +62,7 @@ function harness(options: {
     runCli: async (args): Promise<CliResult> => {
       calls.push([...args]);
       if (hanging && args[0] === "serve") return new Promise<CliResult>(constVoid);
+      if (down) return { code: 1, stdout: "" };
       if (args[0] === "status") return { code: 0, stdout: options.status ?? STATUS };
       if (args.join(" ") === "serve status --json")
         return { code: 0, stdout: options.serve?.(port) ?? "{}" };
@@ -68,6 +71,7 @@ function harness(options: {
     },
     webRoot: root,
     quitTimeoutMs: 50,
+    retryMs: 20,
     startRpc: () => {
       rpcRunning++;
       return async () => {
@@ -87,6 +91,9 @@ function harness(options: {
     last: () => views.at(-1),
     hang: () => {
       hanging = true;
+    },
+    tailscaleDown: (value: boolean) => {
+      down = value;
     },
   };
 }
@@ -257,5 +264,76 @@ describe("remote access controller", () => {
     await h.controller.dispose();
     expect(performance.now() - started).toBeLessThan(1000);
     expect(h.rpcRunning()).toBe(0);
+  });
+
+  it("reports a mapping it couldn't remove and removes it once Tailscale answers", async () => {
+    const h = harness({ serve: ours });
+    await h.controller.init();
+    await h.controller.setEnabled(true);
+    h.tailscaleDown(true);
+    await h.controller.setEnabled(false);
+    // Not "off": the mapping may still send tailnet traffic to a port nothing owns.
+    expect(h.last()).toMatchObject({
+      enabled: false,
+      status: "error",
+      problem: "removeFailed",
+      url: null,
+    });
+    expect(h.rpcRunning()).toBe(0);
+    h.tailscaleDown(false);
+    h.calls.length = 0;
+    await h.controller.refresh();
+    expect(h.calls.slice(0, 2)).toEqual([
+      ["serve", "status", "--json"],
+      ["serve", "--https=8443", "off"],
+    ]);
+    expect(h.last()).toMatchObject({ enabled: false, status: "off", problem: null });
+    await h.controller.dispose();
+  });
+
+  it("keeps retrying a mapping it couldn't remove without being asked", async () => {
+    const h = harness({ serve: ours });
+    await h.controller.init();
+    await h.controller.setEnabled(true);
+    h.tailscaleDown(true);
+    await h.controller.setEnabled(false);
+    h.calls.length = 0;
+    h.tailscaleDown(false);
+    await expect
+      .poll(() => h.calls.some((args) => args.join(" ") === "serve --https=8443 off"))
+      .toBe(true);
+    await expect.poll(() => h.last()?.status).toBe("off");
+    await h.controller.dispose();
+  });
+
+  it("removes its own mapping left by a crash when launched with remote access off", async () => {
+    const h = harness({ serve: ours, settings: { enabled: false, port: 45_678 } });
+    await h.controller.init();
+    expect(h.calls).toEqual([
+      ["serve", "status", "--json"],
+      ["serve", "--https=8443", "off"],
+    ]);
+    expect(h.last()).toMatchObject({ status: "off", problem: null });
+    expect(h.rpcRunning()).toBe(0);
+  });
+
+  it("leaves another app's mapping alone at launch", async () => {
+    const h = harness({ serve: () => ours(3000), settings: { enabled: false, port: 45_678 } });
+    await h.controller.init();
+    expect(h.calls).toEqual([["serve", "status", "--json"]]);
+    expect(h.last()).toMatchObject({ status: "off" });
+  });
+
+  it("removes a crash's mapping when Tailscale comes back after launch", async () => {
+    const h = harness({ serve: ours, settings: { enabled: false, port: 45_678 } });
+    h.tailscaleDown(true);
+    await h.controller.init();
+    // Unknown whether a mapping exists: stay quiet, keep trying.
+    expect(h.last()).toMatchObject({ status: "off", problem: null });
+    h.tailscaleDown(false);
+    await expect
+      .poll(() => h.calls.some((args) => args.join(" ") === "serve --https=8443 off"))
+      .toBe(true);
+    await h.controller.dispose();
   });
 });

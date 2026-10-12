@@ -66,7 +66,7 @@ export function Select<T extends string>({
       <BaseSelect.Trigger
         id={id}
         aria-label={label}
-        className={`group flex min-w-0 items-center text-left outline-a11y-focus ${triggerStyles[variant]} ${className}`}
+        className={`group flex min-w-0 coarse:min-h-10 items-center text-left outline-a11y-focus ${triggerStyles[variant]} ${className}`}
       >
         {current?.icon}
         <BaseSelect.Value

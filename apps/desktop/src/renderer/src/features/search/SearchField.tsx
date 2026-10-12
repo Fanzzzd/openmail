@@ -347,7 +347,7 @@ function SuggestionRow({
             event.stopPropagation();
             onRemove(item.query);
           }}
-          className="shrink-0 rounded-item p-0.5 opacity-0 group-data-highlighted:opacity-100 hover:bg-white/20"
+          className="shrink-0 rounded-item p-0.5 opacity-0 group-data-highlighted:opacity-100 hover:bg-white/20 coarse:p-2.5 coarse:opacity-70"
         >
           <X className="size-3" />
         </span>

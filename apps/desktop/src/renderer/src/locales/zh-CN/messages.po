@@ -1759,6 +1759,10 @@ msgstr "无法读取剪贴板附件。"
 msgid "Couldn't read the image."
 msgstr "无法读取图片。"
 
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Couldn't remove the Tailscale mapping. Open Tailscale, and OpenMail removes it as soon as Tailscale responds."
+msgstr "无法移除 Tailscale 映射。打开 Tailscale，Tailscale 响应后 OpenMail 会立即移除它。"
+
 #: src/renderer/src/features/compose/components/Composer.tsx
 msgid "Couldn't save"
 msgstr "保存失败"
@@ -2674,6 +2678,10 @@ msgstr "来自我认识的人"
 msgid "From updated"
 msgstr "已更新发件人"
 
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Funnel is on for this port, which would put it on the public internet. OpenMail never uses Funnel. Turn Funnel off for this port first."
+msgstr "这个端口开启了 Funnel，会把它暴露到公共互联网。OpenMail 从不使用 Funnel。请先关闭这个端口的 Funnel。"
+
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 msgid "Future messages from this sender will appear in Focused. Existing messages keep their classification."
 msgstr "此发件人的新邮件将显示在重点中。已有邮件保留原分类。"
@@ -2845,6 +2853,10 @@ msgstr "打开会话多久后标为已读。选「手动」时，用 {readShortc
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "HTTPS certificates are off"
 msgstr "HTTPS 证书未开启"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "HTTPS certificates are off for your tailnet. Turn on MagicDNS and HTTPS Certificates on the DNS page of the Tailscale admin console."
+msgstr "你的 tailnet 没有开启 HTTPS 证书。在 Tailscale 管理控制台的 DNS 页面开启 MagicDNS 和 HTTPS 证书。"
 
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 msgid "Icon"
@@ -4421,6 +4433,10 @@ msgstr "打开此链接？"
 msgid "Open With"
 msgstr "打开方式"
 
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "OpenMail couldn't start its local server."
+msgstr "OpenMail 无法启动本地服务器。"
+
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "OpenMail is the default email app"
 msgstr "OpenMail 已是默认邮件客户端"
@@ -5975,6 +5991,10 @@ msgstr "部分规则条件无法通过缓存邮件判断"
 msgid "Some server predicates were omitted to preserve matches; local filters still apply:"
 msgstr "为保留匹配，服务器搜索省略了部分条件；本地仍会筛选："
 
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Something else on this Mac already uses Tailscale Serve on this port. OpenMail won't replace it. Remove that mapping or use a Tailscale Service name below."
+msgstr "这台 Mac 上已有其他程序在这个端口使用 Tailscale Serve。OpenMail 不会替换它。请移除那个映射，或在下方使用 Tailscale Service 名称。"
+
 #: src/renderer/src/app/use-native-menu-bridge.ts
 #: src/renderer/src/features/ai/TriageChip.tsx
 #: src/renderer/src/lib/errors.ts
@@ -6203,8 +6223,20 @@ msgid "Tailscale isn't connected"
 msgstr "Tailscale 未连接"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Tailscale isn't connected. Open Tailscale on this Mac and sign in."
+msgstr "Tailscale 未连接。在这台 Mac 上打开 Tailscale 并登录。"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Tailscale isn't installed"
 msgstr "未安装 Tailscale"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Tailscale isn't installed on this Mac."
+msgstr "这台 Mac 上没有安装 Tailscale。"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Tailscale Serve didn't accept the change. Check the Tailscale app, then try again."
+msgstr "Tailscale Serve 没有接受这次更改。检查 Tailscale app 后再试一次。"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Tailscale Service name"

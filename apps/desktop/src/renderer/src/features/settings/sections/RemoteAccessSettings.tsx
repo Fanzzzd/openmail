@@ -104,7 +104,9 @@ function QrCode({ value, label }: { value: string; label: string }) {
   );
 }
 
-function problemText(problem: RemoteAccessProblem, t: ReturnType<typeof useLingui>["t"]): string {
+/** Why remote access isn't on. A component, so the Lingui macro extracts these messages. */
+function ProblemText({ problem }: { problem: RemoteAccessProblem }) {
+  const { t } = useLingui();
   const texts: Record<RemoteAccessProblem, string> = {
     notInstalled: t`Tailscale isn't installed on this Mac.`,
     notRunning: t`Tailscale isn't connected. Open Tailscale on this Mac and sign in.`,
@@ -113,8 +115,9 @@ function problemText(problem: RemoteAccessProblem, t: ReturnType<typeof useLingu
     funnel: t`Funnel is on for this port, which would put it on the public internet. OpenMail never uses Funnel. Turn Funnel off for this port first.`,
     serveFailed: t`Tailscale Serve didn't accept the change. Check the Tailscale app, then try again.`,
     serverFailed: t`OpenMail couldn't start its local server.`,
+    removeFailed: t`Couldn't remove the Tailscale mapping. Open Tailscale, and OpenMail removes it as soon as Tailscale responds.`,
   };
-  return texts[problem];
+  return <span className="text-red-600 dark:text-red-400">{texts[problem]}</span>;
 }
 
 function Status({ view }: { view: RemoteAccessView }) {
@@ -401,7 +404,7 @@ export function RemoteAccessSettings() {
             view.status === "starting" ? (
               <Trans>Starting…</Trans>
             ) : view.problem ? (
-              <span className="text-red-600 dark:text-red-400">{problemText(view.problem, t)}</span>
+              <ProblemText problem={view.problem} />
             ) : (
               toggleError
             )

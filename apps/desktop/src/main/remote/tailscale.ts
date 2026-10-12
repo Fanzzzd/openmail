@@ -1,5 +1,6 @@
 import { execFile } from "node:child_process";
 import { access, constants } from "node:fs/promises";
+import { delimiter, isAbsolute, join } from "node:path";
 import {
   REMOTE_HTTPS_PORT,
   REMOTE_SERVICE_PORT,
@@ -7,7 +8,13 @@ import {
 } from "../../shared/remote-access";
 
 /** The CLI inside the Mac app from tailscale.com/download. OpenMail never installs it. */
-const TAILSCALE_CLI = "/Applications/Tailscale.app/Contents/MacOS/Tailscale";
+const APP_CLI = "/Applications/Tailscale.app/Contents/MacOS/Tailscale";
+/**
+ * Where a CLI-only install puts `tailscale`: Homebrew on Apple silicon and on
+ * Intel, or the standalone tailscaled package. It talks to the same tailscaled,
+ * so status, serve and the identity headers behave as with the app.
+ */
+const CLI_PATHS = ["/opt/homebrew/bin/tailscale", "/usr/local/bin/tailscale"];
 
 export interface CliResult {
   code: number;
@@ -25,9 +32,33 @@ export const NOT_INSTALLED: TailscaleState = {
   https: false,
 };
 
-/** Runs the bundled CLI with a fixed argv; no shell, bounded time and output. */
-export const runTailscale =
-  (cli = TAILSCALE_CLI): CliRunner =>
+/** The Tailscale CLIs to try, in order: the app's, the usual install paths, then PATH. */
+export function tailscaleCandidates(pathEnv = process.env.PATH ?? ""): string[] {
+  const onPath = pathEnv
+    .split(delimiter)
+    .filter((dir) => isAbsolute(dir))
+    .map((dir) => join(dir, "tailscale"));
+  return [...new Set([APP_CLI, ...CLI_PATHS, ...onPath])];
+}
+
+const executable = (file: string) =>
+  access(file, constants.X_OK).then(
+    () => true,
+    () => false,
+  );
+
+/** The first Tailscale CLI that exists and is executable, or null. */
+export async function findTailscale(
+  candidates = tailscaleCandidates(),
+  canRun: (file: string) => Promise<boolean> = executable,
+): Promise<string | null> {
+  for (const file of candidates) if (await canRun(file)) return file;
+  return null;
+}
+
+/** Runs one CLI with a fixed argv; no shell, bounded time and output. */
+export const runCli =
+  (cli: string): CliRunner =>
   (args) =>
     new Promise((resolve) => {
       execFile(
@@ -48,11 +79,23 @@ export const runTailscale =
       );
     });
 
-export const cliInstalled = (cli = TAILSCALE_CLI) =>
-  access(cli, constants.X_OK).then(
-    () => true,
-    () => false,
-  );
+/**
+ * The Tailscale CLI on this Mac: the app's or a CLI-only install. Each check
+ * looks again, so installing Tailscale while OpenMail runs is picked up.
+ */
+export function localTailscale(find: () => Promise<string | null> = () => findTailscale()) {
+  let cli: string | null = null;
+  return {
+    installed: async () => {
+      cli = await find();
+      return cli !== null;
+    },
+    runCli: (async (args) => {
+      cli ??= await find();
+      return cli ? runCli(cli)(args) : { code: 127, stdout: "" };
+    }) satisfies CliRunner,
+  };
+}
 
 const record = (value: unknown): Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value)

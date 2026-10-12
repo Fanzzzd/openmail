@@ -40,6 +40,7 @@ import {
   MenuItem,
   MenuSeparator,
 } from "../../ui/Menu";
+import { touchIcon } from "../../ui/styles";
 import { PickerPopover, pickerInput, pickerItem, pickerList } from "../../ui/Picker";
 import { useShortcutText } from "../../i18n/use-shortcut-text";
 import { useElementWidth } from "../../lib/use-element-width";
@@ -96,8 +97,7 @@ const moveBack = (state: ThreadState, mailbox: Mailbox) => {
   );
 };
 
-const button =
-  "rounded-control p-1.5 text-a11y-muted outline-offset-0 outline-a11y-focus hover:bg-fill-hover hover:text-neutral-800 focus-visible:outline-[3px] data-popup-open:bg-fill-pressed dark:hover:text-neutral-100";
+const button = `rounded-control p-1.5 ${touchIcon} text-a11y-muted outline-offset-0 outline-a11y-focus hover:bg-fill-hover hover:text-neutral-800 focus-visible:outline-[3px] data-popup-open:bg-fill-pressed dark:hover:text-neutral-100`;
 
 /**
  * Mimestream-style toolbar above the reader. Arrow keys move between the

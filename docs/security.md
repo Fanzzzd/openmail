@@ -99,10 +99,11 @@ frame 标识依据：[Electron WebFrameMain](https://www.electronjs.org/docs/lat
 
 ### 发布
 
-- OpenMail 调用 Tailscale app 自带的 `/Applications/Tailscale.app/Contents/MacOS/Tailscale`，不安装任何东西。未安装时设置页给出 tailscale.com/download 链接。
+- OpenMail 先找 Tailscale app 自带的 `/Applications/Tailscale.app/Contents/MacOS/Tailscale`，再找 CLI 单独安装的 `/opt/homebrew/bin/tailscale`、`/usr/local/bin/tailscale` 和 `PATH` 里绝对路径目录下的 `tailscale`（`tailscale.ts` 的 `tailscaleCandidates`）。它们连同一个 tailscaled，`status`、`serve` 和身份头行为相同。调用一律用 `execFile` 和固定 argv，不经过 shell。OpenMail 不安装任何东西，都找不到时设置页给出 tailscale.com/download 链接。
 - 打开前依次检查：已安装、已登录、tailnet 开了 HTTPS 证书（`status --json` 的 `CertDomains` 非空）。
 - 先读 `serve status --json`。8443 已被别的映射、TCP 转发、前台 serve 或 Funnel 占用时拒绝，不覆盖。之后运行 `tailscale serve --bg --https=8443 http://127.0.0.1:<port>`。
-- 关闭时运行 `tailscale serve --https=8443 off`，只在映射指向本应用端口时执行。
+- 关闭时运行 `tailscale serve --https=8443 off`，只在映射指向本应用端口时执行。`serve status` 或 `serve off` 失败时（例如 Tailscale 没在运行）不报告“已关闭”：状态为 `error`，问题为 `removeFailed`，设置页提示没能移除映射。控制器记下这个映射，每 30 秒（`RETRY_MS`）和每次 Refresh 重试，Tailscale 恢复后按同样的归属检查移除。
+- 启动时设置为关闭但存过端口（上次可能崩溃在开启状态），同样检查一次，映射指向本应用旧端口时移除。Tailscale 不可达时不报错，后台重试。
 - 退出应用时同样移除映射，最多等 3 秒（`QUIT_TIMEOUT_MS`），设置保持打开，下次启动重新发布。否则应用关闭期间映射仍指向空着的 loopback 端口，本机其他进程或其他 macOS 用户可以占用该端口，接收 tailnet 流量和身份头。超时或 CLI 失败时映射会留下，下次启动时 `serve status` 识别为本应用的旧映射并替换。
 - serve 目标只用 TCP loopback。macOS 图形版 Tailscale 是沙盒内的网络扩展，大概率读不到用户目录下的 unix socket，没有实测前不改用 socket 目标。
 - 从不运行 `tailscale funnel`。`serve status` 里该端口有 `AllowFunnel` 时拒绝启动。
@@ -158,4 +159,4 @@ Tailscale 身份才是凭证。会话只把一个浏览器的 WebSocket、下载
 - 退出时移除映射超时或失败，映射会留到下次启动。这期间端口占用的风险见上文“发布”。
 - Disconnect 不能挡住仍在允许列表里的 login，见“会话”。
 
-验证：`remote-server.test.ts`（认证矩阵、会话签发范围、上限、清理、CSP、穿越、附件上下行限制、上传并发、WebSocket Origin 和断开）、`remote-rpcs.test.ts`、`tailscale.test.ts`（serve 参数和冲突检测）、`remote-access.test.ts`（假 CLI 下的开关流程、退出时移除映射及 CLI 卡住时的超时）、`e2e/web.test.ts`（浏览器端经 WebSocket 渲染收件箱）。`OPENMAIL_WEB_SHOT=<dir>` 时 `web-shot.test.ts` 用 Electron 的 Chromium 截取 390 px 和 1280 px 的构建产物。
+验证：`remote-server.test.ts`（认证矩阵、会话签发范围、上限、清理、CSP、穿越、附件上下行限制、上传并发、WebSocket Origin 和断开）、`remote-rpcs.test.ts`、`tailscale.test.ts`（serve 参数、冲突检测和 CLI 查找顺序）、`remote-access.test.ts`（假 CLI 下的开关流程、退出时移除映射、CLI 卡住时的超时、Tailscale 不可达时的 `removeFailed` 与重试、启动时清理崩溃留下的映射）、`e2e/web.test.ts`（浏览器端经 WebSocket 渲染收件箱）。`OPENMAIL_WEB_SHOT=<dir>` 时 `web-shot.test.ts` 用 Electron 的 Chromium 截取 390 px 和 1280 px 的构建产物。

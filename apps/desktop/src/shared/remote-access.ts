@@ -27,6 +27,8 @@ export const RemoteAccessProblem = Schema.Literals([
   "funnel",
   "serveFailed",
   "serverFailed",
+  /** Remote access is off, but Tailscale couldn't be asked to remove OpenMail's mapping yet. */
+  "removeFailed",
 ]);
 export type RemoteAccessProblem = typeof RemoteAccessProblem.Type;
 

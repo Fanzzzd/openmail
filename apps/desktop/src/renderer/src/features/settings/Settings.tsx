@@ -75,6 +75,7 @@ import {
   settingsGroup,
   settingsHeading,
   settingsHint,
+  touchTarget,
 } from "../../ui/styles";
 import { Select } from "../../ui/Select";
 
@@ -211,7 +212,7 @@ export function Settings({
                 <Tabs.Tab
                   key={item.id}
                   value={item.id}
-                  className={`flex h-7 shrink-0 items-center gap-2 rounded-control px-2 text-left whitespace-nowrap outline-none hover:bg-fill-hover focus-visible:ring-2 focus-visible:ring-a11y-focus data-active:bg-fill-pressed data-active:font-medium max-sm:pr-2.5 ${item.group ? "sm:mt-3" : "sm:mt-px"}`}
+                  className={`flex h-7 shrink-0 items-center gap-2 rounded-control px-2 ${touchTarget} text-left whitespace-nowrap outline-none hover:bg-fill-hover focus-visible:ring-2 focus-visible:ring-a11y-focus data-active:bg-fill-pressed data-active:font-medium max-sm:pr-2.5 ${item.group ? "sm:mt-3" : "sm:mt-px"}`}
                 >
                   <span
                     aria-hidden

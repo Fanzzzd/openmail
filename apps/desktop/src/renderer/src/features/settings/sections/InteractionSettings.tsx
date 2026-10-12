@@ -18,6 +18,7 @@ import { SettingsCheckRow, SettingsGroup, SettingsRow } from "../../../ui/Settin
 import { buttonSecondary } from "../../../ui/styles";
 
 import { actionNames } from "../../../i18n/action-names";
+import { isDesktop } from "../../../lib/platform";
 
 function usePreferences() {
   const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => DEFAULT_PREFS);
@@ -60,38 +61,44 @@ export function InteractionSettings() {
   const actions = prefs.toolbarActions;
   return (
     <>
-      <SettingsGroup
-        title={<Trans>Swipe actions</Trans>}
-        footer={
-          <Trans>
-            Swipe horizontally with two fingers. Release after a short or long swipe to apply the
-            action.
-          </Trans>
-        }
-      >
-        {(
-          [
-            { key: "leftShort", label: t`Left short swipe` },
-            { key: "leftLong", label: t`Left long swipe` },
-            { key: "rightShort", label: t`Right short swipe` },
-            { key: "rightLong", label: t`Right long swipe` },
-          ] as const
-        ).map(({ key, label }) => (
-          <SettingsRow key={key} label={label} htmlFor={`swipe-action-${key}`}>
-            <Select
-              id={`swipe-action-${key}`}
-              aria-label={label}
-              variant="field"
-              className="min-w-40"
-              value={prefs.swipeActions[key]}
-              options={SWIPE_ACTIONS.map((value) => ({ value, label: i18n._(actionNames[value]) }))}
-              onValueChange={(value) =>
-                save({ swipeActions: { ...prefs.swipeActions, [key]: value } })
-              }
-            />
-          </SettingsRow>
-        ))}
-      </SettingsGroup>
+      {/* Swipes come from a trackpad's two-finger scroll; a phone browser has none. */}
+      {isDesktop() && (
+        <SettingsGroup
+          title={<Trans>Swipe actions</Trans>}
+          footer={
+            <Trans>
+              Swipe horizontally with two fingers. Release after a short or long swipe to apply the
+              action.
+            </Trans>
+          }
+        >
+          {(
+            [
+              { key: "leftShort", label: t`Left short swipe` },
+              { key: "leftLong", label: t`Left long swipe` },
+              { key: "rightShort", label: t`Right short swipe` },
+              { key: "rightLong", label: t`Right long swipe` },
+            ] as const
+          ).map(({ key, label }) => (
+            <SettingsRow key={key} label={label} htmlFor={`swipe-action-${key}`}>
+              <Select
+                id={`swipe-action-${key}`}
+                aria-label={label}
+                variant="field"
+                className="min-w-40"
+                value={prefs.swipeActions[key]}
+                options={SWIPE_ACTIONS.map((value) => ({
+                  value,
+                  label: i18n._(actionNames[value]),
+                }))}
+                onValueChange={(value) =>
+                  save({ swipeActions: { ...prefs.swipeActions, [key]: value } })
+                }
+              />
+            </SettingsRow>
+          ))}
+        </SettingsGroup>
+      )}
       <SettingsGroup
         title={<Trans>Toolbar actions</Trans>}
         footer={<Trans>Choose actions and use the buttons to change their order.</Trans>}

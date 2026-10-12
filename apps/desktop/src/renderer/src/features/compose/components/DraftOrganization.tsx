@@ -5,7 +5,7 @@ import { useState } from "react";
 import type { OutgoingMessage, Provider } from "../../../../../shared/api";
 import { labelsAtom } from "../../../state/queries";
 import { Tag } from "lucide-react";
-import { iconButton } from "../../../ui/styles";
+import { iconButton, touchIcon } from "../../../ui/styles";
 import { Tip } from "../../../ui/Tip";
 
 type Organization = NonNullable<OutgoingMessage["draftOrganization"]>;
@@ -44,7 +44,7 @@ export function DraftOrganization({
         aria-label={provider === "gmail" ? t`Star draft on this Mac` : t`Star draft`}
         aria-pressed={value.starred}
         onClick={() => onChange({ ...value, starred: !value.starred })}
-        className="rounded px-2 py-1 hover:bg-black/5"
+        className={`rounded px-2 py-1 ${touchIcon} hover:bg-black/5`}
       >
         {value.starred ? "★" : "☆"}
       </button>

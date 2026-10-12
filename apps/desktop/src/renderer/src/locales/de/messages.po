@@ -1749,6 +1749,10 @@ msgstr "Der Zwischenablage-Anhang konnte nicht gelesen werden."
 msgid "Couldn't read the image."
 msgstr "Das Bild konnte nicht gelesen werden."
 
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Couldn't remove the Tailscale mapping. Open Tailscale, and OpenMail removes it as soon as Tailscale responds."
+msgstr "Die Tailscale-Zuordnung konnte nicht entfernt werden. Öffne Tailscale; OpenMail entfernt sie, sobald Tailscale antwortet."
+
 #: src/renderer/src/features/compose/components/Composer.tsx
 msgid "Couldn't save"
 msgstr "Konnte nicht gespeichert werden"
@@ -2664,6 +2668,10 @@ msgstr "Von Personen, die ich kenne"
 msgid "From updated"
 msgstr "Absender aktualisiert"
 
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Funnel is on for this port, which would put it on the public internet. OpenMail never uses Funnel. Turn Funnel off for this port first."
+msgstr "Für diesen Port ist Funnel aktiv, damit wäre er im öffentlichen Internet erreichbar. OpenMail verwendet nie Funnel. Deaktiviere Funnel für diesen Port zuerst."
+
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 msgid "Future messages from this sender will appear in Focused. Existing messages keep their classification."
 msgstr "Künftige Nachrichten dieses Absenders erscheinen unter Relevant. Vorhandene Nachrichten behalten ihre Zuordnung."
@@ -2835,6 +2843,10 @@ msgstr "Wie lange eine Konversation geöffnet bleibt, bevor sie als gelesen mark
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "HTTPS certificates are off"
 msgstr "HTTPS-Zertifikate sind aus"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "HTTPS certificates are off for your tailnet. Turn on MagicDNS and HTTPS Certificates on the DNS page of the Tailscale admin console."
+msgstr "HTTPS-Zertifikate sind für dein Tailnet deaktiviert. Aktiviere MagicDNS und HTTPS Certificates auf der DNS-Seite der Tailscale-Admin-Konsole."
 
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 msgid "Icon"
@@ -4411,6 +4423,10 @@ msgstr "Diesen Link öffnen?"
 msgid "Open With"
 msgstr "Öffnen mit"
 
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "OpenMail couldn't start its local server."
+msgstr "OpenMail konnte seinen lokalen Server nicht starten."
+
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "OpenMail is the default email app"
 msgstr "OpenMail ist die Standard-E-Mail-App"
@@ -5965,6 +5981,10 @@ msgstr "Einige Regelbedingungen lassen sich anhand zwischengespeicherter Nachric
 msgid "Some server predicates were omitted to preserve matches; local filters still apply:"
 msgstr "Einige Serverprädikate wurden weggelassen, um Übereinstimmungen beizubehalten. Es gelten weiterhin lokale Filter:"
 
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Something else on this Mac already uses Tailscale Serve on this port. OpenMail won't replace it. Remove that mapping or use a Tailscale Service name below."
+msgstr "Etwas anderes auf diesem Mac nutzt Tailscale Serve bereits auf diesem Port. OpenMail ersetzt das nicht. Entferne diese Zuordnung oder verwende unten einen Tailscale-Service-Namen."
+
 #: src/renderer/src/app/use-native-menu-bridge.ts
 #: src/renderer/src/features/ai/TriageChip.tsx
 #: src/renderer/src/lib/errors.ts
@@ -6193,8 +6213,20 @@ msgid "Tailscale isn't connected"
 msgstr "Tailscale ist nicht verbunden"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Tailscale isn't connected. Open Tailscale on this Mac and sign in."
+msgstr "Tailscale ist nicht verbunden. Öffne Tailscale auf diesem Mac und melde dich an."
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Tailscale isn't installed"
 msgstr "Tailscale ist nicht installiert"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Tailscale isn't installed on this Mac."
+msgstr "Tailscale ist auf diesem Mac nicht installiert."
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Tailscale Serve didn't accept the change. Check the Tailscale app, then try again."
+msgstr "Tailscale Serve hat die Änderung nicht übernommen. Prüfe die Tailscale-App und versuche es erneut."
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Tailscale Service name"

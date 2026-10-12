@@ -27,6 +27,7 @@ import { KeyboardToolbar } from "../../../ui/KeyboardToolbar";
 import { DropdownMenu, MenuItem, MenuSeparator } from "../../../ui/Menu";
 import { PickerPopover } from "../../../ui/Picker";
 import { Select } from "../../../ui/Select";
+import { touchTarget } from "../../../ui/styles";
 import { Tip } from "../../../ui/Tip";
 
 type Icon = ComponentType<{ className?: string }>;
@@ -45,8 +46,7 @@ function visibleTiers(width: number): Record<ToolbarTier, boolean> {
   return { style: fits("style"), lists: fits("lists"), align: fits("align"), quote: fits("quote") };
 }
 
-const button =
-  "flex size-7 shrink-0 items-center justify-center rounded-control text-a11y-muted hover:bg-fill-hover disabled:opacity-40 data-popup-open:bg-fill-pressed";
+const button = `flex size-7 shrink-0 items-center justify-center rounded-control ${touchTarget} text-a11y-muted hover:bg-fill-hover disabled:opacity-40 data-popup-open:bg-fill-pressed`;
 
 interface Props {
   /** The writing mode select and any one-off undo buttons, first in the row. */

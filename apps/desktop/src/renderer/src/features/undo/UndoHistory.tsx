@@ -2,6 +2,7 @@ import { useLingui } from "@lingui/react/macro";
 import { History } from "lucide-react";
 import type { UndoHistoryEntry } from "@openmail/core/schema";
 import { DropdownMenu, MenuItem } from "../../ui/Menu";
+import { touchIcon } from "../../ui/styles";
 
 /** Restored operations are selected explicitly and never become the window Undo command. */
 export function UndoHistory({
@@ -18,7 +19,7 @@ export function UndoHistory({
         <button
           type="button"
           aria-label={t`Undo history`}
-          className="rounded-control p-1.5 text-a11y-muted hover:bg-fill-hover"
+          className={`rounded-control p-1.5 ${touchIcon} text-a11y-muted hover:bg-fill-hover`}
         >
           <History className="size-4" />
         </button>

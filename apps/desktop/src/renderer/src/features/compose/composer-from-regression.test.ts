@@ -93,7 +93,7 @@ vi.mock("../../ui/Dialog", () => ({
   alertButton: "",
   alertPrimary: "",
   alertDanger: "",
-  narrowSheet: "",
+  narrowSheet: () => "",
   SheetDragStrip: () => null,
 }));
 vi.mock("../../ui/Picker", () => ({
