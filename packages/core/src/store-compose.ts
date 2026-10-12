@@ -1,4 +1,5 @@
 import { makeOutboxStore } from "./mobile-outbox.js";
+import { makeRemoteAccessStore } from "./remote-access.js";
 import { PlatformCrypto } from "./platform/crypto.js";
 import { makeSignatureStore } from "./store-signatures.js";
 import { signatureDefault } from "./signatures.js";
@@ -885,6 +886,7 @@ export function makeComposeStore(
     enqueueDraftSave,
     dropSyncedDrafts,
     ...makeOutboxStore(sql),
+    ...makeRemoteAccessStore(sql),
     prefs,
     setPrefs,
     signatures,

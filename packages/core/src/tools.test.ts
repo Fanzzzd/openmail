@@ -129,6 +129,8 @@ function stubMailbox(overrides: Partial<Service>): Layer.Layer<Mailbox> {
     resetFavorites: () => notUsed("resetFavorites"),
     updateTokenConfigured: Effect.die("unused"),
     setUpdateToken: () => Effect.die("unused"),
+    remoteAccess: Effect.die("unused"),
+    setRemoteAccess: () => Effect.die("unused"),
     startUpdates: () => Effect.die("unused"),
     cacheSize: Effect.die("unused"),
     clearCache: () => Effect.die("unused"),

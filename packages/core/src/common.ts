@@ -81,3 +81,4 @@ export { ProviderDiagnostic } from "./provider-diagnostics.js";
 export { SyncResetDiagnostic } from "./sync-reset.js";
 
 export * from "./search-snippets.js";
+export * from "./remote-access.js";

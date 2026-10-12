@@ -546,6 +546,11 @@ export class Mailbox extends Context.Service<
     ): Effect.Effect<import("./updates.js").ManualUpdateResult>;
     readonly updateTokenConfigured: Effect.Effect<boolean, ProviderError>;
     setUpdateToken(token: string): Effect.Effect<void, InvalidInput>;
+    /** Main process only; no RPC exposes these. */
+    readonly remoteAccess: Effect.Effect<import("./remote-access.js").RemoteAccessSettings>;
+    setRemoteAccess(
+      settings: import("./remote-access.js").RemoteAccessSettings,
+    ): Effect.Effect<import("./remote-access.js").RemoteAccessSettings, InvalidInput>;
     startUpdates(
       client: UpdateClient,
       options: import("./updates.js").UpdateOptions,

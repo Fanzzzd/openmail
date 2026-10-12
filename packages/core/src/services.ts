@@ -586,6 +586,10 @@ export class Store extends Context.Service<
     takeNotifications(now: number): Effect.Effect<import("./domain.js").NotificationBatch[]>;
     readonly prefs: Effect.Effect<Prefs>;
     setPrefs(patch: PrefsPatch): Effect.Effect<void>;
+    readonly remoteAccess: Effect.Effect<import("./remote-access.js").RemoteAccessSettings>;
+    setRemoteAccess(
+      settings: import("./remote-access.js").RemoteAccessSettings,
+    ): Effect.Effect<void>;
     readonly signatures: Effect.Effect<Signature[]>;
     readonly namedSignatures: Effect.Effect<NamedSignature[]>;
     readonly signatureDefaults: Effect.Effect<readonly SignatureDefault[]>;

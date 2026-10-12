@@ -1,3 +1,4 @@
+import { normalizeRemoteAccess } from "./remote-access.js";
 import { makeStorageMailbox } from "./mailbox-storage.js";
 import {
   Cause,
@@ -454,6 +455,12 @@ export const MailboxLive = (
             );
             yield* emit({ _tag: "UpdateSettingsChanged", resetState: true });
           }),
+
+        remoteAccess: store.remoteAccess,
+        setRemoteAccess: (input) =>
+          normalizeRemoteAccess(input).pipe(
+            Effect.tap((settings) => store.setRemoteAccess(settings)),
+          ),
 
         startUpdates: (client, updateOptions) =>
           Effect.flatMap(store.prefs, (prefs) =>
