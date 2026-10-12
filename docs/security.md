@@ -103,6 +103,7 @@ frame 标识依据：[Electron WebFrameMain](https://www.electronjs.org/docs/lat
 - 打开前依次检查：已安装、已登录、tailnet 开了 HTTPS 证书（`status --json` 的 `CertDomains` 非空）。
 - 先读 `serve status --json`。8443 已被别的映射、TCP 转发、前台 serve 或 Funnel 占用时拒绝，不覆盖。之后运行 `tailscale serve --bg --https=8443 http://127.0.0.1:<port>`。
 - 关闭时运行 `tailscale serve --https=8443 off`，只在映射指向本应用端口时执行。`serve status` 或 `serve off` 失败时（例如 Tailscale 没在运行）不报告“已关闭”：状态为 `error`，问题为 `removeFailed`，设置页提示没能移除映射。控制器记下这个映射，每 30 秒（`RETRY_MS`）和每次 Refresh 重试，Tailscale 恢复后按同样的归属检查移除。
+- 只读会话（`OPENMAIL_READ_ONLY=1`，例如 smoke）不运行 Tailscale CLI，视为未安装，不发布也不移除映射（`sessionTailscale`）。
 - 启动时设置为关闭但存过端口（上次可能崩溃在开启状态），同样检查一次，映射指向本应用旧端口时移除。Tailscale 不可达时不报错，后台重试。
 - 退出应用时同样移除映射，最多等 3 秒（`QUIT_TIMEOUT_MS`），设置保持打开，下次启动重新发布。否则应用关闭期间映射仍指向空着的 loopback 端口，本机其他进程或其他 macOS 用户可以占用该端口，接收 tailnet 流量和身份头。超时或 CLI 失败时映射会留下，下次启动时 `serve status` 识别为本应用的旧映射并替换。
 - serve 目标只用 TCP loopback。macOS 图形版 Tailscale 是沙盒内的网络扩展，大概率读不到用户目录下的 unix socket，没有实测前不改用 socket 目标。

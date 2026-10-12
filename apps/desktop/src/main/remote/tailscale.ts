@@ -97,6 +97,13 @@ export function localTailscale(find: () => Promise<string | null> = () => findTa
   };
 }
 
+/**
+ * The CLI for this app session. A read-only session (smoke, diagnostics on a
+ * database copy) never publishes the mailbox and never runs Tailscale.
+ */
+export const sessionTailscale = (env: Readonly<Record<string, string | undefined>>) =>
+  localTailscale(env.OPENMAIL_READ_ONLY === "1" ? async () => null : undefined);
+
 const record = (value: unknown): Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value)
     ? Object.fromEntries(Object.entries(value))

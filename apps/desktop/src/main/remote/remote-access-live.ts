@@ -6,7 +6,7 @@ import type { RemoteAccessView } from "../../shared/remote-access";
 import { localLog } from "../app/reliability";
 import { createRemoteAccess, type RemoteAccessController } from "./remote-access";
 import { remoteRpcServer } from "./remote-rpc-server";
-import { localTailscale } from "./tailscale";
+import { sessionTailscale } from "./tailscale";
 
 export class RemoteAccess extends Context.Service<
   RemoteAccess,
@@ -53,7 +53,7 @@ export const RemoteAccessLive = Layer.effect(
   RemoteAccess,
   Effect.gen(function* () {
     const mailbox = yield* Mailbox;
-    const tailscale = localTailscale();
+    const tailscale = sessionTailscale(process.env);
     const controller = createRemoteAccess({
       mailbox,
       runCli: tailscale.runCli,

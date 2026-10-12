@@ -5,6 +5,7 @@ import {
   localTailscale,
   parseStatus,
   publicUrl,
+  sessionTailscale,
   SERVE_STATUS_ARGS,
   serveOffArgs,
   serveOnArgs,
@@ -219,6 +220,15 @@ describe("finding the Tailscale CLI", () => {
     expect(await tailscale.runCli(["status", "--json"])).toEqual({
       code: 0,
       stdout: "status --json\n",
+    });
+  });
+
+  it("never runs Tailscale in a read-only session such as smoke", async () => {
+    const tailscale = sessionTailscale({ OPENMAIL_READ_ONLY: "1", PATH: "/bin" });
+    expect(await tailscale.installed()).toBe(false);
+    expect(await tailscale.runCli(["serve", "--https=8443", "off"])).toEqual({
+      code: 127,
+      stdout: "",
     });
   });
 });

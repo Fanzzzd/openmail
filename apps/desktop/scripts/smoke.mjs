@@ -236,14 +236,25 @@ try {
         report.consoleErrors.push(entry.text.slice(0, 2000));
     }
   });
+  // Say why the page went away: the renderer crashed, or the preview process exited.
+  let crashed = false;
+  socket.addEventListener("message", (event) => {
+    if (JSON.parse(String(event.data)).method === "Inspector.targetCrashed") crashed = true;
+  });
   socket.addEventListener("close", () => {
-    for (const p of pending.values()) p.reject(new Error("CDP closed"));
+    const exited =
+      child && (child.exitCode !== null || child.signalCode !== null)
+        ? `preview exited: ${child.exitCode ?? child.signalCode}`
+        : "preview still running";
+    const reason = `CDP closed (${crashed ? "renderer crashed, " : ""}${exited})`;
+    for (const p of pending.values()) p.reject(new Error(reason));
     pending.clear();
   });
   const launch = await send("Browser.getBrowserCommandLine");
   if (!launch.arguments?.includes(`--user-data-dir=${directory}`))
     throw new Error("CDP belongs to a different application session");
   await send("Runtime.enable");
+  await send("Inspector.enable");
   await send("Log.enable");
   await send("Page.enable");
   // Window managers may tile the window narrow; the steps below need the three-pane layout.

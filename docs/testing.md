@@ -137,13 +137,13 @@ node apps/desktop/scripts/smoke.mjs --db /path/to/mail.db
 
 stdout 输出 JSON，stderr 输出步骤和预览日志：
 
-| 字段                                           | 含义                                                                                         |
-| ---------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `readOnly`、`copiedDatabase`                   | 已启用只读会话，以及是否提供原库副本                                                         |
-| `steps`                                        | 每步 passed／skipped 及跳过原因；无缓存 Inbox 会话跳过阅读，无账户跳过撰写和 Settings        |
-| `syncHealth`                                   | 各账户脱敏同步健康报告；无账户为空，字段和判断见[同步说明](sync-correctness.md#同步健康检查) |
-| `consoleErrors`、`exceptions`、`ipcRejections` | renderer 错误、异常和 RPC 拒绝；正常中断不计拒绝                                             |
-| `failure`                                      | 步骤超时、预览退出或其他脚本失败原因；成功为空                                               |
+| 字段                                           | 含义                                                                                                |
+| ---------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `readOnly`、`copiedDatabase`                   | 已启用只读会话，以及是否提供原库副本                                                                |
+| `steps`                                        | 每步 passed／skipped 及跳过原因；无缓存 Inbox 会话跳过阅读，无账户跳过撰写和 Settings               |
+| `syncHealth`                                   | 各账户脱敏同步健康报告；无账户为空，字段和判断见[同步说明](sync-correctness.md#同步健康检查)        |
+| `consoleErrors`、`exceptions`、`ipcRejections` | renderer 错误、异常和 RPC 拒绝；正常中断不计拒绝                                                    |
+| `failure`                                      | 步骤超时、预览退出或其他脚本失败原因；`CDP closed` 附带渲染进程是否崩溃、预览进程是否退出；成功为空 |
 
 步骤成功只证明所检查的窗口路径可用。`sync-health` passed 表示报告调用完成，服务商不可用或计数不一致仍需阅读 `syncHealth`；它不使脚本自动失败，也不修复同步。空库的跳过项不能算邮件流程验收。
 
