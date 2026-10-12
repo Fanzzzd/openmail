@@ -37,6 +37,7 @@ const fieldLabel = "mb-1 block text-footnote font-medium text-a11y-muted";
 export function OrganizationSettings({ accounts }: { accounts: readonly Account[] }) {
   accounts = accounts.filter((a) => a.enabled !== false);
   const { t, i18n } = useLingui();
+  const accountSelectId = useId();
   const [accountId, setAccountId] = useState(accounts[0]?.id ?? "");
   const [editing, setEditing] = useState<Label | "new" | null>(null);
   const [deleting, setDeleting] = useState<Label | null>(null);
@@ -62,8 +63,9 @@ export function OrganizationSettings({ accounts }: { accounts: readonly Account[
   return (
     <section className="space-y-6">
       <SettingsGroup>
-        <SettingsRow label={t`Account`}>
+        <SettingsRow label={t`Account`} htmlFor={accountSelectId}>
           <Select
+            id={accountSelectId}
             aria-label={t`Account`}
             variant="field"
             className="min-w-48"

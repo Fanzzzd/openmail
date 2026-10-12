@@ -46,6 +46,23 @@ export function AccountControls({
       },
       reactivityKeys: MAIL_KEYS,
     });
+  const saveButton = (
+    <button
+      type="button"
+      disabled={result.waiting}
+      onClick={() =>
+        saveSettings({
+          kind: "appearance",
+          description,
+          color: customColor ? color : null,
+          ...(account.imap ? { imapAuthservId: authservId.trim() || null } : {}),
+        })
+      }
+      className={buttonLink}
+    >
+      <Trans>Save</Trans>
+    </button>
+  );
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -85,36 +102,26 @@ export function AccountControls({
             />
           </span>
         </label>
-        <button
-          type="button"
-          disabled={result.waiting}
-          onClick={() =>
-            saveSettings({
-              kind: "appearance",
-              description,
-              color: customColor ? color : null,
-              ...(account.imap ? { imapAuthservId: authservId.trim() || null } : {}),
-            })
-          }
-          className={buttonLink}
-        >
-          <Trans>Save</Trans>
-        </button>
+        {/* With an IMAP trust field, Save follows it so it comes after both fields in tab order. */}
+        {!account.imap && saveButton}
       </div>
       {account.imap && (
         <div className="space-y-1">
-          <label htmlFor={`imap-authserv-${account.id}`} className="flex items-center gap-2">
-            <Trans>Trusted authentication service (optional)</Trans>
-            <span className="w-40">
-              <input
-                id={`imap-authserv-${account.id}`}
-                value={authservId}
-                maxLength={253}
-                onChange={(event) => setAuthservId(event.target.value)}
-                className={formInput}
-              />
-            </span>
-          </label>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <label htmlFor={`imap-authserv-${account.id}`} className="flex items-center gap-2">
+              <Trans>Trusted authentication service (optional)</Trans>
+              <span className="w-40">
+                <input
+                  id={`imap-authserv-${account.id}`}
+                  value={authservId}
+                  maxLength={253}
+                  onChange={(event) => setAuthservId(event.target.value)}
+                  className={formInput}
+                />
+              </span>
+            </label>
+            {saveButton}
+          </div>
           <p className={settingsHint}>
             <Trans>
               Leave blank unless your mail administrator provides a trusted authserv-id. The IMAP

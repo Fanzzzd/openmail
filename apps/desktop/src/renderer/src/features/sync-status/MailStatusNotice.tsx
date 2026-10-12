@@ -22,6 +22,7 @@ function NoticeLine({
   className = "",
   children,
   action: trailing,
+  detail,
 }: {
   tone: keyof typeof noticeTone;
   glyph: ReactNode;
@@ -29,12 +30,18 @@ function NoticeLine({
   className?: string;
   children: ReactNode;
   action?: ReactNode;
+  /** A second line under the text, such as the full reason. */
+  detail?: ReactNode;
 }) {
   return (
-    <div className={`${noticeRow} ${noticeTone[tone]} ${className}`} title={title}>
+    <div
+      className={`group/notice flex-wrap ${noticeRow} ${noticeTone[tone]} ${className}`}
+      title={title}
+    >
       {glyph}
       <div className="min-w-0 flex-1 truncate">{children}</div>
       {trailing}
+      {detail}
     </div>
   );
 }
@@ -162,21 +169,32 @@ export function KeychainNotice({ className = "" }: { className?: string }) {
 export function ReauthNotice({
   account,
   onReauth,
+  detailed = false,
   className = "",
 }: {
   account: Account;
   onReauth: (account: Account) => void;
+  /** Always show the reason; otherwise it shows while the line has keyboard focus. */
+  detailed?: boolean;
   className?: string;
 }) {
   const { i18n } = useLingui();
   const reason = reauthText(i18n, account);
-  // The line shows the address; the reason is its tooltip and what a screen reader reads.
+  // The line shows the address. The reason is a second line once the person opens the group or
+  // tabs to Sign in again; until then it is the tooltip and what a screen reader reads.
   return (
     <NoticeLine
       tone="danger"
       glyph={<CircleAlert aria-hidden className={icon} />}
       title={reason}
       className={className}
+      detail={
+        <p
+          className={`w-full pl-5 leading-4 ${detailed ? "" : "sr-only group-focus-within/notice:not-sr-only"}`}
+        >
+          {reason}
+        </p>
+      }
       action={
         <button type="button" onClick={() => onReauth(account)} className={action}>
           <Trans>Sign in again</Trans>
@@ -186,7 +204,6 @@ export function ReauthNotice({
       <span aria-hidden className="font-medium">
         {account.email}
       </span>
-      <span className="sr-only">{reason}</span>
     </NoticeLine>
   );
 }
@@ -216,7 +233,7 @@ export function AccountIssues({
   const lines = (
     <>
       {expired.map((a) => (
-        <ReauthNotice key={a.id} account={a} onReauth={onReauth} />
+        <ReauthNotice key={a.id} account={a} onReauth={onReauth} detailed={affected >= 2} />
       ))}
       {keychain && <KeychainNotice />}
       {failure}

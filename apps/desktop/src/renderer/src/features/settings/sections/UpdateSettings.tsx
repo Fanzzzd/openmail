@@ -67,11 +67,6 @@ export function UpdateSettings() {
       }
     >
       <SettingsRow label={<output>{status}</output>}>
-        {state?.status === "available" && (
-          <Button className={buttonPrimary} disabled={checking} onClick={() => check(true)}>
-            <Trans>Download update</Trans>
-          </Button>
-        )}
         <Button
           className={buttonSecondary}
           disabled={checking || state?.status === "checking" || state?.status === "downloading"}
@@ -79,6 +74,11 @@ export function UpdateSettings() {
         >
           <Trans>Check for updates</Trans>
         </Button>
+        {state?.status === "available" && (
+          <Button className={buttonPrimary} disabled={checking} onClick={() => check(true)}>
+            <Trans>Download update</Trans>
+          </Button>
+        )}
       </SettingsRow>
       <SettingsRow label={t`Update channel`}>
         <Select

@@ -24,7 +24,7 @@ interface Props<T extends string> {
   valueClassName?: string;
   /**
    * "inline" is a borderless pop-up button for toolbars and setting rows.
-   * "field" is a bordered, full-width control that lines up with text inputs in forms.
+   * "field" is a full-width control with the 3:1 control boundary, like text inputs in forms.
    */
   variant?: "inline" | "field";
 }
@@ -33,7 +33,7 @@ const triggerStyles = {
   inline:
     "h-7 gap-2 rounded-control px-1.5 -mx-1.5 outline-offset-0 not-data-disabled:hover:bg-fill-hover focus-visible:outline-[3px] data-popup-open:bg-fill-pressed",
   field:
-    "h-7 w-full justify-between gap-2 rounded-control bg-white px-2.5 shadow-control ring-1 ring-edge outline-offset-1 not-data-disabled:hover:bg-neutral-50 focus-visible:outline-2 data-disabled:opacity-50 data-popup-open:ring-blue-600/60 dark:bg-white/[0.08] dark:not-data-disabled:hover:bg-white/[0.12]",
+    "h-7 w-full justify-between gap-2 rounded-control bg-white px-2.5 shadow-control ring-1 ring-control outline-offset-1 not-data-disabled:hover:bg-neutral-50 focus-visible:outline-2 data-disabled:opacity-50 data-popup-open:ring-blue-600/60 dark:bg-white/[0.08] dark:not-data-disabled:hover:bg-white/[0.12]",
 } as const;
 
 /**

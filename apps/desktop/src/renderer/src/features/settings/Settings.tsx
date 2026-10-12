@@ -128,7 +128,7 @@ const TABS: { id: Tab; label: MessageDescriptor; icon: TabIcon; tile: string; gr
 ];
 
 /** The scrolling content of a tab: its title, then the sections at a readable measure. */
-const panel = "min-h-0 flex-1 overflow-y-auto outline-none @container/settings";
+const panel = "min-h-0 flex-1 overflow-y-auto outline-none";
 const measure = "mx-auto max-w-[620px] space-y-6 px-6 pt-4 pb-8 max-sm:px-4";
 
 interface Props {
