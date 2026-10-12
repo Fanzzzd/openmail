@@ -20,7 +20,7 @@ import { type SyntheticEvent, useEffect, useMemo, useRef, useState } from "react
 import { externalLinkTargets, frameLinkTarget, listenForLinkHints } from "./email-links";
 import { sanitizeReaderHtml } from "./reader-html";
 import { isTypingTarget } from "../../../lib/typing-target";
-import { DARK_CSS, fitDocument, keepLeftEdge } from "./frame-style";
+import { DARK_CSS, fitDocument, growthGuard, keepLeftEdge, pinFrameLayout } from "./frame-style";
 import {
   FRAME_INITIAL_HEIGHT,
   frameSurface,
@@ -98,6 +98,7 @@ export function EmailFrame({
     return () => view.dispose();
   }, [frameDocument, quotes, showQuotes, findQuery, findIndex, onMatches, presentHits]);
   const [height, setHeight] = useState(FRAME_INITIAL_HEIGHT);
+  const shown = useRef(FRAME_INITIAL_HEIGHT);
   const [fit, setFit] = useState(true);
   const [wide, setWide] = useState(false);
   const frameRef = useRef<HTMLIFrameElement>(null);
@@ -107,9 +108,15 @@ export function EmailFrame({
   useEffect(() => {
     const frame = frameRef.current;
     if (!frameDocument || !frame) return constVoid;
+    // A page whose height still follows the frame's would grow it without end.
+    const guard = growthGuard();
+    let width = frame.clientWidth;
     const measure = () => {
+      if (frame.clientWidth !== width) guard.refill();
+      width = frame.clientWidth;
       const size = fitDocument(frameDocument, fit);
-      setHeight(size.height);
+      shown.current = guard.next(shown.current, size.height);
+      setHeight(shown.current);
       setWide(size.wide);
     };
     measure();
@@ -120,7 +127,23 @@ export function EmailFrame({
     // setting its width) is caught here.
     observer.observe(frameDocument.body);
     observer.observe(frame);
-    return () => observer.disconnect();
+    // Changes to the page itself may grow the frame again: quotes and search
+    // marks, late images, web fonts.
+    const mutations = new MutationObserver(guard.refill);
+    mutations.observe(frameDocument.body, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      characterData: true,
+    });
+    frameDocument.addEventListener("load", guard.refill, true);
+    frameDocument.fonts.addEventListener("loadingdone", guard.refill);
+    return () => {
+      observer.disconnect();
+      mutations.disconnect();
+      frameDocument.removeEventListener("load", guard.refill, true);
+      frameDocument.fonts.removeEventListener("loadingdone", guard.refill);
+    };
   }, [frameDocument, fit]);
   const [hint, setHint] = useState<{ document: string; url: string | null } | null>(null);
   const dispose = useRef<(() => void) | undefined>(undefined);
@@ -155,9 +178,7 @@ export function EmailFrame({
     externalLinkTargets(frameDoc);
     // fitDocument sets overflow-x: the page scrolls sideways only when there is
     // more of it to show. No rubber band or sideways scroll chaining either.
-    root.style.setProperty("overflow-y", "hidden", "important");
-    root.style.setProperty("overscroll-behavior-x", "none", "important");
-    frameDoc.body.style.setProperty("overflow", "visible", "important");
+    pinFrameLayout(frameDoc);
     const keydown = (event: KeyboardEvent) => {
       if (event.isTrusted && !isTypingTarget(frameDoc.activeElement)) keys.current?.(event);
     };

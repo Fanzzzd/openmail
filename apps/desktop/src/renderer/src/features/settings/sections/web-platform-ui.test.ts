@@ -4,7 +4,7 @@ import { I18nProvider } from "@lingui/react";
 import { DEFAULT_PREFS } from "@openmail/core/schema";
 import { cleanup, render, screen } from "@testing-library/react";
 import { AsyncResult } from "effect/reactivity";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { createElement as h, type ReactNode } from "react";
 import { afterEach, expect, it, vi } from "vitest";
@@ -68,6 +68,27 @@ it("keeps the traffic-light clearance on the Mac only", () => {
   expect(document.querySelector("[data-traffic-light-space]")).toBeNull();
   render(localized(h(Dialog, { "aria-label": "Example", onClose: () => null, children: "Body" })));
   expect(screen.getByRole("dialog").className).not.toContain("titlebar-clearance");
+  expect(screen.getByRole("dialog").className).toContain("sm:max-h-[calc(100dvh-24px)]");
+});
+
+it("keeps a centred sheet's top edge below the traffic lights on the Mac", () => {
+  render(localized(h(Dialog, { "aria-label": "Example", onClose: () => null, children: "Body" })));
+  // Centred, so a sheet at most the window minus twice the lights' row starts below it.
+  const classes = screen.getByRole("dialog").className.split(" ");
+  expect(classes).toContain("sm:max-h-[calc(100dvh-2*var(--titlebar-clearance,12px))]");
+  // Callers leave the max height to Dialog; a later sm: class of theirs would fight it.
+  const root = path.join(desktopRoot, "src/renderer/src");
+  const sources = readdirSync(root, { recursive: true, encoding: "utf8" }).filter((file) =>
+    file.endsWith(".tsx"),
+  );
+  for (const file of sources) {
+    const source = readFileSync(path.join(root, file), "utf8");
+    // The className before the next tag starts is the Dialog's own.
+    for (const [, classes] of source.matchAll(
+      /<Dialog\b(?:(?!<[A-Za-z])[\s\S])*?className="([^"]*)"/g,
+    ))
+      expect(classes, file).not.toMatch(/(^|\s)max-h-/);
+  }
 });
 
 it("gives buttons, icon buttons and menu rows a 40 px target on a phone in the web build", () => {

@@ -58,6 +58,7 @@ async function client(
     },
   );
   let buffer = "";
+  let output = "";
   let stderr = "";
   let id = 0;
   const pending = new Map<
@@ -68,6 +69,7 @@ async function client(
     stderr += data.toString();
   });
   child.stdout.on("data", (data: Buffer) => {
+    output += data.toString();
     buffer += data.toString();
     while (buffer.includes("\n")) {
       const end = buffer.indexOf("\n");
@@ -126,8 +128,55 @@ async function client(
     clientInfo: { name: "test-client", version: "1" },
   });
   child.stdin.write(`${JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" })}\n`);
-  return { request, directory, initialized };
+  /** Closes stdin as a client does and resolves with everything the server wrote to stdout. */
+  const close = async () => {
+    const exited =
+      child.exitCode === null && child.signalCode === null
+        ? new Promise<void>((resolve) => {
+            child.once("exit", () => resolve());
+          })
+        : Promise.resolve();
+    child.stdin.end();
+    await exited;
+    return { stdout: output, stderr };
+  };
+  return { request, directory, initialized, close };
 }
+
+const RpcFrame = Schema.fromJsonString(
+  Schema.Struct({
+    jsonrpc: Schema.Literal("2.0"),
+    id: Schema.optionalKey(Schema.Union([Schema.Number, Schema.String, Schema.Null])),
+    method: Schema.optionalKey(Schema.String),
+    result: Schema.optionalKey(Schema.Unknown),
+    error: Schema.optionalKey(Schema.Unknown),
+  }),
+);
+
+// Clients read stdout as the protocol stream. A log line, banner or warning there breaks the
+// session, so every byte the server writes, start to exit, must be a JSON-RPC 2.0 frame.
+test.concurrent.for([
+  ["openmail-mcp", false],
+  ["openmail mcp", true],
+] as const)(
+  "%s writes only JSON-RPC frames to stdout from start to exit",
+  async ([, cli], { expect, onTestFinished }) => {
+    const { request, close } = await client(onTestFinished, false, cli, true);
+    Schema.decodeUnknownSync(ToolList)(await request("tools/list"));
+    Schema.decodeUnknownSync(CallResult)(
+      await request("tools/call", { name: "access_status", arguments: {} }),
+    );
+    const { stdout } = await close();
+    expect(stdout.endsWith("\n")).toBe(true);
+    const lines = stdout.slice(0, -1).split("\n");
+    for (const line of lines)
+      expect(() => Schema.decodeUnknownSync(RpcFrame)(line), line).not.toThrow();
+    // initialize, tools/list and access_status each got their reply.
+    const ids = lines.map((line) => Schema.decodeUnknownSync(RpcFrame)(line).id);
+    expect(ids).toEqual(expect.arrayContaining([1, 2, 3]));
+  },
+  30_000,
+);
 
 test.concurrent("stdio MCP defaults to read-only tools, calls the shared Toolkit and rejects hidden writes", async ({
   expect,

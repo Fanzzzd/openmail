@@ -18,6 +18,8 @@ import {
 
 /** Rows agent_activity keeps. Settings shows the last few calls per client. */
 const AGENT_ACTIVITY_ROWS = 500;
+/** The audit log keeps this many of its newest entries. */
+export const AUDIT_LOG_ROWS = 5000;
 
 function auditMetadata(entry: { accountId?: string | null; action: string; detail: unknown }) {
   const metadata = Schema.decodeUnknownOption(
@@ -81,6 +83,8 @@ export const makePolicyStore = ({
     yield* run(sql`INSERT INTO audit_log (at, actor, account_id, action, detail_json)
         VALUES (${now}, ${actorLabel(entry.actor)}, ${entry.accountId ?? null}, ${entry.action},
           ${JSON.stringify(safe)})`);
+    yield* run(sql`DELETE FROM audit_log
+        WHERE id <= (SELECT max(id) FROM audit_log) - ${AUDIT_LOG_ROWS}`);
   });
 
   const listAudit = Effect.fn("Store.listAudit")(function* (limit: number) {

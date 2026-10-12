@@ -49,7 +49,7 @@ export function Proposals({ proposals, accounts, onClose, onOpenDraft }: Props) 
       aria-label={t`AI suggestions`}
       onClose={onClose}
       ownClose
-      className="flex max-h-[min(600px,calc(100vh-40px))] w-[600px] flex-col overflow-hidden"
+      className="flex w-[600px] flex-col overflow-hidden"
     >
       <header className="flex h-12 shrink-0 items-center gap-2 border-b border-separator px-5">
         <Sparkles className="size-4 text-violet-700 dark:text-violet-400" />

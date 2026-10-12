@@ -150,7 +150,7 @@ export function ComposerAi({
         <Dialog
           aria-label={t`Write with AI`}
           onClose={close}
-          className="max-h-[85vh] w-[600px] space-y-3 overflow-y-auto p-5"
+          className="w-[600px] space-y-3 overflow-y-auto p-5"
         >
           <h2 className="font-semibold">
             <Trans>Write with AI</Trans>

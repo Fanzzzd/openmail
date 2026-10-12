@@ -19,7 +19,7 @@ function ImageMatch({ chunk, onClose }: { chunk: DerivedChunk; onClose: () => vo
     <Dialog
       aria-label={t`Image region`}
       onClose={onClose}
-      className="flex max-h-[85vh] w-[min(900px,90vw)] flex-col p-4"
+      className="flex w-[min(900px,90vw)] flex-col p-4"
     >
       <div className="mb-3 flex items-center justify-between gap-3">
         <p className="truncate font-medium">{chunk.source.name}</p>

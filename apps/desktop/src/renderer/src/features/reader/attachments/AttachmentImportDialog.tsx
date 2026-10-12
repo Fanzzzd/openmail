@@ -69,7 +69,7 @@ export function AttachmentImportDialog({
     <Dialog
       aria-label={file.filename}
       onClose={onClose}
-      className="max-h-[85vh] w-[min(90vw,760px)] space-y-4 overflow-auto p-5"
+      className="w-[min(90vw,760px)] space-y-4 overflow-auto p-5"
     >
       <h2 className="font-semibold">{file.filename}</h2>
       {failed && <p role="alert">{t`Could not import this attachment.`}</p>}

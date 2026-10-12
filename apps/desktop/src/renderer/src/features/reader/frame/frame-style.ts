@@ -60,19 +60,68 @@ export function fitDocument(doc: Document, fit: boolean): { height: number; wide
   root.style.setProperty("overflow-x", scrolls ? "auto" : "hidden", "important");
   // A page scrolled sideways at 100% would stay shifted once it fits.
   if (!scrolls) (doc.scrollingElement ?? root).scrollLeft = 0;
-  if (scale !== 1) root.style.setProperty("width", `${natural / own}px`, "important");
+  if (scale !== 1) {
+    root.style.setProperty("width", `${natural / own}px`, "important");
+    root.style.setProperty("zoom", String(own * scale), "important");
+  }
   // A classic (non-overlay) scrollbar takes its height from the frame.
   const bar = scrolls && view ? Math.max(0, view.innerHeight - root.clientHeight) : 0;
-  if (scale === 1) return { height: root.scrollHeight + bar, wide };
-  // Measured at the natural width but before scaling: a page sized to the
-  // frame (html { height: 100% }) would otherwise shrink the frame every pass.
-  let height = Math.ceil(root.scrollHeight * scale);
-  root.style.setProperty("zoom", String(own * scale), "important");
-  // Text can wrap differently once scaled. A body that is just as tall as the
-  // frame is sized to it, not to its content, and would keep the frame from shrinking.
-  const bottom = Math.ceil(doc.body.getBoundingClientRect().bottom);
-  if (view && Math.abs(bottom - view.innerHeight) > 1) height = Math.max(height, bottom);
-  return { height: height + bar, wide };
+  return { height: pageHeight(root) + bar, wide };
+}
+
+/**
+ * The page's height in frame pixels, once scaled. scrollHeight is never less
+ * than the frame, so it cannot tell that a page got shorter; the root's box
+ * can, as pinFrameLayout sizes it to its content. Content that overflows the
+ * root's box is counted only while the page is taller than the frame.
+ */
+function pageHeight(root: HTMLElement): number {
+  const box = Math.ceil(root.getBoundingClientRect().height);
+  return root.scrollHeight > root.clientHeight + 1 ? Math.max(box, root.scrollHeight) : box;
+}
+
+/**
+ * Overrides mail styles that would fight the reader's sizing. The frame takes
+ * its height from the page, so a page that takes its height from the frame
+ * (`html, body { height: 100% }`, `min-height: 100vh`) would grow the frame
+ * by its padding or margin on every resize. The page scrolls in the thread,
+ * not inside the frame, and never sideways past what fitDocument allows.
+ */
+export function pinFrameLayout(doc: Document): void {
+  const root = doc.documentElement;
+  for (const element of [root, doc.body]) {
+    element.style.setProperty("height", "auto", "important");
+    element.style.setProperty("min-height", "0", "important");
+  }
+  root.style.setProperty("overflow-y", "hidden", "important");
+  root.style.setProperty("overscroll-behavior-x", "none", "important");
+  doc.body.style.setProperty("overflow", "visible", "important");
+}
+
+/** How many times in a row the frame may grow with nothing new in the page. */
+export const MAX_UNPROMPTED_GROWTH = 8;
+
+/**
+ * Bounds the frame's growth when content still follows the frame's height
+ * (an element with `height: 100vh` plus a margin): each resize would make the
+ * page taller again. The frame grows at most `limit` times between refills,
+ * which the reader calls when the page itself changes: its DOM, a loaded image
+ * or font, or the frame's width. Shrinking is always taken.
+ */
+export function growthGuard(limit = MAX_UNPROMPTED_GROWTH) {
+  let left = limit;
+  return {
+    refill: () => {
+      left = limit;
+    },
+    /** The height to use, given the frame's current height and the measured one. */
+    next: (current: number, measured: number): number => {
+      if (measured <= current) return measured;
+      if (left === 0) return current;
+      left--;
+      return measured;
+    },
+  };
 }
 
 /** Puts a page that must not scroll sideways back at its left edge, e.g. after scrollIntoView. */

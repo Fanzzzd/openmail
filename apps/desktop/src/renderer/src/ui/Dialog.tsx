@@ -36,6 +36,16 @@ interface DialogProps {
 }
 
 /**
+ * The tallest a centred sheet gets, so its top edge clears the Mac's traffic
+ * lights; the web build keeps a 12 px margin. Callers set a width and, if the
+ * sheet has a fixed size, a height, but no max height: this one wins at `sm`.
+ */
+export const centredSheet = () =>
+  isDesktop()
+    ? "sm:max-h-[calc(100dvh-2*var(--titlebar-clearance,12px))]"
+    : "sm:max-h-[calc(100dvh-24px)]";
+
+/**
  * Below MEDIUM_MIN (696 px, Tailwind's `sm`) a sheet fills the window, whatever size the caller asked for.
  * On the Mac its top stays clear for the traffic lights' row (`--titlebar-clearance`, from WindowChrome);
  * pair it with {@link SheetDragStrip}. A browser has no traffic lights, so the web build uses the whole height.
@@ -85,7 +95,7 @@ export function Dialog({
           aria-label={label}
           initialFocus={initialFocus}
           finalFocus={finalFocus}
-          className={`fixed top-1/2 left-1/2 z-50 -translate-x-1/2 -translate-y-1/2 ${sheet} ${popupMotion} ${className} ${narrowSheet()}`}
+          className={`fixed top-1/2 left-1/2 z-50 -translate-x-1/2 -translate-y-1/2 ${sheet} ${popupMotion} ${className} ${centredSheet()} ${narrowSheet()}`}
         >
           <SheetDragStrip />
           {children}

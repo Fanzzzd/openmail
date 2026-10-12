@@ -85,6 +85,14 @@ export const makeAccountsStore = ({
               yield* run(
                 sql`DELETE FROM prefs WHERE key IN (${`sync-reset:${id}`},${`sync-stale:${id}`},${`sync-headers:${id}`})`,
               );
+              // No foreign key reaches these: audit_log has none, and a queued
+              // mobile send keeps its account inside its JSON.
+              yield* run(sql`DELETE FROM audit_log WHERE account_id=${id}`);
+              yield* run(
+                sql`DELETE FROM prefs WHERE key LIKE 'mobile-outbox:%' AND json_valid(value_json) AND json_extract(value_json,'$.accountId')=${id}`,
+              );
+              // Every other table with an account_id cascades from accounts,
+              // directly or through messages and thread_reminders.
               yield* run(sql`DELETE FROM accounts WHERE id=${id}`);
             }),
           )

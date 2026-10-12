@@ -688,7 +688,7 @@ export function FilterEditor({
     <Dialog
       aria-label={t`Create filter from these messages`}
       onClose={onClose}
-      className="max-h-[85vh] w-[540px] overflow-y-auto p-5"
+      className="w-[540px] overflow-y-auto p-5"
     >
       <form
         className="space-y-4"

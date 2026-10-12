@@ -192,7 +192,7 @@ export function Settings({
     <Dialog
       aria-label={t`Settings`}
       onClose={onClose}
-      className="flex h-[min(640px,calc(100dvh-48px))] w-[min(880px,calc(100vw-48px))] overflow-hidden max-sm:flex-col"
+      className="flex h-[640px] w-[min(880px,calc(100vw-48px))] overflow-hidden max-sm:flex-col"
     >
       <Tabs.Root
         orientation={narrow ? "horizontal" : "vertical"}
