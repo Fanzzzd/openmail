@@ -3,6 +3,8 @@ import { meetingLinks } from "@openmail/core/schema";
 import { Effect } from "effect";
 import { useState } from "react";
 import { causeText } from "../../lib/errors";
+import { isDesktop } from "../../lib/platform";
+import { openMailLink } from "../../state/desktop";
 import { useRunMail, withMail } from "../../state/mail";
 
 export function MeetingLinks({ sources }: { sources: readonly string[] }) {
@@ -21,7 +23,10 @@ export function MeetingLinks({ sources }: { sources: readonly string[] }) {
           className="max-w-full truncate rounded border border-blue-300 px-3 py-1 text-a11y-accent dark:text-blue-400"
           onClick={() =>
             run(
-              withMail((call) => call("OpenMeeting", { url })).pipe(
+              (isDesktop()
+                ? withMail((call) => call("OpenMeeting", { url }))
+                : openMailLink(url)
+              ).pipe(
                 Effect.matchCause({
                   onFailure: (cause) => setError(causeText(i18n, cause)),
                   onSuccess: () => setError(null),

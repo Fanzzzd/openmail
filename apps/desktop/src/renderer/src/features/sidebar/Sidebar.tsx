@@ -1,3 +1,4 @@
+import { isDesktop } from "../../lib/platform";
 import {
   useState,
   type ButtonHTMLAttributes,
@@ -374,16 +375,19 @@ export function Sidebar({
       className="@container/sidebar flex h-full w-full flex-col bg-neutral-100/60 dark:bg-neutral-950/70"
     >
       <div className="drag flex h-13 shrink-0 items-center justify-end gap-0.5 px-3">
-        <Tip label={t`Add email account`}>
-          <button
-            type="button"
-            aria-label={t`Add email account`}
-            onClick={onAddAccount}
-            className="rounded-control p-1 text-a11y-muted hover:bg-fill-hover"
-          >
-            <Plus className="size-4.5" />
-          </button>
-        </Tip>
+        {/* Signing in opens the Mac's browser and keychain: desktop only. */}
+        {isDesktop() && (
+          <Tip label={t`Add email account`}>
+            <button
+              type="button"
+              aria-label={t`Add email account`}
+              onClick={onAddAccount}
+              className="rounded-control p-1 text-a11y-muted hover:bg-fill-hover"
+            >
+              <Plus className="size-4.5" />
+            </button>
+          </Tip>
+        )}
         <Tip label={t`New message`} shortcut={shortcut("compose")}>
           <button
             type="button"

@@ -5,6 +5,7 @@ import { type RpcMessage, RpcClient, RpcSerialization } from "effect/rpc";
 
 import type { RpcBridge } from "../../../shared/channel";
 import { MailRpcs } from "../../../shared/rpc";
+import { rpcBridge } from "./rpc-bridge";
 
 declare global {
   interface Window {
@@ -13,7 +14,10 @@ declare global {
   }
 }
 
-/** RPC client transport over the preload's string pipe to the main process. */
+/**
+ * RPC client transport over a string pipe: the preload's IPC bridge in the
+ * desktop app, a WebSocket to the Mac in the web build.
+ */
 const ElectronProtocol = Layer.effect(
   RpcClient.Protocol,
   Effect.gen(function* () {
@@ -22,7 +26,7 @@ const ElectronProtocol = Layer.effect(
       Effect.fnUntraced(function* (writeResponse, clientIds) {
         const parser = serialization.makeUnsafe();
         const run = yield* FiberSet.makeRuntime();
-        const bridge = window.openmailRpc;
+        const bridge = rpcBridge();
         // Route by request owner even before a short-lived client's receive
         // loop starts. Protocol.make buffers early replies for that client.
         const owners = new Map<string | number, number>();

@@ -1,3 +1,4 @@
+import { isDesktop } from "../../../lib/platform";
 import { GrammarResults, useComposeGrammar } from "./ComposeGrammar";
 import { ComposeToolbar } from "./ComposeToolbar";
 import { MenuCheckboxItem, MenuItem, MenuRadioGroup, MenuSeparator } from "../../../ui/Menu";
@@ -15,7 +16,7 @@ import {
   type ShortcutSet,
 } from "../../../../../shared/shortcuts";
 import { Effect } from "effect";
-import { useRunMail, withMail } from "../../../state/mail";
+import { useRunMail, withMail, type MailEnv } from "../../../state/mail";
 import { AsyncResult, Atom, Reactivity } from "effect/reactivity";
 import { suggestionsAtom } from "../../../state/queries";
 import { useLingui } from "@lingui/react/macro";
@@ -90,6 +91,12 @@ interface Props {
   bodyRef: RefObject<ComposeElement | null>;
   selectionRef: RefObject<Range | null>;
 }
+
+const clipboardText = (): Effect.Effect<string, unknown, MailEnv> =>
+  isDesktop()
+    ? withMail((call) => call("ClipboardText", undefined))
+    : // The browser reads this device's clipboard, never the Mac's.
+      Effect.tryPromise(() => navigator.clipboard.readText());
 
 export function ComposeEditor({
   body,
@@ -401,7 +408,7 @@ export function ComposeEditor({
         : null;
     setPasteError(false);
     run(
-      withMail((call) => call("ClipboardText", undefined)).pipe(
+      clipboardText().pipe(
         Effect.matchCause({
           onFailure: () => setPasteError(true),
           onSuccess: (text) => {

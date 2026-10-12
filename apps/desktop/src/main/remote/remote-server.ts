@@ -66,6 +66,9 @@ const TYPES: Record<string, string> = {
   ".wasm": "application/wasm",
 };
 
+/** The web build's page (vite.web.config.ts). Every app route serves it. */
+export const APP_DOCUMENT = "web.html";
+
 /** Multipart overhead allowed on top of the compose limit. */
 const UPLOAD_SLACK = 1024 * 1024;
 const MAX_UPLOAD_FILES = 64;
@@ -82,7 +85,7 @@ export interface ConnectionHandlers {
 export type ConnectionListener = (connection: RemoteConnection) => ConnectionHandlers;
 
 export interface RemoteServerOptions {
-  /** The built web app (index.html and assets). */
+  /** The built web app (web.html and assets). */
   webRoot: string;
   /** 0 picks a free port. */
   port: number;
@@ -158,7 +161,7 @@ export async function readUpload(
     form = await new Request("http://upload.invalid/", {
       method: "POST",
       headers: { "content-type": contentType },
-      body,
+      body: new Uint8Array(body),
     }).formData();
   } catch {
     return { ok: false, status: 400, error: "invalid" };
@@ -218,7 +221,7 @@ async function serveStatic(
   const relative = path.posix.normalize(decoded).replace(/^\/+/, "");
   // Paths without an extension are app routes (browser history); they get the app.
   const wantsApp = relative === "" || !path.posix.extname(relative);
-  const file = path.join(root, wantsApp ? "index.html" : relative);
+  const file = path.join(root, wantsApp ? APP_DOCUMENT : relative);
   try {
     const real = await realpath(file);
     if (real !== root && !real.startsWith(root + path.sep)) throw new Error("outside");

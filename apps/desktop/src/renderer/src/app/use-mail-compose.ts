@@ -1,3 +1,4 @@
+import { isDesktop } from "../lib/platform";
 import { useLingui } from "@lingui/react/macro";
 import type { Signature } from "@openmail/core/schema";
 import { FEEDBACK_DRAFT_PREFIX } from "@openmail/core/schema";
@@ -208,7 +209,8 @@ export function useMailCompose({
     run(
       openDraft(id).pipe(
         Effect.flatMap((d) =>
-          composeId
+          // The web build has no compose windows; drafts open inline.
+          composeId || !isDesktop()
             ? Effect.map(loadDrafts, ({ fromStored }) => setCompose(fromStored(d)))
             : Effect.sync(() => run(withMail((call) => call("OpenComposeWindow", { id: d.id })))),
         ),

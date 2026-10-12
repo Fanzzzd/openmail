@@ -1,3 +1,4 @@
+import { isDesktop } from "../lib/platform";
 import { focusedSenderMessage, threadStateFor } from "../lib/focused-inbox";
 import { Separator, Group, Panel } from "react-resizable-panels";
 import { useCallback, useRef, useState, type ComponentProps, useEffect } from "react";
@@ -445,7 +446,14 @@ export function App({ composeId }: { composeId?: string }) {
   const rail = layout.mode === "medium" && hasAccounts;
   const sidebarToggle =
     docked || rail ? undefined : <SidebarToggle onClick={paneNav.toggleSidebar} />;
-  const leadingInset = rail ? railTrafficLightInset : docked ? undefined : trafficLightInset;
+  // A browser has no traffic lights to clear.
+  const leadingInset = !isDesktop()
+    ? "pl-4"
+    : rail
+      ? railTrafficLightInset
+      : docked
+        ? undefined
+        : trafficLightInset;
   /** A view or space picked in the rail hands focus to its list. */
   const fromRail =
     <A extends unknown[]>(action: (...args: A) => void) =>
@@ -557,7 +565,8 @@ export function App({ composeId }: { composeId?: string }) {
       onFilters={setFilters}
       folderActions={
         <>
-          <Downloads />
+          {/* Downloads land on the Mac; the browser keeps its own list. */}
+          {isDesktop() && <Downloads />}
           <UndoHistory entries={undoHistory} onUndo={undoRestored} />
           <FolderActions
             folder={{
@@ -999,7 +1008,7 @@ export function App({ composeId }: { composeId?: string }) {
           onClose={closeCompose}
           onDiscard={discard}
           onSend={send}
-          onPopOut={popOut}
+          onPopOut={isDesktop() ? popOut : undefined}
           popOutRequested={popOutRequested}
         />
       )}

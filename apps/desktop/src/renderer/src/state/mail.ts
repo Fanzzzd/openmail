@@ -1,3 +1,4 @@
+import { isDesktop } from "../lib/platform";
 import type { AuthorizationFeature } from "@openmail/core/schema";
 /**
  * Changes, as Effects over the `MailClient`. Each one invalidates the
@@ -87,8 +88,9 @@ export const printThread = (request: {
   locale: string;
 }) => withMail((call) => call("PrintThread", request));
 
+/** The web build has one window; there the open thread stays in the reader. */
 export const openThreadWindow = (id: string) =>
-  withMail((call) => call("OpenThreadWindow", { id }));
+  isDesktop() ? withMail((call) => call("OpenThreadWindow", { id })) : Effect.void;
 
 /** Message-scoped actions never expand the ID into its conversation. */
 export const modifyMessages = (ids: readonly string[], op: MailOp) => modifyWithUndo(ids, op, true);
@@ -97,7 +99,7 @@ export const markUnreadFrom = (id: string) =>
     Reactivity.mutation(threadChangeKeys([id])),
   );
 export const openMessageWindow = (id: string) =>
-  withMail((call) => call("OpenMessageWindow", { id }));
+  isDesktop() ? withMail((call) => call("OpenMessageWindow", { id })) : Effect.void;
 
 /** Starts a sync of every account. Progress and results arrive as events. */
 export const syncNow = withMail((call) => call("Sync", undefined));

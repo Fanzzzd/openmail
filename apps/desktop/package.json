@@ -7,7 +7,7 @@
   "main": "out/main/index.js",
   "scripts": {
     "dev": "node build/build-vision.mjs && electron-vite dev",
-    "build": "node build/build-vision.mjs && electron-vite build",
+    "build": "node build/build-vision.mjs && electron-vite build && vite build --config vite.web.config.ts --logLevel warn",
     "check-types": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "package": "pnpm dist",
     "test": "vitest run && vitest run --config vitest.e2e.config.ts && lingui check sync --clean --workers 1 && lingui check missing --mode catalog --workers 1 && node scripts/i18n-missing.mjs",

@@ -1,3 +1,5 @@
+import { uploadAttachments } from "../../../state/web-upload";
+import { isDesktop } from "../../../lib/platform";
 import { RASTER_IMAGE, type NativePicker } from "../../../../../shared/native-compose";
 import { useLingui } from "@lingui/react/macro";
 import {
@@ -140,6 +142,19 @@ export function useComposeEditor({
       return;
     }
     setAdding(true);
+    if (!isDesktop()) {
+      const uploaded = await uploadAttachments(files, account?.id, draft.attachments);
+      setAdding(false);
+      if (uploaded.ok) {
+        appendAttachments(uploaded.files, inline);
+        setError(null);
+      } else if (uploaded.error === "gmailBlocked")
+        showAttachmentProblem({ kind: "gmailBlocked", filename: uploaded.filename ?? "" });
+      else if (uploaded.error === "tooLarge")
+        setError(messages.attachmentsExceedThe30MBComposeLimit);
+      else setError(messages.couldntReadTheAttachmentTryAddingIt);
+      return;
+    }
     try {
       const added: OutgoingAttachment[] = [];
       for (const file of files)
@@ -385,7 +400,7 @@ export function useComposeEditor({
     if (event.clipboardData.files.length) {
       event.preventDefault();
       void addFiles(event.clipboardData.files, inline);
-    } else if (!event.clipboardData.types.length) {
+    } else if (!event.clipboardData.types.length && isDesktop()) {
       event.preventDefault();
       if (adding) return;
       setAdding(true);

@@ -68,6 +68,7 @@ vi.mock("./reliability", () => ({
 vi.mock("../updates/updates", () => ({ UpdatesLive: Layer.empty }));
 vi.mock("./vision", () => ({ desktopVision: native.vision }));
 vi.mock("../rpc/rpc-server", () => ({ RpcServerLive: Layer.empty }));
+vi.mock("../remote/remote-access-live", () => ({ RemoteAccessLive: Layer.empty }));
 vi.mock("../system/system", () => ({
   DesktopLive: Layer.empty,
   receiveAppUrl: native.urls,

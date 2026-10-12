@@ -123,7 +123,7 @@ describe("remote server", () => {
     base = await mkdtemp(path.join(tmpdir(), "openmail-web-"));
     root = path.join(base, "web");
     await mkdir(path.join(root, "assets"), { recursive: true });
-    await writeFile(path.join(root, "index.html"), "<!doctype html><title>OpenMail</title>");
+    await writeFile(path.join(root, "web.html"), "<!doctype html><title>OpenMail</title>");
     await writeFile(path.join(root, "assets", "app.js"), "export {}");
     await writeFile(path.join(base, "openmail-outside.txt"), "secret");
     server = await startRemoteServer({

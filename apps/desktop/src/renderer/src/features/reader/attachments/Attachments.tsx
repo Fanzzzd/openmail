@@ -1,3 +1,4 @@
+import { attachmentDownloadUrl, isDesktop } from "../../../lib/platform";
 import {
   attachmentImportKind,
   attachmentFilename,
@@ -139,6 +140,7 @@ export function AttachmentList({
   useEffect(
     () => () => {
       pending.current = null;
+      if (!isDesktop()) return;
       run(
         withMail((call) => call("ReleaseAttachmentDrag", { messageId, listId })).pipe(
           Effect.catchCause((cause) => Effect.logWarning("Attachment drag cleanup failed", cause)),
@@ -262,6 +264,61 @@ export function AttachmentList({
       return next;
     });
   };
+  // In the browser, each attachment downloads to this device from the Mac.
+  if (!isDesktop())
+    return (
+      <div className="pt-3">
+        <div className="flex flex-wrap items-center gap-2">
+          {files.map((file) => {
+            const Icon = iconFor(file.mimeType, file.filename);
+            const label = (
+              <>
+                <Icon className="size-4 shrink-0 text-a11y-muted" />
+                <span className="min-w-0 truncate">{file.filename}</span>
+                <span className="shrink-0 text-a11y-muted">
+                  {formatBytes(file.size, i18n.locale)}
+                </span>
+              </>
+            );
+            const chip =
+              "flex h-9 max-w-[min(20rem,100%)] min-w-0 items-center gap-1.5 rounded-control border border-edge px-2.5 text-body hover:bg-fill-hover";
+            return file.embedded ? (
+              <button
+                key={pathKey(file.path)}
+                type="button"
+                className={chip}
+                onClick={() =>
+                  setEmbedded((current) =>
+                    pathKey(current?.path ?? []) === pathKey(file.path) ? null : file,
+                  )
+                }
+              >
+                {label}
+              </button>
+            ) : (
+              <a
+                key={pathKey(file.path)}
+                href={attachmentDownloadUrl(messageId, file.path)}
+                download={file.filename}
+                aria-label={t`Download ${file.filename}`}
+                className={chip}
+              >
+                {label}
+                <Download className="size-3.5 shrink-0 text-a11y-muted" />
+              </a>
+            );
+          })}
+        </div>
+        {embedded && (
+          <EmbeddedReader
+            key={pathKey(embedded.path)}
+            messageId={messageId}
+            file={embedded}
+            notify={notify}
+          />
+        )}
+      </div>
+    );
   return (
     <div className="pt-3">
       {imported && (

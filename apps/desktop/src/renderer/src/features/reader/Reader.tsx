@@ -15,6 +15,7 @@ import {
   type ReaderZoom,
   type SearchMatch,
   searchHighlightTerms,
+  senderSearchQuery,
 } from "@openmail/core/schema";
 import {
   useState,
@@ -108,6 +109,8 @@ import { useShortcutText } from "../../i18n/use-shortcut-text";
 import { useSaveMessage } from "./reader-actions";
 import { TOOLBAR_MIN_WIDTH } from "../../lib/toolbar-fit";
 import { isTypingTarget } from "../../lib/typing-target";
+import { isDesktop } from "../../lib/platform";
+import { emitLocalDesktopEvent } from "../../state/desktop";
 import { DropdownMenu, MenuItem, MenuSeparator } from "../../ui/Menu";
 
 /** Shows a one-line notice, the app's toast. */
@@ -178,7 +181,7 @@ export function Reader({
     <main className="flex h-full w-full min-w-0 flex-col bg-surface">
       <header
         data-reader-toolbar
-        className={`drag @container/bar flex min-h-13 shrink-0 items-center gap-3 py-3 pr-4 ${onBack ? trafficLightInset : "pl-4"}`}
+        className={`drag @container/bar flex min-h-13 shrink-0 items-center gap-3 py-3 pr-4 ${onBack && isDesktop() ? trafficLightInset : "pl-4"}`}
       >
         {onBack && (
           <Tip label={t`Back to messages`} shortcut={BACK_SHORTCUT}>
@@ -232,7 +235,7 @@ export function Reader({
           single={!grouping}
           onEditDraft={onEditDraft}
           notify={notify}
-          canOpenWindow
+          canOpenWindow={isDesktop()}
           onBack={onBack}
         />
       )}
@@ -466,7 +469,9 @@ export function ThreadView({
     );
   const canOpenWeb = provider === "gmail" || provider === "outlook";
   const searchSender = (m: Message) =>
-    run(withMail((call) => call("SearchSender", { address: m.from.address })));
+    isDesktop()
+      ? run(withMail((call) => call("SearchSender", { address: m.from.address })))
+      : emitLocalDesktopEvent({ _tag: "Search", query: senderSearchQuery(m.from.address) });
   const openWeb = (id: string) =>
     run(
       withMail((call) => call("OpenMessageWeb", { id })).pipe(
@@ -658,15 +663,17 @@ export function ThreadView({
         );
         break;
       case "saveMessage":
-        e.preventDefault();
-        save(active.id);
+        if (isDesktop()) {
+          e.preventDefault();
+          save(active.id);
+        }
         break;
       case "searchSender":
         e.preventDefault();
         searchSender(active);
         break;
       case "openMessageWeb":
-        if (canOpenWeb) {
+        if (canOpenWeb && isDesktop()) {
           e.preventDefault();
           openWeb(active.id);
         }
@@ -685,7 +692,8 @@ export function ThreadView({
       onBack();
       return;
     }
-    if (!e.defaultPrevented && !e.repeat) {
+    // Window, compose and settings shortcuts belong to the desktop app's own windows.
+    if (!e.defaultPrevented && !e.repeat && isDesktop()) {
       const action = shortcutAction(prefs.shortcutSet, e, isTypingTarget(e.target));
       if (
         action === "nextWindow" ||
@@ -817,46 +825,55 @@ export function ThreadView({
               {t`Open in New Window`}
             </MenuItem>
           )}
-          {canOpenWeb && (
-            <MenuItem
-              onClick={() =>
-                run(
-                  withMail((call) => call("CopyMessageLink", { id: selectedId, kind: "web" })).pipe(
-                    Effect.matchCause({
-                      onSuccess: () => notify({ text: t`Webmail link copied` }),
-                      onFailure: (cause) => notify({ text: causeText(i18n, cause), tone: "error" }),
-                    }),
-                  ),
-                )
-              }
-            >{t`Copy webmail link`}</MenuItem>
+          {isDesktop() && (
+            <>
+              {canOpenWeb && (
+                <MenuItem
+                  onClick={() =>
+                    run(
+                      withMail((call) =>
+                        call("CopyMessageLink", { id: selectedId, kind: "web" }),
+                      ).pipe(
+                        Effect.matchCause({
+                          onSuccess: () => notify({ text: t`Webmail link copied` }),
+                          onFailure: (cause) =>
+                            notify({ text: causeText(i18n, cause), tone: "error" }),
+                        }),
+                      ),
+                    )
+                  }
+                >{t`Copy webmail link`}</MenuItem>
+              )}
+              <MenuItem
+                onClick={() =>
+                  run(
+                    withMail((call) => call("CopyMessageLink", { id: selectedId })).pipe(
+                      Effect.matchCause({
+                        onSuccess: () => notify({ text: t`Message link copied` }),
+                        onFailure: (cause) =>
+                          notify({ text: causeText(i18n, cause), tone: "error" }),
+                      }),
+                    ),
+                  )
+                }
+              >{t`Copy link to message`}</MenuItem>
+              <MenuItem
+                onClick={() =>
+                  run(
+                    withMail((call) =>
+                      call("CopyMessageLink", { id: selectedId, kind: "thread" }),
+                    ).pipe(
+                      Effect.matchCause({
+                        onSuccess: () => notify({ text: t`Thread link copied` }),
+                        onFailure: (cause) =>
+                          notify({ text: causeText(i18n, cause), tone: "error" }),
+                      }),
+                    ),
+                  )
+                }
+              >{t`Copy link to thread`}</MenuItem>
+            </>
           )}
-          <MenuItem
-            onClick={() =>
-              run(
-                withMail((call) => call("CopyMessageLink", { id: selectedId })).pipe(
-                  Effect.matchCause({
-                    onSuccess: () => notify({ text: t`Message link copied` }),
-                    onFailure: (cause) => notify({ text: causeText(i18n, cause), tone: "error" }),
-                  }),
-                ),
-              )
-            }
-          >{t`Copy link to message`}</MenuItem>
-          <MenuItem
-            onClick={() =>
-              run(
-                withMail((call) =>
-                  call("CopyMessageLink", { id: selectedId, kind: "thread" }),
-                ).pipe(
-                  Effect.matchCause({
-                    onSuccess: () => notify({ text: t`Thread link copied` }),
-                    onFailure: (cause) => notify({ text: causeText(i18n, cause), tone: "error" }),
-                  }),
-                ),
-              )
-            }
-          >{t`Copy link to thread`}</MenuItem>
           {canShare && (
             <>
               <MenuItem
@@ -872,16 +889,20 @@ export function ThreadView({
               )}
             </>
           )}
-          <MenuItem
-            icon={Printer}
-            shortcut={shortcut("print")}
-            onClick={() => print(selectedId, false, printOnly)}
-          >
-            {t`Print…`}
-          </MenuItem>
-          <MenuItem icon={FileDown} onClick={() => print(selectedId, true, printOnly)}>
-            {t`Save as PDF…`}
-          </MenuItem>
+          {isDesktop() && (
+            <>
+              <MenuItem
+                icon={Printer}
+                shortcut={shortcut("print")}
+                onClick={() => print(selectedId, false, printOnly)}
+              >
+                {t`Print…`}
+              </MenuItem>
+              <MenuItem icon={FileDown} onClick={() => print(selectedId, true, printOnly)}>
+                {t`Save as PDF…`}
+              </MenuItem>
+            </>
+          )}
           <MenuSeparator />
           <MenuItem
             icon={Plus}
@@ -971,15 +992,15 @@ export function ThreadView({
               active={m.id === activeId}
               onMessageOp={(op) => messageAction(m.id, op)}
               onUnreadFrom={() => unreadFrom(m.id)}
-              onOpenSingle={() => run(openMessageWindow(m.id))}
+              onOpenSingle={isDesktop() ? () => run(openMessageWindow(m.id)) : undefined}
               thread={stored}
               findQuery={finding && activeId === m.id ? findQuery : ""}
               findIndex={findIndex}
               onMatches={activeId === m.id ? reportMatches : undefined}
-              onSave={() => save(m.id)}
+              onSave={isDesktop() ? () => save(m.id) : undefined}
               onSearchSender={() => searchSender(m)}
               onShare={canShare ? (kind) => shareLink(m.id, kind) : undefined}
-              onOpenWeb={canOpenWeb ? () => openWeb(m.id) : undefined}
+              onOpenWeb={canOpenWeb && isDesktop() ? () => openWeb(m.id) : undefined}
               webLabel={webLabel}
               zoom={zoom}
               defaultBackground={prefs.messageBackground}
@@ -990,7 +1011,7 @@ export function ThreadView({
               imageSenders={imageSenders}
               notify={notify}
               onShowOriginal={() => setRaw(m.id)}
-              onPrint={(pdf) => print(m.id, pdf, m.id)}
+              onPrint={isDesktop() ? (pdf) => print(m.id, pdf, m.id) : undefined}
               onCollapse={messages.length > 1 ? () => toggle(m.id) : undefined}
               onEditDraft={
                 m.labels.includes("DRAFT") && onEditDraft
@@ -1141,11 +1162,11 @@ function Expanded({
   imageSenders: readonly string[];
   notify: Notify;
   onShowOriginal: () => void;
-  onPrint: (pdf: boolean) => void;
+  onPrint: ((pdf: boolean) => void) | undefined;
   onCollapse?: (() => void) | undefined;
   onEditDraft?: (() => void) | undefined;
   onActivate: () => void;
-  onSave: () => void;
+  onSave: (() => void) | undefined;
   onSearchSender: () => void;
   onShare: ((kind: "message" | "thread" | "web") => void) | undefined;
   onOpenWeb: (() => void) | undefined;
@@ -1153,7 +1174,7 @@ function Expanded({
   active: boolean;
   onMessageOp: (op: Parameters<typeof modifyMessages>[1]) => void;
   onUnreadFrom: () => void;
-  onOpenSingle: () => void;
+  onOpenSingle: (() => void) | undefined;
   /** Every stored message of the thread, for folding repeated quotes. */
   thread: readonly Message[];
   findQuery: string;
@@ -1262,10 +1283,12 @@ function Expanded({
             onClick={() => onMessageOp({ kind: "read", value: false })}
           >{t`Mark message unread`}</MenuItem>
           <MenuItem onClick={onUnreadFrom}>{t`Mark unread from this message`}</MenuItem>
-          <MenuItem
-            icon={AppWindow}
-            onClick={onOpenSingle}
-          >{t`Open only this message in a new window`}</MenuItem>
+          {onOpenSingle && (
+            <MenuItem
+              icon={AppWindow}
+              onClick={onOpenSingle}
+            >{t`Open only this message in a new window`}</MenuItem>
+          )}
           <MenuSeparator />
           <MenuItem
             icon={background === "dark" ? Sun : Moon}
@@ -1277,11 +1300,13 @@ function Expanded({
           <MenuItem icon={Code} shortcut={shortcut("showOriginal")} onClick={onShowOriginal}>
             {t`Show original`}
           </MenuItem>
-          <MenuItem
-            icon={FileDown}
-            onClick={onSave}
-            shortcut={shortcut("saveMessage")}
-          >{t`Save message as EML…`}</MenuItem>
+          {onSave && (
+            <MenuItem
+              icon={FileDown}
+              onClick={onSave}
+              shortcut={shortcut("saveMessage")}
+            >{t`Save message as EML…`}</MenuItem>
+          )}
           <MenuItem
             onClick={onSearchSender}
             shortcut={shortcut("searchSender")}
@@ -1300,12 +1325,16 @@ function Expanded({
               {webLabel}
             </MenuItem>
           )}
-          <MenuItem icon={Printer} onClick={() => onPrint(false)}>
-            {t`Print message…`}
-          </MenuItem>
-          <MenuItem icon={FileDown} onClick={() => onPrint(true)}>
-            {t`Save message as PDF…`}
-          </MenuItem>
+          {onPrint && (
+            <>
+              <MenuItem icon={Printer} onClick={() => onPrint(false)}>
+                {t`Print message…`}
+              </MenuItem>
+              <MenuItem icon={FileDown} onClick={() => onPrint(true)}>
+                {t`Save message as PDF…`}
+              </MenuItem>
+            </>
+          )}
           {address && authenticated && (
             <>
               <MenuSeparator />

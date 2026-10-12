@@ -23,7 +23,7 @@ const STATUS = JSON.stringify({
 let root: string;
 beforeEach(async () => {
   root = await mkdtemp(path.join(tmpdir(), "openmail-remote-"));
-  await writeFile(path.join(root, "index.html"), "<!doctype html>");
+  await writeFile(path.join(root, "web.html"), "<!doctype html>");
 });
 afterEach(() => rm(root, { recursive: true, force: true }));
 

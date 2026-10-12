@@ -6,7 +6,7 @@ import { expect, it } from "vitest";
 import { desktopRoot } from "../test-support/paths";
 
 const root = join(desktopRoot, "src/renderer/src");
-const entries = ["main.tsx", "recovery/main.tsx"];
+const entries = ["main.tsx", "web.tsx", "recovery/main.tsx"];
 const skipped = new Set(["locales", "e2e", "tests", "test-support"]);
 
 type Kind = "static" | "type" | "dynamic";

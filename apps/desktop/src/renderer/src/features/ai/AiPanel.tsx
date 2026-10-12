@@ -9,7 +9,7 @@ import { matchesShortcut, platformShortcutText } from "../../../../shared/shortc
 import { useShortcutSet } from "../../i18n/use-shortcut-text";
 import { MailClient } from "../../state/rpc";
 import { Keys } from "../../state/keys";
-import { useRunMail, withMail, type MailEnv } from "../../state/mail";
+import { openMessageWindow, useRunMail, withMail, type MailEnv } from "../../state/mail";
 import { aiSettingsAtom } from "./ai-settings";
 import { Proposals } from "./lazy";
 import { Dialog } from "../../ui/Dialog";
@@ -176,12 +176,7 @@ function AllowedThreadSummary({ id, keyConfigured }: { id: string; keyConfigured
           </p>
         </>
       )}
-      <AiOutput
-        result={result}
-        openSource={(sourceId) =>
-          run(withMail((call) => call("OpenMessageWindow", { id: sourceId })))
-        }
-      />
+      <AiOutput result={result} openSource={(sourceId) => run(openMessageWindow(sourceId))} />
     </section>
   );
 }
@@ -298,10 +293,7 @@ export function Assistant({
             </button>
           </div>
         </form>
-        <AiOutput
-          result={result}
-          openSource={(id) => run(withMail((call) => call("OpenMessageWindow", { id })))}
-        />
+        <AiOutput result={result} openSource={(id) => run(openMessageWindow(id))} />
         <div className="border-t border-separator pt-3">
           <button type="button" onClick={() => setReview(true)} className={buttonLink}>
             <Trans>Review AI suggestions</Trans> ({proposals.length})

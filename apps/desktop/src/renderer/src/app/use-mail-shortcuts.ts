@@ -1,3 +1,4 @@
+import { isDesktop } from "../lib/platform";
 import { Reactivity } from "effect/reactivity";
 import { type RefObject, useEffect, useEffectEvent } from "react";
 import type { Profile } from "../../../shared/api";
@@ -108,6 +109,7 @@ export function useMailShortcuts({
     if (
       !typing &&
       selectedId &&
+      isDesktop() &&
       (e.metaKey || e.ctrlKey) &&
       !e.altKey &&
       !e.shiftKey &&
@@ -245,7 +247,7 @@ export function useMailShortcuts({
         startCompose("new");
         break;
       case "newWindow":
-        run(withMail((call) => call("NewWindow", undefined)));
+        if (isDesktop()) run(withMail((call) => call("NewWindow", undefined)));
         break;
       case "settings":
         setDialog("settings");
@@ -274,10 +276,10 @@ export function useMailShortcuts({
         setFilters((f) => ({ ...f, enabled: !f.enabled }));
         break;
       case "openThread":
-        if (selectedId && view.mailbox !== "drafts") openWindow(selectedId);
+        if (selectedId && view.mailbox !== "drafts" && isDesktop()) openWindow(selectedId);
         break;
       case "print":
-        if (selectedId && threadState)
+        if (selectedId && threadState && isDesktop())
           print(selectedId, false, prefs.threadGrouping ? undefined : selectedId);
         break;
       case "archive":

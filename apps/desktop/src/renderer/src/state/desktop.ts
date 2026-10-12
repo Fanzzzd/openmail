@@ -4,13 +4,53 @@ import { useLingui } from "@lingui/react/macro";
 import { Effect, Fiber, Stream } from "effect";
 import { useEffect, useEffectEvent } from "react";
 
+import { cleanLink, parseAppLink } from "@openmail/core/schema";
 import type { DesktopEvent } from "../../../shared/desktop";
+import { externalUrl } from "../../../shared/external-url";
+import { isDesktop, openOnDevice } from "../lib/platform";
 import { useRunMail, withMail } from "./mail";
+
+const localListeners = new Set<(event: DesktopEvent) => void>();
+
+/**
+ * Delivers an event as if main had sent it. The web build uses it for
+ * actions main would route back to this window, such as a sender search.
+ */
+export function emitLocalDesktopEvent(event: DesktopEvent) {
+  for (const listener of localListeners) listener(event);
+}
+
+/**
+ * Opens a link from mail. The desktop app asks main, which opens the Mac's
+ * browser. The web build opens it on this device with the same checks: http,
+ * https or a mailto that starts a message here, never anything else.
+ */
+export const openMailLink = (url: string, cleanLinks = true) =>
+  isDesktop()
+    ? withMail((call) => call("OpenMailLink", { url }))
+    : Effect.sync(() => {
+        const target = externalUrl(url);
+        if (!target) return;
+        if (new URL(target).protocol === "mailto:") {
+          const link = parseAppLink(target);
+          if (link?.kind === "compose")
+            emitLocalDesktopEvent({ _tag: "Compose", draft: link.draft });
+          return;
+        }
+        openOnDevice(cleanLink(target, cleanLinks));
+      });
 
 /** The stream buffers launch URLs in main until this window subscribes. */
 export function useDesktopEvents(receive: (event: DesktopEvent) => void) {
   const run = useRunMail();
   const onEvent = useEffectEvent(receive);
+  useEffect(() => {
+    const local = (event: DesktopEvent) => onEvent(event);
+    localListeners.add(local);
+    return () => {
+      localListeners.delete(local);
+    };
+  }, []);
   useEffect(() => {
     const fiber = run(
       withMail((call) =>

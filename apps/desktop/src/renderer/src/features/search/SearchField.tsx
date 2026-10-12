@@ -27,7 +27,8 @@ import {
   suggestionFor,
   suggestionKeyAction,
 } from "./search-suggestions";
-import { useRunMail, withMail } from "../../state/mail";
+import { openMailLink } from "../../state/desktop";
+import { useRunMail } from "../../state/mail";
 import { searchScopeAtom } from "../../state/ui";
 import { labelsAtom, suggestionsAtom } from "../../state/queries";
 import { listQueryAtom } from "../../state/threads";
@@ -239,9 +240,7 @@ export function SearchField({
                     type="button"
                     // Keeps focus in the field so the popup stays put until the browser opens.
                     onMouseDown={(event) => event.preventDefault()}
-                    onClick={() =>
-                      run(withMail((call) => call("OpenMailLink", { url: SEARCH_HELP_URL })))
-                    }
+                    onClick={() => run(openMailLink(SEARCH_HELP_URL))}
                     className="shrink-0 font-medium text-a11y-accent hover:underline dark:text-blue-400"
                   >
                     {t`Search help`}

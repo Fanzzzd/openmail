@@ -3,6 +3,7 @@ import { useLingui } from "@lingui/react/macro";
 import { Effect } from "effect";
 import type { Message } from "@openmail/core/schema";
 import { linkHint } from "@openmail/core/schema";
+import { openMailLink } from "../../state/desktop";
 import { useRunMail, withMail } from "../../state/mail";
 import { Dialog } from "../../ui/Dialog";
 
@@ -19,7 +20,7 @@ export function UnsubscribeButton({ message }: { message: Message }) {
       withMail((call) =>
         target.kind === "post"
           ? call("Unsubscribe", { messageId: message.id })
-          : call("OpenMailLink", { url: target.url }),
+          : openMailLink(target.url),
       ).pipe(
         Effect.match({
           onSuccess: () => {

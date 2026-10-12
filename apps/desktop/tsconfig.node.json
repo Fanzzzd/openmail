@@ -11,6 +11,7 @@
     "src/preload",
     "src/shared",
     "electron.vite.config.ts",
+    "vite.web.config.ts",
     "oauth-clients.ts",
     "lingui.config.ts",
     "src/renderer/src/i18n/po.d.ts",

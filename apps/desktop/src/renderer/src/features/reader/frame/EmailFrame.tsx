@@ -4,7 +4,11 @@ import {
   linkHint,
   linkNeedsConfirmation,
 } from "@openmail/core/schema";
-import { useRunMail, withMail } from "../../../state/mail";
+import { useAtomValue } from "@effect/atom-react";
+import { AsyncResult } from "effect/reactivity";
+import { useRunMail } from "../../../state/mail";
+import { openMailLink } from "../../../state/desktop";
+import { prefsAtom } from "../../../state/queries";
 import { LinkConfirmDialog } from "./LinkConfirmDialog";
 import type { QuoteHistory } from "@openmail/core/schema";
 import { listenForMessageActivation } from "./message-activation";
@@ -72,7 +76,8 @@ export function EmailFrame({
   const confirmedAnchor = useRef<HTMLElement | null>(null);
   const run = useRunMail();
   const [pendingLink, setPendingLink] = useState<string | null>(null);
-  const openLink = (url: string) => run(withMail((call) => call("OpenMailLink", { url })));
+  const cleanLinks = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => null)?.cleanLinks;
+  const openLink = (url: string) => run(openMailLink(url, cleanLinks !== false));
 
   const [frameDocument, setFrameDocument] = useState<Document | null>(null);
   const quotes = useBodyQuotes(frameDocument, previous);
