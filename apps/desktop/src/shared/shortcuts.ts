@@ -94,6 +94,8 @@ const common = {
   saveMessage: [cmd("s", { alt: true })],
   searchSender: [shiftCmd("k")],
   openMessageWeb: [shiftCmd("g")],
+  assistant: [cmd("j")],
+  composeAssistant: [shiftCmd("j")],
 };
 const native = {
   ...common,
@@ -116,6 +118,9 @@ const native = {
   next: [key("ArrowDown")],
   previous: [key("ArrowUp")],
   send: [cmd("Enter")],
+  select: [],
+  markRead: [],
+  markUnread: [],
 };
 export const KEYMAP = {
   mimestream: native,
@@ -141,9 +146,18 @@ export const KEYMAP = {
     next: [key("j"), key("ArrowDown")],
     previous: [key("k"), key("ArrowUp")],
     send: [cmd("Enter")],
+    undo: [key("z"), cmd("z")],
+    select: [key("x")],
+    markRead: [key("I")],
+    markUnread: [key("U")],
   },
 } satisfies Record<ShortcutSet, Record<keyof typeof native, readonly KeyStroke[]>>;
 export type ShortcutAction = keyof typeof native;
+/**
+ * The composer checks these with {@link matchesShortcut} while it is open, so they may reuse a
+ * mail key (⇧⌘J is also Report spam). {@link shortcutAction} never returns them.
+ */
+export const COMPOSER_ONLY_ACTIONS: readonly ShortcutAction[] = ["composeAssistant"];
 export interface KeyEvent {
   key: string;
   metaKey: boolean;
@@ -193,7 +207,7 @@ export function shortcutAction(
   typing = false,
 ): ShortcutAction | null {
   for (const action of Object.keys(native)) {
-    if (!isShortcutAction(action)) continue;
+    if (!isShortcutAction(action) || COMPOSER_ONLY_ACTIONS.includes(action)) continue;
     // A held reader key must not queue dialogs, browser tabs or searches.
     if (
       event.repeat &&
@@ -250,8 +264,28 @@ export function shortcutText(set: ShortcutSet, action: ShortcutAction): string {
           ArrowRight: "→",
           Escape: "Esc",
         }[stroke.key] ?? stroke.key.toUpperCase();
-      return `${stroke.control ? "⌃" : ""}${stroke.alt ? "⌥" : ""}${stroke.shift ? "⇧" : ""}${stroke.cmd ? "⌘" : ""}${stroke.key === "F" ? "⇧F" : symbol}`;
+      // An uppercase letter is typed with Shift, so it reads as ⇧ and the letter.
+      const shifted = /^[A-Z]$/.test(stroke.key);
+      return `${stroke.control ? "⌃" : ""}${stroke.alt ? "⌥" : ""}${stroke.shift || shifted ? "⇧" : ""}${stroke.cmd ? "⌘" : ""}${symbol}`;
     })
+    .join(" / ");
+}
+/** {@link shortcutText} on a Mac; elsewhere written out as Ctrl, Alt and Shift. */
+export function platformShortcutText(
+  set: ShortcutSet,
+  action: ShortcutAction,
+  platform: string,
+): string {
+  if (/Mac|darwin/i.test(platform)) return shortcutText(set, action);
+  return KEYMAP[set][action]
+    .map((stroke) =>
+      [
+        ...(stroke.cmd || stroke.control ? ["Ctrl"] : []),
+        ...(stroke.alt ? ["Alt"] : []),
+        ...(stroke.shift || /^[A-Z]$/.test(stroke.key) ? ["Shift"] : []),
+        stroke.key.length === 1 ? stroke.key.toUpperCase() : stroke.key,
+      ].join("+"),
+    )
     .join(" / ");
 }
 export function shortcutAccelerator(set: ShortcutSet, action: ShortcutAction): string | undefined {

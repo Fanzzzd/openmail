@@ -18,6 +18,8 @@ import {
   replaceEditorText,
   type ComposeElement,
 } from "../compose-editor-dom";
+import { matchesShortcut, platformShortcutText } from "../../../../../shared/shortcuts";
+import { useShortcutSet } from "../../../i18n/use-shortcut-text";
 import { withMail } from "../../../state/mail";
 import { AiOutput, aiSettingsAtom, useAiStream } from "../../ai";
 import { Dialog } from "../../../ui/Dialog";
@@ -86,17 +88,17 @@ export function ComposerAi({
     cancel();
     setSnapshot({ body: current, start, end, accountId, ...(replyTo ? { replyTo } : {}) });
   }, [allowed, accountId, replyTo, body, bodyRef, selectionRef, cancel]);
+  const shortcutSet = useShortcutSet();
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key.toLowerCase() === "j") {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        open();
-      }
+      if (!matchesShortcut(shortcutSet, "composeAssistant", event)) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      open();
     };
     window.addEventListener("keydown", key, true);
     return () => window.removeEventListener("keydown", key, true);
-  }, [open]);
+  }, [open, shortcutSet]);
   useEffect(() => {
     if (
       !allowed ||
@@ -125,7 +127,7 @@ export function ComposerAi({
           onClick={() => open()}
         >
           <Trans>Write with AI</Trans> ·{" "}
-          {navigator.platform.startsWith("Mac") ? "⇧⌘J" : "Ctrl+Shift+J"}
+          {platformShortcutText(shortcutSet, "composeAssistant", navigator.platform)}
         </button>
         {undo && (
           <button

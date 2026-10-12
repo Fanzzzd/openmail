@@ -3252,6 +3252,7 @@ msgid "macOS uses the system spellchecker and detects languages automatically."
 msgstr "macOS 使用系统拼写检查器，自动识别语言。"
 
 #: src/renderer/src/features/ai/AiPanel.tsx
+#: src/renderer/src/i18n/shortcut-names.ts
 msgid "Mail assistant"
 msgstr "邮件助手"
 
@@ -3315,6 +3316,7 @@ msgid "Mark message unread"
 msgstr "将此邮件标为未读"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
+#: src/renderer/src/i18n/shortcut-names.ts
 #: src/renderer/src/state/desktop.ts
 msgid "Mark read"
 msgstr "标为已读"
@@ -3324,6 +3326,10 @@ msgstr "标为已读"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Mark read/unread"
 msgstr "标记已读/未读"
+
+#: src/renderer/src/i18n/shortcut-names.ts
+msgid "Mark unread"
+msgstr "标为未读"
 
 #: src/renderer/src/features/reader/Reader.tsx
 msgid "Mark unread from this message"
@@ -5334,6 +5340,10 @@ msgstr "选择已在设置中授权 AI 访问的账户。助手可搜索邮件�
 msgid "Select all"
 msgstr "全选"
 
+#: src/renderer/src/i18n/shortcut-names.ts
+msgid "Select conversation"
+msgstr "选择会话"
+
 #: src/renderer/src/features/reader/Reader.tsx
 msgid "Selected message"
 msgstr "已选邮件"
@@ -6661,6 +6671,7 @@ msgid "Work"
 msgstr "工作"
 
 #: src/renderer/src/features/compose/components/ComposerAi.tsx
+#: src/renderer/src/i18n/shortcut-names.ts
 msgid "Write with AI"
 msgstr "用 AI 撰写"
 

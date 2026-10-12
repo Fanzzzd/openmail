@@ -3242,6 +3242,7 @@ msgid "macOS uses the system spellchecker and detects languages automatically."
 msgstr "macOS používá systémovou kontrolu pravopisu a automaticky rozpoznává jazyky."
 
 #: src/renderer/src/features/ai/AiPanel.tsx
+#: src/renderer/src/i18n/shortcut-names.ts
 msgid "Mail assistant"
 msgstr "Poštovní asistent"
 
@@ -3305,6 +3306,7 @@ msgid "Mark message unread"
 msgstr "Označit zprávu jako nepřečtenou"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
+#: src/renderer/src/i18n/shortcut-names.ts
 #: src/renderer/src/state/desktop.ts
 msgid "Mark read"
 msgstr "Označit jako přečtené"
@@ -3314,6 +3316,10 @@ msgstr "Označit jako přečtené"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Mark read/unread"
 msgstr "Označit jako přečtené/nepřečtené"
+
+#: src/renderer/src/i18n/shortcut-names.ts
+msgid "Mark unread"
+msgstr "Označit jako nepřečtené"
 
 #: src/renderer/src/features/reader/Reader.tsx
 msgid "Mark unread from this message"
@@ -5324,6 +5330,10 @@ msgstr "Vyberte povolené účty v Nastavení > Přístup AI. Asistent hledá v 
 msgid "Select all"
 msgstr "Vyberte vše"
 
+#: src/renderer/src/i18n/shortcut-names.ts
+msgid "Select conversation"
+msgstr "Vybrat konverzaci"
+
 #: src/renderer/src/features/reader/Reader.tsx
 msgid "Selected message"
 msgstr "Vybraná zpráva"
@@ -6651,6 +6661,7 @@ msgid "Work"
 msgstr "Pracovní"
 
 #: src/renderer/src/features/compose/components/ComposerAi.tsx
+#: src/renderer/src/i18n/shortcut-names.ts
 msgid "Write with AI"
 msgstr "Psát s AI"
 

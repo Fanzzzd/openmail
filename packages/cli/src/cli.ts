@@ -526,12 +526,12 @@ const writeMode = Command.make(
     const mailbox = yield* Mailbox;
     yield* Console.log(`Agent write mode: ${yield* mailbox.agentWriteMode}.`);
     yield* Console.log(
-      "The mode can only be changed in the app under Settings > AI permissions. MCP always proposes for app approval. Sending requires confirmation in the app.",
+      "The mode can only be changed in the app under Settings > AI Access. MCP always proposes for app approval. Sending requires confirmation in the app.",
     );
   }),
 ).pipe(
   Command.withDescription(
-    "Show agent write permissions; change them in the app (Settings > AI permissions)",
+    "Show agent write permissions; change them in the app (Settings > AI Access)",
   ),
 );
 
@@ -789,7 +789,7 @@ const appOnlyWriteMode =
   cliArgs[1] === "write-mode" &&
   cliArgs.slice(2).some((arg) => !arg.startsWith("-"));
 (appOnlyWriteMode
-  ? fail("Agent write mode can only be changed in the app under Settings > AI permissions.")
+  ? fail("Agent write mode can only be changed in the app under Settings > AI Access.")
   : Command.run(openmail, { version: "0.1.0" })
 ).pipe(
   Effect.catch((error) => {

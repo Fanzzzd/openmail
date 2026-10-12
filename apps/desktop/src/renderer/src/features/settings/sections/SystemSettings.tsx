@@ -19,6 +19,7 @@ import { useEffect, useState } from "react";
 
 import type { Account, PrefsPatch } from "../../../../../shared/api";
 import {
+  KEYMAP,
   NUMBERED_MAILBOXES,
   isShortcutAction,
   shortcutText,
@@ -478,7 +479,8 @@ function ShortcutTable({ set }: { set: ShortcutSet }) {
     <table className="w-full text-left">
       <tbody className="divide-y divide-separator">
         {ACTIONS.map(([action, label]) => {
-          if (!isShortcutAction(action)) return null;
+          // Actions without a key in this set, such as Gmail's X in the Mimestream set, are left out.
+          if (!isShortcutAction(action) || KEYMAP[set][action].length === 0) return null;
           return (
             <tr key={action}>
               <td className={shortcutRow}>{i18n._(label)}</td>

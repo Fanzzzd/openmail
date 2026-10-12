@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 import { describe, expect, it } from "vitest";
 
 import {
+  COMPOSER_ONLY_ACTIONS,
   KEYMAP,
+  favoriteShortcut,
   isShortcutAction,
   folderShortcut,
   historyShortcut,
@@ -10,6 +12,7 @@ import {
   paneShortcut,
   matchesShortcut,
   selectionShortcut,
+  platformShortcutText,
   shortcutAction,
   shortcutText,
   shortcutAccelerator,
@@ -106,10 +109,11 @@ describe("central shortcut sets", () => {
     expect(spaceShortcut(event("2", { ctrlKey: true }))).toEqual({ kind: "all" });
     expect(spaceShortcut(event("1", { metaKey: true }))).toBeNull();
   });
-  it("has no ambiguous bindings within a set", () => {
+  it("has no ambiguous bindings within a set outside the composer", () => {
     for (const set of Object.values(KEYMAP)) {
       const strokes = new Set<string>();
-      for (const bindings of Object.values(set)) {
+      for (const [action, bindings] of Object.entries(set)) {
+        if (!isShortcutAction(action) || COMPOSER_ONLY_ACTIONS.includes(action)) continue;
         for (const stroke of bindings) {
           const encoded = JSON.stringify(stroke);
           expect(strokes.has(encoded)).toBe(false);
@@ -193,7 +197,8 @@ it("every accelerator is unique and every shortcut leaves typing to the editor",
     const accelerators = new Set<string>();
     for (const action of Object.keys(KEYMAP[set])) {
       if (!isShortcutAction(action)) throw new Error(action);
-      const accelerator = shortcutAccelerator(set, action);
+      const composerOnly = COMPOSER_ONLY_ACTIONS.includes(action);
+      const accelerator = composerOnly ? undefined : shortcutAccelerator(set, action);
       if (accelerator) {
         expect(accelerators.has(accelerator)).toBe(false);
         accelerators.add(accelerator);
@@ -222,8 +227,9 @@ it("every accelerator is unique and every shortcut leaves typing to the editor",
             "previousTab",
           ].includes(action) &&
           (stroke.cmd || action === "nextWindow" || action === "previousWindow");
-        expect(shortcutAction(set, input, true)).toBe(global ? action : null);
         expect(matchesShortcut(set, action, input)).toBe(true);
+        if (composerOnly) continue;
+        expect(shortcutAction(set, input, true)).toBe(global ? action : null);
         expect(shortcutAction(set, input)).toBe(action);
       }
     }
@@ -295,4 +301,67 @@ it("⌘[ and ⌘] step through history and leave other bracket chords alone", ()
   // No keymap action already uses a bracket.
   for (const set of ["mimestream", "apple", "gmail"] as const)
     expect(shortcutAction(set, stroke("["))).toBeNull();
+});
+
+const strokeEvent = (stroke: (typeof KEYMAP)["gmail"]["next"][number]): KeyEvent => ({
+  key: stroke.key,
+  metaKey: Boolean(stroke.cmd),
+  ctrlKey: Boolean(stroke.control),
+  altKey: Boolean(stroke.alt),
+  shiftKey:
+    Boolean(stroke.shift) ||
+    (stroke.key.length === 1 &&
+      (stroke.key !== stroke.key.toLowerCase() || /[?!#+~]/.test(stroke.key))),
+});
+
+it("no keymap stroke is also a mailbox, profile, favorite, history, pane or selection key", () => {
+  for (const set of ["mimestream", "apple", "gmail"] as const) {
+    for (const strokes of Object.values(KEYMAP[set])) {
+      for (const stroke of strokes) {
+        const input = strokeEvent(stroke);
+        expect(folderShortcut(set, input), `${set} ${JSON.stringify(stroke)}`).toBeNull();
+        expect(spaceShortcut(input, set), `${set} ${JSON.stringify(stroke)}`).toBeNull();
+        expect(favoriteShortcut(input), `${set} ${JSON.stringify(stroke)}`).toBeNull();
+        expect(historyShortcut(input), `${set} ${JSON.stringify(stroke)}`).toBeNull();
+        expect(paneShortcut(input), `${set} ${JSON.stringify(stroke)}`).toBeNull();
+        expect(selectionShortcut(input), `${set} ${JSON.stringify(stroke)}`).toBeNull();
+      }
+    }
+  }
+});
+
+it("the Gmail set has Gmail's undo, select and explicit read and unread keys", () => {
+  expect(shortcutAction("gmail", event("z"))).toBe("undo");
+  expect(shortcutAction("gmail", event("x"))).toBe("select");
+  expect(shortcutAction("gmail", event("I", { shiftKey: true }))).toBe("markRead");
+  expect(shortcutAction("gmail", event("U", { shiftKey: true }))).toBe("markUnread");
+  // Lowercase u still toggles read, and Shift-I is not Move to Inbox, which needs ⌘.
+  expect(shortcutAction("gmail", event("u"))).toBe("read");
+  expect(shortcutAction("gmail", event("I", { metaKey: true, shiftKey: true }))).toBe("inbox");
+  expect(shortcutText("gmail", "markRead")).toBe("⇧I");
+  expect(shortcutText("gmail", "forwardAttachment")).toBe("⇧F");
+  for (const set of ["mimestream", "apple"] as const) {
+    expect(shortcutAction(set, event("z"))).toBeNull();
+    expect(shortcutAction(set, event("x"))).toBeNull();
+  }
+});
+
+it("⌘J opens the assistant and ⇧⌘J stays Report spam outside the composer", () => {
+  for (const set of ["mimestream", "apple", "gmail"] as const) {
+    expect(shortcutAction(set, event("j", { metaKey: true }))).toBe("assistant");
+    expect(
+      matchesShortcut(set, "composeAssistant", event("j", { metaKey: true, shiftKey: true })),
+    ).toBe(true);
+  }
+  expect(shortcutAction("mimestream", event("j", { metaKey: true, shiftKey: true }))).toBe("spam");
+  expect(shortcutAction("gmail", event("j", { metaKey: true, shiftKey: true }))).toBeNull();
+});
+
+it("AI shortcut labels follow the platform", () => {
+  expect(platformShortcutText("mimestream", "assistant", "MacIntel")).toBe("⌘J");
+  expect(platformShortcutText("mimestream", "assistant", "Win32")).toBe("Ctrl+J");
+  expect(platformShortcutText("mimestream", "composeAssistant", "Linux x86_64")).toBe(
+    "Ctrl+Shift+J",
+  );
+  expect(platformShortcutText("gmail", "markRead", "Win32")).toBe("Shift+I");
 });

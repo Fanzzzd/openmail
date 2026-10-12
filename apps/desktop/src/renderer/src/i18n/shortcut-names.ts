@@ -97,4 +97,9 @@ export const ACTION_NAMES: Record<ShortcutAction, MessageDescriptor> = {
   loadRemoteContent: msg`Load remote content`,
   toggleMessageBackground: msg`Toggle message background`,
   send: msg`Send`,
+  assistant: msg`Mail assistant`,
+  composeAssistant: msg`Write with AI`,
+  select: msg`Select conversation`,
+  markRead: msg`Mark read`,
+  markUnread: msg`Mark unread`,
 };

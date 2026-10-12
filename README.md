@@ -13,7 +13,7 @@
 
 代码已覆盖这些产品路径。真实账户、系统权限和签名成品的验收范围见[路线图](docs/roadmap.md#待用户完成)。功能对齐的剩余缺口见 [parity](docs/parity.md)。
 
-可选联系人、日历和服务商设置按账户连接或停用，权限分别见 [Google](docs/setup-google.md#可选服务) 与 [Microsoft](docs/setup-microsoft.md#可选服务)。邮件内容保护包括发件人认证、可疑链接确认和模型输入的隐藏文本过滤，规则与源码见[安全说明](docs/security.md)。数据库迁移已到 35，见[架构](docs/architecture.md#provider-与-store)。slice 56 已合入同步重置删除保护，范围与验证队列见[同步说明](docs/sync-correctness.md#重置删除保护)。
+可选联系人、日历和服务商设置按账户连接或停用，权限分别见 [Google](docs/setup-google.md#可选服务) 与 [Microsoft](docs/setup-microsoft.md#可选服务)。邮件内容保护包括发件人认证、可疑链接确认和模型输入的隐藏文本过滤，规则与源码见[安全说明](docs/security.md)。数据库迁移只追加，schema 版本等于 `MIGRATIONS` 的条数，见[架构](docs/architecture.md#provider-与-store)。同步重置带删除保护，范围与验证队列见[同步说明](docs/sync-correctness.md#重置删除保护)。
 
 ## 安装、构建与运行
 

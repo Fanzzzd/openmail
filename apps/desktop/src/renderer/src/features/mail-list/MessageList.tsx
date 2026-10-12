@@ -174,6 +174,13 @@ export function MessageList({
 
   const [viewport, setViewport] = useState({ top: 0, height: 600 });
   const selectedIndex = threads.findIndex((m) => m.id === selectedId);
+  const removeLabelId = moveSourceLabel(rowActions.mailbox, rowActions.currentLabel);
+  const flat = !rowActions.grouped;
+  const dragDataFor = (ids: readonly string[]) => JSON.stringify({ ids, removeLabelId, flat });
+  // Built once per render, not once per selected row: a large selection is quadratic otherwise.
+  const selectedDragData = dragDataFor(
+    threads.filter((row) => selectedIds.has(row.id)).map((row) => row.id),
+  );
   const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => DEFAULT_PREFS);
   const density = LIST_DENSITIES[prefs.messageListDensity];
   const [textScale, setTextScale] = useState(1);
@@ -450,13 +457,7 @@ export function MessageList({
                     }
                     showAccount={showAccount}
                     onSelect={select}
-                    dragData={JSON.stringify({
-                      ids: selectedIds.has(m.id)
-                        ? threads.filter((row) => selectedIds.has(row.id)).map((row) => row.id)
-                        : [m.id],
-                      removeLabelId: moveSourceLabel(rowActions.mailbox, rowActions.currentLabel),
-                      flat: !rowActions.grouped,
-                    })}
+                    dragData={selectedIds.has(m.id) ? selectedDragData : dragDataFor([m.id])}
                     onOpen={openRow}
                     swipeActions={prefs.swipeActions}
                     onSwipe={swipe}

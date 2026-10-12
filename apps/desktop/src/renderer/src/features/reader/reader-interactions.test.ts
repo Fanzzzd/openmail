@@ -321,3 +321,89 @@ it("keys typed into a form field inside the message frame do not run reader shor
     frame.remove();
   }
 });
+
+it("list keys pressed in the message frame reach the window's mail shortcuts", () => {
+  const frame = document.createElement("iframe");
+  frame.setAttribute("sandbox", "allow-same-origin");
+  document.body.append(frame);
+  const frameDoc = frame.contentDocument;
+  if (!frameDoc) throw new Error("Missing message frame");
+  const dom = testDom();
+  vi.stubGlobal("Element", dom.window.Element);
+  vi.stubGlobal("requestAnimationFrame", vi.fn());
+  vi.stubGlobal("matchMedia", () => ({
+    matches: false,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  }));
+  frameDoc.body.innerHTML = "<p>Body</p><input>";
+  frameDoc.addEventListener("keydown", (event) => calls.frameKey(event));
+  // The harness window has no KeyboardEvent; the replayed copy needs one from its realm.
+  const FrameKeyboardEvent = KeyboardEvent;
+  vi.stubGlobal(
+    "KeyboardEvent",
+    function HarnessKeyboardEvent(type: string, init: KeyboardEventInit = {}) {
+      const { key, code, metaKey, ctrlKey, altKey, shiftKey, repeat } = init;
+      return Object.assign(new dom.window.Event(type, init), {
+        key,
+        code,
+        metaKey,
+        ctrlKey,
+        altKey,
+        shiftKey,
+        repeat,
+      });
+    },
+  );
+  const handled: string[] = [];
+  // Stands in for useMailShortcuts, which listens on the window and handles archive and next.
+  const mailKeys = (event: KeyboardEvent) => {
+    if (event.key === "ArrowDown" || (event.key === "a" && event.metaKey && event.ctrlKey)) {
+      handled.push(event.key);
+      event.preventDefault();
+    }
+  };
+  window.addEventListener("keydown", mailKeys);
+  const press = (target: EventTarget, key: string, init: KeyboardEventInit = {}) => {
+    const event = new FrameKeyboardEvent("keydown", {
+      key,
+      bubbles: true,
+      cancelable: true,
+      ...init,
+    });
+    act(() => {
+      target.dispatchEvent(event);
+    });
+    return event;
+  };
+  try {
+    dom.render(
+      createElement(
+        I18nProvider,
+        { i18n: setupI18n({ locale: "en", messages: { en: {} } }) },
+        createElement(ThreadView, {
+          messages: [{ ...message("only", 1), bodyHtml: "<p>Body</p>" }],
+          selectedId: "only",
+          single: false,
+          onSelectMessage: vi.fn(),
+          onComposeMessage: vi.fn(),
+          onActionDone: vi.fn(),
+          notify: vi.fn(),
+        }),
+      ),
+    );
+    expect(press(frameDoc.body, "ArrowDown").defaultPrevented).toBe(true);
+    expect(press(frameDoc.body, "a", { metaKey: true, ctrlKey: true }).defaultPrevented).toBe(true);
+    expect(handled).toEqual(["ArrowDown", "a"]);
+    // Copying selected message text stays with the frame.
+    expect(press(frameDoc.body, "c", { metaKey: true }).defaultPrevented).toBe(false);
+    const input = frameDoc.querySelector("input");
+    if (!input) throw new Error("Missing frame input");
+    press(input, "ArrowDown");
+    expect(handled).toEqual(["ArrowDown", "a"]);
+  } finally {
+    window.removeEventListener("keydown", mailKeys);
+    dom.dispose();
+    frame.remove();
+  }
+});

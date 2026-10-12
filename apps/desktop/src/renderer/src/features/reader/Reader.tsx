@@ -47,6 +47,7 @@ import { readerMessageId, readerThreadKey, useReaderMessages } from "./reader-se
 import { readerSelectedText } from "./quote-selection";
 import { jumpReaderSelection } from "../../lib/jump-selection";
 import { readerFindAction } from "./reader-shortcuts";
+import { forwardFrameKey } from "./frame/forward-frame-key";
 import {
   NO_SEARCH_HITS,
   SearchField,
@@ -710,6 +711,8 @@ export function ThreadView({
         );
       }
     }
+    // List and mail keys such as archive, J/K and star listen on the window.
+    forwardFrameKey(e);
   };
   useEffect(() => {
     const listener = (e: KeyboardEvent) => readerKeys(e);

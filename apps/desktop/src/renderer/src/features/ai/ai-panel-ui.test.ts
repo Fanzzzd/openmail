@@ -5,6 +5,7 @@ import { I18nProvider } from "@lingui/react";
 import { Effect, Stream } from "effect";
 import { AsyncResult } from "effect/reactivity";
 import type { AiEvent, AiTriage, ComposeBody } from "@openmail/core/schema";
+import { DEFAULT_PREFS } from "@openmail/core/schema";
 import { testDom } from "../../test-support/test-dom";
 
 const aiQueries = vi.hoisted(() => ({ tags: new Array<string>() }));
@@ -31,7 +32,9 @@ vi.mock("@effect/atom-react", async (original) => ({
           ? triage.row
           : atom === "Labels"
             ? []
-            : null,
+            : atom === "Prefs"
+              ? DEFAULT_PREFS
+              : null,
     ),
 }));
 vi.mock("../../state/rpc", () => ({
@@ -70,7 +73,7 @@ vi.mock("../../state/mail", () => ({
     ),
 }));
 vi.mock("./Proposals", () => ({ Proposals: () => null }));
-vi.mock("../../state/queries", () => ({ labelsAtom: () => "Labels" }));
+vi.mock("../../state/queries", () => ({ labelsAtom: () => "Labels", prefsAtom: "Prefs" }));
 // The real Select is a Base UI popup, covered in ui-primitives.test.ts; here one button per option picks it.
 vi.mock("../../ui/Select", () => ({
   Select: (props: {
@@ -134,6 +137,8 @@ for (const platform of ["MacIntel", "Win32", "Linux x86_64"]) {
         key: "j",
         ctrlKey: platform !== "MacIntel",
         metaKey: platform === "MacIntel",
+        altKey: false,
+        shiftKey: false,
       });
       act(() => {
         dom.window.dispatchEvent(event);
@@ -189,7 +194,13 @@ for (const action of ["discard", "undo", "later typing", "unflushed typing"] as 
     try {
       dom.render(localize(createElement(Harness)));
       const shortcut = new dom.window.Event("keydown", { bubbles: true, cancelable: true });
-      Object.assign(shortcut, { key: "j", metaKey: true, shiftKey: true });
+      Object.assign(shortcut, {
+        key: "j",
+        metaKey: true,
+        ctrlKey: false,
+        altKey: false,
+        shiftKey: true,
+      });
       act(() => {
         dom.window.dispatchEvent(shortcut);
       });

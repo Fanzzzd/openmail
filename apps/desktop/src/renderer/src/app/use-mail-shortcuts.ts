@@ -36,6 +36,8 @@ import type { useMailSelection } from "./use-mail-selection";
 import type { PaneNavigation } from "./use-pane-navigation";
 import { isBackKey } from "../lib/responsive-layout";
 import { isTypingTarget } from "../lib/typing-target";
+import { checkingRows } from "../lib/selection";
+import { escapeClearsSearch } from "./search-escape";
 export function useMailShortcuts({
   searchRef,
   navigation,
@@ -182,8 +184,16 @@ export function useMailShortcuts({
       return;
     }
     if (e.key === "Escape") {
-      setQuery("");
-      searchRef.current?.blur();
+      if (
+        escapeClearsSearch({
+          target: e.target,
+          field: searchRef.current,
+          readerOpen: panes.shown.reader && selectedId !== null,
+        })
+      ) {
+        setQuery("");
+        searchRef.current?.blur();
+      }
       return;
     }
     if (!typing && view.space !== OVERVIEW && !threads.loading) {
@@ -321,6 +331,13 @@ export function useMailShortcuts({
       case "read":
         if (batchRows.length) act({ kind: "read", value: batchRows.some((row) => row.isUnread) });
         break;
+      case "markRead":
+      case "markUnread":
+        if (batchRows.length) act({ kind: "read", value: action === "markRead" });
+        break;
+      case "select":
+        navigation.toggleFocusedRow();
+        break;
       case "star":
         if (batchRows.length)
           act({ kind: "star", value: !batchRows.every((row) => row.isStarred) });
@@ -350,7 +367,10 @@ export function useMailShortcuts({
         break;
       case "next":
       case "previous": {
-        navigation.move(action === "next" ? 1 : -1);
+        const by = action === "next" ? 1 : -1;
+        // Gmail's J and K move a cursor over checked rows; the arrows still select.
+        if (!e.key.startsWith("Arrow") && checkingRows(selection)) navigation.moveListCursor(by);
+        else navigation.move(by);
         break;
       }
       case "nextWindow":
@@ -388,6 +408,9 @@ export function useMailShortcuts({
       case "searchSender":
       case "openMessageWeb":
       case "send":
+      // AiPanel and ComposerAi own these.
+      case "assistant":
+      case "composeAssistant":
         break;
     }
   });

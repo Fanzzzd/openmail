@@ -4,7 +4,11 @@ import { AsyncResult } from "effect/reactivity";
 import { shortcutText, type ShortcutAction } from "../../../shared/shortcuts";
 import { prefsAtom } from "../state/queries";
 
+export function useShortcutSet() {
+  return AsyncResult.getOrElse(useAtomValue(prefsAtom), () => DEFAULT_PREFS).shortcutSet;
+}
+
 export function useShortcutText() {
-  const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => DEFAULT_PREFS);
-  return (action: ShortcutAction) => shortcutText(prefs.shortcutSet, action);
+  const set = useShortcutSet();
+  return (action: ShortcutAction) => shortcutText(set, action);
 }

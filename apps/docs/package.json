@@ -10,7 +10,8 @@
     "start": "serve out",
     "check-types": "next typegen && tsc --noEmit && tsc --noEmit -p scripts/tsconfig.json",
     "test": "vitest run",
-    "shortcuts": "vitest run -u shortcuts"
+    "shortcuts": "vitest run -u shortcuts",
+    "mcp-tools": "vitest run -u mcp-tools"
   },
   "dependencies": {
     "fumadocs-core": "16.17.1",

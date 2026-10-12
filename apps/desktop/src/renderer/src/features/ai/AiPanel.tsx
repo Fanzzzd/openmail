@@ -3,8 +3,10 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import type { AiEvent, AiSource } from "@openmail/core/schema";
 import { Effect, Fiber, Stream } from "effect";
 import { AsyncResult } from "effect/reactivity";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import type { Proposal, Account } from "../../../../shared/api";
+import { matchesShortcut, platformShortcutText } from "../../../../shared/shortcuts";
+import { useShortcutSet } from "../../i18n/use-shortcut-text";
 import { MailClient } from "../../state/rpc";
 import { Keys } from "../../state/keys";
 import { useRunMail, withMail, type MailEnv } from "../../state/mail";
@@ -205,14 +207,15 @@ export function Assistant({
     settings?.accounts.some((s) => s.accountId === a.id && s.allowed),
   );
   const ids = selected.filter((id) => eligible.some((a) => a.id === id));
+  const shortcutSet = useShortcutSet();
+  const toggleKey = useEffectEvent((event: KeyboardEvent) => {
+    if (!matchesShortcut(shortcutSet, "assistant", event)) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    setOpen((previous) => !previous);
+  });
   useEffect(() => {
-    const listener = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && !event.shiftKey && event.key.toLowerCase() === "j") {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        setOpen((previous) => !previous);
-      }
-    };
+    const listener = (event: KeyboardEvent) => toggleKey(event);
     window.addEventListener("keydown", listener, true);
     return () => window.removeEventListener("keydown", listener, true);
   }, []);
@@ -231,7 +234,7 @@ export function Assistant({
         <h2 className="flex items-baseline gap-2 text-headline font-semibold">
           <Trans>Mail assistant</Trans>
           <kbd className="font-sans text-footnote font-normal text-a11y-muted">
-            {assistantShortcut(navigator.platform)}
+            {platformShortcutText(shortcutSet, "assistant", navigator.platform)}
           </kbd>
         </h2>
         <p className="text-footnote text-a11y-muted">
@@ -320,6 +323,3 @@ export function Assistant({
     </>
   );
 }
-
-const assistantShortcut = (platform: string): string =>
-  /Mac|darwin/i.test(platform) ? "⌘J" : "Ctrl+J";

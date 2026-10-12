@@ -10,6 +10,9 @@ import {
   batchScope,
   trimSelection,
   selectionForQuery,
+  toggleFocused,
+  moveCursor,
+  checkingRows,
   requiresBatchDeleteConfirmation,
 } from "./selection";
 
@@ -176,4 +179,27 @@ it("releases a route's thread once a present message has loaded without losing s
     startupId: null,
     selection,
   });
+});
+
+it("Gmail's X checks rows under a cursor that J and K move without clearing them", () => {
+  // X on the open row unchecks it; the cursor stays there.
+  let selection = toggleFocused(singleSelection("b"));
+  expect([...selection.ids]).toEqual([]);
+  expect(selection.focus).toBe("b");
+  expect(checkingRows(selection)).toBe(true);
+  selection = toggleFocused(selection);
+  expect([...selection.ids]).toEqual(["b"]);
+  expect(checkingRows(selection)).toBe(false);
+  selection = toggleFocused(moveCursor(toggleFocused(selection), rows, 1));
+  expect([...selection.ids]).toEqual(["c"]);
+  selection = toggleFocused(moveCursor(moveCursor(selection, rows, 1), rows, 1));
+  expect([...selection.ids]).toEqual(["c", "e"]);
+  expect(checkingRows(selection)).toBe(true);
+  selection = moveCursor(selection, rows, 1);
+  expect(selection.focus).toBe("f");
+  expect([...selection.ids]).toEqual(["c", "e"]);
+  // The cursor survives list reconciliation while its row is visible.
+  expect(trimSelection(selection, new Set(rows))).toBe(selection);
+  expect(trimSelection(selection, new Set(["c", "e"])).focus).toBe("c");
+  expect(moveCursor(selection, rows, 1).focus).toBe("f");
 });

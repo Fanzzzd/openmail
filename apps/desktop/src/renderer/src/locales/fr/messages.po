@@ -3242,6 +3242,7 @@ msgid "macOS uses the system spellchecker and detects languages automatically."
 msgstr "macOS utilise le correcteur orthographique du système et détecte les langues automatiquement."
 
 #: src/renderer/src/features/ai/AiPanel.tsx
+#: src/renderer/src/i18n/shortcut-names.ts
 msgid "Mail assistant"
 msgstr "Assistant de messagerie"
 
@@ -3305,6 +3306,7 @@ msgid "Mark message unread"
 msgstr "Marquer le message comme non lu"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
+#: src/renderer/src/i18n/shortcut-names.ts
 #: src/renderer/src/state/desktop.ts
 msgid "Mark read"
 msgstr "Marquer comme lu"
@@ -3314,6 +3316,10 @@ msgstr "Marquer comme lu"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Mark read/unread"
 msgstr "Marquer comme lu/non lu"
+
+#: src/renderer/src/i18n/shortcut-names.ts
+msgid "Mark unread"
+msgstr "Marquer comme non lu"
 
 #: src/renderer/src/features/reader/Reader.tsx
 msgid "Mark unread from this message"
@@ -5324,6 +5330,10 @@ msgstr "Sélectionnez les comptes autorisés dans Réglages > Accès à l’IA. 
 msgid "Select all"
 msgstr "Tout sélectionner"
 
+#: src/renderer/src/i18n/shortcut-names.ts
+msgid "Select conversation"
+msgstr "Sélectionner la conversation"
+
 #: src/renderer/src/features/reader/Reader.tsx
 msgid "Selected message"
 msgstr "Message sélectionné"
@@ -6651,6 +6661,7 @@ msgid "Work"
 msgstr "Travail"
 
 #: src/renderer/src/features/compose/components/ComposerAi.tsx
+#: src/renderer/src/i18n/shortcut-names.ts
 msgid "Write with AI"
 msgstr "Rédiger avec l’IA"
 

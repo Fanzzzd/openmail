@@ -221,6 +221,13 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
           act({ kind: "read", value: state.isUnread });
         }
         break;
+      case "markRead":
+      case "markUnread":
+        if (state) {
+          e.preventDefault();
+          act({ kind: "read", value: action === "markRead" });
+        }
+        break;
       case "star":
         if (state) {
           e.preventDefault();

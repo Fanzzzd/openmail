@@ -3242,6 +3242,7 @@ msgid "macOS uses the system spellchecker and detects languages automatically."
 msgstr "macOSはシステムのスペルチェッカーを使用し、言語を自動検出します。"
 
 #: src/renderer/src/features/ai/AiPanel.tsx
+#: src/renderer/src/i18n/shortcut-names.ts
 msgid "Mail assistant"
 msgstr "メールアシスタント"
 
@@ -3305,6 +3306,7 @@ msgid "Mark message unread"
 msgstr "メッセージを未開封にする"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
+#: src/renderer/src/i18n/shortcut-names.ts
 #: src/renderer/src/state/desktop.ts
 msgid "Mark read"
 msgstr "開封済みにする"
@@ -3314,6 +3316,10 @@ msgstr "開封済みにする"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Mark read/unread"
 msgstr "開封済み／未開封にする"
+
+#: src/renderer/src/i18n/shortcut-names.ts
+msgid "Mark unread"
+msgstr "未開封にする"
 
 #: src/renderer/src/features/reader/Reader.tsx
 msgid "Mark unread from this message"
@@ -5324,6 +5330,10 @@ msgstr "「設定」>「AIアクセス」で許可するアカウントを選択
 msgid "Select all"
 msgstr "すべて選択"
 
+#: src/renderer/src/i18n/shortcut-names.ts
+msgid "Select conversation"
+msgstr "スレッドを選択"
+
 #: src/renderer/src/features/reader/Reader.tsx
 msgid "Selected message"
 msgstr "選択したメッセージ"
@@ -6651,6 +6661,7 @@ msgid "Work"
 msgstr "仕事"
 
 #: src/renderer/src/features/compose/components/ComposerAi.tsx
+#: src/renderer/src/i18n/shortcut-names.ts
 msgid "Write with AI"
 msgstr "AI で作成"
 

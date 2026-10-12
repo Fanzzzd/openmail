@@ -28,6 +28,8 @@ export const GROUPS: { title: string; actions: ShortcutAction[] }[] = [
       "trash",
       "spam",
       "read",
+      "markRead",
+      "markUnread",
       "star",
       "important",
       "label",
@@ -44,6 +46,7 @@ export const GROUPS: { title: string; actions: ShortcutAction[] }[] = [
     actions: [
       "next",
       "previous",
+      "select",
       "openThread",
       "search",
       "searchSender",
@@ -105,6 +108,10 @@ export const GROUPS: { title: string; actions: ShortcutAction[] }[] = [
       "pasteMatchStyle",
       "pasteQuotation",
     ],
+  },
+  {
+    title: "AI",
+    actions: ["assistant", "composeAssistant"],
   },
   {
     title: "Formatting",

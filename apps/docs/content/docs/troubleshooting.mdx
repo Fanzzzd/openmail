@@ -1,0 +1,85 @@
+---
+title: Troubleshooting
+description: What to do when OpenMail crashes, stops syncing, asks you to sign in again or cannot read the keychain.
+---
+
+OpenMail keeps its data in `~/Library/Application Support/openmail` on macOS. The `OPENMAIL_HOME` environment variable moves it. Paths below are relative to that folder.
+
+## OpenMail keeps crashing
+
+OpenMail counts crashes. A crash is either a window that stopped unexpectedly or an app that did not quit cleanly. A crashed window reloads. On the third crash within five minutes, OpenMail restarts in safe mode. Safe mode skips the windows you had open and shows **OpenMail safe mode** with three buttons:
+
+- **Continue** opens OpenMail as usual.
+- **Reset local cache** deletes downloaded messages, labels, contacts and search indexes, then downloads mail again. It keeps accounts, settings, drafts, changes waiting to be sent and the sign-ins saved in the keychain.
+- **Quit** closes OpenMail without changing anything. It is the default.
+
+After an unclean exit, OpenMail also checks the database. If the check fails, the same prompt reads **The local database could not be verified**. Then **Reset local cache** rebuilds the database from the records it can still read. It keeps the damaged file next to `mail.db` as `mail.db.corrupt-<time>-<id>`.
+
+If the prompt says to close other OpenMail processes, quit any `openmail` command or MCP server that is running, then open the app again.
+
+After a crash, the next start opens **OpenMail stopped unexpectedly**. It shows the crash entries from the diagnostics log. You can send them to the developer as described in [Send diagnostics](#send-diagnostics), or close the window.
+
+## Free space or clear downloaded mail
+
+**Settings → Local cache** shows how much space message text, attachments and indexes use.
+
+- **Clear all caches** removes downloaded message bodies and attachments for every account. **Clear account cache** does the same for one account. Headers and drafts stay, so search still finds messages. Opening a message downloads its body again.
+- **Message text cache limit**, **Attachment cache limit** and **Keep openmail under** cap the space OpenMail uses. Starred messages, drafts and messages in the outbox stay even above the limit.
+- **Compact now** returns free database pages to the disk. Wait for syncing and queued changes to finish first.
+
+Settings has no button that resets the whole database. Only the safe mode prompt above does that.
+
+## Send diagnostics
+
+OpenMail writes a diagnostics log to `diagnostics/diagnostics.jsonl`. It records fixed fields only: event type, time, failure category, HTTP status and a hashed account ID. It never records message text, addresses, tokens or stack traces. The log rotates at 256 KB and is never uploaded. See [Security model](/docs/security#diagnostics).
+
+To report a problem, choose **Help → Send Feedback…**:
+
+1. Enter the **Feedback address** (see [How do I contact the developer?](/docs/faq#how-do-i-contact-the-developer)) and pick a **Category**.
+2. Describe what happened.
+3. Turn on **Attach the redacted diagnostics shown below** if you want to include the log. The dialog shows exactly what will be attached.
+4. Click **Continue to draft**. OpenMail opens an email draft from your own account. Review it and send it. Nothing is sent until you do.
+
+Sending feedback needs a connected account.
+
+**Settings → Activity** lists the actions that you, the command line and AI took on your mail. It does not contain the diagnostics log.
+
+## Mail stopped syncing
+
+The bottom of the sidebar shows the sync state: **Syncing…**, **Synced** with a time, or **Sync failed** with the number of failed accounts. Hover over it to see which accounts failed. Click **Sync now**, or press ⌃⌘R (⌘R with the Gmail shortcut set).
+
+A notice above the message list explains most failures:
+
+- **You're offline.** Mail syncs again when the connection comes back.
+- **Could not sync** an account. Click **Try again**.
+- A sign-in or keychain notice. See the next two sections.
+- **change could not be saved.** Click **Details** to see which change the server refused.
+
+To check a single account, open **Settings → Accounts**, select the account and click **Check sync health**. The report compares the local message count with the server for each folder and shows how many changes are waiting. **Copy redacted report** copies it with your own folder names replaced by numbers, so you can add it to feedback.
+
+If the counts stay wrong after **Sync now**, quit OpenMail and open it again. If that does not help, send feedback with the sync health report.
+
+## OpenMail keeps asking me to sign in
+
+When an account needs a new sign-in, OpenMail pauses its sync and shows a notice with **Sign in again**. The account also shows **Needs sign-in** in **Settings → Accounts**. The notice names the reason:
+
+| Notice                                                               | What happened                                                                                                              | What to do                                                                                                                   |
+| -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Google currently limits OpenMail's sign-in to 7 days.                | OpenMail's Google project is in Testing mode, where Google expires sign-ins after 7 days.                                  | Click **Sign in again**. To stop the weekly sign-in, [use your own OAuth client](/docs/own-oauth-client) in production mode. |
+| The sign-in was revoked or has expired.                              | You changed your password, removed OpenMail's access in your account settings, or the provider expired the token.          | Click **Sign in again**.                                                                                                     |
+| The account needs to grant mail permissions again.                   | A permission was unchecked on the consent screen.                                                                          | Click **Sign in again** and leave every mail permission checked.                                                             |
+| The OAuth client that signed in the account is no longer configured. | The account was signed in with an OAuth client that OpenMail no longer has, for example after you removed your own client. | Click **Sign in again**.                                                                                                     |
+| The saved sign-in is missing from the keychain.                      | The keychain item named `openmail` was deleted.                                                                            | Click **Sign in again**.                                                                                                     |
+| The mail server rejected the password.                               | An IMAP app password was revoked or changed.                                                                               | Click **Sign in again** and enter a new app password.                                                                        |
+
+If a Google account asks again every week, that is the Testing mode limit in the first row. See [Why do I need to sign in again?](/docs/faq#why-do-i-need-to-sign-in-again) for provider limits.
+
+## The keychain is locked
+
+OpenMail keeps sign-ins in the macOS keychain. When it cannot read them, the notice reads **The keychain is locked. Unlock your computer and sync resumes on its own.** and the account shows **Keychain is locked** in **Settings → Accounts**.
+
+Unlock your Mac. If macOS asks whether OpenMail may use the keychain item, click **Always Allow**. If you clicked **Deny**, OpenMail shows the same notice and tries again on the next sync. A locked keychain never signs you out. If the keychain item itself is gone, OpenMail asks you to sign in again instead.
+
+## Google says the app is unverified
+
+During Gmail sign-in, Google can show **Google hasn't verified this app**. Click **Advanced**, then **Go to OpenMail (unsafe)**. The FAQ explains [why the warning appears](/docs/faq#why-does-google-show-an-unverified-app-warning). To avoid it, [register your own OAuth client](/docs/own-oauth-client).

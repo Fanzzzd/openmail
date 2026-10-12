@@ -80,8 +80,8 @@ export function selectAll(selection: Selection, rows: readonly string[]): Select
 export function trimSelection(selection: Selection, visible: ReadonlySet<string>): Selection {
   const ids = new Set([...selection.ids].filter((id) => visible.has(id)));
   const first = [...ids][0] ?? null;
-  const focus =
-    visible.has(selection.focus ?? "") && ids.has(selection.focus ?? "") ? selection.focus : first;
+  // A cursor on an unselected row (Gmail's X and J/K) stays while that row is visible.
+  const focus = visible.has(selection.focus ?? "") ? selection.focus : first;
   const anchor = visible.has(selection.anchor ?? "") ? selection.anchor : focus;
   return ids.size === selection.ids.size && focus === selection.focus && anchor === selection.anchor
     ? selection
@@ -115,6 +115,31 @@ export function moveSelection(
   const id = rows[Math.max(0, Math.min(rows.length - 1, index < 0 ? 0 : index + direction))];
   return id ? selectRow(selection, rows, id, { range }) : selection;
 }
+
+/** Gmail's X: select or deselect the row under the cursor. The cursor stays on that row. */
+export function toggleFocused(selection: Selection): Selection {
+  const id = selection.focus;
+  if (id === null) return selection;
+  const ids = new Set(selection.ids);
+  if (ids.has(id)) ids.delete(id);
+  else ids.add(id);
+  return { ids, anchor: id, focus: id };
+}
+
+/** Gmail's J/K while rows are checked: move the cursor and keep the selection. */
+export function moveCursor(
+  selection: Selection,
+  rows: readonly string[],
+  direction: 1 | -1,
+): Selection {
+  const index = selection.focus === null ? -1 : rows.indexOf(selection.focus);
+  const id = rows[Math.max(0, Math.min(rows.length - 1, index < 0 ? 0 : index + direction))];
+  return id ? { ids: selection.ids, anchor: id, focus: id } : selection;
+}
+
+/** Whether J/K should move only the cursor: rows are checked, or the cursor is off them. */
+export const checkingRows = (selection: Selection) =>
+  selection.ids.size > 1 || (selection.focus !== null && !selection.ids.has(selection.focus));
 
 /** Pick outside the whole removed range; fall back at either end of the list. */
 export function selectionAfterRemoval(

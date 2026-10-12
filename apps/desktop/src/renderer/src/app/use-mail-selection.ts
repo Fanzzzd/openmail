@@ -12,6 +12,7 @@ import {
   batchScope,
   EMPTY_SELECTION,
   moveSelection,
+  moveCursor,
   reconcileSelection,
   selectAll,
   selectionAfterRemoval,
@@ -19,6 +20,7 @@ import {
   selectRow,
   settleStartupSelection,
   singleSelection,
+  toggleFocused,
   trimSelection,
   type Selection,
 } from "../lib/selection";
@@ -403,6 +405,28 @@ export function useMailSelection({
     focusList(next.focus);
     if (next.focus === list.at(-1)?.id) loadMore();
   };
+  /** Gmail's J/K while rows are checked: the cursor moves, the checked rows stay. */
+  const moveListCursor = (direction: 1 | -1) => {
+    const next = moveCursor(
+      selection,
+      list.map((row) => row.id),
+      direction,
+    );
+    choose(next);
+    setReadTarget(null);
+    setSelectionSource("keyboard");
+    focusList(next.focus);
+    if (next.focus === list.at(-1)?.id) loadMore();
+  };
+  /** Gmail's X. Checking a row never marks it read. */
+  const toggleFocusedRow = () => {
+    const next = toggleFocused(selection);
+    choose(next);
+    setReadTarget(null);
+    setSelectionSource("keyboard");
+    setLabelPicker(false);
+    focusList(next.focus);
+  };
   const archiveSentReply = (replyTo: string | undefined) => {
     if (selectedId !== replyTo) return;
     choose(
@@ -456,6 +480,8 @@ export function useMailSelection({
   return {
     selectAll: selectAllRows,
     move,
+    moveListCursor,
+    toggleFocusedRow,
     archiveSentReply,
     openLink,
     openWindow,
