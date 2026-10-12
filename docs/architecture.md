@@ -124,6 +124,25 @@ Cmd-J 助手使用 MailToolkit 子集，检索本地邮件与已就绪向量索�
 
 desktop 主进程组装 NodeMailbox、系统能力与 RPC server。`shared/rpc.ts` 定义协议，`shared/mailbox-handlers.ts` 共用 Mailbox 处理器；sandbox preload 只桥接 JSON，renderer 通过 RPC 与 Effect atoms 查询。主入口等 Electron ready 事件，后台索引与初次同步等窗口 `ready-to-show` 后运行。
 
-renderer 的 `App.tsx` 组装邮件界面，`app/` 中的 hooks 管理选择、撰写、动作、快捷键、布局与原生菜单，`state/` 管理查询、事件及撤销，`components/` 实现邮件、设置与按需加载的对话框。语言目录也按需加载。
+主进程源码按领域分目录：`app/` 启动、退出、恢复与本机推理，`windows/` 窗口、菜单与拼写，`rpc/` RPC server，`security/` 协议、外链与 OAuth client，`files/` 附件、下载与拖放，`updates/` 自动更新，`system/` 通知、通讯录、默认邮件程序与原生撰写。`index.ts` 是 electron-vite 入口。`new URL(…, import.meta.url)` 按打包后的 `out/main/index.js` 解析，移动源文件不改这些路径。
+
+renderer 源码分层，依赖只向下：
+
+| 目录               | 内容                                                                                                                                                                                                          | 不得导入                             |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| `app/`             | `App.tsx`、`ThreadWindow.tsx`、面板、窗口快捷键和组装界面的 hooks                                                                                                                                             |                                      |
+| `features/<name>/` | 一个功能一个目录：mail-list、reader（含 body、frame、attachments）、compose、search、sidebar、organize、settings、accounts、contacts、ai、calendar、downloads、sync-status、updates、undo、overview、feedback | `app/`                               |
+| `state/`           | RPC client、查询、mutation、事件、撤销和选择                                                                                                                                                                  | `app/`、`features/`                  |
+| `i18n/`            | Lingui 初始化、`LocaleProvider` 和共享文案                                                                                                                                                                    | `app/`、`features/`                  |
+| `ui/`              | 共享 React 组件：Dialog、Menu、Select、Toast 等                                                                                                                                                               | `app/`、`features/`、`state/`        |
+| `lib/`             | 纯函数和通用 hooks，不读取 RPC 或 atoms                                                                                                                                                                       | `app/`、`features/`、`state/`、`ui/` |
+
+oxlint 的 `no-restricted-imports` 执行上表。`tests/layers.test.ts` 从两个 HTML 入口遍历导入图，检查三条规则：
+
+- `import()` 加载的模块不在启动即加载的图里。
+- 功能目录的 `index.ts` 只导出启动即加载的模块，否则导入这个 index 就会连带加载懒加载代码。
+- 一个功能经对方的 `index.ts` 导入另一个功能。只存在于懒加载 chunk 的模块（如 `EmailFrame`、`ComposeEditor`、`OptionalServices`）直接按路径导入。
+
+功能自己打开的懒加载对话框放在该功能的 `lazy.tsx`，`app/LazyDialogs.tsx` 只放 `app/` 打开的对话框。`recovery/` 是恢复窗口的独立入口。跨层测试放在 `tests/`，测试工具放在 `test-support/`，其余测试与源文件放在一起。文件移动保留文件名，因为 `bundle-split.test.ts` 按 chunk 名检查拆包。语言目录按需加载。`scripts/move-files.mjs` 按 JSON 移动文件并改写所有相对导入、`vi.mock` 路径和文档里的路径。
 
 `src/renderer/src/e2e/harness.ts` 在 jsdom 中渲染真实 App，经过 preload 同款 RPC 和共用处理器连接真实 Mailbox 与临时 SQLite。服务商使用 fake，桌面窗口、剪贴板和原生服务使用支架。它验证界面到数据库／provider 的邮件流程；Electron、真实授权和签名验收另列在[路线图](roadmap.md)。测试入口及故障注入只在[测试](testing.md)维护。
