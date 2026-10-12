@@ -5,6 +5,8 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { AsyncResult } from "effect/reactivity";
 import type { Account } from "../../../../../shared/api";
 import { resultError } from "../../../lib/errors";
+import { canCall } from "../../../lib/platform";
+import { SignInAgainOnMac } from "../../../ui/SignInAgainOnMac";
 import { Keys } from "../../../state/keys";
 import { reauthAtom, refreshContactsAtom } from "../../../state/mutations";
 import { contactSyncAtom } from "../../../state/queries";
@@ -59,15 +61,18 @@ export function ContactSettings({ account }: { account: Account }) {
           >
             <Trans>Refresh contacts</Trans>
           </Button>
-          {status?.scopeMissing && (
-            <Button
-              className={buttonSecondary}
-              disabled={signIn.waiting || result.waiting}
-              onClick={() => reauth("contacts")}
-            >
-              <Trans>Sign in again</Trans>
-            </Button>
-          )}
+          {status?.scopeMissing &&
+            (canCall("Reauth") ? (
+              <Button
+                className={buttonSecondary}
+                disabled={signIn.waiting || result.waiting}
+                onClick={() => reauth("contacts")}
+              >
+                <Trans>Sign in again</Trans>
+              </Button>
+            ) : (
+              <SignInAgainOnMac />
+            ))}
         </SettingsRow>
         {status?.error && (
           <p role="alert" className={alertRow}>

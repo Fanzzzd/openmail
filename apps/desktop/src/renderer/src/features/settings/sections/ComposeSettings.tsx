@@ -1,4 +1,5 @@
 import { AppleContactsSettings } from "./AppleContactsSettings";
+import { canCall } from "../../../lib/platform";
 import { SignatureSettings } from "./SignatureSettings";
 import { TemplateSettings } from "./TemplateSettings";
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
@@ -35,7 +36,8 @@ export function ComposeSettings() {
       </SettingsGroup>
       <SettingsGroup>
         <RecipientAddresses />
-        <AppleContactsSettings />
+        {/* Apple Contacts are on the Mac; the remote server refuses their RPCs. */}
+        {canCall("SetAppleContacts") && <AppleContactsSettings />}
       </SettingsGroup>
       <SettingsGroup>
         <QuoteSelection />

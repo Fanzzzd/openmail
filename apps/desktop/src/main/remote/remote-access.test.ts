@@ -41,6 +41,8 @@ function harness(options: {
   let hanging = false;
   // Set by down(): Tailscale isn't running, so every CLI call fails.
   let down = false;
+  // Set by setInstalled(): whether the Tailscale CLI can be found.
+  let installed = options.installed ?? true;
   let stored: RemoteAccessSettings = { ...DEFAULT_REMOTE_ACCESS, ...options.settings };
   const calls: string[][] = [];
   let rpcRunning = 0;
@@ -60,7 +62,7 @@ function harness(options: {
       attachmentPart: () => Effect.die("unused"),
       accounts: Effect.succeed([]),
     },
-    installed: async () => options.installed ?? true,
+    installed: async () => installed,
     runCli: async (args): Promise<CliResult> => {
       calls.push([...args]);
       if (hanging && args[0] === "serve") return new Promise<CliResult>(constVoid);
@@ -97,6 +99,9 @@ function harness(options: {
     },
     tailscaleDown: (value: boolean) => {
       down = value;
+    },
+    setInstalled: (value: boolean) => {
+      installed = value;
     },
   };
 }
@@ -394,5 +399,39 @@ describe("remote access controller", () => {
     expect(h.stored().port).toBeGreaterThan(0);
     await h.controller.setEnabled(false);
     expect(h.stored()).toMatchObject({ enabled: false, port: 0 });
+  });
+
+  it("keeps the stored port when the Tailscale CLI can't be found to check the mapping", async () => {
+    const h = harness({ serve: ours, settings: { enabled: false, port: 45_678 } });
+    h.setInstalled(false);
+    await h.controller.init();
+    // Nothing was checked, so nothing is forgotten.
+    expect(h.calls).toEqual([]);
+    expect(h.stored().port).toBe(45_678);
+    expect(h.last()).toMatchObject({ status: "off", problem: null });
+
+    h.setInstalled(true);
+    await h.controller.refresh();
+    expect(h.calls).toContainEqual(["serve", "--https=8443", "off"]);
+    expect(h.stored().port).toBe(0);
+  });
+
+  it("keeps the stored port after a turn-off without the Tailscale CLI", async () => {
+    const h = harness({ serve: ours });
+    await h.controller.init();
+    await h.controller.setEnabled(true);
+    const port = h.stored().port;
+    h.setInstalled(false);
+    h.calls.length = 0;
+    await h.controller.setEnabled(false);
+    expect(h.calls).toEqual([]);
+    expect(h.stored()).toMatchObject({ enabled: false, port });
+    expect(h.last()).toMatchObject({ status: "off", problem: null });
+
+    // The next launch finds the CLI again and removes the mapping it left.
+    const next = harness({ serve: ours, settings: h.stored() });
+    await next.controller.init();
+    expect(next.calls).toContainEqual(["serve", "--https=8443", "off"]);
+    expect(next.stored().port).toBe(0);
   });
 });

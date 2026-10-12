@@ -133,7 +133,9 @@ Tailscale 身份才是凭证。会话只把一个浏览器的 WebSocket、下载
 
 ### 远程 RPC 表
 
-`main/remote/remote-rpcs.ts` 的 `REMOTE_RPC_POLICY` 列出允许的 RPC，`RemoteRpcs` 只由这些 RPC 组成。不在表里的 RPC 在远程服务器上没有处理器，请求被拒绝并记日志。`remote-rpcs.test.ts` 固定了完整的允许列表和必须拒绝的列表，并断言新增 RPC 默认被拒。
+`shared/remote-policy.ts` 的 `REMOTE_RPC_POLICY` 列出允许的 RPC，`main/remote/remote-rpcs.ts` 的 `RemoteRpcs` 只由这些 RPC 组成。不在表里的 RPC 在远程服务器上没有处理器，请求被拒绝并记日志。`remote-rpcs.test.ts` 固定了完整的允许列表和必须拒绝的列表，并断言新增 RPC 默认被拒。
+
+web 构建读同一张表。`lib/platform.ts` 的 `canCall(tag)` 在桌面恒为真，在 web 构建里只对表里的 RPC 为真。会调用被拒 RPC 的控件按它调用的 RPC 隐藏，例如“重新登录”在 web 上换成“在 Mac 上重新登录”。
 
 允许：读取、搜索、撰写、发送（与桌面同一个发件箱和撤销发送）、整理（归档、标签、稍后提醒、删除）、联系人建议、日历邀请回复，以及 `REMOTE_PREF_KEYS` 里的邮件和界面偏好。
 
@@ -160,4 +162,4 @@ Tailscale 身份才是凭证。会话只把一个浏览器的 WebSocket、下载
 - 退出时移除映射超时或失败，映射会留到下次启动。这期间端口占用的风险见上文“发布”。
 - Disconnect 不能挡住仍在允许列表里的 login，见“会话”。
 
-验证：`remote-server.test.ts`（认证矩阵、会话签发范围、上限、清理、CSP、穿越、附件上下行限制、上传并发、WebSocket Origin 和断开）、`remote-rpcs.test.ts`、`tailscale.test.ts`（serve 参数、冲突检测和 CLI 查找顺序）、`remote-access.test.ts`（假 CLI 下的开关流程、退出时移除映射、CLI 卡住时的超时、Tailscale 不可达时的 `removeFailed` 与重试、启动时清理崩溃留下的映射）、`e2e/web.test.ts`（浏览器端经 WebSocket 渲染收件箱）。`OPENMAIL_WEB_SHOT=<dir>` 时 `web-shot.test.ts` 用 Electron 的 Chromium 截取 390 px 和 1280 px 的构建产物。
+验证：`remote-server.test.ts`（认证矩阵、会话签发范围、上限、清理、CSP、穿越、附件上下行限制、上传并发、WebSocket Origin 和断开）、`remote-rpcs.test.ts`、`tailscale.test.ts`（serve 参数、冲突检测和 CLI 查找顺序）、`remote-access.test.ts`（假 CLI 下的开关流程、退出时移除映射、CLI 卡住时的超时、Tailscale 不可达时的 `removeFailed` 与重试、启动时清理崩溃留下的映射、找不到 CLI 时保留端口）、`e2e/web.test.ts`（浏览器端经 WebSocket 渲染收件箱；逐个点击 web 设置页每个标签里的控件，断言服务器没有拒绝或失败的调用）。`OPENMAIL_WEB_SHOT=<dir>` 时 `web-shot.test.ts` 用 Electron 的 Chromium 截取 390 px 和 1280 px 的构建产物。

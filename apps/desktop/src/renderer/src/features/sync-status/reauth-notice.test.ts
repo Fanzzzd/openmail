@@ -6,6 +6,7 @@ import { act, createElement } from "react";
 import { createRoot } from "react-dom/client";
 import { expect, it, vi } from "vitest";
 import type { Account } from "../../../../shared/api";
+import { setPlatform } from "../../lib/platform";
 import { MailStatusNotice, ReauthNotice } from "./MailStatusNotice";
 
 const account = (reauthReason?: ReauthReason): Account => ({
@@ -21,15 +22,38 @@ const account = (reauthReason?: ReauthReason): Account => ({
 });
 
 function render(node: ReturnType<typeof createElement>) {
+  return renderElement(node).text;
+}
+
+function renderElement(node: ReturnType<typeof createElement>) {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   const element = document.createElement("div");
   const root = createRoot(element);
   const i18n = setupI18n({ locale: "en", messages: { en: {} } });
   act(() => root.render(createElement(I18nProvider, { i18n }, node)));
   const text = element.textContent;
+  const buttons = [...element.querySelectorAll("button")].map((button) => button.textContent);
   act(() => root.unmount());
-  return text;
+  return { text, buttons };
 }
+
+it("in the web build, sends the person to the Mac instead of offering a sign-in it would refuse", () => {
+  for (const provider of ["gmail", "imap"] as const) {
+    const notice = createElement(ReauthNotice, {
+      account: { ...account(), provider },
+      onReauth: vi.fn(),
+    });
+    expect(renderElement(notice).buttons).toContain("Sign in again");
+    setPlatform("web");
+    try {
+      const web = renderElement(notice);
+      expect(web.buttons).toEqual([]);
+      expect(web.text).toContain("Sign in again on your Mac");
+    } finally {
+      setPlatform("desktop");
+    }
+  }
+});
 
 it("each reauth reason has its own message, and none asks the person to publish an app", () => {
   const expected: [ReauthReason | undefined, string][] = [

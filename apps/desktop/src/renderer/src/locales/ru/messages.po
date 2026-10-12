@@ -345,6 +345,10 @@ msgstr "Добавьте {provider}"
 msgid "Add account"
 msgstr "Добавить учетную запись"
 
+#: src/renderer/src/app/App.tsx
+msgid "Add an account on your Mac."
+msgstr "Добавьте учетную запись на своем Mac."
+
 #: src/renderer/src/lib/errors.ts
 msgid "Add an automatic reply message"
 msgstr "Добавить автоматическое ответное сообщение"
@@ -5824,6 +5828,10 @@ msgstr "Боковая панель"
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Sign in again"
 msgstr "Войдите снова"
+
+#: src/renderer/src/ui/SignInAgainOnMac.tsx
+msgid "Sign in again on your Mac"
+msgstr "Войдите снова на своем Mac"
 
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 #: src/renderer/src/lib/errors.ts

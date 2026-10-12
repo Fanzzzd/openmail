@@ -1040,7 +1040,10 @@ export const makeMobileImap = Effect.gen(function* () {
                   `UID FETCH ${uidSet(known.slice(i, i + 500))} (UID FLAGS)`,
                 );
                 for (const row of fetchFields(rows)) {
-                  if (row.flags.includes("\\Deleted")) continue;
+                  if (row.flags.includes("\\Deleted")) {
+                    state.deleted.add(row.uid);
+                    continue;
+                  }
                   present.add(row.uid);
                   current.set(row.uid, flagsOf(row.flags));
                 }
@@ -1070,11 +1073,30 @@ export const makeMobileImap = Effect.gen(function* () {
                     : `SINCE ${date}`;
               const found = await client.search(`UNDELETED ${criteria}`);
               if (regressed) state.lastUid = 0;
-              const pending = found.filter((uid) => uid > state.lastUid).toSorted((a, b) => a - b);
+              // \Deleted mail isn't stored but is watched: an undelete brings it back.
+              const restored: number[] = [];
+              const watched = [...state.deleted];
+              state.deleted.clear();
+              for (const uid of await client.search(`DELETED ${criteria}`))
+                if (uid > state.lastUid) state.deleted.add(uid);
+              for (let i = 0; i < watched.length; i += 500)
+                for (const row of fetchFields(
+                  await client.command(
+                    `UID FETCH ${uidSet(watched.slice(i, i + 500))} (UID FLAGS)`,
+                  ),
+                ))
+                  if (row.flags.includes("\\Deleted")) state.deleted.add(row.uid);
+                  else restored.push(row.uid);
+              const pending = [
+                ...new Set([...found.filter((uid) => uid > state.lastUid), ...restored]),
+              ].toSorted((a, b) => a - b);
               const newest = old && !rebuilt && !regressed ? pending : pending.slice(-1000);
               for (const [index, uid] of newest.entries()) {
                 const row = await fetchRawIn(client, encodeProviderId(path.path, validity, uid));
-                if (row.flags.includes("\\Deleted")) continue;
+                if (row.flags.includes("\\Deleted")) {
+                  state.deleted.add(uid);
+                  continue;
+                }
                 if (!(row.raw instanceof Uint8Array))
                   throw new PermanentError({ message: "Missing mail source" });
                 const message = mobileIncoming(
@@ -1107,6 +1129,7 @@ export const makeMobileImap = Effect.gen(function* () {
                   partial: true,
                 });
               state.lastUid = Math.max(state.lastUid, ...newest);
+              state.watchDeleted(state.deleted);
               next.folders[path.path] = state.toCursor();
               await emit({ _tag: "Cursor", cursor: JSON.stringify(next) });
             }

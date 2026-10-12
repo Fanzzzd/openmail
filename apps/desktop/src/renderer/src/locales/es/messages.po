@@ -345,6 +345,10 @@ msgstr "Añadir {provider}"
 msgid "Add account"
 msgstr "Agregar cuenta"
 
+#: src/renderer/src/app/App.tsx
+msgid "Add an account on your Mac."
+msgstr "Agrega una cuenta en tu Mac."
+
 #: src/renderer/src/lib/errors.ts
 msgid "Add an automatic reply message"
 msgstr "Agregar un mensaje de respuesta automática"
@@ -5824,6 +5828,10 @@ msgstr "Barra lateral"
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Sign in again"
 msgstr "Iniciar sesión nuevamente"
+
+#: src/renderer/src/ui/SignInAgainOnMac.tsx
+msgid "Sign in again on your Mac"
+msgstr "Inicia sesión nuevamente en tu Mac"
 
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 #: src/renderer/src/lib/errors.ts

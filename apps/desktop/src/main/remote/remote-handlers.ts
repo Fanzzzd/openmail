@@ -3,58 +3,11 @@ import { InvalidInput, type PrefsPatch } from "@openmail/core/schema";
 import { Effect, Stream } from "effect";
 import { mailboxHandlers } from "../../shared/mailbox-handlers";
 import { rendererPrefs } from "../../shared/renderer-prefs";
+import { REMOTE_PREF_KEYS } from "../../shared/remote-policy";
 import { RemoteRpcs } from "./remote-rpcs";
 
-/**
- * Preferences a remote browser may change: how mail reads, lists and composes.
- * Settings tied to the Mac (notifications, caches, updates, spellcheck, Apple
- * Contacts, the attachment folder, the menu bar) stay desktop only.
- */
-const REMOTE_PREF_KEYS = new Set<keyof PrefsPatch>([
-  "remoteImages",
-  "cleanLinks",
-  "contactPhotos",
-  "emojiReplacement",
-  "composeFormatBar",
-  "composeMarkdownReplacement",
-  "composeSmartLists",
-  "inlineImageSize",
-  "composeFont",
-  "labs",
-  "swipeActions",
-  "toolbarActions",
-  "messageListDensity",
-  "specialFolderBadges",
-  "showMore",
-  "undoSendSeconds",
-  "defaultFrom",
-  "showFullRecipientAddresses",
-  "replyFrom",
-  "signaturePosition",
-  "signatureSeparator",
-  "signatureOrder",
-  "quoteSelection",
-  "language",
-  "markReadDelay",
-  "nextSelection",
-  "deleteKeyAction",
-  "readingPanePosition",
-  "sidebarVisible",
-  "toolbarVisible",
-  "readingPaneVisible",
-  "readerZoom",
-  "messageBackground",
-  "threadGrouping",
-  "threadOrder",
-  "shortcutSet",
-  "showAccountLabels",
-  "defaultProfilesPrompted",
-]);
-
-const remoteKeys: ReadonlySet<string> = REMOTE_PREF_KEYS;
-
 export const remotePrefs = (patch: PrefsPatch): Effect.Effect<PrefsPatch, InvalidInput> =>
-  Object.keys(patch).every((key) => remoteKeys.has(key))
+  Object.keys(patch).every((key) => REMOTE_PREF_KEYS.has(key))
     ? rendererPrefs(patch)
     : Effect.fail(new InvalidInput({ message: "This setting is only available on the Mac." }));
 

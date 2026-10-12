@@ -1,10 +1,11 @@
 import { useAtom, useAtomValue } from "@effect/atom-react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { consentBatch, type OptionalService } from "@openmail/core/schema";
-import { AsyncResult } from "effect/reactivity";
+import { consentBatch, type OptionalService, type ServiceGrant } from "@openmail/core/schema";
+import { AsyncResult, Atom } from "effect/reactivity";
 import { useEffect, useRef, useState } from "react";
 import type { Account } from "../../../../shared/api";
 import { resultError } from "../../lib/errors";
+import { canCall } from "../../lib/platform";
 import { MailClient } from "../../state/rpc";
 import { Keys, MAIL_KEYS } from "../../state/keys";
 import { reauthAtom } from "../../state/mutations";
@@ -17,9 +18,17 @@ const switchAtom = MailClient.mutation("SetServiceEnabled");
 function openOptionalServices(accountId: string) {
   window.dispatchEvent(new CustomEvent("openmail:optional-services", { detail: accountId }));
 }
-/** The service's grant; undefined while loading and for IMAP, which has no optional services. */
+/** Never resolves: the web build can't read grants, so it shows no service hints. */
+const unknownServicesAtom = Atom.make(AsyncResult.initial<ServiceGrant[]>());
+
+/**
+ * The service's grant; undefined while loading, for IMAP, which has no optional
+ * services, and in the web build, where the Mac's remote server refuses OptionalServices.
+ */
 export function useServiceState(accountId: string, service: OptionalService) {
-  const snapshot = useAtomValue(optionalServicesAtom(accountId));
+  const snapshot = useAtomValue(
+    canCall("OptionalServices") ? optionalServicesAtom(accountId) : unknownServicesAtom,
+  );
   return AsyncResult.getOrElse(snapshot, () => []).find((grant) => grant.service === service)
     ?.state;
 }

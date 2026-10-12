@@ -1765,6 +1765,108 @@ it.effect("sync treats Deleted UIDs as absent", () =>
   ),
 );
 
+for (const condstore of [false, true])
+  it.effect(
+    `an undeleted message comes back${condstore ? " with CONDSTORE" : ""}, and an expunged one is forgotten`,
+    () =>
+      testImap((a, client) =>
+        Effect.gen(function* () {
+          // A small stateful folder: UID -> flags, with a MODSEQ per change.
+          const mail = new Map<number, { flags: Set<string>; modseq: number }>();
+          let modseq = 1;
+          const put = (uid: number, ...flags: string[]) =>
+            mail.set(uid, { flags: new Set(flags), modseq: ++modseq });
+          const uidNext = () => Math.max(0, ...mail.keys()) + 1;
+          const uids = (range: unknown) =>
+            String(range)
+              .replaceAll("*", String(Math.max(uidNext() - 1, 1)))
+              .split(",")
+              .flatMap((part) => {
+                const [from = 0, to = from] = part.split(":").map(Number);
+                return [...mail.keys()].filter(
+                  (uid) => uid >= Math.min(from, to) && uid <= Math.max(from, to),
+                );
+              });
+          if (condstore) client.enabled.add("CONDSTORE");
+          vi.spyOn(client, "mailboxOpen").mockImplementation(async () => ({
+            path: "INBOX",
+            delimiter: "/",
+            flags: new Set<string>(),
+            uidValidity: 7n,
+            uidNext: uidNext(),
+            exists: mail.size,
+            ...(condstore ? { highestModseq: BigInt(modseq) } : {}),
+          }));
+          vi.spyOn(client, "search").mockImplementation(async (query) =>
+            (query.uid ? uids(query.uid) : [...mail.keys()]).filter(
+              (uid) =>
+                query.deleted === undefined ||
+                mail.get(uid)!.flags.has("\\Deleted") === query.deleted,
+            ),
+          );
+          vi.spyOn(client, "fetchAll").mockImplementation(async (range, _query, options) =>
+            uids(range)
+              .filter(
+                (uid) => !options?.changedSince || mail.get(uid)!.modseq > options.changedSince,
+              )
+              .map((uid) => ({ seq: uid, uid, flags: new Set(mail.get(uid)!.flags), size: 100 })),
+          );
+          vi.spyOn(client, "fetch").mockImplementation(async function* (range) {
+            for (const uid of uids(range))
+              yield {
+                seq: uid,
+                uid,
+                flags: new Set(mail.get(uid)!.flags),
+                source: Buffer.from(`Message-ID: <m${uid}@x>\r\nSubject: test\r\n\r\nbody`),
+              };
+          });
+          let cursor = Option.none<string>();
+          const sync = Effect.gen(function* () {
+            yield* TestClock.adjust("11 minutes");
+            const changes = yield* Stream.runCollect(a.pull(account, cursor, "inbox"));
+            const last = changes.findLast((c) => c._tag === "Cursor");
+            assert.ok(last?._tag === "Cursor");
+            cursor = Option.some(last.cursor);
+            return {
+              upserts: changes.flatMap((c) => (c._tag === "Upsert" ? [c.message.providerId] : [])),
+              deletes: changes.flatMap((c) =>
+                c._tag === "RebuildFolder" ? (c.candidates ?? []) : [],
+              ),
+              watched: readCursor(cursor).folders.INBOX?.deleted ?? "",
+            };
+          });
+
+          put(1);
+          put(2);
+          assert.deepStrictEqual((yield* sync).upserts, ["7:1:INBOX", "7:2:INBOX"]);
+
+          // Another client deletes 2 without expunging; 3 arrives already deleted.
+          put(2, "\\Deleted");
+          put(3, "\\Deleted");
+          const deleted = yield* sync;
+          assert.deepStrictEqual(deleted.deletes, ["7:2:INBOX"]);
+          assert.deepStrictEqual(deleted.upserts, []);
+          assert.strictEqual(deleted.watched, "2:3");
+
+          // Both are undeleted: they come back although their UIDs are below lastUid.
+          put(2);
+          put(3);
+          const restored = yield* sync;
+          assert.deepStrictEqual(restored.upserts, ["7:2:INBOX", "7:3:INBOX"]);
+          assert.strictEqual(restored.watched, "");
+          assert.strictEqual(readCursor(cursor).folders.INBOX?.uids, "1:3");
+
+          // Deleted, then expunged: watched once, then forgotten.
+          put(1, "\\Deleted");
+          assert.strictEqual((yield* sync).watched, "1");
+          mail.delete(1);
+          const expunged = yield* sync;
+          assert.strictEqual(expunged.watched, "");
+          assert.deepStrictEqual(expunged.upserts, []);
+        }),
+      ),
+  );
+
 it.effect("interrupted pooled move closes and evicts its connection", () =>
   testImap((a, client, opens) =>
     Effect.gen(function* () {

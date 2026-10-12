@@ -624,18 +624,16 @@ export const makeApplyMailbox = (
             writes.push(store.replaceLabels(account.id, change.labels));
             break;
           case "Cursor":
+            // A full sync covers the inbox too, so it renews the inbox cursor. Without this a
+            // phone's inbox-only background polls would keep an expired Gmail history id or
+            // Graph delta link after a foreground sync. A poll that ran meanwhile may have a
+            // newer one; starting from the older cursor only fetches some changes again.
             writes.push(
               scope
                 ? store.saveInboxCursor(account.id, change.cursor)
                 : store
                     .saveSyncCursor(account.id, change.cursor)
-                    .pipe(
-                      Effect.andThen(
-                        account.provider === "imap"
-                          ? store.saveInboxCursor(account.id, change.cursor)
-                          : Effect.void,
-                      ),
-                    ),
+                    .pipe(Effect.andThen(store.saveInboxCursor(account.id, change.cursor))),
             );
             break;
           case "Progress":

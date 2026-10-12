@@ -1,4 +1,4 @@
-import { isDesktop } from "../lib/platform";
+import { canCall, isDesktop } from "../lib/platform";
 import { focusedSenderMessage, threadStateFor } from "../lib/focused-inbox";
 import { Separator, Group, Panel } from "react-resizable-panels";
 import { useCallback, useRef, useState, type ComponentProps, useEffect } from "react";
@@ -479,9 +479,13 @@ export function App({ composeId }: { composeId?: string }) {
       ) : accounts._tag === "Success" && dialog !== "add" ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-3 px-8 pb-13 text-center">
           <p className="text-a11y-muted">{t`No email accounts yet.`}</p>
-          <button type="button" className={buttonPrimary} onClick={() => setDialog("add")}>
-            {t`Add account`}
-          </button>
+          {canCall("Connect") ? (
+            <button type="button" className={buttonPrimary} onClick={() => setDialog("add")}>
+              {t`Add account`}
+            </button>
+          ) : (
+            <p className="text-a11y-muted">{t`Add an account on your Mac.`}</p>
+          )}
         </div>
       ) : null}
     </main>
@@ -700,11 +704,13 @@ export function App({ composeId }: { composeId?: string }) {
   );
   return (
     <div className="flex h-full flex-col text-body text-neutral-900 dark:text-neutral-100">
-      <DefaultProfilesPrompt
-        accounts={accountList}
-        profiles={profileList}
-        busy={Boolean(dialog || compose)}
-      />
+      {canCall("InitializeProfiles") && (
+        <DefaultProfilesPrompt
+          accounts={accountList}
+          profiles={profileList}
+          busy={Boolean(dialog || compose)}
+        />
+      )}
       <ProfileSwitcher profiles={profileList} value={view.space} onChange={switchSpace} />
       <FocusedInboxPermission />
       <FailedOpNotice onOpenDraft={openSavedDraft} />
@@ -929,21 +935,22 @@ export function App({ composeId }: { composeId?: string }) {
           }}
         />
       )}
-      {(dialog === "add" || (!hasAccounts && accounts._tag === "Success" && !firstRunClosed)) && (
-        <AddAccountDialog
-          firstRun={!hasAccounts}
-          {...(signInAgain?.provider === "imap" ? { signInAgain } : {})}
-          onClose={() => {
-            setDialog(null);
-            setFirstRunClosed(true);
-          }}
-          onAdded={(a) => {
-            setDialog(null);
-            const email = a.email;
-            say({ text: t`Added ${email}. Syncing…` });
-          }}
-        />
-      )}
+      {canCall("Connect") &&
+        (dialog === "add" || (!hasAccounts && accounts._tag === "Success" && !firstRunClosed)) && (
+          <AddAccountDialog
+            firstRun={!hasAccounts}
+            {...(signInAgain?.provider === "imap" ? { signInAgain } : {})}
+            onClose={() => {
+              setDialog(null);
+              setFirstRunClosed(true);
+            }}
+            onAdded={(a) => {
+              setDialog(null);
+              const email = a.email;
+              say({ text: t`Added ${email}. Syncing…` });
+            }}
+          />
+        )}
       {goToFolder && (
         <GoToFolder
           labels={labels}

@@ -23,6 +23,7 @@ import { Checkbox } from "../../../ui/Checkbox";
 import { SettingsCheckRow, SettingsGroup, SettingsRow } from "../../../ui/SettingsRows";
 import { buttonLink, buttonSecondary, formInput, settingsHint } from "../../../ui/styles";
 import { SegmentedControl } from "../../../ui/SegmentedControl";
+import { canCall } from "../../../lib/platform";
 
 /** Settings > Reading: when mail counts as read, conversations, message look, remote images. */
 export function ReadingSettings() {
@@ -33,10 +34,6 @@ export function ReadingSettings() {
   const setPrefsMutation = useAtomSet(setPrefsAtom);
   const setPrefs = (patch: PrefsPatch) =>
     setPrefsMutation({ payload: { patch }, reactivityKeys: [Keys.prefs, Keys.threads] });
-  const chooseFolderMutation = useAtomSet(chooseAttachmentFolderAtom);
-  // The main process shows the folder picker and stores the path; Settings only displays it.
-  const chooseFolder = () =>
-    chooseFolderMutation({ payload: undefined, reactivityKeys: [Keys.prefs] });
 
   return (
     <>
@@ -148,44 +145,8 @@ export function ReadingSettings() {
           </label>
         </SettingsCheckRow>
       </SettingsGroup>
-      <SettingsGroup>
-        <SettingsRow label={<Trans>Attachment folder</Trans>}>
-          {/* Saving never asks, so the legacy "ask" setting shows as Downloads, where it saves. */}
-          <SegmentedControl
-            aria-label={t`Attachment folder`}
-            value={prefs?.attachmentSaveFolder?.kind === "custom" ? "custom" : "downloads"}
-            options={[
-              { value: "downloads" as const, label: t`Downloads` },
-              { value: "custom" as const, label: t`Custom folder` },
-            ]}
-            onValueChange={(kind) =>
-              kind === "custom" ? chooseFolder() : setPrefs({ attachmentSaveFolder: { kind } })
-            }
-          />
-        </SettingsRow>
-        {prefs?.attachmentSaveFolder?.kind === "custom" && (
-          <div className="flex items-end gap-2 px-3 py-2">
-            <label className="block min-w-0 flex-1">
-              <span className="mb-1 block">{t`Folder path`}</span>
-              <input readOnly className={formInput} value={prefs.attachmentSaveFolder.path} />
-            </label>
-            <button type="button" className={buttonSecondary} onClick={chooseFolder}>
-              {t`Choose…`}
-            </button>
-          </div>
-        )}
-        <SettingsRow label={<Trans>Open attachments from</Trans>}>
-          <SegmentedControl
-            aria-label={t`Open attachments from`}
-            value={prefs?.attachmentOpenFolder ?? "internal"}
-            options={[
-              { value: "internal" as const, label: t`Internal folder` },
-              { value: "downloads" as const, label: t`Downloads` },
-            ]}
-            onValueChange={(attachmentOpenFolder) => setPrefs({ attachmentOpenFolder })}
-          />
-        </SettingsRow>
-      </SettingsGroup>
+      {/* Folders on the Mac: the remote server refuses the folder picker and these settings. */}
+      {canCall("ChooseAttachmentFolder") && <AttachmentFolderSettings />}
       <SettingsGroup>
         <StackedRow
           label={<Trans>Mark as read</Trans>}
@@ -349,6 +310,60 @@ export function ReadingSettings() {
 }
 
 /** A setting whose control is too wide to sit beside its label: label, full-width control, hint. */
+
+/** Where attachments are saved and opened from on the Mac. Desktop only. */
+function AttachmentFolderSettings() {
+  const { t } = useLingui();
+  const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => null);
+  const setPrefsMutation = useAtomSet(setPrefsAtom);
+  const setPrefs = (patch: PrefsPatch) =>
+    setPrefsMutation({ payload: { patch }, reactivityKeys: [Keys.prefs] });
+  const chooseFolderMutation = useAtomSet(chooseAttachmentFolderAtom);
+  // The main process shows the folder picker and stores the path; Settings only displays it.
+  const chooseFolder = () =>
+    chooseFolderMutation({ payload: undefined, reactivityKeys: [Keys.prefs] });
+  return (
+    <SettingsGroup>
+      <SettingsRow label={<Trans>Attachment folder</Trans>}>
+        {/* Saving never asks, so the legacy "ask" setting shows as Downloads, where it saves. */}
+        <SegmentedControl
+          aria-label={t`Attachment folder`}
+          value={prefs?.attachmentSaveFolder?.kind === "custom" ? "custom" : "downloads"}
+          options={[
+            { value: "downloads" as const, label: t`Downloads` },
+            { value: "custom" as const, label: t`Custom folder` },
+          ]}
+          onValueChange={(kind) =>
+            kind === "custom" ? chooseFolder() : setPrefs({ attachmentSaveFolder: { kind } })
+          }
+        />
+      </SettingsRow>
+      {prefs?.attachmentSaveFolder?.kind === "custom" && (
+        <div className="flex items-end gap-2 px-3 py-2">
+          <label className="block min-w-0 flex-1">
+            <span className="mb-1 block">{t`Folder path`}</span>
+            <input readOnly className={formInput} value={prefs.attachmentSaveFolder.path} />
+          </label>
+          <button type="button" className={buttonSecondary} onClick={chooseFolder}>
+            {t`Choose…`}
+          </button>
+        </div>
+      )}
+      <SettingsRow label={<Trans>Open attachments from</Trans>}>
+        <SegmentedControl
+          aria-label={t`Open attachments from`}
+          value={prefs?.attachmentOpenFolder ?? "internal"}
+          options={[
+            { value: "internal" as const, label: t`Internal folder` },
+            { value: "downloads" as const, label: t`Downloads` },
+          ]}
+          onValueChange={(attachmentOpenFolder) => setPrefs({ attachmentOpenFolder })}
+        />
+      </SettingsRow>
+    </SettingsGroup>
+  );
+}
+
 function StackedRow({
   label,
   hint,

@@ -51,6 +51,8 @@ const QUIT_TIMEOUT_MS = 3000;
 const RETRY_MS = 30_000;
 const RETRY_MAX_MS = 5 * 60_000;
 
+type Removal = "gone" | "noCli" | "failed";
+
 interface Mapping {
   port: number;
   service: string;
@@ -161,15 +163,17 @@ export function createRemoteAccess(deps: RemoteAccessDeps) {
   };
 
   /**
-   * Removes the serve mapping only when it still points at OpenMail. False
-   * when Tailscale couldn't be asked, so the mapping may still be there.
+   * Removes the serve mapping only when it still points at OpenMail.
+   * - `gone`: `serve status` ran and no OpenMail mapping is left.
+   * - `noCli`: the Tailscale CLI wasn't found, so nothing was checked.
+   * - `failed`: Tailscale couldn't be asked or refused; the mapping may remain.
    */
-  const removeMapping = async (target: Mapping): Promise<boolean> => {
-    if (!(await deps.installed())) return true;
+  const removeMapping = async (target: Mapping): Promise<Removal> => {
+    if (!(await deps.installed())) return "noCli";
     const current = await runCli(SERVE_STATUS_ARGS);
-    if (current.code !== 0) return false;
-    if (checkServe(current.stdout, target).kind !== "ours") return true;
-    return (await runCli(serveOffArgs(target))).code === 0;
+    if (current.code !== 0) return "failed";
+    if (checkServe(current.stdout, target).kind !== "ours") return "gone";
+    return (await runCli(serveOffArgs(target))).code === 0 ? "gone" : "failed";
   };
 
   const forget = () => {
@@ -178,12 +182,16 @@ export function createRemoteAccess(deps: RemoteAccessDeps) {
     retry = undefined;
     retryDelay = 0;
   };
-  /** Tries the leftover mapping once. True when it's gone. */
-  const sweep = async (): Promise<boolean> => {
-    if (!leftover) return true;
+  /**
+   * Tries the leftover mapping once. Only a confirmed `gone` forgets it and
+   * clears the stored port; otherwise the next launch or Refresh tries again.
+   */
+  const sweep = async (): Promise<Removal> => {
+    if (!leftover) return "gone";
     clearTimeout(retry);
     retry = undefined;
-    if (!(await removeMapping(leftover).catch(() => false))) return false;
+    const result = await removeMapping(leftover).catch((): Removal => "failed");
+    if (result !== "gone") return result;
     forget();
     if (problem === "removeFailed") {
       status = "off";
@@ -191,7 +199,7 @@ export function createRemoteAccess(deps: RemoteAccessDeps) {
     }
     // Off and the mapping is confirmed gone: the next launch has nothing to sweep.
     if (!settings.enabled && settings.port) await save({ ...settings, port: 0 });
-    return true;
+    return "gone";
   };
   /**
    * After a turn-off couldn't remove the mapping, retries in the background,
@@ -203,7 +211,7 @@ export function createRemoteAccess(deps: RemoteAccessDeps) {
     retry = setTimeout(() => {
       serial(async () => {
         if (problem !== "removeFailed") return;
-        if (!(await sweep())) armRetry();
+        if ((await sweep()) !== "gone") armRetry();
         emit();
       }).catch(() => null);
     }, retryDelay);
@@ -256,12 +264,13 @@ export function createRemoteAccess(deps: RemoteAccessDeps) {
     const port = server?.port ?? settings.port;
     leftover = port ? { port, service: settings.service } : null;
     retryDelay = 0;
-    const gone = await sweep();
+    // Without the CLI nothing can be checked: off, keeping the port for the next try.
+    const failed = (await sweep()) === "failed";
     await stopLocal();
     url = null;
-    status = gone ? "off" : "error";
-    problem = gone ? null : "removeFailed";
-    if (!gone) armRetry();
+    status = failed ? "error" : "off";
+    problem = failed ? "removeFailed" : null;
+    if (failed) armRetry();
     emit();
   };
 
@@ -290,7 +299,7 @@ export function createRemoteAccess(deps: RemoteAccessDeps) {
     /** Reads `tailscale status` again; retries a failed start or a mapping left behind. */
     refresh: () =>
       serial(async () => {
-        if (!(await sweep()) && problem === "removeFailed") armRetry();
+        if ((await sweep()) !== "gone" && problem === "removeFailed") armRetry();
         if (settings.enabled && status === "error") return start();
         tailscale = await detect();
         emit();

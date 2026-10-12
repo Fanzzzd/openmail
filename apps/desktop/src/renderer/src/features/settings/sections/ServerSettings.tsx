@@ -28,6 +28,8 @@ import { AsyncResult } from "effect/reactivity";
 import { useEffect, useState } from "react";
 import type { Account } from "../../../../../shared/api";
 import { resultError, settingsScopeMissing } from "../../../lib/errors";
+import { canCall } from "../../../lib/platform";
+import { SignInAgainOnMac } from "../../../ui/SignInAgainOnMac";
 import { Keys, MAIL_KEYS } from "../../../state/keys";
 import {
   updateFilterAtom,
@@ -103,7 +105,8 @@ export function ServerSettings({ accounts }: { accounts: readonly Account[] }) {
         </div>
       </div>
       <AccountServerSettings key={id} account={account} />
-      <ContactSettings key={`contacts:${id}`} account={account} />
+      {/* Server contacts sync on the Mac: the remote server refuses ContactSync and RefreshContacts. */}
+      {canCall("ContactSync") && <ContactSettings key={`contacts:${id}`} account={account} />}
     </section>
   );
 }
@@ -125,16 +128,19 @@ function AccountServerSettings({ account }: { account: Account }) {
           <p className="min-w-0 flex-1">
             {resultError(i18n, filters) ?? resultError(i18n, vacation)}
           </p>
-          {(settingsScopeMissing(filters) || settingsScopeMissing(vacation)) && (
-            <button
-              type="button"
-              disabled={signedIn.waiting}
-              onClick={() => reauth("settings")}
-              className={buttonLink}
-            >
-              <Trans>Sign in again</Trans>
-            </button>
-          )}
+          {(settingsScopeMissing(filters) || settingsScopeMissing(vacation)) &&
+            (canCall("Reauth") ? (
+              <button
+                type="button"
+                disabled={signedIn.waiting}
+                onClick={() => reauth("settings")}
+                className={buttonLink}
+              >
+                <Trans>Sign in again</Trans>
+              </button>
+            ) : (
+              <SignInAgainOnMac className="font-medium" />
+            ))}
           {resultError(i18n, signedIn) && <p className="w-full">{resultError(i18n, signedIn)}</p>}
         </div>
       )}
@@ -1154,16 +1160,19 @@ export function FilterEditor({
                 resultError(i18n, applied) ??
                 resultError(i18n, prepared)}
             </p>
-            {settingsScopeMissing(result) && (
-              <button
-                type="button"
-                className={buttonLink}
-                disabled={signedIn.waiting}
-                onClick={() => reauth("settings")}
-              >
-                <Trans>Sign in again to enable filters</Trans>
-              </button>
-            )}
+            {settingsScopeMissing(result) &&
+              (canCall("Reauth") ? (
+                <button
+                  type="button"
+                  className={buttonLink}
+                  disabled={signedIn.waiting}
+                  onClick={() => reauth("settings")}
+                >
+                  <Trans>Sign in again to enable filters</Trans>
+                </button>
+              ) : (
+                <SignInAgainOnMac className="font-medium" />
+              ))}
           </div>
         )}
         <div className="flex justify-end pt-1">

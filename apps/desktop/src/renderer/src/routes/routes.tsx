@@ -18,6 +18,7 @@ import {
 } from "../../../shared/routes";
 import { App } from "../app/App";
 import { LocationBridge } from "../app/location-bridge";
+import { canCall } from "../lib/platform";
 import { ThreadWindow } from "../app/ThreadWindow";
 
 export interface RouterContext {
@@ -51,16 +52,30 @@ export const mailRoute = createRoute({
   component: App,
 });
 
+/**
+ * Thread and compose windows are separate Mac windows. A browser that opens
+ * their URL lands on its default view: the remote server refuses their RPCs.
+ */
+const windowOnly =
+  (tag: "OpenThreadWindow" | "OpenComposeWindow") =>
+  ({ context }: { context: RouterContext }) => {
+    if (!canCall(tag))
+      // oxlint-disable-next-line typescript/only-throw-error -- TanStack redirects are thrown objects.
+      throw redirect({ href: context.defaultHref(), replace: true });
+  };
+
 export const threadRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "thread/$threadId",
   validateSearch: validateThreadSearch,
+  beforeLoad: windowOnly("OpenThreadWindow"),
   component: ThreadScreen,
 });
 
 export const composeRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "compose/$draftId",
+  beforeLoad: windowOnly("OpenComposeWindow"),
   component: ComposeScreen,
 });
 

@@ -6,6 +6,7 @@ import { ChevronDown, ChevronRight, Copy } from "lucide-react";
 import { useState } from "react";
 
 import { resultError } from "../../lib/errors";
+import { canCall } from "../../lib/platform";
 import { rawMessageAtom } from "../../state/queries";
 import { Dialog } from "../../ui/Dialog";
 import { useSaveMessage } from "./reader-actions";
@@ -58,9 +59,11 @@ export function RawMessageDialog({
         <button type="button" onClick={onClose} className={button}>
           <Trans>Close</Trans>
         </button>
-        <button type="button" onClick={() => save(messageId)} className={button}>
-          <Trans>Save message as EML…</Trans>
-        </button>
+        {canCall("SaveMessage") && (
+          <button type="button" onClick={() => save(messageId)} className={button}>
+            <Trans>Save message as EML…</Trans>
+          </button>
+        )}
       </header>
       <div className="selectable min-h-0 flex-1 overflow-auto px-4 py-3 font-mono text-footnote leading-relaxed">
         {parts === null ? (

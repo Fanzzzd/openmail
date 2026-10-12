@@ -1,6 +1,7 @@
 import { backfillCachedHeaders } from "../../header-backfill.js";
 import { readOnlyAdapter } from "../../read-only.js";
 import { makeResetGuard } from "../../sync-reset.js";
+import { readCursor } from "../../imap-cursor.js";
 import { expect, it, vi } from "vitest";
 import { Effect, Fiber, Layer, Logger, ManagedRuntime, Option, Stream } from "effect";
 import {
@@ -321,7 +322,17 @@ function server(
       Layer.provideMerge(services),
     ),
   );
-  return { runtime, commands, sockets, delivered, upgrades };
+  return {
+    runtime,
+    commands,
+    sockets,
+    delivered,
+    upgrades,
+    /** Another client clears \\Deleted on UID 1. */
+    undelete: () => {
+      deleted = false;
+    },
+  };
 }
 it("runs mobile IMAP through shared connect, sync, reader, contacts, flags, move and audited send commands", async () => {
   const test = server();
@@ -969,6 +980,56 @@ it("mobile sync omits Deleted copies on a server without MOVE or UIDPLUS", async
       }),
     );
     expect(test.commands.some((c) => /UID EXPUNGE/.test(c))).toBe(false);
+  } finally {
+    await test.runtime.dispose();
+  }
+});
+
+it("mobile sync brings back a message another client undeletes", async () => {
+  const test = server({ noMove: true, noUidplus: true });
+  try {
+    await test.runtime.runPromise(
+      Effect.gen(function* () {
+        const account = yield* (yield* Mailbox).connect({
+          provider: "imap",
+          input: { preset: "fastmail", email: "me@example.test", password: "secret" },
+        });
+        const adapter = (yield* Providers).get("imap");
+        // Without MOVE or UIDPLUS the source is only marked \\Deleted.
+        yield* adapter.push(account, "9:1:INBOX", {
+          kind: "move",
+          labelId: "Projects",
+          removeLabelId: "INBOX",
+        });
+        const pull = (cursor: Option.Option<string>) =>
+          Stream.runCollect(adapter.pull(account, cursor, "inbox")).pipe(
+            Effect.map((changes) => {
+              const last = changes.findLast((c) => c._tag === "Cursor");
+              return {
+                changes,
+                cursor: Option.some(last?._tag === "Cursor" ? last.cursor : ""),
+              };
+            }),
+          );
+        const first = yield* pull(
+          Option.some(
+            JSON.stringify({
+              folders: {
+                INBOX: { uidValidity: "9", lastUid: 1, uids: "1", unread: "1", starred: "" },
+              },
+            }),
+          ),
+        );
+        expect(readCursor(first.cursor).folders.INBOX?.deleted).toBe("1");
+        test.undelete();
+        const second = yield* pull(first.cursor);
+        expect(
+          second.changes.some((c) => c._tag === "Upsert" && c.message.providerId === "9:1:INBOX"),
+        ).toBe(true);
+        expect(readCursor(second.cursor).folders.INBOX).toMatchObject({ uids: "1" });
+        expect(readCursor(second.cursor).folders.INBOX?.deleted).toBeUndefined();
+      }),
+    );
   } finally {
     await test.runtime.dispose();
   }

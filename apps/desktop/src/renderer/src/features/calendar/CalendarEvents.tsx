@@ -27,6 +27,8 @@ import {
   accountsAtom,
 } from "../../state/queries";
 import { createCalendarEventAtom, reauthAtom } from "../../state/mutations";
+import { canCall } from "../../lib/platform";
+import { SignInAgainOnMac } from "../../ui/SignInAgainOnMac";
 import { Keys } from "../../state/keys";
 import { type AppError, resultError, INPUT_ERRORS } from "../../lib/errors";
 import { Dialog, alertButton, alertPrimary } from "../../ui/Dialog";
@@ -76,6 +78,7 @@ export function CalendarAccessAction({
   const [authorization, authorize] = useAtom(reauthAtom(accountId), { mode: "promiseExit" });
   if (error?._tag !== "FeatureScopeMissing" && error?._tag !== "AuthError") return null;
   const signIn = error._tag === "AuthError";
+  if (!canCall("Reauth")) return <SignInAgainOnMac />;
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
       <button

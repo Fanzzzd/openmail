@@ -7,7 +7,9 @@ import { ChevronRight, CircleAlert, Lock, WifiOff } from "lucide-react";
 import { type ReactNode, useEffectEvent, useLayoutEffect, useRef, useState } from "react";
 
 import type { Account, SyncState } from "../../../../shared/api";
+import { canCall } from "../../lib/platform";
 import { syncNow, useRunMail } from "../../state/mail";
+import { SignInAgainOnMac } from "../../ui/SignInAgainOnMac";
 import { noticeRow, noticeTone } from "../../ui/styles";
 
 const action =
@@ -196,9 +198,14 @@ export function ReauthNotice({
         </p>
       }
       action={
-        <button type="button" onClick={() => onReauth(account)} className={action}>
-          <Trans>Sign in again</Trans>
-        </button>
+        // IMAP signs in again through Add Account (Connect); OAuth providers through Reauth.
+        canCall(account.provider === "imap" ? "Connect" : "Reauth") ? (
+          <button type="button" onClick={() => onReauth(account)} className={action}>
+            <Trans>Sign in again</Trans>
+          </button>
+        ) : (
+          <SignInAgainOnMac className="font-semibold" />
+        )
       }
     >
       <span aria-hidden className="font-medium">

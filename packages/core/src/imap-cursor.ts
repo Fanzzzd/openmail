@@ -50,6 +50,9 @@ export function parseUidSet(set: string, limit = 1000000): number[] {
 
 // Sync cursor
 
+/** Most \Deleted UIDs a folder watches for an undelete. */
+const DELETED_LIMIT = 1000;
+
 /**
  * Per-folder sync state. Flags are kept here because the adapter never reads
  * the store: a flag change is found by comparing the server's flags with the
@@ -69,6 +72,11 @@ export interface FolderCursor {
   unread: string;
   /** The subset of `uids` with \Flagged. */
   starred: string;
+  /**
+   * UIDs on the server marked \Deleted but not expunged, so not in the store.
+   * Each sync checks them again and fetches any whose \Deleted flag was cleared.
+   */
+  deleted?: string;
 }
 
 export interface ImapCursor {
@@ -103,6 +111,7 @@ export function readCursor(raw: Option.Option<string>): ImapCursor {
         return Predicate.isString(v) ? v : undefined;
       };
       const modseq = text("modseq");
+      const deleted = text("deleted");
       folders[path] = {
         uidValidity: f.uidValidity,
         lastUid: f.lastUid,
@@ -113,6 +122,7 @@ export function readCursor(raw: Option.Option<string>): ImapCursor {
         unread: text("unread") ?? "",
         starred: text("starred") ?? "",
         ...(modseq ? { modseq } : {}),
+        ...(deleted ? { deleted } : {}),
       };
     }
   }
@@ -126,6 +136,8 @@ export function readCursor(raw: Option.Option<string>): ImapCursor {
  */
 export class FolderState {
   readonly flags = new Map<number, Flags>();
+  /** See FolderCursor.deleted. */
+  readonly deleted = new Set<number>();
   flagScanAt: number | undefined;
   constructor(
     readonly uidValidity: string,
@@ -136,6 +148,7 @@ export class FolderState {
   static from(c: FolderCursor): FolderState {
     const state = new FolderState(c.uidValidity, c.lastUid, c.modseq);
     state.flagScanAt = c.flagScanAt;
+    for (const uid of parseUidSet(c.deleted ?? "")) state.deleted.add(uid);
     const unread = new Set(parseUidSet(c.unread));
     const starred = new Set(parseUidSet(c.starred));
     for (const uid of parseUidSet(c.uids)) {
@@ -178,8 +191,19 @@ export class FolderState {
     return changes;
   }
 
+  /** Replaces the watched \Deleted UIDs, keeping the newest DELETED_LIMIT not in the store. */
+  watchDeleted(uids: Iterable<number>) {
+    const watched = [...new Set(uids)]
+      .filter((uid) => !this.flags.has(uid))
+      .toSorted((a, b) => b - a)
+      .slice(0, DELETED_LIMIT);
+    this.deleted.clear();
+    for (const uid of watched) this.deleted.add(uid);
+  }
+
   toCursor(): FolderCursor {
     const uids = [...this.flags.keys()];
+    const deleted = [...this.deleted].filter((uid) => !this.flags.has(uid));
     return {
       uidValidity: this.uidValidity,
       ...(this.flagScanAt === undefined ? {} : { flagScanAt: this.flagScanAt }),
@@ -188,6 +212,7 @@ export class FolderState {
       uids: uidSet(uids),
       unread: uidSet(uids.filter((u) => this.flags.get(u)!.unread)),
       starred: uidSet(uids.filter((u) => this.flags.get(u)!.starred)),
+      ...(deleted.length ? { deleted: uidSet(deleted) } : {}),
     };
   }
 }

@@ -9,6 +9,8 @@ import { useEffect, useState } from "react";
 import { causeText, resultError } from "../../lib/errors";
 import { useRunMail, withMail } from "../../state/mail";
 import { reauthAtom } from "../../state/mutations";
+import { canCall } from "../../lib/platform";
+import { SignInAgainOnMac } from "../../ui/SignInAgainOnMac";
 import type { ThreadState } from "../../lib/focused-inbox";
 import { Alert, AlertCancel, alertPrimary } from "../../ui/Dialog";
 import { DropdownMenu, MenuItem, MenuSeparator } from "../../ui/Menu";
@@ -156,15 +158,19 @@ function Permission({ accountId, onClose }: { accountId: string; onClose: () => 
       }
     >
       <AlertCancel disabled={result.waiting}>{t`Cancel`}</AlertCancel>
-      <button
-        type="button"
-        className={alertPrimary}
-        disabled={result.waiting}
-        onClick={async () => {
-          const exit = await reauth("focusedInbox");
-          if (exit._tag === "Success") onClose();
-        }}
-      >{t`Sign in again`}</button>
+      {canCall("Reauth") ? (
+        <button
+          type="button"
+          className={alertPrimary}
+          disabled={result.waiting}
+          onClick={async () => {
+            const exit = await reauth("focusedInbox");
+            if (exit._tag === "Success") onClose();
+          }}
+        >{t`Sign in again`}</button>
+      ) : (
+        <SignInAgainOnMac className="self-center" />
+      )}
     </Alert>
   );
 }

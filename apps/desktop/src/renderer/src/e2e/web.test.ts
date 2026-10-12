@@ -1,9 +1,9 @@
 import { RegistryContext } from "@effect/atom-react";
-import { setupI18n } from "@lingui/core";
+import { i18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
 import { Mailbox } from "@openmail/core/portable";
 import { fakeServer, TemporaryTestMailbox } from "@openmail/core/testing/node";
-import { cleanup, render, screen } from "@testing-library/react/pure";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react/pure";
 import { createMemoryHistory } from "@tanstack/react-router";
 import { Effect, Fiber, Layer, ManagedRuntime } from "effect";
 import { AtomRegistry } from "effect/reactivity";
@@ -28,7 +28,12 @@ afterEach(async () => {
   setPlatform("desktop");
 });
 
-it("the web build renders the inbox over a WebSocket and calls only remote RPCs", async () => {
+/**
+ * The web build against the Mac's real remote RPC server and fake mail. The
+ * server records each denied call and each failed one.
+ */
+async function openWebApp() {
+  i18n.loadAndActivate({ locale: "en", messages: {} });
   const server = fakeServer("me@gmail.com", [
     incoming("one", { subject: "Quarterly report" }),
     incoming("two", { subject: "Lunch on Friday" }),
@@ -44,10 +49,14 @@ it("the web build renders the inbox over a WebSocket and calls only remote RPCs"
   // The fake server side: the real remote RPC group and handlers on a WebSocket.
   const hub = createConnectionHub();
   const denied: string[] = [];
+  const failures: string[] = [];
   const tags: string[] = [];
   const rpc = Effect.runFork(
     Layer.launch(
-      remoteRpcServer(hub, { denied: (tag) => denied.push(tag), failure: () => null }),
+      remoteRpcServer(hub, {
+        denied: (tag) => denied.push(tag),
+        failure: (tag) => failures.push(tag),
+      }),
     ).pipe(Effect.provideService(Mailbox, m)),
   );
   const wss = new WebSocketServer({ host: "127.0.0.1", port: 0 });
@@ -97,7 +106,8 @@ it("the web build renders the inbox over a WebSocket and calls only remote RPCs"
       { value: registry },
       createElement(
         I18nProvider,
-        { i18n: setupI18n({ locale: "en", messages: { en: {} } }) },
+        // The global instance, as in the app: core macros such as plural() read it.
+        { i18n },
         createElement(TipProvider, null, createElement(AppRouterProvider, { router })),
       ),
     ),
@@ -115,6 +125,13 @@ it("the web build renders the inbox over a WebSocket and calls only remote RPCs"
 
   await eventually(() => {
     expect(screen.getAllByText("Quarterly report").length).toBeGreaterThan(0);
+  });
+  return { denied, failures, tags, states };
+}
+
+it("the web build renders the inbox over a WebSocket and calls only remote RPCs", async () => {
+  const { denied, tags, states } = await openWebApp();
+  await eventually(() => {
     expect(screen.getAllByText("Lunch on Friday").length).toBeGreaterThan(0);
   });
   expect(states).toContain("open");
@@ -124,3 +141,50 @@ it("the web build renders the inbox over a WebSocket and calls only remote RPCs"
   // Signing in to a new account belongs to the Mac.
   expect(screen.queryByRole("button", { name: "Add email account" })).toBeNull();
 });
+
+const dialogs = () => [...document.querySelectorAll('[role="dialog"], [role="alertdialog"]')];
+
+/** Lets the click's RPCs reach the server and their replies render. */
+const settle = () =>
+  act(async () => {
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, 30);
+    });
+  });
+
+// Clicks every control in every tab: slower than the 10 s default under load.
+it(
+  "no web settings control calls an RPC or sets a preference the Mac refuses",
+  { timeout: 60_000 },
+  async () => {
+    const { denied, failures } = await openWebApp();
+    // Settings is a lazy chunk; load it before the click so the dialog opens at once.
+    await import("../features/settings/Settings");
+    fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+    const tabs = (await screen.findAllByRole("tab")).map((tab) => tab.textContent);
+    expect(tabs.length).toBeGreaterThan(5);
+    for (const name of tabs) {
+      fireEvent.click(screen.getByRole("tab", { name }));
+      await settle();
+      // Every switch, checkbox, option and button the tab shows, once each.
+      const panel = screen.getByRole("tabpanel");
+      const controls = ["button", "switch", "checkbox", "radio"].flatMap((role) =>
+        within(panel).queryAllByRole(role),
+      );
+      for (const control of controls) {
+        if (!control.isConnected || control.matches(":disabled, [aria-disabled=true]")) continue;
+        const before = dialogs().length;
+        fireEvent.click(control);
+        await settle();
+        // A control that opens a dialog (a new folder, a filter): close it again.
+        for (const opened of dialogs().slice(before).toReversed()) {
+          fireEvent.keyDown(opened, { key: "Escape" });
+          await settle();
+        }
+      }
+    }
+    await settle();
+    expect(denied).toEqual([]);
+    expect(failures).toEqual([]);
+  },
+);

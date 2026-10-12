@@ -345,6 +345,10 @@ msgstr "Přidat {provider}"
 msgid "Add account"
 msgstr "Přidat účet"
 
+#: src/renderer/src/app/App.tsx
+msgid "Add an account on your Mac."
+msgstr "Přidejte účet na svém Macu."
+
 #: src/renderer/src/lib/errors.ts
 msgid "Add an automatic reply message"
 msgstr "Přidejte zprávu s automatickou odpovědí"
@@ -5824,6 +5828,10 @@ msgstr "Postranní panel"
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Sign in again"
 msgstr "Znovu se přihlaste"
+
+#: src/renderer/src/ui/SignInAgainOnMac.tsx
+msgid "Sign in again on your Mac"
+msgstr "Znovu se přihlaste na svém Macu"
 
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 #: src/renderer/src/lib/errors.ts

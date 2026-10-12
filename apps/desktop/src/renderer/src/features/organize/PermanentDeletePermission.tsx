@@ -1,6 +1,8 @@
 import { useAtom } from "@effect/atom-react";
 import { useLingui } from "@lingui/react/macro";
 import { resultError } from "../../lib/errors";
+import { canCall } from "../../lib/platform";
+import { SignInAgainOnMac } from "../../ui/SignInAgainOnMac";
 import { authorizePermanentDeleteAtom } from "../../state/mutations";
 import { Alert, AlertCancel } from "../../ui/Dialog";
 import { formButton } from "../../ui/form-styles";
@@ -37,15 +39,19 @@ export function PermanentDeletePermission({
       }
     >
       <AlertCancel disabled={result.waiting}>{t`Cancel`}</AlertCancel>
-      <button
-        type="button"
-        className={formButton}
-        disabled={result.waiting}
-        onClick={async () => {
-          const exit = await authorize();
-          if (exit._tag === "Success") onClose();
-        }}
-      >{t`Authorize permanent deletion`}</button>
+      {canCall("Reauth") ? (
+        <button
+          type="button"
+          className={formButton}
+          disabled={result.waiting}
+          onClick={async () => {
+            const exit = await authorize();
+            if (exit._tag === "Success") onClose();
+          }}
+        >{t`Authorize permanent deletion`}</button>
+      ) : (
+        <SignInAgainOnMac className="self-center" />
+      )}
     </Alert>
   );
 }

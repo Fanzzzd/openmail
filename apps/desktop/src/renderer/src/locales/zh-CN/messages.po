@@ -355,6 +355,10 @@ msgstr "添加 {provider}"
 msgid "Add account"
 msgstr "添加账户"
 
+#: src/renderer/src/app/App.tsx
+msgid "Add an account on your Mac."
+msgstr "请在 Mac 上添加账户。"
+
 #: src/renderer/src/lib/errors.ts
 msgid "Add an automatic reply message"
 msgstr "请填写自动回复正文"
@@ -5834,6 +5838,10 @@ msgstr "侧栏"
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Sign in again"
 msgstr "重新登录"
+
+#: src/renderer/src/ui/SignInAgainOnMac.tsx
+msgid "Sign in again on your Mac"
+msgstr "请在 Mac 上重新登录"
 
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 #: src/renderer/src/lib/errors.ts

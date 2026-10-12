@@ -345,6 +345,10 @@ msgstr "{provider} を追加"
 msgid "Add account"
 msgstr "アカウントを追加"
 
+#: src/renderer/src/app/App.tsx
+msgid "Add an account on your Mac."
+msgstr "Mac でアカウントを追加してください。"
+
 #: src/renderer/src/lib/errors.ts
 msgid "Add an automatic reply message"
 msgstr "自動返信メッセージを追加する"
@@ -5824,6 +5828,10 @@ msgstr "サイドバー"
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Sign in again"
 msgstr "再度サインインしてください"
+
+#: src/renderer/src/ui/SignInAgainOnMac.tsx
+msgid "Sign in again on your Mac"
+msgstr "Mac で再度サインインしてください"
 
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 #: src/renderer/src/lib/errors.ts

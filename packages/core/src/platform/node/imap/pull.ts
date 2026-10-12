@@ -5,6 +5,7 @@ import {
   encodeProviderId,
   folderRegressed,
   FolderState,
+  parseUidSet,
   uidSet,
   type ImapCursor,
 } from "../../../imap-cursor.js";
@@ -106,6 +107,20 @@ export const fetchMessages = Effect.fnUntraced(function* (
   return out;
 });
 
+/** The newest FOLDER_LIMIT UIDs, newest first. */
+const newest = (uids: readonly number[]) => uids.toSorted((a, b) => b - a).slice(0, FOLDER_LIMIT);
+
+/**
+ * The first-sync window of the selected folder: undeleted UIDs to fetch, and
+ * \Deleted ones to watch, since an undelete brings them back.
+ */
+const searchWindow = Effect.fnUntraced(function* (s: Session, now: number) {
+  const since = new Date(now - INITIAL_DAYS * 86_400_000);
+  const live = yield* searchUids(s, { since, deleted: false });
+  const deleted = yield* searchUids(s, { since, deleted: true });
+  return { newUids: newest(live), deleted: newest(deleted) };
+});
+
 /**
  * The sync, written as a loop that offers changes to the stream's queue. The
  * queue suspends when full, so a slow store slows the IMAP side down.
@@ -141,6 +156,8 @@ export const runPull = Effect.fnUntraced(function* (
   const plans: {
     folder: ImapSyncFolder;
     newUids: number[];
+    /** \Deleted UIDs to watch for an undelete. */
+    deleted: number[];
     uidNext: number;
     validity: string;
     regressed: boolean;
@@ -155,22 +172,29 @@ export const runPull = Effect.fnUntraced(function* (
     const mailbox = opened.value;
     const old = prev.folders[folder.path];
     const regressed = folderRegressed(old, String(mailbox.uidValidity), mailbox.uidNext);
-    let newUids: number[];
+    let newUids: number[] = [];
+    let deleted: number[] = [];
     if (!old || regressed || old.uidValidity !== String(mailbox.uidValidity)) {
-      const since = new Date(now - INITIAL_DAYS * 86_400_000);
-      const found = mailbox.exists ? yield* searchUids(s, { since, deleted: false }) : [];
-      newUids = found.toSorted((a, b) => b - a).slice(0, FOLDER_LIMIT);
-    } else {
+      if (mailbox.exists) ({ newUids, deleted } = yield* searchWindow(s, now));
+    } else if (mailbox.exists) {
       const { lastUid } = old;
-      const found =
-        mailbox.exists && mailbox.uidNext > lastUid + 1
-          ? yield* searchUids(s, { uid: `${lastUid + 1}:*`, deleted: false })
-          : [];
-      newUids = found.filter((u) => u > lastUid);
+      if (mailbox.uidNext > lastUid + 1) {
+        const uid = `${lastUid + 1}:*`;
+        newUids = (yield* searchUids(s, { uid, deleted: false })).filter((u) => u > lastUid);
+        deleted = (yield* searchUids(s, { uid, deleted: true })).filter((u) => u > lastUid);
+      }
+      // Watched \Deleted UIDs: an undeleted one is fetched like new mail; an expunged one is dropped.
+      const watched = parseUidSet(old.deleted ?? "");
+      if (watched.length)
+        for (const m of yield* call(s, (c) =>
+          c.fetchAll(uidSet(watched), { uid: true, flags: true }, { uid: true }),
+        ))
+          (m.flags?.has("\\Deleted") ? deleted : newUids).push(m.uid);
     }
     plans.push({
       folder,
-      newUids: newUids.toSorted((a, b) => a - b),
+      newUids: [...new Set(newUids)].toSorted((a, b) => a - b),
+      deleted,
       uidNext: mailbox.uidNext,
       validity: String(mailbox.uidValidity),
       regressed,
@@ -183,7 +207,7 @@ export const runPull = Effect.fnUntraced(function* (
   for (const plan of plans) {
     const { folder } = plan;
     let { regressed } = plan;
-    let { newUids, uidNext } = plan;
+    let { newUids, uidNext, deleted } = plan;
     const mailbox = yield* call(s, (c) => c.mailboxOpen(folder.path, { readOnly: true }));
     const uidValidity = String(mailbox.uidValidity);
     const highest = mailbox.highestModseq;
@@ -191,27 +215,13 @@ export const runPull = Effect.fnUntraced(function* (
     if (!old || old.uidValidity !== uidValidity) yield* emit({ _tag: "BackfillReset" });
     const rebuilt = old && old.uidValidity !== uidValidity ? old : undefined;
     if (rebuilt) regressed = false;
-    if (folderRegressed(old, uidValidity, mailbox.uidNext) && !regressed) {
-      regressed = true;
-      const found = yield* searchUids(s, {
-        since: new Date(now - INITIAL_DAYS * 86400000),
-        deleted: false,
-      });
-      newUids = found
-        .toSorted((a, b) => b - a)
-        .slice(0, FOLDER_LIMIT)
-        .toSorted((a, b) => a - b);
-      uidNext = mailbox.uidNext;
-    }
-    if (uidValidity !== plan.validity) {
-      const found = yield* searchUids(s, {
-        since: new Date(now - INITIAL_DAYS * 86400000),
-        deleted: false,
-      });
-      newUids = found
-        .toSorted((a, b) => b - a)
-        .slice(0, FOLDER_LIMIT)
-        .toSorted((a, b) => a - b);
+    const research =
+      (folderRegressed(old, uidValidity, mailbox.uidNext) && !regressed) ||
+      uidValidity !== plan.validity;
+    if (folderRegressed(old, uidValidity, mailbox.uidNext)) regressed = true;
+    if (research) {
+      ({ newUids, deleted } = yield* searchWindow(s, now));
+      newUids = newUids.toSorted((a, b) => a - b);
       uidNext = mailbox.uidNext;
     }
     if (rebuilt || regressed) old = undefined;
@@ -221,6 +231,7 @@ export const runPull = Effect.fnUntraced(function* (
       yield* emit({ _tag: "InvalidateFolder", previous: previousFolder });
     }
     const state = old ? FolderState.from(old) : new FolderState(uidValidity, 0, undefined);
+    state.watchDeleted(deleted);
 
     if (old) {
       const known = [...state.flags.keys()];
@@ -250,8 +261,10 @@ export const runPull = Effect.fnUntraced(function* (
               c.fetchAll(range, { uid: true, flags: true }, { uid: true, changedSince: since }),
             );
             for (const m of changed) {
-              if (m.flags?.has("\\Deleted")) present.delete(m.uid);
-              else current.set(m.uid, flagsOf(m.flags));
+              if (m.flags?.has("\\Deleted")) {
+                present.delete(m.uid);
+                state.deleted.add(m.uid);
+              } else current.set(m.uid, flagsOf(m.flags));
             }
           }
         } else if (scan) {
@@ -259,7 +272,10 @@ export const runPull = Effect.fnUntraced(function* (
             c.fetchAll(range, { uid: true, flags: true }, { uid: true }),
           );
           for (const m of all) {
-            if (m.flags?.has("\\Deleted")) continue;
+            if (m.flags?.has("\\Deleted")) {
+              state.deleted.add(m.uid);
+              continue;
+            }
             present.add(m.uid);
             current.set(m.uid, flagsOf(m.flags));
           }
@@ -293,6 +309,8 @@ export const runPull = Effect.fnUntraced(function* (
         );
         state.flags.set(m.uid, m.flags);
       }
+      // Marked \Deleted since the search (or expunged): watch it; the next sync drops it if expunged.
+      for (const uid of batch) if (!state.flags.has(uid)) state.deleted.add(uid);
       fetched += batch.length;
       yield* emit({ _tag: "Progress", fetched, total });
     }
@@ -306,6 +324,7 @@ export const runPull = Effect.fnUntraced(function* (
         partial: true,
       });
     state.lastUid = Math.max(regressed ? 0 : state.lastUid, uidNext - 1, ...newUids);
+    state.watchDeleted(state.deleted);
     state.modseq = highest !== undefined ? String(highest) : undefined;
     next.folders[folder.path] = state.toCursor();
     yield* checkpoint();

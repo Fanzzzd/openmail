@@ -18,7 +18,7 @@ import { SettingsCheckRow, SettingsGroup, SettingsRow } from "../../../ui/Settin
 import { buttonSecondary } from "../../../ui/styles";
 
 import { actionNames } from "../../../i18n/action-names";
-import { isDesktop } from "../../../lib/platform";
+import { canCall, isDesktop } from "../../../lib/platform";
 
 function usePreferences() {
   const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => DEFAULT_PREFS);
@@ -51,7 +51,8 @@ export function LabsSettings() {
           </SettingsCheckRow>
         ))}
       </SettingsGroup>
-      <IndexingSettings />
+      {/* The models and the index live on the Mac; the remote server refuses these switches. */}
+      {canCall("SetModelsEnabled") && canCall("SetIndexingPaused") && <IndexingSettings />}
     </>
   );
 }

@@ -297,6 +297,9 @@ app.whenReady().then(async () => {
       ).toEqual([]);
       expect(measured.shortcuts, name).toEqual([]);
     }
-    expect(measuredShot(dir, "web-1280-inbox").coarse).toBe(false);
+    // A laptop browser has a keyboard: its hints stay, such as "/" in the search field.
+    const laptop = measuredShot(dir, "web-1280-inbox");
+    expect(laptop.coarse).toBe(false);
+    expect(laptop.shortcuts).not.toEqual([]);
   },
 );
