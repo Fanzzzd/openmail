@@ -63,6 +63,10 @@ msgstr "{accountCount, plural, one {# účet} few {# účty} many {# účtu} oth
 msgid "{active, plural, one {Downloads (# in progress)} other {Downloads (# in progress)}}"
 msgstr "{active, plural, one {Stahování (# probíhá)} few {Stahování (# probíhají)} many {Stahování (# probíhá)} other {Stahování (# probíhá)}}"
 
+#: src/renderer/src/features/sync-status/MailStatusNotice.tsx
+msgid "{affected, plural, one {# account needs attention} other {# accounts need attention}}"
+msgstr "{affected, plural, one {# účet vyžaduje pozornost} few {# účty vyžadují pozornost} many {# účtu vyžaduje pozornost} other {# účtů vyžaduje pozornost}}"
+
 #: src/renderer/src/app/App.tsx
 msgid "{baseTitle}: {user}"
 msgstr "{baseTitle}: {user}"

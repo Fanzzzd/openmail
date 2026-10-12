@@ -73,6 +73,10 @@ msgstr "{accountCount, plural, other {# 个账户}}，{total} 封未读"
 msgid "{active, plural, one {Downloads (# in progress)} other {Downloads (# in progress)}}"
 msgstr "{active, plural, other {下载（# 个进行中）}}"
 
+#: src/renderer/src/features/sync-status/MailStatusNotice.tsx
+msgid "{affected, plural, one {# account needs attention} other {# accounts need attention}}"
+msgstr "{affected, plural, other {# 个账户需要处理}}"
+
 #: src/renderer/src/app/App.tsx
 msgid "{baseTitle}: {user}"
 msgstr "{baseTitle}：{user}"

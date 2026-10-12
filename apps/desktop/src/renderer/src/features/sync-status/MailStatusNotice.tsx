@@ -1,15 +1,43 @@
+import { Collapsible } from "@base-ui/react/collapsible";
 import type { I18n } from "@lingui/core";
-import { msg } from "@lingui/core/macro";
+import { msg, plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { isKeychainLocked } from "@openmail/core/schema";
-import { useEffectEvent, useLayoutEffect, useRef, useState } from "react";
+import { ChevronRight, CircleAlert, Lock, WifiOff } from "lucide-react";
+import { type ReactNode, useEffectEvent, useLayoutEffect, useRef, useState } from "react";
 
 import type { Account, SyncState } from "../../../../shared/api";
 import { syncNow, useRunMail } from "../../state/mail";
+import { noticeRow, noticeTone } from "../../ui/styles";
 
-const box = "rounded-lg px-3 py-2 text-[12px] leading-relaxed";
-const danger = `${box} bg-red-500/[0.08] text-red-700 dark:text-red-300`;
-const action = "font-semibold hover:underline";
+const action =
+  "shrink-0 rounded-item font-semibold whitespace-nowrap outline-offset-1 outline-a11y-focus hover:underline focus-visible:outline-2";
+const icon = "size-3.5 shrink-0";
+
+/** One status line: an icon, text cut to one line (the full text in its tooltip), then an action. */
+function NoticeLine({
+  tone,
+  glyph,
+  title,
+  className = "",
+  children,
+  action: trailing,
+}: {
+  tone: keyof typeof noticeTone;
+  glyph: ReactNode;
+  title?: string | undefined;
+  className?: string;
+  children: ReactNode;
+  action?: ReactNode;
+}) {
+  return (
+    <div className={`${noticeRow} ${noticeTone[tone]} ${className}`} title={title}>
+      {glyph}
+      <div className="min-w-0 flex-1 truncate">{children}</div>
+      {trailing}
+    </div>
+  );
+}
 
 /**
  * Sync errors other than expired sign-ins. Core reports each failure as "accountId: message"; an
@@ -19,6 +47,9 @@ export function syncFailures(accounts: readonly Account[], syncState: SyncState)
   const expired = accounts.filter((a) => a.needsReauth).map((a) => `${a.id}: `);
   return syncState.errors.filter((e) => !expired.some((prefix) => e.startsWith(prefix)));
 }
+
+/** The account id of a failure that core reported as "accountId: message". */
+const failedAccount = (failure: string) => failure.slice(0, failure.indexOf(": "));
 
 /**
  * A polite announcement of `text` when it changes after mount. The list remounts its notice on
@@ -65,11 +96,21 @@ function SyncFailure({
     };
   }, []);
   return (
-    <div ref={root} className={danger} title={failed.join("\n")}>
-      <p>{names ? <Trans>Could not sync {names}.</Trans> : <Trans>Sync failed</Trans>}</p>
-      <button type="button" onClick={() => run(syncNow)} className={`mt-1 ${action}`}>
-        <Trans>Try again</Trans>
-      </button>
+    <div ref={root}>
+      <NoticeLine
+        tone="danger"
+        glyph={<CircleAlert aria-hidden className={icon} />}
+        title={failed.join("\n")}
+        action={
+          <button type="button" onClick={() => run(syncNow)} className={action}>
+            <Trans>Try again</Trans>
+          </button>
+        }
+      >
+        <p className="truncate">
+          {names ? <Trans>Could not sync {names}.</Trans> : <Trans>Sync failed</Trans>}
+        </p>
+      </NoticeLine>
     </div>
   );
 }
@@ -103,14 +144,21 @@ export function reauthText(i18n: I18n, account: Account): string {
 
 /** The keychain could not be read, usually locked after sleep. Not a sign-in problem. */
 export function KeychainNotice({ className = "" }: { className?: string }) {
+  const { t } = useLingui();
+  const text = t`The keychain is locked. Unlock your computer and sync resumes on its own.`;
   return (
-    <p className={`${box} bg-orange-500/[0.08] text-orange-800 dark:text-orange-300 ${className}`}>
-      <Trans>The keychain is locked. Unlock your computer and sync resumes on its own.</Trans>
-    </p>
+    <NoticeLine
+      tone="warning"
+      glyph={<Lock aria-hidden className={icon} />}
+      title={text}
+      className={className}
+    >
+      <p className="truncate">{text}</p>
+    </NoticeLine>
   );
 }
 
-/** An account that must sign in again: say why and offer the sign-in. */
+/** An account that must sign in again: name it, offer the sign-in, and give the reason. */
 export function ReauthNotice({
   account,
   onReauth,
@@ -121,13 +169,79 @@ export function ReauthNotice({
   className?: string;
 }) {
   const { i18n } = useLingui();
+  const reason = reauthText(i18n, account);
+  // The line shows the address; the reason is its tooltip and what a screen reader reads.
   return (
-    <div className={`${danger} ${className}`}>
-      <p>{reauthText(i18n, account)}</p>
-      <button type="button" onClick={() => onReauth(account)} className={`mt-1 ${action}`}>
-        <Trans>Sign in again</Trans>
-      </button>
-    </div>
+    <NoticeLine
+      tone="danger"
+      glyph={<CircleAlert aria-hidden className={icon} />}
+      title={reason}
+      className={className}
+      action={
+        <button type="button" onClick={() => onReauth(account)} className={action}>
+          <Trans>Sign in again</Trans>
+        </button>
+      }
+    >
+      <span aria-hidden className="font-medium">
+        {account.email}
+      </span>
+      <span className="sr-only">{reason}</span>
+    </NoticeLine>
+  );
+}
+
+/**
+ * Sign-in, keychain and sync problems. One affected account shows its lines; two or more fold
+ * into one "N accounts need attention" line that opens to show them.
+ */
+export function AccountIssues({
+  expired,
+  keychain,
+  failure,
+  affected,
+  onReauth,
+  className = "",
+}: {
+  expired: readonly Account[];
+  keychain: boolean;
+  /** The sync failure line, if any. */
+  failure?: ReactNode;
+  /** How many accounts the problems touch. */
+  affected: number;
+  onReauth: (account: Account) => void;
+  className?: string;
+}) {
+  if (!expired.length && !keychain && !failure) return null;
+  const lines = (
+    <>
+      {expired.map((a) => (
+        <ReauthNotice key={a.id} account={a} onReauth={onReauth} />
+      ))}
+      {keychain && <KeychainNotice />}
+      {failure}
+    </>
+  );
+  if (affected < 2) return <div className={`grid gap-1.5 ${className}`}>{lines}</div>;
+  return (
+    <Collapsible.Root className={className}>
+      <Collapsible.Trigger
+        className={`group w-full text-left outline-offset-1 outline-a11y-focus focus-visible:outline-2 ${noticeRow} ${noticeTone.danger}`}
+      >
+        <CircleAlert aria-hidden className={icon} />
+        <span className="min-w-0 flex-1 truncate font-medium">
+          {plural(affected, {
+            one: "# account needs attention",
+            other: "# accounts need attention",
+          })}
+        </span>
+        <ChevronRight
+          aria-hidden
+          className={`${icon} transition-transform duration-150 group-data-panel-open:rotate-90 motion-reduce:transition-none`}
+        />
+      </Collapsible.Trigger>
+      <Collapsible.Panel className="grid gap-1.5 pt-1.5">{lines}</Collapsible.Panel>
+    </Collapsible.Root>
   );
 }
 
@@ -167,22 +281,62 @@ export function MailStatusNotice({
     .map((a) => a.email)
     .join(", ");
   const showFailure = failed.length > 0 && !syncState.running;
+  const affected = new Set([
+    ...expired.map((a) => a.id),
+    ...failures.filter((f) => (isKeychainLocked(f) ? keychain : showFailure)).map(failedAccount),
+  ]).size;
   return (
     <>
       <ChangeAnnouncement text={online ? "" : offline} />
       {accountIssues && <SyncStatusAnnouncement failed={failures.length > 0} />}
       {(!online || expired.length > 0 || showFailure || keychain) && (
-        <div className="mx-3 mb-2 grid gap-2">
+        <div className="mx-3 mb-2 grid gap-1.5">
           {!online && (
-            <p className={`${box} bg-black/[0.04] text-a11y-muted dark:bg-white/5`}>{offline}</p>
+            <NoticeLine
+              tone="neutral"
+              glyph={<WifiOff aria-hidden className={icon} />}
+              title={offline}
+            >
+              <p className="truncate">{offline}</p>
+            </NoticeLine>
           )}
-          {expired.map((a) => (
-            <ReauthNotice key={a.id} account={a} onReauth={onReauth} />
-          ))}
-          {keychain && <KeychainNotice />}
-          {showFailure && <SyncFailure names={names} failed={failed} onFocusList={onFocusList} />}
+          <AccountIssues
+            expired={expired}
+            keychain={keychain}
+            affected={affected}
+            onReauth={onReauth}
+            failure={
+              showFailure && <SyncFailure names={names} failed={failed} onFocusList={onFocusList} />
+            }
+          />
         </div>
       )}
     </>
+  );
+}
+
+/** The sidebar's account problems: the same lines and grouping as the list's notice. */
+export function SidebarAccountIssues({
+  members,
+  failures,
+  onReauth,
+  className,
+}: {
+  members: readonly Account[];
+  failures: readonly string[];
+  onReauth: (account: Account) => void;
+  className?: string;
+}) {
+  const expired = members.filter((a) => a.needsReauth);
+  const locked = failures.filter(isKeychainLocked);
+  const affected = new Set([...expired.map((a) => a.id), ...locked.map(failedAccount)]).size;
+  return (
+    <AccountIssues
+      expired={expired}
+      keychain={locked.length > 0}
+      affected={affected}
+      onReauth={onReauth}
+      className={className}
+    />
   );
 }

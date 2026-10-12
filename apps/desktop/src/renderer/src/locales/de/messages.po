@@ -63,6 +63,10 @@ msgstr "{accountCount, plural, one {# Account} other {# Accounts}}, {total} unge
 msgid "{active, plural, one {Downloads (# in progress)} other {Downloads (# in progress)}}"
 msgstr "{active, plural, one {Downloads (# läuft)} other {Downloads (# laufen)}}"
 
+#: src/renderer/src/features/sync-status/MailStatusNotice.tsx
+msgid "{affected, plural, one {# account needs attention} other {# accounts need attention}}"
+msgstr "{affected, plural, one {# Account braucht Aufmerksamkeit} other {# Accounts brauchen Aufmerksamkeit}}"
+
 #: src/renderer/src/app/App.tsx
 msgid "{baseTitle}: {user}"
 msgstr "{baseTitle}: {user}"

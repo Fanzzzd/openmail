@@ -3,6 +3,7 @@ export {
   KeychainNotice,
   reauthText,
   ReauthNotice,
+  SidebarAccountIssues,
   SyncStatusAnnouncement,
   syncFailures,
 } from "./MailStatusNotice";

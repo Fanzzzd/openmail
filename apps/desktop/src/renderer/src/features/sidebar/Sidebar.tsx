@@ -7,12 +7,7 @@ import {
 } from "react";
 import { useLingui, Trans } from "@lingui/react/macro";
 import { numberedFavorites, favoriteView } from "./favorite-navigation";
-import {
-  DEFAULT_PREFS,
-  isKeychainLocked,
-  specialFolderBadge,
-  systemFolderId,
-} from "@openmail/core/schema";
+import { DEFAULT_PREFS, specialFolderBadge, systemFolderId } from "@openmail/core/schema";
 import { Effect } from "effect";
 import {
   MESSAGE_DRAG,
@@ -72,7 +67,7 @@ import {
   PROFILE_BG,
 } from "../../lib/format";
 import { type MailEnv, withMail, syncNow, useRunMail } from "../../state/mail";
-import { KeychainNotice, ReauthNotice, SyncStatusAnnouncement, syncFailures } from "../sync-status";
+import { SidebarAccountIssues, SyncStatusAnnouncement, syncFailures } from "../sync-status";
 import {
   prefsAtom,
   labelsAtom,
@@ -384,7 +379,7 @@ export function Sidebar({
             type="button"
             aria-label={t`Add email account`}
             onClick={onAddAccount}
-            className="rounded-md p-1 text-a11y-muted hover:bg-black/5 dark:hover:bg-white/10"
+            className="rounded-control p-1 text-a11y-muted hover:bg-fill-hover"
           >
             <Plus className="size-4.5" />
           </button>
@@ -394,7 +389,7 @@ export function Sidebar({
             type="button"
             aria-label={t`New message`}
             onClick={onCompose}
-            className="rounded-md p-1 text-a11y-muted hover:bg-black/5 dark:hover:bg-white/10"
+            className="rounded-control p-1 text-a11y-muted hover:bg-fill-hover"
           >
             <SquarePen className="size-4.5" />
           </button>
@@ -402,7 +397,7 @@ export function Sidebar({
       </div>
 
       <div className="flex items-center gap-2 px-4.5 pb-3">
-        <span className="min-w-0 flex-1 truncate text-[15px] font-semibold">
+        <span className="min-w-0 flex-1 truncate text-headline font-semibold">
           {profile ? `${profile.icon} ${profile.name}` : <Trans>All accounts</Trans>}
         </span>
         {profile && (
@@ -411,7 +406,7 @@ export function Sidebar({
               type="button"
               aria-label={t`Edit space`}
               onClick={() => onEditProfile(profile)}
-              className="rounded p-1 text-a11y-muted hover:bg-black/5 dark:hover:bg-white/10"
+              className="rounded p-1 text-a11y-muted hover:bg-fill-hover"
             >
               <Pencil className="size-3.5" />
             </button>
@@ -450,7 +445,7 @@ export function Sidebar({
           </div>
         )}
         {members.length === 0 && (
-          <p className="px-2 pb-4 text-[12px] leading-relaxed text-a11y-muted">
+          <p className="px-2 pb-4 text-footnote leading-relaxed text-a11y-muted">
             {profile ? (
               <Trans>
                 This space has no accounts yet.{" "}
@@ -467,12 +462,12 @@ export function Sidebar({
             )}
           </p>
         )}
-        {members
-          .filter((a) => a.needsReauth)
-          .map((a) => (
-            <ReauthNotice key={a.id} account={a} onReauth={onReauth} className="mx-1 mb-3" />
-          ))}
-        {failures.some(isKeychainLocked) && <KeychainNotice className="mx-1 mb-3" />}
+        <SidebarAccountIssues
+          members={members}
+          failures={failures}
+          onReauth={onReauth}
+          className="mx-1 mb-3"
+        />
 
         {proposals > 0 && (
           <div className="mb-4">
@@ -559,7 +554,7 @@ export function Sidebar({
                               e.stopPropagation();
                               setCategoriesOpen((v) => !v);
                             }}
-                            className="-ml-1 rounded p-0.5 text-a11y-muted hover:bg-black/5 dark:hover:bg-white/10"
+                            className="-ml-1 rounded p-0.5 text-a11y-muted hover:bg-fill-hover"
                           >
                             {categoriesOpen ? (
                               <ChevronDown className="size-3.5" />
@@ -769,14 +764,14 @@ export function Sidebar({
                     ),
                   );
               }}
-              className="my-2 block rounded-md border-2 border-dashed border-blue-400 bg-blue-50 px-3 py-2 text-xs text-blue-800 dark:bg-blue-950 dark:text-blue-200"
+              className="my-2 block rounded-control border-2 border-dashed border-blue-400 bg-blue-50 px-3 py-2 text-xs text-blue-800 dark:bg-blue-950 dark:text-blue-200"
             >
               {t`No parent`} · {accountName(a)}
             </button>
           ))}
       </nav>
 
-      <footer className="flex items-center gap-2 px-4 py-2 text-[12px] text-a11y-muted">
+      <footer className="flex items-center gap-2 px-4 py-2 text-footnote text-a11y-muted">
         <span className="line-clamp-2 min-w-0 flex-1" title={failures.join("\n")}>
           {/* Readable on mount too: the announcement below stays silent until the state changes. */}
           <span>{syncStatus()}</span>
@@ -787,7 +782,7 @@ export function Sidebar({
             type="button"
             aria-label={t`Settings`}
             onClick={onSettings}
-            className="rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
+            className="rounded p-1 hover:bg-fill-hover"
           >
             <SettingsIcon className="size-3.5" />
           </button>
@@ -797,7 +792,7 @@ export function Sidebar({
             type="button"
             aria-label={t`Sync now`}
             onClick={() => run(syncNow)}
-            className="rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
+            className="rounded p-1 hover:bg-fill-hover"
           >
             <RefreshCw className={`size-3.5 ${syncState.running ? "animate-spin" : ""}`} />
           </button>
@@ -833,12 +828,10 @@ export function SidebarToggle({ onClick }: { onClick: () => void }) {
 }
 
 const ring = (active: boolean) =>
-  active
-    ? "bg-white shadow-sm ring-1 ring-black/10 dark:bg-white/15 dark:ring-white/10"
-    : "hover:bg-black/5 dark:hover:bg-white/10";
+  active ? "bg-white shadow-sm ring-1 ring-edge dark:bg-white/15" : "hover:bg-fill-hover";
 
 const cell = (active: boolean) =>
-  `flex size-8 shrink-0 items-center justify-center rounded-lg outline-offset-0 outline-a11y-focus focus-visible:outline-[3px] ${ring(active)}`;
+  `flex size-8 shrink-0 items-center justify-center rounded-card outline-offset-0 outline-a11y-focus focus-visible:outline-[3px] ${ring(active)}`;
 
 /** Arc-style row of spaces at the bottom of the sidebar. ⌃1 is the overview. */
 function SpaceSwitcher({
@@ -862,7 +855,7 @@ function SpaceSwitcher({
   return (
     <Toolbar.Root
       aria-label={t`Spaces`}
-      className="flex items-center gap-1 overflow-x-auto border-t border-black/5 px-2.5 py-2 dark:border-white/5"
+      className="flex items-center gap-1 overflow-x-auto border-t border-separator px-2.5 py-2"
     >
       <Tip label={t`Overview`} shortcut="⌃1" side="top">
         <Toolbar.Button
@@ -885,7 +878,7 @@ function SpaceSwitcher({
         </Toolbar.Button>
       </Tip>
       {profiles.length > 0 && (
-        <Toolbar.Separator className="mx-0.5 h-5 w-px shrink-0 bg-black/10 dark:bg-white/10" />
+        <Toolbar.Separator className="mx-0.5 h-5 w-px shrink-0 bg-fill-pressed" />
       )}
       <ContextMenuRoot
         onOpenChange={(open, details) => {
@@ -919,7 +912,7 @@ function SpaceSwitcher({
                 className={cell(space === p.id)}
               >
                 <span
-                  className={`flex size-6 items-center justify-center rounded-full text-[13px] ${PROFILE_BG[p.color]}`}
+                  className={`flex size-6 items-center justify-center rounded-full text-body ${PROFILE_BG[p.color]}`}
                 >
                   {p.icon}
                 </span>
@@ -1058,7 +1051,7 @@ function LabelSections({
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="mb-4">
-      <h2 className="truncate px-2 pb-1 text-[12px] font-semibold text-a11y-muted">{title}</h2>
+      <h2 className="truncate px-2 pb-1 text-footnote font-semibold text-a11y-muted">{title}</h2>
       <div className="space-y-px">{children}</div>
     </div>
   );
@@ -1069,12 +1062,12 @@ function AccountAvatar({ account: a }: { account: Account }) {
   return (
     <span className="relative">
       <span
-        className={`flex size-6 items-center justify-center rounded-full text-[12px] font-semibold text-white ${accountColorClass(a)}`}
+        className={`flex size-6 items-center justify-center rounded-full text-footnote font-semibold text-white ${accountColorClass(a)}`}
         style={accountColorStyle(a)}
       >
         {accountName(a).slice(0, 1).toUpperCase()}
       </span>
-      <span className="absolute -right-1 -bottom-1 flex size-3.5 items-center justify-center rounded-[4px] bg-white shadow-sm dark:bg-neutral-800">
+      <span className="absolute -right-1 -bottom-1 flex size-3.5 items-center justify-center rounded-item bg-raised shadow-sm">
         <ProviderIcon provider={a.imap?.preset ?? a.provider} className="size-2.5" />
       </span>
     </span>
@@ -1098,23 +1091,23 @@ function Tile(props: {
         type="button"
         onClick={props.onClick}
         // One row in a narrow sidebar, a card in two columns once it has room.
-        className={`grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 rounded-lg px-2 py-1.5 text-left [grid-template-areas:'icon_text_badge'] @min-[240px]/sidebar:grid-cols-[auto_minmax(0,1fr)] @min-[240px]/sidebar:gap-y-1.5 @min-[240px]/sidebar:px-2.5 @min-[240px]/sidebar:py-2 @min-[240px]/sidebar:[grid-template-areas:'icon_badge'_'text_text'] ${
+        className={`grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 rounded-card px-2 py-1.5 text-left [grid-template-areas:'icon_text_badge'] @min-[240px]/sidebar:grid-cols-[auto_minmax(0,1fr)] @min-[240px]/sidebar:gap-y-1.5 @min-[240px]/sidebar:px-2.5 @min-[240px]/sidebar:py-2 @min-[240px]/sidebar:[grid-template-areas:'icon_badge'_'text_text'] ${
           props.active
             ? "bg-black/[0.08] dark:bg-white/12"
-            : "bg-black/[0.03] hover:bg-black/[0.05] dark:bg-white/[0.04] dark:hover:bg-white/[0.07]"
+            : "bg-black/[0.03] hover:bg-fill-hover dark:bg-white/[0.04]"
         }`}
       >
         <span className="flex [grid-area:icon]">{props.icon}</span>
         {props.badge > 0 && (
-          <span className="justify-self-end text-[12px] text-a11y-muted tabular-nums [grid-area:badge]">
+          <span className="justify-self-end text-footnote text-a11y-muted tabular-nums [grid-area:badge]">
             {i18n.number(props.badge)}
           </span>
         )}
         <span className="min-w-0 [grid-area:text]">
-          <span className="block truncate text-[13px] font-medium">{props.label}</span>
+          <span className="block truncate text-body font-medium">{props.label}</span>
           {props.sublabel && (
             <span
-              className={`block truncate text-[11px] ${props.warn ? "text-a11y-danger" : "text-a11y-muted"}`}
+              className={`block truncate text-caption ${props.warn ? "text-a11y-danger" : "text-a11y-muted"}`}
             >
               {props.sublabel}
             </span>
@@ -1138,10 +1131,8 @@ function Item(props: {
   const { i18n } = useLingui();
   return (
     <div
-      className={`flex h-8 w-full items-center rounded-md pr-2 text-[14px] ${
-        props.active
-          ? "bg-black/[0.07] dark:bg-white/10"
-          : "hover:bg-black/[0.04] dark:hover:bg-white/5"
+      className={`flex h-8 w-full items-center rounded-control pr-2 text-callout ${
+        props.active ? "bg-fill-pressed" : "hover:bg-fill-hover"
       }`}
     >
       <button
@@ -1158,7 +1149,7 @@ function Item(props: {
           {props.label}
         </span>
         {props.badge > 0 && (
-          <span className="text-[12px] text-a11y-muted tabular-nums">
+          <span className="text-footnote text-a11y-muted tabular-nums">
             {i18n.number(props.badge)}
           </span>
         )}
