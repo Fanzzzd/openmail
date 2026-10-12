@@ -24,7 +24,7 @@ export function UndoHistory({
         </button>
       }
     >
-      <p className="max-w-72 px-2 py-1 text-xs text-a11y-muted">{t`Operations from the last 24 hours. Restores labels, folders and flags after checking current state.`}</p>
+      <p className="max-w-72 px-2 py-1 text-footnote text-a11y-muted">{t`Operations from the last 24 hours. Restores labels, folders and flags after checking current state.`}</p>
       <div className="max-h-72 overflow-auto">
         {entries.length ? (
           entries.map((entry) => (

@@ -131,7 +131,7 @@ export function GrammarResults({ grammar, locked }: { grammar: ComposeGrammar; l
   const { text, result, error, issues, select, replace } = grammar;
   if (!grammar.available || (!error && result?.text !== text)) return null;
   return (
-    <div className="shrink-0 border-b px-4 py-2 text-xs border-separator">
+    <div className="shrink-0 border-b px-4 py-2 text-footnote border-separator">
       {result?.text === text && (
         <button
           type="button"

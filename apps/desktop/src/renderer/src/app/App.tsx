@@ -365,7 +365,7 @@ export function App({ composeId }: { composeId?: string }) {
           />
         )}
         {!compose && (
-          <p className="p-8 text-sm text-a11y-muted">{toast?.text ?? t`Loading draft…`}</p>
+          <p className="p-8 text-callout text-a11y-muted">{toast?.text ?? t`Loading draft…`}</p>
         )}
         <Toast toast={toast} onDone={hideToast} />
       </div>

@@ -689,7 +689,7 @@ export function Sidebar({
           </ContextMenuContent>
         </ContextMenuRoot>
         {favoriteError && (
-          <output role="alert" className="px-3 text-xs text-a11y-danger">
+          <output role="alert" className="px-3 text-footnote text-a11y-danger">
             {favoriteError}
           </output>
         )}
@@ -724,7 +724,7 @@ export function Sidebar({
             <button
               type="button"
               aria-expanded={moreOpen}
-              className="px-2 py-1 text-sm"
+              className="px-2 py-1 text-callout"
               onClick={() => setMoreOpen(!moreOpen)}
             >{t`More`}</button>
             {moreOpen && (
@@ -764,7 +764,7 @@ export function Sidebar({
                     ),
                   );
               }}
-              className="my-2 block rounded-control border-2 border-dashed border-blue-400 bg-blue-50 px-3 py-2 text-xs text-blue-800 dark:bg-blue-950 dark:text-blue-200"
+              className="my-2 block rounded-control border-2 border-dashed border-blue-400 bg-blue-50 px-3 py-2 text-footnote text-blue-800 dark:bg-blue-950 dark:text-blue-200"
             >
               {t`No parent`} · {accountName(a)}
             </button>

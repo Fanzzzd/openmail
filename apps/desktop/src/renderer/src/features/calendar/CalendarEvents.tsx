@@ -329,7 +329,7 @@ function EventConfirmation({
             onChange={(e) => setDateInput(e.target.value || null)}
           />
         </label>
-        <p className="text-sm">{t`Relative dates use the date of this message.`}</p>
+        <p className="text-callout">{t`Relative dates use the date of this message.`}</p>
         <div className="space-y-1">
           <label htmlFor={zoneId} className="block">
             {t`Time zone`}

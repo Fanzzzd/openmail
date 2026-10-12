@@ -634,7 +634,7 @@ const Row = memo(function Row({
     <div className="relative overflow-hidden rounded-card">
       {swipe.distance !== 0 && (
         <span
-          className={`absolute inset-y-0 flex items-center px-3 text-xs font-medium ${swipe.distance < 0 ? "right-0" : "left-0"}`}
+          className={`absolute inset-y-0 flex items-center px-3 text-footnote font-medium ${swipe.distance < 0 ? "right-0" : "left-0"}`}
           aria-live="polite"
         >
           {i18n._(actionNames[swipe.action])}

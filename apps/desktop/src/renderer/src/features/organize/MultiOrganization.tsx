@@ -3,6 +3,7 @@ import { cloneElement, type ReactElement, useState } from "react";
 import { useLingui } from "@lingui/react/macro";
 import type { Label, MailOp, Provider } from "../../../../shared/api";
 import { PickerPopover } from "../../ui/Picker";
+import { buttonPrimary, formInput } from "../../ui/styles";
 
 /**
  * Outlook categories stack; IMAP copies create separate messages in each
@@ -48,16 +49,17 @@ export function MultiOrganization({
   };
   const form = (
     <fieldset className="space-y-2 py-2">
-      <legend className="text-xs text-a11y-muted">
+      <legend className="text-footnote text-a11y-muted">
         {categories
           ? t`Choose multiple categories`
           : t`Creates a separate copy in each selected folder. Keeps the original. Copies cannot be undone.`}
       </legend>
       <div className="max-h-40 overflow-auto">
         {available.map((label) => (
-          <label key={label.id} className="flex gap-2 py-1">
+          <label key={label.id} className="flex items-center gap-2 py-1">
             <input
               type="checkbox"
+              className="size-3.5 accent-blue-600"
               checked={selected.includes(label.id)}
               onChange={(event) => {
                 setTouched((previous) => new Set([...previous, label.id]));
@@ -76,7 +78,7 @@ export function MultiOrganization({
         <label className="block">
           {t`Additional category names, separated by commas`}
           <input
-            className="mt-1 w-full rounded border bg-transparent px-2 py-1 border-separator"
+            className={`mt-1 ${formInput}`}
             value={names}
             onChange={(event) => setNames(event.target.value)}
           />
@@ -84,7 +86,7 @@ export function MultiOrganization({
       )}
       <button
         type="button"
-        className="text-a11y-accent"
+        className={buttonPrimary}
         disabled={!categories && !selected.length}
         onClick={() => {
           if (categories) {
@@ -128,11 +130,17 @@ export function MultiOrganization({
       </PickerPopover>
     );
   return (
-    <div className="px-2 py-1">
-      <button type="button" aria-expanded={open} onClick={() => toggle(!open)}>
+    <div>
+      {/* Lines up with the menu items around it: their icon column is 32 px wide. */}
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => toggle(!open)}
+        className="flex min-h-[22px] w-full items-center rounded-item pr-2 pl-8 text-left hover:bg-fill-hover"
+      >
         {title}
       </button>
-      {open && form}
+      {open && <div className="px-2">{form}</div>}
     </div>
   );
 }

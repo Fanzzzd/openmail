@@ -64,7 +64,7 @@ export function BatchMenuItems({
           return (
             <div key={account.id}>
               <MenuSeparator />
-              <div className="px-2 py-1 text-xs text-a11y-muted">
+              <div className="px-2 py-1 text-footnote text-a11y-muted">
                 {account.email} · {account.provider === "gmail" ? t`Labels` : t`Move to folder`}
               </div>
               <ContextSubmenu icon={Tag} label={t`Move To`}>
@@ -177,11 +177,11 @@ export function BatchActions(
     <div className="@container/batch flex min-w-0 flex-1 items-center gap-0.5">
       <span
         aria-hidden
-        className="mr-1.5 hidden shrink-0 rounded-full bg-fill-pressed px-1.5 text-xs leading-5 text-a11y-muted tabular-nums @max-[300px]/batch:inline"
+        className="mr-1.5 hidden shrink-0 rounded-full bg-fill-pressed px-1.5 text-footnote leading-5 text-a11y-muted tabular-nums @max-[300px]/batch:inline"
       >
         {count}
       </span>
-      <span className="mr-2 min-w-0 truncate text-sm text-a11y-muted @max-[300px]/batch:sr-only">
+      <span className="mr-2 min-w-0 truncate text-callout text-a11y-muted @max-[300px]/batch:sr-only">
         <Trans>{count} selected (loaded)</Trans>
         {props.canLoadMore && (
           <span className="ml-2">

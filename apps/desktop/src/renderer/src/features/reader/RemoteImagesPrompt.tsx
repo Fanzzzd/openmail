@@ -19,7 +19,7 @@ import { choiceRow, iconButton, radioDot } from "../../ui/styles";
  * layout and does not take focus.
  */
 const card =
-  "no-drag fixed right-4 bottom-4 z-30 max-h-[calc(100vh-64px)] w-[min(360px,calc(100vw-32px))] overflow-y-auto rounded-sheet bg-white/95 p-4 text-body text-neutral-900 shadow-[0_8px_24px_rgb(0_0_0/0.16)] ring-1 ring-edge backdrop-blur-xl transition-[opacity,translate] duration-200 ease-out starting:translate-y-2 starting:opacity-0 motion-reduce:transition-none dark:bg-[#2c2c2e]/95 dark:text-neutral-100 dark:shadow-[0_8px_24px_rgb(0_0_0/0.5)]";
+  "no-drag fixed right-4 bottom-4 z-30 max-h-[calc(100vh-64px)] w-[min(360px,calc(100vw-32px))] overflow-y-auto rounded-sheet bg-overlay p-4 text-body text-neutral-900 shadow-popup backdrop-blur-xl transition-[opacity,translate] duration-200 ease-out starting:translate-y-2 starting:opacity-0 motion-reduce:transition-none dark:text-neutral-100";
 
 /**
  * Asks once how remote images load. It stays until the person stores a mode; closing it

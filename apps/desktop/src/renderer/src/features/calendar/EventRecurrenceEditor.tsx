@@ -284,7 +284,7 @@ export function EventRecurrenceEditor({
             onChange={(ending) => onChange({ ...rule, ending })}
             disabled={disabled}
           />
-          <p aria-live="polite" className="text-sm">
+          <p aria-live="polite" className="text-callout">
             {recurrenceSummary(rule, i18n._.bind(i18n), i18n.locale)}
           </p>
         </>

@@ -118,7 +118,7 @@ export function ComposerAi({
   const diff = composeAiDiff(snapshot?.body.text ?? "", after);
   return (
     <>
-      <div className="flex shrink-0 gap-3 px-4 py-1 text-xs text-violet-600 dark:text-violet-300">
+      <div className="flex shrink-0 gap-3 px-4 py-1 text-footnote text-violet-600 dark:text-violet-300">
         <button
           type="button"
           disabled={!allowed || !settings?.keyConfigured}

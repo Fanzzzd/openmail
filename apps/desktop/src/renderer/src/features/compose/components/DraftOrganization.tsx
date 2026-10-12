@@ -63,9 +63,9 @@ export function DraftOrganization({
         </button>
       </Tip>
       {open && (
-        <div className="absolute right-4 bottom-12 z-10 w-64 space-y-2 rounded-card border bg-raised p-3 shadow-lg border-separator">
+        <div className="absolute right-4 bottom-12 z-10 w-64 space-y-2 rounded-card bg-overlay p-3 shadow-popup backdrop-blur-xl">
           {provider === "gmail" && (
-            <p className="text-xs text-a11y-muted">{t`Gmail draft labels and stars stay on this Mac. Gmail only allows the Draft label on server drafts.`}</p>
+            <p className="text-footnote text-a11y-muted">{t`Gmail draft labels and stars stay on this Mac. Gmail only allows the Draft label on server drafts.`}</p>
           )}
           {provider === "gmail" ? (
             <div className="max-h-48 overflow-auto">

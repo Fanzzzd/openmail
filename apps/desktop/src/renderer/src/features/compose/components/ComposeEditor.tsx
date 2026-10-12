@@ -798,7 +798,7 @@ export function ComposeEditor({
       {!locked && body.kind === "rich" && body.hiddenTextRemoved && (
         <p
           role="status"
-          className="shrink-0 border-b border-edge px-4 py-2 text-sm text-a11y-muted"
+          className="shrink-0 border-b border-edge px-4 py-2 text-callout text-a11y-muted"
         >
           {t({
             message: "Hidden text was removed.",

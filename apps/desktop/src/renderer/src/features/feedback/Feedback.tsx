@@ -57,13 +57,13 @@ export function Feedback({
       title={crash ? t`OpenMail stopped unexpectedly` : t`Send Feedback…`}
     >
       <div className="w-full">
-        <p className="mb-3 text-sm text-a11y-muted">
+        <p className="mb-3 text-callout text-a11y-muted">
           <Trans>
             Review the local diagnostics below. Nothing is uploaded. Continue opens an email draft
             that you review and send from your own account.
           </Trans>
         </p>
-        <label className="block text-sm">
+        <label className="block text-callout">
           <Trans>Feedback address</Trans>
           <input
             aria-label={t`Feedback address`}
@@ -74,7 +74,7 @@ export function Feedback({
             placeholder={t`Enter the project's feedback address`}
           />
         </label>
-        <div className="space-y-1 text-sm">
+        <div className="space-y-1 text-callout">
           <span className="block">
             <Trans>Category</Trans>
           </span>
@@ -97,7 +97,7 @@ export function Feedback({
           onChange={(e) => setBody(e.target.value)}
           placeholder={t`Describe what happened`}
         />
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 text-callout">
           <input
             type="checkbox"
             checked={attach}
@@ -108,7 +108,7 @@ export function Feedback({
         </label>
         <pre
           aria-label={t`Diagnostics preview`}
-          className="my-3 max-h-48 overflow-auto rounded bg-neutral-100 p-2 text-xs dark:bg-neutral-900"
+          className="my-3 max-h-48 overflow-auto rounded bg-neutral-100 p-2 text-footnote dark:bg-neutral-900"
         >
           {preview ?? t`Loading diagnostics…`}
         </pre>
