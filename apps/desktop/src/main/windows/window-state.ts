@@ -1,6 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync, renameSync } from "node:fs";
 import { dirname } from "node:path";
 import { Schema } from "effect";
+import { mailHref, parseAppHref } from "../../shared/routes";
 import { SavedWindow } from "../../shared/window-state";
 
 export function visibleBounds(
@@ -43,7 +44,7 @@ export function windowStateFile(file: string) {
   try {
     saved = Schema.decodeUnknownSync(Schema.Array(SavedWindow))(
       JSON.parse(readFileSync(file, "utf8")),
-    );
+    ).map(withHref);
   } catch {
     /* Fresh installs and invalid snapshots start with one main window. */
   }
@@ -56,4 +57,13 @@ export function windowStateFile(file: string) {
       renameSync(`${file}.tmp`, file);
     },
   };
+}
+
+/** Moves an old `selection` into `href` and drops hrefs that are not app routes. */
+function withHref({ selection, href, ...state }: SavedWindow): SavedWindow {
+  const route = href ? parseAppHref(href) : null;
+  if (route) return { ...state, href };
+  if (!selection) return state;
+  const { messageId, ...view } = selection;
+  return { ...state, href: mailHref(view, messageId ? { thread: messageId } : {}) };
 }

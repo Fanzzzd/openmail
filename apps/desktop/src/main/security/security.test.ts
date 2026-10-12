@@ -70,6 +70,16 @@ it("pins app origins and entry paths, ignoring renderer environment URLs in pack
   ])
     expect(developmentPage(false, value)).toBeNull();
   expect(isAppPage(`${APP_PAGE}?thread=id#reader`, null)).toBe(true);
+  // Router navigations change only the hash, which fires no will-navigate; RPC still trusts them.
+  for (const hash of [
+    "#/mail/all/inbox?thread=gmail%3Ame%40gmail.com%2Fone&dialog=settings",
+    "#/thread/gmail%3Ame%40gmail.com%2Fone?single=1",
+    "#/compose/draft%3A1",
+  ]) {
+    expect(isAppPage(`${APP_PAGE}?systemLanguages=%5B%22en%22%5D${hash}`, null)).toBe(true);
+    expect(isAppPage(`http://localhost:5173/${hash}`, "http://localhost:5173/")).toBe(true);
+  }
+  expect(isAppPage("openmail-app://evil/index.html#/mail/all/inbox", null)).toBe(false);
   for (const url of [
     "file:///tmp/index.html",
     "about:srcdoc",

@@ -6,7 +6,7 @@ import {
   NativePickerResult,
 } from "./native-compose";
 import { NativeMenuState } from "./native-actions";
-import { ComposeRecipients, WindowSelection } from "./window-state";
+import { ComposeRecipients } from "./window-state";
 /**
  * The app's one IPC surface: Effect RPC between the renderer and the main
  * process. Every payload, result and error is a schema, so both sides decode
@@ -744,7 +744,8 @@ export class MailRpcs extends RpcGroup.make(
     error,
   }),
   Rpc.make("CloseComposeWindow"),
-  Rpc.make("SetWindowSelection", { payload: { selection: WindowSelection } }),
+  /** The window's route for restore; main keeps only mail routes of main windows. */
+  Rpc.make("SetWindowRoute", { payload: { href: Schema.String } }),
   Rpc.make("Diagnostics", { payload: { crashOnly: Schema.Boolean }, success: Schema.String }),
   Rpc.make("CrashReportPending", { success: Schema.Boolean }),
   Rpc.make("DismissCrashReport"),

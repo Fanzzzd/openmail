@@ -1,5 +1,5 @@
 import type { BrowserWindowConstructorOptions } from "electron";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { windowStateFile } from "./window-state";
@@ -160,20 +160,14 @@ it("allows local reader documents to load while blocking navigation of the main 
 it("single-message windows force single scope independently of conversation settings", () => {
   const id = "gmail:me@example.com/older";
   const single = openMessageWindow(id);
-  expect({
-    query: Object.fromEntries(
-      new URL(vi.mocked(single).loadURL.mock.calls[0]?.[0] ?? "").searchParams,
-    ),
-  }).toEqual({
-    query: { systemLanguages: JSON.stringify(["en", "en"]), thread: id, single: "1" },
+  expect(page(single)).toEqual({
+    query: { systemLanguages: JSON.stringify(["en", "en"]) },
+    hash: "#/thread/gmail%3Ame%40example.com%2Folder?single=1",
   });
   const thread = openThreadWindow(id);
-  expect({
-    query: Object.fromEntries(
-      new URL(vi.mocked(thread).loadURL.mock.calls[0]?.[0] ?? "").searchParams,
-    ),
-  }).toEqual({
-    query: { systemLanguages: JSON.stringify(["en", "en"]), thread: id },
+  expect(page(thread)).toEqual({
+    query: { systemLanguages: JSON.stringify(["en", "en"]) },
+    hash: "#/thread/gmail%3Ame%40example.com%2Folder",
   });
 });
 
@@ -188,9 +182,10 @@ it("compose windows share the locked sandbox and request a renderer draft close 
       preload: expect.stringContaining("preload/index.cjs"),
     },
   });
-  expect(
-    Object.fromEntries(new URL(vi.mocked(win).loadURL.mock.calls[0]?.[0] ?? "").searchParams),
-  ).toEqual({ systemLanguages: JSON.stringify(["en", "en"]), compose: "draft-20" });
+  expect(page(win)).toEqual({
+    query: { systemLanguages: JSON.stringify(["en", "en"]) },
+    hash: "#/compose/draft-20",
+  });
   expect(vi.mocked(win.webContents).setWindowOpenHandler.mock.calls).toHaveLength(1);
   const recipients = { to: "Alice <unfinished", cc: "Bob,", bcc: "private" };
   retainComposeRecipients(win, recipients);
@@ -202,7 +197,7 @@ it("compose windows share the locked sandbox and request a renderer draft close 
   expect(close).toHaveBeenCalledWith(win);
 });
 
-it("restores each window kind and does not lose the set while quitting", async () => {
+it("restores each window kind from the old and new saved formats", async () => {
   vi.resetModules();
   const { app } = await import("electron");
   const windows = await import("./windows");
@@ -214,44 +209,86 @@ it("restores each window kind and does not lose the set while quitting", async (
     label: { id: "folder-1", accountId: "account" },
     messageId: "message-900",
   } as const;
+  const route = "/mail/work/all?label=account%2Ffolder-1&thread=message-900";
   const bounds = { x: 100, y: 100, width: 960, height: 700 };
-  const saved = [
-    { key: "main", kind: "main", bounds, maximized: false, selection },
-    { key: "reader", kind: "message", bounds, maximized: false, target: "message-1" },
-    { key: "compose", kind: "compose", bounds, maximized: false, target: "draft-1" },
-  ] as const;
+  // Files written before routes carry `selection`; reading them yields `href`.
+  writeFileSync(
+    file,
+    JSON.stringify([
+      { key: "main", kind: "main", bounds, maximized: false, selection },
+      { key: "new", kind: "main", bounds, maximized: false, href: "/mail/all/sent?q=x" },
+      { key: "bad", kind: "main", bounds, maximized: false, href: "https://evil.example/" },
+      { key: "reader", kind: "message", bounds, maximized: false, target: "message-1" },
+      { key: "compose", kind: "compose", bounds, maximized: false, target: "draft-1" },
+    ]),
+  );
   try {
-    windowStateFile(file).write(saved);
     windows.configureWindowRecovery(file, () => false);
     windows.restoreWindows();
-    const restored = BrowserWindow.getAllWindows().slice(-3);
-    expect({
-      query: Object.fromEntries(
-        new URL(vi.mocked(restored[0]!).loadURL.mock.calls[0]?.[0] ?? "").searchParams,
-      ),
-    }).toEqual({
-      query: {
-        systemLanguages: JSON.stringify(["en", "en"]),
-        selection: JSON.stringify(selection),
-      },
-    });
-    expect({
-      query: Object.fromEntries(
-        new URL(vi.mocked(restored[1]!).loadURL.mock.calls[0]?.[0] ?? "").searchParams,
-      ),
-    }).toEqual({
-      query: { systemLanguages: JSON.stringify(["en", "en"]), thread: "message-1", single: "1" },
-    });
-    expect({
-      query: Object.fromEntries(
-        new URL(vi.mocked(restored[2]!).loadURL.mock.calls[0]?.[0] ?? "").searchParams,
-      ),
-    }).toEqual({
-      query: { systemLanguages: JSON.stringify(["en", "en"]), compose: "draft-1" },
-    });
+    const restored = BrowserWindow.getAllWindows().slice(-5);
+    const query = { systemLanguages: JSON.stringify(["en", "en"]) };
+    expect(restored.map(page)).toEqual([
+      { query, hash: `#${route}` },
+      { query, hash: "#/mail/all/sent?q=x" },
+      { query, hash: "" },
+      { query, hash: "#/thread/message-1?single=1" },
+      { query, hash: "#/compose/draft-1" },
+    ]);
     app.emit("before-quit", { defaultPrevented: false });
     for (const win of restored) win.emit("closed");
-    expect(windowStateFile(file).read()).toEqual(saved);
+    expect(windowStateFile(file).read()).toEqual([
+      { key: "main", kind: "main", bounds, maximized: false, href: route },
+      { key: "new", kind: "main", bounds, maximized: false, href: "/mail/all/sent?q=x" },
+      { key: "bad", kind: "main", bounds, maximized: false },
+      {
+        key: "reader",
+        kind: "message",
+        bounds,
+        maximized: false,
+        target: "message-1",
+        href: "/thread/message-1?single=1",
+      },
+      {
+        key: "compose",
+        kind: "compose",
+        bounds,
+        maximized: false,
+        target: "draft-1",
+        href: "/compose/draft-1",
+      },
+    ]);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+it("keeps only mail routes that a main window reports", async () => {
+  vi.resetModules();
+  const windows = await import("./windows");
+  const dir = mkdtempSync(join(tmpdir(), "openmail-route-"));
+  const file = join(dir, "windows.json");
+  try {
+    windows.configureWindowRecovery(file, () => false);
+    const main = windows.createMainWindow();
+    const reader = windows.openThreadWindow("message-1");
+    const saved = () =>
+      windowStateFile(file)
+        .read()
+        .map((state) => state.href);
+    windows.setWindowRoute(main, "/mail/work/sent?thread=m");
+    expect(saved()).toEqual(["/mail/work/sent?thread=m", "/thread/message-1"]);
+    for (const href of [
+      "/thread/other",
+      "/compose/draft",
+      "https://evil.example/",
+      "//evil.example/mail/all/inbox",
+      "/mail/all/nowhere",
+    ]) {
+      windows.setWindowRoute(main, href);
+      expect(saved()[0]).toBe("/mail/work/sent?thread=m");
+    }
+    windows.setWindowRoute(reader, "/mail/all/inbox");
+    expect(saved()[1]).toBe("/thread/message-1");
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -291,3 +328,8 @@ it("sanitizes reader window titles and keeps main and compose titles fixed", () 
     } else expect(title).not.toHaveBeenCalled();
   }
 });
+
+function page(win: BrowserWindow) {
+  const url = new URL(vi.mocked(win).loadURL.mock.calls[0]?.[0] ?? "");
+  return { query: Object.fromEntries(url.searchParams), hash: url.hash };
+}

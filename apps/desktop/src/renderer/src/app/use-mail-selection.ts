@@ -38,6 +38,7 @@ import {
 } from "../state/ui";
 import { ALL, scopeAccountIds, type SpaceId, type View } from "../lib/view";
 import { restoredSelection, settleStartupSelection } from "../state/window-selection";
+import { mailHref } from "../../../shared/routes";
 
 export function useMailSelection({
   setLabelPicker,
@@ -342,7 +343,9 @@ export function useMailSelection({
     if (!composeId)
       run(
         withMail((call) =>
-          call("SetWindowSelection", { selection: { ...view, messageId: selectedId } }),
+          call("SetWindowRoute", {
+            href: mailHref(view, selectedId ? { thread: selectedId } : {}),
+          }),
         ),
       );
   }, [run, composeId, view, selectedId]);

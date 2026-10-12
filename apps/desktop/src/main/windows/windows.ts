@@ -1,7 +1,7 @@
 /**
- * App windows. The main window and thread windows load the same renderer
- * with the same preload and security settings; a `thread` query parameter
- * makes the renderer show only the reader for that thread.
+ * App windows. Every window loads the same renderer with the same preload and
+ * security settings; the hash route (shared/routes) picks the screen, such as
+ * `#/thread/<id>` for a window with only the reader for that thread.
  */
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -9,7 +9,8 @@ import { fileURLToPath } from "node:url";
 import { app, BrowserWindow, nativeTheme, screen } from "electron";
 import { randomUUID } from "node:crypto";
 import { WINDOW_MIN } from "../../shared/layout";
-import type { ComposeRecipients, SavedWindow, WindowSelection } from "../../shared/window-state";
+import { appHref, composeHref, parseAppHref, threadHref } from "../../shared/routes";
+import type { ComposeRecipients, SavedWindow } from "../../shared/window-state";
 import { visibleBounds, windowStateFile } from "./window-state";
 
 import {
@@ -128,12 +129,15 @@ const saveWindows = () => {
     /* Recovery storage failure is non-fatal. */
   }
 };
-export function setWindowSelection(win: BrowserWindow | null, selection: WindowSelection) {
+/** A main window's renderer reports its route; only mail routes are kept for restore. */
+export function setWindowRoute(win: BrowserWindow | null, href: string) {
   const state = win ? tracked.get(win) : undefined;
-  if (win && state) {
-    tracked.set(win, { ...state, selection });
-    saveWindows();
-  }
+  const route = parseAppHref(href);
+  if (!win || state?.kind !== "main" || route?.kind !== "mail") return;
+  const next = appHref(route);
+  if (state.href === next) return;
+  tracked.set(win, { ...state, href: next });
+  saveWindows();
 }
 export function restoreWindows() {
   const saved = ignoreSavedWindows ? [] : (snapshot?.read() ?? []);
@@ -154,7 +158,7 @@ export function restoreWindows() {
           kind: state.kind,
           target: state.target,
           restored: state,
-          query: { thread: state.target, ...(state.kind === "message" ? { single: "1" } : {}) },
+          href: threadHref(state.target, state.kind === "message"),
         });
     }
   }
@@ -181,8 +185,8 @@ interface WindowOptions {
   height: number;
   minWidth: number;
   minHeight: number;
-  /** Extra query parameters for the renderer. */
-  query?: Record<string, string>;
+  /** The renderer route, from shared/routes; unset lands on the default view. */
+  href?: string;
 }
 
 function createAppWindow(options: WindowOptions): BrowserWindow {
@@ -247,7 +251,7 @@ function createAppWindow(options: WindowOptions): BrowserWindow {
           ? win.getNormalBounds()
           : { x: 0, y: 0, width: options.width, height: options.height }),
       maximized: restored?.maximized ?? false,
-      ...(restored?.selection ? { selection: restored.selection } : {}),
+      ...(options.href ? { href: options.href } : {}),
     };
     tracked.set(win, state);
     const update = () => {
@@ -291,16 +295,15 @@ function createAppWindow(options: WindowOptions): BrowserWindow {
   });
 
   // The renderer picks its UI language from the OS language unless the person
-  // chose one in Settings.
-  const query = {
-    systemLanguages: JSON.stringify([...app.getPreferredSystemLanguages(), app.getLocale()]),
-    ...options.query,
-    ...(restored?.selection ? { selection: JSON.stringify(restored.selection) } : {}),
-  };
+  // chose one in Settings. It reads this before the router starts, so it stays
+  // in the query; the route goes after `#`.
   const url = new URL(
     developmentPage(app.isPackaged, process.env.ELECTRON_RENDERER_URL) ?? APP_PAGE,
   );
-  url.search = new URLSearchParams(query).toString();
+  url.search = new URLSearchParams({
+    systemLanguages: JSON.stringify([...app.getPreferredSystemLanguages(), app.getLocale()]),
+  }).toString();
+  if (options.href) url.hash = options.href;
   void win.loadURL(url.href);
   win.once("ready-to-show", () => {
     if (restored?.maximized) win.maximize();
@@ -319,6 +322,9 @@ export function createMainWindow(restored?: SavedWindow): BrowserWindow {
     minWidth: WINDOW_MIN.width,
     minHeight: WINDOW_MIN.height,
     restored,
+    ...(restored?.href && parseAppHref(restored.href)?.kind === "mail"
+      ? { href: restored.href }
+      : {}),
   });
   mainWindows.add(win);
   win.once("closed", () => mainWindows.delete(win));
@@ -348,7 +354,7 @@ export function openThreadWindow(messageId: string): BrowserWindow {
     minHeight: WINDOW_MIN.height,
     kind: "thread",
     target: messageId,
-    query: { thread: messageId },
+    href: threadHref(messageId),
   });
 }
 
@@ -361,7 +367,7 @@ export function openMessageWindow(messageId: string): BrowserWindow {
     minHeight: WINDOW_MIN.height,
     kind: "message",
     target: messageId,
-    query: { thread: messageId, single: "1" },
+    href: threadHref(messageId, true),
   });
 }
 
@@ -390,7 +396,7 @@ export function openComposeWindow(
     kind: "compose",
     target: draftId,
     restored,
-    query: { compose: draftId },
+    href: composeHref(draftId),
   });
   draftEditors.set(draftId, { win, kind: "window" });
   return win;

@@ -1,14 +1,12 @@
 import { trimSelection, type Selection } from "../lib/selection";
-import { Schema } from "effect";
-import { WindowSelection } from "../../../shared/window-state";
+import { parseAppHref } from "../../../shared/routes";
+import type { WindowSelection } from "../../../shared/window-state";
+/** The view and message in the window's starting route. */
 export function restoredSelection(): WindowSelection | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = new URLSearchParams(window.location.search).get("selection");
-    return raw ? Schema.decodeUnknownSync(WindowSelection)(JSON.parse(raw)) : null;
-  } catch {
-    return null;
-  }
+  // oxlint-disable-next-line typescript/no-unnecessary-condition -- test DOMs have no location.
+  const hash: string | undefined = globalThis.window?.location?.hash;
+  const route = hash ? parseAppHref(hash.slice(1)) : null;
+  return route?.kind === "mail" ? { ...route.view, messageId: route.state.thread ?? null } : null;
 }
 
 export function settleStartupSelection(

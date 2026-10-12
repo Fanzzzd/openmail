@@ -91,14 +91,14 @@ function file() {
   dirs.push(dir);
   return join(dir, "windows.json");
 }
-it("retains the last main selection when the last window closes before Quit", async () => {
+it("retains the last main route when the last window closes before Quit", async () => {
   const w = await import("./windows");
   const state = file();
   w.configureWindowRecovery(state, () => false);
   const main = w.createMainWindow();
-  w.setWindowSelection(main, { space: "work", mailbox: "sent", messageId: "m" });
+  w.setWindowRoute(main, "/mail/work/sent?thread=m");
   main.close();
-  expect(windowStateFile(state).read()[0]?.selection?.messageId).toBe("m");
+  expect(windowStateFile(state).read()[0]?.href).toBe("/mail/work/sent?thread=m");
   expect(windowStateFile(state).read()).toHaveLength(1);
 });
 it("safe mode ignores all saved windows and selection", async () => {
@@ -125,7 +125,7 @@ it("safe mode ignores all saved windows and selection", async () => {
   expect(native.options).toHaveLength(1);
   const saved = windowStateFile(state).read();
   expect(saved).toHaveLength(1);
-  expect(saved[0]?.selection).toBeUndefined();
+  expect(saved[0]?.href).toBeUndefined();
 });
 it("coalesces resize/move writes and flushes the final bounds on close", async () => {
   vi.useFakeTimers();

@@ -1,6 +1,7 @@
 import { Schema } from "effect";
 import { MailboxView } from "@openmail/core/schema";
 
+/** The main window's view and open message before routes; read from old window-state.json. */
 export const WindowSelection = Schema.Struct({
   space: Schema.String,
   mailbox: MailboxView,
@@ -22,6 +23,9 @@ export const SavedWindow = Schema.Struct({
     height: Schema.Number,
   }),
   maximized: Schema.Boolean,
+  /** The window's route, from shared/routes. */
+  href: Schema.optionalKey(Schema.String),
+  /** Older files saved the main window's view here instead of `href`. */
   selection: Schema.optionalKey(WindowSelection),
 });
 export type SavedWindow = typeof SavedWindow.Type;

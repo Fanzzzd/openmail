@@ -70,7 +70,7 @@ import {
   takeComposeRecipients,
   claimInlineDraft,
   registerComposeDraft,
-  setWindowSelection,
+  setWindowRoute,
   windowOf,
 } from "../windows/windows";
 
@@ -323,8 +323,8 @@ const Handlers = MailRpcs.toLayer(
         m
           .cancelDesktopUndoSends(String(client.id))
           .pipe(Effect.andThen(Effect.sync(() => approveComposeClose(windowOf(client.id))))),
-      SetWindowSelection: ({ selection }, { client }) =>
-        Effect.sync(() => setWindowSelection(windowOf(client.id), selection)),
+      SetWindowRoute: ({ href }, { client }) =>
+        Effect.sync(() => setWindowRoute(windowOf(client.id), href)),
       Diagnostics: ({ crashOnly }) => Effect.sync(() => diagnosticsPreview(crashOnly)),
       CrashReportPending: () => Effect.sync(hasCrashReport),
       DismissCrashReport: () => Effect.sync(dismissCrashReport),

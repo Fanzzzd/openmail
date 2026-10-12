@@ -8,7 +8,7 @@ const dirs: string[] = [];
 afterEach(() => {
   for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
-it("persists the complete window set with bounds, draft target and space/folder/message selection", () => {
+it("persists the complete window set with bounds, draft target and space/folder/message route", () => {
   const dir = mkdtempSync(join(tmpdir(), "openmail-windows-"));
   dirs.push(dir);
   const file = join(dir, "windows.json");
@@ -18,12 +18,7 @@ it("persists the complete window set with bounds, draft target and space/folder/
       kind: "main",
       bounds: { x: 100, y: 100, width: 1300, height: 800 },
       maximized: false,
-      selection: {
-        space: "profile:work",
-        mailbox: "all",
-        label: { id: "folder-2", accountId: "account-1" },
-        messageId: "message-900",
-      },
+      href: "/mail/profile%3Awork/all?label=account-1%2Ffolder-2&thread=message-900",
     },
     {
       key: "reader",
@@ -44,6 +39,23 @@ it("persists the complete window set with bounds, draft target and space/folder/
   windowStateFile(file).write(windows);
   expect(windowStateFile(file).read()).toEqual(windows);
   windowStateFile(file).write(windows.slice(0, 1));
+  expect(windowStateFile(file).read()).toEqual(windows.slice(0, 1));
+  // Files from before routes saved the view as `selection`.
+  const { href: _href, ...main } = windows[0]!;
+  writeFileSync(
+    file,
+    JSON.stringify([
+      {
+        ...main,
+        selection: {
+          space: "profile:work",
+          mailbox: "all",
+          label: { id: "folder-2", accountId: "account-1" },
+          messageId: "message-900",
+        },
+      },
+    ]),
+  );
   expect(windowStateFile(file).read()).toEqual(windows.slice(0, 1));
   writeFileSync(file, '[{"kind":"not-a-window"}]');
   expect(windowStateFile(file).read()).toEqual([]);

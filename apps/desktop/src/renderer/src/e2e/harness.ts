@@ -322,7 +322,7 @@ export async function flow(
       ComposeMessage: (input) =>
         PubSub.publish(desktop, { _tag: "ComposeMessage", ...input }).pipe(Effect.asVoid),
       ClaimInlineDraft: () => Effect.succeed(true),
-      SetWindowSelection: () => Effect.void,
+      SetWindowRoute: () => Effect.void,
       CrashReportPending: () => Effect.succeed(false),
       SetActiveSpace: () => Effect.void,
       SetSendState: () => Effect.void,
