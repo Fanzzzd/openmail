@@ -11,6 +11,7 @@ import { randomUUID } from "node:crypto";
 import { WINDOW_MIN } from "../../shared/layout";
 import { appHref, composeHref, parseAppHref, threadHref } from "../../shared/routes";
 import type { ComposeRecipients, SavedWindow } from "../../shared/window-state";
+import { backgroundWindows, revealAndFocus, revealWindow } from "./reveal";
 import { visibleBounds, windowStateFile } from "./window-state";
 
 import {
@@ -225,6 +226,8 @@ function createAppWindow(options: WindowOptions): BrowserWindow {
       preload: path.join(here, "../preload/index.cjs"),
       ...WINDOW_SECURITY,
       devTools: !app.isPackaged,
+      // A background window sits behind other apps; keep it painting so harnesses can capture it.
+      ...(backgroundWindows() ? { backgroundThrottling: false } : {}),
     },
   });
   trustRenderer(
@@ -307,7 +310,7 @@ function createAppWindow(options: WindowOptions): BrowserWindow {
   void win.loadURL(url.href);
   win.once("ready-to-show", () => {
     if (restored?.maximized) win.maximize();
-    win.show();
+    revealWindow(win);
   });
   return win;
 }
@@ -339,8 +342,7 @@ export function focusMainWindow(): BrowserWindow {
   const win =
     focused && mainWindows.has(focused) ? focused : ([...mainWindows].at(-1) ?? createMainWindow());
   if (win.isMinimized()) win.restore();
-  win.show();
-  win.focus();
+  revealAndFocus(win);
   return win;
 }
 

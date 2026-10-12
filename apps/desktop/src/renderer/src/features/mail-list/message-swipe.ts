@@ -50,7 +50,17 @@ export function attachMessageSwipe(
     vertical = 0;
     options.preview(0, "none");
   };
+  // A trackpad swipe over a window in the background must never act on mail.
+  const focused = () => {
+    const doc = element.ownerDocument;
+    return typeof doc.hasFocus === "function" ? doc.hasFocus() : true;
+  };
   const wheel = (event: WheelEvent) => {
+    if (!focused()) {
+      clearTimeout(timer);
+      if (axis || distance) reset();
+      return;
+    }
     if (
       event.deltaMode !== 0 ||
       event.shiftKey ||
@@ -76,7 +86,8 @@ export function attachMessageSwipe(
     }
     clearTimeout(timer);
     timer = setTimeout(() => {
-      const action = axis === "horizontal" ? swipeAction(distance, options.actions) : "none";
+      const action =
+        axis === "horizontal" && focused() ? swipeAction(distance, options.actions) : "none";
       reset();
       if (action !== "none") {
         suppressUntil = Date.now() + 300;

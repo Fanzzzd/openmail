@@ -152,7 +152,13 @@ try {
     ],
     {
       cwd: fileURLToPath(new URL("..", import.meta.url)),
-      env: { ...process.env, OPENMAIL_READ_ONLY: "1", OPENMAIL_HOME: directory },
+      env: {
+        ...process.env,
+        OPENMAIL_READ_ONLY: "1",
+        OPENMAIL_HOME: directory,
+        // Development builds open windows without taking focus from the person's work.
+        OPENMAIL_BACKGROUND_WINDOWS: "1",
+      },
       stdio: ["ignore", "ignore", "pipe"],
       detached: process.platform !== "win32",
     },

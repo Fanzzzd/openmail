@@ -47,6 +47,13 @@ export function prepareSmokeDatabase(
     db.prepare(
       "INSERT INTO prefs(key,value_json) VALUES('defaultProfilesPrompted','true') ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json",
     ).run();
+    // Stray swipes or Delete presses that reach the smoke window must not change mail.
+    db.prepare(
+      `INSERT INTO prefs(key,value_json) VALUES('swipeActions','{"leftShort":"none","leftLong":"none","rightShort":"none","rightLong":"none"}') ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json`,
+    ).run();
+    db.prepare(
+      "INSERT INTO prefs(key,value_json) VALUES('deleteKeyAction','\"ask\"') ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json",
+    ).run();
     db.exec("PRAGMA wal_checkpoint(TRUNCATE)");
     const accounts = db.prepare("SELECT COUNT(*) AS n FROM accounts WHERE enabled=1").get()?.["n"];
     const messages = db.prepare("SELECT COUNT(*) AS n FROM messages").get()?.["n"];

@@ -25,11 +25,13 @@ import { UpdatesLive } from "./updates/updates";
 import { RpcServerLive } from "./rpc/rpc-server";
 import { DesktopLive, receiveAppUrl, receiveOpenFile, ready } from "./system/system";
 import { focusMainWindow } from "./windows/windows";
+import { prepareBackgroundWindows } from "./windows/reveal";
 import { showDevIdentity } from "./app/app-identity";
 
 import { prepareReliability, diagnosticsLogger, localLog } from "./app/reliability";
 
 registerSecuritySchemes();
+prepareBackgroundWindows();
 
 const isolatedData = app.commandLine.getSwitchValue("user-data-dir");
 if (isolatedData) app.setPath("userData", resolve(isolatedData));

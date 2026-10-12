@@ -11,6 +11,7 @@ import {
 } from "../../shared/recovery";
 import { withDeadline } from "./deadline";
 import { denyNavigation } from "../security/security";
+import { revealWindow } from "../windows/reveal";
 import { APP_PAGE, developmentPage, WINDOW_SECURITY } from "../security/security-policy";
 
 export interface RecoverySurface {
@@ -103,7 +104,7 @@ export function openRecoveryWindow(prompt: RecoveryPrompt): RecoverySurface {
   const onAnswer = (event: IpcMainEvent, index: unknown) => {
     if (!fromWindow(event) || typeof index !== "number" || !Number.isInteger(index)) return;
     if (index === -1) {
-      win.show();
+      revealWindow(win);
       paint.resolve();
     } else if (index >= 0 && index < prompt.buttons.length) {
       settle.resolve(index);

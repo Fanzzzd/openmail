@@ -2,6 +2,7 @@ import { escapeHtml } from "@openmail/core/schema";
 import { app, BrowserWindow } from "electron";
 import { nativeRecoveryLabels } from "./native-i18n";
 import { denyNavigation } from "../security/security";
+import { revealWindow } from "../windows/reveal";
 import { WINDOW_SECURITY } from "../security/security-policy";
 
 let releaseUpgradeHold: (() => void) | undefined;
@@ -50,7 +51,7 @@ export async function showDatabaseUpgrade() {
   const title = escapeHtml(labels.upgrading);
   const html = `<!doctype html><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'"><title>${title}</title><style>body{font:13px system-ui;margin:32px 36px;color:CanvasText;background:Canvas;color-scheme:light dark}p{margin:0 0 16px;font-weight:600}.track{height:6px;border-radius:3px;overflow:hidden;background:color-mix(in srgb,CanvasText 12%,transparent)}.bar{width:40%;height:100%;border-radius:3px;background:AccentColor;animation:slide 1.4s ease-in-out infinite}@keyframes slide{from{transform:translateX(-100%)}to{transform:translateX(250%)}}@media (prefers-reduced-motion:reduce){.bar{animation:none;width:100%;opacity:.5}}</style><p>${title}</p><div class="track" role="progressbar" aria-label="${title}"><div class="bar"></div></div>`;
   await window.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
-  window.show();
+  revealWindow(window);
   await new Promise<void>((resolve) => {
     setTimeout(resolve, 50);
   });

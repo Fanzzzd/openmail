@@ -183,3 +183,43 @@ it("trackpad jitter accumulates the full swipe and an easing swipe back reaches 
   expect(commit).not.toHaveBeenCalled();
   detach();
 });
+
+it("ignores wheel swipes while the window is in the background", () => {
+  vi.useFakeTimers();
+  const { document } = parseHTML("<button></button>");
+  const row = document.querySelector("button");
+  const view = document.defaultView;
+  if (!view || !row) throw new Error("Missing test row");
+  let focused = false;
+  Object.defineProperty(document, "hasFocus", { value: () => focused, configurable: true });
+  const commit = vi.fn(),
+    preview = vi.fn();
+  attachMessageSwipe(row, { actions: DEFAULT_PREFS.swipeActions, preview, commit });
+  const wheel = (deltaX: number) => {
+    const event = new view.Event("wheel", { cancelable: true });
+    Object.defineProperties(event, {
+      deltaX: { value: deltaX },
+      deltaY: { value: 0 },
+      deltaMode: { value: 0 },
+    });
+    row.dispatchEvent(event);
+    return event;
+  };
+  // A long left swipe trashes by default; in the background it does nothing.
+  expect(wheel(150).defaultPrevented).toBe(false);
+  wheel(150);
+  vi.advanceTimersByTime(500);
+  expect(commit).not.toHaveBeenCalled();
+  // Focus lost mid-gesture cancels it.
+  focused = true;
+  wheel(150);
+  focused = false;
+  wheel(150);
+  vi.advanceTimersByTime(500);
+  expect(commit).not.toHaveBeenCalled();
+  focused = true;
+  wheel(150);
+  wheel(150);
+  vi.advanceTimersByTime(180);
+  expect(commit.mock.calls).toEqual([["trash"]]);
+});

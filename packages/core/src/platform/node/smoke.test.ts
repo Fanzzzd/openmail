@@ -54,6 +54,21 @@ it("smoke preparation upgrades only the copy, retains WAL messages and forces ma
       expect(
         copy.prepare("SELECT value_json FROM prefs WHERE key='language'").get()?.["value_json"],
       ).toBe('"en"');
+      // Stray input that reaches the smoke window cannot trash mail.
+      expect(
+        JSON.parse(
+          String(
+            copy.prepare("SELECT value_json FROM prefs WHERE key='swipeActions'").get()?.[
+              "value_json"
+            ],
+          ),
+        ),
+      ).toEqual({ leftShort: "none", leftLong: "none", rightShort: "none", rightLong: "none" });
+      expect(
+        copy.prepare("SELECT value_json FROM prefs WHERE key='deleteKeyAction'").get()?.[
+          "value_json"
+        ],
+      ).toBe('"ask"');
     } finally {
       copy.close();
     }
