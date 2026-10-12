@@ -147,3 +147,17 @@ export function selectionAfterRemoval(
   if (preference === "below" && !below && moreBelow) return EMPTY_SELECTION;
   return singleSelection((preference === "above" ? (above ?? below) : (below ?? above)) ?? null);
 }
+
+/**
+ * A thread the route opened stays selected while its list loads; once the list
+ * has loaded, a missing one is dropped and the restore is done.
+ */
+export function settleStartupSelection(
+  startupId: string | null,
+  selection: Selection,
+  loaded: boolean,
+  visible: ReadonlySet<string>,
+) {
+  if (!startupId || !loaded) return { startupId, selection };
+  return { startupId: null, selection: trimSelection(selection, visible) };
+}

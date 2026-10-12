@@ -1002,10 +1002,6 @@ msgstr "Can't find this template."
 msgid "Can't open the draft: {reason}"
 msgstr "Can't open the draft: {reason}"
 
-#: src/renderer/src/app/App.tsx
-msgid "Can't open the message: {reason}"
-msgstr "Can't open the message: {reason}"
-
 #: src/renderer/src/lib/errors.ts
 msgid "Can't reach the mail server right now."
 msgstr "Can't reach the mail server right now."

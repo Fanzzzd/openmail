@@ -998,10 +998,6 @@ msgstr "Ich kann diese Vorlage nicht finden."
 msgid "Can't open the draft: {reason}"
 msgstr "Der Entwurf kann nicht geöffnet werden: {reason}"
 
-#: src/renderer/src/app/App.tsx
-msgid "Can't open the message: {reason}"
-msgstr "Die Nachricht kann nicht geöffnet werden: {reason}"
-
 #: src/renderer/src/lib/errors.ts
 msgid "Can't reach the mail server right now."
 msgstr "Der Mailserver ist derzeit nicht erreichbar."

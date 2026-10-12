@@ -998,10 +998,6 @@ msgstr "Tuto šablonu nelze najít."
 msgid "Can't open the draft: {reason}"
 msgstr "Koncept nelze otevřít: {reason}"
 
-#: src/renderer/src/app/App.tsx
-msgid "Can't open the message: {reason}"
-msgstr "Zprávu nelze otevřít: {reason}"
-
 #: src/renderer/src/lib/errors.ts
 msgid "Can't reach the mail server right now."
 msgstr "K poštovnímu serveru se nyní nelze připojit."

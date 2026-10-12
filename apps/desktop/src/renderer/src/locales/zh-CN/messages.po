@@ -1008,10 +1008,6 @@ msgstr "找不到这个模板。"
 msgid "Can't open the draft: {reason}"
 msgstr "打不开草稿：{reason}"
 
-#: src/renderer/src/app/App.tsx
-msgid "Can't open the message: {reason}"
-msgstr "无法打开邮件：{reason}"
-
 #: src/renderer/src/lib/errors.ts
 msgid "Can't reach the mail server right now."
 msgstr "暂时无法连接邮件服务器。"

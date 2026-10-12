@@ -11,12 +11,9 @@ import { historyFor, initialLocation } from "./app/location-bridge";
 import { historyAtom, locationAtom } from "./state/location";
 import { AppRouterProvider } from "./routes/provider";
 import { createAppHashHistory } from "./routes/hash-history";
-import { legacyHref } from "./routes/legacy";
 import { createAppRouter } from "./routes/router";
 import "./styles.css";
 
-const legacy = window.location.hash ? null : legacyHref(window.location.search);
-if (legacy) window.history.replaceState(null, "", `#${legacy}`);
 const router = createAppRouter(createAppHashHistory());
 
 // One atom registry for the window. Data atoms refetch when a change

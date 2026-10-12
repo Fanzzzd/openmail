@@ -998,10 +998,6 @@ msgstr "Не могу найти этот шаблон."
 msgid "Can't open the draft: {reason}"
 msgstr "Не могу открыть черновик: {reason}"
 
-#: src/renderer/src/app/App.tsx
-msgid "Can't open the message: {reason}"
-msgstr "Не могу открыть сообщение: {reason}"
-
 #: src/renderer/src/lib/errors.ts
 msgid "Can't reach the mail server right now."
 msgstr "Сейчас не удаётся подключиться к почтовому серверу."

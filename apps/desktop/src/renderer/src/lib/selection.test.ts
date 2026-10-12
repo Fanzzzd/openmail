@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   EMPTY_SELECTION,
+  settleStartupSelection,
   singleSelection,
   selectRow,
   selectAll,
@@ -160,4 +161,19 @@ it("removing the last loaded row waits for the next page instead of jumping upwa
   expect(selectionAfterRemoval(before, loaded, new Set(["m99"]), "below", true)).toBe(
     EMPTY_SELECTION,
   );
+});
+
+it("keeps a route's thread id while loading, then clears a missing id after the first list", () => {
+  const selection = singleSelection("missing");
+  expect(settleStartupSelection("missing", selection, false, new Set()).selection).toBe(selection);
+  const settled = settleStartupSelection("missing", selection, true, new Set(["other"]));
+  expect(settled.startupId).toBeNull();
+  expect(settled.selection.ids.size).toBe(0);
+});
+it("releases a route's thread once a present message has loaded without losing selection", () => {
+  const selection = singleSelection("present");
+  expect(settleStartupSelection("present", selection, true, new Set(["present"]))).toEqual({
+    startupId: null,
+    selection,
+  });
 });

@@ -998,10 +998,6 @@ msgstr "Kan dit sjabloon niet vinden."
 msgid "Can't open the draft: {reason}"
 msgstr "Kan het concept niet openen: {reason}"
 
-#: src/renderer/src/app/App.tsx
-msgid "Can't open the message: {reason}"
-msgstr "Kan het bericht niet openen: {reason}"
-
 #: src/renderer/src/lib/errors.ts
 msgid "Can't reach the mail server right now."
 msgstr "De mailserver is momenteel niet bereikbaar."

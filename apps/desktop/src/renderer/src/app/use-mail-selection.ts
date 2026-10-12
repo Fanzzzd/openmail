@@ -17,6 +17,7 @@ import {
   selectionAfterRemoval,
   selectionForQuery,
   selectRow,
+  settleStartupSelection,
   singleSelection,
   trimSelection,
   type Selection,
@@ -33,7 +34,6 @@ import {
   viewAtom,
 } from "../state/ui";
 import { scopeAccountIds, type SpaceId, type View } from "../lib/view";
-import { settleStartupSelection } from "../state/window-selection";
 import { navigateAtom } from "../state/location";
 import { labelPickerAtom } from "../features/organize/organize-state";
 import { parseAppHref } from "../../../shared/routes";

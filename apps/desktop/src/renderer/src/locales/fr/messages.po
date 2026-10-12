@@ -998,10 +998,6 @@ msgstr "Je ne trouve pas ce modèle."
 msgid "Can't open the draft: {reason}"
 msgstr "Impossible d’ouvrir le brouillon : {reason}"
 
-#: src/renderer/src/app/App.tsx
-msgid "Can't open the message: {reason}"
-msgstr "Impossible d’ouvrir le message : {reason}"
-
 #: src/renderer/src/lib/errors.ts
 msgid "Can't reach the mail server right now."
 msgstr "Le serveur de messagerie est momentanément inaccessible."

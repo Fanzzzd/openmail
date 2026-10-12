@@ -128,14 +128,15 @@ desktop 主进程组装 NodeMailbox、系统能力与 RPC server。`shared/rpc.t
 
 renderer 源码分层，依赖只向下：
 
-| 目录               | 内容                                                                                                                                                                                                          | 不得导入                             |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
-| `app/`             | `App.tsx`、`ThreadWindow.tsx`、面板、窗口快捷键和组装界面的 hooks                                                                                                                                             |                                      |
-| `features/<name>/` | 一个功能一个目录：mail-list、reader（含 body、frame、attachments）、compose、search、sidebar、organize、settings、accounts、contacts、ai、calendar、downloads、sync-status、updates、undo、overview、feedback | `app/`                               |
-| `state/`           | RPC client、查询、mutation、事件和撤销                                                                                                                                                                        | `app/`、`features/`                  |
-| `i18n/`            | Lingui 初始化、`LocaleProvider` 和共享文案                                                                                                                                                                    | `app/`、`features/`                  |
-| `ui/`              | 共享 React 组件：Dialog、Menu、Select、Toast 等                                                                                                                                                               | `app/`、`features/`、`state/`        |
-| `lib/`             | 纯函数和通用 hooks，不读取 RPC 或 atoms                                                                                                                                                                       | `app/`、`features/`、`state/`、`ui/` |
+| 目录               | 内容                                                                                                                                                                                                          | 不得导入                                        |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| `routes/`          | TanStack Router 的代码路由、`router.ts` 和 `AppRouterProvider`；只由 `main.tsx` 与测试导入                                                                                                                    |                                                 |
+| `app/`             | `App.tsx`、`ThreadWindow.tsx`、面板、窗口快捷键、`location-bridge.tsx` 和组装界面的 hooks                                                                                                                     | `routes/`                                       |
+| `features/<name>/` | 一个功能一个目录：mail-list、reader（含 body、frame、attachments）、compose、search、sidebar、organize、settings、accounts、contacts、ai、calendar、downloads、sync-status、updates、undo、overview、feedback | `routes/`、`app/`                               |
+| `state/`           | RPC client、查询、mutation、事件、撤销和 `location.ts`（窗口路由的 atoms）                                                                                                                                    | `routes/`、`app/`、`features/`                  |
+| `i18n/`            | Lingui 初始化、`LocaleProvider` 和共享文案                                                                                                                                                                    | `routes/`、`app/`、`features/`                  |
+| `ui/`              | 共享 React 组件：Dialog、Menu、Select、Toast 等                                                                                                                                                               | `routes/`、`app/`、`features/`、`state/`        |
+| `lib/`             | 纯函数和通用 hooks，不读取 RPC 或 atoms                                                                                                                                                                       | `routes/`、`app/`、`features/`、`state/`、`ui/` |
 
 oxlint 的 `no-restricted-imports` 执行上表。`tests/layers.test.ts` 从两个 HTML 入口遍历导入图，检查三条规则：
 
@@ -144,5 +145,16 @@ oxlint 的 `no-restricted-imports` 执行上表。`tests/layers.test.ts` 从两�
 - 一个功能经对方的 `index.ts` 导入另一个功能。只存在于懒加载 chunk 的模块（如 `EmailFrame`、`ComposeEditor`、`OptionalServices`）直接按路径导入。
 
 功能自己打开的懒加载对话框放在该功能的 `lazy.tsx`，`app/LazyDialogs.tsx` 只放 `app/` 打开的对话框。`recovery/` 是恢复窗口的独立入口。跨层测试放在 `tests/`，测试工具放在 `test-support/`，其余测试与源文件放在一起。文件移动保留文件名，因为 `bundle-split.test.ts` 按 chunk 名检查拆包。语言目录按需加载。
+
+窗口内导航只走 TanStack Router 的代码路由，app 用 hash history，测试用 memory history。路由表：
+
+| 路由                    | 界面                          | search 参数                                                                           |
+| ----------------------- | ----------------------------- | ------------------------------------------------------------------------------------- |
+| `/`                     | 跳转到本窗口最近的视图        |                                                                                       |
+| `/mail/$space/$mailbox` | 主窗口 `App`                  | `account`、`label`（`账户/标签` 或类别）、`q`、`scope`、`thread`、`message`、`dialog` |
+| `/thread/$threadId`     | 会话或单封窗口 `ThreadWindow` | `single=1` 只显示这一封                                                               |
+| `/compose/$draftId`     | 独立撰写窗口                  |                                                                                       |
+
+`shared/routes.ts` 构造和解析 href，不导入路由库，main 与 renderer 共用。无效 search 参数退回默认值；未知文件夹跳到该空间的收件箱。main 用它生成窗口 URL（`index.html?systemLanguages=…#/thread/x?single=1`），把主窗口路由存进 `windows.json` 的 `href`，并把链接、通知、托盘和 Dock 菜单转成 `Navigate` 事件。renderer 只接受邮件路由。`app/location-bridge.tsx` 把每次 history 变化同步到 `state/location.ts` 的 `locationAtom`，视图、搜索、打开的会话和对话框都从它派生，写入时调用 router。换视图新增历史记录；选会话、提交搜索和开关对话框替换当前记录。多选、标签选择器、稍后提醒等临时状态留在各功能的 atoms 里。
 
 `src/renderer/src/e2e/harness.ts` 在 jsdom 中渲染真实 App，经过 preload 同款 RPC 和共用处理器连接真实 Mailbox 与临时 SQLite。服务商使用 fake，桌面窗口、剪贴板和原生服务使用支架。它验证界面到数据库／provider 的邮件流程；Electron、真实授权和签名验收另列在[路线图](roadmap.md)。测试入口及故障注入只在[测试](testing.md)维护。

@@ -812,7 +812,6 @@ it("label changes keep selection, bulk Trash requires captured confirmation, and
 });
 
 const messages = {
-  cantOpenTheMessage: (reason: string) => `Can't open the message: ${reason}`,
   opDone: (op: MailOp) =>
     op.kind === "label" ? (op.value ? "Label added" : "Label removed") : "Done",
   couldNotLoadTheNextMessage: `Could not load the next message`,
