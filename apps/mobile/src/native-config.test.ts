@@ -39,6 +39,7 @@ const resolved = Schema.Struct({
 const root = fileURLToPath(new URL("../", import.meta.url));
 // Native permission inspection needs no network or CLI telemetry initialization.
 const nativeEnv = { ...process.env, EXPO_OFFLINE: "1", EXPO_NO_TELEMETRY: "1" };
+// `expo config` runs the Expo config plugins in a child process; the 5 s default fails under load.
 it("resolved native configuration allows local notifications and fetch, without camera, microphone, boot or push capability", () => {
   const config = Schema.decodeUnknownSync(Schema.fromJsonString(resolved))(
     execFileSync(`${root}node_modules/.bin/expo`, ["config", "--type", "introspect", "--json"], {
@@ -89,7 +90,7 @@ it("resolved native configuration allows local notifications and fetch, without 
     ),
   )(readFileSync(`${root}package.json`, "utf8"));
   expect(packageJson.dependencies).toHaveProperty("expo-notifications");
-});
+}, 30_000);
 it("autolinks the synchronous backup-exclusion module with local notifications and the background worker", () => {
   const modules = Schema.decodeUnknownSync(
     Schema.fromJsonString(

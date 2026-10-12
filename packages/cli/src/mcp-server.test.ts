@@ -2,7 +2,7 @@ import { execFile, spawn } from "node:child_process";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterAll, beforeAll, describe, test, type TestContext } from "vitest";
+import { afterAll, beforeAll, describe, test, vi, type TestContext } from "vitest";
 import { promisify } from "node:util";
 import { Effect, Option, Schema } from "effect";
 import { ThreadSummary } from "@openmail/core/schema";
@@ -23,6 +23,9 @@ const CallResult = Schema.Struct({
   isError: Schema.optionalKey(Schema.Boolean),
 });
 const run = promisify(execFile);
+// Tests and hooks start `node dist/cli.js` up to four times. Each start opens and migrates a
+// database, about 1 s on a loaded machine, so the 5 s default fails without a real fault.
+vi.setConfig({ testTimeout: 20_000, hookTimeout: 20_000 });
 
 // Each test waits on its own child processes, so tests run concurrently and only
 // the slowest CLI start bounds the file. Cleanups belong to the test that made them.
