@@ -35,6 +35,13 @@ export const separatorClass = "mx-2 my-1 h-px bg-separator";
 /** A borderless icon button in a header or toolbar. Callers add the text color. */
 export const iconButton = `rounded-control p-1 ${touchIcon} transition-colors duration-100 hover:bg-fill-hover active:bg-fill-pressed motion-reduce:transition-none`;
 
+/**
+ * The first row of every window: the 52 px row main centres the traffic
+ * lights in (TITLEBAR_HEIGHT). It drags the window; start it with
+ * <TrafficLightSpace/> wherever the lights can sit over it.
+ */
+export const titlebarRow = "drag flex h-13 shrink-0 items-center";
+
 /** Keyboard shortcut next to a label. */
 export const kbdClass =
   "font-sans text-caption tracking-wide text-neutral-600 tabular-nums group-data-highlighted:text-white dark:text-neutral-400";

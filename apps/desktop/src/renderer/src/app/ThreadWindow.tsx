@@ -29,6 +29,7 @@ import { ThreadActions } from "../features/organize/ThreadActions";
 import type { ThreadState } from "../lib/focused-inbox";
 import { isTypingTarget } from "../lib/typing-target";
 import { Toast, type ToastState } from "../ui/Toast";
+import { titlebarRow } from "../ui/styles";
 import { TrafficLightSpace } from "../ui/TrafficLights";
 import { causeText } from "../lib/errors";
 import { MailClient } from "../state/rpc";
@@ -305,7 +306,7 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
     <div className="flex h-full flex-col bg-surface text-body text-neutral-900 dark:text-neutral-100">
       <FocusedInboxPermission />
       {/* Actions that do not fit beside the traffic lights fold into the menu. */}
-      <header data-thread-toolbar className="drag flex h-13 shrink-0 items-center pr-4 pl-4">
+      <header data-thread-toolbar className={`${titlebarRow} pr-4 pl-4`}>
         <TrafficLightSpace />
         {state && (
           <ThreadActions

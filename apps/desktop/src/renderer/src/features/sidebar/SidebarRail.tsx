@@ -17,6 +17,7 @@ import {
   type View,
 } from "../../lib/view";
 import { MAILBOXES, spaceShortcutLabel, useMailboxCounts } from "./Sidebar";
+import { titlebarRow } from "../../ui/styles";
 import { Tip } from "../../ui/Tip";
 
 /** The mailboxes the rail shows, in the sidebar's order. The drawer has the rest. */
@@ -68,7 +69,7 @@ export function SidebarRail({
       className="flex h-full w-14 shrink-0 flex-col items-center border-r border-separator bg-neutral-100/60 dark:bg-neutral-950/70"
     >
       {/* The traffic lights sit in this strip. */}
-      <div className="drag h-13 w-full shrink-0" />
+      <div className={`${titlebarRow} w-full`} />
       <div className="flex shrink-0 flex-col items-center gap-1 pb-2">
         <Tip label={t`Show sidebar`} shortcut={shortcut("toggleSidebar")} side="right">
           <button

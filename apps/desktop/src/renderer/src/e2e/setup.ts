@@ -21,6 +21,15 @@ class ResizeObserverStub {
 }
 vi.stubGlobal("ResizeObserver", ResizeObserverStub);
 HTMLElement.prototype.scrollIntoView = constVoid;
+/** The Mac's traffic lights as the Window Controls Overlay reports them on macOS 26. */
+class WindowControlsOverlayStub extends EventTarget {
+  visible = true;
+  getTitlebarAreaRect = () => DOMRect.fromRect({ x: 96, y: 0, width: 904, height: 52 });
+}
+Object.defineProperty(navigator, "windowControlsOverlay", {
+  configurable: true,
+  value: new WindowControlsOverlayStub(),
+});
 HTMLElement.prototype.getBoundingClientRect = () => ({
   x: 0,
   y: 0,

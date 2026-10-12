@@ -112,7 +112,6 @@ import {
 } from "./desktop";
 import { DesktopLabels } from "./desktop-labels";
 import { AttachmentApp, DownloadCommand, DownloadItem } from "./downloads";
-import { TitlebarHeight } from "./window-chrome";
 import { PromptAnswer, TextMenuCommand, WindowUiEvent } from "./window-ui";
 import { RemoteAccessView } from "./remote-access";
 import { Rpc, RpcGroup } from "effect/rpc";
@@ -774,8 +773,6 @@ export class MailRpcs extends RpcGroup.make(
   Rpc.make("WindowUiEvents", { success: WindowUiEvent, stream: true }),
   Rpc.make("AnswerPrompt", { payload: { id: Schema.String, answer: PromptAnswer } }),
   Rpc.make("TextMenuCommand", { payload: { command: TextMenuCommand } }),
-  /** The header row the traffic lights sit in is this many CSS pixels tall. */
-  Rpc.make("SetTitlebarHeight", { payload: { height: TitlebarHeight } }),
 
   // Remote access over the person's tailnet. Desktop only: none of these is on the remote allowlist.
   Rpc.make("RemoteAccess", { success: RemoteAccessView, stream: true }),

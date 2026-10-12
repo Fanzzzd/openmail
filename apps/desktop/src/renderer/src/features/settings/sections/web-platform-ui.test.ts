@@ -30,6 +30,7 @@ import { InteractionSettings } from "./InteractionSettings";
 
 afterEach(() => {
   cleanup();
+  Reflect.deleteProperty(navigator, "windowControlsOverlay");
   setPlatform("desktop");
 });
 const localized = (node: ReactNode) =>
@@ -46,6 +47,11 @@ it("hides the swipe settings in the web build, where nothing sends two-finger sw
 });
 
 it("keeps the traffic-light clearance on the Mac only", () => {
+  const overlay = Object.assign(new EventTarget(), {
+    visible: true,
+    getTitlebarAreaRect: () => DOMRect.fromRect({ x: 96, y: 0, width: 904, height: 52 }),
+  });
+  Object.defineProperty(navigator, "windowControlsOverlay", { configurable: true, value: overlay });
   const header = () => render(h("header", null, h(TrafficLightSpace)));
   expect(narrowSheet()).toContain("max-sm:pt-(--titlebar-clearance)");
   render(h(SheetDragStrip));

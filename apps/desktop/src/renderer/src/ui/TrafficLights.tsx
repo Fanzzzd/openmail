@@ -1,16 +1,16 @@
 /**
- * Room for the macOS traffic lights. Every header that can sit under them
- * starts with <TrafficLightSpace/>; it takes exactly the width that keeps the
- * header's content clear of the buttons, measured against their real bounds,
- * and nothing beside or below them, in full screen or in the web build.
- * Main centres the buttons in the header row the spacer reports.
+ * Room for the macOS traffic lights. Every window's first row uses the
+ * `titlebarRow` recipe, the 52 px row main centres the lights in, and every
+ * header that can sit under them starts with <TrafficLightSpace/>. The spacer
+ * takes exactly the width that keeps the header's content clear of the
+ * buttons, measured against their real bounds, and nothing beside or below
+ * them, in full screen or in the web build.
  */
 import { constVoid } from "effect/Function";
 import { useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import {
-  DEFAULT_TITLEBAR_AREA,
-  holdsTrafficLights,
+  trafficLightClearance,
   trafficLightSpace,
   type TitlebarArea,
 } from "../../../shared/window-chrome";
@@ -31,15 +31,12 @@ let cached: TitlebarArea | null = null;
 let cachedKey = "";
 
 /**
- * The titlebar area beside the lights, from the Window Controls Overlay API.
- * It is not visible in full screen, where macOS hides the lights, nor off the
- * Mac. A renderer without the API, such as a test DOM, gets main's default.
+ * The titlebar area beside the lights. The overlay is not visible in full
+ * screen, where macOS hides the lights, nor off the Mac.
  */
 function readArea(): TitlebarArea | null {
-  if (!isDesktop()) return null;
-  const overlay = navigator.windowControlsOverlay;
-  if (!overlay) return DEFAULT_TITLEBAR_AREA;
-  if (!overlay.visible) return null;
+  const overlay = isDesktop() ? navigator.windowControlsOverlay : undefined;
+  if (!overlay?.visible) return null;
   const rect = overlay.getTitlebarAreaRect();
   const key = `${rect.x},${rect.y},${rect.height}`;
   if (key !== cachedKey) {
@@ -62,22 +59,7 @@ function subscribe(onChange: () => void) {
 /** Where the lights' row is free for content; null when there are no lights. */
 export const useTitlebarArea = () => useSyncExternalStore(subscribe, readArea, () => null);
 
-let send: ((height: number) => void) | undefined;
-let pending: number | undefined;
-let reported = "";
-
-function reportTitlebarHeight(height: number) {
-  const key = `${height}@${window.devicePixelRatio}`;
-  if (key === reported) return;
-  if (!send) {
-    pending = height;
-    return;
-  }
-  reported = key;
-  send(height);
-}
-
-const px = (value: string | undefined) => Number.parseFloat(value ?? "") || 0;
+const px = (value: string) => Number.parseFloat(value) || 0;
 
 /**
  * Where `el` sits in the window by layout alone. Transforms do not count, so
@@ -98,8 +80,7 @@ function layoutBox(el: HTMLElement) {
 /**
  * A drag-region spacer, first in a header row. It sizes itself so the next
  * item starts where the lights' row is free, after the row's own padding and
- * gap, and renders nothing where the lights are not. The row that holds the
- * lights reports its height, so main centres them in it.
+ * gap, and renders nothing where the lights are not.
  */
 export function TrafficLightSpace({ className = "" }: { className?: string }) {
   const area = useTitlebarArea();
@@ -110,11 +91,9 @@ export function TrafficLightSpace({ className = "" }: { className?: string }) {
     if (!row) return constVoid;
     const measure = () => {
       const box = layoutBox(row);
-      // Test DOMs without CSS have no computed style; the row then has no padding or gap.
-      const style = typeof getComputedStyle === "function" ? getComputedStyle(row) : undefined;
-      const start = box.left + px(style?.borderLeftWidth) + px(style?.paddingLeft);
-      setWidth(trafficLightSpace(area, { ...box, left: start + px(style?.columnGap) }));
-      if (holdsTrafficLights(area, box, start)) reportTitlebarHeight(box.bottom - box.top);
+      const style = getComputedStyle(row);
+      const start = box.left + px(style.borderLeftWidth) + px(style.paddingLeft);
+      setWidth(trafficLightSpace(area, { ...box, left: start + px(style.columnGap) }));
     };
     measure();
     const observer =
@@ -141,16 +120,16 @@ export function TrafficLightSpace({ className = "" }: { className?: string }) {
 }
 
 /**
- * Sends the lights' row height to main; returns the disconnect. A height
- * measured before the connection goes out once it is made.
+ * Sets `--titlebar-clearance`, the strip a full-window sheet keeps clear for
+ * the lights. Mount once per desktop window.
  */
-export function connectTitlebar(next: (height: number) => void) {
-  send = next;
-  const waiting = pending;
-  pending = undefined;
-  if (waiting !== undefined) reportTitlebarHeight(waiting);
-  return () => {
-    send = undefined;
-    reported = "";
-  };
+export function TitlebarClearance() {
+  const area = useTitlebarArea();
+  useLayoutEffect(() => {
+    document.documentElement.style.setProperty(
+      "--titlebar-clearance",
+      `${trafficLightClearance(area)}px`,
+    );
+  }, [area]);
+  return null;
 }

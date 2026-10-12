@@ -58,7 +58,7 @@ import { DefaultProfilesPrompt, ProfileSwitcher } from "../features/accounts/Pro
 import { Reader, useThreadPrint } from "../features/reader/Reader";
 import { Sidebar, SidebarToggle } from "../features/sidebar/Sidebar";
 import { SidebarRail } from "../features/sidebar/SidebarRail";
-import { buttonPrimary, buttonSecondary } from "../ui/styles";
+import { buttonPrimary, buttonSecondary, titlebarRow } from "../ui/styles";
 import { FocusedInboxPermission } from "../features/organize/FocusedInboxActions";
 import { ThreadActions } from "../features/organize/ThreadActions";
 import type { ThreadState } from "../lib/focused-inbox";
@@ -450,7 +450,7 @@ export function App({ composeId }: { composeId?: string }) {
     };
   const mainPane = !hasAccounts ? (
     <main className="flex h-full w-full flex-col bg-surface">
-      <div className="drag h-13 shrink-0" />
+      <div className={titlebarRow} />
       {accounts._tag === "Failure" ? (
         <div
           role="alert"

@@ -46,7 +46,7 @@ import { ContextMenuContent, ContextMenuRoot, ContextMenuTrigger } from "../../u
 import type { ThreadState } from "../../lib/focused-inbox";
 import { Tip } from "../../ui/Tip";
 import { TrafficLightSpace } from "../../ui/TrafficLights";
-import { noticeRow, noticeTone, touchTarget } from "../../ui/styles";
+import { noticeRow, noticeTone, titlebarRow, touchTarget } from "../../ui/styles";
 
 /** How the current selection was made. Keyboard selection gets the solid accent. */
 export type SelectionSource = "keyboard" | "mouse";
@@ -262,13 +262,13 @@ export function MessageList({
       className="flex h-full w-full flex-col bg-surface"
     >
       {searchBar && (
-        <div className="drag flex h-13 shrink-0 items-center gap-2 pr-4 pl-4">
+        <div className={`${titlebarRow} gap-2 pr-4 pl-4`}>
           <TrafficLightSpace />
           {leading}
           {searchBar}
         </div>
       )}
-      <header className="drag flex h-13 shrink-0 items-center gap-2 pr-3 pl-5">
+      <header className={`${titlebarRow} gap-2 pr-3 pl-5`}>
         <TrafficLightSpace />
         {!searchBar && leading}
         <h1 className="min-w-0 flex-1 truncate text-title font-bold">

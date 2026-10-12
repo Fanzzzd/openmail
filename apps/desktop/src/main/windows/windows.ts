@@ -9,9 +9,9 @@ import { fileURLToPath } from "node:url";
 import { app, BrowserWindow, nativeTheme, screen } from "electron";
 import { randomUUID } from "node:crypto";
 import { WINDOW_MIN } from "../../shared/layout";
+import { TRAFFIC_LIGHT_POSITION } from "../../shared/window-chrome";
 import { appHref, composeHref, parseAppHref, threadHref } from "../../shared/routes";
 import type { ComposeRecipients, SavedWindow } from "../../shared/window-state";
-import { trafficLightOptions } from "./window-chrome";
 import { backgroundWindows, revealAndFocus, revealWindow } from "./reveal";
 import { visibleBounds, windowStateFile } from "./window-state";
 
@@ -212,7 +212,11 @@ function createAppWindow(options: WindowOptions): BrowserWindow {
           ...(options.kind === undefined || options.kind === "main"
             ? { tabbingIdentifier: "openmail-main" }
             : {}),
-          ...trafficLightOptions(),
+          titleBarStyle: "hiddenInset" as const,
+          // Turns on the Window Controls Overlay API, which reports the lights' real bounds.
+          // `true`, not a height: a numeric height misplaces the buttons on macOS 26 (electron#49183).
+          titleBarOverlay: true,
+          trafficLightPosition: TRAFFIC_LIGHT_POSITION,
           // The sidebar is transparent and shows this material through.
           vibrancy: "sidebar" as const,
           visualEffectState: "followWindow" as const,

@@ -48,7 +48,7 @@ import {
   pickerList,
 } from "../../../ui/Picker";
 import { Select } from "../../../ui/Select";
-import { touchIcon, touchTarget } from "../../../ui/styles";
+import { titlebarRow, touchIcon, touchTarget } from "../../../ui/styles";
 import { Tip } from "../../../ui/Tip";
 import { TrafficLightSpace } from "../../../ui/TrafficLights";
 
@@ -280,7 +280,7 @@ export function Composer({
             {/* In its own window the header is the titlebar: it holds the traffic lights and
                 stays on top while the form scrolls. */}
             <header
-              className={`flex min-h-11 shrink-0 items-center gap-2 border-b border-separator px-4 ${standalone ? "drag sticky top-0 z-10 bg-raised" : ""}`}
+              className={`${standalone ? `${titlebarRow} sticky top-0 z-10 bg-raised` : "flex min-h-11 shrink-0 items-center"} gap-2 border-b border-separator px-4`}
             >
               <TrafficLightSpace />
               <Dialog.Title className="text-callout font-semibold">{title}</Dialog.Title>

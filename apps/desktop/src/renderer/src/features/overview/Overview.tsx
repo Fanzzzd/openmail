@@ -18,6 +18,7 @@ import { syncNow, useRunMail } from "../../state/mail";
 import { unreadInboxAtom } from "../../state/queries";
 import { ALL, type SpaceId } from "../../lib/view";
 import { Tip } from "../../ui/Tip";
+import { titlebarRow } from "../../ui/styles";
 import { TrafficLightSpace } from "../../ui/TrafficLights";
 
 interface Group {
@@ -73,7 +74,7 @@ export function Overview({
 
   return (
     <main className="flex h-full w-full min-w-0 flex-col bg-surface">
-      <header className="drag flex h-13 shrink-0 items-center gap-3 pr-4 pl-4 sm:pr-7 sm:pl-7">
+      <header className={`${titlebarRow} gap-3 pr-4 pl-4 sm:pr-7 sm:pl-7`}>
         <TrafficLightSpace />
         {leading}
         <h1 className="shrink-0 text-title font-bold">

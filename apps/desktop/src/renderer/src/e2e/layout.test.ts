@@ -37,7 +37,7 @@ const reader = () => screen.queryByRole("article", { name: "Selected message" })
 /**
  * jsdom has no layout: puts a 52 px header row at `left`, `top` in the
  * window and returns the width its TrafficLightSpace measures against the
- * default lights, whose row is the top 52 px and whose free area starts at 96 px.
+ * stubbed overlay (e2e/setup.ts): the lights fill the top 52 px up to x = 96.
  */
 function lightSpaceAt(row: Element | null | undefined, left: number, top = 0) {
   if (!row) throw new Error("Missing header row");
