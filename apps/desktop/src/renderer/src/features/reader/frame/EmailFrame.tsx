@@ -20,7 +20,7 @@ import { type SyntheticEvent, useEffect, useMemo, useRef, useState } from "react
 import { externalLinkTargets, frameLinkTarget, listenForLinkHints } from "./email-links";
 import { sanitizeReaderHtml } from "./reader-html";
 import { isTypingTarget } from "../../../lib/typing-target";
-import { DARK_CSS, fitDocument } from "./frame-style";
+import { DARK_CSS, fitDocument, keepLeftEdge } from "./frame-style";
 import {
   FRAME_INITIAL_HEIGHT,
   frameSurface,
@@ -115,7 +115,9 @@ export function EmailFrame({
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(frameDocument.documentElement);
-    // The page's width is pinned while it is scaled; a body that widens still has to refit.
+    // The root's box keeps the width fitDocument set, so a body that changes
+    // size without changing the root's height (a mail style or late content
+    // setting its width) is caught here.
     observer.observe(frameDocument.body);
     observer.observe(frame);
     return () => observer.disconnect();
@@ -160,6 +162,9 @@ export function EmailFrame({
       if (event.isTrusted && !isTypingTarget(frameDoc.activeElement)) keys.current?.(event);
     };
     frameDoc.addEventListener("keydown", keydown);
+    // Find and selection jumps call scrollIntoView, which scrolls a hidden axis too.
+    const scroll = () => keepLeftEdge(frameDoc);
+    frameDoc.addEventListener("scroll", scroll);
     const stopActivation = listenForMessageActivation(frameDoc, () => activate.current());
     const click = (event: MouseEvent) => {
       event.preventDefault();
@@ -191,6 +196,7 @@ export function EmailFrame({
       frameDoc.removeEventListener("click", click);
       frameDoc.removeEventListener("auxclick", click);
       frameDoc.removeEventListener("keydown", keydown);
+      frameDoc.removeEventListener("scroll", scroll);
       stopActivation();
     };
   };

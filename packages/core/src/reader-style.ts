@@ -19,7 +19,6 @@ export const READER_COLOUR_CSS = `
 export const READER_BASE_CSS = `
   ${READER_COLOUR_CSS}
   html, body { margin: 0; padding: 0; }
-  html { overflow-x: auto !important; }
   body { font: 14px/1.6 -apple-system, BlinkMacSystemFont, "PingFang SC", system-ui, sans-serif;
          overflow: visible !important; word-wrap: break-word; overflow-wrap: anywhere; }
   /* "anywhere" shrinks a cell's minimum width to one character, so an auto

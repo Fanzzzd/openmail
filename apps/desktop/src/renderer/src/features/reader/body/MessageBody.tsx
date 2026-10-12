@@ -232,7 +232,7 @@ function PlainBody({
       <pre
         ref={root}
         dir="auto"
-        className={`rounded-card p-4 font-sans leading-relaxed whitespace-pre-wrap ${background === "dark" ? "bg-black text-neutral-100" : "bg-white text-neutral-900"}`}
+        className={`rounded-card p-4 font-sans leading-relaxed whitespace-pre-wrap wrap-anywhere ${background === "dark" ? "bg-black text-neutral-100" : "bg-white text-neutral-900"}`}
         style={{ fontSize: (14 * zoom) / 100 }}
       />
       {parts.quote && (

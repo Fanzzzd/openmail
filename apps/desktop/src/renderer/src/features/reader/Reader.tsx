@@ -750,6 +750,11 @@ export function ThreadView({
         )
           event.currentTarget.focus({ preventScroll: true });
       }}
+      // Nothing in the thread is wider than the pane, but scrollIntoView (find
+      // hits, selection jumps) can still scroll its hidden x axis.
+      onScroll={(event) => {
+        if (event.currentTarget.scrollLeft !== 0) event.currentTarget.scrollLeft = 0;
+      }}
       className="selectable @container/thread min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-x-none px-4 pb-10 focus-visible:-outline-offset-2 @min-[520px]/thread:px-7"
     >
       <SelectedMessageAnnouncement message={messages.find((m) => m.id === activeId)} />
