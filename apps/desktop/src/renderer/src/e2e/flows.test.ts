@@ -1,3 +1,4 @@
+import { mailHref } from "../../../shared/routes";
 import { Deferred, Effect, Stream } from "effect";
 import { AuthError, ProviderError, PermanentError } from "@openmail/core/portable";
 import { afterEach, expect, it, vi } from "vitest";
@@ -536,7 +537,8 @@ it("notification click event opens the requested thread and clears an active sea
   );
   edit("Search mail", "does-not-match");
   await eventually(() => expect(screen.getByText("No matching messages")).toBeTruthy());
-  await h.event({ _tag: "OpenThread", id: h.id("arrival") });
+  // Main resolves a notification's thread to its account's All Mail, as showThread does.
+  await h.event({ _tag: "Navigate", href: threadRoute(h, "arrival") });
   await eventually(() =>
     expect(screen.getByRole("article", { name: "Selected message" }).textContent).toContain(
       "Original arrival",
@@ -620,7 +622,8 @@ it("notification click followed by immediate search clears hidden selection befo
   const h = current;
   await eventually(() => expect(row(h.id("one"))).toBeTruthy());
   const release = await h.holdLists();
-  await h.event({ _tag: "OpenThread", id: h.id("one") });
+  // Main resolves a notification's thread to its account's All Mail, as showThread does.
+  await h.event({ _tag: "Navigate", href: threadRoute(h, "one") });
   await eventually(() =>
     expect(screen.getByRole("article", { name: "Selected message" }).textContent).toContain(
       "Original one",
@@ -743,3 +746,6 @@ it.each(["missing", "failed"] as const)(
     expect(h.server.sent).toHaveLength(0);
   },
 );
+
+const threadRoute = (h: Awaited<ReturnType<typeof flow>>, id: string) =>
+  mailHref({ space: "all", mailbox: "all", accountId: h.account.id }, { thread: h.id(id) });

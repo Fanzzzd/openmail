@@ -18,17 +18,14 @@ export const DesktopEvent = Schema.Union([
   }),
   Schema.TaggedStruct("ComposeFiles", { attachments: Schema.Array(OutgoingAttachment) }),
   Schema.TaggedStruct("FileError", { reason: DockFileReason }),
-  Schema.TaggedStruct("AccountInbox", { accountId: Schema.String }),
   Schema.TaggedStruct("UndoSend", {}),
   Schema.TaggedStruct("AttachFiles", {}),
   Schema.TaggedStruct("QuitCheck", {}),
   Schema.TaggedStruct("ComposeClose", {}),
   Schema.TaggedStruct("PopOutDraft", { id: Schema.String }),
   Schema.TaggedStruct("Edit", { action: Schema.Literals(["undo", "selectAll"]) }),
-  Schema.TaggedStruct("OpenThread", {
-    id: Schema.String,
-    single: Schema.optionalKey(Schema.Boolean),
-  }),
+  /** Show a screen in the main window; an href from shared/routes, checked again by the renderer. */
+  Schema.TaggedStruct("Navigate", { href: Schema.String }),
   Schema.TaggedStruct("Compose", { draft: MailtoDraft }),
   Schema.TaggedStruct("Search", { query: Schema.String }),
   Schema.TaggedStruct("Command", {
@@ -69,8 +66,8 @@ export type DefaultClientStatus = typeof DefaultClientStatus.Type;
 /** Only navigation survives a missing renderer; send/quit commands describe the current moment. */
 export function shouldBufferDesktopEvent(event: DesktopEvent): boolean {
   return (
-    ["ComposeFiles", "ComposeMessage", "FileError", "AccountInbox"].includes(event._tag) ||
-    event._tag === "OpenThread" ||
+    ["ComposeFiles", "ComposeMessage", "FileError"].includes(event._tag) ||
+    event._tag === "Navigate" ||
     event._tag === "Compose" ||
     event._tag === "Search"
   );

@@ -1,3 +1,4 @@
+import { mailHref } from "../../shared/routes";
 import { Deferred, Effect, Fiber, Layer, Schema, Stream } from "effect";
 import { TestClock } from "effect/testing";
 import { LockTimeoutError, SqlError } from "effect/sql/SqlError";
@@ -21,6 +22,7 @@ vi.mock("electron", async () => {
     getPreferredSystemLanguages: () => ["en"],
     getLocale: () => "en",
     setBadgeCount: vi.fn<(count: number) => boolean>(() => true),
+    dock: { setMenu: vi.fn<(menu: unknown) => void>() },
     quit: vi.fn(),
     relaunch: vi.fn(),
   });
@@ -238,6 +240,8 @@ const localizedDesktopLayer = (mailbox: Layer.Layer<Mailbox>) =>
   Layer.effectDiscard(
     Desktop.pipe(Effect.flatMap((desktop) => desktop.setLabels(englishLabels))),
   ).pipe(Layer.provideMerge(DesktopLive.pipe(Layer.provideMerge(mailbox))));
+const allMail = (thread: string) =>
+  mailHref({ space: "all", mailbox: "all", accountId: "gmail:me@gmail.com" }, { thread });
 const desktopLayer = (server: ReturnType<typeof fakeServer>) =>
   localizedDesktopLayer(TestMailbox({ gmail: server }));
 const originalResourcesPath = Object.getOwnPropertyDescriptor(process, "resourcesPath");
@@ -258,7 +262,7 @@ beforeEach(() => {
 
 it("buffers cold launch links, targets one main window, and keeps each window's space", async () => {
   const server = fakeServer("me@gmail.com", [incoming("one")]);
-  receiveAppUrl(messageLink("gmail:me@gmail.com/one"));
+  receiveAppUrl("mailto:cold@example.com");
   await Effect.runPromise(
     Effect.scoped(
       Effect.gen(function* () {
@@ -272,7 +276,18 @@ it("buffers cold launch links, targets one main window, and keeps each window's 
         const launch = yield* desktop
           .events(first.webContents.id)
           .pipe(Stream.take(1), Stream.runCollect);
-        expect([...launch]).toEqual([{ _tag: "OpenThread", id: "gmail:me@gmail.com/one" }]);
+        expect([...launch]).toEqual([
+          {
+            _tag: "Compose",
+            draft: { to: "cold@example.com", cc: "", bcc: "", subject: "", body: "" },
+          },
+        ]);
+        // A message link opens its thread in the owner's All Mail, through a Navigate href.
+        receiveAppUrl(messageLink("gmail:me@gmail.com/one"));
+        const link = yield* desktop
+          .events(first.webContents.id)
+          .pipe(Stream.take(1), Stream.runCollect);
+        expect([...link]).toEqual([{ _tag: "Navigate", href: allMail("gmail:me@gmail.com/one") }]);
         first.focus();
         yield* desktop.setSpace(first.webContents.id, "all");
         expect(observations.testState.badge).toHaveBeenLastCalledWith(1);
@@ -317,6 +332,46 @@ it("buffers cold launch links, targets one main window, and keeps each window's 
   expect(observations.testState.windows).toHaveLength(0);
 });
 
+it("dock menu accounts open their inbox through a Navigate href", async () => {
+  const { app } = await vi.importMock<{
+    app: { dock: { setMenu: Mock<(menu: unknown) => void> } };
+  }>("electron");
+  await Effect.runPromise(
+    Effect.scoped(
+      Effect.gen(function* () {
+        const m = yield* Mailbox;
+        const desktop = yield* Desktop;
+        yield* m.connect({ provider: "gmail" });
+        yield* m.sync();
+        yield* settle();
+        // The fake Menu returns the template itself; inspect it as an IO boundary.
+        const items = Schema.decodeUnknownSync(
+          Schema.Array(
+            Schema.Struct({
+              label: Schema.optionalKey(Schema.String),
+              click: Schema.optionalKey(Schema.Unknown),
+            }),
+          ),
+        )(app.dock.setMenu.mock.lastCall?.[0]);
+        const click = items.find((item) => item.label?.startsWith("me@gmail.com"))?.click;
+        expect(typeof click).toBe("function");
+        if (typeof click === "function") click();
+        const win = observations.testState.windows[0];
+        if (!win) throw new Error("Missing main window");
+        const opened = yield* desktop
+          .events(win.webContents.id)
+          .pipe(Stream.take(1), Stream.runCollect);
+        expect([...opened]).toEqual([
+          {
+            _tag: "Navigate",
+            href: mailHref({ space: "all", mailbox: "inbox", accountId: "gmail:me@gmail.com" }),
+          },
+        ]);
+      }),
+    ).pipe(Effect.provide(desktopLayer(fakeServer("me@gmail.com", [incoming("one")])))),
+  );
+});
+
 it("notification clicks open threads; Archive and Delete are audited as the person at the app", async () => {
   const server = fakeServer("me@gmail.com", [incoming("initial")]);
   await Effect.runPromise(
@@ -343,7 +398,7 @@ it("notification clicks open threads; Archive and Delete are audited as the pers
         const click = yield* desktop
           .events(mainWindow.webContents.id)
           .pipe(Stream.take(1), Stream.runCollect);
-        expect([...click]).toEqual([{ _tag: "OpenThread", id: "gmail:me@gmail.com/new" }]);
+        expect([...click]).toEqual([{ _tag: "Navigate", href: allMail("gmail:me@gmail.com/new") }]);
         notification.emit("action", { actionIndex: 0 });
         yield* settle();
         expect(server.pushed.at(-1)).toEqual({ providerId: "new", op: { kind: "archive" } });
@@ -368,7 +423,9 @@ it("notification clicks open threads; Archive and Delete are audited as the pers
         const buffered = yield* desktop
           .events(mainWindow.webContents.id)
           .pipe(Stream.take(1), Stream.runCollect);
-        expect([...buffered]).toEqual([{ _tag: "OpenThread", id: "gmail:me@gmail.com/delete" }]);
+        expect([...buffered]).toEqual([
+          { _tag: "Navigate", href: allMail("gmail:me@gmail.com/delete") },
+        ]);
       }),
     ).pipe(Effect.provide(desktopLayer(server))),
   );
@@ -394,7 +451,9 @@ it.skipIf(process.platform !== "darwin")(
           const click = yield* desktop
             .events(mainWindow.webContents.id)
             .pipe(Stream.take(1), Stream.runCollect);
-          expect([...click]).toEqual([{ _tag: "OpenThread", id: "gmail:me@gmail.com/one" }]);
+          expect([...click]).toEqual([
+            { _tag: "Navigate", href: allMail("gmail:me@gmail.com/one") },
+          ]);
           restored.emit("action", { actionIndex: 0 });
           yield* settle();
           expect(server.pushed.at(-1)).toEqual({ providerId: "one", op: { kind: "archive" } });
@@ -501,7 +560,7 @@ it("menu bar count is optional and its clickable list caps at 50 individual mess
         const opened = yield* desktop
           .events(window.webContents.id)
           .pipe(Stream.take(1), Stream.runCollect);
-        expect(opened[0]?._tag).toBe("OpenThread");
+        expect(opened[0]?._tag).toBe("Navigate");
         yield* m.setPrefs({ menuBarUnreadCount: false });
         yield* settle();
         expect(tray.title).toBe("");
@@ -931,11 +990,11 @@ it("a menu Undo Send issued without a subscriber is never replayed after rendere
           ?.submenu?.find((item) => item.label === "Undo Send");
         expect(undo?.click).toBeDefined();
         undo?.click?.();
-        receiveAppUrl(messageLink("gmail:me@gmail.com/reloaded"));
+        yield* desktop.search("reloaded");
         const events = yield* desktop
           .events(win.webContents.id)
           .pipe(Stream.take(1), Stream.runCollect);
-        expect([...events]).toEqual([{ _tag: "OpenThread", id: "gmail:me@gmail.com/reloaded" }]);
+        expect([...events]).toEqual([{ _tag: "Search", query: "reloaded" }]);
       }),
     ).pipe(Effect.provide(desktopLayer(fakeServer("me@gmail.com")))),
   );

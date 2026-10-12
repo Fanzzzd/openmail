@@ -17,14 +17,14 @@ it("busy editors keep links and never replay menu commands on becoming idle", ()
   };
   receive({ _tag: "Command", command: "compose" });
   receive({ _tag: "Command", command: "settings" });
-  receive({ _tag: "OpenThread", id: "message" });
+  receive({ _tag: "Navigate", href: "/mail/all/all?thread=message" });
   receive({
     _tag: "Compose",
     draft: { to: "to@example.com", cc: "", bcc: "", subject: "", body: "" },
   });
   busy = false;
   delivered.push(...deferred.splice(0));
-  expect(delivered.map((event) => event._tag)).toEqual(["OpenThread", "Compose"]);
+  expect(delivered.map((event) => event._tag)).toEqual(["Navigate", "Compose"]);
   receive({ _tag: "Command", command: "settings" });
   expect(delivered.at(-1)).toEqual({ _tag: "Command", command: "settings" });
 });
@@ -51,7 +51,7 @@ it("send and quit commands are dropped when the renderer is missing, while navig
   expect(shouldBufferDesktopEvent({ _tag: "QuitCheck" })).toBe(false);
   expect(shouldBufferDesktopEvent({ _tag: "Edit", action: "undo" })).toBe(false);
   expect(shouldBufferDesktopEvent({ _tag: "Command", command: "compose" })).toBe(false);
-  expect(shouldBufferDesktopEvent({ _tag: "OpenThread", id: "message" })).toBe(true);
+  expect(shouldBufferDesktopEvent({ _tag: "Navigate", href: "/mail/all/inbox" })).toBe(true);
   expect(
     shouldBufferDesktopEvent({
       _tag: "Compose",

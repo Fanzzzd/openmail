@@ -21,7 +21,6 @@ import { useDesktopEvents } from "../state/desktop";
 import { saveDraft, useRunMail, withMail } from "../state/mail";
 import { useBatchUndo } from "../state/undo";
 import { ALL, OVERVIEW } from "../lib/view";
-import { mailHref } from "../../../shared/routes";
 import { useAtom, useAtomValue } from "@effect/atom-react";
 import { editingProfileAtom } from "../features/accounts/profile-editing";
 import { labelCreationAtom, snoozeIdsAtom } from "../features/organize/organize-state";
@@ -105,9 +104,9 @@ export function useNativeMenuBridge({
         else dispatchNativeAction(prefs.shortcutSet, event.action, event.triggeredByAccelerator);
         break;
       }
-      case "AccountInbox":
-        changeView({ space: ALL, accountId: event.accountId, mailbox: "inbox" });
-        setQuery("");
+      case "Navigate":
+        // Main builds these with shared/routes; openLink still takes only mail routes.
+        navigation.openLink(event.href);
         break;
       case "FileError":
         say({ text: i18n._(DOCK_FILE_MESSAGES[event.reason]), tone: "error" });
@@ -183,10 +182,6 @@ export function useNativeMenuBridge({
         }
         break;
       }
-      case "OpenThread":
-        if (event.single) run(withMail((call) => call("OpenMessageWindow", { id: event.id })));
-        else openLinkedThread(event.id);
-        break;
       case "Search":
         changeView({ space: ALL, mailbox: "all" });
         setSearchScope("all");
@@ -209,39 +204,6 @@ export function useNativeMenuBridge({
         break;
     }
   };
-  /** Opens a linked thread in its account's All Mail, or on the web when it is not stored here. */
-  const openLinkedThread = (id: string) =>
-    run(
-      withMail((call) =>
-        Effect.gen(function* () {
-          const result = yield* call("Thread", { id }).pipe(Effect.result);
-          if (result._tag === "Failure") {
-            if (result.failure._tag !== "NotFound") return yield* result.failure;
-            return yield* call("OpenMessageWeb", { id });
-          }
-          const owner = (yield* call("Accounts", undefined)).find(
-            (account) => account.id === result.success[0]?.accountId,
-          );
-          navigation.openLink(
-            mailHref(
-              {
-                space: owner?.profileId ?? ALL,
-                mailbox: "all",
-                ...(owner ? { accountId: owner.id } : {}),
-              },
-              { thread: id },
-            ),
-          );
-          return yield* Effect.void;
-        }),
-      ).pipe(
-        Effect.catchCause((cause) =>
-          Effect.sync(() =>
-            say({ text: messages.cantOpenTheMessage(causeText(i18n, cause)), tone: "error" }),
-          ),
-        ),
-      ),
-    );
   useDesktopEvents((event) => {
     if (event._tag === "ComposeFiles" && accountList.length) {
       receiveDesktop(event);

@@ -47,11 +47,14 @@ import { askWindow, listeningWindow } from "../windows/window-ui";
 import { notificationPermission } from "./notification-permission";
 import { createQuitGuard, createSendState } from "../app/quit";
 import { shouldBufferDesktopEvent, type DesktopEvent } from "../../shared/desktop";
+import { mailHref } from "../../shared/routes";
+import { openExternal } from "../security/external";
 import type { DesktopLabels } from "../../shared/desktop-labels";
 import { shortcutAccelerator } from "../../shared/shortcuts";
 import {
   createMainWindow,
   focusMainWindow,
+  openMessageWindow,
   isMainWindow,
   isComposeWindow,
   restoreWindows,
@@ -197,7 +200,38 @@ export const DesktopLive = Layer.effect(
     setInlinePopOutHandler((win, id) => deliver({ _tag: "PopOutDraft", id }, win));
     const command = (name: "settings" | "help" | "compose" | "inbox") =>
       deliver({ _tag: "Command", command: name });
-    const openThread = (id: string) => deliver({ _tag: "OpenThread", id });
+    const navigate = (href: string) => deliver({ _tag: "Navigate", href });
+    /**
+     * Opens a thread in the main window, in its account's All Mail, so any
+     * folder finds it. A message no longer stored here opens on the web.
+     */
+    const showThread = (id: string) =>
+      mailbox.thread(id).pipe(
+        Effect.flatMap((messages) =>
+          Effect.map(mailbox.accounts, (accounts) => {
+            const owner = accounts.find((account) => account.id === messages[0]?.accountId);
+            navigate(
+              mailHref(
+                {
+                  space: owner?.profileId ?? "all",
+                  mailbox: "all",
+                  ...(owner ? { accountId: owner.id } : {}),
+                },
+                { thread: id },
+              ),
+            );
+          }),
+        ),
+        Effect.catchTag("NotFound", () =>
+          Effect.gen(function* () {
+            const prefs = yield* mailbox.prefs;
+            const url = yield* mailbox.messageWebUrl(id);
+            yield* Effect.promise(() => openExternal(url, prefs.cleanLinks !== false));
+          }),
+        ),
+        Effect.catchCause((cause) => Effect.logWarning("could not open the linked thread", cause)),
+      );
+    const openThread = (id: string) => run(showThread(id));
     const edit = (action: "undo" | "selectAll") => {
       const focused = BrowserWindow.getFocusedWindow();
       if (!focused) return;
@@ -221,11 +255,8 @@ export const DesktopLive = Layer.effect(
               link.id.startsWith("rfc:") || link.single !== undefined
                 ? yield* mailbox.resolveMailLink(link.id)
                 : link.id;
-            deliver({
-              _tag: "OpenThread",
-              id,
-              ...(link.single === undefined ? {} : { single: link.single }),
-            });
+            if (link.single) openMessageWindow(id);
+            else yield* showThread(id);
           }).pipe(Effect.catch(() => Effect.void)),
         );
     };
@@ -303,7 +334,8 @@ export const DesktopLive = Layer.effect(
               .filter((a) => a.enabled !== false)
               .map((a) => ({
                 label: `${a.description?.trim() || a.email} (${counts[a.id] ?? 0})`,
-                click: () => deliver({ _tag: "AccountInbox", accountId: a.id }),
+                click: () =>
+                  navigate(mailHref({ space: "all", mailbox: "inbox", accountId: a.id })),
               })),
           ]),
         );

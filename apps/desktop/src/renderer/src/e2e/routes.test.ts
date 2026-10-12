@@ -65,7 +65,9 @@ it("opens the thread a route names and keeps the open thread in the route", asyn
   const length = h.router.history.length;
   fireEvent.click(row(h.id("one")));
   await eventually(() =>
-    expect(h.href()).toBe(`/mail/all/inbox?thread=${encodeURIComponent(h.id("one"))}`),
+    expect(h.href().startsWith(`/mail/all/inbox?thread=${encodeURIComponent(h.id("one"))}`)).toBe(
+      true,
+    ),
   );
   expect(h.router.history.length).toBe(length);
   fireEvent.click(within(mailboxes()).getByRole("button", { name: "Sent" }));
@@ -88,4 +90,28 @@ it("opens the dialog a route names, and closing it leaves the route in place", a
   await h.event({ _tag: "Command", command: "help" });
   await eventually(() => expect(h.href()).toBe("/mail/all/sent?dialog=help"));
   expect(h.router.history.length).toBe(length);
+});
+
+it("Navigate events move only between mail routes and open their thread", async () => {
+  const h = (current = await flow());
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  const start = h.href();
+  for (const href of [
+    "https://evil.example/mail/all/inbox",
+    "//evil.example/mail/all/inbox",
+    "javascript:alert(1)",
+    "/thread/x?single=1",
+    "/compose/draft",
+  ]) {
+    await h.event({ _tag: "Navigate", href });
+    expect(h.href()).toBe(start);
+  }
+  const href = `/mail/all/all?account=${encodeURIComponent(h.account.id)}&thread=${encodeURIComponent(h.id("two"))}`;
+  await h.event({ _tag: "Navigate", href });
+  await eventually(() => expect(title()).toContain("All Mail"));
+  // The reader adds the message it focuses in the thread.
+  expect(h.href().startsWith(href)).toBe(true);
+  await eventually(() => expect(row(h.id("two")).getAttribute("aria-selected")).toBe("true"));
+  act(() => h.router.history.back());
+  await eventually(() => expect(h.href()).toBe(start));
 });
