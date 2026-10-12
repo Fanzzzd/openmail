@@ -1276,7 +1276,7 @@ msgstr "Sluit het opstelvenster"
 msgid "Close find"
 msgstr "Sluit zoekbalk"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "Close other OpenMail processes (CLI/MCP), then restart this app and try recovery again."
 msgstr "Sluit andere OpenMail-processen (CLI/MCP), start vervolgens deze app opnieuw en probeer het herstel opnieuw."
 
@@ -1440,7 +1440,7 @@ msgstr "De contactbewerking is mislukt."
 msgid "Content matches"
 msgstr "Inhoud komt overeen"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 #: src/renderer/src/features/reader/UnsubscribeButton.tsx
 msgid "Continue"
@@ -1615,7 +1615,7 @@ msgstr "De bijlagen konden niet worden gelezen. Controleer de bestanden en hun r
 msgid "Could not register OpenMail. Try again from the installed app."
 msgstr "Kon OpenMail niet registreren. Probeer het opnieuw vanuit de geïnstalleerde app."
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "Could not reset the local cache"
 msgstr "Kan de lokale cache niet resetten"
 
@@ -1802,7 +1802,7 @@ msgstr "Donkere achtergrond"
 msgid "Dashed list"
 msgstr "Gestippelde lijst"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "Database recovery was interrupted. Restore a preserved database before reopening OpenMail. Preserved database: {backup}"
 msgstr "Databaseherstel is onderbroken. Herstel een bewaarde database voordat u OpenMail opnieuw opent. Bewaarde database: {backup}"
 
@@ -2534,7 +2534,7 @@ msgstr "Stuur door als bijlage"
 msgid "Fourth"
 msgstr "Vierde"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "Free at least {size} MiB to upgrade the local database, then restart OpenMail. The database was kept."
 msgstr "Maak minstens {size} MiB vrij om de lokale database bij te werken en start OpenMail opnieuw. De database is behouden."
 
@@ -3617,7 +3617,7 @@ msgstr "Meer acties"
 msgid "More conditions"
 msgstr "Meer voorwaarden"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "More disk space is needed"
 msgstr "Meer schijfruimte nodig"
 
@@ -4268,7 +4268,7 @@ msgstr "OpenMail is de standaard e-mailapp"
 msgid "OpenMail is up to date."
 msgstr "OpenMail is up-to-date."
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "OpenMail safe mode"
 msgstr "OpenMail veilige modus"
 
@@ -4284,7 +4284,7 @@ msgstr "openmail logt in met een OAuth-client die u zelf registreert. Voer eerst
 msgid "OpenMail stopped unexpectedly"
 msgstr "OpenMail is onverwacht gestopt"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "OpenMail stopped unexpectedly three times within five minutes. Continue, reset the local mail cache and re-sync, or quit. Accounts, drafts and keychain tokens are kept."
 msgstr "OpenMail is binnen vijf minuten drie keer onverwacht gestopt. Ga door, stel de lokale e-mailcache opnieuw in en synchroniseer opnieuw, of stop. Accounts, concepten en tokens in de sleutelhanger blijven behouden."
 
@@ -4628,7 +4628,7 @@ msgstr "QQ Mail"
 msgid "Quick Look"
 msgstr "Snelle weergave"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 #: src/renderer/src/app/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Quit"
@@ -4693,7 +4693,7 @@ msgstr "Ontvangers buiten het oorspronkelijke gesprek:"
 msgid "Recommended. Known tracking pixels stay blocked."
 msgstr "Aanbevolen. Bekende trackingpixels blijven geblokkeerd."
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
 msgstr "{copied} lokale records hersteld. {skipped} onleesbare items overgeslagen. Oorspronkelijke database: {backup}"
 
@@ -4986,7 +4986,7 @@ msgstr "Opnieuw versturen naar geweigerde ontvangers"
 msgid "Reset Favorites"
 msgstr "Favorieten opnieuw instellen"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "Reset local cache"
 msgstr "Lokale cache opnieuw instellen"
 
@@ -5995,11 +5995,11 @@ msgstr "De berichttekst is niet opgeslagen in de cache. Open dit bericht opnieuw
 msgid "The calendar organizer does not match this invitation"
 msgstr "De agenda-organisator komt niet overeen met deze uitnodiging"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "The database integrity check (quick_check) failed or the file is unavailable. Reset rebuilds a damaged database from readable local records and keeps the original file. Keychain tokens are kept."
 msgstr "De database-integriteitscontrole (quick_check) is mislukt of het bestand is niet beschikbaar. Reset herbouwt een beschadigde database op basis van leesbare lokale records en behoudt het originele bestand. Sleutelhangertokens worden bewaard."
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "The database was kept. Quit OpenMail and restore a local backup or contact support."
 msgstr "De database werd bewaard. Sluit OpenMail af en herstel een lokale back-up of neem contact op met de ondersteuning."
 
@@ -6027,11 +6027,11 @@ msgstr "De laatste poging heeft de server mogelijk bereikt. Opnieuw versturen ka
 msgid "The limit includes the database, attachments, WAL and recovery copies. Protected content may exceed it."
 msgstr "De limiet omvat de database, bijlagen, WAL en herstelkopieën. Beschermde inhoud kan de limiet overschrijden."
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "The local database could not be verified"
 msgstr "De lokale database kan niet worden geverifieerd"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "The local database was recovered"
 msgstr "De lokale database is hersteld"
 
@@ -6494,7 +6494,7 @@ msgstr "Updates"
 msgid "Updates require a signed macOS build and a saved access token."
 msgstr "Updates vereisen een ondertekende macOS-versie en een bewaard toegangstoken."
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "Upgrading local database…"
 msgstr "Lokale database wordt bijgewerkt…"
 

@@ -1286,7 +1286,7 @@ msgstr "关闭写信窗口"
 msgid "Close find"
 msgstr "关闭查找"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "Close other OpenMail processes (CLI/MCP), then restart this app and try recovery again."
 msgstr "请关闭其他 OpenMail 进程（CLI／MCP），再重启此应用并重试恢复。"
 
@@ -1450,7 +1450,7 @@ msgstr "通讯录操作失败。"
 msgid "Content matches"
 msgstr "内容命中"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 #: src/renderer/src/features/reader/UnsubscribeButton.tsx
 msgid "Continue"
@@ -1625,7 +1625,7 @@ msgstr "无法读取附件，请检查文件和访问权限。"
 msgid "Could not register OpenMail. Try again from the installed app."
 msgstr "注册失败，请从安装后的 app 重试。"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "Could not reset the local cache"
 msgstr "无法重置本地缓存"
 
@@ -1812,7 +1812,7 @@ msgstr "深色背景"
 msgid "Dashed list"
 msgstr "短横线列表"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "Database recovery was interrupted. Restore a preserved database before reopening OpenMail. Preserved database: {backup}"
 msgstr "数据库恢复被中断。请先恢复保留的数据库，再打开 OpenMail。保留的数据库：{backup}"
 
@@ -2544,7 +2544,7 @@ msgstr "作为附件转发"
 msgid "Fourth"
 msgstr "第四"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "Free at least {size} MiB to upgrade the local database, then restart OpenMail. The database was kept."
 msgstr "请释放至少 {size} MiB 空间，再重启 OpenMail 升级本地数据库。数据库已保留。"
 
@@ -3627,7 +3627,7 @@ msgstr "更多操作"
 msgid "More conditions"
 msgstr "更多条件"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "More disk space is needed"
 msgstr "需要更多磁盘空间"
 
@@ -4278,7 +4278,7 @@ msgstr "OpenMail 已是默认邮件客户端"
 msgid "OpenMail is up to date."
 msgstr "OpenMail 已是最新版本。"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "OpenMail safe mode"
 msgstr "OpenMail 安全模式"
 
@@ -4294,7 +4294,7 @@ msgstr "openmail 用你自己注册的 OAuth 客户端登录。先填入Google C
 msgid "OpenMail stopped unexpectedly"
 msgstr "OpenMail 意外退出"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "OpenMail stopped unexpectedly three times within five minutes. Continue, reset the local mail cache and re-sync, or quit. Accounts, drafts and keychain tokens are kept."
 msgstr "OpenMail 在五分钟内意外退出三次。可继续、重置本地邮件缓存并重新同步，或退出。账户、草稿和钥匙串令牌会保留。"
 
@@ -4638,7 +4638,7 @@ msgstr "QQ 邮箱"
 msgid "Quick Look"
 msgstr "快速查看"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 #: src/renderer/src/app/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Quit"
@@ -4703,7 +4703,7 @@ msgstr "原会话之外的收件人："
 msgid "Recommended. Known tracking pixels stay blocked."
 msgstr "推荐。已知的跟踪像素仍会拦截。"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
 msgstr "已恢复 {copied} 条本地记录，跳过 {skipped} 个无法读取的项目。原数据库保留在：{backup}"
 
@@ -4996,7 +4996,7 @@ msgstr "仅向被拒收的收件人重发"
 msgid "Reset Favorites"
 msgstr "重置收藏夹"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "Reset local cache"
 msgstr "重置本地缓存"
 
@@ -6005,11 +6005,11 @@ msgstr "正文未缓存。联网后请重新打开这封邮件。"
 msgid "The calendar organizer does not match this invitation"
 msgstr "日历中的组织者与邀请不一致"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "The database integrity check (quick_check) failed or the file is unavailable. Reset rebuilds a damaged database from readable local records and keeps the original file. Keychain tokens are kept."
 msgstr "数据库完整性检查（quick_check）失败，或文件无法访问。重置会用可读的本地记录重建损坏的数据库，并保留原文件和钥匙串令牌。"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "The database was kept. Quit OpenMail and restore a local backup or contact support."
 msgstr "数据库已保留。请退出 OpenMail，恢复本地备份或联系支持。"
 
@@ -6037,11 +6037,11 @@ msgstr "上次尝试可能已到达服务器。再次发送可能会投递第二
 msgid "The limit includes the database, attachments, WAL and recovery copies. Protected content may exceed it."
 msgstr "上限包含数据库、附件、WAL 和恢复副本。受保护内容可超过上限。"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "The local database could not be verified"
 msgstr "无法验证本地数据库"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "The local database was recovered"
 msgstr "本地数据库已恢复"
 
@@ -6504,7 +6504,7 @@ msgstr "动态"
 msgid "Updates require a signed macOS build and a saved access token."
 msgstr "更新需要已签名的 macOS 版本，并保存访问令牌。"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "Upgrading local database…"
 msgstr "正在升级本地数据库…"
 

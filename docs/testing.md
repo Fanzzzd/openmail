@@ -34,7 +34,7 @@ pnpm exec vitest run --maxWorkers=1 \
   src/platform/node/corpus-check.test.ts src/platform/node/visible-text-cost.test.ts
 ```
 
-桌面从 `apps/desktop` 运行 `pnpm exec vitest run --maxWorkers=1 src/main/attachment-actions.test.ts`。
+桌面从 `apps/desktop` 运行 `pnpm exec vitest run --maxWorkers=1 src/main/files/attachment-actions.test.ts`。
 
 所有 Vitest 项目通过 `packages/core/test-support/temp-directory.ts` 使用各自的临时目录。启动时只清理该 helper 创建的、超过 24 小时的 `openmail-tests-*` 目录，不跟随软链接。测试仍须用 Effect scope、`afterEach` 或 `finally` 关闭数据库并删除 fixture；全局 teardown 会报告遗留的 `openmail-*`、`om-*` fixture 并删除整个目录，失败的测试也不会留下大数据库。性能 fixture 不跨运行缓存。search-profile 只保留显式指定的数据库，默认数据库在 `finally` 删除；corpus-check 的持久 explain key 由测试登记后删除。
 
@@ -103,7 +103,7 @@ node apps/desktop/scripts/e2e-mutations.mjs
 
 ## 解析器 fuzz 与无障碍
 
-解析器属性测试使用固定 seed 的 fast-check 和恶意输入语料。覆盖 MIME／TNEF／兼容编码、HTML 清洗与重解析、可见文本、认证头、URL、搜索、日历、IMAP/SMTP 分片流和附件文件名。测试检查有界输出、幂等、协议分帧及清洗后没有活动内容，不能证明所有恶意输入都安全。入口见 core [parser-fuzz.test.ts](../packages/core/src/parser-fuzz.test.ts)、[parser-fuzz-corpus.ts](../packages/core/src/parser-fuzz-corpus.ts)、[mail-socket-fuzz.test.ts](../packages/core/src/platform/mail-socket-fuzz.test.ts)，以及桌面 [reader-html-fuzz.test.ts](../apps/desktop/src/renderer/src/features/reader/frame/reader-html-fuzz.test.ts)和[附件文件名测试](../apps/desktop/src/main/attachment-filenames-fuzz.test.ts)。
+解析器属性测试使用固定 seed 的 fast-check 和恶意输入语料。覆盖 MIME／TNEF／兼容编码、HTML 清洗与重解析、可见文本、认证头、URL、搜索、日历、IMAP/SMTP 分片流和附件文件名。测试检查有界输出、幂等、协议分帧及清洗后没有活动内容，不能证明所有恶意输入都安全。入口见 core [parser-fuzz.test.ts](../packages/core/src/parser-fuzz.test.ts)、[parser-fuzz-corpus.ts](../packages/core/src/parser-fuzz-corpus.ts)、[mail-socket-fuzz.test.ts](../packages/core/src/platform/mail-socket-fuzz.test.ts)，以及桌面 [reader-html-fuzz.test.ts](../apps/desktop/src/renderer/src/features/reader/frame/reader-html-fuzz.test.ts)和[附件文件名测试](../apps/desktop/src/main/files/attachment-filenames-fuzz.test.ts)。
 
 只跑 fuzz：
 
@@ -162,7 +162,7 @@ stdout 输出 JSON，stderr 输出步骤和预览日志：
 - [graph-recurrence.test.ts](../packages/core/src/graph-recurrence.test.ts)、[calendar.test.ts](../packages/core/src/calendar.test.ts)：循环事件、邀请与邮件事件检测。
 - [search.test.ts](../packages/core/src/search.test.ts)、[preferences.test.ts](../packages/core/src/preferences.test.ts)、[organization.test.ts](../packages/core/src/organization.test.ts)：搜索、偏好、分类与规则。
 - [uid-remap.test.ts](../packages/core/src/uid-remap.test.ts)：IMAP 身份映射。
-- [native-compose.test.ts](../apps/desktop/src/main/native-compose.test.ts)：原生分享、图片和语法辅助。
+- [native-compose.test.ts](../apps/desktop/src/main/system/native-compose.test.ts)：原生分享、图片和语法辅助。
 - [sender-auth.test.ts](../packages/core/src/sender-auth.test.ts)、[model-view-hiding.test.ts](../packages/core/src/model-view-hiding.test.ts)：发件人认证与隐藏模型输入。
 
 `TestMailbox.withAdapter(adapter, opts)` 共用真实 Mailbox／Store 和内存平台，支持传入适配器或从 fake adapter 派生。`incoming()`、`outgoing()`、`account(provider)` 提供可覆盖的消息与账户；HTTP 和 IMAP 传输使用共享 fake。

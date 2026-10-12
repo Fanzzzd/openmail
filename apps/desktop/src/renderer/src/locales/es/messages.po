@@ -1276,7 +1276,7 @@ msgstr "Cerrar ventana de redacción"
 msgid "Close find"
 msgstr "Cerrar búsqueda"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "Close other OpenMail processes (CLI/MCP), then restart this app and try recovery again."
 msgstr "Cierre otros procesos de OpenMail (CLI/MCP), luego reinicie esta aplicación e intente la recuperación nuevamente."
 
@@ -1440,7 +1440,7 @@ msgstr "La operación con los contactos ha fallado."
 msgid "Content matches"
 msgstr "Coincidencias de contenido"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 #: src/renderer/src/features/reader/UnsubscribeButton.tsx
 msgid "Continue"
@@ -1615,7 +1615,7 @@ msgstr "No se pudieron leer los adjuntos. Comprueba los archivos y sus permisos.
 msgid "Could not register OpenMail. Try again from the installed app."
 msgstr "No se pudo registrar OpenMail. Inténtalo de nuevo desde la aplicación instalada."
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "Could not reset the local cache"
 msgstr "No se pudo restablecer el caché local"
 
@@ -1802,7 +1802,7 @@ msgstr "Fondo oscuro"
 msgid "Dashed list"
 msgstr "Lista discontinua"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "Database recovery was interrupted. Restore a preserved database before reopening OpenMail. Preserved database: {backup}"
 msgstr "Se interrumpió la recuperación de la base de datos. Restaure una base de datos preservada antes de volver a abrir OpenMail. Base de datos preservada: {backup}"
 
@@ -2534,7 +2534,7 @@ msgstr "Reenviar como adjunto"
 msgid "Fourth"
 msgstr "Cuarto"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "Free at least {size} MiB to upgrade the local database, then restart OpenMail. The database was kept."
 msgstr "Libera al menos {size} MiB para actualizar la base de datos local y reinicia OpenMail. Se conservó la base de datos."
 
@@ -3617,7 +3617,7 @@ msgstr "Más acciones"
 msgid "More conditions"
 msgstr "Más condiciones"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "More disk space is needed"
 msgstr "Se necesita más espacio en disco"
 
@@ -4268,7 +4268,7 @@ msgstr "OpenMail es la aplicación de correo electrónico predeterminada"
 msgid "OpenMail is up to date."
 msgstr "OpenMail está actualizado."
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "OpenMail safe mode"
 msgstr "Modo seguro de OpenMail"
 
@@ -4284,7 +4284,7 @@ msgstr "Openmail inicia sesión con un cliente OAuth que usted mismo registra. P
 msgid "OpenMail stopped unexpectedly"
 msgstr "OpenMail se detuvo inesperadamente"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "OpenMail stopped unexpectedly three times within five minutes. Continue, reset the local mail cache and re-sync, or quit. Accounts, drafts and keychain tokens are kept."
 msgstr "OpenMail se cerró inesperadamente tres veces en cinco minutos. Continúa, restablece la caché local y sincroniza de nuevo, o sal. Las cuentas, los borradores y los tokens del llavero se conservan."
 
@@ -4628,7 +4628,7 @@ msgstr "QQ Mail"
 msgid "Quick Look"
 msgstr "Vista rápida"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 #: src/renderer/src/app/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Quit"
@@ -4693,7 +4693,7 @@ msgstr "Destinatarios ajenos a la conversación original:"
 msgid "Recommended. Known tracking pixels stay blocked."
 msgstr "Recomendado. Los píxeles de seguimiento conocidos siguen bloqueados."
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
 msgstr "{copied} registros locales recuperados. Se omitieron {skipped} elementos ilegibles. Base de datos original: {backup}"
 
@@ -4986,7 +4986,7 @@ msgstr "Reenviar a los destinatarios rechazados"
 msgid "Reset Favorites"
 msgstr "Restablecer favoritos"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "Reset local cache"
 msgstr "Restablecer caché local"
 
@@ -5995,11 +5995,11 @@ msgstr "El texto del mensaje no está en la caché. Intenta abrirlo de nuevo cua
 msgid "The calendar organizer does not match this invitation"
 msgstr "El organizador del calendario no coincide con esta invitación."
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "The database integrity check (quick_check) failed or the file is unavailable. Reset rebuilds a damaged database from readable local records and keeps the original file. Keychain tokens are kept."
 msgstr "La verificación de integridad de la base de datos (quick_check) falló o el archivo no está disponible. Restablecer reconstruye una base de datos dañada a partir de registros locales legibles y conserva el archivo original. Se conservan las fichas de llavero."
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "The database was kept. Quit OpenMail and restore a local backup or contact support."
 msgstr "Se mantuvo la base de datos. Salga de OpenMail y restaure una copia de seguridad local o comuníquese con el soporte técnico."
 
@@ -6027,11 +6027,11 @@ msgstr "Es posible que el último intento haya llegado al servidor. Enviar de nu
 msgid "The limit includes the database, attachments, WAL and recovery copies. Protected content may exceed it."
 msgstr "El límite incluye la base de datos, los adjuntos, el WAL y las copias de recuperación. El contenido protegido puede superarlo."
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "The local database could not be verified"
 msgstr "No se pudo verificar la base de datos local"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "The local database was recovered"
 msgstr "La base de datos local fue recuperada."
 
@@ -6494,7 +6494,7 @@ msgstr "Notificaciones"
 msgid "Updates require a signed macOS build and a saved access token."
 msgstr "Las actualizaciones requieren una versión firmada para macOS y un token de acceso guardado."
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "Upgrading local database…"
 msgstr "Actualizando la base de datos local…"
 

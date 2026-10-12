@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { afterAll, expect, it, vi } from "vitest";
 import type { RpcBridge } from "../../../shared/channel";
-import { decodeRpcFrame, publicRpcResponse } from "../../../main/rpc-security";
+import { decodeRpcFrame, publicRpcResponse } from "../../../main/rpc/rpc-security";
 import { submitAiKey } from "./rpc";
 
 vi.hoisted(() => {

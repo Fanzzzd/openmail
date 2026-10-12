@@ -14,7 +14,7 @@ import {
 } from "../../../../packages/core/src/platform/node/fake-provider.js";
 import { mailboxHandlers } from "./mailbox-handlers";
 import { MailRpcs } from "./rpc";
-import { publicRpcResponse } from "../main/rpc-security";
+import { publicRpcResponse } from "../main/rpc/rpc-security";
 
 it("Thread RPC returns legacy cached text when fetchMessage fails with status zero", async () => {
   const base = makeFakeProvider(fakeServer("cached@example.com"));

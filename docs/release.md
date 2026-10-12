@@ -56,7 +56,7 @@ x64 的目录是 `release/mac/`。该参数同时隔离 Chromium、core 的数�
 
 构建时输出一行来源说明，只写来源，不写值，例如 `Built-in OAuth clients: Google from env vars, Microsoft from oauth-clients.local.json.`。`turbo.json` 的 `@openmail/desktop#build` 把这三个环境变量和本地文件计入缓存键，改动后不会复用旧构建。
 
-`electron.vite.config.ts` 只给 main 构建定义 `__OPENMAIL_OAUTH_CLIENTS__`，renderer 和 preload 拿不到这些值；renderer 通过 `ClientSetup` RPC 只收到每个服务商是否已配置、新登录用内置还是自己的客户端、是否有内置客户端。`src/main/oauth-clients.test.ts` 读取构建产物，确认值只出现在 `out/main`。Google 把 installed app 的 client secret 视为非机密，这里仍不把它写进源码或日志。
+`electron.vite.config.ts` 只给 main 构建定义 `__OPENMAIL_OAUTH_CLIENTS__`，renderer 和 preload 拿不到这些值；renderer 通过 `ClientSetup` RPC 只收到每个服务商是否已配置、新登录用内置还是自己的客户端、是否有内置客户端。`src/main/security/oauth-clients.test.ts` 读取构建产物，确认值只出现在 `out/main`。Google 把 installed app 的 client secret 视为非机密，这里仍不把它写进源码或日志。
 
 环境变量和本地文件的解析只有一份，在 core 的 [oauth-client-sources.ts](../packages/core/src/oauth-client-sources.ts)，桌面构建和 CLI 共用。CLI 和 MCP 把源码目录里的同一个本地文件作为内置客户端；本地文件格式错误时打印警告并忽略。运行时的上述环境变量是另一个来源，排在用户客户端之后、内置客户端之前。三个入口里，用户在 `config.json` 保存的客户端都优先。Google 项目的发布状态和 7 天过期见 [Google 设置](setup-google.md#内置客户端的发布状态)。手机端需要自己的 iOS 和 Android 客户端，不使用这里的值。
 

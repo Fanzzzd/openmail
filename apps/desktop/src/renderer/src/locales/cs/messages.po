@@ -1276,7 +1276,7 @@ msgstr "Zavřít okno pro psaní"
 msgid "Close find"
 msgstr "Zavřít hledání"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "Close other OpenMail processes (CLI/MCP), then restart this app and try recovery again."
 msgstr "Zavřete ostatní procesy OpenMail (CLI/MCP), restartujte tuto aplikaci a zkuste obnovu znovu."
 
@@ -1440,7 +1440,7 @@ msgstr "Operace s kontakty selhala."
 msgid "Content matches"
 msgstr "Obsah se shoduje"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 #: src/renderer/src/features/reader/UnsubscribeButton.tsx
 msgid "Continue"
@@ -1615,7 +1615,7 @@ msgstr "Přílohy se nepodařilo načíst. Zkontrolujte soubory a jejich oprávn
 msgid "Could not register OpenMail. Try again from the installed app."
 msgstr "Nelze zaregistrovat OpenMail. Zkuste to znovu z nainstalované aplikace."
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "Could not reset the local cache"
 msgstr "Nelze resetovat místní mezipaměť"
 
@@ -1802,7 +1802,7 @@ msgstr "tmavé pozadí"
 msgid "Dashed list"
 msgstr "Přerušovaný seznam"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "Database recovery was interrupted. Restore a preserved database before reopening OpenMail. Preserved database: {backup}"
 msgstr "Obnova databáze byla přerušena. Před opětovným otevřením OpenMail obnovte zachovanou databázi. Zachovaná databáze: {backup}"
 
@@ -2534,7 +2534,7 @@ msgstr "Přeposlat jako přílohu"
 msgid "Fourth"
 msgstr "Čtvrtý"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "Free at least {size} MiB to upgrade the local database, then restart OpenMail. The database was kept."
 msgstr "Uvolněte alespoň {size} MiB pro aktualizaci místní databáze a restartujte OpenMail. Databáze zůstala zachována."
 
@@ -3617,7 +3617,7 @@ msgstr "Další akce"
 msgid "More conditions"
 msgstr "Další podmínky"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "More disk space is needed"
 msgstr "Je potřeba více místa na disku"
 
@@ -4268,7 +4268,7 @@ msgstr "OpenMail je výchozí e-mailová aplikace"
 msgid "OpenMail is up to date."
 msgstr "OpenMail je aktuální."
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "OpenMail safe mode"
 msgstr "Bezpečný režim OpenMail"
 
@@ -4284,7 +4284,7 @@ msgstr "openmail se přihlásí pomocí klienta OAuth, kterého si sami zaregist
 msgid "OpenMail stopped unexpectedly"
 msgstr "OpenMail se neočekávaně zastavil"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "OpenMail stopped unexpectedly three times within five minutes. Continue, reset the local mail cache and re-sync, or quit. Accounts, drafts and keychain tokens are kept."
 msgstr "OpenMail se během pěti minut třikrát neočekávaně ukončil. Můžete pokračovat, obnovit místní mezipaměť pošty a znovu synchronizovat nebo aplikaci ukončit. Účty, koncepty a tokeny v klíčence zůstanou zachovány."
 
@@ -4628,7 +4628,7 @@ msgstr "QQ Mail"
 msgid "Quick Look"
 msgstr "Rychlý náhled"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 #: src/renderer/src/app/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Quit"
@@ -4693,7 +4693,7 @@ msgstr "Příjemci mimo původní konverzaci:"
 msgid "Recommended. Known tracking pixels stay blocked."
 msgstr "Doporučeno. Známé sledovací pixely zůstanou blokované."
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
 msgstr "Obnoveno {copied} místních záznamů. Vynechané {skipped} nečitelné položky. Původní databáze: {backup}"
 
@@ -4986,7 +4986,7 @@ msgstr "Znovu odeslat odmítnutým příjemcům"
 msgid "Reset Favorites"
 msgstr "Obnovit oblíbené"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "Reset local cache"
 msgstr "Obnovte místní mezipaměť"
 
@@ -5995,11 +5995,11 @@ msgstr "Text zprávy není uložen v mezipaměti. Po připojení zkuste zprávu 
 msgid "The calendar organizer does not match this invitation"
 msgstr "Organizátor kalendáře neodpovídá této pozvánce"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "The database integrity check (quick_check) failed or the file is unavailable. Reset rebuilds a damaged database from readable local records and keeps the original file. Keychain tokens are kept."
 msgstr "Kontrola integrity databáze (quick_check) selhala nebo je soubor nedostupný. Reset obnoví poškozenou databázi z čitelných místních záznamů a zachová původní soubor. Klíčenky jsou uloženy."
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "The database was kept. Quit OpenMail and restore a local backup or contact support."
 msgstr "Databáze byla zachována. Ukončete OpenMail a obnovte místní zálohu nebo kontaktujte podporu."
 
@@ -6027,11 +6027,11 @@ msgstr "Poslední pokus mohl dorazit na server. Opětovné odeslání může dor
 msgid "The limit includes the database, attachments, WAL and recovery copies. Protected content may exceed it."
 msgstr "Limit zahrnuje databázi, přílohy, WAL a kopie pro obnovu. Chráněný obsah jej může překročit."
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "The local database could not be verified"
 msgstr "Místní databázi se nepodařilo ověřit"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "The local database was recovered"
 msgstr "Místní databáze byla obnovena"
 
@@ -6494,7 +6494,7 @@ msgstr "Aktualizace"
 msgid "Updates require a signed macOS build and a saved access token."
 msgstr "Aktualizace vyžadují podepsanou verzi aplikace pro macOS a uložený přístupový token."
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "Upgrading local database…"
 msgstr "Probíhá aktualizace místní databáze…"
 

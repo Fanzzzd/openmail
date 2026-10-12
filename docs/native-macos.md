@@ -20,7 +20,7 @@ macOS 14 提供 [`NSSpellChecker.showInlinePrediction(forCandidates:client:)`](<
 
 Electron 的 [44.4.5 context-menu 文档](https://github.com/electron/electron/blob/v44.4.5/docs/tutorial/context-menu.md#additional-macos-menu-items-eg-writing-tools) 明确说明：macOS 扩展菜单默认关闭；将 `params.frame` 传给 `Menu.popup({ frame })` 可启用 Writing Tools、AutoFill 和 Services。固定 Chromium 的 [`insertText:replacementRange:`](https://chromium.googlesource.com/chromium/src/+/152.0.7977.130/content/app_shim_remote_cocoa/render_widget_host_view_cocoa.mm#2694) 还处理了 Writing Tools 接受替换时丢失焦点的情况，说明文本写回已有上游路径。
 
-右键菜单由 renderer 用 React 绘制（拼写建议、剪切／拷贝／粘贴、拼写检查开关）。在 composer 消息文本里，React 菜单多一项“Writing Tools and Services…”，点击后主进程才在右键位置弹出原生菜单，因为这些系统项只出现在拿到 `frame` 的原生菜单里。`apps/desktop/src/main/spellcheck.ts` 只给主 frame 的可编辑 composer 消息文本记录 `frame`；`ComposeEditor.tsx` 用 `data-openmail-compose-body` 标识富文本和 textarea。I02 校对、I03 重写／语气及 I05 系统 Compose／ChatGPT 共用这个原生入口。实际菜单项仍由系统功能、语言、地区和用户设置决定；这些操作及写回尚未验证，保持 partial。[Apple Writing Tools 使用说明](https://support.apple.com/guide/mac-help/writing-tools-write-improve-summarize-mchldcd6c260/mac)
+右键菜单由 renderer 用 React 绘制（拼写建议、剪切／拷贝／粘贴、拼写检查开关）。在 composer 消息文本里，React 菜单多一项“Writing Tools and Services…”，点击后主进程才在右键位置弹出原生菜单，因为这些系统项只出现在拿到 `frame` 的原生菜单里。`apps/desktop/src/main/windows/spellcheck.ts` 只给主 frame 的可编辑 composer 消息文本记录 `frame`；`ComposeEditor.tsx` 用 `data-openmail-compose-body` 标识富文本和 textarea。I02 校对、I03 重写／语气及 I05 系统 Compose／ChatGPT 共用这个原生入口。实际菜单项仍由系统功能、语言、地区和用户设置决定；这些操作及写回尚未验证，保持 partial。[Apple Writing Tools 使用说明](https://support.apple.com/guide/mac-help/writing-tools-write-improve-summarize-mchldcd6c260/mac)
 
 I04 目前只有用户选择文本的系统路径。Apple 的完整范围控制依赖原生文本视图／Writing Tools 协调器，例如 `textView(_:writingToolsIgnoredRangesInEnclosingRange:)`；Electron 的 frame 参数不暴露这些 delegate。当前接入没有默认排除签名、引用的能力，I04 保持 partial。[Apple 原生文本视图支持说明](https://developer.apple.com/documentation/appkit/customizing-writing-tools-behavior-for-system-views)
 
@@ -58,7 +58,7 @@ AppKit 的 [`QLPreviewView`](https://developer.apple.com/documentation/quicklook
 
 ## 窗口内 UI 和原生例外
 
-窗口里的控件和弹层都用 React 绘制，样式来自 `renderer/src/components/ui/` 的共享组件（Select、Disclosure、Progress、Confirm、Menu）。`apps/desktop/src/main/native-ui-guard.test.ts` 扫描源码：`dialog.showMessageBox`、`window.confirm/alert/prompt`、`<select>`、`<details>`、`<progress>`、`Menu.buildFromTemplate`、`popup()` 只能出现在下列文件里。
+窗口里的控件和弹层都用 React 绘制，样式来自 `renderer/src/ui/` 的共享组件（Select、Disclosure、Progress、Confirm、Menu）。`apps/desktop/src/main/windows/native-ui-guard.test.ts` 扫描源码：`dialog.showMessageBox`、`window.confirm/alert/prompt`、`<select>`、`<details>`、`<progress>`、`Menu.buildFromTemplate`、`popup()` 只能出现在下列文件里。
 
 保留原生的位置：
 

@@ -1,5 +1,5 @@
 import type { NativePickerResult } from "../../../shared/native-compose";
-import { decodeRpcFrame, publicRpcResponse } from "../../../main/rpc-security";
+import { decodeRpcFrame, publicRpcResponse } from "../../../main/rpc/rpc-security";
 import { RegistryContext } from "@effect/atom-react";
 import { setupI18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";

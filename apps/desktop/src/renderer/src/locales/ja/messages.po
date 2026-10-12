@@ -1276,7 +1276,7 @@ msgstr "作成ウィンドウを閉じる"
 msgid "Close find"
 msgstr "検索を閉じる"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "Close other OpenMail processes (CLI/MCP), then restart this app and try recovery again."
 msgstr "他の OpenMail プロセス (CLI/MCP) を閉じてから、このアプリを再起動し、リカバリを再試行します。"
 
@@ -1440,7 +1440,7 @@ msgstr "連絡先の操作に失敗しました。"
 msgid "Content matches"
 msgstr "コンテンツの一致"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 #: src/renderer/src/features/reader/UnsubscribeButton.tsx
 msgid "Continue"
@@ -1615,7 +1615,7 @@ msgstr "添付ファイルを読み込めませんでした。ファイルとア
 msgid "Could not register OpenMail. Try again from the installed app."
 msgstr "OpenMailを登録できませんでした。インストールされているアプリから再度お試しください。"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "Could not reset the local cache"
 msgstr "ローカルキャッシュをリセットできませんでした"
 
@@ -1802,7 +1802,7 @@ msgstr "暗い背景"
 msgid "Dashed list"
 msgstr "破線リスト"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "Database recovery was interrupted. Restore a preserved database before reopening OpenMail. Preserved database: {backup}"
 msgstr "データベースの回復が中断されました。 OpenMail を再度開く前に、保存されたデータベースを復元します。保存されたデータベース: {backup}"
 
@@ -2534,7 +2534,7 @@ msgstr "添付ファイルとして転送"
 msgid "Fourth"
 msgstr "第4"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "Free at least {size} MiB to upgrade the local database, then restart OpenMail. The database was kept."
 msgstr "ローカルデータベースを更新するには、少なくとも {size} MiB の空き容量を確保してから OpenMail を再起動してください。データベースは保持されています。"
 
@@ -3617,7 +3617,7 @@ msgstr "その他の操作"
 msgid "More conditions"
 msgstr "その他の条件"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "More disk space is needed"
 msgstr "ディスクの空き容量が不足しています"
 
@@ -4268,7 +4268,7 @@ msgstr "OpenMail はデフォルトの電子メール アプリです"
 msgid "OpenMail is up to date."
 msgstr "OpenMail は最新です。"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "OpenMail safe mode"
 msgstr "OpenMail セーフ モード"
 
@@ -4284,7 +4284,7 @@ msgstr "openmail は、自分で登録した OAuth クライアントを使用�
 msgid "OpenMail stopped unexpectedly"
 msgstr "OpenMail が予期せず停止しました"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "OpenMail stopped unexpectedly three times within five minutes. Continue, reset the local mail cache and re-sync, or quit. Accounts, drafts and keychain tokens are kept."
 msgstr "OpenMailが5分間に3回予期せず終了しました。続行するか、ローカルのメールキャッシュをリセットして再同期するか、終了してください。アカウント、下書き、キーチェーンのトークンは保持されます。"
 
@@ -4628,7 +4628,7 @@ msgstr "QQ Mail"
 msgid "Quick Look"
 msgstr "クイックルック"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 #: src/renderer/src/app/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Quit"
@@ -4693,7 +4693,7 @@ msgstr "元のスレッドに含まれない宛先："
 msgid "Recommended. Known tracking pixels stay blocked."
 msgstr "おすすめ。既知のトラッキングピクセルは引き続きブロックされます。"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
 msgstr "{copied} 個のローカル レコードを回復しました。 {skipped} 件の読み取り不可能な項目をスキップしました。元のデータベース: {backup}"
 
@@ -4986,7 +4986,7 @@ msgstr "拒否された宛先に再送信"
 msgid "Reset Favorites"
 msgstr "お気に入りをリセット"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "Reset local cache"
 msgstr "ローカルキャッシュをリセットする"
 
@@ -5995,11 +5995,11 @@ msgstr "本文がキャッシュされていません。接続後にこのメッ
 msgid "The calendar organizer does not match this invitation"
 msgstr "カレンダーの主催者がこの招待状と一致しません"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "The database integrity check (quick_check) failed or the file is unavailable. Reset rebuilds a damaged database from readable local records and keeps the original file. Keychain tokens are kept."
 msgstr "データベースの整合性チェック (quick_check) が失敗したか、ファイルが使用できません。リセットは、読み取り可能なローカル レコードから破損したデータベースを再構築し、元のファイルを保持します。キーチェーントークンは保持されます。"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "The database was kept. Quit OpenMail and restore a local backup or contact support."
 msgstr "データベースは保存されていました。 OpenMail を終了し、ローカル バックアップを復元するか、サポートに連絡してください。"
 
@@ -6027,11 +6027,11 @@ msgstr "前回の試行はサーバに届いた可能性があります。もう
 msgid "The limit includes the database, attachments, WAL and recovery copies. Protected content may exceed it."
 msgstr "上限にはデータベース、添付ファイル、WAL、復旧用コピーが含まれます。保護された内容は上限を超える場合があります。"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "The local database could not be verified"
 msgstr "ローカルデータベースを検証できませんでした"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "The local database was recovered"
 msgstr "ローカルデータベースが回復されました"
 
@@ -6494,7 +6494,7 @@ msgstr "新着"
 msgid "Updates require a signed macOS build and a saved access token."
 msgstr "アップデートには、署名済みの macOS 版と保存済みのアクセストークンが必要です。"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "Upgrading local database…"
 msgstr "ローカルデータベースを更新中…"
 

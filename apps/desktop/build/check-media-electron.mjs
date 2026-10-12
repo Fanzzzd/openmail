@@ -1,4 +1,4 @@
-import { desktopInferenceProcess } from "../src/main/inference.ts";
+import { desktopInferenceProcess } from "../src/main/app/inference.ts";
 import { modelFiles } from "../../../packages/core/dist/platform/node/model-downloads.js";
 /** Isolated Electron main check. Never starts the mail app or opens its database. */
 import { app } from "electron";

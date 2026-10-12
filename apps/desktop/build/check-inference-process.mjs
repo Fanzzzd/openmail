@@ -4,7 +4,7 @@ import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import assert from "node:assert/strict";
-import { desktopInferenceProcess } from "../src/main/inference.ts";
+import { desktopInferenceProcess } from "../src/main/app/inference.ts";
 const profile = mkdtempSync(join(tmpdir(), "openmail-inference-isolation-"));
 app.setPath("userData", profile);
 app.setPath("sessionData", profile);

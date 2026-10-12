@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 import { Effect } from "effect";
-import { desktopVision } from "../src/main/vision.ts";
+import { desktopVision } from "../src/main/app/vision.ts";
 
 if (process.platform === "darwin") {
   const dir = await mkdtemp(join(tmpdir(), "openmail-vision-check-"));

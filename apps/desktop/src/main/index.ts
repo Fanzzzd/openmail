@@ -1,10 +1,10 @@
-import { showDatabaseUpgrade, isDatabaseUpgradeWindow } from "./database-upgrade";
-import { nativeRecoveryLabels } from "./native-i18n";
-import { registerSecuritySchemes, prepareSessionSecurity } from "./security-bootstrap";
-import { openExternal } from "./external";
-import { createShutdownHandler } from "./quit";
-import { prepareUpdateQuit } from "./update-install";
-import { cleanupAttachmentTemps, cleanupPrintTemps } from "./attachment-temp";
+import { showDatabaseUpgrade, isDatabaseUpgradeWindow } from "./app/database-upgrade";
+import { nativeRecoveryLabels } from "./app/native-i18n";
+import { registerSecuritySchemes, prepareSessionSecurity } from "./security/security-bootstrap";
+import { openExternal } from "./security/external";
+import { createShutdownHandler } from "./app/quit";
+import { prepareUpdateQuit } from "./updates/update-install";
+import { cleanupAttachmentTemps, cleanupPrintTemps } from "./files/attachment-temp";
 import {
   NodeMailbox,
   DatabaseUpgradeSpaceError,
@@ -15,19 +15,19 @@ import {
 } from "@openmail/core";
 import { Cause, Deferred, Effect, Fiber, Layer, Logger } from "effect";
 import { resolve } from "node:path";
-import { nativeBinary } from "./native-binary";
-import { builtInOAuthClients } from "./oauth-clients";
+import { nativeBinary } from "./app/native-binary";
+import { builtInOAuthClients } from "./security/oauth-clients";
 import { app, BrowserWindow, dialog, powerMonitor } from "electron";
-import { desktopVision } from "./vision";
-import { desktopInferenceProcess } from "./inference";
+import { desktopVision } from "./app/vision";
+import { desktopInferenceProcess } from "./app/inference";
 
-import { UpdatesLive } from "./updates";
-import { RpcServerLive } from "./rpc-server";
-import { DesktopLive, receiveAppUrl, receiveOpenFile, ready } from "./system";
-import { focusMainWindow } from "./windows";
-import { showDevIdentity } from "./app-identity";
+import { UpdatesLive } from "./updates/updates";
+import { RpcServerLive } from "./rpc/rpc-server";
+import { DesktopLive, receiveAppUrl, receiveOpenFile, ready } from "./system/system";
+import { focusMainWindow } from "./windows/windows";
+import { showDevIdentity } from "./app/app-identity";
 
-import { prepareReliability, diagnosticsLogger, localLog } from "./reliability";
+import { prepareReliability, diagnosticsLogger, localLog } from "./app/reliability";
 
 registerSecuritySchemes();
 

@@ -1276,7 +1276,7 @@ msgstr "Chiudi la finestra di composizione"
 msgid "Close find"
 msgstr "Chiudi ricerca"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "Close other OpenMail processes (CLI/MCP), then restart this app and try recovery again."
 msgstr "Chiudi altri processi OpenMail (CLI/MCP), quindi riavvia questa app e prova di nuovo il ripristino."
 
@@ -1440,7 +1440,7 @@ msgstr "L’operazione sui contatti non è riuscita."
 msgid "Content matches"
 msgstr "Corrispondenze del contenuto"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 #: src/renderer/src/features/reader/UnsubscribeButton.tsx
 msgid "Continue"
@@ -1615,7 +1615,7 @@ msgstr "Impossibile leggere gli allegati. Controlla i file e le autorizzazioni."
 msgid "Could not register OpenMail. Try again from the installed app."
 msgstr "Impossibile registrare OpenMail. Riprovare dall’app installata."
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "Could not reset the local cache"
 msgstr "Impossibile reimpostare la cache locale"
 
@@ -1802,7 +1802,7 @@ msgstr "Sfondo scuro"
 msgid "Dashed list"
 msgstr "Elenco tratteggiato"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "Database recovery was interrupted. Restore a preserved database before reopening OpenMail. Preserved database: {backup}"
 msgstr "Il ripristino del database è stato interrotto. Ripristina un database conservato prima di riaprire OpenMail. Database conservato: {backup}"
 
@@ -2534,7 +2534,7 @@ msgstr "Inoltra come allegato"
 msgid "Fourth"
 msgstr "Quarto"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "Free at least {size} MiB to upgrade the local database, then restart OpenMail. The database was kept."
 msgstr "Libera almeno {size} MiB per aggiornare il database locale, quindi riavvia OpenMail. Il database è stato conservato."
 
@@ -3617,7 +3617,7 @@ msgstr "Altre azioni"
 msgid "More conditions"
 msgstr "Altre condizioni"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "More disk space is needed"
 msgstr "È necessario più spazio su disco"
 
@@ -4268,7 +4268,7 @@ msgstr "OpenMail è l’app di posta elettronica predefinita"
 msgid "OpenMail is up to date."
 msgstr "OpenMail è aggiornato."
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "OpenMail safe mode"
 msgstr "Modalità provvisoria di OpenMail"
 
@@ -4284,7 +4284,7 @@ msgstr "openmail accede con un client OAuth registrato da te. Inserisci innanzit
 msgid "OpenMail stopped unexpectedly"
 msgstr "OpenMail si è arrestato inaspettatamente"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "OpenMail stopped unexpectedly three times within five minutes. Continue, reset the local mail cache and re-sync, or quit. Accounts, drafts and keychain tokens are kept."
 msgstr "OpenMail si è chiuso inaspettatamente tre volte in cinque minuti. Continua, reimposta la cache locale e sincronizza di nuovo oppure esci. Gli account, le bozze e i token nel portachiavi vengono conservati."
 
@@ -4628,7 +4628,7 @@ msgstr "QQ Mail"
 msgid "Quick Look"
 msgstr "Visualizzazione rapida"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 #: src/renderer/src/app/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Quit"
@@ -4693,7 +4693,7 @@ msgstr "Destinatari esterni alla conversazione originale:"
 msgid "Recommended. Known tracking pixels stay blocked."
 msgstr "Consigliato. I pixel di tracciamento noti restano bloccati."
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
 msgstr "Recuperati {copied} record locali. Elementi illeggibili {skipped} saltati. Database originale: {backup}"
 
@@ -4986,7 +4986,7 @@ msgstr "Invia di nuovo ai destinatari rifiutati"
 msgid "Reset Favorites"
 msgstr "Reimposta preferiti"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "Reset local cache"
 msgstr "Reimposta la cache locale"
 
@@ -5995,11 +5995,11 @@ msgstr "Il testo del messaggio non è nella cache. Prova a riaprire il messaggio
 msgid "The calendar organizer does not match this invitation"
 msgstr "L’organizzatore del calendario non corrisponde a questo invito"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "The database integrity check (quick_check) failed or the file is unavailable. Reset rebuilds a damaged database from readable local records and keeps the original file. Keychain tokens are kept."
 msgstr "Il controllo dell’integrità del database (quick_check) non è riuscito oppure il file non è disponibile. Reset ricostruisce un database danneggiato da record locali leggibili e mantiene il file originale. I token del portachiavi vengono conservati."
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "The database was kept. Quit OpenMail and restore a local backup or contact support."
 msgstr "Il database è stato mantenuto. Esci da OpenMail e ripristina un backup locale o contatta l’assistenza."
 
@@ -6027,11 +6027,11 @@ msgstr "L’ultimo tentativo potrebbe aver raggiunto il server. Inviare di nuovo
 msgid "The limit includes the database, attachments, WAL and recovery copies. Protected content may exceed it."
 msgstr "Il limite include database, allegati, WAL e copie di ripristino. I contenuti protetti possono superarlo."
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "The local database could not be verified"
 msgstr "Impossibile verificare il database locale"
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "The local database was recovered"
 msgstr "Il database locale è stato recuperato"
 
@@ -6494,7 +6494,7 @@ msgstr "Aggiornamenti"
 msgid "Updates require a signed macOS build and a saved access token."
 msgstr "Gli aggiornamenti richiedono una versione firmata per macOS e un token di accesso salvato."
 
-#: src/main/native-i18n.ts
+#: src/main/app/native-i18n.ts
 msgid "Upgrading local database…"
 msgstr "Aggiornamento del database locale…"
 

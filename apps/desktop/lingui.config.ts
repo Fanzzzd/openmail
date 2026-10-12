@@ -9,7 +9,7 @@ export default defineConfig({
   catalogs: [
     {
       path: "<rootDir>/src/renderer/src/locales/{locale}/messages",
-      include: ["<rootDir>/src/renderer/src", "<rootDir>/src/main/native-i18n.ts"],
+      include: ["<rootDir>/src/renderer/src", "<rootDir>/src/main/app/native-i18n.ts"],
     },
   ],
   format: formatter({ lineNumbers: false }),

@@ -12,7 +12,7 @@ import { Providers } from "../../../../packages/core/src/services.js";
 import { MemoryPlatform } from "../../../../packages/core/src/platform/node/platform-memory.js";
 import { mailboxHandlers } from "./mailbox-handlers";
 import { MailRpcs } from "./rpc";
-import { publicRpcResponse, createRpcFailureTracker } from "../main/rpc-security";
+import { publicRpcResponse, createRpcFailureTracker } from "../main/rpc/rpc-security";
 
 for (const denied of [
   "outlook-contacts",
