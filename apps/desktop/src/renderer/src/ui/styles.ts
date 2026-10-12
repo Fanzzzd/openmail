@@ -80,7 +80,7 @@ export const settingsHint = "text-footnote text-a11y-muted";
 
 /** Compact status line: icon, one line of text, an action. Tones below. */
 export const noticeRow =
-  "flex min-h-8 items-center gap-2 rounded-card px-2.5 py-1.5 text-footnote leading-4";
+  "flex min-h-8 min-w-0 items-center gap-1.5 rounded-card px-2 py-1.5 text-footnote leading-4";
 export const noticeTone = {
   neutral: "bg-fill-quiet text-a11y-muted",
   danger: "bg-red-500/[0.07] text-red-700 dark:bg-red-400/[0.09] dark:text-red-300",

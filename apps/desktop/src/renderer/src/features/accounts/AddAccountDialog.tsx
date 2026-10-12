@@ -15,6 +15,7 @@ import { ProviderIcon, type ProviderIconName } from "../../ui/ProviderIcon";
 import { Dialog } from "../../ui/Dialog";
 import { Disclosure } from "../../ui/Disclosure";
 import { SegmentedControl } from "../../ui/SegmentedControl";
+import { formInput } from "../../ui/styles";
 
 /**
  * UI text for core's IMAP presets, keyed by preset id. Core keeps its own
@@ -86,7 +87,7 @@ export function AddAccountDialog({ onClose, onAdded }: Props) {
       aria-label={title}
       onClose={onClose}
       ownClose
-      className="w-[460px] rounded-2xl p-6"
+      className="w-[min(460px,calc(100vw-48px))] p-6"
       backdropClassName="bg-black/30 backdrop-blur-[2px]"
     >
       <header className="flex h-7 items-center gap-2">
@@ -133,7 +134,7 @@ export function AddAccountDialog({ onClose, onAdded }: Props) {
                 type="button"
                 aria-label={tileLabel(i18n, item.label)}
                 onClick={() => setChoice(item.id)}
-                className="flex flex-col items-center gap-2 rounded-sheet px-1 py-4 ring-1 ring-edge transition-colors hover:bg-fill-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-a11y-focus"
+                className="flex flex-col items-center gap-2 rounded-card px-1 py-4 ring-1 ring-edge transition-colors hover:bg-fill-hover active:bg-fill-pressed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-a11y-focus motion-reduce:transition-none"
               >
                 <ProviderIcon provider={item.icon} className="size-8" />
                 <span className="text-footnote text-neutral-700 dark:text-neutral-300">
@@ -550,7 +551,7 @@ function Field({
         spellCheck={false}
         autoCapitalize="off"
         onChange={(e) => onChange(e.target.value)}
-        className="selectable mt-1 h-8 w-full rounded-control border border-edge bg-transparent px-2.5 text-body text-neutral-900 outline-none focus:border-blue-500 dark:text-neutral-100"
+        className={`selectable mt-1 h-8 ${formInput}`}
       />
     </label>
   );

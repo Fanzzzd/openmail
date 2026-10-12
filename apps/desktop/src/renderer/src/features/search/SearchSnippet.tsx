@@ -8,7 +8,10 @@ function MarkedSnippet({ match }: { match: SearchMatch }) {
     return [
       before,
       // Opaque with its own text color: a tint under inherited text fails AA on dark and accent rows.
-      <mark key={index} className="rounded bg-amber-200 text-neutral-950">
+      <mark
+        key={index}
+        className="rounded-[3px] bg-amber-200 text-neutral-950 dark:bg-amber-800 dark:text-amber-50"
+      >
         {match.snippet.slice(start, end)}
       </mark>,
     ];

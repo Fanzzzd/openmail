@@ -406,7 +406,7 @@ export function Sidebar({
               type="button"
               aria-label={t`Edit space`}
               onClick={() => onEditProfile(profile)}
-              className="rounded p-1 text-a11y-muted hover:bg-fill-hover"
+              className={`text-a11y-muted ${iconButton}`}
             >
               <Pencil className="size-3.5" />
             </button>
@@ -1092,9 +1092,10 @@ function Tile(props: {
         onClick={props.onClick}
         // One row in a narrow sidebar, a card in two columns once it has room.
         className={`grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 rounded-card px-2 py-1.5 text-left [grid-template-areas:'icon_text_badge'] @min-[240px]/sidebar:grid-cols-[auto_minmax(0,1fr)] @min-[240px]/sidebar:gap-y-1.5 @min-[240px]/sidebar:px-2.5 @min-[240px]/sidebar:py-2 @min-[240px]/sidebar:[grid-template-areas:'icon_badge'_'text_text'] ${
+          // Plain rows in one column; quiet cards once two columns make them tiles.
           props.active
-            ? "bg-black/[0.08] dark:bg-white/12"
-            : "bg-black/[0.03] hover:bg-fill-hover dark:bg-white/[0.04]"
+            ? "bg-fill-pressed"
+            : "hover:bg-fill-hover @min-[240px]/sidebar:bg-fill-quiet @min-[240px]/sidebar:hover:bg-fill-hover"
         }`}
       >
         <span className="flex [grid-area:icon]">{props.icon}</span>
@@ -1131,7 +1132,7 @@ function Item(props: {
   const { i18n } = useLingui();
   return (
     <div
-      className={`flex h-8 w-full items-center rounded-control pr-2 text-callout ${
+      className={`flex h-7 w-full items-center rounded-control pr-2 text-body ${
         props.active ? "bg-fill-pressed" : "hover:bg-fill-hover"
       }`}
     >

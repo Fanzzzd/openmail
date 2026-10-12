@@ -34,7 +34,7 @@ import { listQueryAtom } from "../../state/threads";
 import { DropdownMenu, MenuItem, MenuSeparator } from "../../ui/Menu";
 
 import { Select } from "../../ui/Select";
-import { itemClass, popupSurface } from "../../ui/styles";
+import { itemClass, popupOffset, popupSurface } from "../../ui/styles";
 
 /** The operator reference on the docs site, opened in the default browser. */
 const SEARCH_HELP_URL = "https://openmail-docs.vercel.app/docs/search-operators";
@@ -166,12 +166,12 @@ export function SearchField({
         onItemHighlighted={(item) => setHighlighted(item)}
       >
         {/* One line at any width: chips shrink and truncate before the field grows taller. */}
-        <Combobox.Chips className="focus-within:ring-2 focus-within:ring-a11y-focus flex h-7 min-w-0 flex-1 items-center gap-1 overflow-hidden rounded-control border border-edge px-2">
+        <Combobox.Chips className="focus-within:ring-2 focus-within:ring-a11y-focus flex h-7 min-w-0 flex-1 items-center gap-1.5 overflow-hidden rounded-control border border-edge bg-fill-quiet px-2 transition-colors focus-within:bg-transparent motion-reduce:transition-none">
           <Search className="size-3.5 shrink-0 text-a11y-muted" />
           {chips.map((token, index) => (
             <Combobox.Chip
               key={`${index}:${token}`}
-              className="flex max-w-48 min-w-0 items-center gap-1 rounded bg-blue-500/10 px-1 text-footnote whitespace-nowrap"
+              className="flex max-w-48 min-w-0 items-center gap-1 rounded-item bg-blue-500/10 px-1.5 text-footnote whitespace-nowrap text-blue-800 dark:bg-blue-400/15 dark:text-blue-200"
             >
               <DropdownMenu
                 align="start"
@@ -225,8 +225,13 @@ export function SearchField({
           />
         </Combobox.Chips>
         <Combobox.Portal>
-          <Combobox.Positioner sideOffset={4} className="no-drag z-[60]">
-            <Combobox.Popup className={`w-72 p-1 ${popupSurface}`}>
+          <Combobox.Positioner
+            sideOffset={popupOffset}
+            align="start"
+            collisionPadding={8}
+            className="no-drag z-[60]"
+          >
+            <Combobox.Popup className={`w-(--anchor-width) min-w-72 p-1 ${popupSurface}`}>
               {hint && (
                 <Combobox.Empty className="flex items-center gap-2 px-2 py-1 text-footnote text-a11y-muted">
                   <span className="flex-1">{t`Try from:name or has:attachment`}</span>
@@ -283,7 +288,7 @@ export function SearchField({
           aria-label={
             dateTarget.operator.replace(/^-/, "") === "before:" ? t`Before date` : t`After date`
           }
-          className="w-32 rounded border border-edge bg-transparent px-1 text-footnote"
+          className="w-32 rounded-item border border-edge bg-transparent px-1 text-footnote"
           min="1970-01-01"
           max="9999-12-31"
           onBlur={(event) => commitDate(event.currentTarget.value)}
@@ -343,7 +348,7 @@ function SuggestionRow({
             event.stopPropagation();
             onRemove(item.query);
           }}
-          className="shrink-0 rounded p-0.5 opacity-0 group-data-highlighted:opacity-100 hover:bg-white/20"
+          className="shrink-0 rounded-item p-0.5 opacity-0 group-data-highlighted:opacity-100 hover:bg-white/20"
         >
           <X className="size-3" />
         </span>

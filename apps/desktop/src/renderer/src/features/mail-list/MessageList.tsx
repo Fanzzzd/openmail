@@ -25,7 +25,7 @@ import {
 import { Toggle } from "@base-ui/react/toggle";
 import { constVoid } from "effect/Function";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { Paperclip, Star } from "lucide-react";
+import { FileText, Inbox, ListFilter, Paperclip, SearchX, Star, TriangleAlert } from "lucide-react";
 import {
   useEffect,
   useCallback,
@@ -44,6 +44,7 @@ import type { Filters } from "../../lib/view";
 import { ContextMenuContent, ContextMenuRoot, ContextMenuTrigger } from "../../ui/Menu";
 import type { ThreadState } from "../../lib/focused-inbox";
 import { Tip } from "../../ui/Tip";
+import { noticeRow, noticeTone } from "../../ui/styles";
 
 /** How the current selection was made. Keyboard selection gets the solid accent. */
 export type SelectionSource = "keyboard" | "mouse";
@@ -348,9 +349,12 @@ export function MessageList({
         <output
           role="alert"
           title={searchMessages.join("\n")}
-          className="px-5 pb-2 text-footnote text-orange-700 dark:text-orange-400"
+          className={`mx-3 mb-2 ${noticeRow} ${noticeTone.warning}`}
         >
-          <Trans>Search could not finish:</Trans> {searchMessages.join("; ")}
+          <TriangleAlert aria-hidden className="size-3.5 shrink-0" />
+          <span className="min-w-0 flex-1 truncate">
+            <Trans>Search could not finish:</Trans> {searchMessages.join("; ")}
+          </span>
         </output>
       )}
       {threads.length === 0 && !loading && (
@@ -670,25 +674,22 @@ const Row = memo(function Row({
           onSelect(m.id, { toggle: event.metaKey || event.ctrlKey, range: event.shiftKey })
         }
         onDoubleClick={() => onOpen(m)}
-        className={`motion-reduce:!transform-none relative block w-full overflow-hidden rounded-card py-2.5 pr-3 pl-7 text-left ${
+        // Content centres in the fixed row height, so rows without an attachment line keep even margins.
+        className={`motion-reduce:!transform-none relative flex w-full flex-col justify-center overflow-hidden rounded-card py-2 pr-3 pl-7 text-left ${
           menuOpen ? "ring-2 ring-blue-500 ring-inset" : ""
         } ${
-          accent
-            ? "bg-blue-600 text-white"
-            : selected
-              ? "bg-fill-pressed"
-              : "hover:bg-black/[0.025] dark:hover:bg-white/[0.03]"
+          accent ? "bg-blue-600 text-white" : selected ? "bg-fill-pressed" : "hover:bg-fill-quiet"
         }`}
       >
         <span className="sr-only">
           {m.isUnread && <Trans>Unread</Trans>} {m.isStarred && <Trans>Starred</Trans>}
         </span>
-        {m.isUnread && (
-          <span
-            className={`absolute top-[16px] left-2.5 size-2 rounded-full ${accent ? "bg-white" : "bg-blue-500"}`}
-          />
-        )}
-        <span className="flex items-baseline gap-1.5">
+        <span className="relative flex items-baseline gap-1.5">
+          {m.isUnread && (
+            <span
+              className={`absolute top-1/2 -left-[18px] size-2 -translate-y-1/2 rounded-full ${accent ? "bg-white" : "bg-blue-500"}`}
+            />
+          )}
           <span className="min-w-0 truncate text-callout font-semibold">{senders(m)}</span>
           {m.threadCount > 1 && (
             <span className={`shrink-0 text-body tabular-nums ${muted}`}>{m.threadCount}</span>
@@ -783,7 +784,7 @@ const Row = memo(function Row({
             ))}
           </span>
         )}
-        {rule && <span className="absolute right-3 bottom-0 left-7 h-px bg-fill-hover" />}
+        {rule && <span className="absolute right-3 bottom-0 left-7 h-px bg-separator" />}
       </button>
       <TriageChip id={m.id} accountId={m.accountId} labels={m.labels} compact />
     </div>
@@ -805,6 +806,7 @@ function EmptyList({
   actions: EmptyActions | undefined;
 }) {
   let text: ReactNode = <Trans>No messages here</Trans>;
+  let Icon = Inbox;
   let button: { label: ReactNode; onClick: () => void; disabled?: boolean } | undefined =
     actions && {
       label: <Trans>Sync now</Trans>,
@@ -813,27 +815,36 @@ function EmptyList({
     };
   if (searching) {
     text = <Trans>No matching messages</Trans>;
+    Icon = SearchX;
     button = actions && { label: <Trans>Clear search</Trans>, onClick: actions.onClearSearch };
   } else if (filtered) {
     text = <Trans>No messages match the filters</Trans>;
+    Icon = ListFilter;
     button = { label: <Trans>Turn off filters</Trans>, onClick: onClearFilters };
   } else if (mailbox === "drafts") {
     text = <Trans>No drafts</Trans>;
+    Icon = FileText;
     button = actions && { label: <Trans>New message</Trans>, onClick: actions.onCompose };
   } else if (mailbox === "starred") {
     text = <Trans>No starred messages. Star a message to find it here.</Trans>;
+    Icon = Star;
     button = undefined;
   }
   return (
-    <div className="shrink-0 px-8 pt-8 pb-4 text-center text-a11y-muted">
-      <p>{text}</p>
+    <div className="flex shrink-0 flex-col items-center px-8 pt-16 pb-4 text-center text-a11y-muted">
+      <Icon
+        aria-hidden
+        strokeWidth={1.5}
+        className="mb-3 size-8 text-neutral-300 dark:text-neutral-600"
+      />
+      <p className="max-w-56">{text}</p>
       {button && (
         // aria-disabled keeps focus on Sync now while a sync runs; disabled would drop it.
         <button
           type="button"
           onClick={button.disabled ? undefined : button.onClick}
           aria-disabled={button.disabled || undefined}
-          className="mt-2 font-medium text-a11y-accent hover:underline aria-disabled:no-underline aria-disabled:opacity-50 dark:text-blue-400"
+          className="mt-2 rounded-item font-medium text-a11y-accent hover:underline aria-disabled:no-underline aria-disabled:opacity-50 dark:text-blue-400"
         >
           {button.label}
         </button>

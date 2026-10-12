@@ -26,7 +26,7 @@ import { downloadsAtom, downloadsFeedAtom, downloadsOpenAtom } from "../../state
 import { useRunMail, withMail } from "../../state/mail";
 import { FileIcon } from "../../ui/file-icon";
 import { ProgressBar, ProgressRing } from "../../ui/Progress";
-import { popupMotion } from "../../ui/styles";
+import { popupMotion, popupOffset } from "../../ui/styles";
 import { Tip } from "../../ui/Tip";
 
 const rowButton =
@@ -92,7 +92,7 @@ function DownloadRow({ item }: { item: DownloadItem }) {
   return (
     <li
       aria-label={name}
-      className="group relative flex items-center gap-3 rounded-card px-2 py-2 hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
+      className="group relative flex items-center gap-3 rounded-card px-2 py-2 hover:bg-fill-quiet"
     >
       <span
         aria-hidden
@@ -223,17 +223,17 @@ export function Downloads() {
           <Popover.Trigger
             data-downloads
             aria-label={label}
-            className={`no-drag relative flex size-7 items-center justify-center rounded-control ${active > 0 ? "bg-blue-500/10 text-a11y-accent" : "text-a11y-muted"} outline-offset-1 outline-a11y-focus transition-colors duration-100 hover:bg-black/5 hover:text-neutral-900 focus-visible:outline-2 active:bg-black/10 data-popup-open:bg-black/[0.07] data-popup-open:text-neutral-900 motion-reduce:transition-none dark:hover:bg-white/10 dark:hover:text-neutral-100 dark:data-popup-open:bg-white/10 dark:data-popup-open:text-neutral-100`}
+            className={`no-drag relative flex size-7 items-center justify-center rounded-control ${active > 0 ? "bg-blue-500/10 text-a11y-accent" : "text-a11y-muted"} outline-offset-1 outline-a11y-focus transition-colors duration-100 hover:bg-fill-hover hover:text-neutral-900 focus-visible:outline-2 active:bg-fill-pressed data-popup-open:bg-fill-pressed data-popup-open:text-neutral-900 motion-reduce:transition-none dark:hover:text-neutral-100 dark:data-popup-open:text-neutral-100`}
           >
             {active > 0 && <ProgressRing value={progress} className="absolute size-6" />}
             <ArrowDownToLine className={active > 0 ? "size-3" : "size-4"} />
           </Popover.Trigger>
         </Tip>
         <Popover.Portal>
-          <Popover.Positioner sideOffset={6} align="end" className="z-[60] outline-none">
+          <Popover.Positioner sideOffset={popupOffset} align="end" className="z-[60] outline-none">
             <Popover.Popup
               initialFocus={() => !automatic.current}
-              className={`no-drag flex max-h-[min(28rem,var(--available-height))] w-[22rem] max-w-(--available-width) flex-col overflow-hidden rounded-sheet bg-white/95 text-body text-neutral-900 shadow-[0_12px_32px_rgb(0_0_0/0.18)] ring-1 ring-edge outline-none backdrop-blur-xl dark:bg-[#2c2c2e]/95 dark:text-neutral-100 dark:shadow-[0_12px_32px_rgb(0_0_0/0.5)] ${popupMotion}`}
+              className={`no-drag flex max-h-[min(28rem,var(--available-height))] w-[22rem] max-w-(--available-width) flex-col overflow-hidden rounded-card bg-overlay text-body text-neutral-900 shadow-popup outline-none backdrop-blur-xl dark:text-neutral-100 ${popupMotion}`}
             >
               <div className="flex items-center justify-between gap-2 border-b border-separator px-4 pt-3 pb-2.5">
                 <Popover.Title className="text-body font-semibold">

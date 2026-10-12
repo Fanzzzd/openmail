@@ -1,3 +1,4 @@
+import { CircleAlert } from "lucide-react";
 import { useEffect } from "react";
 
 export interface ToastState {
@@ -29,12 +30,12 @@ export function Toast({ toast, onDone }: { toast: ToastState | null; onDone: () 
       </div>
       {toast && (
         <div
-          className={`fixed bottom-5 left-1/2 z-40 flex w-max max-w-[min(560px,calc(100vw-32px))] -translate-x-1/2 items-center gap-4 rounded-card px-4 py-2.5 text-body shadow-xl ${
-            toast.tone === "error"
-              ? "bg-red-600 text-white"
-              : "bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900"
-          }`}
+          key={toast.id}
+          className="fixed bottom-5 left-1/2 z-40 flex w-max max-w-[min(560px,calc(100vw-32px))] -translate-x-1/2 animate-toast-in items-center gap-3 rounded-card bg-neutral-800/95 px-3.5 py-2 text-body text-white shadow-popup backdrop-blur-xl dark:bg-neutral-700/95"
         >
+          {toast.tone === "error" && (
+            <CircleAlert aria-hidden className="size-4 shrink-0 text-red-400 dark:text-red-300" />
+          )}
           <span className="min-w-0 break-words">{toast.text}</span>
           {toast.action && (
             <button
@@ -43,7 +44,7 @@ export function Toast({ toast, onDone }: { toast: ToastState | null; onDone: () 
                 toast.action?.run();
                 onDone();
               }}
-              className={`shrink-0 font-semibold ${toast.tone === "error" ? "text-white hover:underline" : "text-blue-300 hover:text-blue-200 dark:text-blue-600"}`}
+              className="-my-1 shrink-0 rounded-item px-1.5 py-1 font-semibold text-blue-300 hover:bg-white/10 hover:text-blue-200"
             >
               {toast.action.label}
             </button>

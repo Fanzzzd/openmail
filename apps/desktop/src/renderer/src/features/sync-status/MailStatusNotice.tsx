@@ -222,7 +222,8 @@ export function AccountIssues({
       {failure}
     </>
   );
-  if (affected < 2) return <div className={`grid gap-1.5 ${className}`}>{lines}</div>;
+  if (affected < 2)
+    return <div className={`grid grid-cols-[minmax(0,1fr)] gap-1.5 ${className}`}>{lines}</div>;
   return (
     <Collapsible.Root className={className}>
       <Collapsible.Trigger
@@ -240,7 +241,9 @@ export function AccountIssues({
           className={`${icon} transition-transform duration-150 group-data-panel-open:rotate-90 motion-reduce:transition-none`}
         />
       </Collapsible.Trigger>
-      <Collapsible.Panel className="grid gap-1.5 pt-1.5">{lines}</Collapsible.Panel>
+      <Collapsible.Panel className="grid grid-cols-[minmax(0,1fr)] gap-1.5 pt-1.5">
+        {lines}
+      </Collapsible.Panel>
     </Collapsible.Root>
   );
 }
@@ -290,7 +293,7 @@ export function MailStatusNotice({
       <ChangeAnnouncement text={online ? "" : offline} />
       {accountIssues && <SyncStatusAnnouncement failed={failures.length > 0} />}
       {(!online || expired.length > 0 || showFailure || keychain) && (
-        <div className="mx-3 mb-2 grid gap-1.5">
+        <div className="mx-3 mb-2 grid grid-cols-[minmax(0,1fr)] gap-1.5">
           {!online && (
             <NoticeLine
               tone="neutral"
