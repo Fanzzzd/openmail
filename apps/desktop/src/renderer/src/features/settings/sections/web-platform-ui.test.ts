@@ -57,6 +57,8 @@ it("keeps the traffic-light clearance on the Mac only", () => {
   // No transform on a full-window sheet, so its fixed strip and close button
   // stay under the lights while the sheet's content scrolls.
   expect(narrowSheet()).toContain("max-sm:translate-none");
+  // Any scale, even 100%, would make the closing sheet their containing block again.
+  expect(narrowSheet()).toContain("max-sm:data-ending-style:scale-none");
   render(h(SheetDragStrip));
   expect(document.querySelector(".drag")?.className).toContain("fixed");
   header();

@@ -439,6 +439,10 @@ msgstr "加入词典"
 msgid "Add Your First Account"
 msgstr "添加第一个邮箱"
 
+#: src/renderer/src/features/reader/attachments/AttachmentImportDialog.tsx
+msgid "Added"
+msgstr "已添加"
+
 #: src/renderer/src/app/App.tsx
 msgid "Added {email}. Syncing…"
 msgstr "已添加 {email}，正在同步"

@@ -73,7 +73,7 @@ export const centredSheet = (maxHeight?: SheetCap) =>
  * pair it with {@link SheetDragStrip}. A browser has no traffic lights, so the web build uses the whole height.
  */
 export const narrowSheet = () =>
-  `max-sm:inset-0 max-sm:h-full max-sm:max-h-none max-sm:w-full max-sm:max-w-none max-sm:translate-none max-sm:rounded-none max-sm:data-ending-style:scale-100 ${isDesktop() ? "max-sm:pt-(--titlebar-clearance)" : ""}`;
+  `max-sm:inset-0 max-sm:h-full max-sm:max-h-none max-sm:w-full max-sm:max-w-none max-sm:translate-none max-sm:rounded-none max-sm:data-ending-style:scale-none ${isDesktop() ? "max-sm:pt-(--titlebar-clearance)" : ""}`;
 
 /** The titlebar of a full-window sheet: it drags the window, as the titlebar it covers did. None in a browser. */
 export function SheetDragStrip() {

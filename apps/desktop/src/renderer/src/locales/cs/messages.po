@@ -429,6 +429,10 @@ msgstr "Přidat do slovníku"
 msgid "Add Your First Account"
 msgstr "Přidejte svůj první účet"
 
+#: src/renderer/src/features/reader/attachments/AttachmentImportDialog.tsx
+msgid "Added"
+msgstr "Přidáno"
+
 #: src/renderer/src/app/App.tsx
 msgid "Added {email}. Syncing…"
 msgstr "Přidán {email}. Synchronizace…"

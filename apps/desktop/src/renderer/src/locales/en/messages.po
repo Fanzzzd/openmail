@@ -433,6 +433,10 @@ msgstr "Add to Dictionary"
 msgid "Add Your First Account"
 msgstr "Add Your First Account"
 
+#: src/renderer/src/features/reader/attachments/AttachmentImportDialog.tsx
+msgid "Added"
+msgstr "Added"
+
 #: src/renderer/src/app/App.tsx
 msgid "Added {email}. Syncing…"
 msgstr "Added {email}. Syncing…"

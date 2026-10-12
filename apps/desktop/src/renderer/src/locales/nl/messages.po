@@ -429,6 +429,10 @@ msgstr "Voeg toe aan woordenboek"
 msgid "Add Your First Account"
 msgstr "Voeg uw eerste account toe"
 
+#: src/renderer/src/features/reader/attachments/AttachmentImportDialog.tsx
+msgid "Added"
+msgstr "Toegevoegd"
+
 #: src/renderer/src/app/App.tsx
 msgid "Added {email}. Syncing…"
 msgstr "{email} toegevoegd. Synchroniseren…"

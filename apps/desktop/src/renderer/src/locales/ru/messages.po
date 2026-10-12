@@ -429,6 +429,10 @@ msgstr "Добавить в словарь"
 msgid "Add Your First Account"
 msgstr "Добавьте свою первую учетную запись"
 
+#: src/renderer/src/features/reader/attachments/AttachmentImportDialog.tsx
+msgid "Added"
+msgstr "Добавлено"
+
 #: src/renderer/src/app/App.tsx
 msgid "Added {email}. Syncing…"
 msgstr "Добавлен {email}. Синхронизация…"

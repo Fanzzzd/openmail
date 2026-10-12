@@ -10,6 +10,7 @@ import {
 } from "@openmail/core/schema";
 import { useRunMail, withMail } from "../../../state/mail";
 import { Dialog } from "../../../ui/Dialog";
+import { buttonPrimary, buttonSecondary } from "../../../ui/styles";
 import { LazyEmailFrame } from "../body/MessageBodyShell";
 
 /** Review imported data inside the app. Files never launch an OS handler. */
@@ -98,6 +99,7 @@ export function AttachmentImportDialog({
               </p>
               <button
                 type="button"
+                className={`${buttonSecondary} shrink-0`}
                 disabled={added.has(contact.address)}
                 onClick={() =>
                   perform(
@@ -105,7 +107,9 @@ export function AttachmentImportDialog({
                     withMail((call) => call("AddAppleContact", { contact })),
                   )
                 }
-              >{t`Add to Contacts`}</button>
+              >
+                {added.has(contact.address) ? t`Added` : t`Add to Contacts`}
+              </button>
             </div>
           ))}
         </>
@@ -131,6 +135,7 @@ export function AttachmentImportDialog({
               {invite.method === "PUBLISH" && (
                 <button
                   type="button"
+                  className={buttonSecondary}
                   disabled={added.has(invite.key)}
                   onClick={() =>
                     perform(
@@ -144,7 +149,9 @@ export function AttachmentImportDialog({
                       ),
                     )
                   }
-                >{t`Add to calendar`}</button>
+                >
+                  {added.has(invite.key) ? t`Added` : t`Add to calendar`}
+                </button>
               )}
               {invite.method !== "PUBLISH" && (
                 <p>{t`Respond to this invitation from the message.`}</p>
@@ -153,7 +160,9 @@ export function AttachmentImportDialog({
           ))}
         </>
       )}
-      <button type="button" onClick={onClose}>{t`Close`}</button>
+      <div className="flex justify-end">
+        <button type="button" className={buttonPrimary} onClick={onClose}>{t`Close`}</button>
+      </div>
     </Dialog>
   );
 }

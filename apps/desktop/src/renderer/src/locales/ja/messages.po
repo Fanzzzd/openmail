@@ -429,6 +429,10 @@ msgstr "辞書に追加"
 msgid "Add Your First Account"
 msgstr "最初のアカウントを追加する"
 
+#: src/renderer/src/features/reader/attachments/AttachmentImportDialog.tsx
+msgid "Added"
+msgstr "追加済み"
+
 #: src/renderer/src/app/App.tsx
 msgid "Added {email}. Syncing…"
 msgstr "{email} を追加しました。同期中…"

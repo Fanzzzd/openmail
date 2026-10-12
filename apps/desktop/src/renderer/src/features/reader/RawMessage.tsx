@@ -49,7 +49,7 @@ export function RawMessageDialog({
       ownClose
       className="flex h-[640px] w-[820px] max-w-[92vw] flex-col overflow-hidden"
     >
-      <header className="flex shrink-0 items-center gap-2 border-b border-separator px-4 py-2.5">
+      <header className="flex shrink-0 flex-wrap items-center gap-2 border-b border-separator px-4 py-2.5">
         <h2 className="flex-1 text-callout font-semibold">
           <Trans>Original message</Trans>
         </h2>
