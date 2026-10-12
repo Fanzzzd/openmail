@@ -40,6 +40,18 @@ export default defineConfig(({ command }) => {
             index: resolve(import.meta.dirname, "src/renderer/index.html"),
             recovery: resolve(import.meta.dirname, "src/renderer/recovery.html"),
           },
+          output: {
+            // The router is its own vendor chunk, so its size shows apart from the app's entry.
+            // A manual chunk takes in dependencies no other chunk claims, so React and Rollup's
+            // CommonJS helpers get a chunk of their own; otherwise the recovery window, which
+            // shares React with the app, would load the router too.
+            manualChunks: (id) =>
+              id.includes("/node_modules/@tanstack/")
+                ? "router"
+                : /\/node_modules\/(react|react-dom|scheduler)\/|commonjsHelpers/.test(id)
+                  ? "react"
+                  : undefined,
+          },
         },
       },
       plugins: [

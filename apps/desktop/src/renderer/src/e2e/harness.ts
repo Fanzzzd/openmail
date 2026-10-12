@@ -33,6 +33,7 @@ import {
 } from "effect";
 import { AtomRegistry } from "effect/reactivity";
 import { RpcMessage, RpcSerialization, RpcServer } from "effect/rpc";
+import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
 import { createElement } from "react";
 import { vi } from "vitest";
 import type { RpcBridge } from "../../../shared/channel";
@@ -40,8 +41,8 @@ import type { DesktopEvent } from "../../../shared/desktop";
 import { mailboxHandlers } from "../../../shared/mailbox-handlers";
 import { rendererPrefs } from "../../../shared/renderer-prefs";
 import { MailRpcs } from "../../../shared/rpc";
-import { App } from "../app/App";
-import { ThreadWindow } from "../app/ThreadWindow";
+import { createAppRouter } from "../routes/router";
+import { composeHref, DEFAULT_VIEW, mailHref, threadHref } from "../../../shared/routes";
 import { TipProvider } from "../ui/Tip";
 
 const unsupported = () => Effect.die(new Error("Unexpected desktop operation in flow test"));
@@ -384,6 +385,18 @@ export async function flow(
   );
   await rpcRuntime.runPromise(Effect.void);
   const registry = AtomRegistry.make();
+  const router = createAppRouter(
+    createMemoryHistory({
+      initialEntries: [
+        options.thread
+          ? threadHref(`${account.id}/${options.thread}`)
+          : composeId
+            ? composeHref(composeId)
+            : mailHref(DEFAULT_VIEW),
+      ],
+    }),
+  );
+  await router.load();
   const i18n = setupI18n({ locale: "en", messages: { en: {} } });
   render(
     createElement(
@@ -392,13 +405,7 @@ export async function flow(
       createElement(
         I18nProvider,
         { i18n },
-        createElement(
-          TipProvider,
-          null,
-          options.thread
-            ? createElement(ThreadWindow, { id: `${account.id}/${options.thread}` })
-            : createElement(App, { composeId }),
-        ),
+        createElement(TipProvider, null, createElement(RouterProvider, { router })),
       ),
     ),
   );

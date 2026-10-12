@@ -169,7 +169,14 @@ it("applies the oxlint layer rules to import() and typeof import() too", () => {
       if (layer) forbidden.set(layer, layers);
     }
   }
-  expect([...forbidden.keys()].toSorted()).toEqual(["features", "i18n", "lib", "state", "ui"]);
+  expect([...forbidden.keys()].toSorted()).toEqual([
+    "app",
+    "features",
+    "i18n",
+    "lib",
+    "state",
+    "ui",
+  ]);
   const layerOf = (file: string) => file.split("/")[0] ?? "";
   const violations = edges
     .filter((edge) => forbidden.get(layerOf(edge.from))?.includes(layerOf(edge.to)))

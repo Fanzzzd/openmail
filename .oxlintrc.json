@@ -180,7 +180,7 @@
           {
             "patterns": [
               {
-                "group": ["**/app/**", "**/features/**", "**/state/**"],
+                "group": ["**/routes/**", "**/app/**", "**/features/**", "**/state/**"],
                 "message": "ui/ holds primitives: pass data in as props instead of importing app, features or state."
               }
             ]
@@ -196,7 +196,7 @@
           {
             "patterns": [
               {
-                "group": ["**/app/**", "**/features/**", "**/state/**", "**/ui/**"],
+                "group": ["**/routes/**", "**/app/**", "**/features/**", "**/state/**", "**/ui/**"],
                 "message": "lib/ holds pure helpers: it must not import app, features, state or ui."
               }
             ]
@@ -212,7 +212,7 @@
           {
             "patterns": [
               {
-                "group": ["**/app/**", "**/features/**"],
+                "group": ["**/routes/**", "**/app/**", "**/features/**"],
                 "message": "state/ and i18n/ sit below features: move the shared code down instead of importing app or features."
               }
             ]
@@ -228,8 +228,24 @@
           {
             "patterns": [
               {
-                "group": ["**/app/**"],
-                "message": "features/ must not import app/: move the shared code into the feature, state, ui or lib."
+                "group": ["**/routes/**", "**/app/**"],
+                "message": "features/ must not import routes/ or app/: move the shared code into the feature, state, ui or lib."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["apps/desktop/src/renderer/src/app/**"],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["**/routes/**"],
+                "message": "routes/ sits above app/: read the location from state/location instead of importing the router."
               }
             ]
           }
