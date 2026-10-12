@@ -5,8 +5,10 @@ import { Effect } from "effect";
 import { useState } from "react";
 import { useRunMail, withMail } from "../../../state/mail";
 
-const button =
-  "rounded-control border border-edge px-2.5 py-1 text-a11y-accent disabled:opacity-50";
+import { buttonLink, settingsHint } from "../../../ui/styles";
+
+const head = "px-2 py-1 font-medium whitespace-nowrap";
+const cell = "px-2 py-1 align-top";
 export function SyncHealthCheck({ accountId }: { accountId: string }) {
   const { t } = useLingui();
   const run = useRunMail();
@@ -53,41 +55,45 @@ export function SyncHealthCheck({ accountId }: { accountId: string }) {
       ? t`Never synced`
       : t`${Math.floor(report.cursorAgeMs / 1000)} seconds`;
   return (
-    <section className="w-full space-y-2" aria-label={t`Sync health`}>
-      <button type="button" onClick={check} disabled={waiting} className={button}>
+    <section className="space-y-2" aria-label={t`Sync health`}>
+      <button type="button" onClick={check} disabled={waiting} className={buttonLink}>
         {waiting ? t`Checking sync health…` : t`Check sync health`}
       </button>
-      {failed && <p role="alert">{t`Could not check sync health.`}</p>}
+      {failed && (
+        <p role="alert" className="text-a11y-danger">
+          {t`Could not check sync health.`}
+        </p>
+      )}
       {report && (
         <>
-          <p>
+          <p className="tabular-nums">
             <Trans>
               Cursor age: {age}. Pending operations: {report.pendingOps}.
             </Trans>
           </p>
-          <p className="text-a11y-muted">
+          <p className={settingsHint}>
             <Trans>
               Counts compare messages. Matching counts do not verify message contents. Cache windows
               retain message text; headers remain cached.
             </Trans>
           </p>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+          <div className="overflow-x-auto rounded-control ring-1 ring-edge">
+            <table className="w-full text-left text-caption tabular-nums">
               <caption className="sr-only">
                 <Trans>Sync health</Trans>
               </caption>
-              <thead>
+              <thead className="border-b border-separator bg-fill-quiet text-a11y-muted">
                 <tr>
-                  <th scope="col">
+                  <th scope="col" className={head}>
                     <Trans>Folder or label</Trans>
                   </th>
-                  <th scope="col">
+                  <th scope="col" className={head}>
                     <Trans>Server total / unread / threads</Trans>
                   </th>
-                  <th scope="col">
+                  <th scope="col" className={head}>
                     <Trans>Local total / unread / threads</Trans>
                   </th>
-                  <th scope="col">
+                  <th scope="col" className={head}>
                     <Trans
                       context="cached message text"
                       comment="Retention window for downloaded email message text, not headers."
@@ -95,45 +101,45 @@ export function SyncHealthCheck({ accountId }: { accountId: string }) {
                       Message text cache window
                     </Trans>
                   </th>
-                  <th scope="col">
+                  <th scope="col" className={head}>
                     <Trans>Sync window</Trans>
                   </th>
-                  <th scope="col">
+                  <th scope="col" className={head}>
                     <Trans>Pending operations</Trans>
                   </th>
-                  <th scope="col">
+                  <th scope="col" className={head}>
                     <Trans>Verdict</Trans>
                   </th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-separator">
                 {report.folders.map((folder) => (
                   <tr key={folder.scope}>
-                    <th scope="row" className="max-w-40 break-words py-1.5 font-normal">
+                    <th scope="row" className={`max-w-40 font-normal break-words ${cell}`}>
                       {folder.scope}
                     </th>
-                    <td>
+                    <td className={cell}>
                       {folder.server.kind === "available"
                         ? `${folder.server.total} / ${folder.server.unread} / ${folder.server.threads ?? "—"}`
                         : t`Server unavailable`}
                     </td>
-                    <td>
+                    <td className={cell}>
                       {folder.local.total} / {folder.local.unread} / {folder.local.threads}
                     </td>
-                    <td>{days(folder.bodyCacheWindowDays)}</td>
-                    <td>
+                    <td className={cell}>{days(folder.bodyCacheWindowDays)}</td>
+                    <td className={cell}>
                       {folder.headerWindow
                         ? t`${folder.headerWindow.days} days, up to ${folder.headerWindow.messageLimit} messages`
                         : t`All mail`}
                     </td>
-                    <td>{folder.pendingOps}</td>
-                    <td>{verdicts[folder.verdict]}</td>
+                    <td className={cell}>{folder.pendingOps}</td>
+                    <td className={cell}>{verdicts[folder.verdict]}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <button type="button" onClick={copy} className={button}>
+          <button type="button" onClick={copy} className={buttonLink}>
             {copied ? t`Copied` : t`Copy redacted report`}
           </button>
           <Disclosure summary={<Trans>Redacted report</Trans>}>
@@ -141,7 +147,7 @@ export function SyncHealthCheck({ accountId }: { accountId: string }) {
               readOnly
               aria-label={t`Redacted report`}
               value={JSON.stringify(redactSyncHealth(report), null, 2)}
-              className="selectable h-40 w-full font-mono text-xs"
+              className="selectable block h-40 w-full rounded-control border border-control bg-fill-quiet px-2 py-1 font-mono text-caption outline-offset-0 outline-a11y-focus focus:border-transparent focus:outline-2"
             />
           </Disclosure>
         </>

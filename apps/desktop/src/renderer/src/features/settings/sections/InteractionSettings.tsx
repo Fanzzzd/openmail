@@ -14,6 +14,8 @@ import { moveToolbarAction } from "./toolbar-order";
 import { Select } from "../../../ui/Select";
 import { Checkbox } from "../../../ui/Checkbox";
 import { IndexingSettings } from "./IndexingSettings";
+import { SettingsCheckRow, SettingsGroup, SettingsRow } from "../../../ui/SettingsRows";
+import { buttonSecondary } from "../../../ui/styles";
 
 import { actionNames } from "../../../i18n/action-names";
 
@@ -29,26 +31,27 @@ export function LabsSettings() {
   const { prefs, save } = usePreferences();
   const { t } = useLingui();
   return (
-    <div className="space-y-4">
-      <p className="text-a11y-muted">
-        <Trans>Experimental features can be enabled separately.</Trans>
-      </p>
-      {(
-        [
-          { key: "markdown", label: t`Markdown composition` },
-          { key: "calendarDetection", label: t`Detect calendar events in messages` },
-        ] as const
-      ).map(({ key, label }) => (
-        <label key={key} className="flex items-center gap-2">
-          <Checkbox
-            checked={prefs.labs[key]}
-            onCheckedChange={(enabled) => save({ labs: { ...prefs.labs, [key]: enabled } })}
-          />
-          {label}
-        </label>
-      ))}
+    <>
+      <SettingsGroup footer={<Trans>Experimental features can be enabled separately.</Trans>}>
+        {(
+          [
+            { key: "markdown", label: t`Markdown composition` },
+            { key: "calendarDetection", label: t`Detect calendar events in messages` },
+          ] as const
+        ).map(({ key, label }) => (
+          <SettingsCheckRow key={key}>
+            <label className="flex items-center gap-2">
+              <Checkbox
+                checked={prefs.labs[key]}
+                onCheckedChange={(enabled) => save({ labs: { ...prefs.labs, [key]: enabled } })}
+              />
+              {label}
+            </label>
+          </SettingsCheckRow>
+        ))}
+      </SettingsGroup>
       <IndexingSettings />
-    </div>
+    </>
   );
 }
 export function InteractionSettings() {
@@ -56,17 +59,16 @@ export function InteractionSettings() {
   const { t, i18n } = useLingui();
   const actions = prefs.toolbarActions;
   return (
-    <div className="space-y-5">
-      <section className="space-y-3">
-        <h3 className="font-semibold">
-          <Trans>Swipe actions</Trans>
-        </h3>
-        <p className="text-a11y-muted">
+    <>
+      <SettingsGroup
+        title={<Trans>Swipe actions</Trans>}
+        footer={
           <Trans>
             Swipe horizontally with two fingers. Release after a short or long swipe to apply the
             action.
           </Trans>
-        </p>
+        }
+      >
         {(
           [
             { key: "leftShort", label: t`Left short swipe` },
@@ -75,34 +77,33 @@ export function InteractionSettings() {
             { key: "rightLong", label: t`Right long swipe` },
           ] as const
         ).map(({ key, label }) => (
-          <label key={key} className="flex items-center justify-between gap-3">
-            <span>{label}</span>
+          <SettingsRow key={key} label={label} htmlFor={`swipe-action-${key}`}>
             <Select
+              id={`swipe-action-${key}`}
               aria-label={label}
+              variant="field"
+              className="min-w-40"
               value={prefs.swipeActions[key]}
               options={SWIPE_ACTIONS.map((value) => ({ value, label: i18n._(actionNames[value]) }))}
               onValueChange={(value) =>
                 save({ swipeActions: { ...prefs.swipeActions, [key]: value } })
               }
             />
-          </label>
+          </SettingsRow>
         ))}
-      </section>
-      <section className="space-y-2">
-        <h3 className="font-semibold">
-          <Trans>Toolbar actions</Trans>
-        </h3>
-        <p className="text-a11y-muted">
-          <Trans>Choose actions and use the buttons to change their order.</Trans>
-        </p>
-        <ol className="space-y-2">
+      </SettingsGroup>
+      <SettingsGroup
+        title={<Trans>Toolbar actions</Trans>}
+        footer={<Trans>Choose actions and use the buttons to change their order.</Trans>}
+      >
+        <ol className="divide-y divide-separator">
           {[...actions, ...TOOLBAR_ACTIONS.filter((action) => !actions.includes(action))].map(
             (action) => {
               const index = actions.indexOf(action),
                 label = i18n._(actionNames[action]);
               return (
-                <li key={action} className="flex items-center gap-2">
-                  <label className="flex flex-1 items-center gap-2">
+                <li key={action} className="flex flex-wrap items-center gap-2 px-3 py-2">
+                  <label className="flex min-w-0 flex-1 items-center gap-2">
                     <Checkbox
                       checked={index >= 0}
                       onCheckedChange={(enabled) =>
@@ -117,7 +118,7 @@ export function InteractionSettings() {
                   </label>
                   <button
                     type="button"
-                    className="rounded border px-2 py-1 disabled:opacity-40"
+                    className={buttonSecondary}
                     aria-label={t`Move ${label} up`}
                     disabled={index <= 0}
                     onClick={() => save({ toolbarActions: moveToolbarAction(actions, action, -1) })}
@@ -126,7 +127,7 @@ export function InteractionSettings() {
                   </button>
                   <button
                     type="button"
-                    className="rounded border px-2 py-1 disabled:opacity-40"
+                    className={buttonSecondary}
                     aria-label={t`Move ${label} down`}
                     disabled={index < 0 || index === actions.length - 1}
                     onClick={() => save({ toolbarActions: moveToolbarAction(actions, action, 1) })}
@@ -138,14 +139,16 @@ export function InteractionSettings() {
             },
           )}
         </ol>
-        <button
-          type="button"
-          className="rounded border px-2 py-1"
-          onClick={() => save({ toolbarActions: DEFAULT_PREFS.toolbarActions })}
-        >
-          <Trans>Reset toolbar</Trans>
-        </button>
-      </section>
-    </div>
+        <div className="flex justify-end px-3 py-2">
+          <button
+            type="button"
+            className={buttonSecondary}
+            onClick={() => save({ toolbarActions: DEFAULT_PREFS.toolbarActions })}
+          >
+            <Trans>Reset toolbar</Trans>
+          </button>
+        </div>
+      </SettingsGroup>
+    </>
   );
 }

@@ -5,7 +5,8 @@ import { AsyncResult } from "effect/reactivity";
 import { MailClient } from "../../../state/rpc";
 import { indexingProgressAtom } from "../../../state/queries";
 import { Switch } from "@base-ui/react/switch";
-import { switchThumb, switchTrack } from "../../../ui/styles";
+import { SettingsGroup, SettingsRow } from "../../../ui/SettingsRows";
+import { settingsHint, switchThumb, switchTrack } from "../../../ui/styles";
 
 const modelsAtom = MailClient.mutation("SetModelsEnabled");
 const pauseAtom = MailClient.mutation("SetIndexingPaused");
@@ -20,16 +21,20 @@ export function IndexingSettings() {
     running = i18n.number(progress.running),
     failed = i18n.number(progress.failed);
   return (
-    <section className="mt-6 space-y-2">
-      <h3 className="text-footnote font-semibold text-a11y-muted">
-        <Trans>On-device indexing</Trans>
-      </h3>
-      <p className="text-a11y-muted">
-        <Trans>
-          Images and PDF text are processed on this device. No content is sent to a cloud model.
-        </Trans>
-      </p>
-      <div className="flex items-center gap-2">
+    <SettingsGroup
+      title={<Trans>On-device indexing</Trans>}
+      footer={
+        <Trans>Runs while idle. Scanned PDF pages, audio and video are not indexed yet.</Trans>
+      }
+    >
+      <SettingsRow
+        label={<Trans>Download on-device models, ~226 MB</Trans>}
+        hint={
+          <Trans>
+            Images and PDF text are processed on this device. No content is sent to a cloud model.
+          </Trans>
+        }
+      >
         <Switch.Root
           className={switchTrack}
           checked={progress.modelsEnabled ?? false}
@@ -40,62 +45,59 @@ export function IndexingSettings() {
         >
           <Switch.Thumb className={switchThumb} />
         </Switch.Root>
-        <Trans>Download on-device models, ~226 MB</Trans>
-      </div>
-      {progress.modelsEnabled && !progress.semanticAvailable && (
-        <p>
-          <Trans>Semantic search is unavailable. Full-text search remains available.</Trans>
-        </p>
-      )}
-      {progress.modelsEnabled && (
-        <>
-          {progress.models?.kind === "downloading" && (
-            <div>
-              <ProgressBar
-                value={progress.models.bytes}
-                max={progress.models.total}
-                aria-label={t`Model download progress`}
-                className="mb-1"
-              />
+      </SettingsRow>
+      <div className="space-y-1 px-3 py-2">
+        {progress.modelsEnabled && !progress.semanticAvailable && (
+          <p>
+            <Trans>Semantic search is unavailable. Full-text search remains available.</Trans>
+          </p>
+        )}
+        {progress.modelsEnabled && (
+          <>
+            {progress.models?.kind === "downloading" && (
+              <ModelDownload progress={{ models: progress.models }} />
+            )}
+            {progress.models?.kind === "ready" && (
               <p>
-                <Trans>
-                  Downloading models:{" "}
-                  {i18n.number(Math.floor((progress.models.bytes / progress.models.total) * 100))}%
-                </Trans>
+                <Trans>Models verified and ready. Search stays on this device.</Trans>
               </p>
-            </div>
-          )}
-          {progress.models?.kind === "ready" && (
-            <p>
-              <Trans>Models verified and ready. Search stays on this device.</Trans>
-            </p>
-          )}
-          {progress.models?.kind === "error" && (
-            <p role="alert">
-              <Trans>Model download failed. Retrying while idle.</Trans>
-            </p>
-          )}
-          <output aria-live="off">
+            )}
+            {progress.models?.kind === "error" && (
+              <p role="alert">
+                <Trans>Model download failed. Retrying while idle.</Trans>
+              </p>
+            )}
+            <output aria-live="off" className={`block ${settingsHint}`}>
+              <Trans>
+                {i18n.number(progress.embeddingDone ?? 0)} embedded ·{" "}
+                {i18n.number(progress.embeddingQueued ?? 0)} queued ·{" "}
+                {i18n.number(progress.embeddingRunning ?? 0)} running ·{" "}
+                {i18n.number(progress.embeddingFailed ?? 0)} failed
+              </Trans>
+            </output>
+          </>
+        )}
+        {!progress.available && (
+          <p>
+            <Trans>Image recognition is unavailable on this platform.</Trans>
+          </p>
+        )}
+        <output aria-live="off" className={`block ${settingsHint}`}>
+          <Trans>
+            {done} completed · {queued} queued · {running} running · {failed} failed
+          </Trans>
+        </output>
+      </div>
+      <SettingsRow
+        label={<Trans>Pause indexing</Trans>}
+        hint={
+          progress.onBattery ? (
             <Trans>
-              {i18n.number(progress.embeddingDone ?? 0)} embedded ·{" "}
-              {i18n.number(progress.embeddingQueued ?? 0)} queued ·{" "}
-              {i18n.number(progress.embeddingRunning ?? 0)} running ·{" "}
-              {i18n.number(progress.embeddingFailed ?? 0)} failed
+              On battery: image recognition waits for AC power. PDF text indexing is throttled.
             </Trans>
-          </output>
-        </>
-      )}
-      {!progress.available && (
-        <p>
-          <Trans>Image recognition is unavailable on this platform.</Trans>
-        </p>
-      )}
-      <output aria-live="off">
-        <Trans>
-          {done} completed · {queued} queued · {running} running · {failed} failed
-        </Trans>
-      </output>
-      <div className="flex items-center gap-2">
+          ) : undefined
+        }
+      >
         <Switch.Root
           className={switchTrack}
           checked={progress.paused}
@@ -104,18 +106,28 @@ export function IndexingSettings() {
         >
           <Switch.Thumb className={switchThumb} />
         </Switch.Root>
-        <Trans>Pause indexing</Trans>
-      </div>
-      {progress.onBattery && (
-        <p className="text-a11y-muted">
-          <Trans>
-            On battery: image recognition waits for AC power. PDF text indexing is throttled.
-          </Trans>
-        </p>
-      )}
-      <p className="text-a11y-muted">
-        <Trans>Runs while idle. Scanned PDF pages, audio and video are not indexed yet.</Trans>
+      </SettingsRow>
+    </SettingsGroup>
+  );
+}
+
+/** The model download bar. The props keep the shape of the progress the message text reads. */
+function ModelDownload({ progress }: { progress: { models: { bytes: number; total: number } } }) {
+  const { t, i18n } = useLingui();
+  return (
+    <div>
+      <ProgressBar
+        value={progress.models.bytes}
+        max={progress.models.total}
+        aria-label={t`Model download progress`}
+        className="mb-1"
+      />
+      <p>
+        <Trans>
+          Downloading models:{" "}
+          {i18n.number(Math.floor((progress.models.bytes / progress.models.total) * 100))}%
+        </Trans>
       </p>
-    </section>
+    </div>
   );
 }

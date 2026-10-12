@@ -9,6 +9,17 @@ import type { Account } from "../../../../../shared/api";
 import { MailClient, submitAiKey } from "../../../state/rpc";
 import { errorText, resultError } from "../../../lib/errors";
 import { Keys } from "../../../state/keys";
+import { SettingsCheckRow, SettingsRow } from "../../../ui/SettingsRows";
+import {
+  buttonSecondary,
+  formInput,
+  settingsGroup,
+  settingsHeading,
+  settingsHint,
+} from "../../../ui/styles";
+
+/** A native checkbox in the accent colour; the fieldset around it can still disable it. */
+const nativeCheck = "size-3.5 shrink-0 accent-blue-600";
 
 import { aiSettingsAtom } from "../../ai";
 const accountMutation = MailClient.mutation("SetAiAccount");
@@ -40,63 +51,77 @@ export function AiSettings({ accounts }: { accounts: readonly Account[] }) {
     );
   };
   return (
-    <section className="mb-6 space-y-3">
-      <h3 className="font-semibold">
-        <Trans>Built-in AI</Trans>
-      </h3>
-      <p className="text-a11y-muted">
-        <Trans>
-          When you allow an account, questions and selected mail text, subjects, sender and
-          recipient addresses are sent to Anthropic using your API key. Images, attachments and
-          media stay on this device. Requests may incur API charges. Automatic summaries run only
-          when you enable them for an account.
-        </Trans>
-      </p>
-      <label className="block">
-        <span>
-          <Trans>Anthropic API key</Trans>
-        </span>
-        <input
-          ref={keyInput}
-          type="password"
-          autoComplete="off"
-          spellCheck={false}
-          aria-label={t`Anthropic API key`}
-          placeholder={settings?.keyConfigured ? "••••••••" : ""}
-          className="ml-3 rounded border border-edge px-2 py-1"
-        />
-      </label>
-      <div className="flex gap-3">
-        <button type="button" disabled={saving} onClick={() => save(false)}>
-          <Trans>Save key</Trans>
-        </button>
-        <button
-          type="button"
-          disabled={!settings?.keyConfigured || saving}
-          onClick={() => save(true)}
-        >
-          <Trans>Remove key</Trans>
-        </button>
-      </div>
-      <p className="text-a11y-muted">
-        <Trans>
-          MCP access follows this account's AI consent. Disabled accounts cannot be read through
-          MCP.
-        </Trans>
-      </p>
-      <div className="flex items-center gap-3">
-        <label htmlFor={modelId}>
-          <Trans>Model</Trans>
-        </label>
-        <Select
-          id={modelId}
-          aria-label={t`Model`}
-          value={settings?.model ?? AI_MODELS[0]}
-          disabled={modelResult.waiting}
-          options={AI_MODELS.map((name) => ({ value: name, label: name }))}
-          onValueChange={(model) => setModel({ payload: { model }, reactivityKeys: [Keys.ai] })}
-        />
-      </div>
+    <>
+      <section>
+        <h3 className={settingsHeading}>
+          <Trans>Built-in AI</Trans>
+        </h3>
+        <p className={`mb-2 px-1 ${settingsHint}`}>
+          <Trans>
+            When you allow an account, questions and selected mail text, subjects, sender and
+            recipient addresses are sent to Anthropic using your API key. Images, attachments and
+            media stay on this device. Requests may incur API charges. Automatic summaries run only
+            when you enable them for an account.
+          </Trans>
+        </p>
+        <div className={settingsGroup}>
+          <div className="flex flex-wrap items-center gap-2 px-3 py-2.5">
+            <label className="flex min-w-0 flex-1 basis-72 items-center gap-3">
+              <span className="shrink-0">
+                <Trans>Anthropic API key</Trans>
+              </span>
+              <input
+                ref={keyInput}
+                type="password"
+                autoComplete="off"
+                spellCheck={false}
+                aria-label={t`Anthropic API key`}
+                placeholder={settings?.keyConfigured ? "••••••••" : ""}
+                className={`min-w-0 flex-1 ${formInput}`}
+              />
+            </label>
+            <button
+              type="button"
+              disabled={saving}
+              onClick={() => save(false)}
+              className={buttonSecondary}
+            >
+              <Trans>Save key</Trans>
+            </button>
+            <button
+              type="button"
+              disabled={!settings?.keyConfigured || saving}
+              onClick={() => save(true)}
+              className={buttonSecondary}
+            >
+              <Trans>Remove key</Trans>
+            </button>
+          </div>
+          <SettingsRow label={<Trans>Model</Trans>} htmlFor={modelId}>
+            <Select
+              id={modelId}
+              aria-label={t`Model`}
+              variant="field"
+              className="min-w-48"
+              value={settings?.model ?? AI_MODELS[0]}
+              disabled={modelResult.waiting}
+              options={AI_MODELS.map((name) => ({ value: name, label: name }))}
+              onValueChange={(model) => setModel({ payload: { model }, reactivityKeys: [Keys.ai] })}
+            />
+          </SettingsRow>
+        </div>
+        <p className={`mt-1.5 px-1 ${settingsHint}`}>
+          <Trans>
+            MCP access follows this account's AI consent. Disabled accounts cannot be read through
+            MCP.
+          </Trans>
+        </p>
+        {keyError && (
+          <p role="alert" className="mt-1.5 px-1 text-footnote text-a11y-danger">
+            {keyError}
+          </p>
+        )}
+      </section>
       {accounts.map((account) => {
         const current = settings?.accounts.find((a) => a.accountId === account.id) ?? {
           accountId: account.id,
@@ -108,68 +133,84 @@ export function AiSettings({ accounts }: { accounts: readonly Account[] }) {
           <fieldset
             key={account.id}
             disabled={!settings || accountResult.waiting}
-            className="space-y-2 border-t border-edge py-3"
+            className="min-w-0"
           >
-            <legend>{account.email}</legend>
-            <label className="flex gap-2">
-              <input
-                type="checkbox"
-                checked={current.allowed}
-                onChange={(event) =>
-                  setAccount({
-                    payload: {
-                      input: {
-                        ...current,
-                        allowed: event.target.checked,
-                        autoSummaries: event.target.checked && current.autoSummaries,
-                        autoTriage: event.target.checked && current.autoTriage,
-                      },
-                    },
-                    reactivityKeys: [Keys.ai],
-                  })
-                }
-              />
-              <Trans>Allow sending mail text to the model</Trans>
-            </label>
-            <label className="flex gap-2">
-              <input
-                type="checkbox"
-                disabled={!current.allowed}
-                checked={current.autoSummaries}
-                onChange={(event) =>
-                  setAccount({
-                    payload: { input: { ...current, autoSummaries: event.target.checked } },
-                    reactivityKeys: [Keys.ai],
-                  })
-                }
-              />
-              <Trans>Automatically summarize new mail</Trans>
-            </label>
-            <label className="flex gap-2">
-              <input
-                type="checkbox"
-                disabled={!current.allowed}
-                checked={current.autoTriage ?? false}
-                onChange={(event) =>
-                  setAccount({
-                    payload: { input: { ...current, autoTriage: event.target.checked } },
-                    reactivityKeys: [Keys.ai],
-                  })
-                }
-              />
-              <Trans>Suggest triage for new inbox mail</Trans>
-            </label>
+            <legend className={`truncate ${settingsHeading}`}>{account.email}</legend>
+            <div className={settingsGroup}>
+              <SettingsCheckRow>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    className={nativeCheck}
+                    checked={current.allowed}
+                    onChange={(event) =>
+                      setAccount({
+                        payload: {
+                          input: {
+                            ...current,
+                            allowed: event.target.checked,
+                            autoSummaries: event.target.checked && current.autoSummaries,
+                            autoTriage: event.target.checked && current.autoTriage,
+                          },
+                        },
+                        reactivityKeys: [Keys.ai],
+                      })
+                    }
+                  />
+                  <Trans>Allow sending mail text to the model</Trans>
+                </label>
+              </SettingsCheckRow>
+              <SettingsCheckRow>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    className={nativeCheck}
+                    disabled={!current.allowed}
+                    checked={current.autoSummaries}
+                    onChange={(event) =>
+                      setAccount({
+                        payload: { input: { ...current, autoSummaries: event.target.checked } },
+                        reactivityKeys: [Keys.ai],
+                      })
+                    }
+                  />
+                  <Trans>Automatically summarize new mail</Trans>
+                </label>
+              </SettingsCheckRow>
+              <SettingsCheckRow>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    className={nativeCheck}
+                    disabled={!current.allowed}
+                    checked={current.autoTriage ?? false}
+                    onChange={(event) =>
+                      setAccount({
+                        payload: { input: { ...current, autoTriage: event.target.checked } },
+                        reactivityKeys: [Keys.ai],
+                      })
+                    }
+                  />
+                  <Trans>Suggest triage for new inbox mail</Trans>
+                </label>
+              </SettingsCheckRow>
+            </div>
           </fieldset>
         );
       })}
-      <p className="text-a11y-muted">
-        <Trans>
-          Triage runs while the app is in the foreground or on AC power. Suggestions require your
-          approval. Reply needed adds a star when accepted.
-        </Trans>
-      </p>
-      {resultError(i18n, accountResult) && <p role="alert">{resultError(i18n, accountResult)}</p>}
-      {keyError && <p role="alert">{keyError}</p>}
-    </section>
+      <div className="space-y-1.5 px-1">
+        <p className={settingsHint}>
+          <Trans>
+            Triage runs while the app is in the foreground or on AC power. Suggestions require your
+            approval. Reply needed adds a star when accepted.
+          </Trans>
+        </p>
+        {resultError(i18n, accountResult) && (
+          <p role="alert" className="text-footnote text-a11y-danger">
+            {resultError(i18n, accountResult)}
+          </p>
+        )}
+      </div>
+    </>
   );
 }

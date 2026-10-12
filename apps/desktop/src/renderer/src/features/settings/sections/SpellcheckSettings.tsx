@@ -8,6 +8,7 @@ import { setPrefsAtom } from "../../../state/mutations";
 import { Keys } from "../../../state/keys";
 import { Checkbox } from "../../../ui/Checkbox";
 import { resultError } from "../../../lib/errors";
+import { SettingsCheckRow, SettingsGroup } from "../../../ui/SettingsRows";
 
 const languagesAtom = MailClient.query("SpellcheckLanguages", undefined);
 export function SpellcheckSettings() {
@@ -16,54 +17,59 @@ export function SpellcheckSettings() {
   const languages = AsyncResult.getOrElse(useAtomValue(languagesAtom), () => null);
   const [result, save] = useAtom(setPrefsAtom);
   return (
-    <section className="mt-6 space-y-3 border-t border-edge pt-4">
-      <h2 className="font-semibold">
-        <Trans>Spelling</Trans>
-      </h2>
-      <label htmlFor="compose-spellcheck" className="flex items-center gap-2">
-        <Checkbox
-          id="compose-spellcheck"
-          checked={prefs.spellcheck}
-          onCheckedChange={(spellcheck) =>
-            save({ payload: { patch: { spellcheck } }, reactivityKeys: [Keys.prefs] })
-          }
-        />
-        <Trans>Check spelling while typing</Trans>
-      </label>
-      {languages?.automatic ? (
-        <p className="text-a11y-muted">
-          <Trans>macOS uses the system spellchecker and detects languages automatically.</Trans>
-        </p>
-      ) : (
-        <fieldset disabled={result.waiting}>
-          <legend>{t`Spelling languages`}</legend>
-          {languages?.languages.map((language) => (
-            <label key={language} className="inline-flex items-center gap-2 p-2">
-              <Checkbox
-                checked={prefs.spellcheckLanguages.includes(language)}
-                onCheckedChange={(checked) =>
-                  save({
-                    payload: {
-                      patch: {
-                        spellcheckLanguages: checked
-                          ? [...prefs.spellcheckLanguages, language]
-                          : prefs.spellcheckLanguages.filter((l) => l !== language),
-                      },
-                    },
-                    reactivityKeys: [Keys.prefs],
-                  })
-                }
-              />
-              {language}
-            </label>
-          ))}
-        </fieldset>
+    <SettingsGroup title={<Trans>Spelling</Trans>}>
+      <SettingsCheckRow
+        hint={
+          languages?.automatic ? (
+            <Trans>macOS uses the system spellchecker and detects languages automatically.</Trans>
+          ) : undefined
+        }
+      >
+        <label htmlFor="compose-spellcheck" className="flex items-center gap-2">
+          <Checkbox
+            id="compose-spellcheck"
+            checked={prefs.spellcheck}
+            onCheckedChange={(spellcheck) =>
+              save({ payload: { patch: { spellcheck } }, reactivityKeys: [Keys.prefs] })
+            }
+          />
+          <Trans>Check spelling while typing</Trans>
+        </label>
+      </SettingsCheckRow>
+      {!languages?.automatic && (
+        <div className="px-3 py-2">
+          <fieldset disabled={result.waiting} className="min-w-0">
+            <legend className="mb-1.5">{t`Spelling languages`}</legend>
+            <div className="flex flex-wrap gap-x-5 gap-y-1.5">
+              {languages?.languages.map((language) => (
+                <label key={language} className="inline-flex items-center gap-2">
+                  <Checkbox
+                    checked={prefs.spellcheckLanguages.includes(language)}
+                    onCheckedChange={(checked) =>
+                      save({
+                        payload: {
+                          patch: {
+                            spellcheckLanguages: checked
+                              ? [...prefs.spellcheckLanguages, language]
+                              : prefs.spellcheckLanguages.filter((l) => l !== language),
+                          },
+                        },
+                        reactivityKeys: [Keys.prefs],
+                      })
+                    }
+                  />
+                  {language}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        </div>
       )}
       {resultError(i18n, result) && (
-        <output role="alert" className="text-a11y-danger">
+        <output role="alert" className="block px-3 py-2 text-a11y-danger">
           {resultError(i18n, result)}
         </output>
       )}
-    </section>
+    </SettingsGroup>
   );
 }

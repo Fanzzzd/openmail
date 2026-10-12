@@ -18,23 +18,32 @@ import { setContactHiddenAtom, setPrefsAtom } from "../../../state/mutations";
 import { accountsAtom, sendAsAtom, hiddenContactsAtom, prefsAtom } from "../../../state/queries";
 import { Select } from "../../../ui/Select";
 import { Checkbox } from "../../../ui/Checkbox";
-import { settingsBox, settingsHeading } from "../../../ui/form-styles";
+import { SettingsCheckRow, SettingsGroup, SettingsRow } from "../../../ui/SettingsRows";
+import { buttonLink, settingsHint } from "../../../ui/styles";
 import { SegmentedControl } from "../../../ui/SegmentedControl";
 
 /** Settings > Compose: undo send, signatures, templates, hidden recipients. */
 export function ComposeSettings() {
   return (
-    <div className="space-y-6">
-      <DefaultFrom />
-      <ComposeAppearance />
-      <ReplyFrom />
-      <RecipientAddresses />
-      <AppleContactsSettings />
-      <QuoteSelection />
-      <UndoSend />
+    <>
+      <SettingsGroup>
+        <DefaultFrom />
+        <ReplyFrom />
+      </SettingsGroup>
+      <SettingsGroup>
+        <ComposeAppearance />
+      </SettingsGroup>
+      <SettingsGroup>
+        <RecipientAddresses />
+        <AppleContactsSettings />
+      </SettingsGroup>
+      <SettingsGroup>
+        <QuoteSelection />
+        <UndoSend />
+      </SettingsGroup>
       <Templates />
       <HiddenContacts />
-    </div>
+    </>
   );
 }
 
@@ -43,7 +52,7 @@ function RecipientAddresses() {
   const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => null);
   const setPrefs = useAtomSet(setPrefsAtom);
   return (
-    <section>
+    <SettingsCheckRow>
       <label className="flex items-center gap-2">
         <Checkbox
           checked={prefs?.showFullRecipientAddresses ?? false}
@@ -56,7 +65,7 @@ function RecipientAddresses() {
         />
         <span>{t`Show full email addresses in recipient fields`}</span>
       </label>
-    </section>
+    </SettingsCheckRow>
   );
 }
 
@@ -65,12 +74,13 @@ function UndoSend() {
   const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => null);
   const setPrefs = useAtomSet(setPrefsAtom);
   return (
-    <section>
-      <h3 className={settingsHeading}>
+    <div className="space-y-2 px-3 py-2">
+      <span className="block">
         <Trans>Undo Send</Trans>
-      </h3>
+      </span>
       <SegmentedControl
         aria-label={t`Undo send delay`}
+        className="w-full"
         value={prefs?.undoSendSeconds ?? null}
         options={UNDO_SEND_SECONDS.map((seconds) => ({
           value: seconds,
@@ -83,12 +93,12 @@ function UndoSend() {
           })
         }
       />
-      <p className="mt-2 text-a11y-muted">
+      <p className={settingsHint}>
         <Trans>
           After you click Send, the message waits this long. You can undo it until then.
         </Trans>
       </p>
-    </section>
+    </div>
   );
 }
 
@@ -104,13 +114,10 @@ function HiddenContacts() {
   const setHidden = useAtomSet(setContactHiddenAtom);
   if (hidden.length === 0) return null;
   return (
-    <section>
-      <h3 className={settingsHeading}>
-        <Trans>Addresses no longer suggested</Trans>
-      </h3>
-      <ul className={`${settingsBox} divide-y divide-separator`}>
+    <SettingsGroup title={<Trans>Addresses no longer suggested</Trans>}>
+      <ul className="divide-y divide-separator">
         {hidden.map((address) => (
-          <li key={address} className="flex items-center gap-3 px-3 py-1.5">
+          <li key={address} className="flex min-h-10 items-center gap-3 px-3 py-2">
             <span className="min-w-0 flex-1 truncate">{address}</span>
             <button
               type="button"
@@ -120,14 +127,14 @@ function HiddenContacts() {
                   reactivityKeys: [Keys.contacts],
                 })
               }
-              className="h-7 shrink-0 rounded-control px-2.5 text-a11y-accent hover:bg-blue-500/10 dark:text-blue-400"
+              className={`shrink-0 ${buttonLink}`}
             >
               <Trans>Restore</Trans>
             </button>
           </li>
         ))}
       </ul>
-    </section>
+    </SettingsGroup>
   );
 }
 
@@ -153,10 +160,11 @@ function DefaultFrom() {
     ]);
   const fixed = prefs.defaultFrom;
   return (
-    <section>
-      <h3 className={settingsHeading}>{t`Default From address`}</h3>
+    <SettingsRow label={t`Default From address`}>
       <Select
         aria-label={t`Default From address`}
+        variant="field"
+        className="max-w-64 min-w-40"
         value={fixed ? senderKey(fixed) : "view"}
         options={[
           { value: "view", label: t`Use the current account` },
@@ -179,7 +187,7 @@ function DefaultFrom() {
           });
         }}
       />
-    </section>
+    </SettingsRow>
   );
 }
 
@@ -188,10 +196,11 @@ function QuoteSelection() {
   const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => DEFAULT_PREFS);
   const setPrefs = useAtomSet(setPrefsAtom);
   return (
-    <section>
-      <h3 className={settingsHeading}>{t`Quote selected text`}</h3>
+    <SettingsRow label={t`Quote selected text`}>
       <Select
         aria-label={t`Quote selected text`}
+        variant="field"
+        className="max-w-64 min-w-40"
         value={prefs.quoteSelection}
         options={[
           { value: "ask", label: t`Ask each time` },
@@ -202,7 +211,7 @@ function QuoteSelection() {
           setPrefs({ payload: { patch: { quoteSelection } }, reactivityKeys: [Keys.prefs] })
         }
       />
-    </section>
+    </SettingsRow>
   );
 }
 
@@ -213,17 +222,20 @@ function ComposeAppearance() {
   const save = (patch: Partial<typeof prefs>) =>
     setPrefs({ payload: { patch }, reactivityKeys: [Keys.prefs] });
   return (
-    <section className="space-y-3">
-      <h3 className={settingsHeading}>{t`Default compose font`}</h3>
-      <div className="flex gap-2">
+    <>
+      <SettingsRow label={t`Default compose font`}>
         <Select
           aria-label={t`Font family`}
+          variant="field"
+          className="min-w-32"
           value={prefs.composeFont.family}
           options={COMPOSE_FONT_FAMILIES.map((value) => ({ value, label: value }))}
           onValueChange={(family) => save({ composeFont: { ...prefs.composeFont, family } })}
         />
         <Select
           aria-label={t`Font size`}
+          variant="field"
+          className="min-w-20"
           value={String(prefs.composeFont.size)}
           options={COMPOSE_FONT_SIZES.map((value) => ({
             value: String(value),
@@ -234,22 +246,26 @@ function ComposeAppearance() {
             if (size) save({ composeFont: { ...prefs.composeFont, size } });
           }}
         />
-      </div>
-      <label className="flex items-center gap-2">
-        <Checkbox
-          checked={prefs.emojiReplacement}
-          onCheckedChange={(emojiReplacement) => save({ emojiReplacement })}
-        />
-        <span>{t`Replace emoji text as you type`}</span>
-      </label>
-      <label className="flex items-center gap-2">
-        <Checkbox
-          checked={prefs.contactPhotos}
-          onCheckedChange={(contactPhotos) => save({ contactPhotos })}
-        />
-        <span>{t`Show Google contact photos`}</span>
-      </label>
-    </section>
+      </SettingsRow>
+      <SettingsCheckRow>
+        <label className="flex items-center gap-2">
+          <Checkbox
+            checked={prefs.emojiReplacement}
+            onCheckedChange={(emojiReplacement) => save({ emojiReplacement })}
+          />
+          <span>{t`Replace emoji text as you type`}</span>
+        </label>
+      </SettingsCheckRow>
+      <SettingsCheckRow>
+        <label className="flex items-center gap-2">
+          <Checkbox
+            checked={prefs.contactPhotos}
+            onCheckedChange={(contactPhotos) => save({ contactPhotos })}
+          />
+          <span>{t`Show Google contact photos`}</span>
+        </label>
+      </SettingsCheckRow>
+    </>
   );
 }
 
@@ -258,10 +274,11 @@ function ReplyFrom() {
   const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => DEFAULT_PREFS);
   const setPrefs = useAtomSet(setPrefsAtom);
   return (
-    <section>
-      <h3 className={settingsHeading}>{t`Reply From`}</h3>
+    <SettingsRow label={t`Reply From`}>
       <Select
         aria-label={t`Reply From`}
+        variant="field"
+        className="max-w-64 min-w-40"
         value={prefs.replyFrom}
         options={[
           { value: "received", label: t`Use the address the message was sent to` },
@@ -271,6 +288,6 @@ function ReplyFrom() {
           setPrefs({ payload: { patch: { replyFrom } }, reactivityKeys: [Keys.prefs] })
         }
       />
-    </section>
+    </SettingsRow>
   );
 }

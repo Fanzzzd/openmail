@@ -9,6 +9,7 @@ import { MailClient } from "../../state/rpc";
 import { Keys, MAIL_KEYS } from "../../state/keys";
 import { reauthAtom } from "../../state/mutations";
 import { Checkbox } from "../../ui/Checkbox";
+import { buttonLink } from "../../ui/styles";
 
 const optionalServicesAtom = (accountId: string) =>
   MailClient.query("OptionalServices", { accountId }, { reactivityKeys: [Keys.accounts] });
@@ -38,20 +39,16 @@ export function ServiceHint({
     settings: t`Settings access is off for this account.`,
   };
   return state === "turnedOff" ? (
-    <p className="text-xs">
+    <p className="text-footnote">
       {off[service]}{" "}
-      <button
-        type="button"
-        className="text-a11y-accent"
-        onClick={() => openOptionalServices(accountId)}
-      >
+      <button type="button" className={buttonLink} onClick={() => openOptionalServices(accountId)}>
         <Trans>Turn it on in Settings</Trans>
       </button>
     </p>
   ) : (
     <button
       type="button"
-      className="text-xs text-a11y-accent"
+      className={`text-footnote ${buttonLink}`}
       onClick={() => openOptionalServices(accountId)}
     >
       <Trans>Connect this service in Settings → Accounts → Optional services.</Trans>
@@ -89,14 +86,18 @@ export function OptionalServices({
     ? new Intl.ListFormat(i18n.locale).format(pending.others.map((service) => names[service]))
     : "";
   return (
-    <section ref={ref} tabIndex={-1} className="w-full space-y-2 border-t border-separator pt-2">
-      <h4 className="font-medium">
+    <section
+      ref={ref}
+      tabIndex={-1}
+      className="space-y-1 rounded-item outline-offset-2 outline-a11y-focus focus-visible:outline-2"
+    >
+      <h4 className="font-semibold text-a11y-muted">
         <Trans>Optional services</Trans>
       </h4>
       {grants.map(({ service, state }) => (
-        <div key={service} className="flex items-center gap-3">
-          <span className="flex-1">{names[service]}</span>
-          <span className="text-xs text-a11y-muted">
+        <div key={service} className="flex min-h-6 flex-wrap items-center gap-x-3 gap-y-1">
+          <span className="min-w-0 flex-1">{names[service]}</span>
+          <span className="text-a11y-muted">
             {state === "granted"
               ? t`Granted`
               : state === "turnedOff"
@@ -107,7 +108,7 @@ export function OptionalServices({
             <button
               type="button"
               disabled={authorization.waiting || result.waiting || account.enabled === false}
-              className="text-a11y-accent"
+              className={buttonLink}
               onClick={() => {
                 const others = consentBatch(grants, service).slice(1);
                 if (others.length) setPending({ service, others });
@@ -137,11 +138,11 @@ export function OptionalServices({
         </div>
       ))}
       {pending && (
-        <p className="text-xs">
+        <p>
           <Trans>Connecting also asks for {pendingNames}.</Trans>{" "}
           <button
             type="button"
-            className="text-a11y-accent"
+            className={buttonLink}
             onClick={() => {
               authorize(pending.service);
               setPending(null);
@@ -149,20 +150,20 @@ export function OptionalServices({
           >
             <Trans>Continue</Trans>
           </button>{" "}
-          <button type="button" className="text-a11y-accent" onClick={() => setPending(null)}>
+          <button type="button" className={buttonLink} onClick={() => setPending(null)}>
             <Trans>Cancel</Trans>
           </button>
         </p>
       )}
       {authorization.waiting && (
-        <p className="text-xs text-a11y-muted">
+        <p className="text-a11y-muted">
           <Trans>Finish signing in in your browser</Trans>
         </p>
       )}
       {(resultError(i18n, snapshot) ||
         resultError(i18n, authorization) ||
         resultError(i18n, result)) && (
-        <output role="alert" className="text-a11y-danger">
+        <output role="alert" className="block text-a11y-danger">
           {resultError(i18n, snapshot) ||
             resultError(i18n, authorization) ||
             resultError(i18n, result)}

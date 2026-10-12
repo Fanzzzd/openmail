@@ -1,5 +1,5 @@
 import type { NotificationPermission, DefaultClientStatus } from "../../../../../shared/desktop";
-import { SettingsRow } from "../../../ui/SettingsRows";
+import { SettingsCheckRow, SettingsGroup, SettingsRow } from "../../../ui/SettingsRows";
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Button } from "@base-ui/react/button";
 import { Input } from "@base-ui/react/input";
@@ -32,6 +32,14 @@ import { ACTION_NAMES } from "../../../i18n/shortcut-names";
 import { prefsAtom, profilesAtom } from "../../../state/queries";
 import { Checkbox } from "../../../ui/Checkbox";
 import { Dialog, alertButton } from "../../../ui/Dialog";
+import {
+  buttonLink,
+  buttonPrimary,
+  buttonSecondary,
+  settingsGroup,
+  settingsHeading,
+  settingsHint,
+} from "../../../ui/styles";
 import { SegmentedControl } from "../../../ui/SegmentedControl";
 import { Select } from "../../../ui/Select";
 
@@ -105,7 +113,12 @@ const timeText = (minute: number) =>
 const timeMinute = (value: string) =>
   /^\d{2}:\d{2}$/.test(value) ? Number(value.slice(0, 2)) * 60 + Number(value.slice(3)) : null;
 
-const timeInput = "rounded border border-edge bg-transparent px-2 py-1";
+/** formInput, sized to its content so two times and an action fit on one line. */
+const timeInput =
+  "rounded-control border border-control bg-white px-1.5 py-0.5 text-body tabular-nums outline-offset-0 outline-a11y-focus focus:border-transparent focus:outline-2 dark:bg-white/[0.05]";
+/** "Remove period": quieter than the accent link beside it. */
+const quietLink =
+  "rounded-item text-footnote text-a11y-muted outline-offset-1 outline-a11y-focus hover:underline focus-visible:outline-2";
 const WEEKDAY_NAMES: Record<Weekday, MessageDescriptor> = {
   sunday: msg`Sunday`,
   monday: msg`Monday`,
@@ -162,13 +175,18 @@ export function NotificationsSettings({ accounts }: { accounts: readonly Account
   const save = (patch: PrefsPatch) =>
     setPrefs({ payload: { patch }, reactivityKeys: [Keys.prefs] });
   return (
-    <div className="space-y-6">
-      <section className="space-y-3">
-        <h3 className="font-semibold">
-          <Trans>System notification permission</Trans>
-        </h3>
-        <output aria-live="polite">{t(PERMISSION_NAMES[permission])}</output>
-        <div className="flex gap-3">
+    <>
+      <SettingsGroup title={<Trans>System notification permission</Trans>}>
+        <SettingsRow
+          label={<output aria-live="polite">{t(PERMISSION_NAMES[permission])}</output>}
+          hint={
+            settingsFailed && (
+              <output role="alert" className="text-orange-700 dark:text-orange-400">
+                <Trans>Could not open notification settings.</Trans>
+              </output>
+            )
+          }
+        >
           <Button
             disabled={permissionBusy || permission !== "notDetermined"}
             onClick={() => {
@@ -180,7 +198,7 @@ export function NotificationsSettings({ accounts }: { accounts: readonly Account
                 ),
               );
             }}
-            className={alertButton}
+            className={buttonSecondary}
           >
             <Trans>Allow notifications</Trans>
           </Button>
@@ -192,120 +210,122 @@ export function NotificationsSettings({ accounts }: { accounts: readonly Account
                 ),
               )
             }
-            className={alertButton}
+            className={buttonSecondary}
           >
             <Trans>Open macOS notification settings</Trans>
           </Button>
-        </div>
-        {settingsFailed && (
-          <output role="alert" className="text-orange-700 dark:text-orange-400">
-            <Trans>Could not open notification settings.</Trans>
-          </output>
-        )}
-      </section>
-      <section className="space-y-3">
-        <h3 className="font-semibold">
-          <Trans>Notification action buttons</Trans>
-        </h3>
-        {capabilities.buttons &&
-          NOTIFICATION_ACTIONS.map(({ value, label }) => (
-            <label
-              key={value}
-              htmlFor={`notification-action-${value}`}
-              className="flex items-center gap-2"
-            >
-              <Checkbox
-                id={`notification-action-${value}`}
-                checked={prefs.notificationActions.includes(value)}
-                onCheckedChange={(checked) =>
-                  save({
-                    notificationActions: checked
-                      ? [
-                          ...prefs.notificationActions.filter((action) => action !== value),
-                          value,
-                        ].slice(-3)
-                      : prefs.notificationActions.filter((action) => action !== value),
-                  })
-                }
-              />
-              {value === "menu" && !capabilities.selection ? <Trans>All actions</Trans> : t(label)}
-            </label>
-          ))}
-        <p className="text-a11y-muted">
-          {capabilities.buttons ? (
-            capabilities.selection ? (
-              <Trans>
-                Up to three actions, in selection order. The action menu includes Archive, Trash and
-                Mark read. Changes apply to new notifications.
-              </Trans>
-            ) : (
-              <Trans>
-                Up to three buttons, in selection order. All actions adds Archive, Trash and Mark
-                read buttons. Changes apply to new notifications.
-              </Trans>
-            )
+        </SettingsRow>
+      </SettingsGroup>
+      <SettingsGroup
+        title={<Trans>Notification action buttons</Trans>}
+        footer={
+          capabilities.buttons &&
+          (capabilities.selection ? (
+            <Trans>
+              Up to three actions, in selection order. The action menu includes Archive, Trash and
+              Mark read. Changes apply to new notifications.
+            </Trans>
           ) : (
+            <Trans>
+              Up to three buttons, in selection order. All actions adds Archive, Trash and Mark read
+              buttons. Changes apply to new notifications.
+            </Trans>
+          ))
+        }
+      >
+        {capabilities.buttons ? (
+          NOTIFICATION_ACTIONS.map(({ value, label }) => (
+            <SettingsCheckRow key={value}>
+              <label htmlFor={`notification-action-${value}`} className="flex items-center gap-2">
+                <Checkbox
+                  id={`notification-action-${value}`}
+                  checked={prefs.notificationActions.includes(value)}
+                  onCheckedChange={(checked) =>
+                    save({
+                      notificationActions: checked
+                        ? [
+                            ...prefs.notificationActions.filter((action) => action !== value),
+                            value,
+                          ].slice(-3)
+                        : prefs.notificationActions.filter((action) => action !== value),
+                    })
+                  }
+                />
+                {value === "menu" && !capabilities.selection ? (
+                  <Trans>All actions</Trans>
+                ) : (
+                  t(label)
+                )}
+              </label>
+            </SettingsCheckRow>
+          ))
+        ) : (
+          <p className={`px-3 py-2.5 ${settingsHint}`}>
             <Trans>Notification actions are available on macOS and Windows.</Trans>
-          )}
-        </p>
-      </section>
-      <section>
-        <h3 className="mb-3 font-semibold">
-          <Trans>New mail notifications</Trans>
-        </h3>
-        <div className="space-y-3">
-          {accounts.map((account) => (
-            <div key={account.id} className="flex items-center justify-between gap-4">
-              <span className="truncate">{account.description?.trim() || account.email}</span>
-              <Select
-                aria-label={t`Notifications for ${account.email}`}
-                value={prefs.notifications[account.id] ?? "primary"}
-                options={[
-                  {
-                    value: "primary",
-                    label: account.provider === "outlook" ? t`Focused` : t`Primary`,
-                  },
-                  { value: "inbox", label: t`Inbox` },
-                  { value: "off", label: t`Off` },
-                ]}
-                onValueChange={(mode) =>
-                  save({ notifications: { ...prefs.notifications, [account.id]: mode } })
-                }
-              />
-            </div>
-          ))}
-        </div>
-        <p className="mt-3 text-a11y-muted">
+          </p>
+        )}
+      </SettingsGroup>
+      <SettingsGroup
+        title={<Trans>New mail notifications</Trans>}
+        footer={
           <Trans>
             Primary excludes Gmail's other categories and includes only Outlook Focused mail. For
             IMAP, it includes all Inbox mail. Read mail and the first sync stay silent.
           </Trans>
-        </p>
-      </section>
+        }
+      >
+        {accounts.map((account) => (
+          <SettingsRow
+            key={account.id}
+            label={
+              <span className="block truncate">{account.description?.trim() || account.email}</span>
+            }
+          >
+            <Select
+              aria-label={t`Notifications for ${account.email}`}
+              variant="field"
+              className="min-w-32"
+              value={prefs.notifications[account.id] ?? "primary"}
+              options={[
+                {
+                  value: "primary",
+                  label: account.provider === "outlook" ? t`Focused` : t`Primary`,
+                },
+                { value: "inbox", label: t`Inbox` },
+                { value: "off", label: t`Off` },
+              ]}
+              onValueChange={(mode) =>
+                save({ notifications: { ...prefs.notifications, [account.id]: mode } })
+              }
+            />
+          </SettingsRow>
+        ))}
+      </SettingsGroup>
+      <SettingsGroup>
+        <SettingsCheckRow
+          hint={<Trans>The menu lists up to 50 unread messages in the current space.</Trans>}
+        >
+          <label htmlFor="menu-bar-unread-count" className="flex items-center gap-2">
+            <Checkbox
+              id="menu-bar-unread-count"
+              checked={prefs.menuBarUnreadCount}
+              onCheckedChange={(menuBarUnreadCount) => save({ menuBarUnreadCount })}
+            />
+            <Trans>Show unread count in the menu bar</Trans>
+          </label>
+        </SettingsCheckRow>
+      </SettingsGroup>
       <section>
-        <label htmlFor="menu-bar-unread-count" className="flex items-center gap-2">
-          <Checkbox
-            id="menu-bar-unread-count"
-            checked={prefs.menuBarUnreadCount}
-            onCheckedChange={(menuBarUnreadCount) => save({ menuBarUnreadCount })}
-          />
-          <Trans>Show unread count in the menu bar</Trans>
-        </label>
-        <p className="mt-2 text-a11y-muted">
-          <Trans>The menu lists up to 50 unread messages in the current space.</Trans>
-        </p>
-      </section>
-      <section>
-        <h3 className="mb-3 font-semibold">
+        <h3 className={settingsHeading}>
           <Trans>Active hours by space</Trans>
         </h3>
-        <p className="mb-3 text-a11y-muted">
+        <p className={`mb-2 px-1 ${settingsHint}`}>
           <Trans>
             Use this Mac's local time. Outside active hours, notifications wait and the Dock badge
             excludes the space. When active hours resume, unread arrivals appear in one summary.
           </Trans>
         </p>
-        <div className="space-y-5">
+        <div className={settingsGroup}>
           {[{ id: "all", name: t`Ungrouped accounts` }, ...profiles].map((profile) => {
             const hours = prefs.activeHours[profile.id] ?? DEFAULT_ACTIVE_HOURS;
             const update = (patch: Partial<typeof hours>) =>
@@ -314,8 +334,8 @@ export function NotificationsSettings({ accounts }: { accounts: readonly Account
               update({ days: { ...hours.days, [day]: windows } });
             const legacy = !prefs.activeHours[profile.id] && prefs.quietHours[profile.id]?.enabled;
             return (
-              <div key={profile.id}>
-                <label className="mb-2 flex items-center gap-2 font-medium">
+              <div key={profile.id} className="space-y-2 px-3 py-2.5">
+                <label className="flex items-center gap-2 font-medium">
                   <Checkbox
                     checked={hours.enabled}
                     onCheckedChange={(enabled) => update({ enabled })}
@@ -323,102 +343,112 @@ export function NotificationsSettings({ accounts }: { accounts: readonly Account
                   {profile.name}
                 </label>
                 {legacy && (
-                  <p className="mb-2 text-a11y-muted">
+                  <p className={`pl-[22px] ${settingsHint}`}>
                     <Trans>
                       A previous daily quiet-hours setting is still active. Change this schedule to
                       replace it.
                     </Trans>
                   </p>
                 )}
-                {hours.enabled &&
-                  WEEKDAYS.map((day) => {
-                    const windows = hours.days[day];
-                    const dayName = t(WEEKDAY_NAMES[day]);
-                    return (
-                      <div key={day} className="mb-3 space-y-2">
-                        <label className="flex items-center gap-2">
-                          <Checkbox
-                            checked={windows.length > 0}
-                            onCheckedChange={(enabled) =>
-                              updateDay(day, enabled ? [{ start: 540, end: 1020 }] : [])
-                            }
-                          />
-                          {dayName}
-                        </label>
-                        {windows.map((window, index) => {
-                          const change = (patch: Partial<ActiveWindow>) =>
-                            updateDay(
-                              day,
-                              windows.map((current, i) =>
-                                i === index ? { ...current, ...patch } : current,
-                              ),
-                            );
-                          return (
-                            <div key={index} className="ml-6 flex flex-wrap items-center gap-3">
-                              <label
-                                htmlFor={`active-start-${profile.id}-${day}-${index}`}
-                                className="flex items-center gap-2"
-                              >
-                                <Trans>Start</Trans>
-                                <Input
-                                  id={`active-start-${profile.id}-${day}-${index}`}
-                                  aria-label={t`Active hours start for ${profile.name} on ${dayName}, period ${index + 1}`}
-                                  type="time"
-                                  value={timeText(window.start)}
-                                  className={timeInput}
-                                  onChange={(e) => {
-                                    const start = timeMinute(e.target.value);
-                                    if (start !== null) change({ start });
-                                  }}
-                                />
-                              </label>
-                              <label
-                                htmlFor={`active-end-${profile.id}-${day}-${index}`}
-                                className="flex items-center gap-2"
-                              >
-                                <Trans>Until</Trans>
-                                <Input
-                                  id={`active-end-${profile.id}-${day}-${index}`}
-                                  aria-label={t`Active hours end for ${profile.name} on ${dayName}, period ${index + 1}`}
-                                  type="time"
-                                  value={timeText(window.end)}
-                                  className={timeInput}
-                                  onChange={(e) => {
-                                    const end = timeMinute(e.target.value);
-                                    if (end !== null) change({ end });
-                                  }}
-                                />
-                              </label>
-                              <Button
-                                onClick={() =>
+                {hours.enabled && (
+                  <div className="space-y-1.5 pl-[22px]">
+                    {WEEKDAYS.map((day) => {
+                      const windows = hours.days[day];
+                      const dayName = t(WEEKDAY_NAMES[day]);
+                      return (
+                        <div key={day} className="flex flex-wrap items-start gap-x-4 gap-y-1">
+                          <label className="flex h-7 w-28 shrink-0 items-center gap-2">
+                            <Checkbox
+                              checked={windows.length > 0}
+                              onCheckedChange={(enabled) =>
+                                updateDay(day, enabled ? [{ start: 540, end: 1020 }] : [])
+                              }
+                            />
+                            {dayName}
+                          </label>
+                          {windows.length > 0 && (
+                            <div className="min-w-0 flex-1 space-y-1">
+                              {windows.map((window, index) => {
+                                const change = (patch: Partial<ActiveWindow>) =>
                                   updateDay(
                                     day,
-                                    windows.filter((_, i) => i !== index),
-                                  )
+                                    windows.map((current, i) =>
+                                      i === index ? { ...current, ...patch } : current,
+                                    ),
+                                  );
+                                return (
+                                  <div
+                                    key={index}
+                                    className="flex min-h-7 flex-wrap items-center gap-x-3 gap-y-1"
+                                  >
+                                    <label
+                                      htmlFor={`active-start-${profile.id}-${day}-${index}`}
+                                      className="flex items-center gap-1.5"
+                                    >
+                                      <Trans>Start</Trans>
+                                      <Input
+                                        id={`active-start-${profile.id}-${day}-${index}`}
+                                        aria-label={t`Active hours start for ${profile.name} on ${dayName}, period ${index + 1}`}
+                                        type="time"
+                                        value={timeText(window.start)}
+                                        className={timeInput}
+                                        onChange={(e) => {
+                                          const start = timeMinute(e.target.value);
+                                          if (start !== null) change({ start });
+                                        }}
+                                      />
+                                    </label>
+                                    <label
+                                      htmlFor={`active-end-${profile.id}-${day}-${index}`}
+                                      className="flex items-center gap-1.5"
+                                    >
+                                      <Trans>Until</Trans>
+                                      <Input
+                                        id={`active-end-${profile.id}-${day}-${index}`}
+                                        aria-label={t`Active hours end for ${profile.name} on ${dayName}, period ${index + 1}`}
+                                        type="time"
+                                        value={timeText(window.end)}
+                                        className={timeInput}
+                                        onChange={(e) => {
+                                          const end = timeMinute(e.target.value);
+                                          if (end !== null) change({ end });
+                                        }}
+                                      />
+                                    </label>
+                                    <Button
+                                      onClick={() =>
+                                        updateDay(
+                                          day,
+                                          windows.filter((_, i) => i !== index),
+                                        )
+                                      }
+                                      className={quietLink}
+                                    >
+                                      <Trans>Remove period</Trans>
+                                    </Button>
+                                  </div>
+                                );
+                              })}
+                              <Button
+                                onClick={() =>
+                                  updateDay(day, [...windows, { start: 540, end: 1020 }])
                                 }
-                                className="text-a11y-muted"
+                                className={`text-footnote ${buttonLink}`}
                               >
-                                <Trans>Remove period</Trans>
+                                <Trans>Add period</Trans>
                               </Button>
                             </div>
-                          );
-                        })}
-                        {windows.length > 0 && (
-                          <Button
-                            onClick={() => updateDay(day, [...windows, { start: 540, end: 1020 }])}
-                            className="ml-6 text-a11y-muted"
-                          >
-                            <Trans>Add period</Trans>
-                          </Button>
-                        )}
-                      </div>
-                    );
-                  })}
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
-        <p className="mt-3 text-a11y-muted">
+        <p className={`mt-1.5 px-1 ${settingsHint}`}>
           <Trans>
             Matching times keep that weekday active all day. Overnight periods continue into the
             next day. Unchecked days stay muted except for overnight periods from the previous day.
@@ -426,7 +456,7 @@ export function NotificationsSettings({ accounts }: { accounts: readonly Account
           </Trans>
         </p>
       </section>
-    </div>
+    </>
   );
 }
 
@@ -437,29 +467,32 @@ const SET_NAMES: { value: ShortcutSet; label: MessageDescriptor }[] = [
 ];
 
 const ACTIONS = Object.entries(ACTION_NAMES);
+/** Keys drawn as a small key cap: the system font, so ⌘ and ⌥ match the menu bar. */
+const keyCap =
+  "rounded-item bg-fill-quiet px-1.5 py-px font-sans text-footnote whitespace-nowrap text-neutral-700 tabular-nums dark:text-neutral-300";
+const shortcutRow = "px-3 py-1.5";
+const shortcutKeys = "px-3 py-1.5 text-right";
 function ShortcutTable({ set }: { set: ShortcutSet }) {
   const { i18n } = useLingui();
   return (
     <table className="w-full text-left">
-      <tbody>
+      <tbody className="divide-y divide-separator">
         {ACTIONS.map(([action, label]) => {
           if (!isShortcutAction(action)) return null;
           return (
-            <tr key={action} className="border-b border-separator">
-              <td className="py-1.5">{i18n._(label)}</td>
-              <td className="py-1.5 text-right">
-                <kbd className="font-mono text-footnote text-a11y-muted">
-                  {shortcutText(set, action)}
-                </kbd>
+            <tr key={action}>
+              <td className={shortcutRow}>{i18n._(label)}</td>
+              <td className={shortcutKeys}>
+                <kbd className={keyCap}>{shortcutText(set, action)}</kbd>
               </td>
             </tr>
           );
         })}
         {NUMBERED_MAILBOXES.map((mailbox, index) => (
-          <tr key={mailbox} className="border-b border-separator">
-            <td className="py-1.5">{i18n._(MAILBOX_NAMES[mailbox])}</td>
-            <td className="py-1.5 text-right">
-              <kbd>
+          <tr key={mailbox}>
+            <td className={shortcutRow}>{i18n._(MAILBOX_NAMES[mailbox])}</td>
+            <td className={shortcutKeys}>
+              <kbd className={keyCap}>
                 {set === "gmail" ? "⌃⌘" : "⌘"}
                 {index + 1}
               </kbd>
@@ -467,37 +500,37 @@ function ShortcutTable({ set }: { set: ShortcutSet }) {
           </tr>
         ))}
         <tr>
-          <td className="pt-3">
+          <td className={shortcutRow}>
             <Trans>Favorites in sidebar order</Trans>
           </td>
-          <td className="pt-3 text-right">
-            <kbd>⌥⌘1…9</kbd>
+          <td className={shortcutKeys}>
+            <kbd className={keyCap}>⌥⌘1…9</kbd>
           </td>
         </tr>
         <tr>
-          <td className="pt-3">
+          <td className={shortcutRow}>
             <Trans comment="Keyboard shortcuts help: go back or forward through the views opened in this window, like a browser's Back and Forward.">
               Previous / next view
             </Trans>
           </td>
-          <td className="pt-3 text-right">
-            <kbd>⌘[ / ⌘]</kbd>
+          <td className={shortcutKeys}>
+            <kbd className={keyCap}>⌘[ / ⌘]</kbd>
           </td>
         </tr>
         <tr>
-          <td className="pt-3">
+          <td className={shortcutRow}>
             <Trans>Move focus between panes</Trans>
           </td>
-          <td className="pt-3 text-right">
-            <kbd>← / →</kbd>
+          <td className={shortcutKeys}>
+            <kbd className={keyCap}>← / →</kbd>
           </td>
         </tr>
         <tr>
-          <td className="pt-3">
+          <td className={shortcutRow}>
             <Trans>Switch spaces</Trans>
           </td>
-          <td className="pt-3 text-right">
-            <kbd>{set === "gmail" ? "⌘1…9" : "⌃⌘1…9"}</kbd>
+          <td className={shortcutKeys}>
+            <kbd className={keyCap}>{set === "gmail" ? "⌘1…9" : "⌃⌘1…9"}</kbd>
           </td>
         </tr>
       </tbody>
@@ -509,20 +542,24 @@ export function ShortcutsSettings() {
   const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => DEFAULT_PREFS);
   const setPrefs = useAtomSet(setPrefsAtom);
   return (
-    <div>
-      <SegmentedControl
-        aria-label={t`Shortcut set`}
-        value={prefs.shortcutSet}
-        options={SET_NAMES.map((item) => ({ value: item.value, label: i18n._(item.label) }))}
-        onValueChange={(shortcutSet) =>
-          setPrefs({ payload: { patch: { shortcutSet } }, reactivityKeys: [Keys.prefs] })
-        }
-      />
-      <p className="my-3 text-a11y-muted">
-        <Trans>Press ? outside a text field to show this list.</Trans>
-      </p>
-      <ShortcutTable set={prefs.shortcutSet} />
-    </div>
+    <>
+      <div className="space-y-2">
+        <SegmentedControl
+          aria-label={t`Shortcut set`}
+          value={prefs.shortcutSet}
+          options={SET_NAMES.map((item) => ({ value: item.value, label: i18n._(item.label) }))}
+          onValueChange={(shortcutSet) =>
+            setPrefs({ payload: { patch: { shortcutSet } }, reactivityKeys: [Keys.prefs] })
+          }
+        />
+        <p className={`px-1 ${settingsHint}`}>
+          <Trans>Press ? outside a text field to show this list.</Trans>
+        </p>
+      </div>
+      <div className={`overflow-hidden ${settingsGroup}`}>
+        <ShortcutTable set={prefs.shortcutSet} />
+      </div>
+    </>
   );
 }
 export function ShortcutHelp({ onClose }: { onClose: () => void }) {
@@ -532,17 +569,21 @@ export function ShortcutHelp({ onClose }: { onClose: () => void }) {
     <Dialog
       aria-label={t`Keyboard shortcuts`}
       onClose={onClose}
-      className="flex max-h-[80vh] w-[520px] flex-col p-5"
+      className="flex max-h-[min(640px,calc(100dvh-48px))] w-[min(520px,calc(100vw-48px))] flex-col overflow-hidden"
     >
-      <h2 className="mb-3 text-headline font-semibold">
+      <h2 className="shrink-0 px-5 pt-4 pb-3 text-headline font-semibold">
         <Trans>Keyboard shortcuts</Trans>
       </h2>
-      <div className="overflow-y-auto">
-        <ShortcutTable set={prefs.shortcutSet} />
+      <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-4">
+        <div className={`overflow-hidden ${settingsGroup}`}>
+          <ShortcutTable set={prefs.shortcutSet} />
+        </div>
       </div>
-      <Button className={`${alertButton} mt-4 self-end`} onClick={onClose}>
-        <Trans>Done</Trans>
-      </Button>
+      <div className="flex shrink-0 justify-end border-t border-separator px-5 py-3">
+        <Button className={buttonPrimary} onClick={onClose}>
+          <Trans>Done</Trans>
+        </Button>
+      </div>
     </Dialog>
   );
 }

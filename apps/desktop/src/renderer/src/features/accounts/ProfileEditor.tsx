@@ -19,8 +19,15 @@ import { Keys } from "../../state/keys";
 import { deleteProfileAtom, saveProfileAtom } from "../../state/mutations";
 import { Checkbox } from "../../ui/Checkbox";
 import { Dialog } from "../../ui/Dialog";
+import { buttonPrimary, buttonSecondary, formInput, settingsGroup } from "../../ui/styles";
 
 const ICONS = ["💼", "🏠", "🏭", "🧪", "🎓", "✈️", "💰", "⭐"];
+
+/** A field's label, above the field. */
+const fieldLabel = "mb-1.5 text-footnote font-medium text-a11y-muted";
+/** A borderless destructive action on the leading edge of the button row. */
+const quietDanger =
+  "inline-flex h-7 items-center rounded-control px-3 font-medium text-a11y-danger outline-offset-1 outline-a11y-focus transition-colors duration-100 hover:bg-fill-hover focus-visible:outline-[3px] active:bg-fill-pressed motion-reduce:transition-none";
 
 interface Props {
   /** Edit this profile; omit to create one. */
@@ -94,12 +101,12 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder={t`Name, like Work`}
-            className="h-8 min-w-0 flex-1 rounded-control border border-edge bg-transparent px-2.5 text-callout outline-none focus:border-blue-500"
+            className={`min-w-0 flex-1 ${formInput}`}
           />
         </div>
 
-        <fieldset className="mt-4">
-          <legend className="mb-1.5 text-footnote text-a11y-muted">
+        <fieldset className="mt-5">
+          <legend className={fieldLabel}>
             <Trans>Icon</Trans>
           </legend>
           <div className="flex items-center gap-1">
@@ -113,58 +120,57 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
                 <Radio.Root
                   key={i}
                   value={i}
-                  className="flex size-8 items-center justify-center rounded-control text-title outline-none hover:bg-fill-hover focus-visible:ring-2 focus-visible:ring-a11y-focus data-checked:bg-fill-pressed"
+                  className="flex size-8 items-center justify-center rounded-control text-title outline-offset-1 outline-a11y-focus transition-colors duration-100 hover:bg-fill-hover focus-visible:outline-2 data-checked:bg-fill-pressed motion-reduce:transition-none"
                 >
                   {i}
                 </Radio.Root>
               ))}
             </RadioGroup>
-            <input
-              aria-label={t`Custom icon`}
-              placeholder={t`Other`}
-              onChange={(e) => {
-                const g = firstGrapheme(e.target.value);
-                if (g) setIcon(g);
-              }}
-              className="ml-1 h-8 w-14 rounded-control border border-edge bg-transparent px-2 text-center outline-none"
-            />
+            <div className="ml-1 w-14 shrink-0">
+              <input
+                aria-label={t`Custom icon`}
+                placeholder={t`Other`}
+                onChange={(e) => {
+                  const g = firstGrapheme(e.target.value);
+                  if (g) setIcon(g);
+                }}
+                className={`text-center ${formInput}`}
+              />
+            </div>
           </div>
         </fieldset>
 
-        <fieldset className="mt-4">
-          <legend className="mb-1.5 text-footnote text-a11y-muted">
+        <fieldset className="mt-5">
+          <legend className={fieldLabel}>
             <Trans>Color</Trans>
           </legend>
           <RadioGroup<ProfileColor>
             aria-label={t`Color`}
             value={color}
             onValueChange={setColor}
-            className="flex gap-2"
+            className="flex gap-2.5 px-1 py-1"
           >
             {PROFILE_COLORS.map((c) => (
               <Radio.Root
                 key={c}
                 value={c}
                 aria-label={c}
-                className={`size-6 rounded-full outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-a11y-focus data-checked:ring-2 data-checked:ring-neutral-400 dark:ring-offset-neutral-800 ${PROFILE_BG[c]}`}
+                className={`size-6 rounded-full ring-offset-2 ring-offset-raised outline-offset-[5px] outline-a11y-focus focus-visible:outline-2 data-checked:ring-2 data-checked:ring-neutral-900 dark:data-checked:ring-white ${PROFILE_BG[c]}`}
               />
             ))}
           </RadioGroup>
         </fieldset>
 
-        <fieldset className="mt-4">
-          <legend className="mb-1.5 text-footnote text-a11y-muted">
+        <fieldset className="mt-5">
+          <legend className={fieldLabel}>
             <Trans>Accounts</Trans>
           </legend>
-          <div className="max-h-48 space-y-px overflow-y-auto">
+          <div className={`max-h-48 overflow-y-auto ${settingsGroup}`}>
             {accounts.map((a) => {
               const elsewhere =
                 a.profileId && a.profileId !== profile?.id ? profileName(a.profileId) : undefined;
               return (
-                <label
-                  key={a.id}
-                  className="flex h-8 items-center gap-2.5 rounded-control px-2 hover:bg-fill-hover"
-                >
+                <label key={a.id} className="flex min-h-9 items-center gap-2.5 px-3 py-1.5">
                   <Checkbox
                     checked={members.has(a.id)}
                     onCheckedChange={(checked) =>
@@ -197,7 +203,7 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
         </fieldset>
 
         {error && (
-          <p role="alert" className="mt-3 text-footnote text-a11y-danger">
+          <p role="alert" className="mt-3 text-a11y-danger">
             {error}
           </p>
         )}
@@ -207,24 +213,16 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
             <button
               type="button"
               onClick={() => void deleteProfile(profile.id)}
-              className="h-8 rounded-control px-3 text-a11y-danger hover:bg-red-500/10"
+              className={quietDanger}
             >
               <Trans>Delete Space</Trans>
             </button>
           )}
           <span className="flex-1" />
-          <button
-            type="button"
-            onClick={onClose}
-            className="h-8 rounded-control px-3 hover:bg-fill-hover"
-          >
+          <button type="button" onClick={onClose} className={buttonSecondary}>
             <Trans>Cancel</Trans>
           </button>
-          <button
-            type="submit"
-            disabled={!name.trim() || save.waiting}
-            className="h-8 rounded-control bg-blue-600 px-4 font-medium text-white disabled:opacity-40"
-          >
+          <button type="submit" disabled={!name.trim() || save.waiting} className={buttonPrimary}>
             {profile ? <Trans>Save</Trans> : <Trans>Create</Trans>}
           </button>
         </div>

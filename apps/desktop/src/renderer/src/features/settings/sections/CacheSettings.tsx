@@ -15,8 +15,9 @@ import { Keys } from "../../../state/keys";
 import { MailClient } from "../../../state/rpc";
 import { pauseBackfillAtom, setCacheWindowAtom, setPrefsAtom } from "../../../state/mutations";
 import { backfillStateAtom, cacheWindowsAtom, labelsAtom, prefsAtom } from "../../../state/queries";
-import { alertButton } from "../../../ui/Dialog";
 import { Select } from "../../../ui/Select";
+import { SettingsRow } from "../../../ui/SettingsRows";
+import { buttonSecondary, settingsGroup, settingsHeading, settingsHint } from "../../../ui/styles";
 
 const sizesAtom = MailClient.query("CacheSize", undefined, {
   reactivityKeys: [Keys.storage],
@@ -26,7 +27,10 @@ const databaseSizeAtom = MailClient.query("CacheDatabaseSize", undefined, {
 });
 const clearAtom = MailClient.mutation("ClearCache");
 const compactAtom = MailClient.mutation("CompactCache");
-const actionButton = `${alertButton} shrink-0 disabled:opacity-50`;
+const actionButton = `${buttonSecondary} shrink-0`;
+/** One size in the breakdown: the name left, the value right-aligned in tabular figures. */
+const sizeRow = "flex min-h-8 items-center justify-between gap-6 px-3 py-1.5";
+const sizeValue = "text-right text-a11y-muted tabular-nums";
 const MEGABYTE_LIMITS = [128, 512, 1024, 2048].map((mb) => mb * 1024 ** 2);
 const GIGABYTE_LIMITS = [1, 2, 5, 10, 20].map((gb) => gb * 1024 ** 3);
 
@@ -111,179 +115,213 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
     ["TRASH", t`Trash`],
   ]);
   return (
-    <section className="mt-6 space-y-3 border-t border-edge pt-4">
-      <h2 className="font-semibold">
-        <Trans>Older mail and cache</Trans>
-      </h2>
-      <p className="text-a11y-muted">
-        <Trans>
-          Older mail downloads in the background. Headers stay searchable when bodies expire.
-          Opening a message downloads its body again.
-        </Trans>
-      </p>
-      <div className="flex items-center justify-between gap-3">
-        <span>
-          <Trans
-            context="cached message text"
-            comment="Storage budget for downloaded email message text."
-          >
-            Message text cache limit
-          </Trans>
-        </span>
-        <Select
-          aria-label={t({
-            message: "Message text cache limit",
-            context: "cached message text",
-            comment: "Storage budget for downloaded email message text.",
-          })}
-          value={String(prefs.bodyCacheBytes)}
-          options={limitOptions(t`Disabled`, MEGABYTE_LIMITS, i18n.locale)}
-          disabled={limitResult.waiting}
-          onValueChange={(value) =>
-            setLimit({
-              payload: { patch: { bodyCacheBytes: Number(value) } },
-              reactivityKeys: [Keys.storage, Keys.cache, Keys.prefs, Keys.threads, Keys.thread],
-            })
-          }
-        />
-      </div>
-      <p className="text-xs text-a11y-muted">
-        <Trans>
-          Retention windows take precedence. Starred messages, retained message texts, drafts and
-          outbox messages are kept even when the limit is exceeded. Zero disables the budget.
-        </Trans>
-      </p>
-      <div className="flex items-center justify-between gap-3">
-        <span>
-          <Trans>Keep openmail under</Trans>
-        </span>
-        <Select
-          aria-label={t`Keep openmail under`}
-          value={String(prefs.totalCacheBytes)}
-          options={limitOptions(t`Disabled`, GIGABYTE_LIMITS, i18n.locale)}
-          disabled={limitResult.waiting}
-          onValueChange={(value) =>
-            setLimit({
-              payload: { patch: { totalCacheBytes: Number(value) } },
-              reactivityKeys: [Keys.storage, Keys.cache, Keys.prefs, Keys.threads, Keys.thread],
-            })
-          }
-        />
-      </div>
-      <p className="text-xs text-a11y-muted">
-        <Trans>
-          The limit includes the database, attachments, WAL and recovery copies. Protected content
-          may exceed it.
-        </Trans>
-      </p>
-      {databaseSize?.lowDisk && databaseSize.canReclaim && (
-        <output className="block text-orange-700 dark:text-orange-400">
+    <>
+      <section>
+        <h3 className={settingsHeading}>
+          <Trans>Older mail and cache</Trans>
+        </h3>
+        <p className={`mb-2 px-1 ${settingsHint}`}>
           <Trans>
-            Disk space is low. The cache budget has tightened automatically. Protected content is
-            kept.
+            Older mail downloads in the background. Headers stay searchable when bodies expire.
+            Opening a message downloads its body again.
           </Trans>
-        </output>
-      )}
-      {databaseSize?.lowDisk && !databaseSize.canReclaim && (
-        <p className="text-a11y-muted">
-          <Trans>Disk space is low. Compact now to enable automatic disk space reclamation.</Trans>
         </p>
-      )}
-      <div className="flex items-center justify-between gap-3">
-        <span>
-          <Trans>Attachment cache limit</Trans>
-        </span>
-        <Select
-          aria-label={t`Attachment cache limit`}
-          value={String(prefs.attachmentCacheBytes)}
-          options={limitOptions(t`Disabled`, MEGABYTE_LIMITS, i18n.locale)}
-          disabled={limitResult.waiting}
-          onValueChange={(value) =>
-            setLimit({
-              payload: { patch: { attachmentCacheBytes: Number(value) } },
-              reactivityKeys: [Keys.storage, Keys.cache, Keys.prefs],
-            })
-          }
-        />
-      </div>
-      <div className="flex items-center justify-between gap-3">
-        <output>
-          <Trans>Total cache: {total}</Trans>
-        </output>
-        <button
-          type="button"
-          className={actionButton}
-          disabled={clearResult.waiting}
-          onClick={() =>
-            clear({
-              payload: {},
-              reactivityKeys: [Keys.storage, Keys.cache, Keys.threads, Keys.thread],
-            })
-          }
-        >
-          <Trans>Clear all caches</Trans>
-        </button>
-      </div>
-      <dl className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 text-sm">
-        <dt>
-          <Trans
-            context="cached message text"
-            comment="Storage occupied by downloaded email message text."
+        <div className={settingsGroup}>
+          <SettingsRow
+            label={
+              <Trans
+                context="cached message text"
+                comment="Storage budget for downloaded email message text."
+              >
+                Message text cache limit
+              </Trans>
+            }
+            hint={
+              <Trans>
+                Retention windows take precedence. Starred messages, retained message texts, drafts
+                and outbox messages are kept even when the limit is exceeded. Zero disables the
+                budget.
+              </Trans>
+            }
           >
-            Message text
+            <Select
+              aria-label={t({
+                message: "Message text cache limit",
+                context: "cached message text",
+                comment: "Storage budget for downloaded email message text.",
+              })}
+              variant="field"
+              className="min-w-28"
+              value={String(prefs.bodyCacheBytes)}
+              options={limitOptions(t`Disabled`, MEGABYTE_LIMITS, i18n.locale)}
+              disabled={limitResult.waiting}
+              onValueChange={(value) =>
+                setLimit({
+                  payload: { patch: { bodyCacheBytes: Number(value) } },
+                  reactivityKeys: [Keys.storage, Keys.cache, Keys.prefs, Keys.threads, Keys.thread],
+                })
+              }
+            />
+          </SettingsRow>
+          <SettingsRow
+            label={<Trans>Keep openmail under</Trans>}
+            hint={
+              <Trans>
+                The limit includes the database, attachments, WAL and recovery copies. Protected
+                content may exceed it.
+              </Trans>
+            }
+          >
+            <Select
+              aria-label={t`Keep openmail under`}
+              variant="field"
+              className="min-w-28"
+              value={String(prefs.totalCacheBytes)}
+              options={limitOptions(t`Disabled`, GIGABYTE_LIMITS, i18n.locale)}
+              disabled={limitResult.waiting}
+              onValueChange={(value) =>
+                setLimit({
+                  payload: { patch: { totalCacheBytes: Number(value) } },
+                  reactivityKeys: [Keys.storage, Keys.cache, Keys.prefs, Keys.threads, Keys.thread],
+                })
+              }
+            />
+          </SettingsRow>
+          {databaseSize?.lowDisk && databaseSize.canReclaim && (
+            <output className="block px-3 py-2 text-footnote text-orange-700 dark:text-orange-400">
+              <Trans>
+                Disk space is low. The cache budget has tightened automatically. Protected content
+                is kept.
+              </Trans>
+            </output>
+          )}
+          {databaseSize?.lowDisk && !databaseSize.canReclaim && (
+            <p className={`px-3 py-2 ${settingsHint}`}>
+              <Trans>
+                Disk space is low. Compact now to enable automatic disk space reclamation.
+              </Trans>
+            </p>
+          )}
+          <SettingsRow label={<Trans>Attachment cache limit</Trans>}>
+            <Select
+              aria-label={t`Attachment cache limit`}
+              variant="field"
+              className="min-w-28"
+              value={String(prefs.attachmentCacheBytes)}
+              options={limitOptions(t`Disabled`, MEGABYTE_LIMITS, i18n.locale)}
+              disabled={limitResult.waiting}
+              onValueChange={(value) =>
+                setLimit({
+                  payload: { patch: { attachmentCacheBytes: Number(value) } },
+                  reactivityKeys: [Keys.storage, Keys.cache, Keys.prefs],
+                })
+              }
+            />
+          </SettingsRow>
+        </div>
+      </section>
+      <section>
+        <div className={settingsGroup}>
+          <SettingsRow
+            label={
+              <output className="tabular-nums">
+                <Trans>Total cache: {total}</Trans>
+              </output>
+            }
+          >
+            <button
+              type="button"
+              className={actionButton}
+              disabled={clearResult.waiting}
+              onClick={() =>
+                clear({
+                  payload: {},
+                  reactivityKeys: [Keys.storage, Keys.cache, Keys.threads, Keys.thread],
+                })
+              }
+            >
+              <Trans>Clear all caches</Trans>
+            </button>
+          </SettingsRow>
+          <dl className="divide-y divide-separator">
+            <div className={sizeRow}>
+              <dt>
+                <Trans
+                  context="cached message text"
+                  comment="Storage occupied by downloaded email message text."
+                >
+                  Message text
+                </Trans>
+              </dt>
+              <dd className={sizeValue}>
+                {formatBytes(databaseSize?.bodyBytes ?? 0, i18n.locale)}
+              </dd>
+            </div>
+            <div className={sizeRow}>
+              <dt>
+                <Trans>Attachments</Trans>
+              </dt>
+              <dd className={sizeValue}>
+                {formatBytes(databaseSize?.attachmentBytes ?? 0, i18n.locale)}
+              </dd>
+            </div>
+            <div className={sizeRow}>
+              <dt>
+                <Trans>Indexes and other data</Trans>
+              </dt>
+              <dd className={sizeValue}>
+                {formatBytes(databaseSize?.otherBytes ?? 0, i18n.locale)}
+              </dd>
+            </div>
+            <div className={sizeRow}>
+              <dt>
+                <Trans>Free database pages</Trans>
+              </dt>
+              <dd className={sizeValue}>
+                {formatBytes(databaseSize?.reusableBytes ?? 0, i18n.locale)}
+              </dd>
+            </div>
+            <div className={sizeRow}>
+              <dt>
+                <Trans>WAL</Trans>
+              </dt>
+              <dd className={sizeValue}>{formatBytes(databaseSize?.walBytes ?? 0, i18n.locale)}</dd>
+            </div>
+            <div className={sizeRow}>
+              <dt>
+                <Trans>Recovery copies</Trans>
+              </dt>
+              <dd className={sizeValue}>
+                {formatBytes(databaseSize?.recoveryBytes ?? 0, i18n.locale)}
+              </dd>
+            </div>
+          </dl>
+          <SettingsRow
+            label={
+              <output className={`block ${settingsHint}`}>
+                <CompactionStatus status={compactStatus} />
+              </output>
+            }
+          >
+            <button
+              type="button"
+              className={actionButton}
+              disabled={compactResult.waiting}
+              onClick={() =>
+                compact({ payload: undefined, reactivityKeys: [Keys.storage, Keys.cache] })
+              }
+            >
+              {compactResult.waiting ? <Trans>Compacting…</Trans> : <Trans>Compact now</Trans>}
+            </button>
+          </SettingsRow>
+        </div>
+        <p className={`mt-1.5 px-1 ${settingsHint}`}>
+          <Trans>
+            Clearing removes downloaded bodies and attachments. Headers and drafts stay. Opening
+            uncached content requires a connection.
           </Trans>
-        </dt>
-        <dd className="text-right tabular-nums">
-          {formatBytes(databaseSize?.bodyBytes ?? 0, i18n.locale)}
-        </dd>
-        <dt>
-          <Trans>Attachments</Trans>
-        </dt>
-        <dd className="text-right tabular-nums">
-          {formatBytes(databaseSize?.attachmentBytes ?? 0, i18n.locale)}
-        </dd>
-        <dt>
-          <Trans>Indexes and other data</Trans>
-        </dt>
-        <dd className="text-right tabular-nums">
-          {formatBytes(databaseSize?.otherBytes ?? 0, i18n.locale)}
-        </dd>
-        <dt>
-          <Trans>Free database pages</Trans>
-        </dt>
-        <dd className="text-right tabular-nums">
-          {formatBytes(databaseSize?.reusableBytes ?? 0, i18n.locale)}
-        </dd>
-        <dt>
-          <Trans>WAL</Trans>
-        </dt>
-        <dd className="text-right tabular-nums">
-          {formatBytes(databaseSize?.walBytes ?? 0, i18n.locale)}
-        </dd>
-        <dt>
-          <Trans>Recovery copies</Trans>
-        </dt>
-        <dd className="text-right tabular-nums">
-          {formatBytes(databaseSize?.recoveryBytes ?? 0, i18n.locale)}
-        </dd>
-      </dl>
-      <button
-        type="button"
-        className={actionButton}
-        disabled={compactResult.waiting}
-        onClick={() => compact({ payload: undefined, reactivityKeys: [Keys.storage, Keys.cache] })}
-      >
-        {compactResult.waiting ? <Trans>Compacting…</Trans> : <Trans>Compact now</Trans>}
-      </button>
-      <output className="block text-a11y-muted">
-        <CompactionStatus status={compactStatus} />
-      </output>
-      <p className="text-a11y-muted">
-        <Trans>
-          Clearing removes downloaded bodies and attachments. Headers and drafts stay. Opening
-          uncached content requires a connection.
-        </Trans>
-      </p>
+        </p>
+      </section>
       {accounts.map((account) => {
         const state = states.find((s) => s.accountId === account.id);
         const checked = state?.fetched ?? 0;
@@ -300,116 +338,126 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
             .map((l) => ({ id: l.id, name: l.name })),
         ];
         return (
-          <div key={account.id} className="space-y-2">
-            <h3 className="font-medium">{account.email}</h3>
-            <div className="flex items-center justify-between gap-3">
-              <output>
-                <Trans
-                  context="cached message text"
-                  comment="Cached texts of email messages, never anatomical bodies, then the size of cached attachments."
-                >
-                  Bodies: {bodies} · Attachments: {attachments}
-                </Trans>
-              </output>
-              <button
-                type="button"
-                className={actionButton}
-                disabled={clearResult.waiting}
-                onClick={() =>
-                  clear({
-                    payload: { accountId: account.id },
-                    reactivityKeys: [Keys.storage, Keys.cache, Keys.threads, Keys.thread],
-                  })
-                }
-              >
-                <Trans>Clear account cache</Trans>
-              </button>
-            </div>
-            <div className="flex items-center gap-3">
-              <output className="flex-1 text-a11y-muted">
-                {state?.done
-                  ? t`${plural(checked, {
-                      one: "Older mail is up to date. # message checked.",
-                      other: "Older mail is up to date. # messages checked.",
-                    })}`
-                  : state?.paused
-                    ? t`${plural(checked, {
-                        one: "Backfill paused. # message checked.",
-                        other: "Backfill paused. # messages checked.",
-                      })}`
-                    : t`${plural(checked, {
-                        one: "Backfill runs between syncs. # message checked.",
-                        other: "Backfill runs between syncs. # messages checked.",
-                      })}`}
-              </output>
-              {!state?.done && (
+          <section key={account.id}>
+            <h3 className={`truncate ${settingsHeading}`}>{account.email}</h3>
+            <div className={settingsGroup}>
+              <div className="flex min-h-10 flex-wrap items-center justify-between gap-x-6 gap-y-1.5 px-3 py-2">
+                <output className="tabular-nums">
+                  <Trans
+                    context="cached message text"
+                    comment="Cached texts of email messages, never anatomical bodies, then the size of cached attachments."
+                  >
+                    Bodies: {bodies} · Attachments: {attachments}
+                  </Trans>
+                </output>
                 <button
                   type="button"
-                  disabled={pauseResult.waiting}
                   className={actionButton}
+                  disabled={clearResult.waiting}
                   onClick={() =>
-                    pause({
-                      payload: { accountId: account.id, paused: !state?.paused },
-                      reactivityKeys: [Keys.storage, Keys.cache],
+                    clear({
+                      payload: { accountId: account.id },
+                      reactivityKeys: [Keys.storage, Keys.cache, Keys.threads, Keys.thread],
                     })
                   }
                 >
-                  {state?.paused ? <Trans>Resume</Trans> : <Trans>Pause</Trans>}
+                  <Trans>Clear account cache</Trans>
                 </button>
-              )}
-            </div>
-            {state?.lastError && (
-              <output role="alert" className="text-orange-700 dark:text-orange-400">
-                {state.lastError}
-              </output>
-            )}
-            {rows.map((label) => {
-              const custom = windows.find(
-                (w) => w.accountId === account.id && w.label === label.id,
-              );
-              const defaultWindow = DEFAULT_CACHE_WINDOWS.find((w) => w.label === label.id);
-              const days = custom ? custom.days : defaultWindow?.days;
-              const currentValue =
-                days === undefined ? "inherit" : days === null ? "all" : String(days);
-              return (
-                <div key={label.id} className="flex items-center justify-between gap-3">
-                  <span className="truncate">{label.name}</span>
-                  <Select
-                    aria-label={t`Keep bodies in ${label.name}`}
-                    value={currentValue}
-                    options={options}
-                    disabled={saveResult.waiting}
-                    onValueChange={(value) =>
-                      save({
-                        payload: {
-                          input: {
-                            accountId: account.id,
-                            label: label.id,
-                            ...(value === "inherit"
-                              ? {}
-                              : { days: value === "all" ? null : Number(value) }),
-                          },
-                        },
-                        reactivityKeys: [Keys.storage, Keys.cache, Keys.threads, Keys.thread],
+              </div>
+              <div className="flex min-h-10 flex-wrap items-center justify-between gap-x-6 gap-y-1.5 px-3 py-2">
+                <output className={`min-w-0 flex-1 basis-48 ${settingsHint}`}>
+                  {state?.done
+                    ? t`${plural(checked, {
+                        one: "Older mail is up to date. # message checked.",
+                        other: "Older mail is up to date. # messages checked.",
+                      })}`
+                    : state?.paused
+                      ? t`${plural(checked, {
+                          one: "Backfill paused. # message checked.",
+                          other: "Backfill paused. # messages checked.",
+                        })}`
+                      : t`${plural(checked, {
+                          one: "Backfill runs between syncs. # message checked.",
+                          other: "Backfill runs between syncs. # messages checked.",
+                        })}`}
+                </output>
+                {!state?.done && (
+                  <button
+                    type="button"
+                    disabled={pauseResult.waiting}
+                    className={actionButton}
+                    onClick={() =>
+                      pause({
+                        payload: { accountId: account.id, paused: !state?.paused },
+                        reactivityKeys: [Keys.storage, Keys.cache],
                       })
                     }
-                  />
-                </div>
-              );
-            })}
-          </div>
+                  >
+                    {state?.paused ? <Trans>Resume</Trans> : <Trans>Pause</Trans>}
+                  </button>
+                )}
+              </div>
+              {state?.lastError && (
+                <output
+                  role="alert"
+                  className="block px-3 py-2 text-footnote break-words text-orange-700 dark:text-orange-400"
+                >
+                  {state.lastError}
+                </output>
+              )}
+              {rows.map((label) => {
+                const custom = windows.find(
+                  (w) => w.accountId === account.id && w.label === label.id,
+                );
+                const defaultWindow = DEFAULT_CACHE_WINDOWS.find((w) => w.label === label.id);
+                const days = custom ? custom.days : defaultWindow?.days;
+                const currentValue =
+                  days === undefined ? "inherit" : days === null ? "all" : String(days);
+                return (
+                  <div
+                    key={label.id}
+                    className="flex min-h-10 items-center justify-between gap-6 px-3 py-1.5"
+                  >
+                    <span className="min-w-0 truncate">{label.name}</span>
+                    <Select
+                      aria-label={t`Keep bodies in ${label.name}`}
+                      variant="field"
+                      className="w-32 shrink-0"
+                      value={currentValue}
+                      options={options}
+                      disabled={saveResult.waiting}
+                      onValueChange={(value) =>
+                        save({
+                          payload: {
+                            input: {
+                              accountId: account.id,
+                              label: label.id,
+                              ...(value === "inherit"
+                                ? {}
+                                : { days: value === "all" ? null : Number(value) }),
+                            },
+                          },
+                          reactivityKeys: [Keys.storage, Keys.cache, Keys.threads, Keys.thread],
+                        })
+                      }
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </section>
         );
       })}
       {storageError && (
-        <output role="alert" className="text-a11y-danger">
+        <output role="alert" className="block px-1 text-a11y-danger">
           {storageError}
         </output>
       )}
       {backfillError && (
-        <output role="alert" className="text-a11y-danger">
+        <output role="alert" className="block px-1 text-a11y-danger">
           {backfillError}
         </output>
       )}
-    </section>
+    </>
   );
 }

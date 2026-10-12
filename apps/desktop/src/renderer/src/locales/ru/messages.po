@@ -4618,7 +4618,6 @@ msgstr "Частное"
 msgid "Profile"
 msgstr "Профиль"
 
-#: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Profiles"
 msgstr "Профили"
@@ -5663,7 +5662,6 @@ msgstr "Название подписи"
 msgid "Signature position in replies"
 msgstr "Положение подписи в ответах"
 
-#: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Signatures"
 msgstr "Подписи"

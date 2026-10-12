@@ -1,7 +1,7 @@
 import { constVoid } from "effect/Function";
 import { Exit } from "effect";
 import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { useLingui } from "@lingui/react/macro";
 import {
   DEFAULT_PREFS,
   signatureDefault,
@@ -11,7 +11,8 @@ import {
   type ComposeBody,
 } from "@openmail/core/schema";
 import { AsyncResult } from "effect/reactivity";
-import { useRef, useState } from "react";
+import { ChevronDown, ChevronUp, GripVertical } from "lucide-react";
+import { useId, useRef, useState } from "react";
 import type { Account, NamedSignature } from "../../../../../shared/api";
 import type { ComposeElement } from "../../compose/compose-editor-dom";
 import { causeText } from "../../../lib/errors";
@@ -31,6 +32,27 @@ import {
 import { ComposeEditor } from "../../compose/components/ComposeEditor";
 import { Checkbox } from "../../../ui/Checkbox";
 import { Select } from "../../../ui/Select";
+import { SettingsCheckRow, SettingsGroup, SettingsRow } from "../../../ui/SettingsRows";
+import {
+  buttonLink,
+  buttonPrimary,
+  buttonSecondary,
+  formInput,
+  iconButton,
+  settingsHint,
+} from "../../../ui/styles";
+
+/** A text action in a signature row. Callers add the color. */
+const rowAction =
+  "shrink-0 rounded-item font-medium outline-offset-1 outline-a11y-focus hover:underline focus-visible:outline-2";
+/** A small icon button that reorders a signature. */
+const moveButton = `flex size-6 shrink-0 items-center justify-center text-a11y-muted outline-offset-1 outline-a11y-focus focus-visible:outline-2 disabled:opacity-30 disabled:hover:bg-transparent ${iconButton}`;
+/** The box an inline editor sits in, below the settings groups. */
+const editorCard = "rounded-card bg-raised px-4 pt-3 pb-4 ring-1 ring-edge dark:bg-white/[0.03]";
+/** The editor's title: a legend floated into the box so the padding stays even. */
+const editorLegend = "float-left mb-3 w-full p-0 text-callout font-semibold";
+/** A field's label, above the field. */
+const fieldLabel = "mb-1 block text-footnote font-medium text-a11y-muted";
 
 type SignatureForm = { id?: string; address: string; name: string; body: ComposeBody };
 export function SignatureSettings({ accounts }: { accounts: readonly Account[] }) {
@@ -57,6 +79,7 @@ export function SignatureSettings({ accounts }: { accounts: readonly Account[] }
   const remove = useAtomSet(deleteNamedSignatureAtom);
   const setDefault = useAtomSet(setSignatureDefaultAtom);
   const [form, setForm] = useState<SignatureForm | null>(null);
+  const positionId = useId();
   const addresses = [
     ...new Set(
       accounts.flatMap((a) => [
@@ -73,21 +96,21 @@ export function SignatureSettings({ accounts }: { accounts: readonly Account[] }
       body: richComposeBody(signature.html ?? textComposeHtml(signature.text)),
     });
   return (
-    <section className="space-y-4">
-      <h3 className="text-footnote font-semibold text-a11y-muted">
-        <Trans>Signatures</Trans>
-      </h3>
+    <section className="space-y-6">
       {addresses.map((address) => {
         const signatures = orderedSignatures(library, prefs.signatureOrder).filter(
           (signature) => signature.address === address,
         );
         return (
-          <div key={address} className="space-y-2 rounded-card border border-edge p-3">
-            <p className="font-medium">{address}</p>
+          <SettingsGroup key={address} title={address}>
             {(["new", "reply"] as const).map((kind) => (
-              <div key={kind} className="flex items-center justify-between gap-3">
-                <span>{kind === "new" ? t`New messages` : t`Replies and forwards`}</span>
+              <SettingsRow
+                key={kind}
+                label={kind === "new" ? t`New messages` : t`Replies and forwards`}
+              >
                 <Select
+                  variant="field"
+                  className="min-w-40"
                   aria-label={
                     kind === "new"
                       ? t`New message signature for ${address}`
@@ -110,12 +133,12 @@ export function SignatureSettings({ accounts }: { accounts: readonly Account[] }
                     })
                   }
                 />
-              </div>
+              </SettingsRow>
             ))}
             {signatures.map((signature, index) => (
               <div
                 key={signature.id}
-                className="flex items-center gap-3"
+                className="flex min-h-10 items-center gap-1 px-3 py-1.5"
                 onDragOver={(event) => event.preventDefault()}
                 onDrop={(event) => {
                   event.preventDefault();
@@ -135,43 +158,50 @@ export function SignatureSettings({ accounts }: { accounts: readonly Account[] }
                         drag.current = null;
                       }}
                       aria-label={t`Drag ${signature.name} to reorder`}
+                      className={`${moveButton} cursor-grab`}
                     >
-                      ↕
+                      <GripVertical aria-hidden className="size-3.5" />
                     </button>
                     <button
                       type="button"
                       disabled={index === 0}
                       aria-label={t`Move ${signature.name} up`}
+                      className={moveButton}
                       onClick={() => {
                         const target = signatures[index - 1];
                         if (target) reorder(signature.id, target.id);
                       }}
                     >
-                      ↑
+                      <ChevronUp aria-hidden className="size-3.5" />
                     </button>
                     <button
                       type="button"
                       disabled={index === signatures.length - 1}
                       aria-label={t`Move ${signature.name} down`}
+                      className={moveButton}
                       onClick={() => {
                         const target = signatures[index + 1];
                         if (target) reorder(signature.id, target.id);
                       }}
                     >
-                      ↓
+                      <ChevronDown aria-hidden className="size-3.5" />
                     </button>
                   </>
                 )}
-                <span className="min-w-0 flex-1 truncate">
+                <span className="ml-1 min-w-0 flex-1 truncate">
                   {signature.source === "gmail" ? t`Gmail default` : signature.name}
                 </span>
-                <button type="button" onClick={() => open(signature)}>
+                <button
+                  type="button"
+                  className={`ml-2 ${buttonLink}`}
+                  onClick={() => open(signature)}
+                >
                   {signature.source === "gmail" ? t`Copy to local signature` : t`Edit`}
                 </button>
                 {signature.source === "local" && (
                   <button
                     type="button"
-                    className="text-a11y-danger"
+                    className={`ml-2 ${rowAction} text-a11y-danger`}
                     aria-label={t`Delete ${signature.name}`}
                     onClick={() =>
                       remove({ payload: { id: signature.id }, reactivityKeys: [Keys.signatures] })
@@ -180,41 +210,53 @@ export function SignatureSettings({ accounts }: { accounts: readonly Account[] }
                 )}
               </div>
             ))}
-            <button
-              type="button"
-              className="text-a11y-accent"
-              onClick={() => setForm({ address, name: "", body: richComposeBody("") })}
-            >{t`New signature`}</button>
-          </div>
+            <div className="flex justify-end px-3 py-2">
+              <button
+                type="button"
+                className={buttonSecondary}
+                onClick={() => setForm({ address, name: "", body: richComposeBody("") })}
+              >{t`New signature`}</button>
+            </div>
+          </SettingsGroup>
         );
       })}
-      <label className="flex items-center justify-between gap-3">
-        {t`Signature position in replies`}
-        <Select
-          value={prefs.signaturePosition}
-          aria-label={t`Signature position in replies`}
-          options={[
-            { value: "above", label: t`Above quoted text` },
-            { value: "below", label: t`Below quoted text` },
-          ]}
-          onValueChange={(value) => {
-            setPrefs({
-              payload: { patch: { signaturePosition: value } },
-              reactivityKeys: [Keys.prefs],
-            });
-          }}
-        />
-      </label>
-      <label className="flex items-center gap-2">
-        <Checkbox
-          checked={prefs.signatureSeparator}
-          onCheckedChange={(signatureSeparator) =>
-            setPrefs({ payload: { patch: { signatureSeparator } }, reactivityKeys: [Keys.prefs] })
-          }
-        />
-        {t`Include signature separator`}
-      </label>
-      <p className="text-a11y-muted">{t`Local signatures stay on this Mac. Gmail default signatures are read from Gmail.`}</p>
+      <SettingsGroup
+        footer={t`Local signatures stay on this Mac. Gmail default signatures are read from Gmail.`}
+      >
+        <SettingsRow label={t`Signature position in replies`} htmlFor={positionId}>
+          <Select
+            id={positionId}
+            variant="field"
+            className="min-w-40"
+            value={prefs.signaturePosition}
+            aria-label={t`Signature position in replies`}
+            options={[
+              { value: "above", label: t`Above quoted text` },
+              { value: "below", label: t`Below quoted text` },
+            ]}
+            onValueChange={(value) => {
+              setPrefs({
+                payload: { patch: { signaturePosition: value } },
+                reactivityKeys: [Keys.prefs],
+              });
+            }}
+          />
+        </SettingsRow>
+        <SettingsCheckRow>
+          <label className="flex items-center gap-2">
+            <Checkbox
+              checked={prefs.signatureSeparator}
+              onCheckedChange={(signatureSeparator) =>
+                setPrefs({
+                  payload: { patch: { signatureSeparator } },
+                  reactivityKeys: [Keys.prefs],
+                })
+              }
+            />
+            {t`Include signature separator`}
+          </label>
+        </SettingsCheckRow>
+      </SettingsGroup>
       {form && (
         <SignatureEditor
           key={`${form.address}/${form.id ?? "new"}`}
@@ -235,71 +277,76 @@ function SignatureEditor({ initial, onClose }: { initial: SignatureForm; onClose
   const bodyRef = useRef<ComposeElement>(null);
   const selectionRef = useRef<Range>(null);
   return (
-    <fieldset className="space-y-3 rounded-card border p-3">
-      <legend>{t`Edit signature`}</legend>
-      <label className="block">
-        {t`Signature name`}
-        <input
-          className="mt-1 w-full rounded border bg-transparent px-2 py-1"
-          value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
-        />
-      </label>
-      <div className="flex h-56 flex-col overflow-hidden rounded border">
-        <ComposeEditor
-          shortcutSet={prefs.shortcutSet}
-          prefs={{ ...prefs, composeFormatBar: true }}
-          from={form.address}
-          onImageSize={constVoid}
-          onMention={constVoid}
-          onMentionsChange={constVoid}
-          body={form.body}
-          attachments={[]}
-          bodyRef={bodyRef}
-          selectionRef={selectionRef}
-          onChange={(body) => setForm((previous) => ({ ...previous, body }))}
-        />
-      </div>
-      {error && (
-        <p role="alert" className="text-a11y-danger">
-          {error}
-        </p>
-      )}
-      {state._tag === "Failure" && (
-        <p role="alert" className="text-a11y-danger">
-          {causeText(i18n, state.cause)}
-        </p>
-      )}
-      {state._tag === "Success" && !state.waiting && <output>{t`Saved`}</output>}
-      <div className="flex gap-3">
-        <button
-          type="button"
-          disabled={state.waiting}
-          className="rounded bg-blue-600 px-3 py-1 text-white"
-          onClick={() => {
-            if (!form.name.trim()) {
-              setError(t`Enter a signature name.`);
-              return;
-            }
-            setError("");
-            void save({
-              payload: {
-                ...(form.id ? { id: form.id } : {}),
-                input: {
-                  address: form.address,
-                  name: form.name,
-                  text: form.body.text,
-                  ...(form.body.kind === "rich" ? { html: form.body.html } : {}),
+    <fieldset className={editorCard}>
+      <legend className={editorLegend}>{t`Edit signature`}</legend>
+      <div className="clear-both space-y-4">
+        <label className="block">
+          <span className={fieldLabel}>{t`Signature name`}</span>
+          <input
+            className={formInput}
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+          />
+        </label>
+        <div className="flex h-56 flex-col overflow-hidden rounded-control border border-control bg-white dark:bg-white/[0.05]">
+          <ComposeEditor
+            shortcutSet={prefs.shortcutSet}
+            prefs={{ ...prefs, composeFormatBar: true }}
+            from={form.address}
+            onImageSize={constVoid}
+            onMention={constVoid}
+            onMentionsChange={constVoid}
+            body={form.body}
+            attachments={[]}
+            bodyRef={bodyRef}
+            selectionRef={selectionRef}
+            onChange={(body) => setForm((previous) => ({ ...previous, body }))}
+          />
+        </div>
+        {error && (
+          <p role="alert" className="text-a11y-danger">
+            {error}
+          </p>
+        )}
+        {state._tag === "Failure" && (
+          <p role="alert" className="text-a11y-danger">
+            {causeText(i18n, state.cause)}
+          </p>
+        )}
+        <div className="flex items-center justify-end gap-2">
+          {state._tag === "Success" && !state.waiting && (
+            <output className={`mr-auto ${settingsHint}`}>{t`Saved`}</output>
+          )}
+          <button type="button" className={buttonSecondary} onClick={onClose}>{t`Close`}</button>
+          <button
+            type="button"
+            disabled={state.waiting}
+            className={buttonPrimary}
+            onClick={() => {
+              if (!form.name.trim()) {
+                setError(t`Enter a signature name.`);
+                return;
+              }
+              setError("");
+              void save({
+                payload: {
+                  ...(form.id ? { id: form.id } : {}),
+                  input: {
+                    address: form.address,
+                    name: form.name,
+                    text: form.body.text,
+                    ...(form.body.kind === "rich" ? { html: form.body.html } : {}),
+                  },
                 },
-              },
-              reactivityKeys: [Keys.signatures],
-            }).then((exit) => {
-              if (Exit.isSuccess(exit)) setForm((previous) => ({ ...previous, id: exit.value.id }));
-              return exit;
-            });
-          }}
-        >{t`Save`}</button>
-        <button type="button" onClick={onClose}>{t`Close`}</button>
+                reactivityKeys: [Keys.signatures],
+              }).then((exit) => {
+                if (Exit.isSuccess(exit))
+                  setForm((previous) => ({ ...previous, id: exit.value.id }));
+                return exit;
+              });
+            }}
+          >{t`Save`}</button>
+        </div>
       </div>
     </fieldset>
   );

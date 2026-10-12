@@ -4618,7 +4618,6 @@ msgstr "Privato"
 msgid "Profile"
 msgstr "Profilo"
 
-#: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Profiles"
 msgstr "Profili"
@@ -5663,7 +5662,6 @@ msgstr "Nome della firma"
 msgid "Signature position in replies"
 msgstr "Posizione della firma nelle risposte"
 
-#: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Signatures"
 msgstr "Firme"

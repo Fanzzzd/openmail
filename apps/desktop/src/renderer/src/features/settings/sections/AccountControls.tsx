@@ -10,6 +10,11 @@ import { setAccountSettingsAtom } from "../../../state/mutations";
 import { profilesAtom } from "../../../state/queries";
 import { Checkbox } from "../../../ui/Checkbox";
 import { Select } from "../../../ui/Select";
+import { buttonLink, formInput, settingsHint } from "../../../ui/styles";
+
+/** A small borderless button for secondary actions inside an account row. */
+const quietButton =
+  "h-6 rounded-control px-1.5 outline-offset-1 outline-a11y-focus transition-colors duration-100 hover:bg-fill-hover focus-visible:outline-2 active:bg-fill-pressed disabled:pointer-events-none disabled:opacity-40 motion-reduce:transition-none";
 
 export function AccountControls({
   account,
@@ -42,51 +47,75 @@ export function AccountControls({
       reactivityKeys: MAIL_KEYS,
     });
   return (
-    <div className="flex w-full flex-wrap items-center gap-3 border-t border-separator pt-2">
-      <label htmlFor={`account-enabled-${account.id}`} className="flex items-center gap-2">
-        <Checkbox
-          id={`account-enabled-${account.id}`}
-          checked={account.enabled !== false}
-          onCheckedChange={(enabled) => {
-            if (!result.waiting) saveSettings({ kind: "toggle", enabled });
-          }}
-        />
-        <Trans>Account enabled</Trans>
-      </label>
-      <label className="flex items-center gap-2">
-        <Trans>Display name</Trans>
-        <input
-          className="w-36 rounded border border-edge bg-transparent px-2 py-1"
-          value={description}
-          maxLength={200}
-          onChange={(e) => setDescription(e.target.value)}
-        />
-      </label>
-      <label className="flex items-center gap-2">
-        <Checkbox checked={customColor} onCheckedChange={setCustomColor} />
-        <Trans>Custom colour</Trans>
-        {customColor && (
-          <input
-            aria-label={t`Account colour`}
-            type="color"
-            value={color}
-            onChange={(e) => setColor(e.target.value)}
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <label htmlFor={`account-enabled-${account.id}`} className="flex items-center gap-2">
+          <Checkbox
+            id={`account-enabled-${account.id}`}
+            checked={account.enabled !== false}
+            onCheckedChange={(enabled) => {
+              if (!result.waiting) saveSettings({ kind: "toggle", enabled });
+            }}
           />
-        )}
-      </label>
+          <Trans>Account enabled</Trans>
+        </label>
+        <label className="flex h-6 items-center gap-2">
+          <Checkbox checked={customColor} onCheckedChange={setCustomColor} />
+          <Trans>Custom colour</Trans>
+          {customColor && (
+            <input
+              aria-label={t`Account colour`}
+              type="color"
+              value={color}
+              onChange={(e) => setColor(e.target.value)}
+              className="h-5 w-7 cursor-default rounded-item"
+            />
+          )}
+        </label>
+      </div>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <label className="flex items-center gap-2">
+          <Trans>Display name</Trans>
+          <span className="w-40">
+            <input
+              className={formInput}
+              value={description}
+              maxLength={200}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </span>
+        </label>
+        <button
+          type="button"
+          disabled={result.waiting}
+          onClick={() =>
+            saveSettings({
+              kind: "appearance",
+              description,
+              color: customColor ? color : null,
+              ...(account.imap ? { imapAuthservId: authservId.trim() || null } : {}),
+            })
+          }
+          className={buttonLink}
+        >
+          <Trans>Save</Trans>
+        </button>
+      </div>
       {account.imap && (
-        <div className="w-full space-y-1">
+        <div className="space-y-1">
           <label htmlFor={`imap-authserv-${account.id}`} className="flex items-center gap-2">
             <Trans>Trusted authentication service (optional)</Trans>
-            <input
-              id={`imap-authserv-${account.id}`}
-              value={authservId}
-              maxLength={253}
-              onChange={(event) => setAuthservId(event.target.value)}
-              className="rounded border border-edge bg-transparent px-2 py-1"
-            />
+            <span className="w-40">
+              <input
+                id={`imap-authserv-${account.id}`}
+                value={authservId}
+                maxLength={253}
+                onChange={(event) => setAuthservId(event.target.value)}
+                className={formInput}
+              />
+            </span>
           </label>
-          <p className="text-xs text-a11y-muted">
+          <p className={settingsHint}>
             <Trans>
               Leave blank unless your mail administrator provides a trusted authserv-id. The IMAP
               server name is not a trust setting.
@@ -94,49 +123,36 @@ export function AccountControls({
           </p>
         </div>
       )}
-      <button
-        type="button"
-        disabled={result.waiting}
-        onClick={() =>
-          saveSettings({
-            kind: "appearance",
-            description,
-            color: customColor ? color : null,
-            ...(account.imap ? { imapAuthservId: authservId.trim() || null } : {}),
-          })
-        }
-        className="rounded px-2 py-1 text-a11y-accent disabled:opacity-40"
-      >
-        <Trans>Save</Trans>
-      </button>
-      <Select
-        disabled={moving}
-        aria-label={t`Account space`}
-        value={account.profileId ?? ""}
-        options={[
-          { value: "", label: t`Ungrouped accounts` },
-          ...profiles.map((p) => ({ value: p.id, label: p.name })),
-        ]}
-        onValueChange={(id) => move(account.id, id || null, null)}
-      />
-      <button
-        type="button"
-        disabled={moving || !previous}
-        onClick={() => previous && move(account.id, account.profileId, previous.id)}
-        className="rounded px-2 py-1 disabled:opacity-40"
-      >
-        <Trans>Move up</Trans>
-      </button>
-      <button
-        type="button"
-        disabled={moving || !next}
-        onClick={() => move(account.id, account.profileId, members[index + 2]?.id ?? null)}
-        className="rounded px-2 py-1 disabled:opacity-40"
-      >
-        <Trans>Move down</Trans>
-      </button>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <Select
+          disabled={moving}
+          aria-label={t`Account space`}
+          value={account.profileId ?? ""}
+          options={[
+            { value: "", label: t`Ungrouped accounts` },
+            ...profiles.map((p) => ({ value: p.id, label: p.name })),
+          ]}
+          onValueChange={(id) => move(account.id, id || null, null)}
+        />
+        <button
+          type="button"
+          disabled={moving || !previous}
+          onClick={() => previous && move(account.id, account.profileId, previous.id)}
+          className={quietButton}
+        >
+          <Trans>Move up</Trans>
+        </button>
+        <button
+          type="button"
+          disabled={moving || !next}
+          onClick={() => move(account.id, account.profileId, members[index + 2]?.id ?? null)}
+          className={quietButton}
+        >
+          <Trans>Move down</Trans>
+        </button>
+      </div>
       {resultError(i18n, result) && (
-        <output role="alert" className="text-a11y-danger">
+        <output role="alert" className="block text-a11y-danger">
           {resultError(i18n, result)}
         </output>
       )}

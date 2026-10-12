@@ -12,6 +12,14 @@ import { Keys } from "../../../state/keys";
 import { deleteTemplateAtom, saveTemplateAtom } from "../../../state/mutations";
 import { templatesAtom } from "../../../state/queries";
 import { Select } from "../../../ui/Select";
+import { SettingsGroup } from "../../../ui/SettingsRows";
+import {
+  buttonLink,
+  buttonPrimary,
+  buttonSecondary,
+  formInput,
+  settingsHint,
+} from "../../../ui/styles";
 
 const VARIABLE_LABELS = {
   first_name: msg`Recipient first name`,
@@ -36,7 +44,15 @@ const VARIABLE_LABELS = {
   cc: msg`Cc`,
   bcc: msg`Bcc`,
 };
-const fieldClass = "w-full rounded border border-edge bg-transparent px-2 py-1.5 outline-blue-500";
+/** A text action in a template row. Callers add the color. */
+const rowAction =
+  "shrink-0 rounded-item font-medium outline-offset-1 outline-a11y-focus hover:underline focus-visible:outline-2";
+/** The box the editor sits in, below the template list. */
+const editorCard = "rounded-card bg-raised px-4 pt-3 pb-4 ring-1 ring-edge dark:bg-white/[0.03]";
+/** The editor's title: a legend floated into the box so the padding stays even. */
+const editorLegend = "float-left mb-3 w-full p-0 text-callout font-semibold";
+/** A field's label, above the field. */
+const fieldLabel = "mb-1 block text-footnote font-medium text-a11y-muted";
 type Form = {
   id: string | null;
   name: string;
@@ -64,37 +80,41 @@ export function TemplateSettings() {
       body: template.body,
     });
   return (
-    <section className="space-y-3">
-      <h3 className="text-footnote font-semibold text-a11y-muted">{t`Templates`}</h3>
-      <button
-        type="button"
-        className="rounded border px-3 py-1"
-        onClick={() => setForm({ ...blank })}
-      >{t`New template`}</button>
-      {templates.map((template) => (
-        <div key={template.id} className="flex items-center gap-3">
+    <section className="space-y-6">
+      <SettingsGroup title={t`Templates`}>
+        {templates.map((template) => (
+          <div key={template.id} className="flex min-h-10 items-center gap-4 px-3 py-1.5">
+            <button
+              type="button"
+              className="min-w-0 flex-1 truncate rounded-item text-left outline-offset-1 outline-a11y-focus hover:underline focus-visible:outline-2"
+              onClick={() => open(template)}
+            >
+              {template.name}
+            </button>
+            <button
+              type="button"
+              aria-label={t`Edit ${template.name}`}
+              className={`shrink-0 ${buttonLink}`}
+              onClick={() => open(template)}
+            >{t`Edit`}</button>
+            <button
+              type="button"
+              aria-label={t`Delete ${template.name}`}
+              className={`${rowAction} text-a11y-danger`}
+              onClick={() =>
+                remove({ payload: { id: template.id }, reactivityKeys: [Keys.templates] })
+              }
+            >{t`Delete`}</button>
+          </div>
+        ))}
+        <div className="flex justify-end px-3 py-2">
           <button
             type="button"
-            className="min-w-0 flex-1 truncate text-left text-a11y-accent"
-            onClick={() => open(template)}
-          >
-            {template.name}
-          </button>
-          <button
-            type="button"
-            aria-label={t`Edit ${template.name}`}
-            onClick={() => open(template)}
-          >{t`Edit`}</button>
-          <button
-            type="button"
-            aria-label={t`Delete ${template.name}`}
-            className="text-a11y-danger"
-            onClick={() =>
-              remove({ payload: { id: template.id }, reactivityKeys: [Keys.templates] })
-            }
-          >{t`Delete`}</button>
+            className={buttonSecondary}
+            onClick={() => setForm({ ...blank })}
+          >{t`New template`}</button>
         </div>
-      ))}
+      </SettingsGroup>
       {form && <TemplateForm key={form.id ?? "new"} initial={form} onClose={() => setForm(null)} />}
     </section>
   );
@@ -161,113 +181,125 @@ function TemplateForm({ initial, onClose }: { initial: Form; onClose: () => void
     });
   };
   return (
-    <fieldset className="space-y-3 rounded-card border p-3">
-      <legend>{t`Edit template`}</legend>
-      <label className="block">
-        {t`Template name`}
-        <input
-          className={fieldClass}
-          value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
-        />
-      </label>
-      <label className="block">
-        {t`Subject`}
-        <input
-          ref={subjectRef}
-          className={fieldClass}
-          value={form.subject}
-          onChange={(e) => setForm({ ...form, subject: e.target.value })}
-          onSelect={(e) => {
-            target.current = {
-              field: "subject",
-              start: e.currentTarget.selectionStart ?? 0,
-              end: e.currentTarget.selectionEnd ?? 0,
-            };
-          }}
-        />
-      </label>
-      <label className="block">
-        {t`To`}
-        <input
-          className={fieldClass}
-          value={form.to}
-          onChange={(e) => setForm({ ...form, to: e.target.value })}
-        />
-      </label>
-      <label className="block">
-        {t`Cc`}
-        <input
-          className={fieldClass}
-          value={form.cc}
-          onChange={(e) => setForm({ ...form, cc: e.target.value })}
-        />
-      </label>
-      <label className="block">
-        {t`Bcc`}
-        <input
-          className={fieldClass}
-          value={form.bcc}
-          onChange={(e) => setForm({ ...form, bcc: e.target.value })}
-        />
-      </label>
-      <Select
-        aria-label={t`Insert variable`}
-        value=""
-        options={[
-          { value: "", label: t`Insert variable…` },
-          ...TEMPLATE_VARIABLES.filter((key) => !key.startsWith("recipient_")).map((key) => ({
-            value: key,
-            label: i18n._(VARIABLE_LABELS[key]),
-          })),
-        ]}
-        onValueChange={insert}
-      />
-      <label className="block">
-        {t({
-          message: "Body",
-          context: "message text",
-          comment: "Email message text, never an anatomical body.",
-        })}
-        <textarea
-          ref={bodyRef}
-          rows={7}
-          className={fieldClass}
-          value={form.body}
-          onChange={(e) => setForm({ ...form, body: e.target.value })}
-          onSelect={(e) => {
-            target.current = {
-              field: "body",
-              start: e.currentTarget.selectionStart,
-              end: e.currentTarget.selectionEnd,
-            };
-          }}
-        />
-      </label>
-      <p className="text-a11y-muted">{t`Use ${token} for a custom variable. You will be asked for its value when inserting the template.`}</p>
-      {error && (
-        <p role="alert" className="text-a11y-danger">
-          {error}
-        </p>
-      )}
-      {state._tag === "Failure" && (
-        <p role="alert" className="text-a11y-danger">
-          {causeText(i18n, state.cause)}
-        </p>
-      )}
-      {state._tag === "Success" && !state.waiting && <output>{t`Saved`}</output>}
-      <div className="flex gap-3">
-        <button
-          type="button"
-          className="rounded bg-blue-600 px-3 py-1 text-white"
-          disabled={state.waiting}
-          onClick={saveForm}
-        >
-          <Trans>Save</Trans>
-        </button>
-        <button type="button" onClick={onClose}>
-          <Trans>Close</Trans>
-        </button>
+    <fieldset className={editorCard}>
+      <legend className={editorLegend}>{t`Edit template`}</legend>
+      <div className="clear-both space-y-4">
+        <label className="block">
+          <span className={fieldLabel}>{t`Template name`}</span>
+          <input
+            className={formInput}
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+          />
+        </label>
+        <label className="block">
+          <span className={fieldLabel}>{t`Subject`}</span>
+          <input
+            ref={subjectRef}
+            className={formInput}
+            value={form.subject}
+            onChange={(e) => setForm({ ...form, subject: e.target.value })}
+            onSelect={(e) => {
+              target.current = {
+                field: "subject",
+                start: e.currentTarget.selectionStart ?? 0,
+                end: e.currentTarget.selectionEnd ?? 0,
+              };
+            }}
+          />
+        </label>
+        <label className="block">
+          <span className={fieldLabel}>{t`To`}</span>
+          <input
+            className={formInput}
+            value={form.to}
+            onChange={(e) => setForm({ ...form, to: e.target.value })}
+          />
+        </label>
+        <div className="grid grid-cols-2 gap-3">
+          <label className="block">
+            <span className={fieldLabel}>{t`Cc`}</span>
+            <input
+              className={formInput}
+              value={form.cc}
+              onChange={(e) => setForm({ ...form, cc: e.target.value })}
+            />
+          </label>
+          <label className="block">
+            <span className={fieldLabel}>{t`Bcc`}</span>
+            <input
+              className={formInput}
+              value={form.bcc}
+              onChange={(e) => setForm({ ...form, bcc: e.target.value })}
+            />
+          </label>
+        </div>
+        <div className="flex justify-end">
+          <Select
+            aria-label={t`Insert variable`}
+            value=""
+            options={[
+              { value: "", label: t`Insert variable…` },
+              ...TEMPLATE_VARIABLES.filter((key) => !key.startsWith("recipient_")).map((key) => ({
+                value: key,
+                label: i18n._(VARIABLE_LABELS[key]),
+              })),
+            ]}
+            onValueChange={insert}
+          />
+        </div>
+        <label className="-mt-2 block">
+          <span className={fieldLabel}>
+            {t({
+              message: "Body",
+              context: "message text",
+              comment: "Email message text, never an anatomical body.",
+            })}
+          </span>
+          <textarea
+            ref={bodyRef}
+            rows={7}
+            className={formInput}
+            value={form.body}
+            onChange={(e) => setForm({ ...form, body: e.target.value })}
+            onSelect={(e) => {
+              target.current = {
+                field: "body",
+                start: e.currentTarget.selectionStart,
+                end: e.currentTarget.selectionEnd,
+              };
+            }}
+          />
+        </label>
+        <p
+          className={`-mt-2 ${settingsHint}`}
+        >{t`Use ${token} for a custom variable. You will be asked for its value when inserting the template.`}</p>
+        {error && (
+          <p role="alert" className="text-a11y-danger">
+            {error}
+          </p>
+        )}
+        {state._tag === "Failure" && (
+          <p role="alert" className="text-a11y-danger">
+            {causeText(i18n, state.cause)}
+          </p>
+        )}
+        <div className="flex items-center justify-end gap-2">
+          {state._tag === "Success" && !state.waiting && (
+            <output className={`mr-auto ${settingsHint}`}>{t`Saved`}</output>
+          )}
+          <button type="button" className={buttonSecondary} onClick={onClose}>
+            <Trans>Close</Trans>
+          </button>
+          <button
+            type="button"
+            className={buttonPrimary}
+            disabled={state.waiting}
+            onClick={saveForm}
+          >
+            <Trans>Save</Trans>
+          </button>
+        </div>
       </div>
     </fieldset>
   );

@@ -49,10 +49,28 @@ import { Disclosure } from "../../../ui/Disclosure";
 import { Checkbox } from "../../../ui/Checkbox";
 import { Select } from "../../../ui/Select";
 import { ContactSettings } from "./ContactSettings";
-import { formButton, formInput } from "../../../ui/form-styles";
+import { SettingsGroup, SettingsRow } from "../../../ui/SettingsRows";
+import {
+  buttonLink,
+  buttonPrimary,
+  buttonSecondary,
+  formInput,
+  noticeRow,
+  noticeTone,
+  settingsGroup,
+  settingsHeading,
+  settingsHint,
+} from "../../../ui/styles";
 
+/** A borderless push button inside a settings row. */
 const rowButton =
-  "h-7 shrink-0 rounded-control px-2.5 hover:bg-fill-hover disabled:opacity-50 disabled:hover:bg-transparent";
+  "h-7 shrink-0 rounded-control px-2.5 font-medium outline-offset-1 outline-a11y-focus transition-colors duration-100 hover:bg-fill-hover focus-visible:outline-[3px] active:bg-fill-pressed disabled:opacity-50 disabled:hover:bg-transparent motion-reduce:transition-none";
+/** One row in a settings list. */
+const listRow = "flex min-h-10 items-center gap-1 px-3 py-1.5";
+/** A field's label, above the field. */
+const fieldLabel = "mb-1 block text-footnote font-medium text-a11y-muted";
+/** A legend over a group of checkboxes inside a form. */
+const fieldLegend = "mb-1.5 p-0 text-footnote font-medium text-a11y-muted";
 
 export function ServerSettings({ accounts }: { accounts: readonly Account[] }) {
   const { t } = useLingui();
@@ -61,19 +79,29 @@ export function ServerSettings({ accounts }: { accounts: readonly Account[] }) {
   const account = available.find((a) => a.id === id);
   if (!account)
     return (
-      <p>
+      <p className="text-a11y-muted">
         <Trans>Server filters and automatic replies are available for Gmail and Outlook.</Trans>
       </p>
     );
   return (
-    <section className="space-y-5">
-      <Select
-        aria-label={t`Account`}
-        value={id}
-        onValueChange={setId}
-        options={available.map((a) => ({ value: a.id, label: accountName(a) }))}
-      />
-      <ServiceHint accountId={account.id} service="settings" />
+    <section className="space-y-6">
+      <div>
+        <SettingsGroup>
+          <SettingsRow label={t`Account`}>
+            <Select
+              aria-label={t`Account`}
+              variant="field"
+              className="min-w-48"
+              value={id}
+              onValueChange={setId}
+              options={available.map((a) => ({ value: a.id, label: accountName(a) }))}
+            />
+          </SettingsRow>
+        </SettingsGroup>
+        <div className="mt-1.5 px-1 empty:hidden">
+          <ServiceHint accountId={account.id} service="settings" />
+        </div>
+      </div>
       <AccountServerSettings key={id} account={account} />
       <ContactSettings key={`contacts:${id}`} account={account} />
     </section>
@@ -93,37 +121,41 @@ function AccountServerSettings({ account }: { account: Account }) {
   return (
     <>
       {(resultError(i18n, filters) || resultError(i18n, vacation)) && (
-        <div role="alert" className="space-y-2 text-orange-700 dark:text-orange-400">
-          <p>{resultError(i18n, filters) ?? resultError(i18n, vacation)}</p>
+        <div role="alert" className={`flex-wrap ${noticeRow} ${noticeTone.warning}`}>
+          <p className="min-w-0 flex-1">
+            {resultError(i18n, filters) ?? resultError(i18n, vacation)}
+          </p>
           {(settingsScopeMissing(filters) || settingsScopeMissing(vacation)) && (
             <button
               type="button"
               disabled={signedIn.waiting}
               onClick={() => reauth("settings")}
-              className={formButton}
+              className={buttonLink}
             >
               <Trans>Sign in again</Trans>
             </button>
           )}
-          {resultError(i18n, signedIn) && <p>{resultError(i18n, signedIn)}</p>}
+          {resultError(i18n, signedIn) && <p className="w-full">{resultError(i18n, signedIn)}</p>}
         </div>
       )}
-      <section className="space-y-2">
-        <h3 className="font-semibold">
+      <section>
+        <h3 className={settingsHeading}>
           <Trans>Server filters</Trans>
         </h3>
         {filters._tag === "Initial" && (
-          <output>
+          <output className={`block px-1 ${settingsHint}`}>
             <Trans>Loading…</Trans>
           </output>
         )}
-        <ul className="divide-y divide-separator">
+        <ul className={`empty:hidden ${settingsGroup}`}>
           {AsyncResult.getOrElse(filters, () => []).map((f) => (
-            <li key={f.id} className="flex items-center gap-1 py-2">
-              <span className="min-w-0 flex-1">
+            <li key={f.id} className={listRow}>
+              <span className="mr-2 min-w-0 flex-1">
                 <span className="block truncate">{f.name}</span>
                 {f.editable === false && (
-                  <span className="block text-xs text-a11y-muted">{t`Edit this rule in webmail to preserve all conditions and actions.`}</span>
+                  <span
+                    className={`mt-0.5 block ${settingsHint}`}
+                  >{t`Edit this rule in webmail to preserve all conditions and actions.`}</span>
                 )}
               </span>
               <button
@@ -140,7 +172,7 @@ function AccountServerSettings({ account }: { account: Account }) {
               >{t`Apply to existing mail`}</button>
               <button
                 type="button"
-                className="h-7 shrink-0 rounded-control px-2.5 text-a11y-danger hover:bg-red-500/10 dark:text-red-400"
+                className={`${rowButton} text-a11y-danger`}
                 onClick={() => setDeleting(f)}
               >
                 <Trans>Delete</Trans>
@@ -148,32 +180,38 @@ function AccountServerSettings({ account }: { account: Account }) {
             </li>
           ))}
         </ul>
-        <button
-          type="button"
-          className={formButton}
-          disabled={filters._tag !== "Success"}
-          onClick={() => setEditing("new")}
-        >
-          <Trans>Create filter</Trans>
-        </button>
-        {resultError(i18n, deleted) && (
-          <p role="alert" className="text-a11y-danger">
-            {resultError(i18n, deleted)}
-          </p>
-        )}
+        <div className="mt-2 flex items-start gap-4 px-1">
+          <div className="min-w-0 flex-1">
+            {resultError(i18n, deleted) && (
+              <p role="alert" className="text-a11y-danger">
+                {resultError(i18n, deleted)}
+              </p>
+            )}
+          </div>
+          <button
+            type="button"
+            className={buttonSecondary}
+            disabled={filters._tag !== "Success"}
+            onClick={() => setEditing("new")}
+          >
+            <Trans>Create filter</Trans>
+          </button>
+        </div>
       </section>
-      <section className="space-y-2">
-        <h3 className="font-semibold">
+      <section>
+        <h3 className={settingsHeading}>
           <Trans>Automatic replies</Trans>
         </h3>
-        <button
-          type="button"
-          disabled={vacation._tag !== "Success"}
-          className={formButton}
-          onClick={() => setReply(true)}
-        >
-          <Trans>Edit automatic reply</Trans>
-        </button>
+        <div className="px-1">
+          <button
+            type="button"
+            disabled={vacation._tag !== "Success"}
+            className={buttonSecondary}
+            onClick={() => setReply(true)}
+          >
+            <Trans>Edit automatic reply</Trans>
+          </button>
+        </div>
       </section>
       {account.provider === "gmail" && (
         <>
@@ -257,34 +295,40 @@ function PendingRuleRestorations({ account }: { account: Account }) {
   } | null>(null);
   const busy = prepared.waiting || restored.waiting || discarded.waiting;
   return (
-    <section className="space-y-2">
-      {AsyncResult.getOrElse(backups, () => []).map((backup) => (
-        <div key={backup.id}>
-          <span>{backup.input.name || backup.originalId} </span>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={async () => {
-              const exit = await prepare({
-                payload: { accountId: account.id, id: backup.id },
-                reactivityKeys: MAIL_KEYS,
-              });
-              if (exit._tag === "Success" && exit.value.kind === "preview")
-                setPending({ backup, preview: exit.value.preview });
-            }}
-          >{t`Restore rule`}</button>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => setDiscarding(backup)}
-          >{t`Discard`}</button>
-        </div>
-      ))}
+    <section className="space-y-2 empty:hidden">
+      <div className={`empty:hidden ${settingsGroup}`}>
+        {AsyncResult.getOrElse(backups, () => []).map((backup) => (
+          <div key={backup.id} className={listRow}>
+            <span className="mr-2 min-w-0 flex-1 truncate">
+              {backup.input.name || backup.originalId}{" "}
+            </span>
+            <button
+              type="button"
+              className={rowButton}
+              disabled={busy}
+              onClick={async () => {
+                const exit = await prepare({
+                  payload: { accountId: account.id, id: backup.id },
+                  reactivityKeys: MAIL_KEYS,
+                });
+                if (exit._tag === "Success" && exit.value.kind === "preview")
+                  setPending({ backup, preview: exit.value.preview });
+              }}
+            >{t`Restore rule`}</button>
+            <button
+              type="button"
+              className={`${rowButton} text-a11y-danger`}
+              disabled={busy}
+              onClick={() => setDiscarding(backup)}
+            >{t`Discard`}</button>
+          </div>
+        ))}
+      </div>
       {(resultError(i18n, backups) ||
         resultError(i18n, prepared) ||
         resultError(i18n, restored) ||
         resultError(i18n, discarded)) && (
-        <p role="alert">
+        <p role="alert" className="px-1 text-a11y-danger">
           {resultError(i18n, backups) ??
             resultError(i18n, prepared) ??
             resultError(i18n, restored) ??
@@ -450,7 +494,7 @@ function OutlookPredicatesEditor({
     },
   ];
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-2 gap-x-3 gap-y-3">
       {(
         [
           {
@@ -463,8 +507,8 @@ function OutlookPredicatesEditor({
           { key: "headerContains", label: t`Headers contain` },
         ] as const
       ).map(({ key, label }) => (
-        <label key={key} className="block space-y-1">
-          <span>{label}</span>
+        <label key={key} className="block">
+          <span className={fieldLabel}>{label}</span>
           <input
             className={formInput}
             value={value[key]?.[0] ?? ""}
@@ -476,11 +520,12 @@ function OutlookPredicatesEditor({
         // Not a label: a click on it would reach the select's hidden input, not its button.
         <div
           key={select.key}
-          className={select.key === "messageActionFlag" ? "col-span-2 space-y-1" : "space-y-1"}
+          className={select.key === "messageActionFlag" ? "col-span-2" : undefined}
         >
-          <span className="block">{select.label}</span>
+          <span className={fieldLabel}>{select.label}</span>
           <Select
             aria-label={select.label}
+            variant="field"
             value={select.value}
             options={[{ value: "", label: t`None` }, ...select.options]}
             onValueChange={select.onChange}
@@ -493,8 +538,8 @@ function OutlookPredicatesEditor({
           { key: "maximumSize", label: t`Maximum size (KiB)` },
         ] as const
       ).map(({ key, label }) => (
-        <label key={key} className="block space-y-1">
-          <span>{label}</span>
+        <label key={key} className="block">
+          <span className={fieldLabel}>{label}</span>
           <input
             className={formInput}
             type="number"
@@ -640,19 +685,19 @@ export function FilterEditor({
       className="max-h-[85vh] w-[540px] overflow-y-auto p-5"
     >
       <form
-        className="space-y-3"
+        className="space-y-4"
         onSubmit={async (e) => {
           e.preventDefault();
           const exit = await prepare({ payload: { accountId: account.id, input } });
           if (exit._tag === "Success") setConfirming({ input, preview: exit.value });
         }}
       >
-        <h2 className="font-semibold">
+        <h2 className="text-headline font-semibold">
           {mode === "apply" ? t`Apply to existing mail` : initial ? t`Save rule` : t`Create filter`}
         </h2>
         {account.provider === "outlook" && (
-          <label className="block space-y-1">
-            <span>{t`Name`}</span>
+          <label className="block">
+            <span className={fieldLabel}>{t`Name`}</span>
             <input
               className={formInput}
               value={input.name}
@@ -662,16 +707,16 @@ export function FilterEditor({
           </label>
         )}
         <div className="grid grid-cols-2 gap-3">
-          <label className="block space-y-1">
-            <span>{t`From`}</span>
+          <label className="block">
+            <span className={fieldLabel}>{t`From`}</span>
             <input
               className={formInput}
               value={input.criteria.from}
               onChange={(e) => criteria({ from: e.target.value })}
             />
           </label>
-          <label className="block space-y-1">
-            <span>{t`To`}</span>
+          <label className="block">
+            <span className={fieldLabel}>{t`To`}</span>
             <input
               className={formInput}
               value={input.criteria.to}
@@ -679,8 +724,8 @@ export function FilterEditor({
             />
           </label>
         </div>
-        <label className="block space-y-1">
-          <span>{t`Subject contains`}</span>
+        <label className="block">
+          <span className={fieldLabel}>{t`Subject contains`}</span>
           <input
             className={formInput}
             value={input.criteria.subject}
@@ -688,8 +733,8 @@ export function FilterEditor({
           />
         </label>
         {account.provider === "gmail" && (
-          <label className="block space-y-1">
-            <span>{t`Search query`}</span>
+          <label className="block">
+            <span className={fieldLabel}>{t`Search query`}</span>
             <input
               className={formInput}
               value={input.criteria.query}
@@ -698,16 +743,16 @@ export function FilterEditor({
           </label>
         )}
         <div className="grid grid-cols-2 gap-3">
-          <label className="block space-y-1">
-            <span>{t`Has words`}</span>
+          <label className="block">
+            <span className={fieldLabel}>{t`Has words`}</span>
             <input
               className={formInput}
               value={input.criteria.hasWords ?? ""}
               onChange={(e) => criteria({ hasWords: e.target.value })}
             />
           </label>
-          <label className="block space-y-1">
-            <span>{t`Does not have words`}</span>
+          <label className="block">
+            <span className={fieldLabel}>{t`Does not have words`}</span>
             <input
               className={formInput}
               value={input.criteria.notWords ?? ""}
@@ -715,9 +760,10 @@ export function FilterEditor({
             />
           </label>
           {/* Sits on the input row: the chosen comparison labels itself. */}
-          <div className="self-end py-[3px]">
+          <div className="self-end">
             <Select
               aria-label={t`Size comparison`}
+              variant="field"
               value={input.criteria.sizeComparison ?? "larger"}
               options={[
                 { value: "larger", label: t`Larger than` },
@@ -726,8 +772,8 @@ export function FilterEditor({
               onValueChange={(sizeComparison) => criteria({ sizeComparison })}
             />
           </div>
-          <label className="block space-y-1">
-            <span>{t`Size in bytes`}</span>
+          <label className="block">
+            <span className={fieldLabel}>{t`Size in bytes`}</span>
             <input
               type="number"
               min="0"
@@ -752,25 +798,25 @@ export function FilterEditor({
           <span>{t`Has attachment`}</span>
         </label>
         {account.provider === "outlook" && (
-          <div className="space-y-2">
-            <label className="block space-y-1">
-              <span>{t`Except sender contains`}</span>
+          <div className="space-y-4">
+            <label className="block">
+              <span className={fieldLabel}>{t`Except sender contains`}</span>
               <input
                 className={formInput}
                 value={input.criteria.exceptFrom ?? ""}
                 onChange={(e) => criteria({ exceptFrom: e.target.value })}
               />
             </label>
-            <label className="block space-y-1">
-              <span>{t`Except recipient contains`}</span>
+            <label className="block">
+              <span className={fieldLabel}>{t`Except recipient contains`}</span>
               <input
                 className={formInput}
                 value={input.criteria.exceptTo ?? ""}
                 onChange={(e) => criteria({ exceptTo: e.target.value })}
               />
             </label>
-            <label className="block space-y-1">
-              <span>{t`Except subject contains`}</span>
+            <label className="block">
+              <span className={fieldLabel}>{t`Except subject contains`}</span>
               <input
                 className={formInput}
                 value={input.criteria.exceptSubject ?? ""}
@@ -778,10 +824,11 @@ export function FilterEditor({
               />
             </label>
             {/* Not a label: a click on it would reach the select's hidden input, not its button. */}
-            <div className="space-y-1">
-              <span className="block">{t`Attachment exception`}</span>
+            <div>
+              <span className={fieldLabel}>{t`Attachment exception`}</span>
               <Select
                 aria-label={t`Attachment exception`}
+                variant="field"
                 value={input.criteria.exceptAttachment === true ? "with" : "none"}
                 options={[
                   { value: "none", label: t`None` },
@@ -826,218 +873,232 @@ export function FilterEditor({
             <span>{t`Exclude chats`}</span>
           </label>
         )}
-        <fieldset className="space-y-2 rounded-control border border-edge p-3">
-          <legend>
+        <fieldset className="rounded-card bg-raised px-3 pt-2.5 pb-3 ring-1 ring-edge dark:bg-white/[0.03]">
+          <legend className={`float-left w-full ${fieldLegend}`}>
             <Trans>Actions</Trans>
           </legend>
-          {account.provider === "outlook" && (
+          <div className="clear-both space-y-2.5">
+            {account.provider === "outlook" && (
+              <label className="flex items-center gap-2">
+                <Checkbox
+                  checked={input.action.stopProcessing ?? false}
+                  onCheckedChange={(stopProcessing) => action({ stopProcessing })}
+                />
+                <span>{t`Stop processing more rules`}</span>
+              </label>
+            )}
             <label className="flex items-center gap-2">
               <Checkbox
-                checked={input.action.stopProcessing ?? false}
-                onCheckedChange={(stopProcessing) => action({ stopProcessing })}
-              />
-              <span>{t`Stop processing more rules`}</span>
-            </label>
-          )}
-          <label className="flex items-center gap-2">
-            <Checkbox
-              checked={input.action.archive}
-              onCheckedChange={(archive) =>
-                action({
-                  archive,
-                  trash: false,
-                  ...(account.provider === "gmail" ? {} : { label: null }),
-                })
-              }
-            />
-            <span>{t`Archive`}</span>
-          </label>
-          <label className="flex items-center gap-2">
-            <Checkbox
-              checked={input.action.markRead}
-              onCheckedChange={(markRead) => action({ markRead })}
-            />
-            <span>{t`Mark as read`}</span>
-          </label>
-          {account.provider === "gmail" && (
-            <label className="flex items-center gap-2">
-              <Checkbox checked={input.action.star} onCheckedChange={(star) => action({ star })} />
-              <span>{t`Star`}</span>
-            </label>
-          )}
-          {account.provider === "gmail" && (
-            <Select
-              aria-label={t`Importance action`}
-              value={
-                input.action.important === undefined
-                  ? "unchanged"
-                  : input.action.important
-                    ? "important"
-                    : "normal"
-              }
-              options={[
-                { value: "unchanged", label: t`Keep importance` },
-                { value: "important", label: t`Mark as important` },
-                { value: "normal", label: t`Mark as not important` },
-              ]}
-              onValueChange={(value) =>
-                action({ important: value === "unchanged" ? undefined : value === "important" })
-              }
-            />
-          )}
-
-          {account.provider === "outlook" && (
-            <>
-              <Select
-                aria-label={t`Importance action`}
-                value={ruleImportance(input.action) ?? ""}
-                options={[
-                  { value: "", label: t`Keep importance` },
-                  ...RULE_IMPORTANCE.map((entry) => ({ value: entry, label: importance[entry] })),
-                ]}
-                onValueChange={(v) =>
+                checked={input.action.archive}
+                onCheckedChange={(archive) =>
                   action({
-                    important: undefined,
-                    markImportance: RULE_IMPORTANCE.find((entry) => entry === v),
+                    archive,
+                    trash: false,
+                    ...(account.provider === "gmail" ? {} : { label: null }),
                   })
                 }
               />
-              <label className="block space-y-1">
-                <span>{t`Assign categories (one per line)`}</span>
-                <textarea
-                  rows={2}
-                  className={formInput}
-                  value={categoriesText}
-                  onChange={(e) => {
-                    setCategoriesText(e.target.value);
-                    action({
-                      assignCategories: e.target.value.split("\n").filter((value) => value.trim()),
-                    });
-                  }}
+              <span>{t`Archive`}</span>
+            </label>
+            <label className="flex items-center gap-2">
+              <Checkbox
+                checked={input.action.markRead}
+                onCheckedChange={(markRead) => action({ markRead })}
+              />
+              <span>{t`Mark as read`}</span>
+            </label>
+            {account.provider === "gmail" && (
+              <label className="flex items-center gap-2">
+                <Checkbox
+                  checked={input.action.star}
+                  onCheckedChange={(star) => action({ star })}
                 />
+                <span>{t`Star`}</span>
               </label>
+            )}
+            {account.provider === "gmail" && (
               <Select
-                aria-label={t`Copy to folder`}
-                value={input.action.copyToFolder ?? ""}
+                aria-label={t`Importance action`}
+                variant="field"
+                value={
+                  input.action.important === undefined
+                    ? "unchanged"
+                    : input.action.important
+                      ? "important"
+                      : "normal"
+                }
                 options={[
-                  { value: "", label: t`No copy` },
-                  ...labels.map((l) => ({ value: l.id, label: l.name })),
+                  { value: "unchanged", label: t`Keep importance` },
+                  { value: "important", label: t`Mark as important` },
+                  { value: "normal", label: t`Mark as not important` },
                 ]}
-                onValueChange={(copyToFolder) =>
-                  action({ copyToFolder: copyToFolder || undefined })
+                onValueChange={(value) =>
+                  action({ important: value === "unchanged" ? undefined : value === "important" })
                 }
               />
-            </>
-          )}
-          {account.provider === "gmail" && (
-            <>
-              <Select
-                aria-label={t`Category action`}
-                value={input.action.category ?? ""}
-                options={[
-                  { value: "", label: t`Keep category` },
-                  ...CATEGORIES.map((category) => ({
-                    value: category,
-                    label: categories[category],
-                  })),
-                ]}
-                onValueChange={(value) => action({ category: CATEGORIES.find((c) => c === value) })}
-              />
-              <fieldset>
-                <legend>{t`Additional labels`}</legend>
-                {labels.map((label) => (
-                  <label key={label.id} className="flex items-center gap-2">
-                    <Checkbox
-                      checked={input.action.labels?.includes(label.id) ?? false}
-                      onCheckedChange={(checked) =>
-                        action({
-                          labels: checked
-                            ? [...(input.action.labels ?? []), label.id]
-                            : (input.action.labels ?? []).filter((id) => id !== label.id),
-                          trash: false,
-                        })
-                      }
-                    />
-                    <span>{label.name}</span>
-                  </label>
-                ))}
-              </fieldset>
-            </>
-          )}
-          {account.provider === "gmail" && (
-            <Disclosure summary={t`More label actions`} panelClassName="space-y-2">
-              {(
-                [
-                  { key: "addLabelIds", title: t`Add labels` },
-                  { key: "removeLabelIds", title: t`Remove labels` },
-                ] as const
-              ).map(({ key, title }) => (
-                <fieldset key={key}>
-                  <legend>{title}</legend>
-                  {[
-                    ...labels,
-                    { id: "INBOX", name: t`Inbox` },
-                    { id: "UNREAD", name: t`Unread` },
-                    { id: "STARRED", name: t`Starred` },
-                    { id: "IMPORTANT", name: t`Important` },
-                    { id: "SPAM", name: t`Spam` },
-                    { id: "TRASH", name: t`Trash` },
-                    ...CATEGORIES.map((id) => ({
-                      id,
-                      name: categories[id],
+            )}
+
+            {account.provider === "outlook" && (
+              <>
+                <Select
+                  aria-label={t`Importance action`}
+                  variant="field"
+                  value={ruleImportance(input.action) ?? ""}
+                  options={[
+                    { value: "", label: t`Keep importance` },
+                    ...RULE_IMPORTANCE.map((entry) => ({ value: entry, label: importance[entry] })),
+                  ]}
+                  onValueChange={(v) =>
+                    action({
+                      important: undefined,
+                      markImportance: RULE_IMPORTANCE.find((entry) => entry === v),
+                    })
+                  }
+                />
+                <label className="block">
+                  <span className={fieldLabel}>{t`Assign categories (one per line)`}</span>
+                  <textarea
+                    rows={2}
+                    className={formInput}
+                    value={categoriesText}
+                    onChange={(e) => {
+                      setCategoriesText(e.target.value);
+                      action({
+                        assignCategories: e.target.value
+                          .split("\n")
+                          .filter((value) => value.trim()),
+                      });
+                    }}
+                  />
+                </label>
+                <Select
+                  aria-label={t`Copy to folder`}
+                  variant="field"
+                  value={input.action.copyToFolder ?? ""}
+                  options={[
+                    { value: "", label: t`No copy` },
+                    ...labels.map((l) => ({ value: l.id, label: l.name })),
+                  ]}
+                  onValueChange={(copyToFolder) =>
+                    action({ copyToFolder: copyToFolder || undefined })
+                  }
+                />
+              </>
+            )}
+            {account.provider === "gmail" && (
+              <>
+                <Select
+                  aria-label={t`Category action`}
+                  variant="field"
+                  value={input.action.category ?? ""}
+                  options={[
+                    { value: "", label: t`Keep category` },
+                    ...CATEGORIES.map((category) => ({
+                      value: category,
+                      label: categories[category],
                     })),
-                  ]
-                    .filter((label) =>
-                      key === "addLabelIds"
-                        ? CATEGORIES.some((category) => category === label.id)
-                        : !GMAIL_REMOVABLE_SYSTEM_LABELS.some((id) => id === label.id),
-                    )
-                    .map((label) => (
-                      <label key={label.id} className="flex items-center gap-2">
-                        <Checkbox
-                          checked={input.action[key]?.includes(label.id) ?? false}
-                          onCheckedChange={(checked) =>
-                            action({
-                              [key]: checked
-                                ? [...(input.action[key] ?? []), label.id]
-                                : (input.action[key] ?? []).filter((id) => id !== label.id),
-                            })
-                          }
-                        />
-                        <span>{label.name}</span>
-                      </label>
-                    ))}
+                  ]}
+                  onValueChange={(value) =>
+                    action({ category: CATEGORIES.find((c) => c === value) })
+                  }
+                />
+                <fieldset className="space-y-1.5">
+                  <legend className={fieldLegend}>{t`Additional labels`}</legend>
+                  {labels.map((label) => (
+                    <label key={label.id} className="flex items-center gap-2">
+                      <Checkbox
+                        checked={input.action.labels?.includes(label.id) ?? false}
+                        onCheckedChange={(checked) =>
+                          action({
+                            labels: checked
+                              ? [...(input.action.labels ?? []), label.id]
+                              : (input.action.labels ?? []).filter((id) => id !== label.id),
+                            trash: false,
+                          })
+                        }
+                      />
+                      <span>{label.name}</span>
+                    </label>
+                  ))}
                 </fieldset>
-              ))}
-            </Disclosure>
-          )}
-          <label className="flex items-center gap-2">
-            <Checkbox
-              checked={input.action.trash}
-              onCheckedChange={(trash) =>
-                action({ trash, archive: false, label: null, labels: [], category: undefined })
+              </>
+            )}
+            {account.provider === "gmail" && (
+              <Disclosure summary={t`More label actions`} panelClassName="space-y-3">
+                {(
+                  [
+                    { key: "addLabelIds", title: t`Add labels` },
+                    { key: "removeLabelIds", title: t`Remove labels` },
+                  ] as const
+                ).map(({ key, title }) => (
+                  <fieldset key={key} className="space-y-1.5">
+                    <legend className={fieldLegend}>{title}</legend>
+                    {[
+                      ...labels,
+                      { id: "INBOX", name: t`Inbox` },
+                      { id: "UNREAD", name: t`Unread` },
+                      { id: "STARRED", name: t`Starred` },
+                      { id: "IMPORTANT", name: t`Important` },
+                      { id: "SPAM", name: t`Spam` },
+                      { id: "TRASH", name: t`Trash` },
+                      ...CATEGORIES.map((id) => ({
+                        id,
+                        name: categories[id],
+                      })),
+                    ]
+                      .filter((label) =>
+                        key === "addLabelIds"
+                          ? CATEGORIES.some((category) => category === label.id)
+                          : !GMAIL_REMOVABLE_SYSTEM_LABELS.some((id) => id === label.id),
+                      )
+                      .map((label) => (
+                        <label key={label.id} className="flex items-center gap-2">
+                          <Checkbox
+                            checked={input.action[key]?.includes(label.id) ?? false}
+                            onCheckedChange={(checked) =>
+                              action({
+                                [key]: checked
+                                  ? [...(input.action[key] ?? []), label.id]
+                                  : (input.action[key] ?? []).filter((id) => id !== label.id),
+                              })
+                            }
+                          />
+                          <span>{label.name}</span>
+                        </label>
+                      ))}
+                  </fieldset>
+                ))}
+              </Disclosure>
+            )}
+            <label className="flex items-center gap-2">
+              <Checkbox
+                checked={input.action.trash}
+                onCheckedChange={(trash) =>
+                  action({ trash, archive: false, label: null, labels: [], category: undefined })
+                }
+              />
+              <span>{t`Delete`}</span>
+            </label>
+            <Select
+              aria-label={t`Label or folder`}
+              variant="field"
+              value={input.action.label ?? ""}
+              options={[
+                { value: "", label: t`No label or folder` },
+                ...labels.map((l) => ({ value: l.id, label: l.name })),
+              ]}
+              onValueChange={(label) =>
+                action({
+                  label: label || null,
+                  trash: false,
+                  ...(account.provider === "gmail" ? {} : { archive: false }),
+                })
               }
             />
-            <span>{t`Delete`}</span>
-          </label>
-          <Select
-            aria-label={t`Label or folder`}
-            value={input.action.label ?? ""}
-            options={[
-              { value: "", label: t`No label or folder` },
-              ...labels.map((l) => ({ value: l.id, label: l.name })),
-            ]}
-            onValueChange={(label) =>
-              action({
-                label: label || null,
-                trash: false,
-                ...(account.provider === "gmail" ? {} : { archive: false }),
-              })
-            }
-          />
+          </div>
         </fieldset>
-        <div className="space-y-1">
-          <p aria-live="polite">
+        <div className="space-y-1.5">
+          <p aria-live="polite" className="font-medium">
             {previewBusy ? (
               <Trans>Loading…</Trans>
             ) : previewUnavailable ? (
@@ -1050,7 +1111,7 @@ export function FilterEditor({
             {count === 200 && " +"}
           </p>
           {previewUnavailable && (
-            <p className="text-footnote text-a11y-muted">
+            <p className={settingsHint}>
               <Trans>
                 Some conditions need metadata that is not cached. Save the rule for future mail on
                 the server.
@@ -1058,7 +1119,7 @@ export function FilterEditor({
             </p>
           )}
           {mode === "apply" && serverOnlyAction && (
-            <p className="text-footnote text-a11y-muted">
+            <p className={settingsHint}>
               <Trans>This rule can only be applied to future mail on the server</Trans>
             </p>
           )}
@@ -1067,7 +1128,9 @@ export function FilterEditor({
               {resultError(i18n, preview)}
             </p>
           )}
-          <ul className="max-h-28 overflow-y-auto text-footnote text-a11y-muted">
+          <ul
+            className={`max-h-28 overflow-y-auto rounded-control bg-fill-quiet px-2 py-1.5 empty:hidden ${settingsHint}`}
+          >
             {matches.slice(0, 20).map((m) => (
               <li key={m.id} className="truncate">
                 {m.from.address}: {m.subject}
@@ -1075,7 +1138,7 @@ export function FilterEditor({
             ))}
           </ul>
           {mode !== "apply" && (
-            <p className="text-footnote text-a11y-muted">
+            <p className={settingsHint}>
               <Trans>The filter applies to future mail on the server.</Trans>
             </p>
           )}
@@ -1084,31 +1147,42 @@ export function FilterEditor({
           resultError(i18n, updated) ||
           resultError(i18n, applied) ||
           resultError(i18n, prepared)) && (
-          <div role="alert" className="text-a11y-danger">
-            <p>
+          <div role="alert" className={`flex-wrap ${noticeRow} ${noticeTone.danger}`}>
+            <p className="min-w-0 flex-1">
               {resultError(i18n, result) ??
                 resultError(i18n, updated) ??
                 resultError(i18n, applied) ??
                 resultError(i18n, prepared)}
             </p>
             {settingsScopeMissing(result) && (
-              <button type="button" disabled={signedIn.waiting} onClick={() => reauth("settings")}>
+              <button
+                type="button"
+                className={buttonLink}
+                disabled={signedIn.waiting}
+                onClick={() => reauth("settings")}
+              >
                 <Trans>Sign in again to enable filters</Trans>
               </button>
             )}
           </div>
         )}
-        <button
-          type="submit"
-          className={formButton}
-          disabled={
-            busy ||
-            (mode === "apply" && (previewUnavailable || serverOnlyAction)) ||
-            (account.provider === "gmail" && (previewBusy || preview._tag !== "Success"))
-          }
-        >
-          {mode === "apply" ? t`Apply to existing mail` : initial ? t`Save rule` : t`Create filter`}
-        </button>
+        <div className="flex justify-end pt-1">
+          <button
+            type="submit"
+            className={buttonPrimary}
+            disabled={
+              busy ||
+              (mode === "apply" && (previewUnavailable || serverOnlyAction)) ||
+              (account.provider === "gmail" && (previewBusy || preview._tag !== "Success"))
+            }
+          >
+            {mode === "apply"
+              ? t`Apply to existing mail`
+              : initial
+                ? t`Save rule`
+                : t`Create filter`}
+          </button>
+        </div>
       </form>
       <Alert
         open={confirming !== null}
@@ -1180,7 +1254,7 @@ function VacationEditor({
   return (
     <Dialog aria-label={t`Automatic replies`} onClose={onClose} className="w-[480px] p-5">
       <form
-        className="space-y-3"
+        className="space-y-4"
         onSubmit={async (e) => {
           e.preventDefault();
           const exit = await save({
@@ -1190,7 +1264,7 @@ function VacationEditor({
           if (exit._tag === "Success") onClose();
         }}
       >
-        <h2 className="font-semibold">
+        <h2 className="text-headline font-semibold">
           <Trans>Automatic replies</Trans>
         </h2>
         <label className="flex items-center gap-2">
@@ -1201,8 +1275,8 @@ function VacationEditor({
           <span>{t`Enabled`}</span>
         </label>
         <div className="grid grid-cols-2 gap-3">
-          <label className="block space-y-1">
-            <span>{t`Start`}</span>
+          <label className="block">
+            <span className={fieldLabel}>{t`Start`}</span>
             <input
               className={formInput}
               type="datetime-local"
@@ -1215,8 +1289,8 @@ function VacationEditor({
               }
             />
           </label>
-          <label className="block space-y-1">
-            <span>{t`End`}</span>
+          <label className="block">
+            <span className={fieldLabel}>{t`End`}</span>
             <input
               className={formInput}
               type="datetime-local"
@@ -1231,8 +1305,8 @@ function VacationEditor({
           </label>
         </div>
         {account.provider === "gmail" ? (
-          <label className="block space-y-1">
-            <span>{t`Subject`}</span>
+          <label className="block">
+            <span className={fieldLabel}>{t`Subject`}</span>
             <input
               className={formInput}
               value={input.subject}
@@ -1240,12 +1314,12 @@ function VacationEditor({
             />
           </label>
         ) : (
-          <p className="text-footnote text-a11y-muted">
+          <p className={settingsHint}>
             <Trans>Outlook chooses the reply subject.</Trans>
           </p>
         )}
-        <label className="block space-y-1">
-          <span>{t`Message`}</span>
+        <label className="block">
+          <span className={fieldLabel}>{t`Message`}</span>
           <textarea
             rows={6}
             className={formInput}
@@ -1265,6 +1339,7 @@ function VacationEditor({
           <>
             <Select
               aria-label={t`External replies`}
+              variant="field"
               value={replies.externalAudience}
               onValueChange={(externalAudience) =>
                 setInput({
@@ -1279,8 +1354,8 @@ function VacationEditor({
                 { value: "all", label: t`Everyone` },
               ]}
             />
-            <label className="block space-y-1">
-              <span>{t`Internal reply`}</span>
+            <label className="block">
+              <span className={fieldLabel}>{t`Internal reply`}</span>
               <textarea
                 rows={4}
                 className={formInput}
@@ -1304,9 +1379,11 @@ function VacationEditor({
             {resultError(i18n, result)}
           </p>
         )}
-        <button type="submit" className={formButton} disabled={result.waiting}>
-          <Trans>Save</Trans>
-        </button>
+        <div className="flex justify-end pt-1">
+          <button type="submit" className={buttonPrimary} disabled={result.waiting}>
+            <Trans>Save</Trans>
+          </button>
+        </div>
       </form>
     </Dialog>
   );
@@ -1319,35 +1396,39 @@ function Aliases({ account }: { account: Account }) {
   );
   const [result, sync] = useAtom(syncSendAsAtom);
   return (
-    <section className="space-y-2">
-      <h3 className="font-semibold">
+    <section>
+      <h3 className={settingsHeading}>
         <Trans>Gmail aliases and signatures</Trans>
       </h3>
-      <ul>
+      <ul className={`empty:hidden ${settingsGroup}`}>
         {aliases.map((a) => (
-          <li key={a.address}>
+          <li key={a.address} className="truncate px-3 py-2.5">
             {a.name} &lt;{a.address}&gt;
           </li>
         ))}
       </ul>
-      <button
-        type="button"
-        className={formButton}
-        disabled={result.waiting}
-        onClick={() =>
-          sync({
-            payload: { accountId: account.id },
-            reactivityKeys: [Keys.sendAs, Keys.signatures],
-          })
-        }
-      >
-        <Trans>Sync aliases and signatures</Trans>
-      </button>
-      {resultError(i18n, result) && (
-        <p role="alert" className="text-a11y-danger">
-          {resultError(i18n, result)}
-        </p>
-      )}
+      <div className="mt-2 flex items-start gap-4 px-1">
+        <div className="min-w-0 flex-1">
+          {resultError(i18n, result) && (
+            <p role="alert" className="text-a11y-danger">
+              {resultError(i18n, result)}
+            </p>
+          )}
+        </div>
+        <button
+          type="button"
+          className={buttonSecondary}
+          disabled={result.waiting}
+          onClick={() =>
+            sync({
+              payload: { accountId: account.id },
+              reactivityKeys: [Keys.sendAs, Keys.signatures],
+            })
+          }
+        >
+          <Trans>Sync aliases and signatures</Trans>
+        </button>
+      </div>
     </section>
   );
 }

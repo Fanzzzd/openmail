@@ -4618,7 +4618,6 @@ msgstr "非公開"
 msgid "Profile"
 msgstr "プロファイル"
 
-#: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Profiles"
 msgstr "プロファイル"
@@ -5663,7 +5662,6 @@ msgstr "署名の名前"
 msgid "Signature position in replies"
 msgstr "返信での署名の位置"
 
-#: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Signatures"
 msgstr "署名"

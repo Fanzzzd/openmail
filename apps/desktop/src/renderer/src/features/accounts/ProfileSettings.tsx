@@ -10,6 +10,8 @@ import { useRunMail, withMail } from "../../state/mail";
 import { ProfileEditor } from "./lazy";
 import { Dialog } from "../../ui/Dialog";
 import { Select } from "../../ui/Select";
+import { SettingsGroup, SettingsRow } from "../../ui/SettingsRows";
+import { buttonPrimary, buttonSecondary, settingsHint } from "../../ui/styles";
 
 export function ProfileSwitcher({
   profiles,
@@ -76,7 +78,7 @@ export function DefaultProfilesPrompt({
   };
   return (
     <Dialog aria-label={t`Create profiles?`} className="w-[420px] p-5">
-      <h2 className="font-semibold">
+      <h2 className="text-headline font-semibold">
         <Trans>Create Personal and Work profiles?</Trans>
       </h2>
       <p className="mt-3 text-a11y-muted">
@@ -85,14 +87,19 @@ export function DefaultProfilesPrompt({
         </Trans>
       </p>
       <div className="mt-5 flex justify-end gap-3">
-        <button type="button" disabled={saving} onClick={() => choose(false)}>
+        <button
+          type="button"
+          disabled={saving}
+          onClick={() => choose(false)}
+          className={buttonSecondary}
+        >
           <Trans>Skip</Trans>
         </button>
         <button
           type="button"
           disabled={saving}
           onClick={() => choose(true)}
-          className="rounded bg-blue-600 px-3 py-1 text-white"
+          className={buttonPrimary}
         >
           <Trans>Create profiles</Trans>
         </button>
@@ -105,34 +112,38 @@ export function ProfileSettings({ accounts }: { accounts: readonly Account[] }) 
   const profiles = AsyncResult.getOrElse(useAtomValue(profilesAtom), () => []);
   const [editing, setEditing] = useState<Profile | "new" | null>(null);
   return (
-    <section className="space-y-4">
-      <h2 className="font-semibold">
-        <Trans>Profiles</Trans>
-      </h2>
-      <p className="text-a11y-muted">
+    <>
+      {/* The tab already shows "Profiles" as its title. */}
+      <p className={`px-1 ${settingsHint}`}>
         <Trans>Group accounts and choose a profile in the window toolbar.</Trans>
       </p>
-      {profiles.map((profile) => (
-        <div key={profile.id} className="flex items-center gap-3">
-          <span className="flex-1">
-            {profile.icon} {profile.name}
-          </span>
-          <span className="text-a11y-muted">
-            {accounts
-              .filter((a) => a.profileId === profile.id)
-              .map((a) => a.description || a.email)
-              .join(", ")}
-          </span>
-          <button type="button" onClick={() => setEditing(profile)}>
-            <Trans>Edit</Trans>
-          </button>
-        </div>
-      ))}
-      <button
-        type="button"
-        onClick={() => setEditing("new")}
-        className="rounded bg-blue-600 px-3 py-1 text-white"
-      >{t`New profile`}</button>
+      {profiles.length > 0 && (
+        <SettingsGroup>
+          {profiles.map((profile) => (
+            <SettingsRow
+              key={profile.id}
+              label={
+                <>
+                  {profile.icon} {profile.name}
+                </>
+              }
+              hint={accounts
+                .filter((a) => a.profileId === profile.id)
+                .map((a) => a.description || a.email)
+                .join(", ")}
+            >
+              <button type="button" onClick={() => setEditing(profile)} className={buttonSecondary}>
+                <Trans>Edit</Trans>
+              </button>
+            </SettingsRow>
+          ))}
+        </SettingsGroup>
+      )}
+      <div>
+        <button type="button" onClick={() => setEditing("new")} className={buttonSecondary}>
+          {t`New profile`}
+        </button>
+      </div>
       {editing && (
         <ProfileEditor
           {...(editing === "new" ? {} : { profile: editing })}
@@ -141,6 +152,6 @@ export function ProfileSettings({ accounts }: { accounts: readonly Account[] }) 
           onClose={() => setEditing(null)}
         />
       )}
-    </section>
+    </>
   );
 }

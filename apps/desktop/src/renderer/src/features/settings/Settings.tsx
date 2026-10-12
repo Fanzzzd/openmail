@@ -66,7 +66,15 @@ import { reauthText } from "../sync-status";
 import { isKeychainLocked } from "@openmail/core/schema";
 import { Alert, AlertCancel, alertDanger, Dialog } from "../../ui/Dialog";
 import { SettingsGroup, SettingsRow } from "../../ui/SettingsRows";
-import { choiceRow, radioDot } from "../../ui/styles";
+import {
+  buttonLink,
+  buttonSecondary,
+  choiceRow,
+  radioDot,
+  settingsGroup,
+  settingsHeading,
+  settingsHint,
+} from "../../ui/styles";
 import { Select } from "../../ui/Select";
 
 import { OrganizationSettings } from "../organize";
@@ -260,8 +268,8 @@ function Accounts({
       }),
     );
   return (
-    <div className="space-y-4">
-      <p className="text-a11y-muted">
+    <>
+      <p className={`px-1 ${settingsHint}`}>
         <Trans>
           Drag accounts to reorder or move between spaces. You can also use the space picker and
           Move up / Move down buttons.
@@ -278,10 +286,9 @@ function Accounts({
             if (dragged.current) move(dragged.current, profile.id, null);
             dragged.current = null;
           }}
-          className="min-h-16 rounded-card border border-edge p-2"
         >
-          <h3 className="px-3 py-2 font-semibold">{profile.name}</h3>
-          <ul className="divide-y divide-separator">
+          <h3 className={settingsHeading}>{profile.name}</h3>
+          <ul className={`min-h-11 ${settingsGroup}`}>
             {accounts
               .filter((a) => a.profileId === profile.id)
               .map((a) => (
@@ -322,16 +329,18 @@ function Accounts({
           {resultError(i18n, result)}
         </output>
       )}
-      <button
-        type="button"
-        onClick={onAddAccount}
-        className="h-7 rounded-control border border-edge px-3 font-medium"
-      >
-        <Trans>Add email account</Trans>
-      </button>
-    </div>
+      <div>
+        <button type="button" onClick={onAddAccount} className={buttonSecondary}>
+          <Trans>Add email account</Trans>
+        </button>
+      </div>
+    </>
   );
 }
+
+/** A text action in an account row. Remove reads as a quiet danger link. */
+const removeLink =
+  "rounded-item text-a11y-danger outline-offset-1 outline-a11y-focus hover:underline focus-visible:outline-2 disabled:opacity-50";
 
 function AccountRow({
   optionalFocus,
@@ -376,50 +385,49 @@ function AccountRow({
   const status = accountStatus();
 
   return (
-    <li
-      {...dragProps}
-      draggable={!moving}
-      className="flex flex-wrap items-center gap-3 px-3 py-2.5"
-    >
-      <ProviderIcon provider={a.imap?.preset ?? a.provider} className="size-5 shrink-0" />
-      <span className="min-w-0 flex-1">
-        <span className="block truncate font-medium" title={a.email}>
-          {accountName(a)}
+    <li {...dragProps} draggable={!moving} className="px-3 py-2.5">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <ProviderIcon provider={a.imap?.preset ?? a.provider} className="size-5 shrink-0" />
+        <span className="min-w-0 flex-1 basis-40">
+          <span className="block truncate font-medium" title={a.email}>
+            {accountName(a)}
+          </span>
+          <span
+            className={`block truncate text-footnote ${status.className}`}
+            title={a.needsReauth ? reauthText(i18n, a) : (a.lastSyncError ?? undefined)}
+          >
+            {reauth.waiting
+              ? t`Finish signing in in your browser`
+              : (resultError(i18n, reauth) ?? status.text)}
+          </span>
         </span>
-        <span
-          className={`block truncate text-footnote ${status.className}`}
-          title={a.needsReauth ? reauthText(i18n, a) : (a.lastSyncError ?? undefined)}
-        >
-          {reauth.waiting
-            ? t`Finish signing in in your browser`
-            : (resultError(i18n, reauth) ?? status.text)}
+        <span className="flex shrink-0 items-center gap-3">
+          <button
+            type="button"
+            disabled={reauth.waiting}
+            // IMAP signs in again by adding the same address with a new password.
+            onClick={() => (a.provider === "imap" ? onAddAccount() : runReauth(undefined))}
+            className={buttonLink}
+          >
+            <Trans>Sign in again</Trans>
+          </button>
+          <button type="button" onClick={() => setConfirming(true)} className={removeLink}>
+            <Trans>Remove</Trans>
+          </button>
         </span>
-      </span>
-      <button
-        type="button"
-        disabled={reauth.waiting}
-        // IMAP signs in again by adding the same address with a new password.
-        onClick={() => (a.provider === "imap" ? onAddAccount() : runReauth(undefined))}
-        className="h-7 shrink-0 rounded-control px-2.5 text-a11y-accent hover:bg-blue-500/10 disabled:opacity-50 dark:text-blue-400"
-      >
-        <Trans>Sign in again</Trans>
-      </button>
-      <button
-        type="button"
-        onClick={() => setConfirming(true)}
-        className="h-7 shrink-0 rounded-control px-2.5 text-a11y-danger hover:bg-red-500/10 dark:text-red-400"
-      >
-        <Trans>Remove</Trans>
-      </button>
-      <AccountControls
-        key={`${a.id}:${a.description}:${a.color}:${a.imap?.authservId}`}
-        account={a}
-        accounts={accounts}
-        move={move}
-        moving={moving}
-      />
-      <OptionalServices account={a} focus={optionalFocus} />
-      <SyncHealthCheck accountId={a.id} />
+      </div>
+      {/* Per-account settings sit under the name, past the 20 px icon and its 12 px gap. */}
+      <div className="mt-2 ml-8 space-y-2.5 text-footnote">
+        <AccountControls
+          key={`${a.id}:${a.description}:${a.color}:${a.imap?.authservId}`}
+          account={a}
+          accounts={accounts}
+          move={move}
+          moving={moving}
+        />
+        <OptionalServices account={a} focus={optionalFocus} />
+        <SyncHealthCheck accountId={a.id} />
+      </div>
       <Alert
         open={confirming}
         onOpenChange={setConfirming}
@@ -511,8 +519,8 @@ function AgentPolicy() {
   const setMode = useAtomSet(setAgentModeAtom);
 
   return (
-    <div>
-      <p className="text-a11y-muted">
+    <section>
+      <p className={`mb-2 px-1 ${settingsHint}`}>
         <Trans>
           AI connects to openmail over MCP, for example Claude Code. This decides whether it can
           change your mail.
@@ -525,7 +533,7 @@ function AgentPolicy() {
           if (next)
             setMode({ payload: { mode: next }, reactivityKeys: [Keys.agentMode, Keys.audit] });
         }}
-        className="mt-4 space-y-2"
+        className="space-y-2"
       >
         {MODES.map((m) => (
           <Radio.Root<AgentWriteMode | null>
@@ -539,18 +547,18 @@ function AgentPolicy() {
             </span>
             <span>
               <span className="block font-medium">{i18n._(m.label)}</span>
-              <span className="block text-a11y-muted">{i18n._(m.detail)}</span>
+              <span className={`mt-0.5 block ${settingsHint}`}>{i18n._(m.detail)}</span>
             </span>
           </Radio.Root>
         ))}
       </RadioGroup>
-      <p className="mt-4 text-a11y-muted">
+      <p className={`mt-2 px-1 ${settingsHint}`}>
         <Trans comment="readOnly is the translated Read only write-mode label above.">
           MCP can propose drafts only when the write mode is not "{readOnly}". You review drafts and
           confirm sending in the app.
         </Trans>
       </p>
-    </div>
+    </section>
   );
 }
 
@@ -581,58 +589,66 @@ function actorName(i18n: I18n, actor: string): string {
   return i18n._(msg`AI (${agent})`);
 }
 
+/** Log cells line up with the 12 px inset of setting rows. */
+const logHead = "px-3 py-1.5";
+const logCell = "px-3 py-1.5 align-top";
+
 function AuditLog({ accounts }: { accounts: readonly Account[] }) {
   const { i18n } = useLingui();
   const log = AsyncResult.getOrElse(useAtomValue(auditAtom), () => []);
   const email = (id: string | null) => accounts.find((a) => a.id === id)?.email ?? "";
   if (!log.length)
     return (
-      <p className="text-a11y-muted">
+      <p className={`px-1 ${settingsHint}`}>
         <Trans>No activity yet.</Trans>
       </p>
     );
   return (
-    <table className="w-full text-left">
-      <thead className="text-footnote text-a11y-muted">
-        <tr>
-          <th className="pb-2 font-medium">
-            <Trans>Time</Trans>
-          </th>
-          <th className="pb-2 font-medium">
-            <Trans>Who</Trans>
-          </th>
-          <th className="pb-2 font-medium">
-            <Trans>Action</Trans>
-          </th>
-          <th className="pb-2 font-medium @max-[480px]/log:hidden">
-            <Trans>Account</Trans>
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        {log.map((e, i) => (
-          <tr key={i} className="border-t border-separator">
-            <td className="py-1.5 pr-3 whitespace-nowrap text-a11y-muted tabular-nums">
-              {new Date(e.at).toLocaleString(i18n.locale, {
-                month: "numeric",
-                day: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </td>
-            <td className="py-1.5 pr-3 whitespace-nowrap">{actorName(i18n, e.actor)}</td>
-            <td className="py-1.5 pr-3">
-              {ACTION_NAMES[e.action] ? i18n._(ACTION_NAMES[e.action]!) : e.action}
-              <span className="hidden break-all text-a11y-muted @max-[480px]/log:block">
-                {email(e.accountId)}
-              </span>
-            </td>
-            <td className="py-1.5 text-a11y-muted @max-[480px]/log:hidden">
-              <span className="block max-w-40 truncate">{email(e.accountId)}</span>
-            </td>
+    <div className={`overflow-hidden ${settingsGroup}`}>
+      <table className="w-full text-left tabular-nums">
+        <thead className="border-b border-separator text-footnote text-a11y-muted">
+          <tr>
+            <th className={`${logHead} font-medium`}>
+              <Trans>Time</Trans>
+            </th>
+            <th className={`${logHead} font-medium`}>
+              <Trans>Who</Trans>
+            </th>
+            <th className={`${logHead} font-medium`}>
+              <Trans>Action</Trans>
+            </th>
+            <th className={`${logHead} font-medium @max-[480px]/log:hidden`}>
+              <Trans>Account</Trans>
+            </th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody className="divide-y divide-separator">
+          {log.map((e, i) => (
+            <tr key={i}>
+              <td className={`${logCell} whitespace-nowrap text-a11y-muted`}>
+                {new Date(e.at).toLocaleString(i18n.locale, {
+                  month: "numeric",
+                  day: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </td>
+              <td className={`${logCell} whitespace-nowrap`}>{actorName(i18n, e.actor)}</td>
+              <td className={logCell}>
+                <span className="whitespace-nowrap">
+                  {ACTION_NAMES[e.action] ? i18n._(ACTION_NAMES[e.action]!) : e.action}
+                </span>
+                <span className="hidden break-all text-footnote text-a11y-muted @max-[480px]/log:block">
+                  {email(e.accountId)}
+                </span>
+              </td>
+              <td className={`${logCell} text-a11y-muted @max-[480px]/log:hidden`}>
+                <span className="block max-w-40 truncate">{email(e.accountId)}</span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
