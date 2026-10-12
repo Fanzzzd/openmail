@@ -1,0 +1,76 @@
+import { fileURLToPath } from "node:url";
+import { Mailbox } from "@openmail/core";
+import { DeviceError, InvalidInput } from "@openmail/core/schema";
+import { Context, Effect, Fiber, Layer, Queue, Stream } from "effect";
+import type { RemoteAccessView } from "../../shared/remote-access";
+import { localLog } from "../app/reliability";
+import { createRemoteAccess, type RemoteAccessController } from "./remote-access";
+import { remoteRpcServer } from "./remote-rpc-server";
+import { cliInstalled, runTailscale } from "./tailscale";
+
+export class RemoteAccess extends Context.Service<
+  RemoteAccess,
+  {
+    readonly view: Stream.Stream<RemoteAccessView>;
+    readonly refresh: Effect.Effect<void>;
+    setEnabled(enabled: boolean): Effect.Effect<void, InvalidInput | DeviceError>;
+    setAllowlist(logins: readonly string[]): Effect.Effect<void, InvalidInput | DeviceError>;
+    setService(service: string): Effect.Effect<void, InvalidInput | DeviceError>;
+    revoke(id: string): Effect.Effect<void>;
+  }
+>()("openmail/RemoteAccess") {}
+
+const attempt = (task: () => Promise<void>) =>
+  Effect.tryPromise({
+    try: task,
+    catch: (error) =>
+      error instanceof InvalidInput
+        ? error
+        : new DeviceError({ message: "Remote access could not be changed." }),
+  });
+
+export const remoteAccessService = (controller: RemoteAccessController) =>
+  RemoteAccess.of({
+    view: Stream.callback<RemoteAccessView>((queue) =>
+      Effect.acquireRelease(
+        Effect.sync(() =>
+          controller.subscribe((view) => {
+            Queue.offerUnsafe(queue, view);
+          }),
+        ),
+        (off) => Effect.sync(off),
+      ),
+    ),
+    refresh: Effect.promise(() => controller.refresh().catch(() => null)).pipe(Effect.asVoid),
+    setEnabled: (enabled) => attempt(() => controller.setEnabled(enabled)),
+    setAllowlist: (logins) => attempt(() => controller.setAllowlist(logins)),
+    setService: (service) => attempt(() => controller.setService(service)),
+    revoke: (id) => Effect.sync(() => controller.revoke(id)),
+  });
+
+/** Remote access for the desktop app. Off unless the person turned it on in Settings. */
+export const RemoteAccessLive = Layer.effect(
+  RemoteAccess,
+  Effect.gen(function* () {
+    const mailbox = yield* Mailbox;
+    const controller = createRemoteAccess({
+      mailbox,
+      runCli: runTailscale(),
+      installed: () => cliInstalled(),
+      // out/main/index.js → out/web, the renderer's web build.
+      webRoot: fileURLToPath(new URL("../web/", import.meta.url)),
+      startRpc: (hub) => {
+        const fiber = Effect.runFork(
+          Layer.launch(
+            remoteRpcServer(hub, (tag) => localLog("rpc-auth-failure", { rpc: tag })),
+          ).pipe(Effect.provideService(Mailbox, mailbox)),
+        );
+        return () => Effect.runPromise(Fiber.interrupt(fiber).pipe(Effect.asVoid));
+      },
+      log: (reason) => process.stderr.write(`[remote-access] refused: ${reason}\n`),
+    });
+    yield* Effect.promise(() => controller.init().catch(() => null)).pipe(Effect.forkScoped);
+    yield* Effect.addFinalizer(() => Effect.promise(() => controller.dispose().catch(() => null)));
+    return remoteAccessService(controller);
+  }),
+);

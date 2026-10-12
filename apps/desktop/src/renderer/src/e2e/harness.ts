@@ -335,6 +335,33 @@ export async function flow(
       SetActiveSpace: () => Effect.void,
       SetSendState: () => Effect.void,
       SetDesktopLabels: () => Effect.void,
+      RemoteAccess: () =>
+        Stream.concat(
+          Stream.make({
+            enabled: false,
+            allowlist: [],
+            service: "",
+            tailscale: {
+              installed: false,
+              running: false,
+              tailnet: null,
+              dnsName: null,
+              suffix: null,
+              login: null,
+              https: false,
+            },
+            status: "off" as const,
+            problem: null,
+            url: null,
+            sessions: [],
+          }),
+          Stream.never,
+        ),
+      RefreshRemoteAccess: () => Effect.void,
+      SetRemoteAccess: unsupported,
+      SetRemoteAllowlist: unsupported,
+      SetRemoteService: unsupported,
+      RevokeRemoteSession: unsupported,
       DesktopEvents: () =>
         Stream.fromPubSub(desktop).pipe(Stream.onStart(Deferred.succeed(desktopReady, undefined))),
     }),

@@ -23,6 +23,7 @@ import { desktopInferenceProcess } from "./app/inference";
 
 import { UpdatesLive } from "./updates/updates";
 import { RpcServerLive } from "./rpc/rpc-server";
+import { RemoteAccessLive } from "./remote/remote-access-live";
 import { DesktopLive, receiveAppUrl, receiveOpenFile, ready } from "./system/system";
 import { focusMainWindow } from "./windows/windows";
 import { prepareBackgroundWindows } from "./windows/reveal";
@@ -83,6 +84,7 @@ if (app.isPackaged && !app.requestSingleInstanceLock()) {
   const main = Effect.runFork(
     Layer.launch(
       Layer.merge(RpcServerLive, UpdatesLive).pipe(
+        Layer.provide(RemoteAccessLive),
         Layer.provideMerge(DesktopLive),
         Layer.provide(
           Layer.unwrap(

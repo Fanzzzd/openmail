@@ -113,6 +113,7 @@ import {
 import { DesktopLabels } from "./desktop-labels";
 import { AttachmentApp, DownloadCommand, DownloadItem } from "./downloads";
 import { PromptAnswer, TextMenuCommand, WindowUiEvent } from "./window-ui";
+import { RemoteAccessView } from "./remote-access";
 import { Rpc, RpcGroup } from "effect/rpc";
 
 export const ConnectInput = Schema.Union([
@@ -772,6 +773,22 @@ export class MailRpcs extends RpcGroup.make(
   Rpc.make("WindowUiEvents", { success: WindowUiEvent, stream: true }),
   Rpc.make("AnswerPrompt", { payload: { id: Schema.String, answer: PromptAnswer } }),
   Rpc.make("TextMenuCommand", { payload: { command: TextMenuCommand } }),
+
+  // Remote access over the person's tailnet. Desktop only: none of these is on the remote allowlist.
+  Rpc.make("RemoteAccess", { success: RemoteAccessView, stream: true }),
+  Rpc.make("RefreshRemoteAccess"),
+  Rpc.make("SetRemoteAccess", { payload: { enabled: Schema.Boolean }, error }),
+  Rpc.make("SetRemoteAllowlist", {
+    payload: { logins: Schema.Array(Schema.String.check(Schema.isMaxLength(512))) },
+    error,
+  }),
+  Rpc.make("SetRemoteService", {
+    payload: { service: Schema.String.check(Schema.isMaxLength(80)) },
+    error,
+  }),
+  Rpc.make("RevokeRemoteSession", {
+    payload: { id: Schema.String.check(Schema.isMaxLength(128)) },
+  }),
 
   // Sync
   Rpc.make("Sync", { success: Schema.Array(SyncResult) }),

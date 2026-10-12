@@ -57,6 +57,7 @@ import {
 } from "electron";
 
 import { RPC_CHANNEL } from "../../shared/channel";
+import { RemoteAccess } from "../remote/remote-access-live";
 import { MailRpcs } from "../../shared/rpc";
 import { openAttachment, printThread, saveMessage } from "../files/files";
 import { openMeeting } from "../system/meeting";
@@ -153,6 +154,7 @@ const Handlers = MailRpcs.toLayer(
   Effect.gen(function* () {
     const m = yield* Mailbox;
     const desktop = yield* Desktop;
+    const remote = yield* RemoteAccess;
     const apple = desktopAppleContacts(m);
     const downloads = appDownloads(m, yield* FiberSet.makeRuntime());
     return MailRpcs.of({
@@ -347,6 +349,12 @@ const Handlers = MailRpcs.toLayer(
       SetSendState: (state, { client }) => desktop.setSendState(client.id, state),
       SetDesktopLabels: ({ labels }) => desktop.setLabels(labels),
       DesktopEvents: (_, { client }) => desktop.events(client.id),
+      RemoteAccess: () => remote.view,
+      RefreshRemoteAccess: () => remote.refresh,
+      SetRemoteAccess: ({ enabled }) => remote.setEnabled(enabled),
+      SetRemoteAllowlist: ({ logins }) => remote.setAllowlist(logins),
+      SetRemoteService: ({ service }) => remote.setService(service),
+      RevokeRemoteSession: ({ id }) => remote.revoke(id),
     });
   }),
 );
