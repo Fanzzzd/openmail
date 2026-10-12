@@ -1037,6 +1037,16 @@ export const AuditEntry = Schema.Struct({
 });
 export type AuditEntry = typeof AuditEntry.Type;
 
+/** One MCP tool call. Only the tool and its outcome, never parameters or results. */
+export const AgentActivity = Schema.Struct({
+  at: Schema.Number,
+  /** The MCP client's name from its initialize request, such as claude-code. */
+  client: Schema.String,
+  tool: Schema.String,
+  ok: Schema.Boolean,
+});
+export type AgentActivity = typeof AgentActivity.Type;
+
 // Sync
 
 export const SyncProgress = Schema.Struct({

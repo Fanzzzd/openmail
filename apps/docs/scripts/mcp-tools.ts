@@ -4,6 +4,8 @@ import { MCP_TOOLS, type McpToolName } from "../../../packages/cli/src/mcp-tools
 
 /** One line per tool for people. Type-checked against the registry, so a new tool needs one. */
 export const TOOL_SUMMARIES: Record<McpToolName, string> = {
+  access_status:
+    "Say which accounts the client can read, why others are hidden and what to change in the app.",
   list_accounts: "List connected accounts that allow MCP access.",
   list_profiles: "List profiles, such as Work and Personal.",
   list_labels: "List labels (Gmail) and folders (Outlook, IMAP) per account.",

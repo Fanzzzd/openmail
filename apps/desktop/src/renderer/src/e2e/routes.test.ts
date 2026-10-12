@@ -86,7 +86,8 @@ it("opens the thread a route names and keeps the open thread in the route", asyn
 
 it("opens the dialog a route names, and closing it leaves the route in place", async () => {
   const h = (current = await flow({ route: "/mail/all/sent?dialog=settings" }));
-  const settings = await screen.findByRole("dialog", { name: "Settings" });
+  // Settings is a lazy chunk; its first import in a cold jsdom run can take over a second.
+  const settings = await screen.findByRole("dialog", { name: "Settings" }, { timeout: 5000 });
   const length = h.router.history.length;
   fireEvent.keyDown(settings, { key: "Escape" });
   await eventually(() => expect(screen.queryByRole("dialog", { name: "Settings" })).toBeNull());

@@ -33,6 +33,7 @@ import type {
   Address,
   AgentWriteMode,
   AuditEntry,
+  AgentActivity,
   Command,
   Draft,
   DraftInput,
@@ -440,6 +441,11 @@ export class Mailbox extends Context.Service<
     readonly listFailedOps: Effect.Effect<readonly import("./domain.js").FailedOp[]>;
     acknowledgeFailedOps(ids: readonly number[]): Effect.Effect<void>;
     audit(limit: number): Effect.Effect<AuditEntry[]>;
+    /** The last MCP tool calls, newest first: tool names and outcomes only. */
+    agentActivity(limit: number): Effect.Effect<AgentActivity[]>;
+    recordAgentActivity(entry: { client: string; tool: string; ok: boolean }): Effect.Effect<void>;
+    /** Write mode for one agent: its own policy, else the default. */
+    agentWriteModeFor(name: string): Effect.Effect<AgentWriteMode>;
     /** Default write mode for agents without their own policy. */
     readonly agentWriteMode: Effect.Effect<AgentWriteMode>;
     setAgentWriteMode(mode: AgentWriteMode): Effect.Effect<void>;

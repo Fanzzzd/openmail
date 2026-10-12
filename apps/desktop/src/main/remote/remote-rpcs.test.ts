@@ -59,6 +59,7 @@ const MUST_DENY = [
   "AnswerPrompt", "Diagnostics", "DismissCrashReport", "ClearCache", "CompactCache",
   "SetCacheWindow", "SetModelsEnabled", "SetIndexingPaused", "RemoteAccess", "SetRemoteAccess",
   "SetRemoteAllowlist", "SetRemoteService", "DisconnectRemoteSession", "RefreshRemoteAccess",
+  "AiClients", "PreviewAiClientChange", "ApplyAiClientChange",
 ]; // prettier-ignore
 
 describe("remote RPC allowlist", () => {

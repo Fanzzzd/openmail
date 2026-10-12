@@ -167,6 +167,14 @@ msgstr "{more} plus"
 msgid "{name} client"
 msgstr "Client {name}"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "{name} will no longer start OpenMail's MCP server."
+msgstr "{name} ne lancera plus le serveur MCP d’OpenMail."
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "{name} will start OpenMail's MCP server and read the accounts you allowed. Mail goes to {name} and the model provider it uses."
+msgstr "{name} lancera le serveur MCP d’OpenMail et lira les comptes que vous avez autorisés. Le courrier est transmis à {name} et au fournisseur de modèle qu’il utilise."
+
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "{op} {count, plural, one {# conversation} other {# conversations}}"
 msgstr "{op} {count, plural, one {# conversation} other {# conversations}}"
@@ -273,6 +281,10 @@ msgstr "Espace du compte"
 msgid "Accounts"
 msgstr "Comptes"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Accounts AI apps can read"
+msgstr "Comptes que les applications d’IA peuvent lire"
+
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Accounts you already added keep the client they signed in with."
 msgstr "Les comptes déjà ajoutés gardent le client avec lequel ils se sont connectés."
@@ -340,6 +352,10 @@ msgstr "Ajouter"
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Add {provider}"
 msgstr "Ajouter {provider}"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Add a mail account first."
+msgstr "Ajoutez d’abord un compte de messagerie."
 
 #: src/renderer/src/app/App.tsx
 msgid "Add account"
@@ -469,13 +485,13 @@ msgstr "Action IA"
 msgid "AI added unfamiliar recipients:"
 msgstr "L’IA a ajouté des destinataires inconnus :"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "AI apps"
+msgstr "Applications d’IA"
+
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "AI can read and search mail, but can't change anything."
 msgstr "L’IA peut lire et rechercher le courrier, mais ne peut rien changer."
-
-#: src/renderer/src/features/settings/Settings.tsx
-msgid "AI connects to openmail over MCP, for example Claude Code. This decides whether it can change your mail."
-msgstr "L’IA se connecte à openmail via MCP, par exemple Claude Code. Cela décide s’il peut modifier votre courrier."
 
 #: src/renderer/src/features/compose/components/Composer.tsx
 msgid "AI draft"
@@ -593,6 +609,10 @@ msgstr "Autoriser les notifications"
 msgid "Allow permanent deletion for {email}?"
 msgstr "Autoriser la suppression définitive de {email} ?"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Allow proposals"
+msgstr "Autoriser les propositions"
+
 #: src/renderer/src/lib/ai-settings-errors.test.ts
 #: src/renderer/src/lib/errors.ts
 msgid "Allow sending mail text for each selected account in AI settings."
@@ -691,6 +711,10 @@ msgstr "Apple Mail"
 msgid "Application (client) ID"
 msgstr "ID d’application (client)"
 
+#: src/renderer/src/features/settings/Settings.tsx
+msgid "Applies to AI apps connected over MCP, such as Claude Code, and to your rules. It decides whether they can change your mail."
+msgstr "S’applique aux applications d’IA connectées via MCP, comme Claude Code, et à vos règles. Détermine si elles peuvent modifier votre courrier."
+
 #: src/renderer/src/features/compose/components/DraftOrganization.tsx
 #: src/renderer/src/features/organize/MultiOrganization.tsx
 msgid "Apply"
@@ -723,6 +747,10 @@ msgstr "Approuver et modifier"
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Approve suggestion"
 msgstr "Approuver la suggestion"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Apps not found on this Mac"
+msgstr "Applications introuvables sur ce Mac"
 
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
@@ -1056,6 +1084,7 @@ msgstr "Le serveur de messagerie est momentanément inaccessible."
 #: src/renderer/src/features/organize/PermanentDeletePermission.tsx
 #: src/renderer/src/features/reader/frame/LinkConfirmDialog.tsx
 #: src/renderer/src/features/reader/UnsubscribeButton.tsx
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/state/desktop.ts
@@ -1132,9 +1161,22 @@ msgstr "Changer de mode d’écriture ?"
 msgid "Change your OAuth client"
 msgstr "Changer de client OAuth"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Changes"
+msgstr "Modifications"
+
+#. placeholder {0}: preview.file
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Changes to <0>{0}</0>:"
+msgstr "Modifications de <0>{0}</0> :"
+
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Check again"
 msgstr "Vérifier à nouveau"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Check AI apps again"
+msgstr "Vérifier à nouveau les applications d’IA"
 
 #: src/renderer/src/features/settings/sections/UpdateSettings.tsx
 msgid "Check for updates"
@@ -1224,6 +1266,10 @@ msgstr "Choisissez une libellé ou un dossier utilisateur"
 #: src/renderer/src/lib/errors.ts
 msgid "Choose a verified send-as address for this account"
 msgstr "Choisissez une adresse d’envoi vérifiée pour ce compte"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Choose accounts"
+msgstr "Choisir les comptes"
 
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 msgid "Choose actions and use the buttons to change their order."
@@ -1405,6 +1451,10 @@ msgstr "Nouveau message"
 msgid "Confidential"
 msgstr "Confidentiel"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Config file can't be read"
+msgstr "Fichier de configuration illisible"
+
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Confirm"
 msgstr "Confirmer"
@@ -1426,8 +1476,17 @@ msgid "Confirm rule changes?"
 msgstr "Confirmer les modifications des règles ?"
 
 #: src/renderer/src/features/accounts/OptionalServices.tsx
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 msgid "Connect"
 msgstr "Connecter"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Connect {name}"
+msgstr "Connecter {name}"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Connect {name}?"
+msgstr "Connecter {name} ?"
 
 #: src/renderer/src/app/App.tsx
 msgid "Connect an account to send feedback"
@@ -1436,6 +1495,10 @@ msgstr "Connectez un compte pour envoyer des commentaires"
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 msgid "Connect Calendar"
 msgstr "Connecter le calendrier"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Connect Claude Code, Codex and other AI apps to your mail through OpenMail's MCP server. OpenMail changes an app's settings only when you click Connect, after showing you the change."
+msgstr "Connectez Claude Code, Codex et d’autres applications d’IA à votre courrier via le serveur MCP d’OpenMail. OpenMail ne modifie les réglages d’une application que lorsque vous cliquez sur « Connecter », après vous avoir montré la modification."
 
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 msgid "Connect this service in Settings → Accounts → Optional services."
@@ -1449,9 +1512,21 @@ msgstr "Connecté"
 msgid "Connected to {tailnet}"
 msgstr "Connecté à {tailnet}"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Connected, can propose changes"
+msgstr "Connectée, peut proposer des modifications"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Connected, read only"
+msgstr "Connectée, lecture seule"
+
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 msgid "Connecting also asks for {pendingNames}."
 msgstr "La connexion demande aussi l’accès à {pendingNames}."
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Connects with <0>{cliPath}</0> and writes <1>{configPath}</1>."
+msgstr "Se connecte avec <0>{cliPath}</0> et écrit <1>{configPath}</1>."
 
 #: src/renderer/src/features/compose/components/RecipientField.tsx
 msgid "Contact group"
@@ -1526,6 +1601,7 @@ msgstr "Conversations"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/RawMessage.tsx
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Copied"
@@ -1540,6 +1616,7 @@ msgstr "Copié dans les dossiers"
 #: src/renderer/src/features/organize/MultiOrganization.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/RawMessage.tsx
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "Copy"
 msgstr "Copier"
@@ -1548,6 +1625,14 @@ msgstr "Copier"
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Copy address"
 msgstr "Copier l’adresse"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Copy command for {name}"
+msgstr "Copier la commande pour {name}"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Copy config for {name}"
+msgstr "Copier la configuration pour {name}"
 
 #: src/renderer/src/features/reader/Reader.tsx
 msgid "Copy link to message"
@@ -1781,6 +1866,10 @@ msgstr "Impossible d’établir une connexion sécurisée avec le serveur de mes
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
 msgid "Couldn't sync"
 msgstr "Impossible de synchroniser"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Couldn't write the file. Nothing was changed. {detail}"
+msgstr "Impossible d’écrire le fichier. Rien n’a été modifié. {detail}"
 
 #: src/renderer/src/features/downloads/Downloads.tsx
 msgid "Couldn't write to the attachment folder"
@@ -2051,6 +2140,7 @@ msgstr "Supprimer le brouillon"
 msgid "Discard saved rule?"
 msgstr "Supprimer la règle enregistrée ?"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Disconnect"
 msgstr "Déconnecter"
@@ -2059,6 +2149,14 @@ msgstr "Déconnecter"
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Disconnect {0}"
 msgstr "Déconnecter {0}"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Disconnect {name}"
+msgstr "Déconnecter {name}"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Disconnect {name}?"
+msgstr "Déconnecter {name} ?"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Disconnect closes a browser's connection. Reloading the page connects it again while its login is on the list above. To keep someone out, remove their login."
@@ -2102,6 +2200,10 @@ msgstr "Ne joignez pas le message d’origine"
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Done"
 msgstr "Terminé"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Done."
+msgstr "Terminé."
 
 #. placeholder {0}: file.filename
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
@@ -2252,6 +2354,10 @@ msgstr "Modifier le jeton"
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
 msgid "Editing removes unsupported formatting and images from this draft. Lists, bold, italic, underline and links are kept."
 msgstr "La modification supprime le formatage et les images non pris en charge de ce brouillon. Les listes, les gras, les italiques, les soulignés et les liens sont conservés."
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Edits <0>{configPath}</0>."
+msgstr "Modifie <0>{configPath}</0>."
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Email address"
@@ -2441,6 +2547,10 @@ msgstr "Les fonctionnalités expérimentales peuvent être activées séparémen
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "External replies"
 msgstr "Réponses externes"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "failed"
+msgstr "échec"
 
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
@@ -3062,9 +3172,21 @@ msgstr "Modifications des invitations"
 msgid "Invitation status in this conversation"
 msgstr "Statut de l’invitation dans cette conversation"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "It can propose archiving, labels, snoozes and drafts. Each waits for your approval."
+msgstr "Elle peut proposer d’archiver, d’ajouter des libellés, de reporter et de rédiger des brouillons. Chaque proposition attend votre approbation."
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "It can read and search allowed accounts. It can't change anything."
+msgstr "Elle peut lire et rechercher les comptes autorisés. Elle ne peut rien modifier."
+
 #: src/renderer/src/app/use-native-menu-bridge.ts
 msgid "It is no longer stored here and has no web link."
 msgstr "Il n’est plus stocké ici et n’a pas de lien web."
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "It starts <0>{command}</0>. Reconnect to use this app."
+msgstr "L’entrée lance <0>{command}</0>. Reconnectez l’application pour l’utiliser."
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -3241,6 +3363,10 @@ msgstr "Balayage court vers la gauche"
 msgid "Left to right"
 msgstr "De gauche à droite"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Let {name} propose changes for you to approve"
+msgstr "Laisser {name} proposer des modifications à approuver"
+
 #: src/renderer/src/features/reader/Reader.tsx
 msgid "Light background"
 msgstr "Fond clair"
@@ -3392,6 +3518,10 @@ msgstr "Réglages de la boîte mail"
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Make OpenMail default"
 msgstr "Définir OpenMail par défaut"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Make read only"
+msgstr "Passer en lecture seule"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Manually"
@@ -4071,6 +4201,10 @@ msgstr "Fenêtre suivante"
 msgid "No access token saved"
 msgstr "Aucun jeton d’accès enregistré"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "No account allows AI reads, so a connected app sees no mail. Turn on \"Allow sending mail text to the model\" for an account above."
+msgstr "Aucun compte n’autorise la lecture par l’IA, donc une application connectée ne voit aucun courrier. Activez « Autoriser l’envoi du texte des messages au modèle » pour un compte ci-dessus."
+
 #: src/renderer/src/features/overview/Overview.tsx
 msgid "No accounts yet"
 msgstr "Aucun compte pour l’instant"
@@ -4190,6 +4324,10 @@ msgstr "Aucun modèle pour l’instant. Utilisez {token} pour le nom du premier 
 msgid "No time zone supplied; shown in your local time."
 msgstr "Aucun fuseau horaire fourni ; affiché à votre heure locale."
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "No tool calls yet."
+msgstr "Aucun appel d’outil pour l’instant."
+
 #: src/renderer/src/state/desktop.ts
 msgid "No unread mail"
 msgstr "Aucun courrier non lu"
@@ -4218,9 +4356,17 @@ msgstr "Aucun"
 msgid "Normal"
 msgstr "Normale"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Not connected"
+msgstr "Non connectée"
+
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 msgid "Not granted"
 msgstr "Non autorisé"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Not installed"
+msgstr "Non installée"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Not requested"
@@ -4427,9 +4573,21 @@ msgstr "Ouvrir ce lien ?"
 msgid "Open With"
 msgstr "Ouvrir avec"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "OpenMail can't read this config file, so it changes nothing. Fix the file, then try again. {detail}"
+msgstr "OpenMail ne peut pas lire ce fichier de configuration et ne modifie donc rien. Corrigez le fichier, puis réessayez. {detail}"
+
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "OpenMail couldn't start its local server."
 msgstr "OpenMail n’a pas pu démarrer son serveur local."
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "OpenMail didn't find the claude command. Copy the command below instead."
+msgstr "OpenMail n’a pas trouvé la commande claude. Copiez plutôt la commande ci-dessous."
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "OpenMail is running from a disk image or the Downloads folder, so its path will change. Move it to Applications and open it again before you connect an AI app."
+msgstr "OpenMail s’exécute depuis une image disque ou le dossier Téléchargements, donc son chemin va changer. Déplacez-le dans Applications et rouvrez-le avant de connecter une application d’IA."
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "OpenMail is the default email app"
@@ -4440,9 +4598,17 @@ msgstr "OpenMail est l’application de messagerie par défaut"
 msgid "OpenMail is up to date."
 msgstr "OpenMail est à jour."
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "OpenMail runs"
+msgstr "OpenMail exécute"
+
 #: src/main/app/native-i18n.ts
 msgid "OpenMail safe mode"
 msgstr "Mode sans échec d’OpenMail"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "OpenMail saves a copy of the file next to it first, named .openmail-backup with the date. Nothing else in the file changes."
+msgstr "OpenMail enregistre d’abord une copie du fichier à côté, nommée .openmail-backup avec la date. Rien d’autre ne change dans le fichier."
 
 #: src/main/app/native-i18n.ts
 msgid "OpenMail sign-in"
@@ -4463,6 +4629,10 @@ msgstr "OpenMail s’est arrêté de manière inattendue"
 #: src/main/app/native-i18n.ts
 msgid "OpenMail stopped unexpectedly three times within five minutes. Continue, reset the local mail cache and re-sync, or quit. Accounts, drafts and keychain tokens are kept."
 msgstr "OpenMail s’est arrêté trois fois de manière inattendue en cinq minutes. Continuez, réinitialisez le cache local et synchronisez à nouveau, ou quittez. Les comptes, brouillons et jetons du trousseau sont conservés."
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "OpenMail's MCP server can't start from here yet. See the note above."
+msgstr "Le serveur MCP d’OpenMail ne peut pas encore démarrer depuis cet emplacement. Voir la note ci-dessus."
 
 #: src/renderer/src/features/undo/UndoHistory.tsx
 msgid "Operations from the last 24 hours. Restores labels, folders and flags after checking current state."
@@ -4676,6 +4846,10 @@ msgstr "Supprimer définitivement le courrier sélectionné ?"
 msgid "Permanently deleted {count} messages"
 msgstr "{count} messages supprimés définitivement"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Permission"
+msgstr "Autorisation"
+
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Personal"
@@ -4697,6 +4871,10 @@ msgstr "Port"
 #: src/renderer/src/features/calendar/EventRecurrenceEditor.tsx
 msgid "Position"
 msgstr "Position"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Preparing the change…"
+msgstr "Préparation de la modification…"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Press ? outside a text field to show this list."
@@ -4822,6 +5000,10 @@ msgstr "Coup d’œil"
 msgid "Quit"
 msgstr "Quitter"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Quit and reopen Claude to load it."
+msgstr "Quittez et rouvrez Claude pour appliquer la modification."
+
 #: src/renderer/src/app/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Quit with messages waiting to send?"
@@ -4840,6 +5022,10 @@ msgstr "Citer le texte sélectionné"
 msgctxt "incoming message action flag"
 msgid "Read"
 msgstr "Indicateur de lecture"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Read and search mail, read only by default. To archive, label or draft, an app needs proposals turned on below and a permission to change mail other than Read only. You approve every change in OpenMail, and sending always needs your confirmation here."
+msgstr "Lire et rechercher le courrier, en lecture seule par défaut. Pour archiver, ajouter des libellés ou créer des brouillons, une application doit avoir les propositions activées ci-dessous et une autorisation de modifier le courrier autre que « Lecture seule ». Vous approuvez chaque modification dans OpenMail, et l’envoi exige toujours votre confirmation ici."
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Read and send mail from your phone or another computer through your own tailnet. This Mac stays the host: mail, tokens and keys stay here, and nothing passes through OpenMail servers. OpenMail uses Tailscale Serve, which only devices on your tailnet can reach. It never uses Funnel, so the page is never on the public internet."
@@ -4860,6 +5046,10 @@ msgstr "Lecture"
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Recent"
 msgstr "Récentes"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Recent tool calls"
+msgstr "Appels d’outils récents"
 
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Recipient email"
@@ -4885,6 +5075,14 @@ msgstr "Destinataires en dehors de la conversation d’origine :"
 msgid "Recommended. Known tracking pixels stay blocked."
 msgstr "Recommandé. Les pixels de suivi connus restent bloqués."
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Reconnect"
+msgstr "Reconnecter"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Reconnect {name}"
+msgstr "Reconnecter {name}"
+
 #: src/main/app/native-i18n.ts
 msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
 msgstr "Récupération des enregistrements locaux {copied}. {skipped} éléments illisibles ont été ignorés. Base de données d’origine : {backup}"
@@ -4905,6 +5103,7 @@ msgstr "Réunion récurrente"
 msgid "Redacted report"
 msgstr "Rapport anonymisé"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Refresh"
 msgstr "Actualiser"
@@ -5214,6 +5413,10 @@ msgstr "Réinitialiser la barre d’outils"
 #: src/renderer/src/features/reader/attachments/AttachmentImportDialog.tsx
 msgid "Respond to this invitation from the message."
 msgstr "Répondez à cette invitation depuis le message."
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Restart Cursor to load it."
+msgstr "Redémarrez Cursor pour appliquer la modification."
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Restore"
@@ -5680,6 +5883,14 @@ msgstr "Serveur : total / non lus / conversations"
 msgid "Server unavailable"
 msgstr "Serveur indisponible"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Set up by hand"
+msgstr "Configurer manuellement"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Set up for a different OpenMail"
+msgstr "Configurée pour un autre OpenMail"
+
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -6000,6 +6211,10 @@ msgstr "Autre chose sur ce Mac utilise déjà Tailscale Serve sur ce port. OpenM
 msgid "Something went wrong. Please try again."
 msgstr "Quelque chose s’est mal passé. Veuillez réessayer."
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Something went wrong. Try again."
+msgstr "Une erreur s’est produite. Réessayez."
+
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
 msgid "Spaces"
@@ -6069,6 +6284,14 @@ msgstr "Messages suivis"
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Start"
 msgstr "Début"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Start a new Claude Code session to load it."
+msgstr "Ouvrez une nouvelle session Claude Code pour appliquer la modification."
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Start a new Codex session to load it."
+msgstr "Ouvrez une nouvelle session Codex pour appliquer la modification."
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Starting…"
@@ -6284,6 +6507,10 @@ msgstr "Taille du texte"
 msgid "The {client} OAuth client is not set up yet."
 msgstr "Le client OAuth {client} n’est pas encore configuré."
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "The app's command failed. Nothing else was changed. {detail}"
+msgstr "La commande de l’application a échoué. Rien d’autre n’a été modifié. {detail}"
+
 #: src/renderer/src/features/reader/body/MessageBody.tsx
 msgid "The body is not cached. Try opening this message again when connected."
 msgstr "Le texte du message n’est pas en cache. Réessayez d’ouvrir ce message une fois connecté."
@@ -6307,6 +6534,14 @@ msgstr "Le lien affiché peut masquer sa destination. Vérifiez le domaine réel
 #: src/renderer/src/lib/errors.ts
 msgid "The end must be after the start"
 msgstr "La fin doit être après le début"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "The file changed after the preview. Review the change again."
+msgstr "Le fichier a changé après l’aperçu. Vérifiez à nouveau la modification."
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "The file doesn't exist yet. OpenMail creates it."
+msgstr "Le fichier n’existe pas encore. OpenMail le crée."
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "The filter applies to future mail on the server."
@@ -6359,6 +6594,10 @@ msgstr "Le message a été envoyé, mais sa copie est absente des messages envoy
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "The OAuth client that signed in {email} is no longer configured. Sync is paused."
 msgstr "Le client OAuth qui a connecté {email} n’est plus configuré. La synchronisation est suspendue."
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "The openmail entry is written in a form OpenMail won't edit. Change it by hand. {detail}"
+msgstr "L’entrée openmail est écrite sous une forme qu’OpenMail ne modifie pas. Modifiez-la manuellement. {detail}"
 
 #: src/renderer/src/lib/errors.ts
 msgid "the operation failed."
@@ -6432,9 +6671,17 @@ msgstr "Ces conversations chargées seront déplacées vers la corbeille. Vous p
 msgid "Third"
 msgstr "Troisième"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "This app isn't installed."
+msgstr "Cette application n’est pas installée."
+
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "This deletes the saved recovery copy. Rules on the server are unchanged."
 msgstr "Cela supprime la copie de récupération enregistrée. Les règles sur le serveur sont inchangées."
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "This development build has no MCP server yet. Run pnpm build in the repository first."
+msgstr "Cette version de développement n’a pas encore de serveur MCP. Exécutez d’abord pnpm build dans le dépôt."
 
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
 msgid "This draft contains formatting or images this editor cannot keep. The original is preserved until you edit the body."
@@ -6935,6 +7182,10 @@ msgstr "Chaque semaine"
 msgid "Welcome to openmail. Choose your email provider. Your credentials stay on this computer."
 msgstr "Bienvenue sur openmail. Choisissez votre fournisseur de messagerie. Vos informations d’identification restent sur cet ordinateur."
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "What AI apps can do"
+msgstr "Ce que les applications d’IA peuvent faire"
+
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "When AI wants to archive, label, or mark as read, it goes into AI suggestions first and runs only after you approve."
 msgstr "Lorsque l’IA souhaite archiver, ajouter un libellé ou marquer un message comme lu, elle crée d’abord une suggestion. L’action s’exécute uniquement après votre approbation."
@@ -6942,6 +7193,11 @@ msgstr "Lorsque l’IA souhaite archiver, ajouter un libellé ou marquer un mess
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "When you allow an account, questions and selected mail text, subjects, sender and recipient addresses are sent to Anthropic using your API key. Images, attachments and media stay on this device. Requests may incur API charges. Automatic summaries run only when you enable them for an account."
 msgstr "Lorsque vous autorisez un compte, les questions, le texte des messages sélectionnés, les objets et les adresses des expéditeurs et destinataires sont envoyés à Anthropic avec votre clé API. Les images, pièces jointes et médias restent sur cet appareil. Les requêtes peuvent entraîner des frais d’API. Les résumés automatiques ne sont générés que si vous les activez pour un compte."
+
+#. placeholder {0}: preview.file
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Which changes <0>{0}</0>:"
+msgstr "Ce qui modifie <0>{0}</0> :"
 
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Who"

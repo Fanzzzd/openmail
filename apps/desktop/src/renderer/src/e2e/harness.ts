@@ -41,6 +41,7 @@ import type { DesktopEvent } from "../../../shared/desktop";
 import { mailboxHandlers } from "../../../shared/mailbox-handlers";
 import { rendererPrefs } from "../../../shared/renderer-prefs";
 import { MailRpcs } from "../../../shared/rpc";
+import { AiClientError } from "../../../shared/ai-clients";
 import { type AppRouter, createAppRouter, historyFor, initialLocation } from "../routes/router";
 import { AppRouterProvider } from "../routes/provider";
 import { historyAtom, locationAtom } from "../state/location";
@@ -358,6 +359,21 @@ export async function flow(
           Stream.never,
         ),
       RefreshRemoteAccess: () => Effect.void,
+      AiClients: () =>
+        Effect.map(m.agentActivity(200), (activity) => ({
+          launch: {
+            command: "/Applications/OpenMail.app/Contents/MacOS/OpenMail",
+            args: ["--mcp"],
+            env: {},
+          },
+          launchProblem: null,
+          clients: [],
+          activity,
+        })),
+      PreviewAiClientChange: () =>
+        Effect.fail(new AiClientError({ reason: "notInstalled", detail: "" })),
+      ApplyAiClientChange: () =>
+        Effect.fail(new AiClientError({ reason: "notInstalled", detail: "" })),
       SetRemoteAccess: unsupported,
       SetRemoteAllowlist: unsupported,
       SetRemoteService: unsupported,

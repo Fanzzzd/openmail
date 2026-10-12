@@ -114,6 +114,7 @@ import { DesktopLabels } from "./desktop-labels";
 import { AttachmentApp, DownloadCommand, DownloadItem } from "./downloads";
 import { PromptAnswer, TextMenuCommand, WindowUiEvent } from "./window-ui";
 import { RemoteAccessView } from "./remote-access";
+import { AiClientChange, AiClientError, AiClientPreview, AiClientsView } from "./ai-clients";
 import { Rpc, RpcGroup } from "effect/rpc";
 
 export const ConnectInput = Schema.Union([
@@ -788,6 +789,18 @@ export class MailRpcs extends RpcGroup.make(
   }),
   Rpc.make("DisconnectRemoteSession", {
     payload: { id: Schema.String.check(Schema.isMaxLength(128)) },
+  }),
+
+  // AI apps that start OpenMail's MCP server. Desktop only: they read and edit the Mac's files.
+  Rpc.make("AiClients", { success: AiClientsView }),
+  Rpc.make("PreviewAiClientChange", {
+    payload: { change: AiClientChange },
+    success: AiClientPreview,
+    error: AiClientError,
+  }),
+  Rpc.make("ApplyAiClientChange", {
+    payload: { change: AiClientChange, token: Schema.String.check(Schema.isMaxLength(128)) },
+    error: AiClientError,
   }),
 
   // Sync

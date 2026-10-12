@@ -120,13 +120,13 @@ async function client(
       });
       child.stdin.write(`${JSON.stringify({ jsonrpc: "2.0", id: requestId, method, params })}\n`);
     });
-  await request("initialize", {
+  const initialized = await request("initialize", {
     protocolVersion: "2024-11-05",
     capabilities: {},
     clientInfo: { name: "test-client", version: "1" },
   });
   child.stdin.write(`${JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" })}\n`);
-  return { request, directory };
+  return { request, directory, initialized };
 }
 
 test.concurrent("stdio MCP defaults to read-only tools, calls the shared Toolkit and rejects hidden writes", async ({
@@ -175,6 +175,48 @@ test.concurrent("openmail mcp --allow-writes exposes only supported proposals an
     }),
   );
   expect(called.content[0]?.text).toContain("enabled account with AI consent");
+}, 30_000);
+
+const Initialized = Schema.Struct({ instructions: Schema.String });
+const AccessStatus = Schema.fromJsonString(
+  Schema.Struct({
+    untrusted_mail: Schema.Struct({
+      client: Schema.String,
+      readable_accounts: Schema.Array(Schema.Struct({ id: Schema.String })),
+      proposal_tools: Schema.Boolean,
+      write_mode: Schema.String,
+      next_steps: Schema.Array(Schema.String),
+    }),
+  }),
+);
+
+test.concurrent("MCP points the model at access_status and explains a refused proposal", async ({
+  expect,
+  onTestFinished,
+}) => {
+  const { request, initialized } = await client(onTestFinished, true, false, true);
+  const { instructions } = Schema.decodeUnknownSync(Initialized)(initialized);
+  expect(instructions).toContain("Start with access_status");
+  expect(instructions).toContain("modify_threads, snooze_threads and draft_message");
+  const called = Schema.decodeUnknownSync(CallResult)(
+    await request("tools/call", { name: "access_status", arguments: {} }),
+  );
+  const status = Schema.decodeUnknownSync(AccessStatus)(called.content[0]?.text).untrusted_mail;
+  expect(status.client).toBe("test-client");
+  expect(status.readable_accounts.map((a) => a.id)).toEqual(["gmail:ocr@example.com"]);
+  expect(status.proposal_tools).toBe(true);
+  expect(status.write_mode).toBe("off");
+  expect(status.next_steps.join(" ")).toContain("Read only");
+  const refused = Schema.decodeUnknownSync(CallResult)(
+    await request("tools/call", {
+      name: "modify_threads",
+      arguments: { thread_ids: ["gmail:ocr@example.com/ocr"], action: "archive", rationale: "t" },
+    }),
+  );
+  expect(refused.content[0]?.text).toContain(
+    "The AI permission to change mail is Read only, so nothing changed.",
+  );
+  expect(refused.content[0]?.text).toContain("Settings → AI Access");
 }, 30_000);
 
 test.concurrent("write-mode help describes app-only permissions", async ({

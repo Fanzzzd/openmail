@@ -1449,6 +1449,15 @@ CREATE TRIGGER snoozed_list_date_insert AFTER INSERT ON snoozed_messages BEGIN
    DROP INDEX messages_thread_labels;
    DROP INDEX messages_account_date;
    CREATE INDEX messages_account_date ON messages(account_id,date DESC,provider_id);`,
+  // user_version 47: the last MCP tool calls, so Settings can show what each AI app did.
+  // Tool names and outcomes only, never parameters or results. Store prunes it to 500 rows.
+  `CREATE TABLE agent_activity (
+     id INTEGER PRIMARY KEY AUTOINCREMENT,
+     at INTEGER NOT NULL,
+     client TEXT NOT NULL,
+     tool TEXT NOT NULL,
+     ok INTEGER NOT NULL
+   );`,
 ];
 
 /** Index of migration 37, the cache rowid rebuild. It runs when user_version equals this index. */

@@ -177,6 +177,14 @@ msgstr "还有 {more} 个"
 msgid "{name} client"
 msgstr "{name} 客户端"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "{name} will no longer start OpenMail's MCP server."
+msgstr "{name} 将不再启动 OpenMail 的 MCP 服务器。"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "{name} will start OpenMail's MCP server and read the accounts you allowed. Mail goes to {name} and the model provider it uses."
+msgstr "{name} 会启动 OpenMail 的 MCP 服务器，读取你允许的账户。邮件会发给 {name} 及其使用的模型提供商。"
+
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "{op} {count, plural, one {# conversation} other {# conversations}}"
 msgstr "{op} {count, plural, other {# 个会话}}"
@@ -283,6 +291,10 @@ msgstr "账号所属空间"
 msgid "Accounts"
 msgstr "账户"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Accounts AI apps can read"
+msgstr "AI 应用可读取的账户"
+
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Accounts you already added keep the client they signed in with."
 msgstr "已添加的账户继续用登录时的客户端。"
@@ -350,6 +362,10 @@ msgstr "添加"
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Add {provider}"
 msgstr "添加 {provider}"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Add a mail account first."
+msgstr "请先添加邮件账户。"
 
 #: src/renderer/src/app/App.tsx
 msgid "Add account"
@@ -479,13 +495,13 @@ msgstr "AI 操作"
 msgid "AI added unfamiliar recipients:"
 msgstr "AI 添加了陌生收件人："
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "AI apps"
+msgstr "AI 应用"
+
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "AI can read and search mail, but can't change anything."
 msgstr "AI 能读邮件、搜索，不能改动任何东西。"
-
-#: src/renderer/src/features/settings/Settings.tsx
-msgid "AI connects to openmail over MCP, for example Claude Code. This decides whether it can change your mail."
-msgstr "AI 通过 MCP 连接 openmail，比如 Claude Code。这里决定它能不能改动邮件。"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
 msgid "AI draft"
@@ -603,6 +619,10 @@ msgstr "允许通知"
 msgid "Allow permanent deletion for {email}?"
 msgstr "允许永久删除 {email} 的邮件？"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Allow proposals"
+msgstr "允许提议改动"
+
 #: src/renderer/src/lib/ai-settings-errors.test.ts
 #: src/renderer/src/lib/errors.ts
 msgid "Allow sending mail text for each selected account in AI settings."
@@ -701,6 +721,10 @@ msgstr "Apple 邮件"
 msgid "Application (client) ID"
 msgstr "应用程序（客户端）ID"
 
+#: src/renderer/src/features/settings/Settings.tsx
+msgid "Applies to AI apps connected over MCP, such as Claude Code, and to your rules. It decides whether they can change your mail."
+msgstr "适用于通过 MCP 连接的 AI 应用（例如 Claude Code）和你的规则。它决定这些应用和规则能否改动你的邮件。"
+
 #: src/renderer/src/features/compose/components/DraftOrganization.tsx
 #: src/renderer/src/features/organize/MultiOrganization.tsx
 msgid "Apply"
@@ -733,6 +757,10 @@ msgstr "批准并编辑"
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Approve suggestion"
 msgstr "确认建议"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Apps not found on this Mac"
+msgstr "这台 Mac 上未找到的应用"
 
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
@@ -1066,6 +1094,7 @@ msgstr "暂时无法连接邮件服务器。"
 #: src/renderer/src/features/organize/PermanentDeletePermission.tsx
 #: src/renderer/src/features/reader/frame/LinkConfirmDialog.tsx
 #: src/renderer/src/features/reader/UnsubscribeButton.tsx
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/state/desktop.ts
@@ -1142,9 +1171,22 @@ msgstr "切换撰写模式？"
 msgid "Change your OAuth client"
 msgstr "更换 OAuth 客户端"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Changes"
+msgstr "改动"
+
+#. placeholder {0}: preview.file
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Changes to <0>{0}</0>:"
+msgstr "对 <0>{0}</0> 的改动："
+
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Check again"
 msgstr "再次检查"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Check AI apps again"
+msgstr "重新检查 AI 应用"
 
 #: src/renderer/src/features/settings/sections/UpdateSettings.tsx
 msgid "Check for updates"
@@ -1234,6 +1276,10 @@ msgstr "请选择自建标签或文件夹"
 #: src/renderer/src/lib/errors.ts
 msgid "Choose a verified send-as address for this account"
 msgstr "请选择此账户已验证的发件地址"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Choose accounts"
+msgstr "选择账户"
 
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 msgid "Choose actions and use the buttons to change their order."
@@ -1415,6 +1461,10 @@ msgstr "撰写"
 msgid "Confidential"
 msgstr "机密"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Config file can't be read"
+msgstr "无法读取配置文件"
+
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Confirm"
 msgstr "确认"
@@ -1436,8 +1486,17 @@ msgid "Confirm rule changes?"
 msgstr "确认修改规则？"
 
 #: src/renderer/src/features/accounts/OptionalServices.tsx
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 msgid "Connect"
 msgstr "连接"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Connect {name}"
+msgstr "连接 {name}"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Connect {name}?"
+msgstr "连接 {name}？"
 
 #: src/renderer/src/app/App.tsx
 msgid "Connect an account to send feedback"
@@ -1446,6 +1505,10 @@ msgstr "连接账户后即可发送反馈"
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 msgid "Connect Calendar"
 msgstr "连接日历"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Connect Claude Code, Codex and other AI apps to your mail through OpenMail's MCP server. OpenMail changes an app's settings only when you click Connect, after showing you the change."
+msgstr "通过 OpenMail 的 MCP 服务器，把 Claude Code、Codex 等 AI 应用连接到你的邮件。OpenMail 会先展示改动，你点击“连接”后才修改应用的设置。"
 
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 msgid "Connect this service in Settings → Accounts → Optional services."
@@ -1459,9 +1522,21 @@ msgstr "当前已连接"
 msgid "Connected to {tailnet}"
 msgstr "已连接到 {tailnet}"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Connected, can propose changes"
+msgstr "已连接，可提议改动"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Connected, read only"
+msgstr "已连接，只读"
+
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 msgid "Connecting also asks for {pendingNames}."
 msgstr "这次连接还会请求：{pendingNames}。"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Connects with <0>{cliPath}</0> and writes <1>{configPath}</1>."
+msgstr "通过 <0>{cliPath}</0> 连接，并写入 <1>{configPath}</1>。"
 
 #: src/renderer/src/features/compose/components/RecipientField.tsx
 msgid "Contact group"
@@ -1536,6 +1611,7 @@ msgstr "会话"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/RawMessage.tsx
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Copied"
@@ -1550,6 +1626,7 @@ msgstr "已复制到文件夹"
 #: src/renderer/src/features/organize/MultiOrganization.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/RawMessage.tsx
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "Copy"
 msgstr "复制"
@@ -1558,6 +1635,14 @@ msgstr "复制"
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Copy address"
 msgstr "复制地址"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Copy command for {name}"
+msgstr "复制 {name} 的命令"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Copy config for {name}"
+msgstr "复制 {name} 的配置"
 
 #: src/renderer/src/features/reader/Reader.tsx
 msgid "Copy link to message"
@@ -1791,6 +1876,10 @@ msgstr "无法与邮件服务器建立安全连接。请检查端口和加密设
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
 msgid "Couldn't sync"
 msgstr "无法同步"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Couldn't write the file. Nothing was changed. {detail}"
+msgstr "无法写入文件，未做任何改动。{detail}"
 
 #: src/renderer/src/features/downloads/Downloads.tsx
 msgid "Couldn't write to the attachment folder"
@@ -2061,6 +2150,7 @@ msgstr "丢弃草稿"
 msgid "Discard saved rule?"
 msgstr "丢弃保存的规则？"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Disconnect"
 msgstr "断开连接"
@@ -2069,6 +2159,14 @@ msgstr "断开连接"
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Disconnect {0}"
 msgstr "断开 {0}"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Disconnect {name}"
+msgstr "断开 {name}"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Disconnect {name}?"
+msgstr "断开 {name}？"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Disconnect closes a browser's connection. Reloading the page connects it again while its login is on the list above. To keep someone out, remove their login."
@@ -2112,6 +2210,10 @@ msgstr "不附上原邮件"
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Done"
 msgstr "完成"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Done."
+msgstr "完成。"
 
 #. placeholder {0}: file.filename
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
@@ -2262,6 +2364,10 @@ msgstr "编辑条件"
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
 msgid "Editing removes unsupported formatting and images from this draft. Lists, bold, italic, underline and links are kept."
 msgstr "编辑将移除不支持的格式和图片，保留列表、粗体、斜体、下划线和链接。"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Edits <0>{configPath}</0>."
+msgstr "修改 <0>{configPath}</0>。"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Email address"
@@ -2451,6 +2557,10 @@ msgstr "实验功能可逐项开启。"
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "External replies"
 msgstr "外部回复"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "failed"
+msgstr "失败"
 
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
@@ -3072,9 +3182,21 @@ msgstr "邀请变更"
 msgid "Invitation status in this conversation"
 msgstr "会话中的邀请状态"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "It can propose archiving, labels, snoozes and drafts. Each waits for your approval."
+msgstr "它可以提议归档、加标签、稍后提醒和写草稿。每项都要等你批准。"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "It can read and search allowed accounts. It can't change anything."
+msgstr "它可以读取和搜索已允许的账户，不能改动任何东西。"
+
 #: src/renderer/src/app/use-native-menu-bridge.ts
 msgid "It is no longer stored here and has no web link."
 msgstr "它已不在本地保存，也没有网页链接。"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "It starts <0>{command}</0>. Reconnect to use this app."
+msgstr "它会启动 <0>{command}</0>。重新连接后才能使用这个应用。"
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -3251,6 +3373,10 @@ msgstr "向左短滑"
 msgid "Left to right"
 msgstr "从左到右"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Let {name} propose changes for you to approve"
+msgstr "允许 {name} 提议改动，由你批准"
+
 #: src/renderer/src/features/reader/Reader.tsx
 msgid "Light background"
 msgstr "浅色背景"
@@ -3402,6 +3528,10 @@ msgstr "邮箱设置"
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Make OpenMail default"
 msgstr "设为默认邮件客户端"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Make read only"
+msgstr "设为只读"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Manually"
@@ -4081,6 +4211,10 @@ msgstr "下一个窗口"
 msgid "No access token saved"
 msgstr "未保存访问令牌"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "No account allows AI reads, so a connected app sees no mail. Turn on \"Allow sending mail text to the model\" for an account above."
+msgstr "没有账户允许 AI 读取，已连接的应用看不到任何邮件。请在上方为账户开启“允许向模型发送邮件文本”。"
+
 #: src/renderer/src/features/overview/Overview.tsx
 msgid "No accounts yet"
 msgstr "还没有账户"
@@ -4200,6 +4334,10 @@ msgstr "还没有模板。可以用 {token} 代入第一个收件人的名字。
 msgid "No time zone supplied; shown in your local time."
 msgstr "邀请未指定时区，按本地时间显示。"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "No tool calls yet."
+msgstr "还没有工具调用。"
+
 #: src/renderer/src/state/desktop.ts
 msgid "No unread mail"
 msgstr "没有未读邮件"
@@ -4228,9 +4366,17 @@ msgstr "不选"
 msgid "Normal"
 msgstr "普通"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Not connected"
+msgstr "未连接"
+
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 msgid "Not granted"
 msgstr "未授权"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Not installed"
+msgstr "未安装"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Not requested"
@@ -4437,9 +4583,21 @@ msgstr "打开此链接？"
 msgid "Open With"
 msgstr "打开方式"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "OpenMail can't read this config file, so it changes nothing. Fix the file, then try again. {detail}"
+msgstr "OpenMail 无法读取这个配置文件，因此不做任何改动。请修正文件后重试。{detail}"
+
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "OpenMail couldn't start its local server."
 msgstr "OpenMail 无法启动本地服务器。"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "OpenMail didn't find the claude command. Copy the command below instead."
+msgstr "OpenMail 没找到 claude 命令。请改为复制下面的命令。"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "OpenMail is running from a disk image or the Downloads folder, so its path will change. Move it to Applications and open it again before you connect an AI app."
+msgstr "OpenMail 正从磁盘映像或“下载”文件夹运行，路径会变化。请先把它移到“应用程序”并重新打开，再连接 AI 应用。"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "OpenMail is the default email app"
@@ -4450,9 +4608,17 @@ msgstr "OpenMail 已是默认邮件客户端"
 msgid "OpenMail is up to date."
 msgstr "OpenMail 已是最新版本。"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "OpenMail runs"
+msgstr "OpenMail 会运行"
+
 #: src/main/app/native-i18n.ts
 msgid "OpenMail safe mode"
 msgstr "OpenMail 安全模式"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "OpenMail saves a copy of the file next to it first, named .openmail-backup with the date. Nothing else in the file changes."
+msgstr "OpenMail 会先在文件旁保存一份副本，名为 .openmail-backup 加日期。文件其余内容不变。"
 
 #: src/main/app/native-i18n.ts
 msgid "OpenMail sign-in"
@@ -4473,6 +4639,10 @@ msgstr "OpenMail 意外退出"
 #: src/main/app/native-i18n.ts
 msgid "OpenMail stopped unexpectedly three times within five minutes. Continue, reset the local mail cache and re-sync, or quit. Accounts, drafts and keychain tokens are kept."
 msgstr "OpenMail 在五分钟内意外退出三次。可继续、重置本地邮件缓存并重新同步，或退出。账户、草稿和钥匙串令牌会保留。"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "OpenMail's MCP server can't start from here yet. See the note above."
+msgstr "OpenMail 的 MCP 服务器暂时无法从这里启动。请看上方说明。"
 
 #: src/renderer/src/features/undo/UndoHistory.tsx
 msgid "Operations from the last 24 hours. Restores labels, folders and flags after checking current state."
@@ -4686,6 +4856,10 @@ msgstr "永久删除所选邮件？"
 msgid "Permanently deleted {count} messages"
 msgstr "已永久删除 {count} 封邮件"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Permission"
+msgstr "权限"
+
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Personal"
@@ -4707,6 +4881,10 @@ msgstr "端口"
 #: src/renderer/src/features/calendar/EventRecurrenceEditor.tsx
 msgid "Position"
 msgstr "顺序"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Preparing the change…"
+msgstr "正在准备改动…"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Press ? outside a text field to show this list."
@@ -4832,6 +5010,10 @@ msgstr "快速查看"
 msgid "Quit"
 msgstr "退出"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Quit and reopen Claude to load it."
+msgstr "退出并重新打开 Claude 即可加载。"
+
 #: src/renderer/src/app/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Quit with messages waiting to send?"
@@ -4850,6 +5032,10 @@ msgstr "引用选中文字"
 msgctxt "incoming message action flag"
 msgid "Read"
 msgstr "阅读标记"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Read and search mail, read only by default. To archive, label or draft, an app needs proposals turned on below and a permission to change mail other than Read only. You approve every change in OpenMail, and sending always needs your confirmation here."
+msgstr "读取和搜索邮件，默认只读。应用要归档、加标签或写草稿，需要在下方开启提议，并把改动邮件的权限设为“只读”以外的选项。每项改动都由你在 OpenMail 中批准，发送始终要在这里确认。"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Read and send mail from your phone or another computer through your own tailnet. This Mac stays the host: mail, tokens and keys stay here, and nothing passes through OpenMail servers. OpenMail uses Tailscale Serve, which only devices on your tailnet can reach. It never uses Funnel, so the page is never on the public internet."
@@ -4870,6 +5056,10 @@ msgstr "阅读"
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Recent"
 msgstr "最近"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Recent tool calls"
+msgstr "最近的工具调用"
 
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Recipient email"
@@ -4895,6 +5085,14 @@ msgstr "原会话之外的收件人："
 msgid "Recommended. Known tracking pixels stay blocked."
 msgstr "推荐。已知的跟踪像素仍会拦截。"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Reconnect"
+msgstr "重新连接"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Reconnect {name}"
+msgstr "重新连接 {name}"
+
 #: src/main/app/native-i18n.ts
 msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
 msgstr "已恢复 {copied} 条本地记录，跳过 {skipped} 个无法读取的项目。原数据库保留在：{backup}"
@@ -4915,6 +5113,7 @@ msgstr "重复会议"
 msgid "Redacted report"
 msgstr "脱敏报告"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Refresh"
 msgstr "刷新"
@@ -5224,6 +5423,10 @@ msgstr "重置工具栏"
 #: src/renderer/src/features/reader/attachments/AttachmentImportDialog.tsx
 msgid "Respond to this invitation from the message."
 msgstr "请在消息中回应此邀请。"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Restart Cursor to load it."
+msgstr "重启 Cursor 即可加载。"
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Restore"
@@ -5690,6 +5893,14 @@ msgstr "服务器总数 / 未读 / 会话"
 msgid "Server unavailable"
 msgstr "服务器不可用"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Set up by hand"
+msgstr "手动设置"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Set up for a different OpenMail"
+msgstr "已为另一个 OpenMail 设置"
+
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -6010,6 +6221,10 @@ msgstr "这台 Mac 上已有其他程序在这个端口使用 Tailscale Serve。
 msgid "Something went wrong. Please try again."
 msgstr "出了点问题，请再试一次。"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Something went wrong. Try again."
+msgstr "出错了，请重试。"
+
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
 msgid "Spaces"
@@ -6079,6 +6294,14 @@ msgstr "已加星标的邮件"
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Start"
 msgstr "开始"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Start a new Claude Code session to load it."
+msgstr "新开一个 Claude Code 会话即可加载。"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Start a new Codex session to load it."
+msgstr "新开一个 Codex 会话即可加载。"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Starting…"
@@ -6294,6 +6517,10 @@ msgstr "文字大小"
 msgid "The {client} OAuth client is not set up yet."
 msgstr "还没有填写 {client} 的 OAuth 客户端。"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "The app's command failed. Nothing else was changed. {detail}"
+msgstr "应用的命令执行失败。其他内容未改动。{detail}"
+
 #: src/renderer/src/features/reader/body/MessageBody.tsx
 msgid "The body is not cached. Try opening this message again when connected."
 msgstr "正文未缓存。联网后请重新打开这封邮件。"
@@ -6317,6 +6544,14 @@ msgstr "显示的链接可能隐藏了目标。打开前请检查真实域名。
 #: src/renderer/src/lib/errors.ts
 msgid "The end must be after the start"
 msgstr "结束时间须晚于开始时间"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "The file changed after the preview. Review the change again."
+msgstr "预览后文件有变化。请重新查看改动。"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "The file doesn't exist yet. OpenMail creates it."
+msgstr "文件还不存在。OpenMail 会创建它。"
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "The filter applies to future mail on the server."
@@ -6369,6 +6604,10 @@ msgstr "邮件已发送，但“已发送”中缺少副本。"
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "The OAuth client that signed in {email} is no longer configured. Sync is paused."
 msgstr "为 {email} 登录的 OAuth 客户端已不在配置中，暂停同步。"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "The openmail entry is written in a form OpenMail won't edit. Change it by hand. {detail}"
+msgstr "openmail 条目的写法 OpenMail 不会修改。请手动更改。{detail}"
 
 #: src/renderer/src/lib/errors.ts
 msgid "the operation failed."
@@ -6442,9 +6681,17 @@ msgstr "这些已加载的会话将移至垃圾箱，可以整批撤销。"
 msgid "Third"
 msgstr "第三"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "This app isn't installed."
+msgstr "这个应用未安装。"
+
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "This deletes the saved recovery copy. Rules on the server are unchanged."
 msgstr "将删除保存的恢复副本，服务器规则不变。"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "This development build has no MCP server yet. Run pnpm build in the repository first."
+msgstr "这个开发构建还没有 MCP 服务器。请先在仓库中运行 pnpm build。"
 
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
 msgid "This draft contains formatting or images this editor cannot keep. The original is preserved until you edit the body."
@@ -6945,6 +7192,10 @@ msgstr "每周"
 msgid "Welcome to openmail. Choose your email provider. Your credentials stay on this computer."
 msgstr "欢迎使用 openmail。选择你的邮箱服务商，凭证只存在这台电脑上。"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "What AI apps can do"
+msgstr "AI 应用能做什么"
+
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "When AI wants to archive, label, or mark as read, it goes into AI suggestions first and runs only after you approve."
 msgstr "AI 想归档、打标签、标已读时，先放进「AI 建议」，你确认后才执行。"
@@ -6952,6 +7203,11 @@ msgstr "AI 想归档、打标签、标已读时，先放进「AI 建议」，你
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "When you allow an account, questions and selected mail text, subjects, sender and recipient addresses are sent to Anthropic using your API key. Images, attachments and media stay on this device. Requests may incur API charges. Automatic summaries run only when you enable them for an account."
 msgstr "授权账户后，问题及选中的邮件文本、主题、收发件地址会使用你的 API 密钥发送给 Anthropic。图片、附件和媒体保留在本机。请求可能产生 API 费用。自动摘要需逐账户开启。"
+
+#. placeholder {0}: preview.file
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "Which changes <0>{0}</0>:"
+msgstr "该命令会改动 <0>{0}</0>："
 
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Who"

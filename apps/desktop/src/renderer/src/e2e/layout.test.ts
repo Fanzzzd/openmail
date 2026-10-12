@@ -415,7 +415,8 @@ it("a narrow window shows dialogs as full-window sheets with a close button", as
   const h = current;
   await eventually(() => expect(row(h.id("one"))).toBeTruthy());
   key(",", { metaKey: true }, document.body);
-  const settings = await screen.findByRole("dialog", { name: "Settings" });
+  // Settings is a lazy chunk; its first import in a cold jsdom run can take over a second.
+  const settings = await screen.findByRole("dialog", { name: "Settings" }, { timeout: 5000 });
   expect(settings.className).toContain("max-sm:inset-0");
   expect(within(settings).getByRole("tablist").getAttribute("data-orientation")).toBe("horizontal");
   fireEvent.click(within(settings).getByRole("button", { name: "Close" }));

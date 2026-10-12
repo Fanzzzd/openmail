@@ -1,6 +1,7 @@
 import { ProfileSettings } from "../accounts";
 import { OptionalServices } from "../accounts/OptionalServices";
 import { AiSettings } from "./sections/AiSettings";
+import { AiClientsSettings, WRITE_MODE_ANCHOR } from "./sections/AiClientsSettings";
 import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
 import type { I18n, MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
@@ -263,6 +264,7 @@ export function Settings({
           "ai",
           <>
             <AiSettings accounts={accounts} />
+            {isDesktop() && <AiClientsSettings accounts={accounts} />}
             <AgentPolicy />
           </>,
         )}
@@ -546,11 +548,14 @@ function AgentPolicy() {
   const setMode = useAtomSet(setAgentModeAtom);
 
   return (
-    <section>
+    <section id={WRITE_MODE_ANCHOR} className="scroll-mt-4">
+      <h3 className={settingsHeading}>
+        <Trans>AI permission to change mail</Trans>
+      </h3>
       <p className={`mb-2 px-1 ${settingsHint}`}>
         <Trans>
-          AI connects to openmail over MCP, for example Claude Code. This decides whether it can
-          change your mail.
+          Applies to AI apps connected over MCP, such as Claude Code, and to your rules. It decides
+          whether they can change your mail.
         </Trans>
       </p>
       <RadioGroup<AgentWriteMode | null>

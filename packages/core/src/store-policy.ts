@@ -6,7 +6,18 @@ import { sha256Hex } from "./platform/crypto.js";
 import { type Store } from "./services.js";
 import { all, first, run } from "./sql-rows.js";
 import { type makeComposeStore } from "./store-compose.js";
-import { AuditRow, Id, Mode, ProposalRow, REDACT_DECIDED, toProposal } from "./store-rows.js";
+import {
+  AgentActivityRow,
+  AuditRow,
+  Id,
+  Mode,
+  ProposalRow,
+  REDACT_DECIDED,
+  toProposal,
+} from "./store-rows.js";
+
+/** Rows agent_activity keeps. Settings shows the last few calls per client. */
+const AGENT_ACTIVITY_ROWS = 500;
 
 function auditMetadata(entry: { accountId?: string | null; action: string; detail: unknown }) {
   const metadata = Schema.decodeUnknownOption(
@@ -82,6 +93,24 @@ export const makePolicyStore = ({
       action: r.action,
       detail: r.detail_json,
     }));
+  });
+
+  const appendAgentActivity = Effect.fn("Store.appendAgentActivity")(function* (entry: {
+    client: string;
+    tool: string;
+    ok: boolean;
+  }) {
+    const now = yield* Clock.currentTimeMillis;
+    yield* run(sql`INSERT INTO agent_activity (at, client, tool, ok)
+        VALUES (${now}, ${entry.client}, ${entry.tool}, ${entry.ok ? 1 : 0})`);
+    yield* run(sql`DELETE FROM agent_activity
+        WHERE id <= (SELECT max(id) FROM agent_activity) - ${AGENT_ACTIVITY_ROWS}`);
+  });
+
+  const listAgentActivity = Effect.fn("Store.listAgentActivity")(function* (limit: number) {
+    const rows = yield* all(AgentActivityRow)(sql`SELECT at, client, tool, ok
+        FROM agent_activity ORDER BY id DESC LIMIT ${limit}`);
+    return rows.map((r) => ({ at: r.at, client: r.client, tool: r.tool, ok: r.ok !== 0 }));
   });
 
   /** The agent's own row, else the '*' default, else off. */
@@ -180,6 +209,8 @@ export const makePolicyStore = ({
       purgeAccountProposals,
       appendAudit,
       listAudit,
+      appendAgentActivity,
+      listAgentActivity,
       agentWriteMode,
       setAgentWriteMode,
       insertProposal,
@@ -191,6 +222,8 @@ export const makePolicyStore = ({
       | "purgeAccountProposals"
       | "appendAudit"
       | "listAudit"
+      | "appendAgentActivity"
+      | "listAgentActivity"
       | "agentWriteMode"
       | "setAgentWriteMode"
       | "insertProposal"

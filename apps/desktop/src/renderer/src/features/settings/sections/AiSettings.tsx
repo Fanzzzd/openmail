@@ -22,6 +22,7 @@ import {
 const nativeCheck = "size-3.5 shrink-0 accent-blue-600";
 
 import { aiSettingsAtom } from "../../ai";
+import { CONSENT_ANCHOR } from "./AiClientsSettings";
 const accountMutation = MailClient.mutation("SetAiAccount");
 const modelMutation = MailClient.mutation("SetAiModel");
 
@@ -122,82 +123,84 @@ export function AiSettings({ accounts }: { accounts: readonly Account[] }) {
           </p>
         )}
       </section>
-      {accounts.map((account) => {
-        const current = settings?.accounts.find((a) => a.accountId === account.id) ?? {
-          accountId: account.id,
-          allowed: false,
-          autoSummaries: false,
-          autoTriage: false,
-        };
-        return (
-          <fieldset
-            key={account.id}
-            disabled={!settings || accountResult.waiting}
-            className="min-w-0"
-          >
-            <legend className={`truncate ${settingsHeading}`}>{account.email}</legend>
-            <div className={settingsGroup}>
-              <SettingsCheckRow>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    className={nativeCheck}
-                    checked={current.allowed}
-                    onChange={(event) =>
-                      setAccount({
-                        payload: {
-                          input: {
-                            ...current,
-                            allowed: event.target.checked,
-                            autoSummaries: event.target.checked && current.autoSummaries,
-                            autoTriage: event.target.checked && current.autoTriage,
+      <div id={CONSENT_ANCHOR} className="scroll-mt-4 space-y-6">
+        {accounts.map((account) => {
+          const current = settings?.accounts.find((a) => a.accountId === account.id) ?? {
+            accountId: account.id,
+            allowed: false,
+            autoSummaries: false,
+            autoTriage: false,
+          };
+          return (
+            <fieldset
+              key={account.id}
+              disabled={!settings || accountResult.waiting}
+              className="min-w-0"
+            >
+              <legend className={`truncate ${settingsHeading}`}>{account.email}</legend>
+              <div className={settingsGroup}>
+                <SettingsCheckRow>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      className={nativeCheck}
+                      checked={current.allowed}
+                      onChange={(event) =>
+                        setAccount({
+                          payload: {
+                            input: {
+                              ...current,
+                              allowed: event.target.checked,
+                              autoSummaries: event.target.checked && current.autoSummaries,
+                              autoTriage: event.target.checked && current.autoTriage,
+                            },
                           },
-                        },
-                        reactivityKeys: [Keys.ai],
-                      })
-                    }
-                  />
-                  <Trans>Allow sending mail text to the model</Trans>
-                </label>
-              </SettingsCheckRow>
-              <SettingsCheckRow>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    className={nativeCheck}
-                    disabled={!current.allowed}
-                    checked={current.autoSummaries}
-                    onChange={(event) =>
-                      setAccount({
-                        payload: { input: { ...current, autoSummaries: event.target.checked } },
-                        reactivityKeys: [Keys.ai],
-                      })
-                    }
-                  />
-                  <Trans>Automatically summarize new mail</Trans>
-                </label>
-              </SettingsCheckRow>
-              <SettingsCheckRow>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    className={nativeCheck}
-                    disabled={!current.allowed}
-                    checked={current.autoTriage ?? false}
-                    onChange={(event) =>
-                      setAccount({
-                        payload: { input: { ...current, autoTriage: event.target.checked } },
-                        reactivityKeys: [Keys.ai],
-                      })
-                    }
-                  />
-                  <Trans>Suggest triage for new inbox mail</Trans>
-                </label>
-              </SettingsCheckRow>
-            </div>
-          </fieldset>
-        );
-      })}
+                          reactivityKeys: [Keys.ai],
+                        })
+                      }
+                    />
+                    <Trans>Allow sending mail text to the model</Trans>
+                  </label>
+                </SettingsCheckRow>
+                <SettingsCheckRow>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      className={nativeCheck}
+                      disabled={!current.allowed}
+                      checked={current.autoSummaries}
+                      onChange={(event) =>
+                        setAccount({
+                          payload: { input: { ...current, autoSummaries: event.target.checked } },
+                          reactivityKeys: [Keys.ai],
+                        })
+                      }
+                    />
+                    <Trans>Automatically summarize new mail</Trans>
+                  </label>
+                </SettingsCheckRow>
+                <SettingsCheckRow>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      className={nativeCheck}
+                      disabled={!current.allowed}
+                      checked={current.autoTriage ?? false}
+                      onChange={(event) =>
+                        setAccount({
+                          payload: { input: { ...current, autoTriage: event.target.checked } },
+                          reactivityKeys: [Keys.ai],
+                        })
+                      }
+                    />
+                    <Trans>Suggest triage for new inbox mail</Trans>
+                  </label>
+                </SettingsCheckRow>
+              </div>
+            </fieldset>
+          );
+        })}
+      </div>
       <div className="space-y-1.5 px-1">
         <p className={settingsHint}>
           <Trans>

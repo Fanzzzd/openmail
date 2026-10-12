@@ -28,6 +28,7 @@ import { DesktopLive, receiveAppUrl, receiveOpenFile, ready } from "./system/sys
 import { focusMainWindow } from "./windows/windows";
 import { prepareBackgroundWindows } from "./windows/reveal";
 import { showDevIdentity } from "./app/app-identity";
+import { mcpLaunchArgs, runMcpMode } from "./agents/mcp-mode";
 
 import { prepareReliability, diagnosticsLogger, localLog } from "./app/reliability";
 
@@ -48,8 +49,12 @@ app.on("open-file", (event, file) => {
   receiveOpenFile(file);
 });
 
-// The second process exits before constructing core (and before opening the DB).
-if (app.isPackaged && !app.requestSingleInstanceLock()) {
+const mcp = mcpLaunchArgs(process.argv);
+// `OpenMail --mcp` serves an AI app over stdio. It opens no window and takes no instance lock.
+if (mcp) {
+  runMcpMode(mcp);
+} else if (app.isPackaged && !app.requestSingleInstanceLock()) {
+  // The second process exits before constructing core (and before opening the DB).
   app.exit(0);
 } else {
   app.on("second-instance", (_event, argv) => {

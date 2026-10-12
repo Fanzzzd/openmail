@@ -27,6 +27,7 @@ import type {
   Address,
   AgentWriteMode,
   AuditEntry,
+  AgentActivity,
   Actor,
   Command,
   DraftRemote,
@@ -677,6 +678,8 @@ export class Store extends Context.Service<
       detail: unknown;
     }): Effect.Effect<void>;
     listAudit(limit: number): Effect.Effect<AuditEntry[]>;
+    appendAgentActivity(entry: { client: string; tool: string; ok: boolean }): Effect.Effect<void>;
+    listAgentActivity(limit: number): Effect.Effect<AgentActivity[]>;
     agentWriteMode(name: string): Effect.Effect<AgentWriteMode>;
     setAgentWriteMode(name: string, mode: AgentWriteMode): Effect.Effect<void>;
     insertProposal(actor: Actor, command: Command): Effect.Effect<number>;

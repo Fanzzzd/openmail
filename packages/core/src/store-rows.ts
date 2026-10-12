@@ -123,6 +123,13 @@ export const AuditRow = Schema.Struct({
   detail_json: Schema.fromJsonString(Schema.Unknown),
 });
 
+export const AgentActivityRow = Schema.Struct({
+  at: Schema.Number,
+  client: Schema.String,
+  tool: Schema.String,
+  ok: Schema.Number,
+});
+
 export const ProposalRow = Schema.Struct({
   id: Schema.Number,
   created_at: Schema.Number,

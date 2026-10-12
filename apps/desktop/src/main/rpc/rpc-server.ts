@@ -58,6 +58,7 @@ import {
 
 import { RPC_CHANNEL } from "../../shared/channel";
 import { RemoteAccess } from "../remote/remote-access-live";
+import { aiClientHandlers } from "../agents/ai-clients-rpc";
 import { MailRpcs } from "../../shared/rpc";
 import { openAttachment, printThread, saveMessage } from "../files/files";
 import { openMeeting } from "../system/meeting";
@@ -301,6 +302,7 @@ const Handlers = MailRpcs.toLayer(
       SetSendState: (state, { client }) => desktop.setSendState(client.id, state),
       SetDesktopLabels: ({ labels }) => desktop.setLabels(labels),
       DesktopEvents: (_, { client }) => desktop.events(client.id),
+      ...aiClientHandlers(m),
       RemoteAccess: () => remote.view,
       RefreshRemoteAccess: () => remote.refresh,
       SetRemoteAccess: ({ enabled }) => remote.setEnabled(enabled),

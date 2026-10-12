@@ -77,6 +77,20 @@ frame 标识依据：[Electron WebFrameMain](https://www.electronjs.org/docs/lat
 
 只读会话的范围只在[架构](architecture.md#只读会话)维护；smoke 的原始 console 和 stderr 不是上述脱敏日志。解析器 fuzz 与无障碍测试的运行方式和限制只在[测试](testing.md#解析器-fuzz-与无障碍)维护。
 
+## 连接 AI 应用
+
+「设置 > AI 权限 > AI 应用」检测 Claude Code、Codex、Claude 和 Cursor，并读取它们的 MCP 配置判断连接状态。读取只解析配置，不改文件。OpenMail 只在用户点击「连接」「重新连接」或「断开连接」并在确认框里看过改动后，才改别的应用的配置：
+
+- 确认框列出要运行的命令（argv）和配置文件的 diff。主进程在应用前重新读取文件，内容哈希与预览不同就拒绝，要求重新预览。
+- Claude Code 和 Codex 用各自的 CLI：`claude mcp add|remove --scope user`、`codex mcp add|remove`。主进程用 `execFile` 加固定 argv 运行，不经过 shell，30 秒超时。没找到 Codex CLI 时直接改 `config.toml`；没找到 `claude` 时只提供复制命令。
+- Claude 和 Cursor 没有 CLI，主进程直接改 JSON。JSON 用 jsonc-parser 做最小文本编辑，只动 `mcpServers.openmail`；TOML 只替换 `[mcp_servers.openmail]` 表及其子表这一段文本，其余内容和注释原样保留。文件解析失败、条目写成内联表或改完读回不一致时拒绝，不猜。
+- 改之前在原文件旁写备份 `<文件名>.openmail-backup-<UTC 时间>`，保留原权限，每个文件最多留 5 份。写入走同目录临时文件加 rename，保留原权限；配置是符号链接时写到链接目标，链接保持不变。CLI 修改前同样先备份。
+- 配置条目里只有命令、参数，以及数据目录不是默认值时的 `OPENMAIL_HOME`。不写 token、密钥或其他凭证。
+
+打包的 app 用自己的可执行文件启动 MCP：`OpenMail --mcp [--allow-writes]`。RunAsNode fuse 保持关闭，所以 `ELECTRON_RUN_AS_NODE` 不能让任意脚本借用 app 的签名、TCC 授权和钥匙串访问。`--mcp` 只运行 CLI 包里的 MCP 服务：不开窗口，不进 Dock，不取单实例锁，Chromium 数据放在临时目录。开发构建用 `node packages/cli/dist/cli.js mcp`。
+
+MCP 每次工具调用写一行 `agent_activity`：时间、客户端名、工具名、成功与否，不含参数和结果，最多 500 行。设置页按客户端显示最近的调用。实现见 [ai-clients.ts](../apps/desktop/src/main/agents/ai-clients.ts)、[mcp-config.ts](../apps/desktop/src/main/agents/mcp-config.ts) 和 [mcp-mode.ts](../apps/desktop/src/main/agents/mcp-mode.ts)，回归见 [ai-clients.test.ts](../apps/desktop/src/main/agents/ai-clients.test.ts)，测试只用临时 HOME 和假 CLI。
+
 ## 远程访问
 
 用户可以在手机或另一台电脑的浏览器里使用这台 Mac 上的 OpenMail。默认关闭，在 Settings > Remote access 打开。

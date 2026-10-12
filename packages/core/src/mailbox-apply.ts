@@ -764,6 +764,12 @@ export const makeApplyMailbox = (
 
       audit: (limit) => store.listAudit(limit),
 
+      agentActivity: (limit) => store.listAgentActivity(limit),
+
+      recordAgentActivity: (entry) => store.appendAgentActivity(entry),
+
+      agentWriteModeFor: (name) => store.agentWriteMode(name),
+
       agentWriteMode: store.agentWriteMode("*"),
 
       setAgentWriteMode: (mode) => mutate(store.setAgentWriteMode("*", mode)),
@@ -777,6 +783,9 @@ export const makeApplyMailbox = (
       | "listFailedOps"
       | "acknowledgeFailedOps"
       | "audit"
+      | "agentActivity"
+      | "recordAgentActivity"
+      | "agentWriteModeFor"
       | "agentWriteMode"
       | "setAgentWriteMode"
     >,

@@ -523,6 +523,7 @@ it("enumerates every migrated plain table as retained state or disposable cache"
     "search_word_index",
     "search_word_rows",
     "calendar_invites",
+    "agent_activity",
   ]);
   try {
     for (const row of db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all()) {

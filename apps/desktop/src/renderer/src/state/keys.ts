@@ -26,6 +26,8 @@ export const Keys = {
   audit: "audit",
   failedOps: "failed-ops",
   agentMode: "agent-mode",
+  /** AI apps' MCP configs and their recent tool calls. */
+  aiClients: "ai-clients",
   setup: "setup",
   prefs: "prefs",
   signatures: "signatures",

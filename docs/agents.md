@@ -32,28 +32,42 @@ OAuth 注册步骤见 [Google](setup-google.md) 与 [Microsoft](setup-microsoft.
 
 需要禁止远程写入时，在 CLI 或 MCP 启动前设置 `OPENMAIL_READ_ONLY=1`。该模式仍可读取网络及凭证、刷新 token 和写本地状态；`sync` 不推送既有队列。MCP 默认读取工具与此会话开关分别控制工具入口和远程写入，详细边界只在[架构](architecture.md#只读会话)维护。MCP 配置可加 `"env": { "OPENMAIL_READ_ONLY": "1" }`。
 
-## 接入 Claude
+## 接入 AI 应用
 
-在仓库根目录执行以下命令，将当前构建接入 [Claude Code](https://code.claude.com/docs/en/mcp)：
+在 app 的「设置 > AI 权限 > AI 应用」里，每个客户端一张卡片：Claude Code、Codex、Claude（桌面版）和 Cursor。卡片显示是否安装、`openmail` 条目是否存在、是否指向当前 app，以及该客户端最近的工具调用。「连接」「重新连接」「断开连接」先弹出确认框，列出要运行的命令和配置文件 diff，点确认才执行。机制、备份和原子写入只在[安全说明](security.md#连接-ai-应用)维护。
+
+| 客户端      | 连接方式                                                           | 配置文件                                                          |
+| ----------- | ------------------------------------------------------------------ | ----------------------------------------------------------------- |
+| Claude Code | `claude mcp add --scope user --transport stdio openmail -- <命令>` | `~/.claude.json` 顶层 `mcpServers`                                |
+| Codex       | `codex mcp add openmail -- <命令>`；没有 CLI 时直接改文件          | `~/.codex/config.toml` 的 `[mcp_servers.openmail]`                |
+| Claude      | 直接改文件                                                         | `~/Library/Application Support/Claude/claude_desktop_config.json` |
+| Cursor      | 直接改文件                                                         | `~/.cursor/mcp.json`                                              |
+
+`<命令>` 在打包 app 里是 `/Applications/OpenMail.app/Contents/MacOS/OpenMail --mcp`，开发构建是 `node <仓库>/packages/cli/dist/cli.js mcp`。app 用的数据目录不是默认值时（例如 `--user-data-dir`），条目带上 `OPENMAIL_HOME`。勾选「允许 … 提议改动，由你批准」会加 `--allow-writes`。卡片里的「手动设置」给出可复制的命令或 JSON。
+
+手动接入时，在仓库根目录执行：
 
 ```sh
-claude mcp add --transport stdio openmail -- node "$(pwd)/packages/cli/dist/cli.js" mcp
+claude mcp add --scope user --transport stdio openmail -- node "$(pwd)/packages/cli/dist/cli.js" mcp
+codex mcp add openmail -- node "$(pwd)/packages/cli/dist/cli.js" mcp
 ```
 
-[Claude Desktop 本地配置](https://modelcontextprotocol.io/docs/develop/connect-local-servers)的 `claude_desktop_config.json` 使用 `mcpServers`。先执行 `pnpm --dir packages/cli link --global`，再粘贴：
+Claude 和 Cursor 的 JSON 都用 `mcpServers`：
 
 ```json
 {
   "mcpServers": {
     "openmail": {
-      "command": "openmail",
-      "args": ["mcp"]
+      "command": "/Applications/OpenMail.app/Contents/MacOS/OpenMail",
+      "args": ["--mcp"]
     }
   }
 }
 ```
 
-若 Desktop 找不到全局命令，将 `command` 换成 `command -v openmail` 输出的绝对路径。`openmail mcp` 和 `openmail-mcp` 都在 stdio 上运行，stdout 只输出协议帧。
+全局链接 CLI（`pnpm --dir packages/cli link --global`）后，`command` 也可以写 `openmail`、`args` 写 `["mcp"]`。Claude 从 Finder 启动时 PATH 很短，找不到命令时改成 `command -v openmail` 输出的绝对路径。`openmail mcp`、`openmail-mcp` 和 `OpenMail --mcp` 都在 stdio 上运行，stdout 只输出协议帧。
+
+服务启动说明告诉模型先调用 `access_status`。它返回可读账户、被隐藏账户的数量和原因（未开 AI 文本授权、账户已停用）、本客户端的写权限、是否提供提议工具，以及用户该去哪里改。被隐藏账户只给数量，不给地址。
 
 ## 读取与分页
 
@@ -77,6 +91,7 @@ openmail tool list_proposals --json
 
 | 工具                                  | 返回与后续参数                                                                                                           |
 | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `access_status`                       | 可读账户、被隐藏账户数及原因、写权限、是否有提议工具、给用户的下一步；不读邮件                                           |
 | `list_accounts`、`list_profiles`      | 账户或分组 ID，传给列表、搜索和草稿提议                                                                                  |
 | `list_labels`                         | Gmail 用户标签、Outlook/IMAP 文件夹及 Gmail 分类；ID 用于列表筛选                                                        |
 | `list_threads`                        | 会话摘要；`id` 是代表消息 ID，用于读取及整理提议；`mailbox: "snoozed"` 查询稍后提醒                                      |
@@ -103,7 +118,7 @@ MCP access 默认跟随逐账户 AI 文本授权。未授权或停用的账户�
 
 ## 提议改动
 
-默认服务只列出读取工具。需要提议时，在配置的 `args` 中加入 `"--allow-writes"`，或运行 `openmail mcp --allow-writes`。还须在 app 的「设置 > AI 权限」中开启写权限。权限、逐账户 AI 同意和账户启用状态每次调用都会重新检查；客户端不可读取的账户也不可创建提议。
+默认服务只列出读取工具。需要提议时，在配置的 `args` 中加入 `"--allow-writes"`，或运行 `openmail mcp --allow-writes`。还须在 app 的「设置 > AI 权限」中把「AI 改动邮件的权限」设为「只读」以外的选项。从 app 连接时，勾选「允许 … 提议改动，由你批准」即加入 `--allow-writes`。写权限为只读时调用提议工具，返回的消息说明没有改动、去哪里改、改完再调用。权限、逐账户 AI 同意和账户启用状态每次调用都会重新检查；客户端不可读取的账户也不可创建提议。
 
 开启后只增加 `modify_threads`、`snooze_threads` 和 `draft_message`。整理限于归档、已读/未读、星标及添加或移除同账户的现有 Gmail 用户标签，每次最多 20 个会话。文件夹操作仅支持归档，其他移动操作均拒绝；系统标签不开放。稍后提醒须提供未来一年内的毫秒时间。草稿只支持纯文本新邮件、回复、回复全部。
 

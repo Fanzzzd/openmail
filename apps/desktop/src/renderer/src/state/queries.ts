@@ -103,6 +103,12 @@ export const agentModeAtom = MailClient.query("AgentWriteMode", undefined, {
   ...cached,
 });
 
+/** Read again each time AI Access opens: other apps change their configs and call tools. */
+export const aiClientsAtom = MailClient.query("AiClients", undefined, {
+  reactivityKeys: [Keys.aiClients],
+  timeToLive: Duration.zero,
+});
+
 export const clientSetupAtom = MailClient.query("ClientSetup", undefined, {
   reactivityKeys: [Keys.setup],
   ...cached,

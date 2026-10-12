@@ -37,7 +37,8 @@ export function decide(command: Command, actor: Actor, mode: AgentWriteMode): De
     if (mode === "off")
       return {
         status: "denied",
-        reason: "Enable agent writes in openmail under Settings > AI 权限 to create proposals.",
+        reason:
+          "The AI permission to change mail is Read only, so nothing changed. Ask the person to choose Ask me first in OpenMail under Settings → AI Access, then call this tool again.",
       };
     return { status: "proposed" };
   }

@@ -55,6 +55,7 @@ vi.mock("../state/queries", () => ({
   proposalsAtom: "proposalsAtom",
   auditAtom: "auditAtom",
   agentModeAtom: "agentModeAtom",
+  aiClientsAtom: "aiClientsAtom",
   clientSetupAtom: "clientSetupAtom",
   imapPresetsAtom: "imapPresetsAtom",
   prefsAtom: "prefsAtom",
@@ -301,6 +302,54 @@ beforeEach(() => {
   fixture.values.set("appleContactsStatusAtom", { status: "off", revision: 0 });
   fixture.values.set("appleContactIdentifierAtom", null);
   fixture.values.set("agentModeAtom", "off");
+  const launch = {
+    command: "/Applications/OpenMail.app/Contents/MacOS/OpenMail",
+    args: ["--mcp"],
+    env: {},
+  };
+  const client = {
+    installed: true,
+    method: "cli",
+    cliPath: "/Users/me/.local/bin/claude",
+    configPath: "/Users/me/.claude.json",
+    problem: null,
+    manual: "claude mcp add --scope user --transport stdio openmail -- OpenMail --mcp",
+  };
+  fixture.values.set("aiClientsAtom", {
+    launch,
+    launchProblem: null,
+    clients: [
+      { ...client, id: "claude-code", state: "connected", entry: launch, proposalTools: false },
+      {
+        ...client,
+        id: "codex",
+        state: "stale",
+        entry: { ...launch, command: "/old" },
+        proposalTools: false,
+      },
+      {
+        ...client,
+        id: "claude-desktop",
+        method: "file",
+        cliPath: null,
+        state: "unreadable",
+        entry: null,
+        proposalTools: false,
+        problem: "Unexpected token",
+      },
+      {
+        ...client,
+        id: "cursor",
+        installed: false,
+        method: "file",
+        cliPath: null,
+        state: "notConnected",
+        entry: null,
+        proposalTools: false,
+      },
+    ],
+    activity: [{ at: 0, client: "claude-code", tool: "search", ok: true }],
+  });
   fixture.values.set("AiSettings", {
     keyConfigured: true,
     accounts: [{ accountId: account.id, allowed: true }],

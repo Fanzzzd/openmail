@@ -227,6 +227,9 @@ function stubMailbox(overrides: Partial<Service>): Layer.Layer<Mailbox> {
     decideProposal: () => notUsed("decideProposal"),
     proposals: notUsed("proposals"),
     audit: () => notUsed("audit"),
+    agentActivity: () => Effect.succeed([]),
+    recordAgentActivity: () => Effect.void,
+    agentWriteModeFor: () => Effect.succeed("off" as const),
     agentWriteMode: notUsed("agentWriteMode"),
     setAgentWriteMode: () => notUsed("setAgentWriteMode"),
     composeAttachments: () => Effect.die("unused"),
@@ -377,7 +380,7 @@ it.effect("a denied modify tells the model where the person can allow it", () =>
       call("modify_threads", { thread_ids: ["m1"], action: "archive", rationale: "r" }),
       layer,
     );
-    assert.match(JSON.stringify(result.encodedResult), /Settings > AI 权限/);
+    assert.match(JSON.stringify(result.encodedResult), /Settings → AI Access/);
   }),
 );
 
@@ -1232,6 +1235,61 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
         });
         assert.deepStrictEqual(yield* mailbox.proposals, []);
         assert.isNull(yield* mailbox.draftStatus(draft.id));
+      }).pipe(Effect.provide(Layer.mergeAll(mailboxLayer, handlers)));
+    },
+  );
+
+  it.effect(
+    "access_status explains hidden accounts and proposal tools, and MCP calls leave activity rows",
+    () => {
+      const server = fakeServer("me@gmail.com", [mail]);
+      const mailboxLayer = TestMailbox({ gmail: server });
+      const handlers = MailToolkitLayer.pipe(
+        Layer.provide(mailboxLayer),
+        Layer.provide(AgentIdentity.fixed("mcp", "claude-code", { proposalTools: true })),
+      );
+      const Status = Schema.toEncoded(MailToolkit.tools.access_status.successSchema);
+      return Effect.gen(function* () {
+        const mailbox = yield* Mailbox;
+        const account = yield* mailbox.connect({ provider: "gmail" });
+        const toolkit = yield* MailToolkit;
+        const status = Effect.gen(function* () {
+          const result = (yield* Stream.runCollect(yield* toolkit.handle("access_status", {})))[0];
+          assert.ok(result && !result.isFailure);
+          return Schema.decodeUnknownSync(Status)(result.encodedResult).untrusted_mail;
+        });
+        const before = yield* status;
+        assert.strictEqual(before.client, "claude-code");
+        assert.deepStrictEqual(before.readable_accounts, []);
+        assert.deepStrictEqual(before.hidden_accounts, { without_ai_consent: 1, turned_off: 0 });
+        assert.strictEqual(before.write_mode, "off");
+        assert.isTrue(before.proposal_tools);
+        assert.match(before.next_steps.join(" "), /You can read no mail yet/);
+        assert.match(before.next_steps.join(" "), /Read only, so they will refuse/);
+        // The hidden account's address is not revealed.
+        assert.notInclude(JSON.stringify(before), "me@gmail.com");
+
+        yield* mailbox.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });
+        yield* mailbox.setAgentWriteMode("propose");
+        const after = yield* status;
+        assert.deepStrictEqual(
+          after.readable_accounts.map((a) => a.id),
+          [account.id],
+        );
+        assert.deepStrictEqual(after.hidden_accounts, { without_ai_consent: 0, turned_off: 0 });
+        assert.strictEqual(after.write_mode, "propose");
+        assert.match(after.next_steps.join(" "), /wait for the person to approve/);
+
+        yield* Stream.runCollect(yield* toolkit.handle("read_thread", { id: "missing" }));
+        const activity = yield* mailbox.agentActivity(10);
+        assert.deepStrictEqual(
+          activity.map(({ client, tool, ok }) => ({ client, tool, ok })),
+          [
+            { client: "claude-code", tool: "read_thread", ok: false },
+            { client: "claude-code", tool: "access_status", ok: true },
+            { client: "claude-code", tool: "access_status", ok: true },
+          ],
+        );
       }).pipe(Effect.provide(Layer.mergeAll(mailboxLayer, handlers)));
     },
   );

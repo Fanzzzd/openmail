@@ -49,6 +49,9 @@ importers:
       '@lingui/react':
         specifier: ^6.8.0
         version: 6.8.0(@babel/core@7.29.7(supports-color@8.1.1))(react@19.3.0)
+      '@openmail/cli':
+        specifier: workspace:*
+        version: link:../../packages/cli
       '@openmail/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -61,12 +64,18 @@ importers:
       electron-updater:
         specifier: ^6.8.9
         version: 6.8.9(supports-color@8.1.1)
+      jsonc-parser:
+        specifier: ^3.3.1
+        version: 3.3.1
       react-resizable-panels:
         specifier: ^4.14.1
         version: 4.14.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       scheduler:
         specifier: ^0.27.0
         version: 0.27.0
+      smol-toml:
+        specifier: ^1.9.1
+        version: 1.9.1
       ws:
         specifier: ^8.22.0
         version: 8.22.0
@@ -5423,6 +5432,9 @@ packages:
     engines: {node: '>=6'}
     hasBin: true
 
+  jsonc-parser@3.3.1:
+    resolution: {integrity: sha512-HUgH65KyejrUFPvHFPbqOY0rsFip3Bo5wb4ngvdi1EpCYWUQDC5V+Y7mZws+DLkr4M//zQJoanu1SP+87Dv1oQ==}
+
   jsonfile@4.0.0:
     resolution: {integrity: sha512-m6F1R3z8jjlf2imQHS2Qez5sjKWQzbuuhuJ/FKYFRZvPE3PuHcSMVZzfsLhGVOkfd20obL5SWEBew5ShlquNxg==}
 
@@ -7097,6 +7109,10 @@ packages:
   smart-buffer@4.2.0:
     resolution: {integrity: sha512-94hK0Hh8rPqQl2xXc3HsaBoOXKV20MToPkcXvwbISWLEs+64sBq5kFgn2kJDHb1Pry9yrP0dxrCI9RRci7RXKg==}
     engines: {node: '>= 6.0.0', npm: '>= 3.0.0'}
+
+  smol-toml@1.9.1:
+    resolution: {integrity: sha512-j7WyPdf0CJoutMzMoPLF/bVXHtKZIT9Rb4eGeEbWw8X2t5oirjPgpL+OpaENZrILYaXqYwnVH+qgUwVbl+pUJQ==}
+    engines: {node: '>= 18'}
 
   snake-case@3.0.4:
     resolution: {integrity: sha512-LAOh4z89bGQvl9pFfNF8V146i7o7/CqFPbqzYgP+yYzDIDeS9HaNFtXABamRW+AQzEVODcvE79ljJ+8a9YSdMg==}
@@ -12971,6 +12987,8 @@ snapshots:
 
   json5@2.2.3: {}
 
+  jsonc-parser@3.3.1: {}
+
   jsonfile@4.0.0:
     optionalDependencies:
       graceful-fs: 4.2.11
@@ -15305,6 +15323,8 @@ snapshots:
   slugify@1.6.9: {}
 
   smart-buffer@4.2.0: {}
+
+  smol-toml@1.9.1: {}
 
   snake-case@3.0.4:
     dependencies:
