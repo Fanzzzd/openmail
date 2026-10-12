@@ -1,12 +1,12 @@
 import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { expect, it } from "vitest";
 
 import { describeBuiltInClients, readBuiltInClients } from "../../oauth-clients";
 
-const out = fileURLToPath(new URL("../../out/", import.meta.url));
+// Vitest runs in apps/desktop.
+const out = join(process.cwd(), "out/");
 const filesUnder = (dir: string): string[] =>
   readdirSync(dir, { withFileTypes: true, recursive: true })
     .filter((entry) => entry.isFile())

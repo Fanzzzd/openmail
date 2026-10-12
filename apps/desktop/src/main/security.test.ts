@@ -10,6 +10,7 @@ import {
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { createRequire } from "node:module";
 import { getCurrentFuseWire, FuseState, FuseV1Options } from "@electron/fuses";
 import { expect, it, vi } from "vitest";
@@ -147,7 +148,7 @@ it("serves renderer assets with CSP and denies traversal, sibling paths and esca
     expect((await appResourceHandler(root)(new Request(APP_PAGE, { method: "POST" }))).status).toBe(
       404,
     );
-    const built = await readFile(new URL("../../out/renderer/index.html", import.meta.url), "utf8");
+    const built = await readFile(path.join(process.cwd(), "out/renderer/index.html"), "utf8");
     expect(built).toContain(`content="${APP_CSP}"`);
     expect(built).not.toMatch(/unsafe-eval|script-src[^;]*unsafe-inline|\/src\/main.tsx/);
     expect(built).toMatch(/<script[^>]+src="\.\/assets\//);
@@ -188,7 +189,7 @@ it("afterPack changes the real fuse wire before signing without starting Electro
   const require = createRequire(import.meta.url);
   const config = Schema.decodeUnknownSync(
     Schema.Struct({ asar: Schema.Boolean, afterPack: Schema.Unknown }),
-  )(require("../../electron-builder.config.cjs"));
+  )(require(path.join(process.cwd(), "electron-builder.config.cjs")));
   expect(config.asar).toBe(true);
   if (typeof config.afterPack !== "function") throw new Error("Missing afterPack hook");
   const directory = await mkdtemp(path.join(tmpdir(), "openmail-fuses-"));
@@ -228,14 +229,14 @@ it("afterPack changes the real fuse wire before signing without starting Electro
 });
 
 it("the built preload exposes only the fixed RPC bridge to the top frame and renderer code needs no eval", async () => {
-  const preload = await readFile(new URL("../../out/preload/index.cjs", import.meta.url), "utf8");
+  const preload = await readFile(path.join(process.cwd(), "out/preload/index.cjs"), "utf8");
   expect([...preload.matchAll(/require\("([^"]+)"\)/g)].map((match) => match[1])).toEqual([
     "electron",
   ]);
   expect(preload).toContain("if (process.isMainFrame)");
   expect(preload).toContain('exposeInMainWorld("openmailRpc", bridge)');
   expect(preload).not.toMatch(/ipcRenderer\.invoke|exposeInMainWorld\("(?:electron|ipcRenderer)"/);
-  const assets = new URL("../../out/renderer/assets/", import.meta.url);
+  const assets = pathToFileURL(path.join(process.cwd(), "out/renderer/assets/"));
   for (const file of await readdir(assets)) {
     if (!file.endsWith(".js")) continue;
     expect(await readFile(new URL(file, assets), "utf8")).not.toMatch(
@@ -257,18 +258,18 @@ it("hands legacy mailto URLs to the OS without applying the strict inbound parse
 
 it("AI/MCP docs match the budget placeholder and semantic snippet policy", async () => {
   const documents = await Promise.all([
-    readFile(new URL("../../../../docs/security.md", import.meta.url), "utf8"),
-    readFile(new URL("../../../../docs/agents.md", import.meta.url), "utf8"),
+    readFile(path.join(process.cwd(), "../../docs/security.md"), "utf8"),
+    readFile(path.join(process.cwd(), "../../docs/agents.md"), "utf8"),
   ]);
   const source = await readFile(
-    new URL("../../../../packages/core/src/visible-text.ts", import.meta.url),
+    path.join(process.cwd(), "../../packages/core/src/visible-text.ts"),
     "utf8",
   );
   const placeholder = "[Message too complex for AI: message text omitted.]";
   expect(source).toContain(placeholder);
   for (const doc of documents) expect(doc).toContain(placeholder);
   const tools = await readFile(
-    new URL("../../../../packages/core/src/tools.ts", import.meta.url),
+    path.join(process.cwd(), "../../packages/core/src/tools.ts"),
     "utf8",
   );
   expect(tools).toContain("Message snippets are omitted.");

@@ -2,7 +2,7 @@ import { EventEmitter } from "node:events";
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import { fileURLToPath } from "node:url";
+import path from "node:path";
 import { Effect, Schema } from "effect";
 import { expect, it, vi, afterAll, beforeEach } from "vitest";
 import { Mailbox, type IncomingMessage, parseAppLink } from "@openmail/core";
@@ -288,7 +288,7 @@ it.skipIf(process.platform !== "darwin")(
   () => {
     for (const name of ["photos", "grammar"]) {
       const executable = name === "photos" ? "OpenMailPhotos.app/Contents/MacOS/photos" : "grammar";
-      const binary = fileURLToPath(new URL(`../../out/native/${executable}`, import.meta.url));
+      const binary = path.join(process.cwd(), `out/native/${executable}`);
       expect(execFileSync("/usr/bin/lipo", ["-archs", binary], { encoding: "utf8" })).toMatch(
         /x86_64.*arm64|arm64.*x86_64/,
       );
@@ -297,7 +297,7 @@ it.skipIf(process.platform !== "darwin")(
         execFileSync("/usr/bin/codesign", [
           "--verify",
           "--strict",
-          fileURLToPath(new URL("../../out/native/OpenMailPhotos.app", import.meta.url)),
+          path.join(process.cwd(), "out/native/OpenMailPhotos.app"),
         ]);
       const output = execFileSync(binary, ["--self-test"], { encoding: "utf8", timeout: 30_000 });
       expect(() => JSON.parse(output)).not.toThrow();
@@ -307,7 +307,7 @@ it.skipIf(process.platform !== "darwin")(
 
 it("Photos and grammar helpers have independent minimal signing options", () => {
   const require = createRequire(import.meta.url);
-  const script: unknown = require("../../build/sign-contacts.cjs");
+  const script: unknown = require(path.join(process.cwd(), "build/sign-contacts.cjs"));
   const signing = Schema.decodeUnknownSync(
     Schema.Struct({ contactsSigningOptions: Schema.Unknown }),
   )(script);
@@ -352,13 +352,13 @@ it("packaging includes the complete Photos app bundle and its executable under t
       ),
       mac: Schema.Struct({ binaries: Schema.Array(Schema.String) }),
     }),
-  )(require("../../electron-builder.config.cjs"));
+  )(require(path.join(process.cwd(), "electron-builder.config.cjs")));
   const bundle = "Contents/Resources/native/OpenMailPhotos.app/Contents/MacOS/photos";
   expect(config.mac.binaries).toContain(bundle);
   expect(config.extraResources.find((entry) => entry.from === "out/native")?.filter).toContain(
     "OpenMailPhotos.app/**/*",
   );
-  const info = readFileSync(new URL("../../build/Info.photos.plist", import.meta.url), "utf8");
+  const info = readFileSync(path.join(process.cwd(), "build/Info.photos.plist"), "utf8");
   expect(info).toContain(`<string>${config.appId}.photos</string>`);
   expect(info).toContain("<key>CFBundleExecutable</key><string>photos</string>");
   expect(info).toContain("<key>LSMinimumSystemVersion</key><string>13.0</string>");

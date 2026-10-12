@@ -1,8 +1,10 @@
 import { readdir, readFile } from "node:fs/promises";
+import { pathToFileURL } from "node:url";
 import { expect, it } from "vitest";
 
 // Reads the production build, as security.test.ts does. Run `pnpm build` first.
-const assets = new URL("../../../out/renderer/assets/", import.meta.url);
+// Vitest runs in apps/desktop, so the path does not depend on where this file lives.
+const assets = pathToFileURL(`${process.cwd()}/out/renderer/assets/`);
 
 it("keeps rarely used screens, other locales, calendar parsing and the HTML cleaner out of the renderer entry", async () => {
   const html = await readFile(new URL("../index.html", assets), "utf8");

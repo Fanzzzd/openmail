@@ -1,10 +1,10 @@
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { expect, it } from "vitest";
 
 /** In-window UI is React; native popups and form controls only where docs/native-macos.md allows. */
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+// Vitest runs in apps/desktop.
+const root = path.join(process.cwd(), "src");
 
 const banned: readonly { name: string; pattern: RegExp }[] = [
   { name: "dialog.showMessageBox", pattern: /\bshowMessageBox(Sync)?\b/g },
