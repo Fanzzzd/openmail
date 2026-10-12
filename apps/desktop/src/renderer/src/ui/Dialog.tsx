@@ -34,16 +34,18 @@ interface DialogProps {
 
 /**
  * Below MEDIUM_MIN (696 px, Tailwind's `sm`) a sheet fills the window, whatever size the caller asked for.
- * On the Mac its top 32 px stay clear for the traffic lights; pair it with {@link SheetDragStrip}.
- * A browser has no traffic lights, so the web build uses the whole height.
+ * On the Mac its top stays clear for the traffic lights' row (`--titlebar-clearance`, from WindowChrome);
+ * pair it with {@link SheetDragStrip}. A browser has no traffic lights, so the web build uses the whole height.
  */
 export const narrowSheet = () =>
-  `max-sm:inset-0 max-sm:h-full max-sm:max-h-none max-sm:w-full max-sm:max-w-none max-sm:translate-x-0 max-sm:translate-y-0 max-sm:rounded-none ${isDesktop() ? "max-sm:pt-8" : ""}`;
+  `max-sm:inset-0 max-sm:h-full max-sm:max-h-none max-sm:w-full max-sm:max-w-none max-sm:translate-x-0 max-sm:translate-y-0 max-sm:rounded-none ${isDesktop() ? "max-sm:pt-(--titlebar-clearance)" : ""}`;
 
 /** The titlebar of a full-window sheet: it drags the window, as the titlebar it covers did. None in a browser. */
 export function SheetDragStrip() {
   if (!isDesktop()) return null;
-  return <div aria-hidden className="drag absolute inset-x-0 top-0 h-8 sm:hidden" />;
+  return (
+    <div aria-hidden className="drag absolute inset-x-0 top-0 h-(--titlebar-clearance) sm:hidden" />
+  );
 }
 
 /**

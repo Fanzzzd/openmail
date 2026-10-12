@@ -56,7 +56,8 @@ import {
   type SearchHits,
   SearchHitsContext,
 } from "../search";
-import { iconButton, touchIcon, trafficLightInset } from "../../ui/styles";
+import { iconButton, touchIcon } from "../../ui/styles";
+import { TrafficLightSpace } from "../../ui/TrafficLights";
 import { Tip } from "../../ui/Tip";
 import { BACK_SHORTCUT, isBackKey } from "../../lib/responsive-layout";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -181,8 +182,9 @@ export function Reader({
     <main className="flex h-full w-full min-w-0 flex-col bg-surface">
       <header
         data-reader-toolbar
-        className={`drag @container/bar flex min-h-13 shrink-0 items-center gap-3 py-3 pr-4 ${onBack && isDesktop() ? trafficLightInset : "pl-4"}`}
+        className="drag @container/bar flex min-h-13 shrink-0 items-center gap-3 py-3 pr-4 pl-4"
       >
+        <TrafficLightSpace />
         {onBack && (
           <Tip label={t`Back to messages`} shortcut={BACK_SHORTCUT}>
             <button

@@ -267,6 +267,7 @@ export async function flow(
       WindowUiEvents: () => Stream.never,
       AnswerPrompt: () => Effect.void,
       TextMenuCommand: () => Effect.void,
+      SetTitlebarHeight: () => Effect.void,
       PrintThread: unsupported,
       OpenThreadWindow: unsupported,
       OpenMessageWindow: unsupported,

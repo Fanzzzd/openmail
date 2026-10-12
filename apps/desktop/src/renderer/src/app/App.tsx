@@ -58,12 +58,7 @@ import { DefaultProfilesPrompt, ProfileSwitcher } from "../features/accounts/Pro
 import { Reader, useThreadPrint } from "../features/reader/Reader";
 import { Sidebar, SidebarToggle } from "../features/sidebar/Sidebar";
 import { SidebarRail } from "../features/sidebar/SidebarRail";
-import {
-  buttonPrimary,
-  buttonSecondary,
-  railTrafficLightInset,
-  trafficLightInset,
-} from "../ui/styles";
+import { buttonPrimary, buttonSecondary } from "../ui/styles";
 import { FocusedInboxPermission } from "../features/organize/FocusedInboxActions";
 import { ThreadActions } from "../features/organize/ThreadActions";
 import type { ThreadState } from "../lib/focused-inbox";
@@ -446,14 +441,6 @@ export function App({ composeId }: { composeId?: string }) {
   const rail = layout.mode === "medium" && hasAccounts;
   const sidebarToggle =
     docked || rail ? undefined : <SidebarToggle onClick={paneNav.toggleSidebar} />;
-  // A browser has no traffic lights to clear.
-  const leadingInset = !isDesktop()
-    ? "pl-4"
-    : rail
-      ? railTrafficLightInset
-      : docked
-        ? undefined
-        : trafficLightInset;
   /** A view or space picked in the rail hands focus to its list. */
   const fromRail =
     <A extends unknown[]>(action: (...args: A) => void) =>
@@ -492,7 +479,6 @@ export function App({ composeId }: { composeId?: string }) {
   ) : (
     <Overview
       leading={sidebarToggle}
-      inset={leadingInset}
       accounts={accountList}
       profiles={profileList}
       unread={counts}
@@ -514,7 +500,6 @@ export function App({ composeId }: { composeId?: string }) {
   const listPane = (
     <MessageList
       leading={sidebarToggle}
-      inset={leadingInset}
       notice={
         <MailStatusNotice
           accounts={accountList}

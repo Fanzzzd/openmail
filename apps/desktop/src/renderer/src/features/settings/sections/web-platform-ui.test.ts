@@ -25,6 +25,7 @@ import { desktopRoot } from "../../../test-support/paths";
 import { setPlatform } from "../../../lib/platform";
 import { Dialog, narrowSheet, SheetDragStrip } from "../../../ui/Dialog";
 import { buttonSecondary, iconButton, itemClass, touchTarget } from "../../../ui/styles";
+import { TrafficLightSpace } from "../../../ui/TrafficLights";
 import { InteractionSettings } from "./InteractionSettings";
 
 afterEach(() => {
@@ -45,17 +46,22 @@ it("hides the swipe settings in the web build, where nothing sends two-finger sw
 });
 
 it("keeps the traffic-light clearance on the Mac only", () => {
-  expect(narrowSheet()).toContain("max-sm:pt-8");
+  const header = () => render(h("header", null, h(TrafficLightSpace)));
+  expect(narrowSheet()).toContain("max-sm:pt-(--titlebar-clearance)");
   render(h(SheetDragStrip));
   expect(document.querySelector(".drag")).not.toBeNull();
+  header();
+  expect(document.querySelector("[data-traffic-light-space]")).not.toBeNull();
   cleanup();
 
   setPlatform("web");
-  expect(narrowSheet()).not.toContain("pt-8");
+  expect(narrowSheet()).not.toContain("titlebar-clearance");
   render(h(SheetDragStrip));
   expect(document.querySelector(".drag")).toBeNull();
+  header();
+  expect(document.querySelector("[data-traffic-light-space]")).toBeNull();
   render(localized(h(Dialog, { "aria-label": "Example", onClose: () => null, children: "Body" })));
-  expect(screen.getByRole("dialog").className).not.toContain("pt-8");
+  expect(screen.getByRole("dialog").className).not.toContain("titlebar-clearance");
 });
 
 it("gives buttons, icon buttons and menu rows a 40 px target on a phone in the web build", () => {

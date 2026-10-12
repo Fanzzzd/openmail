@@ -2,7 +2,6 @@ import { constVoid } from "effect/Function";
 import { AuthError, ProviderError } from "@openmail/core/portable";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { act, fireEvent, screen, within } from "@testing-library/react/pure";
-import { railTrafficLightInset, trafficLightInset } from "../ui/styles";
 import { clickButton, eventually, flow, key, row } from "./harness";
 
 let current: Awaited<ReturnType<typeof flow>> | undefined;
@@ -34,6 +33,26 @@ const resize = (next: number) => {
 };
 
 const reader = () => screen.queryByRole("article", { name: "Selected message" });
+
+/**
+ * jsdom has no layout: puts a 52 px header row at `left`, `top` in the
+ * window and returns the width its TrafficLightSpace measures against the
+ * default lights, whose row is the top 52 px and whose free area starts at 96 px.
+ */
+function lightSpaceAt(row: Element | null | undefined, left: number, top = 0) {
+  if (!row) throw new Error("Missing header row");
+  for (const [name, value] of Object.entries({
+    offsetLeft: left,
+    offsetTop: top,
+    offsetHeight: 52,
+  }))
+    Object.defineProperty(row, name, { configurable: true, value });
+  act(() => {
+    window.dispatchEvent(new Event("resize"));
+  });
+  const space = row.querySelector<HTMLElement>(":scope > [data-traffic-light-space]");
+  return space?.hidden ? 0 : Number(space?.dataset.trafficLightSpace);
+}
 const rail = () => document.querySelector<HTMLElement>("[data-sidebar-rail]");
 
 it("a narrow window shows the list or the reader, and goes back with the button, Escape and Cmd+[", async () => {
@@ -42,8 +61,12 @@ it("a narrow window shows the list or the reader, and goes back with the button,
   const h = current;
   await eventually(() => expect(row(h.id("one"))).toBeTruthy());
   // The list carries the search field and there is no reader yet.
-  expect(screen.getByRole("combobox", { name: "Search mail" })).toBeTruthy();
+  const search = screen.getByRole("combobox", { name: "Search mail" });
   expect(reader()).toBeNull();
+  // The search row is the top row and clears the traffic lights; the title row below needs no room.
+  const searchRow = search.closest("section > .drag");
+  expect(lightSpaceAt(searchRow, 0)).toBe(96);
+  expect(lightSpaceAt(searchRow?.nextElementSibling, 0, 52)).toBe(0);
   expect(document.querySelector('[data-mail-pane="sidebar"]')).toBeNull();
   expect(rail()).toBeNull();
 
@@ -152,6 +175,10 @@ it("a wide window docks the sidebar and has no drawer toggle", async () => {
   expect(document.querySelector('[data-mail-pane="sidebar"]')).not.toBeNull();
   expect(screen.queryByRole("button", { name: "Show sidebar" })).toBeNull();
   expect(rail()).toBeNull();
+  // The sidebar header holds the traffic lights; the list header beside it needs no room.
+  const sidebarHeader = document.querySelector('[data-mail-pane="sidebar"] aside > .drag');
+  expect(lightSpaceAt(sidebarHeader, 0)).toBe(96);
+  expect(lightSpaceAt(document.querySelector('[data-mail-pane="list"] header'), 260)).toBe(0);
 });
 
 it("a medium window docks an icon rail whose mailboxes and spaces hand focus to the list", async () => {
@@ -166,7 +193,8 @@ it("a medium window docks an icon rail whose mailboxes and spaces hand focus to 
     within(strip).getByRole("button", { name: "Show sidebar" }),
   ]);
   const list = document.querySelector('[data-mail-pane="list"]');
-  expect(list?.querySelector("header")?.className).toContain(railTrafficLightInset);
+  // The 56 px rail leaves the list header 40 px of the lights to clear.
+  expect(lightSpaceAt(list?.querySelector("header"), 56)).toBe(40);
 
   // Icons are named by their mailbox and unread count; the open one is current.
   const mailboxes = within(strip).getByRole("navigation", { name: "Mailboxes" });
@@ -297,7 +325,7 @@ it("the thread window folds actions into the actions menu as it narrows and keep
   await screen.findByRole("button", { name: "Archive" });
   const header = document.querySelector("[data-thread-toolbar]");
   expect(header?.className).toContain("drag");
-  expect(header?.className).toContain(trafficLightInset);
+  expect(lightSpaceAt(header, 0)).toBe(96);
   const all = shown();
   expect(all).toEqual(["archive", "trash", "spam", "read", "star", "important", "move", "label"]);
 

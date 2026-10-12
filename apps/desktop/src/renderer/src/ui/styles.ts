@@ -35,11 +35,6 @@ export const separatorClass = "mx-2 my-1 h-px bg-separator";
 /** A borderless icon button in a header or toolbar. Callers add the text color. */
 export const iconButton = `rounded-control p-1 ${touchIcon} transition-colors duration-100 hover:bg-fill-hover active:bg-fill-pressed motion-reduce:transition-none`;
 
-/** Left padding that keeps a header at the window's leading edge clear of the traffic lights. */
-export const trafficLightInset = "pl-20";
-/** The same clearance for a header that starts after the 56 px sidebar rail: 56 + 24 = 80 px. */
-export const railTrafficLightInset = "pl-6";
-
 /** Keyboard shortcut next to a label. */
 export const kbdClass =
   "font-sans text-caption tracking-wide text-neutral-600 tabular-nums group-data-highlighted:text-white dark:text-neutral-400";

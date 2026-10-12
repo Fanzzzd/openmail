@@ -1,3 +1,4 @@
+import { WindowChrome } from "./app/WindowChrome";
 import { WindowKeys } from "./app/WindowKeys";
 import { WindowUi } from "./app/WindowUi";
 import { createAppHashHistory } from "./routes/hash-history";
@@ -9,5 +10,6 @@ renderApp(
   <>
     <WindowKeys />
     <WindowUi />
+    <WindowChrome />
   </>,
 );

@@ -11,6 +11,7 @@ import { randomUUID } from "node:crypto";
 import { WINDOW_MIN } from "../../shared/layout";
 import { appHref, composeHref, parseAppHref, threadHref } from "../../shared/routes";
 import type { ComposeRecipients, SavedWindow } from "../../shared/window-state";
+import { trafficLightOptions } from "./window-chrome";
 import { backgroundWindows, revealAndFocus, revealWindow } from "./reveal";
 import { visibleBounds, windowStateFile } from "./window-state";
 
@@ -211,8 +212,7 @@ function createAppWindow(options: WindowOptions): BrowserWindow {
           ...(options.kind === undefined || options.kind === "main"
             ? { tabbingIdentifier: "openmail-main" }
             : {}),
-          titleBarStyle: "hiddenInset" as const,
-          trafficLightPosition: { x: 18, y: 18 },
+          ...trafficLightOptions(),
           // The sidebar is transparent and shows this material through.
           vibrancy: "sidebar" as const,
           visualEffectState: "followWindow" as const,

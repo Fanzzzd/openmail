@@ -50,6 +50,7 @@ import {
 import { Select } from "../../../ui/Select";
 import { touchIcon, touchTarget } from "../../../ui/styles";
 import { Tip } from "../../../ui/Tip";
+import { TrafficLightSpace } from "../../../ui/TrafficLights";
 
 const TITLES: Record<Draft["mode"], MessageDescriptor> = {
   new: msg`New Message`,
@@ -256,7 +257,7 @@ export function Composer({
           initialFocus={initialFocus}
           className={`${standalone ? "no-drag fixed inset-0 z-50 flex h-full w-full " : `no-drag fixed right-5 bottom-5 z-50 flex h-[min(680px,calc(100%-40px))] w-[min(680px,calc(100%-40px))] ${narrowSheet()} `} flex-col overflow-hidden rounded-sheet bg-raised text-body text-neutral-900 shadow-sheet outline-none transition-[opacity,translate] duration-150 ease-out data-starting-style:translate-y-2 data-starting-style:opacity-0 motion-reduce:transition-none dark:text-neutral-100`}
         >
-          {standalone ? <div className="drag h-8 shrink-0" /> : <SheetDragStrip />}
+          {!standalone && <SheetDragStrip />}
           {/* oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- The entire composer accepts file drops; the attachment picker provides keyboard access. */}
           <form
             className="flex min-h-[360px] flex-1 flex-col overflow-y-auto"
@@ -276,7 +277,12 @@ export function Composer({
               submit(false);
             }}
           >
-            <header className="flex min-h-11 shrink-0 items-center gap-2 border-b border-separator px-4">
+            {/* In its own window the header is the titlebar: it holds the traffic lights and
+                stays on top while the form scrolls. */}
+            <header
+              className={`flex min-h-11 shrink-0 items-center gap-2 border-b border-separator px-4 ${standalone ? "drag sticky top-0 z-10 bg-raised" : ""}`}
+            >
+              <TrafficLightSpace />
               <Dialog.Title className="text-callout font-semibold">{title}</Dialog.Title>
               {original && account && (
                 <Select

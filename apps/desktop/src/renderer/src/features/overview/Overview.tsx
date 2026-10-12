@@ -18,6 +18,7 @@ import { syncNow, useRunMail } from "../../state/mail";
 import { unreadInboxAtom } from "../../state/queries";
 import { ALL, type SpaceId } from "../../lib/view";
 import { Tip } from "../../ui/Tip";
+import { TrafficLightSpace } from "../../ui/TrafficLights";
 
 interface Group {
   space: SpaceId;
@@ -35,8 +36,6 @@ interface Props {
   onEditProfile: (profile: Profile | "new") => void;
   /** Controls before the title when the overview is the leftmost pane. */
   leading?: ReactNode;
-  /** Left padding that clears the traffic lights when the header sits under them. */
-  inset?: string | undefined;
 }
 
 /**
@@ -51,7 +50,6 @@ export function Overview({
   onOpen,
   onEditProfile,
   leading,
-  inset,
 }: Props) {
   accounts = accounts.filter((a) => a.enabled !== false);
   const { t, i18n } = useLingui();
@@ -75,9 +73,8 @@ export function Overview({
 
   return (
     <main className="flex h-full w-full min-w-0 flex-col bg-surface">
-      <header
-        className={`drag flex h-13 shrink-0 items-center gap-3 pr-4 sm:pr-7 ${inset ?? "pl-4 sm:pl-7"}`}
-      >
+      <header className="drag flex h-13 shrink-0 items-center gap-3 pr-4 pl-4 sm:pr-7 sm:pl-7">
+        <TrafficLightSpace />
         {leading}
         <h1 className="shrink-0 text-title font-bold">
           <Trans>Overview</Trans>

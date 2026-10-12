@@ -26,6 +26,7 @@ import {
 } from "../files/attachment-actions";
 import type { DownloadItem } from "../../shared/downloads";
 import { textMenuCommand, popupWritingTools } from "../windows/spellcheck";
+import { setTitlebarHeight } from "../windows/window-chrome";
 import { answerPrompt, windowUiEvents } from "../windows/window-ui";
 import { clipboardAttachments } from "../files/clipboard-attachments";
 import { chooseAttachmentFolder } from "../files/attachment-folder";
@@ -189,6 +190,8 @@ const Handlers = MailRpcs.toLayer(
       DownloadAction: ({ id, command }) => downloads.command(id, command),
       ClearDownloads: () => Effect.sync(() => downloads.clear()),
       WindowUiEvents: (_, { client }) => windowUiEvents(client.id),
+      SetTitlebarHeight: ({ height }, { client }) =>
+        Effect.sync(() => setTitlebarHeight(windowOf(client.id), height)),
       AnswerPrompt: ({ id, answer }, { client }) =>
         Effect.sync(() => answerPrompt(client.id, id, answer)),
       TextMenuCommand: ({ command }, { client }) =>

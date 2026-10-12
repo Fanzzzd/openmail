@@ -87,6 +87,7 @@ import {
 } from "../../ui/Menu";
 import { iconButton } from "../../ui/styles";
 import { Tip } from "../../ui/Tip";
+import { TrafficLightSpace } from "../../ui/TrafficLights";
 import {
   ALL,
   inboxCategoryNames,
@@ -375,6 +376,7 @@ export function Sidebar({
       className="@container/sidebar flex h-full w-full flex-col bg-neutral-100/60 dark:bg-neutral-950/70"
     >
       <div className="drag flex h-13 shrink-0 items-center justify-end gap-0.5 px-3">
+        <TrafficLightSpace className="me-auto" />
         {/* Signing in opens the Mac's browser and keychain: desktop only. */}
         {isDesktop() && (
           <Tip label={t`Add email account`}>
