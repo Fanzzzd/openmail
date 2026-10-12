@@ -1,5 +1,5 @@
 import { constVoid } from "effect/Function";
-import { vi } from "vitest";
+import { beforeAll, vi } from "vitest";
 
 Object.defineProperty(window, "matchMedia", {
   writable: true,
@@ -41,3 +41,9 @@ Object.defineProperty(HTMLElement.prototype, "innerText", {
     this.textContent = value;
   },
 });
+
+// Settings is a lazy chunk. Under load its first import can outlast a
+// findByRole wait, so every e2e file loads it before its tests run.
+beforeAll(async () => {
+  await import("../features/settings/Settings");
+}, 60_000);

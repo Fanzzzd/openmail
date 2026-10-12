@@ -85,8 +85,6 @@ it("opens the thread a route names and keeps the open thread in the route", asyn
 });
 
 it("opens the dialog a route names, and closing it leaves the route in place", async () => {
-  // Settings is a lazy chunk; under load its first import outlasts findByRole's wait.
-  await import("../features/settings/Settings");
   const h = (current = await flow({ route: "/mail/all/sent?dialog=settings" }));
   const settings = await screen.findByRole("dialog", { name: "Settings" });
   const length = h.router.history.length;

@@ -386,8 +386,6 @@ it("a narrow window shows dialogs as full-window sheets with a close button", as
   current = await flow();
   const h = current;
   await eventually(() => expect(row(h.id("one"))).toBeTruthy());
-  // Settings is a lazy chunk; under load its first import outlasts findByRole's wait.
-  await import("../features/settings/Settings");
   key(",", { metaKey: true }, document.body);
   const settings = await screen.findByRole("dialog", { name: "Settings" });
   expect(settings.className).toContain("max-sm:inset-0");
