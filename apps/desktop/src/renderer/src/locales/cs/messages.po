@@ -4424,6 +4424,10 @@ msgstr "OpenMail je aktuální."
 msgid "OpenMail safe mode"
 msgstr "Bezpečný režim OpenMail"
 
+#: src/main/app/native-i18n.ts
+msgid "OpenMail sign-in"
+msgstr "Přihlášení do OpenMail"
+
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "openmail signs in with an OAuth client you register yourself. First enter the app you registered in Azure, with the Mobile and desktop applications type. Only personal outlook.com and Hotmail accounts are supported. See {doc} in the repository for the steps."
 msgstr "openmail se přihlásí pomocí klienta OAuth, kterého si sami zaregistrujete. Nejprve zadejte aplikaci, kterou jste zaregistrovali v Azure, s typem Mobilní a stolní aplikace. Podporovány jsou pouze osobní účty outlook.com a Hotmail. Kroky viz {doc} v úložišti."
@@ -5838,6 +5842,10 @@ msgstr "Přihlaste se v prohlížeči svým osobním účtem Microsoft (outlook.
 msgid "Sign-in failed: {reason}"
 msgstr "Přihlášení se nezdařilo: {reason}"
 
+#: src/main/app/native-i18n.ts
+msgid "Sign-in failed. Go back to OpenMail and try again."
+msgstr "Přihlášení se nezdařilo. Vraťte se do OpenMail a zkuste to znovu."
+
 #: src/renderer/src/lib/errors.ts
 msgid "Sign-in took too long. Try again and finish it in your browser."
 msgstr "Přihlášení trvalo příliš dlouho. Zkuste to znovu a dokončete ho v prohlížeči."
@@ -5869,6 +5877,10 @@ msgstr "Podepsané sestavení používají ke stažení soukromých vydání př
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Signed in as {login}. This Mac is {device}."
 msgstr "Přihlášeno jako {login}. Tento Mac je {device}."
+
+#: src/main/app/native-i18n.ts
+msgid "Signed in. You can close this page and go back to OpenMail."
+msgstr "Přihlášení proběhlo. Tuto stránku můžete zavřít a vrátit se do OpenMail."
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Simplify your search query."

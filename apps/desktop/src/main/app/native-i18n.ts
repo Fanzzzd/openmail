@@ -1,12 +1,35 @@
 import { type I18n, setupI18n } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { app } from "electron";
+import type { Language } from "@openmail/core/schema";
 import { loadCatalog } from "../../shared/catalogs";
-import { systemLocale } from "../../shared/locales";
-export async function nativeRecoveryLabels() {
-  const locale = systemLocale([...app.getPreferredSystemLanguages(), app.getLocale()]);
+import { type Locale, systemLocale } from "../../shared/locales";
+
+const osLocale = () => systemLocale([...app.getPreferredSystemLanguages(), app.getLocale()]);
+async function nativeI18n(locale: Locale = osLocale()) {
   const messages = await loadCatalog(locale);
-  return recoveryLabels(setupI18n({ locale, messages: { [locale]: messages } }));
+  return setupI18n({ locale, messages: { [locale]: messages } });
+}
+
+export async function nativeRecoveryLabels() {
+  return recoveryLabels(await nativeI18n());
+}
+
+/** The language setting, as of the last sign-in the app started. */
+let appLanguage: Language = "system";
+export function setNativeLanguage(language: Language) {
+  appLanguage = language;
+}
+
+/** The browser page after an OAuth sign-in, in the app's language. Core escapes it. */
+export async function nativeAuthorizePage() {
+  const i18n = await nativeI18n(appLanguage === "system" ? undefined : appLanguage);
+  return {
+    lang: i18n.locale,
+    title: i18n._(msg`OpenMail sign-in`),
+    doneText: i18n._(msg`Signed in. You can close this page and go back to OpenMail.`),
+    failedText: i18n._(msg`Sign-in failed. Go back to OpenMail and try again.`),
+  };
 }
 
 /** Shared catalog for native recovery dialogs, available before the mailbox starts. */

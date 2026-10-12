@@ -303,8 +303,11 @@ export function checkLocalDatabase(directory: string): IntegrityResult {
 }
 
 /** Startup check after an abnormal exit; the worker leaves the main thread free to paint. */
-export function checkLocalDatabaseInWorker(directory: string): Promise<IntegrityResult> {
-  return databaseQuickCheckInWorker(join(directory, "mail.db"));
+export function checkLocalDatabaseInWorker(
+  directory: string,
+  options?: Parameters<typeof databaseQuickCheckInWorker>[1],
+): Promise<IntegrityResult> {
+  return databaseQuickCheckInWorker(join(directory, "mail.db"), options);
 }
 
 /** Cache reset preserves accounts, preferences, drafts, queued user changes and keychain items. */

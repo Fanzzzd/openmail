@@ -4424,6 +4424,10 @@ msgstr "OpenMail est à jour."
 msgid "OpenMail safe mode"
 msgstr "Mode sans échec d’OpenMail"
 
+#: src/main/app/native-i18n.ts
+msgid "OpenMail sign-in"
+msgstr "Connexion à OpenMail"
+
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "openmail signs in with an OAuth client you register yourself. First enter the app you registered in Azure, with the Mobile and desktop applications type. Only personal outlook.com and Hotmail accounts are supported. See {doc} in the repository for the steps."
 msgstr "openmail se connecte avec un client OAuth que vous enregistrez vous-même. Entrez d’abord l’application que vous avez enregistrée dans Azure, avec le type Applications mobiles et de bureau. Seuls les comptes personnels Outlook.com et Hotmail sont pris en charge. Voir {doc} dans le référentiel pour les étapes."
@@ -5838,6 +5842,10 @@ msgstr "Connectez-vous à votre compte Microsoft personnel (outlook.com ou Hotma
 msgid "Sign-in failed: {reason}"
 msgstr "Échec de la connexion : {reason}"
 
+#: src/main/app/native-i18n.ts
+msgid "Sign-in failed. Go back to OpenMail and try again."
+msgstr "Échec de la connexion. Revenez à OpenMail et réessayez."
+
 #: src/renderer/src/lib/errors.ts
 msgid "Sign-in took too long. Try again and finish it in your browser."
 msgstr "La connexion a pris trop de temps. Réessayez et terminez-la dans votre navigateur."
@@ -5869,6 +5877,10 @@ msgstr "Les versions signées utilisent un jeton d’accès GitHub pour téléch
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Signed in as {login}. This Mac is {device}."
 msgstr "Connecté en tant que {login}. Ce Mac est {device}."
+
+#: src/main/app/native-i18n.ts
+msgid "Signed in. You can close this page and go back to OpenMail."
+msgstr "Connecté. Vous pouvez fermer cette page et revenir à OpenMail."
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Simplify your search query."

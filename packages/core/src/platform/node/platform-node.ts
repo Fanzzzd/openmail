@@ -16,11 +16,12 @@ import { appConfigFile, readClientsFile } from "../../config.js";
 import { firstClients } from "../../oauth-clients.js";
 import { databaseLayer } from "./db.js";
 import { NodeHtmlText } from "./html-text.js";
-import { OAuthLoopback } from "./oauth.js";
+import { OAuthLoopback, withAuthorizePage } from "./oauth.js";
 import { dataDir } from "./paths.js";
 import { makeSecretsKeyring } from "./secrets.js";
 import {
   type AppConfig,
+  type AuthorizePage,
   Browser,
   type ClientConfig,
   type OAuth,
@@ -59,6 +60,8 @@ export interface NodePlatformOptions {
   oauthClients?: ClientConfig;
   /** A JSON file of built-in OAuth clients, read when the layer builds. Used by the CLI in a checkout. */
   oauthClientsFile?: string;
+  /** Text of the browser page after sign-in, read at each sign-in. Defaults to English. */
+  oauthPage?: () => Promise<AuthorizePage>;
 }
 
 /** The OS command that opens `url` in the default browser. */
@@ -154,7 +157,9 @@ export function NodePlatform(opts: NodePlatformOptions = {}): Layer.Layer<Platfo
   return Layer.mergeAll(
     storage,
     makeSecretsKeyring(opts.beforeCredentialRead),
-    OAuthLoopback.pipe(Layer.provide([browser, http])),
+    (opts.oauthPage ? withAuthorizePage(OAuthLoopback, opts.oauthPage) : OAuthLoopback).pipe(
+      Layer.provide([browser, http]),
+    ),
     browser,
     http,
     NodeHtmlText(),

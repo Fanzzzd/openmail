@@ -15,6 +15,8 @@ const pruneVerified = (verified: typeof StaleSweepState.Type.verified, now: numb
   Object.fromEntries(Object.entries(verified ?? {}).filter(([, at]) => now - at < VERIFIED_TTL));
 const staleKey = (account: string) => `sync-stale:${account}`;
 const key = (account: string) => `sync-reset:${account}`;
+/** Bound parameters per candidate read; SQLite allows 32766. */
+const CANDIDATE_PAGE = 500;
 
 export function makeSyncResetStore(
   sql: SqlClient.SqlClient,
@@ -152,26 +154,38 @@ export function makeSyncResetStore(
           change.since === undefined
             ? folderScope
             : sql`${folderScope} AND m.date>=${change.since}`;
-        const rows = yield* all(
-          Schema.Struct({
-            providerId: Schema.String,
-            rfcMessageId: Schema.NullOr(Schema.String),
-            labels: Schema.fromJsonString(Schema.Array(Schema.String)),
-          }),
-        )(
-          sql`SELECT provider_id AS providerId,rfc_message_id AS rfcMessageId,labels_json AS labels FROM messages AS m WHERE m.account_id=${account} AND ${scope}`,
+        // Labels and Message-ID come after the body columns, so reading them walks each
+        // row's overflow pages. Identities come first and from an index; only the rows
+        // that are candidates are read in full.
+        const listed = yield* all(Schema.Struct({ providerId: Schema.String }))(
+          sql`SELECT m.provider_id AS providerId FROM messages AS m WHERE m.account_id=${account} AND ${scope}`,
         );
         const keep = new Set(change.keep ?? []);
         const swept =
           change._tag === "RebuildFolder" && change.candidates
             ? new Set(change.candidates)
             : undefined;
-        return {
-          local: rows.length,
-          candidates: rows.filter(
-            (row) => !keep.has(row.providerId) && (!swept || swept.has(row.providerId)),
+        const wanted = [
+          ...new Set(
+            listed
+              .map((row) => row.providerId)
+              .filter((id) => !keep.has(id) && (!swept || swept.has(id))),
           ),
-        };
+        ];
+        const candidates: ResetCandidate[] = [];
+        for (let offset = 0; offset < wanted.length; offset += CANDIDATE_PAGE)
+          candidates.push(
+            ...(yield* all(
+              Schema.Struct({
+                providerId: Schema.String,
+                rfcMessageId: Schema.NullOr(Schema.String),
+                labels: Schema.fromJsonString(Schema.Array(Schema.String)),
+              }),
+            )(
+              sql`SELECT m.provider_id AS providerId,m.rfc_message_id AS rfcMessageId,m.labels_json AS labels FROM messages AS m WHERE m.account_id=${account} AND ${scope} AND m.provider_id IN ${sql.in(wanted.slice(offset, offset + CANDIDATE_PAGE))}`,
+            )),
+          );
+        return { local: listed.length, candidates };
       }),
   };
 }

@@ -61,6 +61,7 @@ import { RemoteAccess } from "../remote/remote-access-live";
 import { MailRpcs } from "../../shared/rpc";
 import { openAttachment, printThread, saveMessage } from "../files/files";
 import { openMeeting } from "../system/meeting";
+import { setNativeLanguage } from "../app/native-i18n";
 import {
   createMainWindow,
   openThreadWindow,
@@ -120,6 +121,11 @@ const Handlers = MailRpcs.toLayer(
     const remote = yield* RemoteAccess;
     const apple = desktopAppleContacts(m);
     const downloads = appDownloads(m, yield* FiberSet.makeRuntime());
+    // The browser page after sign-in follows the language setting.
+    const signInLanguage = m.prefs.pipe(
+      Effect.tap((prefs) => Effect.sync(() => setNativeLanguage(prefs.language))),
+      Effect.ignore,
+    );
     return MailRpcs.of({
       ...mailboxHandlers(m, { contacts: apple }),
       NotificationPermission: () => Effect.promise(() => notificationPermission()),
@@ -130,8 +136,16 @@ const Handlers = MailRpcs.toLayer(
 
       NotificationActionCapabilities: () =>
         Effect.succeed(notificationActionCapabilities(process.platform)),
-      Connect: ({ input }) => Effect.tap(m.connect(input), () => focusApp),
-      Reauth: ({ accountId, feature }) => Effect.tap(m.reauth(accountId, feature), () => focusApp),
+      Connect: ({ input }) =>
+        signInLanguage.pipe(
+          Effect.andThen(m.connect(input)),
+          Effect.tap(() => focusApp),
+        ),
+      Reauth: ({ accountId, feature }) =>
+        signInLanguage.pipe(
+          Effect.andThen(m.reauth(accountId, feature)),
+          Effect.tap(() => focusApp),
+        ),
       ImapPresets: () => Effect.succeed(IMAP_PRESETS),
       AppleContactsStatus: () => apple.status,
       RefreshAppleContacts: () => apple.refresh(),

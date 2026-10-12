@@ -28,6 +28,19 @@ export const stateLabel = (label: string) =>
 export const outlookStateLabel = (label: string) =>
   stateLabel(label) || isOutlookClassification(label);
 export const RESET_VERIFICATION_LIMIT = 500;
+/**
+ * Outlook verifies 20 ids per $batch request, so 2000 is 100 requests. A bulk delete on the
+ * server reaches the local store within a few syncs; a throttled batch still defers the rest.
+ */
+export const OUTLOOK_RESET_VERIFICATION_LIMIT = 2000;
+export const resetVerificationLimit = (provider: Account["provider"]) =>
+  provider === "outlook" ? OUTLOOK_RESET_VERIFICATION_LIMIT : RESET_VERIFICATION_LIMIT;
+/** One sync's verification budget per provider, shared by that provider's accounts. */
+export const resetBudgets = (): Record<Account["provider"], { remaining: number }> => ({
+  gmail: { remaining: RESET_VERIFICATION_LIMIT },
+  outlook: { remaining: OUTLOOK_RESET_VERIFICATION_LIMIT },
+  imap: { remaining: RESET_VERIFICATION_LIMIT },
+});
 export const STALE_SWEEP_LIMIT = 500;
 const staleFingerprint = (candidate: ResetCandidate) =>
   sha256Hex(
@@ -81,7 +94,7 @@ export function makeResetGuard(
       0,
       Math.min(
         activeBudget.remaining,
-        candidates === undefined ? RESET_VERIFICATION_LIMIT : STALE_SWEEP_LIMIT,
+        candidates === undefined ? resetVerificationLimit(account.provider) : STALE_SWEEP_LIMIT,
       ),
     );
     if (!selected.length || !adapter.verifyResetCandidates) return;
@@ -292,6 +305,12 @@ export function makeResetGuard(
         for (const providerId of providerIds) {
           if (pending.has(providerId)) continue;
           const id = yield* store.messageIdForProvider(account.id, providerId);
+          // Nothing local to clear: a removal of mail this device never stored, such as
+          // old mail outside the sync window. A synced draft still needs its verdict.
+          if (!id) {
+            const draft = yield* store.draftByRemoteMessage(account.id, providerId);
+            if (Option.isNone(draft)) continue;
+          }
           const local = id ? yield* store.getMessage(id).pipe(Effect.orDie) : null;
           pending.set(providerId, {
             providerId,

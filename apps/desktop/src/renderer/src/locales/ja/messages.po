@@ -4424,6 +4424,10 @@ msgstr "OpenMail は最新です。"
 msgid "OpenMail safe mode"
 msgstr "OpenMail セーフ モード"
 
+#: src/main/app/native-i18n.ts
+msgid "OpenMail sign-in"
+msgstr "OpenMail サインイン"
+
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "openmail signs in with an OAuth client you register yourself. First enter the app you registered in Azure, with the Mobile and desktop applications type. Only personal outlook.com and Hotmail accounts are supported. See {doc} in the repository for the steps."
 msgstr "openmail は、自分で登録した OAuth クライアントを使用してサインインします。まず、Azure に登録したアプリを、モバイル アプリケーションとデスクトップ アプリケーションの種類で入力します。個人の Outlook.com アカウントと Hotmail アカウントのみがサポートされています。手順については、リポジトリの {doc} を参照してください。"
@@ -5838,6 +5842,10 @@ msgstr "ブラウザで個人用 Microsoft アカウント（outlook.com また�
 msgid "Sign-in failed: {reason}"
 msgstr "サインインに失敗しました: {reason}"
 
+#: src/main/app/native-i18n.ts
+msgid "Sign-in failed. Go back to OpenMail and try again."
+msgstr "サインインに失敗しました。OpenMail に戻って、もう一度お試しください。"
+
 #: src/renderer/src/lib/errors.ts
 msgid "Sign-in took too long. Try again and finish it in your browser."
 msgstr "サインインに時間がかかりすぎました。もう一度お試しのうえ、ブラウザーで完了してください。"
@@ -5869,6 +5877,10 @@ msgstr "署名付きビルドは、GitHub アクセス トークンを使用し�
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Signed in as {login}. This Mac is {device}."
 msgstr "{login} としてサインイン中。この Mac は {device} です。"
+
+#: src/main/app/native-i18n.ts
+msgid "Signed in. You can close this page and go back to OpenMail."
+msgstr "サインインしました。このページを閉じて OpenMail に戻ってください。"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Simplify your search query."

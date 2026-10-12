@@ -162,6 +162,17 @@ export interface AuthorizeRequest {
   extraParams?: Record<string, string>;
   /** Host written into the loopback redirect URI ("localhost" for Azure). The server binds 127.0.0.1. */
   redirectHost?: string;
+  /** Text of the page the browser shows after the redirect, in the app's language. Defaults to English. */
+  page?: AuthorizePage;
+}
+
+export interface AuthorizePage {
+  /** HTML lang of the text, such as "de". */
+  lang?: string;
+  title?: string;
+  doneText?: string;
+  /** Shown above the provider's error code. */
+  failedText?: string;
 }
 
 export interface TokenResponse {

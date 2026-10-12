@@ -90,6 +90,16 @@ it.effect("actual health, stale, reset and budget queries use indexed metadata",
     const health = queries.find((q) => q.sql.includes("AS total") && q.sql.includes("substr"));
     assert.ok(health);
     assert.include(health.plan.join("\n"), "messages_imap_scope");
+    // Label health counts read labels and read state from an index, never past the bodies.
+    const labelHealth = queries.find(
+      (q) => q.sql.includes("AS cachedTotal") && !q.sql.includes("substr"),
+    );
+    assert.ok(labelHealth);
+    assert.include(labelHealth.plan.join("\n"), "COVERING INDEX messages_thread_state");
+    assert.notMatch(labelHealth.plan.join("\n"), /SEARCH m USING INDEX/);
+    // A reset reads labels only for candidates, after listing identities from an index.
+    const resetIds = queries.filter((q) => /^SELECT m\.provider_id AS providerId FROM/.test(q.sql));
+    assert.lengthOf(resetIds, 2);
     const stale = queries.filter((q) => q.sql.includes("draftOnly"));
     assert.isAbove(stale.length, 0);
     for (const query of stale) {
@@ -101,11 +111,11 @@ it.effect("actual health, stale, reset and budget queries use indexed metadata",
         q.sql.includes("AS providerId") && /date\s*>=/.test(q.sql) && !q.sql.includes("substr"),
     );
     assert.ok(window);
-    assert.include(window.plan.join("\n"), "messages_account_date");
+    assert.include(window.plan.join("\n"), "COVERING INDEX messages_account_date");
     // Startup reads labels before the first list paint; categories must not walk message rows.
     const categories = queries.find((q) => q.sql.includes("LIKE 'category:%'"));
     assert.ok(categories);
-    assert.include(categories.plan.join("\n"), "COVERING INDEX messages_thread_labels");
+    assert.include(categories.plan.join("\n"), "COVERING INDEX messages_thread_state");
     const sizes = queries.find((q) => q.sql.includes("SUM(body_bytes)"));
     assert.ok(sizes);
     assert.include(sizes.plan.join("\n"), "COVERING INDEX messages_body_sizes");
@@ -296,7 +306,7 @@ it.effect("stale keyset pages wrap and include distinct orphan drafts", () =>
           sql`EXPLAIN QUERY PLAN SELECT from_name,from_addr,MIN(date) FROM messages WHERE account_id='account' AND thread_id='thread' GROUP BY from_addr`,
         ],
         [
-          "messages_thread_labels",
+          "messages_thread_state",
           sql`EXPLAIN QUERY PLAN SELECT labels_json FROM messages WHERE account_id='account' AND thread_id='thread'`,
         ],
         [

@@ -4428,6 +4428,10 @@ msgstr "OpenMail is up to date."
 msgid "OpenMail safe mode"
 msgstr "OpenMail safe mode"
 
+#: src/main/app/native-i18n.ts
+msgid "OpenMail sign-in"
+msgstr "OpenMail sign-in"
+
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "openmail signs in with an OAuth client you register yourself. First enter the app you registered in Azure, with the Mobile and desktop applications type. Only personal outlook.com and Hotmail accounts are supported. See {doc} in the repository for the steps."
 msgstr "openmail signs in with an OAuth client you register yourself. First enter the app you registered in Azure, with the Mobile and desktop applications type. Only personal outlook.com and Hotmail accounts are supported. See {doc} in the repository for the steps."
@@ -5842,6 +5846,10 @@ msgstr "Sign in with your personal Microsoft account (outlook.com or Hotmail) in
 msgid "Sign-in failed: {reason}"
 msgstr "Sign-in failed: {reason}"
 
+#: src/main/app/native-i18n.ts
+msgid "Sign-in failed. Go back to OpenMail and try again."
+msgstr "Sign-in failed. Go back to OpenMail and try again."
+
 #: src/renderer/src/lib/errors.ts
 msgid "Sign-in took too long. Try again and finish it in your browser."
 msgstr "Sign-in took too long. Try again and finish it in your browser."
@@ -5873,6 +5881,10 @@ msgstr "Signed builds use a GitHub access token to download private releases. Th
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Signed in as {login}. This Mac is {device}."
 msgstr "Signed in as {login}. This Mac is {device}."
+
+#: src/main/app/native-i18n.ts
+msgid "Signed in. You can close this page and go back to OpenMail."
+msgstr "Signed in. You can close this page and go back to OpenMail."
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Simplify your search query."

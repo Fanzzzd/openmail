@@ -1,5 +1,5 @@
 import { showDatabaseUpgrade, isDatabaseUpgradeWindow } from "./app/database-upgrade";
-import { nativeRecoveryLabels } from "./app/native-i18n";
+import { nativeAuthorizePage, nativeRecoveryLabels } from "./app/native-i18n";
 import { registerSecuritySchemes, prepareSessionSecurity } from "./security/security-bootstrap";
 import { openExternal } from "./security/external";
 import { createShutdownHandler } from "./app/quit";
@@ -162,6 +162,7 @@ if (app.isPackaged && !app.requestSingleInstanceLock()) {
                 inferenceProcess: desktopInferenceProcess,
                 dataDir: directory,
                 oauthClients: builtInOAuthClients,
+                oauthPage: nativeAuthorizePage,
                 inboxPoll: "45 seconds",
                 imapIdle: true,
                 backgroundReady: Deferred.await(painted),

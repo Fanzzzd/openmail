@@ -71,15 +71,36 @@ export function databaseQuickCheck(file: string): QuickCheckResult {
   }
 }
 
-/** The same check on a worker thread, so a caller's event loop keeps running. Falls back inline. */
-export function databaseQuickCheckInWorker(file: string): Promise<QuickCheckResult> {
+/** A quick_check that has not answered by then is treated as unavailable: the recovery prompt. */
+export const QUICK_CHECK_TIMEOUT_MS = 120_000;
+
+/** The part of a worker thread the check uses; tests pass a fake. */
+export interface QuickCheckWorker {
+  once(event: "message" | "error" | "exit", listener: (value: unknown) => void): unknown;
+  terminate(): Promise<unknown>;
+}
+const integrityWorker = (file: string): QuickCheckWorker =>
+  new Worker(new URL("./integrity-worker.mjs", import.meta.url), {
+    workerData: { file },
+    execArgv: [],
+  });
+
+/**
+ * The same check on a worker thread, so a caller's event loop keeps running. Falls back
+ * inline when no worker starts. A worker that hangs, on a stalled disk say, is stopped
+ * after `timeoutMs` and the result is "unavailable".
+ */
+export function databaseQuickCheckInWorker(
+  file: string,
+  {
+    timeoutMs = QUICK_CHECK_TIMEOUT_MS,
+    startWorker = integrityWorker,
+  }: { timeoutMs?: number; startWorker?: (file: string) => QuickCheckWorker } = {},
+): Promise<QuickCheckResult> {
   if (!existsSync(file)) return Promise.resolve("ok");
-  let worker: Worker;
+  let worker: QuickCheckWorker;
   try {
-    worker = new Worker(new URL("./integrity-worker.mjs", import.meta.url), {
-      workerData: { file },
-      execArgv: [],
-    });
+    worker = startWorker(file);
   } catch {
     return Promise.resolve(databaseQuickCheck(file));
   }
@@ -88,8 +109,10 @@ export function databaseQuickCheckInWorker(file: string): Promise<QuickCheckResu
     const finish = (result: QuickCheckResult) => {
       if (settled) return;
       settled = true;
+      clearTimeout(timer);
       void worker.terminate().finally(() => resolve(result));
     };
+    const timer = setTimeout(() => finish("unavailable"), timeoutMs);
     worker.once("message", (reply: unknown) =>
       finish(
         typeof reply === "object" && reply !== null && ("rows" in reply || "errcode" in reply)

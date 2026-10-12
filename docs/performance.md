@@ -244,7 +244,8 @@ IMAP 通过 ImapFlow iterator 逐封解析并控制消费速度，批次保留�
 
 改动如下：
 
-- `listLabels` 的 Outlook 分类查询原先按 `messages_body_sizes` 扫描每行邮件，读取 `labels_json` 时要越过正文溢出页。查询现改用覆盖索引 `messages_thread_labels`，耗时从 58 ms 降到 2 ms。它在首屏前执行，主线程 SQLite 串行，后续 RPC 原先都排在它后面。一次冷启动测到 1.4 s。`performance-plans.test.ts` 断言该计划。
+- `listLabels` 的 Outlook 分类查询原先按 `messages_body_sizes` 扫描每行邮件，读取 `labels_json` 时要越过正文溢出页。查询现改用覆盖索引 `messages_thread_labels`（迁移 42 起为 `messages_thread_state`），耗时从 58 ms 降到 2 ms。它在首屏前执行，主线程 SQLite 串行，后续 RPC 原先都排在它后面。一次冷启动测到 1.4 s。`performance-plans.test.ts` 断言该计划。
+- 首次同步 2,000 封 HTML Outlook 邮件时，事件循环最长阻塞原先在 62 ms 到 1.27 s 之间（5 次，负载 11–14）。阻塞来自两条同步 SQL：重置候选查询读 `labels_json` 和 `rfc_message_id`，同步健康检查读 `labels_json` 和 `is_unread`。这些列排在正文列之后，按行读取要走完每封邮件的正文溢出页，冷缓存下一次查询最长 1.27 s。迁移 42 把同步健康检查和 `listLabels` 改到覆盖索引 `messages_thread_state`，`messages_account_date` 加上 `provider_id`。重置候选先从索引列出标识，只为真正的候选读整行。改后 5 次最长阻塞 25–61 ms（负载 33–43），p95 事件循环延迟 2.6–3.2 ms，测试报告见 `sync-performance.test.ts`。
 - `pagedList` 原先由 `Atom.family` 返回包装对象。family 只弱引用成员，GC 回收包装对象后，下一次读取会新建列表 atom，从第一页重新请求。启动时因此发出三次相同的 `Threads`。旧 atom 带着已加载的页保留 5 分钟闲置 TTL。现在每个 family 直接返回 atom，`threads-paging.test.ts` 在 GC 后检查挂载中的列表不变。
 - `electron-updater` 的 GitHub provider 改为首次检查更新时加载。主进程启动时加载约 1,100 个 ES 模块。Node compile cache 曾使模块求值提前约 70 ms，因安全原因不启用，见[安全说明](security.md)。
 - `openmail-app` 协议开启 `codeCache`。Chromium 第二次加载生成入口脚本的字节码缓存，第三次启动起使用。新构建的前两次启动仍约 211 ms。

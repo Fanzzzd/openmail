@@ -1026,7 +1026,7 @@ export const makeThreadsStore = ({
       }),
     )(sql`
         SELECT DISTINCT m.account_id AS accountId, j.value AS id, substr(j.value,10) AS name, NULL AS color
-        FROM messages m INDEXED BY messages_thread_labels JOIN accounts a ON a.id=m.account_id, json_each(m.labels_json) j
+        FROM messages m INDEXED BY messages_thread_state JOIN accounts a ON a.id=m.account_id, json_each(m.labels_json) j
         WHERE a.enabled=1 AND a.provider='outlook' AND j.value LIKE 'category:%' AND ${accountScope(sql, accountIds)}`);
     return [
       ...new Map(

@@ -4822,6 +4822,93 @@ for (const status of [200, 404] as const) {
   );
 }
 
+for (const { local, syncs } of [
+  { local: 500, syncs: [500] },
+  { local: 3000, syncs: [2000, 1000] },
+]) {
+  it.effect(
+    `a bulk server delete of 5000 messages with ${local} stored clears in ${syncs.length} sync(s)`,
+    () => {
+      const link = (key: string) =>
+        `${GRAPH}/me/mailFolders/${key}/messages/delta?$deltatoken=${key}`;
+      const removed = Array.from({ length: 5000 }, (_, index) => `gone-${index}`);
+      // The stored rows are spread through the removals, as recent mail is among old mail.
+      const stored = removed.filter((_, index) => (index * local) % 5000 < local);
+      const verified: string[][] = [];
+      const http = fakeHttp({
+        ...mailbox({
+          inbox: {
+            json: {
+              value: removed.map((id) => ({ id, "@removed": { reason: "deleted" } })),
+              "@odata.deltaLink": link("inbox"),
+            },
+          },
+        }),
+        "POST /$batch": (_url, call) => {
+          const { requests } = Schema.decodeUnknownSync(
+            Schema.Struct({
+              requests: Schema.Array(Schema.Struct({ id: Schema.String, url: Schema.String })),
+            }),
+          )(call.body);
+          // Header backfill shares $batch; presence probes select only the folder.
+          verified
+            .at(-1)
+            ?.push(
+              ...requests.flatMap((request) =>
+                request.url.endsWith("$select=id,parentFolderId") ? [request.url] : [],
+              ),
+            );
+          return {
+            json: { responses: requests.map((request) => ({ id: request.id, status: 404 })) },
+          };
+        },
+      });
+      const services = Layer.mergeAll(
+        StoreLive,
+        Layer.effect(
+          Providers,
+          makeOutlook.pipe(Effect.map((adapter) => ({ get: () => adapter }))),
+        ),
+      ).pipe(Layer.provideMerge(Layer.mergeAll(http.layer, MemoryPlatform(platformOptions))));
+      return Effect.gen(function* () {
+        const store = yield* Store,
+          mailbox = yield* Mailbox;
+        const saved = yield* store.upsertAccount("outlook", account.email);
+        yield* store.saveSyncCursor(
+          saved.id,
+          JSON.stringify({
+            __idType: "immutable",
+            ...Object.fromEntries([...WELL_KNOWN, "id-c1", "id-c2"].map((k) => [k, link(k)])),
+          }),
+        );
+        yield* store.transaction(
+          Effect.forEach(stored, (id) => store.upsertMessage(saved.id, incoming(id)), {
+            discard: true,
+          }),
+        );
+        for (const expected of syncs) {
+          verified.push([]);
+          yield* mailbox.sync(saved.id);
+          assert.strictEqual(verified.at(-1)?.length, expected);
+        }
+        // Only stored rows were verified, and each once.
+        assert.strictEqual(verified.flat().length, local);
+        assert.strictEqual(new Set(verified.flat()).size, local);
+        assert.deepStrictEqual(yield* store.pendingResetCandidates(saved.id), []);
+        for (const id of stored)
+          assert.strictEqual(yield* store.messageIdForProvider(saved.id, id), null);
+      }).pipe(
+        Effect.provide(
+          MailboxLive({ backgroundFlush: false, imapIdle: false }).pipe(
+            Layer.provideMerge(services),
+          ),
+        ),
+      );
+    },
+    60_000,
+  );
+}
+
 it.effect("an inbox poll spends one delta request, whatever the number of custom folders", () => {
   const link = (key: string) => `${GRAPH}/me/mailFolders/${key}/messages/delta?$deltatoken=${key}`;
   const custom = Array.from({ length: 100 }, (_, index) => `id-f${index}`);

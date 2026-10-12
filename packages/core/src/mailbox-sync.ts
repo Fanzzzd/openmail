@@ -25,7 +25,7 @@ import { BackgroundRead } from "./provider-connectivity.js";
 import { type Change } from "./services.js";
 import { logSyncCrash, type SyncCrashDiagnostic } from "./sync-crash.js";
 import { makeSyncHealth } from "./sync-health.js";
-import { makeResetGuard, RESET_VERIFICATION_LIMIT } from "./sync-reset.js";
+import { makeResetGuard, resetBudgets, resetVerificationLimit } from "./sync-reset.js";
 
 // Changes per write transaction (an Upsert and its Progress are two). Each one blocks
 // the main thread; 100 real messages took up to 509 ms of CPU, 10 took up to 104 ms.
@@ -107,7 +107,7 @@ export const makeSyncMailbox = (
     account: Account,
     scope?: "inbox",
     incrementalOnly = false,
-    budget = { remaining: RESET_VERIFICATION_LIMIT },
+    budget = { remaining: resetVerificationLimit(account.provider) },
   ) {
     let phase: typeof SyncCrashDiagnostic.Type.phase = "pull";
     const enter = (next: typeof phase) =>
@@ -270,15 +270,15 @@ export const makeSyncMailbox = (
       ? [yield* store.getAccount(accountId).pipe(Effect.orDie)]
       : yield* store.listAccounts;
     const results: SyncResult[] = [];
-    const budget = { remaining: RESET_VERIFICATION_LIMIT };
+    const budgets = resetBudgets();
     // One failing account does not stop the rest.
     for (const account of accounts) {
       if (account.enabled === false) continue;
       const result: SyncResult = yield* account.provider === "imap"
-        ? pullAccount(account, undefined, false, budget).pipe(
+        ? pullAccount(account, undefined, false, budgets.imap).pipe(
             imapPullLock(account.id).withPermits(1),
           )
-        : pullAccount(account, undefined, false, budget);
+        : pullAccount(account, undefined, false, budgets[account.provider]);
       if (account.provider === "imap" && !result.error) yield* flush([account.id]);
 
       results.push(result);

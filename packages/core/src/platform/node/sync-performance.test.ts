@@ -1,7 +1,7 @@
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { availableParallelism, loadavg, tmpdir } from "node:os";
 import { join } from "node:path";
-import { monitorEventLoopDelay } from "node:perf_hooks";
+import { monitorEventLoopDelay, PerformanceObserver } from "node:perf_hooks";
 import { DatabaseSync, type StatementSync } from "node:sqlite";
 import { Effect, Layer } from "effect";
 import { expect, it, vi } from "vitest";
@@ -92,6 +92,25 @@ function traceStatements() {
   };
 }
 
+/** Garbage-collection pauses, so a late timer can be told apart from a slow statement. */
+function traceGc() {
+  const pauses: { at: number; ms: number }[] = [];
+  const observer = new PerformanceObserver((list) => {
+    for (const entry of list.getEntries()) {
+      pauses.push({ at: entry.startTime, ms: entry.duration });
+    }
+  });
+  observer.observe({ entryTypes: ["gc"] });
+  return () => {
+    observer.disconnect();
+    return {
+      count: pauses.length,
+      totalMs: pauses.reduce((sum, pause) => sum + pause.ms, 0),
+      longest: pauses.toSorted((a, b) => b.ms - a.ms).slice(0, 5),
+    };
+  };
+}
+
 /** Counts event-loop turns that arrive more than BLOCK_MS late. */
 function countBlocks() {
   let blocks = 0;
@@ -138,6 +157,7 @@ it.skipIf(process.env.OPENMAIL_PERF !== "1")(
           yield* (yield* Store).upsertAccount(owner.provider, owner.email);
           const mailbox = yield* Mailbox;
           const stopCounting = countBlocks();
+          const stopGc = traceGc();
           delay.enable();
           const start = performance.now();
           const [result] = yield* mailbox.sync(owner.id);
@@ -146,8 +166,10 @@ it.skipIf(process.env.OPENMAIL_PERF !== "1")(
           const report = {
             elapsedMs,
             longestBlockMs: delay.max / 1e6,
+            p95BlockMs: delay.percentile(95) / 1e6,
             p99BlockMs: delay.percentile(99) / 1e6,
             blocksOver50Ms: stopCounting(),
+            gc: stopGc(),
             loadAverage: loadavg(),
             statements: trace.slowest(),
           };

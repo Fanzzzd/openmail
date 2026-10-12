@@ -1442,6 +1442,13 @@ CREATE TRIGGER snoozed_list_date_insert AFTER INSERT ON snoozed_messages BEGIN
        OR old.attachments_json IS NOT new.attachments_json BEGIN
      UPDATE message_search_meta SET search_flags=${searchFlags("new")} WHERE row_id=new.rowid;
    END;`,
+  // user_version 46: sync health, label lists and reset windows read message state from indexes.
+  // A row lookup reads the message's body pages too; on a cold 2,000-message sync one such
+  // scan blocked the event loop for up to a second.
+  `CREATE INDEX messages_thread_state ON messages(account_id,thread_id,is_unread,labels_json,provider_id);
+   DROP INDEX messages_thread_labels;
+   DROP INDEX messages_account_date;
+   CREATE INDEX messages_account_date ON messages(account_id,date DESC,provider_id);`,
 ];
 
 /** Index of migration 37, the cache rowid rebuild. It runs when user_version equals this index. */

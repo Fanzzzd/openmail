@@ -25,6 +25,8 @@ import { useMailSelection } from "./use-mail-selection";
 import { useMailShortcuts } from "./use-mail-shortcuts";
 import { useNativeMenuBridge } from "./use-native-menu-bridge";
 import { usePaneNavigation } from "./use-pane-navigation";
+import { forwardFrameKey } from "../features/reader/frame/forward-frame-key";
+import { parseHTML } from "linkedom";
 
 const state = vi.hoisted(() => {
   vi.resetModules();
@@ -506,6 +508,101 @@ it("keyboard owns typing and modal guards and dispatches the current keymap", as
   expect(state.operations).toHaveBeenCalledTimes(1);
   key("a", dom.window, { metaKey: true });
   expect(model.navigation.selection.ids.size).toBe(3);
+});
+
+const checked = () => [...model.navigation.selection.ids].toSorted();
+/** A key pressed in a message frame, a separate document, as the reader forwards it. */
+const frameKey = (value: string) => {
+  const frame = parseHTML("<html><body><p>Body</p></body></html>").document;
+  const Base = dom.window.Event;
+  vi.stubGlobal(
+    "KeyboardEvent",
+    class extends Base {
+      constructor(type: string, init: KeyboardEventInit & EventInit) {
+        super(type, init);
+        Object.assign(
+          this,
+          { metaKey: false, ctrlKey: false, altKey: false, shiftKey: false },
+          init,
+        );
+      }
+    },
+  );
+  frame.addEventListener("keydown", (event: KeyboardEvent) =>
+    forwardFrameKey(event, dom.window.document.body),
+  );
+  key(value, frame.body);
+};
+
+it("Gmail's X checks a second row after J, from the list and from the message frame", () => {
+  act(() => model.navigation.select("one", "mouse"));
+  key("x");
+  expect(checked()).toEqual(["one"]);
+  key("j");
+  expect(model.navigation.selection.focus).toBe("two");
+  expect(checked()).toEqual(["one"]);
+  key("x");
+  expect(checked()).toEqual(["one", "two"]);
+  expect(state.operations).not.toHaveBeenCalled();
+
+  act(() => model.navigation.select("one", "mouse"));
+  frameKey("x");
+  expect(checked()).toEqual(["one"]);
+  frameKey("j");
+  frameKey("x");
+  expect(checked()).toEqual(["one", "two"]);
+
+  // X twice unchecks the row; X again checks it, and J still keeps it.
+  act(() => model.navigation.select("one", "mouse"));
+  key("x");
+  key("x");
+  expect(checked()).toEqual([]);
+  key("x");
+  key("j");
+  key("x");
+  expect(checked()).toEqual(["one", "two"]);
+});
+
+it("shift-selection and opening a thread end X checking", () => {
+  // A shift range keeps its rows while J moves the cursor.
+  act(() => model.navigation.select("one", "mouse"));
+  key("ArrowDown", dom.window, { shiftKey: true });
+  expect(checked()).toEqual(["one", "two"]);
+  expect(model.navigation.selection.checking).toBe(false);
+  key("j");
+  expect(model.navigation.selection.focus).toBe("three");
+  expect(checked()).toEqual(["one", "two"]);
+  // A range shrunk back to one row is an open row again: J moves the selection.
+  act(() => model.navigation.select("one", "mouse"));
+  key("ArrowDown", dom.window, { shiftKey: true });
+  key("ArrowUp", dom.window, { shiftKey: true });
+  expect(checked()).toEqual(["one"]);
+  key("j");
+  expect(checked()).toEqual(["two"]);
+  // X after a shift range unchecks the cursor row and keeps checking with one row left.
+  key("ArrowDown", dom.window, { shiftKey: true });
+  expect(checked()).toEqual(["three", "two"]);
+  key("x");
+  expect(checked()).toEqual(["two"]);
+  key("k");
+  expect(checked()).toEqual(["two"]);
+  expect(model.navigation.selection.focus).toBe("two");
+  // Shift extends from the checked rows and ends checking.
+  key("x");
+  key("j");
+  key("ArrowDown", dom.window, { shiftKey: true });
+  expect(model.navigation.selection.checking).toBe(false);
+  // Opening a thread ends checking: J then moves the open thread.
+  key("x");
+  expect(model.navigation.selection.checking).toBe(true);
+  act(() => model.navigation.selectRow("one", { toggle: false, range: false }));
+  expect(model.navigation.selection.checking).toBe(false);
+  key("j");
+  expect(checked()).toEqual(["two"]);
+  key("x");
+  act(() => model.navigation.select("three", "keyboard"));
+  key("k");
+  expect(checked()).toEqual(["two"]);
 });
 
 it("native bridge defers search while a dialog is open and updates menu state", async () => {

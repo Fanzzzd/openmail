@@ -6,7 +6,13 @@ import { HttpClient, HttpClientRequest, HttpClientResponse } from "effect/http";
 import { AuthError, ProviderError } from "../../errors.js";
 import { tokenTimeout } from "../../provider-retry.js";
 import { tokenEndpointFailure } from "../../reauth.js";
-import { type AuthorizeRequest, Browser, OAuth, type TokenResponse } from "../../services.js";
+import {
+  type AuthorizePage,
+  type AuthorizeRequest,
+  Browser,
+  OAuth,
+  type TokenResponse,
+} from "../../services.js";
 
 /**
  * Authorization-code flow with PKCE and a loopback redirect (RFC 8252). The
@@ -61,21 +67,28 @@ const escapeHtml = (text: string) =>
     (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] ?? c,
   );
 
+const ENGLISH_PAGE = {
+  lang: "en",
+  title: "openmail sign-in",
+  doneText: "Signed in. You can close this page and go back to openmail.",
+  failedText: "Sign-in failed.",
+} satisfies Required<AuthorizePage>;
+
 /**
- * The page the browser shows after the redirect. Core does not know the app's
- * UI language, so it says the same thing in English and Chinese. The provider's
- * error code is reflected, so it is escaped.
+ * The page the browser shows after the redirect, in the language the caller passed.
+ * Every text is escaped: the provider's error code is reflected, and app text may hold `<`.
  */
-function page(error: string | null): string {
-  const [en, zh] =
+function page(error: string | null, text: AuthorizePage = {}): string {
+  const { lang, title, doneText, failedText } = { ...ENGLISH_PAGE, ...text };
+  const body =
     error === null
-      ? [
-          "Signed in. You can close this page and go back to openmail.",
-          "已登录，可以关闭这个页面回到 openmail。",
-        ]
-      : [`Sign-in failed: ${escapeHtml(error)}`, `登录失败：${escapeHtml(error)}`];
-  return `<meta charset="utf-8"><body style="font:16px system-ui;padding:3rem"><p lang="en">${en}</p><p lang="zh-CN">${zh}</p></body>`;
+      ? `<p>${escapeHtml(doneText)}</p>`
+      : `<p>${escapeHtml(failedText)}</p><p><code>${escapeHtml(error)}</code></p>`;
+  return `<!doctype html><html lang="${escapeHtml(lang)}"><meta charset="utf-8"><title>${escapeHtml(title)}</title><body style="font:16px system-ui;padding:3rem">${body}</body></html>`;
 }
+
+/** A request target that is not a URL, such as `GET http://[`, gets a 404 like any stranger. */
+const requestUrl = (target: string | undefined, base: string) => URL.parse(target ?? "/", base);
 
 export const OAuthLoopback: Layer.Layer<
   OAuth,
@@ -141,9 +154,10 @@ export const OAuthLoopback: Layer.Layer<
       // Only a request to the redirect path that carries this sign-in's state may
       // settle it. Anything else (a favicon, another local process probing the
       // port, a forged ?error=) gets a 404 and the sign-in keeps waiting.
-      server.on("request", (incoming, res) => {
-        const url = new URL(incoming.url ?? "/", redirectUri);
+      const answer = (incoming: http.IncomingMessage, res: http.ServerResponse) => {
+        const url = requestUrl(incoming.url, redirectUri);
         if (
+          url === null ||
           incoming.method !== "GET" ||
           url.pathname !== "/" ||
           url.searchParams.get("state") !== state
@@ -161,7 +175,7 @@ export const OAuthLoopback: Layer.Layer<
           "content-type": "text/html; charset=utf-8",
           "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'",
         });
-        res.end(page(error));
+        res.end(page(error, req.page));
         Deferred.doneUnsafe(
           code,
           !error && got
@@ -170,6 +184,15 @@ export const OAuthLoopback: Layer.Layer<
               ? Effect.fail(signInFailed("Sign-in cancelled", "cancelled"))
               : Effect.fail(signInFailed(`Sign-in failed: ${error}`)),
         );
+      };
+      // A listener that throws reaches the main process as an uncaught exception.
+      server.on("request", (incoming, res) => {
+        try {
+          answer(incoming, res);
+        } catch {
+          if (!res.headersSent) res.writeHead(500);
+          res.end();
+        }
       });
 
       const auth = new URL(req.authUrl);
@@ -217,3 +240,26 @@ export const OAuthLoopback: Layer.Layer<
     return OAuth.of({ authorize, refresh });
   }),
 );
+
+/**
+ * Fills each sign-in's result page from `text`, such as the desktop app's catalog in the
+ * person's language. A request that brings its own page keeps it; a failed lookup is English.
+ */
+export const withAuthorizePage = <E, R>(
+  layer: Layer.Layer<OAuth, E, R>,
+  text: () => Promise<AuthorizePage>,
+): Layer.Layer<OAuth, E, R> =>
+  Layer.effect(
+    OAuth,
+    Effect.gen(function* () {
+      const oauth = yield* OAuth;
+      return OAuth.of({
+        ...oauth,
+        authorize: (req) =>
+          (req.page
+            ? Effect.succeed(req.page)
+            : Effect.tryPromise(text).pipe(Effect.orElseSucceed((): AuthorizePage => ({})))
+          ).pipe(Effect.flatMap((page) => oauth.authorize({ ...req, page }))),
+      });
+    }),
+  ).pipe(Layer.provide(layer));

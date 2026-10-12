@@ -3,9 +3,9 @@ import {
   writeMigratedDatabase,
 } from "../test-support/migrated-database.js";
 import { expectFileBytes } from "../test-support/file-bytes.js";
-import { RECOVERY_TABLES } from "./platform/node/database-recovery.js";
+import { QUICK_CHECK_TIMEOUT_MS, RECOVERY_TABLES } from "./platform/node/database-recovery.js";
 import { DatabaseSync } from "node:sqlite";
-import { afterEach, expect, it } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 import { Effect, Layer, Stream, Fiber, Schema } from "effect";
 import {
   copyFileSync,
@@ -130,6 +130,30 @@ it("counts renderer crashes globally and prunes only the detection window", () =
   expect(log.crash("renderer-crash", 137)).toBe(false);
   expect(log.crash("renderer-crash", 139)).toBe(true);
   expect(log.preview(true).split("\n")).toHaveLength(3);
+});
+
+it("a quick_check worker that never replies is stopped after 120 s as unavailable", async () => {
+  const dir = temp();
+  writeFileSync(join(dir, "mail.db"), "");
+  const terminate = vi.fn(async () => 1);
+  vi.useFakeTimers();
+  try {
+    let result: string | undefined;
+    void checkLocalDatabaseInWorker(dir, {
+      startWorker: () => ({ once: () => undefined, terminate }),
+    }).then((value) => {
+      result = value;
+    });
+    await vi.advanceTimersByTimeAsync(QUICK_CHECK_TIMEOUT_MS - 1);
+    expect(result).toBeUndefined();
+    expect(terminate).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(terminate).toHaveBeenCalledTimes(1);
+    expect(result).toBe("unavailable");
+    expect(QUICK_CHECK_TIMEOUT_MS).toBe(120_000);
+  } finally {
+    vi.useRealTimers();
+  }
 });
 
 it("replaces an unreadable database with a verified migrated file and keeps the original", async () => {

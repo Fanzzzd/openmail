@@ -182,14 +182,18 @@ it("releases a route's thread once a present message has loaded without losing s
 });
 
 it("Gmail's X checks rows under a cursor that J and K move without clearing them", () => {
-  // X on the open row unchecks it; the cursor stays there.
+  // X on the open row starts checking and keeps it checked; a second X unchecks it.
+  expect(checkingRows(singleSelection("b"))).toBe(false);
   let selection = toggleFocused(singleSelection("b"));
+  expect([...selection.ids]).toEqual(["b"]);
+  expect(checkingRows(selection)).toBe(true);
+  selection = toggleFocused(selection);
   expect([...selection.ids]).toEqual([]);
   expect(selection.focus).toBe("b");
   expect(checkingRows(selection)).toBe(true);
   selection = toggleFocused(selection);
   expect([...selection.ids]).toEqual(["b"]);
-  expect(checkingRows(selection)).toBe(false);
+  expect(checkingRows(selection)).toBe(true);
   selection = toggleFocused(moveCursor(toggleFocused(selection), rows, 1));
   expect([...selection.ids]).toEqual(["c"]);
   selection = toggleFocused(moveCursor(moveCursor(selection, rows, 1), rows, 1));

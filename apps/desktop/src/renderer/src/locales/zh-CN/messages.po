@@ -4434,6 +4434,10 @@ msgstr "OpenMail 已是最新版本。"
 msgid "OpenMail safe mode"
 msgstr "OpenMail 安全模式"
 
+#: src/main/app/native-i18n.ts
+msgid "OpenMail sign-in"
+msgstr "OpenMail 登录"
+
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "openmail signs in with an OAuth client you register yourself. First enter the app you registered in Azure, with the Mobile and desktop applications type. Only personal outlook.com and Hotmail accounts are supported. See {doc} in the repository for the steps."
 msgstr "openmail 用你自己注册的 OAuth 客户端登录。先填入Azure 里注册的应用，类型选移动和桌面应用。只支持个人 outlook.com 和 hotmail 账户。步骤见仓库里的 {doc}。"
@@ -5848,6 +5852,10 @@ msgstr "在浏览器里用你的个人 Microsoft 账户（outlook.com 或 Hotmai
 msgid "Sign-in failed: {reason}"
 msgstr "登录失败：{reason}"
 
+#: src/main/app/native-i18n.ts
+msgid "Sign-in failed. Go back to OpenMail and try again."
+msgstr "登录失败。请回到 OpenMail 重试。"
+
 #: src/renderer/src/lib/errors.ts
 msgid "Sign-in took too long. Try again and finish it in your browser."
 msgstr "登录超时。请重试，并在浏览器中完成登录。"
@@ -5879,6 +5887,10 @@ msgstr "正式签名的应用使用 GitHub 访问令牌下载私库更新。令�
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Signed in as {login}. This Mac is {device}."
 msgstr "已登录为 {login}。这台 Mac 是 {device}。"
+
+#: src/main/app/native-i18n.ts
+msgid "Signed in. You can close this page and go back to OpenMail."
+msgstr "已登录。可以关闭这个页面，回到 OpenMail。"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Simplify your search query."

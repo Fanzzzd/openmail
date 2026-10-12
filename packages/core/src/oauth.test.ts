@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import net from "node:net";
 
 import { NodeCrypto } from "@effect/platform-node";
 import { assert, it } from "@effect/vitest";
@@ -6,7 +7,7 @@ import { Deferred, Effect, Fiber, Layer, Option, Ref } from "effect";
 import { TestClock } from "effect/testing";
 import { HttpClient, HttpClientError, HttpClientResponse } from "effect/http";
 
-import { OAuthLoopback } from "./platform/node/oauth.js";
+import { OAuthLoopback, withAuthorizePage } from "./platform/node/oauth.js";
 import { Browser, OAuth } from "./services.js";
 
 /**
@@ -255,5 +256,75 @@ it.live("interrupting a sign-in closes the loopback server", () =>
       ),
     );
     assert.isTrue(refused);
+  }),
+);
+
+/** Writes `request` on a raw socket, so the request line can be something no HTTP client sends. */
+const rawRequest = (redirect: URL, request: string) =>
+  new Promise<string>((resolve, reject) => {
+    const socket = net.connect(Number(redirect.port), "127.0.0.1", () => socket.write(request));
+    let reply = "";
+    socket.on("data", (chunk) => {
+      reply += String(chunk);
+      if (reply.includes("\r\n\r\n")) socket.destroy();
+    });
+    socket.on("close", () => resolve(reply));
+    socket.on("error", reject);
+  });
+
+it.live("a malformed request target gets a 404 and the sign-in keeps waiting", () =>
+  Effect.gen(function* () {
+    const replies: string[] = [];
+    const layer = visiting(async (auth, redirect) => {
+      const state = auth.searchParams.get("state")!;
+      replies.push(await rawRequest(redirect, "GET http://[ HTTP/1.1\r\nHost: x\r\n\r\n"));
+      replies.push(await rawRequest(redirect, "GET http://[/?x HTTP/1.1\r\nHost: x\r\n\r\n"));
+      await fetch(withParams(redirect, { code: "the-code", state }));
+    });
+    const tokens = yield* signIn.pipe(Effect.provide(layer));
+    assert.strictEqual(tokens.accessToken, "at");
+    assert.deepStrictEqual(
+      replies.map((reply) => reply.split("\r\n")[0]),
+      ["HTTP/1.1 404 Not Found", "HTTP/1.1 404 Not Found"],
+    );
+  }),
+);
+
+it.live("the result page shows the caller's text, escaped, and English by default", () =>
+  Effect.gen(function* () {
+    const pages: string[] = [];
+    const visit = (params: Record<string, string>) =>
+      visiting(async (auth, redirect) => {
+        const state = auth.searchParams.get("state")!;
+        pages.push(await (await fetch(withParams(redirect, { ...params, state }))).text());
+      });
+    yield* signIn.pipe(Effect.provide(visit({ code: "the-code" })));
+    const localized = (params: Record<string, string>) =>
+      withAuthorizePage(visit(params), async () => ({
+        lang: "de",
+        title: "Anmeldung <openmail>",
+        doneText: "Angemeldet. <b>Sie</b> können diese Seite schließen.",
+        failedText: "Anmeldung fehlgeschlagen & abgebrochen.",
+      }));
+    yield* signIn.pipe(Effect.provide(localized({ code: "the-code" })));
+    yield* signIn.pipe(Effect.provide(localized({ error: "server_error" })), Effect.flip);
+    // A failed catalog lookup falls back to English.
+    yield* signIn.pipe(
+      Effect.provide(
+        withAuthorizePage(visit({ code: "the-code" }), () =>
+          Promise.reject(new Error("no catalog")),
+        ),
+      ),
+    );
+    const [english, done, failed, fallback] = pages;
+    assert.include(english, 'lang="en"');
+    assert.include(english, "Signed in. You can close this page and go back to openmail.");
+    assert.notInclude(english, "已登录");
+    assert.include(done, 'lang="de"');
+    assert.include(done, "<title>Anmeldung &lt;openmail&gt;</title>");
+    assert.include(done, "Angemeldet. &lt;b&gt;Sie&lt;/b&gt; können diese Seite schließen.");
+    assert.include(failed, "Anmeldung fehlgeschlagen &amp; abgebrochen.");
+    assert.include(failed, "<code>server_error</code>");
+    assert.include(fallback, "Signed in.");
   }),
 );

@@ -5,12 +5,22 @@ export interface Selection {
   ids: ReadonlySet<string>;
   anchor: string | null;
   focus: string | null;
+  /**
+   * Gmail's X started checking rows. J and K then move only the cursor, even while one
+   * row, or none, is checked. Opening or clicking a row ends it.
+   */
+  checking: boolean;
 }
-export const EMPTY_SELECTION: Selection = { ids: new Set(), anchor: null, focus: null };
+export const EMPTY_SELECTION: Selection = {
+  ids: new Set(),
+  anchor: null,
+  focus: null,
+  checking: false,
+};
 export const selectionForQuery = (selection: Selection, previous: string, current: string) =>
   previous === current ? selection : EMPTY_SELECTION;
 export const singleSelection = (id: string | null): Selection =>
-  id ? { ids: new Set([id]), anchor: id, focus: id } : EMPTY_SELECTION;
+  id ? { ids: new Set([id]), anchor: id, focus: id, checking: false } : EMPTY_SELECTION;
 
 /** A new reply can change the representative message ID of a selected conversation. */
 export function reconcileSelection(
@@ -36,7 +46,7 @@ export function reconcileSelection(
     anchor === selection.anchor &&
     focus === selection.focus
     ? selection
-    : { ids: new Set(ids), anchor, focus };
+    : { ids: new Set(ids), anchor, focus, checking: selection.checking };
 }
 
 export function selectRow(
@@ -49,12 +59,14 @@ export function selectRow(
     const anchor = selection.anchor ?? selection.focus ?? id;
     const start = rows.indexOf(anchor);
     const end = rows.indexOf(id);
-    if (start < 0 || end < 0) return { ids: new Set([...selection.ids, id]), anchor, focus: id };
+    if (start < 0 || end < 0)
+      return { ids: new Set([...selection.ids, id]), anchor, focus: id, checking: false };
     const range = rows.slice(Math.min(start, end), Math.max(start, end) + 1);
     return {
       ids: new Set(modifiers.toggle ? [...selection.ids, ...range] : range),
       anchor,
       focus: id,
+      checking: false,
     };
   }
   if (modifiers.toggle) {
@@ -62,7 +74,7 @@ export function selectRow(
     if (ids.has(id)) ids.delete(id);
     else ids.add(id);
     const focus = ids.has(id) ? id : ([...ids].at(-1) ?? null);
-    return { ids, anchor: focus, focus };
+    return { ids, anchor: focus, focus, checking: false };
   }
   return singleSelection(id);
 }
@@ -74,6 +86,7 @@ export function selectAll(selection: Selection, rows: readonly string[]): Select
     ids: loaded,
     anchor: loaded.has(selection.anchor ?? "") ? selection.anchor : (rows[0] ?? null),
     focus: loaded.has(selection.focus ?? "") ? selection.focus : (rows[0] ?? null),
+    checking: selection.checking,
   };
 }
 
@@ -85,7 +98,7 @@ export function trimSelection(selection: Selection, visible: ReadonlySet<string>
   const anchor = visible.has(selection.anchor ?? "") ? selection.anchor : focus;
   return ids.size === selection.ids.size && focus === selection.focus && anchor === selection.anchor
     ? selection
-    : { ids, focus, anchor };
+    : { ids, focus, anchor, checking: selection.checking };
 }
 
 /** The toolbar count, confirmation count and submitted IDs share these rows. */
@@ -116,14 +129,19 @@ export function moveSelection(
   return id ? selectRow(selection, rows, id, { range }) : selection;
 }
 
-/** Gmail's X: select or deselect the row under the cursor. The cursor stays on that row. */
+/**
+ * Gmail's X: check or uncheck the row under the cursor. The cursor stays on that row.
+ * X on the one open row starts checking and keeps that row checked.
+ */
 export function toggleFocused(selection: Selection): Selection {
   const id = selection.focus;
   if (id === null) return selection;
   const ids = new Set(selection.ids);
+  const opened = !selection.checking && ids.size === 1 && ids.has(id);
+  if (opened) return { ids, anchor: id, focus: id, checking: true };
   if (ids.has(id)) ids.delete(id);
   else ids.add(id);
-  return { ids, anchor: id, focus: id };
+  return { ids, anchor: id, focus: id, checking: true };
 }
 
 /** Gmail's J/K while rows are checked: move the cursor and keep the selection. */
@@ -134,12 +152,11 @@ export function moveCursor(
 ): Selection {
   const index = selection.focus === null ? -1 : rows.indexOf(selection.focus);
   const id = rows[Math.max(0, Math.min(rows.length - 1, index < 0 ? 0 : index + direction))];
-  return id ? { ids: selection.ids, anchor: id, focus: id } : selection;
+  return id ? { ids: selection.ids, anchor: id, focus: id, checking: true } : selection;
 }
 
-/** Whether J/K should move only the cursor: rows are checked, or the cursor is off them. */
-export const checkingRows = (selection: Selection) =>
-  selection.ids.size > 1 || (selection.focus !== null && !selection.ids.has(selection.focus));
+/** Whether J/K should move only the cursor: X started checking, or several rows are selected. */
+export const checkingRows = (selection: Selection) => selection.checking || selection.ids.size > 1;
 
 /** Pick outside the whole removed range; fall back at either end of the list. */
 export function selectionAfterRemoval(
@@ -158,6 +175,7 @@ export function selectionAfterRemoval(
         ? selection.anchor
         : ([...remaining][0] ?? null),
       focus: remaining.has(selection.focus ?? "") ? selection.focus : ([...remaining][0] ?? null),
+      checking: selection.checking,
     };
   if (preference === "none") return EMPTY_SELECTION;
   const indexes = rows.flatMap((id, index) => (removed.has(id) ? [index] : []));
