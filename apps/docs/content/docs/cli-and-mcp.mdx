@@ -45,13 +45,13 @@ Open **Settings → AI Access** and scroll to **AI apps**. OpenMail shows a card
 
 Click **Connect** to add OpenMail's MCP server to the app. Before anything changes, OpenMail shows the command it will run and a diff of the config file. Nothing happens until you confirm.
 
-- **Claude Code**: OpenMail runs `claude mcp add --scope user`. The server is available in every project.
-- **Codex**: OpenMail runs `codex mcp add`. Without the `codex` command, it edits `~/.codex/config.toml` directly.
+- **Claude Code**: OpenMail runs `claude mcp add-json --scope user`. The server is available in every project. To reconnect, it removes the old entry and adds the new one. If the add fails, it puts the old entry back.
+- **Codex**: OpenMail runs `codex mcp add` to connect and `codex mcp remove` to disconnect. To reconnect, or without the `codex` command, it edits `~/.codex/config.toml` directly.
 - **Claude** and **Cursor**: OpenMail edits `claude_desktop_config.json` or `~/.cursor/mcp.json`.
 
-OpenMail changes only the `openmail` entry, saves a backup next to the file first, and never writes tokens or passwords into another app's config. If the file can't be read, OpenMail refuses and changes nothing.
+OpenMail changes only the `openmail` entry. A reconnect changes only its command, arguments and `OPENMAIL_HOME`, so keys you added yourself, such as `disabled` or `startup_timeout_sec`, stay. When OpenMail edits a file itself, it saves a backup next to it first. It never writes tokens or passwords into another app's config. If the file can't be read, OpenMail refuses and changes nothing.
 
-A connected app is read-only. In the confirmation, check **Let … propose changes for you to approve** to add the proposal tools. If a card says **Set up for a different OpenMail**, the entry points to another copy of the app, for example one you ran from a disk image. Click **Reconnect**.
+A connected app is read-only. In the confirmation, check **Let … propose changes for you to approve** to add the proposal tools. If a card says **Points at another OpenMail copy**, the entry points to another copy of the app, for example one you ran from a disk image. Click **Reconnect**.
 
 Restart the app or start a new session after connecting. Claude must be quit and reopened.
 

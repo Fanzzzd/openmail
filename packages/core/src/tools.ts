@@ -5,7 +5,7 @@
  * it waits for the person or is refused for MCP. No tool sends mail; MCP
  * drafts stay local until the person saves or sends them in the app.
  */
-import { Config, Context, Effect, Exit, Layer, Option, Schema, SchemaGetter } from "effect";
+import { Context, Effect, Exit, Layer, Option, Schema, SchemaGetter } from "effect";
 import { McpSchema, Tool, Toolkit } from "effect/ai";
 
 import {
@@ -63,6 +63,8 @@ export class AgentIdentity extends Context.Service<
       readonly name: string;
       /** The session offers proposal tools: `openmail mcp --allow-writes`. */
       readonly proposalTools?: boolean;
+      /** Tool calls go to agent_activity. Only MCP server sessions; CLI commands don't. */
+      readonly recordsActivity?: boolean;
     }>;
   }
 >()("openmail/AgentIdentity") {
@@ -77,18 +79,16 @@ export class AgentIdentity extends Context.Service<
           surface: "mcp" as const,
           name: Option.getOrUndefined(ctx)?.clientInfo?.name ?? "mcp",
           proposalTools: options.proposalTools,
+          recordsActivity: true,
         })),
       ),
     });
   }
 
-  /** A read-only MCP session. */
-  static readonly mcp = AgentIdentity.mcpSession({ proposalTools: false });
-
   static fixed(
     surface: AgentSurface,
     name: string,
-    options: { readonly proposalTools?: boolean } = {},
+    options: { readonly proposalTools?: boolean; readonly recordsActivity?: boolean } = {},
   ): Layer.Layer<AgentIdentity> {
     return Layer.succeed(AgentIdentity, {
       current: Effect.succeed({ surface, name, ...options }),
@@ -984,11 +984,7 @@ export const MailToolkitLayer = MailToolkit.toLayer(
       const name = current.surface === "mcp" ? cleanMcpClientName(current.name) : current.name;
       const writeMode = yield* mailbox.agentWriteModeFor(name);
       const proposalTools = current.proposalTools ?? false;
-      const readOnlySession =
-        (yield* Config.String("OPENMAIL_READ_ONLY").pipe(
-          Config.withDefault("0"),
-          Effect.orElseSucceed(() => "0"),
-        )) === "1";
+      const readOnlySession = mailbox.readOnlySession;
       const steps: string[] = [];
       if (!accounts.length)
         steps.push("No mail account is connected. The person adds one in the OpenMail app.");
@@ -1454,7 +1450,7 @@ export const MailToolkitLayer = MailToolkit.toLayer(
       effect.pipe(
         Effect.onExit((exit) =>
           Effect.flatMap(identity.current, (current) =>
-            current.surface === "mcp"
+            current.recordsActivity
               ? mailbox.recordAgentActivity({
                   client: cleanMcpClientName(current.name),
                   tool,
@@ -1464,33 +1460,24 @@ export const MailToolkitLayer = MailToolkit.toLayer(
           ).pipe(Effect.ignore),
         ),
       );
-    return MailToolkit.of({
-      access_status: () => tracked("access_status", handlers.access_status()),
-      list_accounts: (p) => tracked("list_accounts", handlers.list_accounts(p)),
-      list_profiles: (p) => tracked("list_profiles", handlers.list_profiles(p)),
-      list_labels: (p) => tracked("list_labels", handlers.list_labels(p)),
-      list_threads: (p) => tracked("list_threads", handlers.list_threads(p)),
-      search: (p) => tracked("search", handlers.search(p)),
-      semantic_search: (p) => tracked("semantic_search", handlers.semantic_search(p)),
-      read_thread: (p) => tracked("read_thread", handlers.read_thread(p)),
-      sync: (p) => tracked("sync", handlers.sync(p)),
-      list_templates: (p) => tracked("list_templates", handlers.list_templates(p)),
-      read_template: (p) => tracked("read_template", handlers.read_template(p)),
-      list_signatures: (p) => tracked("list_signatures", handlers.list_signatures(p)),
-      read_signature: (p) => tracked("read_signature", handlers.read_signature(p)),
-      suggest_contacts: (p) => tracked("suggest_contacts", handlers.suggest_contacts(p)),
-      list_invites: (p) => tracked("list_invites", handlers.list_invites(p)),
-      calendar_overlap: (p) => tracked("calendar_overlap", handlers.calendar_overlap(p)),
-      list_attachments: (p) => tracked("list_attachments", handlers.list_attachments(p)),
-      attachment_text: (p) => tracked("attachment_text", handlers.attachment_text(p)),
-      list_proposals: (p) => tracked("list_proposals", handlers.list_proposals(p)),
-      read_proposal: (p) => tracked("read_proposal", handlers.read_proposal(p)),
-      modify_threads: (p) => tracked("modify_threads", handlers.modify_threads(p)),
-      snooze_threads: (p) => tracked("snooze_threads", handlers.snooze_threads(p)),
-      draft_message: (p) => tracked("draft_message", handlers.draft_message(p)),
-    });
+    return MailToolkit.of(wrapHandlers(handlers, tracked));
   }),
 );
+
+type AnyHandler = (params: never) => Effect.Effect<unknown, unknown, unknown>;
+
+/** Runs every handler through `wrap`, which gets the tool name and keeps the effect's types. */
+function wrapHandlers<H extends Record<string, AnyHandler>>(
+  handlers: H,
+  wrap: <A, E, R>(tool: string, effect: Effect.Effect<A, E, R>) => Effect.Effect<A, E, R>,
+): H {
+  const wrapped: Record<string, AnyHandler> = {};
+  for (const [tool, handler] of Object.entries(handlers)) {
+    wrapped[tool] = (params) => wrap(tool, handler(params));
+  }
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- same keys, and each wrapper keeps its handler's signature; Object.entries loses that.
+  return wrapped as H;
+}
 
 /** Tools whose results narrow to the accounts an agent may read, and are empty without one. */
 const ACCOUNT_SCOPED_TOOLS: ReadonlySet<string> = new Set([

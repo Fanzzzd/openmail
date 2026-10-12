@@ -167,11 +167,15 @@ msgstr "{more} další"
 msgid "{name} client"
 msgstr "{name} klient"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
+msgid "{name} makes this change with its own command, and only the openmail entry changes. If adding the new entry fails, OpenMail puts the old one back."
+msgstr "{name} tuto změnu provede vlastním příkazem a změní se jen položka openmail. Pokud se novou položku nepodaří přidat, OpenMail vrátí původní."
+
+#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "{name} will no longer start OpenMail's MCP server."
 msgstr "{name} už nebude spouštět server MCP aplikace OpenMail."
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "{name} will start OpenMail's MCP server and read the accounts you allowed. Mail goes to {name} and the model provider it uses."
 msgstr "{name} spustí server MCP aplikace OpenMail a bude číst účty, které jste povolili. Pošta půjde do {name} a k poskytovateli modelu, kterého používá."
 
@@ -609,7 +613,7 @@ msgstr "Povolit oznámení"
 msgid "Allow permanent deletion for {email}?"
 msgstr "Povolit trvalé smazání pro {email}?"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Allow proposals"
 msgstr "Povolit návrhy"
 
@@ -1084,7 +1088,7 @@ msgstr "K poštovnímu serveru se nyní nelze připojit."
 #: src/renderer/src/features/organize/PermanentDeletePermission.tsx
 #: src/renderer/src/features/reader/frame/LinkConfirmDialog.tsx
 #: src/renderer/src/features/reader/UnsubscribeButton.tsx
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/state/desktop.ts
@@ -1161,14 +1165,13 @@ msgstr "Změnit režim psaní?"
 msgid "Change your OAuth client"
 msgstr "Změnit klienta OAuth"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "Changes"
 msgstr "Změny"
 
-#. placeholder {0}: preview.file
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
-msgid "Changes to <0>{0}</0>:"
-msgstr "Změny v <0>{0}</0>:"
+#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
+msgid "Changes to <0/>:"
+msgstr "Změny v <0/>:"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Check again"
@@ -1451,7 +1454,7 @@ msgstr "Nová zpráva"
 msgid "Confidential"
 msgstr "Důvěrné"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Config file can't be read"
 msgstr "Konfigurační soubor nelze přečíst"
 
@@ -1476,15 +1479,16 @@ msgid "Confirm rule changes?"
 msgstr "Potvrdit změny pravidel?"
 
 #: src/renderer/src/features/accounts/OptionalServices.tsx
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
+#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "Connect"
 msgstr "Připojit"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Connect {name}"
 msgstr "Připojit {name}"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "Connect {name}?"
 msgstr "Připojit {name}?"
 
@@ -1512,11 +1516,11 @@ msgstr "Právě připojeno"
 msgid "Connected to {tailnet}"
 msgstr "Připojeno k {tailnet}"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Connected, can propose changes"
 msgstr "Připojeno, může navrhovat změny"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Connected, read only"
 msgstr "Připojeno, pouze pro čtení"
 
@@ -1524,7 +1528,7 @@ msgstr "Připojeno, pouze pro čtení"
 msgid "Connecting also asks for {pendingNames}."
 msgstr "Připojení si vyžádá také: {pendingNames}."
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Connects with <0>{cliPath}</0> and writes <1>{configPath}</1>."
 msgstr "Připojuje se přes <0>{cliPath}</0> a zapisuje <1>{configPath}</1>."
 
@@ -1601,7 +1605,7 @@ msgstr "Konverzace"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/RawMessage.tsx
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Copied"
@@ -1616,7 +1620,7 @@ msgstr "Zkopírováno do složek"
 #: src/renderer/src/features/organize/MultiOrganization.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/RawMessage.tsx
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "Copy"
 msgstr "Kopírovat"
@@ -1626,11 +1630,11 @@ msgstr "Kopírovat"
 msgid "Copy address"
 msgstr "Zkopírujte adresu"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Copy command for {name}"
 msgstr "Kopírovat příkaz pro {name}"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Copy config for {name}"
 msgstr "Kopírovat konfiguraci pro {name}"
 
@@ -1867,7 +1871,7 @@ msgstr "K poštovnímu serveru se nepodařilo navázat zabezpečené připojení
 msgid "Couldn't sync"
 msgstr "Synchronizace se nezdařila"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "Couldn't write the file. Nothing was changed. {detail}"
 msgstr "Soubor nelze zapsat. Nic se nezměnilo. {detail}"
 
@@ -2140,7 +2144,8 @@ msgstr "Zahodit koncept"
 msgid "Discard saved rule?"
 msgstr "Zahodit uložené pravidlo?"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
+#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Disconnect"
 msgstr "Odpojit"
@@ -2150,11 +2155,11 @@ msgstr "Odpojit"
 msgid "Disconnect {0}"
 msgstr "Odpojit {0}"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Disconnect {name}"
 msgstr "Odpojit {name}"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "Disconnect {name}?"
 msgstr "Odpojit {name}?"
 
@@ -2355,7 +2360,7 @@ msgstr "Upravit token"
 msgid "Editing removes unsupported formatting and images from this draft. Lists, bold, italic, underline and links are kept."
 msgstr "Úpravou se z tohoto konceptu odstraní nepodporované formátování a obrázky. Seznamy, tučné, kurzíva, podtržení a odkazy jsou zachovány."
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Edits <0>{configPath}</0>."
 msgstr "Upravuje <0>{configPath}</0>."
 
@@ -2548,7 +2553,7 @@ msgstr "Experimentální funkce lze aktivovat samostatně."
 msgid "External replies"
 msgstr "Externí odpovědi"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "failed"
 msgstr "selhalo"
 
@@ -3172,11 +3177,11 @@ msgstr "Změny pozvánky"
 msgid "Invitation status in this conversation"
 msgstr "Stav pozvánky v této konverzaci"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "It can propose archiving, labels, snoozes and drafts. Each waits for your approval."
 msgstr "Může navrhovat archivaci, štítky, odložení a koncepty. Každý návrh čeká na vaše schválení."
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "It can read and search allowed accounts. It can't change anything."
 msgstr "Může číst a prohledávat povolené účty. Nemůže nic měnit."
 
@@ -3184,9 +3189,10 @@ msgstr "Může číst a prohledávat povolené účty. Nemůže nic měnit."
 msgid "It is no longer stored here and has no web link."
 msgstr "Už tu není uložená a nemá webový odkaz."
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
-msgid "It starts <0>{command}</0>. Reconnect to use this app."
-msgstr "Spouští <0>{command}</0>. Aplikaci připojte znovu, abyste ji mohli používat."
+#. placeholder {0}: entry.args.join(" ")
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
+msgid "It starts <0><1/> <2>{0}</2></0>. Reconnect to use this app."
+msgstr "Spouští <0><1/> <2>{0}</2></0>. Aplikaci připojte znovu, abyste ji mohli používat."
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -3363,7 +3369,7 @@ msgstr "Krátké přejetí doleva"
 msgid "Left to right"
 msgstr "Zleva doprava"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "Let {name} propose changes for you to approve"
 msgstr "Povolit {name} navrhovat změny ke schválení"
 
@@ -3519,7 +3525,7 @@ msgstr "Nastavení poštovní schránky"
 msgid "Make OpenMail default"
 msgstr "Nastavit OpenMail jako výchozí"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Make read only"
 msgstr "Nastavit pouze pro čtení"
 
@@ -4324,7 +4330,7 @@ msgstr "Zatím žádné šablony. Jako jméno prvního příjemce použijte {tok
 msgid "No time zone supplied; shown in your local time."
 msgstr "Není zadáno žádné časové pásmo; zobrazeno ve vašem místním čase."
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "No tool calls yet."
 msgstr "Zatím žádná volání nástrojů."
 
@@ -4356,7 +4362,7 @@ msgstr "Žádné"
 msgid "Normal"
 msgstr "Normální"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Not connected"
 msgstr "Nepřipojeno"
 
@@ -4364,7 +4370,7 @@ msgstr "Nepřipojeno"
 msgid "Not granted"
 msgstr "Nepovoleno"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Not installed"
 msgstr "Nenainstalováno"
 
@@ -4573,7 +4579,7 @@ msgstr "Otevřít tento odkaz?"
 msgid "Open With"
 msgstr "Otevřít v aplikaci"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "OpenMail can't read this config file, so it changes nothing. Fix the file, then try again. {detail}"
 msgstr "OpenMail tento konfigurační soubor nedokáže přečíst, a proto nic nemění. Opravte soubor a zkuste to znovu. {detail}"
 
@@ -4581,7 +4587,7 @@ msgstr "OpenMail tento konfigurační soubor nedokáže přečíst, a proto nic 
 msgid "OpenMail couldn't start its local server."
 msgstr "OpenMail nemohl spustit svůj místní server."
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "OpenMail didn't find the claude command. Copy the command below instead."
 msgstr "OpenMail nenašel příkaz claude. Zkopírujte místo toho příkaz níže."
 
@@ -4598,7 +4604,7 @@ msgstr "OpenMail je výchozí e-mailová aplikace"
 msgid "OpenMail is up to date."
 msgstr "OpenMail je aktuální."
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "OpenMail runs"
 msgstr "OpenMail spustí"
 
@@ -4606,7 +4612,7 @@ msgstr "OpenMail spustí"
 msgid "OpenMail safe mode"
 msgstr "Bezpečný režim OpenMail"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "OpenMail saves a copy of the file next to it first, named .openmail-backup with the date. Nothing else in the file changes."
 msgstr "OpenMail nejdřív uloží vedle souboru jeho kopii s názvem .openmail-backup a datem. Nic jiného se v souboru nezmění."
 
@@ -4630,7 +4636,7 @@ msgstr "OpenMail se neočekávaně zastavil"
 msgid "OpenMail stopped unexpectedly three times within five minutes. Continue, reset the local mail cache and re-sync, or quit. Accounts, drafts and keychain tokens are kept."
 msgstr "OpenMail se během pěti minut třikrát neočekávaně ukončil. Můžete pokračovat, obnovit místní mezipaměť pošty a znovu synchronizovat nebo aplikaci ukončit. Účty, koncepty a tokeny v klíčence zůstanou zachovány."
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "OpenMail's MCP server can't start from here yet. See the note above."
 msgstr "Server MCP aplikace OpenMail se odsud zatím nemůže spustit. Viz poznámku výše."
 
@@ -4864,6 +4870,10 @@ msgstr "Fotky"
 msgid "Plain text"
 msgstr "Prostý text"
 
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
+msgid "Points at another OpenMail copy"
+msgstr "Odkazuje na jinou kopii OpenMail"
+
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Port"
 msgstr "Port"
@@ -4872,7 +4882,7 @@ msgstr "Port"
 msgid "Position"
 msgstr "Pořadí"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "Preparing the change…"
 msgstr "Připravuje se změna…"
 
@@ -5000,7 +5010,7 @@ msgstr "Rychlý náhled"
 msgid "Quit"
 msgstr "Ukončit"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "Quit and reopen Claude to load it."
 msgstr "Ukončete a znovu otevřete Claude, aby se změna načetla."
 
@@ -5047,7 +5057,7 @@ msgstr "Čtení"
 msgid "Recent"
 msgstr "Nedávné"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Recent tool calls"
 msgstr "Nedávná volání nástrojů"
 
@@ -5075,11 +5085,11 @@ msgstr "Příjemci mimo původní konverzaci:"
 msgid "Recommended. Known tracking pixels stay blocked."
 msgstr "Doporučeno. Známé sledovací pixely zůstanou blokované."
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Reconnect"
 msgstr "Znovu připojit"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Reconnect {name}"
 msgstr "Znovu připojit {name}"
 
@@ -5414,7 +5424,7 @@ msgstr "Obnovit panel nástrojů"
 msgid "Respond to this invitation from the message."
 msgstr "Na tuto pozvánku odpovězte ve zprávě."
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "Restart Cursor to load it."
 msgstr "Restartujte Cursor, aby se změna načetla."
 
@@ -5883,13 +5893,9 @@ msgstr "Server: celkem / nepřečtené / konverzace"
 msgid "Server unavailable"
 msgstr "Server není dostupný"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Set up by hand"
 msgstr "Nastavit ručně"
-
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
-msgid "Set up for a different OpenMail"
-msgstr "Nastaveno pro jiný OpenMail"
 
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
@@ -6211,7 +6217,7 @@ msgstr "Tailscale Serve na tomto portu už na tomto Macu používá něco jinéh
 msgid "Something went wrong. Please try again."
 msgstr "Něco se pokazilo. Zkuste to prosím znovu."
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "Something went wrong. Try again."
 msgstr "Něco se pokazilo. Zkuste to znovu."
 
@@ -6285,11 +6291,11 @@ msgstr "Zprávy s hvězdičkou"
 msgid "Start"
 msgstr "Začátek"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "Start a new Claude Code session to load it."
 msgstr "Spusťte novou relaci Claude Code, aby se změna načetla."
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "Start a new Codex session to load it."
 msgstr "Spusťte novou relaci Codex, aby se změna načetla."
 
@@ -6507,7 +6513,7 @@ msgstr "Velikost textu"
 msgid "The {client} OAuth client is not set up yet."
 msgstr "Klient {client} OAuth ještě není nastaven."
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "The app's command failed. Nothing else was changed. {detail}"
 msgstr "Příkaz aplikace selhal. Nic dalšího se nezměnilo. {detail}"
 
@@ -6535,11 +6541,11 @@ msgstr "Zobrazený odkaz může skrývat svůj cíl. Před otevřením zkontrolu
 msgid "The end must be after the start"
 msgstr "Konec musí být po startu"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "The file changed after the preview. Review the change again."
 msgstr "Soubor se po náhledu změnil. Zkontrolujte změnu znovu."
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "The file doesn't exist yet. OpenMail creates it."
 msgstr "Soubor zatím neexistuje. OpenMail ho vytvoří."
 
@@ -6595,7 +6601,7 @@ msgstr "Zpráva byla odeslána, ale její kopie chybí v odeslané poště."
 msgid "The OAuth client that signed in {email} is no longer configured. Sync is paused."
 msgstr "Klient OAuth, který přihlásil {email}, už není nakonfigurován. Synchronizace je pozastavena."
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "The openmail entry is written in a form OpenMail won't edit. Change it by hand. {detail}"
 msgstr "Položka openmail je zapsaná ve tvaru, který OpenMail neupravuje. Změňte ji ručně. {detail}"
 
@@ -6671,7 +6677,7 @@ msgstr "Tyto načtené konverzace budou přesunuty do koše. Tuto dávku můžet
 msgid "Third"
 msgstr "Třetí"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "This app isn't installed."
 msgstr "Tato aplikace není nainstalovaná."
 
@@ -7194,10 +7200,9 @@ msgstr "Když chce AI archivovat, přidat štítek nebo označit zprávu jako p�
 msgid "When you allow an account, questions and selected mail text, subjects, sender and recipient addresses are sent to Anthropic using your API key. Images, attachments and media stay on this device. Requests may incur API charges. Automatic summaries run only when you enable them for an account."
 msgstr "Po povolení účtu se dotazy a vybraný text pošty, předměty a adresy odesílatelů a příjemců odesílají společnosti Anthropic pomocí vašeho klíče API. Obrázky, přílohy a média zůstávají na tomto zařízení. Požadavky mohou být zpoplatněny. Automatické souhrny běží jen po zapnutí pro daný účet."
 
-#. placeholder {0}: preview.file
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
-msgid "Which changes <0>{0}</0>:"
-msgstr "Který mění <0>{0}</0>:"
+#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
+msgid "Which changes <0/>:"
+msgstr "Tím se změní <0/>:"
 
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Who"

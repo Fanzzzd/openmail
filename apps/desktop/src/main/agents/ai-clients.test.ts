@@ -5,6 +5,7 @@ import {
   mkdtemp,
   readdir,
   readFile,
+  realpath,
   rm,
   stat,
   symlink,
@@ -32,6 +33,8 @@ const LAUNCH: McpLaunch = {
   args: ["--mcp"],
   env: {},
 };
+/** A launch whose command exists, so an entry for it can count as connected. */
+const RUNNABLE: McpLaunch = { ...LAUNCH, command: process.execPath };
 
 const temps: string[] = [];
 afterEach(async () => {
@@ -57,14 +60,25 @@ async function fakeHost(): Promise<AiClientsHost & { log: string }> {
   };
 }
 
-/** A stand-in CLI that records its argv, one JSON array per line. */
-async function fakeCli(host: AiClientsHost, name: string, exitCode = 0) {
-  const dir = join(host.home, ".local", "bin");
+/**
+ * A stand-in CLI that records its argv, one JSON array per line. It exits with `exitCode`, or
+ * fails only when its second argument is `failOn` (`add-json`, say).
+ */
+async function fakeCli(
+  host: AiClientsHost,
+  name: string,
+  exitCode = 0,
+  options: { dir?: string; failOn?: string } = {},
+) {
+  const dir = options.dir ?? join(host.home, ".local", "bin");
   await mkdir(dir, { recursive: true });
   const file = join(dir, name);
+  const fails = options.failOn
+    ? `process.argv[3] === ${JSON.stringify(options.failOn)}`
+    : String(exitCode !== 0);
   await writeFile(
     file,
-    `#!${process.execPath}\nrequire("fs").appendFileSync(process.env.FAKE_LOG, JSON.stringify(process.argv.slice(2)) + "\\n");\nprocess.stderr.write("boom\\n");\nprocess.exit(${exitCode});\n`,
+    `#!${process.execPath}\nrequire("fs").appendFileSync(process.env.FAKE_LOG, JSON.stringify(process.argv.slice(2)) + "\\n");\nif (${fails}) { process.stderr.write("boom\\n"); process.exit(${exitCode || 1}); }\n`,
   );
   await chmod(file, 0o755);
   return file;
@@ -107,7 +121,47 @@ describe("JSON configs", () => {
       mcpServers: { openmail: { command: "x", args: [], env: {} } },
     });
     expect(() => editJson("{ // comment\n}", undefined)).toThrow(ConfigProblem);
-    expect(() => editJson('{"mcpServers": []}', { command: "x" })).toThrow(/not a JSON object/);
+    expect(() => editJson('{"mcpServers": []}', { command: "x", args: [], env: {} })).toThrow(
+      /not a JSON object/,
+    );
+  });
+
+  it("reconnects by changing only command, args and OPENMAIL_HOME", () => {
+    const mine = `{
+  "mcpServers": {
+    "openmail": {
+      "disabled": false,
+      "command": "/old",
+      "args": ["--mcp"],
+      "autoApprove": ["search"],
+      "env": { "OPENMAIL_HOME": "/old/data", "DEBUG": "1" }
+    }
+  }
+}
+`;
+    const next = editJson(mine, { command: "/new", args: ["--mcp", "--allow-writes"], env: {} });
+    expect(JSON.parse(next).mcpServers.openmail).toEqual({
+      disabled: false,
+      command: "/new",
+      args: ["--mcp", "--allow-writes"],
+      autoApprove: ["search"],
+      env: { DEBUG: "1" },
+    });
+    expect(Object.keys(JSON.parse(next).mcpServers.openmail)).toEqual([
+      "disabled",
+      "command",
+      "args",
+      "autoApprove",
+      "env",
+    ]);
+    expect(next).toContain('"autoApprove": ["search"],');
+  });
+
+  it("reads and keeps a byte order mark", () => {
+    const withBom = `\uFEFF${original}`;
+    const added = editJson(withBom, { command: "x", args: [], env: {} });
+    expect(added.startsWith("\uFEFF{")).toBe(true);
+    expect(editJson(added, undefined)).toBe(withBom);
   });
 });
 
@@ -168,6 +222,29 @@ env = { OPENMAIL_HOME = "/tmp/a \\"b\\"" }
       args: ["--mcp"],
       env: { OPENMAIL_HOME: '/tmp/a "b"' },
     });
+  });
+
+  it("keeps the entry's own keys and subtables on reconnect", () => {
+    const mine = `[mcp_servers.openmail]
+command = "/old"
+args = ["--mcp"]
+startup_timeout_sec = 30
+
+[mcp_servers.openmail.env]
+OPENMAIL_HOME = "/old/data"
+DEBUG = "1"
+
+[projects."/x"]
+trust_level = "trusted"
+`;
+    const next = editToml(mine, LAUNCH);
+    expect(readTomlEntry(next)).toEqual({
+      command: LAUNCH.command,
+      args: ["--mcp"],
+      startup_timeout_sec: 30,
+      env: { DEBUG: "1" },
+    });
+    expect(next).toContain('\n[projects."/x"]\ntrust_level = "trusted"\n');
   });
 
   it("refuses inline definitions and files that don't parse", () => {
@@ -266,7 +343,9 @@ describe("clients in a fake home", () => {
     await fakeCli(host, "claude");
     await writeFile(
       join(host.home, ".claude.json"),
-      JSON.stringify({ mcpServers: { openmail: { type: "stdio", ...withWrites(LAUNCH, true) } } }),
+      JSON.stringify({
+        mcpServers: { openmail: { type: "stdio", ...withWrites(RUNNABLE, true) } },
+      }),
     );
     await mkdir(join(host.home, ".codex"));
     await writeFile(
@@ -275,14 +354,15 @@ describe("clients in a fake home", () => {
     );
     await mkdir(join(host.home, ".cursor"));
     await writeFile(join(host.home, ".cursor", "mcp.json"), "{ not json");
-    const views = await clientViews(host, LAUNCH);
-    expect(views.map((v) => [v.id, v.installed, v.method, v.state, v.proposalTools])).toEqual([
+    const views = await clientViews(host, RUNNABLE);
+    const proposals = (v: (typeof views)[number]) => "proposalTools" in v && v.proposalTools;
+    expect(views.map((v) => [v.id, v.installed, v.method, v.state, proposals(v)])).toEqual([
       ["claude-code", true, "cli", "connected", true],
       ["codex", true, "file", "stale", false],
       ["claude-desktop", false, "file", "notConnected", false],
       ["cursor", true, "file", "unreadable", false],
     ]);
-    expect(views[3]?.problem).toBeTruthy();
+    expect(views[3]?.state === "unreadable" && views[3].problem).toBeTruthy();
   });
 
   it("edits Claude Desktop's file after a preview, with a backup and the original mode", async () => {
@@ -294,22 +374,22 @@ describe("clients in a fake home", () => {
     await writeFile(file, before, { mode: 0o640 });
     await chmod(file, 0o640);
     const change = { client: "claude-desktop", action: "connect", proposalTools: false } as const;
-    const preview = await previewChange(host, change, LAUNCH);
+    const preview = await previewChange(host, change, RUNNABLE);
     expect(preview.commands).toEqual([]);
     expect(preview.backup).toBe(true);
     expect(
       preview.diff.filter((line) => line.kind === "add").map((line) => line.text.trim()),
-    ).toContain('"command": "/Applications/OpenMail.app/Contents/MacOS/OpenMail",');
-    await applyChange(host, change, LAUNCH, preview.token);
+    ).toContain(`"command": ${JSON.stringify(RUNNABLE.command)},`);
+    await applyChange(host, change, RUNNABLE, preview.token);
     const after = JSON.parse(await readFile(file, "utf8"));
     expect(after.theme).toBe("dark");
     expect(after.mcpServers.other).toEqual({ command: "o" });
-    expect(after.mcpServers.openmail).toEqual({ ...LAUNCH, args: ["--mcp"] });
+    expect(after.mcpServers.openmail).toEqual({ ...RUNNABLE, args: ["--mcp"] });
     expect((await stat(file)).mode & 0o777).toBe(0o640);
     const backups = (await readdir(dir)).filter((name) => name.includes(".openmail-backup-"));
     expect(backups).toEqual(["claude_desktop_config.json.openmail-backup-20261012-123456"]);
     expect(await readFile(join(dir, backups[0]!), "utf8")).toBe(before);
-    expect((await clientView(host, "claude-desktop", LAUNCH)).state).toBe("connected");
+    expect((await clientView(host, "claude-desktop", RUNNABLE)).state).toBe("connected");
     // No temp files left behind.
     expect((await readdir(dir)).filter((name) => name.startsWith("."))).toEqual([]);
   });
@@ -347,38 +427,128 @@ describe("clients in a fake home", () => {
     const host = await fakeHost();
     const cli = await fakeCli(host, "claude");
     const config = join(host.home, ".claude.json");
-    await writeFile(
-      config,
-      `${JSON.stringify({ mcpServers: { openmail: { command: "/old" } } }, null, 2)}\n`,
-    );
+    const mine = { command: "/old", autoApprove: ["search"] };
+    const write = (startups: number, entry: unknown) =>
+      writeFile(
+        config,
+        `${JSON.stringify({ numStartups: startups, mcpServers: { openmail: entry } })}\n`,
+      );
+    await write(1, mine);
     const launch = { ...LAUNCH, env: { OPENMAIL_HOME: "/tmp/a b; rm -rf ~" } };
     const change = { client: "claude-code", action: "connect", proposalTools: true } as const;
     const preview = await previewChange(host, change, launch);
+    const entry = {
+      command: LAUNCH.command,
+      autoApprove: ["search"],
+      args: ["--mcp", "--allow-writes"],
+      env: { OPENMAIL_HOME: "/tmp/a b; rm -rf ~" },
+    };
     expect(preview.commands).toEqual([
       [cli, "mcp", "remove", "--scope", "user", "openmail"],
-      [
-        cli,
-        "mcp",
-        "add",
-        "--scope",
-        "user",
-        "--transport",
-        "stdio",
-        "openmail",
-        "-e",
-        "OPENMAIL_HOME=/tmp/a b; rm -rf ~",
-        "--",
-        LAUNCH.command,
-        "--mcp",
-        "--allow-writes",
-      ],
+      [cli, "mcp", "add-json", "--scope", "user", "openmail", JSON.stringify(entry)],
     ]);
+    expect(preview.backup).toBe(false);
+    // Claude Code rewrites the rest of its file all the time; only the entry has to stay put.
+    await write(2, mine);
     await applyChange(host, change, launch, preview.token);
     expect(await calls(host)).toEqual(preview.commands.map((argv) => argv.slice(1)));
-    // OpenMail backs the file up even though the CLI does the edit.
-    expect(
-      (await readdir(host.home)).some((name) => name.startsWith(".claude.json.openmail-backup-")),
-    ).toBe(true);
+    // The CLI does the edit, so OpenMail saves no copy of the file.
+    expect((await readdir(host.home)).filter((name) => name.includes("openmail-backup"))).toEqual(
+      [],
+    );
+    await write(3, { command: "/x" });
+    await expect(applyChange(host, change, launch, preview.token)).rejects.toMatchObject({
+      reason: "changed",
+    });
+  });
+
+  it("puts Claude Code's old entry back when the add fails after the remove", async () => {
+    const host = await fakeHost();
+    await fakeCli(host, "claude", 2, { failOn: "add-json" });
+    const old = { type: "stdio", command: "/old", args: [], env: {} };
+    await writeFile(
+      join(host.home, ".claude.json"),
+      JSON.stringify({ mcpServers: { openmail: old } }),
+    );
+    const change = { client: "claude-code", action: "connect", proposalTools: false } as const;
+    const preview = await previewChange(host, change, LAUNCH);
+    const error = await applyChange(host, change, LAUNCH, preview.token).catch((e: unknown) => e);
+    expect(error).toMatchObject({ reason: "cliFailed" });
+    const log = await calls(host);
+    expect(log.map((argv) => (Array.isArray(argv) ? argv[1] : null))).toEqual([
+      "remove",
+      "add-json",
+      "add-json",
+    ]);
+    expect(log[2]).toEqual(["mcp", "add-json", "--scope", "user", "openmail", JSON.stringify(old)]);
+  });
+
+  it("finds CLIs in version manager folders, never in a per-shell folder", async () => {
+    const host = await fakeHost();
+    const fnm = join(host.home, ".local", "share", "fnm");
+    const install = join(fnm, "node-versions", "v22.1.0", "installation");
+    await fakeCli(host, "claude", 0, { dir: join(install, "bin") });
+    await mkdir(join(fnm, "aliases"), { recursive: true });
+    await symlink(install, join(fnm, "aliases", "default"));
+    const nvm = join(host.home, ".nvm");
+    for (const version of ["v9.0.0", "v20.1.0", "v20.10.0", "v21.0.0"])
+      await fakeCli(host, "codex", 0, { dir: join(nvm, "versions", "node", version, "bin") });
+    await mkdir(join(nvm, "alias"), { recursive: true });
+    await writeFile(join(nvm, "alias", "default"), "20\n");
+    const views = await clientViews(host, LAUNCH);
+    expect(views[0]?.cliPath).toBe(join(await realpath(install), "bin", "claude"));
+    expect(views[1]?.cliPath).toBe(join(nvm, "versions", "node", "v20.10.0", "bin", "codex"));
+  });
+
+  it("counts an entry whose command is gone as stale", async () => {
+    const host = await fakeHost();
+    await mkdir(join(host.home, ".cursor"));
+    const file = join(host.home, ".cursor", "mcp.json");
+    const gone = { ...LAUNCH, command: join(host.home, "gone", "node") };
+    await writeFile(file, JSON.stringify({ mcpServers: { openmail: gone } }));
+    expect((await clientView(host, "cursor", gone)).state).toBe("stale");
+    await writeFile(file, JSON.stringify({ mcpServers: { openmail: RUNNABLE } }));
+    expect((await clientView(host, "cursor", RUNNABLE)).state).toBe("connected");
+  });
+
+  it("keeps the newest five backups, counting same-second copies as numbers", async () => {
+    const host = await fakeHost();
+    const dir = join(host.home, ".cursor");
+    await mkdir(dir);
+    const file = join(dir, "mcp.json");
+    await writeFile(file, "{}\n");
+    const stamp = "mcp.json.openmail-backup-20261012-123456";
+    for (const suffix of ["", "-2", "-3", "-9", "-10"])
+      await writeFile(join(dir, `${stamp}${suffix}`), "{}\n");
+    await writeFile(join(dir, "mcp.json.openmail-backup-20261011-000000"), "{}\n");
+    const change = { client: "cursor", action: "connect", proposalTools: false } as const;
+    await applyChange(host, change, LAUNCH, (await previewChange(host, change, LAUNCH)).token);
+    const left = (await readdir(dir)).filter((name) => name.includes("backup"));
+    expect(left.toSorted()).toEqual(
+      [`${stamp}-10`, `${stamp}-11`, `${stamp}-2`, `${stamp}-3`, `${stamp}-9`].toSorted(),
+    );
+  });
+
+  it("reconnects Codex by editing the file, keeping the entry's own keys", async () => {
+    const host = await fakeHost();
+    const cli = await fakeCli(host, "codex");
+    await mkdir(join(host.home, ".codex"));
+    const file = join(host.home, ".codex", "config.toml");
+    await writeFile(file, '[mcp_servers.openmail]\ncommand = "/old"\nstartup_timeout_sec = 30\n');
+    const change = { client: "codex", action: "connect", proposalTools: false } as const;
+    const preview = await previewChange(host, change, LAUNCH);
+    expect(preview.commands).toEqual([]);
+    expect(preview.backup).toBe(true);
+    await applyChange(host, change, LAUNCH, preview.token);
+    expect(readTomlEntry(await readFile(file, "utf8"))).toEqual({
+      command: LAUNCH.command,
+      startup_timeout_sec: 30,
+      args: ["--mcp"],
+    });
+    expect(await calls(host)).toEqual([]);
+    const disconnect = { ...change, action: "disconnect" } as const;
+    const removal = await previewChange(host, disconnect, LAUNCH);
+    expect(removal.commands).toEqual([[cli, "mcp", "remove", "openmail"]]);
   });
 
   it("uses codex mcp add and reports a failing CLI", async () => {

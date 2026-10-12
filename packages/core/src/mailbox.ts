@@ -444,6 +444,8 @@ export class Mailbox extends Context.Service<
     /** The last MCP tool calls, newest first: tool names and outcomes only. */
     agentActivity(limit: number): Effect.Effect<AgentActivity[]>;
     recordAgentActivity(entry: { client: string; tool: string; ok: boolean }): Effect.Effect<void>;
+    /** OPENMAIL_READ_ONLY=1: no remote writes in this process. */
+    readonly readOnlySession: boolean;
     /** Write mode for one agent: its own policy, else the default. */
     agentWriteModeFor(name: string): Effect.Effect<AgentWriteMode>;
     /** Default write mode for agents without their own policy. */

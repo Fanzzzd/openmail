@@ -1,76 +1,70 @@
-import { join, resolve } from "node:path";
+import { resolve } from "node:path";
 
-import type { Mailbox } from "@openmail/core";
-import { Effect } from "effect";
+import { dataDir, type Mailbox, NodeSystem } from "@openmail/core";
+import { ConfigProvider, Effect } from "effect";
 import { app } from "electron";
 
 import { type AiClientChange, AiClientError } from "../../shared/ai-clients";
-import { appLaunch, applyChange, clientViews, previewChange, systemHost } from "./ai-clients";
+import {
+  appLaunch,
+  applyChange,
+  asClientError,
+  clientViews,
+  previewChange,
+  systemHost,
+} from "./ai-clients";
 
 /** The tool calls Settings groups per client. */
 const ACTIVITY_ROWS = 200;
 
 /**
- * The data folder this app uses, and whether a client must be told about it: the default one is
- * what `openmail mcp` finds by itself, anything else goes into the entry as OPENMAIL_HOME.
+ * This app's MCP command. The data folder goes into the entry as OPENMAIL_HOME only when it is
+ * not the one `openmail mcp` finds by itself (core's dataDir without OPENMAIL_HOME).
  */
-function dataFolders() {
-  const home = process.env.HOME ?? "";
-  const defaultDataDir =
-    process.platform === "darwin" ? join(home, "Library", "Application Support", "openmail") : "";
+const currentLaunch = Effect.gen(function* () {
   const isolated = app.commandLine.getSwitchValue("user-data-dir");
-  const dataDir = isolated
-    ? resolve(isolated)
-    : process.env.OPENMAIL_HOME
-      ? resolve(process.env.OPENMAIL_HOME)
-      : defaultDataDir;
-  return { dataDir, defaultDataDir };
-}
+  const directory = isolated ? resolve(isolated) : yield* dataDir;
+  const { OPENMAIL_HOME: _, ...withoutOverride } = process.env;
+  const defaultDataDir = yield* dataDir.pipe(
+    Effect.provide(ConfigProvider.layer(ConfigProvider.fromEnvRecord(withoutOverride))),
+  );
+  return yield* Effect.promise(() =>
+    appLaunch({
+      packaged: app.isPackaged,
+      execPath: process.execPath,
+      appPath: app.getAppPath(),
+      env: process.env,
+      dataDir: directory,
+      defaultDataDir,
+    }),
+  );
+}).pipe(Effect.provide(NodeSystem));
 
-const launch = () =>
-  appLaunch({
-    packaged: app.isPackaged,
-    execPath: process.execPath,
-    appPath: app.getAppPath(),
-    env: process.env,
-    ...dataFolders(),
-  });
+/** The launch for a change. Connect needs a launch that will still work tomorrow. */
+const launchFor = (change: AiClientChange) =>
+  Effect.flatMap(currentLaunch, ({ launch, problem }) =>
+    problem && change.action === "connect"
+      ? Effect.fail(new AiClientError({ reason: "launchUnavailable", detail: problem }))
+      : Effect.succeed(launch),
+  );
 
-const unexpected = (error: unknown) =>
-  error instanceof AiClientError
-    ? error
-    : new AiClientError({
-        reason: "writeFailed",
-        detail: error instanceof Error ? error.message : String(error),
-      });
+const attempt = <A>(run: () => Promise<A>) => Effect.tryPromise({ try: run, catch: asClientError });
 
 /** Settings → AI Access: detect AI apps, preview and make the change the person confirmed. */
 export const aiClientHandlers = (m: Mailbox["Service"]) => ({
   AiClients: () =>
     Effect.gen(function* () {
-      const { launch: current, problem } = yield* Effect.promise(launch);
-      const clients = yield* Effect.promise(() => clientViews(systemHost(), current));
+      const { launch, problem } = yield* currentLaunch;
+      const clients = yield* Effect.promise(() => clientViews(systemHost(), launch));
       const activity = yield* m.agentActivity(ACTIVITY_ROWS);
-      return { launch: current, launchProblem: problem, clients, activity };
+      return { launch, launchProblem: problem, clients, activity };
     }),
   PreviewAiClientChange: ({ change }: { change: AiClientChange }) =>
-    Effect.tryPromise({
-      try: async () => {
-        const { launch: current, problem } = await launch();
-        if (problem && change.action === "connect")
-          throw new AiClientError({ reason: "launchUnavailable", detail: problem });
-        return previewChange(systemHost(), change, current);
-      },
-      catch: unexpected,
-    }),
+    launchFor(change).pipe(
+      Effect.flatMap((launch) => attempt(() => previewChange(systemHost(), change, launch))),
+    ),
   ApplyAiClientChange: ({ change, token }: { change: AiClientChange; token: string }) =>
-    Effect.tryPromise({
-      try: async () => {
-        const { launch: current, problem } = await launch();
-        if (problem && change.action === "connect")
-          throw new AiClientError({ reason: "launchUnavailable", detail: problem });
-        await applyChange(systemHost(), change, current, token);
-      },
-      catch: unexpected,
-    }),
+    launchFor(change).pipe(
+      Effect.flatMap((launch) => attempt(() => applyChange(systemHost(), change, launch, token))),
+    ),
 });

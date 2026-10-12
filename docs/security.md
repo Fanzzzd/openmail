@@ -81,15 +81,17 @@ frame 标识依据：[Electron WebFrameMain](https://www.electronjs.org/docs/lat
 
 「设置 > AI 权限 > AI 应用」检测 Claude Code、Codex、Claude 和 Cursor，并读取它们的 MCP 配置判断连接状态。读取只解析配置，不改文件。OpenMail 只在用户点击「连接」「重新连接」或「断开连接」并在确认框里看过改动后，才改别的应用的配置：
 
-- 确认框列出要运行的命令（argv）和配置文件的 diff。主进程在应用前重新读取文件，内容哈希与预览不同就拒绝，要求重新预览。
-- Claude Code 和 Codex 用各自的 CLI：`claude mcp add|remove --scope user`、`codex mcp add|remove`。主进程用 `execFile` 加固定 argv 运行，不经过 shell，30 秒超时。没找到 Codex CLI 时直接改 `config.toml`；没找到 `claude` 时只提供复制命令。
-- Claude 和 Cursor 没有 CLI，主进程直接改 JSON。JSON 用 jsonc-parser 做最小文本编辑，只动 `mcpServers.openmail`；TOML 只替换 `[mcp_servers.openmail]` 表及其子表这一段文本，其余内容和注释原样保留。文件解析失败、条目写成内联表或改完读回不一致时拒绝，不猜。
-- 改之前在原文件旁写备份 `<文件名>.openmail-backup-<UTC 时间>`，保留原权限，每个文件最多留 5 份。写入走同目录临时文件加 rename，保留原权限；配置是符号链接时写到链接目标，链接保持不变。CLI 修改前同样先备份。
+- 确认框列出要运行的命令（argv）和配置文件的 diff。主进程在应用前重新计算，预览令牌不同就拒绝，要求重新预览。直接改文件时令牌是整个文件的哈希；走 CLI 时只哈希 `openmail` 条目，因为 Claude Code 随时改写 `~/.claude.json` 的其他部分。
+- Claude Code 用 `claude mcp add-json --scope user openmail <条目 JSON>` 和 `claude mcp remove --scope user openmail`。`add` 拒绝已有名称，所以重新连接先 remove 再 add-json；add-json 失败时用旧条目再 add-json 一次，放回原状。没找到 `claude` 时只提供复制命令。
+- Codex 新连接用 `codex mcp add`，断开用 `codex mcp remove`。`codex mcp add` 只能写命令、参数和 env，所以重新连接直接改 `config.toml`。没找到 Codex CLI 时同样直接改文件。CLI 都用 `execFile` 加固定 argv 运行，不经过 shell，30 秒超时。
+- Claude 和 Cursor 没有 CLI，主进程直接改 JSON。重新连接只改条目里的 `command`、`args` 和 `env.OPENMAIL_HOME`，用户自己加的键（`disabled`、`autoApprove`、`startup_timeout_sec`、其他 env）保留。JSON 用 jsonc-parser 逐键做最小文本编辑，保留 BOM；TOML 只替换 `[mcp_servers.openmail]` 表及其子表这一段文本，段内注释不保留，其余内容和注释原样保留。改完把前后两份都解析一遍：`openmail` 条目必须等于预期，删掉它之后剩下的内容必须完全相同，否则拒绝。文件解析失败或条目写成内联表时同样拒绝，不猜。
+- OpenMail 自己改文件之前在原文件旁写备份 `<文件名>.openmail-backup-<UTC 时间>[-n]`，保留原权限，每个文件按时间和序号留最新 5 份。CLI 自己改文件，不另做备份。写入走同目录临时文件加 rename，保留原权限；配置是符号链接时写到链接目标，链接保持不变。
 - 配置条目里只有命令、参数，以及数据目录不是默认值时的 `OPENMAIL_HOME`。不写 token、密钥或其他凭证。
+- 条目的命令是绝对路径但文件已不存在（例如版本管理器删掉的 Node）时，卡片显示指向另一个副本，提示重新连接。查找 CLI 时除 PATH 外还看 `~/.local/bin`、Homebrew、`~/.npm-global/bin`、Volta、Bun、pnpm，以及 fnm 和 nvm 的默认版本；只取解析后的绝对路径，不用 fnm 每个 shell 临时建的 multishell 目录。
 
-打包的 app 用自己的可执行文件启动 MCP：`OpenMail --mcp [--allow-writes]`。RunAsNode fuse 保持关闭，所以 `ELECTRON_RUN_AS_NODE` 不能让任意脚本借用 app 的签名、TCC 授权和钥匙串访问。`--mcp` 只运行 CLI 包里的 MCP 服务：不开窗口，不进 Dock，不取单实例锁，Chromium 数据放在临时目录。开发构建用 `node packages/cli/dist/cli.js mcp`。
+打包的 app 用自己的可执行文件启动 MCP：`OpenMail --mcp [--allow-writes]`。RunAsNode fuse 保持关闭，所以 `ELECTRON_RUN_AS_NODE` 不能让任意脚本借用 app 的签名、TCC 授权和钥匙串访问。`--mcp` 只运行 CLI 包里的 MCP 服务：不开窗口，不进 Dock，不取单实例锁。Chromium 数据放在每个进程自己的临时目录 `OpenMail MCP <pid>`，退出时删除，启动时清掉已退出进程留下的目录，多个客户端同时启动服务也不共用目录。MCP 服务等 Electron ready 之后才启动，因为推理 worker 是 utilityProcess。开发构建用 `node packages/cli/dist/cli.js mcp`。
 
-MCP 每次工具调用写一行 `agent_activity`：时间、客户端名、工具名、成功与否，不含参数和结果，最多 500 行。设置页按客户端显示最近的调用。实现见 [ai-clients.ts](../apps/desktop/src/main/agents/ai-clients.ts)、[mcp-config.ts](../apps/desktop/src/main/agents/mcp-config.ts) 和 [mcp-mode.ts](../apps/desktop/src/main/agents/mcp-mode.ts)，回归见 [ai-clients.test.ts](../apps/desktop/src/main/agents/ai-clients.test.ts)，测试只用临时 HOME 和假 CLI。
+MCP 服务每次工具调用写一行 `agent_activity`（CLI 的 `openmail tool` 命令不写）：时间、客户端名、工具名、成功与否，不含参数和结果，最多 500 行。设置页按客户端显示最近的调用。实现见 [ai-clients.ts](../apps/desktop/src/main/agents/ai-clients.ts)、[mcp-config.ts](../apps/desktop/src/main/agents/mcp-config.ts) 和 [mcp-mode.ts](../apps/desktop/src/main/agents/mcp-mode.ts)，回归见 [ai-clients.test.ts](../apps/desktop/src/main/agents/ai-clients.test.ts)，测试只用临时 HOME 和假 CLI。
 
 ## 远程访问
 

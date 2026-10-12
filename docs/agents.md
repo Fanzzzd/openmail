@@ -36,12 +36,12 @@ OAuth 注册步骤见 [Google](setup-google.md) 与 [Microsoft](setup-microsoft.
 
 在 app 的「设置 > AI 权限 > AI 应用」里，每个客户端一张卡片：Claude Code、Codex、Claude（桌面版）和 Cursor。卡片显示是否安装、`openmail` 条目是否存在、是否指向当前 app，以及该客户端最近的工具调用。「连接」「重新连接」「断开连接」先弹出确认框，列出要运行的命令和配置文件 diff，点确认才执行。机制、备份和原子写入只在[安全说明](security.md#连接-ai-应用)维护。
 
-| 客户端      | 连接方式                                                           | 配置文件                                                          |
-| ----------- | ------------------------------------------------------------------ | ----------------------------------------------------------------- |
-| Claude Code | `claude mcp add --scope user --transport stdio openmail -- <命令>` | `~/.claude.json` 顶层 `mcpServers`                                |
-| Codex       | `codex mcp add openmail -- <命令>`；没有 CLI 时直接改文件          | `~/.codex/config.toml` 的 `[mcp_servers.openmail]`                |
-| Claude      | 直接改文件                                                         | `~/Library/Application Support/Claude/claude_desktop_config.json` |
-| Cursor      | 直接改文件                                                         | `~/.cursor/mcp.json`                                              |
+| 客户端      | 连接方式                                                            | 配置文件                                                          |
+| ----------- | ------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| Claude Code | `claude mcp add-json --scope user openmail <条目 JSON>`             | `~/.claude.json` 顶层 `mcpServers`                                |
+| Codex       | `codex mcp add openmail -- <命令>`；重新连接或没有 CLI 时直接改文件 | `~/.codex/config.toml` 的 `[mcp_servers.openmail]`                |
+| Claude      | 直接改文件                                                          | `~/Library/Application Support/Claude/claude_desktop_config.json` |
+| Cursor      | 直接改文件                                                          | `~/.cursor/mcp.json`                                              |
 
 `<命令>` 在打包 app 里是 `/Applications/OpenMail.app/Contents/MacOS/OpenMail --mcp`，开发构建是 `node <仓库>/packages/cli/dist/cli.js mcp`。app 用的数据目录不是默认值时（例如 `--user-data-dir`），条目带上 `OPENMAIL_HOME`。勾选「允许 … 提议改动，由你批准」会加 `--allow-writes`。卡片里的「手动设置」给出可复制的命令或 JSON。
 

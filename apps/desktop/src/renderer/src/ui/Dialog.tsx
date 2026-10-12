@@ -29,6 +29,9 @@ interface DialogProps {
   finalFocus?: ComponentProps<typeof BaseDialog.Popup>["finalFocus"];
   /** The dialog draws its own close button, so a full-window sheet adds none. */
   ownClose?: boolean;
+  /** Opens over another dialog. Base UI skips a nested dialog's backdrop unless forced, so the
+   * dialog underneath would show through undimmed. */
+  nested?: boolean;
   children: ReactNode;
 }
 
@@ -61,6 +64,7 @@ export function Dialog({
   initialFocus,
   finalFocus,
   ownClose = false,
+  nested = false,
   children,
 }: DialogProps) {
   const narrow = useLayoutMode() === "narrow";
@@ -74,7 +78,8 @@ export function Dialog({
     >
       <BaseDialog.Portal>
         <BaseDialog.Backdrop
-          className={`no-drag fixed inset-0 z-50 ${backdropClassName} ${backdropMotion}`}
+          forceRender={nested}
+          className={`no-drag fixed inset-0 z-50 ${nested ? "bg-black/35 dark:bg-black/55" : backdropClassName} ${backdropMotion}`}
         />
         <BaseDialog.Popup
           aria-label={label}

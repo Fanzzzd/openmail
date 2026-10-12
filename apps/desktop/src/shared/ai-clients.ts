@@ -14,39 +14,42 @@ export const McpLaunch = Schema.Struct({
 });
 export type McpLaunch = typeof McpLaunch.Type;
 
-export const AiClientState = Schema.Literals([
-  /** No `openmail` entry in the client's config. */
-  "notConnected",
-  /** The entry starts this app's MCP server. */
-  "connected",
-  /** The entry starts something else: an old app path, another build or a hand-written command. */
-  "stale",
-  /** The config file exists but does not parse. OpenMail never edits it. */
-  "unreadable",
-]);
-export type AiClientState = typeof AiClientState.Type;
-
-export const AiClientView = Schema.Struct({
+const clientFields = {
   id: AiClientId,
   installed: Schema.Boolean,
   /**
-   * How Connect works: `cli` runs the client's own `mcp add` command, `file` edits its config
-   * file, `manual` means the person copies the command (the client has no CLI OpenMail found).
+   * How Connect works: `cli` runs the client's own `mcp` command, `file` edits its config file,
+   * `manual` means the person copies the command (the client has no CLI OpenMail found).
    */
   method: Schema.Literals(["cli", "file", "manual"]),
   cliPath: Schema.NullOr(Schema.String),
   configPath: Schema.String,
-  state: AiClientState,
-  /** The configured `openmail` entry, when there is one. */
+  /** What the person runs or pastes to connect by hand. */
+  manual: Schema.String,
+};
+
+const configured = {
+  /** The configured `openmail` entry; null when it has no command (an HTTP server, say). */
   entry: Schema.NullOr(McpLaunch),
   /** The entry passes --allow-writes, so the client sees the proposal tools. */
   proposalTools: Schema.Boolean,
-  /** The config file's parse error, for `unreadable`. */
-  problem: Schema.NullOr(Schema.String),
-  /** What the person runs or pastes to connect by hand. */
-  manual: Schema.String,
-});
+};
+
+export const AiClientView = Schema.Union([
+  /** No `openmail` entry in the client's config. */
+  Schema.Struct({ ...clientFields, state: Schema.Literal("notConnected") }),
+  /** The entry starts this app's MCP server. */
+  Schema.Struct({ ...clientFields, ...configured, state: Schema.Literal("connected") }),
+  /**
+   * The entry starts something else: another copy of the app, another build, a hand-written
+   * command, or a command that no longer exists.
+   */
+  Schema.Struct({ ...clientFields, ...configured, state: Schema.Literal("stale") }),
+  /** The config file exists but does not parse. OpenMail never edits it. */
+  Schema.Struct({ ...clientFields, state: Schema.Literal("unreadable"), problem: Schema.String }),
+]);
 export type AiClientView = typeof AiClientView.Type;
+export type AiClientState = AiClientView["state"];
 
 export const AiLaunchProblem = Schema.Literals([
   /** Development build without `pnpm build`: packages/cli/dist/cli.js is missing. */
@@ -87,9 +90,16 @@ export const AiClientPreview = Schema.Struct({
   /** The client CLI calls, in order, each as argv. Empty for a direct file edit. */
   commands: Schema.Array(Schema.Array(Schema.String)),
   diff: Schema.Array(DiffLine),
-  /** A copy of the file is saved next to it first. False when the file does not exist yet. */
+  /**
+   * OpenMail copies the file next to itself first. Only for its own edits: a CLI edits the file
+   * itself, and the file does not always exist yet.
+   */
   backup: Schema.Boolean,
-  /** The file's content hash at preview time. Apply refuses when the file changed since. */
+  /**
+   * A hash of what the change depends on at preview time: the whole file for a file edit, the
+   * `openmail` entry for a CLI (Claude Code rewrites the rest of its file all the time). Apply
+   * refuses when it changed since.
+   */
   token: Schema.String,
 });
 export type AiClientPreview = typeof AiClientPreview.Type;

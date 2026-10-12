@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { activityClient } from "./AiClientsSettings";
+import { activityClient } from "./ai-clients-ui";
 
 describe("AI app activity", () => {
   it("files MCP client names under the matching card", () => {

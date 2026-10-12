@@ -167,11 +167,15 @@ msgstr "{more} 詳細"
 msgid "{name} client"
 msgstr "{name} クライアント"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
+msgid "{name} makes this change with its own command, and only the openmail entry changes. If adding the new entry fails, OpenMail puts the old one back."
+msgstr "{name} が自身のコマンドでこの変更を行い、openmail の項目だけが変わります。新しい項目の追加に失敗した場合、OpenMail は元の項目を戻します。"
+
+#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "{name} will no longer start OpenMail's MCP server."
 msgstr "{name} は今後 OpenMail の MCP サーバーを起動しません。"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "{name} will start OpenMail's MCP server and read the accounts you allowed. Mail goes to {name} and the model provider it uses."
 msgstr "{name} は OpenMail の MCP サーバーを起動し、許可したアカウントを読み取ります。メールは {name} と、それが使うモデルの提供元に送られます。"
 
@@ -609,7 +613,7 @@ msgstr "通知を許可する"
 msgid "Allow permanent deletion for {email}?"
 msgstr "{email} の完全な削除を許可しますか?"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Allow proposals"
 msgstr "提案を許可"
 
@@ -1084,7 +1088,7 @@ msgstr "現在メールサーバーに接続できません。"
 #: src/renderer/src/features/organize/PermanentDeletePermission.tsx
 #: src/renderer/src/features/reader/frame/LinkConfirmDialog.tsx
 #: src/renderer/src/features/reader/UnsubscribeButton.tsx
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/state/desktop.ts
@@ -1161,14 +1165,13 @@ msgstr "書き込みモードを変更しますか?"
 msgid "Change your OAuth client"
 msgstr "OAuth クライアントを変更"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "Changes"
 msgstr "変更内容"
 
-#. placeholder {0}: preview.file
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
-msgid "Changes to <0>{0}</0>:"
-msgstr "<0>{0}</0> への変更："
+#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
+msgid "Changes to <0/>:"
+msgstr "<0/> への変更："
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Check again"
@@ -1451,7 +1454,7 @@ msgstr "新規メッセージ"
 msgid "Confidential"
 msgstr "機密"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Config file can't be read"
 msgstr "設定ファイルを読み取れません"
 
@@ -1476,15 +1479,16 @@ msgid "Confirm rule changes?"
 msgstr "ルールの変更を確認しますか?"
 
 #: src/renderer/src/features/accounts/OptionalServices.tsx
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
+#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "Connect"
 msgstr "接続"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Connect {name}"
 msgstr "{name} を接続"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "Connect {name}?"
 msgstr "{name} を接続しますか？"
 
@@ -1512,11 +1516,11 @@ msgstr "接続中"
 msgid "Connected to {tailnet}"
 msgstr "{tailnet} に接続済み"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Connected, can propose changes"
 msgstr "接続済み、変更を提案可能"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Connected, read only"
 msgstr "接続済み、読み取り専用"
 
@@ -1524,7 +1528,7 @@ msgstr "接続済み、読み取り専用"
 msgid "Connecting also asks for {pendingNames}."
 msgstr "接続すると {pendingNames} へのアクセスも要求されます。"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Connects with <0>{cliPath}</0> and writes <1>{configPath}</1>."
 msgstr "<0>{cliPath}</0> で接続し、<1>{configPath}</1> に書き込みます。"
 
@@ -1601,7 +1605,7 @@ msgstr "スレッド"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/RawMessage.tsx
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Copied"
@@ -1616,7 +1620,7 @@ msgstr "フォルダにコピーしました"
 #: src/renderer/src/features/organize/MultiOrganization.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/RawMessage.tsx
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "Copy"
 msgstr "コピー"
@@ -1626,11 +1630,11 @@ msgstr "コピー"
 msgid "Copy address"
 msgstr "アドレスをコピーする"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Copy command for {name}"
 msgstr "{name} のコマンドをコピー"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Copy config for {name}"
 msgstr "{name} の設定をコピー"
 
@@ -1867,7 +1871,7 @@ msgstr "メールサーバーと安全な接続を確立できませんでした
 msgid "Couldn't sync"
 msgstr "同期できませんでした"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "Couldn't write the file. Nothing was changed. {detail}"
 msgstr "ファイルを書き込めませんでした。何も変更していません。{detail}"
 
@@ -2140,7 +2144,8 @@ msgstr "下書きを破棄"
 msgid "Discard saved rule?"
 msgstr "保存されたルールを破棄しますか?"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
+#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Disconnect"
 msgstr "切断"
@@ -2150,11 +2155,11 @@ msgstr "切断"
 msgid "Disconnect {0}"
 msgstr "{0} を切断"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Disconnect {name}"
 msgstr "{name} を切断"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "Disconnect {name}?"
 msgstr "{name} を切断しますか？"
 
@@ -2355,7 +2360,7 @@ msgstr "トークンの編集"
 msgid "Editing removes unsupported formatting and images from this draft. Lists, bold, italic, underline and links are kept."
 msgstr "編集すると、サポートされていない書式設定と画像がこの下書きから削除されます。リスト、太字、斜体、下線、リンクは保持されます。"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Edits <0>{configPath}</0>."
 msgstr "<0>{configPath}</0> を編集します。"
 
@@ -2548,7 +2553,7 @@ msgstr "実験的な機能は個別に有効にすることができます。"
 msgid "External replies"
 msgstr "外部からの返信"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "failed"
 msgstr "失敗"
 
@@ -3172,11 +3177,11 @@ msgstr "招待状の変更"
 msgid "Invitation status in this conversation"
 msgstr "このスレッドの招待ステータス"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "It can propose archiving, labels, snoozes and drafts. Each waits for your approval."
 msgstr "アーカイブ、ラベル、スヌーズ、下書きを提案できます。どの提案もあなたの承認を待ちます。"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "It can read and search allowed accounts. It can't change anything."
 msgstr "許可したアカウントの読み取りと検索ができます。変更はできません。"
 
@@ -3184,9 +3189,10 @@ msgstr "許可したアカウントの読み取りと検索ができます。変
 msgid "It is no longer stored here and has no web link."
 msgstr "ここには保存されておらず、Web リンクもありません。"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
-msgid "It starts <0>{command}</0>. Reconnect to use this app."
-msgstr "<0>{command}</0> を起動します。このアプリを使うには再接続してください。"
+#. placeholder {0}: entry.args.join(" ")
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
+msgid "It starts <0><1/> <2>{0}</2></0>. Reconnect to use this app."
+msgstr "<0><1/> <2>{0}</2></0> を起動します。このアプリを使うには再接続してください。"
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -3363,7 +3369,7 @@ msgstr "左に短くスワイプ"
 msgid "Left to right"
 msgstr "左から右へ"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "Let {name} propose changes for you to approve"
 msgstr "{name} が変更を提案し、あなたが承認する"
 
@@ -3519,7 +3525,7 @@ msgstr "メールボックス設定"
 msgid "Make OpenMail default"
 msgstr "OpenMail をデフォルトにする"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Make read only"
 msgstr "読み取り専用にする"
 
@@ -4324,7 +4330,7 @@ msgstr "テンプレートはまだありません。最初の受信者の名前
 msgid "No time zone supplied; shown in your local time."
 msgstr "タイムゾーンが指定されていません。現地時間で表示されます。"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "No tool calls yet."
 msgstr "ツール呼び出しはまだありません。"
 
@@ -4356,7 +4362,7 @@ msgstr "なし"
 msgid "Normal"
 msgstr "標準"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Not connected"
 msgstr "未接続"
 
@@ -4364,7 +4370,7 @@ msgstr "未接続"
 msgid "Not granted"
 msgstr "未許可"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Not installed"
 msgstr "未インストール"
 
@@ -4573,7 +4579,7 @@ msgstr "このリンクを開きますか？"
 msgid "Open With"
 msgstr "このアプリケーションで開く"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "OpenMail can't read this config file, so it changes nothing. Fix the file, then try again. {detail}"
 msgstr "OpenMail はこの設定ファイルを読み取れないため、何も変更しません。ファイルを修正してから再試行してください。{detail}"
 
@@ -4581,7 +4587,7 @@ msgstr "OpenMail はこの設定ファイルを読み取れないため、何も
 msgid "OpenMail couldn't start its local server."
 msgstr "OpenMail のローカルサーバーを起動できませんでした。"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "OpenMail didn't find the claude command. Copy the command below instead."
 msgstr "OpenMail は claude コマンドを見つけられませんでした。代わりに下のコマンドをコピーしてください。"
 
@@ -4598,7 +4604,7 @@ msgstr "OpenMail はデフォルトの電子メール アプリです"
 msgid "OpenMail is up to date."
 msgstr "OpenMail は最新です。"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "OpenMail runs"
 msgstr "OpenMail が実行するコマンド"
 
@@ -4606,7 +4612,7 @@ msgstr "OpenMail が実行するコマンド"
 msgid "OpenMail safe mode"
 msgstr "OpenMail セーフ モード"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "OpenMail saves a copy of the file next to it first, named .openmail-backup with the date. Nothing else in the file changes."
 msgstr "OpenMail はまず、ファイルのコピーを同じ場所に .openmail-backup と日付を付けた名前で保存します。ファイルのほかの部分は変わりません。"
 
@@ -4630,7 +4636,7 @@ msgstr "OpenMail が予期せず停止しました"
 msgid "OpenMail stopped unexpectedly three times within five minutes. Continue, reset the local mail cache and re-sync, or quit. Accounts, drafts and keychain tokens are kept."
 msgstr "OpenMailが5分間に3回予期せず終了しました。続行するか、ローカルのメールキャッシュをリセットして再同期するか、終了してください。アカウント、下書き、キーチェーンのトークンは保持されます。"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "OpenMail's MCP server can't start from here yet. See the note above."
 msgstr "OpenMail の MCP サーバーはまだここから起動できません。上の注意をご覧ください。"
 
@@ -4864,6 +4870,10 @@ msgstr "写真"
 msgid "Plain text"
 msgstr "標準テキスト"
 
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
+msgid "Points at another OpenMail copy"
+msgstr "別の OpenMail のコピーを指しています"
+
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Port"
 msgstr "ポート"
@@ -4872,7 +4882,7 @@ msgstr "ポート"
 msgid "Position"
 msgstr "順番"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "Preparing the change…"
 msgstr "変更を準備中…"
 
@@ -5000,7 +5010,7 @@ msgstr "クイックルック"
 msgid "Quit"
 msgstr "終了"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "Quit and reopen Claude to load it."
 msgstr "Claude を終了して開き直すと読み込まれます。"
 
@@ -5047,7 +5057,7 @@ msgstr "表示"
 msgid "Recent"
 msgstr "最近"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Recent tool calls"
 msgstr "最近のツール呼び出し"
 
@@ -5075,11 +5085,11 @@ msgstr "元のスレッドに含まれない宛先："
 msgid "Recommended. Known tracking pixels stay blocked."
 msgstr "おすすめ。既知のトラッキングピクセルは引き続きブロックされます。"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Reconnect"
 msgstr "再接続"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Reconnect {name}"
 msgstr "{name} を再接続"
 
@@ -5414,7 +5424,7 @@ msgstr "ツールバーをリセット"
 msgid "Respond to this invitation from the message."
 msgstr "この招待にはメッセージから返答してください。"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "Restart Cursor to load it."
 msgstr "Cursor を再起動すると読み込まれます。"
 
@@ -5883,13 +5893,9 @@ msgstr "サーバー：合計 / 未読 / スレッド"
 msgid "Server unavailable"
 msgstr "サーバーに接続できません"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Set up by hand"
 msgstr "手動で設定"
-
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
-msgid "Set up for a different OpenMail"
-msgstr "別の OpenMail 用に設定済み"
 
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
@@ -6211,7 +6217,7 @@ msgstr "この Mac では、別のものがこのポートで Tailscale Serve �
 msgid "Something went wrong. Please try again."
 msgstr "何か問題が発生しました。もう一度試してください。"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "Something went wrong. Try again."
 msgstr "問題が発生しました。もう一度お試しください。"
 
@@ -6285,11 +6291,11 @@ msgstr "スター付きのメッセージ"
 msgid "Start"
 msgstr "開始"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "Start a new Claude Code session to load it."
 msgstr "Claude Code で新しいセッションを開始すると読み込まれます。"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "Start a new Codex session to load it."
 msgstr "Codex で新しいセッションを開始すると読み込まれます。"
 
@@ -6507,7 +6513,7 @@ msgstr "文字サイズ"
 msgid "The {client} OAuth client is not set up yet."
 msgstr "{client} OAuth クライアントはまだセットアップされていません。"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "The app's command failed. Nothing else was changed. {detail}"
 msgstr "アプリのコマンドが失敗しました。ほかには何も変更していません。{detail}"
 
@@ -6535,11 +6541,11 @@ msgstr "表示されたリンクは実際の接続先を隠している可能性
 msgid "The end must be after the start"
 msgstr "終わりは始まりの後にあるはずだ"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "The file changed after the preview. Review the change again."
 msgstr "プレビューの後にファイルが変更されました。変更内容をもう一度確認してください。"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "The file doesn't exist yet. OpenMail creates it."
 msgstr "ファイルはまだありません。OpenMail が作成します。"
 
@@ -6595,7 +6601,7 @@ msgstr "メッセージは送信されましたが、送信済みにコピーが
 msgid "The OAuth client that signed in {email} is no longer configured. Sync is paused."
 msgstr "{email} にサインインした OAuth クライアントは現在設定されていません。同期は一時停止されています。"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "The openmail entry is written in a form OpenMail won't edit. Change it by hand. {detail}"
 msgstr "openmail のエントリは OpenMail が編集しない形式で書かれています。手動で変更してください。{detail}"
 
@@ -6671,7 +6677,7 @@ msgstr "これらのロードされたスレッドはゴミ箱に移動されま
 msgid "Third"
 msgstr "第3"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "This app isn't installed."
 msgstr "このアプリはインストールされていません。"
 
@@ -7194,10 +7200,9 @@ msgstr "AIがアーカイブ、ラベル付け、開封済みへの変更を行�
 msgid "When you allow an account, questions and selected mail text, subjects, sender and recipient addresses are sent to Anthropic using your API key. Images, attachments and media stay on this device. Requests may incur API charges. Automatic summaries run only when you enable them for an account."
 msgstr "アカウントを許可すると、質問、選択したメール本文、件名、差出人と宛先のアドレスが、あなたのAPIキーを使ってAnthropicに送信されます。画像、添付ファイル、メディアはこのデバイスに保持されます。リクエストにはAPI料金が発生する場合があります。自動要約はアカウントごとに有効にした場合のみ実行されます。"
 
-#. placeholder {0}: preview.file
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
-msgid "Which changes <0>{0}</0>:"
-msgstr "変更されるファイル <0>{0}</0>："
+#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
+msgid "Which changes <0/>:"
+msgstr "これにより <0/> が変更されます："
 
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Who"

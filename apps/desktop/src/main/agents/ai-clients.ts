@@ -30,6 +30,7 @@ import {
   ConfigProblem,
   editJson,
   editToml,
+  isRecord,
   launchOf,
   lineDiff,
   readJsonEntry,
@@ -132,32 +133,112 @@ async function exists(path: string) {
   }
 }
 
+async function isExecutable(path: string) {
+  try {
+    await access(path, constants.X_OK);
+    return await isFile(path);
+  } catch {
+    return false;
+  }
+}
+
 async function findExecutable(name: string, dirs: readonly string[]) {
   for (const dir of dirs) {
     const candidate = join(dir, name);
-    try {
-      await access(candidate, constants.X_OK);
-      if (await isFile(candidate)) return candidate;
-    } catch {
-      // Next folder.
-    }
+    if (await isExecutable(candidate)) return candidate;
   }
   return null;
 }
 
+/** The real folder a link points to, only when it resolves to an absolute folder. */
+async function realDir(path: string) {
+  const real = await realpath(path).catch(() => null);
+  return real && isAbsolute(real) && (await stat(real).catch(() => null))?.isDirectory()
+    ? real
+    : null;
+}
+
+const versionParts = (name: string) =>
+  name
+    .replace(/^v/, "")
+    .split(".")
+    .map((part) => Number.parseInt(part, 10) || 0);
+const newestFirst = (a: string, b: string) => {
+  const [x, y] = [versionParts(a), versionParts(b)];
+  for (let i = 0; i < Math.max(x.length, y.length); i++)
+    if ((x[i] ?? 0) !== (y[i] ?? 0)) return (y[i] ?? 0) - (x[i] ?? 0);
+  return 0;
+};
+
+/**
+ * The global bin folders of Node version managers. An app launched from Finder never ran the
+ * shell hook that puts them on PATH, and the hook's per-shell folders (fnm's multishell) vanish
+ * with the shell, so only the managers' default installs count.
+ */
+async function versionManagerDirs(host: AiClientsHost): Promise<string[]> {
+  const dirs: string[] = [];
+  const fnmRoots = [
+    host.env.FNM_DIR,
+    join(host.home, ".local", "share", "fnm"),
+    join(host.home, "Library", "Application Support", "fnm"),
+  ];
+  for (const root of fnmRoots) {
+    if (!root || !isAbsolute(root)) continue;
+    const install = await realDir(join(root, "aliases", "default"));
+    if (install) dirs.push(join(install, "bin"));
+  }
+  const nvm =
+    host.env.NVM_DIR && isAbsolute(host.env.NVM_DIR) ? host.env.NVM_DIR : join(host.home, ".nvm");
+  const versions = (await readdir(join(nvm, "versions", "node")).catch(() => []))
+    .filter((name) => /^v\d+(\.\d+)*$/.test(name))
+    .toSorted(newestFirst);
+  const alias = (await readFile(join(nvm, "alias", "default"), "utf8").catch(() => "")).trim();
+  const wanted = /^v?\d+(\.\d+)*$/.test(alias) ? `v${alias.replace(/^v/, "")}` : null;
+  const preferred = wanted
+    ? versions.find((name) => name === wanted || name.startsWith(`${wanted}.`))
+    : undefined;
+  for (const name of preferred ? [preferred, ...versions.filter((v) => v !== preferred)] : versions)
+    dirs.push(join(nvm, "versions", "node", name, "bin"));
+  return dirs;
+}
+
 /** An app launched from Finder has a minimal PATH, so the usual install folders come first. */
-const cliDirs = (host: AiClientsHost) => [
+const cliDirs = async (host: AiClientsHost) => [
   join(host.home, ".local", "bin"),
   ...host.binDirs,
+  join(host.home, ".npm-global", "bin"),
+  join(host.home, ".volta", "bin"),
+  join(host.home, ".bun", "bin"),
+  host.env.PNPM_HOME && isAbsolute(host.env.PNPM_HOME)
+    ? host.env.PNPM_HOME
+    : join(host.home, "Library", "pnpm"),
+  ...(await versionManagerDirs(host)),
   ...pathDirs(host.env.PATH),
 ];
 
-// Clients
+// Config formats
 
 type Format = "claudeJson" | "json" | "toml";
 
+const FORMATS: Record<
+  Format,
+  {
+    read(text: string | null): unknown;
+    edit(text: string | null, launch: McpLaunch | undefined): string;
+  }
+> = {
+  // Claude Code writes `type` in its entries.
+  claudeJson: {
+    read: readJsonEntry,
+    edit: (text, launch) => editJson(text, launch, { type: "stdio" }),
+  },
+  json: { read: readJsonEntry, edit: (text, launch) => editJson(text, launch) },
+  toml: { read: readTomlEntry, edit: editToml },
+};
+
+// Clients
+
 interface ClientSpec {
-  readonly id: AiClientId;
   readonly format: Format;
   configPath(host: AiClientsHost): string;
   /** CLI names and extra places the client installs its CLI. */
@@ -166,31 +247,36 @@ interface ClientSpec {
   installed(host: AiClientsHost): Promise<boolean>;
 }
 
+const codexHome = (host: AiClientsHost) =>
+  host.env.CODEX_HOME && isAbsolute(host.env.CODEX_HOME)
+    ? host.env.CODEX_HOME
+    : join(host.home, ".codex");
+
 const SPECS: Record<AiClientId, ClientSpec> = {
   "claude-code": {
-    id: "claude-code",
     format: "claudeJson",
     configPath: (host) =>
-      join(host.env.CLAUDE_CONFIG_DIR ? host.env.CLAUDE_CONFIG_DIR : host.home, ".claude.json"),
-    findCli: (host) =>
-      findExecutable("claude", [join(host.home, ".claude", "local"), ...cliDirs(host)]),
+      join(
+        host.env.CLAUDE_CONFIG_DIR && isAbsolute(host.env.CLAUDE_CONFIG_DIR)
+          ? host.env.CLAUDE_CONFIG_DIR
+          : host.home,
+        ".claude.json",
+      ),
+    findCli: async (host) =>
+      findExecutable("claude", [join(host.home, ".claude", "local"), ...(await cliDirs(host))]),
     installed: async () => false,
   },
   codex: {
-    id: "codex",
     format: "toml",
-    configPath: (host) =>
-      join(host.env.CODEX_HOME ? host.env.CODEX_HOME : join(host.home, ".codex"), "config.toml"),
+    configPath: (host) => join(codexHome(host), "config.toml"),
     findCli: async (host) =>
-      (await findExecutable("codex", cliDirs(host))) ??
+      (await findExecutable("codex", await cliDirs(host))) ??
       (await findExecutable("codex", [
         join(host.applications, "Codex.app", "Contents", "Resources"),
       ])),
-    installed: (host) =>
-      exists(host.env.CODEX_HOME ? host.env.CODEX_HOME : join(host.home, ".codex")),
+    installed: (host) => exists(codexHome(host)),
   },
   "claude-desktop": {
-    id: "claude-desktop",
     format: "json",
     configPath: (host) =>
       join(host.home, "Library", "Application Support", "Claude", "claude_desktop_config.json"),
@@ -199,28 +285,12 @@ const SPECS: Record<AiClientId, ClientSpec> = {
       exists(join(host.home, "Library", "Application Support", "Claude")),
   },
   cursor: {
-    id: "cursor",
     format: "json",
     configPath: (host) => join(host.home, ".cursor", "mcp.json"),
     installed: async (host) =>
       (await exists(join(host.applications, "Cursor.app"))) || exists(join(host.home, ".cursor")),
   },
 };
-
-const readEntry = (format: Format, text: string | null) =>
-  format === "toml" ? readTomlEntry(text) : readJsonEntry(text);
-
-/** Claude Code writes `type` in its entries; the others take the plain launch. */
-function jsonEntry(format: Format, launch: McpLaunch): Record<string, unknown> {
-  const base = { command: launch.command, args: [...launch.args], env: { ...launch.env } };
-  return format === "claudeJson" ? { type: "stdio", ...base } : base;
-}
-
-function editConfig(format: Format, text: string | null, launch: McpLaunch | undefined) {
-  return format === "toml"
-    ? editToml(text, launch)
-    : editJson(text, launch ? jsonEntry(format, launch) : undefined);
-}
 
 async function readText(path: string): Promise<string | null> {
   try {
@@ -243,44 +313,52 @@ const shellWord = (word: string) =>
 const envFlags = (flag: string, env: Record<string, string>) =>
   Object.entries(env).flatMap(([key, value]) => [flag, `${key}=${value}`]);
 
-/** The client CLI's argv to add or remove the server, without the CLI itself. */
-function cliArgs(id: AiClientId, launch: McpLaunch | undefined): string[] {
-  if (id === "claude-code")
-    return launch
-      ? [
-          "mcp",
-          "add",
-          "--scope",
-          "user",
-          "--transport",
-          "stdio",
-          SERVER_NAME,
-          ...envFlags("-e", launch.env),
-          "--",
-          launch.command,
-          ...launch.args,
-        ]
-      : ["mcp", "remove", "--scope", "user", SERVER_NAME];
-  return launch
-    ? [
-        "mcp",
-        "add",
-        SERVER_NAME,
-        ...envFlags("--env", launch.env),
-        "--",
-        launch.command,
-        ...launch.args,
-      ]
-    : ["mcp", "remove", SERVER_NAME];
-}
+/** `claude mcp …` argv without the CLI. add-json carries the whole entry, extra keys included. */
+const claudeArgs = {
+  add: (launch: McpLaunch) => [
+    "mcp",
+    "add",
+    "--scope",
+    "user",
+    "--transport",
+    "stdio",
+    SERVER_NAME,
+    ...envFlags("-e", launch.env),
+    "--",
+    launch.command,
+    ...launch.args,
+  ],
+  addJson: (entry: Record<string, unknown>) => [
+    "mcp",
+    "add-json",
+    "--scope",
+    "user",
+    SERVER_NAME,
+    JSON.stringify(entry),
+  ],
+  remove: () => ["mcp", "remove", "--scope", "user", SERVER_NAME],
+};
+
+/** `codex mcp …` argv without the CLI. */
+const codexArgs = {
+  add: (launch: McpLaunch) => [
+    "mcp",
+    "add",
+    SERVER_NAME,
+    ...envFlags("--env", launch.env),
+    "--",
+    launch.command,
+    ...launch.args,
+  ],
+  remove: () => ["mcp", "remove", SERVER_NAME],
+};
 
 /** What a person types or pastes to connect without OpenMail's help. */
-function manualText(spec: ClientSpec, launch: McpLaunch): string {
-  if (spec.id === "claude-code" || spec.id === "codex")
-    return [spec.id === "claude-code" ? "claude" : "codex", ...cliArgs(spec.id, launch)]
-      .map(shellWord)
-      .join(" ");
-  return `${JSON.stringify({ mcpServers: { [SERVER_NAME]: jsonEntry(spec.format, launch) } }, null, 2)}\n`;
+function manualText(id: AiClientId, launch: McpLaunch): string {
+  if (id === "claude-code") return ["claude", ...claudeArgs.add(launch)].map(shellWord).join(" ");
+  if (id === "codex") return ["codex", ...codexArgs.add(launch)].map(shellWord).join(" ");
+  const entry = { command: launch.command, args: launch.args, env: launch.env };
+  return `${JSON.stringify({ mcpServers: { [SERVER_NAME]: entry } }, null, 2)}\n`;
 }
 
 export async function clientView(
@@ -299,29 +377,26 @@ export async function clientView(
     method,
     cliPath,
     configPath,
-    manual: manualText(spec, launch),
+    manual: manualText(id, launch),
   } as const;
+  let raw: unknown;
   try {
-    const entry = readEntry(spec.format, await readText(configPath));
-    if (entry === undefined)
-      return { ...base, state: "notConnected", entry: null, proposalTools: false, problem: null };
-    const current = launchOf(entry);
-    return {
-      ...base,
-      state: current && matches(current, launch) ? "connected" : "stale",
-      entry: current,
-      proposalTools: current?.args.includes(WRITE_FLAG) ?? false,
-      problem: null,
-    };
+    raw = FORMATS[spec.format].read(await readText(configPath));
   } catch (error) {
     return {
       ...base,
       state: "unreadable",
-      entry: null,
-      proposalTools: false,
       problem: error instanceof Error ? error.message : String(error),
     };
   }
+  if (raw === undefined) return { ...base, state: "notConnected" };
+  const entry = launchOf(raw);
+  const proposalTools = entry?.args.includes(WRITE_FLAG) ?? false;
+  // A command that is gone (an old version manager folder, a deleted build) can't start.
+  const runnable =
+    entry !== null && (!isAbsolute(entry.command) || (await isExecutable(entry.command)));
+  const state = entry && runnable && matches(entry, launch) ? "connected" : "stale";
+  return { ...base, state, entry, proposalTools };
 }
 
 export const clientViews = (host: AiClientsHost, launch: McpLaunch) =>
@@ -335,35 +410,76 @@ interface Plan {
   readonly after: string;
   /** argv lists, the CLI first. Empty: OpenMail writes `after` itself. */
   readonly commands: readonly (readonly string[])[];
+  /** Run when a later command fails, to put the old entry back. */
+  readonly rollback: readonly (readonly string[])[];
+  readonly token: string;
 }
 
 const fail = (reason: AiClientError["reason"], detail = "") =>
   new AiClientError({ reason, detail });
 
-const asClientError = (error: unknown) =>
+/** The one mapping from anything thrown here to what Settings shows. */
+export const asClientError = (error: unknown) =>
   error instanceof AiClientError
     ? error
     : error instanceof ConfigProblem
       ? fail(error.reason, error.message)
       : fail("writeFailed", error instanceof Error ? error.message : String(error));
 
+/**
+ * The CLI calls for a change, or none when OpenMail edits the file itself.
+ *
+ * Claude Code: `mcp add-json` with the merged entry, so the person's own keys survive. `mcp add`
+ * refuses an existing name, so a reconnect removes the old entry first and puts it back if the
+ * add fails.
+ * Codex: `mcp add` and `mcp remove`. Its `add` can only write command, args and env, so a
+ * reconnect edits the file instead and keeps the entry's other keys.
+ */
+function cliPlan(
+  id: AiClientId,
+  cli: string,
+  existing: unknown,
+  target: Record<string, unknown> | undefined,
+  launch: McpLaunch | undefined,
+) {
+  const run = (args: string[]) => [cli, ...args];
+  const old = isRecord(existing) ? existing : null;
+  if (id === "claude-code") {
+    const commands = [
+      ...(existing === undefined ? [] : [run(claudeArgs.remove())]),
+      ...(target ? [run(claudeArgs.addJson(target))] : []),
+    ];
+    const rollback = target && old ? [run(claudeArgs.addJson(old))] : [];
+    return { commands, rollback };
+  }
+  if (existing !== undefined && launch) return null;
+  return {
+    commands: [run(launch ? codexArgs.add(launch) : codexArgs.remove())],
+    rollback: [],
+  };
+}
+
 async function plan(host: AiClientsHost, change: AiClientChange, launch: McpLaunch): Promise<Plan> {
   const spec = SPECS[change.client];
   const view = await clientView(host, change.client, launch);
-  if (view.state === "unreadable") throw fail("unreadable", view.problem ?? "");
+  if (view.state === "unreadable") throw fail("unreadable", view.problem);
   if (view.method === "manual") throw fail("notInstalled");
   const target = change.action === "connect" ? withWrites(launch, change.proposalTools) : undefined;
+  const format = FORMATS[spec.format];
   const file = spec.configPath(host);
   const before = await readText(file);
-  const after = editConfig(spec.format, before, target);
-  const commands: string[][] = [];
-  if (view.method === "cli" && view.cliPath && after !== (before ?? "")) {
-    // `mcp add` refuses an existing name, so a reconnect removes the old entry first.
-    if (view.state !== "notConnected")
-      commands.push([view.cliPath, ...cliArgs(change.client, undefined)]);
-    if (target) commands.push([view.cliPath, ...cliArgs(change.client, target)]);
-  }
-  return { file, before, after, commands };
+  const existing = format.read(before);
+  const after = format.edit(before, target);
+  const none = { file, before, after, commands: [], rollback: [] };
+  if (after === (before ?? "")) return { ...none, token: tokenOf(before) };
+  const entry = format.read(after);
+  const cli =
+    view.method === "cli" && view.cliPath
+      ? cliPlan(change.client, view.cliPath, existing, isRecord(entry) ? entry : undefined, target)
+      : null;
+  if (!cli) return { ...none, token: tokenOf(before) };
+  // The CLI edits only the entry, and the rest of the file may change at any time.
+  return { file, before, after, ...cli, token: tokenOf(JSON.stringify(existing ?? null)) };
 }
 
 export async function previewChange(
@@ -378,15 +494,15 @@ export async function previewChange(
       file: result.file,
       commands: result.commands,
       diff: lineDiff(result.before ?? "", result.after),
-      backup: result.before !== null,
-      token: tokenOf(result.before),
+      backup: result.before !== null && !result.commands.length,
+      token: result.token,
     };
   } catch (error) {
     throw asClientError(error);
   }
 }
 
-/** `config.json.openmail-backup-20261012-204501`, next to the file. */
+/** `config.json.openmail-backup-20261012-204501`, then `-2`, `-3` within the same second. */
 const backupSuffix = ".openmail-backup-";
 const stamp = (date: Date) =>
   date
@@ -396,15 +512,35 @@ const stamp = (date: Date) =>
     .replaceAll(":", "")
     .replace("T", "-");
 const KEPT_BACKUPS = 5;
+const BACKUP_NAME = /^(\d{8}-\d{6})(?:-(\d+))?$/;
+
+/** Oldest first: by timestamp, then by the same-second counter as a number. */
+function backupOrder(prefix: string, names: readonly string[]) {
+  return names
+    .map((name) => ({ name, match: BACKUP_NAME.exec(name.slice(prefix.length)) }))
+    .filter((item) => item.name.startsWith(prefix) && item.match)
+    .toSorted(
+      (a, b) =>
+        (a.match?.[1] ?? "").localeCompare(b.match?.[1] ?? "") ||
+        Number(a.match?.[2] ?? 1) - Number(b.match?.[2] ?? 1),
+    )
+    .map((item) => item.name);
+}
 
 /** Copies the file next to itself, keeping its mode, and prunes OpenMail's older copies. */
 async function backup(file: string, now: Date) {
-  let target = `${file}${backupSuffix}${stamp(now)}`;
-  for (let n = 2; await exists(target); n++) target = `${file}${backupSuffix}${stamp(now)}-${n}`;
+  const prefix = `${basename(file)}${backupSuffix}`;
+  const ours = backupOrder(prefix, await readdir(dirname(file)));
+  // After the newest copy of this second, so pruning never removes the copy just made.
+  const sameSecond = ours
+    .map((name) => BACKUP_NAME.exec(name.slice(prefix.length)))
+    .filter((match) => match?.[1] === stamp(now))
+    .map((match) => Number(match?.[2] ?? 1));
+  const n = sameSecond.length ? Math.max(...sameSecond) + 1 : 1;
+  const target = `${file}${backupSuffix}${stamp(now)}${n > 1 ? `-${n}` : ""}`;
   await copyFile(file, target, constants.COPYFILE_EXCL);
   await chmod(target, (await stat(file)).mode & 0o777);
-  const prefix = `${basename(file)}${backupSuffix}`;
-  const ours = (await readdir(dirname(file))).filter((name) => name.startsWith(prefix)).toSorted();
+  ours.push(basename(target));
   for (const old of ours.slice(0, Math.max(0, ours.length - KEPT_BACKUPS)))
     await rm(join(dirname(file), old), { force: true });
   return target;
@@ -458,9 +594,13 @@ export function runCli(
   });
 }
 
+const cliError = (code: number, stderr: string) =>
+  stderr.trim().split("\n").slice(-3).join("\n") || `Exit code ${code}`;
+
 /**
- * Makes the change the person confirmed. Refuses when the file changed since the preview,
- * saves a backup first, then runs the client's CLI or writes the file atomically.
+ * Makes the change the person confirmed. Refuses when what the preview showed changed since.
+ * A file edit saves a backup and writes atomically; a CLI change runs the client's commands and,
+ * when one fails after the old entry was removed, puts the old entry back.
  */
 export async function applyChange(
   host: AiClientsHost,
@@ -471,21 +611,24 @@ export async function applyChange(
 ): Promise<void> {
   try {
     const result = await plan(host, change, launch);
-    if (tokenOf(result.before) !== token)
-      throw fail("changed", "The file changed after the preview.");
+    if (result.token !== token) throw fail("changed", "The file changed after the preview.");
     if (result.after === (result.before ?? "")) return;
-    if (result.before !== null) await backup(result.file, host.now());
     if (!result.commands.length) {
+      if (result.before !== null) await backup(result.file, host.now());
       await writeAtomically(result.file, result.after);
       return;
     }
-    for (const argv of result.commands) {
+    for (const [index, argv] of result.commands.entries()) {
       const { code, stderr } = await run(argv, host.env);
-      if (code !== 0)
-        throw fail(
-          "cliFailed",
-          stderr.trim().split("\n").slice(-3).join("\n") || `Exit code ${code}`,
-        );
+      if (code === 0) continue;
+      let detail = cliError(code, stderr);
+      if (index > 0)
+        for (const undo of result.rollback) {
+          const restored = await run(undo, host.env);
+          if (restored.code !== 0)
+            detail += `\nPutting the old entry back failed too: ${cliError(restored.code, restored.stderr)}`;
+        }
+      throw fail("cliFailed", detail);
     }
   } catch (error) {
     throw asClientError(error);

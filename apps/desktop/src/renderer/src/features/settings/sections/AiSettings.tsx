@@ -22,7 +22,7 @@ import {
 const nativeCheck = "size-3.5 shrink-0 accent-blue-600";
 
 import { aiSettingsAtom } from "../../ai";
-import { CONSENT_ANCHOR } from "./AiClientsSettings";
+import { CONSENT_ANCHOR } from "./ai-clients-ui";
 const accountMutation = MailClient.mutation("SetAiAccount");
 const modelMutation = MailClient.mutation("SetAiModel");
 

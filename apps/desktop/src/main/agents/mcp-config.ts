@@ -1,5 +1,7 @@
+import { isDeepStrictEqual } from "node:util";
+
 import { applyEdits, modify } from "jsonc-parser";
-import { parse as parseToml } from "smol-toml";
+import { parse as parseToml, stringify as stringifyToml } from "smol-toml";
 
 import type { DiffLine, McpLaunch } from "../../shared/ai-clients";
 
@@ -16,7 +18,7 @@ export class ConfigProblem extends Error {
   }
 }
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
+export const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
 /**
@@ -35,12 +37,81 @@ export function launchOf(entry: unknown): McpLaunch | null {
   return { command: entry.command, args, env };
 }
 
+/**
+ * The entry after Connect: the existing entry with only `command`, `args` and `env.OPENMAIL_HOME`
+ * changed, so the person's own keys (`disabled`, `autoApprove`, `startup_timeout_sec`, other env)
+ * survive a reconnect. Without a usable entry it is `fresh` plus the launch. `emptyEnv` keeps an
+ * empty env object.
+ */
+export function mergedEntry(
+  existing: unknown,
+  launch: McpLaunch,
+  fresh: { readonly type?: string; readonly emptyEnv: boolean },
+): Record<string, unknown> {
+  const reuse = isRecord(existing) && launchOf(existing) !== null;
+  const base: Record<string, unknown> = reuse ? existing : fresh.type ? { type: fresh.type } : {};
+  const env: Record<string, unknown> = isRecord(base.env) ? { ...base.env } : {};
+  delete env.OPENMAIL_HOME;
+  Object.assign(env, launch.env);
+  const next: Record<string, unknown> = {
+    ...base,
+    command: launch.command,
+    args: [...launch.args],
+  };
+  // JSON clients write `"env": {}`; Codex leaves an empty env out.
+  if (Object.keys(env).length || (fresh.emptyEnv && ("env" in base || !reuse))) next.env = env;
+  else delete next.env;
+  return next;
+}
+
+/** Plain data, so values compare the same whichever parser made them. */
+const plain = (value: unknown): unknown =>
+  value === undefined ? undefined : JSON.parse(JSON.stringify(value));
+
+/** The parsed file without the openmail server, and without a server table left empty. */
+function withoutOwnEntry(parsed: Record<string, unknown>, serversKey: string): unknown {
+  const copy = { ...parsed };
+  const servers = copy[serversKey];
+  if (isRecord(servers)) {
+    const rest = { ...servers };
+    delete rest[SERVER_NAME];
+    if (Object.keys(rest).length) copy[serversKey] = rest;
+    else delete copy[serversKey];
+  }
+  return plain(copy);
+}
+
+/**
+ * Parses the file before and after an edit and refuses the edit unless the openmail entry is
+ * exactly `expected` and everything else in the file is unchanged.
+ */
+function checkEdit(
+  parse: (text: string) => Record<string, unknown>,
+  serversKey: string,
+  before: string,
+  after: string,
+  expected: Record<string, unknown> | undefined,
+) {
+  const a = before.trim() ? parse(before) : {};
+  const b = after.trim() ? parse(after) : {};
+  const servers = b[serversKey];
+  const entry = isRecord(servers) ? servers[SERVER_NAME] : undefined;
+  if (
+    !isDeepStrictEqual(plain(entry), plain(expected)) ||
+    !isDeepStrictEqual(withoutOwnEntry(a, serversKey), withoutOwnEntry(b, serversKey))
+  )
+    throw new ConfigProblem("unsupportedLayout", "The edited file did not read back as expected.");
+}
+
 // JSON: Claude Code's ~/.claude.json, Claude Desktop and Cursor. All keep servers in `mcpServers`.
+
+const BOM = "\uFEFF";
+const stripBom = (text: string) => (text.startsWith(BOM) ? text.slice(1) : text);
 
 function parseJson(text: string): Record<string, unknown> {
   let value: unknown;
   try {
-    value = JSON.parse(text);
+    value = JSON.parse(stripBom(text));
   } catch (error) {
     throw new ConfigProblem("unreadable", error instanceof Error ? error.message : String(error));
   }
@@ -69,23 +140,42 @@ function jsonFormat(text: string) {
 }
 
 /**
- * Sets or removes `mcpServers.openmail` with a minimal text edit: every other key, the key order,
- * the indentation and the rest of the file stay byte for byte.
+ * Sets or removes `mcpServers.openmail` with minimal text edits. A reconnect touches only
+ * `command`, `args` and `env.OPENMAIL_HOME` inside the existing entry; every other key, the key
+ * order, the indentation and the rest of the file stay byte for byte. A byte order mark stays.
  */
-export function editJson(text: string | null, entry: Record<string, unknown> | undefined): string {
+export function editJson(
+  text: string | null,
+  launch: McpLaunch | undefined,
+  fresh: { readonly type?: string } = {},
+): string {
+  const expected = (existing: unknown) =>
+    launch ? mergedEntry(existing, launch, { ...fresh, emptyEnv: true }) : undefined;
   if (!text?.trim()) {
-    if (entry === undefined) return text ?? "";
-    return `${JSON.stringify({ mcpServers: { [SERVER_NAME]: entry } }, null, 2)}\n`;
+    if (!launch) return text ?? "";
+    return `${JSON.stringify({ mcpServers: { [SERVER_NAME]: expected(undefined) } }, null, 2)}\n`;
   }
-  readJsonEntry(text);
-  const edits = modify(text, ["mcpServers", SERVER_NAME], entry, {
-    formattingOptions: jsonFormat(text),
-  });
-  const next = applyEdits(text, edits);
-  const check = readJsonEntry(next);
-  if (JSON.stringify(check) !== JSON.stringify(entry))
-    throw new ConfigProblem("unsupportedLayout", "The edited file did not read back as expected.");
-  return next;
+  const bom = text.startsWith(BOM) ? BOM : "";
+  const body = stripBom(text);
+  const existing = readJsonEntry(body);
+  const target = expected(existing);
+  const formattingOptions = jsonFormat(body);
+  const set = (source: string, path: string[], value: unknown) =>
+    applyEdits(
+      source,
+      modify(source, ["mcpServers", SERVER_NAME, ...path], value, { formattingOptions }),
+    );
+  let next: string;
+  if (!target || !isRecord(existing) || launchOf(existing) === null) next = set(body, [], target);
+  else {
+    next = set(body, ["command"], target.command);
+    next = set(next, ["args"], target.args);
+    const home = launch?.env.OPENMAIL_HOME;
+    const hadHome = isRecord(existing.env) && "OPENMAIL_HOME" in existing.env;
+    if (home !== undefined || hadHome) next = set(next, ["env", "OPENMAIL_HOME"], home);
+  }
+  checkEdit(parseJson, "mcpServers", body, next, target);
+  return bom + next;
 }
 
 // TOML: Codex's ~/.codex/config.toml keeps servers in [mcp_servers.<name>] tables.
@@ -125,18 +215,36 @@ export function tomlBlock(launch: McpLaunch): string[] {
   return lines;
 }
 
+/** An entry with only a command, string args and string env: written the way Codex writes it. */
+const isPlainLaunch = (entry: Record<string, unknown>) =>
+  Object.keys(entry).every((key) => ["command", "args", "env"].includes(key)) &&
+  // tomlBlock leaves out an empty env.
+  (!isRecord(entry.env) || Object.keys(entry.env).length > 0) &&
+  isDeepStrictEqual(plain(launchOf(entry)), plain({ args: [], env: {}, ...entry }));
+
+/** The block for a merged entry. Extra keys and subtables go through the TOML writer. */
+function entryBlock(entry: Record<string, unknown>): string[] {
+  const launch = launchOf(entry);
+  if (launch && isPlainLaunch(entry)) return tomlBlock(launch);
+  const lines = stringifyToml({ mcp_servers: { [SERVER_NAME]: entry } }).split("\n");
+  while (lines.length && lines.at(-1)?.trim() === "") lines.pop();
+  return lines;
+}
+
 const OWN_HEADER =
   /^\s*\[\s*mcp_servers\s*\.\s*(?:openmail|"openmail")\s*(?:\.[^\]]*)?\]\s*(?:#.*)?$/;
 const ANY_HEADER = /^\s*\[/;
 
 /**
  * Replaces, adds or removes the `[mcp_servers.openmail]` table and its subtables as one block of
- * lines. Everything outside the block, comments included, is left as it was. An entry written
- * another way (an inline table or dotted keys) is refused instead of guessed at.
+ * lines. A reconnect keeps the entry's own keys and changes only `command`, `args` and
+ * `env.OPENMAIL_HOME`. Everything outside the block, comments included, is left as it was. An
+ * entry written another way (an inline table or dotted keys) is refused instead of guessed at.
  */
 export function editToml(text: string | null, launch: McpLaunch | undefined): string {
   const source = text ?? "";
   const existing = readTomlEntry(source);
+  const target = launch ? mergedEntry(existing, launch, { emptyEnv: false }) : undefined;
   const eol = source.includes("\r\n") ? "\r\n" : "\n";
   const lines = source.length ? source.split(/\r?\n/) : [];
   const start = lines.findIndex((line) => OWN_HEADER.test(line));
@@ -147,10 +255,10 @@ export function editToml(text: string | null, launch: McpLaunch | undefined): st
     );
   let next: string[];
   if (start < 0) {
-    if (!launch) return source;
+    if (!target) return source;
     const body = [...lines];
     while (body.length && body.at(-1)?.trim() === "") body.pop();
-    next = [...body, ...(body.length ? [""] : []), ...tomlBlock(launch), ""];
+    next = [...body, ...(body.length ? [""] : []), ...entryBlock(target), ""];
   } else {
     let end = start + 1;
     while (
@@ -167,18 +275,15 @@ export function editToml(text: string | null, launch: McpLaunch | undefined): st
       );
     const before = lines.slice(0, start);
     let after = lines.slice(end);
-    if (!launch) {
+    if (!target) {
       // Drop the blank line that separated the removed block from the next table.
       while (before.length && before.at(-1)?.trim() === "" && after[0]?.trim() === "")
         after = after.slice(1);
       next = [...before, ...after];
-    } else next = [...before, ...tomlBlock(launch), ...after];
+    } else next = [...before, ...entryBlock(target), ...after];
   }
   const result = next.join(eol);
-  const check = launchOf(readTomlEntry(result));
-  const expected = launch ?? null;
-  if (JSON.stringify(check) !== JSON.stringify(expected))
-    throw new ConfigProblem("unsupportedLayout", "The edited file did not read back as expected.");
+  checkEdit(parseTomlText, "mcp_servers", source, result, target);
   return result;
 }
 

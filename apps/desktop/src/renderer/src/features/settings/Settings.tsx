@@ -1,7 +1,8 @@
 import { ProfileSettings } from "../accounts";
 import { OptionalServices } from "../accounts/OptionalServices";
 import { AiSettings } from "./sections/AiSettings";
-import { AiClientsSettings, WRITE_MODE_ANCHOR } from "./sections/AiClientsSettings";
+import { AiClientsSettings } from "./sections/AiClientsSettings";
+import { WRITE_MODE_ANCHOR } from "./sections/ai-clients-ui";
 import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
 import type { I18n, MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";

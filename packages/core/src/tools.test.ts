@@ -230,6 +230,7 @@ function stubMailbox(overrides: Partial<Service>): Layer.Layer<Mailbox> {
     agentActivity: () => Effect.succeed([]),
     recordAgentActivity: () => Effect.void,
     agentWriteModeFor: () => Effect.succeed("off" as const),
+    readOnlySession: false,
     agentWriteMode: notUsed("agentWriteMode"),
     setAgentWriteMode: () => notUsed("setAgentWriteMode"),
     composeAttachments: () => Effect.die("unused"),
@@ -1246,7 +1247,9 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
       const mailboxLayer = TestMailbox({ gmail: server });
       const handlers = MailToolkitLayer.pipe(
         Layer.provide(mailboxLayer),
-        Layer.provide(AgentIdentity.fixed("mcp", "claude-code", { proposalTools: true })),
+        Layer.provide(
+          AgentIdentity.fixed("mcp", "claude-code", { proposalTools: true, recordsActivity: true }),
+        ),
       );
       const Status = Schema.toEncoded(MailToolkit.tools.access_status.successSchema);
       return Effect.gen(function* () {
@@ -1293,6 +1296,19 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
       }).pipe(Effect.provide(Layer.mergeAll(mailboxLayer, handlers)));
     },
   );
+
+  it.effect("CLI tool commands leave no activity rows", () => {
+    const mailboxLayer = TestMailbox({ gmail: fakeServer("me@gmail.com", [mail]) });
+    const handlers = MailToolkitLayer.pipe(
+      Layer.provide(mailboxLayer),
+      Layer.provide(AgentIdentity.fixed("mcp", "openmail-cli")),
+    );
+    return Effect.gen(function* () {
+      const toolkit = yield* MailToolkit;
+      yield* Stream.runCollect(yield* toolkit.handle("access_status", {}));
+      assert.deepStrictEqual(yield* (yield* Mailbox).agentActivity(10), []);
+    }).pipe(Effect.provide(Layer.mergeAll(mailboxLayer, handlers)));
+  });
 
   it.effect("assistant label proposals are checked against current labels at approval", () => {
     const server = fakeServer("me@gmail.com", [mail]);

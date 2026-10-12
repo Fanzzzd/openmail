@@ -770,6 +770,8 @@ export const makeApplyMailbox = (
 
       agentWriteModeFor: (name) => store.agentWriteMode(name),
 
+      readOnlySession: readOnly,
+
       agentWriteMode: store.agentWriteMode("*"),
 
       setAgentWriteMode: (mode) => mutate(store.setAgentWriteMode("*", mode)),
@@ -786,6 +788,7 @@ export const makeApplyMailbox = (
       | "agentActivity"
       | "recordAgentActivity"
       | "agentWriteModeFor"
+      | "readOnlySession"
       | "agentWriteMode"
       | "setAgentWriteMode"
     >,
