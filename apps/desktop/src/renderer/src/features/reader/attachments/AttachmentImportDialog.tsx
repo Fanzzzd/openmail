@@ -54,6 +54,8 @@ export function AttachmentImportDialog({
       import("../../../state/mail").MailEnv
     >,
   ) => {
+    if (added.has(key)) return;
+    setFailed(false);
     setAdded((current) => new Set([...current, key]));
     run(
       effect.pipe(
@@ -99,8 +101,9 @@ export function AttachmentImportDialog({
               </p>
               <button
                 type="button"
-                className={`${buttonSecondary} shrink-0`}
-                disabled={added.has(contact.address)}
+                className={`${buttonSecondary} shrink-0 aria-disabled:opacity-50`}
+                // Stays focusable: a disabled button drops focus to the page.
+                aria-disabled={added.has(contact.address)}
                 onClick={() =>
                   perform(
                     contact.address,
@@ -135,8 +138,9 @@ export function AttachmentImportDialog({
               {invite.method === "PUBLISH" && (
                 <button
                   type="button"
-                  className={buttonSecondary}
-                  disabled={added.has(invite.key)}
+                  className={`${buttonSecondary} aria-disabled:opacity-50`}
+                  // Stays focusable: a disabled button drops focus to the page.
+                  aria-disabled={added.has(invite.key)}
                   onClick={() =>
                     perform(
                       invite.key,
