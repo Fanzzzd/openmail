@@ -1207,6 +1207,11 @@ msgstr "Borrar selección"
 msgid "Clearing removes downloaded bodies and attachments. Headers and drafts stay. Opening uncached content requires a connection."
 msgstr "Vaciar la caché elimina los textos de los mensajes y los adjuntos descargados. Los encabezados y los borradores se conservan. Se necesita conexión para abrir contenido fuera de la caché."
 
+#. loadImages is the translated Load images button above a message in the reader.
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
+msgid "Click {loadImages} on each message."
+msgstr "Haz clic en «{loadImages}» en cada mensaje."
+
 #: src/renderer/src/compose/use-compose-editor.ts
 msgid "Click in this window, then choose a device to take a photo, scan a document or add a sketch."
 msgstr "Haz clic en esta ventana y elige un dispositivo para tomar una foto, escanear un documento o añadir un dibujo."
@@ -1383,6 +1388,10 @@ msgstr "No se ha concedido acceso a los contactos. Desactiva y activa este ajust
 #: src/renderer/src/components/AppleContactsSettings.tsx
 msgid "Contacts access restricted by system policy."
 msgstr "La política del sistema restringe el acceso a los contactos."
+
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
+msgid "Contacts and people you've sent mail to, when the sender is verified."
+msgstr "Contactos y personas a las que has enviado correo, si el remitente está verificado."
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Contacts only"
@@ -3020,6 +3029,7 @@ msgid "Link URL"
 msgstr "URL del enlace"
 
 #: src/renderer/src/components/MessageBody.tsx
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
 msgid "Load images"
 msgstr "Cargar imágenes"
 
@@ -4059,10 +4069,6 @@ msgstr "¿Abrir este enlace?"
 msgid "Open With…"
 msgstr "Abrir con…"
 
-#: src/renderer/src/components/RemoteImagesPrompt.tsx
-msgid "OpenMail blocks known tracking pixels in every mode."
-msgstr "OpenMail bloquea los píxeles de seguimiento conocidos en todos los modos."
-
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "OpenMail is the default email app"
 msgstr "OpenMail es la aplicación de correo electrónico predeterminada"
@@ -4472,6 +4478,10 @@ msgstr "Nombre del destinatario"
 #: src/renderer/src/components/Composer.tsx
 msgid "Recipients outside the original conversation:"
 msgstr "Destinatarios ajenos a la conversación original:"
+
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
+msgid "Recommended. Known tracking pixels stay blocked."
+msgstr "Recomendado. Los píxeles de seguimiento conocidos siguen bloqueados."
 
 #: src/main/native-i18n.ts
 msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"

@@ -1217,6 +1217,11 @@ msgstr "清除选择"
 msgid "Clearing removes downloaded bodies and attachments. Headers and drafts stay. Opening uncached content requires a connection."
 msgstr "清除已下载的正文和附件，保留邮件头和草稿。打开未缓存内容需要联网。"
 
+#. loadImages is the translated Load images button above a message in the reader.
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
+msgid "Click {loadImages} on each message."
+msgstr "每封消息都要点“{loadImages}”。"
+
 #: src/renderer/src/compose/use-compose-editor.ts
 msgid "Click in this window, then choose a device to take a photo, scan a document or add a sketch."
 msgstr "点击窗口，再选择设备拍照、扫描文稿或添加速写。"
@@ -1393,6 +1398,10 @@ msgstr "尚未获准访问通讯录。关闭后重新开启此设置以申请权
 #: src/renderer/src/components/AppleContactsSettings.tsx
 msgid "Contacts access restricted by system policy."
 msgstr "系统策略限制了通讯录访问。"
+
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
+msgid "Contacts and people you've sent mail to, when the sender is verified."
+msgstr "联系人和你发过邮件的人，且发件人需通过认证。"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Contacts only"
@@ -3030,6 +3039,7 @@ msgid "Link URL"
 msgstr "链接地址"
 
 #: src/renderer/src/components/MessageBody.tsx
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
 msgid "Load images"
 msgstr "加载图片"
 
@@ -4069,10 +4079,6 @@ msgstr "打开此链接？"
 msgid "Open With…"
 msgstr "打开方式…"
 
-#: src/renderer/src/components/RemoteImagesPrompt.tsx
-msgid "OpenMail blocks known tracking pixels in every mode."
-msgstr "无论选哪种方式，OpenMail 都会拦截已知的跟踪像素。"
-
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "OpenMail is the default email app"
 msgstr "OpenMail 已是默认邮件客户端"
@@ -4482,6 +4488,10 @@ msgstr "收件人姓名"
 #: src/renderer/src/components/Composer.tsx
 msgid "Recipients outside the original conversation:"
 msgstr "原会话之外的收件人："
+
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
+msgid "Recommended. Known tracking pixels stay blocked."
+msgstr "推荐。已知的跟踪像素仍会拦截。"
 
 #: src/main/native-i18n.ts
 msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"

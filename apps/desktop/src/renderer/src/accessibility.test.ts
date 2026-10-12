@@ -530,11 +530,29 @@ it("asks once how remote images load; closing it stores Always", async () => {
 
   const first = prompt();
   const region = screen.getByRole("region", { name: "Load images in messages?" });
-  expect(region.textContent).toContain("OpenMail blocks known tracking pixels in every mode.");
+  // A floating card over the panes; it leaves focus where it was.
+  expect(region.className).toContain("fixed");
+  expect(region.contains(document.activeElement)).toBe(false);
+  const always = screen.getByRole("radio", {
+    name: "Always, block trackers",
+    description: "Recommended. Known tracking pixels stay blocked.",
+  });
+  expect(always.getAttribute("aria-checked")).toBe("true");
   expect(
-    screen.getByRole("radio", { name: "Always, block trackers" }).getAttribute("aria-checked"),
-  ).toBe("true");
+    screen.getByRole("radio", {
+      name: "Ask each time",
+      description: "Click Load images on each message.",
+    }),
+  ).toBeTruthy();
+  expect(screen.getByRole("radiogroup", { name: "Remote images" })).toBeTruthy();
   await audit();
+  // Arrow keys move the selection inside the group.
+  always.focus();
+  await userEvent.setup().keyboard("{ArrowDown}");
+  expect(
+    screen.getByRole("radio", { name: "From people I know" }).getAttribute("aria-checked"),
+  ).toBe("true");
+  fireEvent.click(screen.getByRole("radio", { name: "Ask each time" }));
   fireEvent.click(screen.getByRole("radio", { name: "From people I know" }));
   fireEvent.click(screen.getByRole("button", { name: "Done" }));
   expect(saved()).toEqual({ remoteImages: "known" });

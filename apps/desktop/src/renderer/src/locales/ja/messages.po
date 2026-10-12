@@ -1207,6 +1207,11 @@ msgstr "選択を解除"
 msgid "Clearing removes downloaded bodies and attachments. Headers and drafts stay. Opening uncached content requires a connection."
 msgstr "ダウンロード済みの本文と添付ファイルを消去します。ヘッダと下書きは保持されます。キャッシュされていないコンテンツを開くには接続が必要です。"
 
+#. loadImages is the translated Load images button above a message in the reader.
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
+msgid "Click {loadImages} on each message."
+msgstr "メッセージごとに「{loadImages}」をクリックします。"
+
 #: src/renderer/src/compose/use-compose-editor.ts
 msgid "Click in this window, then choose a device to take a photo, scan a document or add a sketch."
 msgstr "このウインドウをクリックし、デバイスを選択して写真の撮影、書類のスキャン、スケッチの追加を行います。"
@@ -1383,6 +1388,10 @@ msgstr "連絡先へのアクセスは許可されていません。この設定
 #: src/renderer/src/components/AppleContactsSettings.tsx
 msgid "Contacts access restricted by system policy."
 msgstr "システムポリシーにより連絡先へのアクセスが制限されています。"
+
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
+msgid "Contacts and people you've sent mail to, when the sender is verified."
+msgstr "連絡先とメールを送信したことのある相手。送信者が認証された場合に限ります。"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Contacts only"
@@ -3020,6 +3029,7 @@ msgid "Link URL"
 msgstr "リンクURL"
 
 #: src/renderer/src/components/MessageBody.tsx
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
 msgid "Load images"
 msgstr "画像の読み込み"
 
@@ -4059,10 +4069,6 @@ msgstr "このリンクを開きますか？"
 msgid "Open With…"
 msgstr "このアプリケーションで開く…"
 
-#: src/renderer/src/components/RemoteImagesPrompt.tsx
-msgid "OpenMail blocks known tracking pixels in every mode."
-msgstr "OpenMail はどのモードでも既知のトラッキングピクセルをブロックします。"
-
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "OpenMail is the default email app"
 msgstr "OpenMail はデフォルトの電子メール アプリです"
@@ -4472,6 +4478,10 @@ msgstr "受信者名"
 #: src/renderer/src/components/Composer.tsx
 msgid "Recipients outside the original conversation:"
 msgstr "元のスレッドに含まれない宛先："
+
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
+msgid "Recommended. Known tracking pixels stay blocked."
+msgstr "おすすめ。既知のトラッキングピクセルは引き続きブロックされます。"
 
 #: src/main/native-i18n.ts
 msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"

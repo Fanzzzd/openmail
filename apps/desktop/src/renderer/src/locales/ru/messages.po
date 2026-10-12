@@ -1207,6 +1207,11 @@ msgstr "Снять выделение"
 msgid "Clearing removes downloaded bodies and attachments. Headers and drafts stay. Opening uncached content requires a connection."
 msgstr "Очистка удаляет загруженные тексты сообщений и вложения. Заголовки и черновики сохраняются. Для открытия содержимого вне кэша нужно подключение."
 
+#. loadImages is the translated Load images button above a message in the reader.
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
+msgid "Click {loadImages} on each message."
+msgstr "Нажимайте «{loadImages}» в каждом сообщении."
+
 #: src/renderer/src/compose/use-compose-editor.ts
 msgid "Click in this window, then choose a device to take a photo, scan a document or add a sketch."
 msgstr "Нажмите в этом окне, затем выберите устройство, чтобы сделать фото, отсканировать документ или добавить рисунок."
@@ -1383,6 +1388,10 @@ msgstr "Доступ к контактам не предоставлен. Вык
 #: src/renderer/src/components/AppleContactsSettings.tsx
 msgid "Contacts access restricted by system policy."
 msgstr "Доступ к контактам ограничен политикой системы."
+
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
+msgid "Contacts and people you've sent mail to, when the sender is verified."
+msgstr "Контакты и люди, которым вы отправляли почту, если отправитель подтверждён."
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Contacts only"
@@ -3020,6 +3029,7 @@ msgid "Link URL"
 msgstr "URL-адрес ссылки"
 
 #: src/renderer/src/components/MessageBody.tsx
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
 msgid "Load images"
 msgstr "Загрузить изображения"
 
@@ -4059,10 +4069,6 @@ msgstr "Открыть эту ссылку?"
 msgid "Open With…"
 msgstr "Открыть в программе…"
 
-#: src/renderer/src/components/RemoteImagesPrompt.tsx
-msgid "OpenMail blocks known tracking pixels in every mode."
-msgstr "OpenMail блокирует известные пиксели отслеживания в любом режиме."
-
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "OpenMail is the default email app"
 msgstr "OpenMail — почтовое приложение по умолчанию."
@@ -4472,6 +4478,10 @@ msgstr "Имя получателя"
 #: src/renderer/src/components/Composer.tsx
 msgid "Recipients outside the original conversation:"
 msgstr "Получатели вне исходной переписки:"
+
+#: src/renderer/src/components/RemoteImagesPrompt.tsx
+msgid "Recommended. Known tracking pixels stay blocked."
+msgstr "Рекомендуется. Известные пиксели отслеживания остаются заблокированными."
 
 #: src/main/native-i18n.ts
 msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
