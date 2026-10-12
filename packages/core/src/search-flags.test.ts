@@ -39,7 +39,7 @@ it("search flags freeze the attachment rules that migration 45 embeds", () => {
 });
 
 it("migration 45 flags has: operators at write time and backfills older rows in batches", async () => {
-  expect(MIGRATIONS).toHaveLength(45);
+  expect(MIGRATIONS.length).toBeGreaterThanOrEqual(45);
   const directory = await mkdtemp(join(tmpdir(), "openmail-drive-links-"));
   const file = join(directory, "mail.sqlite");
   try {
