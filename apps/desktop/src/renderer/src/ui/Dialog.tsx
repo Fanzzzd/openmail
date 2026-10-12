@@ -15,7 +15,7 @@ const popupMotion =
 
 /** The white sheet every dialog sits on. */
 const sheet =
-  "no-drag rounded-xl bg-white text-[13px] text-neutral-900 shadow-2xl ring-1 ring-black/5 outline-none dark:bg-neutral-800 dark:text-neutral-100 dark:ring-white/10";
+  "no-drag rounded-sheet bg-raised text-body text-neutral-900 shadow-sheet outline-none dark:text-neutral-100";
 
 interface DialogProps {
   /** Called on Escape and outside clicks. Omit to make the dialog impossible to dismiss. */
@@ -136,7 +136,7 @@ export function Drawer({
             const active = document.activeElement;
             return !active || active === document.body || !!popup.current?.contains(active);
           }}
-          className="no-drag fixed inset-y-0 left-0 z-40 flex max-h-none w-72 max-w-[calc(100vw-48px)] flex-col overflow-hidden bg-neutral-100 text-[13px] text-neutral-900 shadow-2xl outline-none transition-transform duration-200 ease-out data-ending-style:-translate-x-full data-starting-style:-translate-x-full motion-reduce:transition-none dark:bg-neutral-900 dark:text-neutral-100"
+          className="no-drag fixed inset-y-0 left-0 z-40 flex max-h-none w-72 max-w-[calc(100vw-48px)] flex-col overflow-hidden bg-neutral-100 text-body text-neutral-900 shadow-2xl outline-none transition-transform duration-200 ease-out data-ending-style:-translate-x-full data-starting-style:-translate-x-full motion-reduce:transition-none dark:bg-neutral-900 dark:text-neutral-100"
         >
           {children}
         </BaseDialog.Popup>
@@ -167,7 +167,7 @@ export function Alert({ open, onOpenChange, title, description, children }: Aler
         <AlertDialog.Popup
           className={`fixed top-1/2 left-1/2 z-50 w-[400px] -translate-x-1/2 -translate-y-1/2 p-5 ${sheet} ${popupMotion}`}
         >
-          <AlertDialog.Title className="text-[14px] font-semibold">{title}</AlertDialog.Title>
+          <AlertDialog.Title className="text-callout font-semibold">{title}</AlertDialog.Title>
           {description && (
             <AlertDialog.Description className="mt-1.5 text-a11y-muted">
               {description}

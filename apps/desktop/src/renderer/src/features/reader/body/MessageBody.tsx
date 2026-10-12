@@ -182,7 +182,7 @@ function TrackerBadge({ trackers, pixels }: { trackers: readonly string[]; pixel
         </button>
       }
     >
-      <div className="px-3 py-2 text-[12px]">
+      <div className="px-3 py-2 text-footnote">
         <span className="mb-1 block font-medium">{t`Blocked before loading:`}</span>
         {list.map((name) => (
           <span key={name} className="block text-neutral-600 dark:text-neutral-300">
@@ -232,7 +232,7 @@ function PlainBody({
       <pre
         ref={root}
         dir="auto"
-        className={`rounded-lg p-4 font-sans leading-relaxed whitespace-pre-wrap ${background === "dark" ? "bg-black text-neutral-100" : "bg-white text-neutral-900"}`}
+        className={`rounded-card p-4 font-sans leading-relaxed whitespace-pre-wrap ${background === "dark" ? "bg-black text-neutral-100" : "bg-white text-neutral-900"}`}
         style={{ fontSize: (14 * zoom) / 100 }}
       />
       {parts.quote && (
@@ -268,7 +268,7 @@ function RemoteImagesNotice({
   return (
     <div
       data-images-notice={imageNotice || undefined}
-      className={`mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] ${imageNotice ? "rounded-md bg-neutral-100 px-3 py-1.5 text-neutral-600 dark:bg-white/5 dark:text-neutral-400" : ""}`}
+      className={`mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-footnote ${imageNotice ? "rounded-control bg-neutral-100 px-3 py-1.5 text-neutral-600 dark:bg-white/5 dark:text-neutral-400" : ""}`}
     >
       {imageNotice && (
         <>

@@ -74,22 +74,22 @@ export function Overview({
   const accountCount = accounts.length;
 
   return (
-    <main className="flex h-full w-full min-w-0 flex-col bg-white dark:bg-neutral-900">
+    <main className="flex h-full w-full min-w-0 flex-col bg-surface">
       <header
         className={`drag flex h-13 shrink-0 items-center gap-3 pr-4 sm:pr-7 ${inset ?? "pl-4 sm:pl-7"}`}
       >
         {leading}
-        <h1 className="shrink-0 text-[17px] font-bold">
+        <h1 className="shrink-0 text-title font-bold">
           <Trans>Overview</Trans>
         </h1>
-        <span className="min-w-0 truncate text-[13px] text-a11y-muted">
+        <span className="min-w-0 truncate text-body text-a11y-muted">
           {t`${plural(accountCount, { one: "# account", other: "# accounts" })}, ${total} unread`}
         </span>
         <span className="flex-1" />
         <button
           type="button"
           onClick={() => run(syncNow)}
-          className="flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-black/10 px-2.5 text-[13px] hover:bg-black/[0.03] dark:border-white/10 dark:hover:bg-white/5"
+          className="flex h-7 shrink-0 items-center gap-1.5 rounded-control border border-edge px-2.5 text-body hover:bg-fill-hover"
         >
           <RefreshCw className={`size-3.5 ${syncState.running ? "animate-spin" : ""}`} />
           <span className="max-sm:sr-only">
@@ -100,8 +100,8 @@ export function Overview({
 
       <div className="flex-1 overflow-y-auto px-4 pb-10 sm:px-7">
         {profiles.length === 0 && (
-          <div className="mb-6 flex items-center gap-4 rounded-xl border border-dashed border-black/15 p-4 dark:border-white/15">
-            <p className="flex-1 text-[13px] leading-relaxed text-neutral-600 dark:text-neutral-300">
+          <div className="mb-6 flex items-center gap-4 rounded-sheet border border-dashed border-edge p-4">
+            <p className="flex-1 text-body leading-relaxed text-neutral-600 dark:text-neutral-300">
               <Trans>
                 Group accounts into spaces, like “Work” and “Personal”. Each space has its own
                 inbox. Switch with ⌃1 to ⌃9.
@@ -110,7 +110,7 @@ export function Overview({
             <button
               type="button"
               onClick={() => onEditProfile("new")}
-              className="flex h-8 shrink-0 items-center gap-1.5 rounded-md bg-blue-600 px-3 text-[13px] font-medium text-white"
+              className="flex h-8 shrink-0 items-center gap-1.5 rounded-control bg-blue-600 px-3 text-body font-medium text-white"
             >
               <Plus className="size-4" />
               <Trans>New space</Trans>
@@ -151,11 +151,11 @@ function GroupCard({
   const count = i18n.number(unreadCount);
 
   return (
-    <section className="flex flex-col rounded-xl border border-black/[0.08] dark:border-white/10">
+    <section className="flex flex-col rounded-sheet border border-separator">
       <header className="flex items-center gap-2.5 px-4 pt-3.5 pb-2">
         {group.profile ? (
           <span
-            className={`flex size-7 items-center justify-center rounded-full text-[15px] ${PROFILE_BG[group.profile.color]}`}
+            className={`flex size-7 items-center justify-center rounded-full text-headline ${PROFILE_BG[group.profile.color]}`}
           >
             {group.profile.icon}
           </span>
@@ -167,12 +167,12 @@ function GroupCard({
         <button
           type="button"
           onClick={() => onOpen(group.space)}
-          className="min-w-0 flex-1 truncate text-left text-[15px] font-semibold hover:underline"
+          className="min-w-0 flex-1 truncate text-left text-headline font-semibold hover:underline"
         >
           {group.title}
         </button>
         {unreadCount > 0 && (
-          <span className="text-[13px] text-a11y-muted tabular-nums">
+          <span className="text-body text-a11y-muted tabular-nums">
             <Trans>{count} unread</Trans>
           </span>
         )}
@@ -182,7 +182,7 @@ function GroupCard({
               type="button"
               aria-label={t`Edit space`}
               onClick={onEdit}
-              className="rounded p-1 text-a11y-muted hover:bg-black/5 dark:hover:bg-white/10"
+              className="rounded p-1 text-a11y-muted hover:bg-fill-hover"
             >
               <Pencil className="size-3.5" />
             </button>
@@ -192,12 +192,12 @@ function GroupCard({
 
       <ul className="px-4 pb-2">
         {group.accounts.length === 0 && (
-          <li className="py-1 text-[13px] text-a11y-muted">
+          <li className="py-1 text-body text-a11y-muted">
             <Trans>No accounts yet</Trans>
           </li>
         )}
         {group.accounts.map((a) => (
-          <li key={a.id} className="flex items-center gap-2 py-1 text-[13px]">
+          <li key={a.id} className="flex items-center gap-2 py-1 text-body">
             <span
               className={`size-2 shrink-0 rounded-full ${accountColorClass(a)}`}
               style={accountColorStyle(a)}
@@ -212,7 +212,7 @@ function GroupCard({
                 <Trans>Sync failed</Trans>
               </span>
             ) : (
-              <span className="shrink-0 text-[12px] text-a11y-muted">
+              <span className="shrink-0 text-footnote text-a11y-muted">
                 {a.lastSyncedAt ? shortDate(a.lastSyncedAt, i18n) : t`Not synced`}
               </span>
             )}
@@ -223,9 +223,9 @@ function GroupCard({
         ))}
       </ul>
 
-      <div className="mt-auto border-t border-black/[0.06] px-2 py-1.5 dark:border-white/[0.08]">
+      <div className="mt-auto border-t border-separator px-2 py-1.5">
         {threads?.length === 0 && (
-          <p className="px-2 py-2 text-[13px] text-a11y-muted">
+          <p className="px-2 py-2 text-body text-a11y-muted">
             <Trans>No unread mail in the inbox</Trans>
           </p>
         )}
@@ -234,11 +234,11 @@ function GroupCard({
             key={thread.id}
             type="button"
             onClick={() => onOpen(group.space, thread.id)}
-            className="flex w-full items-baseline gap-2 rounded-md px-2 py-1.5 text-left text-[13px] hover:bg-black/[0.04] dark:hover:bg-white/5"
+            className="flex w-full items-baseline gap-2 rounded-control px-2 py-1.5 text-left text-body hover:bg-fill-hover"
           >
             <span className="w-24 shrink-0 truncate font-semibold">{displayName(thread.from)}</span>
             <span className="min-w-0 flex-1 truncate">{thread.subject || t`(No subject)`}</span>
-            <span className="shrink-0 text-[12px] text-a11y-muted tabular-nums">
+            <span className="shrink-0 text-footnote text-a11y-muted tabular-nums">
               {shortDate(thread.date, i18n)}
             </span>
           </button>

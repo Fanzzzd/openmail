@@ -23,10 +23,8 @@ import { Tip } from "../../ui/Tip";
 const RAIL_MAILBOXES = new Set<Mailbox>(["snoozed", "inbox", "starred", "sent", "drafts"]);
 
 const cell = (active: boolean) =>
-  `relative flex size-9 shrink-0 items-center justify-center rounded-lg outline-offset-0 outline-a11y-focus focus-visible:outline-[3px] ${
-    active
-      ? "bg-white shadow-sm ring-1 ring-black/10 dark:bg-white/15 dark:ring-white/10"
-      : "hover:bg-black/5 dark:hover:bg-white/10"
+  `relative flex size-9 shrink-0 items-center justify-center rounded-card outline-offset-0 outline-a11y-focus focus-visible:outline-[3px] ${
+    active ? "bg-white shadow-sm ring-1 ring-edge dark:bg-white/15" : "hover:bg-fill-hover"
   }`;
 
 interface Props {
@@ -67,7 +65,7 @@ export function SidebarRail({
     <div
       data-mail-pane="sidebar"
       data-sidebar-rail
-      className="flex h-full w-14 shrink-0 flex-col items-center border-r border-black/[0.07] bg-neutral-100/60 dark:border-white/[0.08] dark:bg-neutral-950/70"
+      className="flex h-full w-14 shrink-0 flex-col items-center border-r border-separator bg-neutral-100/60 dark:bg-neutral-950/70"
     >
       {/* The traffic lights sit in this strip. */}
       <div className="drag h-13 w-full shrink-0" />
@@ -93,7 +91,7 @@ export function SidebarRail({
           </button>
         </Tip>
       </div>
-      <div className="flex min-h-0 w-full flex-1 flex-col items-center gap-3 overflow-y-auto border-t border-black/5 pt-2 pb-2 dark:border-white/5">
+      <div className="flex min-h-0 w-full flex-1 flex-col items-center gap-3 overflow-y-auto border-t border-separator pt-2 pb-2">
         <nav aria-label={t`Mailboxes`} className="flex flex-col items-center gap-1">
           {MAILBOXES.filter(({ id }) => RAIL_MAILBOXES.has(id)).map(({ id, icon: Icon, color }) => (
             <RailButton
@@ -111,7 +109,7 @@ export function SidebarRail({
         </nav>
         <fieldset
           aria-label={t`Spaces`}
-          className="mt-auto flex min-w-0 flex-col items-center gap-1 border-t border-black/5 pt-2 dark:border-white/5"
+          className="mt-auto flex min-w-0 flex-col items-center gap-1 border-t border-separator pt-2"
         >
           <RailButton
             label={t`Overview`}
@@ -141,7 +139,7 @@ export function SidebarRail({
               onClick={() => onSpace(p.id)}
             >
               <span
-                className={`flex size-6 items-center justify-center rounded-full text-[13px] ${PROFILE_BG[p.color]}`}
+                className={`flex size-6 items-center justify-center rounded-full text-body ${PROFILE_BG[p.color]}`}
               >
                 {p.icon}
               </span>

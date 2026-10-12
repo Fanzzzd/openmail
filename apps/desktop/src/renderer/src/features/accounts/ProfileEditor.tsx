@@ -81,7 +81,7 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
           if (name.trim()) void submit();
         }}
       >
-        <h2 className="text-[15px] font-semibold">{title}</h2>
+        <h2 className="text-headline font-semibold">{title}</h2>
 
         <div className="mt-4 flex items-center gap-3">
           <span
@@ -94,12 +94,12 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder={t`Name, like Work`}
-            className="h-8 min-w-0 flex-1 rounded-md border border-black/10 bg-transparent px-2.5 text-[14px] outline-none focus:border-blue-500 dark:border-white/15"
+            className="h-8 min-w-0 flex-1 rounded-control border border-edge bg-transparent px-2.5 text-callout outline-none focus:border-blue-500"
           />
         </div>
 
         <fieldset className="mt-4">
-          <legend className="mb-1.5 text-[12px] text-a11y-muted">
+          <legend className="mb-1.5 text-footnote text-a11y-muted">
             <Trans>Icon</Trans>
           </legend>
           <div className="flex items-center gap-1">
@@ -113,7 +113,7 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
                 <Radio.Root
                   key={i}
                   value={i}
-                  className="flex size-8 items-center justify-center rounded-md text-[17px] outline-none hover:bg-black/5 focus-visible:ring-2 focus-visible:ring-a11y-focus data-checked:bg-black/10 dark:hover:bg-white/5 dark:data-checked:bg-white/15"
+                  className="flex size-8 items-center justify-center rounded-control text-title outline-none hover:bg-fill-hover focus-visible:ring-2 focus-visible:ring-a11y-focus data-checked:bg-fill-pressed"
                 >
                   {i}
                 </Radio.Root>
@@ -126,13 +126,13 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
                 const g = firstGrapheme(e.target.value);
                 if (g) setIcon(g);
               }}
-              className="ml-1 h-8 w-14 rounded-md border border-black/10 bg-transparent px-2 text-center outline-none dark:border-white/15"
+              className="ml-1 h-8 w-14 rounded-control border border-edge bg-transparent px-2 text-center outline-none"
             />
           </div>
         </fieldset>
 
         <fieldset className="mt-4">
-          <legend className="mb-1.5 text-[12px] text-a11y-muted">
+          <legend className="mb-1.5 text-footnote text-a11y-muted">
             <Trans>Color</Trans>
           </legend>
           <RadioGroup<ProfileColor>
@@ -153,7 +153,7 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
         </fieldset>
 
         <fieldset className="mt-4">
-          <legend className="mb-1.5 text-[12px] text-a11y-muted">
+          <legend className="mb-1.5 text-footnote text-a11y-muted">
             <Trans>Accounts</Trans>
           </legend>
           <div className="max-h-48 space-y-px overflow-y-auto">
@@ -163,7 +163,7 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
               return (
                 <label
                   key={a.id}
-                  className="flex h-8 items-center gap-2.5 rounded-md px-2 hover:bg-black/[0.04] dark:hover:bg-white/5"
+                  className="flex h-8 items-center gap-2.5 rounded-control px-2 hover:bg-fill-hover"
                 >
                   <Checkbox
                     checked={members.has(a.id)}
@@ -182,7 +182,7 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
                   />
                   <span className="min-w-0 flex-1 truncate">{accountName(a)}</span>
                   {elsewhere && (
-                    <span className="shrink-0 text-[12px] text-a11y-muted">
+                    <span className="shrink-0 text-footnote text-a11y-muted">
                       {members.has(a.id) ? (
                         <Trans>Moves from “{elsewhere}”</Trans>
                       ) : (
@@ -197,7 +197,7 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
         </fieldset>
 
         {error && (
-          <p role="alert" className="mt-3 text-[12px] text-a11y-danger">
+          <p role="alert" className="mt-3 text-footnote text-a11y-danger">
             {error}
           </p>
         )}
@@ -207,7 +207,7 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
             <button
               type="button"
               onClick={() => void deleteProfile(profile.id)}
-              className="h-8 rounded-md px-3 text-a11y-danger hover:bg-red-500/10"
+              className="h-8 rounded-control px-3 text-a11y-danger hover:bg-red-500/10"
             >
               <Trans>Delete Space</Trans>
             </button>
@@ -216,14 +216,14 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
           <button
             type="button"
             onClick={onClose}
-            className="h-8 rounded-md px-3 hover:bg-black/5 dark:hover:bg-white/10"
+            className="h-8 rounded-control px-3 hover:bg-fill-hover"
           >
             <Trans>Cancel</Trans>
           </button>
           <button
             type="submit"
             disabled={!name.trim() || save.waiting}
-            className="h-8 rounded-md bg-blue-600 px-4 font-medium text-white disabled:opacity-40"
+            className="h-8 rounded-control bg-blue-600 px-4 font-medium text-white disabled:opacity-40"
           >
             {profile ? <Trans>Save</Trans> : <Trans>Create</Trans>}
           </button>

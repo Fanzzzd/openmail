@@ -42,7 +42,7 @@ export function AccountControls({
       reactivityKeys: MAIL_KEYS,
     });
   return (
-    <div className="flex w-full flex-wrap items-center gap-3 border-t border-black/5 pt-2 dark:border-white/5">
+    <div className="flex w-full flex-wrap items-center gap-3 border-t border-separator pt-2">
       <label htmlFor={`account-enabled-${account.id}`} className="flex items-center gap-2">
         <Checkbox
           id={`account-enabled-${account.id}`}
@@ -56,7 +56,7 @@ export function AccountControls({
       <label className="flex items-center gap-2">
         <Trans>Display name</Trans>
         <input
-          className="w-36 rounded border border-black/10 bg-transparent px-2 py-1 dark:border-white/15"
+          className="w-36 rounded border border-edge bg-transparent px-2 py-1"
           value={description}
           maxLength={200}
           onChange={(e) => setDescription(e.target.value)}
@@ -83,7 +83,7 @@ export function AccountControls({
               value={authservId}
               maxLength={253}
               onChange={(event) => setAuthservId(event.target.value)}
-              className="rounded border border-black/10 bg-transparent px-2 py-1 dark:border-white/15"
+              className="rounded border border-edge bg-transparent px-2 py-1"
             />
           </label>
           <p className="text-xs text-a11y-muted">

@@ -50,7 +50,7 @@ export function OpenWithSubmenu({
       }}
     >
       <Menu.SubmenuTrigger
-        className={`group ${itemClass} data-popup-open:not-data-highlighted:bg-black/[0.06] dark:data-popup-open:not-data-highlighted:bg-white/10`}
+        className={`group ${itemClass} data-popup-open:not-data-highlighted:bg-fill-hover`}
       >
         <span className="flex size-4 shrink-0 items-center justify-center" />
         <span className="min-w-0 flex-1 truncate">{t`Open With`}</span>

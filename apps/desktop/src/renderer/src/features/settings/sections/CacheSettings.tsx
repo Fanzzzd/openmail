@@ -111,7 +111,7 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
     ["TRASH", t`Trash`],
   ]);
   return (
-    <section className="mt-6 space-y-3 border-t border-black/10 pt-4 dark:border-white/10">
+    <section className="mt-6 space-y-3 border-t border-edge pt-4">
       <h2 className="font-semibold">
         <Trans>Older mail and cache</Trans>
       </h2>

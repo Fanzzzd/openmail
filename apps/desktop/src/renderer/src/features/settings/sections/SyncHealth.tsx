@@ -6,7 +6,7 @@ import { useState } from "react";
 import { useRunMail, withMail } from "../../../state/mail";
 
 const button =
-  "rounded-md border border-black/10 px-2.5 py-1 text-a11y-accent disabled:opacity-50 dark:border-white/15";
+  "rounded-control border border-edge px-2.5 py-1 text-a11y-accent disabled:opacity-50";
 export function SyncHealthCheck({ accountId }: { accountId: string }) {
   const { t } = useLingui();
   const run = useRunMail();

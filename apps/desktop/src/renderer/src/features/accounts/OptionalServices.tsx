@@ -89,11 +89,7 @@ export function OptionalServices({
     ? new Intl.ListFormat(i18n.locale).format(pending.others.map((service) => names[service]))
     : "";
   return (
-    <section
-      ref={ref}
-      tabIndex={-1}
-      className="w-full space-y-2 border-t border-black/5 pt-2 dark:border-white/5"
-    >
+    <section ref={ref} tabIndex={-1} className="w-full space-y-2 border-t border-separator pt-2">
       <h4 className="font-medium">
         <Trans>Optional services</Trans>
       </h4>

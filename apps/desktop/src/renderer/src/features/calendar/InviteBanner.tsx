@@ -46,7 +46,7 @@ function LoadedInvites({ message }: { message: Message }) {
     return (
       <div
         role="alert"
-        className="mt-3 rounded-md border border-orange-300 p-3 text-orange-700 dark:text-orange-400"
+        className="mt-3 rounded-control border border-orange-300 p-3 text-orange-700 dark:text-orange-400"
       >
         <Trans>Could not load the calendar invitation.</Trans> {resultError(i18n, invitations)}
       </div>
@@ -117,7 +117,7 @@ function Recurrence({ invite }: { invite: CalendarInvite }) {
       }
     >
       {invite.recurrenceId && <p>{formatCalendarTime(invite.recurrenceId, i18n.locale)}</p>}
-      <ul className="break-words font-mono text-[11px]">
+      <ul className="break-words font-mono text-caption">
         {invite.recurrence.map((r) => (
           <li key={r}>{r}</li>
         ))}
@@ -171,7 +171,7 @@ function Invitation({
   return (
     <section
       aria-label={t`Calendar invitation`}
-      className="mt-3 space-y-2 rounded-lg border border-blue-200 bg-blue-50/70 p-3 text-[12px] dark:border-blue-900 dark:bg-blue-950/30"
+      className="mt-3 space-y-2 rounded-card border border-blue-200 bg-blue-50/70 p-3 text-footnote dark:border-blue-900 dark:bg-blue-950/30"
     >
       <p className="font-semibold">
         {invite.cancelled
@@ -180,7 +180,7 @@ function Invitation({
             ? t`Meeting response`
             : t`Calendar invitation`}
       </p>
-      <h3 className="text-[14px] font-semibold">{invite.title || message.subject}</h3>
+      <h3 className="text-callout font-semibold">{invite.title || message.subject}</h3>
       {invite.start && (
         <p>
           <CalendarRange range={invite} />

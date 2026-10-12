@@ -350,7 +350,7 @@ export function App({ composeId }: { composeId?: string }) {
   const { host: readerHost, slot: readerSlot } = usePaneHost();
   if (composeId)
     return (
-      <div className="h-screen bg-white dark:bg-neutral-900">
+      <div className="h-screen bg-surface">
         {compose && (
           <Composer
             key={compose.id}
@@ -440,7 +440,7 @@ export function App({ composeId }: { composeId?: string }) {
       navigation.focusList(null);
     };
   const mainPane = !hasAccounts ? (
-    <main className="h-full w-full bg-white dark:bg-neutral-900">
+    <main className="h-full w-full bg-surface">
       <div className="drag h-13" />
     </main>
   ) : (
@@ -656,7 +656,7 @@ export function App({ composeId }: { composeId?: string }) {
     />
   );
   return (
-    <div className="flex h-full flex-col text-[13px] text-neutral-900 dark:text-neutral-100">
+    <div className="flex h-full flex-col text-body text-neutral-900 dark:text-neutral-100">
       <DefaultProfilesPrompt
         accounts={accountList}
         profiles={profileList}

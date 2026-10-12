@@ -46,7 +46,7 @@ function visibleTiers(width: number): Record<ToolbarTier, boolean> {
 }
 
 const button =
-  "flex size-7 shrink-0 items-center justify-center rounded-md text-a11y-muted hover:bg-black/5 disabled:opacity-40 data-popup-open:bg-black/5 dark:hover:bg-white/10 dark:data-popup-open:bg-white/10";
+  "flex size-7 shrink-0 items-center justify-center rounded-control text-a11y-muted hover:bg-fill-hover disabled:opacity-40 data-popup-open:bg-fill-pressed";
 
 interface Props {
   /** The writing mode select and any one-off undo buttons, first in the row. */
@@ -161,7 +161,7 @@ export function ComposeToolbar({
     <KeyboardToolbar
       ref={ref}
       aria-label={t`Formatting`}
-      className="flex shrink-0 items-center gap-0.5 overflow-hidden border-b border-black/[0.07] px-4 py-1 dark:border-white/[0.08]"
+      className="flex shrink-0 items-center gap-0.5 overflow-hidden border-b border-separator px-4 py-1"
     >
       <div className="mr-1 flex min-w-0 shrink items-center gap-1">{leading}</div>
       {formatting && (
@@ -262,7 +262,7 @@ export function ComposeToolbar({
 }
 
 function Separator() {
-  return <span aria-hidden className="mx-1 h-4 w-px shrink-0 bg-black/10 dark:bg-white/10" />;
+  return <span aria-hidden className="mx-1 h-4 w-px shrink-0 bg-fill-pressed" />;
 }
 
 function FontPopover({ disabled, onStyle }: { disabled: boolean; onStyle: Props["onStyle"] }) {
@@ -360,7 +360,7 @@ function ColorPopover({ disabled, onStyle }: { disabled: boolean; onStyle: Props
         <button
           type="button"
           disabled={!/^#(?:[a-f\d]{3}|[a-f\d]{6})$/i.test(hex[target])}
-          className="rounded px-2 py-1 text-xs hover:bg-black/5 disabled:opacity-40 dark:hover:bg-white/10"
+          className="rounded px-2 py-1 text-xs hover:bg-fill-hover disabled:opacity-40"
           onClick={() => {
             const value = composeStyleValue(target, hex[target]);
             if (value) onStyle(target, value);

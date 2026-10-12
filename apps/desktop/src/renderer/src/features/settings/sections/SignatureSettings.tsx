@@ -74,7 +74,7 @@ export function SignatureSettings({ accounts }: { accounts: readonly Account[] }
     });
   return (
     <section className="space-y-4">
-      <h3 className="text-[12px] font-semibold text-a11y-muted">
+      <h3 className="text-footnote font-semibold text-a11y-muted">
         <Trans>Signatures</Trans>
       </h3>
       {addresses.map((address) => {
@@ -82,10 +82,7 @@ export function SignatureSettings({ accounts }: { accounts: readonly Account[] }
           (signature) => signature.address === address,
         );
         return (
-          <div
-            key={address}
-            className="space-y-2 rounded-lg border border-black/10 p-3 dark:border-white/10"
-          >
+          <div key={address} className="space-y-2 rounded-card border border-edge p-3">
             <p className="font-medium">{address}</p>
             {(["new", "reply"] as const).map((kind) => (
               <div key={kind} className="flex items-center justify-between gap-3">
@@ -238,7 +235,7 @@ function SignatureEditor({ initial, onClose }: { initial: SignatureForm; onClose
   const bodyRef = useRef<ComposeElement>(null);
   const selectionRef = useRef<Range>(null);
   return (
-    <fieldset className="space-y-3 rounded-lg border p-3">
+    <fieldset className="space-y-3 rounded-card border p-3">
       <legend>{t`Edit signature`}</legend>
       <label className="block">
         {t`Signature name`}

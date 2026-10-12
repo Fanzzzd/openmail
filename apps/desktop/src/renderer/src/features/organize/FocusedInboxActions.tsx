@@ -56,7 +56,7 @@ export function FocusedInboxActions({
         trigger={
           <Toolbar.Button
             aria-label={t`Focused/Other`}
-            className="rounded-md p-1.5 text-a11y-muted hover:bg-black/5 dark:hover:bg-white/10"
+            className="rounded-control p-1.5 text-a11y-muted hover:bg-fill-hover"
           >
             <Inbox className="size-4" />
           </Toolbar.Button>

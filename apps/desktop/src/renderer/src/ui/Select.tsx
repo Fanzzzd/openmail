@@ -2,7 +2,7 @@ import { Select as BaseSelect } from "@base-ui/react/select";
 import { Check, ChevronsUpDown } from "lucide-react";
 import type { ReactNode } from "react";
 
-import { itemClass, popupMotion, popupSurface } from "./styles";
+import { itemClass, popupMotion, popupOffset, popupSurface } from "./styles";
 
 interface SelectOption<T extends string> {
   value: T;
@@ -31,14 +31,16 @@ interface Props<T extends string> {
 
 const triggerStyles = {
   inline:
-    "h-7 gap-2 rounded-md px-1.5 -mx-1.5 outline-offset-0 not-data-disabled:hover:bg-black/[0.04] focus-visible:outline-[3px] data-popup-open:bg-black/[0.06] dark:not-data-disabled:hover:bg-white/5 dark:data-popup-open:bg-white/10",
+    "h-7 gap-2 rounded-control px-1.5 -mx-1.5 outline-offset-0 not-data-disabled:hover:bg-fill-hover focus-visible:outline-[3px] data-popup-open:bg-fill-pressed",
   field:
-    "h-8 w-full justify-between gap-2 rounded-md border border-black/15 bg-white px-2.5 shadow-xs outline-offset-1 not-data-disabled:hover:border-black/25 focus-visible:outline-2 data-disabled:opacity-50 data-popup-open:border-blue-600 dark:border-white/15 dark:bg-white/5 dark:not-data-disabled:hover:border-white/25 dark:data-popup-open:border-blue-400",
+    "h-7 w-full justify-between gap-2 rounded-control bg-white px-2.5 shadow-control ring-1 ring-edge outline-offset-1 not-data-disabled:hover:bg-neutral-50 focus-visible:outline-2 data-disabled:opacity-50 data-popup-open:ring-blue-600/60 dark:bg-white/[0.08] dark:not-data-disabled:hover:bg-white/[0.12]",
 } as const;
 
 /**
- * A macOS pop-up button: the list opens over the button with the current
- * item under the pointer. Inline, when disabled it reads as plain text.
+ * A pop-up button. The list drops below the button, start-aligned and at least
+ * as wide, like every other popup in the app; opening it over the button hid
+ * the label and looked misplaced next to fields. Inline, when disabled it
+ * reads as plain text.
  */
 export function Select<T extends string>({
   value,
@@ -77,7 +79,12 @@ export function Select<T extends string>({
         </BaseSelect.Icon>
       </BaseSelect.Trigger>
       <BaseSelect.Portal>
-        <BaseSelect.Positioner className="z-[60] outline-none" sideOffset={4}>
+        <BaseSelect.Positioner
+          className="z-[60] outline-none"
+          alignItemWithTrigger={false}
+          align="start"
+          sideOffset={popupOffset}
+        >
           <BaseSelect.Popup
             className={`min-w-(--anchor-width) p-[5px] ${popupSurface} ${popupMotion}`}
           >

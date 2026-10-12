@@ -51,16 +51,16 @@ export function Proposals({ proposals, accounts, onClose, onOpenDraft }: Props) 
       ownClose
       className="flex max-h-[min(600px,calc(100vh-40px))] w-[600px] flex-col overflow-hidden"
     >
-      <header className="flex h-12 shrink-0 items-center gap-2 border-b border-black/[0.07] px-5 dark:border-white/[0.08]">
+      <header className="flex h-12 shrink-0 items-center gap-2 border-b border-separator px-5">
         <Sparkles className="size-4 text-violet-700 dark:text-violet-400" />
-        <h2 className="flex-1 text-[15px] font-semibold">
+        <h2 className="flex-1 text-headline font-semibold">
           <Trans>AI suggestions</Trans>
         </h2>
         <button
           type="button"
           aria-label={t`Close`}
           onClick={onClose}
-          className="rounded p-1 text-a11y-muted hover:bg-black/5 dark:hover:bg-white/10"
+          className="rounded p-1 text-a11y-muted hover:bg-fill-hover"
         >
           <X className="size-4" />
         </button>
@@ -71,7 +71,7 @@ export function Proposals({ proposals, accounts, onClose, onOpenDraft }: Props) 
             <Trans>No suggestions waiting for review.</Trans>
           </p>
         ) : (
-          <ul className="divide-y divide-black/[0.07] dark:divide-white/[0.08]">
+          <ul className="divide-y divide-separator">
             {proposals.map((p) => (
               <Item key={p.id} proposal={p} accounts={accounts} onOpenDraft={onOpenDraft} />
             ))}
@@ -130,7 +130,7 @@ function Item({
 
   return (
     <li className="px-5 py-4">
-      <p className="text-[12px] text-a11y-muted">
+      <p className="text-footnote text-a11y-muted">
         {surface} · {agent?.name ?? "AI"} ·{" "}
         {new Date(p.createdAt).toLocaleString(i18n.locale, {
           month: "numeric",
@@ -189,12 +189,12 @@ function Item({
             readOnly
             rows={8}
             value={outgoing.message.text}
-            className="mt-1 block max-h-64 w-full resize-y overflow-y-auto rounded border border-black/10 bg-transparent p-2 whitespace-pre-wrap break-words text-a11y-muted dark:border-white/10"
+            className="mt-1 block max-h-64 w-full resize-y overflow-y-auto rounded border border-edge bg-transparent p-2 whitespace-pre-wrap break-words text-a11y-muted"
           />
         </>
       )}
       {agent?.rationale && (
-        <p className="mt-2 rounded-md bg-violet-500/[0.07] px-2.5 py-1.5 text-violet-700 dark:text-violet-300">
+        <p className="mt-2 rounded-control bg-violet-500/[0.07] px-2.5 py-1.5 text-violet-700 dark:text-violet-300">
           {agent.rationale}
         </p>
       )}
@@ -204,7 +204,7 @@ function Item({
             type="button"
             disabled={decide.waiting}
             onClick={() => runDecide(true)}
-            className="h-7 rounded-md bg-blue-600 px-3 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            className="h-7 rounded-control bg-blue-600 px-3 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
           >
             <Trans>Approve</Trans>
           </button>
@@ -221,7 +221,7 @@ function Item({
                 );
               else onOpenDraft(p);
             }}
-            className="h-7 rounded-md bg-blue-600 px-3 font-medium text-white hover:bg-blue-700"
+            className="h-7 rounded-control bg-blue-600 px-3 font-medium text-white hover:bg-blue-700"
           >
             {builtIn ? <Trans>Approve and edit</Trans> : <Trans>Review and Send</Trans>}
           </button>
@@ -230,7 +230,7 @@ function Item({
           type="button"
           disabled={decide.waiting}
           onClick={() => runDecide(false)}
-          className="h-7 rounded-md px-3 text-neutral-600 hover:bg-black/5 dark:text-neutral-300 dark:hover:bg-white/10"
+          className="h-7 rounded-control px-3 text-neutral-600 hover:bg-fill-hover dark:text-neutral-300"
         >
           <Trans>Reject</Trans>
         </button>

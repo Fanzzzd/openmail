@@ -108,7 +108,7 @@ function HiddenContacts() {
       <h3 className={settingsHeading}>
         <Trans>Addresses no longer suggested</Trans>
       </h3>
-      <ul className={`${settingsBox} divide-y divide-black/[0.07] dark:divide-white/[0.08]`}>
+      <ul className={`${settingsBox} divide-y divide-separator`}>
         {hidden.map((address) => (
           <li key={address} className="flex items-center gap-3 px-3 py-1.5">
             <span className="min-w-0 flex-1 truncate">{address}</span>
@@ -120,7 +120,7 @@ function HiddenContacts() {
                   reactivityKeys: [Keys.contacts],
                 })
               }
-              className="h-7 shrink-0 rounded-md px-2.5 text-a11y-accent hover:bg-blue-500/10 dark:text-blue-400"
+              className="h-7 shrink-0 rounded-control px-2.5 text-a11y-accent hover:bg-blue-500/10 dark:text-blue-400"
             >
               <Trans>Restore</Trans>
             </button>

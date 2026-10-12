@@ -597,7 +597,7 @@ export function ComposeEditor({
     }
   };
   const button =
-    "rounded p-1.5 text-a11y-muted hover:bg-black/5 focus-visible:outline-a11y-focus dark:hover:bg-white/10";
+    "rounded p-1.5 text-a11y-muted hover:bg-fill-hover focus-visible:outline-a11y-focus";
 
   return (
     <div
@@ -795,7 +795,7 @@ export function ComposeEditor({
       {!locked && body.kind === "rich" && body.hiddenTextRemoved && (
         <p
           role="status"
-          className="shrink-0 border-b border-black/10 px-4 py-2 text-sm text-a11y-muted dark:border-white/10"
+          className="shrink-0 border-b border-edge px-4 py-2 text-sm text-a11y-muted"
         >
           {t({
             message: "Hidden text was removed.",
@@ -900,7 +900,7 @@ export function ComposeEditor({
         </div>
       )}
       {locked && body.kind === "rich" && (
-        <div className="bg-white px-4 py-4 dark:bg-neutral-900">
+        <div className="bg-surface px-4 py-4">
           <EmailFrame
             html={composePreviewHtml(body, attachments)}
             remote={false}
@@ -949,7 +949,7 @@ export function ComposeEditor({
             context: "message text",
             comment: "Email message text, never an anatomical body.",
           })}
-          className="min-h-0 flex-1 overflow-auto px-4 py-3 text-[14px] leading-relaxed outline-none [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_a]:text-blue-600 [&_a]:underline [&_em]:italic [&_strong]:font-bold [&_s]:line-through [&_blockquote]:border-l-2 [&_blockquote]:pl-3 [&_img]:max-w-full [&_img:not([height])]:h-auto [&_img]:cursor-pointer [&_code]:font-mono [&_pre]:font-mono [&_pre]:whitespace-pre-wrap [&_ul[type=dash]>li]:list-none [&_ul[type=dash]>li]:before:content-['–_']"
+          className="min-h-0 flex-1 overflow-auto px-4 py-3 text-callout leading-relaxed outline-none [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_a]:text-blue-600 [&_a]:underline [&_em]:italic [&_strong]:font-bold [&_s]:line-through [&_blockquote]:border-l-2 [&_blockquote]:pl-3 [&_img]:max-w-full [&_img:not([height])]:h-auto [&_img]:cursor-pointer [&_code]:font-mono [&_pre]:font-mono [&_pre]:whitespace-pre-wrap [&_ul[type=dash]>li]:list-none [&_ul[type=dash]>li]:before:content-['–_']"
           style={body.font ? { fontFamily: body.font.family, fontSize: body.font.size } : undefined}
           onClick={(event) => {
             const target = event.target;
@@ -1028,7 +1028,7 @@ export function ComposeEditor({
               ? t`Markdown works: **bold**, \`code\`, \`\`\`code block\`\`\``
               : undefined
           }
-          className={`min-h-0 flex-1 resize-none bg-transparent px-4 py-3 text-[14px] leading-relaxed outline-none placeholder:text-a11y-muted ${body.kind === "markdown" ? "font-mono text-[13px]" : ""}`}
+          className={`min-h-0 flex-1 resize-none bg-transparent px-4 py-3 text-callout leading-relaxed outline-none placeholder:text-a11y-muted ${body.kind === "markdown" ? "font-mono text-body" : ""}`}
         />
       )}
     </div>

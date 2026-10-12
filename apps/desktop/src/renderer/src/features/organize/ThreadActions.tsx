@@ -97,7 +97,7 @@ const moveBack = (state: ThreadState, mailbox: Mailbox) => {
 };
 
 const button =
-  "rounded-md p-1.5 text-a11y-muted outline-offset-0 outline-a11y-focus hover:bg-black/5 hover:text-neutral-800 focus-visible:outline-[3px] data-popup-open:bg-black/5 dark:hover:bg-white/10 dark:hover:text-neutral-100 dark:data-popup-open:bg-white/10";
+  "rounded-control p-1.5 text-a11y-muted outline-offset-0 outline-a11y-focus hover:bg-fill-hover hover:text-neutral-800 focus-visible:outline-[3px] data-popup-open:bg-fill-pressed dark:hover:text-neutral-100";
 
 /**
  * Mimestream-style toolbar above the reader. Arrow keys move between the

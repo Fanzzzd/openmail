@@ -25,7 +25,7 @@ export function Disclosure({
   return (
     <Collapsible.Root defaultOpen={defaultOpen} className={className}>
       <Collapsible.Trigger
-        className={`group -ml-1 inline-flex max-w-full items-center gap-1 rounded-md py-0.5 pr-1.5 pl-1 text-left outline-offset-1 outline-a11y-focus hover:bg-black/[0.04] focus-visible:outline-2 active:bg-black/[0.07] dark:hover:bg-white/5 dark:active:bg-white/10 ${summaryClassName}`}
+        className={`group -ml-1 inline-flex max-w-full items-center gap-1 rounded-control py-0.5 pr-1.5 pl-1 text-left outline-offset-1 outline-a11y-focus hover:bg-fill-hover focus-visible:outline-2 active:bg-fill-pressed ${summaryClassName}`}
       >
         <ChevronRight
           aria-hidden

@@ -36,8 +36,7 @@ const VARIABLE_LABELS = {
   cc: msg`Cc`,
   bcc: msg`Bcc`,
 };
-const fieldClass =
-  "w-full rounded border border-black/10 bg-transparent px-2 py-1.5 outline-blue-500 dark:border-white/15";
+const fieldClass = "w-full rounded border border-edge bg-transparent px-2 py-1.5 outline-blue-500";
 type Form = {
   id: string | null;
   name: string;
@@ -66,7 +65,7 @@ export function TemplateSettings() {
     });
   return (
     <section className="space-y-3">
-      <h3 className="text-[12px] font-semibold text-a11y-muted">{t`Templates`}</h3>
+      <h3 className="text-footnote font-semibold text-a11y-muted">{t`Templates`}</h3>
       <button
         type="button"
         className="rounded border px-3 py-1"
@@ -162,7 +161,7 @@ function TemplateForm({ initial, onClose }: { initial: Form; onClose: () => void
     });
   };
   return (
-    <fieldset className="space-y-3 rounded-lg border p-3">
+    <fieldset className="space-y-3 rounded-card border p-3">
       <legend>{t`Edit template`}</legend>
       <label className="block">
         {t`Template name`}

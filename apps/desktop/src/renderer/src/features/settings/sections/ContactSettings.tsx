@@ -19,7 +19,7 @@ export function ContactSettings({ account }: { account: Account }) {
   const [signIn, reauth] = useAtom(reauthAtom(account.id));
   const count = i18n.number(status?.count ?? 0);
   return (
-    <section className="space-y-2 border-t border-black/10 pt-4 dark:border-white/10">
+    <section className="space-y-2 border-t border-edge pt-4">
       <ServiceHint accountId={account.id} service="contacts" />
       <h3 className="font-semibold">
         <Trans>Server contacts</Trans>

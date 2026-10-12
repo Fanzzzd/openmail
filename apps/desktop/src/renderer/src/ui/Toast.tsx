@@ -29,7 +29,7 @@ export function Toast({ toast, onDone }: { toast: ToastState | null; onDone: () 
       </div>
       {toast && (
         <div
-          className={`fixed bottom-5 left-1/2 z-40 flex w-max max-w-[min(560px,calc(100vw-32px))] -translate-x-1/2 items-center gap-4 rounded-lg px-4 py-2.5 text-[13px] shadow-xl ${
+          className={`fixed bottom-5 left-1/2 z-40 flex w-max max-w-[min(560px,calc(100vw-32px))] -translate-x-1/2 items-center gap-4 rounded-card px-4 py-2.5 text-body shadow-xl ${
             toast.tone === "error"
               ? "bg-red-600 text-white"
               : "bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900"

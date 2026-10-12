@@ -52,7 +52,7 @@ import { ContactSettings } from "./ContactSettings";
 import { formButton, formInput } from "../../../ui/form-styles";
 
 const rowButton =
-  "h-7 shrink-0 rounded-md px-2.5 hover:bg-black/5 disabled:opacity-50 disabled:hover:bg-transparent dark:hover:bg-white/10";
+  "h-7 shrink-0 rounded-control px-2.5 hover:bg-fill-hover disabled:opacity-50 disabled:hover:bg-transparent";
 
 export function ServerSettings({ accounts }: { accounts: readonly Account[] }) {
   const { t } = useLingui();
@@ -117,7 +117,7 @@ function AccountServerSettings({ account }: { account: Account }) {
             <Trans>Loading…</Trans>
           </output>
         )}
-        <ul className="divide-y divide-black/5 dark:divide-white/10">
+        <ul className="divide-y divide-separator">
           {AsyncResult.getOrElse(filters, () => []).map((f) => (
             <li key={f.id} className="flex items-center gap-1 py-2">
               <span className="min-w-0 flex-1">
@@ -140,7 +140,7 @@ function AccountServerSettings({ account }: { account: Account }) {
               >{t`Apply to existing mail`}</button>
               <button
                 type="button"
-                className="h-7 shrink-0 rounded-md px-2.5 text-a11y-danger hover:bg-red-500/10 dark:text-red-400"
+                className="h-7 shrink-0 rounded-control px-2.5 text-a11y-danger hover:bg-red-500/10 dark:text-red-400"
                 onClick={() => setDeleting(f)}
               >
                 <Trans>Delete</Trans>
@@ -826,7 +826,7 @@ export function FilterEditor({
             <span>{t`Exclude chats`}</span>
           </label>
         )}
-        <fieldset className="space-y-2 rounded-md border border-black/10 p-3 dark:border-white/10">
+        <fieldset className="space-y-2 rounded-control border border-edge p-3">
           <legend>
             <Trans>Actions</Trans>
           </legend>
@@ -1050,7 +1050,7 @@ export function FilterEditor({
             {count === 200 && " +"}
           </p>
           {previewUnavailable && (
-            <p className="text-[12px] text-a11y-muted">
+            <p className="text-footnote text-a11y-muted">
               <Trans>
                 Some conditions need metadata that is not cached. Save the rule for future mail on
                 the server.
@@ -1058,7 +1058,7 @@ export function FilterEditor({
             </p>
           )}
           {mode === "apply" && serverOnlyAction && (
-            <p className="text-[12px] text-a11y-muted">
+            <p className="text-footnote text-a11y-muted">
               <Trans>This rule can only be applied to future mail on the server</Trans>
             </p>
           )}
@@ -1067,7 +1067,7 @@ export function FilterEditor({
               {resultError(i18n, preview)}
             </p>
           )}
-          <ul className="max-h-28 overflow-y-auto text-[12px] text-a11y-muted">
+          <ul className="max-h-28 overflow-y-auto text-footnote text-a11y-muted">
             {matches.slice(0, 20).map((m) => (
               <li key={m.id} className="truncate">
                 {m.from.address}: {m.subject}
@@ -1075,7 +1075,7 @@ export function FilterEditor({
             ))}
           </ul>
           {mode !== "apply" && (
-            <p className="text-[12px] text-a11y-muted">
+            <p className="text-footnote text-a11y-muted">
               <Trans>The filter applies to future mail on the server.</Trans>
             </p>
           )}
@@ -1240,7 +1240,7 @@ function VacationEditor({
             />
           </label>
         ) : (
-          <p className="text-[12px] text-a11y-muted">
+          <p className="text-footnote text-a11y-muted">
             <Trans>Outlook chooses the reply subject.</Trans>
           </p>
         )}

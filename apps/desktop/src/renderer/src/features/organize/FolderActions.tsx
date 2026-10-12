@@ -72,7 +72,7 @@ export function FolderActions({
             type="button"
             disabled={busy}
             aria-label={t`Folder actions`}
-            className="rounded-md p-1 text-a11y-muted hover:bg-black/5"
+            className="rounded-control p-1 text-a11y-muted hover:bg-black/5"
           >
             <MoreHorizontal className="size-4" />
           </button>

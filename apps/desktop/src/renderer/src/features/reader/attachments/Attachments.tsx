@@ -85,7 +85,7 @@ export function Attachments({
 }
 
 const buttonClass =
-  "h-8 rounded-md px-2 text-[13px] font-medium text-a11y-accent hover:bg-blue-500/10 disabled:opacity-40 dark:text-blue-400";
+  "h-8 rounded-control px-2 text-body font-medium text-a11y-accent hover:bg-blue-500/10 disabled:opacity-40 dark:text-blue-400";
 const pathKey = (path: readonly number[]) => path.join(".");
 
 /** File selections are scoped to one message/container, including duplicate names. */
@@ -285,7 +285,7 @@ export function AttachmentList({
           return (
             <span
               key={pathKey(file.path)}
-              className={`flex h-8 max-w-[min(20rem,100%)] items-center rounded-md border text-[13px] ${hit ? "border-amber-500 bg-amber-500/10" : "border-black/10 dark:border-white/10"}`}
+              className={`flex h-8 max-w-[min(20rem,100%)] items-center rounded-control border text-body ${hit ? "border-amber-500 bg-amber-500/10" : "border-edge"}`}
               title={hit ? hit.snippet : undefined}
             >
               <input
@@ -313,7 +313,7 @@ export function AttachmentList({
                     );
                   else action("open", [file]);
                 }}
-                className="flex h-full min-w-0 items-center gap-1.5 px-2 hover:bg-black/[0.04] dark:hover:bg-white/5"
+                className="flex h-full min-w-0 items-center gap-1.5 px-2 hover:bg-fill-hover"
               >
                 <Icon className="size-4 shrink-0 text-a11y-muted" />
                 <span className="min-w-0 truncate">
@@ -399,12 +399,12 @@ export function AttachmentList({
       {attachmentMatches(matches)
         .slice(0, 3)
         .map((match, index) => (
-          <p key={index} className="mt-2 text-[12px] text-a11y-muted">
+          <p key={index} className="mt-2 text-footnote text-a11y-muted">
             <SearchSnippet match={match} />
           </p>
         ))}
       {files.some((file) => file.decodeError) && (
-        <p className="mt-2 text-[12px] text-a11y-muted">
+        <p className="mt-2 text-footnote text-a11y-muted">
           <Trans>Could not decode winmail.dat. You can save the original file.</Trans>
         </p>
       )}
@@ -499,12 +499,9 @@ function EmbeddedReader({
       </p>
     );
   return (
-    <section
-      aria-label={t`Attached message`}
-      className="mt-3 rounded-lg border border-black/10 p-3 dark:border-white/10"
-    >
+    <section aria-label={t`Attached message`} className="mt-3 rounded-card border border-edge p-3">
       <h4 className="font-semibold">{message.subject || t`(No subject)`}</h4>
-      <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 text-[12px] break-all">
+      <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 text-footnote break-all">
         <dt>
           <Trans>From</Trans>
         </dt>

@@ -121,7 +121,7 @@ export function OrganizationSettings({ accounts }: { accounts: readonly Account[
         <Trans>New label or folder</Trans>
       </button>
       {account && account.provider !== "gmail" && (
-        <p className="text-[12px] text-a11y-muted">
+        <p className="text-footnote text-a11y-muted">
           <Trans>Folder colors are stored on this computer only.</Trans>
         </p>
       )}
@@ -140,7 +140,7 @@ export function OrganizationSettings({ accounts }: { accounts: readonly Account[
           return (
             <li
               key={label.id}
-              className="flex flex-wrap items-center gap-3 border-b border-black/5 pb-2 dark:border-white/10"
+              className="flex flex-wrap items-center gap-3 border-b border-separator pb-2"
             >
               <span className="min-w-0 flex-1 truncate">{label.name}</span>
               {account?.provider === "gmail" ? (

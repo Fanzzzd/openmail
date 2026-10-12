@@ -18,11 +18,74 @@
   }
 }
 
+/*
+ * Design tokens. Utilities read these names; the values switch with the theme
+ * in the :root blocks below.
+ *
+ * Radius, largest to smallest: the native window, then
+ *   sheet (dialogs, 12px) > card (grouped rows, popups, notices, 8px)
+ *   > control (buttons, fields, 6px) > item (rows inside a popup or list, 4px).
+ * Type: caption 11, footnote 12, body 13, callout 14, headline 15, title 17. Weights are
+ *   normal, medium for labels and buttons, semibold for headings.
+ * Elevation: control (resting buttons), popup (menus, selects, popovers),
+ *   sheet (dialogs). Panes are flat and separated by hairlines.
+ * Spacing is Tailwind's 4px scale.
+ */
+@theme {
+  --radius-sheet: 12px;
+  --radius-card: 8px;
+  --radius-control: 6px;
+  --radius-item: 4px;
+
+  --text-caption: 11px;
+  --text-footnote: 12px;
+  --text-body: 13px;
+  --text-callout: 14px;
+  --text-headline: 15px;
+  --text-title: 17px;
+}
+
 @theme inline {
   --color-a11y-muted: var(--a11y-muted);
   --color-a11y-accent: var(--a11y-accent);
   --color-a11y-danger: var(--a11y-danger);
   --color-a11y-focus: var(--a11y-focus);
+
+  /* Surfaces, back to front. */
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-overlay: var(--overlay);
+  /* Lines: hairlines between panes and rows, the outline of a card, and the 3:1 boundary of a control. */
+  --color-separator: var(--separator);
+  --color-edge: var(--edge);
+  --color-control: var(--a11y-border);
+  /* Neutral fills for insets, hover and pressed or open states. */
+  --color-fill-quiet: var(--fill-quiet);
+  --color-fill-hover: var(--fill-hover);
+  --color-fill-pressed: var(--fill-pressed);
+
+  --shadow-control: var(--elevation-control);
+  --shadow-popup: var(--elevation-popup);
+  --shadow-sheet: var(--elevation-sheet);
+}
+
+/* Keyboard focus for controls the base rule below leaves out, such as text fields' wrappers. */
+@utility focus-ring {
+  &:focus-visible {
+    outline-style: solid;
+    outline-width: 2px;
+    outline-offset: 2px;
+    outline-color: var(--a11y-focus);
+  }
+}
+/* The same ring drawn inside the element, for rows that clip their overflow. */
+@utility focus-ring-inset {
+  &:focus-visible {
+    outline-style: solid;
+    outline-width: 2px;
+    outline-offset: -2px;
+    outline-color: var(--a11y-focus);
+  }
 }
 
 /* The panes scroll; the window never does. The viewport takes the html
@@ -76,8 +139,21 @@ body {
     --a11y-muted: #525252;
     --a11y-accent: #1d4ed8;
     --a11y-danger: #b91c1c;
-    --a11y-border: #737373;
+    /* Control boundaries: the lightest grey with 3:1 on both surfaces. */
+    --a11y-border: #8c8c8c;
     --a11y-focus: #1d4ed8;
+
+    --surface: #ffffff;
+    --raised: #ffffff;
+    --overlay: rgb(255 255 255 / 0.94);
+    --separator: rgb(0 0 0 / 0.08);
+    --edge: rgb(0 0 0 / 0.11);
+    --fill-quiet: rgb(0 0 0 / 0.035);
+    --fill-hover: rgb(0 0 0 / 0.05);
+    --fill-pressed: rgb(0 0 0 / 0.08);
+    --elevation-control: 0 0.5px 1px rgb(0 0 0 / 0.1);
+    --elevation-popup: 0 0 0 0.5px rgb(0 0 0 / 0.1), 0 6px 20px rgb(0 0 0 / 0.14);
+    --elevation-sheet: 0 0 0 0.5px rgb(0 0 0 / 0.08), 0 20px 50px rgb(0 0 0 / 0.22);
   }
 
   @media (prefers-color-scheme: dark) {
@@ -88,8 +164,20 @@ body {
       --a11y-muted: #a3a3a3;
       --a11y-accent: #93c5fd;
       --a11y-danger: #fca5a5;
-      --a11y-border: #a3a3a3;
+      --a11y-border: #727272;
       --a11y-focus: #93c5fd;
+
+      --surface: #171717;
+      --raised: #262626;
+      --overlay: rgb(40 40 42 / 0.94);
+      --separator: rgb(255 255 255 / 0.08);
+      --edge: rgb(255 255 255 / 0.1);
+      --fill-quiet: rgb(255 255 255 / 0.04);
+      --fill-hover: rgb(255 255 255 / 0.07);
+      --fill-pressed: rgb(255 255 255 / 0.11);
+      --elevation-control: 0 0.5px 1px rgb(0 0 0 / 0.3);
+      --elevation-popup: 0 0 0 0.5px rgb(255 255 255 / 0.1), 0 8px 24px rgb(0 0 0 / 0.5);
+      --elevation-sheet: 0 0 0 0.5px rgb(255 255 255 / 0.1), 0 24px 60px rgb(0 0 0 / 0.55);
     }
   }
 
@@ -102,7 +190,9 @@ body {
     box-shadow: 0 0 0 2px var(--a11y-surface);
   }
 
-  :where(input:not([type="hidden"]), textarea, [role="checkbox"], [role="radio"]) {
+  /* Text fields fall back to the 3:1 control boundary. Checkboxes, radios and
+     segmented controls draw their own boundary with ring-control. */
+  :where(input:not([type="hidden"], [type="checkbox"], [type="radio"], [type="range"]), textarea) {
     border-color: var(--a11y-border);
   }
 
@@ -121,10 +211,6 @@ body {
       transition: none !important;
       scroll-behavior: auto !important;
     }
-  }
-
-  :where([role="checkbox"], [role="radio"]) {
-    box-shadow: 0 0 0 1px var(--a11y-border);
   }
 
   ::placeholder {

@@ -237,7 +237,7 @@ export function RecipientField({
               <Combobox.ChipRemove
                 aria-label={t`Remove ${text}`}
                 tabIndex={-1}
-                className="flex size-4 shrink-0 items-center justify-center rounded-[3px] opacity-0 group-hover:opacity-70 group-focus-within:opacity-100 hover:bg-black/10 hover:opacity-100 dark:hover:bg-white/15"
+                className="flex size-4 shrink-0 items-center justify-center rounded-[3px] opacity-0 group-hover:opacity-70 group-focus-within:opacity-100 hover:bg-fill-pressed hover:opacity-100"
               >
                 <X className="size-3" />
               </Combobox.ChipRemove>
@@ -263,7 +263,7 @@ export function RecipientField({
           onBlur={() => {
             commit();
           }}
-          className="h-[22px] min-w-24 flex-1 bg-transparent text-[13px] outline-none placeholder:text-a11y-muted"
+          className="h-[22px] min-w-24 flex-1 bg-transparent text-body outline-none placeholder:text-a11y-muted"
         />
       </Combobox.Chips>
       <output aria-live="polite" aria-atomic="true" className="sr-only">
@@ -293,7 +293,7 @@ export function RecipientField({
                     >
                       <span className="min-w-0 flex-1">
                         <span className="block truncate">{group.name}</span>
-                        <span className="block text-[12px] text-a11y-muted">
+                        <span className="block text-footnote text-a11y-muted">
                           {t`Contact group`} · {group.members.length}
                         </span>
                       </span>
@@ -305,7 +305,7 @@ export function RecipientField({
                   <Combobox.Item key={text} value={text} className={`group py-1 pr-1 ${itemClass}`}>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate">{displayName(a)}</span>
-                      <span className="block truncate text-[12px] text-a11y-muted group-data-highlighted:text-white">
+                      <span className="block truncate text-footnote text-a11y-muted group-data-highlighted:text-white">
                         {a.address}
                       </span>
                     </span>

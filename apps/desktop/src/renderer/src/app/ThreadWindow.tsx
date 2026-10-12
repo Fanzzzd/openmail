@@ -295,7 +295,7 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
   }, [run, messages?.length, dialog, account?.provider]);
 
   return (
-    <div className="flex h-full flex-col bg-white text-[13px] text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100">
+    <div className="flex h-full flex-col bg-surface text-body text-neutral-900 dark:text-neutral-100">
       <FocusedInboxPermission />
       {/* Room on the left for the traffic lights; actions that do not fit fold into the menu. */}
       <header

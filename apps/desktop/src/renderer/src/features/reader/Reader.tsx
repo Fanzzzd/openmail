@@ -174,7 +174,7 @@ export function Reader({
   const grouping = prefs.threadGrouping;
 
   return (
-    <main className="flex h-full w-full min-w-0 flex-col bg-white dark:bg-neutral-900">
+    <main className="flex h-full w-full min-w-0 flex-col bg-surface">
       <header
         data-reader-toolbar
         className={`drag @container/bar flex min-h-13 shrink-0 items-center gap-3 py-3 pr-4 ${onBack ? trafficLightInset : "pl-4"}`}
@@ -762,7 +762,7 @@ export function ThreadView({
           {newest?.subject || t`(No subject)`}
         </h2>
         {messages.length > 1 && (
-          <div className="hidden shrink-0 gap-2 pt-1 text-[12px] text-a11y-accent @min-[520px]/thread:flex dark:text-blue-400">
+          <div className="hidden shrink-0 gap-2 pt-1 text-footnote text-a11y-accent @min-[520px]/thread:flex dark:text-blue-400">
             <button
               type="button"
               onClick={() => expand(true)}
@@ -782,7 +782,7 @@ export function ThreadView({
             <button
               type="button"
               aria-label={t`More actions`}
-              className="mt-1 rounded-md p-1.5 text-a11y-muted outline-offset-0 outline-a11y-focus hover:bg-black/5 hover:text-neutral-800 focus-visible:outline-[3px] data-popup-open:bg-black/5 dark:hover:bg-white/10 dark:hover:text-neutral-100 dark:data-popup-open:bg-white/10"
+              className="mt-1 rounded-control p-1.5 text-a11y-muted outline-offset-0 outline-a11y-focus hover:bg-fill-hover hover:text-neutral-800 focus-visible:outline-[3px] data-popup-open:bg-fill-pressed dark:hover:text-neutral-100"
             >
               <MoreHorizontal className="size-4" />
             </button>
@@ -906,7 +906,7 @@ export function ThreadView({
       </div>
       {finding && (
         <search
-          className="sticky top-0 z-10 mb-3 flex items-center gap-2 rounded border border-neutral-200 bg-white p-2 dark:bg-neutral-900"
+          className="sticky top-0 z-10 mb-3 flex items-center gap-2 rounded border border-neutral-200 bg-surface p-2"
           aria-label={t`Find in message`}
         >
           <input
@@ -948,7 +948,7 @@ export function ThreadView({
       )}
       {!finding && hits && <SearchHitBar index={hitIndex} count={hitCount} onStep={nextHit} />}
       <MediaMatches chunks={derivedMatches} />
-      <div className="divide-y divide-black/[0.07] dark:divide-white/[0.08]">
+      <div className="divide-y divide-separator">
         {messages.map((m) =>
           open.has(m.id) ? (
             <Expanded
@@ -1011,9 +1011,7 @@ export function ThreadView({
               <Avatar message={m} />
               <span className="min-w-0 flex-1">
                 <MessageHead message={m} />
-                <span className="mt-0.5 block truncate text-[13px] text-a11y-muted">
-                  {m.snippet}
-                </span>
+                <span className="mt-0.5 block truncate text-body text-a11y-muted">{m.snippet}</span>
               </span>
             </button>
           ),
@@ -1043,7 +1041,7 @@ function MessageHead({
   return (
     <span className="block">
       <span className="flex flex-col @min-[520px]/message:flex-row @min-[520px]/message:items-baseline @min-[520px]/message:gap-2">
-        <span className="min-w-0 text-[14px] font-semibold @min-[520px]/message:flex-1">
+        <span className="min-w-0 text-callout font-semibold @min-[520px]/message:flex-1">
           {onSearchSender ? (
             <DropdownMenu
               trigger={
@@ -1062,7 +1060,7 @@ function MessageHead({
             name
           )}
         </span>
-        <span className="flex min-w-0 items-baseline gap-x-2 text-[12px] @max-[420px]/message:flex-wrap @min-[520px]/message:max-w-[65%]">
+        <span className="flex min-w-0 items-baseline gap-x-2 text-footnote @max-[420px]/message:flex-wrap @min-[520px]/message:max-w-[65%]">
           {label !== m.from.address && (
             <span data-sender-address className="min-w-0 truncate" title={m.from.address}>
               {m.from.address}
@@ -1082,13 +1080,13 @@ function MessageHead({
       {m.security?.dmarc === "fail" && (
         <span
           role="alert"
-          className="block text-[12px] text-a11y-danger"
+          className="block text-footnote text-a11y-danger"
         >{t`Sender authentication failed (DMARC)`}</span>
       )}
       {senderSpoofed(m.from) && (
         <span
           role="alert"
-          className="block text-[12px] text-a11y-danger"
+          className="block text-footnote text-a11y-danger"
         >{t`The sender name contains a different email address.`}</span>
       )}
     </span>
@@ -1197,7 +1195,7 @@ function Expanded({
     >
       <h3 className="sr-only">{m.subject || t`(No subject)`}</h3>
       {onEditDraft && (
-        <div className="mb-2 flex items-center gap-2 rounded-md bg-red-500/[0.06] px-3 py-1.5 text-[13px]">
+        <div className="mb-2 flex items-center gap-2 rounded-control bg-red-500/[0.06] px-3 py-1.5 text-body">
           <span className="flex-1 text-a11y-danger dark:text-red-400">
             <Trans>Draft</Trans>
           </span>
@@ -1216,7 +1214,7 @@ function Expanded({
           <span className="min-w-0 flex-1">
             <MessageHead message={m} onSearchSender={onSearchSender} />
             <span
-              className="mt-0.5 block truncate text-[13px] text-a11y-muted"
+              className="mt-0.5 block truncate text-body text-a11y-muted"
               title={[...m.to, ...m.cc].map((a) => a.address).join(separator)}
             >
               <Trans>To: {to}</Trans>
@@ -1244,7 +1242,7 @@ function Expanded({
             <button
               type="button"
               aria-label={t`Message actions`}
-              className="size-7 shrink-0 self-start rounded-md p-1.5 text-a11y-muted outline-offset-0 outline-a11y-focus hover:bg-black/5 hover:text-neutral-800 focus-visible:outline-[3px] data-popup-open:bg-black/5 dark:hover:bg-white/10 dark:hover:text-neutral-100 dark:data-popup-open:bg-white/10"
+              className="size-7 shrink-0 self-start rounded-control p-1.5 text-a11y-muted outline-offset-0 outline-a11y-focus hover:bg-fill-hover hover:text-neutral-800 focus-visible:outline-[3px] data-popup-open:bg-fill-pressed dark:hover:text-neutral-100"
             >
               <MoreHorizontal className="size-4" />
             </button>
@@ -1377,7 +1375,7 @@ function Avatar({ message: m }: { message: Message }) {
   const [failed, setFailed] = useState<string | null>(null);
   return (
     <span
-      className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full text-[15px] font-semibold text-white"
+      className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full text-headline font-semibold text-white"
       style={{ backgroundColor: letterAvatarColor(displayName(m.from)) }}
     >
       {photo && photo !== failed && /^data:image\/(png|jpeg|gif|webp);base64,/.test(photo) ? (

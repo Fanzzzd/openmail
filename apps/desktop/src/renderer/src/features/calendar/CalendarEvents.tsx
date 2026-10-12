@@ -185,7 +185,7 @@ function TextDates({ events, message }: { events: CalendarEvent[]; message: Mess
         trigger={
           <button
             type="button"
-            className="-mx-2 inline-flex h-7 items-center gap-1.5 rounded-md px-2 text-a11y-muted hover:bg-black/5 dark:hover:bg-white/10"
+            className="-mx-2 inline-flex h-7 items-center gap-1.5 rounded-control px-2 text-a11y-muted hover:bg-fill-hover"
           >
             <CalendarDays aria-hidden className="size-4 shrink-0" />
             {t({
@@ -424,7 +424,7 @@ function EventConfirmation({
   );
   if (dialogOnly) return dialog;
   return (
-    <section className="mt-3 space-y-2 rounded-lg border border-blue-200 p-3 dark:border-blue-900">
+    <section className="mt-3 space-y-2 rounded-card border border-blue-200 p-3 dark:border-blue-900">
       <h3 className="font-semibold">{event.title || message.subject}</h3>
       <p>
         {range}

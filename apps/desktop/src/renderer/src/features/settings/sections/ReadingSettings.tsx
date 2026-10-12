@@ -371,25 +371,25 @@ function ImageSenders() {
           onChange={(e) => setDraft(e.target.value)}
           placeholder={t`news@shop.com or shop.com`}
           aria-label={t`Address or domain`}
-          className="h-7 min-w-0 flex-1 rounded-md border border-black/10 bg-transparent px-2 outline-none focus:border-blue-500 dark:border-white/15"
+          className="h-7 min-w-0 flex-1 rounded-control border border-edge bg-transparent px-2 outline-none focus:border-blue-500"
         />
         <button
           type="submit"
           disabled={!valid}
-          className="h-7 shrink-0 rounded-md border border-black/10 px-3 font-medium hover:bg-black/[0.04] disabled:opacity-50 dark:border-white/15 dark:hover:bg-white/5"
+          className="h-7 shrink-0 rounded-control border border-edge px-3 font-medium hover:bg-fill-hover disabled:opacity-50"
         >
           <Trans>Add</Trans>
         </button>
       </form>
       {senders.length > 0 && (
-        <ul className={`${settingsBox} divide-y divide-black/[0.07] dark:divide-white/[0.08]`}>
+        <ul className={`${settingsBox} divide-y divide-separator`}>
           {senders.map((sender) => (
             <li key={sender} className="flex items-center gap-3 px-3 py-1.5">
               <span className="min-w-0 flex-1 truncate">{sender}</span>
               <button
                 type="button"
                 onClick={() => set(sender, false)}
-                className="h-7 shrink-0 rounded-md px-2.5 text-a11y-danger hover:bg-red-500/10 dark:text-red-400"
+                className="h-7 shrink-0 rounded-control px-2.5 text-a11y-danger hover:bg-red-500/10 dark:text-red-400"
               >
                 <Trans>Remove</Trans>
               </button>

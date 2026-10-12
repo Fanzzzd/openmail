@@ -39,7 +39,7 @@ export function SegmentedControl<T extends string | number>({
         if (next !== null) onValueChange(next);
       }}
       disabled={disabled}
-      className={`relative inline-grid grid-flow-col auto-cols-fr rounded-[7px] bg-black/[0.06] p-0.5 outline-offset-1 outline-a11y-focus has-focus-visible:outline-[3px] data-disabled:opacity-50 dark:bg-white/[0.07] dark:shadow-[inset_0_0_0_0.5px_rgb(255_255_255/0.06)] ${className}`}
+      className={`relative inline-grid grid-flow-col auto-cols-fr rounded-[7px] bg-fill-hover p-0.5 outline-offset-1 outline-a11y-focus has-focus-visible:outline-[3px] data-disabled:opacity-50 dark:shadow-[inset_0_0_0_0.5px_rgb(255_255_255/0.06)] ${className}`}
     >
       <span
         aria-hidden
@@ -55,7 +55,7 @@ export function SegmentedControl<T extends string | number>({
         <Radio.Root<T | null>
           key={option.value}
           value={option.value}
-          className={`relative flex h-6 items-center justify-center rounded-[5px] px-3 text-[13px] whitespace-nowrap text-neutral-600 outline-none transition-colors duration-150 before:absolute before:inset-y-1.5 before:left-0 before:w-px before:bg-black/[0.12] before:transition-opacity motion-reduce:transition-none data-checked:text-neutral-900 data-unchecked:hover:text-neutral-900 data-unchecked:active:bg-black/[0.05] dark:text-neutral-300 dark:before:bg-white/[0.12] dark:data-checked:text-white dark:data-unchecked:hover:text-white dark:data-unchecked:active:bg-white/[0.06] ${
+          className={`relative flex h-6 items-center justify-center rounded-[5px] px-3 text-body whitespace-nowrap text-neutral-600 outline-none transition-colors duration-150 before:absolute before:inset-y-1.5 before:left-0 before:w-px before:bg-black/[0.12] before:transition-opacity motion-reduce:transition-none data-checked:text-neutral-900 data-unchecked:hover:text-neutral-900 data-unchecked:active:bg-black/[0.05] dark:text-neutral-300 dark:before:bg-white/[0.12] dark:data-checked:text-white dark:data-unchecked:hover:text-white dark:data-unchecked:active:bg-white/[0.06] ${
             i === 0 || i === selected || i - 1 === selected ? "before:opacity-0" : ""
           }`}
         >

@@ -72,7 +72,7 @@ function Suggestion({
     <>
       <button
         type="button"
-        className={`${compact ? "absolute right-3 bottom-1 z-10 max-w-[55%] truncate" : "mb-2"} rounded bg-violet-100 px-2 py-0.5 text-[11px] text-violet-800 dark:bg-violet-950 dark:text-violet-200`}
+        className={`${compact ? "absolute right-3 bottom-1 z-10 max-w-[55%] truncate" : "mb-2"} rounded bg-violet-100 px-2 py-0.5 text-caption text-violet-800 dark:bg-violet-950 dark:text-violet-200`}
         onClick={(event) => {
           event.stopPropagation();
           setOpen(true);

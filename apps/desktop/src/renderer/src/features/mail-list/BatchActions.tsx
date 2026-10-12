@@ -170,14 +170,14 @@ export function BatchActions(
     { icon: Star, label: starred ? t`Unstar` : t`Star`, op: { kind: "star", value: !starred } },
   ] satisfies { icon: typeof Archive; label: string; op: MailOp }[];
   const button =
-    "rounded-md p-1.5 text-a11y-muted hover:bg-black/5 focus-visible:outline-a11y-focus dark:hover:bg-white/10";
+    "rounded-control p-1.5 text-a11y-muted hover:bg-fill-hover focus-visible:outline-a11y-focus";
   return (
     // Below 300 px the five buttons (150 px) leave the count text too little room, so the
     // count stands alone as a number and the actions keep their buttons.
     <div className="@container/batch flex min-w-0 flex-1 items-center gap-0.5">
       <span
         aria-hidden
-        className="mr-1.5 hidden shrink-0 rounded-full bg-black/[0.07] px-1.5 text-xs leading-5 text-a11y-muted tabular-nums @max-[300px]/batch:inline dark:bg-white/10"
+        className="mr-1.5 hidden shrink-0 rounded-full bg-fill-pressed px-1.5 text-xs leading-5 text-a11y-muted tabular-nums @max-[300px]/batch:inline"
       >
         {count}
       </span>

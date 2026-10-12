@@ -64,7 +64,7 @@ export function MediaMatches({ chunks }: { chunks: readonly DerivedChunk[] }) {
   const [selected, setSelected] = useState<DerivedChunk | null>(null);
   if (!chunks.length) return null;
   return (
-    <section className="mx-4 mb-3 rounded-lg bg-amber-500/5 p-3 text-[13px]">
+    <section className="mx-4 mb-3 rounded-card bg-amber-500/5 p-3 text-body">
       <h3 className="mb-2 font-medium">
         <Trans>Content matches</Trans>
       </h3>

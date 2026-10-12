@@ -272,7 +272,7 @@ export function Assistant({
             maxLength={4000}
             value={question}
             onChange={(event) => setQuestion(event.target.value)}
-            className="w-full rounded border border-black/15 bg-transparent p-2 dark:border-white/15"
+            className="w-full rounded border border-edge bg-transparent p-2"
           />
           <button
             type="submit"

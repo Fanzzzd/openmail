@@ -5,6 +5,7 @@ import { AsyncResult } from "effect/reactivity";
 import { MailClient } from "../../../state/rpc";
 import { indexingProgressAtom } from "../../../state/queries";
 import { Switch } from "@base-ui/react/switch";
+import { switchThumb, switchTrack } from "../../../ui/styles";
 
 const modelsAtom = MailClient.mutation("SetModelsEnabled");
 const pauseAtom = MailClient.mutation("SetIndexingPaused");
@@ -20,7 +21,7 @@ export function IndexingSettings() {
     failed = i18n.number(progress.failed);
   return (
     <section className="mt-6 space-y-2">
-      <h3 className="text-[12px] font-semibold text-a11y-muted">
+      <h3 className="text-footnote font-semibold text-a11y-muted">
         <Trans>On-device indexing</Trans>
       </h3>
       <p className="text-a11y-muted">
@@ -30,14 +31,14 @@ export function IndexingSettings() {
       </p>
       <div className="flex items-center gap-2">
         <Switch.Root
-          className="flex h-5 w-9 rounded-full bg-neutral-300 p-0.5 outline-offset-2 focus-visible:outline-2 focus-visible:outline-a11y-focus data-checked:bg-blue-600"
+          className={switchTrack}
           checked={progress.modelsEnabled ?? false}
           aria-label={t`Download on-device models, ~226 MB`}
           onCheckedChange={(enabled) =>
             models({ payload: { enabled }, reactivityKeys: ["indexing"] })
           }
         >
-          <Switch.Thumb className="size-4 rounded-full bg-white transition-transform data-checked:translate-x-4" />
+          <Switch.Thumb className={switchThumb} />
         </Switch.Root>
         <Trans>Download on-device models, ~226 MB</Trans>
       </div>
@@ -96,12 +97,12 @@ export function IndexingSettings() {
       </output>
       <div className="flex items-center gap-2">
         <Switch.Root
-          className="flex h-5 w-9 rounded-full bg-neutral-300 p-0.5 outline-offset-2 focus-visible:outline-2 focus-visible:outline-a11y-focus data-checked:bg-blue-600"
+          className={switchTrack}
           checked={progress.paused}
           aria-label={t`Pause indexing`}
           onCheckedChange={(paused) => pause({ payload: { paused }, reactivityKeys: ["indexing"] })}
         >
-          <Switch.Thumb className="size-4 rounded-full bg-white transition-transform data-checked:translate-x-4" />
+          <Switch.Thumb className={switchThumb} />
         </Switch.Root>
         <Trans>Pause indexing</Trans>
       </div>

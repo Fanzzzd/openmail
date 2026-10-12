@@ -16,7 +16,7 @@ export function SpellcheckSettings() {
   const languages = AsyncResult.getOrElse(useAtomValue(languagesAtom), () => null);
   const [result, save] = useAtom(setPrefsAtom);
   return (
-    <section className="mt-6 space-y-3 border-t border-black/10 pt-4 dark:border-white/10">
+    <section className="mt-6 space-y-3 border-t border-edge pt-4">
       <h2 className="font-semibold">
         <Trans>Spelling</Trans>
       </h2>

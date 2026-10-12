@@ -23,7 +23,7 @@ export function ProfileSwitcher({
   const { t } = useLingui();
   if (!profiles.length) return null;
   return (
-    <div className="drag flex h-9 shrink-0 items-center justify-end border-b border-black/10 px-4 dark:border-white/10">
+    <div className="drag flex h-9 shrink-0 items-center justify-end border-b border-edge px-4">
       <Select
         className="no-drag"
         aria-label={t`Profile`}

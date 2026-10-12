@@ -166,12 +166,12 @@ export function SearchField({
         onItemHighlighted={(item) => setHighlighted(item)}
       >
         {/* One line at any width: chips shrink and truncate before the field grows taller. */}
-        <Combobox.Chips className="focus-within:ring-2 focus-within:ring-a11y-focus flex h-7 min-w-0 flex-1 items-center gap-1 overflow-hidden rounded-md border border-black/10 px-2 dark:border-white/10">
+        <Combobox.Chips className="focus-within:ring-2 focus-within:ring-a11y-focus flex h-7 min-w-0 flex-1 items-center gap-1 overflow-hidden rounded-control border border-edge px-2">
           <Search className="size-3.5 shrink-0 text-a11y-muted" />
           {chips.map((token, index) => (
             <Combobox.Chip
               key={`${index}:${token}`}
-              className="flex max-w-48 min-w-0 items-center gap-1 rounded bg-blue-500/10 px-1 text-[12px] whitespace-nowrap"
+              className="flex max-w-48 min-w-0 items-center gap-1 rounded bg-blue-500/10 px-1 text-footnote whitespace-nowrap"
             >
               <DropdownMenu
                 align="start"
@@ -221,14 +221,14 @@ export function SearchField({
             ref={fieldRef}
             aria-label={t`Search mail`}
             placeholder={chips.length ? undefined : t`Search  /`}
-            className="h-6 min-w-10 flex-1 bg-transparent text-[13px] text-ellipsis outline-none"
+            className="h-6 min-w-10 flex-1 bg-transparent text-body text-ellipsis outline-none"
           />
         </Combobox.Chips>
         <Combobox.Portal>
           <Combobox.Positioner sideOffset={4} className="no-drag z-[60]">
             <Combobox.Popup className={`w-72 p-1 ${popupSurface}`}>
               {hint && (
-                <Combobox.Empty className="flex items-center gap-2 px-2 py-1 text-[12px] text-a11y-muted">
+                <Combobox.Empty className="flex items-center gap-2 px-2 py-1 text-footnote text-a11y-muted">
                   <span className="flex-1">{t`Try from:name or has:attachment`}</span>
                   <button
                     type="button"
@@ -249,7 +249,7 @@ export function SearchField({
               <Combobox.List>
                 {(group: { value: SearchSuggestionGroup; items: string[] }) => (
                   <Combobox.Group key={group.value} items={group.items} className="py-0.5">
-                    <Combobox.GroupLabel className="px-2 pt-1 pb-0.5 text-[11px] font-semibold text-a11y-muted">
+                    <Combobox.GroupLabel className="px-2 pt-1 pb-0.5 text-caption font-semibold text-a11y-muted">
                       {groupNames[group.value]}
                     </Combobox.GroupLabel>
                     <Combobox.Collection>
@@ -283,7 +283,7 @@ export function SearchField({
           aria-label={
             dateTarget.operator.replace(/^-/, "") === "before:" ? t`Before date` : t`After date`
           }
-          className="w-32 rounded border border-black/10 bg-transparent px-1 text-[12px] dark:border-white/10"
+          className="w-32 rounded border border-edge bg-transparent px-1 text-footnote"
           min="1970-01-01"
           max="9999-12-31"
           onBlur={(event) => commitDate(event.currentTarget.value)}
@@ -353,7 +353,7 @@ function SuggestionRow({
     <>
       <span className="min-w-0 shrink-0 truncate">{item.label}</span>
       {(item.description || item.detail) && (
-        <span className="min-w-0 flex-1 truncate text-[12px] opacity-70">
+        <span className="min-w-0 flex-1 truncate text-footnote opacity-70">
           {item.description ? i18n._(item.description) : item.detail}
         </span>
       )}

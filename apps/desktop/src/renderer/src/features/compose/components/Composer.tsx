@@ -226,13 +226,13 @@ export function Composer({
   useComposeShortcuts({ draft, prefs, recipients, sendFlow, editor, lifecycle, ccRef });
 
   const field =
-    "h-9 min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-a11y-muted";
+    "h-9 min-w-0 flex-1 bg-transparent text-body outline-none placeholder:text-a11y-muted";
   // The row draws the one focus ring for its text field; buttons in it keep their own outline.
   const row =
-    "flex items-start gap-2 has-[input:focus]:ring-2 has-[input:focus]:ring-inset has-[input:focus]:ring-a11y-focus border-b border-black/[0.07] px-4 dark:border-white/[0.08]";
+    "flex items-start gap-2 has-[input:focus]:ring-2 has-[input:focus]:ring-inset has-[input:focus]:ring-a11y-focus border-b border-separator px-4";
   const label = "flex h-9 w-14 shrink-0 items-center text-a11y-muted";
   const quiet =
-    "rounded p-1 text-a11y-muted outline-offset-0 outline-a11y-focus hover:bg-black/5 focus-visible:outline-[3px] data-popup-open:bg-black/5 dark:hover:bg-white/10 dark:data-popup-open:bg-white/10";
+    "rounded p-1 text-a11y-muted outline-offset-0 outline-a11y-focus hover:bg-fill-hover focus-visible:outline-[3px] data-popup-open:bg-fill-pressed";
   const title = i18n._(TITLES[draft.mode]);
 
   return (
@@ -254,7 +254,7 @@ export function Composer({
           data-full-window={standalone || undefined}
           aria-label={title}
           initialFocus={initialFocus}
-          className={`${standalone ? "no-drag fixed inset-0 z-50 flex h-full w-full " : `no-drag fixed right-5 bottom-5 z-50 flex h-[min(680px,calc(100%-40px))] w-[min(680px,calc(100%-40px))] ${narrowSheet} `} flex-col overflow-hidden rounded-xl bg-white text-[13px] text-neutral-900 shadow-2xl ring-1 ring-black/10 outline-none transition-[opacity,translate] duration-150 ease-out data-starting-style:translate-y-2 data-starting-style:opacity-0 motion-reduce:transition-none dark:bg-neutral-800 dark:text-neutral-100 dark:ring-white/10`}
+          className={`${standalone ? "no-drag fixed inset-0 z-50 flex h-full w-full " : `no-drag fixed right-5 bottom-5 z-50 flex h-[min(680px,calc(100%-40px))] w-[min(680px,calc(100%-40px))] ${narrowSheet} `} flex-col overflow-hidden rounded-sheet bg-raised text-body text-neutral-900 shadow-2xl ring-1 ring-edge outline-none transition-[opacity,translate] duration-150 ease-out data-starting-style:translate-y-2 data-starting-style:opacity-0 motion-reduce:transition-none dark:text-neutral-100`}
         >
           {standalone ? <div className="drag h-8 shrink-0" /> : <SheetDragStrip />}
           {/* oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- The entire composer accepts file drops; the attachment picker provides keyboard access. */}
@@ -276,8 +276,8 @@ export function Composer({
               submit(false);
             }}
           >
-            <header className="flex min-h-11 shrink-0 items-center gap-2 border-b border-black/[0.07] px-4 dark:border-white/[0.08]">
-              <Dialog.Title className="text-[14px] font-semibold">{title}</Dialog.Title>
+            <header className="flex min-h-11 shrink-0 items-center gap-2 border-b border-separator px-4">
+              <Dialog.Title className="text-callout font-semibold">{title}</Dialog.Title>
               {original && account && (
                 <Select
                   aria-label={t`Reply mode`}
@@ -297,11 +297,11 @@ export function Composer({
               )}
 
               {draft.proposalId !== undefined && (
-                <span className="rounded bg-violet-500/10 px-1.5 py-0.5 text-[11px] text-violet-700 dark:text-violet-300">
+                <span className="rounded bg-violet-500/10 px-1.5 py-0.5 text-caption text-violet-700 dark:text-violet-300">
                   <Trans>AI draft</Trans>
                 </span>
               )}
-              <span className="flex-1 truncate text-[12px] text-a11y-muted">{status}</span>
+              <span className="flex-1 truncate text-footnote text-a11y-muted">{status}</span>
               {onPopOut && (
                 <button
                   type="button"
@@ -343,7 +343,7 @@ export function Composer({
                 className="max-w-full"
               />
               {senderUndo && (
-                <output className="flex items-center gap-2 text-[12px] text-a11y-muted">
+                <output className="flex items-center gap-2 text-footnote text-a11y-muted">
                   {t`From updated`}
                   <button
                     type="button"
@@ -572,7 +572,7 @@ export function Composer({
             {(draft.attachments.length > 0 || draft.forwardAsAttachment) && (
               <div className="flex flex-wrap gap-2 px-4 pb-2">
                 {draft.forwardAsAttachment && (
-                  <span className="flex items-center gap-1.5 rounded-md border border-black/10 px-2 py-1 dark:border-white/10">
+                  <span className="flex items-center gap-1.5 rounded-control border border-edge px-2 py-1">
                     <Paperclip className="size-3.5 text-a11y-muted" />
                     <Trans>Original message (.eml)</Trans>
                     <button
@@ -617,7 +617,7 @@ export function Composer({
                         attachmentDrag.current = null;
                       }
                     }}
-                    className="flex items-center gap-1.5 rounded-md border border-black/10 px-2 py-1 dark:border-white/10"
+                    className="flex items-center gap-1.5 rounded-control border border-edge px-2 py-1"
                   >
                     <Paperclip className="size-3.5 text-a11y-muted" />
                     {a.filename}
@@ -661,11 +661,11 @@ export function Composer({
               </div>
             )}
 
-            <footer className="flex shrink-0 items-center gap-2 border-t border-black/[0.07] px-4 py-2.5 dark:border-white/[0.08]">
+            <footer className="flex shrink-0 items-center gap-2 border-t border-separator px-4 py-2.5">
               <Tip label={t`Send`} shortcut={shortcut("send")} side="top">
                 <button
                   type="submit"
-                  className="h-7 rounded-md bg-blue-600 px-3.5 font-medium text-white hover:bg-blue-700"
+                  className="h-7 rounded-control bg-blue-600 px-3.5 font-medium text-white hover:bg-blue-700"
                 >
                   <Trans>Send</Trans>
                 </button>
@@ -675,7 +675,7 @@ export function Composer({
                   <button
                     type="button"
                     onClick={() => submit(true)}
-                    className="h-7 rounded-md border border-black/10 px-3 font-medium hover:bg-black/[0.04] dark:border-white/15 dark:hover:bg-white/5"
+                    className="h-7 rounded-control border border-edge px-3 font-medium hover:bg-fill-hover"
                   >
                     <Trans>Send and archive</Trans>
                   </button>
@@ -767,7 +767,7 @@ export function Composer({
               <span
                 id={errorId}
                 role="alert"
-                className="min-w-0 flex-1 truncate text-[12px] text-a11y-danger"
+                className="min-w-0 flex-1 truncate text-footnote text-a11y-danger"
                 title={error ?? undefined}
               >
                 {error}
@@ -1040,7 +1040,7 @@ function TemplatePicker({
               >
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-medium">{tpl.name}</span>
-                  <span className="block truncate text-[12px] text-a11y-muted group-data-highlighted:text-white">
+                  <span className="block truncate text-footnote text-a11y-muted group-data-highlighted:text-white">
                     {tpl.subject || tpl.body.replace(/\s+/g, " ").slice(0, 60)}
                   </span>
                 </span>

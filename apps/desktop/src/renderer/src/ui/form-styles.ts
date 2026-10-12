@@ -1,5 +1,5 @@
-export const formInput =
-  "w-full rounded-md border border-black/15 bg-transparent px-2 py-1.5 outline-a11y-focus dark:border-white/15";
-export const settingsHeading = "mb-2 text-[12px] font-semibold text-a11y-muted";
-export const settingsBox = "rounded-lg border border-black/10 dark:border-white/10";
-export const formButton = "rounded-md bg-blue-600 px-3 py-1.5 text-white disabled:opacity-50";
+export { formInput, settingsHeading, settingsHint } from "./styles";
+/** A bordered box around a block of settings. */
+export const settingsBox = "rounded-card ring-1 ring-edge";
+export const formButton =
+  "inline-flex h-7 items-center justify-center rounded-control bg-blue-600 px-3 font-medium text-white shadow-control outline-offset-1 outline-a11y-focus hover:bg-blue-700 focus-visible:outline-[3px] disabled:opacity-50";

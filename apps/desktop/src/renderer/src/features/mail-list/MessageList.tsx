@@ -252,7 +252,7 @@ export function MessageList({
   return (
     <section
       aria-label={searching ? t`Search results` : title}
-      className="flex h-full w-full flex-col bg-white dark:bg-neutral-900"
+      className="flex h-full w-full flex-col bg-surface"
     >
       {searchBar && (
         <div className={`drag flex h-13 shrink-0 items-center gap-2 pr-4 ${inset ?? "pl-4"}`}>
@@ -264,7 +264,7 @@ export function MessageList({
         className={`drag flex h-13 shrink-0 items-center gap-2 pr-3 ${inset && !searchBar ? inset : "pl-5"}`}
       >
         {!searchBar && leading}
-        <h1 className="min-w-0 flex-1 truncate text-[17px] font-bold">
+        <h1 className="min-w-0 flex-1 truncate text-title font-bold">
           {searching ? <Trans>Search results</Trans> : title}
         </h1>
         <div className="flex shrink-0 items-center gap-2">{folderActions}</div>
@@ -314,17 +314,17 @@ export function MessageList({
 
       {notice}
       {searchingServer && (
-        <output className="px-5 pb-2 text-[12px] text-a11y-muted">
+        <output className="px-5 pb-2 text-footnote text-a11y-muted">
           <Trans>Searching server…</Trans>
         </output>
       )}
       {searchTruncated && (
-        <output className="px-5 pb-2 text-[12px] text-a11y-muted">
+        <output className="px-5 pb-2 text-footnote text-a11y-muted">
           <Trans>More matches exist. Narrow your search.</Trans>
         </output>
       )}
       {searchIgnored.length > 0 && (
-        <output className="px-5 pb-2 text-[12px] text-orange-700 dark:text-orange-400">
+        <output className="px-5 pb-2 text-footnote text-orange-700 dark:text-orange-400">
           <Trans>
             Some server predicates were omitted to preserve matches; local filters still apply:
           </Trans>{" "}
@@ -332,12 +332,15 @@ export function MessageList({
         </output>
       )}
       {searchQuery && searchUsesSize(searchQuery) && (
-        <output className="px-5 pb-2 text-[12px] text-orange-700 dark:text-orange-400">
+        <output className="px-5 pb-2 text-footnote text-orange-700 dark:text-orange-400">
           <Trans>Unknown message sizes are left unfiltered.</Trans>
         </output>
       )}
       {searchInputInvalid && (
-        <output role="alert" className="px-5 pb-2 text-[12px] text-orange-700 dark:text-orange-400">
+        <output
+          role="alert"
+          className="px-5 pb-2 text-footnote text-orange-700 dark:text-orange-400"
+        >
           <Trans>Simplify your search query.</Trans>
         </output>
       )}
@@ -345,7 +348,7 @@ export function MessageList({
         <output
           role="alert"
           title={searchMessages.join("\n")}
-          className="px-5 pb-2 text-[12px] text-orange-700 dark:text-orange-400"
+          className="px-5 pb-2 text-footnote text-orange-700 dark:text-orange-400"
         >
           <Trans>Search could not finish:</Trans> {searchMessages.join("; ")}
         </output>
@@ -526,7 +529,7 @@ function FilterChip(props: {
       <Toggle
         pressed={props.active}
         onPressedChange={props.onChange}
-        className="h-6 shrink-0 rounded-full px-2.5 whitespace-nowrap text-[12px] font-medium text-a11y-muted outline-offset-1 outline-a11y-focus hover:bg-black/5 focus-visible:outline-[3px] data-pressed:bg-blue-600 data-pressed:text-white dark:hover:bg-white/10 dark:data-pressed:text-white"
+        className="h-6 shrink-0 rounded-full px-2.5 whitespace-nowrap text-footnote font-medium text-a11y-muted outline-offset-1 outline-a11y-focus hover:bg-fill-hover focus-visible:outline-[3px] data-pressed:bg-blue-600 data-pressed:text-white dark:data-pressed:text-white"
       >
         {props.label}
       </Toggle>
@@ -604,12 +607,8 @@ const Row = memo(function Row({
       {chips.map((l) => (
         <span
           key={l.id}
-          className={`max-w-24 shrink-0 truncate rounded px-1.5 text-[12px] leading-[18px] ${
-            accent
-              ? "bg-black/20 text-white"
-              : l.color
-                ? "colored-label"
-                : "bg-black/[0.06] dark:bg-white/10"
+          className={`max-w-24 shrink-0 truncate rounded px-1.5 text-footnote leading-[18px] ${
+            accent ? "bg-black/20 text-white" : l.color ? "colored-label" : "bg-fill-hover"
           }`}
           style={!accent && l.color ? labelChipColors(l.color) : undefined}
         >
@@ -628,7 +627,7 @@ const Row = memo(function Row({
     </>
   );
   return (
-    <div className="relative overflow-hidden rounded-lg">
+    <div className="relative overflow-hidden rounded-card">
       {swipe.distance !== 0 && (
         <span
           className={`absolute inset-y-0 flex items-center px-3 text-xs font-medium ${swipe.distance < 0 ? "right-0" : "left-0"}`}
@@ -671,13 +670,13 @@ const Row = memo(function Row({
           onSelect(m.id, { toggle: event.metaKey || event.ctrlKey, range: event.shiftKey })
         }
         onDoubleClick={() => onOpen(m)}
-        className={`motion-reduce:!transform-none relative block w-full overflow-hidden rounded-lg py-2.5 pr-3 pl-7 text-left ${
+        className={`motion-reduce:!transform-none relative block w-full overflow-hidden rounded-card py-2.5 pr-3 pl-7 text-left ${
           menuOpen ? "ring-2 ring-blue-500 ring-inset" : ""
         } ${
           accent
             ? "bg-blue-600 text-white"
             : selected
-              ? "bg-black/[0.07] dark:bg-white/10"
+              ? "bg-fill-pressed"
               : "hover:bg-black/[0.025] dark:hover:bg-white/[0.03]"
         }`}
       >
@@ -690,17 +689,17 @@ const Row = memo(function Row({
           />
         )}
         <span className="flex items-baseline gap-1.5">
-          <span className="min-w-0 truncate text-[14px] font-semibold">{senders(m)}</span>
+          <span className="min-w-0 truncate text-callout font-semibold">{senders(m)}</span>
           {m.threadCount > 1 && (
-            <span className={`shrink-0 text-[13px] tabular-nums ${muted}`}>{m.threadCount}</span>
+            <span className={`shrink-0 text-body tabular-nums ${muted}`}>{m.threadCount}</span>
           )}
           <span className="flex-1" />
           {showAccount && <AccountBadge accountId={m.accountId} accent={accent} />}
-          <span className={`shrink-0 text-[12px] tabular-nums ${muted}`}>
+          <span className={`shrink-0 text-footnote tabular-nums ${muted}`}>
             {shortDate(m.date, i18n)}
           </span>
         </span>
-        <span className="mt-0.5 flex items-center gap-1.5 text-[13px]">
+        <span className="mt-0.5 flex items-center gap-1.5 text-body">
           <span className="min-w-0 flex-1 truncate">
             {m.subject ? (
               <MatchedText
@@ -725,7 +724,7 @@ const Row = memo(function Row({
           <span className="mt-0.5 flex items-start gap-1.5">
             <span
               id={previewId}
-              className={`min-w-0 flex-1 text-[13px] ${density.previewLines === 2 ? "line-clamp-2" : "truncate"} ${muted}`}
+              className={`min-w-0 flex-1 text-body ${density.previewLines === 2 ? "line-clamp-2" : "truncate"} ${muted}`}
             >
               <SearchPreview thread={m} lead={density.previewLines === 2 ? undefined : 24} />
             </span>
@@ -734,14 +733,11 @@ const Row = memo(function Row({
           </span>
         )}
         {density.attachments && m.hasAttachments && (
-          <span className={`mt-1 flex items-center gap-1.5 text-[11px] ${muted}`}>
+          <span className={`mt-1 flex items-center gap-1.5 text-caption ${muted}`}>
             <Paperclip className="size-3.5 shrink-0" />
             {m.attachmentNames?.length ? (
               m.attachmentNames.slice(0, 2).map((name, index) => (
-                <span
-                  key={index}
-                  className="max-w-32 truncate rounded bg-black/5 px-1 dark:bg-white/10"
-                >
+                <span key={index} className="max-w-32 truncate rounded bg-fill-hover px-1">
                   {name}
                 </span>
               ))
@@ -754,12 +750,12 @@ const Row = memo(function Row({
           // The row's name is short; matches describe it, so a search says why the row matched.
           <span id={matchesId} className="block">
             {attachmentHits.map((match, index) => (
-              <span key={index} className={`mt-1 block truncate text-[12px] ${muted}`}>
+              <span key={index} className={`mt-1 block truncate text-footnote ${muted}`}>
                 <SearchSnippet match={match} lead={8} />
               </span>
             ))}
             {derivedHits.map((hit, index) => (
-              <span key={index} className={`mt-1 block truncate text-[12px] ${muted}`}>
+              <span key={index} className={`mt-1 block truncate text-footnote ${muted}`}>
                 {hit.source.kind === "body" ? (
                   <Trans
                     context="message text"
@@ -787,9 +783,7 @@ const Row = memo(function Row({
             ))}
           </span>
         )}
-        {rule && (
-          <span className="absolute right-3 bottom-0 left-7 h-px bg-black/[0.06] dark:bg-white/[0.06]" />
-        )}
+        {rule && <span className="absolute right-3 bottom-0 left-7 h-px bg-fill-hover" />}
       </button>
       <TriageChip id={m.id} accountId={m.accountId} labels={m.labels} compact />
     </div>

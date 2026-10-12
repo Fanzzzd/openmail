@@ -63,7 +63,7 @@ export function AiSettings({ accounts }: { accounts: readonly Account[] }) {
           spellCheck={false}
           aria-label={t`Anthropic API key`}
           placeholder={settings?.keyConfigured ? "••••••••" : ""}
-          className="ml-3 rounded border border-black/10 px-2 py-1 dark:border-white/10"
+          className="ml-3 rounded border border-edge px-2 py-1"
         />
       </label>
       <div className="flex gap-3">
@@ -108,7 +108,7 @@ export function AiSettings({ accounts }: { accounts: readonly Account[] }) {
           <fieldset
             key={account.id}
             disabled={!settings || accountResult.waiting}
-            className="space-y-2 border-t border-black/10 py-3 dark:border-white/10"
+            className="space-y-2 border-t border-edge py-3"
           >
             <legend>{account.email}</legend>
             <label className="flex gap-2">

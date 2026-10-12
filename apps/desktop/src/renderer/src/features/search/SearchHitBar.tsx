@@ -15,7 +15,7 @@ export function SearchHitBar({
   const { t } = useLingui();
   const shortcut = useShortcutText();
   return (
-    <fieldset className="sticky top-0 z-10 mb-3 flex min-w-0 items-center gap-2 rounded border border-neutral-200 bg-white px-2 py-1 text-[12px] dark:border-white/10 dark:bg-neutral-900">
+    <fieldset className="sticky top-0 z-10 mb-3 flex min-w-0 items-center gap-2 rounded border border-neutral-200 bg-surface px-2 py-1 text-footnote dark:border-white/10">
       <legend className="sr-only">{t`Search matches`}</legend>
       <output aria-live="polite" className="flex-1 text-a11y-muted">
         {plural(count, { one: "# search match", other: "# search matches" })}

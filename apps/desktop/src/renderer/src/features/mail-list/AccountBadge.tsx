@@ -16,7 +16,7 @@ export function AccountBadge({
   const account = accounts.find((a) => a.id === accountId);
   return (
     <span
-      className={`flex max-w-36 shrink-0 items-center gap-1.5 self-center text-[11px] ${accent ? "text-white" : "text-a11y-muted"}`}
+      className={`flex max-w-36 shrink-0 items-center gap-1.5 self-center text-caption ${accent ? "text-white" : "text-a11y-muted"}`}
       title={account?.email ?? accountId}
     >
       <span

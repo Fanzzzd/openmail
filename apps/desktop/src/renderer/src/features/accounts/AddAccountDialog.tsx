@@ -95,19 +95,19 @@ export function AddAccountDialog({ onClose, onAdded }: Props) {
             type="button"
             aria-label={t`Back`}
             onClick={() => setChoice(null)}
-            className="-ml-1.5 flex size-7 items-center justify-center rounded-md text-a11y-muted hover:bg-black/5 dark:hover:bg-white/10"
+            className="-ml-1.5 flex size-7 items-center justify-center rounded-control text-a11y-muted hover:bg-fill-hover"
           >
             <ChevronLeft className="size-4" />
           </button>
         )}
         {tile && <ProviderIcon provider={tile.icon} className="size-5 shrink-0" />}
-        <h2 className="flex-1 text-[15px] font-semibold">{title}</h2>
+        <h2 className="flex-1 text-headline font-semibold">{title}</h2>
         {onClose && (
           <button
             type="button"
             aria-label={t`Close`}
             onClick={onClose}
-            className="-mr-1.5 flex size-7 items-center justify-center rounded-md text-a11y-muted hover:bg-black/5 dark:hover:bg-white/10"
+            className="-mr-1.5 flex size-7 items-center justify-center rounded-control text-a11y-muted hover:bg-fill-hover"
           >
             <X className="size-4" />
           </button>
@@ -133,10 +133,10 @@ export function AddAccountDialog({ onClose, onAdded }: Props) {
                 type="button"
                 aria-label={tileLabel(i18n, item.label)}
                 onClick={() => setChoice(item.id)}
-                className="flex flex-col items-center gap-2 rounded-xl px-1 py-4 ring-1 ring-black/[0.06] transition-colors hover:bg-black/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-a11y-focus dark:ring-white/10 dark:hover:bg-white/5"
+                className="flex flex-col items-center gap-2 rounded-sheet px-1 py-4 ring-1 ring-edge transition-colors hover:bg-fill-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-a11y-focus"
               >
                 <ProviderIcon provider={item.icon} className="size-8" />
-                <span className="text-[12px] text-neutral-700 dark:text-neutral-300">
+                <span className="text-footnote text-neutral-700 dark:text-neutral-300">
                   {tileLabel(i18n, item.label)}
                 </span>
               </button>
@@ -244,7 +244,7 @@ function OAuthStep({
           </Trans>
         )}
       </p>
-      <p className="mt-2 text-[12px] text-a11y-muted">
+      <p className="mt-2 text-footnote text-a11y-muted">
         {active === "own" ? (
           <Trans>New sign-ins use your own OAuth client.</Trans>
         ) : (
@@ -264,7 +264,7 @@ function OAuthStep({
       </Actions>
       <Disclosure
         className="mt-4"
-        summaryClassName="text-[12px] text-a11y-muted"
+        summaryClassName="text-footnote text-a11y-muted"
         summary={
           builtIn ? (
             <Trans>Use your own OAuth client</Trans>
@@ -298,7 +298,7 @@ function UseBuiltIn({ provider }: { provider: OAuthProvider }) {
   const clearError = resultError(i18n, clear);
   return (
     <>
-      <p className="mt-1 text-[12px] text-a11y-muted">
+      <p className="mt-1 text-footnote text-a11y-muted">
         <Trans>Accounts you already added keep the client they signed in with.</Trans>{" "}
         <button
           type="button"
@@ -357,7 +357,7 @@ function ClientForm({
       )}
       {saveError && <ErrorLine text={saveError} />}
       {saveClient._tag === "Success" && (
-        <output className="mt-3 block text-[12px] text-a11y-muted">
+        <output className="mt-3 block text-footnote text-a11y-muted">
           <Trans>Saved. New sign-ins use this client.</Trans>
         </output>
       )}
@@ -449,7 +449,7 @@ function ImapStep({
           href={info.appPasswordUrl}
           target="_blank"
           rel="noreferrer"
-          className="mt-1.5 inline-flex items-center gap-1 text-[12px] text-a11y-accent hover:underline dark:text-blue-400"
+          className="mt-1.5 inline-flex items-center gap-1 text-footnote text-a11y-accent hover:underline dark:text-blue-400"
         >
           {authCode ? (
             <Trans>Generate authorization code</Trans>
@@ -493,7 +493,7 @@ function ImapStep({
             </div>
           </div>
           <div className="mt-3">
-            <span className="block text-[12px] font-medium text-a11y-muted">
+            <span className="block text-footnote font-medium text-a11y-muted">
               <Trans>SMTP encryption</Trans>
             </span>
             <SegmentedControl
@@ -540,7 +540,7 @@ function Field({
   inputMode?: "numeric";
 }) {
   return (
-    <label className="mt-3 block text-[12px] font-medium text-a11y-muted">
+    <label className="mt-3 block text-footnote font-medium text-a11y-muted">
       {label}
       <input
         type={password ? "password" : (type ?? "text")}
@@ -550,7 +550,7 @@ function Field({
         spellCheck={false}
         autoCapitalize="off"
         onChange={(e) => onChange(e.target.value)}
-        className="selectable mt-1 h-8 w-full rounded-md border border-black/10 bg-transparent px-2.5 text-[13px] text-neutral-900 outline-none focus:border-blue-500 dark:border-white/15 dark:text-neutral-100"
+        className="selectable mt-1 h-8 w-full rounded-control border border-edge bg-transparent px-2.5 text-body text-neutral-900 outline-none focus:border-blue-500 dark:text-neutral-100"
       />
     </label>
   );
@@ -558,7 +558,7 @@ function Field({
 
 function ErrorLine({ text }: { text: string }) {
   return (
-    <p role="alert" className="mt-3 text-[12px] text-a11y-danger">
+    <p role="alert" className="mt-3 text-footnote text-a11y-danger">
       {text}
     </p>
   );
@@ -582,7 +582,7 @@ function PrimaryButton({
       type={onClick ? "button" : "submit"}
       disabled={disabled}
       onClick={onClick}
-      className="h-8 rounded-md bg-blue-600 px-4 font-medium text-white hover:bg-blue-700 disabled:opacity-40"
+      className="h-8 rounded-control bg-blue-600 px-4 font-medium text-white hover:bg-blue-700 disabled:opacity-40"
     >
       {children}
     </button>

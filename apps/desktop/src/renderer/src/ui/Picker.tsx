@@ -65,11 +65,11 @@ export function PickerPopover({
 
 /** Search field at the top of a picker. */
 export const pickerInput =
-  "h-8 w-full shrink-0 border-b border-black/[0.07] bg-transparent px-3 text-[13px] outline-none placeholder:text-a11y-muted dark:border-white/[0.08]";
+  "h-8 w-full shrink-0 border-b border-separator bg-transparent px-3 text-body outline-none placeholder:text-a11y-muted";
 
 /** Footer button of a picker. */
 export const pickerFooter =
-  "block h-8 w-full shrink-0 border-t border-black/[0.07] px-3 text-left text-a11y-accent outline-none hover:bg-black/[0.03] focus-visible:bg-black/[0.05] dark:border-white/[0.08] dark:text-blue-400 dark:hover:bg-white/5";
+  "block h-8 w-full shrink-0 border-t border-separator px-3 text-left text-a11y-accent outline-none hover:bg-fill-hover focus-visible:bg-black/[0.05] dark:text-blue-400";
 
 /** The list of a picker. */
 export const pickerList = "max-h-64 overflow-y-auto p-[5px] empty:hidden";

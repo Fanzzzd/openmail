@@ -30,7 +30,7 @@ import { popupMotion } from "../../ui/styles";
 import { Tip } from "../../ui/Tip";
 
 const rowButton =
-  "flex size-7 shrink-0 items-center justify-center rounded-md text-a11y-muted outline-offset-0 outline-a11y-focus transition-colors duration-100 hover:bg-black/[0.06] hover:text-neutral-900 focus-visible:outline-2 active:bg-black/10 motion-reduce:transition-none dark:hover:bg-white/10 dark:hover:text-neutral-100 dark:active:bg-white/15";
+  "flex size-7 shrink-0 items-center justify-center rounded-control text-a11y-muted outline-offset-0 outline-a11y-focus transition-colors duration-100 hover:bg-fill-hover hover:text-neutral-900 focus-visible:outline-2 active:bg-fill-pressed motion-reduce:transition-none dark:hover:text-neutral-100";
 
 /** An icon button on a download row: the tip names the action, the label names the file too. */
 function RowAction({
@@ -92,14 +92,12 @@ function DownloadRow({ item }: { item: DownloadItem }) {
   return (
     <li
       aria-label={name}
-      className="group relative flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
+      className="group relative flex items-center gap-3 rounded-card px-2 py-2 hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
     >
       <span
         aria-hidden
-        className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${
-          failed
-            ? "bg-red-500/10 text-a11y-danger"
-            : "bg-black/[0.05] text-a11y-muted dark:bg-white/10"
+        className={`flex size-8 shrink-0 items-center justify-center rounded-card ${
+          failed ? "bg-red-500/10 text-a11y-danger" : "bg-fill-hover text-a11y-muted"
         }`}
       >
         <FileIcon filename={item.filename} className="size-4" />
@@ -109,7 +107,7 @@ function DownloadRow({ item }: { item: DownloadItem }) {
           <button
             type="button"
             onClick={() => command("open")}
-            className="block max-w-full truncate rounded-sm text-left font-medium outline-offset-1 outline-a11y-focus hover:underline focus-visible:outline-2"
+            className="block max-w-full truncate rounded-item text-left font-medium outline-offset-1 outline-a11y-focus hover:underline focus-visible:outline-2"
             title={name}
           >
             {name}
@@ -128,7 +126,7 @@ function DownloadRow({ item }: { item: DownloadItem }) {
           />
         ) : null}
         <p
-          className={`mt-0.5 truncate text-[11px] tabular-nums ${failed ? "text-a11y-danger" : "text-a11y-muted"}`}
+          className={`mt-0.5 truncate text-caption tabular-nums ${failed ? "text-a11y-danger" : "text-a11y-muted"}`}
         >
           {status(item)}
           {done && item.blocked && (
@@ -138,7 +136,7 @@ function DownloadRow({ item }: { item: DownloadItem }) {
             </span>
           )}
         </p>
-        {error && <p className="mt-0.5 text-[11px] text-a11y-danger">{error}</p>}
+        {error && <p className="mt-0.5 text-caption text-a11y-danger">{error}</p>}
       </div>
       <div className="flex shrink-0 items-center gap-0.5">
         {done && !item.blocked && (
@@ -225,7 +223,7 @@ export function Downloads() {
           <Popover.Trigger
             data-downloads
             aria-label={label}
-            className={`no-drag relative flex size-7 items-center justify-center rounded-md ${active > 0 ? "bg-blue-500/10 text-a11y-accent" : "text-a11y-muted"} outline-offset-1 outline-a11y-focus transition-colors duration-100 hover:bg-black/5 hover:text-neutral-900 focus-visible:outline-2 active:bg-black/10 data-popup-open:bg-black/[0.07] data-popup-open:text-neutral-900 motion-reduce:transition-none dark:hover:bg-white/10 dark:hover:text-neutral-100 dark:data-popup-open:bg-white/10 dark:data-popup-open:text-neutral-100`}
+            className={`no-drag relative flex size-7 items-center justify-center rounded-control ${active > 0 ? "bg-blue-500/10 text-a11y-accent" : "text-a11y-muted"} outline-offset-1 outline-a11y-focus transition-colors duration-100 hover:bg-black/5 hover:text-neutral-900 focus-visible:outline-2 active:bg-black/10 data-popup-open:bg-black/[0.07] data-popup-open:text-neutral-900 motion-reduce:transition-none dark:hover:bg-white/10 dark:hover:text-neutral-100 dark:data-popup-open:bg-white/10 dark:data-popup-open:text-neutral-100`}
           >
             {active > 0 && <ProgressRing value={progress} className="absolute size-6" />}
             <ArrowDownToLine className={active > 0 ? "size-3" : "size-4"} />
@@ -235,10 +233,10 @@ export function Downloads() {
           <Popover.Positioner sideOffset={6} align="end" className="z-[60] outline-none">
             <Popover.Popup
               initialFocus={() => !automatic.current}
-              className={`no-drag flex max-h-[min(28rem,var(--available-height))] w-[22rem] max-w-(--available-width) flex-col overflow-hidden rounded-xl bg-white/95 text-[13px] text-neutral-900 shadow-[0_12px_32px_rgb(0_0_0/0.18)] ring-1 ring-black/10 outline-none backdrop-blur-xl dark:bg-[#2c2c2e]/95 dark:text-neutral-100 dark:shadow-[0_12px_32px_rgb(0_0_0/0.5)] dark:ring-white/10 ${popupMotion}`}
+              className={`no-drag flex max-h-[min(28rem,var(--available-height))] w-[22rem] max-w-(--available-width) flex-col overflow-hidden rounded-sheet bg-white/95 text-body text-neutral-900 shadow-[0_12px_32px_rgb(0_0_0/0.18)] ring-1 ring-edge outline-none backdrop-blur-xl dark:bg-[#2c2c2e]/95 dark:text-neutral-100 dark:shadow-[0_12px_32px_rgb(0_0_0/0.5)] ${popupMotion}`}
             >
-              <div className="flex items-center justify-between gap-2 border-b border-black/[0.06] px-4 pt-3 pb-2.5 dark:border-white/10">
-                <Popover.Title className="text-[13px] font-semibold">
+              <div className="flex items-center justify-between gap-2 border-b border-separator px-4 pt-3 pb-2.5">
+                <Popover.Title className="text-body font-semibold">
                   <Trans>Downloads</Trans>
                 </Popover.Title>
                 {items.length > 0 && (
@@ -246,7 +244,7 @@ export function Downloads() {
                     type="button"
                     disabled={finished === 0}
                     onClick={() => run(withMail((call) => call("ClearDownloads", undefined)))}
-                    className="rounded-md px-2 py-0.5 text-[12px] font-medium text-a11y-accent outline-offset-1 outline-a11y-focus hover:bg-blue-500/10 focus-visible:outline-2 active:bg-blue-500/15 disabled:pointer-events-none disabled:opacity-40"
+                    className="rounded-control px-2 py-0.5 text-footnote font-medium text-a11y-accent outline-offset-1 outline-a11y-focus hover:bg-blue-500/10 focus-visible:outline-2 active:bg-blue-500/15 disabled:pointer-events-none disabled:opacity-40"
                   >
                     <Trans>Clear</Trans>
                   </button>
@@ -262,14 +260,14 @@ export function Downloads() {
                 <div className="flex flex-col items-center gap-1.5 px-6 py-8 text-center">
                   <span
                     aria-hidden
-                    className="mb-1 flex size-10 items-center justify-center rounded-full bg-black/[0.05] text-a11y-muted dark:bg-white/10"
+                    className="mb-1 flex size-10 items-center justify-center rounded-full bg-fill-hover text-a11y-muted"
                   >
                     <ArrowDownToLine className="size-5" />
                   </span>
                   <p className="font-medium">
                     <Trans>No downloads</Trans>
                   </p>
-                  <p className="text-[12px] text-a11y-muted">
+                  <p className="text-footnote text-a11y-muted">
                     <Trans>Attachments you save appear here.</Trans>
                   </p>
                 </div>

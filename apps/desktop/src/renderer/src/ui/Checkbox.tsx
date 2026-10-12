@@ -1,5 +1,6 @@
 import { Checkbox as BaseCheckbox } from "@base-ui/react/checkbox";
 import { Check } from "lucide-react";
+import { checkboxBox } from "./styles";
 
 interface Props {
   id?: string;
@@ -19,7 +20,7 @@ export function Checkbox({ id, checked, disabled, onCheckedChange, "aria-label":
       disabled={disabled}
       onCheckedChange={(next) => onCheckedChange(next)}
       aria-label={label}
-      className="flex size-3.5 shrink-0 items-center justify-center rounded-[4px] bg-white shadow-[0_0.5px_1px_rgb(0_0_0/0.15)] ring-1 ring-black/20 outline-offset-1 outline-a11y-focus focus-visible:outline-[3px] data-checked:bg-blue-600 data-checked:ring-blue-600 dark:bg-white/10 dark:ring-white/20 dark:data-checked:bg-blue-600 dark:data-checked:ring-blue-500"
+      className={checkboxBox}
     >
       <BaseCheckbox.Indicator className="text-white">
         <Check className="size-3" strokeWidth={3} />

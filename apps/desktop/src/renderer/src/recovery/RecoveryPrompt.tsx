@@ -39,7 +39,7 @@ export function RecoveryPrompt({
       aria-labelledby={title}
       aria-describedby={detail}
       data-full-window
-      className="flex h-full flex-col gap-4 bg-white p-6 text-[13px] text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100"
+      className="flex h-full flex-col gap-4 bg-surface p-6 text-body text-neutral-900 dark:text-neutral-100"
     >
       <div className="flex min-h-0 flex-1 gap-4">
         <span
@@ -49,7 +49,7 @@ export function RecoveryPrompt({
           <Icon className="size-5" />
         </span>
         <div className="min-w-0 flex-1 space-y-1.5 overflow-y-auto">
-          <h1 id={title} className="text-[15px] leading-snug font-semibold">
+          <h1 id={title} className="text-headline leading-snug font-semibold">
             {prompt.message}
           </h1>
           <p

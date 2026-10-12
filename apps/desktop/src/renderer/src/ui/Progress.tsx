@@ -14,7 +14,7 @@ export function ProgressBar({
 }) {
   return (
     <Progress.Root value={value} max={max} aria-label={label} className={`w-full ${className}`}>
-      <Progress.Track className="relative h-1.5 overflow-hidden rounded-full bg-black/10 dark:bg-white/15">
+      <Progress.Track className="relative h-1.5 overflow-hidden rounded-full bg-fill-pressed">
         <Progress.Indicator className="block h-full rounded-full bg-blue-600 data-indeterminate:w-1/3 data-indeterminate:opacity-70 data-indeterminate:motion-safe:animate-indeterminate dark:bg-blue-400" />
       </Progress.Track>
     </Progress.Root>

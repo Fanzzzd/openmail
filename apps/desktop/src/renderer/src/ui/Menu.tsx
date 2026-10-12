@@ -133,7 +133,7 @@ export function MenuRadioGroup<V extends string>({
         if (option) onValueChange(option.value);
       }}
     >
-      <Menu.GroupLabel className="px-2 pt-1 pb-0.5 text-[11px] font-semibold text-a11y-muted">
+      <Menu.GroupLabel className="px-2 pt-1 pb-0.5 text-caption font-semibold text-a11y-muted">
         {label}
       </Menu.GroupLabel>
       {options.map((option) => (
@@ -173,7 +173,7 @@ export function ContextSubmenu({
   return (
     <ContextMenu.SubmenuRoot>
       <ContextMenu.SubmenuTrigger
-        className={`group ${itemClass} data-popup-open:not-data-highlighted:bg-black/[0.06] dark:data-popup-open:not-data-highlighted:bg-white/10`}
+        className={`group ${itemClass} data-popup-open:not-data-highlighted:bg-fill-hover`}
       >
         <span className="flex size-4 shrink-0 items-center justify-center">
           {Icon && <Icon className="size-3.5" />}

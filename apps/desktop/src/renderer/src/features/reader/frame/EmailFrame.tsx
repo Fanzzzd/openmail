@@ -221,7 +221,7 @@ export function EmailFrame({
         </button>
       )}
       {link && (
-        <output className="pointer-events-none fixed right-3 bottom-3 left-3 z-50 w-fit max-w-[calc(100%-1.5rem)] rounded border border-black/10 bg-neutral-100 px-2 py-1 font-mono text-[12px] break-all text-neutral-800 shadow dark:border-white/15 dark:bg-neutral-800 dark:text-neutral-100">
+        <output className="pointer-events-none fixed right-3 bottom-3 left-3 z-50 w-fit max-w-[calc(100%-1.5rem)] rounded border border-edge bg-neutral-100 px-2 py-1 font-mono text-footnote break-all text-neutral-800 shadow dark:bg-neutral-800 dark:text-neutral-100">
           {linkHint(link)}
         </output>
       )}

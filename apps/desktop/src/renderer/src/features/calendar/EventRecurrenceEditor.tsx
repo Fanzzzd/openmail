@@ -239,10 +239,7 @@ export function EventRecurrenceEditor({
   const pattern = rule?.pattern;
   const date = calendarTimeDate(start, { unknownZone: "wall" });
   return (
-    <fieldset
-      disabled={disabled}
-      className="space-y-2 border-t border-black/10 pt-2 dark:border-white/10"
-    >
+    <fieldset disabled={disabled} className="space-y-2 border-t border-edge pt-2">
       {/* Floated, the legend leaves the border and sits above the field like the other labels. */}
       <legend className="float-left mb-0 w-full font-medium">{t`Repeat`}</legend>
       <Select
