@@ -1,44 +1,79 @@
-import { restoredSelection } from "./window-selection";
 /**
  * What the person is looking at: the view, list filters and search text.
- * They live in atoms because the thread list atom derives its query from them.
+ * The view and committed search live in the route (state/location.ts); these
+ * atoms read and write it, because the thread list atom derives its query
+ * from them.
  */
 import { Atom } from "effect/reactivity";
 
-import { ALL, type SpaceId, type View } from "../lib/view";
+import type { MailState } from "../../../shared/routes";
+import type { View } from "../lib/view";
 import { makeFolderFiltersAtom } from "./folder-filters";
+import { goMail, mailRouteAtom, sameView } from "./location";
 
-interface Nav {
-  view: View;
-  /** The last view in each space, so switching back lands where you were, like Arc. */
-  remembered: ReadonlyMap<SpaceId, View>;
-}
+export { rememberedViewsAtom } from "./location";
 
-const restored = restoredSelection();
-const nav = Atom.make<Nav>({
-  view: restored ?? { space: ALL, mailbox: "inbox" },
-  remembered: new Map(),
-}).pipe(Atom.keepAlive);
+/** A new view keeps the search and dialog, and closes the open thread. */
+const keptForView = ({ q, scope, dialog }: MailState): MailState => ({
+  ...(q ? { q } : {}),
+  ...(scope ? { scope } : {}),
+  ...(dialog ? { dialog } : {}),
+});
 
-/** The view on screen. Writing it also remembers it as its space's last view. */
+/** The view on screen. Writing it adds a history entry, so Back returns to the previous view. */
 export const viewAtom = Atom.writable(
-  (get) => get(nav).view,
-  (ctx, view: View) => {
-    const remembered = new Map(ctx.get(nav).remembered).set(view.space, view);
-    ctx.set(nav, { view, remembered });
-  },
-);
-
-export const rememberedViewsAtom = Atom.make((get) => get(nav).remembered);
+  (get): View => get(mailRouteAtom).view,
+  (ctx, view: View) =>
+    goMail(
+      ctx,
+      (route) => ({ view, state: keptForView(route.state) }),
+      sameView(ctx.get(mailRouteAtom).view, view),
+    ),
+).pipe(Atom.withEquality(sameView));
 
 export const filtersAtom = makeFolderFiltersAtom(
   viewAtom,
   typeof localStorage === "undefined" ? undefined : localStorage,
 );
 
-export const searchTextAtom = Atom.make("").pipe(Atom.keepAlive);
+/** Text typed since the last commit, and the committed search it started from. */
+const searchDraftAtom = Atom.make<{ text: string; base: string } | undefined>(undefined).pipe(
+  Atom.keepAlive,
+);
+const committedSearch = Atom.make((get) => get(mailRouteAtom).state.q ?? "");
+
+/**
+ * The search field's text. Typing stays in this window's atoms; the route's
+ * `q` takes over again when it changes, as on Back.
+ */
+export const searchTextAtom = Atom.writable(
+  (get) => {
+    const draft = get(searchDraftAtom);
+    const q = get(committedSearch);
+    return draft?.base === q ? draft.text : q;
+  },
+  (ctx, text: string) => ctx.set(searchDraftAtom, { text, base: ctx.get(committedSearch) }),
+);
 
 export const searchAtom = Atom.make((get) => get(searchTextAtom).trim());
+
+/** Writes the typed search into the route, replacing the current entry. */
+export const commitSearchAtom = Atom.writable(
+  (get) => get(committedSearch),
+  (ctx) => {
+    const text = ctx.get(searchTextAtom);
+    const q = text.trim();
+    goMail(
+      ctx,
+      ({ view, state: { q: _old, ...state } }) => ({
+        view,
+        state: { ...state, ...(q ? { q } : {}) },
+      }),
+      true,
+    );
+    ctx.set(searchDraftAtom, { text, base: q });
+  },
+);
 
 /**
  * A map with insertion order as recency: setting a key makes it the newest,
@@ -93,4 +128,16 @@ const NO_IMAGES_LOADED: ReadonlySet<string> = new Set<string>();
  */
 export const imagesLoadedAtom = boundedFamily(IMAGES_LOADED_LIMIT, NO_IMAGES_LOADED);
 
-export const searchScopeAtom = Atom.make<"all" | "folder">("all").pipe(Atom.keepAlive);
+/** Where search looks: every folder, or the folder on screen. */
+export const searchScopeAtom = Atom.writable(
+  (get): "all" | "folder" => get(mailRouteAtom).state.scope ?? "all",
+  (ctx, scope: "all" | "folder") =>
+    goMail(
+      ctx,
+      ({ view, state: { scope: _old, ...state } }) => ({
+        view,
+        state: { ...state, ...(scope === "folder" ? { scope } : {}) },
+      }),
+      true,
+    ),
+);

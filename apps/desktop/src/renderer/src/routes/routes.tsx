@@ -13,6 +13,7 @@ import {
 import { Schema } from "effect";
 import { mailHref, validateMailSearch, validateThreadSearch } from "../../../shared/routes";
 import { App } from "../app/App";
+import { LocationBridge } from "../app/location-bridge";
 import { ThreadWindow } from "../app/ThreadWindow";
 import { MailboxView } from "@openmail/core/schema";
 
@@ -22,7 +23,7 @@ export interface RouterContext {
 }
 
 export const rootRoute = createRootRouteWithContext<RouterContext>()({
-  component: Outlet,
+  component: Root,
   notFoundComponent: () => <Navigate to="/" replace />,
 });
 
@@ -63,6 +64,15 @@ export const composeRoute = createRoute({
 });
 
 export const routeTree = rootRoute.addChildren([indexRoute, mailRoute, threadRoute, composeRoute]);
+
+function Root() {
+  return (
+    <>
+      <LocationBridge />
+      <Outlet />
+    </>
+  );
+}
 
 function MailScreen() {
   return <App />;

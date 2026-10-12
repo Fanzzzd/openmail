@@ -1,4 +1,4 @@
-import { useAtom, useAtomValue } from "@effect/atom-react";
+import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
 import { useLingui } from "@lingui/react/macro";
 import { DEFAULT_PREFS, markReadAfter } from "@openmail/core/schema";
 import { Effect } from "effect";
@@ -29,6 +29,7 @@ import {
 } from "../lib/selection";
 import { listQueryAtom, threadListAtom } from "../state/threads";
 import {
+  commitSearchAtom,
   filtersAtom,
   rememberedViewsAtom,
   searchAtom,
@@ -39,6 +40,9 @@ import {
 import { ALL, scopeAccountIds, type SpaceId, type View } from "../lib/view";
 import { restoredSelection, settleStartupSelection } from "../state/window-selection";
 import { mailHref } from "../../../shared/routes";
+
+/** How long typing pauses before the search goes into the route. */
+const SEARCH_COMMIT_MS = 400;
 
 export function useMailSelection({
   setLabelPicker,
@@ -64,6 +68,14 @@ export function useMailSelection({
   const [, setSearchScope] = useAtom(searchScopeAtom);
   const search = useAtomValue(searchAtom);
   const [filters, setFilters] = useAtom(filtersAtom);
+  // Typing stays local; the route's q follows once typing pauses, or at once when cleared.
+  const committedSearch = useAtomValue(commitSearchAtom);
+  const commitSearch = useAtomSet(commitSearchAtom);
+  useEffect(() => {
+    if (search === committedSearch) return constVoid;
+    const timer = setTimeout(commitSearch, search ? SEARCH_COMMIT_MS : 0);
+    return () => clearTimeout(timer);
+  }, [search, committedSearch, commitSearch]);
   const [selection, setSelection] = useState<Selection>(() =>
     singleSelection(restoredSelection()?.messageId ?? null),
   );

@@ -33,7 +33,7 @@ import {
 } from "effect";
 import { AtomRegistry } from "effect/reactivity";
 import { RpcMessage, RpcSerialization, RpcServer } from "effect/rpc";
-import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
+import { createMemoryHistory } from "@tanstack/react-router";
 import { createElement } from "react";
 import { vi } from "vitest";
 import type { RpcBridge } from "../../../shared/channel";
@@ -41,7 +41,10 @@ import type { DesktopEvent } from "../../../shared/desktop";
 import { mailboxHandlers } from "../../../shared/mailbox-handlers";
 import { rendererPrefs } from "../../../shared/renderer-prefs";
 import { MailRpcs } from "../../../shared/rpc";
-import { createAppRouter } from "../routes/router";
+import { type AppRouter, createAppRouter } from "../routes/router";
+import { AppRouterProvider } from "../routes/provider";
+import { historyFor, initialLocation } from "../app/location-bridge";
+import { historyAtom, locationAtom } from "../state/location";
 import { composeHref, DEFAULT_VIEW, mailHref, threadHref } from "../../../shared/routes";
 import { TipProvider } from "../ui/Tip";
 
@@ -115,6 +118,10 @@ interface FlowHarness {
   id(id: string): string;
   event(event: DesktopEvent): Promise<void>;
   holdLists(): Promise<() => Promise<void>>;
+  /** The window's router, on memory history. */
+  router: AppRouter;
+  /** The current route href, as the history holds it. */
+  href(): string;
   dispose(): Promise<void>;
 }
 
@@ -132,6 +139,8 @@ export async function flow(
     };
     /** Renders the thread window for this message instead of the main window. */
     thread?: string;
+    /** The main window's starting route, from shared/routes. */
+    route?: string;
   } = {},
 ): Promise<FlowHarness> {
   const provider = options.provider ?? "gmail";
@@ -392,11 +401,13 @@ export async function flow(
           ? threadHref(`${account.id}/${options.thread}`)
           : composeId
             ? composeHref(composeId)
-            : mailHref(DEFAULT_VIEW),
+            : (options.route ?? mailHref(DEFAULT_VIEW)),
       ],
     }),
   );
   await router.load();
+  registry.set(locationAtom, initialLocation(router));
+  registry.set(historyAtom, historyFor(router));
   const i18n = setupI18n({ locale: "en", messages: { en: {} } });
   render(
     createElement(
@@ -405,7 +416,7 @@ export async function flow(
       createElement(
         I18nProvider,
         { i18n },
-        createElement(TipProvider, null, createElement(RouterProvider, { router })),
+        createElement(TipProvider, null, createElement(AppRouterProvider, { router })),
       ),
     ),
   );
@@ -420,6 +431,8 @@ export async function flow(
     account,
     notifications,
     id: (id: string) => `${account.id}/${id}`,
+    router,
+    href: () => `${router.history.location.pathname}${router.history.location.search}`,
     async event(event: DesktopEvent) {
       await act(async () => {
         await Effect.runPromise(PubSub.publish(desktop, event));

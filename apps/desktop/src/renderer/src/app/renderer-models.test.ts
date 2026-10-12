@@ -62,18 +62,21 @@ vi.mock("@effect/atom-react", async () => {
       const pair = useState(initial);
       return atom === "threads" ? [state.threads(), state.loadMore] : pair;
     },
+    useAtomSet: () => vi.fn(),
     useAtomValue: (atom: string) =>
-      atom === "prefs"
-        ? AsyncResult.success(state.prefs())
-        : atom === "accounts"
-          ? AsyncResult.success(state.accounts)
-          : atom === "remembered"
-            ? new Map([["profile", { space: "profile", mailbox: "sent" }]])
-            : atom === "query"
-              ? { mailbox: "inbox", flat: !state.prefs().threadGrouping }
-              : atom === "search"
-                ? state.search
-                : AsyncResult.initial(),
+      atom === "commit"
+        ? state.search
+        : atom === "prefs"
+          ? AsyncResult.success(state.prefs())
+          : atom === "accounts"
+            ? AsyncResult.success(state.accounts)
+            : atom === "remembered"
+              ? new Map([["profile", { space: "profile", mailbox: "sent" }]])
+              : atom === "query"
+                ? { mailbox: "inbox", flat: !state.prefs().threadGrouping }
+                : atom === "search"
+                  ? state.search
+                  : AsyncResult.initial(),
   };
 });
 vi.mock("../state/queries", () => ({
@@ -89,6 +92,7 @@ vi.mock("../state/ui", () => ({
   searchTextAtom: "text",
   searchScopeAtom: "scope",
   searchAtom: "search",
+  commitSearchAtom: "commit",
   filtersAtom: "filters",
 }));
 vi.mock("../state/events", () => ({ syncStateAtom: "sync", syncProgressAtom: "progress" }));

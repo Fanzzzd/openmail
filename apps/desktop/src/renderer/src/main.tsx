@@ -1,5 +1,4 @@
 import { RegistryProvider } from "@effect/atom-react";
-import { RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
@@ -8,6 +7,9 @@ import { LocaleProvider } from "./i18n/LocaleProvider";
 import { TipProvider } from "./ui/Tip";
 import { ConfirmHost } from "./ui/Confirm";
 import { WindowUi } from "./app/WindowUi";
+import { historyFor, initialLocation } from "./app/location-bridge";
+import { historyAtom, locationAtom } from "./state/location";
+import { AppRouterProvider } from "./routes/provider";
 import { createAppHashHistory } from "./routes/hash-history";
 import { legacyHref } from "./routes/legacy";
 import { createAppRouter } from "./routes/router";
@@ -21,13 +23,18 @@ const router = createAppRouter(createAppHashHistory());
 // invalidates their reactivity keys (state/keys.ts), not on a timer or focus.
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <RegistryProvider>
+    <RegistryProvider
+      initialValues={[
+        [locationAtom, initialLocation(router)],
+        [historyAtom, historyFor(router)],
+      ]}
+    >
       <LocaleProvider>
         <TipProvider>
           <WindowKeys />
           <WindowUi />
           <ConfirmHost />
-          <RouterProvider router={router} />
+          <AppRouterProvider router={router} />
         </TipProvider>
       </LocaleProvider>
     </RegistryProvider>
