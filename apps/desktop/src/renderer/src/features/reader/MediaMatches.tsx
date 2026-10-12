@@ -19,6 +19,7 @@ function ImageMatch({ chunk, onClose }: { chunk: DerivedChunk; onClose: () => vo
     <Dialog
       aria-label={t`Image region`}
       onClose={onClose}
+      ownClose
       maxHeight="85vh"
       className="flex w-[min(900px,90vw)] flex-col p-4"
     >

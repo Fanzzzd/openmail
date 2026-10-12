@@ -46,6 +46,7 @@ export function RawMessageDialog({
     <Dialog
       aria-label={t`Original message`}
       onClose={onClose}
+      ownClose
       className="flex h-[640px] w-[820px] max-w-[92vw] flex-col overflow-hidden"
     >
       <header className="flex shrink-0 items-center gap-2 border-b border-separator px-4 py-2.5">
