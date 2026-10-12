@@ -29,6 +29,16 @@ openmail tools --json
 
 The CLI has no send command. Sending happens in the app.
 
+`openmail list`, `openmail search`, `openmail sync` and `openmail tool` run the same tools as the MCP server. They read only accounts for which you turned on **Allow sending mail text to the model** in **Settings → AI Access**. Where an MCP client gets an empty result, the CLI prints an error on stderr and exits with code 1:
+
+```text
+error: No accounts allow agent reads. Turn on 'Allow sending mail text to the model' in Settings → AI Access.
+error: Account gmail:me@example.com does not allow agent reads. Turn on 'Allow sending mail text to the model' in Settings → AI Access.
+error: No account with id gmail:typo@example.com. Run `openmail accounts list` to see them.
+```
+
+A tool that fails prints its message the same way. With `--json`, the CLI also prints `{"_tag": "MailToolError", "message": "..."}` on stdout.
+
 ## Connect an MCP client
 
 `openmail mcp` runs an MCP server over stdio. For Claude Desktop, add this to `claude_desktop_config.json`:

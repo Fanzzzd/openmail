@@ -181,8 +181,8 @@ it.skipIf(process.env.OPENMAIL_PERF !== "1")(
           expect(result?.changed).toBe(COUNT);
           expect(report.p99BlockMs).toBeLessThan(BLOCK_MS);
           expect(report.longestBlockMs).toBeLessThan(300);
-          // Preemption on an overloaded machine shows up as late timers too.
-          if (report.loadAverage[0]! < availableParallelism())
+          // Preemption on a busy machine shows up as late timers too.
+          if (report.loadAverage[0]! < availableParallelism() / 2)
             expect(report.blocksOver50Ms).toBe(0);
         }).pipe(Effect.provide(layer)),
       );

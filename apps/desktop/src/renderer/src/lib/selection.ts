@@ -10,6 +10,8 @@ export interface Selection {
    * row, or none, is checked. Opening or clicking a row ends it.
    */
   checking: boolean;
+  /** Rows checked before a Shift range started from X checking. The range adds to them. */
+  kept?: ReadonlySet<string>;
 }
 export const EMPTY_SELECTION: Selection = {
   ids: new Set(),
@@ -46,7 +48,7 @@ export function reconcileSelection(
     anchor === selection.anchor &&
     focus === selection.focus
     ? selection
-    : { ids: new Set(ids), anchor, focus, checking: selection.checking };
+    : { ...selection, ids: new Set(ids), anchor, focus };
 }
 
 export function selectRow(
@@ -59,15 +61,13 @@ export function selectRow(
     const anchor = selection.anchor ?? selection.focus ?? id;
     const start = rows.indexOf(anchor);
     const end = rows.indexOf(id);
+    // A range started from X checking keeps the checked rows, also while it grows or shrinks.
+    const kept = selection.checking ? selection.ids : selection.kept;
     if (start < 0 || end < 0)
-      return { ids: new Set([...selection.ids, id]), anchor, focus: id, checking: false };
+      return { ids: new Set([...selection.ids, id]), anchor, focus: id, checking: false, kept };
     const range = rows.slice(Math.min(start, end), Math.max(start, end) + 1);
-    return {
-      ids: new Set(modifiers.toggle ? [...selection.ids, ...range] : range),
-      anchor,
-      focus: id,
-      checking: false,
-    };
+    const base = modifiers.toggle ? selection.ids : (kept ?? []);
+    return { ids: new Set([...base, ...range]), anchor, focus: id, checking: false, kept };
   }
   if (modifiers.toggle) {
     const ids = new Set(selection.ids);
@@ -98,7 +98,7 @@ export function trimSelection(selection: Selection, visible: ReadonlySet<string>
   const anchor = visible.has(selection.anchor ?? "") ? selection.anchor : focus;
   return ids.size === selection.ids.size && focus === selection.focus && anchor === selection.anchor
     ? selection
-    : { ids, focus, anchor, checking: selection.checking };
+    : { ...selection, ids, focus, anchor };
 }
 
 /** The toolbar count, confirmation count and submitted IDs share these rows. */
@@ -178,6 +178,10 @@ export function selectionAfterRemoval(
       checking: selection.checking,
     };
   if (preference === "none") return EMPTY_SELECTION;
+  // In X checking the cursor is the open row once the checked rows are gone.
+  const { focus } = selection;
+  if (selection.checking && focus !== null && !removed.has(focus) && rows.includes(focus))
+    return singleSelection(focus);
   const indexes = rows.flatMap((id, index) => (removed.has(id) ? [index] : []));
   if (!indexes.length) return EMPTY_SELECTION;
   const first = indexes[0] ?? 0;

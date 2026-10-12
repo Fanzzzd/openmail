@@ -1338,3 +1338,53 @@ export const MailToolkitLayer = MailToolkit.toLayer(
     });
   }),
 );
+
+/** Tools whose results narrow to the accounts an agent may read, and are empty without one. */
+const ACCOUNT_SCOPED_TOOLS: ReadonlySet<string> = new Set([
+  "list_accounts",
+  "list_labels",
+  "list_threads",
+  "search",
+  "semantic_search",
+  "suggest_contacts",
+  "list_proposals",
+  "sync",
+]);
+
+const AGENT_CONSENT_HINT =
+  "Turn on 'Allow sending mail text to the model' in Settings → AI Access.";
+
+/**
+ * Why a tool call from the CLI would read no account: an unknown or turned-off account id,
+ * or no account with AI consent. Null when it can read one. MCP clients get the empty
+ * result instead, so this runs only in the CLI.
+ */
+export const agentAccountGap = (tool: string, input: unknown) =>
+  Effect.gen(function* () {
+    const accountId =
+      typeof input === "object" &&
+      input !== null &&
+      "account_id" in input &&
+      typeof input.account_id === "string"
+        ? input.account_id
+        : undefined;
+    if (accountId === undefined && !ACCOUNT_SCOPED_TOOLS.has(tool)) return null;
+    const mailbox = yield* Mailbox;
+    const accounts = yield* mailbox.accounts;
+    const consent = (yield* mailbox.aiSettings).accounts;
+    const allowed = (id: string) => consent.some((s) => s.accountId === id && s.allowed);
+    if (accountId !== undefined) {
+      const account = accounts.find((a) => a.id === accountId);
+      if (!account)
+        return `No account with id ${accountId}. Run \`openmail accounts list\` to see them.`;
+      if (account.enabled === false) return `Account ${accountId} is turned off in openmail.`;
+      return allowed(accountId)
+        ? null
+        : `Account ${accountId} does not allow agent reads. ${AGENT_CONSENT_HINT}`;
+    }
+    const enabled = accounts.filter((a) => a.enabled !== false);
+    if (!enabled.length) return "No enabled mail accounts.";
+    return enabled.some((a) => allowed(a.id))
+      ? null
+      : `No accounts allow agent reads. ${AGENT_CONSENT_HINT}`;
+  });

@@ -39,10 +39,10 @@ async function client(
   onTestFinished: TestContext["onTestFinished"],
   allowWrites = false,
   cli = false,
-  seed = false,
+  seed: boolean | ((directory: string) => Promise<unknown>) = false,
 ) {
   const directory = await mkdtemp(join(tmpdir(), "openmail-mcp-test-"));
-  if (seed) await seedAttachmentMail(directory);
+  if (seed) await (seed === true ? seedAttachmentMail : seed)(directory);
   const child = spawn(
     process.execPath,
     [
@@ -320,6 +320,75 @@ test.concurrent("MCP and CLI search expose attachment snippets only inside the u
   expect(fromCli.untrusted_mail.threads[0]?.searchMatches).toEqual(
     fromMcp.untrusted_mail.threads[0]?.searchMatches,
   );
+}, 30_000);
+
+/** One account with a message and no AI consent. */
+async function seedWithoutConsent(directory: string) {
+  await Effect.runPromise(
+    Effect.scoped(
+      Effect.gen(function* () {
+        const store = yield* Store;
+        const account = yield* store.upsertAccount("gmail", "plain@example.com");
+        yield* store.upsertMessage(account.id, incoming("m1", { subject: "Hello" }));
+      }).pipe(
+        Effect.provide(
+          TestMailbox({}, { backgroundFlush: false }, {}, undefined, {
+            database: join(directory, "mail.db"),
+          }),
+        ),
+      ),
+    ),
+  );
+}
+
+const Failure = Schema.Struct({
+  code: Schema.Number,
+  stdout: Schema.String,
+  stderr: Schema.String,
+});
+
+test.concurrent("CLI mail tools explain a missing account or AI consent; MCP keeps empty results", async ({
+  expect,
+  onTestFinished,
+}) => {
+  const { request, directory } = await client(onTestFinished, false, false, seedWithoutConsent);
+  const options = { env: { ...process.env, OPENMAIL_HOME: directory } };
+  const cli = (...args: string[]) =>
+    run(process.execPath, ["dist/cli.js", ...args], options).then(
+      (done) => ({ code: 0, ...done }),
+      (error: unknown) => Schema.decodeUnknownSync(Failure)(error),
+    );
+  const [list, typo, json, read, mcpList, mcpTypo] = await Promise.all([
+    cli("list"),
+    cli("list", "--account", "gmail:typo@example.com"),
+    cli("list", "--json"),
+    cli("read-thread", "--input-json", '{"id":"missing"}'),
+    request("tools/call", { name: "list_threads", arguments: {} }),
+    request("tools/call", {
+      name: "list_threads",
+      arguments: { account_id: "gmail:typo@example.com" },
+    }),
+  ]);
+  expect(list.code).toBe(1);
+  expect(list.stderr).toContain(
+    "No accounts allow agent reads. Turn on 'Allow sending mail text to the model' in Settings → AI Access.",
+  );
+  expect(typo.code).toBe(1);
+  expect(typo.stderr).toContain("No account with id gmail:typo@example.com.");
+  expect(json.code).toBe(1);
+  expect(JSON.parse(json.stdout)).toEqual({
+    _tag: "MailToolError",
+    message: expect.stringContaining("No accounts allow agent reads."),
+  });
+  // A tool error prints its message, not the encoded failure.
+  expect(read).toMatchObject({ code: 1, stdout: "" });
+  expect(read.stderr).toContain("error: No message with id missing.");
+  expect(read.stderr).not.toContain("_tag");
+  for (const result of [mcpList, mcpTypo]) {
+    const called = Schema.decodeUnknownSync(CallResult)(result);
+    expect(called.isError).not.toBe(true);
+    expect(called.content[0]?.text).toContain('"threads":[]');
+  }
 }, 30_000);
 
 async function seedProposals(directory: string) {

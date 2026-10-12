@@ -158,6 +158,19 @@ it("selection after delete/archive follows the current ascending/descending sort
     "new",
   );
 });
+it("removing X-checked rows opens the cursor row when it stays", () => {
+  const checked = moveCursor(moveCursor(toggleFocused(singleSelection("a")), rows, 1), rows, 1);
+  expect(checked.focus).toBe("c");
+  expect(selectionAfterRemoval(checked, rows, new Set(["a"]), "below")).toEqual(
+    singleSelection("c"),
+  );
+  // The cursor row was checked too: the usual next row opens.
+  const onCursor = toggleFocused(checked);
+  expect(selectionAfterRemoval(onCursor, rows, new Set(["a", "c"]), "below")).toEqual(
+    singleSelection("d"),
+  );
+  expect(selectionAfterRemoval(checked, rows, new Set(["a"]), "none")).toBe(EMPTY_SELECTION);
+});
 it("removing the last loaded row waits for the next page instead of jumping upward", () => {
   const before = singleSelection("m99");
   const loaded = Array.from({ length: 100 }, (_, index) => `m${index}`);

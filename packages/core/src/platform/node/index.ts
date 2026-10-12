@@ -4,6 +4,7 @@ export {
   Actor,
   Address,
   AgentIdentity,
+  agentAccountGap,
   type AppLink,
   type ClientConfig,
   AttachmentAction,

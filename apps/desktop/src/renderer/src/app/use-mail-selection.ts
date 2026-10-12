@@ -427,6 +427,11 @@ export function useMailSelection({
     setLabelPicker(false);
     focusList(next.focus);
   };
+  /** Escape while rows are checked: the cursor row becomes the one open row. */
+  const clearChecks = () => {
+    select(selection.focus, "keyboard");
+    focusList(selection.focus);
+  };
   const archiveSentReply = (replyTo: string | undefined) => {
     if (selectedId !== replyTo) return;
     choose(
@@ -482,6 +487,7 @@ export function useMailSelection({
     move,
     moveListCursor,
     toggleFocusedRow,
+    clearChecks,
     archiveSentReply,
     openLink,
     openWindow,

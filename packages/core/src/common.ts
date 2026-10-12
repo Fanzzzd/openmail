@@ -15,6 +15,7 @@ export { MailboxLive } from "./mailbox-live.js";
 export { AppConfig, Browser, type ClientConfig, Providers, Secrets } from "./services.js";
 export {
   AgentIdentity,
+  agentAccountGap,
   MailToolkit,
   MailToolkitLayer,
   ReadMailToolkit,

@@ -30,6 +30,31 @@ import { makeResetGuard, resetBudgets, resetVerificationLimit } from "./sync-res
 // Changes per write transaction (an Upsert and its Progress are two). Each one blocks
 // the main thread; 100 real messages took up to 509 ms of CPU, 10 took up to 104 ms.
 const WRITE_BATCH = 20;
+// Body text per write transaction, in UTF-16 code units (bytes for ASCII HTML). 20 messages
+// of about 105 KB HTML each, with the FTS and search_flags triggers, blocked for over 50 ms.
+const WRITE_BATCH_BODY = 200_000;
+
+/** Cuts a batch before a message whose body would take the transaction over `budget`. */
+export function splitWriteBatch(batch: readonly Change[], budget = WRITE_BATCH_BODY): Change[][] {
+  const parts: Change[][] = [];
+  let part: Change[] = [];
+  let size = 0;
+  for (const change of batch) {
+    const body =
+      change._tag === "Upsert" || change._tag === "Remap"
+        ? change.message.bodyHtml.length + change.message.bodyText.length
+        : 0;
+    if (body && part.length && size + body > budget) {
+      parts.push(part);
+      part = [];
+      size = 0;
+    }
+    part.push(change);
+    size += body;
+  }
+  if (part.length) parts.push(part);
+  return parts;
+}
 
 /**
  * A pull that failed on the network (no status: the connection dropped, DNS
@@ -190,7 +215,15 @@ export const makeSyncMailbox = (
               ),
               // Let timers and IPC run between write transactions.
               Stream.runForEach((batch) =>
-                Effect.andThen(apply(currentAccount, notificationsReady)(batch), Effect.yieldNow),
+                Effect.forEach(
+                  splitWriteBatch(batch),
+                  (part) =>
+                    Effect.andThen(
+                      apply(currentAccount, notificationsReady)(part),
+                      Effect.yieldNow,
+                    ),
+                  { discard: true },
+                ),
               ),
             );
         }),

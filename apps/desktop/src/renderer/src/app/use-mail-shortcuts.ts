@@ -186,6 +186,17 @@ export function useMailShortcuts({
       return;
     }
     if (e.key === "Escape") {
+      // Checked rows clear before the search; popups and the search field keep Escape.
+      if (
+        !typing &&
+        checkingRows(selection) &&
+        selection.focus !== null &&
+        !(e.target instanceof Element && e.target.closest('[role="alertdialog"]'))
+      ) {
+        e.preventDefault();
+        navigation.clearChecks();
+        return;
+      }
       if (
         escapeClearsSearch({
           target: e.target,

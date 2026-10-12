@@ -605,6 +605,75 @@ it("shift-selection and opening a thread end X checking", () => {
   expect(checked()).toEqual(["two"]);
 });
 
+it("Shift+arrow after X and J adds the range to the checked rows", () => {
+  state.threads.mockReturnValue({
+    ...state.threads(),
+    threads: [row("one"), row("two"), row("three"), row("four"), row("five")],
+  });
+  mount();
+  act(() => model.navigation.select("one", "mouse"));
+  key("x");
+  key("j");
+  key("x");
+  key("j");
+  expect(model.navigation.selection.focus).toBe("three");
+  key("ArrowDown", dom.window, { shiftKey: true });
+  expect(checked()).toEqual(["four", "one", "three", "two"]);
+  key("ArrowDown", dom.window, { shiftKey: true });
+  expect(checked()).toEqual(["five", "four", "one", "three", "two"]);
+  // Shrinking the range keeps the rows X checked.
+  key("ArrowUp", dom.window, { shiftKey: true });
+  key("ArrowUp", dom.window, { shiftKey: true });
+  expect(checked()).toEqual(["one", "three", "two"]);
+  key("ArrowUp", dom.window, { shiftKey: true });
+  expect(checked()).toEqual(["one", "three", "two"]);
+  // A new plain range after opening a row starts fresh.
+  act(() => model.navigation.select("four", "mouse"));
+  key("ArrowDown", dom.window, { shiftKey: true });
+  expect(checked()).toEqual(["five", "four"]);
+});
+
+it("archiving checked rows opens the cursor row, not the next row", async () => {
+  act(() => model.navigation.select("one", "mouse"));
+  key("x");
+  key("j");
+  key("j");
+  expect(model.navigation.selection.focus).toBe("three");
+  key("e");
+  await flush();
+  expect(state.operations).toHaveBeenCalledWith(["one"], { kind: "archive" }, false);
+  expect(model.navigation.selectedId).toBe("three");
+  expect(model.navigation.selection.checking).toBe(false);
+});
+
+it("Escape clears checked rows after popups and the search field", () => {
+  act(() => model.navigation.select("one", "mouse"));
+  key("x");
+  key("j");
+  key("x");
+  expect(checked()).toEqual(["one", "two"]);
+  // A dialog and the search field take Escape first.
+  act(() => registry.set(dialogAtom, "settings"));
+  key("Escape");
+  expect(checked()).toEqual(["one", "two"]);
+  act(() => registry.set(dialogAtom, null));
+  const field = dom.window.document.createElement("input");
+  dom.window.document.body.append(field);
+  key("Escape", field);
+  expect(checked()).toEqual(["one", "two"]);
+  expect(key("Escape").defaultPrevented).toBe(true);
+  expect(checked()).toEqual(["two"]);
+  expect(model.navigation.selection.checking).toBe(false);
+  expect(model.navigation.selectedId).toBe("two");
+  // A shift range clears the same way; with one open row Escape does nothing to it.
+  key("ArrowDown", dom.window, { shiftKey: true });
+  expect(checked()).toEqual(["three", "two"]);
+  key("Escape");
+  expect(checked()).toEqual(["three"]);
+  expect(key("Escape").defaultPrevented).toBe(false);
+  expect(checked()).toEqual(["three"]);
+});
+
 it("native bridge defers search while a dialog is open and updates menu state", async () => {
   act(() => {
     model.navigation.select("one", "mouse");

@@ -17,6 +17,7 @@ import {
   MAILBOXES,
   Mailbox,
   AgentIdentity,
+  agentAccountGap,
   MailToolkit,
   MailToolkitLayer,
   ReadMailToolkit,
@@ -364,10 +365,14 @@ const sync = Command.make(
   },
   Effect.fn(function* ({ account, json, budget }) {
     const encoded = yield* withProgress(
-      invokeTool("sync", {
-        ...(Option.isSome(account) ? { account_id: account.value } : {}),
-        token_budget: budget,
-      }),
+      invokeTool(
+        "sync",
+        {
+          ...(Option.isSome(account) ? { account_id: account.value } : {}),
+          token_budget: budget,
+        },
+        json,
+      ),
       !json,
     );
     const result = yield* Schema.decodeUnknownEffect(MailToolkit.tools.sync.successSchema)(encoded);
@@ -410,17 +415,21 @@ const list = Command.make(
     json: jsonFlag,
   },
   Effect.fn(function* (o) {
-    const result = yield* invokeTool("list_threads", {
-      mailbox: o.mailbox,
-      ...(Option.isSome(o.account) ? { account_id: o.account.value } : {}),
-      ...(Option.isSome(o.profile) ? { profile_id: o.profile.value } : {}),
-      ...(Option.isSome(o.label) ? { label: o.label.value } : {}),
-      unread_only: o.unread,
-      ...(Option.isSome(o.before) ? { before: o.before.value } : {}),
-      ...(Option.isSome(o.cursor) ? { cursor: o.cursor.value } : {}),
-      limit: o.limit,
-      token_budget: o.budget,
-    });
+    const result = yield* invokeTool(
+      "list_threads",
+      {
+        mailbox: o.mailbox,
+        ...(Option.isSome(o.account) ? { account_id: o.account.value } : {}),
+        ...(Option.isSome(o.profile) ? { profile_id: o.profile.value } : {}),
+        ...(Option.isSome(o.label) ? { label: o.label.value } : {}),
+        unread_only: o.unread,
+        ...(Option.isSome(o.before) ? { before: o.before.value } : {}),
+        ...(Option.isSome(o.cursor) ? { cursor: o.cursor.value } : {}),
+        limit: o.limit,
+        token_budget: o.budget,
+      },
+      o.json,
+    );
     return yield* print(result, o.json);
   }),
 ).pipe(Command.withDescription("List conversations in a mailbox, newest first"));
@@ -440,14 +449,18 @@ const search = Command.make(
     json: jsonFlag,
   },
   Effect.fn(function* (o) {
-    const result = yield* invokeTool("search", {
-      query: o.query.join(" "),
-      ...(Option.isSome(o.account) ? { account_id: o.account.value } : {}),
-      limit: o.limit,
-      ...(Option.isSome(o.cursor) ? { cursor: o.cursor.value } : {}),
-      token_budget: o.budget,
-      server: o.server,
-    });
+    const result = yield* invokeTool(
+      "search",
+      {
+        query: o.query.join(" "),
+        ...(Option.isSome(o.account) ? { account_id: o.account.value } : {}),
+        limit: o.limit,
+        ...(Option.isSome(o.cursor) ? { cursor: o.cursor.value } : {}),
+        token_budget: o.budget,
+        server: o.server,
+      },
+      o.json,
+    );
     yield* print(result, o.json);
   }),
 ).pipe(Command.withDescription(MailToolkit.tools.search.description ?? "Search mail"));
@@ -597,16 +610,34 @@ const isWriteTool = (name: ToolName) => name in ProposalMailToolkit.tools;
 const toolHandlers = MailToolkitLayer.pipe(
   Layer.provide(AgentIdentity.fixed("mcp", "openmail-cli")),
 );
-function invokeTool(name: ToolName, input: unknown) {
+const ToolFailure = Schema.Struct({ message: Schema.String });
+/**
+ * A tool failure prints its message on stderr and exits 1; --json also prints the
+ * `MailToolError` object on stdout. Where MCP returns an empty result because the account
+ * is unknown or lacks AI consent, the CLI fails and says why.
+ */
+function invokeTool(name: ToolName, input: unknown, json: boolean) {
+  const toolFailure = (message: string) =>
+    (json ? print({ _tag: "MailToolError", message }, true) : Effect.void).pipe(
+      Effect.andThen(fail(message)),
+    );
   return Effect.gen(function* () {
     const parameters = yield* Schema.decodeUnknownEffect(
       Schema.toEncoded(MailToolkit.tools[name].parametersSchema),
     )(input);
+    const gap = yield* agentAccountGap(name, parameters);
+    if (gap !== null) return yield* toolFailure(gap);
     const toolkit = yield* MailToolkit;
     const stream = yield* toolkit.handle(name, parameters);
     const last = yield* Stream.runLast(stream);
     if (Option.isNone(last)) return yield* fail("The tool returned no result.");
-    if (last.value.isFailure) return yield* fail(JSON.stringify(last.value.encodedResult));
+    if (last.value.isFailure)
+      return yield* toolFailure(
+        Option.match(Schema.decodeUnknownOption(ToolFailure)(last.value.encodedResult), {
+          onNone: () => JSON.stringify(last.value.encodedResult),
+          onSome: (failure) => failure.message,
+        }),
+      );
     return last.value.encodedResult;
   }).pipe(Effect.provide(toolHandlers));
 }
@@ -618,7 +649,7 @@ function runToolCommand(
     if (isWriteTool(name) && !allowWrites)
       return yield* fail("Proposal tools require --allow-writes and app AI write permission.");
     const parsed = yield* Schema.decodeUnknownEffect(Schema.fromJsonString(Schema.Unknown))(input);
-    const result = yield* invokeTool(name, parsed);
+    const result = yield* invokeTool(name, parsed, json);
     return yield* print(result, json);
   });
 }
