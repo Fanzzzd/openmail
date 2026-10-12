@@ -1,6 +1,6 @@
 import { act, fireEvent, screen, within } from "@testing-library/react/pure";
 import { afterEach, expect, it } from "vitest";
-import { eventually, flow, row } from "./harness";
+import { eventually, flow, key, row } from "./harness";
 
 let current: Awaited<ReturnType<typeof flow>> | undefined;
 afterEach(async () => {
@@ -114,4 +114,21 @@ it("Navigate events move only between mail routes and open their thread", async 
   await eventually(() => expect(row(h.id("two")).getAttribute("aria-selected")).toBe("true"));
   act(() => h.router.history.back());
   await eventually(() => expect(h.href()).toBe(start));
+});
+
+it("⌘[ and ⌘] go Back and Forward between views", async () => {
+  const h = (current = await flow({ route: "/mail/all/inbox" }));
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  fireEvent.click(within(mailboxes()).getByRole("button", { name: "Starred" }));
+  await eventually(() => expect(title()).toBe("Starred"));
+  key("[", { metaKey: true }, document.body);
+  await eventually(() => expect(title()).toBe("Inbox"));
+  expect(h.href()).toBe("/mail/all/inbox");
+  key("]", { metaKey: true }, document.body);
+  await eventually(() => expect(title()).toBe("Starred"));
+  // Typing keeps the brackets for the field.
+  const field = screen.getByLabelText("Search mail");
+  field.focus();
+  key("[", { metaKey: true }, field);
+  expect(title()).toBe("Starred");
 });

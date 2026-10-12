@@ -4548,6 +4548,11 @@ msgstr "Aperçu indisponible. La règle s’appliquera aux futurs messages sur l
 msgid "Preview: {0} messages. Only the previewed messages will be changed when applying to existing mail."
 msgstr "Aperçu : {0} messages. Seuls les messages prévisualisés seront modifiés lors de l’application au courrier existant."
 
+#. Keyboard shortcuts help: go back or forward through the views opened in this window, like a browser's Back and Forward.
+#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+msgid "Previous / next view"
+msgstr "Vue précédente / suivante"
+
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
 #: src/renderer/src/features/reader/Reader.tsx
 #: src/renderer/src/features/search/SearchHitBar.tsx

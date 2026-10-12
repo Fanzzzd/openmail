@@ -4548,6 +4548,11 @@ msgstr "Anteprima non disponibile. La regola si applicherà ai nuovi messaggi su
 msgid "Preview: {0} messages. Only the previewed messages will be changed when applying to existing mail."
 msgstr "Anteprima: {0} messaggi. Solo i messaggi visualizzati in anteprima verranno modificati quando applicati alla posta esistente."
 
+#. Keyboard shortcuts help: go back or forward through the views opened in this window, like a browser's Back and Forward.
+#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+msgid "Previous / next view"
+msgstr "Vista precedente / successiva"
+
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
 #: src/renderer/src/features/reader/Reader.tsx
 #: src/renderer/src/features/search/SearchHitBar.tsx

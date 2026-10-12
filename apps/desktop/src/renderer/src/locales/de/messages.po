@@ -4548,6 +4548,11 @@ msgstr "Vorschau nicht verfügbar. Die Regel gilt für künftige Nachrichten auf
 msgid "Preview: {0} messages. Only the previewed messages will be changed when applying to existing mail."
 msgstr "Vorschau: {0} Nachrichten. Bei der Anwendung auf vorhandene E-Mails werden nur die in der Vorschau angezeigten Nachrichten geändert."
 
+#. Keyboard shortcuts help: go back or forward through the views opened in this window, like a browser's Back and Forward.
+#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+msgid "Previous / next view"
+msgstr "Vorherige / nächste Ansicht"
+
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
 #: src/renderer/src/features/reader/Reader.tsx
 #: src/renderer/src/features/search/SearchHitBar.tsx

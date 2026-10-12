@@ -4,6 +4,7 @@ import type { Profile } from "../../../shared/api";
 import {
   favoriteShortcut,
   folderShortcut,
+  historyShortcut,
   paneShortcut,
   selectionShortcut,
   shortcutAction,
@@ -28,6 +29,7 @@ import {
 import { filterSeedAtom } from "../features/settings/filter-seed";
 import { goToFolderAtom } from "../features/sidebar/go-to-folder";
 import { dialogAtom } from "../state/ui";
+import { historyAtom } from "../state/location";
 import type { useMailActions } from "./use-mail-actions";
 import type { useMailCompose } from "./use-mail-compose";
 import type { useMailSelection } from "./use-mail-selection";
@@ -62,6 +64,7 @@ export function useMailShortcuts({
   print: ReturnType<typeof useThreadPrint>;
 }) {
   const [dialog, setDialog] = useAtom(dialogAtom);
+  const history = useAtomValue(historyAtom);
   const editing = useAtomValue(editingProfileAtom);
   const [goToFolder, setGoToFolder] = useAtom(goToFolderAtom);
   const snoozeIds = useAtomValue(snoozeIdsAtom);
@@ -168,6 +171,14 @@ export function useMailShortcuts({
     if (!panes.shown.list && !typing && isBackKey(e)) {
       e.preventDefault();
       panes.back();
+      return;
+    }
+    // With the list on screen, ⌘[ is the window's Back rather than the narrow reader's.
+    const step = typing ? null : historyShortcut(e);
+    if (step) {
+      e.preventDefault();
+      if (step === "back") history.back();
+      else history.forward();
       return;
     }
     if (e.key === "Escape") {

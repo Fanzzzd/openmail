@@ -5,6 +5,7 @@ import {
   KEYMAP,
   isShortcutAction,
   folderShortcut,
+  historyShortcut,
   NUMBERED_MAILBOXES,
   paneShortcut,
   matchesShortcut,
@@ -273,4 +274,25 @@ it("reader source, remote content, background and filter shortcuts exist in ever
     assert.strictEqual(shortcutAction(set, { ...base, key: "l" }), "filterUnread");
     assert.strictEqual(shortcutAction(set, { ...base, key: "u", repeat: true }), null);
   }
+});
+
+it("⌘[ and ⌘] step through history and leave other bracket chords alone", () => {
+  const stroke = (key: string, modifiers: Partial<KeyEvent> = {}): KeyEvent => ({
+    key,
+    metaKey: true,
+    ctrlKey: false,
+    altKey: false,
+    shiftKey: false,
+    ...modifiers,
+  });
+  expect(historyShortcut(stroke("["))).toBe("back");
+  expect(historyShortcut(stroke("]"))).toBe("forward");
+  expect(historyShortcut(stroke("[", { metaKey: false, ctrlKey: true }))).toBe("back");
+  expect(historyShortcut(stroke("[", { ctrlKey: true }))).toBeNull();
+  expect(historyShortcut(stroke("[", { altKey: true }))).toBeNull();
+  expect(historyShortcut(stroke("{", { shiftKey: true }))).toBeNull();
+  expect(historyShortcut(stroke("[", { metaKey: false }))).toBeNull();
+  // No keymap action already uses a bracket.
+  for (const set of ["mimestream", "apple", "gmail"] as const)
+    expect(shortcutAction(set, stroke("["))).toBeNull();
 });

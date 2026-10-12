@@ -4548,6 +4548,11 @@ msgstr "プレビューを利用できません。ルールはサーバー上の
 msgid "Preview: {0} messages. Only the previewed messages will be changed when applying to existing mail."
 msgstr "プレビュー: {0} メッセージ。既存のメールに適用する場合、プレビューされたメッセージのみが変更されます。"
 
+#. Keyboard shortcuts help: go back or forward through the views opened in this window, like a browser's Back and Forward.
+#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+msgid "Previous / next view"
+msgstr "前のビュー / 次のビュー"
+
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
 #: src/renderer/src/features/reader/Reader.tsx
 #: src/renderer/src/features/search/SearchHitBar.tsx

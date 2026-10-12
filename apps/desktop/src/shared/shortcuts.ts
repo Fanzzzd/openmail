@@ -314,6 +314,12 @@ export function folderShortcut(
     return null;
   return NUMBERED_MAILBOXES[Number(event.key) - 1] ?? null;
 }
+/** ⌘[ and ⌘] (Ctrl elsewhere) step through the window's history, as in Safari and Mail. */
+export function historyShortcut(event: KeyEvent): "back" | "forward" | null {
+  if (event.metaKey === event.ctrlKey || event.altKey || event.shiftKey) return null;
+  return event.key === "[" ? "back" : event.key === "]" ? "forward" : null;
+}
+
 export function paneShortcut(event: KeyEvent): "left" | "right" | null {
   if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return null;
   return event.key === "ArrowLeft" ? "left" : event.key === "ArrowRight" ? "right" : null;

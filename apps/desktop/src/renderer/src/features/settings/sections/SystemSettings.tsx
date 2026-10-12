@@ -473,6 +473,16 @@ function ShortcutTable({ set }: { set: ShortcutSet }) {
         </tr>
         <tr>
           <td className="pt-3">
+            <Trans comment="Keyboard shortcuts help: go back or forward through the views opened in this window, like a browser's Back and Forward.">
+              Previous / next view
+            </Trans>
+          </td>
+          <td className="pt-3 text-right">
+            <kbd>⌘[ / ⌘]</kbd>
+          </td>
+        </tr>
+        <tr>
+          <td className="pt-3">
             <Trans>Move focus between panes</Trans>
           </td>
           <td className="pt-3 text-right">

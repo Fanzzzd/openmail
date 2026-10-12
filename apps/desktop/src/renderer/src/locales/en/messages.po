@@ -4552,6 +4552,11 @@ msgstr "Preview unavailable. The rule will apply to future mail on the server."
 msgid "Preview: {0} messages. Only the previewed messages will be changed when applying to existing mail."
 msgstr "Preview: {0} messages. Only the previewed messages will be changed when applying to existing mail."
 
+#. Keyboard shortcuts help: go back or forward through the views opened in this window, like a browser's Back and Forward.
+#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+msgid "Previous / next view"
+msgstr "Previous / next view"
+
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
 #: src/renderer/src/features/reader/Reader.tsx
 #: src/renderer/src/features/search/SearchHitBar.tsx

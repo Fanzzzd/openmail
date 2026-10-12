@@ -4558,6 +4558,11 @@ msgstr "预览不可用。规则将用于服务器上的新邮件。"
 msgid "Preview: {0} messages. Only the previewed messages will be changed when applying to existing mail."
 msgstr "预览：{0} 封邮件。应用到已有邮件时，只修改预览中的邮件。"
 
+#. Keyboard shortcuts help: go back or forward through the views opened in this window, like a browser's Back and Forward.
+#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+msgid "Previous / next view"
+msgstr "上一个视图 / 下一个视图"
+
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
 #: src/renderer/src/features/reader/Reader.tsx
 #: src/renderer/src/features/search/SearchHitBar.tsx
