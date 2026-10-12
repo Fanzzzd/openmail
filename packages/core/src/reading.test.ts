@@ -320,6 +320,21 @@ import { prepareMessageHtml } from "./reader-html.js";
     expect(media).toContain("b{color:blue}");
     expect(media).toContain("a{color:red}");
     expect(media).not.toMatch(/vm(?:in|ax)/i);
+    // A height query in vmin reads at the same height, so 50vmin is 400px of 800.
+    expect(sanitizeReaderCss("@media (min-height:50vmin){p{color:red}}", false, false, 800)).toBe(
+      "@media (width>=0px){p{color:red}}",
+    );
+    // A <style media> value gets the same units as the sheet it guards.
+    const attribute = sanitizeReaderHtml(
+      '<style media="(max-width: 60vh), (min-width: 50vmin)">p{color:red}</style><p>x</p>',
+      false,
+      undefined,
+      [],
+      800,
+    );
+    expect(attribute).toContain("480px");
+    expect(attribute).toContain("400px");
+    expect(attribute).not.toMatch(/\d(?:vh|vmin)/);
   });
 
   it("the reader evaluates height media queries at its viewport height; width ones stay live", () => {

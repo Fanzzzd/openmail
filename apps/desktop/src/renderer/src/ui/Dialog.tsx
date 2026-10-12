@@ -73,13 +73,17 @@ export const centredSheet = (maxHeight?: SheetCap) =>
  * pair it with {@link SheetDragStrip}. A browser has no traffic lights, so the web build uses the whole height.
  */
 export const narrowSheet = () =>
-  `max-sm:inset-0 max-sm:h-full max-sm:max-h-none max-sm:w-full max-sm:max-w-none max-sm:translate-x-0 max-sm:translate-y-0 max-sm:rounded-none ${isDesktop() ? "max-sm:pt-(--titlebar-clearance)" : ""}`;
+  `max-sm:inset-0 max-sm:h-full max-sm:max-h-none max-sm:w-full max-sm:max-w-none max-sm:translate-none max-sm:rounded-none ${isDesktop() ? "max-sm:pt-(--titlebar-clearance)" : ""}`;
 
 /** The titlebar of a full-window sheet: it drags the window, as the titlebar it covers did. None in a browser. */
 export function SheetDragStrip() {
   if (!isDesktop()) return null;
   return (
-    <div aria-hidden className="drag absolute inset-x-0 top-0 h-(--titlebar-clearance) sm:hidden" />
+    // Fixed, so it stays put and covers the content as a scrolling sheet passes under the lights.
+    <div
+      aria-hidden
+      className="drag fixed inset-x-0 top-0 z-10 h-(--titlebar-clearance) bg-inherit sm:hidden"
+    />
   );
 }
 
@@ -138,7 +142,7 @@ function SheetClose() {
   return (
     <BaseDialog.Close
       aria-label={t`Close`}
-      className={`no-drag absolute top-2.5 right-3 text-a11y-muted ${iconButton} coarse:top-0 coarse:right-1`}
+      className={`no-drag fixed top-2.5 right-3 z-20 text-a11y-muted ${iconButton} coarse:top-0 coarse:right-1`}
     >
       <X className="size-4" />
     </BaseDialog.Close>

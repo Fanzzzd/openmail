@@ -178,7 +178,11 @@ function queryLength(node: CssNode | null, height: number): number | null {
   if (node?.type === "Number") return Number(node.value) === 0 ? 0 : null;
   if (node?.type !== "Dimension") return null;
   const unit = ident.decode(node.unit).toLowerCase();
-  const scale = VIEWPORT_HEIGHT_UNIT.test(unit) ? height / 100 : QUERY_PX[unit];
+  // vmin/vmax read as the height here, as elsewhere in a prelude.
+  const scale =
+    VIEWPORT_HEIGHT_UNIT.test(unit) || VIEWPORT_EXTREME_UNIT.test(unit)
+      ? height / 100
+      : QUERY_PX[unit];
   return scale === undefined ? null : Number(node.value) * scale;
 }
 
@@ -286,6 +290,14 @@ function fixMediaAttribute(value: string, height: number): string {
   try {
     const ast = parse(value, { context: "mediaQueryList" });
     fixMediaHeight(ast, height);
+    // Width features stay live, but their viewport units mean the frame's height.
+    walk(ast, (node) => {
+      if (node.type !== "Dimension") return;
+      const unit = ident.decode(node.unit);
+      if (!VIEWPORT_HEIGHT_UNIT.test(unit) && !VIEWPORT_EXTREME_UNIT.test(unit)) return;
+      node.value = String(Math.round(Number(node.value) * height) / 100);
+      node.unit = "px";
+    });
     return generate(ast);
   } catch {
     return "not all";

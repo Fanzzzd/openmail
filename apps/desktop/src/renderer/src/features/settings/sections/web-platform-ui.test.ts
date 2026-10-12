@@ -54,8 +54,11 @@ it("keeps the traffic-light clearance on the Mac only", () => {
   Object.defineProperty(navigator, "windowControlsOverlay", { configurable: true, value: overlay });
   const header = () => render(h("header", null, h(TrafficLightSpace)));
   expect(narrowSheet()).toContain("max-sm:pt-(--titlebar-clearance)");
+  // No transform on a full-window sheet, so its fixed strip and close button
+  // stay under the lights while the sheet's content scrolls.
+  expect(narrowSheet()).toContain("max-sm:translate-none");
   render(h(SheetDragStrip));
-  expect(document.querySelector(".drag")).not.toBeNull();
+  expect(document.querySelector(".drag")?.className).toContain("fixed");
   header();
   expect(document.querySelector("[data-traffic-light-space]")).not.toBeNull();
   cleanup();
