@@ -8,8 +8,8 @@ import { Duration, Schedule, Stream } from "effect";
 import { AsyncResult, Atom } from "effect/reactivity";
 
 import type { Message } from "../../../shared/api";
-import type { AppError } from "../errors";
-import { MailClient } from "../rpc";
+import type { AppError } from "../lib/errors";
+import { MailClient } from "./rpc";
 import { Keys } from "./keys";
 
 /** Lists the whole app shows stay loaded for the life of the window. */

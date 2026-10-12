@@ -3,7 +3,7 @@ import { AsyncResult, AtomRegistry } from "effect/reactivity";
 import type { MailboxEvent } from "../../../shared/api";
 
 vi.hoisted(() => vi.resetModules());
-vi.mock("../rpc", async () => {
+vi.mock("./rpc", async () => {
   const { Context, Effect, Layer, Stream } = await import("effect");
   const { Atom } = await import("effect/reactivity");
   const events: MailboxEvent[] = [
@@ -26,7 +26,7 @@ vi.mock("../rpc", async () => {
 import { liveUpdatesAtom, syncStateAtom } from "./events";
 
 afterAll(() => {
-  vi.doUnmock("../rpc");
+  vi.doUnmock("./rpc");
   vi.resetModules();
 });
 

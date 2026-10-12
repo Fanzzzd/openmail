@@ -12,14 +12,14 @@ const cases = [
   [
     "HTML draft import",
     "server HTML opens|keeps unsupported tables|opens in the rich composer",
-    `${renderer}draft.ts`,
+    `${renderer}features/compose/draft.ts`,
     "body: outgoingComposeBody(m),",
     'body: { kind: "plain", text: m.text },',
   ],
   [
     "draft transport preview",
     "preserved draft preview|forward preview",
-    `${renderer}compose-preview.ts`,
+    `${renderer}features/compose/compose-preview.ts`,
     "return prepareMessageHtml(transport, { inline }).html;",
     'return "<p>SECRET</p>";',
   ],
@@ -55,7 +55,7 @@ const cases = [
   [
     "autosave",
     "new compose autosaves",
-    `${renderer}compose/use-draft-lifecycle.ts`,
+    `${renderer}features/compose/hooks/use-draft-lifecycle.ts`,
     "const AUTOSAVE_MS = 2000;",
     "const AUTOSAVE_MS = 20000;",
   ],
@@ -69,7 +69,7 @@ const cases = [
   [
     "attachment reminder",
     "attachment reminder blocks",
-    `${renderer}send.ts`,
+    `${renderer}features/compose/send.ts`,
     '!confirmed.includes("attachment") &&',
     'false && !confirmed.includes("attachment") &&',
   ],

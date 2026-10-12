@@ -1,7 +1,7 @@
 import { DEFAULT_LIST_FILTERS, ListFilters } from "@openmail/core/schema";
 import { Atom } from "effect/reactivity";
 import { Schema } from "effect";
-import type { View } from "../view";
+import type { View } from "../lib/view";
 
 export const FILTER_STORAGE_KEY = "openmail.folderFilters";
 export function folderFilterKey(view: View): string {

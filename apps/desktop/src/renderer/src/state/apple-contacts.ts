@@ -1,8 +1,8 @@
 import { Duration, Effect, Option, Schedule, Stream } from "effect";
 import { AsyncResult, Atom, Reactivity } from "effect/reactivity";
 import type { AppleContactsState } from "@openmail/core/schema";
-import type { AppError } from "../errors";
-import { MailClient } from "../rpc";
+import type { AppError } from "../lib/errors";
+import { MailClient } from "./rpc";
 import { Keys } from "./keys";
 
 const every10s = Atom.make(Stream.fromSchedule(Schedule.spaced("10 seconds")));

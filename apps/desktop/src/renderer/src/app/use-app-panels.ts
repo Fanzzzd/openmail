@@ -3,10 +3,10 @@ import { type Prefs } from "@openmail/core/schema";
 import { useRef, useState } from "react";
 import { useDefaultLayout } from "react-resizable-panels";
 import type { Profile } from "../../../shared/api";
-import { type LabelApplyTarget } from "../components/CreateLabelDialog";
-import { type LayoutMode, useMailLayout } from "../responsive-layout";
+import { type LabelApplyTarget } from "../features/organize/CreateLabelDialog";
+import { type LayoutMode, useMailLayout } from "../lib/responsive-layout";
 import { syncProgressAtom, syncStateAtom } from "../state/events";
-import { OVERVIEW, type View } from "../view";
+import { OVERVIEW, type View } from "../lib/view";
 
 export function useAppPanels() {
   const [editing, setEditing] = useState<Profile | "new" | null>(null);

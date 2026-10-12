@@ -158,7 +158,7 @@ Outlook Drafts 本地 40、服务端约 22 的差异尚无真实服务器身份�
 - 本地较多，陈旧：总数或未读数超过服务商；完整同步可触发上述过期缓存扫描；健康检查本身不清理，计数差不能证明某个 ID 已删除。
 - 服务商不可用：请求失败或超时；不说明本地缓存损坏。
 
-CLI、桌面复制及 smoke 导出通过 `redactSyncHealth` 将自定义标签／文件夹改为 `folder:N`，只保留计数、固定状态、时间和域名散列，不含主题、消息文本或 token。实现见 [sync-health.ts](../packages/core/src/sync-health.ts)、[store-sync-health.ts](../packages/core/src/store-sync-health.ts)、[CLI](../packages/cli/src/cli.ts)和[桌面界面](../apps/desktop/src/renderer/src/components/SyncHealth.tsx)，回归见 [sync-health.test.ts](../packages/core/src/sync-health.test.ts)。
+CLI、桌面复制及 smoke 导出通过 `redactSyncHealth` 将自定义标签／文件夹改为 `folder:N`，只保留计数、固定状态、时间和域名散列，不含主题、消息文本或 token。实现见 [sync-health.ts](../packages/core/src/sync-health.ts)、[store-sync-health.ts](../packages/core/src/store-sync-health.ts)、[CLI](../packages/cli/src/cli.ts)和[桌面界面](../apps/desktop/src/renderer/src/features/settings/sections/SyncHealth.tsx)，回归见 [sync-health.test.ts](../packages/core/src/sync-health.test.ts)。
 
 ## 断网与同步恢复
 

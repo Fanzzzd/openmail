@@ -2,7 +2,7 @@ import { AlertTriangle, CircleX, Info } from "lucide-react";
 import { useEffect, useId, useRef } from "react";
 
 import type { RecoveryPrompt as Prompt } from "../../../shared/recovery";
-import { buttonDanger, buttonPrimary, buttonSecondary } from "../components/ui/styles";
+import { buttonDanger, buttonPrimary, buttonSecondary } from "../ui/styles";
 
 const icons = {
   warning: { Icon: AlertTriangle, tint: "bg-amber-500/15 text-amber-700 dark:text-amber-300" },

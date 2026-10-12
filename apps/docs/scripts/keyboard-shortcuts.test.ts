@@ -6,7 +6,9 @@ import { GROUPS, parseActionNames, renderShortcutsPage } from "./keyboard-shortc
 
 const names = parseActionNames(
   readFileSync(
-    fileURLToPath(new URL("../../desktop/src/renderer/src/shortcut-names.ts", import.meta.url)),
+    fileURLToPath(
+      new URL("../../desktop/src/renderer/src/i18n/shortcut-names.ts", import.meta.url),
+    ),
     "utf8",
   ),
 );

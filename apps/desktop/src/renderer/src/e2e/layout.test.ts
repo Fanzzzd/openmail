@@ -2,7 +2,7 @@ import { constVoid } from "effect/Function";
 import { AuthError, ProviderError } from "@openmail/core/portable";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { act, fireEvent, screen, within } from "@testing-library/react/pure";
-import { railTrafficLightInset, trafficLightInset } from "../components/ui/styles";
+import { railTrafficLightInset, trafficLightInset } from "../ui/styles";
 import { clickButton, eventually, flow, key, row } from "./harness";
 
 let current: Awaited<ReturnType<typeof flow>> | undefined;

@@ -3,7 +3,7 @@ import { Effect, Stream } from "effect";
 import { Atom } from "effect/reactivity";
 
 import type { DownloadItem } from "../../../shared/downloads";
-import { MailClient } from "../rpc";
+import { MailClient } from "./rpc";
 
 export const downloadsAtom = Atom.make<readonly DownloadItem[]>([]).pipe(Atom.keepAlive);
 

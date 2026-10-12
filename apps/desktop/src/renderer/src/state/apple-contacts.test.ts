@@ -9,7 +9,7 @@ const calls = vi.hoisted(() => {
   const state: AppleContactsState = { status: "authorized", revision: 1 };
   return { state, polls: vi.fn(), contacts: ["private@example.com"], queries: vi.fn() };
 });
-vi.mock("../rpc", async () => {
+vi.mock("./rpc", async () => {
   const { Context, Effect, Layer } = await import("effect");
   const { Atom } = await import("effect/reactivity");
   const call = () =>
@@ -22,11 +22,11 @@ vi.mock("../rpc", async () => {
   }
   return { MailClient };
 });
-import { MailClient } from "../rpc";
+import { MailClient } from "./rpc";
 import { appleContactsStatusAtom } from "./apple-contacts";
 
 afterAll(() => {
-  vi.doUnmock("../rpc");
+  vi.doUnmock("./rpc");
   vi.resetModules();
 });
 

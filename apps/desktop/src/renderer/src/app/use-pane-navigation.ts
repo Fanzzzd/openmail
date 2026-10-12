@@ -1,5 +1,5 @@
 import { Reactivity } from "effect/reactivity";
-import { visiblePanes, type MailLayout } from "../responsive-layout";
+import { visiblePanes, type MailLayout } from "../lib/responsive-layout";
 import { Keys } from "../state/keys";
 import { useRunMail, withMail } from "../state/mail";
 import type { useMailSelection } from "./use-mail-selection";

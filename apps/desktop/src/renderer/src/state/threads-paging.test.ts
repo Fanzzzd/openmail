@@ -7,7 +7,7 @@ const calls = vi.hoisted(() => {
   vi.resetModules();
   return { older: vi.fn() };
 });
-vi.mock("../rpc", async () => {
+vi.mock("./rpc", async () => {
   const { Context, Effect, Layer } = await import("effect");
   const { Atom, AsyncResult } = await import("effect/reactivity");
   const call = (tag: string) => {
@@ -25,7 +25,7 @@ vi.mock("../rpc", async () => {
 });
 
 afterAll(() => {
-  vi.doUnmock("../rpc");
+  vi.doUnmock("./rpc");
   vi.resetModules();
 });
 it("failed Load older waits for a new user request across list refreshes", async () => {

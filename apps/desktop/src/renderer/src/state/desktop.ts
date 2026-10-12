@@ -1,5 +1,5 @@
 import { NATIVE_MENUS } from "../../../shared/native-actions";
-import { ACTION_NAMES } from "../shortcut-names";
+import { ACTION_NAMES } from "../i18n/shortcut-names";
 import { useLingui } from "@lingui/react/macro";
 import { Effect, Fiber, Stream } from "effect";
 import { useEffect, useEffectEvent } from "react";

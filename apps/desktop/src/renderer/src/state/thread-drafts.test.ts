@@ -4,7 +4,7 @@ const calls = vi.hoisted(() => {
   vi.resetModules();
   return { queries: new Array<{ tag: string; payload: unknown }>() };
 });
-vi.mock("../rpc", async () => {
+vi.mock("./rpc", async () => {
   const { Atom, AsyncResult } = await import("effect/reactivity");
   return {
     MailClient: {
@@ -21,7 +21,7 @@ vi.mock("./apple-contacts", async () => {
 });
 import { threadAtom, draftStatusAtom } from "./queries";
 afterAll(() => {
-  vi.doUnmock("../rpc");
+  vi.doUnmock("./rpc");
   vi.doUnmock("./apple-contacts");
   vi.resetModules();
 });

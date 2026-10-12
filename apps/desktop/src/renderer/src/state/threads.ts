@@ -15,10 +15,10 @@ import { Effect, Option, Stream, Schedule } from "effect";
 import { AsyncResult, Atom } from "effect/reactivity";
 
 import type { ThreadQuery, ThreadSummary } from "../../../shared/api";
-import type { AppError } from "../errors";
-import { supportsInInboxFilter } from "../folder-actions";
-import { MailClient } from "../rpc";
-import { OVERVIEW, scopeAccountIds, categoryAccounts } from "../view";
+import type { AppError } from "../lib/errors";
+import { supportsInInboxFilter } from "../lib/folder-actions";
+import { MailClient } from "./rpc";
+import { OVERVIEW, scopeAccountIds, categoryAccounts } from "../lib/view";
 import { type Loaded, refreshPages, searchExtent } from "./list-pages";
 import { Keys } from "./keys";
 import { accountsAtom, organizationAtom, prefsAtom } from "./queries";

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { Atom, AtomRegistry } from "effect/reactivity";
 import { DEFAULT_LIST_FILTERS } from "@openmail/core/schema";
-import type { View } from "../view";
+import type { View } from "../lib/view";
 import {
   FILTER_STORAGE_KEY,
   makeFolderFiltersAtom,

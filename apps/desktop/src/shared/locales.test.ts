@@ -3,7 +3,7 @@ import { Schema } from "effect";
 import { DEFAULT_PREFS, LANGUAGES, Prefs } from "@openmail/core/schema";
 import { setupI18n } from "@lingui/core";
 import { systemLocale } from "./locales";
-import { formatBytes, shortDate } from "../renderer/src/format";
+import { formatBytes, shortDate } from "../renderer/src/lib/format";
 
 it("every language preference round-trips and OS region/script variants select the right catalog", () => {
   const decode = Schema.decodeUnknownSync(Prefs);

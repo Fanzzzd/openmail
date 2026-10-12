@@ -1,5 +1,5 @@
 import type { MailOp } from "../../../shared/api";
-import type { AppMessages } from "../App";
+import type { AppMessages } from "./App";
 import { setupI18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
 import { DEFAULT_PREFS, type Account, type Prefs, type ThreadSummary } from "@openmail/core/schema";
@@ -7,12 +7,12 @@ import type { Effect } from "effect";
 import { act, createElement, useEffect, useRef, useState } from "react";
 import { afterAll, afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { DesktopEvent } from "../../../shared/desktop";
-import type { ToastState } from "../components/Toast";
-import { emptyDraft, toDraftInput } from "../draft";
+import type { ToastState } from "../ui/Toast";
+import { emptyDraft, toDraftInput } from "../features/compose/draft";
 import { useRunMail } from "../state/mail";
 import type { ThreadList } from "../state/threads";
-import { testDom } from "../test-dom";
-import { ALL, OVERVIEW } from "../view";
+import { testDom } from "../test-support/test-dom";
+import { ALL, OVERVIEW } from "../lib/view";
 import { useAppPanels, usePanelLayout } from "./use-app-panels";
 import { useMailActions } from "./use-mail-actions";
 import { useMailCompose } from "./use-mail-compose";
@@ -196,7 +196,7 @@ vi.mock("../state/mail", async () => {
     syncNow: Effect.void,
   };
 });
-vi.mock("../components/ui/Confirm", () => ({
+vi.mock("../ui/Confirm", () => ({
   confirmOpen: () => state.confirms.length > 0,
   confirmDialog: () =>
     new Promise<boolean>((resolve) => {

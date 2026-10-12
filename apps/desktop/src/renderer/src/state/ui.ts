@@ -1,11 +1,11 @@
-import { restoredSelection } from "../window-selection";
+import { restoredSelection } from "./window-selection";
 /**
  * What the person is looking at: the view, list filters and search text.
  * They live in atoms because the thread list atom derives its query from them.
  */
 import { Atom } from "effect/reactivity";
 
-import { ALL, type SpaceId, type View } from "../view";
+import { ALL, type SpaceId, type View } from "../lib/view";
 import { makeFolderFiltersAtom } from "./folder-filters";
 
 interface Nav {

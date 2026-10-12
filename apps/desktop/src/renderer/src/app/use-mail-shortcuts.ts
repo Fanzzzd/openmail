@@ -9,22 +9,22 @@ import {
   shortcutAction,
   spaceShortcut,
 } from "../../../shared/shortcuts";
-import { useThreadPrint } from "../components/Reader";
-import type { ThreadState } from "../focused-inbox";
-import { usesDeletePreference } from "../delete-key";
-import { favoriteView, numberedFavorites } from "../favorite-navigation";
-import { moveMailPaneFocus } from "../pane-navigation";
+import { useThreadPrint } from "../features/reader/Reader";
+import type { ThreadState } from "../lib/focused-inbox";
+import { usesDeletePreference } from "../lib/delete-key";
+import { favoriteView, numberedFavorites } from "../features/sidebar/favorite-navigation";
+import { moveMailPaneFocus } from "./pane-navigation";
 import { Keys } from "../state/keys";
 import { syncNow, useRunMail, withMail } from "../state/mail";
 import { useBatchUndo } from "../state/undo";
-import { ALL, OVERVIEW } from "../view";
+import { ALL, OVERVIEW } from "../lib/view";
 import type { useAppPanels } from "./use-app-panels";
 import type { useMailActions } from "./use-mail-actions";
 import type { useMailCompose } from "./use-mail-compose";
 import type { useMailSelection } from "./use-mail-selection";
 import type { PaneNavigation } from "./use-pane-navigation";
-import { isBackKey } from "../responsive-layout";
-import { isTypingTarget } from "../typing-target";
+import { isBackKey } from "../lib/responsive-layout";
+import { isTypingTarget } from "../lib/typing-target";
 export function useMailShortcuts({
   panels,
   navigation,

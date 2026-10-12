@@ -40,9 +40,9 @@ import type { DesktopEvent } from "../../../shared/desktop";
 import { mailboxHandlers } from "../../../shared/mailbox-handlers";
 import { rendererPrefs } from "../../../shared/renderer-prefs";
 import { MailRpcs } from "../../../shared/rpc";
-import { App } from "../App";
-import { ThreadWindow } from "../ThreadWindow";
-import { TipProvider } from "../components/ui/Tip";
+import { App } from "../app/App";
+import { ThreadWindow } from "../app/ThreadWindow";
+import { TipProvider } from "../ui/Tip";
 
 const unsupported = () => Effect.die(new Error("Unexpected desktop operation in flow test"));
 

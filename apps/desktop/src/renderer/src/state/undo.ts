@@ -2,8 +2,8 @@ import { constVoid } from "effect/Function";
 import { Effect, type Cause } from "effect";
 import { useRef, useEffect, useCallback, useState } from "react";
 import type { BatchResult, UndoHistoryEntry } from "@openmail/core/schema";
-import type { AppError } from "../errors";
-import type { ToastState } from "../components/Toast";
+import type { AppError } from "../lib/errors";
+import type { ToastState } from "../ui/Toast";
 import { undoBatch, useRunMail, withMail } from "./mail";
 
 /** New operations alone bind Cmd+Z. Restored entries require an explicit history action. */

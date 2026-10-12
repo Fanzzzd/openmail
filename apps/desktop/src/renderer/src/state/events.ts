@@ -6,7 +6,7 @@ import { Effect, Match, Stream } from "effect";
 import { Atom, Reactivity } from "effect/reactivity";
 
 import type { MailboxEvent, SyncProgress, SyncState } from "../../../shared/api";
-import { MailClient } from "../rpc";
+import { MailClient } from "./rpc";
 import { appleContactsStatusAtom } from "./apple-contacts";
 import { Keys, MAIL_KEYS } from "./keys";
 

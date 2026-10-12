@@ -8,20 +8,24 @@ import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useEffectEvent, useState } from "react";
 import type { Account, Proposal } from "../../../shared/api";
 import { type DesktopEvent } from "../../../shared/desktop";
-import type { AppMessages } from "../App";
-import { type FeedbackInput } from "../components/Feedback";
-import { type ToastState } from "../components/Toast";
-import { defaultSignature, resolveComposeSender } from "../compose-sender";
-import { useComposeDelivery } from "../compose/use-compose-delivery";
-import type { ComposeMode, Draft } from "../draft";
-import { loadDrafts } from "../draft-loader";
-import { causeText } from "../errors";
-import { quoteChoice, readerSelectedText } from "../quote-selection";
-import { replySource, replyTarget, type ReaderSelection } from "../reader-selection";
+import type { AppMessages } from "./App";
+import { type FeedbackInput } from "../features/feedback/Feedback";
+import { type ToastState } from "../ui/Toast";
+import { defaultSignature, resolveComposeSender } from "../features/compose/compose-sender";
+import { useComposeDelivery } from "./use-compose-delivery";
+import type { ComposeMode, Draft } from "../features/compose/draft";
+import { loadDrafts } from "../features/compose/draft-loader";
+import { causeText } from "../lib/errors";
+import { quoteChoice, readerSelectedText } from "../features/reader/quote-selection";
+import {
+  replySource,
+  replyTarget,
+  type ReaderSelection,
+} from "../features/reader/reader-selection";
 import { discardDraft, openDraft, saveDraft, useRunMail, withMail } from "../state/mail";
 import { accountsAtom, prefsAtom, sendAsAtom, threadAtom } from "../state/queries";
 import { useBatchUndo } from "../state/undo";
-import { scopeAccountIds } from "../view";
+import { scopeAccountIds } from "../lib/view";
 import type { useAppPanels } from "./use-app-panels";
 import type { useMailSelection } from "./use-mail-selection";
 export function useMailCompose({

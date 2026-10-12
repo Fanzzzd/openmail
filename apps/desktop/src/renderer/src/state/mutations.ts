@@ -10,10 +10,10 @@ import { Atom, Reactivity } from "effect/reactivity";
 
 import type { Account, DraftInput, Profile, ProfileInput } from "../../../shared/api";
 import type { ConnectInput as ConnectInputSchema } from "../../../shared/rpc";
-import { MailClient } from "../rpc";
+import { MailClient } from "./rpc";
 import { Keys, MAIL_KEYS } from "./keys";
 import { decideProposal, reauthAccount, saveDraft, withMail } from "./mail";
-import { recentSearches } from "../recent-searches";
+import { recentSearches } from "./recent-searches";
 
 type ConnectInput = typeof ConnectInputSchema.Type;
 

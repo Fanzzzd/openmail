@@ -12,7 +12,7 @@ import { useCallback, useContext } from "react";
 import { RegistryContext } from "@effect/atom-react";
 
 import type { DraftInput, MailOp, OutgoingMessage } from "../../../shared/api";
-import { MailClient } from "../rpc";
+import { MailClient } from "./rpc";
 import { Keys, MAIL_KEYS, threadChangeKeys } from "./keys";
 
 /** What the Effects below need; `MailClient.runtime` provides all of it. */

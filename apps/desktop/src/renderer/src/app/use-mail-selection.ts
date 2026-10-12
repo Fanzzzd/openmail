@@ -7,11 +7,11 @@ import { AsyncResult } from "effect/reactivity";
 import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import type { Account, ThreadSummary } from "../../../shared/api";
-import type { AppMessages } from "../App";
-import { type SelectionSource } from "../components/MessageList";
-import type { ToastState } from "../components/Toast";
-import { causeText } from "../errors";
-import { permanentDeleteFolder } from "../folder-actions";
+import type { AppMessages } from "./App";
+import { type SelectionSource } from "../features/mail-list/MessageList";
+import type { ToastState } from "../ui/Toast";
+import { causeText } from "../lib/errors";
+import { permanentDeleteFolder } from "../lib/folder-actions";
 import { modifyWithUndo, openThreadWindow, useRunMail, withMail } from "../state/mail";
 import { prefsAtom } from "../state/queries";
 import {
@@ -36,8 +36,8 @@ import {
   searchTextAtom,
   viewAtom,
 } from "../state/ui";
-import { ALL, scopeAccountIds, type SpaceId, type View } from "../view";
-import { restoredSelection, settleStartupSelection } from "../window-selection";
+import { ALL, scopeAccountIds, type SpaceId, type View } from "../lib/view";
+import { restoredSelection, settleStartupSelection } from "../state/window-selection";
 
 export function useMailSelection({
   setLabelPicker,

@@ -64,7 +64,7 @@ CLI 同步进度和 SIGINT／SIGTERM 退出测试在 `packages/cli/src/sync-prog
 - [op-queue.test.ts](../packages/core/src/op-queue.test.ts)：退避、过期、认领丢失、复制进度、重映射失败、草稿清理和仅向拒收地址重发。
 - [Node IMAP 回归](../packages/core/src/platform/node/imap-opqueue.test.ts)与[手机 IMAP 回归](../packages/core/src/platform/react-native/imap.test.ts)：复制恢复、缺失 UID／Message-ID、标记拒绝、特殊文件夹、SMTP 阶段和 Sent 保存失败。
 - [Outlook 回归](../packages/core/src/outlook.test.ts)：永久写入拒绝与简短原因。
-- [桌面失败提示](../apps/desktop/src/renderer/src/failed-op-notice.test.ts)与[手机失败提示](../apps/mobile/src/failed-op-notice.test.ts)：分类标题、操作与邮件详情、关闭提示及拒收重发入口；翻译检查沿用仓库命令。
+- [桌面失败提示](../apps/desktop/src/renderer/src/features/sync-status/failed-op-notice.test.ts)与[手机失败提示](../apps/mobile/src/failed-op-notice.test.ts)：分类标题、操作与邮件详情、关闭提示及拒收重发入口；翻译检查沿用仓库命令。
 
 离线重试测试推进 TestClock 或虚拟 Date，等待 retry_at 后再推送，避免把立即重试写成要求。
 
@@ -103,7 +103,7 @@ node apps/desktop/scripts/e2e-mutations.mjs
 
 ## 解析器 fuzz 与无障碍
 
-解析器属性测试使用固定 seed 的 fast-check 和恶意输入语料。覆盖 MIME／TNEF／兼容编码、HTML 清洗与重解析、可见文本、认证头、URL、搜索、日历、IMAP/SMTP 分片流和附件文件名。测试检查有界输出、幂等、协议分帧及清洗后没有活动内容，不能证明所有恶意输入都安全。入口见 core [parser-fuzz.test.ts](../packages/core/src/parser-fuzz.test.ts)、[parser-fuzz-corpus.ts](../packages/core/src/parser-fuzz-corpus.ts)、[mail-socket-fuzz.test.ts](../packages/core/src/platform/mail-socket-fuzz.test.ts)，以及桌面 [reader-html-fuzz.test.ts](../apps/desktop/src/renderer/src/components/reader-html-fuzz.test.ts)和[附件文件名测试](../apps/desktop/src/main/attachment-filenames-fuzz.test.ts)。
+解析器属性测试使用固定 seed 的 fast-check 和恶意输入语料。覆盖 MIME／TNEF／兼容编码、HTML 清洗与重解析、可见文本、认证头、URL、搜索、日历、IMAP/SMTP 分片流和附件文件名。测试检查有界输出、幂等、协议分帧及清洗后没有活动内容，不能证明所有恶意输入都安全。入口见 core [parser-fuzz.test.ts](../packages/core/src/parser-fuzz.test.ts)、[parser-fuzz-corpus.ts](../packages/core/src/parser-fuzz-corpus.ts)、[mail-socket-fuzz.test.ts](../packages/core/src/platform/mail-socket-fuzz.test.ts)，以及桌面 [reader-html-fuzz.test.ts](../apps/desktop/src/renderer/src/features/reader/frame/reader-html-fuzz.test.ts)和[附件文件名测试](../apps/desktop/src/main/attachment-filenames-fuzz.test.ts)。
 
 只跑 fuzz：
 
@@ -114,7 +114,7 @@ pnpm --filter @openmail/desktop exec vitest run fuzz
 
 固定 seed 和轮数在各测试中维护。`OPENMAIL_LOW_MEMORY_TESTS=1` 会减少部分属性测试轮数；调查 fast-check 失败时保留输出中的 seed、path 和最小反例，用对应测试的参数重放。
 
-[accessibility.test.ts](../apps/desktop/src/renderer/src/accessibility.test.ts) 用 axe 检查主界面、设置、撰写、阅读及确认对话框；serious／critical 必须为零，moderate 必须准确匹配带理由的 [allowlist](../apps/desktop/src/renderer/src/accessibility.test.ts)，当前为空。jsdom 不做布局和 canvas 对比度判断，axe 的 color-contrast 关闭；主题 token 对比度、focus 和 reduced motion 由 [accessibility-theme.test.ts](../apps/desktop/src/renderer/src/accessibility-theme.test.ts)单独检查，另有 CSS 与语言回归。键盘路径、焦点恢复、控件名称和 live region 由 DOM 交互测试覆盖，不能代替 VoiceOver 或真机手势验收。
+[accessibility.test.ts](../apps/desktop/src/renderer/src/tests/accessibility.test.ts) 用 axe 检查主界面、设置、撰写、阅读及确认对话框；serious／critical 必须为零，moderate 必须准确匹配带理由的 [allowlist](../apps/desktop/src/renderer/src/tests/accessibility.test.ts)，当前为空。jsdom 不做布局和 canvas 对比度判断，axe 的 color-contrast 关闭；主题 token 对比度、focus 和 reduced motion 由 [accessibility-theme.test.ts](../apps/desktop/src/renderer/src/tests/accessibility-theme.test.ts)单独检查，另有 CSS 与语言回归。键盘路径、焦点恢复、控件名称和 live region 由 DOM 交互测试覆盖，不能代替 VoiceOver 或真机手势验收。
 
 ```sh
 pnpm --filter @openmail/desktop exec vitest run accessibility
@@ -147,7 +147,7 @@ stdout 输出 JSON，stderr 输出步骤和预览日志：
 
 步骤成功只证明所检查的窗口路径可用。`sync-health` passed 表示报告调用完成，服务商不可用或计数不一致仍需阅读 `syncHealth`；它不使脚本自动失败，也不修复同步。空库的跳过项不能算邮件流程验收。
 
-只有来自 `about:srcdoc`、匹配固定 `img-src data: cid:` 提示的远程图片 CSP 拦截会被忽略。其他 console 错误、异常、RPC 拒绝或 `failure` 使退出码为 1。正常结束及 SIGINT／SIGTERM／SIGHUP 共用幂等清理，终止预览并按 `--keep` 删除或保留副本；信号退出码为 130／143／129，已有退出码不覆盖。回归见 [smoke.test.ts](../packages/core/src/platform/node/smoke.test.ts)、[smoke-cleanup.test.ts](../packages/core/src/platform/node/smoke-cleanup.test.ts)、[smoke-ui.test.ts](../apps/desktop/src/renderer/src/smoke-ui.test.ts)和 [rpc-key.test.ts](../apps/desktop/src/renderer/src/rpc-key.test.ts)。
+只有来自 `about:srcdoc`、匹配固定 `img-src data: cid:` 提示的远程图片 CSP 拦截会被忽略。其他 console 错误、异常、RPC 拒绝或 `failure` 使退出码为 1。正常结束及 SIGINT／SIGTERM／SIGHUP 共用幂等清理，终止预览并按 `--keep` 删除或保留副本；信号退出码为 130／143／129，已有退出码不覆盖。回归见 [smoke.test.ts](../packages/core/src/platform/node/smoke.test.ts)、[smoke-cleanup.test.ts](../packages/core/src/platform/node/smoke-cleanup.test.ts)、[smoke-ui.test.ts](../apps/desktop/src/renderer/src/tests/smoke-ui.test.ts)和 [rpc-key.test.ts](../apps/desktop/src/renderer/src/state/rpc-key.test.ts)。
 
 脱敏服务商诊断格式只在[安全说明](security.md#服务商诊断)维护。smoke 的原始 console、`failure` 和 stderr 不受该字段白名单约束，分享前检查内容。自动测试使用 DOM、临时库和 fake provider，不运行 Electron smoke，也不证明真实 OAuth、系统权限或签名成品。
 

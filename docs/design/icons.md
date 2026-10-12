@@ -48,7 +48,7 @@ The final parameters are `FINAL` and `FINAL_SMALL` in `build6.py`. `build6.py` n
 
 ## Provider icons
 
-`apps/desktop/src/renderer/src/components/ProviderIcon.tsx` imports brand marks from Iconify icon packages through `unplugin-icons`. The build compiles each used icon into a React component, so the app ships only these six and never fetches icons at runtime.
+`apps/desktop/src/renderer/src/ui/ProviderIcon.tsx` imports brand marks from Iconify icon packages through `unplugin-icons`. The build compiles each used icon into a React component, so the app ships only these six and never fetches icons at runtime.
 
 | Provider | Icon                        | Package                      | License   |
 | -------- | --------------------------- | ---------------------------- | --------- |

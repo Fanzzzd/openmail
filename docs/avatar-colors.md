@@ -14,7 +14,7 @@ Contact photos take precedence. Account and profile colors keep their own settin
 
 The palette gives Gmail-like tones. Gmail does not publish its contact-to-color
 mapping; this algorithm does not claim exact parity with a Gmail account's avatar.
-The implementation is in `apps/desktop/src/renderer/src/format.ts`, with golden
+The implementation is in `apps/desktop/src/renderer/src/lib/format.ts`, with golden
 values and normalization cases in `format-avatar.test.ts`.
 
 The reference is Google's [Material color system](https://m2.material.io/design/color/the-color-system.html),

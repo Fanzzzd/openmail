@@ -13,7 +13,7 @@
     "electron.vite.config.ts",
     "oauth-clients.ts",
     "lingui.config.ts",
-    "src/renderer/src/po.d.ts",
+    "src/renderer/src/i18n/po.d.ts",
     "../../packages/core/src/css-tree-browser-api.d.ts"
   ]
 }

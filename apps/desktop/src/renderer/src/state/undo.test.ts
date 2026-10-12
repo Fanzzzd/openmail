@@ -1,7 +1,7 @@
 import { expect, it, vi } from "vitest";
 import { act, createElement, useEffect } from "react";
-import type { ToastState } from "../components/Toast";
-import { testDom } from "../test-dom";
+import type { ToastState } from "../ui/Toast";
+import { testDom } from "../test-support/test-dom";
 
 const state = vi.hoisted(() => {
   const calls: { id: string; targets: readonly string[] }[] = [];
