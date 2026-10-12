@@ -16,7 +16,7 @@ export class RemoteAccess extends Context.Service<
     setEnabled(enabled: boolean): Effect.Effect<void, InvalidInput | DeviceError>;
     setAllowlist(logins: readonly string[]): Effect.Effect<void, InvalidInput | DeviceError>;
     setService(service: string): Effect.Effect<void, InvalidInput | DeviceError>;
-    revoke(id: string): Effect.Effect<void>;
+    disconnect(id: string): Effect.Effect<void>;
   }
 >()("openmail/RemoteAccess") {}
 
@@ -29,7 +29,7 @@ const attempt = (task: () => Promise<void>) =>
         : new DeviceError({ message: "Remote access could not be changed." }),
   });
 
-export const remoteAccessService = (controller: RemoteAccessController) =>
+const remoteAccessService = (controller: RemoteAccessController) =>
   RemoteAccess.of({
     view: Stream.callback<RemoteAccessView>((queue) =>
       Effect.acquireRelease(
@@ -45,7 +45,7 @@ export const remoteAccessService = (controller: RemoteAccessController) =>
     setEnabled: (enabled) => attempt(() => controller.setEnabled(enabled)),
     setAllowlist: (logins) => attempt(() => controller.setAllowlist(logins)),
     setService: (service) => attempt(() => controller.setService(service)),
-    revoke: (id) => Effect.sync(() => controller.revoke(id)),
+    disconnect: (id) => Effect.sync(() => controller.disconnect(id)),
   });
 
 /** Remote access for the desktop app. Off unless the person turned it on in Settings. */
@@ -62,7 +62,10 @@ export const RemoteAccessLive = Layer.effect(
       startRpc: (hub) => {
         const fiber = Effect.runFork(
           Layer.launch(
-            remoteRpcServer(hub, (tag) => localLog("rpc-auth-failure", { rpc: tag })),
+            remoteRpcServer(hub, {
+              denied: (tag) => localLog("rpc-auth-failure", { rpc: tag }),
+              failure: (tag) => localLog("rpc-failure", { rpc: tag }),
+            }),
           ).pipe(Effect.provideService(Mailbox, mailbox)),
         );
         return () => Effect.runPromise(Fiber.interrupt(fiber).pipe(Effect.asVoid));

@@ -17,7 +17,6 @@ export function setPlatform(next: Platform) {
  * so the web build hides the controls instead of showing actions that fail.
  */
 export const isDesktop = () => platform === "desktop";
-export const isWeb = () => platform === "web";
 
 /** Opens a checked http(s) URL on this device. Only for the web build. */
 export function openOnDevice(url: string) {

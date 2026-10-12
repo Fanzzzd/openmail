@@ -7,7 +7,7 @@ import {
 } from "../../shared/remote-access";
 
 /** The CLI inside the Mac app from tailscale.com/download. OpenMail never installs it. */
-export const TAILSCALE_CLI = "/Applications/Tailscale.app/Contents/MacOS/Tailscale";
+const TAILSCALE_CLI = "/Applications/Tailscale.app/Contents/MacOS/Tailscale";
 
 export interface CliResult {
   code: number;
@@ -89,7 +89,7 @@ export function parseStatus(json: string): TailscaleState {
 }
 
 /** Where the mapping lives: a port on this node, or a Tailscale Service. */
-export interface ServeTarget {
+interface ServeTarget {
   /** 127.0.0.1 port of the OpenMail server. */
   port: number;
   /** The port OpenMail used last time; a mapping to it is OpenMail's own, now stale. */
@@ -139,7 +139,7 @@ export function publicUrl(state: TailscaleState, service: string): string | null
   return service ? `https://${host}` : `https://${host}:${REMOTE_HTTPS_PORT}`;
 }
 
-export type ServeCheck =
+type ServeCheck =
   | { kind: "free" }
   | { kind: "ours" }
   | { kind: "stale" }

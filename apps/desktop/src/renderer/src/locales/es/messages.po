@@ -930,6 +930,10 @@ msgstr "Texto del mensaje"
 msgid "Bold"
 msgstr "Negrita"
 
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Browsers"
+msgstr "Navegadores"
+
 #: src/renderer/src/features/feedback/Feedback.tsx
 msgid "Bug report"
 msgstr "Informe de error"
@@ -2038,6 +2042,19 @@ msgstr "Descartar borrador"
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Discard saved rule?"
 msgstr "¿Descartar la regla guardada?"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Disconnect"
+msgstr "Desconectar"
+
+#. placeholder {0}: session.login
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Disconnect {0}"
+msgstr "Desconectar {0}"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Disconnect closes a browser's connection. Reloading the page connects it again while its login is on the list above. To keep someone out, remove their login."
+msgstr "Desconectar cierra la conexión de un navegador. Al recargar la página vuelve a conectarse mientras su inicio de sesión siga en la lista de arriba. Para impedir que alguien entre, quita su inicio de sesión."
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgid "Disk space is low. Compact now to enable automatic disk space reclamation."
@@ -4051,8 +4068,8 @@ msgid "No app can open this file"
 msgstr "Ninguna app puede abrir este archivo"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "No browser is signed in."
-msgstr "Ningún navegador ha iniciado sesión."
+msgid "No browser has opened OpenMail."
+msgstr "Ningún navegador ha abierto OpenMail."
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "No copy"
@@ -5817,19 +5834,6 @@ msgstr "Inicie sesión con su cuenta de Google en el navegador. openmail guarda 
 msgid "Sign in with your personal Microsoft account (outlook.com or Hotmail) in the browser. openmail keeps the sign-in token in this computer's keychain."
 msgstr "Inicie sesión con su cuenta personal de Microsoft (outlook.com o Hotmail) en el navegador. openmail guarda el token de inicio de sesión en el llavero de este equipo."
 
-#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "Sign out"
-msgstr "Cerrar sesión"
-
-#. placeholder {0}: session.login
-#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "Sign out {0}"
-msgstr "Cerrar sesión de {0}"
-
-#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "Sign out ends a browser's session. To keep someone out, remove their login above."
-msgstr "Cerrar sesión termina la sesión de un navegador. Para impedir que alguien entre, quita su inicio de sesión arriba."
-
 #: src/renderer/src/app/App.tsx
 msgid "Sign-in failed: {reason}"
 msgstr "Error al iniciar sesión: {reason}"
@@ -5865,10 +5869,6 @@ msgstr "Las compilaciones firmadas utilizan un token de acceso de GitHub para de
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Signed in as {login}. This Mac is {device}."
 msgstr "Sesión iniciada como {login}. Este Mac es {device}."
-
-#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "Signed-in browsers"
-msgstr "Navegadores con sesión iniciada"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Simplify your search query."
@@ -6189,8 +6189,8 @@ msgid "Tailscale Service name"
 msgstr "Nombre del Tailscale Service"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "Tailscale tells OpenMail who is visiting. Only these tailnet logins get in. The list starts with this Mac's own login."
-msgstr "Tailscale le dice a OpenMail quién visita. Solo entran estos inicios de sesión de tailnet. La lista empieza con el inicio de sesión de este Mac."
+msgid "Tailscale tells OpenMail who is visiting. Only these tailnet logins get in. Removing a login disconnects its browsers and keeps them out. The list starts with this Mac's own login."
+msgstr "Tailscale le dice a OpenMail quién visita. Solo entran estos inicios de sesión de tailnet. Quitar un inicio de sesión desconecta sus navegadores y los deja fuera. La lista empieza con el inicio de sesión de este Mac."
 
 #: src/renderer/src/features/compose/components/ComposerAi.tsx
 msgid "Target language"
@@ -6316,8 +6316,8 @@ msgid "The organizer differs from the message sender. Check the response recipie
 msgstr "El organizador difiere del remitente del mensaje. Verifique el destinatario de la respuesta antes de responder."
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "The other device needs the Tailscale app, signed in to the same tailnet. This Mac must stay on with OpenMail open."
-msgstr "El otro dispositivo necesita la app Tailscale, con sesión en el mismo tailnet. Este Mac debe seguir encendido con OpenMail abierto."
+msgid "The other device needs the Tailscale app, signed in to the same tailnet. This Mac must stay on with OpenMail open. Quitting OpenMail takes the address offline until it opens again."
+msgstr "El otro dispositivo necesita la app Tailscale, con sesión en el mismo tailnet. Este Mac debe seguir encendido con OpenMail abierto. Al salir de OpenMail, la dirección queda sin conexión hasta que se vuelva a abrir."
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "The preview checked at most 201 server messages. Matching messages outside this sample may be missing."
@@ -6981,8 +6981,8 @@ msgid "Your draft was kept. Check Sent before sending again."
 msgstr "Se conservó el borrador. Revisa Enviados antes de volver a enviar."
 
 #: src/renderer/src/features/remote/ConnectionNotice.tsx
-msgid "Your Mac ended this session."
-msgstr "Tu Mac terminó esta sesión."
+msgid "Your Mac disconnected this browser. Reload to connect again while your login is still allowed."
+msgstr "Tu Mac desconectó este navegador. Recarga para conectarte de nuevo mientras tu inicio de sesión siga permitido."
 
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 msgid "Your overlapping events"

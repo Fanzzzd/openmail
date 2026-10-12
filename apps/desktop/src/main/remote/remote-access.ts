@@ -1,6 +1,5 @@
 import {
   DEFAULT_REMOTE_ACCESS,
-  type InvalidInput,
   type Provider,
   type RemoteAccessSettings,
 } from "@openmail/core/schema";
@@ -39,7 +38,12 @@ export interface RemoteAccessDeps {
   /** Starts the remote RPC server on the hub; resolves to its stopper. */
   startRpc: (hub: ConnectionHub) => () => Promise<void>;
   log?: (reason: string) => void;
+  /** How long quitting waits for `tailscale serve off`. */
+  quitTimeoutMs?: number;
 }
+
+/** Quitting never waits longer than this for the Tailscale CLI. */
+const QUIT_TIMEOUT_MS = 3000;
 
 /** Fails with the Effect's own error (InvalidInput) instead of a wrapped one. */
 async function run<A, E>(effect: Effect.Effect<A, E>): Promise<A> {
@@ -181,14 +185,17 @@ export function createRemoteAccess(deps: RemoteAccessDeps) {
     emit();
   };
 
-  /** Removes the mapping only when it still points at OpenMail. */
-  const unpublish = async () => {
+  /** Removes the serve mapping only when it still points at OpenMail. */
+  const removeMapping = async () => {
     const port = server?.port ?? settings.port;
+    if (!port) return;
     const current = await runCli(SERVE_STATUS_ARGS);
-    if (current.code === 0 && port) {
-      const target = { port, service: settings.service };
-      if (checkServe(current.stdout, target).kind === "ours") await runCli(serveOffArgs(target));
-    }
+    if (current.code !== 0) return;
+    const target = { port, service: settings.service };
+    if (checkServe(current.stdout, target).kind === "ours") await runCli(serveOffArgs(target));
+  };
+  const unpublish = async () => {
+    await removeMapping();
     await stopLocal();
     status = "off";
     problem = null;
@@ -239,12 +246,30 @@ export function createRemoteAccess(deps: RemoteAccessDeps) {
         if (settings.enabled) await start();
         else emit();
       }),
-    revoke: (id: string) => {
-      sessions.revoke(id);
+    /** Closes one browser's session; it reconnects on reload while its login is allowed. */
+    disconnect: (id: string) => {
+      sessions.disconnect(id);
     },
-    /** App quit: stop serving locally. The serve mapping stays for the next launch. */
-    dispose: () => serial(stopLocal),
+    /**
+     * App quit: remove the serve mapping, so nothing else can take the port
+     * behind it while OpenMail is closed, then stop serving. The setting stays
+     * on and the next launch publishes again. Quitting waits at most
+     * QUIT_TIMEOUT_MS for the CLI.
+     */
+    dispose: () =>
+      serial(async () => {
+        if (status === "on" || status === "starting") {
+          let timer: ReturnType<typeof setTimeout> | undefined;
+          await Promise.race([
+            removeMapping().catch(() => null),
+            new Promise<void>((resolve) => {
+              timer = setTimeout(resolve, deps.quitTimeoutMs ?? QUIT_TIMEOUT_MS);
+            }),
+          ]);
+          clearTimeout(timer);
+        }
+        await stopLocal();
+      }),
   };
 }
 export type RemoteAccessController = ReturnType<typeof createRemoteAccess>;
-export type RemoteAccessError = InvalidInput;

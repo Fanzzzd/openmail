@@ -21,7 +21,7 @@ Remote access is off by default.
 3. Turn on **Allow access from my tailnet**.
 4. On the other device, scan the QR code or open the address shown, such as `https://macbook-pro.tail1234.ts.net:8443`.
 
-OpenMail runs `tailscale serve --bg --https=8443` to publish itself on your tailnet. If something else already uses port 8443 on this Mac, OpenMail stops and tells you. It doesn't replace another app's setting. Turning remote access off removes the mapping.
+OpenMail runs `tailscale serve --bg --https=8443` to publish itself on your tailnet. If something else already uses port 8443 on this Mac, OpenMail stops and tells you. It doesn't replace another app's setting. Turning remote access off removes the mapping. Quitting OpenMail removes it too, and the next launch adds it again.
 
 OpenMail never uses Tailscale Funnel, so the page is never on the public internet.
 
@@ -31,7 +31,7 @@ Tailscale tells OpenMail which tailnet login each visitor uses. Only logins on t
 
 Any of your own devices on the tailnet can open the page. To limit which devices can reach your Mac, use [access controls](https://tailscale.com/kb/1018/acls) in the Tailscale admin console. For example, allow only your phone to reach the Mac on port 8443.
 
-**Signed-in browsers** lists each browser session. **Sign out** ends that session. Sessions also end after 12 hours or when OpenMail quits. Removing a login from the list signs out its browsers at once.
+Your Tailscale login is what lets a browser in. **Browsers** lists each browser that opened OpenMail. **Disconnect** closes that browser's connection, but reloading the page connects it again while its login is on the list. To keep someone out, remove their login: their browsers disconnect at once and can't come back. Sessions also end after 12 hours or when OpenMail quits.
 
 ## What works in the browser
 
@@ -45,7 +45,7 @@ Some things stay on the Mac:
 - Opening messages in new windows, printing and saving files on the Mac
 - Updates, default mail app and Apple Contacts
 
-Attachments download to the device you are using. Files you attach upload to the Mac, with the same size limits as on the Mac.
+Attachments download to the device you are using. Files you attach upload to the Mac, with the same size limits as on the Mac. The Mac takes two uploads at a time; a third waits for you to try again.
 
 ## Tailscale Service (advanced)
 
@@ -62,5 +62,5 @@ The address becomes `https://openmail.<your-tailnet>.ts.net`. Leave the field em
 - **Tailscale isn't installed.** Install the Tailscale app, sign in, then press **Refresh**.
 - **HTTPS certificates are off.** Turn on MagicDNS and HTTPS Certificates in the admin console, then press **Refresh**.
 - **Port 8443 is in use.** Another `tailscale serve` setting uses it. Run `tailscale serve status` to see it, and remove it if you no longer need it.
-- **The page shows a 502 error.** OpenMail is closed or the Mac is asleep. Open OpenMail on the Mac.
+- **The page doesn't load.** OpenMail is closed or the Mac is asleep. Quitting OpenMail takes the address offline, and opening it publishes the address again. Open OpenMail on the Mac.
 - **"Your Mac ended this session."** The session was signed out or expired. Reload the page.

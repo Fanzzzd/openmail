@@ -20,4 +20,4 @@ export const refreshRemoteAccessAtom = MailClient.mutation("RefreshRemoteAccess"
 export const setRemoteAccessAtom = MailClient.mutation("SetRemoteAccess");
 export const setRemoteAllowlistAtom = MailClient.mutation("SetRemoteAllowlist");
 export const setRemoteServiceAtom = MailClient.mutation("SetRemoteService");
-export const revokeRemoteSessionAtom = MailClient.mutation("RevokeRemoteSession");
+export const disconnectRemoteSessionAtom = MailClient.mutation("DisconnectRemoteSession");

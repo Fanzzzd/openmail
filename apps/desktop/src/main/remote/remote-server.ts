@@ -9,22 +9,16 @@ import {
 import type { Duplex } from "node:stream";
 import path from "node:path";
 import { WebSocketServer, type WebSocket } from "ws";
-import {
-  attachmentFilename,
-  attachmentSizesProblem,
-  COMPOSE_ATTACHMENT_LIMIT,
-  type OutgoingAttachment,
-  type Provider,
-} from "@openmail/core/schema";
+import { attachmentFilename, COMPOSE_ATTACHMENT_LIMIT, type Provider } from "@openmail/core/schema";
 import { MAX_RPC_FRAME } from "../../shared/channel";
 import {
   checkOrigin,
   checkRequest,
   type GateConfig,
   type GateResult,
-  type RemoteSessionHandle,
   type Sessions,
 } from "./remote-auth";
+import { MAX_CONCURRENT_UPLOADS, readBody, readUpload, UPLOAD_SLACK } from "./remote-upload";
 
 /** The page's policy: same-origin scripts and connections, never framed. */
 export const WEB_CSP = [
@@ -67,11 +61,10 @@ const TYPES: Record<string, string> = {
 };
 
 /** The web build's page (vite.web.config.ts). Every app route serves it. */
-export const APP_DOCUMENT = "web.html";
+const APP_DOCUMENT = "web.html";
 
-/** Multipart overhead allowed on top of the compose limit. */
-const UPLOAD_SLACK = 1024 * 1024;
-const MAX_UPLOAD_FILES = 64;
+/** Expired sessions lose their sockets this often. */
+const SWEEP_MS = 60_000;
 
 export interface RemoteConnection {
   send(frame: string): void;
@@ -84,7 +77,7 @@ export interface ConnectionHandlers {
 /** Hands each authenticated WebSocket to the RPC protocol. */
 export type ConnectionListener = (connection: RemoteConnection) => ConnectionHandlers;
 
-export interface RemoteServerOptions {
+interface RemoteServerOptions {
   /** The built web app (web.html and assets). */
   webRoot: string;
   /** 0 picks a free port. */
@@ -96,6 +89,7 @@ export interface RemoteServerOptions {
     messageId: string,
     path: readonly number[],
   ) => Promise<{ filename: string; data: Uint8Array }>;
+  /** The account's provider, or null when there is no such account. */
   provider: (accountId: string) => Promise<Provider | null>;
   onConnection: ConnectionListener;
   /** Refused request reasons, for stderr. Never logins, paths or bodies. */
@@ -116,6 +110,13 @@ const send = (
   });
   response.end(body);
 };
+const sendJson = (
+  response: ServerResponse,
+  status: number,
+  value: unknown,
+  headers: OutgoingHttpHeaders = {},
+) =>
+  send(response, status, JSON.stringify(value), { "content-type": "application/json", ...headers });
 
 /** Attachment paths travel as dot-separated part indices, like 0 or 2.1. */
 export function parsePartPath(value: string | null): number[] | null {
@@ -130,81 +131,16 @@ export function contentDisposition(filename: string): string {
   return `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(safe)}`;
 }
 
-async function readBody(request: IncomingMessage, limit: number): Promise<Buffer | null> {
-  const declared = Number(request.headers["content-length"] ?? "0");
-  if (declared > limit) return null;
-  const chunks: Buffer[] = [];
-  let size = 0;
-  for await (const chunk of request) {
-    const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk));
-    size += buffer.length;
-    if (size > limit) return null;
-    chunks.push(buffer);
-  }
-  return Buffer.concat(chunks);
-}
-
 /**
- * Checks uploaded compose attachments with the desktop limits: 30 MB in total
- * and the provider's blocked types and sizes. Returns base64 attachments.
+ * Serves a file from the web build. Paths without an extension are app routes
+ * (browser history) and get the app document; `appHeaders` runs only then.
  */
-export async function readUpload(
-  body: Buffer,
-  contentType: string,
-  provider: Provider | null,
-): Promise<
-  | { ok: true; files: OutgoingAttachment[] }
-  | { ok: false; status: number; error: string; filename?: string }
-> {
-  let form: FormData;
-  try {
-    form = await new Request("http://upload.invalid/", {
-      method: "POST",
-      headers: { "content-type": contentType },
-      body: new Uint8Array(body),
-    }).formData();
-  } catch {
-    return { ok: false, status: 400, error: "invalid" };
-  }
-  const files = form.getAll("file").flatMap((entry) => (typeof entry === "string" ? [] : [entry]));
-  if (files.length === 0 || files.length > MAX_UPLOAD_FILES)
-    return { ok: false, status: 400, error: "invalid" };
-  const existing = Number(form.get("existingBytes") ?? 0);
-  const total = files.reduce((sum, file) => sum + file.size, 0);
-  if (!Number.isFinite(existing) || existing < 0 || total + existing > COMPOSE_ATTACHMENT_LIMIT)
-    return { ok: false, status: 413, error: "tooLarge" };
-  const described = files.map((file) => ({
-    filename: attachmentFilename(file.name || "attachment"),
-    mimeType: file.type || "application/octet-stream",
-    size: file.size,
-  }));
-  const problem = provider ? attachmentSizesProblem(provider, described) : undefined;
-  if (problem)
-    return {
-      ok: false,
-      status: problem.kind === "gmailBlocked" ? 415 : 413,
-      error: problem.kind,
-      ...(problem.kind === "gmailBlocked" ? { filename: problem.filename } : {}),
-    };
-  const out: OutgoingAttachment[] = [];
-  for (const [index, file] of files.entries()) {
-    const info = described[index];
-    if (!info) continue;
-    out.push({
-      filename: info.filename,
-      mimeType: info.mimeType,
-      content: Buffer.from(await file.arrayBuffer()).toString("base64"),
-    });
-  }
-  return { ok: true, files: out };
-}
-
 async function serveStatic(
   root: string,
   pathname: string,
   response: ServerResponse,
   head: boolean,
-  extraHeaders: OutgoingHttpHeaders,
+  appHeaders: () => OutgoingHttpHeaders,
 ) {
   let decoded: string;
   try {
@@ -219,31 +155,89 @@ async function serveStatic(
     return;
   }
   const relative = path.posix.normalize(decoded).replace(/^\/+/, "");
-  // Paths without an extension are app routes (browser history); they get the app.
   const wantsApp = relative === "" || !path.posix.extname(relative);
   const file = path.join(root, wantsApp ? APP_DOCUMENT : relative);
+  let real: string;
+  let size: number;
   try {
-    const real = await realpath(file);
+    real = await realpath(file);
     if (real !== root && !real.startsWith(root + path.sep)) throw new Error("outside");
     const info = await stat(real);
     if (!info.isFile()) throw new Error("not a file");
-    const ext = path.extname(real);
-    const immutable = real.startsWith(path.join(root, "assets") + path.sep);
-    response.writeHead(200, {
-      ...SECURITY_HEADERS,
-      "content-type": TYPES[ext] ?? "application/octet-stream",
-      "content-length": info.size,
-      "cache-control": immutable ? "private, max-age=31536000, immutable" : "no-store",
-      ...(wantsApp ? extraHeaders : {}),
-    });
-    if (head) {
-      response.end();
-      return;
-    }
-    createReadStream(real).pipe(response);
+    size = info.size;
   } catch {
     send(response, 404, "Not found");
+    return;
   }
+  const immutable = real.startsWith(path.join(root, "assets") + path.sep);
+  response.writeHead(200, {
+    ...SECURITY_HEADERS,
+    "content-type": TYPES[path.extname(real)] ?? "application/octet-stream",
+    "content-length": size,
+    "cache-control": immutable ? "private, max-age=31536000, immutable" : "no-store",
+    ...(wantsApp ? appHeaders() : {}),
+  });
+  if (head) response.end();
+  else createReadStream(real).pipe(response);
+}
+
+/** GET /api/attachment?message=&part=: always a download, never rendered in this origin. */
+async function handleAttachment(
+  url: URL,
+  response: ServerResponse,
+  attachment: RemoteServerOptions["attachment"],
+) {
+  const messageId = url.searchParams.get("message");
+  const part = parsePartPath(url.searchParams.get("part"));
+  if (!messageId || messageId.length > 1024 || !part) return send(response, 400);
+  try {
+    const content = await attachment(messageId, part);
+    response.writeHead(200, {
+      ...SECURITY_HEADERS,
+      "content-type": "application/octet-stream",
+      "content-security-policy": "sandbox; default-src 'none'",
+      "content-disposition": contentDisposition(content.filename),
+      "content-length": content.data.byteLength,
+      "cache-control": "no-store",
+    });
+    const chunk = 256 * 1024;
+    for (let offset = 0; offset < content.data.byteLength; offset += chunk) {
+      if (!response.write(content.data.subarray(offset, offset + chunk)))
+        await new Promise<void>((resolve) => {
+          response.once("drain", resolve);
+        });
+    }
+    response.end();
+  } catch {
+    if (!response.headersSent) send(response, 404, "Not found");
+    else response.destroy();
+  }
+}
+
+/** POST /api/upload?account=: compose attachments, checked against that account's limits. */
+async function handleUpload(
+  request: IncomingMessage,
+  url: URL,
+  response: ServerResponse,
+  provider: RemoteServerOptions["provider"],
+) {
+  const contentType = request.headers["content-type"] ?? "";
+  if (!/^multipart\/form-data;/i.test(contentType)) return send(response, 415);
+  const accountId = url.searchParams.get("account");
+  const accountProvider = accountId ? await provider(accountId) : null;
+  if (!accountProvider)
+    return sendJson(response, 400, { error: "invalid" }, { connection: "close" });
+  const body = await readBody(request, COMPOSE_ATTACHMENT_LIMIT + UPLOAD_SLACK);
+  const result =
+    body instanceof Uint8Array ? await readUpload(body, contentType, accountProvider) : body;
+  if (result.ok) return sendJson(response, 200, { files: result.files });
+  return sendJson(
+    response,
+    result.status,
+    { error: result.error, filename: result.filename },
+    // An unread body would otherwise sit in the socket.
+    body instanceof Uint8Array ? {} : { connection: "close" },
+  );
 }
 
 /**
@@ -254,6 +248,7 @@ async function serveStatic(
 export async function startRemoteServer(options: RemoteServerOptions) {
   const root = await realpath(options.webRoot);
   const wss = new WebSocketServer({ noServer: true, maxPayload: MAX_RPC_FRAME });
+  let uploads = 0;
   const refuse = (gate: GateResult & { ok: false }, response: ServerResponse) => {
     options.log?.(gate.reason);
     send(response, gate.status, "Forbidden");
@@ -266,7 +261,11 @@ export async function startRemoteServer(options: RemoteServerOptions) {
       config,
     );
   };
-  const session = (request: IncomingMessage, login: string): RemoteSessionHandle | null =>
+  const sameOrigin = (request: IncomingMessage) => {
+    const config = options.gate();
+    return config !== null && checkOrigin(request.headers, config);
+  };
+  const session = (request: IncomingMessage, login: string) =>
     options.sessions.find(request.headers.cookie, login);
 
   const server = createServer((request, response) => {
@@ -278,77 +277,33 @@ export async function startRemoteServer(options: RemoteServerOptions) {
 
       if (url.pathname.startsWith("/api/")) {
         if (!session(request, gate.login)) return send(response, 401, "Sign in again");
-        if (url.pathname === "/api/attachment" && method === "GET") {
-          const messageId = url.searchParams.get("message");
-          const part = parsePartPath(url.searchParams.get("part"));
-          if (!messageId || messageId.length > 1024 || !part) return send(response, 400);
-          try {
-            const content = await options.attachment(messageId, part);
-            response.writeHead(200, {
-              ...SECURITY_HEADERS,
-              // Never rendered in this origin: always a download, sandboxed if opened.
-              "content-type": "application/octet-stream",
-              "content-security-policy": "sandbox; default-src 'none'",
-              "content-disposition": contentDisposition(content.filename),
-              "content-length": content.data.byteLength,
-              "cache-control": "no-store",
-            });
-            const chunk = 256 * 1024;
-            for (let offset = 0; offset < content.data.byteLength; offset += chunk) {
-              const piece = content.data.subarray(offset, offset + chunk);
-              if (!response.write(piece))
-                await new Promise<void>((resolve) => {
-                  response.once("drain", resolve);
-                });
-            }
-            response.end();
-          } catch {
-            if (!response.headersSent) send(response, 404, "Not found");
-            else response.destroy();
-          }
-          return;
-        }
+        if (url.pathname === "/api/attachment" && method === "GET")
+          return handleAttachment(url, response, options.attachment);
         if (url.pathname === "/api/upload" && method === "POST") {
-          const config = options.gate();
-          if (
-            !config ||
-            !checkOrigin({ remoteAddress: undefined, headers: request.headers }, config)
-          )
-            return send(response, 403, "Forbidden");
-          const contentType = request.headers["content-type"] ?? "";
-          if (!/^multipart\/form-data;/i.test(contentType)) return send(response, 415);
-          const body = await readBody(request, COMPOSE_ATTACHMENT_LIMIT + UPLOAD_SLACK);
-          if (!body)
-            return send(response, 413, JSON.stringify({ error: "tooLarge" }), {
-              "content-type": "application/json",
-              connection: "close",
-            });
-          const accountId = url.searchParams.get("account");
-          const provider = accountId ? await options.provider(accountId) : null;
-          const result = await readUpload(body, contentType, provider);
-          return result.ok
-            ? send(response, 200, JSON.stringify({ files: result.files }), {
-                "content-type": "application/json",
-              })
-            : send(
-                response,
-                result.status,
-                JSON.stringify({ error: result.error, filename: result.filename }),
-                { "content-type": "application/json" },
-              );
+          if (!sameOrigin(request)) return send(response, 403, "Forbidden");
+          if (uploads >= MAX_CONCURRENT_UPLOADS)
+            return sendJson(
+              response,
+              503,
+              { error: "busy" },
+              { connection: "close", "retry-after": "2" },
+            );
+          uploads++;
+          try {
+            return await handleUpload(request, url, response, options.provider);
+          } finally {
+            uploads--;
+          }
         }
         return send(response, 404, "Not found");
       }
 
       if (method !== "GET" && method !== "HEAD") return send(response, 405, "", { allow: "GET" });
-      const existing = session(request, gate.login);
-      const issued = existing ? undefined : options.sessions.issue(gate.login, gate.name);
-      await serveStatic(
-        root,
-        url.pathname,
-        response,
-        method === "HEAD",
-        issued ? { "set-cookie": issued.cookie } : {},
+      // Only the app document starts a session; assets and misses don't.
+      await serveStatic(root, url.pathname, response, method === "HEAD", () =>
+        session(request, gate.login)
+          ? {}
+          : { "set-cookie": options.sessions.issue(gate.login, gate.name) },
       );
     })().catch(() => {
       if (!response.headersSent) send(response, 500);
@@ -363,9 +318,7 @@ export async function startRemoteServer(options: RemoteServerOptions) {
     };
     const gate = identify(request);
     if (!gate.ok) return reject(gate.status, gate.reason);
-    const config = options.gate();
-    if (!config || !checkOrigin({ remoteAddress: undefined, headers: request.headers }, config))
-      return reject(403, "bad-origin");
+    if (!sameOrigin(request)) return reject(403, "bad-origin");
     const url = new URL(request.url ?? "/", "http://remote.invalid");
     if (url.pathname !== "/rpc") return reject(404, "bad-path");
     const owner = session(request, gate.login);
@@ -393,6 +346,8 @@ export async function startRemoteServer(options: RemoteServerOptions) {
     });
   });
 
+  const sweeper = setInterval(() => options.sessions.sweep(), SWEEP_MS);
+  sweeper.unref();
   server.requestTimeout = 120_000;
   server.headersTimeout = 20_000;
   const port = await new Promise<number>((resolve, reject) => {
@@ -415,6 +370,7 @@ export async function startRemoteServer(options: RemoteServerOptions) {
     port,
     close: () =>
       new Promise<void>((resolve) => {
+        clearInterval(sweeper);
         for (const client of wss.clients) client.terminate();
         wss.close();
         server.closeAllConnections();

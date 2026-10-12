@@ -940,6 +940,10 @@ msgstr "正文"
 msgid "Bold"
 msgstr "粗体"
 
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Browsers"
+msgstr "浏览器"
+
 #: src/renderer/src/features/feedback/Feedback.tsx
 msgid "Bug report"
 msgstr "问题报告"
@@ -2048,6 +2052,19 @@ msgstr "丢弃草稿"
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Discard saved rule?"
 msgstr "丢弃保存的规则？"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Disconnect"
+msgstr "断开连接"
+
+#. placeholder {0}: session.login
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Disconnect {0}"
+msgstr "断开 {0}"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Disconnect closes a browser's connection. Reloading the page connects it again while its login is on the list above. To keep someone out, remove their login."
+msgstr "断开连接会关闭浏览器的连接。只要它的登录名还在上方列表里，重新加载页面就会再次连接。要拒绝某人访问，请移除其登录名。"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgid "Disk space is low. Compact now to enable automatic disk space reclamation."
@@ -4061,8 +4078,8 @@ msgid "No app can open this file"
 msgstr "没有 App 能打开此文件"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "No browser is signed in."
-msgstr "没有已登录的浏览器。"
+msgid "No browser has opened OpenMail."
+msgstr "还没有浏览器打开过 OpenMail。"
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "No copy"
@@ -5827,19 +5844,6 @@ msgstr "在浏览器里用你的 Google 账户登录。openmail 把登录令牌�
 msgid "Sign in with your personal Microsoft account (outlook.com or Hotmail) in the browser. openmail keeps the sign-in token in this computer's keychain."
 msgstr "在浏览器里用你的个人 Microsoft 账户（outlook.com 或 Hotmail）登录。openmail 把登录令牌存在这台电脑的钥匙串里。"
 
-#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "Sign out"
-msgstr "退出登录"
-
-#. placeholder {0}: session.login
-#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "Sign out {0}"
-msgstr "让 {0} 退出登录"
-
-#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "Sign out ends a browser's session. To keep someone out, remove their login above."
-msgstr "退出登录会结束浏览器的会话。要拒绝某人访问，请在上方移除其登录名。"
-
 #: src/renderer/src/app/App.tsx
 msgid "Sign-in failed: {reason}"
 msgstr "登录失败：{reason}"
@@ -5875,10 +5879,6 @@ msgstr "正式签名的应用使用 GitHub 访问令牌下载私库更新。令�
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Signed in as {login}. This Mac is {device}."
 msgstr "已登录为 {login}。这台 Mac 是 {device}。"
-
-#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "Signed-in browsers"
-msgstr "已登录的浏览器"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Simplify your search query."
@@ -6199,8 +6199,8 @@ msgid "Tailscale Service name"
 msgstr "Tailscale Service 名称"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "Tailscale tells OpenMail who is visiting. Only these tailnet logins get in. The list starts with this Mac's own login."
-msgstr "Tailscale 会告诉 OpenMail 访问者是谁。只有这些 tailnet 登录名可以进入。列表默认包含这台 Mac 自己的登录名。"
+msgid "Tailscale tells OpenMail who is visiting. Only these tailnet logins get in. Removing a login disconnects its browsers and keeps them out. The list starts with this Mac's own login."
+msgstr "Tailscale 会告诉 OpenMail 访问者是谁。只有这些 tailnet 登录名可以进入。移除登录名会断开其浏览器，并不再允许它们进入。列表默认包含这台 Mac 自己的登录名。"
 
 #: src/renderer/src/features/compose/components/ComposerAi.tsx
 msgid "Target language"
@@ -6326,8 +6326,8 @@ msgid "The organizer differs from the message sender. Check the response recipie
 msgstr "组织者与邮件发件人不同，回复前请核对收件地址。"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "The other device needs the Tailscale app, signed in to the same tailnet. This Mac must stay on with OpenMail open."
-msgstr "另一台设备需要安装 Tailscale 应用，并登录同一个 tailnet。这台 Mac 需要保持开机并打开 OpenMail。"
+msgid "The other device needs the Tailscale app, signed in to the same tailnet. This Mac must stay on with OpenMail open. Quitting OpenMail takes the address offline until it opens again."
+msgstr "另一台设备需要安装 Tailscale 应用，并登录同一个 tailnet。这台 Mac 需要保持开机并打开 OpenMail。退出 OpenMail 后，地址会离线，直到再次打开。"
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "The preview checked at most 201 server messages. Matching messages outside this sample may be missing."
@@ -6991,8 +6991,8 @@ msgid "Your draft was kept. Check Sent before sending again."
 msgstr "草稿已保留。再次发送前请检查“已发送”。"
 
 #: src/renderer/src/features/remote/ConnectionNotice.tsx
-msgid "Your Mac ended this session."
-msgstr "你的 Mac 结束了这个会话。"
+msgid "Your Mac disconnected this browser. Reload to connect again while your login is still allowed."
+msgstr "你的 Mac 断开了这个浏览器。只要你的登录名仍被允许，重新加载即可再次连接。"
 
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 msgid "Your overlapping events"

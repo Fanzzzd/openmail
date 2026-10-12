@@ -930,6 +930,10 @@ msgstr "Text zprávy"
 msgid "Bold"
 msgstr "Tučné"
 
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Browsers"
+msgstr "Prohlížeče"
+
 #: src/renderer/src/features/feedback/Feedback.tsx
 msgid "Bug report"
 msgstr "Hlášení chyby"
@@ -2038,6 +2042,19 @@ msgstr "Zahodit koncept"
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Discard saved rule?"
 msgstr "Zahodit uložené pravidlo?"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Disconnect"
+msgstr "Odpojit"
+
+#. placeholder {0}: session.login
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Disconnect {0}"
+msgstr "Odpojit {0}"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Disconnect closes a browser's connection. Reloading the page connects it again while its login is on the list above. To keep someone out, remove their login."
+msgstr "Odpojení ukončí spojení prohlížeče. Po načtení stránky znovu se připojí, dokud je jeho přihlášení v seznamu výše. Chcete-li někomu zabránit v přístupu, odeberte jeho přihlášení."
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgid "Disk space is low. Compact now to enable automatic disk space reclamation."
@@ -4051,8 +4068,8 @@ msgid "No app can open this file"
 msgstr "Tento soubor nelze otevřít žádnou aplikací"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "No browser is signed in."
-msgstr "Žádný prohlížeč není přihlášen."
+msgid "No browser has opened OpenMail."
+msgstr "OpenMail zatím neotevřel žádný prohlížeč."
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "No copy"
@@ -5817,19 +5834,6 @@ msgstr "Přihlaste se v prohlížeči svým účtem Google. openmail uloží př
 msgid "Sign in with your personal Microsoft account (outlook.com or Hotmail) in the browser. openmail keeps the sign-in token in this computer's keychain."
 msgstr "Přihlaste se v prohlížeči svým osobním účtem Microsoft (outlook.com nebo Hotmail). openmail uloží přihlašovací token do klíčenky tohoto počítače."
 
-#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "Sign out"
-msgstr "Odhlásit"
-
-#. placeholder {0}: session.login
-#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "Sign out {0}"
-msgstr "Odhlásit {0}"
-
-#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "Sign out ends a browser's session. To keep someone out, remove their login above."
-msgstr "Odhlášení ukončí relaci prohlížeče. Chcete-li někomu zabránit v přístupu, odeberte výše jeho přihlášení."
-
 #: src/renderer/src/app/App.tsx
 msgid "Sign-in failed: {reason}"
 msgstr "Přihlášení se nezdařilo: {reason}"
@@ -5865,10 +5869,6 @@ msgstr "Podepsané sestavení používají ke stažení soukromých vydání př
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Signed in as {login}. This Mac is {device}."
 msgstr "Přihlášeno jako {login}. Tento Mac je {device}."
-
-#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "Signed-in browsers"
-msgstr "Přihlášené prohlížeče"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Simplify your search query."
@@ -6189,8 +6189,8 @@ msgid "Tailscale Service name"
 msgstr "Název Tailscale Service"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "Tailscale tells OpenMail who is visiting. Only these tailnet logins get in. The list starts with this Mac's own login."
-msgstr "Tailscale sděluje OpenMailu, kdo přistupuje. Dovnitř se dostanou jen tato přihlášení do tailnetu. Seznam začíná přihlášením tohoto Macu."
+msgid "Tailscale tells OpenMail who is visiting. Only these tailnet logins get in. Removing a login disconnects its browsers and keeps them out. The list starts with this Mac's own login."
+msgstr "Tailscale sděluje OpenMailu, kdo přistupuje. Dovnitř se dostanou jen tato přihlášení do tailnetu. Odebrání přihlášení odpojí jeho prohlížeče a zabrání jim v přístupu. Seznam začíná přihlášením tohoto Macu."
 
 #: src/renderer/src/features/compose/components/ComposerAi.tsx
 msgid "Target language"
@@ -6316,8 +6316,8 @@ msgid "The organizer differs from the message sender. Check the response recipie
 msgstr "Organizátor se liší od odesílatele zprávy. Než odpovíte, zkontrolujte příjemce odpovědi."
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "The other device needs the Tailscale app, signed in to the same tailnet. This Mac must stay on with OpenMail open."
-msgstr "Druhé zařízení potřebuje aplikaci Tailscale přihlášenou do stejného tailnetu. Tento Mac musí zůstat zapnutý s otevřeným OpenMailem."
+msgid "The other device needs the Tailscale app, signed in to the same tailnet. This Mac must stay on with OpenMail open. Quitting OpenMail takes the address offline until it opens again."
+msgstr "Druhé zařízení potřebuje aplikaci Tailscale přihlášenou do stejného tailnetu. Tento Mac musí zůstat zapnutý s otevřeným OpenMailem. Po ukončení OpenMailu je adresa offline, dokud se znovu neotevře."
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "The preview checked at most 201 server messages. Matching messages outside this sample may be missing."
@@ -6981,8 +6981,8 @@ msgid "Your draft was kept. Check Sent before sending again."
 msgstr "Koncept byl zachován. Před dalším odesláním zkontrolujte odeslanou poštu."
 
 #: src/renderer/src/features/remote/ConnectionNotice.tsx
-msgid "Your Mac ended this session."
-msgstr "Váš Mac tuto relaci ukončil."
+msgid "Your Mac disconnected this browser. Reload to connect again while your login is still allowed."
+msgstr "Váš Mac tento prohlížeč odpojil. Načtěte stránku znovu a připojte se, dokud je vaše přihlášení stále povolené."
 
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 msgid "Your overlapping events"

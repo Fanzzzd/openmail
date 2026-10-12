@@ -46,9 +46,9 @@ it("the web build renders the inbox over a WebSocket and calls only remote RPCs"
   const denied: string[] = [];
   const tags: string[] = [];
   const rpc = Effect.runFork(
-    Layer.launch(remoteRpcServer(hub, (tag) => denied.push(tag))).pipe(
-      Effect.provideService(Mailbox, m),
-    ),
+    Layer.launch(
+      remoteRpcServer(hub, { denied: (tag) => denied.push(tag), failure: () => null }),
+    ).pipe(Effect.provideService(Mailbox, m)),
   );
   const wss = new WebSocketServer({ host: "127.0.0.1", port: 0 });
   await new Promise<void>((resolve) => {

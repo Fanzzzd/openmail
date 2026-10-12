@@ -7,9 +7,9 @@ const RECONNECT_MS = 3000;
 
 /**
  * The web build's link to the Mac. A dropped socket reloads the page after a
- * pause, which opens a new socket. A session the Mac ended waits for the
- * person: reloading asks the Mac again, which works only if the login is still
- * allowed.
+ * pause, which opens a new socket. A session the Mac ended (Disconnect, the
+ * 12-hour limit, or the login leaving the allowlist) waits for the person:
+ * reloading starts a new session if the login is still allowed.
  */
 export function ConnectionNotice() {
   const state = useWebConnection();
@@ -25,7 +25,10 @@ export function ConnectionNotice() {
         {state === "lost" ? (
           <Trans>Lost the connection to your Mac. Reconnecting…</Trans>
         ) : (
-          <Trans>Your Mac ended this session.</Trans>
+          <Trans>
+            Your Mac disconnected this browser. Reload to connect again while your login is still
+            allowed.
+          </Trans>
         )}
       </span>
       {state === "ended" && (

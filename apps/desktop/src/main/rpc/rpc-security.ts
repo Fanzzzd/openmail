@@ -1,5 +1,5 @@
-import { Schema } from "effect";
-import type { RpcMessage } from "effect/rpc";
+import { Effect, FiberSet, Layer, Queue, Schema } from "effect";
+import { type RpcMessage, RpcSerialization, RpcServer } from "effect/rpc";
 import { MailError } from "@openmail/core/schema";
 import { MAX_RPC_FRAME } from "../../shared/channel";
 import { PUBLIC_ERROR_MESSAGES } from "../../shared/public-error-messages";
@@ -116,3 +116,81 @@ export function createRpcFailureTracker(record: (tag: string) => void) {
     },
   };
 }
+
+/** Feeds a string transport's frames into the protocol. */
+export interface StringProtocolInput {
+  /** One frame from a client. False when it is not a valid RPC frame. */
+  frame(clientId: number, frame: unknown): boolean;
+  disconnect(clientId: number): void;
+}
+
+export interface StringTransport {
+  /** Starts delivering frames; returns the teardown. */
+  attach(input: StringProtocolInput): () => void;
+  send(clientId: number, frame: string): void;
+  end?(clientId: number): void;
+  /** Tags of failed requests, for the local log. */
+  failure(tag: string): void;
+  /** Sees each validated batch before it runs. */
+  inspect?(clientId: number, messages: readonly RpcMessage.FromClientEncoded[]): void;
+}
+
+/**
+ * Effect RPC over JSON string frames, shared by Electron IPC and the remote
+ * WebSockets: envelope checks on the way in, scrubbed errors and the failure
+ * tracker on the way out.
+ */
+export const makeStringProtocol = (transport: StringTransport) =>
+  Layer.effect(
+    RpcServer.Protocol,
+    Effect.gen(function* () {
+      const serialization = yield* RpcSerialization.RpcSerialization;
+      return yield* RpcServer.Protocol.make(
+        Effect.fnUntraced(function* (writeRequest) {
+          const disconnects = yield* Queue.make<number>();
+          const clients = new Set<number>();
+          const failures = createRpcFailureTracker((tag) => transport.failure(tag));
+          const parser = serialization.makeUnsafe();
+          const run = yield* FiberSet.makeRuntime();
+          const detach = transport.attach({
+            frame: (clientId, frame) => {
+              const messages = decodeRpcFrame(frame);
+              if (!messages) return false;
+              clients.add(clientId);
+              transport.inspect?.(clientId, messages);
+              failures.request(clientId, messages);
+              run(
+                Effect.forEach(messages, (message) => writeRequest(clientId, message), {
+                  discard: true,
+                }),
+              );
+              return true;
+            },
+            disconnect: (clientId) => {
+              clients.delete(clientId);
+              failures.disconnect(clientId);
+              run(Queue.offer(disconnects, clientId));
+            },
+          });
+          yield* Effect.addFinalizer(() => Effect.sync(detach));
+          return {
+            disconnects,
+            send: (clientId, response) =>
+              Effect.sync(() => {
+                failures.response(clientId, response);
+                const frame = parser.encode(publicRpcResponse(response));
+                if (typeof frame === "string") transport.send(clientId, frame);
+              }),
+            end: (clientId) => Effect.sync(() => transport.end?.(clientId)),
+            clientIds: Effect.sync(() => new Set(clients)),
+            initialMessage: Effect.succeedNone,
+            supportsAck: true,
+            supportsTransferables: false,
+            supportsSpanPropagation: false,
+            supportsNotifications: true,
+            codecFor: serialization.codecFor,
+          };
+        }),
+      );
+    }),
+  );

@@ -14,7 +14,7 @@ import {
   refreshRemoteAccessAtom,
   remoteAccessAtom,
   remoteAccessFeedAtom,
-  revokeRemoteSessionAtom,
+  disconnectRemoteSessionAtom,
   setRemoteAccessAtom,
   setRemoteAllowlistAtom,
   setRemoteServiceAtom,
@@ -39,6 +39,43 @@ const HELP_URL = "https://openmail-docs.vercel.app/docs/remote-access";
 function useOpenLink() {
   const run = useRunMail();
   return (url: string) => run(openMailLink(url, false));
+}
+
+/** A one-line field for logins and service names: no autocorrect or capitals. */
+function LoginField({
+  label,
+  placeholder,
+  value,
+  onChange,
+  className = "",
+}: {
+  label: string;
+  placeholder: string;
+  value: string;
+  onChange: (value: string) => void;
+  className?: string;
+}) {
+  return (
+    <input
+      aria-label={label}
+      placeholder={placeholder}
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      autoCapitalize="off"
+      autoCorrect="off"
+      spellCheck={false}
+      className={`${formInput} min-w-0 flex-1 ${className}`}
+    />
+  );
+}
+
+function FieldError({ error, className = "" }: { error: string | null; className?: string }) {
+  if (!error) return null;
+  return (
+    <p role="alert" className={`text-footnote text-red-600 dark:text-red-400 ${className}`}>
+      {error}
+    </p>
+  );
 }
 
 /** A QR code of the URL, drawn as one SVG path from the module grid. */
@@ -156,7 +193,8 @@ function Address({ url }: { url: string }) {
         <p className={settingsHint}>
           <Trans>
             The other device needs the Tailscale app, signed in to the same tailnet. This Mac must
-            stay on with OpenMail open.
+            stay on with OpenMail open. Quitting OpenMail takes the address offline until it opens
+            again.
           </Trans>
         </p>
       </div>
@@ -180,8 +218,9 @@ function Allowlist({ view }: { view: RemoteAccessView }) {
       title={<Trans>Who can sign in</Trans>}
       footer={
         <Trans>
-          Tailscale tells OpenMail who is visiting. Only these tailnet logins get in. The list
-          starts with this Mac's own login.
+          Tailscale tells OpenMail who is visiting. Only these tailnet logins get in. Removing a
+          login disconnects its browsers and keeps them out. The list starts with this Mac's own
+          login.
         </Trans>
       }
     >
@@ -210,24 +249,16 @@ function Allowlist({ view }: { view: RemoteAccessView }) {
           add();
         }}
       >
-        <input
-          aria-label={t`Tailnet login`}
+        <LoginField
+          label={t`Tailnet login`}
           placeholder="name@github"
           value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          autoCapitalize="off"
-          autoCorrect="off"
-          spellCheck={false}
-          className={`${formInput} min-w-0 flex-1`}
+          onChange={setDraft}
         />
         <button type="submit" className={buttonSecondary} disabled={!draft.trim()}>
           <Trans>Add</Trans>
         </button>
-        {error && (
-          <p role="alert" className="basis-full text-footnote text-red-600 dark:text-red-400">
-            {error}
-          </p>
-        )}
+        <FieldError error={error} className="basis-full" />
       </form>
     </SettingsGroup>
   );
@@ -235,18 +266,19 @@ function Allowlist({ view }: { view: RemoteAccessView }) {
 
 function Sessions({ view }: { view: RemoteAccessView }) {
   const { t, i18n } = useLingui();
-  const revoke = useAtomSet(revokeRemoteSessionAtom);
+  const disconnect = useAtomSet(disconnectRemoteSessionAtom);
   return (
     <SettingsGroup
-      title={<Trans>Signed-in browsers</Trans>}
+      title={<Trans>Browsers</Trans>}
       footer={
         <Trans>
-          Sign out ends a browser's session. To keep someone out, remove their login above.
+          Disconnect closes a browser's connection. Reloading the page connects it again while its
+          login is on the list above. To keep someone out, remove their login.
         </Trans>
       }
     >
       {view.sessions.length === 0 ? (
-        <SettingsRow label={<Trans>No browser is signed in.</Trans>} />
+        <SettingsRow label={<Trans>No browser has opened OpenMail.</Trans>} />
       ) : (
         view.sessions.map((session) => {
           const since = threadDate(session.lastSeenAt, i18n);
@@ -265,10 +297,10 @@ function Sessions({ view }: { view: RemoteAccessView }) {
               <button
                 type="button"
                 className={buttonSecondary}
-                aria-label={t`Sign out ${session.login}`}
-                onClick={() => revoke({ payload: { id: session.id } })}
+                aria-label={t`Disconnect ${session.login}`}
+                onClick={() => disconnect({ payload: { id: session.id } })}
               >
-                <Trans>Sign out</Trans>
+                <Trans>Disconnect</Trans>
               </button>
             </SettingsRow>
           );
@@ -301,15 +333,12 @@ function ServiceName({ view }: { view: RemoteAccessView }) {
             save({ payload: { service: value.trim() } });
           }}
         >
-          <input
-            aria-label={t`Tailscale Service name`}
+          <LoginField
+            label={t`Tailscale Service name`}
             placeholder="svc:openmail"
             value={value}
-            onChange={(event) => setValue(event.target.value)}
-            autoCapitalize="off"
-            autoCorrect="off"
-            spellCheck={false}
-            className={`${formInput} min-w-0 flex-1 font-mono`}
+            onChange={setValue}
+            className="font-mono"
           />
           <button type="submit" className={buttonSecondary}>
             <Trans>Save</Trans>
@@ -318,11 +347,7 @@ function ServiceName({ view }: { view: RemoteAccessView }) {
             <Trans>Open admin console</Trans>
           </button>
         </form>
-        {error && (
-          <p role="alert" className="text-footnote text-red-600 dark:text-red-400">
-            {error}
-          </p>
-        )}
+        <FieldError error={error} />
       </div>
     </Disclosure>
   );

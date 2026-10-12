@@ -930,6 +930,10 @@ msgstr "本文"
 msgid "Bold"
 msgstr "太字"
 
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Browsers"
+msgstr "ブラウザ"
+
 #: src/renderer/src/features/feedback/Feedback.tsx
 msgid "Bug report"
 msgstr "バグレポート"
@@ -2038,6 +2042,19 @@ msgstr "下書きを破棄"
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Discard saved rule?"
 msgstr "保存されたルールを破棄しますか?"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Disconnect"
+msgstr "切断"
+
+#. placeholder {0}: session.login
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Disconnect {0}"
+msgstr "{0} を切断"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Disconnect closes a browser's connection. Reloading the page connects it again while its login is on the list above. To keep someone out, remove their login."
+msgstr "切断するとブラウザの接続が閉じます。ページを再読み込みすると、ログインが上のリストにある限り再接続します。誰かを締め出すには、そのログインを削除してください。"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgid "Disk space is low. Compact now to enable automatic disk space reclamation."
@@ -4051,8 +4068,8 @@ msgid "No app can open this file"
 msgstr "このファイルを開けるアプリがありません"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "No browser is signed in."
-msgstr "サインイン中のブラウザはありません。"
+msgid "No browser has opened OpenMail."
+msgstr "OpenMail を開いたブラウザはまだありません。"
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "No copy"
@@ -5817,19 +5834,6 @@ msgstr "ブラウザで Google アカウントにサインインします。open
 msgid "Sign in with your personal Microsoft account (outlook.com or Hotmail) in the browser. openmail keeps the sign-in token in this computer's keychain."
 msgstr "ブラウザで個人用 Microsoft アカウント（outlook.com または Hotmail）にサインインします。openmail はサインイン トークンをこのコンピュータのキーチェーンに保存します。"
 
-#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "Sign out"
-msgstr "サインアウト"
-
-#. placeholder {0}: session.login
-#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "Sign out {0}"
-msgstr "{0} をサインアウト"
-
-#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "Sign out ends a browser's session. To keep someone out, remove their login above."
-msgstr "サインアウトするとブラウザのセッションが終了します。誰かを締め出すには、上でそのログインを削除してください。"
-
 #: src/renderer/src/app/App.tsx
 msgid "Sign-in failed: {reason}"
 msgstr "サインインに失敗しました: {reason}"
@@ -5865,10 +5869,6 @@ msgstr "署名付きビルドは、GitHub アクセス トークンを使用し�
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Signed in as {login}. This Mac is {device}."
 msgstr "{login} としてサインイン中。この Mac は {device} です。"
-
-#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "Signed-in browsers"
-msgstr "サインイン中のブラウザ"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Simplify your search query."
@@ -6189,8 +6189,8 @@ msgid "Tailscale Service name"
 msgstr "Tailscale Service 名"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "Tailscale tells OpenMail who is visiting. Only these tailnet logins get in. The list starts with this Mac's own login."
-msgstr "Tailscale が訪問者を OpenMail に伝えます。ここにある tailnet ログインだけが入れます。リストはこの Mac 自身のログインから始まります。"
+msgid "Tailscale tells OpenMail who is visiting. Only these tailnet logins get in. Removing a login disconnects its browsers and keeps them out. The list starts with this Mac's own login."
+msgstr "Tailscale が訪問者を OpenMail に伝えます。ここにある tailnet ログインだけが入れます。ログインを削除すると、そのブラウザは切断され、入れなくなります。リストはこの Mac 自身のログインから始まります。"
 
 #: src/renderer/src/features/compose/components/ComposerAi.tsx
 msgid "Target language"
@@ -6316,8 +6316,8 @@ msgid "The organizer differs from the message sender. Check the response recipie
 msgstr "主催者はメッセージ送信者とは異なります。返信する前に返信先を確認してください。"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "The other device needs the Tailscale app, signed in to the same tailnet. This Mac must stay on with OpenMail open."
-msgstr "もう一方のデバイスには、同じ tailnet にサインインした Tailscale アプリが必要です。この Mac は OpenMail を開いたまま起動しておく必要があります。"
+msgid "The other device needs the Tailscale app, signed in to the same tailnet. This Mac must stay on with OpenMail open. Quitting OpenMail takes the address offline until it opens again."
+msgstr "もう一方のデバイスには、同じ tailnet にサインインした Tailscale アプリが必要です。この Mac は OpenMail を開いたまま起動しておく必要があります。OpenMail を終了すると、次に開くまでアドレスはオフラインになります。"
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "The preview checked at most 201 server messages. Matching messages outside this sample may be missing."
@@ -6981,8 +6981,8 @@ msgid "Your draft was kept. Check Sent before sending again."
 msgstr "下書きは保存されています。再送信する前に送信済みを確認してください。"
 
 #: src/renderer/src/features/remote/ConnectionNotice.tsx
-msgid "Your Mac ended this session."
-msgstr "Mac がこのセッションを終了しました。"
+msgid "Your Mac disconnected this browser. Reload to connect again while your login is still allowed."
+msgstr "Mac がこのブラウザを切断しました。ログインがまだ許可されていれば、再読み込みで再接続できます。"
 
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 msgid "Your overlapping events"

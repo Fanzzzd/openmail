@@ -786,7 +786,7 @@ export class MailRpcs extends RpcGroup.make(
     payload: { service: Schema.String.check(Schema.isMaxLength(80)) },
     error,
   }),
-  Rpc.make("RevokeRemoteSession", {
+  Rpc.make("DisconnectRemoteSession", {
     payload: { id: Schema.String.check(Schema.isMaxLength(128)) },
   }),
 

@@ -32,15 +32,14 @@ const EXPECTED_SHARED = [
   "AgentWriteMode", "Prefs", "ImageSenders", "SetImageSender", "SetAccountSettings",
   "MoveAccount", "Vacation", "SetVacation", "SyncSendAs", "SaveNamedSignature",
   "DeleteNamedSignature", "SetSignatureDefault", "SaveTemplate", "DeleteTemplate",
+  "InspectAttachment", "QueueUndoSend", "SuggestContacts", "ContactAlternatives", "ContactGroups", "ContactPhoto", "KnownSenders", "SetClassificationOverride", "Unsubscribe", "ImportCalendarAttachment",
 ]; // prettier-ignore
 const EXPECTED_REMOTE = [
-  "InspectAttachment", "QueueUndoSend", "SuggestContacts", "ContactAlternatives",
-  "ContactGroups", "ContactPhoto", "KnownSenders", "SetClassificationOverride", "Unsubscribe",
-  "ImportCalendarAttachment", "SetPrefs", "DesktopEvents", "WindowUiEvents",
-  "SetNativeMenuState", "SetDesktopLabels", "SetActiveSpace", "SetWindowRoute", "SetSendState",
-  "NetworkChanged", "NotificationActionCapabilities", "AttachmentCapabilities",
-  "NativeComposeCapabilities", "Downloads", "UpdateState", "CrashReportPending",
-  "ClaimInlineDraft", "AppleContactsStatus", "SpellcheckLanguages",
+  "SetPrefs", "DesktopEvents", "WindowUiEvents", "SetNativeMenuState", "SetDesktopLabels",
+  "SetActiveSpace", "SetWindowRoute", "SetSendState", "NetworkChanged",
+  "NotificationActionCapabilities", "AttachmentCapabilities", "NativeComposeCapabilities",
+  "Downloads", "UpdateState", "CrashReportPending", "ClaimInlineDraft", "AppleContactsStatus",
+  "SpellcheckLanguages",
 ]; // prettier-ignore
 
 /** Representative calls that touch the Mac's disk, OS, windows, clipboard or keys. */
@@ -59,7 +58,7 @@ const MUST_DENY = [
   "OpenSettings", "SwitchWindow", "ComposeNew", "ComposeMessage", "TextMenuCommand",
   "AnswerPrompt", "Diagnostics", "DismissCrashReport", "ClearCache", "CompactCache",
   "SetCacheWindow", "SetModelsEnabled", "SetIndexingPaused", "RemoteAccess", "SetRemoteAccess",
-  "SetRemoteAllowlist", "SetRemoteService", "RevokeRemoteSession", "RefreshRemoteAccess",
+  "SetRemoteAllowlist", "SetRemoteService", "DisconnectRemoteSession", "RefreshRemoteAccess",
 ]; // prettier-ignore
 
 describe("remote RPC allowlist", () => {

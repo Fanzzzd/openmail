@@ -1,11 +1,53 @@
 import { Effect } from "effect";
 import type { Mailbox } from "@openmail/core/portable";
+import { inspectAttachment, InvalidInput } from "@openmail/core/schema";
 import type { MailRpcs } from "./rpc";
 
 const USER = { kind: "user", surface: "app" } as const;
 
-/** Shared by Electron and the in-process flow harness. */
-export function mailboxHandlers(m: Mailbox["Service"]) {
+type MailboxService = Mailbox["Service"];
+
+/** Where contact suggestions, groups and photos come from. */
+export interface ContactsBackend {
+  suggest(
+    query: string,
+    options: { exclude?: string; accountIds?: readonly string[] },
+  ): ReturnType<MailboxService["suggestContacts"]>;
+  alternatives(address: string): ReturnType<MailboxService["contactAlternatives"]>;
+  groups(
+    query: string,
+    accountIds?: readonly string[],
+  ): ReturnType<MailboxService["contactGroups"]>;
+  photo(accountId: string, address: string): ReturnType<MailboxService["contactPhoto"]>;
+  knownSenders(
+    accountId: string,
+    addresses: readonly string[],
+  ): ReturnType<MailboxService["knownSenders"]>;
+}
+
+/** Contacts from the mail accounts alone, without Apple Contacts. */
+export const accountContacts = (m: MailboxService): ContactsBackend => ({
+  suggest: (query, options) => m.suggestContacts(query, options),
+  alternatives: (address) => m.contactAlternatives(address),
+  groups: (query, accountIds) => m.contactGroups(query, accountIds),
+  photo: (accountId, address) =>
+    Effect.flatMap(m.prefs, (prefs) =>
+      prefs.contactPhotos ? m.contactPhoto(accountId, address) : Effect.succeed(null),
+    ),
+  knownSenders: (accountId, addresses) => m.knownSenders(accountId, addresses),
+});
+
+export interface MailboxHandlerOptions {
+  /** Defaults to the mail accounts' own contacts. */
+  contacts?: ContactsBackend;
+  /** Prefixes the RPC client id in undo-send owners, so clients don't share waiting sends. */
+  ownerPrefix?: string;
+}
+
+/** Shared by Electron, the remote server and the in-process flow harness. */
+export function mailboxHandlers(m: MailboxService, options: MailboxHandlerOptions = {}) {
+  const contacts = options.contacts ?? accountContacts(m);
+  const ownerPrefix = options.ownerPrefix ?? "";
   return {
     ClientSetup: () => m.clientSetup,
     SetGoogleClient: ({ clientId, clientSecret }) =>
@@ -39,7 +81,15 @@ export function mailboxHandlers(m: Mailbox["Service"]) {
     ThreadCount: ({ query }) => m.threadCount(query),
     Thread: ({ id }) => m.readerThread(id),
     RawMessage: ({ id }) => m.rawMessage(id),
-    KnownSenders: ({ accountId, addresses }) => m.knownSenders(accountId, addresses),
+    KnownSenders: ({ accountId, addresses }) => contacts.knownSenders(accountId, addresses),
+    SuggestContacts: ({ query, exclude, accountIds }) =>
+      contacts.suggest(query, {
+        ...(exclude === undefined ? {} : { exclude }),
+        ...(accountIds === undefined ? {} : { accountIds }),
+      }),
+    ContactAlternatives: ({ address }) => contacts.alternatives(address),
+    ContactGroups: ({ query, accountIds }) => contacts.groups(query, accountIds),
+    ContactPhoto: ({ accountId, address }) => contacts.photo(accountId, address),
     IndexingProgress: () => m.indexingProgress,
     SetModelsEnabled: ({ enabled }) => m.setModelsEnabled(enabled),
     SetIndexingPaused: ({ paused }) => m.setIndexingPaused(paused),
@@ -48,6 +98,20 @@ export function mailboxHandlers(m: Mailbox["Service"]) {
     ImageSenders: () => m.imageSenders,
     SetImageSender: ({ entry, allowed }) => m.setImageSender(entry, allowed),
     ReaderAttachments: ({ messageId }) => m.readerAttachments(messageId),
+    InspectAttachment: ({ messageId, path }) =>
+      m.attachmentPart(messageId, path).pipe(
+        Effect.flatMap((content) => {
+          const inspection = inspectAttachment(content);
+          return inspection
+            ? Effect.succeed(inspection)
+            : Effect.fail(new InvalidInput({ message: "This attachment cannot be imported" }));
+        }),
+      ),
+    ImportCalendarAttachment: ({ messageId, path, key }) =>
+      m.importCalendarAttachment(messageId, path, key, USER),
+    SetClassificationOverride: ({ messageId, classifyAs }) =>
+      m.setClassificationOverride(messageId, classifyAs),
+    Unsubscribe: ({ messageId }) => m.unsubscribe(messageId, USER),
     EmbeddedMessage: ({ messageId, path }) => m.embeddedMessage(messageId, path),
     MarkUnreadFrom: ({ id }) => m.markUnreadFrom(id),
     Labels: ({ accountIds }) => m.labels(accountIds),
@@ -120,6 +184,12 @@ export function mailboxHandlers(m: Mailbox["Service"]) {
         USER,
       ),
 
+    QueueUndoSend: ({ draft, due, archive, confirmResend }, { client }) =>
+      m.queueUndoSend(draft, due, {
+        archive,
+        confirmResend,
+        owner: `${ownerPrefix}${client.id}`,
+      }),
     AwaitUndoSend: ({ id }) => m.awaitUndoSend(id),
     CancelWaitingSend: ({ id }) => m.cancelWaitingSend(id),
     ComposeAttachments: ({ id }) => m.composeAttachments(id),

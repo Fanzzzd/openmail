@@ -5,7 +5,13 @@ import path from "node:path";
 import { COMPOSE_ATTACHMENT_LIMIT } from "@openmail/core/schema";
 import { WebSocket } from "ws";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { checkRequest, createSessions, decodeName, type GateConfig } from "./remote-auth";
+import {
+  checkRequest,
+  createSessions,
+  decodeName,
+  MAX_SESSIONS,
+  type GateConfig,
+} from "./remote-auth";
 import { contentDisposition, parsePartPath, startRemoteServer, WEB_CSP } from "./remote-server";
 
 const HOST = "mac.tail1234.ts.net";
@@ -67,7 +73,7 @@ describe("sessions", () => {
   it("binds a signed, expiring cookie to one login", () => {
     let now = 1_000;
     const sessions = createSessions(() => now);
-    const { cookie } = sessions.issue("owner@github", "Owner");
+    const cookie = sessions.issue("owner@github", "Owner");
     expect(cookie).toMatch(
       /^__Host-openmail-session=[\w-]+\.[\w-]+; Path=\/; Max-Age=43200; HttpOnly; Secure; SameSite=Strict$/,
     );
@@ -78,17 +84,45 @@ describe("sessions", () => {
     now += 12 * 60 * 60 * 1000;
     expect(sessions.find(header, "owner@github")).toBeNull();
   });
-  it("revokes sessions and closes their sockets", () => {
-    const sessions = createSessions();
-    const { id, cookie } = sessions.issue("owner@github", "Owner");
+  const connected = (sessions: ReturnType<typeof createSessions>, cookie: string) => {
     const session = sessions.find(cookie.split(";")[0], "owner@github");
     if (!session) throw new Error("no session");
     const closed: number[] = [];
     sessions.attach(session, { close: (code) => closed.push(code ?? 0) });
+    return { id: session.id, closed };
+  };
+  it("disconnects a session and closes its sockets", () => {
+    const sessions = createSessions();
+    const { id, closed } = connected(sessions, sessions.issue("owner@github", "Owner"));
     expect(sessions.list()).toMatchObject([{ id, connected: true }]);
-    sessions.revoke(id);
+    sessions.disconnect(id);
     expect(closed).toEqual([4401]);
     expect(sessions.list()).toEqual([]);
+  });
+  it("sweeps expired sessions and closes their sockets", () => {
+    let now = 1_000;
+    const sessions = createSessions(() => now);
+    const { closed } = connected(sessions, sessions.issue("owner@github", "Owner"));
+    sessions.sweep();
+    expect(closed).toEqual([]);
+    now += 12 * 60 * 60 * 1000;
+    sessions.sweep();
+    expect(closed).toEqual([4401]);
+    expect(sessions.list()).toEqual([]);
+  });
+  it("keeps at most MAX_SESSIONS, ending the oldest first", () => {
+    let now = 1_000;
+    const sessions = createSessions(() => now);
+    const { id: first, closed } = connected(sessions, sessions.issue("owner@github", "Owner"));
+    for (let i = 1; i < MAX_SESSIONS; i++) {
+      now += 1;
+      sessions.issue("owner@github", "Owner");
+    }
+    expect(sessions.list()).toHaveLength(MAX_SESSIONS);
+    sessions.issue("owner@github", "Owner");
+    expect(sessions.list()).toHaveLength(MAX_SESSIONS);
+    expect(sessions.list().some((session) => session.id === first)).toBe(false);
+    expect(closed).toEqual([4401]);
   });
   it("ends sessions whose login leaves the allowlist", () => {
     const sessions = createSessions();
@@ -189,6 +223,18 @@ describe("remote server", () => {
     const asset = await call("/assets/app.js", tailnet());
     expect(asset.headers["content-type"]).toMatch(/javascript/);
     expect(asset.headers["set-cookie"]).toBeUndefined();
+  });
+
+  it("starts sessions only for the app document", async () => {
+    const before = sessions.list().length;
+    for (const pathname of ["/assets/app.js", "/assets/missing.js", "/favicon.ico", "/x.png"])
+      expect((await call(pathname, tailnet())).headers["set-cookie"], pathname).toBeUndefined();
+    expect(sessions.list()).toHaveLength(before);
+    const cookie = await signIn();
+    expect(cookie).toMatch(/^__Host-openmail-session=/);
+    // A page load with a live session keeps it.
+    const again = await call("/mail/all/inbox", { ...tailnet(), cookie });
+    expect(again.headers["set-cookie"]).toBeUndefined();
   });
 
   it("applies the auth matrix to real requests", async () => {
@@ -292,12 +338,69 @@ describe("remote server", () => {
       },
     ]);
     const tooLarge = await call(
-      "/api/upload",
+      "/api/upload?account=gmail-account",
       { ...headers, "content-type": big.type },
       "POST",
       big.body,
     );
     expect(tooLarge.status).toBe(413);
+  });
+
+  it("requires a known account, so the blocked-type check always runs", async () => {
+    const cookie = await signIn();
+    const upload = multipart([{ name: "setup.exe", type: "text/plain", data: Buffer.from("MZ") }]);
+    const headers = { ...tailnet(), cookie, origin: ORIGIN, "content-type": upload.type };
+    expect((await call("/api/upload", headers, "POST", upload.body)).status).toBe(400);
+    expect((await call("/api/upload?account=nope", headers, "POST", upload.body)).status).toBe(400);
+  });
+
+  it("refuses uploads without a length and more than two at once", async () => {
+    const cookie = await signIn();
+    const upload = multipart([{ name: "a.txt", type: "text/plain", data: Buffer.from("x") }]);
+    const headers = { ...tailnet(), cookie, origin: ORIGIN, "content-type": upload.type };
+    const chunked = await new Promise<number>((resolve, reject) => {
+      const req = httpRequest(
+        {
+          host: "127.0.0.1",
+          port: server.port,
+          path: "/api/upload?account=gmail-account",
+          method: "POST",
+          headers: { ...headers, "transfer-encoding": "chunked" },
+        },
+        (res) => {
+          res.resume();
+          resolve(res.statusCode ?? 0);
+        },
+      );
+      req.on("error", reject);
+      req.end(upload.body);
+    });
+    expect(chunked).toBe(411);
+    // Two uploads that never finish their bodies hold both slots.
+    const held = [0, 1].map(() => {
+      const req = httpRequest({
+        host: "127.0.0.1",
+        port: server.port,
+        path: "/api/upload?account=gmail-account",
+        method: "POST",
+        headers: { ...headers, "content-length": String(upload.body.length) },
+      });
+      req.on("error", () => null);
+      req.write(upload.body.subarray(0, 10));
+      return req;
+    });
+    await new Promise((resolve) => {
+      setTimeout(resolve, 100);
+    });
+    const busy = await call("/api/upload?account=gmail-account", headers, "POST", upload.body);
+    expect(busy.status).toBe(503);
+    for (const req of held) req.destroy();
+    await new Promise((resolve) => {
+      setTimeout(resolve, 100);
+    });
+    expect(
+      (await call("/api/upload?account=gmail-account", headers, "POST", upload.body)).status,
+    ).toBe(200);
   });
 
   it("refuses uploads with another origin, no session or another content type", async () => {
@@ -357,7 +460,7 @@ describe("remote server", () => {
     const closed = new Promise<number>((resolve) => {
       accepted.socket?.once("close", resolve);
     });
-    for (const session of sessions.list()) if (session.connected) sessions.revoke(session.id);
+    for (const session of sessions.list()) if (session.connected) sessions.disconnect(session.id);
     expect(await closed).toBe(4401);
   });
 });

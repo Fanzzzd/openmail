@@ -930,6 +930,10 @@ msgstr "Текст сообщения"
 msgid "Bold"
 msgstr "Полужирный"
 
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Browsers"
+msgstr "Браузеры"
+
 #: src/renderer/src/features/feedback/Feedback.tsx
 msgid "Bug report"
 msgstr "Отчет об ошибке"
@@ -2038,6 +2042,19 @@ msgstr "Удалить черновик"
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Discard saved rule?"
 msgstr "Удалить сохраненное правило?"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Disconnect"
+msgstr "Отключить"
+
+#. placeholder {0}: session.login
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Disconnect {0}"
+msgstr "Отключить {0}"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Disconnect closes a browser's connection. Reloading the page connects it again while its login is on the list above. To keep someone out, remove their login."
+msgstr "Отключение закрывает соединение браузера. После перезагрузки страницы он снова подключится, пока его логин есть в списке выше. Чтобы не пускать кого-то, удалите его логин."
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgid "Disk space is low. Compact now to enable automatic disk space reclamation."
@@ -4051,8 +4068,8 @@ msgid "No app can open this file"
 msgstr "Нет приложения, которое может открыть этот файл"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "No browser is signed in."
-msgstr "Ни один браузер не вошёл."
+msgid "No browser has opened OpenMail."
+msgstr "Ни один браузер ещё не открывал OpenMail."
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "No copy"
@@ -5817,19 +5834,6 @@ msgstr "Войдите в браузере в свою учётную запис
 msgid "Sign in with your personal Microsoft account (outlook.com or Hotmail) in the browser. openmail keeps the sign-in token in this computer's keychain."
 msgstr "Войдите в браузере в свою личную учётную запись Microsoft (outlook.com или Hotmail). openmail хранит токен входа в связке ключей этого компьютера."
 
-#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "Sign out"
-msgstr "Выйти"
-
-#. placeholder {0}: session.login
-#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "Sign out {0}"
-msgstr "Выйти: {0}"
-
-#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "Sign out ends a browser's session. To keep someone out, remove their login above."
-msgstr "Выход завершает сеанс браузера. Чтобы не пускать кого-то, удалите его логин выше."
-
 #: src/renderer/src/app/App.tsx
 msgid "Sign-in failed: {reason}"
 msgstr "Не удалось войти: {reason}."
@@ -5865,10 +5869,6 @@ msgstr "Подписанные сборки используют токен до
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Signed in as {login}. This Mac is {device}."
 msgstr "Вы вошли как {login}. Этот Mac — {device}."
-
-#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "Signed-in browsers"
-msgstr "Браузеры со входом"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Simplify your search query."
@@ -6189,8 +6189,8 @@ msgid "Tailscale Service name"
 msgstr "Имя Tailscale Service"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "Tailscale tells OpenMail who is visiting. Only these tailnet logins get in. The list starts with this Mac's own login."
-msgstr "Tailscale сообщает OpenMail, кто заходит. Войти могут только эти логины tailnet. Список начинается с логина этого Mac."
+msgid "Tailscale tells OpenMail who is visiting. Only these tailnet logins get in. Removing a login disconnects its browsers and keeps them out. The list starts with this Mac's own login."
+msgstr "Tailscale сообщает OpenMail, кто заходит. Войти могут только эти логины tailnet. Удаление логина отключает его браузеры и больше не пускает их. Список начинается с логина этого Mac."
 
 #: src/renderer/src/features/compose/components/ComposerAi.tsx
 msgid "Target language"
@@ -6316,8 +6316,8 @@ msgid "The organizer differs from the message sender. Check the response recipie
 msgstr "Организатор отличается от отправителя сообщения. Прежде чем ответить, проверьте получателя ответа."
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "The other device needs the Tailscale app, signed in to the same tailnet. This Mac must stay on with OpenMail open."
-msgstr "На другом устройстве нужно приложение Tailscale со входом в тот же tailnet. Этот Mac должен оставаться включённым с открытым OpenMail."
+msgid "The other device needs the Tailscale app, signed in to the same tailnet. This Mac must stay on with OpenMail open. Quitting OpenMail takes the address offline until it opens again."
+msgstr "На другом устройстве нужно приложение Tailscale со входом в тот же tailnet. Этот Mac должен оставаться включённым с открытым OpenMail. Если закрыть OpenMail, адрес будет недоступен, пока приложение не откроется снова."
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "The preview checked at most 201 server messages. Matching messages outside this sample may be missing."
@@ -6981,8 +6981,8 @@ msgid "Your draft was kept. Check Sent before sending again."
 msgstr "Черновик сохранён. Проверьте папку «Отправленные», прежде чем отправлять снова."
 
 #: src/renderer/src/features/remote/ConnectionNotice.tsx
-msgid "Your Mac ended this session."
-msgstr "Ваш Mac завершил этот сеанс."
+msgid "Your Mac disconnected this browser. Reload to connect again while your login is still allowed."
+msgstr "Ваш Mac отключил этот браузер. Перезагрузите страницу, чтобы подключиться снова, пока ваш логин разрешён."
 
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 msgid "Your overlapping events"

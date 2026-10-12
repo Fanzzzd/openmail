@@ -11,7 +11,7 @@ type MailTag = MailRpc["_tag"];
  *   windows or clipboard (a no-op, an empty stream, or core without macOS data).
  * Anything not listed is denied. New RPCs therefore start denied.
  */
-export type RemoteDisposition = "shared" | "remote";
+type RemoteDisposition = "shared" | "remote";
 
 export const REMOTE_RPC_POLICY = {
   // Reading and searching
@@ -24,7 +24,7 @@ export const REMOTE_RPC_POLICY = {
   InlineImages: "shared",
   ReaderAttachments: "shared",
   EmbeddedMessage: "shared",
-  InspectAttachment: "remote",
+  InspectAttachment: "shared",
   Labels: "shared",
   UnreadCounts: "shared",
   UnreadByLabel: "shared",
@@ -53,17 +53,17 @@ export const REMOTE_RPC_POLICY = {
   PrepareRejectedResend: "shared",
   AcknowledgeFailedOps: "shared",
   Send: "shared",
-  QueueUndoSend: "remote",
+  QueueUndoSend: "shared",
   AwaitUndoSend: "shared",
   CancelWaitingSend: "shared",
   ImageFromFile: "shared",
   ImageFromUrl: "shared",
   SuggestSender: "shared",
-  SuggestContacts: "remote",
-  ContactAlternatives: "remote",
-  ContactGroups: "remote",
-  ContactPhoto: "remote",
-  KnownSenders: "remote",
+  SuggestContacts: "shared",
+  ContactAlternatives: "shared",
+  ContactGroups: "shared",
+  ContactPhoto: "shared",
+  KnownSenders: "shared",
   HiddenContacts: "shared",
   SetContactHidden: "shared",
   SendAs: "shared",
@@ -88,11 +88,11 @@ export const REMOTE_RPC_POLICY = {
   SetLabelPreference: "shared",
   Organization: "shared",
   SetOrganization: "shared",
-  SetClassificationOverride: "remote",
-  Unsubscribe: "remote",
+  SetClassificationOverride: "shared",
+  Unsubscribe: "shared",
   RespondInvite: "shared",
   CreateCalendarEvent: "shared",
-  ImportCalendarAttachment: "remote",
+  ImportCalendarAttachment: "shared",
   Filters: "shared",
   PreviewFilter: "shared",
   PrepareFilter: "shared",
@@ -154,7 +154,7 @@ export const REMOTE_RPC_POLICY = {
 } as const satisfies Partial<Record<MailTag, RemoteDisposition>>;
 
 type RemoteTag = keyof typeof REMOTE_RPC_POLICY;
-export type RemoteRpc = Extract<MailRpc, { readonly _tag: RemoteTag }>;
+type RemoteRpc = Extract<MailRpc, { readonly _tag: RemoteTag }>;
 
 const POLICY = new Map<string, RemoteDisposition>(Object.entries(REMOTE_RPC_POLICY));
 

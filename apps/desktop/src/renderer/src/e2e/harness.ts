@@ -361,7 +361,7 @@ export async function flow(
       SetRemoteAccess: unsupported,
       SetRemoteAllowlist: unsupported,
       SetRemoteService: unsupported,
-      RevokeRemoteSession: unsupported,
+      DisconnectRemoteSession: unsupported,
       DesktopEvents: () =>
         Stream.fromPubSub(desktop).pipe(Stream.onStart(Deferred.succeed(desktopReady, undefined))),
     }),

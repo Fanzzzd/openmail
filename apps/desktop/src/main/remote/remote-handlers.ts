@@ -1,18 +1,16 @@
 import type { Mailbox } from "@openmail/core";
-import { InvalidInput, inspectAttachment, type PrefsPatch } from "@openmail/core/schema";
+import { InvalidInput, type PrefsPatch } from "@openmail/core/schema";
 import { Effect, Stream } from "effect";
 import { mailboxHandlers } from "../../shared/mailbox-handlers";
 import { rendererPrefs } from "../../shared/renderer-prefs";
 import { RemoteRpcs } from "./remote-rpcs";
-
-const USER = { kind: "user", surface: "app" } as const;
 
 /**
  * Preferences a remote browser may change: how mail reads, lists and composes.
  * Settings tied to the Mac (notifications, caches, updates, spellcheck, Apple
  * Contacts, the attachment folder, the menu bar) stay desktop only.
  */
-export const REMOTE_PREF_KEYS = new Set<keyof PrefsPatch>([
+const REMOTE_PREF_KEYS = new Set<keyof PrefsPatch>([
   "remoteImages",
   "cleanLinks",
   "contactPhotos",
@@ -66,36 +64,8 @@ export const remotePrefs = (patch: PrefsPatch): Effect.Effect<PrefsPatch, Invali
  */
 export const remoteHandlers = (m: Mailbox["Service"]) =>
   RemoteRpcs.of({
-    ...mailboxHandlers(m),
-    InspectAttachment: ({ messageId, path }) =>
-      m.attachmentPart(messageId, path).pipe(
-        Effect.flatMap((content) => {
-          const inspection = inspectAttachment(content);
-          return inspection
-            ? Effect.succeed(inspection)
-            : Effect.fail(new InvalidInput({ message: "This attachment cannot be imported" }));
-        }),
-      ),
-    ImportCalendarAttachment: ({ messageId, path, key }) =>
-      m.importCalendarAttachment(messageId, path, key, USER),
-    SetClassificationOverride: ({ messageId, classifyAs }) =>
-      m.setClassificationOverride(messageId, classifyAs),
-    Unsubscribe: ({ messageId }) => m.unsubscribe(messageId, USER),
     // Each browser connection owns its waiting sends, apart from desktop windows.
-    QueueUndoSend: ({ draft, due, archive, confirmResend }, { client }) =>
-      m.queueUndoSend(draft, due, { archive, confirmResend, owner: `remote:${client.id}` }),
-    SuggestContacts: ({ query, exclude, accountIds }) =>
-      m.suggestContacts(query, {
-        ...(exclude === undefined ? {} : { exclude }),
-        ...(accountIds === undefined ? {} : { accountIds }),
-      }),
-    ContactAlternatives: ({ address }) => m.contactAlternatives(address),
-    ContactGroups: ({ query, accountIds }) => m.contactGroups(query, accountIds),
-    ContactPhoto: ({ accountId, address }) =>
-      Effect.flatMap(m.prefs, (prefs) =>
-        prefs.contactPhotos ? m.contactPhoto(accountId, address) : Effect.succeed(null),
-      ),
-    KnownSenders: ({ accountId, addresses }) => m.knownSenders(accountId, addresses),
+    ...mailboxHandlers(m, { ownerPrefix: "remote:" }),
     SetPrefs: ({ patch }) =>
       remotePrefs(patch).pipe(Effect.flatMap((allowed) => m.setPrefs(allowed))),
     DesktopEvents: () => Stream.never,

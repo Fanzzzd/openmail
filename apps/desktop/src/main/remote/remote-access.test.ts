@@ -7,6 +7,7 @@ import {
   type RemoteAccessSettings,
 } from "@openmail/core/schema";
 import { Effect } from "effect";
+import { constVoid } from "effect/Function";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { RemoteAccessView } from "../../shared/remote-access";
 import { createRemoteAccess, type RemoteAccessDeps } from "./remote-access";
@@ -34,6 +35,8 @@ function harness(options: {
   settings?: Partial<RemoteAccessSettings>;
   failServeOn?: boolean;
 }) {
+  // Set by hang(): serve commands never return, like a stuck CLI.
+  let hanging = false;
   let stored: RemoteAccessSettings = { ...DEFAULT_REMOTE_ACCESS, ...options.settings };
   const calls: string[][] = [];
   let rpcRunning = 0;
@@ -56,6 +59,7 @@ function harness(options: {
     installed: async () => options.installed ?? true,
     runCli: async (args): Promise<CliResult> => {
       calls.push([...args]);
+      if (hanging && args[0] === "serve") return new Promise<CliResult>(constVoid);
       if (args[0] === "status") return { code: 0, stdout: options.status ?? STATUS };
       if (args.join(" ") === "serve status --json")
         return { code: 0, stdout: options.serve?.(port) ?? "{}" };
@@ -63,6 +67,7 @@ function harness(options: {
       return { code: 0, stdout: "" };
     },
     webRoot: root,
+    quitTimeoutMs: 50,
     startRpc: () => {
       rpcRunning++;
       return async () => {
@@ -80,6 +85,9 @@ function harness(options: {
     stored: () => stored,
     rpcRunning: () => rpcRunning,
     last: () => views.at(-1),
+    hang: () => {
+      hanging = true;
+    },
   };
 }
 
@@ -212,5 +220,42 @@ describe("remote access controller", () => {
     ]);
     expect(h.last()?.url).toBe("https://openmail.tail1234.ts.net");
     await h.controller.dispose();
+  });
+
+  it("removes its mapping at quit and publishes again on the next launch", async () => {
+    const first = harness({ serve: ours });
+    await first.controller.init();
+    await first.controller.setEnabled(true);
+    const port = first.stored().port;
+    first.calls.length = 0;
+    await first.controller.dispose();
+    expect(first.calls).toEqual([
+      ["serve", "status", "--json"],
+      ["serve", "--https=8443", "off"],
+    ]);
+    expect(first.rpcRunning()).toBe(0);
+    expect(first.stored().enabled).toBe(true);
+
+    const next = harness({ settings: first.stored() });
+    await next.controller.init();
+    expect(next.calls.at(-1)).toEqual([
+      "serve",
+      "--bg",
+      "--https=8443",
+      `http://127.0.0.1:${port}`,
+    ]);
+    expect(next.last()).toMatchObject({ status: "on" });
+    await next.controller.dispose();
+  });
+
+  it("quits within the timeout when the Tailscale CLI hangs", async () => {
+    const h = harness({ serve: ours });
+    await h.controller.init();
+    await h.controller.setEnabled(true);
+    h.hang();
+    const started = performance.now();
+    await h.controller.dispose();
+    expect(performance.now() - started).toBeLessThan(1000);
+    expect(h.rpcRunning()).toBe(0);
   });
 });

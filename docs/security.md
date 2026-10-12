@@ -103,6 +103,8 @@ frame 标识依据：[Electron WebFrameMain](https://www.electronjs.org/docs/lat
 - 打开前依次检查：已安装、已登录、tailnet 开了 HTTPS 证书（`status --json` 的 `CertDomains` 非空）。
 - 先读 `serve status --json`。8443 已被别的映射、TCP 转发、前台 serve 或 Funnel 占用时拒绝，不覆盖。之后运行 `tailscale serve --bg --https=8443 http://127.0.0.1:<port>`。
 - 关闭时运行 `tailscale serve --https=8443 off`，只在映射指向本应用端口时执行。
+- 退出应用时同样移除映射，最多等 3 秒（`QUIT_TIMEOUT_MS`），设置保持打开，下次启动重新发布。否则应用关闭期间映射仍指向空着的 loopback 端口，本机其他进程或其他 macOS 用户可以占用该端口，接收 tailnet 流量和身份头。超时或 CLI 失败时映射会留下，下次启动时 `serve status` 识别为本应用的旧映射并替换。
+- serve 目标只用 TCP loopback。macOS 图形版 Tailscale 是沙盒内的网络扩展，大概率读不到用户目录下的 unix socket，没有实测前不改用 socket 目标。
 - 从不运行 `tailscale funnel`。`serve status` 里该端口有 `AllowFunnel` 时拒绝启动。
 - 可选的 Tailscale Service（如 `svc:openmail`）改用 `serve --service=svc:openmail --https=443`。
 
@@ -120,9 +122,12 @@ WebSocket 升级和上传还要求 `Origin` 等于 `https://<host>`。
 
 ### 会话
 
-- 打开应用页面时签发 `__Host-openmail-session`：HttpOnly、Secure、SameSite=Strict、Path=/。值是随机 id 加 HMAC，密钥每次启动重新生成。
-- 会话绑定 login，12 小时过期，存在主进程内存里，退出即失效。请求的 login 和会话的 login 不一致时拒绝。
-- 设置页列出已登录的浏览器。退出登录或从允许列表删掉 login 会关闭对应 WebSocket（关闭码 4401），浏览器显示会话已结束。
+Tailscale 身份才是凭证。会话只把一个浏览器的 WebSocket、下载和上传绑到它的 login 上，方便列出和断开。
+
+- 只有应用页面（无扩展名的路径）签发 `__Host-openmail-session`，静态资源和 404 不签发：HttpOnly、Secure、SameSite=Strict、Path=/。值是随机 id 加 HMAC，密钥每次启动重新生成。
+- 会话绑定 login，12 小时过期，存在主进程内存里，退出即失效。请求的 login 和会话的 login 不一致时拒绝。最多 50 个，超过时结束最早的一个。
+- 服务器每 60 秒清理一次过期会话，关闭其 WebSocket（关闭码 4401）。
+- 设置页的 Disconnect 只结束一个会话并关闭其 WebSocket。只要 login 还在允许列表里，浏览器重新加载就会拿到新会话，页面提示也这样写。要真正拒绝某人，从允许列表删掉其 login：其会话立即结束，之后的请求都被拒绝。
 
 ### 远程 RPC 表
 
@@ -137,7 +142,7 @@ WebSocket 升级和上传还要求 `Origin` 等于 `https://<host>`。
 ### 附件
 
 - 下载：`GET /api/attachment?message=<id>&part=<path>`，需要会话。响应 `application/octet-stream`、`Content-Disposition: attachment`、`Content-Security-Policy: sandbox`，浏览器不会在本源下渲染附件。
-- 上传：`POST /api/upload?account=<id>`，需要会话和 Origin。限制和桌面相同：合计 30 MB；Gmail 拒绝的类型返回 415。
+- 上传：`POST /api/upload?account=<id>`，需要会话、Origin、存在的账户和 Content-Length（缺少返回 411），因此账户的类型检查总会执行。限制和桌面相同：合计 30 MB；Gmail 拒绝的类型返回 415。同时最多两个上传，再多返回 503。请求体按声明长度读入一个缓冲区，解析后编码为 base64 交给 core。
 
 ### 浏览器页面
 
@@ -150,6 +155,7 @@ WebSocket 升级和上传还要求 `Origin` 等于 `https://<host>`。
 
 - 同一用户下的本机进程可以直连 127.0.0.1 并伪造 Tailscale 头。它们本来就能读数据库和钥匙串授权的进程内存，不在本边界内。浏览器网页不能跨源发自定义头，Host 检查挡住 DNS rebinding。
 - 允许列表里的 login 能在任何属于该用户的 tailnet 设备上登录。限制设备要靠 tailnet 的访问策略。
-- 退出 OpenMail 后 serve 映射仍在，访问会得到 502。关闭开关会移除映射。
+- 退出时移除映射超时或失败，映射会留到下次启动。这期间端口占用的风险见上文“发布”。
+- Disconnect 不能挡住仍在允许列表里的 login，见“会话”。
 
-验证：`remote-server.test.ts`（认证矩阵、会话、CSP、穿越、附件上下行限制、WebSocket Origin 和吊销）、`remote-rpcs.test.ts`、`tailscale.test.ts`（serve 参数和冲突检测）、`remote-access.test.ts`（假 CLI 下的开关流程）、`e2e/web.test.ts`（浏览器端经 WebSocket 渲染收件箱）。`OPENMAIL_WEB_SHOT=<dir>` 时 `web-shot.test.ts` 用 Electron 的 Chromium 截取 390 px 和 1280 px 的构建产物。
+验证：`remote-server.test.ts`（认证矩阵、会话签发范围、上限、清理、CSP、穿越、附件上下行限制、上传并发、WebSocket Origin 和断开）、`remote-rpcs.test.ts`、`tailscale.test.ts`（serve 参数和冲突检测）、`remote-access.test.ts`（假 CLI 下的开关流程、退出时移除映射及 CLI 卡住时的超时）、`e2e/web.test.ts`（浏览器端经 WebSocket 渲染收件箱）。`OPENMAIL_WEB_SHOT=<dir>` 时 `web-shot.test.ts` 用 Electron 的 Chromium 截取 390 px 和 1280 px 的构建产物。

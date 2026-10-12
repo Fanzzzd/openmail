@@ -153,7 +153,7 @@ vi.mock("../state/remote-access", async () => {
     setRemoteAccessAtom: "SetRemoteAccess",
     setRemoteAllowlistAtom: "SetRemoteAllowlist",
     setRemoteServiceAtom: "SetRemoteService",
-    revokeRemoteSessionAtom: "RevokeRemoteSession",
+    disconnectRemoteSessionAtom: "DisconnectRemoteSession",
   };
 });
 vi.mock("../state/rpc", () => ({

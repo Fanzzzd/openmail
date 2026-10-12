@@ -1,4 +1,4 @@
-import { inspectAttachment, InvalidInput, cleanLink, parseAppLink } from "@openmail/core/schema";
+import { cleanLink, parseAppLink } from "@openmail/core/schema";
 import { externalUrl } from "../../shared/external-url";
 import { receiveAppUrl, Desktop } from "../system/system";
 import {
@@ -9,7 +9,7 @@ import {
 import { shareMessageLink } from "../system/share-message-link";
 import { openExternal } from "../security/external";
 import { trustedSender } from "../security/security";
-import { decodeRpcFrame, publicRpcResponse, createRpcFailureTracker } from "./rpc-security";
+import { makeStringProtocol } from "./rpc-security";
 import { mailboxHandlers } from "../../shared/mailbox-handlers";
 import { desktopAppleContacts } from "../system/apple-contacts";
 import { currentUpdateState } from "../updates/update-state";
@@ -82,73 +82,36 @@ const focusApp = Effect.sync(() => BrowserWindow.getAllWindows()[0]?.focus());
  * RPC server transport over Electron IPC. Each renderer (webContents) is one
  * client; its id is the client id. Frames are JSON strings.
  */
-const ElectronProtocol = Layer.effect(
-  RpcServer.Protocol,
-  Effect.gen(function* () {
-    const serialization = yield* RpcSerialization.RpcSerialization;
-    return yield* RpcServer.Protocol.make(
-      Effect.fnUntraced(function* (writeRequest) {
-        const disconnects = yield* Queue.make<number>();
-        const clients = new Set<number>();
-        const failures = createRpcFailureTracker((tag) => {
-          localLog("rpc-failure", { rpc: tag });
-          process.stderr.write(`[rpc-failure] ${tag}\n`);
-        });
-        const parser = serialization.makeUnsafe();
-        const run = yield* FiberSet.makeRuntime();
-
-        const onFrame = (event: IpcMainEvent, frame: unknown) => {
-          if (!trustedSender(event)) return;
-          const messages = decodeRpcFrame(frame);
-          if (!messages) return;
-          const client = event.sender;
-          if (!clients.has(client.id)) {
-            clients.add(client.id);
-            client.once("destroyed", () => {
-              clients.delete(client.id);
-              failures.disconnect(client.id);
-              run(Queue.offer(disconnects, client.id));
-            });
-          }
-          failures.request(client.id, messages);
-          run(
-            Effect.forEach(messages, (message) => writeRequest(client.id, message), {
-              discard: true,
-            }),
-          );
-        };
-        ipcMain.on(RPC_CHANNEL, onFrame);
-        yield* Effect.addFinalizer(() => Effect.sync(() => ipcMain.off(RPC_CHANNEL, onFrame)));
-
-        return {
-          disconnects,
-          send: (clientId, response) =>
-            Effect.sync(() => {
-              failures.response(clientId, response);
-              const frame = parser.encode(publicRpcResponse(response));
-              const target = webContents.fromId(clientId);
-              if (
-                typeof frame === "string" &&
-                target &&
-                !target.isDestroyed() &&
-                trustedSender({ sender: target, senderFrame: target.mainFrame })
-              ) {
-                target.send(RPC_CHANNEL, frame);
-              }
-            }),
-          end: () => Effect.void,
-          clientIds: Effect.sync(() => new Set(clients)),
-          initialMessage: Effect.succeedNone,
-          supportsAck: true,
-          supportsTransferables: false,
-          supportsSpanPropagation: false,
-          supportsNotifications: true,
-          codecFor: serialization.codecFor,
-        };
-      }),
-    );
-  }),
-);
+const ElectronProtocol = makeStringProtocol({
+  attach: (input) => {
+    const watched = new Set<number>();
+    const onFrame = (event: IpcMainEvent, frame: unknown) => {
+      if (!trustedSender(event)) return;
+      const client = event.sender;
+      if (!input.frame(client.id, frame) || watched.has(client.id)) return;
+      watched.add(client.id);
+      client.once("destroyed", () => {
+        watched.delete(client.id);
+        input.disconnect(client.id);
+      });
+    };
+    ipcMain.on(RPC_CHANNEL, onFrame);
+    return () => ipcMain.off(RPC_CHANNEL, onFrame);
+  },
+  send: (clientId, frame) => {
+    const target = webContents.fromId(clientId);
+    if (
+      target &&
+      !target.isDestroyed() &&
+      trustedSender({ sender: target, senderFrame: target.mainFrame })
+    )
+      target.send(RPC_CHANNEL, frame);
+  },
+  failure: (tag) => {
+    localLog("rpc-failure", { rpc: tag });
+    process.stderr.write(`[rpc-failure] ${tag}\n`);
+  },
+});
 
 const Handlers = MailRpcs.toLayer(
   Effect.gen(function* () {
@@ -158,7 +121,7 @@ const Handlers = MailRpcs.toLayer(
     const apple = desktopAppleContacts(m);
     const downloads = appDownloads(m, yield* FiberSet.makeRuntime());
     return MailRpcs.of({
-      ...mailboxHandlers(m),
+      ...mailboxHandlers(m, { contacts: apple }),
       NotificationPermission: () => Effect.promise(() => notificationPermission()),
       RequestNotificationPermission: () => Effect.promise(() => notificationPermission(true)),
       OpenNotificationSettings: () => Effect.promise(openNotificationSettings),
@@ -168,20 +131,15 @@ const Handlers = MailRpcs.toLayer(
       NotificationActionCapabilities: () =>
         Effect.succeed(notificationActionCapabilities(process.platform)),
       Connect: ({ input }) => Effect.tap(m.connect(input), () => focusApp),
-      SetClassificationOverride: ({ messageId, classifyAs }) =>
-        m.setClassificationOverride(messageId, classifyAs),
       Reauth: ({ accountId, feature }) => Effect.tap(m.reauth(accountId, feature), () => focusApp),
       ImapPresets: () => Effect.succeed(IMAP_PRESETS),
       AppleContactsStatus: () => apple.status,
       RefreshAppleContacts: () => apple.refresh(),
       SetAppleContacts: ({ enabled }) => apple.setEnabled(enabled),
       AppleContactIdentifier: ({ address }) => apple.identifier(address),
-      KnownSenders: ({ accountId, addresses }) => apple.knownSenders(accountId, addresses),
       OpenAppleContact: ({ address }) => apple.open(address),
       AddAppleContact: ({ contact }) => apple.add(contact),
       OpenAppleContactsSettings: () => apple.openSettings(),
-      ContactGroups: ({ query, accountIds }) => apple.groups(query, accountIds),
-      ContactPhoto: ({ accountId, address }) => apple.photo(accountId, address),
       SaveMessage: ({ id }, { client }) => saveMessage(m, windowOf(client.id), id),
       OpenMessageWeb: ({ id }) =>
         Effect.gen(function* () {
@@ -190,17 +148,6 @@ const Handlers = MailRpcs.toLayer(
           yield* Effect.promise(() => openExternal(url, prefs.cleanLinks !== false));
         }),
       SearchSender: ({ address }) => desktop.search(senderSearchQuery(address)),
-      ImportCalendarAttachment: ({ messageId, path, key }) =>
-        m.importCalendarAttachment(messageId, path, key, { kind: "user", surface: "app" }),
-      InspectAttachment: ({ messageId, path }) =>
-        m.attachmentPart(messageId, path).pipe(
-          Effect.flatMap((content) => {
-            const inspection = inspectAttachment(content);
-            return inspection
-              ? Effect.succeed(inspection)
-              : Effect.fail(new InvalidInput({ message: "This attachment cannot be imported" }));
-          }),
-        ),
       AttachmentCapabilities: () => Effect.succeed({ share: process.platform === "darwin" }),
       ReleaseAttachmentDrag: (request, { client }) =>
         releaseAttachmentDrag(windowOf(client.id), request),
@@ -271,15 +218,8 @@ const Handlers = MailRpcs.toLayer(
           const parent = windowOf(client.id);
           return parent ? dialog.showOpenDialog(parent, options) : dialog.showOpenDialog(options);
         }),
-      SuggestContacts: ({ query, exclude, accountIds }) =>
-        apple.suggest(query, {
-          ...(exclude === undefined ? {} : { exclude }),
-          ...(accountIds === undefined ? {} : { accountIds }),
-        }),
-      ContactAlternatives: ({ address }) => apple.alternatives(address),
       SwitchWindow: ({ action }, { client }) => Effect.sync(() => switchWindow(client.id, action)),
       ClipboardText: () => Effect.promise(() => clipboard.readText()),
-      Unsubscribe: ({ messageId }) => m.unsubscribe(messageId, { kind: "user", surface: "app" }),
       OpenMailLink: ({ url }) =>
         Effect.gen(function* () {
           const target = externalUrl(url);
@@ -319,8 +259,6 @@ const Handlers = MailRpcs.toLayer(
             return { draft, recipients: takeComposeRecipients(win) };
           }),
         ),
-      QueueUndoSend: ({ draft, due, archive, confirmResend }, { client }) =>
-        m.queueUndoSend(draft, due, { archive, confirmResend, owner: String(client.id) }),
       CloseComposeWindow: (_, { client }) =>
         m
           .cancelDesktopUndoSends(String(client.id))
@@ -354,7 +292,7 @@ const Handlers = MailRpcs.toLayer(
       SetRemoteAccess: ({ enabled }) => remote.setEnabled(enabled),
       SetRemoteAllowlist: ({ logins }) => remote.setAllowlist(logins),
       SetRemoteService: ({ service }) => remote.setService(service),
-      RevokeRemoteSession: ({ id }) => remote.revoke(id),
+      DisconnectRemoteSession: ({ id }) => remote.disconnect(id),
     });
   }),
 );

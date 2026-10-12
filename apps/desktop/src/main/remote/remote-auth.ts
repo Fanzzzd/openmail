@@ -4,12 +4,16 @@ import { sameLogin } from "@openmail/core/schema";
 import type { RemoteSession } from "../../shared/remote-access";
 
 /** Set by Tailscale Serve on tailnet traffic; Funnel traffic never carries it. */
-export const LOGIN_HEADER = "tailscale-user-login";
-export const NAME_HEADER = "tailscale-user-name";
+const LOGIN_HEADER = "tailscale-user-login";
+const NAME_HEADER = "tailscale-user-name";
 /** Serve marks traffic that arrived through Funnel. */
-export const FUNNEL_HEADER = "tailscale-funnel-request";
-export const SESSION_COOKIE = "__Host-openmail-session";
-export const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
+const FUNNEL_HEADER = "tailscale-funnel-request";
+const SESSION_COOKIE = "__Host-openmail-session";
+const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
+/** The oldest session goes when a new one would pass this. */
+export const MAX_SESSIONS = 50;
+/** Close code a browser gets when its session ends. */
+export const SESSION_ENDED = 4401;
 
 export interface GateConfig {
   /** Logins that may sign in, compared case-insensitively. */
@@ -20,7 +24,7 @@ export interface GateConfig {
   port: number;
 }
 
-export interface RequestFacts {
+interface RequestFacts {
   remoteAddress: string | undefined;
   headers: IncomingHttpHeaders;
 }
@@ -28,24 +32,17 @@ export interface RequestFacts {
 export type GateResult =
   | { ok: true; login: string; name: string }
   | { ok: false; status: 403 | 421; reason: GateReason };
-export type GateReason =
-  | "not-loopback"
-  | "funnel"
-  | "no-identity"
-  | "bad-host"
-  | "not-allowed"
-  | "bad-origin"
-  | "no-session";
+type GateReason = "not-loopback" | "funnel" | "no-identity" | "bad-host" | "not-allowed";
 
 const LOOPBACK = new Set(["127.0.0.1", "::1", "::ffff:127.0.0.1"]);
 const one = (value: string | string[] | undefined) =>
   typeof value === "string" ? value : value?.length === 1 ? value[0] : undefined;
 
-export const expectedHosts = (config: Pick<GateConfig, "host" | "port">) => {
+const expectedHosts = (config: Pick<GateConfig, "host" | "port">) => {
   const host = config.host.toLowerCase();
   return config.port === 443 ? [host, `${host}:443`] : [`${host}:${config.port}`];
 };
-export const expectedOrigin = (config: Pick<GateConfig, "host" | "port">) =>
+const expectedOrigin = (config: Pick<GateConfig, "host" | "port">) =>
   config.port === 443
     ? `https://${config.host.toLowerCase()}`
     : `https://${config.host.toLowerCase()}:${config.port}`;
@@ -87,16 +84,21 @@ export function checkRequest(facts: RequestFacts, config: GateConfig): GateResul
 }
 
 /** WebSocket upgrades and uploads also need the page's own origin (no cross-site requests). */
-export function checkOrigin(facts: RequestFacts, config: GateConfig): boolean {
-  return one(facts.headers.origin) === expectedOrigin(config);
+export function checkOrigin(headers: IncomingHttpHeaders, config: GateConfig): boolean {
+  return one(headers.origin) === expectedOrigin(config);
 }
 
-export function readCookie(header: string | undefined, name: string): string | undefined {
+function readCookie(header: string | undefined, name: string): string | undefined {
   for (const part of (header ?? "").split(";")) {
     const index = part.indexOf("=");
     if (index > 0 && part.slice(0, index).trim() === name) return part.slice(index + 1).trim();
   }
   return undefined;
+}
+
+/** A browser's WebSocket, as far as its session needs it. */
+export interface SessionSocket {
+  close(code?: number, reason?: string): void;
 }
 
 interface Session {
@@ -106,13 +108,17 @@ interface Session {
   createdAt: number;
   expiresAt: number;
   lastSeenAt: number;
-  sockets: Set<{ close: (code?: number, reason?: string) => void }>;
+  sockets: Set<SessionSocket>;
 }
 
 /**
  * Browser sessions, in memory. The cookie holds a random id and an HMAC under
  * a key made at launch, so restarting OpenMail ends every session. A session
  * belongs to one login; a request with another login does not match it.
+ *
+ * The Tailscale login is the real credential: an allowlisted browser without
+ * a session gets a new one on its next page load. Disconnecting a session
+ * closes its sockets; removing the login from the allowlist keeps it out.
  */
 export function createSessions(now: () => number = Date.now) {
   const key = randomBytes(32);
@@ -124,12 +130,30 @@ export function createSessions(now: () => number = Date.now) {
   };
   const end = (session: Session) => {
     sessions.delete(session.id);
-    for (const socket of session.sockets) socket.close(4401, "Session ended");
+    for (const socket of session.sockets) socket.close(SESSION_ENDED, "Session ended");
     session.sockets.clear();
+  };
+  /** Ends expired sessions and those failing `keep`. True when any ended. */
+  const prune = (keep: (session: Session) => boolean = () => true) => {
+    const at = now();
+    let ended = false;
+    for (const session of sessions.values())
+      if (session.expiresAt <= at || !keep(session)) {
+        end(session);
+        ended = true;
+      }
+    return ended;
   };
   return {
     /** A new session and its Set-Cookie value. */
     issue(login: string, name: string) {
+      prune();
+      // Map order is insertion order, so the first entry is the oldest.
+      while (sessions.size >= MAX_SESSIONS) {
+        const oldest = sessions.values().next().value;
+        if (!oldest) break;
+        end(oldest);
+      }
       const id = randomBytes(24).toString("base64url");
       const at = now();
       sessions.set(id, {
@@ -142,10 +166,7 @@ export function createSessions(now: () => number = Date.now) {
         sockets: new Set(),
       });
       changed();
-      return {
-        id,
-        cookie: `${SESSION_COOKIE}=${id}.${sign(id)}; Path=/; Max-Age=${SESSION_TTL_MS / 1000}; HttpOnly; Secure; SameSite=Strict`,
-      };
+      return `${SESSION_COOKIE}=${id}.${sign(id)}; Path=/; Max-Age=${SESSION_TTL_MS / 1000}; HttpOnly; Secure; SameSite=Strict`;
     },
     /** The session for a cookie, if it is valid, unexpired and for this login. */
     find(cookieHeader: string | undefined, login: string): Session | null {
@@ -165,7 +186,7 @@ export function createSessions(now: () => number = Date.now) {
       session.lastSeenAt = now();
       return session;
     },
-    attach(session: Session, socket: Session["sockets"] extends Set<infer S> ? S : never) {
+    attach(session: Session, socket: SessionSocket) {
       session.sockets.add(socket);
       changed();
       return () => {
@@ -173,20 +194,19 @@ export function createSessions(now: () => number = Date.now) {
         changed();
       };
     },
-    revoke(id: string) {
+    /** Closes one browser's session. It reconnects on reload while its login is allowed. */
+    disconnect(id: string) {
       const session = sessions.get(id);
       if (session) end(session);
       changed();
     },
+    /** Closes expired sessions' sockets. Runs on a timer. */
+    sweep() {
+      if (prune()) changed();
+    },
     /** Ends sessions whose login left the allowlist, and expired ones. */
     retain(allowlist: readonly string[]) {
-      const at = now();
-      for (const session of sessions.values())
-        if (
-          session.expiresAt <= at ||
-          !allowlist.some((allowed) => sameLogin(allowed, session.login))
-        )
-          end(session);
+      prune((session) => allowlist.some((allowed) => sameLogin(allowed, session.login)));
       changed();
     },
     clear() {
@@ -210,4 +230,3 @@ export function createSessions(now: () => number = Date.now) {
   };
 }
 export type Sessions = ReturnType<typeof createSessions>;
-export type RemoteSessionHandle = NonNullable<ReturnType<Sessions["find"]>>;
