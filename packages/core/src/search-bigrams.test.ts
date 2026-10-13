@@ -10,6 +10,7 @@ import { incoming } from "./platform/node/testing.js";
 import { bigramMatch, bigramText } from "./search-bigrams.js";
 import { Store } from "./services.js";
 import { StoreLive } from "./store.js";
+import { BIGRAM_BATCH_ROWS, BIGRAM_BATCH_TOKENS } from "./store-word-index.js";
 
 const accountId = "gmail:me@example.com";
 
@@ -159,6 +160,44 @@ it("short CJK searches return the same rows queued, indexed and after edits", as
         expect(yield* search("鲸鱼")).toEqual(withChunk);
         expect(yield* search("扫")).toEqual(["latin"]);
       }).pipe(Effect.provide(layer)),
+    );
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+it("a bigram batch stops after its token budget, so long CJK text cannot hold the connection", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "openmail-bigram-budget-"));
+  const layer = StoreLive.pipe(
+    Layer.provideMerge(
+      databaseLayer(join(directory, "mail.sqlite")).pipe(Layer.provide(NodeSystem)),
+    ),
+  );
+  // 3,000 CJK characters per message: 9,000 token characters each.
+  const body = "会议纪要预算审批".repeat(375);
+  try {
+    await Effect.runPromise(
+      Effect.gen(function* () {
+        const store = yield* Store;
+        yield* store.upsertAccount("gmail", "me@example.com");
+        for (let n = 0; n < 40; n++)
+          yield* store.upsertMessage(
+            accountId,
+            incoming(`long${n}`, { threadId: `long${n}`, bodyText: `${body}${n}` }),
+          );
+        const first = yield* store.indexBigrams(BIGRAM_BATCH_ROWS);
+        const perRow = bigramText(`${body}0`).length + bigramText("主题 long0").length;
+        expect(first.ready).toBe(false);
+        expect(first.processed).toBe(Math.ceil(BIGRAM_BATCH_TOKENS / perRow));
+        let total = first.processed;
+        for (;;) {
+          const batch = yield* store.indexBigrams(BIGRAM_BATCH_ROWS);
+          total += batch.processed;
+          if (batch.ready) break;
+        }
+        expect(total).toBe(40);
+        expect((yield* store.listThreads({ search: "审批", flat: true })).length).toBe(40);
+      }).pipe(Effect.provide(layer), Effect.scoped),
     );
   } finally {
     await rm(directory, { recursive: true, force: true });
