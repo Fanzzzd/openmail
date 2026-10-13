@@ -22,7 +22,7 @@ import {
   searchStep,
   type SearchProfiler,
 } from "../search/search-profile.js";
-import { DerivedChunk } from "../media.js";
+import { DerivedChunk } from "../ai/media.js";
 import {
   ftsSearchTerm,
   hasSearchExpression,

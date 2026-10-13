@@ -26,7 +26,7 @@ export * from "./search/search.js";
 
 export { htmlToText } from "./mime/mime.js";
 
-export * from "./media.js";
+export * from "./ai/media.js";
 export * from "./calendar/calendar.js";
 export * from "./contacts/contacts.js";
 
@@ -57,7 +57,7 @@ export * from "./compose/compose-extras.js";
 export * from "./compose/signatures.js";
 
 export * from "./domain/categories.js";
-export * from "./ai.js";
+export * from "./ai/ai.js";
 export * from "./update-state.js";
 export * from "./compose/compose-ai.js";
 export * from "./contacts/apple-contacts.js";

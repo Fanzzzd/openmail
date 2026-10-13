@@ -1,4 +1,4 @@
-import { ModelAnthropic } from "../../model.js";
+import { ModelAnthropic } from "../../ai/model.js";
 import type { NodeModelsOptions } from "./embeddings-node.js";
 import { makeNodeModels } from "./embeddings-node.js";
 import { dataDir } from "./paths.js";

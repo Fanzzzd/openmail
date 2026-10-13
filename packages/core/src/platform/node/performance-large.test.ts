@@ -6,7 +6,7 @@ import { TestClock } from "effect/testing";
 import { SqlClient } from "effect/sql";
 import { Mailbox } from "../../mailbox/mailbox.js";
 import { Store } from "../../services.js";
-import { AgentIdentity, MailToolkit, MailToolkitLayer } from "../../tools.js";
+import { AgentIdentity, MailToolkit, MailToolkitLayer } from "../../tools/tools.js";
 import { visibleHtmlText } from "../../visible-text/visible-text.js";
 import { sanitizeReaderHtml } from "../../reader/reader-sanitize.js";
 import { structuredMailEvents } from "../../calendar/structured-events.js";

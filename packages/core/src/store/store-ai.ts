@@ -6,7 +6,7 @@ import {
   AiSummary,
   AiTriageContent,
   type AiTriage,
-} from "../ai.js";
+} from "../ai/ai.js";
 
 const decode =
   <S extends Schema.Constraint>(schema: S) =>

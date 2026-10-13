@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { MailCodec } from "../mail-codec.js";
-import type { Model } from "../../model.js";
+import type { Model } from "../../ai/model.js";
 import type { ProviderAdapter, Secrets, Store } from "../../services.js";
 import { Effect, Layer } from "effect";
 

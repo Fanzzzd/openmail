@@ -8,9 +8,9 @@ import {
   type InferenceError,
   type ModelRuntime,
   type ModelsStatus,
-} from "../../media.js";
+} from "../../ai/media.js";
 import { modelFiles } from "./model-downloads.js";
-import { MODEL_BYTES, MODEL_VERSION } from "../../model-manifest.js";
+import { MODEL_BYTES, MODEL_VERSION } from "../../ai/model-manifest.js";
 import {
   nodeInferenceProcess,
   type InferenceProcess,

@@ -13,7 +13,7 @@ import type {
   FolderListOptions,
   PermanentDeleteBatch,
 } from "./domain/folder-actions.js";
-import type { DerivedChunk } from "./media.js";
+import type { DerivedChunk } from "./ai/media.js";
 import type { makeSyncHealthStore } from "./store/store-sync-health.js";
 import type { makeSemanticStore } from "./store/store-semantic.js";
 import type { makeMediaStore } from "./store/store-media.js";

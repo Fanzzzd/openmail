@@ -6,7 +6,7 @@ import type { MailCodec } from "./platform/mail-codec.js";
 import type { MailTransport } from "./platform/mail-socket.js";
 import type { AttachmentFiles, ImageNetwork, PdfWorker } from "./platform/runtime.js";
 import { MailboxLive, type MailboxOptions } from "./mailbox/mailbox-live.js";
-import { ModelAnthropic } from "./model.js";
+import { ModelAnthropic } from "./ai/model.js";
 import { StoreLive } from "./store/store.js";
 import { OAuthIssuersSql } from "./store/store-oauth-issuers.js";
 import { makeGmail } from "./providers/gmail/gmail.js";

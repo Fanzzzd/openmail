@@ -1,10 +1,10 @@
 import { PlatformCrypto } from "../platform/crypto.js";
-import { SEMANTIC_MAX_DISTANCE } from "../semantic-distance.js";
+import { SEMANTIC_MAX_DISTANCE } from "../ai/semantic-distance.js";
 import type { ThreadQuery } from "../domain/domain.js";
 import type { Fragment } from "effect/sql/Statement";
 import { Context, Effect, Option, Schema } from "effect";
 import type { SqlClient } from "effect/sql";
-import { DerivedChunk, type VectorItem } from "../media.js";
+import { DerivedChunk, type VectorItem } from "../ai/media.js";
 import { makeMediaStore, type DerivedJob } from "./store-media.js";
 import { all, first, run } from "./sql-rows.js";
 

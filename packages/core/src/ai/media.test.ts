@@ -1,24 +1,24 @@
-import { PdfWorker } from "./platform/runtime.js";
-import { AuthError, ProviderError } from "./domain/errors.js";
+import { PdfWorker } from "../platform/runtime.js";
+import { AuthError, ProviderError } from "../domain/errors.js";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { vi } from "vitest";
 import { TestClock } from "effect/testing";
-import { databaseLayer, DatabaseCapabilities } from "./platform/node/db.js";
-import { NodeSystem } from "./platform/node/platform-node.js";
+import { databaseLayer, DatabaseCapabilities } from "../platform/node/db.js";
+import { NodeSystem } from "../platform/node/platform-node.js";
 import { assert, it } from "@effect/vitest";
 import { Deferred, Effect, Fiber, Layer, Option, Schema } from "effect";
 import { SqlClient } from "effect/sql";
 import { type IndexerInput, makeIndexer } from "./indexer.js";
-import { type IncomingMessage, type ThreadSummary } from "./domain/domain.js";
+import { type IncomingMessage, type ThreadSummary } from "../domain/domain.js";
 import { MediaError, type Vision, unavailableVision } from "./media.js";
-import { MemoryPlatform } from "./platform/node/platform-memory.js";
-import { Store } from "./services.js";
-import { StoreLive } from "./store/store.js";
-import { pdfText } from "./platform/node/pdf-text.js";
-import { inlineMediaFromRaw } from "./platform/node/portable-helpers.js";
-import { parseSearchQuery, reciprocalRankFusion, mergeSearchResults } from "./search/search.js";
+import { MemoryPlatform } from "../platform/node/platform-memory.js";
+import { Store } from "../services.js";
+import { StoreLive } from "../store/store.js";
+import { pdfText } from "../platform/node/pdf-text.js";
+import { inlineMediaFromRaw } from "../platform/node/portable-helpers.js";
+import { parseSearchQuery, reciprocalRankFusion, mergeSearchResults } from "../search/search.js";
 
 const withStore = <A, E>(body: Effect.Effect<A, E, Store | SqlClient.SqlClient | PdfWorker>) =>
   body.pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform()))));
@@ -482,8 +482,8 @@ it.effect(
     ),
 );
 
-export { syntheticPdf } from "./platform/node/fixtures/synthetic-pdf.js";
-import { syntheticPdf } from "./platform/node/fixtures/synthetic-pdf.js";
+export { syntheticPdf } from "../platform/node/fixtures/synthetic-pdf.js";
+import { syntheticPdf } from "../platform/node/fixtures/synthetic-pdf.js";
 
 it.effect(
   "extracts PDF text offline by page and records scanned-page deferral; battery throttles PDFs",

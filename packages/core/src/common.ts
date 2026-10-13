@@ -1,7 +1,7 @@
 // Shared core exports. Platform entries add their own adapters.
 export * from "./compose/compose-text.js";
 export * from "./compose/compose-body.js";
-export { MODEL_KEY } from "./secrets.js";
+export { MODEL_KEY } from "./ai/secrets.js";
 export * from "./domain/domain.js";
 export * from "./domain/errors.js";
 export * from "./reader/print.js";
@@ -21,12 +21,12 @@ export {
   MailToolkitLayer,
   ReadMailToolkit,
   ProposalMailToolkit,
-} from "./tools.js";
+} from "./tools/tools.js";
 
 export * from "./domain/organization.js";
 export * from "./search/search.js";
 
-export * from "./media.js";
+export * from "./ai/media.js";
 
 export * from "./calendar/calendar.js";
 export * from "./contacts/contacts.js";
@@ -60,9 +60,9 @@ export * from "./update-feed.js";
 export * from "./compose/signatures.js";
 
 export * from "./domain/categories.js";
-export * from "./ai.js";
+export * from "./ai/ai.js";
 export { messageModelText } from "./visible-text/visible-text.js";
-export { ModelAnthropic, FakeModelLayer, type ModelOutput, type ModelRequest } from "./model.js";
+export { ModelAnthropic, FakeModelLayer, type ModelOutput, type ModelRequest } from "./ai/model.js";
 
 export * from "./update-state.js";
 

@@ -11,7 +11,7 @@ import { type Actor, type IncomingMessage, type Message } from "../domain/domain
 import { AuthError, PermanentError, ProviderError } from "../domain/errors.js";
 import { Mailbox } from "./mailbox.js";
 import { SYNC_FAILURE_TEXT } from "../sync/sync-failure.js";
-import { toModelThread } from "../model-view.js";
+import { toModelThread } from "../ai/model-view.js";
 import { makeFakeProvider } from "../platform/node/fake-provider.js";
 import { Store, type ProviderAdapter } from "../services.js";
 {

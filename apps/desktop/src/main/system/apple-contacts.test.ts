@@ -9,7 +9,7 @@ import {
   FakeModelLayer,
   type ModelRequest,
   type ModelOutput,
-} from "../../../../../packages/core/src/model.js";
+} from "../../../../../packages/core/src/ai/model.js";
 
 const id = "00000000-0000-4000-8000-000000000001:ABPerson";
 const native = vi.hoisted(() => ({

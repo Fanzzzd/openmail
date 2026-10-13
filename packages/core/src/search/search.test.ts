@@ -33,7 +33,7 @@ import { SqlClient } from "effect/sql";
 import { databaseLayer } from "../platform/node/db.js";
 import { NodeSystem } from "../platform/node/platform-node.js";
 import { InvalidInput } from "../domain/errors.js";
-import { type DerivedChunk } from "../media.js";
+import { type DerivedChunk } from "../ai/media.js";
 {
   const message: IncomingMessage = makeIncoming("m1", {
     threadId: "t1",

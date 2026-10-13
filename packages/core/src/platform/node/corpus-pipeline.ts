@@ -3,7 +3,7 @@ import { DatabaseSync } from "node:sqlite";
 import { Option, Schema } from "effect";
 import { Attachment, Message, Provider, type IncomingMessage } from "../../domain/domain.js";
 import { htmlToText } from "../../mime/mime.js";
-import { modelContext } from "../../model-view.js";
+import { modelContext } from "../../ai/model-view.js";
 import { prepareMessageHtml } from "../../reader/reader-html.js";
 import { sanitizeReaderHtml } from "../../reader/reader-sanitize.js";
 import {

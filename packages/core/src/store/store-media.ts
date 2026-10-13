@@ -2,7 +2,7 @@ import { PlatformCrypto } from "../platform/crypto.js";
 import type { Fragment } from "effect/sql/Statement";
 import { Context, Effect, Option, Schema } from "effect";
 import type { SqlClient } from "effect/sql";
-import { DerivedChunk, derivedPart } from "../media.js";
+import { DerivedChunk, derivedPart } from "../ai/media.js";
 import { all, first, run } from "./sql-rows.js";
 
 const Job = Schema.Struct({

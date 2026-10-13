@@ -14,14 +14,19 @@ import {
   AiTriageContent,
   AI_TRIAGE_PROMPT_VERSION,
   isTriageInbox,
-} from "../ai.js";
+} from "../ai/ai.js";
 import { InvalidInput } from "../domain/errors.js";
 import { Mailbox, type ModelThread } from "./mailbox.js";
-import type { Model } from "../model.js";
-import { modelContext } from "../model-view.js";
-import { MODEL_KEY } from "../secrets.js";
+import type { Model } from "../ai/model.js";
+import { modelContext } from "../ai/model-view.js";
+import { MODEL_KEY } from "../ai/secrets.js";
 import type { Secrets, Store } from "../services.js";
-import { AgentIdentity, AssistantToolkit, MailToolkitLayer, toModelAccount } from "../tools.js";
+import {
+  AgentIdentity,
+  AssistantToolkit,
+  MailToolkitLayer,
+  toModelAccount,
+} from "../tools/tools.js";
 
 const isSpecialLabel = (name: string) => {
   const normalized = name
@@ -711,7 +716,7 @@ export function makeAiMailbox(
         );
         yield* changed;
       }),
-    setAiModel: (name: import("../ai.js").AiModelName) =>
+    setAiModel: (name: import("../ai/ai.js").AiModelName) =>
       Effect.andThen(cancel, Effect.andThen(store.ai.setModel(name), changed)).pipe(Effect.asVoid),
     aiSummary: (id: string) =>
       Effect.flatMap(enabled(id), (allowed) =>

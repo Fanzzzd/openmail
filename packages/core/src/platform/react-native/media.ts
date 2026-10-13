@@ -1,5 +1,5 @@
 import { Effect, Layer } from "effect";
-import { MediaError } from "../../media.js";
+import { MediaError } from "../../ai/media.js";
 import { ProviderError } from "../../domain/errors.js";
 import { ImageNetwork, PdfWorker } from "../runtime.js";
 

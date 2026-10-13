@@ -16,7 +16,7 @@ import {
   Provider,
   QueuedOp,
 } from "../domain/domain.js";
-import { DerivedChunk } from "../media.js";
+import { DerivedChunk } from "../ai/media.js";
 import { isReauthReason } from "../domain/errors.js";
 import { cleanDisplayName } from "../reader/message-security.js";
 import { type PendingOp } from "../services.js";

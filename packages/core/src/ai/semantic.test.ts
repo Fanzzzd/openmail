@@ -5,10 +5,10 @@ import {
   fakeModels,
   indexer,
   setup,
-} from "../test-support/semantic-fixtures.js";
+} from "../../test-support/semantic-fixtures.js";
 import { TestClock } from "effect/testing";
-import { Mailbox } from "./mailbox/mailbox.js";
-import { TestMailbox, fakeServer } from "./platform/node/testing.js";
+import { Mailbox } from "../mailbox/mailbox.js";
+import { TestMailbox, fakeServer } from "../platform/node/testing.js";
 import { assert, it } from "@effect/vitest";
 import { Deferred, Effect, Fiber, Option } from "effect";
 import { SqlClient } from "effect/sql";
@@ -20,7 +20,7 @@ import {
   unavailableVision,
 } from "./media.js";
 import { textChunks } from "./text-chunks.js";
-import { semanticRankFusion } from "./search/search.js";
+import { semanticRankFusion } from "../search/search.js";
 
 it("body chunks cover the original and overlap the preceding sentence", () => {
   const text =

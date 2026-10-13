@@ -1,5 +1,5 @@
-import { Buffer } from "./platform/bytes.js";
-import { sha256Hex } from "./platform/crypto.js";
+import { Buffer } from "../platform/bytes.js";
+import { sha256Hex } from "../platform/crypto.js";
 import { Effect, Schema } from "effect";
 
 const ToolCursor = Schema.String.check(Schema.isMaxLength(24_000)).annotate({

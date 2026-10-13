@@ -13,7 +13,7 @@ const Scores = Schema.Struct({
 it("cutoffs retain spike text positives and confident image positives instead of padding every route", () => {
   const spike = Schema.decodeUnknownSync(Schema.fromJsonString(Scores))(
     readFileSync(
-      new URL("../../../spikes/media/artifacts/embeddings-hybrid.json", import.meta.url),
+      new URL("../../../../spikes/media/artifacts/embeddings-hybrid.json", import.meta.url),
       "utf8",
     ),
   );

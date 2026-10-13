@@ -23,12 +23,12 @@ import {
   Profile,
   SyncResult,
   ThreadSummary,
-} from "./domain/domain.js";
-import { Mailbox, ModelThread, type PerformError } from "./mailbox/mailbox.js";
-import { CalendarEvent, CalendarInvite } from "./calendar/calendar.js";
-import { DerivedChunk } from "./media.js";
-import { NamedSignature } from "./compose/signatures.js";
-import { SearchResult } from "./domain/organization.js";
+} from "../domain/domain.js";
+import { Mailbox, ModelThread, type PerformError } from "../mailbox/mailbox.js";
+import { CalendarEvent, CalendarInvite } from "../calendar/calendar.js";
+import { DerivedChunk } from "../ai/media.js";
+import { NamedSignature } from "../compose/signatures.js";
+import { SearchResult } from "../domain/organization.js";
 import {
   PageParameters,
   PageResult,
@@ -41,7 +41,7 @@ import {
   shortText,
   jsonBytes,
 } from "./tool-pages.js";
-import { parseAddressList } from "./mime/mime.js";
+import { parseAddressList } from "../mime/mime.js";
 
 export const cleanMcpClientName = (name: string): string =>
   name

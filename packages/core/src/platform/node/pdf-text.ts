@@ -1,6 +1,6 @@
 import { Worker } from "node:worker_threads";
 import { Effect, Schema } from "effect";
-import { MediaError } from "../../media.js";
+import { MediaError } from "../../ai/media.js";
 
 const Result = Schema.Union([
   Schema.Struct({

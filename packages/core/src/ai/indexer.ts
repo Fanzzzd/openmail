@@ -4,9 +4,9 @@ import {
   type ProviderError,
   type PermanentError,
   type NotFound,
-} from "./domain/errors.js";
+} from "../domain/errors.js";
 import { Context, Effect, Option, Semaphore } from "effect";
-import type { Message } from "./domain/domain.js";
+import type { Message } from "../domain/domain.js";
 import {
   DerivedChunk,
   IndexingProgress,
@@ -14,8 +14,8 @@ import {
   MediaError,
   type Vision,
 } from "./media.js";
-import { PdfWorker } from "./platform/runtime.js";
-import type { makeMediaStore } from "./store/store-media.js";
+import { PdfWorker } from "../platform/runtime.js";
+import type { makeMediaStore } from "../store/store-media.js";
 
 class Indexer extends Context.Service<
   Indexer,

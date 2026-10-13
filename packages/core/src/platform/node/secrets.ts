@@ -6,7 +6,7 @@ import { Secrets } from "../../services.js";
 
 // Refresh tokens and IMAP passwords live in the OS keychain. Error handling: docs/sync-correctness.md#重新登录的判定.
 const SERVICE = "openmail";
-export { MODEL_KEY } from "../../secrets.js";
+export { MODEL_KEY } from "../../ai/secrets.js";
 
 /** The person cancelled or denied the keychain prompt (errSecUserCanceled, -128): asking again only repeats it. */
 const userCanceled = (error: unknown) =>

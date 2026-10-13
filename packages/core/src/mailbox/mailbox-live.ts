@@ -18,10 +18,10 @@ import {
   inlineImagesFromRaw as unboundInlineImagesFromRaw,
   inlineMediaFromRaw as unboundInlineMediaFromRaw,
 } from "../mime/attachments.js";
-import { makeDownloadBudget } from "../download-budget.js";
+import { makeDownloadBudget } from "../ai/download-budget.js";
 import { parseRawDraft as unboundParseRawDraft } from "../compose/drafts.js";
 import { InvalidInput } from "../domain/errors.js";
-import { makeIndexer } from "../indexer.js";
+import { makeIndexer } from "../ai/indexer.js";
 import { makeAccountsMailbox } from "./mailbox-accounts.js";
 import { makeAiMailbox } from "./mailbox-ai.js";
 import { makeApplyMailbox } from "./mailbox-apply.js";
@@ -43,15 +43,15 @@ import { makeOptionalServiceMailbox } from "./mailbox-services.js";
 import { cacheIO } from "./mailbox-shared.js";
 import { makeSyncMailbox } from "./mailbox-sync.js";
 import { Mailbox, type MailboxEvent } from "./mailbox.js";
-import { unavailableVision } from "../media.js";
-import { Model, ModelUnavailable } from "../model.js";
+import { unavailableVision } from "../ai/media.js";
+import { Model, ModelUnavailable } from "../ai/model.js";
 import { scopedAdapter } from "../providers/optional-services.js";
 import { destination as outlookDestination } from "../providers/outlook/graph.js";
 import { PlatformCrypto } from "../platform/crypto.js";
 import { MailCodec } from "../platform/mail-codec.js";
 import { AppVerifier, AttachmentFiles, ImageNetwork, type PdfWorker } from "../platform/runtime.js";
 import { offlineAdapter, readOnlyAdapter } from "./read-only.js";
-import { makeSemanticIndexer } from "../semantic-indexer.js";
+import { makeSemanticIndexer } from "../ai/semantic-indexer.js";
 import { AppConfig, OAuthIssuers, Providers, Secrets, Store } from "../services.js";
 import { makeSyncHealth } from "../sync/sync-health.js";
 import { UnsubscribeNetwork } from "./unsubscribe.js";
@@ -412,7 +412,7 @@ export const MailboxLive = (
         inline: (id) => readingMailbox.localInline(id),
         changed,
         markReauth: (id, error) => store.markReauth(id, error),
-      } satisfies import("../indexer.js").IndexerInput;
+      } satisfies import("../ai/indexer.js").IndexerInput;
 
       const indexer = yield* makeIndexer(indexInput);
 

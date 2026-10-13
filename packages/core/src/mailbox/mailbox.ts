@@ -13,7 +13,7 @@ import type {
   AiQuestion,
   AiComposeRequest,
   AiTriage,
-} from "../ai.js";
+} from "../ai/ai.js";
 import type {
   NamedSignature,
   NamedSignatureInput,
@@ -21,7 +21,7 @@ import type {
 } from "../compose/signatures.js";
 import type { ReaderAttachment, EmbeddedMessage } from "../mime/attachment-view.js";
 import type { FolderScope, DeleteFolder } from "../domain/folder-actions.js";
-import type { DerivedChunk, IndexingProgress } from "../media.js";
+import type { DerivedChunk, IndexingProgress } from "../ai/media.js";
 /**
  * Mailbox: the one interface desktop, CLI, MCP and the assistant use. Reading,
  * changing and syncing mail all go through here, so policy, audit and the

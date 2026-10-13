@@ -1,9 +1,9 @@
-import { messageModelText } from "./visible-text/visible-text.js";
+import { messageModelText } from "../visible-text/visible-text.js";
 import { makeDownloadBudget } from "./download-budget.js";
 import { Clock, Effect, Option, Semaphore } from "effect";
 import { markIfAuth, type IndexerInput } from "./indexer.js";
 import { MediaError, type ModelRuntime, type VectorItem } from "./media.js";
-import type { Store } from "./services.js";
+import type { Store } from "../services.js";
 import { textChunks } from "./text-chunks.js";
 
 export const makeSemanticIndexer = Effect.fn("makeSemanticIndexer")(function* (
