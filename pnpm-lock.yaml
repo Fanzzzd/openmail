@@ -42,7 +42,7 @@ importers:
     dependencies:
       '@effect/atom-react':
         specifier: 4.0.0-rc.118
-        version: 4.0.0-rc.118(effect@4.0.0-rc.118)(react@19.3.0)(scheduler@0.27.0)
+        version: 4.0.0-rc.118(effect@4.0.2)(react@19.3.0)(scheduler@0.27.0)
       '@lingui/core':
         specifier: ^6.8.0
         version: 6.8.0(@babel/core@7.29.7(supports-color@8.1.1))
@@ -59,8 +59,8 @@ importers:
         specifier: ^3.4.16
         version: 3.4.16
       effect:
-        specifier: 4.0.0-rc.118
-        version: 4.0.0-rc.118
+        specifier: 4.0.2
+        version: 4.0.2
       electron-updater:
         specifier: ^6.8.9
         version: 6.8.9(supports-color@8.1.1)
@@ -283,8 +283,8 @@ importers:
         specifier: 9.1.0
         version: 9.1.0(expo@57.0.26)(react-native@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)
       effect:
-        specifier: 4.0.0-rc.118
-        version: 4.0.0-rc.118
+        specifier: 4.0.2
+        version: 4.0.2
       expo:
         specifier: 57.0.26
         version: 57.0.26(066b41bb6a4249c9ebb4af4b7b319d68)
@@ -417,13 +417,13 @@ importers:
     dependencies:
       '@effect/platform-node':
         specifier: 4.0.0-rc.118
-        version: 4.0.0-rc.118(effect@4.0.0-rc.118)(redis@6.2.1)
+        version: 4.0.0-rc.118(effect@4.0.2)(redis@6.2.1)
       '@openmail/core':
         specifier: workspace:*
         version: link:../core
       effect:
-        specifier: 4.0.0-rc.118
-        version: 4.0.0-rc.118
+        specifier: 4.0.2
+        version: 4.0.2
     devDependencies:
       '@types/node':
         specifier: ^22.20.4
@@ -439,13 +439,13 @@ importers:
     dependencies:
       '@effect/ai-anthropic':
         specifier: 4.0.0-rc.118
-        version: 4.0.0-rc.118(effect@4.0.0-rc.118)
+        version: 4.0.0-rc.118(effect@4.0.2)
       '@effect/platform-node':
         specifier: 4.0.0-rc.118
-        version: 4.0.0-rc.118(effect@4.0.0-rc.118)(redis@6.2.1)
+        version: 4.0.0-rc.118(effect@4.0.2)(redis@6.2.1)
       '@effect/sql-sqlite-node':
         specifier: 4.0.0-rc.118
-        version: 4.0.0-rc.118(effect@4.0.0-rc.118)
+        version: 4.0.0-rc.118(effect@4.0.2)
       '@exodus/bytes':
         specifier: 1.16.0
         version: 1.16.0(@noble/hashes@2.4.0)
@@ -471,8 +471,8 @@ importers:
         specifier: ^3.2.1
         version: 3.2.1
       effect:
-        specifier: 4.0.0-rc.118
-        version: 4.0.0-rc.118
+        specifier: 4.0.2
+        version: 4.0.2
       htmlparser2:
         specifier: ^10.1.0
         version: 10.1.0
@@ -521,7 +521,7 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: 4.0.0-rc.118
-        version: 4.0.0-rc.118(effect@4.0.0-rc.118)(vitest@5.0.2(@types/node@22.20.4)(jsdom@30.1.1(@noble/hashes@2.4.0))(vite@7.3.6(@types/node@22.20.4)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(yaml@2.9.1)))
+        version: 4.0.0-rc.118(effect@4.0.2)(vitest@5.0.2(@types/node@22.20.4)(jsdom@30.1.1(@noble/hashes@2.4.0))(vite@7.3.6(@types/node@22.20.4)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(yaml@2.9.1)))
       '@types/css-tree':
         specifier: ^3.2.0
         version: 3.2.0
@@ -4356,8 +4356,8 @@ packages:
   ee-first@1.1.1:
     resolution: {integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==}
 
-  effect@4.0.0-rc.118:
-    resolution: {integrity: sha512-hxhpCd+swzrtu9lnyPpEFre2ODQzJ9qxgyL1oHIEY8NKnW4PxTbM1XzplMZXiAsLD62HO+KJc41Nqxr9T791ZQ==}
+  effect@4.0.2:
+    resolution: {integrity: sha512-YeYnLqSFrL4+tCOXRrfNP03w8FILoF/wDl+ukraJAGzXrjcS383W7LAAvGBbLatEyktmLxRq+9xJinx7QzXW5A==}
 
   ejs@3.1.10:
     resolution: {integrity: sha512-UeJmFfOrAQS8OJWPZ4qtgHyWExa088/MtK5UEyoJGFH67cDEXkZSviOiKRCZ4Xij0zxI3JECgYs3oKx+AizQBA==}
@@ -8499,42 +8499,42 @@ snapshots:
 
   '@csstools/css-tokenizer@4.0.2': {}
 
-  '@effect/ai-anthropic@4.0.0-rc.118(effect@4.0.0-rc.118)':
+  '@effect/ai-anthropic@4.0.0-rc.118(effect@4.0.2)':
     dependencies:
-      effect: 4.0.0-rc.118
+      effect: 4.0.2
 
-  '@effect/atom-react@4.0.0-rc.118(effect@4.0.0-rc.118)(react@19.3.0)(scheduler@0.27.0)':
+  '@effect/atom-react@4.0.0-rc.118(effect@4.0.2)(react@19.3.0)(scheduler@0.27.0)':
     dependencies:
-      effect: 4.0.0-rc.118
+      effect: 4.0.2
       react: 19.3.0
       scheduler: 0.27.0
 
-  '@effect/platform-node-shared@4.0.0-rc.118(effect@4.0.0-rc.118)':
+  '@effect/platform-node-shared@4.0.0-rc.118(effect@4.0.2)':
     dependencies:
       '@types/ws': 8.18.1
-      effect: 4.0.0-rc.118
+      effect: 4.0.2
       ws: 8.22.0
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
 
-  '@effect/platform-node@4.0.0-rc.118(effect@4.0.0-rc.118)(redis@6.2.1)':
+  '@effect/platform-node@4.0.0-rc.118(effect@4.0.2)(redis@6.2.1)':
     dependencies:
-      '@effect/platform-node-shared': 4.0.0-rc.118(effect@4.0.0-rc.118)
-      effect: 4.0.0-rc.118
+      '@effect/platform-node-shared': 4.0.0-rc.118(effect@4.0.2)
+      effect: 4.0.2
       redis: 6.2.1
       undici: 8.11.2
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
 
-  '@effect/sql-sqlite-node@4.0.0-rc.118(effect@4.0.0-rc.118)':
+  '@effect/sql-sqlite-node@4.0.0-rc.118(effect@4.0.2)':
     dependencies:
-      effect: 4.0.0-rc.118
+      effect: 4.0.2
 
-  '@effect/vitest@4.0.0-rc.118(effect@4.0.0-rc.118)(vitest@5.0.2(@types/node@22.20.4)(jsdom@30.1.1(@noble/hashes@2.4.0))(vite@7.3.6(@types/node@22.20.4)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(yaml@2.9.1)))':
+  '@effect/vitest@4.0.0-rc.118(effect@4.0.2)(vitest@5.0.2(@types/node@22.20.4)(jsdom@30.1.1(@noble/hashes@2.4.0))(vite@7.3.6(@types/node@22.20.4)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(yaml@2.9.1)))':
     dependencies:
-      effect: 4.0.0-rc.118
+      effect: 4.0.2
       vitest: 5.0.2(@types/node@22.20.4)(jsdom@30.1.1(@noble/hashes@2.4.0))(vite@7.3.6(@types/node@22.20.4)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(yaml@2.9.1))
 
   '@egjs/hammerjs@2.0.17':
@@ -11720,7 +11720,7 @@ snapshots:
 
   ee-first@1.1.1: {}
 
-  effect@4.0.0-rc.118: {}
+  effect@4.0.2: {}
 
   ejs@3.1.10:
     dependencies:

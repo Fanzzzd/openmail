@@ -24,7 +24,7 @@
     "@openmail/cli": "workspace:*",
     "@openmail/core": "workspace:*",
     "dompurify": "^3.4.16",
-    "effect": "4.0.0-rc.118",
+    "effect": "4.0.2",
     "electron-updater": "^6.8.9",
     "jsonc-parser": "^3.3.1",
     "react-resizable-panels": "^4.14.1",
