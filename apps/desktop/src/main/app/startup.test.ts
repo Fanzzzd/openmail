@@ -90,7 +90,16 @@ vi.mock("../system/system", () => ({
 vi.mock("../windows/windows", () => ({ focusMainWindow: native.focus }));
 
 const originalResourcesPath = Object.getOwnPropertyDescriptor(process, "resourcesPath");
+// index.ts installs process-wide handlers once; each test removes the ones it added.
+const vitestListeners = {
+  uncaughtException: process.listeners("uncaughtException"),
+  unhandledRejection: process.listeners("unhandledRejection"),
+};
 afterEach(() => {
+  for (const [event, kept] of Object.entries(vitestListeners))
+    for (const listener of process.listeners(event as keyof typeof vitestListeners))
+      if (!kept.includes(listener)) process.off(event, listener);
+  Reflect.deleteProperty(process, Symbol.for("openmail.processErrorHandlers"));
   vi.restoreAllMocks();
   if (originalResourcesPath) Object.defineProperty(process, "resourcesPath", originalResourcesPath);
   else Reflect.deleteProperty(process, "resourcesPath");
@@ -225,6 +234,21 @@ it("a database from a newer OpenMail explains itself in a native dialog before e
     "This library was opened by a newer OpenMail",
     "Update OpenMail to the latest version to open it.",
   );
+});
+it("the main process handles uncaught exceptions and unhandled rejections", async () => {
+  const handled = Symbol.for("openmail.processErrorHandlers");
+  Reflect.deleteProperty(process, handled);
+  const before = process.listenerCount("uncaughtException");
+  const rejections = process.listenerCount("unhandledRejection");
+  await import("../index");
+  expect(process.listenerCount("uncaughtException")).toBe(before + 1);
+  expect(process.listenerCount("unhandledRejection")).toBe(rejections + 1);
+  vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+  process.emit("unhandledRejection", new Error("lost promise"), Promise.resolve());
+  expect(native.localLog).toHaveBeenCalledWith("runtime-error", {
+    reason: "unhandled-rejection",
+  });
+  (await import("electron")).app.emit("will-quit", { preventDefault: vi.fn() });
 });
 it("the diagnostics logger replaces the raw Effect logger", async () => {
   native.warnStart = true;

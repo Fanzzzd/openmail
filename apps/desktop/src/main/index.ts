@@ -32,7 +32,10 @@ import { showAppIdentity } from "./app/app-identity";
 import { mcpLaunchArgs, runMcpMode } from "./agents/mcp-mode";
 
 import { prepareReliability, diagnosticsLogger, localLog } from "./app/reliability";
+import { registerProcessErrorHandlers } from "./app/process-errors";
 
+// First, so MCP mode and early startup are covered; localLog writes once diagnostics exist.
+registerProcessErrorHandlers(localLog);
 registerSecuritySchemes();
 prepareBackgroundWindows();
 

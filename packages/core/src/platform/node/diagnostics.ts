@@ -56,6 +56,8 @@ const RuntimeReason = Schema.Literals([
   "media-index-failed",
   "attachment-cache-unavailable",
   "attachment-cleanup-failed",
+  "uncaught-exception",
+  "unhandled-rejection",
   "unclassified",
 ]);
 const runtimeReasons: Readonly<Record<string, typeof RuntimeReason.Type>> = {
