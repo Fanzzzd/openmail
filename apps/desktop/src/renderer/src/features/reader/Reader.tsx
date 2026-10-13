@@ -7,7 +7,6 @@ import {
   type BatchResult,
   type MailOp,
   orderThread,
-  READER_ZOOMS,
   senderName,
   remoteImageMode,
   shouldLoadRemote,
@@ -56,7 +55,7 @@ import {
   type SearchHits,
   SearchHitsContext,
 } from "../search";
-import { iconButton, titlebarRow, touchIcon } from "../../ui/styles";
+import { buttonSecondary, iconButton, titlebarRow, touchIcon } from "../../ui/styles";
 import { TrafficLightSpace } from "../../ui/TrafficLights";
 import { Tip } from "../../ui/Tip";
 import { BACK_SHORTCUT, isBackKey } from "../../lib/responsive-layout";
@@ -68,19 +67,17 @@ import {
   Code,
   ChevronDown,
   ChevronLeft,
-  ChevronsDownUp,
-  ChevronsUpDown,
   FileDown,
+  Forward,
   Images,
   Mail,
-  Minus,
   MoreHorizontal,
   Moon,
-  Plus,
   Printer,
+  Reply,
+  ReplyAll,
   Star,
   Sun,
-  Type,
 } from "lucide-react";
 
 import { messageMissing, causeText } from "../../lib/errors";
@@ -97,6 +94,7 @@ import {
 import { setImageSenderAtom, setPrefsAtom } from "../../state/mutations";
 import { imagesLoadedAtom, messageBackgroundAtom } from "../../state/ui";
 import { MediaMatches } from "./MediaMatches";
+import { stepZoom, THREAD_EXPANSION_EVENT, ThreadViewMenuItems } from "./ThreadViewMenu";
 import { Attachments } from "./attachments/Attachments";
 import {
   LazyMessageBody,
@@ -134,7 +132,7 @@ interface Props {
    * Actions for the open thread, left of the search field. They fill the room
    * the search field leaves and fold into their menu when it runs out.
    */
-  renderToolbar?: () => ReactNode;
+  renderToolbar?: (threadMenu: ReactNode) => ReactNode;
   /** Opens a draft of the thread in the compose window, by local draft id or message id. */
   onEditDraft: (messageId: string) => void;
   notify: Notify;
@@ -177,6 +175,19 @@ export function Reader({
   );
   const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => DEFAULT_PREFS);
   const grouping = prefs.threadGrouping;
+  const print = useThreadPrint(notify);
+  // With the toolbar showing, the thread's commands join its menu instead of a second "…".
+  const menuInToolbar = prefs.toolbarVisible && renderToolbar !== undefined;
+  const threadMenu =
+    messageId && messages ? (
+      <ThreadViewMenuItems
+        messages={messages}
+        selectedId={messageId}
+        single={!grouping}
+        notify={notify}
+        print={print}
+      />
+    ) : null;
 
   return (
     <main className="flex h-full w-full min-w-0 flex-col bg-surface">
@@ -196,7 +207,7 @@ export function Reader({
         )}
         {prefs.toolbarVisible && (
           <div className="flex flex-1" style={{ minWidth: TOOLBAR_MIN_WIDTH }}>
-            {renderToolbar?.()}
+            {renderToolbar?.(threadMenu)}
           </div>
         )}
         {/* Beside the toolbar, search starts at 14rem: room for a query with the scope as an
@@ -236,6 +247,7 @@ export function Reader({
           notify={notify}
           canOpenWindow={isDesktop()}
           onBack={onBack}
+          menuInToolbar={menuInToolbar}
         />
       )}
     </main>
@@ -254,13 +266,6 @@ function useDarkMode(): boolean {
     },
     () => darkQuery().matches,
   );
-}
-
-/** The next text size up (1) or down (-1), or normal size (0). */
-function stepZoom(zoom: ReaderZoom, step: -1 | 0 | 1): ReaderZoom {
-  if (step === 0) return 100;
-  const i = READER_ZOOMS.indexOf(zoom);
-  return READER_ZOOMS[Math.max(0, Math.min(READER_ZOOMS.length - 1, i + step))] ?? zoom;
 }
 
 /** ⌘+ / ⌘= bigger, ⌘- smaller, ⌘0 normal. */
@@ -320,6 +325,7 @@ export function ThreadView({
   onActionDone,
   onComposeMessage,
   onBack,
+  menuInToolbar = false,
 }: {
   messages: readonly Message[];
   derivedMatches?: readonly DerivedChunk[] | undefined;
@@ -338,6 +344,8 @@ export function ThreadView({
   onActionDone?: ReaderActionDone | undefined;
   onComposeMessage?: Props["onComposeMessage"] | undefined;
   onBack?: Props["onBack"];
+  /** The toolbar's Conversation actions menu holds the thread's commands, so the subject row has no menu. */
+  menuInToolbar?: boolean;
 }) {
   const { t, i18n } = useLingui();
   const run = useRunMail();
@@ -484,6 +492,11 @@ export function ThreadView({
     (a, m) => (!a || m.date >= a.date ? m : a),
     undefined,
   );
+  // The reply bar answers the newest message someone sent, not a draft of a reply.
+  const replyTarget =
+    messages
+      .filter((m) => !m.labels.includes("DRAFT"))
+      .reduce<Message | undefined>((a, m) => (!a || m.date >= a.date ? m : a), undefined) ?? newest;
   const matchedIds = [
     ...new Set(
       searchMatches
@@ -554,7 +567,6 @@ export function ThreadView({
     e.preventDefault();
     setZoom(stepZoom(zoom, step));
   };
-  const printOnly = single ? selectedId : undefined;
 
   // ⌘+ and ⌘- apply while focus is in the thread; a click anywhere in it focuses it.
   const zoomKeys = useEffectEvent((e: KeyboardEvent) => onZoomKey(e));
@@ -721,6 +733,15 @@ export function ThreadView({
     // List and mail keys such as archive, J/K and star listen on the window.
     forwardFrameKey(e);
   };
+  const expandFromMenu = useEffectEvent((expanded: boolean) => expand(expanded));
+  useEffect(() => {
+    const listener = (event: Event) => {
+      if (event instanceof CustomEvent && typeof event.detail === "boolean")
+        expandFromMenu(event.detail);
+    };
+    window.addEventListener(THREAD_EXPANSION_EVENT, listener);
+    return () => window.removeEventListener(THREAD_EXPANSION_EVENT, listener);
+  }, []);
   useEffect(() => {
     const listener = (e: KeyboardEvent) => readerKeys(e);
     window.addEventListener("keydown", listener, true);
@@ -792,145 +813,35 @@ export function ThreadView({
             >{t`Collapse all`}</button>
           </div>
         )}
-        <DropdownMenu
-          trigger={
-            <button
-              type="button"
-              aria-label={t`More actions`}
-              className={`mt-1 rounded-control p-1.5 ${touchIcon} text-a11y-muted outline-offset-0 outline-a11y-focus hover:bg-fill-hover hover:text-neutral-800 focus-visible:outline-[3px] data-popup-open:bg-fill-pressed dark:hover:text-neutral-100`}
-            >
-              <MoreHorizontal className="size-4" />
-            </button>
-          }
-        >
-          {messages.length > 1 && (
-            <>
-              <MenuItem
-                icon={ChevronsUpDown}
-                shortcut={shortcut("expandAll")}
-                disabled={messages.every((m) => open.has(m.id))}
-                onClick={() => expand(true)}
+        {!menuInToolbar && (
+          <DropdownMenu
+            trigger={
+              <button
+                type="button"
+                aria-label={t`More actions`}
+                className={`mt-1 rounded-control p-1.5 ${touchIcon} text-a11y-muted outline-offset-0 outline-a11y-focus hover:bg-fill-hover hover:text-neutral-800 focus-visible:outline-[3px] data-popup-open:bg-fill-pressed dark:hover:text-neutral-100`}
               >
-                {t`Expand all`}
-              </MenuItem>
-              <MenuItem
-                icon={ChevronsDownUp}
-                shortcut={shortcut("collapseAll")}
-                disabled={open.size === 0}
-                onClick={() => expand(false)}
-              >
-                {t`Collapse all`}
-              </MenuItem>
-              <MenuSeparator />
-            </>
-          )}
-          {canOpenWindow && (
-            <MenuItem icon={AppWindow} onClick={() => run(openThreadWindow(selectedId))}>
-              {t`Open in New Window`}
-            </MenuItem>
-          )}
-          {isDesktop() && (
-            <>
-              {canOpenWeb && (
-                <MenuItem
-                  onClick={() =>
-                    run(
-                      withMail((call) =>
-                        call("CopyMessageLink", { id: selectedId, kind: "web" }),
-                      ).pipe(
-                        Effect.matchCause({
-                          onSuccess: () => notify({ text: t`Webmail link copied` }),
-                          onFailure: (cause) =>
-                            notify({ text: causeText(i18n, cause), tone: "error" }),
-                        }),
-                      ),
-                    )
-                  }
-                >{t`Copy webmail link`}</MenuItem>
-              )}
-              <MenuItem
-                onClick={() =>
-                  run(
-                    withMail((call) => call("CopyMessageLink", { id: selectedId })).pipe(
-                      Effect.matchCause({
-                        onSuccess: () => notify({ text: t`Message link copied` }),
-                        onFailure: (cause) =>
-                          notify({ text: causeText(i18n, cause), tone: "error" }),
-                      }),
-                    ),
-                  )
-                }
-              >{t`Copy link to message`}</MenuItem>
-              <MenuItem
-                onClick={() =>
-                  run(
-                    withMail((call) =>
-                      call("CopyMessageLink", { id: selectedId, kind: "thread" }),
-                    ).pipe(
-                      Effect.matchCause({
-                        onSuccess: () => notify({ text: t`Thread link copied` }),
-                        onFailure: (cause) =>
-                          notify({ text: causeText(i18n, cause), tone: "error" }),
-                      }),
-                    ),
-                  )
-                }
-              >{t`Copy link to thread`}</MenuItem>
-            </>
-          )}
-          {canShare && (
-            <>
-              <MenuItem
-                onClick={() => shareLink(selectedId, "message")}
-              >{t`Send message link to…`}</MenuItem>
-              <MenuItem
-                onClick={() => shareLink(selectedId, "thread")}
-              >{t`Send thread link to…`}</MenuItem>
-              {canOpenWeb && (
-                <MenuItem
-                  onClick={() => shareLink(selectedId, "web")}
-                >{t`Send web mail link to…`}</MenuItem>
-              )}
-            </>
-          )}
-          {isDesktop() && (
-            <>
-              <MenuItem
-                icon={Printer}
-                shortcut={shortcut("print")}
-                onClick={() => print(selectedId, false, printOnly)}
-              >
-                {t`Print…`}
-              </MenuItem>
-              <MenuItem icon={FileDown} onClick={() => print(selectedId, true, printOnly)}>
-                {t`Save as PDF…`}
-              </MenuItem>
-            </>
-          )}
-          <MenuSeparator />
-          <MenuItem
-            icon={Plus}
-            shortcut={shortcut("zoomIn")}
-            onClick={() => setZoom(stepZoom(zoom, 1))}
+                <MoreHorizontal className="size-4" />
+              </button>
+            }
           >
-            {t`Bigger text`}
-          </MenuItem>
-          <MenuItem
-            icon={Minus}
-            shortcut={shortcut("zoomOut")}
-            onClick={() => setZoom(stepZoom(zoom, -1))}
-          >
-            {t`Smaller text`}
-          </MenuItem>
-          <MenuItem
-            icon={Type}
-            shortcut={shortcut("zoomReset")}
-            onClick={() => setZoom(100)}
-            disabled={zoom === 100}
-          >
-            {t`Actual size`}
-          </MenuItem>
-        </DropdownMenu>
+            {canOpenWindow && (
+              <>
+                <MenuItem icon={AppWindow} onClick={() => run(openThreadWindow(selectedId))}>
+                  {t`Open in new window`}
+                </MenuItem>
+                <MenuSeparator />
+              </>
+            )}
+            <ThreadViewMenuItems
+              messages={messages}
+              selectedId={selectedId}
+              single={single}
+              notify={notify}
+              print={print}
+            />
+          </DropdownMenu>
+        )}
       </div>
       {finding && (
         <search
@@ -1045,8 +956,46 @@ export function ThreadView({
           ),
         )}
       </div>
+      {onComposeMessage && replyTarget && (
+        <ReplyBar
+          onCompose={(mode, attachment) => onComposeMessage(replyTarget.id, mode, attachment)}
+        />
+      )}
       {raw && <RawMessageDialog messageId={raw} notify={notify} onClose={() => setRaw(null)} />}
     </div>
+  );
+}
+
+/**
+ * Reply, Reply all and Forward under the last message, as in Apple Mail and Mimestream. The
+ * toolbar can fold its copies into the menu; this bar stays at every width.
+ */
+function ReplyBar({
+  onCompose,
+}: {
+  onCompose: (mode: "reply" | "replyAll" | "forward", attachment?: boolean) => void;
+}) {
+  const { t } = useLingui();
+  const shortcut = useShortcutText();
+  const actions = [
+    { mode: "reply", icon: Reply, label: t`Reply` },
+    { mode: "replyAll", icon: ReplyAll, label: t`Reply all` },
+    { mode: "forward", icon: Forward, label: t`Forward` },
+  ] as const;
+  return (
+    <fieldset
+      aria-label={t`Reply to this conversation`}
+      className="mt-4 flex min-w-0 flex-wrap gap-2 border-0 border-t border-separator p-0 pt-4"
+    >
+      {actions.map(({ mode, icon: Icon, label }) => (
+        <Tip key={mode} label={label} shortcut={shortcut(mode)}>
+          <button type="button" className={buttonSecondary} onClick={() => onCompose(mode)}>
+            <Icon aria-hidden className="size-4" />
+            {label}
+          </button>
+        </Tip>
+      ))}
+    </fieldset>
   );
 }
 

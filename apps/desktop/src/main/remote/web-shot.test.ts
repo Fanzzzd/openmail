@@ -118,8 +118,8 @@ app.whenReady().then(async () => {
     await shot(390, 844, true, "web-390-thread",
       [click("[data-id]", "Quarterly report draft")]);
     await shot(390, 844, true, "web-390-compose", [
-      openSidebar,
-      click('button[aria-label="New message"]'),
+      // The list header's New message button: a phone needs no drawer to compose.
+      click('[data-mail-pane="list"] header button[aria-label="New message"]'),
       focus('input[aria-label="To"]'),
       { text: "dana.whitfield@example.com" }, { key: "Enter" },
       { text: "sam.ortiz@example.com" }, { key: "Enter" },

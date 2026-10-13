@@ -58,6 +58,7 @@ vi.mock("../features/reader/Reader", () => ({
 }));
 vi.mock("../features/organize/FocusedInboxActions", () => ({ FocusedInboxPermission: () => null }));
 vi.mock("../features/organize/ThreadActions", () => ({ ThreadActions: () => null }));
+vi.mock("../features/reader/ThreadViewMenu", () => ({ ThreadViewMenuItems: () => null }));
 vi.mock("../features/downloads/Downloads", () => ({ Downloads: () => null }));
 vi.mock("../ui/Toast", () => ({
   Toast: ({ toast }: { toast: { text: string } | null }) =>

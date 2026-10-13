@@ -5,7 +5,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { Cause, Exit } from "effect";
 import { AsyncResult, Atom } from "effect/reactivity";
 import { ChevronLeft, ExternalLink, X } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useRef, useState } from "react";
 
 import type { Account, ImapConnectInput } from "../../../../shared/api";
 import { type AppError, causeText, resultError } from "../../lib/errors";
@@ -15,7 +15,8 @@ import { ProviderIcon, type ProviderIconName } from "../../ui/ProviderIcon";
 import { Dialog } from "../../ui/Dialog";
 import { Disclosure } from "../../ui/Disclosure";
 import { SegmentedControl } from "../../ui/SegmentedControl";
-import { formInput } from "../../ui/styles";
+import { buttonPrimary, formInput } from "../../ui/styles";
+import { useShortcutText } from "../../i18n/use-shortcut-text";
 
 /**
  * UI text for core's IMAP presets, keyed by preset id. Core keeps its own
@@ -97,6 +98,8 @@ export function AddAccountDialog({ onClose, onAdded, firstRun, signInAgain }: Pr
     signInAgain ? (againPreset && isImapChoice(againPreset) ? againPreset : "custom") : null,
   );
   const tile = TILES.find((item) => item.id === choice);
+  // Focus starts on the first provider, the step's first choice, not on Close.
+  const firstTile = useRef<HTMLButtonElement>(null);
 
   const provider = tile ? tileLabel(i18n, tile.label) : "";
   const title = signInAgain
@@ -104,7 +107,7 @@ export function AddAccountDialog({ onClose, onAdded, firstRun, signInAgain }: Pr
     : tile
       ? t`Add ${provider}`
       : firstRun
-        ? t`Add Your First Account`
+        ? t`Add your first account`
         : t`Add email account`;
 
   return (
@@ -112,6 +115,7 @@ export function AddAccountDialog({ onClose, onAdded, firstRun, signInAgain }: Pr
       aria-label={title}
       onClose={onClose}
       ownClose
+      initialFocus={choice === null ? firstTile : undefined}
       className="w-[min(460px,calc(100vw-48px))] p-6"
       backdropClassName="bg-black/30 backdrop-blur-[2px]"
     >
@@ -143,7 +147,7 @@ export function AddAccountDialog({ onClose, onAdded, firstRun, signInAgain }: Pr
           <p className="mt-1.5 text-a11y-muted">
             {firstRun ? (
               <Trans>
-                Welcome to openmail. Choose your email provider. Your credentials stay on this
+                Welcome to OpenMail. Choose your email provider. Your credentials stay on this
                 computer.
               </Trans>
             ) : (
@@ -151,9 +155,10 @@ export function AddAccountDialog({ onClose, onAdded, firstRun, signInAgain }: Pr
             )}
           </p>
           <div className="mt-5 grid grid-cols-4 gap-2">
-            {TILES.map((item) => (
+            {TILES.map((item, index) => (
               <button
                 key={item.id}
+                ref={index === 0 ? firstTile : undefined}
                 type="button"
                 aria-label={tileLabel(i18n, item.label)}
                 onClick={() => setChoice(item.id)}
@@ -244,13 +249,13 @@ function OAuthStep({
       <ClientForm provider={provider} autoFocus>
         {provider === "gmail" ? (
           <Trans>
-            openmail signs in with an OAuth client you register yourself. First enter the OAuth
+            OpenMail signs in with an OAuth client you register yourself. First enter the OAuth
             client you created in Google Cloud, with the Desktop app type. See {doc} in the
             repository for the steps.
           </Trans>
         ) : (
           <Trans>
-            openmail signs in with an OAuth client you register yourself. First enter the app you
+            OpenMail signs in with an OAuth client you register yourself. First enter the app you
             registered in Azure, with the Mobile and desktop applications type. Only personal
             outlook.com and Hotmail accounts are supported. See {doc} in the repository for the
             steps.
@@ -266,13 +271,13 @@ function OAuthStep({
           <Trans>Finish signing in in your browser, then come back here.</Trans>
         ) : provider === "gmail" ? (
           <Trans>
-            Sign in with your Google account in the browser. openmail keeps the sign-in token in
+            Sign in with your Google account in the browser. OpenMail keeps the sign-in token in
             this computer's keychain.
           </Trans>
         ) : (
           <Trans>
             Sign in with your personal Microsoft account (outlook.com or Hotmail) in the browser.
-            openmail keeps the sign-in token in this computer's keychain.
+            OpenMail keeps the sign-in token in this computer's keychain.
           </Trans>
         )}
       </p>
@@ -280,7 +285,7 @@ function OAuthStep({
         {active === "own" ? (
           <Trans>New sign-ins use your own OAuth client.</Trans>
         ) : (
-          <Trans>New sign-ins use openmail's built-in client.</Trans>
+          <Trans>New sign-ins use OpenMail's built-in client.</Trans>
         )}
       </p>
       {active === "own" && builtIn && <UseBuiltIn provider={provider} />}
@@ -662,5 +667,56 @@ function PrimaryButton({
     >
       {children}
     </button>
+  );
+}
+
+/**
+ * The step after the first account: mail is syncing, and three shortcuts to start with. Done,
+ * Escape or a click outside skips it; it does not come back.
+ */
+export function FirstRunDone({ onClose }: { onClose: () => void }) {
+  const { t } = useLingui();
+  const shortcut = useShortcutText();
+  const done = useRef<HTMLButtonElement>(null);
+  const keys = [
+    { action: "compose", label: t`New message` },
+    { action: "reply", label: t`Reply` },
+    { action: "archive", label: t`Archive` },
+  ] as const;
+  const help = shortcut("help");
+  return (
+    <Dialog
+      aria-label={t`You're set`}
+      onClose={onClose}
+      initialFocus={done}
+      className="w-[min(380px,calc(100vw-48px))] p-6"
+    >
+      <h2 className="text-headline font-semibold">
+        <Trans>You're set</Trans>
+      </h2>
+      <p className="mt-1.5 text-a11y-muted">
+        <Trans>Your mail is syncing. Three shortcuts to start with:</Trans>
+      </p>
+      <dl className="mt-4 grid grid-cols-[1fr_auto] gap-x-4 gap-y-2">
+        {keys.map(({ action, label }) => (
+          <div key={action} className="contents">
+            <dt>{label}</dt>
+            <dd>
+              <kbd className="rounded-item bg-fill-quiet px-1.5 py-px font-sans text-footnote tabular-nums">
+                {shortcut(action)}
+              </kbd>
+            </dd>
+          </div>
+        ))}
+      </dl>
+      <p className="mt-4 text-footnote text-a11y-muted">
+        <Trans>Press {help} for all shortcuts.</Trans>
+      </p>
+      <div className="mt-5 flex justify-end">
+        <button ref={done} type="button" className={buttonPrimary} onClick={onClose}>
+          <Trans>Done</Trans>
+        </button>
+      </div>
+    </Dialog>
   );
 }

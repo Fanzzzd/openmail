@@ -4,8 +4,8 @@
   --font-sans:
     -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB",
     "Microsoft YaHei", system-ui, sans-serif;
-  /* MEDIUM_MIN in shared/layout.ts (696px), so max-sm: matches the narrow layout. */
-  --breakpoint-sm: 43.5rem;
+  /* MEDIUM_MIN in shared/layout.ts (800px), so max-sm: matches the narrow layout. */
+  --breakpoint-sm: 50rem;
   /* Indeterminate progress: a short bar slides across the track. */
   --animate-indeterminate: indeterminate 1.4s ease-in-out infinite;
   /* A toast rises into place after the action that raised it. Reduced motion turns it off. */

@@ -141,6 +141,8 @@ export async function flow(
     thread?: string;
     /** The main window's starting route, from shared/routes. */
     route?: string;
+    /** The renderer sees no accounts, as on first launch. */
+    noAccounts?: boolean;
   } = {},
 ): Promise<FlowHarness> {
   const provider = options.provider ?? "gmail";
@@ -313,6 +315,8 @@ export async function flow(
       ContactPhoto: ({ accountId, address }) => m.contactPhoto(accountId, address),
       AttachmentCapabilities: () => Effect.succeed({ share: Boolean(options.native) }),
       UpdateState: () => Effect.succeed({ status: "disabled" }),
+      PrivateUpdateFeed: () => Effect.succeed(false),
+      ...(options.noAccounts ? { Accounts: () => Effect.succeed([]) } : {}),
       ClipboardAttachments: () => Effect.succeed([]),
       SetNativeMenuState: () => Effect.void,
       SpellcheckLanguages: () => Effect.succeed({ languages: [], automatic: true }),

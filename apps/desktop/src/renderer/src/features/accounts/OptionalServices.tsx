@@ -89,7 +89,7 @@ export function OptionalServices({
   const names = {
     contacts: t`Contacts`,
     calendar: t`Calendar`,
-    settings: account.provider === "gmail" ? t`Gmail Settings` : t`MailboxSettings`,
+    settings: account.provider === "gmail" ? t`Gmail settings` : t`MailboxSettings`,
   };
   const pendingNames = pending
     ? new Intl.ListFormat(i18n.locale).format(pending.others.map((service) => names[service]))

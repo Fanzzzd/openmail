@@ -163,6 +163,10 @@ msgstr "{label} предложений"
 msgid "{more} more"
 msgstr "{more} ещё"
 
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "{name} ({owner})"
+msgstr "{name} ({owner})"
+
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "{name} client"
 msgstr "{name} клиент"
@@ -186,6 +190,26 @@ msgstr "{op} {count, plural, one {# переписка} few {# переписк�
 #: src/renderer/src/features/reader/body/MessageBody.tsx
 msgid "{pixels, plural, one {# tracking pixel} other {# tracking pixels}}"
 msgstr "{pixels, plural, one {# пиксель отслеживания} few {# пикселя отслеживания} many {# пикселей отслеживания} other {# пикселя отслеживания}}"
+
+#: src/renderer/src/features/sync-status/MailStatusNotice.tsx
+msgid "{provider} needs permission again"
+msgstr "{provider} снова требует разрешение"
+
+#: src/renderer/src/features/sync-status/MailStatusNotice.tsx
+msgid "{provider} password rejected"
+msgstr "{provider} отклонил пароль"
+
+#: src/renderer/src/features/sync-status/MailStatusNotice.tsx
+msgid "{provider} sign-in client changed"
+msgstr "Клиент входа {provider} изменился"
+
+#: src/renderer/src/features/sync-status/MailStatusNotice.tsx
+msgid "{provider} sign-in expired"
+msgstr "Вход в {provider} истёк"
+
+#: src/renderer/src/features/sync-status/MailStatusNotice.tsx
+msgid "{provider} sign-in missing"
+msgstr "Данные входа {provider} отсутствуют"
 
 #: src/renderer/src/features/downloads/Downloads.tsx
 msgid "{received} of {size}"
@@ -220,6 +244,7 @@ msgid "1 year"
 msgstr "1 год"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 #: src/renderer/src/ui/ProviderIcon.tsx
 msgid "163 Mail"
 msgstr "163 Mail"
@@ -342,7 +367,7 @@ msgstr "Активные часы начинаются для {0} {dayName}, п�
 msgid "Activity"
 msgstr "Журнал действий"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Actual size"
 msgstr "Фактический размер"
@@ -426,15 +451,23 @@ msgid "Add to Contacts"
 msgstr "Добавить в Контакты"
 
 #: src/renderer/src/app/WindowUi.tsx
-msgid "Add to Dictionary"
+msgid "Add to dictionary"
 msgstr "Добавить в словарь"
+
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "Add to favorites"
+msgstr "Добавить в избранное"
+
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "Add to favorites in all accounts"
+msgstr "Добавить в избранное во всех учётных записях"
 
 #: src/renderer/src/features/ai/AiPanel.tsx
 msgid "Add your Anthropic API key in Settings → AI Access, then allow the accounts the assistant may read."
 msgstr "Добавьте ключ API Anthropic в «Настройки → Доступ к ИИ», затем разрешите учётные записи, которые может читать помощник."
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
-msgid "Add Your First Account"
+msgid "Add your first account"
 msgstr "Добавьте свою первую учетную запись"
 
 #: src/renderer/src/features/reader/attachments/AttachmentImportDialog.tsx
@@ -782,6 +815,7 @@ msgstr "Приложения, не найденные на этом Mac"
 
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/ai/TriageChip.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
@@ -837,7 +871,7 @@ msgid "Attach files"
 msgstr "Прикрепить файлы"
 
 #: src/renderer/src/state/desktop.ts
-msgid "Attach Files…"
+msgid "Attach files…"
 msgstr "Прикрепить файлы…"
 
 #: src/renderer/src/features/feedback/Feedback.tsx
@@ -962,7 +996,7 @@ msgstr "До даты"
 msgid "Below quoted text"
 msgstr "Под цитируемым текстом"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Bigger text"
 msgstr "Текст большего размера"
 
@@ -1218,7 +1252,7 @@ msgid "Check for updates"
 msgstr "Проверить наличие обновлений"
 
 #: src/renderer/src/state/desktop.ts
-msgid "Check for Updates…"
+msgid "Check for updates…"
 msgstr "Проверить наличие обновлений…"
 
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
@@ -1421,6 +1455,7 @@ msgid "Code block"
 msgstr "Кодовый блок"
 
 #: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Collapse all"
 msgstr "Свернуть все"
 
@@ -1478,7 +1513,9 @@ msgstr "Сжатие недоступно на этой платформе."
 msgid "Compaction was refused because search index alignment could not be guaranteed."
 msgstr "Сжатие отклонено, поскольку соответствие поискового индекса не удалось гарантировать."
 
+#. Keyboard shortcuts section: writing, replying to and sending messages.
 #: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/i18n/shortcut-groups.ts
 msgid "Compose"
 msgstr "Новое сообщение"
 
@@ -1529,7 +1566,7 @@ msgid "Connect an account to send feedback"
 msgstr "Подключите учётная запись, чтобы отправить отзыв"
 
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
-msgid "Connect Calendar"
+msgid "Connect calendar"
 msgstr "Подключить календарь"
 
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
@@ -1670,11 +1707,11 @@ msgstr "Копировать команду для {name}"
 msgid "Copy config for {name}"
 msgstr "Копировать конфигурацию для {name}"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Copy link to message"
 msgstr "Скопировать ссылку на сообщение"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Copy link to thread"
 msgstr "Скопировать ссылку на переписку"
 
@@ -1703,7 +1740,7 @@ msgstr "Скопировать в папки…"
 msgid "Copy to local signature"
 msgstr "Копировать в локальную подпись"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Copy webmail link"
 msgstr "Копировать ссылку на веб-почту"
 
@@ -2121,7 +2158,7 @@ msgid "Delete permanently"
 msgstr "Удалить навсегда"
 
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
-msgid "Delete Space"
+msgid "Delete space"
 msgstr "Удалить пространство"
 
 #: src/renderer/src/app/App.tsx
@@ -2233,6 +2270,7 @@ msgstr "Не повторяется"
 msgid "Don't attach the original message"
 msgstr "Не прикрепляйте исходное сообщение"
 
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/reader/RemoteImagesPrompt.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Done"
@@ -2562,6 +2600,7 @@ msgid "Exclude matches"
 msgstr "Исключить совпадения"
 
 #: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Expand all"
 msgstr "Развернуть все"
 
@@ -2590,9 +2629,16 @@ msgid "failed"
 msgstr "ошибка"
 
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
-#: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Favorite"
 msgstr "Любимый"
+
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "Favorite {name}"
+msgstr "Избранное: {name}"
+
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "Favorite {name} in all accounts"
+msgstr "Избранное: {name} во всех учётных записях"
 
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Favorites"
@@ -2634,6 +2680,10 @@ msgstr "Заполнение переменных шаблона"
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Filter"
 msgstr "Фильтр"
+
+#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+msgid "Filter shortcuts"
+msgstr "Фильтр сочетаний клавиш"
 
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Filters"
@@ -2750,7 +2800,9 @@ msgstr "К сведению"
 msgid "Format"
 msgstr "Формат"
 
+#. Keyboard shortcuts section: text styles in the message editor.
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
+#: src/renderer/src/i18n/shortcut-groups.ts
 msgid "Formatting"
 msgstr "Форматирование"
 
@@ -2762,6 +2814,7 @@ msgstr "Форумы"
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
+#: src/renderer/src/features/reader/Reader.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Forward"
@@ -2907,7 +2960,7 @@ msgid "Gmail draft labels and stars stay on this Mac. Gmail only allows the Draf
 msgstr "Ярлыки и звёзды черновиков Gmail остаются на этом Mac. Gmail разрешает для черновиков на сервере только ярлык «Черновик»."
 
 #: src/renderer/src/features/accounts/OptionalServices.tsx
-msgid "Gmail Settings"
+msgid "Gmail settings"
 msgstr "Настройки Gmail"
 
 #: src/renderer/src/features/organize/GoToFolder.tsx
@@ -3266,8 +3319,8 @@ msgid "Keep local copy"
 msgstr "Сохранить локальную копию"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
-msgid "Keep openmail under"
-msgstr "Ограничить размер openmail"
+msgid "Keep OpenMail under"
+msgstr "Ограничить размер OpenMail"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
@@ -3738,7 +3791,7 @@ msgctxt "message text"
 msgid "Message body"
 msgstr "Текст сообщения"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Message link copied"
 msgstr "Ссылка на сообщение скопирована."
 
@@ -4006,7 +4059,7 @@ msgstr "Переместить сообщение в корзину"
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
 #: src/renderer/src/i18n/action-names.ts
-msgid "Move To"
+msgid "Move to"
 msgstr "Переместить в"
 
 #: src/renderer/src/features/compose/components/RecipientField.tsx
@@ -4109,6 +4162,11 @@ msgstr "Назовите шаблон, затем нажмите Return."
 msgid "Name, like Work"
 msgstr "Имя, например Работа"
 
+#. Keyboard shortcuts section: moving between messages, mailboxes and panes.
+#: src/renderer/src/i18n/shortcut-groups.ts
+msgid "Navigation"
+msgstr "Навигация"
+
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Needs sign-in"
@@ -4136,17 +4194,16 @@ msgstr "Новый ярлык или папка"
 msgid "New mail notifications"
 msgstr "Уведомления о новой почте"
 
+#: src/renderer/src/app/App.tsx
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
+#: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/mail-list/MessageList.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 #: src/renderer/src/state/desktop.ts
 msgid "New message"
-msgstr "Новое сообщение"
-
-#: src/renderer/src/features/compose/components/Composer.tsx
-msgid "New Message"
 msgstr "Новое сообщение"
 
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
@@ -4166,8 +4223,8 @@ msgid "New profile"
 msgstr "Новый профиль"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
-msgid "New sign-ins use openmail's built-in client."
-msgstr "Новые входы используют встроенный клиент openmail."
+msgid "New sign-ins use OpenMail's built-in client."
+msgstr "Новые входы используют встроенный клиент OpenMail."
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "New sign-ins use your own OAuth client."
@@ -4193,7 +4250,7 @@ msgstr "Новое время:"
 
 #: src/renderer/src/i18n/shortcut-names.ts
 #: src/renderer/src/state/desktop.ts
-msgid "New Window"
+msgid "New window"
 msgstr "Новое окно"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
@@ -4341,6 +4398,10 @@ msgstr "принтеров нет."
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "No response needed"
 msgstr "Ответ не требуется"
+
+#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+msgid "No shortcuts match."
+msgstr "Нет подходящих сочетаний клавиш."
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "No starred messages. Star a message to find it here."
@@ -4560,7 +4621,7 @@ msgstr "Открыть в Gmail"
 #: src/renderer/src/features/reader/Reader.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
-msgid "Open in New Window"
+msgid "Open in new window"
 msgstr "Открыть в новом окне"
 
 #: src/renderer/src/features/reader/Reader.tsx
@@ -4612,7 +4673,7 @@ msgid "Open this link?"
 msgstr "Открыть эту ссылку?"
 
 #: src/renderer/src/features/reader/attachments/OpenWithMenu.tsx
-msgid "Open With"
+msgid "Open with"
 msgstr "Открыть в программе"
 
 #: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
@@ -4657,12 +4718,12 @@ msgid "OpenMail sign-in"
 msgstr "Вход в OpenMail"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
-msgid "openmail signs in with an OAuth client you register yourself. First enter the app you registered in Azure, with the Mobile and desktop applications type. Only personal outlook.com and Hotmail accounts are supported. See {doc} in the repository for the steps."
-msgstr "openmail входит в систему с помощью клиента OAuth, который вы регистрируете самостоятельно. Сначала введите приложение, которое вы зарегистрировали в Azure, с типом «Мобильные и настольные приложения». Поддерживаются только личные учетные записи Outlook.com и Hotmail. Инструкции см. в {doc} в репозитории."
+msgid "OpenMail signs in with an OAuth client you register yourself. First enter the app you registered in Azure, with the Mobile and desktop applications type. Only personal outlook.com and Hotmail accounts are supported. See {doc} in the repository for the steps."
+msgstr "OpenMail входит в систему с помощью клиента OAuth, который вы регистрируете самостоятельно. Сначала введите приложение, которое вы зарегистрировали в Azure, с типом «Мобильные и настольные приложения». Поддерживаются только личные учетные записи Outlook.com и Hotmail. Инструкции см. в {doc} в репозитории."
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
-msgid "openmail signs in with an OAuth client you register yourself. First enter the OAuth client you created in Google Cloud, with the Desktop app type. See {doc} in the repository for the steps."
-msgstr "openmail входит в систему с помощью клиента OAuth, который вы регистрируете самостоятельно. Сначала введите клиент OAuth, который вы создали в Google Cloud, с типом настольного приложения. Инструкции см. в {doc} в репозитории."
+msgid "OpenMail signs in with an OAuth client you register yourself. First enter the OAuth client you created in Google Cloud, with the Desktop app type. See {doc} in the repository for the steps."
+msgstr "OpenMail входит в систему с помощью клиента OAuth, который вы регистрируете самостоятельно. Сначала введите клиент OAuth, который вы создали в Google Cloud, с типом настольного приложения. Инструкции см. в {doc} в репозитории."
 
 #: src/renderer/src/features/feedback/Feedback.tsx
 msgid "OpenMail stopped unexpectedly"
@@ -4926,6 +4987,10 @@ msgstr "Подготовка изменения…"
 msgid "Press ? outside a text field to show this list."
 msgstr "Нажимать ? вне текстового поля, чтобы отобразить этот список."
 
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+msgid "Press {help} for all shortcuts."
+msgstr "Нажмите {help}, чтобы увидеть все сочетания клавиш."
+
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Press Delete to remove it from recent searches."
 msgstr "Нажмите Delete, чтобы удалить его из недавних поисков."
@@ -4998,7 +5063,7 @@ msgstr "Распечатать"
 msgid "Print message…"
 msgstr "Распечатать сообщение…"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Print…"
 msgstr "Распечатать…"
 
@@ -5028,6 +5093,7 @@ msgid "Publish OpenMail as a Tailscale Service, such as svc:openmail, with its o
 msgstr "Опубликуйте OpenMail как Tailscale Service, например svc:openmail, с собственным именем вместо порта 8443 на этом Mac. Сначала опишите сервис в консоли администратора Tailscale и одобрите этот Mac как его хост. Оставьте пустым, чтобы использовать имя этого Mac."
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 #: src/renderer/src/ui/ProviderIcon.tsx
 msgid "QQ Mail"
 msgstr "QQ Mail"
@@ -5085,7 +5151,9 @@ msgstr "Только чтение"
 msgid "Read status"
 msgstr "Статус прочтения"
 
+#. Keyboard shortcuts section: actions on the open message, such as text size.
 #: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/i18n/shortcut-groups.ts
 msgid "Reading"
 msgstr "Чтение"
 
@@ -5250,19 +5318,24 @@ msgid "Remove account"
 msgstr "Удалить учётная запись"
 
 #: src/renderer/src/app/App.tsx
-#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
-msgid "Remove current label"
-msgstr "Удалить текущий ярлык"
-
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
+#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/i18n/action-names.ts
-msgid "Remove Current Label"
-msgstr "Удалить текущую ярлык"
+msgid "Remove current label"
+msgstr "Удалить текущий ярлык"
 
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Remove favorite"
 msgstr "Удалить избранное"
+
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "Remove from favorites"
+msgstr "Удалить из избранного"
+
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "Remove from favorites in all accounts"
+msgstr "Удалить из избранного во всех учётных записях"
 
 #: src/renderer/src/features/downloads/Downloads.tsx
 msgid "Remove from list"
@@ -5297,8 +5370,8 @@ msgid "Remove star"
 msgstr "Убрать звезду"
 
 #: src/renderer/src/features/settings/Settings.tsx
-msgid "Remove this account and its local mail from openmail. Mail on the server is not affected."
-msgstr "Удалите эту учетную запись и ее локальную почту из openmail. Почта на сервере не затронута."
+msgid "Remove this account and its local mail from OpenMail. Mail on the server is not affected."
+msgstr "Удалите эту учетную запись и ее локальную почту из OpenMail. Почта на сервере не затронута."
 
 #: src/renderer/src/features/settings/sections/UpdateSettings.tsx
 msgid "Remove token"
@@ -5376,9 +5449,11 @@ msgstr "Заменить на"
 msgid "Replies and forwards"
 msgstr "Ответы и пересылки"
 
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
+#: src/renderer/src/features/reader/Reader.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Reply"
@@ -5391,7 +5466,9 @@ msgid "Reply"
 msgstr "Метка ответа"
 
 #: src/renderer/src/features/ai/Proposals.tsx
+#: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
+#: src/renderer/src/features/reader/Reader.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Reply all"
@@ -5402,10 +5479,6 @@ msgstr "Ответить всем"
 msgctxt "incoming message action flag"
 msgid "Reply all"
 msgstr "Метка «Ответить всем»"
-
-#: src/renderer/src/features/compose/components/Composer.tsx
-msgid "Reply All"
-msgstr "Ответить всем"
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Reply From"
@@ -5427,6 +5500,10 @@ msgstr "Отвечать только контактам"
 msgid "Reply signature for {address}"
 msgstr "Ответная подпись для {address}"
 
+#: src/renderer/src/features/reader/Reader.tsx
+msgid "Reply to this conversation"
+msgstr "Ответить в этой переписке"
+
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
 #: src/renderer/src/features/settings/Settings.tsx
@@ -5445,7 +5522,7 @@ msgid "Resend to rejected recipients"
 msgstr "Отправить снова отклонённым получателям"
 
 #: src/renderer/src/features/sidebar/Sidebar.tsx
-msgid "Reset Favorites"
+msgid "Reset favorites"
 msgstr "Сбросить избранное"
 
 #: src/main/app/native-i18n.ts
@@ -5455,6 +5532,14 @@ msgstr "Сбросить локальный кеш"
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 msgid "Reset toolbar"
 msgstr "Сбросить панель инструментов"
+
+#: src/renderer/src/app/App.tsx
+msgid "Resize message list"
+msgstr "Изменить размер списка сообщений"
+
+#: src/renderer/src/app/App.tsx
+msgid "Resize sidebar"
+msgstr "Изменить размер боковой панели"
 
 #: src/renderer/src/features/reader/attachments/AttachmentImportDialog.tsx
 msgid "Respond to this invitation from the message."
@@ -5615,7 +5700,7 @@ msgstr "Сохранить все"
 msgid "Save an Anthropic API key in AI settings."
 msgstr "Сохраните ключ API Anthropic в настройках ИИ."
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Save as PDF…"
 msgstr "Сохранить как PDF…"
 
@@ -5811,7 +5896,7 @@ msgstr "Отправить"
 
 #: src/renderer/src/features/organize/ThreadActions.tsx
 #: src/renderer/src/i18n/action-names.ts
-msgid "Send Again"
+msgid "Send again"
 msgstr "Отправить повторно"
 
 #: src/renderer/src/features/reader/UnsubscribeButton.tsx
@@ -5833,10 +5918,11 @@ msgstr "Не удалось отправить"
 
 #: src/renderer/src/features/feedback/Feedback.tsx
 #: src/renderer/src/state/desktop.ts
-msgid "Send Feedback…"
+msgid "Send feedback…"
 msgstr "Отправить отзыв…"
 
 #: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Send message link to…"
 msgstr "Отправить ссылку на сообщение в…"
@@ -5846,11 +5932,13 @@ msgid "Send this message without a subject?"
 msgstr "Отправить это сообщение без темы?"
 
 #: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Send thread link to…"
 msgstr "Отправить ссылку на переписку в…"
 
 #: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Send web mail link to…"
 msgstr "Отправить ссылку на веб-почту в…"
@@ -6113,12 +6201,12 @@ msgid "Sign in with {name}"
 msgstr "Войти через {name}"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
-msgid "Sign in with your Google account in the browser. openmail keeps the sign-in token in this computer's keychain."
-msgstr "Войдите в браузере в свою учётную запись Google. openmail хранит токен входа в связке ключей этого компьютера."
+msgid "Sign in with your Google account in the browser. OpenMail keeps the sign-in token in this computer's keychain."
+msgstr "Войдите в браузере в свою учётную запись Google. OpenMail хранит токен входа в связке ключей этого компьютера."
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
-msgid "Sign in with your personal Microsoft account (outlook.com or Hotmail) in the browser. openmail keeps the sign-in token in this computer's keychain."
-msgstr "Войдите в браузере в свою личную учётную запись Microsoft (outlook.com или Hotmail). openmail хранит токен входа в связке ключей этого компьютера."
+msgid "Sign in with your personal Microsoft account (outlook.com or Hotmail) in the browser. OpenMail keeps the sign-in token in this computer's keychain."
+msgstr "Войдите в браузере в свою личную учётную запись Microsoft (outlook.com или Hotmail). OpenMail хранит токен входа в связке ключей этого компьютера."
 
 #: src/renderer/src/app/App.tsx
 msgid "Sign-in failed: {reason}"
@@ -6184,7 +6272,7 @@ msgstr "Пропустить"
 msgid "Small"
 msgstr "Маленький"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Smaller text"
 msgstr "Меньший текст"
@@ -6194,7 +6282,7 @@ msgid "Smaller than"
 msgstr "Меньше, чем"
 
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
-msgid "Smart Lists"
+msgid "Smart lists"
 msgstr "Умные списки"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
@@ -6427,7 +6515,7 @@ msgid "Sync aliases and signatures"
 msgstr "Синхронизировать псевдонимы и подписи"
 
 #: src/renderer/src/features/overview/Overview.tsx
-msgid "Sync All"
+msgid "Sync all"
 msgstr "Синхронизировать все"
 
 #: src/renderer/src/features/overview/Overview.tsx
@@ -6768,8 +6856,8 @@ msgid "This message may have been sent. Check Sent before sending it again."
 msgstr "Возможно, это сообщение уже отправлено. Проверьте «Отправленные», прежде чем отправлять его снова."
 
 #: src/renderer/src/features/organize/PermanentDeletePermission.tsx
-msgid "This permission lets openmail permanently delete mail in this Gmail account. Google will ask for your consent. After granting it, confirm the deletion again."
-msgstr "Это разрешение позволяет openmail безвозвратно удалять почту в этой учетной записи Gmail. Google запросит ваше согласие. После его предоставления еще раз подтвердите удаление."
+msgid "This permission lets OpenMail permanently delete mail in this Gmail account. Google will ask for your consent. After granting it, confirm the deletion again."
+msgstr "Это разрешение позволяет OpenMail безвозвратно удалять почту в этой учетной записи Gmail. Google запросит ваше согласие. После его предоставления еще раз подтвердите удаление."
 
 #: src/renderer/src/lib/errors.ts
 msgid "This recurrence cannot be represented in Outlook"
@@ -6812,7 +6900,7 @@ msgstr "В этом пространстве пока нет учётных за
 msgid "This time is skipped or repeated by daylight saving. Enter a date and time with a UTC offset"
 msgstr "Из-за перехода на летнее время этот час пропускается или повторяется. Укажите дату и время со смещением UTC"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Thread link copied"
 msgstr "Ссылка на переписку скопирована"
 
@@ -6908,6 +6996,11 @@ msgstr "Перевести"
 msgid "Trash"
 msgstr "Корзина"
 
+#. Keyboard shortcuts section: archive, delete, mark read, star and similar actions.
+#: src/renderer/src/i18n/shortcut-groups.ts
+msgid "Triage"
+msgstr "Разбор почты"
+
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "Triage runs while the app is in the foreground or on AC power. Suggestions require your approval. Reply needed adds a star when accepted."
 msgstr "Предложения по сортировке создаются, когда приложение на переднем плане или устройство подключено к электросети. Они требуют вашего одобрения. Принятие предложения Требуется ответ добавляет звезду."
@@ -6979,7 +7072,7 @@ msgstr "Отменить действие от {0}"
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 #: src/renderer/src/state/desktop.ts
-msgid "Undo Send"
+msgid "Undo send"
 msgstr "Отменить отправку"
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
@@ -7111,6 +7204,10 @@ msgstr "Оповещения"
 msgid "Updates require a signed macOS build and a saved access token."
 msgstr "Для обновлений нужна подписанная версия для macOS и сохранённый токен доступа."
 
+#: src/renderer/src/features/settings/sections/UpdateSettings.tsx
+msgid "Updates require a signed, installed macOS build."
+msgstr "Для обновлений нужна подписанная установленная сборка для macOS."
+
 #: src/main/app/native-i18n.ts
 msgid "Upgrading local database…"
 msgstr "Обновление локальной базы данных…"
@@ -7211,7 +7308,7 @@ msgstr "Ожидание входа в систему…"
 msgid "WAL"
 msgstr "WAL"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Webmail link copied"
 msgstr "Ссылка на веб-почту скопирована"
 
@@ -7228,8 +7325,8 @@ msgid "Weekly"
 msgstr "Еженедельно"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
-msgid "Welcome to openmail. Choose your email provider. Your credentials stay on this computer."
-msgstr "Добро пожаловать в openmail. Выберите своего поставщика электронной почты. Ваши учетные данные останутся на этом компьютере."
+msgid "Welcome to OpenMail. Choose your email provider. Your credentials stay on this computer."
+msgstr "Добро пожаловать в OpenMail. Выберите своего поставщика электронной почты. Ваши учетные данные останутся на этом компьютере."
 
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 msgid "What AI apps can do"
@@ -7259,6 +7356,8 @@ msgstr "Кто может войти"
 msgid "Whole message"
 msgstr "Все сообщение"
 
+#. Keyboard shortcuts section: windows, tabs, panes and app settings.
+#: src/renderer/src/i18n/shortcut-groups.ts
 #: src/renderer/src/state/desktop.ts
 msgid "Window"
 msgstr "Окно"
@@ -7329,6 +7428,10 @@ msgstr "Вы вошли как {signedInAs}. Чтобы продолжить, в
 msgid "You're offline. Mail syncs again when you reconnect."
 msgstr "Нет подключения к сети. Почта снова синхронизируется после подключения."
 
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+msgid "You're set"
+msgstr "Всё готово"
+
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
 msgid "Your changes are saved on this Mac. Try again or keep a local copy."
 msgstr "Ваши изменения сохраняются на этом Mac. Попробуйте еще раз или сохраните локальную копию."
@@ -7340,6 +7443,10 @@ msgstr "Черновик сохранён. Проверьте папку «От�
 #: src/renderer/src/features/remote/ConnectionNotice.tsx
 msgid "Your Mac disconnected this browser. Reload to connect again while your login is still allowed."
 msgstr "Ваш Mac отключил этот браузер. Перезагрузите страницу, чтобы подключиться снова, пока ваш логин разрешён."
+
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+msgid "Your mail is syncing. Three shortcuts to start with:"
+msgstr "Почта синхронизируется. Три сочетания клавиш для начала:"
 
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 msgid "Your overlapping events"

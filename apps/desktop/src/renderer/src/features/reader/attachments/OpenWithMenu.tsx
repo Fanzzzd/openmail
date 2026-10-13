@@ -17,7 +17,7 @@ type Apps =
   | { kind: "error"; text: string };
 
 /**
- * "Open With" inside an attachment's menu. The apps registered for the file
+ * "Open with" inside an attachment's menu. The apps registered for the file
  * load when the submenu opens; picking one opens the attachment there.
  */
 export function OpenWithSubmenu({
@@ -53,12 +53,12 @@ export function OpenWithSubmenu({
         className={`group ${itemClass} data-popup-open:not-data-highlighted:bg-fill-hover`}
       >
         <span className="flex size-4 shrink-0 items-center justify-center" />
-        <span className="min-w-0 flex-1 truncate">{t`Open With`}</span>
+        <span className="min-w-0 flex-1 truncate">{t`Open with`}</span>
         <ChevronRight aria-hidden className="ml-4 size-3.5 opacity-60" />
       </Menu.SubmenuTrigger>
       <Menu.Portal>
         <Menu.Positioner
-          render={<section aria-label={t`Open With`} />}
+          render={<section aria-label={t`Open with`} />}
           className="z-[60] outline-none"
           alignOffset={-5}
           sideOffset={-2}

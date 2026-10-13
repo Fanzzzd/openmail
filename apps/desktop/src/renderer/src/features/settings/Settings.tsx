@@ -11,7 +11,14 @@ import { Radio } from "@base-ui/react/radio";
 import { RadioGroup } from "@base-ui/react/radio-group";
 import { Tabs } from "@base-ui/react/tabs";
 import { AsyncResult } from "effect/reactivity";
-import { type ComponentType, type ReactNode, useRef, useState } from "react";
+import {
+  type ComponentType,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   AtSign,
   Bell,
@@ -188,6 +195,7 @@ export function Settings({
     </Tabs.Panel>
   );
 
+  const [tabStrip, moreTabs, scrollTabs] = useOverflowEnd(narrow);
   return (
     <Dialog
       aria-label={t`Settings`}
@@ -203,11 +211,17 @@ export function Settings({
         }}
         className="flex min-h-0 min-w-0 flex-1 max-sm:flex-col"
       >
-        <div className="flex w-52 shrink-0 flex-col border-r border-separator bg-fill-quiet max-md:w-44 max-sm:w-auto max-sm:border-r-0 max-sm:border-b max-sm:bg-transparent">
+        <div className="flex w-52 shrink-0 flex-col border-r border-separator bg-fill-quiet max-lg:w-44 max-sm:w-auto max-sm:border-r-0 max-sm:border-b max-sm:bg-transparent">
           <h2 className="px-5 pt-4 pb-2 text-headline font-semibold max-sm:px-4 max-sm:pt-1">
             <Trans>Settings</Trans>
           </h2>
-          <Tabs.List className="flex min-h-0 flex-1 flex-col overflow-y-auto px-2.5 pb-3 max-sm:flex-none max-sm:flex-row max-sm:gap-1 max-sm:overflow-x-auto max-sm:px-3 max-sm:pb-2">
+          {/* In a narrow window the tabs scroll sideways; a fade at the right edge says more follow. */}
+          <Tabs.List
+            ref={tabStrip}
+            onScroll={scrollTabs}
+            data-more={moreTabs || undefined}
+            className="flex min-h-0 flex-1 flex-col overflow-y-auto px-2.5 pb-3 max-sm:flex-none max-sm:flex-row max-sm:gap-1 max-sm:overflow-x-auto max-sm:px-3 max-sm:pb-2 max-sm:data-more:[mask-image:linear-gradient(to_right,black_calc(100%-40px),transparent)]"
+          >
             {visibleTabs().map((item) => {
               const Icon = item.icon;
               return (
@@ -462,7 +476,7 @@ function AccountRow({
         open={confirming}
         onOpenChange={setConfirming}
         title={t`Remove ${email}?`}
-        description={t`Remove this account and its local mail from openmail. Mail on the server is not affected.`}
+        description={t`Remove this account and its local mail from OpenMail. Mail on the server is not affected.`}
       >
         <AlertCancel>
           <Trans>Cancel</Trans>
@@ -684,4 +698,24 @@ function AuditLog({ accounts }: { accounts: readonly Account[] }) {
       </table>
     </div>
   );
+}
+
+/**
+ * Whether a sideways-scrolling strip has more content past its right edge. `active` is false
+ * while the strip does not scroll, such as the settings tabs in a wide window.
+ */
+export function useOverflowEnd(active: boolean) {
+  // A callback ref: the dialog's portal mounts the strip after this component's first effects.
+  const [element, setElement] = useState<HTMLDivElement | null>(null);
+  const [overflowing, setOverflowing] = useState(false);
+  const update = useCallback(() => {
+    if (element) setOverflowing(element.scrollLeft + element.clientWidth < element.scrollWidth - 1);
+  }, [element]);
+  useEffect(() => {
+    // The observer reports once on observe, then on every resize.
+    const observer = new ResizeObserver(update);
+    if (element) observer.observe(element);
+    return () => observer.disconnect();
+  }, [element, update]);
+  return [setElement, active && overflowing, update] as const;
 }

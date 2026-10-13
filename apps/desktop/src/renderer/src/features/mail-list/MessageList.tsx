@@ -478,8 +478,8 @@ export function MessageList({
               <Trans>Loading older messages…</Trans>
             </>
           ) : exhausted ? (
-            // An empty list already says so above.
-            threads.length > 0 && <Trans>No more messages</Trans>
+            // An empty list already says so above; a server search still running may add rows.
+            threads.length > 0 && !searchingServer && <Trans>No more messages</Trans>
           ) : (
             <button type="button" onClick={onEndReached}>
               <Trans>Load older messages</Trans>
@@ -533,7 +533,8 @@ function FilterChip(props: {
       <Toggle
         pressed={props.active}
         onPressedChange={props.onChange}
-        className={`h-6 shrink-0 rounded-full px-2.5 ${touchTarget} whitespace-nowrap text-footnote font-medium text-a11y-muted outline-offset-1 outline-a11y-focus hover:bg-fill-hover focus-visible:outline-[3px] data-pressed:bg-blue-600 data-pressed:text-white dark:data-pressed:text-white`}
+        // An outlined pill when off and a filled one when on, so each reads as a toggle.
+        className={`h-6 shrink-0 rounded-full px-2.5 ${touchTarget} whitespace-nowrap text-footnote font-medium text-a11y-muted ring-1 ring-edge outline-offset-1 outline-a11y-focus ring-inset hover:bg-fill-hover focus-visible:outline-[3px] data-pressed:bg-blue-600 data-pressed:text-white data-pressed:ring-blue-600 dark:data-pressed:text-white`}
       >
         {props.label}
       </Toggle>

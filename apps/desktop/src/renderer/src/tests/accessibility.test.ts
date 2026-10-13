@@ -83,6 +83,7 @@ vi.mock("../state/queries", () => ({
   cacheWindowsAtom: "cacheWindowsAtom",
   backfillStateAtom: "backfillStateAtom",
   updateTokenConfiguredAtom: "updateTokenConfiguredAtom",
+  privateUpdateFeedAtom: "privateUpdateFeedAtom",
   contactGroupsAtom: () => "contactGroupsAtom",
   contactPhotoAtom: () => "contactPhotoAtom",
   calendarEventsAtom: () => "calendarEventsAtom",
@@ -196,6 +197,7 @@ import { MailStatusNotice } from "../features/sync-status/MailStatusNotice";
 import { BatchActions } from "../features/mail-list/BatchActions";
 import { Composer } from "../features/compose/components/Composer";
 import { Settings } from "../features/settings/Settings";
+import { ShortcutHelp } from "../features/settings/sections/SystemSettings";
 import { Assistant, AiOutput } from "../features/ai/AiPanel";
 import { Proposals } from "../features/ai/Proposals";
 import { Toast } from "../ui/Toast";
@@ -210,7 +212,7 @@ import { GoToFolder } from "../features/organize/GoToFolder";
 import { PickerPopover } from "../ui/Picker";
 import { LinkConfirmDialog } from "../features/reader/frame/LinkConfirmDialog";
 import { EmailFrame } from "../features/reader/frame/EmailFrame";
-import { AddAccountDialog } from "../features/accounts/AddAccountDialog";
+import { AddAccountDialog, FirstRunDone } from "../features/accounts/AddAccountDialog";
 import { SnoozeDialog } from "../features/organize/SnoozeDialog";
 import { LabelEditor } from "../features/organize/OrganizationSettings";
 import { RemoteImagesPrompt } from "../features/reader/RemoteImagesPrompt";
@@ -573,6 +575,63 @@ for (const tab of [
   });
 }
 
+it("groups the keyboard shortcuts with Triage first and filters them by name or key", async () => {
+  render(localized(h(ShortcutHelp, { onClose: vi.fn() })));
+  const dialog = screen.getByRole("dialog", { name: "Keyboard shortcuts" });
+  expect(
+    within(dialog)
+      .getAllByRole("heading", { level: 3 })
+      .map((e) => e.textContent),
+  ).toEqual(["Triage", "Navigation", "Reading", "Compose", "Formatting", "Window"]);
+  const triage = within(dialog).getByRole("region", { name: "Triage" });
+  expect(within(triage).getAllByRole("row")[0]?.textContent).toMatch(/^Archive/);
+  const filter = within(dialog).getByRole("searchbox", { name: "Filter shortcuts" });
+  fireEvent.change(filter, { target: { value: "reply" } });
+  expect(
+    within(dialog)
+      .getAllByRole("heading", { level: 3 })
+      .map((e) => e.textContent),
+  ).toEqual(["Compose"]);
+  expect(
+    within(dialog)
+      .getAllByRole("row")
+      .map((row) => row.querySelector("td")?.textContent),
+  ).toEqual(["Reply", "Reply all"]);
+  // A key matches too.
+  fireEvent.change(filter, { target: { value: "⌘B" } });
+  expect(
+    within(dialog)
+      .getAllByRole("row")
+      .map((row) => row.querySelector("td")?.textContent),
+  ).toContain("Bold");
+  fireEvent.change(filter, { target: { value: "no such shortcut" } });
+  expect(within(dialog).getByRole("status").textContent).toBe("No shortcuts match.");
+  await audit();
+});
+
+it("shows the GitHub token field only for a build with a private update feed", () => {
+  const general = () =>
+    render(
+      localized(
+        h(Settings, {
+          initialTab: "general",
+          accounts: [account],
+          onClose: vi.fn(),
+          onAddAccount: vi.fn(),
+        }),
+      ),
+    );
+  fixture.values.set("privateUpdateFeedAtom", false);
+  const view = general();
+  expect(screen.getByRole("button", { name: "Check for updates" })).toBeTruthy();
+  expect(screen.queryByRole("textbox", { name: "GitHub access token" })).toBeNull();
+  expect(document.body.textContent).not.toContain("GitHub access token");
+  view.unmount();
+  fixture.values.set("privateUpdateFeedAtom", true);
+  general();
+  expect(screen.getByLabelText("GitHub access token")).toBeTruthy();
+});
+
 it("audits a custom attachment folder shown read-only with a picker button", async () => {
   fixture.values.set("prefsAtom", {
     ...DEFAULT_PREFS,
@@ -931,7 +990,7 @@ it("offers Open With in the keyboard accessible attachment menu", async () => {
   );
   screen.getByRole("button", { name: "Actions for agenda.pdf" }).focus();
   await user.keyboard("{Enter}");
-  const openWith = await screen.findByRole("menuitem", { name: "Open With" });
+  const openWith = await screen.findByRole("menuitem", { name: "Open with" });
   expect(openWith.getAttribute("aria-haspopup")).toBe("menu");
   await audit();
   openWith.focus();
@@ -1610,6 +1669,29 @@ for (const choice of [null, "Other IMAP", "Gmail", "Outlook"] as const) {
   });
 }
 
+it("after the first account, a short skippable step lists three shortcuts", async () => {
+  const onClose = vi.fn();
+  render(localized(h(FirstRunDone, { onClose })));
+  const dialog = screen.getByRole("dialog", { name: "You're set" });
+  expect(
+    within(dialog)
+      .getAllByRole("term")
+      .map((term) => term.textContent),
+  ).toEqual(["New message", "Reply", "Archive"]);
+  expect(
+    within(dialog)
+      .getAllByRole("definition")
+      .map((keys) => keys.textContent),
+  ).toEqual(["⌘N", "⌘R", "⌃⌘A"]);
+  expect(dialog.textContent).toContain("Press ? for all shortcuts.");
+  await waitFor(() =>
+    expect(document.activeElement).toBe(within(dialog).getByRole("button", { name: "Done" })),
+  );
+  await audit();
+  fireEvent.click(within(dialog).getByRole("button", { name: "Done" }));
+  expect(onClose).toHaveBeenCalledTimes(1);
+});
+
 it("without a built-in or saved client, adding Gmail asks for the user's own client", () => {
   fixture.values.set("clientSetupAtom", NO_CLIENTS);
   render(localized(h(AddAccountDialog, { onClose: vi.fn(), onAdded: vi.fn() })));
@@ -1630,7 +1712,7 @@ for (const [choice, name] of [
     render(localized(h(AddAccountDialog, { onClose: vi.fn(), onAdded: vi.fn() })));
     fireEvent.click(screen.getByRole("button", { name: choice }));
     expect(screen.getByRole("button", { name: `Sign in with ${name}` })).toBeTruthy();
-    expect(screen.getByText("New sign-ins use openmail's built-in client.")).toBeTruthy();
+    expect(screen.getByText("New sign-ins use OpenMail's built-in client.")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Use the built-in client" })).toBeNull();
     const summary = screen.getByRole("button", { name: "Use your own OAuth client" });
     expect(summary.getAttribute("aria-expanded")).toBe("false");
@@ -1840,6 +1922,17 @@ it("moves focus from Sync now to the syncing status in an empty list", async () 
   await audit();
 });
 
+it("a server search in flight hides No more messages until it finishes", () => {
+  const list = (searchingServer: boolean) =>
+    localized(h("main", null, h(MessageList, listProps({ searching: true, searchingServer }))));
+  const view = render(list(true));
+  expect(screen.getByText("Searching server…")).toBeTruthy();
+  expect(screen.queryByText("No more messages")).toBeNull();
+  view.rerender(list(false));
+  expect(screen.queryByText("Searching server…")).toBeNull();
+  expect(screen.getByText("No more messages")).toBeTruthy();
+});
+
 it("audits list notices, announces offline and sync failure once and keeps focus after Try again", async () => {
   const user = userEvent.setup();
   const notice = (
@@ -2034,7 +2127,7 @@ it("describes search result rows by their attachment matches and audits the mark
     .split(" ")
     .map((id) => document.getElementById(id)?.textContent)
     .join(" | ");
-  expect(description).toMatch(/^Attachment text .* \| In attachment agenda\.pdf:.*budget/);
+  expect(description).toMatch(/^Attachment text: .* \| In attachment agenda\.pdf:.*budget/);
   const mark = option.querySelector("mark");
   expect(mark?.textContent).toBe("budget");
   expect(mark?.className).toContain("text-neutral-950");
@@ -2090,7 +2183,11 @@ it("says which fields matched, marks the words, and marks nothing on a related r
       .split(" ")
       .map((id) => document.getElementById(id)?.textContent)
       .join(" | ");
-  expect(describe(hit)).toMatch(/^Subject · Sender · Message body .*budget review/);
+  // The matched fields stay in the description but leave the screen: the marks show them.
+  expect(describe(hit)).toMatch(/^Subject, Sender, Message body: .*budget review/);
+  expect([...(hit?.querySelectorAll(".sr-only") ?? [])].map((node) => node.textContent)).toContain(
+    "Subject, Sender, Message body: ",
+  );
   expect([...(hit?.querySelectorAll("mark") ?? [])].map((mark) => mark.textContent)).toEqual([
     thread.subject.slice(0, 3),
     "budget",

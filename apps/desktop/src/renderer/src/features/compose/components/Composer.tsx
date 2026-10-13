@@ -53,9 +53,9 @@ import { Tip } from "../../../ui/Tip";
 import { TrafficLightSpace } from "../../../ui/TrafficLights";
 
 const TITLES: Record<Draft["mode"], MessageDescriptor> = {
-  new: msg`New Message`,
+  new: msg`New message`,
   reply: msg`Reply`,
-  replyAll: msg`Reply All`,
+  replyAll: msg`Reply all`,
   forward: msg`Forward`,
 };
 
@@ -290,7 +290,7 @@ export function Composer({
                   value={draft.mode}
                   options={[
                     { value: "reply", label: t`Reply` },
-                    { value: "replyAll", label: t`Reply All` },
+                    { value: "replyAll", label: t`Reply all` },
                     { value: "forward", label: t`Forward` },
                   ]}
                   onValueChange={(mode) => {
@@ -317,7 +317,7 @@ export function Composer({
                 >
                   <AppWindow className="size-4 sm:hidden" />
                   <span className="max-sm:sr-only">
-                    <Trans>Open in New Window</Trans>
+                    <Trans>Open in new window</Trans>
                   </span>
                 </button>
               )}

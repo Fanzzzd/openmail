@@ -2,7 +2,7 @@ import { NodeFileSystem, NodePath } from "@effect/platform-node";
 import { assert, it } from "@effect/vitest";
 import { Effect, FileSystem, Layer, Path, Stream, Fiber } from "effect";
 import { databaseLayer } from "./platform/node/db.js";
-import { DEFAULT_PREFS } from "./domain.js";
+import { DEFAULT_PREFS, LEGACY_TOOLBAR_ACTIONS } from "./domain.js";
 import { StoreLive } from "./store.js";
 import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { Store } from "./services.js";
@@ -67,6 +67,33 @@ import { SqlClient } from "effect/sql";
           ...DEFAULT_PREFS.swipeActions,
           leftShort: "star",
         });
+      }).pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform())))),
+  );
+}
+
+{
+  it.effect(
+    "the default toolbar shows Reply and Forward after Delete; a stored old default follows it, a custom order stays",
+    () =>
+      Effect.gen(function* () {
+        assert.deepStrictEqual(DEFAULT_PREFS.toolbarActions.slice(0, 5), [
+          "archive",
+          "trash",
+          "reply",
+          "replyAll",
+          "forward",
+        ]);
+        const store = yield* Store,
+          sql = yield* SqlClient.SqlClient;
+        yield* sql`INSERT INTO prefs(key,value_json) VALUES('toolbarActions',${JSON.stringify(LEGACY_TOOLBAR_ACTIONS)})`;
+        assert.deepStrictEqual((yield* store.prefs).toolbarActions, DEFAULT_PREFS.toolbarActions);
+        const custom = [...LEGACY_TOOLBAR_ACTIONS].toReversed();
+        yield* store.setPrefs({ toolbarActions: custom });
+        assert.deepStrictEqual((yield* store.prefs).toolbarActions, custom);
+        // A saved list with one action removed is a choice, not the old default.
+        const trimmed = LEGACY_TOOLBAR_ACTIONS.filter((action) => action !== "filter");
+        yield* store.setPrefs({ toolbarActions: trimmed });
+        assert.deepStrictEqual((yield* store.prefs).toolbarActions, trimmed);
       }).pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform())))),
   );
 }

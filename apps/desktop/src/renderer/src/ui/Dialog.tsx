@@ -68,7 +68,7 @@ export const centredSheet = (maxHeight?: SheetCap) =>
   SHEET_CAPS[isDesktop() ? "desktop" : "web"][maxHeight ?? "window"];
 
 /**
- * Below MEDIUM_MIN (696 px, Tailwind's `sm`) a sheet fills the window, whatever size the caller asked for.
+ * Below MEDIUM_MIN (800 px, Tailwind's `sm`) a sheet fills the window, whatever size the caller asked for.
  * On the Mac its top stays clear for the traffic lights' row (`--titlebar-clearance`, from WindowChrome);
  * pair it with {@link SheetDragStrip}. A browser has no traffic lights, so the web build uses the whole height.
  */

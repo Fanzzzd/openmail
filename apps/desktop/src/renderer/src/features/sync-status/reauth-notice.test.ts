@@ -103,3 +103,61 @@ it("a locked keychain shows its own notice instead of a sign-in or a sync failur
   expect(shown).not.toContain("Sign in again");
   expect(shown).not.toContain("Could not sync");
 });
+
+it("the line names the provider and what happened; the full address is in the tooltip and the reason", () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const long: Account = { ...account(), email: "a.very.long.address.for.work@gmail.com" };
+  const cases: [Account, string][] = [
+    [long, "Gmail sign-in expired"],
+    [{ ...long, reauthReason: "testing_mode_expiry" }, "Gmail sign-in expired"],
+    [{ ...long, reauthReason: "scope_missing" }, "Gmail needs permission again"],
+    [
+      { ...long, provider: "outlook", email: "me@outlook.com", reauthReason: "token_revoked" },
+      "Outlook sign-in expired",
+    ],
+    [
+      {
+        ...long,
+        provider: "imap",
+        email: "me@icloud.com",
+        imap: {
+          preset: "icloud",
+          username: "me@icloud.com",
+          imapHost: "imap.mail.me.com",
+          imapPort: 993,
+          smtpHost: "smtp.mail.me.com",
+          smtpPort: 587,
+          smtpSecure: false,
+        },
+        reauthReason: "imap_auth_failed",
+      },
+      "iCloud password rejected",
+    ],
+    [
+      { ...long, provider: "imap", email: "me@example.org", reauthReason: "imap_auth_failed" },
+      "example.org password rejected",
+    ],
+  ];
+  for (const [subject, headline] of cases) {
+    const element = document.createElement("div");
+    const root = createRoot(element);
+    const i18n = setupI18n({ locale: "en", messages: { en: {} } });
+    act(() =>
+      root.render(
+        createElement(
+          I18nProvider,
+          { i18n },
+          createElement(ReauthNotice, { account: subject, onReauth: vi.fn() }),
+        ),
+      ),
+    );
+    const line = element.querySelector(".font-medium");
+    expect(line?.textContent).toBe(headline);
+    expect(line?.getAttribute("aria-hidden")).toBeNull();
+    const notice = element.querySelector("[title]");
+    expect(notice?.getAttribute("title")).toContain(subject.email);
+    // The screen reader text after the line carries the full address.
+    expect(element.querySelector(".sr-only")?.textContent).toContain(subject.email);
+    act(() => root.unmount());
+  }
+});

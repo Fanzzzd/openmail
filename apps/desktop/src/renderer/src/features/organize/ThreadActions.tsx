@@ -79,6 +79,8 @@ interface Props {
   /** The label or folder picker; L or V opens it from the keyboard. */
   labelPicker: boolean;
   onLabelPicker: (open: boolean) => void;
+  /** The open thread's own commands (links, printing, text size), at the end of the menu. */
+  threadMenu?: ReactNode;
 }
 
 /** Archive, or back to the inbox when the thread is already out of it. */
@@ -119,6 +121,7 @@ export function ThreadActions({
   onFilter,
   labelPicker,
   onLabelPicker,
+  threadMenu,
 }: Props) {
   const { t } = useLingui();
   const shortcut = useShortcutText();
@@ -143,9 +146,9 @@ export function ThreadActions({
         onLabelPicker(false);
         onOp({ kind: "move", labelId: label.id, removeLabelId });
       }}
-      tip={{ label: t`Move To`, shortcut: shortcut("move") }}
+      tip={{ label: t`Move to`, shortcut: shortcut("move") }}
       trigger={
-        <Toolbar.Button aria-label={t`Move To`} className={button}>
+        <Toolbar.Button aria-label={t`Move to`} className={button}>
           <FolderInput className="size-4" />
         </Toolbar.Button>
       }
@@ -256,12 +259,12 @@ export function ThreadActions({
       labels.some((l) => l.id === currentLabel) && (
         <Action
           icon={Tag}
-          label={t`Remove Current Label`}
+          label={t`Remove current label`}
           onClick={() => onOp({ kind: "label", labelId: currentLabel, value: false })}
         />
       ),
     sendAgain: onSendAgain && (
-      <Action icon={MailPlus} label={t`Send Again`} onClick={onSendAgain} />
+      <Action icon={MailPlus} label={t`Send again`} onClick={onSendAgain} />
     ),
     reply: onCompose && (
       <Action
@@ -298,7 +301,7 @@ export function ThreadActions({
     openWindow: onOpenWindow && (
       <Action
         icon={AppWindow}
-        label={t`Open in New Window`}
+        label={t`Open in new window`}
         shortcut={shortcut("openThread")}
         onClick={onOpenWindow}
       />
@@ -358,6 +361,12 @@ export function ThreadActions({
           onPermanentDelete={onPermanentDelete}
           onFilter={onFilter}
         />
+        {threadMenu && (
+          <>
+            <MenuSeparator />
+            {threadMenu}
+          </>
+        )}
       </DropdownMenu>
     </Toolbar.Root>
   );
@@ -397,7 +406,7 @@ export function ThreadMenuItems({
   onSnooze,
   onPermanentDelete,
   onFilter,
-}: Omit<Props, "labelPicker" | "onLabelPicker">) {
+}: Omit<Props, "labelPicker" | "onLabelPicker" | "threadMenu">) {
   const { t } = useLingui();
   const shortcut = useShortcutText();
   const folders = state.provider !== "gmail";
@@ -406,7 +415,7 @@ export function ThreadMenuItems({
       {onOpenWindow && (
         <>
           <MenuItem icon={AppWindow} shortcut={shortcut("openThread")} onClick={onOpenWindow}>
-            {t`Open in New Window`}
+            {t`Open in new window`}
           </MenuItem>
           <MenuSeparator />
         </>
@@ -418,7 +427,7 @@ export function ThreadMenuItems({
           onClick={onFilter}
         >{t`Create filter from these messages`}</MenuItem>
       )}
-      {onSendAgain && <MenuItem icon={MailPlus} onClick={onSendAgain}>{t`Send Again`}</MenuItem>}
+      {onSendAgain && <MenuItem icon={MailPlus} onClick={onSendAgain}>{t`Send again`}</MenuItem>}
       {onCompose && (
         <>
           <MenuItem icon={Reply} shortcut={shortcut("reply")} onClick={() => onCompose("reply")}>
@@ -500,10 +509,10 @@ export function ThreadMenuItems({
         <MenuItem
           icon={Tag}
           onClick={() => onOp({ kind: "label", labelId: currentLabel, value: false })}
-        >{t`Remove Current Label`}</MenuItem>
+        >{t`Remove current label`}</MenuItem>
       )}
       {(labels.length > 0 || onCreate) && (
-        <ContextSubmenu icon={FolderInput} label={t`Move To`}>
+        <ContextSubmenu icon={FolderInput} label={t`Move to`}>
           {labels
             .filter((label) => !label.id.startsWith("category:"))
             .map((l) => (

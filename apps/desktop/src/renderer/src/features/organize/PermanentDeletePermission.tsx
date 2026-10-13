@@ -29,7 +29,7 @@ export function PermanentDeletePermission({
       title={t`Allow permanent deletion for ${email}?`}
       description={
         <>
-          {t`This permission lets openmail permanently delete mail in this Gmail account. Google will ask for your consent. After granting it, confirm the deletion again.`}
+          {t`This permission lets OpenMail permanently delete mail in this Gmail account. Google will ask for your consent. After granting it, confirm the deletion again.`}
           {resultError(i18n, result) && (
             <span role="alert" className="mt-2 block text-orange-700 dark:text-orange-400">
               {resultError(i18n, result)}

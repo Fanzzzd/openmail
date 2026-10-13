@@ -67,7 +67,7 @@ export function BatchMenuItems({
               <div className="px-2 py-1 text-footnote text-a11y-muted">
                 {account.email} · {account.provider === "gmail" ? t`Labels` : t`Move to folder`}
               </div>
-              <ContextSubmenu icon={Tag} label={t`Move To`}>
+              <ContextSubmenu icon={Tag} label={t`Move to`}>
                 {available
                   .filter((label) => !label.id.startsWith("category:"))
                   .map((label) => (
@@ -100,7 +100,7 @@ export function BatchMenuItems({
                     onClick={() =>
                       onOp({ kind: "label", labelId: currentLabel, value: false }, account.id)
                     }
-                  >{t`Remove Current Label`}</MenuItem>
+                  >{t`Remove current label`}</MenuItem>
                 )}
               {account.provider !== "gmail" && (
                 <MultiOrganization

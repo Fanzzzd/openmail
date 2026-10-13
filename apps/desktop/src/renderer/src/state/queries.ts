@@ -236,6 +236,8 @@ export const updateTokenConfiguredAtom = MailClient.query("UpdateTokenConfigured
   reactivityKeys: [Keys.cache],
 });
 
+export const privateUpdateFeedAtom = MailClient.query("PrivateUpdateFeed", undefined);
+
 export const contactGroupsAtom = (query: string, accountIds?: readonly string[]) =>
   MailClient.query(
     "ContactGroups",

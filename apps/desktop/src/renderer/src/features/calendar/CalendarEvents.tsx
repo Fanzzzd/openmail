@@ -87,7 +87,7 @@ export function CalendarAccessAction({
         disabled={authorization.waiting}
         onClick={() => authorize(signIn ? undefined : "calendar")}
       >
-        {signIn ? <Trans>Sign in again</Trans> : <Trans>Connect Calendar</Trans>}
+        {signIn ? <Trans>Sign in again</Trans> : <Trans>Connect calendar</Trans>}
       </button>
       {resultError(i18n, authorization) && (
         <p role="alert" className="text-orange-700 dark:text-orange-400">

@@ -64,3 +64,57 @@ it("top-level labels have no Move to top level menu action", async () => {
   expect(screen.queryByRole("menuitem", { name: "Move to top level" })).toBeNull();
   expect(current.requests.some((request) => request.tag === "ChangeLabel")).toBe(false);
 });
+
+it("favorite stars are named toggles off the tab order; in All accounts the menu favorites every account", async () => {
+  current = await flow();
+  const h = current;
+  await h.run(h.m.connect({ provider: "outlook" }));
+  await eventually(() =>
+    expect(screen.getByRole("button", { name: /me@outlook.com/ })).toBeTruthy(),
+  );
+  const star = screen.getByRole("button", { name: "Favorite Inbox in all accounts" });
+  expect(star.tabIndex).toBe(-1);
+  expect(star.getAttribute("aria-pressed")).toBe("false");
+  // The outline star waits for the pointer or focus on its row.
+  expect(star.className).toContain("opacity-0");
+  expect(screen.getByRole("button", { name: "Favorite Work" }).tabIndex).toBe(-1);
+
+  const inbox = screen.getByRole("button", { name: /^Inbox/ });
+  inbox.focus();
+  fireEvent.keyDown(inbox, { key: "F10", shiftKey: true });
+  fireEvent.click(
+    await screen.findByRole("menuitem", { name: "Add to favorites in all accounts" }),
+  );
+  await eventually(() =>
+    expect(
+      h.requests
+        .filter((request) => request.tag === "SetLabelPreference")
+        .map((request) => JSON.stringify(request.payload)),
+    ).toHaveLength(2),
+  );
+  await eventually(() =>
+    expect(
+      screen
+        .getByRole("button", { name: "Favorite Inbox in all accounts" })
+        .getAttribute("aria-pressed"),
+    ).toBe("true"),
+  );
+  // One Inbox per account, told apart by the account.
+  expect(screen.getAllByRole("button", { name: /^Inbox \(/ })).toHaveLength(2);
+});
+
+it("with no account the sidebar lists no mailboxes and no sync status, and Add account starts on Gmail", async () => {
+  current = await flow({ noAccounts: true });
+  const dialog = await screen.findByRole(
+    "dialog",
+    { name: "Add your first account" },
+    { timeout: 5000 },
+  );
+  await eventually(() =>
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Gmail" })),
+  );
+  expect(dialog.contains(document.activeElement)).toBe(true);
+  expect(screen.queryByRole("button", { name: /^Inbox/, hidden: true })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Sync now", hidden: true })).toBeNull();
+  expect(document.body.textContent).not.toMatch(/Synced|Syncing/);
+});

@@ -164,7 +164,7 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
             />
           </SettingsRow>
           <SettingsRow
-            label={<Trans>Keep openmail under</Trans>}
+            label={<Trans>Keep OpenMail under</Trans>}
             hint={
               <Trans>
                 The limit includes the database, attachments, WAL and recovery copies. Protected
@@ -173,7 +173,7 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
             }
           >
             <Select
-              aria-label={t`Keep openmail under`}
+              aria-label={t`Keep OpenMail under`}
               variant="field"
               className="min-w-28"
               value={String(prefs.totalCacheBytes)}

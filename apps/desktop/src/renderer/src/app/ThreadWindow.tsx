@@ -24,6 +24,7 @@ import type { MailOp } from "../../../shared/api";
 import { ThreadView, useThreadPrint } from "../features/reader/Reader";
 import { OPEN_SETTINGS_EVENT } from "../features/ai/open-ai-settings";
 import { readerThreadKey } from "../features/reader/reader-selection";
+import { ThreadViewMenuItems } from "../features/reader/ThreadViewMenu";
 import { useBatchUndo } from "../state/undo";
 import { FocusedInboxPermission } from "../features/organize/FocusedInboxActions";
 import { ThreadActions } from "../features/organize/ThreadActions";
@@ -330,6 +331,17 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
             onOp={act}
             labelPicker={labelPicker}
             onLabelPicker={setLabelPicker}
+            threadMenu={
+              messages && (
+                <ThreadViewMenuItems
+                  messages={messages}
+                  selectedId={id}
+                  single={single || !prefs.threadGrouping}
+                  notify={say}
+                  print={print}
+                />
+              )
+            }
           />
         )}
         <div className="ml-auto flex shrink-0 items-center pl-2">
@@ -347,6 +359,7 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
           onActionDone={({ result, ids }) => showUndo(result, ids, t`Message updated`)}
           single={single || !prefs.threadGrouping}
           notify={(next) => say(next)}
+          menuInToolbar={state !== null}
         />
       ) : (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 text-neutral-300 dark:text-neutral-600">

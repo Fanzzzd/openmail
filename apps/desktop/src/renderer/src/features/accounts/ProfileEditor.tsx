@@ -215,7 +215,7 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
               onClick={() => void deleteProfile(profile.id)}
               className={quietDanger}
             >
-              <Trans>Delete Space</Trans>
+              <Trans>Delete space</Trans>
             </button>
           )}
           <span className="flex-1" />

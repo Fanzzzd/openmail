@@ -125,7 +125,7 @@ export const DesktopLive = Layer.effect(
     let activeSpace = "all";
     let labelsReady = false;
     let labels: DesktopLabels = {
-      checkUpdates: "Check for Updates…",
+      checkUpdates: "Check for updates…",
       updatesDisabled:
         "Update checks require a signed, installed macOS app and a saved GitHub access token.",
       updatesCurrent: "OpenMail is up to date.",
@@ -135,9 +135,9 @@ export const DesktopLive = Layer.effect(
       read: "Mark read",
       actionMenu: "Actions",
       settings: "Settings…",
-      newWindow: "New Window",
+      newWindow: "New window",
       compose: "New message",
-      attachFiles: "Attach Files…",
+      attachFiles: "Attach files…",
       help: "Keyboard shortcuts",
       archive: "Archive",
       trash: "Delete",
@@ -147,7 +147,7 @@ export const DesktopLive = Layer.effect(
       file: "File",
       edit: "Edit",
       undo: "Undo",
-      undoSend: "Undo Send",
+      undoSend: "Undo send",
       quitPending: "Quit with messages waiting to send?",
       quitPendingDetail:
         "Messages in the undo window will remain drafts. A send already in progress may finish.",
@@ -156,7 +156,7 @@ export const DesktopLive = Layer.effect(
       selectAll: "Select all",
       window: "Window",
       newMessages: "new messages",
-      feedback: "Send Feedback…",
+      feedback: "Send feedback…",
     };
     const deliver = (event: DesktopEvent, target = focusMainWindow()) => {
       const id = target.webContents.id;

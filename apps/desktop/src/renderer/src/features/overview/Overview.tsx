@@ -91,7 +91,7 @@ export function Overview({
         >
           <RefreshCw className={`size-3.5 ${syncState.running ? "animate-spin" : ""}`} />
           <span className="max-sm:sr-only">
-            <Trans>Sync All</Trans>
+            <Trans>Sync all</Trans>
           </span>
         </button>
       </header>

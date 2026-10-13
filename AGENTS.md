@@ -35,6 +35,8 @@ lint 用 plany 同一套 oxlint 配置，type-aware。`no-unsafe-type-assertion`
 
 界面文案用 Lingui，代码里写英文原文，翻译在 `apps/desktop/src/renderer/src/locales/{locale}/messages.po`。新增文案后跑 `pnpm --filter @openmail/desktop i18n:extract`，补齐 zh-CN、cs、nl、fr、de、it、ja、ru、es 的全部 `msgstr`，保留 ICU 参数、复数和组件标记。用 `pnpm --filter @openmail/desktop i18n:missing` 列出各语言漏译。`pnpm test` 会检查目录同步、每个目录的翻译完整性及参数；任何语言漏译都会失败。
 
+界面文案的大小写：产品名一律写 OpenMail，所有语言都不翻译、不改大小写；`openmail` 只出现在标识符里（配置项名、文件名、`svc:openmail`）。标题、按钮、菜单项、标签和正文都用句首大写（sentence case），专有名词保留大写：品牌和产品名（Gmail、Outlook、iCloud）、文件夹名（Inbox、Trash、Spam、Focused、Other、All Mail）和 macOS 的功能名（Finder、Quick Look、Writing Tools、System Settings、Contacts）、app 自己的设置页名 AI Access（glossary 里的术语）。现有文案约 830 条是句首大写、60 条是标题大写，所以选句首大写；Apple HIG 要求 macOS 菜单项和按钮用标题大写，这里有意不跟，菜单栏也一样，保持 app 内外同一条规则。
+
 翻译邮件术语时读取 `apps/desktop/src/renderer/src/locales/glossary.json`；正文用“消息文本”的表达，引用按钮时插入该按钮的翻译值，并注明 Lingui context/comment。新增语言文案须通过术语一致性和严格 ICU 解析测试；日语复数只用 `other`，数值分支仍可保留。
 
 ## Agent skills

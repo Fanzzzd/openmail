@@ -355,7 +355,7 @@ it("asks for calendar consent, not a new sign-in, when the provider refuses cale
   expect(view.container.textContent).toContain("Calendar access isn't granted for this account.");
   expect(view.container.textContent).not.toContain("Could not load your calendar");
   expect(view.container.textContent).not.toContain("Sign in again");
-  expect(screen.getByRole("button", { name: "Connect Calendar" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Connect calendar" })).toBeTruthy();
   expect(screen.getByRole("button", { name: "Accept" })).toBeTruthy();
 });
 
@@ -365,7 +365,7 @@ it("asks to sign in again only when the provider rejects the sign-in", () => {
   fixture.values.set("calendarEvents", AsyncResult.fail(new AuthError({ message: "401" })));
   render(localized(h(InviteBanner, { message: message("m1", { hasCalendar: true }) })));
   expect(screen.getByRole("button", { name: "Sign in again" })).toBeTruthy();
-  expect(screen.queryByRole("button", { name: "Connect Calendar" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Connect calendar" })).toBeNull();
 });
 
 it("keeps the search field on one line and folds the scope into an icon when narrow", () => {

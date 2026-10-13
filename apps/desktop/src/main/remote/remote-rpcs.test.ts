@@ -50,7 +50,7 @@ const MUST_DENY = [
   "OpenMeeting", "SearchSender", "Connect", "Reauth", "SetGoogleClient", "SetMicrosoftClient",
   "ClearClient", "ClientSetup", "RemoveAccount", "SetServiceEnabled", "SetAiKey",
   "SetAiAccount", "SetAiModel", "SetAgentWriteMode", "SetUpdateToken", "CheckForUpdates",
-  "UpdateTokenConfigured", "RequestNotificationPermission", "OpenNotificationSettings",
+  "UpdateTokenConfigured", "PrivateUpdateFeed", "RequestNotificationPermission", "OpenNotificationSettings",
   "BecomeDefaultMailClient", "SetAppleContacts", "OpenAppleContact", "AddAppleContact",
   "ClipboardText", "ClipboardAttachments", "CopyMessageLink", "ShareMessageLink",
   "PickNativeImages", "CheckNativeGrammar", "NativeEdit", "NewWindow", "OpenThreadWindow",

@@ -683,7 +683,7 @@ export function ComposeEditor({
                     setSmartLists(next);
                     saveFormatPrefs({ composeSmartLists: next });
                   }}
-                >{t`Smart Lists`}</MenuCheckboxItem>
+                >{t`Smart lists`}</MenuCheckboxItem>
                 <MenuCheckboxItem
                   checked={markdownReplacement}
                   onCheckedChange={(next) => {

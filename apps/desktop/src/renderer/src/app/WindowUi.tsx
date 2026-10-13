@@ -110,7 +110,7 @@ export function TextContextMenu({
                   </MenuItem>
                 )}
                 <MenuItem icon={SpellCheck} onClick={choose({ kind: "learn" })}>
-                  {t`Add to Dictionary`}
+                  {t`Add to dictionary`}
                 </MenuItem>
                 <MenuSeparator />
               </>

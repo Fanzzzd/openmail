@@ -23,6 +23,7 @@ import {
   Prefs,
   PrefsPatch,
   ToolbarAction,
+  LEGACY_TOOLBAR_ACTIONS,
   type Signature,
   SignatureKind,
   type Template,
@@ -550,18 +551,21 @@ export function makeComposeStore(
             d.swipeActions.rightLong,
           ),
         },
-        toolbarActions: [
-          ...new Set(
-            pref(
-              Schema.Array(Schema.Unknown),
-              stored.get("toolbarActions"),
-              d.toolbarActions,
-            ).flatMap((item) => {
-              const decoded = Schema.decodeUnknownOption(ToolbarAction)(item);
-              return Option.isSome(decoded) ? [decoded.value] : [];
-            }),
-          ),
-        ],
+        toolbarActions: currentToolbarOrder(
+          [
+            ...new Set(
+              pref(
+                Schema.Array(Schema.Unknown),
+                stored.get("toolbarActions"),
+                d.toolbarActions,
+              ).flatMap((item) => {
+                const decoded = Schema.decodeUnknownOption(ToolbarAction)(item);
+                return Option.isSome(decoded) ? [decoded.value] : [];
+              }),
+            ),
+          ],
+          d.toolbarActions,
+        ),
         messageListDensity: pref(
           f.messageListDensity,
           stored.get("messageListDensity"),
@@ -898,4 +902,15 @@ export function makeComposeStore(
     hiddenContacts,
     setContactHidden,
   };
+}
+
+/** A stored toolbar equal to the old default was never customised: it gets the current default. */
+function currentToolbarOrder(
+  stored: readonly ToolbarAction[],
+  current: readonly ToolbarAction[],
+): readonly ToolbarAction[] {
+  return stored.length === LEGACY_TOOLBAR_ACTIONS.length &&
+    stored.every((action, index) => action === LEGACY_TOOLBAR_ACTIONS[index])
+    ? current
+    : stored;
 }

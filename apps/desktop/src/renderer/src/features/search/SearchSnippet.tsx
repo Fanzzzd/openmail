@@ -135,17 +135,23 @@ export function SearchPreview({ thread, lead }: { thread: ThreadSummary; lead?: 
     attachment: t({ message: "Attachment text", context: "search match source" }),
   };
   const body = matches.find((match) => match.source === "body");
+  // The marked words already show where a row matched, so the field names are for screen
+  // readers only. A related result has no marked words, so it says so on screen.
   return (
     <>
-      <span className="font-medium">
-        {fields.length
-          ? fields.map((field) => names[field]).join(" · ")
-          : t({
+      {fields.length ? (
+        <span className="sr-only">{fields.map((field) => names[field]).join(", ")}: </span>
+      ) : (
+        <>
+          <span className="font-medium">
+            {t({
               message: "Related",
               context: "search match source",
               comment: "A search result found by meaning, without the search words.",
             })}
-      </span>{" "}
+          </span>{" "}
+        </>
+      )}
       {body ? (
         <MarkedSnippet match={lead === undefined ? body : leadIn(body, lead)} />
       ) : (

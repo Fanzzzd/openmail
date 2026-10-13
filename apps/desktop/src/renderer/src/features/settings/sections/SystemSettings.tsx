@@ -30,6 +30,13 @@ import { Keys } from "../../../state/keys";
 import { useRunMail, withMail } from "../../../state/mail";
 import { setPrefsAtom } from "../../../state/mutations";
 import { ACTION_NAMES } from "../../../i18n/shortcut-names";
+import {
+  matchesShortcutFilter,
+  SHORTCUT_GROUP,
+  SHORTCUT_GROUP_NAMES,
+  SHORTCUT_GROUPS,
+  type ShortcutGroup,
+} from "../../../i18n/shortcut-groups";
 import { prefsAtom, profilesAtom } from "../../../state/queries";
 import { Checkbox } from "../../../ui/Checkbox";
 import { Dialog, alertButton } from "../../../ui/Dialog";
@@ -37,6 +44,7 @@ import {
   buttonLink,
   buttonPrimary,
   buttonSecondary,
+  formInput,
   settingsGroup,
   settingsHeading,
   settingsHint,
@@ -473,70 +481,111 @@ const keyCap =
   "rounded-item bg-fill-quiet px-1.5 py-px font-sans text-footnote whitespace-nowrap text-neutral-700 tabular-nums dark:text-neutral-300";
 const shortcutRow = "px-3 py-1.5";
 const shortcutKeys = "px-3 py-1.5 text-right";
+
+interface ShortcutRow {
+  id: string;
+  group: ShortcutGroup;
+  label: string;
+  keys: string;
+}
+
+const navigation = (id: string, label: string, keys: string): ShortcutRow => ({
+  id,
+  group: "navigation",
+  label,
+  keys,
+});
+
+/** Every shortcut of the set as a row with its section, label and keys. */
+function useShortcutRows(set: ShortcutSet): ShortcutRow[] {
+  const { t, i18n } = useLingui();
+  const rows: ShortcutRow[] = ACTIONS.flatMap(([action, label]) =>
+    // Actions without a key in this set, such as Gmail's X in the Mimestream set, are left out.
+    isShortcutAction(action) && KEYMAP[set][action].length > 0
+      ? [
+          {
+            id: action,
+            group: SHORTCUT_GROUP[action],
+            label: i18n._(label),
+            keys: shortcutText(set, action),
+          },
+        ]
+      : [],
+  );
+  return [
+    ...rows,
+    ...NUMBERED_MAILBOXES.map((mailbox, index) =>
+      navigation(
+        `mailbox-${mailbox}`,
+        i18n._(MAILBOX_NAMES[mailbox]),
+        `${set === "gmail" ? "⌃⌘" : "⌘"}${index + 1}`,
+      ),
+    ),
+    navigation("favorites", t`Favorites in sidebar order`, "⌥⌘1…9"),
+    navigation(
+      "views",
+      t({
+        message: "Previous / next view",
+        comment:
+          "Keyboard shortcuts help: go back or forward through the views opened in this window, like a browser's Back and Forward.",
+      }),
+      "⌘[ / ⌘]",
+    ),
+    navigation("panes", t`Move focus between panes`, "← / →"),
+    navigation("spaces", t`Switch spaces`, set === "gmail" ? "⌘1…9" : "⌃⌘1…9"),
+  ];
+}
+
+/**
+ * The shortcuts of a set in sections, Triage first, with a filter field that matches a name or
+ * a key such as "⌘R".
+ */
 function ShortcutTable({ set }: { set: ShortcutSet }) {
-  const { i18n } = useLingui();
+  const { t, i18n } = useLingui();
+  const [filter, setFilter] = useState("");
+  const rows = useShortcutRows(set).filter((row) =>
+    matchesShortcutFilter(filter, row.label, row.keys),
+  );
   return (
-    <table className="w-full text-left">
-      <tbody className="divide-y divide-separator">
-        {ACTIONS.map(([action, label]) => {
-          // Actions without a key in this set, such as Gmail's X in the Mimestream set, are left out.
-          if (!isShortcutAction(action) || KEYMAP[set][action].length === 0) return null;
-          return (
-            <tr key={action}>
-              <td className={shortcutRow}>{i18n._(label)}</td>
-              <td className={shortcutKeys}>
-                <kbd className={keyCap}>{shortcutText(set, action)}</kbd>
-              </td>
-            </tr>
-          );
-        })}
-        {NUMBERED_MAILBOXES.map((mailbox, index) => (
-          <tr key={mailbox}>
-            <td className={shortcutRow}>{i18n._(MAILBOX_NAMES[mailbox])}</td>
-            <td className={shortcutKeys}>
-              <kbd className={keyCap}>
-                {set === "gmail" ? "⌃⌘" : "⌘"}
-                {index + 1}
-              </kbd>
-            </td>
-          </tr>
-        ))}
-        <tr>
-          <td className={shortcutRow}>
-            <Trans>Favorites in sidebar order</Trans>
-          </td>
-          <td className={shortcutKeys}>
-            <kbd className={keyCap}>⌥⌘1…9</kbd>
-          </td>
-        </tr>
-        <tr>
-          <td className={shortcutRow}>
-            <Trans comment="Keyboard shortcuts help: go back or forward through the views opened in this window, like a browser's Back and Forward.">
-              Previous / next view
-            </Trans>
-          </td>
-          <td className={shortcutKeys}>
-            <kbd className={keyCap}>⌘[ / ⌘]</kbd>
-          </td>
-        </tr>
-        <tr>
-          <td className={shortcutRow}>
-            <Trans>Move focus between panes</Trans>
-          </td>
-          <td className={shortcutKeys}>
-            <kbd className={keyCap}>← / →</kbd>
-          </td>
-        </tr>
-        <tr>
-          <td className={shortcutRow}>
-            <Trans>Switch spaces</Trans>
-          </td>
-          <td className={shortcutKeys}>
-            <kbd className={keyCap}>{set === "gmail" ? "⌘1…9" : "⌃⌘1…9"}</kbd>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <div className="space-y-4">
+      <Input
+        type="search"
+        value={filter}
+        onValueChange={setFilter}
+        aria-label={t`Filter shortcuts`}
+        placeholder={t`Filter shortcuts`}
+        className={`w-full ${formInput}`}
+      />
+      {rows.length === 0 && (
+        <output className={`block px-1 ${settingsHint}`}>
+          <Trans>No shortcuts match.</Trans>
+        </output>
+      )}
+      {SHORTCUT_GROUPS.map((group) => {
+        const groupRows = rows.filter((row) => row.group === group);
+        if (groupRows.length === 0) return null;
+        const name = i18n._(SHORTCUT_GROUP_NAMES[group]);
+        return (
+          <section key={group} aria-label={name}>
+            <h3 className={settingsHeading}>{name}</h3>
+            <div className={`overflow-hidden ${settingsGroup}`}>
+              <table className="w-full text-left">
+                <tbody className="divide-y divide-separator">
+                  {groupRows.map((row) => (
+                    <tr key={row.id}>
+                      <td className={shortcutRow}>{row.label}</td>
+                      <td className={shortcutKeys}>
+                        <kbd className={keyCap}>{row.keys}</kbd>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        );
+      })}
+    </div>
   );
 }
 export function ShortcutsSettings() {
@@ -558,9 +607,7 @@ export function ShortcutsSettings() {
           <Trans>Press ? outside a text field to show this list.</Trans>
         </p>
       </div>
-      <div className={`overflow-hidden ${settingsGroup}`}>
-        <ShortcutTable set={prefs.shortcutSet} />
-      </div>
+      <ShortcutTable set={prefs.shortcutSet} />
     </>
   );
 }
@@ -578,9 +625,7 @@ export function ShortcutHelp({ onClose }: { onClose: () => void }) {
         <Trans>Keyboard shortcuts</Trans>
       </h2>
       <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-4">
-        <div className={`overflow-hidden ${settingsGroup}`}>
-          <ShortcutTable set={prefs.shortcutSet} />
-        </div>
+        <ShortcutTable set={prefs.shortcutSet} />
       </div>
       <div className="flex shrink-0 justify-end border-t border-separator px-5 py-3">
         <Button className={buttonPrimary} onClick={onClose}>

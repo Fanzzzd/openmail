@@ -151,6 +151,41 @@ export function reauthText(i18n: I18n, account: Account): string {
   }
 }
 
+/** Brand names stay as they are; a custom IMAP server goes by its address's domain. */
+const PRESET_NAMES: Record<string, string | ReturnType<typeof msg>> = {
+  icloud: "iCloud",
+  yahoo: "Yahoo",
+  fastmail: "Fastmail",
+  qq: msg`QQ Mail`,
+  "163": msg`163 Mail`,
+};
+
+/** The account's provider as the person knows it: Gmail, Outlook, iCloud or the mail domain. */
+function providerName(i18n: I18n, account: Account): string {
+  if (account.provider === "gmail") return "Gmail";
+  if (account.provider === "outlook") return "Outlook";
+  const preset = account.imap?.preset ? PRESET_NAMES[account.imap.preset] : undefined;
+  if (preset) return typeof preset === "string" ? preset : i18n._(preset);
+  return account.email.split("@")[1] ?? account.email;
+}
+
+/** One short line for the notice, such as "Gmail sign-in expired"; {@link reauthText} says more. */
+export function reauthHeadline(i18n: I18n, account: Account): string {
+  const provider = providerName(i18n, account);
+  switch (account.reauthReason) {
+    case "scope_missing":
+      return i18n._(msg`${provider} needs permission again`);
+    case "client_mismatch":
+      return i18n._(msg`${provider} sign-in client changed`);
+    case "keychain_missing":
+      return i18n._(msg`${provider} sign-in missing`);
+    case "imap_auth_failed":
+      return i18n._(msg`${provider} password rejected`);
+    default:
+      return i18n._(msg`${provider} sign-in expired`);
+  }
+}
+
 /** The keychain could not be read, usually locked after sleep. Not a sign-in problem. */
 export function KeychainNotice({ className = "" }: { className?: string }) {
   const { t } = useLingui();
@@ -182,13 +217,14 @@ export function ReauthNotice({
 }) {
   const { i18n } = useLingui();
   const reason = reauthText(i18n, account);
-  // The line shows the address. The reason is a second line once the person opens the group or
-  // tabs to Sign in again; until then it is the tooltip and what a screen reader reads.
+  // The line says what happened in a few words, which fit where the address was cut off. The
+  // reason, with the full address, is a second line once the person opens the group or tabs to
+  // Sign in again; until then it is the tooltip and what a screen reader reads after the line.
   return (
     <NoticeLine
       tone="danger"
       glyph={<CircleAlert aria-hidden className={icon} />}
-      title={reason}
+      title={`${account.email}\n${reason}`}
       className={className}
       detail={
         <p
@@ -208,9 +244,7 @@ export function ReauthNotice({
         )
       }
     >
-      <span aria-hidden className="font-medium">
-        {account.email}
-      </span>
+      <span className="font-medium">{reauthHeadline(i18n, account)}</span>
     </NoticeLine>
   );
 }

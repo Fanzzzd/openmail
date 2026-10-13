@@ -78,7 +78,7 @@ function UndoSend() {
   return (
     <div className="space-y-2 px-3 py-2">
       <span className="block">
-        <Trans>Undo Send</Trans>
+        <Trans>Undo send</Trans>
       </span>
       <SegmentedControl
         aria-label={t`Undo send delay`}

@@ -730,7 +730,31 @@ export const NotificationActions = Schema.Array(
 export const SWIPE_ACTIONS = ["none", "archive", "trash", "read", "star", "snooze"] as const;
 export const SwipeAction = Schema.Literals(SWIPE_ACTIONS);
 export type SwipeAction = typeof SwipeAction.Type;
+/** Every toolbar action, in the default order. Reply and Forward follow Archive and Delete so they fit at 1280 px. */
 export const TOOLBAR_ACTIONS = [
+  "archive",
+  "trash",
+  "reply",
+  "replyAll",
+  "forward",
+  "spam",
+  "snooze",
+  "filter",
+  "read",
+  "star",
+  "important",
+  "move",
+  "label",
+  "removeLabel",
+  "sendAgain",
+  "forwardAttachment",
+  "openWindow",
+] as const;
+/**
+ * The default order before Reply and Forward moved forward. A stored list equal to it was never
+ * customised, so it reads as the current default; any other stored order is the person's own.
+ */
+export const LEGACY_TOOLBAR_ACTIONS: readonly (typeof TOOLBAR_ACTIONS)[number][] = [
   "archive",
   "trash",
   "spam",
@@ -748,7 +772,7 @@ export const TOOLBAR_ACTIONS = [
   "forward",
   "forwardAttachment",
   "openWindow",
-] as const;
+];
 export const ToolbarAction = Schema.Literals(TOOLBAR_ACTIONS);
 export type ToolbarAction = typeof ToolbarAction.Type;
 export const AttachmentSaveFolder = Schema.Union([

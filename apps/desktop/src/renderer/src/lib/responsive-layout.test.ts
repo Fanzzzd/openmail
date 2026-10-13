@@ -5,14 +5,16 @@ import { builtStyles } from "../test-support/test-styles";
 
 it("picks the layout from the panes' minimum widths", () => {
   expect(WIDE_MIN).toBe(960);
-  // The medium layout keeps the rail, the list and the reader at their minimum widths.
-  expect(MEDIUM_MIN).toBe(PANE_MIN.rail + PANE_MIN.list + PANE_MIN.reader);
-  expect(MEDIUM_MIN).toBe(696);
+  // The medium layout leaves the reader more than its minimum width beside the rail and the list.
+  expect(MEDIUM_MIN).toBeGreaterThan(PANE_MIN.rail + PANE_MIN.list + PANE_MIN.reader);
+  expect(MEDIUM_MIN).toBe(800);
   expect(layoutMode(1600)).toBe("wide");
   expect(layoutMode(960)).toBe("wide");
   expect(layoutMode(959)).toBe("medium");
-  expect(layoutMode(696)).toBe("medium");
-  expect(layoutMode(695)).toBe("narrow");
+  expect(layoutMode(800)).toBe("medium");
+  expect(layoutMode(799)).toBe("narrow");
+  // A 720 px window shows the list alone, not half a window of "Select a message".
+  expect(layoutMode(720)).toBe("narrow");
   expect(layoutMode(640)).toBe("narrow");
   expect(layoutMode(480)).toBe("narrow");
 });

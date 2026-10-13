@@ -189,6 +189,7 @@ export function Sidebar({
   const [favoriteError, setFavoriteError] = useState<string | null>(null);
   const { t, i18n } = useLingui();
   const shortcut = useShortcutText();
+  const favoriteMenuText = useFavoriteMenuText();
 
   const members = spaceAccounts(view.space, accounts);
   const scope = scopeAccountIds({ ...view, label: undefined }, accounts);
@@ -221,9 +222,17 @@ export function Sidebar({
   const categories = colored.filter((label) => label.id.startsWith("category:"));
   const labels = colored.filter((label) => !label.id.startsWith("category:") && visible(label));
   const hidden = colored.filter((l) => !l.id.startsWith("category:") && !visible(l));
-  const favorites = numberedFavorites(view, accounts, favoriteLabels, labelPrefs).map((p) => {
+  const named = numberedFavorites(view, accounts, favoriteLabels, labelPrefs).map((p) => {
     const custom = favoriteLabels.find((l) => l.accountId === p.accountId && l.id === p.id);
     return { ...p, name: p.mailbox ? i18n._(MAILBOX_NAMES[p.mailbox]) : (custom?.name ?? p.id) };
+  });
+  // Inbox favorited in two accounts shows twice; the account tells the rows apart.
+  const favorites = named.map((p) => {
+    if (named.filter((other) => other.name === p.name).length < 2) return p;
+    const account = accounts.find((a) => a.id === p.accountId);
+    const owner = account ? accountName(account) : p.accountId;
+    const name = p.name;
+    return { ...p, name: t`${name} (${owner})` };
   });
   const perform = <A, E>(effect: Effect.Effect<A, E, MailEnv>) =>
     run(
@@ -232,28 +241,58 @@ export function Sidebar({
         Effect.catchCause(() => Effect.sync(() => setOrganizeError(t`Action failed`))),
       ),
     );
-  const toggleFavorite = (accountId: string, id: string) => {
-    const pref = labelPrefs.find((p) => p.accountId === accountId && p.id === id) ?? {
-      accountId,
-      id,
-      visible: true,
-      favorite: false,
-      color: null,
-    };
-    perform(
+  const isFavorite = (accountId: string, id: string) =>
+    labelPrefs.some((p) => p.accountId === accountId && p.id === id && p.favorite);
+  /**
+   * Favorites belong to one account's folder. In All accounts a mailbox's star covers every
+   * account in the space: on when all of them have it, and pressing it sets all of them.
+   */
+  const favoriteAccounts = view.accountId
+    ? [view.accountId]
+    : members.filter((a) => a.enabled !== false).map((a) => a.id);
+  const setFavorite = (targets: readonly { accountId: string; id: string }[], on: boolean) => {
+    const last = Math.max(-1, ...labelPrefs.map((p) => p.position ?? 0));
+    const changes = targets
+      .filter((target) => isFavorite(target.accountId, target.id) !== on)
+      .map(({ accountId, id }, index) => ({
+        ...(labelPrefs.find((p) => p.accountId === accountId && p.id === id) ?? {
+          accountId,
+          id,
+          visible: true,
+          color: null,
+        }),
+        favorite: on,
+        position: last + 1 + index,
+      }));
+    if (changes.length)
+      perform(
+        Effect.forEach(
+          changes,
+          (input) => withMail((call) => call("SetLabelPreference", { input })),
+          { discard: true },
+        ),
+      );
+  };
+  const toggleFavorite = (accountId: string, id: string) =>
+    setFavorite([{ accountId, id }], !isFavorite(accountId, id));
+  const mailboxFavorite = (mailbox: Mailbox) => {
+    const id = systemFolderId(mailbox);
+    const targets = favoriteAccounts.map((accountId) => ({ accountId, id }));
+    const on = targets.length > 0 && targets.every((target) => isFavorite(target.accountId, id));
+    return { on, toggle: () => setFavorite(targets, !on), allAccounts: !view.accountId };
+  };
+  const resetFavorites = () =>
+    run(
       withMail((call) =>
-        call("SetLabelPreference", {
-          input: {
-            ...pref,
-            favorite: !pref.favorite,
-            position: favorites.length
-              ? Math.max(...labelPrefs.map((p) => p.position ?? 0)) + 1
-              : 0,
-          },
+        call("ResetFavorites", { accountIds: scope ?? members.map((a) => a.id) }),
+      ).pipe(
+        Reactivity.mutation([Keys.organization]),
+        Effect.match({
+          onSuccess: () => setFavoriteError(null),
+          onFailure: (error) => setFavoriteError(error.message),
         }),
       ),
     );
-  };
   const reorder = (
     source: { accountId: string; id: string },
     target: { accountId: string; id: string },
@@ -487,262 +526,268 @@ export function Sidebar({
           </div>
         )}
 
-        <ContextMenuRoot>
-          <ContextMenuTrigger render={<div />}>
-            <Section title={t`Mailboxes`}>
-              {MAILBOXES.map(({ id, icon: Icon, color }) => (
-                <div key={id}>
-                  <Item
-                    buttonProps={{
-                      onDragOver: (e) => {
-                        if (
-                          e.dataTransfer.types.includes(MESSAGE_DRAG) &&
-                          ["inbox", "trash", "spam"].includes(id)
-                        )
-                          e.preventDefault();
-                      },
-                      onDrop: (e) => {
-                        e.preventDefault();
-                        const messages = decodeDrag(
-                          DragMessages,
-                          e.dataTransfer.getData(MESSAGE_DRAG),
-                        );
-                        if (messages && (id === "inbox" || id === "trash" || id === "spam"))
-                          perform(
-                            withMail((call) =>
-                              call("ModifyWithUndo", {
-                                threads: messages.ids,
-                                op: { kind: id },
-                                flat: messages.flat,
-                              }),
-                            ).pipe(Effect.asVoid),
-                          );
-                      },
-                    }}
-                    active={view.mailbox === id && !view.label}
-                    onClick={() => onView({ ...view, mailbox: id, label: undefined })}
-                    icon={<Icon className={`size-4.5 ${color}`} />}
-                    label={i18n._(MAILBOX_NAMES[id])}
-                    badge={specialFolderBadge(
-                      id,
-                      byLabel,
-                      prefs?.specialFolderBadges ?? DEFAULT_PREFS.specialFolderBadges,
-                    )}
-                    disclosure={
-                      <>
-                        {members[0] && (
-                          <button
-                            type="button"
-                            aria-label={t`Favorite`}
-                            onClick={() => {
-                              const accountId = view.accountId ?? members[0]?.id;
-                              if (accountId) toggleFavorite(accountId, systemFolderId(id));
-                            }}
-                            className="px-1 text-amber-600 dark:text-amber-400"
-                          >
-                            {labelPrefs.some(
-                              (p) =>
-                                p.accountId === (view.accountId ?? members[0]?.id) &&
-                                p.id === systemFolderId(id) &&
-                                p.favorite,
-                            )
-                              ? "★"
-                              : "☆"}
-                          </button>
-                        )}
-                        {id === "inbox" && hasCategories ? (
-                          <button
-                            type="button"
-                            aria-label={
-                              categoriesOpen ? t`Collapse categories` : t`Expand categories`
-                            }
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setCategoriesOpen((v) => !v);
-                            }}
-                            className="-ml-1 rounded p-0.5 text-a11y-muted hover:bg-fill-hover"
-                          >
-                            {categoriesOpen ? (
-                              <ChevronDown className="size-3.5" />
-                            ) : (
-                              <ChevronRight className="size-3.5" />
-                            )}
-                          </button>
-                        ) : undefined}
-                      </>
-                    }
-                  />
-                  {id === "inbox" &&
-                    hasCategories &&
-                    categoriesOpen &&
-                    Object.entries(categoryNames)
-                      .filter(([category]) =>
-                        accounts.some(
-                          (a) =>
-                            a.enabled !== false &&
-                            (a.provider === "gmail" || a.provider === "outlook") &&
-                            (!scope || scope.includes(a.id)) &&
-                            (a.provider === "outlook"
-                              ? ["CATEGORY_PERSONAL", "CATEGORY_OTHER"].includes(category)
-                              : category !== "CATEGORY_OTHER") &&
-                            organization.find((o) => o.accountId === a.id)?.categories !== false &&
-                            (organization
-                              .find((o) => o.accountId === a.id)
-                              ?.selectedCategories?.some((c) => c === category) ??
-                              true),
-                        ),
-                      )
-                      .map(([cat, name]) => {
-                        const CatIcon = CATEGORY_ICONS[cat] ?? Tag;
-                        return (
-                          <Item
-                            key={cat}
-                            indent
-                            active={view.mailbox === "inbox" && view.label?.id === cat}
-                            onClick={() =>
-                              onView({ ...view, mailbox: "inbox", label: { id: cat } })
-                            }
-                            icon={<CatIcon className="size-4 text-blue-600 dark:text-blue-400" />}
-                            label={i18n._(name)}
-                            badge={inInbox[cat] ?? 0}
-                          />
-                        );
-                      })}
-                </div>
-              ))}
-            </Section>
-
-            {favorites.length > 0 && (
-              <Section title={t`Favorites`}>
-                {favorites.map((l, index) => (
-                  <Item
-                    key={`${l.accountId}/${l.id}`}
-                    buttonProps={{
-                      draggable: true,
-                      onDragStart: (e) =>
-                        e.dataTransfer.setData(
-                          FAVORITE_DRAG,
-                          JSON.stringify({ accountId: l.accountId, id: l.id }),
-                        ),
-                      onDragOver: (e) => e.preventDefault(),
-                      onDrop: (e) => drop(e, l, false),
-                    }}
-                    disclosure={
-                      <>
-                        <button
-                          type="button"
-                          aria-label={t`Move up`}
-                          disabled={index === 0}
-                          onClick={() => {
-                            const target = favorites[index - 1];
-                            if (target) reorder(l, target);
-                          }}
-                        >
-                          ↑
-                        </button>
-                        <button
-                          type="button"
-                          aria-label={t`Move down`}
-                          disabled={index === favorites.length - 1}
-                          onClick={() => {
-                            const target = favorites[index + 1];
-                            if (target) reorder(l, target);
-                          }}
-                        >
-                          ↓
-                        </button>
-                        <button
-                          type="button"
-                          aria-label={t`Remove favorite`}
-                          onClick={() => toggleFavorite(l.accountId, l.id)}
-                        >
-                          ×
-                        </button>
-                      </>
-                    }
-                    active={
-                      l.mailbox
-                        ? view.mailbox === l.mailbox &&
-                          view.accountId === l.accountId &&
-                          !view.label
-                        : view.label?.id === l.id && view.label.accountId === l.accountId
-                    }
-                    onClick={() => onView(favoriteView(view, l))}
-                    icon={<Star className="size-4 text-amber-600 dark:text-amber-400" />}
-                    label={index < 9 ? `${l.name}  ⌥⌘${index + 1}` : l.name}
-                    badge={0}
-                  />
-                ))}
-              </Section>
-            )}
-          </ContextMenuTrigger>
-          <ContextMenuContent>
-            <MenuItem
-              onClick={() =>
-                run(
-                  withMail((call) =>
-                    call("ResetFavorites", { accountIds: scope ?? members.map((a) => a.id) }),
-                  ).pipe(
-                    Reactivity.mutation([Keys.organization]),
-                    Effect.match({
-                      onSuccess: () => setFavoriteError(null),
-                      onFailure: (error) => setFavoriteError(error.message),
-                    }),
-                  ),
-                )
-              }
-            >{t`Reset Favorites`}</MenuItem>
-          </ContextMenuContent>
-        </ContextMenuRoot>
-        {favoriteError && (
-          <output role="alert" className="px-3 text-footnote text-a11y-danger">
-            {favoriteError}
-          </output>
-        )}
-        <LabelSections
-          labels={labels}
-          accounts={accounts}
-          view={view}
-          onView={onView}
-          unread={byLabel}
-          actions={labelActions}
-          unnest={unnest}
-          favorite={(l) => toggleFavorite(l.accountId, l.id)}
-        />
-        {categories.length > 0 && (
-          <LabelSections
-            labels={categories}
-            accounts={accounts}
-            view={view}
-            onView={onView}
-            unread={byLabel}
-            categories
-            actions={(label) => ({
-              onDragOver: (event) => {
-                if (event.dataTransfer.types.includes(MESSAGE_DRAG)) event.preventDefault();
-              },
-              onDrop: (event) => drop(event, label, false),
-            })}
-          />
-        )}
-        {hidden.length > 0 && (prefs?.showMore ?? true) && (
+        {/* No account, no mailboxes: the window offers Add account instead. */}
+        {members.length > 0 && (
           <>
-            <button
-              type="button"
-              aria-expanded={moreOpen}
-              className="px-2 py-1 text-callout"
-              onClick={() => setMoreOpen(!moreOpen)}
-            >{t`More`}</button>
-            {moreOpen && (
+            <ContextMenuRoot>
+              <ContextMenuTrigger render={<div />}>
+                <Section title={t`Mailboxes`}>
+                  {MAILBOXES.map(({ id, icon: Icon, color }) => {
+                    const favorite = mailboxFavorite(id);
+                    const mailboxName = i18n._(MAILBOX_NAMES[id]);
+                    return (
+                      <div key={id}>
+                        <ContextMenuRoot>
+                          <ContextMenuTrigger
+                            render={<div onKeyDownCapture={openMenuFromKeyboard} />}
+                          >
+                            <Item
+                              buttonProps={{
+                                onDragOver: (e) => {
+                                  if (
+                                    e.dataTransfer.types.includes(MESSAGE_DRAG) &&
+                                    ["inbox", "trash", "spam"].includes(id)
+                                  )
+                                    e.preventDefault();
+                                },
+                                onDrop: (e) => {
+                                  e.preventDefault();
+                                  const messages = decodeDrag(
+                                    DragMessages,
+                                    e.dataTransfer.getData(MESSAGE_DRAG),
+                                  );
+                                  if (
+                                    messages &&
+                                    (id === "inbox" || id === "trash" || id === "spam")
+                                  )
+                                    perform(
+                                      withMail((call) =>
+                                        call("ModifyWithUndo", {
+                                          threads: messages.ids,
+                                          op: { kind: id },
+                                          flat: messages.flat,
+                                        }),
+                                      ).pipe(Effect.asVoid),
+                                    );
+                                },
+                              }}
+                              active={view.mailbox === id && !view.label}
+                              onClick={() => onView({ ...view, mailbox: id, label: undefined })}
+                              icon={<Icon className={`size-4.5 ${color}`} />}
+                              label={i18n._(MAILBOX_NAMES[id])}
+                              badge={specialFolderBadge(
+                                id,
+                                byLabel,
+                                prefs?.specialFolderBadges ?? DEFAULT_PREFS.specialFolderBadges,
+                              )}
+                              disclosure={
+                                <>
+                                  {favoriteAccounts.length > 0 && (
+                                    <FavoriteStar
+                                      name={mailboxName}
+                                      pressed={favorite.on}
+                                      allAccounts={favorite.allAccounts}
+                                      onToggle={favorite.toggle}
+                                    />
+                                  )}
+                                  {id === "inbox" && hasCategories ? (
+                                    <button
+                                      type="button"
+                                      aria-label={
+                                        categoriesOpen
+                                          ? t`Collapse categories`
+                                          : t`Expand categories`
+                                      }
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setCategoriesOpen((v) => !v);
+                                      }}
+                                      className="-ml-1 rounded p-0.5 text-a11y-muted hover:bg-fill-hover"
+                                    >
+                                      {categoriesOpen ? (
+                                        <ChevronDown className="size-3.5" />
+                                      ) : (
+                                        <ChevronRight className="size-3.5" />
+                                      )}
+                                    </button>
+                                  ) : undefined}
+                                </>
+                              }
+                            />
+                          </ContextMenuTrigger>
+                          <ContextMenuContent>
+                            {favoriteAccounts.length > 0 && (
+                              <MenuItem icon={Star} onClick={favorite.toggle}>
+                                {favoriteMenuText(favorite.on, favorite.allAccounts)}
+                              </MenuItem>
+                            )}
+                            <MenuItem onClick={resetFavorites}>{t`Reset favorites`}</MenuItem>
+                          </ContextMenuContent>
+                        </ContextMenuRoot>
+                        {id === "inbox" &&
+                          hasCategories &&
+                          categoriesOpen &&
+                          Object.entries(categoryNames)
+                            .filter(([category]) =>
+                              accounts.some(
+                                (a) =>
+                                  a.enabled !== false &&
+                                  (a.provider === "gmail" || a.provider === "outlook") &&
+                                  (!scope || scope.includes(a.id)) &&
+                                  (a.provider === "outlook"
+                                    ? ["CATEGORY_PERSONAL", "CATEGORY_OTHER"].includes(category)
+                                    : category !== "CATEGORY_OTHER") &&
+                                  organization.find((o) => o.accountId === a.id)?.categories !==
+                                    false &&
+                                  (organization
+                                    .find((o) => o.accountId === a.id)
+                                    ?.selectedCategories?.some((c) => c === category) ??
+                                    true),
+                              ),
+                            )
+                            .map(([cat, name]) => {
+                              const CatIcon = CATEGORY_ICONS[cat] ?? Tag;
+                              return (
+                                <Item
+                                  key={cat}
+                                  indent
+                                  active={view.mailbox === "inbox" && view.label?.id === cat}
+                                  onClick={() =>
+                                    onView({ ...view, mailbox: "inbox", label: { id: cat } })
+                                  }
+                                  icon={
+                                    <CatIcon className="size-4 text-blue-600 dark:text-blue-400" />
+                                  }
+                                  label={i18n._(name)}
+                                  badge={inInbox[cat] ?? 0}
+                                />
+                              );
+                            })}
+                      </div>
+                    );
+                  })}
+                </Section>
+
+                {favorites.length > 0 && (
+                  <Section title={t`Favorites`}>
+                    {favorites.map((l, index) => (
+                      <Item
+                        key={`${l.accountId}/${l.id}`}
+                        buttonProps={{
+                          draggable: true,
+                          onDragStart: (e) =>
+                            e.dataTransfer.setData(
+                              FAVORITE_DRAG,
+                              JSON.stringify({ accountId: l.accountId, id: l.id }),
+                            ),
+                          onDragOver: (e) => e.preventDefault(),
+                          onDrop: (e) => drop(e, l, false),
+                        }}
+                        disclosure={
+                          <>
+                            <button
+                              type="button"
+                              aria-label={t`Move up`}
+                              disabled={index === 0}
+                              onClick={() => {
+                                const target = favorites[index - 1];
+                                if (target) reorder(l, target);
+                              }}
+                            >
+                              ↑
+                            </button>
+                            <button
+                              type="button"
+                              aria-label={t`Move down`}
+                              disabled={index === favorites.length - 1}
+                              onClick={() => {
+                                const target = favorites[index + 1];
+                                if (target) reorder(l, target);
+                              }}
+                            >
+                              ↓
+                            </button>
+                            <button
+                              type="button"
+                              aria-label={t`Remove favorite`}
+                              onClick={() => toggleFavorite(l.accountId, l.id)}
+                            >
+                              ×
+                            </button>
+                          </>
+                        }
+                        active={
+                          l.mailbox
+                            ? view.mailbox === l.mailbox &&
+                              view.accountId === l.accountId &&
+                              !view.label
+                            : view.label?.id === l.id && view.label.accountId === l.accountId
+                        }
+                        onClick={() => onView(favoriteView(view, l))}
+                        icon={<Star className="size-4 text-amber-600 dark:text-amber-400" />}
+                        label={index < 9 ? `${l.name}  ⌥⌘${index + 1}` : l.name}
+                        badge={0}
+                      />
+                    ))}
+                  </Section>
+                )}
+              </ContextMenuTrigger>
+              <ContextMenuContent>
+                <MenuItem onClick={resetFavorites}>{t`Reset favorites`}</MenuItem>
+              </ContextMenuContent>
+            </ContextMenuRoot>
+            {favoriteError && (
+              <output role="alert" className="px-3 text-footnote text-a11y-danger">
+                {favoriteError}
+              </output>
+            )}
+            <LabelSections
+              labels={labels}
+              accounts={accounts}
+              view={view}
+              onView={onView}
+              unread={byLabel}
+              actions={labelActions}
+              unnest={unnest}
+              favorite={(l) => toggleFavorite(l.accountId, l.id)}
+              isFavorite={(l) => isFavorite(l.accountId, l.id)}
+            />
+            {categories.length > 0 && (
               <LabelSections
-                labels={hidden}
+                labels={categories}
                 accounts={accounts}
                 view={view}
                 onView={onView}
                 unread={byLabel}
-                actions={labelActions}
-                unnest={unnest}
+                categories
+                actions={(label) => ({
+                  onDragOver: (event) => {
+                    if (event.dataTransfer.types.includes(MESSAGE_DRAG)) event.preventDefault();
+                  },
+                  onDrop: (event) => drop(event, label, false),
+                })}
               />
+            )}
+            {hidden.length > 0 && (prefs?.showMore ?? true) && (
+              <>
+                <button
+                  type="button"
+                  aria-expanded={moreOpen}
+                  className="px-2 py-1 text-callout"
+                  onClick={() => setMoreOpen(!moreOpen)}
+                >{t`More`}</button>
+                {moreOpen && (
+                  <LabelSections
+                    labels={hidden}
+                    accounts={accounts}
+                    view={view}
+                    onView={onView}
+                    unread={byLabel}
+                    actions={labelActions}
+                    unnest={unnest}
+                  />
+                )}
+              </>
             )}
           </>
         )}
@@ -778,10 +823,15 @@ export function Sidebar({
       </nav>
 
       <footer className="flex items-center gap-2 px-4 py-2 text-footnote text-a11y-muted">
+        {/* With no account there is nothing to sync, so the footer keeps only Settings. */}
         <span className="line-clamp-2 min-w-0 flex-1" title={failures.join("\n")}>
           {/* Readable on mount too: the announcement below stays silent until the state changes. */}
-          <span>{syncStatus()}</span>
-          <SyncStatusAnnouncement failed={failures.length > 0} />
+          {accounts.length > 0 && (
+            <>
+              <span>{syncStatus()}</span>
+              <SyncStatusAnnouncement failed={failures.length > 0} />
+            </>
+          )}
         </span>
         <Tip label={t`Settings`} shortcut={shortcut("settings")} side="top">
           <button
@@ -793,16 +843,18 @@ export function Sidebar({
             <SettingsIcon className="size-3.5" />
           </button>
         </Tip>
-        <Tip label={t`Sync now`} shortcut={shortcut("sync")} side="top">
-          <button
-            type="button"
-            aria-label={t`Sync now`}
-            onClick={() => run(syncNow)}
-            className="rounded p-1 hover:bg-fill-hover"
-          >
-            <RefreshCw className={`size-3.5 ${syncState.running ? "animate-spin" : ""}`} />
-          </button>
-        </Tip>
+        {accounts.length > 0 && (
+          <Tip label={t`Sync now`} shortcut={shortcut("sync")} side="top">
+            <button
+              type="button"
+              aria-label={t`Sync now`}
+              onClick={() => run(syncNow)}
+              className="rounded p-1 hover:bg-fill-hover"
+            >
+              <RefreshCw className={`size-3.5 ${syncState.running ? "animate-spin" : ""}`} />
+            </button>
+          </Tip>
+        )}
       </footer>
 
       <SpaceSwitcher
@@ -962,10 +1014,12 @@ function LabelSections({
   unread,
   actions,
   favorite,
+  isFavorite = () => false,
   unnest,
   categories = false,
 }: {
   unnest?: (label: Label) => void;
+  isFavorite?: (label: Label) => boolean;
   categories?: boolean;
   labels: readonly Label[];
   accounts: readonly Account[];
@@ -976,6 +1030,7 @@ function LabelSections({
   favorite?: (label: Label) => void;
 }) {
   const { t } = useLingui();
+  const favoriteMenuText = useFavoriteMenuText();
   const groups = new Map<string, Label[]>();
   for (const l of labels) groups.set(l.accountId, [...(groups.get(l.accountId) ?? []), l]);
   return [...groups].map(([accountId, list]) => {
@@ -991,24 +1046,9 @@ function LabelSections({
             <ContextMenuTrigger
               render={
                 <div
-                  onKeyDownCapture={(event) => {
-                    if (
-                      !unnest ||
-                      !l.name.includes("/") ||
-                      (event.key !== "ContextMenu" && !(event.shiftKey && event.key === "F10"))
-                    )
-                      return;
-                    event.preventDefault();
-                    event.stopPropagation();
-                    const rect = event.currentTarget.getBoundingClientRect();
-                    event.currentTarget.dispatchEvent(
-                      new MouseEvent("contextmenu", {
-                        bubbles: true,
-                        clientX: rect.left,
-                        clientY: rect.bottom,
-                      }),
-                    );
-                  }}
+                  onKeyDownCapture={
+                    favorite || (unnest && l.name.includes("/")) ? openMenuFromKeyboard : undefined
+                  }
                 />
               }
             >
@@ -1016,14 +1056,12 @@ function LabelSections({
                 buttonProps={actions?.(l)}
                 disclosure={
                   favorite && (
-                    <button
-                      type="button"
-                      aria-label={t`Favorite`}
-                      className="text-amber-600 dark:text-amber-400"
-                      onClick={() => favorite(l)}
-                    >
-                      ☆
-                    </button>
+                    <FavoriteStar
+                      name={l.name}
+                      pressed={isFavorite(l)}
+                      allAccounts={false}
+                      onToggle={() => favorite(l)}
+                    />
                   )
                 }
                 active={view.label?.id === l.id && view.label.accountId === accountId}
@@ -1039,12 +1077,19 @@ function LabelSections({
                 badge={unread[l.id] ?? 0}
               />
             </ContextMenuTrigger>
-            {unnest && l.name.includes("/") && (
+            {(favorite || (unnest && l.name.includes("/"))) && (
               <ContextMenuContent>
-                <MenuItem
-                  icon={ArrowRight}
-                  onClick={() => unnest(l)}
-                >{t`Move to top level`}</MenuItem>
+                {favorite && (
+                  <MenuItem icon={Star} onClick={() => favorite(l)}>
+                    {favoriteMenuText(isFavorite(l), false)}
+                  </MenuItem>
+                )}
+                {unnest && l.name.includes("/") && (
+                  <MenuItem
+                    icon={ArrowRight}
+                    onClick={() => unnest(l)}
+                  >{t`Move to top level`}</MenuItem>
+                )}
               </ContextMenuContent>
             )}
           </ContextMenuRoot>
@@ -1138,7 +1183,7 @@ function Item(props: {
   const { i18n } = useLingui();
   return (
     <div
-      className={`flex h-7 w-full items-center rounded-control pr-2 text-body ${
+      className={`group/item flex h-7 w-full items-center rounded-control pr-2 text-body ${
         props.active ? "bg-fill-pressed" : "hover:bg-fill-hover"
       }`}
     >
@@ -1163,5 +1208,66 @@ function Item(props: {
       </button>
       {props.disclosure}
     </div>
+  );
+}
+
+/** Opens a row's context menu from the keyboard: the Menu key or Shift+F10. */
+function openMenuFromKeyboard(event: React.KeyboardEvent<HTMLElement>) {
+  if (event.key !== "ContextMenu" && !(event.shiftKey && event.key === "F10")) return;
+  event.preventDefault();
+  event.stopPropagation();
+  const rect = event.currentTarget.getBoundingClientRect();
+  event.currentTarget.dispatchEvent(
+    new MouseEvent("contextmenu", { bubbles: true, clientX: rect.left, clientY: rect.bottom }),
+  );
+}
+
+function useFavoriteMenuText() {
+  const { t } = useLingui();
+  return (on: boolean, allAccounts: boolean) =>
+    on
+      ? allAccounts
+        ? t`Remove from favorites in all accounts`
+        : t`Remove from favorites`
+      : allAccounts
+        ? t`Add to favorites in all accounts`
+        : t`Add to favorites`;
+}
+
+/**
+ * A row's favorite toggle. Out of the tab order: the row's context menu (Menu key or Shift+F10)
+ * offers the same choice. The outline star shows while the pointer or focus is on the row.
+ */
+function FavoriteStar({
+  name,
+  pressed,
+  allAccounts,
+  onToggle,
+}: {
+  name: string;
+  pressed: boolean;
+  /** All accounts: the star covers the mailbox in every account of the space. */
+  allAccounts: boolean;
+  onToggle: () => void;
+}) {
+  const { t } = useLingui();
+  const label = allAccounts ? t`Favorite ${name} in all accounts` : t`Favorite ${name}`;
+  return (
+    <Tip label={label}>
+      <button
+        type="button"
+        tabIndex={-1}
+        aria-label={label}
+        aria-pressed={pressed}
+        onClick={onToggle}
+        className={`px-1 text-amber-600 dark:text-amber-400 ${
+          pressed
+            ? ""
+            : "opacity-0 group-focus-within/item:opacity-100 group-hover/item:opacity-100 focus-visible:opacity-100"
+        }`}
+      >
+        {pressed ? "★" : "☆"}
+      </button>
+    </Tip>
   );
 }

@@ -418,7 +418,17 @@ it("a narrow window shows dialogs as full-window sheets with a close button", as
   // Settings is a lazy chunk; its first import in a cold jsdom run can take over a second.
   const settings = await screen.findByRole("dialog", { name: "Settings" }, { timeout: 5000 });
   expect(settings.className).toContain("max-sm:inset-0");
-  expect(within(settings).getByRole("tablist").getAttribute("data-orientation")).toBe("horizontal");
+  const tabs = within(settings).getByRole("tablist");
+  expect(tabs.getAttribute("data-orientation")).toBe("horizontal");
+  // Tabs past the right edge fade out there; scrolled to the end, the fade goes.
+  for (const [name, value] of Object.entries({ scrollWidth: 900, clientWidth: 500 }))
+    Object.defineProperty(tabs, name, { configurable: true, value });
+  fireEvent.scroll(tabs);
+  await eventually(() => expect(tabs.hasAttribute("data-more")).toBe(true));
+  expect(tabs.className).toContain("max-sm:data-more:[mask-image:");
+  tabs.scrollLeft = 400;
+  fireEvent.scroll(tabs);
+  await eventually(() => expect(tabs.hasAttribute("data-more")).toBe(false));
   fireEvent.click(within(settings).getByRole("button", { name: "Close" }));
   await eventually(() => expect(screen.queryByRole("dialog", { name: "Settings" })).toBeNull());
 
@@ -448,6 +458,8 @@ it("the reader's toolbar folds actions into its menu as it narrows, next to the 
     "flex-[0_1_14rem]",
   );
   const all = shown();
+  // Reply and Forward come right after Archive and Delete, so they stay out of the menu.
+  expect(all.slice(0, 5)).toEqual(["archive", "trash", "reply", "replyAll", "forward"]);
   layout.resize(150);
   expect(shown()).toEqual(all.slice(0, 4));
   layout.resize(40);
@@ -590,4 +602,75 @@ it("the list says when the computer is offline", async () => {
     window.dispatchEvent(new Event("online"));
   });
   expect(screen.queryByText(/You're offline/)).toBeNull();
+});
+
+it("pane dividers are named and resize their panes with the arrow keys", async () => {
+  width = 1200;
+  current = await flow();
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  const sidebar = screen.getByRole("separator", { name: "Resize sidebar" });
+  const list = screen.getByRole("separator", { name: "Resize message list" });
+  // Both are tab stops. jsdom has no layout, so the arrow keys that resize them are checked
+  // in the Electron screenshot run instead (react-resizable-panels handles the keys).
+  expect(sidebar.tabIndex).toBe(0);
+  expect(list.tabIndex).toBe(0);
+  expect(list.getAttribute("aria-orientation")).toBe("vertical");
+});
+
+it("a narrow window offers New message in the list header, and 720 px shows the list alone", async () => {
+  width = 720;
+  current = await flow();
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  expect(reader()).toBeNull();
+  expect(rail()).toBeNull();
+  const header = document.querySelector('[data-mail-pane="list"] header');
+  if (!(header instanceof HTMLElement)) throw new Error("Missing list header");
+  fireEvent.click(within(header).getByRole("button", { name: "New message" }));
+  await eventually(() => expect(screen.getByRole("textbox", { name: "Subject" })).toBeTruthy());
+});
+
+it("the thread ends with Reply, Reply all and Forward, and has one menu for the conversation", async () => {
+  width = 1200;
+  current = await flow();
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  fireEvent.click(row(h.id("one")));
+  const bar = await screen.findByRole("group", { name: "Reply to this conversation" });
+  expect(
+    within(bar)
+      .getAllByRole("button")
+      .map((button) => button.textContent),
+  ).toEqual(["Reply", "Reply all", "Forward"]);
+  // The subject row has no "…" of its own: its commands are in Conversation actions.
+  const thread = screen.getByRole("document");
+  expect(within(thread).queryByRole("button", { name: "More actions" })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Conversation actions" }));
+  expect(await screen.findByRole("menuitem", { name: "Copy link to thread" })).toBeTruthy();
+  expect(screen.getByRole("menuitem", { name: /^Bigger text/ })).toBeTruthy();
+  key("Escape");
+  await eventually(() =>
+    expect(screen.queryByRole("menuitem", { name: /^Bigger text/ })).toBeNull(),
+  );
+
+  fireEvent.click(within(bar).getByRole("button", { name: "Reply" }));
+  await eventually(() =>
+    expect(screen.getByRole<HTMLInputElement>("textbox", { name: "Subject" }).value).toMatch(
+      /^Re: /,
+    ),
+  );
+});
+
+it("with the toolbar hidden, the subject row keeps the thread's menu", async () => {
+  width = 1200;
+  current = await flow({ prefs: { toolbarVisible: false } });
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  fireEvent.click(row(h.id("one")));
+  await screen.findByRole("group", { name: "Reply to this conversation" });
+  fireEvent.click(
+    within(screen.getByRole("document")).getByRole("button", { name: "More actions" }),
+  );
+  expect(await screen.findByRole("menuitem", { name: /^Bigger text/ })).toBeTruthy();
 });

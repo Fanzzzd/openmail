@@ -173,6 +173,10 @@ msgstr "{label}建议"
 msgid "{more} more"
 msgstr "还有 {more} 个"
 
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "{name} ({owner})"
+msgstr "{name}（{owner}）"
+
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "{name} client"
 msgstr "{name} 客户端"
@@ -196,6 +200,26 @@ msgstr "{op} {count, plural, other {# 个会话}}"
 #: src/renderer/src/features/reader/body/MessageBody.tsx
 msgid "{pixels, plural, one {# tracking pixel} other {# tracking pixels}}"
 msgstr "{pixels, plural, other {# 个追踪像素}}"
+
+#: src/renderer/src/features/sync-status/MailStatusNotice.tsx
+msgid "{provider} needs permission again"
+msgstr "{provider} 需要重新授权"
+
+#: src/renderer/src/features/sync-status/MailStatusNotice.tsx
+msgid "{provider} password rejected"
+msgstr "{provider} 拒绝了密码"
+
+#: src/renderer/src/features/sync-status/MailStatusNotice.tsx
+msgid "{provider} sign-in client changed"
+msgstr "{provider} 登录客户端已更改"
+
+#: src/renderer/src/features/sync-status/MailStatusNotice.tsx
+msgid "{provider} sign-in expired"
+msgstr "{provider} 登录已过期"
+
+#: src/renderer/src/features/sync-status/MailStatusNotice.tsx
+msgid "{provider} sign-in missing"
+msgstr "缺少 {provider} 登录信息"
 
 #: src/renderer/src/features/downloads/Downloads.tsx
 msgid "{received} of {size}"
@@ -230,6 +254,7 @@ msgid "1 year"
 msgstr "1 年"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 #: src/renderer/src/ui/ProviderIcon.tsx
 msgid "163 Mail"
 msgstr "163 邮箱"
@@ -352,7 +377,7 @@ msgstr "{0}在{dayName}的第{1}段开始时间"
 msgid "Activity"
 msgstr "操作记录"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Actual size"
 msgstr "实际大小"
@@ -436,15 +461,23 @@ msgid "Add to Contacts"
 msgstr "添加到通讯录"
 
 #: src/renderer/src/app/WindowUi.tsx
-msgid "Add to Dictionary"
+msgid "Add to dictionary"
 msgstr "加入词典"
+
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "Add to favorites"
+msgstr "添加到收藏夹"
+
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "Add to favorites in all accounts"
+msgstr "在所有账户中添加到收藏夹"
 
 #: src/renderer/src/features/ai/AiPanel.tsx
 msgid "Add your Anthropic API key in Settings → AI Access, then allow the accounts the assistant may read."
 msgstr "先在「设置 → AI 权限」中添加你的 Anthropic API 密钥，再选择允许助手读取的账户。"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
-msgid "Add Your First Account"
+msgid "Add your first account"
 msgstr "添加第一个邮箱"
 
 #: src/renderer/src/features/reader/attachments/AttachmentImportDialog.tsx
@@ -792,6 +825,7 @@ msgstr "这台 Mac 上未找到的应用"
 
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/ai/TriageChip.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
@@ -847,7 +881,7 @@ msgid "Attach files"
 msgstr "添加附件"
 
 #: src/renderer/src/state/desktop.ts
-msgid "Attach Files…"
+msgid "Attach files…"
 msgstr "添加附件…"
 
 #: src/renderer/src/features/feedback/Feedback.tsx
@@ -972,7 +1006,7 @@ msgstr "早于日期"
 msgid "Below quoted text"
 msgstr "引文下方"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Bigger text"
 msgstr "放大文字"
 
@@ -1228,7 +1262,7 @@ msgid "Check for updates"
 msgstr "检查更新"
 
 #: src/renderer/src/state/desktop.ts
-msgid "Check for Updates…"
+msgid "Check for updates…"
 msgstr "检查更新…"
 
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
@@ -1431,6 +1465,7 @@ msgid "Code block"
 msgstr "代码块"
 
 #: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Collapse all"
 msgstr "全部收起"
 
@@ -1488,7 +1523,9 @@ msgstr "此平台暂不支持压缩。"
 msgid "Compaction was refused because search index alignment could not be guaranteed."
 msgstr "无法保证搜索索引对齐，已拒绝压缩。"
 
+#. Keyboard shortcuts section: writing, replying to and sending messages.
 #: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/i18n/shortcut-groups.ts
 msgid "Compose"
 msgstr "撰写"
 
@@ -1539,7 +1576,7 @@ msgid "Connect an account to send feedback"
 msgstr "连接账户后即可发送反馈"
 
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
-msgid "Connect Calendar"
+msgid "Connect calendar"
 msgstr "连接日历"
 
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
@@ -1680,11 +1717,11 @@ msgstr "复制 {name} 的命令"
 msgid "Copy config for {name}"
 msgstr "复制 {name} 的配置"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Copy link to message"
 msgstr "复制邮件链接"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Copy link to thread"
 msgstr "复制会话链接"
 
@@ -1713,7 +1750,7 @@ msgstr "复制到文件夹…"
 msgid "Copy to local signature"
 msgstr "复制为本地签名"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Copy webmail link"
 msgstr "复制网页邮箱链接"
 
@@ -2131,7 +2168,7 @@ msgid "Delete permanently"
 msgstr "永久删除"
 
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
-msgid "Delete Space"
+msgid "Delete space"
 msgstr "删除空间"
 
 #: src/renderer/src/app/App.tsx
@@ -2243,6 +2280,7 @@ msgstr "不重复"
 msgid "Don't attach the original message"
 msgstr "不附上原邮件"
 
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/reader/RemoteImagesPrompt.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Done"
@@ -2572,6 +2610,7 @@ msgid "Exclude matches"
 msgstr "排除匹配项"
 
 #: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Expand all"
 msgstr "全部展开"
 
@@ -2600,9 +2639,16 @@ msgid "failed"
 msgstr "失败"
 
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
-#: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Favorite"
 msgstr "收藏"
+
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "Favorite {name}"
+msgstr "收藏 {name}"
+
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "Favorite {name} in all accounts"
+msgstr "在所有账户中收藏 {name}"
 
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Favorites"
@@ -2644,6 +2690,10 @@ msgstr "填写模板变量"
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Filter"
 msgstr "筛选"
+
+#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+msgid "Filter shortcuts"
+msgstr "筛选快捷键"
 
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Filters"
@@ -2760,7 +2810,9 @@ msgstr "供参考"
 msgid "Format"
 msgstr "格式"
 
+#. Keyboard shortcuts section: text styles in the message editor.
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
+#: src/renderer/src/i18n/shortcut-groups.ts
 msgid "Formatting"
 msgstr "格式"
 
@@ -2772,6 +2824,7 @@ msgstr "论坛"
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
+#: src/renderer/src/features/reader/Reader.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Forward"
@@ -2917,7 +2970,7 @@ msgid "Gmail draft labels and stars stay on this Mac. Gmail only allows the Draf
 msgstr "Gmail 草稿标签和星标仅保存在本机。服务器草稿只允许“草稿”标签。"
 
 #: src/renderer/src/features/accounts/OptionalServices.tsx
-msgid "Gmail Settings"
+msgid "Gmail settings"
 msgstr "Gmail 设置"
 
 #: src/renderer/src/features/organize/GoToFolder.tsx
@@ -3276,8 +3329,8 @@ msgid "Keep local copy"
 msgstr "保留本地副本"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
-msgid "Keep openmail under"
-msgstr "openmail 占用上限"
+msgid "Keep OpenMail under"
+msgstr "OpenMail 占用上限"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
@@ -3748,7 +3801,7 @@ msgctxt "message text"
 msgid "Message body"
 msgstr "正文"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Message link copied"
 msgstr "已复制邮件链接"
 
@@ -4016,7 +4069,7 @@ msgstr "将此邮件移到废纸篓"
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
 #: src/renderer/src/i18n/action-names.ts
-msgid "Move To"
+msgid "Move to"
 msgstr "移动到"
 
 #: src/renderer/src/features/compose/components/RecipientField.tsx
@@ -4119,6 +4172,11 @@ msgstr "给模板起个名字，回车保存"
 msgid "Name, like Work"
 msgstr "名称，比如 工作"
 
+#. Keyboard shortcuts section: moving between messages, mailboxes and panes.
+#: src/renderer/src/i18n/shortcut-groups.ts
+msgid "Navigation"
+msgstr "导航"
+
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Needs sign-in"
@@ -4146,7 +4204,10 @@ msgstr "新建标签或文件夹"
 msgid "New mail notifications"
 msgstr "新邮件通知"
 
+#: src/renderer/src/app/App.tsx
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
+#: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/mail-list/MessageList.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
@@ -4154,10 +4215,6 @@ msgstr "新邮件通知"
 #: src/renderer/src/state/desktop.ts
 msgid "New message"
 msgstr "写邮件"
-
-#: src/renderer/src/features/compose/components/Composer.tsx
-msgid "New Message"
-msgstr "新邮件"
 
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 msgid "New message signature for {address}"
@@ -4176,8 +4233,8 @@ msgid "New profile"
 msgstr "新建 Profile"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
-msgid "New sign-ins use openmail's built-in client."
-msgstr "新登录使用 openmail 内置客户端。"
+msgid "New sign-ins use OpenMail's built-in client."
+msgstr "新登录使用 OpenMail 内置客户端。"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "New sign-ins use your own OAuth client."
@@ -4203,7 +4260,7 @@ msgstr "新时间："
 
 #: src/renderer/src/i18n/shortcut-names.ts
 #: src/renderer/src/state/desktop.ts
-msgid "New Window"
+msgid "New window"
 msgstr "新建窗口"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
@@ -4351,6 +4408,10 @@ msgstr "没有可用的打印机。"
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "No response needed"
 msgstr "无需回复"
+
+#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+msgid "No shortcuts match."
+msgstr "没有匹配的快捷键。"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "No starred messages. Star a message to find it here."
@@ -4570,7 +4631,7 @@ msgstr "在 Gmail 中打开"
 #: src/renderer/src/features/reader/Reader.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
-msgid "Open in New Window"
+msgid "Open in new window"
 msgstr "在新窗口中打开"
 
 #: src/renderer/src/features/reader/Reader.tsx
@@ -4622,7 +4683,7 @@ msgid "Open this link?"
 msgstr "打开此链接？"
 
 #: src/renderer/src/features/reader/attachments/OpenWithMenu.tsx
-msgid "Open With"
+msgid "Open with"
 msgstr "打开方式"
 
 #: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
@@ -4667,12 +4728,12 @@ msgid "OpenMail sign-in"
 msgstr "OpenMail 登录"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
-msgid "openmail signs in with an OAuth client you register yourself. First enter the app you registered in Azure, with the Mobile and desktop applications type. Only personal outlook.com and Hotmail accounts are supported. See {doc} in the repository for the steps."
-msgstr "openmail 用你自己注册的 OAuth 客户端登录。先填入Azure 里注册的应用，类型选移动和桌面应用。只支持个人 outlook.com 和 hotmail 账户。步骤见仓库里的 {doc}。"
+msgid "OpenMail signs in with an OAuth client you register yourself. First enter the app you registered in Azure, with the Mobile and desktop applications type. Only personal outlook.com and Hotmail accounts are supported. See {doc} in the repository for the steps."
+msgstr "OpenMail 用你自己注册的 OAuth 客户端登录。先填入Azure 里注册的应用，类型选移动和桌面应用。只支持个人 outlook.com 和 hotmail 账户。步骤见仓库里的 {doc}。"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
-msgid "openmail signs in with an OAuth client you register yourself. First enter the OAuth client you created in Google Cloud, with the Desktop app type. See {doc} in the repository for the steps."
-msgstr "openmail 用你自己注册的 OAuth 客户端登录。先填入Google Cloud 里创建的 OAuth 客户端，类型选桌面应用。步骤见仓库里的 {doc}。"
+msgid "OpenMail signs in with an OAuth client you register yourself. First enter the OAuth client you created in Google Cloud, with the Desktop app type. See {doc} in the repository for the steps."
+msgstr "OpenMail 用你自己注册的 OAuth 客户端登录。先填入Google Cloud 里创建的 OAuth 客户端，类型选桌面应用。步骤见仓库里的 {doc}。"
 
 #: src/renderer/src/features/feedback/Feedback.tsx
 msgid "OpenMail stopped unexpectedly"
@@ -4936,6 +4997,10 @@ msgstr "正在准备改动…"
 msgid "Press ? outside a text field to show this list."
 msgstr "在输入框外按 ? 查看快捷键。"
 
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+msgid "Press {help} for all shortcuts."
+msgstr "按 {help} 查看全部快捷键。"
+
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Press Delete to remove it from recent searches."
 msgstr "按 Delete 键可将其从最近搜索中移除。"
@@ -5008,7 +5073,7 @@ msgstr "打印"
 msgid "Print message…"
 msgstr "打印这封邮件…"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Print…"
 msgstr "打印…"
 
@@ -5038,6 +5103,7 @@ msgid "Publish OpenMail as a Tailscale Service, such as svc:openmail, with its o
 msgstr "把 OpenMail 发布为 Tailscale Service，例如 svc:openmail，用独立名称代替这台 Mac 的 8443 端口。需先在 Tailscale 管理控制台定义该服务，并批准这台 Mac 作为它的主机。留空则使用这台 Mac 的名称。"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 #: src/renderer/src/ui/ProviderIcon.tsx
 msgid "QQ Mail"
 msgstr "QQ 邮箱"
@@ -5095,7 +5161,9 @@ msgstr "只读"
 msgid "Read status"
 msgstr "已读状态"
 
+#. Keyboard shortcuts section: actions on the open message, such as text size.
 #: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/i18n/shortcut-groups.ts
 msgid "Reading"
 msgstr "阅读"
 
@@ -5260,19 +5328,24 @@ msgid "Remove account"
 msgstr "移除账户"
 
 #: src/renderer/src/app/App.tsx
-#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
-msgid "Remove current label"
-msgstr "移除当前标签"
-
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
+#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/i18n/action-names.ts
-msgid "Remove Current Label"
+msgid "Remove current label"
 msgstr "移除当前标签"
 
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Remove favorite"
 msgstr "取消收藏"
+
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "Remove from favorites"
+msgstr "从收藏夹移除"
+
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "Remove from favorites in all accounts"
+msgstr "在所有账户中从收藏夹移除"
 
 #: src/renderer/src/features/downloads/Downloads.tsx
 msgid "Remove from list"
@@ -5307,8 +5380,8 @@ msgid "Remove star"
 msgstr "去掉星标"
 
 #: src/renderer/src/features/settings/Settings.tsx
-msgid "Remove this account and its local mail from openmail. Mail on the server is not affected."
-msgstr "从 openmail 移除这个账户和它的本地邮件。服务器上的邮件不受影响。"
+msgid "Remove this account and its local mail from OpenMail. Mail on the server is not affected."
+msgstr "从 OpenMail 移除这个账户和它的本地邮件。服务器上的邮件不受影响。"
 
 #: src/renderer/src/features/settings/sections/UpdateSettings.tsx
 msgid "Remove token"
@@ -5386,9 +5459,11 @@ msgstr "替换为"
 msgid "Replies and forwards"
 msgstr "回复和转发"
 
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
+#: src/renderer/src/features/reader/Reader.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Reply"
@@ -5401,7 +5476,9 @@ msgid "Reply"
 msgstr "回复标记"
 
 #: src/renderer/src/features/ai/Proposals.tsx
+#: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
+#: src/renderer/src/features/reader/Reader.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Reply all"
@@ -5412,10 +5489,6 @@ msgstr "回复全部"
 msgctxt "incoming message action flag"
 msgid "Reply all"
 msgstr "全部回复标记"
-
-#: src/renderer/src/features/compose/components/Composer.tsx
-msgid "Reply All"
-msgstr "回复全部"
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Reply From"
@@ -5437,6 +5510,10 @@ msgstr "仅回复联系人"
 msgid "Reply signature for {address}"
 msgstr "{address} 的回复签名"
 
+#: src/renderer/src/features/reader/Reader.tsx
+msgid "Reply to this conversation"
+msgstr "回复此会话"
+
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
 #: src/renderer/src/features/settings/Settings.tsx
@@ -5455,7 +5532,7 @@ msgid "Resend to rejected recipients"
 msgstr "仅向被拒收的收件人重发"
 
 #: src/renderer/src/features/sidebar/Sidebar.tsx
-msgid "Reset Favorites"
+msgid "Reset favorites"
 msgstr "重置收藏夹"
 
 #: src/main/app/native-i18n.ts
@@ -5465,6 +5542,14 @@ msgstr "重置本地缓存"
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 msgid "Reset toolbar"
 msgstr "重置工具栏"
+
+#: src/renderer/src/app/App.tsx
+msgid "Resize message list"
+msgstr "调整邮件列表大小"
+
+#: src/renderer/src/app/App.tsx
+msgid "Resize sidebar"
+msgstr "调整侧栏大小"
 
 #: src/renderer/src/features/reader/attachments/AttachmentImportDialog.tsx
 msgid "Respond to this invitation from the message."
@@ -5625,7 +5710,7 @@ msgstr "全部保存"
 msgid "Save an Anthropic API key in AI settings."
 msgstr "请在 AI 设置中保存 Anthropic API 密钥。"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Save as PDF…"
 msgstr "保存为 PDF…"
 
@@ -5821,7 +5906,7 @@ msgstr "发送"
 
 #: src/renderer/src/features/organize/ThreadActions.tsx
 #: src/renderer/src/i18n/action-names.ts
-msgid "Send Again"
+msgid "Send again"
 msgstr "再次发送"
 
 #: src/renderer/src/features/reader/UnsubscribeButton.tsx
@@ -5843,10 +5928,11 @@ msgstr "发送失败"
 
 #: src/renderer/src/features/feedback/Feedback.tsx
 #: src/renderer/src/state/desktop.ts
-msgid "Send Feedback…"
+msgid "Send feedback…"
 msgstr "发送反馈…"
 
 #: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Send message link to…"
 msgstr "发送邮件链接到…"
@@ -5856,11 +5942,13 @@ msgid "Send this message without a subject?"
 msgstr "确认发送无主题邮件？"
 
 #: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Send thread link to…"
 msgstr "发送会话链接到…"
 
 #: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Send web mail link to…"
 msgstr "发送网页版邮件链接到…"
@@ -6123,12 +6211,12 @@ msgid "Sign in with {name}"
 msgstr "用 {name} 登录"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
-msgid "Sign in with your Google account in the browser. openmail keeps the sign-in token in this computer's keychain."
-msgstr "在浏览器里用你的 Google 账户登录。openmail 把登录令牌存在这台电脑的钥匙串里。"
+msgid "Sign in with your Google account in the browser. OpenMail keeps the sign-in token in this computer's keychain."
+msgstr "在浏览器里用你的 Google 账户登录。OpenMail 把登录令牌存在这台电脑的钥匙串里。"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
-msgid "Sign in with your personal Microsoft account (outlook.com or Hotmail) in the browser. openmail keeps the sign-in token in this computer's keychain."
-msgstr "在浏览器里用你的个人 Microsoft 账户（outlook.com 或 Hotmail）登录。openmail 把登录令牌存在这台电脑的钥匙串里。"
+msgid "Sign in with your personal Microsoft account (outlook.com or Hotmail) in the browser. OpenMail keeps the sign-in token in this computer's keychain."
+msgstr "在浏览器里用你的个人 Microsoft 账户（outlook.com 或 Hotmail）登录。OpenMail 把登录令牌存在这台电脑的钥匙串里。"
 
 #: src/renderer/src/app/App.tsx
 msgid "Sign-in failed: {reason}"
@@ -6194,7 +6282,7 @@ msgstr "跳过"
 msgid "Small"
 msgstr "小"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Smaller text"
 msgstr "缩小文字"
@@ -6204,7 +6292,7 @@ msgid "Smaller than"
 msgstr "小于"
 
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
-msgid "Smart Lists"
+msgid "Smart lists"
 msgstr "智能列表"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
@@ -6437,7 +6525,7 @@ msgid "Sync aliases and signatures"
 msgstr "同步别名和签名"
 
 #: src/renderer/src/features/overview/Overview.tsx
-msgid "Sync All"
+msgid "Sync all"
 msgstr "同步全部"
 
 #: src/renderer/src/features/overview/Overview.tsx
@@ -6778,8 +6866,8 @@ msgid "This message may have been sent. Check Sent before sending it again."
 msgstr "这封邮件可能已经发送。再次发送前，请检查“已发送”。"
 
 #: src/renderer/src/features/organize/PermanentDeletePermission.tsx
-msgid "This permission lets openmail permanently delete mail in this Gmail account. Google will ask for your consent. After granting it, confirm the deletion again."
-msgstr "此权限允许 openmail 永久删除此 Gmail 账户的邮件。Google 会征求你的同意。授权后，请再次确认删除。"
+msgid "This permission lets OpenMail permanently delete mail in this Gmail account. Google will ask for your consent. After granting it, confirm the deletion again."
+msgstr "此权限允许 OpenMail 永久删除此 Gmail 账户的邮件。Google 会征求你的同意。授权后，请再次确认删除。"
 
 #: src/renderer/src/lib/errors.ts
 msgid "This recurrence cannot be represented in Outlook"
@@ -6822,7 +6910,7 @@ msgstr "这个空间还没有账户。<0>添加账户</0>"
 msgid "This time is skipped or repeated by daylight saving. Enter a date and time with a UTC offset"
 msgstr "夏令时切换使该时间不存在或重复，请输入带 UTC 偏移的日期和时间"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Thread link copied"
 msgstr "已复制会话链接"
 
@@ -6918,6 +7006,11 @@ msgstr "翻译"
 msgid "Trash"
 msgstr "已删除"
 
+#. Keyboard shortcuts section: archive, delete, mark read, star and similar actions.
+#: src/renderer/src/i18n/shortcut-groups.ts
+msgid "Triage"
+msgstr "分拣"
+
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "Triage runs while the app is in the foreground or on AC power. Suggestions require your approval. Reply needed adds a star when accepted."
 msgstr "应用在前台或接电时生成整理建议。建议须经你确认。接受“需要回复”会为邮件加星标。"
@@ -6989,7 +7082,7 @@ msgstr "撤销 {0} 的操作"
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 #: src/renderer/src/state/desktop.ts
-msgid "Undo Send"
+msgid "Undo send"
 msgstr "撤销发送"
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
@@ -7121,6 +7214,10 @@ msgstr "动态"
 msgid "Updates require a signed macOS build and a saved access token."
 msgstr "更新需要已签名的 macOS 版本，并保存访问令牌。"
 
+#: src/renderer/src/features/settings/sections/UpdateSettings.tsx
+msgid "Updates require a signed, installed macOS build."
+msgstr "更新需要已签名并已安装的 macOS 版本。"
+
 #: src/main/app/native-i18n.ts
 msgid "Upgrading local database…"
 msgstr "正在升级本地数据库…"
@@ -7221,7 +7318,7 @@ msgstr "等待授权…"
 msgid "WAL"
 msgstr "WAL"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Webmail link copied"
 msgstr "已复制网页邮箱链接"
 
@@ -7238,8 +7335,8 @@ msgid "Weekly"
 msgstr "每周"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
-msgid "Welcome to openmail. Choose your email provider. Your credentials stay on this computer."
-msgstr "欢迎使用 openmail。选择你的邮箱服务商，凭证只存在这台电脑上。"
+msgid "Welcome to OpenMail. Choose your email provider. Your credentials stay on this computer."
+msgstr "欢迎使用 OpenMail。选择你的邮箱服务商，凭证只存在这台电脑上。"
 
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 msgid "What AI apps can do"
@@ -7269,6 +7366,8 @@ msgstr "谁可以登录"
 msgid "Whole message"
 msgstr "全文"
 
+#. Keyboard shortcuts section: windows, tabs, panes and app settings.
+#: src/renderer/src/i18n/shortcut-groups.ts
 #: src/renderer/src/state/desktop.ts
 msgid "Window"
 msgstr "窗口"
@@ -7339,6 +7438,10 @@ msgstr "你登录的是 {signedInAs}。请用 {expected} 登录以继续。"
 msgid "You're offline. Mail syncs again when you reconnect."
 msgstr "你已离线。重新联网后会继续同步邮件。"
 
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+msgid "You're set"
+msgstr "一切就绪"
+
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
 msgid "Your changes are saved on this Mac. Try again or keep a local copy."
 msgstr "更改已保存在此 Mac，可重试或保留本地副本。"
@@ -7350,6 +7453,10 @@ msgstr "草稿已保留。再次发送前请检查“已发送”。"
 #: src/renderer/src/features/remote/ConnectionNotice.tsx
 msgid "Your Mac disconnected this browser. Reload to connect again while your login is still allowed."
 msgstr "你的 Mac 断开了这个浏览器。只要你的登录名仍被允许，重新加载即可再次连接。"
+
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+msgid "Your mail is syncing. Three shortcuts to start with:"
+msgstr "邮件正在同步。先记住这三个快捷键："
 
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 msgid "Your overlapping events"

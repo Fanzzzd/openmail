@@ -1,4 +1,4 @@
-import { canCall, isDesktop } from "../lib/platform";
+import { canCall, isDesktop, isTouchWeb } from "../lib/platform";
 import { focusedSenderMessage, threadStateFor } from "../lib/focused-inbox";
 import { Separator, Group, Panel } from "react-resizable-panels";
 import { useCallback, useRef, useState, type ComponentProps, useEffect } from "react";
@@ -37,6 +37,7 @@ import {
   CreateLabelDialog,
   Feedback,
   FilterEditor,
+  FirstRunDone,
   Settings,
   ShortcutHelp,
 } from "./LazyDialogs";
@@ -59,7 +60,10 @@ import { DefaultProfilesPrompt, ProfileSwitcher } from "../features/accounts/Pro
 import { Reader, useThreadPrint } from "../features/reader/Reader";
 import { Sidebar, SidebarToggle } from "../features/sidebar/Sidebar";
 import { SidebarRail } from "../features/sidebar/SidebarRail";
-import { buttonPrimary, buttonSecondary, titlebarRow } from "../ui/styles";
+import { buttonPrimary, buttonSecondary, iconButton, titlebarRow } from "../ui/styles";
+import { Tip } from "../ui/Tip";
+import { SquarePen } from "lucide-react";
+import { useShortcutText } from "../i18n/use-shortcut-text";
 import { FocusedInboxPermission } from "../features/organize/FocusedInboxActions";
 import { ThreadActions } from "../features/organize/ThreadActions";
 import type { ThreadState } from "../lib/focused-inbox";
@@ -114,6 +118,7 @@ export function App({ composeId }: { composeId?: string }) {
   const { t, i18n } = useLingui();
 
   const layout = useMailLayout();
+  const shortcutText = useShortcutText();
   const [editing, setEditing] = useAtom(editingProfileAtom);
   const syncState = useAtomValue(syncStateAtom);
   const progress = useAtomValue(syncProgressAtom);
@@ -172,6 +177,8 @@ export function App({ composeId }: { composeId?: string }) {
   const accountList = AsyncResult.getOrElse(accounts, () => []);
   // Closing the first-run dialog leaves an empty window that still offers Add account.
   const [firstRunClosed, setFirstRunClosed] = useState(false);
+  // After the first account, one short step with the keys to start with. A touch screen skips it.
+  const [firstRunDone, setFirstRunDone] = useState(false);
   const [signInAgainId, setSignInAgain] = useAtom(signInAgainAtom);
   const signInAgain =
     dialog === "add" ? accountList.find((a) => a.id === signInAgainId) : undefined;
@@ -564,6 +571,19 @@ export function App({ composeId }: { composeId?: string }) {
       onFilters={setFilters}
       folderActions={
         <>
+          {/* One pane at a time hides the sidebar and its New message button. */}
+          {narrow && (
+            <Tip label={t`New message`} shortcut={shortcutText("compose")}>
+              <button
+                type="button"
+                aria-label={t`New message`}
+                onClick={() => startCompose("new")}
+                className={`no-drag text-a11y-muted ${iconButton}`}
+              >
+                <SquarePen className="size-4.5" />
+              </button>
+            </Tip>
+          )}
           {/* Downloads land on the Mac; the browser keeps its own list. */}
           {isDesktop() && <Downloads />}
           <UndoHistory entries={undoHistory} onUndo={undoRestored} />
@@ -646,7 +666,7 @@ export function App({ composeId }: { composeId?: string }) {
       onEditDraft={openSavedDraft}
       notify={(next) => say(next)}
       onBack={narrow ? paneNav.back : undefined}
-      renderToolbar={() => (
+      renderToolbar={(threadMenu) => (
         <ReaderToolbar
           batch={batchToolbar}
           thread={
@@ -691,6 +711,7 @@ export function App({ composeId }: { composeId?: string }) {
               },
               labelPicker,
               onLabelPicker: setLabelPicker,
+              threadMenu,
             }
           }
         />
@@ -769,7 +790,7 @@ export function App({ composeId }: { composeId?: string }) {
                 {sidebar}
               </Panel>
             )}
-            {docked && <ResizeHandle />}
+            {docked && <ResizeHandle label={t`Resize sidebar`} />}
             {paneMode !== "mail" ? (
               <Panel id="main" minSize={360}>
                 {mainPane}
@@ -791,7 +812,9 @@ export function App({ composeId }: { composeId?: string }) {
                 >
                   <div ref={listSlot} className="flex h-full" />
                 </Panel>
-                {prefs.readingPaneVisible && <ResizeHandle orientation={mailOrientation} />}
+                {prefs.readingPaneVisible && (
+                  <ResizeHandle label={t`Resize message list`} orientation={mailOrientation} />
+                )}
                 {prefs.readingPaneVisible && (
                   <Panel
                     id="reader"
@@ -943,6 +966,7 @@ export function App({ composeId }: { composeId?: string }) {
               setDialog(null);
               const email = a.email;
               say({ text: t`Added ${email}. Syncing…` });
+              if (!hasAccounts && !isTouchWeb()) setFirstRunDone(true);
             }}
           />
         )}
@@ -978,6 +1002,7 @@ export function App({ composeId }: { composeId?: string }) {
       )}
       <Assistant accounts={accountList} proposals={proposals} onOpenDraft={openProposal} />
       {dialog === "help" && <ShortcutHelp onClose={() => setDialog(null)} />}
+      {firstRunDone && !dialog && <FirstRunDone onClose={() => setFirstRunDone(false)} />}
       {dialog === "settings" && (
         <Settings
           accounts={accountList}
@@ -1124,9 +1149,17 @@ function usePaneHost() {
  * carry themselves; the group's resizeTargetMinimumSize widens what the
  * pointer can grab without widening the line.
  */
-function ResizeHandle({ orientation = "horizontal" }: { orientation?: "horizontal" | "vertical" }) {
+function ResizeHandle({
+  label,
+  orientation = "horizontal",
+}: {
+  /** Names the pane the handle resizes. The library's separator takes arrow keys, Home and End. */
+  label: string;
+  orientation?: "horizontal" | "vertical";
+}) {
   return (
     <Separator
+      aria-label={label}
       className={`no-drag ${orientation === "vertical" ? "h-px" : "w-px"} bg-black/5 transition-colors outline-none data-[separator=active]:bg-blue-500 data-[separator=focus]:bg-blue-500 data-[separator=hover]:bg-blue-500/60 dark:bg-white/5`}
     />
   );

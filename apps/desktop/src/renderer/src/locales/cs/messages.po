@@ -163,6 +163,10 @@ msgstr "{label} návrhy"
 msgid "{more} more"
 msgstr "{more} další"
 
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "{name} ({owner})"
+msgstr "{name} ({owner})"
+
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "{name} client"
 msgstr "{name} klient"
@@ -186,6 +190,26 @@ msgstr "{op} {count, plural, one {# konverzace} few {# konverzace} many {# konve
 #: src/renderer/src/features/reader/body/MessageBody.tsx
 msgid "{pixels, plural, one {# tracking pixel} other {# tracking pixels}}"
 msgstr "{pixels, plural, one {# sledovací pixel} few {# sledovací pixely} many {# sledovacích pixelů} other {# sledovacích pixelů}}"
+
+#: src/renderer/src/features/sync-status/MailStatusNotice.tsx
+msgid "{provider} needs permission again"
+msgstr "{provider} znovu potřebuje oprávnění"
+
+#: src/renderer/src/features/sync-status/MailStatusNotice.tsx
+msgid "{provider} password rejected"
+msgstr "{provider} odmítl heslo"
+
+#: src/renderer/src/features/sync-status/MailStatusNotice.tsx
+msgid "{provider} sign-in client changed"
+msgstr "Klient přihlášení k {provider} se změnil"
+
+#: src/renderer/src/features/sync-status/MailStatusNotice.tsx
+msgid "{provider} sign-in expired"
+msgstr "Přihlášení k {provider} vypršelo"
+
+#: src/renderer/src/features/sync-status/MailStatusNotice.tsx
+msgid "{provider} sign-in missing"
+msgstr "Přihlášení k {provider} chybí"
 
 #: src/renderer/src/features/downloads/Downloads.tsx
 msgid "{received} of {size}"
@@ -220,6 +244,7 @@ msgid "1 year"
 msgstr "1 rok"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 #: src/renderer/src/ui/ProviderIcon.tsx
 msgid "163 Mail"
 msgstr "163 Mail"
@@ -342,7 +367,7 @@ msgstr "Aktivní hodiny začínají pro {0} dne {dayName}, období {1}"
 msgid "Activity"
 msgstr "Aktivita"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Actual size"
 msgstr "Skutečná velikost"
@@ -426,15 +451,23 @@ msgid "Add to Contacts"
 msgstr "Přidat do Kontaktů"
 
 #: src/renderer/src/app/WindowUi.tsx
-msgid "Add to Dictionary"
+msgid "Add to dictionary"
 msgstr "Přidat do slovníku"
+
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "Add to favorites"
+msgstr "Přidat do oblíbených"
+
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "Add to favorites in all accounts"
+msgstr "Přidat do oblíbených ve všech účtech"
 
 #: src/renderer/src/features/ai/AiPanel.tsx
 msgid "Add your Anthropic API key in Settings → AI Access, then allow the accounts the assistant may read."
 msgstr "Přidejte svůj klíč API Anthropic v Nastavení → Přístup AI a pak povolte účty, které asistent smí číst."
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
-msgid "Add Your First Account"
+msgid "Add your first account"
 msgstr "Přidejte svůj první účet"
 
 #: src/renderer/src/features/reader/attachments/AttachmentImportDialog.tsx
@@ -782,6 +815,7 @@ msgstr "Aplikace, které na tomto Macu nebyly nalezeny"
 
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/ai/TriageChip.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
@@ -837,7 +871,7 @@ msgid "Attach files"
 msgstr "Přiložit soubory"
 
 #: src/renderer/src/state/desktop.ts
-msgid "Attach Files…"
+msgid "Attach files…"
 msgstr "Přiložit soubory…"
 
 #: src/renderer/src/features/feedback/Feedback.tsx
@@ -962,7 +996,7 @@ msgstr "Před datem"
 msgid "Below quoted text"
 msgstr "Pod citovaným textem"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Bigger text"
 msgstr "Větší text"
 
@@ -1218,7 +1252,7 @@ msgid "Check for updates"
 msgstr "Zkontrolovat aktualizace"
 
 #: src/renderer/src/state/desktop.ts
-msgid "Check for Updates…"
+msgid "Check for updates…"
 msgstr "Zkontrolovat aktualizace…"
 
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
@@ -1421,6 +1455,7 @@ msgid "Code block"
 msgstr "Blok kódu"
 
 #: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Collapse all"
 msgstr "Sbalit vše"
 
@@ -1478,7 +1513,9 @@ msgstr "Na této platformě není zmenšení dostupné."
 msgid "Compaction was refused because search index alignment could not be guaranteed."
 msgstr "Zmenšení bylo odmítnuto, protože nelze zaručit soulad vyhledávacího indexu."
 
+#. Keyboard shortcuts section: writing, replying to and sending messages.
 #: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/i18n/shortcut-groups.ts
 msgid "Compose"
 msgstr "Nová zpráva"
 
@@ -1529,7 +1566,7 @@ msgid "Connect an account to send feedback"
 msgstr "Chcete-li odeslat zpětnou vazbu, připojte účet"
 
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
-msgid "Connect Calendar"
+msgid "Connect calendar"
 msgstr "Připojit kalendář"
 
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
@@ -1670,11 +1707,11 @@ msgstr "Kopírovat příkaz pro {name}"
 msgid "Copy config for {name}"
 msgstr "Kopírovat konfiguraci pro {name}"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Copy link to message"
 msgstr "Zkopírujte odkaz do zprávy"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Copy link to thread"
 msgstr "Kopírovat odkaz na konverzaci"
 
@@ -1703,7 +1740,7 @@ msgstr "Kopírovat do složek…"
 msgid "Copy to local signature"
 msgstr "Zkopírujte do místního podpisu"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Copy webmail link"
 msgstr "Kopírovat odkaz na webovou poštu"
 
@@ -2121,7 +2158,7 @@ msgid "Delete permanently"
 msgstr "Trvale smazat"
 
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
-msgid "Delete Space"
+msgid "Delete space"
 msgstr "Smazat prostor"
 
 #: src/renderer/src/app/App.tsx
@@ -2233,6 +2270,7 @@ msgstr "Neopakuje se"
 msgid "Don't attach the original message"
 msgstr "Nepřipojujte původní zprávu"
 
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/reader/RemoteImagesPrompt.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Done"
@@ -2562,6 +2600,7 @@ msgid "Exclude matches"
 msgstr "Vyloučit shody"
 
 #: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Expand all"
 msgstr "Rozbalit vše"
 
@@ -2590,9 +2629,16 @@ msgid "failed"
 msgstr "selhalo"
 
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
-#: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Favorite"
 msgstr "Oblíbený"
+
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "Favorite {name}"
+msgstr "Oblíbená položka {name}"
+
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "Favorite {name} in all accounts"
+msgstr "Oblíbená položka {name} ve všech účtech"
 
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Favorites"
@@ -2634,6 +2680,10 @@ msgstr "Vyplňte proměnné šablony"
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Filter"
 msgstr "Filtr"
+
+#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+msgid "Filter shortcuts"
+msgstr "Filtrovat zkratky"
 
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Filters"
@@ -2750,7 +2800,9 @@ msgstr "Pro informaci"
 msgid "Format"
 msgstr "Formát"
 
+#. Keyboard shortcuts section: text styles in the message editor.
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
+#: src/renderer/src/i18n/shortcut-groups.ts
 msgid "Formatting"
 msgstr "Formátování"
 
@@ -2762,6 +2814,7 @@ msgstr "Fóra"
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
+#: src/renderer/src/features/reader/Reader.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Forward"
@@ -2907,7 +2960,7 @@ msgid "Gmail draft labels and stars stay on this Mac. Gmail only allows the Draf
 msgstr "Štítky a hvězdičky konceptů Gmailu zůstávají na tomto Macu. Gmail povoluje u serverových konceptů pouze štítek Koncept."
 
 #: src/renderer/src/features/accounts/OptionalServices.tsx
-msgid "Gmail Settings"
+msgid "Gmail settings"
 msgstr "Nastavení Gmailu"
 
 #: src/renderer/src/features/organize/GoToFolder.tsx
@@ -3266,8 +3319,8 @@ msgid "Keep local copy"
 msgstr "Ponechat místní kopii"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
-msgid "Keep openmail under"
-msgstr "Udržovat openmail pod limitem"
+msgid "Keep OpenMail under"
+msgstr "Udržovat OpenMail pod limitem"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
@@ -3738,7 +3791,7 @@ msgctxt "message text"
 msgid "Message body"
 msgstr "Text zprávy"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Message link copied"
 msgstr "Odkaz na zprávu zkopírován"
 
@@ -4006,7 +4059,7 @@ msgstr "Přesunout zprávu do koše"
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
 #: src/renderer/src/i18n/action-names.ts
-msgid "Move To"
+msgid "Move to"
 msgstr "Přesunout do"
 
 #: src/renderer/src/features/compose/components/RecipientField.tsx
@@ -4109,6 +4162,11 @@ msgstr "Pojmenujte šablonu a stiskněte Return"
 msgid "Name, like Work"
 msgstr "Jméno, třeba Práce"
 
+#. Keyboard shortcuts section: moving between messages, mailboxes and panes.
+#: src/renderer/src/i18n/shortcut-groups.ts
+msgid "Navigation"
+msgstr "Navigace"
+
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Needs sign-in"
@@ -4136,17 +4194,16 @@ msgstr "Nový štítek nebo složka"
 msgid "New mail notifications"
 msgstr "Upozornění na novou poštu"
 
+#: src/renderer/src/app/App.tsx
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
+#: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/mail-list/MessageList.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 #: src/renderer/src/state/desktop.ts
 msgid "New message"
-msgstr "Nová zpráva"
-
-#: src/renderer/src/features/compose/components/Composer.tsx
-msgid "New Message"
 msgstr "Nová zpráva"
 
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
@@ -4166,8 +4223,8 @@ msgid "New profile"
 msgstr "Nový profil"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
-msgid "New sign-ins use openmail's built-in client."
-msgstr "Nová přihlášení používají vestavěného klienta openmail."
+msgid "New sign-ins use OpenMail's built-in client."
+msgstr "Nová přihlášení používají vestavěného klienta OpenMail."
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "New sign-ins use your own OAuth client."
@@ -4193,7 +4250,7 @@ msgstr "Nový čas:"
 
 #: src/renderer/src/i18n/shortcut-names.ts
 #: src/renderer/src/state/desktop.ts
-msgid "New Window"
+msgid "New window"
 msgstr "Nové okno"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
@@ -4341,6 +4398,10 @@ msgstr "nejsou k dispozici žádné tiskárny."
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "No response needed"
 msgstr "Odpověď není nutná"
+
+#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+msgid "No shortcuts match."
+msgstr "Žádná zkratka neodpovídá."
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "No starred messages. Star a message to find it here."
@@ -4560,7 +4621,7 @@ msgstr "Otevřít v Gmailu"
 #: src/renderer/src/features/reader/Reader.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
-msgid "Open in New Window"
+msgid "Open in new window"
 msgstr "Otevřít v novém okně"
 
 #: src/renderer/src/features/reader/Reader.tsx
@@ -4612,7 +4673,7 @@ msgid "Open this link?"
 msgstr "Otevřít tento odkaz?"
 
 #: src/renderer/src/features/reader/attachments/OpenWithMenu.tsx
-msgid "Open With"
+msgid "Open with"
 msgstr "Otevřít v aplikaci"
 
 #: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
@@ -4657,12 +4718,12 @@ msgid "OpenMail sign-in"
 msgstr "Přihlášení do OpenMail"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
-msgid "openmail signs in with an OAuth client you register yourself. First enter the app you registered in Azure, with the Mobile and desktop applications type. Only personal outlook.com and Hotmail accounts are supported. See {doc} in the repository for the steps."
-msgstr "openmail se přihlásí pomocí klienta OAuth, kterého si sami zaregistrujete. Nejprve zadejte aplikaci, kterou jste zaregistrovali v Azure, s typem Mobilní a stolní aplikace. Podporovány jsou pouze osobní účty outlook.com a Hotmail. Kroky viz {doc} v úložišti."
+msgid "OpenMail signs in with an OAuth client you register yourself. First enter the app you registered in Azure, with the Mobile and desktop applications type. Only personal outlook.com and Hotmail accounts are supported. See {doc} in the repository for the steps."
+msgstr "OpenMail se přihlásí pomocí klienta OAuth, kterého si sami zaregistrujete. Nejprve zadejte aplikaci, kterou jste zaregistrovali v Azure, s typem Mobilní a stolní aplikace. Podporovány jsou pouze osobní účty outlook.com a Hotmail. Kroky viz {doc} v úložišti."
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
-msgid "openmail signs in with an OAuth client you register yourself. First enter the OAuth client you created in Google Cloud, with the Desktop app type. See {doc} in the repository for the steps."
-msgstr "openmail se přihlásí pomocí klienta OAuth, kterého si sami zaregistrujete. Nejprve zadejte klienta OAuth, který jste vytvořili v Google Cloud, s typem aplikace pro stolní počítače. Kroky viz {doc} v úložišti."
+msgid "OpenMail signs in with an OAuth client you register yourself. First enter the OAuth client you created in Google Cloud, with the Desktop app type. See {doc} in the repository for the steps."
+msgstr "OpenMail se přihlásí pomocí klienta OAuth, kterého si sami zaregistrujete. Nejprve zadejte klienta OAuth, který jste vytvořili v Google Cloud, s typem aplikace pro stolní počítače. Kroky viz {doc} v úložišti."
 
 #: src/renderer/src/features/feedback/Feedback.tsx
 msgid "OpenMail stopped unexpectedly"
@@ -4926,6 +4987,10 @@ msgstr "Připravuje se změna…"
 msgid "Press ? outside a text field to show this list."
 msgstr "Stiskněte tlačítko ? mimo textové pole pro zobrazení tohoto seznamu."
 
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+msgid "Press {help} for all shortcuts."
+msgstr "Stisknutím {help} zobrazíte všechny zkratky."
+
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Press Delete to remove it from recent searches."
 msgstr "Stisknutím Delete ji odeberete z nedávných hledání."
@@ -4998,7 +5063,7 @@ msgstr "Vytisknout"
 msgid "Print message…"
 msgstr "Vytisknout zprávu…"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Print…"
 msgstr "Vytisknout…"
 
@@ -5028,6 +5093,7 @@ msgid "Publish OpenMail as a Tailscale Service, such as svc:openmail, with its o
 msgstr "Zveřejněte OpenMail jako Tailscale Service, např. svc:openmail, s vlastním názvem místo portu 8443 na tomto Macu. Nejprve službu definujte v administrační konzoli Tailscale a schvalte tento Mac jako hostitele. Ponechte prázdné, chcete-li použít název tohoto Macu."
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 #: src/renderer/src/ui/ProviderIcon.tsx
 msgid "QQ Mail"
 msgstr "QQ Mail"
@@ -5085,7 +5151,9 @@ msgstr "Pouze pro čtení"
 msgid "Read status"
 msgstr "Stav přečtení"
 
+#. Keyboard shortcuts section: actions on the open message, such as text size.
 #: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/i18n/shortcut-groups.ts
 msgid "Reading"
 msgstr "Čtení"
 
@@ -5250,19 +5318,24 @@ msgid "Remove account"
 msgstr "Odebrat účet"
 
 #: src/renderer/src/app/App.tsx
-#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
-msgid "Remove current label"
-msgstr "Odebrat aktuální štítek"
-
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
+#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/i18n/action-names.ts
-msgid "Remove Current Label"
+msgid "Remove current label"
 msgstr "Odebrat aktuální štítek"
 
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Remove favorite"
 msgstr "Odebrat oblíbené"
+
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "Remove from favorites"
+msgstr "Odebrat z oblíbených"
+
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "Remove from favorites in all accounts"
+msgstr "Odebrat z oblíbených ve všech účtech"
 
 #: src/renderer/src/features/downloads/Downloads.tsx
 msgid "Remove from list"
@@ -5297,8 +5370,8 @@ msgid "Remove star"
 msgstr "Odebrat hvězdičku"
 
 #: src/renderer/src/features/settings/Settings.tsx
-msgid "Remove this account and its local mail from openmail. Mail on the server is not affected."
-msgstr "Odeberte tento účet a jeho místní poštu z openmailu. Pošta na serveru není ovlivněna."
+msgid "Remove this account and its local mail from OpenMail. Mail on the server is not affected."
+msgstr "Odeberte tento účet a jeho místní poštu z OpenMailu. Pošta na serveru není ovlivněna."
 
 #: src/renderer/src/features/settings/sections/UpdateSettings.tsx
 msgid "Remove token"
@@ -5376,9 +5449,11 @@ msgstr "Nahradit za"
 msgid "Replies and forwards"
 msgstr "Odpovědi a přeposlání"
 
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
+#: src/renderer/src/features/reader/Reader.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Reply"
@@ -5391,7 +5466,9 @@ msgid "Reply"
 msgstr "Příznak odpovědi"
 
 #: src/renderer/src/features/ai/Proposals.tsx
+#: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
+#: src/renderer/src/features/reader/Reader.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Reply all"
@@ -5402,10 +5479,6 @@ msgstr "Odpovědět všem"
 msgctxt "incoming message action flag"
 msgid "Reply all"
 msgstr "Příznak odpovědi všem"
-
-#: src/renderer/src/features/compose/components/Composer.tsx
-msgid "Reply All"
-msgstr "Odpovědět všem"
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Reply From"
@@ -5427,6 +5500,10 @@ msgstr "Odpovídat pouze kontaktům"
 msgid "Reply signature for {address}"
 msgstr "Podpis odpovědi pro {address}"
 
+#: src/renderer/src/features/reader/Reader.tsx
+msgid "Reply to this conversation"
+msgstr "Odpovědět v této konverzaci"
+
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
 #: src/renderer/src/features/settings/Settings.tsx
@@ -5445,7 +5522,7 @@ msgid "Resend to rejected recipients"
 msgstr "Znovu odeslat odmítnutým příjemcům"
 
 #: src/renderer/src/features/sidebar/Sidebar.tsx
-msgid "Reset Favorites"
+msgid "Reset favorites"
 msgstr "Obnovit oblíbené"
 
 #: src/main/app/native-i18n.ts
@@ -5455,6 +5532,14 @@ msgstr "Obnovte místní mezipaměť"
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 msgid "Reset toolbar"
 msgstr "Obnovit panel nástrojů"
+
+#: src/renderer/src/app/App.tsx
+msgid "Resize message list"
+msgstr "Změnit šířku seznamu zpráv"
+
+#: src/renderer/src/app/App.tsx
+msgid "Resize sidebar"
+msgstr "Změnit šířku postranního panelu"
 
 #: src/renderer/src/features/reader/attachments/AttachmentImportDialog.tsx
 msgid "Respond to this invitation from the message."
@@ -5615,7 +5700,7 @@ msgstr "Uložit vše"
 msgid "Save an Anthropic API key in AI settings."
 msgstr "Uložte klíč API Anthropic v nastavení AI."
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Save as PDF…"
 msgstr "Uložit jako PDF…"
 
@@ -5811,7 +5896,7 @@ msgstr "Odeslat"
 
 #: src/renderer/src/features/organize/ThreadActions.tsx
 #: src/renderer/src/i18n/action-names.ts
-msgid "Send Again"
+msgid "Send again"
 msgstr "Odeslat znovu"
 
 #: src/renderer/src/features/reader/UnsubscribeButton.tsx
@@ -5833,10 +5918,11 @@ msgstr "Odeslání selhalo"
 
 #: src/renderer/src/features/feedback/Feedback.tsx
 #: src/renderer/src/state/desktop.ts
-msgid "Send Feedback…"
+msgid "Send feedback…"
 msgstr "Odeslat zpětnou vazbu…"
 
 #: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Send message link to…"
 msgstr "Odeslat odkaz na zprávu do…"
@@ -5846,11 +5932,13 @@ msgid "Send this message without a subject?"
 msgstr "Odeslat tuto zprávu bez předmětu?"
 
 #: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Send thread link to…"
 msgstr "Odeslat odkaz na konverzaci do…"
 
 #: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Send web mail link to…"
 msgstr "Odeslat odkaz na webovou zprávu do…"
@@ -6113,12 +6201,12 @@ msgid "Sign in with {name}"
 msgstr "Přihlásit se přes {name}"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
-msgid "Sign in with your Google account in the browser. openmail keeps the sign-in token in this computer's keychain."
-msgstr "Přihlaste se v prohlížeči svým účtem Google. openmail uloží přihlašovací token do klíčenky tohoto počítače."
+msgid "Sign in with your Google account in the browser. OpenMail keeps the sign-in token in this computer's keychain."
+msgstr "Přihlaste se v prohlížeči svým účtem Google. OpenMail uloží přihlašovací token do klíčenky tohoto počítače."
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
-msgid "Sign in with your personal Microsoft account (outlook.com or Hotmail) in the browser. openmail keeps the sign-in token in this computer's keychain."
-msgstr "Přihlaste se v prohlížeči svým osobním účtem Microsoft (outlook.com nebo Hotmail). openmail uloží přihlašovací token do klíčenky tohoto počítače."
+msgid "Sign in with your personal Microsoft account (outlook.com or Hotmail) in the browser. OpenMail keeps the sign-in token in this computer's keychain."
+msgstr "Přihlaste se v prohlížeči svým osobním účtem Microsoft (outlook.com nebo Hotmail). OpenMail uloží přihlašovací token do klíčenky tohoto počítače."
 
 #: src/renderer/src/app/App.tsx
 msgid "Sign-in failed: {reason}"
@@ -6184,7 +6272,7 @@ msgstr "Přeskočit"
 msgid "Small"
 msgstr "Malý"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Smaller text"
 msgstr "Menší text"
@@ -6194,7 +6282,7 @@ msgid "Smaller than"
 msgstr "Menší než"
 
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
-msgid "Smart Lists"
+msgid "Smart lists"
 msgstr "Chytré seznamy"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
@@ -6427,7 +6515,7 @@ msgid "Sync aliases and signatures"
 msgstr "Synchronizujte aliasy a podpisy"
 
 #: src/renderer/src/features/overview/Overview.tsx
-msgid "Sync All"
+msgid "Sync all"
 msgstr "Synchronizovat vše"
 
 #: src/renderer/src/features/overview/Overview.tsx
@@ -6768,8 +6856,8 @@ msgid "This message may have been sent. Check Sent before sending it again."
 msgstr "Tato zpráva již mohla být odeslána. Před dalším odesláním zkontrolujte složku „Odeslané“."
 
 #: src/renderer/src/features/organize/PermanentDeletePermission.tsx
-msgid "This permission lets openmail permanently delete mail in this Gmail account. Google will ask for your consent. After granting it, confirm the deletion again."
-msgstr "Toto oprávnění umožňuje openmailu trvale smazat poštu v tomto účtu Gmail. Google vás požádá o souhlas. Po udělení smazání znovu potvrďte."
+msgid "This permission lets OpenMail permanently delete mail in this Gmail account. Google will ask for your consent. After granting it, confirm the deletion again."
+msgstr "Toto oprávnění umožňuje OpenMailu trvale smazat poštu v tomto účtu Gmail. Google vás požádá o souhlas. Po udělení smazání znovu potvrďte."
 
 #: src/renderer/src/lib/errors.ts
 msgid "This recurrence cannot be represented in Outlook"
@@ -6812,7 +6900,7 @@ msgstr "Tento prostor zatím nemá žádné účty. <0>Přidat účet</0>"
 msgid "This time is skipped or repeated by daylight saving. Enter a date and time with a UTC offset"
 msgstr "Letní čas tento čas vynechává nebo opakuje. Zadejte datum a čas s posunem vůči UTC"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Thread link copied"
 msgstr "Odkaz na konverzaci zkopírován"
 
@@ -6908,6 +6996,11 @@ msgstr "Přeložit"
 msgid "Trash"
 msgstr "Koš"
 
+#. Keyboard shortcuts section: archive, delete, mark read, star and similar actions.
+#: src/renderer/src/i18n/shortcut-groups.ts
+msgid "Triage"
+msgstr "Třídění"
+
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "Triage runs while the app is in the foreground or on AC power. Suggestions require your approval. Reply needed adds a star when accepted."
 msgstr "Návrhy třídění se vytvářejí, když je aplikace v popředí nebo je zařízení připojeno k napájení. Návrhy vyžadují vaše schválení. Přijetí návrhu Vyžaduje odpověď přidá hvězdičku."
@@ -6979,7 +7072,7 @@ msgstr "Vrátit zpět operaci z {0}"
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 #: src/renderer/src/state/desktop.ts
-msgid "Undo Send"
+msgid "Undo send"
 msgstr "Odvolat odeslání"
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
@@ -7111,6 +7204,10 @@ msgstr "Aktualizace"
 msgid "Updates require a signed macOS build and a saved access token."
 msgstr "Aktualizace vyžadují podepsanou verzi aplikace pro macOS a uložený přístupový token."
 
+#: src/renderer/src/features/settings/sections/UpdateSettings.tsx
+msgid "Updates require a signed, installed macOS build."
+msgstr "Aktualizace vyžadují podepsanou nainstalovanou verzi pro macOS."
+
 #: src/main/app/native-i18n.ts
 msgid "Upgrading local database…"
 msgstr "Probíhá aktualizace místní databáze…"
@@ -7211,7 +7308,7 @@ msgstr "Čekání na přihlášení…"
 msgid "WAL"
 msgstr "WAL"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Webmail link copied"
 msgstr "Odkaz na webovou poštu zkopírován"
 
@@ -7228,8 +7325,8 @@ msgid "Weekly"
 msgstr "Týdně"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
-msgid "Welcome to openmail. Choose your email provider. Your credentials stay on this computer."
-msgstr "Vítejte v openmailu. Vyberte poskytovatele e-mailu. Vaše přihlašovací údaje zůstanou v tomto počítači."
+msgid "Welcome to OpenMail. Choose your email provider. Your credentials stay on this computer."
+msgstr "Vítejte v OpenMailu. Vyberte poskytovatele e-mailu. Vaše přihlašovací údaje zůstanou v tomto počítači."
 
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 msgid "What AI apps can do"
@@ -7259,6 +7356,8 @@ msgstr "Kdo se může přihlásit"
 msgid "Whole message"
 msgstr "Celá zpráva"
 
+#. Keyboard shortcuts section: windows, tabs, panes and app settings.
+#: src/renderer/src/i18n/shortcut-groups.ts
 #: src/renderer/src/state/desktop.ts
 msgid "Window"
 msgstr "Okno"
@@ -7329,6 +7428,10 @@ msgstr "Přihlásili jste se jako {signedInAs}. Pokračujte přihlášením jako
 msgid "You're offline. Mail syncs again when you reconnect."
 msgstr "Jste offline. Pošta se znovu synchronizuje po obnovení připojení."
 
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+msgid "You're set"
+msgstr "Vše je připraveno"
+
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
 msgid "Your changes are saved on this Mac. Try again or keep a local copy."
 msgstr "Vaše změny jsou uloženy na tomto Macu. Zkuste to znovu nebo si ponechte místní kopii."
@@ -7340,6 +7443,10 @@ msgstr "Koncept byl zachován. Před dalším odesláním zkontrolujte odeslanou
 #: src/renderer/src/features/remote/ConnectionNotice.tsx
 msgid "Your Mac disconnected this browser. Reload to connect again while your login is still allowed."
 msgstr "Váš Mac tento prohlížeč odpojil. Načtěte stránku znovu a připojte se, dokud je vaše přihlášení stále povolené."
+
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+msgid "Your mail is syncing. Three shortcuts to start with:"
+msgstr "Pošta se synchronizuje. Tři zkratky na začátek:"
 
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 msgid "Your overlapping events"

@@ -205,7 +205,7 @@ const incoming = (id: string): IncomingMessage => ({
   attachments: [],
 });
 const englishLabels: DesktopLabels = {
-  checkUpdates: "Check for Updates…",
+  checkUpdates: "Check for updates…",
   updatesDisabled: "Update checks disabled",
   updatesCurrent: "Up to date",
   updatesAvailable: "Update available:",
@@ -214,9 +214,9 @@ const englishLabels: DesktopLabels = {
   read: "Mark read",
   actionMenu: "Actions",
   settings: "Settings…",
-  newWindow: "New Window",
+  newWindow: "New window",
   compose: "New message",
-  attachFiles: "Attach Files…",
+  attachFiles: "Attach files…",
   help: "Keyboard shortcuts",
   archive: "Archive",
   trash: "Delete",
@@ -226,7 +226,7 @@ const englishLabels: DesktopLabels = {
   file: "File",
   edit: "Edit",
   undo: "Undo",
-  undoSend: "Undo Send",
+  undoSend: "Undo send",
   quitPending: "Quit with pending sends?",
   quitPendingDetail: "Pending sends",
   quit: "Quit",
@@ -234,7 +234,7 @@ const englishLabels: DesktopLabels = {
   selectAll: "Select all",
   window: "Window",
   newMessages: "new messages",
-  feedback: "Send Feedback…",
+  feedback: "Send feedback…",
 };
 const localizedDesktopLayer = (mailbox: Layer.Layer<Mailbox>) =>
   Layer.effectDiscard(
@@ -782,7 +782,7 @@ it("Undo Send in Edit follows the focused window's undo window", async () => {
             expect.objectContaining({
               label: "Edit",
               submenu: expect.arrayContaining([
-                expect.objectContaining({ label: "Undo Send", enabled: true }),
+                expect.objectContaining({ label: "Undo send", enabled: true }),
               ]),
             }),
           ]),
@@ -795,7 +795,7 @@ it("Undo Send in Edit follows the focused window's undo window", async () => {
             expect.objectContaining({
               label: "Edit",
               submenu: expect.arrayContaining([
-                expect.objectContaining({ label: "Undo Send", enabled: false }),
+                expect.objectContaining({ label: "Undo send", enabled: false }),
               ]),
             }),
           ]),
@@ -807,7 +807,7 @@ it("Undo Send in Edit follows the focused window's undo window", async () => {
             expect.objectContaining({
               label: "Edit",
               submenu: expect.arrayContaining([
-                expect.objectContaining({ label: "Undo Send", enabled: false }),
+                expect.objectContaining({ label: "Undo send", enabled: false }),
               ]),
             }),
           ]),
@@ -993,7 +993,7 @@ it("a menu Undo Send issued without a subscriber is never replayed after rendere
         yield* desktop.setSendState(win.webContents.id, { pending: 1, undoAvailable: true });
         const undo = Menu.setApplicationMenu.mock.lastCall?.[0]
           .find((item) => item.label === "Edit")
-          ?.submenu?.find((item) => item.label === "Undo Send");
+          ?.submenu?.find((item) => item.label === "Undo send");
         expect(undo?.click).toBeDefined();
         undo?.click?.();
         yield* desktop.search("reloaded");
@@ -1133,7 +1133,7 @@ it("the app menu exposes a manual update check and explains the unpackaged gate"
         )(template);
         const click = menu
           .flatMap((item) => item.submenu ?? [])
-          .find((item) => item.label === "Check for Updates…")?.click;
+          .find((item) => item.label === "Check for updates…")?.click;
         expect(typeof click).toBe("function");
         if (typeof click === "function") click();
         yield* settle();
@@ -1216,7 +1216,7 @@ it("native Attach Files reaches the focused standalone composer after merging th
         const fileMenu = Menu.setApplicationMenu.mock.calls
           .at(-1)?.[0]
           .find((item) => item.label === "File");
-        const attach = fileMenu?.submenu?.find((item) => item.label === "Attach Files…");
+        const attach = fileMenu?.submenu?.find((item) => item.label === "Attach files…");
         if (!attach?.click) throw new Error("Missing native attachment action");
         attach.click();
         expect(yield* Fiber.join(receive)).toEqual([{ _tag: "AttachFiles" }]);
