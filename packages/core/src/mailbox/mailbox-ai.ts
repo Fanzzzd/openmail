@@ -23,12 +23,9 @@ import { modelContext } from "../ai/model-view.js";
 import { MODEL_KEY } from "../ai/secrets.js";
 import type { Secrets } from "../platform/auth.js";
 import type { Store } from "../store/service.js";
-import {
-  AgentIdentity,
-  AssistantToolkit,
-  MailToolkitLayer,
-  toModelAccount,
-} from "../tools/tools.js";
+import { AssistantToolkit, MailToolkitLayer } from "../tools/tools.js";
+import { AgentIdentity } from "../tools/agent-identity.js";
+import { toModelAccount } from "../tools/account-tools.js";
 
 const isSpecialLabel = (name: string) => {
   const normalized = name

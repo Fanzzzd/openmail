@@ -20,14 +20,14 @@ export { MailboxLive } from "./mailbox/mailbox-live.js";
 export { AppConfig, Browser, type ClientConfig, Secrets } from "./platform/auth.js";
 export { Providers } from "./providers/adapter.js";
 export {
-  AgentIdentity,
   agentAccountGap,
-  MailToolError,
   MailToolkit,
   MailToolkitLayer,
   ReadMailToolkit,
   ProposalMailToolkit,
 } from "./tools/tools.js";
+export { AgentIdentity } from "./tools/agent-identity.js";
+export { MailToolError } from "./tools/tool-common.js";
 
 export * from "./domain/organization.js";
 export * from "./search/search.js";

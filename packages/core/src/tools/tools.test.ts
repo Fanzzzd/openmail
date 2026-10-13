@@ -11,15 +11,9 @@ import type { OutgoingMessage } from "../domain/changes.js";
 import { fakeServer, TestMailbox } from "../platform/node/testing.js";
 import { Mailbox } from "../mailbox/mailbox.js";
 import { NotFound } from "../domain/errors.js";
-import {
-  AgentIdentity,
-  cleanMcpClientName,
-  UNTRUSTED_MAIL_NOTICE,
-  MailToolkit,
-  MailToolkitLayer,
-  ReadMailToolkit,
-  ProposalMailToolkit,
-} from "./tools.js";
+import { MailToolkit, MailToolkitLayer, ReadMailToolkit, ProposalMailToolkit } from "./tools.js";
+import { AgentIdentity, cleanMcpClientName } from "./agent-identity.js";
+import { UNTRUSTED_MAIL_NOTICE } from "./tool-common.js";
 
 type Service = Mailbox["Service"];
 

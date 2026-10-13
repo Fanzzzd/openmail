@@ -280,7 +280,7 @@ it("AI/MCP docs match the budget placeholder and semantic snippet policy", async
   expect(source).toContain(placeholder);
   for (const doc of documents) expect(doc).toContain(placeholder);
   const tools = await readFile(
-    path.join(desktopRoot, "../../packages/core/src/tools/tools.ts"),
+    path.join(desktopRoot, "../../packages/core/src/tools/thread-tools.ts"),
     "utf8",
   );
   expect(tools).toContain("Message snippets are omitted.");
