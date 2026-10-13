@@ -126,3 +126,39 @@ it("re-measures the page with the frame collapsed whenever the page changes", as
   expect(doc.body.style.getPropertyValue("height")).toBe("auto");
   vi.unstubAllGlobals();
 });
+
+it("loads no stylesheet from the network, even with remote images allowed", () => {
+  render(
+    createElement(
+      I18nProvider,
+      { i18n: setupI18n({ locale: "en", messages: {} }) },
+      createElement(EmailFrame, {
+        html: '<link rel="stylesheet" href="https://mail.example.com/a.css"><style>@import "https://mail.example.com/b.css";</style><p>Hi</p>',
+        remote: true,
+        background: "light",
+        zoom: 100,
+        onActivate: constVoid,
+        previous: { bodies: [], before: 0 },
+        findQuery: "",
+        findIndex: 0,
+        onMatches: undefined,
+      }),
+    ),
+  );
+  const frame = screen.getByTitle("Message");
+  if (!(frame instanceof HTMLIFrameElement)) throw new Error("Missing frame");
+  const page = new DOMParser().parseFromString(frame.srcdoc, "text/html");
+  const policy =
+    page.querySelector('meta[http-equiv="Content-Security-Policy"]')?.getAttribute("content") ?? "";
+  const directive = (name: string) =>
+    policy
+      .split(";")
+      .map((part) => part.trim().split(/\s+/))
+      .find(([key]) => key === name)
+      ?.slice(1);
+  // The sanitizer already drops <link> and @import; the policy holds if one slips through.
+  expect(page.body.innerHTML).not.toMatch(/<link|@import/i);
+  // A fetched stylesheet's own url() and @import bypass the tracker and pixel filters.
+  expect(directive("style-src")).toEqual(["'unsafe-inline'"]);
+  expect(directive("img-src")).toContain("https:");
+});

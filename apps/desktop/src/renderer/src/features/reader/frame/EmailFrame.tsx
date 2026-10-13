@@ -42,9 +42,11 @@ import { searchTermsOf, useSearchHits } from "../../search";
 // `allow-same-origin` only lets this component measure and fit the document
 // and listen for shortcut keys; without `allow-scripts` the mail cannot use it.
 // The resource policy is also the baseline checked by the mobile reader.
+// Stylesheets never load from the network: a fetched sheet's own url() and
+// @import would skip the tracker and pixel filters that the mail's HTML went through.
 const BLOCKED = "default-src 'none'; img-src data: cid:; style-src 'unsafe-inline'; font-src data:";
 const ALLOWED =
-  "default-src 'none'; img-src data: cid: https:; style-src 'unsafe-inline' https:; font-src data: https:";
+  "default-src 'none'; img-src data: cid: https:; style-src 'unsafe-inline'; font-src data: https:";
 const FRAME_RESTRICTIONS =
   "script-src 'none'; object-src 'none'; frame-src 'none'; connect-src 'none'; base-uri 'none'; form-action 'none'";
 
