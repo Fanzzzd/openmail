@@ -1,4 +1,4 @@
-import { makeOutboxStore } from "./mobile-outbox.js";
+import { makeOutboxStore } from "./mailbox/mobile-outbox.js";
 import { makeRemoteAccessStore } from "./remote-access.js";
 import { PlatformCrypto } from "./platform/crypto.js";
 import { makeSignatureStore } from "./store-signatures.js";

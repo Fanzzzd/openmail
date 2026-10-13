@@ -22,7 +22,7 @@ import {
   parseCalendar,
 } from "./platform/node/portable-helpers.js";
 import { type IncomingMessage } from "./domain/domain.js";
-import { Mailbox } from "./mailbox.js";
+import { Mailbox } from "./mailbox/mailbox.js";
 {
   const calendar = (event: string, method = "REQUEST", zones = "") =>
     `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nMETHOD:${method}\r\n${zones}BEGIN:VEVENT\r\nUID:meeting@example.com\r\nSEQUENCE:3\r\nSUMMARY:Planning\\, review\r\nLOCATION:Room 1\\nSecond floor\r\nORGANIZER;CN="Alice, Organizer":mailto:alice@example.com\r\nATTENDEE;CN=Me;PARTSTAT=NEEDS-ACTION:mailto:me@example.com\r\nATTENDEE;PARTSTAT=ACCEPTED:mailto:other@example.com\r\n${event}\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n`;

@@ -1,7 +1,7 @@
 import { nodeCacheMaintenance } from "./cache-maintenance.js";
 import { CacheStorage, CacheMaintenance } from "../cache-storage.js";
 import { nodeCacheStorage } from "./cache-storage.js";
-import { UnsubscribeNetwork } from "../../unsubscribe.js";
+import { UnsubscribeNetwork } from "../../mailbox/unsubscribe.js";
 import { postUnsubscribe } from "./unsubscribe.js";
 import { createHash, createHmac, randomUUID } from "node:crypto";
 import { Effect, Layer } from "effect";

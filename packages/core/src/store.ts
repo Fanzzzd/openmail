@@ -26,7 +26,7 @@ import { makeSignatureStore } from "./store-signatures.js";
 import { makeSyncHealthStore } from "./store-sync-health.js";
 import { makeThreadsStore } from "./store-threads.js";
 import { makeWordIndexStore } from "./store-word-index.js";
-import { makeUndoStore } from "./undo-journal.js";
+import { makeUndoStore } from "./mailbox/undo-journal.js";
 export { applyOpToLabels, folderTarget } from "./domain/mail-ops.js";
 export { accountId } from "./store-rows.js";
 /**

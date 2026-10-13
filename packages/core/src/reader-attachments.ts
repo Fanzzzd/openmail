@@ -3,7 +3,12 @@ import { Buffer } from "./platform/bytes.js";
 import { Effect, Result } from "effect";
 import type { MailCodecPort } from "./platform/mail-codec.js";
 import { InvalidInput, NotFound, ProviderError } from "./domain/errors.js";
-import type { AttachmentContent, AttachmentPartResult, Mailbox, PerformError } from "./mailbox.js";
+import type {
+  AttachmentContent,
+  AttachmentPartResult,
+  Mailbox,
+  PerformError,
+} from "./mailbox/mailbox.js";
 import type { EmbeddedMessage, ReaderAttachment } from "./attachment-view.js";
 import {
   decodeTnef,

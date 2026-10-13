@@ -3,7 +3,7 @@ import { Effect, Fiber, Logger, Stream } from "effect";
 import { TestClock } from "effect/testing";
 import { AuthError, KEYCHAIN_LOCKED_MESSAGE, ProviderError } from "./domain/errors.js";
 import { diagnosticRecord } from "./platform/node/diagnostics.js";
-import { Mailbox } from "./mailbox.js";
+import { Mailbox } from "./mailbox/mailbox.js";
 import { TestMailbox } from "./platform/node/testing.js";
 import { Store } from "./services.js";
 import {

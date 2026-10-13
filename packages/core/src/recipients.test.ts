@@ -11,9 +11,9 @@ import { assert, it } from "@effect/vitest";
 import { Effect, Layer } from "effect";
 
 import type { Address, IncomingMessage, Message, OutgoingMessage } from "./domain/domain.js";
-import { Mailbox } from "./mailbox.js";
+import { Mailbox } from "./mailbox/mailbox.js";
 import { fakeServer, makeFakeProvider } from "./platform/node/fake-provider.js";
-import { MailboxLive } from "./mailbox-live.js";
+import { MailboxLive } from "./mailbox/mailbox-live.js";
 import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { Providers, Store } from "./services.js";
 import { StoreLive } from "./store.js";

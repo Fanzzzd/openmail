@@ -7,12 +7,12 @@ import { graphRecurrence } from "./graph-recurrence.js";
 import { graphTimestamp } from "./graph-time.js";
 import { parseCalendar } from "./invites.js";
 import { makeProviderCalendar } from "./provider-calendar.js";
-import { Mailbox } from "./mailbox.js";
+import { Mailbox } from "./mailbox/mailbox.js";
 import { Providers } from "./services.js";
 import { StoreLive } from "./store.js";
 import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { makeFakeProvider } from "./platform/node/fake-provider.js";
-import { MailboxLive } from "./mailbox-live.js";
+import { MailboxLive } from "./mailbox/mailbox-live.js";
 {
   const event: CalendarEvent = {
     key: "personal",

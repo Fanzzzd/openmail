@@ -21,7 +21,7 @@ import { opSqliteShim } from "../../../test-support/op-sqlite.js";
 import { AppPaths } from "../paths.js";
 import { PlatformCrypto, sha256Hex, hmacSha256Hex } from "../crypto.js";
 import { TestMailbox, fakeServer, incoming } from "../node/testing.js";
-import { Mailbox } from "../../mailbox.js";
+import { Mailbox } from "../../mailbox/mailbox.js";
 import { Store } from "../../services.js";
 import type { OpSqliteDatabase } from "./sqlite.js";
 import {

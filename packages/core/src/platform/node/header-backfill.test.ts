@@ -7,11 +7,11 @@ import { ConfigProvider, Deferred, Effect, Layer, ManagedRuntime, Schema, Stream
 import { SqlClient } from "effect/sql";
 import type { IncomingMessage, Provider } from "../../domain/domain.js";
 import { backfillCachedHeaders, type CachedHeaders } from "../../header-backfill.js";
-import { readOnlyAdapter } from "../../read-only.js";
+import { readOnlyAdapter } from "../../mailbox/read-only.js";
 import { ProviderError } from "../../domain/errors.js";
 import { Providers, Store } from "../../services.js";
-import { Mailbox } from "../../mailbox.js";
-import { MailboxLive } from "../../mailbox-live.js";
+import { Mailbox } from "../../mailbox/mailbox.js";
+import { MailboxLive } from "../../mailbox/mailbox-live.js";
 import { StoreLive } from "../../store.js";
 import { all, run } from "../../sql-rows.js";
 import { fakeServer, makeFakeProvider } from "./fake-provider.js";

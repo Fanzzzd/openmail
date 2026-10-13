@@ -26,8 +26,8 @@ import {
   CRASH_WINDOW_MS,
   resetLocalCache,
 } from "./platform/node/diagnostics.js";
-import { Mailbox } from "./mailbox.js";
-import { MailboxLive } from "./mailbox-live.js";
+import { Mailbox } from "./mailbox/mailbox.js";
+import { MailboxLive } from "./mailbox/mailbox-live.js";
 import { fakeServer } from "./platform/node/testing.js";
 import { makeFakeProvider } from "./platform/node/fake-provider.js";
 import { MemoryPlatform } from "./platform/node/platform-memory.js";

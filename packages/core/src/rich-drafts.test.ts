@@ -9,7 +9,7 @@ import { richComposeBody, preservedComposeHtml, remoteComposeBody } from "./comp
 import { type Actor, type IncomingMessage, type Provider } from "./domain/domain.js";
 import { ProviderError } from "./domain/errors.js";
 import { makeFakeProvider } from "./platform/node/fake-provider.js";
-import { Mailbox } from "./mailbox.js";
+import { Mailbox } from "./mailbox/mailbox.js";
 import { fakeServer, TestMailbox } from "./platform/node/testing.js";
 const user: Actor = { kind: "user", surface: "app" };
 const html =

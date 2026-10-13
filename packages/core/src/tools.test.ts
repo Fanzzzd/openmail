@@ -7,7 +7,7 @@ import { Tool } from "effect/ai";
 
 import type { Actor, Command, Outcome, ThreadQuery, OutgoingMessage } from "./domain/domain.js";
 import { fakeServer, TestMailbox } from "./platform/node/testing.js";
-import { Mailbox } from "./mailbox.js";
+import { Mailbox } from "./mailbox/mailbox.js";
 import { NotFound } from "./domain/errors.js";
 import {
   AgentIdentity,
@@ -58,12 +58,12 @@ function testThread(
   id: string,
   view: "model",
   tokenBudget?: number,
-): Effect.Effect<import("./mailbox.js").ModelThread>;
+): Effect.Effect<import("./mailbox/mailbox.js").ModelThread>;
 function testThread(
   id: string,
   view?: "model",
 ): Effect.Effect<
-  readonly import("./domain/domain.js").Message[] | import("./mailbox.js").ModelThread
+  readonly import("./domain/domain.js").Message[] | import("./mailbox/mailbox.js").ModelThread
 > {
   return view === "model"
     ? Effect.succeed({

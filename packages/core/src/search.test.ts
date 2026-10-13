@@ -27,7 +27,7 @@ import { Store } from "./services.js";
 import { StoreLive } from "./store.js";
 import { ImapFlow } from "imapflow";
 import { searchCompiler } from "imapflow/lib/search-compiler.js";
-import { Mailbox } from "./mailbox.js";
+import { Mailbox } from "./mailbox/mailbox.js";
 import { NodeFileSystem, NodePath } from "@effect/platform-node";
 import { SqlClient } from "effect/sql";
 import { databaseLayer } from "./platform/node/db.js";

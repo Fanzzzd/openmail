@@ -5,8 +5,8 @@ import { Effect, Exit, Fiber, Layer, Option, Schema, Stream } from "effect";
 import { TestClock } from "effect/testing";
 import { MailError } from "./domain/errors.js";
 import { makeGmail } from "./gmail.js";
-import { MailboxLive } from "./mailbox-live.js";
-import { Mailbox } from "./mailbox.js";
+import { MailboxLive } from "./mailbox/mailbox-live.js";
+import { Mailbox } from "./mailbox/mailbox.js";
 import { makeOutlook } from "./outlook.js";
 import {
   fakeHttp,

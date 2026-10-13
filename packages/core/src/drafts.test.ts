@@ -19,7 +19,7 @@ import {
   type OutgoingMessage,
 } from "./domain/domain.js";
 import { ProviderError } from "./domain/errors.js";
-import { Mailbox } from "./mailbox.js";
+import { Mailbox } from "./mailbox/mailbox.js";
 import { applyComposeSignature, richComposeBody } from "./compose-body.js";
 import { SqlClient } from "effect/sql";
 import { DatabaseSync } from "node:sqlite";

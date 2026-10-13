@@ -6,7 +6,7 @@ import { HttpClient, HttpClientResponse } from "effect/http";
 import { BASE_SCOPES, consentBatch, OPTIONAL_SCOPES, serviceGrants } from "./optional-services.js";
 import { makeGmail } from "./gmail.js";
 import { makeOutlook } from "./outlook.js";
-import { Mailbox } from "./mailbox.js";
+import { Mailbox } from "./mailbox/mailbox.js";
 import { makeFakeProvider } from "./platform/node/fake-provider.js";
 import {
   Store,

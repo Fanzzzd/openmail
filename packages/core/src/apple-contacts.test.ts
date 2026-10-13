@@ -5,7 +5,7 @@ import {
   appleContactVCard,
   type AppleContactsSnapshot,
 } from "./apple-contacts.js";
-import { Mailbox } from "./mailbox.js";
+import { Mailbox } from "./mailbox/mailbox.js";
 import { TestMailbox } from "./platform/node/testing.js";
 
 const snapshot: AppleContactsSnapshot = {

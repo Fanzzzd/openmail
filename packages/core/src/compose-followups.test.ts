@@ -18,8 +18,8 @@ import {
 } from "./domain/domain.js";
 import { ProviderError } from "./domain/errors.js";
 import { makeFakeProvider } from "./platform/node/fake-provider.js";
-import { Mailbox } from "./mailbox.js";
-import { MailboxLive } from "./mailbox-live.js";
+import { Mailbox } from "./mailbox/mailbox.js";
+import { MailboxLive } from "./mailbox/mailbox-live.js";
 import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { NodeSystem } from "./platform/node/platform-node.js";
 import { Providers } from "./services.js";

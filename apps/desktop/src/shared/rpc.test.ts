@@ -8,7 +8,7 @@ import {
   PrefsPatch,
   Proposal,
 } from "@openmail/core/schema";
-import { Mailbox } from "../../../../packages/core/src/mailbox.js";
+import { Mailbox } from "../../../../packages/core/src/mailbox/mailbox.js";
 import { TestMailbox } from "../../../../packages/core/src/platform/node/testing.js";
 import { MailRpcs } from "./rpc";
 

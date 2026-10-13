@@ -1,5 +1,5 @@
 import { backfillCachedHeaders } from "../../header-backfill.js";
-import { readOnlyAdapter } from "../../read-only.js";
+import { readOnlyAdapter } from "../../mailbox/read-only.js";
 import { makeResetGuard } from "../../sync-reset.js";
 import { readCursor } from "../../imap-cursor.js";
 import { expect, it, vi } from "vitest";
@@ -17,8 +17,8 @@ import { parseMobileMime, mobileMailCodecLayer } from "./mail-codec.js";
 import { MemoryPlatform } from "../node/platform-memory.js";
 import { StoreLive } from "../../store.js";
 import { Providers, Secrets, Store } from "../../services.js";
-import { MailboxLive } from "../../mailbox-live.js";
-import { Mailbox } from "../../mailbox.js";
+import { MailboxLive } from "../../mailbox/mailbox-live.js";
+import { Mailbox } from "../../mailbox/mailbox.js";
 import { Buffer } from "../bytes.js";
 const raw = Buffer.from(
   [

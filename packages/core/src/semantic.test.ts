@@ -7,7 +7,7 @@ import {
   setup,
 } from "../test-support/semantic-fixtures.js";
 import { TestClock } from "effect/testing";
-import { Mailbox } from "./mailbox.js";
+import { Mailbox } from "./mailbox/mailbox.js";
 import { TestMailbox, fakeServer } from "./platform/node/testing.js";
 import { assert, it } from "@effect/vitest";
 import { Deferred, Effect, Fiber, Option } from "effect";

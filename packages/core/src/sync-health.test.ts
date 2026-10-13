@@ -5,7 +5,7 @@ import { TestClock } from "effect/testing";
 import { StoreLive } from "./store.js";
 import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { makeFakeProvider } from "./platform/node/fake-provider.js";
-import { Mailbox } from "./mailbox.js";
+import { Mailbox } from "./mailbox/mailbox.js";
 import { Providers, Store, type ProviderAdapter } from "./services.js";
 import { TestMailbox, fakeServer } from "./platform/node/testing.js";
 import { type IncomingMessage, type Provider } from "./domain/domain.js";

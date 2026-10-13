@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { Effect } from "effect";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { Mailbox } from "../../../../../packages/core/src/mailbox.js";
+import { Mailbox } from "../../../../../packages/core/src/mailbox/mailbox.js";
 import { fakeServer, TestMailbox } from "../../../../../packages/core/src/platform/node/testing.js";
 import type { IncomingMessage } from "../../../../../packages/core/src/domain/domain.js";
 

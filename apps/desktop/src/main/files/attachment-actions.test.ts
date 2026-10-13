@@ -16,7 +16,7 @@ import { fileURLToPath } from "node:url";
 import { Deferred, Effect, Fiber } from "effect";
 import { constVoid } from "effect/Function";
 import { afterAll, beforeAll, beforeEach, expect, it, vi } from "vitest";
-import { Mailbox } from "../../../../../packages/core/src/mailbox.js";
+import { Mailbox } from "../../../../../packages/core/src/mailbox/mailbox.js";
 import { buildMime } from "../../../../../packages/core/src/platform/node/compose.js";
 import { fakeServer, TestMailbox } from "../../../../../packages/core/src/platform/node/testing.js";
 import type { IncomingMessage } from "../../../../../packages/core/src/domain/domain.js";

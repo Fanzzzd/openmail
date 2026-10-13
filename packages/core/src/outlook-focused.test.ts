@@ -3,7 +3,7 @@ import { Effect, Layer, Option, Schema, Stream } from "effect";
 import { DatabaseSync } from "node:sqlite";
 import { DEFAULT_PREFS } from "./domain/domain.js";
 import { MIGRATIONS } from "./db.js";
-import { Mailbox } from "./mailbox.js";
+import { Mailbox } from "./mailbox/mailbox.js";
 import { makeOutlook } from "./outlook.js";
 import { parseGraphMessage } from "./outlook/parse.js";
 import { GraphMessage } from "./outlook/graph.js";

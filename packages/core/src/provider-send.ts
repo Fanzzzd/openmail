@@ -1,4 +1,4 @@
-import type { PerformError } from "./mailbox.js";
+import type { PerformError } from "./mailbox/mailbox.js";
 import { Clock, Effect, Schema } from "effect";
 import type { ApiError } from "./provider-http.js";
 import { AuthError, ProviderError, SendUncertain } from "./domain/errors.js";

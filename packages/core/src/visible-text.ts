@@ -62,7 +62,7 @@ import {
 import { READER_COLOUR_CSS, READER_COLOURS } from "./reader-style.js";
 import { constantLength, siblingPaint, type SiblingPaint } from "./visible-text-overlap.js";
 import { horizontalInlineCoverage, opaqueCoverage } from "./visible-text-cover.js";
-import type { ModelThread } from "./mailbox.js";
+import type { ModelThread } from "./mailbox/mailbox.js";
 
 export type ModelTextFlag = NonNullable<ModelThread["messages"][number]["flags"]>[number];
 type VisibleText =

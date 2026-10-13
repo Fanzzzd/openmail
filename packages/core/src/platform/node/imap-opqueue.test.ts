@@ -17,8 +17,8 @@ import { parseUidSet } from "../../imap-cursor.js";
 import { smtpTransport } from "./imap/session.js";
 import { buildMime } from "./compose.js";
 import { MemoryPlatform } from "./platform-memory.js";
-import { Mailbox } from "../../mailbox.js";
-import { MailboxLive } from "../../mailbox-live.js";
+import { Mailbox } from "../../mailbox/mailbox.js";
+import { MailboxLive } from "../../mailbox/mailbox-live.js";
 import { StoreLive } from "../../store.js";
 import {
   Providers,

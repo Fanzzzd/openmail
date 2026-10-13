@@ -22,8 +22,8 @@ import { Buffer, type ByteCodec, type ByteEncoding } from "./platform/bytes.js";
 import { draftCreation } from "./platform/node/draft-create-fixture.js";
 import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { account as buildAccount, incoming } from "./platform/node/testing.js";
-import { Mailbox } from "./mailbox.js";
-import { MailboxLive } from "./mailbox-live.js";
+import { Mailbox } from "./mailbox/mailbox.js";
+import { MailboxLive } from "./mailbox/mailbox-live.js";
 import { StoreLive } from "./store.js";
 import {
   Providers,

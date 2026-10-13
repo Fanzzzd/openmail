@@ -2,7 +2,7 @@ import { assert, it } from "@effect/vitest";
 import { Effect, Layer, Option } from "effect";
 
 import { makeGmail } from "./gmail.js";
-import { Mailbox } from "./mailbox.js";
+import { Mailbox } from "./mailbox/mailbox.js";
 import { clientForToken, effectiveClients } from "./oauth-clients.js";
 import { makeOutlook } from "./outlook.js";
 import { fakeHttp } from "./platform/node/fake-http.js";

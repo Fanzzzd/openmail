@@ -28,8 +28,8 @@ import { HttpClient, HttpClientError, HttpClientRequest, HttpClientResponse } fr
 import { TestClock } from "effect/testing";
 import { simpleParser } from "mailparser";
 import { type Account, type OutgoingMessage } from "./domain/domain.js";
-import { MailboxLive } from "./mailbox-live.js";
-import { Mailbox } from "./mailbox.js";
+import { MailboxLive } from "./mailbox/mailbox-live.js";
+import { Mailbox } from "./mailbox/mailbox.js";
 import { markdownDraftSource } from "./markdown-draft.js";
 import { renderMarkdown } from "./markdown.js";
 import { makeOutlook } from "./outlook.js";

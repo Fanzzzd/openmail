@@ -4,7 +4,7 @@ import {
   fakeServer,
   TestMailbox,
 } from "../../../../../../../packages/core/src/platform/node/testing.js";
-import { Mailbox } from "../../../../../../../packages/core/src/mailbox.js";
+import { Mailbox } from "../../../../../../../packages/core/src/mailbox/mailbox.js";
 import { requestDraftClose } from "./draft-close";
 import { emptyDraft, fromStored, isEmpty, toDraftInput } from "./draft";
 

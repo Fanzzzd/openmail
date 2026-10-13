@@ -10,7 +10,7 @@ import {
   Prefs,
 } from "./domain/domain.js";
 import { PermanentError } from "./domain/errors.js";
-import { Mailbox, type MailboxEvent } from "./mailbox.js";
+import { Mailbox, type MailboxEvent } from "./mailbox/mailbox.js";
 import {
   inQuietHours,
   messageLink,

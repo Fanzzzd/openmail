@@ -1,4 +1,4 @@
-import type { QueuedSend } from "./mobile-outbox.js";
+import type { QueuedSend } from "./mailbox/mobile-outbox.js";
 import type { OptionalService, AuthorizationFeature } from "./optional-services.js";
 import type { NamedSignature, NamedSignatureInput, SignatureDefault } from "./signatures.js";
 import type { WordIndexState } from "./store-word-index.js";
@@ -473,13 +473,17 @@ export class Store extends Context.Service<
     updateProfile(id: string, input: ProfileInput): Effect.Effect<void>;
     deleteProfile(id: string): Effect.Effect<void>;
 
-    undoHistory: ReturnType<typeof import("./undo-journal.js").makeUndoStore>["undoHistory"];
-    undoJournal: ReturnType<typeof import("./undo-journal.js").makeUndoStore>["undoJournal"];
+    undoHistory: ReturnType<
+      typeof import("./mailbox/undo-journal.js").makeUndoStore
+    >["undoHistory"];
+    undoJournal: ReturnType<
+      typeof import("./mailbox/undo-journal.js").makeUndoStore
+    >["undoJournal"];
     saveUndoJournal: ReturnType<
-      typeof import("./undo-journal.js").makeUndoStore
+      typeof import("./mailbox/undo-journal.js").makeUndoStore
     >["saveUndoJournal"];
     deleteUndoJournal: ReturnType<
-      typeof import("./undo-journal.js").makeUndoStore
+      typeof import("./mailbox/undo-journal.js").makeUndoStore
     >["deleteUndoJournal"];
 
     sendUncertain(id: string): Effect.Effect<boolean>;

@@ -8,9 +8,9 @@ import { DEFAULT_LIST_FILTERS, type IncomingMessage, type Provider } from "./dom
 import { FOLDER_MESSAGE_LIMIT, GMAIL_PERMANENT_DELETE_SCOPE } from "./folder-actions.js";
 import { AuthError, PermanentError } from "./errors.js";
 import { makeFakeProvider } from "../platform/node/fake-provider.js";
-import { makeFolderMailbox } from "../mailbox-folders.js";
-import { Mailbox } from "../mailbox.js";
-import { MailboxLive } from "../mailbox-live.js";
+import { makeFolderMailbox } from "../mailbox/mailbox-folders.js";
+import { Mailbox } from "../mailbox/mailbox.js";
+import { MailboxLive } from "../mailbox/mailbox-live.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
 import { NodeSystem } from "../platform/node/platform-node.js";
 import { Providers, Store } from "../services.js";

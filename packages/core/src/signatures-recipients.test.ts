@@ -8,7 +8,7 @@ import { join } from "node:path";
 import { databaseLayer, MIGRATIONS } from "./platform/node/db.js";
 import { type IncomingMessage, type OutgoingMessage } from "./domain/domain.js";
 import { AuthError, PermanentError, ProviderError } from "./domain/errors.js";
-import { Mailbox } from "./mailbox.js";
+import { Mailbox } from "./mailbox/mailbox.js";
 import { TestMailbox, fakeServer } from "./platform/node/testing.js";
 import { Store } from "./services.js";
 import { StoreLive } from "./store.js";

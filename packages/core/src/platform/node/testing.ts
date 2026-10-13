@@ -8,8 +8,8 @@ import { Effect, Layer } from "effect";
 
 import type { Account, IncomingMessage, OutgoingMessage, Provider } from "../../domain/domain.js";
 import { type FakeServer, fakeServer, makeFakeProvider } from "./fake-provider.js";
-import { MailboxLive, type MailboxOptions } from "../../mailbox-live.js";
-import type { Mailbox } from "../../mailbox.js";
+import { MailboxLive, type MailboxOptions } from "../../mailbox/mailbox-live.js";
+import type { Mailbox } from "../../mailbox/mailbox.js";
 import { MemoryPlatform, type MemoryPlatformOptions } from "./platform-memory.js";
 import { Providers } from "../../services.js";
 import { StoreLive } from "../../store.js";

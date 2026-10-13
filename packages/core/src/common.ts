@@ -9,8 +9,8 @@ export * from "./reader-html.js";
 export * from "./reading.js";
 export * from "./trackers.js";
 export { IMAP_PRESETS, ImapConnectInput, ImapPreset } from "./imap-presets.js";
-export { Mailbox, MailboxEvent, type PerformError, SyncState } from "./mailbox.js";
-export { MailboxLive } from "./mailbox-live.js";
+export { Mailbox, MailboxEvent, type PerformError, SyncState } from "./mailbox/mailbox.js";
+export { MailboxLive } from "./mailbox/mailbox-live.js";
 
 export { AppConfig, Browser, type ClientConfig, Providers, Secrets } from "./services.js";
 export {

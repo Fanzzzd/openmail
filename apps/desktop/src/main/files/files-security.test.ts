@@ -6,7 +6,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { afterAll, expect, it, vi } from "vitest";
 import { Effect } from "effect";
-import { Mailbox } from "../../../../../packages/core/src/mailbox.js";
+import { Mailbox } from "../../../../../packages/core/src/mailbox/mailbox.js";
 import { fakeServer, TestMailbox } from "../../../../../packages/core/src/platform/node/testing.js";
 import { APP_SCHEME, WINDOW_SECURITY } from "../security/security-policy";
 

@@ -10,7 +10,7 @@ import { NodeSystem } from "./platform-node.js";
 import { databaseLayer } from "./db.js";
 import { buildMime } from "./compose.js";
 import { syntheticPdf } from "./fixtures/synthetic-pdf.js";
-import { Mailbox } from "../../mailbox.js";
+import { Mailbox } from "../../mailbox/mailbox.js";
 import { Store } from "../../services.js";
 import { StoreLive } from "../../store.js";
 import { MailCodec } from "../mail-codec.js";

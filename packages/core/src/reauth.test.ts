@@ -5,8 +5,8 @@ import { TestClock } from "effect/testing";
 
 import type { Account } from "./domain/domain.js";
 import { AuthError, KEYCHAIN_LOCKED_MESSAGE, ProviderError } from "./domain/errors.js";
-import { MailboxLive } from "./mailbox-live.js";
-import { Mailbox } from "./mailbox.js";
+import { MailboxLive } from "./mailbox/mailbox-live.js";
+import { Mailbox } from "./mailbox/mailbox.js";
 import { makeOutlook } from "./outlook.js";
 import { fakeHttp } from "./platform/node/fake-http.js";
 import { refreshWithIssuer } from "./oauth-clients.js";
