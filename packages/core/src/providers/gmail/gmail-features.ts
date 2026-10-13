@@ -2,15 +2,15 @@ import { gmailPages } from "../provider-pages.js";
 import { Effect, Result, Schema } from "effect";
 import { reconcileProviderWrite } from "../provider-write.js";
 import type { Account, Address } from "../../domain/domain.js";
-import type { CalendarInvite, CalendarTime, InviteResponse } from "../../calendar.js";
+import type { CalendarInvite, CalendarTime, InviteResponse } from "../../calendar/calendar.js";
 import { InvalidInput } from "../../domain/errors.js";
 import {
   type ContactGroup,
   type ContactPhoto,
   type ContactSnapshot,
   mergeContacts,
-} from "../../contacts.js";
-import { graphTimestamp } from "../../graph-time.js";
+} from "../../contacts/contacts.js";
+import { graphTimestamp } from "../../calendar/graph-time.js";
 import { featureRequest } from "../provider-features.js";
 
 const Person = Schema.Struct({

@@ -7,7 +7,7 @@ import { stripMessageIdBrackets } from "../../message-id.js";
 import { makeOutlookFeatures } from "./outlook-features.js";
 import { makeOutlookSettings } from "./outlook-settings.js";
 import { hasSignedContainer } from "../../platform/mime-compat.js";
-import { makeProviderCalendar } from "../../provider-calendar.js";
+import { makeProviderCalendar } from "../../calendar/provider-calendar.js";
 import { BackgroundRead } from "../provider-connectivity.js";
 import { ApiError } from "../provider-http.js";
 import { graphPages } from "../provider-pages.js";

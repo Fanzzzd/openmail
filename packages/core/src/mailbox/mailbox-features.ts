@@ -21,13 +21,13 @@ import {
   type CalendarEvent,
   type CalendarInvite,
   type InviteResponse,
-} from "../calendar.js";
+} from "../calendar/calendar.js";
 import { InvalidInput } from "../domain/errors.js";
 import {
   inviteCanRespond,
   inviteReply,
   invitesFromRaw as unboundInvitesFromRaw,
-} from "../invites.js";
+} from "../calendar/invites.js";
 import type { Mailbox } from "./mailbox.js";
 import type { Providers, Store } from "../services.js";
 

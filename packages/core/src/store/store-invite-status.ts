@@ -1,6 +1,6 @@
 import { Effect, Option, Schema } from "effect";
 import type { SqlClient } from "effect/sql";
-import { CalendarInvite, InviteResponseRecord } from "../calendar.js";
+import { CalendarInvite, InviteResponseRecord } from "../calendar/calendar.js";
 import { all, first, run } from "./sql-rows.js";
 
 /** Only explicit, successfully sent responses are recorded. Account/event identity scopes them. */

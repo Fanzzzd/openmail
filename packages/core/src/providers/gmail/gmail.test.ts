@@ -5,7 +5,7 @@ import { draftCreation } from "../../platform/node/draft-create-fixture.js";
 import { MailCodec } from "../../platform/mail-codec.js";
 import { nodeMailCodec } from "../../platform/node/mail-codec.js";
 import { assert, it } from "@effect/vitest";
-import { parseCalendar } from "../../invites.js";
+import { parseCalendar } from "../../calendar/invites.js";
 import { Cause, Clock, Deferred, Effect, Fiber, Layer, Option, Schema, Stream } from "effect";
 import { HttpClient, HttpClientError, HttpClientResponse } from "effect/http";
 import { TestClock } from "effect/testing";

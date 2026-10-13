@@ -9,7 +9,7 @@ import { Store } from "../../services.js";
 import { AgentIdentity, MailToolkit, MailToolkitLayer } from "../../tools.js";
 import { visibleHtmlText } from "../../visible-text.js";
 import { sanitizeReaderHtml } from "../../reader-sanitize.js";
-import { structuredMailEvents } from "../../structured-events.js";
+import { structuredMailEvents } from "../../calendar/structured-events.js";
 import { incoming } from "./testing.js";
 import {
   PerformanceMailbox,

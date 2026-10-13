@@ -10,7 +10,7 @@ import { createVisibleTextTrace, inspectHtmlStructure } from "../../visible-text
 import { visibleHtmlText } from "../../visible-text.js";
 import { linkDisplayMismatch } from "../../link-security.js";
 import { messageSecurity } from "../../message-security.js";
-import { structuredMailEvents } from "../../structured-events.js";
+import { structuredMailEvents } from "../../calendar/structured-events.js";
 import { normalizeMimeCharsets, withDecodedBody } from "../mime-compat.js";
 import { nodeMailCodec } from "./mail-codec.js";
 import {

@@ -5,7 +5,7 @@ import {
   type CalendarEvent,
   type CalendarInvite,
   type InviteResponse,
-} from "../../calendar.js";
+} from "../../calendar/calendar.js";
 import { Effect, Option, Stream } from "effect";
 
 import { attachmentFromRaw } from "../../attachments.js";
@@ -49,8 +49,8 @@ export interface FakeServer {
   >;
   grantedScopes: string[];
   contacts: Address[];
-  contactGroups: import("../../contacts.js").ContactGroup[];
-  contactPhotos: import("../../contacts.js").ContactPhoto[];
+  contactGroups: import("../../contacts/contacts.js").ContactGroup[];
+  contactPhotos: import("../../contacts/contacts.js").ContactPhoto[];
   calendarEvents: CalendarEvent[];
   createdEvents: CalendarEvent[];
   responses: { invite: CalendarInvite; response: InviteResponse }[];

@@ -8,8 +8,8 @@ import {
   parseAddressList,
   htmlToText,
 } from "./mime.js";
-import { parseCalendar } from "./invites.js";
-import { structuredMailEvents } from "./structured-events.js";
+import { parseCalendar } from "./calendar/invites.js";
+import { structuredMailEvents } from "./calendar/structured-events.js";
 import { richComposeBody, remoteComposeBody } from "./compose-body.js";
 import { visibleHtmlText, messageModelText } from "./visible-text.js";
 import { prepareMessageHtml } from "./reader-html.js";

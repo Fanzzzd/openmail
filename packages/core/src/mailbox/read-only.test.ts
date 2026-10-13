@@ -17,7 +17,7 @@ import { Store } from "../services.js";
 import { EMPTY_FILTER } from "../domain/organization.js";
 import { fakeServer, TestMailbox } from "../platform/node/testing.js";
 import { makeFakeProvider } from "../platform/node/fake-provider.js";
-import { detectMailEvents } from "../calendar.js";
+import { detectMailEvents } from "../calendar/calendar.js";
 import { type IncomingMessage, type OutgoingMessage } from "../domain/domain.js";
 {
   it.effect(

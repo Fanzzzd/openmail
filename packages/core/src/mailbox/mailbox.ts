@@ -74,8 +74,8 @@ import type {
   CalendarEventEdits,
   CalendarInvite,
   InviteResponse,
-} from "../calendar.js";
-import type { ContactSync, ContactGroup } from "../contacts.js";
+} from "../calendar/calendar.js";
+import type { ContactSync, ContactGroup } from "../contacts/contacts.js";
 import type { ClientConfig, ConnectInput } from "../services.js";
 
 import type {

@@ -19,7 +19,7 @@ import {
   messagesFrom,
   splitRepeatedQuote,
 } from "./reading.js";
-import { parseCalendar } from "./invites.js";
+import { parseCalendar } from "./calendar/invites.js";
 
 const incoming = (
   providerId: string,

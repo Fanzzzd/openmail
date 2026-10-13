@@ -1,18 +1,18 @@
-import { incoming as makeIncoming, fakeServer, TestMailbox } from "./platform/node/testing.js";
+import { incoming as makeIncoming, fakeServer, TestMailbox } from "../platform/node/testing.js";
 import { assert, it } from "@effect/vitest";
 import { Effect, Schema, Layer } from "effect";
-import { type Account, type IncomingMessage } from "./domain/domain.js";
+import { type Account, type IncomingMessage } from "../domain/domain.js";
 import { type CalendarEvent } from "./calendar.js";
 import { graphRecurrence } from "./graph-recurrence.js";
 import { graphTimestamp } from "./graph-time.js";
 import { parseCalendar } from "./invites.js";
 import { makeProviderCalendar } from "./provider-calendar.js";
-import { Mailbox } from "./mailbox/mailbox.js";
-import { Providers } from "./services.js";
-import { StoreLive } from "./store/store.js";
-import { MemoryPlatform } from "./platform/node/platform-memory.js";
-import { makeFakeProvider } from "./platform/node/fake-provider.js";
-import { MailboxLive } from "./mailbox/mailbox-live.js";
+import { Mailbox } from "../mailbox/mailbox.js";
+import { Providers } from "../services.js";
+import { StoreLive } from "../store/store.js";
+import { MemoryPlatform } from "../platform/node/platform-memory.js";
+import { makeFakeProvider } from "../platform/node/fake-provider.js";
+import { MailboxLive } from "../mailbox/mailbox-live.js";
 {
   const event: CalendarEvent = {
     key: "personal",

@@ -1,7 +1,7 @@
-import { Buffer } from "./platform/bytes.js";
+import { Buffer } from "../platform/bytes.js";
 import { Effect, Result, Schema } from "effect";
 import ICAL from "ical.js";
-import { parseMime } from "./platform/mail-codec.js";
+import { parseMime } from "../platform/mail-codec.js";
 import {
   inviteCanRespond,
   type CalendarInvite,
@@ -9,10 +9,10 @@ import {
   type InviteResponse,
 } from "./calendar.js";
 export { inviteCanRespond } from "./calendar.js";
-import type { Address, OutgoingMessage } from "./domain/domain.js";
-import { InvalidInput, ProviderError } from "./domain/errors.js";
+import type { Address, OutgoingMessage } from "../domain/domain.js";
+import { InvalidInput, ProviderError } from "../domain/errors.js";
 import { graphTimestamp } from "./graph-time.js";
-import { decodeBytes } from "./mime.js";
+import { decodeBytes } from "../mime.js";
 
 const value = (component: ICAL.Component, name: string): unknown =>
   component.getFirstPropertyValue(name);

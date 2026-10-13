@@ -1,11 +1,11 @@
 import { Effect } from "effect";
 import { NodeRuntime } from "./runtime.js";
 import { parseRawDraft as draft } from "../../drafts.js";
-import { invitesFromRaw as invites } from "../../invites.js";
+import { invitesFromRaw as invites } from "../../calendar/invites.js";
 import { inlineMediaFromRaw as media } from "../../attachments.js";
 import { imageAttachment as image } from "../../compose-images.js";
 export * from "../../drafts.js";
-export * from "../../invites.js";
+export * from "../../calendar/invites.js";
 export * from "../../attachments.js";
 export * from "../../compose-images.js";
 export { downloadRemoteImage } from "./image-network.js";

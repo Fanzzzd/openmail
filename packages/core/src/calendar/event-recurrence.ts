@@ -9,7 +9,7 @@ import {
   calendarDateValid,
   localCalendarTimeZone,
 } from "./event-dates.js";
-import { InvalidInput } from "./domain/errors.js";
+import { InvalidInput } from "../domain/errors.js";
 
 const Positive = Schema.Int.check(Schema.isBetween({ minimum: 1, maximum: 2147483647 }));
 export const RecurrenceWeekday = Schema.Literals(["MO", "TU", "WE", "TH", "FR", "SA", "SU"]);

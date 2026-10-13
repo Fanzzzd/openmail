@@ -1,4 +1,4 @@
-import { sha256Hex } from "./platform/crypto.js";
+import { sha256Hex } from "../platform/crypto.js";
 import { structuredMailEvents } from "./structured-events.js";
 import { CalendarTime, calendarTimestamp } from "./calendar-time.js";
 export { CalendarTime, calendarTimestamp } from "./calendar-time.js";
@@ -18,10 +18,10 @@ import {
   validateRecurrenceStart,
   type CalendarEventEdits,
 } from "./event-recurrence.js";
-import { InvalidInput } from "./domain/errors.js";
+import { InvalidInput } from "../domain/errors.js";
 export * from "./event-dates.js";
 export * from "./event-recurrence.js";
-import { Address, type Message, type Provider } from "./domain/domain.js";
+import { Address, type Message, type Provider } from "../domain/domain.js";
 
 export const InviteResponse = Schema.Literals(["accepted", "tentative", "declined"]);
 export type InviteResponse = typeof InviteResponse.Type;

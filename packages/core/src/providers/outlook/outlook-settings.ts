@@ -3,7 +3,7 @@ import { Effect, Schema, Option } from "effect";
 import type { Account } from "../../domain/domain.js";
 import { PermanentError, ProviderError, SettingsScopeMissing } from "../../domain/errors.js";
 import { authFailure } from "../reauth.js";
-import { graphTimestamp } from "../../graph-time.js";
+import { graphTimestamp } from "../../calendar/graph-time.js";
 import { escapeHtml } from "../../print.js";
 import { htmlToText } from "../../mime.js";
 import {

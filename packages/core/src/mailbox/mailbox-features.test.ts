@@ -10,7 +10,7 @@ import type { IncomingMessage } from "../domain/domain.js";
 import { FeatureScopeMissing } from "../domain/errors.js";
 import { Mailbox } from "./mailbox.js";
 import { fakeServer, TestMailbox } from "../platform/node/testing.js";
-import { parseCalendar } from "../invites.js";
+import { parseCalendar } from "../calendar/invites.js";
 
 const incoming: IncomingMessage = {
   providerId: "m1",

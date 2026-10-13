@@ -6,7 +6,7 @@ import {
   mergeContacts,
   type ContactSnapshot,
   type ContactSync,
-} from "../contacts.js";
+} from "../contacts/contacts.js";
 import { all, run } from "./sql-rows.js";
 
 const SyncRow = Schema.Struct({

@@ -2,9 +2,9 @@ import { graphPageLink } from "./graph-pagination.js";
 import { reconcileProviderWrite } from "../provider-write.js";
 import { Effect, Schema } from "effect";
 import type { Account, Address } from "../../domain/domain.js";
-import type { CalendarInvite, InviteResponse } from "../../calendar.js";
+import type { CalendarInvite, InviteResponse } from "../../calendar/calendar.js";
 import { InvalidInput } from "../../domain/errors.js";
-import { mergeContacts } from "../../contacts.js";
+import { mergeContacts } from "../../contacts/contacts.js";
 import { featureRequest } from "../provider-features.js";
 
 const Email = Schema.Struct({

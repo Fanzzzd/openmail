@@ -27,8 +27,8 @@ export * from "./search.js";
 export { htmlToText } from "./mime.js";
 
 export * from "./media.js";
-export * from "./calendar.js";
-export * from "./contacts.js";
+export * from "./calendar/calendar.js";
+export * from "./contacts/contacts.js";
 
 export { deviceErrorReason, deviceFailure } from "./domain/device-errors.js";
 export * from "./system.js";
@@ -60,7 +60,7 @@ export * from "./domain/categories.js";
 export * from "./ai.js";
 export * from "./update-state.js";
 export * from "./compose-ai.js";
-export * from "./apple-contacts.js";
+export * from "./contacts/apple-contacts.js";
 
 export * from "./message-security.js";
 export * from "./visible-text.js";

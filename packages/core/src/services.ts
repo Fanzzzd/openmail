@@ -69,8 +69,8 @@ import type {
   CalendarEvent,
   CalendarInvite,
   InviteResponse,
-} from "./calendar.js";
-import type { ContactSnapshot, ContactGroup, ContactSync } from "./contacts.js";
+} from "./calendar/calendar.js";
+import type { ContactSnapshot, ContactGroup, ContactSync } from "./contacts/contacts.js";
 import type { AttachmentRef } from "./attachments.js";
 import type { ImapConnectInput } from "./providers/imap/imap-presets.js";
 import type { MarkdownDraftSource } from "./markdown-draft.js";

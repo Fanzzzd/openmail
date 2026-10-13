@@ -28,8 +28,8 @@ export * from "./search.js";
 
 export * from "./media.js";
 
-export * from "./calendar.js";
-export * from "./contacts.js";
+export * from "./calendar/calendar.js";
+export * from "./contacts/contacts.js";
 
 export { deviceErrorReason, deviceFailure } from "./domain/device-errors.js";
 export * from "./system.js";
@@ -66,7 +66,7 @@ export { ModelAnthropic, FakeModelLayer, type ModelOutput, type ModelRequest } f
 
 export * from "./update-state.js";
 
-export * from "./apple-contacts.js";
+export * from "./contacts/apple-contacts.js";
 
 export * from "./platform/crypto.js";
 export * from "./platform/paths.js";
