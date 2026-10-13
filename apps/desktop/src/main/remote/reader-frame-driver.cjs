@@ -88,15 +88,52 @@ const clickText = (selector, text) => `(() => {
 })()`;
 
 // The current find hit's box in the thread pane's coordinates, and the frame's own vertical scroll.
+// Hits are CSS highlights over the text, so the frame's registry holds the current one.
 const HIT = `(() => {
   const pane = document.querySelector("[data-reader-text]");
   const frame = [...pane.querySelectorAll('iframe[title="Message"]')].at(-1);
   const doc = frame.contentDocument;
-  const mark = [...doc.querySelectorAll("mark")].find((m) => m.style.background.includes("251, 146, 60"));
-  if (!mark) return null;
-  const f = frame.getBoundingClientRect(), m = mark.getBoundingClientRect(), p = pane.getBoundingClientRect();
+  const active = frame.contentWindow.CSS.highlights.get("openmail-find-active");
+  const range = active && [...active][0];
+  if (!range) return null;
+  const f = frame.getBoundingClientRect(), m = range.getBoundingClientRect(), p = pane.getBoundingClientRect();
   return { top: f.top + m.top - p.top, bottom: f.top + m.bottom - p.top, pane: pane.clientHeight,
     frameScroll: doc.scrollingElement.scrollTop };
+})()`;
+
+// The last message frame's markup and highlight sizes, to show a search or find adds nothing to the
+// mail. Inline style and hidden are left out: the reader sets them to fit the page and to open quotes.
+const MAIL_DOM = `(() => {
+  const frame = [...document.querySelectorAll('[data-reader-text] iframe[title="Message"]')].at(-1);
+  const doc = frame.contentDocument;
+  const highlights = {};
+  for (const [name, highlight] of frame.contentWindow.CSS.highlights) highlights[name] = highlight.size;
+  const copy = doc.documentElement.cloneNode(true);
+  for (const element of [copy, ...copy.querySelectorAll("*")]) {
+    element.removeAttribute("style");
+    element.removeAttribute("hidden");
+  }
+  return { html: copy.outerHTML, highlights,
+    probe: frame.contentWindow.getComputedStyle(doc.body).outlineStyle };
+})()`;
+
+/** Searches the mailbox for `term` and opens `subject` from the results, as typing in the search field does. */
+const search = (term, subject) => `(async () => {
+  const input = document.querySelector('input[aria-label="Search mail"]');
+  if (!input) return false;
+  input.focus();
+  Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set.call(input, ${JSON.stringify(term)});
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+  input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", code: "Enter", bubbles: true }));
+  for (let i = 0; i < 80; i++) {
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    const row = [...document.querySelectorAll("[data-id]")].find((e) => e.getClientRects().length && e.textContent.includes(${JSON.stringify(subject)}));
+    const frame = [...document.querySelectorAll('[data-reader-text] iframe[title="Message"]')].at(-1);
+    const painted = frame?.contentWindow?.CSS.highlights.get("openmail-search-active");
+    if (painted?.size) return true;
+    if (row && i % 10 === 0) row.click();
+  }
+  return false;
 })()`;
 
 /** Opens find on the last message, as ⌘F does, and types `term`. */
@@ -136,6 +173,7 @@ const STEPS = {
     return true;
   })()`,
   find: (c) => find(c.find),
+  search: (c) => search(c.search, c.subject),
   findNext: press("Next match"),
   findPrevious: press("Previous match"),
 };
@@ -226,6 +264,8 @@ async function main() {
       }
       await settle(c.name);
       const hits = [];
+      const dom = [];
+      const before = c.find ? await js(MAIL_DOM) : null;
       for (const [index, step] of (c.steps ?? []).entries()) {
         await js(`window.__phase = ${index + 1}`);
         const script = typeof STEPS[step] === "function" ? STEPS[step](c) : STEPS[step];
@@ -236,7 +276,16 @@ async function main() {
           throw new Error(`${c.name}: step ${step} failed; buttons: ${buttons}`);
         }
         await settle(`${c.name} ${step}`);
-        if (c.find) hits.push({ step, ...(await js(HIT)) });
+        if (c.find) {
+          if (step !== "search") hits.push({ step, ...(await js(HIT)) });
+          const after = await js(MAIL_DOM);
+          dom.push({
+            step,
+            same: after.html === before.html,
+            highlights: after.highlights,
+            probe: after.probe,
+          });
+        }
       }
       // Settled; anything drawn in the next 400 ms is flicker.
       const settled = await js(`performance.now()`);
@@ -249,6 +298,7 @@ async function main() {
         settled,
         heights,
         hits,
+        dom,
         ...measured,
       });
     }

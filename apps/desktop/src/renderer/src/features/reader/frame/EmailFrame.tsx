@@ -33,7 +33,7 @@ import {
   frameSurface,
   type MessageBackground,
 } from "../body/MessageBodyShell";
-import { searchTermsOf, useSearchHits } from "../../search";
+import { HIGHLIGHT_CSS, useSearchHits } from "../../search";
 
 // Mail HTML is untrusted. It renders in a sandboxed iframe with scripts off,
 // and its own CSP blocks remote loads (tracking pixels) until images are
@@ -96,7 +96,7 @@ export function EmailFrame({
   useEffect(() => {
     activate.current = onActivate;
   });
-  const { termsKey, present: presentHits } = useSearchHits();
+  const { present: presentHits } = useSearchHits();
   // Set by the measuring effect: measures on the next animation frame.
   const remeasure = useRef<() => void>(constVoid);
   // The current find hit, scrolled to again once the frame has grown to its page.
@@ -105,7 +105,7 @@ export function EmailFrame({
     if (!frameDocument || !quotes) return constVoid;
     const view = presentBody(frameDocument.body, quotes, showQuotes, findQuery);
     // Search hits count after the quotes settle; an open find scrolls last.
-    presentHits(frameDocument.body);
+    const hits = presentHits(frameDocument.body);
     onMatches?.(view.count);
     const index = view.count ? findIndex % view.count : 0;
     view.select(index);
@@ -116,6 +116,7 @@ export function EmailFrame({
     return () => {
       reveal.current = null;
       view.dispose();
+      hits();
     };
   }, [frameDocument, quotes, showQuotes, findQuery, findIndex, onMatches, presentHits]);
   const [fit, setFit] = useState(true);
@@ -155,7 +156,7 @@ export function EmailFrame({
     const observer = new ResizeObserver(schedule);
     for (const element of [frame, frameDocument.documentElement, frameDocument.body])
       observer.observe(element);
-    // Quotes and search marks, and late images and web fonts.
+    // Quotes, and late images and web fonts.
     const mutations = new MutationObserver(schedule);
     mutations.observe(frameDocument.body, {
       subtree: true,
@@ -190,11 +191,8 @@ export function EmailFrame({
   const css =
     presentation === "compose"
       ? `html, body { background: ${READER_COLOURS.paper}; color: ${READER_COLOURS.ink}; color-scheme: light; }`
-      : `${READER_BASE_CSS}${background === "dark" ? DARK_CSS : ""} body { zoom: ${zoom}%; }`;
-  const safeHtml = useMemo(
-    () => sanitizeReaderHtml(html, remote, searchTermsOf(termsKey)),
-    [html, remote, termsKey],
-  );
+      : `${READER_BASE_CSS}${background === "dark" ? DARK_CSS : ""} body { zoom: ${zoom}%; }${HIGHLIGHT_CSS}`;
+  const safeHtml = useMemo(() => sanitizeReaderHtml(html, remote), [html, remote]);
   const doc = `<!doctype html><html lang="${i18n.locale}"><head><meta charset="utf-8">
 <meta http-equiv="x-dns-prefetch-control" content="off">
 <meta http-equiv="Content-Security-Policy" content="${remote ? ALLOWED : BLOCKED}; ${FRAME_RESTRICTIONS}">

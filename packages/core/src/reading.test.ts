@@ -284,7 +284,7 @@ import { prepareMessageHtml } from "./reader-html.js";
     const html =
       "<style>body{min-height:100vh} .a{height:calc(110dvh - 2svh)} @media (max-height:50lvh){p{margin:1vmin}}</style>" +
       '<div style="height:100VH;width:50vw;max-height:12.5vmax">x</div><body style="padding:1vb">y</body>';
-    const fixed = sanitizeReaderHtml(html, false, undefined, [], 800);
+    const fixed = sanitizeReaderHtml(html, false, undefined, 800);
     for (const value of [
       "min-height:800px",
       "calc(880px - 16px)",
@@ -329,7 +329,6 @@ import { prepareMessageHtml } from "./reader-html.js";
       '<style media="(max-width: 60vh), (min-width: 50vmin)">p{color:red}</style><p>x</p>',
       false,
       undefined,
-      [],
       800,
     );
     expect(attribute).toContain("480px");
@@ -385,7 +384,6 @@ import { prepareMessageHtml } from "./reader-html.js";
         '<style media="(max-height:100px)">p{color:red}</style>',
         false,
         undefined,
-        [],
         800,
       ),
     ).toContain('media="(not (width&gt;=0px))"');

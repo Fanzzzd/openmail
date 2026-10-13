@@ -273,3 +273,15 @@ body {
   background-color: rgb(59 130 246 / 0.12);
   text-decoration: underline wavy #3b82f6;
 }
+
+/* Search and find hits in plain-text bodies; mail frames get the same rules (HIGHLIGHT_CSS). */
+::highlight(openmail-search-hit),
+::highlight(openmail-find-hit) {
+  background-color: #fef08a;
+  color: #111;
+}
+::highlight(openmail-search-active),
+::highlight(openmail-find-active) {
+  background-color: #fb923c;
+  color: #111;
+}

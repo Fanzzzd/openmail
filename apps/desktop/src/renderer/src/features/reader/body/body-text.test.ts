@@ -1,31 +1,42 @@
-import { expect, it } from "vitest";
-import { parseHTML } from "linkedom";
+// @vitest-environment jsdom
+import { afterEach, expect, it } from "vitest";
 import { normalizeQuote } from "@openmail/core/schema";
 import { highlightBody, presentBody, repeatedQuoteElements } from "./body-text";
 
 function body(html: string) {
-  return parseHTML(`<html><body>${html}</body></html>`).document.body;
+  document.body.innerHTML = html;
+  return document.body;
 }
 
-it("finds across inline elements and navigates whole matches without touching links or attributes", () => {
+/** jsdom has no CSS Custom Highlight API; this registry records what was painted. */
+const registry = new Map<string, Set<Range>>();
+Object.assign(window, { Highlight: class extends Set<Range> {} });
+Object.defineProperty(window, "CSS", { value: { highlights: registry }, configurable: true });
+const painted = (name: string) => [...(registry.get(name) ?? [])].map(String);
+afterEach(() => registry.clear());
+
+it("finds across inline elements and navigates whole matches without touching the DOM", () => {
   const root = body(
     '<p>A hello <b>world</b> and HELLO <a href="https://example.com">WORLD</a>.</p>',
   );
   const original = root.innerHTML;
   const found = highlightBody(root, "hello world");
   expect(found.count).toBe(2);
-  expect(root.querySelectorAll("mark")).toHaveLength(4);
-  expect(root.querySelector("a")?.getAttribute("href")).toBe("https://example.com");
+  expect(found.ranges.map(String)).toEqual(["hello world", "HELLO WORLD"]);
+  expect(painted("openmail-find-hit")).toEqual(["hello world", "HELLO WORLD"]);
   found.select(1);
-  const marks = [...root.querySelectorAll("mark")];
-  expect(marks[0]?.style.getPropertyValue("background")).toBe("#fef08a");
-  expect(marks[2]?.style.getPropertyValue("background")).toBe("#fb923c");
-  found.dispose();
+  expect(painted("openmail-find-active")).toEqual(["HELLO WORLD"]);
+  found.select(0);
+  expect(painted("openmail-find-active")).toEqual(["hello world"]);
+  // No element, class or attribute was added for the find.
   expect(root.innerHTML).toBe(original);
+  found.dispose();
+  expect(painted("openmail-find-hit")).toEqual([]);
+  expect(painted("openmail-find-active")).toEqual([]);
   const again = highlightBody(root, "world");
   expect(again.count).toBe(2);
   again.dispose();
-  expect(root.querySelectorAll("mark")).toHaveLength(0);
+  expect(root.innerHTML).toBe(original);
 });
 
 it("literal, Unicode and plain-text matches exclude hidden content, fields, scripts and styles", () => {
@@ -37,7 +48,7 @@ it("literal, Unicode and plain-text matches exclude hidden content, fields, scri
   found.dispose();
   const unicode = highlightBody(root, "test");
   expect(unicode.count).toBe(1);
-  expect(root.querySelector("mark")?.textContent).toBe("test");
+  expect(unicode.ranges.map(String)).toEqual(["test"]);
   unicode.dispose();
   const empty = highlightBody(root, "");
   expect(empty.count).toBe(0);

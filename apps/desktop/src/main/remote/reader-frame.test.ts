@@ -18,9 +18,19 @@ interface Case {
   name: string;
   html: string;
   pane?: number;
-  steps?: ("viewAt100" | "showQuotes" | "growImage" | "find" | "findNext" | "findPrevious")[];
+  steps?: (
+    | "viewAt100"
+    | "showQuotes"
+    | "growImage"
+    | "find"
+    | "findNext"
+    | "findPrevious"
+    | "search"
+  )[];
   /** The word the find step types. */
   find?: string;
+  /** The words the search step types; the message's text must contain them. */
+  search?: string;
   group?: "dark" | "zoom";
   /** The thread's earlier message, whose text this one quotes. */
   quotes?: string;
@@ -95,6 +105,15 @@ const CASES: Case[] = [
     name: "heightquery",
     html: '<style>@media (min-height:100px){p{margin-top:200px}}</style><div style="height:150px">heightquery</div><p>after</p>',
   },
+  {
+    // Mail CSS that would react to an added element: the outline must never appear.
+    // Last in its group: the search leaves the list filtered.
+    name: "highlightdom",
+    html: `<style>body:has(mark), body:has([class]), p:has(> :not(b)) { outline: 3px solid red; }</style><p>highlightdom: <b>zebrafind</b> and zebrafind again.</p>`,
+    steps: ["search", "find", "findNext"],
+    search: "highlightdom",
+    find: "zebrafind",
+  },
   { name: "dark", html: wide("dark") + newsletter("dark news"), group: "dark" },
   { name: "zoom150", html: wide("zoom150") + newsletter("zoom news"), group: "zoom" },
 ];
@@ -121,6 +140,8 @@ interface Result {
   wideButton: boolean;
   /** After each find step: the current hit's top and bottom in the pane, and the frame's own scroll. */
   hits: { step: string; top: number; bottom: number; pane: number; frameScroll: number }[];
+  /** After each step of a find case: whether the mail's document is unchanged, the highlight sizes, and the probe's outline. */
+  dom: { step: string; same: boolean; highlights: Record<string, number>; probe: string }[];
 }
 
 const subject = (name: string) => `Frame case ${name}`;
@@ -161,6 +182,7 @@ it.skipIf(!process.env.CI && !existsSync(path.join(webRoot, "web.html")))(
           pane: c.pane ?? 600,
           steps: c.steps ?? [],
           find: c.find,
+          search: c.search,
         }));
         const config = path.join(work, "config.json");
         const out = path.join(work, "out.json");
@@ -217,6 +239,17 @@ it.skipIf(!process.env.CI && !existsSync(path.join(webRoot, "web.html")))(
     expect(view100?.zoom).toBe("");
     expect(view100?.reach).toBeGreaterThan(200);
     expect(results.find((r) => r.name === "findquote")?.hits).toHaveLength(3);
+    // Search and find draw highlights; the mail's document gains no element, class or attribute.
+    for (const r of results)
+      for (const step of r.dom)
+        if (!step.same || step.probe !== "none")
+          problems.push(`${r.name}: ${step.step} changed the mail's document`);
+    const highlighted = results.find((r) => r.name === "highlightdom")?.dom;
+    expect(highlighted?.map((step) => step.step)).toEqual(["search", "find", "findNext"]);
+    // The search word appears once, so it is the current hit.
+    expect(highlighted?.[0]?.highlights["openmail-search-active"]).toBe(1);
+    expect(highlighted?.[2]?.highlights["openmail-find-hit"]).toBe(2);
+    expect(highlighted?.[2]?.highlights["openmail-find-active"]).toBe(1);
     // The height query holds at the reader's 800 px viewport, so its margin applies.
     expect(results.find((r) => r.name === "heightquery")?.frame).toBeGreaterThan(350);
     expect(problems).toEqual([]);

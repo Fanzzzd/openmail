@@ -8,7 +8,6 @@ import {
   type EnterOrLeaveFn,
 } from "./css-tree-browser.js";
 import { flattenHtmlChildren, MAX_HTML_DEPTH } from "./html-depth.js";
-import { markSearchHits } from "./search-highlight.js";
 
 // HTML-only output avoids foreign-content/raw-text mutation during browser
 // reparsing. Resource preparation still runs first to resolve CID and bases.
@@ -324,7 +323,15 @@ export function sanitizeReaderCss(
       parseCustomProperty: true,
     });
     const filter: EnterOrLeaveFn = function (node, item, list) {
-      if (node.type === "Atrule") {
+      if (node.type === "Rule" && node.prelude.type === "SelectorList") {
+        // :has() lets a sheet react to what the reader adds or exposes, such as
+        // a highlight or an opened quote, and report it through a background URL.
+        node.prelude.children = node.prelude.children.filter((selector) => !relational(selector));
+        if (node.prelude.children.isEmpty) {
+          list.remove(item);
+          return this.skip;
+        }
+      } else if (node.type === "Atrule") {
         // Only inert layout/grouping rules. Imports and font sources never load.
         if (
           !["media", "supports", "layer", "container", "page"].includes(
@@ -385,19 +392,26 @@ export function sanitizeReaderCss(
   }
 }
 
+const relational = (selector: CssNode) => {
+  let found = false;
+  walk(selector, (node) => {
+    if (node.type === "PseudoClassSelector" && ident.decode(node.name).toLowerCase() === "has")
+      found = true;
+  });
+  return found;
+};
+
 /** The viewport height the desktop reader resolves `vh` against; its frame takes its height from the page. */
 export const READER_VIEWPORT_HEIGHT = 800;
 
 /**
  * Inert, bounded portable reader/print markup. Sandbox and CSP remain required.
- * `searchTerms` marks search hits in the cleaned text (see `markSearchHits`).
  * `viewportHeight` fixes viewport-height units (see `sanitizeReaderCss`).
  */
 export function sanitizeReaderHtml(
   input: string,
   remote = false,
   onOmit?: (node: ReturnType<typeof parseDocument>["children"][number]) => void,
-  searchTerms: readonly string[] = [],
   viewportHeight?: number,
 ): string {
   const document = parseDocument(input);
@@ -485,6 +499,5 @@ export function sanitizeReaderHtml(
     });
   };
   document.children = clean(document.children);
-  markSearchHits(document, searchTerms);
   return DomUtils.getOuterHTML(document);
 }

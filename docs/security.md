@@ -60,7 +60,8 @@ frame 标识依据：[Electron WebFrameMain](https://www.electronjs.org/docs/lat
 
 可见文本提取采用保守静态 CSS 判断，不运行浏览器布局或外部样式表；不能证明任意 CSS 都与实际像素一致。未覆盖覆盖层、元素遮挡及 DARK_CSS 的暗色双重反转；不运行浏览器布局，也不提取 CSS 生成内容。暗色反转由 renderer 单独处理。回归包含 Gmail／Microsoft／Fastmail 格式、顶层失败与低位伪造通过、AR 注释／引用注入、IMAP 信任保存与撤销、MCP snippet 删除、CSS 隐藏方式、Unicode／嵌入式链接标签和签名 query 保留，以及先前的 DKIM、退订、附件和 agent policy 样例。未启动 Electron，也未对真实邮件服务执行退订。
 
-- 搜索词在阅读器中由 core 的 `sanitizeReaderHtml` 标记：只包裹清洗后文本节点里的命中，属性、URL 和样式不变，序列化器转义全部文本；发件人自带的 `openmail-search-hit` class 先被移除，不能伪造命中。实现：[search-highlight.ts](../packages/core/src/search-highlight.ts)。
+- 搜索词和“在邮件中查找”的命中用 [CSS Custom Highlight API](https://developer.mozilla.org/docs/Web/API/CSS_Custom_Highlight_API) 绘制：core 的 `textSearchHits` 在文本节点里找命中，阅读器建 Range 并登记到 frame 自己的 `CSS.highlights`，邮件 DOM 不增加元素、class 或属性。邮件 CSS 因此无法用 `:has()`、属性选择器或计数器得知搜索了什么，再经 `background:url()` 传出。`::highlight()` 只接受颜色和文字装饰，不能加载 URL。邮件 CSS 中含 `:has()` 的选择器另被移除，作为纵深防御；规则的其他选择器保留。显示引用和贴合页面仍会改 `hidden` 与内联样式。真实 Chromium 回归见 `apps/desktop/src/main/remote/reader-frame.test.ts` 的 highlightdom 用例。实现：[search-highlight.ts](../packages/core/src/search-highlight.ts)、`renderer/src/features/search/text-highlights.ts`。
+- 阅读器清洗器丢弃 `<link>` 与 `@import`，渲染层 CSP 继承应用页面的 `style-src 'self' 'unsafe-inline'`。邮件 frame 自己的 CSP 也只允许 `style-src 'unsafe-inline'`，图片放行时同样不加载外部样式表：样式表内的 `url()` 与 `@import` 不经过 tracker 和像素过滤。回归见 `email-frame.test.ts`。
 - 最近搜索只存在本机 renderer 的 localStorage（`openmail.recentSearches`，最多 8 条），不进数据库、日志或同步，移除任一账户时清空。实现：`apps/desktop/src/renderer/src/state/recent-searches.ts`。
 
 ## 服务商诊断

@@ -1,5 +1,6 @@
 import { constVoid } from "effect/Function";
 import { repeatedQuote, type QuoteHistory } from "@openmail/core/schema";
+import { HIGHLIGHTS, paintRanges, scrollRangeIntoView } from "../../search";
 
 /** Visit each container once, skipping descendants of a repeated parent. */
 export function repeatedQuoteElements(root: HTMLElement, previous: QuoteHistory): HTMLElement[] {
@@ -89,9 +90,15 @@ const BLOCK = new Set([
   "H3",
 ]);
 
-/** Matches span inline nodes, but never scripts, hidden quotes, fields or paragraph boundaries. */
+/**
+ * Find in message. Matches span inline nodes, but never scripts, hidden
+ * quotes, fields or paragraph boundaries. They are drawn as highlights, so the
+ * mail's document and its CSS never see what was typed.
+ */
 export function highlightBody(root: HTMLElement, query: string) {
-  if (!query) return { count: 0, select: (_index: number) => constVoid(), dispose: constVoid };
+  const none: Range[] = [];
+  if (!query)
+    return { count: 0, ranges: none, select: (_index: number) => constVoid(), dispose: constVoid };
   const document = root.ownerDocument;
   const view = document.defaultView;
   const parts: TextPart[] = [];
@@ -122,47 +129,42 @@ export function highlightBody(root: HTMLElement, query: string) {
     if (block) text += "\n";
   };
   visit(root);
-  const matches: { start: number; end: number; marks: HTMLElement[] }[] = [];
   // Escape the literal query. RegExp /i preserves original string offsets for Unicode case folding.
-  if (query) {
-    const literal = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    for (const match of text.matchAll(new RegExp(literal, "gi")))
-      matches.push({ start: match.index, end: match.index + match[0].length, marks: [] });
+  const literal = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  // Matches come in order, so one cursor walks the text nodes once.
+  let cursor = 0;
+  const position = (offset: number, end: boolean) => {
+    // The text node holding `offset`; an end offset belongs to the node it closes.
+    while (cursor < parts.length && (parts[cursor]?.end ?? 0) < offset + (end ? 0 : 1)) cursor++;
+    const part = parts[cursor];
+    return part && part.start <= offset - (end ? 1 : 0)
+      ? ([part.node, offset - part.start] as const)
+      : undefined;
+  };
+  const matches: Range[] = [];
+  for (const match of text.matchAll(new RegExp(literal, "gi"))) {
+    const from = position(match.index, false);
+    const to = from && position(match.index + match[0].length, true);
+    if (!from || !to) continue;
+    const range = document.createRange();
+    range.setStart(...from);
+    range.setEnd(...to);
+    matches.push(range);
   }
-  for (const part of parts) {
-    const overlaps = matches.filter((match) => match.start < part.end && match.end > part.start);
-    if (!overlaps.length) continue;
-    const fragment = document.createDocumentFragment();
-    const value = part.node.data;
-    let position = 0;
-    for (const match of overlaps) {
-      const start = Math.max(0, match.start - part.start);
-      const end = Math.min(value.length, match.end - part.start);
-      fragment.append(document.createTextNode(value.slice(position, start)));
-      const mark = document.createElement("mark");
-      mark.textContent = value.slice(start, end);
-      mark.style.setProperty("background", "#fef08a", "important");
-      mark.style.setProperty("color", "#111", "important");
-      fragment.append(mark);
-      match.marks.push(mark);
-      position = end;
-    }
-    fragment.append(document.createTextNode(value.slice(position)));
-    part.node.replaceWith(fragment);
-  }
+  const clearHits = paintRanges(document, HIGHLIGHTS.findHit, matches);
+  let clearActive = constVoid;
   return {
     count: matches.length,
+    ranges: matches,
     select(index: number) {
-      for (const [i, match] of matches.entries())
-        for (const mark of match.marks)
-          mark.style.setProperty("background", i === index ? "#fb923c" : "#fef08a", "important");
-      const active = matches[index]?.marks[0];
-      if (typeof active?.scrollIntoView === "function") active.scrollIntoView({ block: "center" });
+      clearActive();
+      const active = matches[index];
+      clearActive = paintRanges(document, HIGHLIGHTS.findActive, active ? [active] : []);
+      if (active) scrollRangeIntoView(active);
     },
     dispose() {
-      for (const match of matches)
-        for (const mark of match.marks) mark.replaceWith(document.createTextNode(mark.textContent));
-      root.normalize();
+      clearActive();
+      clearHits();
     },
   };
 }

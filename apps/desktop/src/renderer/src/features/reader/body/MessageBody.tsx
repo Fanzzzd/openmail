@@ -21,7 +21,7 @@ import { inlineImagesAtom } from "../../../state/queries";
 import { highlightBody } from "./body-text";
 import { EmailFrame } from "../frame/EmailFrame";
 import type { MessageBackground } from "./MessageBodyShell";
-import { markPlainSearchHits, searchTermsOf, useSearchHits } from "../../search";
+import { useSearchHits } from "../../search";
 import { PickerPopover } from "../../../ui/Picker";
 
 // Loaded through MessageBodyShell.tsx: everything here needs core's HTML cleaner.
@@ -216,17 +216,19 @@ function PlainBody({
   const parts = useMemo(() => splitRepeatedQuote(text, previous), [text, previous]);
   const root = useRef<HTMLPreElement>(null);
   const visible = parts.body + (showQuotes || findQuery ? parts.quote : "");
-  const { termsKey, present: presentHits } = useSearchHits();
+  const { present: presentHits } = useSearchHits();
   useEffect(() => {
     if (!root.current) return constVoid;
     root.current.textContent = visible;
-    markPlainSearchHits(root.current, searchTermsOf(termsKey));
-    presentHits(root.current);
+    const hits = presentHits(root.current);
     const highlights = highlightBody(root.current, findQuery);
     onMatches?.(highlights.count);
     highlights.select(highlights.count ? findIndex % highlights.count : 0);
-    return () => highlights.dispose();
-  }, [visible, findQuery, findIndex, onMatches, termsKey, presentHits]);
+    return () => {
+      highlights.dispose();
+      hits();
+    };
+  }, [visible, findQuery, findIndex, onMatches, presentHits]);
   return (
     <>
       <pre
