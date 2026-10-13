@@ -83,6 +83,7 @@ export * from "./contacts/apple-contacts.js";
 
 export * from "./reader/message-security.js";
 export * from "./visible-text/visible-text.js";
+export type { VisibleHtmlTextOptions } from "./visible-text/visible-text-context.js";
 
 export * from "./reader/link-security.js";
 
