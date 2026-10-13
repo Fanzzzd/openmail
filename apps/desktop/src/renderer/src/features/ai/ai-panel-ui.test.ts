@@ -219,6 +219,8 @@ for (const action of ["discard", "undo", "later typing", "unflushed typing"] as 
             replyTo: "gmail:me/m1",
             text: "Alice",
             task: { kind: "rewrite", tone: "shorter" },
+            // The UI language, so written text comes back in it.
+            locale: "en",
           },
         },
       ]);

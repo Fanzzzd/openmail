@@ -75,6 +75,7 @@ vi.mock("./reliability", () => ({
 }));
 vi.mock("./native-i18n", () => ({
   nativeAuthorizePage: vi.fn(),
+  osLocale: () => "en",
   nativeRecoveryLabels: async () => ({
     newerDatabaseTitle: "This library was opened by a newer OpenMail",
     newerDatabaseDetail: "Update OpenMail to the latest version to open it.",
