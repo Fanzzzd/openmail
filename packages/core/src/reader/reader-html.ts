@@ -1,17 +1,24 @@
-import { stripMessageIdBrackets } from "../mime/message-id.js";
 /**
  * Prepares untrusted mail HTML for the reader and for printing. It only
  * rewrites resource URLs; the sandboxed iframe and its CSP stay the security
- * boundary. No Node dependencies; exported through `@openmail/core/schema`.
+ * boundary, and `sanitizeReaderHtml` repeats the tracker and pixel checks on
+ * its parsed tree. No Node dependencies; exported through `@openmail/core/schema`.
+ *
+ * htmlparser2 tokenizes the markup and css-tree the CSS. Each changed tag or
+ * CSS value is spliced back at its source offsets, so the rest of the message
+ * stays byte for byte.
  */
-import { trackerFor } from "./trackers.js";
 import { Parser } from "htmlparser2";
+import { stripMessageIdBrackets } from "../mime/message-id.js";
+import { ident, parse, walk } from "./css-tree-browser.js";
+import { browserUrlText, isPixelImage, srcsetCandidates, webUrl } from "./resource-url.js";
+import { trackerForUrl } from "./trackers.js";
 
 export interface PreparedHtml {
   html: string;
   /** Tracking services whose URLs were removed, each once. */
   trackers: string[];
-  /** 1×1 remote images from hosts not on the list, removed as likely open pixels. */
+  /** Remote images under 2 px wide or tall from hosts not on the list, removed as likely open pixels. */
   pixels: number;
   /** Remote images or styles are left that the CSP blocks until images are allowed. */
   hasRemote: boolean;
@@ -27,261 +34,241 @@ export interface PrepareOptions {
 /** What a removed resource points to: an empty data URL loads nothing. */
 const EMPTY = "data:,";
 
-const TAG =
-  /<([a-zA-Z][\w:-]*)((?:\s+[^\s"'>/=]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s"'>]+))?)*)\s*(\/?)>/g;
-const ATTR = /([^\s"'>/=]+)(?:\s*=\s*("[^"]*"|'[^']*'|[^\s"'>]+))?/g;
-const CSS_URL = /url\(\s*(['"]?)([^'")]*)\1\s*\)/gi;
-const STYLE_BLOCK = /(<style\b[^>]*>)([\s\S]*?)(<\/style\s*>)/gi;
-/** Attributes that load a resource by themselves. `href` only loads on <link>. */
+/** Attributes that load a resource by themselves. */
 const RESOURCE_ATTRS = new Set(["src", "background", "poster", "data", "lowsrc", "dynsrc"]);
+/** Attributes holding an image candidate list. */
+const SRCSET_ATTRS = new Set(["srcset", "imagesrcset"]);
+const HREF_ATTRS = new Set(["href", "xlink:href"]);
+/** Elements whose `href` loads a resource rather than navigating. */
+const RESOURCE_HREF_TAGS = new Set(["link", "image", "use", "feimage"]);
+/** CSS functions whose top-level strings are resource URLs. */
+const STRING_RESOURCE_FUNCTIONS = new Set(["image-set", "-webkit-image-set", "image", "src"]);
+/** Attribute names that serialize and reparse as themselves. */
+const ATTRIBUTE_NAME = /^[^\s"'<>/=\0]+$/;
 
-const isRemote = (url: string) => /^\s*(https?:)?\/\//i.test(url);
-
-const unquote = (value: string) =>
-  value.startsWith('"') || value.startsWith("'") ? value.slice(1, -1) : value;
-
-/** A dimension of 0 or 1 pixel, from an attribute or inline style. */
-const tiny = (value: string | undefined) => value !== undefined && /^\s*[01](px)?\s*$/i.test(value);
-
-function styleDimension(style: string | undefined, name: string): string | undefined {
-  if (!style) return undefined;
-  const match = new RegExp(`(?:^|;)\\s*${name}\\s*:\\s*([^;]+)`, "i").exec(style);
-  return match?.[1];
+interface Tag {
+  start: number;
+  end: number;
+  name: string;
+  attribs: Record<string, string>;
+  selfClosing: boolean;
 }
 
-const attributeText = (value: string) => {
-  if (!value.includes("&")) return value;
-  let decoded = value;
-  new Parser({
-    onopentag: (_name, attrs) => {
-      decoded = attrs.value ?? value;
+interface Edit {
+  start: number;
+  end: number;
+  text: string;
+}
+
+/** Open tags as written (not ones implied by an end tag) and `<style>` text ranges. */
+function scan(html: string): { tags: Tag[]; styles: { start: number; end: number }[] } {
+  const tags: Tag[] = [];
+  const styles: { start: number; end: number }[] = [];
+  let styleStart = -1;
+  const parser = new Parser({
+    onopentag: (name, attribs) => {
+      const { startIndex: start, endIndex: end } = parser;
+      if (html[start] !== "<" || html[start + 1] === "/") return;
+      tags.push({ start, end: end + 1, name, attribs, selfClosing: html[end - 1] === "/" });
+      if (name === "style") styleStart = end + 1;
     },
-  }).end(`<a value="${value.replaceAll('"', "&quot;")}">`);
-  return decoded;
-};
-const attributeUrl = (value: string) => value.replaceAll("&", "&amp;");
-
-/** CSS escapes are decoded before deciding whether a URL or declaration is concealed. */
-export function decodeCssEscapes(value: string): string {
-  return value.replace(/\\([0-9a-f]{1,6}\s?|.)/gi, (_whole, escaped: string) => {
-    const hex = /^[0-9a-f]{1,6}\s?$/i.test(escaped) ? parseInt(escaped.trim(), 16) : null;
-    return hex === null
-      ? escaped
-      : hex > 0 && hex <= 0x10ffff
-        ? String.fromCodePoint(hex)
-        : "\uFFFD";
+    onclosetag: (name, implied) => {
+      if (name !== "style" || styleStart < 0) return;
+      // An implied end is either the end of input or a self-closed SVG style.
+      const end = implied ? Math.max(styleStart, parser.startIndex) : parser.startIndex;
+      styles.push({ start: styleStart, end });
+      styleStart = -1;
+    },
   });
+  parser.end(html);
+  return { tags, styles };
 }
 
-/** Strings at the top level of image-set are resources; nested type() strings are MIME types. */
-function rewriteImageSets(text: string, resource: (value: string) => string): string {
+const splice = (text: string, edits: readonly Edit[]) => {
+  if (!edits.length) return text;
   let out = "";
   let cursor = 0;
-  for (const match of text.matchAll(/(?:-webkit-)?image-set\s*\(/gi)) {
-    if (match.index < cursor) continue;
-    let i = match.index + match[0].length;
-    out += text.slice(cursor, i);
-    let depth = 1;
-    while (i < text.length && depth > 0) {
-      const character = text[i];
-      if (character === '"' || character === "'") {
-        const start = ++i;
-        while (i < text.length && text[i] !== character) {
-          if (text[i] === "\\") i++;
-          i++;
-        }
-        const value = text.slice(start, i);
-        const next = depth === 1 ? resource(value) : value;
-        out +=
-          character +
-          (next === value
-            ? value
-            : next.replaceAll("\\", "\\\\").replaceAll(character, `\\${character}`));
-        if (i < text.length) out += character;
-      } else {
-        if (character === "(") depth++;
-        if (character === ")") depth--;
-        out += character;
-      }
-      i++;
-    }
-    cursor = i;
+  for (const edit of edits.toSorted((a, b) => a.start - b.start)) {
+    out += text.slice(cursor, edit.start) + edit.text;
+    cursor = edit.end;
   }
   return out + text.slice(cursor);
-}
+};
+
+/** A CSS string body for `quote`. */
+const cssString = (value: string, quote: string) =>
+  value
+    .replaceAll("\\", "\\\\")
+    .replaceAll(quote, `\\${quote}`)
+    .replace(/[\n\r\f]/g, (character) => `\\${character.charCodeAt(0).toString(16)} `);
+
+const attributeValue = (value: string) => value.replaceAll("&", "&amp;").replaceAll('"', "&quot;");
 
 export function prepareMessageHtml(html: string, options: PrepareOptions = {}): PreparedHtml {
   const trackers: string[] = [];
   let pixels = 0;
   let hasRemote = false;
   let hasCid = false;
+  const { tags, styles } = scan(html);
 
-  // Read the first HTML base href with entity decoding. Only an absolute web
-  // URL can supply a base; all base elements are removed before rendering.
+  // The first HTML base href, entity-decoded. Only an absolute web URL can
+  // supply a base; all base elements are removed before rendering.
   let base: string | undefined;
-  let sawBase = false;
-  new Parser({
-    onopentag: (name, attrs) => {
-      if (name !== "base" || sawBase || attrs.href === undefined) return;
-      sawBase = true;
-      try {
-        const url = new URL(attrs.href);
-        if (url.protocol === "https:" || url.protocol === "http:") {
-          url.username = "";
-          url.password = "";
-          base = url.href;
-        }
-      } catch {
-        /* An invalid base must not redirect relative resources to an app URL. */
-      }
-    },
-  }).end(html);
-
-  const absolute = (value: string, attribute = false) => {
-    const decoded = attribute ? attributeText(value) : value;
-    try {
-      return base ? new URL(decoded, base).href : decoded;
-    } catch {
-      return decoded;
+  const baseHref = tags.find((tag) => tag.name === "base" && tag.attribs.href !== undefined)
+    ?.attribs.href;
+  if (baseHref !== undefined) {
+    const url = webUrl(baseHref);
+    // An invalid base must not redirect relative resources to an app URL.
+    if (url && !/^[\\/]{2}/.test(browserUrlText(baseHref))) {
+      url.username = "";
+      url.password = "";
+      base = url.href;
     }
-  };
+  }
 
   const note = (name: string) => {
     if (!trackers.includes(name)) trackers.push(name);
   };
 
-  /** A resource URL as it should load: removed for trackers, inlined for cid:, else unchanged. */
-  const resource = (url: string, attribute = false): string => {
-    const decodedCss = attribute ? url : decodeCssEscapes(url);
-    const trimmed = absolute(decodedCss, attribute).trim();
-    if (/^cid:/i.test(trimmed)) {
+  /** A resource URL as it should load: removed for trackers, inlined for cid:, upgraded to HTTPS. */
+  const resource = (value: string): string => {
+    const text = browserUrlText(value);
+    if (/^cid:/i.test(text)) {
       hasCid = true;
       try {
-        const id = stripMessageIdBrackets(decodeURIComponent(trimmed.slice(4)));
-        return options.inline?.[id] ?? url;
+        const id = stripMessageIdBrackets(decodeURIComponent(text.slice(4)));
+        return options.inline?.[id] ?? value;
       } catch {
-        return url;
+        return value;
       }
     }
-    const tracker = trackerFor(trimmed);
+    const url = webUrl(text, base);
+    if (!url) return value;
+    const tracker = trackerForUrl(url);
     if (tracker) {
       note(tracker);
       return EMPTY;
     }
-    let next = trimmed;
-    if (isRemote(trimmed)) {
-      hasRemote = true;
-      // The app has a secure origin. Opted-in resources use HTTPS rather than
-      // relying on Chromium's mixed-content exceptions for HTTP images.
-      try {
-        const remote = new URL(trimmed.startsWith("//") ? `https:${trimmed}` : trimmed);
-        remote.protocol = "https:";
-        next = remote.href;
-      } catch {
-        return url;
-      }
-    }
-    if (next === (attribute ? attributeText(url) : url)) return url;
-    return attribute ? attributeUrl(next) : next;
+    hasRemote = true;
+    // The app has a secure origin. Opted-in resources use HTTPS rather than
+    // relying on Chromium's mixed-content exceptions for HTTP images.
+    url.protocol = "https:";
+    return url.href === value ? value : url.href;
   };
 
-  const css = (text: string, attribute = false) => {
-    const source = attribute ? attributeText(text) : text;
-    const imported = source.replace(
-      /(@import\s+)(['"])(.*?)\2/gi,
-      (_whole, prefix: string, quote: string, url: string) =>
-        `${prefix}${quote}${resource(url)}${quote}`,
-    );
-    const result = rewriteImageSets(imported, resource).replace(
-      CSS_URL,
-      (whole, quote: string, url: string) => {
-        const next = resource(url);
-        if (next === url) return whole;
-        const quoted = quote || (/['"()\s]/u.test(next) ? '"' : "");
-        const escaped = quoted
-          ? next.replaceAll("\\", "\\\\").replaceAll(quoted, `\\${quoted}`)
-          : next;
-        return `url(${quoted}${escaped}${quoted})`;
-      },
-    );
-    if (source === result) return text;
-    return attribute ? attributeUrl(result) : result;
+  /** Rewrites url(), image-set and @import strings, read by css-tree. */
+  const css = (text: string, inline: boolean): string => {
+    const edits: Edit[] = [];
+    try {
+      const ast = parse(text, {
+        context: inline ? "declarationList" : "stylesheet",
+        positions: true,
+        parseCustomProperty: true,
+      });
+      walk(ast, function (node) {
+        if (!node.loc) return;
+        const { offset: start } = node.loc.start;
+        const { offset: end } = node.loc.end;
+        if (node.type === "Url") {
+          const next = resource(node.value);
+          if (next === node.value) return;
+          const written = /^url\(\s*(["']?)/i.exec(text.slice(start, end))?.[1] ?? "";
+          const quote = written || (/['"()\s\\]/.test(next) ? '"' : "");
+          const value = quote ? cssString(next, quote) : next;
+          edits.push({ start, end, text: `url(${quote}${value}${quote})` });
+        } else if (node.type === "String") {
+          const holder = this.function
+            ? STRING_RESOURCE_FUNCTIONS.has(ident.decode(this.function.name).toLowerCase())
+            : this.atrulePrelude &&
+              this.atrule !== null &&
+              ident.decode(this.atrule.name).toLowerCase() === "import";
+          if (!holder) return;
+          const next = resource(node.value);
+          if (next === node.value) return;
+          const quote = text[start] === "'" ? "'" : '"';
+          edits.push({ start, end, text: `${quote}${cssString(next, quote)}${quote}` });
+        }
+      });
+    } catch {
+      // The sanitizer drops what css-tree cannot read.
+      return text;
+    }
+    return splice(text, edits);
   };
 
-  const srcset = (value: string) =>
-    value
-      .split(",")
-      .map((candidate) => candidate.trim())
-      .flatMap((candidate) => {
-        const match = /^(\S+)(.*)$/.exec(candidate);
-        const url = match?.[1] ?? "";
-        const next = resource(url, true);
-        return next === EMPTY ? [] : [`${next}${match?.[2] ?? ""}`];
-      })
-      .join(", ");
-
-  const rewriteTag = (whole: string, name: string, attrs: string, selfClose: string) => {
-    const tag = name.toLowerCase();
-    if (tag === "base") return "";
-    const parsed: [string, string | undefined][] = [];
-    for (const m of attrs.matchAll(ATTR)) {
-      parsed.push([m[1] ?? "", m[2] === undefined ? undefined : unquote(m[2])]);
+  const srcset = (value: string) => {
+    let changed = false;
+    const candidates: string[] = [];
+    for (const { url, descriptor } of srcsetCandidates(value)) {
+      const next = resource(url);
+      if (next !== url) changed = true;
+      if (next === EMPTY && url !== EMPTY) continue;
+      candidates.push(descriptor ? `${next} ${descriptor}` : next);
     }
-    const get = (key: string) => parsed.find(([k]) => k.toLowerCase() === key)?.[1];
+    return changed ? candidates.join(", ") : value;
+  };
 
-    if (
-      tag === "link" &&
-      attributeText(get("rel") ?? "")
-        .trim()
-        .toLowerCase() !== "stylesheet"
-    )
-      return "";
+  /** A navigation link resolved against the base, not upgraded. */
+  const link = (value: string) => {
+    try {
+      return base ? new URL(browserUrlText(value), base).href : value;
+    } catch {
+      return value;
+    }
+  };
+
+  /** The tag as it should be written, or undefined when it stays as it is. */
+  const rewriteTag = ({ name, attribs, selfClosing }: Tag): string | undefined => {
+    if (name === "base") return "";
+    if (name === "link" && (attribs.rel ?? "").trim().toLowerCase() !== "stylesheet") return "";
 
     // Tracker images go away whole, so no broken-image icon is left behind.
-    // An image of one pixel or less from an unlisted remote host is an open
+    // An image under 2 px wide or tall from an unlisted remote host is an open
     // pixel too. Parsers read <image> outside SVG as <img> (htmlparser2 12 does).
-    if (tag === "img" || tag === "image") {
-      const src = absolute(get("src") ?? "", true);
-      const tracker = trackerFor(src);
+    if (
+      name === "img" ||
+      name === "image" ||
+      (name === "input" && attribs.type?.trim().toLowerCase() === "image")
+    ) {
+      const source = attribs.src ?? attribs.href ?? attribs["xlink:href"];
+      const url = source === undefined ? undefined : webUrl(source, base);
+      const tracker = url && trackerForUrl(url);
       if (tracker) {
         note(tracker);
         return "";
       }
-      const style = get("style");
-      const width = get("width") ?? styleDimension(style, "width");
-      const height = get("height") ?? styleDimension(style, "height");
-      if (isRemote(src) && tiny(width) && tiny(height)) {
+      if (url && isPixelImage(attribs)) {
         pixels++;
         return "";
       }
     }
 
-    const out = parsed.map(([key, value]): [string, string | undefined] => {
-      if (value === undefined) return [key, value];
-      const k = key.toLowerCase();
+    let changed = false;
+    const written: string[] = [];
+    for (const [key, value] of Object.entries(attribs)) {
       let next = value;
-      if (RESOURCE_ATTRS.has(k)) next = resource(value, true);
-      else if (k === "srcset") next = srcset(value);
-      else if (k === "style") next = css(value, true);
-      else if ((k === "href" || k === "xlink:href") && (tag === "link" || tag === "image"))
-        next = resource(value, true);
-      else if ((k === "href" || k === "xlink:href") && base)
-        next = attributeUrl(absolute(value, true));
-      return [key, next];
-    });
-    if (out.every(([, value], i) => value === parsed[i]?.[1])) return whole;
-    const rebuilt = out
-      .map(([key, value]) =>
-        value === undefined ? key : `${key}="${value.replaceAll('"', "&quot;")}"`,
-      )
-      .join(" ");
-    return `<${name} ${rebuilt}${selfClose ? " /" : ""}>`;
+      if (RESOURCE_ATTRS.has(key) || (HREF_ATTRS.has(key) && RESOURCE_HREF_TAGS.has(name)))
+        next = resource(value);
+      else if (SRCSET_ATTRS.has(key)) next = srcset(value);
+      else if (key === "style") next = css(value, true);
+      else if (HREF_ATTRS.has(key)) next = link(value);
+      if (next !== value) changed = true;
+      // A name the tokenizer accepted only as an error is not written back.
+      if (ATTRIBUTE_NAME.test(key)) written.push(`${key}="${attributeValue(next)}"`);
+    }
+    if (!changed) return undefined;
+    return `<${name}${written.map((attribute) => ` ${attribute}`).join("")}${selfClosing ? " /" : ""}>`;
   };
 
-  const withStyles = html.replace(
-    STYLE_BLOCK,
-    (_whole, open: string, body: string, close: string) => `${open}${css(body)}${close}`,
-  );
-  const result = withStyles.replace(TAG, rewriteTag);
-  return { html: result, trackers, pixels, hasRemote, hasCid };
+  const edits: Edit[] = [];
+  for (const tag of tags) {
+    const text = rewriteTag(tag);
+    if (text !== undefined) edits.push({ start: tag.start, end: tag.end, text });
+  }
+  for (const style of styles) {
+    const source = html.slice(style.start, style.end);
+    const text = css(source, false);
+    if (text !== source) edits.push({ ...style, text });
+  }
+  return { html: splice(html, edits), trackers, pixels, hasRemote, hasCid };
 }

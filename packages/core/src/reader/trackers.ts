@@ -7,6 +7,8 @@
  * serves real content (images, pages) to its tracking endpoints. Plain data
  * with no Node dependencies; exported through `@openmail/core/schema`.
  */
+import { webUrl } from "./resource-url.js";
+
 export interface Tracker {
   readonly name: string;
   readonly hosts: readonly (string | RegExp)[];
@@ -141,22 +143,53 @@ const hostMatches = (host: string, pattern: string | RegExp) =>
     ? host === pattern || host.endsWith(`.${pattern}`)
     : pattern.test(host);
 
-/** The tracking service a URL belongs to, or undefined. Only http(s) and protocol-relative URLs match. */
-export function trackerFor(url: string): string | undefined {
-  const trimmed = url.trim().replaceAll("&amp;", "&");
-  if (!/^(https?:)?\/\//i.test(trimmed)) return undefined;
-  let parsed: URL;
-  try {
-    parsed = new URL(trimmed.startsWith("//") ? `https:${trimmed}` : trimmed);
-  } catch {
-    return undefined;
+/** Decodes valid `%XX` escapes byte by byte; malformed escapes stay as written. */
+const percentDecode = (value: string) =>
+  value.replace(/%([0-9a-f]{2})/gi, (_whole, hex: string) =>
+    String.fromCharCode(parseInt(hex, 16)),
+  );
+
+/**
+ * The path and query a server may act on: percent-decoded until stable (at
+ * most three rounds), backslashes read as slashes, and `.`/`..` segments that
+ * decoding exposed resolved again.
+ */
+function trackingPath(url: URL): string {
+  let path = `${url.pathname}${url.search}`;
+  for (let round = 0; round < 3; round++) {
+    const decoded = percentDecode(path);
+    if (decoded === path) break;
+    path = decoded;
   }
-  const host = parsed.hostname.toLowerCase();
-  const path = `${parsed.pathname}${parsed.search}`;
+  const query = path.indexOf("?");
+  const segments: string[] = [];
+  for (const segment of (query < 0 ? path : path.slice(0, query))
+    .replaceAll("\\", "/")
+    .split("/")) {
+    if (segment === "..") segments.pop();
+    else if (segment !== ".") segments.push(segment);
+  }
+  const resolved = segments.join("/");
+  return `${resolved.startsWith("/") ? "" : "/"}${resolved}${query < 0 ? "" : path.slice(query)}`;
+}
+
+/** The tracking service a parsed http(s) URL belongs to, or undefined. */
+export function trackerForUrl(url: URL): string | undefined {
+  const host = url.hostname.toLowerCase().replace(/\.+$/, "");
+  const path = trackingPath(url);
   for (const tracker of TRACKERS) {
     if (!tracker.hosts.some((h) => hostMatches(host, h))) continue;
     if (tracker.path && !tracker.path.test(path)) continue;
     return tracker.name;
   }
   return undefined;
+}
+
+/**
+ * The tracking service a URL belongs to, or undefined. Only http(s) and
+ * protocol-relative URLs match, read as a browser reads them (see `webUrl`).
+ */
+export function trackerFor(url: string): string | undefined {
+  const parsed = webUrl(url.replaceAll("&amp;", "&"));
+  return parsed && trackerForUrl(parsed);
 }

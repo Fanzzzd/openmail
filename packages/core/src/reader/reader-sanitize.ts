@@ -8,6 +8,8 @@ import {
   type EnterOrLeaveFn,
 } from "./css-tree-browser.js";
 import { flattenHtmlChildren, MAX_HTML_DEPTH } from "./html-depth.js";
+import { browserUrlText, isPixelImage, webUrl } from "./resource-url.js";
+import { trackerForUrl } from "./trackers.js";
 
 // HTML-only output avoids foreign-content/raw-text mutation during browser
 // reparsing. Resource preparation still runs first to resolve CID and bases.
@@ -104,12 +106,10 @@ export const READER_DROP: ReadonlySet<string> = new Set(
 const imageData =
   /^data:image\/(?:png|jpeg|pjpeg|gif|webp|avif|bmp|x-ms-bmp|tiff|tif|x-tiff|heic|heif|ico|x-icon|vnd\.microsoft\.icon|apng|jxl|jp2|jpx|x-xbitmap|x-xpixmap);base64,[a-z\d+/=\s]*$/i;
 const normalizeResource = (value: string) =>
-  value
-    .trim()
-    .replace(
-      /^data:image\/(jpg|x-png);/i,
-      (_match, type: string) => `data:image/${type.toLowerCase() === "jpg" ? "jpeg" : "png"};`,
-    );
+  browserUrlText(value).replace(
+    /^data:image\/(jpg|x-png);/i,
+    (_match, type: string) => `data:image/${type.toLowerCase() === "jpg" ? "jpeg" : "png"};`,
+  );
 const resourceAllowed = (value: string, remote: boolean) => {
   if (imageData.test(value) || value === "data:," || /^cid:[\w.@+-]+$/i.test(value)) return true;
   if (!remote) return false;
@@ -119,6 +119,35 @@ const resourceAllowed = (value: string, remote: boolean) => {
   } catch {
     return false;
   }
+};
+/**
+ * A resource value as the reader writes it, or undefined when it must not
+ * load. Web URLs are checked against the tracker list in the form the browser
+ * parses and written back in that canonical form, so the URL checked is the
+ * URL loaded.
+ */
+const allowedResource = (raw: string, remote: boolean): string | undefined => {
+  const value = normalizeResource(raw);
+  const url = webUrl(value);
+  if (url && trackerForUrl(url)) return undefined;
+  if (!resourceAllowed(value, remote)) return undefined;
+  return url ? url.href : value;
+};
+/** An image that loads a tracker, or a remote image under 2 px wide or tall. */
+const trackingImage = (attribs: Readonly<Record<string, string>>) => {
+  const url = attribs.src === undefined ? undefined : webUrl(attribs.src);
+  return url !== undefined && (trackerForUrl(url) !== undefined || isPixelImage(attribs));
+};
+/** attr() typed as a URL turns an attribute value into a resource. */
+const attrLoadsUrl = (node: CssNode) => {
+  let found = false;
+  walk(node, (child) => {
+    if (child.type === "Identifier" && ident.decode(child.name).toLowerCase() === "url")
+      found = true;
+    if (child.type === "Function" && ident.decode(child.name).toLowerCase() === "type")
+      found = true;
+  });
+  return found;
 };
 const linkAllowed = (value: string) => {
   if (value.startsWith("#")) return true;
@@ -353,13 +382,15 @@ export function sanitizeReaderCss(
           return this.skip;
         }
       } else if (node.type === "Url") {
-        node.value = normalizeResource(node.value);
-        if (!resourceAllowed(node.value, remote)) item.data = { type: "Identifier", name: "none" };
+        const value = allowedResource(node.value, remote);
+        if (value === undefined) item.data = { type: "Identifier", name: "none" };
+        else node.value = value;
       } else if (
         node.type === "Function" &&
-        ["url", "image", "image-set", "-webkit-image-set"].includes(
+        (["url", "image", "image-set", "-webkit-image-set", "src"].includes(
           ident.decode(node.name).toLowerCase(),
-        )
+        ) ||
+          (ident.decode(node.name).toLowerCase() === "attr" && attrLoadsUrl(node)))
       ) {
         item.data = { type: "Identifier", name: "none" };
         return this.skip;
@@ -438,18 +469,20 @@ export function sanitizeReaderHtml(
           child.data = sanitizeReaderCss(child.data, remote, false, viewportHeight);
         node.children = text;
       } else if (!flatten) node.children = clean(node.children, depth + 1);
+      // Tracker images and open pixels go whatever the remote-image setting.
+      if (node.name === "img" && trackingImage(node.attribs)) return [];
       for (const [key, raw] of Object.entries(node.attribs)) {
-        const value =
-          key === "href"
+        const resource = key === "src" || key === "background";
+        const value = resource
+          ? allowedResource(raw, remote)
+          : key === "href"
             ? raw.replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, "")
-            : ["src", "background"].includes(key)
-              ? normalizeResource(raw)
-              : raw;
+            : raw;
         if (
+          value === undefined ||
           (!READER_ATTRIBUTES.has(key) && !(node.name === "style" && key === "media")) ||
           (key === "href" && !linkAllowed(value)) ||
-          (key === "usemap" && !value.startsWith("#")) ||
-          (["src", "background"].includes(key) && !resourceAllowed(value, remote))
+          (key === "usemap" && !value.startsWith("#"))
         )
           delete node.attribs[key];
         else if (key === "style") {
