@@ -44,6 +44,19 @@ const features: { title: string; href: string; body: ReactNode }[] = [
   },
 ];
 
+const shots: { src: string; alt: string }[] = [
+  {
+    src: "/media/search.webp",
+    alt: "Search results for has:attachment with the matching message open",
+  },
+  {
+    src: "/media/settings.webp",
+    alt: "Settings, AI Access: connect Claude Code, Codex and Claude, read-only by default",
+  },
+  { src: "/media/compose.webp", alt: "Composer with rich text and Write with AI" },
+  { src: "/media/dark.webp", alt: "Dark mode with an HTML newsletter open" },
+];
+
 export default function HomePage() {
   return (
     <main className="flex flex-1 flex-col">
@@ -76,6 +89,32 @@ export default function HomePage() {
             OpenMail is in early testing. There is no public download yet.
           </p>
         </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-5xl px-6 pt-12">
+        <img
+          src="/media/hero.webp"
+          alt="OpenMail inbox with a conversation open"
+          width={1440}
+          height={900}
+          className="w-full rounded-xl border border-fd-border shadow-lg"
+        />
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          {shots.map((shot) => (
+            <img
+              key={shot.src}
+              src={shot.src}
+              alt={shot.alt}
+              width={1440}
+              height={900}
+              loading="lazy"
+              className="w-full rounded-lg border border-fd-border"
+            />
+          ))}
+        </div>
+        <p className="mt-3 text-center text-sm text-fd-muted-foreground">
+          Screenshots use fake demo mail.
+        </p>
       </section>
 
       <section className="mx-auto w-full max-w-5xl px-6 py-16">

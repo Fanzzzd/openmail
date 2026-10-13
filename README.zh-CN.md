@@ -1,5 +1,7 @@
 # openmail
 
+[English](README.md) | 简体中文
+
 本地优先的邮件客户端。桌面界面、CLI 和 MCP 共用 core 与本机 SQLite 数据库。手机端已有 Expo 邮件流程、IMAP/SMTP、后台刷新和本地通知，尚需真机验证。
 
 ## 当前功能
@@ -91,6 +93,10 @@ OPENMAIL_LOW_MEMORY_TESTS=1 pnpm test
 pnpm exec oxlint
 pnpm exec oxfmt --check .
 ```
+
+## 许可证
+
+[MIT](LICENSE)。第三方资源的许可见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。参与开发见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## 致谢
 

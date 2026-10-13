@@ -1,5 +1,5 @@
 import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
-import { appName } from "./site";
+import { appName, repoUrl } from "./site";
 
 export function baseOptions(): BaseLayoutProps {
   return {
@@ -11,6 +11,7 @@ export function baseOptions(): BaseLayoutProps {
         </>
       ),
     },
+    githubUrl: repoUrl,
     links: [
       { text: "Docs", url: "/docs", active: "nested-url" },
       { text: "Privacy", url: "/privacy" },
