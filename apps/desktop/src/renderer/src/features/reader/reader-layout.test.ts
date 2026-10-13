@@ -368,7 +368,7 @@ it("asks to sign in again only when the provider rejects the sign-in", () => {
   expect(screen.queryByRole("button", { name: "Connect calendar" })).toBeNull();
 });
 
-it("keeps the search field on one line and folds the scope into an icon when narrow", () => {
+it("keeps the search field on one line and shows the scope as an icon at every width", () => {
   const view = render(
     localized(
       h(SearchField, {
@@ -386,10 +386,12 @@ it("keeps the search field on one line and folds the scope into an icon when nar
   expect(field.getAttribute("placeholder")).toBeNull();
   expect(screen.getByRole("button", { name: /^Modify / }).className).toContain("truncate");
   expect(view.container.firstElementChild?.className).toContain("@container/search");
-  const scope = screen.getByRole("combobox", { name: "Search scope" });
+  // The scope names itself as a scope, so it never reads as the folder in the list title.
+  const scope = screen.getByRole("combobox", { name: "Search scope: All Mail" });
   expect(scope.className).toContain("shrink-0");
   expect(scope.querySelector("svg")).not.toBeNull();
-  expect(scope.innerHTML).toContain("@max-[340px]/search:sr-only");
+  expect(scope.innerHTML).toContain("sr-only");
+  expect(scope.innerHTML).not.toContain("@max-[340px]/search:sr-only");
 });
 
 it("opens an older message whose attachment matched the search", () => {

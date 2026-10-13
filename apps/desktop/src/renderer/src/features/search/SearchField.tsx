@@ -35,7 +35,10 @@ import { listQueryAtom } from "../../state/threads";
 import { DropdownMenu, MenuItem, MenuSeparator } from "../../ui/Menu";
 
 import { Select } from "../../ui/Select";
+import { Tip } from "../../ui/Tip";
 import { isTouchWeb } from "../../lib/platform";
+import { primaryShortcutText } from "../../../../shared/shortcuts";
+import { useShortcutSet } from "../../i18n/use-shortcut-text";
 import { itemClass, popupOffset, popupSurface } from "../../ui/styles";
 
 /** The operator reference on the docs site, opened in the default browser. */
@@ -54,6 +57,10 @@ export function SearchField({
 }) {
   const { t } = useLingui();
   const [scope, setScope] = useAtom(searchScopeAtom);
+  // The hint follows the keymap: ⌥⌘F in the Mac sets, / in Gmail's.
+  const shortcutSet = useShortcutSet();
+  const searchKey = isTouchWeb() ? "" : primaryShortcutText(shortcutSet, "search");
+  const scopeName = scope === "all" ? t`Search scope: All Mail` : t`Search scope: Current folder`;
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState<string | undefined>();
   const fieldRef = useRef<HTMLInputElement>(null);
@@ -222,7 +229,9 @@ export function SearchField({
             }}
             ref={fieldRef}
             aria-label={t`Search mail`}
-            placeholder={chips.length ? undefined : isTouchWeb() ? t`Search` : t`Search  /`}
+            placeholder={
+              chips.length ? undefined : searchKey ? `${t`Search`}  ${searchKey}` : t`Search`
+            }
             className="h-6 min-w-10 flex-1 bg-transparent text-body text-ellipsis outline-none"
           />
         </Combobox.Chips>
@@ -301,21 +310,26 @@ export function SearchField({
           }}
         />
       )}
-      <Select
-        aria-label={t`Search scope`}
-        value={scope}
-        onValueChange={setScope}
-        className="shrink-0"
-        valueClassName="@max-[340px]/search:sr-only"
-        options={[
-          { value: "all", label: t`All Mail`, icon: <Mails className="size-3.5 shrink-0" /> },
-          {
-            value: "folder",
-            label: t`Current folder`,
-            icon: <Folder className="size-3.5 shrink-0" />,
-          },
-        ]}
-      />
+      {/* Icon only at every width, so the scope never reads as the folder in the title. */}
+      <Tip label={scopeName}>
+        <span className="flex shrink-0">
+          <Select
+            aria-label={scopeName}
+            value={scope}
+            onValueChange={setScope}
+            className="shrink-0"
+            valueClassName="sr-only"
+            options={[
+              { value: "all", label: t`All Mail`, icon: <Mails className="size-3.5 shrink-0" /> },
+              {
+                value: "folder",
+                label: t`Current folder`,
+                icon: <Folder className="size-3.5 shrink-0" />,
+              },
+            ]}
+          />
+        </span>
+      </Tip>
     </div>
   );
 }

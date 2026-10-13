@@ -32,6 +32,7 @@ const controls = vi.hoisted(() => {
     contactLookup: vi.fn(),
     labelScope: vi.fn(),
     accountIds: ["gmail:one"],
+    shortcutSet: "mimestream" as "mimestream" | "apple" | "gmail",
   };
 });
 // The widget shell is stubbed; test the real search field's callbacks and state without a browser.
@@ -104,6 +105,7 @@ vi.mock("@effect/atom-react", () => ({
   useAtom: () => ["all", vi.fn()],
   useAtomValue: (atom: string) => {
     if (atom === "listQuery") return { accountIds: controls.accountIds };
+    if (atom === "prefs") return AsyncResult.success({ shortcutSet: controls.shortcutSet });
     if (atom === "labels")
       return AsyncResult.success([{ id: "work", name: 'Work "private"', accountId: "gmail:one" }]);
     if (atom === "contacts")
@@ -112,6 +114,7 @@ vi.mock("@effect/atom-react", () => ({
   },
 }));
 vi.mock("../../state/queries", () => ({
+  prefsAtom: "prefs",
   suggestionsAtom: (query: string, from: string | undefined, accountIds?: readonly string[]) => {
     controls.contactLookup(query, from, accountIds);
     return "contacts";
@@ -481,4 +484,22 @@ it("a typed name of three or more letters offers people as from: and to:", () =>
     dom.dispose();
     vi.useRealTimers();
   }
+});
+
+it("the placeholder names the search key of the active keymap", () => {
+  for (const [set, placeholder] of [
+    ["mimestream", "Search  ⌥⌘F"],
+    ["apple", "Search  ⌥⌘F"],
+    ["gmail", "Search  /"],
+  ] as const) {
+    controls.shortcutSet = set;
+    const dom = testDom();
+    try {
+      renderField(dom, "");
+      expect(dom.element.querySelector("input")?.getAttribute("placeholder")).toBe(placeholder);
+    } finally {
+      dom.dispose();
+    }
+  }
+  controls.shortcutSet = "mimestream";
 });

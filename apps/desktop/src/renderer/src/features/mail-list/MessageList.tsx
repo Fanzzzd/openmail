@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+  type RefObject,
+} from "react";
 import { EmptyList, type EmptyActions } from "./EmptyList";
 import type { Label, ThreadQuery, ThreadSummary } from "../../../../shared/api";
 import type { Filters } from "../../lib/view";
@@ -7,7 +15,6 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import {
   DEFAULT_PREFS,
   LIST_DENSITIES,
-  listWindow,
   moveSourceLabel,
   searchUsesSize,
   type SwipeAction,
@@ -16,6 +23,7 @@ import { AsyncResult } from "effect/reactivity";
 import { useAtomValue } from "@effect/atom-react";
 import { prefsAtom } from "../../state/queries";
 import { attachmentMatches } from "../search";
+import { rowLayout, rowWindow } from "./row-layout";
 import { swipeMailOp } from "./message-swipe";
 import { constVoid } from "effect/Function";
 import { noticeRow, noticeTone, titlebarRow, touchTarget } from "../../ui/styles";
@@ -23,6 +31,7 @@ import { TrafficLightSpace } from "../../ui/TrafficLights";
 import { TriangleAlert } from "lucide-react";
 import { ContextMenuContent, ContextMenuRoot, ContextMenuTrigger } from "../../ui/Menu";
 import { Tip } from "../../ui/Tip";
+import { useShortcutText } from "../../i18n/use-shortcut-text";
 import { Toggle } from "@base-ui/react/toggle";
 
 /** How the current selection was made. Keyboard selection gets the solid accent. */
@@ -108,6 +117,7 @@ export function MessageList({
   rowActions,
 }: Props) {
   const { t } = useLingui();
+  const shortcutText = useShortcutText();
   const searchMessages = searchErrorAccounts.map(
     (accountId) =>
       `${accountLabel(accountId)}: ${searchReauthAccounts.includes(accountId) ? t`Sign in again` : t`The server could not complete this search.`}`,
@@ -136,11 +146,22 @@ export function MessageList({
     globalThis.addEventListener("resize", measure);
     return () => globalThis.removeEventListener("resize", measure);
   }, []);
-  const rowHeight =
-    (threads.some((m) => m.derivedMatches?.length || attachmentMatches(m.searchMatches).length)
-      ? density.height + 48
-      : density.height) * textScale;
-  const window = listWindow(threads.length, viewport.top, viewport.height, rowHeight);
+  // Only rows that show attachment or text hits under them are taller.
+  const layout = useMemo(
+    () =>
+      rowLayout(
+        threads.map(
+          (m) =>
+            (m.derivedMatches?.length || attachmentMatches(m.searchMatches).length
+              ? density.height + 48
+              : density.height) * textScale,
+        ),
+      ),
+    [threads, density.height, textScale],
+  );
+  const rowHeight = (index: number) =>
+    (layout.offsets[index + 1] ?? 0) - (layout.offsets[index] ?? 0);
+  const window = rowWindow(layout, viewport.top, viewport.height);
   const endReached = useRef(onEndReached);
   const callbacks = useRef({ onSelect, rowActions });
   useEffect(() => {
@@ -181,10 +202,10 @@ export function MessageList({
   useEffect(() => {
     const el = listRef.current;
     if (!el || selectedIndex < 0 || selectionSource !== "keyboard") return constVoid;
-    const top = selectedIndex * rowHeight;
+    const top = layout.offsets[selectedIndex] ?? 0;
+    const bottom = layout.offsets[selectedIndex + 1] ?? top;
     if (top < el.scrollTop) el.scrollTop = top;
-    else if (top + rowHeight > el.scrollTop + el.clientHeight)
-      el.scrollTop = top + rowHeight - el.clientHeight;
+    else if (bottom > el.scrollTop + el.clientHeight) el.scrollTop = bottom - el.clientHeight;
     setViewport({ top: el.scrollTop, height: el.clientHeight });
     const frame = requestAnimationFrame(() => {
       for (const row of el.querySelectorAll<HTMLButtonElement>("[data-id]"))
@@ -194,13 +215,12 @@ export function MessageList({
         }
     });
     return () => cancelAnimationFrame(frame);
-  }, [selectedIndex, selectedId, selectionSource, rowHeight, listRef]);
+  }, [selectedIndex, selectedId, selectionSource, layout, listRef]);
 
   // Short first pages have no scrollbar. Ask for older mail once per list growth.
   useEffect(() => {
-    if (!loading && threads.length * rowHeight - viewport.top - viewport.height < 400)
-      endReached.current();
-  }, [threads.length, loading, viewport.top, viewport.height, rowHeight]);
+    if (!loading && window.total - viewport.top - viewport.height < 400) endReached.current();
+  }, [threads.length, loading, viewport.top, viewport.height, window.total]);
 
   return (
     <section
@@ -233,7 +253,7 @@ export function MessageList({
               onChange={(enabled) => onFilters({ ...filters, enabled })}
               label={t`Filter`}
               tip={t`Enable filters`}
-              shortcut="⌥⌘L"
+              shortcut={shortcutText("filterUnread")}
             />
             <FilterChip
               active={filters.unread}
@@ -380,7 +400,7 @@ export function MessageList({
                   <Row
                     key={m.id}
                     thread={m}
-                    rowHeight={rowHeight}
+                    rowHeight={rowHeight(i)}
                     density={density}
                     position={i + 1}
                     total={exhausted ? threads.length : -1}
