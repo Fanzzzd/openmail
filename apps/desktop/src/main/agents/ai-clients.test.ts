@@ -61,14 +61,45 @@ async function fakeHost(): Promise<AiClientsHost & { log: string }> {
 }
 
 /**
- * A stand-in CLI that records its argv, one JSON array per line. It exits with `exitCode`, or
- * fails only when its second argument is `failOn` (`add-json`, say).
+ * What a stand-in CLI does to its config in the fake home, like the real one: Claude Code keeps
+ * entries in ~/.claude.json, Codex in ~/.codex/config.toml.
+ */
+const FAKE_EDITS = `
+const fs = require("fs"), path = require("path");
+const [group, verb] = args;
+if (group === "mcp" && name === "claude") {
+  const file = path.join(process.env.HOME, ".claude.json");
+  let config = {};
+  try { config = JSON.parse(fs.readFileSync(file, "utf8")); } catch {}
+  config.mcpServers = config.mcpServers || {};
+  if (verb === "remove") delete config.mcpServers[args.at(-1)];
+  if (verb === "add-json") config.mcpServers[args[4]] = JSON.parse(args[5]);
+  fs.writeFileSync(file, JSON.stringify(config));
+}
+if (group === "mcp" && name === "codex") {
+  const file = path.join(process.env.HOME, ".codex", "config.toml");
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  let text = "";
+  try { text = fs.readFileSync(file, "utf8"); } catch {}
+  text = text.replace(/\\[mcp_servers\\.openmail\\][^\\[]*/, "");
+  if (verb === "add") {
+    const rest = args.slice(args.indexOf("--") + 1);
+    text += "[mcp_servers.openmail]\\ncommand = " + JSON.stringify(rest[0]) + "\\nargs = " + JSON.stringify(rest.slice(1)) + "\\n";
+  }
+  fs.writeFileSync(file, text);
+}
+`;
+
+/**
+ * A stand-in CLI that records its argv, one JSON array per line, and edits its config in the
+ * fake home as the real CLI would (`writes: false` makes it exit 0 and change nothing). It
+ * exits with `exitCode`, or fails only when its second argument is `failOn` (`add-json`, say).
  */
 async function fakeCli(
   host: AiClientsHost,
   name: string,
   exitCode = 0,
-  options: { dir?: string; failOn?: string } = {},
+  options: { dir?: string; failOn?: string; writes?: boolean } = {},
 ) {
   const dir = options.dir ?? join(host.home, ".local", "bin");
   await mkdir(dir, { recursive: true });
@@ -78,7 +109,7 @@ async function fakeCli(
     : String(exitCode !== 0);
   await writeFile(
     file,
-    `#!${process.execPath}\nrequire("fs").appendFileSync(process.env.FAKE_LOG, JSON.stringify(process.argv.slice(2)) + "\\n");\nif (${fails}) { process.stderr.write("boom\\n"); process.exit(${exitCode || 1}); }\n`,
+    `#!${process.execPath}\nconst args = process.argv.slice(2), name = ${JSON.stringify(name)};\nrequire("fs").appendFileSync(process.env.FAKE_LOG, JSON.stringify(args) + "\\n");\nif (${fails}) { process.stderr.write("boom\\n"); process.exit(${exitCode || 1}); }\n${options.writes === false ? "" : FAKE_EDITS}`,
   );
   await chmod(file, 0o755);
   return file;
@@ -460,6 +491,57 @@ describe("clients in a fake home", () => {
     await expect(applyChange(host, change, launch, preview.token)).rejects.toMatchObject({
       reason: "changed",
     });
+  });
+
+  it("reports a CLI that exits 0 but writes nothing as failed, for connect and disconnect", async () => {
+    for (const name of ["claude", "codex"] as const) {
+      const host = await fakeHost();
+      await fakeCli(host, name, 0, { writes: false });
+      const client = name === "claude" ? "claude-code" : "codex";
+      const connect = { client, action: "connect", proposalTools: false } as const;
+      const preview = await previewChange(host, connect, RUNNABLE);
+      expect(preview.commands.length).toBeGreaterThan(0);
+      const error = await applyChange(host, connect, RUNNABLE, preview.token).catch(
+        (e: unknown) => e,
+      );
+      expect(error).toBeInstanceOf(AiClientError);
+      expect(error).toMatchObject({
+        reason: "cliFailed",
+        detail: expect.stringContaining("no openmail entry"),
+      });
+    }
+    const host = await fakeHost();
+    await fakeCli(host, "claude", 0, { writes: false });
+    await writeFile(
+      join(host.home, ".claude.json"),
+      JSON.stringify({ mcpServers: { openmail: { command: RUNNABLE.command, args: ["--mcp"] } } }),
+    );
+    const disconnect = {
+      client: "claude-code",
+      action: "disconnect",
+      proposalTools: false,
+    } as const;
+    const removal = await previewChange(host, disconnect, RUNNABLE);
+    await expect(applyChange(host, disconnect, RUNNABLE, removal.token)).rejects.toMatchObject({
+      reason: "cliFailed",
+      detail: expect.stringContaining("still in its config"),
+    });
+  });
+
+  it("reports done only when the config read back shows the change", async () => {
+    for (const name of ["claude", "codex"] as const) {
+      const host = await fakeHost();
+      await fakeCli(host, name);
+      const client = name === "claude" ? "claude-code" : "codex";
+      const connect = { client, action: "connect", proposalTools: false } as const;
+      const preview = await previewChange(host, connect, RUNNABLE);
+      await applyChange(host, connect, RUNNABLE, preview.token);
+      expect((await clientView(host, client, RUNNABLE)).state).toBe("connected");
+      const disconnect = { ...connect, action: "disconnect" } as const;
+      const removal = await previewChange(host, disconnect, RUNNABLE);
+      await applyChange(host, disconnect, RUNNABLE, removal.token);
+      expect((await clientView(host, client, RUNNABLE)).state).toBe("notConnected");
+    }
   });
 
   it("puts Claude Code's old entry back when the add fails after the remove", async () => {

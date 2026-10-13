@@ -630,7 +630,30 @@ export async function applyChange(
         }
       throw fail("cliFailed", detail);
     }
+    // A CLI can exit 0 and write nothing (another config scope, a stub, a version that
+    // ignores a flag), so read the config back before reporting the change as done.
+    const after = await clientView(host, change.client, launch);
+    const problem = changeMissing(after, change, launch);
+    if (problem) throw fail("cliFailed", problem);
   } catch (error) {
     throw asClientError(error);
   }
+}
+
+/** Why the config read back after a CLI change does not show it, or null when it does. */
+function changeMissing(
+  view: AiClientView,
+  change: AiClientChange,
+  launch: McpLaunch,
+): string | null {
+  if (view.state === "unreadable") return `The config could not be read back: ${view.problem}`;
+  if (change.action === "disconnect")
+    return view.state === "notConnected"
+      ? null
+      : "The CLI exited without an error, but the openmail entry is still in its config.";
+  if (view.state === "notConnected")
+    return "The CLI exited without an error, but its config has no openmail entry.";
+  return view.entry && matches(view.entry, launch) && view.proposalTools === change.proposalTools
+    ? null
+    : "The CLI exited without an error, but the openmail entry in its config is not the one OpenMail asked for.";
 }
