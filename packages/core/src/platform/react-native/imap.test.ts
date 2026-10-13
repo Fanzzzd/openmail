@@ -12,7 +12,9 @@ import {
   encodeFolder,
   decodeFolder,
 } from "../mail-socket.js";
-import { fetchFields, makeMobileImap, mobileIncoming, smtpSession } from "./imap.js";
+import { makeMobileImap } from "./imap.js";
+import { fetchFields, mobileIncoming } from "./imap-parse.js";
+import { smtpSession } from "./smtp.js";
 import { parseMobileMime, mobileMailCodecLayer } from "./mail-codec.js";
 import { MemoryPlatform } from "../node/platform-memory.js";
 import { StoreLive } from "../../store/store.js";

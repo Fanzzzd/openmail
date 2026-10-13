@@ -1,7 +1,7 @@
 import { assert, it } from "@effect/vitest";
 import { nodeMailCodec } from "./mail-codec.js";
 import { threadIdOf } from "./imap/parse.js";
-import { mobileIncoming } from "../react-native/imap.js";
+import { mobileIncoming } from "../react-native/imap-parse.js";
 import { parseMobileMime } from "../react-native/mail-codec.js";
 
 for (const example of [
