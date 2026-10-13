@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and ideas
+    url: https://github.com/Fanzzzd/openmail/discussions
+    about: Ask how to do something or discuss an idea before filing an issue.
+  - name: Security vulnerability
+    url: https://github.com/Fanzzzd/openmail/security/advisories/new
+    about: Report security problems privately. See SECURITY.md.
+  - name: Documentation
+    url: https://openmail-docs.vercel.app
+    about: Setup guides, keyboard shortcuts, MCP and privacy.

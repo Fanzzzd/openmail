@@ -1,0 +1,76 @@
+name: Bug report
+description: Something in OpenMail does not work as expected.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Security problems go through private reporting instead, see SECURITY.md.
+        Remove real names, addresses and mail content from screenshots and logs before you post them.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open ...
+        2. Press ...
+        3. See ...
+    validations:
+      required: true
+  - type: dropdown
+    id: account
+    attributes:
+      label: Account type
+      multiple: true
+      options:
+        - Gmail
+        - Outlook (personal)
+        - iCloud
+        - Yahoo
+        - Fastmail
+        - QQ / 163
+        - Other IMAP
+        - Not account related
+    validations:
+      required: true
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Where
+      multiple: true
+      options:
+        - Desktop app
+        - CLI
+        - MCP server
+        - Remote access (phone browser)
+        - Mobile app
+        - Docs website
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: OpenMail version or commit
+      description: OpenMail > About OpenMail, or `git rev-parse --short HEAD` for a source build.
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version and chip
+      placeholder: macOS 26.1, Apple M2
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: Help > Send Feedback… shows a redacted diagnostics preview you can copy. Check it before you paste.
+      render: text
