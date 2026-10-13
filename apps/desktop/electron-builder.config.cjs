@@ -10,11 +10,15 @@ const profile = process.env.APPLE_KEYCHAIN_PROFILE;
 module.exports = {
   appId: "app.openmail.desktop",
   productName: "OpenMail",
+  // Shown in Finder's Get Info and the About panel. The license field comes from package.json.
+  copyright: "Copyright (c) 2026 Fanzzzd and OpenMail contributors",
   protocols: [
     { name: "OpenMail message links", schemes: ["openmail"], role: "Viewer" },
     { name: "Email", schemes: ["mailto"], role: "Editor" },
   ],
   extraResources: [
+    { from: "../../LICENSE", to: "LICENSE" },
+    { from: "../../THIRD_PARTY_NOTICES.md", to: "THIRD_PARTY_NOTICES.md" },
     { from: "build/contacts-locales", to: ".", filter: ["**/InfoPlist.strings"] },
     { from: "build/trayTemplate.png", to: "trayTemplate.png" },
     { from: "build/trayTemplate@2x.png", to: "trayTemplate@2x.png" },
@@ -73,7 +77,7 @@ module.exports = {
       ],
     },
     category: "public.app-category.productivity",
-    // Existing artwork is a placeholder. User choices are in docs/design/icon-options.
+    // Sources and regeneration: docs/design/icons.md.
     icon: "build/icon.icon",
     // Ad-hoc signing repairs Electron's seal on Apple Silicon. It does not enable updates.
     identity: signed ? undefined : "-",

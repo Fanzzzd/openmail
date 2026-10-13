@@ -25,9 +25,22 @@ const identity = appIdentity(
 export const APP_TITLE = identity.title;
 export const DEV_ICON = identity.icon;
 
-/** Puts the dev icon in the Dock and the dev name in the About panel. No-op when packaged. */
-export function showDevIdentity() {
-  if (!DEV_ICON) return;
+/** CC BY 4.0 asks for attribution where the icons ship. Notices: THIRD_PARTY_NOTICES.md. */
+export const ABOUT_CREDITS = "Provider icons by selfh.st, https://selfh.st/icons (CC BY 4.0).";
+
+/**
+ * Puts the icon credits in the About panel. Unpackaged runs also get the dev
+ * icon in the Dock and the dev name in the About panel.
+ */
+export function showAppIdentity() {
+  if (!DEV_ICON) {
+    app.setAboutPanelOptions({ credits: ABOUT_CREDITS });
+    return;
+  }
   if (process.platform === "darwin") app.dock?.setIcon(DEV_ICON);
-  app.setAboutPanelOptions({ applicationName: APP_TITLE, applicationVersion: app.getVersion() });
+  app.setAboutPanelOptions({
+    applicationName: APP_TITLE,
+    applicationVersion: app.getVersion(),
+    credits: ABOUT_CREDITS,
+  });
 }

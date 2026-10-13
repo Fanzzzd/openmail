@@ -1,6 +1,7 @@
 {
   "name": "openmail-media-spike",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "samples": "swiftc -O GenerateSamples.swift -o bin/generate-samples && bin/generate-samples samples",

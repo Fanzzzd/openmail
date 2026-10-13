@@ -44,22 +44,23 @@ it("points the dev run at the committed icon-dev.png", async () => {
 
 it("shows the dev identity without renaming the app, so userData stays put", async () => {
   electron.isPackaged = false;
-  const { showDevIdentity, DEV_ICON } = await import("./app-identity");
-  showDevIdentity();
+  const { showAppIdentity, DEV_ICON, ABOUT_CREDITS } = await import("./app-identity");
+  showAppIdentity();
   if (process.platform === "darwin") expect(electron.dock.setIcon).toHaveBeenCalledWith(DEV_ICON);
   expect(electron.setAboutPanelOptions).toHaveBeenCalledWith({
     applicationName: "OpenMail Dev",
     applicationVersion: "0.1.0",
+    credits: ABOUT_CREDITS,
   });
   expect(electron.setName).not.toHaveBeenCalled();
   expect(electron.setPath).not.toHaveBeenCalled();
 });
 
-it("leaves the packaged app alone", async () => {
+it("gives the packaged app only the icon credits", async () => {
   electron.isPackaged = true;
-  const { showDevIdentity, APP_TITLE, DEV_ICON } = await import("./app-identity");
-  showDevIdentity();
+  const { showAppIdentity, APP_TITLE, DEV_ICON, ABOUT_CREDITS } = await import("./app-identity");
+  showAppIdentity();
   expect([APP_TITLE, DEV_ICON]).toEqual(["OpenMail", undefined]);
   expect(electron.dock.setIcon).not.toHaveBeenCalled();
-  expect(electron.setAboutPanelOptions).not.toHaveBeenCalled();
+  expect(electron.setAboutPanelOptions).toHaveBeenCalledWith({ credits: ABOUT_CREDITS });
 });

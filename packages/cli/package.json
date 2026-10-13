@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "openmail CLI and MCP server over the local mail database",
+  "license": "MIT",
   "bin": {
     "openmail": "dist/cli.js",
     "openmail-mcp": "dist/mcp.js"

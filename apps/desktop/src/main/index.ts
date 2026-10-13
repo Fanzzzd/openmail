@@ -27,7 +27,7 @@ import { RemoteAccessLive } from "./remote/remote-access-live";
 import { DesktopLive, receiveAppUrl, receiveOpenFile, ready } from "./system/system";
 import { focusMainWindow } from "./windows/windows";
 import { prepareBackgroundWindows } from "./windows/reveal";
-import { showDevIdentity } from "./app/app-identity";
+import { showAppIdentity } from "./app/app-identity";
 import { mcpLaunchArgs, runMcpMode } from "./agents/mcp-mode";
 
 import { prepareReliability, diagnosticsLogger, localLog } from "./app/reliability";
@@ -80,7 +80,7 @@ if (mcp) {
       ),
       Effect.andThen(
         Effect.sync(() => {
-          showDevIdentity();
+          showAppIdentity();
           if (app.isPackaged) app.setAsDefaultProtocolClient("openmail");
         }),
       ),

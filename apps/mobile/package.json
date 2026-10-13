@@ -2,6 +2,7 @@
   "name": "@openmail/mobile",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "main": "index.js",
   "scripts": {
     "build": "pnpm i18n:compile && pnpm check-types",

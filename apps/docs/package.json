@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "OpenMail website: product page, documentation, privacy policy and terms",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "next dev",
