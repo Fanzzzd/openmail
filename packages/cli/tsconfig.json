@@ -3,7 +3,9 @@
   "compilerOptions": {
     "rootDir": "src",
     "outDir": "dist",
-    "types": ["node"]
+    "types": ["node"],
+    // Command modules export values whose types name core internals; only mcp-server is public.
+    "stripInternal": true
   },
   "include": ["src"],
   "exclude": ["src/**/*.test.ts"]
