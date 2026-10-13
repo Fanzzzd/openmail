@@ -1,8 +1,8 @@
 # core 平台依赖清单
 
-修改 core 平台实现、打包入口或手机 Layer 时读取。导入边界规则在 AGENTS.md，禁止的包名以 `.oxlintrc.json` 为准。`platform-imports.test.ts` 读取该配置，另检查 Node 内置模块和 portable 的本地依赖图。
+修改 core 平台实现、打包入口或手机 Layer 时读取。导入边界规则在 AGENTS.md，禁止的包名以 `.oxlintrc.json` 为准。`platform-imports.test.ts` 读取该配置，另检查 Node 内置模块、portable 的本地依赖图，以及 `src` 顶层只有包入口。
 
-对原有 `packages/core/src` 的审计包括静态、类型、动态导入及 `.mjs` worker。生产 Node 实现现在全部位于 `platform/node/`；进程测试 fixture、fake provider 和 SQLite 内存测试平台也放在此目录。
+对原有 `packages/core/src` 的审计包括静态、类型、动态导入及 `.mjs` worker。生产 Node 实现现在全部位于 `platform/node/`；进程测试 fixture、fake provider 和 SQLite 内存测试平台也放在此目录。下表“原文件”列是审计时的文件名；留在 core 的部分后来按领域分目录，位置见 [ADR 0001](adr/0001-core-layout.md)。
 
 | 原文件                                                               | 原平台依赖                                                | 处理                                                                                                 |
 | -------------------------------------------------------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
@@ -11,7 +11,7 @@
 | `database-recovery.ts`                                               | crypto、fs、path、sqlite                                  | Node 恢复 adapter，直接提供数据库完整文件操作                                                        |
 | `recovery-files.ts`                                                  | fs、path、sqlite                                          | Node WAL、恢复文件及锁处理                                                                           |
 | `diagnostics.ts`                                                     | crypto、fs、path、sqlite                                  | Node 本地诊断及数据库检查                                                                            |
-| `db.ts`                                                              | @effect/sql-sqlite-node、sqlite-vec                       | 迁移、SQL 初始化、能力标签留在 core；连接、扩展加载和锁在 Node adapter                               |
+| `db.ts`                                                              | @effect/sql-sqlite-node、sqlite-vec                       | 迁移、SQL 初始化、能力标签留在 core 的 `db/`；连接、扩展加载和锁在 Node adapter                      |
 | `embeddings-node.ts`                                                 | path、url、推理进程                                       | Node 模型 adapter，launcher 可由 `NodeModelsOptions.launch` 替换                                     |
 | `inference-process.ts`                                               | child_process                                             | fork adapter；推理进程协议在可移植平台端口                                                           |
 | `embedding-worker.mjs`                                               | module、path、onnxruntime-node、@huggingface/transformers | Node worker，保留原资源预算和离线限制                                                                |
@@ -48,9 +48,9 @@ MailCodec、PdfWorker、AttachmentFiles、ImageNetwork 是必需的 Effect servi
 
 手机 `PdfWorker` 和 `ImageNetwork` 的 no-op Layer 在 `platform/react-native/media.ts`，明确返回 unavailable。PDF.js 的现有 worker 不适用于 Hermes；手机无固定地址图片导入入口，fetch 不能替代 DNS pinning。阅读器继续使用 shouldLoadRemote／HTTPS CSP；端侧推理未实现。详细预算、安全规则和原因只在[手机媒体说明](../apps/mobile/README.md#媒体适配边界)维护。这些 adapters 不调用 Node、转换服务或云端媒体推理。
 
-portable IMAP／SMTP 协议位于 `platform/react-native/imap.ts`，`MailTransport` 只暴露 TCP/TLS 字节流，手机原生实现位于 `apps/mobile/src/platform/transport.ts`。账户预设解析由两端共用 `imap-settings.ts`，密码仍经 Secrets。Expo 附件缓存与临时分享副本位于手机沙箱 cache，core 的 AttachmentFiles 仍负责容量、清理与版本失效；未增加数据库迁移。原生 TLS 证书主机名校验、Android 读取线程同步及两端握手完成事件补丁随 pnpm 锁文件安装。具体能力及验证边界见[手机端能力表](../apps/mobile/README.md#能力)。
+portable IMAP／SMTP 协议位于 `platform/react-native/`：`imap.ts` 组装 adapter，`imap-session.ts` 管理会话，`imap-parse.ts` 解析响应，`imap-push.ts` 推送队列操作，`smtp.ts` 发送。`MailTransport` 只暴露 TCP/TLS 字节流，手机原生实现位于 `apps/mobile/src/platform/transport.ts`。账户预设解析由两端共用 `providers/imap/imap-settings.ts`，密码仍经 Secrets。Expo 附件缓存与临时分享副本位于手机沙箱 cache，core 的 AttachmentFiles 仍负责容量、清理与版本失效；未增加数据库迁移。原生 TLS 证书主机名校验、Android 读取线程同步及两端握手完成事件补丁随 pnpm 锁文件安装。具体能力及验证边界见[手机端能力表](../apps/mobile/README.md#能力)。
 
-开发 smoke 的数据库复制与副本迁移在 `platform/node/smoke.ts`，桌面脚本只调用该 core 导出。`OPENMAIL_READ_ONLY=1` 经 Effect Config 在 core Layer 构建时读取；provider 写入拦截与队列／发送策略见 `read-only.ts`、`mailbox-live.ts`，没有引入隐式 Node 全局。
+开发 smoke 的数据库复制与副本迁移在 `platform/node/smoke.ts`，桌面脚本只调用该 core 导出。`OPENMAIL_READ_ONLY=1` 经 Effect Config 在 core Layer 构建时读取；provider 写入拦截与队列／发送策略见 `mailbox/read-only.ts`、`mailbox/mailbox-live.ts`，没有引入隐式 Node 全局。
 
 共享导出集中在 `common.ts`。Node 入口只重导出桌面／CLI 消费的名称，不经 `portable.ts` 加载手机 adapters 或手机专用工作流；`platform-imports.test.ts` 检查该依赖图。手机端继续从 `portable.ts` 获得共享能力和移动平台组装。
 
@@ -72,6 +72,6 @@ portable IMAP／SMTP 协议位于 `platform/react-native/imap.ts`，`MailTranspo
 | 永久删除       | 要求 UIDPLUS 或 IMAP4rev2，限定目标 UID 删除并返回部分结果    | checkPermanentDelete／permanentlyDelete 不支持                                |
 | SMTP 发送      | 使用 message.from，报告部分收件人拒绝，并可创建 Sent 文件夹   | 使用账户地址作为信封和 MIME 发件人，逐个处理 RCPT 响应，Sent 文件夹必须已存在 |
 
-Node IMAP 的实现分为 `platform/node/imap/{adapter,session,parse,pull,ops,send,recovery,pool}.ts`。Outlook 分为 `outlook/{graph,client,send,sync,parse,pull,recovery,folders}.ts`。旧入口只导出 provider 组装函数；纯函数和传输帮助函数由调用处直接导入所属模块。
+Node IMAP 的实现分为 `platform/node/imap/{adapter,session,parse,pull,ops,send,recovery,pool}.ts`。Outlook 分为 `providers/outlook/{graph,client,sync,parse,pull,recovery,folders}.ts`，发送再分为 `draft-state.ts`（草稿创建日志与版本）、`drafts.ts`、`graph-message.ts` 和 `send.ts`。旧入口只导出 provider 组装函数；纯函数和传输帮助函数由调用处直接导入所属模块。
 
-T07 的 `CacheStorage` 端口位于 `platform/cache-storage.ts`，Node 实现在 `platform/node/cache-storage.ts`，通过实际数据库路径读取 WAL／恢复文件及 `statfs` 卷空间。portable 默认返回 `disk: null` 与零外部文件字节，手机暂不自动判断低磁盘。SQL 页、消息文本、附件计量仍由 core 提供。`CacheMaintenance` 将 Node 压缩及旧库 rowid 重建放进 `platform/node/cache-worker.mjs`，默认 portable 完整压缩返回 unavailable。桌面在异常退出后的启动检查由 `platform/node/integrity-worker.mjs` 执行只读 quick_check，主线程同时显示进度窗口。迁移共享包装在 db.ts，Node 的 smoke、恢复与测试通过 migrations.ts 使用它。
+T07 的 `CacheStorage` 端口位于 `platform/cache-storage.ts`，Node 实现在 `platform/node/cache-storage.ts`，通过实际数据库路径读取 WAL／恢复文件及 `statfs` 卷空间。portable 默认返回 `disk: null` 与零外部文件字节，手机暂不自动判断低磁盘。SQL 页、消息文本、附件计量仍由 core 提供。`CacheMaintenance` 将 Node 压缩及旧库 rowid 重建放进 `platform/node/cache-worker.mjs`，默认 portable 完整压缩返回 unavailable。桌面在异常退出后的启动检查由 `platform/node/integrity-worker.mjs` 执行只读 quick_check，主线程同时显示进度窗口。迁移共享包装在 `db/migrate.ts`，Node 的 smoke、恢复与测试通过 `platform/node/migrations.ts` 使用它。

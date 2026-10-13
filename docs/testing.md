@@ -65,9 +65,9 @@ CLI 同步进度和 SIGINT／SIGTERM 退出测试在 `packages/cli/src/sync-prog
 
 [出站规则](sync-correctness.md#出站操作队列)用假 provider、协议响应及临时 SQLite 验证，SMTP 阶段另用本地假服务器；不向真实账户发送，不启动 Electron，不代替手机原生传输验收。
 
-- [op-queue.test.ts](../packages/core/src/op-queue.test.ts)：退避、过期、认领丢失、复制进度、重映射失败、草稿清理和仅向拒收地址重发。
+- [op-queue.test.ts](../packages/core/src/mailbox/op-queue.test.ts)：退避、过期、认领丢失、复制进度、重映射失败、草稿清理和仅向拒收地址重发。
 - [Node IMAP 回归](../packages/core/src/platform/node/imap-opqueue.test.ts)与[手机 IMAP 回归](../packages/core/src/platform/react-native/imap.test.ts)：复制恢复、缺失 UID／Message-ID、标记拒绝、特殊文件夹、SMTP 阶段和 Sent 保存失败。
-- [Outlook 回归](../packages/core/src/outlook.test.ts)：永久写入拒绝与简短原因。
+- [Outlook 回归](../packages/core/src/providers/outlook/outlook.test.ts)：永久写入拒绝与简短原因。
 - [桌面失败提示](../apps/desktop/src/renderer/src/features/sync-status/failed-op-notice.test.ts)与[手机失败提示](../apps/mobile/src/failed-op-notice.test.ts)：分类标题、操作与邮件详情、关闭提示及拒收重发入口；翻译检查沿用仓库命令。
 
 离线重试测试推进 TestClock 或虚拟 Date，等待 retry_at 后再推送，避免把立即重试写成要求。
@@ -87,7 +87,7 @@ OPENMAIL_LOW_MEMORY_TESTS=1 pnpm --filter @openmail/desktop exec vitest run --co
 
 扩展时，在同一文件新增测试，通过 `flow()` 配置邮件、provider 和偏好；用 UI 操作触发行为，同时断言 `server` 调用记录和 `store` 状态。用 `eventually()` 等待 RPC，`advance()` 推进自动保存、已读和撤回计时。`server.failNext` 注入一次失败，`beforePush` 注入持续失败或 Deferred 阻塞。`holdLists()` 可阻塞列表 RPC，验证导航与搜索交错。`afterEach` 关闭 Registry、RPC、Mailbox 并删除临时数据库。
 
-同步重放回归在 `packages/core/src/pending-pull.test.ts`，覆盖三种 provider 的稍后提醒、唤醒、Flags 更新及队列索引。
+同步重放回归在 `packages/core/src/mailbox/pending-pull.test.ts`，覆盖三种 provider 的稍后提醒、唤醒、Flags 更新及队列索引。
 
 检查每项流程能捕获故障：
 
@@ -97,17 +97,17 @@ node apps/desktop/scripts/e2e-mutations.mjs
 
 脚本串行临时修改行为，要求所选测试全部失败，每轮恢复文件；覆盖主流程及相关回归。新增流程时同步扩展脚本的故障案例。完成后再跑正常测试与仓库检查。
 
-重置删除保护回归见 [sync-reset.test.ts](../packages/core/src/sync-reset.test.ts)和 [sync-reset-imap.test.ts](../packages/core/src/sync-reset-imap.test.ts)：覆盖窗口外缓存保留、存在性验证失败与持久续验、IMAP UID 复用，以及 Outlook delta 初始／410 重启／续页／增量的 Prefer 页大小。规则只在[同步说明](sync-correctness.md#重置删除保护)维护。
+重置删除保护回归见 [sync-reset.test.ts](../packages/core/src/sync/sync-reset.test.ts)和 [sync-reset-imap.test.ts](../packages/core/src/sync/sync-reset-imap.test.ts)：覆盖窗口外缓存保留、存在性验证失败与持久续验、IMAP UID 复用，以及 Outlook delta 初始／410 重启／续页／增量的 Prefer 页大小。规则只在[同步说明](sync-correctness.md#重置删除保护)维护。
 
-[sync-stale.test.ts](../packages/core/src/sync-stale.test.ts) 检查扫描的每账户预算、小时冷却与重启续验、不可用计数、孤立远端草稿和待推送改动保护；[sync-reset.test.ts](../packages/core/src/sync-reset.test.ts)及 [outlook.test.ts](../packages/core/src/outlook.test.ts) 检查 Outlook 冲突的持久入队与游标保存顺序。
+[sync-stale.test.ts](../packages/core/src/sync/sync-stale.test.ts) 检查扫描的每账户预算、小时冷却与重启续验、不可用计数、孤立远端草稿和待推送改动保护；[sync-reset.test.ts](../packages/core/src/sync/sync-reset.test.ts)及 [outlook.test.ts](../packages/core/src/providers/outlook/outlook.test.ts) 检查 Outlook 冲突的持久入队与游标保存顺序。
 
-[imap.test.ts](../packages/core/src/imap.test.ts)、[sync-reset.test.ts](../packages/core/src/sync-reset.test.ts)和 [sync-reset-imap.test.ts](../packages/core/src/sync-reset-imap.test.ts) 覆盖 SEARCH 失败与空集合的区别、小数量及空列表重置验证、遗漏文件夹和 UID 身份失效。[outlook.test.ts](../packages/core/src/outlook.test.ts)及 [provider-calendar.test.ts](../packages/core/src/provider-calendar.test.ts) 检查 Graph key-segment 续页、外域拒绝、嵌套联系人文件夹、去重和 People 上限。
+[imap.test.ts](../packages/core/src/providers/imap/imap.test.ts)、[sync-reset.test.ts](../packages/core/src/sync/sync-reset.test.ts)和 [sync-reset-imap.test.ts](../packages/core/src/sync/sync-reset-imap.test.ts) 覆盖 SEARCH 失败与空集合的区别、小数量及空列表重置验证、遗漏文件夹和 UID 身份失效。[outlook.test.ts](../packages/core/src/providers/outlook/outlook.test.ts)及 [provider-calendar.test.ts](../packages/core/src/calendar/provider-calendar.test.ts) 检查 Graph key-segment 续页、外域拒绝、嵌套联系人文件夹、去重和 People 上限。
 
-[provider-retry.test.ts](../packages/core/src/provider-retry.test.ts)、[gmail.test.ts](../packages/core/src/gmail.test.ts)和 [outlook.test.ts](../packages/core/src/outlook.test.ts) 覆盖非幂等写入单次提交、丢失响应后的核对、草稿 ID 保留、附件续页、changeKey 冲突及 Trash 补偿。[undo-send-and-draft-create.test.ts](../packages/core/src/undo-send-and-draft-create.test.ts)与 [mobile-outbox.test.ts](../packages/core/src/mobile-outbox.test.ts) 检查创建日志、发送认领事务、明确失败重试、renderer 断开和数据库重开；同时覆盖与 合并后的迟到草稿回调、失效认领、ID 重映射及部分拒收保护；桌面 [renderer-models.test.ts](../apps/desktop/src/renderer/src/app/renderer-models.test.ts) 检查撤销的 core RPC。行为规则只在[同步说明](sync-correctness.md#草稿与其他写入)维护。普通低内存测试即可运行，无须启动 Electron。
+[provider-retry.test.ts](../packages/core/src/providers/provider-retry.test.ts)、[gmail.test.ts](../packages/core/src/providers/gmail/gmail.test.ts)和 [outlook.test.ts](../packages/core/src/providers/outlook/outlook.test.ts) 覆盖非幂等写入单次提交、丢失响应后的核对、草稿 ID 保留、附件续页、changeKey 冲突及 Trash 补偿。[undo-send-and-draft-create.test.ts](../packages/core/src/mailbox/undo-send-and-draft-create.test.ts)与 [mobile-outbox.test.ts](../packages/core/src/mailbox/mobile-outbox.test.ts) 检查创建日志、发送认领事务、明确失败重试、renderer 断开和数据库重开；同时覆盖与 合并后的迟到草稿回调、失效认领、ID 重映射及部分拒收保护；桌面 [renderer-models.test.ts](../apps/desktop/src/renderer/src/app/renderer-models.test.ts) 检查撤销的 core RPC。行为规则只在[同步说明](sync-correctness.md#草稿与其他写入)维护。普通低内存测试即可运行，无须启动 Electron。
 
 ## 解析器 fuzz 与无障碍
 
-解析器属性测试使用固定 seed 的 fast-check 和恶意输入语料。覆盖 MIME／TNEF／兼容编码、HTML 清洗与重解析、可见文本、认证头、URL、搜索、日历、IMAP/SMTP 分片流和附件文件名。测试检查有界输出、幂等、协议分帧及清洗后没有活动内容，不能证明所有恶意输入都安全。入口见 core [parser-fuzz.test.ts](../packages/core/src/parser-fuzz.test.ts)、[parser-fuzz-corpus.ts](../packages/core/src/parser-fuzz-corpus.ts)、[mail-socket-fuzz.test.ts](../packages/core/src/platform/mail-socket-fuzz.test.ts)，以及桌面 [reader-html-fuzz.test.ts](../apps/desktop/src/renderer/src/features/reader/frame/reader-html-fuzz.test.ts)和[附件文件名测试](../apps/desktop/src/main/files/attachment-filenames-fuzz.test.ts)。
+解析器属性测试使用固定 seed 的 fast-check 和恶意输入语料。覆盖 MIME／TNEF／兼容编码、HTML 清洗与重解析、可见文本、认证头、URL、搜索、日历、IMAP/SMTP 分片流和附件文件名。测试检查有界输出、幂等、协议分帧及清洗后没有活动内容，不能证明所有恶意输入都安全。入口见 core [parser-fuzz.test.ts](../packages/core/src/reader/parser-fuzz.test.ts)、[parser-fuzz-corpus.ts](../packages/core/src/reader/parser-fuzz-corpus.ts)、[mail-socket-fuzz.test.ts](../packages/core/src/platform/mail-socket-fuzz.test.ts)，以及桌面 [reader-html-fuzz.test.ts](../apps/desktop/src/renderer/src/features/reader/frame/reader-html-fuzz.test.ts)和[附件文件名测试](../apps/desktop/src/main/files/attachment-filenames-fuzz.test.ts)。
 
 只跑 fuzz：
 
@@ -157,19 +157,19 @@ stdout 输出 JSON，stderr 输出步骤和预览日志：
 
 脱敏服务商诊断格式只在[安全说明](security.md#服务商诊断)维护。smoke 的原始 console、`failure` 和 stderr 不受该字段白名单约束，分享前检查内容。自动测试使用 DOM、临时库和 fake provider，不运行 Electron smoke，也不证明真实 OAuth、系统权限或签名成品。
 
-远程消息文本／Reply-To 补全以整个会话五秒为上限，失败仍返回缓存及 `bodyRefresh="failed"`，不改变账户认证状态；未知 Reply-To 不自动猜测回复收件人。Node Layer 使用 FetchHttpClient 与 Node fetch，renderer 取消请求会中断 fetch。只读 GET 的实际传输失败等待 500 毫秒后重试一次，发送不重试。实现与回归见 [mailbox-live.ts](../packages/core/src/mailbox-live.ts)、[provider-retry.ts](../packages/core/src/provider-retry.ts)和 [read-only.test.ts](../packages/core/src/read-only.test.ts)。
+远程消息文本／Reply-To 补全以整个会话五秒为上限，失败仍返回缓存及 `bodyRefresh="failed"`，不改变账户认证状态；未知 Reply-To 不自动猜测回复收件人。Node Layer 使用 FetchHttpClient 与 Node fetch，renderer 取消请求会中断 fetch。只读 GET 的实际传输失败等待 500 毫秒后重试一次，发送不重试。实现与回归见 [mailbox-live.ts](../packages/core/src/mailbox/mailbox-live.ts)、[provider-retry.ts](../packages/core/src/providers/provider-retry.ts)和 [read-only.test.ts](../packages/core/src/mailbox/read-only.test.ts)。
 
 空白 Composer 的 `DraftStatus` 只查询本地草稿，未保存或已删除时返回 `null`；`OpenDraft` 用于明确打开或导入已有草稿。完整流程测试覆盖空白 Composer 打开、关闭时无失败 RPC，也不查询该草稿 ID 的消息，见 [mailbox-handlers.ts](../apps/desktop/src/shared/mailbox-handlers.ts)和 [flows.test.ts](../apps/desktop/src/renderer/src/e2e/flows.test.ts)。
 
 ## 按领域组织的回归
 
-- [undo-journal.test.ts](../packages/core/src/undo-journal.test.ts)、[signatures.test.ts](../packages/core/src/signatures.test.ts)：跨重启撤销与签名。
-- [optional-services.test.ts](../packages/core/src/optional-services.test.ts)：授权、服务开关与消息文本预算。
-- [graph-recurrence.test.ts](../packages/core/src/graph-recurrence.test.ts)、[calendar.test.ts](../packages/core/src/calendar.test.ts)：循环事件、邀请与邮件事件检测。
-- [search.test.ts](../packages/core/src/search.test.ts)、[preferences.test.ts](../packages/core/src/preferences.test.ts)、[organization.test.ts](../packages/core/src/organization.test.ts)：搜索、偏好、分类与规则。
-- [uid-remap.test.ts](../packages/core/src/uid-remap.test.ts)：IMAP 身份映射。
+- [undo-journal.test.ts](../packages/core/src/mailbox/undo-journal.test.ts)、[signatures.test.ts](../packages/core/src/compose/signatures.test.ts)：跨重启撤销与签名。
+- [optional-services.test.ts](../packages/core/src/providers/optional-services.test.ts)：授权、服务开关与消息文本预算。
+- [graph-recurrence.test.ts](../packages/core/src/calendar/graph-recurrence.test.ts)、[calendar.test.ts](../packages/core/src/calendar/calendar.test.ts)：循环事件、邀请与邮件事件检测。
+- [search.test.ts](../packages/core/src/search/search.test.ts)、[preferences.test.ts](../packages/core/src/mailbox/preferences.test.ts)、[organization.test.ts](../packages/core/src/domain/organization.test.ts)：搜索、偏好、分类与规则。
+- [uid-remap.test.ts](../packages/core/src/mailbox/uid-remap.test.ts)：IMAP 身份映射。
 - [native-compose.test.ts](../apps/desktop/src/main/system/native-compose.test.ts)：原生分享、图片和语法辅助。
-- [sender-auth.test.ts](../packages/core/src/sender-auth.test.ts)、[model-view-hiding.test.ts](../packages/core/src/model-view-hiding.test.ts)：发件人认证与隐藏模型输入。
+- [sender-auth.test.ts](../packages/core/src/reader/sender-auth.test.ts)、[model-view-hiding.test.ts](../packages/core/src/ai/model-view-hiding.test.ts)：发件人认证与隐藏模型输入。
 
 `TestMailbox.withAdapter(adapter, opts)` 共用真实 Mailbox／Store 和内存平台，支持传入适配器或从 fake adapter 派生。`incoming()`、`outgoing()`、`account(provider)` 提供可覆盖的消息与账户；HTTP 和 IMAP 传输使用共享 fake。
 

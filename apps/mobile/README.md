@@ -18,7 +18,7 @@ pnpm exec oxfmt --check .
 
 ## 数据库
 
-锁定 `@op-engineering/op-sqlite` 18.2.5，发布包 `cpp/sqlite3.h` 中 SQLite 是 3.53.4。`package.json` 的 `op-sqlite.fts5=true` 开启编译选项，`iosSqlite=false` 使用打包版本。FTS5 trigram 最低需要 SQLite 3.34.0；启动时创建临时 trigram 表验证实际原生构建，再启用 WAL 并运行 core 的全部迁移，见 [db.ts](../../packages/core/src/db.ts)。缺少 tokenizer 就停止启动。向量能力报告 `vectors=false`。
+锁定 `@op-engineering/op-sqlite` 18.2.5，发布包 `cpp/sqlite3.h` 中 SQLite 是 3.53.4。`package.json` 的 `op-sqlite.fts5=true` 开启编译选项，`iosSqlite=false` 使用打包版本。FTS5 trigram 最低需要 SQLite 3.34.0；启动时创建临时 trigram 表验证实际原生构建，再启用 WAL 并运行 core 的全部迁移，见 [db/migrations.ts](../../packages/core/src/db/migrations.ts)。缺少 tokenizer 就停止启动。向量能力报告 `vectors=false`。
 
 Effect `SqlClient` 使用同一连接、SQLite compiler、`BEGIN IMMEDIATE`、savepoints 和 semaphore。异步语句完成后才释放连接，避免取消请求时遗留写入。测试通过真实 Node SQLite 模拟 op-sqlite Promise/result API，覆盖迁移幂等、FTS 完整性、upsert rowid、分页、事务回滚、COMMIT 失败恢复及并发串行化。shim 不能证明原生 JSI、WAL、设备存储或锁行为，后续需用开发构建验证。
 
@@ -75,7 +75,7 @@ Expo 的默认 background-task iOS 实现使用 BGProcessingTask，本项目依�
 
 依据：[BackgroundTask](https://docs.expo.dev/versions/v57.0.0/sdk/background-task/)、[Notifications](https://docs.expo.dev/versions/v57.0.0/sdk/notifications/)、[ImagePicker](https://docs.expo.dev/versions/latest/sdk/imagepicker/)。
 
-实现见 [background.ts](src/background.ts)、[background-policy.ts](src/background-policy.ts)、core [mobile-background.ts](../../packages/core/src/mobile-background.ts)和 [mailbox-live.ts](../../packages/core/src/mailbox-live.ts)。默认值与持久去重由 core 管理；原生配置见 [app.config.ts](app.config.ts)及 [plugins](plugins)。
+实现见 [background.ts](src/background.ts)、[background-policy.ts](src/background-policy.ts)、core [mobile-background.ts](../../packages/core/src/mailbox/mobile-background.ts)和 [mailbox-live.ts](../../packages/core/src/mailbox/mailbox-live.ts)。默认值与持久去重由 core 管理；原生配置见 [app.config.ts](app.config.ts)及 [plugins](plugins)。
 
 ## AI、稍后提醒与签名
 
@@ -142,4 +142,4 @@ iOS 本地 Expo module `modules/openmail-storage` 在移动目录前和打开数
 
 依据：[Apple 目录与备份](https://developer.apple.com/documentation/foundation/using-the-file-system-effectively)、[Android allowBackup](https://docs.expo.dev/versions/latest/config/app/#allowbackup)、[SecureStore 可访问性](https://docs.expo.dev/versions/v57.0.0/sdk/securestore/)、[Expo native intent](https://docs.expo.dev/router/advanced/native-intent/)。
 
-本地缓存 T07：`CacheStorage` 暂用 core 的默认 no-op，返回 `disk: null`、零 WAL／恢复副本字节。手机尚未接入数据卷剩余空间查询，不触发低磁盘自动收紧；数据库页、消息文本和附件仍由现有服务计量。手机界面尚未暴露整库目标与“立即压缩”。`CacheMaintenance` 暂为 no-op，完整压缩返回 unavailable；没有 Node worker 和卷空间预检。op-sqlite 升级共用 db.ts 的迁移外键包装，异步原生 execute 保留迁移 37 的依赖行；Node shim 回归不替代设备验证。Node 桌面能力及测试见[性能说明](../../docs/performance.md#本地缓存管理t07)。
+本地缓存 T07：`CacheStorage` 暂用 core 的默认 no-op，返回 `disk: null`、零 WAL／恢复副本字节。手机尚未接入数据卷剩余空间查询，不触发低磁盘自动收紧；数据库页、消息文本和附件仍由现有服务计量。手机界面尚未暴露整库目标与“立即压缩”。`CacheMaintenance` 暂为 no-op，完整压缩返回 unavailable；没有 Node worker 和卷空间预检。op-sqlite 升级共用 `db/migrate.ts` 的迁移外键包装，异步原生 execute 保留迁移 37 的依赖行；Node shim 回归不替代设备验证。Node 桌面能力及测试见[性能说明](../../docs/performance.md#本地缓存管理t07)。

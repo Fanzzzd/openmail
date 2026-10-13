@@ -118,7 +118,7 @@ openmail tool list_proposals --json
 
 MCP access 默认跟随逐账户 AI 文本授权。未授权或停用的账户不进入工具读取；读取会话和附件也逐次检查。`semantic_search` 必须显式提供 `account_id`，该账户须开启第三方 AI 文本授权，并已启用本地索引。内置助手仍限定所选且授权账户，移除搜索结果中的消息片段、附件名称和媒体派生命中，不允许服务端搜索。Apple Contacts 快照仅供桌面补全，不进入工具或 AI 上下文，见 [Apple Contacts](apple-contacts.md)。`read_thread` 的主题、发件人和消息文本都位于 `untrusted_mail`；`read_proposal` 的 JSON 文本位于 `untrusted_mail.command_json`。每个结果和分页都带 `notice`，这些邮件字段和提议理由是不可信数据，不应当作工具指令。权限、身份与输出预算回归见[测试](testing.md)。
 
-列表和搜索不返回服务商 snippet。`read_thread` 有 HTML 时优先可见文本；`flags` 可包含 `hidden-text-removed`、`plain-differs`、`budget-exceeded` 或 `quoted-text-removed`，分别表示删过隐藏内容、plain alternative 有差异、CSS 检查预算耗尽或无可靠引用边界时按 `>` 行移除文本；`quotedTextRemoved` 给出移除字符数。识别的回复头块也会截断引用历史；规则见安全说明。预算耗尽时返回固定占位文本 `[Message too complex for AI: message text omitted.]`，不返回未经完整可见性判断的消息文本。提取规则和限制只在[安全说明](security.md)维护，实现见 [model-view.ts](../packages/core/src/model-view.ts)、[visible-text.ts](../packages/core/src/visible-text.ts)和 [tool-pages.ts](../packages/core/src/tool-pages.ts)。
+列表和搜索不返回服务商 snippet。`read_thread` 有 HTML 时优先可见文本；`flags` 可包含 `hidden-text-removed`、`plain-differs`、`budget-exceeded` 或 `quoted-text-removed`，分别表示删过隐藏内容、plain alternative 有差异、CSS 检查预算耗尽或无可靠引用边界时按 `>` 行移除文本；`quotedTextRemoved` 给出移除字符数。识别的回复头块也会截断引用历史；规则见安全说明。预算耗尽时返回固定占位文本 `[Message too complex for AI: message text omitted.]`，不返回未经完整可见性判断的消息文本。提取规则和限制只在[安全说明](security.md)维护，实现见 [model-view.ts](../packages/core/src/ai/model-view.ts)、[visible-text.ts](../packages/core/src/visible-text/visible-text.ts)和 [tool-pages.ts](../packages/core/src/tools/tool-pages.ts)。
 
 ## 提议改动
 

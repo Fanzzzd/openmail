@@ -56,13 +56,13 @@
 | `/me/contacts` 及根／嵌套 `contactFolders` 的联系人，读取 `displayName,emailAddresses,companyName`                                     | `Contacts.Read`                         |
 | `/me/people`，读取 `displayName,scoredEmailAddresses`                                                                                  | `People.Read`                           |
 
-联系人刷新遍历默认联系人、全部根联系人文件夹及递归子文件夹，每个集合沿 nextLink 分页，按 contact ID 去重，再合并邮箱地址。`/me/people` 是相关性建议，只取首批最多 250 人，不作为完整联系人清单；不沿 People 的 nextLink 扩大范围。实现见 [outlook-features.ts](../packages/core/src/outlook-features.ts)，分页链接校验见[架构](architecture.md#provider-与-store)，回归见 [outlook.test.ts](../packages/core/src/outlook.test.ts)。
+联系人刷新遍历默认联系人、全部根联系人文件夹及递归子文件夹，每个集合沿 nextLink 分页，按 contact ID 去重，再合并邮箱地址。`/me/people` 是相关性建议，只取首批最多 250 人，不作为完整联系人清单；不沿 People 的 nextLink 扩大范围。实现见 [outlook-features.ts](../packages/core/src/providers/outlook/outlook-features.ts)，分页链接校验见[架构](architecture.md#provider-与-store)，回归见 [outlook.test.ts](../packages/core/src/providers/outlook/outlook.test.ts)。
 
 已有授权缺少新增 scope 时，在对应能力提示连接可选服务，不停邮件同步。联系人每 6 小时刷新一次，失败后 1 小时再试，旧缓存继续补全。日历响应只由用户点击触发。所有授权和续期仍走 `https://login.microsoftonline.com/consumers`，不改用公司租户。
 
 依据：[接受事件](https://learn.microsoft.com/en-us/graph/api/event-accept?view=graph-rest-1.0)、[关联会议消息](https://learn.microsoft.com/en-us/graph/api/eventmessage-get?view=graph-rest-1.0)、[Contacts](https://learn.microsoft.com/en-us/graph/api/user-list-contacts?view=graph-rest-1.0)、[People](https://learn.microsoft.com/en-us/graph/api/user-list-people?view=graph-rest-1.0)。
 
-代码依据：[optional-services.ts](../packages/core/src/optional-services.ts) 定义基础及分服务 scopes，[store-services.ts](../packages/core/src/store-services.ts) 处理旧账户授权记录，[mailbox-services.ts](../packages/core/src/mailbox-services.ts) 执行本机启停；官方授权与 token 响应处理见 [mailbox-live.ts](../packages/core/src/mailbox-live.ts)、[Node OAuth](../packages/core/src/platform/node/oauth.ts)和[手机 OAuth](../packages/core/src/platform/react-native/oauth.ts)。迁移 33 只保存本机开关，不存凭证。局部权限错误与脱敏日志见[安全说明](security.md#服务商诊断)。
+代码依据：[optional-services.ts](../packages/core/src/providers/optional-services.ts) 定义基础及分服务 scopes，[store-services.ts](../packages/core/src/store/store-services.ts) 处理旧账户授权记录，[mailbox-services.ts](../packages/core/src/mailbox/mailbox-services.ts) 执行本机启停；官方授权与 token 响应处理见 [mailbox-live.ts](../packages/core/src/mailbox/mailbox-live.ts)、[Node OAuth](../packages/core/src/platform/node/oauth.ts)和[手机 OAuth](../packages/core/src/platform/react-native/oauth.ts)。迁移 33 只保存本机开关，不存凭证。局部权限错误与脱敏日志见[安全说明](security.md#服务商诊断)。
 
 ## 手机端
 

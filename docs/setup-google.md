@@ -19,7 +19,7 @@ refresh token 只能和签发它的客户端一起使用。core 在登录成功�
 
 迁移 43 之前登录的账户没有记录。旧版本只会用环境变量或 `config.json` 里的客户端签发 token，所以续期先用环境变量的客户端，再用用户客户端，绝不用内置客户端；第一次续期成功后补记。两者都不在时，账户提示重新登录。删除账户时这条记录随账户行一起删除。
 
-添加账户页显示新登录用的是内置客户端还是你自己的客户端。用自己的客户端且有内置客户端时，可以点 **Use the built-in client** 删除 `config.json` 里的客户端；已添加的账户继续用登录时的客户端。实现见 [oauth-clients.ts](../packages/core/src/oauth-clients.ts)。
+添加账户页显示新登录用的是内置客户端还是你自己的客户端。用自己的客户端且有内置客户端时，可以点 **Use the built-in client** 删除 `config.json` 里的客户端；已添加的账户继续用登录时的客户端。实现见 [oauth-clients.ts](../packages/core/src/providers/oauth-clients.ts)。
 
 ## 注册自己的客户端
 
@@ -84,7 +84,7 @@ Google 的[桌面 OAuth 文档](https://developers.google.com/identity/protocols
 
 过滤器列表可用已有 `gmail.modify` 或 `gmail.readonly` 读取，成功返回空列表时无需重新登录；创建或删除过滤器仍需 `gmail.settings.basic`。过滤器读取可用基础邮件权限；修改要求连接 Gmail Settings 服务；403 权限错误只提示连接该服务，不改变邮件同步状态。依据：[读取列表](https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.settings.filters/list)、[创建过滤器](https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.settings.filters/create)。
 
-代码依据：[optional-services.ts](../packages/core/src/optional-services.ts) 定义基础及分服务 scopes，[store-services.ts](../packages/core/src/store-services.ts) 处理旧账户授权记录，[mailbox-services.ts](../packages/core/src/mailbox-services.ts) 执行本机启停；官方授权与 token 响应处理见 [mailbox-live.ts](../packages/core/src/mailbox-live.ts)、[Node OAuth](../packages/core/src/platform/node/oauth.ts)和[手机 OAuth](../packages/core/src/platform/react-native/oauth.ts)。迁移 33 只保存本机开关，不存凭证。局部权限错误与脱敏日志见[安全说明](security.md#服务商诊断)。
+代码依据：[optional-services.ts](../packages/core/src/providers/optional-services.ts) 定义基础及分服务 scopes，[store-services.ts](../packages/core/src/store/store-services.ts) 处理旧账户授权记录，[mailbox-services.ts](../packages/core/src/mailbox/mailbox-services.ts) 执行本机启停；官方授权与 token 响应处理见 [mailbox-live.ts](../packages/core/src/mailbox/mailbox-live.ts)、[Node OAuth](../packages/core/src/platform/node/oauth.ts)和[手机 OAuth](../packages/core/src/platform/react-native/oauth.ts)。迁移 33 只保存本机开关，不存凭证。局部权限错误与脱敏日志见[安全说明](security.md#服务商诊断)。
 
 ## 永久删除权限
 

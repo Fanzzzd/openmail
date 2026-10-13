@@ -19,7 +19,7 @@ Brand marks are trademarks of their owners. OpenMail shows them only to identify
 
 ## Unicode CLDR data
 
-`packages/core/src/windows-zones.ts` contains the Windows to IANA time zone mapping from Unicode CLDR, under the Unicode License v3. The full text is in [docs/licenses/unicode-3.0.txt](docs/licenses/unicode-3.0.txt).
+`packages/core/src/calendar/windows-zones.ts` contains the Windows to IANA time zone mapping from Unicode CLDR, under the Unicode License v3. The full text is in [docs/licenses/unicode-3.0.txt](docs/licenses/unicode-3.0.txt).
 
 ## npm dependencies and Electron
 

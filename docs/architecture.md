@@ -2,18 +2,57 @@
 
 core 负责邮件网络、数据库、策略和同步。桌面、CLI、MCP 与手机界面调用 Mailbox，平台能力通过 Effect 服务提供。术语见 [CONTEXT.md](../CONTEXT.md)，源码约束只在 [AGENTS.md](../AGENTS.md)维护。
 
+## 源码地图
+
+core 的源码按领域分目录，划分理由见 [ADR 0001](adr/0001-core-layout.md)。`packages/core/src` 顶层只放包入口，`platform-imports.test.ts` 检查这一点。测试和被测文件放在同一目录。
+
+| 目录                     | 内容                                                                                                | 从这里读起                                      |
+| ------------------------ | --------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| 顶层                     | 包入口：`index.ts`（Node）、`portable.ts`（手机）、`schema.ts`（renderer）、`common.ts`（共享导出） | `index.ts`                                      |
+| `domain/`                | 领域 schema 与错误：账户、消息、改动、设置、Command／Actor／Outcome、文件夹操作                     | `domain/message.ts`、`domain/command.ts`        |
+| `mailbox/`               | Mailbox 服务与 `mailbox-*.ts` 子模块、策略、只读会话、撤销记录、发件箱                              | `mailbox/mailbox.ts`、`mailbox/mailbox-live.ts` |
+| `store/`                 | Store 端口与 `store-*.ts` 查询                                                                      | `store/service.ts`、`store/store.ts`            |
+| `db/`                    | 只追加的迁移、迁移执行、搜索标志位 SQL、数据库能力                                                  | `db/migrations.ts`                              |
+| `sync/`                  | 同步健康报告、同步重置、失败分类、邮件头回填、退避                                                  | `sync/sync-health.ts`                           |
+| `providers/`             | ProviderAdapter 端口、HTTP 重试、诊断、可选服务、OAuth client                                       | `providers/adapter.ts`                          |
+| `providers/gmail/`       | Gmail 适配器：`api`、`client`、`pull`、`history`、`labels`、`send`、`parse`，`gmail.ts` 组装        | `providers/gmail/gmail.ts`                      |
+| `providers/outlook/`     | Outlook 适配器与 Graph 分页；发送拆为草稿状态、草稿和发送                                           | `providers/outlook/outlook.ts`                  |
+| `providers/imap/`        | 两端共用的 IMAP 游标、预设、IDLE 调度                                                               | `providers/imap/imap-cursor.ts`                 |
+| `calendar/`、`contacts/` | 日历事件、重复规则、邀请、Windows 时区表；联系人与 Apple Contacts 快照                              | `calendar/calendar.ts`                          |
+| `compose/`               | 撰写正文（节点、Markdown、发送转换）、签名、收件人、Markdown 草稿                                   | `compose/compose-body.ts`                       |
+| `mime/`                  | MIME 解析、TNEF、附件策略、Message-ID                                                               | `mime/mime.ts`                                  |
+| `reader/`                | 阅读 HTML 清洗、跟踪器、链接与发件人安全、打印                                                      | `reader/reading.ts`                             |
+| `visible-text/`          | 模型消息文本的可见文本提取：上下文、规则、绘制器、CSS                                               | `visible-text/visible-text.ts`                  |
+| `search/`                | 查询解析、字段、FTS、排名、服务商搜索                                                               | `search/search.ts`                              |
+| `ai/`                    | Model、本机索引、向量检索、模型消息视图                                                             | `ai/model.ts`、`ai/model-view.ts`               |
+| `tools/`                 | MailToolkit：每组工具一个 `*-tools.ts`，`tools.ts` 合成工具集与处理器                               | `tools/tools.ts`                                |
+| `app/`                   | 桌面集成：链接与通知判断、更新、远程访问、反馈                                                      |                                                 |
+| `platform/`              | 平台端口；`platform/node/` 是 Node 实现，`platform/react-native/` 是手机 adapters                   | `platform/auth.ts`、`platform/runtime.ts`       |
+
+桌面、CLI 与手机：
+
+| 位置                             | 内容                                                                                                                 |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `apps/desktop/src/main/`         | 主进程，按领域分 `app/`、`windows/`、`rpc/`、`security/`、`files/`、`updates/`、`system/`、`remote/`、`agents/`      |
+| `apps/desktop/src/shared/`       | main 与 renderer 共用：RPC 协议 `rpc.ts`、Mailbox 处理器、路由、远程策略                                             |
+| `apps/desktop/src/renderer/src/` | renderer，分层规则见下文[桌面与测试](#桌面与测试)                                                                    |
+| `packages/cli/src/`              | `cli.ts` 组装并运行；`commands/` 按组放命令：`accounts`、`mail`、`agents`、`tools`、`corpus`；`mcp-server.ts` 是 MCP |
+| `apps/mobile/`                   | Expo 应用，`src/platform/` 提供 OS Layers                                                                            |
+
+导入环由 oxlint 的 `import/no-cycle`（`ignoreTypes: false`）拦截，类型导入构成的环同样报错。非生成源文件控制在约 800 行以内，例外见 ADR。
+
 ## 当前模块
 
-| 模块            | 入口与职责                                                                                                                                                                                          |
-| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Mailbox         | `mailbox.ts` 定义 Effect 服务；`mailbox-live.ts` 组装同步、队列、策略和事件                                                                                                                         |
-| Mailbox 子模块  | `mailbox-batch.ts`、`mailbox-folders.ts`、`mailbox-cache.ts`、`mailbox-features.ts`、`mailbox-organization.ts`、`mailbox-ai.ts` 分别实现批量、破坏性文件夹操作、缓存、日历／联系人、搜索／整理与 AI |
-| Store           | `services.ts` 定义端口，`store.ts` 与 `store-*.ts` 实现查询；`db.ts` 保存追加迁移及数据库能力                                                                                                       |
-| ProviderAdapter | `services.ts` 定义接口；`gmail.ts`、`outlook.ts` 和 `platform/node/imap/adapter.ts` 实现协议                                                                                                        |
-| 模型与工具      | `model.ts` 提供 Model；`tools.ts` 提供 MailToolkit；`tool-pages.ts` 处理游标和预算                                                                                                                  |
-| 本机索引        | `indexer.ts`、`semantic-indexer.ts` 与 media／semantic Store 处理派生文本及向量                                                                                                                     |
-| Node 平台       | `platform/node/` 实现数据库、密钥、OAuth、IMAP/SMTP、MIME、文件、PDF 和推理 worker                                                                                                                  |
-| 手机平台        | `platform/react-native/` 提供 SQL／OAuth／MIME／IMAP/SMTP adapters；Expo OS Layers 在 `apps/mobile/src/platform/`                                                                                   |
+| 模块            | 入口与职责                                                                                                                                                                                                                                      |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Mailbox         | `mailbox/mailbox.ts` 定义 Effect 服务；`mailbox/mailbox-live.ts` 组装同步、队列、策略和事件                                                                                                                                                     |
+| Mailbox 子模块  | `mailbox/` 下的 `mailbox-batch.ts`、`mailbox-folders.ts`、`mailbox-cache.ts`、`mailbox-features.ts`、`mailbox-organization.ts`、`mailbox-filters.ts`、`mailbox-ai.ts` 分别实现批量、破坏性文件夹操作、缓存、日历／联系人、整理、服务商规则与 AI |
+| Store           | `store/service.ts` 定义端口，`store/store.ts` 与 `store/store-*.ts` 实现查询；`db/migrations.ts` 保存追加迁移，`db/capabilities.ts` 描述数据库能力                                                                                              |
+| ProviderAdapter | `providers/adapter.ts` 定义接口；`providers/gmail/gmail.ts`、`providers/outlook/outlook.ts` 和 `platform/node/imap/adapter.ts` 实现协议                                                                                                         |
+| 模型与工具      | `ai/model.ts` 提供 Model；`tools/tools.ts` 提供 MailToolkit；`tools/tool-pages.ts` 处理游标和预算                                                                                                                                               |
+| 本机索引        | `ai/indexer.ts`、`ai/semantic-indexer.ts` 与 media／semantic Store 处理派生文本及向量                                                                                                                                                           |
+| Node 平台       | `platform/node/` 实现数据库、密钥、OAuth、IMAP/SMTP、MIME、文件、PDF 和推理 worker                                                                                                                                                              |
+| 手机平台        | `platform/react-native/` 提供 SQL／OAuth／MIME／IMAP/SMTP adapters；Expo OS Layers 在 `apps/mobile/src/platform/`                                                                                                                               |
 
 ## Mailbox 接口
 
@@ -35,25 +74,25 @@ Mailbox 是 Effect `Context.Service`。`NodeMailbox(options)` 返回已组装的
 | `optionalServices`、`reauth`、`setServiceEnabled`                  | 查询服务授权、走官方同意页及控制本机启停                    |
 | `events`                                                           | `Changed`、同步状态／进度、新邮件、回填进度和更新设置事件流 |
 
-其余账户、Profiles、设置、联系人、日历、缓存与 AI 方法以 `mailbox.ts` 为准。永久删除与清空文件夹走独立的确认接口，不放入模型工具的普通 MailOp。
+其余账户、Profiles、设置、联系人、日历、缓存与 AI 方法以 `mailbox/mailbox.ts` 为准。永久删除与清空文件夹走独立的确认接口，不放入模型工具的普通 MailOp。
 
 ### 策略与改动
 
-`domain.ts` 定义 Command、Actor 和 Outcome，`policy.ts` 的 `decide` 根据入口与写权限判断。用户操作走执行路径；规则按权限直接执行或提议。MCP 和内置助手的写入须审批，代理发送不能直接执行。工具开关与审批细节只在[代理使用指南](agents.md#提议改动)维护。
+`domain/command.ts` 定义 Command、Actor 和 Outcome，`mailbox/policy.ts` 的 `decide` 根据入口与写权限判断。用户操作走执行路径；规则按权限直接执行或提议。MCP 和内置助手的写入须审批，代理发送不能直接执行。工具开关与审批细节只在[代理使用指南](agents.md#提议改动)维护。
 
 普通修改在 core 展开会话，应用本地状态，记录 `pending_ops` 与 `audit_log`，再尝试推送服务商。重试、认领、失败提示与发送结果规则只在[同步说明](sync-correctness.md#出站操作队列)维护。同步落库保留待推送操作的本地结果，避免拉取覆盖离线改动。
 
-批量路径记录逐封逆向状态。`undo-journal.ts` 持久保存记录，重启后仍可查询；撤销前检查消息状态，防止覆盖后续操作。删除服务商规则的恢复记录另存，不混入邮件撤销。
+批量路径记录逐封逆向状态。`mailbox/undo-journal.ts` 持久保存记录，重启后仍可查询；撤销前检查消息状态，防止覆盖后续操作。删除服务商规则的恢复记录另存，不混入邮件撤销。
 
 ### 只读会话
 
-`OPENMAIL_READ_ONLY=1` 在 Layer 构建时读取。Node Providers 和 portable Mailbox 均包裹 [read-only.ts](../packages/core/src/read-only.ts) 的 adapter，只放行已列出的读取与连接方法；未知方法及 accessor 默认拒绝。邮件、文件夹、规则、自动回复、日历、草稿上传、发送和一键退订 POST 均受拦截。队列刷新跳过既有操作，延迟发送不执行，待处理项保留原状态。
+`OPENMAIL_READ_ONLY=1` 在 Layer 构建时读取。Node Providers 和 portable Mailbox 均包裹 [read-only.ts](../packages/core/src/mailbox/read-only.ts) 的 adapter，只放行已列出的读取与连接方法；未知方法及 accessor 默认拒绝。邮件、文件夹、规则、自动回复、日历、草稿上传、发送和一键退订 POST 均受拦截。队列刷新跳过既有操作，延迟发送不执行，待处理项保留原状态。
 
-本地偏好、草稿、已读状态和提议仍可保存。该开关不隔离数据库，也不阻止网络读取、标准 Secrets 读取或 token 刷新，不扩大 OAuth scopes。组装与队列入口见 [Node Layers](../packages/core/src/platform/node/layers.ts) 和 [mailbox-live.ts](../packages/core/src/mailbox-live.ts)，回归见 [read-only.test.ts](../packages/core/src/read-only.test.ts)。使用数据库副本的运行方式只在[测试](testing.md#桌面生产构建-smoke)维护。
+本地偏好、草稿、已读状态和提议仍可保存。该开关不隔离数据库，也不阻止网络读取、标准 Secrets 读取或 token 刷新，不扩大 OAuth scopes。组装与队列入口见 [Node Layers](../packages/core/src/platform/node/layers.ts) 和 [mailbox-live.ts](../packages/core/src/mailbox/mailbox-live.ts)，回归见 [read-only.test.ts](../packages/core/src/mailbox/read-only.test.ts)。使用数据库副本的运行方式只在[测试](testing.md#桌面生产构建-smoke)维护。
 
 ### 可选服务
 
-[optional-services.ts](../packages/core/src/optional-services.ts) 定义基础及分服务 scopes，`scopedAdapter` 在 provider 调用前检查授权和本机开关。联系人、日历和服务商设置互不替代，缺权限不暂停邮件同步。只有显式停用联系人会清除服务器联系人、分组和照片，本地往来地址仍保留。授权兼容规则见 [store-services.ts](../packages/core/src/store-services.ts)，启停见 [mailbox-services.ts](../packages/core/src/mailbox-services.ts)。配置和 scope 表只在 [Google](setup-google.md#可选服务) 与 [Microsoft](setup-microsoft.md#可选服务)维护。
+[optional-services.ts](../packages/core/src/providers/optional-services.ts) 定义基础及分服务 scopes，`scopedAdapter` 在 provider 调用前检查授权和本机开关。联系人、日历和服务商设置互不替代，缺权限不暂停邮件同步。只有显式停用联系人会清除服务器联系人、分组和照片，本地往来地址仍保留。授权兼容规则见 [store-services.ts](../packages/core/src/store/store-services.ts)，启停见 [mailbox-services.ts](../packages/core/src/mailbox/mailbox-services.ts)。配置和 scope 表只在 [Google](setup-google.md#可选服务) 与 [Microsoft](setup-microsoft.md#可选服务)维护。
 
 ### Provider 与 Store
 
@@ -61,11 +100,11 @@ Mailbox 是 Effect `Context.Service`。`NodeMailbox(options)` 返回已组装的
 
 Store 使用 Effect `SqlClient`。Node Layer 提供 `node:sqlite` 与可选 sqlite-vec；手机 Layer 提供 op-sqlite 并报告向量能力不可用。两端运行同一 `MIGRATIONS`。消息经 `upsertMessage` 更新，保留 rowid 与外部内容 FTS 的对应。词索引、trigram、徽标及联系人投影用于查询，性能证据见[性能](performance.md)。
 
-[db.ts](../packages/core/src/db.ts) 的 `MIGRATIONS` 只追加，schema 版本等于它的条数，新迁移接在末尾。近期迁移中，31 保存邮件头与词位置视图，32 保存认证结果及安全退订目标，33 保存本机可选服务开关，34 增加消息文本字节数、运行总量和 LRU 索引；35 调整 provider ID 与列表日期覆盖索引，并增加 IMAP 路径、孤立远端草稿和消息文本字节数索引。36 保存出站重试与复制进度、认领 token、APPEND 身份和失败提示。之后各条的用途见 `db.ts` 中的注释。索引的读取收益、写入与空间成本只在[性能](performance.md#写入与磁盘成本)维护。消息文本容量预算默认关闭，启用后每小时或额度变更时回收；保留期限、星标、草稿和发件箱优先，额度不保证覆盖受保护内容。它不限制整个数据库或所有附件占用，见 [store-cache.ts](../packages/core/src/store-cache.ts)。
+[db/migrations.ts](../packages/core/src/db/migrations.ts) 的 `MIGRATIONS` 只追加，schema 版本等于它的条数，新迁移接在末尾。近期迁移中，31 保存邮件头与词位置视图，32 保存认证结果及安全退订目标，33 保存本机可选服务开关，34 增加消息文本字节数、运行总量和 LRU 索引；35 调整 provider ID 与列表日期覆盖索引，并增加 IMAP 路径、孤立远端草稿和消息文本字节数索引。36 保存出站重试与复制进度、认领 token、APPEND 身份和失败提示。之后各条的用途见 `db/migrations.ts` 中的注释。索引的读取收益、写入与空间成本只在[性能](performance.md#写入与磁盘成本)维护。消息文本容量预算默认关闭，启用后每小时或额度变更时回收；保留期限、星标、草稿和发件箱优先，额度不保证覆盖受保护内容。它不限制整个数据库或所有附件占用，见 [store-cache.ts](../packages/core/src/store/store-cache.ts)。
 
-slice 56 已合入同步重置删除保护。slice 62 将所有重置删除候选纳入持久验证队列，验证失败保留；实现见 [sync-reset.ts](../packages/core/src/sync-reset.ts)和 [store-sync-reset.ts](../packages/core/src/store-sync-reset.ts)。slice 60 增加独立预算的过期缓存扫描与持久 Outlook 冲突验证，仍不按计数差直接删除。删除范围、扫描预算、Outlook delta 页大小、UID 身份隔离、发送结果与同步健康报告只在[同步说明](sync-correctness.md)维护。
+slice 56 已合入同步重置删除保护。slice 62 将所有重置删除候选纳入持久验证队列，验证失败保留；实现见 [sync-reset.ts](../packages/core/src/sync/sync-reset.ts)和 [store-sync-reset.ts](../packages/core/src/store/store-sync-reset.ts)。slice 60 增加独立预算的过期缓存扫描与持久 Outlook 冲突验证，仍不按计数差直接删除。删除范围、扫描预算、Outlook delta 页大小、UID 身份隔离、发送结果与同步健康报告只在[同步说明](sync-correctness.md)维护。
 
-[graph-pagination.ts](../packages/core/src/graph-pagination.ts) 校验 Graph 列表续页链接：仅接受 `https://graph.microsoft.com/v1.0/me/` 下相同资源族，拒绝用户信息和 fragment；匹配资源时兼容 slash 与 OData key-segment、资源名大小写及 well-known 文件夹转实际 ID，请求保留服务端 URL 和不透明 query。邮件／文件夹、联系人与日历列表共用该规则，见 [Outlook](../packages/core/src/outlook.ts)、[outlook-features.ts](../packages/core/src/outlook-features.ts)和 [provider-calendar.ts](../packages/core/src/provider-calendar.ts)。联系人遍历范围只在 [Microsoft 配置](setup-microsoft.md#可选服务)维护。
+[graph-pagination.ts](../packages/core/src/providers/outlook/graph-pagination.ts) 校验 Graph 列表续页链接：仅接受 `https://graph.microsoft.com/v1.0/me/` 下相同资源族，拒绝用户信息和 fragment；匹配资源时兼容 slash 与 OData key-segment、资源名大小写及 well-known 文件夹转实际 ID，请求保留服务端 URL 和不透明 query。邮件／文件夹、联系人与日历列表共用该规则，见 [Outlook](../packages/core/src/providers/outlook/outlook.ts)、[outlook-features.ts](../packages/core/src/providers/outlook/outlook-features.ts)和 [provider-calendar.ts](../packages/core/src/calendar/provider-calendar.ts)。联系人遍历范围只在 [Microsoft 配置](setup-microsoft.md#可选服务)维护。
 
 ## 草稿与附件
 
@@ -102,11 +141,11 @@ slice 56 已合入同步重置删除保护。slice 62 将所有重置删除候�
 
 ## Model 端口
 
-`model.ts` 定义 Model 流式服务、`ModelAnthropic` 与 `FakeModelLayer`。第三方语言模型与本机向量推理 `ModelRuntime` 分开。模型选择以 `ai.ts` 为准。
+`ai/model.ts` 定义 Model 流式服务、`ModelAnthropic` 与 `FakeModelLayer`。第三方语言模型与本机向量推理 `ModelRuntime` 分开。模型选择以 `ai/ai.ts` 为准。
 
-`mailbox-ai.ts` 维护账户文本授权、密钥、请求、摘要缓存与分拣。账户文本授权、自动摘要和自动分拣默认关闭；API 密钥经 Secrets 保存，界面只读取是否配置。关闭授权清理对应 AI 派生数据并取消请求。Apple Contacts 的进程内快照不进入这些路径，具体隔离见 [Apple Contacts](apple-contacts.md)。
+`mailbox/mailbox-ai.ts` 维护账户文本授权、密钥、请求、摘要缓存与分拣。账户文本授权、自动摘要和自动分拣默认关闭；API 密钥经 Secrets 保存，界面只读取是否配置。关闭授权清理对应 AI 派生数据并取消请求。Apple Contacts 的进程内快照不进入这些路径，具体隔离见 [Apple Contacts](apple-contacts.md)。
 
-[model-view.ts](../packages/core/src/model-view.ts) 和 [visible-text.ts](../packages/core/src/visible-text.ts) 生成模型消息文本；有 HTML 时优先提取可见文本，再去引用与标准签名，保留来源 ID。本机文本向量沿用该提取器。第三方请求不包含 HTML、图片、附件二进制或媒体派生内容；内置助手进一步移除附件名称与搜索结果中的消息片段，限定本次选中且授权的账户。邮件以转义 JSON 数据送入模型，工具权限由代码决定。隐藏内容、plain alternative 差异与 CSS 检查预算耗尽均有标记；静态提取的边界只在[安全说明](security.md)维护。
+[model-view.ts](../packages/core/src/ai/model-view.ts) 和 [visible-text.ts](../packages/core/src/visible-text/visible-text.ts) 生成模型消息文本；有 HTML 时优先提取可见文本，再去引用与标准签名，保留来源 ID。本机文本向量沿用该提取器。第三方请求不包含 HTML、图片、附件二进制或媒体派生内容；内置助手进一步移除附件名称与搜索结果中的消息片段，限定本次选中且授权的账户。邮件以转义 JSON 数据送入模型，工具权限由代码决定。隐藏内容、plain alternative 差异与 CSS 检查预算耗尽均有标记；静态提取的边界只在[安全说明](security.md)维护。
 
 摘要与分拣结果存在 `derived`，保存模型、提示词版本和输入哈希。读取缓存时重验；输入变化或授权撤销使结果失效。截断输出不缓存。单次请求最多 24,000 输入预算、1,024 输出 token、4 轮、12 次工具调用，60 秒总超时。
 
@@ -116,9 +155,9 @@ Cmd-J 助手使用 MailToolkit 子集，检索本地邮件与已就绪向量索�
 
 ## MailToolkit 与入口
 
-`tools.ts` 定义 `ReadMailToolkit`、`ProposalMailToolkit`、合成的 `MailToolkit` 及 `AssistantToolkit`。`AgentIdentity` 提供入口身份，`MailToolkitLayer` 复用 Mailbox；`tool-pages.ts` 统一游标、结果截断和字节预算。
+`tools/tools.ts` 定义 `ReadMailToolkit`、`ProposalMailToolkit`、合成的 `MailToolkit` 及 `AssistantToolkit`。每组工具及其处理器在一个 `tools/*-tools.ts` 里：账户、会话、撰写、日历、附件和提议。`AgentIdentity` 提供入口身份，`MailToolkitLayer` 复用 Mailbox；`tools/tool-pages.ts` 统一游标、结果截断和字节预算。
 
-`packages/cli/src/cli.ts` 提供人工命令与工具命令，`mcp-server.ts` 通过 Effect MCP 暴露同一工具集合。默认集合包含读取及显式 sync；sync 会拉取并推送现有队列。开启写工具后只新增整理、稍后提醒与草稿提议，仍须 app 批准。详细工具范围与调用示例只在[代理使用指南](agents.md)维护。
+`packages/cli/src/cli.ts` 组装 `commands/` 下的人工命令与工具命令，`mcp-server.ts` 通过 Effect MCP 暴露同一工具集合。默认集合包含读取及显式 sync；sync 会拉取并推送现有队列。开启写工具后只新增整理、稍后提醒与草稿提议，仍须 app 批准。详细工具范围与调用示例只在[代理使用指南](agents.md)维护。
 
 ## 桌面与测试
 

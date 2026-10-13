@@ -1,6 +1,6 @@
 # 日历日期解析规则
 
-检测和输入共用 `packages/core/src/event-dates.ts` 的有界语法，无 LLM。相对日期和省略年份的日期以邮件日期及确认窗口选择的 IANA 时区为准。
+检测和输入共用 `packages/core/src/calendar/event-dates.ts` 的有界语法，无 LLM。相对日期和省略年份的日期以邮件日期及确认窗口选择的 IANA 时区为准。
 
 - 英文裸星期取下一次该星期；当天同名星期要求确认。
 - `this Friday` 等 `this` 表达取今天或下一次该星期，不回到过去。
@@ -14,4 +14,4 @@
 - 支持 `日`／`号`、`明年` 加月日、`凌晨`。支持的语法之外不推测日期。
 - 夏令时使墙上时间缺失或重复时要求确认，并提示输入 UTC 偏移。有效的显式 ISO 偏移可确定具体时刻。
 
-所有星期组合、跨月及跨年、金额／版本排除、时段继承和 DST 行为见 `packages/core/src/event-dates.test.ts`。界面摘要使用 Lingui ICU 复数、Intl 日期和列表格式；日语仅使用 `other` 分支。
+所有星期组合、跨月及跨年、金额／版本排除、时段继承和 DST 行为见 `packages/core/src/calendar/event-dates.test.ts`。界面摘要使用 Lingui ICU 复数、Intl 日期和列表格式；日语仅使用 `other` 分支。

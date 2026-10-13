@@ -18,7 +18,7 @@
 
 根因修复将页大小移到 `odata.maxpagesize` 请求头，并从 delta 请求 URL 删除 `$top`，包括旧游标中的显式参数。回归假 Graph 在有 `$top` 时复现“50 条后结束”，改用请求头后按 50、50、23 分页交付全部 123 条；初始同步、410 重启、续页和下一轮增量都检查请求头与 ImmutableId 设置。窗口范围、5,000 条过滤上限的保护、逐项验证和持久续验继续生效。已有 28,666 条服务端计数、1,199 条窗内缓存与 91 条列举的回归仍通过 `syncHealth` 检查本地保留，并覆盖窗外邮件、UID 复用、移动和失败。
 
-重试与发送确认实现见 [provider-retry.ts](../../packages/core/src/provider-retry.ts)、[Gmail](../../packages/core/src/gmail.ts)、[Outlook](../../packages/core/src/outlook.ts)和 [mailbox-live.ts](../../packages/core/src/mailbox-live.ts)。UID 重置与发送回归见 [uid-remap.test.ts](../../packages/core/src/uid-remap.test.ts)及 [store.test.ts](../../packages/core/src/store.test.ts)。
+重试与发送确认实现见 [provider-retry.ts](../../packages/core/src/providers/provider-retry.ts)、[Gmail](../../packages/core/src/providers/gmail/gmail.ts)、[Outlook](../../packages/core/src/providers/outlook/outlook.ts)和 [mailbox-live.ts](../../packages/core/src/mailbox/mailbox-live.ts)。UID 重置与发送回归见 [uid-remap.test.ts](../../packages/core/src/mailbox/uid-remap.test.ts)及 [store.test.ts](../../packages/core/src/store/store.test.ts)。
 
 ## 决定与影响
 

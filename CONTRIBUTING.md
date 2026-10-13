@@ -60,6 +60,35 @@ OpenMail signs in to Gmail and personal Outlook with an OAuth client. A source c
 
 Use a client you registered yourself. Do not reuse another app's client ID or credentials. IMAP accounts need no client.
 
+## Where things live
+
+| Path                                                                         | What it holds                                                                                                                                                                               |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/core/src/`                                                         | Everything that touches mail, the network or the database. The top level holds only the package entries: `index.ts` (Node), `portable.ts` (mobile), `schema.ts` (renderer) and `common.ts`. |
+| `packages/core/src/domain/`                                                  | Schemas for accounts, messages, changes, settings and commands. Start here to learn the data model.                                                                                         |
+| `packages/core/src/mailbox/`                                                 | The `Mailbox` service every app calls, its `mailbox-*.ts` parts, policy, the read-only session and undo.                                                                                    |
+| `packages/core/src/store/`, `db/`                                            | SQLite queries, and the append-only migrations in `db/migrations.ts`.                                                                                                                       |
+| `packages/core/src/sync/`                                                    | Sync health, sync reset and backfill.                                                                                                                                                       |
+| `packages/core/src/providers/`                                               | The `ProviderAdapter` port and its `gmail/`, `outlook/` and `imap/` implementations.                                                                                                        |
+| `packages/core/src/compose/`, `mime/`, `reader/`, `visible-text/`, `search/` | Writing mail, parsing MIME, cleaning HTML for the reader, the text models see, and search.                                                                                                  |
+| `packages/core/src/calendar/`, `contacts/`                                   | Calendar events and invites; contacts.                                                                                                                                                      |
+| `packages/core/src/ai/`, `tools/`                                            | Models and local indexing; the MailToolkit, one `*-tools.ts` module per group of tools.                                                                                                     |
+| `packages/core/src/app/`                                                     | Desktop helpers: links, notifications, updates, remote access.                                                                                                                              |
+| `packages/core/src/platform/`                                                | Platform ports. `platform/node/` is the Node implementation and the only place Node APIs are allowed; `platform/react-native/` holds the mobile adapters.                                   |
+| `apps/desktop/src/main/`                                                     | The Electron main process, by area: `app/`, `windows/`, `rpc/`, `security/`, `files/`, `updates/`, `system/`, `remote/`, `agents/`.                                                         |
+| `apps/desktop/src/shared/`                                                   | Code shared by main and renderer: the RPC protocol, Mailbox handlers, routes and the remote policy.                                                                                         |
+| `apps/desktop/src/renderer/src/`                                             | The UI: `app/` assembles the window, `features/<name>/` holds one feature each, `state/` holds RPC and atoms, `ui/` and `lib/` hold shared pieces.                                          |
+| `packages/cli/src/`                                                          | The CLI: `cli.ts` runs it, `commands/` holds the commands by group, `mcp-server.ts` is the MCP server.                                                                                      |
+| `apps/mobile/`                                                               | The Expo app.                                                                                                                                                                               |
+| `apps/docs/`                                                                 | The documentation site.                                                                                                                                                                     |
+
+Tests sit next to the file they test. [docs/architecture.md](docs/architecture.md) has the full map, and [docs/adr/0001-core-layout.md](docs/adr/0001-core-layout.md) explains the core layout. Two checks keep it in shape:
+
+- `pnpm exec oxlint` fails on any import cycle, type-only imports included.
+- `packages/core/src/platform-imports.test.ts` fails if a new module lands at the top of `packages/core/src` or a non-Node folder imports a Node API.
+
+Keep source files under about 800 lines. When one grows past that, split it along a real boundary, such as a sub-component, a hook or one group of handlers.
+
 ## Before you open a pull request
 
 Run the same gate as CI:
@@ -77,9 +106,9 @@ pnpm build && pnpm check-types && pnpm test && pnpm exec oxlint && pnpm exec oxf
 - `packages/core` is the only code that touches the network or the database. The desktop main process, the CLI and the MCP server call functions core exports. They write no SQL and call no provider API.
 - Node-specific core code lives only in `packages/core/src/platform/node/`. Other core sources import no `node:` modules and read no Node globals; runtime capabilities come from Effect platform services. Read [docs/platform-inventory.md](docs/platform-inventory.md) before changing platform code.
 - The database is `node:sqlite`. Do not switch to better-sqlite3.
-- Migrations live in the `MIGRATIONS` array in `packages/core/src/db.ts`. Append only; never edit an existing entry.
+- Migrations live in the `MIGRATIONS` array in `packages/core/src/db/migrations.ts`. Append only; never edit an existing entry.
 - `messages_fts` is an external-content FTS table keyed by rowid. Write messages only through `upsertMessage`, never `INSERT OR REPLACE`.
-- Refresh tokens, IMAP passwords and AI keys go only to the system keychain (`secrets.ts`), never to the database or logs.
+- Refresh tokens, IMAP passwords and AI keys go only to the system keychain (`packages/core/src/platform/node/secrets.ts`), never to the database or logs.
 - Only the user's own accounts, through the official consent page, with OpenMail's or the user's own OAuth client. Outlook uses the `consumers` tenant only.
 - Mail HTML is untrusted. The reader iframe's `sandbox` never includes `allow-scripts`, and its CSP blocks remote content unless the remote-image setting allows it. Known trackers are always removed.
 - MCP tools are read-only by default. A tool that changes mail needs an explicit switch, and sending always needs confirmation in the app.

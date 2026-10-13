@@ -2,7 +2,7 @@
 
 迁移 39 清除 Outlook 的完整和 Inbox delta 游标，以补取 `inferenceClassification`。下次同步会重拉同步窗口内的邮件及消息文本一次，窗口外缓存保留，但分类不会自动补齐；未知分类暂按 Focused 处理，用户可直接更改分类。
 
-UIDNEXT 回退且 UIDVALIDITY 未变时，旧 UID 已不可信。core 先失效远端草稿引用，把旧队列操作改成带无效 provider ID 的 `reconcile`，并撤销旧撤销记录与待审批提议。UID 身份失效会隔离保留全部旧缓存，用 Message-ID 验证；重新发现的邮件使用新的本地世代 ID，不复用旧句柄。此情况不按旧 UID 自动重映射。阅读视图在消息查询返回不存在时清除旧内容。IMAP 全量同步和普通收件箱轮询先拉取、后推送；按账户与推送队列互斥，其他账户操作不等拉取结束。UIDVALIDITY 改变时仍按 Message-ID 重映射，每个旧行在一次拉取中最多使用一次。手机 OS 后台任务仅增量拉取，不推送队列。实现见 [store.ts](../packages/core/src/store.ts)、[mailbox-live.ts](../packages/core/src/mailbox-live.ts)、[Node IMAP](../packages/core/src/platform/node/imap/adapter.ts)和[手机 IMAP](../packages/core/src/platform/react-native/imap.ts)。
+UIDNEXT 回退且 UIDVALIDITY 未变时，旧 UID 已不可信。core 先失效远端草稿引用，把旧队列操作改成带无效 provider ID 的 `reconcile`，并撤销旧撤销记录与待审批提议。UID 身份失效会隔离保留全部旧缓存，用 Message-ID 验证；重新发现的邮件使用新的本地世代 ID，不复用旧句柄。此情况不按旧 UID 自动重映射。阅读视图在消息查询返回不存在时清除旧内容。IMAP 全量同步和普通收件箱轮询先拉取、后推送；按账户与推送队列互斥，其他账户操作不等拉取结束。UIDVALIDITY 改变时仍按 Message-ID 重映射，每个旧行在一次拉取中最多使用一次。手机 OS 后台任务仅增量拉取，不推送队列。实现见 [store.ts](../packages/core/src/store/store.ts)、[mailbox-live.ts](../packages/core/src/mailbox/mailbox-live.ts)、[Node IMAP](../packages/core/src/platform/node/imap/adapter.ts)和[手机 IMAP](../packages/core/src/platform/react-native/imap.ts)。
 
 文件夹失效后，尚未同步的本地改动会被丢弃，包括标签、已读、星标、稍后提醒和排队的远端草稿删除；相关操作只保留无效 ID 的清理记录，孤立提醒行会删除。推送在 SELECT 后核对保存的 UIDVALIDITY 和 UIDNEXT 下界；发现回退便返回永久错误，等待重新同步。
 
@@ -16,7 +16,7 @@ COPYUID 缺失时按 Message-ID 查目标 UID。已有 Message-ID 但 UID 未确
 
 Node IMAP 标记、复制和删除返回 false 时按 ProviderError 重试；PERMANENTFLAGS 禁止所需标记时永久失败。草稿 APPEND 前记录 Message-ID，重试先查已追加副本，避免重复追加。退避期间的编辑或手动重试保留这份身份和进度；发现内容已变则替换恢复的副本，最终只保留最新的可见副本。恢复的 UID 与旧引用相同时不删除该副本。丢弃草稿或保留本地副本时，排队按已记录的 Message-ID 清理未确认副本；切换账户时在原账户清理，不把旧身份用于新账户。新草稿 UID 未知时保留旧副本并失败；新关联已确定而旧副本清理失败时，排队 deleteDraft 重试清理。
 
-实现见 [Node IMAP](../packages/core/src/platform/node/imap/adapter.ts)、[手机 IMAP](../packages/core/src/platform/react-native/imap.ts)与 [Store](../packages/core/src/store.ts)。回归入口见[测试](testing.md#出站操作与发送回归)。
+实现见 [Node IMAP](../packages/core/src/platform/node/imap/adapter.ts)、[手机 IMAP](../packages/core/src/platform/react-native/imap.ts)与 [Store](../packages/core/src/store/store.ts)。回归入口见[测试](testing.md#出站操作与发送回归)。
 
 ## 出站操作队列
 
@@ -26,7 +26,7 @@ Node IMAP 标记、复制和删除返回 false 时按 ProviderError 重试；PER
 
 迁移 36 增加重试时间、认领 token、Message-ID、复制进度和草稿 APPEND 身份；既有排队操作从缓存补全 Message-ID。推送中终止的非 reconcile 操作和发送警告进入 failed_ops，桌面与手机按类别显示计数、操作、主题、发件人及原因，直到用户关闭提示。Graph 写入的 400、404、409、413、415、422 和 `403 ErrorAccessDenied` 为永久错误，界面显示简短原因，不显示 Graph JSON。
 
-实现见 [mailbox-live.ts](../packages/core/src/mailbox-live.ts)、[store.ts](../packages/core/src/store.ts)、[db.ts](../packages/core/src/db.ts)和 [Outlook](../packages/core/src/outlook.ts)。
+实现见 [mailbox-live.ts](../packages/core/src/mailbox/mailbox-live.ts)、[store.ts](../packages/core/src/store/store.ts)、[db/migrations.ts](../packages/core/src/db/migrations.ts)和 [Outlook](../packages/core/src/providers/outlook/outlook.ts)。
 
 ## 发送结果
 
@@ -42,7 +42,7 @@ IMAP SMTP 在 DATA 终止符已发出后丢失回复时，按 Message-ID 查询 
 
 Node SMTP 部分拒收会列出拒收地址，保留原草稿并启用重发保护。提示中的“仅向拒收收件人重发”创建新草稿，只保留拒收的 To／Cc／Bcc，保留消息文本及附件，不自动发送，也不修改原草稿。
 
-发送确认实现见 [provider-send.ts](../packages/core/src/provider-send.ts)、[Node IMAP](../packages/core/src/platform/node/imap/adapter.ts)和[手机 IMAP](../packages/core/src/platform/react-native/imap.ts)；失败提示经 Mailbox 的 listFailedOps、acknowledgeFailedOps 与 prepareRejectedResend 提供。
+发送确认实现见 [provider-send.ts](../packages/core/src/providers/provider-send.ts)、[Node IMAP](../packages/core/src/platform/node/imap/adapter.ts)和[手机 IMAP](../packages/core/src/platform/react-native/imap.ts)；失败提示经 Mailbox 的 listFailedOps、acknowledgeFailedOps 与 prepareRejectedResend 提供。
 
 ## 草稿与其他写入
 
@@ -70,7 +70,7 @@ Outlook 附件上传结果不确定时，读取全部附件页并核对文件名
 
 每次上传按 nextExpectedRanges 继续。PUT 失败先查询会话状态；最终响应丢失时逐块核对已附加内容，避免重复附件。每块超时按至少 20 KiB/s 传输速度加 30 秒余量计算；不凭本地时钟和服务端到期时间跳过 PUT，只有请求返回 404／410 或会话已过期错误才重建，最多两次。放弃的上传会 DELETE 上传 URL，不附带 Authorization。恢复查询使用 GET 上传 URL，并接受 nextExpectedRanges／NextExpectedRanges 两种写法，依据[微软 SDK 实现](https://github.com/microsoftgraph/msgraph-sdk-javascript/blob/dev/src/tasks/LargeFileUploadTask.ts)。完整传输失败则由既有草稿／发送错误路径处理，不改变撤销窗口、outbox 认领或 pending-op 规则。排队前与发送时都计入消息文本；固定大小和上传错误通过 RPC 精确白名单及 Lingui 显示，服务商任意错误文本仍被过滤。
 
-上传仅解码当前块；已有 Base64 源由 compose 模型持有，不再构造完整二进制或大附件 JSON，上传前只规范化一次空白。恢复仅列附件元数据，按名称、类型、isInline／Content-ID 筛选后流式比较字节。Graph 的 size 是存储大小，不能作为内容身份：官方示例上传 3,483,322 字节后，GET 返回 3,640,066 字节。草稿保存沿用创建日志与远端版本；附件未变时不上传。适配器缓存已核验的附件 ID 与分块内容指纹，自身仅修改消息文本的 PATCH 保留缓存，读到远端版本变化或重启后重新核验。回归见 [outlook-upload.test.ts](../packages/core/src/outlook-upload.test.ts)，包含膨胀 size、最终 PUT 响应丢失、各阶段恢复、确认重发、慢速与时钟偏差、10 MB 分块、100 MB 内存边界和服务器草稿重新打开后保存。全部 Graph 测试使用假的 HTTP 服务，未调用真实 Microsoft API。
+上传仅解码当前块；已有 Base64 源由 compose 模型持有，不再构造完整二进制或大附件 JSON，上传前只规范化一次空白。恢复仅列附件元数据，按名称、类型、isInline／Content-ID 筛选后流式比较字节。Graph 的 size 是存储大小，不能作为内容身份：官方示例上传 3,483,322 字节后，GET 返回 3,640,066 字节。草稿保存沿用创建日志与远端版本；附件未变时不上传。适配器缓存已核验的附件 ID 与分块内容指纹，自身仅修改消息文本的 PATCH 保留缓存，读到远端版本变化或重启后重新核验。回归见 [outlook-upload.test.ts](../packages/core/src/providers/outlook/outlook-upload.test.ts)，包含膨胀 size、最终 PUT 响应丢失、各阶段恢复、确认重发、慢速与时钟偏差、10 MB 分块、100 MB 内存边界和服务器草稿重新打开后保存。全部 Graph 测试使用假的 HTTP 服务，未调用真实 Microsoft API。
 
 规则创建结果不确定时，重读并匹配条件、动作和排除条件。Gmail 更新规则必须先核对新规则；仍未确认时保留原规则恢复记录，不自动恢复或重放创建。会议响应重读 responseStatus 或自身 attendee 状态，匹配后才报告成功。标签／文件夹创建冲突按完整名称重读；Gmail 同时处理 400 和 409，只有找到同名用户标签才报告成功。Gmail 官方[标签说明](https://developers.google.com/workspace/gmail/api/guides/labels)明确保留名称冲突可返回 400，未规定重复自定义名称的状态码。
 
@@ -90,9 +90,9 @@ Gmail history-404 恢复列出最近 90 天，恢复分页不受初次同步的 
 
 slice 62 移除了删除数量阈值。Reset、DeleteLabel 和 RebuildFolder 中所有未列入 keep 的删除候选都先入持久验证队列，即使只缺一封也须验证；不因列表标记完整或为空直接删除。持久队列的预算、续验与扫描规则见[过期缓存扫描](#过期缓存扫描)。Graph 每批最多 20 个只读请求，使用四个拉取许可，遵守内部请求的 Retry-After；发送许可保持独立。Gmail 用 minimal 批量读取，IMAP 用 UNDELETED UID SEARCH 和 Message-ID 搜索。确认消失才删除；找到同文件夹副本则保留，移到其他文件夹则更新归属。`sync-reset` 日志只记录账户、文件夹的哈希和计数。Outlook listing 仅在首次建游标、身份重置或 410 重启时记录；普通增量拉取不记为重置，空列表也保存最终 deltaLink。
 
-保护已随 slice 56 合入。验证队列使用既有 prefs 持久化，无新增迁移；本地队列未验证完时继续保留缓存。只读会话允许这些存在性探测，包括只含 GET 子请求的 Graph batch。实现见 [sync-reset.ts](../packages/core/src/sync-reset.ts)、[store-sync-reset.ts](../packages/core/src/store-sync-reset.ts)、[Outlook](../packages/core/src/outlook.ts)、[Gmail](../packages/core/src/gmail.ts)和 [read-only.ts](../packages/core/src/read-only.ts)。回归见 [sync-reset.test.ts](../packages/core/src/sync-reset.test.ts)和 [sync-reset-imap.test.ts](../packages/core/src/sync-reset-imap.test.ts)。
+保护已随 slice 56 合入。验证队列使用既有 prefs 持久化，无新增迁移；本地队列未验证完时继续保留缓存。只读会话允许这些存在性探测，包括只含 GET 子请求的 Graph batch。实现见 [sync-reset.ts](../packages/core/src/sync/sync-reset.ts)、[store-sync-reset.ts](../packages/core/src/store/store-sync-reset.ts)、[Outlook](../packages/core/src/providers/outlook/outlook.ts)、[Gmail](../packages/core/src/providers/gmail/gmail.ts)和 [read-only.ts](../packages/core/src/mailbox/read-only.ts)。回归见 [sync-reset.test.ts](../packages/core/src/sync/sync-reset.test.ts)和 [sync-reset-imap.test.ts](../packages/core/src/sync/sync-reset-imap.test.ts)。
 
-Node IMAP adapter 将 ImapFlow SEARCH 返回的 false／undefined 视为 ProviderError，不转成空 UID 集合。首次拉取、增量、标记扫描、历史回填、服务端搜索和存在性验证共用此规则，搜索失败不能证明邮件消失。文件夹遗漏先核对 STATUS；只有明确 NotFound 且再次 LIST 仍缺失才确认删除，失败或隐藏文件夹保留旧状态。Outlook 同样先直接 GET 遗漏的文件夹，仅明确 404 才进入删除验证，其他结果保留旧游标。实现见 [Node IMAP](../packages/core/src/platform/node/imap/adapter.ts)、[Outlook](../packages/core/src/outlook.ts)和 [store.ts](../packages/core/src/store.ts)，回归见 [imap.test.ts](../packages/core/src/imap.test.ts)及 [sync-reset-imap.test.ts](../packages/core/src/sync-reset-imap.test.ts)。
+Node IMAP adapter 将 ImapFlow SEARCH 返回的 false／undefined 视为 ProviderError，不转成空 UID 集合。首次拉取、增量、标记扫描、历史回填、服务端搜索和存在性验证共用此规则，搜索失败不能证明邮件消失。文件夹遗漏先核对 STATUS；只有明确 NotFound 且再次 LIST 仍缺失才确认删除，失败或隐藏文件夹保留旧状态。Outlook 同样先直接 GET 遗漏的文件夹，仅明确 404 才进入删除验证，其他结果保留旧游标。实现见 [Node IMAP](../packages/core/src/platform/node/imap/adapter.ts)、[Outlook](../packages/core/src/providers/outlook/outlook.ts)和 [store.ts](../packages/core/src/store/store.ts)，回归见 [imap.test.ts](../packages/core/src/providers/imap/imap.test.ts)及 [sync-reset-imap.test.ts](../packages/core/src/sync/sync-reset-imap.test.ts)。
 
 ## 失败后续传
 
@@ -112,17 +112,17 @@ Drafts 孤立草稿只统计已有 `remote_message_id`、`local_only=0`、`sync_
 
 Outlook 同轮出现同 ID 的更新和移除时，只要更新文件夹与移除文件夹重叠，就先把 ID 保存到持久验证队列，再保存游标。拉取不内联验证；随后按共享预算核对当前位置。限流、权限错误和没有明确答案的 ID 留在队列，后续同步续验。这覆盖从后处理文件夹移动到 Inbox、旧文件夹更新覆盖了新位置的情况。没有被任何文件夹列出的移除同样先入验证队列，不直接删除：文件夹 delta 的 `receivedDateTime` 起点在游标创建时固定，二月的邮件移入六月新建的文件夹后，新文件夹的 delta 不会列出它；验证读取 `parentFolderId` 后把它改到新文件夹。确实删除的邮件由验证确认为 gone 后删除，每 20 个删除多一个只读 batch 请求。Inbox 轮询不处理移除，也不逐个 GET 自定义文件夹；收件箱游标只保留 Inbox 的 delta 链接，文件夹删除仍由完整同步判定。
 
-实现见 [sync-reset.ts](../packages/core/src/sync-reset.ts)、[store-sync-reset.ts](../packages/core/src/store-sync-reset.ts)、[Outlook](../packages/core/src/outlook.ts)和 [store-sync-health.ts](../packages/core/src/store-sync-health.ts)，回归见 [sync-stale.test.ts](../packages/core/src/sync-stale.test.ts)、[sync-reset.test.ts](../packages/core/src/sync-reset.test.ts)及 [outlook.test.ts](../packages/core/src/outlook.test.ts)。
+实现见 [sync-reset.ts](../packages/core/src/sync/sync-reset.ts)、[store-sync-reset.ts](../packages/core/src/store/store-sync-reset.ts)、[Outlook](../packages/core/src/providers/outlook/outlook.ts)和 [store-sync-health.ts](../packages/core/src/store/store-sync-health.ts)，回归见 [sync-stale.test.ts](../packages/core/src/sync/sync-stale.test.ts)、[sync-reset.test.ts](../packages/core/src/sync/sync-reset.test.ts)及 [outlook.test.ts](../packages/core/src/providers/outlook/outlook.test.ts)。
 
 ## 旧缓存邮件头回填
 
 slice 66 在每账户完整拉取成功后，以及启用自动同步时的独立后台维护中回填 `rfc_message_id IS NULL OR headers_json IS NULL` 的旧行，按邮件日期、本地 ID 倒序，每批 20 行、每账户每轮最多 500 行。独立游标及完成时间保存在 `prefs` 的 `sync-headers:<account>`；每批补写与游标一起提交，重启后续跑。完成后停止请求。独立维护每十秒选择一个未完成账户，不等待 Graph delta 重建；与完整同步共用账户回填锁，IMAP 还须取得拉取锁，忙时跳过。无新增迁移。
 
-Gmail 按共享账户请求许可串行 GET metadata，用 `metadataHeaders` 指定身份、引用链、投递、邮件列表及安全等缓存字段，集合见 [header-backfill.ts](../packages/core/src/header-backfill.ts)。Graph `$batch` 每批最多 20 个 GET，显式 `$select=internetMessageId,internetMessageHeaders`，每轮最多 25 批，沿用 ImmutableId、拉取许可及内部请求的 Retry-After。Graph 成功响应省略或返回 null 邮件头时，缓存 `[]` 并推进游标，保留返回的 Message-ID；没有 Message-ID 也只扫描一次。请求失败的重试截止时间持久保存在回填状态，重启沿用；Graph 拉取请求共用账户限流截止时间，发送许可独立。[Graph 邮件头文档](https://learn.microsoft.com/en-us/graph/api/message-get?view=graph-rest-1.0#example-2-get-internet-message-headers)要求用 `$select` 获取邮件头。桌面和手机 IMAP 按文件夹分组，核对 UIDVALIDITY 和已知 UID 下界，只执行只读打开与 `UID FETCH BODY.PEEK[HEADER.FIELDS (...)]`，保留重复字段并展开折行。手机正常拉取也保存邮件头，避免继续产生缺头缓存。
+Gmail 按共享账户请求许可串行 GET metadata，用 `metadataHeaders` 指定身份、引用链、投递、邮件列表及安全等缓存字段，集合见 [header-backfill.ts](../packages/core/src/sync/header-backfill.ts)。Graph `$batch` 每批最多 20 个 GET，显式 `$select=internetMessageId,internetMessageHeaders`，每轮最多 25 批，沿用 ImmutableId、拉取许可及内部请求的 Retry-After。Graph 成功响应省略或返回 null 邮件头时，缓存 `[]` 并推进游标，保留返回的 Message-ID；没有 Message-ID 也只扫描一次。请求失败的重试截止时间持久保存在回填状态，重启沿用；Graph 拉取请求共用账户限流截止时间，发送许可独立。[Graph 邮件头文档](https://learn.microsoft.com/en-us/graph/api/message-get?view=graph-rest-1.0#example-2-get-internet-message-headers)要求用 `$select` 获取邮件头。桌面和手机 IMAP 按文件夹分组，核对 UIDVALIDITY 和已知 UID 下界，只执行只读打开与 `UID FETCH BODY.PEEK[HEADER.FIELDS (...)]`，保留重复字段并展开折行。手机正常拉取也保存邮件头，避免继续产生缺头缓存。
 
 补写只 UPDATE 两个缺失字段，不覆盖已有值，不改 rowid、标签、标记、线程或正文；FTS、词索引和消息派生触发器不监听这两列。只读会话允许远端读取及同步缓存补写。404、410、缺失 UID 或不安全的 IMAP 身份只跳过，留给普通同步与存在性验证；不删除邮件。前置存在性验证已推迟时跳过同步尾部回填，独立维护也受账户 Retry-After 约束。回填请求失败、限流超出等待预算或缺失回复时停止本轮，保留未完成批次的游标；邮件头没有 Message-ID 也可完成扫描。自动同步维护只处理已有同步缓存的账户，手机 OS 增量后台任务不运行。
 
-实现见 [header-backfill.ts](../packages/core/src/header-backfill.ts)、[store-header-backfill.ts](../packages/core/src/store-header-backfill.ts)和 [mailbox-live.ts](../packages/core/src/mailbox-live.ts)。回归覆盖四种适配器的读取、重复与折行字段、命名空间保护、限流和只读规则；[持久化测试](../packages/core/src/platform/node/header-backfill.test.ts)覆盖各服务商的 500 行预算、数据库关闭重开续跑、完成后停止、账户隔离、标签／标记保持及 FTS 无额外写入；假 Graph 验证 3,840 行在八轮内完成，含缺头、缺 ID、原有 ID、重试截止时间和 delta 阻塞。
+实现见 [header-backfill.ts](../packages/core/src/sync/header-backfill.ts)、[store-header-backfill.ts](../packages/core/src/store/store-header-backfill.ts)和 [mailbox-live.ts](../packages/core/src/mailbox/mailbox-live.ts)。回归覆盖四种适配器的读取、重复与折行字段、命名空间保护、限流和只读规则；[持久化测试](../packages/core/src/platform/node/header-backfill.test.ts)覆盖各服务商的 500 行预算、数据库关闭重开续跑、完成后停止、账户隔离、标签／标记保持及 FTS 无额外写入；假 Graph 验证 3,840 行在八轮内完成，含缺头、缺 ID、原有 ID、重试截止时间和 delta 阻塞。
 
 同步重置计数由 `logSyncReset` 记录为 Info。桌面日志桥将已识别的 `sync-reset` 和 `provider-failure` 事件各记录一次，不再为其额外产生 `runtime-warning`。真正的运行时警告／错误只保存固定原因码，例如 `header-backfill-failed`、`history-backfill-failed`、`sync-failed`；未知来源记为 `unclassified`，不记录错误文本、邮件、路径或凭证。
 
@@ -154,7 +154,7 @@ Outlook Drafts 本地 40、服务端约 22 的差异尚无真实服务器身份�
 
 健康报告在 Outlook Drafts 复核后仍多出时附 `diagnostic.code = "OUTLOOK_DRAFT_COUNT_EXCESS"`。`cachedTotal` 与 `unmirroredDraftTotal` 拆开两种计数来源；按 providerId 取最多 50 个候选，使用剩余十秒预算内最多一秒的只读位置／存在性验证，报告 `sampled`、`gone`、`outsideDrafts`、`presentInDrafts`、`unverified`。这些是抽样数，不能当成全夹数量。gone 证明当前身份已不存在，outsideDrafts 证明缓存归属陈旧；两者都不能单独证明 delta 漏报，下一次排查应结合游标年龄、上次同步时间及增量事件。超时或缺失响应计入 unverified，不作为删除证据。
 
-诊断只输出固定码和数字，脱敏导出保留它，不读取消息文本、不改缓存、草稿或操作队列。正常完整同步的过期扫描直接验证自己的候选，不再重复做诊断抽样。回归见 [sync-health.test.ts](../packages/core/src/sync-health.test.ts)。
+诊断只输出固定码和数字，脱敏导出保留它，不读取消息文本、不改缓存、草稿或操作队列。正常完整同步的过期扫描直接验证自己的候选，不再重复做诊断抽样。回归见 [sync-health.test.ts](../packages/core/src/sync/sync-health.test.ts)。
 
 判断结果按以下规则解释：
 
@@ -164,7 +164,7 @@ Outlook Drafts 本地 40、服务端约 22 的差异尚无真实服务器身份�
 - 本地较多，陈旧：总数或未读数超过服务商；完整同步可触发上述过期缓存扫描；健康检查本身不清理，计数差不能证明某个 ID 已删除。
 - 服务商不可用：请求失败或超时；不说明本地缓存损坏。
 
-CLI、桌面复制及 smoke 导出通过 `redactSyncHealth` 将自定义标签／文件夹改为 `folder:N`，只保留计数、固定状态、时间和域名散列，不含主题、消息文本或 token。实现见 [sync-health.ts](../packages/core/src/sync-health.ts)、[store-sync-health.ts](../packages/core/src/store-sync-health.ts)、[CLI](../packages/cli/src/cli.ts)和[桌面界面](../apps/desktop/src/renderer/src/features/settings/sections/SyncHealth.tsx)，回归见 [sync-health.test.ts](../packages/core/src/sync-health.test.ts)。
+CLI、桌面复制及 smoke 导出通过 `redactSyncHealth` 将自定义标签／文件夹改为 `folder:N`，只保留计数、固定状态、时间和域名散列，不含主题、消息文本或 token。实现见 [sync-health.ts](../packages/core/src/sync/sync-health.ts)、[store-sync-health.ts](../packages/core/src/store/store-sync-health.ts)、[CLI](../packages/cli/src/cli.ts)和[桌面界面](../apps/desktop/src/renderer/src/features/settings/sections/SyncHealth.tsx)，回归见 [sync-health.test.ts](../packages/core/src/sync/sync-health.test.ts)。
 
 ## 断网与同步恢复
 
@@ -172,7 +172,7 @@ Gmail／Outlook 的后台拉取、计数、验证及维护共用每账户断网�
 
 Gmail／Graph 请求在 60 秒内收不到响应头，或响应体 60 秒没有新数据时，按 status 0 的传输失败处理；请求体每 20 KiB 另给响应头 1 秒上传时间。发送随后走 Sent 精确 Message-ID 确认。token 刷新限时 60 秒，超时不标记重新登录。
 
-resetConnectivity 让因断网失败的排队操作立即到期，429／5xx 的退避不变，并让等待中的 IDLE 立即重连。迁移 42 用 retry_offline 记录断网失败。桌面主进程每五秒读取 `net.isOnline()`，恢复在线时调用 resetConnectivity 和 sync。回归见 [network-failures.test.ts](../packages/core/src/network-failures.test.ts)。
+resetConnectivity 让因断网失败的排队操作立即到期，429／5xx 的退避不变，并让等待中的 IDLE 立即重连。迁移 42 用 retry_offline 记录断网失败。桌面主进程每五秒读取 `net.isOnline()`，恢复在线时调用 resetConnectivity 和 sync。回归见 [network-failures.test.ts](../packages/core/src/providers/network-failures.test.ts)。
 
 同步中的 provider 缺陷返回固定失败文案并允许后续账户和下一轮自动同步继续；runSync 的维护异常也会释放共享等待和 running 状态。手动同步的中断传播并释放状态；自动循环静默处理纯中断并继续下一轮，关闭作用域时正常取消且不记录崩溃。崩溃诊断只保留 pull／verification／health／headers／maintenance 阶段及 defect／failure 分类，不记录 Cause 的内容。原有单条 sync-crashed 日志没有这些字段，无法据此还原那次具体异常。回归见 `uid-remap.test.ts`、`provider-connectivity.test.ts`、`outlook.test.ts`、`gmail.test.ts`。
 
@@ -200,4 +200,4 @@ Graph 搜索集合的 `$select` 不含 internetMessageHeaders，attachments 的 
 
 token 刷新按账户串行。Microsoft 轮换 refresh token：新 token 先写入钥匙串，写完才使用新的 access token。写入前重读钥匙串，条目已不存在说明账户在刷新期间被删除，此时不写入。写入失败时钥匙串保留旧 token（个人账户的旧 token 仍有效），新 token 留在内存里，下次刷新先重试写入再使用。刷新返回 `invalid_grant` 时重读一次钥匙串；CLI 或 MCP 已换成新 token 时用新 token 重试一次，没有变化才标记。
 
-桌面后台在启动 1 分钟后检查一次，之后每 6 小时检查一次，本进程超过 6 天没有刷新的 OAuth 账户会刷新一次 token，停用、暂停同步和只读会话也执行；它不拉取邮件，也不写邮箱。停用的账户不同步，所以每次启动 app 会刷新一次，app 一直开着时每 6 天一次。Microsoft 个人账户的 refresh token 闲置 90 天过期，这个间隔让运行中的 app 不会碰到这条限制。实现见 [reauth.ts](../packages/core/src/reauth.ts)、[provider-http.ts](../packages/core/src/provider-http.ts)、[token-keepalive.ts](../packages/core/src/token-keepalive.ts)，回归见 [reauth.test.ts](../packages/core/src/reauth.test.ts)。
+桌面后台在启动 1 分钟后检查一次，之后每 6 小时检查一次，本进程超过 6 天没有刷新的 OAuth 账户会刷新一次 token，停用、暂停同步和只读会话也执行；它不拉取邮件，也不写邮箱。停用的账户不同步，所以每次启动 app 会刷新一次，app 一直开着时每 6 天一次。Microsoft 个人账户的 refresh token 闲置 90 天过期，这个间隔让运行中的 app 不会碰到这条限制。实现见 [reauth.ts](../packages/core/src/providers/reauth.ts)、[provider-http.ts](../packages/core/src/providers/provider-http.ts)、[token-keepalive.ts](../packages/core/src/sync/token-keepalive.ts)，回归见 [reauth.test.ts](../packages/core/src/providers/reauth.test.ts)。

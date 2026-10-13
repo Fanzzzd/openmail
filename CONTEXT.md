@@ -38,27 +38,29 @@ openmail 在本机缓存邮件。桌面、CLI 和 MCP 通过 core 共享数据�
 
 ## 模块入口
 
-| 位置                                                                       | 职责                                                                               |
-| -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| `packages/core/src/domain.ts`、`services.ts`、`mailbox.ts`                 | 领域 schema、内部服务端口与调用方 Mailbox 接口                                     |
-| `mailbox-live.ts`、`mailbox-*.ts`                                          | 同步、策略、队列与审计的组装；分拆批量、文件夹、缓存、联系人／日历、整理与 AI 能力 |
-| `store.ts`、`store-*.ts`、`db.ts`                                          | SQLite 查询、投影与追加迁移；消息写入经过 `upsertMessage`                          |
-| `gmail.ts`、`outlook.ts`、`platform/node/imap.ts`                          | 服务商适配器；拉取产出 Change，由 Mailbox 落库                                     |
-| `platform/react-native/imap.ts`、`platform/mail-socket.ts`                 | 手机 IMAP/SMTP 协议与可移植传输；原生 TCP/TLS Layer 由 app 提供                    |
-| `read-only.ts`、`optional-services.ts`、`mailbox-services.ts`              | 只读方法白名单、各服务 scopes 与本机启停                                           |
-| `sync-reset.ts`、`store-sync-reset.ts`                                     | 限定重置删除范围、持久冲突候选、过期缓存扫描与服务商存在性验证                     |
-| `sync-health.ts`、`store-sync-health.ts`、`provider-diagnostics.ts`        | 同步健康报告、本地计数和脱敏服务商失败事件                                         |
-| `model.ts`、`mailbox-ai.ts`、`store-ai.ts`、`model-view.ts`                | 第三方模型、账户授权、缓存、分拣与模型消息文本上下文                               |
-| `tools.ts`、`tool-pages.ts`                                                | 工具集合、身份、分页与输出预算                                                     |
-| `indexer.ts`、`semantic-indexer.ts`、`store-media.ts`、`store-semantic.ts` | 本机 OCR／PDF 派生文本、向量与检索                                                 |
-| `platform/`、`platform/node/`、`platform/react-native/`                    | 可移植端口、Node 实现、无 React Native 依赖的移动 SQL／OAuth／MIME adapters        |
-| `apps/desktop/src/main`、`preload`、`shared`                               | 窗口与系统能力、sandbox preload、RPC schema 和 Mailbox 处理器                      |
-| `apps/desktop/src/renderer/src/app`、`state`、`components`                 | 界面控制 hooks、Effect atoms、邮件与设置组件                                       |
-| `packages/cli/src`                                                         | 人工 CLI 命令和 stdio MCP server，共用 NodeMailbox                                 |
-| `apps/mobile/app`、`apps/mobile/src/platform`                              | Expo 路由、移动界面与 OS Layers，只调用 portable Mailbox                           |
-| `apps/desktop/src/renderer/src/e2e`                                        | 真实 App、RPC、Mailbox 和临时 SQLite 的完整邮件流程测试                            |
-| `apps/desktop/scripts/smoke.mjs`                                           | 用数据库副本启动生产构建，检查窗口与同步健康报告                                   |
-| `apps/mobile/src/background.ts`、core `mobile-background.ts`               | OS 后台增量刷新、本地通知、徽标和持久去重                                          |
+core 的路径相对 `packages/core/src`。目录与领域的对应见 [ADR 0001](docs/adr/0001-core-layout.md)。
+
+| 位置                                                                                         | 职责                                                                               |
+| -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `domain/`、`store/service.ts`、`providers/adapter.ts`、`mailbox/mailbox.ts`                  | 领域 schema、Store 与 ProviderAdapter 端口、调用方 Mailbox 接口                    |
+| `mailbox/mailbox-live.ts`、`mailbox/mailbox-*.ts`                                            | 同步、策略、队列与审计的组装；分拆批量、文件夹、缓存、联系人／日历、整理与 AI 能力 |
+| `store/store.ts`、`store/store-*.ts`、`db/`                                                  | SQLite 查询、投影与追加迁移；消息写入经过 `upsertMessage`                          |
+| `providers/gmail/`、`providers/outlook/`、`platform/node/imap/`                              | 服务商适配器；拉取产出 Change，由 Mailbox 落库                                     |
+| `platform/react-native/imap.ts`、`platform/mail-socket.ts`                                   | 手机 IMAP/SMTP 协议与可移植传输；原生 TCP/TLS Layer 由 app 提供                    |
+| `mailbox/read-only.ts`、`providers/optional-services.ts`、`mailbox/mailbox-services.ts`      | 只读方法白名单、各服务 scopes 与本机启停                                           |
+| `sync/sync-reset.ts`、`store/store-sync-reset.ts`                                            | 限定重置删除范围、持久冲突候选、过期缓存扫描与服务商存在性验证                     |
+| `sync/sync-health.ts`、`store/store-sync-health.ts`、`providers/provider-diagnostics.ts`     | 同步健康报告、本地计数和脱敏服务商失败事件                                         |
+| `ai/model.ts`、`mailbox/mailbox-ai.ts`、`store/store-ai.ts`、`ai/model-view.ts`              | 第三方模型、账户授权、缓存、分拣与模型消息文本上下文                               |
+| `tools/`                                                                                     | 工具集合（每组工具一个模块）、身份、分页与输出预算                                 |
+| `ai/indexer.ts`、`ai/semantic-indexer.ts`、`store/store-media.ts`、`store/store-semantic.ts` | 本机 OCR／PDF 派生文本、向量与检索                                                 |
+| `platform/`、`platform/node/`、`platform/react-native/`                                      | 可移植端口、Node 实现、无 React Native 依赖的移动 SQL／OAuth／MIME adapters        |
+| `apps/desktop/src/main`、`preload`、`shared`                                                 | 窗口与系统能力、sandbox preload、RPC schema 和 Mailbox 处理器                      |
+| `apps/desktop/src/renderer/src/app`、`features`、`state`、`ui`                               | 界面组装 hooks、按功能分目录的组件、Effect atoms、共享组件                         |
+| `packages/cli/src/cli.ts`、`packages/cli/src/commands/`                                      | 人工 CLI 命令（按组分模块）和 stdio MCP server，共用 NodeMailbox                   |
+| `apps/mobile/app`、`apps/mobile/src/platform`                                                | Expo 路由、移动界面与 OS Layers，只调用 portable Mailbox                           |
+| `apps/desktop/src/renderer/src/e2e`                                                          | 真实 App、RPC、Mailbox 和临时 SQLite 的完整邮件流程测试                            |
+| `apps/desktop/scripts/smoke.mjs`                                                             | 用数据库副本启动生产构建，检查窗口与同步健康报告                                   |
+| `apps/mobile/src/background.ts`、core `mailbox/mobile-background.ts`                         | OS 后台增量刷新、本地通知、徽标和持久去重                                          |
 
 ## 规则来源
 
