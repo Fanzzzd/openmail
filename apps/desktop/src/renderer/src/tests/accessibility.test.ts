@@ -190,7 +190,8 @@ vi.mock("../state/mail", () => ({
   printThread: () => Effect.void,
 }));
 import { MessageList } from "../features/mail-list/MessageList";
-import { Reader, ThreadView } from "../features/reader/Reader";
+import { Reader } from "../features/reader/Reader";
+import { ThreadView } from "../features/reader/ThreadView";
 import { ThreadActions } from "../features/organize/ThreadActions";
 import { Sidebar } from "../features/sidebar/Sidebar";
 import { MailStatusNotice } from "../features/sync-status/MailStatusNotice";

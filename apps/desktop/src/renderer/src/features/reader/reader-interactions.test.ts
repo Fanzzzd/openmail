@@ -86,7 +86,7 @@ vi.mock("../../ui/Menu", () => ({
     createElement("button", { onClick }, children),
   MenuSeparator: () => null,
 }));
-import { ThreadView } from "./Reader";
+import { ThreadView } from "./ThreadView";
 import { loadMessageBody } from "./body/MessageBodyShell";
 
 // The reader body is a lazy chunk; load it so renders below are synchronous.

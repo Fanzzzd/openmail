@@ -6,7 +6,7 @@ msgstr ""
 #. Separator between list items
 #. Separator between list items
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid ", "
 msgstr ", "
 
@@ -19,7 +19,8 @@ msgstr "（宛先なし）"
 #: src/renderer/src/features/mail-list/MessageList.tsx
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
+#: src/renderer/src/features/reader/ThreadView.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "(No subject)"
 msgstr "（件名なし）"
@@ -701,11 +702,11 @@ msgstr "いつもこの差出人から"
 msgid "Always light"
 msgstr "常にライト"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Always load images from {address}"
 msgstr "常に {address} から画像をロードします"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Always load images from {domain}"
 msgstr "常に {domain} から画像をロードします"
 
@@ -833,7 +834,7 @@ msgstr "この Mac で見つからないアプリ"
 msgid "Archive"
 msgstr "アーカイブ"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Archive message"
 msgstr "メッセージをアーカイブ"
 
@@ -1205,7 +1206,7 @@ msgstr "カンマで区切られたカテゴリ名"
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/use-thread-print.ts
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Cc"
 msgstr "Cc"
@@ -1214,7 +1215,7 @@ msgstr "Cc"
 msgid "CC me"
 msgstr "自分にCC"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Cc: {cc}"
 msgstr "Cc: {cc}"
 
@@ -1448,7 +1449,7 @@ msgid "Close compose window"
 msgstr "作成ウィンドウを閉じる"
 
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/FindBar.tsx
 msgid "Close find"
 msgstr "検索を閉じる"
 
@@ -1461,7 +1462,7 @@ msgstr "他の OpenMail プロセス (CLI/MCP) を閉じてから、このアプ
 msgid "Code block"
 msgstr "コードブロック"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadView.tsx
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Collapse all"
 msgstr "すべて折りたたむ"
@@ -1474,7 +1475,7 @@ msgstr "すべてのメッセージを折りたたむ"
 msgid "Collapse categories"
 msgstr "カテゴリを折りたたむ"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Collapse message"
 msgstr "メッセージを折りたたむ"
 
@@ -1663,7 +1664,7 @@ msgstr "コンテンツの一致"
 msgid "Continue"
 msgstr "続ける"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Continue editing"
 msgstr "編集を続ける"
 
@@ -1902,7 +1903,7 @@ msgstr "このメッセージを読み込めませんでした。"
 msgid "Couldn't load your accounts."
 msgstr "アカウントを読み込めませんでした。"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/use-thread-print.ts
 msgid "Couldn't print: {reason}"
 msgstr "印刷できませんでした: {reason}"
 
@@ -1930,7 +1931,7 @@ msgstr "保存できませんでした"
 msgid "Couldn't save the draft: {reason}"
 msgstr "下書きを保存できませんでした: {reason}"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/use-thread-print.ts
 msgid "Couldn't save the PDF: {reason}"
 msgstr "PDF を保存できませんでした: {reason}"
 
@@ -2040,7 +2041,7 @@ msgstr "カット"
 msgid "Daily"
 msgstr "毎日"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Dark background"
 msgstr "暗い背景"
 
@@ -2054,7 +2055,7 @@ msgid "Database recovery was interrupted. Restore a preserved database before re
 msgstr "データベースの回復が中断されました。 OpenMail を再度開く前に、保存されたデータベースを復元します。保存されたデータベース: {backup}"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/use-thread-print.ts
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Date"
 msgstr "日付"
@@ -2343,7 +2344,7 @@ msgstr "アップデート {version} をダウンロード中…"
 msgid "Downloads"
 msgstr "ダウンロード"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Draft"
 msgstr "下書き"
 
@@ -2614,7 +2615,7 @@ msgstr "チャットを除外"
 msgid "Exclude matches"
 msgstr "一致する項目を除外"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadView.tsx
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Expand all"
 msgstr "すべて展開"
@@ -2712,7 +2713,7 @@ msgstr "検索して置換する"
 msgid "Find in body"
 msgstr "本文内を検索"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/FindBar.tsx
 msgid "Find in message"
 msgstr "メッセージ内で検索"
 
@@ -2829,7 +2830,7 @@ msgstr "フォーラム"
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Forward"
@@ -2874,7 +2875,7 @@ msgstr "より親しみやすく"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/use-thread-print.ts
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "From"
 msgstr "差出人"
@@ -3484,7 +3485,7 @@ msgstr "左から右へ"
 msgid "Let {name} propose changes for you to approve"
 msgstr "{name} による変更の提案を許可（実行前にあなたが承認）"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Light background"
 msgstr "明るい背景"
 
@@ -3679,7 +3680,7 @@ msgstr "開封済みにする"
 msgid "Mark as unread"
 msgstr "未開封にする"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Mark message unread"
 msgstr "メッセージを未開封にする"
 
@@ -3699,7 +3700,7 @@ msgstr "開封済み／未開封にする"
 msgid "Mark unread"
 msgstr "未開封にする"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Mark unread from this message"
 msgstr "このメッセージを未開封としてマークする"
 
@@ -3790,7 +3791,7 @@ msgid "Mention suggestions"
 msgstr "メンション候補"
 
 #: src/renderer/src/features/reader/frame/EmailFrame.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/features/settings/sections/VacationEditor.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Message"
@@ -3800,7 +3801,7 @@ msgstr "メッセージ"
 msgid "Message action flag"
 msgstr "メッセージの操作フラグ"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Message actions"
 msgstr "メッセージアクション"
 
@@ -4000,7 +4001,7 @@ msgstr "毎月、曜日指定"
 msgid "More"
 msgstr "その他"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadView.tsx
 #: src/renderer/src/ui/Menu.tsx
 msgid "More actions"
 msgstr "その他の操作"
@@ -4079,7 +4080,7 @@ msgstr "下に移動"
 msgid "Move focus between panes"
 msgstr "ペイン間でフォーカスを移動する"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Move message to Trash"
 msgstr "メッセージをゴミ箱に移動"
 
@@ -4297,7 +4298,7 @@ msgid "Next below"
 msgstr "次は下に"
 
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/FindBar.tsx
 #: src/renderer/src/features/search/SearchHitBar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Next match"
@@ -4381,7 +4382,7 @@ msgid "No label or folder"
 msgstr "ラベルもフォルダもありません"
 
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/FindBar.tsx
 msgid "No matches"
 msgstr "一致する項目がありません"
 
@@ -4646,19 +4647,19 @@ msgstr "新しい OpenMail 下書きで電子メール リンクを開きます�
 msgid "Open in Contacts"
 msgstr "連絡先で開く"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/use-thread-mail-actions.ts
 msgid "Open in Gmail"
 msgstr "Gmail で開く"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadView.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Open in new window"
 msgstr "新しいウィンドウで開く"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/use-thread-mail-actions.ts
 msgid "Open in Outlook"
 msgstr "Outlook で開く"
 
@@ -4678,7 +4679,7 @@ msgstr "リンクを開く"
 msgid "Open macOS notification settings"
 msgstr "macOS の通知設定を開く"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Open only this message in a new window"
 msgstr "このメッセージのみを新しいウィンドウで開きます"
 
@@ -5057,7 +5058,7 @@ msgid "Previous / next view"
 msgstr "前のビュー / 次のビュー"
 
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/FindBar.tsx
 #: src/renderer/src/features/search/SearchHitBar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Previous match"
@@ -5093,7 +5094,7 @@ msgstr "メインには Gmail の他のカテゴリを除くメールと Outlook
 msgid "Print"
 msgstr "印刷する"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Print message…"
 msgstr "メッセージを印刷…"
 
@@ -5487,7 +5488,7 @@ msgstr "返信と転送"
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Reply"
@@ -5502,7 +5503,7 @@ msgstr "返信フラグ"
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Reply all"
@@ -5534,7 +5535,7 @@ msgstr "連絡先にのみ返信"
 msgid "Reply signature for {address}"
 msgstr "{address} の返信署名"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Reply to this conversation"
 msgstr "このスレッドに返信"
 
@@ -5748,12 +5749,12 @@ msgid "Save key"
 msgstr "キーを保存"
 
 #: src/renderer/src/features/reader/RawMessage.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Save message as EML…"
 msgstr "メッセージをEMLとして保存…"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Save message as PDF…"
 msgstr "メッセージを PDF として保存…"
 
@@ -5803,7 +5804,7 @@ msgstr "保存しました"
 msgid "Saved as EML"
 msgstr "EMLとして保存"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/use-thread-print.ts
 msgid "Saved as PDF"
 msgstr "PDFとして保存"
 
@@ -5853,7 +5854,7 @@ msgstr "メールを検索"
 msgid "Search matches"
 msgstr "検索の一致"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Search messages from this sender"
 msgstr "この送信者からのメッセージを検索する"
@@ -5904,7 +5905,7 @@ msgstr "すべて選択"
 msgid "Select conversation"
 msgstr "スレッドを選択"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Selected message"
 msgstr "選択したメッセージ"
 
@@ -5955,7 +5956,7 @@ msgstr "送信できませんでした"
 msgid "Send feedback…"
 msgstr "フィードバックを送信…"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Send message link to…"
@@ -5965,13 +5966,13 @@ msgstr "メッセージのリンクを送信…"
 msgid "Send this message without a subject?"
 msgstr "件名なしでこのメッセージを送信しますか?"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Send thread link to…"
 msgstr "スレッドのリンクを送信…"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Send web mail link to…"
@@ -5982,7 +5983,7 @@ msgctxt "search match source"
 msgid "Sender"
 msgstr "差出人"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Sender authentication failed (DMARC)"
 msgstr "送信者の認証に失敗しました（DMARC）"
 
@@ -6174,7 +6175,7 @@ msgstr "サイドバーの表示または非表示"
 msgid "Show or hide toolbar"
 msgstr "ツールバーを表示／非表示"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Show original"
 msgstr "元のメッセージを表示"
@@ -6433,7 +6434,7 @@ msgstr "下書きにスターを付ける"
 msgid "Star draft on this Mac"
 msgstr "このMacの下書きにスターを付ける"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Star message"
 msgstr "メッセージにスターを付ける"
 
@@ -6469,11 +6470,11 @@ msgstr "起動中…"
 msgid "STARTTLS (usually 587)"
 msgstr "STARTTLS (通常は 587)"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Stop loading images from {address}"
 msgstr "{address} からの画像の読み込みを停止します"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Stop loading images from {domain}"
 msgstr "{domain} からの画像の読み込みを停止します"
 
@@ -6814,7 +6815,7 @@ msgstr "残りはここでは省略します。コピーするとメッセージ
 msgid "The selected message is no longer available."
 msgstr "選択したメッセージは利用できなくなりました。"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "The sender name contains a different email address."
 msgstr "送信者名に別のメールアドレスが含まれています。"
 
@@ -6978,7 +6979,7 @@ msgstr "タイムゾーン"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/use-thread-print.ts
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "To"
@@ -6992,7 +6993,7 @@ msgstr "自分宛て"
 msgid "To or CC me"
 msgstr "自分宛てまたはCC"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "To: {to}"
 msgstr "宛先: {to}"
 
@@ -7184,7 +7185,7 @@ msgstr "未読のメッセージ"
 msgid "Unstar"
 msgstr "スターを外す"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Unstar message"
 msgstr "メッセージのスターを外す"
 

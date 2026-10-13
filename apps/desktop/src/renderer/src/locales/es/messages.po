@@ -6,7 +6,7 @@ msgstr ""
 #. Separator between list items
 #. Separator between list items
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid ", "
 msgstr ", "
 
@@ -19,7 +19,8 @@ msgstr "(sin destinatarios)"
 #: src/renderer/src/features/mail-list/MessageList.tsx
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
+#: src/renderer/src/features/reader/ThreadView.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "(No subject)"
 msgstr "(Sin asunto)"
@@ -701,11 +702,11 @@ msgstr "Siempre de este remitente"
 msgid "Always light"
 msgstr "Siempre claro"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Always load images from {address}"
 msgstr "Cargar siempre imágenes desde {address}"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Always load images from {domain}"
 msgstr "Cargar siempre imágenes desde {domain}"
 
@@ -833,7 +834,7 @@ msgstr "Aplicaciones no encontradas en este Mac"
 msgid "Archive"
 msgstr "Archivar"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Archive message"
 msgstr "Archivar mensaje"
 
@@ -1205,7 +1206,7 @@ msgstr "Nombres de categorías, separados por comas"
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/use-thread-print.ts
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Cc"
 msgstr "Cc"
@@ -1214,7 +1215,7 @@ msgstr "Cc"
 msgid "CC me"
 msgstr "CC a mí"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Cc: {cc}"
 msgstr "CC: {cc}"
 
@@ -1448,7 +1449,7 @@ msgid "Close compose window"
 msgstr "Cerrar ventana de redacción"
 
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/FindBar.tsx
 msgid "Close find"
 msgstr "Cerrar búsqueda"
 
@@ -1461,7 +1462,7 @@ msgstr "Cierra los demás procesos de OpenMail (CLI/MCP), reinicia esta aplicaci
 msgid "Code block"
 msgstr "Bloque de código"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadView.tsx
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Collapse all"
 msgstr "Contraer todo"
@@ -1474,7 +1475,7 @@ msgstr "Contraer todos los mensajes"
 msgid "Collapse categories"
 msgstr "Colapsar categorías"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Collapse message"
 msgstr "Contraer mensaje"
 
@@ -1663,7 +1664,7 @@ msgstr "Coincidencias de contenido"
 msgid "Continue"
 msgstr "Continuar"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Continue editing"
 msgstr "Continuar editando"
 
@@ -1902,7 +1903,7 @@ msgstr "No se pudo cargar este mensaje."
 msgid "Couldn't load your accounts."
 msgstr "No se pudieron cargar sus cuentas."
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/use-thread-print.ts
 msgid "Couldn't print: {reason}"
 msgstr "No se pudo imprimir: {reason}"
 
@@ -1930,7 +1931,7 @@ msgstr "No se pudo guardar"
 msgid "Couldn't save the draft: {reason}"
 msgstr "No se pudo guardar el borrador: {reason}"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/use-thread-print.ts
 msgid "Couldn't save the PDF: {reason}"
 msgstr "No se pudo guardar el PDF: {reason}"
 
@@ -2040,7 +2041,7 @@ msgstr "Cortar"
 msgid "Daily"
 msgstr "A diario"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Dark background"
 msgstr "Fondo oscuro"
 
@@ -2054,7 +2055,7 @@ msgid "Database recovery was interrupted. Restore a preserved database before re
 msgstr "Se interrumpió la recuperación de la base de datos. Restaure una base de datos preservada antes de volver a abrir OpenMail. Base de datos preservada: {backup}"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/use-thread-print.ts
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Date"
 msgstr "Fecha"
@@ -2343,7 +2344,7 @@ msgstr "Descargando la actualización {version}…"
 msgid "Downloads"
 msgstr "Descargas"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Draft"
 msgstr "Borrador"
 
@@ -2614,7 +2615,7 @@ msgstr "Excluir chats"
 msgid "Exclude matches"
 msgstr "Excluir coincidencias"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadView.tsx
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Expand all"
 msgstr "Expandir todo"
@@ -2712,7 +2713,7 @@ msgstr "Buscar y reemplazar"
 msgid "Find in body"
 msgstr "Buscar en el texto del mensaje"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/FindBar.tsx
 msgid "Find in message"
 msgstr "Buscar en el mensaje"
 
@@ -2829,7 +2830,7 @@ msgstr "Foros"
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Forward"
@@ -2874,7 +2875,7 @@ msgstr "Más cordial"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/use-thread-print.ts
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "From"
 msgstr "De"
@@ -3484,7 +3485,7 @@ msgstr "De izquierda a derecha"
 msgid "Let {name} propose changes for you to approve"
 msgstr "Permitir que {name} proponga cambios para que los apruebes"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Light background"
 msgstr "Fondo claro"
 
@@ -3679,7 +3680,7 @@ msgstr "Marcar como leído"
 msgid "Mark as unread"
 msgstr "Marcar como no leído"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Mark message unread"
 msgstr "Marcar mensaje como no leído"
 
@@ -3699,7 +3700,7 @@ msgstr "Marcar como leído/no leído"
 msgid "Mark unread"
 msgstr "Marcar como no leído"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Mark unread from this message"
 msgstr "Marcar como no leído de este mensaje"
 
@@ -3790,7 +3791,7 @@ msgid "Mention suggestions"
 msgstr "Sugerencias de menciones"
 
 #: src/renderer/src/features/reader/frame/EmailFrame.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/features/settings/sections/VacationEditor.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Message"
@@ -3800,7 +3801,7 @@ msgstr "Mensaje"
 msgid "Message action flag"
 msgstr "Marca de acción del mensaje"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Message actions"
 msgstr "Acciones de mensaje"
 
@@ -4000,7 +4001,7 @@ msgstr "Mensualmente por día de la semana"
 msgid "More"
 msgstr "Más"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadView.tsx
 #: src/renderer/src/ui/Menu.tsx
 msgid "More actions"
 msgstr "Más acciones"
@@ -4079,7 +4080,7 @@ msgstr "Bajar"
 msgid "Move focus between panes"
 msgstr "Mover el foco entre paneles"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Move message to Trash"
 msgstr "Mover mensaje a la Papelera"
 
@@ -4297,7 +4298,7 @@ msgid "Next below"
 msgstr "Siguiente abajo"
 
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/FindBar.tsx
 #: src/renderer/src/features/search/SearchHitBar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Next match"
@@ -4381,7 +4382,7 @@ msgid "No label or folder"
 msgstr "Sin etiqueta ni carpeta"
 
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/FindBar.tsx
 msgid "No matches"
 msgstr "Sin coincidencias"
 
@@ -4646,19 +4647,19 @@ msgstr "Abra enlaces de correo electrónico en un nuevo borrador de OpenMail."
 msgid "Open in Contacts"
 msgstr "Abrir en Contactos"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/use-thread-mail-actions.ts
 msgid "Open in Gmail"
 msgstr "Abrir en Gmail"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadView.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Open in new window"
 msgstr "Abrir en ventana nueva"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/use-thread-mail-actions.ts
 msgid "Open in Outlook"
 msgstr "Abrir en Outlook"
 
@@ -4678,7 +4679,7 @@ msgstr "Abrir enlace"
 msgid "Open macOS notification settings"
 msgstr "Abrir los ajustes de notificaciones de macOS"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Open only this message in a new window"
 msgstr "Abrir solo este mensaje en una ventana nueva"
 
@@ -5057,7 +5058,7 @@ msgid "Previous / next view"
 msgstr "Vista anterior / siguiente"
 
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/FindBar.tsx
 #: src/renderer/src/features/search/SearchHitBar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Previous match"
@@ -5093,7 +5094,7 @@ msgstr "Principal excluye las otras categorías de Gmail e incluye solo el corre
 msgid "Print"
 msgstr "Imprimir"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Print message…"
 msgstr "Imprimir mensaje…"
 
@@ -5487,7 +5488,7 @@ msgstr "Responde y reenvía"
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Reply"
@@ -5502,7 +5503,7 @@ msgstr "Marca para responder"
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Reply all"
@@ -5534,7 +5535,7 @@ msgstr "Responder solo a contactos"
 msgid "Reply signature for {address}"
 msgstr "Firma de respuesta para {address}"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Reply to this conversation"
 msgstr "Responder a esta conversación"
 
@@ -5748,12 +5749,12 @@ msgid "Save key"
 msgstr "Guardar clave"
 
 #: src/renderer/src/features/reader/RawMessage.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Save message as EML…"
 msgstr "Guardar mensaje como EML…"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Save message as PDF…"
 msgstr "Guardar mensaje como PDF…"
 
@@ -5803,7 +5804,7 @@ msgstr "Guardado"
 msgid "Saved as EML"
 msgstr "Guardado como EML"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/use-thread-print.ts
 msgid "Saved as PDF"
 msgstr "Guardado como PDF"
 
@@ -5853,7 +5854,7 @@ msgstr "Buscar correo"
 msgid "Search matches"
 msgstr "Coincidencias de búsqueda"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Search messages from this sender"
 msgstr "Buscar mensajes de este remitente"
@@ -5904,7 +5905,7 @@ msgstr "Seleccionar todo"
 msgid "Select conversation"
 msgstr "Seleccionar conversación"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Selected message"
 msgstr "Mensaje seleccionado"
 
@@ -5955,7 +5956,7 @@ msgstr "Error al enviar"
 msgid "Send feedback…"
 msgstr "Enviar comentarios…"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Send message link to…"
@@ -5965,13 +5966,13 @@ msgstr "Enviar enlace del mensaje a…"
 msgid "Send this message without a subject?"
 msgstr "¿Enviar este mensaje sin asunto?"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Send thread link to…"
 msgstr "Enviar enlace de la conversación a…"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Send web mail link to…"
@@ -5982,7 +5983,7 @@ msgctxt "search match source"
 msgid "Sender"
 msgstr "Remitente"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Sender authentication failed (DMARC)"
 msgstr "Error de autenticación del remitente (DMARC)"
 
@@ -6174,7 +6175,7 @@ msgstr "Mostrar u ocultar la barra lateral"
 msgid "Show or hide toolbar"
 msgstr "Mostrar u ocultar la barra de herramientas"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Show original"
 msgstr "Mostrar original"
@@ -6433,7 +6434,7 @@ msgstr "Destacar borrador"
 msgid "Star draft on this Mac"
 msgstr "Destacar borrador en este Mac"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Star message"
 msgstr "Destacar mensaje"
 
@@ -6469,11 +6470,11 @@ msgstr "Iniciando…"
 msgid "STARTTLS (usually 587)"
 msgstr "STARTTLS (normalmente 587)"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Stop loading images from {address}"
 msgstr "Dejar de cargar imágenes de {address}"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Stop loading images from {domain}"
 msgstr "Dejar de cargar imágenes de {domain}"
 
@@ -6814,7 +6815,7 @@ msgstr "El resto queda aquí. La copia recibe el mensaje completo."
 msgid "The selected message is no longer available."
 msgstr "El mensaje seleccionado ya no está disponible."
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "The sender name contains a different email address."
 msgstr "El nombre del remitente contiene una dirección de correo diferente."
 
@@ -6978,7 +6979,7 @@ msgstr "Zona horaria"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/use-thread-print.ts
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "To"
@@ -6992,7 +6993,7 @@ msgstr "A mí"
 msgid "To or CC me"
 msgstr "A mí o CC a mí"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "To: {to}"
 msgstr "Para: {to}"
 
@@ -7184,7 +7185,7 @@ msgstr "Mensajes no leídos"
 msgid "Unstar"
 msgstr "Dejar de destacar"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Unstar message"
 msgstr "Dejar de destacar mensaje"
 

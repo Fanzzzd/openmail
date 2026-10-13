@@ -16,7 +16,7 @@ msgstr ""
 #. Separator between list items
 #. Separator between list items
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid ", "
 msgstr "、"
 
@@ -29,7 +29,8 @@ msgstr "（未填收件人）"
 #: src/renderer/src/features/mail-list/MessageList.tsx
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
+#: src/renderer/src/features/reader/ThreadView.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "(No subject)"
 msgstr "（无主题）"
@@ -711,11 +712,11 @@ msgstr "总是加载此发件人的图片"
 msgid "Always light"
 msgstr "始终浅色"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Always load images from {address}"
 msgstr "总是加载 {address} 的图片"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Always load images from {domain}"
 msgstr "总是加载 {domain} 的图片"
 
@@ -843,7 +844,7 @@ msgstr "这台 Mac 上未找到的应用"
 msgid "Archive"
 msgstr "归档"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Archive message"
 msgstr "归档此邮件"
 
@@ -1215,7 +1216,7 @@ msgstr "分类名称，用逗号分隔"
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/use-thread-print.ts
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Cc"
 msgstr "抄送"
@@ -1224,7 +1225,7 @@ msgstr "抄送"
 msgid "CC me"
 msgstr "抄送给我"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Cc: {cc}"
 msgstr "抄送：{cc}"
 
@@ -1458,7 +1459,7 @@ msgid "Close compose window"
 msgstr "关闭写信窗口"
 
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/FindBar.tsx
 msgid "Close find"
 msgstr "关闭查找"
 
@@ -1471,7 +1472,7 @@ msgstr "请关闭其他 OpenMail 进程（CLI／MCP），再重启此应用并�
 msgid "Code block"
 msgstr "代码块"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadView.tsx
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Collapse all"
 msgstr "全部收起"
@@ -1484,7 +1485,7 @@ msgstr "收起所有邮件"
 msgid "Collapse categories"
 msgstr "收起分类"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Collapse message"
 msgstr "收起邮件"
 
@@ -1673,7 +1674,7 @@ msgstr "内容命中"
 msgid "Continue"
 msgstr "继续"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Continue editing"
 msgstr "继续编辑"
 
@@ -1912,7 +1913,7 @@ msgstr "无法加载此邮件。"
 msgid "Couldn't load your accounts."
 msgstr "无法加载你的账户。"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/use-thread-print.ts
 msgid "Couldn't print: {reason}"
 msgstr "无法打印：{reason}"
 
@@ -1940,7 +1941,7 @@ msgstr "保存失败"
 msgid "Couldn't save the draft: {reason}"
 msgstr "无法保存草稿：{reason}"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/use-thread-print.ts
 msgid "Couldn't save the PDF: {reason}"
 msgstr "无法保存 PDF：{reason}"
 
@@ -2050,7 +2051,7 @@ msgstr "剪切"
 msgid "Daily"
 msgstr "每天"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Dark background"
 msgstr "深色背景"
 
@@ -2064,7 +2065,7 @@ msgid "Database recovery was interrupted. Restore a preserved database before re
 msgstr "数据库恢复被中断。请先恢复保留的数据库，再打开 OpenMail。保留的数据库：{backup}"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/use-thread-print.ts
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Date"
 msgstr "日期"
@@ -2353,7 +2354,7 @@ msgstr "正在下载更新 {version}…"
 msgid "Downloads"
 msgstr "下载目录"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Draft"
 msgstr "草稿"
 
@@ -2624,7 +2625,7 @@ msgstr "排除聊天"
 msgid "Exclude matches"
 msgstr "排除匹配项"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadView.tsx
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Expand all"
 msgstr "全部展开"
@@ -2722,7 +2723,7 @@ msgstr "查找替换"
 msgid "Find in body"
 msgstr "查找正文"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/FindBar.tsx
 msgid "Find in message"
 msgstr "在正文中查找"
 
@@ -2839,7 +2840,7 @@ msgstr "论坛"
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Forward"
@@ -2884,7 +2885,7 @@ msgstr "更友好"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/use-thread-print.ts
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "From"
 msgstr "发件人"
@@ -3494,7 +3495,7 @@ msgstr "从左到右"
 msgid "Let {name} propose changes for you to approve"
 msgstr "允许 {name} 提出改动建议，由你批准"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Light background"
 msgstr "浅色背景"
 
@@ -3689,7 +3690,7 @@ msgstr "标为已读"
 msgid "Mark as unread"
 msgstr "标为未读"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Mark message unread"
 msgstr "将此邮件标为未读"
 
@@ -3709,7 +3710,7 @@ msgstr "标记已读/未读"
 msgid "Mark unread"
 msgstr "标为未读"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Mark unread from this message"
 msgstr "从此邮件起标为未读"
 
@@ -3800,7 +3801,7 @@ msgid "Mention suggestions"
 msgstr "提及建议"
 
 #: src/renderer/src/features/reader/frame/EmailFrame.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/features/settings/sections/VacationEditor.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Message"
@@ -3810,7 +3811,7 @@ msgstr "正文"
 msgid "Message action flag"
 msgstr "消息操作标记"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Message actions"
 msgstr "邮件操作"
 
@@ -4010,7 +4011,7 @@ msgstr "每月按星期"
 msgid "More"
 msgstr "更多"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadView.tsx
 #: src/renderer/src/ui/Menu.tsx
 msgid "More actions"
 msgstr "更多操作"
@@ -4089,7 +4090,7 @@ msgstr "下移"
 msgid "Move focus between panes"
 msgstr "在面板间移动焦点"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Move message to Trash"
 msgstr "将此邮件移到废纸篓"
 
@@ -4307,7 +4308,7 @@ msgid "Next below"
 msgstr "下一项"
 
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/FindBar.tsx
 #: src/renderer/src/features/search/SearchHitBar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Next match"
@@ -4391,7 +4392,7 @@ msgid "No label or folder"
 msgstr "不加标签或文件夹"
 
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/FindBar.tsx
 msgid "No matches"
 msgstr "无匹配"
 
@@ -4656,19 +4657,19 @@ msgstr "点击邮件链接时，在 OpenMail 中新建草稿。"
 msgid "Open in Contacts"
 msgstr "在通讯录中打开"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/use-thread-mail-actions.ts
 msgid "Open in Gmail"
 msgstr "在 Gmail 中打开"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadView.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Open in new window"
 msgstr "在新窗口中打开"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/use-thread-mail-actions.ts
 msgid "Open in Outlook"
 msgstr "在 Outlook 中打开"
 
@@ -4688,7 +4689,7 @@ msgstr "打开链接"
 msgid "Open macOS notification settings"
 msgstr "打开 macOS 通知设置"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Open only this message in a new window"
 msgstr "在新窗口中只打开此邮件"
 
@@ -5067,7 +5068,7 @@ msgid "Previous / next view"
 msgstr "上一个视图 / 下一个视图"
 
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/FindBar.tsx
 #: src/renderer/src/features/search/SearchHitBar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Previous match"
@@ -5103,7 +5104,7 @@ msgstr "主要排除 Gmail 的其他分类，只包含 Outlook 的重点邮件�
 msgid "Print"
 msgstr "打印"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Print message…"
 msgstr "打印这封邮件…"
 
@@ -5497,7 +5498,7 @@ msgstr "回复和转发"
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Reply"
@@ -5512,7 +5513,7 @@ msgstr "回复标记"
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Reply all"
@@ -5544,7 +5545,7 @@ msgstr "仅回复联系人"
 msgid "Reply signature for {address}"
 msgstr "{address} 的回复签名"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Reply to this conversation"
 msgstr "回复此会话"
 
@@ -5758,12 +5759,12 @@ msgid "Save key"
 msgstr "保存密钥"
 
 #: src/renderer/src/features/reader/RawMessage.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Save message as EML…"
 msgstr "将邮件保存为 EML…"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Save message as PDF…"
 msgstr "将这封邮件保存为 PDF…"
 
@@ -5813,7 +5814,7 @@ msgstr "已保存"
 msgid "Saved as EML"
 msgstr "已保存为 EML"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/use-thread-print.ts
 msgid "Saved as PDF"
 msgstr "已保存为 PDF"
 
@@ -5863,7 +5864,7 @@ msgstr "搜索邮件"
 msgid "Search matches"
 msgstr "搜索匹配"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Search messages from this sender"
 msgstr "搜索此发件人的邮件"
@@ -5914,7 +5915,7 @@ msgstr "全选"
 msgid "Select conversation"
 msgstr "选择会话"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Selected message"
 msgstr "已选邮件"
 
@@ -5965,7 +5966,7 @@ msgstr "发送失败"
 msgid "Send feedback…"
 msgstr "发送反馈…"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Send message link to…"
@@ -5975,13 +5976,13 @@ msgstr "发送邮件链接到…"
 msgid "Send this message without a subject?"
 msgstr "确认发送无主题邮件？"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Send thread link to…"
 msgstr "发送会话链接到…"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Send web mail link to…"
@@ -5992,7 +5993,7 @@ msgctxt "search match source"
 msgid "Sender"
 msgstr "发件人"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Sender authentication failed (DMARC)"
 msgstr "发件人认证失败（DMARC）"
 
@@ -6184,7 +6185,7 @@ msgstr "显示或隐藏侧栏"
 msgid "Show or hide toolbar"
 msgstr "显示或隐藏工具栏"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Show original"
 msgstr "显示原始邮件"
@@ -6443,7 +6444,7 @@ msgstr "草稿加星"
 msgid "Star draft on this Mac"
 msgstr "在本机标记草稿星标"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Star message"
 msgstr "为此邮件加星标"
 
@@ -6479,11 +6480,11 @@ msgstr "正在启动…"
 msgid "STARTTLS (usually 587)"
 msgstr "STARTTLS（通常是 587）"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Stop loading images from {address}"
 msgstr "不再自动加载 {address} 的图片"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Stop loading images from {domain}"
 msgstr "不再自动加载 {domain} 的图片"
 
@@ -6824,7 +6825,7 @@ msgstr "其余部分这里没有显示。复制会得到整封邮件。"
 msgid "The selected message is no longer available."
 msgstr "所选邮件已不存在。"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "The sender name contains a different email address."
 msgstr "发件人名称含有不同的邮件地址。"
 
@@ -6988,7 +6989,7 @@ msgstr "时区"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/use-thread-print.ts
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "To"
@@ -7002,7 +7003,7 @@ msgstr "发送给我"
 msgid "To or CC me"
 msgstr "发送或抄送给我"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "To: {to}"
 msgstr "收件人：{to}"
 
@@ -7194,7 +7195,7 @@ msgstr "未读邮件"
 msgid "Unstar"
 msgstr "去掉星标"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Unstar message"
 msgstr "取消此邮件星标"
 

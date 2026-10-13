@@ -47,7 +47,8 @@ import {
 } from "../lib/view";
 import { numberedFavorites } from "../features/sidebar/favorite-navigation";
 import { readerThreadKey, type ReaderSelection } from "../features/reader/reader-selection";
-import { Reader, useThreadPrint } from "../features/reader/Reader";
+import { Reader } from "../features/reader/Reader";
+import { useThreadPrint } from "../features/reader/use-thread-print";
 import { focusedSenderMessage, threadStateFor, type ThreadState } from "../lib/focused-inbox";
 import { useMailActions } from "./use-mail-actions";
 import { useMailCompose } from "./use-mail-compose";

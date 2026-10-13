@@ -52,10 +52,8 @@ vi.mock("../state/mail", () => ({
   modifyThreads: () => Effect.sync(() => calls.modify()),
   modifyMessages: () => Effect.sync(() => calls.modify()),
 }));
-vi.mock("../features/reader/Reader", () => ({
-  ThreadView: () => null,
-  useThreadPrint: () => vi.fn(),
-}));
+vi.mock("../features/reader/ThreadView", () => ({ ThreadView: () => null }));
+vi.mock("../features/reader/use-thread-print", () => ({ useThreadPrint: () => vi.fn() }));
 vi.mock("../features/organize/FocusedInboxActions", () => ({ FocusedInboxPermission: () => null }));
 vi.mock("../features/organize/ThreadActions", () => ({ ThreadActions: () => null }));
 vi.mock("../features/reader/ThreadViewMenu", () => ({ ThreadViewMenuItems: () => null }));
@@ -86,7 +84,8 @@ afterAll(() => {
     "../state/undo",
     "../state/downloads",
     "../state/mail",
-    "../features/reader/Reader",
+    "../features/reader/ThreadView",
+    "../features/reader/use-thread-print",
     "../features/organize/ThreadActions",
     "../features/downloads/Downloads",
     "../features/organize/FocusedInboxActions",

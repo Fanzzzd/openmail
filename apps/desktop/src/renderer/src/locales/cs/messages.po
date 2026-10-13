@@ -6,7 +6,7 @@ msgstr ""
 #. Separator between list items
 #. Separator between list items
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid ", "
 msgstr ", "
 
@@ -19,7 +19,8 @@ msgstr "(bez příjemců)"
 #: src/renderer/src/features/mail-list/MessageList.tsx
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
+#: src/renderer/src/features/reader/ThreadView.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "(No subject)"
 msgstr "(Bez předmětu)"
@@ -701,11 +702,11 @@ msgstr "Vždy od tohoto odesílatele"
 msgid "Always light"
 msgstr "Vždy světlé"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Always load images from {address}"
 msgstr "Vždy načítat obrázky z {address}"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Always load images from {domain}"
 msgstr "Vždy načítat obrázky z {domain}"
 
@@ -833,7 +834,7 @@ msgstr "Aplikace, které na tomto Macu nebyly nalezeny"
 msgid "Archive"
 msgstr "Archivovat"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Archive message"
 msgstr "Archivovat zprávu"
 
@@ -1205,7 +1206,7 @@ msgstr "Názvy kategorií oddělené čárkami"
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/use-thread-print.ts
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Cc"
 msgstr "Kopie"
@@ -1214,7 +1215,7 @@ msgstr "Kopie"
 msgid "CC me"
 msgstr "Kopie pro mě"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Cc: {cc}"
 msgstr "Kopie: {cc}"
 
@@ -1448,7 +1449,7 @@ msgid "Close compose window"
 msgstr "Zavřít okno pro psaní"
 
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/FindBar.tsx
 msgid "Close find"
 msgstr "Zavřít hledání"
 
@@ -1461,7 +1462,7 @@ msgstr "Zavřete ostatní procesy OpenMail (CLI/MCP), restartujte tuto aplikaci 
 msgid "Code block"
 msgstr "Blok kódu"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadView.tsx
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Collapse all"
 msgstr "Sbalit vše"
@@ -1474,7 +1475,7 @@ msgstr "Sbalit všechny zprávy"
 msgid "Collapse categories"
 msgstr "Sbalit kategorie"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Collapse message"
 msgstr "Sbalit zprávu"
 
@@ -1663,7 +1664,7 @@ msgstr "Obsah se shoduje"
 msgid "Continue"
 msgstr "Pokračovat"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Continue editing"
 msgstr "Pokračujte v úpravách"
 
@@ -1902,7 +1903,7 @@ msgstr "Tuto zprávu se nepodařilo načíst."
 msgid "Couldn't load your accounts."
 msgstr "Účty se nepodařilo načíst."
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/use-thread-print.ts
 msgid "Couldn't print: {reason}"
 msgstr "Nelze vytisknout: {reason}"
 
@@ -1930,7 +1931,7 @@ msgstr "Uložení se nezdařilo"
 msgid "Couldn't save the draft: {reason}"
 msgstr "Koncept se nepodařilo uložit: {reason}"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/use-thread-print.ts
 msgid "Couldn't save the PDF: {reason}"
 msgstr "Soubor PDF nelze uložit: {reason}"
 
@@ -2040,7 +2041,7 @@ msgstr "Vyjmout"
 msgid "Daily"
 msgstr "Denně"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Dark background"
 msgstr "tmavé pozadí"
 
@@ -2054,7 +2055,7 @@ msgid "Database recovery was interrupted. Restore a preserved database before re
 msgstr "Obnova databáze byla přerušena. Před opětovným otevřením OpenMail obnovte zachovanou databázi. Zachovaná databáze: {backup}"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/use-thread-print.ts
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Date"
 msgstr "Datum"
@@ -2343,7 +2344,7 @@ msgstr "Stahuje se aktualizace {version}…"
 msgid "Downloads"
 msgstr "Stahování"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Draft"
 msgstr "Koncept"
 
@@ -2614,7 +2615,7 @@ msgstr "Vyloučit chaty"
 msgid "Exclude matches"
 msgstr "Vyloučit shody"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadView.tsx
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Expand all"
 msgstr "Rozbalit vše"
@@ -2712,7 +2713,7 @@ msgstr "Najít a nahradit"
 msgid "Find in body"
 msgstr "Hledat v textu zprávy"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/FindBar.tsx
 msgid "Find in message"
 msgstr "Najít ve zprávě"
 
@@ -2829,7 +2830,7 @@ msgstr "Fóra"
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Forward"
@@ -2874,7 +2875,7 @@ msgstr "Přátelštější"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/use-thread-print.ts
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "From"
 msgstr "Od"
@@ -3484,7 +3485,7 @@ msgstr "Zleva doprava"
 msgid "Let {name} propose changes for you to approve"
 msgstr "Povolit {name} navrhovat změny ke schválení"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Light background"
 msgstr "světlé pozadí"
 
@@ -3679,7 +3680,7 @@ msgstr "Označit jako přečtené"
 msgid "Mark as unread"
 msgstr "Označit jako nepřečtené"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Mark message unread"
 msgstr "Označit zprávu jako nepřečtenou"
 
@@ -3699,7 +3700,7 @@ msgstr "Označit jako přečtené/nepřečtené"
 msgid "Mark unread"
 msgstr "Označit jako nepřečtené"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Mark unread from this message"
 msgstr "Označit z této zprávy jako nepřečtené"
 
@@ -3790,7 +3791,7 @@ msgid "Mention suggestions"
 msgstr "Návrhy zmínek"
 
 #: src/renderer/src/features/reader/frame/EmailFrame.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/features/settings/sections/VacationEditor.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Message"
@@ -3800,7 +3801,7 @@ msgstr "Zpráva"
 msgid "Message action flag"
 msgstr "Příznak akce zprávy"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Message actions"
 msgstr "Akce zpráv"
 
@@ -4000,7 +4001,7 @@ msgstr "Měsíčně podle dne v týdnu"
 msgid "More"
 msgstr "Více"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadView.tsx
 #: src/renderer/src/ui/Menu.tsx
 msgid "More actions"
 msgstr "Další akce"
@@ -4079,7 +4080,7 @@ msgstr "Posuňte se dolů"
 msgid "Move focus between panes"
 msgstr "Přesun fokusu mezi panely"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Move message to Trash"
 msgstr "Přesunout zprávu do koše"
 
@@ -4297,7 +4298,7 @@ msgid "Next below"
 msgstr "Další níže"
 
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/FindBar.tsx
 #: src/renderer/src/features/search/SearchHitBar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Next match"
@@ -4381,7 +4382,7 @@ msgid "No label or folder"
 msgstr "Žádný štítek nebo složka"
 
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/FindBar.tsx
 msgid "No matches"
 msgstr "Žádné shody"
 
@@ -4646,19 +4647,19 @@ msgstr "Otevřete e-mailové odkazy v novém konceptu OpenMail."
 msgid "Open in Contacts"
 msgstr "Otevřít v Kontaktech"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/use-thread-mail-actions.ts
 msgid "Open in Gmail"
 msgstr "Otevřít v Gmailu"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadView.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Open in new window"
 msgstr "Otevřít v novém okně"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/use-thread-mail-actions.ts
 msgid "Open in Outlook"
 msgstr "Otevřete v aplikaci Outlook"
 
@@ -4678,7 +4679,7 @@ msgstr "Otevřít odkaz"
 msgid "Open macOS notification settings"
 msgstr "Otevřete nastavení oznámení macOS"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Open only this message in a new window"
 msgstr "Otevřít pouze tuto zprávu v novém okně"
 
@@ -5057,7 +5058,7 @@ msgid "Previous / next view"
 msgstr "Předchozí / další zobrazení"
 
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/FindBar.tsx
 #: src/renderer/src/features/search/SearchHitBar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Previous match"
@@ -5093,7 +5094,7 @@ msgstr "Primární nezahrnuje ostatní kategorie Gmailu a zahrnuje pouze priorit
 msgid "Print"
 msgstr "Vytisknout"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Print message…"
 msgstr "Vytisknout zprávu…"
 
@@ -5487,7 +5488,7 @@ msgstr "Odpovědi a přeposlání"
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Reply"
@@ -5502,7 +5503,7 @@ msgstr "Příznak odpovědi"
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Reply all"
@@ -5534,7 +5535,7 @@ msgstr "Odpovídat pouze kontaktům"
 msgid "Reply signature for {address}"
 msgstr "Podpis odpovědi pro {address}"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Reply to this conversation"
 msgstr "Odpovědět v této konverzaci"
 
@@ -5748,12 +5749,12 @@ msgid "Save key"
 msgstr "Uložit klíč"
 
 #: src/renderer/src/features/reader/RawMessage.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Save message as EML…"
 msgstr "Uložit zprávu jako EML…"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Save message as PDF…"
 msgstr "Uložit zprávu jako PDF…"
 
@@ -5803,7 +5804,7 @@ msgstr "Uloženo"
 msgid "Saved as EML"
 msgstr "Uloženo jako EML"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/use-thread-print.ts
 msgid "Saved as PDF"
 msgstr "Uloženo jako PDF"
 
@@ -5853,7 +5854,7 @@ msgstr "Hledat v poště"
 msgid "Search matches"
 msgstr "Shody s hledáním"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Search messages from this sender"
 msgstr "Hledat zprávy od tohoto odesílatele"
@@ -5904,7 +5905,7 @@ msgstr "Vyberte vše"
 msgid "Select conversation"
 msgstr "Vybrat konverzaci"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Selected message"
 msgstr "Vybraná zpráva"
 
@@ -5955,7 +5956,7 @@ msgstr "Odeslání selhalo"
 msgid "Send feedback…"
 msgstr "Odeslat zpětnou vazbu…"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Send message link to…"
@@ -5965,13 +5966,13 @@ msgstr "Odeslat odkaz na zprávu do…"
 msgid "Send this message without a subject?"
 msgstr "Odeslat tuto zprávu bez předmětu?"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Send thread link to…"
 msgstr "Odeslat odkaz na konverzaci do…"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Send web mail link to…"
@@ -5982,7 +5983,7 @@ msgctxt "search match source"
 msgid "Sender"
 msgstr "Odesílatel"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Sender authentication failed (DMARC)"
 msgstr "Ověření odesílatele selhalo (DMARC)"
 
@@ -6174,7 +6175,7 @@ msgstr "Zobrazit nebo skrýt postranní panel"
 msgid "Show or hide toolbar"
 msgstr "Zobrazit nebo skrýt panel nástrojů"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Show original"
 msgstr "Zobrazit originál"
@@ -6433,7 +6434,7 @@ msgstr "Označit koncept hvězdičkou"
 msgid "Star draft on this Mac"
 msgstr "Označit koncept hvězdičkou na tomto Macu"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Star message"
 msgstr "Označit zprávu hvězdičkou"
 
@@ -6469,11 +6470,11 @@ msgstr "Spouštění…"
 msgid "STARTTLS (usually 587)"
 msgstr "STARTTLS (obvykle 587)"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Stop loading images from {address}"
 msgstr "Zastavit načítání obrázků z {address}"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Stop loading images from {domain}"
 msgstr "Zastavit načítání obrázků z {domain}"
 
@@ -6814,7 +6815,7 @@ msgstr "Zbytek je zde vynechán. Kopírovat získá celou zprávu."
 msgid "The selected message is no longer available."
 msgstr "Vybraná zpráva již není dostupná."
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "The sender name contains a different email address."
 msgstr "Jméno odesílatele obsahuje jinou e-mailovou adresu."
 
@@ -6978,7 +6979,7 @@ msgstr "Časové pásmo"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/use-thread-print.ts
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "To"
@@ -6992,7 +6993,7 @@ msgstr "Pro mě"
 msgid "To or CC me"
 msgstr "Pro mě nebo kopie pro mě"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "To: {to}"
 msgstr "Komu: {to}"
 
@@ -7184,7 +7185,7 @@ msgstr "Nepřečtené zprávy"
 msgid "Unstar"
 msgstr "Odebrat hvězdičku"
 
-#: src/renderer/src/features/reader/Reader.tsx
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Unstar message"
 msgstr "Odebrat hvězdičku ze zprávy"
 

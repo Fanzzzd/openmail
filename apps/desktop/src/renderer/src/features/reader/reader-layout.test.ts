@@ -103,7 +103,7 @@ vi.mock("../../ui/Menu", () => ({
     h("button", { type: "button", role: "menuitem", onClick }, children),
   MenuSeparator: () => null,
 }));
-import { ThreadView } from "./Reader";
+import { ThreadView } from "./ThreadView";
 import { InviteBanner } from "../calendar/InviteBanner";
 import { SearchField } from "../search/SearchField";
 import { loadMessageBody } from "./body/MessageBodyShell";

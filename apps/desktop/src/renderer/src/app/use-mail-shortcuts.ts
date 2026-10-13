@@ -11,7 +11,7 @@ import {
   shortcutAction,
   spaceShortcut,
 } from "../../../shared/shortcuts";
-import { useThreadPrint } from "../features/reader/Reader";
+import { useThreadPrint } from "../features/reader/use-thread-print";
 import type { ThreadState } from "../lib/focused-inbox";
 import { usesDeletePreference } from "../lib/delete-key";
 import { favoriteView, numberedFavorites } from "../features/sidebar/favorite-navigation";

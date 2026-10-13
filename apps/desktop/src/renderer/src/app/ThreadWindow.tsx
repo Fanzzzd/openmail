@@ -21,7 +21,8 @@ import { Mail } from "lucide-react";
 import { useCallback, useEffect, useEffectEvent, useState } from "react";
 
 import type { MailOp } from "../../../shared/api";
-import { ThreadView, useThreadPrint } from "../features/reader/Reader";
+import { ThreadView } from "../features/reader/ThreadView";
+import { useThreadPrint } from "../features/reader/use-thread-print";
 import { OPEN_SETTINGS_EVENT } from "../features/ai/open-ai-settings";
 import { readerThreadKey } from "../features/reader/reader-selection";
 import { ThreadViewMenuItems } from "../features/reader/ThreadViewMenu";
