@@ -12,7 +12,7 @@ import {
   type FilterAction,
   type OutlookRulePredicates,
 } from "../domain/organization.js";
-import { labelOps } from "./mailbox-organization.js";
+import { labelOps } from "./mailbox-filters.js";
 import { GraphMessage } from "../providers/outlook/graph.js";
 import { expandedAttachments, parseGraphMessage } from "../providers/outlook/parse.js";
 import { evaluateOutlookRule } from "../providers/outlook/outlook-rules.js";
