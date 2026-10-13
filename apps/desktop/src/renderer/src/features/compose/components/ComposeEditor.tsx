@@ -22,6 +22,7 @@ import {
   type ShortcutSet,
 } from "../../../../../shared/shortcuts";
 import { shortcutHint } from "../../../i18n/use-shortcut-text";
+import { EDITOR_ACTION_EVENT } from "../../../../../shared/native-actions";
 import { Effect } from "effect";
 import { useRunMail, withMail, type MailEnv } from "../../../state/mail";
 import { AsyncResult, Atom } from "effect/reactivity";
@@ -47,6 +48,7 @@ import {
   emojiAtCaret,
 } from "@openmail/core/schema";
 import {
+  useEffect,
   useLayoutEffect,
   useEffectEvent,
   useMemo,
@@ -100,6 +102,20 @@ const clipboardText = (): Effect.Effect<string, unknown, MailEnv> =>
     ? withMail((call) => call("ClipboardText", undefined))
     : // The browser reads this device's clipboard, never the Mac's.
       Effect.tryPromise(() => navigator.clipboard.readText());
+
+/** Rich-text actions the Format menu and its keys run on the body. */
+const RICH_ACTIONS = [
+  "toggleFormatBar",
+  "fontSizeIncrease",
+  "fontSizeDecrease",
+  ...FORMAT_ACTIONS,
+  "bold",
+  "italic",
+  "underline",
+  "link",
+  "strikethrough",
+] as const;
+type RichAction = (typeof RICH_ACTIONS)[number];
 
 export function ComposeEditor({
   body,
@@ -563,50 +579,59 @@ export function ComposeEditor({
       return;
     }
     if (body.kind !== "rich") return;
-    if (matchesShortcut(shortcutSet, "toggleFormatBar", event)) {
-      event.preventDefault();
-      event.stopPropagation();
+    const action = RICH_ACTIONS.find((candidate) => matchesShortcut(shortcutSet, candidate, event));
+    if (!action) return;
+    event.preventDefault();
+    event.stopPropagation();
+    richAction(action);
+  };
+  const richAction = (action: RichAction) => {
+    if (action === "toggleFormatBar") {
       toggleFormatBar();
       return;
     }
-    if (
-      matchesShortcut(shortcutSet, "fontSizeIncrease", event) ||
-      matchesShortcut(shortcutSet, "fontSizeDecrease", event)
-    ) {
-      event.preventDefault();
-      event.stopPropagation();
-      remember();
-      if (richRef.current) {
-        stepEditorFontSize(
-          richRef.current,
-          selectionRef.current,
-          matchesShortcut(shortcutSet, "fontSizeIncrease", event) ? 1 : -1,
-        );
-        changed();
-      }
-      return;
-    }
-    for (const action of FORMAT_ACTIONS) {
-      if (!matchesShortcut(shortcutSet, action, event)) continue;
-      event.preventDefault();
-      event.stopPropagation();
-      remember();
-      format(action);
-      return;
-    }
-    for (const action of ["bold", "italic", "underline", "link", "strikethrough"] as const) {
-      if (!matchesShortcut(shortcutSet, action, event)) continue;
-      event.preventDefault();
-      event.stopPropagation();
-      remember();
-      if (action === "link") openLink();
-      else command(action === "strikethrough" ? "strikeThrough" : action);
-      return;
-    }
+    remember();
+    if (action === "fontSizeIncrease" || action === "fontSizeDecrease") {
+      if (!richRef.current) return;
+      stepEditorFontSize(
+        richRef.current,
+        selectionRef.current,
+        action === "fontSizeIncrease" ? 1 : -1,
+      );
+      changed();
+    } else if (action === "link") openLink();
+    else if (
+      action === "bold" ||
+      action === "italic" ||
+      action === "underline" ||
+      action === "strikethrough"
+    )
+      command(action === "strikethrough" ? "strikeThrough" : action);
+    else format(action);
   };
+  // Format menu items without a key arrive as an event on the focused body.
+  const menuAction = useEffectEvent((event: Event) => {
+    const inBody =
+      event.target === bodyRef.current ||
+      (event.target instanceof Node && richRef.current?.contains(event.target));
+    if (!inBody || locked || body.kind !== "rich") return;
+    // Read off the event rather than through instanceof, which differs per window.
+    const detail: unknown = Reflect.get(event, "detail");
+    const action = RICH_ACTIONS.find((candidate) => candidate === detail);
+    if (action) richAction(action);
+  });
+  const rootRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return constVoid;
+    const listener = (event: Event) => menuAction(event);
+    root.addEventListener(EDITOR_ACTION_EVENT, listener);
+    return () => root.removeEventListener(EDITOR_ACTION_EVENT, listener);
+  }, []);
 
   return (
     <div
+      ref={rootRef}
       className={`flex flex-col ${locked ? "shrink-0" : "min-h-0 flex-1"} focus-within:ring-2 focus-within:ring-inset focus-within:ring-a11y-focus`}
     >
       <ComposeToolbar

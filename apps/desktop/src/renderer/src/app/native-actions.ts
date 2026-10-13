@@ -1,5 +1,6 @@
 import type { NativeAction } from "../../../shared/native-actions";
 import {
+  EDITOR_ACTION_EVENT,
   NATIVE_MENUS,
   nativeActionStroke,
   nativeActionUsesEditor,
@@ -24,10 +25,15 @@ export function dispatchNativeAction(
 ) {
   if (shouldDropNativeAction(action, triggeredByAccelerator)) return;
   const stroke = nativeActionStroke(set, action);
-  if (!stroke) return;
   const target = nativeActionUsesEditor(action)
     ? (document.activeElement ?? window)
     : document.body;
+  if (!stroke) {
+    // Rare formatting has no key, so the menu names the action instead.
+    if (nativeActionUsesEditor(action))
+      target.dispatchEvent(new CustomEvent(EDITOR_ACTION_EVENT, { detail: action, bubbles: true }));
+    return;
+  }
   target.dispatchEvent(
     new KeyboardEvent("keydown", {
       key: stroke.key,

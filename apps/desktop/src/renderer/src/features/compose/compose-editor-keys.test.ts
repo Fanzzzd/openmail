@@ -8,6 +8,7 @@ import { DEFAULT_PREFS, richComposeBody, type ComposeBody } from "@openmail/core
 import type { ReactNode } from "react";
 import type { ComposeElement } from "./compose-editor-dom";
 import { testDom } from "../../test-support/test-dom";
+import { EDITOR_ACTION_EVENT } from "../../../../shared/native-actions";
 
 const controls = vi.hoisted(() => {
   vi.resetModules();
@@ -121,7 +122,7 @@ it("rich compose style keys invoke editor commands and link opens its form", () 
       ["b", "bold", {}],
       ["i", "italic", {}],
       ["u", "underline", {}],
-      ["x", "strikeThrough", { altKey: true }],
+      ["x", "strikeThrough", { shiftKey: true }],
     ] as const) {
       expect(dom.key(dom.body, key, modifiers).defaultPrevented).toBe(true);
       expect(dom.command).toHaveBeenLastCalledWith(name, false, undefined);
@@ -213,7 +214,15 @@ it("hiding the format bar keeps the toolbar row, persists the preference and kee
   const dom = editor(richComposeBody("Hello"));
   try {
     expect(dom.element.querySelector('[aria-label="Bold"]')).not.toBeNull();
-    dom.key(dom.body, "x", { ctrlKey: true, altKey: true });
+    // The Format menu's Hide format bar has no key and arrives as an action event.
+    void act(() =>
+      dom.body.dispatchEvent(
+        new dom.window.CustomEvent(EDITOR_ACTION_EVENT, {
+          detail: "toggleFormatBar",
+          bubbles: true,
+        }),
+      ),
+    );
     expect(dom.element.querySelector('[aria-label="Bold"]')).toBeNull();
     expect(dom.element.querySelector('[aria-label="More formatting"]')).not.toBeNull();
     expect(controls.calls.at(-1)).toEqual({

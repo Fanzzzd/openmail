@@ -38,35 +38,39 @@ const common = {
   findNext: [cmd("g")],
   findPrevious: [cmd("g", { alt: true })],
   findSelection: [cmd("e")],
-  superscript: [cmd("a", { control: true, alt: true })],
-  subscript: [cmd("b", { control: true, alt: true })],
-  alignLeft: [cmd("c", { control: true, alt: true })],
-  alignCenter: [cmd("d", { control: true, alt: true })],
-  alignRight: [cmd("e", { control: true, alt: true })],
-  alignJustify: [cmd("f", { control: true, alt: true })],
-  directionLtr: [cmd("g", { control: true, alt: true })],
-  directionRtl: [cmd("h", { control: true, alt: true })],
-  directionAuto: [cmd("i", { control: true, alt: true })],
-  bulletList: [cmd("j", { control: true, alt: true })],
-  numberList: [cmd("k", { control: true, alt: true })],
-  dashList: [cmd("l", { control: true, alt: true })],
-  inlineCode: [cmd("m", { control: true, alt: true })],
-  blockCode: [cmd("n", { control: true, alt: true })],
-  indentParagraph: [cmd("o", { control: true, alt: true })],
-  outdentParagraph: [cmd("p", { control: true, alt: true })],
-  indentList: [cmd("q", { control: true, alt: true })],
-  outdentList: [cmd("r", { control: true, alt: true })],
-  quoteIncrease: [cmd("s", { control: true, alt: true })],
-  quoteDecrease: [cmd("t", { control: true, alt: true })],
-  copyStyle: [cmd("u", { control: true, alt: true })],
-  pasteStyle: [cmd("v", { control: true, alt: true })],
-  clearFormatting: [cmd("w", { control: true, alt: true })],
-  toggleFormatBar: [cmd("x", { control: true, alt: true })],
+  // Formatting follows Mimestream and the macOS text system: ⌘{ ⌘| ⌘} align, ⌘[ ⌘] indent,
+  // ⌘' ⌥⌘' quote level, ⌘\ removes style and ⇧⌘B is a code block. Lists use Gmail's
+  // ⇧⌘7 and ⇧⌘8. ⌘[ and ⌘] are the window's Back and Forward outside the composer.
+  // Rare actions stay in the Format menu without a key.
+  superscript: [],
+  subscript: [],
+  alignLeft: [cmd("{")],
+  alignCenter: [cmd("|")],
+  alignRight: [cmd("}")],
+  alignJustify: [],
+  directionLtr: [],
+  directionRtl: [],
+  directionAuto: [],
+  bulletList: [shiftCmd("8")],
+  numberList: [shiftCmd("7")],
+  dashList: [],
+  inlineCode: [],
+  blockCode: [shiftCmd("b")],
+  indentParagraph: [cmd("]")],
+  outdentParagraph: [cmd("[")],
+  indentList: [],
+  outdentList: [],
+  quoteIncrease: [cmd("'")],
+  quoteDecrease: [cmd("'", { alt: true })],
+  copyStyle: [],
+  pasteStyle: [],
+  clearFormatting: [cmd("\\")],
+  toggleFormatBar: [],
   bold: [cmd("b")],
   italic: [cmd("i")],
   underline: [cmd("u")],
   link: [cmd("k")],
-  strikethrough: [cmd("x", { alt: true })],
+  strikethrough: [shiftCmd("x")],
   pasteMatchStyle: [cmd("v", { alt: true, shift: true })],
   pasteQuotation: [cmd("v", { alt: true })],
   newWindow: [shiftCmd("n")],
@@ -165,6 +169,8 @@ export interface KeyEvent {
   altKey: boolean;
   shiftKey: boolean;
   repeat?: boolean;
+  /** The physical key. Shifted digits and brackets fall back to it, since ⇧⌘7 may report "&". */
+  code?: string;
 }
 
 /** Selection gestures shared by all keymaps; extra modifiers keep their original actions. */
@@ -179,6 +185,22 @@ export function selectionShortcut(event: KeyEvent): "all" | "extendNext" | "exte
   return null;
 }
 
+/** Symbols whose KeyboardEvent.key already includes Shift. */
+const SHIFTED_SYMBOL = /[?!#+~{}|]/;
+const isLiteralShift = (key: string) =>
+  key.length === 1 && (key !== key.toLowerCase() || SHIFTED_SYMBOL.test(key));
+/** Physical keys for strokes whose reported character changes with the layout or with ⌘. */
+const STROKE_CODE: Record<string, string> = {
+  "{": "BracketLeft",
+  "}": "BracketRight",
+  "[": "BracketLeft",
+  "]": "BracketRight",
+  "|": "Backslash",
+  "\\": "Backslash",
+  "'": "Quote",
+};
+const strokeCode = (key: string) => (/^[0-9]$/.test(key) ? `Digit${key}` : STROKE_CODE[key]);
+
 function matches(stroke: KeyStroke, event: KeyEvent): boolean {
   if (!stroke.cmd && event.metaKey) return false;
   const primary = stroke.cmd ? event.metaKey || (event.ctrlKey && !stroke.control) : false;
@@ -186,13 +208,15 @@ function matches(stroke: KeyStroke, event: KeyEvent): boolean {
   if (stroke.control ? !event.ctrlKey : event.metaKey && event.ctrlKey) return false;
   if (!stroke.cmd && event.ctrlKey !== Boolean(stroke.control)) return false;
   // Symbols and uppercase letters already encode Shift in KeyboardEvent.key.
-  const literalShift =
-    stroke.key.length === 1 &&
-    (stroke.key !== stroke.key.toLowerCase() || /[?!#+~]/.test(stroke.key));
+  const literalShift = isLiteralShift(stroke.key);
   if (!literalShift && Boolean(stroke.shift) !== event.shiftKey) return false;
-  return literalShift
-    ? event.key === stroke.key
-    : event.key.toLowerCase() === stroke.key.toLowerCase();
+  if (
+    literalShift ? event.key === stroke.key : event.key.toLowerCase() === stroke.key.toLowerCase()
+  )
+    return true;
+  // Modified strokes only: a plain digit or quote is typing, whatever its physical key.
+  const code = stroke.cmd ? strokeCode(stroke.key) : undefined;
+  return code !== undefined && event.code === code && (!literalShift || event.shiftKey);
 }
 export function matchesShortcut(
   set: ShortcutSet,
@@ -251,24 +275,28 @@ export function shortcutAction(
 export const isShortcutAction = (value: string): value is ShortcutAction =>
   Object.hasOwn(native, value);
 export function shortcutText(set: ShortcutSet, action: ShortcutAction): string {
-  return KEYMAP[set][action]
-    .map((stroke) => {
-      const symbol =
-        {
-          Enter: "↩",
-          Backspace: "⌫",
-          Delete: "⌦",
-          ArrowDown: "↓",
-          ArrowUp: "↑",
-          ArrowLeft: "←",
-          ArrowRight: "→",
-          Escape: "Esc",
-        }[stroke.key] ?? stroke.key.toUpperCase();
-      // An uppercase letter is typed with Shift, so it reads as ⇧ and the letter.
-      const shifted = /^[A-Z]$/.test(stroke.key);
-      return `${stroke.control ? "⌃" : ""}${stroke.alt ? "⌥" : ""}${stroke.shift || shifted ? "⇧" : ""}${stroke.cmd ? "⌘" : ""}${symbol}`;
-    })
-    .join(" / ");
+  return KEYMAP[set][action].map(strokeText).join(" / ");
+}
+/** The first key of an action, for a short hint such as a placeholder. Empty when unbound. */
+export function primaryShortcutText(set: ShortcutSet, action: ShortcutAction): string {
+  const stroke = KEYMAP[set][action][0];
+  return stroke ? strokeText(stroke) : "";
+}
+function strokeText(stroke: KeyStroke): string {
+  const symbol =
+    {
+      Enter: "↩",
+      Backspace: "⌫",
+      Delete: "⌦",
+      ArrowDown: "↓",
+      ArrowUp: "↑",
+      ArrowLeft: "←",
+      ArrowRight: "→",
+      Escape: "Esc",
+    }[stroke.key] ?? stroke.key.toUpperCase();
+  // An uppercase letter is typed with Shift, so it reads as ⇧ and the letter.
+  const shifted = /^[A-Z]$/.test(stroke.key);
+  return `${stroke.control ? "⌃" : ""}${stroke.alt ? "⌥" : ""}${stroke.shift || shifted ? "⇧" : ""}${stroke.cmd ? "⌘" : ""}${symbol}`;
 }
 /** {@link shortcutText} on a Mac; elsewhere written out as Ctrl, Alt and Shift. */
 export function platformShortcutText(

@@ -175,6 +175,8 @@ export function nativeActionEnabled(action: NativeAction, state: NativeMenuState
     (action !== "shareWebLink" || state.web === true)
   );
 }
+/** A Format menu action without a key reaches the focused compose body as this event. */
+export const EDITOR_ACTION_EVENT = "openmail:editor-action";
 /** Dispatch through existing handlers, including Composer and Reader, using the selected keymap. */
 export function nativeActionStroke(set: ShortcutSet, action: ShortcutAction) {
   return KEYMAP[set][action][0];

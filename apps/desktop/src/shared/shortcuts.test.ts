@@ -206,7 +206,7 @@ it("every accelerator is unique and every shortcut leaves typing to the editor",
       for (const stroke of KEYMAP[set][action]) {
         const shifted =
           stroke.key.length === 1 &&
-          (stroke.key !== stroke.key.toLowerCase() || /[?!#+~]/.test(stroke.key));
+          (stroke.key !== stroke.key.toLowerCase() || /[?!#+~{}|]/.test(stroke.key));
         const input = event(stroke.key, {
           metaKey: Boolean(stroke.cmd),
           ctrlKey: Boolean(stroke.control),
@@ -298,9 +298,12 @@ it("⌘[ and ⌘] step through history and leave other bracket chords alone", ()
   expect(historyShortcut(stroke("[", { altKey: true }))).toBeNull();
   expect(historyShortcut(stroke("{", { shiftKey: true }))).toBeNull();
   expect(historyShortcut(stroke("[", { metaKey: false }))).toBeNull();
-  // No keymap action already uses a bracket.
-  for (const set of ["mimestream", "apple", "gmail"] as const)
-    expect(shortcutAction(set, stroke("["))).toBeNull();
+  // Only the composer's indent and outdent share the brackets; the composer handles them first.
+  for (const set of ["mimestream", "apple", "gmail"] as const) {
+    expect(shortcutAction(set, stroke("["))).toBe("outdentParagraph");
+    expect(shortcutAction(set, stroke("]"))).toBe("indentParagraph");
+    expect(shortcutAction(set, stroke("["), true)).toBeNull();
+  }
 });
 
 const strokeEvent = (stroke: (typeof KEYMAP)["gmail"]["next"][number]): KeyEvent => ({
@@ -311,18 +314,22 @@ const strokeEvent = (stroke: (typeof KEYMAP)["gmail"]["next"][number]): KeyEvent
   shiftKey:
     Boolean(stroke.shift) ||
     (stroke.key.length === 1 &&
-      (stroke.key !== stroke.key.toLowerCase() || /[?!#+~]/.test(stroke.key))),
+      (stroke.key !== stroke.key.toLowerCase() || /[?!#+~{}|]/.test(stroke.key))),
 });
+
+/** The composer body handles these before the window's history keys, which skip typing. */
+const composerFormatting = new Set(["indentParagraph", "outdentParagraph"]);
 
 it("no keymap stroke is also a mailbox, profile, favorite, history, pane or selection key", () => {
   for (const set of ["mimestream", "apple", "gmail"] as const) {
-    for (const strokes of Object.values(KEYMAP[set])) {
+    for (const [action, strokes] of Object.entries(KEYMAP[set])) {
       for (const stroke of strokes) {
         const input = strokeEvent(stroke);
         expect(folderShortcut(set, input), `${set} ${JSON.stringify(stroke)}`).toBeNull();
         expect(spaceShortcut(input, set), `${set} ${JSON.stringify(stroke)}`).toBeNull();
         expect(favoriteShortcut(input), `${set} ${JSON.stringify(stroke)}`).toBeNull();
-        expect(historyShortcut(input), `${set} ${JSON.stringify(stroke)}`).toBeNull();
+        if (!composerFormatting.has(action))
+          expect(historyShortcut(input), `${set} ${JSON.stringify(stroke)}`).toBeNull();
         expect(paneShortcut(input), `${set} ${JSON.stringify(stroke)}`).toBeNull();
         expect(selectionShortcut(input), `${set} ${JSON.stringify(stroke)}`).toBeNull();
       }
@@ -364,4 +371,71 @@ it("AI shortcut labels follow the platform", () => {
     "Ctrl+Shift+J",
   );
   expect(platformShortcutText("gmail", "markRead", "Win32")).toBe("Shift+I");
+});
+
+it("formatting keys follow Mimestream and the macOS text system", () => {
+  const cases = [
+    ["bold", "⌘B"],
+    ["italic", "⌘I"],
+    ["underline", "⌘U"],
+    ["strikethrough", "⇧⌘X"],
+    ["link", "⌘K"],
+    ["alignLeft", "⌘{"],
+    ["alignCenter", "⌘|"],
+    ["alignRight", "⌘}"],
+    ["numberList", "⇧⌘7"],
+    ["bulletList", "⇧⌘8"],
+    ["quoteIncrease", "⌘'"],
+    ["quoteDecrease", "⌥⌘'"],
+    ["indentParagraph", "⌘]"],
+    ["outdentParagraph", "⌘["],
+    ["clearFormatting", "⌘\\"],
+    ["blockCode", "⇧⌘B"],
+  ] as const;
+  for (const set of ["mimestream", "apple", "gmail"] as const) {
+    for (const [action, text] of cases) expect(shortcutText(set, action)).toBe(text);
+    for (const action of ["superscript", "subscript", "dashList", "copyStyle", "toggleFormatBar"])
+      expect(KEYMAP[set][action as "superscript"]).toEqual([]);
+  }
+});
+
+it("shifted digits and brackets match by physical key when the character differs", () => {
+  const set = "mimestream";
+  // ⇧⌘7 reports "&" on a US layout.
+  expect(
+    matchesShortcut(
+      set,
+      "numberList",
+      event("&", { metaKey: true, shiftKey: true, code: "Digit7" }),
+    ),
+  ).toBe(true);
+  expect(
+    matchesShortcut(
+      set,
+      "alignLeft",
+      event("[", { metaKey: true, shiftKey: true, code: "BracketLeft" }),
+    ),
+  ).toBe(true);
+  expect(
+    matchesShortcut(set, "alignLeft", event("[", { metaKey: true, code: "BracketLeft" })),
+  ).toBe(false);
+  expect(
+    matchesShortcut(
+      set,
+      "outdentParagraph",
+      event("{", { metaKey: true, shiftKey: true, code: "BracketLeft" }),
+    ),
+  ).toBe(false);
+  expect(
+    matchesShortcut(
+      set,
+      "alignCenter",
+      event("\\", { metaKey: true, shiftKey: true, code: "Backslash" }),
+    ),
+  ).toBe(true);
+  expect(matchesShortcut(set, "clearFormatting", event("\\", { metaKey: true }))).toBe(true);
+  // Without ⌘ the physical key never counts.
+  expect(matchesShortcut(set, "numberList", event("&", { shiftKey: true, code: "Digit7" }))).toBe(
+    false,
+  );
 });

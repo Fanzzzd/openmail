@@ -1,6 +1,7 @@
 import { expect, it, vi } from "vitest";
 import { dispatchNativeAction } from "./native-actions";
 import { testDom } from "../test-support/test-dom";
+import { EDITOR_ACTION_EVENT } from "../../../shared/native-actions";
 
 it("native message commands act on the selection while editor commands reach the focused field", () => {
   const dom = testDom();
@@ -17,6 +18,7 @@ it("native message commands act on the selection while editor commands reach the
     }
   }
   vi.stubGlobal("KeyboardEvent", KeyEvent);
+  vi.stubGlobal("CustomEvent", dom.window.CustomEvent);
   try {
     for (const tag of ["input", "textarea", "select", "div"]) {
       const field = dom.window.document.createElement(tag);
@@ -38,6 +40,13 @@ it("native message commands act on the selection while editor commands reach the
       expect(message).toHaveBeenCalledWith(expect.objectContaining({ key: "r", metaKey: true }));
       dispatchNativeAction("mimestream", "bold", true);
       expect(editor).toHaveBeenCalledWith(expect.objectContaining({ key: "b", metaKey: true }));
+      // Superscript has no key, so the menu sends the action itself.
+      const menu = vi.fn();
+      field.addEventListener(EDITOR_ACTION_EVENT, menu);
+      editor.mockClear();
+      dispatchNativeAction("mimestream", "superscript", true);
+      expect(editor).not.toHaveBeenCalled();
+      expect(menu).toHaveBeenCalledWith(expect.objectContaining({ detail: "superscript" }));
     }
   } finally {
     dom.dispose();
