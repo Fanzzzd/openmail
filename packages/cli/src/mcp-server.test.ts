@@ -2,6 +2,7 @@ import { execFile, spawn } from "node:child_process";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { DatabaseSync } from "node:sqlite";
 import { afterAll, beforeAll, describe, test, vi, type TestContext } from "vitest";
 import { promisify } from "node:util";
 import { Effect, Option, Schema } from "effect";
@@ -598,6 +599,29 @@ test.concurrent("CLI list --profile explains a profile without AI consent", asyn
   expect(unknown.stderr).toContain("No profile with id nope.");
   expect(outside.code).toBe(1);
   expect(outside.stderr).toContain(`Account ${homeAccount} is not in profile ${profile}.`);
+}, 30_000);
+
+test.concurrent("CLI and MCP exit 1 with one stderr line on a database from a newer OpenMail", async ({
+  expect,
+  onTestFinished,
+}) => {
+  const directory = await home(onTestFinished, "openmail-cli-newer-");
+  const db = new DatabaseSync(join(directory, "mail.db"));
+  // Far past any MIGRATIONS length this build ships.
+  db.exec("PRAGMA user_version = 100000");
+  db.close();
+  const options = { env: { ...process.env, OPENMAIL_HOME: directory } };
+  const start = (script: string, ...args: string[]) =>
+    run(process.execPath, [script, ...args], options).then(
+      (done) => ({ code: 0, ...done }),
+      (error: unknown) => Schema.decodeUnknownSync(Failure)(error),
+    );
+  const message = "This library was opened by a newer OpenMail. Update OpenMail to open it.";
+  for (const result of await Promise.all([start("dist/cli.js", "list"), start("dist/mcp.js")])) {
+    expect(result.code).toBe(1);
+    expect(result.stderr).toContain(`error: ${message}`);
+    expect(result.stdout).toBe("");
+  }
 }, 30_000);
 
 async function seedProposals(directory: string) {

@@ -5,6 +5,8 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 const native = vi.hoisted(() => ({
   primary: true,
   failStart: false,
+  startError: undefined as Error | undefined,
+  showErrorBox: vi.fn(),
   warnStart: false,
   diagnosticLog: vi.fn(),
   localLog: vi.fn(),
@@ -31,11 +33,13 @@ vi.mock("electron", () => ({
     setAboutPanelOptions: vi.fn(),
   }),
   BrowserWindow: { getAllWindows: () => [], getFocusedWindow: () => null },
+  dialog: { showErrorBox: native.showErrorBox },
   shell: { openExternal: vi.fn() },
   powerMonitor: { isOnBatteryPower: () => false, getSystemIdleTime: () => 6 },
 }));
 vi.mock("@openmail/core", () => ({
   DatabaseUpgradeSpaceError: class extends Error {},
+  DatabaseTooNewError: class DatabaseTooNewError extends Error {},
   unavailableVision: {
     available: false,
     version: "unavailable",
@@ -46,7 +50,9 @@ vi.mock("@openmail/core", () => ({
   NodeMailbox: (options: unknown) => {
     native.nodeMailbox(options);
     if (native.failStart)
-      return Layer.effectDiscard(Effect.die(new Error("startup regression failure")));
+      return Layer.effectDiscard(
+        Effect.die(native.startError ?? new Error("startup regression failure")),
+      );
     if (native.warnStart)
       return Layer.effectDiscard(Effect.logWarning("startup regression warning"));
     return Layer.empty;
@@ -64,6 +70,13 @@ vi.mock("./reliability", () => ({
   prepareReliability: vi.fn(async () => true),
   diagnosticsLogger: Logger.make(() => native.diagnosticLog()),
   localLog: native.localLog,
+}));
+vi.mock("./native-i18n", () => ({
+  nativeAuthorizePage: vi.fn(),
+  nativeRecoveryLabels: async () => ({
+    newerDatabaseTitle: "This library was opened by a newer OpenMail",
+    newerDatabaseDetail: "Update OpenMail to the latest version to open it.",
+  }),
 }));
 vi.mock("../updates/updates", () => ({ UpdatesLive: Layer.empty }));
 vi.mock("./vision", () => ({ desktopVision: native.vision }));
@@ -99,6 +112,7 @@ beforeEach(async () => {
   vi.resetModules();
   native.primary = true;
   native.failStart = false;
+  native.startError = undefined;
   native.warnStart = false;
   vi.clearAllMocks();
 });
@@ -197,6 +211,20 @@ it("startup defects remain visible on stderr while the file log receives only a 
   expect(stderr).toHaveBeenCalledWith(expect.stringContaining("startup regression failure"));
   expect(native.localLog).toHaveBeenCalledWith("startup-failed");
   expect(native.localLog.mock.calls[0]).toEqual(["startup-failed"]);
+});
+it("a database from a newer OpenMail explains itself in a native dialog before exiting", async () => {
+  vi.spyOn(console, "error").mockImplementation(() => {
+    /* Capture console output in this regression. */
+  });
+  const { DatabaseTooNewError } = await import("@openmail/core");
+  native.failStart = true;
+  native.startError = new DatabaseTooNewError("too new");
+  await import("../index");
+  await vi.waitFor(() => expect(native.exit).toHaveBeenCalledWith(1));
+  expect(native.showErrorBox).toHaveBeenCalledWith(
+    "This library was opened by a newer OpenMail",
+    "Update OpenMail to the latest version to open it.",
+  );
 });
 it("the diagnostics logger replaces the raw Effect logger", async () => {
   native.warnStart = true;

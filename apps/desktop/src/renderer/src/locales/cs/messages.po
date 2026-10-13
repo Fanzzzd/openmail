@@ -6879,6 +6879,10 @@ msgstr "Na tuto pozvánku tento účet nemůže odpovědět"
 msgid "This invitation has a newer update"
 msgstr "Tato pozvánka má novější aktualizaci"
 
+#: src/main/app/native-i18n.ts
+msgid "This library was opened by a newer OpenMail"
+msgstr "Místní databázi otevřela novější verze OpenMail"
+
 #: src/renderer/src/lib/errors.ts
 msgid "This meeting has been cancelled"
 msgstr "Tato schůzka byla zrušena"
@@ -7240,6 +7244,10 @@ msgstr "Kontrola nebo stažení aktualizace se nezdařilo. Zkuste to znovu."
 #: src/renderer/src/state/desktop.ts
 msgid "Update checks require a signed, installed macOS app and a saved GitHub access token."
 msgstr "Kontroly aktualizací vyžadují podepsanou nainstalovanou aplikaci pro macOS a uložený přístupový token GitHub."
+
+#: src/main/app/native-i18n.ts
+msgid "Update OpenMail to the latest version to open it. The library was not changed."
+msgstr "Aktualizujte OpenMail na nejnovější verzi a otevřete ji znovu. Databáze nebyla změněna."
 
 #: src/renderer/src/i18n/organization-labels.ts
 #: src/renderer/src/lib/view.ts

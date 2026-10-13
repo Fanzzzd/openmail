@@ -7,6 +7,7 @@ import { constVoid } from "effect/Function";
 import { SqlClient } from "effect/sql";
 import {
   DatabaseCapabilities,
+  DatabaseTooNewError,
   migrate,
   migrateTo,
   MIGRATIONS,
@@ -147,6 +148,7 @@ export function databaseLayer(
         yield* Effect.sync(() =>
           inspectReadOnly(filename, (inspection) => {
             const version = Number(inspection.prepare("PRAGMA user_version").get()?.user_version);
+            if (version > MIGRATIONS.length) throw new DatabaseTooNewError(version);
             if (version > 0 && version <= ROWID_REBUILD_MIGRATION)
               checkDatabaseUpgradeSpace(inspection);
           }),

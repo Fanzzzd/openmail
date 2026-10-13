@@ -19,6 +19,14 @@ if (args.some((arg) => arg !== "--allow-writes")) {
 }
 runMcp(args.includes("--allow-writes")).pipe(
   Effect.provide(NodeMailbox({ oauthClientsFile })),
+  // stdout carries MCP frames, so a startup defect (a database from a newer OpenMail) goes to
+  // stderr as one line, and the process exits 1.
+  Effect.catchDefect((defect) =>
+    Effect.sync(() => {
+      process.stderr.write(`error: ${defect instanceof Error ? defect.message : String(defect)}\n`);
+      process.exitCode = 1;
+    }),
+  ),
   Effect.provideService(Logger.LogToStderr, true),
   NodeRuntime.runMain,
 );

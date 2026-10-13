@@ -6889,6 +6889,10 @@ msgstr "此账户无法响应该邀请"
 msgid "This invitation has a newer update"
 msgstr "此邀请已有更新版本"
 
+#: src/main/app/native-i18n.ts
+msgid "This library was opened by a newer OpenMail"
+msgstr "本地数据库已被更新版本的 OpenMail 打开过"
+
 #: src/renderer/src/lib/errors.ts
 msgid "This meeting has been cancelled"
 msgstr "此会议已取消"
@@ -7250,6 +7254,10 @@ msgstr "检查或下载更新失败，请重试。"
 #: src/renderer/src/state/desktop.ts
 msgid "Update checks require a signed, installed macOS app and a saved GitHub access token."
 msgstr "检查更新需要已签名并安装的 macOS 应用和已保存的 GitHub 访问令牌。"
+
+#: src/main/app/native-i18n.ts
+msgid "Update OpenMail to the latest version to open it. The library was not changed."
+msgstr "请将 OpenMail 更新到最新版本后再打开。本地数据库没有改动。"
 
 #: src/renderer/src/i18n/organization-labels.ts
 #: src/renderer/src/lib/view.ts

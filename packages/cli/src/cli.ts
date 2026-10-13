@@ -858,6 +858,14 @@ const appOnlyWriteMode =
           Effect.andThen(Effect.fail(new Failed({ message }))),
         );
   }),
+  // A defect (a database from a newer OpenMail, a file another process keeps locked) also
+  // gets one line on stderr. runMain would log it to stdout, where scripts never look.
+  Effect.catchDefect((defect) => {
+    const message = defect instanceof Error ? defect.message : String(defect);
+    return Console.error(`error: ${message}`).pipe(
+      Effect.andThen(Effect.fail(new Failed({ message }))),
+    );
+  }),
   Effect.provide(NodeServices.layer),
   Effect.provideService(Logger.LogToStderr, true),
   NodeRuntime.runMain,

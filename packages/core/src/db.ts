@@ -1524,6 +1524,21 @@ export function withMigrationForeignKeys<A, E, E2, R>(
 }
 
 const UserVersion = Schema.Struct({ user_version: Schema.Number });
+
+/**
+ * The database has migrations this build does not know: a newer OpenMail opened it. Running
+ * against it could misread or corrupt tables, so every entry point refuses to open it.
+ */
+export class DatabaseTooNewError extends Error {
+  constructor(
+    readonly version: number,
+    readonly supported: number = MIGRATIONS.length,
+  ) {
+    super("This library was opened by a newer OpenMail. Update OpenMail to open it.");
+    this.name = "DatabaseTooNewError";
+  }
+}
+
 /**
  * Runs pending migrations, one transaction each. The version is read inside
  * the transaction (BEGIN IMMEDIATE holds the write lock), so the app and the
@@ -1539,7 +1554,9 @@ export const migrateTo = (targetVersion: number) =>
     yield* sql`PRAGMA journal_size_limit = 8388608`;
     yield* sql`PRAGMA foreign_keys = ON`;
     const initialVersion = yield* sql`PRAGMA user_version`;
-    if (initialVersion[0]?.user_version === 0) yield* sql`PRAGMA auto_vacuum=INCREMENTAL`;
+    const opened = Number(initialVersion[0]?.user_version ?? 0);
+    if (opened > MIGRATIONS.length) return yield* Effect.die(new DatabaseTooNewError(opened));
+    if (opened === 0) yield* sql`PRAGMA auto_vacuum=INCREMENTAL`;
     const step = sql.withTransaction(
       Effect.gen(function* () {
         const rows = yield* sql`PRAGMA user_version`;

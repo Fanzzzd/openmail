@@ -7,6 +7,7 @@ import { prepareUpdateQuit } from "./updates/update-install";
 import { cleanupAttachmentTemps, cleanupPrintTemps } from "./files/attachment-temp";
 import {
   NodeMailbox,
+  DatabaseTooNewError,
   DatabaseUpgradeSpaceError,
   dataDir,
   NodeSystem,
@@ -202,6 +203,10 @@ if (mcp) {
               labels.upgradeSpaceTitle,
               labels.upgradeSpaceDetail(String(Math.ceil(error.requiredBytes / 1024 ** 2))),
             );
+          }
+          if (error instanceof DatabaseTooNewError) {
+            const labels = await nativeRecoveryLabels();
+            dialog.showErrorBox(labels.newerDatabaseTitle, labels.newerDatabaseDetail);
           }
           localLog("startup-failed");
           console.error(Cause.pretty(cause));

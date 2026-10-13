@@ -6879,6 +6879,10 @@ msgstr "Deze uitnodiging kan niet worden beantwoord met dit account"
 msgid "This invitation has a newer update"
 msgstr "Deze uitnodiging heeft een nieuwere update"
 
+#: src/main/app/native-i18n.ts
+msgid "This library was opened by a newer OpenMail"
+msgstr "De lokale database is geopend door een nieuwere OpenMail"
+
 #: src/renderer/src/lib/errors.ts
 msgid "This meeting has been cancelled"
 msgstr "Deze bijeenkomst is geannuleerd"
@@ -7240,6 +7244,10 @@ msgstr "Zoeken naar of downloaden van de update is mislukt. Probeer het opnieuw.
 #: src/renderer/src/state/desktop.ts
 msgid "Update checks require a signed, installed macOS app and a saved GitHub access token."
 msgstr "Voor updatecontroles zijn een ondertekende, geïnstalleerde macOS-app en een opgeslagen GitHub-toegangstoken vereist."
+
+#: src/main/app/native-i18n.ts
+msgid "Update OpenMail to the latest version to open it. The library was not changed."
+msgstr "Werk OpenMail bij naar de nieuwste versie om hem te openen. De database is niet gewijzigd."
 
 #: src/renderer/src/i18n/organization-labels.ts
 #: src/renderer/src/lib/view.ts

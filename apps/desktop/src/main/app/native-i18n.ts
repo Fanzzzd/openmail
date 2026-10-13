@@ -43,6 +43,10 @@ function recoveryLabels(i18n: I18n) {
       i18n._(
         msg`Free at least ${size} MiB to upgrade the local database, then restart OpenMail. The database was kept.`,
       ),
+    newerDatabaseTitle: i18n._(msg`This library was opened by a newer OpenMail`),
+    newerDatabaseDetail: i18n._(
+      msg`Update OpenMail to the latest version to open it. The library was not changed.`,
+    ),
     safeMode: i18n._(msg`OpenMail safe mode`),
     integrityFailed: i18n._(msg`The local database could not be verified`),
     crashDetail: i18n._(
