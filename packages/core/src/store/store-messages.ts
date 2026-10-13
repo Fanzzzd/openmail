@@ -7,7 +7,7 @@ import { decodeProviderId } from "../providers/imap/imap-cursor.js";
 import { applyOpToLabels } from "../domain/mail-ops.js";
 import { cleanDisplayName } from "../reader/message-security.js";
 import { type PlatformCrypto } from "../platform/crypto.js";
-import { type Store } from "../services.js";
+import type { Store } from "./service.js";
 import { all, first, run } from "./sql-rows.js";
 import { type makeComposeStore } from "./store-compose.js";
 import { type makeContactStore } from "./store-contacts.js";
@@ -57,7 +57,7 @@ export const makeMessagesStore = ({
 
     const invalidateImapFolder = (
       account: string,
-      previous: import("../services.js").ImapFolderIdentity,
+      previous: import("../providers/adapter.js").ImapFolderIdentity,
     ) =>
       sql
         .withTransaction(
@@ -134,7 +134,7 @@ export const makeMessagesStore = ({
 
     const remapProviderIds = (
       account: string,
-      mappings: readonly import("../services.js").ProviderIdMapping[],
+      mappings: readonly import("../providers/adapter.js").ProviderIdMapping[],
     ) =>
       sql
         .withTransaction(

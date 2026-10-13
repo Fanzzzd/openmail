@@ -10,7 +10,7 @@ import { ProviderError } from "../domain/errors.js";
 import { fakeServer, makeFakeProvider } from "../platform/node/fake-provider.js";
 import { Mailbox } from "./mailbox.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
-import { Store } from "../services.js";
+import { Store } from "../store/service.js";
 import { StoreLive } from "../store/store.js";
 import { makeBatchMailbox } from "./mailbox-batch.js";
 {

@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import type { DraftPush } from "../../services.js";
+import type { DraftPush } from "../../providers/adapter.js";
 import type { DraftCreateState } from "../../domain/domain.js";
 
 /** An isolated journal for provider tests that do not assemble the Store. */

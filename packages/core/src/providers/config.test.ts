@@ -5,7 +5,7 @@ import { appConfigFile, readClientsFile } from "./config.js";
 import { effectiveClients } from "./oauth-clients.js";
 import { dataDirFor } from "../platform/node/paths.js";
 import { MemoryFiles, MemoryFileSystem } from "../platform/node/platform-memory.js";
-import { AppConfig, type ClientConfig } from "../services.js";
+import { AppConfig, type ClientConfig } from "../platform/auth.js";
 
 const withEnv = (env: Record<string, string>) =>
   Effect.provide(ConfigProvider.layer(ConfigProvider.fromEnvRecord(env)));

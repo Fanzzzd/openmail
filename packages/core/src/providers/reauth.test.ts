@@ -27,11 +27,11 @@ import {
 import {
   type AppConfig,
   type OAuthIssuers,
-  Providers,
   Secrets,
-  Store,
   type TokenResponse,
-} from "../services.js";
+} from "../platform/auth.js";
+import { Providers } from "./adapter.js";
+import { Store } from "../store/service.js";
 import { StoreLive } from "../store/store.js";
 import {
   type KeepAliveProviders,

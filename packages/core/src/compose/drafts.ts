@@ -24,7 +24,7 @@ import type {
   OutgoingMessage,
 } from "../domain/domain.js";
 import { ProviderError } from "../domain/errors.js";
-import type { StoredDraft } from "../services.js";
+import type { StoredDraft } from "../store/service.js";
 
 /** What a raw draft from the provider holds, ready for the compose window. */
 export interface ParsedDraft {

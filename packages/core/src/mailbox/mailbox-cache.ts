@@ -4,7 +4,8 @@ import { trackImapBackfill } from "../providers/imap/imap-cursor.js";
 import type { ThreadQuery } from "../domain/domain.js";
 import { ProviderError } from "../domain/errors.js";
 import type { PerformError } from "./mailbox.js";
-import type { Providers, Store } from "../services.js";
+import type { Providers } from "../providers/adapter.js";
+import type { Store } from "../store/service.js";
 
 /** Pages yield the network lock between requests; sync claims it before historical work. */
 export function makeCacheMailbox(

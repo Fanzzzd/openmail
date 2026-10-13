@@ -23,7 +23,7 @@ import {
 } from "./search.js";
 import { fuzzyFolders } from "../domain/organization.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
-import { Store } from "../services.js";
+import { Store } from "../store/service.js";
 import { StoreLive } from "../store/store.js";
 import { ImapFlow } from "imapflow";
 import { searchCompiler } from "imapflow/lib/search-compiler.js";

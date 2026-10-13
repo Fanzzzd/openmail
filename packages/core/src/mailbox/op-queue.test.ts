@@ -5,7 +5,8 @@ import { TestClock } from "effect/testing";
 import { SqlClient } from "effect/sql";
 import { Mailbox } from "./mailbox.js";
 import { PermanentError, ProviderError, SendUncertain } from "../domain/errors.js";
-import { Store, type ProviderAdapter } from "../services.js";
+import { Store } from "../store/service.js";
+import type { ProviderAdapter } from "../providers/adapter.js";
 import { fakeServer, makeFakeProvider } from "../platform/node/fake-provider.js";
 import { type IncomingMessage } from "../domain/domain.js";
 {

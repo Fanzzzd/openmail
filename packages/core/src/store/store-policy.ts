@@ -9,7 +9,7 @@ import {
 } from "../domain/domain.js";
 import { NotFound } from "../domain/errors.js";
 import { sha256Hex } from "../platform/crypto.js";
-import { type Store } from "../services.js";
+import type { Store } from "./service.js";
 import { all, first, run } from "./sql-rows.js";
 import { type makeComposeStore } from "./store-compose.js";
 import {
@@ -58,7 +58,7 @@ export const makePolicyStore = ({
 }) => {
   const purgeAccountProposals = Effect.fn("Store.purgeAccountProposals")(function* (
     ownerId: string,
-    removeDraft: (draft: import("../services.js").StoredDraft) => Effect.Effect<void> = (draft) =>
+    removeDraft: (draft: import("./service.js").StoredDraft) => Effect.Effect<void> = (draft) =>
       compose.deleteDraft(draft.id),
   ) {
     const now = yield* Clock.currentTimeMillis;

@@ -11,7 +11,7 @@ import type { Mailbox } from "../../mailbox/mailbox.js";
 import { makeOutlook } from "../../providers/outlook/outlook.js";
 import { NodeSystem, NodePlatform, type NodePlatformOptions } from "./platform-node.js";
 import { readOnlyAdapter } from "../../mailbox/read-only.js";
-import { Providers } from "../../services.js";
+import { Providers } from "../../providers/adapter.js";
 import { StoreLive } from "../../store/store.js";
 import { OAuthIssuersSql } from "../../store/store-oauth-issuers.js";
 

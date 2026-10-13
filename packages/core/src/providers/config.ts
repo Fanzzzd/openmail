@@ -1,7 +1,7 @@
 import { Config, Effect, FileSystem, Layer, Option, Path, Schema } from "effect";
 
 import { CLIENT_ENV_VARS, clientsFromEnv, parseClientsFile } from "./oauth-client-sources.js";
-import { AppConfig, type ClientConfig, type ClientSources } from "../services.js";
+import { AppConfig, type ClientConfig, type ClientSources } from "../platform/auth.js";
 
 /**
  * OAuth clients. The user's own registrations live in config.json. The

@@ -16,11 +16,13 @@ import {
   isTriageInbox,
 } from "../ai/ai.js";
 import { InvalidInput } from "../domain/errors.js";
-import { Mailbox, type ModelThread } from "./mailbox.js";
+import { Mailbox } from "./mailbox.js";
+import type { ModelThread } from "../ai/model-thread.js";
 import type { Model } from "../ai/model.js";
 import { modelContext } from "../ai/model-view.js";
 import { MODEL_KEY } from "../ai/secrets.js";
-import type { Secrets, Store } from "../services.js";
+import type { Secrets } from "../platform/auth.js";
+import type { Store } from "../store/service.js";
 import {
   AgentIdentity,
   AssistantToolkit,

@@ -227,7 +227,7 @@ export const makeReadingMailbox = (
     id: string,
     view: "model",
     tokenBudget?: number,
-  ): Effect.Effect<import("./mailbox.js").ModelThread, NotFound>;
+  ): Effect.Effect<import("../ai/model-thread.js").ModelThread, NotFound>;
 
   function thread(id: string, view?: "model", tokenBudget = 6000) {
     return view === "model"

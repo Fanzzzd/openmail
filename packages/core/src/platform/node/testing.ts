@@ -3,7 +3,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { MailCodec } from "../mail-codec.js";
 import type { Model } from "../../ai/model.js";
-import type { ProviderAdapter, Secrets, Store } from "../../services.js";
+import type { ProviderAdapter } from "../../providers/adapter.js";
+import type { Secrets } from "../auth.js";
+import type { Store } from "../../store/service.js";
 import { Effect, Layer } from "effect";
 
 import type { Account, IncomingMessage, OutgoingMessage, Provider } from "../../domain/domain.js";
@@ -11,7 +13,7 @@ import { type FakeServer, fakeServer, makeFakeProvider } from "./fake-provider.j
 import { MailboxLive, type MailboxOptions } from "../../mailbox/mailbox-live.js";
 import type { Mailbox } from "../../mailbox/mailbox.js";
 import { MemoryPlatform, type MemoryPlatformOptions } from "./platform-memory.js";
-import { Providers } from "../../services.js";
+import { Providers } from "../../providers/adapter.js";
 import { StoreLive } from "../../store/store.js";
 
 /**
@@ -37,7 +39,7 @@ export function TestMailbox(
   });
 }
 
-export { Store } from "../../services.js";
+export { Store } from "../../store/service.js";
 export { StoreLive } from "../../store/store.js";
 
 export { type FakeServer, fakeServer } from "./fake-provider.js";

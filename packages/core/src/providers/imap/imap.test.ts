@@ -36,7 +36,9 @@ import {
 import { resolveImapSettings } from "./imap-settings.js";
 import { fetchMessages } from "../../platform/node/imap/pull.js";
 import { HtmlText } from "../../platform/html-text.js";
-import { Providers, Secrets, Store } from "../../services.js";
+import { Providers } from "../adapter.js";
+import { Secrets } from "../../platform/auth.js";
+import { Store } from "../../store/service.js";
 import { Mailbox } from "../../mailbox/mailbox.js";
 import { MailboxLive } from "../../mailbox/mailbox-live.js";
 import { StoreLive } from "../../store/store.js";
@@ -1339,7 +1341,7 @@ it.effect(
 
 function testImap<A, E>(
   work: (
-    adapter: import("../../services.js").ProviderAdapter,
+    adapter: import("../adapter.js").ProviderAdapter,
     client: ImapFlow,
     opens: () => number,
   ) => Effect.Effect<A, E>,
@@ -2006,7 +2008,7 @@ for (const result of [false, undefined] as const) {
         Effect.gen(function* () {
           vi.spyOn(client, "search").mockResolvedValue(result);
           const append = vi.spyOn(client, "append").mockResolvedValue(false);
-          const emitted: import("../../services.js").Change[] = [];
+          const emitted: import("../adapter.js").Change[] = [];
           let operation;
           if (mode === "search") operation = adapter.search(account, { search: "test" });
           else if (mode === "backfill")

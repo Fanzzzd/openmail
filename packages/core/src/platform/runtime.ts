@@ -1,5 +1,5 @@
 import { Context, type Effect } from "effect";
-import type { ImageDownloader } from "../compose/compose-images.js";
+import type { InvalidInput, ProviderError } from "../domain/errors.js";
 import type { MediaError } from "../ai/media.js";
 
 export interface AttachmentFileCache {
@@ -22,6 +22,11 @@ export class AttachmentFiles extends Context.Service<
     readonly open: (directory: string) => AttachmentFileCache;
   }
 >()("openmail/AttachmentFiles") {}
+export type DownloadedImage = { mimeType: string; content: string };
+export type ImageDownloader = (
+  url: string,
+  limit: number,
+) => Effect.Effect<DownloadedImage, InvalidInput | ProviderError>;
 /** Owns DNS resolution and pinned TCP/TLS requests. A plain fetch cannot satisfy this port. */
 export class ImageNetwork extends Context.Service<
   ImageNetwork,

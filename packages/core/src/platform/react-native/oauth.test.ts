@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { Effect, Layer, Option } from "effect";
 import { FetchHttpClient } from "effect/http";
-import { OAuth } from "../../services.js";
+import { OAuth } from "../auth.js";
 import { mobileOAuthLayer } from "./oauth.js";
 
 const tokenUrl = "https://login.microsoftonline.com/consumers/oauth2/v2.0/token";

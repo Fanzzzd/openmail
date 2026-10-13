@@ -1,4 +1,5 @@
-import type { CalendarEvent, CalendarTime } from "./calendar.js";
+import type { CalendarEvent } from "./calendar-event.js";
+import type { CalendarTime } from "./calendar-time.js";
 import { InvalidInput } from "../domain/errors.js";
 import { WINDOWS_ZONES } from "./windows-zones.js";
 

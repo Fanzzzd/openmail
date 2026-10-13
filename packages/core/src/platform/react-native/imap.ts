@@ -1,14 +1,10 @@
 import { messageIdKey } from "../../mime/message-id.js";
-import { FolderStatus } from "../../sync/sync-health.js";
-import type { ResetVerification } from "../../sync/sync-reset.js";
+import { FolderStatus } from "../../sync/sync-records.js";
+import type { ResetVerification, CachedHeaders } from "../../sync/sync-records.js";
 import { Clock, Effect, Option, Queue, Schema, Scope, Semaphore, Stream } from "effect";
 import { Buffer } from "../bytes.js";
 import { MailCodec, mimeAddresses, type MimeMessage } from "../mail-codec.js";
-import {
-  CACHED_HEADER_NAMES,
-  cachedHeaders,
-  type CachedHeaders,
-} from "../../sync/header-backfill.js";
+import { CACHED_HEADER_NAMES, cachedHeaders } from "../../sync/header-backfill.js";
 import {
   MailTransport,
   MailWire,
@@ -21,14 +17,14 @@ import {
   type ImapResponse,
   type ImapValue,
 } from "../mail-socket.js";
-import {
-  Secrets,
-  type ProviderAdapter,
-  type Change,
-  type ProviderPushContext,
-  type ProviderPushResult,
-  type ProviderIdMapping,
-} from "../../services.js";
+import { Secrets } from "../auth.js";
+import type {
+  ProviderAdapter,
+  Change,
+  ProviderPushContext,
+  ProviderPushResult,
+  ProviderIdMapping,
+} from "../../providers/adapter.js";
 import {
   AuthError,
   InvalidInput,

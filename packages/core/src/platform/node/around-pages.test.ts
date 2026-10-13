@@ -19,7 +19,7 @@ import {
   type SearchExpression,
 } from "../../search/search.js";
 import { MAILBOX_LABEL } from "../../domain/mailbox-labels.js";
-import { Store } from "../../services.js";
+import { Store } from "../../store/service.js";
 import { StoreLive } from "../../store/store.js";
 import { incoming } from "./testing.js";
 import { MemoryPlatform } from "./platform-memory.js";

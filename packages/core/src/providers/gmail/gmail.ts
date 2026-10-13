@@ -1,11 +1,8 @@
 import { Clock, Effect, Option, Schema, Stream } from "effect";
 import { HttpClient, HttpClientRequest } from "effect/http";
 import { FOLDER_BATCH_LIMIT, GMAIL_PERMANENT_DELETE_SCOPE } from "../../domain/folder-actions.js";
-import {
-  CACHED_HEADER_NAMES,
-  type CachedHeaders,
-  firstHeaders,
-} from "../../sync/header-backfill.js";
+import { CACHED_HEADER_NAMES, firstHeaders } from "../../sync/header-backfill.js";
+import type { CachedHeaders, FolderStatus, ResetVerification } from "../../sync/sync-records.js";
 import { newMessageId } from "../../mime/message-id.js";
 import { messageSecurity } from "../../reader/message-security.js";
 import { BASE_SCOPES, OPTIONAL_SCOPES, isOptionalService } from "../optional-services.js";
@@ -32,8 +29,6 @@ import {
   providerDecode,
   providerReadFailure,
 } from "../provider-send.js";
-import type { FolderStatus } from "../../sync/sync-health.js";
-import type { ResetVerification } from "../../sync/sync-reset.js";
 
 import { GMAIL_MIME_LIMIT } from "../../mime/attachment-policy.js";
 import { type AttachmentRef, MEDIA_RAW_TOO_LARGE, pickAttachment } from "../../mime/attachments.js";
@@ -56,18 +51,15 @@ import {
   type ProviderFailure,
 } from "../../domain/errors.js";
 import { charsetOf, decodeHeader, decodeUtf8First, parseAddressList } from "../../mime/mime.js";
-import {
-  AppConfig,
-  OAuthIssuers,
-  type Change,
-  type ConnectInput,
-  type Connected,
-  type DraftPush,
-  type DraftSaveResult,
-  OAuth,
-  type ProviderAdapter,
-  Secrets,
-} from "../../services.js";
+import { AppConfig, OAuthIssuers, OAuth, Secrets } from "../../platform/auth.js";
+import type {
+  Change,
+  ConnectInput,
+  Connected,
+  DraftPush,
+  DraftSaveResult,
+  ProviderAdapter,
+} from "../adapter.js";
 
 import { makeGmailFeatures } from "./gmail-features.js";
 import { finishInline, finishWith, type HtmlBody, HtmlText } from "../../platform/html-text.js";

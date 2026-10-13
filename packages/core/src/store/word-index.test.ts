@@ -7,7 +7,7 @@ import { it, expect } from "vitest";
 import { Effect, Layer } from "effect";
 import { databaseLayer, MIGRATIONS } from "../platform/node/db.js";
 import { StoreLive } from "./store.js";
-import { Store } from "../services.js";
+import { Store } from "./service.js";
 import { NodeSystem } from "../platform/node/platform-node.js";
 import type { IncomingMessage } from "../domain/domain.js";
 

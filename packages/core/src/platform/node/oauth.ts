@@ -12,7 +12,7 @@ import {
   Browser,
   OAuth,
   type TokenResponse,
-} from "../../services.js";
+} from "../auth.js";
 
 /**
  * Authorization-code flow with PKCE and a loopback redirect (RFC 8252). The

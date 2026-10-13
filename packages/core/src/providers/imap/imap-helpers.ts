@@ -1,9 +1,5 @@
-export interface Flags {
-  unread: boolean;
-  starred: boolean;
-}
 import { Option } from "effect";
-import { decodeProviderId } from "./imap-cursor.js";
+import { decodeProviderId, type Flags } from "./imap-cursor.js";
 
 export const copyProgressKey = (providerId: string, destination: string, accepted = false) =>
   JSON.stringify(accepted ? [providerId, destination, "accepted"] : [providerId, destination]);

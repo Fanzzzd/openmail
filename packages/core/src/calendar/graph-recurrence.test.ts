@@ -8,7 +8,7 @@ import { graphTimestamp } from "./graph-time.js";
 import { parseCalendar } from "./invites.js";
 import { makeProviderCalendar } from "./provider-calendar.js";
 import { Mailbox } from "../mailbox/mailbox.js";
-import { Providers } from "../services.js";
+import { Providers } from "../providers/adapter.js";
 import { StoreLive } from "../store/store.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
 import { makeFakeProvider } from "../platform/node/fake-provider.js";

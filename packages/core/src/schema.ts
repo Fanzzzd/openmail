@@ -12,7 +12,8 @@ export {
   SyncFailureReason,
 } from "./sync/sync-failure.js";
 export { IMAP_PRESETS, ImapConnectInput, ImapPreset } from "./providers/imap/imap-presets.js";
-export { Mailbox, MailboxEvent, ModelThread, SyncState } from "./mailbox/mailbox.js";
+export { Mailbox, MailboxEvent, SyncState } from "./mailbox/mailbox.js";
+export { ModelThread } from "./ai/model-thread.js";
 export { type HeldSend, holdSend } from "./mailbox/undo-send.js";
 export * from "./reader/print.js";
 export * from "./reader/reader-html.js";
@@ -72,6 +73,7 @@ export * from "./mime/attachment-import.js";
 export * from "./providers/optional-services.js";
 
 export * from "./sync/sync-health.js";
+export { FolderStatus, HealthCounts } from "./sync/sync-records.js";
 
 export { outlookPreviewUnavailable } from "./providers/outlook/outlook-rules.js";
 export * from "./search/search-snippets.js";

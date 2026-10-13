@@ -2,7 +2,7 @@ import { incoming as makeIncoming, TestMailbox, fakeServer } from "../platform/n
 import { expect, it } from "vitest";
 import { Effect, ManagedRuntime, Option } from "effect";
 import { Mailbox } from "../portable.js";
-import { Store } from "../services.js";
+import { Store } from "../store/service.js";
 import { buildMobileMime } from "../platform/react-native/compose.js";
 import { parseMobileMime } from "../platform/react-native/mail-codec.js";
 import { SendUncertain } from "../domain/errors.js";

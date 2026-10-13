@@ -8,7 +8,8 @@ import { type MailboxOptions } from "./mailbox-live.js";
 import { Mailbox } from "./mailbox.js";
 import { TestMailbox } from "../platform/node/testing.js";
 import { fakeServer, makeFakeProvider } from "../platform/node/fake-provider.js";
-import { Store, type ProviderAdapter } from "../services.js";
+import { Store } from "../store/service.js";
+import type { ProviderAdapter } from "../providers/adapter.js";
 for (const action of ["discard", "send"] as const) {
   it.effect(`${action} queues Message-ID cleanup for an uncertain draft creation`, () =>
     core(

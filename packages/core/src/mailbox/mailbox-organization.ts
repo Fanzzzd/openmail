@@ -1,7 +1,7 @@
 import { PlatformCrypto } from "../platform/crypto.js";
 import { Clock, Context, Effect, Semaphore } from "effect";
 import type { Account, Label, MailOp, ThreadQuery, Provider } from "../domain/domain.js";
-import { requireFocusedInboxScope } from "../providers/optional-services.js";
+import { requireFocusedInboxScope } from "../providers/scoped-adapter.js";
 import { InvalidInput } from "../domain/errors.js";
 import type { Mailbox } from "./mailbox.js";
 import {
@@ -26,7 +26,8 @@ import {
   serverSearchIgnored,
   searchQueryError,
 } from "../search/search.js";
-import type { Providers, Store } from "../services.js";
+import type { Providers } from "../providers/adapter.js";
+import type { Store } from "../store/service.js";
 import {
   evaluateOutlookRule,
   outlookPreviewUnavailable,

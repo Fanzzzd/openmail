@@ -13,7 +13,7 @@ import {
   refused,
 } from "./read-only.js";
 import { Mailbox } from "./mailbox.js";
-import { Store } from "../services.js";
+import { Store } from "../store/service.js";
 import { EMPTY_FILTER } from "../domain/organization.js";
 import { fakeServer, TestMailbox } from "../platform/node/testing.js";
 import { makeFakeProvider } from "../platform/node/fake-provider.js";

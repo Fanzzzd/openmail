@@ -1,4 +1,4 @@
-import { serviceAvailable } from "../providers/optional-services.js";
+import { serviceAvailable } from "../providers/scoped-adapter.js";
 import { PlatformCrypto } from "../platform/crypto.js";
 import { MailCodec, type MailCodecPort } from "../platform/mail-codec.js";
 import { bestComposeSender } from "../compose/compose-sender.js";
@@ -6,8 +6,8 @@ import {
   imageAttachment as unboundImageAttachment,
   CONTACT_PHOTO_LIMIT,
   COMPOSE_IMAGE_LIMIT,
-  type ImageDownloader,
 } from "../compose/compose-images.js";
+import type { ImageDownloader } from "../platform/runtime.js";
 import { Clock, Effect, Schema, Semaphore } from "effect";
 import type { Account, Actor, Command } from "../domain/domain.js";
 import {
@@ -29,7 +29,8 @@ import {
   invitesFromRaw as unboundInvitesFromRaw,
 } from "../calendar/invites.js";
 import type { Mailbox } from "./mailbox.js";
-import type { Providers, Store } from "../services.js";
+import type { Providers } from "../providers/adapter.js";
+import type { Store } from "../store/service.js";
 
 export function eventFromInvite(invite: CalendarInvite): CalendarEvent | null {
   if (!invite.start || invite.cancelled) return null;

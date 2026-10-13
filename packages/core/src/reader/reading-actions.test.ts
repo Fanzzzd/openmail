@@ -8,7 +8,7 @@ import { DatabaseSync } from "node:sqlite";
 import { databaseLayer, MIGRATIONS } from "../platform/node/db.js";
 import { type IncomingMessage, type Prefs } from "../domain/domain.js";
 import { Mailbox } from "../mailbox/mailbox.js";
-import { Store } from "../services.js";
+import { Store } from "../store/service.js";
 import { StoreLive } from "../store/store.js";
 import { gmailThreadUrl, officialMessageUrl, senderName, threadExpansion } from "./reading.js";
 import { parseSearchQuery, senderSearchQuery } from "../search/search.js";

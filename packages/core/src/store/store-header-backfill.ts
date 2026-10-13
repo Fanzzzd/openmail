@@ -6,7 +6,7 @@ import {
   HeaderBackfillCandidate,
   type CachedHeaders,
   type HeaderPosition,
-} from "../sync/header-backfill.js";
+} from "../sync/sync-records.js";
 
 const key = (account: string) => `sync-headers:${account}`;
 const Candidate = HeaderBackfillCandidate;

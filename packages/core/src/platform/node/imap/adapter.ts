@@ -10,12 +10,8 @@ import {
 } from "../../../providers/imap/imap-cursor.js";
 import { groupIdsByFolder } from "../../../providers/imap/imap-helpers.js";
 import { matchesSearch, parseSearchQuery, searchMailboxLabel } from "../../../search/search.js";
-import {
-  Secrets,
-  type Change,
-  type ProviderAdapter,
-  type ProviderPushContext,
-} from "../../../services.js";
+import { Secrets } from "../../auth.js";
+import type { Change, ProviderAdapter, ProviderPushContext } from "../../../providers/adapter.js";
 import { HtmlText } from "../../html-text.js";
 import { MailCodec } from "../../mail-codec.js";
 import { watchImapInbox } from "../imap-idle.js";
@@ -96,7 +92,7 @@ export const makeImapWith = (
             return yield* new PermanentError({ message: `Not an IMAP message id: ${invalid}` });
           }
           const groups = decodedGroups.value;
-          const mappings: import("../../../services.js").ProviderIdMapping[] = [];
+          const mappings: import("../../../providers/adapter.js").ProviderIdMapping[] = [];
           let reconcile = false;
           for (const first of groups.values()) {
             const moved = yield* applyOp(

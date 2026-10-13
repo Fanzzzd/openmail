@@ -31,12 +31,12 @@ import { MailboxLive } from "../../mailbox/mailbox-live.js";
 import { StoreLive } from "../../store/store.js";
 import {
   Providers,
-  Secrets,
-  Store,
   type DraftPush,
   type ProviderAdapter,
   type SendPreparation,
-} from "../../services.js";
+} from "../adapter.js";
+import { Secrets } from "../../platform/auth.js";
+import { Store } from "../../store/service.js";
 
 const account = buildAccount("outlook");
 const options = {

@@ -3,7 +3,7 @@ import { Effect, Layer, Schema } from "effect";
 import { SqlClient } from "effect/sql";
 import type { IncomingMessage } from "../domain/domain.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
-import { Store } from "../services.js";
+import { Store } from "./service.js";
 import { StoreLive } from "./store.js";
 import { AUDIT_LOG_ROWS } from "./store-policy.js";
 

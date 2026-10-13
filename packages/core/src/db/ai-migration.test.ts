@@ -5,7 +5,7 @@ import { Effect, FileSystem, Layer, Option, Path, Schema } from "effect";
 import { SqlClient } from "effect/sql";
 import { DatabaseSync } from "node:sqlite";
 import { databaseLayer, MIGRATIONS } from "../platform/node/db.js";
-import { Store } from "../services.js";
+import { Store } from "../store/service.js";
 import { StoreLive } from "../store/store.js";
 
 it.effect(

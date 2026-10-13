@@ -1,6 +1,6 @@
 import { Effect, Option, Schema } from "effect";
 import { HttpClient, HttpClientRequest } from "effect/http";
-import type { Account } from "../../domain/domain.js";
+import type { Account, Attachment } from "../../domain/domain.js";
 import {
   AuthError,
   ClientNotConfigured,
@@ -16,14 +16,8 @@ import { Buffer } from "../../platform/bytes.js";
 import { graphSearchErrorCode, logProviderFailure } from "../provider-diagnostics.js";
 import { makeProviderHttp, ApiError } from "../provider-http.js";
 import { graphPages } from "../provider-pages.js";
-import {
-  AppConfig,
-  type Connected,
-  type ConnectInput,
-  OAuth,
-  OAuthIssuers,
-  Secrets,
-} from "../../services.js";
+import { AppConfig, OAuth, OAuthIssuers, Secrets } from "../../platform/auth.js";
+import type { Connected, ConnectInput } from "../adapter.js";
 import {
   AUTH_URL,
   CONCURRENCY,
@@ -335,3 +329,17 @@ export const makeOutlookClient = Effect.gen(function* () {
   };
 });
 export type OutlookClient = Effect.Success<typeof makeOutlookClient>;
+
+/** Folder and attachment reads that sync hands to the pull and recovery paths. */
+export interface OutlookSyncSources {
+  listCustomFolders: (
+    accountId: string,
+  ) => Effect.Effect<
+    readonly { id: string; name: string }[],
+    Effect.Error<ReturnType<OutlookClient["get"]>>
+  >;
+  fetchAttachments: (
+    accountId: string,
+    id: string,
+  ) => Effect.Effect<Attachment[], Effect.Error<ReturnType<OutlookClient["get"]>>>;
+}

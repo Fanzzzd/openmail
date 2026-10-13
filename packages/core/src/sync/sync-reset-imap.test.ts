@@ -3,7 +3,7 @@ import { Effect, Layer, Option, Stream } from "effect";
 import { ImapFlow } from "imapflow";
 import { vi } from "vitest";
 import { type IncomingMessage } from "../domain/domain.js";
-import { Store } from "../services.js";
+import { Store } from "../store/service.js";
 import { StoreLive } from "../store/store.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
 import { makeImapWith } from "../platform/node/imap/adapter.js";

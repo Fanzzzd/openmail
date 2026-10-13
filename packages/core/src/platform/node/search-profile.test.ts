@@ -3,7 +3,7 @@ import { assert, it } from "@effect/vitest";
 import { Effect, Layer } from "effect";
 import { SqlClient } from "effect/sql";
 import { TestClock } from "effect/testing";
-import { Store } from "../../services.js";
+import { Store } from "../../store/service.js";
 import { StoreLive } from "../../store/store.js";
 import { SearchProfile } from "../../search/search-profile.js";
 import { MemoryPlatform } from "./platform-memory.js";

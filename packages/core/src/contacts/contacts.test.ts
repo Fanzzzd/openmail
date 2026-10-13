@@ -6,7 +6,7 @@ import { SqlClient } from "effect/sql";
 import { DatabaseSync } from "node:sqlite";
 import { databaseLayer, MIGRATIONS } from "../platform/node/db.js";
 import { mergeContacts } from "./contacts.js";
-import { Store } from "../services.js";
+import { Store } from "../store/service.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
 import { StoreLive } from "../store/store.js";
 

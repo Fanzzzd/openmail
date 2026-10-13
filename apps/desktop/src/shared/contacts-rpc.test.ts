@@ -8,7 +8,7 @@ import { Mailbox } from "../../../../packages/core/src/mailbox/mailbox.js";
 import { makeOutlook } from "../../../../packages/core/src/providers/outlook/outlook.js";
 import { makeGmail } from "../../../../packages/core/src/providers/gmail/gmail.js";
 import { Store, StoreLive } from "@openmail/core/testing/node";
-import { Providers } from "../../../../packages/core/src/services.js";
+import { Providers } from "../../../../packages/core/src/providers/adapter.js";
 import { MemoryPlatform } from "../../../../packages/core/src/platform/node/platform-memory.js";
 import { mailboxHandlers } from "./mailbox-handlers";
 import { MailRpcs } from "./rpc";

@@ -32,7 +32,7 @@ import {
   OAuth,
   Secrets,
   type TokenResponse,
-} from "../../services.js";
+} from "../auth.js";
 
 /** URLs the memory Browser was asked to open, oldest first. */
 class OpenedUrls extends Context.Service<OpenedUrls, Ref.Ref<string[]>>()(

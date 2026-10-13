@@ -9,7 +9,7 @@ import { SqlClient } from "effect/sql";
 import { SqliteClient } from "@effect/sql-sqlite-node";
 import { MIGRATIONS, splitStatements } from "../dist/db.js";
 import { StoreLive } from "../dist/store.js";
-import { Store } from "../dist/services.js";
+import { Store } from "../dist/store/service.js";
 import { NodeRuntime } from "../dist/platform/node/runtime.js";
 import {
   fixtureAccounts,

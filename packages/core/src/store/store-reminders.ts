@@ -2,7 +2,7 @@ import { Effect, Option, Schema } from "effect";
 import { type SqlClient } from "effect/sql";
 import { InvalidInput } from "../domain/errors.js";
 import { applyOpToLabels } from "../domain/mail-ops.js";
-import { type Store } from "../services.js";
+import type { Store } from "./service.js";
 import { all, first, run } from "./sql-rows.js";
 
 import { type makeQueryStore } from "./store-query.js";

@@ -12,7 +12,8 @@ import {
   type DeleteFolder,
 } from "../domain/folder-actions.js";
 import type { Mailbox } from "./mailbox.js";
-import type { Providers, Store } from "../services.js";
+import type { Providers } from "../providers/adapter.js";
+import type { Store } from "../store/service.js";
 
 const requireConfirmation = (confirmed: boolean) =>
   confirmed

@@ -26,7 +26,7 @@ import {
   type ClientConfig,
   type OAuth,
   type Secrets,
-} from "../../services.js";
+} from "../auth.js";
 
 /** Everything below the Store and the providers: what a platform has to supply. */
 export type PlatformServices =

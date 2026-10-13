@@ -12,7 +12,7 @@ import {
 } from "../domain/domain.js";
 import { InvalidInput, type ProviderError } from "../domain/errors.js";
 import { decodeProviderId } from "../providers/imap/imap-cursor.js";
-import { requireFocusedInboxScope } from "../providers/optional-services.js";
+import { requireFocusedInboxScope } from "../providers/scoped-adapter.js";
 import { applyOpToLabels, folderTarget, invalidCategoryFolderOp } from "../domain/mail-ops.js";
 import { type makeBatchMailbox } from "./mailbox-batch.js";
 import { eventFromInvite } from "./mailbox-features.js";
@@ -23,7 +23,8 @@ import { type Mailbox, type PerformError } from "./mailbox.js";
 import { sha256Hex } from "../platform/crypto.js";
 import { decide } from "./policy.js";
 import { READ_ONLY_MESSAGE } from "./read-only.js";
-import { type Change, type StoredDraft } from "../services.js";
+import type { Change } from "../providers/adapter.js";
+import type { StoredDraft } from "../store/service.js";
 import { notificationEligible, profileNotificationsActive } from "../app/system.js";
 
 const isAiProposalActor = (actor: Actor): boolean =>

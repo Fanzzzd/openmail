@@ -71,7 +71,7 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
   // Messages
 
   const imapFolder = (
-    folder: import("../services.js").ImapFolderIdentity,
+    folder: import("../providers/adapter.js").ImapFolderIdentity,
     column = sql.literal("m.provider_id"),
   ) =>
     sql`${column}>=${`${folder.uidValidity}:`} AND ${column}<${`${folder.uidValidity};`} AND substr(${column}, instr(${column}, ':') + instr(substr(${column}, instr(${column}, ':') + 1), ':') + 1)=${folder.path}`;

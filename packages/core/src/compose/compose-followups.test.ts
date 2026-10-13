@@ -22,7 +22,7 @@ import { Mailbox } from "../mailbox/mailbox.js";
 import { MailboxLive } from "../mailbox/mailbox-live.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
 import { NodeSystem } from "../platform/node/platform-node.js";
-import { Providers } from "../services.js";
+import { Providers } from "../providers/adapter.js";
 import { StoreLive } from "../store/store.js";
 import { fakeServer, TestMailbox } from "../platform/node/testing.js";
 

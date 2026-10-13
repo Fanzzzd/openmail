@@ -20,7 +20,9 @@ import { MailboxLive } from "../mailbox/mailbox-live.js";
 import { Mailbox } from "../mailbox/mailbox.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
 import { replyRecipients } from "../compose/recipients.js";
-import { Providers, Store, Secrets, type ProviderAdapter } from "../services.js";
+import { Providers, type ProviderAdapter } from "../providers/adapter.js";
+import { Store } from "../store/service.js";
+import { Secrets } from "../platform/auth.js";
 import { StoreLive } from "../store/store.js";
 import {
   startAutoUpdates,

@@ -12,7 +12,7 @@ import { TextDecoder } from "../platform/text-decoder.js";
 import { BackgroundRead, makeProviderConnectivity } from "./provider-connectivity.js";
 import { makeOptionalPermissions } from "./provider-diagnostics.js";
 import { requestNotSent, retryAfterMillis, retryProviderRequest } from "./provider-retry.js";
-import type { OAuth, Secrets } from "../services.js";
+import type { OAuth, Secrets } from "../platform/auth.js";
 
 /** A non-2xx response, or a transport failure as status 0, before it becomes a ProviderFailure. */
 export class ApiError extends Data.TaggedError("ApiError")<{

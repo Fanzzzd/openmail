@@ -18,8 +18,8 @@ import {
   parseSearchQuery,
   searchMailboxLabel,
 } from "../../search/search.js";
-import { type ProviderAdapter } from "../../services.js";
-import type { FolderStatus } from "../../sync/sync-health.js";
+import type { ProviderAdapter } from "../adapter.js";
+import type { FolderStatus } from "../../sync/sync-records.js";
 import type { OutlookClient } from "./client.js";
 import { makeOutlookFolders } from "./folders.js";
 import {
@@ -548,15 +548,3 @@ export const makeOutlookSync = (client: OutlookClient, reader: OutlookRead) =>
       | "setClassificationOverride"
     >;
   });
-export interface OutlookSyncSources {
-  listCustomFolders: (
-    accountId: string,
-  ) => Effect.Effect<
-    readonly { id: string; name: string }[],
-    Effect.Error<ReturnType<OutlookClient["get"]>>
-  >;
-  fetchAttachments: (
-    accountId: string,
-    id: string,
-  ) => Effect.Effect<Attachment[], Effect.Error<ReturnType<OutlookClient["get"]>>>;
-}

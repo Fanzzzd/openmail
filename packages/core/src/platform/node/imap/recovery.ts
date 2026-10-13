@@ -1,11 +1,8 @@
 import { Effect, Option, Schema } from "effect";
 import { PermanentError, ProviderError } from "../../../domain/errors.js";
 import { FOLDER_BATCH_LIMIT } from "../../../domain/folder-actions.js";
-import {
-  CACHED_HEADER_NAMES,
-  cachedHeaders,
-  type CachedHeaders,
-} from "../../../sync/header-backfill.js";
+import { CACHED_HEADER_NAMES, cachedHeaders } from "../../../sync/header-backfill.js";
+import type { CachedHeaders, ResetVerification } from "../../../sync/sync-records.js";
 import {
   decodeProviderId,
   encodeProviderId,
@@ -13,8 +10,7 @@ import {
   type ImapCursor,
 } from "../../../providers/imap/imap-cursor.js";
 import { retainedResetLabels } from "../../../providers/imap/imap-helpers.js";
-import { type ProviderAdapter } from "../../../services.js";
-import type { ResetVerification } from "../../../sync/sync-reset.js";
+import type { ProviderAdapter } from "../../../providers/adapter.js";
 import { imapSearch } from "../imap-search.js";
 import { openFolderOf } from "./ops.js";
 import { mapFolders } from "./parse.js";

@@ -3,7 +3,7 @@ import { Effect, Layer, Schema } from "effect";
 import { makeGmail } from "../providers/gmail/gmail.js";
 import { makeOutlook } from "../providers/outlook/outlook.js";
 import { Mailbox } from "./mailbox.js";
-import { Store } from "../services.js";
+import { Store } from "../store/service.js";
 import {
   EMPTY_FILTER,
   sameFilterRule,

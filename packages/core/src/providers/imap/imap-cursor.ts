@@ -1,7 +1,6 @@
 import { Option, Predicate, Schema } from "effect";
 import type { IncomingMessage } from "../../domain/domain.js";
-import type { Change } from "../../services.js";
-import type { Flags } from "./imap-helpers.js";
+import type { Change } from "../adapter.js";
 export function encodeProviderId(path: string, uidValidity: bigint | string, uid: number): string {
   return `${uidValidity}:${uid}:${path}`;
 }
@@ -52,6 +51,12 @@ export function parseUidSet(set: string, limit = 1000000): number[] {
 
 /** Most \Deleted UIDs a folder watches for an undelete. */
 const DELETED_LIMIT = 1000;
+
+/** Unread and starred state as the server reports it. */
+export interface Flags {
+  unread: boolean;
+  starred: boolean;
+}
 
 /**
  * Per-folder sync state. Flags are kept here because the adapter never reads

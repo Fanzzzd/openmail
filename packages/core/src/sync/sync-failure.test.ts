@@ -5,7 +5,7 @@ import { AuthError, KEYCHAIN_LOCKED_MESSAGE, ProviderError } from "../domain/err
 import { diagnosticRecord } from "../platform/node/diagnostics.js";
 import { Mailbox } from "../mailbox/mailbox.js";
 import { TestMailbox } from "../platform/node/testing.js";
-import { Store } from "../services.js";
+import { Store } from "../store/service.js";
 import {
   classifySyncFailure,
   storedSyncFailureReason,

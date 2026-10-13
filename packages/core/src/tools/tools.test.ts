@@ -1,4 +1,4 @@
-import { Store } from "../services.js";
+import { Store } from "../store/service.js";
 import { expect } from "vitest";
 import { assert, it } from "@effect/vitest";
 
@@ -58,12 +58,12 @@ function testThread(
   id: string,
   view: "model",
   tokenBudget?: number,
-): Effect.Effect<import("../mailbox/mailbox.js").ModelThread>;
+): Effect.Effect<import("../ai/model-thread.js").ModelThread>;
 function testThread(
   id: string,
   view?: "model",
 ): Effect.Effect<
-  readonly import("../domain/domain.js").Message[] | import("../mailbox/mailbox.js").ModelThread
+  readonly import("../domain/domain.js").Message[] | import("../ai/model-thread.js").ModelThread
 > {
   return view === "model"
     ? Effect.succeed({

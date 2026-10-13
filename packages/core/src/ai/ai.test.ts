@@ -11,7 +11,8 @@ import { AI_INPUT_BUDGET, mailData } from "./ai.js";
 import { makeFakeProvider } from "../platform/node/fake-provider.js";
 import { MailboxLive } from "../mailbox/mailbox-live.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
-import { Providers, Store } from "../services.js";
+import { Providers } from "../providers/adapter.js";
+import { Store } from "../store/service.js";
 import { StoreLive } from "../store/store.js";
 
 const incoming = (providerId: string, text = "A decision on Friday"): IncomingMessage => ({

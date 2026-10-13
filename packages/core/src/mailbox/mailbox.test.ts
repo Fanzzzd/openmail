@@ -13,7 +13,8 @@ import { Mailbox } from "./mailbox.js";
 import { SYNC_FAILURE_TEXT } from "../sync/sync-failure.js";
 import { toModelThread } from "../ai/model-view.js";
 import { makeFakeProvider } from "../platform/node/fake-provider.js";
-import { Store, type ProviderAdapter } from "../services.js";
+import { Store } from "../store/service.js";
+import type { ProviderAdapter } from "../providers/adapter.js";
 {
   const user: Actor = { kind: "user", surface: "app" };
 

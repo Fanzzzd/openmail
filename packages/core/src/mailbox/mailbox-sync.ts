@@ -23,7 +23,7 @@ import { type MailboxDependencies, type MailboxRuntimeState } from "./mailbox-ru
 import { type Mailbox, type SyncState } from "./mailbox.js";
 import { BackgroundRead } from "../providers/provider-connectivity.js";
 import { retryAfterMillis } from "../providers/provider-retry.js";
-import { type Change } from "../services.js";
+import type { Change } from "../providers/adapter.js";
 import { logSyncCrash, type SyncCrashDiagnostic } from "../sync/sync-crash.js";
 import { logSyncFailed, SYNC_FAILURE_TEXT, syncFailureText } from "../sync/sync-failure.js";
 import { makeSyncHealth } from "../sync/sync-health.js";

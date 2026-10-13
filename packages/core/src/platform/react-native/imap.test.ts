@@ -16,7 +16,9 @@ import { fetchFields, makeMobileImap, mobileIncoming, smtpSession } from "./imap
 import { parseMobileMime, mobileMailCodecLayer } from "./mail-codec.js";
 import { MemoryPlatform } from "../node/platform-memory.js";
 import { StoreLive } from "../../store/store.js";
-import { Providers, Secrets, Store } from "../../services.js";
+import { Providers } from "../../providers/adapter.js";
+import { Secrets } from "../auth.js";
+import { Store } from "../../store/service.js";
 import { MailboxLive } from "../../mailbox/mailbox-live.js";
 import { Mailbox } from "../../mailbox/mailbox.js";
 import { Buffer } from "../bytes.js";

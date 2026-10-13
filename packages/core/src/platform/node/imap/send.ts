@@ -4,11 +4,11 @@ import { PermanentError, ProviderError } from "../../../domain/errors.js";
 import { decodeProviderId, encodeProviderId } from "../../../providers/imap/imap-cursor.js";
 import { serverSavesSent } from "../../../providers/imap/imap-settings.js";
 import { confirmDelivery } from "../../../providers/provider-send.js";
-import {
-  type DraftPush,
-  type ProviderAdapter,
-  type ProviderPushContext,
-} from "../../../services.js";
+import type {
+  DraftPush,
+  ProviderAdapter,
+  ProviderPushContext,
+} from "../../../providers/adapter.js";
 import { buildMime } from "../compose.js";
 
 import {

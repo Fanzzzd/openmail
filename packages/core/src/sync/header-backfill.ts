@@ -1,8 +1,14 @@
-import { Clock, Effect, Schema } from "effect";
+import { Clock, Effect } from "effect";
 import type { Account } from "../domain/domain.js";
-import type { ProviderAdapter, Store } from "../services.js";
+import type { ProviderAdapter } from "../providers/adapter.js";
+import type { Store } from "../store/service.js";
 import { retryAfterMillis } from "../providers/provider-retry.js";
 import { ProviderError } from "../domain/errors.js";
+import type {
+  CachedHeaders,
+  HeaderBackfillState,
+  HeaderBackfillCandidate,
+} from "./sync-records.js";
 
 /** Headers needed for identity, threading, local header searches and security. */
 export const CACHED_HEADER_NAMES = [
@@ -40,29 +46,6 @@ export const CACHED_HEADER_NAMES = [
   "importance",
   "x-mailer",
 ];
-
-export const HeaderPosition = Schema.Struct({ date: Schema.Number, id: Schema.String });
-export const HeaderBackfillCandidate = Schema.Struct({
-  ...HeaderPosition.fields,
-  providerId: Schema.String,
-});
-export const HeaderBackfillState = Schema.Union([
-  Schema.Struct({
-    kind: Schema.Literal("running"),
-    after: Schema.NullOr(HeaderPosition),
-    retryAt: Schema.optionalKey(Schema.Number),
-  }),
-  Schema.Struct({ kind: Schema.Literal("done"), completedAt: Schema.Number }),
-]);
-export type HeaderBackfillState = typeof HeaderBackfillState.Type;
-export type CachedHeaders =
-  | {
-      readonly kind: "headers";
-      readonly id: string;
-      readonly rfcMessageId: string | null;
-      readonly headers: readonly { readonly name: string; readonly value: string }[];
-    }
-  | { readonly kind: "unavailable"; readonly id: string };
 
 /** Fold continuations and retain repeated fields, unlike a Map of MIME headers. */
 export function cachedHeaders(

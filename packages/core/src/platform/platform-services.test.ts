@@ -18,7 +18,7 @@ import {
   sha256Hex,
   hmacSha256Hex,
 } from "../portable.js";
-import { Store } from "../services.js";
+import { Store } from "../store/service.js";
 import { StoreLive } from "../store/store.js";
 import { isIP } from "./ip.js";
 import { MemoryPlatform } from "./node/platform-memory.js";
@@ -105,7 +105,7 @@ it("a mailbox keeps its own MIME and random services after the platform Layer is
   let createdMessageId: string | undefined;
   const provider = {
     ...makeFakeProvider(server),
-    saveDraft: (_account: unknown, push: import("../services.js").DraftPush) =>
+    saveDraft: (_account: unknown, push: import("../providers/adapter.js").DraftPush) =>
       Effect.gen(function* () {
         const state = yield* push.creation.begin();
         createdMessageId = state.messageId;

@@ -14,7 +14,7 @@ import {
 } from "./ai.js";
 import { InvalidInput, ProviderError } from "../domain/errors.js";
 import { MODEL_KEY } from "./secrets.js";
-import { Secrets } from "../services.js";
+import { Secrets } from "../platform/auth.js";
 import type { AssistantToolkit } from "../tools/tools.js";
 
 export interface ModelRequest {

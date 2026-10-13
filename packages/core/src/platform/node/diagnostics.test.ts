@@ -33,7 +33,7 @@ import { makeFakeProvider } from "./fake-provider.js";
 import { MemoryPlatform } from "./platform-memory.js";
 import { databaseLayer, MIGRATIONS } from "./db.js";
 import { NodeSystem } from "./platform-node.js";
-import { Providers } from "../../services.js";
+import { Providers } from "../../providers/adapter.js";
 import { StoreLive } from "../../store/store.js";
 
 const directories: string[] = [];

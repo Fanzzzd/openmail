@@ -39,7 +39,7 @@ import {
   wordTokens,
   type SearchExpression,
 } from "../search/search.js";
-import { type Store } from "../services.js";
+import type { Store } from "./service.js";
 import { all, sqliteTextCompare } from "./sql-rows.js";
 import { type makeComposeStore } from "./store-compose.js";
 import {

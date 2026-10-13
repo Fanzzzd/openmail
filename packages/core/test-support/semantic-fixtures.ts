@@ -4,7 +4,7 @@ import type { IncomingMessage } from "../src/domain/domain.js";
 import { type ModelRuntime, unavailableVision } from "../src/ai/media.js";
 import { MemoryPlatform } from "../src/platform/node/platform-memory.js";
 import { makeSemanticIndexer } from "../src/ai/semantic-indexer.js";
-import { Store } from "../src/services.js";
+import { Store } from "../src/store/service.js";
 import { StoreLive } from "../src/store/store.js";
 
 export const withStore = <A, E>(body: Effect.Effect<A, E, Store | SqlClient.SqlClient>) =>

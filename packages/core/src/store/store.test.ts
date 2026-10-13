@@ -15,7 +15,7 @@ import {
 } from "../domain/domain.js";
 import { MemoryFileSystem, MemoryPlatform } from "../platform/node/platform-memory.js";
 import { AuthError } from "../domain/errors.js";
-import { Store } from "../services.js";
+import { Store } from "./service.js";
 import { applyOpToLabels, folderTarget, StoreLive } from "./store.js";
 function message(overrides: Partial<IncomingMessage>): IncomingMessage {
   return {

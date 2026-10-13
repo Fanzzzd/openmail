@@ -4,7 +4,8 @@ import type { Account, ImapSettings } from "../../../domain/domain.js";
 import { AuthError, InvalidInput, ProviderError } from "../../../domain/errors.js";
 import { resolveImapSettings } from "../../../providers/imap/imap-settings.js";
 import { isLoginRefusal } from "../../../providers/reauth.js";
-import { Secrets, type ConnectInput } from "../../../services.js";
+import { Secrets } from "../../auth.js";
+import type { ConnectInput } from "../../../providers/adapter.js";
 import type { HtmlText } from "../../html-text.js";
 import { IDLE_RENEW_MS } from "../imap-idle.js";
 

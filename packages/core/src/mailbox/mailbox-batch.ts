@@ -13,10 +13,10 @@ import {
   type IncomingMessage,
 } from "../domain/domain.js";
 import { messagesFrom } from "../reader/reading.js";
-import { requireFocusedInboxScope } from "../providers/optional-services.js";
+import { requireFocusedInboxScope } from "../providers/scoped-adapter.js";
 import { InvalidInput } from "../domain/errors.js";
 import type { Mailbox } from "./mailbox.js";
-import type { ReminderSnapshot, Store } from "../services.js";
+import type { ReminderSnapshot, Store } from "../store/service.js";
 import { undoStateKey, type UndoState } from "./undo-journal.js";
 import { applyOpToLabels, folderTarget } from "../store/store.js";
 

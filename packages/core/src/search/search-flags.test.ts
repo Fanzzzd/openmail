@@ -7,7 +7,7 @@ import { it, expect } from "vitest";
 import { Effect, Layer } from "effect";
 import { databaseLayer, MIGRATIONS } from "../platform/node/db.js";
 import { StoreLive } from "../store/store.js";
-import { Store } from "../services.js";
+import { Store } from "../store/service.js";
 import { NodeSystem } from "../platform/node/platform-node.js";
 import { incoming } from "../platform/node/testing.js";
 import { SEARCH_FLAG_ATTACHMENT_TYPES_45 } from "../db/db.js";

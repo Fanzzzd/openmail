@@ -22,11 +22,11 @@ import { MailboxLive } from "../../mailbox/mailbox-live.js";
 import { StoreLive } from "../../store/store.js";
 import {
   Providers,
-  Secrets,
-  Store,
   type ProviderAdapter,
   type ProviderPushContext,
-} from "../../services.js";
+} from "../../providers/adapter.js";
+import { Secrets } from "../auth.js";
+import { Store } from "../../store/service.js";
 import { type Account } from "../../domain/domain.js";
 const settings = {
   preset: "custom",

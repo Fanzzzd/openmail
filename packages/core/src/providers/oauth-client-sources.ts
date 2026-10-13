@@ -1,4 +1,4 @@
-import type { ClientConfig } from "../services.js";
+import type { ClientConfig } from "../platform/auth.js";
 
 /**
  * Parsing for OAuth client values outside config.json, with no runtime

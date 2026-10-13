@@ -9,7 +9,9 @@ import { applyNativeMigration } from "./migrations.js";
 import { assert, it } from "@effect/vitest";
 import { Effect, Layer, Schema } from "effect";
 import { SqlClient } from "effect/sql";
-import { Store, Providers, Secrets, type ProviderAdapter } from "../../services.js";
+import { Store } from "../../store/service.js";
+import { Providers, type ProviderAdapter } from "../../providers/adapter.js";
+import { Secrets } from "../auth.js";
 import {
   PerformanceMailbox,
   fixtureAccounts,

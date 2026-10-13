@@ -12,7 +12,7 @@ import { performance } from "node:perf_hooks";
 import { Effect, Layer } from "effect";
 import { SqlClient } from "effect/sql";
 import { SqliteClient } from "@effect/sql-sqlite-node";
-import { Store } from "../dist/services.js";
+import { Store } from "../dist/store/service.js";
 
 const historical = process.env.OPENMAIL_PERF_BASELINE_REF;
 let directory;

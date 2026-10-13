@@ -15,7 +15,7 @@ import {
   serviceGrants,
 } from "../providers/optional-services.js";
 import { activeClient } from "../providers/oauth-clients.js";
-import { type ConnectInput } from "../services.js";
+import type { ConnectInput } from "../providers/adapter.js";
 
 const accountMismatch = (signedInAs: string, expected: string) =>
   new AuthError({

@@ -2,7 +2,7 @@ import { Clock, Effect, Option } from "effect";
 
 import { AuthError, ProviderError } from "../domain/errors.js";
 import { isTestingModeExpiry } from "./reauth.js";
-import type { AppConfig, ClientConfig, ClientSources, OAuthIssuers } from "../services.js";
+import type { AppConfig, ClientConfig, ClientSources, OAuthIssuers } from "../platform/auth.js";
 
 /** Per provider, the first source that has a client. */
 export const firstClients = (...sources: readonly ClientConfig[]): ClientConfig => {

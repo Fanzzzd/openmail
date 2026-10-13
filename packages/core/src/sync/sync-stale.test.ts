@@ -5,7 +5,8 @@ import { type IncomingMessage, type OutgoingMessage, type Provider } from "../do
 import { Mailbox } from "../mailbox/mailbox.js";
 import { fakeServer, makeFakeProvider } from "../platform/node/fake-provider.js";
 import { TestMailbox } from "../platform/node/testing.js";
-import { Store, type Change, type ProviderAdapter } from "../services.js";
+import { Store } from "../store/service.js";
+import type { Change, ProviderAdapter } from "../providers/adapter.js";
 import { type SyncHealth } from "./sync-health.js";
 import { makeResetGuard } from "./sync-reset.js";
 const message = (providerId: string, labels: string[]): IncomingMessage => ({

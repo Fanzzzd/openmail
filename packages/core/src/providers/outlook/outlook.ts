@@ -5,7 +5,8 @@ import { makeOutlookRead } from "./parse.js";
 import { makeOutlookSend } from "./send.js";
 import { makeOutlookSync } from "./sync.js";
 import type { MailCodec } from "../../platform/mail-codec.js";
-import type { AppConfig, OAuth, OAuthIssuers, ProviderAdapter, Secrets } from "../../services.js";
+import type { AppConfig, OAuth, OAuthIssuers, Secrets } from "../../platform/auth.js";
+import type { ProviderAdapter } from "../adapter.js";
 export const makeOutlook: Effect.Effect<
   ProviderAdapter,
   never,

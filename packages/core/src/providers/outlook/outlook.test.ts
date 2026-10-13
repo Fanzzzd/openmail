@@ -44,7 +44,9 @@ import {
 } from "../../platform/node/portable-helpers.js";
 import { isDefiniteSendFailure } from "../provider-send.js";
 import { replyRecipients } from "../../compose/recipients.js";
-import { Providers, Secrets, Store, type Change, type ProviderAdapter } from "../../services.js";
+import { Providers, type Change, type ProviderAdapter } from "../adapter.js";
+import { Secrets } from "../../platform/auth.js";
+import { Store } from "../../store/service.js";
 import { StoreLive } from "../../store/store.js";
 const GRAPH = "https://graph.microsoft.com/v1.0";
 

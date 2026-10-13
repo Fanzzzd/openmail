@@ -8,14 +8,9 @@ import { makeGmail } from "./gmail/gmail.js";
 import { makeOutlook } from "./outlook/outlook.js";
 import { Mailbox } from "../mailbox/mailbox.js";
 import { makeFakeProvider } from "../platform/node/fake-provider.js";
-import {
-  Store,
-  OAuth,
-  AppConfig,
-  Secrets,
-  type AuthorizeRequest,
-  type ProviderAdapter,
-} from "../services.js";
+import { Store } from "../store/service.js";
+import { OAuth, AppConfig, Secrets, type AuthorizeRequest } from "../platform/auth.js";
+import type { ProviderAdapter } from "./adapter.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
 import { type IncomingMessage } from "../domain/domain.js";
 import { TestClock } from "effect/testing";

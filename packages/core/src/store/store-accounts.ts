@@ -13,7 +13,7 @@ import {
 import { type AuthError, InvalidInput, NotFound } from "../domain/errors.js";
 import { logReauth, reauthReason } from "../providers/reauth.js";
 import { type PlatformCrypto } from "../platform/crypto.js";
-import { type Store } from "../services.js";
+import type { Store } from "./service.js";
 import { all, first, run } from "./sql-rows.js";
 import { type makeMediaStore } from "./store-media.js";
 import { accountId, AccountRow, Cursor, Next, toAccount } from "./store-rows.js";

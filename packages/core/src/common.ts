@@ -12,7 +12,8 @@ export { IMAP_PRESETS, ImapConnectInput, ImapPreset } from "./providers/imap/ima
 export { Mailbox, MailboxEvent, type PerformError, SyncState } from "./mailbox/mailbox.js";
 export { MailboxLive } from "./mailbox/mailbox-live.js";
 
-export { AppConfig, Browser, type ClientConfig, Providers, Secrets } from "./services.js";
+export { AppConfig, Browser, type ClientConfig, Secrets } from "./platform/auth.js";
+export { Providers } from "./providers/adapter.js";
 export {
   AgentIdentity,
   agentAccountGap,
@@ -78,6 +79,7 @@ export * from "./mime/attachment-import.js";
 export * from "./reader/reader-sanitize.js";
 
 export * from "./sync/sync-health.js";
+export { FolderStatus, HealthCounts } from "./sync/sync-records.js";
 
 export { ProviderDiagnostic } from "./providers/provider-diagnostics.js";
 export { SyncResetDiagnostic } from "./sync/sync-reset.js";

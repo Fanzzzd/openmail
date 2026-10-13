@@ -24,7 +24,8 @@ import {
   SyncResult,
   ThreadSummary,
 } from "../domain/domain.js";
-import { Mailbox, ModelThread, type PerformError } from "../mailbox/mailbox.js";
+import { Mailbox, type PerformError } from "../mailbox/mailbox.js";
+import { ModelThread } from "../ai/model-thread.js";
 import { CalendarEvent, CalendarInvite } from "../calendar/calendar.js";
 import { DerivedChunk } from "../ai/media.js";
 import { NamedSignature } from "../compose/signatures.js";

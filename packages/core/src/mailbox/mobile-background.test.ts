@@ -10,7 +10,7 @@ import {
 } from "./mobile-background.js";
 import { SqlClient } from "effect/sql";
 import { StoreLive } from "../store/store.js";
-import { Store } from "../services.js";
+import { Store } from "../store/service.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
 
 it("persists device opt-ins and atomic stable-id claims across database reopen without a migration", async () => {

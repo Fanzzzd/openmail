@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { Effect, Fiber, Layer, Schema } from "effect";
 import { SqlClient } from "effect/sql";
 import { MIGRATIONS, migrate } from "../../db/db.js";
-import { Store } from "../../services.js";
+import { Store } from "../../store/service.js";
 import { StoreLive } from "../../store/store.js";
 import { IncomingMessage } from "../../domain/domain.js";
 import { opSqliteLayer, type OpSqliteDatabase, type SqliteScalar } from "./sqlite.js";

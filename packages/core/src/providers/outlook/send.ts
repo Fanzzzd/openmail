@@ -26,12 +26,7 @@ import { ApiError } from "../provider-http.js";
 import { graphPages } from "../provider-pages.js";
 import { uncertainWrite } from "../provider-retry.js";
 import { confirmDelivery, deliverOrConfirm, pollDelivery } from "../provider-send.js";
-import {
-  type DraftPush,
-  type DraftSaveResult,
-  type ProviderAdapter,
-  type SendPreparation,
-} from "../../services.js";
+import type { DraftPush, DraftSaveResult, ProviderAdapter, SendPreparation } from "../adapter.js";
 import { attachmentRange, largeAttachment, makeAttachmentUpload } from "./upload.js";
 import type { OutlookClient } from "./client.js";
 import {

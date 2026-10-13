@@ -14,7 +14,7 @@ import { type IndexerInput, makeIndexer } from "./indexer.js";
 import { type IncomingMessage, type ThreadSummary } from "../domain/domain.js";
 import { MediaError, type Vision, unavailableVision } from "./media.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
-import { Store } from "../services.js";
+import { Store } from "../store/service.js";
 import { StoreLive } from "../store/store.js";
 import { pdfText } from "../platform/node/pdf-text.js";
 import { inlineMediaFromRaw } from "../platform/node/portable-helpers.js";

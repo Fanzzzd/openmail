@@ -21,6 +21,8 @@ import {
 import { InvalidInput } from "../domain/errors.js";
 export * from "./event-dates.js";
 export * from "./event-recurrence.js";
+export * from "./calendar-event.js";
+import { CalendarEvent } from "./calendar-event.js";
 import { Address, type Message, type Provider } from "../domain/domain.js";
 
 export const InviteResponse = Schema.Literals(["accepted", "tentative", "declined"]);
@@ -36,21 +38,6 @@ export const InviteResponseRecord = Schema.Struct({
   response: InviteResponse,
 });
 export type InviteResponseRecord = typeof InviteResponseRecord.Type;
-
-export const CalendarEvent = Schema.Struct({
-  key: Schema.String,
-  uid: Schema.optionalKey(Schema.String),
-  title: Schema.String,
-  start: CalendarTime,
-  end: CalendarTime,
-  location: Schema.String,
-  description: Schema.String,
-  recurrence: Schema.Array(Schema.String),
-  endEstimated: Schema.optionalKey(Schema.Boolean),
-  dateInput: Schema.optionalKey(Schema.String),
-  hasRecurrenceOverrides: Schema.optionalKey(Schema.Boolean),
-});
-export type CalendarEvent = typeof CalendarEvent.Type;
 
 export function calendarWindow(event: Pick<CalendarEvent, "start" | "end">) {
   const start = calendarTimestamp(event.start);

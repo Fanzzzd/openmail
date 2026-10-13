@@ -1,3 +1,4 @@
+import type { ModelThread } from "../ai/model-thread.js";
 import type { QueuedSend } from "./mobile-outbox.js";
 import type {
   OptionalService,
@@ -80,7 +81,8 @@ import type {
   InviteResponse,
 } from "../calendar/calendar.js";
 import type { ContactSync, ContactGroup } from "../contacts/contacts.js";
-import type { ClientConfig, ConnectInput } from "../services.js";
+import type { ClientConfig } from "../platform/auth.js";
+import type { ConnectInput } from "../providers/adapter.js";
 
 import type {
   AccountOrganization,
@@ -125,39 +127,6 @@ export const MailboxEvent = Schema.Union([
   Schema.TaggedStruct("Changed", {}),
 ]);
 export type MailboxEvent = typeof MailboxEvent.Type;
-
-/** A thread shaped for a language model: plain text, quotes and signatures cut, ids kept for citing. */
-export const ModelThread = Schema.Struct({
-  threadId: Schema.String,
-  accountId: Schema.String,
-  subject: Schema.String,
-  labels: Schema.Array(Schema.String),
-  messages: Schema.Array(
-    Schema.Struct({
-      id: Schema.String,
-      from: Schema.String,
-      to: Schema.Array(Schema.String),
-      cc: Schema.Array(Schema.String),
-      date: Schema.String,
-      text: Schema.String,
-      flags: Schema.optionalKey(
-        Schema.Array(
-          Schema.Literals([
-            "hidden-text-removed",
-            "plain-differs",
-            "budget-exceeded",
-            "quoted-text-removed",
-          ]),
-        ),
-      ),
-      quotedTextRemoved: Schema.optionalKey(Schema.Number),
-      attachments: Schema.Array(Schema.String),
-    }),
-  ),
-  /** Characters dropped to fit the budget. 0 when nothing was cut. */
-  truncated: Schema.Number,
-});
-export type ModelThread = typeof ModelThread.Type;
 
 /** An attachment's content, fetched from the provider. */
 export interface AttachmentContent {

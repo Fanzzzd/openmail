@@ -1,14 +1,14 @@
 import { Effect, Schema } from "effect";
 import type { Account } from "../../domain/domain.js";
 import { ProviderError } from "../../domain/errors.js";
-import type { CachedHeaders } from "../../sync/header-backfill.js";
+import type { CachedHeaders, ResetVerification } from "../../sync/sync-records.js";
 import { BatchResponse, deferIfThrottled, verifyInChunks } from "../provider-batch.js";
 import { BackgroundRead } from "../provider-connectivity.js";
 import { ApiError } from "../provider-http.js";
 import { retryProvider } from "../provider-retry.js";
-import { type ProviderAdapter } from "../../services.js";
-import { type ResetVerification, outlookStateLabel } from "../../sync/sync-reset.js";
-import type { OutlookClient } from "./client.js";
+import type { ProviderAdapter } from "../adapter.js";
+import { outlookStateLabel } from "../../sync/sync-reset.js";
+import type { OutlookClient, OutlookSyncSources } from "./client.js";
 import {
   decode,
   EXPAND_ATTACHMENTS,
@@ -25,7 +25,6 @@ import {
 } from "./graph.js";
 import type { OutlookRead } from "./parse.js";
 import { expandedAttachments } from "./parse.js";
-import type { OutlookSyncSources } from "./sync.js";
 export const makeOutlookRecovery = (
   client: OutlookClient,
   reader: OutlookRead,

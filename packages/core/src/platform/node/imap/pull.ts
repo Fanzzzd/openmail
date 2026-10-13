@@ -7,11 +7,11 @@ import {
   FolderState,
   parseUidSet,
   uidSet,
+  type Flags,
   type ImapCursor,
 } from "../../../providers/imap/imap-cursor.js";
-import type { Flags } from "../../../providers/imap/imap-helpers.js";
 import { flagsOf } from "../../../providers/imap/imap-helpers.js";
-import { type Change } from "../../../services.js";
+import type { Change } from "../../../providers/adapter.js";
 import { nodeMailCodec } from "../mail-codec.js";
 import { finishWith } from "../../html-text.js";
 import { incomingBody, mapFolders, structureAttachments, type ImapSyncFolder } from "./parse.js";

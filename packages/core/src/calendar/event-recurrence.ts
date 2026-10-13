@@ -1,5 +1,5 @@
 import { Schema } from "effect";
-import type { CalendarEvent } from "./calendar.js";
+import type { CalendarEvent } from "./calendar-event.js";
 import { graphRecurrence } from "./graph-recurrence.js";
 import type { CalendarTime } from "./calendar-time.js";
 import {

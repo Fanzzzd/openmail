@@ -19,7 +19,7 @@ import {
 import { DerivedChunk } from "../ai/media.js";
 import { isReauthReason } from "../domain/errors.js";
 import { cleanDisplayName } from "../reader/message-security.js";
-import { type PendingOp } from "../services.js";
+import type { PendingOp } from "./service.js";
 
 // Row shapes as SQLite returns them. JSON columns and 0/1 flags decode here,
 // so the mapping functions below only rename fields.
@@ -236,7 +236,7 @@ export function accountId(provider: Provider, email: string): string {
 
 export const imapEpochKey = (
   account: string,
-  folder: import("../services.js").ImapFolderIdentity,
+  folder: import("../providers/adapter.js").ImapFolderIdentity,
 ) => `imap-epoch:${JSON.stringify([account, folder.path, folder.uidValidity])}`;
 export const Reminder = Schema.Struct({
   due_at: Schema.NullOr(Schema.Number),

@@ -24,13 +24,9 @@ import { type Model } from "../ai/model.js";
 import { type PlatformCrypto } from "../platform/crypto.js";
 import { type MailCodec } from "../platform/mail-codec.js";
 import { type AppVerifier, type AttachmentFiles, type ImageNetwork } from "../platform/runtime.js";
-import {
-  type AppConfig,
-  type OAuthIssuers,
-  type Providers,
-  type Secrets,
-  type Store,
-} from "../services.js";
+import type { AppConfig, OAuthIssuers, Secrets } from "../platform/auth.js";
+import type { Providers } from "../providers/adapter.js";
+import type { Store } from "../store/service.js";
 import { type UnsubscribeNetwork } from "./unsubscribe.js";
 
 export interface MailboxOptions {
@@ -38,7 +34,7 @@ export interface MailboxOptions {
   backgroundReady?: Effect.Effect<void>;
   imapIdle?: boolean;
   attachmentCacheDirectory?: string;
-  imageDownloader?: import("../compose/compose-images.js").ImageDownloader;
+  imageDownloader?: import("../platform/runtime.js").ImageDownloader;
   /** Sync every account on this interval after backgroundReady. Desktop enables it; CLI and MCP don't. */
   autoSync?: Duration.Input;
   /** Desktop enables its independent idle indexer. CLI/MCP only read derived content. */
@@ -109,7 +105,7 @@ export interface MailboxDependencies {
 }
 /** Mutable state shared by mailbox effects; operation-local variables stay in their factories. */
 export const makeMailboxRuntimeState = Effect.gen(function* () {
-  const adapters = new Map<Provider, import("../services.js").ProviderAdapter>();
+  const adapters = new Map<Provider, import("../providers/adapter.js").ProviderAdapter>();
   const attachmentCache = new AttachmentCache();
 
   const pubsub = yield* PubSub.unbounded<MailboxEvent>();
@@ -157,7 +153,7 @@ export const makeMailboxRuntimeState = Effect.gen(function* () {
   return runtime;
 });
 export interface MailboxRuntimeState {
-  adapters: Map<Provider, import("../services.js").ProviderAdapter>;
+  adapters: Map<Provider, import("../providers/adapter.js").ProviderAdapter>;
   attachmentCache: AttachmentCache;
   idle: ImapIdle | undefined;
   syncPaused: boolean;

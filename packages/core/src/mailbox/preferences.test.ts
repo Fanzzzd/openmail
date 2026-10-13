@@ -5,7 +5,7 @@ import { databaseLayer } from "../platform/node/db.js";
 import { DEFAULT_PREFS, LEGACY_TOOLBAR_ACTIONS } from "../domain/domain.js";
 import { StoreLive } from "../store/store.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
-import { Store } from "../services.js";
+import { Store } from "../store/service.js";
 import { Mailbox } from "./mailbox.js";
 import { TestMailbox } from "../platform/node/testing.js";
 import { SqlClient } from "effect/sql";

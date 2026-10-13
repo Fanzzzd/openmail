@@ -1,28 +1,13 @@
 import { Clock, Effect, Option, Schema } from "effect";
 import { isOutlookClassification, type Account } from "../domain/domain.js";
-import type { Change, ProviderAdapter, Store } from "../services.js";
+import type { ProviderAdapter, ResetChange } from "../providers/adapter.js";
+import type { Store } from "../store/service.js";
 import { sha256Hex } from "../platform/crypto.js";
 import { trackImapBackfill } from "../providers/imap/imap-cursor.js";
 import { applyOpToLabels } from "../domain/mail-ops.js";
 import type { SyncHealth } from "./sync-health.js";
+import type { ResetCandidate, ResetVerification } from "./sync-records.js";
 
-export const ResetCandidate = Schema.Struct({
-  providerId: Schema.String,
-  /** Original UID is unsafe after a namespace reset; only Message-ID can verify it. */
-  resetProviderId: Schema.optionalKey(Schema.String),
-  rfcMessageId: Schema.NullOr(Schema.String),
-  labels: Schema.Array(Schema.String),
-});
-export type ResetCandidate = typeof ResetCandidate.Type;
-export type ResetChange = Extract<Change, { _tag: "Reset" | "DeleteLabel" | "RebuildFolder" }>;
-export type ResetVerification =
-  | { readonly kind: "gone"; readonly id: string }
-  | {
-      readonly kind: "present";
-      readonly id: string;
-      readonly providerId: string;
-      readonly labels: readonly string[];
-    };
 export const stateLabel = (label: string) =>
   ["UNREAD", "STARRED", "IMPORTANT"].includes(label) || label.startsWith("category:");
 export const outlookStateLabel = (label: string) =>

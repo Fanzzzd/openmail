@@ -1,7 +1,7 @@
 import { Effect, Layer, Option, Schema } from "effect";
 import { SqlClient } from "effect/sql";
 
-import { OAuthIssuers } from "../services.js";
+import { OAuthIssuers } from "../platform/auth.js";
 import { first, run } from "./sql-rows.js";
 
 const IssuerRow = Schema.Struct({ oauth_client_id: Schema.NullOr(Schema.String) });

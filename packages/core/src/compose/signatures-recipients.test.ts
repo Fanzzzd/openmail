@@ -10,7 +10,7 @@ import { type IncomingMessage, type OutgoingMessage } from "../domain/domain.js"
 import { AuthError, PermanentError, ProviderError } from "../domain/errors.js";
 import { Mailbox } from "../mailbox/mailbox.js";
 import { TestMailbox, fakeServer } from "../platform/node/testing.js";
-import { Store } from "../services.js";
+import { Store } from "../store/service.js";
 import { StoreLive } from "../store/store.js";
 import { NodeSystem } from "../platform/node/platform-node.js";
 import { replyFromAddress, signatureDefault } from "./signatures.js";

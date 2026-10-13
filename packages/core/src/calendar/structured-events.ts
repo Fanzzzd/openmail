@@ -1,7 +1,7 @@
 import { parseDocument } from "htmlparser2";
 import { Option, Schema } from "effect";
-import { calendarTimestamp } from "./calendar-time.js";
-import type { CalendarEvent, CalendarTime } from "./calendar.js";
+import { calendarTimestamp, type CalendarTime } from "./calendar-time.js";
+import type { CalendarEvent } from "./calendar-event.js";
 
 const Item = Schema.Struct({
   "@type": Schema.optionalKey(Schema.Union([Schema.String, Schema.Array(Schema.String)])),

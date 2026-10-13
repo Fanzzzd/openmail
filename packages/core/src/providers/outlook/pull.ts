@@ -4,9 +4,9 @@ import { ProviderError, type ProviderFailure } from "../../domain/errors.js";
 import { BackgroundRead } from "../provider-connectivity.js";
 import { logInvalidGraphCursor } from "../provider-diagnostics.js";
 import { graphPages } from "../provider-pages.js";
-import { type Change, type ProviderAdapter } from "../../services.js";
+import type { Change, ProviderAdapter } from "../adapter.js";
 import { logSyncReset } from "../../sync/sync-reset.js";
-import type { OutlookClient } from "./client.js";
+import type { OutlookClient, OutlookSyncSources } from "./client.js";
 import {
   CONCURRENCY,
   decodeCursor,
@@ -28,7 +28,6 @@ import {
 } from "./graph.js";
 import type { OutlookRead } from "./parse.js";
 import { expandedAttachments } from "./parse.js";
-import type { OutlookSyncSources } from "./sync.js";
 /** Marks a cursor saved after some folders of a full sync, before the rest completed. */
 const PARTIAL_KEY = "__partial";
 

@@ -20,7 +20,9 @@ import { MemoryPlatform } from "../platform/node/platform-memory.js";
 import { account as buildAccount, incoming, outgoing } from "../platform/node/testing.js";
 import { transferAllowance } from "./provider-http.js";
 import { isDefiniteSendFailure } from "./provider-send.js";
-import { Browser, OAuth, Providers, Store, type ProviderAdapter } from "../services.js";
+import { Browser, OAuth } from "../platform/auth.js";
+import { Providers, type ProviderAdapter } from "./adapter.js";
+import { Store } from "../store/service.js";
 import { StoreLive } from "../store/store.js";
 import { SYNC_FAILURE_TEXT } from "../sync/sync-failure.js";
 

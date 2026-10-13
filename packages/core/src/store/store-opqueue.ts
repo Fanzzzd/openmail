@@ -3,7 +3,7 @@ import { type SqlClient } from "effect/sql";
 import { FailedOp, type QueuedOp } from "../domain/domain.js";
 import { NotFound, ProviderError } from "../domain/errors.js";
 import { JITTER } from "../sync/backoff.js";
-import { type Store } from "../services.js";
+import type { Store } from "./service.js";
 import { all, first, run } from "./sql-rows.js";
 import {
   CopyProgressRow,

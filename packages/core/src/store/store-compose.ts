@@ -38,7 +38,7 @@ import {
   textComposeHtml,
   normalizeComposeMessage,
 } from "../compose/compose-body.js";
-import type { StoredDraft } from "../services.js";
+import type { StoredDraft } from "./service.js";
 import { all, first, run } from "./sql-rows.js";
 
 const DraftRow = Schema.Struct({

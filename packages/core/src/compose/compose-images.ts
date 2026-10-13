@@ -1,10 +1,10 @@
 import { Buffer } from "../platform/bytes.js";
 import { Effect } from "effect";
-import { ImageNetwork } from "../platform/runtime.js";
+import { ImageNetwork, type DownloadedImage } from "../platform/runtime.js";
 import { PlatformCrypto } from "../platform/crypto.js";
 import { isIP } from "../platform/ip.js";
 import type { OutgoingAttachment } from "../domain/domain.js";
-import { InvalidInput, ProviderError } from "../domain/errors.js";
+import { InvalidInput } from "../domain/errors.js";
 
 export const COMPOSE_IMAGE_LIMIT = 8 * 1024 * 1024;
 export const CONTACT_PHOTO_LIMIT = 256 * 1024;
@@ -74,12 +74,6 @@ export function publicImageAddress(address: string): boolean {
     !address.startsWith("2002:")
   );
 }
-
-export type DownloadedImage = { mimeType: string; content: string };
-export type ImageDownloader = (
-  url: string,
-  limit: number,
-) => Effect.Effect<DownloadedImage, InvalidInput | ProviderError>;
 
 export const downloadRemoteImage = (url: string, limit: number) =>
   Effect.flatMap(ImageNetwork, (network) => network.download(url, limit));

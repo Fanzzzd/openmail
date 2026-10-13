@@ -11,7 +11,7 @@ import {
 } from "../../../providers/imap/imap-cursor.js";
 import { copyProgressKey } from "../../../providers/imap/imap-helpers.js";
 import { messageIdKey } from "../../../mime/message-id.js";
-import { type ProviderPushContext } from "../../../services.js";
+import type { ProviderPushContext } from "../../../providers/adapter.js";
 import { call, describe, failure, isRefusal, searchUids, type Session } from "./session.js";
 
 // Push
@@ -262,7 +262,7 @@ const resumeCopied = Effect.fnUntraced(function* (
     )
   )
     return null;
-  const mappings: import("../../../services.js").ProviderIdMapping[] = [];
+  const mappings: import("../../../providers/adapter.js").ProviderIdMapping[] = [];
   let reconcile = false;
   for (const destination of destinations) {
     if (destination === ref.path) continue;

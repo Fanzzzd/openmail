@@ -24,7 +24,8 @@ import { destination } from "../providers/outlook/graph.js";
 import { ProviderError } from "../domain/errors.js";
 import { fakeServer, makeFakeProvider } from "../platform/node/fake-provider.js";
 import { NodeSystem } from "../platform/node/platform-node.js";
-import { Store, type ProviderAdapter } from "../services.js";
+import { Store } from "../store/service.js";
+import type { ProviderAdapter } from "../providers/adapter.js";
 import { StoreLive } from "../store/store.js";
 const incoming = (id: string, overrides: Partial<IncomingMessage> = {}): IncomingMessage => ({
   providerId: id,

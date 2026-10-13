@@ -13,7 +13,7 @@ import { Mailbox } from "../../mailbox/mailbox.js";
 import { makeMailboxRuntimeState } from "../../mailbox/mailbox-runtime.js";
 import { makeStorageMailbox } from "../../mailbox/mailbox-storage.js";
 import { CacheStorage } from "../cache-storage.js";
-import { Store } from "../../services.js";
+import { Store } from "../../store/service.js";
 import { StoreLive } from "../../store/store.js";
 import { makeCompactionStore } from "../../store/store-compaction.js";
 import { measureCacheStorage } from "./cache-storage.js";

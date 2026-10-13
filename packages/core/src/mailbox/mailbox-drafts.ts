@@ -37,7 +37,8 @@ import { type Mailbox } from "./mailbox.js";
 import { renderMarkdown } from "../compose/markdown.js";
 import { newMessageId } from "../mime/message-id.js";
 import { PlatformCrypto } from "../platform/crypto.js";
-import { type ProviderPushContext, type StoredDraft } from "../services.js";
+import type { ProviderPushContext } from "../providers/adapter.js";
+import type { StoredDraft } from "../store/service.js";
 
 export const makeDraftsMailbox = (
   deps: MailboxDependencies & { flushLater: Effect.Effect<void | boolean> },

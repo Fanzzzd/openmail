@@ -3,7 +3,7 @@ import { HttpClient, HttpClientRequest, HttpClientResponse } from "effect/http";
 import { AuthError, ProviderError } from "../../domain/errors.js";
 import { tokenTimeout } from "../../providers/provider-retry.js";
 import { tokenEndpointFailure } from "../../providers/reauth.js";
-import { OAuth, type AuthorizeRequest, type TokenResponse } from "../../services.js";
+import { OAuth, type AuthorizeRequest, type TokenResponse } from "../auth.js";
 
 export interface MobileAuthSession {
   /**

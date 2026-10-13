@@ -13,7 +13,8 @@ import { Mailbox } from "../mailbox/mailbox.js";
 import { MailboxLive } from "../mailbox/mailbox-live.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
 import { NodeSystem } from "../platform/node/platform-node.js";
-import { Providers, Store } from "../services.js";
+import { Providers } from "../providers/adapter.js";
+import { Store } from "../store/service.js";
 import { StoreLive } from "../store/store.js";
 import { fakeServer } from "../platform/node/testing.js";
 const message = (id: string, labels = ["INBOX", "UNREAD"], threadId = id): IncomingMessage => ({

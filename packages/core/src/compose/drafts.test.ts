@@ -28,7 +28,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { MIGRATIONS } from "../platform/node/db.js";
 import { makeFakeProvider } from "../platform/node/fake-provider.js";
-import { Store, type ProviderAdapter } from "../services.js";
+import { Store } from "../store/service.js";
+import type { ProviderAdapter } from "../providers/adapter.js";
 import { replyFromAddress } from "./signatures.js";
 {
   const GMAIL = "gmail:me@gmail.com";

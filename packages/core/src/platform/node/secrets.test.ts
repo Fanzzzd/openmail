@@ -1,6 +1,6 @@
 import { Effect, Fiber, Layer, Option } from "effect";
 import { describe, expect, it, vi } from "vitest";
-import { Secrets } from "../../services.js";
+import { Secrets } from "../auth.js";
 const keyring = vi.hoisted(() => ({
   get: vi.fn<(signal: AbortSignal) => Promise<string | null>>(),
 }));

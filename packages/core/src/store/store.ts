@@ -4,7 +4,7 @@ import { SqlClient } from "effect/sql";
 import { isSqlError } from "effect/sql/SqlError";
 import { DatabaseCapabilities } from "../db/db.js";
 import { PlatformCrypto } from "../platform/crypto.js";
-import { Store } from "../services.js";
+import { Store } from "./service.js";
 import { makeAccountsStore } from "./store-accounts.js";
 import { makeAiStore } from "./store-ai.js";
 import { makeCacheStore } from "./store-cache.js";

@@ -11,7 +11,7 @@ import { makeFakeProvider, fakeServer } from "../platform/node/fake-provider.js"
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
 import { NodeSystem } from "../platform/node/platform-node.js";
 import { StoreLive } from "../store/store.js";
-import { Providers } from "../services.js";
+import { Providers } from "../providers/adapter.js";
 import {
   richComposeBody,
   composeHtmlHasUnsupported,

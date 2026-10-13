@@ -3,21 +3,10 @@ import { Provider } from "../domain/domain.js";
 import { DEFAULT_CACHE_WINDOWS } from "../domain/cache.js";
 import { readCursor, parseUidSet } from "../providers/imap/imap-cursor.js";
 import { sha256Hex } from "../platform/crypto.js";
-import type { Providers, Store } from "../services.js";
+import type { Providers } from "../providers/adapter.js";
+import type { Store } from "../store/service.js";
+import { FolderStatus, Count, HealthCounts } from "./sync-records.js";
 
-const Count = Schema.Int.check(Schema.isGreaterThanOrEqualTo(0));
-export const HealthCounts = Schema.Struct({
-  total: Count,
-  unread: Count,
-  threads: Schema.NullOr(Count),
-});
-export type HealthCounts = typeof HealthCounts.Type;
-export const FolderStatus = Schema.Struct({
-  ...HealthCounts.fields,
-  uidNext: Schema.NullOr(Count),
-  uidValidity: Schema.NullOr(Schema.String.check(Schema.isPattern(/^\d+$/))),
-});
-export type FolderStatus = typeof FolderStatus.Type;
 const ServerStatus = Schema.Union([
   Schema.Struct({ kind: Schema.Literal("available"), ...FolderStatus.fields }),
   Schema.Struct({ kind: Schema.Literal("unavailable") }),

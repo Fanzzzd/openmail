@@ -9,7 +9,8 @@ import { MailboxLive } from "../mailbox/mailbox-live.js";
 import { Mailbox } from "../mailbox/mailbox.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
 import { makeFakeProvider, fakeServer } from "../platform/node/fake-provider.js";
-import { Providers, Store, type ProviderAdapter } from "../services.js";
+import { Providers, type ProviderAdapter } from "../providers/adapter.js";
+import { Store } from "../store/service.js";
 import { StoreLive } from "../store/store.js";
 import { makeResetGuard } from "./sync-reset.js";
 import { parseGmailBatch } from "../providers/provider-batch.js";
@@ -222,10 +223,10 @@ function runtime<A, E>(
     ProviderAdapter,
     never,
     | HttpClient.HttpClient
-    | import("../services.js").Secrets
-    | import("../services.js").AppConfig
-    | import("../services.js").OAuthIssuers
-    | import("../services.js").OAuth
+    | import("../platform/auth.js").Secrets
+    | import("../platform/auth.js").AppConfig
+    | import("../platform/auth.js").OAuthIssuers
+    | import("../platform/auth.js").OAuth
     | import("../platform/mail-codec.js").MailCodec
   >,
   body: Effect.Effect<A, E, Store | Mailbox | Providers>,
@@ -581,7 +582,7 @@ it.effect("a Graph delta reaching the filtered 5,000 cap remains a partial windo
           needsReauth: false,
         } as const;
         let listed = 0;
-        let reset: Extract<import("../services.js").Change, { _tag: "Reset" }> | undefined;
+        let reset: Extract<import("../providers/adapter.js").Change, { _tag: "Reset" }> | undefined;
         yield* Stream.runForEach(adapter.pull(account, Option.none()), (change) =>
           Effect.sync(() => {
             if (change._tag === "Upsert") listed++;

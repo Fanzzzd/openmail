@@ -11,7 +11,7 @@ import { databaseLayer } from "./db.js";
 import { buildMime } from "./compose.js";
 import { syntheticPdf } from "./fixtures/synthetic-pdf.js";
 import { Mailbox } from "../../mailbox/mailbox.js";
-import { Store } from "../../services.js";
+import { Store } from "../../store/service.js";
 import { StoreLive } from "../../store/store.js";
 import { MailCodec } from "../mail-codec.js";
 

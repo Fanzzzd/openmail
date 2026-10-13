@@ -8,10 +8,11 @@ import { MailboxLive } from "./mailbox-live.js";
 import { splitWriteBatch } from "./mailbox-sync.js";
 import { fakeServer, makeFakeProvider } from "../platform/node/fake-provider.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
-import { Providers, Store } from "../services.js";
+import { Providers } from "../providers/adapter.js";
+import { Store } from "../store/service.js";
 import { StoreLive } from "../store/store.js";
 import { incoming, TestMailbox } from "../platform/node/testing.js";
-import { type Change } from "../services.js";
+import type { Change } from "../providers/adapter.js";
 
 const upsert = (id: string, htmlLength: number): Change => ({
   _tag: "Upsert",

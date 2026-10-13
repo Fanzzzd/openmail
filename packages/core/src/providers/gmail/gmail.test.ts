@@ -15,7 +15,7 @@ import { makeGmailSettings } from "./gmail-settings.js";
 import { ProviderError } from "../../domain/errors.js";
 import { type GmailRuleDefinition, EMPTY_FILTER } from "../../domain/organization.js";
 import { MemoryPlatform } from "../../platform/node/platform-memory.js";
-import { type Change, type ProviderAdapter } from "../../services.js";
+import type { Change, ProviderAdapter } from "../adapter.js";
 import { isDefiniteSendFailure } from "../provider-send.js";
 /**
  * An HttpClient that answers from `routes`, keyed by "METHOD /path" under the

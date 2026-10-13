@@ -2,7 +2,7 @@ import { Effect, Option, Schema } from "effect";
 import { PermanentError } from "../../domain/errors.js";
 import { FOLDER_BATCH_LIMIT, type PermanentDeleteBatch } from "../../domain/folder-actions.js";
 import { graphPages } from "../provider-pages.js";
-import { type ProviderAdapter } from "../../services.js";
+import type { ProviderAdapter } from "../adapter.js";
 import type { OutlookClient } from "./client.js";
 import { is404, nextPage, WELL_KNOWN, WithId, writeFailure } from "./graph.js";
 export const makeOutlookFolders = (client: OutlookClient) => {

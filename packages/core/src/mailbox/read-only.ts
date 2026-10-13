@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { ProviderError } from "../domain/errors.js";
-import type { ProviderAdapter } from "../services.js";
+import type { ProviderAdapter } from "../providers/adapter.js";
 
 export const READ_ONLY_MESSAGE = "Remote writes are disabled in this read-only session";
 

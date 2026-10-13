@@ -5,7 +5,8 @@ import { decodeProviderId, readCursor, recordPushedFlags } from "../providers/im
 import { type MailboxDependencies, type MailboxRuntimeState } from "./mailbox-runtime.js";
 import { withPendingOps } from "./mailbox-shared.js";
 import { READ_ONLY_MESSAGE } from "./read-only.js";
-import { type PendingOp, type ProviderPushContext, type ProviderPushResult } from "../services.js";
+import type { PendingOp } from "../store/service.js";
+import type { ProviderPushContext, ProviderPushResult } from "../providers/adapter.js";
 
 class PendingOpClaimLost extends Schema.TaggedError<PendingOpClaimLost>()("PendingOpClaimLost", {
   message: Schema.String,

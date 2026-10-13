@@ -3,12 +3,8 @@ import { request as httpRequest } from "node:http";
 import { request as httpsRequest } from "node:https";
 import { Effect } from "effect";
 import { ProviderError } from "../../domain/errors.js";
-import {
-  publicImageAddress,
-  readRasterImage,
-  type ImageDownloader,
-  type DownloadedImage,
-} from "../../compose/compose-images.js";
+import { publicImageAddress, readRasterImage } from "../../compose/compose-images.js";
+import type { DownloadedImage, ImageDownloader } from "../runtime.js";
 /** DNS is resolved once and pinned for the request. Every redirect repeats validation. */
 export const downloadRemoteImage: ImageDownloader = (input, limit) =>
   Effect.tryPromise({

@@ -12,7 +12,8 @@ import { OAuthIssuersSql } from "./store/store-oauth-issuers.js";
 import { makeGmail } from "./providers/gmail/gmail.js";
 import { makeOutlook } from "./providers/outlook/outlook.js";
 import { makeMobileImap } from "./platform/react-native/imap.js";
-import { Providers, type AppConfig, type OAuth, type Secrets } from "./services.js";
+import { Providers } from "./providers/adapter.js";
+import type { AppConfig, OAuth, Secrets } from "./platform/auth.js";
 
 // Mobile entry: shared core plus mobile adapters and workflows.
 export * from "./common.js";

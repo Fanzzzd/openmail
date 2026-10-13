@@ -6,7 +6,7 @@ import { type IncomingMessage, type Provider } from "../domain/domain.js";
 import { ProviderError } from "../domain/errors.js";
 import { makeFakeProvider } from "../platform/node/fake-provider.js";
 import { Mailbox } from "./mailbox.js";
-import { Store } from "../services.js";
+import { Store } from "../store/service.js";
 const incoming = (labels: string[]): IncomingMessage => ({
   providerId: "one",
   threadId: "thread",

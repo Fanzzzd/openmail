@@ -26,7 +26,7 @@ import {
   SettingsScopeMissing,
   type ProviderFailure,
 } from "../../domain/errors.js";
-import type { Change, ConnectInput, DraftPush, ProviderAdapter } from "../../services.js";
+import type { Change, ConnectInput, DraftPush, ProviderAdapter } from "../../providers/adapter.js";
 import {
   EMPTY_VACATION,
   type ServerFilter,

@@ -1,7 +1,6 @@
 import { POINT_TO_PIXEL } from "./visible-text-constants.js";
 import type { CssNode } from "../reader/css-tree-browser.js";
 import type { VisibleRemovalRule, VisibleRemovalSource } from "./visible-text-diagnostics.js";
-import type { VisibleCascade } from "./visible-text-css.js";
 
 type FontUnit = "px" | "pt" | "vw" | "vh" | "vmin" | "vmax";
 interface FontSize {
@@ -170,8 +169,14 @@ export function resolveFont(node: CssNode, parent: InheritedTextStyle): FontSize
   if (result.unit === "number") return result.value === 0 ? { value: 0, unit: "px" } : null;
   return { value: Math.max(0, result.value), unit: result.unit };
 }
+/** The parts of a computed cascade (visible-text-css.ts) that text inheritance reads. */
+interface CascadeValues {
+  readonly values: ReadonlyMap<string, string>;
+  readonly sources: ReadonlyMap<string, VisibleRemovalSource>;
+  readonly nodes: ReadonlyMap<string, CssNode>;
+}
 export function resolveTextStyle(
-  cascade: VisibleCascade,
+  cascade: CascadeValues,
   parent: InheritedTextStyle,
   rootElement = false,
 ): InheritedTextStyle {

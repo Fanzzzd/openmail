@@ -1,7 +1,7 @@
 import { assert, it } from "@effect/vitest";
 import { Effect, Layer } from "effect";
 import { SqlClient } from "effect/sql";
-import { Store } from "../services.js";
+import { Store } from "./service.js";
 import { StoreLive } from "./store.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
 import type { IncomingMessage } from "../domain/domain.js";

@@ -8,7 +8,7 @@ import { TestClock } from "effect/testing";
 import { HttpClient, HttpClientError, HttpClientResponse } from "effect/http";
 
 import { OAuthLoopback, withAuthorizePage } from "./oauth.js";
-import { Browser, OAuth } from "../../services.js";
+import { Browser, OAuth } from "../auth.js";
 
 /**
  * A browser that "consents" at once: it calls the loopback redirect with a

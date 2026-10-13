@@ -5,7 +5,7 @@ import { Effect, Layer, Stream, Option, Schema } from "effect";
 import { TestClock } from "effect/testing";
 import { SqlClient } from "effect/sql";
 import { Mailbox } from "../../mailbox/mailbox.js";
-import { Store } from "../../services.js";
+import { Store } from "../../store/service.js";
 import { AgentIdentity, MailToolkit, MailToolkitLayer } from "../../tools/tools.js";
 import { visibleHtmlText } from "../../visible-text/visible-text.js";
 import { sanitizeReaderHtml } from "../../reader/reader-sanitize.js";
