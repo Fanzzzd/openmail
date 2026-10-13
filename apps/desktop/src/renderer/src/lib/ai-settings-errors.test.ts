@@ -20,7 +20,7 @@ it("AI settings InvalidInput errors use the selected UI locale", () => {
       translated: "无法将 API 密钥存入系统钥匙串。",
     },
     {
-      message: msg`Allow sending mail text for each selected account in AI settings.`,
+      message: msg`Turn on “Allow AI to read this account” for each selected account in Settings → AI Access.`,
       translated: "请在 AI 设置中授权所选账户发送邮件文本。",
     },
   ];

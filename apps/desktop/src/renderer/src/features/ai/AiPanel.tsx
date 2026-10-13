@@ -190,8 +190,13 @@ export function ThreadSummary({ id, accountId }: { id: string; accountId: string
 
 function AllowedThreadSummary({ id, keyConfigured }: { id: string; keyConfigured: boolean }) {
   const run = useRunMail();
+  // Summaries come back, and are cached, in the UI language.
+  const { i18n } = useLingui();
+  const locale = i18n.locale;
   const cached = AsyncResult.getOrElse(
-    useAtomValue(MailClient.query("AiSummary", { id }, { reactivityKeys: [Keys.ai, Keys.thread] })),
+    useAtomValue(
+      MailClient.query("AiSummary", { id, locale }, { reactivityKeys: [Keys.ai, Keys.thread] }),
+    ),
     () => null,
   );
   const result = useAiStream();
@@ -201,7 +206,9 @@ function AllowedThreadSummary({ id, keyConfigured }: { id: string; keyConfigured
       <button
         type="button"
         disabled={!keyConfigured || result.status === "running"}
-        onClick={() => result.start(withMail((call) => Effect.succeed(call("Summarize", { id }))))}
+        onClick={() =>
+          result.start(withMail((call) => Effect.succeed(call("Summarize", { id, locale }))))
+        }
       >
         <Trans>Summarize</Trans>
       </button>
@@ -233,7 +240,7 @@ export function Assistant({
   proposals: readonly Proposal[];
   onOpenDraft: (proposal: Proposal) => void;
 }) {
-  const { t } = useLingui();
+  const { t, i18n } = useLingui();
   const run = useRunMail();
   const [open, setOpen] = useState(false);
   const [review, setReview] = useState(false);
@@ -329,7 +336,9 @@ export function Assistant({
               result.start(
                 withMail((call) =>
                   Effect.succeed(
-                    call("AskAi", { input: { question: question.trim(), accountIds: ids } }),
+                    call("AskAi", {
+                      input: { question: question.trim(), accountIds: ids, locale: i18n.locale },
+                    }),
                   ),
                 ),
               );

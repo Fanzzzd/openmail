@@ -170,11 +170,17 @@ export class MailRpcs extends RpcGroup.make(
   Rpc.make("SetAiAccount", { payload: { input: AiAccountSettings }, error }),
   Rpc.make("SetAiModel", { payload: { model: AiModelName } }),
   Rpc.make("AiSummary", {
-    payload: { id: Schema.String },
+    payload: { id: Schema.String, locale: Schema.optionalKey(Schema.String) },
     success: Schema.NullOr(AiSummary),
     error,
   }),
-  Rpc.make("Summarize", { payload: { id: Schema.String }, success: AiEvent, stream: true, error }),
+  Rpc.make("Summarize", {
+    // The UI language, so the summary comes back in it; summaries are cached per language.
+    payload: { id: Schema.String, locale: Schema.optionalKey(Schema.String) },
+    success: AiEvent,
+    stream: true,
+    error,
+  }),
   Rpc.make("AskAi", { payload: { input: AiQuestion }, success: AiEvent, stream: true, error }),
   Rpc.make("ComposeAi", {
     payload: { input: AiComposeRequest },

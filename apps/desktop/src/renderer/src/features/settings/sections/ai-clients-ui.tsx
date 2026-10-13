@@ -1,13 +1,37 @@
 import type { I18n } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { Cause } from "effect";
+import { AsyncResult } from "effect/reactivity";
+import type { AiSettings } from "@openmail/core/schema";
 import { type ComponentType, Fragment } from "react";
 import ClaudeIcon from "~icons/logos/claude-icon";
 import CodexIcon from "~icons/logos/codex";
 import CursorIcon from "~icons/logos/cursor-icon";
 import ClaudeCodeIcon from "~icons/thesvg-color/claude-code";
 
+import type { Account } from "../../../../../shared/api";
 import { AiClientError, type AiClientId } from "../../../../../shared/ai-clients";
+
+/**
+ * Which accounts AI apps can read, from AiSettings. Until it loads, or when it fails, the pane
+ * says so instead of "no account", so a settings or keychain error never reads as no consent.
+ */
+export type ReadableAccounts =
+  | { readonly kind: "loading" }
+  | { readonly kind: "failed" }
+  | { readonly kind: "loaded"; readonly accounts: readonly Account[] };
+export function readableAccounts(
+  settings: AsyncResult.AsyncResult<AiSettings, unknown>,
+  accounts: readonly Account[],
+): ReadableAccounts {
+  if (AsyncResult.isFailure(settings)) return { kind: "failed" };
+  if (!AsyncResult.isSuccess(settings)) return { kind: "loading" };
+  const allowed = new Set(settings.value.accounts.filter((a) => a.allowed).map((a) => a.accountId));
+  return {
+    kind: "loaded",
+    accounts: accounts.filter((a) => a.enabled !== false && allowed.has(a.id)),
+  };
+}
 
 /** Anchors in the AI Access tab that the cards link to. */
 export const CONSENT_ANCHOR = "ai-account-consent";

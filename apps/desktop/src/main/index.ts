@@ -1,5 +1,5 @@
 import { showDatabaseUpgrade, isDatabaseUpgradeWindow } from "./app/database-upgrade";
-import { nativeAuthorizePage, nativeRecoveryLabels } from "./app/native-i18n";
+import { nativeAuthorizePage, nativeRecoveryLabels, osLocale } from "./app/native-i18n";
 import { registerSecuritySchemes, prepareSessionSecurity } from "./security/security-bootstrap";
 import { openExternal } from "./security/external";
 import { createShutdownHandler } from "./app/quit";
@@ -178,6 +178,7 @@ if (mcp) {
                 pollOnBattery: () => powerMonitor.isOnBatteryPower(),
                 canTriage: () =>
                   BrowserWindow.getFocusedWindow() !== null || !powerMonitor.isOnBatteryPower(),
+                systemLocale: osLocale,
                 media: {
                   vision,
                   onBattery: () => powerMonitor.isOnBatteryPower(),

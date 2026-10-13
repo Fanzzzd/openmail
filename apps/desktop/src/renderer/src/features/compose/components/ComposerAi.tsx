@@ -222,6 +222,7 @@ export function ComposerAi({
                         replyTo: snapshot.replyTo,
                         text: snapshot.body.text.slice(snapshot.start, snapshot.end),
                         task,
+                        locale: i18n.locale,
                       },
                     }),
                   ),

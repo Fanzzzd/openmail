@@ -28,6 +28,8 @@ import {
   CONSENT_ANCHOR,
   RELOAD_HINTS,
   activityClient,
+  readableAccounts,
+  type ReadableAccounts,
   scrollToAnchor,
   WRITE_MODE_ANCHOR,
 } from "./ai-clients-ui";
@@ -57,22 +59,30 @@ function AccessSummary({
   readable,
 }: {
   accounts: readonly Account[];
-  readable: readonly Account[];
+  readable: ReadableAccounts;
 }) {
-  const names = readable.map((a) => a.email).join(", ");
+  const { t } = useLingui();
+  const allow = t`Allow AI to read this account`;
   return (
     <SettingsGroup>
       <SettingsRow
         label={<Trans>Accounts AI apps can read</Trans>}
         hint={
-          readable.length ? (
-            <span className="break-all">{names}</span>
+          readable.kind === "loading" ? null : readable.kind === "failed" ? (
+            <span className="text-orange-700 dark:text-orange-400">
+              <Trans>
+                OpenMail could not load the AI settings, so it can't show which accounts AI apps can
+                read. Close Settings and open it again.
+              </Trans>
+            </span>
+          ) : readable.accounts.length ? (
+            <span className="break-all">{readable.accounts.map((a) => a.email).join(", ")}</span>
           ) : (
             <span className="text-orange-700 dark:text-orange-400">
               {accounts.length ? (
-                <Trans>
-                  No account allows AI reads, so a connected app sees no mail. Turn on "Allow
-                  sending mail text to the model" for an account above.
+                <Trans comment="allow is the translated per-account checkbox label in AI settings.">
+                  No account allows AI reads, so a connected app sees no mail. Turn on “{allow}” for
+                  an account above.
                 </Trans>
               ) : (
                 <Trans>Add a mail account first.</Trans>
@@ -109,13 +119,11 @@ function AccessSummary({
 
 export function AiClientsSettings({ accounts }: { accounts: readonly Account[] }) {
   const { t } = useLingui();
-  const consent = AsyncResult.getOrElse(useAtomValue(aiSettingsAtom), () => null)?.accounts ?? [];
-  const allowed = new Set(consent.filter((a) => a.allowed).map((a) => a.accountId));
+  const readable = readableAccounts(useAtomValue(aiSettingsAtom), accounts);
   const view = AsyncResult.getOrElse(useAtomValue(aiClientsAtom), () => null);
   const refresh = useAtomRefresh(aiClientsAtom);
   const [pending, setPending] = useState<AiClientChange | null>(null);
   const [done, setDone] = useState<AiClientId | null>(null);
-  const readable = accounts.filter((a) => a.enabled !== false && allowed.has(a.id));
   const activityFor = (id: AiClientId) =>
     (view?.activity ?? []).filter((row) => activityClient(row.client) === id).slice(0, 4);
   const installed = (view?.clients ?? []).filter((c) => c.installed || c.state !== "notConnected");

@@ -40,7 +40,7 @@ export const PUBLIC_ERROR_MESSAGES = new Set([
   "AI tool budget exceeded.",
   "Add an automatic reply message",
   "Add at least one filter condition",
-  "Allow sending mail text for each selected account in AI settings.",
+  "Turn on “Allow AI to read this account” for each selected account in Settings → AI Access.",
   "Approve AI proposals in the app.",
   "Attachment exceeds the 32 MB reader limit",
   "Attachments and their containers exceed the 32 MB reader limit",

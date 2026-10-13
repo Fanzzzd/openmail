@@ -49,6 +49,11 @@ export interface MailboxOptions {
   /** Desktop reports foreground or AC power; absent means automatic triage cannot run. */
   canTriage?: () => boolean;
   /**
+   * The system language as a BCP 47 tag, for AI text made in the background when the language
+   * setting follows the system. Desktop passes the OS language.
+   */
+  systemLocale?: () => string | undefined;
+  /**
    * Push draft saves in the background (default) so saving never waits for
    * the network. Short-lived processes and tests set false: the save then
    * returns after the push was tried.

@@ -5,7 +5,8 @@ import type { Language } from "@openmail/core/schema";
 import { loadCatalog } from "../../shared/catalogs";
 import { type Locale, systemLocale } from "../../shared/locales";
 
-const osLocale = () => systemLocale([...app.getPreferredSystemLanguages(), app.getLocale()]);
+/** The app catalog that matches the OS languages; also the language of background AI text. */
+export const osLocale = () => systemLocale([...app.getPreferredSystemLanguages(), app.getLocale()]);
 async function nativeI18n(locale: Locale = osLocale()) {
   const messages = await loadCatalog(locale);
   return setupI18n({ locale, messages: { [locale]: messages } });

@@ -68,7 +68,7 @@ export const INPUT_ERRORS: Record<string, MessageDescriptor> = {
   "Enter a single API key.": msg`Enter a single API key.`,
   "Invalid AI account settings.": msg`Invalid AI account settings.`,
   "Could not save the API key in the system keychain.": msg`Could not save the API key in the system keychain.`,
-  "Allow sending mail text for each selected account in AI settings.": msg`Allow sending mail text for each selected account in AI settings.`,
+  "Turn on “Allow AI to read this account” for each selected account in Settings → AI Access.": msg`Turn on “Allow AI to read this account” for each selected account in Settings → AI Access.`,
   "Enable this account to open mail on the web": msg`Enable this account to open mail on the web`,
   "Enable this account to use its calendar": msg`Enable this account to use its calendar`,
   "This recurring event has a time zone Google Calendar cannot use": msg`This recurring event has a time zone Google Calendar cannot use`,

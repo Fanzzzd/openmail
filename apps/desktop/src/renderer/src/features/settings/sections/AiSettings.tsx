@@ -111,15 +111,17 @@ export function AiSettings({ accounts }: { accounts: readonly Account[] }) {
             />
           </SettingsRow>
         </div>
-        <p className={`mt-1.5 px-1 ${settingsHint}`}>
-          <Trans>
-            MCP access follows this account's AI consent. Disabled accounts cannot be read through
-            MCP.
-          </Trans>
-        </p>
         {keyError && (
           <p role="alert" className="mt-1.5 px-1 text-footnote text-a11y-danger">
             {keyError}
+          </p>
+        )}
+        {settings?.keyUnreadable && (
+          <p role="alert" className="mt-1.5 px-1 text-footnote text-a11y-danger">
+            <Trans>
+              OpenMail could not read the API key from the keychain. Unlock the keychain, then open
+              Settings again.
+            </Trans>
           </p>
         )}
       </section>
@@ -166,7 +168,7 @@ export function AiSettings({ accounts }: { accounts: readonly Account[] }) {
                         })
                       }
                     />
-                    <Trans>Allow sending mail text to the model</Trans>
+                    <Trans>Allow AI to read this account</Trans>
                   </label>
                 </SettingsCheckRow>
                 <SettingsCheckRow>
@@ -209,6 +211,12 @@ export function AiSettings({ accounts }: { accounts: readonly Account[] }) {
         })}
       </div>
       <div className="space-y-1.5 px-1">
+        <p className={settingsHint}>
+          <Trans>
+            MCP access follows each account's AI setting above. MCP cannot read an account that is
+            not enabled.
+          </Trans>
+        </p>
         <p className={settingsHint}>
           <Trans>
             Triage runs while the app is in the foreground or on AC power. Suggestions require your

@@ -16,6 +16,11 @@ export const AiAccountSettings = Schema.Struct({
 export type AiAccountSettings = typeof AiAccountSettings.Type;
 export const AiSettings = Schema.Struct({
   keyConfigured: Schema.Boolean,
+  /**
+   * The keychain refused the API key read (locked, denied). Consent still loads: the AI apps
+   * pane must not report "no account" because of a key problem.
+   */
+  keyUnreadable: Schema.optionalKey(Schema.Boolean),
   model: AiModelName,
   accounts: Schema.Array(AiAccountSettings),
 });
@@ -40,16 +45,50 @@ export const AiEvent = Schema.Union([
   }),
 ]);
 export type AiEvent = typeof AiEvent.Type;
+/**
+ * The UI language as a BCP 47 tag ("zh-CN", "de"), so AI text the person reads comes back in
+ * the app's language. Absent from the CLI and MCP.
+ */
+export const AiLocale = Schema.String.check(
+  Schema.isMaxLength(35),
+  Schema.isPattern(/^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/),
+);
+export type AiLocale = typeof AiLocale.Type;
+
+/** English language names for prompts. Null where the runtime lacks Intl.DisplayNames. */
+const languageNames = (() => {
+  try {
+    return new Intl.DisplayNames(["en"], { type: "language" });
+  } catch {
+    return null;
+  }
+})();
+
+/** One prompt sentence that names the output language; empty when there is no locale. */
+export function aiLanguage(locale: string | undefined): string {
+  if (!locale) return "";
+  let name: string | undefined;
+  try {
+    name = languageNames?.of(locale);
+  } catch {
+    name = undefined;
+  }
+  return `Write your answer in ${name && name !== locale ? `${name} (${locale})` : locale}, the language of the person's app, unless they ask for another language.`;
+}
+
 export const AiQuestion = Schema.Struct({
   question: Schema.String.check(Schema.isMinLength(1), Schema.isMaxLength(4000)),
   accountIds: Schema.Array(Schema.String).check(Schema.isMinLength(1), Schema.isMaxLength(50)),
   /** Optional thread context, filtered through the same visible-text pipeline as summaries. */
   threadId: Schema.optionalKey(Schema.String),
+  locale: Schema.optionalKey(AiLocale),
 });
 export type AiQuestion = typeof AiQuestion.Type;
 export const AI_REWRITE_TONES = ["shorter", "friendlier", "formal", "proofread"] as const;
 export const AiComposeRequest = Schema.Struct({
   accountId: Schema.String,
+  /** For write: the language of a new message when the instruction does not settle it. */
+  locale: Schema.optionalKey(AiLocale),
   replyTo: Schema.optionalKey(Schema.String),
   text: Schema.String.check(Schema.isMaxLength(16_000)),
   task: Schema.Union([
@@ -113,7 +152,8 @@ export function mailData(value: unknown): string {
 /** The sentences the app shows for each kind of model failure; the renderer translates them. */
 export const AI_ERRORS = {
   noKey: "Save an Anthropic API key in AI settings.",
-  noConsent: "Allow sending mail text for each selected account in AI settings.",
+  noConsent:
+    "Turn on “Allow AI to read this account” for each selected account in Settings → AI Access.",
   invalidKey: "Anthropic rejected the API key. Check it in Settings → AI Access.",
   rateLimited: "Anthropic's rate limit was reached. Wait a minute, then try again.",
   offline: "Can't reach Anthropic. Check your internet connection.",

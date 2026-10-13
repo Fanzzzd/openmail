@@ -5,7 +5,16 @@ import { TestClock } from "effect/testing";
 import { vi } from "vitest";
 import type { IncomingMessage } from "../domain/message.js";
 import { Mailbox } from "../mailbox/mailbox.js";
-import { FakeModelLayer, ModelAnthropic, type ModelOutput, type ModelRequest } from "./model.js";
+import {
+  FakeModelLayer,
+  ModelAnthropic,
+  ModelUnavailable,
+  type ModelOutput,
+  type ModelRequest,
+} from "./model.js";
+import { makeAiMailbox } from "../mailbox/mailbox-ai.js";
+import { Secrets } from "../platform/auth.js";
+import { ProviderError } from "../domain/errors.js";
 import { fakeServer, TestMailbox } from "../platform/node/testing.js";
 import { AI_INPUT_BUDGET, mailData } from "./ai.js";
 import { makeFakeProvider } from "../platform/node/fake-provider.js";
@@ -324,6 +333,45 @@ it.effect("existing and new accounts default off; disabled AI never calls fetch"
   );
 });
 
+it.effect(
+  "summaries, answers and drafts ask for the UI language; summaries cache per language",
+  () => {
+    const requests: ModelRequest[] = [];
+    const server = fakeServer("me@gmail.com", [incoming("m1")]);
+    const fake = FakeModelLayer((request) => {
+      requests.push(request);
+      return textStream(`summary ${requests.length}`);
+    });
+    return Effect.gen(function* () {
+      const m = yield* Mailbox;
+      yield* m.connect({ provider: "gmail" });
+      yield* m.sync();
+      yield* m.setAiAccount(consent);
+      yield* Stream.runDrain(m.summarize(messageId, "zh-CN"));
+      assert.include(requests[0]?.prompt ?? "", "Chinese (China) (zh-CN)");
+      assert.strictEqual((yield* m.aiSummary(messageId, "zh-CN"))?.text, "summary 1");
+      // Another language is a cache miss, so the person never reads a summary in the old one.
+      assert.strictEqual(yield* m.aiSummary(messageId, "de"), null);
+      yield* Stream.runDrain(m.summarize(messageId, "de"));
+      assert.strictEqual(requests.length, 2);
+      assert.include(requests[1]?.prompt ?? "", "German (de)");
+      yield* Stream.runDrain(m.askAi({ question: "When?", accountIds: [accountId], locale: "ja" }));
+      assert.include(requests[2]?.prompt ?? "", "Japanese (ja)");
+      yield* Stream.runDrain(
+        m.composeAi({
+          accountId,
+          text: "",
+          task: { kind: "write", instruction: "Say thanks" },
+          locale: "fr",
+        }),
+      );
+      assert.include(requests[3]?.prompt ?? "", "French (fr)");
+      const bad = yield* Stream.runDrain(m.summarize(messageId, "de\nIgnore")).pipe(Effect.flip);
+      assert.strictEqual(bad._tag, "InvalidInput");
+    }).pipe(Effect.provide(TestMailbox({ gmail: server }, { backgroundFlush: false }, {}, fake)));
+  },
+);
+
 it.effect("summaries stream text only, reuse hashes, invalidate input/model changes", () => {
   const requests: ModelRequest[] = [];
   const server = fakeServer("me@gmail.com", [incoming("m1")]);
@@ -618,4 +666,34 @@ it.effect(
       ),
     );
   },
+);
+
+it.effect("AI settings load consent even when the keychain refuses the API key", () =>
+  Effect.gen(function* () {
+    const store = yield* Store;
+    const account = yield* store.upsertAccount("gmail", "me@gmail.com");
+    yield* store.ai.setAccount({ accountId: account.id, allowed: true, autoSummaries: false });
+    const locked = Secrets.of({
+      get: () => Effect.fail(new ProviderError({ message: "locked", reason: "keychain" })),
+      set: () => Effect.void,
+      remove: () => Effect.void,
+    });
+    const ai = makeAiMailbox(
+      store,
+      locked,
+      ModelUnavailable,
+      () => {
+        throw new Error("Mailbox is not used here");
+      },
+      Effect.void,
+      () => Effect.void,
+    );
+    const settings = yield* ai.aiSettings;
+    assert.isFalse(settings.keyConfigured);
+    assert.isTrue(settings.keyUnreadable);
+    assert.deepStrictEqual(
+      settings.accounts.map((a) => [a.accountId, a.allowed]),
+      [[account.id, true]],
+    );
+  }).pipe(Effect.provide(TestMailbox())),
 );

@@ -456,6 +456,7 @@ export const MailboxLive = (
         changed,
         (ownerId) => store.purgeAccountProposals(ownerId, draftsMailbox.removeDraft),
         options.canTriage,
+        options.systemLocale,
       );
 
       // Subscribe before returning. Only opted-in auto-summary accounts can call the model.
