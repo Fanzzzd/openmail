@@ -336,7 +336,7 @@ msgstr "Azione non riuscita: {reason}"
 msgid "Action menu"
 msgstr "Menù azioni"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Actions"
 msgstr "Azioni"
@@ -425,7 +425,7 @@ msgstr "Aggiungi account di posta elettronica"
 msgid "Add label"
 msgstr "Aggiungi etichetta"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Add labels"
 msgstr "Aggiungi etichette"
 
@@ -491,7 +491,7 @@ msgstr "Aggiunto al calendario"
 msgid "Additional category names, separated by commas"
 msgstr "Nomi di categorie aggiuntive, separati da virgole"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Additional labels"
 msgstr "Etichette aggiuntive"
 
@@ -753,7 +753,7 @@ msgstr "Anthropic ha rifiutato la chiave API. Controllala in Impostazioni → Ac
 msgid "Anthropic's rate limit was reached. Wait a minute, then try again."
 msgstr "Hai raggiunto il limite di richieste di Anthropic. Attendi un minuto, poi riprova."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Any action flag"
 msgstr "Qualsiasi contrassegno di azione"
 
@@ -790,11 +790,12 @@ msgstr "Applica colore"
 msgid "Apply link"
 msgstr "Applicare il collegamento"
 
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Apply to existing mail"
 msgstr "Applica alla posta esistente"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Apply to existing mail?"
 msgstr "Applicare alla posta esistente?"
 
@@ -821,8 +822,8 @@ msgstr "App non trovate su questo Mac"
 #: src/renderer/src/features/ai/TriageChip.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
@@ -858,7 +859,7 @@ msgstr "Chiedi ogni volta"
 msgid "Ask me first"
 msgstr "Chiedimelo prima"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Assign categories (one per line)"
 msgstr "Assegna categorie (una per riga)"
 
@@ -887,7 +888,7 @@ msgstr "Messaggio allegato"
 msgid "Attachment cache limit"
 msgstr "Limite cache degli allegati"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Attachment exception"
 msgstr "Eccezione per gli allegati"
 
@@ -944,10 +945,11 @@ msgid "Automatic direction"
 msgstr "Direzione automatica"
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Automatic replies"
 msgstr "Risposte automatiche"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Automatic reply"
 msgstr "Risposta automatica"
 
@@ -1082,7 +1084,7 @@ msgstr "La risposta all’invito non è stata inviata"
 msgid "Calendar responses require a user action"
 msgstr "Le risposte del calendario richiedono un’azione da parte dell’utente"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Call"
 msgstr "Chiama"
 
@@ -1158,6 +1160,8 @@ msgstr "Al momento non è possibile raggiungere il server di posta."
 #: src/renderer/src/features/reader/frame/LinkConfirmDialog.tsx
 #: src/renderer/src/features/reader/UnsubscribeButton.tsx
 #: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
+#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/state/desktop.ts
@@ -1190,7 +1194,7 @@ msgstr "Categorie…"
 msgid "Category"
 msgstr "Categoria"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Category action"
 msgstr "Azione di categoria"
 
@@ -1206,7 +1210,7 @@ msgstr "Nomi delle categorie, separati da virgole"
 msgid "Cc"
 msgstr "Cc"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "CC me"
 msgstr "CC a me"
 
@@ -1522,7 +1526,7 @@ msgstr "La compattazione è stata rifiutata perché non è stato possibile garan
 msgid "Compose"
 msgstr "Nuovo messaggio"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Confidential"
 msgstr "Riservato"
 
@@ -1530,7 +1534,7 @@ msgstr "Riservato"
 msgid "Config file can't be read"
 msgstr "Impossibile leggere il file di configurazione"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Confirm"
 msgstr "Conferma"
 
@@ -1546,7 +1550,7 @@ msgstr "Conferma l’eliminazione con questa regola"
 msgid "Confirm removal"
 msgstr "Conferma la rimozione"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Confirm rule changes?"
 msgstr "Confermi le modifiche alle regole?"
 
@@ -1640,7 +1644,7 @@ msgstr "La politica di sistema limita l’accesso ai contatti."
 msgid "Contacts and people you've sent mail to, when the sender is verified."
 msgstr "Contatti e persone a cui hai inviato posta, se il mittente è verificato."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Contacts only"
 msgstr "Solo contatti"
 
@@ -1731,7 +1735,7 @@ msgstr "Copia selezionata"
 msgid "Copy style"
 msgstr "Copia stile"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Copy to folder"
 msgstr "Copia nella cartella"
 
@@ -1972,12 +1976,13 @@ msgstr "Crea una password per l’app in Impostazioni > Privacy e sicurezza, con
 msgid "Create an app-specific password under Sign-In and Security in your Apple Account."
 msgstr "Crea una password specifica per l’app in Accesso e sicurezza nel tuo account Apple."
 
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Create filter"
 msgstr "Crea filtro"
 
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/i18n/action-names.ts
 msgid "Create filter from these messages"
 msgstr "Crea un filtro da questi messaggi"
@@ -2124,6 +2129,7 @@ msgstr "Firma predefinita"
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
@@ -2209,7 +2215,7 @@ msgid "Disabled"
 msgstr "Disattivato"
 
 #: src/renderer/src/features/compose/components/ComposerAi.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 msgid "Discard"
 msgstr "Scarta"
 
@@ -2218,7 +2224,7 @@ msgstr "Scarta"
 msgid "Discard draft"
 msgstr "Scarta bozza"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 msgid "Discard saved rule?"
 msgstr "Eliminare la regola salvata?"
 
@@ -2263,11 +2269,11 @@ msgid "Display name"
 msgstr "Nome da visualizzare"
 
 #. Incoming message action flag value; this option does not execute forwarding.
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Do not forward"
 msgstr "Non inoltrare"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Does not have words"
 msgstr "Non contiene le parole"
 
@@ -2475,11 +2481,11 @@ msgstr "Abilita questo account per aprire la posta sul Web"
 msgid "Enable this account to use its calendar"
 msgstr "Abilita questo account a utilizzare il suo calendario"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Enabled"
 msgstr "Attivato"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "End"
 msgstr "Fine"
 
@@ -2584,23 +2590,23 @@ msgstr "Ogni {interval} settimane"
 msgid "Every {interval} years"
 msgstr "Ogni {interval} anni"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Everyone"
 msgstr "Tutti"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Except recipient contains"
 msgstr "Escludi se il destinatario contiene"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Except sender contains"
 msgstr "Escludi se il mittente contiene"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Except subject contains"
 msgstr "Escludi se l’oggetto contiene"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Exclude chats"
 msgstr "Escludi chat"
 
@@ -2629,7 +2635,7 @@ msgstr "Espanso"
 msgid "Experimental features can be enabled separately."
 msgstr "Le funzionalità sperimentali possono essere abilitate separatamente."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "External replies"
 msgstr "Risposte esterne"
 
@@ -2779,7 +2785,7 @@ msgstr "Percorso della cartella"
 msgid "Follow system"
 msgstr "Segui il sistema"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Follow up"
 msgstr "Da completare"
 
@@ -2801,7 +2807,7 @@ msgstr "Dimensione del carattere"
 msgid "For example: tomorrow 3pm or Oct 12–14"
 msgstr "Ad esempio: tomorrow 3pm oppure Oct 12–14"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "For your information"
 msgstr "Per informazione"
 
@@ -2830,7 +2836,7 @@ msgid "Forward"
 msgstr "Inoltra"
 
 #. Flag value on the incoming message, not an action to execute.
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgctxt "incoming message action flag"
 msgid "Forward"
 msgstr "Contrassegno di inoltro"
@@ -2869,7 +2875,7 @@ msgstr "Più cordiale"
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/Reader.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "From"
 msgstr "Da"
 
@@ -3007,11 +3013,11 @@ msgstr "Raggruppa gli account in spazi, come “Lavoro” e “Personale”. Ogn
 msgid "Group messages into conversations"
 msgstr "Raggruppare i messaggi in conversazioni"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Has attachment"
 msgstr "Contiene allegati"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Has words"
 msgstr "Contiene le parole"
 
@@ -3024,7 +3030,7 @@ msgstr "Hai controllato «Inviata» e verificato che questo messaggio non sia st
 msgid "Headers"
 msgstr "Intestazioni"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Headers contain"
 msgstr "Le intestazioni contengono"
 
@@ -3121,16 +3127,16 @@ msgstr "server IMAP"
 msgid "Import from iPhone or iPad"
 msgstr "Importa da iPhone o iPad"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Importance action"
 msgstr "Azione di importanza"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Importance condition"
 msgstr "Condizione di importanza"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 #: src/renderer/src/i18n/action-names.ts
@@ -3170,7 +3176,7 @@ msgid "In the reader, ⌘+ and ⌘− change it and ⌘0 goes back to 100%."
 msgstr "Nel lettore, ⌘+ e ⌘− lo modificano e ⌘0 torna al 100%."
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 #: src/renderer/src/lib/view.ts
 msgid "Inbox"
@@ -3244,7 +3250,7 @@ msgstr "Installa l’app Tailscale su questo Mac ed effettua l’accesso, poi to
 msgid "Internal folder"
 msgstr "Cartella interna"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Internal reply"
 msgstr "Risposta interna"
 
@@ -3321,7 +3327,7 @@ msgstr "Giustifica"
 msgid "Keep bodies in {0}"
 msgstr "Conserva i testi dei messaggi in {0}"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Keep category"
 msgstr "Mantieni la categoria"
 
@@ -3329,7 +3335,7 @@ msgstr "Mantieni la categoria"
 msgid "Keep existing rule"
 msgstr "Mantieni la regola esistente"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Keep importance"
 msgstr "Mantieni importanza"
 
@@ -3372,7 +3378,7 @@ msgid "Label list visibility"
 msgstr "Visibilità dell’elenco delle etichette"
 
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Label or folder"
 msgstr "Etichetta o cartella"
 
@@ -3417,7 +3423,7 @@ msgstr "Grande"
 msgid "Larger text"
 msgstr "Testo più grande"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Larger than"
 msgstr "Più grande di"
 
@@ -3547,6 +3553,7 @@ msgstr "Caricamento dell’originale dal server…"
 
 #: src/renderer/src/features/reader/attachments/AttachmentImportDialog.tsx
 #: src/renderer/src/features/reader/body/MessageBodyShell.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Loading…"
 msgstr "Caricamento…"
@@ -3571,7 +3578,7 @@ msgstr "Meno in locale: periodo di sincronizzazione"
 msgid "Local has more: stale"
 msgstr "Più in locale: obsoleti"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Local preview: {count} messages"
 msgstr "Anteprima locale: {count} messaggi"
 
@@ -3648,21 +3655,21 @@ msgstr "Segna tutti come letti"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Mark as important"
 msgstr "Segna come importante"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Mark as not important"
 msgstr "Segna come non importante"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Mark as read"
 msgstr "Segna come letto"
 
@@ -3749,7 +3756,7 @@ msgstr "Corrisponde alla ricerca"
 msgid "Matching times keep that weekday active all day. Overnight periods continue into the next day. Unchecked days stay muted except for overnight periods from the previous day. Repeated daylight-saving times use the same schedule; skipped times are passed over."
 msgstr "Gli orari corrispondenti mantengono il giorno della settimana attivo tutto il giorno. I periodi notturni continuano nel giorno successivo. I giorni non selezionati rimangono disattivati, ad eccezione dei periodi notturni del giorno precedente. L’ora legale ripetuta utilizza la stessa pianificazione; i tempi saltati vengono superati."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Maximum size (KiB)"
 msgstr "Dimensione massima (KiB)"
 
@@ -3784,12 +3791,12 @@ msgstr "Suggerimenti per le menzioni"
 
 #: src/renderer/src/features/reader/frame/EmailFrame.tsx
 #: src/renderer/src/features/reader/Reader.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Message"
 msgstr "Messaggio"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Message action flag"
 msgstr "Contrassegno di azione del messaggio"
 
@@ -3847,7 +3854,7 @@ msgid "Message text cache window"
 msgstr "Periodo di cache del testo dei messaggi"
 
 #. Rule predicate matching the message text, excluding the subject.
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Message text contains"
 msgstr "Il testo del messaggio contiene"
 
@@ -3944,7 +3951,7 @@ msgstr "Microsoft chiederà il permesso di modificare la posta. Dopo l’accesso
 msgid "Mimestream"
 msgstr "Mimestream"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Minimum size (KiB)"
 msgstr "Dimensione minima (KiB)"
 
@@ -3998,7 +4005,7 @@ msgstr "Altro"
 msgid "More actions"
 msgstr "Altre azioni"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "More conditions"
 msgstr "Altre condizioni"
 
@@ -4006,7 +4013,7 @@ msgstr "Altre condizioni"
 msgid "More disk space is needed"
 msgstr "È necessario più spazio su disco"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "More exceptions"
 msgstr "Altre eccezioni"
 
@@ -4018,7 +4025,7 @@ msgstr "Più formale"
 msgid "More formatting"
 msgstr "Altra formattazione"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "More label actions"
 msgstr "Altre azioni sulle etichette"
 
@@ -4170,7 +4177,7 @@ msgid "Moves from “{elsewhere}”"
 msgstr "Sposta da \"{elsewhere}\""
 
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Name"
 msgstr "Nome"
 
@@ -4336,7 +4343,7 @@ msgstr "Nessuna app può aprire questo file"
 msgid "No browser has opened OpenMail."
 msgstr "Nessun browser ha ancora aperto OpenMail."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "No copy"
 msgstr "Non copiare"
 
@@ -4361,7 +4368,7 @@ msgstr "Nessuna bozza"
 msgid "No email accounts yet."
 msgstr "Nessun account di posta elettronica."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "No external replies"
 msgstr "Nessuna risposta esterna"
 
@@ -4369,7 +4376,7 @@ msgstr "Nessuna risposta esterna"
 msgid "No grammar suggestions"
 msgstr "Nessun suggerimento grammaticale"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "No label or folder"
 msgstr "Nessuna etichetta o cartella"
 
@@ -4415,7 +4422,7 @@ msgstr "Nessuna cartella superiore"
 msgid "no printers are available."
 msgstr "nessuna stampante è disponibile."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "No response needed"
 msgstr "Nessuna risposta necessaria"
 
@@ -4463,14 +4470,15 @@ msgstr "Nessuno può accedere. Aggiungi un login tailnet qui sotto."
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 #: src/renderer/src/i18n/action-names.ts
 msgid "None"
 msgstr "Nessuno"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 #: src/renderer/src/i18n/organization-labels.ts
 msgid "Normal"
 msgstr "Normale"
@@ -4495,7 +4503,7 @@ msgstr "Non richiesto"
 msgid "Not synced"
 msgstr "Non sincronizzato"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Not to me"
 msgstr "Non a me"
 
@@ -4605,7 +4613,7 @@ msgstr "Solo il testo degli allegati"
 msgid "Only the selected messages in this Trash or Spam folder will be permanently deleted. This cannot be undone."
 msgstr "Verranno eliminati definitivamente solo i messaggi selezionati in questo Cestino o nella cartella Indesiderata. L’operazione non può essere annullata."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Only to me"
 msgstr "Solo a me"
 
@@ -4864,7 +4872,7 @@ msgstr "Outlook non può caricare messaggi allegati di 3 MB o più. Rimuovi ques
 msgid "Outlook categories"
 msgstr "Categorie Outlook"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Outlook chooses the reply subject."
 msgstr "Outlook sceglie l’oggetto della risposta."
 
@@ -4980,7 +4988,7 @@ msgid "Permission"
 msgstr "Autorizzazione"
 
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Personal"
 msgstr "Personale"
 
@@ -5030,16 +5038,16 @@ msgstr "Anteprima {0}"
 msgid "Preview changes"
 msgstr "Anteprima delle modifiche"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Preview unavailable"
 msgstr "Anteprima non disponibile"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Preview unavailable. The rule will apply to future mail on the server."
 msgstr "Anteprima non disponibile. La regola si applicherà ai nuovi messaggi sul server."
 
 #. placeholder {0}: confirming.preview.matches.length
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Preview: {0} messages. Only the previewed messages will be changed when applying to existing mail."
 msgstr "Anteprima: {0} messaggi. Solo i messaggi visualizzati in anteprima verranno modificati quando applicati alla posta esistente."
 
@@ -5093,7 +5101,7 @@ msgstr "Stampa messaggio..."
 msgid "Print…"
 msgstr "Stampa…"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Private"
 msgstr "Privato"
 
@@ -5156,7 +5164,7 @@ msgid "Quote selected text"
 msgstr "Cita il testo selezionato"
 
 #. Flag value on the incoming message, not an action to execute.
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgctxt "incoming message action flag"
 msgid "Read"
 msgstr "Contrassegno di lettura"
@@ -5379,7 +5387,7 @@ msgstr "Rimuovi chiave"
 msgid "Remove label"
 msgstr "Rimuovi etichetta"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Remove labels"
 msgstr "Rimuovi etichette"
 
@@ -5486,7 +5494,7 @@ msgid "Reply"
 msgstr "Rispondi"
 
 #. Flag value on the incoming message, not an action to execute.
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgctxt "incoming message action flag"
 msgid "Reply"
 msgstr "Contrassegno di risposta"
@@ -5501,7 +5509,7 @@ msgid "Reply all"
 msgstr "Rispondi a tutti"
 
 #. Flag value on the incoming message, not an action to execute.
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgctxt "incoming message action flag"
 msgid "Reply all"
 msgstr "Contrassegno « Rispondi a tutti »"
@@ -5518,7 +5526,7 @@ msgstr "Modalità di risposta"
 msgid "Reply needed: add star"
 msgstr "Risposta necessaria: aggiungi una stella"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Reply only to contacts"
 msgstr "Rispondi solo ai contatti"
 
@@ -5583,16 +5591,16 @@ msgstr "Ripristinare"
 msgid "Restore message state"
 msgstr "Ripristina lo stato del messaggio"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 msgid "Restore rule"
 msgstr "Ripristina regola"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 msgid "Restore rule?"
 msgstr "Ripristinare la regola?"
 
 #. placeholder {0}: pending.preview.matches.length
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 msgid "Restore the saved original rule on the server. Preview: {0} messages."
 msgstr "Ripristina la regola originale salvata sul server. Anteprima: {0} messaggi."
 
@@ -5623,7 +5631,7 @@ msgstr "Riprova {name}"
 msgid "Revert"
 msgstr "Ripristina"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Review"
 msgstr "Rivedi"
 
@@ -5707,9 +5715,9 @@ msgstr "Sabato"
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Save"
 msgstr "Salva"
 
@@ -5749,7 +5757,7 @@ msgstr "Salva messaggio come EML…"
 msgid "Save message as PDF…"
 msgstr "Salva messaggio come PDF..."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Save rule"
 msgstr "Salva regola"
 
@@ -5850,7 +5858,7 @@ msgstr "Corrispondenze di ricerca"
 msgid "Search messages from this sender"
 msgstr "Cerca messaggi da questo mittente"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Search query"
 msgstr "Query di ricerca"
 
@@ -5998,7 +6006,7 @@ msgstr "Nome del mittente"
 msgid "Sending…"
 msgstr "Invio…"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Sensitivity"
 msgstr "Riservatezza"
 
@@ -6031,7 +6039,7 @@ msgstr "Filtri del server"
 msgid "Server filters and automatic replies are available for Gmail and Outlook."
 msgstr "Filtri server e risposte automatiche sono disponibili per Gmail e Outlook."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Server preview: {count} messages"
 msgstr "Anteprima del server: messaggi {count}"
 
@@ -6209,7 +6217,7 @@ msgstr "Accedi di nuovo sul tuo Mac"
 msgid "Sign in again to change Focused/Other."
 msgstr "Accedi di nuovo per modificare Evidenziata/Altra."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Sign in again to enable filters"
 msgstr "Accedi nuovamente per abilitare i filtri"
 
@@ -6282,11 +6290,11 @@ msgstr "Accesso effettuato. Puoi chiudere questa pagina e tornare a OpenMail."
 msgid "Simplify your search query."
 msgstr "Semplifica la ricerca."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Size comparison"
 msgstr "Confronto delle dimensioni"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Size in bytes"
 msgstr "Dimensioni in byte"
 
@@ -6303,7 +6311,7 @@ msgstr "Piccolo"
 msgid "Smaller text"
 msgstr "Testo più piccolo"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Smaller than"
 msgstr "Più piccolo di"
 
@@ -6341,7 +6349,7 @@ msgstr "Social"
 msgid "Software updates"
 msgstr "Aggiornamenti software"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Some conditions need metadata that is not cached. Save the rule for future mail on the server."
 msgstr "Alcune condizioni richiedono metadati non presenti nella cache. Salva la regola per i nuovi messaggi sul server."
 
@@ -6381,8 +6389,8 @@ msgid "Spaces"
 msgstr "Spazi"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/lib/view.ts
 msgid "Spam"
 msgstr "Indesiderata"
@@ -6409,7 +6417,7 @@ msgstr "Stabile"
 
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 #: src/renderer/src/i18n/action-names.ts
@@ -6430,8 +6438,8 @@ msgid "Star message"
 msgstr "Aggiungi stella al messaggio"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/lib/view.ts
 msgid "Starred"
 msgstr "Speciali"
@@ -6440,8 +6448,8 @@ msgstr "Speciali"
 msgid "Starred messages"
 msgstr "Messaggi speciali"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Start"
 msgstr "Inizio"
 
@@ -6469,7 +6477,7 @@ msgstr "Interrompi caricamento immagini da {address}"
 msgid "Stop loading images from {domain}"
 msgstr "Interrompi caricamento immagini da {domain}"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Stop processing more rules"
 msgstr "Interrompi l’elaborazione delle regole successive"
 
@@ -6484,8 +6492,8 @@ msgid "Strikethrough"
 msgstr "Barrato"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Subject"
 msgstr "Oggetto"
 
@@ -6494,7 +6502,7 @@ msgctxt "search match source"
 msgid "Subject"
 msgstr "Oggetto"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Subject contains"
 msgstr "L’oggetto contiene"
 
@@ -6712,7 +6720,7 @@ msgstr "Il file è cambiato dopo l’anteprima. Rivedi di nuovo la modifica."
 msgid "The file doesn't exist yet. OpenMail creates it."
 msgstr "Il file non esiste ancora. OpenMail lo crea."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "The filter applies to future mail on the server."
 msgstr "Il filtro si applica alla posta futura sul server."
 
@@ -6790,11 +6798,11 @@ msgstr "L’organizzatore è diverso dal mittente del messaggio. Controlla il de
 msgid "The other device needs the Tailscale app, signed in to the same tailnet. This Mac must stay on with OpenMail open. Quitting OpenMail takes the address offline until it opens again."
 msgstr "L’altro dispositivo ha bisogno dell’app Tailscale, connessa alla stessa tailnet. Questo Mac deve restare acceso con OpenMail aperto. Chiudendo OpenMail l’indirizzo resta offline finché non viene riaperto."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "The preview checked at most 201 server messages. Matching messages outside this sample may be missing."
 msgstr "L’anteprima ha controllato al massimo 201 messaggi sul server. Potrebbero mancare messaggi corrispondenti fuori dal campione."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "The preview is limited to 200 messages. Narrow the conditions to process other messages."
 msgstr "L’anteprima è limitata a 200 messaggi. Restringi le condizioni per elaborare altri messaggi."
 
@@ -6856,7 +6864,7 @@ msgstr "Terzo"
 msgid "This app isn't installed."
 msgstr "Questa app non è installata."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 msgid "This deletes the saved recovery copy. Rules on the server are unchanged."
 msgstr "Questa operazione elimina la copia di ripristino salvata. Le regole sul server rimangono invariate."
 
@@ -6926,12 +6934,12 @@ msgstr "Outlook non supporta il fuso orario di questo evento ricorrente"
 msgid "This removes the filter from the server. Existing messages are unchanged."
 msgstr "Questo rimuove il filtro dal server. I messaggi esistenti rimangono invariati."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/lib/errors.ts
 msgid "This rule can only be applied to future mail on the server"
 msgstr "Questa regola può essere applicata solo ai nuovi messaggi sul server"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "This rule deletes messages. Confirm only if the preview matches the messages you intend to delete."
 msgstr "Questa regola elimina i messaggi. Conferma solo se l’anteprima corrisponde ai messaggi che intendi eliminare."
 
@@ -6971,16 +6979,16 @@ msgstr "Fuso orario"
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/Reader.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "To"
 msgstr "A"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "To me"
 msgstr "A me"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "To or CC me"
 msgstr "A me o CC a me"
 
@@ -7046,7 +7054,7 @@ msgid "Translate"
 msgstr "Traduci"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 #: src/renderer/src/lib/view.ts
 msgid "Trash"
@@ -7163,7 +7171,7 @@ msgid "Unknown organizer time zone; showing the original time."
 msgstr "Fuso orario dell’organizzatore sconosciuto; mostrando l’ora originale."
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Unread"
 msgstr "Non letti"
 

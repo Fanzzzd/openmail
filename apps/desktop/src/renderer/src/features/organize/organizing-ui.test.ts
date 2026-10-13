@@ -148,7 +148,8 @@ vi.mock("../../ui/Select", () => ({
     ),
 }));
 
-import { FilterEditor, ServerSettings } from "../settings/sections/ServerSettings";
+import { FilterEditor } from "../settings/sections/FilterEditor";
+import { ServerSettings } from "../settings/sections/ServerSettings";
 import { LabelEditor } from "./OrganizationSettings";
 
 const account = {

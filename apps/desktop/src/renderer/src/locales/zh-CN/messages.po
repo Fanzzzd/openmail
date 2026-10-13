@@ -346,7 +346,7 @@ msgstr "操作失败：{reason}"
 msgid "Action menu"
 msgstr "动作菜单"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Actions"
 msgstr "操作"
@@ -435,7 +435,7 @@ msgstr "添加邮箱"
 msgid "Add label"
 msgstr "加标签"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Add labels"
 msgstr "添加标签"
 
@@ -501,7 +501,7 @@ msgstr "已加入日历"
 msgid "Additional category names, separated by commas"
 msgstr "其他分类名称，用逗号分隔"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Additional labels"
 msgstr "附加标签"
 
@@ -763,7 +763,7 @@ msgstr "Anthropic 拒绝了这个 API 密钥。请在「设置 → AI 权限」�
 msgid "Anthropic's rate limit was reached. Wait a minute, then try again."
 msgstr "已达到 Anthropic 的速率限制。请等一分钟再试。"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Any action flag"
 msgstr "任意操作标记"
 
@@ -800,11 +800,12 @@ msgstr "应用颜色"
 msgid "Apply link"
 msgstr "应用链接"
 
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Apply to existing mail"
 msgstr "应用到已有邮件"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Apply to existing mail?"
 msgstr "应用到已有邮件？"
 
@@ -831,8 +832,8 @@ msgstr "这台 Mac 上未找到的应用"
 #: src/renderer/src/features/ai/TriageChip.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
@@ -868,7 +869,7 @@ msgstr "每次询问"
 msgid "Ask me first"
 msgstr "先问我"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Assign categories (one per line)"
 msgstr "分配分类（每行一个）"
 
@@ -897,7 +898,7 @@ msgstr "附加邮件"
 msgid "Attachment cache limit"
 msgstr "附件缓存上限"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Attachment exception"
 msgstr "附件例外"
 
@@ -954,10 +955,11 @@ msgid "Automatic direction"
 msgstr "自动方向"
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Automatic replies"
 msgstr "自动回复"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Automatic reply"
 msgstr "自动回复"
 
@@ -1092,7 +1094,7 @@ msgstr "日历响应未发送"
 msgid "Calendar responses require a user action"
 msgstr "日历响应须由用户操作"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Call"
 msgstr "致电"
 
@@ -1168,6 +1170,8 @@ msgstr "暂时无法连接邮件服务器。"
 #: src/renderer/src/features/reader/frame/LinkConfirmDialog.tsx
 #: src/renderer/src/features/reader/UnsubscribeButton.tsx
 #: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
+#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/state/desktop.ts
@@ -1200,7 +1204,7 @@ msgstr "分类…"
 msgid "Category"
 msgstr "类别"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Category action"
 msgstr "分类动作"
 
@@ -1216,7 +1220,7 @@ msgstr "分类名称，用逗号分隔"
 msgid "Cc"
 msgstr "抄送"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "CC me"
 msgstr "抄送给我"
 
@@ -1532,7 +1536,7 @@ msgstr "无法保证搜索索引对齐，已拒绝压缩。"
 msgid "Compose"
 msgstr "撰写"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Confidential"
 msgstr "机密"
 
@@ -1540,7 +1544,7 @@ msgstr "机密"
 msgid "Config file can't be read"
 msgstr "无法读取配置文件"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Confirm"
 msgstr "确认"
 
@@ -1556,7 +1560,7 @@ msgstr "请确认此规则的删除操作"
 msgid "Confirm removal"
 msgstr "确认移除"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Confirm rule changes?"
 msgstr "确认修改规则？"
 
@@ -1650,7 +1654,7 @@ msgstr "系统策略限制了通讯录访问。"
 msgid "Contacts and people you've sent mail to, when the sender is verified."
 msgstr "联系人和你发过邮件的人，且发件人需通过认证。"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Contacts only"
 msgstr "仅联系人"
 
@@ -1741,7 +1745,7 @@ msgstr "复制选中附件"
 msgid "Copy style"
 msgstr "复制样式"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Copy to folder"
 msgstr "复制到文件夹"
 
@@ -1982,12 +1986,13 @@ msgstr "在「设置 > 隐私与安全」里新建应用密码，勾选 IMAP 和
 msgid "Create an app-specific password under Sign-In and Security in your Apple Account."
 msgstr "在 Apple 账户的「登录与安全」里生成应用专用密码。"
 
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Create filter"
 msgstr "创建过滤器"
 
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/i18n/action-names.ts
 msgid "Create filter from these messages"
 msgstr "按这些邮件创建过滤器"
@@ -2134,6 +2139,7 @@ msgstr "默认签名"
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
@@ -2219,7 +2225,7 @@ msgid "Disabled"
 msgstr "已停用"
 
 #: src/renderer/src/features/compose/components/ComposerAi.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 msgid "Discard"
 msgstr "丢弃"
 
@@ -2228,7 +2234,7 @@ msgstr "丢弃"
 msgid "Discard draft"
 msgstr "丢弃草稿"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 msgid "Discard saved rule?"
 msgstr "丢弃保存的规则？"
 
@@ -2273,11 +2279,11 @@ msgid "Display name"
 msgstr "显示名称"
 
 #. Incoming message action flag value; this option does not execute forwarding.
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Do not forward"
 msgstr "不要转发"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Does not have words"
 msgstr "不包含词语"
 
@@ -2485,11 +2491,11 @@ msgstr "请先启用此账户以打开网页版邮件"
 msgid "Enable this account to use its calendar"
 msgstr "请先启用此账户以使用日历"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Enabled"
 msgstr "开启"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "End"
 msgstr "结束"
 
@@ -2594,23 +2600,23 @@ msgstr "每 {interval} 周"
 msgid "Every {interval} years"
 msgstr "每 {interval} 年"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Everyone"
 msgstr "所有人"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Except recipient contains"
 msgstr "排除收件人包含"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Except sender contains"
 msgstr "排除发件人包含"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Except subject contains"
 msgstr "排除主题包含"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Exclude chats"
 msgstr "排除聊天"
 
@@ -2639,7 +2645,7 @@ msgstr "展开"
 msgid "Experimental features can be enabled separately."
 msgstr "实验功能可逐项开启。"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "External replies"
 msgstr "外部回复"
 
@@ -2789,7 +2795,7 @@ msgstr "文件夹路径"
 msgid "Follow system"
 msgstr "跟随系统"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Follow up"
 msgstr "跟进"
 
@@ -2811,7 +2817,7 @@ msgstr "字号"
 msgid "For example: tomorrow 3pm or Oct 12–14"
 msgstr "例如：明天下午三点或10月12日至14日"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "For your information"
 msgstr "供参考"
 
@@ -2840,7 +2846,7 @@ msgid "Forward"
 msgstr "转发"
 
 #. Flag value on the incoming message, not an action to execute.
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgctxt "incoming message action flag"
 msgid "Forward"
 msgstr "转发标记"
@@ -2879,7 +2885,7 @@ msgstr "更友好"
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/Reader.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "From"
 msgstr "发件人"
 
@@ -3017,11 +3023,11 @@ msgstr "把账户分进空间，比如「工作」和「个人」。每个空间
 msgid "Group messages into conversations"
 msgstr "按会话归组邮件"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Has attachment"
 msgstr "有附件"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Has words"
 msgstr "包含词语"
 
@@ -3034,7 +3040,7 @@ msgstr "是否已检查“已发送”，并确认这封邮件尚未发送？"
 msgid "Headers"
 msgstr "邮件头"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Headers contain"
 msgstr "邮件头包含"
 
@@ -3131,16 +3137,16 @@ msgstr "IMAP 服务器"
 msgid "Import from iPhone or iPad"
 msgstr "从 iPhone 或 iPad 导入"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Importance action"
 msgstr "重要性动作"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Importance condition"
 msgstr "重要性条件"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 #: src/renderer/src/i18n/action-names.ts
@@ -3180,7 +3186,7 @@ msgid "In the reader, ⌘+ and ⌘− change it and ⌘0 goes back to 100%."
 msgstr "在阅读区按 ⌘+ 和 ⌘− 调整，按 ⌘0 回到 100%。"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 #: src/renderer/src/lib/view.ts
 msgid "Inbox"
@@ -3254,7 +3260,7 @@ msgstr "在这台 Mac 上安装 Tailscale 应用并登录，然后回到这里�
 msgid "Internal folder"
 msgstr "应用内部目录"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Internal reply"
 msgstr "内部回复"
 
@@ -3331,7 +3337,7 @@ msgstr "两端对齐"
 msgid "Keep bodies in {0}"
 msgstr "{0} 正文保留期限"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Keep category"
 msgstr "保留分类"
 
@@ -3339,7 +3345,7 @@ msgstr "保留分类"
 msgid "Keep existing rule"
 msgstr "保留现有规则"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Keep importance"
 msgstr "保留重要性"
 
@@ -3382,7 +3388,7 @@ msgid "Label list visibility"
 msgstr "侧栏标签可见性"
 
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Label or folder"
 msgstr "标签或文件夹"
 
@@ -3427,7 +3433,7 @@ msgstr "大"
 msgid "Larger text"
 msgstr "放大文字"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Larger than"
 msgstr "大于"
 
@@ -3557,6 +3563,7 @@ msgstr "正在从服务器读取原始邮件…"
 
 #: src/renderer/src/features/reader/attachments/AttachmentImportDialog.tsx
 #: src/renderer/src/features/reader/body/MessageBodyShell.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Loading…"
 msgstr "加载中…"
@@ -3581,7 +3588,7 @@ msgstr "本地较少：同步窗口"
 msgid "Local has more: stale"
 msgstr "本地较多：过时"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Local preview: {count} messages"
 msgstr "本地预览：{count} 封邮件"
 
@@ -3658,21 +3665,21 @@ msgstr "全部标为已读"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Mark as important"
 msgstr "标为重要"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Mark as not important"
 msgstr "取消重要"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Mark as read"
 msgstr "标为已读"
 
@@ -3759,7 +3766,7 @@ msgstr "与搜索匹配"
 msgid "Matching times keep that weekday active all day. Overnight periods continue into the next day. Unchecked days stay muted except for overnight periods from the previous day. Repeated daylight-saving times use the same schedule; skipped times are passed over."
 msgstr "开始与结束相同表示当天全天活跃。跨午夜时段延续到次日；未勾选日期仅保留前一天延续的时段。夏令时重复时刻按同一日程，跳过的时刻不触发通知。"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Maximum size (KiB)"
 msgstr "最大大小（KiB）"
 
@@ -3794,12 +3801,12 @@ msgstr "提及建议"
 
 #: src/renderer/src/features/reader/frame/EmailFrame.tsx
 #: src/renderer/src/features/reader/Reader.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Message"
 msgstr "正文"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Message action flag"
 msgstr "消息操作标记"
 
@@ -3857,7 +3864,7 @@ msgid "Message text cache window"
 msgstr "消息文本缓存窗口"
 
 #. Rule predicate matching the message text, excluding the subject.
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Message text contains"
 msgstr "消息文本包含"
 
@@ -3954,7 +3961,7 @@ msgstr "Microsoft 将请求邮件修改权限。登录后，请重新选择操�
 msgid "Mimestream"
 msgstr "Mimestream"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Minimum size (KiB)"
 msgstr "最小大小（KiB）"
 
@@ -4008,7 +4015,7 @@ msgstr "更多"
 msgid "More actions"
 msgstr "更多操作"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "More conditions"
 msgstr "更多条件"
 
@@ -4016,7 +4023,7 @@ msgstr "更多条件"
 msgid "More disk space is needed"
 msgstr "需要更多磁盘空间"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "More exceptions"
 msgstr "更多例外"
 
@@ -4028,7 +4035,7 @@ msgstr "更正式"
 msgid "More formatting"
 msgstr "更多格式"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "More label actions"
 msgstr "更多标签动作"
 
@@ -4180,7 +4187,7 @@ msgid "Moves from “{elsewhere}”"
 msgstr "从「{elsewhere}」移过来"
 
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Name"
 msgstr "名称"
 
@@ -4346,7 +4353,7 @@ msgstr "没有应用能打开此文件"
 msgid "No browser has opened OpenMail."
 msgstr "还没有浏览器打开过 OpenMail。"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "No copy"
 msgstr "不复制"
 
@@ -4371,7 +4378,7 @@ msgstr "没有草稿"
 msgid "No email accounts yet."
 msgstr "还没有邮箱账户。"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "No external replies"
 msgstr "关闭外部回复"
 
@@ -4379,7 +4386,7 @@ msgstr "关闭外部回复"
 msgid "No grammar suggestions"
 msgstr "没有语法建议"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "No label or folder"
 msgstr "不加标签或文件夹"
 
@@ -4425,7 +4432,7 @@ msgstr "无上级文件夹"
 msgid "no printers are available."
 msgstr "没有可用的打印机。"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "No response needed"
 msgstr "无需回复"
 
@@ -4473,14 +4480,15 @@ msgstr "目前没有人能登录。请在下方添加 tailnet 登录名。"
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 #: src/renderer/src/i18n/action-names.ts
 msgid "None"
 msgstr "不选"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 #: src/renderer/src/i18n/organization-labels.ts
 msgid "Normal"
 msgstr "普通"
@@ -4505,7 +4513,7 @@ msgstr "尚未请求"
 msgid "Not synced"
 msgstr "未同步"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Not to me"
 msgstr "未发送给我"
 
@@ -4615,7 +4623,7 @@ msgstr "仅搜索附件内的文本"
 msgid "Only the selected messages in this Trash or Spam folder will be permanently deleted. This cannot be undone."
 msgstr "仅永久删除所选邮件中属于当前垃圾箱或垃圾邮件文件夹的邮件。此操作无法撤销。"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Only to me"
 msgstr "仅发送给我"
 
@@ -4874,7 +4882,7 @@ msgstr "Outlook 不支持上传 3 MB 及以上的消息附件。请移除此附�
 msgid "Outlook categories"
 msgstr "Outlook 分类"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Outlook chooses the reply subject."
 msgstr "回复主题由 Outlook 决定。"
 
@@ -4990,7 +4998,7 @@ msgid "Permission"
 msgstr "权限"
 
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Personal"
 msgstr "个人"
 
@@ -5040,16 +5048,16 @@ msgstr "预览 {0}"
 msgid "Preview changes"
 msgstr "预览修改"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Preview unavailable"
 msgstr "预览不可用"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Preview unavailable. The rule will apply to future mail on the server."
 msgstr "预览不可用。规则将用于服务器上的新邮件。"
 
 #. placeholder {0}: confirming.preview.matches.length
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Preview: {0} messages. Only the previewed messages will be changed when applying to existing mail."
 msgstr "预览：{0} 封邮件。应用到已有邮件时，只修改预览中的邮件。"
 
@@ -5103,7 +5111,7 @@ msgstr "打印这封邮件…"
 msgid "Print…"
 msgstr "打印…"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Private"
 msgstr "私人"
 
@@ -5166,7 +5174,7 @@ msgid "Quote selected text"
 msgstr "引用选中文字"
 
 #. Flag value on the incoming message, not an action to execute.
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgctxt "incoming message action flag"
 msgid "Read"
 msgstr "阅读标记"
@@ -5389,7 +5397,7 @@ msgstr "移除密钥"
 msgid "Remove label"
 msgstr "去掉标签"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Remove labels"
 msgstr "移除标签"
 
@@ -5496,7 +5504,7 @@ msgid "Reply"
 msgstr "回复"
 
 #. Flag value on the incoming message, not an action to execute.
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgctxt "incoming message action flag"
 msgid "Reply"
 msgstr "回复标记"
@@ -5511,7 +5519,7 @@ msgid "Reply all"
 msgstr "回复全部"
 
 #. Flag value on the incoming message, not an action to execute.
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgctxt "incoming message action flag"
 msgid "Reply all"
 msgstr "全部回复标记"
@@ -5528,7 +5536,7 @@ msgstr "回复模式"
 msgid "Reply needed: add star"
 msgstr "需要回复：加星标"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Reply only to contacts"
 msgstr "仅回复联系人"
 
@@ -5593,16 +5601,16 @@ msgstr "恢复"
 msgid "Restore message state"
 msgstr "恢复邮件状态"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 msgid "Restore rule"
 msgstr "恢复规则"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 msgid "Restore rule?"
 msgstr "恢复规则？"
 
 #. placeholder {0}: pending.preview.matches.length
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 msgid "Restore the saved original rule on the server. Preview: {0} messages."
 msgstr "将在服务器恢复保存的原规则。预览：{0} 封邮件。"
 
@@ -5633,7 +5641,7 @@ msgstr "重试 {name}"
 msgid "Revert"
 msgstr "还原"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Review"
 msgstr "审阅"
 
@@ -5717,9 +5725,9 @@ msgstr "星期六"
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Save"
 msgstr "保存"
 
@@ -5759,7 +5767,7 @@ msgstr "将邮件保存为 EML…"
 msgid "Save message as PDF…"
 msgstr "将这封邮件保存为 PDF…"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Save rule"
 msgstr "保存规则"
 
@@ -5860,7 +5868,7 @@ msgstr "搜索匹配"
 msgid "Search messages from this sender"
 msgstr "搜索此发件人的邮件"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Search query"
 msgstr "搜索条件"
 
@@ -6008,7 +6016,7 @@ msgstr "发件人姓名"
 msgid "Sending…"
 msgstr "正在发送…"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Sensitivity"
 msgstr "敏感度"
 
@@ -6041,7 +6049,7 @@ msgstr "服务器过滤器"
 msgid "Server filters and automatic replies are available for Gmail and Outlook."
 msgstr "Gmail 和 Outlook 支持服务器过滤器和自动回复。"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Server preview: {count} messages"
 msgstr "服务器预览：{count} 封邮件"
 
@@ -6219,7 +6227,7 @@ msgstr "请在 Mac 上重新登录"
 msgid "Sign in again to change Focused/Other."
 msgstr "重新登录以更改重点/其他分类。"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Sign in again to enable filters"
 msgstr "重新登录以启用过滤器"
 
@@ -6292,11 +6300,11 @@ msgstr "已登录。可以关闭这个页面，回到 OpenMail。"
 msgid "Simplify your search query."
 msgstr "请简化搜索条件。"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Size comparison"
 msgstr "大小比较"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Size in bytes"
 msgstr "大小（字节）"
 
@@ -6313,7 +6321,7 @@ msgstr "小"
 msgid "Smaller text"
 msgstr "缩小文字"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Smaller than"
 msgstr "小于"
 
@@ -6351,7 +6359,7 @@ msgstr "社交"
 msgid "Software updates"
 msgstr "软件更新"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Some conditions need metadata that is not cached. Save the rule for future mail on the server."
 msgstr "部分条件需要未缓存的元数据。可保存规则，用于服务器上的新邮件。"
 
@@ -6391,8 +6399,8 @@ msgid "Spaces"
 msgstr "空间"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/lib/view.ts
 msgid "Spam"
 msgstr "垃圾邮件"
@@ -6419,7 +6427,7 @@ msgstr "稳定版本"
 
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 #: src/renderer/src/i18n/action-names.ts
@@ -6440,8 +6448,8 @@ msgid "Star message"
 msgstr "为此邮件加星标"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/lib/view.ts
 msgid "Starred"
 msgstr "星标"
@@ -6450,8 +6458,8 @@ msgstr "星标"
 msgid "Starred messages"
 msgstr "已加星标的邮件"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Start"
 msgstr "开始"
 
@@ -6479,7 +6487,7 @@ msgstr "不再自动加载 {address} 的图片"
 msgid "Stop loading images from {domain}"
 msgstr "不再自动加载 {domain} 的图片"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Stop processing more rules"
 msgstr "停止处理后续规则"
 
@@ -6494,8 +6502,8 @@ msgid "Strikethrough"
 msgstr "删除线"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Subject"
 msgstr "主题"
 
@@ -6504,7 +6512,7 @@ msgctxt "search match source"
 msgid "Subject"
 msgstr "主题"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Subject contains"
 msgstr "主题包含"
 
@@ -6722,7 +6730,7 @@ msgstr "预览后文件有变化。请重新查看改动。"
 msgid "The file doesn't exist yet. OpenMail creates it."
 msgstr "文件还不存在。OpenMail 会创建它。"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "The filter applies to future mail on the server."
 msgstr "过滤器会处理服务器上的新邮件。"
 
@@ -6800,11 +6808,11 @@ msgstr "组织者与邮件发件人不同，回复前请核对收件地址。"
 msgid "The other device needs the Tailscale app, signed in to the same tailnet. This Mac must stay on with OpenMail open. Quitting OpenMail takes the address offline until it opens again."
 msgstr "另一台设备需要安装 Tailscale 应用，并登录同一个 tailnet。这台 Mac 需要保持开机并打开 OpenMail。退出 OpenMail 后，地址会离线，直到再次打开。"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "The preview checked at most 201 server messages. Matching messages outside this sample may be missing."
 msgstr "预览最多检查了服务器上的 201 条消息。样本外可能还有命中消息。"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "The preview is limited to 200 messages. Narrow the conditions to process other messages."
 msgstr "预览最多显示 200 封。请缩小条件以处理其他邮件。"
 
@@ -6866,7 +6874,7 @@ msgstr "第三"
 msgid "This app isn't installed."
 msgstr "这个应用未安装。"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 msgid "This deletes the saved recovery copy. Rules on the server are unchanged."
 msgstr "将删除保存的恢复副本，服务器规则不变。"
 
@@ -6936,12 +6944,12 @@ msgstr "Outlook 不支持此重复事件的时区"
 msgid "This removes the filter from the server. Existing messages are unchanged."
 msgstr "将从服务器移除此规则，已有邮件不变。"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/lib/errors.ts
 msgid "This rule can only be applied to future mail on the server"
 msgstr "此规则只能用于服务器上的新邮件"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "This rule deletes messages. Confirm only if the preview matches the messages you intend to delete."
 msgstr "此规则会删除消息。仅当预览符合要删除的消息时才确认。"
 
@@ -6981,16 +6989,16 @@ msgstr "时区"
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/Reader.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "To"
 msgstr "收件人"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "To me"
 msgstr "发送给我"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "To or CC me"
 msgstr "发送或抄送给我"
 
@@ -7056,7 +7064,7 @@ msgid "Translate"
 msgstr "翻译"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 #: src/renderer/src/lib/view.ts
 msgid "Trash"
@@ -7173,7 +7181,7 @@ msgid "Unknown organizer time zone; showing the original time."
 msgstr "无法识别组织者时区，显示原始时间。"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Unread"
 msgstr "未读"
 

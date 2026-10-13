@@ -336,7 +336,7 @@ msgstr "Akce se nezdařila: {reason}"
 msgid "Action menu"
 msgstr "Nabídka akcí"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Actions"
 msgstr "Akce"
@@ -425,7 +425,7 @@ msgstr "Přidat e-mailový účet"
 msgid "Add label"
 msgstr "Přidat štítek"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Add labels"
 msgstr "Přidat štítky"
 
@@ -491,7 +491,7 @@ msgstr "Přidáno do kalendáře"
 msgid "Additional category names, separated by commas"
 msgstr "Další názvy kategorií oddělené čárkami"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Additional labels"
 msgstr "Další štítky"
 
@@ -753,7 +753,7 @@ msgstr "Anthropic odmítl klíč API. Zkontrolujte ho v Nastavení → Přístup
 msgid "Anthropic's rate limit was reached. Wait a minute, then try again."
 msgstr "Byl dosažen limit požadavků Anthropic. Počkejte minutu a zkuste to znovu."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Any action flag"
 msgstr "Libovolný příznak akce"
 
@@ -790,11 +790,12 @@ msgstr "Použít barvu"
 msgid "Apply link"
 msgstr "Použít odkaz"
 
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Apply to existing mail"
 msgstr "Použít na existující poštu"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Apply to existing mail?"
 msgstr "Použít na stávající poštu?"
 
@@ -821,8 +822,8 @@ msgstr "Aplikace, které na tomto Macu nebyly nalezeny"
 #: src/renderer/src/features/ai/TriageChip.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
@@ -858,7 +859,7 @@ msgstr "Pokaždé se ptejte"
 msgid "Ask me first"
 msgstr "Nejdřív se mě zeptej"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Assign categories (one per line)"
 msgstr "Přiřadit kategorie (jednu na řádek)"
 
@@ -887,7 +888,7 @@ msgstr "Přiložená zpráva"
 msgid "Attachment cache limit"
 msgstr "Limit mezipaměti příloh"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Attachment exception"
 msgstr "Výjimka pro přílohy"
 
@@ -944,10 +945,11 @@ msgid "Automatic direction"
 msgstr "Automatický směr"
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Automatic replies"
 msgstr "Automatické odpovědi"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Automatic reply"
 msgstr "Automatická odpověď"
 
@@ -1082,7 +1084,7 @@ msgstr "Odpověď na pozvánku nebyla odeslána"
 msgid "Calendar responses require a user action"
 msgstr "Odpovědi kalendáře vyžadují akci uživatele"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Call"
 msgstr "Zavolat"
 
@@ -1158,6 +1160,8 @@ msgstr "K poštovnímu serveru se nyní nelze připojit."
 #: src/renderer/src/features/reader/frame/LinkConfirmDialog.tsx
 #: src/renderer/src/features/reader/UnsubscribeButton.tsx
 #: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
+#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/state/desktop.ts
@@ -1190,7 +1194,7 @@ msgstr "Kategorie…"
 msgid "Category"
 msgstr "Kategorie"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Category action"
 msgstr "Kategorie akce"
 
@@ -1206,7 +1210,7 @@ msgstr "Názvy kategorií oddělené čárkami"
 msgid "Cc"
 msgstr "Kopie"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "CC me"
 msgstr "Kopie pro mě"
 
@@ -1522,7 +1526,7 @@ msgstr "Zmenšení bylo odmítnuto, protože nelze zaručit soulad vyhledávací
 msgid "Compose"
 msgstr "Nová zpráva"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Confidential"
 msgstr "Důvěrné"
 
@@ -1530,7 +1534,7 @@ msgstr "Důvěrné"
 msgid "Config file can't be read"
 msgstr "Konfigurační soubor nelze přečíst"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Confirm"
 msgstr "Potvrdit"
 
@@ -1546,7 +1550,7 @@ msgstr "Potvrďte mazání tímto pravidlem"
 msgid "Confirm removal"
 msgstr "Potvrďte odstranění"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Confirm rule changes?"
 msgstr "Potvrdit změny pravidel?"
 
@@ -1640,7 +1644,7 @@ msgstr "Přístup ke kontaktům omezuje zásada systému."
 msgid "Contacts and people you've sent mail to, when the sender is verified."
 msgstr "Kontakty a lidé, kterým jste odeslali poštu, pokud je odesílatel ověřen."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Contacts only"
 msgstr "Pouze kontakty"
 
@@ -1731,7 +1735,7 @@ msgstr "Kopírovat vybrané"
 msgid "Copy style"
 msgstr "Kopírovat styl"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Copy to folder"
 msgstr "Kopírovat do složky"
 
@@ -1972,12 +1976,13 @@ msgstr "Vytvořte heslo aplikace v části Nastavení > Soukromí a zabezpečen�
 msgid "Create an app-specific password under Sign-In and Security in your Apple Account."
 msgstr "V části Přihlášení a zabezpečení ve svém účtu Apple vytvořte heslo pro konkrétní aplikaci."
 
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Create filter"
 msgstr "Vytvořit filtr"
 
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/i18n/action-names.ts
 msgid "Create filter from these messages"
 msgstr "Vytvořte filtr z těchto zpráv"
@@ -2124,6 +2129,7 @@ msgstr "Výchozí podpis"
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
@@ -2209,7 +2215,7 @@ msgid "Disabled"
 msgstr "Vypnuto"
 
 #: src/renderer/src/features/compose/components/ComposerAi.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 msgid "Discard"
 msgstr "Zahodit"
 
@@ -2218,7 +2224,7 @@ msgstr "Zahodit"
 msgid "Discard draft"
 msgstr "Zahodit koncept"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 msgid "Discard saved rule?"
 msgstr "Zahodit uložené pravidlo?"
 
@@ -2263,11 +2269,11 @@ msgid "Display name"
 msgstr "Zobrazovaný název"
 
 #. Incoming message action flag value; this option does not execute forwarding.
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Do not forward"
 msgstr "Nepřeposílat"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Does not have words"
 msgstr "Neobsahuje slova"
 
@@ -2475,11 +2481,11 @@ msgstr "Povolte tento účet pro otevírání pošty na webu"
 msgid "Enable this account to use its calendar"
 msgstr "Povolte tomuto účtu používat jeho kalendář"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Enabled"
 msgstr "Zapnuto"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "End"
 msgstr "Konec"
 
@@ -2584,23 +2590,23 @@ msgstr "Každých {interval} týdnů"
 msgid "Every {interval} years"
 msgstr "Každých {interval} let"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Everyone"
 msgstr "Každý"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Except recipient contains"
 msgstr "Kromě příjemce obsahujícího"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Except sender contains"
 msgstr "Kromě odesílatele obsahujícího"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Except subject contains"
 msgstr "Kromě předmětu obsahujícího"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Exclude chats"
 msgstr "Vyloučit chaty"
 
@@ -2629,7 +2635,7 @@ msgstr "Rozšířený"
 msgid "Experimental features can be enabled separately."
 msgstr "Experimentální funkce lze aktivovat samostatně."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "External replies"
 msgstr "Externí odpovědi"
 
@@ -2779,7 +2785,7 @@ msgstr "Cesta ke složce"
 msgid "Follow system"
 msgstr "Podle systému"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Follow up"
 msgstr "Sledovat"
 
@@ -2801,7 +2807,7 @@ msgstr "Velikost písma"
 msgid "For example: tomorrow 3pm or Oct 12–14"
 msgstr "Například: tomorrow 3pm nebo Oct 12–14"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "For your information"
 msgstr "Pro informaci"
 
@@ -2830,7 +2836,7 @@ msgid "Forward"
 msgstr "Přeposlat"
 
 #. Flag value on the incoming message, not an action to execute.
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgctxt "incoming message action flag"
 msgid "Forward"
 msgstr "Příznak přeposlání"
@@ -2869,7 +2875,7 @@ msgstr "Přátelštější"
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/Reader.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "From"
 msgstr "Od"
 
@@ -3007,11 +3013,11 @@ msgstr "Seskupte účty do prostorů, například „Pracovní“ a „Osobní�
 msgid "Group messages into conversations"
 msgstr "Seskupování zpráv do konverzací"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Has attachment"
 msgstr "Obsahuje přílohu"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Has words"
 msgstr "Obsahuje slova"
 
@@ -3024,7 +3030,7 @@ msgstr "Zkontrolovali jste složku „Odeslané“ a ověřili, že tato zpráva
 msgid "Headers"
 msgstr "Záhlaví zprávy"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Headers contain"
 msgstr "Hlavičky obsahují"
 
@@ -3121,16 +3127,16 @@ msgstr "IMAP server"
 msgid "Import from iPhone or iPad"
 msgstr "Importovat z iPhonu nebo iPadu"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Importance action"
 msgstr "Důležitá akce"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Importance condition"
 msgstr "Podmínka důležitosti"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 #: src/renderer/src/i18n/action-names.ts
@@ -3170,7 +3176,7 @@ msgid "In the reader, ⌘+ and ⌘− change it and ⌘0 goes back to 100%."
 msgstr "Ve čtečce to změníte ⌘+ a ⌘− a ⌘0 se vrátí na 100 %."
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 #: src/renderer/src/lib/view.ts
 msgid "Inbox"
@@ -3244,7 +3250,7 @@ msgstr "Nainstalujte na tento Mac aplikaci Tailscale, přihlaste se a pak se sem
 msgid "Internal folder"
 msgstr "Vnitřní složka"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Internal reply"
 msgstr "Interní odpověď"
 
@@ -3321,7 +3327,7 @@ msgstr "Zarovnat do bloku"
 msgid "Keep bodies in {0}"
 msgstr "Uchovávat texty zpráv ve složce {0}"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Keep category"
 msgstr "Zachovat kategorii"
 
@@ -3329,7 +3335,7 @@ msgstr "Zachovat kategorii"
 msgid "Keep existing rule"
 msgstr "Ponechat stávající pravidlo"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Keep importance"
 msgstr "Ponechat důležitost"
 
@@ -3372,7 +3378,7 @@ msgid "Label list visibility"
 msgstr "Viditelnost seznamu štítků"
 
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Label or folder"
 msgstr "Štítek nebo složka"
 
@@ -3417,7 +3423,7 @@ msgstr "Velký"
 msgid "Larger text"
 msgstr "Větší text"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Larger than"
 msgstr "Větší než"
 
@@ -3547,6 +3553,7 @@ msgstr "Načítání originálu ze serveru…"
 
 #: src/renderer/src/features/reader/attachments/AttachmentImportDialog.tsx
 #: src/renderer/src/features/reader/body/MessageBodyShell.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Loading…"
 msgstr "Načítání…"
@@ -3571,7 +3578,7 @@ msgstr "Místně méně: rozsah synchronizace"
 msgid "Local has more: stale"
 msgstr "Místně více: zastaralé zprávy"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Local preview: {count} messages"
 msgstr "Místní náhled: {count} zpráv"
 
@@ -3648,21 +3655,21 @@ msgstr "Označit vše jako přečtené"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Mark as important"
 msgstr "Označit jako důležité"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Mark as not important"
 msgstr "Označit jako nedůležité"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Mark as read"
 msgstr "Označit jako přečtené"
 
@@ -3749,7 +3756,7 @@ msgstr "Odpovídá hledání"
 msgid "Matching times keep that weekday active all day. Overnight periods continue into the next day. Unchecked days stay muted except for overnight periods from the previous day. Repeated daylight-saving times use the same schedule; skipped times are passed over."
 msgstr "Shodné časy udrží tento pracovní den aktivní po celý den. Přenocování pokračuje do dalšího dne. Nezaškrtnuté dny zůstanou bez zvuku s výjimkou období přes noc z předchozího dne. Opakovaný letní čas používá stejný plán; přeskočené časy jsou překročeny."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Maximum size (KiB)"
 msgstr "Maximální velikost (KiB)"
 
@@ -3784,12 +3791,12 @@ msgstr "Návrhy zmínek"
 
 #: src/renderer/src/features/reader/frame/EmailFrame.tsx
 #: src/renderer/src/features/reader/Reader.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Message"
 msgstr "Zpráva"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Message action flag"
 msgstr "Příznak akce zprávy"
 
@@ -3847,7 +3854,7 @@ msgid "Message text cache window"
 msgstr "Doba uchování textu zpráv v mezipaměti"
 
 #. Rule predicate matching the message text, excluding the subject.
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Message text contains"
 msgstr "Text zprávy obsahuje"
 
@@ -3944,7 +3951,7 @@ msgstr "Microsoft požádá o oprávnění upravovat poštu. Po přihlášení z
 msgid "Mimestream"
 msgstr "Mimestream"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Minimum size (KiB)"
 msgstr "Minimální velikost (KiB)"
 
@@ -3998,7 +4005,7 @@ msgstr "Více"
 msgid "More actions"
 msgstr "Další akce"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "More conditions"
 msgstr "Další podmínky"
 
@@ -4006,7 +4013,7 @@ msgstr "Další podmínky"
 msgid "More disk space is needed"
 msgstr "Je potřeba více místa na disku"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "More exceptions"
 msgstr "Další výjimky"
 
@@ -4018,7 +4025,7 @@ msgstr "Formálnější"
 msgid "More formatting"
 msgstr "Další formátování"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "More label actions"
 msgstr "Další akce se štítky"
 
@@ -4170,7 +4177,7 @@ msgid "Moves from “{elsewhere}”"
 msgstr "Přesune z „{elsewhere}“"
 
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Name"
 msgstr "Jméno"
 
@@ -4336,7 +4343,7 @@ msgstr "Tento soubor nelze otevřít žádnou aplikací"
 msgid "No browser has opened OpenMail."
 msgstr "OpenMail zatím nebyl otevřen v žádném prohlížeči."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "No copy"
 msgstr "Nekopírovat"
 
@@ -4361,7 +4368,7 @@ msgstr "Žádné koncepty"
 msgid "No email accounts yet."
 msgstr "Zatím nemáte žádný e-mailový účet."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "No external replies"
 msgstr "Žádné externí odpovědi"
 
@@ -4369,7 +4376,7 @@ msgstr "Žádné externí odpovědi"
 msgid "No grammar suggestions"
 msgstr "Žádné gramatické návrhy"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "No label or folder"
 msgstr "Žádný štítek nebo složka"
 
@@ -4415,7 +4422,7 @@ msgstr "Bez nadřazené složky"
 msgid "no printers are available."
 msgstr "nejsou k dispozici žádné tiskárny."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "No response needed"
 msgstr "Odpověď není nutná"
 
@@ -4463,14 +4470,15 @@ msgstr "Nikdo se nemůže přihlásit. Níže přidejte přihlášení do tailne
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 #: src/renderer/src/i18n/action-names.ts
 msgid "None"
 msgstr "Žádné"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 #: src/renderer/src/i18n/organization-labels.ts
 msgid "Normal"
 msgstr "Normální"
@@ -4495,7 +4503,7 @@ msgstr "Není požadováno"
 msgid "Not synced"
 msgstr "Nesynchronizováno"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Not to me"
 msgstr "Není pro mě"
 
@@ -4605,7 +4613,7 @@ msgstr "Jen text v přílohách"
 msgid "Only the selected messages in this Trash or Spam folder will be permanently deleted. This cannot be undone."
 msgstr "Trvale se smažou jen vybrané zprávy v této složce koše nebo nevyžádané pošty. Tuto akci nelze vrátit zpět."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Only to me"
 msgstr "Pouze pro mě"
 
@@ -4864,7 +4872,7 @@ msgstr "Outlook nemůže nahrát přiložené zprávy o velikosti 3 MB nebo vět
 msgid "Outlook categories"
 msgstr "Kategorie Outlooku"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Outlook chooses the reply subject."
 msgstr "Aplikace Outlook vybere předmět odpovědi."
 
@@ -4980,7 +4988,7 @@ msgid "Permission"
 msgstr "Oprávnění"
 
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Personal"
 msgstr "Osobní"
 
@@ -5030,16 +5038,16 @@ msgstr "Náhled {0}"
 msgid "Preview changes"
 msgstr "Náhled změn"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Preview unavailable"
 msgstr "Náhled není dostupný"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Preview unavailable. The rule will apply to future mail on the server."
 msgstr "Náhled není dostupný. Pravidlo se použije na budoucí poštu na serveru."
 
 #. placeholder {0}: confirming.preview.matches.length
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Preview: {0} messages. Only the previewed messages will be changed when applying to existing mail."
 msgstr "Náhled: {0} zpráv. Při použití na existující poštu se změní pouze zprávy v náhledu."
 
@@ -5093,7 +5101,7 @@ msgstr "Vytisknout zprávu…"
 msgid "Print…"
 msgstr "Vytisknout…"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Private"
 msgstr "Soukromé"
 
@@ -5156,7 +5164,7 @@ msgid "Quote selected text"
 msgstr "Citovat vybraný text"
 
 #. Flag value on the incoming message, not an action to execute.
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgctxt "incoming message action flag"
 msgid "Read"
 msgstr "Příznak přečtení"
@@ -5379,7 +5387,7 @@ msgstr "Odebrat klíč"
 msgid "Remove label"
 msgstr "Odebrat štítek"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Remove labels"
 msgstr "Odebrat štítky"
 
@@ -5486,7 +5494,7 @@ msgid "Reply"
 msgstr "Odpovědět"
 
 #. Flag value on the incoming message, not an action to execute.
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgctxt "incoming message action flag"
 msgid "Reply"
 msgstr "Příznak odpovědi"
@@ -5501,7 +5509,7 @@ msgid "Reply all"
 msgstr "Odpovědět všem"
 
 #. Flag value on the incoming message, not an action to execute.
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgctxt "incoming message action flag"
 msgid "Reply all"
 msgstr "Příznak odpovědi všem"
@@ -5518,7 +5526,7 @@ msgstr "Režim odpovědi"
 msgid "Reply needed: add star"
 msgstr "Vyžaduje odpověď: přidat hvězdičku"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Reply only to contacts"
 msgstr "Odpovídat pouze kontaktům"
 
@@ -5583,16 +5591,16 @@ msgstr "Obnovit"
 msgid "Restore message state"
 msgstr "Obnovit stav zprávy"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 msgid "Restore rule"
 msgstr "Obnovit pravidlo"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 msgid "Restore rule?"
 msgstr "Obnovit pravidlo?"
 
 #. placeholder {0}: pending.preview.matches.length
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 msgid "Restore the saved original rule on the server. Preview: {0} messages."
 msgstr "Obnovte uložené původní pravidlo na serveru. Náhled: {0} zpráv."
 
@@ -5623,7 +5631,7 @@ msgstr "Zkusit znovu {name}"
 msgid "Revert"
 msgstr "Vrátit změny"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Review"
 msgstr "Zkontrolovat"
 
@@ -5707,9 +5715,9 @@ msgstr "Sobota"
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Save"
 msgstr "Uložit"
 
@@ -5749,7 +5757,7 @@ msgstr "Uložit zprávu jako EML…"
 msgid "Save message as PDF…"
 msgstr "Uložit zprávu jako PDF…"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Save rule"
 msgstr "Uložit pravidlo"
 
@@ -5850,7 +5858,7 @@ msgstr "Shody s hledáním"
 msgid "Search messages from this sender"
 msgstr "Hledat zprávy od tohoto odesílatele"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Search query"
 msgstr "Vyhledávací dotaz"
 
@@ -5998,7 +6006,7 @@ msgstr "Jméno odesílatele"
 msgid "Sending…"
 msgstr "Odesílání…"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Sensitivity"
 msgstr "Citlivost"
 
@@ -6031,7 +6039,7 @@ msgstr "Serverové filtry"
 msgid "Server filters and automatic replies are available for Gmail and Outlook."
 msgstr "Pro Gmail a Outlook jsou k dispozici serverové filtry a automatické odpovědi."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Server preview: {count} messages"
 msgstr "Náhled serveru: {count} zpráv"
 
@@ -6209,7 +6217,7 @@ msgstr "Znovu se přihlaste na svém Macu"
 msgid "Sign in again to change Focused/Other."
 msgstr "Přihlaste se znovu pro změnu Prioritní/Další."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Sign in again to enable filters"
 msgstr "Chcete-li povolit filtry, znovu se přihlaste"
 
@@ -6282,11 +6290,11 @@ msgstr "Přihlášení proběhlo. Tuto stránku můžete zavřít a vrátit se d
 msgid "Simplify your search query."
 msgstr "Zjednodušte vyhledávací dotaz."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Size comparison"
 msgstr "Porovnání velikosti"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Size in bytes"
 msgstr "Velikost v bajtech"
 
@@ -6303,7 +6311,7 @@ msgstr "Malý"
 msgid "Smaller text"
 msgstr "Menší text"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Smaller than"
 msgstr "Menší než"
 
@@ -6341,7 +6349,7 @@ msgstr "Sociální sítě"
 msgid "Software updates"
 msgstr "Aktualizace softwaru"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Some conditions need metadata that is not cached. Save the rule for future mail on the server."
 msgstr "Některé podmínky vyžadují metadata, která nejsou v mezipaměti. Uložte pravidlo pro budoucí poštu na serveru."
 
@@ -6381,8 +6389,8 @@ msgid "Spaces"
 msgstr "Prostory"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/lib/view.ts
 msgid "Spam"
 msgstr "Nevyžádaná pošta"
@@ -6409,7 +6417,7 @@ msgstr "Stabilní"
 
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 #: src/renderer/src/i18n/action-names.ts
@@ -6430,8 +6438,8 @@ msgid "Star message"
 msgstr "Označit zprávu hvězdičkou"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/lib/view.ts
 msgid "Starred"
 msgstr "S hvězdičkou"
@@ -6440,8 +6448,8 @@ msgstr "S hvězdičkou"
 msgid "Starred messages"
 msgstr "Zprávy s hvězdičkou"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Start"
 msgstr "Začátek"
 
@@ -6469,7 +6477,7 @@ msgstr "Zastavit načítání obrázků z {address}"
 msgid "Stop loading images from {domain}"
 msgstr "Zastavit načítání obrázků z {domain}"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Stop processing more rules"
 msgstr "Zastavit zpracování dalších pravidel"
 
@@ -6484,8 +6492,8 @@ msgid "Strikethrough"
 msgstr "Přeškrtnutí"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Subject"
 msgstr "Předmět"
 
@@ -6494,7 +6502,7 @@ msgctxt "search match source"
 msgid "Subject"
 msgstr "Předmět"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Subject contains"
 msgstr "Předmět obsahuje"
 
@@ -6712,7 +6720,7 @@ msgstr "Soubor se po náhledu změnil. Zkontrolujte změnu znovu."
 msgid "The file doesn't exist yet. OpenMail creates it."
 msgstr "Soubor zatím neexistuje. OpenMail ho vytvoří."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "The filter applies to future mail on the server."
 msgstr "Filtr se vztahuje na budoucí poštu na serveru."
 
@@ -6790,11 +6798,11 @@ msgstr "Organizátor se liší od odesílatele zprávy. Než odpovíte, zkontrol
 msgid "The other device needs the Tailscale app, signed in to the same tailnet. This Mac must stay on with OpenMail open. Quitting OpenMail takes the address offline until it opens again."
 msgstr "Druhé zařízení potřebuje aplikaci Tailscale přihlášenou do stejného tailnetu. Tento Mac musí zůstat zapnutý s otevřeným OpenMailem. Po ukončení OpenMailu je adresa offline, dokud se znovu neotevře."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "The preview checked at most 201 server messages. Matching messages outside this sample may be missing."
 msgstr "Náhled ověřil nejvýše 201 zpráv na serveru. Odpovídající zprávy mimo tento vzorek mohou chybět."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "The preview is limited to 200 messages. Narrow the conditions to process other messages."
 msgstr "Náhled je omezen na 200 zpráv. Zužte podmínky pro zpracování dalších zpráv."
 
@@ -6856,7 +6864,7 @@ msgstr "Třetí"
 msgid "This app isn't installed."
 msgstr "Tato aplikace není nainstalovaná."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 msgid "This deletes the saved recovery copy. Rules on the server are unchanged."
 msgstr "Tím se smaže uložená kopie pro obnovení. Pravidla na serveru se nemění."
 
@@ -6926,12 +6934,12 @@ msgstr "Outlook nepodporuje časové pásmo této opakované události"
 msgid "This removes the filter from the server. Existing messages are unchanged."
 msgstr "Tím se filtr odebere ze serveru. Stávající zprávy jsou nezměněny."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/lib/errors.ts
 msgid "This rule can only be applied to future mail on the server"
 msgstr "Toto pravidlo lze použít pouze na budoucí poštu na serveru"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "This rule deletes messages. Confirm only if the preview matches the messages you intend to delete."
 msgstr "Toto pravidlo maže zprávy. Potvrďte pouze tehdy, pokud náhled odpovídá zprávám, které chcete smazat."
 
@@ -6971,16 +6979,16 @@ msgstr "Časové pásmo"
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/Reader.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "To"
 msgstr "Komu"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "To me"
 msgstr "Pro mě"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "To or CC me"
 msgstr "Pro mě nebo kopie pro mě"
 
@@ -7046,7 +7054,7 @@ msgid "Translate"
 msgstr "Přeložit"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 #: src/renderer/src/lib/view.ts
 msgid "Trash"
@@ -7163,7 +7171,7 @@ msgid "Unknown organizer time zone; showing the original time."
 msgstr "Neznámé časové pásmo organizátora; ukazuje původní čas."
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Unread"
 msgstr "Nepřečtené"
 

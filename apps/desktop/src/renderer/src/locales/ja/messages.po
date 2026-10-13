@@ -336,7 +336,7 @@ msgstr "アクションが失敗しました: {reason}"
 msgid "Action menu"
 msgstr "アクションメニュー"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Actions"
 msgstr "操作"
@@ -425,7 +425,7 @@ msgstr "メールアカウントを追加"
 msgid "Add label"
 msgstr "ラベルを追加する"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Add labels"
 msgstr "ラベルを追加"
 
@@ -491,7 +491,7 @@ msgstr "カレンダーに追加されました"
 msgid "Additional category names, separated by commas"
 msgstr "追加カテゴリ名をカンマで区切る"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Additional labels"
 msgstr "追加のラベル"
 
@@ -753,7 +753,7 @@ msgstr "Anthropic が API キーを拒否しました。「設定 → AI アク�
 msgid "Anthropic's rate limit was reached. Wait a minute, then try again."
 msgstr "Anthropic のレート制限に達しました。1 分ほど待ってから、もう一度お試しください。"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Any action flag"
 msgstr "任意の操作フラグ"
 
@@ -790,11 +790,12 @@ msgstr "色を適用"
 msgid "Apply link"
 msgstr "リンクを適用する"
 
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Apply to existing mail"
 msgstr "既存のメールに適用する"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Apply to existing mail?"
 msgstr "既存のメールに適用しますか？"
 
@@ -821,8 +822,8 @@ msgstr "この Mac で見つからないアプリ"
 #: src/renderer/src/features/ai/TriageChip.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
@@ -858,7 +859,7 @@ msgstr "毎回尋ねる"
 msgid "Ask me first"
 msgstr "まずは聞いてください"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Assign categories (one per line)"
 msgstr "分類を割り当てる（1行に1つ）"
 
@@ -887,7 +888,7 @@ msgstr "添付メッセージ"
 msgid "Attachment cache limit"
 msgstr "添付ファイルのキャッシュ上限"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Attachment exception"
 msgstr "添付ファイルの例外"
 
@@ -944,10 +945,11 @@ msgid "Automatic direction"
 msgstr "自動方向"
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Automatic replies"
 msgstr "自動返信"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Automatic reply"
 msgstr "自動返信"
 
@@ -1082,7 +1084,7 @@ msgstr "招待への返信が送信されませんでした"
 msgid "Calendar responses require a user action"
 msgstr "カレンダーの応答にはユーザーのアクションが必要です"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Call"
 msgstr "電話する"
 
@@ -1158,6 +1160,8 @@ msgstr "現在メールサーバーに接続できません。"
 #: src/renderer/src/features/reader/frame/LinkConfirmDialog.tsx
 #: src/renderer/src/features/reader/UnsubscribeButton.tsx
 #: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
+#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/state/desktop.ts
@@ -1190,7 +1194,7 @@ msgstr "カテゴリ…"
 msgid "Category"
 msgstr "カテゴリ"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Category action"
 msgstr "カテゴリアクション"
 
@@ -1206,7 +1210,7 @@ msgstr "カンマで区切られたカテゴリ名"
 msgid "Cc"
 msgstr "Cc"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "CC me"
 msgstr "自分にCC"
 
@@ -1522,7 +1526,7 @@ msgstr "検索インデックスの整合性を保証できないため、圧縮
 msgid "Compose"
 msgstr "新規メッセージ"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Confidential"
 msgstr "機密"
 
@@ -1530,7 +1534,7 @@ msgstr "機密"
 msgid "Config file can't be read"
 msgstr "設定ファイルを読み取れません"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Confirm"
 msgstr "確認"
 
@@ -1546,7 +1550,7 @@ msgstr "このルールによる削除を確認してください"
 msgid "Confirm removal"
 msgstr "削除の確認"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Confirm rule changes?"
 msgstr "ルールの変更を確認しますか?"
 
@@ -1640,7 +1644,7 @@ msgstr "システムポリシーにより連絡先へのアクセスが制限さ
 msgid "Contacts and people you've sent mail to, when the sender is verified."
 msgstr "連絡先とメールを送信したことのある相手。送信者が認証された場合に限ります。"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Contacts only"
 msgstr "連絡先のみ"
 
@@ -1731,7 +1735,7 @@ msgstr "選択したものをコピー"
 msgid "Copy style"
 msgstr "スタイルをコピー"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Copy to folder"
 msgstr "フォルダーにコピー"
 
@@ -1972,12 +1976,13 @@ msgstr "[設定] > [プライバシーとセキュリティ] で、IMAP と SMTP
 msgid "Create an app-specific password under Sign-In and Security in your Apple Account."
 msgstr "Apple アカウントの「サインインとセキュリティ」でアプリ固有のパスワードを作成します。"
 
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Create filter"
 msgstr "フィルターの作成"
 
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/i18n/action-names.ts
 msgid "Create filter from these messages"
 msgstr "これらのメッセージからフィルターを作成する"
@@ -2124,6 +2129,7 @@ msgstr "デフォルトの署名"
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
@@ -2209,7 +2215,7 @@ msgid "Disabled"
 msgstr "無効"
 
 #: src/renderer/src/features/compose/components/ComposerAi.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 msgid "Discard"
 msgstr "破棄"
 
@@ -2218,7 +2224,7 @@ msgstr "破棄"
 msgid "Discard draft"
 msgstr "下書きを破棄"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 msgid "Discard saved rule?"
 msgstr "保存されたルールを破棄しますか?"
 
@@ -2263,11 +2269,11 @@ msgid "Display name"
 msgstr "表示名"
 
 #. Incoming message action flag value; this option does not execute forwarding.
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Do not forward"
 msgstr "転送しない"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Does not have words"
 msgstr "含まないキーワード"
 
@@ -2475,11 +2481,11 @@ msgstr "このアカウントが Web 上でメールを開くことができる�
 msgid "Enable this account to use its calendar"
 msgstr "このアカウントがカレンダーを使用できるようにする"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Enabled"
 msgstr "有効"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "End"
 msgstr "終了"
 
@@ -2584,23 +2590,23 @@ msgstr "{interval}週間ごと"
 msgid "Every {interval} years"
 msgstr "{interval}年ごと"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Everyone"
 msgstr "みんな"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Except recipient contains"
 msgstr "宛先に含まれる場合は除外"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Except sender contains"
 msgstr "差出人に含まれる場合は除外"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Except subject contains"
 msgstr "件名に含まれる場合は除外"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Exclude chats"
 msgstr "チャットを除外"
 
@@ -2629,7 +2635,7 @@ msgstr "拡張された"
 msgid "Experimental features can be enabled separately."
 msgstr "実験的な機能は個別に有効にすることができます。"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "External replies"
 msgstr "外部からの返信"
 
@@ -2779,7 +2785,7 @@ msgstr "フォルダパス"
 msgid "Follow system"
 msgstr "システム設定に従う"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Follow up"
 msgstr "フォローアップ"
 
@@ -2801,7 +2807,7 @@ msgstr "フォントサイズ"
 msgid "For example: tomorrow 3pm or Oct 12–14"
 msgstr "例：tomorrow 3pm、Oct 12–14"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "For your information"
 msgstr "参考情報"
 
@@ -2830,7 +2836,7 @@ msgid "Forward"
 msgstr "転送"
 
 #. Flag value on the incoming message, not an action to execute.
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgctxt "incoming message action flag"
 msgid "Forward"
 msgstr "転送フラグ"
@@ -2869,7 +2875,7 @@ msgstr "より親しみやすく"
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/Reader.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "From"
 msgstr "差出人"
 
@@ -3007,11 +3013,11 @@ msgstr "「仕事」や「個人」などのスペースにアカウントをグ
 msgid "Group messages into conversations"
 msgstr "メッセージをスレッドにグループ化する"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Has attachment"
 msgstr "添付ファイルあり"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Has words"
 msgstr "含むキーワード"
 
@@ -3024,7 +3030,7 @@ msgstr "「送信済み」を確認し、このメッセージが送信されて
 msgid "Headers"
 msgstr "ヘッダ"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Headers contain"
 msgstr "ヘッダーに含む"
 
@@ -3121,16 +3127,16 @@ msgstr "IMAPサーバー"
 msgid "Import from iPhone or iPad"
 msgstr "iPhoneまたはiPadから読み込む"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Importance action"
 msgstr "重要なアクション"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Importance condition"
 msgstr "重要度の条件"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 #: src/renderer/src/i18n/action-names.ts
@@ -3170,7 +3176,7 @@ msgid "In the reader, ⌘+ and ⌘− change it and ⌘0 goes back to 100%."
 msgstr "リーダーで、⌘+ と ⌘- を押すと変更され、⌘0 は 100% に戻ります。"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 #: src/renderer/src/lib/view.ts
 msgid "Inbox"
@@ -3244,7 +3250,7 @@ msgstr "この Mac に Tailscale アプリをインストールしてサイン�
 msgid "Internal folder"
 msgstr "内部フォルダ"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Internal reply"
 msgstr "内部返信"
 
@@ -3321,7 +3327,7 @@ msgstr "両端揃え"
 msgid "Keep bodies in {0}"
 msgstr "{0}の本文を保持"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Keep category"
 msgstr "カテゴリを保持する"
 
@@ -3329,7 +3335,7 @@ msgstr "カテゴリを保持する"
 msgid "Keep existing rule"
 msgstr "既存のルールを保持"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Keep importance"
 msgstr "重要マークを保持"
 
@@ -3372,7 +3378,7 @@ msgid "Label list visibility"
 msgstr "ラベルリストの可視性"
 
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Label or folder"
 msgstr "ラベルまたはフォルダ"
 
@@ -3417,7 +3423,7 @@ msgstr "大きい"
 msgid "Larger text"
 msgstr "大きな文字"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Larger than"
 msgstr "より大きい"
 
@@ -3547,6 +3553,7 @@ msgstr "サーバーからオリジナルをロードしています…"
 
 #: src/renderer/src/features/reader/attachments/AttachmentImportDialog.tsx
 #: src/renderer/src/features/reader/body/MessageBodyShell.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Loading…"
 msgstr "読み込み中…"
@@ -3571,7 +3578,7 @@ msgstr "ローカルが少ない：同期期間"
 msgid "Local has more: stale"
 msgstr "ローカルが多い：古い状態"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Local preview: {count} messages"
 msgstr "ローカル プレビュー: {count} メッセージ"
 
@@ -3648,21 +3655,21 @@ msgstr "すべて開封済みにする"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Mark as important"
 msgstr "重要としてマークする"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Mark as not important"
 msgstr "重要ではないものとしてマークする"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Mark as read"
 msgstr "開封済みにする"
 
@@ -3749,7 +3756,7 @@ msgstr "検索に一致"
 msgid "Matching times keep that weekday active all day. Overnight periods continue into the next day. Unchecked days stay muted except for overnight periods from the previous day. Repeated daylight-saving times use the same schedule; skipped times are passed over."
 msgstr "時間を一致させると、その平日は一日中アクティブになります。夜間の期間は翌日まで続きます。チェックされていない日は、前日からの一晩の期間を除き、ミュートされたままになります。夏時間が繰り返される場合は、同じスケジュールが使用されます。スキップされた時間は引き継がれます。"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Maximum size (KiB)"
 msgstr "最大サイズ（KiB）"
 
@@ -3784,12 +3791,12 @@ msgstr "メンション候補"
 
 #: src/renderer/src/features/reader/frame/EmailFrame.tsx
 #: src/renderer/src/features/reader/Reader.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Message"
 msgstr "メッセージ"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Message action flag"
 msgstr "メッセージの操作フラグ"
 
@@ -3847,7 +3854,7 @@ msgid "Message text cache window"
 msgstr "メッセージ本文のキャッシュ期間"
 
 #. Rule predicate matching the message text, excluding the subject.
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Message text contains"
 msgstr "メッセージ本文に含む"
 
@@ -3944,7 +3951,7 @@ msgstr "Microsoft がメールの変更権限を求めます。ログイン後�
 msgid "Mimestream"
 msgstr "Mimestream"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Minimum size (KiB)"
 msgstr "最小サイズ（KiB）"
 
@@ -3998,7 +4005,7 @@ msgstr "その他"
 msgid "More actions"
 msgstr "その他の操作"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "More conditions"
 msgstr "その他の条件"
 
@@ -4006,7 +4013,7 @@ msgstr "その他の条件"
 msgid "More disk space is needed"
 msgstr "ディスクの空き容量が不足しています"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "More exceptions"
 msgstr "その他の例外"
 
@@ -4018,7 +4025,7 @@ msgstr "より丁寧に"
 msgid "More formatting"
 msgstr "その他の書式"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "More label actions"
 msgstr "その他のラベル操作"
 
@@ -4170,7 +4177,7 @@ msgid "Moves from “{elsewhere}”"
 msgstr "「{elsewhere}」から移動"
 
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Name"
 msgstr "名前"
 
@@ -4336,7 +4343,7 @@ msgstr "このファイルを開けるアプリがありません"
 msgid "No browser has opened OpenMail."
 msgstr "OpenMail を開いたブラウザはまだありません。"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "No copy"
 msgstr "コピーしない"
 
@@ -4361,7 +4368,7 @@ msgstr "下書きはありません"
 msgid "No email accounts yet."
 msgstr "メールアカウントはまだありません。"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "No external replies"
 msgstr "外部からの返信はありません"
 
@@ -4369,7 +4376,7 @@ msgstr "外部からの返信はありません"
 msgid "No grammar suggestions"
 msgstr "文法の提案はありません"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "No label or folder"
 msgstr "ラベルもフォルダもありません"
 
@@ -4415,7 +4422,7 @@ msgstr "親フォルダなし"
 msgid "no printers are available."
 msgstr "使用できるプリンターがありません。"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "No response needed"
 msgstr "返信不要"
 
@@ -4463,14 +4470,15 @@ msgstr "誰もサインインできません。下で tailnet ログインを追
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 #: src/renderer/src/i18n/action-names.ts
 msgid "None"
 msgstr "なし"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 #: src/renderer/src/i18n/organization-labels.ts
 msgid "Normal"
 msgstr "標準"
@@ -4495,7 +4503,7 @@ msgstr "要求されていません"
 msgid "Not synced"
 msgstr "同期されていません"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Not to me"
 msgstr "自分宛てではない"
 
@@ -4605,7 +4613,7 @@ msgstr "添付ファイル内のテキストのみ"
 msgid "Only the selected messages in this Trash or Spam folder will be permanently deleted. This cannot be undone."
 msgstr "このゴミ箱または迷惑メールフォルダで選択したメッセージのみ完全に削除されます。この操作は取り消せません。"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Only to me"
 msgstr "自分のみに送信"
 
@@ -4864,7 +4872,7 @@ msgstr "Outlook では 3 MB 以上の添付メッセージをアップロード�
 msgid "Outlook categories"
 msgstr "Outlookのカテゴリ"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Outlook chooses the reply subject."
 msgstr "Outlook によって返信の件名が選択されます。"
 
@@ -4980,7 +4988,7 @@ msgid "Permission"
 msgstr "権限"
 
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Personal"
 msgstr "個人"
 
@@ -5030,16 +5038,16 @@ msgstr "{0} をプレビューする"
 msgid "Preview changes"
 msgstr "変更をプレビュー"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Preview unavailable"
 msgstr "プレビューを利用できません"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Preview unavailable. The rule will apply to future mail on the server."
 msgstr "プレビューを利用できません。ルールはサーバー上の今後のメールに適用されます。"
 
 #. placeholder {0}: confirming.preview.matches.length
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Preview: {0} messages. Only the previewed messages will be changed when applying to existing mail."
 msgstr "プレビュー: {0} メッセージ。既存のメールに適用する場合、プレビューされたメッセージのみが変更されます。"
 
@@ -5093,7 +5101,7 @@ msgstr "メッセージを印刷…"
 msgid "Print…"
 msgstr "印刷…"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Private"
 msgstr "非公開"
 
@@ -5156,7 +5164,7 @@ msgid "Quote selected text"
 msgstr "選択したテキストを引用する"
 
 #. Flag value on the incoming message, not an action to execute.
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgctxt "incoming message action flag"
 msgid "Read"
 msgstr "閲覧フラグ"
@@ -5379,7 +5387,7 @@ msgstr "キーを削除"
 msgid "Remove label"
 msgstr "ラベルを削除する"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Remove labels"
 msgstr "ラベルを削除"
 
@@ -5486,7 +5494,7 @@ msgid "Reply"
 msgstr "返信"
 
 #. Flag value on the incoming message, not an action to execute.
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgctxt "incoming message action flag"
 msgid "Reply"
 msgstr "返信フラグ"
@@ -5501,7 +5509,7 @@ msgid "Reply all"
 msgstr "全員に返信"
 
 #. Flag value on the incoming message, not an action to execute.
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgctxt "incoming message action flag"
 msgid "Reply all"
 msgstr "全員に返信フラグ"
@@ -5518,7 +5526,7 @@ msgstr "返信モード"
 msgid "Reply needed: add star"
 msgstr "返信が必要: スターを付ける"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Reply only to contacts"
 msgstr "連絡先にのみ返信"
 
@@ -5583,16 +5591,16 @@ msgstr "復元する"
 msgid "Restore message state"
 msgstr "メッセージの状態を復元"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 msgid "Restore rule"
 msgstr "ルールを復元"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 msgid "Restore rule?"
 msgstr "ルールを復元しますか?"
 
 #. placeholder {0}: pending.preview.matches.length
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 msgid "Restore the saved original rule on the server. Preview: {0} messages."
 msgstr "サーバー上に保存されている元のルールを復元します。プレビュー: {0} メッセージ。"
 
@@ -5623,7 +5631,7 @@ msgstr "{name} を再試行"
 msgid "Revert"
 msgstr "変更を元に戻す"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Review"
 msgstr "確認"
 
@@ -5707,9 +5715,9 @@ msgstr "土曜日"
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Save"
 msgstr "保存"
 
@@ -5749,7 +5757,7 @@ msgstr "メッセージをEMLとして保存…"
 msgid "Save message as PDF…"
 msgstr "メッセージを PDF として保存…"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Save rule"
 msgstr "ルールの保存"
 
@@ -5850,7 +5858,7 @@ msgstr "検索の一致"
 msgid "Search messages from this sender"
 msgstr "この送信者からのメッセージを検索する"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Search query"
 msgstr "検索条件"
 
@@ -5998,7 +6006,7 @@ msgstr "差出人の名前"
 msgid "Sending…"
 msgstr "送信中…"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Sensitivity"
 msgstr "秘密度"
 
@@ -6031,7 +6039,7 @@ msgstr "サーバーフィルター"
 msgid "Server filters and automatic replies are available for Gmail and Outlook."
 msgstr "サーバー フィルターと自動返信は、Gmail と Outlook で利用できます。"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Server preview: {count} messages"
 msgstr "サーバー プレビュー: {count} メッセージ"
 
@@ -6209,7 +6217,7 @@ msgstr "Mac で再度サインインしてください"
 msgid "Sign in again to change Focused/Other."
 msgstr "優先/その他を変更するには再度ログインしてください。"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Sign in again to enable filters"
 msgstr "再度サインインしてフィルターを有効にします"
 
@@ -6282,11 +6290,11 @@ msgstr "サインインしました。このページを閉じて OpenMail に�
 msgid "Simplify your search query."
 msgstr "検索条件を簡単にしてください。"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Size comparison"
 msgstr "サイズ比較"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Size in bytes"
 msgstr "バイト単位のサイズ"
 
@@ -6303,7 +6311,7 @@ msgstr "小さい"
 msgid "Smaller text"
 msgstr "小さい文字"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Smaller than"
 msgstr "より小さい"
 
@@ -6341,7 +6349,7 @@ msgstr "ソーシャル"
 msgid "Software updates"
 msgstr "ソフトウェアアップデート"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Some conditions need metadata that is not cached. Save the rule for future mail on the server."
 msgstr "一部の条件にはキャッシュされていないメタデータが必要です。今後のメールに適用するルールをサーバーに保存できます。"
 
@@ -6381,8 +6389,8 @@ msgid "Spaces"
 msgstr "スペース"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/lib/view.ts
 msgid "Spam"
 msgstr "迷惑メール"
@@ -6409,7 +6417,7 @@ msgstr "安定版"
 
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 #: src/renderer/src/i18n/action-names.ts
@@ -6430,8 +6438,8 @@ msgid "Star message"
 msgstr "メッセージにスターを付ける"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/lib/view.ts
 msgid "Starred"
 msgstr "スター付き"
@@ -6440,8 +6448,8 @@ msgstr "スター付き"
 msgid "Starred messages"
 msgstr "スター付きのメッセージ"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Start"
 msgstr "開始"
 
@@ -6469,7 +6477,7 @@ msgstr "{address} からの画像の読み込みを停止します"
 msgid "Stop loading images from {domain}"
 msgstr "{domain} からの画像の読み込みを停止します"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Stop processing more rules"
 msgstr "後続ルールの処理を停止"
 
@@ -6484,8 +6492,8 @@ msgid "Strikethrough"
 msgstr "取り消し線"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Subject"
 msgstr "件名"
 
@@ -6494,7 +6502,7 @@ msgctxt "search match source"
 msgid "Subject"
 msgstr "件名"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Subject contains"
 msgstr "件名に含まれる文字"
 
@@ -6712,7 +6720,7 @@ msgstr "プレビューの後にファイルが変更されました。変更内
 msgid "The file doesn't exist yet. OpenMail creates it."
 msgstr "ファイルはまだありません。OpenMail が作成します。"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "The filter applies to future mail on the server."
 msgstr "フィルターはサーバー上の今後のメールに適用されます。"
 
@@ -6790,11 +6798,11 @@ msgstr "主催者はメッセージ送信者とは異なります。返信する
 msgid "The other device needs the Tailscale app, signed in to the same tailnet. This Mac must stay on with OpenMail open. Quitting OpenMail takes the address offline until it opens again."
 msgstr "もう一方のデバイスには、同じ tailnet にサインインした Tailscale アプリが必要です。この Mac は電源を入れたまま、OpenMail を開いておく必要があります。OpenMail を終了すると、次に開くまでアドレスはオフラインになります。"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "The preview checked at most 201 server messages. Matching messages outside this sample may be missing."
 msgstr "プレビューではサーバー上の最大201件のメッセージを確認しました。この範囲外の一致するメッセージは表示されない場合があります。"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "The preview is limited to 200 messages. Narrow the conditions to process other messages."
 msgstr "プレビューは 200 メッセージに制限されています。条件を絞り込んで他のメッセージを処理します。"
 
@@ -6856,7 +6864,7 @@ msgstr "第3"
 msgid "This app isn't installed."
 msgstr "このアプリはインストールされていません。"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 msgid "This deletes the saved recovery copy. Rules on the server are unchanged."
 msgstr "これにより、保存されたリカバリ コピーが削除されます。サーバー上のルールは変更されません。"
 
@@ -6926,12 +6934,12 @@ msgstr "この繰り返しイベントのタイムゾーンはOutlookに対応�
 msgid "This removes the filter from the server. Existing messages are unchanged."
 msgstr "これにより、サーバーからフィルターが削除されます。既存のメッセージは変更されません。"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/lib/errors.ts
 msgid "This rule can only be applied to future mail on the server"
 msgstr "このルールはサーバー上の今後のメールにのみ適用できます"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "This rule deletes messages. Confirm only if the preview matches the messages you intend to delete."
 msgstr "このルールはメッセージを削除します。プレビューが削除するメッセージと一致する場合のみ確認してください。"
 
@@ -6971,16 +6979,16 @@ msgstr "タイムゾーン"
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/Reader.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "To"
 msgstr "宛先"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "To me"
 msgstr "自分宛て"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "To or CC me"
 msgstr "自分宛てまたはCC"
 
@@ -7046,7 +7054,7 @@ msgid "Translate"
 msgstr "翻訳"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 #: src/renderer/src/lib/view.ts
 msgid "Trash"
@@ -7163,7 +7171,7 @@ msgid "Unknown organizer time zone; showing the original time."
 msgstr "主催者のタイムゾーンが不明。元の時間を表示します。"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Unread"
 msgstr "未開封"
 

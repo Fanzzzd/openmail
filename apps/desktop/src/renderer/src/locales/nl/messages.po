@@ -336,7 +336,7 @@ msgstr "Actie mislukt: {reason}"
 msgid "Action menu"
 msgstr "Actiemenu"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Actions"
 msgstr "Acties"
@@ -425,7 +425,7 @@ msgstr "E-mailaccount toevoegen"
 msgid "Add label"
 msgstr "Label toevoegen"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Add labels"
 msgstr "Labels toevoegen"
 
@@ -491,7 +491,7 @@ msgstr "Toegevoegd aan kalender"
 msgid "Additional category names, separated by commas"
 msgstr "Extra categorienamen, gescheiden door komma’s"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Additional labels"
 msgstr "Extra labels"
 
@@ -753,7 +753,7 @@ msgstr "Anthropic heeft de API-sleutel geweigerd. Controleer hem in Instellingen
 msgid "Anthropic's rate limit was reached. Wait a minute, then try again."
 msgstr "De aanvraaglimiet van Anthropic is bereikt. Wacht een minuut en probeer het opnieuw."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Any action flag"
 msgstr "Elke actiemarkering"
 
@@ -790,11 +790,12 @@ msgstr "Pas kleur toe"
 msgid "Apply link"
 msgstr "Koppeling toepassen"
 
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Apply to existing mail"
 msgstr "Toepassen op bestaande e-mail"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Apply to existing mail?"
 msgstr "Toepassen op bestaande e-mail?"
 
@@ -821,8 +822,8 @@ msgstr "Apps die niet op deze Mac zijn gevonden"
 #: src/renderer/src/features/ai/TriageChip.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
@@ -858,7 +859,7 @@ msgstr "Vraag het elke keer"
 msgid "Ask me first"
 msgstr "Vraag het mij eerst"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Assign categories (one per line)"
 msgstr "Categorieën toewijzen (één per regel)"
 
@@ -887,7 +888,7 @@ msgstr "Bijgevoegd bericht"
 msgid "Attachment cache limit"
 msgstr "Cachelimiet voor bijlagen"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Attachment exception"
 msgstr "Uitzondering voor bijlagen"
 
@@ -944,10 +945,11 @@ msgid "Automatic direction"
 msgstr "Automatische richting"
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Automatic replies"
 msgstr "Automatische antwoorden"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Automatic reply"
 msgstr "Automatisch antwoord"
 
@@ -1082,7 +1084,7 @@ msgstr "Het antwoord op de uitnodiging is niet verstuurd"
 msgid "Calendar responses require a user action"
 msgstr "Agendareacties vereisen een gebruikersactie"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Call"
 msgstr "Bellen"
 
@@ -1158,6 +1160,8 @@ msgstr "De mailserver is momenteel niet bereikbaar."
 #: src/renderer/src/features/reader/frame/LinkConfirmDialog.tsx
 #: src/renderer/src/features/reader/UnsubscribeButton.tsx
 #: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
+#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/state/desktop.ts
@@ -1190,7 +1194,7 @@ msgstr "Categorieën…"
 msgid "Category"
 msgstr "Categorie"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Category action"
 msgstr "Categorie-actie"
 
@@ -1206,7 +1210,7 @@ msgstr "Categorienamen, gescheiden door komma’s"
 msgid "Cc"
 msgstr "Kopie"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "CC me"
 msgstr "CC aan mij"
 
@@ -1522,7 +1526,7 @@ msgstr "Verkleinen is geweigerd omdat de aansluiting van de zoekindex niet kon w
 msgid "Compose"
 msgstr "Nieuw bericht"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Confidential"
 msgstr "Vertrouwelijk"
 
@@ -1530,7 +1534,7 @@ msgstr "Vertrouwelijk"
 msgid "Config file can't be read"
 msgstr "Configuratiebestand onleesbaar"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Confirm"
 msgstr "Bevestig"
 
@@ -1546,7 +1550,7 @@ msgstr "Bevestig verwijderen door deze regel"
 msgid "Confirm removal"
 msgstr "Bevestig de verwijdering"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Confirm rule changes?"
 msgstr "Regelwijzigingen bevestigen?"
 
@@ -1640,7 +1644,7 @@ msgstr "Het systeembeleid beperkt de toegang tot contacten."
 msgid "Contacts and people you've sent mail to, when the sender is verified."
 msgstr "Contacten en mensen naar wie je mail hebt verstuurd, als de afzender is geverifieerd."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Contacts only"
 msgstr "Alleen contacten"
 
@@ -1731,7 +1735,7 @@ msgstr "Kopieer geselecteerd"
 msgid "Copy style"
 msgstr "Kopieer stijl"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Copy to folder"
 msgstr "Kopiëren naar map"
 
@@ -1972,12 +1976,13 @@ msgstr "Maak een app-wachtwoord aan onder Instellingen > Privacy en beveiliging,
 msgid "Create an app-specific password under Sign-In and Security in your Apple Account."
 msgstr "Maak een app-specifiek wachtwoord aan onder Inloggen en beveiliging in uw Apple Account."
 
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Create filter"
 msgstr "Filter maken"
 
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/i18n/action-names.ts
 msgid "Create filter from these messages"
 msgstr "Maak een filter op basis van deze berichten"
@@ -2124,6 +2129,7 @@ msgstr "Standaard handtekening"
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
@@ -2209,7 +2215,7 @@ msgid "Disabled"
 msgstr "Uitgeschakeld"
 
 #: src/renderer/src/features/compose/components/ComposerAi.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 msgid "Discard"
 msgstr "Verwijder"
 
@@ -2218,7 +2224,7 @@ msgstr "Verwijder"
 msgid "Discard draft"
 msgstr "Verwijder concept"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 msgid "Discard saved rule?"
 msgstr "Opgeslagen regel verwijderen?"
 
@@ -2263,11 +2269,11 @@ msgid "Display name"
 msgstr "Weergavenaam"
 
 #. Incoming message action flag value; this option does not execute forwarding.
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Do not forward"
 msgstr "Doorstuurverbod"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Does not have words"
 msgstr "Bevat niet de woorden"
 
@@ -2475,11 +2481,11 @@ msgstr "Schakel dit account in om e-mail op internet te openen"
 msgid "Enable this account to use its calendar"
 msgstr "Schakel dit account in om de agenda ervan te gebruiken"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Enabled"
 msgstr "Ingeschakeld"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "End"
 msgstr "Einde"
 
@@ -2584,23 +2590,23 @@ msgstr "Elke {interval} weken"
 msgid "Every {interval} years"
 msgstr "Elke {interval} jaar"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Everyone"
 msgstr "Iedereen"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Except recipient contains"
 msgstr "Behalve ontvanger bevat"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Except sender contains"
 msgstr "Behalve afzender bevat"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Except subject contains"
 msgstr "Behalve onderwerp bevat"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Exclude chats"
 msgstr "Chats uitsluiten"
 
@@ -2629,7 +2635,7 @@ msgstr "Uitgebreid"
 msgid "Experimental features can be enabled separately."
 msgstr "Experimentele functies kunnen afzonderlijk worden ingeschakeld."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "External replies"
 msgstr "Externe antwoorden"
 
@@ -2779,7 +2785,7 @@ msgstr "Mappad"
 msgid "Follow system"
 msgstr "Volg systeem"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Follow up"
 msgstr "Opvolgen"
 
@@ -2801,7 +2807,7 @@ msgstr "Lettergrootte"
 msgid "For example: tomorrow 3pm or Oct 12–14"
 msgstr "Bijvoorbeeld: tomorrow 3pm of Oct 12–14"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "For your information"
 msgstr "Ter informatie"
 
@@ -2830,7 +2836,7 @@ msgid "Forward"
 msgstr "Stuur door"
 
 #. Flag value on the incoming message, not an action to execute.
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgctxt "incoming message action flag"
 msgid "Forward"
 msgstr "Doorstuurmarkering"
@@ -2869,7 +2875,7 @@ msgstr "Vriendelijker"
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/Reader.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "From"
 msgstr "Van"
 
@@ -3007,11 +3013,11 @@ msgstr "Groepeer accounts in werkruimten, zoals ‘Werk’ en ‘Privé’. Elke
 msgid "Group messages into conversations"
 msgstr "Groepeer berichten in gesprekken"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Has attachment"
 msgstr "Heeft bijlage"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Has words"
 msgstr "Bevat de woorden"
 
@@ -3024,7 +3030,7 @@ msgstr "Hebt u „Verstuurd“ gecontroleerd en bevestigd dat dit bericht niet i
 msgid "Headers"
 msgstr "Berichtkoppen"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Headers contain"
 msgstr "Headers bevatten"
 
@@ -3121,16 +3127,16 @@ msgstr "IMAP-server"
 msgid "Import from iPhone or iPad"
 msgstr "Importeren vanaf iPhone of iPad"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Importance action"
 msgstr "Belang actie"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Importance condition"
 msgstr "Belangrijkheidsvoorwaarde"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 #: src/renderer/src/i18n/action-names.ts
@@ -3170,7 +3176,7 @@ msgid "In the reader, ⌘+ and ⌘− change it and ⌘0 goes back to 100%."
 msgstr "In de lezer veranderen ⌘+ en ⌘− dit en ⌘0 gaat terug naar 100%."
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 #: src/renderer/src/lib/view.ts
 msgid "Inbox"
@@ -3244,7 +3250,7 @@ msgstr "Installeer de Tailscale-app op deze Mac en log in, kom daarna hier terug
 msgid "Internal folder"
 msgstr "Interne map"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Internal reply"
 msgstr "Intern antwoord"
 
@@ -3321,7 +3327,7 @@ msgstr "Vul uit"
 msgid "Keep bodies in {0}"
 msgstr "Bewaar berichtteksten in {0}"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Keep category"
 msgstr "Categorie behouden"
 
@@ -3329,7 +3335,7 @@ msgstr "Categorie behouden"
 msgid "Keep existing rule"
 msgstr "Bestaande regel behouden"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Keep importance"
 msgstr "Behoud belangrijkheidsmarkering"
 
@@ -3372,7 +3378,7 @@ msgid "Label list visibility"
 msgstr "Zichtbaarheid van de labellijst"
 
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Label or folder"
 msgstr "Label of map"
 
@@ -3417,7 +3423,7 @@ msgstr "Groot"
 msgid "Larger text"
 msgstr "Grotere tekst"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Larger than"
 msgstr "Groter dan"
 
@@ -3547,6 +3553,7 @@ msgstr "Het origineel van de server laden..."
 
 #: src/renderer/src/features/reader/attachments/AttachmentImportDialog.tsx
 #: src/renderer/src/features/reader/body/MessageBodyShell.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Loading…"
 msgstr "Laden..."
@@ -3571,7 +3578,7 @@ msgstr "Lokaal minder: synchronisatieperiode"
 msgid "Local has more: stale"
 msgstr "Lokaal meer: verouderd"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Local preview: {count} messages"
 msgstr "Lokaal voorbeeld: {count} berichten"
 
@@ -3648,21 +3655,21 @@ msgstr "Markeer alles als gelezen"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Mark as important"
 msgstr "Markeer als belangrijk"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Mark as not important"
 msgstr "Markeer als niet belangrijk"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Mark as read"
 msgstr "Markeer als gelezen"
 
@@ -3749,7 +3756,7 @@ msgstr "Komt overeen met de zoekopdracht"
 msgid "Matching times keep that weekday active all day. Overnight periods continue into the next day. Unchecked days stay muted except for overnight periods from the previous day. Repeated daylight-saving times use the same schedule; skipped times are passed over."
 msgstr "Bijpassende tijden houden die weekdag de hele dag actief. Overnachtingen gaan door tot de volgende dag. Niet-aangevinkte dagen blijven gedempt, behalve voor nachtperioden van de vorige dag. Herhaalde zomertijden gebruiken hetzelfde schema; overgeslagen tijden worden gepasseerd."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Maximum size (KiB)"
 msgstr "Maximale grootte (KiB)"
 
@@ -3784,12 +3791,12 @@ msgstr "Suggesties voor vermeldingen"
 
 #: src/renderer/src/features/reader/frame/EmailFrame.tsx
 #: src/renderer/src/features/reader/Reader.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Message"
 msgstr "Bericht"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Message action flag"
 msgstr "Actiemarkering van bericht"
 
@@ -3847,7 +3854,7 @@ msgid "Message text cache window"
 msgstr "Bewaarperiode voor berichttekst"
 
 #. Rule predicate matching the message text, excluding the subject.
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Message text contains"
 msgstr "Berichttekst bevat"
 
@@ -3944,7 +3951,7 @@ msgstr "Microsoft vraagt toestemming om e-mail bij te werken. Kies na het aanmel
 msgid "Mimestream"
 msgstr "Mimestream"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Minimum size (KiB)"
 msgstr "Minimale grootte (KiB)"
 
@@ -3998,7 +4005,7 @@ msgstr "Meer"
 msgid "More actions"
 msgstr "Meer acties"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "More conditions"
 msgstr "Meer voorwaarden"
 
@@ -4006,7 +4013,7 @@ msgstr "Meer voorwaarden"
 msgid "More disk space is needed"
 msgstr "Meer schijfruimte nodig"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "More exceptions"
 msgstr "Meer uitzonderingen"
 
@@ -4018,7 +4025,7 @@ msgstr "Formeler"
 msgid "More formatting"
 msgstr "Meer opmaak"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "More label actions"
 msgstr "Meer labelacties"
 
@@ -4170,7 +4177,7 @@ msgid "Moves from “{elsewhere}”"
 msgstr "Verplaatst van “{elsewhere}”"
 
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Name"
 msgstr "Naam"
 
@@ -4336,7 +4343,7 @@ msgstr "Geen app kan dit bestand openen"
 msgid "No browser has opened OpenMail."
 msgstr "Nog geen browser heeft OpenMail geopend."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "No copy"
 msgstr "Niet kopiëren"
 
@@ -4361,7 +4368,7 @@ msgstr "Geen concepten"
 msgid "No email accounts yet."
 msgstr "Nog geen e-mailaccounts."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "No external replies"
 msgstr "Geen externe antwoorden"
 
@@ -4369,7 +4376,7 @@ msgstr "Geen externe antwoorden"
 msgid "No grammar suggestions"
 msgstr "Geen grammaticasuggesties"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "No label or folder"
 msgstr "Geen label of map"
 
@@ -4415,7 +4422,7 @@ msgstr "Geen bovenliggende map"
 msgid "no printers are available."
 msgstr "er zijn geen printers beschikbaar."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "No response needed"
 msgstr "Geen antwoord nodig"
 
@@ -4463,14 +4470,15 @@ msgstr "Niemand kan inloggen. Voeg hieronder een tailnet-login toe."
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 #: src/renderer/src/i18n/action-names.ts
 msgid "None"
 msgstr "Geen"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 #: src/renderer/src/i18n/organization-labels.ts
 msgid "Normal"
 msgstr "Normaal"
@@ -4495,7 +4503,7 @@ msgstr "Niet aangevraagd"
 msgid "Not synced"
 msgstr "Niet gesynchroniseerd"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Not to me"
 msgstr "Niet aan mij"
 
@@ -4605,7 +4613,7 @@ msgstr "Alleen tekst in bijlagen"
 msgid "Only the selected messages in this Trash or Spam folder will be permanently deleted. This cannot be undone."
 msgstr "Alleen de geselecteerde berichten in deze map Prullenmand of Ongewenste reclame worden permanent verwijderd. Dit kan niet ongedaan worden gemaakt."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Only to me"
 msgstr "Alleen aan mij"
 
@@ -4864,7 +4872,7 @@ msgstr "Outlook kan bijgevoegde berichten van 3 MB of meer niet uploaden. Verwij
 msgid "Outlook categories"
 msgstr "Outlook-categorieën"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Outlook chooses the reply subject."
 msgstr "Outlook kiest het antwoordonderwerp."
 
@@ -4980,7 +4988,7 @@ msgid "Permission"
 msgstr "Toestemming"
 
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Personal"
 msgstr "Privé"
 
@@ -5030,16 +5038,16 @@ msgstr "Voorbeeld {0}"
 msgid "Preview changes"
 msgstr "Wijzigingen bekijken"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Preview unavailable"
 msgstr "Voorbeeld niet beschikbaar"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Preview unavailable. The rule will apply to future mail on the server."
 msgstr "Voorbeeld niet beschikbaar. De regel geldt voor toekomstige e-mail op de server."
 
 #. placeholder {0}: confirming.preview.matches.length
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Preview: {0} messages. Only the previewed messages will be changed when applying to existing mail."
 msgstr "Voorbeeld: {0} berichten. Alleen de voorbeeldberichten worden gewijzigd wanneer u deze op bestaande e-mail toepast."
 
@@ -5093,7 +5101,7 @@ msgstr "Bericht afdrukken…"
 msgid "Print…"
 msgstr "Afdrukken…"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Private"
 msgstr "Privé"
 
@@ -5156,7 +5164,7 @@ msgid "Quote selected text"
 msgstr "Citeer de geselecteerde tekst"
 
 #. Flag value on the incoming message, not an action to execute.
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgctxt "incoming message action flag"
 msgid "Read"
 msgstr "Leesmarkering"
@@ -5379,7 +5387,7 @@ msgstr "Verwijder sleutel"
 msgid "Remove label"
 msgstr "Label verwijderen"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Remove labels"
 msgstr "Labels verwijderen"
 
@@ -5486,7 +5494,7 @@ msgid "Reply"
 msgstr "Beantwoord"
 
 #. Flag value on the incoming message, not an action to execute.
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgctxt "incoming message action flag"
 msgid "Reply"
 msgstr "Antwoordmarkering"
@@ -5501,7 +5509,7 @@ msgid "Reply all"
 msgstr "Beantwoord allen"
 
 #. Flag value on the incoming message, not an action to execute.
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgctxt "incoming message action flag"
 msgid "Reply all"
 msgstr "Markering voor antwoord aan allen"
@@ -5518,7 +5526,7 @@ msgstr "Antwoordmodus"
 msgid "Reply needed: add star"
 msgstr "Antwoord nodig: ster toevoegen"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Reply only to contacts"
 msgstr "Beantwoord alleen contacten"
 
@@ -5583,16 +5591,16 @@ msgstr "Herstellen"
 msgid "Restore message state"
 msgstr "Berichtstatus herstellen"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 msgid "Restore rule"
 msgstr "Herstel regel"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 msgid "Restore rule?"
 msgstr "Regel herstellen?"
 
 #. placeholder {0}: pending.preview.matches.length
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 msgid "Restore the saved original rule on the server. Preview: {0} messages."
 msgstr "Herstel de opgeslagen originele regel op de server. Voorbeeld: {0} berichten."
 
@@ -5623,7 +5631,7 @@ msgstr "{name} opnieuw proberen"
 msgid "Revert"
 msgstr "Herstel wijzigingen"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Review"
 msgstr "Beoordelen"
 
@@ -5707,9 +5715,9 @@ msgstr "Zaterdag"
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Save"
 msgstr "Bewaar"
 
@@ -5749,7 +5757,7 @@ msgstr "Bericht opslaan als EML…"
 msgid "Save message as PDF…"
 msgstr "Bericht opslaan als PDF…"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Save rule"
 msgstr "Regel opslaan"
 
@@ -5850,7 +5858,7 @@ msgstr "Zoekresultaten in bericht"
 msgid "Search messages from this sender"
 msgstr "Zoek naar berichten van deze afzender"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Search query"
 msgstr "Zoekopdracht"
 
@@ -5998,7 +6006,7 @@ msgstr "Naam afzender"
 msgid "Sending…"
 msgstr "Versturen…"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Sensitivity"
 msgstr "Gevoeligheid"
 
@@ -6031,7 +6039,7 @@ msgstr "Serverfilters"
 msgid "Server filters and automatic replies are available for Gmail and Outlook."
 msgstr "Serverfilters en automatische antwoorden zijn beschikbaar voor Gmail en Outlook."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Server preview: {count} messages"
 msgstr "Servervoorbeeld: {count} berichten"
 
@@ -6209,7 +6217,7 @@ msgstr "Meld u opnieuw aan op uw Mac"
 msgid "Sign in again to change Focused/Other."
 msgstr "Meld je opnieuw aan om Prioriteit/Overige te wijzigen."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Sign in again to enable filters"
 msgstr "Meld u opnieuw aan om filters in te schakelen"
 
@@ -6282,11 +6290,11 @@ msgstr "Ingelogd. Je kunt deze pagina sluiten en teruggaan naar OpenMail."
 msgid "Simplify your search query."
 msgstr "Vereenvoudig uw zoekopdracht."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Size comparison"
 msgstr "Grootte vergelijking"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Size in bytes"
 msgstr "Grootte in bytes"
 
@@ -6303,7 +6311,7 @@ msgstr "Klein"
 msgid "Smaller text"
 msgstr "Kleinere tekst"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Smaller than"
 msgstr "Kleiner dan"
 
@@ -6341,7 +6349,7 @@ msgstr "Sociaal"
 msgid "Software updates"
 msgstr "Software-updates"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Some conditions need metadata that is not cached. Save the rule for future mail on the server."
 msgstr "Sommige voorwaarden vereisen metadata die niet in de cache staan. Sla de regel op voor toekomstige e-mail op de server."
 
@@ -6381,8 +6389,8 @@ msgid "Spaces"
 msgstr "Werkruimten"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/lib/view.ts
 msgid "Spam"
 msgstr "Ongewenste reclame"
@@ -6409,7 +6417,7 @@ msgstr "Stabiel"
 
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 #: src/renderer/src/i18n/action-names.ts
@@ -6430,8 +6438,8 @@ msgid "Star message"
 msgstr "Geef bericht een ster"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/lib/view.ts
 msgid "Starred"
 msgstr "Met ster"
@@ -6440,8 +6448,8 @@ msgstr "Met ster"
 msgid "Starred messages"
 msgstr "Berichten met ster"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Start"
 msgstr "Begin"
 
@@ -6469,7 +6477,7 @@ msgstr "Stop met het laden van afbeeldingen van {address}"
 msgid "Stop loading images from {domain}"
 msgstr "Stop met het laden van afbeeldingen van {domain}"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Stop processing more rules"
 msgstr "Verwerking van volgende regels stoppen"
 
@@ -6484,8 +6492,8 @@ msgid "Strikethrough"
 msgstr "Doorhalen"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
+#: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Subject"
 msgstr "Onderwerp"
 
@@ -6494,7 +6502,7 @@ msgctxt "search match source"
 msgid "Subject"
 msgstr "Onderwerp"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Subject contains"
 msgstr "Onderwerp bevat"
 
@@ -6712,7 +6720,7 @@ msgstr "Het bestand is na de voorvertoning gewijzigd. Bekijk de wijziging opnieu
 msgid "The file doesn't exist yet. OpenMail creates it."
 msgstr "Het bestand bestaat nog niet. OpenMail maakt het aan."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "The filter applies to future mail on the server."
 msgstr "Het filter is van toepassing op toekomstige e-mail op de server."
 
@@ -6790,11 +6798,11 @@ msgstr "De organisator verschilt van de afzender van het bericht. Controleer de 
 msgid "The other device needs the Tailscale app, signed in to the same tailnet. This Mac must stay on with OpenMail open. Quitting OpenMail takes the address offline until it opens again."
 msgstr "Het andere apparaat heeft de Tailscale-app nodig, ingelogd op hetzelfde tailnet. Deze Mac moet aan blijven met OpenMail open. Als je OpenMail afsluit, is het adres offline tot het weer wordt geopend."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "The preview checked at most 201 server messages. Matching messages outside this sample may be missing."
 msgstr "Het voorbeeld controleerde maximaal 201 berichten op de server. Overeenkomende berichten buiten deze steekproef kunnen ontbreken."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "The preview is limited to 200 messages. Narrow the conditions to process other messages."
 msgstr "Het voorbeeld is beperkt tot 200 berichten. Beperk de voorwaarden om andere berichten te verwerken."
 
@@ -6856,7 +6864,7 @@ msgstr "Derde"
 msgid "This app isn't installed."
 msgstr "Deze app is niet geïnstalleerd."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 msgid "This deletes the saved recovery copy. Rules on the server are unchanged."
 msgstr "Hiermee wordt de opgeslagen herstelkopie verwijderd. De regels op de server zijn ongewijzigd."
 
@@ -6926,12 +6934,12 @@ msgstr "Outlook ondersteunt de tijdzone van deze terugkerende afspraak niet"
 msgid "This removes the filter from the server. Existing messages are unchanged."
 msgstr "Hierdoor wordt het filter van de server verwijderd. Bestaande berichten blijven ongewijzigd."
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/lib/errors.ts
 msgid "This rule can only be applied to future mail on the server"
 msgstr "Deze regel kan alleen worden toegepast op toekomstige e-mail op de server"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "This rule deletes messages. Confirm only if the preview matches the messages you intend to delete."
 msgstr "Deze regel verwijdert berichten. Bevestig alleen als het voorbeeld overeenkomt met de berichten die u wilt verwijderen."
 
@@ -6971,16 +6979,16 @@ msgstr "Tijdzone"
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/Reader.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "To"
 msgstr "Aan"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "To me"
 msgstr "Aan mij"
 
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "To or CC me"
 msgstr "Aan mij of CC aan mij"
 
@@ -7046,7 +7054,7 @@ msgid "Translate"
 msgstr "Vertalen"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 #: src/renderer/src/lib/view.ts
 msgid "Trash"
@@ -7163,7 +7171,7 @@ msgid "Unknown organizer time zone; showing the original time."
 msgstr "Onbekende tijdzone van de organisator; toont de oorspronkelijke tijd."
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
-#: src/renderer/src/features/settings/sections/ServerSettings.tsx
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Unread"
 msgstr "Ongelezen"
 
