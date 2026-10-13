@@ -3,6 +3,7 @@ import { sha256Hex } from "./platform/crypto.js";
 import { Clock, Deferred, Effect, Layer, Option, Schema, Stream } from "effect";
 import {
   mailData,
+  AI_ERRORS,
   AI_INPUT_BUDGET,
   AI_PROMPT_VERSION,
   AiAccountSettings,
@@ -59,9 +60,7 @@ export function makeAiMailbox(
             !accounts.some((a) => a.id === id && a.enabled !== false),
         )
       )
-        yield* new InvalidInput({
-          message: "Allow sending mail text for each selected account in AI settings.",
-        });
+        yield* new InvalidInput({ message: AI_ERRORS.noConsent });
     });
   const context = (id: string) =>
     Effect.map(store.getThread(id), (messages) => modelContext(messages, 6000));

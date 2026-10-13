@@ -1,6 +1,7 @@
 import { assert, it } from "@effect/vitest";
 import { Effect, Layer, Schema, Stream } from "effect";
 import { FetchHttpClient } from "effect/http";
+import { AI_ERRORS } from "./ai.js";
 import { Model, ModelAnthropic } from "./model.js";
 import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { MODEL_KEY } from "./platform/node/secrets.js";
@@ -211,3 +212,51 @@ it.effect(
     }).pipe(Effect.provide(TestMailbox({}, { backgroundFlush: false }, {}, live)));
   },
 );
+
+it.effect("model failures map to one actionable sentence each, without the provider body", () => {
+  let mode: "401" | "429" | "404" | "529" | "offline" = "401";
+  const fetch: typeof globalThis.fetch = async () => {
+    if (mode === "offline") throw new TypeError("fetch failed");
+    const status = Number(mode);
+    return Response.json(
+      {
+        type: "error",
+        error: {
+          type: status === 404 ? "not_found_error" : "api_error",
+          message: "test-secret-key echoed by server",
+        },
+      },
+      { status },
+    );
+  };
+  const http = FetchHttpClient.layer.pipe(
+    Layer.provide(Layer.succeed(FetchHttpClient.Fetch, fetch)),
+  );
+  const request = { model: "claude-sonnet-5-5", prompt: "Summarize", check: Effect.void } as const;
+  const message = Effect.fnUntraced(function* () {
+    const model = yield* Model;
+    const exit = yield* Stream.runDrain(model.stream(request)).pipe(Effect.flip);
+    assert.ok(!JSON.stringify(exit).includes("test-secret-key"));
+    return exit.message;
+  });
+  return Effect.gen(function* () {
+    const withKey = ModelAnthropic.pipe(
+      Layer.provide(
+        Layer.mergeAll(MemoryPlatform({ secrets: { [MODEL_KEY]: "test-secret-key" } }), http),
+      ),
+    );
+    const expected = {
+      "401": AI_ERRORS.invalidKey,
+      "429": AI_ERRORS.rateLimited,
+      "404": AI_ERRORS.unavailable,
+      "529": AI_ERRORS.unavailable,
+      offline: AI_ERRORS.offline,
+    } as const;
+    for (const next of ["401", "429", "404", "529", "offline"] as const) {
+      mode = next;
+      assert.strictEqual(yield* message().pipe(Effect.provide(withKey)), expected[next], next);
+    }
+    const noKey = ModelAnthropic.pipe(Layer.provide(Layer.mergeAll(MemoryPlatform({}), http)));
+    assert.strictEqual(yield* message().pipe(Effect.provide(noKey)), AI_ERRORS.noKey);
+  });
+});

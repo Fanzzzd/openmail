@@ -369,6 +369,10 @@ msgstr "Aggiungi account"
 msgid "Add an account on your Mac."
 msgstr "Aggiungi un account sul tuo Mac."
 
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Add an Anthropic API key in Settings → AI Access to summarize."
+msgstr "Aggiungi una chiave API Anthropic in Impostazioni → Accesso all’IA per ottenere riassunti."
+
 #: src/renderer/src/lib/errors.ts
 msgid "Add an automatic reply message"
 msgstr "Aggiungi un messaggio di risposta automatica"
@@ -425,6 +429,10 @@ msgstr "Aggiungi a Contatti"
 msgid "Add to Dictionary"
 msgstr "Aggiungi al dizionario"
 
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Add your Anthropic API key in Settings → AI Access, then allow the accounts the assistant may read."
+msgstr "Aggiungi la tua chiave API Anthropic in Impostazioni → Accesso all’IA, poi consenti gli account che l’assistente può leggere."
+
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Add Your First Account"
 msgstr "Aggiungi il tuo primo account"
@@ -479,11 +487,11 @@ msgstr "Dopo aver fatto clic su Invia, il messaggio attende questo tempo. Puoi a
 
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "AI ({agent})"
-msgstr "AI ({agent})"
+msgstr "IA ({agent})"
 
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "AI Access"
-msgstr "Accesso all’intelligenza artificiale"
+msgstr "Accesso all’IA"
 
 #: src/renderer/src/features/compose/components/ComposerAi.tsx
 msgid "AI action"
@@ -499,7 +507,7 @@ msgstr "App di IA"
 
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "AI can read and search mail, but can't change anything."
-msgstr "L’intelligenza artificiale può leggere e cercare la posta, ma non può modificare nulla."
+msgstr "L’IA può leggere e cercare nella posta, ma non può modificare nulla."
 
 #: src/renderer/src/features/compose/components/Composer.tsx
 msgid "AI draft"
@@ -507,19 +515,19 @@ msgstr "Bozza dell’IA"
 
 #: src/renderer/src/lib/errors.ts
 msgid "AI input budget exceeded. Ask about fewer messages."
-msgstr "Limite di input dell'IA superato. Fai una domanda su meno messaggi."
+msgstr "Limite di input dell’IA superato. Fai una domanda su meno messaggi."
 
 #: src/renderer/src/lib/errors.ts
 msgid "AI input could not be encoded."
-msgstr "Non è stato possibile codificare l'input per l'IA."
+msgstr "Non è stato possibile codificare l’input per l’IA."
 
 #: src/renderer/src/lib/errors.ts
 msgid "AI model is unavailable."
-msgstr "Il modello IA non è disponibile."
+msgstr "Il modello di IA non è disponibile."
 
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "AI permission to change mail"
-msgstr "Autorizzazione AI per cambiare posta"
+msgstr "Autorizzazione dell’IA a modificare la posta"
 
 #: src/renderer/src/features/ai/AiPanel.tsx
 msgid "AI request failed. Check account permissions and your API key, then try again."
@@ -527,24 +535,24 @@ msgstr "Richiesta dell’IA non riuscita. Controlla le autorizzazioni dell’acc
 
 #: src/renderer/src/lib/errors.ts
 msgid "AI request failed. Check your key and try again."
-msgstr "Richiesta IA non riuscita. Controlla la chiave e riprova."
+msgstr "Richiesta all’IA non riuscita. Controlla la chiave e riprova."
 
 #: src/renderer/src/lib/errors.ts
 msgid "AI request timed out."
-msgstr "La richiesta IA è scaduta."
+msgstr "Tempo scaduto per la richiesta all’IA."
 
 #: src/renderer/src/lib/errors.ts
 msgid "AI stream ended before completion."
-msgstr "La risposta dell'IA si è interrotta prima del completamento."
+msgstr "La risposta dell’IA si è interrotta prima del completamento."
 
 #: src/renderer/src/features/ai/TriageChip.tsx
 msgid "AI suggestion"
-msgstr "Suggerimento IA"
+msgstr "Suggerimento dell’IA"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "AI suggestions"
-msgstr "Suggerimenti dell’intelligenza artificiale"
+msgstr "Suggerimenti dell’IA"
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -608,6 +616,10 @@ msgstr "Tutti i messaggi attualmente presenti in questa cartella, inclusi i mess
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Allow access from my tailnet"
 msgstr "Consenti l’accesso dalla mia tailnet"
+
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Allow an account in Settings → AI Access to ask about its mail."
+msgstr "Consenti un account in Impostazioni → Accesso all’IA per fare domande sulla sua posta."
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Allow notifications"
@@ -698,6 +710,14 @@ msgstr "Un allegato è cambiato durante la lettura. Prova ad aggiungerlo di nuov
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "Anthropic API key"
 msgstr "Chiave API Anthropic"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Anthropic rejected the API key. Check it in Settings → AI Access."
+msgstr "Anthropic ha rifiutato la chiave API. Controllala in Impostazioni → Accesso all’IA."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Anthropic's rate limit was reached. Wait a minute, then try again."
+msgstr "Hai raggiunto il limite di richieste di Anthropic. Attendi un minuto, poi riprova."
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Any action flag"
@@ -982,6 +1002,10 @@ msgstr "Segnalazione di bug"
 msgid "Built-in AI"
 msgstr "IA integrata"
 
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "Built-in AI sends this account's subjects, addresses and message text to Anthropic with your API key. Connected AI apps can also read this account."
+msgstr "L’IA integrata invia ad Anthropic, con la tua chiave API, oggetti, indirizzi e testo dei messaggi di questo account. Anche le app di IA connesse possono leggere questo account."
+
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Bulleted list"
@@ -1070,6 +1094,10 @@ msgstr "Impossibile aprire la bozza: {reason}"
 #: src/renderer/src/app/App.tsx
 msgid "Can't open the message: {reason}"
 msgstr "Impossibile aprire il messaggio: {reason}"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Can't reach Anthropic. Check your internet connection."
+msgstr "Impossibile raggiungere Anthropic. Controlla la connessione a Internet."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Can't reach the mail server right now."
@@ -2969,7 +2997,7 @@ msgstr "I certificati HTTPS sono disattivati"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "HTTPS certificates are off for your tailnet. Turn on MagicDNS and HTTPS Certificates on the DNS page of the Tailscale admin console."
-msgstr "I certificati HTTPS sono disattivati per il tuo tailnet. Attiva MagicDNS e HTTPS Certificates nella pagina DNS della console di amministrazione di Tailscale."
+msgstr "I certificati HTTPS sono disattivati per la tua tailnet. Attiva MagicDNS e HTTPS Certificates nella pagina DNS della console di amministrazione di Tailscale."
 
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 msgid "Icon"
@@ -3159,7 +3187,7 @@ msgstr "Impostazioni dell’account per l’IA non valide."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Invalid AI compose request."
-msgstr "Richiesta di scrittura IA non valida."
+msgstr "Richiesta di scrittura con l’IA non valida."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Invalid calendar event time"
@@ -3555,7 +3583,7 @@ msgstr "Segna come importante"
 #: src/renderer/src/features/organize/ThreadActions.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Mark as not important"
-msgstr "Contrassegna come non importante"
+msgstr "Segna come non importante"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
@@ -4507,6 +4535,10 @@ msgstr "Apri {name}"
 msgid "Open admin console"
 msgstr "Apri la console di amministrazione"
 
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Open AI Access"
+msgstr "Apri Accesso all’IA"
+
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Open attachments from"
 msgstr "Apri gli allegati da"
@@ -5129,7 +5161,7 @@ msgstr "Aggiorna i contatti"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "Reject"
-msgstr "Rifiutare"
+msgstr "Rifiuta"
 
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Reject suggestion"
@@ -5246,7 +5278,7 @@ msgstr "Rimuovi chiave"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "Remove label"
-msgstr "Rimuovere l’etichetta"
+msgstr "Rimuovi etichetta"
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Remove labels"
@@ -5581,7 +5613,7 @@ msgstr "Salva tutto"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Save an Anthropic API key in AI settings."
-msgstr "Salva una chiave API Anthropic nelle impostazioni IA."
+msgstr "Salva una chiave API Anthropic nelle impostazioni dell’IA."
 
 #: src/renderer/src/features/reader/Reader.tsx
 msgid "Save as PDF…"
@@ -5896,6 +5928,10 @@ msgstr "Server: totale / non letti / conversazioni"
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Server unavailable"
 msgstr "Server non disponibile"
+
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Set up built-in AI"
+msgstr "Configura l’IA integrata"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Set up by hand"
@@ -6219,7 +6255,7 @@ msgstr "Qualcos’altro su questo Mac usa già Tailscale Serve su questa porta. 
 #: src/renderer/src/features/ai/TriageChip.tsx
 #: src/renderer/src/lib/errors.ts
 msgid "Something went wrong. Please try again."
-msgstr "Qualcosa è andato storto. Per favore riprova."
+msgstr "Si è verificato un errore. Riprova."
 
 #: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "Something went wrong. Try again."
@@ -6476,7 +6512,7 @@ msgstr "Nome del Tailscale Service"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Tailscale tells OpenMail who is visiting. Only these tailnet logins get in. Removing a login disconnects its browsers and keeps them out. The list starts with this Mac's own login."
-msgstr "Tailscale comunica a OpenMail chi sta visitando. Entrano solo questi login tailnet. Rimuovere un login disconnette i suoi browser e li tiene fuori. L’elenco inizia con il login di questo Mac."
+msgstr "Tailscale comunica a OpenMail chi si collega. Entrano solo questi login tailnet. Rimuovere un login disconnette i suoi browser e li tiene fuori. L’elenco inizia con il login di questo Mac."
 
 #: src/renderer/src/features/compose/components/ComposerAi.tsx
 msgid "Target language"
@@ -6922,7 +6958,7 @@ msgstr "Annulla"
 
 #: src/renderer/src/features/compose/components/ComposerAi.tsx
 msgid "Undo AI edit"
-msgstr "Annulla la modifica IA"
+msgstr "Annulla la modifica dell’IA"
 
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
 msgid "Undo emoji replacement"
@@ -7014,10 +7050,13 @@ msgstr "Non supportato su questa piattaforma"
 msgid "Unsupported server rule"
 msgstr "Regola del server non supportata"
 
-#: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Until"
 msgstr "Fino a"
+
+#: src/renderer/src/features/ai/Proposals.tsx
+msgid "Until {dueText}"
+msgstr "Fino al {dueText}"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Up to three actions, in selection order. The action menu includes Archive, Trash and Mark read. Changes apply to new notifications."
@@ -7202,11 +7241,11 @@ msgstr "Quando l’IA vuole archiviare, aggiungere un’etichetta o segnare un m
 
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "When you allow an account, questions and selected mail text, subjects, sender and recipient addresses are sent to Anthropic using your API key. Images, attachments and media stay on this device. Requests may incur API charges. Automatic summaries run only when you enable them for an account."
-msgstr "Quando autorizzi un account, le domande e il testo della posta selezionata, gli oggetti e gli indirizzi di mittenti e destinatari vengono inviati ad Anthropic usando la tua chiave API. Immagini, allegati e contenuti multimediali restano su questo dispositivo. Le richieste possono comportare costi API. I riepiloghi automatici vengono eseguiti solo se li attivi per un account."
+msgstr "Quando autorizzi un account, le domande e il testo della posta selezionata, gli oggetti e gli indirizzi di mittenti e destinatari vengono inviati ad Anthropic usando la tua chiave API. Immagini, allegati e contenuti multimediali restano su questo dispositivo. Le richieste possono comportare costi API. I riassunti automatici vengono generati solo se li attivi per un account."
 
 #: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "Which changes <0/>:"
-msgstr "Che modifica <0/>:"
+msgstr "Cosa modifica <0/>:"
 
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Who"

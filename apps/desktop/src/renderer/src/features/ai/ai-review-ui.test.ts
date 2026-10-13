@@ -166,3 +166,65 @@ for (const surface of ["mcp", "rule"] as const) {
     }
   });
 }
+
+it("snooze and reply approvals show the localized time and subject, never raw ids or epochs", () => {
+  const due = Date.UTC(2026, 9, 14, 9, 30);
+  const snooze = render({
+    ...base,
+    command: { kind: "snooze", threads: ["source"], due },
+  });
+  try {
+    const text = snooze.element.textContent;
+    expect(text).not.toContain(String(due));
+    expect(text).toContain(
+      `Until ${new Date(due).toLocaleString("en", { dateStyle: "medium", timeStyle: "short" })}`,
+    );
+  } finally {
+    snooze.dispose();
+  }
+  const reply = render({
+    ...base,
+    command: {
+      kind: "draft",
+      accountId: account.id,
+      message: {
+        to: [{ name: "", address: "to@example.com" }],
+        cc: [],
+        bcc: [],
+        subject: "s",
+        text: "t",
+        mode: "reply",
+        inReplyTo: "source",
+        attachments: [],
+      },
+    },
+  });
+  try {
+    expect(reply.element.textContent).toContain("Original approval request");
+    expect(reply.element.textContent).not.toContain("[source]");
+  } finally {
+    reply.dispose();
+  }
+});
+
+it("proposal times keep the locale's hour cycle without a padded hour", () => {
+  const createdAt = new Date(2026, 9, 14, 9, 5).getTime();
+  const dom = render({
+    ...base,
+    createdAt,
+    command: { kind: "snooze", threads: ["source"], due: createdAt },
+  });
+  try {
+    expect(dom.element.textContent).toContain(
+      new Date(createdAt).toLocaleString("en", {
+        month: "numeric",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      }),
+    );
+    expect(dom.element.textContent).not.toMatch(/\b09:05\b/);
+  } finally {
+    dom.dispose();
+  }
+});

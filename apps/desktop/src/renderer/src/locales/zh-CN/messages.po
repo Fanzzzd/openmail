@@ -379,6 +379,10 @@ msgstr "添加账户"
 msgid "Add an account on your Mac."
 msgstr "请在 Mac 上添加账户。"
 
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Add an Anthropic API key in Settings → AI Access to summarize."
+msgstr "在「设置 → AI 权限」中添加 Anthropic API 密钥后才能生成摘要。"
+
 #: src/renderer/src/lib/errors.ts
 msgid "Add an automatic reply message"
 msgstr "请填写自动回复正文"
@@ -434,6 +438,10 @@ msgstr "添加到通讯录"
 #: src/renderer/src/app/WindowUi.tsx
 msgid "Add to Dictionary"
 msgstr "加入词典"
+
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Add your Anthropic API key in Settings → AI Access, then allow the accounts the assistant may read."
+msgstr "先在「设置 → AI 权限」中添加你的 Anthropic API 密钥，再选择允许助手读取的账户。"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Add Your First Account"
@@ -619,6 +627,10 @@ msgstr "将永久删除当前文件夹中的邮件，包括尚未加载的邮件
 msgid "Allow access from my tailnet"
 msgstr "允许从我的 tailnet 访问"
 
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Allow an account in Settings → AI Access to ask about its mail."
+msgstr "在「设置 → AI 权限」中允许一个账户后，就能询问它的邮件。"
+
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Allow notifications"
 msgstr "允许通知"
@@ -629,7 +641,7 @@ msgstr "允许永久删除 {email} 的邮件？"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Allow proposals"
-msgstr "允许提议改动"
+msgstr "允许提出建议"
 
 #: src/renderer/src/lib/ai-settings-errors.test.ts
 #: src/renderer/src/lib/errors.ts
@@ -675,7 +687,7 @@ msgstr "总是加载 {domain} 的图片"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Always load remote images from"
-msgstr "总是加载以下发件人的远程图片"
+msgstr "始终加载这些发件人的远程图片"
 
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 msgid "Always move messages from this sender to Focused"
@@ -708,6 +720,14 @@ msgstr "附件在读取时发生变化，请重新添加。"
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "Anthropic API key"
 msgstr "Anthropic API 密钥"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Anthropic rejected the API key. Check it in Settings → AI Access."
+msgstr "Anthropic 拒绝了这个 API 密钥。请在「设置 → AI 权限」中检查。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Anthropic's rate limit was reached. Wait a minute, then try again."
+msgstr "已达到 Anthropic 的速率限制。请等一分钟再试。"
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Any action flag"
@@ -912,7 +932,7 @@ msgstr "自动下载更新"
 
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "Automatically summarize new mail"
-msgstr "自动摘要新邮件"
+msgstr "自动为新邮件生成摘要"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Available in the installed macOS app"
@@ -992,6 +1012,10 @@ msgstr "问题报告"
 msgid "Built-in AI"
 msgstr "内置 AI"
 
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "Built-in AI sends this account's subjects, addresses and message text to Anthropic with your API key. Connected AI apps can also read this account."
+msgstr "内置 AI 会用你的 API 密钥，把这个账户的主题、地址和消息文本发送给 Anthropic。已连接的 AI 应用也能读取这个账户。"
+
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Bulleted list"
@@ -1015,7 +1039,7 @@ msgstr "此账户未授予日历访问权限。"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Calendar creation requires an in-app confirmation"
-msgstr "创建日程需要在 app 内确认"
+msgstr "创建日程需要在应用内确认"
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Calendar invitation"
@@ -1080,6 +1104,10 @@ msgstr "打不开草稿：{reason}"
 #: src/renderer/src/app/App.tsx
 msgid "Can't open the message: {reason}"
 msgstr "无法打开邮件：{reason}"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Can't reach Anthropic. Check your internet connection."
+msgstr "无法连接 Anthropic。请检查网络连接。"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Can't reach the mail server right now."
@@ -1532,7 +1560,7 @@ msgstr "已连接到 {tailnet}"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Connected, can propose changes"
-msgstr "已连接，可提议改动"
+msgstr "已连接，可提出改动建议"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Connected, read only"
@@ -1780,7 +1808,7 @@ msgstr "无法读取附件，请检查文件和访问权限。"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Could not register OpenMail. Try again from the installed app."
-msgstr "注册失败，请从安装后的 app 重试。"
+msgstr "注册失败，请从安装后的应用重试。"
 
 #: src/main/app/native-i18n.ts
 msgid "Could not reset the local cache"
@@ -1911,7 +1939,7 @@ msgstr "在「设置 > 隐私与安全」里新建应用密码，勾选 IMAP 和
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Create an app-specific password under Sign-In and Security in your Apple Account."
-msgstr "在 Apple 账户的「登录与安全」里生成 App 专用密码。"
+msgstr "在 Apple 账户的「登录与安全」里生成应用专用密码。"
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Create filter"
@@ -2635,7 +2663,7 @@ msgstr "在正文中查找"
 
 #: src/renderer/src/features/reader/attachments/OpenWithMenu.tsx
 msgid "Finding apps…"
-msgstr "正在查找 App…"
+msgstr "正在查找应用…"
 
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/features/accounts/OptionalServices.tsx
@@ -3144,7 +3172,7 @@ msgstr "插入变量…"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Install the packaged app to make it the default. Development builds cannot register email links."
-msgstr "安装打包后的 app 才能设为默认。开发版本不能注册邮件链接。"
+msgstr "安装打包后的应用才能设为默认。开发版本不能注册邮件链接。"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Install the Tailscale app on this Mac and sign in, then come back here. OpenMail doesn't install anything itself."
@@ -3193,7 +3221,7 @@ msgstr "会话中的邀请状态"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "It can propose archiving, labels, snoozes and drafts. Each waits for your approval."
-msgstr "它可以提议归档、加标签、稍后提醒和写草稿。每项都要等你批准。"
+msgstr "它可以建议归档、加标签、稍后提醒和写草稿。每项建议都要等你批准。"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "It can read and search allowed accounts. It can't change anything."
@@ -3385,7 +3413,7 @@ msgstr "从左到右"
 
 #: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "Let {name} propose changes for you to approve"
-msgstr "允许 {name} 提议改动，由你批准"
+msgstr "允许 {name} 提出改动建议，由你批准"
 
 #: src/renderer/src/features/reader/Reader.tsx
 msgid "Light background"
@@ -3664,12 +3692,12 @@ msgstr "最大大小（KiB）"
 
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "MCP access follows this account's AI consent. Disabled accounts cannot be read through MCP."
-msgstr "MCP 访问跟随此账户的 AI 授权。MCP 无法读取停用账户。"
+msgstr "MCP 能否访问此账户，取决于它的 AI 授权。MCP 读取不到已停用的账户。"
 
 #. readOnly is the translated Read only write-mode label above.
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "MCP can propose drafts only when the write mode is not \"{readOnly}\". You review drafts and confirm sending in the app."
-msgstr "写入模式不是“{readOnly}”时，MCP 才能提议草稿。你在 app 中审阅草稿并确认发送。"
+msgstr "写入模式不是“{readOnly}”时，MCP 才能以建议的形式写草稿。你在应用中审阅草稿并确认发送。"
 
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
 msgid "Medium"
@@ -4235,7 +4263,7 @@ msgstr "还没有操作记录。"
 
 #: src/renderer/src/features/reader/attachments/OpenWithMenu.tsx
 msgid "No app can open this file"
-msgstr "没有 App 能打开此文件"
+msgstr "没有应用能打开此文件"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "No browser has opened OpenMail."
@@ -4358,7 +4386,7 @@ msgstr "收件箱没有未读"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Nobody can sign in. Add a tailnet login below."
-msgstr "没人能登录。请在下方添加 tailnet 登录名。"
+msgstr "目前没有人能登录。请在下方添加 tailnet 登录名。"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
@@ -4516,6 +4544,10 @@ msgstr "打开 {name}"
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Open admin console"
 msgstr "打开管理控制台"
+
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Open AI Access"
+msgstr "打开 AI 权限"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Open attachments from"
@@ -5049,7 +5081,7 @@ msgstr "阅读标记"
 
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 msgid "Read and search mail, read only by default. To archive, label or draft, an app needs proposals turned on below and a permission to change mail other than Read only. You approve every change in OpenMail, and sending always needs your confirmation here."
-msgstr "读取和搜索邮件，默认只读。应用要归档、加标签或写草稿，需要在下方开启提议，并把改动邮件的权限设为“只读”以外的选项。每项改动都由你在 OpenMail 中批准，发送始终要在这里确认。"
+msgstr "读取和搜索邮件，默认只读。应用要归档、加标签或写草稿，需要在下方开启“允许提出建议”，并把改动邮件的权限设为“只读”以外的选项。每项改动都由你在 OpenMail 中批准，发送始终要在这里确认。"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Read and send mail from your phone or another computer through your own tailnet. This Mac stays the host: mail, tokens and keys stay here, and nothing passes through OpenMail servers. OpenMail uses Tailscale Serve, which only devices on your tailnet can reach. It never uses Funnel, so the page is never on the public internet."
@@ -5557,7 +5589,7 @@ msgstr "规则"
 
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Rules can archive, label, and mark as read directly. MCP always proposes changes for you to approve in the app."
-msgstr "规则可以直接归档、加标签、标为已读。MCP 始终只提议改动，由你在 app 中批准。"
+msgstr "规则可以直接归档、加标签、标为已读。MCP 始终只提出改动建议，由你在应用中批准。"
 
 #: src/renderer/src/features/settings/sections/IndexingSettings.tsx
 msgid "Runs while idle. Scanned PDF pages, audio and video are not indexed yet."
@@ -5752,7 +5784,7 @@ msgstr "选择一封邮件"
 
 #: src/renderer/src/features/ai/AiPanel.tsx
 msgid "Select accounts allowed in Settings > AI Access. The assistant searches mail and proposes drafts, labels or archive. You approve changes in AI suggestions."
-msgstr "选择已在设置中授权 AI 访问的账户。助手可搜索邮件，提出草稿、标签或归档建议。修改需在 AI 建议中确认。"
+msgstr "在「设置 > AI 权限」中选择已允许的账户。助手会搜索邮件，提出草稿、标签或归档建议。改动需在「AI 建议」中确认。"
 
 #: src/renderer/src/app/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
@@ -5906,6 +5938,10 @@ msgstr "服务器总数 / 未读 / 会话"
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Server unavailable"
 msgstr "服务器不可用"
+
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Set up built-in AI"
+msgstr "设置内置 AI"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Set up by hand"
@@ -6478,7 +6514,7 @@ msgstr "这台 Mac 上没有安装 Tailscale。"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Tailscale Serve didn't accept the change. Check the Tailscale app, then try again."
-msgstr "Tailscale Serve 没有接受这次更改。检查 Tailscale app 后再试一次。"
+msgstr "Tailscale Serve 没有接受这次更改。检查 Tailscale 应用后再试一次。"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Tailscale Service name"
@@ -6486,7 +6522,7 @@ msgstr "Tailscale Service 名称"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Tailscale tells OpenMail who is visiting. Only these tailnet logins get in. Removing a login disconnects its browsers and keeps them out. The list starts with this Mac's own login."
-msgstr "Tailscale 会告诉 OpenMail 访问者是谁。只有这些 tailnet 登录名可以进入。移除登录名会断开其浏览器，并不再允许它们进入。列表默认包含这台 Mac 自己的登录名。"
+msgstr "Tailscale 会告诉 OpenMail 访问者是谁。只有这些 tailnet 登录名可以进入。移除登录名会断开它的浏览器，之后也无法再访问。列表默认包含这台 Mac 自己的登录名。"
 
 #: src/renderer/src/features/compose/components/ComposerAi.tsx
 msgid "Target language"
@@ -7024,10 +7060,13 @@ msgstr "此平台不支持"
 msgid "Unsupported server rule"
 msgstr "不支持的服务器规则"
 
-#: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Until"
 msgstr "至"
+
+#: src/renderer/src/features/ai/Proposals.tsx
+msgid "Until {dueText}"
+msgstr "直到 {dueText}"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Up to three actions, in selection order. The action menu includes Archive, Trash and Mark read. Changes apply to new notifications."

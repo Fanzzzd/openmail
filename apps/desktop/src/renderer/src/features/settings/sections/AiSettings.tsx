@@ -139,7 +139,14 @@ export function AiSettings({ accounts }: { accounts: readonly Account[] }) {
             >
               <legend className={`truncate ${settingsHeading}`}>{account.email}</legend>
               <div className={settingsGroup}>
-                <SettingsCheckRow>
+                <SettingsCheckRow
+                  hint={
+                    <Trans>
+                      Built-in AI sends this account's subjects, addresses and message text to
+                      Anthropic with your API key. Connected AI apps can also read this account.
+                    </Trans>
+                  }
+                >
                   <label className="flex items-center gap-2">
                     <input
                       type="checkbox"

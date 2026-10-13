@@ -369,6 +369,10 @@ msgstr "Account toevoegen"
 msgid "Add an account on your Mac."
 msgstr "Voeg een account toe op uw Mac."
 
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Add an Anthropic API key in Settings → AI Access to summarize."
+msgstr "Voeg een Anthropic API-sleutel toe in Instellingen → AI-toegang om samenvattingen te maken."
+
 #: src/renderer/src/lib/errors.ts
 msgid "Add an automatic reply message"
 msgstr "Voeg een automatisch antwoordbericht toe"
@@ -424,6 +428,10 @@ msgstr "Toevoegen aan Contacten"
 #: src/renderer/src/app/WindowUi.tsx
 msgid "Add to Dictionary"
 msgstr "Voeg toe aan woordenboek"
+
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Add your Anthropic API key in Settings → AI Access, then allow the accounts the assistant may read."
+msgstr "Voeg je Anthropic API-sleutel toe in Instellingen → AI-toegang en sta daarna de accounts toe die de assistent mag lezen."
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Add Your First Account"
@@ -523,7 +531,7 @@ msgstr "AI-toestemming om e-mail te wijzigen"
 
 #: src/renderer/src/features/ai/AiPanel.tsx
 msgid "AI request failed. Check account permissions and your API key, then try again."
-msgstr "AI-verzoek mislukt. Controleer de accountrechten en je API-sleutel en probeer opnieuw."
+msgstr "De AI-aanvraag is mislukt. Controleer de accountrechten en je API-sleutel en probeer het opnieuw."
 
 #: src/renderer/src/lib/errors.ts
 msgid "AI request failed. Check your key and try again."
@@ -609,6 +617,10 @@ msgstr "Alle berichten die zich momenteel in deze map bevinden, inclusief niet-g
 msgid "Allow access from my tailnet"
 msgstr "Toegang vanuit mijn tailnet toestaan"
 
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Allow an account in Settings → AI Access to ask about its mail."
+msgstr "Sta een account toe in Instellingen → AI-toegang om vragen over de e-mail ervan te stellen."
+
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Allow notifications"
 msgstr "Meldingen toestaan"
@@ -628,7 +640,7 @@ msgstr "Sta in de AI-instellingen het versturen van e-mailtekst toe voor elk ges
 
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "Allow sending mail text to the model"
-msgstr "Sta versturen van e-mailtekst naar het model toe"
+msgstr "Versturen van e-mailtekst naar het model toestaan"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Allowed"
@@ -665,7 +677,7 @@ msgstr "Laad altijd afbeeldingen van {domain}"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Always load remote images from"
-msgstr "Laad altijd externe afbeeldingen van"
+msgstr "Externe afbeeldingen altijd laden van"
 
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 msgid "Always move messages from this sender to Focused"
@@ -698,6 +710,14 @@ msgstr "Een bijlage is gewijzigd tijdens het lezen. Probeer deze opnieuw toe te 
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "Anthropic API key"
 msgstr "Anthropic API-sleutel"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Anthropic rejected the API key. Check it in Settings → AI Access."
+msgstr "Anthropic heeft de API-sleutel geweigerd. Controleer hem in Instellingen → AI-toegang."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Anthropic's rate limit was reached. Wait a minute, then try again."
+msgstr "De aanvraaglimiet van Anthropic is bereikt. Wacht een minuut en probeer het opnieuw."
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Any action flag"
@@ -982,6 +1002,10 @@ msgstr "Bugrapport"
 msgid "Built-in AI"
 msgstr "Ingebouwde AI"
 
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "Built-in AI sends this account's subjects, addresses and message text to Anthropic with your API key. Connected AI apps can also read this account."
+msgstr "Ingebouwde AI stuurt de onderwerpen, adressen en berichttekst van dit account met je API-sleutel naar Anthropic. Verbonden AI-apps kunnen dit account ook lezen."
+
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Bulleted list"
@@ -1070,6 +1094,10 @@ msgstr "Kan het concept niet openen: {reason}"
 #: src/renderer/src/app/App.tsx
 msgid "Can't open the message: {reason}"
 msgstr "Kan het bericht niet openen: {reason}"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Can't reach Anthropic. Check your internet connection."
+msgstr "Kan Anthropic niet bereiken. Controleer je internetverbinding."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Can't reach the mail server right now."
@@ -2152,24 +2180,24 @@ msgstr "Opgeslagen regel verwijderen?"
 #: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Disconnect"
-msgstr "Verbreken"
+msgstr "Verbinding verbreken"
 
 #. placeholder {0}: session.login
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Disconnect {0}"
-msgstr "{0} verbreken"
+msgstr "Verbinding met {0} verbreken"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Disconnect {name}"
-msgstr "{name} verbreken"
+msgstr "Verbinding met {name} verbreken"
 
 #: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "Disconnect {name}?"
-msgstr "{name} verbreken?"
+msgstr "Verbinding met {name} verbreken?"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Disconnect closes a browser's connection. Reloading the page connects it again while its login is on the list above. To keep someone out, remove their login."
-msgstr "Verbreken sluit de verbinding van een browser. Na het herladen van de pagina maakt hij weer verbinding zolang zijn login in de lijst hierboven staat. Om iemand buiten te houden, verwijder je zijn login."
+msgstr "“Verbinding verbreken” sluit de verbinding van een browser. Als de pagina opnieuw wordt geladen, maakt die weer verbinding zolang de login in de lijst hierboven staat. Verwijder iemands login om diegene buiten te houden."
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgid "Disk space is low. Compact now to enable automatic disk space reclamation."
@@ -3375,7 +3403,7 @@ msgstr "Van links naar rechts"
 
 #: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "Let {name} propose changes for you to approve"
-msgstr "Laat {name} wijzigingen voorstellen die jij goedkeurt"
+msgstr "Laat {name} wijzigingen voorstellen die je goedkeurt"
 
 #: src/renderer/src/features/reader/Reader.tsx
 msgid "Light background"
@@ -4213,7 +4241,7 @@ msgstr "Geen toegangstoken opgeslagen"
 
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 msgid "No account allows AI reads, so a connected app sees no mail. Turn on \"Allow sending mail text to the model\" for an account above."
-msgstr "Geen enkel account staat lezen door AI toe, dus een verbonden app ziet geen e-mail. Zet “Sta versturen van e-mailtekst naar het model toe” aan voor een account hierboven."
+msgstr "Geen enkel account staat lezen door AI toe, dus een verbonden app ziet geen e-mail. Zet “Versturen van e-mailtekst naar het model toestaan” aan voor een account hierboven."
 
 #: src/renderer/src/features/overview/Overview.tsx
 msgid "No accounts yet"
@@ -4324,7 +4352,7 @@ msgstr "Geen suggesties"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "No suggestions waiting for review."
-msgstr "Er zijn geen suggesties die wachten op beoordeling."
+msgstr "Geen suggesties die op beoordeling wachten."
 
 #: src/renderer/src/features/compose/components/Composer.tsx
 msgid "No templates yet. Use {token} for the first recipient's name."
@@ -4506,6 +4534,10 @@ msgstr "Open {name}"
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Open admin console"
 msgstr "Beheerconsole openen"
+
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Open AI Access"
+msgstr "AI-toegang openen"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Open attachments from"
@@ -5897,6 +5929,10 @@ msgstr "Server totaal / ongelezen / gesprekken"
 msgid "Server unavailable"
 msgstr "Server niet beschikbaar"
 
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Set up built-in AI"
+msgstr "Ingebouwde AI instellen"
+
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Set up by hand"
 msgstr "Handmatig instellen"
@@ -6476,7 +6512,7 @@ msgstr "Naam van Tailscale Service"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Tailscale tells OpenMail who is visiting. Only these tailnet logins get in. Removing a login disconnects its browsers and keeps them out. The list starts with this Mac's own login."
-msgstr "Tailscale vertelt OpenMail wie er langskomt. Alleen deze tailnet-logins komen binnen. Een login verwijderen verbreekt de verbinding van zijn browsers en houdt ze buiten. De lijst begint met de login van deze Mac."
+msgstr "Tailscale laat OpenMail weten wie er verbinding maakt. Alleen deze tailnet-logins komen binnen. Een login verwijderen verbreekt de verbinding van zijn browsers en houdt ze buiten. De lijst begint met de login van deze Mac."
 
 #: src/renderer/src/features/compose/components/ComposerAi.tsx
 msgid "Target language"
@@ -7014,10 +7050,13 @@ msgstr "Wordt niet ondersteund op dit platform"
 msgid "Unsupported server rule"
 msgstr "Niet-ondersteunde serverregel"
 
-#: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Until"
 msgstr "Tot"
+
+#: src/renderer/src/features/ai/Proposals.tsx
+msgid "Until {dueText}"
+msgstr "Tot {dueText}"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Up to three actions, in selection order. The action menu includes Archive, Trash and Mark read. Changes apply to new notifications."

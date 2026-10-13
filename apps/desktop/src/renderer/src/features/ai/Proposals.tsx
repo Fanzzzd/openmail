@@ -119,6 +119,13 @@ function Item({
         ? t`Snooze`
         : "";
   const more = count - threadIds.length;
+  const dueText =
+    command.kind === "snooze"
+      ? new Date(command.due).toLocaleString(i18n.locale, {
+          dateStyle: "medium",
+          timeStyle: "short",
+        })
+      : "";
   const outgoing = command.kind === "send" || command.kind === "draft" ? command : null;
   const from = outgoing
     ? outgoing.message.from
@@ -136,7 +143,7 @@ function Item({
         {new Date(p.createdAt).toLocaleString(i18n.locale, {
           month: "numeric",
           day: "numeric",
-          hour: "2-digit",
+          hour: "numeric",
           minute: "2-digit",
         })}
       </p>
@@ -165,11 +172,7 @@ function Item({
           </ul>
         </>
       )}
-      {command.kind === "snooze" && (
-        <p>
-          <Trans>Until</Trans>: {new Date(command.due).toLocaleString(i18n.locale)} [{command.due}]
-        </p>
-      )}
+      {command.kind === "snooze" && <p>{t`Until ${dueText}`}</p>}
       {outgoing && (
         <>
           <p className="mt-1 font-medium">
@@ -296,9 +299,7 @@ function DraftDetails({ message }: { message: OutgoingMessage }) {
           <dt>
             <Trans>Original message</Trans>
           </dt>
-          <dd>
-            {subject} [{message.inReplyTo}]
-          </dd>
+          <dd>{subject}</dd>
         </>
       )}
     </dl>

@@ -14,12 +14,17 @@ const selectors: Record<string, string> = {
   Forward: "\\bforward(?:ed|ing)?\\b",
   Snooze: "\\bsnooz(?:e|ed|ing)\\b",
   Conversation: "\\b(?:threads?|conversations?)\\b",
+  Proposal: "\\b(?:propos(?:als?|es?|ed|ing)|AI suggestions?)\\b",
+  "AI app": "\\bAI apps?\\b",
+  "Remote images": "\\bremote images?\\b",
+  "AI Access": "\\bAI Access\\b",
 };
+const patternsFor: Record<string, Partial<Record<string, string>>> = glossary;
 
 it("the complete catalogs consistently use the mail glossary, message-text terminology and the actual Edit body label", async () => {
   const po = formatter();
   const failures: string[] = [];
-  for (const locale of ["cs", "nl", "fr", "de", "it", "ja", "ru", "es"] as const) {
+  for (const locale of ["zh-CN", "cs", "nl", "fr", "de", "it", "ja", "ru", "es"] as const) {
     const file = new URL(`../locales/${locale}/messages.po`, import.meta.url);
     const catalog = await po.parse(await readFile(file, "utf8"), {
       locale,
@@ -30,7 +35,10 @@ it("the complete catalogs consistently use the mail glossary, message-text termi
       const source = message.message ?? "";
       const target = message.translation ?? "";
       const visibleSource = source.replace(/\{[A-Za-z_]\w*\}/g, "");
-      for (const [term, patterns] of Object.entries(glossary)) {
+      for (const [term, patterns] of Object.entries(patternsFor)) {
+        // Terms without a pattern for this locale are not checked there (zh-CN has few).
+        const pattern = patterns[locale];
+        if (pattern === undefined) continue;
         // Other is an Outlook tab only in its context or in explicit classification text.
         if (
           term === "Other" &&
@@ -41,7 +49,7 @@ it("the complete catalogs consistently use the mail glossary, message-text termi
         // Japanese naturally calls the message text 本文, without repeating メッセージ.
         if (locale === "ja" && source === "Message body" && term === "Message") continue;
         const selector = new RegExp(selectors[term] ?? `\\b${term}s?\\b`, "i");
-        if (selector.test(visibleSource) && !new RegExp(patterns[locale], "iu").test(target))
+        if (selector.test(visibleSource) && !new RegExp(pattern, "iu").test(target))
           failures.push(`${locale}: ${term}: ${source} → ${target}`);
       }
       if (/\b(?:body|bodies)\b/i.test(source))

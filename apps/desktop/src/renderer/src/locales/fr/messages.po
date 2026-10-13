@@ -369,6 +369,10 @@ msgstr "Ajouter un compte"
 msgid "Add an account on your Mac."
 msgstr "Ajoutez un compte sur votre Mac."
 
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Add an Anthropic API key in Settings → AI Access to summarize."
+msgstr "Ajoutez une clé API Anthropic dans Réglages → Accès à l’IA pour obtenir des résumés."
+
 #: src/renderer/src/lib/errors.ts
 msgid "Add an automatic reply message"
 msgstr "Ajouter un message de réponse automatique"
@@ -393,7 +397,7 @@ msgstr "Ajouter un compte de messagerie"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "Add label"
-msgstr "Ajouter une libellé"
+msgstr "Ajouter un libellé"
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Add labels"
@@ -424,6 +428,10 @@ msgstr "Ajouter à Contacts"
 #: src/renderer/src/app/WindowUi.tsx
 msgid "Add to Dictionary"
 msgstr "Ajouter au dictionnaire"
+
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Add your Anthropic API key in Settings → AI Access, then allow the accounts the assistant may read."
+msgstr "Ajoutez votre clé API Anthropic dans Réglages → Accès à l’IA, puis autorisez les comptes que l’assistant peut lire."
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Add Your First Account"
@@ -487,7 +495,7 @@ msgstr "Accès à l’IA"
 
 #: src/renderer/src/features/compose/components/ComposerAi.tsx
 msgid "AI action"
-msgstr "Action IA"
+msgstr "Action d’IA"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
 msgid "AI added unfamiliar recipients:"
@@ -507,39 +515,39 @@ msgstr "Brouillon de l’IA"
 
 #: src/renderer/src/lib/errors.ts
 msgid "AI input budget exceeded. Ask about fewer messages."
-msgstr "La limite d'entrée de l'IA est dépassée. Posez une question sur moins de messages."
+msgstr "La limite d’entrée de l’IA est dépassée. Posez une question sur moins de messages."
 
 #: src/renderer/src/lib/errors.ts
 msgid "AI input could not be encoded."
-msgstr "L'entrée de l'IA n'a pas pu être encodée."
+msgstr "L’entrée de l’IA n’a pas pu être encodée."
 
 #: src/renderer/src/lib/errors.ts
 msgid "AI model is unavailable."
-msgstr "Le modèle d'IA est indisponible."
+msgstr "Le modèle d’IA est indisponible."
 
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "AI permission to change mail"
-msgstr "Autorisation de l’IA pour modifier le courrier"
+msgstr "Autorisation de l’IA à modifier le courrier"
 
 #: src/renderer/src/features/ai/AiPanel.tsx
 msgid "AI request failed. Check account permissions and your API key, then try again."
-msgstr "La requête de l’IA a échoué. Vérifiez les autorisations du compte et votre clé API, puis réessayez."
+msgstr "La requête à l’IA a échoué. Vérifiez les autorisations du compte et votre clé API, puis réessayez."
 
 #: src/renderer/src/lib/errors.ts
 msgid "AI request failed. Check your key and try again."
-msgstr "La requête à l'IA a échoué. Vérifiez votre clé et réessayez."
+msgstr "La requête à l’IA a échoué. Vérifiez votre clé et réessayez."
 
 #: src/renderer/src/lib/errors.ts
 msgid "AI request timed out."
-msgstr "Le délai de la requête à l'IA est dépassé."
+msgstr "Le délai de la requête à l’IA est dépassé."
 
 #: src/renderer/src/lib/errors.ts
 msgid "AI stream ended before completion."
-msgstr "La réponse de l'IA s'est interrompue avant la fin."
+msgstr "La réponse de l’IA s’est interrompue avant la fin."
 
 #: src/renderer/src/features/ai/TriageChip.tsx
 msgid "AI suggestion"
-msgstr "Suggestion IA"
+msgstr "Suggestion d’IA"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
@@ -609,6 +617,10 @@ msgstr "Tous les messages actuellement dans ce dossier, y compris les messages n
 msgid "Allow access from my tailnet"
 msgstr "Autoriser l’accès depuis mon tailnet"
 
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Allow an account in Settings → AI Access to ask about its mail."
+msgstr "Autorisez un compte dans Réglages → Accès à l’IA pour poser des questions sur ses messages."
+
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Allow notifications"
 msgstr "Autoriser les notifications"
@@ -665,7 +677,7 @@ msgstr "Chargez toujours les images depuis {domain}"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Always load remote images from"
-msgstr "Chargez toujours les images distantes depuis"
+msgstr "Toujours charger les images distantes de"
 
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 msgid "Always move messages from this sender to Focused"
@@ -698,6 +710,14 @@ msgstr "Une pièce jointe a changé pendant sa lecture. Essayez de l’ajouter �
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "Anthropic API key"
 msgstr "Clé API Anthropic"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Anthropic rejected the API key. Check it in Settings → AI Access."
+msgstr "Anthropic a refusé la clé API. Vérifiez-la dans Réglages → Accès à l’IA."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Anthropic's rate limit was reached. Wait a minute, then try again."
+msgstr "La limite de requêtes d’Anthropic est atteinte. Patientez une minute, puis réessayez."
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Any action flag"
@@ -982,6 +1002,10 @@ msgstr "Rapport de bug"
 msgid "Built-in AI"
 msgstr "IA intégrée"
 
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "Built-in AI sends this account's subjects, addresses and message text to Anthropic with your API key. Connected AI apps can also read this account."
+msgstr "L’IA intégrée envoie à Anthropic, avec votre clé API, les objets, les adresses et le texte des messages de ce compte. Les applications d’IA connectées peuvent aussi lire ce compte."
+
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Bulleted list"
@@ -1033,35 +1057,35 @@ msgstr "Serveur de messagerie introuvable. Vérifiez le nom du serveur et votre 
 
 #: src/renderer/src/lib/errors.ts
 msgid "Can't find this account."
-msgstr "Je ne trouve pas ce compte."
+msgstr "Impossible de trouver ce compte."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Can't find this attachment."
-msgstr "Je ne trouve pas cette pièce jointe."
+msgstr "Impossible de trouver cette pièce jointe."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Can't find this draft."
-msgstr "Je ne trouve pas ce brouillon."
+msgstr "Impossible de trouver ce brouillon."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Can't find this message."
-msgstr "Je ne trouve pas ce message."
+msgstr "Impossible de trouver ce message."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Can't find this proposal."
-msgstr "Je ne trouve pas cette proposition."
+msgstr "Impossible de trouver cette proposition."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Can't find this signature."
-msgstr "Je ne trouve pas cette signature."
+msgstr "Impossible de trouver cette signature."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Can't find this space."
-msgstr "Je ne trouve pas cet espace."
+msgstr "Impossible de trouver cet espace."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Can't find this template."
-msgstr "Je ne trouve pas ce modèle."
+msgstr "Impossible de trouver ce modèle."
 
 #: src/renderer/src/app/App.tsx
 msgid "Can't open the draft: {reason}"
@@ -1070,6 +1094,10 @@ msgstr "Impossible d’ouvrir le brouillon : {reason}"
 #: src/renderer/src/app/App.tsx
 msgid "Can't open the message: {reason}"
 msgstr "Impossible d’ouvrir le message : {reason}"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Can't reach Anthropic. Check your internet connection."
+msgstr "Impossible de joindre Anthropic. Vérifiez votre connexion Internet."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Can't reach the mail server right now."
@@ -2169,7 +2197,7 @@ msgstr "Déconnecter {name} ?"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Disconnect closes a browser's connection. Reloading the page connects it again while its login is on the list above. To keep someone out, remove their login."
-msgstr "Déconnecter ferme la connexion d’un navigateur. En rechargeant la page, il se reconnecte tant que son identifiant figure dans la liste ci-dessus. Pour exclure quelqu’un, retirez son identifiant."
+msgstr "« Déconnecter » ferme la connexion d’un navigateur. Recharger la page le reconnecte tant que son identifiant figure dans la liste ci-dessus. Pour exclure quelqu’un, retirez son identifiant."
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgid "Disk space is low. Compact now to enable automatic disk space reclamation."
@@ -2793,7 +2821,7 @@ msgstr "Expéditeur modifié"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Funnel is on for this port, which would put it on the public internet. OpenMail never uses Funnel. Turn Funnel off for this port first."
-msgstr "Funnel est activé pour ce port, ce qui l’exposerait sur l’internet public. OpenMail n’utilise jamais Funnel. Désactivez d’abord Funnel pour ce port."
+msgstr "Funnel est activé pour ce port, ce qui l’exposerait sur l’Internet public. OpenMail n’utilise jamais Funnel. Désactivez d’abord Funnel pour ce port."
 
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 msgid "Future messages from this sender will appear in Focused. Existing messages keep their classification."
@@ -3155,11 +3183,11 @@ msgstr "Intervalle"
 #: src/renderer/src/lib/ai-settings-errors.test.ts
 #: src/renderer/src/lib/errors.ts
 msgid "Invalid AI account settings."
-msgstr "Réglages du compte de l’IA non valides."
+msgstr "Réglages d’IA du compte non valides."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Invalid AI compose request."
-msgstr "La demande de rédaction par l'IA est invalide."
+msgstr "La demande de rédaction par l’IA n’est pas valide."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Invalid calendar event time"
@@ -4507,6 +4535,10 @@ msgstr "Ouvrir {name}"
 msgid "Open admin console"
 msgstr "Ouvrir la console d’administration"
 
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Open AI Access"
+msgstr "Ouvrir Accès à l’IA"
+
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Open attachments from"
 msgstr "Ouvrir les pièces jointes de"
@@ -5246,7 +5278,7 @@ msgstr "Supprimer la clé"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "Remove label"
-msgstr "Supprimer l’libellé"
+msgstr "Supprimer le libellé"
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Remove labels"
@@ -5581,7 +5613,7 @@ msgstr "Tout enregistrer"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Save an Anthropic API key in AI settings."
-msgstr "Enregistrez une clé API Anthropic dans les réglages de l'IA."
+msgstr "Enregistrez une clé API Anthropic dans les réglages de l’IA."
 
 #: src/renderer/src/features/reader/Reader.tsx
 msgid "Save as PDF…"
@@ -5896,6 +5928,10 @@ msgstr "Serveur : total / non lus / conversations"
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Server unavailable"
 msgstr "Serveur indisponible"
+
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Set up built-in AI"
+msgstr "Configurer l’IA intégrée"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Set up by hand"
@@ -6219,7 +6255,7 @@ msgstr "Autre chose sur ce Mac utilise déjà Tailscale Serve sur ce port. OpenM
 #: src/renderer/src/features/ai/TriageChip.tsx
 #: src/renderer/src/lib/errors.ts
 msgid "Something went wrong. Please try again."
-msgstr "Quelque chose s’est mal passé. Veuillez réessayer."
+msgstr "Une erreur s’est produite. Réessayez."
 
 #: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "Something went wrong. Try again."
@@ -6922,7 +6958,7 @@ msgstr "Annuler"
 
 #: src/renderer/src/features/compose/components/ComposerAi.tsx
 msgid "Undo AI edit"
-msgstr "Annuler la modification IA"
+msgstr "Annuler la modification de l’IA"
 
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
 msgid "Undo emoji replacement"
@@ -7014,10 +7050,13 @@ msgstr "Non pris en charge sur cette plateforme"
 msgid "Unsupported server rule"
 msgstr "Règle de serveur non prise en charge"
 
-#: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Until"
 msgstr "Jusqu’à"
+
+#: src/renderer/src/features/ai/Proposals.tsx
+msgid "Until {dueText}"
+msgstr "Jusqu’au {dueText}"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Up to three actions, in selection order. The action menu includes Archive, Trash and Mark read. Changes apply to new notifications."

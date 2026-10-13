@@ -192,5 +192,49 @@
     "ja": "その他",
     "ru": "друг",
     "es": "otros"
+  },
+  "Proposal": {
+    "zh-CN": "建议",
+    "cs": "návrh|navrh|návrz",
+    "nl": "voorstel|stel\\p{L}*\\b.*\\bvoor\\b|suggestie",
+    "fr": "propos|suggestion",
+    "de": "vorschl|vorgeschlag|schl[äa]gt\\b.*\\bvor\\b",
+    "it": "propo|suggeriment",
+    "ja": "提案",
+    "ru": "предлож|предлага",
+    "es": "propo|propuest|sugerencia"
+  },
+  "AI app": {
+    "zh-CN": "AI 应用",
+    "cs": "aplikac\\p{L}* AI",
+    "nl": "AI-app",
+    "fr": "applications? d[’']IA",
+    "de": "KI-App",
+    "it": "app di IA",
+    "ja": "AI アプリ",
+    "ru": "ИИ-приложени",
+    "es": "aplicaci(?:ón|ones) de IA"
+  },
+  "Remote images": {
+    "zh-CN": "远程图片",
+    "cs": "vzdálen\\p{L}* obráz",
+    "nl": "externe afbeelding",
+    "fr": "images distantes",
+    "de": "externe\\p{L}* bild",
+    "it": "immagini remote",
+    "ja": "リモート画像",
+    "ru": "удалённ\\p{L}* изображени",
+    "es": "imágenes remotas"
+  },
+  "AI Access": {
+    "zh-CN": "AI 权限",
+    "cs": "přístup AI",
+    "nl": "AI-toegang",
+    "fr": "accès à l[’']IA",
+    "de": "KI-Zugriff",
+    "it": "accesso all[’']IA",
+    "ja": "AI アクセス",
+    "ru": "доступ к ИИ",
+    "es": "acceso a IA"
   }
 }

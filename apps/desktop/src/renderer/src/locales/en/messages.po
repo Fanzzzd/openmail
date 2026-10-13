@@ -373,6 +373,10 @@ msgstr "Add account"
 msgid "Add an account on your Mac."
 msgstr "Add an account on your Mac."
 
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Add an Anthropic API key in Settings → AI Access to summarize."
+msgstr "Add an Anthropic API key in Settings → AI Access to summarize."
+
 #: src/renderer/src/lib/errors.ts
 msgid "Add an automatic reply message"
 msgstr "Add an automatic reply message"
@@ -428,6 +432,10 @@ msgstr "Add to Contacts"
 #: src/renderer/src/app/WindowUi.tsx
 msgid "Add to Dictionary"
 msgstr "Add to Dictionary"
+
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Add your Anthropic API key in Settings → AI Access, then allow the accounts the assistant may read."
+msgstr "Add your Anthropic API key in Settings → AI Access, then allow the accounts the assistant may read."
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Add Your First Account"
@@ -613,6 +621,10 @@ msgstr "All messages currently in this folder, including messages not loaded and
 msgid "Allow access from my tailnet"
 msgstr "Allow access from my tailnet"
 
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Allow an account in Settings → AI Access to ask about its mail."
+msgstr "Allow an account in Settings → AI Access to ask about its mail."
+
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Allow notifications"
 msgstr "Allow notifications"
@@ -702,6 +714,14 @@ msgstr "An attachment changed while reading. Try adding it again."
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "Anthropic API key"
 msgstr "Anthropic API key"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Anthropic rejected the API key. Check it in Settings → AI Access."
+msgstr "Anthropic rejected the API key. Check it in Settings → AI Access."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Anthropic's rate limit was reached. Wait a minute, then try again."
+msgstr "Anthropic's rate limit was reached. Wait a minute, then try again."
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Any action flag"
@@ -986,6 +1006,10 @@ msgstr "Bug report"
 msgid "Built-in AI"
 msgstr "Built-in AI"
 
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "Built-in AI sends this account's subjects, addresses and message text to Anthropic with your API key. Connected AI apps can also read this account."
+msgstr "Built-in AI sends this account's subjects, addresses and message text to Anthropic with your API key. Connected AI apps can also read this account."
+
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Bulleted list"
@@ -1074,6 +1098,10 @@ msgstr "Can't open the draft: {reason}"
 #: src/renderer/src/app/App.tsx
 msgid "Can't open the message: {reason}"
 msgstr "Can't open the message: {reason}"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Can't reach Anthropic. Check your internet connection."
+msgstr "Can't reach Anthropic. Check your internet connection."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Can't reach the mail server right now."
@@ -4511,6 +4539,10 @@ msgstr "Open {name}"
 msgid "Open admin console"
 msgstr "Open admin console"
 
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Open AI Access"
+msgstr "Open AI Access"
+
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Open attachments from"
 msgstr "Open attachments from"
@@ -5901,6 +5933,10 @@ msgstr "Server total / unread / threads"
 msgid "Server unavailable"
 msgstr "Server unavailable"
 
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Set up built-in AI"
+msgstr "Set up built-in AI"
+
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Set up by hand"
 msgstr "Set up by hand"
@@ -7018,10 +7054,13 @@ msgstr "Unsupported on this platform"
 msgid "Unsupported server rule"
 msgstr "Unsupported server rule"
 
-#: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Until"
 msgstr "Until"
+
+#: src/renderer/src/features/ai/Proposals.tsx
+msgid "Until {dueText}"
+msgstr "Until {dueText}"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Up to three actions, in selection order. The action menu includes Archive, Trash and Mark read. Changes apply to new notifications."

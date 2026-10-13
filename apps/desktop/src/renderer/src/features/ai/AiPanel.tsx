@@ -1,17 +1,19 @@
 import { useAtomValue } from "@effect/atom-react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { AiEvent, AiSource } from "@openmail/core/schema";
-import { Effect, Fiber, Stream } from "effect";
+import { AI_ERRORS, type AiEvent, type AiSource } from "@openmail/core/schema";
+import { Cause, Effect, Fiber, Stream } from "effect";
 import { AsyncResult } from "effect/reactivity";
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import type { Proposal, Account } from "../../../../shared/api";
 import { matchesShortcut } from "../../../../shared/shortcuts";
 import { platformShortcutHint, useShortcutSet } from "../../i18n/use-shortcut-text";
+import { errorText, type AppError } from "../../lib/errors";
 import { MailClient } from "../../state/rpc";
 import { Keys } from "../../state/keys";
 import { openMessageWindow, useRunMail, withMail, type MailEnv } from "../../state/mail";
 import { aiSettingsAtom } from "./ai-settings";
 import { Proposals } from "./lazy";
+import { openAiSettings } from "./open-ai-settings";
 import { Dialog } from "../../ui/Dialog";
 import { buttonLink, buttonPrimary, formInput } from "../../ui/styles";
 
@@ -22,6 +24,7 @@ export function useAiStream() {
   const [model, setModel] = useState("");
   const [truncated, setTruncated] = useState(false);
   const [status, setStatus] = useState<"idle" | "running" | "done" | "failed">("idle");
+  const [error, setError] = useState<AppError | null>(null);
   const fiber = useRef<Fiber.Fiber<void> | null>(null);
   const generation = useRef(0);
   const cancel = useCallback(() => {
@@ -50,6 +53,7 @@ export function useAiStream() {
     setSources([]);
     setModel("");
     setTruncated(false);
+    setError(null);
     setStatus("running");
     const consume = (event: AiEvent) =>
       Effect.sync(() => {
@@ -71,9 +75,12 @@ export function useAiStream() {
     fiber.current = run(
       stream.pipe(
         Effect.flatMap((events) => Stream.runForEach(events, consume)),
-        Effect.catchCause(() =>
+        Effect.catchCause((cause) =>
           Effect.sync(() => {
-            if (current === generation.current) setStatus("failed");
+            if (current !== generation.current) return;
+            const found = Cause.findErrorOption(cause);
+            setError(found._tag === "Some" ? found.value : null);
+            setStatus("failed");
           }),
         ),
         Effect.tap(() =>
@@ -84,7 +91,30 @@ export function useAiStream() {
       ),
     );
   };
-  return { text, sources, model, truncated, status, start, cancel };
+  return { text, sources, model, truncated, status, error, start, cancel };
+}
+
+/** Failures the person fixes in Settings → AI Access: the key or an account's consent. */
+const SETTINGS_ERRORS: ReadonlySet<string> = new Set([
+  AI_ERRORS.noKey,
+  AI_ERRORS.noConsent,
+  AI_ERRORS.invalidKey,
+]);
+
+/** A link-styled button that opens Settings → AI Access. */
+export function AiAccessLink({ onOpen }: { onOpen?: () => void }) {
+  return (
+    <button
+      type="button"
+      className={buttonLink}
+      onClick={() => {
+        onOpen?.();
+        openAiSettings();
+      }}
+    >
+      <Trans>Open AI Access</Trans>
+    </button>
+  );
 }
 
 export function AiOutput({
@@ -94,7 +124,7 @@ export function AiOutput({
   result: ReturnType<typeof useAiStream>;
   openSource: (id: string) => void;
 }) {
-  const { t } = useLingui();
+  const { t, i18n } = useLingui();
   const model = result.model;
   return (
     <div className="space-y-2">
@@ -119,11 +149,18 @@ export function AiOutput({
         </output>
       )}
       {result.status === "failed" && (
-        <p role="alert">
-          <Trans>
-            AI request failed. Check account permissions and your API key, then try again.
-          </Trans>
-        </p>
+        <div role="alert" className="space-y-1">
+          <p>
+            {result.error ? (
+              errorText(i18n, result.error)
+            ) : (
+              <Trans>
+                AI request failed. Check account permissions and your API key, then try again.
+              </Trans>
+            )}
+          </p>
+          {result.error && SETTINGS_ERRORS.has(result.error.message) && <AiAccessLink />}
+        </div>
       )}
       {result.status === "running" && (
         <button type="button" onClick={result.cancel}>{t`Cancel`}</button>
@@ -136,7 +173,7 @@ export function AiOutput({
               className="text-a11y-accent"
               onClick={() => openSource(source.id)}
             >
-              {source.subject || t`(No subject)`} [{source.id}]
+              {source.subject || t`(No subject)`}
             </button>
           </li>
         ))}
@@ -168,6 +205,12 @@ function AllowedThreadSummary({ id, keyConfigured }: { id: string; keyConfigured
       >
         <Trans>Summarize</Trans>
       </button>
+      {!keyConfigured && (
+        <p className="text-footnote text-a11y-muted">
+          <Trans>Add an Anthropic API key in Settings → AI Access to summarize.</Trans>{" "}
+          <AiAccessLink />
+        </p>
+      )}
       {result.status === "idle" && cached && (
         <>
           <p className="whitespace-pre-wrap">{cached.text}</p>
@@ -234,12 +277,33 @@ export function Assistant({
             <kbd className="font-sans text-footnote font-normal text-a11y-muted">{hint}</kbd>
           )}
         </h2>
-        <p className="text-footnote text-a11y-muted">
-          <Trans>
-            Select accounts allowed in Settings &gt; AI Access. The assistant searches mail and
-            proposes drafts, labels or archive. You approve changes in AI suggestions.
-          </Trans>
-        </p>
+        {settings && !settings.keyConfigured ? (
+          <div className="space-y-2 rounded border border-violet-500/20 p-4">
+            <p className="font-medium">
+              <Trans>Set up built-in AI</Trans>
+            </p>
+            <p className="text-a11y-muted">
+              <Trans>
+                Add your Anthropic API key in Settings → AI Access, then allow the accounts the
+                assistant may read.
+              </Trans>
+            </p>
+            <AiAccessLink onOpen={() => setOpen(false)} />
+          </div>
+        ) : (
+          <p className="text-footnote text-a11y-muted">
+            <Trans>
+              Select accounts allowed in Settings &gt; AI Access. The assistant searches mail and
+              proposes drafts, labels or archive. You approve changes in AI suggestions.
+            </Trans>
+          </p>
+        )}
+        {settings?.keyConfigured && !eligible.length && (
+          <p className="text-footnote text-a11y-muted">
+            <Trans>Allow an account in Settings → AI Access to ask about its mail.</Trans>{" "}
+            <AiAccessLink onOpen={() => setOpen(false)} />
+          </p>
+        )}
         {eligible.map((account) => (
           <label key={account.id} className="mr-4 inline-flex items-center gap-2">
             <input

@@ -21,7 +21,7 @@ import {
 import { matchesShortcut } from "../../../../../shared/shortcuts";
 import { platformShortcutHint, useShortcutSet } from "../../../i18n/use-shortcut-text";
 import { withMail } from "../../../state/mail";
-import { AiOutput, aiSettingsAtom, useAiStream } from "../../ai";
+import { AiAccessLink, AiOutput, aiSettingsAtom, useAiStream } from "../../ai";
 import { Dialog } from "../../../ui/Dialog";
 import { Select } from "../../../ui/Select";
 import { touchTarget } from "../../../ui/styles";
@@ -132,6 +132,7 @@ export function ComposerAi({
           <Trans>Write with AI</Trans>
           {hint && ` · ${hint}`}
         </button>
+        {allowed && settings && !settings.keyConfigured && <AiAccessLink />}
         {undo && (
           <button
             type="button"

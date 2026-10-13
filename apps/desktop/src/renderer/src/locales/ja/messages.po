@@ -369,6 +369,10 @@ msgstr "アカウントを追加"
 msgid "Add an account on your Mac."
 msgstr "Mac でアカウントを追加してください。"
 
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Add an Anthropic API key in Settings → AI Access to summarize."
+msgstr "要約するには、「設定 → AI アクセス」で Anthropic API キーを追加してください。"
+
 #: src/renderer/src/lib/errors.ts
 msgid "Add an automatic reply message"
 msgstr "自動返信メッセージを追加する"
@@ -425,6 +429,10 @@ msgstr "連絡先に追加"
 msgid "Add to Dictionary"
 msgstr "辞書に追加"
 
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Add your Anthropic API key in Settings → AI Access, then allow the accounts the assistant may read."
+msgstr "「設定 → AI アクセス」で Anthropic API キーを追加し、アシスタントに読み取りを許可するアカウントを選んでください。"
+
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Add Your First Account"
 msgstr "最初のアカウントを追加する"
@@ -463,7 +471,7 @@ msgstr "住所は提案されなくなりました"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Advanced: Tailscale Service"
-msgstr "詳細設定: Tailscale Service"
+msgstr "詳細設定：Tailscale Service"
 
 #: src/renderer/src/features/calendar/EventRecurrenceEditor.tsx
 msgid "After a number of occurrences"
@@ -483,7 +491,7 @@ msgstr "AI ({agent})"
 
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "AI Access"
-msgstr "AIアクセス"
+msgstr "AI アクセス"
 
 #: src/renderer/src/features/compose/components/ComposerAi.tsx
 msgid "AI action"
@@ -503,7 +511,7 @@ msgstr "AI はメールを読んだり検索したりすることはできます
 
 #: src/renderer/src/features/compose/components/Composer.tsx
 msgid "AI draft"
-msgstr "AIの下書き"
+msgstr "AI の下書き"
 
 #: src/renderer/src/lib/errors.ts
 msgid "AI input budget exceeded. Ask about fewer messages."
@@ -519,11 +527,11 @@ msgstr "AI モデルを利用できません。"
 
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "AI permission to change mail"
-msgstr "AIによるメール変更許可"
+msgstr "AI によるメール変更許可"
 
 #: src/renderer/src/features/ai/AiPanel.tsx
 msgid "AI request failed. Check account permissions and your API key, then try again."
-msgstr "AIへのリクエストが失敗しました。アカウントの権限とAPIキーを確認し、もう一度お試しください。"
+msgstr "AI へのリクエストが失敗しました。アカウントの権限と API キーを確認し、もう一度お試しください。"
 
 #: src/renderer/src/lib/errors.ts
 msgid "AI request failed. Check your key and try again."
@@ -544,7 +552,7 @@ msgstr "AI の提案"
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "AI suggestions"
-msgstr "AIによる提案"
+msgstr "AI の提案"
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -609,6 +617,10 @@ msgstr "読み込まれていないメッセージや Outlook の子フォルダ
 msgid "Allow access from my tailnet"
 msgstr "自分の tailnet からのアクセスを許可"
 
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Allow an account in Settings → AI Access to ask about its mail."
+msgstr "メールについて質問するには、「設定 → AI アクセス」でアカウントを許可してください。"
+
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Allow notifications"
 msgstr "通知を許可する"
@@ -624,7 +636,7 @@ msgstr "提案を許可"
 #: src/renderer/src/lib/ai-settings-errors.test.ts
 #: src/renderer/src/lib/errors.ts
 msgid "Allow sending mail text for each selected account in AI settings."
-msgstr "AI設定で、選択した各アカウントのメール本文の送信を許可してください。"
+msgstr "AI 設定で、選択した各アカウントのメール本文の送信を許可してください。"
 
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "Allow sending mail text to the model"
@@ -665,7 +677,7 @@ msgstr "常に {domain} から画像をロードします"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Always load remote images from"
-msgstr "常にリモート イメージをロードする"
+msgstr "リモート画像を常に読み込む送信元"
 
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 msgid "Always move messages from this sender to Focused"
@@ -697,7 +709,15 @@ msgstr "読み込み中に添付ファイルが変更されました。もう一
 
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "Anthropic API key"
-msgstr "AnthropicのAPIキー"
+msgstr "Anthropic API キー"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Anthropic rejected the API key. Check it in Settings → AI Access."
+msgstr "Anthropic が API キーを拒否しました。「設定 → AI アクセス」で確認してください。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Anthropic's rate limit was reached. Wait a minute, then try again."
+msgstr "Anthropic のレート制限に達しました。1 分ほど待ってから、もう一度お試しください。"
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Any action flag"
@@ -709,7 +729,7 @@ msgstr "アプリ固有のパスワード"
 
 #: src/renderer/src/features/settings/sections/AppleContactsSettings.tsx
 msgid "Apple Contacts stay on this device and are never sent to AI models."
-msgstr "Appleの連絡先はこのデバイス内に保存され、AIモデルには送信されません。"
+msgstr "Appleの連絡先はこのデバイス内に保存され、AI モデルには送信されません。"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Apple Mail"
@@ -980,7 +1000,11 @@ msgstr "バグレポート"
 
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "Built-in AI"
-msgstr "内蔵AI"
+msgstr "内蔵 AI"
+
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "Built-in AI sends this account's subjects, addresses and message text to Anthropic with your API key. Connected AI apps can also read this account."
+msgstr "内蔵 AI は、このアカウントの件名、アドレス、メッセージ本文を、あなたの API キーで Anthropic に送信します。接続した AI アプリもこのアカウントを読み取れます。"
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -1070,6 +1094,10 @@ msgstr "下書きを開けません: {reason}"
 #: src/renderer/src/app/App.tsx
 msgid "Can't open the message: {reason}"
 msgstr "メッセージを開けません: {reason}"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Can't reach Anthropic. Check your internet connection."
+msgstr "Anthropic に接続できません。インターネット接続を確認してください。"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Can't reach the mail server right now."
@@ -1613,7 +1641,7 @@ msgstr "スレッド"
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Copied"
-msgstr "コピーされました"
+msgstr "コピーしました"
 
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
@@ -1632,7 +1660,7 @@ msgstr "コピー"
 #: src/renderer/src/features/compose/components/RecipientField.tsx
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Copy address"
-msgstr "アドレスをコピーする"
+msgstr "アドレスをコピー"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Copy command for {name}"
@@ -1780,7 +1808,7 @@ msgstr "ローカルキャッシュをリセットできませんでした"
 #: src/renderer/src/lib/ai-settings-errors.test.ts
 #: src/renderer/src/lib/errors.ts
 msgid "Could not save the API key in the system keychain."
-msgstr "APIキーをシステムのキーチェーンに保存できませんでした。"
+msgstr "API キーをシステムのキーチェーンに保存できませんでした。"
 
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Could not sync {names}."
@@ -3155,7 +3183,7 @@ msgstr "間隔"
 #: src/renderer/src/lib/ai-settings-errors.test.ts
 #: src/renderer/src/lib/errors.ts
 msgid "Invalid AI account settings."
-msgstr "AIアカウント設定が無効です。"
+msgstr "AI アカウント設定が無効です。"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Invalid AI compose request."
@@ -3338,7 +3366,7 @@ msgstr "過去 7 日間"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Last seen {since}"
-msgstr "最終確認 {since}"
+msgstr "最終アクセス {since}"
 
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Last sync failed"
@@ -3375,7 +3403,7 @@ msgstr "左から右へ"
 
 #: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "Let {name} propose changes for you to approve"
-msgstr "{name} が変更を提案し、あなたが承認する"
+msgstr "{name} による変更の提案を許可（実行前にあなたが承認）"
 
 #: src/renderer/src/features/reader/Reader.tsx
 msgid "Light background"
@@ -3654,7 +3682,7 @@ msgstr "最大サイズ（KiB）"
 
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "MCP access follows this account's AI consent. Disabled accounts cannot be read through MCP."
-msgstr "MCP のアクセスはこのアカウントの AI 利用への同意に従います。無効なアカウントは MCP から読み取れません。"
+msgstr "MCP からのアクセスは、このアカウントの AI への同意設定に従います。無効にしたアカウントは MCP から読み取れません。"
 
 #. readOnly is the translated Read only write-mode label above.
 #: src/renderer/src/features/settings/Settings.tsx
@@ -4507,6 +4535,10 @@ msgstr "{name} を開く"
 msgid "Open admin console"
 msgstr "管理コンソールを開く"
 
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Open AI Access"
+msgstr "AI アクセスを開く"
+
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Open attachments from"
 msgstr "添付ファイルを開く"
@@ -5043,7 +5075,7 @@ msgstr "メールの読み取りと検索ができ、既定では読み取り専
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Read and send mail from your phone or another computer through your own tailnet. This Mac stays the host: mail, tokens and keys stay here, and nothing passes through OpenMail servers. OpenMail uses Tailscale Serve, which only devices on your tailnet can reach. It never uses Funnel, so the page is never on the public internet."
-msgstr "自分の tailnet を通じて、スマートフォンや別のコンピュータからメールを読んだり送ったりできます。この Mac がホストのままです。メール、トークン、キーはここに残り、OpenMail のサーバーを経由するものはありません。OpenMail は tailnet 内のデバイスだけが届く Tailscale Serve を使います。Funnel は使わないため、ページが公開インターネットに出ることはありません。"
+msgstr "自分の tailnet を通じて、スマートフォンや別のコンピュータからメールを読んだり送ったりできます。この Mac がホストのままです。メール、トークン、キーはここに残り、OpenMail のサーバーを経由するものはありません。OpenMail は、tailnet 内のデバイスからしか接続できない Tailscale Serve を使います。Funnel は使わないため、ページが公開インターネットに出ることはありません。"
 
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Read only"
@@ -5490,7 +5522,7 @@ msgstr "AI の宛先を確認"
 
 #: src/renderer/src/features/ai/AiPanel.tsx
 msgid "Review AI suggestions"
-msgstr "AIの提案を確認"
+msgstr "AI の提案を確認"
 
 #: src/renderer/src/features/reader/UnsubscribeButton.tsx
 msgid "Review an unsubscribe email before sending?"
@@ -5742,7 +5774,7 @@ msgstr "メッセージを選択してください"
 
 #: src/renderer/src/features/ai/AiPanel.tsx
 msgid "Select accounts allowed in Settings > AI Access. The assistant searches mail and proposes drafts, labels or archive. You approve changes in AI suggestions."
-msgstr "「設定」>「AIアクセス」で許可するアカウントを選択してください。アシスタントはメールを検索し、下書き、ラベル、アーカイブを提案します。「AIによる提案」で変更を承認します。"
+msgstr "「設定」>「AI アクセス」で許可したアカウントを選択してください。アシスタントはメールを検索し、下書き、ラベル、アーカイブを提案します。変更は「AI の提案」で承認します。"
 
 #: src/renderer/src/app/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
@@ -5896,6 +5928,10 @@ msgstr "サーバー：合計 / 未読 / スレッド"
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Server unavailable"
 msgstr "サーバーに接続できません"
+
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Set up built-in AI"
+msgstr "内蔵 AI を設定"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Set up by hand"
@@ -6213,7 +6249,7 @@ msgstr "一部のサーバー述語は、一致を保持するために省略さ
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Something else on this Mac already uses Tailscale Serve on this port. OpenMail won't replace it. Remove that mapping or use a Tailscale Service name below."
-msgstr "この Mac では、別のものがこのポートで Tailscale Serve をすでに使っています。OpenMail はそれを置き換えません。そのマッピングを削除するか、下で Tailscale Service 名を使ってください。"
+msgstr "この Mac の別のアプリが、このポートで Tailscale Serve をすでに使っています。OpenMail はそれを置き換えません。そのマッピングを削除するか、下で Tailscale Service 名を指定してください。"
 
 #: src/renderer/src/app/use-native-menu-bridge.ts
 #: src/renderer/src/features/ai/TriageChip.tsx
@@ -6305,7 +6341,7 @@ msgstr "Codex で新しいセッションを開始すると読み込まれます
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Starting…"
-msgstr "開始しています…"
+msgstr "起動中…"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "STARTTLS (usually 587)"
@@ -6476,7 +6512,7 @@ msgstr "Tailscale Service 名"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Tailscale tells OpenMail who is visiting. Only these tailnet logins get in. Removing a login disconnects its browsers and keeps them out. The list starts with this Mac's own login."
-msgstr "Tailscale が訪問者を OpenMail に伝えます。ここにある tailnet ログインだけが入れます。ログインを削除すると、そのブラウザは切断され、入れなくなります。リストはこの Mac 自身のログインから始まります。"
+msgstr "Tailscale が、アクセスしてきた人を OpenMail に知らせます。ここにある tailnet ログインだけがアクセスできます。ログインを削除すると、そのブラウザは切断され、以後アクセスできなくなります。リストには最初からこの Mac 自身のログインが入っています。"
 
 #: src/renderer/src/features/compose/components/ComposerAi.tsx
 msgid "Target language"
@@ -6619,7 +6655,7 @@ msgstr "主催者はメッセージ送信者とは異なります。返信する
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "The other device needs the Tailscale app, signed in to the same tailnet. This Mac must stay on with OpenMail open. Quitting OpenMail takes the address offline until it opens again."
-msgstr "もう一方のデバイスには、同じ tailnet にサインインした Tailscale アプリが必要です。この Mac は OpenMail を開いたまま起動しておく必要があります。OpenMail を終了すると、次に開くまでアドレスはオフラインになります。"
+msgstr "もう一方のデバイスには、同じ tailnet にサインインした Tailscale アプリが必要です。この Mac は電源を入れたまま、OpenMail を開いておく必要があります。OpenMail を終了すると、次に開くまでアドレスはオフラインになります。"
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "The preview checked at most 201 server messages. Matching messages outside this sample may be missing."
@@ -7014,10 +7050,13 @@ msgstr "このプラットフォームではサポートされていません"
 msgid "Unsupported server rule"
 msgstr "未対応のサーバールール"
 
-#: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Until"
 msgstr "終了日時"
+
+#: src/renderer/src/features/ai/Proposals.tsx
+msgid "Until {dueText}"
+msgstr "{dueText} まで"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Up to three actions, in selection order. The action menu includes Archive, Trash and Mark read. Changes apply to new notifications."
@@ -7198,11 +7237,11 @@ msgstr "AI アプリでできること"
 
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "When AI wants to archive, label, or mark as read, it goes into AI suggestions first and runs only after you approve."
-msgstr "AIがアーカイブ、ラベル付け、開封済みへの変更を行う場合、まずAIの提案に追加されます。承認後にのみ実行されます。"
+msgstr "AI がアーカイブ、ラベル付け、既読化を行うときは、まず「AI の提案」に追加され、あなたが承認した後にだけ実行されます。"
 
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "When you allow an account, questions and selected mail text, subjects, sender and recipient addresses are sent to Anthropic using your API key. Images, attachments and media stay on this device. Requests may incur API charges. Automatic summaries run only when you enable them for an account."
-msgstr "アカウントを許可すると、質問、選択したメール本文、件名、差出人と宛先のアドレスが、あなたのAPIキーを使ってAnthropicに送信されます。画像、添付ファイル、メディアはこのデバイスに保持されます。リクエストにはAPI料金が発生する場合があります。自動要約はアカウントごとに有効にした場合のみ実行されます。"
+msgstr "アカウントを許可すると、質問、選択したメール本文、件名、差出人と宛先のアドレスが、あなたの API キーを使って Anthropic に送信されます。画像、添付ファイル、メディアはこのデバイスに保持されます。リクエストには API 料金が発生する場合があります。自動要約はアカウントごとに有効にした場合のみ実行されます。"
 
 #: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "Which changes <0/>:"

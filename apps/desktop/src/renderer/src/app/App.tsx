@@ -29,6 +29,7 @@ import { useMailShortcuts } from "./use-mail-shortcuts";
 import { useNativeMenuBridge } from "./use-native-menu-bridge";
 import { usePaneNavigation } from "./use-pane-navigation";
 import { Assistant } from "../features/ai/AiPanel";
+import { OPEN_SETTINGS_EVENT } from "../features/ai/open-ai-settings";
 import { FolderActions } from "../features/organize/FolderActions";
 import {
   AddAccountDialog,
@@ -135,6 +136,15 @@ export function App({ composeId }: { composeId?: string }) {
     };
     window.addEventListener("openmail:optional-services", open);
     return () => window.removeEventListener("openmail:optional-services", open);
+  }, [setDialog]);
+  const [settingsTab, setSettingsTab] = useState<"ai" | null>(null);
+  useEffect(() => {
+    const open = () => {
+      setSettingsTab("ai");
+      setDialog("settings");
+    };
+    window.addEventListener(OPEN_SETTINGS_EVENT, open);
+    return () => window.removeEventListener(OPEN_SETTINGS_EVENT, open);
   }, [setDialog]);
   const [toast, setToast] = useState<ToastState | null>(null);
   const hideToast = useCallback(() => setToast(null), [setToast]);
@@ -971,11 +981,12 @@ export function App({ composeId }: { composeId?: string }) {
       {dialog === "settings" && (
         <Settings
           accounts={accountList}
-          initialTab={optionalAccountId ? "accounts" : "general"}
+          initialTab={optionalAccountId ? "accounts" : (settingsTab ?? "general")}
           optionalAccountId={optionalAccountId}
           onClose={() => {
             setDialog(null);
             setOptionalAccountId(null);
+            setSettingsTab(null);
           }}
           onAddAccount={() => setDialog("add")}
         />

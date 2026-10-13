@@ -177,7 +177,7 @@ msgstr "{name} больше не будет запускать MCP-сервер 
 
 #: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "{name} will start OpenMail's MCP server and read the accounts you allowed. Mail goes to {name} and the model provider it uses."
-msgstr "{name} будет запускать MCP-сервер OpenMail и читать разрешённые вами учётные записи. Почта передаётся в {name} и поставщику модели, которого оно использует."
+msgstr "{name} будет запускать MCP-сервер OpenMail и читать разрешённые вами учётные записи. Почта передаётся в {name} и поставщику модели, с которым работает {name}."
 
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "{op} {count, plural, one {# conversation} other {# conversations}}"
@@ -369,6 +369,10 @@ msgstr "Добавить учетную запись"
 msgid "Add an account on your Mac."
 msgstr "Добавьте учетную запись на своем Mac."
 
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Add an Anthropic API key in Settings → AI Access to summarize."
+msgstr "Чтобы получать краткие изложения, добавьте ключ API Anthropic в «Настройки → Доступ к ИИ»."
+
 #: src/renderer/src/lib/errors.ts
 msgid "Add an automatic reply message"
 msgstr "Добавить автоматическое ответное сообщение"
@@ -424,6 +428,10 @@ msgstr "Добавить в Контакты"
 #: src/renderer/src/app/WindowUi.tsx
 msgid "Add to Dictionary"
 msgstr "Добавить в словарь"
+
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Add your Anthropic API key in Settings → AI Access, then allow the accounts the assistant may read."
+msgstr "Добавьте ключ API Anthropic в «Настройки → Доступ к ИИ», затем разрешите учётные записи, которые может читать помощник."
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Add Your First Account"
@@ -519,11 +527,11 @@ msgstr "Модель ИИ недоступна."
 
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "AI permission to change mail"
-msgstr "Разрешение ИИ на смену почты"
+msgstr "Разрешение ИИ на изменение почты"
 
 #: src/renderer/src/features/ai/AiPanel.tsx
 msgid "AI request failed. Check account permissions and your API key, then try again."
-msgstr "Запрос ИИ не выполнен. Проверьте разрешения учётной записи и ключ API, затем повторите попытку."
+msgstr "Запрос к ИИ не выполнен. Проверьте разрешения учётной записи и ключ API, затем повторите попытку."
 
 #: src/renderer/src/lib/errors.ts
 msgid "AI request failed. Check your key and try again."
@@ -609,6 +617,10 @@ msgstr "Все сообщения, находящиеся в настоящее 
 msgid "Allow access from my tailnet"
 msgstr "Разрешить доступ из моего tailnet"
 
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Allow an account in Settings → AI Access to ask about its mail."
+msgstr "Разрешите учётную запись в «Настройки → Доступ к ИИ», чтобы задавать вопросы о её почте."
+
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Allow notifications"
 msgstr "Разрешить уведомления"
@@ -665,7 +677,7 @@ msgstr "Всегда загружайте изображения из {domain}."
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Always load remote images from"
-msgstr "Всегда загружайте удаленные изображения из"
+msgstr "Всегда загружать удалённые изображения от"
 
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 msgid "Always move messages from this sender to Focused"
@@ -698,6 +710,14 @@ msgstr "Вложение изменилось во время чтения. По
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "Anthropic API key"
 msgstr "Ключ API Anthropic"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Anthropic rejected the API key. Check it in Settings → AI Access."
+msgstr "Anthropic отклонил ключ API. Проверьте его в «Настройки → Доступ к ИИ»."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Anthropic's rate limit was reached. Wait a minute, then try again."
+msgstr "Достигнут лимит запросов Anthropic. Подождите минуту и повторите попытку."
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Any action flag"
@@ -982,6 +1002,10 @@ msgstr "Отчет об ошибке"
 msgid "Built-in AI"
 msgstr "Встроенный ИИ"
 
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "Built-in AI sends this account's subjects, addresses and message text to Anthropic with your API key. Connected AI apps can also read this account."
+msgstr "Встроенный ИИ отправляет в Anthropic с вашим ключом API темы, адреса и текст сообщений этой учётной записи. Подключённые ИИ-приложения тоже могут читать эту учётную запись."
+
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Bulleted list"
@@ -1033,35 +1057,35 @@ msgstr "Не удаётся найти почтовый сервер. Прове
 
 #: src/renderer/src/lib/errors.ts
 msgid "Can't find this account."
-msgstr "Не могу найти этот учётная запись."
+msgstr "Не удалось найти эту учётную запись."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Can't find this attachment."
-msgstr "Не могу найти это вложение."
+msgstr "Не удалось найти это вложение."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Can't find this draft."
-msgstr "Не могу найти этот черновик."
+msgstr "Не удалось найти этот черновик."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Can't find this message."
-msgstr "Не могу найти это сообщение."
+msgstr "Не удалось найти это сообщение."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Can't find this proposal."
-msgstr "Не могу найти это предложение."
+msgstr "Не удалось найти это предложение."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Can't find this signature."
-msgstr "Не могу найти эту подпись."
+msgstr "Не удалось найти эту подпись."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Can't find this space."
-msgstr "Не могу найти это место."
+msgstr "Не удалось найти это пространство."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Can't find this template."
-msgstr "Не могу найти этот шаблон."
+msgstr "Не удалось найти этот шаблон."
 
 #: src/renderer/src/app/App.tsx
 msgid "Can't open the draft: {reason}"
@@ -1070,6 +1094,10 @@ msgstr "Не могу открыть черновик: {reason}"
 #: src/renderer/src/app/App.tsx
 msgid "Can't open the message: {reason}"
 msgstr "Не могу открыть сообщение: {reason}"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Can't reach Anthropic. Check your internet connection."
+msgstr "Не удаётся подключиться к Anthropic. Проверьте подключение к интернету."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Can't reach the mail server right now."
@@ -1183,7 +1211,7 @@ msgstr "Проверить снова"
 
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 msgid "Check AI apps again"
-msgstr "Проверить ИИ-приложения снова"
+msgstr "Снова проверить ИИ-приложения"
 
 #: src/renderer/src/features/settings/sections/UpdateSettings.tsx
 msgid "Check for updates"
@@ -3400,7 +3428,7 @@ msgstr "Загрузить старые сообщения"
 
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Load remote content"
-msgstr "Загрузить удаленный контент"
+msgstr "Загрузить удалённый контент"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Loading attached message…"
@@ -4324,7 +4352,7 @@ msgstr "Нет подсказок"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "No suggestions waiting for review."
-msgstr "Никаких предложений, ожидающих рассмотрения."
+msgstr "Нет предложений, ожидающих рассмотрения."
 
 #: src/renderer/src/features/compose/components/Composer.tsx
 msgid "No templates yet. Use {token} for the first recipient's name."
@@ -4506,6 +4534,10 @@ msgstr "Открыть {name}"
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Open admin console"
 msgstr "Открыть консоль администратора"
+
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Open AI Access"
+msgstr "Открыть «Доступ к ИИ»"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Open attachments from"
@@ -5129,7 +5161,7 @@ msgstr "Обновить контакты"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "Reject"
-msgstr "Отклонять"
+msgstr "Отклонить"
 
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Reject suggestion"
@@ -5897,6 +5929,10 @@ msgstr "Сервер: всего / непрочитанные / переписк
 msgid "Server unavailable"
 msgstr "Сервер недоступен"
 
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Set up built-in AI"
+msgstr "Настроить встроенный ИИ"
+
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Set up by hand"
 msgstr "Настроить вручную"
@@ -6219,7 +6255,7 @@ msgstr "На этом Mac что-то другое уже использует T
 #: src/renderer/src/features/ai/TriageChip.tsx
 #: src/renderer/src/lib/errors.ts
 msgid "Something went wrong. Please try again."
-msgstr "Что-то пошло не так. Пожалуйста, попробуйте еще раз."
+msgstr "Что-то пошло не так. Повторите попытку."
 
 #: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "Something went wrong. Try again."
@@ -7014,10 +7050,13 @@ msgstr "Не поддерживается на этой платформе"
 msgid "Unsupported server rule"
 msgstr "Неподдерживаемое правило сервера"
 
-#: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Until"
 msgstr "До"
+
+#: src/renderer/src/features/ai/Proposals.tsx
+msgid "Until {dueText}"
+msgstr "До {dueText}"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Up to three actions, in selection order. The action menu includes Archive, Trash and Mark read. Changes apply to new notifications."
@@ -7194,11 +7233,11 @@ msgstr "Добро пожаловать в openmail. Выберите своег
 
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 msgid "What AI apps can do"
-msgstr "Что могут ИИ-приложения"
+msgstr "Что могут делать ИИ-приложения"
 
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "When AI wants to archive, label, or mark as read, it goes into AI suggestions first and runs only after you approve."
-msgstr "Для архивирования, добавления ярлыка или отярлыки о прочтении ИИ сначала создаёт предложение. Действие выполняется только после вашего одобрения."
+msgstr "Если ИИ хочет архивировать письмо, добавить ярлык или пометить письмо прочитанным, он сначала создаёт предложение ИИ. Действие выполняется только после вашего одобрения."
 
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "When you allow an account, questions and selected mail text, subjects, sender and recipient addresses are sent to Anthropic using your API key. Images, attachments and media stay on this device. Requests may incur API charges. Automatic summaries run only when you enable them for an account."

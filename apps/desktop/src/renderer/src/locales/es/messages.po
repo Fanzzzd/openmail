@@ -369,6 +369,10 @@ msgstr "Agregar cuenta"
 msgid "Add an account on your Mac."
 msgstr "Agrega una cuenta en tu Mac."
 
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Add an Anthropic API key in Settings → AI Access to summarize."
+msgstr "Añade una clave API de Anthropic en Ajustes → Acceso a IA para obtener resúmenes."
+
 #: src/renderer/src/lib/errors.ts
 msgid "Add an automatic reply message"
 msgstr "Agregar un mensaje de respuesta automática"
@@ -393,7 +397,7 @@ msgstr "Agregar cuenta de correo electrónico"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "Add label"
-msgstr "Agregar etiqueta"
+msgstr "Añadir etiqueta"
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Add labels"
@@ -424,6 +428,10 @@ msgstr "Añadir a Contactos"
 #: src/renderer/src/app/WindowUi.tsx
 msgid "Add to Dictionary"
 msgstr "Añadir al diccionario"
+
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Add your Anthropic API key in Settings → AI Access, then allow the accounts the assistant may read."
+msgstr "Añade tu clave API de Anthropic en Ajustes → Acceso a IA y luego permite las cuentas que el asistente puede leer."
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Add Your First Account"
@@ -609,6 +617,10 @@ msgstr "Todos los mensajes que se encuentren actualmente en esta carpeta, inclui
 msgid "Allow access from my tailnet"
 msgstr "Permitir acceso desde mi tailnet"
 
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Allow an account in Settings → AI Access to ask about its mail."
+msgstr "Permite una cuenta en Ajustes → Acceso a IA para hacer preguntas sobre su correo."
+
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Allow notifications"
 msgstr "Permitir notificaciones"
@@ -665,7 +677,7 @@ msgstr "Cargar siempre imágenes desde {domain}"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Always load remote images from"
-msgstr "Cargue siempre imágenes remotas desde"
+msgstr "Cargar siempre imágenes remotas de"
 
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 msgid "Always move messages from this sender to Focused"
@@ -698,6 +710,14 @@ msgstr "Un archivo adjunto cambió durante la lectura. Intenta añadirlo de nuev
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "Anthropic API key"
 msgstr "Clave API de Anthropic"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Anthropic rejected the API key. Check it in Settings → AI Access."
+msgstr "Anthropic rechazó la clave API. Revísala en Ajustes → Acceso a IA."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Anthropic's rate limit was reached. Wait a minute, then try again."
+msgstr "Se alcanzó el límite de solicitudes de Anthropic. Espera un minuto y vuelve a intentarlo."
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Any action flag"
@@ -982,6 +1002,10 @@ msgstr "Informe de error"
 msgid "Built-in AI"
 msgstr "IA integrada"
 
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "Built-in AI sends this account's subjects, addresses and message text to Anthropic with your API key. Connected AI apps can also read this account."
+msgstr "La IA integrada envía a Anthropic, con tu clave API, los asuntos, las direcciones y el texto de los mensajes de esta cuenta. Las aplicaciones de IA conectadas también pueden leer esta cuenta."
+
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Bulleted list"
@@ -1033,35 +1057,35 @@ msgstr "No se encuentra el servidor de correo. Compruebe el nombre del servidor 
 
 #: src/renderer/src/lib/errors.ts
 msgid "Can't find this account."
-msgstr "No puedo encontrar esta cuenta."
+msgstr "No se encuentra esta cuenta."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Can't find this attachment."
-msgstr "No puedo encontrar este archivo adjunto."
+msgstr "No se encuentra este archivo adjunto."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Can't find this draft."
-msgstr "No puedo encontrar este borrador."
+msgstr "No se encuentra este borrador."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Can't find this message."
-msgstr "No puedo encontrar este mensaje."
+msgstr "No se encuentra este mensaje."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Can't find this proposal."
-msgstr "No puedo encontrar esta propuesta."
+msgstr "No se encuentra esta propuesta."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Can't find this signature."
-msgstr "No puedo encontrar esta firma."
+msgstr "No se encuentra esta firma."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Can't find this space."
-msgstr "No puedo encontrar este espacio."
+msgstr "No se encuentra este espacio."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Can't find this template."
-msgstr "No puedo encontrar esta plantilla."
+msgstr "No se encuentra esta plantilla."
 
 #: src/renderer/src/app/App.tsx
 msgid "Can't open the draft: {reason}"
@@ -1070,6 +1094,10 @@ msgstr "No se puede abrir el borrador: {reason}"
 #: src/renderer/src/app/App.tsx
 msgid "Can't open the message: {reason}"
 msgstr "No se puede abrir el mensaje: {reason}"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Can't reach Anthropic. Check your internet connection."
+msgstr "No se puede conectar con Anthropic. Comprueba tu conexión a Internet."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Can't reach the mail server right now."
@@ -1385,7 +1413,7 @@ msgstr "Cerrar búsqueda"
 
 #: src/main/app/native-i18n.ts
 msgid "Close other OpenMail processes (CLI/MCP), then restart this app and try recovery again."
-msgstr "Cierre otros procesos de OpenMail (CLI/MCP), luego reinicie esta aplicación e intente la recuperación nuevamente."
+msgstr "Cierra los demás procesos de OpenMail (CLI/MCP), reinicia esta aplicación y vuelve a intentar la recuperación."
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -1542,7 +1570,7 @@ msgstr "Grupo de contacto"
 
 #: src/renderer/src/features/settings/sections/ContactSettings.tsx
 msgid "Contact refresh failed. Cached suggestions remain available."
-msgstr "Error al actualizar el contacto. Las sugerencias almacenadas en caché siguen disponibles."
+msgstr "Error al actualizar los contactos. Las sugerencias almacenadas en caché siguen disponibles."
 
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 msgid "Contacts"
@@ -3659,7 +3687,7 @@ msgstr "El acceso MCP sigue el consentimiento de IA de esta cuenta. Las cuentas 
 #. readOnly is the translated Read only write-mode label above.
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "MCP can propose drafts only when the write mode is not \"{readOnly}\". You review drafts and confirm sending in the app."
-msgstr "MCP solo puede proponer borradores si el modo de escritura no es \"{readOnly}\". Revisas los borradores y confirmas el envío en la aplicación."
+msgstr "MCP solo puede proponer borradores si el modo de escritura no es «{readOnly}». Revisas los borradores y confirmas el envío en la aplicación."
 
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
 msgid "Medium"
@@ -4506,6 +4534,10 @@ msgstr "Abrir {name}"
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Open admin console"
 msgstr "Abrir consola de administración"
+
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Open AI Access"
+msgstr "Abrir Acceso a IA"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Open attachments from"
@@ -5897,6 +5929,10 @@ msgstr "Servidor: total / no leídos / conversaciones"
 msgid "Server unavailable"
 msgstr "Servidor no disponible"
 
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Set up built-in AI"
+msgstr "Configurar la IA integrada"
+
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Set up by hand"
 msgstr "Configurar manualmente"
@@ -6213,13 +6249,13 @@ msgstr "Se omitieron algunos predicados del servidor para preservar las coincide
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Something else on this Mac already uses Tailscale Serve on this port. OpenMail won't replace it. Remove that mapping or use a Tailscale Service name below."
-msgstr "Otra cosa en este Mac ya usa Tailscale Serve en este puerto. OpenMail no la reemplazará. Quita esa asignación o usa abajo un nombre de Tailscale Service."
+msgstr "Otro proceso de este Mac ya usa Tailscale Serve en este puerto. OpenMail no lo reemplazará. Quita esa asignación o usa abajo un nombre de Tailscale Service."
 
 #: src/renderer/src/app/use-native-menu-bridge.ts
 #: src/renderer/src/features/ai/TriageChip.tsx
 #: src/renderer/src/lib/errors.ts
 msgid "Something went wrong. Please try again."
-msgstr "Algo salió mal. Por favor inténtalo de nuevo."
+msgstr "Algo salió mal. Inténtalo de nuevo."
 
 #: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "Something went wrong. Try again."
@@ -6476,7 +6512,7 @@ msgstr "Nombre del Tailscale Service"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Tailscale tells OpenMail who is visiting. Only these tailnet logins get in. Removing a login disconnects its browsers and keeps them out. The list starts with this Mac's own login."
-msgstr "Tailscale le dice a OpenMail quién visita. Solo entran estos inicios de sesión de tailnet. Quitar un inicio de sesión desconecta sus navegadores y los deja fuera. La lista empieza con el inicio de sesión de este Mac."
+msgstr "Tailscale indica a OpenMail quién accede. Solo entran estos inicios de sesión de tailnet. Quitar un inicio de sesión desconecta sus navegadores y les impide volver a entrar. La lista empieza con el inicio de sesión de este Mac."
 
 #: src/renderer/src/features/compose/components/ComposerAi.tsx
 msgid "Target language"
@@ -7014,10 +7050,13 @@ msgstr "No compatible con esta plataforma"
 msgid "Unsupported server rule"
 msgstr "Regla de servidor no compatible"
 
-#: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Until"
 msgstr "Hasta"
+
+#: src/renderer/src/features/ai/Proposals.tsx
+msgid "Until {dueText}"
+msgstr "Hasta el {dueText}"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Up to three actions, in selection order. The action menu includes Archive, Trash and Mark read. Changes apply to new notifications."

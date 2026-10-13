@@ -369,6 +369,10 @@ msgstr "Přidat účet"
 msgid "Add an account on your Mac."
 msgstr "Přidejte účet na svém Macu."
 
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Add an Anthropic API key in Settings → AI Access to summarize."
+msgstr "Pro shrnutí přidejte klíč API Anthropic v Nastavení → Přístup AI."
+
 #: src/renderer/src/lib/errors.ts
 msgid "Add an automatic reply message"
 msgstr "Přidejte zprávu s automatickou odpovědí"
@@ -424,6 +428,10 @@ msgstr "Přidat do Kontaktů"
 #: src/renderer/src/app/WindowUi.tsx
 msgid "Add to Dictionary"
 msgstr "Přidat do slovníku"
+
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Add your Anthropic API key in Settings → AI Access, then allow the accounts the assistant may read."
+msgstr "Přidejte svůj klíč API Anthropic v Nastavení → Přístup AI a pak povolte účty, které asistent smí číst."
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Add Your First Account"
@@ -544,7 +552,7 @@ msgstr "Návrh AI"
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "AI suggestions"
-msgstr "návrhy AI"
+msgstr "Návrhy AI"
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -609,6 +617,10 @@ msgstr "Všechny zprávy aktuálně v této složce, včetně nenačtených zpr�
 msgid "Allow access from my tailnet"
 msgstr "Povolit přístup z mého tailnetu"
 
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Allow an account in Settings → AI Access to ask about its mail."
+msgstr "Povolte účet v Nastavení → Přístup AI, abyste se mohli ptát na jeho poštu."
+
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Allow notifications"
 msgstr "Povolit oznámení"
@@ -665,7 +677,7 @@ msgstr "Vždy načítat obrázky z {domain}"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Always load remote images from"
-msgstr "Vzdálené obrázky vždy načtěte z"
+msgstr "Vždy načítat vzdálené obrázky od"
 
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 msgid "Always move messages from this sender to Focused"
@@ -698,6 +710,14 @@ msgstr "Příloha se během načítání změnila. Zkuste ji přidat znovu."
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "Anthropic API key"
 msgstr "Klíč API Anthropic"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Anthropic rejected the API key. Check it in Settings → AI Access."
+msgstr "Anthropic odmítl klíč API. Zkontrolujte ho v Nastavení → Přístup AI."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Anthropic's rate limit was reached. Wait a minute, then try again."
+msgstr "Byl dosažen limit požadavků Anthropic. Počkejte minutu a zkuste to znovu."
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Any action flag"
@@ -758,7 +778,7 @@ msgstr "Schválit návrh"
 
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 msgid "Apps not found on this Mac"
-msgstr "Aplikace nenalezené v tomto Macu"
+msgstr "Aplikace, které na tomto Macu nebyly nalezeny"
 
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
@@ -982,6 +1002,10 @@ msgstr "Hlášení chyby"
 msgid "Built-in AI"
 msgstr "Vestavěná AI"
 
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "Built-in AI sends this account's subjects, addresses and message text to Anthropic with your API key. Connected AI apps can also read this account."
+msgstr "Vestavěná AI odesílá do Anthropic s vaším klíčem API předměty, adresy a text zpráv tohoto účtu. Připojené aplikace AI mohou tento účet také číst."
+
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Bulleted list"
@@ -1057,7 +1081,7 @@ msgstr "Tento podpis nelze najít."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Can't find this space."
-msgstr "Toto místo nelze najít."
+msgstr "Tento prostor nelze najít."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Can't find this template."
@@ -1070,6 +1094,10 @@ msgstr "Koncept nelze otevřít: {reason}"
 #: src/renderer/src/app/App.tsx
 msgid "Can't open the message: {reason}"
 msgstr "Zprávu nelze otevřít: {reason}"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Can't reach Anthropic. Check your internet connection."
+msgstr "Nelze se připojit k Anthropic. Zkontrolujte připojení k internetu."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Can't reach the mail server right now."
@@ -1632,7 +1660,7 @@ msgstr "Kopírovat"
 #: src/renderer/src/features/compose/components/RecipientField.tsx
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Copy address"
-msgstr "Zkopírujte adresu"
+msgstr "Kopírovat adresu"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Copy command for {name}"
@@ -4229,7 +4257,7 @@ msgstr "Tento soubor nelze otevřít žádnou aplikací"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "No browser has opened OpenMail."
-msgstr "OpenMail zatím neotevřel žádný prohlížeč."
+msgstr "OpenMail zatím nebyl otevřen v žádném prohlížeči."
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "No copy"
@@ -4506,6 +4534,10 @@ msgstr "Otevřít {name}"
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Open admin console"
 msgstr "Otevřít administrační konzoli"
+
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Open AI Access"
+msgstr "Otevřít Přístup AI"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Open attachments from"
@@ -5246,7 +5278,7 @@ msgstr "Odebrat klíč"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "Remove label"
-msgstr "Odstraňte štítek"
+msgstr "Odebrat štítek"
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Remove labels"
@@ -5897,6 +5929,10 @@ msgstr "Server: celkem / nepřečtené / konverzace"
 msgid "Server unavailable"
 msgstr "Server není dostupný"
 
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Set up built-in AI"
+msgstr "Nastavit vestavěnou AI"
+
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Set up by hand"
 msgstr "Nastavit ručně"
@@ -6219,7 +6255,7 @@ msgstr "Tailscale Serve na tomto portu už na tomto Macu používá něco jinéh
 #: src/renderer/src/features/ai/TriageChip.tsx
 #: src/renderer/src/lib/errors.ts
 msgid "Something went wrong. Please try again."
-msgstr "Něco se pokazilo. Zkuste to prosím znovu."
+msgstr "Něco se pokazilo. Zkuste to znovu."
 
 #: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "Something went wrong. Try again."
@@ -6452,7 +6488,7 @@ msgstr "Tailscale"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Tailscale isn't connected"
-msgstr "Tailscale není připojen"
+msgstr "Tailscale není připojený"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Tailscale isn't connected. Open Tailscale on this Mac and sign in."
@@ -6460,7 +6496,7 @@ msgstr "Tailscale není připojený. Otevřete Tailscale na tomto Macu a přihla
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Tailscale isn't installed"
-msgstr "Tailscale není nainstalován"
+msgstr "Tailscale není nainstalovaný"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Tailscale isn't installed on this Mac."
@@ -7014,10 +7050,13 @@ msgstr "Na této platformě není podporováno"
 msgid "Unsupported server rule"
 msgstr "Nepodporované pravidlo serveru"
 
-#: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Until"
 msgstr "Do"
+
+#: src/renderer/src/features/ai/Proposals.tsx
+msgid "Until {dueText}"
+msgstr "Do {dueText}"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Up to three actions, in selection order. The action menu includes Archive, Trash and Mark read. Changes apply to new notifications."

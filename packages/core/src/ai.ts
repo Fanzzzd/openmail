@@ -109,3 +109,14 @@ export const AI_TRIAGE_SYSTEM =
 export function mailData(value: unknown): string {
   return `<mail-data>\n${JSON.stringify(value).replaceAll("<", "\\u003c").replaceAll(">", "\\u003e")}\n</mail-data>`;
 }
+
+/** The sentences the app shows for each kind of model failure; the renderer translates them. */
+export const AI_ERRORS = {
+  noKey: "Save an Anthropic API key in AI settings.",
+  noConsent: "Allow sending mail text for each selected account in AI settings.",
+  invalidKey: "Anthropic rejected the API key. Check it in Settings → AI Access.",
+  rateLimited: "Anthropic's rate limit was reached. Wait a minute, then try again.",
+  offline: "Can't reach Anthropic. Check your internet connection.",
+  unavailable: "AI model is unavailable.",
+  failed: "AI request failed. Check your key and try again.",
+} as const;

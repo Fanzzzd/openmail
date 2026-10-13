@@ -22,6 +22,7 @@ import { useCallback, useEffect, useEffectEvent, useState } from "react";
 
 import type { MailOp } from "../../../shared/api";
 import { ThreadView, useThreadPrint } from "../features/reader/Reader";
+import { OPEN_SETTINGS_EVENT } from "../features/ai/open-ai-settings";
 import { readerThreadKey } from "../features/reader/reader-selection";
 import { useBatchUndo } from "../state/undo";
 import { FocusedInboxPermission } from "../features/organize/FocusedInboxActions";
@@ -83,6 +84,15 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
   const [labelPicker, setLabelPicker] = useState(false);
   const [pickerMode, setPickerMode] = useState<"label" | "move">("label");
   const [dialog, setDialog] = useState<"settings" | "help" | "add" | null>(null);
+  const [settingsTab, setSettingsTab] = useState<"ai" | null>(null);
+  useEffect(() => {
+    const open = () => {
+      setSettingsTab("ai");
+      setDialog("settings");
+    };
+    window.addEventListener(OPEN_SETTINGS_EVENT, open);
+    return () => window.removeEventListener(OPEN_SETTINGS_EVENT, open);
+  }, []);
   const subject = messages?.at(-1)?.subject;
 
   useEffect(() => {
@@ -349,7 +359,11 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
       {dialog === "settings" && (
         <Settings
           accounts={accounts}
-          onClose={() => setDialog(null)}
+          initialTab={settingsTab ?? "general"}
+          onClose={() => {
+            setDialog(null);
+            setSettingsTab(null);
+          }}
           onAddAccount={() => setDialog("add")}
         />
       )}

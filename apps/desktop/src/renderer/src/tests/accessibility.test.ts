@@ -832,6 +832,7 @@ it("announces AI state changes without putting streamed text in a live region", 
     model: "",
     truncated: false,
     status: "running",
+    error: null,
     start: vi.fn(),
     cancel: vi.fn(),
   } satisfies Parameters<typeof AiOutput>[0]["result"];

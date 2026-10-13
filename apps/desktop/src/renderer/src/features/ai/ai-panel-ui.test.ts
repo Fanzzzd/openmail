@@ -5,11 +5,12 @@ import { I18nProvider } from "@lingui/react";
 import { Effect, Stream } from "effect";
 import { AsyncResult } from "effect/reactivity";
 import type { AiEvent, AiTriage, ComposeBody } from "@openmail/core/schema";
-import { DEFAULT_PREFS } from "@openmail/core/schema";
+import { AI_ERRORS, DEFAULT_PREFS, InvalidInput, ProviderError } from "@openmail/core/schema";
 import { testDom } from "../../test-support/test-dom";
 
 const aiQueries = vi.hoisted(() => ({ tags: new Array<string>() }));
 const compose = vi.hoisted(() => ({ requests: new Array<unknown>(), truncated: false }));
+const ai = vi.hoisted(() => ({ keyConfigured: true }));
 const triage = vi.hoisted((): { row: AiTriage | null; decisions: unknown[] } => ({
   row: null,
   decisions: [],
@@ -23,7 +24,7 @@ vi.mock("@effect/atom-react", async (original) => ({
       atom === "AiSettings"
         ? {
             model: "claude-sonnet-5-5",
-            keyConfigured: true,
+            keyConfigured: ai.keyConfigured,
             accounts: [
               { accountId: "gmail:me", allowed: true, autoSummaries: false, autoTriage: true },
             ],
@@ -102,6 +103,7 @@ vi.mock("../../ui/Dialog", () => ({
   Dialog: ({ children }: { children: ReactNode }) => createElement("section", null, children),
 }));
 import { AiOutput, Assistant, ThreadSummary } from "./AiPanel";
+import { OPEN_SETTINGS_EVENT } from "./open-ai-settings";
 import { ComposerAi } from "../compose/components/ComposerAi";
 import { TriageChip } from "./TriageChip";
 
@@ -344,6 +346,7 @@ it("AI answers render URLs and phone numbers as plain text", () => {
             model: "",
             truncated: false,
             status: "done",
+            error: null,
             start: vi.fn(),
             cancel: vi.fn(),
           },
@@ -371,6 +374,110 @@ it("unapproved reader never subscribes to summary or triage RPCs", () => {
     expect(aiQueries.tags).not.toContain("AiSummary");
     expect(aiQueries.tags).not.toContain("AiTriage");
   } finally {
+    dom.dispose();
+  }
+});
+
+const failedOutput = (error: InvalidInput | ProviderError | null) =>
+  localize(
+    createElement(AiOutput, {
+      result: {
+        text: "",
+        sources: [{ id: "gmail:me/m1", subject: "Quarterly plan" }],
+        model: "",
+        truncated: false,
+        status: "failed",
+        error,
+        start: vi.fn(),
+        cancel: vi.fn(),
+      },
+      openSource: vi.fn(),
+    }),
+  );
+
+it("AI failures name the cause, and key or consent problems link to AI Access", () => {
+  const cases = [
+    [new InvalidInput({ message: AI_ERRORS.noKey }), AI_ERRORS.noKey, true],
+    [new ProviderError({ message: AI_ERRORS.invalidKey, status: 401 }), AI_ERRORS.invalidKey, true],
+    [
+      new ProviderError({ message: AI_ERRORS.rateLimited, status: 429 }),
+      AI_ERRORS.rateLimited,
+      false,
+    ],
+    [
+      new ProviderError({ message: AI_ERRORS.offline, reason: "connection" }),
+      AI_ERRORS.offline,
+      false,
+    ],
+    [new InvalidInput({ message: AI_ERRORS.unavailable }), AI_ERRORS.unavailable, false],
+  ] as const;
+  for (const [error, text, link] of cases) {
+    const dom = testDom();
+    try {
+      const opened = vi.fn();
+      dom.window.addEventListener(OPEN_SETTINGS_EVENT, opened);
+      vi.stubGlobal("CustomEvent", dom.window.CustomEvent);
+      dom.render(failedOutput(error));
+      const alert = dom.element.querySelector('[role="alert"]');
+      expect(alert?.textContent).toContain(text);
+      const button = Array.from(alert?.querySelectorAll("button") ?? []).find(
+        (item) => item.textContent === "Open AI Access",
+      );
+      expect(Boolean(button), text).toBe(link);
+      if (button) {
+        act(() => button.click());
+        expect(opened).toHaveBeenCalledTimes(1);
+      }
+    } finally {
+      dom.dispose();
+    }
+  }
+});
+
+it("AI sources show the subject without the raw message id", () => {
+  const dom = testDom();
+  try {
+    dom.render(failedOutput(null));
+    const source = Array.from(dom.element.querySelectorAll("button")).find((item) =>
+      item.textContent.includes("Quarterly plan"),
+    );
+    expect(source?.textContent).toBe("Quarterly plan");
+    expect(dom.element.textContent).not.toContain("gmail:me/m1");
+  } finally {
+    dom.dispose();
+  }
+});
+
+it("without an API key, Summarize explains why it is off and the assistant shows setup", () => {
+  ai.keyConfigured = false;
+  const dom = testDom();
+  try {
+    dom.render(
+      localize(createElement(ThreadSummary, { id: "gmail:me/m1", accountId: "gmail:me" })),
+    );
+    const summarize = dom.element.querySelector("button");
+    expect(summarize?.disabled).toBe(true);
+    expect(dom.element.textContent).toContain("Add an Anthropic API key in Settings → AI Access");
+    expect(dom.element.textContent).toContain("Open AI Access");
+    dom.render(
+      localize(createElement(Assistant, { accounts: [], proposals: [], onOpenDraft: vi.fn() })),
+    );
+    const event = new dom.window.Event("keydown", { bubbles: true, cancelable: true });
+    Object.assign(event, {
+      key: "j",
+      metaKey: true,
+      ctrlKey: false,
+      altKey: false,
+      shiftKey: false,
+    });
+    vi.stubGlobal("navigator", { platform: "MacIntel" });
+    act(() => {
+      dom.window.dispatchEvent(event);
+    });
+    expect(dom.element.textContent).toContain("Set up built-in AI");
+    expect(dom.element.textContent).toContain("Add your Anthropic API key");
+  } finally {
+    ai.keyConfigured = true;
     dom.dispose();
   }
 });
