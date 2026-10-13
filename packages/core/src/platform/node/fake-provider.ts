@@ -8,7 +8,7 @@ import {
 } from "../../calendar/calendar.js";
 import { Effect, Option, Stream } from "effect";
 
-import { attachmentFromRaw } from "../../attachments.js";
+import { attachmentFromRaw } from "../../mime/attachments.js";
 import { MailCodec, type MailCodecPort } from "../mail-codec.js";
 import { nodeMailCodec } from "./mail-codec.js";
 import { buildMime } from "./compose.js";

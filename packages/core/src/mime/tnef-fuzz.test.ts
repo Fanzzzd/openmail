@@ -1,7 +1,7 @@
 import * as fc from "fast-check";
 import { expect, it } from "vitest";
 import { decodeTnef } from "./tnef.js";
-import { InvalidInput } from "./domain/errors.js";
+import { InvalidInput } from "../domain/errors.js";
 
 const options = {
   seed: 0x520054,

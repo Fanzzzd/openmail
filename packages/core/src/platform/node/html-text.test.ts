@@ -5,7 +5,7 @@ import { Effect, type Layer, Schema } from "effect";
 import { expect, it } from "vitest";
 // NodePlatform resolves the worker next to itself, which only the build has.
 import { NodePlatform } from "../../../dist/platform/node/platform-node.js";
-import { htmlToText } from "../../mime.js";
+import { htmlToText } from "../../mime/mime.js";
 import { GraphMessage } from "../../providers/outlook/graph.js";
 import { graphBody, parseGraphMessage } from "../../providers/outlook/parse.js";
 import { hostileHtml, nestedHtml } from "../../parser-fuzz-corpus.js";
@@ -15,7 +15,7 @@ import { NodeHtmlText, strippedHtmlText } from "./html-text.js";
 
 // The source pool runs the compiled worker, the same file production ships.
 const workerUrl = new URL("../../../dist/platform/node/html-worker.js", import.meta.url);
-const readerFixtures = new URL("../../fixtures/reader/", import.meta.url);
+const readerFixtures = new URL("../../../test-support/fixtures/reader/", import.meta.url);
 const samples = [
   ...readdirSync(readerFixtures).map((name) => readFileSync(new URL(name, readerFixtures), "utf8")),
   ...hostileHtml,

@@ -24,7 +24,7 @@ export * from "./trackers.js";
 export * from "./domain/organization.js";
 export * from "./search.js";
 
-export { htmlToText } from "./mime.js";
+export { htmlToText } from "./mime/mime.js";
 
 export * from "./media.js";
 export * from "./calendar/calendar.js";
@@ -42,13 +42,13 @@ export * from "./compose/recipients.js";
 export * from "./compose/compose-sender.js";
 export * from "./domain/folder-actions.js";
 
-export * from "./attachment-policy.js";
+export * from "./mime/attachment-policy.js";
 
 export * from "./compose/compose-find.js";
 
-export * from "./attachment-view.js";
+export * from "./mime/attachment-view.js";
 
-export * from "./attachment-filename.js";
+export * from "./mime/attachment-filename.js";
 
 export * from "./compose/compose-paste.js";
 export * from "./feedback.js";
@@ -67,7 +67,7 @@ export * from "./visible-text.js";
 
 export * from "./link-security.js";
 
-export * from "./attachment-import.js";
+export * from "./mime/attachment-import.js";
 
 export * from "./providers/optional-services.js";
 

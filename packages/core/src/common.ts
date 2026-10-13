@@ -45,12 +45,12 @@ export * from "./compose/recipients.js";
 
 export * from "./compose/compose-sender.js";
 
-export * from "./attachment-policy.js";
+export * from "./mime/attachment-policy.js";
 
-export * from "./attachment-view.js";
-export * from "./tnef.js";
+export * from "./mime/attachment-view.js";
+export * from "./mime/tnef.js";
 
-export * from "./attachment-filename.js";
+export * from "./mime/attachment-filename.js";
 
 export * from "./feedback.js";
 
@@ -74,7 +74,7 @@ export * from "./platform/mail-codec.js";
 export * from "./platform/runtime.js";
 export * from "./platform/cache-storage.js";
 
-export * from "./attachment-import.js";
+export * from "./mime/attachment-import.js";
 export * from "./reader-sanitize.js";
 
 export * from "./sync/sync-health.js";

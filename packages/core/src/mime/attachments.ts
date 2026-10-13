@@ -1,13 +1,13 @@
 import { stripMessageIdBrackets } from "./message-id.js";
-import { Buffer } from "./platform/bytes.js";
+import { Buffer } from "../platform/bytes.js";
 /**
  * Attachment lookup shared by the provider adapters, and parts read from raw
  * MIME: inline images for the reader and a fallback for attachment content.
  */
 import { Effect } from "effect";
-import { parseMime } from "./platform/mail-codec.js";
+import { parseMime } from "../platform/mail-codec.js";
 
-import { ProviderError } from "./domain/errors.js";
+import { ProviderError } from "../domain/errors.js";
 
 /**
  * Which attachment of a message to fetch, as listed on the stored message.

@@ -19,7 +19,7 @@ import type {
   NamedSignatureInput,
   SignatureDefault,
 } from "../compose/signatures.js";
-import type { ReaderAttachment, EmbeddedMessage } from "../attachment-view.js";
+import type { ReaderAttachment, EmbeddedMessage } from "../mime/attachment-view.js";
 import type { FolderScope, DeleteFolder } from "../domain/folder-actions.js";
 import type { DerivedChunk, IndexingProgress } from "../media.js";
 /**

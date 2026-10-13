@@ -1,5 +1,5 @@
 import { Effect, Option } from "effect";
-import { attachmentRef, MAX_INLINE_BYTES, MEDIA_RAW_TOO_LARGE } from "../attachments.js";
+import { attachmentRef, MAX_INLINE_BYTES, MEDIA_RAW_TOO_LARGE } from "../mime/attachments.js";
 import { type Message } from "../domain/domain.js";
 import { InvalidInput, NotFound } from "../domain/errors.js";
 import { type MailboxDependencies, type MailboxRuntimeState } from "./mailbox-runtime.js";
@@ -8,7 +8,7 @@ import { type Mailbox } from "./mailbox.js";
 import { type DerivedChunk, MediaError } from "../media.js";
 import { modelContext } from "../model-view.js";
 import { Buffer } from "../platform/bytes.js";
-import { makeReaderAttachments } from "../reader-attachments.js";
+import { makeReaderAttachments } from "../mime/reader-attachments.js";
 import { gmailThreadUrl, officialMessageUrl, validMessageProviderId } from "../reading.js";
 import { parseSearchQuery, quoteSearchValue, semanticRankFusion } from "../search.js";
 import { parseStableReference, privateMailLink } from "../system.js";

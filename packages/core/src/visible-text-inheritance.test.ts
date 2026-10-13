@@ -2,7 +2,7 @@ import { expect, it } from "vitest";
 import { visibleHtmlText, messageModelText } from "./visible-text.js";
 import { createVisibleTextTrace } from "./visible-text-diagnostics.js";
 import { sanitizeReaderHtml } from "./reader-sanitize.js";
-import { htmlToText } from "./mime.js";
+import { htmlToText } from "./mime/mime.js";
 import { modelContext } from "./model-view.js";
 import type { Message } from "./domain/domain.js";
 

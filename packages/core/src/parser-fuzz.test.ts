@@ -7,7 +7,7 @@ import {
   decodeUtf8First,
   parseAddressList,
   htmlToText,
-} from "./mime.js";
+} from "./mime/mime.js";
 import { parseCalendar } from "./calendar/invites.js";
 import { structuredMailEvents } from "./calendar/structured-events.js";
 import { richComposeBody, remoteComposeBody } from "./compose/compose-body.js";
@@ -25,7 +25,7 @@ import {
 import { messageSecurity } from "./message-security.js";
 import { parseSearchExpression, parseSearchQuery, searchInputError } from "./search.js";
 import { InvalidInput } from "./domain/errors.js";
-import { attachmentFilename } from "./attachment-filename.js";
+import { attachmentFilename } from "./mime/attachment-filename.js";
 import { hostileHtml, htmlTokens, nestedHtml } from "./parser-fuzz-corpus.js";
 
 const options = {

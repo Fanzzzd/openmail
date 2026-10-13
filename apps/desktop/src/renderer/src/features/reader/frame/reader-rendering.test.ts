@@ -7,7 +7,7 @@ import { desktopRoot } from "../../../test-support/paths";
 
 const fixture = (name: string) =>
   readFileSync(
-    resolve(desktopRoot, `../../packages/core/src/fixtures/reader/${name}.html`),
+    resolve(desktopRoot, `../../packages/core/test-support/fixtures/reader/${name}.html`),
     "utf8",
   );
 function render(input: string): HTMLElement {

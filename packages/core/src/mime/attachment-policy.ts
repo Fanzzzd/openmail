@@ -1,5 +1,5 @@
-import type { OutgoingAttachment, OutgoingMessage, Provider } from "./domain/domain.js";
-import { Buffer } from "./platform/bytes.js";
+import type { OutgoingAttachment, OutgoingMessage, Provider } from "../domain/domain.js";
+import { Buffer } from "../platform/bytes.js";
 
 // https://support.google.com/mail/answer/6590
 const GMAIL_BLOCKED = new Set(

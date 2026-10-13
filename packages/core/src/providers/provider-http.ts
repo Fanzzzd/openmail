@@ -5,7 +5,7 @@ import {
   type HttpClient,
   type HttpClientResponse,
 } from "effect/http";
-import { MEDIA_RAW_TOO_LARGE } from "../attachments.js";
+import { MEDIA_RAW_TOO_LARGE } from "../mime/attachments.js";
 import { AuthError, PermanentError, ProviderError } from "../domain/errors.js";
 import { Buffer } from "../platform/bytes.js";
 import { TextDecoder } from "../platform/text-decoder.js";

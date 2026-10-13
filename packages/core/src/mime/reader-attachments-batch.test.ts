@@ -2,16 +2,16 @@ import { readFileSync } from "node:fs";
 import { Effect } from "effect";
 import { expect, it, vi } from "vitest";
 import { makeReaderAttachments as unboundReader } from "./reader-attachments.js";
-import { MailCodec } from "./platform/mail-codec.js";
-import { NodeRuntime } from "./platform/node/runtime.js";
+import { MailCodec } from "../platform/mail-codec.js";
+import { NodeRuntime } from "../platform/node/runtime.js";
 const codec = await Effect.runPromise(MailCodec.pipe(Effect.provide(NodeRuntime)));
 const makeReaderAttachments = (
   attachment: Parameters<typeof unboundReader>[0],
   thread: Parameters<typeof unboundReader>[1],
 ) => unboundReader(attachment, thread, codec);
 import { AttachmentCache } from "./attachment-cache.js";
-import { buildMime } from "./platform/node/compose.js";
-import type { Message } from "./domain/domain.js";
+import { buildMime } from "../platform/node/compose.js";
+import type { Message } from "../domain/domain.js";
 
 const message = (data: Uint8Array): Message => ({
   id: "message",
@@ -32,7 +32,9 @@ const message = (data: Uint8Array): Message => ({
   attachments: [{ filename: "outer.eml", mimeType: "message/rfc822", size: data.byteLength }],
 });
 it("200 TNEF parts in one attached RFC822 message fetch the root once per request", async () => {
-  const fixture = readFileSync(new URL("./fixtures/legacy-winmail.dat", import.meta.url));
+  const fixture = readFileSync(
+    new URL("../../test-support/fixtures/legacy-winmail.dat", import.meta.url),
+  );
   const winmail = Buffer.concat([
     fixture.subarray(0, 40),
     ...Array.from({ length: 200 }, () => fixture.subarray(40, 101)),

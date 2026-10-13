@@ -4,7 +4,7 @@ import {
   attachmentBytes,
   attachmentProblem,
   type AttachmentProblem,
-} from "../attachment-policy.js";
+} from "../mime/attachment-policy.js";
 import type { OutgoingAttachment, Provider } from "../domain/domain.js";
 import { OutgoingMessage } from "../domain/domain.js";
 import { all, run } from "../store/sql-rows.js";

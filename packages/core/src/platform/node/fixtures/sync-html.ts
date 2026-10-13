@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 
 const newsletter = readFileSync(
-  new URL("../../../../src/fixtures/reader/mailchimp-newsletter.html", import.meta.url),
+  new URL("../../../../test-support/fixtures/reader/mailchimp-newsletter.html", import.meta.url),
   "utf8",
 );
 const words = [

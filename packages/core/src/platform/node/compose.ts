@@ -3,7 +3,7 @@ import { Effect } from "effect";
 
 import type { Address, OutgoingMessage } from "../../domain/domain.js";
 import { PermanentError } from "../../domain/errors.js";
-import { htmlDocument } from "../../mime.js";
+import { htmlDocument } from "../../mime/mime.js";
 import { draftTextFingerprint, markdownDraftSource } from "../../compose/markdown-draft.js";
 
 const format = (a: Address) => (a.name ? { name: a.name, address: a.address } : a.address);

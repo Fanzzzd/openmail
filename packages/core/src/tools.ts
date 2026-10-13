@@ -41,7 +41,7 @@ import {
   shortText,
   jsonBytes,
 } from "./tool-pages.js";
-import { parseAddressList } from "./mime.js";
+import { parseAddressList } from "./mime/mime.js";
 
 export const cleanMcpClientName = (name: string): string =>
   name

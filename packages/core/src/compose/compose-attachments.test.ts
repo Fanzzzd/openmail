@@ -4,7 +4,11 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { simpleParser } from "mailparser";
-import { attachmentBytes, attachmentProblem, reorderAttachments } from "../attachment-policy.js";
+import {
+  attachmentBytes,
+  attachmentProblem,
+  reorderAttachments,
+} from "../mime/attachment-policy.js";
 import { composeMatches } from "./compose-find.js";
 import { buildMime } from "../platform/node/compose.js";
 import { richComposeBody, remoteComposeBody, normalizeComposeMessage } from "./compose-body.js";

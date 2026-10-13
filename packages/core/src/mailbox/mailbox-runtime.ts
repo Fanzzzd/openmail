@@ -10,11 +10,11 @@ import {
   type Scope,
   Semaphore,
 } from "effect";
-import { AttachmentCache } from "../attachment-cache.js";
+import { AttachmentCache } from "../mime/attachment-cache.js";
 import {
   type inlineImagesFromRaw as unboundInlineImagesFromRaw,
   type inlineMediaFromRaw as unboundInlineMediaFromRaw,
-} from "../attachments.js";
+} from "../mime/attachments.js";
 import { type Outcome, type Provider, type SyncResult } from "../domain/domain.js";
 import { type parseRawDraft as unboundParseRawDraft } from "../compose/drafts.js";
 import { type ImapIdle } from "../providers/imap/imap-idle.js";

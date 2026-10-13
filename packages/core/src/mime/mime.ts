@@ -1,10 +1,10 @@
-import { visibleHtmlText } from "./visible-text.js";
-import { Buffer } from "./platform/bytes.js";
+import { visibleHtmlText } from "../visible-text.js";
+import { Buffer } from "../platform/bytes.js";
 import { Result } from "effect";
-import { TextDecoder } from "./platform/text-decoder.js";
+import { TextDecoder } from "../platform/text-decoder.js";
 
-import type { Address } from "./domain/domain.js";
-import { isEmailAddress, splitAddresses } from "./compose/recipients.js";
+import type { Address } from "../domain/domain.js";
+import { isEmailAddress, splitAddresses } from "../compose/recipients.js";
 
 /** Decodes RFC 2047 encoded-words (`=?GBK?B?...?=`) that providers leave in headers. */
 export function decodeHeader(value: string): string {

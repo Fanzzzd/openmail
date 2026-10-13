@@ -1,7 +1,7 @@
 import { Effect, Schema } from "effect";
 import { type SqlClient } from "effect/sql";
 import { type Fragment } from "effect/sql/Statement";
-import { attachmentFilename } from "../attachment-filename.js";
+import { attachmentFilename } from "../mime/attachment-filename.js";
 import { categoryKey } from "../domain/categories.js";
 import {
   type Label,

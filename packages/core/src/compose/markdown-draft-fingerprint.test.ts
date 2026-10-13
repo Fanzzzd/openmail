@@ -16,7 +16,7 @@ import {
   type MarkdownDraftSource,
 } from "./markdown-draft.js";
 import { renderMarkdown } from "./markdown.js";
-import { htmlDocument } from "../mime.js";
+import { htmlDocument } from "../mime/mime.js";
 
 const source = "**original**\n\n[details](https://example.com)";
 const message = {

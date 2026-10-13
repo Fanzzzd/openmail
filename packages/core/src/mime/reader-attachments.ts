@@ -1,14 +1,14 @@
 import { stripMessageIdBrackets } from "./message-id.js";
-import { Buffer } from "./platform/bytes.js";
+import { Buffer } from "../platform/bytes.js";
 import { Effect, Result } from "effect";
-import type { MailCodecPort } from "./platform/mail-codec.js";
-import { InvalidInput, NotFound, ProviderError } from "./domain/errors.js";
+import type { MailCodecPort } from "../platform/mail-codec.js";
+import { InvalidInput, NotFound, ProviderError } from "../domain/errors.js";
 import type {
   AttachmentContent,
   AttachmentPartResult,
   Mailbox,
   PerformError,
-} from "./mailbox/mailbox.js";
+} from "../mailbox/mailbox.js";
 import type { EmbeddedMessage, ReaderAttachment } from "./attachment-view.js";
 import {
   decodeTnef,
@@ -17,8 +17,8 @@ import {
   MAX_ATTACHMENT_CONTAINER_BYTES,
   MAX_CONTAINER_PARTS,
 } from "./tnef.js";
-import { prepareMessageHtml } from "./reader-html.js";
-import { escapeComposeText, preservedComposeHtml } from "./compose/compose-body.js";
+import { prepareMessageHtml } from "../reader-html.js";
+import { escapeComposeText, preservedComposeHtml } from "../compose/compose-body.js";
 import { attachmentFilename } from "./attachment-filename.js";
 
 const descriptor = (
@@ -57,7 +57,7 @@ const parseMessage = (part: AttachmentContent, codec: MailCodecPort) =>
  * The budget includes roots, all decoded ancestor contents, and returned copies. */
 export function makeReaderAttachments(
   attachment: Mailbox["Service"]["attachment"],
-  thread: (id: string) => Effect.Effect<import("./domain/domain.js").Message[], NotFound>,
+  thread: (id: string) => Effect.Effect<import("../domain/domain.js").Message[], NotFound>,
   codec: MailCodecPort,
 ) {
   const openTree = Effect.fnUntraced(function* (messageId: string) {

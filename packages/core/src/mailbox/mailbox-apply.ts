@@ -1,5 +1,5 @@
 import { Clock, Effect, Option } from "effect";
-import { inspectAttachment } from "../attachment-import.js";
+import { inspectAttachment } from "../mime/attachment-import.js";
 import {
   actorLabel,
   type Account,

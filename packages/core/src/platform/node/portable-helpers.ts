@@ -2,11 +2,11 @@ import { Effect } from "effect";
 import { NodeRuntime } from "./runtime.js";
 import { parseRawDraft as draft } from "../../compose/drafts.js";
 import { invitesFromRaw as invites } from "../../calendar/invites.js";
-import { inlineMediaFromRaw as media } from "../../attachments.js";
+import { inlineMediaFromRaw as media } from "../../mime/attachments.js";
 import { imageAttachment as image } from "../../compose/compose-images.js";
 export * from "../../compose/drafts.js";
 export * from "../../calendar/invites.js";
-export * from "../../attachments.js";
+export * from "../../mime/attachments.js";
 export * from "../../compose/compose-images.js";
 export { downloadRemoteImage } from "./image-network.js";
 export const parseRawDraft = (...args: Parameters<typeof draft>) =>

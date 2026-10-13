@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { decodeTnef, MAX_ATTACHMENT_CONTAINER_BYTES } from "./tnef.js";
 
 const fixture = (name: string) =>
-  readFileSync(new URL(`./fixtures/${name}-winmail.dat`, import.meta.url));
+  readFileSync(new URL(`../../test-support/fixtures/${name}-winmail.dat`, import.meta.url));
 describe("bounded MS-OXTNEF parser", () => {
   it("extracts real legacy attributes, preserving duplicates and untrusted names", () => {
     const files = decodeTnef(fixture("legacy"));

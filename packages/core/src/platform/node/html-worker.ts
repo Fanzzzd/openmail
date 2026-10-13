@@ -1,5 +1,5 @@
 import { parentPort } from "node:worker_threads";
-import { htmlToText } from "../../mime.js";
+import { htmlToText } from "../../mime/mime.js";
 
 // Loads only the parser modules. "ready" tells the pool that module loading is done.
 const port = parentPort;

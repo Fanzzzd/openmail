@@ -10,7 +10,7 @@ import {
   type FolderCursor,
 } from "../../../providers/imap/imap-cursor.js";
 import { copyProgressKey } from "../../../providers/imap/imap-helpers.js";
-import { messageIdKey } from "../../../message-id.js";
+import { messageIdKey } from "../../../mime/message-id.js";
 import { type ProviderPushContext } from "../../../services.js";
 import { call, describe, failure, isRefusal, searchUids, type Session } from "./session.js";
 

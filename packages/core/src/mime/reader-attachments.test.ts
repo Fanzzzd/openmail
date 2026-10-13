@@ -4,18 +4,18 @@ import { Effect, Layer } from "effect";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { type IncomingMessage, DEFAULT_PREFS } from "./domain/domain.js";
-import { buildMime } from "./platform/node/compose.js";
-import { databaseLayer } from "./platform/node/db.js";
-import { Mailbox } from "./mailbox/mailbox.js";
-import { MailboxLive } from "./mailbox/mailbox-live.js";
-import { MemoryPlatform } from "./platform/node/platform-memory.js";
-import { NodeSystem } from "./platform/node/platform-node.js";
-import { Providers } from "./services.js";
-import { makeFakeProvider } from "./platform/node/fake-provider.js";
-import { fakeServer } from "./platform/node/testing.js";
-import { StoreLive } from "./store/store.js";
-import { LIST_DENSITIES, listWindow, specialFolderBadge } from "./list-window.js";
+import { type IncomingMessage, DEFAULT_PREFS } from "../domain/domain.js";
+import { buildMime } from "../platform/node/compose.js";
+import { databaseLayer } from "../platform/node/db.js";
+import { Mailbox } from "../mailbox/mailbox.js";
+import { MailboxLive } from "../mailbox/mailbox-live.js";
+import { MemoryPlatform } from "../platform/node/platform-memory.js";
+import { NodeSystem } from "../platform/node/platform-node.js";
+import { Providers } from "../services.js";
+import { makeFakeProvider } from "../platform/node/fake-provider.js";
+import { fakeServer } from "../platform/node/testing.js";
+import { StoreLive } from "../store/store.js";
+import { LIST_DENSITIES, listWindow, specialFolderBadge } from "../list-window.js";
 import { inspectAttachment } from "./attachment-import.js";
 {
   const original: IncomingMessage = {
@@ -42,7 +42,9 @@ import { inspectAttachment } from "./attachment-import.js";
           Effect.sync(() => mkdtempSync(join(tmpdir(), "om-reader-"))),
           (folder) => Effect.sync(() => rmSync(folder, { recursive: true, force: true })),
         );
-        const winmail = readFileSync(new URL("./fixtures/legacy-winmail.dat", import.meta.url));
+        const winmail = readFileSync(
+          new URL("../../test-support/fixtures/legacy-winmail.dat", import.meta.url),
+        );
         // Raw incoming RFC822 deliberately bypasses our outgoing HTML sanitizer.
         const nested = Buffer.from(
           [

@@ -1,4 +1,4 @@
-import { GMAIL_MIME_LIMIT } from "../../attachment-policy.js";
+import { GMAIL_MIME_LIMIT } from "../../mime/attachment-policy.js";
 import { account as buildAccount } from "../../platform/node/testing.js";
 import { fakeHttp } from "../../platform/node/fake-http.js";
 import { draftCreation } from "../../platform/node/draft-create-fixture.js";

@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { visibleHtmlText, messageModelText } from "./visible-text.js";
-import { htmlToText } from "./mime.js";
+import { htmlToText } from "./mime/mime.js";
 import { createVisibleTextTrace } from "./visible-text-diagnostics.js";
 const budgetCases = [
   {

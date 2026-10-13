@@ -1,4 +1,4 @@
-import { stripMessageIdBrackets } from "../../message-id.js";
+import { stripMessageIdBrackets } from "../../mime/message-id.js";
 import { compatibleMime, normalizeMimeCharsets } from "../mime-compat.js";
 import PostalMime, { type Address } from "postal-mime";
 import { Layer } from "effect";

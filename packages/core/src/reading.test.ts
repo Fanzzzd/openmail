@@ -14,7 +14,7 @@ import { DomUtils, parseDocument } from "htmlparser2";
 import { sanitizeReaderHtml, sanitizeReaderCss } from "./reader-sanitize.js";
 import { stripMobileForms } from "./platform/react-native/reader-html.js";
 import { visibleHtmlText } from "./visible-text.js";
-import { htmlToText } from "./mime.js";
+import { htmlToText } from "./mime/mime.js";
 import { stripActiveContent } from "./print.js";
 import { prepareMessageHtml } from "./reader-html.js";
 {
@@ -153,7 +153,7 @@ import { prepareMessageHtml } from "./reader-html.js";
 
 {
   const fixture = (name: string) =>
-    readFileSync(new URL(`./fixtures/reader/${name}.html`, import.meta.url), "utf8");
+    readFileSync(new URL(`../test-support/fixtures/reader/${name}.html`, import.meta.url), "utf8");
 
   const element = (html: string, name: string) =>
     DomUtils.findAll((node) => node.name === name, parseDocument(html).children)[0];

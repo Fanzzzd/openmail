@@ -1,5 +1,5 @@
 import { Clock, Deferred, Effect, Fiber, Option } from "effect";
-import { attachmentProblem, attachmentProblemMessage } from "../attachment-policy.js";
+import { attachmentProblem, attachmentProblemMessage } from "../mime/attachment-policy.js";
 import {
   type Actor,
   type Command,

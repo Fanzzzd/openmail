@@ -1,4 +1,4 @@
-import { messageIdKey } from "../../message-id.js";
+import { messageIdKey } from "../../mime/message-id.js";
 import { FolderStatus } from "../../sync/sync-health.js";
 import type { ResetVerification } from "../../sync/sync-reset.js";
 import { Clock, Effect, Option, Queue, Schema, Scope, Semaphore, Stream } from "effect";
@@ -63,7 +63,7 @@ import {
 } from "../../providers/imap/imap-cursor.js";
 import type { Account, ImapSettings, IncomingMessage } from "../../domain/domain.js";
 import { confirmDelivery } from "../../providers/provider-send.js";
-import { htmlToText } from "../../mime.js";
+import { htmlToText } from "../../mime/mime.js";
 import { matchesSearch, searchMailboxLabel } from "../../search.js";
 
 const FOLDER_ALIASES: Record<string, readonly string[]> = {

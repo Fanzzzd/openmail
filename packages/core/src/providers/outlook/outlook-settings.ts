@@ -5,7 +5,7 @@ import { PermanentError, ProviderError, SettingsScopeMissing } from "../../domai
 import { authFailure } from "../reauth.js";
 import { graphTimestamp } from "../../calendar/graph-time.js";
 import { escapeHtml } from "../../print.js";
-import { htmlToText } from "../../mime.js";
+import { htmlToText } from "../../mime/mime.js";
 import {
   EMPTY_FILTER,
   RULE_IMPORTANCE,

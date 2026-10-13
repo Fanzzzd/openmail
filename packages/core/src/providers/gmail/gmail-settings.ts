@@ -6,7 +6,7 @@ import { CATEGORIES, type Account } from "../../domain/domain.js";
 import { ProviderError, SettingsScopeMissing } from "../../domain/errors.js";
 import { authFailure } from "../reauth.js";
 import { escapeHtml } from "../../print.js";
-import { htmlToText } from "../../mime.js";
+import { htmlToText } from "../../mime/mime.js";
 import {
   EMPTY_FILTER,
   GMAIL_REMOVABLE_SYSTEM_LABELS,

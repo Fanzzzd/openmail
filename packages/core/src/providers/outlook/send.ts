@@ -4,7 +4,7 @@ import {
   attachmentBytes,
   attachmentProblem,
   attachmentProblemMessage,
-} from "../../attachment-policy.js";
+} from "../../mime/attachment-policy.js";
 import { composeTransportHtml } from "../../compose/compose-body.js";
 import { buildMime as unboundBuildMime } from "../../compose/compose.js";
 import type {
@@ -17,8 +17,8 @@ import type {
 import { draftVersionMetadata } from "../../compose/draft-version.js";
 import { PermanentError, ProviderError, type ProviderFailure } from "../../domain/errors.js";
 import { MarkdownDraftSource, markdownDraftSource } from "../../compose/markdown-draft.js";
-import { newMessageId } from "../../message-id.js";
-import { htmlDocument } from "../../mime.js";
+import { newMessageId } from "../../mime/message-id.js";
+import { htmlDocument } from "../../mime/mime.js";
 import { PlatformCrypto } from "../../platform/crypto.js";
 import { MailCodec } from "../../platform/mail-codec.js";
 import { Buffer } from "../../platform/bytes.js";

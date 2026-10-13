@@ -3,7 +3,7 @@ import { makeRemoteAccessStore } from "../remote-access.js";
 import { PlatformCrypto } from "../platform/crypto.js";
 import { makeSignatureStore } from "./store-signatures.js";
 import { signatureDefault } from "../compose/signatures.js";
-import { attachmentFilename } from "../attachment-filename.js";
+import { attachmentFilename } from "../mime/attachment-filename.js";
 /**
  * The Store's SQL for writing and reading settings: drafts, preferences,
  * signatures, templates, recipient suggestions and the remote image allowlist. Part of the Store service (store.ts

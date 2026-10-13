@@ -1,4 +1,4 @@
-import { stripMessageIdBrackets } from "./message-id.js";
+import { stripMessageIdBrackets } from "./mime/message-id.js";
 /** Protocol and notification decisions shared by desktop and tests. No platform APIs. */
 import { Schema } from "effect";
 

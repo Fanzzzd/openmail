@@ -1,4 +1,4 @@
-import { stripMessageIdBrackets } from "./message-id.js";
+import { stripMessageIdBrackets } from "./mime/message-id.js";
 import { MAILBOX_LABEL } from "./domain/mailbox-labels.js";
 import { Option, Schema } from "effect";
 import {

@@ -3,7 +3,7 @@ import { HttpClientRequest } from "effect/http";
 import { categoryKey, mergeCategoryNames } from "../../domain/categories.js";
 import type { Account, Attachment, IncomingMessage, MailOp } from "../../domain/domain.js";
 import { AuthError, PermanentError, ProviderError } from "../../domain/errors.js";
-import { stripMessageIdBrackets } from "../../message-id.js";
+import { stripMessageIdBrackets } from "../../mime/message-id.js";
 import { makeOutlookFeatures } from "./outlook-features.js";
 import { makeOutlookSettings } from "./outlook-settings.js";
 import { hasSignedContainer } from "../../platform/mime-compat.js";

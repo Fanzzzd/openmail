@@ -1,4 +1,4 @@
-import { stripMessageIdBrackets } from "../message-id.js";
+import { stripMessageIdBrackets } from "../mime/message-id.js";
 import { Buffer } from "../platform/bytes.js";
 /**
  * Turning drafts into what providers take and back: the attached original of

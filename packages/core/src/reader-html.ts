@@ -1,4 +1,4 @@
-import { stripMessageIdBrackets } from "./message-id.js";
+import { stripMessageIdBrackets } from "./mime/message-id.js";
 /**
  * Prepares untrusted mail HTML for the reader and for printing. It only
  * rewrites resource URLs; the sandboxed iframe and its CSP stay the security

@@ -5,7 +5,7 @@ import {
   attachmentSizesProblem,
   COMPOSE_ATTACHMENT_LIMIT,
   GMAIL_MIME_LIMIT,
-} from "../attachment-policy.js";
+} from "../mime/attachment-policy.js";
 import {
   normalizeComposeMessage,
   preservedComposeHtml,
@@ -35,7 +35,7 @@ import { type MailboxDependencies, type MailboxRuntimeState } from "./mailbox-ru
 import { WRITE_RECOVERY_WINDOW_MS } from "./mailbox-shared.js";
 import { type Mailbox } from "./mailbox.js";
 import { renderMarkdown } from "../compose/markdown.js";
-import { newMessageId } from "../message-id.js";
+import { newMessageId } from "../mime/message-id.js";
 import { PlatformCrypto } from "../platform/crypto.js";
 import { type ProviderPushContext, type StoredDraft } from "../services.js";
 

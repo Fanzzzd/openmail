@@ -6,7 +6,7 @@ import {
   type CachedHeaders,
   firstHeaders,
 } from "../../sync/header-backfill.js";
-import { newMessageId } from "../../message-id.js";
+import { newMessageId } from "../../mime/message-id.js";
 import { messageSecurity } from "../../message-security.js";
 import { BASE_SCOPES, OPTIONAL_SCOPES, isOptionalService } from "../optional-services.js";
 import { effectiveClients, refreshWithIssuer } from "../oauth-clients.js";
@@ -35,8 +35,8 @@ import {
 import type { FolderStatus } from "../../sync/sync-health.js";
 import type { ResetVerification } from "../../sync/sync-reset.js";
 
-import { GMAIL_MIME_LIMIT } from "../../attachment-policy.js";
-import { type AttachmentRef, MEDIA_RAW_TOO_LARGE, pickAttachment } from "../../attachments.js";
+import { GMAIL_MIME_LIMIT } from "../../mime/attachment-policy.js";
+import { type AttachmentRef, MEDIA_RAW_TOO_LARGE, pickAttachment } from "../../mime/attachments.js";
 import { type Threading, buildMime as unboundBuildMime } from "../../compose/compose.js";
 import type {
   Account,
@@ -55,7 +55,7 @@ import {
   ProviderError,
   type ProviderFailure,
 } from "../../domain/errors.js";
-import { charsetOf, decodeHeader, decodeUtf8First, parseAddressList } from "../../mime.js";
+import { charsetOf, decodeHeader, decodeUtf8First, parseAddressList } from "../../mime/mime.js";
 import {
   AppConfig,
   OAuthIssuers,

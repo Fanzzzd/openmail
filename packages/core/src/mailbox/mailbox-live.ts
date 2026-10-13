@@ -17,7 +17,7 @@ import {
 import {
   inlineImagesFromRaw as unboundInlineImagesFromRaw,
   inlineMediaFromRaw as unboundInlineMediaFromRaw,
-} from "../attachments.js";
+} from "../mime/attachments.js";
 import { makeDownloadBudget } from "../download-budget.js";
 import { parseRawDraft as unboundParseRawDraft } from "../compose/drafts.js";
 import { InvalidInput } from "../domain/errors.js";

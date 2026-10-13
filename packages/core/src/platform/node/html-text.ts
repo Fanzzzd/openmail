@@ -2,7 +2,7 @@ import { availableParallelism } from "node:os";
 import { Worker } from "node:worker_threads";
 import { Parser } from "htmlparser2";
 import { Effect, Layer } from "effect";
-import { htmlToText } from "../../mime.js";
+import { htmlToText } from "../../mime/mime.js";
 import { HtmlText } from "../html-text.js";
 
 export const HTML_TEXT_POOL_SIZE = Math.max(1, Math.min(2, availableParallelism() - 1));

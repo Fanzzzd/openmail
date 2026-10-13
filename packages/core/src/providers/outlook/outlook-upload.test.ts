@@ -7,7 +7,7 @@ import {
   attachmentSizesProblem,
   OUTLOOK_ATTACHMENT_THRESHOLD,
   OUTLOOK_MESSAGE_LIMIT,
-} from "../../attachment-policy.js";
+} from "../../mime/attachment-policy.js";
 import type {
   OutgoingAttachment,
   OutgoingMessage,

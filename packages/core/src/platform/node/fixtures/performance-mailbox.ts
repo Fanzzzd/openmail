@@ -20,7 +20,10 @@ export const fixtureAccounts = [
 ] as const;
 const providers = ["gmail", "outlook", "imap"] as const;
 const html = ["mailchimp-newsletter", "outlook-word"].map((name) =>
-  readFileSync(new URL(`../../../../src/fixtures/reader/${name}.html`, import.meta.url), "utf8"),
+  readFileSync(
+    new URL(`../../../../test-support/fixtures/reader/${name}.html`, import.meta.url),
+    "utf8",
+  ),
 );
 // Small realistic bodies in every row; the standalone parser case is exactly 200 KiB UTF-8.
 const fixtureHtml = html.map((body) => `${body}<p>weekly alpha beta 预算批准，会议通知。</p>`);

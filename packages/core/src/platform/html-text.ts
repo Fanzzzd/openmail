@@ -1,5 +1,5 @@
 import { Context, Effect } from "effect";
-import { htmlToText } from "../mime.js";
+import { htmlToText } from "../mime/mime.js";
 
 /** HTML-to-text extraction for provider parsing. Node replaces the inline default with a worker pool. */
 export interface HtmlText {
