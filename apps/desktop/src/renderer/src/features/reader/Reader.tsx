@@ -69,8 +69,6 @@ export function Reader({
   landmark = true,
 }: Props) {
   const { t } = useLingui();
-  // Inside the layout's main landmark a labelled section keeps the toolbar from reading as a banner.
-  const Landmark = landmark ? "main" : "section";
   const result = useAtomValue(threadAtom(messageId));
   const thread = AsyncResult.value(result);
   const messages = useReaderMessages(
@@ -95,7 +93,10 @@ export function Reader({
     ) : null;
 
   return (
-    <Landmark
+    // One element type in every layout, so crossing a breakpoint keeps the reader mounted. Beside
+    // the list it is a labelled section, which also keeps its toolbar from reading as a banner.
+    <section
+      role={landmark ? "main" : undefined}
       aria-label={landmark ? undefined : t`Reading pane`}
       className="flex h-full w-full min-w-0 flex-col bg-surface"
     >
@@ -158,6 +159,6 @@ export function Reader({
           menuInToolbar={menuInToolbar}
         />
       )}
-    </Landmark>
+    </section>
   );
 }
