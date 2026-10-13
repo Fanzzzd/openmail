@@ -90,13 +90,6 @@ export const makeOutlookPull = (
           // does not restart the ones before it. A legacy cursor (no immutable-id marker)
           // needs its account Reset after every folder, so it only saves at the end.
           const resumable = !scope && (!reset || Option.isNone(cursor));
-          const canonical = (links: Readonly<Record<string, string>>) =>
-            JSON.stringify(
-              Object.fromEntries(
-                Object.entries(links).toSorted(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)),
-              ),
-            );
-          let saved: string | undefined;
           const queued = new Set<string>();
           // Removals seen so far whose move target was not listed. Their delta events are
           // behind any saved link, so they go to the durable verification queue first.
@@ -131,8 +124,10 @@ export const makeOutlookPull = (
               for (const id of unresolved) queued.add(id);
               if (unresolved.length)
                 yield* Queue.offer(queue, { _tag: "VerifyCandidates", providerIds: unresolved });
-              saved = canonical({ ...(reset ? {} : stored), ...next, [PARTIAL_KEY]: "1" });
-              yield* Queue.offer(queue, { _tag: "Cursor", cursor: saved });
+              yield* Queue.offer(queue, {
+                _tag: "Cursor",
+                cursor: JSON.stringify({ ...(reset ? {} : stored), ...next, [PARTIAL_KEY]: "1" }),
+              });
             });
           for (const folder of folders) {
             let known = previous[folder.key];
