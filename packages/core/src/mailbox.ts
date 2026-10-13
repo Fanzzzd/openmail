@@ -252,11 +252,13 @@ export class Mailbox extends Context.Service<
       edits?: CalendarEventEdits,
     ): Effect.Effect<void, PerformError>;
     invitations(messageId: string): Effect.Effect<CalendarInvite[], PerformError>;
+    /** `label` names the response in an IMAP reply's subject and text; see `inviteReply`. */
     respondInvite(
       messageId: string,
       key: string,
       response: InviteResponse,
       actor: Actor,
+      label?: string,
     ): Effect.Effect<void, PerformError>;
     contactGroups(query: string, accountIds?: readonly string[]): Effect.Effect<ContactGroup[]>;
     contactPhoto(accountId: string, address: string): Effect.Effect<string | null>;

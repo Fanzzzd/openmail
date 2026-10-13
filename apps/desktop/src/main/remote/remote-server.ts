@@ -149,8 +149,8 @@ async function serveStatic(
     send(response, 400);
     return;
   }
-  // oxlint-disable-next-line no-control-regex
-  if (decoded.includes("\0") || /[\u0000-\u001f]/.test(decoded)) {
+  // \p{Cc} covers NUL, the C0 controls, DEL and the C1 controls.
+  if (/\p{Cc}/u.test(decoded)) {
     send(response, 400);
     return;
   }

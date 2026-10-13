@@ -8,6 +8,8 @@ import { afterAll, expect, it, vi } from "vitest";
 import { emptyDraft, draftFor } from "./draft";
 import { testDom } from "../../test-support/test-dom";
 
+const english = setupI18n({ locale: "en", messages: { en: {} } });
+
 const calls = vi.hoisted(() => {
   vi.resetModules();
   return {
@@ -208,7 +210,7 @@ for (const preference of ["received", "default"] as const) {
     calls.aliases = [alias];
     const dom = testDom();
     try {
-      const draft = draftFor("reply", original, account, false, [alias], undefined, {
+      const draft = draftFor(english, "reply", original, account, false, [alias], undefined, {
         preference,
         aliases: [alias],
       });

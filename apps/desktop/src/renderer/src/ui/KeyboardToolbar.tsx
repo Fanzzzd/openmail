@@ -38,8 +38,7 @@ export function KeyboardToolbar({ children, ref: outer, ...props }: ComponentPro
         if (typeof outer === "function") outer(node);
         else if (outer) outer.current = node;
       }}
-      // A toolbar contains mixed controls; no native element provides its role.
-      // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
+      // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- HTML has no toolbar element; the role carries the roving focus.
       role="toolbar"
       onFocusCapture={(event) => {
         if (controls().includes(event.target)) rove(event.target);

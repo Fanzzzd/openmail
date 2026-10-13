@@ -1,4 +1,5 @@
-import { quoteDate } from "../../lib/format";
+import type { I18n } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
 import {
   displayName,
   formatAddress,
@@ -87,26 +88,63 @@ export function emptyDraft(accountId: string): Draft {
 
 export { formatAddress, parseAddresses, ADDRESS_SEPARATOR } from "@openmail/core/schema";
 
-function quote(m: Message): string {
-  const lines = m.bodyText.trimEnd().split("\n");
-  return `\n\n${quoteDate(m.date)}，${displayName(m.from)} <${m.from.address}> 写道：\n${lines
-    .map((l) => `> ${l}`)
-    .join("\n")}`;
+/**
+ * The date in a quote or forward header. Recipients read it later, so it is
+ * absolute ("Mon, Oct 13, 2026, 10:24 AM"), never "today".
+ */
+export function mailDate(ms: number, locale: string): string {
+  return new Intl.DateTimeFormat(locale, {
+    weekday: "short",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(ms);
 }
 
-/**
- * A reply, reply-all or forward of `m`, sent from the account that received
- * it. `asAttachment` forwards the original as an .eml instead of quoting it.
- */
-export function draftFor(
+/** The line above a quoted reply, in the app language, as Gmail and Apple Mail write it. */
+function replyHeader(i18n: I18n, m: Message): string {
+  const date = mailDate(m.date, i18n.locale);
+  const name = displayName(m.from);
+  const address = m.from.address;
+  return i18n._(
+    msg({
+      context: "outgoing reply quote header",
+      comment: "Written into the sent message above the quoted text.",
+      message: `On ${date}, ${name} <${address}> wrote:`,
+    }),
+  );
+}
+
+function quote(i18n: I18n, m: Message): string {
+  const lines = m.bodyText.trimEnd().split("\n");
+  return `\n\n${replyHeader(i18n, m)}\n${lines.map((l) => `> ${l}`).join("\n")}`;
+}
+
+/** The header block above a forwarded message's text, in the app language. */
+function forwardHeader(i18n: I18n, m: Message): string {
+  const from = formatAddress(m.from);
+  const date = mailDate(m.date, i18n.locale);
+  const subject = m.subject;
+  const to = m.to.map(formatAddress).join(", ");
+  const banner = i18n._(msg({ context: "outgoing forward header", message: "Forwarded message" }));
+  return [
+    `---------- ${banner} ---------`,
+    i18n._(msg({ context: "outgoing forward header", message: `From: ${from}` })),
+    i18n._(msg({ context: "outgoing forward header", message: `Date: ${date}` })),
+    i18n._(msg({ context: "outgoing forward header", message: `Subject: ${subject}` })),
+    i18n._(msg({ context: "outgoing forward header", message: `To: ${to}` })),
+  ].join("\n");
+}
+
+/** To and Cc of a reply or forward, as recipient text. */
+function addressing(
   mode: Exclude<ComposeMode, "new">,
   m: Message,
   account: Account,
-  asAttachment = false,
-  aliases: readonly Pick<SendAs, "accountId" | "address">[] = [],
-  selectedText?: string,
-  replyFrom?: { preference: "received" | "default"; aliases: readonly SendAs[] },
-): Draft {
+  aliases: readonly Pick<SendAs, "accountId" | "address">[],
+): { to: string; cc: string } {
   const { to, cc } =
     mode === "forward"
       ? { to: [], cc: [] }
@@ -121,14 +159,32 @@ export function draftFor(
           ],
           mode === "replyAll",
         );
+  return { to: to.map(formatAddress).join(", "), cc: cc.map(formatAddress).join(", ") };
+}
+
+/**
+ * A reply, reply-all or forward of `m`, sent from the account that received
+ * it. `asAttachment` forwards the original as an .eml instead of quoting it.
+ */
+export function draftFor(
+  i18n: I18n,
+  mode: Exclude<ComposeMode, "new">,
+  m: Message,
+  account: Account,
+  asAttachment = false,
+  aliases: readonly Pick<SendAs, "accountId" | "address">[] = [],
+  selectedText?: string,
+  replyFrom?: { preference: "received" | "default"; aliases: readonly SendAs[] },
+): Draft {
+  const { to, cc } = addressing(mode, m, account, aliases);
   const forwardAsAttachment = mode === "forward" && asAttachment;
 
   const quoted = selectedText === undefined ? m : { ...m, bodyText: selectedText, bodyHtml: "" };
   const body = forwardAsAttachment
     ? ""
     : mode === "forward"
-      ? `\n\n---------- 转发的邮件 ----------\n发件人：${formatAddress(m.from)}\n日期：${quoteDate(m.date)}\n主题：${m.subject}\n收件人：${m.to.map(formatAddress).join(", ")}\n\n${quoted.bodyText}`
-      : quote(quoted);
+      ? `\n\n${forwardHeader(i18n, m)}\n\n${quoted.bodyText}`
+      : quote(i18n, quoted);
 
   return {
     id: newDraftId(),
@@ -137,8 +193,8 @@ export function draftFor(
     ...(mode !== "forward" && replyFrom
       ? { from: replyFromAddress(m, account, replyFrom.aliases, replyFrom.preference) }
       : {}),
-    to: to.map(formatAddress).join(", "),
-    cc: cc.map(formatAddress).join(", "),
+    to,
+    cc,
     bcc: "",
     subject: mode === "forward" ? forwardSubject(m.subject) : replySubject(m.subject),
     body:
@@ -261,11 +317,9 @@ export function switchReplyMode(
   account: Account,
   aliases: readonly Pick<SendAs, "accountId" | "address">[],
 ): Draft {
-  const next = draftFor(mode, original, account, false, aliases);
+  const next = addressing(mode, original, account, aliases);
   const previous =
-    draft.mode === "new"
-      ? { to: "", cc: "" }
-      : draftFor(draft.mode, original, account, false, aliases);
+    draft.mode === "new" ? { to: "", cc: "" } : addressing(draft.mode, original, account, aliases);
   const automatic = new Set(
     [...parseAddresses(previous.to).addresses, ...parseAddresses(previous.cc).addresses].map((a) =>
       a.address.toLowerCase(),

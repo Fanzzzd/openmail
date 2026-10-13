@@ -1,3 +1,4 @@
+import { setupI18n } from "@lingui/core";
 import { describe, expect, it } from "vitest";
 import { hiddenDraftProbes } from "../../../../../../../packages/core/test-support/html-draft-fixtures";
 import {
@@ -9,6 +10,7 @@ import {
   preservedComposeHtml,
 } from "@openmail/core/schema";
 import type { Account, Message } from "../../../../shared/api";
+import { catalogI18n } from "../../test-support/catalog-i18n";
 import {
   draftFor,
   formatAddress,
@@ -16,11 +18,14 @@ import {
   toMessage,
   emptyDraft,
   fromStored,
+  mailDate,
   isEmpty,
   needsClosePrompt,
   switchReplyMode,
   toDraftInput,
 } from "./draft";
+
+const english = setupI18n({ locale: "en", messages: { en: {} } });
 
 const account: Account = {
   id: "gmail:me@example.com",
@@ -58,6 +63,7 @@ const message: Message = {
 
 it.each(hiddenDraftProbes)("forward excludes hidden content and resources: %s", (probe) => {
   const forward = draftFor(
+    english,
     "forward",
     {
       ...message,
@@ -80,7 +86,7 @@ it("forward preserves sanitized HTML while reply/forward selected quotes contain
     bodyHtml:
       '<table><tr><td style="color:red">Whole message</td></tr></table><script>evil()</script><img src="https://evil.test/track">',
   };
-  const forward = draftFor("forward", source, account);
+  const forward = draftFor(english, "forward", source, account);
   const sent = toMessage(forward).message;
   expect(forward.includeOriginalAttachments).toBe(true);
   const transportHtml = preservedComposeHtml(sent.originalHtml ?? sent.html ?? "");
@@ -89,7 +95,7 @@ it("forward preserves sanitized HTML while reply/forward selected quotes contain
   expect(transportHtml).not.toContain("script");
   expect(forward.body.kind === "rich" ? forward.body.html : "").not.toContain("https://evil.test");
   for (const mode of ["reply", "replyAll", "forward"] as const) {
-    const draft = draftFor(mode, source, account, false, [], "Chosen <text>");
+    const draft = draftFor(english, mode, source, account, false, [], "Chosen <text>");
     const outgoing = toMessage(draft).message;
     expect(outgoing.text).toContain("Chosen <text>");
     expect(outgoing.text).not.toContain("Whole message");
@@ -101,7 +107,9 @@ it("forward preserves sanitized HTML while reply/forward selected quotes contain
 
 it("reply drafts preserve quoted names, Reply-To and original threading", () => {
   for (const mode of ["reply", "replyAll"] as const) {
-    const draft = draftFor(mode, message, account, false, [alias(account.id, "ALIAS@example.com")]);
+    const draft = draftFor(english, mode, message, account, false, [
+      alias(account.id, "ALIAS@example.com"),
+    ]);
     const { message: outgoing, invalid } = toMessage(draft);
     expect(invalid).toEqual([]);
     expect(outgoing.to).toEqual(message.replyTo);
@@ -114,6 +122,7 @@ it("reply drafts preserve quoted names, Reply-To and original threading", () => 
 it("Outlook forwards retain large originals on the server without scheduling a MIME fetch", () => {
   const outlook = { ...account, provider: "outlook" } satisfies Account;
   const draft = draftFor(
+    english,
     "forward",
     {
       ...message,
@@ -143,7 +152,7 @@ it("replying in a second account treats the first account and its aliases as rec
   };
   for (const mode of ["reply", "replyAll"] as const) {
     const { message: outgoing, invalid } = toMessage(
-      draftFor(mode, fromFirstAccount, replyingAccount, false, [
+      draftFor(english, mode, fromFirstAccount, replyingAccount, false, [
         alias(account.id, account.email),
         alias(account.id),
         alias(replyingAccount.id, "own-alias@outlook.com"),
@@ -158,9 +167,9 @@ it("replying in a second account treats the first account and its aliases as rec
 it("replying from an own alias targets original recipients, and forwarding starts empty", () => {
   const self = { ...message, from: { name: "Alias", address: "ALIAS@example.com" } };
   expect(
-    toMessage(draftFor("replyAll", self, account, false, [alias(account.id)])).message.to,
+    toMessage(draftFor(english, "replyAll", self, account, false, [alias(account.id)])).message.to,
   ).toEqual([message.to[1]]);
-  const draft = draftFor("forward", message, account, true, [alias(account.id)]);
+  const draft = draftFor(english, "forward", message, account, true, [alias(account.id)]);
   expect(draft.to).toBe("");
   expect(draft.cc).toBe("");
   expect(draft.forwardAsAttachment).toBe(true);
@@ -190,7 +199,7 @@ it("IMAP replies exclude only its login address and account aliases", () => {
     ],
   };
   const { message: outgoing, invalid } = toMessage(
-    draftFor("replyAll", incoming, imapAccount, false, [
+    draftFor(english, "replyAll", incoming, imapAccount, false, [
       alias(imapAccount.id),
       alias("gmail:second@example.com", "second@example.com"),
     ]),
@@ -339,7 +348,7 @@ describe("compose draft model", () => {
 
 it("switching Reply / Reply All / Forward preserves typed rich body, identity and attachments", () => {
   const draft = {
-    ...draftFor("reply", message, account),
+    ...draftFor(english, "reply", message, account),
     body: richComposeBody("<p>My <b>edited</b> reply</p>"),
     attachments: [{ filename: "note.txt", mimeType: "text/plain", content: "aGk=" }],
     bcc: "private@example.com",
@@ -397,7 +406,7 @@ it("an empty new draft with only the automatic signature does not prompt", () =>
 
 it("mode switches retain manual To/Cc/Bcc, remove previous automatic recipients and deduplicate across fields", () => {
   const aliases = [alias(account.id)];
-  const automatic = draftFor("replyAll", message, account, false, aliases);
+  const automatic = draftFor(english, "replyAll", message, account, false, aliases);
   const edited = {
     ...automatic,
     to: `${automatic.to}, Manual <manual@example.com>`,
@@ -430,7 +439,7 @@ it("mode switches retain manual To/Cc/Bcc, remove previous automatic recipients 
 
 it("untouched never-stored reply and forward close without a save prompt", () => {
   for (const mode of ["reply", "forward"] as const) {
-    const initial = draftFor(mode, message, account);
+    const initial = draftFor(english, mode, message, account);
     expect(needsClosePrompt(initial, null, { initial })).toBe(false);
     expect(needsClosePrompt({ ...initial, subject: "Edited" }, null, { initial })).toBe(true);
   }
@@ -479,4 +488,43 @@ it("AI provenance survives reopening and autosave serialization", () => {
     proposalId: 1,
   });
   expect(toMessage(draft).message.agentOrigin).toEqual(message.agentOrigin);
+});
+
+it("quote and forward headers follow the app language, with an absolute localized date", async () => {
+  const sent = { ...message, date: Date.UTC(2026, 9, 13, 8, 24), bodyText: "Hello" };
+  const cases = [
+    {
+      locale: "en",
+      reply: `On ${mailDate(sent.date, "en")}, Sender <sender@example.com> wrote:\n> Hello`,
+      forward: [
+        "---------- Forwarded message ---------",
+        "From: Sender <sender@example.com>",
+        `Date: ${mailDate(sent.date, "en")}`,
+        "Subject: Question",
+        "To: Me <me@example.com>, Other <other@example.com>",
+      ],
+    },
+    {
+      locale: "zh-CN",
+      reply: `${mailDate(sent.date, "zh-CN")}，Sender <sender@example.com> 写道：\n> Hello`,
+      forward: [
+        "---------- 转发的邮件 ---------",
+        "发件人：Sender <sender@example.com>",
+        `日期：${mailDate(sent.date, "zh-CN")}`,
+        "主题：Question",
+        "收件人：Me <me@example.com>, Other <other@example.com>",
+      ],
+    },
+  ];
+  for (const { locale, reply, forward } of cases) {
+    const { i18n } = await catalogI18n(locale);
+    expect(toMessage(draftFor(i18n, "reply", sent, account)).message.text).toContain(reply);
+    expect(toMessage(draftFor(i18n, "forward", sent, account)).message.text).toContain(
+      forward.join("\n"),
+    );
+  }
+  // Recipients read the header later, so it never says "today"; the year and time are spelled out.
+  expect(mailDate(sent.date, "en")).toMatch(/2026/);
+  expect(mailDate(Date.now(), "en")).not.toMatch(/today/i);
+  expect(mailDate(sent.date, "zh-CN")).toMatch(/2026年10月13日/);
 });

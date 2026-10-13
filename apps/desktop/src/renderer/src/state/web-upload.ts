@@ -1,8 +1,17 @@
-import { attachmentBytes, type OutgoingAttachment } from "@openmail/core/schema";
+import { attachmentBytes, OutgoingAttachment } from "@openmail/core/schema";
+import { Schema } from "effect";
 
 export type UploadResult =
-  | { ok: true; files: OutgoingAttachment[] }
+  | { ok: true; files: readonly OutgoingAttachment[] }
   | { ok: false; error: "tooLarge" | "gmailBlocked" | "failed"; filename?: string };
+
+/** The Mac's JSON reply. Anything else reads as a failed upload. */
+const UploadReply = Schema.Struct({
+  files: Schema.optionalKey(Schema.Array(OutgoingAttachment)),
+  error: Schema.optionalKey(Schema.String),
+  filename: Schema.optionalKey(Schema.String),
+});
+const decodeReply = Schema.decodeUnknownOption(UploadReply);
 
 /**
  * The web build's compose attachments go to the Mac's upload endpoint, which
@@ -27,13 +36,9 @@ export async function uploadAttachments(
       body: form,
       credentials: "same-origin",
     });
-    // IO boundary: the Mac's JSON reply.
-    const body = (await response.json()) as {
-      files?: OutgoingAttachment[];
-      error?: string;
-      filename?: string;
-    };
-    if (response.ok && Array.isArray(body.files)) return { ok: true, files: body.files };
+    const reply = decodeReply(await response.json());
+    const body = reply._tag === "Some" ? reply.value : {};
+    if (response.ok && body.files) return { ok: true, files: body.files };
     if (body.error === "gmailBlocked")
       return {
         ok: false,

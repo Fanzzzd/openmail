@@ -1,14 +1,14 @@
 import { EventEmitter } from "node:events";
 import { Effect, Fiber, Stream } from "effect";
 import { constVoid } from "effect/Function";
-import { expect, it, vi } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 
 vi.mock("electron", () => ({
   BrowserWindow: { getFocusedWindow: () => null, getAllWindows: () => [] },
 }));
 import type { PromptAnswer, WindowUiEvent } from "../../shared/window-ui";
 import { withDeadline } from "../app/deadline";
-import { answerPrompt, askWindow, sendWindowUi, windowUiEvents } from "./window-ui";
+import { answerPrompt, askWindow, hasWindowUi, sendWindowUi, windowUiEvents } from "./window-ui";
 
 const target = (id: number) =>
   Object.assign(new EventEmitter(), { webContents: { id }, isDestroyed: () => false });
@@ -24,10 +24,11 @@ const listen = (id: number) => {
   );
   return { received, stop: () => Effect.runPromise(Fiber.interrupt(fiber)) };
 };
-const tick = () =>
-  new Promise((resolve) => {
-    setTimeout(resolve, 0);
-  });
+/** Resolves once the renderer subscription for `id` is registered. */
+const subscribed = (id: number) => vi.waitFor(() => expect(hasWindowUi(id)).toBe(true));
+afterEach(() => {
+  vi.useRealTimers();
+});
 const quit = (id: string): WindowUiEvent => ({ _tag: "QuitPrompt", id });
 const promptId = (event: WindowUiEvent | undefined) => (event && "id" in event ? event.id : "");
 
@@ -41,16 +42,17 @@ it("with no renderer listening, the native fallback answers", async () => {
 
 it("once painted the React prompt answers with no deadline, and only its own window can answer", async () => {
   const renderer = listen(2);
-  await tick();
+  await subscribed(2);
   const fallback = vi.fn(() => Promise.resolve<PromptAnswer>("accept"));
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
   const result = askWindow(target(2), quit, fallback, 50);
   await vi.waitFor(() => expect(renderer.received).toHaveLength(1), { interval: 1 });
   const id = promptId(renderer.received[0]);
   answerPrompt(2, id, "shown");
   answerPrompt(99, id, "accept");
-  await new Promise((resolve) => {
-    setTimeout(resolve, 100);
-  });
+  // Well past the 50 ms paint deadline: a painted prompt has none.
+  await vi.advanceTimersByTimeAsync(100);
+  vi.useRealTimers();
   answerPrompt(2, id, "cancel");
   expect(await result).toBe("cancel");
   expect(fallback).not.toHaveBeenCalled();
@@ -59,7 +61,7 @@ it("once painted the React prompt answers with no deadline, and only its own win
 
 it("an unpainted prompt is withdrawn and the native box asks instead", async () => {
   const renderer = listen(3);
-  await tick();
+  await subscribed(3);
   const fallback = vi.fn(() => Promise.resolve<PromptAnswer>("accept"));
   expect(await askWindow(target(3), quit, fallback, 10)).toBe("accept");
   await vi.waitFor(() => expect(renderer.received).toHaveLength(2));
@@ -69,7 +71,7 @@ it("an unpainted prompt is withdrawn and the native box asks instead", async () 
 
 it("closing the window or losing its renderer cancels a shown prompt", async () => {
   const renderer = listen(4);
-  await tick();
+  await subscribed(4);
   const fallback = vi.fn(() => Promise.resolve<PromptAnswer>("accept"));
   const win = target(4);
   const closed = askWindow(win, quit, fallback, 1000);

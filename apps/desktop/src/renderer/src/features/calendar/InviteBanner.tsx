@@ -160,14 +160,15 @@ function Invitation({
   const calendarOff = calendar !== undefined && calendar !== "granted";
   const recipient = provider === "imap" ? invite.organizer?.address : null;
   const state = sent ?? attendee?.status.toLowerCase();
-  const label =
-    state === "accepted"
+  const responseLabel = (response: string) =>
+    response === "accepted"
       ? t`Accepted`
-      : state === "tentative"
+      : response === "tentative"
         ? t`Tentative`
-        : state === "declined"
+        : response === "declined"
           ? t`Declined`
           : null;
+  const label = state === undefined ? null : responseLabel(state);
   return (
     <section
       aria-label={t`Calendar invitation`}
@@ -307,7 +308,13 @@ function Invitation({
               disabled={result.waiting}
               onClick={async () => {
                 const exit = await respond({
-                  payload: { messageId: message.id, key: invite.key, response },
+                  payload: {
+                    messageId: message.id,
+                    key: invite.key,
+                    response,
+                    // An IMAP reply's subject names the response in the app language.
+                    label: responseLabel(response) ?? response,
+                  },
                   reactivityKeys: [Keys.audit],
                 });
                 if (exit._tag === "Success") setSent(response);

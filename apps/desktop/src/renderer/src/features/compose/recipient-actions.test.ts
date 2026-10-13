@@ -1,8 +1,11 @@
+import { setupI18n } from "@lingui/core";
 import { expect, it } from "vitest";
 import { moveRecipient, parseRecipientDrag, replaceRecipient } from "./recipient-actions";
 import { emptyDraft, fromStored, needsClosePrompt, toMessage, draftFor } from "./draft";
 import { recipientLabel } from "@openmail/core/schema";
 import type { Account, Message } from "../../../../shared/api";
+
+const english = setupI18n({ locale: "en", messages: { en: {} } });
 
 it("moving a chip preserves quoted names, unfinished text and dedupes the destination", () => {
   const fields = {
@@ -97,13 +100,13 @@ it("reply draft uses the received alias before signature selection", () => {
     hasAttachments: false,
   };
   expect(
-    draftFor("reply", message, account, false, [alias], undefined, {
+    draftFor(english, "reply", message, account, false, [alias], undefined, {
       preference: "received",
       aliases: [alias],
     }).from,
   ).toEqual({ name: "Alias", address: alias.address });
   expect(
-    draftFor("reply", message, account, false, [alias], undefined, {
+    draftFor(english, "reply", message, account, false, [alias], undefined, {
       preference: "default",
       aliases: [alias],
     }).from?.address,

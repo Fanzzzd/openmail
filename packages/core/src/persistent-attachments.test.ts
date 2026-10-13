@@ -2,7 +2,7 @@ import { TestMailbox } from "./platform/node/testing.js";
 import { NodeFileSystem, NodePath } from "@effect/platform-node";
 import { assert, it } from "@effect/vitest";
 import { Effect, Layer, Option, Stream } from "effect";
-import { mkdtemp, rm, readdir, stat, symlink, writeFile } from "node:fs/promises";
+import { mkdtemp, rm, readdir, stat, symlink, utimes, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { expect, vi } from "vitest";
@@ -50,10 +50,9 @@ import { TestClock } from "effect/testing";
         expect((await stat(path.join(folder, name))).mode & 0o777).toBe(0o600);
       const reopened = new PersistentAttachments(directory);
       expect(await reopened.get("../../account", "../../a", 4)).toEqual(Buffer.from([1, 2]));
-      // Ensure LRU timestamps have distinct ordering even on coarse filesystems.
-      await new Promise((resolve) => {
-        setTimeout(resolve, 15);
-      });
+      // Age both entries so the read below is the newest use even on coarse filesystems.
+      const past = new Date(Date.now() - 60_000);
+      for (const name of await readdir(folder)) await utimes(path.join(folder, name), past, past);
       await reopened.get("../../account", "../../a", 4);
       await reopened.set("other", "c", new Uint8Array([5, 6]), 4);
       expect(await reopened.get("../../account", "b", 4)).toBeNull();

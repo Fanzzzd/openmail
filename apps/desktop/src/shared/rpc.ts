@@ -260,7 +260,13 @@ export class MailRpcs extends RpcGroup.make(
   }),
   /** User click only. No MCP write tool maps to this endpoint. */
   Rpc.make("RespondInvite", {
-    payload: { messageId: Schema.String, key: Schema.String, response: InviteResponse },
+    payload: {
+      messageId: Schema.String,
+      key: Schema.String,
+      response: InviteResponse,
+      /** The response in the app language, for the subject of an IMAP reply. */
+      label: Schema.optionalKey(Schema.String.check(Schema.isMaxLength(100))),
+    },
     error,
   }),
   Rpc.make("AppleContactsStatus", { success: AppleContactsState }),

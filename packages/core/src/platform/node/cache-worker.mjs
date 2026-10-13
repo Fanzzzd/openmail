@@ -90,6 +90,5 @@ try {
 } finally {
   db?.close();
 }
-// Worker MessagePort has no browser target origin.
-// oxlint-disable-next-line unicorn/require-post-message-target-origin
+// oxlint-disable-next-line unicorn/require-post-message-target-origin -- a worker_threads port has no target origin.
 parentPort.postMessage(result);

@@ -269,10 +269,17 @@ import { Store, type ProviderAdapter } from "./services.js";
           date: 2,
           bodyText: "好的，就这么定。\n\n2026年9月1日 Alice 写道：\n> 第一封\n",
         },
+        {
+          ...base,
+          id: "c",
+          date: 3,
+          bodyText: "Passt.\n\nAm 1. Sept. 2026 schrieb Alice <alice@x.com>:\n> 第一封\n",
+        },
       ],
       30,
     );
     assert.strictEqual(thread.messages[1]?.text, "好的，就这么定。");
+    assert.strictEqual(thread.messages[2]?.text, "Passt.");
     assert.ok(thread.truncated > 0);
     assert.ok(thread.messages[0]!.text.length <= 30);
   });

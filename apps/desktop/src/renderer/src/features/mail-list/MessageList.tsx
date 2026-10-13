@@ -392,8 +392,7 @@ export function MessageList({
           render={
             <div
               ref={listRef}
-              // A native select cannot host these windowed conversation previews.
-              // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
+              // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- a native select cannot host the windowed conversation rows.
               role="listbox"
               tabIndex={threads.length === 0 ? 0 : -1}
               aria-busy={loading}
@@ -650,8 +649,7 @@ const Row = memo(function Row({
           e.dataTransfer.effectAllowed = "move";
         }}
         data-id={m.id}
-        // Keep the virtual conversation row clickable and expose its listbox position.
-        // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
+        // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- an option element holds only text; the row holds the preview markup.
         role="option"
         style={{
           height: rowHeight,

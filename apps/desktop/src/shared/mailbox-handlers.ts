@@ -68,8 +68,8 @@ export function mailboxHandlers(m: MailboxService, options: MailboxHandlerOption
     CreateCalendarEvent: ({ messageId, key, edits }) =>
       m.createCalendarEvent(messageId, key, USER, edits),
     Invitations: ({ messageId }) => m.invitations(messageId),
-    RespondInvite: ({ messageId, key, response }) =>
-      m.respondInvite(messageId, key, response, USER),
+    RespondInvite: ({ messageId, key, response, label }) =>
+      m.respondInvite(messageId, key, response, USER, label),
     ContactSync: () => m.contactSync,
     ImageFromUrl: ({ url }) => m.imageFromUrl(url),
     ImageFromFile: ({ file }) => m.imageFromFile(file),

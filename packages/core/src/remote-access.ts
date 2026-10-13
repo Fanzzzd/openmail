@@ -46,8 +46,7 @@ export function normalizeRemoteAccess(
   const allowlist: string[] = [];
   for (const raw of input.allowlist) {
     const login = raw.trim();
-    // oxlint-disable-next-line no-control-regex
-    if (!LOGIN.test(login) || /[\u0000-\u001f\u007f]/.test(login))
+    if (!LOGIN.test(login) || /\p{Cc}/u.test(login))
       return Effect.fail(
         new InvalidInput({ message: "Enter a tailnet login such as name@github" }),
       );

@@ -1,7 +1,10 @@
+import { setupI18n } from "@lingui/core";
 import { expect, it } from "vitest";
 import type { Account, Message } from "../../../../shared/api";
 import { draftFor, toMessage } from "../compose/draft";
 import { readerThreadKey, readerMessageId, replySource, replyTarget } from "./reader-selection";
+
+const english = setupI18n({ locale: "en", messages: { en: {} } });
 
 it("standard reply uses the selected older message's recipients, quote and threading", () => {
   const account: Account = {
@@ -52,7 +55,7 @@ it("standard reply uses the selected older message's recipients, quote and threa
   expect(source).toBe(older);
   if (!source) throw new Error("Missing selected reply source");
   for (const mode of ["reply", "replyAll"] as const) {
-    const draft = draftFor(mode, source, account);
+    const draft = draftFor(english, mode, source, account);
     const { message } = toMessage(draft);
     expect(message.inReplyTo).toBe(older.id);
     expect(message.to).toEqual(older.replyTo);

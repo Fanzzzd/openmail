@@ -86,19 +86,21 @@ it("right-clicks become a TextMenu event; commands act on the main process's own
     expect(other.webContents.replaceMisspelling).not.toHaveBeenCalled();
     expect(other.webContents.session.addWordToSpellCheckerDictionary).not.toHaveBeenCalled();
 
-    win.webContents.emit("context-menu", undefined, {
-      isEditable: false,
-      frame: {},
-      x: 0,
-      y: 0,
-      misspelledWord: "",
-      dictionarySuggestions: [],
-      editFlags: { canCut: false, canCopy: false, canPaste: false },
-    });
-    await new Promise((resolve) => {
-      setTimeout(resolve, 10);
-    });
-    expect(native.sent).toHaveBeenCalledTimes(1);
+    const rightClick = (isEditable: boolean, x: number) =>
+      win.webContents.emit("context-menu", undefined, {
+        isEditable,
+        frame: {},
+        x,
+        y: 0,
+        misspelledWord: "",
+        dictionarySuggestions: [],
+        editFlags: { canCut: false, canCopy: false, canPaste: false },
+      });
+    // A read-only right-click sends nothing: the editable one after it is the only new menu.
+    rightClick(false, 1);
+    rightClick(true, 2);
+    await vi.waitFor(() => expect(native.sent).toHaveBeenCalledTimes(2));
+    expect(native.sent.mock.lastCall?.[1]).toMatchObject({ menu: { x: 2 } });
   } finally {
     stop();
   }

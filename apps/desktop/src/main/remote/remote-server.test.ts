@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { COMPOSE_ATTACHMENT_LIMIT } from "@openmail/core/schema";
 import { WebSocket } from "ws";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import {
   checkRequest,
   createSessions,
@@ -257,6 +257,11 @@ describe("remote server", () => {
       expect((await call(pathname, tailnet())).status, pathname).not.toBe(200);
   });
 
+  it("rejects control characters in the path", async () => {
+    for (const pathname of ["/%00", "/a%1fb", "/%7f", "/%c2%85"])
+      expect((await call(pathname, tailnet())).status, pathname).toBe(400);
+  });
+
   it("downloads attachments by id only with a session, as an octet-stream download", async () => {
     expect((await call("/api/attachment?message=m1&part=0.1", tailnet())).status).toBe(401);
     const cookie = await signIn();
@@ -389,18 +394,13 @@ describe("remote server", () => {
       req.write(upload.body.subarray(0, 10));
       return req;
     });
-    await new Promise((resolve) => {
-      setTimeout(resolve, 100);
-    });
-    const busy = await call("/api/upload?account=gmail-account", headers, "POST", upload.body);
-    expect(busy.status).toBe(503);
+    // The server takes the held slots once it reads their headers; poll until it does.
+    const postUpload = () =>
+      call("/api/upload?account=gmail-account", headers, "POST", upload.body);
+    await vi.waitFor(async () => expect((await postUpload()).status).toBe(503), { interval: 5 });
     for (const req of held) req.destroy();
-    await new Promise((resolve) => {
-      setTimeout(resolve, 100);
-    });
-    expect(
-      (await call("/api/upload?account=gmail-account", headers, "POST", upload.body)).status,
-    ).toBe(200);
+    // Destroyed bodies free their slots once the server sees the sockets close.
+    await vi.waitFor(async () => expect((await postUpload()).status).toBe(200), { interval: 5 });
   });
 
   it("refuses uploads with another origin, no session or another content type", async () => {

@@ -1,4 +1,4 @@
-import { expect } from "vitest";
+import { expect, vi } from "vitest";
 import { assert, it } from "@effect/vitest";
 import { Clock, Deferred, Effect, Fiber, ManagedRuntime, Option } from "effect";
 import { TestClock } from "effect/testing";
@@ -628,7 +628,7 @@ it("desktop undo intents and draft creation metadata survive reopening", async (
     await cli.runPromise(
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        yield* Effect.sleep("100 millis");
+        // Layer start runs synchronously, so a CLI resume would already have sent.
         yield* mailbox.flushQueuedSends();
         expect(server.sent).toHaveLength(0);
         expect((yield* mailbox.queuedSends)[0]?.status).toBe("waiting");
@@ -643,8 +643,8 @@ it("desktop undo intents and draft creation metadata survive reopening", async (
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
         const store = yield* Store;
-        yield* Effect.sleep("100 millis");
-        expect(server.sent).toHaveLength(1);
+        // The resumed intent is due now; its worker sends in the background.
+        yield* Effect.promise(() => vi.waitFor(() => expect(server.sent).toHaveLength(1)));
         expect(yield* mailbox.queuedSends).toEqual([]);
         const draft = Option.getOrThrow(yield* store.getDraft("create-marker"));
         expect(draft.remote?.changeKey).toBe("version");
@@ -709,9 +709,12 @@ for (const status of ["waiting", "sending", "stale"] as const) {
         Effect.gen(function* () {
           const mailbox = yield* Mailbox;
           const store = yield* Store;
-          yield* Effect.sleep("100 millis");
-          expect((yield* mailbox.queuedSends)[0]?.status).toBe(
-            status === "stale" ? "retryable" : "failed",
+          // A due "waiting" intent fails in its background worker; the others fail at start.
+          const expected = status === "stale" ? "retryable" : "failed";
+          yield* Effect.promise(() =>
+            vi.waitFor(async () =>
+              expect((await Effect.runPromise(mailbox.queuedSends))[0]?.status).toBe(expected),
+            ),
           );
           expect(yield* store.sendUncertain("restart-failure")).toBe(status !== "stale");
           expect(server.sent).toHaveLength(0);

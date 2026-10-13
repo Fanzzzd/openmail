@@ -1,5 +1,30 @@
+import * as React from "react";
 import { constVoid } from "effect/Function";
 import { beforeAll, vi } from "vitest";
+
+/**
+ * React's act environment is on exactly while an act() scope is open.
+ *
+ * The flows import @testing-library/react/pure. Its act() sets
+ * IS_REACT_ACT_ENVIRONMENT for the call and restores the previous value when
+ * the call ends, so overlapping acts (an eventually() poll while an RPC reply
+ * renders) leave it false inside an open scope, and React logs "not configured
+ * to support act" for each update: about 3,500 lines a run. Setting it to true
+ * for good is worse: RPC replies and Effect atoms update the tree between
+ * polls, outside any act, and React logs "not wrapped in act" for each one:
+ * about 70,000 lines. The flows wait for those updates with eventually(), so
+ * neither warning points at a real fault.
+ */
+const reactInternals: object = Reflect.get(
+  React,
+  "__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE",
+);
+Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", {
+  configurable: true,
+  get: () => Reflect.get(reactInternals, "actQueue") !== null,
+  // Testing Library's act() writes the flag; the getter already answers for it.
+  set: constVoid,
+});
 
 Object.defineProperty(window, "matchMedia", {
   writable: true,
@@ -21,6 +46,8 @@ class ResizeObserverStub {
 }
 vi.stubGlobal("ResizeObserver", ResizeObserverStub);
 HTMLElement.prototype.scrollIntoView = constVoid;
+// jsdom has no layout; its window.scrollTo only logs "Not implemented".
+window.scrollTo = constVoid;
 /** The Mac's traffic lights as the Window Controls Overlay reports them on macOS 26. */
 class WindowControlsOverlayStub extends EventTarget {
   visible = true;

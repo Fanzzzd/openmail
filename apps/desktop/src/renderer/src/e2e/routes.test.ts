@@ -1,7 +1,7 @@
 import { act, fireEvent, screen, within } from "@testing-library/react/pure";
 import { afterEach, expect, it, vi } from "vitest";
 import { SETTLE_MS } from "../routes/router";
-import { eventually, flow, key, row } from "./harness";
+import { advance, eventually, flow, key, row } from "./harness";
 
 let current: Awaited<ReturnType<typeof flow>> | undefined;
 afterEach(async () => {
@@ -9,10 +9,6 @@ afterEach(async () => {
   current = undefined;
 });
 
-const wait = (ms: number) =>
-  new Promise<void>((resolve) => {
-    setTimeout(resolve, ms);
-  });
 const title = () => screen.getByRole("heading", { level: 1 }).textContent;
 const mailboxes = () => screen.getAllByRole("navigation", { name: "Mailboxes" })[0]!;
 
@@ -145,8 +141,9 @@ it("writes the URL once after rapid selection moves settle", async () => {
   row(h.id("one")).focus();
   const push = vi.spyOn(h.router.history, "push");
   const replace = vi.spyOn(h.router.history, "replace");
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
   for (let i = 0; i < 300; i++) act(() => key(i % 2 ? "ArrowUp" : "ArrowDown"));
-  await act(() => wait(SETTLE_MS + 50));
+  await advance(SETTLE_MS + 50);
   await eventually(() => expect(h.href()).toContain("thread="));
   expect(push).not.toHaveBeenCalled();
   expect(replace.mock.calls.length).toBeLessThanOrEqual(3);
@@ -163,11 +160,13 @@ it("drops a search typed but not committed when Back leaves the route", async ()
   fireEvent.click(within(mailboxes()).getByRole("button", { name: /^Inbox/ }));
   await eventually(() => expect(title()).toBe("Inbox"));
   const field = await screen.findByLabelText("Search mail");
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
   fireEvent.change(field, { target: { value: "Original" } });
   act(() => h.router.history.back());
   await eventually(() => expect(title()).toBe("Starred"));
   expect(field).toHaveProperty("value", "");
-  await act(() => wait(600));
+  // Past the search debounce and the URL settle: nothing pending writes the search back.
+  await advance(600);
   expect(h.href()).toBe("/mail/all/starred");
 });
 

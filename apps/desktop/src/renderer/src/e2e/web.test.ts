@@ -9,7 +9,7 @@ import { Effect, Fiber, Layer, ManagedRuntime } from "effect";
 import { AtomRegistry } from "effect/reactivity";
 import { createElement } from "react";
 import { WebSocket as NodeWebSocket, WebSocketServer } from "ws";
-import { afterEach, expect, it } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 import { createConnectionHub, remoteRpcServer } from "../../../main/remote/remote-rpc-server";
 import { DEFAULT_VIEW, mailHref } from "../../../shared/routes";
 import { setPlatform } from "../lib/platform";
@@ -77,10 +77,7 @@ async function openWebApp() {
     });
     socket.once("close", () => handlers.closed());
   });
-  for (let i = 0; i < 200 && !hub.listening; i++)
-    await new Promise<void>((resolve) => {
-      setTimeout(resolve, 10);
-    });
+  await vi.waitFor(() => expect(hub.listening).toBe(true), { timeout: 2_000, interval: 10 });
   const address = wss.address();
   const port = typeof address === "object" && address ? address.port : 0;
 
@@ -144,7 +141,11 @@ it("the web build renders the inbox over a WebSocket and calls only remote RPCs"
 
 const dialogs = () => [...document.querySelectorAll('[role="dialog"], [role="alertdialog"]')];
 
-/** Lets the click's RPCs reach the server and their replies render. */
+/**
+ * Lets the click's RPCs reach the server and their replies render. A real
+ * 30 ms window on purpose: this is a sweep for calls that should not happen,
+ * and a click that makes no call has no event to wait for.
+ */
 const settle = () =>
   act(async () => {
     await new Promise<void>((resolve) => {

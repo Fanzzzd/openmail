@@ -2054,6 +2054,11 @@ msgstr "Дата"
 msgid "Date is ambiguous. Enter an explicit date and time"
 msgstr "Дата неоднозначна. Укажите точные дату и время"
 
+#: src/renderer/src/features/compose/draft.ts
+msgctxt "outgoing forward header"
+msgid "Date: {date}"
+msgstr "Дата: {date}"
+
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Dates"
 msgstr "Даты"
@@ -2832,6 +2837,11 @@ msgstr "Метка пересылки"
 msgid "Forward as attachment"
 msgstr "Переслать как вложение"
 
+#: src/renderer/src/features/compose/draft.ts
+msgctxt "outgoing forward header"
+msgid "Forwarded message"
+msgstr "Пересылаемое сообщение"
+
 #: src/renderer/src/features/calendar/recurrence-summary.ts
 msgid "Fourth"
 msgstr "Четвёртый"
@@ -2871,6 +2881,11 @@ msgstr "От знакомых"
 #: src/renderer/src/features/compose/components/Composer.tsx
 msgid "From updated"
 msgstr "Отправитель изменён"
+
+#: src/renderer/src/features/compose/draft.ts
+msgctxt "outgoing forward header"
+msgid "From: {from}"
+msgstr "От: {from}"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Funnel is on for this port, which would put it on the public internet. OpenMail never uses Funnel. Turn Funnel off for this port first."
@@ -4530,6 +4545,12 @@ msgstr "Старая почта загружается в фоне. После �
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Oldest first"
 msgstr "Сначала самый старый"
+
+#. Written into the sent message above the quoted text.
+#: src/renderer/src/features/compose/draft.ts
+msgctxt "outgoing reply quote header"
+msgid "On {date}, {name} <{address}> wrote:"
+msgstr "{date}, {name} <{address}> написал(а):"
 
 #: src/renderer/src/features/calendar/EventRecurrenceEditor.tsx
 msgid "On a date"
@@ -6472,6 +6493,11 @@ msgstr "Тема"
 msgid "Subject contains"
 msgstr "Тема содержит"
 
+#: src/renderer/src/features/compose/draft.ts
+msgctxt "outgoing forward header"
+msgid "Subject: {subject}"
+msgstr "Тема: {subject}"
+
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Subscript"
@@ -6934,6 +6960,11 @@ msgid "To or CC me"
 msgstr "Мне или копия мне"
 
 #: src/renderer/src/features/reader/Reader.tsx
+msgid "To: {to}"
+msgstr "Кому: {to}"
+
+#: src/renderer/src/features/compose/draft.ts
+msgctxt "outgoing forward header"
 msgid "To: {to}"
 msgstr "Кому: {to}"
 

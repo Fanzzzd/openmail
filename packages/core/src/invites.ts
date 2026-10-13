@@ -230,12 +230,23 @@ export const invitesFromRaw = (raw: Uint8Array, includePublished = false) =>
     }),
   );
 
-/** Minimal iTIP REPLY, retaining UID, SEQUENCE, RECURRENCE-ID and sender timezone. */
+const RESPONSE_LABELS: Record<InviteResponse, string> = {
+  accepted: "Accepted",
+  tentative: "Tentative",
+  declined: "Declined",
+};
+
+/**
+ * Minimal iTIP REPLY, retaining UID, SEQUENCE, RECURRENCE-ID and sender timezone.
+ * `label` names the response in the subject and text, in the language of the
+ * person answering; callers without a language get English.
+ */
 export function inviteReply(
   parsed: ParsedInvite,
   me: Address,
   response: InviteResponse,
   messageId: string,
+  label = RESPONSE_LABELS[response],
 ): OutgoingMessage {
   if (!inviteCanRespond(parsed.invite, me.address) || !parsed.invite.organizer)
     throw new InvalidInput({ message: "This invitation cannot be answered by this account" });
@@ -275,8 +286,8 @@ export function inviteReply(
     to: [parsed.invite.organizer],
     cc: [],
     bcc: [],
-    subject: `${response}: ${parsed.invite.title}`,
-    text: `${me.address}: ${response}\n${parsed.invite.title}`,
+    subject: `${label}: ${parsed.invite.title}`,
+    text: `${me.address}: ${label}\n${parsed.invite.title}`,
     attachments: [],
     calendar: { method: "REPLY", content: calendar.toString() },
     inReplyTo: messageId,

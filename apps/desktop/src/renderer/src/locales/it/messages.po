@@ -2054,6 +2054,11 @@ msgstr "Data"
 msgid "Date is ambiguous. Enter an explicit date and time"
 msgstr "La data è ambigua. Inserisci una data e un’ora precise"
 
+#: src/renderer/src/features/compose/draft.ts
+msgctxt "outgoing forward header"
+msgid "Date: {date}"
+msgstr "Data: {date}"
+
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Dates"
 msgstr "Date"
@@ -2832,6 +2837,11 @@ msgstr "Contrassegno di inoltro"
 msgid "Forward as attachment"
 msgstr "Inoltra come allegato"
 
+#: src/renderer/src/features/compose/draft.ts
+msgctxt "outgoing forward header"
+msgid "Forwarded message"
+msgstr "Messaggio inoltrato"
+
 #: src/renderer/src/features/calendar/recurrence-summary.ts
 msgid "Fourth"
 msgstr "Quarto"
@@ -2871,6 +2881,11 @@ msgstr "Da persone che conosco"
 #: src/renderer/src/features/compose/components/Composer.tsx
 msgid "From updated"
 msgstr "Mittente aggiornato"
+
+#: src/renderer/src/features/compose/draft.ts
+msgctxt "outgoing forward header"
+msgid "From: {from}"
+msgstr "Da: {from}"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Funnel is on for this port, which would put it on the public internet. OpenMail never uses Funnel. Turn Funnel off for this port first."
@@ -4530,6 +4545,12 @@ msgstr "I messaggi meno recenti vengono scaricati in background. Le intestazioni
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Oldest first"
 msgstr "Prima il più vecchio"
+
+#. Written into the sent message above the quoted text.
+#: src/renderer/src/features/compose/draft.ts
+msgctxt "outgoing reply quote header"
+msgid "On {date}, {name} <{address}> wrote:"
+msgstr "Il giorno {date} {name} <{address}> ha scritto:"
 
 #: src/renderer/src/features/calendar/EventRecurrenceEditor.tsx
 msgid "On a date"
@@ -6472,6 +6493,11 @@ msgstr "Oggetto"
 msgid "Subject contains"
 msgstr "L’oggetto contiene"
 
+#: src/renderer/src/features/compose/draft.ts
+msgctxt "outgoing forward header"
+msgid "Subject: {subject}"
+msgstr "Oggetto: {subject}"
+
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Subscript"
@@ -6934,6 +6960,11 @@ msgid "To or CC me"
 msgstr "A me o CC a me"
 
 #: src/renderer/src/features/reader/Reader.tsx
+msgid "To: {to}"
+msgstr "A: {to}"
+
+#: src/renderer/src/features/compose/draft.ts
+msgctxt "outgoing forward header"
 msgid "To: {to}"
 msgstr "A: {to}"
 

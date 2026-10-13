@@ -56,7 +56,7 @@ const outlookHttp = () =>
 /** Times every statement on every connection opened after the call. */
 function traceStatements() {
   const slow = new Map<string, { count: number; totalMs: number; maxMs: number }>();
-  // oxlint-disable-next-line typescript/unbound-method
+  // oxlint-disable-next-line typescript/unbound-method -- the original is called with .call(this) after the prototype is patched.
   const prepare = DatabaseSync.prototype.prepare;
   const spy = vi.spyOn(DatabaseSync.prototype, "prepare").mockImplementation(function (
     this: DatabaseSync,

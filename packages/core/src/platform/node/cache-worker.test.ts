@@ -31,9 +31,9 @@ function fixture(version = 37) {
 
 it("runs VACUUM in a worker while the caller's event loop keeps responding", async () => {
   const database = fixture();
-  // oxlint-disable-next-line typescript/unbound-method
+  // oxlint-disable-next-line typescript/unbound-method -- the original is called with .call(this) after the prototype is patched.
   const prepare = DatabaseSync.prototype.prepare;
-  // oxlint-disable-next-line typescript/unbound-method
+  // oxlint-disable-next-line typescript/unbound-method -- the original is called with .call(this) after the prototype is patched.
   const exec = DatabaseSync.prototype.exec;
   const forbidVacuum = vi.spyOn(DatabaseSync.prototype, "prepare").mockImplementation(function (
     this: DatabaseSync,

@@ -2054,6 +2054,11 @@ msgstr "日付"
 msgid "Date is ambiguous. Enter an explicit date and time"
 msgstr "日時が曖昧です。明確な日時を入力してください"
 
+#: src/renderer/src/features/compose/draft.ts
+msgctxt "outgoing forward header"
+msgid "Date: {date}"
+msgstr "日付: {date}"
+
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Dates"
 msgstr "日付"
@@ -2832,6 +2837,11 @@ msgstr "転送フラグ"
 msgid "Forward as attachment"
 msgstr "添付ファイルとして転送"
 
+#: src/renderer/src/features/compose/draft.ts
+msgctxt "outgoing forward header"
+msgid "Forwarded message"
+msgstr "転送されたメッセージ"
+
 #: src/renderer/src/features/calendar/recurrence-summary.ts
 msgid "Fourth"
 msgstr "第4"
@@ -2871,6 +2881,11 @@ msgstr "知り合いから"
 #: src/renderer/src/features/compose/components/Composer.tsx
 msgid "From updated"
 msgstr "差出人を更新しました"
+
+#: src/renderer/src/features/compose/draft.ts
+msgctxt "outgoing forward header"
+msgid "From: {from}"
+msgstr "差出人: {from}"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Funnel is on for this port, which would put it on the public internet. OpenMail never uses Funnel. Turn Funnel off for this port first."
@@ -4530,6 +4545,12 @@ msgstr "古いメールはバックグラウンドでダウンロードされま
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Oldest first"
 msgstr "古い順"
+
+#. Written into the sent message above the quoted text.
+#: src/renderer/src/features/compose/draft.ts
+msgctxt "outgoing reply quote header"
+msgid "On {date}, {name} <{address}> wrote:"
+msgstr "{date} {name} <{address}>:"
 
 #: src/renderer/src/features/calendar/EventRecurrenceEditor.tsx
 msgid "On a date"
@@ -6472,6 +6493,11 @@ msgstr "件名"
 msgid "Subject contains"
 msgstr "件名に含まれる文字"
 
+#: src/renderer/src/features/compose/draft.ts
+msgctxt "outgoing forward header"
+msgid "Subject: {subject}"
+msgstr "件名: {subject}"
+
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Subscript"
@@ -6934,6 +6960,11 @@ msgid "To or CC me"
 msgstr "自分宛てまたはCC"
 
 #: src/renderer/src/features/reader/Reader.tsx
+msgid "To: {to}"
+msgstr "宛先: {to}"
+
+#: src/renderer/src/features/compose/draft.ts
+msgctxt "outgoing forward header"
 msgid "To: {to}"
 msgstr "宛先: {to}"
 

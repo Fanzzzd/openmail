@@ -17,7 +17,7 @@ import { Store } from "../dist/services.js";
 const historical = process.env.OPENMAIL_PERF_BASELINE_REF;
 let directory;
 let historicalDirectory;
-// oxlint-disable-next-line typescript/unbound-method
+// oxlint-disable-next-line typescript/unbound-method -- the original is called with .call(this) after the prototype is patched.
 const originalPrepare = DatabaseSync.prototype.prepare;
 try {
   let moduleRoot = new URL("../dist/", import.meta.url);

@@ -13,23 +13,33 @@ export const SIGNATURE_SEPARATOR = "-- ";
 /**
  * Lines that start the quoted part of a reply or forward, as openmail and the
  * common clients write them. Everything from here on is someone else's text.
+ * Quote headers follow the sender's language, so besides the known phrases a
+ * line that names an address in angle brackets and ends with a colon counts
+ * when quoted lines follow it, and so does a dashed banner such as
+ * "---------- Forwarded message ---------".
  */
 const QUOTE_START = [
   /^.*写道：\s*$/,
   /^On .+ wrote:\s*$/,
-  /^-{5,}\s*(转发的邮件|Forwarded message)\s*-{5,}\s*$/,
+  /^-{5,}\s*[^\s-].*[^\s-]\s*-{5,}\s*$/,
   /^>/,
 ];
+/** "Am 13.10.2026 schrieb Ada <ada@example.com>:" and its forms in other languages. */
+export const ADDRESSED_QUOTE_HEADER = /<[^<>\s@]+@[^<>\s]+>.*[:：]\s*$/;
 
-function isQuoteStart(line: string): boolean {
-  return QUOTE_START.some((re) => re.test(line));
+function isQuoteStart(line: string, next: string | undefined): boolean {
+  return (
+    QUOTE_START.some((re) => re.test(line)) ||
+    (ADDRESSED_QUOTE_HEADER.test(line) && next?.startsWith(">") === true)
+  );
 }
 
 /** Offset of the first quoted line in `body`, or its length when nothing is quoted. */
 export function quoteOffset(body: string): number {
   let offset = 0;
-  for (const line of body.split("\n")) {
-    if (isQuoteStart(line)) return offset;
+  const lines = body.split("\n");
+  for (const [index, line] of lines.entries()) {
+    if (isQuoteStart(line, lines[index + 1])) return offset;
     offset += line.length + 1;
   }
   return body.length;

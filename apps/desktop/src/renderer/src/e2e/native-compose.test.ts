@@ -1,10 +1,7 @@
-import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { afterEach, expect, it } from "vitest";
 import { act, fireEvent, screen } from "@testing-library/react/pure";
 import { clickButton, eventually, flow, key, row } from "./harness";
 
-beforeEach(() => {
-  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-});
 let current: Awaited<ReturnType<typeof flow>> | undefined;
 afterEach(async () => {
   await current?.dispose();

@@ -22,6 +22,25 @@ describe("applySignature", () => {
     assert.strictEqual(applySignature(forward, undefined, "王"), `\n\n-- \n王${forward}`);
   });
 
+  it("finds the quote in headers written in any app language", () => {
+    for (const header of [
+      "Am Di., 13. Okt. 2026, 10:24 schrieb Ada <ada@x.com>:",
+      "2026年10月13日(火) 10:24 Ada <ada@x.com>:",
+      "Le mar. 13 oct. 2026, 10:24, Ada <ada@x.com> a écrit :",
+    ]) {
+      const quote = `\n\n${header}\n> Hallo`;
+      assert.strictEqual(applySignature(quote, undefined, "W"), `\n\n-- \nW${quote}`);
+    }
+    const forward = "\n\n---------- Message transféré ---------\nDe : a@x.com";
+    assert.strictEqual(applySignature(forward, undefined, "W"), `\n\n-- \nW${forward}`);
+    // Without quoted lines after it, an addressed line is the person's own text; so is a rule.
+    assert.strictEqual(
+      ownText("Write to Ada <ada@x.com>:\nthanks"),
+      "Write to Ada <ada@x.com>:\nthanks",
+    );
+    assert.strictEqual(ownText("Notes\n--------------\nmore"), "Notes\n--------------\nmore");
+  });
+
   it("swaps the signature when the From account changes, and removes it for none", () => {
     const withOld = applySignature(QUOTE, undefined, "旧");
     const swapped = applySignature(`收到${withOld}`, "旧", "新");

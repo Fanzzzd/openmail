@@ -551,6 +551,17 @@ import { Mailbox } from "./mailbox.js";
       "source",
     );
     assert.ok(reply.calendar?.content.includes("ROLE=OPT-PARTICIPANT"));
+    // The subject names the response in English unless the caller passes its own language.
+    assert.strictEqual(reply.subject, "Accepted: Meeting");
+    const chinese = inviteReply(
+      next,
+      { name: "Me", address: "me@example.com" },
+      "accepted",
+      "source",
+      "已接受",
+    );
+    assert.strictEqual(chinese.subject, "已接受: Meeting");
+    assert.strictEqual(chinese.text, "me@example.com: 已接受\nMeeting");
     const annotated = inviteHistory(next.invite, [old.invite, next.invite, response.invite]);
     assert.deepStrictEqual(annotated.previous, {
       start: old.invite.start,

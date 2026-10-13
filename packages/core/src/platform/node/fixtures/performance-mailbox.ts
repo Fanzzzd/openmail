@@ -171,7 +171,7 @@ export type QueryPlan = { sql: string; plan: string[] };
 export function traceQueries(
   onQuery?: (query: string, phase: "prepare" | "execute") => () => void,
 ) {
-  // oxlint-disable-next-line typescript/unbound-method
+  // oxlint-disable-next-line typescript/unbound-method -- the original is called with .call(this) after the prototype is patched.
   const prepare = DatabaseSync.prototype.prepare;
   let capture: Map<string, QueryPlan> | undefined;
   DatabaseSync.prototype.prepare = function (query) {

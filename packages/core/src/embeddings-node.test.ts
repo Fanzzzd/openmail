@@ -80,6 +80,10 @@ it.effect("process exit is a runtime failure; a later request starts a fresh chi
 it("a verified runtime frees its idle process while retaining fast search readiness", async () => {
   let kills = 0;
   let spawns = 0;
+  let idleKill: () => void = () => null;
+  const killed = new Promise<void>((resolve) => {
+    idleKill = resolve;
+  });
   const launch: InferenceProcessLauncher = () => {
     spawns++;
     let reply: (value: unknown) => void = () => null;
@@ -91,6 +95,7 @@ it("a verified runtime frees its idle process while retaining fast search readin
       onFailure: () => () => null,
       kill: () => {
         kills++;
+        idleKill();
         return Promise.resolve();
       },
       send: () =>
@@ -108,12 +113,8 @@ it("a verified runtime frees its idle process while retaining fast search readin
       });
       yield* models.ensure(true);
       yield* models.embedder.text("fixture", "query");
-      yield* Effect.promise(
-        () =>
-          new Promise((resolve) => {
-            setTimeout(resolve, 60);
-          }),
-      );
+      // The 15 ms idle timer kills the process.
+      yield* Effect.promise(() => killed);
       assert.strictEqual(kills, 1);
       assert.strictEqual((yield* models.status).kind, "ready");
       yield* models.ensure(false);

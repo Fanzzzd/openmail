@@ -13,6 +13,10 @@ vi.mock("electron", () => ({
 }));
 
 import { DeviceError } from "../../../../../packages/core/src/errors.js";
+import {
+  DEFAULT_PREFS,
+  type AttachmentSaveFolder,
+} from "../../../../../packages/core/src/domain.js";
 import type { DownloadItem } from "../../shared/downloads";
 import { activeDownload, downloadsProgress } from "../../shared/downloads";
 import { attachmentFolder } from "./attachment-actions";
@@ -222,10 +226,10 @@ it("the overall ring shows bytes over known sizes of active downloads only", () 
 });
 
 it("the attachment folder follows the setting; legacy ask means Downloads, relative paths fail", async () => {
-  const prefs = (attachmentSaveFolder: unknown) => ({
-    // IO seam: prefs arrive as decoded JSON in production.
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-    prefs: Effect.succeed({ attachmentSaveFolder } as never),
+  // No stored setting means the key is absent, as in a profile from before the setting existed.
+  const { attachmentSaveFolder: _default, ...unset } = DEFAULT_PREFS;
+  const prefs = (attachmentSaveFolder?: AttachmentSaveFolder) => ({
+    prefs: Effect.succeed(attachmentSaveFolder ? { ...unset, attachmentSaveFolder } : unset),
   });
   const custom = path.join(folder, "nested", "attachments");
   expect(

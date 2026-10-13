@@ -27,6 +27,8 @@ it.effect("remote access rejects malformed logins and service names", () =>
     for (const input of [
       { ...DEFAULT_REMOTE_ACCESS, allowlist: ["not a login"] },
       { ...DEFAULT_REMOTE_ACCESS, allowlist: ["a@b\nX-Header: 1"] },
+      { ...DEFAULT_REMOTE_ACCESS, allowlist: ["a@b\u007f"] },
+      { ...DEFAULT_REMOTE_ACCESS, allowlist: ["a@b\u0085"] },
       { ...DEFAULT_REMOTE_ACCESS, service: "openmail" },
       { ...DEFAULT_REMOTE_ACCESS, service: "svc:-openmail" },
     ]) {

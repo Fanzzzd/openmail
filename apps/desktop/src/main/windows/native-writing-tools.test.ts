@@ -3,13 +3,13 @@ import { expect, it, vi } from "vitest";
 
 const native = vi.hoisted(() => {
   vi.resetModules();
-  return { popup: vi.fn(), sent: vi.fn() };
+  return { sent: vi.fn() };
 });
 vi.mock("electron", () => ({
   app: new EventEmitter(),
   BrowserWindow: { getAllWindows: () => [] },
   session: { defaultSession: {} },
-  Menu: { buildFromTemplate: () => ({ popup: native.popup }) },
+  Menu: { buildFromTemplate: vi.fn() },
 }));
 vi.mock("./window-ui", () => ({ sendWindowUi: native.sent }));
 
@@ -19,8 +19,7 @@ it.skipIf(process.platform !== "darwin")(
     vi.doUnmock("./spellcheck");
     vi.resetModules();
     const { app } = await import("electron");
-    const { installSpellingMenu, popupWritingTools, textMenuCommand } =
-      await import("./spellcheck");
+    const { installSpellingMenu, textMenuCommand } = await import("./spellcheck");
     const frame = {};
     const script = vi.fn<(script: string) => Promise<boolean>>(() => Promise.resolve(true));
     const contents = Object.assign(new EventEmitter(), {
@@ -55,19 +54,17 @@ it.skipIf(process.platform !== "darwin")(
       contents.emit("context-menu", undefined, params);
       await vi.waitFor(() => expect(lastMenu()).toMatchObject({ writingTools: true, x: 50 }));
       expect(script.mock.lastCall?.[0]).toContain("data-openmail-compose-body");
-      // IO seam: the fake window stands in for a BrowserWindow.
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-      const target = win as unknown as Electron.BrowserWindow;
-      textMenuCommand(win, { kind: "writingTools" }, (state) => popupWritingTools(target, state));
-      expect(native.popup.mock.lastCall?.[0]).toEqual({ window: win, frame, x: 50, y: 100 });
+      const openWritingTools = vi.fn<(state: { frame?: unknown; x: number; y: number }) => void>();
+      textMenuCommand(win, { kind: "writingTools" }, openWritingTools);
+      expect(openWritingTools.mock.lastCall?.[0]).toMatchObject({ frame, x: 50, y: 100 });
 
       script.mockResolvedValue(false);
       native.sent.mockClear();
-      native.popup.mockClear();
+      openWritingTools.mockClear();
       contents.emit("context-menu", undefined, params);
       await vi.waitFor(() => expect(lastMenu()).toMatchObject({ writingTools: false }));
-      textMenuCommand(win, { kind: "writingTools" }, (state) => popupWritingTools(target, state));
-      expect(native.popup).not.toHaveBeenCalled();
+      textMenuCommand(win, { kind: "writingTools" }, openWritingTools);
+      expect(openWritingTools).not.toHaveBeenCalled();
 
       script.mockClear();
       native.sent.mockClear();
@@ -75,12 +72,12 @@ it.skipIf(process.platform !== "darwin")(
       await vi.waitFor(() => expect(lastMenu()).toMatchObject({ writingTools: false }));
       expect(script).not.toHaveBeenCalled();
 
+      // A read-only right-click sends nothing: the editable one after it is the only new menu.
       native.sent.mockClear();
-      contents.emit("context-menu", undefined, { ...params, isEditable: false });
-      await new Promise((resolve) => {
-        setTimeout(resolve, 10);
-      });
-      expect(native.sent).not.toHaveBeenCalled();
+      contents.emit("context-menu", undefined, { ...params, isEditable: false, x: 1 });
+      contents.emit("context-menu", undefined, { ...params, x: 2 });
+      await vi.waitFor(() => expect(native.sent).toHaveBeenCalledTimes(1));
+      expect(lastMenu()).toMatchObject({ x: 2 });
     } finally {
       stop();
     }

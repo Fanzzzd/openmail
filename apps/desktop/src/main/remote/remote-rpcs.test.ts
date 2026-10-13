@@ -1,7 +1,7 @@
 import { Effect, Fiber, Layer } from "effect";
 import { Rpc, RpcGroup } from "effect/rpc";
 import { TestMailbox } from "@openmail/core/testing/node";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { MailRpcs } from "../../shared/rpc";
 import { remotePrefs } from "./remote-handlers";
 import { createConnectionHub, remoteRpcServer } from "./remote-rpc-server";
@@ -122,11 +122,6 @@ describe("remote RPC allowlist", () => {
   });
 });
 
-const pause = () =>
-  new Promise<void>((resolve) => {
-    setTimeout(resolve, 10);
-  });
-
 interface Frame {
   _tag: string;
   requestId?: string;
@@ -139,7 +134,7 @@ describe("remote RPC server", () => {
     const fiber = Effect.runFork(
       Layer.launch(remoteRpcServer(hub)).pipe(Effect.provide(TestMailbox())),
     );
-    for (let i = 0; i < 500 && !hub.listening; i++) await pause();
+    await vi.waitFor(() => expect(hub.listening).toBe(true), { timeout: 5_000, interval: 10 });
     const frames: Frame[] = [];
     let closed: number | undefined;
     const connection = hub.onConnection({
@@ -156,7 +151,10 @@ describe("remote RPC server", () => {
     request("3", "SetRemoteAllowlist", { logins: ["attacker@example.com"] });
     request("4", "ClipboardText");
     const exit = (id: string) => frames.find((frame) => frame.requestId === id)?.exit;
-    for (let i = 0; i < 500 && ["1", "2", "3", "4"].some((id) => !exit(id)); i++) await pause();
+    await vi.waitFor(() => expect(["1", "2", "3", "4"].map(exit)).not.toContain(undefined), {
+      timeout: 5_000,
+      interval: 10,
+    });
     expect(exit("1")?._tag).toBe("Success");
     for (const id of ["2", "3", "4"]) {
       expect(exit(id)?._tag, id).toBe("Failure");

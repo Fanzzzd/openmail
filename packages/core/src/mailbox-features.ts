@@ -333,7 +333,13 @@ export function makeFeatureMailbox(
           }),
         );
       }),
-    respondInvite: (messageId: string, key: string, response: InviteResponse, actor: Actor) =>
+    respondInvite: (
+      messageId: string,
+      key: string,
+      response: InviteResponse,
+      actor: Actor,
+      label?: string,
+    ) =>
       responseLock.withPermit(
         Effect.gen(function* () {
           if (actor.kind !== "user")
@@ -395,7 +401,7 @@ export function makeFeatureMailbox(
                 message: "This invitation cannot be answered by this account",
               });
             const message = yield* Effect.try({
-              try: () => inviteReply(invitation, attendee, response, messageId),
+              try: () => inviteReply(invitation, attendee, response, messageId, label),
               catch: () => new InvalidInput({ message: "Cannot build calendar response" }),
             });
             const command: Command = { kind: "send", accountId: account.id, message };

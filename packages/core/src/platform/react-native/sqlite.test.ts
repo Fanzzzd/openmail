@@ -107,7 +107,7 @@ describe("op-sqlite contract", () => {
               Effect.gen(function* () {
                 const before = yield* sql`SELECT n FROM counter`;
                 const n = Schema.decodeUnknownSync(Count)(before[0]).n;
-                yield* Effect.sleep("1 millis");
+                yield* Effect.yieldNow;
                 yield* sql`UPDATE counter SET n = ${n + 1}`;
               }),
             ),

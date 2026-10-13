@@ -1,5 +1,5 @@
 import { mailHref } from "../../shared/routes";
-import { Deferred, Effect, Fiber, Layer, Schema, Stream } from "effect";
+import { Deferred, Effect, Fiber, Layer, Logger, Schema, Stream } from "effect";
 import { TestClock } from "effect/testing";
 import { LockTimeoutError, SqlError } from "effect/sql/SqlError";
 import type { DesktopLabels } from "../../shared/desktop-labels";
@@ -688,7 +688,16 @@ const busyError = () =>
   new SqlError({
     reason: new LockTimeoutError({ cause: new Error("SQLITE_BUSY"), operation: "BEGIN IMMEDIATE" }),
   });
+/** Error logs kept in memory, so the expected SQLITE_BUSY stack is asserted instead of printed. */
+const capturedErrors = () => {
+  const messages: unknown[] = [];
+  const logger = Logger.make((options) => {
+    if (options.logLevel === "Error") messages.push(options.message);
+  });
+  return { messages, layer: Logger.layer([logger]) };
+};
 it("the notification event consumer logs a SQL defect and processes later events", async () => {
+  const logs = capturedErrors();
   const server = fakeServer("me@gmail.com");
   let failNext = false;
   let failures = 0;
@@ -721,16 +730,18 @@ it("the notification event consumer logs a SQL defect and processes later events
         yield* mailbox.pollInbox();
         yield* settle();
         expect(failures).toBe(1);
+        expect(logs.messages).toEqual([expect.arrayContaining(["system event refresh failed"])]);
         server.messages.set("second", incoming("second"));
         yield* mailbox.pollInbox();
         yield* settle();
         expect(observations.testState.notifications).toHaveLength(2);
       }),
-    ).pipe(Effect.provide(localizedDesktopLayer(mailboxLayer))),
+    ).pipe(Effect.provide(localizedDesktopLayer(mailboxLayer)), Effect.provide(logs.layer)),
   );
 });
 
 it("periodic refresh logs a SQL defect and runs again at the next interval", async () => {
+  const logs = capturedErrors();
   let failNext = false;
   let attempts = 0;
   const mailboxLayer = Layer.effect(
@@ -759,10 +770,15 @@ it("periodic refresh logs a SQL defect and runs again at the next interval", asy
         yield* TestClock.adjust("15 seconds");
         expect(failNext).toBe(false);
         expect(attempts).toBe(beforeFailure + 1);
+        expect(logs.messages).toEqual([expect.arrayContaining(["periodic system refresh failed"])]);
         yield* TestClock.adjust("15 seconds");
         expect(attempts).toBe(beforeFailure + 2);
       }),
-    ).pipe(Effect.provide(localizedDesktopLayer(mailboxLayer)), Effect.provide(TestClock.layer())),
+    ).pipe(
+      Effect.provide(localizedDesktopLayer(mailboxLayer)),
+      Effect.provide(TestClock.layer()),
+      Effect.provide(logs.layer),
+    ),
   );
 });
 

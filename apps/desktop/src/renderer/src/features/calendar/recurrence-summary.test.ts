@@ -1,32 +1,7 @@
-import { readFile } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
-import { runInNewContext } from "node:vm";
-import { formatter } from "@lingui/format-po";
-import { createCompiledCatalog } from "@lingui/cli/api";
-import { setupI18n, type Messages } from "@lingui/core";
 import { expect, it } from "vitest";
+import { catalogI18n } from "../../test-support/catalog-i18n";
 import { recurrenceSummary, ORDINAL_LABELS } from "./recurrence-summary";
 
-async function translator(locale: string) {
-  const file = new URL(`../../locales/${locale}/messages.po`, import.meta.url);
-  const catalog = await formatter().parse(await readFile(file, "utf8"), {
-    locale,
-    sourceLocale: "en",
-    filename: fileURLToPath(file),
-  });
-  const compiled = createCompiledCatalog(
-    locale,
-    Object.fromEntries(
-      Object.entries(catalog).map(([id, message]) => [id, message.translation ?? ""]),
-    ),
-    { namespace: "cjs", strict: true },
-  );
-  expect(compiled.errors).toEqual([]);
-  const module: { exports: { messages: Messages } } = { exports: { messages: {} } };
-  runInNewContext(compiled.source, { module });
-  const i18n = setupI18n({ locale, messages: { [locale]: module.exports.messages } });
-  return { i18n, catalog };
-}
 it("real ICU forms for Czech, Russian and Japanese format every tested count", async () => {
   const countForms = {
     cs: ["1 výskyt", "2 výskyty", "5 výskytů", "21 výskytů"],
@@ -34,7 +9,7 @@ it("real ICU forms for Czech, Russian and Japanese format every tested count", a
     ja: ["1回", "2回", "5回", "21回"],
   };
   for (const [locale, forms] of Object.entries(countForms)) {
-    const { i18n, catalog } = await translator(locale);
+    const { i18n, catalog } = await catalogI18n(locale);
     for (const [index, count] of [1, 2, 5, 21].entries()) {
       const text = recurrenceSummary(
         { pattern: { kind: "daily", interval: count }, ending: { kind: "count", count } },
@@ -56,7 +31,7 @@ it("real ICU forms for Czech, Russian and Japanese format every tested count", a
   }
 });
 it("summary dates and weekday conjunctions use Intl and Last has distinct Chinese contexts", async () => {
-  const { i18n } = await translator("en");
+  const { i18n } = await catalogI18n("en");
   const days = new Intl.ListFormat("en", { style: "short", type: "conjunction" }).format([
     "Mon",
     "Wed",
@@ -74,7 +49,7 @@ it("summary dates and weekday conjunctions use Intl and Last has distinct Chines
       "en",
     ),
   ).toBe(`Every 2 weeks on ${days} until ${date}`);
-  const zh = await translator("zh-CN");
+  const zh = await catalogI18n("zh-CN");
   expect(zh.i18n._(ORDINAL_LABELS[-1])).toBe("最后一个");
   expect(
     recurrenceSummary(

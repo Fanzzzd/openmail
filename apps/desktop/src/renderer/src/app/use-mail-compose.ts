@@ -182,6 +182,7 @@ export function useMailCompose({
           if (!last || !account) return;
           const drafts = yield* loadDrafts;
           const draft = drafts.draftFor(
+            i18n,
             mode,
             last,
             account,

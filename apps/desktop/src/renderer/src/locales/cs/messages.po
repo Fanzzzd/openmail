@@ -2054,6 +2054,11 @@ msgstr "Datum"
 msgid "Date is ambiguous. Enter an explicit date and time"
 msgstr "Datum je nejednoznačné. Zadejte přesné datum a čas"
 
+#: src/renderer/src/features/compose/draft.ts
+msgctxt "outgoing forward header"
+msgid "Date: {date}"
+msgstr "Datum: {date}"
+
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Dates"
 msgstr "Data"
@@ -2832,6 +2837,11 @@ msgstr "Příznak přeposlání"
 msgid "Forward as attachment"
 msgstr "Přeposlat jako přílohu"
 
+#: src/renderer/src/features/compose/draft.ts
+msgctxt "outgoing forward header"
+msgid "Forwarded message"
+msgstr "Přeposlaná zpráva"
+
 #: src/renderer/src/features/calendar/recurrence-summary.ts
 msgid "Fourth"
 msgstr "Čtvrtý"
@@ -2871,6 +2881,11 @@ msgstr "Od lidí, které znám"
 #: src/renderer/src/features/compose/components/Composer.tsx
 msgid "From updated"
 msgstr "Adresa odesílatele změněna"
+
+#: src/renderer/src/features/compose/draft.ts
+msgctxt "outgoing forward header"
+msgid "From: {from}"
+msgstr "Od: {from}"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Funnel is on for this port, which would put it on the public internet. OpenMail never uses Funnel. Turn Funnel off for this port first."
@@ -4530,6 +4545,12 @@ msgstr "Starší pošta se stahuje na pozadí. Po odstranění textů zpráv lze
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Oldest first"
 msgstr "Nejdříve nejstarší"
+
+#. Written into the sent message above the quoted text.
+#: src/renderer/src/features/compose/draft.ts
+msgctxt "outgoing reply quote header"
+msgid "On {date}, {name} <{address}> wrote:"
+msgstr "Dne {date} {name} <{address}> napsal(a):"
 
 #: src/renderer/src/features/calendar/EventRecurrenceEditor.tsx
 msgid "On a date"
@@ -6472,6 +6493,11 @@ msgstr "Předmět"
 msgid "Subject contains"
 msgstr "Předmět obsahuje"
 
+#: src/renderer/src/features/compose/draft.ts
+msgctxt "outgoing forward header"
+msgid "Subject: {subject}"
+msgstr "Předmět: {subject}"
+
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Subscript"
@@ -6934,6 +6960,11 @@ msgid "To or CC me"
 msgstr "Pro mě nebo kopie pro mě"
 
 #: src/renderer/src/features/reader/Reader.tsx
+msgid "To: {to}"
+msgstr "Komu: {to}"
+
+#: src/renderer/src/features/compose/draft.ts
+msgctxt "outgoing forward header"
 msgid "To: {to}"
 msgstr "Komu: {to}"
 

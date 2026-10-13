@@ -281,7 +281,9 @@ it.each(["reply", "replyAll", "forward"] as const)(
     const sent = h.server.sent[0];
     expect(sent?.message.mode).toBe(mode);
     expect(sent?.message.text).toContain("Original one");
-    expect(sent?.message.text).toContain(mode === "forward" ? "转发的邮件" : "> Original one");
+    expect(sent?.message.text).toContain(
+      mode === "forward" ? "Forwarded message" : "> Original one",
+    );
     expect(sent?.message.text).toContain("Flow signature");
     expect(sent?.message.to.map((address) => address.address)).toEqual([
       mode === "forward" ? "carol@example.com" : "alice@example.com",

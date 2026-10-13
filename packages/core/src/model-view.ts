@@ -1,6 +1,7 @@
 import { cleanDisplayName } from "./message-security.js";
 import { messageModelText } from "./visible-text.js";
 import type { Address, Message } from "./domain.js";
+import { ADDRESSED_QUOTE_HEADER } from "./compose-text.js";
 import type { ModelThread } from "./mailbox.js";
 
 const QUOTE_MARKERS = [
@@ -13,6 +14,8 @@ const FROM_HEADER = /^(?:From|发件人)[:：]\s*.+$/i;
 function replyHeader(lines: readonly string[], index: number, quoteBoundary: boolean): boolean {
   const line = lines[index]?.trim() ?? "";
   if (QUOTE_MARKERS.some((pattern) => pattern.test(line))) return true;
+  if (ADDRESSED_QUOTE_HEADER.test(line) && lines[index + 1]?.trimStart().startsWith(">"))
+    return true;
   if (!FROM_HEADER.test(line)) return false;
   if (quoteBoundary) return true;
   const headers = lines.slice(index + 1, index + 8).map((value) => value.trim());

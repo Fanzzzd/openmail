@@ -37,8 +37,7 @@ export function ThreadRow({
   const names = actionLabels(i18n);
   const offset = useSharedValue(0);
   const animated = useAnimatedStyle(() => ({ transform: [{ translateX: offset.get() }] }));
-  // Gesture.Pan constructs a native recognizer, not a React component.
-  // oxlint-disable-next-line react/capitalized-calls
+  // oxlint-disable-next-line react/capitalized-calls -- Gesture.Pan builds a native recognizer, not a React component.
   const gesture = Gesture.Pan()
     .enabled(!selecting)
     .activeOffsetX([-15, 15])
