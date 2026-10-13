@@ -840,3 +840,42 @@ it.effect("Gmail recovery verifies a single missing message at the 90-day window
     http.layer,
   );
 });
+
+it.effect("verification keeps candidates queued while its provider request was in flight", () => {
+  let queueLate: Effect.Effect<void> = Effect.void;
+  const adapter: ProviderAdapter = {
+    ...makeFakeProvider(fakeServer("me@example.test")),
+    verifyResetCandidates: (_account, candidates) =>
+      queueLate.pipe(
+        Effect.as(
+          candidates
+            .filter((candidate) => candidate.providerId === "m0")
+            .map((candidate) => ({ kind: "gone" as const, id: candidate.providerId })),
+        ),
+      ),
+  };
+  return runtime(
+    "gmail",
+    Effect.succeed(adapter),
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const account = yield* store.upsertAccount("gmail", "me@example.test");
+      for (const id of ["m0", "m1", "late"]) yield* store.upsertMessage(account.id, mail(id));
+      const guard = makeResetGuard(
+        store,
+        adapter,
+        account,
+        { changed: 0, deleted: 0 },
+        { remaining: 500 },
+      );
+      yield* guard.enqueue(["m0", "m1"]);
+      // Another writer queues a candidate between the read and the write.
+      queueLate = guard.enqueue(["late"]);
+      yield* guard.verify();
+      assert.deepStrictEqual(
+        (yield* store.pendingResetCandidates(account.id)).map((c) => c.providerId).toSorted(),
+        ["late", "m1"],
+      );
+    }),
+  );
+});

@@ -181,13 +181,17 @@ export function makeResetGuard(
           completed.add(result.id);
         }
         // Rotate uncertain ids so a permanently failing first page cannot starve later ids.
-        if (candidates === undefined)
+        // Re-read the queue: candidates queued during the network call stay.
+        if (candidates === undefined) {
+          const current = yield* store.pendingResetCandidates(account.id);
           yield* store.saveResetCandidates(account.id, [
-            ...pending
-              .slice(selected.length)
-              .filter((candidate) => !completed.has(candidate.providerId)),
-            ...selected.filter((candidate) => !completed.has(candidate.providerId)),
+            ...current.filter((candidate) => !requested.has(candidate.providerId)),
+            ...current.filter(
+              (candidate) =>
+                requested.has(candidate.providerId) && !completed.has(candidate.providerId),
+            ),
           ]);
+        }
       }),
     );
     if (candidates !== undefined)
@@ -210,7 +214,6 @@ export function makeResetGuard(
   });
   const reset = Effect.fnUntraced(function* (change: ResetChange) {
     const snapshot = yield* store.resetCandidates(account.id, change);
-    const pending = yield* store.pendingResetCandidates(account.id);
     const folder =
       change._tag === "DeleteLabel"
         ? change.label
@@ -229,6 +232,7 @@ export function makeResetGuard(
     });
     yield* store.transaction(
       Effect.gen(function* () {
+        const pending = yield* store.pendingResetCandidates(account.id);
         // Every keep-set omission is a candidate, irrespective of count or listing completeness.
         const keep = new Set(change.keep ?? []);
         const merged = new Map(
