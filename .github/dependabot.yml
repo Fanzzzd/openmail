@@ -46,6 +46,18 @@ updates:
         update-types: ["version-update:semver-major", "version-update:semver-minor"]
       - dependency-name: "@react-native-community/*"
         update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      # The React Native renderer refuses any React other than the one it was built with, and
+      # the mobile app pins that one (19.2.3 for RN 0.86). Dependabot cannot scope a rule to
+      # apps/mobile, so React minors for desktop and docs are bumped by hand; patches still
+      # come through.
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "@types/react"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "@types/react-dom"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
     groups:
       # Effect packages share one release train and must move together.
       effect:
