@@ -9,7 +9,7 @@ import {
   type ImapCursor,
 } from "../../../providers/imap/imap-cursor.js";
 import { groupIdsByFolder } from "../../../providers/imap/imap-helpers.js";
-import { matchesSearch, parseSearchQuery, searchMailboxLabel } from "../../../search.js";
+import { matchesSearch, parseSearchQuery, searchMailboxLabel } from "../../../search/search.js";
 import {
   Secrets,
   type Change,

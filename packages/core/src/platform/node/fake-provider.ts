@@ -34,7 +34,7 @@ import {
   type SendAs,
 } from "../../domain/organization.js";
 import { FOLDER_BATCH_LIMIT, GMAIL_PERMANENT_DELETE_SCOPE } from "../../domain/folder-actions.js";
-import { matchesSearch } from "../../search.js";
+import { matchesSearch } from "../../search/search.js";
 import { applyOpToLabels } from "../../store/store.js";
 
 /** Ids handed out by fake servers; unique across servers so tests never mix them up. */

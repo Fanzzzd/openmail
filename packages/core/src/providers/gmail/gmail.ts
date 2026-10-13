@@ -73,7 +73,7 @@ import { makeGmailFeatures } from "./gmail-features.js";
 import { finishInline, finishWith, type HtmlBody, HtmlText } from "../../platform/html-text.js";
 import { makeGmailSettings } from "./gmail-settings.js";
 import { makeProviderCalendar } from "../../calendar/provider-calendar.js";
-import { gmailSearch, searchIncludesSpecialFolders } from "../../search.js";
+import { gmailSearch, searchIncludesSpecialFolders } from "../../search/search.js";
 
 const AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const TOKEN_URL = "https://oauth2.googleapis.com/token";

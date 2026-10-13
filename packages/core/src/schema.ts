@@ -22,7 +22,7 @@ export * from "./reader/reading.js";
 export * from "./reader/trackers.js";
 
 export * from "./domain/organization.js";
-export * from "./search.js";
+export * from "./search/search.js";
 
 export { htmlToText } from "./mime/mime.js";
 
@@ -74,6 +74,6 @@ export * from "./providers/optional-services.js";
 export * from "./sync/sync-health.js";
 
 export { outlookPreviewUnavailable } from "./providers/outlook/outlook-rules.js";
-export * from "./search-snippets.js";
-export * from "./search-highlight.js";
+export * from "./search/search-snippets.js";
+export * from "./search/search-highlight.js";
 export * from "./remote-access.js";

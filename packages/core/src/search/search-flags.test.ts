@@ -1,16 +1,16 @@
-import { applyNativeMigration } from "./platform/node/migrations.js";
+import { applyNativeMigration } from "../platform/node/migrations.js";
 import { DatabaseSync } from "node:sqlite";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { it, expect } from "vitest";
 import { Effect, Layer } from "effect";
-import { databaseLayer, MIGRATIONS } from "./platform/node/db.js";
-import { StoreLive } from "./store/store.js";
-import { Store } from "./services.js";
-import { NodeSystem } from "./platform/node/platform-node.js";
-import { incoming } from "./platform/node/testing.js";
-import { SEARCH_FLAG_ATTACHMENT_TYPES_45 } from "./db/db.js";
+import { databaseLayer, MIGRATIONS } from "../platform/node/db.js";
+import { StoreLive } from "../store/store.js";
+import { Store } from "../services.js";
+import { NodeSystem } from "../platform/node/platform-node.js";
+import { incoming } from "../platform/node/testing.js";
+import { SEARCH_FLAG_ATTACHMENT_TYPES_45 } from "../db/db.js";
 import { ATTACHMENT_TYPES } from "./search.js";
 
 const accountId = "gmail:me@example.com";

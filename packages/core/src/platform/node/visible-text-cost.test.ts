@@ -53,7 +53,7 @@ it.each([300, 1000])("%i narrow media rules keep 5000 matching paragraphs hidden
 });
 
 it("a 1 MB message text is tokenized once for eight search terms", async () => {
-  const { searchTermRanges } = await import("../../search-snippets.js");
+  const { searchTermRanges } = await import("../../search/search-snippets.js");
   const text = "Quarterly invoice review for the Café team, budget approved. ".repeat(17_000);
   const terms = ["invoice", "budget", "cafe", '"team budget"', "review*", "quarterly", "x", "zz"];
   searchTermRanges(text, terms.slice(0, 1));

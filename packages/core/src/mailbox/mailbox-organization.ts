@@ -25,7 +25,7 @@ import {
   parseSearchQuery,
   serverSearchIgnored,
   searchQueryError,
-} from "../search.js";
+} from "../search/search.js";
 import type { Providers, Store } from "../services.js";
 import {
   evaluateOutlookRule,

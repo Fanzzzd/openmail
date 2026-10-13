@@ -17,7 +17,7 @@ import {
   matchesSearchCondition,
   searchIncludesSpecialFolders,
   type SearchExpression,
-} from "../../search.js";
+} from "../../search/search.js";
 import { MAILBOX_LABEL } from "../../domain/mailbox-labels.js";
 import { Store } from "../../services.js";
 import { StoreLive } from "../../store/store.js";

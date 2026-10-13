@@ -5,7 +5,7 @@ import { SqlClient } from "effect/sql";
 import { TestClock } from "effect/testing";
 import { Store } from "../../services.js";
 import { StoreLive } from "../../store/store.js";
-import { SearchProfile } from "../../search-profile.js";
+import { SearchProfile } from "../../search/search-profile.js";
 import { MemoryPlatform } from "./platform-memory.js";
 import { fixtureNow, seedMailbox, traceQueries } from "./fixtures/performance-mailbox.js";
 

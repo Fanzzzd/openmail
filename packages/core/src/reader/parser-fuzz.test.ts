@@ -23,7 +23,7 @@ import {
   linkNeedsConfirmation,
 } from "./link-security.js";
 import { messageSecurity } from "./message-security.js";
-import { parseSearchExpression, parseSearchQuery, searchInputError } from "../search.js";
+import { parseSearchExpression, parseSearchQuery, searchInputError } from "../search/search.js";
 import { InvalidInput } from "../domain/errors.js";
 import { attachmentFilename } from "../mime/attachment-filename.js";
 import { hostileHtml, htmlTokens, nestedHtml } from "./parser-fuzz-corpus.js";

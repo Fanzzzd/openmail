@@ -1,7 +1,7 @@
 import { Effect, Schema } from "effect";
 import type { SqlClient } from "effect/sql";
 import { BACKFILL_SEARCH_FLAGS } from "../db/db.js";
-import { bigramText } from "../search-bigrams.js";
+import { bigramText } from "../search/search-bigrams.js";
 import { all, run } from "./sql-rows.js";
 
 /** Pending rows one bigram batch reads at most. */

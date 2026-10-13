@@ -18,7 +18,7 @@ import { Store } from "./services.js";
 import { StoreLive } from "./store/store.js";
 import { pdfText } from "./platform/node/pdf-text.js";
 import { inlineMediaFromRaw } from "./platform/node/portable-helpers.js";
-import { parseSearchQuery, reciprocalRankFusion, mergeSearchResults } from "./search.js";
+import { parseSearchQuery, reciprocalRankFusion, mergeSearchResults } from "./search/search.js";
 
 const withStore = <A, E>(body: Effect.Effect<A, E, Store | SqlClient.SqlClient | PdfWorker>) =>
   body.pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform()))));

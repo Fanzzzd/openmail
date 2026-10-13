@@ -11,7 +11,7 @@ import { EMPTY_FILTER, EMPTY_VACATION, snoozeTimes, sameFilterRule } from "./org
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
 import { Providers, Store } from "../services.js";
 import { StoreLive } from "../store/store.js";
-import { filterQuery, matchesSearch, parseSearchQuery } from "../search.js";
+import { filterQuery, matchesSearch, parseSearchQuery } from "../search/search.js";
 import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
 {
   const incoming = (id: string, overrides: Partial<IncomingMessage> = {}): IncomingMessage =>

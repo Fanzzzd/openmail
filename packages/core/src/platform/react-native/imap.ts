@@ -64,7 +64,7 @@ import {
 import type { Account, ImapSettings, IncomingMessage } from "../../domain/domain.js";
 import { confirmDelivery } from "../../providers/provider-send.js";
 import { htmlToText } from "../../mime/mime.js";
-import { matchesSearch, searchMailboxLabel } from "../../search.js";
+import { matchesSearch, searchMailboxLabel } from "../../search/search.js";
 
 const FOLDER_ALIASES: Record<string, readonly string[]> = {
   SENT: ["sent", "sent items", "sent messages"],

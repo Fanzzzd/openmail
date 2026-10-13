@@ -15,8 +15,13 @@ import {
   searchSnippet,
   mergeSearchRanges,
   searchTermRanges,
-} from "../search-snippets.js";
-import { SearchProfile, searchEffect, searchStep, type SearchProfiler } from "../search-profile.js";
+} from "../search/search-snippets.js";
+import {
+  SearchProfile,
+  searchEffect,
+  searchStep,
+  type SearchProfiler,
+} from "../search/search-profile.js";
 import { DerivedChunk } from "../media.js";
 import {
   ftsSearchTerm,
@@ -33,7 +38,7 @@ import {
   usesSubstringSearch,
   wordTokens,
   type SearchExpression,
-} from "../search.js";
+} from "../search/search.js";
 import { type Store } from "../services.js";
 import { all, sqliteTextCompare } from "./sql-rows.js";
 import { type makeComposeStore } from "./store-compose.js";

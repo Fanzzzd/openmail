@@ -24,7 +24,7 @@ export {
 } from "./tools.js";
 
 export * from "./domain/organization.js";
-export * from "./search.js";
+export * from "./search/search.js";
 
 export * from "./media.js";
 
@@ -82,5 +82,5 @@ export * from "./sync/sync-health.js";
 export { ProviderDiagnostic } from "./providers/provider-diagnostics.js";
 export { SyncResetDiagnostic } from "./sync/sync-reset.js";
 
-export * from "./search-snippets.js";
+export * from "./search/search-snippets.js";
 export * from "./remote-access.js";

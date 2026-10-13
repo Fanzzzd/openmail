@@ -4,13 +4,13 @@ import { join } from "node:path";
 import { Effect, Layer } from "effect";
 import { SqlClient } from "effect/sql";
 import { expect, it } from "vitest";
-import { databaseLayer } from "./platform/node/db.js";
-import { NodeSystem } from "./platform/node/platform-node.js";
-import { incoming } from "./platform/node/testing.js";
+import { databaseLayer } from "../platform/node/db.js";
+import { NodeSystem } from "../platform/node/platform-node.js";
+import { incoming } from "../platform/node/testing.js";
 import { bigramMatch, bigramText } from "./search-bigrams.js";
-import { Store } from "./services.js";
-import { StoreLive } from "./store/store.js";
-import { BIGRAM_BATCH_ROWS, BIGRAM_BATCH_TOKENS } from "./store/store-word-index.js";
+import { Store } from "../services.js";
+import { StoreLive } from "../store/store.js";
+import { BIGRAM_BATCH_ROWS, BIGRAM_BATCH_TOKENS } from "../store/store-word-index.js";
 
 const accountId = "gmail:me@example.com";
 

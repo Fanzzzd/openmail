@@ -16,7 +16,7 @@ import { labelOps } from "./mailbox-organization.js";
 import { GraphMessage } from "../providers/outlook/graph.js";
 import { expandedAttachments, parseGraphMessage } from "../providers/outlook/parse.js";
 import { evaluateOutlookRule } from "../providers/outlook/outlook-rules.js";
-import { filterQuery, gmailSearch } from "../search.js";
+import { filterQuery, gmailSearch } from "../search/search.js";
 import { fakeHttp } from "../platform/node/fake-http.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
 import { account, incoming, fakeServer, TestMailbox } from "../platform/node/testing.js";
