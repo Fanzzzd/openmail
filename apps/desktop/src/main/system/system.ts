@@ -13,10 +13,6 @@ import { approveUpdateQuit } from "../updates/update-install";
 import { setRecoveryRelaunch } from "../app/recovery-actions";
 import {
   Mailbox,
-  notificationAction,
-  notificationButtonActions,
-  type Prefs,
-  messageLink,
   parseAppLink,
   dockUnreadCount,
   MENU_BAR_MAIL_LIMIT,
@@ -45,6 +41,8 @@ import { manualUpdateCheck } from "../updates/updates";
 import { nativeAsk } from "./native-fallback";
 import { askWindow, listeningWindow } from "../windows/window-ui";
 import { notificationPermission } from "./notification-permission";
+import { makeNotifications } from "./notifications";
+import { DEFAULT_DESKTOP_LABELS } from "./default-labels";
 import { createQuitGuard, createSendState } from "../app/quit";
 import { shouldBufferDesktopEvent, type DesktopEvent } from "../../shared/desktop";
 import { mailHref } from "../../shared/routes";
@@ -124,40 +122,7 @@ export const DesktopLive = Layer.effect(
     const sendStates = createSendState();
     let activeSpace = "all";
     let labelsReady = false;
-    let labels: DesktopLabels = {
-      checkUpdates: "Check for updates…",
-      updatesDisabled:
-        "Update checks require a signed, installed macOS app and a saved GitHub access token.",
-      updatesCurrent: "OpenMail is up to date.",
-      updatesAvailable: "Update available:",
-      updatesFailed: "Could not check for updates. Try again later.",
-      ok: "OK",
-      read: "Mark read",
-      actionMenu: "Actions",
-      settings: "Settings…",
-      newWindow: "New window",
-      compose: "New message",
-      attachFiles: "Attach files…",
-      help: "Keyboard shortcuts",
-      archive: "Archive",
-      trash: "Delete",
-      noUnread: "No unread mail",
-      showInbox: "Show Inbox",
-      allAccounts: "All accounts",
-      file: "File",
-      edit: "Edit",
-      undo: "Undo",
-      undoSend: "Undo send",
-      quitPending: "Quit with messages waiting to send?",
-      quitPendingDetail:
-        "Messages in the undo window will remain drafts. A send already in progress may finish.",
-      quit: "Quit",
-      cancel: "Cancel",
-      selectAll: "Select all",
-      window: "Window",
-      newMessages: "new messages",
-      feedback: "Send feedback…",
-    };
+    let labels: DesktopLabels = DEFAULT_DESKTOP_LABELS;
     const deliver = (event: DesktopEvent, target = focusMainWindow()) => {
       const id = target.webContents.id;
       const listener = listeners.get(id);
@@ -551,114 +516,16 @@ export const DesktopLive = Layer.effect(
       }),
     );
 
-    const notifications = new Set<Notification>();
-    const notificationAccounts = new Map<Notification, readonly string[]>();
+    const { notifications, notificationAccounts, wireNotification, notify } = makeNotifications({
+      mailbox,
+      run,
+      openThread,
+      labels: () => labels,
+      ready: () => labelsReady,
+    });
     yield* Effect.promise(async () => {
       if ((await notificationPermission()) === "notDetermined") await notificationPermission(true);
     }).pipe(Effect.forkScoped);
-    const wireNotification = (
-      notification: Notification,
-      id: string,
-      actions: Prefs["notificationActions"],
-    ) => {
-      notifications.add(notification);
-      notification.on("click", () => openThread(id));
-      // Electron 44 supplies actionIndex on the event; the positional argument is deprecated.
-      notification.on("action", (event) => {
-        const op = notificationAction(
-          notificationButtonActions(actions, process.platform),
-          event.actionIndex,
-          event.selectionIndex,
-        );
-        if (!op) return;
-        notification.close();
-        run(
-          mailbox
-            .perform({ kind: "modify", threads: [id], op }, { kind: "user", surface: "app" })
-            .pipe(
-              Effect.catchCause((cause) => Effect.logError("notification action failed", cause)),
-            ),
-        );
-      });
-      notification.on("close", () => {
-        notifications.delete(notification);
-        notificationAccounts.delete(notification);
-      });
-      notification.on("failed", () => {
-        notifications.delete(notification);
-        notificationAccounts.delete(notification);
-      });
-    };
-    const notify = Effect.gen(function* () {
-      // Startup refresh and arrivals must wait for the renderer's Lingui labels.
-      if (!labelsReady || !Notification.isSupported()) return;
-      const prefs = yield* mailbox.prefs;
-      const actions = notificationButtonActions(prefs.notificationActions, process.platform);
-      const batches = yield* mailbox.takeNotifications;
-      const accounts = yield* mailbox.accounts;
-      const profiles = yield* mailbox.profiles;
-      for (const batch of batches) {
-        const first = batch.messages[0];
-        if (!first) continue;
-        const account = accounts.find((a) => a.id === first.accountId);
-        if (batch.kind === "digest" || batch.messages.length > 5) {
-          const singleAccount = batch.messages.every(
-            (message) => message.accountId === first.accountId,
-          );
-          const notification = new Notification({
-            id: messageLink(first.id),
-            groupId: batch.profileId ?? first.accountId,
-            title: `${batch.messages.length} ${labels.newMessages}`,
-            body:
-              profiles.find((p) => p.id === batch.profileId)?.name ??
-              (singleAccount
-                ? account
-                  ? account.description?.trim() || account.email
-                  : labels.allAccounts
-                : labels.allAccounts),
-          });
-          notificationAccounts.set(
-            notification,
-            batch.messages.map((message) => message.accountId),
-          );
-          notifications.add(notification);
-          notification.on("click", () => openThread(first.id));
-          notification.on("close", () => {
-            notifications.delete(notification);
-            notificationAccounts.delete(notification);
-          });
-          notification.on("failed", () => {
-            notifications.delete(notification);
-            notificationAccounts.delete(notification);
-          });
-          notification.show();
-          continue;
-        }
-        for (const message of batch.messages) {
-          const id = message.id;
-          const notification = new Notification({
-            id: messageLink(id),
-            groupId: batch.profileId ?? message.accountId,
-            title: message.from.name || message.from.address,
-            subtitle: message.subject,
-            body: message.snippet,
-            actions: actions.map((action) =>
-              action === "menu"
-                ? {
-                    type: "selection" as const,
-                    text: labels.actionMenu,
-                    items: [labels.archive, labels.trash, labels.read],
-                  }
-                : { type: "button" as const, text: labels[action] },
-            ),
-          });
-          notificationAccounts.set(notification, [message.accountId]);
-          yield* mailbox.rememberNotificationActions(id, actions);
-          wireNotification(notification, id, actions);
-          notification.show();
-        }
-      }
-    });
 
     yield* mailbox.events.pipe(
       Stream.runForEach((event) =>
