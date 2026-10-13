@@ -19,6 +19,7 @@ import {
   spaceAccountIds,
 } from "./system.js";
 import { fakeServer, TestMailbox } from "./platform/node/testing.js";
+import { SYNC_FAILURE_TEXT } from "./sync-failure.js";
 
 const account: Account = {
   id: "gmail:me@gmail.com",
@@ -358,7 +359,7 @@ it.effect(
       );
       yield* Effect.yieldNow;
       yield* m.pollInbox();
-      assert.strictEqual((yield* m.accounts)[0]?.lastSyncError, "full sync error");
+      assert.strictEqual((yield* m.accounts)[0]?.lastSyncError, SYNC_FAILURE_TEXT.unknown);
       yield* Effect.yieldNow;
       assert.strictEqual(yield* Ref.get(changes), 0);
       server.failNext = new PermanentError({ message: "offline" });
@@ -372,7 +373,7 @@ it.effect(
       yield* m.pollInbox();
       yield* Effect.yieldNow;
       assert.strictEqual(yield* Ref.get(changes), 2);
-      assert.strictEqual((yield* m.accounts)[0]?.lastSyncError, "full sync error");
+      assert.strictEqual((yield* m.accounts)[0]?.lastSyncError, SYNC_FAILURE_TEXT.unknown);
     }).pipe(Effect.provide(TestMailbox({ gmail: server })));
   },
 );

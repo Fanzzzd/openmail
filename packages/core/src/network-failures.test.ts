@@ -22,6 +22,7 @@ import { transferAllowance } from "./provider-http.js";
 import { isDefiniteSendFailure } from "./provider-send.js";
 import { Browser, OAuth, Providers, Store, type ProviderAdapter } from "./services.js";
 import { StoreLive } from "./store.js";
+import { SYNC_FAILURE_TEXT } from "./sync-failure.js";
 
 type Fault = NonNullable<FakeHttpReply["fault"]>;
 type Route = FakeHttpReply | ((url: URL, call: FakeHttpCall) => FakeHttpReply);
@@ -498,7 +499,7 @@ for (const fault of ["ENOTFOUND", "reset-body", "stall-body"] as const)
         assert.strictEqual(failed.exit._tag, "Success");
         const offline = yield* store.getAccount(saved.id);
         assert.isFalse(offline.needsReauth);
-        assert.match(offline.lastSyncError ?? "", /Graph API 0/);
+        assert.strictEqual(offline.lastSyncError, SYNC_FAILURE_TEXT.network);
         // A second sync while the account backs off sends nothing.
         const pages = continuations();
         yield* mailbox.sync();
