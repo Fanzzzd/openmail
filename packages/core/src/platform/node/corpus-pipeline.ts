@@ -4,12 +4,15 @@ import { Option, Schema } from "effect";
 import { Attachment, Message, Provider, type IncomingMessage } from "../../domain/domain.js";
 import { htmlToText } from "../../mime/mime.js";
 import { modelContext } from "../../model-view.js";
-import { prepareMessageHtml } from "../../reader-html.js";
-import { sanitizeReaderHtml } from "../../reader-sanitize.js";
-import { createVisibleTextTrace, inspectHtmlStructure } from "../../visible-text-diagnostics.js";
-import { visibleHtmlText } from "../../visible-text.js";
-import { linkDisplayMismatch } from "../../link-security.js";
-import { messageSecurity } from "../../message-security.js";
+import { prepareMessageHtml } from "../../reader/reader-html.js";
+import { sanitizeReaderHtml } from "../../reader/reader-sanitize.js";
+import {
+  createVisibleTextTrace,
+  inspectHtmlStructure,
+} from "../../visible-text/visible-text-diagnostics.js";
+import { visibleHtmlText } from "../../visible-text/visible-text.js";
+import { linkDisplayMismatch } from "../../reader/link-security.js";
+import { messageSecurity } from "../../reader/message-security.js";
 import { structuredMailEvents } from "../../calendar/structured-events.js";
 import { normalizeMimeCharsets, withDecodedBody } from "../mime-compat.js";
 import { nodeMailCodec } from "./mail-codec.js";

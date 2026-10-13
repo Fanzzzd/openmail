@@ -20,7 +20,10 @@ it("portable CSS uses the browser ESM export without Node builtins under Metro's
   expect(manifest.browser["./lib/data.js"]).toBe("./dist/data.js");
   const bundle = readFileSync(join(dirname(path), "dist/csstree.esm.js"), "utf8");
   expect(/\bcreateRequire\b|\bprocess\./.test(bundle)).toBe(false);
-  const portable = readFileSync(new URL("../../css-tree-browser.ts", import.meta.url), "utf8");
+  const portable = readFileSync(
+    new URL("../../reader/css-tree-browser.ts", import.meta.url),
+    "utf8",
+  );
   expect(portable).toContain('from "css-tree/dist/csstree.esm"');
   const metro = readFileSync(
     new URL("../../../../../apps/mobile/metro.config.cjs", import.meta.url),

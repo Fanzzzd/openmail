@@ -1,5 +1,5 @@
 import { DomUtils, parseDocument } from "htmlparser2";
-import { flattenHtmlChildren, MAX_HTML_DEPTH } from "../../html-depth.js";
+import { flattenHtmlChildren, MAX_HTML_DEPTH } from "../../reader/html-depth.js";
 
 /** Remove forms and automatic navigation/resource hints before mobile WebView rendering. */
 export function stripMobileForms(html: string): string {

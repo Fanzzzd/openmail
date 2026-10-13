@@ -1,4 +1,4 @@
-import { visibleHtmlText } from "../visible-text.js";
+import { visibleHtmlText } from "../visible-text/visible-text.js";
 import { Buffer } from "../platform/bytes.js";
 import { Result } from "effect";
 import { TextDecoder } from "../platform/text-decoder.js";

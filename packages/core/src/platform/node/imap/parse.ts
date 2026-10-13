@@ -7,7 +7,7 @@ import {
   IMAP_SPECIAL_LABELS as SPECIAL_LABEL,
 } from "../../../providers/imap/imap-helpers.js";
 
-import { messageSecurity } from "../../../message-security.js";
+import { messageSecurity } from "../../../reader/message-security.js";
 import { finishInline, type HtmlBody } from "../../html-text.js";
 import { mimeAddresses, type MimeMessage } from "../../mail-codec.js";
 

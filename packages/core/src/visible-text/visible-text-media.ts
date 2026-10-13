@@ -1,5 +1,5 @@
 import { MAX_MEDIA_WIDTH, MAX_REVEAL_INTERVALS } from "./visible-text-constants.js";
-import { parse, generate, ident, walk, type CssNode } from "./css-tree-browser.js";
+import { parse, generate, ident, walk, type CssNode } from "../reader/css-tree-browser.js";
 export interface MediaEnvironment {
   readonly values: ReadonlyMap<string, string>;
   readonly pixelRatio: number;

@@ -4,10 +4,10 @@ export * from "./compose/compose-body.js";
 export { MODEL_KEY } from "./secrets.js";
 export * from "./domain/domain.js";
 export * from "./domain/errors.js";
-export * from "./print.js";
-export * from "./reader-html.js";
-export * from "./reading.js";
-export * from "./trackers.js";
+export * from "./reader/print.js";
+export * from "./reader/reader-html.js";
+export * from "./reader/reading.js";
+export * from "./reader/trackers.js";
 export { IMAP_PRESETS, ImapConnectInput, ImapPreset } from "./providers/imap/imap-presets.js";
 export { Mailbox, MailboxEvent, type PerformError, SyncState } from "./mailbox/mailbox.js";
 export { MailboxLive } from "./mailbox/mailbox-live.js";
@@ -61,7 +61,7 @@ export * from "./compose/signatures.js";
 
 export * from "./domain/categories.js";
 export * from "./ai.js";
-export { messageModelText } from "./visible-text.js";
+export { messageModelText } from "./visible-text/visible-text.js";
 export { ModelAnthropic, FakeModelLayer, type ModelOutput, type ModelRequest } from "./model.js";
 
 export * from "./update-state.js";
@@ -75,7 +75,7 @@ export * from "./platform/runtime.js";
 export * from "./platform/cache-storage.js";
 
 export * from "./mime/attachment-import.js";
-export * from "./reader-sanitize.js";
+export * from "./reader/reader-sanitize.js";
 
 export * from "./sync/sync-health.js";
 

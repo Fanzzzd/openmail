@@ -5,7 +5,7 @@ import { Effect, Schema, Option } from "effect";
 import { CATEGORIES, type Account } from "../../domain/domain.js";
 import { ProviderError, SettingsScopeMissing } from "../../domain/errors.js";
 import { authFailure } from "../reauth.js";
-import { escapeHtml } from "../../print.js";
+import { escapeHtml } from "../../reader/print.js";
 import { htmlToText } from "../../mime/mime.js";
 import {
   EMPTY_FILTER,

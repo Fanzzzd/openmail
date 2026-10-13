@@ -1,5 +1,5 @@
 import { COMPOSE_FONT_FAMILIES } from "../domain/domain.js";
-import { parse, generate, ident, lexer } from "../css-tree-browser.js";
+import { parse, generate, ident, lexer } from "../reader/css-tree-browser.js";
 
 export const COMPOSE_COLORS = [
   "#000000",

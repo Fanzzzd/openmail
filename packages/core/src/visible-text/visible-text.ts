@@ -12,10 +12,10 @@ import { compile } from "css-select";
 import { DomUtils } from "htmlparser2";
 import { parse as parseHtml5 } from "parse5";
 import { adapter } from "parse5-htmlparser2-tree-adapter";
-import { sanitizeReaderHtml, READER_DROP } from "./reader-sanitize.js";
-import { prepareMessageHtml } from "./reader-html.js";
-import { parse, ident } from "./css-tree-browser.js";
-import { flattenHtmlChildren, MAX_HTML_DEPTH } from "./html-depth.js";
+import { sanitizeReaderHtml, READER_DROP } from "../reader/reader-sanitize.js";
+import { prepareMessageHtml } from "../reader/reader-html.js";
+import { parse, ident } from "../reader/css-tree-browser.js";
+import { flattenHtmlChildren, MAX_HTML_DEPTH } from "../reader/html-depth.js";
 import {
   makeVisibleStyleCascade,
   REFERENCE_READER_WIDTHS,
@@ -59,10 +59,10 @@ import {
   textContrast,
   type PaintedBackground,
 } from "./visible-text-paint.js";
-import { READER_COLOUR_CSS, READER_COLOURS } from "./reader-style.js";
+import { READER_COLOUR_CSS, READER_COLOURS } from "../reader/reader-style.js";
 import { constantLength, siblingPaint, type SiblingPaint } from "./visible-text-overlap.js";
 import { horizontalInlineCoverage, opaqueCoverage } from "./visible-text-cover.js";
-import type { ModelThread } from "./mailbox/mailbox.js";
+import type { ModelThread } from "../mailbox/mailbox.js";
 
 export type ModelTextFlag = NonNullable<ModelThread["messages"][number]["flags"]>[number];
 type VisibleText =

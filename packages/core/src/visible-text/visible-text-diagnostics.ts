@@ -1,7 +1,7 @@
 import { ElementType, parseDocument } from "htmlparser2";
 import { Option, Record, Schema } from "effect";
-import { READER_TAGS } from "./reader-sanitize.js";
-import { ident, parse, walk } from "./css-tree-browser.js";
+import { READER_TAGS } from "../reader/reader-sanitize.js";
+import { ident, parse, walk } from "../reader/css-tree-browser.js";
 
 export const VisibleRemovalRule = Schema.Literals([
   "hidden-attribute",

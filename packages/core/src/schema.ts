@@ -14,12 +14,12 @@ export {
 export { IMAP_PRESETS, ImapConnectInput, ImapPreset } from "./providers/imap/imap-presets.js";
 export { Mailbox, MailboxEvent, ModelThread, SyncState } from "./mailbox/mailbox.js";
 export { type HeldSend, holdSend } from "./mailbox/undo-send.js";
-export * from "./print.js";
-export * from "./reader-html.js";
-export { READER_BASE_CSS, READER_COLOURS } from "./reader-style.js";
-export * from "./reader-sanitize.js";
-export * from "./reading.js";
-export * from "./trackers.js";
+export * from "./reader/print.js";
+export * from "./reader/reader-html.js";
+export { READER_BASE_CSS, READER_COLOURS } from "./reader/reader-style.js";
+export * from "./reader/reader-sanitize.js";
+export * from "./reader/reading.js";
+export * from "./reader/trackers.js";
 
 export * from "./domain/organization.js";
 export * from "./search.js";
@@ -62,10 +62,10 @@ export * from "./update-state.js";
 export * from "./compose/compose-ai.js";
 export * from "./contacts/apple-contacts.js";
 
-export * from "./message-security.js";
-export * from "./visible-text.js";
+export * from "./reader/message-security.js";
+export * from "./visible-text/visible-text.js";
 
-export * from "./link-security.js";
+export * from "./reader/link-security.js";
 
 export * from "./mime/attachment-import.js";
 

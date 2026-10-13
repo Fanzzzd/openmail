@@ -4,7 +4,7 @@ import type { Account } from "../../domain/domain.js";
 import { PermanentError, ProviderError, SettingsScopeMissing } from "../../domain/errors.js";
 import { authFailure } from "../reauth.js";
 import { graphTimestamp } from "../../calendar/graph-time.js";
-import { escapeHtml } from "../../print.js";
+import { escapeHtml } from "../../reader/print.js";
 import { htmlToText } from "../../mime/mime.js";
 import {
   EMPTY_FILTER,

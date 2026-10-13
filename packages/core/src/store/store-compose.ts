@@ -32,7 +32,7 @@ import {
   type ThreadSummary,
 } from "../domain/domain.js";
 import { NotFound } from "../domain/errors.js";
-import { imageSenderKey } from "../reading.js";
+import { imageSenderKey } from "../reader/reading.js";
 import {
   richComposeBody,
   textComposeHtml,

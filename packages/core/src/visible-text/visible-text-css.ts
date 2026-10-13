@@ -7,7 +7,7 @@ import {
   walk,
   type CssNode,
   type EnterOrLeaveFn,
-} from "./css-tree-browser.js";
+} from "../reader/css-tree-browser.js";
 import {
   alwaysMedia,
   andCoverage,
@@ -27,7 +27,7 @@ export {
   type MediaCoverage,
   type ReaderWidth,
 } from "./visible-text-media.js";
-import { READER_ATTRIBUTES } from "./reader-sanitize.js";
+import { READER_ATTRIBUTES } from "../reader/reader-sanitize.js";
 import { resolveFont, INITIAL_TEXT_STYLE } from "./visible-text-inheritance.js";
 import {
   subtreeStyleRemovalRule,

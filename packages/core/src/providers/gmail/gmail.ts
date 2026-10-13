@@ -7,7 +7,7 @@ import {
   firstHeaders,
 } from "../../sync/header-backfill.js";
 import { newMessageId } from "../../mime/message-id.js";
-import { messageSecurity } from "../../message-security.js";
+import { messageSecurity } from "../../reader/message-security.js";
 import { BASE_SCOPES, OPTIONAL_SCOPES, isOptionalService } from "../optional-services.js";
 import { effectiveClients, refreshWithIssuer } from "../oauth-clients.js";
 import { Buffer } from "../../platform/bytes.js";

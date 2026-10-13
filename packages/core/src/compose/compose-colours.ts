@@ -7,11 +7,15 @@ import {
   referenceMedia,
   REFERENCE_READER_WIDTHS,
   type VisibleStyleRule,
-} from "../visible-text-css.js";
-import { referenceEnvironments } from "../visible-text-media.js";
-import { legacyColour, resolveInk } from "../visible-text-paint.js";
-import { parseColour } from "../visible-text-style.js";
-import { MAX_CSS_RULES, MAX_MATCH_CHECKS, MAX_SELECTOR_LENGTH } from "../visible-text-constants.js";
+} from "../visible-text/visible-text-css.js";
+import { referenceEnvironments } from "../visible-text/visible-text-media.js";
+import { legacyColour, resolveInk } from "../visible-text/visible-text-paint.js";
+import { parseColour } from "../visible-text/visible-text-style.js";
+import {
+  MAX_CSS_RULES,
+  MAX_MATCH_CHECKS,
+  MAX_SELECTOR_LENGTH,
+} from "../visible-text/visible-text-constants.js";
 
 type HtmlNode = ReturnType<typeof parseDocument>["children"][number];
 type HtmlElement = Extract<HtmlNode, { attribs: Record<string, string> }>;

@@ -2,7 +2,7 @@ import * as fc from "fast-check";
 import { expect, it } from "vitest";
 import { parseCalendar } from "./invites.js";
 import { structuredMailEvents } from "./structured-events.js";
-import { escapeHtml, stripActiveContent } from "../print.js";
+import { escapeHtml, stripActiveContent } from "../reader/print.js";
 
 const options = {
   seed: 0x520065,

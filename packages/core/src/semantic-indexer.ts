@@ -1,4 +1,4 @@
-import { messageModelText } from "./visible-text.js";
+import { messageModelText } from "./visible-text/visible-text.js";
 import { makeDownloadBudget } from "./download-budget.js";
 import { Clock, Effect, Option, Semaphore } from "effect";
 import { markIfAuth, type IndexerInput } from "./indexer.js";

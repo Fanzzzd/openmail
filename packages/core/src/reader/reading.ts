@@ -13,7 +13,7 @@ import type {
   MessageSecurity,
   Provider,
   RemoteImageMode,
-} from "./domain/domain.js";
+} from "../domain/domain.js";
 
 /**
  * The sender's name for a header that shows the address beside it. Senders

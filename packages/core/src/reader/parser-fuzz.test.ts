@@ -7,15 +7,15 @@ import {
   decodeUtf8First,
   parseAddressList,
   htmlToText,
-} from "./mime/mime.js";
-import { parseCalendar } from "./calendar/invites.js";
-import { structuredMailEvents } from "./calendar/structured-events.js";
-import { richComposeBody, remoteComposeBody } from "./compose/compose-body.js";
-import { visibleHtmlText, messageModelText } from "./visible-text.js";
+} from "../mime/mime.js";
+import { parseCalendar } from "../calendar/invites.js";
+import { structuredMailEvents } from "../calendar/structured-events.js";
+import { richComposeBody, remoteComposeBody } from "../compose/compose-body.js";
+import { visibleHtmlText, messageModelText } from "../visible-text/visible-text.js";
 import { prepareMessageHtml } from "./reader-html.js";
 import { sanitizeReaderHtml } from "./reader-sanitize.js";
 import { stripActiveContent } from "./print.js";
-import { stripMobileForms } from "./platform/react-native/reader-html.js";
+import { stripMobileForms } from "../platform/react-native/reader-html.js";
 import {
   cleanLink,
   linkIdentity,
@@ -23,9 +23,9 @@ import {
   linkNeedsConfirmation,
 } from "./link-security.js";
 import { messageSecurity } from "./message-security.js";
-import { parseSearchExpression, parseSearchQuery, searchInputError } from "./search.js";
-import { InvalidInput } from "./domain/errors.js";
-import { attachmentFilename } from "./mime/attachment-filename.js";
+import { parseSearchExpression, parseSearchQuery, searchInputError } from "../search.js";
+import { InvalidInput } from "../domain/errors.js";
+import { attachmentFilename } from "../mime/attachment-filename.js";
 import { hostileHtml, htmlTokens, nestedHtml } from "./parser-fuzz-corpus.js";
 
 const options = {

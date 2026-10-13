@@ -5,7 +5,7 @@ import { type IncomingMessage, type MailOp, type Message } from "../domain/domai
 import { NotFound, ProviderError } from "../domain/errors.js";
 import { decodeProviderId } from "../providers/imap/imap-cursor.js";
 import { applyOpToLabels } from "../domain/mail-ops.js";
-import { cleanDisplayName } from "../message-security.js";
+import { cleanDisplayName } from "../reader/message-security.js";
 import { type PlatformCrypto } from "../platform/crypto.js";
 import { type Store } from "../services.js";
 import { all, first, run } from "./sql-rows.js";

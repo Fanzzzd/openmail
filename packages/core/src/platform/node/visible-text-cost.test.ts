@@ -1,7 +1,10 @@
 import { performance } from "node:perf_hooks";
 import { expect, it, vi } from "vitest";
-import { visibleHtmlText } from "../../visible-text.js";
-import { makeDeclarationParser, visibleStylesheetRules } from "../../visible-text-css.js";
+import { visibleHtmlText } from "../../visible-text/visible-text.js";
+import {
+  makeDeclarationParser,
+  visibleStylesheetRules,
+} from "../../visible-text/visible-text-css.js";
 
 // Wall-clock budgets are opt-in; the default suite checks output and shared parse results.
 const performanceBudgets = process.env.OPENMAIL_PERF === "1";

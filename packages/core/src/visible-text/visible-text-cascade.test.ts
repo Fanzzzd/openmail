@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { visibleHtmlText, messageModelText } from "./visible-text.js";
-import { sanitizeReaderHtml } from "./reader-sanitize.js";
+import { sanitizeReaderHtml } from "../reader/reader-sanitize.js";
 
 const checkHidden = (html: string) => {
   expect(visibleHtmlText(html).text).not.toContain("SECRET");

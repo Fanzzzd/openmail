@@ -3,15 +3,15 @@ import { Effect, Layer, Option } from "effect";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { databaseLayer } from "./platform/node/db.js";
-import type { IncomingMessage, MailOp, Provider } from "./domain/domain.js";
-import { fakeServer, makeFakeProvider } from "./platform/node/fake-provider.js";
-import { Mailbox } from "./mailbox/mailbox.js";
-import { MailboxLive } from "./mailbox/mailbox-live.js";
-import { MemoryPlatform } from "./platform/node/platform-memory.js";
-import { NodeSystem } from "./platform/node/platform-node.js";
-import { Providers } from "./services.js";
-import { StoreLive } from "./store/store.js";
+import { databaseLayer } from "../platform/node/db.js";
+import type { IncomingMessage, MailOp, Provider } from "../domain/domain.js";
+import { fakeServer, makeFakeProvider } from "../platform/node/fake-provider.js";
+import { Mailbox } from "../mailbox/mailbox.js";
+import { MailboxLive } from "../mailbox/mailbox-live.js";
+import { MemoryPlatform } from "../platform/node/platform-memory.js";
+import { NodeSystem } from "../platform/node/platform-node.js";
+import { Providers } from "../services.js";
+import { StoreLive } from "../store/store.js";
 import {
   normalizeQuote,
   meetingLinks,
@@ -19,7 +19,7 @@ import {
   messagesFrom,
   splitRepeatedQuote,
 } from "./reading.js";
-import { parseCalendar } from "./calendar/invites.js";
+import { parseCalendar } from "../calendar/invites.js";
 
 const incoming = (
   providerId: string,

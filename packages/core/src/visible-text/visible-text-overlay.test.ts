@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { visibleHtmlText } from "./visible-text.js";
-import { sanitizeReaderHtml } from "./reader-sanitize.js";
+import { sanitizeReaderHtml } from "../reader/reader-sanitize.js";
 
 it.each([
   '<div style="background:#fff url(data:image/png;base64,iVBORw0KGgo=)"><span style="color:#000">SECRET</span></div>',

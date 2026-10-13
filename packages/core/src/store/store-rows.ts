@@ -18,7 +18,7 @@ import {
 } from "../domain/domain.js";
 import { DerivedChunk } from "../media.js";
 import { isReauthReason } from "../domain/errors.js";
-import { cleanDisplayName } from "../message-security.js";
+import { cleanDisplayName } from "../reader/message-security.js";
 import { type PendingOp } from "../services.js";
 
 // Row shapes as SQLite returns them. JSON columns and 0/1 flags decode here,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sanitizeReaderCss, sanitizeReaderHtml } from "./reader-sanitize.js";
+import { sanitizeReaderCss, sanitizeReaderHtml } from "./reader/reader-sanitize.js";
 import { textSearchHits } from "./search-highlight.js";
 import { searchHighlightTerms } from "./search-snippets.js";
 

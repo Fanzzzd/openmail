@@ -9,7 +9,7 @@ import { type DerivedChunk, MediaError } from "../media.js";
 import { modelContext } from "../model-view.js";
 import { Buffer } from "../platform/bytes.js";
 import { makeReaderAttachments } from "../mime/reader-attachments.js";
-import { gmailThreadUrl, officialMessageUrl, validMessageProviderId } from "../reading.js";
+import { gmailThreadUrl, officialMessageUrl, validMessageProviderId } from "../reader/reading.js";
 import { parseSearchQuery, quoteSearchValue, semanticRankFusion } from "../search.js";
 import { parseStableReference, privateMailLink } from "../system.js";
 

@@ -17,7 +17,7 @@ import {
   MAX_ATTACHMENT_CONTAINER_BYTES,
   MAX_CONTAINER_PARTS,
 } from "./tnef.js";
-import { prepareMessageHtml } from "../reader-html.js";
+import { prepareMessageHtml } from "../reader/reader-html.js";
 import { escapeComposeText, preservedComposeHtml } from "../compose/compose-body.js";
 import { attachmentFilename } from "./attachment-filename.js";
 

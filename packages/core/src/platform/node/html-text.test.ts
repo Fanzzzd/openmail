@@ -8,7 +8,7 @@ import { NodePlatform } from "../../../dist/platform/node/platform-node.js";
 import { htmlToText } from "../../mime/mime.js";
 import { GraphMessage } from "../../providers/outlook/graph.js";
 import { graphBody, parseGraphMessage } from "../../providers/outlook/parse.js";
-import { hostileHtml, nestedHtml } from "../../parser-fuzz-corpus.js";
+import { hostileHtml, nestedHtml } from "../../reader/parser-fuzz-corpus.js";
 import { finishWith, HtmlText } from "../html-text.js";
 import { syncHtml } from "./fixtures/sync-html.js";
 import { NodeHtmlText, strippedHtmlText } from "./html-text.js";

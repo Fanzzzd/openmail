@@ -1,6 +1,6 @@
 import { assert, describe, it } from "@effect/vitest";
 
-import { DEFAULT_PREFS } from "./domain/domain.js";
+import { DEFAULT_PREFS } from "../domain/domain.js";
 import { prepareMessageHtml } from "./reader-html.js";
 import { sanitizeReaderHtml } from "./reader-sanitize.js";
 import { shouldLoadRemote } from "./reading.js";

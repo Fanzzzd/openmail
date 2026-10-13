@@ -1,7 +1,7 @@
 import { MAX_ALTERNATIVES } from "./visible-text-constants.js";
 import { parseColour, gradientColours, shadowPaints, type Rgba } from "./visible-text-style.js";
-import { READER_COLOURS } from "./reader-style.js";
-import { parse, walk } from "./css-tree-browser.js";
+import { READER_COLOURS } from "../reader/reader-style.js";
+import { parse, walk } from "../reader/css-tree-browser.js";
 
 export type PaintedBackground =
   | { readonly kind: "known"; readonly rgb: Rgba }

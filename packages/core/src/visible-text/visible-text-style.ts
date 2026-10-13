@@ -7,7 +7,7 @@ import {
   walk,
   type CssNode,
   type EnterOrLeaveFn,
-} from "./css-tree-browser.js";
+} from "../reader/css-tree-browser.js";
 import { evaluateQuantity, INITIAL_TEXT_STYLE } from "./visible-text-inheritance.js";
 import type { VisibleRemovalRule } from "./visible-text-diagnostics.js";
 

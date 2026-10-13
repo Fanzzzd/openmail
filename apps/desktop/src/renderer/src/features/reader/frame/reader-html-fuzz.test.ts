@@ -6,7 +6,7 @@ import {
   hostileHtml,
   htmlTokens,
   nestedHtml,
-} from "../../../../../../../../packages/core/src/parser-fuzz-corpus.js";
+} from "../../../../../../../../packages/core/src/reader/parser-fuzz-corpus.js";
 import { sanitizeReaderHtml } from "./reader-html";
 
 const options = {

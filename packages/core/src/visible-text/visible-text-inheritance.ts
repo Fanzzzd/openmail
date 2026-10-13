@@ -1,5 +1,5 @@
 import { POINT_TO_PIXEL } from "./visible-text-constants.js";
-import type { CssNode } from "./css-tree-browser.js";
+import type { CssNode } from "../reader/css-tree-browser.js";
 import type { VisibleRemovalRule, VisibleRemovalSource } from "./visible-text-diagnostics.js";
 import type { VisibleCascade } from "./visible-text-css.js";
 

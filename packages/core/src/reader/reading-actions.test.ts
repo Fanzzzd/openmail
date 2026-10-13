@@ -1,19 +1,19 @@
-import { applyNativeMigration } from "./platform/node/migrations.js";
-import { incoming as makeIncoming, fakeServer, TestMailbox } from "./platform/node/testing.js";
+import { applyNativeMigration } from "../platform/node/migrations.js";
+import { incoming as makeIncoming, fakeServer, TestMailbox } from "../platform/node/testing.js";
 import { NodeFileSystem, NodePath } from "@effect/platform-node";
 import { assert, it } from "@effect/vitest";
 import { Effect, FileSystem, Layer, Path } from "effect";
 import { SqlClient } from "effect/sql";
 import { DatabaseSync } from "node:sqlite";
-import { databaseLayer, MIGRATIONS } from "./platform/node/db.js";
-import { type IncomingMessage, type Prefs } from "./domain/domain.js";
-import { Mailbox } from "./mailbox/mailbox.js";
-import { Store } from "./services.js";
-import { StoreLive } from "./store/store.js";
+import { databaseLayer, MIGRATIONS } from "../platform/node/db.js";
+import { type IncomingMessage, type Prefs } from "../domain/domain.js";
+import { Mailbox } from "../mailbox/mailbox.js";
+import { Store } from "../services.js";
+import { StoreLive } from "../store/store.js";
 import { gmailThreadUrl, officialMessageUrl, senderName, threadExpansion } from "./reading.js";
-import { parseSearchQuery, senderSearchQuery } from "./search.js";
-import { MemoryPlatform } from "./platform/node/platform-memory.js";
-import { parseAppLink, parseStableReference, privateMailLink, messageLink } from "./system.js";
+import { parseSearchQuery, senderSearchQuery } from "../search.js";
+import { MemoryPlatform } from "../platform/node/platform-memory.js";
+import { parseAppLink, parseStableReference, privateMailLink, messageLink } from "../system.js";
 {
   const incoming: IncomingMessage = makeIncoming("first", {
     threadId: "conversation",

@@ -16,6 +16,6 @@
     "app.config.ts",
     "lingui.config.ts",
     "vitest.config.ts",
-    "../../packages/core/src/css-tree-browser-api.d.ts"
+    "../../packages/core/src/reader/css-tree-browser-api.d.ts"
   ]
 }

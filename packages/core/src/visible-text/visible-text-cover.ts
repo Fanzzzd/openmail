@@ -1,6 +1,6 @@
 import { constantLength, REPLACED_TAGS } from "./visible-text-overlap.js";
 import { OVERPAINT_MARGIN_PX, POINT_TO_PIXEL } from "./visible-text-constants.js";
-import { parse, generate, type CssNode } from "./css-tree-browser.js";
+import { parse, generate, type CssNode } from "../reader/css-tree-browser.js";
 import { INITIAL_TEXT_STYLE, evaluateQuantity } from "./visible-text-inheritance.js";
 import { parseColour, gradientColours, paintLengths } from "./visible-text-style.js";
 import { legacyColour } from "./visible-text-paint.js";

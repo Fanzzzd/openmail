@@ -55,7 +55,7 @@ import {
   toSummary,
 } from "./store-rows.js";
 import { type makeWordIndexStore, type WordIndexState } from "./store-word-index.js";
-import { messageModelText, visibleHtmlText } from "../visible-text.js";
+import { messageModelText, visibleHtmlText } from "../visible-text/visible-text.js";
 
 const rowKey = (row: typeof DerivedSearchRow.Type, flat?: boolean) =>
   flat ? row.provenance_json.messageId : `${row.account_id}/${row.thread_id}`;

@@ -1,5 +1,5 @@
 import { Schema, Record } from "effect";
-import { MessageTextExplanation } from "../../visible-text-diagnostics.js";
+import { MessageTextExplanation } from "../../visible-text/visible-text-diagnostics.js";
 import { Provider } from "../../domain/domain.js";
 
 export const CORPUS_LIMITS = {

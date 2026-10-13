@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
-import { htmlToText } from "./mime/mime.js";
-import { sanitizeReaderHtml, sanitizeReaderCss } from "./reader-sanitize.js";
+import { htmlToText } from "../mime/mime.js";
+import { sanitizeReaderHtml, sanitizeReaderCss } from "../reader/reader-sanitize.js";
 import { visibleHtmlText, messageModelText } from "./visible-text.js";
 import { createVisibleTextTrace } from "./visible-text-diagnostics.js";
 

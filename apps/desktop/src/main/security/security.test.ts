@@ -273,7 +273,7 @@ it("AI/MCP docs match the budget placeholder and semantic snippet policy", async
     readFile(path.join(desktopRoot, "../../docs/agents.md"), "utf8"),
   ]);
   const source = await readFile(
-    path.join(desktopRoot, "../../packages/core/src/visible-text.ts"),
+    path.join(desktopRoot, "../../packages/core/src/visible-text/visible-text.ts"),
     "utf8",
   );
   const placeholder = "[Message too complex for AI: message text omitted.]";

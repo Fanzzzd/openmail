@@ -14,8 +14,8 @@ import {
   editedComposeBody,
   richComposeBody,
 } from "./compose-body.js";
-import { visibleHtmlText } from "../visible-text.js";
-import { prepareMessageHtml } from "../reader-html.js";
+import { visibleHtmlText } from "../visible-text/visible-text.js";
+import { prepareMessageHtml } from "../reader/reader-html.js";
 
 const backgroundDraftProbes = [
   '<div style="background-color:#777"><span style="color:#000000">Visible contrast</span></div>',

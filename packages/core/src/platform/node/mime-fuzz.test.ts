@@ -2,7 +2,7 @@ import * as fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { nodeMailCodec } from "./mail-codec.js";
 import { parseMobileMime } from "../react-native/mail-codec.js";
-import { hostileMime } from "../../parser-fuzz-corpus.js";
+import { hostileMime } from "../../reader/parser-fuzz-corpus.js";
 import { PermanentError } from "../../domain/errors.js";
 
 const options = {

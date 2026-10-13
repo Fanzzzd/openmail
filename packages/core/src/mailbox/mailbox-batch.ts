@@ -12,7 +12,7 @@ import {
   type Provider,
   type IncomingMessage,
 } from "../domain/domain.js";
-import { messagesFrom } from "../reading.js";
+import { messagesFrom } from "../reader/reading.js";
 import { requireFocusedInboxScope } from "../providers/optional-services.js";
 import { InvalidInput } from "../domain/errors.js";
 import type { Mailbox } from "./mailbox.js";
