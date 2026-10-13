@@ -72,7 +72,7 @@ frame 标识依据：[Electron WebFrameMain](https://www.electronjs.org/docs/lat
 
 `reauth` 事件在账户被标记为需要重新登录时写入一次，只含时间、服务商、原因代码和账户 ID 的 16 位 SHA-256 前缀。原因代码的含义见[同步正确性](sync-correctness.md#重新登录的判定)。
 
-同步失败时，core 只保存按原因分类的固定英文句子（quota、auth、network、server、unknown），不保存 provider 的错误正文。桌面按原因显示翻译后的固定文字；旧版本存下的原始文本一律显示为 unknown 的文字。同时写一条 `runtime-warning`，reason 为 `sync-failed`，只含服务商（含 imap）、分类、full／inbox 范围、可用的 status 和账户 ID 的 16 位 SHA-256 前缀。实现见 [sync-failure.ts](../packages/core/src/sync-failure.ts)。
+同步失败时，core 只保存按原因分类的固定英文句子（quota、auth、network、server、unknown，以及 IMAP 连接的 dns、refused、no_response、tls、unsafe_login），不保存 provider 的错误正文。连接原因的句子与应用其他地方的提示相同，说明该检查哪项设置；unsafe_login 不自动重试。桌面按原因显示翻译后的固定文字；旧版本存下的原始文本一律显示为 unknown 的文字。同时写一条 `runtime-warning`，reason 为 `sync-failed`，只含服务商（含 imap）、分类、full／inbox 范围、可用的 status 和账户 ID 的 16 位 SHA-256 前缀。实现见 [sync-failure.ts](../packages/core/src/sync-failure.ts)。
 
 `sync-reset` 诊断还记录服务商、listing／reset／verification 阶段、账户与文件夹哈希，以及列出、保留、候选、已验证和延期等计数，不记录候选 ID。runtime-error 的 sync-crashed 还允许固定 phase 和 causeKind，不导出异常内容或堆栈。RPC renderer 回调显式返回 void，防止 Fiber 经 contextBridge 返回时触发克隆错误；回归用 structuredClone 检查 JSON 帧和回调返回值。事件定义见 [sync-reset.ts](../packages/core/src/sync-reset.ts)，落盘与导出沿用同一字段白名单。
 

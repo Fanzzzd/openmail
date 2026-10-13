@@ -75,6 +75,8 @@ type PullError = {
 const isTransientPull = (e: PullError) =>
   e._tag === "ProviderError" &&
   !e.deferred &&
+  // The server refuses this sign-in until the person changes a setting.
+  e.reason !== "unsafe_login" &&
   (e.status === undefined || e.status === 429 || e.status >= 500 || e.reason === "quota");
 
 /** A server that asks for a longer wait is left to the next scheduled sync. */

@@ -12,6 +12,12 @@ const TEXT: Record<SyncFailureReason, MessageDescriptor> = {
   network: msg`Can't reach the mail server right now.`,
   server: msg`The mail server had a problem. Sync will try again later.`,
   unknown: msg`Sync could not finish. It will retry automatically.`,
+  // The same sentences the app shows for these connection failures elsewhere.
+  dns: msg`Can't find the mail server. Check the server name and your internet connection.`,
+  refused: msg`The mail server refused the connection. Check the port.`,
+  no_response: msg`The mail server didn't respond. Check the server name, the port and your internet connection.`,
+  tls: msg`Couldn't set up a secure connection to the mail server. Check the port and the encryption setting.`,
+  unsafe_login: msg`The server blocked the sign-in as unsafe. Turn on IMAP in your email's web settings, then sign in with the authorization code it generates.`,
 };
 const KEYCHAIN = msg`Keychain is locked`;
 

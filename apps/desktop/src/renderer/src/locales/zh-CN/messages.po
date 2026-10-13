@@ -1095,6 +1095,7 @@ msgstr "日历响应须由用户操作"
 msgid "Call"
 msgstr "致电"
 
+#: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "Can't find the mail server. Check the server name and your internet connection."
 msgstr "找不到邮件服务器。请检查服务器名称和网络连接。"
@@ -1942,6 +1943,7 @@ msgstr "无法保存 PDF：{reason}"
 msgid "Couldn't send: {reason}"
 msgstr "发送失败：{reason}"
 
+#: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "Couldn't set up a secure connection to the mail server. Check the port and the encryption setting."
 msgstr "无法与邮件服务器建立安全连接。请检查端口和加密设置。"
@@ -6747,6 +6749,7 @@ msgstr "本地数据库已恢复"
 msgid "The mail provider is limiting requests. Sync will try again later."
 msgstr "邮件服务商正在限制请求，稍后会再次同步。"
 
+#: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "The mail server didn't respond. Check the server name, the port and your internet connection."
 msgstr "邮件服务器没有响应。请检查服务器名称、端口和网络连接。"
@@ -6755,6 +6758,7 @@ msgstr "邮件服务器没有响应。请检查服务器名称、端口和网络
 msgid "The mail server had a problem. Sync will try again later."
 msgstr "邮件服务器出现问题，稍后会再次同步。"
 
+#: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "The mail server refused the connection. Check the port."
 msgstr "邮件服务器拒绝了连接。请检查端口。"
@@ -6815,6 +6819,7 @@ msgstr "所选邮件已不存在。"
 msgid "The sender name contains a different email address."
 msgstr "发件人名称含有不同的邮件地址。"
 
+#: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "The server blocked the sign-in as unsafe. Turn on IMAP in your email's web settings, then sign in with the authorization code it generates."
 msgstr "服务器把这次登录当作不安全登录拦截了。请在邮箱网页版的设置中开启 IMAP，再用生成的授权码登录。"

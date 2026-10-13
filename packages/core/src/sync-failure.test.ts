@@ -19,7 +19,17 @@ it("classifies sync failures into fixed reasons", () => {
   assert.strictEqual(classifySyncFailure(provider({ status: 403, reason: "quota" })), "quota");
   assert.strictEqual(classifySyncFailure(provider({ status: 429 })), "quota");
   assert.strictEqual(classifySyncFailure(provider({ status: 0 })), "network");
-  assert.strictEqual(classifySyncFailure(provider({ reason: "timeout" })), "network");
+  // IMAP connection reasons keep what to check; unsafe_login does not retry by itself.
+  assert.strictEqual(classifySyncFailure(provider({ reason: "timeout" })), "no_response");
+  assert.strictEqual(classifySyncFailure(provider({ reason: "tls" })), "tls");
+  assert.strictEqual(classifySyncFailure(provider({ reason: "dns" })), "dns");
+  assert.strictEqual(classifySyncFailure(provider({ reason: "refused" })), "refused");
+  assert.strictEqual(classifySyncFailure(provider({ reason: "unsafe_login" })), "unsafe_login");
+  assert.strictEqual(classifySyncFailure(provider({ reason: "connection" })), "network");
+  assert.strictEqual(
+    storedSyncFailureReason(`a@b: ${SYNC_FAILURE_TEXT.unsafe_login}`),
+    "unsafe_login",
+  );
   assert.strictEqual(classifySyncFailure(provider({ status: 503 })), "server");
   assert.strictEqual(classifySyncFailure(provider({ status: 400 })), "unknown");
   assert.strictEqual(
@@ -52,7 +62,7 @@ it.effect("an IMAP sync failure logs a fixed-field sync-failed event", () => {
     const fiber = yield* Effect.forkChild(mailbox.sync());
     for (let second = 0; second < 20; second++) yield* TestClock.adjust("1 second");
     const [result] = yield* Fiber.join(fiber);
-    assert.strictEqual(result?.error, SYNC_FAILURE_TEXT.network);
+    assert.strictEqual(result?.error, SYNC_FAILURE_TEXT.no_response);
     const event = logged.find(
       (value) =>
         typeof value === "object" &&
@@ -76,7 +86,7 @@ it.effect("an IMAP sync failure logs a fixed-field sync-failed event", () => {
       event: "runtime-warning",
       reason: "sync-failed",
       provider: "imap",
-      failure: "network",
+      failure: "no_response",
       scope: "full",
     });
     assert.notInclude(JSON.stringify(record), "203.0.113.9");

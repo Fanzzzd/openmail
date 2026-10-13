@@ -1085,6 +1085,7 @@ msgstr "Kalenderantworten erfordern eine Benutzeraktion"
 msgid "Call"
 msgstr "Anrufen"
 
+#: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "Can't find the mail server. Check the server name and your internet connection."
 msgstr "Der Mailserver wurde nicht gefunden. Prüfe den Servernamen und deine Internetverbindung."
@@ -1932,6 +1933,7 @@ msgstr "Das PDF konnte nicht gespeichert werden: {reason}"
 msgid "Couldn't send: {reason}"
 msgstr "Konnte nicht gesendet werden: {reason}"
 
+#: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "Couldn't set up a secure connection to the mail server. Check the port and the encryption setting."
 msgstr "Es konnte keine sichere Verbindung zum Mailserver hergestellt werden. Prüfe den Port und die Verschlüsselungseinstellung."
@@ -6737,6 +6739,7 @@ msgstr "Die lokale Datenbank wurde wiederhergestellt"
 msgid "The mail provider is limiting requests. Sync will try again later."
 msgstr "Der E-Mail-Anbieter begrenzt die Anfragen. Die Synchronisierung wird später erneut versucht."
 
+#: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "The mail server didn't respond. Check the server name, the port and your internet connection."
 msgstr "Der Mailserver hat nicht geantwortet. Prüfe den Servernamen, den Port und deine Internetverbindung."
@@ -6745,6 +6748,7 @@ msgstr "Der Mailserver hat nicht geantwortet. Prüfe den Servernamen, den Port u
 msgid "The mail server had a problem. Sync will try again later."
 msgstr "Beim Mailserver ist ein Problem aufgetreten. Die Synchronisierung wird später erneut versucht."
 
+#: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "The mail server refused the connection. Check the port."
 msgstr "Der Mailserver hat die Verbindung abgelehnt. Prüfe den Port."
@@ -6805,6 +6809,7 @@ msgstr "Die ausgewählte Nachricht ist nicht mehr verfügbar."
 msgid "The sender name contains a different email address."
 msgstr "Der Absendername enthält eine andere E-Mail-Adresse."
 
+#: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "The server blocked the sign-in as unsafe. Turn on IMAP in your email's web settings, then sign in with the authorization code it generates."
 msgstr "Der Server hat die Anmeldung als unsicher blockiert. Aktiviere IMAP in den Web-Einstellungen deines E-Mail-Dienstes und melde dich mit dem dort erzeugten Autorisierungscode an."

@@ -4,7 +4,19 @@ import { KEYCHAIN_LOCKED_MESSAGE } from "./errors.js";
 import { sha256Hex } from "./platform/crypto.js";
 
 /** Why a sync failed, as stored and shown. Provider response bodies never reach the UI. */
-export const SyncFailureReason = Schema.Literals(["quota", "auth", "network", "server", "unknown"]);
+export const SyncFailureReason = Schema.Literals([
+  "quota",
+  "auth",
+  "network",
+  "server",
+  "unknown",
+  // IMAP/SMTP connection reasons, each with what to check.
+  "dns",
+  "refused",
+  "no_response",
+  "tls",
+  "unsafe_login",
+]);
 export type SyncFailureReason = typeof SyncFailureReason.Type;
 
 /**
@@ -17,9 +29,23 @@ export const SYNC_FAILURE_TEXT: Readonly<Record<SyncFailureReason, string>> = {
   network: "Can't reach the mail server right now.",
   server: "The mail server had a problem. Sync will try again later.",
   unknown: "Sync could not finish. It will retry automatically.",
+  dns: "Can't find the mail server. Check the server name and your internet connection.",
+  refused: "The mail server refused the connection. Check the port.",
+  no_response:
+    "The mail server didn't respond. Check the server name, the port and your internet connection.",
+  tls: "Couldn't set up a secure connection to the mail server. Check the port and the encryption setting.",
+  unsafe_login:
+    "The server blocked the sign-in as unsafe. Turn on IMAP in your email's web settings, then sign in with the authorization code it generates.",
 };
 
-const NETWORK_REASONS = new Set(["connection", "dns", "tls", "refused", "timeout", "unreachable"]);
+const CONNECTION_REASONS: Readonly<Record<string, SyncFailureReason>> = {
+  dns: "dns",
+  refused: "refused",
+  timeout: "no_response",
+  unreachable: "no_response",
+  tls: "tls",
+  unsafe_login: "unsafe_login",
+};
 
 export function classifySyncFailure(error: {
   readonly _tag: string;
@@ -29,8 +55,12 @@ export function classifySyncFailure(error: {
   if (error._tag === "AuthError") return "auth";
   if (error._tag !== "ProviderError") return "unknown";
   if (error.reason === "quota" || error.status === 429) return "quota";
-  if (error.status === 0 || (error.reason !== undefined && NETWORK_REASONS.has(error.reason)))
-    return "network";
+  const connection =
+    error.reason !== undefined && Object.hasOwn(CONNECTION_REASONS, error.reason)
+      ? CONNECTION_REASONS[error.reason]
+      : undefined;
+  if (connection) return connection;
+  if (error.status === 0 || error.reason === "connection") return "network";
   if (error.status !== undefined && error.status >= 500) return "server";
   return "unknown";
 }

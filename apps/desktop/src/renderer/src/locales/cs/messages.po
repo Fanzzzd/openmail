@@ -1085,6 +1085,7 @@ msgstr "Odpovědi kalendáře vyžadují akci uživatele"
 msgid "Call"
 msgstr "Zavolat"
 
+#: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "Can't find the mail server. Check the server name and your internet connection."
 msgstr "Poštovní server nelze najít. Zkontrolujte název serveru a připojení k internetu."
@@ -1932,6 +1933,7 @@ msgstr "Soubor PDF nelze uložit: {reason}"
 msgid "Couldn't send: {reason}"
 msgstr "Nelze odeslat: {reason}"
 
+#: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "Couldn't set up a secure connection to the mail server. Check the port and the encryption setting."
 msgstr "K poštovnímu serveru se nepodařilo navázat zabezpečené připojení. Zkontrolujte port a nastavení šifrování."
@@ -6737,6 +6739,7 @@ msgstr "Místní databáze byla obnovena"
 msgid "The mail provider is limiting requests. Sync will try again later."
 msgstr "Poskytovatel pošty omezuje počet požadavků. Synchronizace se později zopakuje."
 
+#: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "The mail server didn't respond. Check the server name, the port and your internet connection."
 msgstr "Poštovní server neodpověděl. Zkontrolujte název serveru, port a připojení k internetu."
@@ -6745,6 +6748,7 @@ msgstr "Poštovní server neodpověděl. Zkontrolujte název serveru, port a př
 msgid "The mail server had a problem. Sync will try again later."
 msgstr "Na poštovním serveru došlo k potížím. Synchronizace se později zopakuje."
 
+#: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "The mail server refused the connection. Check the port."
 msgstr "Poštovní server odmítl připojení. Zkontrolujte port."
@@ -6805,6 +6809,7 @@ msgstr "Vybraná zpráva již není dostupná."
 msgid "The sender name contains a different email address."
 msgstr "Jméno odesílatele obsahuje jinou e-mailovou adresu."
 
+#: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "The server blocked the sign-in as unsafe. Turn on IMAP in your email's web settings, then sign in with the authorization code it generates."
 msgstr "Server zablokoval přihlášení jako nebezpečné. Zapněte IMAP v nastavení webové pošty a přihlaste se vygenerovaným autorizačním kódem."

@@ -1085,6 +1085,7 @@ msgstr "Ответы календаря требуют действий поль
 msgid "Call"
 msgstr "Позвонить"
 
+#: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "Can't find the mail server. Check the server name and your internet connection."
 msgstr "Не удаётся найти почтовый сервер. Проверьте имя сервера и подключение к интернету."
@@ -1932,6 +1933,7 @@ msgstr "Не удалось сохранить PDF-файл: {reason}."
 msgid "Couldn't send: {reason}"
 msgstr "Не удалось отправить: {reason}"
 
+#: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "Couldn't set up a secure connection to the mail server. Check the port and the encryption setting."
 msgstr "Не удалось установить защищённое соединение с почтовым сервером. Проверьте порт и настройку шифрования."
@@ -6737,6 +6739,7 @@ msgstr "Локальная база данных восстановлена."
 msgid "The mail provider is limiting requests. Sync will try again later."
 msgstr "Почтовый сервис ограничивает число запросов. Синхронизация будет повторена позже."
 
+#: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "The mail server didn't respond. Check the server name, the port and your internet connection."
 msgstr "Почтовый сервер не ответил. Проверьте имя сервера, порт и подключение к интернету."
@@ -6745,6 +6748,7 @@ msgstr "Почтовый сервер не ответил. Проверьте и
 msgid "The mail server had a problem. Sync will try again later."
 msgstr "На почтовом сервере возникла проблема. Синхронизация будет повторена позже."
 
+#: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "The mail server refused the connection. Check the port."
 msgstr "Почтовый сервер отклонил подключение. Проверьте порт."
@@ -6805,6 +6809,7 @@ msgstr "Выбранное сообщение больше недоступно.
 msgid "The sender name contains a different email address."
 msgstr "Имя отправителя содержит другой адрес электронной почты."
 
+#: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "The server blocked the sign-in as unsafe. Turn on IMAP in your email's web settings, then sign in with the authorization code it generates."
 msgstr "Сервер заблокировал вход как небезопасный. Включите IMAP в веб-настройках почты и войдите с помощью созданного кода авторизации."

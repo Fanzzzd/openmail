@@ -1085,6 +1085,7 @@ msgstr "カレンダーの応答にはユーザーのアクションが必要で
 msgid "Call"
 msgstr "電話する"
 
+#: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "Can't find the mail server. Check the server name and your internet connection."
 msgstr "メールサーバーが見つかりません。サーバー名とインターネット接続を確認してください。"
@@ -1932,6 +1933,7 @@ msgstr "PDF を保存できませんでした: {reason}"
 msgid "Couldn't send: {reason}"
 msgstr "送信できませんでした: {reason}"
 
+#: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "Couldn't set up a secure connection to the mail server. Check the port and the encryption setting."
 msgstr "メールサーバーと安全な接続を確立できませんでした。ポートと暗号化の設定を確認してください。"
@@ -6737,6 +6739,7 @@ msgstr "ローカルデータベースが回復されました"
 msgid "The mail provider is limiting requests. Sync will try again later."
 msgstr "メールプロバイダがリクエストを制限しています。後で同期を再試行します。"
 
+#: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "The mail server didn't respond. Check the server name, the port and your internet connection."
 msgstr "メールサーバーから応答がありません。サーバー名、ポート、インターネット接続を確認してください。"
@@ -6745,6 +6748,7 @@ msgstr "メールサーバーから応答がありません。サーバー名、
 msgid "The mail server had a problem. Sync will try again later."
 msgstr "メールサーバーで問題が発生しました。後で同期を再試行します。"
 
+#: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "The mail server refused the connection. Check the port."
 msgstr "メールサーバーが接続を拒否しました。ポートを確認してください。"
@@ -6805,6 +6809,7 @@ msgstr "選択したメッセージは利用できなくなりました。"
 msgid "The sender name contains a different email address."
 msgstr "送信者名に別のメールアドレスが含まれています。"
 
+#: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "The server blocked the sign-in as unsafe. Turn on IMAP in your email's web settings, then sign in with the authorization code it generates."
 msgstr "サーバーが安全でないサインインとしてブロックしました。メールの Web 設定で IMAP を有効にし、生成された認証コードでサインインしてください。"
