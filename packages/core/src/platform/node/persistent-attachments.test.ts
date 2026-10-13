@@ -1,4 +1,4 @@
-import { TestMailbox } from "./platform/node/testing.js";
+import { TestMailbox } from "./testing.js";
 import { NodeFileSystem, NodePath } from "@effect/platform-node";
 import { assert, it } from "@effect/vitest";
 import { Effect, Layer, Option, Stream } from "effect";
@@ -6,16 +6,16 @@ import { mkdtemp, rm, readdir, stat, symlink, utimes, writeFile } from "node:fs/
 import os from "node:os";
 import path from "node:path";
 import { expect, vi } from "vitest";
-import { databaseLayer } from "./platform/node/db.js";
-import { MailboxLive, type MailboxOptions } from "./mailbox/mailbox-live.js";
-import { Mailbox } from "./mailbox/mailbox.js";
-import { Store, Providers, Secrets, type ProviderAdapter } from "./services.js";
-import { MemoryPlatform } from "./platform/node/platform-memory.js";
-import { StoreLive } from "./store/store.js";
-import { fakeServer, makeFakeProvider } from "./platform/node/fake-provider.js";
-import { PersistentAttachments } from "./platform/node/persistent-attachments.js";
-import { type IncomingMessage } from "./domain/domain.js";
-import { ProviderError } from "./domain/errors.js";
+import { databaseLayer } from "./db.js";
+import { MailboxLive, type MailboxOptions } from "../../mailbox/mailbox-live.js";
+import { Mailbox } from "../../mailbox/mailbox.js";
+import { Store, Providers, Secrets, type ProviderAdapter } from "../../services.js";
+import { MemoryPlatform } from "./platform-memory.js";
+import { StoreLive } from "../../store/store.js";
+import { fakeServer, makeFakeProvider } from "./fake-provider.js";
+import { PersistentAttachments } from "./persistent-attachments.js";
+import { type IncomingMessage } from "../../domain/domain.js";
+import { ProviderError } from "../../domain/errors.js";
 import { TestClock } from "effect/testing";
 {
   const message = (id: number, label = "INBOX"): IncomingMessage => ({

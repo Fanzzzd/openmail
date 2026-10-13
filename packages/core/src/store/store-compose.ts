@@ -1,5 +1,5 @@
 import { makeOutboxStore } from "../mailbox/mobile-outbox.js";
-import { makeRemoteAccessStore } from "../remote-access.js";
+import { makeRemoteAccessStore } from "../app/remote-access.js";
 import { PlatformCrypto } from "../platform/crypto.js";
 import { makeSignatureStore } from "./store-signatures.js";
 import { signatureDefault } from "../compose/signatures.js";

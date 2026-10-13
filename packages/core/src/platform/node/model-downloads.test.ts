@@ -7,8 +7,8 @@ import { createHash } from "node:crypto";
 import { mkdtemp, writeFile, readFile, mkdir, rm, stat } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { modelFiles, type ModelFile } from "./platform/node/model-downloads.js";
-import { MODEL_BYTES, MODEL_FILES } from "./ai/model-manifest.js";
+import { modelFiles, type ModelFile } from "./model-downloads.js";
+import { MODEL_BYTES, MODEL_FILES } from "../../ai/model-manifest.js";
 
 vi.mock("node:fs", async (importOriginal) => {
   const module = await importOriginal<typeof import("node:fs")>();

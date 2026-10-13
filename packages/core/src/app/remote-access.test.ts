@@ -1,7 +1,7 @@
 import { assert, it } from "@effect/vitest";
 import { Effect } from "effect";
-import { Mailbox } from "./mailbox/mailbox.js";
-import { TestMailbox } from "./platform/node/testing.js";
+import { Mailbox } from "../mailbox/mailbox.js";
+import { TestMailbox } from "../platform/node/testing.js";
 import { DEFAULT_REMOTE_ACCESS } from "./remote-access.js";
 
 it.effect("remote access is off by default and keeps a normalized allowlist", () =>

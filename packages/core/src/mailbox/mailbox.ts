@@ -99,7 +99,7 @@ import type {
 
 import type { BackfillState, CacheWindow, CacheWindowInput } from "../domain/cache.js";
 
-import type { UpdateClient } from "../updates.js";
+import type { UpdateClient } from "../app/updates.js";
 
 export const SyncState = Schema.Struct({
   running: Schema.Boolean,
@@ -565,18 +565,18 @@ export class Mailbox extends Context.Service<
     /** Only presence crosses IPC. The token stays in the system keychain. */
     checkUpdates(
       client: UpdateClient,
-      options: import("../updates.js").UpdateOptions,
-    ): Effect.Effect<import("../updates.js").ManualUpdateResult>;
+      options: import("../app/updates.js").UpdateOptions,
+    ): Effect.Effect<import("../app/updates.js").ManualUpdateResult>;
     readonly updateTokenConfigured: Effect.Effect<boolean, ProviderError>;
     setUpdateToken(token: string): Effect.Effect<void, InvalidInput>;
     /** Main process only; no RPC exposes these. */
-    readonly remoteAccess: Effect.Effect<import("../remote-access.js").RemoteAccessSettings>;
+    readonly remoteAccess: Effect.Effect<import("../app/remote-access.js").RemoteAccessSettings>;
     setRemoteAccess(
-      settings: import("../remote-access.js").RemoteAccessSettings,
-    ): Effect.Effect<import("../remote-access.js").RemoteAccessSettings, InvalidInput>;
+      settings: import("../app/remote-access.js").RemoteAccessSettings,
+    ): Effect.Effect<import("../app/remote-access.js").RemoteAccessSettings, InvalidInput>;
     startUpdates(
       client: UpdateClient,
-      options: import("../updates.js").UpdateOptions,
+      options: import("../app/updates.js").UpdateOptions,
     ): Effect.Effect<() => void, ProviderError>;
     readonly cacheDatabaseSize: Effect.Effect<import("../domain/cache.js").CacheDatabaseSize>;
     readonly compactCache: Effect.Effect<import("../domain/cache.js").CacheCompactionResult>;

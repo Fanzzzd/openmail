@@ -7,7 +7,7 @@ import { all, first, run } from "./sql-rows.js";
 import { type makeComposeStore } from "./store-compose.js";
 import { SUMMARY_COLUMNS } from "./store-query.js";
 import { NotificationActionRow, summaryRowFields, toSummary } from "./store-rows.js";
-import { notificationEligible, profileNotificationsActive } from "../system.js";
+import { notificationEligible, profileNotificationsActive } from "../app/system.js";
 
 const NOTIFICATION_RETENTION = 7 * 86_400_000;
 

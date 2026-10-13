@@ -32,14 +32,14 @@ export * from "./calendar/calendar.js";
 export * from "./contacts/contacts.js";
 
 export { deviceErrorReason, deviceFailure } from "./domain/device-errors.js";
-export * from "./system.js";
+export * from "./app/system.js";
 
 export * from "./domain/cache.js";
 
-export * from "./list-window.js";
+export * from "./app/list-window.js";
 export * from "./domain/folder-actions.js";
 
-export * from "./updates.js";
+export * from "./app/updates.js";
 
 export * from "./compose/recipients.js";
 
@@ -52,11 +52,11 @@ export * from "./mime/tnef.js";
 
 export * from "./mime/attachment-filename.js";
 
-export * from "./feedback.js";
+export * from "./app/feedback.js";
 
 export * from "./compose/compose-extras.js";
 export * from "./compose/compose-images.js";
-export * from "./update-feed.js";
+export * from "./app/update-feed.js";
 export * from "./compose/signatures.js";
 
 export * from "./domain/categories.js";
@@ -64,7 +64,7 @@ export * from "./ai/ai.js";
 export { messageModelText } from "./visible-text/visible-text.js";
 export { ModelAnthropic, FakeModelLayer, type ModelOutput, type ModelRequest } from "./ai/model.js";
 
-export * from "./update-state.js";
+export * from "./app/update-state.js";
 
 export * from "./contacts/apple-contacts.js";
 
@@ -83,4 +83,4 @@ export { ProviderDiagnostic } from "./providers/provider-diagnostics.js";
 export { SyncResetDiagnostic } from "./sync/sync-reset.js";
 
 export * from "./search/search-snippets.js";
-export * from "./remote-access.js";
+export * from "./app/remote-access.js";

@@ -8,9 +8,9 @@ import {
   type IncomingMessage,
   type Message,
   Prefs,
-} from "./domain/domain.js";
-import { PermanentError } from "./domain/errors.js";
-import { Mailbox, type MailboxEvent } from "./mailbox/mailbox.js";
+} from "../domain/domain.js";
+import { PermanentError } from "../domain/errors.js";
+import { Mailbox, type MailboxEvent } from "../mailbox/mailbox.js";
 import {
   inQuietHours,
   messageLink,
@@ -18,8 +18,8 @@ import {
   shouldNotify,
   spaceAccountIds,
 } from "./system.js";
-import { fakeServer, TestMailbox } from "./platform/node/testing.js";
-import { SYNC_FAILURE_TEXT } from "./sync/sync-failure.js";
+import { fakeServer, TestMailbox } from "../platform/node/testing.js";
+import { SYNC_FAILURE_TEXT } from "../sync/sync-failure.js";
 
 const account: Account = {
   id: "gmail:me@gmail.com",

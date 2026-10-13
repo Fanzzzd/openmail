@@ -15,7 +15,7 @@ import { databaseLayer, MIGRATIONS, splitStatements } from "../platform/node/db.
 import { type IncomingMessage } from "./domain.js";
 import { ProviderError } from "./errors.js";
 import { fakeServer, makeFakeProvider, type FakeServer } from "../platform/node/fake-provider.js";
-import { listWindow } from "../list-window.js";
+import { listWindow } from "../app/list-window.js";
 import { MailboxLive } from "../mailbox/mailbox-live.js";
 import { Mailbox } from "../mailbox/mailbox.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
@@ -27,7 +27,7 @@ import {
   type UpdateClient,
   startStoredUpdates,
   UPDATE_TOKEN_KEY,
-} from "../updates.js";
+} from "../app/updates.js";
 {
   const message = (id: string, overrides: Partial<IncomingMessage> = {}): IncomingMessage =>
     makeIncoming(id, {

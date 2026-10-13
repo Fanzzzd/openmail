@@ -24,7 +24,7 @@ import { sha256Hex } from "../platform/crypto.js";
 import { decide } from "./policy.js";
 import { READ_ONLY_MESSAGE } from "./read-only.js";
 import { type Change, type StoredDraft } from "../services.js";
-import { notificationEligible, profileNotificationsActive } from "../system.js";
+import { notificationEligible, profileNotificationsActive } from "../app/system.js";
 
 const isAiProposalActor = (actor: Actor): boolean =>
   actor.kind === "agent" &&

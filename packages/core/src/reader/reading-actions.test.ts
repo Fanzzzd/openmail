@@ -13,7 +13,7 @@ import { StoreLive } from "../store/store.js";
 import { gmailThreadUrl, officialMessageUrl, senderName, threadExpansion } from "./reading.js";
 import { parseSearchQuery, senderSearchQuery } from "../search/search.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
-import { parseAppLink, parseStableReference, privateMailLink, messageLink } from "../system.js";
+import { parseAppLink, parseStableReference, privateMailLink, messageLink } from "../app/system.js";
 {
   const incoming: IncomingMessage = makeIncoming("first", {
     threadId: "conversation",

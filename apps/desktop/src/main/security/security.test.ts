@@ -25,7 +25,7 @@ import {
 import { configurePermissions } from "./security";
 import { appResource, appResourceHandler } from "./app-protocol";
 import { externalUrl } from "../../shared/external-url";
-import { parseAppLink } from "../../../../../packages/core/src/system.js";
+import { parseAppLink } from "../../../../../packages/core/src/app/system.js";
 import { Schema } from "effect";
 import { desktopRoot } from "../../renderer/src/test-support/paths";
 

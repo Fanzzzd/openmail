@@ -11,7 +11,7 @@ import { Buffer } from "../platform/bytes.js";
 import { makeReaderAttachments } from "../mime/reader-attachments.js";
 import { gmailThreadUrl, officialMessageUrl, validMessageProviderId } from "../reader/reading.js";
 import { parseSearchQuery, quoteSearchValue, semanticRankFusion } from "../search/search.js";
-import { parseStableReference, privateMailLink } from "../system.js";
+import { parseStableReference, privateMailLink } from "../app/system.js";
 
 const DEFAULT_MODEL_CHARS = 12_000;
 

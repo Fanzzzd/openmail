@@ -7,8 +7,8 @@ import { Deferred, Effect, Fiber, Layer, Option, Ref } from "effect";
 import { TestClock } from "effect/testing";
 import { HttpClient, HttpClientError, HttpClientResponse } from "effect/http";
 
-import { OAuthLoopback, withAuthorizePage } from "./platform/node/oauth.js";
-import { Browser, OAuth } from "./services.js";
+import { OAuthLoopback, withAuthorizePage } from "./oauth.js";
+import { Browser, OAuth } from "../../services.js";
 
 /**
  * A browser that "consents" at once: it calls the loopback redirect with a

@@ -1,4 +1,4 @@
-import { modelFiles } from "./platform/node/model-downloads.js";
+import { modelFiles } from "./model-downloads.js";
 import { assert, it } from "@effect/vitest";
 import { Effect } from "effect";
 import { existsSync } from "node:fs";
@@ -7,7 +7,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { deflateSync } from "node:zlib";
-import { makeNodeModels } from "./platform/node/embeddings-node.js";
+import { makeNodeModels } from "./embeddings-node.js";
 
 const root = fileURLToPath(new URL("../../../spikes/media/models/", import.meta.url));
 const optedIn = process.env.OPENMAIL_TEST_MODELS === "1";

@@ -17,12 +17,12 @@ import {
   Providers,
   sha256Hex,
   hmacSha256Hex,
-} from "./portable.js";
-import { Store } from "./services.js";
-import { StoreLive } from "./store/store.js";
-import { isIP } from "./platform/ip.js";
-import { MemoryPlatform } from "./platform/node/platform-memory.js";
-import { fakeServer, makeFakeProvider } from "./platform/node/fake-provider.js";
+} from "../portable.js";
+import { Store } from "../services.js";
+import { StoreLive } from "../store/store.js";
+import { isIP } from "./ip.js";
+import { MemoryPlatform } from "./node/platform-memory.js";
+import { fakeServer, makeFakeProvider } from "./node/fake-provider.js";
 
 it("platform fingerprints preserve the native UTF-8 SHA-256 and HMAC results", () => {
   for (const input of ["", "abc", "消息文本\r\nCafé 📨", "unpaired\ud800", "x".repeat(100_000)]) {
@@ -105,7 +105,7 @@ it("a mailbox keeps its own MIME and random services after the platform Layer is
   let createdMessageId: string | undefined;
   const provider = {
     ...makeFakeProvider(server),
-    saveDraft: (_account: unknown, push: import("./services.js").DraftPush) =>
+    saveDraft: (_account: unknown, push: import("../services.js").DraftPush) =>
       Effect.gen(function* () {
         const state = yield* push.creation.begin();
         createdMessageId = state.messageId;

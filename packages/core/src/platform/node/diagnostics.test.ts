@@ -1,9 +1,9 @@
 import {
   openUnversionedMigratedDatabase,
   writeMigratedDatabase,
-} from "../test-support/migrated-database.js";
-import { expectFileBytes } from "../test-support/file-bytes.js";
-import { QUICK_CHECK_TIMEOUT_MS, RECOVERY_TABLES } from "./platform/node/database-recovery.js";
+} from "../../../test-support/migrated-database.js";
+import { expectFileBytes } from "../../../test-support/file-bytes.js";
+import { QUICK_CHECK_TIMEOUT_MS, RECOVERY_TABLES } from "./database-recovery.js";
 import { DatabaseSync } from "node:sqlite";
 import { afterEach, expect, it, vi } from "vitest";
 import { Effect, Layer, Stream, Fiber, Schema } from "effect";
@@ -25,16 +25,16 @@ import {
   createLocalDiagnostics,
   CRASH_WINDOW_MS,
   resetLocalCache,
-} from "./platform/node/diagnostics.js";
-import { Mailbox } from "./mailbox/mailbox.js";
-import { MailboxLive } from "./mailbox/mailbox-live.js";
-import { fakeServer } from "./platform/node/testing.js";
-import { makeFakeProvider } from "./platform/node/fake-provider.js";
-import { MemoryPlatform } from "./platform/node/platform-memory.js";
-import { databaseLayer, MIGRATIONS } from "./platform/node/db.js";
-import { NodeSystem } from "./platform/node/platform-node.js";
-import { Providers } from "./services.js";
-import { StoreLive } from "./store/store.js";
+} from "./diagnostics.js";
+import { Mailbox } from "../../mailbox/mailbox.js";
+import { MailboxLive } from "../../mailbox/mailbox-live.js";
+import { fakeServer } from "./testing.js";
+import { makeFakeProvider } from "./fake-provider.js";
+import { MemoryPlatform } from "./platform-memory.js";
+import { databaseLayer, MIGRATIONS } from "./db.js";
+import { NodeSystem } from "./platform-node.js";
+import { Providers } from "../../services.js";
+import { StoreLive } from "../../store/store.js";
 
 const directories: string[] = [];
 function temp() {

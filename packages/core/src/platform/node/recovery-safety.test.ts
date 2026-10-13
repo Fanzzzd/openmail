@@ -1,6 +1,6 @@
-import { openUnversionedMigratedDatabase } from "../test-support/migrated-database.js";
-import { expectFileBytes } from "../test-support/file-bytes.js";
-import { applyNativeMigration } from "./platform/node/migrations.js";
+import { openUnversionedMigratedDatabase } from "../../../test-support/migrated-database.js";
+import { expectFileBytes } from "../../../test-support/file-bytes.js";
+import { applyNativeMigration } from "./migrations.js";
 import { spawn, spawnSync } from "node:child_process";
 import {
   existsSync,
@@ -20,15 +20,15 @@ import { DatabaseSync } from "node:sqlite";
 import { afterEach, expect, it } from "vitest";
 import { Effect, Layer } from "effect";
 import { SqlClient } from "effect/sql";
-import { acquireDatabaseAccess, DatabaseInUseError } from "./platform/node/database-access.js";
-import { databaseLayer, MIGRATIONS } from "./platform/node/db.js";
-import { NodeSystem } from "./platform/node/platform-node.js";
-import { rebuildCorruptDatabase } from "./platform/node/database-recovery.js";
+import { acquireDatabaseAccess, DatabaseInUseError } from "./database-access.js";
+import { databaseLayer, MIGRATIONS } from "./db.js";
+import { NodeSystem } from "./platform-node.js";
+import { rebuildCorruptDatabase } from "./database-recovery.js";
 import {
   InterruptedRecoveryError,
   openDatabaseAccess,
   prepareDatabaseStartup,
-} from "./platform/node/recovery-files.js";
+} from "./recovery-files.js";
 const dirs: string[] = [];
 function temp() {
   const dir = mkdtempSync(join(tmpdir(), "openmail-recovery-safety-"));
@@ -173,7 +173,8 @@ for (const step of ["sidecar", "linked", "installed"] as const)
   it(`process death after ${step} keeps a live path and cannot replay an old WAL into the replacement`, () => {
     const dir = fixture(temp(), true);
     const file = join(dir, "mail.db");
-    const moduleUrl = new URL("../dist/platform/node/database-recovery.js", import.meta.url).href;
+    const moduleUrl = new URL("../../../dist/platform/node/database-recovery.js", import.meta.url)
+      .href;
     const code = `
     import fs from 'node:fs'; import { syncBuiltinESMExports } from 'node:module';
     const file=${JSON.stringify(file)}, step=${JSON.stringify(step)};
@@ -266,7 +267,7 @@ it("old corrupt backups without recovery markers do not block an intentional fre
 it("four simultaneous first openers each acquire a shared lease without initializing the lock database", async () => {
   const dir = temp();
   const file = join(dir, "mail.db");
-  const url = new URL("../dist/platform/node/database-access.js", import.meta.url).href;
+  const url = new URL("../../../dist/platform/node/database-access.js", import.meta.url).href;
   // IPC barrier: every child has loaded the module before any of them opens the lock file.
   const code = `const {acquireDatabaseAccess}=await import(${JSON.stringify(url)}); const next=()=>new Promise(r=>process.once('message',r)); process.send('ready'); await next(); const at=Date.now(); const lease=acquireDatabaseAccess(${JSON.stringify(file)},'shared'); process.send(String(Date.now()-at)); await next(); lease.release(); process.disconnect();`;
   const children = [0, 1, 2, 3].map(() =>

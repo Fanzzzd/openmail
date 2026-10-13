@@ -1,4 +1,4 @@
-import { normalizeRemoteAccess } from "../remote-access.js";
+import { normalizeRemoteAccess } from "../app/remote-access.js";
 import { makeStorageMailbox } from "./mailbox-storage.js";
 import {
   Cause,
@@ -55,7 +55,7 @@ import { makeSemanticIndexer } from "../ai/semantic-indexer.js";
 import { AppConfig, OAuthIssuers, Providers, Secrets, Store } from "../services.js";
 import { makeSyncHealth } from "../sync/sync-health.js";
 import { UnsubscribeNetwork } from "./unsubscribe.js";
-import { checkStoredUpdates, startStoredUpdates, UPDATE_TOKEN_KEY } from "../updates.js";
+import { checkStoredUpdates, startStoredUpdates, UPDATE_TOKEN_KEY } from "../app/updates.js";
 
 const DEFAULT_SUGGESTIONS = 8;
 

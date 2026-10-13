@@ -21,7 +21,7 @@ import { Store } from "../../services.js";
 import { StoreLive } from "../../store/store.js";
 import { makeResetGuard } from "../../sync/sync-reset.js";
 import { matchesSearch } from "../../search/search.js";
-import { notificationEligible } from "../../system.js";
+import { notificationEligible } from "../../app/system.js";
 
 const account = makeAccount("outlook");
 const raw = {

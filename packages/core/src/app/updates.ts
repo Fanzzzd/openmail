@@ -1,9 +1,9 @@
-import type { ProviderError } from "./domain/errors.js";
+import type { ProviderError } from "../domain/errors.js";
 import type { UpdateState } from "./update-state.js";
 import parse from "semver/functions/parse.js";
 import { Effect, Option, Schema } from "effect";
 const ignoreError = (_error: Error) => null;
-import { AppVerifier } from "./platform/runtime.js";
+import { AppVerifier } from "../platform/runtime.js";
 export const isSignedMacApp = (bundle: string) =>
   Effect.runPromise(
     Effect.flatMap(AppVerifier, (verifier) => Effect.promise(() => verifier.verify(bundle))),

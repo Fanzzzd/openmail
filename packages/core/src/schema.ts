@@ -31,10 +31,10 @@ export * from "./calendar/calendar.js";
 export * from "./contacts/contacts.js";
 
 export { deviceErrorReason, deviceFailure } from "./domain/device-errors.js";
-export * from "./system.js";
+export * from "./app/system.js";
 export * from "./domain/cache.js";
 
-export * from "./list-window.js";
+export * from "./app/list-window.js";
 
 export * from "./domain/mail-ops.js";
 export * from "./compose/recipients.js";
@@ -51,14 +51,14 @@ export * from "./mime/attachment-view.js";
 export * from "./mime/attachment-filename.js";
 
 export * from "./compose/compose-paste.js";
-export * from "./feedback.js";
+export * from "./app/feedback.js";
 export * from "./compose/compose-extras.js";
 
 export * from "./compose/signatures.js";
 
 export * from "./domain/categories.js";
 export * from "./ai/ai.js";
-export * from "./update-state.js";
+export * from "./app/update-state.js";
 export * from "./compose/compose-ai.js";
 export * from "./contacts/apple-contacts.js";
 
@@ -76,4 +76,4 @@ export * from "./sync/sync-health.js";
 export { outlookPreviewUnavailable } from "./providers/outlook/outlook-rules.js";
 export * from "./search/search-snippets.js";
 export * from "./search/search-highlight.js";
-export * from "./remote-access.js";
+export * from "./app/remote-access.js";

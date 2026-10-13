@@ -29,7 +29,7 @@ import {
   withDraftMarkdownSource,
 } from "../compose/drafts.js";
 import { InvalidInput, NotFound, PermanentError, ProviderError } from "../domain/errors.js";
-import { isLocalFeedbackDraft } from "../feedback.js";
+import { isLocalFeedbackDraft } from "../app/feedback.js";
 import { withAgentOrigin } from "./mailbox-apply.js";
 import { type MailboxDependencies, type MailboxRuntimeState } from "./mailbox-runtime.js";
 import { WRITE_RECOVERY_WINDOW_MS } from "./mailbox-shared.js";

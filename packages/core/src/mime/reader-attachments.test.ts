@@ -15,7 +15,7 @@ import { Providers } from "../services.js";
 import { makeFakeProvider } from "../platform/node/fake-provider.js";
 import { fakeServer } from "../platform/node/testing.js";
 import { StoreLive } from "../store/store.js";
-import { LIST_DENSITIES, listWindow, specialFolderBadge } from "../list-window.js";
+import { LIST_DENSITIES, listWindow, specialFolderBadge } from "../app/list-window.js";
 import { inspectAttachment } from "./attachment-import.js";
 {
   const original: IncomingMessage = {

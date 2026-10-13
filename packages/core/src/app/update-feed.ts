@@ -1,4 +1,4 @@
-import { Buffer } from "./platform/bytes.js";
+import { Buffer } from "../platform/bytes.js";
 import { Schema } from "effect";
 import compare from "semver/functions/compare.js";
 import parse from "semver/functions/parse.js";

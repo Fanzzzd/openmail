@@ -1,6 +1,6 @@
 import type { Address, MessageSecurity, Provider } from "../domain/domain.js";
 import { registrableDomain } from "./link-security.js";
-import { parseAppLink } from "../system.js";
+import { parseAppLink } from "../app/system.js";
 
 export const cleanDisplayName = (name: string) => name.replace(/\p{Cf}/gu, "");
 export function senderSpoofed(sender: Address): boolean {

@@ -2,7 +2,7 @@ import { parseGraphMessage } from "../providers/outlook/parse.js";
 import { expect, it } from "vitest";
 import { messageSecurity, cleanDisplayName, senderSpoofed } from "./message-security.js";
 import { cleanLink, linkHint, linkNeedsConfirmation, registrableDomain } from "./link-security.js";
-import { parseAppLink } from "../system.js";
+import { parseAppLink } from "../app/system.js";
 {
   const h = (name: string, value: string) => ({ name, value });
 
