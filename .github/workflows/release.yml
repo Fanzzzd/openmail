@@ -9,7 +9,7 @@ on:
     tags: ["v*"]
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: release-${{ github.ref }}
@@ -19,13 +19,24 @@ env:
   CI: "1"
 
 jobs:
+  # The same build, type, test, lint and format checks as a push to main. Nothing is
+  # built for release, and no secret is in scope, until they pass on this commit.
+  check:
+    uses: ./.github/workflows/check.yml
+
   release:
+    needs: check
     runs-on: macos-latest
+    permissions:
+      contents: write
     timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          # gh uploads with GH_TOKEN; git needs no stored credential.
+          persist-credentials: false
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version-file: .nvmrc
           # pnpm comes from corepack in the next step; the store is cached below.

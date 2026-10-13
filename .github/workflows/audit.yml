@@ -1,0 +1,35 @@
+name: Audit
+
+# Checks production dependencies against the npm advisory database. It needs the registry, so
+# it runs weekly and on demand instead of in Check. An advisory that reaches the desktop app,
+# the CLI or core fails the run; mobile-only and docs-only advisories are warnings.
+# See docs/testing.md#依赖审计.
+
+on:
+  schedule:
+    # Mondays 06:00 UTC.
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+
+      - name: Enable pnpm through corepack
+        run: corepack enable
+
+      # pnpm audit reads pnpm-lock.yaml; no install needed.
+      - run: pnpm audit:prod
