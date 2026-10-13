@@ -12,7 +12,7 @@ import {
   Stream,
 } from "effect";
 import { type Account, type FlushResult, type SyncResult } from "./domain.js";
-import { type AuthError, type ProviderError } from "./errors.js";
+import { type AuthError, type ProviderError, type ProviderFailure } from "./errors.js";
 import { runTokenKeepAlive } from "./token-keepalive.js";
 import { backfillCachedHeaders } from "./header-backfill.js";
 import { ImapIdle } from "./imap-idle.js";
@@ -75,6 +75,11 @@ const PULL_RETRY = {
   schedule: Schedule.exponential("5 seconds"),
   times: 2,
   while: isTransientPull,
+};
+
+type PullFailed = {
+  readonly _tag: "PullFailed";
+  readonly cause: Cause.Cause<ProviderFailure>;
 };
 
 const SYNC_RETRY_MESSAGE = "Sync could not finish. It will retry automatically.";
@@ -206,6 +211,14 @@ export const makeSyncMailbox = (
             .get(account.provider)
             .pull(currentAccount, cursor, scope, incrementalOnly)
             .pipe(
+              // A failure ends the stream after the changes before it are written, so a
+              // checkpoint (an Outlook folder's cursor) still in the batch buffer is kept.
+              Stream.map((change): Change | PullFailed => change),
+              Stream.catchCause((cause) =>
+                Cause.hasInterruptsOnly(cause)
+                  ? Stream.failCause(cause)
+                  : Stream.succeed<Change | PullFailed>({ _tag: "PullFailed", cause }),
+              ),
               Stream.groupedWithin(WRITE_BATCH, Duration.millis(250)),
               Stream.takeWhileEffect(() =>
                 store.getAccount(account.id).pipe(
@@ -214,17 +227,19 @@ export const makeSyncMailbox = (
                 ),
               ),
               // Let timers and IPC run between write transactions.
-              Stream.runForEach((batch) =>
-                Effect.forEach(
-                  splitWriteBatch(batch),
+              Stream.runForEach((batch) => {
+                const changes = batch.filter((c): c is Change => c._tag !== "PullFailed");
+                const failure = batch.find((c): c is PullFailed => c._tag === "PullFailed");
+                return Effect.forEach(
+                  splitWriteBatch(changes),
                   (part) =>
                     Effect.andThen(
                       apply(currentAccount, notificationsReady)(part),
                       Effect.yieldNow,
                     ),
                   { discard: true },
-                ),
-              ),
+                ).pipe(Effect.andThen(failure ? Effect.failCause(failure.cause) : Effect.void));
+              }),
             );
         }),
       ),

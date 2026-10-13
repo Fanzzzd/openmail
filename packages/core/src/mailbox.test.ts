@@ -214,7 +214,8 @@ import { Store, type ProviderAdapter } from "./services.js";
           message: "Gmail API 0: Transport error (GET /labels)",
         });
         const fiber = yield* Effect.forkChild(m.sync());
-        yield* TestClock.adjust("5 seconds");
+        // The failure reaches the retry after the batch buffer drains, not synchronously.
+        for (let second = 0; second < 6; second++) yield* TestClock.adjust("1 second");
         const [result] = yield* Fiber.join(fiber);
         assert.strictEqual(result?.error, undefined);
         assert.deepStrictEqual((yield* m.syncState).errors, []);

@@ -1524,11 +1524,13 @@ it.effect("an expired delta link restarts that folder and drops its local copies
     const changes = yield* run(http, (a) =>
       Stream.runCollect(a.pull(account, Option.some(JSON.stringify(stored)))),
     );
+    // The restarted Inbox is checkpointed before the other folders, after its DeleteLabel.
     assert.deepStrictEqual(tags(changes), [
       "Labels",
       "Upsert",
       "Progress",
       "DeleteLabel",
+      "Cursor",
       "Cursor",
     ]);
     assert.deepStrictEqual(changes[3], {
@@ -5435,7 +5437,8 @@ it.effect("empty delta restart persists once and healthy increments emit no rese
     yield* run(http, (adapter) =>
       Effect.gen(function* () {
         const initial = yield* Stream.runCollect(adapter.pull(account, Option.none()));
-        const saved = initial.find((change) => change._tag === "Cursor");
+        // The last cursor is the one a completed pull leaves; earlier ones are folder checkpoints.
+        const saved = initial.findLast((change) => change._tag === "Cursor");
         assert.ok(saved?._tag === "Cursor");
         diagnostics.length = 0;
         for (let pass = 0; pass < 3; pass++) {
@@ -5917,3 +5920,64 @@ for (const invalid of [
     },
   );
 }
+
+it.effect("a failed folder keeps the delta links of folders that finished before it", () =>
+  Effect.gen(function* () {
+    let sentFails = true;
+    const inboxLink = `${GRAPH}/me/mailFolders/inbox/messages/delta?$deltatoken=inbox-done`;
+    const http = fakeHttp(
+      mailbox({
+        inbox: (url) =>
+          url.searchParams.get("$deltatoken") === "inbox-done"
+            ? { json: { value: [], "@odata.deltaLink": inboxLink } }
+            : {
+                json: {
+                  value: [{ ...raw, id: "first", hasAttachments: false }],
+                  "@odata.deltaLink": inboxLink,
+                },
+              },
+        sentitems: () =>
+          sentFails
+            ? { status: 400, json: { error: { code: "BadRequest" } } }
+            : {
+                json: {
+                  value: [],
+                  "@odata.deltaLink": `${GRAPH}/me/mailFolders/sentitems/messages/delta?$deltatoken=sent`,
+                },
+              },
+      }),
+    );
+    const adapters = Layer.effect(
+      Providers,
+      Effect.map(makeOutlook, (adapter) => Providers.of({ get: () => adapter })),
+    );
+    const layer = MailboxLive({ backgroundFlush: false, imapIdle: false }).pipe(
+      Layer.provideMerge(Layer.mergeAll(StoreLive, adapters)),
+      Layer.provide(Layer.mergeAll(MemoryPlatform(platformOptions), http.layer)),
+    );
+    yield* Effect.gen(function* () {
+      const store = yield* Store;
+      const mailbox = yield* Mailbox;
+      yield* store.upsertAccount("outlook", account.email);
+      const failed = yield* mailbox.sync(account.id);
+      assert.ok(failed[0]?.error);
+      const partial = yield* store.getSyncCursor(account.id);
+      assert.ok(Option.isSome(partial));
+      assert.include(partial.value, "inbox-done");
+      sentFails = false;
+      const inboxCalls = () =>
+        http.calls
+          .filter((c) => c.url.pathname.endsWith("/mailFolders/inbox/messages/delta"))
+          .map((c) => c.url.searchParams.get("$deltatoken"));
+      const before = inboxCalls().length;
+      const done = yield* mailbox.sync(account.id);
+      assert.isUndefined(done[0]?.error);
+      // The retry continues Inbox from its saved link instead of listing it again.
+      assert.deepStrictEqual(inboxCalls().slice(before), ["inbox-done"]);
+      assert.strictEqual(yield* store.hasMessage(`${account.id}/first`), true);
+      const final = yield* store.getSyncCursor(account.id);
+      assert.ok(Option.isSome(final));
+      assert.notInclude(final.value, "__partial");
+    }).pipe(Effect.provide(layer), Effect.scoped);
+  }),
+);

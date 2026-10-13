@@ -29,6 +29,9 @@ import {
 import type { OutlookRead } from "./parse.js";
 import { expandedAttachments } from "./parse.js";
 import type { OutlookSyncSources } from "./sync.js";
+/** Marks a cursor saved after some folders of a full sync, before the rest completed. */
+const PARTIAL_KEY = "__partial";
+
 export const makeOutlookPull = (
   client: OutlookClient,
   reader: OutlookRead,
@@ -83,12 +86,64 @@ export const makeOutlookPull = (
             ...(stored[WINDOW_KEY] ? { [WINDOW_KEY]: stored[WINDOW_KEY] } : {}),
           };
           let fetched = 0;
+          // A full sync saves the cursor after each folder, so a throttled or failed folder
+          // does not restart the ones before it. A legacy cursor (no immutable-id marker)
+          // needs its account Reset after every folder, so it only saves at the end.
+          const resumable = !scope && (!reset || Option.isNone(cursor));
+          const canonical = (links: Readonly<Record<string, string>>) =>
+            JSON.stringify(
+              Object.fromEntries(
+                Object.entries(links).toSorted(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)),
+              ),
+            );
+          let saved: string | undefined;
+          const queued = new Set<string>();
+          // Removals seen so far whose move target was not listed. Their delta events are
+          // behind any saved link, so they go to the durable verification queue first.
+          const unresolvedRemovals = () => {
+            const unresolved: string[] = [];
+            for (const [providerId, removedLabels] of removed)
+              if (
+                !kept.has(providerId) ||
+                [...(changedFolders.get(providerId) ?? [])].some((label) =>
+                  removedLabels.has(label),
+                )
+              )
+                unresolved.push(providerId);
+            removed.clear();
+            return unresolved;
+          };
+          const checkpoint = (folder: GraphSyncFolder) =>
+            Effect.gen(function* () {
+              if (!resumable || next[folder.key] === undefined) return;
+              if (next[folder.key] === stored[folder.key] && !restarted.has(folder.label)) return;
+              // A restart's keep set drops queued ids from verification, so it goes first and
+              // never keeps an id an earlier checkpoint queued.
+              if (restarted.delete(folder.label))
+                yield* Queue.offer(queue, {
+                  _tag: "DeleteLabel",
+                  label: folder.label,
+                  keep: [...kept].filter((id) => !queued.has(id)),
+                  since,
+                  partial: true,
+                });
+              const unresolved = unresolvedRemovals();
+              for (const id of unresolved) queued.add(id);
+              if (unresolved.length)
+                yield* Queue.offer(queue, { _tag: "VerifyCandidates", providerIds: unresolved });
+              saved = canonical({ ...(reset ? {} : stored), ...next, [PARTIAL_KEY]: "1" });
+              yield* Queue.offer(queue, { _tag: "Cursor", cursor: saved });
+            });
           for (const folder of folders) {
             let known = previous[folder.key];
             if (incrementalOnly && known === undefined)
               yield* new ProviderError({
                 message: "Foreground sync required to renew the cursor",
               });
+            // After a partial pull, a folder listed from scratch may hold local copies from the
+            // failed attempt; they are verified like a restarted folder's.
+            if (resumable && stored[PARTIAL_KEY] && known === undefined)
+              restarted.add(folder.label);
             // Delta's filtered snapshot can cap at 5,000. Its keep set never covers older headers.
             const initial = `${GRAPH}/me/mailFolders/${encodeURIComponent(folder.path)}/messages/delta?$select=${SELECT}&${EXPAND_ATTACHMENTS}&$filter=${encodeURIComponent(`receivedDateTime ge ${new Date(since).toISOString()}`)}&$orderby=receivedDateTime%20desc`;
             const deltaBase = `/me/mailFolders/${encodeURIComponent(folder.path)}/messages/delta`;
@@ -229,11 +284,12 @@ export const makeOutlookPull = (
                 incomplete: deferredFetches + (page["@odata.deltaLink"] ? 0 : 1),
                 deferred: deferredFetches,
               });
+            yield* checkpoint(folder);
           }
           // Changes from removed folders can overwrite a move observed earlier.
           // Resolve overlaps after all pages, through the durable verification queue.
           yield* start;
-          const keep = [...kept];
+          const keep = [...kept].filter((id) => !queued.has(id));
           if (reset) yield* Queue.offer(queue, { _tag: "Reset", keep, since, partial: true });
           else
             for (const label of restarted)
@@ -247,13 +303,7 @@ export const makeOutlookPull = (
           // A removal proves absence from one folder only. A move into a folder whose
           // filtered delta predates the message's receivedDateTime never lists it there,
           // so every unlisted removal, and every overlap with a listed update, is verified.
-          const unresolved: string[] = [];
-          for (const [providerId, removedLabels] of removed)
-            if (
-              !kept.has(providerId) ||
-              [...(changedFolders.get(providerId) ?? [])].some((label) => removedLabels.has(label))
-            )
-              unresolved.push(providerId);
+          const unresolved = unresolvedRemovals();
           // Inbox polls do not reconcile removals; the next full sync verifies them.
           if (!scope && unresolved.length)
             yield* Queue.offer(queue, { _tag: "VerifyCandidates", providerIds: unresolved });
@@ -261,7 +311,13 @@ export const makeOutlookPull = (
           // The inbox cursor only ever drives inbox polls, so a poll keeps no other folder
           // links and spends no request per custom folder. Full sync owns folder removal.
           for (const key of scope ? [] : Object.keys(previous)) {
-            if (key === ID_TYPE_KEY || key === WINDOW_KEY || wellKnown.has(key) || key in next)
+            if (
+              key === ID_TYPE_KEY ||
+              key === WINDOW_KEY ||
+              key === PARTIAL_KEY ||
+              wellKnown.has(key) ||
+              key in next
+            )
               continue;
             const saved = previous[key];
             // Visible folder lists omit hidden folders. Only a direct 404 establishes removal.
