@@ -19,7 +19,7 @@
     "@op-engineering/op-sqlite": "18.2.5",
     "@openmail/core": "workspace:*",
     "@react-native-community/datetimepicker": "9.1.0",
-    "effect": "4.0.0-rc.118",
+    "effect": "4.0.2",
     "expo": "57.0.26",
     "expo-auth-session": "~57.0.13",
     "expo-background-task": "~57.0.21",

@@ -12,6 +12,11 @@ allowBuilds:
   protobufjs: false
 catalog:
   typescript: ^5.9.3
+overrides:
+  # Effect packages ship in lockstep. @effect/platform-node 4.0.2 asks for
+  # ^4.0.2 of this one, which resolves to 4.0.3 and needs effect 4.0.3.
+  # Move it with the rest of the Effect family, or drop it on the next bump.
+  "@effect/platform-node-shared": 4.0.2
 # Why each patch exists and when it can go: docs/dependency-patches.md
 patchedDependencies:
   expo-background-task@57.0.21: patches/expo-background-task@57.0.21.patch

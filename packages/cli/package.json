@@ -22,9 +22,9 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@effect/platform-node": "4.0.0-rc.118",
+    "@effect/platform-node": "4.0.2",
     "@openmail/core": "workspace:*",
-    "effect": "4.0.0-rc.118"
+    "effect": "4.0.2"
   },
   "devDependencies": {
     "@types/node": "^22.20.4",

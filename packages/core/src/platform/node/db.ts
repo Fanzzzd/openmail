@@ -156,8 +156,10 @@ export function databaseLayer(
           }),
         );
       }
+      // Since 4.0.1 a failed open is a typed SqlError. Opening the local
+      // database has no recovery path here, so it stays a defect as before.
       return Layer.effect(DatabaseCapabilities, initialize.pipe(Effect.orDie)).pipe(
-        Layer.provideMerge(SqliteClient.layer({ filename, busyTimeout: 5000 })),
+        Layer.provideMerge(Layer.orDie(SqliteClient.layer({ filename, busyTimeout: 5000 }))),
       );
     }),
   );
