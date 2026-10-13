@@ -5,7 +5,7 @@ import { ContextMenuContent } from "../../ui/Menu";
 import { MESSAGE_DRAG, ThreadMenuItems } from "../organize";
 import { displayName, shortDate } from "../../lib/format";
 import type { LIST_DENSITIES, Prefs, SwipeAction } from "@openmail/core/schema";
-import { plural } from "@lingui/core/macro";
+import { msg, plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMessageSwipe } from "./message-swipe-hook";
 import { MatchedText, SearchPreview, SearchSnippet, distinctAttachmentMatches } from "../search";
@@ -208,7 +208,8 @@ export const Row = memo(function Row({
             m.subject || t`(No subject)`,
             shortDate(m.date, i18n),
             ...(messageCount > 1
-              ? [plural(messageCount, { one: "# message", other: "# messages" })]
+              ? // The component's i18n, not the global one, which a window may not activate.
+                [i18n._(msg`${plural(messageCount, { one: "# message", other: "# messages" })}`)]
               : []),
             ...(m.isUnread ? [t`Unread`] : []),
             ...(m.isStarred ? [t`Starred`] : []),
