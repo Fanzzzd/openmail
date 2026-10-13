@@ -162,23 +162,25 @@ it.effect(
           message(`m${String(n).padStart(3, "0")}`, ["INBOX", "CATEGORY_PERSONAL"]),
         );
       yield* store.upsertMessage(second.id, message("second", ["INBOX"]));
+      // Accounts sync concurrently, so calls are compared per account.
+      const of = (id: string) => calls.filter((call) => call.account === id).map((c) => c.ids);
       yield* mailbox.sync();
       assert.strictEqual(calls.length, 2);
-      assert.strictEqual(calls[0]?.ids.length, 500);
-      assert.deepStrictEqual(calls[1]?.ids, ["second"]);
+      assert.strictEqual(of(first.id)[0]?.length, 500);
+      assert.deepStrictEqual(of(second.id), [["second"]]);
       assert.strictEqual((yield* store.syncHealthLocal(first.id, "INBOX", false)).total, 503);
       yield* mailbox.sync();
       assert.strictEqual(calls.length, 2);
-      assert.deepStrictEqual(calls[1]?.ids, ["second"]);
       yield* TestClock.adjust("59 minutes");
       yield* mailbox.sync();
       assert.strictEqual(calls.length, 2);
       fail = false;
       yield* TestClock.adjust("1 minute");
       yield* mailbox.sync();
-      assert.strictEqual(calls[2]?.ids.length, 500);
-      assert.deepStrictEqual(calls[2]?.ids.slice(0, 3), ["m500", "m501", "m502"]);
-      assert.strictEqual(new Set(calls[2]?.ids).size, 500);
+      const rotated = of(first.id)[1];
+      assert.strictEqual(rotated?.length, 500);
+      assert.deepStrictEqual(rotated?.slice(0, 3), ["m500", "m501", "m502"]);
+      assert.strictEqual(new Set(rotated).size, 500);
       assert.strictEqual((yield* store.syncHealthLocal(first.id, "INBOX", false)).total, 3);
       yield* TestClock.adjust("1 hour");
       yield* mailbox.sync();
@@ -510,10 +512,14 @@ it.effect("one account's 500-id stale sweep cannot starve another account's rese
       { providerId: "reset", rfcMessageId: null, labels: ["INBOX"] },
     ]);
     yield* mailbox.sync();
-    assert.deepStrictEqual(checked, [
-      { account: first.id, count: 500 },
-      { account: second.id, count: 1 },
-    ]);
+    // Accounts sync concurrently; each gets its own verification.
+    assert.deepStrictEqual(
+      checked.toSorted((a, b) => b.count - a.count),
+      [
+        { account: first.id, count: 500 },
+        { account: second.id, count: 1 },
+      ],
+    );
     assert.deepStrictEqual(yield* store.pendingResetCandidates(second.id), []);
   }).pipe(Effect.provide(runtime(adapter)));
 });

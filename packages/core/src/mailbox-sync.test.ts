@@ -1,5 +1,5 @@
 import { assert, it } from "@effect/vitest";
-import { Effect, Layer, ManagedRuntime } from "effect";
+import { Effect, Layer, ManagedRuntime, Stream } from "effect";
 import { TestClock } from "effect/testing";
 import { expect } from "vitest";
 import { Mailbox } from "./mailbox.js";
@@ -111,3 +111,41 @@ it.effect("the snooze wake loop keeps running after one failed pass", () =>
     }).pipe(Effect.provide(live));
   }),
 );
+
+it.live("a full sync pulls up to three accounts at once, each account once", () => {
+  let active = 0;
+  let most = 0;
+  const pulls: string[] = [];
+  const layer = TestMailbox.withAdapter((base) => ({
+    ...base,
+    pull: (account, ...rest) =>
+      Stream.unwrap(
+        Effect.gen(function* () {
+          pulls.push(account.email);
+          most = Math.max(most, ++active);
+          yield* Effect.sleep("30 millis");
+          active--;
+          return base.pull(account, ...rest);
+        }),
+      ),
+  }));
+  return Effect.gen(function* () {
+    const store = yield* Store;
+    const mailbox = yield* Mailbox;
+    for (const name of ["a", "b", "c", "d", "e"])
+      yield* store.upsertAccount("gmail", `${name}@example.test`);
+    const results = yield* mailbox.sync();
+    assert.deepStrictEqual(
+      results.map((result) => result.error),
+      [undefined, undefined, undefined, undefined, undefined],
+    );
+    assert.strictEqual(most, 3);
+    assert.deepStrictEqual(pulls.toSorted(), [
+      "a@example.test",
+      "b@example.test",
+      "c@example.test",
+      "d@example.test",
+      "e@example.test",
+    ]);
+  }).pipe(Effect.provide(layer));
+});

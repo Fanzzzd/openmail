@@ -102,6 +102,9 @@ type PullFailed = {
   readonly cause: Cause.Cause<ProviderFailure>;
 };
 
+/** Accounts a full sync pulls at the same time. */
+const SYNC_ACCOUNTS = 3;
+
 const SYNC_RETRY_MESSAGE = "Sync could not finish. It will retry automatically.";
 
 export const makeSyncMailbox = (
@@ -343,28 +346,32 @@ export const makeSyncMailbox = (
     const accounts = accountId
       ? [yield* store.getAccount(accountId).pipe(Effect.orDie)]
       : yield* store.listAccounts;
-    const results: SyncResult[] = [];
     const budgets = resetBudgets();
-    // One failing account does not stop the rest.
-    for (const account of accounts) {
-      if (account.enabled === false) continue;
-      const result: SyncResult = yield* account.provider === "imap"
-        ? pullAccount(account, undefined, false, budgets.imap).pipe(
-            imapPullLock(account.id).withPermits(1),
-          )
-        : pullAccount(account, undefined, false, budgets[account.provider]);
-      if (account.provider === "imap" && !result.error) yield* flush([account.id]);
-
-      results.push(result);
-      if (!result.error) runtime.polling.delete(account.id);
-      if (!account.needsReauth)
-        yield* deps
-          .features()
-          .refreshContacts(account.id, false)
-          .pipe(Effect.catch(() => Effect.void));
-      yield* store.getBackfillState(account.id);
-      yield* store.evictBodies(account.id, yield* Clock.currentTimeMillis);
-    }
+    // Up to SYNC_ACCOUNTS accounts pull at once; each account appears once per run, and
+    // syncLock keeps polls and other runs out. SQLite writes still go one transaction at a
+    // time through the shared connection. One failing account does not stop the rest.
+    const results = yield* Effect.forEach(
+      accounts.filter((account) => account.enabled !== false),
+      (account) =>
+        Effect.gen(function* () {
+          const result: SyncResult = yield* account.provider === "imap"
+            ? pullAccount(account, undefined, false, budgets.imap).pipe(
+                imapPullLock(account.id).withPermits(1),
+              )
+            : pullAccount(account, undefined, false, budgets[account.provider]);
+          if (account.provider === "imap" && !result.error) yield* flush([account.id]);
+          if (!result.error) runtime.polling.delete(account.id);
+          if (!account.needsReauth)
+            yield* deps
+              .features()
+              .refreshContacts(account.id, false)
+              .pipe(Effect.catch(() => Effect.void));
+          yield* store.getBackfillState(account.id);
+          yield* store.evictBodies(account.id, yield* Clock.currentTimeMillis);
+          return result;
+        }),
+      { concurrency: SYNC_ACCOUNTS },
+    );
     const next: SyncState = {
       running: false,
       lastFinishedAt: Date.now(),
