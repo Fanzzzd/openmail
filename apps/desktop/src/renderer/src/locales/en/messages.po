@@ -1133,6 +1133,7 @@ msgstr "Can't open the draft: {reason}"
 msgid "Can't open the message: {reason}"
 msgstr "Can't open the message: {reason}"
 
+#: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "Can't reach Anthropic. Check your internet connection."
 msgstr "Can't reach Anthropic. Check your internet connection."
@@ -3353,6 +3354,7 @@ msgid "Keyboard shortcuts"
 msgstr "Keyboard shortcuts"
 
 #: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/sync-status/sync-failure-text.ts
 msgid "Keychain is locked"
 msgstr "Keychain is locked"
 
@@ -6548,6 +6550,10 @@ msgstr "Sync aliases and signatures"
 msgid "Sync all"
 msgstr "Sync all"
 
+#: src/renderer/src/features/sync-status/sync-failure-text.ts
+msgid "Sync could not finish. It will retry automatically."
+msgstr "Sync could not finish. It will retry automatically."
+
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Sync failed"
@@ -6731,9 +6737,17 @@ msgstr "The local database could not be verified"
 msgid "The local database was recovered"
 msgstr "The local database was recovered"
 
+#: src/renderer/src/features/sync-status/sync-failure-text.ts
+msgid "The mail provider is limiting requests. Sync will try again later."
+msgstr "The mail provider is limiting requests. Sync will try again later."
+
 #: src/renderer/src/lib/errors.ts
 msgid "The mail server didn't respond. Check the server name, the port and your internet connection."
 msgstr "The mail server didn't respond. Check the server name, the port and your internet connection."
+
+#: src/renderer/src/features/sync-status/sync-failure-text.ts
+msgid "The mail server had a problem. Sync will try again later."
+msgstr "The mail server had a problem. Sync will try again later."
 
 #: src/renderer/src/lib/errors.ts
 msgid "The mail server refused the connection. Check the port."
@@ -6807,6 +6821,7 @@ msgstr "The server could not complete this search."
 msgid "The server refused this action."
 msgstr "The server refused this action."
 
+#: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "The server rejected the sign-in."
 msgstr "The server rejected the sign-in."

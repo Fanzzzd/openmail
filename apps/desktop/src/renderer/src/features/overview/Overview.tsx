@@ -18,6 +18,7 @@ import { syncNow, useRunMail } from "../../state/mail";
 import { unreadInboxAtom } from "../../state/queries";
 import { ALL, type SpaceId } from "../../lib/view";
 import { Tip } from "../../ui/Tip";
+import { syncErrorText } from "../sync-status";
 import { titlebarRow } from "../../ui/styles";
 import { TrafficLightSpace } from "../../ui/TrafficLights";
 
@@ -204,7 +205,7 @@ function GroupCard({
             {a.lastSyncError ? (
               <span
                 className="flex shrink-0 items-center gap-1 text-a11y-danger"
-                title={a.lastSyncError}
+                title={syncErrorText(i18n, a.lastSyncError)}
               >
                 <CircleAlert className="size-3.5" />
                 <Trans>Sync failed</Trans>

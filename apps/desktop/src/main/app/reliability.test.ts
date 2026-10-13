@@ -365,6 +365,29 @@ it("core sync crashes retain safe phase and cause codes", async () => {
   expect(preview).not.toContain("private");
 });
 
+it("IMAP sync failures are recorded as fixed sync-failed fields", async () => {
+  const dir = temp();
+  const recovery = await import("./reliability");
+  await recovery.prepareReliability(dir);
+  await Effect.runPromise(
+    Effect.logWarning({
+      _tag: "SyncFailedDiagnostic",
+      reason: "sync-failed",
+      provider: "imap",
+      failure: "network",
+      scope: "full",
+      accountHash: "0123456789abcdef",
+      message: "private body",
+      host: "imap.private.example",
+    }).pipe(Effect.provide(Logger.layer([recovery.diagnosticsLogger]))),
+  );
+  const preview = recovery.diagnosticsPreview(false);
+  expect(preview).toContain('"reason":"sync-failed"');
+  expect(preview).toContain('"provider":"imap"');
+  expect(preview).toContain('"failure":"network"');
+  expect(preview).not.toContain("private");
+});
+
 it("an abnormal exit checks the database in a worker behind a painted progress window", async () => {
   const dir = temp();
   createLocalDiagnostics(join(dir, "diagnostics")).begin();

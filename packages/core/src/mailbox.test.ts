@@ -10,6 +10,7 @@ import { TestClock } from "effect/testing";
 import { type Actor, type IncomingMessage, type Message } from "./domain.js";
 import { AuthError, PermanentError, ProviderError } from "./errors.js";
 import { Mailbox } from "./mailbox.js";
+import { SYNC_FAILURE_TEXT } from "./sync-failure.js";
 import { toModelThread } from "./model-view.js";
 import { makeFakeProvider } from "./platform/node/fake-provider.js";
 import { Store, type ProviderAdapter } from "./services.js";
@@ -251,8 +252,36 @@ import { Store, type ProviderAdapter } from "./services.js";
       Effect.gen(function* () {
         server.failNext = new ProviderError({ message: "Gmail API 400: bad", status: 400 });
         const [result] = yield* m.sync();
-        assert.strictEqual(result?.error, "Gmail API 400: bad");
-        assert.strictEqual((yield* m.accounts)[0]?.lastSyncError, "Gmail API 400: bad");
+        // The stored error is a fixed sentence; the provider's body stays out of the UI.
+        assert.strictEqual(result?.error, SYNC_FAILURE_TEXT.unknown);
+        assert.strictEqual((yield* m.accounts)[0]?.lastSyncError, SYNC_FAILURE_TEXT.unknown);
+      }),
+    ),
+  );
+
+  it.effect("a quota failure stores a fixed reason, never the provider's JSON body", () =>
+    withGmail([incoming("m1")], (m, server) =>
+      Effect.gen(function* () {
+        const body = JSON.stringify({
+          error: {
+            code: 403,
+            errors: [{ reason: "rateLimitExceeded" }],
+            message: "x".repeat(2000),
+          },
+        });
+        server.failNext = new ProviderError({
+          message: `Gmail API 403: ${body}`,
+          status: 403,
+          reason: "quota",
+          retryAfter: "3600",
+        });
+        const [result] = yield* m.sync();
+        assert.strictEqual(result?.error, SYNC_FAILURE_TEXT.quota);
+        const account = (yield* m.accounts)[0];
+        assert.strictEqual(account?.lastSyncError, SYNC_FAILURE_TEXT.quota);
+        assert.deepStrictEqual((yield* m.syncState).errors, [
+          `${account?.id}: ${SYNC_FAILURE_TEXT.quota}`,
+        ]);
       }),
     ),
   );

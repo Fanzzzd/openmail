@@ -1129,6 +1129,7 @@ msgstr "Kan het concept niet openen: {reason}"
 msgid "Can't open the message: {reason}"
 msgstr "Kan het bericht niet openen: {reason}"
 
+#: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "Can't reach Anthropic. Check your internet connection."
 msgstr "Kan Anthropic niet bereiken. Controleer je internetverbinding."
@@ -3349,6 +3350,7 @@ msgid "Keyboard shortcuts"
 msgstr "Sneltoetsen"
 
 #: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/sync-status/sync-failure-text.ts
 msgid "Keychain is locked"
 msgstr "Sleutelhanger is vergrendeld"
 
@@ -6544,6 +6546,10 @@ msgstr "Synchroniseer aliassen en handtekeningen"
 msgid "Sync all"
 msgstr "Alles synchroniseren"
 
+#: src/renderer/src/features/sync-status/sync-failure-text.ts
+msgid "Sync could not finish. It will retry automatically."
+msgstr "{'zh-CN': '同步未能完成，稍后会自动重试。', 'cs': 'Synchronizaci nebylo možné dokončit. Automaticky se zopakuje.', 'nl': 'De synchronisatie kon niet worden voltooid. Er wordt automatisch opnieuw geprobeerd.', 'fr': 'La synchronisation n’a pas pu se terminer. Elle sera relancée automatiquement.', 'de': 'Die Synchronisierung konnte nicht abgeschlossen werden. Sie wird automatisch wiederholt.', 'it': 'Non è stato possibile completare la sincronizzazione. Verrà ritentata automaticamente.', 'ja': '同期を完了できませんでした。自動的に再試行します。', 'ru': 'Не удалось завершить синхронизацию. Она будет повторена автоматически.', 'es': 'No se pudo completar la sincronización. Se volverá a intentar automáticamente.'}"
+
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Sync failed"
@@ -6727,9 +6733,17 @@ msgstr "De lokale database kan niet worden geverifieerd"
 msgid "The local database was recovered"
 msgstr "De lokale database is hersteld"
 
+#: src/renderer/src/features/sync-status/sync-failure-text.ts
+msgid "The mail provider is limiting requests. Sync will try again later."
+msgstr "{'zh-CN': '邮件服务商正在限制请求，稍后会再次同步。', 'cs': 'Poskytovatel pošty omezuje počet požadavků. Synchronizace se později zopakuje.', 'nl': 'De mailprovider beperkt het aantal verzoeken. De synchronisatie wordt later opnieuw geprobeerd.', 'fr': 'Le fournisseur de messagerie limite les requêtes. La synchronisation sera relancée plus tard.', 'de': 'Der E-Mail-Anbieter begrenzt die Anfragen. Die Synchronisierung wird später erneut versucht.', 'it': 'Il provider di posta sta limitando le richieste. La sincronizzazione verrà ritentata più tardi.', 'ja': 'メールプロバイダがリクエストを制限しています。後で同期を再試行します。', 'ru': 'Почтовый сервис ограничивает число запросов. Синхронизация будет повторена позже.', 'es': 'El proveedor de correo está limitando las solicitudes. La sincronización se volverá a intentar más tarde.'}"
+
 #: src/renderer/src/lib/errors.ts
 msgid "The mail server didn't respond. Check the server name, the port and your internet connection."
 msgstr "De mailserver reageerde niet. Controleer de servernaam, de poort en uw internetverbinding."
+
+#: src/renderer/src/features/sync-status/sync-failure-text.ts
+msgid "The mail server had a problem. Sync will try again later."
+msgstr "{'zh-CN': '邮件服务器出现问题，稍后会再次同步。', 'cs': 'Na poštovním serveru došlo k potížím. Synchronizace se později zopakuje.', 'nl': 'Er was een probleem met de mailserver. De synchronisatie wordt later opnieuw geprobeerd.', 'fr': 'Le serveur de messagerie a rencontré un problème. La synchronisation sera relancée plus tard.', 'de': 'Beim Mailserver ist ein Problem aufgetreten. Die Synchronisierung wird später erneut versucht.', 'it': 'Il server di posta ha avuto un problema. La sincronizzazione verrà ritentata più tardi.', 'ja': 'メールサーバーで問題が発生しました。後で同期を再試行します。', 'ru': 'На почтовом сервере возникла проблема. Синхронизация будет повторена позже.', 'es': 'El servidor de correo tuvo un problema. La sincronización se volverá a intentar más tarde.'}"
 
 #: src/renderer/src/lib/errors.ts
 msgid "The mail server refused the connection. Check the port."
@@ -6803,6 +6817,7 @@ msgstr "De server kon deze zoekopdracht niet voltooien."
 msgid "The server refused this action."
 msgstr "De server heeft deze actie geweigerd."
 
+#: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "The server rejected the sign-in."
 msgstr "De server heeft het aanmelden geweigerd."

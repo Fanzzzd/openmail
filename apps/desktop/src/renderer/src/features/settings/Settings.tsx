@@ -72,7 +72,7 @@ import { SpellcheckSettings } from "./sections/SpellcheckSettings";
 import { CacheSettings } from "./sections/CacheSettings";
 import { ProviderIcon } from "../../ui/ProviderIcon";
 import { ReadingSettings } from "./sections/ReadingSettings";
-import { reauthText } from "../sync-status";
+import { reauthText, syncErrorText } from "../sync-status";
 import { isKeychainLocked } from "@openmail/core/schema";
 import { Alert, AlertCancel, alertDanger, Dialog } from "../../ui/Dialog";
 import { SettingsGroup, SettingsRow } from "../../ui/SettingsRows";
@@ -438,7 +438,13 @@ function AccountRow({
           </span>
           <span
             className={`block truncate text-footnote ${status.className}`}
-            title={a.needsReauth ? reauthText(i18n, a) : (a.lastSyncError ?? undefined)}
+            title={
+              a.needsReauth
+                ? reauthText(i18n, a)
+                : a.lastSyncError
+                  ? syncErrorText(i18n, a.lastSyncError)
+                  : undefined
+            }
           >
             {reauth.waiting
               ? t`Finish signing in in your browser`

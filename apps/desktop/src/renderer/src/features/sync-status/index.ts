@@ -7,3 +7,4 @@ export {
   SyncStatusAnnouncement,
   syncFailures,
 } from "./MailStatusNotice";
+export { syncErrorText } from "./sync-failure-text";

@@ -5,6 +5,7 @@ import {
   ReauthDiagnostic,
   SyncResetDiagnostic,
   SyncCrashDiagnostic,
+  SyncFailedDiagnostic,
   checkLocalDatabaseInWorker,
   createLocalDiagnostics,
   runtimeDiagnosticReason,
@@ -43,6 +44,11 @@ export const diagnosticsLogger = Logger.make((options) => {
     const reset = Schema.decodeUnknownOption(SyncResetDiagnostic)(message);
     if (reset._tag === "Some") {
       localLog("sync-reset", reset.value);
+      classified = true;
+    }
+    const syncFailed = Schema.decodeUnknownOption(SyncFailedDiagnostic)(message);
+    if (syncFailed._tag === "Some") {
+      localLog("runtime-warning", syncFailed.value);
       classified = true;
     }
     const reauth = Schema.decodeUnknownOption(ReauthDiagnostic)(message);

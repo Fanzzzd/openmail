@@ -25,6 +25,7 @@ import { BackgroundRead } from "./provider-connectivity.js";
 import { retryAfterMillis } from "./provider-retry.js";
 import { type Change } from "./services.js";
 import { logSyncCrash, type SyncCrashDiagnostic } from "./sync-crash.js";
+import { logSyncFailed, SYNC_FAILURE_TEXT, syncFailureText } from "./sync-failure.js";
 import { makeSyncHealth } from "./sync-health.js";
 import { makeResetGuard, resetBudgets, resetVerificationLimit } from "./sync-reset.js";
 
@@ -105,7 +106,7 @@ type PullFailed = {
 /** Accounts a full sync pulls at the same time. */
 const SYNC_ACCOUNTS = 3;
 
-const SYNC_RETRY_MESSAGE = "Sync could not finish. It will retry automatically.";
+const SYNC_RETRY_MESSAGE = SYNC_FAILURE_TEXT.unknown;
 
 export const makeSyncMailbox = (
   deps: MailboxDependencies & {
@@ -325,7 +326,11 @@ export const makeSyncMailbox = (
       // `counts` is filled while the stream runs, so read it afterwards.
       Effect.map(() => ({ accountId: account.id, ...counts }) satisfies SyncResult),
       Effect.catch((error) =>
-        failed(error.message, error._tag === "AuthError" ? error : undefined),
+        logSyncFailed(account, scope ? "inbox" : "full", error).pipe(
+          Effect.andThen(
+            failed(syncFailureText(error), error._tag === "AuthError" ? error : undefined),
+          ),
+        ),
       ),
       // A bug in one provider must not stop the other accounts from syncing.
       Effect.catchCause((cause) =>

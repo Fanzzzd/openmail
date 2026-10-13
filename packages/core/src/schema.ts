@@ -6,6 +6,7 @@ export * from "./compose-body.js";
 export * from "./compose-format.js";
 export * from "./domain.js";
 export * from "./errors.js";
+export { storedSyncFailureReason, SYNC_FAILURE_TEXT, SyncFailureReason } from "./sync-failure.js";
 export { IMAP_PRESETS, ImapConnectInput, ImapPreset } from "./imap-presets.js";
 export { Mailbox, MailboxEvent, ModelThread, SyncState } from "./mailbox.js";
 export { type HeldSend, holdSend } from "./undo-send.js";

@@ -11,6 +11,7 @@ import { canCall } from "../../lib/platform";
 import { syncNow, useRunMail } from "../../state/mail";
 import { SignInAgainOnMac } from "../../ui/SignInAgainOnMac";
 import { noticeRow, noticeTone } from "../../ui/styles";
+import { syncErrorText } from "./sync-failure-text";
 
 const action =
   "shrink-0 rounded-item font-semibold whitespace-nowrap outline-offset-1 outline-a11y-focus hover:underline focus-visible:outline-2";
@@ -96,6 +97,7 @@ function SyncFailure({
   onFocusList: () => void;
 }) {
   const run = useRunMail();
+  const { i18n } = useLingui();
   const root = useRef<HTMLDivElement>(null);
   const focusList = useEffectEvent(onFocusList);
   useLayoutEffect(() => {
@@ -109,7 +111,7 @@ function SyncFailure({
       <NoticeLine
         tone="danger"
         glyph={<CircleAlert aria-hidden className={icon} />}
-        title={failed.join("\n")}
+        title={[...new Set(failed.map((failure) => syncErrorText(i18n, failure)))].join("\n")}
         action={
           <button type="button" onClick={() => run(syncNow)} className={action}>
             <Trans>Try again</Trans>

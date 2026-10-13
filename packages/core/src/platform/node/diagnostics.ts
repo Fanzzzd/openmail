@@ -6,6 +6,8 @@ import { ProviderDiagnostic } from "../../provider-diagnostics.js";
 export { ProviderDiagnostic } from "../../provider-diagnostics.js";
 import { ReauthDiagnostic } from "../../reauth.js";
 export { ReauthDiagnostic } from "../../reauth.js";
+import { SyncFailedDiagnostic } from "../../sync-failure.js";
+export { SyncFailedDiagnostic } from "../../sync-failure.js";
 import {
   databaseQuickCheck,
   databaseQuickCheckInWorker,
@@ -134,6 +136,23 @@ export function diagnosticRecord(event: unknown, data: unknown = {}, at = Date.n
           },
         ),
       ),
+    };
+  }
+  const syncFailed = Schema.decodeUnknownOption(SyncFailedDiagnostic)(data);
+  if (event === "runtime-warning" && syncFailed._tag === "Some") {
+    const value = syncFailed.value;
+    return {
+      at,
+      event,
+      _tag: value._tag,
+      reason: value.reason,
+      provider: value.provider,
+      failure: value.failure,
+      scope: value.scope,
+      ...(value.status !== undefined && Number.isFinite(value.status)
+        ? { status: Math.trunc(value.status) }
+        : {}),
+      accountHash: /^[a-f0-9]{16}$/.test(value.accountHash) ? value.accountHash : undefined,
     };
   }
   const reauth = Schema.decodeUnknownOption(ReauthDiagnostic)(data);

@@ -1,7 +1,11 @@
 // @vitest-environment jsdom
 import { setupI18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
-import { KEYCHAIN_LOCKED_MESSAGE, type ReauthReason } from "@openmail/core/schema";
+import {
+  KEYCHAIN_LOCKED_MESSAGE,
+  type ReauthReason,
+  SYNC_FAILURE_TEXT,
+} from "@openmail/core/schema";
 import { act, createElement } from "react";
 import { createRoot } from "react-dom/client";
 import { expect, it, vi } from "vitest";
@@ -160,4 +164,38 @@ it("the line names the provider and what happened; the full address is in the to
     expect(element.querySelector(".sr-only")?.textContent).toContain(subject.email);
     act(() => root.unmount());
   }
+});
+
+it("a sync failure's tooltip shows fixed text, never the stored provider response", () => {
+  const ok = { ...account(), needsReauth: false };
+  const raw = `Gmail API 403: ${JSON.stringify({ error: { code: 403, message: "Quota exceeded" } })}`;
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const element = document.createElement("div");
+  const root = createRoot(element);
+  const i18n = setupI18n({ locale: "en", messages: { en: {} } });
+  const notice = (errors: string[]) =>
+    createElement(
+      I18nProvider,
+      { i18n },
+      createElement(MailStatusNotice, {
+        accounts: [ok],
+        space: [ok],
+        online: true,
+        syncState: { running: false, lastFinishedAt: 1, errors },
+        accountIssues: true,
+        onReauth: vi.fn(),
+        onFocusList: vi.fn(),
+      }),
+    );
+  act(() => root.render(notice([`${ok.id}: ${raw}`, `${ok.id}: ${SYNC_FAILURE_TEXT.quota}`])));
+  const titles = [...element.querySelectorAll("[title]")].map((node) => node.getAttribute("title"));
+  act(() => root.unmount());
+  expect(titles.join("\n")).not.toContain("Quota exceeded");
+  expect(titles.join("\n")).not.toContain(ok.id);
+  expect(titles).toContain(
+    [
+      "Sync could not finish. It will retry automatically.",
+      "The mail provider is limiting requests. Sync will try again later.",
+    ].join("\n"),
+  );
 });
