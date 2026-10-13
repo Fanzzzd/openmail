@@ -58,14 +58,24 @@ export function tokenEndpointFailure(
 const TRANSIENT_LOGIN_CODES = new Set(["UNAVAILABLE", "INUSE", "LIMIT", "SERVERBUG"]);
 
 /**
+ * Server text on a refused LOGIN that means "too many sessions, try later". Gmail answers
+ * `NO [ALERT] Too many simultaneous connections. (Failure)` when the account's 15-session cap
+ * is reached; the password is fine.
+ */
+const TRANSIENT_LOGIN_TEXT = /too many simultaneous connections/i;
+
+/**
  * Whether a login the server answered with a refusal is final. Node and mobile pass the
- * IMAP response code and the SMTP reply code they have; 4xx SMTP (454) means try later.
+ * IMAP response code, the server's text and the SMTP reply code they have; 4xx SMTP (454)
+ * means try later.
  */
 export const isLoginRefusal = (reply: {
   readonly imapCode?: string | undefined;
   readonly smtpCode?: number | undefined;
+  readonly text?: string | undefined;
 }) =>
   !(reply.imapCode !== undefined && TRANSIENT_LOGIN_CODES.has(reply.imapCode.toUpperCase())) &&
+  !(reply.text !== undefined && TRANSIENT_LOGIN_TEXT.test(reply.text)) &&
   !(reply.smtpCode !== undefined && reply.smtpCode < 500);
 
 /** Google expires refresh tokens of apps in Testing status seven days after consent. */

@@ -466,9 +466,12 @@ it("Node and mobile share one rule for a final login refusal", () => {
 });
 
 it("IMAP: only a refused login after connecting is imap_auth_failed", () => {
+  // The shape imapflow's LOGIN catch leaves after a tagged NO.
   const login = (code?: string) =>
-    Object.assign(new Error("LOGIN failed"), {
+    Object.assign(new Error("Command failed"), {
       authenticationFailed: true,
+      responseStatus: "NO",
+      response: `2 NO ${code ? `[${code}] ` : ""}Invalid credentials (Failure)`,
       ...(code ? { serverResponseCode: code } : {}),
     });
   assert.isTrue(isAuthFailure(login("AUTHENTICATIONFAILED")));
@@ -483,6 +486,46 @@ it("IMAP: only a refused login after connecting is imap_auth_failed", () => {
     const dropped = imapFailure(ID, "imap.example.com", Object.assign(new Error(code), { code }));
     assert.strictEqual(dropped._tag, "ProviderError", code);
   }
+});
+
+it("IMAP: a socket drop, timeout or session cap during LOGIN is not a refusal", () => {
+  // imapflow's LOGIN catch sets authenticationFailed on every error and replaces
+  // `response` with getErrorText(undefined) === false when the server never answered.
+  const duringLogin = (fields: object) =>
+    Object.assign(new Error("Connection closed"), {
+      authenticationFailed: true,
+      response: false,
+      ...fields,
+    });
+  const transient = [
+    duringLogin({ code: "ECONNRESET", message: "read ECONNRESET" }),
+    duringLogin({ code: "ETIMEOUT", message: "Socket timeout" }),
+    duringLogin({ code: "NoConnection", message: "Connection not available" }),
+    duringLogin({ code: "EConnectionClosed" }),
+    Object.assign(new Error("Command failed"), {
+      authenticationFailed: true,
+      responseStatus: "NO",
+      serverResponseCode: "ALERT",
+      responseText: "Too many simultaneous connections. (Failure)",
+      response: "3 NO [ALERT] Too many simultaneous connections. (Failure)",
+    }),
+  ];
+  for (const error of transient) {
+    assert.isFalse(isAuthFailure(error), String(error.message));
+    assert.strictEqual(imapFailure(ID, "imap.gmail.com", error)._tag, "ProviderError");
+  }
+  assert.isFalse(
+    isLoginRefusal({ imapCode: "ALERT", text: "3 NO [ALERT] Too many simultaneous connections." }),
+  );
+  // Exchange's "authenticated but not connected" is still a refusal: imapflow keeps the text.
+  assert.isTrue(
+    isAuthFailure(
+      Object.assign(new Error("Authentication failed"), {
+        authenticationFailed: true,
+        response: "User is authenticated but not connected.",
+      }),
+    ),
+  );
 });
 
 it("IMAP and SMTP connection failures name the setting to check", () => {

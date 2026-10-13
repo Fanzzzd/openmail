@@ -16,13 +16,27 @@ const CLIENT_INFO = { name: "openmail", version: "0.1.0", vendor: "openmail" };
 
 // Errors
 
-// imapflow marks failed logins with `authenticationFailed`; nodemailer uses EAUTH / 535.
-// Both only exist once the server answered the login, so TCP and TLS already succeeded.
-// A 4xx SMTP auth reply (454 temporary failure) is retryable.
+// imapflow sets `authenticationFailed` on any error thrown during LOGIN or AUTHENTICATE,
+// including a dropped socket or a timeout. Only a tagged NO/BAD answer leaves the server's
+// text in `response` (a string); socket errors leave `false` there. nodemailer uses
+// EAUTH / 535, which only exist once the server answered. A 4xx SMTP auth reply (454
+// temporary failure) is retryable, and so are RFC 5530 "try later" codes and Gmail's
+// simultaneous-connections ALERT.
 export function isAuthFailure(error: unknown): boolean {
   if (!Predicate.isObject(error)) return false;
+  const serverText =
+    "response" in error && Predicate.isString(error.response) && error.response
+      ? error.response
+      : undefined;
+  const answered =
+    serverText !== undefined ||
+    ("responseStatus" in error &&
+      (error.responseStatus === "NO" || error.responseStatus === "BAD"));
   const refused =
-    ("authenticationFailed" in error && error.authenticationFailed === true) ||
+    ("authenticationFailed" in error &&
+      error.authenticationFailed === true &&
+      answered &&
+      connectionReason(error) === undefined) ||
     ("code" in error && error.code === "EAUTH") ||
     ("responseCode" in error && error.responseCode === 535);
   return (
@@ -36,6 +50,7 @@ export function isAuthFailure(error: unknown): boolean {
         "responseCode" in error && typeof error.responseCode === "number"
           ? error.responseCode
           : undefined,
+      text: serverText ?? describe(error),
     })
   );
 }

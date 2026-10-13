@@ -624,7 +624,7 @@ export const makeMobileImap = Effect.gen(function* () {
             if (
               error instanceof ImapCommandError &&
               error.status === "NO" &&
-              isLoginRefusal({ imapCode: error.responseCode })
+              isLoginRefusal({ imapCode: error.responseCode, text: error.text })
             )
               throw new AuthError({
                 accountId,

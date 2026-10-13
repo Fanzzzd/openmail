@@ -217,6 +217,7 @@ export class ImapCommandError extends Error {
   constructor(
     readonly status: string,
     readonly responseCode?: string,
+    readonly text?: string,
   ) {
     super("IMAP command rejected");
   }
@@ -309,6 +310,7 @@ export class ImapWire {
           throw new ImapCommandError(
             response.text.split(" ")[1] ?? "BAD",
             /\[([A-Z]+)(?:\s|\])/i.exec(response.text)?.[1]?.toUpperCase(),
+            response.text,
           );
         responses.push(response);
         return responses;
