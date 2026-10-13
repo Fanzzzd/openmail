@@ -1129,11 +1129,11 @@ msgstr "Не могу открыть черновик: {reason}"
 msgid "Can't open the message: {reason}"
 msgstr "Не могу открыть сообщение: {reason}"
 
-#: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "Can't reach Anthropic. Check your internet connection."
 msgstr "Не удаётся подключиться к Anthropic. Проверьте подключение к интернету."
 
+#: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "Can't reach the mail server right now."
 msgstr "Сейчас не удаётся подключиться к почтовому серверу."
@@ -6548,7 +6548,7 @@ msgstr "Синхронизировать все"
 
 #: src/renderer/src/features/sync-status/sync-failure-text.ts
 msgid "Sync could not finish. It will retry automatically."
-msgstr "{'zh-CN': '同步未能完成，稍后会自动重试。', 'cs': 'Synchronizaci nebylo možné dokončit. Automaticky se zopakuje.', 'nl': 'De synchronisatie kon niet worden voltooid. Er wordt automatisch opnieuw geprobeerd.', 'fr': 'La synchronisation n’a pas pu se terminer. Elle sera relancée automatiquement.', 'de': 'Die Synchronisierung konnte nicht abgeschlossen werden. Sie wird automatisch wiederholt.', 'it': 'Non è stato possibile completare la sincronizzazione. Verrà ritentata automaticamente.', 'ja': '同期を完了できませんでした。自動的に再試行します。', 'ru': 'Не удалось завершить синхронизацию. Она будет повторена автоматически.', 'es': 'No se pudo completar la sincronización. Se volverá a intentar automáticamente.'}"
+msgstr "Не удалось завершить синхронизацию. Она будет повторена автоматически."
 
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
@@ -6735,7 +6735,7 @@ msgstr "Локальная база данных восстановлена."
 
 #: src/renderer/src/features/sync-status/sync-failure-text.ts
 msgid "The mail provider is limiting requests. Sync will try again later."
-msgstr "{'zh-CN': '邮件服务商正在限制请求，稍后会再次同步。', 'cs': 'Poskytovatel pošty omezuje počet požadavků. Synchronizace se později zopakuje.', 'nl': 'De mailprovider beperkt het aantal verzoeken. De synchronisatie wordt later opnieuw geprobeerd.', 'fr': 'Le fournisseur de messagerie limite les requêtes. La synchronisation sera relancée plus tard.', 'de': 'Der E-Mail-Anbieter begrenzt die Anfragen. Die Synchronisierung wird später erneut versucht.', 'it': 'Il provider di posta sta limitando le richieste. La sincronizzazione verrà ritentata più tardi.', 'ja': 'メールプロバイダがリクエストを制限しています。後で同期を再試行します。', 'ru': 'Почтовый сервис ограничивает число запросов. Синхронизация будет повторена позже.', 'es': 'El proveedor de correo está limitando las solicitudes. La sincronización se volverá a intentar más tarde.'}"
+msgstr "Почтовый сервис ограничивает число запросов. Синхронизация будет повторена позже."
 
 #: src/renderer/src/lib/errors.ts
 msgid "The mail server didn't respond. Check the server name, the port and your internet connection."
@@ -6743,7 +6743,7 @@ msgstr "Почтовый сервер не ответил. Проверьте и
 
 #: src/renderer/src/features/sync-status/sync-failure-text.ts
 msgid "The mail server had a problem. Sync will try again later."
-msgstr "{'zh-CN': '邮件服务器出现问题，稍后会再次同步。', 'cs': 'Na poštovním serveru došlo k potížím. Synchronizace se později zopakuje.', 'nl': 'Er was een probleem met de mailserver. De synchronisatie wordt later opnieuw geprobeerd.', 'fr': 'Le serveur de messagerie a rencontré un problème. La synchronisation sera relancée plus tard.', 'de': 'Beim Mailserver ist ein Problem aufgetreten. Die Synchronisierung wird später erneut versucht.', 'it': 'Il server di posta ha avuto un problema. La sincronizzazione verrà ritentata più tardi.', 'ja': 'メールサーバーで問題が発生しました。後で同期を再試行します。', 'ru': 'На почтовом сервере возникла проблема. Синхронизация будет повторена позже.', 'es': 'El servidor de correo tuvo un problema. La sincronización se volverá a intentar más tarde.'}"
+msgstr "На почтовом сервере возникла проблема. Синхронизация будет повторена позже."
 
 #: src/renderer/src/lib/errors.ts
 msgid "The mail server refused the connection. Check the port."

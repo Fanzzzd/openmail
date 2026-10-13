@@ -1133,11 +1133,11 @@ msgstr "Can't open the draft: {reason}"
 msgid "Can't open the message: {reason}"
 msgstr "Can't open the message: {reason}"
 
-#: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "Can't reach Anthropic. Check your internet connection."
 msgstr "Can't reach Anthropic. Check your internet connection."
 
+#: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "Can't reach the mail server right now."
 msgstr "Can't reach the mail server right now."
