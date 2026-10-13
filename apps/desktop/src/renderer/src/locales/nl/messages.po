@@ -68,7 +68,7 @@ msgstr "{active, plural, one {Downloads (# bezig)} other {Downloads (# bezig)}}"
 msgid "{affected, plural, one {# account needs attention} other {# accounts need attention}}"
 msgstr "{affected, plural, one {# account vraagt aandacht} other {# accounts vragen aandacht}}"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-view-title.ts
 msgid "{baseTitle}: {user}"
 msgstr "{baseTitle}: {user}"
 
@@ -388,11 +388,11 @@ msgstr "Voeg {provider} toe"
 msgid "Add a mail account first."
 msgstr "Voeg eerst een e-mailaccount toe."
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/NoAccounts.tsx
 msgid "Add account"
 msgstr "Account toevoegen"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/NoAccounts.tsx
 msgid "Add an account on your Mac."
 msgstr "Voeg een account toe op uw Mac."
 
@@ -476,7 +476,7 @@ msgstr "Voeg uw eerste account toe"
 msgid "Added"
 msgstr "Toegevoegd"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/AppDialogs.tsx
 msgid "Added {email}. Syncing…"
 msgstr "{email} toegevoegd. Synchroniseren…"
 
@@ -817,7 +817,7 @@ msgstr "Suggestie goedkeuren"
 msgid "Apps not found on this Mac"
 msgstr "Apps die niet op deze Mac zijn gevonden"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
@@ -1144,7 +1144,7 @@ msgstr "Kan Anthropic niet bereiken. Controleer je internetverbinding."
 msgid "Can't reach the mail server right now."
 msgstr "De mailserver is momenteel niet bereikbaar."
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/accounts/OptionalServices.tsx
@@ -1357,7 +1357,7 @@ msgstr "Kies acties en gebruik de knoppen om de volgorde ervan te wijzigen."
 msgid "Choose at least one filter action"
 msgstr "Kies ten minste één filteractie"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
 msgid "Choose Delete key action"
 msgstr "Kies actie van Delete-toets"
@@ -1900,7 +1900,7 @@ msgstr "Kan de originele bijlagen niet laden. Probeer het opnieuw."
 msgid "Couldn't load this message."
 msgstr "Kan dit bericht niet laden."
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/NoAccounts.tsx
 msgid "Couldn't load your accounts."
 msgstr "Uw accounts konden niet worden geladen."
 
@@ -2125,7 +2125,7 @@ msgstr "Standaard Van-adres"
 msgid "Default signature"
 msgstr "Standaard handtekening"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
@@ -2150,7 +2150,7 @@ msgid "Delete {0}"
 msgstr "Verwijder {0}"
 
 #. placeholder {0}: deleteRequest?.ids.size ?? 0
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "Delete {0} conversations?"
 msgstr "{0} gesprekken verwijderen?"
 
@@ -3366,7 +3366,7 @@ msgstr "Sneltoetsen"
 msgid "Keychain is locked"
 msgstr "Sleutelhanger is vergrendeld"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-view-title.ts
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "Label"
@@ -4139,7 +4139,7 @@ msgstr "Verplaats naar Aan"
 msgid "Move to top level"
 msgstr "Naar hoogste niveau verplaatsen"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
@@ -4224,7 +4224,7 @@ msgstr "Nieuw label of map"
 msgid "New mail notifications"
 msgstr "Nieuwe e-mailmeldingen"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailListPane.tsx
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
@@ -4367,7 +4367,7 @@ msgstr "Geen downloads"
 msgid "No drafts"
 msgstr "Geen concepten"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/NoAccounts.tsx
 msgid "No email accounts yet."
 msgstr "Nog geen e-mailaccounts."
 
@@ -4596,7 +4596,7 @@ msgstr "Eén gebeurtenis van een terugkerende vergadering"
 msgid "Only inbox messages can be snoozed"
 msgstr "Alleen berichten in Postvak IN kunnen worden uitgesteld"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "Only messages in this Trash or Spam folder from the selected conversations will be permanently deleted. Inbox and Sent copies will remain. This cannot be undone."
 msgstr "Alleen berichten uit de geselecteerde gesprekken in deze map Prullenmand of Ongewenste reclame worden permanent verwijderd. Kopieën in Postvak IN en Verstuurd blijven behouden. Dit kan niet ongedaan worden gemaakt."
 
@@ -4612,7 +4612,7 @@ msgstr "Alleen geselecteerde Apple-contacten zijn beschikbaar."
 msgid "Only text inside attachments"
 msgstr "Alleen tekst in bijlagen"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "Only the selected messages in this Trash or Spam folder will be permanently deleted. This cannot be undone."
 msgstr "Alleen de geselecteerde berichten in deze map Prullenmand of Ongewenste reclame worden permanent verwijderd. Dit kan niet ongedaan worden gemaakt."
 
@@ -4970,14 +4970,14 @@ msgstr "Personen"
 msgid "People you know are your contacts and people you have sent mail to, when the message passes sender authentication. Known trackers stay blocked."
 msgstr "Mensen die je kent zijn je contacten en mensen naar wie je mail hebt verstuurd, als het bericht de afzenderverificatie doorstaat. Bekende trackers blijven geblokkeerd."
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/FolderActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
 msgid "Permanently delete"
 msgstr "Permanent verwijderen"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "Permanently delete selected mail?"
 msgstr "Geselecteerde e-mail definitief verwijderen?"
 
@@ -5158,7 +5158,7 @@ msgstr "Sluit Claude af en open het opnieuw om de wijziging te laden."
 msgid "Quit with messages waiting to send?"
 msgstr "Stoppen met berichten die wachten om te worden verzonden?"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "Quote only the selected text?"
 msgstr "Alleen de geselecteerde tekst citeren?"
 
@@ -5354,7 +5354,7 @@ msgstr "{token} verwijderen"
 msgid "Remove account"
 msgstr "Account verwijderen"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
@@ -5619,7 +5619,7 @@ msgstr "Synchronisatie hervatten"
 msgid "Retention windows take precedence. Starred messages, retained message texts, drafts and outbox messages are kept even when the limit is exceeded. Zero disables the budget."
 msgstr "Bewaartermijnen hebben voorrang. Berichten met een ster, bewaarde berichtteksten, concepten en berichten in het postvak uit blijven behouden als de limiet wordt overschreden. Nul schakelt het budget uit."
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/NoAccounts.tsx
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
 #: src/renderer/src/features/downloads/Downloads.tsx
 #: src/renderer/src/features/reader/body/MessageBodyShell.tsx
@@ -5911,7 +5911,7 @@ msgstr "Gesprek selecteren"
 msgid "Selected message"
 msgstr "Geselecteerd bericht"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "Selected text"
 msgstr "Geselecteerde tekst"
 
@@ -6855,7 +6855,7 @@ msgstr "Er is onvoldoende vrije schijfruimte om veilig te verkleinen."
 msgid "These are not email addresses: {list}"
 msgstr "Dit zijn geen e-mailadressen: {list}"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "These loaded conversations will be moved to Trash. You can undo this batch."
 msgstr "Deze geladen gesprekken worden naar de prullenmand verplaatst. U kunt deze batch ongedaan maken."
 
@@ -7424,7 +7424,7 @@ msgstr "Wie"
 msgid "Who can sign in"
 msgstr "Wie kan inloggen"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "Whole message"
 msgstr "Hele bericht"
 

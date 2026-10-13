@@ -1,25 +1,23 @@
-import { useAtom, useAtomMount, useAtomRefresh, useAtomValue } from "@effect/atom-react";
+import { useAtom, useAtomMount, useAtomSet, useAtomValue } from "@effect/atom-react";
 import { MailClient } from "../state/rpc";
 import { liveUpdatesAtom, syncProgressAtom, syncStateAtom } from "../state/events";
-import { networkChanged, syncNow, useRunMail } from "../state/mail";
+import { networkChanged, useRunMail } from "../state/mail";
 import { useOnline } from "../lib/use-online";
 import { useDesktopLabels } from "../state/desktop";
 import { useAppMessages } from "./use-app-messages";
 import { useLingui } from "@lingui/react/macro";
 import { useMailLayout } from "../lib/responsive-layout";
-import { useShortcutText } from "../i18n/use-shortcut-text";
 import { editingProfileAtom } from "../features/accounts/profile-editing";
-import { dialogAtom, openMessageAtom, signInAgainAtom } from "../state/ui";
+import { dialogAtom, openMessageAtom } from "../state/ui";
 import {
   labelCreationAtom,
   labelPickerAtom,
   pickerModeAtom,
   snoozeIdsAtom,
 } from "../features/organize/organize-state";
-import { goToFolderAtom } from "../features/sidebar/go-to-folder";
 import { filterSeedAtom } from "../features/settings/filter-seed";
-import { useCallback, useEffect, useRef, useState, type ComponentProps } from "react";
-import { OPEN_SETTINGS_EVENT } from "../features/ai/open-ai-settings";
+import { useCallback, useRef, useState } from "react";
+import { useSettingsRequests } from "./use-settings-requests";
 import { Toast, type ToastState } from "../ui/Toast";
 import { useBatchUndo } from "../state/undo";
 import { causeText, messageMissing } from "../lib/errors";
@@ -36,18 +34,9 @@ import {
 } from "../state/queries";
 import { AsyncResult } from "effect/reactivity";
 import { useMailSelection } from "./use-mail-selection";
-import {
-  ALL,
-  MAILBOX_NAMES,
-  OVERVIEW,
-  categoryAccounts,
-  inboxCategoryNames,
-  scopeAccountIds,
-  spaceAccounts,
-} from "../lib/view";
+import { ALL, OVERVIEW, scopeAccountIds } from "../lib/view";
 import { numberedFavorites } from "../features/sidebar/favorite-navigation";
 import { readerThreadKey, type ReaderSelection } from "../features/reader/reader-selection";
-import { Reader } from "../features/reader/Reader";
 import { useThreadPrint } from "../features/reader/use-thread-print";
 import { focusedSenderMessage, threadStateFor, type ThreadState } from "../lib/focused-inbox";
 import { useMailActions } from "./use-mail-actions";
@@ -55,53 +44,32 @@ import { useMailCompose } from "./use-mail-compose";
 import { useNativeMenuBridge } from "./use-native-menu-bridge";
 import { usePaneNavigation } from "./use-pane-navigation";
 import { useMailShortcuts } from "./use-mail-shortcuts";
+import { useViewTitle } from "./use-view-title";
 import { usePanelLayout } from "./use-panel-layout";
-import {
-  AddAccountDialog,
-  Composer,
-  CreateLabelDialog,
-  Feedback,
-  FilterEditor,
-  FirstRunDone,
-  Settings,
-  ShortcutHelp,
-} from "./LazyDialogs";
+import { ReaderToolbar, ResizeHandle, usePaneHost } from "./PaneLayout";
+import { Composer } from "./LazyDialogs";
 import { moveSourceLabel } from "@openmail/core/schema";
 import type { Label, MailOp } from "../../../shared/api";
 import { Sidebar, SidebarToggle } from "../features/sidebar/Sidebar";
-import { buttonPrimary, buttonSecondary, iconButton, titlebarRow } from "../ui/styles";
-import { canCall, isDesktop, isTouchWeb } from "../lib/platform";
+import { NoAccounts } from "./NoAccounts";
 import { Overview } from "../features/overview/Overview";
-import { MessageList } from "../features/mail-list/MessageList";
-import { MailStatusNotice } from "../features/sync-status/MailStatusNotice";
-import { accountName } from "../lib/format";
-import { SearchField } from "../features/search/SearchField";
-import { BatchActions, BatchMenuItems } from "../features/mail-list/BatchActions";
-import { supportsInInboxFilter } from "../lib/folder-actions";
-import { Tip } from "../ui/Tip";
-import { SquarePen } from "lucide-react";
-import { Downloads } from "../features/downloads/Downloads";
-import { UndoHistory } from "../features/undo/UndoHistory";
-import { FolderActions } from "../features/organize/FolderActions";
-import { recentSearches } from "../state/recent-searches";
+import { MailListPane } from "./MailListPane";
+import { drawerActions } from "./drawer-actions";
+import { Reader } from "../features/reader/Reader";
+import { canCall, isDesktop } from "../lib/platform";
 import { DefaultProfilesPrompt, ProfileSwitcher } from "../features/accounts/ProfileSettings";
 import { FocusedInboxPermission } from "../features/organize/FocusedInboxActions";
 import { FailedOpNotice } from "../features/sync-status/FailedOpNotice";
 import { UpdateNotice } from "../features/updates/UpdateNotice";
 import { RemoteImagesPrompt } from "../features/reader/RemoteImagesPrompt";
 import { SidebarRail } from "../features/sidebar/SidebarRail";
-import { Group, Panel, Separator } from "react-resizable-panels";
+import { Group, Panel } from "react-resizable-panels";
 import { PANE_MIN } from "../../../shared/layout";
 import { MailPanels } from "./MailPanels";
 import { createPortal } from "react-dom";
-import { Alert, AlertCancel, Drawer, alertButton, alertDanger, alertPrimary } from "../ui/Dialog";
-import { PermanentDeletePermission } from "../features/organize/PermanentDeletePermission";
-import { ProfileEditor } from "../features/accounts/lazy";
-import { GoToFolder } from "../features/organize/GoToFolder";
-import { SnoozeDialog } from "../features/organize/SnoozeDialog";
-import { Assistant } from "../features/ai/AiPanel";
-import { Proposals } from "../features/ai/lazy";
-import { ThreadActions } from "../features/organize/ThreadActions";
+import { Drawer } from "../ui/Dialog";
+import { MailAlerts } from "./MailAlerts";
+import { AppDialogs } from "./AppDialogs";
 
 export function App({ composeId }: { composeId?: string }) {
   // The one subscription to the main process's events, and the RPC runtime,
@@ -115,39 +83,18 @@ export function App({ composeId }: { composeId?: string }) {
   const { t, i18n } = useLingui();
 
   const layout = useMailLayout();
-  const shortcutText = useShortcutText();
-  const [editing, setEditing] = useAtom(editingProfileAtom);
+  const setEditing = useAtomSet(editingProfileAtom);
   const syncState = useAtomValue(syncStateAtom);
   const progress = useAtomValue(syncProgressAtom);
   const [dialog, setDialog] = useAtom(dialogAtom);
   const [labelPicker, setLabelPicker] = useAtom(labelPickerAtom);
   const pickerMode = useAtomValue(pickerModeAtom);
-  const [goToFolder, setGoToFolder] = useAtom(goToFolderAtom);
-  const [labelCreation, setLabelCreation] = useAtom(labelCreationAtom);
-  const [snoozeIds, setSnoozeIds] = useAtom(snoozeIdsAtom);
-  const [filterSeed, setFilterSeed] = useAtom(filterSeedAtom);
+  const setLabelCreation = useAtomSet(labelCreationAtom);
+  const setSnoozeIds = useAtomSet(snoozeIdsAtom);
+  const setFilterSeed = useAtomSet(filterSeedAtom);
   const searchRef = useRef<HTMLInputElement>(null);
 
-  const [optionalAccountId, setOptionalAccountId] = useState<string | null>(null);
-  useEffect(() => {
-    const open = (event: Event) => {
-      if (event instanceof CustomEvent && typeof event.detail === "string") {
-        setOptionalAccountId(event.detail);
-        setDialog("settings");
-      }
-    };
-    window.addEventListener("openmail:optional-services", open);
-    return () => window.removeEventListener("openmail:optional-services", open);
-  }, [setDialog]);
-  const [settingsTab, setSettingsTab] = useState<"ai" | null>(null);
-  useEffect(() => {
-    const open = () => {
-      setSettingsTab("ai");
-      setDialog("settings");
-    };
-    window.addEventListener(OPEN_SETTINGS_EVENT, open);
-    return () => window.removeEventListener(OPEN_SETTINGS_EVENT, open);
-  }, [setDialog]);
+  const settingsRequest = useSettingsRequests(setDialog);
   const [toast, setToast] = useState<ToastState | null>(null);
   const hideToast = useCallback(() => setToast(null), [setToast]);
   const say = useCallback(
@@ -170,18 +117,7 @@ export function App({ composeId }: { composeId?: string }) {
   });
 
   const accounts = useAtomValue(accountsAtom);
-  const refreshAccounts = useAtomRefresh(accountsAtom);
   const accountList = AsyncResult.getOrElse(accounts, () => []);
-  // Closing the first-run dialog leaves an empty window that still offers Add account.
-  const [firstRunClosed, setFirstRunClosed] = useState(false);
-  // After the first account, one short step with the keys to start with. A touch screen skips it.
-  const [firstRunDone, setFirstRunDone] = useState(false);
-  const [signInAgainId, setSignInAgain] = useAtom(signInAgainAtom);
-  const signInAgain =
-    dialog === "add" ? accountList.find((a) => a.id === signInAgainId) : undefined;
-  useEffect(() => {
-    if (dialog !== "add" && signInAgainId !== null) setSignInAgain(null);
-  }, [dialog, signInAgainId, setSignInAgain]);
   const profileList = AsyncResult.getOrElse(useAtomValue(profilesAtom), () => []);
   const counts = AsyncResult.getOrElse(useAtomValue(unreadCountsAtom), () => ({}));
   const navigation = useMailSelection({
@@ -193,23 +129,10 @@ export function App({ composeId }: { composeId?: string }) {
     view,
     query,
     setQuery,
-    search,
-    filters,
-    setFilters,
     selection,
     selectedId,
-    setSelectedId,
-    deleteRequest,
-    setDeleteRequest,
-    listRef,
-    selectionSource,
     threads,
-    loadMore,
-    list,
-    listQuery,
     deleteFolder,
-    folderAccountIds,
-    scopeKey,
     batchRows,
     selected,
     prefs,
@@ -219,9 +142,6 @@ export function App({ composeId }: { composeId?: string }) {
   } = navigation;
 
   const scope = scopeAccountIds(view, accountList);
-  const filterAccount = filterSeed
-    ? accountList.find((a) => a.id === filterSeed.accountId)
-    : undefined;
 
   const labels = AsyncResult.getOrElse(useAtomValue(labelsAtom()), () => []);
   const labelPreferences = AsyncResult.getOrElse(useAtomValue(labelPreferencesAtom), () => []);
@@ -275,18 +195,7 @@ export function App({ composeId }: { composeId?: string }) {
     showUndo,
     selectedAccount,
   });
-  const {
-    deleteKeyPrompt,
-    setDeleteKeyPrompt,
-    permanentRequest,
-    setPermanentRequest,
-    permissionAccount,
-    setPermissionAccount,
-    requestPermanentDelete,
-    rowState,
-    act,
-    applyDeleteKey,
-  } = mailActions;
+  const { requestPermanentDelete, act } = mailActions;
 
   const composition = useMailCompose({
     messages: strings,
@@ -307,8 +216,6 @@ export function App({ composeId }: { composeId?: string }) {
     closeRequested,
     crashFeedback,
     signatureFor,
-    quotePrompt,
-    setQuotePrompt,
     sendAgain,
     startCompose,
     openSavedDraft,
@@ -349,20 +256,7 @@ export function App({ composeId }: { composeId?: string }) {
   });
 
   const hasAccounts = accountList.length > 0;
-  const viewAccount = accountList.find((a) => a.id === (view.label?.accountId ?? view.accountId));
-  const categorized = categoryAccounts(view, accountList);
-  const category = view.label
-    ? inboxCategoryNames(
-        categorized.length > 0 && categorized.every((a) => a.provider === "outlook"),
-      )[view.label.id]
-    : undefined;
-  const baseTitle = view.label
-    ? category
-      ? i18n._(category)
-      : (labelMap.get(`${view.label.accountId}/${view.label.id}`)?.name ?? t`Label`)
-    : i18n._(MAILBOX_NAMES[view.mailbox]);
-  const user = viewAccount?.email.split("@")[0];
-  const title = viewAccount ? t`${baseTitle}: ${user}` : baseTitle;
+  const { viewAccount, title } = useViewTitle(view, accountList, labelMap);
 
   const { docked, paneMode, savedLayout, mailOrientation } = usePanelLayout({
     prefs,
@@ -395,21 +289,7 @@ export function App({ composeId }: { composeId?: string }) {
       </div>
     );
   const narrow = layout.mode === "narrow";
-  /** Sidebar actions also close the drawer the sidebar sits in when it is not docked. */
-  const fromDrawer =
-    <A extends unknown[]>(action: (...args: A) => void) =>
-    (...args: A) => {
-      layout.setDrawerOpen(false);
-      action(...args);
-    };
-  /** A view picked in the drawer hands focus to its list, not back to the drawer toggle. */
-  const viewFromDrawer =
-    <A extends unknown[]>(action: (...args: A) => void) =>
-    (...args: A) => {
-      const fromOpenDrawer = layout.drawerOpen;
-      fromDrawer(action)(...args);
-      if (fromOpenDrawer) navigation.focusList(null);
-    };
+  const { fromDrawer, viewFromDrawer, fromRail } = drawerActions(layout, navigation.focusList);
   const deleteBatch = deleteFolder
     ? () => requestPermanentDelete(batchRows.map((row) => row.id))
     : undefined;
@@ -455,41 +335,8 @@ export function App({ composeId }: { composeId?: string }) {
   const rail = layout.mode === "medium" && hasAccounts;
   const sidebarToggle =
     docked || rail ? undefined : <SidebarToggle onClick={paneNav.toggleSidebar} />;
-  /** A view or space picked in the rail hands focus to its list. */
-  const fromRail =
-    <A extends unknown[]>(action: (...args: A) => void) =>
-    (...args: A) => {
-      action(...args);
-      navigation.focusList(null);
-    };
   const mainPane = !hasAccounts ? (
-    <main className="flex h-full w-full flex-col bg-surface">
-      <div className={titlebarRow} />
-      {accounts._tag === "Failure" ? (
-        <div
-          role="alert"
-          className="flex flex-1 flex-col items-center justify-center gap-3 px-8 pb-13 text-center"
-        >
-          <p className="max-w-80 text-a11y-muted">
-            {t`Couldn't load your accounts.`} {causeText(i18n, accounts.cause)}
-          </p>
-          <button type="button" className={buttonSecondary} onClick={refreshAccounts}>
-            {t`Retry`}
-          </button>
-        </div>
-      ) : accounts._tag === "Success" && dialog !== "add" ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-3 px-8 pb-13 text-center">
-          <p className="text-a11y-muted">{t`No email accounts yet.`}</p>
-          {canCall("Connect") ? (
-            <button type="button" className={buttonPrimary} onClick={() => setDialog("add")}>
-              {t`Add account`}
-            </button>
-          ) : (
-            <p className="text-a11y-muted">{t`Add an account on your Mac.`}</p>
-          )}
-        </div>
-      ) : null}
-    </main>
+    <NoAccounts adding={dialog === "add"} onAdd={() => setDialog("add")} />
   ) : (
     <Overview
       leading={sidebarToggle}
@@ -512,137 +359,27 @@ export function App({ composeId }: { composeId?: string }) {
         }
       : null;
   const listPane = (
-    <MessageList
+    <MailListPane
+      navigation={navigation}
+      mailActions={mailActions}
+      paneNav={paneNav}
+      startCompose={startCompose}
+      openSavedDraft={openSavedDraft}
+      accountList={accountList}
+      labels={labels}
+      labelMap={labelMap}
+      online={online}
+      docked={docked}
+      narrow={narrow}
       leading={sidebarToggle}
-      notice={
-        <MailStatusNotice
-          accounts={accountList}
-          space={spaceAccounts(view.space, accountList)}
-          online={online}
-          syncState={syncState}
-          accountIssues={!docked}
-          onReauth={mailActions.reauth}
-          onFocusList={() => navigation.focusList(selection.focus)}
-        />
-      }
-      emptyActions={{
-        onClearSearch: () => setQuery(""),
-        onCompose: () => startCompose("new"),
-        onSync: () => run(syncNow),
-        syncing: syncState.running,
-      }}
-      accountLabel={(id) => {
-        const account = accountList.find((a) => a.id === id);
-        return account ? accountName(account) : id;
-      }}
-      searchBar={
-        !prefs.readingPaneVisible || narrow ? (
-          <SearchField value={query} onChange={setQuery} inputRef={searchRef} />
-        ) : undefined
-      }
-      // One pane at a time leaves no reader toolbar, so selected rows get their actions above the
-      // list. Only while the list shows, so the reader's bar and this one never share a label picker.
-      selectionBar={
-        narrow && !paneNav.shown.reader && batchToolbar ? (
-          <BatchActions {...batchToolbar} />
-        ) : undefined
-      }
-      key={JSON.stringify([view, search, filters])}
       title={title}
-      threads={list}
-      loading={threads.loading}
-      loadingMore={threads.loadingMore}
-      loadError={threads.loadError}
-      exhausted={threads.exhausted}
       showAccount={!viewAccount && (scope?.length ?? accountList.length) > 1}
-      searching={search !== ""}
-      searchingServer={threads.searchingServer}
-      searchTruncated={threads.searchTruncated}
-      searchErrorAccounts={threads.searchErrorAccounts}
-      searchReauthAccounts={threads.searchReauthAccounts}
-      searchInputInvalid={threads.searchInputInvalid}
-      searchIgnored={threads.searchIgnored}
-      searchQuery={listQuery ?? undefined}
-      filters={filters}
-      inLabel={supportsInInboxFilter(view, accountList)}
-      onFilters={setFilters}
-      folderActions={
-        <>
-          {/* One pane at a time hides the sidebar and its New message button. */}
-          {narrow && (
-            <Tip label={t`New message`} shortcut={shortcutText("compose")}>
-              <button
-                type="button"
-                aria-label={t`New message`}
-                onClick={() => startCompose("new")}
-                className={`no-drag text-a11y-muted ${iconButton}`}
-              >
-                <SquarePen className="size-4.5" />
-              </button>
-            </Tip>
-          )}
-          {/* Downloads land on the Mac; the browser keeps its own list. */}
-          {isDesktop() && <Downloads />}
-          <UndoHistory entries={undoHistory} onUndo={undoRestored} />
-          <FolderActions
-            folder={{
-              mailbox: view.mailbox,
-              ...(folderAccountIds ? { accountIds: folderAccountIds } : {}),
-              ...(view.label ? { label: view.label.id } : {}),
-            }}
-            notify={(text, error) => say({ text, ...(error ? { tone: "error" as const } : {}) })}
-          />
-        </>
-      }
-      labels={labelMap}
-      selectedId={selection.focus}
-      selectedIds={selection.ids}
-      listRef={listRef}
-      selectionSource={selectionSource}
-      rowActions={{
-        batchMenu: <BatchMenuItems {...batch} />,
-        grouped: prefs.threadGrouping,
-        currentLabel: view.label?.id,
-        mailbox: view.mailbox,
-        labels,
-        stateOf: rowState,
-        onOp: (m, state, op) => act(op, {}, { id: m.id, state }),
-        onSwipeOp: (m, state, op) =>
-          act(op, { confirmedIds: new Set([m.id]) }, { id: m.id, state }),
-        onCompose: (m, mode, asAttachment) => startCompose(mode, asAttachment, m.id),
-        onPermanentDelete: deleteFolder
-          ? (thread) => requestPermanentDelete([thread.id])
-          : undefined,
-        onCreate: (thread, move) =>
-          setLabelCreation({
-            accountId: thread.accountId,
-            move,
-            threads: [thread.id],
-            flat: !prefs.threadGrouping,
-            removeLabelId: moveSourceLabel(view.mailbox, view.label?.id),
-          }),
-        onSnooze: (thread) => setSnoozeIds([thread.id]),
-        onFilter: (thread) =>
-          setFilterSeed({ accountId: thread.accountId, from: thread.from.address }),
-        onOpenWindow: (m) =>
-          view.mailbox === "drafts" ? openSavedDraft(m.id) : navigation.openWindow(m.id),
-      }}
-      onSelect={(id, modifiers) => {
-        if (threads.loading) return;
-        // Opening a result keeps its search in Recent.
-        if (search) recentSearches.add(search);
-        if (view.mailbox !== "drafts") {
-          navigation.selectRow(id, modifiers);
-          if (!modifiers.toggle && !modifiers.range) paneNav.openReader();
-          return;
-        }
-        // Drafts open in the compose window.
-        setSelectedId(id);
-        openSavedDraft(id);
-      }}
-      onEndReached={() => {
-        loadMore();
-      }}
+      batch={batch}
+      batchToolbar={batchToolbar}
+      say={say}
+      undoHistory={undoHistory}
+      onUndo={undoRestored}
+      searchRef={searchRef}
     />
   );
   const readerPane = (
@@ -839,191 +576,21 @@ export function App({ composeId }: { composeId?: string }) {
           {sidebar}
         </Drawer>
       )}
-      <Alert
-        open={deleteKeyPrompt}
-        onOpenChange={setDeleteKeyPrompt}
-        title={t`Choose Delete key action`}
-      >
-        <AlertCancel>{t`Cancel`}</AlertCancel>
-        {(["trash", "archive", "removeLabel"] as const).map((action) => (
-          <button
-            type="button"
-            key={action}
-            className={alertButton}
-            onClick={() => {
-              setDeleteKeyPrompt(false);
-              applyDeleteKey(action);
-            }}
-          >
-            {action === "trash"
-              ? t`Move to Trash`
-              : action === "archive"
-                ? t`Archive`
-                : t`Remove current label`}
-          </button>
-        ))}
-      </Alert>
-      <Alert
-        open={quotePrompt !== null}
-        onOpenChange={(open) => {
-          if (!open) setQuotePrompt(null);
-        }}
-        title={t`Quote only the selected text?`}
-      >
-        <AlertCancel>{t`Cancel`}</AlertCancel>
-        <button
-          type="button"
-          className={alertButton}
-          onClick={() => {
-            quotePrompt?.(false);
-            setQuotePrompt(null);
-          }}
-        >{t`Whole message`}</button>
-        <button
-          type="button"
-          className={alertPrimary}
-          onClick={() => {
-            quotePrompt?.(true);
-            setQuotePrompt(null);
-          }}
-        >{t`Selected text`}</button>
-      </Alert>
-      <Alert
-        open={deleteRequest !== null}
-        onOpenChange={(open) => {
-          if (!open) setDeleteRequest(null);
-        }}
-        title={t`Delete ${deleteRequest?.ids.size ?? 0} conversations?`}
-        description={t`These loaded conversations will be moved to Trash. You can undo this batch.`}
-      >
-        <AlertCancel>{t`Cancel`}</AlertCancel>
-        <button
-          type="button"
-          className={alertDanger}
-          onClick={() => {
-            const request = deleteRequest;
-            setDeleteRequest(null);
-            if (request && request.scopeKey === scopeKey)
-              act({ kind: "trash" }, { confirmedIds: request.ids });
-          }}
-        >{t`Delete`}</button>
-      </Alert>
-      <Alert
-        open={permanentRequest !== null}
-        onOpenChange={(open) => {
-          if (!open) setPermanentRequest(null);
-        }}
-        title={t`Permanently delete selected mail?`}
-        description={
-          permanentRequest?.flat
-            ? t`Only the selected messages in this Trash or Spam folder will be permanently deleted. This cannot be undone.`
-            : t`Only messages in this Trash or Spam folder from the selected conversations will be permanently deleted. Inbox and Sent copies will remain. This cannot be undone.`
-        }
-      >
-        <AlertCancel>{t`Cancel`}</AlertCancel>
-        <button
-          type="button"
-          className={alertDanger}
-          onClick={() => {
-            mailActions.confirmPermanentDelete();
-          }}
-        >{t`Permanently delete`}</button>
-      </Alert>
-      {permissionAccount && (
-        <PermanentDeletePermission
-          key={permissionAccount}
-          accountId={permissionAccount}
-          onClose={() => setPermissionAccount(null)}
-        />
-      )}
-      {editing && (
-        <ProfileEditor
-          profile={editing === "new" ? undefined : editing}
-          accounts={accountList}
-          profiles={profileList}
-          onClose={() => setEditing(null)}
-          onSaved={(p) => {
-            if (editing === "new") switchSpace(p.id);
-          }}
-          onDeleted={() => {
-            if (editing !== "new" && view.space === editing.id) switchSpace(ALL);
-          }}
-        />
-      )}
-      {canCall("Connect") &&
-        (dialog === "add" || (!hasAccounts && accounts._tag === "Success" && !firstRunClosed)) && (
-          <AddAccountDialog
-            firstRun={!hasAccounts}
-            {...(signInAgain?.provider === "imap" ? { signInAgain } : {})}
-            onClose={() => {
-              setDialog(null);
-              setFirstRunClosed(true);
-            }}
-            onAdded={(a) => {
-              setDialog(null);
-              const email = a.email;
-              say({ text: t`Added ${email}. Syncing…` });
-              if (!hasAccounts && !isTouchWeb()) setFirstRunDone(true);
-            }}
-          />
-        )}
-      {goToFolder && (
-        <GoToFolder
-          labels={labels}
-          accounts={accountList}
-          view={view}
-          onView={changeView}
-          onClose={() => setGoToFolder(false)}
-        />
-      )}
-      {labelCreation && (
-        <CreateLabelDialog
-          target={labelCreation}
-          labels={labels}
-          onClose={() => setLabelCreation(null)}
-        />
-      )}
-      {snoozeIds && (
-        <SnoozeDialog
-          threads={snoozeIds}
-          onClose={() => setSnoozeIds(null)}
-          onStart={mailActions.startSnooze}
-        />
-      )}
-      {filterSeed && filterAccount && (
-        <FilterEditor
-          account={filterAccount}
-          from={filterSeed.from}
-          onClose={() => setFilterSeed(null)}
-        />
-      )}
-      <Assistant accounts={accountList} proposals={proposals} onOpenDraft={openProposal} />
-      {dialog === "help" && <ShortcutHelp onClose={() => setDialog(null)} />}
-      {firstRunDone && !dialog && <FirstRunDone onClose={() => setFirstRunDone(false)} />}
-      {dialog === "settings" && (
-        <Settings
-          accounts={accountList}
-          initialTab={optionalAccountId ? "accounts" : (settingsTab ?? "general")}
-          optionalAccountId={optionalAccountId}
-          onClose={() => {
-            setDialog(null);
-            setOptionalAccountId(null);
-            setSettingsTab(null);
-          }}
-          onAddAccount={() => setDialog("add")}
-        />
-      )}
-      {dialog === "proposals" && (
-        <Proposals
-          proposals={proposals}
-          accounts={accountList}
-          onClose={() => setDialog(null)}
-          onOpenDraft={openProposal}
-        />
-      )}
-      {dialog === "feedback" && (
-        <Feedback crash={crashFeedback} onClose={() => setDialog(null)} onDraft={feedbackDraft} />
-      )}
+      <MailAlerts mailActions={mailActions} composition={composition} navigation={navigation} />
+      <AppDialogs
+        profiles={profileList}
+        view={view}
+        labels={labels}
+        proposals={proposals}
+        switchSpace={switchSpace}
+        changeView={changeView}
+        startSnooze={mailActions.startSnooze}
+        openProposal={openProposal}
+        crashFeedback={crashFeedback}
+        feedbackDraft={feedbackDraft}
+        settingsRequest={settingsRequest}
+        say={say}
+      />
       {compose && (
         <Composer
           key={compose.id}
@@ -1042,18 +609,6 @@ export function App({ composeId }: { composeId?: string }) {
   );
 }
 
-/** The reader's actions: for the selected rows when several are selected, otherwise for the open thread. */
-function ReaderToolbar({
-  batch,
-  thread,
-}: {
-  batch: ComponentProps<typeof BatchActions> | null;
-  thread: ComponentProps<typeof ThreadActions> | null;
-}) {
-  if (batch) return <BatchActions {...batch} />;
-  return thread && <ThreadActions {...thread} />;
-}
-
 /** Immutable query arrays own their lookup maps; WeakMap releases old results. */
 const maps = new WeakMap<readonly Label[], Map<string, Label>>();
 function labelsById(labels: readonly Label[]) {
@@ -1062,46 +617,4 @@ function labelsById(labels: readonly Label[]) {
   const map = new Map(labels.map((label) => [`${label.accountId}/${label.id}`, label]));
   maps.set(labels, map);
   return map;
-}
-
-/**
- * A pane that keeps its React state when the layout moves it. The caller
- * portals the pane into `host` at one fixed place in the tree, and each
- * layout gives the host a slot through the `slot` ref. Changing layouts then
- * moves one DOM node instead of remounting the list or the reader.
- */
-function usePaneHost() {
-  const [host] = useState(() => {
-    const element = document.createElement("div");
-    element.className = "flex h-full min-w-0 flex-1";
-    return element;
-  });
-  const slot = useCallback(
-    (element: HTMLElement | null) => {
-      element?.append(host);
-    },
-    [host],
-  );
-  return { host, slot };
-}
-
-/**
- * The line between two panes. It draws the 1 px border the panes used to
- * carry themselves; the group's resizeTargetMinimumSize widens what the
- * pointer can grab without widening the line.
- */
-function ResizeHandle({
-  label,
-  orientation = "horizontal",
-}: {
-  /** Names the pane the handle resizes. The library's separator takes arrow keys, Home and End. */
-  label: string;
-  orientation?: "horizontal" | "vertical";
-}) {
-  return (
-    <Separator
-      aria-label={label}
-      className={`no-drag ${orientation === "vertical" ? "h-px" : "w-px"} bg-black/5 transition-colors outline-none data-[separator=active]:bg-blue-500 data-[separator=focus]:bg-blue-500 data-[separator=hover]:bg-blue-500/60 dark:bg-white/5`}
-    />
-  );
 }

@@ -68,7 +68,7 @@ msgstr "{active, plural, one {Downloads (# läuft)} other {Downloads (# laufen)}
 msgid "{affected, plural, one {# account needs attention} other {# accounts need attention}}"
 msgstr "{affected, plural, one {# Account braucht Aufmerksamkeit} other {# Accounts brauchen Aufmerksamkeit}}"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-view-title.ts
 msgid "{baseTitle}: {user}"
 msgstr "{baseTitle}: {user}"
 
@@ -388,11 +388,11 @@ msgstr "{provider} hinzufügen"
 msgid "Add a mail account first."
 msgstr "Füge zuerst einen Mail-Account hinzu."
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/NoAccounts.tsx
 msgid "Add account"
 msgstr "Account hinzufügen"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/NoAccounts.tsx
 msgid "Add an account on your Mac."
 msgstr "Füge einen Account auf deinem Mac hinzu."
 
@@ -476,7 +476,7 @@ msgstr "Ersten Account hinzufügen"
 msgid "Added"
 msgstr "Hinzugefügt"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/AppDialogs.tsx
 msgid "Added {email}. Syncing…"
 msgstr "{email} hinzugefügt. Synchronisierung…"
 
@@ -817,7 +817,7 @@ msgstr "Vorschlag genehmigen"
 msgid "Apps not found on this Mac"
 msgstr "Auf diesem Mac nicht gefundene Apps"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
@@ -1144,7 +1144,7 @@ msgstr "Anthropic ist nicht erreichbar. Prüfe deine Internetverbindung."
 msgid "Can't reach the mail server right now."
 msgstr "Der Mailserver ist derzeit nicht erreichbar."
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/accounts/OptionalServices.tsx
@@ -1357,7 +1357,7 @@ msgstr "Wähle Aktionen aus und ändere ihre Reihenfolge mit den Schaltflächen.
 msgid "Choose at least one filter action"
 msgstr "Mindestens eine Filteraktion auswählen"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
 msgid "Choose Delete key action"
 msgstr "Aktion der Löschtaste auswählen"
@@ -1900,7 +1900,7 @@ msgstr "Die Originalanhänge konnten nicht geladen werden. Versuche es erneut."
 msgid "Couldn't load this message."
 msgstr "Diese Nachricht konnte nicht geladen werden."
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/NoAccounts.tsx
 msgid "Couldn't load your accounts."
 msgstr "Deine Accounts konnten nicht geladen werden."
 
@@ -2125,7 +2125,7 @@ msgstr "Standard-Von-Adresse"
 msgid "Default signature"
 msgstr "Standardsignatur"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
@@ -2150,7 +2150,7 @@ msgid "Delete {0}"
 msgstr "{0} löschen"
 
 #. placeholder {0}: deleteRequest?.ids.size ?? 0
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "Delete {0} conversations?"
 msgstr "{0} Konversationen löschen?"
 
@@ -3366,7 +3366,7 @@ msgstr "Tastaturkürzel"
 msgid "Keychain is locked"
 msgstr "Schlüsselbund ist gesperrt"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-view-title.ts
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "Label"
@@ -4139,7 +4139,7 @@ msgstr "In „An“ verschieben"
 msgid "Move to top level"
 msgstr "Auf die oberste Ebene verschieben"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
@@ -4224,7 +4224,7 @@ msgstr "Neues Label oder neuer Ordner"
 msgid "New mail notifications"
 msgstr "Neue E-Mail-Benachrichtigungen"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailListPane.tsx
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
@@ -4367,7 +4367,7 @@ msgstr "Keine Downloads"
 msgid "No drafts"
 msgstr "Keine Entwürfe"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/NoAccounts.tsx
 msgid "No email accounts yet."
 msgstr "Noch keine E-Mail-Accounts."
 
@@ -4596,7 +4596,7 @@ msgstr "Ein Vorkommen einer wiederkehrenden Besprechung"
 msgid "Only inbox messages can be snoozed"
 msgstr "Nur Nachrichten im Posteingang können zurückgestellt werden"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "Only messages in this Trash or Spam folder from the selected conversations will be permanently deleted. Inbox and Sent copies will remain. This cannot be undone."
 msgstr "Nur Nachrichten der ausgewählten Konversationen in diesem Papierkorb oder Ordner „Werbung“ werden endgültig gelöscht. Kopien im Posteingang und in „Gesendet“ bleiben erhalten. Diese Aktion kann nicht rückgängig gemacht werden."
 
@@ -4612,7 +4612,7 @@ msgstr "Nur ausgewählte Apple-Kontakte sind verfügbar."
 msgid "Only text inside attachments"
 msgstr "Nur Text in Anhängen"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "Only the selected messages in this Trash or Spam folder will be permanently deleted. This cannot be undone."
 msgstr "Nur die ausgewählten Nachrichten in diesem Papierkorb oder Ordner „Werbung“ werden endgültig gelöscht. Diese Aktion kann nicht rückgängig gemacht werden."
 
@@ -4970,14 +4970,14 @@ msgstr "Personen"
 msgid "People you know are your contacts and people you have sent mail to, when the message passes sender authentication. Known trackers stay blocked."
 msgstr "Bekannte Personen sind deine Kontakte und Personen, denen du E-Mails gesendet hast, sofern die Nachricht die Absenderauthentifizierung besteht. Bekannte Tracker bleiben blockiert."
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/FolderActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
 msgid "Permanently delete"
 msgstr "Endgültig löschen"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "Permanently delete selected mail?"
 msgstr "Ausgewählte E-Mail dauerhaft löschen?"
 
@@ -5158,7 +5158,7 @@ msgstr "Beende Claude und öffne es erneut, um die Änderung zu laden."
 msgid "Quit with messages waiting to send?"
 msgstr "Beenden, obwohl Nachrichten noch auf den Versand warten?"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "Quote only the selected text?"
 msgstr "Nur den ausgewählten Text zitieren?"
 
@@ -5354,7 +5354,7 @@ msgstr "{token} entfernen"
 msgid "Remove account"
 msgstr "Account entfernen"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
@@ -5619,7 +5619,7 @@ msgstr "Synchronisierung fortsetzen"
 msgid "Retention windows take precedence. Starred messages, retained message texts, drafts and outbox messages are kept even when the limit is exceeded. Zero disables the budget."
 msgstr "Aufbewahrungsfristen haben Vorrang. Markierte Nachrichten, aufbewahrte Nachrichtentexte, Entwürfe und Nachrichten im Postausgang bleiben auch bei Überschreitung des Limits erhalten. Null deaktiviert das Limit."
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/NoAccounts.tsx
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
 #: src/renderer/src/features/downloads/Downloads.tsx
 #: src/renderer/src/features/reader/body/MessageBodyShell.tsx
@@ -5911,7 +5911,7 @@ msgstr "Konversation auswählen"
 msgid "Selected message"
 msgstr "Ausgewählte Nachricht"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "Selected text"
 msgstr "Ausgewählter Text"
 
@@ -6855,7 +6855,7 @@ msgstr "Für eine sichere Komprimierung ist nicht genügend freier Speicherplatz
 msgid "These are not email addresses: {list}"
 msgstr "Dies sind keine E-Mail-Adressen: {list}"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "These loaded conversations will be moved to Trash. You can undo this batch."
 msgstr "Diese geladenen Konversationen werden in den Papierkorb verschoben. Du kannst diesen Stapel rückgängig machen."
 
@@ -7424,7 +7424,7 @@ msgstr "Wer"
 msgid "Who can sign in"
 msgstr "Wer sich anmelden kann"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "Whole message"
 msgstr "Ganze Nachricht"
 

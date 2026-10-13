@@ -78,7 +78,7 @@ msgstr "{active, plural, other {下载（# 个进行中）}}"
 msgid "{affected, plural, one {# account needs attention} other {# accounts need attention}}"
 msgstr "{affected, plural, other {# 个账户需要处理}}"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-view-title.ts
 msgid "{baseTitle}: {user}"
 msgstr "{baseTitle}：{user}"
 
@@ -398,11 +398,11 @@ msgstr "添加 {provider}"
 msgid "Add a mail account first."
 msgstr "请先添加邮件账户。"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/NoAccounts.tsx
 msgid "Add account"
 msgstr "添加账户"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/NoAccounts.tsx
 msgid "Add an account on your Mac."
 msgstr "请在 Mac 上添加账户。"
 
@@ -486,7 +486,7 @@ msgstr "添加第一个邮箱"
 msgid "Added"
 msgstr "已添加"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/AppDialogs.tsx
 msgid "Added {email}. Syncing…"
 msgstr "已添加 {email}，正在同步"
 
@@ -827,7 +827,7 @@ msgstr "确认建议"
 msgid "Apps not found on this Mac"
 msgstr "这台 Mac 上未找到的应用"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
@@ -1154,7 +1154,7 @@ msgstr "无法连接 Anthropic。请检查网络连接。"
 msgid "Can't reach the mail server right now."
 msgstr "暂时无法连接邮件服务器。"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/accounts/OptionalServices.tsx
@@ -1367,7 +1367,7 @@ msgstr "选择操作，用按钮调整顺序。"
 msgid "Choose at least one filter action"
 msgstr "请选择至少一项操作"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
 msgid "Choose Delete key action"
 msgstr "选择删除键动作"
@@ -1910,7 +1910,7 @@ msgstr "无法加载原附件，请重试。"
 msgid "Couldn't load this message."
 msgstr "无法加载此邮件。"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/NoAccounts.tsx
 msgid "Couldn't load your accounts."
 msgstr "无法加载你的账户。"
 
@@ -2135,7 +2135,7 @@ msgstr "默认发件地址"
 msgid "Default signature"
 msgstr "默认签名"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
@@ -2160,7 +2160,7 @@ msgid "Delete {0}"
 msgstr "删除 {0}"
 
 #. placeholder {0}: deleteRequest?.ids.size ?? 0
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "Delete {0} conversations?"
 msgstr "删除 {0} 个会话？"
 
@@ -3376,7 +3376,7 @@ msgstr "快捷键帮助"
 msgid "Keychain is locked"
 msgstr "钥匙串已锁定"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-view-title.ts
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "Label"
@@ -4149,7 +4149,7 @@ msgstr "移到收件人"
 msgid "Move to top level"
 msgstr "移到顶层"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
@@ -4234,7 +4234,7 @@ msgstr "新建标签或文件夹"
 msgid "New mail notifications"
 msgstr "新邮件通知"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailListPane.tsx
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
@@ -4377,7 +4377,7 @@ msgstr "没有下载"
 msgid "No drafts"
 msgstr "没有草稿"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/NoAccounts.tsx
 msgid "No email accounts yet."
 msgstr "还没有邮箱账户。"
 
@@ -4606,7 +4606,7 @@ msgstr "重复会议中的一次"
 msgid "Only inbox messages can be snoozed"
 msgstr "只能为收件箱邮件设置提醒"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "Only messages in this Trash or Spam folder from the selected conversations will be permanently deleted. Inbox and Sent copies will remain. This cannot be undone."
 msgstr "仅永久删除所选会话中属于当前垃圾箱或垃圾邮件文件夹的邮件。收件箱和已发送中的副本会保留。此操作无法撤销。"
 
@@ -4622,7 +4622,7 @@ msgstr "仅可使用已选的 Apple 联系人。"
 msgid "Only text inside attachments"
 msgstr "仅搜索附件内的文本"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "Only the selected messages in this Trash or Spam folder will be permanently deleted. This cannot be undone."
 msgstr "仅永久删除所选邮件中属于当前垃圾箱或垃圾邮件文件夹的邮件。此操作无法撤销。"
 
@@ -4980,14 +4980,14 @@ msgstr "联系人"
 msgid "People you know are your contacts and people you have sent mail to, when the message passes sender authentication. Known trackers stay blocked."
 msgstr "认识的人指你的联系人和你发过邮件的人，且消息需通过发件人认证。已知跟踪器始终拦截。"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/FolderActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
 msgid "Permanently delete"
 msgstr "永久删除"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "Permanently delete selected mail?"
 msgstr "永久删除所选邮件？"
 
@@ -5168,7 +5168,7 @@ msgstr "退出并重新打开 Claude 即可加载。"
 msgid "Quit with messages waiting to send?"
 msgstr "仍有待发邮件，是否退出？"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "Quote only the selected text?"
 msgstr "只引用选中文字？"
 
@@ -5364,7 +5364,7 @@ msgstr "移除 {token}"
 msgid "Remove account"
 msgstr "移除账户"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
@@ -5629,7 +5629,7 @@ msgstr "恢复同步"
 msgid "Retention windows take precedence. Starred messages, retained message texts, drafts and outbox messages are kept even when the limit is exceeded. Zero disables the budget."
 msgstr "保留期限优先。即使超过上限，也会保留星标邮件、期限内的消息文本、草稿和发件箱邮件。设为零可停用容量限制。"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/NoAccounts.tsx
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
 #: src/renderer/src/features/downloads/Downloads.tsx
 #: src/renderer/src/features/reader/body/MessageBodyShell.tsx
@@ -5921,7 +5921,7 @@ msgstr "选择会话"
 msgid "Selected message"
 msgstr "已选邮件"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "Selected text"
 msgstr "选中文字"
 
@@ -6865,7 +6865,7 @@ msgstr "磁盘空闲空间不足，无法安全压缩。"
 msgid "These are not email addresses: {list}"
 msgstr "这些不是邮件地址：{list}"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "These loaded conversations will be moved to Trash. You can undo this batch."
 msgstr "这些已加载的会话将移至垃圾箱，可以整批撤销。"
 
@@ -7434,7 +7434,7 @@ msgstr "谁"
 msgid "Who can sign in"
 msgstr "谁可以登录"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "Whole message"
 msgstr "全文"
 

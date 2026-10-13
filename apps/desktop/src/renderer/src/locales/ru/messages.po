@@ -68,7 +68,7 @@ msgstr "{active, plural, one {Загрузки (# выполняется)} few {
 msgid "{affected, plural, one {# account needs attention} other {# accounts need attention}}"
 msgstr "{affected, plural, one {# учётная запись требует внимания} few {# учётные записи требуют внимания} many {# учётных записей требуют внимания} other {# учётной записи требуют внимания}}"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-view-title.ts
 msgid "{baseTitle}: {user}"
 msgstr "{baseTitle}: {user}"
 
@@ -388,11 +388,11 @@ msgstr "Добавьте {provider}"
 msgid "Add a mail account first."
 msgstr "Сначала добавьте почтовую учётную запись."
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/NoAccounts.tsx
 msgid "Add account"
 msgstr "Добавить учетную запись"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/NoAccounts.tsx
 msgid "Add an account on your Mac."
 msgstr "Добавьте учетную запись на своем Mac."
 
@@ -476,7 +476,7 @@ msgstr "Добавьте свою первую учетную запись"
 msgid "Added"
 msgstr "Добавлено"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/AppDialogs.tsx
 msgid "Added {email}. Syncing…"
 msgstr "Добавлен {email}. Синхронизация…"
 
@@ -817,7 +817,7 @@ msgstr "Одобрить предложение"
 msgid "Apps not found on this Mac"
 msgstr "Приложения, не найденные на этом Mac"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
@@ -1144,7 +1144,7 @@ msgstr "Не удаётся подключиться к Anthropic. Провер�
 msgid "Can't reach the mail server right now."
 msgstr "Сейчас не удаётся подключиться к почтовому серверу."
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/accounts/OptionalServices.tsx
@@ -1357,7 +1357,7 @@ msgstr "Выбирайте действия и используйте кнопк
 msgid "Choose at least one filter action"
 msgstr "Выберите хотя бы одно действие фильтра."
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
 msgid "Choose Delete key action"
 msgstr "Выбрать действие клавиши Delete"
@@ -1900,7 +1900,7 @@ msgstr "Не удалось загрузить исходные вложения
 msgid "Couldn't load this message."
 msgstr "Не удалось загрузить это сообщение."
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/NoAccounts.tsx
 msgid "Couldn't load your accounts."
 msgstr "Не удалось загрузить учетные записи."
 
@@ -2125,7 +2125,7 @@ msgstr "Адрес отправителя по умолчанию"
 msgid "Default signature"
 msgstr "Подпись по умолчанию"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
@@ -2150,7 +2150,7 @@ msgid "Delete {0}"
 msgstr "Удалить {0}"
 
 #. placeholder {0}: deleteRequest?.ids.size ?? 0
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "Delete {0} conversations?"
 msgstr "Удалить переписки {0}?"
 
@@ -3366,7 +3366,7 @@ msgstr "Сочетания клавиш"
 msgid "Keychain is locked"
 msgstr "Связка ключей заблокирована"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-view-title.ts
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "Label"
@@ -4139,7 +4139,7 @@ msgstr "Переместить в поле «Кому»"
 msgid "Move to top level"
 msgstr "Переместить на верхний уровень"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
@@ -4224,7 +4224,7 @@ msgstr "Новый ярлык или папка"
 msgid "New mail notifications"
 msgstr "Уведомления о новой почте"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailListPane.tsx
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
@@ -4367,7 +4367,7 @@ msgstr "Нет загрузок"
 msgid "No drafts"
 msgstr "Нет черновиков"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/NoAccounts.tsx
 msgid "No email accounts yet."
 msgstr "Учетных записей электронной почты пока нет."
 
@@ -4596,7 +4596,7 @@ msgstr "Один случай повторяющейся встречи"
 msgid "Only inbox messages can be snoozed"
 msgstr "Отложить можно только сообщения из папки «Входящие»"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "Only messages in this Trash or Spam folder from the selected conversations will be permanently deleted. Inbox and Sent copies will remain. This cannot be undone."
 msgstr "Навсегда удалятся только сообщения из выбранных переписок в этой Корзине или папке «Спам». Копии во «Входящих» и «Отправленных» сохранятся. Действие нельзя отменить."
 
@@ -4612,7 +4612,7 @@ msgstr "Доступны только выбранные контакты Apple.
 msgid "Only text inside attachments"
 msgstr "Только текст во вложениях"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "Only the selected messages in this Trash or Spam folder will be permanently deleted. This cannot be undone."
 msgstr "Навсегда удалятся только выбранные сообщения в этой Корзине или папке «Спам». Действие нельзя отменить."
 
@@ -4970,14 +4970,14 @@ msgstr "Люди"
 msgid "People you know are your contacts and people you have sent mail to, when the message passes sender authentication. Known trackers stay blocked."
 msgstr "Знакомые — это ваши контакты и люди, которым вы отправляли почту, если сообщение прошло проверку подлинности отправителя. Известные трекеры остаются заблокированными."
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/FolderActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
 msgid "Permanently delete"
 msgstr "Удалить навсегда"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "Permanently delete selected mail?"
 msgstr "Удалить выбранное письмо навсегда?"
 
@@ -5158,7 +5158,7 @@ msgstr "Закройте и снова откройте Claude, чтобы за�
 msgid "Quit with messages waiting to send?"
 msgstr "Выйти с сообщениями, ожидающими отправки?"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "Quote only the selected text?"
 msgstr "Цитировать только выделенный текст?"
 
@@ -5354,7 +5354,7 @@ msgstr "Удалить {token}"
 msgid "Remove account"
 msgstr "Удалить учётная запись"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
@@ -5619,7 +5619,7 @@ msgstr "Возобновить синхронизацию"
 msgid "Retention windows take precedence. Starred messages, retained message texts, drafts and outbox messages are kept even when the limit is exceeded. Zero disables the budget."
 msgstr "Сроки хранения имеют приоритет. Сообщения со звёздочкой, сохраняемые тексты сообщений, черновики и сообщения в исходящих остаются даже при превышении лимита. Ноль отключает лимит."
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/NoAccounts.tsx
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
 #: src/renderer/src/features/downloads/Downloads.tsx
 #: src/renderer/src/features/reader/body/MessageBodyShell.tsx
@@ -5911,7 +5911,7 @@ msgstr "Выбрать переписку"
 msgid "Selected message"
 msgstr "Выбранное сообщение"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "Selected text"
 msgstr "Выделенный текст"
 
@@ -6855,7 +6855,7 @@ msgstr "Недостаточно свободного места на диске
 msgid "These are not email addresses: {list}"
 msgstr "Это не адреса электронной почты: {list}"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "These loaded conversations will be moved to Trash. You can undo this batch."
 msgstr "Эти загруженные переписки будут перемещены в корзину. Вы можете отменить этот пакет."
 
@@ -7424,7 +7424,7 @@ msgstr "Кто"
 msgid "Who can sign in"
 msgstr "Кто может войти"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "Whole message"
 msgstr "Все сообщение"
 

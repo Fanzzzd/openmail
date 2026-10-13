@@ -68,7 +68,7 @@ msgstr "{active, plural, one {Stahování (# probíhá)} few {Stahování (# pro
 msgid "{affected, plural, one {# account needs attention} other {# accounts need attention}}"
 msgstr "{affected, plural, one {# účet vyžaduje pozornost} few {# účty vyžadují pozornost} many {# účtu vyžaduje pozornost} other {# účtů vyžaduje pozornost}}"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-view-title.ts
 msgid "{baseTitle}: {user}"
 msgstr "{baseTitle}: {user}"
 
@@ -388,11 +388,11 @@ msgstr "Přidat {provider}"
 msgid "Add a mail account first."
 msgstr "Nejdřív přidejte poštovní účet."
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/NoAccounts.tsx
 msgid "Add account"
 msgstr "Přidat účet"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/NoAccounts.tsx
 msgid "Add an account on your Mac."
 msgstr "Přidejte účet na svém Macu."
 
@@ -476,7 +476,7 @@ msgstr "Přidejte svůj první účet"
 msgid "Added"
 msgstr "Přidáno"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/AppDialogs.tsx
 msgid "Added {email}. Syncing…"
 msgstr "Přidán {email}. Synchronizace…"
 
@@ -817,7 +817,7 @@ msgstr "Schválit návrh"
 msgid "Apps not found on this Mac"
 msgstr "Aplikace, které na tomto Macu nebyly nalezeny"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
@@ -1144,7 +1144,7 @@ msgstr "Nelze se připojit k Anthropic. Zkontrolujte připojení k internetu."
 msgid "Can't reach the mail server right now."
 msgstr "K poštovnímu serveru se nyní nelze připojit."
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/accounts/OptionalServices.tsx
@@ -1357,7 +1357,7 @@ msgstr "Vyberte akce a pomocí tlačítek změňte jejich pořadí."
 msgid "Choose at least one filter action"
 msgstr "Vyberte alespoň jednu akci filtru"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
 msgid "Choose Delete key action"
 msgstr "Vybrat akci klávesy Delete"
@@ -1900,7 +1900,7 @@ msgstr "Původní přílohy se nepodařilo načíst. Try again."
 msgid "Couldn't load this message."
 msgstr "Tuto zprávu se nepodařilo načíst."
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/NoAccounts.tsx
 msgid "Couldn't load your accounts."
 msgstr "Účty se nepodařilo načíst."
 
@@ -2125,7 +2125,7 @@ msgstr "Výchozí adresa odesílatele"
 msgid "Default signature"
 msgstr "Výchozí podpis"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
@@ -2150,7 +2150,7 @@ msgid "Delete {0}"
 msgstr "Smazat {0}"
 
 #. placeholder {0}: deleteRequest?.ids.size ?? 0
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "Delete {0} conversations?"
 msgstr "Smazat {0} konverzace?"
 
@@ -3366,7 +3366,7 @@ msgstr "Klávesové zkratky"
 msgid "Keychain is locked"
 msgstr "Klíčenka je zamčená"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-view-title.ts
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "Label"
@@ -4139,7 +4139,7 @@ msgstr "Přesunout do pole Komu"
 msgid "Move to top level"
 msgstr "Přesunout na nejvyšší úroveň"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
@@ -4224,7 +4224,7 @@ msgstr "Nový štítek nebo složka"
 msgid "New mail notifications"
 msgstr "Upozornění na novou poštu"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailListPane.tsx
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
@@ -4367,7 +4367,7 @@ msgstr "Žádná stahování"
 msgid "No drafts"
 msgstr "Žádné koncepty"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/NoAccounts.tsx
 msgid "No email accounts yet."
 msgstr "Zatím nemáte žádný e-mailový účet."
 
@@ -4596,7 +4596,7 @@ msgstr "Jeden výskyt opakované schůzky"
 msgid "Only inbox messages can be snoozed"
 msgstr "Odložit lze jen zprávy v doručené poště"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "Only messages in this Trash or Spam folder from the selected conversations will be permanently deleted. Inbox and Sent copies will remain. This cannot be undone."
 msgstr "Trvale se smažou jen zprávy z vybraných konverzací v této složce koše nebo nevyžádané pošty. Kopie v doručené poště a odeslaných zůstanou. Tuto akci nelze vrátit zpět."
 
@@ -4612,7 +4612,7 @@ msgstr "K dispozici jsou pouze vybrané kontakty Apple."
 msgid "Only text inside attachments"
 msgstr "Jen text v přílohách"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "Only the selected messages in this Trash or Spam folder will be permanently deleted. This cannot be undone."
 msgstr "Trvale se smažou jen vybrané zprávy v této složce koše nebo nevyžádané pošty. Tuto akci nelze vrátit zpět."
 
@@ -4970,14 +4970,14 @@ msgstr "Lidé"
 msgid "People you know are your contacts and people you have sent mail to, when the message passes sender authentication. Known trackers stay blocked."
 msgstr "Lidé, které znáte, jsou vaše kontakty a lidé, kterým jste odeslali poštu, pokud zpráva projde ověřením odesílatele. Známé sledovače zůstávají blokované."
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/FolderActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
 msgid "Permanently delete"
 msgstr "Trvale smazat"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "Permanently delete selected mail?"
 msgstr "Trvale smazat vybranou poštu?"
 
@@ -5158,7 +5158,7 @@ msgstr "Ukončete a znovu otevřete Claude, aby se změna načetla."
 msgid "Quit with messages waiting to send?"
 msgstr "Ukončit se zprávami čekajícími na odeslání?"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "Quote only the selected text?"
 msgstr "Citovat pouze vybraný text?"
 
@@ -5354,7 +5354,7 @@ msgstr "Odebrat {token}"
 msgid "Remove account"
 msgstr "Odebrat účet"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
@@ -5619,7 +5619,7 @@ msgstr "Obnovit synchronizaci"
 msgid "Retention windows take precedence. Starred messages, retained message texts, drafts and outbox messages are kept even when the limit is exceeded. Zero disables the budget."
 msgstr "Doba uchování má přednost. Zprávy s hvězdičkou, uchovávané texty zpráv, koncepty a zprávy ve složce k odeslání zůstanou i při překročení limitu. Nula vypne limit."
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/NoAccounts.tsx
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
 #: src/renderer/src/features/downloads/Downloads.tsx
 #: src/renderer/src/features/reader/body/MessageBodyShell.tsx
@@ -5911,7 +5911,7 @@ msgstr "Vybrat konverzaci"
 msgid "Selected message"
 msgstr "Vybraná zpráva"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "Selected text"
 msgstr "Vybraný text"
 
@@ -6855,7 +6855,7 @@ msgstr "Pro bezpečné zmenšení není na disku dostatek volného místa."
 msgid "These are not email addresses: {list}"
 msgstr "Toto nejsou e-mailové adresy: {list}"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "These loaded conversations will be moved to Trash. You can undo this batch."
 msgstr "Tyto načtené konverzace budou přesunuty do koše. Tuto dávku můžete vrátit zpět."
 
@@ -7424,7 +7424,7 @@ msgstr "Kdo"
 msgid "Who can sign in"
 msgstr "Kdo se může přihlásit"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "Whole message"
 msgstr "Celá zpráva"
 

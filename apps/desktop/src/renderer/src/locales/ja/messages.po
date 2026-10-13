@@ -68,7 +68,7 @@ msgstr "{active, plural, other {ダウンロード（#件進行中）}}"
 msgid "{affected, plural, one {# account needs attention} other {# accounts need attention}}"
 msgstr "{affected, plural, other {#個のアカウントに対応が必要です}}"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-view-title.ts
 msgid "{baseTitle}: {user}"
 msgstr "{baseTitle}: {user}"
 
@@ -388,11 +388,11 @@ msgstr "{provider} を追加"
 msgid "Add a mail account first."
 msgstr "先にメールアカウントを追加してください。"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/NoAccounts.tsx
 msgid "Add account"
 msgstr "アカウントを追加"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/NoAccounts.tsx
 msgid "Add an account on your Mac."
 msgstr "Mac でアカウントを追加してください。"
 
@@ -476,7 +476,7 @@ msgstr "最初のアカウントを追加する"
 msgid "Added"
 msgstr "追加済み"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/AppDialogs.tsx
 msgid "Added {email}. Syncing…"
 msgstr "{email} を追加しました。同期中…"
 
@@ -817,7 +817,7 @@ msgstr "提案の承認"
 msgid "Apps not found on this Mac"
 msgstr "この Mac で見つからないアプリ"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
@@ -1144,7 +1144,7 @@ msgstr "Anthropic に接続できません。インターネット接続を確�
 msgid "Can't reach the mail server right now."
 msgstr "現在メールサーバーに接続できません。"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/accounts/OptionalServices.tsx
@@ -1357,7 +1357,7 @@ msgstr "アクションを選択し、ボタンを使用して順序を変更し
 msgid "Choose at least one filter action"
 msgstr "少なくとも 1 つのフィルター アクションを選択してください"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
 msgid "Choose Delete key action"
 msgstr "Deleteキーの操作を選択"
@@ -1900,7 +1900,7 @@ msgstr "元の添付ファイルを読み込めませんでした。もう一度
 msgid "Couldn't load this message."
 msgstr "このメッセージを読み込めませんでした。"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/NoAccounts.tsx
 msgid "Couldn't load your accounts."
 msgstr "アカウントを読み込めませんでした。"
 
@@ -2125,7 +2125,7 @@ msgstr "デフォルトの差出人アドレス"
 msgid "Default signature"
 msgstr "デフォルトの署名"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
@@ -2150,7 +2150,7 @@ msgid "Delete {0}"
 msgstr "{0} を削除"
 
 #. placeholder {0}: deleteRequest?.ids.size ?? 0
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "Delete {0} conversations?"
 msgstr "{0} のスレッドを削除しますか?"
 
@@ -3366,7 +3366,7 @@ msgstr "キーボードショートカット"
 msgid "Keychain is locked"
 msgstr "キーチェーンがロックされています"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-view-title.ts
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "Label"
@@ -4139,7 +4139,7 @@ msgstr "宛先に移動"
 msgid "Move to top level"
 msgstr "最上位に移動"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
@@ -4224,7 +4224,7 @@ msgstr "新しいラベルまたはフォルダ"
 msgid "New mail notifications"
 msgstr "新着メール通知"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailListPane.tsx
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
@@ -4367,7 +4367,7 @@ msgstr "ダウンロードはありません"
 msgid "No drafts"
 msgstr "下書きはありません"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/NoAccounts.tsx
 msgid "No email accounts yet."
 msgstr "メールアカウントはまだありません。"
 
@@ -4596,7 +4596,7 @@ msgstr "定期的な会議の 1 回の開催"
 msgid "Only inbox messages can be snoozed"
 msgstr "受信のメッセージのみスヌーズできます"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "Only messages in this Trash or Spam folder from the selected conversations will be permanently deleted. Inbox and Sent copies will remain. This cannot be undone."
 msgstr "選択したスレッドのうち、このゴミ箱または迷惑メールフォルダにあるメッセージのみ完全に削除されます。受信と送信済みのコピーは保持されます。この操作は取り消せません。"
 
@@ -4612,7 +4612,7 @@ msgstr "選択したAppleの連絡先のみ利用できます。"
 msgid "Only text inside attachments"
 msgstr "添付ファイル内のテキストのみ"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "Only the selected messages in this Trash or Spam folder will be permanently deleted. This cannot be undone."
 msgstr "このゴミ箱または迷惑メールフォルダで選択したメッセージのみ完全に削除されます。この操作は取り消せません。"
 
@@ -4970,14 +4970,14 @@ msgstr "人"
 msgid "People you know are your contacts and people you have sent mail to, when the message passes sender authentication. Known trackers stay blocked."
 msgstr "知り合いとは、連絡先とメールを送信したことのある相手で、メッセージが送信者認証に合格した場合に限ります。既知のトラッカーは常にブロックされます。"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/FolderActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
 msgid "Permanently delete"
 msgstr "完全に削除"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "Permanently delete selected mail?"
 msgstr "選択したメールを完全に削除しますか?"
 
@@ -5158,7 +5158,7 @@ msgstr "Claude を終了して開き直すと読み込まれます。"
 msgid "Quit with messages waiting to send?"
 msgstr "メッセージの送信を待機している状態で終了しますか?"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "Quote only the selected text?"
 msgstr "選択したテキストのみを引用しますか?"
 
@@ -5354,7 +5354,7 @@ msgstr "{token} を削除"
 msgid "Remove account"
 msgstr "アカウントを削除する"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
@@ -5619,7 +5619,7 @@ msgstr "同期を再開する"
 msgid "Retention windows take precedence. Starred messages, retained message texts, drafts and outbox messages are kept even when the limit is exceeded. Zero disables the budget."
 msgstr "保存期間を優先します。上限を超えても、スター付きメール、保存期間内のメッセージ本文、下書き、送信トレイのメールは保持します。ゼロにすると容量制限を無効にします。"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/NoAccounts.tsx
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
 #: src/renderer/src/features/downloads/Downloads.tsx
 #: src/renderer/src/features/reader/body/MessageBodyShell.tsx
@@ -5911,7 +5911,7 @@ msgstr "スレッドを選択"
 msgid "Selected message"
 msgstr "選択したメッセージ"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "Selected text"
 msgstr "選択したテキスト"
 
@@ -6855,7 +6855,7 @@ msgstr "安全に圧縮するためのディスク空き容量が不足してい
 msgid "These are not email addresses: {list}"
 msgstr "これらは電子メール アドレスではありません: {list}"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "These loaded conversations will be moved to Trash. You can undo this batch."
 msgstr "これらのロードされたスレッドはゴミ箱に移動されます。このバッチは取り消すことができます。"
 
@@ -7424,7 +7424,7 @@ msgstr "実行者"
 msgid "Who can sign in"
 msgstr "サインインできる人"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/MailAlerts.tsx
 msgid "Whole message"
 msgstr "メッセージ全体"
 
