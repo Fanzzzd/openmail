@@ -93,7 +93,7 @@ OPENMAIL_LOW_MEMORY_TESTS=1 pnpm --filter @openmail/desktop exec vitest run --co
 
 主流程覆盖首次同步、延迟已读、批量／单封撤销、草稿自动保存、撤销发送、回复／转发、附件提醒、服务器搜索、离线重试、草稿恢复、AI 关闭、提议审批、通知点击与键盘操作。耗时取决于机器，运行配置中的超时不代表产品响应时间。
 
-扩展时，在同一文件新增测试，通过 `flow()` 配置邮件、provider 和偏好；用 UI 操作触发行为，同时断言 `server` 调用记录和 `store` 状态。用 `eventually()` 等待 RPC 和渲染，它在 DOM 和 RPC 连续 2.5 秒（乘 `testTimeScale`）没有变化后才报失败，总等待不超过这个时间的三倍；`advance()` 推进自动保存、已读和撤回计时。`server.failNext` 注入一次失败，`beforePush` 注入持续失败或 Deferred 阻塞。`holdLists()` 可阻塞列表 RPC，验证导航与搜索交错。`afterEach` 关闭 Registry、RPC、Mailbox 并删除临时数据库。
+扩展时，在同一文件新增测试，通过 `flow()` 配置邮件、provider 和偏好；用 UI 操作触发行为，同时断言 `server` 调用记录和 `store` 状态。用 `eventually()` 等待 RPC 和渲染，它在 DOM 和 RPC 连续 2.5 秒（乘 `testTimeScale`）没有变化后才报失败，总等待不超过这个时间的三倍；`lazyDialog` 声明的弹窗模块在 `flow()` 返回前已加载完，打开弹窗不再等模块导入；`advance()` 推进自动保存、已读和撤回计时。`server.failNext` 注入一次失败，`beforePush` 注入持续失败或 Deferred 阻塞。`holdLists()` 可阻塞列表 RPC，验证导航与搜索交错。`afterEach` 关闭 Registry、RPC、Mailbox 并删除临时数据库。
 
 同步重放回归在 `packages/core/src/mailbox/pending-pull.test.ts`，覆盖三种 provider 的稍后提醒、唤醒、Flags 更新及队列索引。
 

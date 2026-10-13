@@ -2,6 +2,17 @@ import * as React from "react";
 import { constVoid } from "effect/Function";
 import { beforeAll, vi } from "vitest";
 
+// See lazy-loads.ts. The second call, from React.lazy, gets the same cached module.
+vi.mock("../ui/lazy-dialog", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../ui/lazy-dialog")>();
+  const { lazyLoads } = await import("./lazy-loads");
+  const lazyDialog: typeof actual.lazyDialog = (load) => {
+    lazyLoads.push(load());
+    return actual.lazyDialog(load);
+  };
+  return { lazyDialog };
+});
+
 /**
  * React's act environment is on exactly while an act() scope is open.
  *

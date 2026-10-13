@@ -48,6 +48,7 @@ import { AppRouterProvider } from "../routes/provider";
 import { historyAtom, locationAtom } from "../state/location";
 import { composeHref, DEFAULT_VIEW, mailHref, threadHref } from "../../../shared/routes";
 import { TipProvider } from "../ui/Tip";
+import { lazyLoads } from "./lazy-loads";
 
 const unsupported = () => Effect.die(new Error("Unexpected desktop operation in flow test"));
 
@@ -209,6 +210,7 @@ export async function flow(
   );
   // Connect starts a detached sync. Drain it before exposing the renderer to the fixture.
   await run(m.sync());
+  await Promise.all(lazyLoads);
 
   let composeId: string | undefined;
   if (options.serverDraft) {
