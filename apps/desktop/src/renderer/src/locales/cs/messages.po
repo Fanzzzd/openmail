@@ -160,6 +160,10 @@ msgstr "{hours, plural, one {Odložit o # hodinu} few {Odložit o # hodiny} many
 msgid "{label} suggestions"
 msgstr "{label} návrhy"
 
+#: src/renderer/src/features/mail-list/MessageRow.tsx
+msgid "{messageCount, plural, one {# message} other {# messages}}"
+msgstr "{messageCount, plural, one {# zpráva} few {# zprávy} many {# zprávy} other {# zpráv}}"
+
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "{more} more"
 msgstr "{more} další"
@@ -763,7 +767,7 @@ msgstr "Heslo pro konkrétní aplikaci"
 msgid "Apple Contacts stay on this device and are never sent to AI models."
 msgstr "Kontakty Apple zůstávají v tomto zařízení a nikdy se neodesílají modelům AI."
 
-#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+#: src/renderer/src/i18n/shortcut-set-names.ts
 msgid "Apple Mail"
 msgstr "Apple Mail"
 
@@ -1846,6 +1850,7 @@ msgstr "Nelze přečíst oprávnění systému"
 msgid "Could not read the attachments. Check the files and their permissions."
 msgstr "Přílohy se nepodařilo načíst. Zkontrolujte soubory a jejich oprávnění."
 
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Could not register OpenMail. Try again from the installed app."
 msgstr "Nelze zaregistrovat OpenMail. Zkuste to znovu z nainstalované aplikace."
@@ -2961,7 +2966,7 @@ msgstr "Získávání přílohy…"
 msgid "GitHub access token"
 msgstr "Přístupový token GitHub"
 
-#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+#: src/renderer/src/i18n/shortcut-set-names.ts
 msgid "Gmail"
 msgstr "Gmail"
 
@@ -3020,6 +3025,10 @@ msgstr "Seskupování zpráv do konverzací"
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Has attachment"
 msgstr "Obsahuje přílohu"
+
+#: src/renderer/src/features/mail-list/MessageRow.tsx
+msgid "Has attachments"
+msgstr "Má přílohy"
 
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Has words"
@@ -3633,6 +3642,7 @@ msgstr "Schránka"
 msgid "Mailboxes"
 msgstr "Schránky"
 
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Make OpenMail default"
 msgstr "Nastavit OpenMail jako výchozí"
@@ -3947,7 +3957,7 @@ msgstr "Zprávy s přílohami"
 msgid "Microsoft will ask for permission to update mail. After signing in, choose the action again."
 msgstr "Microsoft požádá o oprávnění upravovat poštu. Po přihlášení zvolte akci znovu."
 
-#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+#: src/renderer/src/i18n/shortcut-set-names.ts
 msgid "Mimestream"
 msgstr "Mimestream"
 
@@ -4429,6 +4439,10 @@ msgid "No shortcuts match."
 msgstr "Žádná zkratka neodpovídá."
 
 #: src/renderer/src/features/mail-list/EmptyList.tsx
+msgid "No snoozed messages. A snoozed message leaves the Inbox and comes back at the time you pick."
+msgstr "Žádné odložené zprávy. Odložená zpráva opustí doručenou poštu a vrátí se v čase, který vyberete."
+
+#: src/renderer/src/features/mail-list/EmptyList.tsx
 msgid "No starred messages. Star a message to find it here."
 msgstr "Žádné zprávy s hvězdičkou. Označte zprávu hvězdičkou a najdete ji tady."
 
@@ -4628,6 +4642,7 @@ msgstr "Otevřít {name}"
 msgid "Open admin console"
 msgstr "Otevřít administrační konzoli"
 
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/ai/AiPanel.tsx
 msgid "Open AI Access"
 msgstr "Otevřít Přístup AI"
@@ -4732,6 +4747,7 @@ msgstr "OpenMail nenašel příkaz claude. Zkopírujte místo toho příkaz ní�
 msgid "OpenMail is running from a disk image or the Downloads folder, so its path will change. Move it to Applications and open it again before you connect an AI app."
 msgstr "OpenMail běží z obrazu disku nebo ze složky Stažené soubory, takže se jeho cesta změní. Přesuňte ho do složky Aplikace a znovu ho otevřete, než připojíte aplikaci AI."
 
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "OpenMail is the default email app"
 msgstr "OpenMail je výchozí e-mailová aplikace"
@@ -5192,6 +5208,10 @@ msgstr "Stav přečtení"
 #: src/renderer/src/i18n/shortcut-groups.ts
 msgid "Reading"
 msgstr "Čtení"
+
+#: src/renderer/src/features/reader/Reader.tsx
+msgid "Reading pane"
+msgstr "Panel čtení"
 
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Recent"
@@ -5836,10 +5856,6 @@ msgstr "Ukládání…"
 msgid "Search"
 msgstr "Hledat"
 
-#: src/renderer/src/features/search/SearchField.tsx
-msgid "Search  /"
-msgstr "Hledat  /"
-
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Search could not finish:"
 msgstr "Hledání nemohlo dokončit:"
@@ -5870,8 +5886,12 @@ msgid "Search results"
 msgstr "Výsledky hledání"
 
 #: src/renderer/src/features/search/SearchField.tsx
-msgid "Search scope"
-msgstr "Rozsah hledání"
+msgid "Search scope: All Mail"
+msgstr "Rozsah hledání: Všechna pošta"
+
+#: src/renderer/src/features/search/SearchField.tsx
+msgid "Search scope: Current folder"
+msgstr "Rozsah hledání: Aktuální složka"
 
 #: src/renderer/src/features/compose/components/TemplatePicker.tsx
 msgid "Search templates"
@@ -6081,6 +6101,7 @@ msgstr "Sdílet vybrané…"
 msgid "Share…"
 msgstr "Sdílet…"
 
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Shortcut set"
 msgstr "Sada klávesových zkratek"
@@ -6197,6 +6218,7 @@ msgid "Show unread count in the menu bar"
 msgstr "Zobrazit počet nepřečtených v řádku nabídek"
 
 #: src/renderer/src/app/App.tsx
+#: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Sidebar"
 msgstr "Postranní panel"
 
@@ -6406,6 +6428,10 @@ msgstr "Prostory seskupují účty. Účty můžete přiřazovat a prostory upra
 #: src/renderer/src/lib/view.ts
 msgid "Spam"
 msgstr "Nevyžádaná pošta"
+
+#: src/renderer/src/features/mail-list/EmptyList.tsx
+msgid "Spam is empty"
+msgstr "Nevyžádaná pošta je prázdná"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Special folder badges"
@@ -7078,6 +7104,10 @@ msgstr "Přeložit"
 msgid "Trash"
 msgstr "Koš"
 
+#: src/renderer/src/features/mail-list/EmptyList.tsx
+msgid "Trash is empty"
+msgstr "Koš je prázdný"
+
 #. Keyboard shortcuts section: archive, delete, mark read, star and similar actions.
 #: src/renderer/src/i18n/shortcut-groups.ts
 msgid "Triage"
@@ -7508,6 +7538,10 @@ msgstr "Máte nejnovější verzi."
 #: src/renderer/src/lib/errors.ts
 msgid "You signed in as {signedInAs}. Sign in with {expected} to continue."
 msgstr "Přihlásili jste se jako {signedInAs}. Pokračujte přihlášením jako {expected}."
+
+#: src/renderer/src/features/mail-list/EmptyList.tsx
+msgid "You're all caught up. Your Inbox is empty."
+msgstr "Máte vše vyřízeno. Doručená pošta je prázdná."
 
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "You're offline. Mail syncs again when you reconnect."

@@ -160,6 +160,10 @@ msgstr "{hours, plural, one {Stel uit voor # uur} other {Stel uit voor # uur}}"
 msgid "{label} suggestions"
 msgstr "{label} suggesties"
 
+#: src/renderer/src/features/mail-list/MessageRow.tsx
+msgid "{messageCount, plural, one {# message} other {# messages}}"
+msgstr "{messageCount, plural, one {# bericht} other {# berichten}}"
+
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "{more} more"
 msgstr "{more} meer"
@@ -763,7 +767,7 @@ msgstr "App-specifiek wachtwoord"
 msgid "Apple Contacts stay on this device and are never sent to AI models."
 msgstr "Apple-contacten blijven op dit apparaat en worden nooit naar AI-modellen verstuurd."
 
-#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+#: src/renderer/src/i18n/shortcut-set-names.ts
 msgid "Apple Mail"
 msgstr "Apple Mail"
 
@@ -1846,6 +1850,7 @@ msgstr "Kan systeemmachtiging niet lezen"
 msgid "Could not read the attachments. Check the files and their permissions."
 msgstr "De bijlagen konden niet worden gelezen. Controleer de bestanden en hun rechten."
 
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Could not register OpenMail. Try again from the installed app."
 msgstr "Kon OpenMail niet registreren. Probeer het opnieuw vanuit de geïnstalleerde app."
@@ -2961,7 +2966,7 @@ msgstr "Bijlage ophalen…"
 msgid "GitHub access token"
 msgstr "GitHub-toegangstoken"
 
-#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+#: src/renderer/src/i18n/shortcut-set-names.ts
 msgid "Gmail"
 msgstr "Gmail"
 
@@ -3020,6 +3025,10 @@ msgstr "Groepeer berichten in gesprekken"
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Has attachment"
 msgstr "Heeft bijlage"
+
+#: src/renderer/src/features/mail-list/MessageRow.tsx
+msgid "Has attachments"
+msgstr "Heeft bijlagen"
 
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Has words"
@@ -3633,6 +3642,7 @@ msgstr "Postbus"
 msgid "Mailboxes"
 msgstr "Postbussen"
 
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Make OpenMail default"
 msgstr "Maak OpenMail standaard"
@@ -3947,7 +3957,7 @@ msgstr "Berichten met bijlagen"
 msgid "Microsoft will ask for permission to update mail. After signing in, choose the action again."
 msgstr "Microsoft vraagt toestemming om e-mail bij te werken. Kies na het aanmelden de actie opnieuw."
 
-#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+#: src/renderer/src/i18n/shortcut-set-names.ts
 msgid "Mimestream"
 msgstr "Mimestream"
 
@@ -4429,6 +4439,10 @@ msgid "No shortcuts match."
 msgstr "Geen sneltoetsen gevonden."
 
 #: src/renderer/src/features/mail-list/EmptyList.tsx
+msgid "No snoozed messages. A snoozed message leaves the Inbox and comes back at the time you pick."
+msgstr "Geen uitgestelde berichten. Een uitgesteld bericht verlaat Postvak IN en komt terug op het tijdstip dat je kiest."
+
+#: src/renderer/src/features/mail-list/EmptyList.tsx
 msgid "No starred messages. Star a message to find it here."
 msgstr "Geen berichten met ster. Geef een bericht een ster om het hier te vinden."
 
@@ -4628,6 +4642,7 @@ msgstr "Open {name}"
 msgid "Open admin console"
 msgstr "Beheerconsole openen"
 
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/ai/AiPanel.tsx
 msgid "Open AI Access"
 msgstr "AI-toegang openen"
@@ -4732,6 +4747,7 @@ msgstr "OpenMail heeft de opdracht claude niet gevonden. Kopieer in plaats daarv
 msgid "OpenMail is running from a disk image or the Downloads folder, so its path will change. Move it to Applications and open it again before you connect an AI app."
 msgstr "OpenMail draait vanaf een schijfkopie of de map Downloads, dus het pad verandert. Verplaats het naar Programma’s en open het opnieuw voordat je een AI-app verbindt."
 
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "OpenMail is the default email app"
 msgstr "OpenMail is de standaard e-mailapp"
@@ -5192,6 +5208,10 @@ msgstr "Leesstatus"
 #: src/renderer/src/i18n/shortcut-groups.ts
 msgid "Reading"
 msgstr "Lezen"
+
+#: src/renderer/src/features/reader/Reader.tsx
+msgid "Reading pane"
+msgstr "Leesvenster"
 
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Recent"
@@ -5836,10 +5856,6 @@ msgstr "Bewaren…"
 msgid "Search"
 msgstr "Zoek"
 
-#: src/renderer/src/features/search/SearchField.tsx
-msgid "Search  /"
-msgstr "Zoek  /"
-
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Search could not finish:"
 msgstr "Zoeken kon niet worden voltooid:"
@@ -5870,8 +5886,12 @@ msgid "Search results"
 msgstr "Zoekresultaten"
 
 #: src/renderer/src/features/search/SearchField.tsx
-msgid "Search scope"
-msgstr "Zoekbereik"
+msgid "Search scope: All Mail"
+msgstr "Zoekbereik: Alle berichten"
+
+#: src/renderer/src/features/search/SearchField.tsx
+msgid "Search scope: Current folder"
+msgstr "Zoekbereik: Huidige map"
 
 #: src/renderer/src/features/compose/components/TemplatePicker.tsx
 msgid "Search templates"
@@ -6081,6 +6101,7 @@ msgstr "Deel selectie…"
 msgid "Share…"
 msgstr "Deel…"
 
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Shortcut set"
 msgstr "Sneltoetsenset"
@@ -6197,6 +6218,7 @@ msgid "Show unread count in the menu bar"
 msgstr "Toon ongelezen aantal in de menubalk"
 
 #: src/renderer/src/app/App.tsx
+#: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Sidebar"
 msgstr "Zijbalk"
 
@@ -6406,6 +6428,10 @@ msgstr "Ruimtes groeperen accounts. Je kunt accounts toewijzen en ruimtes bewerk
 #: src/renderer/src/lib/view.ts
 msgid "Spam"
 msgstr "Ongewenste reclame"
+
+#: src/renderer/src/features/mail-list/EmptyList.tsx
+msgid "Spam is empty"
+msgstr "Ongewenste reclame is leeg"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Special folder badges"
@@ -7078,6 +7104,10 @@ msgstr "Vertalen"
 msgid "Trash"
 msgstr "Prullenmand"
 
+#: src/renderer/src/features/mail-list/EmptyList.tsx
+msgid "Trash is empty"
+msgstr "Prullenmand is leeg"
+
 #. Keyboard shortcuts section: archive, delete, mark read, star and similar actions.
 #: src/renderer/src/i18n/shortcut-groups.ts
 msgid "Triage"
@@ -7508,6 +7538,10 @@ msgstr "Je hebt de nieuwste versie."
 #: src/renderer/src/lib/errors.ts
 msgid "You signed in as {signedInAs}. Sign in with {expected} to continue."
 msgstr "U bent aangemeld als {signedInAs}. Meld u aan met {expected} om verder te gaan."
+
+#: src/renderer/src/features/mail-list/EmptyList.tsx
+msgid "You're all caught up. Your Inbox is empty."
+msgstr "Je bent helemaal bij. Postvak IN is leeg."
 
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "You're offline. Mail syncs again when you reconnect."

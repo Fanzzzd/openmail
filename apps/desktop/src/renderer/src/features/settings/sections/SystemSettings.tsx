@@ -1,4 +1,4 @@
-import type { NotificationPermission, DefaultClientStatus } from "../../../../../shared/desktop";
+import type { NotificationPermission } from "../../../../../shared/desktop";
 import { SettingsCheckRow, SettingsGroup, SettingsRow } from "../../../ui/SettingsRows";
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Button } from "@base-ui/react/button";
@@ -28,6 +28,8 @@ import {
 import { MAILBOX_NAMES } from "../../../lib/view";
 import { Keys } from "../../../state/keys";
 import { useRunMail, withMail } from "../../../state/mail";
+import { useDefaultMailClient } from "../use-default-mail-client";
+import { SET_NAMES } from "../../../i18n/shortcut-set-names";
 import { setPrefsAtom } from "../../../state/mutations";
 import { ACTION_NAMES } from "../../../i18n/shortcut-names";
 import {
@@ -53,18 +55,7 @@ import { SegmentedControl } from "../../../ui/SegmentedControl";
 import { Select } from "../../../ui/Select";
 
 export function DefaultMailClient() {
-  const run = useRunMail();
-  const [status, setStatus] = useState<DefaultClientStatus | null>(null);
-  const isDefault = status?.isDefault ?? false;
-  const [busy, setBusy] = useState(false);
-  const [failed, setFailed] = useState(false);
-  useEffect(() => {
-    run(
-      withMail((call) => call("DefaultMailClient", undefined)).pipe(
-        Effect.tap((value) => Effect.sync(() => setStatus(value))),
-      ),
-    );
-  }, [run]);
+  const { status, isDefault, busy, failed, become } = useDefaultMailClient();
   return (
     <SettingsRow
       label={<Trans>Default email app</Trans>}
@@ -91,21 +82,7 @@ export function DefaultMailClient() {
       <Button
         className={alertButton}
         disabled={busy || isDefault || !status?.available}
-        onClick={() => {
-          setBusy(true);
-          setFailed(false);
-          run(
-            withMail((call) => call("BecomeDefaultMailClient", undefined)).pipe(
-              Effect.tap((value) =>
-                Effect.sync(() => {
-                  setStatus((current) => current && { ...current, isDefault: value });
-                  setFailed(!value);
-                }),
-              ),
-              Effect.ensuring(Effect.sync(() => setBusy(false))),
-            ),
-          );
-        }}
+        onClick={become}
       >
         {isDefault ? (
           <Trans>OpenMail is the default email app</Trans>
@@ -469,12 +446,6 @@ export function NotificationsSettings({ accounts }: { accounts: readonly Account
     </>
   );
 }
-
-const SET_NAMES: { value: ShortcutSet; label: MessageDescriptor }[] = [
-  { value: "mimestream", label: msg`Mimestream` },
-  { value: "gmail", label: msg`Gmail` },
-  { value: "apple", label: msg`Apple Mail` },
-];
 
 const ACTIONS = Object.entries(ACTION_NAMES);
 /** Keys drawn as a small key cap: the system font, so ⌘ and ⌥ match the menu bar. */

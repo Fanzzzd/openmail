@@ -160,6 +160,10 @@ msgstr "{hours, plural, other {# 時間スヌーズ}}"
 msgid "{label} suggestions"
 msgstr "{label} の提案"
 
+#: src/renderer/src/features/mail-list/MessageRow.tsx
+msgid "{messageCount, plural, one {# message} other {# messages}}"
+msgstr "{messageCount, plural, other {#件のメッセージ}}"
+
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "{more} more"
 msgstr "{more} 詳細"
@@ -763,7 +767,7 @@ msgstr "アプリ固有のパスワード"
 msgid "Apple Contacts stay on this device and are never sent to AI models."
 msgstr "Appleの連絡先はこのデバイス内に保存され、AI モデルには送信されません。"
 
-#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+#: src/renderer/src/i18n/shortcut-set-names.ts
 msgid "Apple Mail"
 msgstr "Apple Mail"
 
@@ -1846,6 +1850,7 @@ msgstr "システム権限を読み取れませんでした"
 msgid "Could not read the attachments. Check the files and their permissions."
 msgstr "添付ファイルを読み込めませんでした。ファイルとアクセス権を確認してください。"
 
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Could not register OpenMail. Try again from the installed app."
 msgstr "OpenMailを登録できませんでした。インストールされているアプリから再度お試しください。"
@@ -2961,7 +2966,7 @@ msgstr "添付ファイルを取得中…"
 msgid "GitHub access token"
 msgstr "GitHubアクセストークン"
 
-#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+#: src/renderer/src/i18n/shortcut-set-names.ts
 msgid "Gmail"
 msgstr "Gmail"
 
@@ -3019,6 +3024,10 @@ msgstr "メッセージをスレッドにグループ化する"
 
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Has attachment"
+msgstr "添付ファイルあり"
+
+#: src/renderer/src/features/mail-list/MessageRow.tsx
+msgid "Has attachments"
 msgstr "添付ファイルあり"
 
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
@@ -3633,6 +3642,7 @@ msgstr "メールボックス"
 msgid "Mailboxes"
 msgstr "メールボックス"
 
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Make OpenMail default"
 msgstr "OpenMail をデフォルトにする"
@@ -3947,7 +3957,7 @@ msgstr "添付ファイルのあるメッセージ"
 msgid "Microsoft will ask for permission to update mail. After signing in, choose the action again."
 msgstr "Microsoft がメールの変更権限を求めます。ログイン後、もう一度操作を選んでください。"
 
-#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+#: src/renderer/src/i18n/shortcut-set-names.ts
 msgid "Mimestream"
 msgstr "Mimestream"
 
@@ -4429,6 +4439,10 @@ msgid "No shortcuts match."
 msgstr "一致するショートカットはありません。"
 
 #: src/renderer/src/features/mail-list/EmptyList.tsx
+msgid "No snoozed messages. A snoozed message leaves the Inbox and comes back at the time you pick."
+msgstr "スヌーズ中のメッセージはありません。スヌーズしたメッセージは受信ボックスから外れ、選んだ時刻に戻ってきます。"
+
+#: src/renderer/src/features/mail-list/EmptyList.tsx
 msgid "No starred messages. Star a message to find it here."
 msgstr "スター付きのメッセージはありません。メッセージにスターを付けるとここに表示されます。"
 
@@ -4628,6 +4642,7 @@ msgstr "{name} を開く"
 msgid "Open admin console"
 msgstr "管理コンソールを開く"
 
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/ai/AiPanel.tsx
 msgid "Open AI Access"
 msgstr "AI アクセスを開く"
@@ -4732,6 +4747,7 @@ msgstr "OpenMail は claude コマンドを見つけられませんでした。�
 msgid "OpenMail is running from a disk image or the Downloads folder, so its path will change. Move it to Applications and open it again before you connect an AI app."
 msgstr "OpenMail がディスクイメージまたはダウンロードフォルダから実行されているため、パスが変わります。AI アプリを接続する前に、アプリケーションフォルダへ移動して開き直してください。"
 
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "OpenMail is the default email app"
 msgstr "OpenMail はデフォルトの電子メール アプリです"
@@ -5192,6 +5208,10 @@ msgstr "既読状態"
 #: src/renderer/src/i18n/shortcut-groups.ts
 msgid "Reading"
 msgstr "表示"
+
+#: src/renderer/src/features/reader/Reader.tsx
+msgid "Reading pane"
+msgstr "閲覧ペイン"
 
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Recent"
@@ -5836,10 +5856,6 @@ msgstr "保存中…"
 msgid "Search"
 msgstr "検索"
 
-#: src/renderer/src/features/search/SearchField.tsx
-msgid "Search  /"
-msgstr "検索  /"
-
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Search could not finish:"
 msgstr "検索を完了できませんでした:"
@@ -5870,8 +5886,12 @@ msgid "Search results"
 msgstr "検索結果"
 
 #: src/renderer/src/features/search/SearchField.tsx
-msgid "Search scope"
-msgstr "検索範囲"
+msgid "Search scope: All Mail"
+msgstr "検索範囲：すべてのメール"
+
+#: src/renderer/src/features/search/SearchField.tsx
+msgid "Search scope: Current folder"
+msgstr "検索範囲：現在のフォルダ"
 
 #: src/renderer/src/features/compose/components/TemplatePicker.tsx
 msgid "Search templates"
@@ -6081,6 +6101,7 @@ msgstr "選択した項目を共有…"
 msgid "Share…"
 msgstr "共有…"
 
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Shortcut set"
 msgstr "ショートカット設定"
@@ -6197,6 +6218,7 @@ msgid "Show unread count in the menu bar"
 msgstr "メニューバーに未開封数を表示"
 
 #: src/renderer/src/app/App.tsx
+#: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Sidebar"
 msgstr "サイドバー"
 
@@ -6406,6 +6428,10 @@ msgstr "スペースでアカウントをまとめます。「設定」でアカ
 #: src/renderer/src/lib/view.ts
 msgid "Spam"
 msgstr "迷惑メール"
+
+#: src/renderer/src/features/mail-list/EmptyList.tsx
+msgid "Spam is empty"
+msgstr "迷惑メールは空です"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Special folder badges"
@@ -7078,6 +7104,10 @@ msgstr "翻訳"
 msgid "Trash"
 msgstr "ゴミ箱"
 
+#: src/renderer/src/features/mail-list/EmptyList.tsx
+msgid "Trash is empty"
+msgstr "ゴミ箱は空です"
+
 #. Keyboard shortcuts section: archive, delete, mark read, star and similar actions.
 #: src/renderer/src/i18n/shortcut-groups.ts
 msgid "Triage"
@@ -7508,6 +7538,10 @@ msgstr "最新バージョンです。"
 #: src/renderer/src/lib/errors.ts
 msgid "You signed in as {signedInAs}. Sign in with {expected} to continue."
 msgstr "{signedInAs} でサインインしました。続行するには {expected} でサインインしてください。"
+
+#: src/renderer/src/features/mail-list/EmptyList.tsx
+msgid "You're all caught up. Your Inbox is empty."
+msgstr "すべて確認済みです。受信ボックスは空です。"
 
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "You're offline. Mail syncs again when you reconnect."

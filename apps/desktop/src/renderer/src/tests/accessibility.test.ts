@@ -19,6 +19,7 @@ import {
 } from "@openmail/core/schema";
 import { emptyDraft } from "../features/compose/draft";
 import { builtPalette } from "../test-support/test-styles";
+import { setPlatform } from "../lib/platform";
 
 const fixture = vi.hoisted(() => {
   vi.resetModules();
@@ -494,10 +495,15 @@ it("audits the main sidebar, virtual list and reader with fixture messages", asy
   expect(screen.getByRole("listbox").getAttribute("aria-multiselectable")).toBe("true");
   expect(options[0]?.getAttribute("aria-posinset")).toBe("1");
   expect(options[0]?.getAttribute("aria-setsize")).toBe("3");
-  expect(options[0]?.getAttribute("aria-label")).toMatch(
-    /^Alice, Meeting agenda, .+, Unread, Starred$/,
-  );
-  expect(options[0]?.getAttribute("aria-label")).not.toContain(message.snippet);
+  // The name leads with the sender and subject shown on screen; the preview stays out of it.
+  expect(options[0]?.hasAttribute("aria-label")).toBe(false);
+  expect(
+    screen.getByRole("option", {
+      name: (name) =>
+        /^Alice, Meeting agenda, .+, Unread, Starred$/.test(name) &&
+        !name.includes(message.snippet),
+    }),
+  ).toBe(options[0]);
   expect(options.map((option) => option.getAttribute("aria-selected"))).toEqual([
     "true",
     "false",
@@ -511,6 +517,61 @@ it("audits the main sidebar, virtual list and reader with fixture messages", asy
   await audit();
   fireEvent.keyDown(screen.getByRole("menu"), { key: "Escape" });
   await waitFor(() => expect(document.activeElement).toBe(options[0]));
+});
+
+it("names a row's message count, attachments and account, with the account initial on screen", async () => {
+  render(
+    localized(
+      h(MessageList, {
+        title: "All Mail",
+        threads: [{ ...thread, threadCount: 3, hasAttachments: true }],
+        loading: false,
+        exhausted: true,
+        showAccount: true,
+        searching: false,
+        searchingServer: false,
+        searchTruncated: false,
+        searchErrorAccounts: [],
+        searchReauthAccounts: [],
+        searchInputInvalid: false,
+        searchIgnored: [],
+        filters: {
+          enabled: false,
+          unread: false,
+          starred: false,
+          important: false,
+          inInbox: false,
+        },
+        inLabel: false,
+        folderActions: null,
+        onFilters: vi.fn(),
+        labels: new Map(),
+        selectedId: null,
+        selectedIds: new Set<string>(),
+        listRef: createRef<HTMLDivElement>(),
+        selectionSource: "mouse",
+        onSelect: vi.fn(),
+        onEndReached: vi.fn(),
+        rowActions: {
+          mailbox: "all",
+          labels: [],
+          stateOf: () => null,
+          onOp: vi.fn(),
+          onSwipeOp: vi.fn(),
+          onCompose: vi.fn(),
+          onOpenWindow: vi.fn(),
+          onSnooze: vi.fn(),
+          onFilter: vi.fn(),
+        },
+      }),
+    ),
+  );
+  const row = screen.getByRole("option", {
+    name: /^Alice, Meeting agenda, .+, 3 messages, Has attachments, me@example\.com$/,
+  });
+  // The account colour carries its initial, and the full address on hover.
+  expect(within(row).getByTitle(account.email).textContent).toBe("M");
+  await audit();
 });
 
 for (const standalone of [false, true]) {
@@ -869,6 +930,43 @@ it("names recipient actions and exposes removal and moving to keyboard users", a
   remove.focus();
   await user.keyboard("{Enter}");
   expect(onChange).toHaveBeenCalledWith("");
+});
+
+it("on a touch screen a recipient chip shows the name and opens its menu itself", async () => {
+  const user = userEvent.setup();
+  setPlatform("web");
+  vi.stubGlobal("matchMedia", (query: string) => ({
+    matches: query === "(pointer: coarse)",
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  }));
+  try {
+    render(
+      localized(
+        h(
+          "main",
+          null,
+          h(RecipientField, {
+            label: "To",
+            value: "Alice Example <alice@example.com>",
+            onChange: vi.fn(),
+            onMove: vi.fn(),
+            fieldName: "to",
+            from: account.email,
+            showFullAddresses: false,
+          }),
+        ),
+      ),
+    );
+    expect(screen.queryByRole("button", { name: "Actions for alice@example.com" })).toBeNull();
+    const chip = screen.getByRole("button", { name: "Alice Example" });
+    expect(chip.getAttribute("title")).toBe("alice@example.com");
+    await user.click(chip);
+    expect(await screen.findByRole("menuitem", { name: "Move to Cc" })).toBeTruthy();
+    await audit();
+  } finally {
+    setPlatform("desktop");
+  }
 });
 
 it("announces undo politely and errors assertively", () => {
@@ -1672,7 +1770,8 @@ for (const choice of [null, "Other IMAP", "Gmail", "Outlook"] as const) {
 
 it("after the first account, a short skippable step lists three shortcuts", async () => {
   const onClose = vi.fn();
-  render(localized(h(FirstRunDone, { onClose })));
+  const onAiAccess = vi.fn();
+  render(localized(h(FirstRunDone, { onClose, onAiAccess })));
   const dialog = screen.getByRole("dialog", { name: "You're set" });
   expect(
     within(dialog)
@@ -1689,6 +1788,13 @@ it("after the first account, a short skippable step lists three shortcuts", asyn
     expect(document.activeElement).toBe(within(dialog).getByRole("button", { name: "Done" })),
   );
   await audit();
+  // The keymap is picked here too, and AI Access is one click away.
+  fireEvent.click(within(dialog).getByRole("radio", { name: "Gmail" }));
+  expect(fixture.decide).toHaveBeenCalledWith(
+    expect.objectContaining({ payload: { patch: { shortcutSet: "gmail" } } }),
+  );
+  fireEvent.click(within(dialog).getByRole("button", { name: "Open AI Access" }));
+  expect(onAiAccess).toHaveBeenCalledTimes(1);
   fireEvent.click(within(dialog).getByRole("button", { name: "Done" }));
   expect(onClose).toHaveBeenCalledTimes(1);
 });
@@ -2061,7 +2167,7 @@ it("keeps list notices, the batch count badge, empty list text and search marks 
       ),
     ),
   );
-  readable(screen.getByText("No messages here"), "empty list text");
+  readable(screen.getByText("You're all caught up. Your Inbox is empty."), "empty list text");
   readable(screen.getByRole("button", { name: "Sync now" }), "Sync now");
   cleanup();
 

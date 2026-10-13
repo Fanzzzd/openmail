@@ -9,14 +9,18 @@ import { type ReactNode, useRef, useState } from "react";
 
 import type { Account, ImapConnectInput } from "../../../../shared/api";
 import { type AppError, causeText, resultError } from "../../lib/errors";
-import { clearClientAtom, connectAtom, saveClientAtom } from "../../state/mutations";
+import { clearClientAtom, connectAtom, saveClientAtom, setPrefsAtom } from "../../state/mutations";
 import { clientSetupAtom, imapPresetsAtom } from "../../state/queries";
 import { ProviderIcon, type ProviderIconName } from "../../ui/ProviderIcon";
 import { Dialog } from "../../ui/Dialog";
 import { Disclosure } from "../../ui/Disclosure";
 import { SegmentedControl } from "../../ui/SegmentedControl";
-import { buttonPrimary, formInput } from "../../ui/styles";
-import { useShortcutText } from "../../i18n/use-shortcut-text";
+import { buttonPrimary, buttonSecondary, formInput } from "../../ui/styles";
+import { useShortcutSet, useShortcutText } from "../../i18n/use-shortcut-text";
+import { SET_NAMES } from "../../i18n/shortcut-set-names";
+import { useDefaultMailClient } from "../settings/use-default-mail-client";
+import { isDesktop } from "../../lib/platform";
+import { Keys } from "../../state/keys";
 
 /**
  * UI text for core's IMAP presets, keyed by preset id. Core keeps its own
@@ -671,12 +675,22 @@ function PrimaryButton({
 }
 
 /**
- * The step after the first account: mail is syncing, and three shortcuts to start with. Done,
- * Escape or a click outside skips it; it does not come back.
+ * The step after the first account: mail is syncing, the keymap with three shortcuts to start
+ * with, and two optional setups. Done, Escape or a click outside skips it; it does not come back.
  */
-export function FirstRunDone({ onClose }: { onClose: () => void }) {
-  const { t } = useLingui();
+export function FirstRunDone({
+  onClose,
+  onAiAccess,
+}: {
+  onClose: () => void;
+  /** Opens Settings at AI Access. */
+  onAiAccess?: (() => void) | undefined;
+}) {
+  const { t, i18n } = useLingui();
   const shortcut = useShortcutText();
+  const set = useShortcutSet();
+  const setPrefs = useAtomSet(setPrefsAtom);
+  const defaultApp = useDefaultMailClient();
   const done = useRef<HTMLButtonElement>(null);
   const keys = [
     { action: "compose", label: t`New message` },
@@ -684,6 +698,8 @@ export function FirstRunDone({ onClose }: { onClose: () => void }) {
     { action: "archive", label: t`Archive` },
   ] as const;
   const help = shortcut("help");
+  // Only an installed app can register for email links; a development build hides the offer.
+  const offerDefault = isDesktop() && defaultApp.status?.available === true;
   return (
     <Dialog
       aria-label={t`You're set`}
@@ -697,7 +713,16 @@ export function FirstRunDone({ onClose }: { onClose: () => void }) {
       <p className="mt-1.5 text-a11y-muted">
         <Trans>Your mail is syncing. Three shortcuts to start with:</Trans>
       </p>
-      <dl className="mt-4 grid grid-cols-[1fr_auto] gap-x-4 gap-y-2">
+      <SegmentedControl
+        aria-label={t`Shortcut set`}
+        className="mt-3 w-full"
+        value={set}
+        options={SET_NAMES.map((item) => ({ value: item.value, label: i18n._(item.label) }))}
+        onValueChange={(shortcutSet) =>
+          setPrefs({ payload: { patch: { shortcutSet } }, reactivityKeys: [Keys.prefs] })
+        }
+      />
+      <dl className="mt-3 grid grid-cols-[1fr_auto] gap-x-4 gap-y-2">
         {keys.map(({ action, label }) => (
           <div key={action} className="contents">
             <dt>{label}</dt>
@@ -712,6 +737,34 @@ export function FirstRunDone({ onClose }: { onClose: () => void }) {
       <p className="mt-4 text-footnote text-a11y-muted">
         <Trans>Press {help} for all shortcuts.</Trans>
       </p>
+      {(offerDefault || onAiAccess) && (
+        <div className="mt-4 flex flex-wrap gap-2 border-t border-separator pt-4">
+          {offerDefault && (
+            <button
+              type="button"
+              className={buttonSecondary}
+              disabled={defaultApp.busy || defaultApp.isDefault}
+              onClick={defaultApp.become}
+            >
+              {defaultApp.isDefault ? (
+                <Trans>OpenMail is the default email app</Trans>
+              ) : (
+                <Trans>Make OpenMail default</Trans>
+              )}
+            </button>
+          )}
+          {onAiAccess && (
+            <button type="button" className={buttonSecondary} onClick={onAiAccess}>
+              <Trans>Open AI Access</Trans>
+            </button>
+          )}
+          {defaultApp.failed && (
+            <output role="alert" className="block basis-full text-footnote text-a11y-danger">
+              <Trans>Could not register OpenMail. Try again from the installed app.</Trans>
+            </output>
+          )}
+        </div>
+      )}
       <div className="mt-5 flex justify-end">
         <button ref={done} type="button" className={buttonPrimary} onClick={onClose}>
           <Trans>Done</Trans>

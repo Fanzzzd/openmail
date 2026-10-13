@@ -164,6 +164,10 @@ msgstr "{hours, plural, one {Snooze for # hour} other {Snooze for # hours}}"
 msgid "{label} suggestions"
 msgstr "{label} suggestions"
 
+#: src/renderer/src/features/mail-list/MessageRow.tsx
+msgid "{messageCount, plural, one {# message} other {# messages}}"
+msgstr "{messageCount, plural, one {# message} other {# messages}}"
+
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "{more} more"
 msgstr "{more} more"
@@ -767,7 +771,7 @@ msgstr "App-specific password"
 msgid "Apple Contacts stay on this device and are never sent to AI models."
 msgstr "Apple Contacts stay on this device and are never sent to AI models."
 
-#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+#: src/renderer/src/i18n/shortcut-set-names.ts
 msgid "Apple Mail"
 msgstr "Apple Mail"
 
@@ -1850,6 +1854,7 @@ msgstr "Could not read system permission"
 msgid "Could not read the attachments. Check the files and their permissions."
 msgstr "Could not read the attachments. Check the files and their permissions."
 
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Could not register OpenMail. Try again from the installed app."
 msgstr "Could not register OpenMail. Try again from the installed app."
@@ -2965,7 +2970,7 @@ msgstr "Getting the attachment…"
 msgid "GitHub access token"
 msgstr "GitHub access token"
 
-#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+#: src/renderer/src/i18n/shortcut-set-names.ts
 msgid "Gmail"
 msgstr "Gmail"
 
@@ -3024,6 +3029,10 @@ msgstr "Group messages into conversations"
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Has attachment"
 msgstr "Has attachment"
+
+#: src/renderer/src/features/mail-list/MessageRow.tsx
+msgid "Has attachments"
+msgstr "Has attachments"
 
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Has words"
@@ -3637,6 +3646,7 @@ msgstr "Mailbox"
 msgid "Mailboxes"
 msgstr "Mailboxes"
 
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Make OpenMail default"
 msgstr "Make OpenMail default"
@@ -3951,7 +3961,7 @@ msgstr "Messages with attachments"
 msgid "Microsoft will ask for permission to update mail. After signing in, choose the action again."
 msgstr "Microsoft will ask for permission to update mail. After signing in, choose the action again."
 
-#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+#: src/renderer/src/i18n/shortcut-set-names.ts
 msgid "Mimestream"
 msgstr "Mimestream"
 
@@ -4433,6 +4443,10 @@ msgid "No shortcuts match."
 msgstr "No shortcuts match."
 
 #: src/renderer/src/features/mail-list/EmptyList.tsx
+msgid "No snoozed messages. A snoozed message leaves the Inbox and comes back at the time you pick."
+msgstr "No snoozed messages. A snoozed message leaves the Inbox and comes back at the time you pick."
+
+#: src/renderer/src/features/mail-list/EmptyList.tsx
 msgid "No starred messages. Star a message to find it here."
 msgstr "No starred messages. Star a message to find it here."
 
@@ -4632,6 +4646,7 @@ msgstr "Open {name}"
 msgid "Open admin console"
 msgstr "Open admin console"
 
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/ai/AiPanel.tsx
 msgid "Open AI Access"
 msgstr "Open AI Access"
@@ -4736,6 +4751,7 @@ msgstr "OpenMail didn't find the claude command. Copy the command below instead.
 msgid "OpenMail is running from a disk image or the Downloads folder, so its path will change. Move it to Applications and open it again before you connect an AI app."
 msgstr "OpenMail is running from a disk image or the Downloads folder, so its path will change. Move it to Applications and open it again before you connect an AI app."
 
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "OpenMail is the default email app"
 msgstr "OpenMail is the default email app"
@@ -5196,6 +5212,10 @@ msgstr "Read status"
 #: src/renderer/src/i18n/shortcut-groups.ts
 msgid "Reading"
 msgstr "Reading"
+
+#: src/renderer/src/features/reader/Reader.tsx
+msgid "Reading pane"
+msgstr "Reading pane"
 
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Recent"
@@ -5840,10 +5860,6 @@ msgstr "Saving…"
 msgid "Search"
 msgstr "Search"
 
-#: src/renderer/src/features/search/SearchField.tsx
-msgid "Search  /"
-msgstr "Search  /"
-
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Search could not finish:"
 msgstr "Search could not finish:"
@@ -5874,8 +5890,12 @@ msgid "Search results"
 msgstr "Search results"
 
 #: src/renderer/src/features/search/SearchField.tsx
-msgid "Search scope"
-msgstr "Search scope"
+msgid "Search scope: All Mail"
+msgstr "Search scope: All Mail"
+
+#: src/renderer/src/features/search/SearchField.tsx
+msgid "Search scope: Current folder"
+msgstr "Search scope: Current folder"
 
 #: src/renderer/src/features/compose/components/TemplatePicker.tsx
 msgid "Search templates"
@@ -6085,6 +6105,7 @@ msgstr "Share selected…"
 msgid "Share…"
 msgstr "Share…"
 
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Shortcut set"
 msgstr "Shortcut set"
@@ -6201,6 +6222,7 @@ msgid "Show unread count in the menu bar"
 msgstr "Show unread count in the menu bar"
 
 #: src/renderer/src/app/App.tsx
+#: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Sidebar"
 msgstr "Sidebar"
 
@@ -6410,6 +6432,10 @@ msgstr "Spaces group accounts. You can assign accounts and edit spaces in Settin
 #: src/renderer/src/lib/view.ts
 msgid "Spam"
 msgstr "Spam"
+
+#: src/renderer/src/features/mail-list/EmptyList.tsx
+msgid "Spam is empty"
+msgstr "Spam is empty"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Special folder badges"
@@ -7082,6 +7108,10 @@ msgstr "Translate"
 msgid "Trash"
 msgstr "Trash"
 
+#: src/renderer/src/features/mail-list/EmptyList.tsx
+msgid "Trash is empty"
+msgstr "Trash is empty"
+
 #. Keyboard shortcuts section: archive, delete, mark read, star and similar actions.
 #: src/renderer/src/i18n/shortcut-groups.ts
 msgid "Triage"
@@ -7512,6 +7542,10 @@ msgstr "You are up to date."
 #: src/renderer/src/lib/errors.ts
 msgid "You signed in as {signedInAs}. Sign in with {expected} to continue."
 msgstr "You signed in as {signedInAs}. Sign in with {expected} to continue."
+
+#: src/renderer/src/features/mail-list/EmptyList.tsx
+msgid "You're all caught up. Your Inbox is empty."
+msgstr "You're all caught up. Your Inbox is empty."
 
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "You're offline. Mail syncs again when you reconnect."

@@ -28,6 +28,7 @@ import {
   suggestionsAtom,
 } from "../../../state/queries";
 import { itemClass, popupMotion, popupSurface, touchIcon } from "../../../ui/styles";
+import { isTouchWeb } from "../../../lib/platform";
 
 type Suggestions = Atom.Atom<AsyncResult.AsyncResult<readonly Address[], AppError>>;
 const none: Suggestions = Atom.make(AsyncResult.success([]));
@@ -74,6 +75,7 @@ export function RecipientField({
   onDragChip,
 }: Props) {
   const { t } = useLingui();
+  const touch = isTouchWeb();
   const fieldRef = useRef<HTMLDivElement>(null);
   const [copyError, setCopyError] = useState(false);
   const [announcement, setAnnouncement] = useState("");
@@ -207,11 +209,15 @@ export function RecipientField({
                   : "bg-red-500/10 text-red-700 dark:bg-red-400/15 dark:text-red-300"
               }`}
             >
-              <span className="truncate">
-                {address ? recipientLabel(address, showFullAddresses) : text}
-              </span>
+              {/* On a phone the chip itself opens its menu, so the name gets the width. */}
+              {(!address || !touch) && (
+                <span className="truncate">
+                  {address ? recipientLabel(address, showFullAddresses) : text}
+                </span>
+              )}
               {address && (
                 <ChipActions
+                  label={touch ? recipientLabel(address, showFullAddresses) : undefined}
                   address={address}
                   fieldName={fieldName}
                   onCopy={() => {
@@ -337,6 +343,7 @@ export function RecipientField({
 }
 
 function ChipActions({
+  label,
   address,
   fieldName,
   onCopy,
@@ -344,6 +351,8 @@ function ChipActions({
   onReplace,
   onMove,
 }: {
+  /** The chip's text as the menu button, on a touch screen. Otherwise a ⋯ button follows it. */
+  label: string | undefined;
   address: Address;
   fieldName: RecipientFieldName | undefined;
   onCopy: () => void;
@@ -364,7 +373,9 @@ function ChipActions({
       trigger={
         <button
           type="button"
-          aria-label={t`Actions for ${address.address}`}
+          // The visible name is the button's name on a touch screen.
+          aria-label={label === undefined ? t`Actions for ${address.address}` : undefined}
+          title={label === undefined ? undefined : address.address}
           onKeyDown={(event) => {
             if (
               !event.altKey &&
@@ -375,9 +386,13 @@ function ChipActions({
             )
               event.stopPropagation();
           }}
-          className={`rounded p-0.5 hover:bg-black/10 ${touchIcon}`}
+          className={
+            label === undefined
+              ? `rounded p-0.5 hover:bg-black/10 ${touchIcon}`
+              : "block min-w-0 truncate rounded text-left leading-10"
+          }
         >
-          <MoreHorizontal className="size-3" />
+          {label === undefined ? <MoreHorizontal className="size-3" /> : label}
         </button>
       }
     >

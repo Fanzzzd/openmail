@@ -12,7 +12,7 @@ import { labelCreationAtom, snoozeIdsAtom } from "../features/organize/organize-
 import { SnoozeDialog } from "../features/organize/SnoozeDialog";
 import { filterSeedAtom } from "../features/settings/filter-seed";
 import { goToFolderAtom } from "../features/sidebar/go-to-folder";
-import { canCall, isTouchWeb } from "../lib/platform";
+import { canCall, isDesktop, isTouchWeb } from "../lib/platform";
 import { ALL, type SpaceId, type View } from "../lib/view";
 import { accountsAtom } from "../state/queries";
 import { dialogAtom, signInAgainAtom } from "../state/ui";
@@ -144,7 +144,21 @@ export function AppDialogs({
       )}
       <Assistant accounts={accountList} proposals={proposals} onOpenDraft={openProposal} />
       {dialog === "help" && <ShortcutHelp onClose={() => setDialog(null)} />}
-      {firstRunDone && !dialog && <FirstRunDone onClose={() => setFirstRunDone(false)} />}
+      {firstRunDone && !dialog && (
+        <FirstRunDone
+          onClose={() => setFirstRunDone(false)}
+          // AI Access lives on the Mac; the web build has no such settings page.
+          onAiAccess={
+            isDesktop()
+              ? () => {
+                  setFirstRunDone(false);
+                  settingsRequest.setSettingsTab("ai");
+                  setDialog("settings");
+                }
+              : undefined
+          }
+        />
+      )}
       {dialog === "settings" && (
         <Settings
           accounts={accountList}
