@@ -8,7 +8,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fork } from "node:child_process";
 import { DatabaseSync } from "node:sqlite";
-import { MIGRATIONS } from "../../db/db.js";
+import { MIGRATIONS } from "../../db/migrations.js";
 import { applyNativeMigration } from "./migrations.js";
 import { checkDatabaseUpgradeSpace, DatabaseUpgradeSpaceError } from "./database-upgrade.js";
 import { nodeCacheMaintenance } from "./cache-maintenance.js";

@@ -2,7 +2,7 @@ import { CacheMaintenance } from "../platform/cache-storage.js";
 import { Effect, Layer, Option } from "effect";
 import { SqlClient } from "effect/sql";
 import { isSqlError } from "effect/sql/SqlError";
-import { DatabaseCapabilities } from "../db/db.js";
+import { DatabaseCapabilities } from "../db/capabilities.js";
 import { PlatformCrypto } from "../platform/crypto.js";
 import { Store } from "./service.js";
 import { makeAccountsStore } from "./store-accounts.js";

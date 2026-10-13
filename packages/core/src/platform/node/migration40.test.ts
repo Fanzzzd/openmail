@@ -1,6 +1,6 @@
 import { DatabaseSync } from "node:sqlite";
 import { expect, it } from "vitest";
-import { MIGRATIONS } from "../../db/db.js";
+import { MIGRATIONS } from "../../db/migrations.js";
 import { applyNativeMigration } from "./migrations.js";
 
 it("migration 40 leaves missing vectors for lazy repair when vec0 is unavailable", () => {

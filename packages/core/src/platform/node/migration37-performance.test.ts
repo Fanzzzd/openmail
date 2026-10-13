@@ -5,7 +5,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { DatabaseSync } from "node:sqlite";
-import { MIGRATIONS } from "../../db/db.js";
+import { MIGRATIONS } from "../../db/migrations.js";
 import { StoreLive } from "../../store/store.js";
 import { NodeRuntime } from "./runtime.js";
 import { applyNativeMigration } from "./migrations.js";

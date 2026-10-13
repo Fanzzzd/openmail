@@ -1,6 +1,7 @@
 import { DatabaseSync } from "node:sqlite";
 import { expect, it } from "vitest";
-import { MIGRATIONS, splitStatements } from "../../db/db.js";
+import { MIGRATIONS } from "../../db/migrations.js";
+import { splitStatements } from "../../db/migrate.js";
 import type { DerivedChunk } from "../../ai/media.js";
 import { applyNativeMigration } from "./migrations.js";
 

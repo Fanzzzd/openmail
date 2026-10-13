@@ -1,6 +1,6 @@
 import { Effect, Schema } from "effect";
 import type { SqlClient } from "effect/sql";
-import { BACKFILL_SEARCH_FLAGS } from "../db/db.js";
+import { BACKFILL_SEARCH_FLAGS } from "../db/search-flags.js";
 import { bigramText } from "../search/search-bigrams.js";
 import { all, run } from "./sql-rows.js";
 

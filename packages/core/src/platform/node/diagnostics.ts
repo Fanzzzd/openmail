@@ -28,7 +28,8 @@ import {
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { Schema } from "effect";
-import { DatabaseTooNewError, MIGRATIONS } from "../../db/db.js";
+import { DatabaseTooNewError } from "../../db/migrate.js";
+import { MIGRATIONS } from "../../db/migrations.js";
 
 const DiagnosticEvent = Schema.Literals([
   "startup",

@@ -5,14 +5,9 @@ import { SqliteClient } from "@effect/sql-sqlite-node";
 import { Effect, FileSystem, Layer, Path } from "effect";
 import { constVoid } from "effect/Function";
 import { SqlClient } from "effect/sql";
-import {
-  DatabaseCapabilities,
-  DatabaseTooNewError,
-  migrate,
-  migrateTo,
-  MIGRATIONS,
-  ROWID_REBUILD_MIGRATION,
-} from "../../db/db.js";
+import { DatabaseCapabilities } from "../../db/capabilities.js";
+import { DatabaseTooNewError, migrate, migrateTo } from "../../db/migrate.js";
+import { MIGRATIONS, ROWID_REBUILD_MIGRATION } from "../../db/migrations.js";
 import { nodeCacheMaintenance } from "./cache-maintenance.js";
 import { registerDatabaseLease } from "./database-access.js";
 import { checkDatabaseUpgradeSpace } from "./database-upgrade.js";
@@ -165,4 +160,6 @@ export function databaseLayer(
   );
 }
 
-export { MIGRATIONS, splitStatements, DatabaseCapabilities } from "../../db/db.js";
+export { MIGRATIONS } from "../../db/migrations.js";
+export { splitStatements } from "../../db/migrate.js";
+export { DatabaseCapabilities } from "../../db/capabilities.js";

@@ -8,7 +8,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { adaptiveBodyLimit, cacheAccounting } from "../../domain/cache.js";
-import { MIGRATIONS } from "../../db/db.js";
+import { MIGRATIONS } from "../../db/migrations.js";
 import { Mailbox } from "../../mailbox/mailbox.js";
 import { makeMailboxRuntimeState } from "../../mailbox/mailbox-runtime.js";
 import { makeStorageMailbox } from "../../mailbox/mailbox-storage.js";

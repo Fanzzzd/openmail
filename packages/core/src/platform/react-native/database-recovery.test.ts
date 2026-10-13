@@ -1,5 +1,5 @@
 import { DatabaseSync } from "node:sqlite";
-import { MIGRATIONS } from "../../db/db.js";
+import { MIGRATIONS } from "../../db/migrations.js";
 import { applyNativeMigration } from "../node/migrations.js";
 import {
   mkdtempSync,

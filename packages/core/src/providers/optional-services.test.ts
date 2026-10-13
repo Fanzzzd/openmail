@@ -18,7 +18,7 @@ import { DatabaseSync } from "node:sqlite";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { MIGRATIONS } from "../db/db.js";
+import { MIGRATIONS } from "../db/migrations.js";
 import { GMAIL_PERMANENT_DELETE_SCOPE } from "../domain/folder-actions.js";
 {
   for (const provider of ["gmail", "outlook"] as const) {

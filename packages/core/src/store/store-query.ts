@@ -18,7 +18,7 @@ import {
   usesSubstringSearch,
   wordTokens,
 } from "../search/search.js";
-import { SEARCH_FLAG_BITS } from "../db/db.js";
+import { SEARCH_FLAG_BITS } from "../db/search-flags.js";
 import { bigramMatch } from "../search/search-bigrams.js";
 import { all } from "./sql-rows.js";
 import { MAILBOX_LABEL } from "../domain/mailbox-labels.js";

@@ -2,7 +2,7 @@ const log = (value) => process.stdout.write(`${value}\n`);
 // Local fake IMAP only. Three IDLE connections, then 100 connect/close cycles.
 import { createServer } from "node:net";
 import { ImapFlow } from "imapflow";
-import { keepInboxIdle } from "../dist/imap-idle.js";
+import { keepInboxIdle } from "../dist/providers/imap/imap-idle.js";
 
 const ignore = () => {
   /* Connection errors are expected when the fake peer closes. */

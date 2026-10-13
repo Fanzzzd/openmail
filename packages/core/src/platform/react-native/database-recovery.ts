@@ -9,7 +9,7 @@ import {
   Semaphore,
 } from "effect";
 import { SqlClient } from "effect/sql";
-import type { DatabaseCapabilities } from "../../db/db.js";
+import type { DatabaseCapabilities } from "../../db/capabilities.js";
 import { AppPaths } from "../paths.js";
 import { PlatformCrypto } from "../crypto.js";
 import {

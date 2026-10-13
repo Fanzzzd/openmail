@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import { MIGRATIONS } from "../src/db/db.js";
+import { MIGRATIONS } from "../src/db/migrations.js";
 import { applyNativeMigration } from "../src/platform/node/migrations.js";
 
 let template: Uint8Array | undefined;

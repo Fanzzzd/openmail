@@ -4,7 +4,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync, statSync, existsSync 
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { DatabaseSync } from "node:sqlite";
-import { MIGRATIONS } from "../../db/db.js";
+import { MIGRATIONS } from "../../db/migrations.js";
 import { prepareSmokeDatabase } from "./smoke.js";
 
 it("smoke preparation upgrades only the copy, retains WAL messages and forces manual read in English", () => {

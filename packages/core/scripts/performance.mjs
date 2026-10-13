@@ -3,7 +3,7 @@ const log = (value) => process.stdout.write(`${value}\n`);
 // Node-only benchmark. Never opens a user database or starts Electron.
 // Build core first, then run with --expose-gc and OPENMAIL_LOW_MEMORY_TESTS=1.
 import { DatabaseSync } from "node:sqlite";
-import { mkdtempSync, readdirSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
+import { cpSync, mkdtempSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { tmpdir } from "node:os";
@@ -22,14 +22,23 @@ const originalPrepare = DatabaseSync.prototype.prepare;
 try {
   let moduleRoot = new URL("../dist/", import.meta.url);
   if (historical) {
-    // Share dependencies; read historical SQL modules without changing checkout.
+    // Copy the build, then swap in the historical SQL modules without changing checkout.
+    // The ref must use the domain folder layout (db/, store/).
     const dist = fileURLToPath(moduleRoot);
     historicalDirectory = mkdtempSync(join(dist, "performance-before-"));
     for (const entry of readdirSync(dist, { withFileTypes: true }))
-      if (entry.isFile())
-        symlinkSync(join(dist, entry.name), join(historicalDirectory, entry.name));
+      if (!entry.name.startsWith("performance-before-"))
+        cpSync(join(dist, entry.name), join(historicalDirectory, entry.name), { recursive: true });
     const { default: ts } = await import("typescript");
-    for (const name of ["db", "store", "store-compose", "store-contacts", "store-invite-status"]) {
+    for (const name of [
+      "db/migrations",
+      "db/migrate",
+      "db/search-flags",
+      "store/store",
+      "store/store-compose",
+      "store/store-contacts",
+      "store/store-invite-status",
+    ]) {
       const source = execFileSync("git", ["show", `${historical}:packages/core/src/${name}.ts`], {
         encoding: "utf8",
       });
@@ -44,8 +53,9 @@ try {
     }
     moduleRoot = new URL(`../dist/${historicalDirectory.split("/").at(-1)}/`, import.meta.url);
   }
-  const { MIGRATIONS, migrate } = await import(new URL("db.js", moduleRoot));
-  const { StoreLive } = await import(new URL("store.js", moduleRoot));
+  const { MIGRATIONS } = await import(new URL("db/migrations.js", moduleRoot));
+  const { migrate } = await import(new URL("db/migrate.js", moduleRoot));
+  const { StoreLive } = await import(new URL("store/store.js", moduleRoot));
 
   directory = mkdtempSync(join(tmpdir(), "openmail-perf-"));
   const file = join(directory, "mail.db");
