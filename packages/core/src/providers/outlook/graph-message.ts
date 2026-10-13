@@ -3,7 +3,7 @@
 import type { OutgoingMessage } from "../../domain/changes.js";
 import type { Address } from "../../domain/message.js";
 import { htmlDocument } from "../../mime/mime.js";
-import { composeTransportHtml } from "../../compose/compose-body.js";
+import { composeTransportHtml } from "../../compose/compose-transport.js";
 import { largeAttachment } from "./upload.js";
 import { Buffer } from "../../platform/bytes.js";
 import { REQUEST_LIMIT } from "./graph.js";

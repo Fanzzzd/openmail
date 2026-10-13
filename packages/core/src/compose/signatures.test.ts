@@ -14,7 +14,8 @@ import { Providers } from "../providers/adapter.js";
 import { StoreLive } from "../store/store.js";
 import { orderedSignatures } from "./signatures.js";
 import { applySignature } from "./compose-text.js";
-import { applyComposeSignature, remoteComposeBody, richComposeBody } from "./compose-body.js";
+import { remoteComposeBody, richComposeBody } from "./compose-body.js";
+import { applyComposeSignature } from "./compose-transport.js";
 {
   const temporary = Effect.acquireRelease(
     Effect.sync(() => mkdtempSync(join(tmpdir(), "om-fixture-"))),

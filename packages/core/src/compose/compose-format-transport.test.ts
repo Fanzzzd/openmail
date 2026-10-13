@@ -2,11 +2,11 @@ import { assert, it } from "@effect/vitest";
 import {
   composeConversion,
   composeHtmlHasUnsupported,
-  composeTransportHtml,
   preservedComposeHtml,
   remoteComposeBody,
   richComposeBody,
 } from "./compose-body.js";
+import { composeTransportHtml } from "./compose-transport.js";
 
 it("default paragraphs and lists convert without a false formatting warning", () => {
   for (const html of [

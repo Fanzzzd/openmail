@@ -12,11 +12,8 @@ import { MemoryPlatform } from "../platform/node/platform-memory.js";
 import { NodeSystem } from "../platform/node/platform-node.js";
 import { StoreLive } from "../store/store.js";
 import { Providers } from "../providers/adapter.js";
-import {
-  richComposeBody,
-  composeHtmlHasUnsupported,
-  composeTransportHtml,
-} from "./compose-body.js";
+import { richComposeBody, composeHtmlHasUnsupported } from "./compose-body.js";
+import { composeTransportHtml } from "./compose-transport.js";
 import { buildMime } from "../platform/node/compose.js";
 import type { Provider } from "../domain/account.js";
 

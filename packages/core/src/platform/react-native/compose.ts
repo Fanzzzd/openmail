@@ -5,7 +5,8 @@ import type { Address } from "../../domain/message.js";
 import type { OutgoingMessage } from "../../domain/changes.js";
 import type { Threading } from "../mail-codec.js";
 import { PermanentError } from "../../domain/errors.js";
-import { composeTransportHtml, normalizeComposeMessage } from "../../compose/compose-body.js";
+import { normalizeComposeMessage } from "../../compose/compose-body.js";
+import { composeTransportHtml } from "../../compose/compose-transport.js";
 
 const encoded = (value: string) => `=?UTF-8?B?${Buffer.from(value).toString("base64")}?=`;
 const headerSafe = (value: string) => {

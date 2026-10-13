@@ -1,6 +1,5 @@
 import { assert, describe, it } from "@effect/vitest";
 import {
-  composeLink,
   normalizeComposeMessage,
   outgoingComposeBody,
   richComposeBody,
@@ -12,6 +11,7 @@ import {
   preservedComposeHtml,
   remoteComposeBody,
 } from "./compose-body.js";
+import { composeLink } from "./compose-nodes.js";
 import { renderMarkdown } from "./markdown.js";
 import { performance } from "node:perf_hooks";
 {

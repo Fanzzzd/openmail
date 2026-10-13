@@ -1,4 +1,5 @@
-import { escapeComposeText, richComposeBody } from "./compose-body.js";
+import { richComposeBody } from "./compose-body.js";
+import { escapeComposeText } from "./compose-nodes.js";
 export function composePaste(text: string, mode: "matchStyle" | "quotation") {
   const normalized = text.replace(/\r\n?/g, "\n");
   const html = escapeComposeText(normalized).replaceAll("\n", "<br>");

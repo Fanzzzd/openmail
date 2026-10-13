@@ -1,4 +1,4 @@
-import { composeTransportHtml } from "../../compose/compose-body.js";
+import { composeTransportHtml } from "../../compose/compose-transport.js";
 import { Effect } from "effect";
 
 import type { Address } from "../../domain/message.js";

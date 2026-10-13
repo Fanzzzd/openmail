@@ -2,7 +2,7 @@ import { sha256Hex } from "../platform/crypto.js";
 import { Schema } from "effect";
 import { ElementType, parseDocument } from "htmlparser2";
 
-import { composeTransportHtml } from "./compose-body.js";
+import { composeTransportHtml } from "./compose-transport.js";
 import { renderMarkdown } from "./markdown.js";
 
 export const MarkdownDraftSource = Schema.Struct({

@@ -35,11 +35,11 @@ import {
 import {
   richComposeBody,
   editedComposeBody,
-  composeTransportHtml,
   normalizeComposeMessage,
   composeHtmlHasUnsupported,
   outgoingComposeBody,
 } from "./compose-body.js";
+import { composeTransportHtml } from "./compose-transport.js";
 import { bestComposeSender } from "./compose-sender.js";
 import { buildMime } from "../platform/node/compose.js";
 import { FeatureScopeMissing, ProviderError } from "../domain/errors.js";

@@ -3,6 +3,8 @@
 // itself pulls in node:sqlite, the keychain and IMAP.
 export * from "./compose/compose-text.js";
 export * from "./compose/compose-body.js";
+export { composeLink, escapeComposeText } from "./compose/compose-nodes.js";
+export { applyComposeSignature, composeTransportHtml } from "./compose/compose-transport.js";
 export * from "./compose/compose-format.js";
 export * from "./domain/account.js";
 export * from "./domain/message.js";

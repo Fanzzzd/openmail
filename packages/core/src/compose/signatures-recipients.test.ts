@@ -16,12 +16,12 @@ import { StoreLive } from "../store/store.js";
 import { NodeSystem } from "../platform/node/platform-node.js";
 import { replyFromAddress, signatureDefault } from "./signatures.js";
 import {
-  applyComposeSignature,
   remoteComposeBody,
   richComposeBody,
   textComposeHtml,
   preservedComposeHtml,
 } from "./compose-body.js";
+import { applyComposeSignature } from "./compose-transport.js";
 import { fillTemplate, customTemplateVariables } from "./compose-text.js";
 
 const accountId = "gmail:me@example.com";

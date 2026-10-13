@@ -1,6 +1,8 @@
 // Shared core exports. Platform entries add their own adapters.
 export * from "./compose/compose-text.js";
 export * from "./compose/compose-body.js";
+export { composeLink, escapeComposeText } from "./compose/compose-nodes.js";
+export { applyComposeSignature, composeTransportHtml } from "./compose/compose-transport.js";
 export { MODEL_KEY } from "./ai/secrets.js";
 export * from "./domain/account.js";
 export * from "./domain/message.js";

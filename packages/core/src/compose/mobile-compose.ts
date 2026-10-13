@@ -1,5 +1,6 @@
 import { Parser, parseDocument, ElementType } from "htmlparser2";
-import { escapeComposeText, richComposeBody } from "./compose-body.js";
+import { richComposeBody } from "./compose-body.js";
+import { escapeComposeText } from "./compose-nodes.js";
 import type { OutgoingMessage } from "../domain/changes.js";
 export type MobileComposeMark = { start: number; end: number; kind: "bold" | "italic" };
 type Node = ReturnType<typeof parseDocument>["children"][number];
