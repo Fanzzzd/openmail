@@ -20,7 +20,9 @@ import { openDatabaseAccess } from "./recovery-files.js";
 
 /** A separate read-only handle sees the file before SqliteClient changes journal mode or schema. */
 function inspectReadOnly(filename: string, inspect: (db: DatabaseSync) => void) {
-  const inspection = new DatabaseSync(filename, { readOnly: true });
+  // Another process may hold the lock briefly (a sibling CLI migrating or recovering the WAL);
+  // wait like the main connection's busy timeout instead of failing with "database is locked".
+  const inspection = new DatabaseSync(filename, { readOnly: true, timeout: 5000 });
   try {
     inspect(inspection);
   } finally {

@@ -1,3 +1,5 @@
+import { spawn } from "node:child_process";
+import { once } from "node:events";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -63,3 +65,37 @@ it("migrate itself refuses a newer schema, so every platform's opener stops", as
   expect(error instanceof DatabaseTooNewError && error.version).toBe(MIGRATIONS.length + 1);
   expect(versionOf(file)).toBe(MIGRATIONS.length + 1);
 });
+
+it("opening waits for a lock another process holds briefly instead of failing as locked", async () => {
+  // The CLI flake: four CLI processes start on one file; the read-only inspection ran without
+  // a busy timeout and died with "database is locked" while a sibling held the write lock.
+  const directory = await mkdtemp(join(tmpdir(), "openmail-locked-"));
+  directories.push(directory);
+  const file = join(directory, "mail.db");
+  const db = new DatabaseSync(file);
+  db.exec("CREATE TABLE t (x)");
+  db.close();
+  const holder = spawn(
+    process.execPath,
+    [
+      "-e",
+      `const { DatabaseSync } = require("node:sqlite");
+       const db = new DatabaseSync(process.argv[1]);
+       db.exec("BEGIN EXCLUSIVE; INSERT INTO t VALUES (1)");
+       process.stdout.write("locked\\n");
+       setTimeout(() => { db.exec("COMMIT"); db.close(); }, 400);`,
+      file,
+    ],
+    { stdio: ["ignore", "pipe", "inherit"] },
+  );
+  const closed = once(holder, "close");
+  await once(holder.stdout, "data");
+  const exit = await Effect.runPromiseExit(
+    Effect.scoped(
+      Layer.build(databaseLayer(file, { vectorExtension: null }).pipe(Layer.provide(NodeSystem))),
+    ),
+  );
+  await closed;
+  expect(defectOf(exit)).toBeUndefined();
+  expect(versionOf(file)).toBe(MIGRATIONS.length);
+}, 30_000);
