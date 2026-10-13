@@ -577,6 +577,7 @@ exports[`tool input and output schemas are stable 1`] = `
       "additionalProperties": true,
       "properties": {
         "id": {
+          "description": "A template id from list_templates.",
           "type": "string",
         },
         "offset": {
@@ -678,6 +679,7 @@ exports[`tool input and output schemas are stable 1`] = `
       "additionalProperties": true,
       "properties": {
         "id": {
+          "description": "A signature id from list_signatures.",
           "type": "string",
         },
         "offset": {
@@ -1077,12 +1079,13 @@ exports[`tool input and output schemas are stable 1`] = `
     "readonly": true,
   },
   {
-    "description": "Read one pending proposal as the JSON the approval screen shows. Use an id from list_proposals. Long JSON pages with next_offset; join the chunks.",
+    "description": "Read one pending proposal as the approval screen shows it. Use an id from list_proposals. A long draft body pages with next_offset.",
     "idempotent": true,
     "input": {
       "additionalProperties": true,
       "properties": {
         "id": {
+          "description": "A pending proposal id from list_proposals, as a string.",
           "type": "string",
         },
         "offset": {
@@ -1213,6 +1216,7 @@ exports[`tool input and output schemas are stable 1`] = `
           "type": "string",
         },
         "thread_ids": {
+          "description": "Message ids from list_threads or search; each stands for its thread.",
           "items": {
             "description": "A message id from list_threads or search. It stands for its whole thread.",
             "type": "string",

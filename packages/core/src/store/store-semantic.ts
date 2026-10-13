@@ -107,11 +107,18 @@ export function makeSemanticStore(
         ) AND v.distance <= ${SEMANTIC_MAX_DISTANCE[kind]} ORDER BY v.distance`,
     ).pipe(Effect.map((rows) => rows.map((row) => row.provenance_json)));
   };
+  /** Whether any message in these accounts has a text vector for this model version. */
+  const hasTextVectors = (version: string, accountIds: readonly string[]) =>
+    first(Schema.Struct({ found: Schema.Number }))(
+      sql`SELECT 1 AS found FROM vector_items item JOIN messages m ON m.id=item.message_id
+        WHERE item.version=${version} AND ${filter({ accountIds })} LIMIT 1`,
+    ).pipe(Effect.map(Option.isSome));
   return {
     vectors,
     enabled,
     complete,
     neighbors,
+    hasTextVectors,
     repairMissingVectors,
     claim: queue.claim,
     retry: queue.retry,

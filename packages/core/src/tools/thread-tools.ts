@@ -1,9 +1,11 @@
 /** Tools that list, search, read and sync threads. */
 
 import {
+  ACCOUNT_ID_HINT,
   AccountId,
   MailToolError,
   ThreadId,
+  ToolThread,
   boundThread,
   bounded,
   compactThread,
@@ -18,7 +20,7 @@ import {
   untrustedMail,
 } from "./tool-common.js";
 import { Effect, Schema } from "effect";
-import { MAILBOXES, ThreadSummary } from "../domain/message.js";
+import { MAILBOXES } from "../domain/message.js";
 import {
   PageParameters,
   PageResult,
@@ -65,7 +67,7 @@ export const ListThreads = readOnly(
     }),
     success: Schema.Struct({
       ...PageResult,
-      threads: Schema.Array(ThreadSummary),
+      threads: Schema.Array(ToolThread),
       next_before: Schema.optionalKey(
         Schema.Finite.annotate({
           description: "Pass as before to get the next page. Absent on the last page.",
@@ -94,7 +96,11 @@ export const Search = readOnly(
       ...PageParameters,
       limit: ToolLimit(20),
     }),
-    success: Schema.Struct({ ...PageResult, ...SearchResult.fields }),
+    success: Schema.Struct({
+      ...PageResult,
+      ...SearchResult.fields,
+      threads: Schema.Array(ToolThread),
+    }),
     failure: MailToolError,
     failureMode: "return",
   }),
@@ -137,7 +143,7 @@ export const SemanticSearch = readOnly(
       ...PageParameters,
       limit: ToolLimit(5, 5),
     }),
-    success: Schema.Struct({ ...PageResult, threads: Schema.Array(ThreadSummary) }),
+    success: Schema.Struct({ ...PageResult, threads: Schema.Array(ToolThread) }),
     failure: MailToolError,
     failureMode: "return",
   }),
@@ -166,10 +172,12 @@ export const threadHandlers = ({
   identity,
   accountIdsFor,
   forAccounts,
+  requireProfile,
   requireMessage,
 }: ToolContext) => {
   return {
     list_threads: Effect.fnUntraced(function* (p) {
+      if (p.profile_id !== undefined) yield* requireProfile(p.profile_id);
       let accountIds = yield* accountIdsFor(p.account_id);
       if (!accountIds.length) return { threads: [] };
       if (p.profile_id) {
@@ -272,10 +280,24 @@ export const threadHandlers = ({
         p,
         Effect.flatMap(identity.current, (current) =>
           !p.account_id && current.surface === "mcp"
-            ? Effect.succeed([])
+            ? Effect.fail(
+                toolError(
+                  "invalid_input",
+                  "semantic_search needs account_id: it searches one account's on-device index.",
+                  ACCOUNT_ID_HINT,
+                ),
+              )
             : forAccounts(p.account_id, (ids) =>
                 mailbox.semanticSearch({ search: p.query, accountIds: ids, limit: 5 }).pipe(
-                  Effect.mapError(toToolError),
+                  Effect.mapError((e) =>
+                    e._tag === "IndexNotReady"
+                      ? toolError(
+                          "not_ready",
+                          e.message,
+                          "Use search for keywords meanwhile, and tell the person why meaning search is unavailable.",
+                        )
+                      : toToolError(e),
+                  ),
                   Effect.map((rows) => rows.map(compactThread)),
                 ),
               ),

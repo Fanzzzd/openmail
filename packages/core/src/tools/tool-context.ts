@@ -4,6 +4,7 @@ import { AgentIdentity, cleanMcpClientName } from "./agent-identity.js";
 import type { Actor, Proposal } from "../domain/command.js";
 import {
   ACCESS_STATUS_HINT,
+  ACCOUNT_ID_HINT,
   CONSENT_SWITCH,
   MESSAGE_ID_HINT,
   toToolError,
@@ -30,9 +31,29 @@ export const makeToolContext = Effect.gen(function* () {
     const consent = (yield* mailbox.aiSettings).accounts;
     return accounts.filter((a) => consent.some((s) => s.accountId === a.id && s.allowed));
   }).pipe(Effect.mapError(toToolError));
+  /**
+   * Every readable account, or just `id`. An id the caller cannot read fails as not_found,
+   * whether it is unknown, turned off or lacks consent, so a typo never reads as empty mail
+   * and a hidden account's existence is not revealed.
+   */
   const accountIdsFor = (id?: string) =>
-    Effect.map(accessibleAccounts, (accounts) =>
-      accounts.filter((a) => id === undefined || a.id === id).map((a) => a.id),
+    Effect.flatMap(accessibleAccounts, (accounts) =>
+      id === undefined
+        ? Effect.succeed(accounts.map((a) => a.id))
+        : accounts.some((a) => a.id === id)
+          ? Effect.succeed([id])
+          : Effect.fail(
+              toolError("not_found", `No readable account with id ${id}.`, ACCOUNT_ID_HINT),
+            ),
+    );
+  /** Fails as not_found for an unknown profile id. */
+  const requireProfile = (id: string) =>
+    Effect.flatMap(mailbox.profiles, (profiles) =>
+      profiles.some((p) => p.id === id)
+        ? Effect.void
+        : Effect.fail(
+            toolError("not_found", `No profile with id ${id}.`, "Pass an id from list_profiles."),
+          ),
     );
   const forAccounts = <A, E>(
     id: string | undefined,
@@ -86,6 +107,7 @@ export const makeToolContext = Effect.gen(function* () {
     accessibleAccounts,
     accountIdsFor,
     forAccounts,
+    requireProfile,
     requireMessage,
     requireThreads,
     visibleProposals,

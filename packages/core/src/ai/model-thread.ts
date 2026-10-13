@@ -5,7 +5,8 @@ export const ModelThread = Schema.Struct({
   threadId: Schema.String,
   accountId: Schema.String,
   subject: Schema.String,
-  labels: Schema.Array(Schema.String),
+  /** Absent in model context (read_thread), which leaves label ids out. */
+  labels: Schema.optionalKey(Schema.Array(Schema.String)),
   messages: Schema.Array(
     Schema.Struct({
       id: Schema.String,
@@ -25,7 +26,8 @@ export const ModelThread = Schema.Struct({
         ),
       ),
       quotedTextRemoved: Schema.optionalKey(Schema.Number),
-      attachments: Schema.Array(Schema.String),
+      /** Attachment names. Absent in model context, which leaves them out. */
+      attachments: Schema.optionalKey(Schema.Array(Schema.String)),
     }),
   ),
   /** Characters dropped to fit the budget. 0 when nothing was cut. */

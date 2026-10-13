@@ -46,7 +46,24 @@ export function decodeCursor(raw: string | undefined, scope: string): PageCursor
   if (cursor.scope !== scope) throw new Error("Cursor belongs to another tool or filters.");
   return cursor;
 }
-export const jsonBytes = (value: unknown) => Buffer.byteLength(JSON.stringify(value));
+/** `accountId` → `account_id`: tool results use snake_case keys, like tool parameters. */
+export const snakeKey = (key: string) => key.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
+/** Renames every object key in a JSON value; arrays and scalars keep their values. */
+export function renameKeys(value: unknown, rename: (key: string) => string): unknown {
+  if (Array.isArray(value)) return value.map((item) => renameKeys(item, rename));
+  if (value !== null && typeof value === "object") return renameRecordKeys(value, rename);
+  return value;
+}
+export const renameRecordKeys = (
+  value: object,
+  rename: (key: string) => string,
+): { readonly [key: string]: unknown } =>
+  Object.fromEntries(
+    Object.entries(value).map(([key, item]) => [rename(key), renameKeys(item, rename)]),
+  );
+/** Bytes of the result as MCP sends it, with snake_case keys. */
+export const jsonBytes = (value: unknown) =>
+  Buffer.byteLength(JSON.stringify(renameKeys(value, snakeKey)));
 export const shortText = (text: string, max = 256) =>
   text.length > max ? `${text.slice(0, max)}…` : text;
 

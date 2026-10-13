@@ -121,8 +121,12 @@ export function toModelThread(messages: readonly Message[], maxChars: number): M
 /** Byte budget includes headers, ids and JSON escaping, conservatively bounding tokens. */
 export function modelContext(messages: readonly Message[], tokenBudget = 6000): ModelThread {
   const bytes = Math.max(256, Math.min(tokenBudget, Number.MAX_SAFE_INTEGER));
-  let view = toModelThread(messages, bytes);
-  view = { ...view, labels: [], messages: view.messages.map((m) => ({ ...m, attachments: [] })) };
+  // Label ids and attachment names stay out of model context; the fields are omitted, not empty.
+  const { labels: _labels, ...rest } = toModelThread(messages, bytes);
+  let view: ModelThread = {
+    ...rest,
+    messages: rest.messages.map(({ attachments: _attachments, ...m }) => m),
+  };
   while (
     new TextEncoder().encode(JSON.stringify(view)).length > bytes &&
     view.messages.length > 0

@@ -32,18 +32,18 @@ export const ListSignatures = collection(
     source: NamedSignature.fields.source,
   }),
 );
-export const detailParameters = {
-  id: Schema.String,
+export const detailParameters = (id: string) => ({
+  id: Schema.String.annotate({ description: id }),
   offset: Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: 1_000_000 }))
     .annotate({ description: "next_offset from the last page. Default 0." })
     .pipe(Schema.withDecodingDefaultKey(Effect.succeed(0))),
   token_budget: ToolBudget,
-};
+});
 export const ReadTemplate = readOnly(
   mailTool("read_template", {
     description:
       "Read a template's subject, recipients and plain-text body. Use an id from list_templates. Long bodies page with next_offset.",
-    parameters: Schema.Struct(detailParameters),
+    parameters: Schema.Struct(detailParameters("A template id from list_templates.")),
     success: Schema.Struct({
       id: Schema.String,
       name: Schema.String,
@@ -62,7 +62,7 @@ export const ReadSignature = readOnly(
   mailTool("read_signature", {
     description:
       "Read a signature as plain text. Use an id from list_signatures. Long text pages with next_offset.",
-    parameters: Schema.Struct(detailParameters),
+    parameters: Schema.Struct(detailParameters("A signature id from list_signatures.")),
     success: Schema.Struct({
       id: Schema.String,
       name: Schema.String,

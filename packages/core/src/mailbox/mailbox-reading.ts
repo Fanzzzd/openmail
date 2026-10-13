@@ -1,7 +1,7 @@
 import { Effect, Option } from "effect";
 import { attachmentRef, MAX_INLINE_BYTES, MEDIA_RAW_TOO_LARGE } from "../mime/attachments.js";
 import type { Message } from "../domain/message.js";
-import { InvalidInput, NotFound } from "../domain/errors.js";
+import { IndexNotReady, InvalidInput, NotFound } from "../domain/errors.js";
 import { type MailboxDependencies, type MailboxRuntimeState } from "./mailbox-runtime.js";
 import { cacheIO } from "./mailbox-shared.js";
 import { type Mailbox } from "./mailbox.js";
@@ -256,7 +256,15 @@ export const makeReadingMailbox = (
             !(yield* store.semantics.enabled) ||
             (yield* models.status).kind !== "ready"
           )
-            return [];
+            return yield* new IndexNotReady({
+              message:
+                "On-device search is off or its model is not downloaded. The person turns it on in OpenMail under Settings.",
+            });
+          if (!(yield* store.semantics.hasTextVectors(models.version, q.accountIds)))
+            return yield* new IndexNotReady({
+              message:
+                "The on-device text index has nothing for this account yet. Indexing runs while OpenMail is open.",
+            });
           yield* models.ensure(false);
           const embedding = yield* models.embedder.text(q.search, "query");
           const hits = yield* store.semantics.neighbors(
@@ -267,7 +275,11 @@ export const makeReadingMailbox = (
           );
           return (yield* store.vectorThreads(q, hits)).slice(0, Math.min(q.limit ?? 5, 5));
         }).pipe(
-          Effect.mapError(() => new InvalidInput({ message: "Semantic search is unavailable." })),
+          Effect.mapError((error) =>
+            error._tag === "IndexNotReady" || error._tag === "InvalidInput"
+              ? error
+              : new InvalidInput({ message: "Semantic search is unavailable." }),
+          ),
         ),
 
       threadCount: (query) => store.countThreads(query),

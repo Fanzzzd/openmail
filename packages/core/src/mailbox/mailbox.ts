@@ -64,6 +64,7 @@ import type {
   FeatureScopeMissing,
   AuthError,
   ClientNotConfigured,
+  IndexNotReady,
   InvalidInput,
   NotFound,
   PermanentError,
@@ -160,8 +161,16 @@ export class Mailbox extends Context.Service<
     setAiKey(key: string): Effect.Effect<void, InvalidInput>;
     setAiAccount(input: AiAccountSettings): Effect.Effect<void, NotFound | InvalidInput>;
     setAiModel(model: AiModelName): Effect.Effect<void>;
-    aiSummary(id: string): Effect.Effect<AiSummary | null, NotFound | InvalidInput>;
-    summarize(id: string): Stream.Stream<AiEvent, NotFound | InvalidInput | ProviderError>;
+    /** The cached summary in `locale`, the UI language; summaries are cached per language. */
+    aiSummary(
+      id: string,
+      locale?: string,
+    ): Effect.Effect<AiSummary | null, NotFound | InvalidInput>;
+    /** Summarizes in `locale`, the UI language, when given. */
+    summarize(
+      id: string,
+      locale?: string,
+    ): Stream.Stream<AiEvent, NotFound | InvalidInput | ProviderError>;
     askAi(input: AiQuestion): Stream.Stream<AiEvent, PerformError>;
     composeAi(input: AiComposeRequest): Stream.Stream<AiEvent, PerformError>;
     aiTriage(id: string): Effect.Effect<AiTriage | null, NotFound | InvalidInput>;
@@ -170,7 +179,10 @@ export class Mailbox extends Context.Service<
       accept: boolean,
       surface: "app" | "cli",
     ): Effect.Effect<void, PerformError>;
-    semanticSearch(query: ThreadQuery): Effect.Effect<ThreadSummary[], InvalidInput>;
+    /** Fails with IndexNotReady when the on-device index cannot answer, instead of an empty list. */
+    semanticSearch(
+      query: ThreadQuery,
+    ): Effect.Effect<ThreadSummary[], InvalidInput | IndexNotReady>;
     // Accounts
     setAccountSettings(
       id: string,

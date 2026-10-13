@@ -104,6 +104,11 @@ export class NotFound extends Schema.TaggedError<NotFound>()("NotFound", {
   id: Schema.String,
 }) {}
 
+/** The on-device text index cannot answer yet: turned off, model missing, or nothing indexed. */
+export class IndexNotReady extends Schema.TaggedError<IndexNotReady>()("IndexNotReady", {
+  message: Schema.String,
+}) {}
+
 /** Bad input from a person or an agent (invalid address, missing field). */
 export class InvalidInput extends Schema.TaggedError<InvalidInput>()("InvalidInput", {
   message: Schema.String,

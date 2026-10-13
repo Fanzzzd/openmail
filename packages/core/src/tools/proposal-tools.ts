@@ -1,7 +1,6 @@
 /** Tools that propose changes (modify, snooze, draft) and read pending proposals. Every change waits for approval in the app. */
 
 import {
-  ACCESS_STATUS_HINT,
   AccountId,
   MailToolError,
   Rationale,
@@ -118,11 +117,16 @@ export const ListProposals = collection(
 export const ReadProposal = readOnly(
   mailTool("read_proposal", {
     description:
-      "Read one pending proposal as the JSON the approval screen shows. Use an id from list_proposals. Long JSON pages with next_offset; join the chunks.",
-    parameters: Schema.Struct(detailParameters),
+      "Read one pending proposal as the approval screen shows it. Use an id from list_proposals. A long draft body pages with next_offset.",
+    parameters: Schema.Struct(
+      detailParameters("A pending proposal id from list_proposals, as a string."),
+    ),
     success: Schema.Struct({
       id: Schema.Number,
-      command_json: Schema.String,
+      command: Schema.Record(Schema.String, Schema.Unknown).annotate({
+        description:
+          "The change: kind, then threads and op, due, or account and message. A draft's message.text is one page of the body.",
+      }),
       next_offset: Schema.optionalKey(Schema.Int),
     }),
     failure: MailToolError,
@@ -133,7 +137,11 @@ export const SnoozeThreads = appTool("snooze_threads", {
   description:
     "Propose snoozing up to 20 conversations until a time. Nothing is snoozed until the person approves it in OpenMail. Relay the returned message and do not retry.",
   parameters: Schema.Struct({
-    thread_ids: Schema.Array(ThreadId).check(Schema.isMinLength(1), Schema.isMaxLength(20)),
+    thread_ids: Schema.Array(ThreadId)
+      .check(Schema.isMinLength(1), Schema.isMaxLength(20))
+      .annotate({
+        description: "Message ids from list_threads or search; each stands for its thread.",
+      }),
     due: Schema.Finite.annotate({
       description: "When the conversations return to the inbox, in epoch milliseconds.",
     }),
@@ -147,6 +155,29 @@ export const SnoozeThreads = appTool("snooze_threads", {
   .annotate(Tool.Destructive, false)
   .annotate(Tool.Idempotent, false)
   .annotate(Tool.OpenWorld, false);
+
+/**
+ * A proposal as an object. Only a draft or send has long text, its body, so that pages with
+ * next_offset; everything else fits in one result.
+ */
+function proposalPage(
+  id: number,
+  command: ReturnType<typeof approvalCommand>,
+  p: { readonly offset: number; readonly token_budget: number },
+) {
+  if (command.kind !== "draft" && command.kind !== "send") {
+    if (p.offset > 0) throw new Error("offset is beyond the text.");
+    return { id, command };
+  }
+  // The header carries an empty body, so the page size counts the body once.
+  const header = { id, command: { ...command, message: { ...command.message, text: "" } } };
+  const { text, next_offset } = textPage(header, command.message.text, p);
+  return {
+    id,
+    command: { ...command, message: { ...command.message, text } },
+    ...(next_offset === undefined ? {} : { next_offset }),
+  };
+}
 
 export function opFor(action: ModifyAction, labelId: string | undefined): MailOp | undefined {
   switch (action) {
@@ -196,14 +227,7 @@ export const proposalHandlers = ({
           `No pending proposal with id ${p.id}.`,
           "Get pending proposal ids from list_proposals.",
         );
-      return yield* toolAttempt(() => {
-        const { text, ...rest } = textPage(
-          { id: row.id },
-          JSON.stringify(approvalCommand(row.command)),
-          { ...p, token_budget: p.token_budget - 64 },
-        );
-        return { ...rest, command_json: text };
-      });
+      return yield* toolAttempt(() => proposalPage(row.id, approvalCommand(row.command), p));
     }),
     modify_threads: Effect.fnUntraced(function* (p) {
       yield* requireThreads(p.thread_ids);
@@ -237,12 +261,7 @@ export const proposalHandlers = ({
     }),
     draft_message: Effect.fnUntraced(function* (p) {
       if ((yield* identity.current).surface === "mcp") {
-        if (!(yield* accountIdsFor(p.account_id)).length)
-          return yield* toolError(
-            "no_ai_consent",
-            `Account ${p.account_id} is unknown, turned off, or does not allow AI access.`,
-            ACCESS_STATUS_HINT,
-          );
+        yield* accountIdsFor(p.account_id);
         if (p.reply_to_message_id) yield* requireMessage(p.reply_to_message_id);
       }
       const to = yield* addresses(p.to);

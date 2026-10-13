@@ -52,7 +52,7 @@ export const AccessStatus = readOnly(
       client: Schema.String,
       readable_accounts: Schema.Array(ModelAccount),
       hidden_accounts: Schema.Struct({
-        /** "Allow sending mail text to the model" is off for these accounts. */
+        /** "Allow AI to read this account" is off for these accounts. */
         without_ai_consent: Schema.Int,
         turned_off: Schema.Int,
       }),
@@ -75,7 +75,7 @@ export const AccessStatus = readOnly(
 export const ListProfiles = readOnly(
   mailTool("list_profiles", {
     description:
-      "List profiles, named groups of accounts such as Work and Personal. Pass an id as profile_id to list_threads. Page with next_cursor.",
+      "List profiles, the groups of accounts OpenMail calls spaces, such as Work and Personal. Pass an id as profile_id to list_threads. Page with next_cursor.",
     parameters: Schema.Struct(PageParameters),
     success: Schema.Struct({ ...PageResult, profiles: Schema.Array(Profile) }),
     failure: MailToolError,

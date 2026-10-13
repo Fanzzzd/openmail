@@ -143,7 +143,7 @@ const ACCOUNT_SCOPED_TOOLS: ReadonlySet<string> = new Set([
 
 const AGENT_CONSENT_HINT = `Turn on ${CONSENT_SWITCH} in Settings → AI Access.`;
 const noConsent = (message: string) =>
-  toolError("no_ai_consent", message, "Run `openmail access-status` to see what is readable.");
+  toolError("no_ai_consent", message, "Run `openmail tool access_status` to see what is readable.");
 
 const stringParam = (input: unknown, key: string): string | undefined => {
   if (typeof input !== "object" || input === null) return undefined;
@@ -170,7 +170,7 @@ export const agentAccountGap = (tool: string, input: unknown) =>
     if (profileId !== undefined && !(yield* mailbox.profiles).some((p) => p.id === profileId))
       return toolError(
         "not_found",
-        `No profile with id ${profileId}. Run \`openmail profiles list\` to see them.`,
+        `No space with id ${profileId}. Run \`openmail spaces list\` to see them.`,
       );
     const inScope = accounts.filter((a) => profileId === undefined || a.profileId === profileId);
     if (accountId !== undefined) {
@@ -181,7 +181,7 @@ export const agentAccountGap = (tool: string, input: unknown) =>
           `No account with id ${accountId}. Run \`openmail accounts list\` to see them.`,
         );
       if (!inScope.includes(account))
-        return toolError("invalid_input", `Account ${accountId} is not in profile ${profileId}.`);
+        return toolError("invalid_input", `Account ${accountId} is not in space ${profileId}.`);
       if (account.enabled === false)
         return noConsent(`Account ${accountId} is turned off in OpenMail.`);
       return allowed(accountId)
@@ -190,10 +190,10 @@ export const agentAccountGap = (tool: string, input: unknown) =>
     }
     const enabled = inScope.filter((a) => a.enabled !== false);
     if (profileId !== undefined) {
-      if (!enabled.length) return noConsent(`Profile ${profileId} has no enabled mail accounts.`);
+      if (!enabled.length) return noConsent(`Space ${profileId} has no enabled mail accounts.`);
       return enabled.some((a) => allowed(a.id))
         ? null
-        : noConsent(`No accounts in profile ${profileId} allow agent reads. ${AGENT_CONSENT_HINT}`);
+        : noConsent(`No accounts in space ${profileId} allow agent reads. ${AGENT_CONSENT_HINT}`);
     }
     if (!enabled.length) return noConsent("No enabled mail accounts.");
     return enabled.some((a) => allowed(a.id))

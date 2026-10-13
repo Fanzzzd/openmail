@@ -15,6 +15,14 @@ import { MailToolkit, MailToolkitLayer, ReadMailToolkit, ProposalMailToolkit } f
 import { AgentIdentity, cleanMcpClientName } from "./agent-identity.js";
 import { UNTRUSTED_MAIL_NOTICE } from "./tool-common.js";
 
+/** read_proposal as MCP sends it: the command is an object, a draft body one page of text. */
+const ProposalPage = Schema.Struct({
+  untrusted_mail: Schema.Struct({
+    command: Schema.Struct({ message: Schema.Struct({ text: Schema.String }) }),
+    next_offset: Schema.optionalKey(Schema.Number),
+  }),
+});
+
 type Service = Mailbox["Service"];
 
 const notUsed = (name: string) => Effect.die(`Mailbox.${name} is not used in this test`);
@@ -508,6 +516,9 @@ it.effect("list_threads narrows to a profile and pages with next_before", () =>
         account("gmail:a@example.com", "work"),
         account("gmail:b@example.com", null),
       ]),
+      profiles: Effect.succeed([
+        { id: "work", name: "Work", icon: "💼", color: "blue", position: 0 },
+      ]),
       threads: (q) =>
         Effect.sync(() => {
           queries.push(q);
@@ -571,15 +582,18 @@ it.effect("search returns local matched chunks and provenance without image byte
       }),
     );
     assert.strictEqual(result.isFailure, false);
+    const { snippet: _snippet, ...shown } = row;
     assert.deepStrictEqual(result.result, {
-      threads: [row],
+      threads: [shown],
       ignored: [],
       errors: [],
       truncated: false,
     });
     const encoded = JSON.stringify(result.result);
     assert.include(JSON.stringify(result.encodedResult), "untrusted_mail");
-    assert.include(JSON.stringify(result.encodedResult), "searchMatches");
+    assert.include(JSON.stringify(result.encodedResult), '"search_matches"');
+    assert.include(JSON.stringify(result.encodedResult), '"attachment_name":"ticket.pdf"');
+    assert.notInclude(JSON.stringify(result.encodedResult), "searchMatches");
     assert.ok(!encoded.includes("base64"));
     assert.ok(!encoded.includes('"data"'));
   });
@@ -1033,31 +1047,39 @@ it.effect(
         });
         let offset = 0;
         let joined = "";
+        let first: unknown;
         for (let page = 0; page < 100; page++) {
           const result = yield* run(
             call("read_proposal", { id: "42", offset, token_budget: 2000 }),
             layer,
           );
           assert.isFalse(result.isFailure);
-          if (!("command_json" in result.result)) return;
           assert.ok(Buffer.byteLength(JSON.stringify(result.encodedResult)) <= 2000);
-          joined += result.result.command_json;
-          if (result.result.next_offset === undefined) break;
-          offset = result.result.next_offset;
+          const { untrusted_mail: shown } = Schema.decodeUnknownSync(ProposalPage)(
+            result.encodedResult,
+          );
+          first ??= Schema.decodeUnknownSync(
+            Schema.Struct({ untrusted_mail: Schema.Struct({ command: Schema.Unknown }) }),
+          )(result.encodedResult).untrusted_mail.command;
+          joined += shown.command.message.text;
+          if (shown.next_offset === undefined) break;
+          assert.ok(page < 99);
+          offset = shown.next_offset;
         }
-        const projection = Schema.decodeUnknownSync(Schema.fromJsonString(Schema.Unknown))(joined);
-        assert.deepStrictEqual(projection, {
+        assert.strictEqual(joined, text);
+        // An object, not JSON in a string, with snake_case keys like every MCP result.
+        expect(first).toEqual({
           kind,
-          accountId: "a",
+          account_id: "a",
           message: {
             from: { name: "Alias", address: "alias@example.com" },
             to: [{ name: "To", address: "to@example.com" }],
             cc: [{ name: "Cc", address: "cc@example.com" }],
             bcc: [{ name: "Bcc", address: "bcc@example.com" }],
             subject: "Visible subject",
-            text,
+            text: expect.any(String),
             mode: "replyAll",
-            inReplyTo: "m1",
+            in_reply_to: "m1",
           },
         });
       }
@@ -1078,7 +1100,7 @@ it.effect(
           expected: {
             kind: "modify",
             threads: ["m1"],
-            op: { kind: "label", labelId: "Label_1", value: false },
+            op: { kind: "label", label_id: "Label_1", value: false },
           },
         },
         {
@@ -1110,11 +1132,10 @@ it.effect(
           }),
         );
         assert.isFalse(result.isFailure);
-        if (!("command_json" in result.result)) return;
         assert.deepStrictEqual(
-          Schema.decodeUnknownSync(Schema.fromJsonString(Schema.Unknown))(
-            result.result.command_json,
-          ),
+          Schema.decodeUnknownSync(
+            Schema.Struct({ untrusted_mail: Schema.Struct({ command: Schema.Unknown }) }),
+          )(result.encodedResult).untrusted_mail.command,
           expected,
         );
       }
@@ -1146,7 +1167,8 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
     for (const response of responses) {
       assert.isFalse(response.isFailure);
       assert.ok(!JSON.stringify(response.encodedResult).includes("Invisible instructions"));
-      if ("threads" in response.result) assert.strictEqual(response.result.threads[0]?.snippet, "");
+      // The field is left out, not sent empty.
+      assert.ok(!JSON.stringify(response.encodedResult).includes('"snippet"'));
     }
   });
 });
@@ -1243,7 +1265,10 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
           Schema.toEncoded(MailToolkit.tools.read_proposal.successSchema),
         )(proposal.encodedResult);
         assert.strictEqual(proposalEnvelope.notice, UNTRUSTED_MAIL_NOTICE);
-        assert.include(proposalEnvelope.untrusted_mail.command_json, "alice@example.com");
+        assert.include(
+          JSON.stringify(proposalEnvelope.untrusted_mail["command"]),
+          "alice@example.com",
+        );
         const draft = yield* mailbox.openDraft(`proposal:${proposed.proposalId}`);
         assert.deepStrictEqual(draft.message.agentOrigin?.recipients, ["alice@example.com"]);
         yield* mailbox.saveDraft({ id: draft.id, accountId: draft.accountId, message: outgoing });
@@ -1520,3 +1545,206 @@ it.effect(
     }).pipe(Effect.provide(handlers));
   },
 );
+
+/** Decodes a failed tool call as MCP sends it. */
+const ToolFailureShape = Schema.Struct({
+  code: Schema.String,
+  message: Schema.String,
+  hint: Schema.optionalKey(Schema.String),
+});
+const failureOf = (result: { readonly isFailure: boolean; readonly encodedResult: unknown }) => {
+  assert.isTrue(result.isFailure, JSON.stringify(result.encodedResult));
+  return Schema.decodeUnknownSync(ToolFailureShape)(result.encodedResult);
+};
+
+it.effect("draft_message rejects a bare name instead of dropping it from the recipients", () =>
+  Effect.gen(function* () {
+    const { calls, layer } = recordingMailbox({ status: "proposed", proposalId: 1 });
+    for (const field of ["to", "cc", "bcc"] as const) {
+      const result = yield* run(
+        call("draft_message", {
+          account_id: "a",
+          to: ["bob@example.com"],
+          [field]: [...(field === "to" ? ["bob@example.com"] : []), "Alice Example"],
+          subject: "s",
+          body: "b",
+          rationale: "r",
+        }),
+        layer,
+      );
+      const failure = failureOf(result);
+      assert.strictEqual(failure.code, "invalid_input");
+      assert.include(failure.message, '"Alice Example"');
+      assert.include(failure.hint ?? "", "suggest_contacts");
+    }
+    // Two addresses in one entry, and a display name with its address, still work.
+    const ok = yield* run(
+      call("draft_message", {
+        account_id: "a",
+        to: ["Bob <bob@example.com>, carol@example.com"],
+        subject: "s",
+        body: "b",
+        rationale: "r",
+      }),
+      layer,
+    );
+    assert.isFalse(ok.isFailure);
+    const sent = calls[0]?.command;
+    assert.ok(sent?.kind === "draft");
+    assert.deepStrictEqual(
+      sent.message.to.map((a) => a.address),
+      ["bob@example.com", "carol@example.com"],
+    );
+    assert.strictEqual(calls.length, 1);
+  }),
+);
+
+it.effect("tools fail as not_found for an account, profile or id the client cannot read", () =>
+  Effect.gen(function* () {
+    const layer = stubMailbox({
+      accounts: Effect.succeed([testAccount("a"), { ...testAccount("off"), enabled: false }]),
+      profiles: Effect.succeed([]),
+      labels: () => Effect.succeed([]),
+      threads: () => Effect.succeed([]),
+      suggestContacts: () => Effect.succeed([]),
+      sync: () => Effect.succeed([]),
+    });
+    for (const account_id of ["bogus", "off"]) {
+      const results = yield* Effect.all([
+        run(call("list_labels", { account_id }), layer),
+        run(call("list_threads", { account_id }), layer),
+        run(call("search", { query: "x", account_id }), layer),
+        run(call("semantic_search", { query: "x", account_id }), layer),
+        run(call("suggest_contacts", { query: "x", account_id }), layer),
+        run(call("sync", { account_id }), layer),
+      ]);
+      for (const result of results) {
+        const failure = failureOf(result);
+        assert.strictEqual(failure.code, "not_found");
+        assert.include(failure.message, account_id);
+        assert.include(failure.hint ?? "", "list_accounts");
+      }
+    }
+    const profile = failureOf(yield* run(call("list_threads", { profile_id: "nope" }), layer));
+    assert.strictEqual(profile.code, "not_found");
+    assert.include(profile.hint ?? "", "list_profiles");
+    for (const [name, hint] of [
+      ["read_template", "list_templates"],
+      ["read_signature", "list_signatures"],
+      ["read_proposal", "list_proposals"],
+    ] as const) {
+      const missing = yield* run(
+        call(name, { id: "nope" }),
+        stubMailbox({
+          templates: Effect.succeed([]),
+          namedSignatures: Effect.succeed([]),
+          proposals: Effect.succeed([]),
+        }),
+      );
+      assert.strictEqual(failureOf(missing).code, "not_found");
+      assert.include(failureOf(missing).hint ?? "", hint);
+    }
+  }),
+);
+
+it.effect("semantic_search explains a missing account_id and an index that is not ready", () =>
+  Effect.gen(function* () {
+    const { IndexNotReady } = yield* Effect.promise(() => import("../domain/errors.js"));
+    const layer = stubMailbox({
+      semanticSearch: () => Effect.fail(new IndexNotReady({ message: "Not indexed yet." })),
+    });
+    const missing = failureOf(yield* run(call("semantic_search", { query: "trip" }), layer));
+    assert.strictEqual(missing.code, "invalid_input");
+    assert.include(missing.hint ?? "", "Pass an id from list_accounts");
+    const notReady = failureOf(
+      yield* run(call("semantic_search", { query: "trip", account_id: "a" }), layer),
+    );
+    assert.strictEqual(notReady.code, "not_ready");
+    assert.strictEqual(notReady.message, "Not indexed yet.");
+  }),
+);
+
+/** Every object key in a JSON value, at any depth. */
+const keysOf = (value: unknown): string[] =>
+  Array.isArray(value)
+    ? value.flatMap(keysOf)
+    : value !== null && typeof value === "object"
+      ? Object.entries(value).flatMap(([key, item]) => [key, ...keysOf(item)])
+      : [];
+
+it.effect("MCP results use snake_case keys at every depth and leave out empty fields", () =>
+  Effect.gen(function* () {
+    const row = {
+      id: "a/m1",
+      accountId: "a",
+      threadId: "t",
+      subject: "s",
+      from: { name: "", address: "x@example.com" },
+      date: 1,
+      snippet: "provider preview",
+      labels: ["INBOX"],
+      isUnread: true,
+      isStarred: false,
+      hasAttachments: false,
+      threadCount: 1,
+      participants: [],
+    };
+    const layer = stubMailbox({
+      threads: () => Effect.succeed([row]),
+      threadForModel: () =>
+        Effect.succeed({
+          threadId: "t",
+          accountId: "a",
+          subject: "s",
+          messages: [
+            {
+              id: "a/m1",
+              from: "x",
+              to: [],
+              cc: [],
+              date: "1970",
+              text: "hi",
+              quotedTextRemoved: 3,
+            },
+          ],
+          truncated: 0,
+        }),
+    });
+    const results = yield* Effect.all([
+      run(call("list_accounts", {}), layer),
+      run(call("list_threads", {}), layer),
+      run(call("search", { query: "s" }), layer),
+      run(call("read_thread", { id: "a/m1" }), layer),
+      run(call("access_status", {}), layer),
+    ]);
+    for (const result of results) {
+      assert.isFalse(result.isFailure, JSON.stringify(result.encodedResult));
+      const camel = keysOf(result.encodedResult).filter((key) => /[A-Z]/.test(key));
+      assert.deepStrictEqual(camel, [], JSON.stringify(result.encodedResult));
+    }
+    const [accounts, list, , thread] = results.map((r) => JSON.stringify(r.encodedResult));
+    assert.include(accounts, '"needs_reauth":false');
+    assert.include(list, '"account_id":"a"');
+    assert.include(list, '"is_unread":true');
+    assert.notInclude(list, "snippet");
+    assert.include(thread, '"quoted_text_removed":3');
+    assert.notInclude(thread, '"labels"');
+    assert.notInclude(thread, '"attachments"');
+    // Decoding maps the keys back, so the CLI reads results as core types.
+    const [, decoded] = results;
+    assert.ok(!decoded.isFailure && "threads" in decoded.result);
+    assert.strictEqual(decoded.result.threads[0]?.accountId, "a");
+  }),
+);
+
+it("every tool parameter has a description", () => {
+  for (const tool of Object.values(MailToolkit.tools)) {
+    const schema = Tool.getJsonSchema(tool);
+    const properties: Record<string, unknown> =
+      "properties" in schema && schema.properties !== null && typeof schema.properties === "object"
+        ? { ...schema.properties }
+        : {};
+    for (const [name, property] of Object.entries(properties))
+      assert.include(JSON.stringify(property), '"description"', `${tool.name}.${name}`);
+  }
+});
