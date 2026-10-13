@@ -7,6 +7,9 @@ import MarkdownIt from "markdown-it";
  * markdown-it writes itself. That is the sanitizing; no second pass is needed.
  */
 const md = new MarkdownIt({ html: false, linkify: true, breaks: true });
+// markdown-it 15 turned fuzzy links off. People type www.example.com in mail
+// and expect a link, as they got before. Credentials in URLs stay unlinked.
+md.linkify.set({ fuzzyLink: true });
 
 // Mail clients drop <style> blocks, so the few styles that matter are inline.
 const STYLES: [string, string][] = [

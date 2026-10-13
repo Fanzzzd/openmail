@@ -22,3 +22,9 @@ it("escapes typed HTML and refuses script links", () => {
   assert.notMatch(html, /<script|<img|href="javascript/i);
   assert.match(html, /&lt;script&gt;/);
 });
+
+it("links bare domains and addresses", () => {
+  const html = renderMarkdown("www.example.com or bob@example.com");
+  assert.match(html, /<a href="http:\/\/www\.example\.com">www\.example\.com<\/a>/);
+  assert.match(html, /<a href="mailto:bob@example\.com">bob@example\.com<\/a>/);
+});

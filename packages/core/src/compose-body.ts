@@ -261,7 +261,9 @@ function composeNodes(input: string): SafeNode[] {
       space.lineStart = false;
     }
   };
-  const visit = (nodes: HtmlNode[], pre = false, depth = 0): SafeNode[] => {
+  // `link` is true inside an <a>. HTML has no nested links: a parser closes
+  // the outer one, so a nested <a> would not survive a second pass.
+  const visit = (nodes: HtmlNode[], pre = false, depth = 0, link = false): SafeNode[] => {
     if (depth > 128) return [];
     const result: SafeNode[] = [];
     for (const node of nodes) {
@@ -274,12 +276,17 @@ function composeNodes(input: string): SafeNode[] {
       const { name, attribs } = node;
       const cid = name === "img" ? composeCid(attribs.src ?? "") : undefined;
       if (name === "html" || name === "body") {
-        for (const child of visit(node.children, pre, depth + 1)) result.push(child);
+        for (const child of visit(node.children, pre, depth + 1, link)) result.push(child);
         continue;
       }
       const block = BLOCKS.has(name) || LISTS.has(name) || name === "table";
       if (block || name === "br") reset();
-      let children = visit(node.children, pre || name === "pre" || name === "code", depth + 1);
+      let children = visit(
+        node.children,
+        pre || name === "pre" || name === "code",
+        depth + 1,
+        link || name === "a",
+      );
       if (name === "span") {
         for (const mark of spanMarks(attribs.style ?? "").toReversed())
           children = [{ kind: "tag", name: mark, attrs: {}, children }];
@@ -288,7 +295,7 @@ function composeNodes(input: string): SafeNode[] {
       const inline = INLINE.get(name);
       const tag = inline ?? (RICH_TAGS.has(name) ? name : block ? "div" : undefined);
       if (name === "a") {
-        const href = composeLink(attribs.href ?? "");
+        const href = link ? undefined : composeLink(attribs.href ?? "");
         if (href)
           result.push({
             kind: "tag",

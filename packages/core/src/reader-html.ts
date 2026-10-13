@@ -239,8 +239,8 @@ export function prepareMessageHtml(html: string, options: PrepareOptions = {}): 
 
     // Tracker images go away whole, so no broken-image icon is left behind.
     // An image of one pixel or less from an unlisted remote host is an open
-    // pixel too.
-    if (tag === "img") {
+    // pixel too. Parsers read <image> outside SVG as <img> (htmlparser2 12 does).
+    if (tag === "img" || tag === "image") {
       const src = absolute(get("src") ?? "", true);
       const tracker = trackerFor(src);
       if (tracker) {

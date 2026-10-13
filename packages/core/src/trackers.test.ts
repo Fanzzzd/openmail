@@ -88,6 +88,14 @@ describe("prepareMessageHtml", () => {
     assert.include(out.html, "<p>Hi</p>");
   });
 
+  it("treats <image> as <img>, as HTML parsers do", () => {
+    const html = `<p>a<image src="https://u1.ct.sendgrid.net/wf/open?upn=a">b<image src="https://unknown.example/o.gif" width="1" height="1">c</p>`;
+    const out = prepareMessageHtml(html);
+    assert.deepStrictEqual(out.trackers, ["SendGrid"]);
+    assert.strictEqual(out.pixels, 1);
+    assert.strictEqual(sanitizeReaderHtml(out.html, true), "<p>abc</p>");
+  });
+
   it("still removes trackers when the default mode loads remote images", () => {
     const message = { from: { address: "news@shop.example" } };
     const load = shouldLoadRemote(message, {
