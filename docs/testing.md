@@ -137,13 +137,15 @@ node apps/desktop/scripts/smoke.mjs --db /path/to/mail.db
 
 提供 `--db` 前先关闭原库的写入进程。脚本只复制原库、存在的 WAL 和同目录 `config.json`，发现复制期间文件变化即停止；只打开临时副本并迁移到当前版本。副本强制手动已读、英语界面，关闭首次 Profiles 建议，滑动操作全部设为无操作，Delete 键改为询问，原文件不变。脚本设置 `OPENMAIL_BACKGROUND_WINDOWS=1`：开发构建的窗口用 `showInactive()` 显示，不抢焦点，误触的按键和触控板滑动仍落在原来的应用。打包后的应用忽略这个变量。钥匙串项不复制，仍沿用标准 Secrets 读取和 token 刷新。没有 `config.json` 时，副本可能提示配置 OAuth client；这不等于需要重新登录。
 
+默认离线：启动设置 `OPENMAIL_OFFLINE=1`，core 的每个 provider 方法（同步、健康检查的服务端计数、联系人、token 刷新、IMAP 连接）都直接失败，不发出请求，报告的 `network` 为 false。这时 `syncHealth` 里各账户的服务端计数不可用，只有本地计数。要让副本连接真实服务商，加 `--network`。离线模式不拦截阅读器按远程图片设置加载的邮件图片。
+
 `--db` 可省略，使用空临时库。`--timeout` 是总等待毫秒数，默认 180000；`--port` 指定本地 CDP 端口，默认自动选取。`--keep` 保留临时库和诊断文件，报告输出 `directory`；默认删除。启动设置 `OPENMAIL_READ_ONLY=1` 和临时 `OPENMAIL_HOME`，并核对 Electron 的 `user-data-dir`。只读会话仍允许本地写入和网络读取，详细边界只在[架构](architecture.md#只读会话)维护。
 
 stdout 输出 JSON，stderr 输出步骤和预览日志：
 
 | 字段                                           | 含义                                                                                                |
 | ---------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `readOnly`、`copiedDatabase`                   | 已启用只读会话，以及是否提供原库副本                                                                |
+| `readOnly`、`network`、`copiedDatabase`        | 已启用只读会话，是否允许 provider 调用（`--network`），以及是否提供原库副本                         |
 | `steps`                                        | 每步 passed／skipped 及跳过原因；无缓存 Inbox 会话跳过阅读，无账户跳过撰写和 Settings               |
 | `syncHealth`                                   | 各账户脱敏同步健康报告；无账户为空，字段和判断见[同步说明](sync-correctness.md#同步健康检查)        |
 | `consoleErrors`、`exceptions`、`ipcRejections` | renderer 错误、异常和 RPC 拒绝；正常中断不计拒绝                                                    |

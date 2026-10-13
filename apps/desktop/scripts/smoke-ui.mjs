@@ -21,3 +21,21 @@ export function isBlockedSmokeImage(source, text) {
       ))
   );
 }
+
+/**
+ * The preview's environment. Offline unless `--network` asks for provider calls: the copied
+ * database keeps real accounts and the keychain still has their tokens, so a default run
+ * would sync, refresh tokens and fetch contacts against Gmail, Outlook and IMAP servers.
+ */
+export function smokeEnvironment(base, directory, network = false) {
+  const env = {
+    ...base,
+    OPENMAIL_READ_ONLY: "1",
+    OPENMAIL_HOME: directory,
+    // Development builds open windows without taking focus from the person's work.
+    OPENMAIL_BACKGROUND_WINDOWS: "1",
+  };
+  if (network) delete env.OPENMAIL_OFFLINE;
+  else env.OPENMAIL_OFFLINE = "1";
+  return env;
+}

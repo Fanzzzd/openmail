@@ -1,6 +1,10 @@
 import { runInNewContext } from "node:vm";
 import { expect, it } from "vitest";
-import { smokeClickExpression, isBlockedSmokeImage } from "../../../../scripts/smoke-ui.mjs";
+import {
+  smokeClickExpression,
+  isBlockedSmokeImage,
+  smokeEnvironment,
+} from "../../../../scripts/smoke-ui.mjs";
 import { testDom } from "../test-support/test-dom";
 
 it("smoke re-queries after a replaced list row and stops clicking once the reader appears", () => {
@@ -63,4 +67,18 @@ it("smoke ignores only srcdoc remote-image CSP blocks in both Chromium message f
     "Uncaught Error: CSP violation",
   ])
     expect(isBlockedSmokeImage("about:srcdoc", text)).toBe(false);
+});
+
+it("smoke runs offline unless --network opts in to provider calls", () => {
+  const base = { PATH: "/usr/bin", OPENMAIL_OFFLINE: "0" };
+  const offline = smokeEnvironment(base, "/tmp/smoke");
+  expect(offline).toMatchObject({
+    PATH: "/usr/bin",
+    OPENMAIL_OFFLINE: "1",
+    OPENMAIL_READ_ONLY: "1",
+    OPENMAIL_HOME: "/tmp/smoke",
+  });
+  const online = smokeEnvironment(base, "/tmp/smoke", true);
+  expect(online.OPENMAIL_OFFLINE).toBeUndefined();
+  expect(online.OPENMAIL_READ_ONLY).toBe("1");
 });

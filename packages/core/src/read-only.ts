@@ -60,3 +60,29 @@ export function readOnlyAdapter(adapter: ProviderAdapter): ProviderAdapter {
     },
   });
 }
+
+export const OFFLINE_MESSAGE = "Network calls are disabled in this offline session";
+
+const offline = () => Effect.fail(new ProviderError({ message: OFFLINE_MESSAGE }));
+
+/**
+ * OPENMAIL_OFFLINE=1 (the desktop smoke's default): every provider method fails without
+ * running, reads and token refreshes included, so the session makes no provider calls.
+ * Local mail, search and settings keep working from the database.
+ */
+export function offlineAdapter(adapter: ProviderAdapter): ProviderAdapter {
+  return new Proxy(adapter, {
+    // Never evaluate the adapter's own value, so a getter cannot reach the network either.
+    get: (target, key) => (key in target ? offline : undefined),
+    getOwnPropertyDescriptor(target, key) {
+      const descriptor = Reflect.getOwnPropertyDescriptor(target, key);
+      if (!descriptor) return descriptor;
+      return {
+        configurable: descriptor.configurable,
+        enumerable: descriptor.enumerable,
+        value: offline,
+        writable: false,
+      };
+    },
+  });
+}

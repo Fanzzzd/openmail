@@ -5,7 +5,13 @@ import { makeGmail } from "./gmail.js";
 import { makeOutlook } from "./outlook.js";
 import { makeImap } from "./platform/node/imap/adapter.js";
 import { MemoryPlatform } from "./platform/node/platform-memory.js";
-import { READ_ONLY_METHODS, readOnlyAdapter, READ_ONLY_MESSAGE, refused } from "./read-only.js";
+import {
+  offlineAdapter,
+  READ_ONLY_METHODS,
+  readOnlyAdapter,
+  READ_ONLY_MESSAGE,
+  refused,
+} from "./read-only.js";
 import { Mailbox } from "./mailbox.js";
 import { Store } from "./services.js";
 import { EMPTY_FILTER } from "./organization.js";
@@ -225,3 +231,52 @@ import { type IncomingMessage, type OutgoingMessage } from "./domain.js";
     },
   );
 }
+
+it.effect("OPENMAIL_OFFLINE refuses every provider method without calling it", () =>
+  Effect.gen(function* () {
+    for (const adapter of [yield* makeGmail, yield* makeOutlook, yield* makeImap]) {
+      const closed = offlineAdapter(adapter);
+      for (const name of Object.keys(adapter)) {
+        const method: unknown = Reflect.get(closed, name);
+        assert.strictEqual(typeof method, "function", name);
+        assert.notStrictEqual(method, Reflect.get(adapter, name), name);
+      }
+    }
+  }).pipe(
+    Effect.provide(
+      Layer.mergeAll(
+        MemoryPlatform(),
+        Layer.succeed(
+          HttpClient.HttpClient,
+          HttpClient.make(() => Effect.die("Unexpected network request")),
+        ),
+      ),
+    ),
+  ),
+);
+
+it.effect("an offline session syncs and checks health without one provider call", () => {
+  const server = fakeServer("me@gmail.com");
+  return Effect.gen(function* () {
+    const mailbox = yield* Mailbox;
+    const store = yield* Store;
+    const account = yield* store.upsertAccount("gmail", "me@gmail.com");
+    const results = yield* mailbox.sync(account.id);
+    assert.ok(results.length > 0);
+    for (const result of results) assert.isString(result.error);
+    yield* mailbox.syncHealth(account.id).pipe(Effect.result);
+    assert.strictEqual(server.pulls.length, 0);
+    assert.strictEqual(server.pushed.length, 0);
+    assert.strictEqual(server.sent.length, 0);
+  }).pipe(
+    Effect.provide(
+      TestMailbox({ gmail: server }).pipe(
+        Layer.provide(
+          ConfigProvider.layer(
+            ConfigProvider.fromEnvRecord({ OPENMAIL_READ_ONLY: "1", OPENMAIL_OFFLINE: "1" }),
+          ),
+        ),
+      ),
+    ),
+  );
+});

@@ -1,4 +1,4 @@
-import { smokeClickExpression, isBlockedSmokeImage } from "./smoke-ui.mjs";
+import { smokeClickExpression, isBlockedSmokeImage, smokeEnvironment } from "./smoke-ui.mjs";
 import { spawn } from "node:child_process";
 import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -14,6 +14,8 @@ const { values } = parseArgs({
     port: { type: "string" },
     timeout: { type: "string", default: "180000" },
     keep: { type: "boolean", default: false },
+    // Off by default: no provider calls. Pass --network to let the copy sync and check health.
+    network: { type: "boolean", default: false },
   },
 });
 const timeout = Number(values.timeout);
@@ -40,6 +42,7 @@ const directory = await mkdtemp(join(tmpdir(), "openmail-smoke-"));
 if (values.keep) process.stderr.write(`Smoke directory: ${directory}\n`);
 const report = {
   readOnly: true,
+  network: values.network,
   copiedDatabase: !!values.db,
   ...(values.keep ? { directory } : {}),
   steps: [],
@@ -152,13 +155,7 @@ try {
     ],
     {
       cwd: fileURLToPath(new URL("..", import.meta.url)),
-      env: {
-        ...process.env,
-        OPENMAIL_READ_ONLY: "1",
-        OPENMAIL_HOME: directory,
-        // Development builds open windows without taking focus from the person's work.
-        OPENMAIL_BACKGROUND_WINDOWS: "1",
-      },
+      env: smokeEnvironment(process.env, directory, values.network),
       stdio: ["ignore", "ignore", "pipe"],
       detached: process.platform !== "win32",
     },

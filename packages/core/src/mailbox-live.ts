@@ -50,7 +50,7 @@ import { destination as outlookDestination } from "./outlook/graph.js";
 import { PlatformCrypto } from "./platform/crypto.js";
 import { MailCodec } from "./platform/mail-codec.js";
 import { AppVerifier, AttachmentFiles, ImageNetwork, type PdfWorker } from "./platform/runtime.js";
-import { readOnlyAdapter } from "./read-only.js";
+import { offlineAdapter, readOnlyAdapter } from "./read-only.js";
 import { makeSemanticIndexer } from "./semantic-indexer.js";
 import { AppConfig, OAuthIssuers, Providers, Secrets, Store } from "./services.js";
 import { makeSyncHealth } from "./sync-health.js";
@@ -115,6 +115,10 @@ export const MailboxLive = (
         (yield* Config.String("OPENMAIL_READ_ONLY").pipe(Config.withDefault("0"), Effect.orDie)) ===
         "1";
 
+      const offline =
+        (yield* Config.String("OPENMAIL_OFFLINE").pipe(Config.withDefault("0"), Effect.orDie)) ===
+        "1";
+
       const rawProviders = yield* Providers;
 
       const providers = Providers.of({
@@ -122,7 +126,11 @@ export const MailboxLive = (
           const cached = runtime.adapters.get(provider);
           if (cached) return cached;
           const scoped = scopedAdapter(rawProviders.get(provider), store);
-          const adapter = readOnly ? readOnlyAdapter(scoped) : scoped;
+          const adapter = offline
+            ? offlineAdapter(scoped)
+            : readOnly
+              ? readOnlyAdapter(scoped)
+              : scoped;
           runtime.adapters.set(provider, adapter);
           return adapter;
         },
