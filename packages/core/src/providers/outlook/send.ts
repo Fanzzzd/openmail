@@ -28,7 +28,7 @@ import { makeOutlookDrafts } from "./drafts.js";
 export const makeOutlookSend = (client: OutlookClient) =>
   Effect.gen(function* () {
     const { codec, api, get } = client;
-    const state = yield* makeOutlookDraftState(client);
+    const draftState = yield* makeOutlookDraftState(client);
     const {
       write,
       crypto,
@@ -41,7 +41,7 @@ export const makeOutlookSend = (client: OutlookClient) =>
       addDraftAttachments,
       deliver,
       syncUploadedAttachments,
-    } = state;
+    } = draftState;
 
     const buildMime = (...args: Parameters<typeof unboundBuildMime>) =>
       unboundBuildMime(...args).pipe(Effect.provideService(MailCodec, codec));
@@ -312,7 +312,7 @@ export const makeOutlookSend = (client: OutlookClient) =>
         ),
     );
 
-    const { saveDraft, deleteDraft, draftMarkdownSource } = makeOutlookDrafts(client, state);
+    const { saveDraft, deleteDraft, draftMarkdownSource } = makeOutlookDrafts(client, draftState);
 
     return {
       send,

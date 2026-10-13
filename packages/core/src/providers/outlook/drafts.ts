@@ -21,7 +21,7 @@ import {
 } from "./graph-message.js";
 
 /** Saving, deleting and reading back Outlook drafts. */
-export const makeOutlookDrafts = (client: OutlookClient, state: OutlookDraftState) => {
+export const makeOutlookDrafts = (client: OutlookClient, draftState: OutlookDraftState) => {
   const { get } = client;
   const {
     write,
@@ -32,7 +32,7 @@ export const makeOutlookDrafts = (client: OutlookClient, state: OutlookDraftStat
     draftLookup,
     addDraftAttachments,
     syncUploadedAttachments,
-  } = state;
+  } = draftState;
 
   /**
    * Outlook drafts are messages in the Drafts folder, edited in place, so the

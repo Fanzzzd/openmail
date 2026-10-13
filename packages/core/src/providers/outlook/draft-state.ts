@@ -16,6 +16,18 @@ import { draftKey, fileAttachment, keepsInherited } from "./graph-message.js";
  * wrote, attachment fingerprints proven on the server, delivery and draft
  * lookups by Message-ID, and attachment upload and sync.
  */
+/** An attachment already on the draft: same name, bytes and content id. */
+const sameAttachment = (
+  a: Pick<ReturnType<typeof fileAttachment>, "name" | "contentBytes" | "contentId">,
+  b: Pick<
+    (typeof UploadedAttachments.Type)["value"][number],
+    "name" | "contentBytes" | "contentId"
+  >,
+) =>
+  a.name === b.name &&
+  a.contentBytes === b.contentBytes &&
+  (a.contentId ?? null) === (b.contentId ?? null);
+
 export const makeOutlookDraftState = (client: OutlookClient) =>
   Effect.gen(function* () {
     const { get } = client;
@@ -142,19 +154,9 @@ export const makeOutlookDraftState = (client: OutlookClient) =>
     ) =>
       Effect.gen(function* () {
         const added: ReturnType<typeof fileAttachment>[] = [];
-        const same = (
-          a: Pick<ReturnType<typeof fileAttachment>, "name" | "contentBytes" | "contentId">,
-          b: Pick<
-            (typeof UploadedAttachments.Type)["value"][number],
-            "name" | "contentBytes" | "contentId"
-          >,
-        ) =>
-          a.name === b.name &&
-          a.contentBytes === b.contentBytes &&
-          (a.contentId ?? null) === (b.contentId ?? null);
         const existing = reconcile ? yield* listDraftAttachments(accountId, id) : [];
         for (const attachment of attachments) {
-          const present = existing.findIndex((candidate) => same(attachment, candidate));
+          const present = existing.findIndex((candidate) => sameAttachment(attachment, candidate));
           if (present >= 0) {
             existing.splice(present, 1);
             added.push(attachment);
@@ -171,8 +173,12 @@ export const makeOutlookDraftState = (client: OutlookClient) =>
               (error) =>
                 Effect.gen(function* () {
                   const current = yield* listDraftAttachments(accountId, id);
-                  const required = 1 + added.filter((prior) => same(prior, attachment)).length;
-                  if (current.filter((candidate) => same(attachment, candidate)).length < required)
+                  const required =
+                    1 + added.filter((prior) => sameAttachment(prior, attachment)).length;
+                  if (
+                    current.filter((candidate) => sameAttachment(attachment, candidate)).length <
+                    required
+                  )
                     yield* Effect.fail(error);
                 }),
             ),
