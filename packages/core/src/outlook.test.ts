@@ -45,7 +45,7 @@ import {
 import { isDefiniteSendFailure } from "./provider-send.js";
 import { replyRecipients } from "./recipients.js";
 import { Providers, Secrets, Store, type Change, type ProviderAdapter } from "./services.js";
-import { StoreLive } from "./store.js";
+import { StoreLive } from "./store/store.js";
 const GRAPH = "https://graph.microsoft.com/v1.0";
 
 it.effect(

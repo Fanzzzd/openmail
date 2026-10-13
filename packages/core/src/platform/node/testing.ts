@@ -12,7 +12,7 @@ import { MailboxLive, type MailboxOptions } from "../../mailbox/mailbox-live.js"
 import type { Mailbox } from "../../mailbox/mailbox.js";
 import { MemoryPlatform, type MemoryPlatformOptions } from "./platform-memory.js";
 import { Providers } from "../../services.js";
-import { StoreLive } from "../../store.js";
+import { StoreLive } from "../../store/store.js";
 
 /**
  * A Mailbox over an in-memory database and fake providers: the whole
@@ -38,7 +38,7 @@ export function TestMailbox(
 }
 
 export { Store } from "../../services.js";
-export { StoreLive } from "../../store.js";
+export { StoreLive } from "../../store/store.js";
 
 export { type FakeServer, fakeServer } from "./fake-provider.js";
 

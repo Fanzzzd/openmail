@@ -1,6 +1,6 @@
 import { Effect, Layer, Option, Schema, Context, Clock } from "effect";
 import { SqlClient } from "effect/sql";
-import { all, run } from "../sql-rows.js";
+import { all, run } from "../store/sql-rows.js";
 
 export const MobileBackgroundPreferences = Schema.Struct({
   refresh: Schema.Boolean,

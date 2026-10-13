@@ -12,8 +12,8 @@ import { makeOutlook } from "../../outlook.js";
 import { NodeSystem, NodePlatform, type NodePlatformOptions } from "./platform-node.js";
 import { readOnlyAdapter } from "../../mailbox/read-only.js";
 import { Providers } from "../../services.js";
-import { StoreLive } from "../../store.js";
-import { OAuthIssuersSql } from "../../store-oauth-issuers.js";
+import { StoreLive } from "../../store/store.js";
+import { OAuthIssuersSql } from "../../store/store-oauth-issuers.js";
 
 export const ProvidersLive = Layer.effect(
   Providers,

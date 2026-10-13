@@ -12,7 +12,7 @@ import {
   migrateTo,
   MIGRATIONS,
   ROWID_REBUILD_MIGRATION,
-} from "../../db.js";
+} from "../../db/db.js";
 import { nodeCacheMaintenance } from "./cache-maintenance.js";
 import { registerDatabaseLease } from "./database-access.js";
 import { checkDatabaseUpgradeSpace } from "./database-upgrade.js";
@@ -165,4 +165,4 @@ export function databaseLayer(
   );
 }
 
-export { MIGRATIONS, splitStatements, DatabaseCapabilities } from "../../db.js";
+export { MIGRATIONS, splitStatements, DatabaseCapabilities } from "../../db/db.js";

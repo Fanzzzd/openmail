@@ -9,7 +9,7 @@ import {
   DEFAULT_MOBILE_BACKGROUND,
 } from "./mobile-background.js";
 import { SqlClient } from "effect/sql";
-import { StoreLive } from "../store.js";
+import { StoreLive } from "../store/store.js";
 import { Store } from "../services.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
 

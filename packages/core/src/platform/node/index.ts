@@ -84,4 +84,4 @@ export {
 } from "./corpus-check.js";
 
 export { DatabaseUpgradeSpaceError } from "./database-upgrade.js";
-export { DatabaseTooNewError } from "../../db.js";
+export { DatabaseTooNewError } from "../../db/db.js";

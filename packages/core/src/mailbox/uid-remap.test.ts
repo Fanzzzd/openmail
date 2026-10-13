@@ -9,7 +9,7 @@ import { fakeServer, makeFakeProvider } from "../platform/node/fake-provider.js"
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
 import { incoming as makeIncoming, TestMailbox } from "../platform/node/testing.js";
 import { Providers, Store, type Change, type ProviderAdapter } from "../services.js";
-import { StoreLive } from "../store.js";
+import { StoreLive } from "../store/store.js";
 {
   const message = (providerId: string, rfcMessageId: string): IncomingMessage =>
     makeIncoming(providerId, {

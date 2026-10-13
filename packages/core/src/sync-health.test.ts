@@ -2,7 +2,7 @@ import { assert, it } from "@effect/vitest";
 import { ConfigProvider, Effect, Fiber, Layer, Option } from "effect";
 import { SqlClient } from "effect/sql";
 import { TestClock } from "effect/testing";
-import { StoreLive } from "./store.js";
+import { StoreLive } from "./store/store.js";
 import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { makeFakeProvider } from "./platform/node/fake-provider.js";
 import { Mailbox } from "./mailbox/mailbox.js";

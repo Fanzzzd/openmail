@@ -7,7 +7,7 @@ import { SqlClient } from "effect/sql";
 import type { IncomingMessage } from "../../../domain/domain.js";
 import { MailboxLive } from "../../../mailbox/mailbox-live.js";
 import { Store, Providers } from "../../../services.js";
-import { StoreLive } from "../../../store.js";
+import { StoreLive } from "../../../store/store.js";
 import { MailCodec } from "../../mail-codec.js";
 import { MemoryPlatform } from "../platform-memory.js";
 import { fakeServer, makeFakeProvider } from "../fake-provider.js";

@@ -11,7 +11,7 @@ import { MailboxLive, type MailboxOptions } from "./mailbox/mailbox-live.js";
 import { Mailbox } from "./mailbox/mailbox.js";
 import { Store, Providers, Secrets, type ProviderAdapter } from "./services.js";
 import { MemoryPlatform } from "./platform/node/platform-memory.js";
-import { StoreLive } from "./store.js";
+import { StoreLive } from "./store/store.js";
 import { fakeServer, makeFakeProvider } from "./platform/node/fake-provider.js";
 import { PersistentAttachments } from "./platform/node/persistent-attachments.js";
 import { type IncomingMessage } from "./domain/domain.js";

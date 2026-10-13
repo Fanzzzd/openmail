@@ -2,7 +2,7 @@ import { applyNativeMigration } from "./migrations.js";
 import { copyQuiescentDatabase } from "./database-copy.js";
 import { existsSync, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
-import { MIGRATIONS } from "../../db.js";
+import { MIGRATIONS } from "../../db/db.js";
 import { DatabaseSync } from "node:sqlite";
 
 /** Copy a quiescent database, WAL and adjacent OAuth client config without modifying sources. */

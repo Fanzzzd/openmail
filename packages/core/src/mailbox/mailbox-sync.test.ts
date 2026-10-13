@@ -9,7 +9,7 @@ import { splitWriteBatch } from "./mailbox-sync.js";
 import { fakeServer, makeFakeProvider } from "../platform/node/fake-provider.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
 import { Providers, Store } from "../services.js";
-import { StoreLive } from "../store.js";
+import { StoreLive } from "../store/store.js";
 import { incoming, TestMailbox } from "../platform/node/testing.js";
 import { type Change } from "../services.js";
 

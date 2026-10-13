@@ -9,7 +9,7 @@ import { parseCalendar } from "./invites.js";
 import { makeProviderCalendar } from "./provider-calendar.js";
 import { Mailbox } from "./mailbox/mailbox.js";
 import { Providers } from "./services.js";
-import { StoreLive } from "./store.js";
+import { StoreLive } from "./store/store.js";
 import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { makeFakeProvider } from "./platform/node/fake-provider.js";
 import { MailboxLive } from "./mailbox/mailbox-live.js";

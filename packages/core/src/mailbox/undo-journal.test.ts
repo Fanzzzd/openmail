@@ -11,7 +11,7 @@ import { fakeServer, makeFakeProvider } from "../platform/node/fake-provider.js"
 import { Mailbox } from "./mailbox.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
 import { Store } from "../services.js";
-import { StoreLive } from "../store.js";
+import { StoreLive } from "../store/store.js";
 import { makeBatchMailbox } from "./mailbox-batch.js";
 {
   const incoming = (id: string, labels = ["INBOX", "UNREAD"]): IncomingMessage => ({

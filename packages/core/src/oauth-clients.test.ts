@@ -9,7 +9,7 @@ import { fakeHttp } from "./platform/node/fake-http.js";
 import { MemoryPlatform, type MemoryPlatformOptions } from "./platform/node/platform-memory.js";
 import { account, TestMailbox } from "./platform/node/testing.js";
 import { AppConfig, type ClientConfig, OAuthIssuers, Store } from "./services.js";
-import { StoreLive } from "./store.js";
+import { StoreLive } from "./store/store.js";
 
 const user = { clientId: "user-google", clientSecret: "user-secret" };
 const env = { clientId: "env-google", clientSecret: "env-secret" };

@@ -10,7 +10,7 @@ import { Mailbox } from "../mailbox/mailbox.js";
 import { EMPTY_FILTER, EMPTY_VACATION, snoozeTimes, sameFilterRule } from "./organization.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
 import { Providers, Store } from "../services.js";
-import { StoreLive } from "../store.js";
+import { StoreLive } from "../store/store.js";
 import { filterQuery, matchesSearch, parseSearchQuery } from "../search.js";
 import { makeOutlookSettings } from "../outlook-settings.js";
 {

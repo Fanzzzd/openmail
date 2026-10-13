@@ -156,7 +156,7 @@ try {
     }),
   );
   const currentWrites = declarations(
-    readFileSync(new URL("../src/store.ts", import.meta.url), "utf8"),
+    readFileSync(new URL("../src/store/store.ts", import.meta.url), "utf8"),
   );
   for (const name of writeNames)
     if (!mainWrites.has(name) || mainWrites.get(name) !== currentWrites.get(name))

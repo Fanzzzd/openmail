@@ -39,7 +39,7 @@ import { HtmlText } from "./platform/html-text.js";
 import { Providers, Secrets, Store } from "./services.js";
 import { Mailbox } from "./mailbox/mailbox.js";
 import { MailboxLive } from "./mailbox/mailbox-live.js";
-import { StoreLive } from "./store.js";
+import { StoreLive } from "./store/store.js";
 import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { incoming } from "./platform/node/testing.js";
 const makeImap = unboundMakeImap.pipe(Effect.provideService(MailCodec, nodeMailCodec));

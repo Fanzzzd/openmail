@@ -18,7 +18,7 @@ import { InvalidInput } from "../domain/errors.js";
 import type { Mailbox } from "./mailbox.js";
 import type { ReminderSnapshot, Store } from "../services.js";
 import { undoStateKey, type UndoState } from "./undo-journal.js";
-import { applyOpToLabels, folderTarget } from "../store.js";
+import { applyOpToLabels, folderTarget } from "../store/store.js";
 
 const user: Actor = { kind: "user", surface: "app" };
 interface Change {

@@ -18,7 +18,7 @@ import { Mailbox } from "./mailbox.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
 import { NodeSystem } from "../platform/node/platform-node.js";
 import { Providers, Secrets, Store } from "../services.js";
-import { StoreLive } from "../store.js";
+import { StoreLive } from "../store/store.js";
 import { notificationAction, spaceAccountIds, dockUnreadCount } from "../system.js";
 import { TestMailbox } from "../platform/node/testing.js";
 import { TestClock } from "effect/testing";

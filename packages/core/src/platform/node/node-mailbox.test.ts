@@ -12,7 +12,7 @@ import { buildMime } from "./compose.js";
 import { syntheticPdf } from "./fixtures/synthetic-pdf.js";
 import { Mailbox } from "../../mailbox/mailbox.js";
 import { Store } from "../../services.js";
-import { StoreLive } from "../../store.js";
+import { StoreLive } from "../../store/store.js";
 import { MailCodec } from "../mail-codec.js";
 
 const png = Buffer.from(

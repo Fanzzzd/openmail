@@ -15,7 +15,7 @@ import {
   type Vision,
 } from "./media.js";
 import { PdfWorker } from "./platform/runtime.js";
-import type { makeMediaStore } from "./store-media.js";
+import type { makeMediaStore } from "./store/store-media.js";
 
 class Indexer extends Context.Service<
   Indexer,

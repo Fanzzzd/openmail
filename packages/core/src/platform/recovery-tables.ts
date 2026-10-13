@@ -1,4 +1,4 @@
-import { MIGRATIONS, splitStatements } from "../db.js";
+import { MIGRATIONS, splitStatements } from "../db/db.js";
 
 /** User state from every migration. Cache/FTS/vector tables are intentionally rebuilt. */
 export const RECOVERY_TABLES = [

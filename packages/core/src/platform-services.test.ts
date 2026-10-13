@@ -19,7 +19,7 @@ import {
   hmacSha256Hex,
 } from "./portable.js";
 import { Store } from "./services.js";
-import { StoreLive } from "./store.js";
+import { StoreLive } from "./store/store.js";
 import { isIP } from "./platform/ip.js";
 import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { fakeServer, makeFakeProvider } from "./platform/node/fake-provider.js";

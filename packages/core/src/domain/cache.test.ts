@@ -21,7 +21,7 @@ import { Mailbox } from "../mailbox/mailbox.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
 import { replyRecipients } from "../recipients.js";
 import { Providers, Store, Secrets, type ProviderAdapter } from "../services.js";
-import { StoreLive } from "../store.js";
+import { StoreLive } from "../store/store.js";
 import {
   startAutoUpdates,
   type UpdateClient,

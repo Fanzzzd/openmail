@@ -9,7 +9,7 @@ import { Mailbox } from "../../mailbox/mailbox.js";
 import { MailboxLive } from "../../mailbox/mailbox-live.js";
 import { makeOutlook } from "../../outlook.js";
 import { Providers, Store } from "../../services.js";
-import { StoreLive } from "../../store.js";
+import { StoreLive } from "../../store/store.js";
 import { fakeHttp, graphFolderRoutes } from "./fake-http.js";
 import { syncHtml } from "./fixtures/sync-html.js";
 import { NodeHtmlText } from "./html-text.js";

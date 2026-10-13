@@ -12,8 +12,8 @@ import { ProviderError } from "../../domain/errors.js";
 import { Providers, Store } from "../../services.js";
 import { Mailbox } from "../../mailbox/mailbox.js";
 import { MailboxLive } from "../../mailbox/mailbox-live.js";
-import { StoreLive } from "../../store.js";
-import { all, run } from "../../sql-rows.js";
+import { StoreLive } from "../../store/store.js";
+import { all, run } from "../../store/sql-rows.js";
 import { fakeServer, makeFakeProvider } from "./fake-provider.js";
 import { MemoryPlatform } from "./platform-memory.js";
 

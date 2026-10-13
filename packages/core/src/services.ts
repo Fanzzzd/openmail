@@ -1,7 +1,7 @@
 import type { QueuedSend } from "./mailbox/mobile-outbox.js";
 import type { OptionalService, AuthorizationFeature } from "./optional-services.js";
 import type { NamedSignature, NamedSignatureInput, SignatureDefault } from "./signatures.js";
-import type { WordIndexState } from "./store-word-index.js";
+import type { WordIndexState } from "./store/store-word-index.js";
 import type {
   DeleteFolder,
   FolderScope,
@@ -10,9 +10,9 @@ import type {
   PermanentDeleteBatch,
 } from "./domain/folder-actions.js";
 import type { DerivedChunk } from "./media.js";
-import type { makeSyncHealthStore } from "./store-sync-health.js";
-import type { makeSemanticStore } from "./store-semantic.js";
-import type { makeMediaStore } from "./store-media.js";
+import type { makeSyncHealthStore } from "./store/store-sync-health.js";
+import type { makeSemanticStore } from "./store/store-semantic.js";
+import type { makeMediaStore } from "./store/store-media.js";
 /**
  * Service interfaces inside core. Only `Mailbox` (mailbox.ts) is meant for
  * callers outside core; these are the seams its implementation is built from,
@@ -255,7 +255,7 @@ export class Store extends Context.Service<
     /** Runs `effect` in one SQLite transaction. */
     transaction<A, E, R>(effect: Effect.Effect<A, E, R>): Effect.Effect<A, E, R>;
 
-    readonly ai: ReturnType<typeof import("./store-ai.js").makeAiStore>;
+    readonly ai: ReturnType<typeof import("./store/store-ai.js").makeAiStore>;
     readonly semantics: ReturnType<typeof makeSemanticStore>;
     readonly media: ReturnType<typeof makeMediaStore>;
 
@@ -303,16 +303,16 @@ export class Store extends Context.Service<
     // Messages. Writes keep rowids stable for the FTS index (ON CONFLICT DO UPDATE).
     upsertMessage(accountId: string, m: IncomingMessage): Effect.Effect<void>;
     readonly headerBackfillState: ReturnType<
-      typeof import("./store-header-backfill.js").makeHeaderBackfillStore
+      typeof import("./store/store-header-backfill.js").makeHeaderBackfillStore
     >["headerBackfillState"];
     readonly saveHeaderBackfillState: ReturnType<
-      typeof import("./store-header-backfill.js").makeHeaderBackfillStore
+      typeof import("./store/store-header-backfill.js").makeHeaderBackfillStore
     >["saveHeaderBackfillState"];
     readonly headerBackfillCandidates: ReturnType<
-      typeof import("./store-header-backfill.js").makeHeaderBackfillStore
+      typeof import("./store/store-header-backfill.js").makeHeaderBackfillStore
     >["headerBackfillCandidates"];
     readonly updateCachedHeaders: ReturnType<
-      typeof import("./store-header-backfill.js").makeHeaderBackfillStore
+      typeof import("./store/store-header-backfill.js").makeHeaderBackfillStore
     >["updateCachedHeaders"];
     setMessageWebLink(id: string, url: string): Effect.Effect<void>;
     knownSenders(accountId: string, addresses: readonly string[]): Effect.Effect<string[]>;
@@ -325,16 +325,16 @@ export class Store extends Context.Service<
       flags: { isUnread: boolean; isStarred: boolean },
     ): Effect.Effect<void>;
     readonly claimStaleSweep: ReturnType<
-      typeof import("./store-sync-reset.js").makeSyncResetStore
+      typeof import("./store/store-sync-reset.js").makeSyncResetStore
     >["claimStaleSweep"];
     readonly saveStaleSweepPosition: ReturnType<
-      typeof import("./store-sync-reset.js").makeSyncResetStore
+      typeof import("./store/store-sync-reset.js").makeSyncResetStore
     >["saveStaleSweepPosition"];
     readonly saveStaleSweepVerified: ReturnType<
-      typeof import("./store-sync-reset.js").makeSyncResetStore
+      typeof import("./store/store-sync-reset.js").makeSyncResetStore
     >["saveStaleSweepVerified"];
     readonly staleCandidates: ReturnType<
-      typeof import("./store-sync-reset.js").makeSyncResetStore
+      typeof import("./store/store-sync-reset.js").makeSyncResetStore
     >["staleCandidates"];
     resetCandidates(
       accountId: string,

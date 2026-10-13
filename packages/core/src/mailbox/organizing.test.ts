@@ -25,7 +25,7 @@ import { ProviderError } from "../domain/errors.js";
 import { fakeServer, makeFakeProvider } from "../platform/node/fake-provider.js";
 import { NodeSystem } from "../platform/node/platform-node.js";
 import { Store, type ProviderAdapter } from "../services.js";
-import { StoreLive } from "../store.js";
+import { StoreLive } from "../store/store.js";
 const incoming = (id: string, overrides: Partial<IncomingMessage> = {}): IncomingMessage => ({
   providerId: id,
   threadId: "thread",

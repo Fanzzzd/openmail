@@ -34,7 +34,7 @@ import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { databaseLayer, MIGRATIONS } from "./platform/node/db.js";
 import { NodeSystem } from "./platform/node/platform-node.js";
 import { Providers } from "./services.js";
-import { StoreLive } from "./store.js";
+import { StoreLive } from "./store/store.js";
 
 const directories: string[] = [];
 function temp() {

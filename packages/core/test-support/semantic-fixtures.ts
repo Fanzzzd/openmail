@@ -5,7 +5,7 @@ import { type ModelRuntime, unavailableVision } from "../src/media.js";
 import { MemoryPlatform } from "../src/platform/node/platform-memory.js";
 import { makeSemanticIndexer } from "../src/semantic-indexer.js";
 import { Store } from "../src/services.js";
-import { StoreLive } from "../src/store.js";
+import { StoreLive } from "../src/store/store.js";
 
 export const withStore = <A, E>(body: Effect.Effect<A, E, Store | SqlClient.SqlClient>) =>
   body.pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform()))));

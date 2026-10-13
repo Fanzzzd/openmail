@@ -9,7 +9,7 @@ import { databaseLayer, MIGRATIONS } from "./platform/node/db.js";
 import { type IncomingMessage, type Prefs } from "./domain/domain.js";
 import { Mailbox } from "./mailbox/mailbox.js";
 import { Store } from "./services.js";
-import { StoreLive } from "./store.js";
+import { StoreLive } from "./store/store.js";
 import { gmailThreadUrl, officialMessageUrl, senderName, threadExpansion } from "./reading.js";
 import { parseSearchQuery, senderSearchQuery } from "./search.js";
 import { MemoryPlatform } from "./platform/node/platform-memory.js";

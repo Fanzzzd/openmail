@@ -10,7 +10,7 @@ import { MailboxLive } from "./mailbox/mailbox-live.js";
 import { makeFakeProvider, fakeServer } from "./platform/node/fake-provider.js";
 import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { NodeSystem } from "./platform/node/platform-node.js";
-import { StoreLive } from "./store.js";
+import { StoreLive } from "./store/store.js";
 import { Providers } from "./services.js";
 import {
   richComposeBody,

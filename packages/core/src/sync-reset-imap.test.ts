@@ -4,7 +4,7 @@ import { ImapFlow } from "imapflow";
 import { vi } from "vitest";
 import { type IncomingMessage } from "./domain/domain.js";
 import { Store } from "./services.js";
-import { StoreLive } from "./store.js";
+import { StoreLive } from "./store/store.js";
 import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { makeImapWith } from "./platform/node/imap/adapter.js";
 import { makeResetGuard } from "./sync-reset.js";

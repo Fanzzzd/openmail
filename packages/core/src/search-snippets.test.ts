@@ -4,7 +4,7 @@ import { SqlClient } from "effect/sql";
 import { searchHighlightTerms, searchSnippet } from "./search-snippets.js";
 import type { IncomingMessage, SearchMatch } from "./domain/domain.js";
 import { Store } from "./services.js";
-import { StoreLive } from "./store.js";
+import { StoreLive } from "./store/store.js";
 import { MemoryPlatform } from "./platform/node/platform-memory.js";
 
 it("highlights Unicode, prefixes, phrases and positive boolean terms as plain text", () => {

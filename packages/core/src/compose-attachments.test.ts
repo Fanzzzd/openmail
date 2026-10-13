@@ -15,7 +15,7 @@ import { MailboxLive } from "./mailbox/mailbox-live.js";
 import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { NodeSystem } from "./platform/node/platform-node.js";
 import { Providers } from "./services.js";
-import { StoreLive } from "./store.js";
+import { StoreLive } from "./store/store.js";
 import { makeFakeProvider } from "./platform/node/fake-provider.js";
 import { fakeServer, TestMailbox } from "./platform/node/testing.js";
 import { ProviderError } from "./domain/errors.js";

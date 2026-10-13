@@ -10,7 +10,7 @@ import { Mailbox } from "./mailbox/mailbox.js";
 import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { makeFakeProvider, fakeServer } from "./platform/node/fake-provider.js";
 import { Providers, Store, type ProviderAdapter } from "./services.js";
-import { StoreLive } from "./store.js";
+import { StoreLive } from "./store/store.js";
 import { makeResetGuard } from "./sync-reset.js";
 import { parseGmailBatch } from "./provider-batch.js";
 const mail = (providerId: string): IncomingMessage => ({

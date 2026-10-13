@@ -8,7 +8,7 @@ import { databaseLayer, MIGRATIONS } from "./platform/node/db.js";
 import { mergeContacts } from "./contacts.js";
 import { Store } from "./services.js";
 import { MemoryPlatform } from "./platform/node/platform-memory.js";
-import { StoreLive } from "./store.js";
+import { StoreLive } from "./store/store.js";
 
 it("normalizes contacts, retains saved names, rejects non-addresses", () => {
   assert.deepStrictEqual(

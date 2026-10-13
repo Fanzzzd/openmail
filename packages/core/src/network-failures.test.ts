@@ -21,7 +21,7 @@ import { account as buildAccount, incoming, outgoing } from "./platform/node/tes
 import { transferAllowance } from "./provider-http.js";
 import { isDefiniteSendFailure } from "./provider-send.js";
 import { Browser, OAuth, Providers, Store, type ProviderAdapter } from "./services.js";
-import { StoreLive } from "./store.js";
+import { StoreLive } from "./store/store.js";
 import { SYNC_FAILURE_TEXT } from "./sync-failure.js";
 
 type Fault = NonNullable<FakeHttpReply["fault"]>;

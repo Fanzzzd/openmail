@@ -19,7 +19,7 @@ import {
 import { basename, join } from "node:path";
 import { DatabaseSync, type SQLOutputValue } from "node:sqlite";
 import { Worker } from "node:worker_threads";
-import { MIGRATIONS } from "../../db.js";
+import { MIGRATIONS } from "../../db/db.js";
 import {
   optionalParentChecks,
   quoteIdentifier,

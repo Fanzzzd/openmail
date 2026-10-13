@@ -10,7 +10,7 @@ import { Mailbox } from "./mailbox/mailbox.js";
 import { MailboxLive } from "./mailbox/mailbox-live.js";
 import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { Providers } from "./services.js";
-import { StoreLive } from "./store.js";
+import { StoreLive } from "./store/store.js";
 import { fakeServer, TestMailbox } from "./platform/node/testing.js";
 const message: OutgoingMessage = {
   to: [],

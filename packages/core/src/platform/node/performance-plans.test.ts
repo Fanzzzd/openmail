@@ -18,7 +18,7 @@ import {
   traceQueries,
 } from "./fixtures/performance-mailbox.js";
 import { CurrentTransformer, type Transformer } from "effect/sql/Statement";
-import { StoreLive } from "../../store.js";
+import { StoreLive } from "../../store/store.js";
 import { MemoryPlatform } from "./platform-memory.js";
 import { type IncomingMessage } from "../../domain/domain.js";
 import { DatabaseSync } from "node:sqlite";
@@ -28,7 +28,7 @@ import { fakeServer } from "./testing.js";
 import { makeFakeProvider, type FakeServer } from "./fake-provider.js";
 import { MailboxLive } from "../../mailbox/mailbox-live.js";
 import { invitesFromRaw } from "./portable-helpers.js";
-import { first } from "../../sql-rows.js";
+import { first } from "../../store/sql-rows.js";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";

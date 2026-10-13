@@ -32,7 +32,7 @@ import {
   Store,
   type TokenResponse,
 } from "./services.js";
-import { StoreLive } from "./store.js";
+import { StoreLive } from "./store/store.js";
 import { type KeepAliveProviders, keepTokensAlive, runTokenKeepAlive } from "./token-keepalive.js";
 
 const DAY = 86_400_000;

@@ -1,7 +1,7 @@
 import { Effect, Option, Schema } from "effect";
 import type { SqlClient } from "effect/sql";
 import { InvalidInput } from "./domain/errors.js";
-import { all, run } from "./sql-rows.js";
+import { all, run } from "./store/sql-rows.js";
 
 /**
  * Remote access settings: whether the Mac publishes OpenMail to the owner's

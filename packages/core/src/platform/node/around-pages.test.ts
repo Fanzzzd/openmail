@@ -20,7 +20,7 @@ import {
 } from "../../search.js";
 import { MAILBOX_LABEL } from "../../domain/mailbox-labels.js";
 import { Store } from "../../services.js";
-import { StoreLive } from "../../store.js";
+import { StoreLive } from "../../store/store.js";
 import { incoming } from "./testing.js";
 import { MemoryPlatform } from "./platform-memory.js";
 import { traceQueries } from "./fixtures/performance-mailbox.js";

@@ -1,7 +1,7 @@
 import { assert, it } from "@effect/vitest";
 import { Deferred, Effect, Fiber, Layer } from "effect";
 import { MailboxLive } from "./mailbox-live.js";
-import { StoreLive } from "../store.js";
+import { StoreLive } from "../store/store.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
 import { Providers, Store } from "../services.js";
 import { makeFakeProvider } from "../platform/node/fake-provider.js";

@@ -11,7 +11,7 @@ import { makeAiMailbox } from "./mailbox/mailbox-ai.js";
 import { Model, FakeModelLayer, type ModelOutput, type ModelRequest } from "./model.js";
 import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { Providers, Secrets, Store } from "./services.js";
-import { StoreLive } from "./store.js";
+import { StoreLive } from "./store/store.js";
 import { fakeServer, makeFakeProvider } from "./platform/node/fake-provider.js";
 import { TestMailbox } from "./platform/node/testing.js";
 import type { ModelRuntime, DerivedChunk } from "./media.js";

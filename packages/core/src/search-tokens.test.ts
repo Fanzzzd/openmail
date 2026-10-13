@@ -10,7 +10,7 @@ import { MailboxLive } from "./mailbox/mailbox-live.js";
 import { Mailbox } from "./mailbox/mailbox.js";
 import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { Providers, Store } from "./services.js";
-import { StoreLive } from "./store.js";
+import { StoreLive } from "./store/store.js";
 import {
   SEARCH_OPERATORS,
   attachmentHasType,

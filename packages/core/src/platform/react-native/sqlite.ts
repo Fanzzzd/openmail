@@ -1,7 +1,7 @@
 import { Effect, Layer, Schema, Semaphore, Stream } from "effect";
 import { Reactivity } from "effect/reactivity";
 import { SqlClient, SqlConnection, SqlError, Statement } from "effect/sql";
-import { DatabaseCapabilities, migrate } from "../../db.js";
+import { DatabaseCapabilities, migrate } from "../../db/db.js";
 
 // Structural op-sqlite port: core never imports React Native or its native modules.
 export type SqliteScalar = string | number | boolean | null | ArrayBuffer | ArrayBufferView;

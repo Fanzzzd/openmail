@@ -9,8 +9,8 @@ import { NodeSystem } from "./platform/node/platform-node.js";
 import { incoming } from "./platform/node/testing.js";
 import { bigramMatch, bigramText } from "./search-bigrams.js";
 import { Store } from "./services.js";
-import { StoreLive } from "./store.js";
-import { BIGRAM_BATCH_ROWS, BIGRAM_BATCH_TOKENS } from "./store-word-index.js";
+import { StoreLive } from "./store/store.js";
+import { BIGRAM_BATCH_ROWS, BIGRAM_BATCH_TOKENS } from "./store/store-word-index.js";
 
 const accountId = "gmail:me@example.com";
 
