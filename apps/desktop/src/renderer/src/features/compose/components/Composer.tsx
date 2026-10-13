@@ -1,57 +1,42 @@
-import { isEmpty, parseAddresses, switchReplyMode, type ComposeMode, type Draft } from "../draft";
+import { isEmpty, switchReplyMode, type ComposeMode, type Draft } from "../draft";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
-import type { Account, OutgoingMessage, Template } from "../../../../../shared/api";
-import { useId, useRef, useState, type ReactElement, type RefObject } from "react";
+import type { Account, OutgoingMessage } from "../../../../../shared/api";
+import { useId, useRef, useState } from "react";
 import { useComposeMessages } from "../hooks/use-compose-messages";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useComposeDraft } from "../hooks/use-compose-draft";
 import { useShortcutText } from "../../../i18n/use-shortcut-text";
 import { AsyncResult } from "effect/reactivity";
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
-import { nativeComposeCapabilitiesAtom, templatesAtom, threadAtom } from "../../../state/queries";
-import { saveTemplateAtom, setPrefsAtom } from "../../../state/mutations";
+import { nativeComposeCapabilitiesAtom, threadAtom } from "../../../state/queries";
+import { setPrefsAtom } from "../../../state/mutations";
 import { useRunMail } from "../../../state/mail";
 import { useComposeRecipients } from "../hooks/use-compose-recipients";
 import { useComposeSend } from "../hooks/use-compose-send";
 import { useComposeEditor } from "../hooks/use-compose-editor";
 import { useDraftLifecycle } from "../hooks/use-draft-lifecycle";
 import { useComposeShortcuts } from "../hooks/use-compose-shortcuts";
-import { titlebarRow, touchIcon, touchTarget } from "../../../ui/styles";
+import { titlebarRow, touchTarget } from "../../../ui/styles";
 import { Dialog } from "@base-ui/react/dialog";
-import {
-  Alert,
-  AlertCancel,
-  SheetDragStrip,
-  alertButton,
-  alertDanger,
-  alertPrimary,
-  narrowSheet,
-} from "../../../ui/Dialog";
+import { SheetDragStrip, narrowSheet } from "../../../ui/Dialog";
 import { TrafficLightSpace } from "../../../ui/TrafficLights";
 import { Select } from "../../../ui/Select";
 import { AppWindow, Ellipsis, FileText, ImagePlus, Link, Paperclip, Trash2, X } from "lucide-react";
 import { Tip } from "../../../ui/Tip";
-import { ServiceHint } from "../../accounts/OptionalServices";
-import { RecipientField } from "./RecipientField";
-import { customTemplateVariables, ownText, reorderAttachments } from "@openmail/core/schema";
 import { DraftSyncRecovery } from "./DraftSyncRecovery";
 import { ComposerAi } from "./ComposerAi";
 import { ComposeEditor } from "./ComposeEditor";
 import { Keys } from "../../../state/keys";
 import { inheritsOriginals } from "../compose-originals";
-import { formatBytes } from "../../../lib/format";
 import { DropdownMenu, MenuItem } from "../../../ui/Menu";
 import { DraftOrganization } from "./DraftOrganization";
-import type { ComposeElement } from "../compose-editor-dom";
-import {
-  PickerPopover,
-  pickerFooter,
-  pickerInput,
-  pickerItem,
-  pickerList,
-} from "../../../ui/Picker";
-import { Autocomplete } from "@base-ui/react/autocomplete";
+import { TemplatePicker } from "./TemplatePicker";
+import { TemplateVariables } from "./TemplateVariables";
+import { ComposeAttachments } from "./ComposeAttachments";
+import { ComposerAlerts } from "./ComposerAlerts";
+import { label, quiet, row } from "./composer-styles";
+import { AddressFields } from "./AddressFields";
 
 const TITLES: Record<Draft["mode"], MessageDescriptor> = {
   new: msg`New message`,
@@ -118,16 +103,8 @@ export function Composer({
     currentSignature,
     currentAddress,
     localSignatures,
-    availableSenders,
-    showBcc,
     setShowBcc,
-    moveChip,
-    dropChip,
-    selectSender,
-    revertSender,
     chooseSignature,
-    senderUndo,
-    changeRecipients,
     currentFrom,
     addMention,
     removeMentions,
@@ -230,11 +207,6 @@ export function Composer({
 
   const field =
     "h-9 min-w-0 flex-1 bg-transparent text-body outline-none placeholder:text-a11y-muted";
-  // The row marks its focused text field with an accent underline; buttons in it keep their own outline.
-  const row =
-    "flex items-start gap-2 border-b border-separator px-4 has-[input:focus]:border-a11y-focus has-[input:focus]:shadow-[inset_0_-1px_0_var(--a11y-focus)]";
-  const label = "flex h-9 w-14 shrink-0 items-center text-a11y-muted";
-  const quiet = `rounded-control p-1 ${touchIcon} text-a11y-muted outline-offset-0 outline-a11y-focus hover:bg-fill-hover focus-visible:outline-[3px] data-popup-open:bg-fill-pressed`;
   const title = i18n._(TITLES[draft.mode]);
 
   return (
@@ -335,96 +307,14 @@ export function Composer({
               </Tip>
             </header>
 
-            <div className={`${row} items-center`}>
-              <span className={label}>
-                <Trans>From</Trans>
-              </span>
-              <Select
-                aria-label={t`From`}
-                value={`${draft.accountId}/${draft.from?.address ?? account?.email ?? ""}`}
-                onValueChange={selectSender}
-                options={availableSenders.map((sender) => ({
-                  value: `${sender.accountId}/${sender.address}`,
-                  label: sender.name ? `${sender.name} (${sender.address})` : sender.address,
-                }))}
-                className="max-w-full"
-              />
-              {senderUndo && (
-                <output className="flex items-center gap-2 text-footnote text-a11y-muted">
-                  {t`From updated`}
-                  <button
-                    type="button"
-                    className="text-a11y-accent"
-                    onClick={revertSender}
-                  >{t`Revert`}</button>
-                </output>
-              )}
-            </div>
-            <ServiceHint accountId={draft.accountId} service="contacts" />
-            <div className={row}>
-              <span className={label}>
-                <Trans>To</Trans>
-              </span>
-              <RecipientField
-                onDragChip={() => setShowBcc(true)}
-                aria-describedby={error ? errorId : undefined}
-                fieldName="to"
-                onMove={(index, target) => moveChip("to", target, index)}
-                onDropRecipient={(chip) => dropChip("to", chip)}
-                label={t`To`}
-                inputRef={toRef}
-                value={draft.to}
-                onChange={(to) => changeRecipients("to", to)}
-                showFullAddresses={prefs.showFullRecipientAddresses}
-                from={draft.from?.address ?? account?.email}
-              />
-              {!showBcc && (
-                <button
-                  type="button"
-                  onClick={() => setShowBcc(true)}
-                  className={`h-9 shrink-0 text-a11y-muted hover:text-neutral-800 coarse:h-10 dark:hover:text-neutral-200 ${touchTarget}`}
-                >
-                  <Trans>Cc/Bcc</Trans>
-                </button>
-              )}
-            </div>
-            {showBcc && (
-              <>
-                <div className={row}>
-                  <span className={label}>
-                    <Trans>Cc</Trans>
-                  </span>
-                  <RecipientField
-                    aria-describedby={error ? errorId : undefined}
-                    fieldName="cc"
-                    onMove={(index, target) => moveChip("cc", target, index)}
-                    onDropRecipient={(chip) => dropChip("cc", chip)}
-                    label={t`Cc`}
-                    inputRef={ccRef}
-                    value={draft.cc}
-                    onChange={(cc) => changeRecipients("cc", cc)}
-                    showFullAddresses={prefs.showFullRecipientAddresses}
-                    from={draft.from?.address ?? account?.email}
-                  />
-                </div>
-                <div className={row}>
-                  <span className={label}>
-                    <Trans>Bcc</Trans>
-                  </span>
-                  <RecipientField
-                    aria-describedby={error ? errorId : undefined}
-                    fieldName="bcc"
-                    onMove={(index, target) => moveChip("bcc", target, index)}
-                    onDropRecipient={(chip) => dropChip("bcc", chip)}
-                    label={t`Bcc`}
-                    value={draft.bcc}
-                    onChange={(bcc) => changeRecipients("bcc", bcc)}
-                    showFullAddresses={prefs.showFullRecipientAddresses}
-                    from={draft.from?.address ?? account?.email}
-                  />
-                </div>
-              </>
-            )}
+            <AddressFields
+              draft={draft}
+              prefs={prefs}
+              recipients={recipients}
+              describedBy={error ? errorId : undefined}
+              toRef={toRef}
+              ccRef={ccRef}
+            />
             <div className={row}>
               <span className={label}>
                 <Trans>Subject</Trans>
@@ -439,46 +329,13 @@ export function Composer({
             </div>
 
             {templateForm && (
-              <fieldset className="shrink-0 space-y-2 border-b border-separator px-4 py-3">
-                <legend>{t`Fill template variables`}</legend>
-                {customTemplateVariables(templateForm.subject, templateForm.body).map((name) => (
-                  <label key={name} className="flex items-center gap-2">
-                    <span>{name}</span>
-                    <input
-                      aria-label={name}
-                      value={templateValues[name] ?? ""}
-                      className="min-w-0 flex-1 rounded border px-2 py-1 border-separator"
-                      onChange={(event) =>
-                        setTemplateValues((previous) => ({
-                          ...previous,
-                          [name]: event.target.value,
-                        }))
-                      }
-                      onKeyDown={(event) => {
-                        if (event.key === "Escape") {
-                          event.preventDefault();
-                          event.stopPropagation();
-                          setTemplateForm(null);
-                        }
-                        if (event.key === "Enter") {
-                          event.preventDefault();
-                          insertTemplate(templateForm, templateValues);
-                        }
-                      }}
-                    />
-                  </label>
-                ))}
-                <button
-                  type="button"
-                  className={alertPrimary}
-                  onClick={() => insertTemplate(templateForm, templateValues)}
-                >{t`Insert template`}</button>
-                <button
-                  type="button"
-                  className={alertButton}
-                  onClick={() => setTemplateForm(null)}
-                >{t`Cancel`}</button>
-              </fieldset>
+              <TemplateVariables
+                template={templateForm}
+                values={templateValues}
+                setValues={setTemplateValues}
+                onInsert={insertTemplate}
+                onCancel={() => setTemplateForm(null)}
+              />
             )}
             {imageUrlOpen && (
               <div className="flex items-center gap-2 px-4 py-2">
@@ -576,97 +433,7 @@ export function Composer({
               <output className="px-4 py-2">{t`Original attachments are kept in Outlook without uploading them again.`}</output>
             ) : null}
             {adding && <output className="px-4 py-2">{t`Loading attachments…`}</output>}
-            {(draft.attachments.length > 0 || draft.forwardAsAttachment) && (
-              <div className="flex flex-wrap gap-2 px-4 pb-2">
-                {draft.forwardAsAttachment && (
-                  <span className="flex items-center gap-1.5 rounded-control border border-edge px-2 py-1">
-                    <Paperclip className="size-3.5 text-a11y-muted" />
-                    <Trans>Original message (.eml)</Trans>
-                    <button
-                      type="button"
-                      aria-label={t`Don't attach the original message`}
-                      onClick={() => set({ forwardAsAttachment: false })}
-                      className="text-a11y-muted hover:text-neutral-700 dark:hover:text-neutral-200"
-                    >
-                      <X className="size-3.5" />
-                    </button>
-                  </span>
-                )}
-                {draft.attachments.map((a, i) => (
-                  <span
-                    key={`${a.filename}-${i}`}
-                    draggable
-                    onDragStart={(event) => {
-                      attachmentDrag.current = i;
-                      event.dataTransfer.setData("application/x-openmail-attachment", String(i));
-                      event.dataTransfer.effectAllowed = "move";
-                    }}
-                    onDragEnd={() => {
-                      attachmentDrag.current = null;
-                    }}
-                    onDragOver={(event) => {
-                      if (attachmentDrag.current !== null) {
-                        event.preventDefault();
-                        event.dataTransfer.dropEffect = "move";
-                      }
-                    }}
-                    onDrop={(event) => {
-                      if (attachmentDrag.current !== null) {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        set({
-                          attachments: reorderAttachments(
-                            draft.attachments,
-                            attachmentDrag.current,
-                            i,
-                          ),
-                        });
-                        attachmentDrag.current = null;
-                      }
-                    }}
-                    className="flex items-center gap-1.5 rounded-control border border-edge px-2 py-1"
-                  >
-                    <Paperclip className="size-3.5 text-a11y-muted" />
-                    {a.filename}
-                    <button
-                      type="button"
-                      disabled={i === 0}
-                      aria-label={t`Move ${a.filename} earlier`}
-                      onClick={() =>
-                        set({ attachments: reorderAttachments(draft.attachments, i, i - 1) })
-                      }
-                      className={quiet}
-                    >
-                      ↑
-                    </button>
-                    <button
-                      type="button"
-                      disabled={i === draft.attachments.length - 1}
-                      aria-label={t`Move ${a.filename} later`}
-                      onClick={() =>
-                        set({ attachments: reorderAttachments(draft.attachments, i, i + 1) })
-                      }
-                      className={quiet}
-                    >
-                      ↓
-                    </button>
-                    <span className="text-a11y-muted">
-                      {formatBytes((a.content.length * 3) / 4, i18n.locale)}
-                    </span>
-                    <button
-                      type="button"
-                      aria-label={t`Remove ${a.filename}`}
-                      onClick={() =>
-                        set({ attachments: draft.attachments.filter((_, j) => j !== i) })
-                      }
-                      className="text-a11y-muted hover:text-neutral-700 dark:hover:text-neutral-200"
-                    >
-                      <X className="size-3.5" />
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
+            <ComposeAttachments draft={draft} set={set} attachmentDrag={attachmentDrag} />
 
             <footer className="flex shrink-0 items-center gap-2 border-t border-separator px-4 py-2.5">
               <Tip label={t`Send`} shortcut={shortcut("send")} side="top">
@@ -813,218 +580,19 @@ export function Composer({
             />
           </form>
 
-          <Alert
-            open={closing}
-            onOpenChange={setClosing}
-            title={t`Save this draft before closing?`}
-            description={t`This draft has unsaved changes or is waiting to sync.`}
-          >
-            <AlertCancel>
-              <Trans>Cancel</Trans>
-            </AlertCancel>
-            <button type="button" onClick={() => onDiscard(draft)} className={alertDanger}>
-              <Trans>Delete</Trans>
-            </button>
-            <button type="button" onClick={() => onClose(draft, true)} className={alertPrimary}>
-              <Trans>Save</Trans>
-            </button>
-          </Alert>
-          <Alert
-            open={asking !== null}
-            onOpenChange={(open) => {
-              if (!open) setAsking(null);
-            }}
-            title={
-              asking?.warning === "recipients"
-                ? t`Review AI recipients`
-                : asking?.warning === "subject"
-                  ? t`Send this message without a subject?`
-                  : t`The message mentions an attachment, but none is added.`
-            }
-          >
-            {asking?.recipients?.unfamiliar.length ? (
-              <p>
-                <Trans>AI added unfamiliar recipients:</Trans>{" "}
-                {asking.recipients.unfamiliar.join(", ")}
-              </p>
-            ) : null}
-            {asking?.recipients?.outsideThread.length ? (
-              <p>
-                <Trans>Recipients outside the original conversation:</Trans>{" "}
-                {asking.recipients.outsideThread.join(", ")}
-              </p>
-            ) : null}
-            <AlertCancel>
-              <Trans>Cancel</Trans>
-            </AlertCancel>
-            {asking?.warning === "attachment" && (
-              <button
-                type="button"
-                autoFocus
-                // Nothing is sent: the prompt closes and the file picker opens.
-                onClick={() => {
-                  setAsking(null);
-                  fileRef.current?.click();
-                }}
-                className={alertButton}
-              >
-                <Trans>Add attachment</Trans>
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => {
-                if (asking) submit(asking.archive, [...asking.confirmed, asking.warning]);
-              }}
-              className={alertPrimary}
-            >
-              <Trans>Send anyway</Trans>
-            </button>
-          </Alert>
+          <ComposerAlerts
+            draft={draft}
+            closing={closing}
+            setClosing={setClosing}
+            asking={asking}
+            setAsking={setAsking}
+            submit={submit}
+            onAttach={() => fileRef.current?.click()}
+            onDiscard={onDiscard}
+            onClose={onClose}
+          />
         </Dialog.Popup>
       </Dialog.Portal>
     </Dialog.Root>
-  );
-}
-
-/** ⌘/ in the compose window: pick a template to insert, or keep this message as one. */
-function TemplatePicker({
-  open,
-  onOpenChange,
-  trigger,
-  tip,
-  draft,
-  onInsert,
-  bodyRef,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  trigger: ReactElement;
-  tip: { label: string; shortcut: string };
-  draft: Draft;
-  onInsert: (t: Template) => void;
-  bodyRef: RefObject<ComposeElement | null>;
-}) {
-  const { t } = useLingui();
-  const templates = AsyncResult.getOrElse(useAtomValue(templatesAtom), () => []);
-  const saveTemplate = useAtomSet(saveTemplateAtom);
-  const [filter, setFilter] = useState("");
-  const [naming, setNaming] = useState(false);
-  // A template placeholder, shown as is.
-  const token = "{first_name}";
-
-  const reset = () => {
-    setFilter("");
-    setNaming(false);
-  };
-
-  const keep = () => {
-    const name = filter.trim();
-    if (!name) return;
-    saveTemplate({
-      payload: {
-        input: {
-          name,
-          subject: draft.subject,
-          to: parseAddresses(draft.to).addresses,
-          cc: parseAddresses(draft.cc).addresses,
-          bcc: parseAddresses(draft.bcc).addresses,
-          body: ownText(draft.body.text),
-        },
-      },
-      reactivityKeys: [Keys.templates],
-    });
-    onOpenChange(false);
-    reset();
-  };
-
-  return (
-    <PickerPopover
-      aria-label={t`Templates`}
-      open={open}
-      onOpenChange={(next) => {
-        onOpenChange(next);
-        if (!next) reset();
-      }}
-      trigger={trigger}
-      tip={tip}
-      side="top"
-      finalFocus={bodyRef}
-      className="w-80"
-    >
-      {naming ? (
-        <input
-          // The footer button switched modes; typing continues here.
-          autoFocus
-          aria-label={t`Template name`}
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.metaKey && !e.ctrlKey) {
-              e.preventDefault();
-              keep();
-            }
-          }}
-          placeholder={t`Name the template, then press Return`}
-          className={pickerInput}
-        />
-      ) : (
-        <Autocomplete.Root
-          inline
-          open
-          items={templates}
-          itemToStringValue={(tpl: Template) => tpl.name}
-          value={filter}
-          onValueChange={(v) => setFilter(v)}
-          autoHighlight="always"
-          keepHighlight
-        >
-          <Autocomplete.Input
-            aria-label={t`Search templates`}
-            placeholder={t`Templates…`}
-            className={pickerInput}
-          />
-          {templates.length === 0 && (
-            <p className="px-3 py-2 text-a11y-muted">
-              <Trans>No templates yet. Use {token} for the first recipient's name.</Trans>
-            </p>
-          )}
-          <Autocomplete.List className={pickerList}>
-            {(tpl: Template) => (
-              <Autocomplete.Item
-                key={tpl.id}
-                value={tpl}
-                onClick={() => {
-                  onInsert(tpl);
-                  reset();
-                }}
-                className={pickerItem}
-              >
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate font-medium">{tpl.name}</span>
-                  <span className="block truncate text-footnote text-a11y-muted group-data-highlighted:text-white">
-                    {tpl.subject || tpl.body.replace(/\s+/g, " ").slice(0, 60)}
-                  </span>
-                </span>
-              </Autocomplete.Item>
-            )}
-          </Autocomplete.List>
-        </Autocomplete.Root>
-      )}
-      <button
-        type="button"
-        onClick={() => {
-          if (naming) {
-            keep();
-          } else {
-            setNaming(true);
-            setFilter("");
-          }
-        }}
-        className={pickerFooter}
-      >
-        {naming ? <Trans>Save</Trans> : <Trans>Save this message as a template…</Trans>}
-      </button>
-    </PickerPopover>
   );
 }

@@ -412,7 +412,7 @@ msgstr "Добавьте хотя бы одно условие фильтра"
 msgid "Add at least one recipient"
 msgstr "Добавьте хотя бы одного получателя"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "Add attachment"
 msgstr "Добавить вложение"
 
@@ -532,7 +532,7 @@ msgstr "Доступ к ИИ"
 msgid "AI action"
 msgstr "Действие ИИ"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "AI added unfamiliar recipients:"
 msgstr "ИИ добавил незнакомых получателей:"
 
@@ -988,7 +988,7 @@ msgid "Batch actions"
 msgstr "Пакетные действия"
 
 #: src/renderer/src/features/ai/Proposals.tsx
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/AddressFields.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Bcc"
 msgstr "Скрытая копия"
@@ -1153,6 +1153,8 @@ msgstr "Сейчас не удаётся подключиться к почто�
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
+#: src/renderer/src/features/compose/components/TemplateVariables.tsx
 #: src/renderer/src/features/compose/hooks/use-compose-editor.ts
 #: src/renderer/src/features/feedback/Feedback.tsx
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
@@ -1205,7 +1207,7 @@ msgid "Category names, separated by commas"
 msgstr "Названия категорий, разделенные запятыми."
 
 #: src/renderer/src/features/ai/Proposals.tsx
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/AddressFields.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/use-thread-print.ts
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
@@ -1220,7 +1222,7 @@ msgstr "Копия мне"
 msgid "Cc: {cc}"
 msgstr "Копия: {cc}"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/AddressFields.tsx
 msgid "Cc/Bcc"
 msgstr "Копия/Скрытая копия"
 
@@ -2127,7 +2129,7 @@ msgstr "Подпись по умолчанию"
 
 #: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
@@ -2283,7 +2285,7 @@ msgstr "Не содержит слов"
 msgid "Does not repeat"
 msgstr "Не повторяется"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposeAttachments.tsx
 msgid "Don't attach the original message"
 msgstr "Не прикрепляйте исходное сообщение"
 
@@ -2691,7 +2693,7 @@ msgctxt "search match source"
 msgid "File name"
 msgstr "Имя файла"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/TemplateVariables.tsx
 msgid "Fill template variables"
 msgstr "Заполнение переменных шаблона"
 
@@ -2875,7 +2877,7 @@ msgstr "Пятница"
 msgid "Friendlier"
 msgstr "Дружелюбнее"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/AddressFields.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/use-thread-print.ts
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
@@ -2891,7 +2893,7 @@ msgstr "От {from} до {to}"
 msgid "From people I know"
 msgstr "От знакомых"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/AddressFields.tsx
 msgid "From updated"
 msgstr "Отправитель изменён"
 
@@ -3229,7 +3231,7 @@ msgstr "Встроенный код"
 msgid "Insert image"
 msgstr "Вставить изображение"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/TemplateVariables.tsx
 msgid "Insert template"
 msgstr "Вставить шаблон"
 
@@ -4050,12 +4052,12 @@ msgid "Move {0} down"
 msgstr "Переместить {0} вниз"
 
 #. placeholder {0}: a.filename
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposeAttachments.tsx
 msgid "Move {0} earlier"
 msgstr "Переместить {0} раньше"
 
 #. placeholder {0}: a.filename
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposeAttachments.tsx
 msgid "Move {0} later"
 msgstr "Переместить {0} позже"
 
@@ -4184,7 +4186,7 @@ msgstr "Переезжает с «{elsewhere}»"
 msgid "Name"
 msgstr "Имя"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/TemplatePicker.tsx
 msgid "Name the template, then press Return"
 msgstr "Назовите шаблон, затем нажмите Return."
 
@@ -4445,7 +4447,7 @@ msgstr "Нет подсказок"
 msgid "No suggestions waiting for review."
 msgstr "Нет предложений, ожидающих рассмотрения."
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/TemplatePicker.tsx
 msgid "No templates yet. Use {token} for the first recipient's name."
 msgstr "Шаблонов пока нет. Используйте {token} в качестве имени первого получателя."
 
@@ -4821,7 +4823,7 @@ msgstr "Исходное форматирование сохранено"
 msgid "Original message"
 msgstr "Исходное сообщение"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposeAttachments.tsx
 msgid "Original message (.eml)"
 msgstr "Исходное сообщение (.eml)"
 
@@ -5218,7 +5220,7 @@ msgstr "Фамилия получателя"
 msgid "Recipient name"
 msgstr "Имя получателя"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "Recipients outside the original conversation:"
 msgstr "Получатели вне исходной переписки:"
 
@@ -5326,7 +5328,7 @@ msgid "Remove"
 msgstr "Удалить"
 
 #. placeholder {0}: a.filename
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposeAttachments.tsx
 msgid "Remove {0}"
 msgstr "Удалить {0}"
 
@@ -5630,7 +5632,7 @@ msgstr "Повторить"
 msgid "Retry {name}"
 msgstr "Повторить {name}"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/AddressFields.tsx
 msgid "Revert"
 msgstr "Отменить изменения"
 
@@ -5638,7 +5640,7 @@ msgstr "Отменить изменения"
 msgid "Review"
 msgstr "Проверить"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "Review AI recipients"
 msgstr "Проверить получателей ИИ"
 
@@ -5713,7 +5715,8 @@ msgstr "Суббота"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
+#: src/renderer/src/features/compose/components/TemplatePicker.tsx
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
@@ -5776,11 +5779,11 @@ msgstr "Сохранить выбранное в…"
 msgid "Save sent copy"
 msgstr "Сохранить отправленную копию"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "Save this draft before closing?"
 msgstr "Сохранить этот черновик перед закрытием?"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/TemplatePicker.tsx
 msgid "Save this message as a template…"
 msgstr "Сохраните это сообщение как шаблон…"
 
@@ -5873,7 +5876,7 @@ msgstr "Результаты поиска"
 msgid "Search scope"
 msgstr "Область поиска"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/TemplatePicker.tsx
 msgid "Search templates"
 msgstr "Поиск шаблонов"
 
@@ -5945,7 +5948,7 @@ msgstr "Отправить запрос на отмену подписки на 
 msgid "Send and archive"
 msgstr "Отправить и архивировать"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "Send anyway"
 msgstr "Всё равно отправить"
 
@@ -5964,7 +5967,7 @@ msgstr "Отправить отзыв…"
 msgid "Send message link to…"
 msgstr "Отправить ссылку на сообщение в…"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "Send this message without a subject?"
 msgstr "Отправить это сообщение без темы?"
 
@@ -6652,18 +6655,19 @@ msgstr "Tailscale сообщает OpenMail, кто заходит. Войти �
 msgid "Target language"
 msgstr "Язык перевода"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/TemplatePicker.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Template name"
 msgstr "Имя шаблона"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/TemplatePicker.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Templates"
 msgstr "Шаблоны"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/TemplatePicker.tsx
 msgid "Templates…"
 msgstr "Шаблоны…"
 
@@ -6773,7 +6777,7 @@ msgstr "Почтовый сервер отклонил пароль для {emai
 msgid "The menu lists up to 50 unread messages in the current space."
 msgstr "В меню отображается до 50 непрочитанных сообщений в текущем пространстве."
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "The message mentions an attachment, but none is added."
 msgstr "В сообщении упоминается вложение, но оно не добавляется."
 
@@ -6879,7 +6883,7 @@ msgstr "В этой сборке для разработки ещё нет MCP-�
 msgid "This draft contains formatting or images this editor cannot keep. The original is preserved until you edit the body."
 msgstr "Этот черновик содержит форматирование или изображения, которые редактор не может сохранить. Оригинал сохраняется до изменения текста сообщения."
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "This draft has unsaved changes or is waiting to sync."
 msgstr "В этом черновике есть несохраненные изменения или он ожидает синхронизации."
 
@@ -6979,7 +6983,7 @@ msgstr "Время"
 msgid "Time zone"
 msgstr "Часовой пояс"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/AddressFields.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/use-thread-print.ts
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx

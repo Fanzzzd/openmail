@@ -412,7 +412,7 @@ msgstr "Přidejte alespoň jednu podmínku filtru"
 msgid "Add at least one recipient"
 msgstr "Přidejte alespoň jednoho příjemce"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "Add attachment"
 msgstr "Přidat přílohu"
 
@@ -532,7 +532,7 @@ msgstr "Přístup AI"
 msgid "AI action"
 msgstr "Akce AI"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "AI added unfamiliar recipients:"
 msgstr "AI přidala neznámé příjemce:"
 
@@ -988,7 +988,7 @@ msgid "Batch actions"
 msgstr "Dávkové akce"
 
 #: src/renderer/src/features/ai/Proposals.tsx
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/AddressFields.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Bcc"
 msgstr "Skrytá kopie"
@@ -1153,6 +1153,8 @@ msgstr "K poštovnímu serveru se nyní nelze připojit."
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
+#: src/renderer/src/features/compose/components/TemplateVariables.tsx
 #: src/renderer/src/features/compose/hooks/use-compose-editor.ts
 #: src/renderer/src/features/feedback/Feedback.tsx
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
@@ -1205,7 +1207,7 @@ msgid "Category names, separated by commas"
 msgstr "Názvy kategorií oddělené čárkami"
 
 #: src/renderer/src/features/ai/Proposals.tsx
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/AddressFields.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/use-thread-print.ts
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
@@ -1220,7 +1222,7 @@ msgstr "Kopie pro mě"
 msgid "Cc: {cc}"
 msgstr "Kopie: {cc}"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/AddressFields.tsx
 msgid "Cc/Bcc"
 msgstr "Kopie / Skrytá kopie"
 
@@ -2127,7 +2129,7 @@ msgstr "Výchozí podpis"
 
 #: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
@@ -2283,7 +2285,7 @@ msgstr "Neobsahuje slova"
 msgid "Does not repeat"
 msgstr "Neopakuje se"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposeAttachments.tsx
 msgid "Don't attach the original message"
 msgstr "Nepřipojujte původní zprávu"
 
@@ -2691,7 +2693,7 @@ msgctxt "search match source"
 msgid "File name"
 msgstr "Název souboru"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/TemplateVariables.tsx
 msgid "Fill template variables"
 msgstr "Vyplňte proměnné šablony"
 
@@ -2875,7 +2877,7 @@ msgstr "Pátek"
 msgid "Friendlier"
 msgstr "Přátelštější"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/AddressFields.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/use-thread-print.ts
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
@@ -2891,7 +2893,7 @@ msgstr "Od {from} do {to}"
 msgid "From people I know"
 msgstr "Od lidí, které znám"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/AddressFields.tsx
 msgid "From updated"
 msgstr "Adresa odesílatele změněna"
 
@@ -3229,7 +3231,7 @@ msgstr "Vložený kód"
 msgid "Insert image"
 msgstr "Vložit obrázek"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/TemplateVariables.tsx
 msgid "Insert template"
 msgstr "Vložte šablonu"
 
@@ -4050,12 +4052,12 @@ msgid "Move {0} down"
 msgstr "Posunout {0} dolů"
 
 #. placeholder {0}: a.filename
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposeAttachments.tsx
 msgid "Move {0} earlier"
 msgstr "Přesunout {0} dříve"
 
 #. placeholder {0}: a.filename
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposeAttachments.tsx
 msgid "Move {0} later"
 msgstr "Přesunout {0} později"
 
@@ -4184,7 +4186,7 @@ msgstr "Přesune z „{elsewhere}“"
 msgid "Name"
 msgstr "Jméno"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/TemplatePicker.tsx
 msgid "Name the template, then press Return"
 msgstr "Pojmenujte šablonu a stiskněte Return"
 
@@ -4445,7 +4447,7 @@ msgstr "Žádné návrhy"
 msgid "No suggestions waiting for review."
 msgstr "Žádné návrhy čekající na kontrolu."
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/TemplatePicker.tsx
 msgid "No templates yet. Use {token} for the first recipient's name."
 msgstr "Zatím žádné šablony. Jako jméno prvního příjemce použijte {token}."
 
@@ -4821,7 +4823,7 @@ msgstr "Původní formátování zachováno"
 msgid "Original message"
 msgstr "Původní zpráva"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposeAttachments.tsx
 msgid "Original message (.eml)"
 msgstr "Původní zpráva (.eml)"
 
@@ -5218,7 +5220,7 @@ msgstr "Příjmení příjemce"
 msgid "Recipient name"
 msgstr "Jméno příjemce"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "Recipients outside the original conversation:"
 msgstr "Příjemci mimo původní konverzaci:"
 
@@ -5326,7 +5328,7 @@ msgid "Remove"
 msgstr "Odebrat"
 
 #. placeholder {0}: a.filename
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposeAttachments.tsx
 msgid "Remove {0}"
 msgstr "Odebrat {0}"
 
@@ -5630,7 +5632,7 @@ msgstr "Zkusit znovu"
 msgid "Retry {name}"
 msgstr "Zkusit znovu {name}"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/AddressFields.tsx
 msgid "Revert"
 msgstr "Vrátit změny"
 
@@ -5638,7 +5640,7 @@ msgstr "Vrátit změny"
 msgid "Review"
 msgstr "Zkontrolovat"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "Review AI recipients"
 msgstr "Zkontrolovat příjemce AI"
 
@@ -5713,7 +5715,8 @@ msgstr "Sobota"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
+#: src/renderer/src/features/compose/components/TemplatePicker.tsx
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
@@ -5776,11 +5779,11 @@ msgstr "Uložit vybrané do…"
 msgid "Save sent copy"
 msgstr "Uložit odeslanou kopii"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "Save this draft before closing?"
 msgstr "Uložit tento koncept před uzavřením?"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/TemplatePicker.tsx
 msgid "Save this message as a template…"
 msgstr "Uložit tuto zprávu jako šablonu…"
 
@@ -5873,7 +5876,7 @@ msgstr "Výsledky hledání"
 msgid "Search scope"
 msgstr "Rozsah hledání"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/TemplatePicker.tsx
 msgid "Search templates"
 msgstr "Hledat šablony"
 
@@ -5945,7 +5948,7 @@ msgstr "Odeslat žádost o odhlášení na tuto adresu?"
 msgid "Send and archive"
 msgstr "Odeslat a archivovat"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "Send anyway"
 msgstr "Přesto odeslat"
 
@@ -5964,7 +5967,7 @@ msgstr "Odeslat zpětnou vazbu…"
 msgid "Send message link to…"
 msgstr "Odeslat odkaz na zprávu do…"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "Send this message without a subject?"
 msgstr "Odeslat tuto zprávu bez předmětu?"
 
@@ -6652,18 +6655,19 @@ msgstr "Tailscale sděluje OpenMailu, kdo přistupuje. Dovnitř se dostanou jen 
 msgid "Target language"
 msgstr "Cílový jazyk"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/TemplatePicker.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Template name"
 msgstr "Název šablony"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/TemplatePicker.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Templates"
 msgstr "Šablony"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/TemplatePicker.tsx
 msgid "Templates…"
 msgstr "Šablony…"
 
@@ -6773,7 +6777,7 @@ msgstr "Poštovní server odmítl heslo pro {email}. Synchronizace je pozastaven
 msgid "The menu lists up to 50 unread messages in the current space."
 msgstr "Nabídka obsahuje až 50 nepřečtených zpráv v aktuálním prostoru."
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "The message mentions an attachment, but none is added."
 msgstr "Zpráva zmiňuje přílohu, ale žádná není přidána."
 
@@ -6879,7 +6883,7 @@ msgstr "Toto vývojové sestavení zatím nemá server MCP. Nejdřív v repozit�
 msgid "This draft contains formatting or images this editor cannot keep. The original is preserved until you edit the body."
 msgstr "Tento koncept obsahuje formátování nebo obrázky, které editor nedokáže zachovat. Originál zůstane zachován, dokud neupravíte text zprávy."
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "This draft has unsaved changes or is waiting to sync."
 msgstr "Tento koncept obsahuje neuložené změny nebo čeká na synchronizaci."
 
@@ -6979,7 +6983,7 @@ msgstr "Čas"
 msgid "Time zone"
 msgstr "Časové pásmo"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/AddressFields.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/use-thread-print.ts
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx

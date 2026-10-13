@@ -422,7 +422,7 @@ msgstr "请添加至少一个筛选条件"
 msgid "Add at least one recipient"
 msgstr "至少填一个收件人"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "Add attachment"
 msgstr "返回添加附件"
 
@@ -542,7 +542,7 @@ msgstr "AI 权限"
 msgid "AI action"
 msgstr "AI 操作"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "AI added unfamiliar recipients:"
 msgstr "AI 添加了陌生收件人："
 
@@ -998,7 +998,7 @@ msgid "Batch actions"
 msgstr "批量操作"
 
 #: src/renderer/src/features/ai/Proposals.tsx
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/AddressFields.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Bcc"
 msgstr "密送"
@@ -1163,6 +1163,8 @@ msgstr "暂时无法连接邮件服务器。"
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
+#: src/renderer/src/features/compose/components/TemplateVariables.tsx
 #: src/renderer/src/features/compose/hooks/use-compose-editor.ts
 #: src/renderer/src/features/feedback/Feedback.tsx
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
@@ -1215,7 +1217,7 @@ msgid "Category names, separated by commas"
 msgstr "分类名称，用逗号分隔"
 
 #: src/renderer/src/features/ai/Proposals.tsx
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/AddressFields.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/use-thread-print.ts
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
@@ -1230,7 +1232,7 @@ msgstr "抄送给我"
 msgid "Cc: {cc}"
 msgstr "抄送：{cc}"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/AddressFields.tsx
 msgid "Cc/Bcc"
 msgstr "抄送/密送"
 
@@ -2137,7 +2139,7 @@ msgstr "默认签名"
 
 #: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
@@ -2293,7 +2295,7 @@ msgstr "不包含词语"
 msgid "Does not repeat"
 msgstr "不重复"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposeAttachments.tsx
 msgid "Don't attach the original message"
 msgstr "不附上原邮件"
 
@@ -2701,7 +2703,7 @@ msgctxt "search match source"
 msgid "File name"
 msgstr "文件名"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/TemplateVariables.tsx
 msgid "Fill template variables"
 msgstr "填写模板变量"
 
@@ -2885,7 +2887,7 @@ msgstr "星期五"
 msgid "Friendlier"
 msgstr "更友好"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/AddressFields.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/use-thread-print.ts
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
@@ -2901,7 +2903,7 @@ msgstr "从 {from} 发给 {to}"
 msgid "From people I know"
 msgstr "来自我认识的人"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/AddressFields.tsx
 msgid "From updated"
 msgstr "已更新发件人"
 
@@ -3239,7 +3241,7 @@ msgstr "行内代码"
 msgid "Insert image"
 msgstr "插入图片"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/TemplateVariables.tsx
 msgid "Insert template"
 msgstr "插入模板"
 
@@ -4060,12 +4062,12 @@ msgid "Move {0} down"
 msgstr "下移 {0}"
 
 #. placeholder {0}: a.filename
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposeAttachments.tsx
 msgid "Move {0} earlier"
 msgstr "将 {0} 前移"
 
 #. placeholder {0}: a.filename
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposeAttachments.tsx
 msgid "Move {0} later"
 msgstr "将 {0} 后移"
 
@@ -4194,7 +4196,7 @@ msgstr "从「{elsewhere}」移过来"
 msgid "Name"
 msgstr "名称"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/TemplatePicker.tsx
 msgid "Name the template, then press Return"
 msgstr "给模板起个名字，回车保存"
 
@@ -4455,7 +4457,7 @@ msgstr "没有建议"
 msgid "No suggestions waiting for review."
 msgstr "没有待确认的建议。"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/TemplatePicker.tsx
 msgid "No templates yet. Use {token} for the first recipient's name."
 msgstr "还没有模板。可以用 {token} 代入第一个收件人的名字。"
 
@@ -4831,7 +4833,7 @@ msgstr "已保留原始格式"
 msgid "Original message"
 msgstr "原始邮件"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposeAttachments.tsx
 msgid "Original message (.eml)"
 msgstr "原邮件（.eml）"
 
@@ -5228,7 +5230,7 @@ msgstr "收件人姓氏"
 msgid "Recipient name"
 msgstr "收件人姓名"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "Recipients outside the original conversation:"
 msgstr "原会话之外的收件人："
 
@@ -5336,7 +5338,7 @@ msgid "Remove"
 msgstr "移除"
 
 #. placeholder {0}: a.filename
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposeAttachments.tsx
 msgid "Remove {0}"
 msgstr "移除 {0}"
 
@@ -5640,7 +5642,7 @@ msgstr "重试"
 msgid "Retry {name}"
 msgstr "重试 {name}"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/AddressFields.tsx
 msgid "Revert"
 msgstr "还原"
 
@@ -5648,7 +5650,7 @@ msgstr "还原"
 msgid "Review"
 msgstr "审阅"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "Review AI recipients"
 msgstr "检查 AI 收件人"
 
@@ -5723,7 +5725,8 @@ msgstr "星期六"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
+#: src/renderer/src/features/compose/components/TemplatePicker.tsx
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
@@ -5786,11 +5789,11 @@ msgstr "将选中附件保存到…"
 msgid "Save sent copy"
 msgstr "保存已发送副本"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "Save this draft before closing?"
 msgstr "关闭前保存草稿？"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/TemplatePicker.tsx
 msgid "Save this message as a template…"
 msgstr "把这封邮件存为模板…"
 
@@ -5883,7 +5886,7 @@ msgstr "搜索结果"
 msgid "Search scope"
 msgstr "搜索范围"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/TemplatePicker.tsx
 msgid "Search templates"
 msgstr "搜索模板"
 
@@ -5955,7 +5958,7 @@ msgstr "向此地址发送退订请求？"
 msgid "Send and archive"
 msgstr "发送并归档"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "Send anyway"
 msgstr "仍然发送"
 
@@ -5974,7 +5977,7 @@ msgstr "发送反馈…"
 msgid "Send message link to…"
 msgstr "发送邮件链接到…"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "Send this message without a subject?"
 msgstr "确认发送无主题邮件？"
 
@@ -6662,18 +6665,19 @@ msgstr "Tailscale 会告诉 OpenMail 访问者是谁。只有这些 tailnet 登�
 msgid "Target language"
 msgstr "目标语言"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/TemplatePicker.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Template name"
 msgstr "模板名称"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/TemplatePicker.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Templates"
 msgstr "模板"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/TemplatePicker.tsx
 msgid "Templates…"
 msgstr "模板…"
 
@@ -6783,7 +6787,7 @@ msgstr "邮件服务器拒绝了 {email} 的密码，暂停同步。"
 msgid "The menu lists up to 50 unread messages in the current space."
 msgstr "菜单最多显示当前空间的 50 封未读邮件。"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "The message mentions an attachment, but none is added."
 msgstr "正文提到了附件，但还没有添加。"
 
@@ -6889,7 +6893,7 @@ msgstr "这个开发构建还没有 MCP 服务器。请先在仓库中运行 pnp
 msgid "This draft contains formatting or images this editor cannot keep. The original is preserved until you edit the body."
 msgstr "草稿含有编辑器不支持的格式或图片。编辑正文前会保留原文。"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "This draft has unsaved changes or is waiting to sync."
 msgstr "草稿有未保存的修改或正在等待同步。"
 
@@ -6989,7 +6993,7 @@ msgstr "时间"
 msgid "Time zone"
 msgstr "时区"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/AddressFields.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/use-thread-print.ts
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx

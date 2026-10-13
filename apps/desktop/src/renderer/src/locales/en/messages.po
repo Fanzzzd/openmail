@@ -416,7 +416,7 @@ msgstr "Add at least one filter condition"
 msgid "Add at least one recipient"
 msgstr "Add at least one recipient"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "Add attachment"
 msgstr "Add attachment"
 
@@ -536,7 +536,7 @@ msgstr "AI Access"
 msgid "AI action"
 msgstr "AI action"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "AI added unfamiliar recipients:"
 msgstr "AI added unfamiliar recipients:"
 
@@ -992,7 +992,7 @@ msgid "Batch actions"
 msgstr "Batch actions"
 
 #: src/renderer/src/features/ai/Proposals.tsx
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/AddressFields.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Bcc"
 msgstr "Bcc"
@@ -1157,6 +1157,8 @@ msgstr "Can't reach the mail server right now."
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
+#: src/renderer/src/features/compose/components/TemplateVariables.tsx
 #: src/renderer/src/features/compose/hooks/use-compose-editor.ts
 #: src/renderer/src/features/feedback/Feedback.tsx
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
@@ -1209,7 +1211,7 @@ msgid "Category names, separated by commas"
 msgstr "Category names, separated by commas"
 
 #: src/renderer/src/features/ai/Proposals.tsx
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/AddressFields.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/use-thread-print.ts
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
@@ -1224,7 +1226,7 @@ msgstr "CC me"
 msgid "Cc: {cc}"
 msgstr "Cc: {cc}"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/AddressFields.tsx
 msgid "Cc/Bcc"
 msgstr "Cc/Bcc"
 
@@ -2131,7 +2133,7 @@ msgstr "Default signature"
 
 #: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
@@ -2287,7 +2289,7 @@ msgstr "Does not have words"
 msgid "Does not repeat"
 msgstr "Does not repeat"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposeAttachments.tsx
 msgid "Don't attach the original message"
 msgstr "Don't attach the original message"
 
@@ -2695,7 +2697,7 @@ msgctxt "search match source"
 msgid "File name"
 msgstr "File name"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/TemplateVariables.tsx
 msgid "Fill template variables"
 msgstr "Fill template variables"
 
@@ -2879,7 +2881,7 @@ msgstr "Friday"
 msgid "Friendlier"
 msgstr "Friendlier"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/AddressFields.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/use-thread-print.ts
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
@@ -2895,7 +2897,7 @@ msgstr "From {from} to {to}"
 msgid "From people I know"
 msgstr "From people I know"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/AddressFields.tsx
 msgid "From updated"
 msgstr "From updated"
 
@@ -3233,7 +3235,7 @@ msgstr "Inline code"
 msgid "Insert image"
 msgstr "Insert image"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/TemplateVariables.tsx
 msgid "Insert template"
 msgstr "Insert template"
 
@@ -4054,12 +4056,12 @@ msgid "Move {0} down"
 msgstr "Move {0} down"
 
 #. placeholder {0}: a.filename
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposeAttachments.tsx
 msgid "Move {0} earlier"
 msgstr "Move {0} earlier"
 
 #. placeholder {0}: a.filename
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposeAttachments.tsx
 msgid "Move {0} later"
 msgstr "Move {0} later"
 
@@ -4188,7 +4190,7 @@ msgstr "Moves from “{elsewhere}”"
 msgid "Name"
 msgstr "Name"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/TemplatePicker.tsx
 msgid "Name the template, then press Return"
 msgstr "Name the template, then press Return"
 
@@ -4449,7 +4451,7 @@ msgstr "No suggestions"
 msgid "No suggestions waiting for review."
 msgstr "No suggestions waiting for review."
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/TemplatePicker.tsx
 msgid "No templates yet. Use {token} for the first recipient's name."
 msgstr "No templates yet. Use {token} for the first recipient's name."
 
@@ -4825,7 +4827,7 @@ msgstr "Original formatting kept"
 msgid "Original message"
 msgstr "Original message"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposeAttachments.tsx
 msgid "Original message (.eml)"
 msgstr "Original message (.eml)"
 
@@ -5222,7 +5224,7 @@ msgstr "Recipient last name"
 msgid "Recipient name"
 msgstr "Recipient name"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "Recipients outside the original conversation:"
 msgstr "Recipients outside the original conversation:"
 
@@ -5330,7 +5332,7 @@ msgid "Remove"
 msgstr "Remove"
 
 #. placeholder {0}: a.filename
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposeAttachments.tsx
 msgid "Remove {0}"
 msgstr "Remove {0}"
 
@@ -5634,7 +5636,7 @@ msgstr "Retry"
 msgid "Retry {name}"
 msgstr "Retry {name}"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/AddressFields.tsx
 msgid "Revert"
 msgstr "Revert"
 
@@ -5642,7 +5644,7 @@ msgstr "Revert"
 msgid "Review"
 msgstr "Review"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "Review AI recipients"
 msgstr "Review AI recipients"
 
@@ -5717,7 +5719,8 @@ msgstr "Saturday"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
+#: src/renderer/src/features/compose/components/TemplatePicker.tsx
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
@@ -5780,11 +5783,11 @@ msgstr "Save selected to…"
 msgid "Save sent copy"
 msgstr "Save sent copy"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "Save this draft before closing?"
 msgstr "Save this draft before closing?"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/TemplatePicker.tsx
 msgid "Save this message as a template…"
 msgstr "Save this message as a template…"
 
@@ -5877,7 +5880,7 @@ msgstr "Search results"
 msgid "Search scope"
 msgstr "Search scope"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/TemplatePicker.tsx
 msgid "Search templates"
 msgstr "Search templates"
 
@@ -5949,7 +5952,7 @@ msgstr "Send an unsubscribe request to this address?"
 msgid "Send and archive"
 msgstr "Send and archive"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "Send anyway"
 msgstr "Send anyway"
 
@@ -5968,7 +5971,7 @@ msgstr "Send feedback…"
 msgid "Send message link to…"
 msgstr "Send message link to…"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "Send this message without a subject?"
 msgstr "Send this message without a subject?"
 
@@ -6656,18 +6659,19 @@ msgstr "Tailscale tells OpenMail who is visiting. Only these tailnet logins get 
 msgid "Target language"
 msgstr "Target language"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/TemplatePicker.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Template name"
 msgstr "Template name"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/TemplatePicker.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Templates"
 msgstr "Templates"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/TemplatePicker.tsx
 msgid "Templates…"
 msgstr "Templates…"
 
@@ -6777,7 +6781,7 @@ msgstr "The mail server rejected the password for {email}. Sync is paused."
 msgid "The menu lists up to 50 unread messages in the current space."
 msgstr "The menu lists up to 50 unread messages in the current space."
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "The message mentions an attachment, but none is added."
 msgstr "The message mentions an attachment, but none is added."
 
@@ -6883,7 +6887,7 @@ msgstr "This development build has no MCP server yet. Run pnpm build in the repo
 msgid "This draft contains formatting or images this editor cannot keep. The original is preserved until you edit the body."
 msgstr "This draft contains formatting or images this editor cannot keep. The original is preserved until you edit the body."
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "This draft has unsaved changes or is waiting to sync."
 msgstr "This draft has unsaved changes or is waiting to sync."
 
@@ -6983,7 +6987,7 @@ msgstr "Time"
 msgid "Time zone"
 msgstr "Time zone"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/components/AddressFields.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/use-thread-print.ts
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
