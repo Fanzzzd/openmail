@@ -338,17 +338,17 @@ export class Store extends Context.Service<
     >["staleCandidates"];
     resetCandidates(
       accountId: string,
-      change: import("./sync-reset.js").ResetChange,
+      change: import("./sync/sync-reset.js").ResetChange,
     ): Effect.Effect<{
       local: number;
-      candidates: readonly import("./sync-reset.js").ResetCandidate[];
+      candidates: readonly import("./sync/sync-reset.js").ResetCandidate[];
     }>;
     pendingResetCandidates(
       accountId: string,
-    ): Effect.Effect<readonly import("./sync-reset.js").ResetCandidate[]>;
+    ): Effect.Effect<readonly import("./sync/sync-reset.js").ResetCandidate[]>;
     saveResetCandidates(
       accountId: string,
-      candidates: readonly import("./sync-reset.js").ResetCandidate[],
+      candidates: readonly import("./sync/sync-reset.js").ResetCandidate[],
     ): Effect.Effect<void>;
     deleteMessagesWithLabel(
       accountId: string,
@@ -837,21 +837,21 @@ export interface ProviderAdapter {
   fetchCachedHeaders?(
     account: Account,
     ids: readonly string[],
-  ): Effect.Effect<readonly import("./header-backfill.js").CachedHeaders[], ProviderFailure>;
+  ): Effect.Effect<readonly import("./sync/header-backfill.js").CachedHeaders[], ProviderFailure>;
   /** Counts only; an undercount can be checked against message-ID listings. */
   folderStatus(
     account: Account,
     scope: string,
     recheck?: {
       readonly localTotal: number;
-      readonly summary: import("./sync-health.js").FolderStatus;
+      readonly summary: import("./sync/sync-health.js").FolderStatus;
     },
-  ): Effect.Effect<import("./sync-health.js").FolderStatus, ProviderFailure>;
+  ): Effect.Effect<import("./sync/sync-health.js").FolderStatus, ProviderFailure>;
   /** Omitted/failed results remain local and are retried on the next foreground sync. */
   verifyResetCandidates?(
     account: Account,
-    candidates: readonly import("./sync-reset.js").ResetCandidate[],
-  ): Effect.Effect<readonly import("./sync-reset.js").ResetVerification[], ProviderFailure>;
+    candidates: readonly import("./sync/sync-reset.js").ResetCandidate[],
+  ): Effect.Effect<readonly import("./sync/sync-reset.js").ResetVerification[], ProviderFailure>;
 
   /** One bounded page, used only as positive evidence that a Gmail draft still exists. */
   draftMessageIds?(account: Account): Effect.Effect<readonly string[], ProviderFailure>;

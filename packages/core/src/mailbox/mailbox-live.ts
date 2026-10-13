@@ -53,7 +53,7 @@ import { AppVerifier, AttachmentFiles, ImageNetwork, type PdfWorker } from "../p
 import { offlineAdapter, readOnlyAdapter } from "./read-only.js";
 import { makeSemanticIndexer } from "../semantic-indexer.js";
 import { AppConfig, OAuthIssuers, Providers, Secrets, Store } from "../services.js";
-import { makeSyncHealth } from "../sync-health.js";
+import { makeSyncHealth } from "../sync/sync-health.js";
 import { UnsubscribeNetwork } from "./unsubscribe.js";
 import { checkStoredUpdates, startStoredUpdates, UPDATE_TOKEN_KEY } from "../updates.js";
 

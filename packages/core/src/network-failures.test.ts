@@ -22,7 +22,7 @@ import { transferAllowance } from "./provider-http.js";
 import { isDefiniteSendFailure } from "./provider-send.js";
 import { Browser, OAuth, Providers, Store, type ProviderAdapter } from "./services.js";
 import { StoreLive } from "./store/store.js";
-import { SYNC_FAILURE_TEXT } from "./sync-failure.js";
+import { SYNC_FAILURE_TEXT } from "./sync/sync-failure.js";
 
 type Fault = NonNullable<FakeHttpReply["fault"]>;
 type Route = FakeHttpReply | ((url: URL, call: FakeHttpCall) => FakeHttpReply);

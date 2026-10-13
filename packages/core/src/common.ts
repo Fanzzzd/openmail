@@ -77,10 +77,10 @@ export * from "./platform/cache-storage.js";
 export * from "./attachment-import.js";
 export * from "./reader-sanitize.js";
 
-export * from "./sync-health.js";
+export * from "./sync/sync-health.js";
 
 export { ProviderDiagnostic } from "./provider-diagnostics.js";
-export { SyncResetDiagnostic } from "./sync-reset.js";
+export { SyncResetDiagnostic } from "./sync/sync-reset.js";
 
 export * from "./search-snippets.js";
 export * from "./remote-access.js";

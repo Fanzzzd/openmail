@@ -2,17 +2,17 @@ import { TestClock } from "effect/testing";
 import { assert, it } from "@effect/vitest";
 import { Effect, Layer, Option, Schema, Stream } from "effect";
 import { HttpClient, HttpClientResponse } from "effect/http";
-import { type IncomingMessage, type Provider } from "./domain/domain.js";
-import { makeGmail } from "./gmail.js";
-import { makeOutlook } from "./outlook.js";
-import { MailboxLive } from "./mailbox/mailbox-live.js";
-import { Mailbox } from "./mailbox/mailbox.js";
-import { MemoryPlatform } from "./platform/node/platform-memory.js";
-import { makeFakeProvider, fakeServer } from "./platform/node/fake-provider.js";
-import { Providers, Store, type ProviderAdapter } from "./services.js";
-import { StoreLive } from "./store/store.js";
+import { type IncomingMessage, type Provider } from "../domain/domain.js";
+import { makeGmail } from "../gmail.js";
+import { makeOutlook } from "../outlook.js";
+import { MailboxLive } from "../mailbox/mailbox-live.js";
+import { Mailbox } from "../mailbox/mailbox.js";
+import { MemoryPlatform } from "../platform/node/platform-memory.js";
+import { makeFakeProvider, fakeServer } from "../platform/node/fake-provider.js";
+import { Providers, Store, type ProviderAdapter } from "../services.js";
+import { StoreLive } from "../store/store.js";
 import { makeResetGuard } from "./sync-reset.js";
-import { parseGmailBatch } from "./provider-batch.js";
+import { parseGmailBatch } from "../provider-batch.js";
 const mail = (providerId: string): IncomingMessage => ({
   providerId,
   threadId: providerId,
@@ -222,11 +222,11 @@ function runtime<A, E>(
     ProviderAdapter,
     never,
     | HttpClient.HttpClient
-    | import("./services.js").Secrets
-    | import("./services.js").AppConfig
-    | import("./services.js").OAuthIssuers
-    | import("./services.js").OAuth
-    | import("./platform/mail-codec.js").MailCodec
+    | import("../services.js").Secrets
+    | import("../services.js").AppConfig
+    | import("../services.js").OAuthIssuers
+    | import("../services.js").OAuth
+    | import("../platform/mail-codec.js").MailCodec
   >,
   body: Effect.Effect<A, E, Store | Mailbox | Providers>,
   http: Layer.Layer<HttpClient.HttpClient> = Layer.succeed(HttpClient.HttpClient)(
@@ -581,7 +581,7 @@ it.effect("a Graph delta reaching the filtered 5,000 cap remains a partial windo
           needsReauth: false,
         } as const;
         let listed = 0;
-        let reset: Extract<import("./services.js").Change, { _tag: "Reset" }> | undefined;
+        let reset: Extract<import("../services.js").Change, { _tag: "Reset" }> | undefined;
         yield* Stream.runForEach(adapter.pull(account, Option.none()), (change) =>
           Effect.sync(() => {
             if (change._tag === "Upsert") listed++;

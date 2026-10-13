@@ -5,7 +5,7 @@ import {
   CACHED_HEADER_NAMES,
   cachedHeaders,
   type CachedHeaders,
-} from "../../../header-backfill.js";
+} from "../../../sync/header-backfill.js";
 import {
   decodeProviderId,
   encodeProviderId,
@@ -14,7 +14,7 @@ import {
 } from "../../../imap-cursor.js";
 import { retainedResetLabels } from "../../../imap-helpers.js";
 import { type ProviderAdapter } from "../../../services.js";
-import type { ResetVerification } from "../../../sync-reset.js";
+import type { ResetVerification } from "../../../sync/sync-reset.js";
 import { imapSearch } from "../imap-search.js";
 import { openFolderOf } from "./ops.js";
 import { mapFolders } from "./parse.js";

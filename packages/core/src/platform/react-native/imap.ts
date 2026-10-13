@@ -1,10 +1,14 @@
 import { messageIdKey } from "../../message-id.js";
-import { FolderStatus } from "../../sync-health.js";
-import type { ResetVerification } from "../../sync-reset.js";
+import { FolderStatus } from "../../sync/sync-health.js";
+import type { ResetVerification } from "../../sync/sync-reset.js";
 import { Clock, Effect, Option, Queue, Schema, Scope, Semaphore, Stream } from "effect";
 import { Buffer } from "../bytes.js";
 import { MailCodec, mimeAddresses, type MimeMessage } from "../mail-codec.js";
-import { CACHED_HEADER_NAMES, cachedHeaders, type CachedHeaders } from "../../header-backfill.js";
+import {
+  CACHED_HEADER_NAMES,
+  cachedHeaders,
+  type CachedHeaders,
+} from "../../sync/header-backfill.js";
 import {
   MailTransport,
   MailWire,

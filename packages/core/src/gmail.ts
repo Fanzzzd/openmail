@@ -1,7 +1,7 @@
 import { Clock, Effect, Option, Schema, Stream } from "effect";
 import { HttpClient, HttpClientRequest } from "effect/http";
 import { FOLDER_BATCH_LIMIT, GMAIL_PERMANENT_DELETE_SCOPE } from "./domain/folder-actions.js";
-import { CACHED_HEADER_NAMES, type CachedHeaders, firstHeaders } from "./header-backfill.js";
+import { CACHED_HEADER_NAMES, type CachedHeaders, firstHeaders } from "./sync/header-backfill.js";
 import { newMessageId } from "./message-id.js";
 import { messageSecurity } from "./message-security.js";
 import { BASE_SCOPES, OPTIONAL_SCOPES, isOptionalService } from "./optional-services.js";
@@ -28,8 +28,8 @@ import {
   providerDecode,
   providerReadFailure,
 } from "./provider-send.js";
-import type { FolderStatus } from "./sync-health.js";
-import type { ResetVerification } from "./sync-reset.js";
+import type { FolderStatus } from "./sync/sync-health.js";
+import type { ResetVerification } from "./sync/sync-reset.js";
 
 import { GMAIL_MIME_LIMIT } from "./attachment-policy.js";
 import { type AttachmentRef, MEDIA_RAW_TOO_LARGE, pickAttachment } from "./attachments.js";

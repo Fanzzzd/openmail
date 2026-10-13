@@ -6,7 +6,7 @@ import { assert, it } from "@effect/vitest";
 import { ConfigProvider, Deferred, Effect, Layer, ManagedRuntime, Schema, Stream } from "effect";
 import { SqlClient } from "effect/sql";
 import type { IncomingMessage, Provider } from "../../domain/domain.js";
-import { backfillCachedHeaders, type CachedHeaders } from "../../header-backfill.js";
+import { backfillCachedHeaders, type CachedHeaders } from "../../sync/header-backfill.js";
 import { readOnlyAdapter } from "../../mailbox/read-only.js";
 import { ProviderError } from "../../domain/errors.js";
 import { Providers, Store } from "../../services.js";

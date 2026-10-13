@@ -1,13 +1,13 @@
 import { Effect, Schema } from "effect";
 import type { Account } from "../domain/domain.js";
 import { ProviderError } from "../domain/errors.js";
-import type { CachedHeaders } from "../header-backfill.js";
+import type { CachedHeaders } from "../sync/header-backfill.js";
 import { BatchResponse, deferIfThrottled, verifyInChunks } from "../provider-batch.js";
 import { BackgroundRead } from "../provider-connectivity.js";
 import { ApiError } from "../provider-http.js";
 import { retryProvider } from "../provider-retry.js";
 import { type ProviderAdapter } from "../services.js";
-import { type ResetVerification, outlookStateLabel } from "../sync-reset.js";
+import { type ResetVerification, outlookStateLabel } from "../sync/sync-reset.js";
 import type { OutlookClient } from "./client.js";
 import {
   decode,

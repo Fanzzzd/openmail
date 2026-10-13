@@ -2,7 +2,7 @@ import { Effect, Option, Schema } from "effect";
 import type { SqlClient } from "effect/sql";
 import type { Fragment } from "effect/sql/Statement";
 import { all, first, run, sqliteBinaryCompare } from "./sql-rows.js";
-import { ResetCandidate, type ResetChange } from "../sync-reset.js";
+import { ResetCandidate, type ResetChange } from "../sync/sync-reset.js";
 import type { ImapFolderIdentity } from "../services.js";
 
 const StaleSweepState = Schema.Struct({

@@ -13,8 +13,8 @@ import {
 } from "effect";
 import { type Account, type FlushResult, type SyncResult } from "../domain/domain.js";
 import { type AuthError, type ProviderError, type ProviderFailure } from "../domain/errors.js";
-import { runTokenKeepAlive } from "../token-keepalive.js";
-import { backfillCachedHeaders } from "../header-backfill.js";
+import { runTokenKeepAlive } from "../sync/token-keepalive.js";
+import { backfillCachedHeaders } from "../sync/header-backfill.js";
 import { ImapIdle } from "../imap-idle.js";
 import { type makeCacheMailbox } from "./mailbox-cache.js";
 import { type makeFeatureMailbox } from "./mailbox-features.js";
@@ -24,10 +24,10 @@ import { type Mailbox, type SyncState } from "./mailbox.js";
 import { BackgroundRead } from "../provider-connectivity.js";
 import { retryAfterMillis } from "../provider-retry.js";
 import { type Change } from "../services.js";
-import { logSyncCrash, type SyncCrashDiagnostic } from "../sync-crash.js";
-import { logSyncFailed, SYNC_FAILURE_TEXT, syncFailureText } from "../sync-failure.js";
-import { makeSyncHealth } from "../sync-health.js";
-import { makeResetGuard, resetBudgets, resetVerificationLimit } from "../sync-reset.js";
+import { logSyncCrash, type SyncCrashDiagnostic } from "../sync/sync-crash.js";
+import { logSyncFailed, SYNC_FAILURE_TEXT, syncFailureText } from "../sync/sync-failure.js";
+import { makeSyncHealth } from "../sync/sync-health.js";
+import { makeResetGuard, resetBudgets, resetVerificationLimit } from "../sync/sync-reset.js";
 
 // Changes per write transaction (an Upsert and its Progress are two). Each one blocks
 // the main thread; 100 real messages took up to 509 ms of CPU, 10 took up to 104 ms.

@@ -1,6 +1,6 @@
-import { backfillCachedHeaders } from "../../header-backfill.js";
+import { backfillCachedHeaders } from "../../sync/header-backfill.js";
 import { readOnlyAdapter } from "../../mailbox/read-only.js";
-import { makeResetGuard } from "../../sync-reset.js";
+import { makeResetGuard } from "../../sync/sync-reset.js";
 import { readCursor } from "../../imap-cursor.js";
 import { expect, it, vi } from "vitest";
 import { Effect, Fiber, Layer, Logger, ManagedRuntime, Option, Stream } from "effect";

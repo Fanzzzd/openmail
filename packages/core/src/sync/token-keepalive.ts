@@ -1,8 +1,8 @@
 import { Cause, Effect, Schedule } from "effect";
 
-import { KEEP_ALIVE_CHECK, KEEP_ALIVE_MAX_AGE_MS } from "./reauth.js";
-import type { Provider } from "./domain/domain.js";
-import type { ProviderAdapter, Store } from "./services.js";
+import { KEEP_ALIVE_CHECK, KEEP_ALIVE_MAX_AGE_MS } from "../reauth.js";
+import type { Provider } from "../domain/domain.js";
+import type { ProviderAdapter, Store } from "../services.js";
 
 /** Only the keep-alive of each adapter is used. */
 export interface KeepAliveProviders {

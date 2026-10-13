@@ -1,7 +1,7 @@
 import { graphPageLink } from "./graph-pagination.js";
 import { assert, it } from "@effect/vitest";
 import { ProviderError } from "./domain/errors.js";
-import { backfillCachedHeaders } from "./header-backfill.js";
+import { backfillCachedHeaders } from "./sync/header-backfill.js";
 import { parseCalendar } from "./invites.js";
 import { EMPTY_FILTER } from "./domain/organization.js";
 import { draftCreation } from "./platform/node/draft-create-fixture.js";

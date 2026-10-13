@@ -27,7 +27,7 @@ import {
   toMessage,
 } from "./store-rows.js";
 import { makeSyncResetStore } from "./store-sync-reset.js";
-import { logSyncReset } from "../sync-reset.js";
+import { logSyncReset } from "../sync/sync-reset.js";
 
 import { type makeQueryStore } from "./store-query.js";
 

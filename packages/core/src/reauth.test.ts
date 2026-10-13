@@ -33,7 +33,11 @@ import {
   type TokenResponse,
 } from "./services.js";
 import { StoreLive } from "./store/store.js";
-import { type KeepAliveProviders, keepTokensAlive, runTokenKeepAlive } from "./token-keepalive.js";
+import {
+  type KeepAliveProviders,
+  keepTokensAlive,
+  runTokenKeepAlive,
+} from "./sync/token-keepalive.js";
 
 const DAY = 86_400_000;
 const ID = "outlook:me@outlook.com";

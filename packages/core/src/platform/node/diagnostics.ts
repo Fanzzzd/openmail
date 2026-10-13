@@ -1,13 +1,13 @@
-import { SyncCrashDiagnostic } from "../../sync-crash.js";
-export { SyncCrashDiagnostic } from "../../sync-crash.js";
-import { SyncResetDiagnostic } from "../../sync-reset.js";
-export { SyncResetDiagnostic } from "../../sync-reset.js";
+import { SyncCrashDiagnostic } from "../../sync/sync-crash.js";
+export { SyncCrashDiagnostic } from "../../sync/sync-crash.js";
+import { SyncResetDiagnostic } from "../../sync/sync-reset.js";
+export { SyncResetDiagnostic } from "../../sync/sync-reset.js";
 import { ProviderDiagnostic } from "../../provider-diagnostics.js";
 export { ProviderDiagnostic } from "../../provider-diagnostics.js";
 import { ReauthDiagnostic } from "../../reauth.js";
 export { ReauthDiagnostic } from "../../reauth.js";
-import { SyncFailedDiagnostic } from "../../sync-failure.js";
-export { SyncFailedDiagnostic } from "../../sync-failure.js";
+import { SyncFailedDiagnostic } from "../../sync/sync-failure.js";
+export { SyncFailedDiagnostic } from "../../sync/sync-failure.js";
 import {
   databaseQuickCheck,
   databaseQuickCheckInWorker,

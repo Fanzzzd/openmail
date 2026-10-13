@@ -2,13 +2,13 @@ import { assert, it } from "@effect/vitest";
 import { Effect, Layer, Option, Stream } from "effect";
 import { ImapFlow } from "imapflow";
 import { vi } from "vitest";
-import { type IncomingMessage } from "./domain/domain.js";
-import { Store } from "./services.js";
-import { StoreLive } from "./store/store.js";
-import { MemoryPlatform } from "./platform/node/platform-memory.js";
-import { makeImapWith } from "./platform/node/imap/adapter.js";
+import { type IncomingMessage } from "../domain/domain.js";
+import { Store } from "../services.js";
+import { StoreLive } from "../store/store.js";
+import { MemoryPlatform } from "../platform/node/platform-memory.js";
+import { makeImapWith } from "../platform/node/imap/adapter.js";
 import { makeResetGuard } from "./sync-reset.js";
-import { readCursor, parseUidSet } from "./imap-cursor.js";
+import { readCursor, parseUidSet } from "../imap-cursor.js";
 const settings = {
   preset: "custom",
   username: "me@example.test",

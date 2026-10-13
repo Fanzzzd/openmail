@@ -5,7 +5,7 @@ import { BackgroundRead } from "../provider-connectivity.js";
 import { logInvalidGraphCursor } from "../provider-diagnostics.js";
 import { graphPages } from "../provider-pages.js";
 import { type Change, type ProviderAdapter } from "../services.js";
-import { logSyncReset } from "../sync-reset.js";
+import { logSyncReset } from "../sync/sync-reset.js";
 import type { OutlookClient } from "./client.js";
 import {
   CONCURRENCY,

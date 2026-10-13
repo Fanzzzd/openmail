@@ -14,7 +14,7 @@ import { graphPages } from "../provider-pages.js";
 import { uncertainWrite } from "../provider-retry.js";
 import { graphSearch, matchesSearch, parseSearchQuery, searchMailboxLabel } from "../search.js";
 import { type ProviderAdapter } from "../services.js";
-import type { FolderStatus } from "../sync-health.js";
+import type { FolderStatus } from "../sync/sync-health.js";
 import type { OutlookClient } from "./client.js";
 import { makeOutlookFolders } from "./folders.js";
 import {

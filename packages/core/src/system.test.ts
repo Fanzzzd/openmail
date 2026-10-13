@@ -19,7 +19,7 @@ import {
   spaceAccountIds,
 } from "./system.js";
 import { fakeServer, TestMailbox } from "./platform/node/testing.js";
-import { SYNC_FAILURE_TEXT } from "./sync-failure.js";
+import { SYNC_FAILURE_TEXT } from "./sync/sync-failure.js";
 
 const account: Account = {
   id: "gmail:me@gmail.com",

@@ -19,7 +19,7 @@ import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { applyNativeMigration } from "./platform/node/migrations.js";
 import { Store } from "./services.js";
 import { StoreLive } from "./store/store.js";
-import { makeResetGuard } from "./sync-reset.js";
+import { makeResetGuard } from "./sync/sync-reset.js";
 import { matchesSearch } from "./search.js";
 import { notificationEligible } from "./system.js";
 
