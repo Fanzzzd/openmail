@@ -5964,6 +5964,9 @@ it.effect("a failed folder keeps the delta links of folders that finished before
       const partial = yield* store.getSyncCursor(account.id);
       assert.ok(Option.isSome(partial));
       assert.include(partial.value, "inbox-done");
+      // A folder checkpoint is not a completed sync and leaves the inbox cursor alone.
+      assert.strictEqual((yield* store.getAccount(account.id)).lastSyncedAt, null);
+      assert.isTrue(Option.isNone(yield* store.getInboxCursor(account.id)));
       sentFails = false;
       const inboxCalls = () =>
         http.calls

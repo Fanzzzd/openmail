@@ -127,6 +127,7 @@ export const makeOutlookPull = (
               yield* Queue.offer(queue, {
                 _tag: "Cursor",
                 cursor: JSON.stringify({ ...(reset ? {} : stored), ...next, [PARTIAL_KEY]: "1" }),
+                checkpoint: true,
               });
             });
           for (const folder of folders) {

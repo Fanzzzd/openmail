@@ -777,7 +777,11 @@ export type Change =
   | { readonly _tag: "BackfillReset" }
   | { readonly _tag: "Labels"; readonly labels: readonly Omit<Label, "accountId">[] }
   | { readonly _tag: "Progress"; readonly fetched: number; readonly total: number }
-  | { readonly _tag: "Cursor"; readonly cursor: string };
+  /**
+   * `checkpoint` marks a cursor saved partway through a full sync so a retry resumes. It does
+   * not count as a completed sync and is not copied to the inbox cursor.
+   */
+  | { readonly _tag: "Cursor"; readonly cursor: string; readonly checkpoint?: boolean };
 
 /** `loginHint` names the account to sign in as, so the consent page does not pick another one. */
 export type ConnectInput =

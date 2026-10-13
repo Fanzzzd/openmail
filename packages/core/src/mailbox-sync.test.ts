@@ -1,5 +1,6 @@
 import { assert, it } from "@effect/vitest";
-import { Effect, Layer, ManagedRuntime, Stream } from "effect";
+import { Effect, Layer, ManagedRuntime, Option, Stream } from "effect";
+import { ProviderError } from "./errors.js";
 import { TestClock } from "effect/testing";
 import { expect } from "vitest";
 import { Mailbox } from "./mailbox.js";
@@ -147,5 +148,35 @@ it.live("a full sync pulls up to three accounts at once, each account once", () 
       "d@example.test",
       "e@example.test",
     ]);
+  }).pipe(Effect.provide(layer));
+});
+
+it.effect("a checkpoint cursor before a failed first sync does not mark the account synced", () => {
+  const pulls: { cursor: string | undefined; scope: string | undefined }[] = [];
+  const layer = TestMailbox.withAdapter((base) => ({
+    ...base,
+    pull: (_account, cursor, scope) => {
+      pulls.push({ cursor: Option.getOrUndefined(cursor), scope });
+      const checkpoint: Change = { _tag: "Cursor", cursor: "initial:901", checkpoint: true };
+      return Stream.make(checkpoint).pipe(
+        Stream.concat(
+          Stream.fail(new ProviderError({ message: "Gmail API 400: bad", status: 400 })),
+        ),
+      );
+    },
+  }));
+  return Effect.gen(function* () {
+    const store = yield* Store;
+    const mailbox = yield* Mailbox;
+    const account = yield* store.upsertAccount("gmail", "me@example.test");
+    const [result] = yield* mailbox.sync();
+    assert.ok(result?.error);
+    const after = yield* store.getAccount(account.id);
+    assert.strictEqual(after.lastSyncedAt, null);
+    assert.deepStrictEqual(yield* store.getSyncCursor(account.id), Option.some("initial:901"));
+    assert.isTrue(Option.isNone(yield* store.getInboxCursor(account.id)));
+    // Inbox polls wait for a completed first sync instead of listing the inbox again.
+    yield* mailbox.pollInbox();
+    assert.deepStrictEqual(pulls, [{ cursor: undefined, scope: undefined }]);
   }).pipe(Effect.provide(layer));
 });

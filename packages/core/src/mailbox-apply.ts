@@ -629,11 +629,15 @@ export const makeApplyMailbox = (
             // Graph delta link after a foreground sync. A poll that ran meanwhile may have a
             // newer one; starting from the older cursor only fetches some changes again.
             writes.push(
-              scope
-                ? store.saveInboxCursor(account.id, change.cursor)
-                : store
-                    .saveSyncCursor(account.id, change.cursor)
-                    .pipe(Effect.andThen(store.saveInboxCursor(account.id, change.cursor))),
+              change.checkpoint
+                ? scope
+                  ? Effect.void
+                  : store.saveSyncCursor(account.id, change.cursor, false)
+                : scope
+                  ? store.saveInboxCursor(account.id, change.cursor)
+                  : store
+                      .saveSyncCursor(account.id, change.cursor)
+                      .pipe(Effect.andThen(store.saveInboxCursor(account.id, change.cursor))),
             );
             break;
           case "Progress":

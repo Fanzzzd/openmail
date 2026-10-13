@@ -3348,7 +3348,7 @@ it.effect("a first sync saves its history id and a retry skips the messages it s
       "GET /messages/m2": { json: message("m2", ["INBOX"]) },
     });
     const first = yield* run(http, (a) => Stream.runCollect(a.pull(account, Option.none())));
-    assert.deepStrictEqual(first[1], { _tag: "Cursor", cursor: "initial:901" });
+    assert.deepStrictEqual(first[1], { _tag: "Cursor", cursor: "initial:901", checkpoint: true });
     assert.deepStrictEqual(first.at(-1), { _tag: "Cursor", cursor: "901" });
 
     const before = http.calls.length;
@@ -3395,5 +3395,26 @@ it.effect("Gmail's per-user rate limit 403 is a quota failure, not a refusal", (
     assert.strictEqual(error._tag, "ProviderError");
     assert.ok(error._tag === "ProviderError" && error.reason === "quota");
     assert.isAbove(calls, 1);
+  }),
+);
+
+it.effect("an inbox poll from a first sync's checkpoint skips the messages already stored", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({
+      "GET /messages": { json: { messages: [{ id: "m1" }, { id: "m2" }] } },
+      "GET /messages/m1": { json: message("m1", ["INBOX"]) },
+      "GET /messages/m2": { json: message("m2", ["INBOX"]) },
+    });
+    const changes = yield* run(http, (a) =>
+      Stream.runCollect(
+        a.pull(account, Option.some("initial:901"), "inbox", false, () =>
+          Effect.succeed(new Set(["m1", "m2"])),
+        ),
+      ),
+    );
+    const paths = http.calls.map((c) => c.url.pathname.replace(/^.*\/users\/me/, ""));
+    assert.notInclude(paths, "/messages/m1");
+    assert.notInclude(paths, "/messages/m2");
+    assert.deepStrictEqual(changes.at(-1), { _tag: "Cursor", cursor: "901" });
   }),
 );

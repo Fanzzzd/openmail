@@ -503,13 +503,16 @@ export const makeGmail: Effect.Effect<
         const total = plan.changedIds.length;
         // A first sync fetches only what an earlier attempt did not store. The listing
         // still covers every message, so a stored one is not refetched in full.
+        // An inbox poll that starts from a first sync's checkpoint skips stored mail the same way.
         const initial = !scope && full !== undefined && Option.isNone(history);
-        const skip = initial && stored ? yield* stored(plan.changedIds) : new Set<string>();
+        const resuming = full !== undefined && resumeFrom !== undefined;
+        const skip =
+          (initial || resuming) && stored ? yield* stored(plan.changedIds) : new Set<string>();
         const pending = skip.size ? plan.changedIds.filter((id) => !skip.has(id)) : plan.changedIds;
         const done = total - pending.length;
         const checkpoint: Change[] =
           initial && resumeFrom === undefined
-            ? [{ _tag: "Cursor", cursor: `${INITIAL_CURSOR}${plan.cursor}` }]
+            ? [{ _tag: "Cursor", cursor: `${INITIAL_CURSOR}${plan.cursor}`, checkpoint: true }]
             : [];
 
         const fetched = Stream.fromIterable(pending).pipe(
