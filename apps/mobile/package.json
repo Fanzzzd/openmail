@@ -62,7 +62,7 @@
     "@types/react-dom": "~19.2.3",
     "babel-preset-expo": "~57.0.9",
     "jsdom": "30.1.1",
-    "typescript": "~6.0.3",
+    "typescript": "catalog:",
     "vitest": "^5.0.2"
   },
   "op-sqlite": {
