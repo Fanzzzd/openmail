@@ -67,6 +67,19 @@ function sources(directory: string): string[] {
     return /\.([cm]?[jt]s|tsx|jsx)$/.test(path) && !/\.(test|spec)\./.test(path) ? [path] : [];
   });
 }
+it("keeps only the package entries at the top of src; every other module sits in a domain folder", () => {
+  const top = readdirSync(root, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && !/\.(test|spec)\./.test(entry.name))
+    .map((entry) => entry.name);
+  expect(top.toSorted()).toEqual(["common.ts", "index.ts", "portable.ts", "schema.ts"]);
+});
+it("checks the sources of every domain folder", () => {
+  const scanned = new Set(sources(root).map((file) => relative(root, file).split("/")[0]));
+  const folders = readdirSync(root, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name);
+  expect(folders.filter((folder) => !scanned.has(folder))).toEqual([]);
+});
 it("keeps native imports, exports, dynamic imports and requires inside platform/node", () => {
   const violations = sources(root).flatMap((file) =>
     imports(readFileSync(file, "utf8"))
