@@ -13,6 +13,8 @@ pnpm exec oxlint
 pnpm exec oxfmt --check .
 ```
 
+发布前另跑 `pnpm audit:prod`（即 `pnpm audit --prod`），检查所有 workspace 的生产依赖是否有已知漏洞。它要访问 npm registry，所以不在上面的离线检查里，CI 工作流另行接入。2026-10-13 的结果是 5 条，全部经手机（expo、react-native 的 metro）或文档站（next 的 postcss）引入：node-forge、braces、source-map-js 为 high，uuid、decode-uri-component 为 moderate，不在桌面、CLI 或 core 的依赖路径上。
+
 `pnpm build` 构建 core／CLI／桌面，并编译手机语言目录及检查类型。`pnpm test` 包含桌面完整邮件流程、桌面和手机 Lingui 目录同步／漏译，以及桌面术语与 ICU 检查。其他类型检查可单独运行 `pnpm check-types`。提交要求见 [AGENTS.md](../AGENTS.md)。
 
 桌面有几项测试读取构建产物，例如 `out/web` 里的网页版。turbo 在 `@openmail/desktop#test` 之前先跑桌面的 `build`，构建命中缓存时这一步约 0.3 秒。单独用 vitest 跑这些测试前先 `pnpm build`。

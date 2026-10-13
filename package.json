@@ -11,6 +11,7 @@
     "test:perf": "pnpm --filter @openmail/core test:perf",
     "perf:cost": "pnpm --filter @openmail/core perf:cost",
     "check": "oxlint && oxfmt --check .",
+    "audit:prod": "pnpm audit --prod",
     "cli": "node packages/cli/dist/cli.js"
   },
   "devDependencies": {
