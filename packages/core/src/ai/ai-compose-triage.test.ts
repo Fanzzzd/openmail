@@ -376,7 +376,8 @@ it.effect(
             const encoded = JSON.stringify(found.value.encodedResult);
             assert.ok(encoded.includes(id));
             assert.ok(!/other@example|secret.pdf|private snippet|media secret/.test(encoded));
-            assert.ok(encoded.includes('"snippet":""'));
+            // Tool rows leave the snippet out rather than sending it empty.
+            assert.ok(!encoded.includes('"snippet"'));
             const outside = yield* Stream.runLast(
               yield* request.toolkit.handle("semantic_search", {
                 query: "meaning",
@@ -384,9 +385,11 @@ it.effect(
                 limit: 5,
               }),
             );
+            // An account outside the selection is not readable, so the call says so.
             assert.ok(
               Option.isSome(outside) &&
-                JSON.stringify(outside.value.encodedResult).includes('"threads":[]'),
+                outside.value.isFailure &&
+                JSON.stringify(outside.value.encodedResult).includes('"code":"not_found"'),
             );
             return output("Found Friday");
           }),

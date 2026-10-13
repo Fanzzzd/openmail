@@ -113,7 +113,7 @@ exports[`tool input and output schemas are stable 1`] = `
     "readonly": true,
   },
   {
-    "description": "List profiles, named groups of accounts such as Work and Personal. Pass an id as profile_id to list_threads. Page with next_cursor.",
+    "description": "List profiles, the groups of accounts OpenMail calls spaces, such as Work and Personal. Pass an id as profile_id to list_threads. Page with next_cursor.",
     "idempotent": true,
     "input": {
       "additionalProperties": true,
