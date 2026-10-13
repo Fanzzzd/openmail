@@ -7,7 +7,7 @@ export const TOOL_SUMMARIES: Record<McpToolName, string> = {
   access_status:
     "Say which accounts the client can read, why others are hidden and what to change in the app.",
   list_accounts: "List connected accounts that allow MCP access.",
-  list_profiles: "List profiles, such as Work and Personal.",
+  list_profiles: "List spaces, such as Work and Personal. MCP calls them profiles.",
   list_labels: "List labels (Gmail) and folders (Outlook, IMAP) per account.",
   list_threads: "List conversations in a mailbox, newest first, from the local copy.",
   search: "Search mail with Gmail-style operators.",

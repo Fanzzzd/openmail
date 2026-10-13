@@ -81,6 +81,10 @@ frame 标识依据：[Electron WebFrameMain](https://www.electronjs.org/docs/lat
 
 只读会话的范围只在[架构](architecture.md#只读会话)维护；smoke 的原始 console 和 stderr 不是上述脱敏日志。解析器 fuzz 与无障碍测试的运行方式和限制只在[测试](testing.md#解析器-fuzz-与无障碍)维护。
 
+## CLI 与 AI 授权
+
+逐账户的「允许 AI 读取这个账户」只约束代理入口：MCP 服务和 `openmail tool <工具名>`，两者以 `agent:mcp:<客户端名>` 身份调用工具，每次检查授权。人在终端里输入的 `list`、`search`、`show`、`sync` 和 `health` 以用户身份经 Mailbox 读取，与 app 一样看到所有已启用账户。用户自己的 shell 能直接读数据目录里的 SQLite 文件，CLI 不是安全边界，在这里检查授权挡不住任何人，只会让人以为邮件不存在。脚本若代表模型读取邮件，应调用 `openmail tool` 或 MCP。
+
 ## 连接 AI 应用
 
 「设置 > AI 权限 > AI 应用」检测 Claude Code、Codex、Claude 和 Cursor，并读取它们的 MCP 配置判断连接状态。读取只解析配置，不改文件。OpenMail 只在用户点击「连接」「重新连接」或「断开连接」并在确认框里看过改动后，才改别的应用的配置：
@@ -88,6 +92,7 @@ frame 标识依据：[Electron WebFrameMain](https://www.electronjs.org/docs/lat
 - 确认框列出要运行的命令（argv）和配置文件的 diff。主进程在应用前重新计算，预览令牌不同就拒绝，要求重新预览。直接改文件时令牌是整个文件的哈希；走 CLI 时只哈希 `openmail` 条目，因为 Claude Code 随时改写 `~/.claude.json` 的其他部分。
 - Claude Code 用 `claude mcp add-json --scope user openmail <条目 JSON>` 和 `claude mcp remove --scope user openmail`。`add` 拒绝已有名称，所以重新连接先 remove 再 add-json；add-json 失败时用旧条目再 add-json 一次，放回原状。没找到 `claude` 时只提供复制命令。
 - Codex 新连接用 `codex mcp add`，断开用 `codex mcp remove`。`codex mcp add` 只能写命令、参数和 env，所以重新连接直接改 `config.toml`。没找到 Codex CLI 时同样直接改文件。CLI 都用 `execFile` 加固定 argv 运行，不经过 shell，30 秒超时。
+- CLI 退出码为 0 不算成功。命令跑完后主进程用 `clientView` 重新读配置：连接要求 `openmail` 条目的命令、参数和 `OPENMAIL_HOME` 与预期一致，且 `--allow-writes` 与所选一致；断开要求条目已不存在。不符合时报 `cliFailed`，界面不显示「完成」。
 - Claude 和 Cursor 没有 CLI，主进程直接改 JSON。重新连接只改条目里的 `command`、`args` 和 `env.OPENMAIL_HOME`，用户自己加的键（`disabled`、`autoApprove`、`startup_timeout_sec`、其他 env）保留。JSON 用 jsonc-parser 逐键做最小文本编辑，保留 BOM；TOML 只替换 `[mcp_servers.openmail]` 表及其子表这一段文本，段内注释不保留，其余内容和注释原样保留。改完把前后两份都解析一遍：`openmail` 条目必须等于预期，删掉它之后剩下的内容必须完全相同，否则拒绝。文件解析失败或条目写成内联表时同样拒绝，不猜。
 - OpenMail 自己改文件之前在原文件旁写备份 `<文件名>.openmail-backup-<UTC 时间>[-n]`，保留原权限，每个文件按时间和序号留最新 5 份。CLI 自己改文件，不另做备份。写入走同目录临时文件加 rename，保留原权限；配置是符号链接时写到链接目标，链接保持不变。
 - 配置条目里只有命令、参数，以及数据目录不是默认值时的 `OPENMAIL_HOME`。不写 token、密钥或其他凭证。

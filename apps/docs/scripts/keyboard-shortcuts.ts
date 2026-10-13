@@ -216,7 +216,7 @@ export function renderShortcutsPage(names: Map<string, string>): string {
     "| Target | Mimestream and Apple Mail | Gmail |",
     "| --- | --- | --- |",
     "| Mailbox 1 to 8 | ⌘1 to ⌘8 | ⌃⌘1 to ⌃⌘8 |",
-    "| Profile 1 to 9 | ⌃⌘1 to ⌃⌘9 | ⌘1 to ⌘9 |",
+    "| Space 1 to 9 | ⌃⌘1 to ⌃⌘9 | ⌘1 to ⌘9 |",
     "| Favorite 1 to 9 | ⌥⌘1 to ⌥⌘9 | ⌥⌘1 to ⌥⌘9 |",
     "",
   );

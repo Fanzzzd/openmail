@@ -25,7 +25,7 @@ const features: { title: string; href: string; body: ReactNode }[] = [
   {
     title: "Keyboard first",
     href: "/docs/keyboard-shortcuts",
-    body: "Three shortcut sets: Mimestream, Gmail and Apple Mail. Profiles group accounts, and the interface is available in ten languages.",
+    body: "Three shortcut sets: Mimestream, Gmail and Apple Mail. Spaces group accounts, and the interface is available in ten languages.",
   },
   {
     title: "AI, off by default",

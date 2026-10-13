@@ -186,12 +186,12 @@ export default function PrivacyPage() {
       <h2 id="ai-features">AI features</h2>
       <p>
         AI features are off by default. To use them you provide your own Anthropic API key and turn
-        on “Allow sending mail text to the model” for each account. When you then use a feature, or
-        turn on automatic summaries or triage suggestions for that account, OpenMail sends your
-        question and the relevant message text, subjects, and sender and recipient addresses from
-        your Mac directly to Anthropic using your key. It does not send message HTML, images,
-        attachment files, or text extracted from images and PDFs. Anthropic processes that data
-        under its own terms and privacy policy. We never receive it.
+        on “Allow AI to read this account” for each account. When you then use a feature, or turn on
+        automatic summaries or triage suggestions for that account, OpenMail sends your question and
+        the relevant message text, subjects, and sender and recipient addresses from your Mac
+        directly to Anthropic using your key. It does not send message HTML, images, attachment
+        files, or text extracted from images and PDFs. Anthropic processes that data under its own
+        terms and privacy policy. We never receive it.
       </p>
       <p>
         Turning off an account's AI permission deletes the AI results stored for it on your Mac.

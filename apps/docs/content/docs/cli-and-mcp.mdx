@@ -18,22 +18,39 @@ pnpm --dir packages/cli link --global
 ```sh
 openmail accounts list
 openmail sync
-openmail list --mailbox inbox --unread --json
-openmail search 'from:billing has:attachment' --json
+openmail list --mailbox inbox --unread
+openmail list --space <space-id> --json
+openmail search 'from:billing has:attachment'
 openmail search 'invoice' --server --json
+openmail show '<message-id>' --thread
+openmail spaces list
 openmail health --json
 openmail tools --json
 ```
 
-`openmail tools --json` lists every tool with its input schema. Each tool can also be run as `openmail tool <name> --input-json '{...}' --json`.
+`list` and `search` print one line per conversation: date, sender, subject and the message id that `openmail show` takes. Unread conversations have a `*`. When there are more, the last line gives the `--cursor` for the next page. Add `--json` for the machine format: `{"threads": [...], "next_cursor": "..."}`.
+
+Spaces group accounts, such as Work and Personal. `openmail spaces` manages them and `--space` filters `list`. The older `openmail profiles` and `--profile` still work.
 
 The CLI has no send command. Sending happens in the app.
 
-`openmail list`, `openmail search`, `openmail sync` and `openmail tool` run the same tools as the MCP server. They read only accounts for which you turned on **Allow sending mail text to the model** in **Settings → AI Access**. Where an MCP client gets an empty result, the CLI prints an error on stderr and exits with code 1:
+### Commands you type and agent tools
+
+`list`, `search`, `show`, `sync` and `health` are commands you type, so they run as you. They read every account that is turned on in OpenMail, like the app does. They do not check **Allow AI to read this account**: a command in your own shell could read the database file anyway, so that switch would protect nothing there.
+
+`openmail tool <name>` runs an agent tool exactly as an MCP client would: same consent checks, parameters and results. Use it to test what an AI app will see, or in scripts that act for a model. `openmail tools --json` lists every tool with its input schema, and `openmail tool --help` lists them by name.
+
+```sh
+openmail tool access_status --json
+openmail tool read_thread --input-json '{"id":"gmail:me@example.com/m1"}' --json
+openmail tool draft_message --allow-writes --input-json '{"account_id":"gmail:me@example.com","to":["alice@example.com"],"subject":"Status","body":"Tomorrow.","rationale":"Draft for review."}' --json
+```
+
+`--allow-writes` exists only on the proposal tools. Where an MCP client gets an empty result because no account allows AI reads, `openmail tool` prints an error on stderr and exits with code 1:
 
 ```text
-error: No accounts allow agent reads. Turn on 'Allow sending mail text to the model' in Settings → AI Access.
-error: Account gmail:me@example.com does not allow agent reads. Turn on 'Allow sending mail text to the model' in Settings → AI Access.
+error: No accounts allow agent reads. Turn on 'Allow AI to read this account' in Settings → AI Access.
+error: Account gmail:me@example.com does not allow agent reads. Turn on 'Allow AI to read this account' in Settings → AI Access.
 error: No account with id gmail:typo@example.com. Run `openmail accounts list` to see them.
 ```
 
@@ -115,7 +132,7 @@ By default the server offers 20 tools:
 | ------------------ | -------------------------------------------------------------------------------------------- | --------- |
 | `access_status`    | Say which accounts the client can read, why others are hidden and what to change in the app. | Yes       |
 | `list_accounts`    | List connected accounts that allow MCP access.                                               | Yes       |
-| `list_profiles`    | List profiles, such as Work and Personal.                                                    | Yes       |
+| `list_profiles`    | List spaces, such as Work and Personal. MCP calls them profiles.                             | Yes       |
 | `list_labels`      | List labels (Gmail) and folders (Outlook, IMAP) per account.                                 | Yes       |
 | `list_threads`     | List conversations in a mailbox, newest first, from the local copy.                          | Yes       |
 | `search`           | Search mail with Gmail-style operators.                                                      | Yes       |
@@ -144,11 +161,13 @@ With write access turned on, the server adds 3 proposal tools:
 
 {/* mcp-tools:end */}
 
-An MCP client can only read accounts for which you turned on **Allow sending mail text to the model** in **Settings → AI Access**. OpenMail checks this on every call. Mail reaches the MCP client, and from there the model provider that client uses. Choose clients you trust.
+An MCP client can only read accounts for which you turned on **Allow AI to read this account** in **Settings → AI Access**. OpenMail checks this on every call. Mail reaches the MCP client, and from there the model provider that client uses. Choose clients you trust.
 
 Tool results put all mail content in an `untrusted_mail` field with a notice, so the model treats message text as data, not as instructions. OpenMail's own guidance, such as `access_status` and the message a proposal tool returns, sits outside that field.
 
-A failed call returns `isError` with a `message`, a `code` such as `not_found`, `no_ai_consent` or `denied`, and a `hint` that names the next step.
+Every key in a result is snake_case, at any depth, like the tool parameters: `account_id`, `is_unread`, `next_cursor`, `needs_reauth`. Fields that would always be empty are left out. `read_proposal` returns the proposal as a `command` object.
+
+A failed call returns `isError` with a `message`, a `code` and a `hint` that names the next step. The codes are `not_found`, `invalid_input`, `no_ai_consent`, `denied`, `not_ready`, `reauth_required`, `provider_rejected` and `provider_unavailable`. An `account_id`, `profile_id` or other id the client cannot read fails with `not_found`, so a typo never looks like an empty mailbox. `semantic_search` fails with `not_ready` while the on-device index has nothing for the account. Arguments that don't match a tool's input schema come back the same way, with code `invalid_input`, so the model can fix them; they are not JSON-RPC protocol errors.
 
 ## Proposing changes
 
