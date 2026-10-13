@@ -22,6 +22,25 @@ updates:
       # Newer majors type APIs that Node 22 does not have.
       - dependency-name: "@types/node"
         update-types: ["version-update:semver-major"]
+      # The mobile app stays on Expo SDK 57 for now. An SDK major brings its own React Native
+      # release (SDK 57 is RN 0.86), moves every expo-* package together and invalidates the
+      # version-bound patches in patches/ (docs/dependency-patches.md). That upgrade runs
+      # through `npx expo install --fix` and a native rebuild, not a Dependabot bump.
+      # Patch and minor updates inside SDK 57 still come through the expo group.
+      - dependency-name: "expo"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "expo-*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@expo/*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "babel-preset-expo"
+        update-types: ["version-update:semver-major"]
+      # React Native is 0.x, so each minor (0.86 to 0.87) is the breaking step that follows
+      # an Expo SDK major. Only patches come through.
+      - dependency-name: "react-native"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "@react-native/*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
     groups:
       # Effect packages share one release train and must move together.
       effect:

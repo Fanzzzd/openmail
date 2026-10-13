@@ -236,7 +236,7 @@ export default function Threads() {
             <Text style={styles.empty}>
               {i18n._({ id: "No messages", message: "No messages" })}
             </Text>
-          ) : null
+          ) : undefined
         }
         ListFooterComponent={
           loading ? (
@@ -249,7 +249,7 @@ export default function Threads() {
             >
               <Text style={styles.action}>{i18n._({ id: "Try again", message: "Try again" })}</Text>
             </Pressable>
-          ) : null
+          ) : undefined
         }
       />
       {failed && (
