@@ -234,7 +234,8 @@ function PlainBody({
       <pre
         ref={root}
         dir="auto"
-        className={`rounded-card p-4 font-sans leading-relaxed whitespace-pre-wrap wrap-anywhere ${background === "dark" ? "bg-black text-neutral-100" : "bg-white text-neutral-900"}`}
+        // Plain text keeps a readable measure of about 75 characters; HTML mail sets its own.
+        className={`max-w-[calc(75ch+2rem)] rounded-card p-4 font-sans leading-relaxed whitespace-pre-wrap wrap-anywhere ${background === "dark" ? "bg-black text-neutral-100" : "bg-white text-neutral-900"}`}
         style={{ fontSize: (14 * zoom) / 100 }}
       />
       {parts.quote && (

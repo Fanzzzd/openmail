@@ -595,7 +595,7 @@ export function ThreadView({
               className={`@container/message flex w-full gap-3 py-3 text-left ${m.id === activeId ? "border-l-2 border-blue-400 pl-2" : ""}`}
             >
               <Avatar message={m} />
-              <span className="min-w-0 flex-1">
+              <span className="min-w-0 flex-1 max-w-[75ch]">
                 <MessageHead message={m} />
                 <span className="mt-0.5 block truncate text-body text-a11y-muted">{m.snippet}</span>
               </span>

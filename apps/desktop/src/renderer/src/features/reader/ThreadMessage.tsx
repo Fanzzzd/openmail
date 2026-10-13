@@ -268,7 +268,8 @@ export function Expanded({
       <div className="flex gap-1">
         <div className="flex min-w-0 flex-1 gap-3 text-left select-text">
           <Avatar message={m} />
-          <span className="min-w-0 flex-1">
+          {/* A readable measure: the header stops near 75 characters in a wide window. */}
+          <span className="min-w-0 flex-1 max-w-[75ch]">
             <MessageHead message={m} onSearchSender={onSearchSender} />
             <span
               className="mt-0.5 block truncate text-body text-a11y-muted"
