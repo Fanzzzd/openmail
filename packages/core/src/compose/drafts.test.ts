@@ -1,34 +1,34 @@
-import { applyNativeMigration } from "./platform/node/migrations.js";
+import { applyNativeMigration } from "../platform/node/migrations.js";
 import {
   incoming as buildIncoming,
   outgoing,
   type FakeServer,
   fakeServer,
   TestMailbox,
-} from "./platform/node/testing.js";
-import { draftCreation } from "./platform/node/draft-create-fixture.js";
+} from "../platform/node/testing.js";
+import { draftCreation } from "../platform/node/draft-create-fixture.js";
 import { assert, it } from "@effect/vitest";
 import { Effect, Option, Deferred, Fiber } from "effect";
 import { TestClock } from "effect/testing";
 import { simpleParser } from "mailparser";
-import { buildMime } from "./platform/node/compose.js";
+import { buildMime } from "../platform/node/compose.js";
 import {
   type Actor,
   DEFAULT_PREFS,
   type IncomingMessage,
   type OutgoingMessage,
-} from "./domain/domain.js";
-import { ProviderError } from "./domain/errors.js";
-import { Mailbox } from "./mailbox/mailbox.js";
+} from "../domain/domain.js";
+import { ProviderError } from "../domain/errors.js";
+import { Mailbox } from "../mailbox/mailbox.js";
 import { applyComposeSignature, richComposeBody } from "./compose-body.js";
 import { SqlClient } from "effect/sql";
 import { DatabaseSync } from "node:sqlite";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { MIGRATIONS } from "./platform/node/db.js";
-import { makeFakeProvider } from "./platform/node/fake-provider.js";
-import { Store, type ProviderAdapter } from "./services.js";
+import { MIGRATIONS } from "../platform/node/db.js";
+import { makeFakeProvider } from "../platform/node/fake-provider.js";
+import { Store, type ProviderAdapter } from "../services.js";
 import { replyFromAddress } from "./signatures.js";
 {
   const GMAIL = "gmail:me@gmail.com";

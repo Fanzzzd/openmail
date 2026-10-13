@@ -6,8 +6,8 @@ import {
   SignatureDefault,
   gmailSignatureId,
   type NamedSignatureInput,
-} from "../signatures.js";
-import { richComposeBody, textComposeHtml } from "../compose-body.js";
+} from "../compose/signatures.js";
+import { richComposeBody, textComposeHtml } from "../compose/compose-body.js";
 import { all, first, run } from "./sql-rows.js";
 import { InvalidInput, NotFound } from "../domain/errors.js";
 

@@ -1,6 +1,10 @@
 import type { QueuedSend } from "./mailbox/mobile-outbox.js";
 import type { OptionalService, AuthorizationFeature } from "./providers/optional-services.js";
-import type { NamedSignature, NamedSignatureInput, SignatureDefault } from "./signatures.js";
+import type {
+  NamedSignature,
+  NamedSignatureInput,
+  SignatureDefault,
+} from "./compose/signatures.js";
 import type { WordIndexState } from "./store/store-word-index.js";
 import type {
   DeleteFolder,
@@ -73,7 +77,7 @@ import type {
 import type { ContactSnapshot, ContactGroup, ContactSync } from "./contacts/contacts.js";
 import type { AttachmentRef } from "./attachments.js";
 import type { ImapConnectInput } from "./providers/imap/imap-presets.js";
-import type { MarkdownDraftSource } from "./markdown-draft.js";
+import type { MarkdownDraftSource } from "./compose/markdown-draft.js";
 
 import type {
   AccountOrganization,
@@ -650,7 +654,7 @@ export class Store extends Context.Service<
     ): Effect.Effect<void>;
     senderHistory(
       recipients: readonly string[],
-    ): Effect.Effect<import("./compose-sender.js").SenderHistory[]>;
+    ): Effect.Effect<import("./compose/compose-sender.js").SenderHistory[]>;
     replaceServerContacts(
       accountId: string,
       contacts: readonly Address[],

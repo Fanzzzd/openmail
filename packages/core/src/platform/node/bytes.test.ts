@@ -1,7 +1,7 @@
 import { selectByteCodec } from "../bytes.js";
 import { performance } from "node:perf_hooks";
 import { expect, it } from "vitest";
-import { originalAttachment } from "../../drafts.js";
+import { originalAttachment } from "../../compose/drafts.js";
 
 it("encodes a 25 MB attachment as base64 on Node", () => {
   const data = new Uint8Array(25 * 1024 * 1024).fill(0x39);

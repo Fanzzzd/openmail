@@ -18,7 +18,7 @@ import {
   MAX_CONTAINER_PARTS,
 } from "./tnef.js";
 import { prepareMessageHtml } from "./reader-html.js";
-import { escapeComposeText, preservedComposeHtml } from "./compose-body.js";
+import { escapeComposeText, preservedComposeHtml } from "./compose/compose-body.js";
 import { attachmentFilename } from "./attachment-filename.js";
 
 const descriptor = (

@@ -1,6 +1,6 @@
 import { Schema } from "effect";
-import type { SendAs } from "./domain/organization.js";
-import type { Account, Prefs } from "./domain/domain.js";
+import type { SendAs } from "../domain/organization.js";
+import type { Account, Prefs } from "../domain/domain.js";
 
 /** A fixed verified sender takes precedence; missing accounts/aliases follow the view again. */
 export function composeSender(

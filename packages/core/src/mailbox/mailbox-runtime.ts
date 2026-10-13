@@ -16,7 +16,7 @@ import {
   type inlineMediaFromRaw as unboundInlineMediaFromRaw,
 } from "../attachments.js";
 import { type Outcome, type Provider, type SyncResult } from "../domain/domain.js";
-import { type parseRawDraft as unboundParseRawDraft } from "../drafts.js";
+import { type parseRawDraft as unboundParseRawDraft } from "../compose/drafts.js";
 import { type ImapIdle } from "../providers/imap/imap-idle.js";
 import { type Mailbox, type MailboxEvent, type PerformError, type SyncState } from "./mailbox.js";
 import { type ModelRuntime, type Vision } from "../media.js";
@@ -38,7 +38,7 @@ export interface MailboxOptions {
   backgroundReady?: Effect.Effect<void>;
   imapIdle?: boolean;
   attachmentCacheDirectory?: string;
-  imageDownloader?: import("../compose-images.js").ImageDownloader;
+  imageDownloader?: import("../compose/compose-images.js").ImageDownloader;
   /** Sync every account on this interval after backgroundReady. Desktop enables it; CLI and MCP don't. */
   autoSync?: Duration.Input;
   /** Desktop enables its independent idle indexer. CLI/MCP only read derived content. */

@@ -19,7 +19,7 @@ import {
   inlineMediaFromRaw as unboundInlineMediaFromRaw,
 } from "../attachments.js";
 import { makeDownloadBudget } from "../download-budget.js";
-import { parseRawDraft as unboundParseRawDraft } from "../drafts.js";
+import { parseRawDraft as unboundParseRawDraft } from "../compose/drafts.js";
 import { InvalidInput } from "../domain/errors.js";
 import { makeIndexer } from "../indexer.js";
 import { makeAccountsMailbox } from "./mailbox-accounts.js";

@@ -10,13 +10,13 @@ import {
 import { assert, it } from "@effect/vitest";
 import { Effect, Layer } from "effect";
 
-import type { Address, IncomingMessage, Message, OutgoingMessage } from "./domain/domain.js";
-import { Mailbox } from "./mailbox/mailbox.js";
-import { fakeServer, makeFakeProvider } from "./platform/node/fake-provider.js";
-import { MailboxLive } from "./mailbox/mailbox-live.js";
-import { MemoryPlatform } from "./platform/node/platform-memory.js";
-import { Providers, Store } from "./services.js";
-import { StoreLive } from "./store/store.js";
+import type { Address, IncomingMessage, Message, OutgoingMessage } from "../domain/domain.js";
+import { Mailbox } from "../mailbox/mailbox.js";
+import { fakeServer, makeFakeProvider } from "../platform/node/fake-provider.js";
+import { MailboxLive } from "../mailbox/mailbox-live.js";
+import { MemoryPlatform } from "../platform/node/platform-memory.js";
+import { Providers, Store } from "../services.js";
+import { StoreLive } from "../store/store.js";
 
 const address = (address: string, name = ""): Address => ({ name, address });
 const me = address("me@example.com");

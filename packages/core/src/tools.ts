@@ -27,7 +27,7 @@ import {
 import { Mailbox, ModelThread, type PerformError } from "./mailbox/mailbox.js";
 import { CalendarEvent, CalendarInvite } from "./calendar/calendar.js";
 import { DerivedChunk } from "./media.js";
-import { NamedSignature } from "./signatures.js";
+import { NamedSignature } from "./compose/signatures.js";
 import { SearchResult } from "./domain/organization.js";
 import {
   PageParameters,

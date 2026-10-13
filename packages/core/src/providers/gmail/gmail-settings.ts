@@ -1,6 +1,6 @@
 import { reconcileProviderWrite, sameProviderWrite } from "../provider-write.js";
 import { uncertainWrite } from "../provider-retry.js";
-import { richComposeBody } from "../../compose-body.js";
+import { richComposeBody } from "../../compose/compose-body.js";
 import { Effect, Schema, Option } from "effect";
 import { CATEGORIES, type Account } from "../../domain/domain.js";
 import { ProviderError, SettingsScopeMissing } from "../../domain/errors.js";

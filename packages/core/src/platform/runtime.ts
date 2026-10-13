@@ -1,5 +1,5 @@
 import { Context, type Effect } from "effect";
-import type { ImageDownloader } from "../compose-images.js";
+import type { ImageDownloader } from "../compose/compose-images.js";
 import type { MediaError } from "../media.js";
 
 export interface AttachmentFileCache {

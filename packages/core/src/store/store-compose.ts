@@ -2,7 +2,7 @@ import { makeOutboxStore } from "../mailbox/mobile-outbox.js";
 import { makeRemoteAccessStore } from "../remote-access.js";
 import { PlatformCrypto } from "../platform/crypto.js";
 import { makeSignatureStore } from "./store-signatures.js";
-import { signatureDefault } from "../signatures.js";
+import { signatureDefault } from "../compose/signatures.js";
 import { attachmentFilename } from "../attachment-filename.js";
 /**
  * The Store's SQL for writing and reading settings: drafts, preferences,
@@ -33,7 +33,11 @@ import {
 } from "../domain/domain.js";
 import { NotFound } from "../domain/errors.js";
 import { imageSenderKey } from "../reading.js";
-import { richComposeBody, textComposeHtml, normalizeComposeMessage } from "../compose-body.js";
+import {
+  richComposeBody,
+  textComposeHtml,
+  normalizeComposeMessage,
+} from "../compose/compose-body.js";
 import type { StoredDraft } from "../services.js";
 import { all, first, run } from "./sql-rows.js";
 

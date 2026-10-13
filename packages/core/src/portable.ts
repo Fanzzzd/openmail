@@ -18,7 +18,7 @@ import { Providers, type AppConfig, type OAuth, type Secrets } from "./services.
 export * from "./common.js";
 export * from "./mailbox/mobile-outbox.js";
 export * from "./mailbox/mobile-background.js";
-export * from "./mobile-compose.js";
+export * from "./compose/mobile-compose.js";
 export { opSqliteLayer } from "./platform/react-native/sqlite.js";
 export * from "./platform/react-native/database-recovery.js";
 export { mobileMediaLayer } from "./platform/react-native/media.js";

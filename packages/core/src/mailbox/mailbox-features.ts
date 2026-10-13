@@ -1,13 +1,13 @@
 import { serviceAvailable } from "../providers/optional-services.js";
 import { PlatformCrypto } from "../platform/crypto.js";
 import { MailCodec, type MailCodecPort } from "../platform/mail-codec.js";
-import { bestComposeSender } from "../compose-sender.js";
+import { bestComposeSender } from "../compose/compose-sender.js";
 import {
   imageAttachment as unboundImageAttachment,
   CONTACT_PHOTO_LIMIT,
   COMPOSE_IMAGE_LIMIT,
   type ImageDownloader,
-} from "../compose-images.js";
+} from "../compose/compose-images.js";
 import { Clock, Effect, Schema, Semaphore } from "effect";
 import type { Account, Actor, Command } from "../domain/domain.js";
 import {

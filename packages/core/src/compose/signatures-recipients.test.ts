@@ -1,18 +1,18 @@
-import { applyNativeMigration } from "./platform/node/migrations.js";
+import { applyNativeMigration } from "../platform/node/migrations.js";
 import { assert, it } from "@effect/vitest";
 import { Effect, Layer } from "effect";
 import { DatabaseSync } from "node:sqlite";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { databaseLayer, MIGRATIONS } from "./platform/node/db.js";
-import { type IncomingMessage, type OutgoingMessage } from "./domain/domain.js";
-import { AuthError, PermanentError, ProviderError } from "./domain/errors.js";
-import { Mailbox } from "./mailbox/mailbox.js";
-import { TestMailbox, fakeServer } from "./platform/node/testing.js";
-import { Store } from "./services.js";
-import { StoreLive } from "./store/store.js";
-import { NodeSystem } from "./platform/node/platform-node.js";
+import { databaseLayer, MIGRATIONS } from "../platform/node/db.js";
+import { type IncomingMessage, type OutgoingMessage } from "../domain/domain.js";
+import { AuthError, PermanentError, ProviderError } from "../domain/errors.js";
+import { Mailbox } from "../mailbox/mailbox.js";
+import { TestMailbox, fakeServer } from "../platform/node/testing.js";
+import { Store } from "../services.js";
+import { StoreLive } from "../store/store.js";
+import { NodeSystem } from "../platform/node/platform-node.js";
 import { replyFromAddress, signatureDefault } from "./signatures.js";
 import {
   applyComposeSignature,

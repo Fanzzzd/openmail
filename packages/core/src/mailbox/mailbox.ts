@@ -14,7 +14,11 @@ import type {
   AiComposeRequest,
   AiTriage,
 } from "../ai.js";
-import type { NamedSignature, NamedSignatureInput, SignatureDefault } from "../signatures.js";
+import type {
+  NamedSignature,
+  NamedSignatureInput,
+  SignatureDefault,
+} from "../compose/signatures.js";
 import type { ReaderAttachment, EmbeddedMessage } from "../attachment-view.js";
 import type { FolderScope, DeleteFolder } from "../domain/folder-actions.js";
 import type { DerivedChunk, IndexingProgress } from "../media.js";
@@ -271,10 +275,13 @@ export class Mailbox extends Context.Service<
     imageFromUrl(url: string): Effect.Effect<OutgoingAttachment, InvalidInput | ProviderError>;
     imageFromFile(file: OutgoingAttachment): Effect.Effect<OutgoingAttachment, InvalidInput>;
     suggestSender(
-      current: Pick<import("../compose-sender.js").SuggestedSender, "accountId" | "address">,
+      current: Pick<
+        import("../compose/compose-sender.js").SuggestedSender,
+        "accountId" | "address"
+      >,
       recipients: readonly string[],
       accountIds: readonly string[],
-    ): Effect.Effect<import("../compose-sender.js").SuggestedSender | null>;
+    ): Effect.Effect<import("../compose/compose-sender.js").SuggestedSender | null>;
     readonly contactSync: Effect.Effect<ContactSync[]>;
     refreshContacts(accountId: string, force?: boolean): Effect.Effect<void, PerformError>;
 

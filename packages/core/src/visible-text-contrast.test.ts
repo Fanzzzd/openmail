@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
 import { visibleHtmlText } from "./visible-text.js";
 import { textContrast } from "./visible-text-paint.js";
-import { preservedComposeHtml, remoteComposeBody } from "./compose-body.js";
+import { preservedComposeHtml, remoteComposeBody } from "./compose/compose-body.js";
 
 it("uses relative luminance and effective opacity for contrast", () => {
   expect(textContrast([0, 0, 0, 1], [255, 255, 255, 1])).toBe(21);

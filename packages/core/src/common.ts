@@ -1,6 +1,6 @@
 // Shared core exports. Platform entries add their own adapters.
-export * from "./compose-text.js";
-export * from "./compose-body.js";
+export * from "./compose/compose-text.js";
+export * from "./compose/compose-body.js";
 export { MODEL_KEY } from "./secrets.js";
 export * from "./domain/domain.js";
 export * from "./domain/errors.js";
@@ -41,9 +41,9 @@ export * from "./domain/folder-actions.js";
 
 export * from "./updates.js";
 
-export * from "./recipients.js";
+export * from "./compose/recipients.js";
 
-export * from "./compose-sender.js";
+export * from "./compose/compose-sender.js";
 
 export * from "./attachment-policy.js";
 
@@ -54,10 +54,10 @@ export * from "./attachment-filename.js";
 
 export * from "./feedback.js";
 
-export * from "./compose-extras.js";
-export * from "./compose-images.js";
+export * from "./compose/compose-extras.js";
+export * from "./compose/compose-images.js";
 export * from "./update-feed.js";
-export * from "./signatures.js";
+export * from "./compose/signatures.js";
 
 export * from "./domain/categories.js";
 export * from "./ai.js";

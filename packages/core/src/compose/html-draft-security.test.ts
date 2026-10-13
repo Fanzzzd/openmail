@@ -4,7 +4,7 @@ import {
   clientHtmlDrafts,
   outlookMsoDraftHtml,
   outlookWindowsReplyHtml,
-} from "../test-support/html-draft-fixtures.js";
+} from "../../test-support/html-draft-fixtures.js";
 import {
   composeHtmlHasUnsupported,
   remoteComposeBody,
@@ -14,8 +14,8 @@ import {
   editedComposeBody,
   richComposeBody,
 } from "./compose-body.js";
-import { visibleHtmlText } from "./visible-text.js";
-import { prepareMessageHtml } from "./reader-html.js";
+import { visibleHtmlText } from "../visible-text.js";
+import { prepareMessageHtml } from "../reader-html.js";
 
 const backgroundDraftProbes = [
   '<div style="background-color:#777"><span style="color:#000000">Visible contrast</span></div>',

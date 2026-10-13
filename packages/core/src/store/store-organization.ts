@@ -6,7 +6,7 @@ import {
   type LabelPreference,
   type SendAs,
 } from "../domain/organization.js";
-import { richComposeBody, textComposeHtml } from "../compose-body.js";
+import { richComposeBody, textComposeHtml } from "../compose/compose-body.js";
 import { INBOX_CATEGORIES, inboxCategories, Provider } from "../domain/domain.js";
 import { all, run } from "./sql-rows.js";
 

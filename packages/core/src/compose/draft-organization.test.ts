@@ -3,15 +3,15 @@ import { Effect, Layer } from "effect";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { ProviderError } from "./domain/errors.js";
-import { DEFAULT_PREFS, type OutgoingMessage, type Provider } from "./domain/domain.js";
-import { makeFakeProvider } from "./platform/node/fake-provider.js";
-import { Mailbox } from "./mailbox/mailbox.js";
-import { MailboxLive } from "./mailbox/mailbox-live.js";
-import { MemoryPlatform } from "./platform/node/platform-memory.js";
-import { Providers } from "./services.js";
-import { StoreLive } from "./store/store.js";
-import { fakeServer, TestMailbox } from "./platform/node/testing.js";
+import { ProviderError } from "../domain/errors.js";
+import { DEFAULT_PREFS, type OutgoingMessage, type Provider } from "../domain/domain.js";
+import { makeFakeProvider } from "../platform/node/fake-provider.js";
+import { Mailbox } from "../mailbox/mailbox.js";
+import { MailboxLive } from "../mailbox/mailbox-live.js";
+import { MemoryPlatform } from "../platform/node/platform-memory.js";
+import { Providers } from "../services.js";
+import { StoreLive } from "../store/store.js";
+import { fakeServer, TestMailbox } from "../platform/node/testing.js";
 const message: OutgoingMessage = {
   to: [],
   cc: [],

@@ -3,12 +3,12 @@ import { assert, describe, it } from "@effect/vitest";
 import { Effect } from "effect";
 import { simpleParser } from "mailparser";
 
-import { buildMime } from "./platform/node/compose.js";
+import { buildMime } from "../platform/node/compose.js";
 import {
   importedMessage,
   parseRawDraft,
   withDraftMarkdownSource,
-} from "./platform/node/portable-helpers.js";
+} from "../platform/node/portable-helpers.js";
 import {
   draftBodyFingerprint,
   draftTextFingerprint,
@@ -16,7 +16,7 @@ import {
   type MarkdownDraftSource,
 } from "./markdown-draft.js";
 import { renderMarkdown } from "./markdown.js";
-import { htmlDocument } from "./mime.js";
+import { htmlDocument } from "../mime.js";
 
 const source = "**original**\n\n[details](https://example.com)";
 const message = {

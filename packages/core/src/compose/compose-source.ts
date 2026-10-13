@@ -1,13 +1,13 @@
 import { DomUtils, ElementType, parseDocument } from "htmlparser2";
 import { selectAll } from "css-select";
-import { parse, generate, walk, ident } from "./css-tree-browser.js";
-import { sanitizeReaderHtml, sanitizeReaderCss, READER_DROP } from "./reader-sanitize.js";
-import { flattenHtmlChildren, MAX_HTML_DEPTH } from "./html-depth.js";
-import { visibleHtmlMarkup } from "./visible-text.js";
-import { stripMessageIdBrackets } from "./message-id.js";
+import { parse, generate, walk, ident } from "../css-tree-browser.js";
+import { sanitizeReaderHtml, sanitizeReaderCss, READER_DROP } from "../reader-sanitize.js";
+import { flattenHtmlChildren, MAX_HTML_DEPTH } from "../html-depth.js";
+import { visibleHtmlMarkup } from "../visible-text.js";
+import { stripMessageIdBrackets } from "../message-id.js";
 import { composeStyleValue } from "./compose-format.js";
-import { MAX_MATCH_CHECKS } from "./visible-text-constants.js";
-import { parseColour } from "./visible-text-style.js";
+import { MAX_MATCH_CHECKS } from "../visible-text-constants.js";
+import { parseColour } from "../visible-text-style.js";
 import { composeColourContexts } from "./compose-colours.js";
 
 type HtmlNode = ReturnType<typeof parseDocument>["children"][number];

@@ -1,4 +1,4 @@
-import { sha256Hex } from "./platform/crypto.js";
+import { sha256Hex } from "../platform/crypto.js";
 import { Schema } from "effect";
 import { ElementType, parseDocument } from "htmlparser2";
 

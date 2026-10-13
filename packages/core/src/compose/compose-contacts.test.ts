@@ -1,24 +1,24 @@
-import { incoming as makeIncoming, TestMailbox } from "./platform/node/testing.js";
+import { incoming as makeIncoming, TestMailbox } from "../platform/node/testing.js";
 import { assert, it } from "@effect/vitest";
 import { Effect, Layer, Schema, Deferred, Fiber } from "effect";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { simpleParser } from "mailparser";
-import { databaseLayer } from "./platform/node/db.js";
+import { databaseLayer } from "../platform/node/db.js";
 import {
   DEFAULT_PREFS,
   Prefs as importedPrefs,
   type IncomingMessage,
   type Account,
-} from "./domain/domain.js";
-import { makeFakeProvider, fakeServer } from "./platform/node/fake-provider.js";
-import { Mailbox } from "./mailbox/mailbox.js";
-import { MailboxLive } from "./mailbox/mailbox-live.js";
-import { MemoryPlatform } from "./platform/node/platform-memory.js";
-import { NodeSystem } from "./platform/node/platform-node.js";
-import { Providers, Store } from "./services.js";
-import { StoreLive } from "./store/store.js";
+} from "../domain/domain.js";
+import { makeFakeProvider, fakeServer } from "../platform/node/fake-provider.js";
+import { Mailbox } from "../mailbox/mailbox.js";
+import { MailboxLive } from "../mailbox/mailbox-live.js";
+import { MemoryPlatform } from "../platform/node/platform-memory.js";
+import { NodeSystem } from "../platform/node/platform-node.js";
+import { Providers, Store } from "../services.js";
+import { StoreLive } from "../store/store.js";
 import {
   imageAttachment,
   downloadRemoteImage,
@@ -26,7 +26,7 @@ import {
   CONTACT_PHOTO_LIMIT,
   COMPOSE_IMAGE_LIMIT,
   parseRawDraft,
-} from "./platform/node/portable-helpers.js";
+} from "../platform/node/portable-helpers.js";
 import {
   inlineImageHtml,
   mentionHtml,
@@ -43,11 +43,11 @@ import {
   outgoingComposeBody,
 } from "./compose-body.js";
 import { bestComposeSender } from "./compose-sender.js";
-import { buildMime } from "./platform/node/compose.js";
-import { FeatureScopeMissing, ProviderError } from "./domain/errors.js";
+import { buildMime } from "../platform/node/compose.js";
+import { FeatureScopeMissing, ProviderError } from "../domain/errors.js";
 import { SqlClient } from "effect/sql";
-import { makeGmailFeatures } from "./providers/gmail/gmail-features.js";
-import { makeOutlookFeatures } from "./providers/outlook/outlook-features.js";
+import { makeGmailFeatures } from "../providers/gmail/gmail-features.js";
+import { makeOutlookFeatures } from "../providers/outlook/outlook-features.js";
 {
   const png =
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aZ2kAAAAASUVORK5CYII=";

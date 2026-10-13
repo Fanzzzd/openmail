@@ -3,7 +3,7 @@ import { Address } from "./domain/domain.js";
 import { CalendarInvite } from "./calendar/calendar.js";
 import { parseCalendar } from "./calendar/invites.js";
 import { prepareMessageHtml } from "./reader-html.js";
-import { isEmailAddress } from "./recipients.js";
+import { isEmailAddress } from "./compose/recipients.js";
 import { cleanDisplayName } from "./message-security.js";
 
 const unescape = (value: string) => value.replace(/\\n/gi, " ").replace(/\\([,;\\])/g, "$1");

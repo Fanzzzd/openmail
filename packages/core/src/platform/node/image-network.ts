@@ -8,7 +8,7 @@ import {
   readRasterImage,
   type ImageDownloader,
   type DownloadedImage,
-} from "../../compose-images.js";
+} from "../../compose/compose-images.js";
 /** DNS is resolved once and pinned for the request. Every redirect repeats validation. */
 export const downloadRemoteImage: ImageDownloader = (input, limit) =>
   Effect.tryPromise({

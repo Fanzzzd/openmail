@@ -10,7 +10,7 @@ import {
   normalizeComposeMessage,
   preservedComposeHtml,
   remoteComposeBody,
-} from "../compose-body.js";
+} from "../compose/compose-body.js";
 import {
   type Account,
   actorLabel,
@@ -18,7 +18,7 @@ import {
   type Message,
   type OutgoingMessage,
 } from "../domain/domain.js";
-import { draftVersionMetadata } from "../draft-version.js";
+import { draftVersionMetadata } from "../compose/draft-version.js";
 import {
   attachmentsKey,
   draftOrganizationKey,
@@ -27,14 +27,14 @@ import {
   type ParsedDraft,
   toDraft,
   withDraftMarkdownSource,
-} from "../drafts.js";
+} from "../compose/drafts.js";
 import { InvalidInput, NotFound, PermanentError, ProviderError } from "../domain/errors.js";
 import { isLocalFeedbackDraft } from "../feedback.js";
 import { withAgentOrigin } from "./mailbox-apply.js";
 import { type MailboxDependencies, type MailboxRuntimeState } from "./mailbox-runtime.js";
 import { WRITE_RECOVERY_WINDOW_MS } from "./mailbox-shared.js";
 import { type Mailbox } from "./mailbox.js";
-import { renderMarkdown } from "../markdown.js";
+import { renderMarkdown } from "../compose/markdown.js";
 import { newMessageId } from "../message-id.js";
 import { PlatformCrypto } from "../platform/crypto.js";
 import { type ProviderPushContext, type StoredDraft } from "../services.js";

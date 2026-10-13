@@ -30,8 +30,8 @@ import { simpleParser } from "mailparser";
 import { type Account, type OutgoingMessage } from "../../domain/domain.js";
 import { MailboxLive } from "../../mailbox/mailbox-live.js";
 import { Mailbox } from "../../mailbox/mailbox.js";
-import { markdownDraftSource } from "../../markdown-draft.js";
-import { renderMarkdown } from "../../markdown.js";
+import { markdownDraftSource } from "../../compose/markdown-draft.js";
+import { renderMarkdown } from "../../compose/markdown.js";
 import { makeOutlook } from "./outlook.js";
 import { MARKDOWN_DRAFT_PROPERTY } from "./send.js";
 import { parseGraphMessage } from "./parse.js";
@@ -43,7 +43,7 @@ import {
   withDraftMarkdownSource,
 } from "../../platform/node/portable-helpers.js";
 import { isDefiniteSendFailure } from "../provider-send.js";
-import { replyRecipients } from "../../recipients.js";
+import { replyRecipients } from "../../compose/recipients.js";
 import { Providers, Secrets, Store, type Change, type ProviderAdapter } from "../../services.js";
 import { StoreLive } from "../../store/store.js";
 const GRAPH = "https://graph.microsoft.com/v1.0";

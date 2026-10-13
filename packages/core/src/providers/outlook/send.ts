@@ -5,8 +5,8 @@ import {
   attachmentProblem,
   attachmentProblemMessage,
 } from "../../attachment-policy.js";
-import { composeTransportHtml } from "../../compose-body.js";
-import { buildMime as unboundBuildMime } from "../../compose.js";
+import { composeTransportHtml } from "../../compose/compose-body.js";
+import { buildMime as unboundBuildMime } from "../../compose/compose.js";
 import type {
   Account,
   Address,
@@ -14,9 +14,9 @@ import type {
   OutgoingMessage,
   SendPreparationState,
 } from "../../domain/domain.js";
-import { draftVersionMetadata } from "../../draft-version.js";
+import { draftVersionMetadata } from "../../compose/draft-version.js";
 import { PermanentError, ProviderError, type ProviderFailure } from "../../domain/errors.js";
-import { MarkdownDraftSource, markdownDraftSource } from "../../markdown-draft.js";
+import { MarkdownDraftSource, markdownDraftSource } from "../../compose/markdown-draft.js";
 import { newMessageId } from "../../message-id.js";
 import { htmlDocument } from "../../mime.js";
 import { PlatformCrypto } from "../../platform/crypto.js";

@@ -4,21 +4,21 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { simpleParser } from "mailparser";
-import { databaseLayer } from "./platform/node/db.js";
-import { Mailbox } from "./mailbox/mailbox.js";
-import { MailboxLive } from "./mailbox/mailbox-live.js";
-import { makeFakeProvider, fakeServer } from "./platform/node/fake-provider.js";
-import { MemoryPlatform } from "./platform/node/platform-memory.js";
-import { NodeSystem } from "./platform/node/platform-node.js";
-import { StoreLive } from "./store/store.js";
-import { Providers } from "./services.js";
+import { databaseLayer } from "../platform/node/db.js";
+import { Mailbox } from "../mailbox/mailbox.js";
+import { MailboxLive } from "../mailbox/mailbox-live.js";
+import { makeFakeProvider, fakeServer } from "../platform/node/fake-provider.js";
+import { MemoryPlatform } from "../platform/node/platform-memory.js";
+import { NodeSystem } from "../platform/node/platform-node.js";
+import { StoreLive } from "../store/store.js";
+import { Providers } from "../services.js";
 import {
   richComposeBody,
   composeHtmlHasUnsupported,
   composeTransportHtml,
 } from "./compose-body.js";
-import { buildMime } from "./platform/node/compose.js";
-import type { Provider } from "./domain/domain.js";
+import { buildMime } from "../platform/node/compose.js";
+import type { Provider } from "../domain/domain.js";
 
 const source =
   '<div dir="auto" style="text-align:right;margin-left:24px"><span style="font-family:Georgia;font-size:18px;color:#123;background-color:#fff">שלום <sup>2</sup><sub>3</sub><s>old</s><code>x</code></span></div><blockquote><blockquote>nested</blockquote></blockquote><ul type="dash"><li>dash</li></ul><ol type="1"><li>number</li></ol><pre> a  b\nc</pre>';

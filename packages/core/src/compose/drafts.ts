@@ -1,11 +1,11 @@
-import { stripMessageIdBrackets } from "./message-id.js";
-import { Buffer } from "./platform/bytes.js";
+import { stripMessageIdBrackets } from "../message-id.js";
+import { Buffer } from "../platform/bytes.js";
 /**
  * Turning drafts into what providers take and back: the attached original of
  * a forward-as-attachment, and a provider's raw draft parsed for editing.
  */
 import { Effect } from "effect";
-import { parseMime, mimeAddresses as addresses } from "./platform/mail-codec.js";
+import { parseMime, mimeAddresses as addresses } from "../platform/mail-codec.js";
 import { remoteComposeBody, richComposeBody, composeCid } from "./compose-body.js";
 import {
   draftBodyFingerprint,
@@ -22,9 +22,9 @@ import type {
   Message,
   OutgoingAttachment,
   OutgoingMessage,
-} from "./domain/domain.js";
-import { ProviderError } from "./domain/errors.js";
-import type { StoredDraft } from "./services.js";
+} from "../domain/domain.js";
+import { ProviderError } from "../domain/errors.js";
+import type { StoredDraft } from "../services.js";
 
 /** What a raw draft from the provider holds, ready for the compose window. */
 export interface ParsedDraft {

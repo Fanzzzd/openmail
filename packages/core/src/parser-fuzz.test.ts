@@ -10,7 +10,7 @@ import {
 } from "./mime.js";
 import { parseCalendar } from "./calendar/invites.js";
 import { structuredMailEvents } from "./calendar/structured-events.js";
-import { richComposeBody, remoteComposeBody } from "./compose-body.js";
+import { richComposeBody, remoteComposeBody } from "./compose/compose-body.js";
 import { visibleHtmlText, messageModelText } from "./visible-text.js";
 import { prepareMessageHtml } from "./reader-html.js";
 import { sanitizeReaderHtml } from "./reader-sanitize.js";

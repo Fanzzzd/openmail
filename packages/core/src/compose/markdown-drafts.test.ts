@@ -2,18 +2,18 @@ import { assert, it } from "@effect/vitest";
 import { Effect, Layer } from "effect";
 import { simpleParser } from "mailparser";
 
-import { buildMime } from "./platform/node/compose.js";
-import type { Provider, OutgoingMessage } from "./domain/domain.js";
-import { importedMessage, parseRawDraft } from "./platform/node/portable-helpers.js";
-import { Mailbox } from "./mailbox/mailbox.js";
-import { fakeServer, TestMailbox } from "./platform/node/testing.js";
+import { buildMime } from "../platform/node/compose.js";
+import type { Provider, OutgoingMessage } from "../domain/domain.js";
+import { importedMessage, parseRawDraft } from "../platform/node/portable-helpers.js";
+import { Mailbox } from "../mailbox/mailbox.js";
+import { fakeServer, TestMailbox } from "../platform/node/testing.js";
 import { renderMarkdown } from "./markdown.js";
-import { ProviderError } from "./domain/errors.js";
-import { makeFakeProvider } from "./platform/node/fake-provider.js";
-import { MailboxLive } from "./mailbox/mailbox-live.js";
-import { MemoryPlatform } from "./platform/node/platform-memory.js";
-import { Providers } from "./services.js";
-import { StoreLive } from "./store/store.js";
+import { ProviderError } from "../domain/errors.js";
+import { makeFakeProvider } from "../platform/node/fake-provider.js";
+import { MailboxLive } from "../mailbox/mailbox-live.js";
+import { MemoryPlatform } from "../platform/node/platform-memory.js";
+import { Providers } from "../services.js";
+import { StoreLive } from "../store/store.js";
 
 const source =
   "**bold**\n\n_italic_ [details](https://example.com)\n\n- first\n- second\n\n```\n  aligned\n```\n\n";

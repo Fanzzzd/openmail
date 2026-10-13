@@ -101,7 +101,7 @@ it("the Node entry does not load mobile adapters or mobile-only workflows", () =
   const violations: string[] = [];
   const mobileOnly = new Set([
     join(root, "mailbox", "mobile-background.ts"),
-    join(root, "mobile-compose.ts"),
+    join(root, "compose", "mobile-compose.ts"),
     join(root, "platform", "mail-socket.ts"),
   ]);
   const visit = (file: string) => {

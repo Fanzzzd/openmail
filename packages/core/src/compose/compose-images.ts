@@ -1,10 +1,10 @@
-import { Buffer } from "./platform/bytes.js";
+import { Buffer } from "../platform/bytes.js";
 import { Effect } from "effect";
-import { ImageNetwork } from "./platform/runtime.js";
-import { PlatformCrypto } from "./platform/crypto.js";
-import { isIP } from "./platform/ip.js";
-import type { OutgoingAttachment } from "./domain/domain.js";
-import { InvalidInput, ProviderError } from "./domain/errors.js";
+import { ImageNetwork } from "../platform/runtime.js";
+import { PlatformCrypto } from "../platform/crypto.js";
+import { isIP } from "../platform/ip.js";
+import type { OutgoingAttachment } from "../domain/domain.js";
+import { InvalidInput, ProviderError } from "../domain/errors.js";
 
 export const COMPOSE_IMAGE_LIMIT = 8 * 1024 * 1024;
 export const CONTACT_PHOTO_LIMIT = 256 * 1024;

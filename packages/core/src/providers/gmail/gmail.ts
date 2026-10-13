@@ -37,7 +37,7 @@ import type { ResetVerification } from "../../sync/sync-reset.js";
 
 import { GMAIL_MIME_LIMIT } from "../../attachment-policy.js";
 import { type AttachmentRef, MEDIA_RAW_TOO_LARGE, pickAttachment } from "../../attachments.js";
-import { type Threading, buildMime as unboundBuildMime } from "../../compose.js";
+import { type Threading, buildMime as unboundBuildMime } from "../../compose/compose.js";
 import type {
   Account,
   Attachment,
