@@ -1,0 +1,81 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`CLI help keeps tools under \`tool\`, lists each by its first sentence and stays stable 1`] = `
+"DESCRIPTION
+  Local-first mail for people and models. Reads come from the local database; \`openmail sync\` refreshes it.
+
+USAGE
+  openmail <subcommand> [flags]
+
+GLOBAL FLAGS
+  --help, -h                                                          Show help information
+  --version, -v                                                       Show version information
+  --wizard                                                            Start wizard mode for a command
+  --completions <bash|zsh|fish|sh>                                    Print shell completion script (choices: bash, zsh, fish, sh)
+  --log-level <all|trace|debug|info|warn|warning|error|fatal|none>    Sets the minimum log level (choices: all, trace, debug, info, warn, warning, error, fatal, none)
+
+SUBCOMMANDS
+  corpus-check    Run offline, content-free diagnostics on a read-only mailbox snapshot
+  config          Store your own OAuth client registrations, which win over the built-in ones
+  accounts        Manage mail accounts
+  spaces          Group accounts into spaces such as Work and Personal
+  sync            Push queued changes, then fetch changes into the local database
+  health          Compare cached messages with read-only server counts
+  list            List conversations in a mailbox, newest first
+  search          Search mail with words and Gmail-style operators
+  show            Print a message as plain text, or its whole thread
+  proposals       Review what agents asked to change
+  agents          Permissions for MCP clients and other agents
+  audit           Show recent changes and who made them
+  mcp             Run the MCP server on stdio (same as \`openmail-mcp\`)
+  tools           List agent tools and their input schemas
+  tool            Call an agent tool as an AI app would
+"
+`;
+
+exports[`CLI help keeps tools under \`tool\`, lists each by its first sentence and stays stable 2`] = `
+"DESCRIPTION
+  Call an agent tool as an AI app would, with the same consent checks, parameters and results as MCP. Parameters are validated against tools --json; results honor cursors and byte budgets.
+
+USAGE
+  openmail tool <subcommand> [flags]
+
+GLOBAL FLAGS
+  --help, -h                                                          Show help information
+  --version, -v                                                       Show version information
+  --wizard                                                            Start wizard mode for a command
+  --completions <bash|zsh|fish|sh>                                    Print shell completion script (choices: bash, zsh, fish, sh)
+  --log-level <all|trace|debug|info|warn|warning|error|fatal|none>    Sets the minimum log level (choices: all, trace, debug, info, warn, warning, error, fatal, none)
+
+SUBCOMMANDS
+  access_status       Report which accounts this client can read, how many are hidden and why, and whether it can propose changes
+  list_accounts       List the mail accounts this client can read
+  list_profiles       List profiles, the groups of accounts OpenMail calls spaces, such as Work and Personal
+  list_labels         List labels (Gmail) and folders (Outlook, IMAP) per account, plus Gmail categories
+  list_threads        List conversations in a mailbox from the local copy, newest first
+  search              Search the local copy with words and Gmail-style operators
+  semantic_search     Find up to five conversations in one account by meaning, using its on-device text index
+  read_thread         Read a conversation as plain text, oldest message first, without quoted history, signatures or attachments
+  sync                Fetch new and changed mail from the providers into the local copy, and push changes the person already approved
+  list_templates      List saved templates by id, name and subject
+  read_template       Read a template's subject, recipients and plain-text body
+  list_signatures     List saved signatures by id, name, address and source
+  read_signature      Read a signature as plain text
+  suggest_contacts    Suggest recipient addresses from local history and cached contacts, for the to, cc or bcc of draft_message
+  list_invites        Read the calendar invitations in a message
+  calendar_overlap    List calendar events that overlap an invitation
+  list_attachments    List a message's attachments with index, filename, type and size
+  attachment_text     Read text that on-device OCR or PDF extraction already produced for a message's attachments and images
+  list_proposals      List proposals waiting for the person's approval in OpenMail
+  read_proposal       Read one pending proposal as the approval screen shows it
+  modify_threads      Propose archiving, marking read or unread, starring, or adding or removing a Gmail label on up to 20 conversations
+  snooze_threads      Propose snoozing up to 20 conversations until a time
+  draft_message       Propose a new message or reply as a local draft
+EXAMPLES
+  # List template ids
+  openmail tool list_templates --json
+
+  # Read bounded plain-text model context
+  openmail tool read_thread --input-json '{"id":"gmail:me@example.com/m1"}' --json
+"
+`;

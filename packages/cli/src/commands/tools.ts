@@ -1,12 +1,19 @@
-/** tools, tool and one command per agent tool. */
+/** tools, and tool with one subcommand per agent tool. */
 
 import { MailToolkit, ReadMailToolkit } from "@openmail/core";
 import { Effect } from "effect";
 import { Tool } from "effect/ai";
-import { Argument, Command } from "effect/cli";
+import { Command } from "effect/cli";
 import { withToolDescription } from "../mcp-tools.js";
 import { jsonFlag, print } from "./common.js";
-import { allowWritesFlag, toolNames, toolInput, runToolCommand } from "./tool-runner.js";
+import {
+  type ToolName,
+  allowWritesFlag,
+  isWriteTool,
+  toolNames,
+  toolInput,
+  runToolCommand,
+} from "./tool-runner.js";
 
 const tools = Command.make(
   "tools",
@@ -24,21 +31,31 @@ const tools = Command.make(
     );
   }),
 ).pipe(
-  Command.withDescription("List agent tools and their exact input schemas. Read-only by default."),
-);
-const tool = Command.make(
-  "tool",
-  {
-    name: Argument.Literals("name", toolNames),
-    input: toolInput,
-    json: jsonFlag,
-    allowWrites: allowWritesFlag,
-  },
-  ({ name, input, json, allowWrites }) => runToolCommand(name, { input, json, allowWrites }),
-).pipe(
   Command.withDescription(
-    "Call any agent tool through the shared core Toolkit. Parameters are validated against tools --json; results honor cursors and byte budgets.",
+    "List agent tools and their exact input schemas. Read tools by default; --allow-writes adds the proposal tools.",
   ),
+  Command.withShortDescription("List agent tools and their input schemas"),
+);
+const toolCommand = (name: ToolName) => {
+  const description = MailToolkit.tools[name].description ?? name;
+  // Only proposal tools take --allow-writes; read tools never change mail.
+  return isWriteTool(name)
+    ? Command.make(
+        name,
+        { input: toolInput, json: jsonFlag, allowWrites: allowWritesFlag },
+        (options) => runToolCommand(name, options),
+      ).pipe(withToolDescription(description))
+    : Command.make(name, { input: toolInput, json: jsonFlag }, (options) =>
+        runToolCommand(name, { ...options, allowWrites: false }),
+      ).pipe(withToolDescription(description));
+};
+
+/** `openmail tool <name>`: one subcommand per agent tool, named as in MCP. */
+const tool = Command.make("tool").pipe(
+  Command.withDescription(
+    "Call an agent tool as an AI app would, with the same consent checks, parameters and results as MCP. Parameters are validated against tools --json; results honor cursors and byte budgets.",
+  ),
+  Command.withShortDescription("Call an agent tool as an AI app would"),
   Command.withExamples([
     { command: "openmail tool list_templates --json", description: "List template ids" },
     {
@@ -46,18 +63,8 @@ const tool = Command.make(
       description: "Read bounded plain-text model context",
     },
   ]),
+  Command.withSubcommands(toolNames.map(toolCommand)),
 );
 
-// A named command for each tool keeps --help and the CLI aligned with core descriptions.
-const perToolCommands = toolNames
-  .filter((name) => name !== "sync" && name !== "search")
-  .map((name) =>
-    Command.make(
-      name.replaceAll("_", "-"),
-      { input: toolInput, json: jsonFlag, allowWrites: allowWritesFlag },
-      (options) => runToolCommand(name, options),
-    ).pipe(withToolDescription(MailToolkit.tools[name].description ?? name)),
-  );
-
 /** @internal */
-export const toolCommands = [tools, tool, ...perToolCommands] as const;
+export const toolCommands = [tools, tool] as const;

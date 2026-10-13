@@ -1,6 +1,7 @@
 #!/usr/bin/env -S node --disable-warning=ExperimentalWarning
 /**
- * Mailbox commands run through core as user:cli, with policy and audit.
+ * Mailbox commands run through core as user:cli, with policy and audit. `openmail tool …`
+ * and `openmail mcp` run as agents and need per-account AI consent.
  * corpus-check uses the separate offline checker. Sending needs app review.
  */
 import { Console, Effect, Layer, Logger } from "effect";
@@ -36,10 +37,18 @@ const CliBrowser: Layer.Layer<Browser, never, ChildProcessSpawner.ChildProcessSp
     }),
   );
 
+/** One notice per run, however many keychain items the command reads. */
+let toldAboutKeychain = false;
+const keychainNotice = Effect.suspend(() => {
+  if (toldAboutKeychain) return Effect.void;
+  toldAboutKeychain = true;
+  return Console.error("Reading credentials from the keychain…");
+});
+
 const cliMailbox = NodeMailbox({
   browser: CliBrowser.pipe(Layer.provide(NodeServices.layer)),
   backgroundFlush: false,
-  beforeCredentialRead: Console.error("Reading credentials from the keychain…"),
+  beforeCredentialRead: keychainNotice,
   oauthClientsFile,
 });
 

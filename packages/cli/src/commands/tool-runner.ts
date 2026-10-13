@@ -16,7 +16,7 @@ export type ToolName = keyof typeof MailToolkit.tools;
 export const toolNames = Object.keys(MailToolkit.tools).filter(
   (name): name is ToolName => name in MailToolkit.tools,
 );
-const isWriteTool = (name: ToolName) => name in ProposalMailToolkit.tools;
+export const isWriteTool = (name: ToolName) => name in ProposalMailToolkit.tools;
 const toolHandlers = MailToolkitLayer.pipe(
   Layer.provide(AgentIdentity.fixed("mcp", "openmail-cli")),
 );

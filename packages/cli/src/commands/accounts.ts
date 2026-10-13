@@ -1,4 +1,4 @@
-/** config, accounts and profiles: OAuth clients, signing in and spaces. */
+/** config, accounts and spaces: OAuth clients, signing in and account groups (Profile in core). */
 
 import { Argument, Command, Flag, Prompt } from "effect/cli";
 import { Config, Console, Effect, Option, Redacted } from "effect";
@@ -172,10 +172,10 @@ const profilesList = Command.make(
         ? rs
             .map((p) => `${p.icon} ${p.name}  ${p.id}\n      ${p.accounts.join(", ") || "(empty)"}`)
             .join("\n")
-        : "(no profiles; run `openmail profiles add <name>`)",
+        : "(no spaces; run `openmail spaces add <name>`)",
     );
   }),
-).pipe(Command.withDescription("List profiles and their accounts"));
+).pipe(Command.withDescription("List spaces and their accounts"));
 
 const profilesAdd = Command.make(
   "add",
@@ -190,26 +190,26 @@ const profilesAdd = Command.make(
   Effect.fn(function* ({ name, icon, color }) {
     const mailbox = yield* Mailbox;
     const p = yield* mailbox.createProfile({ name, icon, color });
-    yield* Console.log(`Added profile ${p.name} (${p.id}).`);
+    yield* Console.log(`Added space ${p.name} (${p.id}).`);
   }),
-).pipe(Command.withDescription("Create a profile"));
+).pipe(Command.withDescription("Create a space"));
 
 const profilesRemove = Command.make(
   "remove",
-  { id: Argument.String("profile-id") },
+  { id: Argument.String("space-id") },
   Effect.fn(function* ({ id }) {
     const mailbox = yield* Mailbox;
     yield* mailbox.deleteProfile(id);
-    yield* Console.log(`Removed profile ${id}.`);
+    yield* Console.log(`Removed space ${id}.`);
   }),
-).pipe(Command.withDescription("Delete the profile; its accounts become ungrouped"));
+).pipe(Command.withDescription("Delete the space; its accounts become ungrouped"));
 
 const profilesAssign = Command.make(
   "assign",
   {
     accountId: Argument.String("account-id"),
-    profileId: Argument.String("profile-id").pipe(
-      Argument.withDescription('Profile id, or "none" to ungroup'),
+    profileId: Argument.String("space-id").pipe(
+      Argument.withDescription('Space id, or "none" to ungroup'),
     ),
   },
   Effect.fn(function* ({ accountId, profileId }) {
@@ -217,12 +217,19 @@ const profilesAssign = Command.make(
     yield* mailbox.assignProfile(accountId, profileId === "none" ? null : profileId);
     yield* Console.log(`Moved ${accountId}.`);
   }),
-).pipe(Command.withDescription("Put an account in a profile"));
+).pipe(Command.withDescription("Put an account in a space"));
 
+const spaceCommands = [profilesList, profilesAdd, profilesRemove, profilesAssign];
+const spaces = Command.make("spaces").pipe(
+  Command.withDescription("Group accounts into spaces such as Work and Personal"),
+  Command.withSubcommands(spaceCommands),
+);
+/** The old name, still accepted so existing scripts keep working; help shows only spaces. */
 const profiles = Command.make("profiles").pipe(
-  Command.withDescription("Group accounts into profiles such as Work and Personal"),
-  Command.withSubcommands([profilesList, profilesAdd, profilesRemove, profilesAssign]),
+  Command.withDescription("Same as spaces"),
+  Command.withSubcommands(spaceCommands),
+  Command.unlisted,
 );
 
 /** @internal */
-export const accountCommands = [config, accounts, profiles] as const;
+export const accountCommands = [config, accounts, spaces, profiles] as const;

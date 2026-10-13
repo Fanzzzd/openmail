@@ -1,13 +1,18 @@
-/** sync, health, list, search and show: reading the local mailbox. */
+/**
+ * sync, health, list, search and show: reading the local mailbox. These are commands a person
+ * types, so they run as the user through Mailbox and see every turned-on account, like the app. Agent
+ * consent gates `openmail tool …` and `openmail mcp`: a CLI in the person's own shell could
+ * read the SQLite file anyway.
+ */
 
 import { Argument, Command, Flag } from "effect/cli";
-import { fail, jsonFlag, optionalInt, optionalString, print } from "./common.js";
-import { Console, Effect, Option, Schema } from "effect";
-import { MAILBOXES, MailToolkit, Mailbox, redactSyncHealth } from "@openmail/core";
+import { Failed, fail, jsonFlag, optionalInt, optionalString, print } from "./common.js";
+import { Effect, Option, Schema } from "effect";
+import { Buffer } from "node:buffer";
+import { MAILBOXES, Mailbox, redactSyncHealth } from "@openmail/core";
+import type { SearchResult, ThreadSummary } from "@openmail/core/schema";
 import { withProgress } from "../sync-progress.js";
-import { invokeTool } from "./tool-runner.js";
-import { messageText, syncTable } from "../format.js";
-import { withToolDescription } from "../mcp-tools.js";
+import { messageText, syncTable, threadTable } from "../format.js";
 
 const health = Command.make(
   "health",
@@ -16,7 +21,6 @@ const health = Command.make(
     json: jsonFlag,
   },
   Effect.fn(function* ({ account, json }) {
-    yield* Console.error("Reading credentials from the keychain…");
     const mailbox = yield* Mailbox;
     const ids = Option.isSome(account)
       ? [account.value]
@@ -42,6 +46,9 @@ const health = Command.make(
   }),
 ).pipe(Command.withDescription("Compare cached messages with read-only server counts"));
 
+/** Accepted and ignored: list, search and sync used to run as agent tools with a byte budget. */
+const legacyBudget = Flag.Int("token-budget").pipe(Flag.withHidden, Flag.optional);
+
 const sync = Command.make(
   "sync",
   {
@@ -50,33 +57,17 @@ const sync = Command.make(
       Argument.optional,
     ),
     json: jsonFlag,
-    budget: Flag.Int("token-budget").pipe(
-      Flag.withDescription("UTF-8 JSON budget, 2000 to 24000 bytes"),
-      Flag.withDefault(12000),
-    ),
+    budget: legacyBudget,
   },
-  Effect.fn(function* ({ account, json, budget }) {
-    const encoded = yield* withProgress(
-      invokeTool(
-        "sync",
-        {
-          ...(Option.isSome(account) ? { account_id: account.value } : {}),
-          token_budget: budget,
-        },
-        json,
-      ),
+  Effect.fn(function* ({ account, json }) {
+    const mailbox = yield* Mailbox;
+    const ids = yield* accountScope(account, Option.none());
+    const results = yield* withProgress(
+      Effect.forEach(ids, (id) => mailbox.sync(id)).pipe(Effect.map((rows) => rows.flat())),
       !json,
     );
-    const result = yield* Schema.decodeUnknownEffect(MailToolkit.tools.sync.successSchema)(encoded);
-    yield* print(
-      result,
-      json,
-      (value) =>
-        `${syncTable(value.results)}${value.omitted ? `\n${value.omitted} account results omitted; sync an account id to inspect.` : ""}`,
-    );
-    return yield* result.results.some((r) => r.error)
-      ? fail("Some accounts did not sync.")
-      : Effect.void;
+    yield* print({ results }, json, (value) => syncTable(value.results));
+    return yield* results.some((r) => r.error) ? fail("Some accounts did not sync.") : Effect.void;
   }),
 ).pipe(Command.withDescription("Push queued changes, then fetch changes into the local database"));
 
@@ -89,42 +80,120 @@ const limitFlag = Flag.Int("limit").pipe(
   ),
 );
 
+/** `--space`, plus the hidden `--profile` it replaced, so older scripts keep working. */
+const spaceFlags = {
+  space: optionalString("space", "Only accounts in this space (openmail spaces list)"),
+  profile: optionalString("profile", "Same as --space").pipe(Flag.withHidden),
+};
+
+/** The opaque --cursor for list and search: where the last page stopped. */
+const PageCursor = Schema.Struct({
+  date: Schema.optionalKey(Schema.Number),
+  id: Schema.optionalKey(Schema.String),
+  offset: Schema.optionalKey(Schema.Int),
+});
+const PageCursorJson = Schema.fromJsonString(PageCursor);
+const encodePageCursor = (cursor: typeof PageCursor.Type) =>
+  Buffer.from(Schema.encodeSync(PageCursorJson)(cursor)).toString("base64url");
+const decodePageCursor = (raw: Option.Option<string>) =>
+  Option.isNone(raw)
+    ? Effect.succeed<typeof PageCursor.Type>({})
+    : Schema.decodeUnknownEffect(PageCursorJson)(
+        Buffer.from(raw.value, "base64url").toString("utf8"),
+      ).pipe(
+        Effect.mapError(() => new Failed({ message: "That --cursor is not from this command." })),
+      );
+
+/**
+ * The accounts a person's list or search covers: every turned-on account, narrowed by --space
+ * and --account. Unknown ids fail with the command that lists the right ones.
+ */
+const accountScope = (account: Option.Option<string>, space: Option.Option<string>) =>
+  Effect.gen(function* () {
+    const mailbox = yield* Mailbox;
+    const accounts = yield* mailbox.accounts;
+    if (Option.isSome(space) && !(yield* mailbox.profiles).some((p) => p.id === space.value))
+      return yield* fail(
+        `No space with id ${space.value}. Run \`openmail spaces list\` to see them.`,
+      );
+    if (Option.isSome(account)) {
+      const found = accounts.find((a) => a.id === account.value);
+      if (!found)
+        return yield* fail(
+          `No account with id ${account.value}. Run \`openmail accounts list\` to see them.`,
+        );
+      if (Option.isSome(space) && found.profileId !== space.value)
+        return yield* fail(`Account ${account.value} is not in space ${space.value}.`);
+      return [found.id];
+    }
+    return accounts
+      .filter((a) => a.enabled !== false)
+      .filter((a) => Option.isNone(space) || a.profileId === space.value)
+      .map((a) => a.id);
+  });
+
+/** Human output: one line per thread, then the command for the next page. */
+const pageText = (threads: readonly ThreadSummary[], next: string | undefined, notes: string[]) =>
+  [
+    threadTable(threads),
+    ...notes,
+    ...(next === undefined ? [] : [`More: add --cursor ${next}`]),
+  ].join("\n");
+
 const list = Command.make(
   "list",
   {
     mailbox: Flag.Literals("mailbox", MAILBOXES).pipe(Flag.withDefault("inbox")),
     account: optionalString("account", "Only this account"),
-    profile: optionalString("profile", "Only accounts in this profile"),
+    ...spaceFlags,
     label: optionalString("label", "Only threads with this label or folder id"),
     unread: Flag.Boolean("unread").pipe(
       Flag.withDescription("Unread only"),
       Flag.withDefault(false),
     ),
     limit: limitFlag,
+    budget: legacyBudget,
     before: optionalInt("before", "Legacy page boundary; use --cursor to preserve same-date rows"),
-    cursor: optionalString("cursor", "next_cursor from the preceding page"),
-    budget: Flag.Int("token-budget").pipe(Flag.withDefault(12000)),
+    cursor: optionalString("cursor", "The cursor printed after the preceding page"),
     json: jsonFlag,
   },
   Effect.fn(function* (o) {
-    const result = yield* invokeTool(
-      "list_threads",
-      {
-        mailbox: o.mailbox,
-        ...(Option.isSome(o.account) ? { account_id: o.account.value } : {}),
-        ...(Option.isSome(o.profile) ? { profile_id: o.profile.value } : {}),
-        ...(Option.isSome(o.label) ? { label: o.label.value } : {}),
-        unread_only: o.unread,
-        ...(Option.isSome(o.before) ? { before: o.before.value } : {}),
-        ...(Option.isSome(o.cursor) ? { cursor: o.cursor.value } : {}),
-        limit: o.limit,
-        token_budget: o.budget,
-      },
-      o.json,
+    const mailbox = yield* Mailbox;
+    const accountIds = yield* accountScope(
+      o.account,
+      Option.orElse(o.space, () => o.profile),
     );
-    return yield* print(result, o.json);
+    const cursor = yield* decodePageCursor(o.cursor);
+    const before =
+      cursor.date !== undefined
+        ? { before: cursor.date, ...(cursor.id === undefined ? {} : { beforeId: cursor.id }) }
+        : Option.isSome(o.before)
+          ? { before: o.before.value }
+          : {};
+    const rows = accountIds.length
+      ? yield* mailbox.threads({
+          mailbox: o.mailbox,
+          accountIds,
+          ...(Option.isSome(o.label) ? { label: o.label.value } : {}),
+          ...(o.unread ? { unreadOnly: true } : {}),
+          ...before,
+          limit: o.limit + 1,
+        })
+      : [];
+    const threads = rows.slice(0, o.limit);
+    const last = threads.at(-1);
+    const next =
+      last && rows.length > threads.length
+        ? encodePageCursor({ date: last.date, id: last.id })
+        : undefined;
+    yield* print({ threads, ...(next === undefined ? {} : { next_cursor: next }) }, o.json, () =>
+      pageText(threads, next, []),
+    );
   }),
 ).pipe(Command.withDescription("List conversations in a mailbox, newest first"));
+
+/** Search reads at most this many hits; a narrower query finds the rest. */
+const SEARCH_CAP = 200;
 
 const search = Command.make(
   "search",
@@ -132,8 +201,8 @@ const search = Command.make(
     query: Argument.String("query").pipe(Argument.variadic({ min: 1 })),
     account: optionalString("account", "Only this account"),
     limit: limitFlag,
-    cursor: optionalString("cursor", "next_cursor from the preceding page"),
-    budget: Flag.Int("token-budget").pipe(Flag.withDefault(12000)),
+    budget: legacyBudget,
+    cursor: optionalString("cursor", "The cursor printed after the preceding page"),
     server: Flag.Boolean("server").pipe(
       Flag.withDefault(false),
       Flag.withDescription("Fetch provider search hits; report unsupported operators and failures"),
@@ -141,21 +210,49 @@ const search = Command.make(
     json: jsonFlag,
   },
   Effect.fn(function* (o) {
-    const result = yield* invokeTool(
-      "search",
+    const mailbox = yield* Mailbox;
+    const accountIds = yield* accountScope(o.account, Option.none());
+    const { offset = 0 } = yield* decodePageCursor(o.cursor);
+    const query = { search: o.query.join(" "), accountIds, limit: SEARCH_CAP + 1 };
+    const found: SearchResult = !accountIds.length
+      ? { threads: [], truncated: false, errors: [] }
+      : o.server
+        ? yield* mailbox.searchServer(query)
+        : { threads: yield* mailbox.threads(query), truncated: false, errors: [] };
+    const all = found.threads.slice(0, SEARCH_CAP);
+    const threads = all.slice(offset, offset + o.limit);
+    const next =
+      offset + threads.length < all.length
+        ? encodePageCursor({ offset: offset + threads.length })
+        : undefined;
+    const truncated = found.truncated || found.threads.length > SEARCH_CAP;
+    const notes = [
+      ...(found.ignored ?? []).map(
+        (n) => `${n.accountId}: the provider ignored ${n.operators.join(", ")}`,
+      ),
+      ...found.errors.map((n) => `${n.accountId}: ${n.message}`),
+      ...(truncated
+        ? [`Showing the first ${SEARCH_CAP} hits; narrow the query for the rest.`]
+        : []),
+    ];
+    yield* print(
       {
-        query: o.query.join(" "),
-        ...(Option.isSome(o.account) ? { account_id: o.account.value } : {}),
-        limit: o.limit,
-        ...(Option.isSome(o.cursor) ? { cursor: o.cursor.value } : {}),
-        token_budget: o.budget,
-        server: o.server,
+        threads,
+        truncated,
+        ...(found.ignored ? { ignored: found.ignored } : {}),
+        errors: found.errors,
+        ...(next === undefined ? {} : { next_cursor: next }),
       },
       o.json,
+      () => pageText(threads, next, notes),
     );
-    yield* print(result, o.json);
   }),
-).pipe(withToolDescription(MailToolkit.tools.search.description ?? "Search mail"));
+).pipe(
+  Command.withDescription(
+    "Search the local copy with words and Gmail-style operators (from:, subject:, has:attachment …); --server also asks the provider",
+  ),
+  Command.withShortDescription("Search mail with words and Gmail-style operators"),
+);
 
 const show = Command.make(
   "show",

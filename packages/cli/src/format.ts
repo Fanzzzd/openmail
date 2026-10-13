@@ -8,6 +8,7 @@ import {
   type SyncResult,
   actorLabel,
 } from "@openmail/core";
+import type { ThreadSummary } from "@openmail/core/schema";
 
 const stamp = (ms: number) => new Date(ms).toLocaleString("sv-SE").slice(0, 16);
 
@@ -40,6 +41,28 @@ export function messageText(m: Message): string {
     "",
     m.bodyText,
   ].join("\n");
+}
+
+const graphemes = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+
+/** Cuts to `width` characters, with an ellipsis, then pads; control characters become spaces. */
+function cell(text: string, width: number): string {
+  const flat = text.replace(/[\p{Cc}\p{Zl}\p{Zp}]+/gu, " ").trim();
+  const parts = Array.from(graphemes.segment(flat), (part) => part.segment);
+  const cut = parts.length > width ? `${parts.slice(0, width - 1).join("")}…` : flat;
+  return cut.padEnd(width);
+}
+
+/** list and search for people: date, sender, subject and the id `openmail show` takes. */
+export function threadTable(rows: readonly ThreadSummary[]): string {
+  if (rows.length === 0) return "(no conversations)";
+  return rows
+    .map((t) => {
+      const from = t.from.name || t.from.address;
+      const count = t.threadCount > 1 ? ` (${t.threadCount})` : "";
+      return `${stamp(t.date)}  ${t.isUnread ? "*" : " "} ${cell(from, 24)}  ${cell(`${t.subject || "(no subject)"}${count}`, 50)}  ${t.id}`;
+    })
+    .join("\n");
 }
 
 export function syncTable(results: readonly SyncResult[]): string {

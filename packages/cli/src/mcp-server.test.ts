@@ -6,7 +6,6 @@ import { DatabaseSync } from "node:sqlite";
 import { afterAll, beforeAll, describe, test, vi, type TestContext } from "vitest";
 import { promisify } from "node:util";
 import { Effect, Option, Schema } from "effect";
-import { ThreadSummary } from "@openmail/core/schema";
 import { Store, TestMailbox, incoming } from "@openmail/core/testing/node";
 
 const Frame = Schema.Struct({
@@ -212,21 +211,48 @@ test.concurrent("results carry structuredContent and the same JSON once as text"
   expect(JSON.parse(called.content[0]?.text ?? "")).toEqual(called.structuredContent);
 }, 30_000);
 
-test.concurrent("CLI help lists each tool by its first sentence and shows the rest in its own help", async ({
+test.concurrent("CLI help keeps tools under `tool`, lists each by its first sentence and stays stable", async ({
   expect,
   onTestFinished,
 }) => {
   const directory = await home(onTestFinished, "openmail-cli-help-test-");
   const options = { env: { ...process.env, OPENMAIL_HOME: directory } };
-  const [top, own] = await Promise.all([
-    run(process.execPath, ["dist/cli.js", "--help"], options),
-    run(process.execPath, ["dist/cli.js", "read-thread", "--help"], options),
+  const help = (...args: string[]) =>
+    run(process.execPath, ["dist/cli.js", ...args, "--help"], options).then((r) => r.stdout);
+  const [top, tool, own, proposal, list] = await Promise.all([
+    help(),
+    help("tool"),
+    help("tool", "read_thread"),
+    help("tool", "draft_message"),
+    help("list"),
   ]);
+  // --space is documented; the old --profile still parses but is hidden.
+  expect(list).toContain("--space");
+  expect(list).not.toContain("--profile");
   const first =
     "Read a conversation as plain text, oldest message first, without quoted history, signatures or attachments";
-  expect(top.stdout).toContain(first);
-  expect(top.stdout).not.toContain("Use a message id from list_threads or search.");
-  expect(own.stdout).toContain("Use a message id from list_threads or search.");
+  // The top level lists commands for people; agent tools sit under `openmail tool`.
+  expect(top).not.toContain("read-thread");
+  expect(top).not.toContain(first);
+  expect(top).not.toContain("--profile");
+  expect(top).toMatchSnapshot();
+  expect(tool).toContain(`read_thread         ${first}`);
+  expect(tool).not.toContain("Use a message id from list_threads or search.");
+  expect(tool).toMatchSnapshot();
+  expect(own).toContain("Use a message id from list_threads or search.");
+  // --allow-writes appears only where it does something.
+  expect(own).not.toContain("--allow-writes");
+  expect(proposal).toContain("--allow-writes");
+  await expect(
+    run(process.execPath, ["dist/cli.js", "read-thread", "--input-json", "{}"], options),
+  ).rejects.toMatchObject({ code: 1 });
+  await expect(
+    run(
+      process.execPath,
+      ["dist/cli.js", "tool", "read_thread", "--allow-writes", "--input-json", "{}"],
+      options,
+    ),
+  ).rejects.toMatchObject({ code: 1 });
 });
 
 test.concurrent("stdio MCP defaults to read-only tools, calls the shared Toolkit and rejects hidden writes", async ({
@@ -276,8 +302,8 @@ test.concurrent("openmail mcp --allow-writes exposes only supported proposals an
   );
   expect(called.isError).toBe(true);
   expect(JSON.parse(called.content[0]?.text ?? "")).toEqual({
-    message: "Account missing is unknown, turned off, or does not allow AI access.",
-    code: "no_ai_consent",
+    message: "No readable account with id missing.",
+    code: "not_found",
     hint: expect.stringContaining("access_status"),
   });
 }, 30_000);
@@ -435,15 +461,17 @@ async function seedAttachmentMail(directory: string) {
   );
 }
 
-test.concurrent("MCP and CLI search expose attachment snippets only inside the untrusted envelope", async ({
+test.concurrent("MCP and CLI tool search expose attachment snippets only inside the untrusted envelope", async ({
   expect,
   onTestFinished,
 }) => {
   const { request, directory } = await client(onTestFinished, false, false, true);
   // The CLI reads the same seeded database while the MCP server answers.
-  const cli = run(process.execPath, ["dist/cli.js", "search", "amount", "--json"], {
-    env: { ...process.env, OPENMAIL_HOME: directory },
-  });
+  const cli = run(
+    process.execPath,
+    ["dist/cli.js", "tool", "search", "--input-json", '{"query":"amount"}', "--json"],
+    { env: { ...process.env, OPENMAIL_HOME: directory } },
+  );
   const called = Schema.decodeUnknownSync(CallResult)(
     await request("tools/call", {
       name: "search",
@@ -454,25 +482,27 @@ test.concurrent("MCP and CLI search expose attachment snippets only inside the u
   const envelope = Schema.fromJsonString(
     Schema.Struct({
       notice: Schema.String,
-      untrusted_mail: Schema.Struct({ threads: Schema.Array(ThreadSummary) }),
+      untrusted_mail: Schema.Struct({
+        threads: Schema.Array(Schema.Struct({ search_matches: Schema.Unknown })),
+      }),
     }),
   );
   const fromMcp = Schema.decodeUnknownSync(envelope)(called.content[0]?.text);
   expect(fromMcp.notice).toContain("untrusted");
-  expect(fromMcp.untrusted_mail.threads[0]?.searchMatches).toEqual([
+  expect(fromMcp.untrusted_mail.threads[0]?.search_matches).toEqual([
     {
       source: "attachment",
-      messageId: "gmail:ocr@example.com/ocr",
-      attachmentName: "invoice.pdf",
-      attachmentIndex: 0,
+      message_id: "gmail:ocr@example.com/ocr",
+      attachment_name: "invoice.pdf",
+      attachment_index: 0,
       snippet: "total amount due",
       highlights: [{ start: 6, end: 12 }],
     },
   ]);
   const { stdout } = await cli;
   const fromCli = Schema.decodeUnknownSync(envelope)(stdout);
-  expect(fromCli.untrusted_mail.threads[0]?.searchMatches).toEqual(
-    fromMcp.untrusted_mail.threads[0]?.searchMatches,
+  expect(fromCli.untrusted_mail.threads[0]?.search_matches).toEqual(
+    fromMcp.untrusted_mail.threads[0]?.search_matches,
   );
 }, 30_000);
 
@@ -501,7 +531,7 @@ const Failure = Schema.Struct({
   stderr: Schema.String,
 });
 
-test.concurrent("CLI mail tools explain a missing account or AI consent; MCP keeps empty results", async ({
+test.concurrent("list, search and show read as the person; agent tools still need AI consent", async ({
   expect,
   onTestFinished,
 }) => {
@@ -512,38 +542,59 @@ test.concurrent("CLI mail tools explain a missing account or AI consent; MCP kee
       (done) => ({ code: 0, ...done }),
       (error: unknown) => Schema.decodeUnknownSync(Failure)(error),
     );
-  const [list, typo, json, read, mcpList, mcpTypo] = await Promise.all([
-    cli("list"),
-    cli("list", "--account", "gmail:typo@example.com"),
-    cli("list", "--json"),
-    cli("read-thread", "--input-json", '{"id":"missing"}'),
-    request("tools/call", { name: "list_threads", arguments: {} }),
-    request("tools/call", {
-      name: "list_threads",
-      arguments: { account_id: "gmail:typo@example.com" },
-    }),
-  ]);
-  expect(list.code).toBe(1);
-  expect(list.stderr).toContain(
-    "No accounts allow agent reads. Turn on 'Allow sending mail text to the model' in Settings → AI Access.",
-  );
+  const [list, json, search, show, typo, tool, toolJson, read, mcpList, mcpTypo] =
+    await Promise.all([
+      cli("list"),
+      cli("list", "--json"),
+      cli("search", "Hello"),
+      cli("show", "gmail:plain@example.com/m1"),
+      cli("list", "--account", "gmail:typo@example.com"),
+      cli("tool", "list_threads"),
+      cli("tool", "list_threads", "--json"),
+      cli("tool", "read_thread", "--input-json", '{"id":"missing"}'),
+      request("tools/call", { name: "list_threads", arguments: {} }),
+      request("tools/call", {
+        name: "list_threads",
+        arguments: { account_id: "gmail:typo@example.com" },
+      }),
+    ]);
+  // People see a table: date, sender, subject and the id `show` takes. No JSON envelope.
+  expect(list.code).toBe(0);
+  expect(list.stdout).toMatch(/^\d{4}-\d\d-\d\d \d\d:\d\d .*Hello.*gmail:plain@example\.com\/m1$/m);
+  expect(list.stdout).not.toContain("untrusted_mail");
+  expect(JSON.parse(json.stdout)).toMatchObject({
+    threads: [{ id: "gmail:plain@example.com/m1", subject: "Hello" }],
+  });
+  expect(search.code).toBe(0);
+  expect(search.stdout).toContain("gmail:plain@example.com/m1");
+  expect(show.code).toBe(0);
+  expect(show.stdout).toContain("Subject: Hello");
   expect(typo.code).toBe(1);
   expect(typo.stderr).toContain("No account with id gmail:typo@example.com.");
-  expect(json.code).toBe(1);
-  expect(JSON.parse(json.stdout)).toEqual({
+  // `openmail tool` runs as an agent, so consent applies and the error says where to turn it on.
+  expect(tool.code).toBe(1);
+  expect(tool.stderr).toContain(
+    "No accounts allow agent reads. Turn on 'Allow AI to read this account' in Settings → AI Access.",
+  );
+  expect(JSON.parse(toolJson.stdout)).toEqual({
     message: expect.stringContaining("No accounts allow agent reads."),
     code: "no_ai_consent",
-    hint: expect.stringContaining("access-status"),
+    hint: expect.stringContaining("openmail tool access_status"),
   });
   // A tool error prints its message, not the encoded failure.
   expect(read).toMatchObject({ code: 1, stdout: "" });
   expect(read.stderr).toContain("error: No message with id missing.");
   expect(read.stderr).not.toContain("_tag");
-  for (const result of [mcpList, mcpTypo]) {
-    const called = Schema.decodeUnknownSync(CallResult)(result);
-    expect(called.isError).not.toBe(true);
-    expect(called.content[0]?.text).toContain('"threads":[]');
-  }
+  // MCP: no readable account is an empty list (access_status explains); a bad id is not_found.
+  const empty = Schema.decodeUnknownSync(CallResult)(mcpList);
+  expect(empty.isError).not.toBe(true);
+  expect(empty.content[0]?.text).toContain('"threads":[]');
+  const missing = Schema.decodeUnknownSync(CallResult)(mcpTypo);
+  expect(missing.isError).toBe(true);
+  expect(JSON.parse(missing.content[0]?.text ?? "")).toMatchObject({
+    code: "not_found",
+    hint: expect.stringContaining("list_accounts"),
+  });
 }, 30_000);
 
 /** A consenting account outside any profile and a Work profile whose one account has no consent. */
@@ -571,7 +622,7 @@ async function seedProfileWithoutConsent(directory: string) {
   );
 }
 
-test.concurrent("CLI list --profile explains a profile without AI consent", async ({
+test.concurrent("CLI list --space reads as the person; tool list_threads checks consent per space", async ({
   expect,
   onTestFinished,
 }) => {
@@ -583,22 +634,52 @@ test.concurrent("CLI list --profile explains a profile without AI consent", asyn
       (done) => ({ code: 0, ...done }),
       (error: unknown) => Schema.decodeUnknownSync(Failure)(error),
     );
-  const [all, inProfile, unknown, outside] = await Promise.all([
-    cli("list"),
-    cli("list", "--profile", profile),
-    cli("list", "--profile", "nope"),
-    cli("list", "--profile", profile, "--account", homeAccount),
-  ]);
-  // Another account has consent, so the unscoped list works.
-  expect(all.code).toBe(0);
-  expect(inProfile.code).toBe(1);
-  expect(inProfile.stderr).toContain(
-    `No accounts in profile ${profile} allow agent reads. Turn on 'Allow sending mail text to the model' in Settings → AI Access.`,
-  );
+  const tool = (input: object) =>
+    cli("tool", "list_threads", "--input-json", JSON.stringify(input));
+  const [inSpace, oldFlag, unknown, outside, agentAll, agentSpace, agentUnknown] =
+    await Promise.all([
+      cli("list", "--space", profile),
+      cli("list", "--profile", profile),
+      cli("list", "--space", "nope"),
+      cli("list", "--space", profile, "--account", homeAccount),
+      tool({}),
+      tool({ profile_id: profile }),
+      tool({ profile_id: "nope" }),
+    ]);
+  expect(inSpace.code).toBe(0);
+  expect(inSpace.stdout).toContain("Standup");
+  expect(inSpace.stdout).not.toContain("Hello");
+  // The hidden --profile alias keeps older scripts working.
+  expect(oldFlag.stdout).toBe(inSpace.stdout);
   expect(unknown.code).toBe(1);
-  expect(unknown.stderr).toContain("No profile with id nope.");
+  expect(unknown.stderr).toContain("No space with id nope.");
   expect(outside.code).toBe(1);
-  expect(outside.stderr).toContain(`Account ${homeAccount} is not in profile ${profile}.`);
+  expect(outside.stderr).toContain(`Account ${homeAccount} is not in space ${profile}.`);
+  // Another account has consent, so the unscoped agent list works.
+  expect(agentAll.code).toBe(0);
+  expect(agentSpace.code).toBe(1);
+  expect(agentSpace.stderr).toContain(
+    `No accounts in space ${profile} allow agent reads. Turn on 'Allow AI to read this account' in Settings → AI Access.`,
+  );
+  expect(agentUnknown.code).toBe(1);
+  expect(agentUnknown.stderr).toContain("No space with id nope.");
+}, 30_000);
+
+/** MCP 2025-11-25: input validation errors are tool results the model can read and correct. */
+test.concurrent("MCP returns invalid tool arguments as an isError result, not a protocol error", async ({
+  expect,
+  onTestFinished,
+}) => {
+  const { request } = await client(onTestFinished, false, false, false, "2025-11-25");
+  const called = Schema.decodeUnknownSync(CallResult)(
+    await request("tools/call", { name: "read_thread", arguments: { max_chars: 5 } }),
+  );
+  expect(called.isError).toBe(true);
+  const failure = JSON.parse(called.content[0]?.text ?? "");
+  expect(failure).toMatchObject({ code: "invalid_input", hint: expect.any(String) });
+  expect(failure.message).toContain("input schema");
+  // An unknown tool is still a protocol error.
+  await expect(request("tools/call", { name: "no_such_tool", arguments: {} })).rejects.toThrow();
 }, 30_000);
 
 test.concurrent("CLI and MCP exit 1 with one stderr line on a database from a newer OpenMail", async ({
