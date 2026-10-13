@@ -653,6 +653,11 @@ msgstr "Všechny zprávy aktuálně v této složce, včetně nenačtených zpr�
 msgid "Allow access from my tailnet"
 msgstr "Povolit přístup z mého tailnetu"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "Allow AI to read this account"
+msgstr "Povolit AI číst tento účet"
+
 #: src/renderer/src/features/ai/AiPanel.tsx
 msgid "Allow an account in Settings → AI Access to ask about its mail."
 msgstr "Povolte účet v Nastavení → Přístup AI, abyste se mohli ptát na jeho poštu."
@@ -668,15 +673,6 @@ msgstr "Povolit trvalé smazání pro {email}?"
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Allow proposals"
 msgstr "Povolit návrhy"
-
-#: src/renderer/src/lib/ai-settings-errors.test.ts
-#: src/renderer/src/lib/errors.ts
-msgid "Allow sending mail text for each selected account in AI settings."
-msgstr "V nastavení AI povolte odesílání textu pošty pro každý vybraný účet."
-
-#: src/renderer/src/features/settings/sections/AiSettings.tsx
-msgid "Allow sending mail text to the model"
-msgstr "Povolit odesílání textu pošty modelu"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Allowed"
@@ -809,7 +805,7 @@ msgstr "Schválit"
 msgid "Approve and edit"
 msgstr "Schválit a upravit"
 
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 msgid "Approve suggestion"
 msgstr "Schválit návrh"
 
@@ -824,10 +820,10 @@ msgstr "Aplikace, které na tomto Macu nebyly nalezeny"
 #: src/renderer/src/features/ai/TriageChip.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
-#: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -1574,6 +1570,10 @@ msgstr "Připojit {name}"
 msgid "Connect {name}?"
 msgstr "Připojit {name}?"
 
+#: src/renderer/src/features/settings/sections/audit-actions.ts
+msgid "Connect account"
+msgstr "Připojit účet"
+
 #: src/renderer/src/app/use-app-messages.ts
 msgid "Connect an account to send feedback"
 msgstr "Chcete-li odeslat zpětnou vazbu, připojte účet"
@@ -1994,16 +1994,16 @@ msgid "Create filter from these messages"
 msgstr "Vytvořte filtr z těchto zpráv"
 
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
-msgid "Create Personal and Work profiles?"
-msgstr "Vytvořit profily Osobní a Pracovní?"
+msgid "Create Personal and Work spaces?"
+msgstr "Vytvořit prostory Osobní a Pracovní?"
 
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
-msgid "Create profiles"
-msgstr "Vytvořit profily"
+msgid "Create spaces"
+msgstr "Vytvořit prostory"
 
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
-msgid "Create profiles?"
-msgstr "Vytvořit profily?"
+msgid "Create spaces?"
+msgstr "Vytvořit prostory?"
 
 #: src/renderer/src/features/organize/MultiOrganization.tsx
 msgid "Creates a separate copy in each selected folder. Keeps the original. Copies cannot be undone."
@@ -2135,11 +2135,11 @@ msgstr "Výchozí podpis"
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
-#: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 #: src/renderer/src/state/desktop.ts
@@ -2190,8 +2190,8 @@ msgstr "Smazáno"
 msgid "Deleting a folder also deletes its messages on the server."
 msgstr "Odstraněním složky se odstraní také její zprávy na serveru."
 
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
-#: src/renderer/src/features/settings/Settings.tsx
 msgid "Denied"
 msgstr "Nepovoleno"
 
@@ -2226,7 +2226,7 @@ msgid "Discard"
 msgstr "Zahodit"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 msgid "Discard draft"
 msgstr "Zahodit koncept"
 
@@ -2382,8 +2382,8 @@ msgid "Drag {0} to reorder"
 msgstr "Přetáhnout {0} pro změnu pořadí"
 
 #: src/renderer/src/features/settings/Settings.tsx
-msgid "Drag accounts to reorder or move between spaces. You can also use the space picker and Move up / Move down buttons."
-msgstr "Přetažením účtů změníte pořadí nebo se přesunete mezi mezerami. Můžete také použít výběr prostoru a tlačítka Posunout nahoru / Posunout dolů."
+msgid "Drag an account to reorder it or move it to another space. You can also use the space picker and the Move up and Move down buttons."
+msgstr "Přetažením účtu změníte jeho pořadí nebo ho přesunete do jiného prostoru. Můžete také použít výběr prostoru a tlačítka Posunout nahoru a Posunout dolů."
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Drag selected to Finder"
@@ -3005,17 +3005,13 @@ msgstr "Přejděte do složky"
 msgid "Google currently limits OpenMail's sign-in to 7 days. Sign in again to keep syncing {email}."
 msgstr "Google nyní omezuje přihlášení do OpenMail na 7 dní. Přihlaste se znovu, aby synchronizace {email} pokračovala."
 
-#: src/renderer/src/features/accounts/OptionalServices.tsx
-msgid "Granted"
-msgstr "Povoleno"
-
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
-msgid "Group accounts and choose a profile in the window toolbar."
-msgstr "Seskupte účty a vyberte profil na panelu nástrojů okna."
+msgid "Group accounts into spaces and choose a space in the window toolbar."
+msgstr "Seskupte účty do prostorů a prostor vyberte na panelu nástrojů okna."
 
 #: src/renderer/src/features/overview/Overview.tsx
-msgid "Group accounts into spaces, like “Work” and “Personal”. Each space has its own inbox. Switch with ⌃1 to ⌃9."
-msgstr "Seskupte účty do prostorů, například „Pracovní“ a „Osobní“. Každý prostor má vlastní doručenou poštu. Přepínejte pomocí ⌃1 až ⌃9."
+msgid "Group accounts into spaces, like “Work” and “Personal”. Each space has its own inbox. Switch with {firstSpaceKey} to {lastSpaceKey}."
+msgstr "Seskupte účty do prostorů, například „Pracovní“ a „Osobní“. Každý prostor má vlastní doručenou poštu. Mezi prostory přepínáte zkratkami {firstSpaceKey} až {lastSpaceKey}."
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Group messages into conversations"
@@ -3144,8 +3140,8 @@ msgid "Importance condition"
 msgstr "Podmínka důležitosti"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
-#: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -3372,7 +3368,7 @@ msgid "Keychain is locked"
 msgstr "Klíčenka je zamčená"
 
 #: src/renderer/src/app/use-view-title.ts
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "Label"
 msgstr "Štítek"
@@ -3637,10 +3633,6 @@ msgstr "Schránka"
 msgid "Mailboxes"
 msgstr "Schránky"
 
-#: src/renderer/src/features/accounts/OptionalServices.tsx
-msgid "MailboxSettings"
-msgstr "Nastavení poštovní schránky"
-
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Make OpenMail default"
 msgstr "Nastavit OpenMail jako výchozí"
@@ -3697,7 +3689,7 @@ msgstr "Označit zprávu jako nepřečtenou"
 msgid "Mark read"
 msgstr "Označit jako přečtené"
 
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Mark read/unread"
@@ -3769,8 +3761,8 @@ msgid "Maximum size (KiB)"
 msgstr "Maximální velikost (KiB)"
 
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
-msgid "MCP access follows this account's AI consent. Disabled accounts cannot be read through MCP."
-msgstr "Přístup MCP se řídí souhlasem s AI pro tento účet. Vypnuté účty nelze přes MCP číst."
+msgid "MCP access follows each account's AI setting above. MCP cannot read an account that is not enabled."
+msgstr "Přístup přes MCP se řídí nastavením AI u každého účtu výše. MCP nemůže číst účet, který není povolen."
 
 #. readOnly is the translated Read only write-mode label above.
 #: src/renderer/src/features/settings/Settings.tsx
@@ -4124,7 +4116,7 @@ msgstr "Přesunout do složky…"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Move to Inbox"
@@ -4215,7 +4207,7 @@ msgstr "Nikdy"
 msgid "Never synced"
 msgstr "Dosud nesynchronizováno"
 
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 msgid "New draft"
 msgstr "Nový koncept"
 
@@ -4253,10 +4245,6 @@ msgstr "nové zprávy"
 msgid "New messages"
 msgstr "Nové zprávy"
 
-#: src/renderer/src/features/accounts/ProfileSettings.tsx
-msgid "New profile"
-msgstr "Nový profil"
-
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "New sign-ins use OpenMail's built-in client."
 msgstr "Nová přihlášení používají vestavěného klienta OpenMail."
@@ -4270,6 +4258,7 @@ msgid "New signature"
 msgstr "Nový podpis"
 
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
+#: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 msgid "New space"
@@ -4331,9 +4320,10 @@ msgstr "Další okno"
 msgid "No access token saved"
 msgstr "Nebyl uložen žádný přístupový token"
 
+#. allow is the translated per-account checkbox label in AI settings.
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
-msgid "No account allows AI reads, so a connected app sees no mail. Turn on \"Allow sending mail text to the model\" for an account above."
-msgstr "Žádný účet nepovoluje čtení pro AI, takže připojená aplikace neuvidí žádnou poštu. Zapněte u některého účtu výše „Povolit odesílání textu pošty modelu“."
+msgid "No account allows AI reads, so a connected app sees no mail. Turn on “{allow}” for an account above."
+msgstr "Žádný účet nepovoluje čtení pomocí AI, takže připojená aplikace nevidí žádnou poštu. U některého účtu výše zapněte „{allow}“."
 
 #: src/renderer/src/features/overview/Overview.tsx
 msgid "No accounts yet"
@@ -4722,6 +4712,14 @@ msgstr "Otevřít v aplikaci"
 msgid "OpenMail can't read this config file, so it changes nothing. Fix the file, then try again. {detail}"
 msgstr "OpenMail tento konfigurační soubor nedokáže přečíst, a proto nic nemění. Opravte soubor a zkuste to znovu. {detail}"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "OpenMail could not load the AI settings, so it can't show which accounts AI apps can read. Close Settings and open it again."
+msgstr "OpenMail nemohl načíst nastavení AI, a proto nemůže ukázat, které účty mohou aplikace AI číst. Zavřete Nastavení a znovu je otevřete."
+
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "OpenMail could not read the API key from the keychain. Unlock the keychain, then open Settings again."
+msgstr "OpenMail nemohl načíst klíč API z klíčenky. Odemkněte klíčenku a pak znovu otevřete Nastavení."
+
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "OpenMail couldn't start its local server."
 msgstr "OpenMail nemohl spustit svůj místní server."
@@ -4844,6 +4842,10 @@ msgctxt "outlook-inbox"
 msgid "Other"
 msgstr "Další"
 
+#: src/renderer/src/features/settings/sections/audit-actions.ts
+msgid "Other action"
+msgstr "Jiná akce"
+
 #: src/renderer/src/features/feedback/Feedback.tsx
 msgid "Other feedback"
 msgstr "Další zpětná vazba"
@@ -4899,6 +4901,10 @@ msgstr "Požadavky na zprávy v Outlooku nesmí překročit 4 MB. Velké přilo�
 #: src/renderer/src/lib/errors.ts
 msgid "Outlook scheduled replies need both dates"
 msgstr "Naplánované odpovědi aplikace Outlook vyžadují obě data"
+
+#: src/renderer/src/features/accounts/OptionalServices.tsx
+msgid "Outlook settings"
+msgstr "Nastavení Outlooku"
 
 #: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
@@ -5113,18 +5119,6 @@ msgstr "Vytisknout…"
 msgid "Private"
 msgstr "Soukromé"
 
-#: src/renderer/src/features/accounts/ProfileSettings.tsx
-msgid "Profile"
-msgstr "Profil"
-
-#: src/renderer/src/features/settings/Settings.tsx
-msgid "Profiles"
-msgstr "Profily"
-
-#: src/renderer/src/features/accounts/ProfileSettings.tsx
-msgid "Profiles group accounts. You can assign accounts and edit profiles in Settings."
-msgstr "Profily seskupují účty. Účty můžete přiřadit a profily upravit v Nastavení."
-
 #: src/renderer/src/i18n/organization-labels.ts
 #: src/renderer/src/lib/view.ts
 msgid "Promotions"
@@ -5273,7 +5267,7 @@ msgstr "Obnovte kontakty"
 msgid "Reject"
 msgstr "Odmítnout"
 
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 msgid "Reject suggestion"
 msgstr "Odmítnout návrh"
 
@@ -5355,7 +5349,7 @@ msgstr "Odebrat {text}"
 msgid "Remove {token}"
 msgstr "Odebrat {token}"
 
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 msgid "Remove account"
 msgstr "Odebrat účet"
 
@@ -5548,7 +5542,7 @@ msgstr "Odpovědět v této konverzaci"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -5931,7 +5925,7 @@ msgstr "Sémantické vyhledávání není k dispozici. K dispozici zůstává fu
 
 #: src/renderer/src/app/use-compose-delivery.ts
 #: src/renderer/src/features/compose/components/Composer.tsx
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Send"
@@ -5955,7 +5949,7 @@ msgstr "Odeslat a archivovat"
 msgid "Send anyway"
 msgstr "Přesto odeslat"
 
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 msgid "Send failed"
 msgstr "Odeslání selhalo"
 
@@ -6392,10 +6386,19 @@ msgstr "Něco se pokazilo. Zkuste to znovu."
 msgid "Something went wrong. Try again."
 msgstr "Něco se pokazilo. Zkuste to znovu."
 
+#: src/renderer/src/features/accounts/ProfileSettings.tsx
+msgid "Space"
+msgstr "Prostor"
+
+#: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
 #: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 msgid "Spaces"
 msgstr "Prostory"
+
+#: src/renderer/src/features/accounts/ProfileSettings.tsx
+msgid "Spaces group accounts. You can assign accounts and edit spaces in Settings."
+msgstr "Prostory seskupují účty. Účty můžete přiřazovat a prostory upravovat v Nastavení."
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
@@ -6426,8 +6429,8 @@ msgstr "Stabilní"
 
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
-#: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -6530,7 +6533,7 @@ msgstr "Dolní index"
 msgid "Suggest triage for new inbox mail"
 msgstr "Navrhovat třídění nové doručené pošty"
 
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 msgid "Suggested"
 msgstr "Doporučeno"
 
@@ -6987,6 +6990,10 @@ msgstr "Čas"
 msgid "Time zone"
 msgstr "Časové pásmo"
 
+#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+msgid "Times follow this Mac's time zone. Outside a space's active hours, OpenMail holds its notifications and leaves its unread mail out of the Dock badge. When active hours start again, you get one summary of the unread mail that arrived."
+msgstr "Časy se řídí časovým pásmem tohoto Macu. Mimo aktivní hodiny prostoru OpenMail jeho oznámení odloží a jeho nepřečtenou poštu nezapočítá do odznaku v Docku. Když aktivní hodiny znovu začnou, dostanete jeden souhrn nepřečtené pošty, která mezitím přišla."
+
 #: src/renderer/src/features/compose/components/AddressFields.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/use-thread-print.ts
@@ -7100,13 +7107,14 @@ msgstr "Úterý"
 msgid "Turn it on in Settings"
 msgstr "Zapnout v nastavení"
 
-#: src/renderer/src/features/accounts/OptionalServices.tsx
-msgid "Turn off"
-msgstr "Vypnout"
-
 #: src/renderer/src/features/mail-list/EmptyList.tsx
 msgid "Turn off filters"
 msgstr "Vypnout filtry"
+
+#: src/renderer/src/lib/ai-settings-errors.test.ts
+#: src/renderer/src/lib/errors.ts
+msgid "Turn on “Allow AI to read this account” for each selected account in Settings → AI Access."
+msgstr "V Nastavení → Přístup AI zapněte u každého vybraného účtu „Povolit AI číst tento účet“."
 
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 msgid "Turned off"
@@ -7340,10 +7348,6 @@ msgstr "Použít vestavěného klienta"
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Use the current account"
 msgstr "Použít aktuální účet"
-
-#: src/renderer/src/features/settings/sections/SystemSettings.tsx
-msgid "Use this Mac's local time. Outside active hours, notifications wait and the Dock badge excludes the space. When active hours resume, unread arrivals appear in one summary."
-msgstr "Použijte místní čas tohoto Macu. Mimo aktivní hodiny oznámení čekají a odznak Dock vylučuje prostor. Po obnovení aktivních hodin se nepřečtené příchody objeví v jednom souhrnu."
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Use your own OAuth client"

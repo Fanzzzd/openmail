@@ -663,6 +663,11 @@ msgstr "将永久删除当前文件夹中的邮件，包括尚未加载的邮件
 msgid "Allow access from my tailnet"
 msgstr "允许从我的 tailnet 访问"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "Allow AI to read this account"
+msgstr "允许 AI 读取这个账户"
+
 #: src/renderer/src/features/ai/AiPanel.tsx
 msgid "Allow an account in Settings → AI Access to ask about its mail."
 msgstr "在「设置 → AI 权限」中允许一个账户后，就能询问它的邮件。"
@@ -678,15 +683,6 @@ msgstr "允许永久删除 {email} 的邮件？"
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Allow proposals"
 msgstr "允许提出建议"
-
-#: src/renderer/src/lib/ai-settings-errors.test.ts
-#: src/renderer/src/lib/errors.ts
-msgid "Allow sending mail text for each selected account in AI settings."
-msgstr "请在 AI 设置中授权所选账户发送邮件文本。"
-
-#: src/renderer/src/features/settings/sections/AiSettings.tsx
-msgid "Allow sending mail text to the model"
-msgstr "允许向模型发送邮件文本"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Allowed"
@@ -819,7 +815,7 @@ msgstr "批准"
 msgid "Approve and edit"
 msgstr "批准并编辑"
 
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 msgid "Approve suggestion"
 msgstr "确认建议"
 
@@ -834,10 +830,10 @@ msgstr "这台 Mac 上未找到的应用"
 #: src/renderer/src/features/ai/TriageChip.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
-#: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -1584,6 +1580,10 @@ msgstr "连接 {name}"
 msgid "Connect {name}?"
 msgstr "连接 {name}？"
 
+#: src/renderer/src/features/settings/sections/audit-actions.ts
+msgid "Connect account"
+msgstr "连接账户"
+
 #: src/renderer/src/app/use-app-messages.ts
 msgid "Connect an account to send feedback"
 msgstr "连接账户后即可发送反馈"
@@ -2004,16 +2004,16 @@ msgid "Create filter from these messages"
 msgstr "按这些邮件创建过滤器"
 
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
-msgid "Create Personal and Work profiles?"
-msgstr "创建个人和工作 Profile？"
+msgid "Create Personal and Work spaces?"
+msgstr "创建「个人」和「工作」空间？"
 
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
-msgid "Create profiles"
-msgstr "创建 Profile"
+msgid "Create spaces"
+msgstr "创建空间"
 
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
-msgid "Create profiles?"
-msgstr "创建 Profile？"
+msgid "Create spaces?"
+msgstr "创建空间？"
 
 #: src/renderer/src/features/organize/MultiOrganization.tsx
 msgid "Creates a separate copy in each selected folder. Keeps the original. Copies cannot be undone."
@@ -2145,11 +2145,11 @@ msgstr "默认签名"
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
-#: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 #: src/renderer/src/state/desktop.ts
@@ -2200,8 +2200,8 @@ msgstr "已删除"
 msgid "Deleting a folder also deletes its messages on the server."
 msgstr "删除文件夹也会删除服务器内的邮件。"
 
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
-#: src/renderer/src/features/settings/Settings.tsx
 msgid "Denied"
 msgstr "被拒绝"
 
@@ -2236,7 +2236,7 @@ msgid "Discard"
 msgstr "丢弃"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 msgid "Discard draft"
 msgstr "丢弃草稿"
 
@@ -2392,8 +2392,8 @@ msgid "Drag {0} to reorder"
 msgstr "拖动 {0} 排序"
 
 #: src/renderer/src/features/settings/Settings.tsx
-msgid "Drag accounts to reorder or move between spaces. You can also use the space picker and Move up / Move down buttons."
-msgstr "拖动账号可排序或移入其他空间，也可用空间选择器和上下移按钮。"
+msgid "Drag an account to reorder it or move it to another space. You can also use the space picker and the Move up and Move down buttons."
+msgstr "拖动账户可以调整顺序，或移到其他空间。也可以用空间选择器和「上移」「下移」按钮。"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Drag selected to Finder"
@@ -3015,17 +3015,13 @@ msgstr "前往文件夹"
 msgid "Google currently limits OpenMail's sign-in to 7 days. Sign in again to keep syncing {email}."
 msgstr "Google 目前把 OpenMail 的登录限制为 7 天。重新登录即可继续同步 {email}。"
 
-#: src/renderer/src/features/accounts/OptionalServices.tsx
-msgid "Granted"
-msgstr "已授权"
-
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
-msgid "Group accounts and choose a profile in the window toolbar."
-msgstr "将账户分组，在窗口工具栏切换 Profile。"
+msgid "Group accounts into spaces and choose a space in the window toolbar."
+msgstr "把账户分进空间，在窗口工具栏切换空间。"
 
 #: src/renderer/src/features/overview/Overview.tsx
-msgid "Group accounts into spaces, like “Work” and “Personal”. Each space has its own inbox. Switch with ⌃1 to ⌃9."
-msgstr "把账户分进空间，比如「工作」和「个人」。每个空间有自己的收件箱，用 ⌃1 到 ⌃9 切换。"
+msgid "Group accounts into spaces, like “Work” and “Personal”. Each space has its own inbox. Switch with {firstSpaceKey} to {lastSpaceKey}."
+msgstr "把账户分进空间，比如「工作」和「个人」。每个空间有自己的收件箱，用 {firstSpaceKey} 到 {lastSpaceKey} 切换。"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Group messages into conversations"
@@ -3154,8 +3150,8 @@ msgid "Importance condition"
 msgstr "重要性条件"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
-#: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -3382,7 +3378,7 @@ msgid "Keychain is locked"
 msgstr "钥匙串已锁定"
 
 #: src/renderer/src/app/use-view-title.ts
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "Label"
 msgstr "标签"
@@ -3647,10 +3643,6 @@ msgstr "邮箱"
 msgid "Mailboxes"
 msgstr "邮箱"
 
-#: src/renderer/src/features/accounts/OptionalServices.tsx
-msgid "MailboxSettings"
-msgstr "邮箱设置"
-
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Make OpenMail default"
 msgstr "设为默认邮件客户端"
@@ -3707,7 +3699,7 @@ msgstr "将此邮件标为未读"
 msgid "Mark read"
 msgstr "标为已读"
 
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Mark read/unread"
@@ -3779,8 +3771,8 @@ msgid "Maximum size (KiB)"
 msgstr "最大大小（KiB）"
 
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
-msgid "MCP access follows this account's AI consent. Disabled accounts cannot be read through MCP."
-msgstr "MCP 能否访问此账户，取决于它的 AI 授权。MCP 读取不到已停用的账户。"
+msgid "MCP access follows each account's AI setting above. MCP cannot read an account that is not enabled."
+msgstr "MCP 访问遵循上面每个账户的 AI 设置。MCP 无法读取未启用的账户。"
 
 #. readOnly is the translated Read only write-mode label above.
 #: src/renderer/src/features/settings/Settings.tsx
@@ -4134,7 +4126,7 @@ msgstr "移到文件夹…"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Move to Inbox"
@@ -4225,7 +4217,7 @@ msgstr "永不"
 msgid "Never synced"
 msgstr "从未同步"
 
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 msgid "New draft"
 msgstr "新草稿"
 
@@ -4263,10 +4255,6 @@ msgstr "封新邮件"
 msgid "New messages"
 msgstr "新邮件"
 
-#: src/renderer/src/features/accounts/ProfileSettings.tsx
-msgid "New profile"
-msgstr "新建 Profile"
-
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "New sign-ins use OpenMail's built-in client."
 msgstr "新登录使用 OpenMail 内置客户端。"
@@ -4280,6 +4268,7 @@ msgid "New signature"
 msgstr "新建签名"
 
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
+#: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 msgid "New space"
@@ -4341,9 +4330,10 @@ msgstr "下一个窗口"
 msgid "No access token saved"
 msgstr "未保存访问令牌"
 
+#. allow is the translated per-account checkbox label in AI settings.
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
-msgid "No account allows AI reads, so a connected app sees no mail. Turn on \"Allow sending mail text to the model\" for an account above."
-msgstr "没有账户允许 AI 读取，已连接的应用看不到任何邮件。请在上方为账户开启“允许向模型发送邮件文本”。"
+msgid "No account allows AI reads, so a connected app sees no mail. Turn on “{allow}” for an account above."
+msgstr "没有账户允许 AI 读取，所以已连接的应用看不到邮件。请在上面为一个账户打开「{allow}」。"
 
 #: src/renderer/src/features/overview/Overview.tsx
 msgid "No accounts yet"
@@ -4732,6 +4722,14 @@ msgstr "打开方式"
 msgid "OpenMail can't read this config file, so it changes nothing. Fix the file, then try again. {detail}"
 msgstr "OpenMail 无法读取这个配置文件，因此不做任何改动。请修正文件后重试。{detail}"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "OpenMail could not load the AI settings, so it can't show which accounts AI apps can read. Close Settings and open it again."
+msgstr "OpenMail 无法载入 AI 设置，因此无法显示 AI 应用能读取哪些账户。请关闭设置后重新打开。"
+
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "OpenMail could not read the API key from the keychain. Unlock the keychain, then open Settings again."
+msgstr "OpenMail 无法从钥匙串读取 API 密钥。请解锁钥匙串，然后重新打开设置。"
+
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "OpenMail couldn't start its local server."
 msgstr "OpenMail 无法启动本地服务器。"
@@ -4854,6 +4852,10 @@ msgctxt "outlook-inbox"
 msgid "Other"
 msgstr "其他"
 
+#: src/renderer/src/features/settings/sections/audit-actions.ts
+msgid "Other action"
+msgstr "其他操作"
+
 #: src/renderer/src/features/feedback/Feedback.tsx
 msgid "Other feedback"
 msgstr "其他反馈"
@@ -4909,6 +4911,10 @@ msgstr "Outlook 消息请求不能超过 4 MB，不支持将大消息附件作�
 #: src/renderer/src/lib/errors.ts
 msgid "Outlook scheduled replies need both dates"
 msgstr "Outlook 定时回复须填起止时间"
+
+#: src/renderer/src/features/accounts/OptionalServices.tsx
+msgid "Outlook settings"
+msgstr "Outlook 设置"
 
 #: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
@@ -5123,18 +5129,6 @@ msgstr "打印…"
 msgid "Private"
 msgstr "私人"
 
-#: src/renderer/src/features/accounts/ProfileSettings.tsx
-msgid "Profile"
-msgstr "Profile"
-
-#: src/renderer/src/features/settings/Settings.tsx
-msgid "Profiles"
-msgstr "Profiles"
-
-#: src/renderer/src/features/accounts/ProfileSettings.tsx
-msgid "Profiles group accounts. You can assign accounts and edit profiles in Settings."
-msgstr "Profile 用于账户分组。可在设置中分配账户、编辑 Profile。"
-
 #: src/renderer/src/i18n/organization-labels.ts
 #: src/renderer/src/lib/view.ts
 msgid "Promotions"
@@ -5283,7 +5277,7 @@ msgstr "刷新联系人"
 msgid "Reject"
 msgstr "拒绝"
 
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 msgid "Reject suggestion"
 msgstr "拒绝建议"
 
@@ -5365,7 +5359,7 @@ msgstr "移除 {text}"
 msgid "Remove {token}"
 msgstr "移除 {token}"
 
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 msgid "Remove account"
 msgstr "移除账户"
 
@@ -5558,7 +5552,7 @@ msgstr "回复此会话"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -5941,7 +5935,7 @@ msgstr "语义搜索暂不可用，仍可全文搜索。"
 
 #: src/renderer/src/app/use-compose-delivery.ts
 #: src/renderer/src/features/compose/components/Composer.tsx
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Send"
@@ -5965,7 +5959,7 @@ msgstr "发送并归档"
 msgid "Send anyway"
 msgstr "仍然发送"
 
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 msgid "Send failed"
 msgstr "发送失败"
 
@@ -6402,10 +6396,19 @@ msgstr "出了点问题，请再试一次。"
 msgid "Something went wrong. Try again."
 msgstr "出错了，请重试。"
 
+#: src/renderer/src/features/accounts/ProfileSettings.tsx
+msgid "Space"
+msgstr "空间"
+
+#: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
 #: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 msgid "Spaces"
 msgstr "空间"
+
+#: src/renderer/src/features/accounts/ProfileSettings.tsx
+msgid "Spaces group accounts. You can assign accounts and edit spaces in Settings."
+msgstr "空间用来给账户分组。可以在设置中分配账户、编辑空间。"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
@@ -6436,8 +6439,8 @@ msgstr "稳定版本"
 
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
-#: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -6540,7 +6543,7 @@ msgstr "下标"
 msgid "Suggest triage for new inbox mail"
 msgstr "为收件箱新邮件建议整理方式"
 
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 msgid "Suggested"
 msgstr "提出建议"
 
@@ -6997,6 +7000,10 @@ msgstr "时间"
 msgid "Time zone"
 msgstr "时区"
 
+#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+msgid "Times follow this Mac's time zone. Outside a space's active hours, OpenMail holds its notifications and leaves its unread mail out of the Dock badge. When active hours start again, you get one summary of the unread mail that arrived."
+msgstr "时间按这台 Mac 的时区计算。在空间的活跃时段以外，OpenMail 暂缓这个空间的通知，Dock 图标的未读数也不计入它的邮件。活跃时段重新开始时，你会收到一条汇总，列出这段时间收到的未读邮件。"
+
 #: src/renderer/src/features/compose/components/AddressFields.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/use-thread-print.ts
@@ -7110,13 +7117,14 @@ msgstr "星期二"
 msgid "Turn it on in Settings"
 msgstr "在设置中开启"
 
-#: src/renderer/src/features/accounts/OptionalServices.tsx
-msgid "Turn off"
-msgstr "停用"
-
 #: src/renderer/src/features/mail-list/EmptyList.tsx
 msgid "Turn off filters"
 msgstr "关闭筛选"
+
+#: src/renderer/src/lib/ai-settings-errors.test.ts
+#: src/renderer/src/lib/errors.ts
+msgid "Turn on “Allow AI to read this account” for each selected account in Settings → AI Access."
+msgstr "请在「设置 → AI 权限」中为每个所选账户打开「允许 AI 读取这个账户」。"
 
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 msgid "Turned off"
@@ -7350,10 +7358,6 @@ msgstr "改用内置客户端"
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Use the current account"
 msgstr "使用当前账号"
-
-#: src/renderer/src/features/settings/sections/SystemSettings.tsx
-msgid "Use this Mac's local time. Outside active hours, notifications wait and the Dock badge excludes the space. When active hours resume, unread arrivals appear in one summary."
-msgstr "按本机时间。非活跃时段暂停通知，Dock 不计该空间；恢复时汇总仍未读的新邮件。"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Use your own OAuth client"

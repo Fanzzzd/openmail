@@ -84,3 +84,8 @@ export function categoryAccounts(view: View, accounts: readonly Account[]): read
       (ids === undefined || ids.includes(account.id)),
   );
 }
+
+/** The shortcut that opens the space at `index` among the user's spaces, for the first nine. */
+export function spaceShortcutLabel(shortcutSet: string, index: number) {
+  return index < 9 ? `${shortcutSet === "gmail" ? "⌘" : "⌃⌘"}${index + 1}` : undefined;
+}

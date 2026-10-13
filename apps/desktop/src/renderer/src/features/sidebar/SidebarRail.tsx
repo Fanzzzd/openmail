@@ -14,9 +14,10 @@ import {
   OVERVIEW,
   type SpaceId,
   spaceAccounts,
+  spaceShortcutLabel,
   type View,
 } from "../../lib/view";
-import { MAILBOXES, spaceShortcutLabel, useMailboxCounts } from "./sidebar-mailboxes";
+import { MAILBOXES, useMailboxCounts } from "./sidebar-mailboxes";
 import { titlebarRow } from "../../ui/styles";
 import { Tip } from "../../ui/Tip";
 

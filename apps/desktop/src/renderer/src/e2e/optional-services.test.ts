@@ -9,7 +9,7 @@ afterEach(async () => {
   current = undefined;
 });
 
-it("service hint opens the account section, incremental Connect updates the grant, and Turn off persists", async () => {
+it("service hint opens the account section, incremental Connect updates the grant, and turning the switch off persists", async () => {
   current = await flow();
   const h = current;
   await h.run(h.store.setGrantedScopes(h.account.id, BASE_SCOPES.gmail));
@@ -27,13 +27,14 @@ it("service hint opens the account section, incremental Connect updates the gran
   if (!contactsRow) throw new Error("Missing contacts row");
   h.server.grantedScopes = [...BASE_SCOPES.gmail, ...OPTIONAL_SCOPES.gmail.contacts];
   fireEvent.click(within(contactsRow).getByRole("button", { name: "Connect" }));
-  await eventually(() => expect(within(contactsRow).getByText("Granted")).toBeTruthy());
+  const contactsSwitch = () => within(contactsRow).getByRole("switch", { name: "Contacts" });
+  await eventually(() => expect(contactsSwitch().getAttribute("aria-checked")).toBe("true"));
   expect(h.server.connects.at(-1)?.provider).toBe("gmail");
   expect(h.server.connects.at(-1)).toMatchObject({
     feature: "contacts",
     loginHint: h.account.email,
   });
-  fireEvent.click(within(contactsRow).getByRole("checkbox", { name: "Turn off" }));
+  fireEvent.click(contactsSwitch());
   await eventually(() => expect(within(contactsRow).getByText("Turned off")).toBeTruthy());
   expect(await h.run(h.store.disabledServices(h.account.id))).toEqual(["contacts"]);
   expect(h.requests.some((request) => request.tag === "SetServiceEnabled")).toBe(true);

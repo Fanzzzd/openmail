@@ -1,4 +1,4 @@
-import { ALL, OVERVIEW, type SpaceId } from "../../lib/view";
+import { ALL, OVERVIEW, spaceShortcutLabel, type SpaceId } from "../../lib/view";
 import type { Profile } from "../../../../shared/api";
 import { useLingui } from "@lingui/react/macro";
 import { AsyncResult } from "effect/reactivity";
@@ -15,7 +15,6 @@ import {
   MenuItem,
   MenuSeparator,
 } from "../../ui/Menu";
-import { spaceShortcutLabel } from "./sidebar-mailboxes";
 import { PROFILE_BG } from "../../lib/format";
 
 const ring = (active: boolean) =>

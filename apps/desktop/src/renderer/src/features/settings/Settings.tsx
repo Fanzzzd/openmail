@@ -57,6 +57,7 @@ import {
   clientSetupAtom,
 } from "../../state/queries";
 import { runAccountMove } from "./sections/account-settings";
+import { auditActionName } from "./sections/audit-actions";
 import { SyncHealthCheck } from "./sections/SyncHealth";
 import { AccountControls } from "./sections/AccountControls";
 import { accountName } from "../../lib/format";
@@ -120,7 +121,7 @@ type TabIcon = ComponentType<{ className?: string }>;
 const TABS: { id: Tab; label: MessageDescriptor; icon: TabIcon; tile: string; group?: true }[] = [
   { id: "general", label: msg`General`, icon: SettingsIcon, tile: "bg-neutral-500" },
   { id: "accounts", label: msg`Accounts`, icon: AtSign, tile: "bg-blue-500" },
-  { id: "profiles", label: msg`Profiles`, icon: Layers, tile: "bg-indigo-500" },
+  { id: "profiles", label: msg`Spaces`, icon: Layers, tile: "bg-indigo-500" },
   { id: "reading", label: msg`Reading`, icon: BookOpen, tile: "bg-sky-500", group: true },
   { id: "compose", label: msg`Compose`, icon: SquarePen, tile: "bg-blue-500" },
   { id: "signatures", label: msg`Signatures`, icon: Signature, tile: "bg-orange-500" },
@@ -315,8 +316,8 @@ function Accounts({
     <>
       <p className={`px-1 ${settingsHint}`}>
         <Trans>
-          Drag accounts to reorder or move between spaces. You can also use the space picker and
-          Move up / Move down buttons.
+          Drag an account to reorder it or move it to another space. You can also use the space
+          picker and the Move up and Move down buttons.
         </Trans>
       </p>
       {[{ id: null, name: t`Ungrouped accounts` }, ...profiles].map((profile) => (
@@ -615,26 +616,6 @@ function AgentPolicy() {
   );
 }
 
-const ACTION_NAMES: Record<string, MessageDescriptor> = {
-  read: msg`Mark read/unread`,
-  star: msg`Star`,
-  important: msg`Important`,
-  archive: msg`Archive`,
-  inbox: msg`Move to Inbox`,
-  trash: msg`Delete`,
-  spam: msg`Report spam`,
-  label: msg`Label`,
-  send: msg`Send`,
-  send_failed: msg`Send failed`,
-  draft: msg`New draft`,
-  discard_draft: msg`Discard draft`,
-  proposed: msg`Suggested`,
-  approve: msg`Approve suggestion`,
-  reject: msg`Reject suggestion`,
-  denied: msg`Denied`,
-  removeAccount: msg`Remove account`,
-};
-
 function actorName(i18n: I18n, actor: string): string {
   if (actor.startsWith("user:"))
     return actor === "user:cli" ? i18n._(msg`You (command line)`) : i18n._(msg`You`);
@@ -688,9 +669,7 @@ function AuditLog({ accounts }: { accounts: readonly Account[] }) {
               </td>
               <td className={`${logCell} whitespace-nowrap`}>{actorName(i18n, e.actor)}</td>
               <td className={logCell}>
-                <span className="whitespace-nowrap">
-                  {ACTION_NAMES[e.action] ? i18n._(ACTION_NAMES[e.action]!) : e.action}
-                </span>
+                <span className="whitespace-nowrap">{auditActionName(i18n, e.action)}</span>
                 <span className="hidden break-all text-footnote text-a11y-muted @max-[480px]/log:block">
                   {email(e.accountId)}
                 </span>

@@ -304,7 +304,7 @@ msgstr "Account ingeschakeld"
 
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
 msgid "Account space"
-msgstr "Werkruimte van account"
+msgstr "Ruimte van account"
 
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/settings/Settings.tsx
@@ -351,7 +351,7 @@ msgstr "Acties voor {0}"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Active hours by space"
-msgstr "Actieve uren per werkruimte"
+msgstr "Actieve uren per ruimte"
 
 #. placeholder {0}: profile.name
 #. placeholder {1}: index + 1
@@ -653,6 +653,11 @@ msgstr "Alle berichten die zich momenteel in deze map bevinden, inclusief niet-g
 msgid "Allow access from my tailnet"
 msgstr "Toegang vanuit mijn tailnet toestaan"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "Allow AI to read this account"
+msgstr "AI dit account laten lezen"
+
 #: src/renderer/src/features/ai/AiPanel.tsx
 msgid "Allow an account in Settings → AI Access to ask about its mail."
 msgstr "Sta een account toe in Instellingen → AI-toegang om vragen over de e-mail ervan te stellen."
@@ -668,15 +673,6 @@ msgstr "Permanente verwijdering toestaan ​​voor {email}?"
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Allow proposals"
 msgstr "Voorstellen toestaan"
-
-#: src/renderer/src/lib/ai-settings-errors.test.ts
-#: src/renderer/src/lib/errors.ts
-msgid "Allow sending mail text for each selected account in AI settings."
-msgstr "Sta in de AI-instellingen het versturen van e-mailtekst toe voor elk geselecteerd account."
-
-#: src/renderer/src/features/settings/sections/AiSettings.tsx
-msgid "Allow sending mail text to the model"
-msgstr "Versturen van e-mailtekst naar het model toestaan"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Allowed"
@@ -809,7 +805,7 @@ msgstr "Keur goed"
 msgid "Approve and edit"
 msgstr "Keur goed en bewerk"
 
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 msgid "Approve suggestion"
 msgstr "Suggestie goedkeuren"
 
@@ -824,10 +820,10 @@ msgstr "Apps die niet op deze Mac zijn gevonden"
 #: src/renderer/src/features/ai/TriageChip.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
-#: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -1574,6 +1570,10 @@ msgstr "{name} verbinden"
 msgid "Connect {name}?"
 msgstr "{name} verbinden?"
 
+#: src/renderer/src/features/settings/sections/audit-actions.ts
+msgid "Connect account"
+msgstr "Account verbinden"
+
 #: src/renderer/src/app/use-app-messages.ts
 msgid "Connect an account to send feedback"
 msgstr "Koppel een account om feedback te sturen"
@@ -1994,16 +1994,16 @@ msgid "Create filter from these messages"
 msgstr "Maak een filter op basis van deze berichten"
 
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
-msgid "Create Personal and Work profiles?"
-msgstr "Profielen Privé en Werk aanmaken?"
+msgid "Create Personal and Work spaces?"
+msgstr "Ruimtes Privé en Werk maken?"
 
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
-msgid "Create profiles"
-msgstr "Maak profielen aan"
+msgid "Create spaces"
+msgstr "Ruimtes maken"
 
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
-msgid "Create profiles?"
-msgstr "Profielen aanmaken?"
+msgid "Create spaces?"
+msgstr "Ruimtes maken?"
 
 #: src/renderer/src/features/organize/MultiOrganization.tsx
 msgid "Creates a separate copy in each selected folder. Keeps the original. Copies cannot be undone."
@@ -2135,11 +2135,11 @@ msgstr "Standaard handtekening"
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
-#: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 #: src/renderer/src/state/desktop.ts
@@ -2180,7 +2180,7 @@ msgstr "Permanent verwijderen"
 
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 msgid "Delete space"
-msgstr "Verwijder werkruimte"
+msgstr "Verwijder ruimte"
 
 #: src/renderer/src/app/use-app-messages.ts
 msgid "Deleted"
@@ -2190,8 +2190,8 @@ msgstr "Verwijderd"
 msgid "Deleting a folder also deletes its messages on the server."
 msgstr "Als u een map verwijdert, worden ook de berichten op de server verwijderd."
 
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
-#: src/renderer/src/features/settings/Settings.tsx
 msgid "Denied"
 msgstr "Geweigerd"
 
@@ -2226,7 +2226,7 @@ msgid "Discard"
 msgstr "Verwijder"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 msgid "Discard draft"
 msgstr "Verwijder concept"
 
@@ -2382,8 +2382,8 @@ msgid "Drag {0} to reorder"
 msgstr "Sleep {0} om de volgorde te wijzigen"
 
 #: src/renderer/src/features/settings/Settings.tsx
-msgid "Drag accounts to reorder or move between spaces. You can also use the space picker and Move up / Move down buttons."
-msgstr "Versleep accounts om de volgorde te wijzigen of tussen ruimtes te verplaatsen. U kunt ook de spatiekiezer en de knoppen Omhoog/Omlaag gebruiken."
+msgid "Drag an account to reorder it or move it to another space. You can also use the space picker and the Move up and Move down buttons."
+msgstr "Sleep een account om de volgorde te wijzigen of het naar een andere ruimte te verplaatsen. Je kunt ook de ruimtekiezer en de knoppen Omhoog en Omlaag gebruiken."
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Drag selected to Finder"
@@ -2430,7 +2430,7 @@ msgstr "Handtekening bewerken"
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 #: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 msgid "Edit space"
-msgstr "Bewerk werkruimte"
+msgstr "Bewerk ruimte"
 
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Edit template"
@@ -3005,17 +3005,13 @@ msgstr "Ga naar map"
 msgid "Google currently limits OpenMail's sign-in to 7 days. Sign in again to keep syncing {email}."
 msgstr "Google beperkt aanmelden bij OpenMail momenteel tot 7 dagen. Meld u opnieuw aan om {email} te blijven synchroniseren."
 
-#: src/renderer/src/features/accounts/OptionalServices.tsx
-msgid "Granted"
-msgstr "Toegestaan"
-
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
-msgid "Group accounts and choose a profile in the window toolbar."
-msgstr "Groepeer accounts en kies een profiel in de werkbalk van het venster."
+msgid "Group accounts into spaces and choose a space in the window toolbar."
+msgstr "Groepeer accounts in ruimtes en kies een ruimte in de knoppenbalk van het venster."
 
 #: src/renderer/src/features/overview/Overview.tsx
-msgid "Group accounts into spaces, like “Work” and “Personal”. Each space has its own inbox. Switch with ⌃1 to ⌃9."
-msgstr "Groepeer accounts in werkruimten, zoals ‘Werk’ en ‘Privé’. Elke werkruimte heeft een eigen Postvak IN. Wissel met ⌃1 tot ⌃9."
+msgid "Group accounts into spaces, like “Work” and “Personal”. Each space has its own inbox. Switch with {firstSpaceKey} to {lastSpaceKey}."
+msgstr "Groepeer accounts in ruimtes, zoals “Werk” en “Privé”. Elke ruimte heeft een eigen postvak IN. Wissel van ruimte met {firstSpaceKey} tot en met {lastSpaceKey}."
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Group messages into conversations"
@@ -3144,8 +3140,8 @@ msgid "Importance condition"
 msgstr "Belangrijkheidsvoorwaarde"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
-#: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -3372,7 +3368,7 @@ msgid "Keychain is locked"
 msgstr "Sleutelhanger is vergrendeld"
 
 #: src/renderer/src/app/use-view-title.ts
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "Label"
 msgstr "Label"
@@ -3637,10 +3633,6 @@ msgstr "Postbus"
 msgid "Mailboxes"
 msgstr "Postbussen"
 
-#: src/renderer/src/features/accounts/OptionalServices.tsx
-msgid "MailboxSettings"
-msgstr "Postvakinstellingen"
-
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Make OpenMail default"
 msgstr "Maak OpenMail standaard"
@@ -3697,7 +3689,7 @@ msgstr "Markeer bericht als ongelezen"
 msgid "Mark read"
 msgstr "Markeer als gelezen"
 
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Mark read/unread"
@@ -3769,8 +3761,8 @@ msgid "Maximum size (KiB)"
 msgstr "Maximale grootte (KiB)"
 
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
-msgid "MCP access follows this account's AI consent. Disabled accounts cannot be read through MCP."
-msgstr "MCP-toegang volgt de AI-toestemming voor dit account. Uitgeschakelde accounts kunnen niet via MCP worden gelezen."
+msgid "MCP access follows each account's AI setting above. MCP cannot read an account that is not enabled."
+msgstr "MCP-toegang volgt de AI-instelling van elk account hierboven. MCP kan geen account lezen dat niet is ingeschakeld."
 
 #. readOnly is the translated Read only write-mode label above.
 #: src/renderer/src/features/settings/Settings.tsx
@@ -4081,7 +4073,7 @@ msgstr "Verplaats {label} omhoog"
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Move down"
-msgstr "Ga naar beneden"
+msgstr "Omlaag"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Move focus between panes"
@@ -4124,7 +4116,7 @@ msgstr "Verplaatsen naar map…"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Move to Inbox"
@@ -4155,7 +4147,7 @@ msgstr "Verplaatsen naar prullenmand"
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Move up"
-msgstr "Ga omhoog"
+msgstr "Omhoog"
 
 #: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/features/ai/Proposals.tsx
@@ -4215,7 +4207,7 @@ msgstr "Nooit"
 msgid "Never synced"
 msgstr "Nog nooit gesynchroniseerd"
 
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 msgid "New draft"
 msgstr "Nieuw concept"
 
@@ -4253,10 +4245,6 @@ msgstr "nieuwe berichten"
 msgid "New messages"
 msgstr "Nieuwe berichten"
 
-#: src/renderer/src/features/accounts/ProfileSettings.tsx
-msgid "New profile"
-msgstr "Nieuw profiel"
-
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "New sign-ins use OpenMail's built-in client."
 msgstr "Nieuwe aanmeldingen gebruiken de ingebouwde client van OpenMail."
@@ -4270,10 +4258,11 @@ msgid "New signature"
 msgstr "Nieuwe handtekening"
 
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
+#: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 msgid "New space"
-msgstr "Nieuwe werkruimte"
+msgstr "Nieuwe ruimte"
 
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "New template"
@@ -4331,9 +4320,10 @@ msgstr "Volgend venster"
 msgid "No access token saved"
 msgstr "Geen toegangstoken opgeslagen"
 
+#. allow is the translated per-account checkbox label in AI settings.
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
-msgid "No account allows AI reads, so a connected app sees no mail. Turn on \"Allow sending mail text to the model\" for an account above."
-msgstr "Geen enkel account staat lezen door AI toe, dus een verbonden app ziet geen e-mail. Zet “Versturen van e-mailtekst naar het model toestaan” aan voor een account hierboven."
+msgid "No account allows AI reads, so a connected app sees no mail. Turn on “{allow}” for an account above."
+msgstr "Geen enkel account staat lezen door AI toe, dus een verbonden app ziet geen e-mail. Zet “{allow}” aan voor een account hierboven."
 
 #: src/renderer/src/features/overview/Overview.tsx
 msgid "No accounts yet"
@@ -4692,7 +4682,7 @@ msgstr "Open alleen dit bericht in een nieuw venster"
 
 #: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 msgid "Open space"
-msgstr "Open werkruimte"
+msgstr "Open ruimte"
 
 #: src/renderer/src/features/settings/sections/AppleContactsSettings.tsx
 msgid "Open System Settings"
@@ -4721,6 +4711,14 @@ msgstr "Open met"
 #: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "OpenMail can't read this config file, so it changes nothing. Fix the file, then try again. {detail}"
 msgstr "OpenMail kan dit configuratiebestand niet lezen en wijzigt dus niets. Herstel het bestand en probeer het opnieuw. {detail}"
+
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "OpenMail could not load the AI settings, so it can't show which accounts AI apps can read. Close Settings and open it again."
+msgstr "OpenMail kon de AI-instellingen niet laden en kan daarom niet tonen welke accounts AI-apps kunnen lezen. Sluit Instellingen en open ze opnieuw."
+
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "OpenMail could not read the API key from the keychain. Unlock the keychain, then open Settings again."
+msgstr "OpenMail kon de API-sleutel niet uit de sleutelhanger lezen. Ontgrendel de sleutelhanger en open Instellingen daarna opnieuw."
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "OpenMail couldn't start its local server."
@@ -4844,6 +4842,10 @@ msgctxt "outlook-inbox"
 msgid "Other"
 msgstr "Overige"
 
+#: src/renderer/src/features/settings/sections/audit-actions.ts
+msgid "Other action"
+msgstr "Andere actie"
+
 #: src/renderer/src/features/feedback/Feedback.tsx
 msgid "Other feedback"
 msgstr "Andere feedback"
@@ -4899,6 +4901,10 @@ msgstr "Berichtaanvragen in Outlook mogen niet groter zijn dan 4 MB. Grote bijge
 #: src/renderer/src/lib/errors.ts
 msgid "Outlook scheduled replies need both dates"
 msgstr "Voor geplande Outlook-antwoorden zijn beide datums nodig"
+
+#: src/renderer/src/features/accounts/OptionalServices.tsx
+msgid "Outlook settings"
+msgstr "Outlook-instellingen"
 
 #: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
@@ -5113,18 +5119,6 @@ msgstr "Afdrukken…"
 msgid "Private"
 msgstr "Privé"
 
-#: src/renderer/src/features/accounts/ProfileSettings.tsx
-msgid "Profile"
-msgstr "Profiel"
-
-#: src/renderer/src/features/settings/Settings.tsx
-msgid "Profiles"
-msgstr "Profielen"
-
-#: src/renderer/src/features/accounts/ProfileSettings.tsx
-msgid "Profiles group accounts. You can assign accounts and edit profiles in Settings."
-msgstr "Profielen groeperen accounts. Je kunt accounts toewijzen en profielen bewerken in Instellingen."
-
 #: src/renderer/src/i18n/organization-labels.ts
 #: src/renderer/src/lib/view.ts
 msgid "Promotions"
@@ -5273,7 +5267,7 @@ msgstr "Vernieuw contacten"
 msgid "Reject"
 msgstr "Afwijzen"
 
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 msgid "Reject suggestion"
 msgstr "Suggestie afwijzen"
 
@@ -5355,7 +5349,7 @@ msgstr "{text} verwijderen"
 msgid "Remove {token}"
 msgstr "{token} verwijderen"
 
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 msgid "Remove account"
 msgstr "Account verwijderen"
 
@@ -5548,7 +5542,7 @@ msgstr "Antwoorden in dit gesprek"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -5931,7 +5925,7 @@ msgstr "Semantisch zoeken is niet beschikbaar. Zoeken in volledige tekst blijft 
 
 #: src/renderer/src/app/use-compose-delivery.ts
 #: src/renderer/src/features/compose/components/Composer.tsx
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Send"
@@ -5955,7 +5949,7 @@ msgstr "Verstuur en archiveer"
 msgid "Send anyway"
 msgstr "Verstuur toch"
 
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 msgid "Send failed"
 msgstr "Versturen mislukt"
 
@@ -6392,10 +6386,19 @@ msgstr "Er is iets misgegaan. Probeer het opnieuw."
 msgid "Something went wrong. Try again."
 msgstr "Er ging iets mis. Probeer het opnieuw."
 
+#: src/renderer/src/features/accounts/ProfileSettings.tsx
+msgid "Space"
+msgstr "Ruimte"
+
+#: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
 #: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 msgid "Spaces"
-msgstr "Werkruimten"
+msgstr "Ruimtes"
+
+#: src/renderer/src/features/accounts/ProfileSettings.tsx
+msgid "Spaces group accounts. You can assign accounts and edit spaces in Settings."
+msgstr "Ruimtes groeperen accounts. Je kunt accounts toewijzen en ruimtes bewerken in Instellingen."
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
@@ -6426,8 +6429,8 @@ msgstr "Stabiel"
 
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
-#: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -6530,7 +6533,7 @@ msgstr "Subscript"
 msgid "Suggest triage for new inbox mail"
 msgstr "Suggesties voor sorteren van nieuwe berichten in Postvak IN"
 
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 msgid "Suggested"
 msgstr "Voorgesteld"
 
@@ -6557,7 +6560,7 @@ msgstr "Veeg horizontaal met twee vingers. Laat los na een korte of lange veegbe
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Switch spaces"
-msgstr "Wissel van werkruimte"
+msgstr "Wissel van ruimte"
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Sync aliases and signatures"
@@ -6987,6 +6990,10 @@ msgstr "Tijd"
 msgid "Time zone"
 msgstr "Tijdzone"
 
+#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+msgid "Times follow this Mac's time zone. Outside a space's active hours, OpenMail holds its notifications and leaves its unread mail out of the Dock badge. When active hours start again, you get one summary of the unread mail that arrived."
+msgstr "Tijden volgen de tijdzone van deze Mac. Buiten de actieve uren van een ruimte houdt OpenMail de meldingen van die ruimte vast en telt OpenMail de ongelezen e-mail ervan niet mee in de Dock-badge. Zodra de actieve uren weer beginnen, krijg je één overzicht van de ongelezen e-mail die in de tussentijd is binnengekomen."
+
 #: src/renderer/src/features/compose/components/AddressFields.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/use-thread-print.ts
@@ -7100,13 +7107,14 @@ msgstr "Dinsdag"
 msgid "Turn it on in Settings"
 msgstr "Inschakelen in instellingen"
 
-#: src/renderer/src/features/accounts/OptionalServices.tsx
-msgid "Turn off"
-msgstr "Uitschakelen"
-
 #: src/renderer/src/features/mail-list/EmptyList.tsx
 msgid "Turn off filters"
 msgstr "Filters uitschakelen"
+
+#: src/renderer/src/lib/ai-settings-errors.test.ts
+#: src/renderer/src/lib/errors.ts
+msgid "Turn on “Allow AI to read this account” for each selected account in Settings → AI Access."
+msgstr "Zet in Instellingen → AI-toegang “AI dit account laten lezen” aan voor elk geselecteerd account."
 
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 msgid "Turned off"
@@ -7340,10 +7348,6 @@ msgstr "Ingebouwde client gebruiken"
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Use the current account"
 msgstr "Gebruik het huidige account"
-
-#: src/renderer/src/features/settings/sections/SystemSettings.tsx
-msgid "Use this Mac's local time. Outside active hours, notifications wait and the Dock badge excludes the space. When active hours resume, unread arrivals appear in one summary."
-msgstr "Gebruik de lokale tijd van deze Mac. Buiten actieve uren wachten meldingen en sluit de Dock-badge de ruimte uit. Wanneer de actieve uren worden hervat, verschijnen ongelezen aankomsten in één overzicht."
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Use your own OAuth client"

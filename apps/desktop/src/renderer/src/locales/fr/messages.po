@@ -653,6 +653,11 @@ msgstr "Tous les messages actuellement dans ce dossier, y compris les messages n
 msgid "Allow access from my tailnet"
 msgstr "Autoriser l’accès depuis mon tailnet"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "Allow AI to read this account"
+msgstr "Autoriser l’IA à lire ce compte"
+
 #: src/renderer/src/features/ai/AiPanel.tsx
 msgid "Allow an account in Settings → AI Access to ask about its mail."
 msgstr "Autorisez un compte dans Réglages → Accès à l’IA pour poser des questions sur ses messages."
@@ -668,15 +673,6 @@ msgstr "Autoriser la suppression définitive de {email} ?"
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Allow proposals"
 msgstr "Autoriser les propositions"
-
-#: src/renderer/src/lib/ai-settings-errors.test.ts
-#: src/renderer/src/lib/errors.ts
-msgid "Allow sending mail text for each selected account in AI settings."
-msgstr "Autorisez l’envoi du texte des messages pour chaque compte sélectionné dans les réglages de l’IA."
-
-#: src/renderer/src/features/settings/sections/AiSettings.tsx
-msgid "Allow sending mail text to the model"
-msgstr "Autoriser l’envoi du texte des messages au modèle"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Allowed"
@@ -809,7 +805,7 @@ msgstr "Approuver"
 msgid "Approve and edit"
 msgstr "Approuver et modifier"
 
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 msgid "Approve suggestion"
 msgstr "Approuver la suggestion"
 
@@ -824,10 +820,10 @@ msgstr "Applications introuvables sur ce Mac"
 #: src/renderer/src/features/ai/TriageChip.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
-#: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -1574,6 +1570,10 @@ msgstr "Connecter {name}"
 msgid "Connect {name}?"
 msgstr "Connecter {name} ?"
 
+#: src/renderer/src/features/settings/sections/audit-actions.ts
+msgid "Connect account"
+msgstr "Connecter le compte"
+
 #: src/renderer/src/app/use-app-messages.ts
 msgid "Connect an account to send feedback"
 msgstr "Connectez un compte pour envoyer des commentaires"
@@ -1964,7 +1964,7 @@ msgstr "Impossible d’écrire dans le dossier des pièces jointes"
 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Counts compare messages. Matching counts do not verify message contents. Cache windows retain message text; headers remain cached."
-msgstr "Les nombres comparent les messages. Des nombres identiques ne vérifient pas leur contenu. La durée de cache concerne le texte des messages ; les en-têtes restent en cache."
+msgstr "Les décomptes portent sur les messages. Des décomptes identiques ne garantissent pas un contenu identique. La durée de cache s’applique au texte des messages ; les en-têtes restent en cache."
 
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 msgid "Create"
@@ -1994,16 +1994,16 @@ msgid "Create filter from these messages"
 msgstr "Créer un filtre à partir de ces messages"
 
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
-msgid "Create Personal and Work profiles?"
-msgstr "Créer les profils Personnel et Travail ?"
+msgid "Create Personal and Work spaces?"
+msgstr "Créer les espaces Personnel et Travail ?"
 
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
-msgid "Create profiles"
-msgstr "Créer des profils"
+msgid "Create spaces"
+msgstr "Créer des espaces"
 
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
-msgid "Create profiles?"
-msgstr "Créer des profils ?"
+msgid "Create spaces?"
+msgstr "Créer des espaces ?"
 
 #: src/renderer/src/features/organize/MultiOrganization.tsx
 msgid "Creates a separate copy in each selected folder. Keeps the original. Copies cannot be undone."
@@ -2135,11 +2135,11 @@ msgstr "Signature par défaut"
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
-#: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 #: src/renderer/src/state/desktop.ts
@@ -2190,8 +2190,8 @@ msgstr "Supprimé"
 msgid "Deleting a folder also deletes its messages on the server."
 msgstr "La suppression d’un dossier supprime également ses messages sur le serveur."
 
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
-#: src/renderer/src/features/settings/Settings.tsx
 msgid "Denied"
 msgstr "Refusé"
 
@@ -2226,7 +2226,7 @@ msgid "Discard"
 msgstr "Supprimer"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 msgid "Discard draft"
 msgstr "Supprimer le brouillon"
 
@@ -2382,8 +2382,8 @@ msgid "Drag {0} to reorder"
 msgstr "Faire glisser {0} pour réorganiser"
 
 #: src/renderer/src/features/settings/Settings.tsx
-msgid "Drag accounts to reorder or move between spaces. You can also use the space picker and Move up / Move down buttons."
-msgstr "Faites glisser les comptes pour les réorganiser ou vous déplacer entre les espaces. Vous pouvez également utiliser le sélecteur d’espace et les boutons Monter/Descendre."
+msgid "Drag an account to reorder it or move it to another space. You can also use the space picker and the Move up and Move down buttons."
+msgstr "Faites glisser un compte pour changer sa position ou le déplacer vers un autre espace. Vous pouvez aussi utiliser le sélecteur d’espace et les boutons Monter et Descendre."
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Drag selected to Finder"
@@ -2506,7 +2506,7 @@ msgstr "Se termine"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Enter a different OAuth client you registered yourself. New sign-ins use it. See {doc} in the repository."
-msgstr "Saisissez un autre client OAuth que vous avez enregistré vous-même. Les nouvelles connexions l’utilisent. Voir {doc} dans le référentiel."
+msgstr "Saisissez un autre client OAuth que vous avez enregistré vous-même. Les nouvelles connexions l’utilisent. Voir {doc} dans le dépôt."
 
 #: src/renderer/src/features/organize/SnoozeDialog.tsx
 msgid "Enter a future reminder time"
@@ -2535,7 +2535,7 @@ msgstr "Entrez un nom de modèle."
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Enter an OAuth client you registered yourself. New sign-ins use it instead of the built-in client. See {doc} in the repository."
-msgstr "Saisissez un client OAuth que vous avez enregistré vous-même. Les nouvelles connexions l’utilisent à la place du client intégré. Voir {doc} dans le référentiel."
+msgstr "Saisissez un client OAuth que vous avez enregistré vous-même. Les nouvelles connexions l’utilisent à la place du client intégré. Voir {doc} dans le dépôt."
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Enter port numbers from 1 to 65535."
@@ -3005,17 +3005,13 @@ msgstr "Aller au dossier"
 msgid "Google currently limits OpenMail's sign-in to 7 days. Sign in again to keep syncing {email}."
 msgstr "Google limite actuellement la connexion à OpenMail à 7 jours. Reconnectez-vous pour continuer à synchroniser {email}."
 
-#: src/renderer/src/features/accounts/OptionalServices.tsx
-msgid "Granted"
-msgstr "Autorisé"
-
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
-msgid "Group accounts and choose a profile in the window toolbar."
-msgstr "Regroupez les comptes et choisissez un profil dans la barre d’outils de la fenêtre."
+msgid "Group accounts into spaces and choose a space in the window toolbar."
+msgstr "Regroupez les comptes dans des espaces et choisissez un espace dans la barre d’outils de la fenêtre."
 
 #: src/renderer/src/features/overview/Overview.tsx
-msgid "Group accounts into spaces, like “Work” and “Personal”. Each space has its own inbox. Switch with ⌃1 to ⌃9."
-msgstr "Regroupez les comptes dans des espaces, comme « Travail » et « Personnel ». Chaque espace possède sa boîte de réception. Passez d’un espace à l’autre avec ⌃1 à ⌃9."
+msgid "Group accounts into spaces, like “Work” and “Personal”. Each space has its own inbox. Switch with {firstSpaceKey} to {lastSpaceKey}."
+msgstr "Regroupez les comptes dans des espaces, comme « Travail » et « Personnel ». Chaque espace a sa propre boîte de réception. Changez d’espace avec les raccourcis {firstSpaceKey} à {lastSpaceKey}."
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Group messages into conversations"
@@ -3144,8 +3140,8 @@ msgid "Importance condition"
 msgstr "Condition d’importance"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
-#: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -3372,7 +3368,7 @@ msgid "Keychain is locked"
 msgstr "Le trousseau est verrouillé"
 
 #: src/renderer/src/app/use-view-title.ts
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "Label"
 msgstr "Libellé"
@@ -3637,10 +3633,6 @@ msgstr "Boîte aux lettres"
 msgid "Mailboxes"
 msgstr "Boîtes aux lettres"
 
-#: src/renderer/src/features/accounts/OptionalServices.tsx
-msgid "MailboxSettings"
-msgstr "Réglages de la boîte mail"
-
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Make OpenMail default"
 msgstr "Définir OpenMail par défaut"
@@ -3697,7 +3689,7 @@ msgstr "Marquer le message comme non lu"
 msgid "Mark read"
 msgstr "Marquer comme lu"
 
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Mark read/unread"
@@ -3762,15 +3754,15 @@ msgstr "Correspond à la recherche"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Matching times keep that weekday active all day. Overnight periods continue into the next day. Unchecked days stay muted except for overnight periods from the previous day. Repeated daylight-saving times use the same schedule; skipped times are passed over."
-msgstr "Les heures correspondantes maintiennent ce jour de la semaine actif toute la journée. Les périodes de nuit se poursuivent le lendemain. Les jours non cochés restent muets, sauf pour les périodes de nuit de la veille. Les heures d’été répétées utilisent le même horaire ; les temps sautés sont ignorés."
+msgstr "Si le début et la fin sont identiques, ce jour reste actif toute la journée. Les plages de nuit se prolongent jusqu’au lendemain. Les jours non cochés restent en sourdine, sauf pour une plage de nuit commencée la veille. Lors du changement d’heure, une heure répétée suit le même horaire et une heure sautée est ignorée."
 
 #: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Maximum size (KiB)"
 msgstr "Taille maximale (KiB)"
 
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
-msgid "MCP access follows this account's AI consent. Disabled accounts cannot be read through MCP."
-msgstr "L’accès MCP suit le consentement IA de ce compte. Les comptes désactivés ne sont pas accessibles via MCP."
+msgid "MCP access follows each account's AI setting above. MCP cannot read an account that is not enabled."
+msgstr "L’accès MCP suit le réglage IA de chaque compte ci-dessus. MCP ne peut pas lire un compte qui n’est pas activé."
 
 #. readOnly is the translated Read only write-mode label above.
 #: src/renderer/src/features/settings/Settings.tsx
@@ -4124,7 +4116,7 @@ msgstr "Déplacer vers le dossier…"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Move to Inbox"
@@ -4215,7 +4207,7 @@ msgstr "Jamais"
 msgid "Never synced"
 msgstr "Jamais synchronisé"
 
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 msgid "New draft"
 msgstr "Nouveau brouillon"
 
@@ -4253,10 +4245,6 @@ msgstr "nouveaux messages"
 msgid "New messages"
 msgstr "Nouveaux messages"
 
-#: src/renderer/src/features/accounts/ProfileSettings.tsx
-msgid "New profile"
-msgstr "Nouveau profil"
-
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "New sign-ins use OpenMail's built-in client."
 msgstr "Les nouvelles connexions utilisent le client intégré d’OpenMail."
@@ -4270,6 +4258,7 @@ msgid "New signature"
 msgstr "Nouvelle signature"
 
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
+#: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 msgid "New space"
@@ -4331,9 +4320,10 @@ msgstr "Fenêtre suivante"
 msgid "No access token saved"
 msgstr "Aucun jeton d’accès enregistré"
 
+#. allow is the translated per-account checkbox label in AI settings.
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
-msgid "No account allows AI reads, so a connected app sees no mail. Turn on \"Allow sending mail text to the model\" for an account above."
-msgstr "Aucun compte n’autorise la lecture par l’IA, donc une application connectée ne voit aucun courrier. Activez « Autoriser l’envoi du texte des messages au modèle » pour un compte ci-dessus."
+msgid "No account allows AI reads, so a connected app sees no mail. Turn on “{allow}” for an account above."
+msgstr "Aucun compte n’autorise la lecture par l’IA, donc une application connectée ne voit aucun courrier. Activez « {allow} » pour un compte ci-dessus."
 
 #: src/renderer/src/features/overview/Overview.tsx
 msgid "No accounts yet"
@@ -4722,6 +4712,14 @@ msgstr "Ouvrir avec"
 msgid "OpenMail can't read this config file, so it changes nothing. Fix the file, then try again. {detail}"
 msgstr "OpenMail ne peut pas lire ce fichier de configuration et ne modifie donc rien. Corrigez le fichier, puis réessayez. {detail}"
 
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+msgid "OpenMail could not load the AI settings, so it can't show which accounts AI apps can read. Close Settings and open it again."
+msgstr "OpenMail n’a pas pu charger les réglages de l’IA ; il ne peut donc pas indiquer quels comptes les applications d’IA peuvent lire. Fermez les Réglages, puis rouvrez-les."
+
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "OpenMail could not read the API key from the keychain. Unlock the keychain, then open Settings again."
+msgstr "OpenMail n’a pas pu lire la clé API dans le trousseau. Déverrouillez le trousseau, puis rouvrez les Réglages."
+
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "OpenMail couldn't start its local server."
 msgstr "OpenMail n’a pas pu démarrer son serveur local."
@@ -4761,11 +4759,11 @@ msgstr "Connexion à OpenMail"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "OpenMail signs in with an OAuth client you register yourself. First enter the app you registered in Azure, with the Mobile and desktop applications type. Only personal outlook.com and Hotmail accounts are supported. See {doc} in the repository for the steps."
-msgstr "OpenMail se connecte avec un client OAuth que vous enregistrez vous-même. Entrez d’abord l’application que vous avez enregistrée dans Azure, avec le type Applications mobiles et de bureau. Seuls les comptes personnels Outlook.com et Hotmail sont pris en charge. Voir {doc} dans le référentiel pour les étapes."
+msgstr "OpenMail se connecte avec un client OAuth que vous enregistrez vous-même. Entrez d’abord l’application que vous avez enregistrée dans Azure, avec le type Applications mobiles et de bureau. Seuls les comptes personnels Outlook.com et Hotmail sont pris en charge. Voir {doc} dans le dépôt pour les étapes."
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "OpenMail signs in with an OAuth client you register yourself. First enter the OAuth client you created in Google Cloud, with the Desktop app type. See {doc} in the repository for the steps."
-msgstr "OpenMail se connecte avec un client OAuth que vous enregistrez vous-même. Saisissez d’abord le client OAuth que vous avez créé dans Google Cloud, avec le type d’application de bureau. Voir {doc} dans le référentiel pour les étapes."
+msgstr "OpenMail se connecte avec un client OAuth que vous enregistrez vous-même. Saisissez d’abord le client OAuth que vous avez créé dans Google Cloud, avec le type d’application de bureau. Voir {doc} dans le dépôt pour les étapes."
 
 #: src/renderer/src/features/feedback/Feedback.tsx
 msgid "OpenMail stopped unexpectedly"
@@ -4844,6 +4842,10 @@ msgctxt "outlook-inbox"
 msgid "Other"
 msgstr "Autres"
 
+#: src/renderer/src/features/settings/sections/audit-actions.ts
+msgid "Other action"
+msgstr "Autre action"
+
 #: src/renderer/src/features/feedback/Feedback.tsx
 msgid "Other feedback"
 msgstr "Autres commentaires"
@@ -4899,6 +4901,10 @@ msgstr "Les requêtes de messages Outlook ne peuvent pas dépasser 4 Mo. Les mes
 #: src/renderer/src/lib/errors.ts
 msgid "Outlook scheduled replies need both dates"
 msgstr "Les réponses planifiées Outlook nécessitent les deux dates"
+
+#: src/renderer/src/features/accounts/OptionalServices.tsx
+msgid "Outlook settings"
+msgstr "Réglages Outlook"
 
 #: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
@@ -5095,7 +5101,7 @@ msgstr "Principale"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Primary excludes Gmail's other categories and includes only Outlook Focused mail. For IMAP, it includes all Inbox mail. Read mail and the first sync stay silent."
-msgstr "Principale exclut les autres catégories de Gmail et inclut uniquement les e-mails Prioritaire d’Outlook. Pour IMAP, elle inclut tous les e-mails de la boîte de réception. Les e-mails lus et la première synchronisation restent silencieux."
+msgstr "Principale exclut les autres catégories de Gmail et, pour Outlook, ne garde que l’onglet Prioritaire. Pour IMAP, elle inclut tous les e-mails de la boîte de réception. Les e-mails lus et la première synchronisation ne déclenchent pas de notification."
 
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Print"
@@ -5112,18 +5118,6 @@ msgstr "Imprimer…"
 #: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Private"
 msgstr "Privé"
-
-#: src/renderer/src/features/accounts/ProfileSettings.tsx
-msgid "Profile"
-msgstr "Profil"
-
-#: src/renderer/src/features/settings/Settings.tsx
-msgid "Profiles"
-msgstr "Profils"
-
-#: src/renderer/src/features/accounts/ProfileSettings.tsx
-msgid "Profiles group accounts. You can assign accounts and edit profiles in Settings."
-msgstr "Les profils regroupent les comptes. Vous pouvez attribuer des comptes et modifier les profils dans Réglages."
 
 #: src/renderer/src/i18n/organization-labels.ts
 #: src/renderer/src/lib/view.ts
@@ -5273,7 +5267,7 @@ msgstr "Actualiser les contacts"
 msgid "Reject"
 msgstr "Rejeter"
 
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 msgid "Reject suggestion"
 msgstr "Rejeter la suggestion"
 
@@ -5355,7 +5349,7 @@ msgstr "Supprimer {text}"
 msgid "Remove {token}"
 msgstr "Supprimer {token}"
 
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 msgid "Remove account"
 msgstr "Supprimer le compte"
 
@@ -5548,7 +5542,7 @@ msgstr "Répondre à cette conversation"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -5931,7 +5925,7 @@ msgstr "La recherche sémantique n’est pas disponible. La recherche en texte i
 
 #: src/renderer/src/app/use-compose-delivery.ts
 #: src/renderer/src/features/compose/components/Composer.tsx
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Send"
@@ -5955,7 +5949,7 @@ msgstr "Envoyer et archiver"
 msgid "Send anyway"
 msgstr "Envoyer quand même"
 
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 msgid "Send failed"
 msgstr "Échec de l’envoi"
 
@@ -6038,7 +6032,7 @@ msgstr "Contacts du serveur"
 
 #: src/renderer/src/features/settings/sections/ContactSettings.tsx
 msgid "Server contacts refresh every six hours while the app runs. Cached contacts and local correspondents appear in recipient suggestions."
-msgstr "Les contacts du serveur sont actualisés toutes les six heures pendant l’exécution de l’application. Les contacts mis en cache et les correspondants locaux apparaissent dans les suggestions de destinataires."
+msgstr "Les contacts du serveur sont actualisés toutes les six heures pendant que l’application est ouverte. Les contacts en cache et les correspondants trouvés dans le courrier local apparaissent dans les suggestions de destinataires."
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Server filters"
@@ -6285,7 +6279,7 @@ msgstr "Signatures"
 
 #: src/renderer/src/features/settings/sections/UpdateSettings.tsx
 msgid "Signed builds use a GitHub access token to download private releases. The token is stored in your system keychain."
-msgstr "Les versions signées utilisent un jeton d’accès GitHub pour télécharger des versions privées. Le jeton est stocké dans le trousseau de votre système."
+msgstr "Les builds signés utilisent un jeton d’accès GitHub pour télécharger des versions privées. Le jeton est stocké dans le trousseau de votre système."
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Signed in as {login}. This Mac is {device}."
@@ -6392,10 +6386,19 @@ msgstr "Une erreur s’est produite. Réessayez."
 msgid "Something went wrong. Try again."
 msgstr "Une erreur s’est produite. Réessayez."
 
+#: src/renderer/src/features/accounts/ProfileSettings.tsx
+msgid "Space"
+msgstr "Espace"
+
+#: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
 #: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 msgid "Spaces"
 msgstr "Espaces"
+
+#: src/renderer/src/features/accounts/ProfileSettings.tsx
+msgid "Spaces group accounts. You can assign accounts and edit spaces in Settings."
+msgstr "Les espaces regroupent les comptes. Vous pouvez attribuer des comptes et modifier les espaces dans Réglages."
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
@@ -6426,8 +6429,8 @@ msgstr "Stable"
 
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
-#: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -6530,7 +6533,7 @@ msgstr "Indice"
 msgid "Suggest triage for new inbox mail"
 msgstr "Suggérer le tri des nouveaux messages de la boîte de réception"
 
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/audit-actions.ts
 msgid "Suggested"
 msgstr "Suggéré"
 
@@ -6987,6 +6990,10 @@ msgstr "Temps"
 msgid "Time zone"
 msgstr "Fuseau horaire"
 
+#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+msgid "Times follow this Mac's time zone. Outside a space's active hours, OpenMail holds its notifications and leaves its unread mail out of the Dock badge. When active hours start again, you get one summary of the unread mail that arrived."
+msgstr "Les horaires suivent le fuseau horaire de ce Mac. En dehors des heures d’activité d’un espace, OpenMail met ses notifications en attente et ne compte pas ses courriers non lus dans la pastille du Dock. À la reprise des heures d’activité, vous recevez un seul résumé des courriers non lus arrivés entre-temps."
+
 #: src/renderer/src/features/compose/components/AddressFields.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/use-thread-print.ts
@@ -7078,7 +7085,7 @@ msgstr "Tri"
 
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "Triage runs while the app is in the foreground or on AC power. Suggestions require your approval. Reply needed adds a star when accepted."
-msgstr "Les suggestions de tri sont générées lorsque l’application est au premier plan ou que l’appareil est branché. Elles nécessitent votre approbation. Accepter Réponse nécessaire ajoute une étoile."
+msgstr "Les suggestions de tri sont générées quand l’application est au premier plan ou que l’ordinateur est branché sur secteur. Elles nécessitent votre approbation. Accepter « Réponse nécessaire » ajoute une étoile."
 
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
 msgid "Trusted authentication service (optional)"
@@ -7100,13 +7107,14 @@ msgstr "Mardi"
 msgid "Turn it on in Settings"
 msgstr "L’activer dans les réglages"
 
-#: src/renderer/src/features/accounts/OptionalServices.tsx
-msgid "Turn off"
-msgstr "Désactiver"
-
 #: src/renderer/src/features/mail-list/EmptyList.tsx
 msgid "Turn off filters"
 msgstr "Désactiver les filtres"
+
+#: src/renderer/src/lib/ai-settings-errors.test.ts
+#: src/renderer/src/lib/errors.ts
+msgid "Turn on “Allow AI to read this account” for each selected account in Settings → AI Access."
+msgstr "Dans Réglages → Accès à l’IA, activez « Autoriser l’IA à lire ce compte » pour chaque compte sélectionné."
 
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 msgid "Turned off"
@@ -7234,7 +7242,7 @@ msgstr "Jusqu’à trois actions, dans l’ordre de sélection. Le menu d’acti
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Up to three buttons, in selection order. All actions adds Archive, Trash and Mark read buttons. Changes apply to new notifications."
-msgstr "Jusqu’à trois boutons, dans l’ordre de sélection. Toutes les actions ajoutent des boutons Archiver, Corbeille et Marquer comme lu. Les modifications s’appliquent aux nouvelles notifications."
+msgstr "Jusqu’à trois boutons, dans l’ordre de sélection. L’option « Toutes les actions » ajoute les boutons Archiver, Corbeille et Marquer comme lu. Les modifications s’appliquent aux nouvelles notifications."
 
 #. placeholder {0}: state.version
 #: src/renderer/src/features/settings/sections/UpdateSettings.tsx
@@ -7340,10 +7348,6 @@ msgstr "Utiliser le client intégré"
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Use the current account"
 msgstr "Utiliser le compte actuel"
-
-#: src/renderer/src/features/settings/sections/SystemSettings.tsx
-msgid "Use this Mac's local time. Outside active hours, notifications wait and the Dock badge excludes the space. When active hours resume, unread arrivals appear in one summary."
-msgstr "Utilisez l’heure locale de ce Mac. En dehors des heures d’activité, les notifications attendent et le badge Dock exclut l’espace. Lorsque les heures d’activité reprennent, les arrivées non lues apparaissent dans un seul résumé."
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Use your own OAuth client"

@@ -330,8 +330,9 @@ export function NotificationsSettings({ accounts }: { accounts: readonly Account
         </h3>
         <p className={`mb-2 px-1 ${settingsHint}`}>
           <Trans>
-            Use this Mac's local time. Outside active hours, notifications wait and the Dock badge
-            excludes the space. When active hours resume, unread arrivals appear in one summary.
+            Times follow this Mac's time zone. Outside a space's active hours, OpenMail holds its
+            notifications and leaves its unread mail out of the Dock badge. When active hours start
+            again, you get one summary of the unread mail that arrived.
           </Trans>
         </p>
         <div className={settingsGroup}>

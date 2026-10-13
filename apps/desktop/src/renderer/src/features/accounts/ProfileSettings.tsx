@@ -28,7 +28,7 @@ export function ProfileSwitcher({
     <div className="drag flex h-9 shrink-0 items-center justify-end border-b border-edge px-4">
       <Select
         className="no-drag"
-        aria-label={t`Profile`}
+        aria-label={t`Space`}
         value={value}
         onValueChange={onChange}
         options={[
@@ -77,14 +77,12 @@ export function DefaultProfilesPrompt({
     );
   };
   return (
-    <Dialog aria-label={t`Create profiles?`} className="w-[420px] p-5">
+    <Dialog aria-label={t`Create spaces?`} className="w-[420px] p-5">
       <h2 className="text-headline font-semibold">
-        <Trans>Create Personal and Work profiles?</Trans>
+        <Trans>Create Personal and Work spaces?</Trans>
       </h2>
       <p className="mt-3 text-a11y-muted">
-        <Trans>
-          Profiles group accounts. You can assign accounts and edit profiles in Settings.
-        </Trans>
+        <Trans>Spaces group accounts. You can assign accounts and edit spaces in Settings.</Trans>
       </p>
       <div className="mt-5 flex justify-end gap-3">
         <button
@@ -101,7 +99,7 @@ export function DefaultProfilesPrompt({
           onClick={() => choose(true)}
           className={buttonPrimary}
         >
-          <Trans>Create profiles</Trans>
+          <Trans>Create spaces</Trans>
         </button>
       </div>
     </Dialog>
@@ -113,9 +111,9 @@ export function ProfileSettings({ accounts }: { accounts: readonly Account[] }) 
   const [editing, setEditing] = useState<Profile | "new" | null>(null);
   return (
     <>
-      {/* The tab already shows "Profiles" as its title. */}
+      {/* The tab already shows "Spaces" as its title. */}
       <p className={`px-1 ${settingsHint}`}>
-        <Trans>Group accounts and choose a profile in the window toolbar.</Trans>
+        <Trans>Group accounts into spaces and choose a space in the window toolbar.</Trans>
       </p>
       {profiles.length > 0 && (
         <SettingsGroup>
@@ -141,7 +139,7 @@ export function ProfileSettings({ accounts }: { accounts: readonly Account[] }) 
       )}
       <div>
         <button type="button" onClick={() => setEditing("new")} className={buttonSecondary}>
-          {t`New profile`}
+          {t`New space`}
         </button>
       </div>
       {editing && (

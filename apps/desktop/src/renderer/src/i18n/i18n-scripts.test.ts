@@ -29,7 +29,7 @@ function mixedScriptProblems(locale: string, source: string, target: string): st
     visibleText(source)
       .toLowerCase()
       .match(/[\p{L}\p{N}]+/gu) ?? [];
-  // "Web" for "webmail" and "Profile" for "profiles" keep the source's own spelling.
+  // "Web" for "webmail" keeps the source's own spelling.
   const fromSource = (run: string) =>
     LATIN_ALLOWED.has(run) || sourceWords.some((w) => w.startsWith(run.toLowerCase()));
   // Hyphens join "MCP-сервер" style compounds; each part is its own word.

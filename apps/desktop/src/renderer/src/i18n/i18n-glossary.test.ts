@@ -18,6 +18,8 @@ const selectors: Record<string, string> = {
   "AI app": "\\bAI apps?\\b",
   "Remote images": "\\bremote images?\\b",
   "AI Access": "\\bAI Access\\b",
+  // A space groups accounts; disk space is a different word.
+  Space: "(?<!disk )\\bspaces?\\b",
 };
 const patternsFor: Record<string, Partial<Record<string, string>>> = glossary;
 
@@ -52,6 +54,9 @@ it("the complete catalogs consistently use the mail glossary, message-text termi
         if (selector.test(visibleSource) && !new RegExp(pattern, "iu").test(target))
           failures.push(`${locale}: ${term}: ${source} → ${target}`);
       }
+      // The UI calls an account group a space; "profile" is only the code name.
+      if (/\bprofiles?\b/i.test(source) || /\bprofil|プロファイル|профил|werkruimte/iu.test(target))
+        failures.push(`${locale}: Space: ${source} → ${target}`);
       if (/\b(?:body|bodies)\b/i.test(source))
         expect(target, `${locale}: ${source}`).not.toMatch(
           /Leichen|Körper|corps|тела|тело|těla|tělo|遺体|身体|lichaam|\bcorpo\b|\bcuerpo\b/i,

@@ -15,8 +15,8 @@ import {
   shortDate,
 } from "../../lib/format";
 import { syncNow, useRunMail } from "../../state/mail";
-import { unreadInboxAtom } from "../../state/queries";
-import { ALL, type SpaceId } from "../../lib/view";
+import { prefsAtom, unreadInboxAtom } from "../../state/queries";
+import { ALL, spaceShortcutLabel, type SpaceId } from "../../lib/view";
 import { Tip } from "../../ui/Tip";
 import { syncErrorText } from "../sync-status";
 import { titlebarRow } from "../../ui/styles";
@@ -56,6 +56,10 @@ export function Overview({
   accounts = accounts.filter((a) => a.enabled !== false);
   const { t, i18n } = useLingui();
   const run = useRunMail();
+  const shortcutSet =
+    AsyncResult.getOrElse(useAtomValue(prefsAtom), () => null)?.shortcutSet ?? "mimestream";
+  const firstSpaceKey = spaceShortcutLabel(shortcutSet, 0);
+  const lastSpaceKey = spaceShortcutLabel(shortcutSet, 8);
   const groups: Group[] = profiles.map((p) => ({
     space: p.id,
     profile: p,
@@ -103,7 +107,7 @@ export function Overview({
             <p className="flex-1 text-body leading-relaxed text-neutral-600 dark:text-neutral-300">
               <Trans>
                 Group accounts into spaces, like “Work” and “Personal”. Each space has its own
-                inbox. Switch with ⌃1 to ⌃9.
+                inbox. Switch with {firstSpaceKey} to {lastSpaceKey}.
               </Trans>
             </p>
             <button

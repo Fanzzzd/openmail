@@ -236,5 +236,16 @@
     "ja": "AI アクセス",
     "ru": "доступ к ИИ",
     "es": "acceso a IA"
+  },
+  "Space": {
+    "zh-CN": "空间",
+    "cs": "prostor",
+    "nl": "(?<!werk)ruimte",
+    "fr": "espace",
+    "de": "bereich",
+    "it": "spazi",
+    "ja": "スペース",
+    "ru": "пространств",
+    "es": "espacio"
   }
 }

@@ -1,4 +1,5 @@
 import { useAtom, useAtomValue } from "@effect/atom-react";
+import { Switch } from "@base-ui/react/switch";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { consentBatch, type OptionalService, type ServiceGrant } from "@openmail/core/schema";
 import { AsyncResult, Atom } from "effect/reactivity";
@@ -9,8 +10,7 @@ import { canCall } from "../../lib/platform";
 import { MailClient } from "../../state/rpc";
 import { Keys, MAIL_KEYS } from "../../state/keys";
 import { reauthAtom } from "../../state/mutations";
-import { Checkbox } from "../../ui/Checkbox";
-import { buttonLink } from "../../ui/styles";
+import { buttonLink, switchThumb, switchTrack } from "../../ui/styles";
 
 const optionalServicesAtom = (accountId: string) =>
   MailClient.query("OptionalServices", { accountId }, { reactivityKeys: [Keys.accounts] });
@@ -89,7 +89,7 @@ export function OptionalServices({
   const names = {
     contacts: t`Contacts`,
     calendar: t`Calendar`,
-    settings: account.provider === "gmail" ? t`Gmail settings` : t`MailboxSettings`,
+    settings: account.provider === "gmail" ? t`Gmail settings` : t`Outlook settings`,
   };
   const pendingNames = pending
     ? new Intl.ListFormat(i18n.locale).format(pending.others.map((service) => names[service]))
@@ -106,44 +106,39 @@ export function OptionalServices({
       {grants.map(({ service, state }) => (
         <div key={service} className="flex min-h-6 flex-wrap items-center gap-x-3 gap-y-1">
           <span className="min-w-0 flex-1">{names[service]}</span>
-          <span className="text-a11y-muted">
-            {state === "granted"
-              ? t`Granted`
-              : state === "turnedOff"
-                ? t`Turned off`
-                : t`Not granted`}
-          </span>
           {state !== "granted" && (
-            <button
-              type="button"
-              disabled={authorization.waiting || result.waiting || account.enabled === false}
-              className={buttonLink}
-              onClick={() => {
-                const others = consentBatch(grants, service).slice(1);
-                if (others.length) setPending({ service, others });
-                else authorize(service);
-              }}
-            >
-              <Trans>Connect</Trans>
-            </button>
+            <>
+              <span className="text-a11y-muted">
+                {state === "turnedOff" ? t`Turned off` : t`Not granted`}
+              </span>
+              <button
+                type="button"
+                disabled={authorization.waiting || result.waiting || account.enabled === false}
+                className={buttonLink}
+                onClick={() => {
+                  const others = consentBatch(grants, service).slice(1);
+                  if (others.length) setPending({ service, others });
+                  else authorize(service);
+                }}
+              >
+                <Trans>Connect</Trans>
+              </button>
+            </>
           )}
-          <label
-            htmlFor={`service-off-${account.id}-${service}`}
-            className="flex items-center gap-2"
+          <Switch.Root
+            className={switchTrack}
+            aria-label={names[service]}
+            checked={state === "granted"}
+            disabled={authorization.waiting || result.waiting || state === "notGranted"}
+            onCheckedChange={(enabled) =>
+              toggle({
+                payload: { accountId: account.id, service, enabled },
+                reactivityKeys: MAIL_KEYS,
+              })
+            }
           >
-            <Checkbox
-              id={`service-off-${account.id}-${service}`}
-              checked={state === "turnedOff"}
-              disabled={authorization.waiting || result.waiting || state === "notGranted"}
-              onCheckedChange={(off) =>
-                toggle({
-                  payload: { accountId: account.id, service, enabled: !off },
-                  reactivityKeys: MAIL_KEYS,
-                })
-              }
-            />
-            <Trans>Turn off</Trans>
-          </label>
+            <Switch.Thumb className={switchThumb} />
+          </Switch.Root>
         </div>
       ))}
       {pending && (
