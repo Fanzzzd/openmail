@@ -22,6 +22,7 @@ import { type makeOrganizationMailbox } from "./mailbox-organization.js";
 import { type MailboxDependencies, type MailboxRuntimeState } from "./mailbox-runtime.js";
 import { type Mailbox, type SyncState } from "./mailbox.js";
 import { BackgroundRead } from "./provider-connectivity.js";
+import { retryAfterMillis } from "./provider-retry.js";
 import { type Change } from "./services.js";
 import { logSyncCrash, type SyncCrashDiagnostic } from "./sync-crash.js";
 import { makeSyncHealth } from "./sync-health.js";
@@ -56,26 +57,45 @@ export function splitWriteBatch(batch: readonly Change[], budget = WRITE_BATCH_B
   return parts;
 }
 
+type PullError = {
+  readonly _tag: string;
+  readonly status?: number | undefined;
+  readonly reason?: string | undefined;
+  readonly deferred?: boolean;
+  readonly retryAfter?: string | undefined;
+};
+
 /**
  * A pull that failed on the network (no status: the connection dropped, DNS
- * failed after a wake from sleep), throttling or a 5xx is tried again before
+ * failed after a wake from sleep), a rate limit or a 5xx is tried again before
  * the sync counts as failed. The adapters already retry each request for
  * about 8 s; this covers an outage that outlasts that.
  */
-const isTransientPull = (e: {
-  readonly _tag: string;
-  readonly status?: number | undefined;
-  readonly deferred?: boolean;
-}) =>
+const isTransientPull = (e: PullError) =>
   e._tag === "ProviderError" &&
   !e.deferred &&
-  (e.status === undefined || e.status === 429 || e.status >= 500);
+  (e.status === undefined || e.status === 429 || e.status >= 500 || e.reason === "quota");
 
-const PULL_RETRY = {
-  schedule: Schedule.exponential("5 seconds"),
-  times: 2,
-  while: isTransientPull,
-};
+/** A server that asks for a longer wait is left to the next scheduled sync. */
+const PULL_RETRY_MAX_WAIT = 120_000;
+
+/**
+ * Tries a transient pull failure again after 5 s, then 10 s. A rate limit waits 30 s, then
+ * 60 s, since Gmail's per-minute quota sends no Retry-After; a Retry-After is honoured.
+ */
+const retryPull = <A, E extends PullError, R>(pull: Effect.Effect<A, E, R>, times: number) =>
+  Effect.gen(function* () {
+    for (let attempt = 0; ; attempt++) {
+      const result = yield* Effect.result(pull);
+      if (result._tag === "Success") return result.success;
+      const error = result.failure;
+      if (attempt >= times || !isTransientPull(error)) return yield* Effect.fail(error);
+      const base = (error.reason === "quota" ? 30_000 : 5_000) * 2 ** attempt;
+      const asked = retryAfterMillis(error.retryAfter, yield* Clock.currentTimeMillis);
+      if (asked > PULL_RETRY_MAX_WAIT) return yield* Effect.fail(error);
+      yield* Effect.sleep(Math.max(base, asked));
+    }
+  });
 
 type PullFailed = {
   readonly _tag: "PullFailed";
@@ -186,6 +206,13 @@ export const makeSyncMailbox = (
       });
     if (!scope && account.lastSyncedAt === null) yield* store.beginInitialSync(account.id);
     const notificationsReady = yield* store.notificationsReady(account.id);
+    const storedIds = (providerIds: readonly string[]) =>
+      Effect.gen(function* () {
+        const found = new Set<string>();
+        for (const providerId of providerIds)
+          if (yield* store.messageIdForProvider(account.id, providerId)) found.add(providerId);
+        return found;
+      });
     // A retry starts from the cursor the failed attempt left: batches it
     // wrote stay, and the cursor only moves once a whole pull is in.
     const pull = Effect.sync(() => {
@@ -209,7 +236,7 @@ export const makeSyncMailbox = (
           if (currentAccount.enabled === false) return;
           yield* providers
             .get(account.provider)
-            .pull(currentAccount, cursor, scope, incrementalOnly)
+            .pull(currentAccount, cursor, scope, incrementalOnly, storedIds)
             .pipe(
               // A failure ends the stream after the changes before it are written, so a
               // checkpoint (an Outlook folder's cursor) still in the batch buffer is kept.
@@ -244,8 +271,7 @@ export const makeSyncMailbox = (
         }),
       ),
     );
-    return yield* pull.pipe(
-      Effect.retry(scope ? { ...PULL_RETRY, times: 0 } : PULL_RETRY),
+    return yield* retryPull(pull, scope ? 0 : 2).pipe(
       Effect.tap(() => enter("verification")),
       Effect.andThen(scope ? Effect.void : guard.verify()),
       Effect.tap(() => enter("health")),

@@ -67,6 +67,14 @@ export const deliverOrConfirm = <A, E, R, E2, R2>(
 ) =>
   submission.pipe(Effect.catchIf(uncertain, () => confirmDelivery(lookup).pipe(Effect.as(null))));
 
+/**
+ * A per-user rate limit: 429, or the 403 Gmail and Google APIs send for rateLimitExceeded,
+ * userRateLimitExceeded and the per-minute query cost quota. A daily quota is not one.
+ */
+export const isRateLimited = (status: number, body: string) =>
+  status === 429 ||
+  (status === 403 && /rate_?limit_?exceeded|totalQueryCostPerMinutePerUser/i.test(body));
+
 /** Maps a failed call to what the op queue does next: sign in again, drop
  * the op, or retry later. Meaningful read 404s are handled by the caller. */
 export const providerReadFailure =
@@ -79,7 +87,11 @@ export const providerReadFailure =
     return new ProviderError({
       message,
       status: error.status,
-      ...(error.requestNotSent ? { reason: "connection" } : {}),
+      ...(error.requestNotSent
+        ? { reason: "connection" }
+        : isRateLimited(error.status, error.body)
+          ? { reason: "quota" }
+          : {}),
       ...(error.deferred ? { deferred: true } : {}),
       ...(error.retryAfter ? { retryAfter: error.retryAfter } : {}),
     });

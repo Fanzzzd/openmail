@@ -94,6 +94,12 @@ slice 62 移除了删除数量阈值。Reset、DeleteLabel 和 RebuildFolder 中
 
 Node IMAP adapter 将 ImapFlow SEARCH 返回的 false／undefined 视为 ProviderError，不转成空 UID 集合。首次拉取、增量、标记扫描、历史回填、服务端搜索和存在性验证共用此规则，搜索失败不能证明邮件消失。文件夹遗漏先核对 STATUS；只有明确 NotFound 且再次 LIST 仍缺失才确认删除，失败或隐藏文件夹保留旧状态。Outlook 同样先直接 GET 遗漏的文件夹，仅明确 404 才进入删除验证，其他结果保留旧游标。实现见 [Node IMAP](../packages/core/src/platform/node/imap/adapter.ts)、[Outlook](../packages/core/src/outlook.ts)和 [store.ts](../packages/core/src/store.ts)，回归见 [imap.test.ts](../packages/core/src/imap.test.ts)及 [sync-reset-imap.test.ts](../packages/core/src/sync-reset-imap.test.ts)。
 
+## 失败后续传
+
+Gmail 初次同步先取 `/profile` 的 historyId，开始拉取正文前保存游标 `initial:<historyId>`。重试时用这个 historyId，重新列出 ID，跳过已存储的消息，不再按 `format=full` 重取；完成后游标为原 historyId，之后的 history 覆盖两次尝试之间的变化。限流（429，或 Gmail 403 的 rateLimitExceeded、userRateLimitExceeded、totalQueryCostPerMinutePerUser）的 ProviderError 带 `reason: "quota"`。完整同步对它重试两次，等 30 s、60 s；服务器给出 Retry-After 时按它等，超过两分钟则交给下次定时同步。网络错误和 5xx 仍等 5 s、10 s。
+
+Outlook 完整同步每完成一个文件夹，就保存一次带 `__partial` 标记的游标：已完成文件夹用新 delta 链接，其余沿用旧链接。保存前先把已见到但目标未列出的移除放进验证队列；重启的文件夹先发出 DeleteLabel，其 keep 集合不含已入队的 ID，避免把它们从队列中删掉。重试时，带标记游标中缺少链接的文件夹按重启处理。旧格式游标（没有不可变 ID 标记）要在全部文件夹之后 Reset，只在最后保存。同步遇到拉取失败时，先写入失败前已收到的变更，再报告失败，批缓冲中的检查点不会丢。
+
 ## 过期缓存扫描
 
 完整同步后，stale sweep 每账户每小时最多运行一次。扫描时间和分页位置保存在 prefs，重启后沿用。只扫描服务端计数可用且 `local.total > server.total` 的文件夹。先取得所有文件夹的摘要计数，再在账户十秒预算的剩余时间内做可选复核。复核只用于 Gmail 类别／Drafts 和 Outlook Drafts，每个复核最多一秒；普通 Inbox 不枚举 ID。Gmail 只分页读取 ID，显式 includeSpamTrash=true，总数和未读各最多两页；摘要总数超过两页可计数的 1,000 条时直接跳过复核，总数列举触顶后不再列未读。Graph 用文件夹 messages 的 `$count=true`，分别查询总数和未读数。触顶、超时或复核失败保留已取得的摘要计数及 available 状态，仍可扫描旧行；只有原始摘要读取失败才标为服务商不可用。复核后不再多出的文件夹不进入逐项验证；仅未读数过多不触发扫描，因为 Graph 与 IMAP 的位置验证不读取当前标记。

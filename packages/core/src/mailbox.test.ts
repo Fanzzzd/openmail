@@ -225,6 +225,27 @@ import { Store, type ProviderAdapter } from "./services.js";
     ),
   );
 
+  it.effect("a rate-limited pull waits for Retry-After and the sync succeeds", () =>
+    withGmail([incoming("m1")], (m, server) =>
+      Effect.gen(function* () {
+        server.messages.set("m2", incoming("m2"));
+        server.failNext = new ProviderError({
+          message: "Gmail API 403: rateLimitExceeded",
+          status: 403,
+          reason: "quota",
+          retryAfter: "90",
+        });
+        const fiber = yield* Effect.forkChild(m.sync());
+        for (let second = 0; second < 85; second++) yield* TestClock.adjust("1 second");
+        assert.isUndefined(fiber.pollUnsafe());
+        for (let second = 0; second < 10; second++) yield* TestClock.adjust("1 second");
+        const [result] = yield* Fiber.join(fiber);
+        assert.strictEqual(result?.error, undefined);
+        assert.strictEqual((yield* m.threads({ mailbox: "inbox" })).length, 2);
+      }),
+    ),
+  );
+
   it.effect("a pull the provider refuses fails the sync without waiting", () =>
     withGmail([incoming("m1")], (m, server) =>
       Effect.gen(function* () {

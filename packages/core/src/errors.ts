@@ -63,7 +63,8 @@ export class ProviderError extends Schema.TaggedError<ProviderError>()("Provider
   /** `keychain`: the OS keychain could not be read (locked after sleep). Never a sign-in problem. */
   /**
    * `dns`, `tls`, `refused`, `timeout`, `unreachable` and `unsafe_login` classify an IMAP/SMTP
-   * connection failure so the UI can say which setting to check.
+   * connection failure so the UI can say which setting to check. `quota` is a provider rate
+   * limit (429, or Gmail's 403 rateLimitExceeded) that clears after a wait.
    */
   reason: Schema.optionalKey(
     Schema.Literals([
@@ -76,6 +77,7 @@ export class ProviderError extends Schema.TaggedError<ProviderError>()("Provider
       "timeout",
       "unreachable",
       "unsafe_login",
+      "quota",
     ]),
   ),
   deferred: Schema.optionalKey(Schema.Boolean),

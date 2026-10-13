@@ -342,6 +342,9 @@ export const makeOutlookPull = (
       { bufferSize: 16, strategy: "suspend" },
     );
   return {
-    pull: (...args) => pull(...args).pipe(Stream.provideService(BackgroundRead, true)),
+    pull: (account, cursor, scope, incrementalOnly) =>
+      pull(account, cursor, scope, incrementalOnly).pipe(
+        Stream.provideService(BackgroundRead, true),
+      ),
   } satisfies Pick<ProviderAdapter, "pull">;
 };

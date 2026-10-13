@@ -950,6 +950,8 @@ export interface ProviderAdapter {
     cursor: Option.Option<string>,
     scope?: "inbox",
     incrementalOnly?: boolean,
+    /** The given provider IDs already stored for the account, so a resumed first sync skips them. */
+    stored?: (providerIds: readonly string[]) => Effect.Effect<ReadonlySet<string>>,
   ): Stream.Stream<Change, ProviderFailure>;
   push(
     account: Account,

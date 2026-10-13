@@ -3333,3 +3333,67 @@ it.effect("category summaries above the listing capacity skip repeated rechecks"
     }),
   );
 });
+
+it.effect("a first sync saves its history id and a retry skips the messages it stored", () =>
+  Effect.gen(function* () {
+    let profileCalls = 0;
+    const http = fakeHttp({
+      "GET /labels": { json: { labels: [] } },
+      "GET /profile": () => {
+        profileCalls++;
+        return { json: { emailAddress: "me@gmail.com", historyId: String(900 + profileCalls) } };
+      },
+      "GET /messages": { json: { messages: [{ id: "m1" }, { id: "m2" }] } },
+      "GET /messages/m1": { json: message("m1", ["INBOX"]) },
+      "GET /messages/m2": { json: message("m2", ["INBOX"]) },
+    });
+    const first = yield* run(http, (a) => Stream.runCollect(a.pull(account, Option.none())));
+    assert.deepStrictEqual(first[1], { _tag: "Cursor", cursor: "initial:901" });
+    assert.deepStrictEqual(first.at(-1), { _tag: "Cursor", cursor: "901" });
+
+    const before = http.calls.length;
+    const resumed = yield* run(http, (a) =>
+      Stream.runCollect(
+        a.pull(account, Option.some("initial:901"), undefined, false, () =>
+          Effect.succeed(new Set(["m1"])),
+        ),
+      ),
+    );
+    const paths = http.calls.slice(before).map((c) => c.url.pathname.replace(/^.*\/users\/me/, ""));
+    assert.notInclude(paths, "/messages/m1");
+    assert.notInclude(paths, "/profile");
+    assert.include(paths, "/messages/m2");
+    assert.deepStrictEqual(tags(resumed), ["Labels", "Upsert", "Progress", "Cursor"]);
+    assert.deepStrictEqual(resumed[2], { _tag: "Progress", fetched: 2, total: 2 });
+    // History from the first attempt's id covers changes to the skipped message.
+    assert.deepStrictEqual(resumed.at(-1), { _tag: "Cursor", cursor: "901" });
+  }),
+);
+
+it.effect("Gmail's per-user rate limit 403 is a quota failure, not a refusal", () =>
+  Effect.gen(function* () {
+    const body = {
+      error: {
+        code: 403,
+        message: "Quota exceeded for quota metric 'Queries'",
+        errors: [{ reason: "rateLimitExceeded" }],
+        details: [{ metadata: { quota_limit: "totalQueryCostPerMinutePerUser" } }],
+      },
+    };
+    let calls = 0;
+    const http = fakeHttp({
+      "GET /labels": () => {
+        calls++;
+        return { status: 403, json: body };
+      },
+    });
+    const fiber = yield* Effect.forkChild(
+      run(http, (a) => Stream.runCollect(a.pull(account, Option.some("1")))).pipe(Effect.flip),
+    );
+    for (let second = 0; second < 90; second++) yield* TestClock.adjust("1 second");
+    const error = yield* Fiber.join(fiber);
+    assert.strictEqual(error._tag, "ProviderError");
+    assert.ok(error._tag === "ProviderError" && error.reason === "quota");
+    assert.isAbove(calls, 1);
+  }),
+);

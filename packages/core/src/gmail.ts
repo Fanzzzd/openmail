@@ -22,7 +22,12 @@ import { featureRequest } from "./provider-features.js";
 import { ApiError, makeProviderHttp } from "./provider-http.js";
 import { gmailPages } from "./provider-pages.js";
 import { isProviderSend, retryProvider, uncertainWrite } from "./provider-retry.js";
-import { deliverOrConfirm, providerDecode, providerReadFailure } from "./provider-send.js";
+import {
+  deliverOrConfirm,
+  isRateLimited,
+  providerDecode,
+  providerReadFailure,
+} from "./provider-send.js";
 import type { FolderStatus } from "./sync-health.js";
 import type { ResetVerification } from "./sync-reset.js";
 
@@ -180,10 +185,14 @@ const AttachmentBody = Schema.Struct({ data: Schema.String });
 // 429 and 5xx are quota and transient errors. Gmail also reports per-user
 // quota as 403 rateLimitExceeded, which clears the same way.
 const isTransient = (e: ApiError) =>
-  e.status === 0 ||
-  e.status === 429 ||
-  e.status >= 500 ||
-  (e.status === 403 && /rateLimitExceeded/i.test(e.body));
+  e.status === 0 || e.status >= 500 || isRateLimited(e.status, e.body);
+
+/**
+ * A first sync saves `initial:<historyId>` before fetching. A retry lists again from that
+ * history id, skips the messages it already stored, and history from that id covers changes
+ * to them in between.
+ */
+const INITIAL_CURSOR = "initial:";
 
 const is404 = (e: { _tag: string }) => e instanceof ApiError && e.status === 404;
 
@@ -409,11 +418,12 @@ export const makeGmail: Effect.Effect<
     accountId: string,
     scope?: "inbox",
     recovering = false,
+    resumeFrom?: string,
   ) {
     const since = (yield* Clock.currentTimeMillis) - 90 * 86400000;
     // Take the cursor before listing so nothing that arrives mid-sync is lost;
     // the next incremental run re-fetches any overlap idempotently.
-    const { historyId } = yield* get(accountId, Profile, "/profile");
+    const historyId = resumeFrom ?? (yield* get(accountId, Profile, "/profile")).historyId;
     const ids: string[] = [];
     for (const loadPage of gmailPages((pageToken) =>
       get(accountId, MessageList, "/messages", {
@@ -469,24 +479,40 @@ export const makeGmail: Effect.Effect<
     cursor: Option.Option<string>,
     scope?: "inbox",
     incrementalOnly = false,
+    stored?: (providerIds: readonly string[]) => Effect.Effect<ReadonlySet<string>>,
   ): Stream.Stream<Change, ProviderFailure> =>
     Stream.unwrap(
       Effect.gen(function* () {
         const labels = scope ? [] : yield* fetchUserLabels(account.id);
-        const incremental = Option.isSome(cursor)
-          ? yield* readHistory(account.id, cursor.value, scope)
+        const saved = Option.getOrUndefined(cursor);
+        const resumeFrom = saved?.startsWith(INITIAL_CURSOR)
+          ? saved.slice(INITIAL_CURSOR.length)
+          : undefined;
+        const history = resumeFrom === undefined ? cursor : Option.none<string>();
+        const incremental = Option.isSome(history)
+          ? yield* readHistory(account.id, history.value, scope)
           : Option.none();
         if (incrementalOnly && Option.isNone(incremental))
           return yield* new ProviderError({
             message: "Foreground sync required to renew the cursor",
           });
         const full = Option.isNone(incremental)
-          ? yield* fullSyncPlan(account.id, scope, Option.isSome(cursor))
+          ? yield* fullSyncPlan(account.id, scope, Option.isSome(history), resumeFrom)
           : undefined;
         const plan = Option.isSome(incremental) ? incremental.value : full!;
         const total = plan.changedIds.length;
+        // A first sync fetches only what an earlier attempt did not store. The listing
+        // still covers every message, so a stored one is not refetched in full.
+        const initial = !scope && full !== undefined && Option.isNone(history);
+        const skip = initial && stored ? yield* stored(plan.changedIds) : new Set<string>();
+        const pending = skip.size ? plan.changedIds.filter((id) => !skip.has(id)) : plan.changedIds;
+        const done = total - pending.length;
+        const checkpoint: Change[] =
+          initial && resumeFrom === undefined
+            ? [{ _tag: "Cursor", cursor: `${INITIAL_CURSOR}${plan.cursor}` }]
+            : [];
 
-        const fetched = Stream.fromIterable(plan.changedIds).pipe(
+        const fetched = Stream.fromIterable(pending).pipe(
           Stream.mapEffect(
             (id, i) =>
               (plan.addedIds.has(id)
@@ -518,7 +544,7 @@ export const makeGmail: Effect.Effect<
               ).pipe(
                 Effect.map((change): Change[] => [
                   change,
-                  { _tag: "Progress", fetched: i + 1, total },
+                  { _tag: "Progress", fetched: done + i + 1, total },
                 ]),
               ),
             { concurrency: CONCURRENCY },
@@ -532,12 +558,12 @@ export const makeGmail: Effect.Effect<
         // The history cursor only covers the whole batch, so it goes last.
         const head: Change = { _tag: "Labels", labels };
         const tail: Change = { _tag: "Cursor", cursor: plan.cursor };
-        return Stream.fromIterable(scope ? [] : [head]).pipe(
+        return Stream.fromIterable(scope ? [] : [head, ...checkpoint]).pipe(
           Stream.concat(fetched),
           Stream.concat(Stream.fromIterable(deletes)),
           Stream.concat(
             Stream.fromIterable(
-              !scope && Option.isSome(cursor) && Option.isNone(incremental) && full
+              !scope && Option.isSome(history) && Option.isNone(incremental) && full
                 ? [{ _tag: "Reset" as const, keep: plan.changedIds, since: full.since }]
                 : [],
             ),
