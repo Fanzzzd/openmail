@@ -1,6 +1,6 @@
 # 依赖补丁
 
-`pnpm-workspace.yaml` 的 `patchedDependencies` 列出 `patches/` 里的补丁。补丁按版本号绑定，升级依赖时 pnpm 会因版本不匹配报错，这时按下面的条件决定删掉补丁还是重做。三个补丁都只影响手机端。
+`pnpm-workspace.yaml` 的 `patchedDependencies` 列出 `patches/` 里的补丁。补丁按版本号绑定，升级依赖时 pnpm 会因版本不匹配报错，这时按下面的条件决定删掉补丁还是重做。三个补丁都只影响手机端。最后一节是 Effect 的版本覆盖，升级 Effect 时一起看。
 
 ## react-native-tcp-socket@6.4.3
 
@@ -28,3 +28,9 @@ IMAP／SMTP 的 TCP 和 TLS 传输。补丁改了四处：
 - iOS 用 `openmailThread` 设置 `threadIdentifier`，同一会话的通知归成一组。
 
 删除条件：清单部分可以改成 app 的 config plugin，用 `tools:node="remove"` 移除；分组、公开版本和 `threadIdentifier` 要等 expo-notifications 的本地通知内容提供对应字段。
+
+## 版本覆盖：@effect/platform-node-shared
+
+`pnpm-workspace.yaml` 的 `overrides` 把 `@effect/platform-node-shared` 固定在 4.0.2。Effect 的包按同一个版本号一起发布，`@effect/platform-node` 4.0.2 对它的依赖写的是 `^4.0.2`，pnpm 会解析到 4.0.3，而 4.0.3 要求 effect 4.0.3。没有这条覆盖，桌面和 CLI 会在 effect 4.0.2 上跑 4.0.3 的平台代码。
+
+Dependabot 不改 `overrides`。升级 Effect 家族时同一个提交里处理这一条：新版本的 `@effect/platform-node` 能解析到同版本的 `platform-node-shared` 时删掉覆盖，否则把它改成新的版本号。用 `pnpm peers check` 确认没有 effect 的 unmet peer。
