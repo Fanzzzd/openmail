@@ -1,5 +1,5 @@
 import type { MailOp } from "../../../shared/api";
-import type { AppMessages } from "./App";
+import type { AppMessages } from "./use-app-messages";
 import { setupI18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
 import { DEFAULT_PREFS, type Account, type Prefs, type ThreadSummary } from "@openmail/core/schema";

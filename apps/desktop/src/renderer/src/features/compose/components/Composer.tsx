@@ -1,45 +1,49 @@
-import { ServiceHint } from "../../accounts/OptionalServices";
-import { DropdownMenu, MenuItem } from "../../../ui/Menu";
-import { Autocomplete } from "@base-ui/react/autocomplete";
-import { Dialog } from "@base-ui/react/dialog";
-import { useAtomSet, useAtomValue } from "@effect/atom-react";
+import { isEmpty, parseAddresses, switchReplyMode, type ComposeMode, type Draft } from "../draft";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
-import { Trans, useLingui } from "@lingui/react/macro";
-import { customTemplateVariables, ownText, reorderAttachments } from "@openmail/core/schema";
-import { AsyncResult } from "effect/reactivity";
-import { AppWindow, Ellipsis, FileText, ImagePlus, Link, Paperclip, Trash2, X } from "lucide-react";
-import { useId, useRef, useState, type ReactElement, type RefObject } from "react";
 import type { Account, OutgoingMessage, Template } from "../../../../../shared/api";
-import { type ComposeElement } from "../compose-editor-dom";
-import { inheritsOriginals } from "../compose-originals";
+import { useId, useRef, useState, type ReactElement, type RefObject } from "react";
+import { useComposeMessages } from "../hooks/use-compose-messages";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useComposeDraft } from "../hooks/use-compose-draft";
-import { useComposeEditor } from "../hooks/use-compose-editor";
+import { useShortcutText } from "../../../i18n/use-shortcut-text";
+import { AsyncResult } from "effect/reactivity";
+import { useAtomSet, useAtomValue } from "@effect/atom-react";
+import { nativeComposeCapabilitiesAtom, templatesAtom, threadAtom } from "../../../state/queries";
+import { saveTemplateAtom, setPrefsAtom } from "../../../state/mutations";
+import { useRunMail } from "../../../state/mail";
 import { useComposeRecipients } from "../hooks/use-compose-recipients";
 import { useComposeSend } from "../hooks/use-compose-send";
-import { useComposeShortcuts } from "../hooks/use-compose-shortcuts";
+import { useComposeEditor } from "../hooks/use-compose-editor";
 import { useDraftLifecycle } from "../hooks/use-draft-lifecycle";
-import { isEmpty, parseAddresses, switchReplyMode, type ComposeMode, type Draft } from "../draft";
-import { formatBytes } from "../../../lib/format";
-import { Keys } from "../../../state/keys";
-import { useRunMail } from "../../../state/mail";
-import { saveTemplateAtom, setPrefsAtom } from "../../../state/mutations";
-import { nativeComposeCapabilitiesAtom, templatesAtom, threadAtom } from "../../../state/queries";
-import { useShortcutText } from "../../../i18n/use-shortcut-text";
-import { ComposeEditor } from "./ComposeEditor";
-import { ComposerAi } from "./ComposerAi";
-import { DraftOrganization } from "./DraftOrganization";
-import { DraftSyncRecovery } from "./DraftSyncRecovery";
-import { RecipientField } from "./RecipientField";
+import { useComposeShortcuts } from "../hooks/use-compose-shortcuts";
+import { titlebarRow, touchIcon, touchTarget } from "../../../ui/styles";
+import { Dialog } from "@base-ui/react/dialog";
 import {
   Alert,
   AlertCancel,
+  SheetDragStrip,
   alertButton,
   alertDanger,
   alertPrimary,
   narrowSheet,
-  SheetDragStrip,
 } from "../../../ui/Dialog";
+import { TrafficLightSpace } from "../../../ui/TrafficLights";
+import { Select } from "../../../ui/Select";
+import { AppWindow, Ellipsis, FileText, ImagePlus, Link, Paperclip, Trash2, X } from "lucide-react";
+import { Tip } from "../../../ui/Tip";
+import { ServiceHint } from "../../accounts/OptionalServices";
+import { RecipientField } from "./RecipientField";
+import { customTemplateVariables, ownText, reorderAttachments } from "@openmail/core/schema";
+import { DraftSyncRecovery } from "./DraftSyncRecovery";
+import { ComposerAi } from "./ComposerAi";
+import { ComposeEditor } from "./ComposeEditor";
+import { Keys } from "../../../state/keys";
+import { inheritsOriginals } from "../compose-originals";
+import { formatBytes } from "../../../lib/format";
+import { DropdownMenu, MenuItem } from "../../../ui/Menu";
+import { DraftOrganization } from "./DraftOrganization";
+import type { ComposeElement } from "../compose-editor-dom";
 import {
   PickerPopover,
   pickerFooter,
@@ -47,10 +51,7 @@ import {
   pickerItem,
   pickerList,
 } from "../../../ui/Picker";
-import { Select } from "../../../ui/Select";
-import { titlebarRow, touchIcon, touchTarget } from "../../../ui/styles";
-import { Tip } from "../../../ui/Tip";
-import { TrafficLightSpace } from "../../../ui/TrafficLights";
+import { Autocomplete } from "@base-ui/react/autocomplete";
 
 const TITLES: Record<Draft["mode"], MessageDescriptor> = {
   new: msg`New message`,
@@ -885,51 +886,6 @@ export function Composer({
     </Dialog.Root>
   );
 }
-
-export function useComposeMessages() {
-  const { t } = useLingui();
-  return {
-    couldntLoadTheOriginalAttachments: (reason: string) =>
-      t`Couldn't load the original attachments: ${reason}`,
-    saving: t`Saving…`,
-    couldntSave: t`Couldn't save`,
-    keptOnThisMac: t`Kept on this Mac`,
-    couldntSync: t`Couldn't sync`,
-    savedOnThisMacRetryingSyncAutomatically: t`Saved on this Mac. Retrying sync automatically.`,
-    saved: t`Saved`,
-    savedOnThisMacSyncsWhenOnline: t`Saved on this Mac. Syncs when online.`,
-    waitForAttachmentsToFinishLoading: t`Wait for attachments to finish loading.`,
-    listSeparator: t({ message: ", ", comment: "Separator between list items" }),
-    theseAreNotEmailAddresses: (list: string) => t`These are not email addresses: ${list}`,
-    addAtLeastOneRecipient: t`Add at least one recipient`,
-    attachmentsExceedThe30MBComposeLimit: t`Attachments exceed the 30 MB compose limit.`,
-    couldntReadTheAttachmentTryAddingIt: t`Couldn't read the attachment. Try adding it again.`,
-    couldntLoadTheOriginalAttachmentsTryAgain: t`Couldn't load the original attachments. Try again.`,
-    chooseBeforeInsertingAnImage: (editBody: string) =>
-      t({
-        message: `Choose ${editBody} before inserting an image.`,
-        context: "message text instruction",
-        comment: "editBody is the exact translated Edit body button label. Preserve it unchanged.",
-      }),
-    couldntInsertTheImageUseAPublic: t`Couldn't insert the image. Use a public PNG, JPEG, GIF or WebP image up to 8 MB.`,
-    useAnImageUpTo8MB: t`Use an image up to 8 MB.`,
-    usePNGJPEGGIFOrWebPImages: t`Use PNG, JPEG, GIF or WebP images up to 8 MB.`,
-    couldntReadTheImage: t`Couldn't read the image.`,
-    chooseBeforeInsertingATemplate: (editBody: string) =>
-      t({
-        message: `Choose ${editBody} before inserting a template.`,
-        context: "message text instruction",
-        comment: "editBody is the exact translated Edit body button label. Preserve it unchanged.",
-      }),
-    couldntReadTheClipboardAttachment: t`Couldn't read the clipboard attachment.`,
-    gmailSize: t`Gmail attachments exceed 25 MB in total. Remove attachments before sending.`,
-    gmailBlocked: (filename: string) =>
-      t`Gmail blocks ${filename}. Remove this attachment before sending.`,
-    outlookSize: t`Outlook.com messages are limited to 25 MB, including message text and attachments. Remove attachments before sending.`,
-    outlookItemSize: t`Outlook cannot upload attached messages of 3 MB or more. Remove this attachment before sending.`,
-  };
-}
-export type ComposeMessages = ReturnType<typeof useComposeMessages>;
 
 /** ⌘/ in the compose window: pick a template to insert, or keep this message as one. */
 function TemplatePicker({

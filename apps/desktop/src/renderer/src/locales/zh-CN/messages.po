@@ -15,7 +15,7 @@ msgstr ""
 
 #. Separator between list items
 #. Separator between list items
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 #: src/renderer/src/features/reader/Reader.tsx
 msgid ", "
 msgstr "、"
@@ -141,7 +141,7 @@ msgstr "{delay, plural, other {# 秒}}"
 msgid "{done} completed · {queued} queued · {running} running · {failed} failed"
 msgstr "已完成 {done} · 等待 {queued} · 运行 {running} · 失败 {failed}"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "{email} is signed in again"
 msgstr "{email} 已重新登录"
 
@@ -338,6 +338,7 @@ msgstr "操作失败"
 
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Action failed: {reason}"
 msgstr "操作失败：{reason}"
 
@@ -416,7 +417,7 @@ msgstr "请填写自动回复正文"
 msgid "Add at least one filter condition"
 msgstr "请添加至少一个筛选条件"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Add at least one recipient"
 msgstr "至少填一个收件人"
 
@@ -488,7 +489,7 @@ msgstr "已添加"
 msgid "Added {email}. Syncing…"
 msgstr "已添加 {email}，正在同步"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Added star"
 msgstr "已加星标"
 
@@ -845,7 +846,7 @@ msgstr "归档"
 msgid "Archive message"
 msgstr "归档此邮件"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Archived"
 msgstr "已归档"
 
@@ -919,7 +920,7 @@ msgid "Attachments"
 msgstr "附件"
 
 #: src/renderer/src/app/use-native-menu-bridge.ts
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Attachments exceed the 30 MB compose limit."
 msgstr "附件总大小超过 30 MB，请移除部分附件。"
 
@@ -1132,11 +1133,11 @@ msgstr "找不到这个空间。"
 msgid "Can't find this template."
 msgstr "找不到这个模板。"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Can't open the draft: {reason}"
 msgstr "打不开草稿：{reason}"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Can't open the message: {reason}"
 msgstr "无法打开邮件：{reason}"
 
@@ -1186,7 +1187,7 @@ msgstr "无法编辑含单次例外的重复事件"
 msgid "Categories"
 msgstr "类别"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "Categories updated"
 msgstr "已更新分类"
@@ -1305,13 +1306,13 @@ msgid "Checking sync health…"
 msgstr "正在检查同步状态…"
 
 #. editBody is the exact translated Edit body button label. Preserve it unchanged.
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgctxt "message text instruction"
 msgid "Choose {editBody} before inserting a template."
 msgstr "插入模板前，请选择“{editBody}”。"
 
 #. editBody is the exact translated Edit body button label. Preserve it unchanged.
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgctxt "message text instruction"
 msgid "Choose {editBody} before inserting an image."
 msgstr "插入图片前，请选择“{editBody}”。"
@@ -1573,7 +1574,7 @@ msgstr "连接 {name}"
 msgid "Connect {name}?"
 msgstr "连接 {name}？"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Connect an account to send feedback"
 msgstr "连接账户后即可发送反馈"
 
@@ -1692,7 +1693,7 @@ msgstr "会话"
 msgid "Copied"
 msgstr "已复制"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "Copied to folders"
 msgstr "已复制到文件夹"
@@ -1797,7 +1798,7 @@ msgstr "无法加载更早的邮件，请重试。"
 msgid "Could not load the calendar invitation."
 msgstr "无法加载日历邀请。"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Could not load the next message"
 msgstr "无法加载下一封邮件"
 
@@ -1809,15 +1810,15 @@ msgstr "无法加载日历。"
 msgid "Could not open notification settings."
 msgstr "无法打开通知设置。"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Could not open the compose window"
 msgstr "无法打开撰写窗口"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Could not open the draft"
 msgstr "无法打开草稿"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Could not open the feedback draft"
 msgstr "无法打开反馈草稿"
 
@@ -1867,11 +1868,11 @@ msgstr "无法同步 {names}。"
 msgid "Couldn't copy address"
 msgstr "无法复制地址"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Couldn't delete: {reason}"
 msgstr "删除失败：{reason}"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Couldn't discard: {reason}"
 msgstr "丢弃失败：{reason}"
 
@@ -1887,15 +1888,15 @@ msgstr "无法获取附件"
 msgid "Couldn't get the attachment: {reason}"
 msgstr "无法获取附件：{reason}"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't insert the image. Use a public PNG, JPEG, GIF or WebP image up to 8 MB."
 msgstr "无法插入图片。请使用不超过 8 MB 的公网 PNG、JPEG、GIF 或 WebP 图片。"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't load the original attachments: {reason}"
 msgstr "无法加载原附件：{reason}"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't load the original attachments. Try again."
 msgstr "无法加载原附件，请重试。"
 
@@ -1911,15 +1912,15 @@ msgstr "无法加载你的账户。"
 msgid "Couldn't print: {reason}"
 msgstr "无法打印：{reason}"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't read the attachment. Try adding it again."
 msgstr "无法读取附件，请重新添加。"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't read the clipboard attachment."
 msgstr "无法读取剪贴板附件。"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't read the image."
 msgstr "无法读取图片。"
 
@@ -1927,11 +1928,11 @@ msgstr "无法读取图片。"
 msgid "Couldn't remove the Tailscale mapping. Open Tailscale, and OpenMail removes it as soon as Tailscale responds."
 msgstr "无法移除 Tailscale 映射。打开 Tailscale，Tailscale 响应后 OpenMail 会立即移除它。"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't save"
 msgstr "保存失败"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Couldn't save the draft: {reason}"
 msgstr "无法保存草稿：{reason}"
 
@@ -1939,7 +1940,7 @@ msgstr "无法保存草稿：{reason}"
 msgid "Couldn't save the PDF: {reason}"
 msgstr "无法保存 PDF：{reason}"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Couldn't send: {reason}"
 msgstr "发送失败：{reason}"
 
@@ -1948,8 +1949,8 @@ msgstr "发送失败：{reason}"
 msgid "Couldn't set up a secure connection to the mail server. Check the port and the encryption setting."
 msgstr "无法与邮件服务器建立安全连接。请检查端口和加密设置。"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't sync"
 msgstr "无法同步"
 
@@ -2179,7 +2180,7 @@ msgstr "永久删除"
 msgid "Delete space"
 msgstr "删除空间"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Deleted"
 msgstr "已删除"
 
@@ -2360,7 +2361,7 @@ msgstr "草稿正文"
 msgid "Draft categories"
 msgstr "草稿分类"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Draft discarded"
 msgstr "草稿已丢弃"
 
@@ -2723,7 +2724,7 @@ msgstr "在正文中查找"
 msgid "Finding apps…"
 msgstr "正在查找应用…"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Finish signing in in your browser"
@@ -2964,13 +2965,13 @@ msgstr "Gmail"
 msgid "Gmail aliases and signatures"
 msgstr "Gmail 别名和签名"
 
-#: src/renderer/src/app/App.tsx
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/app/use-app-messages.ts
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Gmail attachments exceed 25 MB in total. Remove attachments before sending."
 msgstr "Gmail 附件总大小超过 25 MB，请移除部分附件后发送。"
 
-#: src/renderer/src/app/App.tsx
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/app/use-app-messages.ts
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Gmail blocks {filename}. Remove this attachment before sending."
 msgstr "Gmail 禁止发送 {filename}，请移除此附件。"
 
@@ -3350,8 +3351,8 @@ msgstr "保留本地副本"
 msgid "Keep OpenMail under"
 msgstr "OpenMail 占用上限"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Kept on this Mac"
 msgstr "已保留在此 Mac"
 
@@ -3372,7 +3373,7 @@ msgstr "钥匙串已锁定"
 msgid "Label"
 msgstr "标签"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Label added"
 msgstr "已加标签"
 
@@ -3385,7 +3386,7 @@ msgstr "侧栏标签可见性"
 msgid "Label or folder"
 msgstr "标签或文件夹"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Label removed"
 msgstr "已去掉标签"
 
@@ -3725,19 +3726,19 @@ msgstr "支持 Markdown：**粗体**、`代码`、```代码块```"
 msgid "Marked {count} messages as read"
 msgstr "已将 {count} 封邮件标为已读"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Marked as important"
 msgstr "已标为重要"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Marked as not important"
 msgstr "已取消重要"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Marked as read"
 msgstr "已标为已读"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Marked as unread"
 msgstr "已标为未读"
 
@@ -4151,7 +4152,7 @@ msgstr "移到废纸篓"
 msgid "Move up"
 msgstr "上移"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "Moved"
 msgstr "已移动"
@@ -4160,17 +4161,17 @@ msgstr "已移动"
 msgid "Moved or deleted"
 msgstr "已移动或删除"
 
-#: src/renderer/src/app/App.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Moved to Focused"
 msgstr "已移至重点"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Moved to Inbox"
 msgstr "已移回收件箱"
 
-#: src/renderer/src/app/App.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Moved to Other"
 msgstr "已移至其他"
 
@@ -4349,8 +4350,8 @@ msgstr "还没有浏览器打开过 OpenMail。"
 msgid "No copy"
 msgstr "不复制"
 
-#: src/renderer/src/app/App.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "No current label applies. Moving to Trash."
 msgstr "无适用标签，改为移到废纸篓。"
 
@@ -4863,8 +4864,8 @@ msgstr "Outlook 附件上传失败。请重试保存或发送。"
 msgid "Outlook automatic replies do not support a custom subject"
 msgstr "Outlook 自动回复不支持自定主题"
 
-#: src/renderer/src/app/App.tsx
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/app/use-app-messages.ts
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 #: src/renderer/src/lib/errors.ts
 msgid "Outlook cannot upload attached messages of 3 MB or more. Remove this attachment before sending."
 msgstr "Outlook 不支持上传 3 MB 及以上的消息附件。请移除此附件后发送。"
@@ -4893,8 +4894,8 @@ msgstr "Outlook 消息请求不能超过 4 MB，不支持将大消息附件作�
 msgid "Outlook scheduled replies need both dates"
 msgstr "Outlook 定时回复须填起止时间"
 
-#: src/renderer/src/app/App.tsx
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/app/use-app-messages.ts
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 #: src/renderer/src/lib/errors.ts
 msgid "Outlook.com messages are limited to 25 MB, including message text and attachments. Remove attachments before sending."
 msgstr "Outlook.com 消息上限为 25 MB，包含消息文本和附件。请移除部分附件后发送。"
@@ -4979,7 +4980,7 @@ msgstr "永久删除"
 msgid "Permanently delete selected mail?"
 msgstr "永久删除所选邮件？"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/features/organize/FolderActions.tsx
 msgid "Permanently deleted {count} messages"
 msgstr "已永久删除 {count} 封邮件"
@@ -5420,7 +5421,7 @@ msgstr "移除链接中的跟踪参数"
 msgid "Removed {recipient}"
 msgstr "已移除 {recipient}"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Removed star"
 msgstr "已去掉星标"
 
@@ -5548,7 +5549,7 @@ msgstr "回复此会话"
 msgid "Report spam"
 msgstr "报告垃圾邮件"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Reported as spam"
 msgstr "已报告为垃圾邮件"
 
@@ -5794,7 +5795,7 @@ msgstr "保存到…"
 msgid "Save token"
 msgstr "保存令牌"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Saved"
@@ -5808,11 +5809,11 @@ msgstr "已保存为 EML"
 msgid "Saved as PDF"
 msgstr "已保存为 PDF"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Saved on this Mac. Retrying sync automatically."
 msgstr "已保存在此 Mac，将自动重试同步。"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Saved on this Mac. Syncs when online."
 msgstr "已存到本机，联网后同步"
 
@@ -5820,7 +5821,7 @@ msgstr "已存到本机，联网后同步"
 msgid "Saved. New sign-ins use this client."
 msgstr "已保存。之后的新登录使用这个客户端。"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Saving…"
 msgstr "正在保存…"
 
@@ -6003,7 +6004,7 @@ msgstr "发件人姓氏"
 msgid "Sender name"
 msgstr "发件人姓名"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Sending…"
 msgstr "正在发送…"
 
@@ -6011,12 +6012,12 @@ msgstr "正在发送…"
 msgid "Sensitivity"
 msgstr "敏感度"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/lib/view.ts
 msgid "Sent"
 msgstr "已发送"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Sent and archived"
 msgstr "已发送并归档"
 
@@ -6243,7 +6244,7 @@ msgstr "在浏览器里用你的 Google 账户登录。OpenMail 把登录令牌�
 msgid "Sign in with your personal Microsoft account (outlook.com or Hotmail) in the browser. OpenMail keeps the sign-in token in this computer's keychain."
 msgstr "在浏览器里用你的个人 Microsoft 账户（outlook.com 或 Hotmail）登录。OpenMail 把登录令牌存在这台电脑的钥匙串里。"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Sign-in failed: {reason}"
 msgstr "登录失败：{reason}"
 
@@ -6335,7 +6336,7 @@ msgstr "SMTP 服务器"
 msgid "Snooze"
 msgstr "稍后提醒"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/lib/view.ts
 msgid "Snoozed"
 msgstr "稍后提醒"
@@ -6849,7 +6850,7 @@ msgstr "会话已变更。请重新生成摘要。"
 msgid "There is not enough free disk space to compact safely."
 msgstr "磁盘空闲空间不足，无法安全压缩。"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "These are not email addresses: {list}"
 msgstr "这些不是邮件地址：{list}"
 
@@ -7109,6 +7110,7 @@ msgstr "下划线"
 
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
+#: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 #: src/renderer/src/state/desktop.ts
 msgid "Undo"
@@ -7293,7 +7295,7 @@ msgstr "输入服务名称，例如 svc:openmail"
 msgid "Use an http, https or mailto link"
 msgstr "请输入 http、https 或 mailto 链接"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Use an image up to 8 MB."
 msgstr "请使用不超过 8 MB 的图片。"
 
@@ -7305,7 +7307,7 @@ msgstr "使用 Apple 联系人"
 msgid "Use default"
 msgstr "使用默认值"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Use PNG, JPEG, GIF or WebP images up to 8 MB."
 msgstr "请使用不超过 8 MB 的 PNG、JPEG、GIF 或 WebP 图片。"
 
@@ -7357,7 +7359,7 @@ msgstr "按 100% 显示"
 msgid "Visible categories"
 msgstr "显示的分类"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Wait for attachments to finish loading."
 msgstr "请等待附件加载完成。"
 

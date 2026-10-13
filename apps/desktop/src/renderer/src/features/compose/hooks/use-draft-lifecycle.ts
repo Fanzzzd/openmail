@@ -12,7 +12,7 @@ import {
   type SetStateAction,
 } from "react";
 import type { OutgoingAttachment } from "../../../../../shared/api";
-import type { ComposeMessages } from "../components/Composer";
+import type { ComposeMessages } from "./use-compose-messages";
 import { draftSyncNotice } from "../components/DraftSyncRecovery";
 import { loadOriginalAttachments, withOriginalAttachments } from "../compose-originals";
 import { toDraftInput, type Draft } from "../draft";

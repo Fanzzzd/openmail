@@ -1,4 +1,4 @@
-import type { ComposeMessages } from "../components/Composer";
+import type { ComposeMessages } from "./use-compose-messages";
 import { setupI18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
 import {

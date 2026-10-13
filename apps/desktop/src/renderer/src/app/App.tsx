@@ -1,36 +1,60 @@
-import { canCall, isDesktop, isTouchWeb } from "../lib/platform";
-import { focusedSenderMessage, threadStateFor } from "../lib/focused-inbox";
-import { Separator, Group, Panel } from "react-resizable-panels";
-import { useCallback, useRef, useState, type ComponentProps, useEffect } from "react";
-import type { Label, MailOp } from "../../../shared/api";
 import { useAtom, useAtomMount, useAtomRefresh, useAtomValue } from "@effect/atom-react";
-import type { MessageDescriptor } from "@lingui/core";
-import { msg } from "@lingui/core/macro";
+import { MailClient } from "../state/rpc";
+import { liveUpdatesAtom, syncProgressAtom, syncStateAtom } from "../state/events";
+import { networkChanged, syncNow, useRunMail } from "../state/mail";
+import { useOnline } from "../lib/use-online";
+import { useDesktopLabels } from "../state/desktop";
+import { useAppMessages } from "./use-app-messages";
 import { useLingui } from "@lingui/react/macro";
-import { moveSourceLabel } from "@openmail/core/schema";
-import { AsyncResult } from "effect/reactivity";
-import { createPortal } from "react-dom";
-import { PANE_MIN } from "../../../shared/layout";
-import { usePanelLayout } from "./use-panel-layout";
 import { useMailLayout } from "../lib/responsive-layout";
+import { useShortcutText } from "../i18n/use-shortcut-text";
 import { editingProfileAtom } from "../features/accounts/profile-editing";
+import { dialogAtom, openMessageAtom, signInAgainAtom } from "../state/ui";
 import {
   labelCreationAtom,
   labelPickerAtom,
   pickerModeAtom,
   snoozeIdsAtom,
 } from "../features/organize/organize-state";
-import { filterSeedAtom } from "../features/settings/filter-seed";
 import { goToFolderAtom } from "../features/sidebar/go-to-folder";
+import { filterSeedAtom } from "../features/settings/filter-seed";
+import { useCallback, useEffect, useRef, useState, type ComponentProps } from "react";
+import { OPEN_SETTINGS_EVENT } from "../features/ai/open-ai-settings";
+import { Toast, type ToastState } from "../ui/Toast";
+import { useBatchUndo } from "../state/undo";
+import { causeText, messageMissing } from "../lib/errors";
+import {
+  accountsAtom,
+  labelPreferencesAtom,
+  labelsAtom,
+  profilesAtom,
+  proposalsAtom,
+  sendAsAtom,
+  signaturesAtom,
+  threadAtom,
+  unreadCountsAtom,
+} from "../state/queries";
+import { AsyncResult } from "effect/reactivity";
+import { useMailSelection } from "./use-mail-selection";
+import {
+  ALL,
+  MAILBOX_NAMES,
+  OVERVIEW,
+  categoryAccounts,
+  inboxCategoryNames,
+  scopeAccountIds,
+  spaceAccounts,
+} from "../lib/view";
+import { numberedFavorites } from "../features/sidebar/favorite-navigation";
+import { readerThreadKey, type ReaderSelection } from "../features/reader/reader-selection";
+import { Reader, useThreadPrint } from "../features/reader/Reader";
+import { focusedSenderMessage, threadStateFor, type ThreadState } from "../lib/focused-inbox";
 import { useMailActions } from "./use-mail-actions";
 import { useMailCompose } from "./use-mail-compose";
-import { useMailSelection } from "./use-mail-selection";
-import { useMailShortcuts } from "./use-mail-shortcuts";
 import { useNativeMenuBridge } from "./use-native-menu-bridge";
 import { usePaneNavigation } from "./use-pane-navigation";
-import { Assistant } from "../features/ai/AiPanel";
-import { OPEN_SETTINGS_EVENT } from "../features/ai/open-ai-settings";
-import { FolderActions } from "../features/organize/FolderActions";
+import { useMailShortcuts } from "./use-mail-shortcuts";
+import { usePanelLayout } from "./use-panel-layout";
 import {
   AddAccountDialog,
   Composer,
@@ -41,70 +65,42 @@ import {
   Settings,
   ShortcutHelp,
 } from "./LazyDialogs";
-import { ProfileEditor } from "../features/accounts/lazy";
-import { Proposals } from "../features/ai/lazy";
-import { PermanentDeletePermission } from "../features/organize/PermanentDeletePermission";
+import { moveSourceLabel } from "@openmail/core/schema";
+import type { Label, MailOp } from "../../../shared/api";
+import { Sidebar, SidebarToggle } from "../features/sidebar/Sidebar";
+import { buttonPrimary, buttonSecondary, iconButton, titlebarRow } from "../ui/styles";
+import { canCall, isDesktop, isTouchWeb } from "../lib/platform";
+import { Overview } from "../features/overview/Overview";
+import { MessageList } from "../features/mail-list/MessageList";
+import { MailStatusNotice } from "../features/sync-status/MailStatusNotice";
+import { accountName } from "../lib/format";
+import { SearchField } from "../features/search/SearchField";
+import { BatchActions, BatchMenuItems } from "../features/mail-list/BatchActions";
+import { supportsInInboxFilter } from "../lib/folder-actions";
+import { Tip } from "../ui/Tip";
+import { SquarePen } from "lucide-react";
+import { Downloads } from "../features/downloads/Downloads";
+import { UndoHistory } from "../features/undo/UndoHistory";
+import { FolderActions } from "../features/organize/FolderActions";
+import { recentSearches } from "../state/recent-searches";
+import { DefaultProfilesPrompt, ProfileSwitcher } from "../features/accounts/ProfileSettings";
+import { FocusedInboxPermission } from "../features/organize/FocusedInboxActions";
 import { FailedOpNotice } from "../features/sync-status/FailedOpNotice";
 import { UpdateNotice } from "../features/updates/UpdateNotice";
 import { RemoteImagesPrompt } from "../features/reader/RemoteImagesPrompt";
-import { Downloads } from "../features/downloads/Downloads";
-import { numberedFavorites } from "../features/sidebar/favorite-navigation";
-import { supportsInInboxFilter } from "../lib/folder-actions";
-import { readerThreadKey, type ReaderSelection } from "../features/reader/reader-selection";
-
-import { BatchActions, BatchMenuItems } from "../features/mail-list/BatchActions";
-import { MailPanels } from "./MailPanels";
-import { MessageList } from "../features/mail-list/MessageList";
-import { Overview } from "../features/overview/Overview";
-import { DefaultProfilesPrompt, ProfileSwitcher } from "../features/accounts/ProfileSettings";
-import { Reader, useThreadPrint } from "../features/reader/Reader";
-import { Sidebar, SidebarToggle } from "../features/sidebar/Sidebar";
 import { SidebarRail } from "../features/sidebar/SidebarRail";
-import { buttonPrimary, buttonSecondary, iconButton, titlebarRow } from "../ui/styles";
-import { Tip } from "../ui/Tip";
-import { SquarePen } from "lucide-react";
-import { useShortcutText } from "../i18n/use-shortcut-text";
-import { FocusedInboxPermission } from "../features/organize/FocusedInboxActions";
-import { ThreadActions } from "../features/organize/ThreadActions";
-import type { ThreadState } from "../lib/focused-inbox";
-import { Toast, type ToastState } from "../ui/Toast";
-import { Alert, alertButton, AlertCancel, alertDanger, alertPrimary, Drawer } from "../ui/Dialog";
-import { recentSearches } from "../state/recent-searches";
-import { SearchField } from "../features/search/SearchField";
-import { UndoHistory } from "../features/undo/UndoHistory";
-import { messageMissing, causeText } from "../lib/errors";
-import { MailClient } from "../state/rpc";
-import { useDesktopLabels } from "../state/desktop";
-import { liveUpdatesAtom, syncProgressAtom, syncStateAtom } from "../state/events";
-import { networkChanged, syncNow, useRunMail } from "../state/mail";
-import { MailStatusNotice } from "../features/sync-status/MailStatusNotice";
-import { useOnline } from "../lib/use-online";
-import { accountName } from "../lib/format";
-import {
-  accountsAtom,
-  labelPreferencesAtom,
-  labelsAtom,
-  profilesAtom,
-  proposalsAtom,
-  signaturesAtom,
-  sendAsAtom,
-  threadAtom,
-  unreadCountsAtom,
-} from "../state/queries";
-import { useBatchUndo } from "../state/undo";
-import { dialogAtom, openMessageAtom, signInAgainAtom } from "../state/ui";
-import {
-  ALL,
-  inboxCategoryNames,
-  categoryAccounts,
-  MAILBOX_NAMES,
-  OVERVIEW,
-  scopeAccountIds,
-  spaceAccounts,
-} from "../lib/view";
-
+import { Group, Panel, Separator } from "react-resizable-panels";
+import { PANE_MIN } from "../../../shared/layout";
+import { MailPanels } from "./MailPanels";
+import { createPortal } from "react-dom";
+import { Alert, AlertCancel, Drawer, alertButton, alertDanger, alertPrimary } from "../ui/Dialog";
+import { PermanentDeletePermission } from "../features/organize/PermanentDeletePermission";
+import { ProfileEditor } from "../features/accounts/lazy";
 import { GoToFolder } from "../features/organize/GoToFolder";
 import { SnoozeDialog } from "../features/organize/SnoozeDialog";
+import { Assistant } from "../features/ai/AiPanel";
+import { Proposals } from "../features/ai/lazy";
+import { ThreadActions } from "../features/organize/ThreadActions";
 
 export function App({ composeId }: { composeId?: string }) {
   // The one subscription to the main process's events, and the RPC runtime,
@@ -1056,62 +1052,6 @@ function ReaderToolbar({
   if (batch) return <BatchActions {...batch} />;
   return thread && <ThreadActions {...thread} />;
 }
-
-const OP_DONE: Record<MailOp["kind"], (op: MailOp) => MessageDescriptor> = {
-  read: (op) => (op.kind === "read" && op.value ? msg`Marked as read` : msg`Marked as unread`),
-  star: (op) => (op.kind === "star" && op.value ? msg`Added star` : msg`Removed star`),
-  important: (op) =>
-    op.kind === "important" && op.value ? msg`Marked as important` : msg`Marked as not important`,
-  archive: () => msg`Archived`,
-  inbox: () => msg`Moved to Inbox`,
-  trash: () => msg`Deleted`,
-  spam: () => msg`Reported as spam`,
-  move: () => msg`Moved`,
-  categories: () => msg`Categories updated`,
-  classification: (op) =>
-    op.kind === "classification" && op.value === "focused"
-      ? msg`Moved to Focused`
-      : msg`Moved to Other`,
-  copy: () => msg`Copied to folders`,
-  label: (op) => (op.kind === "label" && op.value ? msg`Label added` : msg`Label removed`),
-};
-
-/** Keep catalog origins here; behaviour modules receive this text adapter. */
-function useAppMessages() {
-  const { t, i18n } = useLingui();
-  return {
-    cantOpenTheMessage: (reason: string) => t`Can't open the message: ${reason}`,
-    opDone: (op: MailOp) => i18n._(OP_DONE[op.kind](op)),
-    couldNotLoadTheNextMessage: t`Could not load the next message`,
-    actionFailed: (reason: string) => t`Action failed: ${reason}`,
-    noCurrentLabelAppliesMovingToTrash: t`No current label applies. Moving to Trash.`,
-    finishSigningInInYourBrowser: t`Finish signing in in your browser`,
-    isSignedInAgain: (email: string) => t`${email} is signed in again`,
-    signInFailed: (reason: string) => t`Sign-in failed: ${reason}`,
-    snoozed: t`Snoozed`,
-    permanentlyDeletedMessages: (count: number) => t`Permanently deleted ${count} messages`,
-    couldntDelete: (reason: string) => t`Couldn't delete: ${reason}`,
-    cantOpenTheDraft: (reason: string) => t`Can't open the draft: ${reason}`,
-    couldNotOpenTheComposeWindow: t`Could not open the compose window`,
-    connectAnAccountToSendFeedback: t`Connect an account to send feedback`,
-    couldNotOpenTheFeedbackDraft: t`Could not open the feedback draft`,
-    couldNotOpenTheDraft: t`Could not open the draft`,
-    couldntSaveTheDraft: (reason: string) => t`Couldn't save the draft: ${reason}`,
-    draftDiscarded: t`Draft discarded`,
-    couldntDiscard: (reason: string) => t`Couldn't discard: ${reason}`,
-    sentAndArchived: t`Sent and archived`,
-    sent: t`Sent`,
-    couldntSend: (reason: string) => t`Couldn't send: ${reason}`,
-    sending: t`Sending…`,
-    undo: t`Undo`,
-    gmailSize: t`Gmail attachments exceed 25 MB in total. Remove attachments before sending.`,
-    gmailBlocked: (filename: string) =>
-      t`Gmail blocks ${filename}. Remove this attachment before sending.`,
-    outlookSize: t`Outlook.com messages are limited to 25 MB, including message text and attachments. Remove attachments before sending.`,
-    outlookItemSize: t`Outlook cannot upload attached messages of 3 MB or more. Remove this attachment before sending.`,
-  };
-}
-export type AppMessages = ReturnType<typeof useAppMessages>;
 
 /** Immutable query arrays own their lookup maps; WeakMap releases old results. */
 const maps = new WeakMap<readonly Label[], Map<string, Label>>();

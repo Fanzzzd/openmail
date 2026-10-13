@@ -12,7 +12,7 @@ import { Effect } from "effect";
 import { useRunMail, withMail } from "../../../state/mail";
 import type { Account, OutgoingMessage } from "../../../../../shared/api";
 import { attachmentProblemMessage } from "../../../lib/attachment-problem-message";
-import type { ComposeMessages } from "../components/Composer";
+import type { ComposeMessages } from "./use-compose-messages";
 import { toDraftInput, toMessage, type Draft } from "../draft";
 import { submitDraft, type SendWarning } from "../send";
 

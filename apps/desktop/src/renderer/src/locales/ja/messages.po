@@ -5,7 +5,7 @@ msgstr ""
 
 #. Separator between list items
 #. Separator between list items
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 #: src/renderer/src/features/reader/Reader.tsx
 msgid ", "
 msgstr ", "
@@ -131,7 +131,7 @@ msgstr "{delay, plural, other {#秒}}"
 msgid "{done} completed · {queued} queued · {running} running · {failed} failed"
 msgstr "{done} が完了しました · {queued} がキューに登録されました · {running} が実行されました · {failed} が失敗しました"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "{email} is signed in again"
 msgstr "{email} が再度サインインしました"
 
@@ -328,6 +328,7 @@ msgstr "アクションが失敗しました"
 
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Action failed: {reason}"
 msgstr "アクションが失敗しました: {reason}"
 
@@ -406,7 +407,7 @@ msgstr "自動返信メッセージを追加する"
 msgid "Add at least one filter condition"
 msgstr "少なくとも 1 つのフィルター条件を追加します"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Add at least one recipient"
 msgstr "少なくとも 1 人の受信者を追加します"
 
@@ -478,7 +479,7 @@ msgstr "追加済み"
 msgid "Added {email}. Syncing…"
 msgstr "{email} を追加しました。同期中…"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Added star"
 msgstr "スターを付けました"
 
@@ -835,7 +836,7 @@ msgstr "アーカイブ"
 msgid "Archive message"
 msgstr "メッセージをアーカイブ"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Archived"
 msgstr "アーカイブ済み"
 
@@ -909,7 +910,7 @@ msgid "Attachments"
 msgstr "添付ファイル"
 
 #: src/renderer/src/app/use-native-menu-bridge.ts
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Attachments exceed the 30 MB compose limit."
 msgstr "添付ファイルが 30 MB の作成制限を超えています。"
 
@@ -1122,11 +1123,11 @@ msgstr "このスペースが見つかりません。"
 msgid "Can't find this template."
 msgstr "このテンプレートが見つかりません。"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Can't open the draft: {reason}"
 msgstr "下書きを開けません: {reason}"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Can't open the message: {reason}"
 msgstr "メッセージを開けません: {reason}"
 
@@ -1176,7 +1177,7 @@ msgstr "個別に変更された予定を含む繰り返しは編集できませ
 msgid "Categories"
 msgstr "カテゴリ"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "Categories updated"
 msgstr "カテゴリを更新しました"
@@ -1295,13 +1296,13 @@ msgid "Checking sync health…"
 msgstr "同期状態を確認中…"
 
 #. editBody is the exact translated Edit body button label. Preserve it unchanged.
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgctxt "message text instruction"
 msgid "Choose {editBody} before inserting a template."
 msgstr "テンプレートを挿入する前に「{editBody}」を選択してください。"
 
 #. editBody is the exact translated Edit body button label. Preserve it unchanged.
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgctxt "message text instruction"
 msgid "Choose {editBody} before inserting an image."
 msgstr "画像を挿入する前に「{editBody}」を選択してください。"
@@ -1563,7 +1564,7 @@ msgstr "{name} を接続"
 msgid "Connect {name}?"
 msgstr "{name} を接続しますか？"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Connect an account to send feedback"
 msgstr "アカウントに接続してフィードバックを送信する"
 
@@ -1682,7 +1683,7 @@ msgstr "スレッド"
 msgid "Copied"
 msgstr "コピーしました"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "Copied to folders"
 msgstr "フォルダにコピーしました"
@@ -1787,7 +1788,7 @@ msgstr "古いメッセージを読み込めませんでした。もう一度お
 msgid "Could not load the calendar invitation."
 msgstr "カレンダーの招待状を読み込めませんでした。"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Could not load the next message"
 msgstr "次のメッセージを読み込めませんでした"
 
@@ -1799,15 +1800,15 @@ msgstr "カレンダーを読み込めませんでした。"
 msgid "Could not open notification settings."
 msgstr "通知設定を開けませんでした。"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Could not open the compose window"
 msgstr "作成ウィンドウを開けませんでした"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Could not open the draft"
 msgstr "下書きを開けませんでした"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Could not open the feedback draft"
 msgstr "フィードバックの下書きを開けませんでした"
 
@@ -1857,11 +1858,11 @@ msgstr "{names} を同期できませんでした。"
 msgid "Couldn't copy address"
 msgstr "アドレスをコピーできませんでした"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Couldn't delete: {reason}"
 msgstr "削除できませんでした: {reason}"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Couldn't discard: {reason}"
 msgstr "破棄できませんでした: {reason}"
 
@@ -1877,15 +1878,15 @@ msgstr "添付ファイルを取得できませんでした"
 msgid "Couldn't get the attachment: {reason}"
 msgstr "添付ファイルを取得できませんでした: {reason}"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't insert the image. Use a public PNG, JPEG, GIF or WebP image up to 8 MB."
 msgstr "画像を挿入できませんでした。最大 8 MB のパブリック PNG、JPEG、GIF、または WebP 画像を使用します。"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't load the original attachments: {reason}"
 msgstr "元の添付ファイルを読み込めませんでした: {reason}"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't load the original attachments. Try again."
 msgstr "元の添付ファイルを読み込めませんでした。もう一度やり直してください。"
 
@@ -1901,15 +1902,15 @@ msgstr "アカウントを読み込めませんでした。"
 msgid "Couldn't print: {reason}"
 msgstr "印刷できませんでした: {reason}"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't read the attachment. Try adding it again."
 msgstr "添付ファイルを読み取れませんでした。もう一度追加してみてください。"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't read the clipboard attachment."
 msgstr "クリップボードの添付ファイルを読み取れませんでした。"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't read the image."
 msgstr "画像を読み取れませんでした。"
 
@@ -1917,11 +1918,11 @@ msgstr "画像を読み取れませんでした。"
 msgid "Couldn't remove the Tailscale mapping. Open Tailscale, and OpenMail removes it as soon as Tailscale responds."
 msgstr "Tailscale のマッピングを削除できませんでした。Tailscale を開いてください。Tailscale が応答したら OpenMail がすぐに削除します。"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't save"
 msgstr "保存できませんでした"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Couldn't save the draft: {reason}"
 msgstr "下書きを保存できませんでした: {reason}"
 
@@ -1929,7 +1930,7 @@ msgstr "下書きを保存できませんでした: {reason}"
 msgid "Couldn't save the PDF: {reason}"
 msgstr "PDF を保存できませんでした: {reason}"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Couldn't send: {reason}"
 msgstr "送信できませんでした: {reason}"
 
@@ -1938,8 +1939,8 @@ msgstr "送信できませんでした: {reason}"
 msgid "Couldn't set up a secure connection to the mail server. Check the port and the encryption setting."
 msgstr "メールサーバーと安全な接続を確立できませんでした。ポートと暗号化の設定を確認してください。"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't sync"
 msgstr "同期できませんでした"
 
@@ -2169,7 +2170,7 @@ msgstr "完全に削除"
 msgid "Delete space"
 msgstr "スペースを削除"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Deleted"
 msgstr "削除しました"
 
@@ -2350,7 +2351,7 @@ msgstr "下書きの本文"
 msgid "Draft categories"
 msgstr "下書きのカテゴリ"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Draft discarded"
 msgstr "下書きを破棄しました"
 
@@ -2713,7 +2714,7 @@ msgstr "メッセージ内で検索"
 msgid "Finding apps…"
 msgstr "アプリを検索中…"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Finish signing in in your browser"
@@ -2954,13 +2955,13 @@ msgstr "Gmail"
 msgid "Gmail aliases and signatures"
 msgstr "Gmail のエイリアスと署名"
 
-#: src/renderer/src/app/App.tsx
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/app/use-app-messages.ts
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Gmail attachments exceed 25 MB in total. Remove attachments before sending."
 msgstr "Gmail の添付ファイルは合計 25 MB を超えます。送信する前に添付ファイルを削除してください。"
 
-#: src/renderer/src/app/App.tsx
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/app/use-app-messages.ts
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Gmail blocks {filename}. Remove this attachment before sending."
 msgstr "Gmail は {filename} をブロックします。送信する前にこの添付ファイルを削除してください。"
 
@@ -3340,8 +3341,8 @@ msgstr "ローカルコピーを保持する"
 msgid "Keep OpenMail under"
 msgstr "OpenMail の使用容量上限"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Kept on this Mac"
 msgstr "このMacに保存されています"
 
@@ -3362,7 +3363,7 @@ msgstr "キーチェーンがロックされています"
 msgid "Label"
 msgstr "ラベル"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Label added"
 msgstr "ラベルを追加しました"
 
@@ -3375,7 +3376,7 @@ msgstr "ラベルリストの可視性"
 msgid "Label or folder"
 msgstr "ラベルまたはフォルダ"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Label removed"
 msgstr "ラベルを削除しました"
 
@@ -3715,19 +3716,19 @@ msgstr "マークダウンは機能します: **太字**、`code`、```code bloc
 msgid "Marked {count} messages as read"
 msgstr "{count} メッセージを既読としてマークしました"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Marked as important"
 msgstr "重要としてマークされています"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Marked as not important"
 msgstr "重要ではないとしてマークされている"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Marked as read"
 msgstr "開封済みにしました"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Marked as unread"
 msgstr "未開封にしました"
 
@@ -4141,7 +4142,7 @@ msgstr "ゴミ箱に移動"
 msgid "Move up"
 msgstr "上に移動"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "Moved"
 msgstr "移動しました"
@@ -4150,17 +4151,17 @@ msgstr "移動しました"
 msgid "Moved or deleted"
 msgstr "移動または削除されました"
 
-#: src/renderer/src/app/App.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Moved to Focused"
 msgstr "優先へ移動しました"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Moved to Inbox"
 msgstr "受信箱に移動しました"
 
-#: src/renderer/src/app/App.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Moved to Other"
 msgstr "その他へ移動しました"
 
@@ -4339,8 +4340,8 @@ msgstr "OpenMail を開いたブラウザはまだありません。"
 msgid "No copy"
 msgstr "コピーしない"
 
-#: src/renderer/src/app/App.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "No current label applies. Moving to Trash."
 msgstr "現在のラベルは適用されません。ゴミ箱に移動します。"
 
@@ -4853,8 +4854,8 @@ msgstr "Outlook の添付ファイルのアップロードに失敗しました�
 msgid "Outlook automatic replies do not support a custom subject"
 msgstr "Outlook の自動返信はカスタム件名をサポートしていません"
 
-#: src/renderer/src/app/App.tsx
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/app/use-app-messages.ts
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 #: src/renderer/src/lib/errors.ts
 msgid "Outlook cannot upload attached messages of 3 MB or more. Remove this attachment before sending."
 msgstr "Outlook では 3 MB 以上の添付メッセージをアップロードできません。送信前にこの添付ファイルを削除してください。"
@@ -4883,8 +4884,8 @@ msgstr "Outlook メッセージのリクエストは 4 MB を超えることは�
 msgid "Outlook scheduled replies need both dates"
 msgstr "Outlook のスケジュールされた返信には両方の日付が必要です"
 
-#: src/renderer/src/app/App.tsx
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/app/use-app-messages.ts
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 #: src/renderer/src/lib/errors.ts
 msgid "Outlook.com messages are limited to 25 MB, including message text and attachments. Remove attachments before sending."
 msgstr "Outlook.com メッセージの上限は、メッセージ本文と添付ファイルを含めて 25 MB です。送信前に添付ファイルを削除してください。"
@@ -4969,7 +4970,7 @@ msgstr "完全に削除"
 msgid "Permanently delete selected mail?"
 msgstr "選択したメールを完全に削除しますか?"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/features/organize/FolderActions.tsx
 msgid "Permanently deleted {count} messages"
 msgstr "{count} メッセージが完全に削除されました"
@@ -5410,7 +5411,7 @@ msgstr "リンクから追跡パラメータを削除"
 msgid "Removed {recipient}"
 msgstr "{recipient} を削除しました"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Removed star"
 msgstr "スターを外しました"
 
@@ -5538,7 +5539,7 @@ msgstr "このスレッドに返信"
 msgid "Report spam"
 msgstr "迷惑メールとして報告"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Reported as spam"
 msgstr "迷惑メールとして報告しました"
 
@@ -5784,7 +5785,7 @@ msgstr "保存先を指定…"
 msgid "Save token"
 msgstr "トークンを保存"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Saved"
@@ -5798,11 +5799,11 @@ msgstr "EMLとして保存"
 msgid "Saved as PDF"
 msgstr "PDFとして保存"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Saved on this Mac. Retrying sync automatically."
 msgstr "このMacに保存されています。同期を自動的に再試行します。"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Saved on this Mac. Syncs when online."
 msgstr "このMacに保存されています。オンライン時に同期します。"
 
@@ -5810,7 +5811,7 @@ msgstr "このMacに保存されています。オンライン時に同期しま
 msgid "Saved. New sign-ins use this client."
 msgstr "保存しました。新しいサインインではこのクライアントを使用します。"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Saving…"
 msgstr "保存中…"
 
@@ -5993,7 +5994,7 @@ msgstr "差出人の姓"
 msgid "Sender name"
 msgstr "差出人の名前"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Sending…"
 msgstr "送信中…"
 
@@ -6001,12 +6002,12 @@ msgstr "送信中…"
 msgid "Sensitivity"
 msgstr "秘密度"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/lib/view.ts
 msgid "Sent"
 msgstr "送信済み"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Sent and archived"
 msgstr "送信してアーカイブしました"
 
@@ -6233,7 +6234,7 @@ msgstr "ブラウザで Google アカウントにサインインします。Open
 msgid "Sign in with your personal Microsoft account (outlook.com or Hotmail) in the browser. OpenMail keeps the sign-in token in this computer's keychain."
 msgstr "ブラウザで個人用 Microsoft アカウント（outlook.com または Hotmail）にサインインします。OpenMail はサインイン トークンをこのコンピュータのキーチェーンに保存します。"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Sign-in failed: {reason}"
 msgstr "サインインに失敗しました: {reason}"
 
@@ -6325,7 +6326,7 @@ msgstr "SMTPサーバー"
 msgid "Snooze"
 msgstr "スヌーズ"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/lib/view.ts
 msgid "Snoozed"
 msgstr "スヌーズ中"
@@ -6839,7 +6840,7 @@ msgstr "スレッドが変更されました。要約を再生成してくださ
 msgid "There is not enough free disk space to compact safely."
 msgstr "安全に圧縮するためのディスク空き容量が不足しています。"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "These are not email addresses: {list}"
 msgstr "これらは電子メール アドレスではありません: {list}"
 
@@ -7099,6 +7100,7 @@ msgstr "下線"
 
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
+#: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 #: src/renderer/src/state/desktop.ts
 msgid "Undo"
@@ -7283,7 +7285,7 @@ msgstr "svc:openmail のようなサービス名を入力してください"
 msgid "Use an http, https or mailto link"
 msgstr "http、https、または mailto リンクを使用します"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Use an image up to 8 MB."
 msgstr "最大 8 MB の画像を使用します。"
 
@@ -7295,7 +7297,7 @@ msgstr "Appleの連絡先を使用"
 msgid "Use default"
 msgstr "デフォルトを使用"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Use PNG, JPEG, GIF or WebP images up to 8 MB."
 msgstr "最大 8 MB の PNG、JPEG、GIF、または WebP 画像を使用します。"
 
@@ -7347,7 +7349,7 @@ msgstr "100% で表示"
 msgid "Visible categories"
 msgstr "表示可能なカテゴリ"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Wait for attachments to finish loading."
 msgstr "添付ファイルの読み込みが完了するまで待ちます。"
 

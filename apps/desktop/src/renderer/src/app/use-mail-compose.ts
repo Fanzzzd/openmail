@@ -9,7 +9,7 @@ import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useEffectEvent, useState } from "react";
 import type { Account, Proposal } from "../../../shared/api";
 import { type DesktopEvent } from "../../../shared/desktop";
-import type { AppMessages } from "./App";
+import type { AppMessages } from "./use-app-messages";
 import { type FeedbackInput } from "../features/feedback/Feedback";
 import { type ToastState } from "../ui/Toast";
 import { defaultSignature, resolveComposeSender } from "../features/compose/compose-sender";

@@ -27,7 +27,7 @@ import { useRunMail, withMail } from "../../../state/mail";
 import { prefsAtom } from "../../../state/queries";
 import { downloadsOpenAtom } from "../../../state/downloads";
 import { OpenWithSubmenu } from "./OpenWithMenu";
-import type { Notify } from "../Reader";
+import type { Notify } from "../notify";
 import { LazyEmailFrame } from "../body/MessageBodyShell";
 import { DropdownMenu, MenuItem } from "../../../ui/Menu";
 import { Tip } from "../../../ui/Tip";

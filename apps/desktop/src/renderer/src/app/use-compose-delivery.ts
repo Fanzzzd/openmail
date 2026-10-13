@@ -4,7 +4,7 @@ import { holdSend } from "@openmail/core/schema";
 import { Cause, Deferred, Effect, Fiber } from "effect";
 import { useRef, type Dispatch, type SetStateAction } from "react";
 import type { OutgoingMessage } from "../../../shared/api";
-import type { AppMessages } from "./App";
+import type { AppMessages } from "./use-app-messages";
 import type { useMailSelection } from "./use-mail-selection";
 import { type ToastState } from "../ui/Toast";
 import { confirmDialog } from "../ui/Confirm";

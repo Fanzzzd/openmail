@@ -20,7 +20,7 @@ import type { Message } from "../../../../../shared/api";
 import { inlineImagesAtom } from "../../../state/queries";
 import { highlightBody } from "./body-text";
 import { EmailFrame } from "../frame/EmailFrame";
-import type { MessageBackground } from "./MessageBodyShell";
+import type { MessageBackground } from "./frame-surface";
 import { useSearchHits } from "../../search";
 import { PickerPopover } from "../../../ui/Picker";
 

@@ -18,7 +18,7 @@ import {
 import { Effect } from "effect";
 import { useRef, useState, type ClipboardEvent, type Dispatch, type SetStateAction } from "react";
 import type { Account, OutgoingAttachment, Template } from "../../../../../shared/api";
-import type { ComposeMessages } from "../components/Composer";
+import type { ComposeMessages } from "./use-compose-messages";
 import {
   editorBody,
   insertEditorText,

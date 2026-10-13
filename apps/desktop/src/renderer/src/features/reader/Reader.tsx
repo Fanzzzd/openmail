@@ -1,119 +1,112 @@
-import { useAtomValue, RegistryContext, useAtom, useAtomSet } from "@effect/atom-react";
-import { AsyncResult, Atom } from "effect/reactivity";
 import {
   DEFAULT_PREFS,
-  senderSpoofed,
   addressDomain,
-  type BatchResult,
-  type MailOp,
   orderThread,
-  senderName,
   remoteImageMode,
+  searchHighlightTerms,
+  senderName,
+  senderSearchQuery,
+  senderSpoofed,
   shouldLoadRemote,
   threadExpansion,
+  type BatchResult,
+  type MailOp,
   type ReaderZoom,
   type SearchMatch,
-  searchHighlightTerms,
-  senderSearchQuery,
 } from "@openmail/core/schema";
+import type { DerivedChunk, Message } from "../../../../shared/api";
 import {
-  useState,
-  type ReactNode,
-  type RefObject,
-  useContext,
   useCallback,
+  useContext,
   useEffect,
   useEffectEvent,
   useRef,
+  useState,
   useSyncExternalStore,
+  type ReactNode,
+  type RefObject,
 } from "react";
-import type { Message, DerivedChunk } from "../../../../shared/api";
-import { letterAvatarColor, displayName, threadDate } from "../../lib/format";
+import type { Notify } from "./notify";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { RegistryContext, useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
 import {
-  contactPhotoAtom,
-  prefsAtom,
   accountsAtom,
-  knownSendersAtom,
+  contactPhotoAtom,
   imageSendersAtom,
+  knownSendersAtom,
+  prefsAtom,
   threadAtom,
 } from "../../state/queries";
-import { UnsubscribeButton } from "./UnsubscribeButton";
-import { MailClient } from "../../state/rpc";
-import { AppleContactActions } from "../contacts";
-import { RawMessageDialog } from "./lazy";
-import { ThreadSummary, TriageChip } from "../ai";
-import { matchesShortcut, shortcutAction, type ShortcutSet } from "../../../../shared/shortcuts";
+import { AsyncResult, Atom } from "effect/reactivity";
 import { readerMessageId, readerThreadKey, useReaderMessages } from "./reader-selection";
-import { readerSelectedText } from "./quote-selection";
-import { jumpReaderSelection } from "../../lib/jump-selection";
-import { readerFindAction } from "./reader-shortcuts";
-import { forwardFrameKey } from "./frame/forward-frame-key";
-import {
-  NO_SEARCH_HITS,
-  SearchField,
-  SearchHitBar,
-  type SearchHits,
-  SearchHitsContext,
-} from "../search";
+import { causeText, messageMissing } from "../../lib/errors";
+import { THREAD_EXPANSION_EVENT, ThreadViewMenuItems, stepZoom } from "./ThreadViewMenu";
 import { buttonSecondary, iconButton, titlebarRow, touchIcon } from "../../ui/styles";
 import { TrafficLightSpace } from "../../ui/TrafficLights";
 import { Tip } from "../../ui/Tip";
 import { BACK_SHORTCUT, isBackKey } from "../../lib/responsive-layout";
-import { Trans, useLingui } from "@lingui/react/macro";
-import { Effect } from "effect";
-import { constVoid } from "effect/Function";
 import {
   AppWindow,
-  Code,
   ChevronDown,
   ChevronLeft,
+  Code,
   FileDown,
   Forward,
   Images,
   Mail,
-  MoreHorizontal,
   Moon,
+  MoreHorizontal,
   Printer,
   Reply,
   ReplyAll,
   Star,
   Sun,
 } from "lucide-react";
-
-import { messageMissing, causeText } from "../../lib/errors";
-import { Keys } from "../../state/keys";
+import { TOOLBAR_MIN_WIDTH } from "../../lib/toolbar-fit";
 import {
-  openThreadWindow,
-  openMessageWindow,
-  modifyMessages,
+  NO_SEARCH_HITS,
+  SearchField,
+  SearchHitBar,
+  SearchHitsContext,
+  type SearchHits,
+} from "../search";
+import { isDesktop } from "../../lib/platform";
+import { matchesShortcut, shortcutAction, type ShortcutSet } from "../../../../shared/shortcuts";
+import {
   markUnreadFrom,
+  modifyMessages,
+  openMessageWindow,
+  openThreadWindow,
   printThread,
   useRunMail,
   withMail,
 } from "../../state/mail";
-import { setImageSenderAtom, setPrefsAtom } from "../../state/mutations";
-import { imagesLoadedAtom, messageBackgroundAtom } from "../../state/ui";
-import { MediaMatches } from "./MediaMatches";
-import { stepZoom, THREAD_EXPANSION_EVENT, ThreadViewMenuItems } from "./ThreadViewMenu";
-import { Attachments } from "./attachments/Attachments";
-import {
-  LazyMessageBody,
-  useMessageBodyState,
-  type MessageBackground,
-} from "./body/MessageBodyShell";
-import { InviteBanner, MeetingLinks } from "../calendar";
-
+import { Effect } from "effect";
 import { useShortcutText } from "../../i18n/use-shortcut-text";
-
+import { setImageSenderAtom, setPrefsAtom } from "../../state/mutations";
 import { useSaveMessage } from "./reader-actions";
-import { TOOLBAR_MIN_WIDTH } from "../../lib/toolbar-fit";
-import { isTypingTarget } from "../../lib/typing-target";
-import { isDesktop } from "../../lib/platform";
+import { imagesLoadedAtom, messageBackgroundAtom } from "../../state/ui";
+import { MailClient } from "../../state/rpc";
 import { emitLocalDesktopEvent } from "../../state/desktop";
+import { LazyMessageBody, useMessageBodyState } from "./body/MessageBodyShell";
+import type { MessageBackground } from "./body/frame-surface";
+import { Keys } from "../../state/keys";
+import { isTypingTarget } from "../../lib/typing-target";
+import { readerFindAction } from "./reader-shortcuts";
+import { jumpReaderSelection } from "../../lib/jump-selection";
+import { readerSelectedText } from "./quote-selection";
+import { forwardFrameKey } from "./frame/forward-frame-key";
+import { constVoid } from "effect/Function";
+import { ThreadSummary, TriageChip } from "../ai";
 import { DropdownMenu, MenuItem, MenuSeparator } from "../../ui/Menu";
+import { MediaMatches } from "./MediaMatches";
+import { RawMessageDialog } from "./lazy";
+import { AppleContactActions } from "../contacts";
+import { displayName, letterAvatarColor, threadDate } from "../../lib/format";
+import { UnsubscribeButton } from "./UnsubscribeButton";
+import { InviteBanner, MeetingLinks } from "../calendar";
+import { Attachments } from "./attachments/Attachments";
 
-/** Shows a one-line notice, the app's toast. */
-export type Notify = (toast: { text: string; tone?: "error" }) => void;
 type ReaderActionDone = (action: {
   result: BatchResult;
   ids: readonly string[];

@@ -28,11 +28,7 @@ import {
   measureFrame,
   pinFrameLayout,
 } from "./frame-style";
-import {
-  FRAME_INITIAL_HEIGHT,
-  frameSurface,
-  type MessageBackground,
-} from "../body/MessageBodyShell";
+import { FRAME_INITIAL_HEIGHT, frameSurface, type MessageBackground } from "../body/frame-surface";
 import { HIGHLIGHT_CSS, useSearchHits } from "../../search";
 
 // Mail HTML is untrusted. It renders in a sandboxed iframe with scripts off,

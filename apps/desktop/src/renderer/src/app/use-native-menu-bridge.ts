@@ -11,7 +11,7 @@ import { constVoid } from "effect/Function";
 import { type RefObject, useEffect, useEffectEvent, useState } from "react";
 import type { Account } from "../../../shared/api";
 import { desktopEventRoute, editCommandRoute, type DesktopEvent } from "../../../shared/desktop";
-import type { AppMessages } from "./App";
+import type { AppMessages } from "./use-app-messages";
 import { attachmentProblemMessage } from "../lib/attachment-problem-message";
 import type { ThreadState } from "../lib/focused-inbox";
 import type { ToastState } from "../ui/Toast";

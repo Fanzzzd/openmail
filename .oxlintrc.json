@@ -40,7 +40,7 @@
     ],
     "unicorn/prefer-ternary": "error",
     "import/no-self-import": "error",
-    "import/no-cycle": "error",
+    "import/no-cycle": ["error", { "ignoreTypes": false }],
     "import/no-duplicates": "error",
     "typescript/no-unnecessary-condition": "error",
     "typescript/no-unsafe-type-assertion": "warn",

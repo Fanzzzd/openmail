@@ -5,7 +5,7 @@ msgstr ""
 
 #. Separator between list items
 #. Separator between list items
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 #: src/renderer/src/features/reader/Reader.tsx
 msgid ", "
 msgstr ", "
@@ -131,7 +131,7 @@ msgstr "{delay, plural, one {# sekunda} few {# sekundy} many {# sekundy} other {
 msgid "{done} completed · {queued} queued · {running} running · {failed} failed"
 msgstr "{done} dokončeno · {queued} ve frontě · {running} běží · {failed} se nezdařilo"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "{email} is signed in again"
 msgstr "{email} je znovu přihlášen"
 
@@ -328,6 +328,7 @@ msgstr "Akce se nezdařila"
 
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Action failed: {reason}"
 msgstr "Akce se nezdařila: {reason}"
 
@@ -406,7 +407,7 @@ msgstr "Přidejte zprávu s automatickou odpovědí"
 msgid "Add at least one filter condition"
 msgstr "Přidejte alespoň jednu podmínku filtru"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Add at least one recipient"
 msgstr "Přidejte alespoň jednoho příjemce"
 
@@ -478,7 +479,7 @@ msgstr "Přidáno"
 msgid "Added {email}. Syncing…"
 msgstr "Přidán {email}. Synchronizace…"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Added star"
 msgstr "Hvězdička přidána"
 
@@ -835,7 +836,7 @@ msgstr "Archivovat"
 msgid "Archive message"
 msgstr "Archivovat zprávu"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Archived"
 msgstr "Archivováno"
 
@@ -909,7 +910,7 @@ msgid "Attachments"
 msgstr "Přílohy"
 
 #: src/renderer/src/app/use-native-menu-bridge.ts
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Attachments exceed the 30 MB compose limit."
 msgstr "Přílohy přesahují limit 30 MB pro psaní."
 
@@ -1122,11 +1123,11 @@ msgstr "Tento prostor nelze najít."
 msgid "Can't find this template."
 msgstr "Tuto šablonu nelze najít."
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Can't open the draft: {reason}"
 msgstr "Koncept nelze otevřít: {reason}"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Can't open the message: {reason}"
 msgstr "Zprávu nelze otevřít: {reason}"
 
@@ -1176,7 +1177,7 @@ msgstr "Nelze upravit sérii se změněnými výskyty"
 msgid "Categories"
 msgstr "Kategorie"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "Categories updated"
 msgstr "Kategorie aktualizovány"
@@ -1295,13 +1296,13 @@ msgid "Checking sync health…"
 msgstr "Kontrola synchronizace…"
 
 #. editBody is the exact translated Edit body button label. Preserve it unchanged.
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgctxt "message text instruction"
 msgid "Choose {editBody} before inserting a template."
 msgstr "Před vložením šablony zvolte „{editBody}“."
 
 #. editBody is the exact translated Edit body button label. Preserve it unchanged.
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgctxt "message text instruction"
 msgid "Choose {editBody} before inserting an image."
 msgstr "Před vložením obrázku zvolte „{editBody}“."
@@ -1563,7 +1564,7 @@ msgstr "Připojit {name}"
 msgid "Connect {name}?"
 msgstr "Připojit {name}?"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Connect an account to send feedback"
 msgstr "Chcete-li odeslat zpětnou vazbu, připojte účet"
 
@@ -1682,7 +1683,7 @@ msgstr "Konverzace"
 msgid "Copied"
 msgstr "Zkopírováno"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "Copied to folders"
 msgstr "Zkopírováno do složek"
@@ -1787,7 +1788,7 @@ msgstr "Starší zprávy se nepodařilo načíst. Zkuste to znovu."
 msgid "Could not load the calendar invitation."
 msgstr "Nepodařilo se načíst pozvánku kalendáře."
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Could not load the next message"
 msgstr "Nelze načíst další zprávu"
 
@@ -1799,15 +1800,15 @@ msgstr "Kalendář se nepodařilo načíst."
 msgid "Could not open notification settings."
 msgstr "Nastavení oznámení nelze otevřít."
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Could not open the compose window"
 msgstr "Nelze otevřít okno pro psaní zprávy"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Could not open the draft"
 msgstr "Koncept se nepodařilo otevřít"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Could not open the feedback draft"
 msgstr "Koncept zpětné vazby se nepodařilo otevřít"
 
@@ -1857,11 +1858,11 @@ msgstr "{names} se nepodařilo synchronizovat."
 msgid "Couldn't copy address"
 msgstr "Adresu se nepodařilo zkopírovat"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Couldn't delete: {reason}"
 msgstr "Nelze smazat: {reason}"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Couldn't discard: {reason}"
 msgstr "Nelze zahodit: {reason}"
 
@@ -1877,15 +1878,15 @@ msgstr "Přílohu se nepodařilo získat"
 msgid "Couldn't get the attachment: {reason}"
 msgstr "Nelze získat přílohu: {reason}"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't insert the image. Use a public PNG, JPEG, GIF or WebP image up to 8 MB."
 msgstr "Obrázek se nepodařilo vložit. Použijte veřejný obrázek PNG, JPEG, GIF nebo WebP do velikosti 8 MB."
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't load the original attachments: {reason}"
 msgstr "Nelze načíst původní přílohy: {reason}"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't load the original attachments. Try again."
 msgstr "Původní přílohy se nepodařilo načíst. Try again."
 
@@ -1901,15 +1902,15 @@ msgstr "Účty se nepodařilo načíst."
 msgid "Couldn't print: {reason}"
 msgstr "Nelze vytisknout: {reason}"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't read the attachment. Try adding it again."
 msgstr "Přílohu nelze přečíst. Try adding it again."
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't read the clipboard attachment."
 msgstr "Přílohu schránky nelze přečíst."
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't read the image."
 msgstr "Obrázek se nepodařilo načíst."
 
@@ -1917,11 +1918,11 @@ msgstr "Obrázek se nepodařilo načíst."
 msgid "Couldn't remove the Tailscale mapping. Open Tailscale, and OpenMail removes it as soon as Tailscale responds."
 msgstr "Mapování Tailscale se nepodařilo odebrat. Otevřete Tailscale a OpenMail ho odebere, jakmile Tailscale odpoví."
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't save"
 msgstr "Uložení se nezdařilo"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Couldn't save the draft: {reason}"
 msgstr "Koncept se nepodařilo uložit: {reason}"
 
@@ -1929,7 +1930,7 @@ msgstr "Koncept se nepodařilo uložit: {reason}"
 msgid "Couldn't save the PDF: {reason}"
 msgstr "Soubor PDF nelze uložit: {reason}"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Couldn't send: {reason}"
 msgstr "Nelze odeslat: {reason}"
 
@@ -1938,8 +1939,8 @@ msgstr "Nelze odeslat: {reason}"
 msgid "Couldn't set up a secure connection to the mail server. Check the port and the encryption setting."
 msgstr "K poštovnímu serveru se nepodařilo navázat zabezpečené připojení. Zkontrolujte port a nastavení šifrování."
 
-#: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't sync"
 msgstr "Synchronizace se nezdařila"
 
@@ -2169,7 +2170,7 @@ msgstr "Trvale smazat"
 msgid "Delete space"
 msgstr "Smazat prostor"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Deleted"
 msgstr "Smazáno"
 
@@ -2350,7 +2351,7 @@ msgstr "Text konceptu"
 msgid "Draft categories"
 msgstr "Kategorie konceptu"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Draft discarded"
 msgstr "Koncept zahozen"
 
@@ -2713,7 +2714,7 @@ msgstr "Najít ve zprávě"
 msgid "Finding apps…"
 msgstr "Hledání aplikací…"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Finish signing in in your browser"
@@ -2954,13 +2955,13 @@ msgstr "Gmail"
 msgid "Gmail aliases and signatures"
 msgstr "Aliasy a podpisy Gmailu"
 
-#: src/renderer/src/app/App.tsx
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/app/use-app-messages.ts
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Gmail attachments exceed 25 MB in total. Remove attachments before sending."
 msgstr "Přílohy Gmailu celkově přesahují 25 MB. Před odesláním přílohy odstraňte."
 
-#: src/renderer/src/app/App.tsx
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/app/use-app-messages.ts
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Gmail blocks {filename}. Remove this attachment before sending."
 msgstr "Gmail blokuje {filename}. Před odesláním tuto přílohu odstraňte."
 
@@ -3340,8 +3341,8 @@ msgstr "Ponechat místní kopii"
 msgid "Keep OpenMail under"
 msgstr "Udržovat OpenMail pod limitem"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Kept on this Mac"
 msgstr "Ponecháno na tomto Macu"
 
@@ -3362,7 +3363,7 @@ msgstr "Klíčenka je zamčená"
 msgid "Label"
 msgstr "Štítek"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Label added"
 msgstr "Štítek přidán"
 
@@ -3375,7 +3376,7 @@ msgstr "Viditelnost seznamu štítků"
 msgid "Label or folder"
 msgstr "Štítek nebo složka"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Label removed"
 msgstr "Štítek odebrán"
 
@@ -3715,19 +3716,19 @@ msgstr "Markdown funguje: **tučné**, `kód`, ```blok kódu```"
 msgid "Marked {count} messages as read"
 msgstr "Označeno {count} zpráv jako přečtených"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Marked as important"
 msgstr "Označeno jako důležité"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Marked as not important"
 msgstr "Označeno jako nedůležité"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Marked as read"
 msgstr "Označeno jako přečtené"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Marked as unread"
 msgstr "Označeno jako nepřečtené"
 
@@ -4141,7 +4142,7 @@ msgstr "Přesunout do koše"
 msgid "Move up"
 msgstr "Posuňte se nahoru"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "Moved"
 msgstr "Přesunuto"
@@ -4150,17 +4151,17 @@ msgstr "Přesunuto"
 msgid "Moved or deleted"
 msgstr "Přesunuto nebo smazáno"
 
-#: src/renderer/src/app/App.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Moved to Focused"
 msgstr "Přesunuto do Prioritní"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Moved to Inbox"
 msgstr "Přesunuto do doručené pošty"
 
-#: src/renderer/src/app/App.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Moved to Other"
 msgstr "Přesunuto do Další"
 
@@ -4339,8 +4340,8 @@ msgstr "OpenMail zatím nebyl otevřen v žádném prohlížeči."
 msgid "No copy"
 msgstr "Nekopírovat"
 
-#: src/renderer/src/app/App.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "No current label applies. Moving to Trash."
 msgstr "Neplatí žádný aktuální štítek. Přesouvání do koše."
 
@@ -4853,8 +4854,8 @@ msgstr "Nahrání přílohy do Outlooku selhalo. Zkuste ji znovu uložit nebo od
 msgid "Outlook automatic replies do not support a custom subject"
 msgstr "Automatické odpovědi aplikace Outlook nepodporují vlastní předmět"
 
-#: src/renderer/src/app/App.tsx
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/app/use-app-messages.ts
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 #: src/renderer/src/lib/errors.ts
 msgid "Outlook cannot upload attached messages of 3 MB or more. Remove this attachment before sending."
 msgstr "Outlook nemůže nahrát přiložené zprávy o velikosti 3 MB nebo větší. Před odesláním tuto přílohu odstraňte."
@@ -4883,8 +4884,8 @@ msgstr "Požadavky na zprávy v Outlooku nesmí překročit 4 MB. Velké přilo�
 msgid "Outlook scheduled replies need both dates"
 msgstr "Naplánované odpovědi aplikace Outlook vyžadují obě data"
 
-#: src/renderer/src/app/App.tsx
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/app/use-app-messages.ts
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 #: src/renderer/src/lib/errors.ts
 msgid "Outlook.com messages are limited to 25 MB, including message text and attachments. Remove attachments before sending."
 msgstr "Zprávy Outlook.com jsou omezeny na 25 MB včetně textu zprávy a příloh. Před odesláním odstraňte přílohy."
@@ -4969,7 +4970,7 @@ msgstr "Trvale smazat"
 msgid "Permanently delete selected mail?"
 msgstr "Trvale smazat vybranou poštu?"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/features/organize/FolderActions.tsx
 msgid "Permanently deleted {count} messages"
 msgstr "Trvale smazáno {count} zpráv"
@@ -5410,7 +5411,7 @@ msgstr "Odstranit sledovací parametry z odkazů"
 msgid "Removed {recipient}"
 msgstr "Odebráno: {recipient}"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Removed star"
 msgstr "Hvězdička odebrána"
 
@@ -5538,7 +5539,7 @@ msgstr "Odpovědět v této konverzaci"
 msgid "Report spam"
 msgstr "Nahlásit nevyžádanou poštu"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Reported as spam"
 msgstr "Nahlášeno jako nevyžádaná pošta"
 
@@ -5784,7 +5785,7 @@ msgstr "Uložit do…"
 msgid "Save token"
 msgstr "Uložit token"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Saved"
@@ -5798,11 +5799,11 @@ msgstr "Uloženo jako EML"
 msgid "Saved as PDF"
 msgstr "Uloženo jako PDF"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Saved on this Mac. Retrying sync automatically."
 msgstr "Uloženo na tomto Macu. Probíhá automatický pokus o synchronizaci."
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Saved on this Mac. Syncs when online."
 msgstr "Uloženo na tomto Macu. Synchronizuje se, když je online."
 
@@ -5810,7 +5811,7 @@ msgstr "Uloženo na tomto Macu. Synchronizuje se, když je online."
 msgid "Saved. New sign-ins use this client."
 msgstr "Uloženo. Nová přihlášení použijí tohoto klienta."
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Saving…"
 msgstr "Ukládání…"
 
@@ -5993,7 +5994,7 @@ msgstr "Příjmení odesílatele"
 msgid "Sender name"
 msgstr "Jméno odesílatele"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Sending…"
 msgstr "Odesílání…"
 
@@ -6001,12 +6002,12 @@ msgstr "Odesílání…"
 msgid "Sensitivity"
 msgstr "Citlivost"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/lib/view.ts
 msgid "Sent"
 msgstr "Odeslané"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Sent and archived"
 msgstr "Odesláno a archivováno"
 
@@ -6233,7 +6234,7 @@ msgstr "Přihlaste se v prohlížeči svým účtem Google. OpenMail uloží př
 msgid "Sign in with your personal Microsoft account (outlook.com or Hotmail) in the browser. OpenMail keeps the sign-in token in this computer's keychain."
 msgstr "Přihlaste se v prohlížeči svým osobním účtem Microsoft (outlook.com nebo Hotmail). OpenMail uloží přihlašovací token do klíčenky tohoto počítače."
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Sign-in failed: {reason}"
 msgstr "Přihlášení se nezdařilo: {reason}"
 
@@ -6325,7 +6326,7 @@ msgstr "SMTP server"
 msgid "Snooze"
 msgstr "Odložit"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/lib/view.ts
 msgid "Snoozed"
 msgstr "Odložené"
@@ -6839,7 +6840,7 @@ msgstr "Konverzace se změnila. Vytvořte shrnutí znovu."
 msgid "There is not enough free disk space to compact safely."
 msgstr "Pro bezpečné zmenšení není na disku dostatek volného místa."
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "These are not email addresses: {list}"
 msgstr "Toto nejsou e-mailové adresy: {list}"
 
@@ -7099,6 +7100,7 @@ msgstr "Podtržené"
 
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
+#: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 #: src/renderer/src/state/desktop.ts
 msgid "Undo"
@@ -7283,7 +7285,7 @@ msgstr "Zadejte název služby, např. svc:openmail"
 msgid "Use an http, https or mailto link"
 msgstr "Použijte odkaz http, https nebo mailto"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Use an image up to 8 MB."
 msgstr "Použijte obrázek do velikosti 8 MB."
 
@@ -7295,7 +7297,7 @@ msgstr "Používat kontakty Apple"
 msgid "Use default"
 msgstr "Použít výchozí"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Use PNG, JPEG, GIF or WebP images up to 8 MB."
 msgstr "Používejte obrázky PNG, JPEG, GIF nebo WebP do velikosti 8 MB."
 
@@ -7347,7 +7349,7 @@ msgstr "Zobrazit ve 100 %"
 msgid "Visible categories"
 msgstr "Viditelné kategorie"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Wait for attachments to finish loading."
 msgstr "Počkejte na dokončení načítání příloh."
 

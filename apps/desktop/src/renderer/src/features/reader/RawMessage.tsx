@@ -10,7 +10,7 @@ import { canCall } from "../../lib/platform";
 import { rawMessageAtom } from "../../state/queries";
 import { Dialog } from "../../ui/Dialog";
 import { useSaveMessage } from "./reader-actions";
-import type { Notify } from "./Reader";
+import type { Notify } from "./notify";
 
 /** Longer sources (big attachments in base64) show only this much; Copy still copies all of it. */
 const SHOWN_CHARS = 400_000;

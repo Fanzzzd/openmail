@@ -5,7 +5,7 @@ msgstr ""
 
 #. Separator between list items
 #. Separator between list items
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 #: src/renderer/src/features/reader/Reader.tsx
 msgid ", "
 msgstr ", "
@@ -131,7 +131,7 @@ msgstr "{delay, plural, one {# segundo} other {# segundos}}"
 msgid "{done} completed · {queued} queued · {running} running · {failed} failed"
 msgstr "{done} completado · {queued} en cola · {running} en ejecución · {failed} falló"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "{email} is signed in again"
 msgstr "{email} ha iniciado sesión nuevamente"
 
@@ -328,6 +328,7 @@ msgstr "La acción falló"
 
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Action failed: {reason}"
 msgstr "Acción fallida: {reason}"
 
@@ -406,7 +407,7 @@ msgstr "Agregar un mensaje de respuesta automática"
 msgid "Add at least one filter condition"
 msgstr "Agregar al menos una condición de filtro"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Add at least one recipient"
 msgstr "Añade al menos un destinatario"
 
@@ -478,7 +479,7 @@ msgstr "Añadido"
 msgid "Added {email}. Syncing…"
 msgstr "Se agregó {email}. Sincronizando…"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Added star"
 msgstr "Estrella añadida"
 
@@ -835,7 +836,7 @@ msgstr "Archivar"
 msgid "Archive message"
 msgstr "Archivar mensaje"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Archived"
 msgstr "Archivado"
 
@@ -909,7 +910,7 @@ msgid "Attachments"
 msgstr "Archivos adjuntos"
 
 #: src/renderer/src/app/use-native-menu-bridge.ts
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Attachments exceed the 30 MB compose limit."
 msgstr "Los archivos adjuntos superan el límite de redacción de 30 MB."
 
@@ -1122,11 +1123,11 @@ msgstr "No se encuentra este espacio."
 msgid "Can't find this template."
 msgstr "No se encuentra esta plantilla."
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Can't open the draft: {reason}"
 msgstr "No se puede abrir el borrador: {reason}"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Can't open the message: {reason}"
 msgstr "No se puede abrir el mensaje: {reason}"
 
@@ -1176,7 +1177,7 @@ msgstr "No se puede editar una serie con eventos individuales modificados"
 msgid "Categories"
 msgstr "Categorías"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "Categories updated"
 msgstr "Categorías actualizadas"
@@ -1295,13 +1296,13 @@ msgid "Checking sync health…"
 msgstr "Comprobando sincronización…"
 
 #. editBody is the exact translated Edit body button label. Preserve it unchanged.
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgctxt "message text instruction"
 msgid "Choose {editBody} before inserting a template."
 msgstr "Selecciona «{editBody}» antes de insertar una plantilla."
 
 #. editBody is the exact translated Edit body button label. Preserve it unchanged.
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgctxt "message text instruction"
 msgid "Choose {editBody} before inserting an image."
 msgstr "Selecciona «{editBody}» antes de insertar una imagen."
@@ -1563,7 +1564,7 @@ msgstr "Conectar {name}"
 msgid "Connect {name}?"
 msgstr "¿Conectar {name}?"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Connect an account to send feedback"
 msgstr "Conecte una cuenta para enviar comentarios"
 
@@ -1682,7 +1683,7 @@ msgstr "Conversaciones"
 msgid "Copied"
 msgstr "Copiado"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "Copied to folders"
 msgstr "Copiado en carpetas"
@@ -1787,7 +1788,7 @@ msgstr "No se pudieron cargar los mensajes antiguos. Inténtalo de nuevo."
 msgid "Could not load the calendar invitation."
 msgstr "No se pudo cargar la invitación del calendario."
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Could not load the next message"
 msgstr "No se pudo cargar el siguiente mensaje"
 
@@ -1799,15 +1800,15 @@ msgstr "No se pudo cargar tu calendario."
 msgid "Could not open notification settings."
 msgstr "No se pudo abrir los ajustes de notificaciones."
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Could not open the compose window"
 msgstr "No se pudo abrir la ventana de redacción"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Could not open the draft"
 msgstr "No se pudo abrir el borrador."
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Could not open the feedback draft"
 msgstr "No se pudo abrir el borrador de comentarios"
 
@@ -1857,11 +1858,11 @@ msgstr "No se pudo sincronizar {names}."
 msgid "Couldn't copy address"
 msgstr "No se pudo copiar la dirección"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Couldn't delete: {reason}"
 msgstr "No se pudo eliminar: {reason}"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Couldn't discard: {reason}"
 msgstr "No se pudo descartar: {reason}"
 
@@ -1877,15 +1878,15 @@ msgstr "No se pudo obtener el adjunto"
 msgid "Couldn't get the attachment: {reason}"
 msgstr "No se pudo obtener el archivo adjunto: {reason}"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't insert the image. Use a public PNG, JPEG, GIF or WebP image up to 8 MB."
 msgstr "No se pudo insertar la imagen. Utilice una imagen pública PNG, JPEG, GIF o WebP de hasta 8 MB."
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't load the original attachments: {reason}"
 msgstr "No se pudieron cargar los archivos adjuntos originales: {reason}"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't load the original attachments. Try again."
 msgstr "No se pudieron cargar los archivos adjuntos originales. Intentar otra vez."
 
@@ -1901,15 +1902,15 @@ msgstr "No se pudieron cargar sus cuentas."
 msgid "Couldn't print: {reason}"
 msgstr "No se pudo imprimir: {reason}"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't read the attachment. Try adding it again."
 msgstr "No se pudo leer el archivo adjunto. Intente agregarlo nuevamente."
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't read the clipboard attachment."
 msgstr "No se pudo leer el archivo adjunto del portapapeles."
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't read the image."
 msgstr "No se pudo leer la imagen."
 
@@ -1917,11 +1918,11 @@ msgstr "No se pudo leer la imagen."
 msgid "Couldn't remove the Tailscale mapping. Open Tailscale, and OpenMail removes it as soon as Tailscale responds."
 msgstr "No se pudo quitar la asignación de Tailscale. Abre Tailscale; OpenMail la quitará en cuanto Tailscale responda."
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't save"
 msgstr "No se pudo guardar"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Couldn't save the draft: {reason}"
 msgstr "No se pudo guardar el borrador: {reason}"
 
@@ -1929,7 +1930,7 @@ msgstr "No se pudo guardar el borrador: {reason}"
 msgid "Couldn't save the PDF: {reason}"
 msgstr "No se pudo guardar el PDF: {reason}"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Couldn't send: {reason}"
 msgstr "No se pudo enviar: {reason}"
 
@@ -1938,8 +1939,8 @@ msgstr "No se pudo enviar: {reason}"
 msgid "Couldn't set up a secure connection to the mail server. Check the port and the encryption setting."
 msgstr "No se pudo establecer una conexión segura con el servidor de correo. Compruebe el puerto y el ajuste de cifrado."
 
-#: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't sync"
 msgstr "No se pudo sincronizar"
 
@@ -2169,7 +2170,7 @@ msgstr "Eliminar permanentemente"
 msgid "Delete space"
 msgstr "Eliminar espacio"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Deleted"
 msgstr "Eliminado"
 
@@ -2350,7 +2351,7 @@ msgstr "Texto del mensaje del borrador"
 msgid "Draft categories"
 msgstr "Categorías del borrador"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Draft discarded"
 msgstr "Borrador descartado"
 
@@ -2713,7 +2714,7 @@ msgstr "Buscar en el mensaje"
 msgid "Finding apps…"
 msgstr "Buscando apps…"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Finish signing in in your browser"
@@ -2954,13 +2955,13 @@ msgstr "Gmail"
 msgid "Gmail aliases and signatures"
 msgstr "Alias ​​y firmas de Gmail"
 
-#: src/renderer/src/app/App.tsx
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/app/use-app-messages.ts
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Gmail attachments exceed 25 MB in total. Remove attachments before sending."
 msgstr "Los archivos adjuntos de Gmail superan los 25 MB en total. Elimine los archivos adjuntos antes de enviarlos."
 
-#: src/renderer/src/app/App.tsx
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/app/use-app-messages.ts
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Gmail blocks {filename}. Remove this attachment before sending."
 msgstr "Gmail bloquea {filename}. Elimine este archivo adjunto antes de enviarlo."
 
@@ -3340,8 +3341,8 @@ msgstr "Mantener copia local"
 msgid "Keep OpenMail under"
 msgstr "Limitar OpenMail a"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Kept on this Mac"
 msgstr "Mantenido en esta Mac"
 
@@ -3362,7 +3363,7 @@ msgstr "El llavero está bloqueado"
 msgid "Label"
 msgstr "Etiqueta"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Label added"
 msgstr "Etiqueta añadida"
 
@@ -3375,7 +3376,7 @@ msgstr "Visibilidad de la lista de etiquetas"
 msgid "Label or folder"
 msgstr "Etiqueta o carpeta"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Label removed"
 msgstr "Etiqueta eliminada"
 
@@ -3715,19 +3716,19 @@ msgstr "Markdown funciona: **negrita**, `código`, ```bloque de código```"
 msgid "Marked {count} messages as read"
 msgstr "{count} mensajes marcados como leídos"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Marked as important"
 msgstr "Marcado como importante"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Marked as not important"
 msgstr "Marcado como no importante"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Marked as read"
 msgstr "Marcado como leído"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Marked as unread"
 msgstr "Marcado como no leído"
 
@@ -4141,7 +4142,7 @@ msgstr "Mover a la papelera"
 msgid "Move up"
 msgstr "Subir"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "Moved"
 msgstr "Movido"
@@ -4150,17 +4151,17 @@ msgstr "Movido"
 msgid "Moved or deleted"
 msgstr "Movido o eliminado"
 
-#: src/renderer/src/app/App.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Moved to Focused"
 msgstr "Movido a Prioritarios"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Moved to Inbox"
 msgstr "Movido a la Bandeja de entrada"
 
-#: src/renderer/src/app/App.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Moved to Other"
 msgstr "Movido a Otros"
 
@@ -4339,8 +4340,8 @@ msgstr "Ningún navegador ha abierto OpenMail."
 msgid "No copy"
 msgstr "No copiar"
 
-#: src/renderer/src/app/App.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "No current label applies. Moving to Trash."
 msgstr "No se aplica ninguna etiqueta actual. Pasando a la Papelera."
 
@@ -4853,8 +4854,8 @@ msgstr "No se pudo cargar el archivo adjunto de Outlook. Intenta guardar o envia
 msgid "Outlook automatic replies do not support a custom subject"
 msgstr "Las respuestas automáticas de Outlook no admiten un asunto personalizado"
 
-#: src/renderer/src/app/App.tsx
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/app/use-app-messages.ts
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 #: src/renderer/src/lib/errors.ts
 msgid "Outlook cannot upload attached messages of 3 MB or more. Remove this attachment before sending."
 msgstr "Outlook no puede cargar mensajes adjuntos de 3 MB o más. Elimina este archivo adjunto antes de enviar."
@@ -4883,8 +4884,8 @@ msgstr "Las solicitudes de mensajes de Outlook no pueden superar los 4 MB. Los m
 msgid "Outlook scheduled replies need both dates"
 msgstr "Las respuestas programadas de Outlook necesitan ambas fechas"
 
-#: src/renderer/src/app/App.tsx
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/app/use-app-messages.ts
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 #: src/renderer/src/lib/errors.ts
 msgid "Outlook.com messages are limited to 25 MB, including message text and attachments. Remove attachments before sending."
 msgstr "Los mensajes de Outlook.com están limitados a 25 MB, incluidos el texto del mensaje y los archivos adjuntos. Elimina archivos adjuntos antes de enviar."
@@ -4969,7 +4970,7 @@ msgstr "Eliminar permanentemente"
 msgid "Permanently delete selected mail?"
 msgstr "¿Eliminar permanentemente el correo seleccionado?"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/features/organize/FolderActions.tsx
 msgid "Permanently deleted {count} messages"
 msgstr "{count} mensajes eliminados permanentemente"
@@ -5410,7 +5411,7 @@ msgstr "Eliminar los parámetros de seguimiento de los enlaces"
 msgid "Removed {recipient}"
 msgstr "Se ha eliminado {recipient}"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Removed star"
 msgstr "Estrella eliminada"
 
@@ -5538,7 +5539,7 @@ msgstr "Responder a esta conversación"
 msgid "Report spam"
 msgstr "Marcar como correo no deseado"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Reported as spam"
 msgstr "Marcado como correo no deseado"
 
@@ -5784,7 +5785,7 @@ msgstr "Guardar en…"
 msgid "Save token"
 msgstr "Guardar token"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Saved"
@@ -5798,11 +5799,11 @@ msgstr "Guardado como EML"
 msgid "Saved as PDF"
 msgstr "Guardado como PDF"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Saved on this Mac. Retrying sync automatically."
 msgstr "Guardado en esta Mac. Reintentando la sincronización automáticamente."
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Saved on this Mac. Syncs when online."
 msgstr "Guardado en esta Mac. Se sincroniza cuando está en línea."
 
@@ -5810,7 +5811,7 @@ msgstr "Guardado en esta Mac. Se sincroniza cuando está en línea."
 msgid "Saved. New sign-ins use this client."
 msgstr "Guardado. Los nuevos inicios de sesión usan este cliente."
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Saving…"
 msgstr "Guardando…"
 
@@ -5993,7 +5994,7 @@ msgstr "Apellido del remitente"
 msgid "Sender name"
 msgstr "Nombre del remitente"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Sending…"
 msgstr "Enviando…"
 
@@ -6001,12 +6002,12 @@ msgstr "Enviando…"
 msgid "Sensitivity"
 msgstr "Confidencialidad"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/lib/view.ts
 msgid "Sent"
 msgstr "Enviado"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Sent and archived"
 msgstr "Enviado y archivado"
 
@@ -6233,7 +6234,7 @@ msgstr "Inicie sesión con su cuenta de Google en el navegador. OpenMail guarda 
 msgid "Sign in with your personal Microsoft account (outlook.com or Hotmail) in the browser. OpenMail keeps the sign-in token in this computer's keychain."
 msgstr "Inicie sesión con su cuenta personal de Microsoft (outlook.com o Hotmail) en el navegador. OpenMail guarda el token de inicio de sesión en el llavero de este equipo."
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Sign-in failed: {reason}"
 msgstr "Error al iniciar sesión: {reason}"
 
@@ -6325,7 +6326,7 @@ msgstr "Servidor SMTP"
 msgid "Snooze"
 msgstr "Posponer"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/lib/view.ts
 msgid "Snoozed"
 msgstr "Pospuesto"
@@ -6839,7 +6840,7 @@ msgstr "La conversación cambió. Vuelve a resumirla."
 msgid "There is not enough free disk space to compact safely."
 msgstr "No hay suficiente espacio libre en disco para compactar de forma segura."
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "These are not email addresses: {list}"
 msgstr "Estas no son direcciones de correo electrónico: {list}"
 
@@ -7099,6 +7100,7 @@ msgstr "Subrayado"
 
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
+#: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 #: src/renderer/src/state/desktop.ts
 msgid "Undo"
@@ -7283,7 +7285,7 @@ msgstr "Introduce un nombre de servicio como svc:openmail"
 msgid "Use an http, https or mailto link"
 msgstr "Utilice un enlace http, https o mailto"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Use an image up to 8 MB."
 msgstr "Utilice una imagen de hasta 8 MB."
 
@@ -7295,7 +7297,7 @@ msgstr "Usar contactos de Apple"
 msgid "Use default"
 msgstr "Usar predeterminado"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Use PNG, JPEG, GIF or WebP images up to 8 MB."
 msgstr "Utilice imágenes PNG, JPEG, GIF o WebP de hasta 8 MB."
 
@@ -7347,7 +7349,7 @@ msgstr "Ver al 100 %"
 msgid "Visible categories"
 msgstr "Categorías visibles"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Wait for attachments to finish loading."
 msgstr "Espere a que los archivos adjuntos terminen de cargarse."
 

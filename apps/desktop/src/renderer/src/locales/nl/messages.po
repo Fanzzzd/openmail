@@ -5,7 +5,7 @@ msgstr ""
 
 #. Separator between list items
 #. Separator between list items
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 #: src/renderer/src/features/reader/Reader.tsx
 msgid ", "
 msgstr ", "
@@ -131,7 +131,7 @@ msgstr "{delay, plural, one {# seconde} other {# seconden}}"
 msgid "{done} completed · {queued} queued · {running} running · {failed} failed"
 msgstr "{done} voltooid · {queued} in wachtrij · {running} actief · {failed} mislukt"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "{email} is signed in again"
 msgstr "{email} is opnieuw aangemeld"
 
@@ -328,6 +328,7 @@ msgstr "Actie mislukt"
 
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Action failed: {reason}"
 msgstr "Actie mislukt: {reason}"
 
@@ -406,7 +407,7 @@ msgstr "Voeg een automatisch antwoordbericht toe"
 msgid "Add at least one filter condition"
 msgstr "Voeg ten minste één filtervoorwaarde toe"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Add at least one recipient"
 msgstr "Voeg ten minste één ontvanger toe"
 
@@ -478,7 +479,7 @@ msgstr "Toegevoegd"
 msgid "Added {email}. Syncing…"
 msgstr "{email} toegevoegd. Synchroniseren…"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Added star"
 msgstr "Ster toegevoegd"
 
@@ -835,7 +836,7 @@ msgstr "Archiveer"
 msgid "Archive message"
 msgstr "Archiveer bericht"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Archived"
 msgstr "Gearchiveerd"
 
@@ -909,7 +910,7 @@ msgid "Attachments"
 msgstr "Bijlagen"
 
 #: src/renderer/src/app/use-native-menu-bridge.ts
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Attachments exceed the 30 MB compose limit."
 msgstr "Bijlagen overschrijden de opstellimiet van 30 MB."
 
@@ -1122,11 +1123,11 @@ msgstr "Kan deze ruimte niet vinden."
 msgid "Can't find this template."
 msgstr "Kan dit sjabloon niet vinden."
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Can't open the draft: {reason}"
 msgstr "Kan het concept niet openen: {reason}"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Can't open the message: {reason}"
 msgstr "Kan het bericht niet openen: {reason}"
 
@@ -1176,7 +1177,7 @@ msgstr "Een reeks met gewijzigde afzonderlijke afspraken kan niet worden bewerkt
 msgid "Categories"
 msgstr "Categorieën"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "Categories updated"
 msgstr "Categorieën bijgewerkt"
@@ -1295,13 +1296,13 @@ msgid "Checking sync health…"
 msgstr "Synchronisatie controleren…"
 
 #. editBody is the exact translated Edit body button label. Preserve it unchanged.
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgctxt "message text instruction"
 msgid "Choose {editBody} before inserting a template."
 msgstr "Kies ‘{editBody}’ voordat je een sjabloon invoegt."
 
 #. editBody is the exact translated Edit body button label. Preserve it unchanged.
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgctxt "message text instruction"
 msgid "Choose {editBody} before inserting an image."
 msgstr "Kies ‘{editBody}’ voordat je een afbeelding invoegt."
@@ -1563,7 +1564,7 @@ msgstr "{name} verbinden"
 msgid "Connect {name}?"
 msgstr "{name} verbinden?"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Connect an account to send feedback"
 msgstr "Koppel een account om feedback te sturen"
 
@@ -1682,7 +1683,7 @@ msgstr "Gesprekken"
 msgid "Copied"
 msgstr "Gekopieerd"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "Copied to folders"
 msgstr "Gekopieerd naar mappen"
@@ -1787,7 +1788,7 @@ msgstr "Oudere berichten konden niet worden geladen. Probeer opnieuw."
 msgid "Could not load the calendar invitation."
 msgstr "Kan de agenda-uitnodiging niet laden."
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Could not load the next message"
 msgstr "Kan het volgende bericht niet laden"
 
@@ -1799,15 +1800,15 @@ msgstr "Kan uw agenda niet laden."
 msgid "Could not open notification settings."
 msgstr "Kan meldingsinstellingen niet openen."
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Could not open the compose window"
 msgstr "Kan het opstelvenster niet openen"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Could not open the draft"
 msgstr "Kan het concept niet openen"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Could not open the feedback draft"
 msgstr "Kan het feedbackconcept niet openen"
 
@@ -1857,11 +1858,11 @@ msgstr "Kan {names} niet synchroniseren."
 msgid "Couldn't copy address"
 msgstr "Kan adres niet kopiëren"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Couldn't delete: {reason}"
 msgstr "Kan niet verwijderen: {reason}"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Couldn't discard: {reason}"
 msgstr "Kan niet weggooien: {reason}"
 
@@ -1877,15 +1878,15 @@ msgstr "Kan bijlage niet ophalen"
 msgid "Couldn't get the attachment: {reason}"
 msgstr "Kon de bijlage niet ophalen: {reason}"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't insert the image. Use a public PNG, JPEG, GIF or WebP image up to 8 MB."
 msgstr "Kan de afbeelding niet invoegen. Gebruik een openbare PNG-, JPEG-, GIF- of WebP-afbeelding van maximaal 8 MB."
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't load the original attachments: {reason}"
 msgstr "Kon de originele bijlagen niet laden: {reason}"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't load the original attachments. Try again."
 msgstr "Kan de originele bijlagen niet laden. Probeer het opnieuw."
 
@@ -1901,15 +1902,15 @@ msgstr "Uw accounts konden niet worden geladen."
 msgid "Couldn't print: {reason}"
 msgstr "Kon niet afdrukken: {reason}"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't read the attachment. Try adding it again."
 msgstr "Kon de bijlage niet lezen. Probeer het opnieuw toe te voegen."
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't read the clipboard attachment."
 msgstr "Kan de klembordbijlage niet lezen."
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't read the image."
 msgstr "Kon de afbeelding niet lezen."
 
@@ -1917,11 +1918,11 @@ msgstr "Kon de afbeelding niet lezen."
 msgid "Couldn't remove the Tailscale mapping. Open Tailscale, and OpenMail removes it as soon as Tailscale responds."
 msgstr "De Tailscale-koppeling kon niet worden verwijderd. Open Tailscale; OpenMail verwijdert de koppeling zodra Tailscale reageert."
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't save"
 msgstr "Kan niet opslaan"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Couldn't save the draft: {reason}"
 msgstr "Kan het concept niet opslaan: {reason}"
 
@@ -1929,7 +1930,7 @@ msgstr "Kan het concept niet opslaan: {reason}"
 msgid "Couldn't save the PDF: {reason}"
 msgstr "Kan de pdf niet opslaan: {reason}"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Couldn't send: {reason}"
 msgstr "Kan niet verzenden: {reason}"
 
@@ -1938,8 +1939,8 @@ msgstr "Kan niet verzenden: {reason}"
 msgid "Couldn't set up a secure connection to the mail server. Check the port and the encryption setting."
 msgstr "Er kon geen beveiligde verbinding met de mailserver worden gemaakt. Controleer de poort en de versleutelingsinstelling."
 
-#: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't sync"
 msgstr "Kan niet synchroniseren"
 
@@ -2169,7 +2170,7 @@ msgstr "Permanent verwijderen"
 msgid "Delete space"
 msgstr "Verwijder werkruimte"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Deleted"
 msgstr "Verwijderd"
 
@@ -2350,7 +2351,7 @@ msgstr "Berichttekst van concept"
 msgid "Draft categories"
 msgstr "Categorieën van concept"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Draft discarded"
 msgstr "Concept verwijderd"
 
@@ -2713,7 +2714,7 @@ msgstr "Zoek in bericht"
 msgid "Finding apps…"
 msgstr "Apps zoeken…"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Finish signing in in your browser"
@@ -2954,13 +2955,13 @@ msgstr "Gmail"
 msgid "Gmail aliases and signatures"
 msgstr "Gmail-aliassen en handtekeningen"
 
-#: src/renderer/src/app/App.tsx
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/app/use-app-messages.ts
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Gmail attachments exceed 25 MB in total. Remove attachments before sending."
 msgstr "Gmail-bijlagen zijn in totaal groter dan 25 MB. Verwijder bijlagen voordat u deze verzendt."
 
-#: src/renderer/src/app/App.tsx
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/app/use-app-messages.ts
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Gmail blocks {filename}. Remove this attachment before sending."
 msgstr "Gmail blokkeert {filename}. Verwijder deze bijlage voordat u deze verzendt."
 
@@ -3340,8 +3341,8 @@ msgstr "Bewaar een lokale kopie"
 msgid "Keep OpenMail under"
 msgstr "Houd OpenMail onder"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Kept on this Mac"
 msgstr "Op deze Mac bewaard"
 
@@ -3362,7 +3363,7 @@ msgstr "Sleutelhanger is vergrendeld"
 msgid "Label"
 msgstr "Label"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Label added"
 msgstr "Label toegevoegd"
 
@@ -3375,7 +3376,7 @@ msgstr "Zichtbaarheid van de labellijst"
 msgid "Label or folder"
 msgstr "Label of map"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Label removed"
 msgstr "Label verwijderd"
 
@@ -3715,19 +3716,19 @@ msgstr "Markdown werkt: **vet**, `code`, ```codeblok```"
 msgid "Marked {count} messages as read"
 msgstr "{count} berichten gemarkeerd als gelezen"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Marked as important"
 msgstr "Gemarkeerd als belangrijk"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Marked as not important"
 msgstr "Gemarkeerd als niet belangrijk"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Marked as read"
 msgstr "Gemarkeerd als gelezen"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Marked as unread"
 msgstr "Gemarkeerd als ongelezen"
 
@@ -4141,7 +4142,7 @@ msgstr "Verplaatsen naar prullenmand"
 msgid "Move up"
 msgstr "Ga omhoog"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "Moved"
 msgstr "Verplaatst"
@@ -4150,17 +4151,17 @@ msgstr "Verplaatst"
 msgid "Moved or deleted"
 msgstr "Verplaatst of verwijderd"
 
-#: src/renderer/src/app/App.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Moved to Focused"
 msgstr "Verplaatst naar Prioriteit"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Moved to Inbox"
 msgstr "Verplaatst naar Postvak IN"
 
-#: src/renderer/src/app/App.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Moved to Other"
 msgstr "Verplaatst naar Overige"
 
@@ -4339,8 +4340,8 @@ msgstr "Nog geen browser heeft OpenMail geopend."
 msgid "No copy"
 msgstr "Niet kopiëren"
 
-#: src/renderer/src/app/App.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "No current label applies. Moving to Trash."
 msgstr "Er is geen actueel label van toepassing. Verplaatsen naar prullenmand."
 
@@ -4853,8 +4854,8 @@ msgstr "Het uploaden van de Outlook-bijlage is mislukt. Probeer opnieuw op te sl
 msgid "Outlook automatic replies do not support a custom subject"
 msgstr "Automatische antwoorden in Outlook ondersteunen geen aangepast onderwerp"
 
-#: src/renderer/src/app/App.tsx
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/app/use-app-messages.ts
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 #: src/renderer/src/lib/errors.ts
 msgid "Outlook cannot upload attached messages of 3 MB or more. Remove this attachment before sending."
 msgstr "Outlook kan bijgevoegde berichten van 3 MB of meer niet uploaden. Verwijder deze bijlage voordat u verzendt."
@@ -4883,8 +4884,8 @@ msgstr "Berichtaanvragen in Outlook mogen niet groter zijn dan 4 MB. Grote bijge
 msgid "Outlook scheduled replies need both dates"
 msgstr "Voor geplande Outlook-antwoorden zijn beide datums nodig"
 
-#: src/renderer/src/app/App.tsx
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/app/use-app-messages.ts
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 #: src/renderer/src/lib/errors.ts
 msgid "Outlook.com messages are limited to 25 MB, including message text and attachments. Remove attachments before sending."
 msgstr "Outlook.com-berichten zijn beperkt tot 25 MB, inclusief berichttekst en bijlagen. Verwijder bijlagen voordat u verzendt."
@@ -4969,7 +4970,7 @@ msgstr "Permanent verwijderen"
 msgid "Permanently delete selected mail?"
 msgstr "Geselecteerde e-mail definitief verwijderen?"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/features/organize/FolderActions.tsx
 msgid "Permanently deleted {count} messages"
 msgstr "Permanent verwijderde {count} berichten"
@@ -5410,7 +5411,7 @@ msgstr "Trackingparameters uit links verwijderen"
 msgid "Removed {recipient}"
 msgstr "{recipient} verwijderd"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Removed star"
 msgstr "Ster verwijderd"
 
@@ -5538,7 +5539,7 @@ msgstr "Antwoorden in dit gesprek"
 msgid "Report spam"
 msgstr "Meld ongewenste reclame"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Reported as spam"
 msgstr "Gemeld als ongewenste reclame"
 
@@ -5784,7 +5785,7 @@ msgstr "Bewaar in…"
 msgid "Save token"
 msgstr "Bewaar token"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Saved"
@@ -5798,11 +5799,11 @@ msgstr "Opgeslagen als EML"
 msgid "Saved as PDF"
 msgstr "Opgeslagen als PDF"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Saved on this Mac. Retrying sync automatically."
 msgstr "Opgeslagen op deze Mac. Automatische synchronisatie opnieuw proberen."
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Saved on this Mac. Syncs when online."
 msgstr "Opgeslagen op deze Mac. Synchroniseert wanneer online."
 
@@ -5810,7 +5811,7 @@ msgstr "Opgeslagen op deze Mac. Synchroniseert wanneer online."
 msgid "Saved. New sign-ins use this client."
 msgstr "Bewaard. Nieuwe aanmeldingen gebruiken deze client."
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Saving…"
 msgstr "Bewaren…"
 
@@ -5993,7 +5994,7 @@ msgstr "Achternaam afzender"
 msgid "Sender name"
 msgstr "Naam afzender"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Sending…"
 msgstr "Versturen…"
 
@@ -6001,12 +6002,12 @@ msgstr "Versturen…"
 msgid "Sensitivity"
 msgstr "Gevoeligheid"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/lib/view.ts
 msgid "Sent"
 msgstr "Verstuurd"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Sent and archived"
 msgstr "Verstuurd en gearchiveerd"
 
@@ -6233,7 +6234,7 @@ msgstr "Log in de browser in met uw Google-account. OpenMail bewaart het aanmeld
 msgid "Sign in with your personal Microsoft account (outlook.com or Hotmail) in the browser. OpenMail keeps the sign-in token in this computer's keychain."
 msgstr "Log in de browser in met uw persoonlijke Microsoft-account (outlook.com of Hotmail). OpenMail bewaart het aanmeldtoken in de sleutelhanger van deze computer."
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 msgid "Sign-in failed: {reason}"
 msgstr "Inloggen mislukt: {reason}"
 
@@ -6325,7 +6326,7 @@ msgstr "SMTP-server"
 msgid "Snooze"
 msgstr "Stel uit"
 
-#: src/renderer/src/app/App.tsx
+#: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/lib/view.ts
 msgid "Snoozed"
 msgstr "Uitgesteld"
@@ -6839,7 +6840,7 @@ msgstr "Het gesprek is gewijzigd. Vat het opnieuw samen."
 msgid "There is not enough free disk space to compact safely."
 msgstr "Er is onvoldoende vrije schijfruimte om veilig te verkleinen."
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "These are not email addresses: {list}"
 msgstr "Dit zijn geen e-mailadressen: {list}"
 
@@ -7099,6 +7100,7 @@ msgstr "Onderstreept"
 
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
+#: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 #: src/renderer/src/state/desktop.ts
 msgid "Undo"
@@ -7283,7 +7285,7 @@ msgstr "Voer een servicenaam in zoals svc:openmail"
 msgid "Use an http, https or mailto link"
 msgstr "Gebruik een http-, https- of mailto-link"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Use an image up to 8 MB."
 msgstr "Gebruik een afbeelding van maximaal 8 MB."
 
@@ -7295,7 +7297,7 @@ msgstr "Apple-contacten gebruiken"
 msgid "Use default"
 msgstr "Gebruik standaard"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Use PNG, JPEG, GIF or WebP images up to 8 MB."
 msgstr "Gebruik PNG-, JPEG-, GIF- of WebP-afbeeldingen tot 8 MB."
 
@@ -7347,7 +7349,7 @@ msgstr "Weergeven op 100%"
 msgid "Visible categories"
 msgstr "Zichtbare categorieën"
 
-#: src/renderer/src/features/compose/components/Composer.tsx
+#: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Wait for attachments to finish loading."
 msgstr "Wacht tot de bijlagen zijn geladen."
 
