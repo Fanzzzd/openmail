@@ -167,10 +167,11 @@ export function Sidebar({
 
   const failures = syncFailures(accounts, syncState);
 
-  // Inside the layout's main landmark a labelled section keeps the footer from reading as contentinfo.
-  const Landmark = landmark ? "aside" : "section";
   return (
-    <Landmark
+    // Inside the layout's main landmark a complementary landmark may not nest, so it is a
+    // labelled region there. The aside still keeps its footer from reading as contentinfo.
+    <aside
+      role={landmark ? undefined : "region"}
       aria-label={landmark ? undefined : t`Sidebar`}
       onDropCapture={() => setDragAccount(null)}
       onDragEndCapture={() => setDragAccount(null)}
@@ -598,7 +599,7 @@ export function Sidebar({
         onSpace={onSpace}
         onEditProfile={onEditProfile}
       />
-    </Landmark>
+    </aside>
   );
 }
 

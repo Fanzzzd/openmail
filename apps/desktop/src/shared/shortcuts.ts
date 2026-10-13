@@ -187,8 +187,8 @@ export function selectionShortcut(event: KeyEvent): "all" | "extendNext" | "exte
 
 /** Symbols whose KeyboardEvent.key already includes Shift. */
 const SHIFTED_SYMBOL = /[?!#+~{}|]/;
-const isLiteralShift = (key: string) =>
-  key.length === 1 && (key !== key.toLowerCase() || SHIFTED_SYMBOL.test(key));
+const isLiteralShift = (value: string) =>
+  value.length === 1 && (value !== value.toLowerCase() || SHIFTED_SYMBOL.test(value));
 /** Physical keys for strokes whose reported character changes with the layout or with ⌘. */
 const STROKE_CODE: Record<string, string> = {
   "{": "BracketLeft",
@@ -199,7 +199,8 @@ const STROKE_CODE: Record<string, string> = {
   "\\": "Backslash",
   "'": "Quote",
 };
-const strokeCode = (key: string) => (/^[0-9]$/.test(key) ? `Digit${key}` : STROKE_CODE[key]);
+const strokeCode = (value: string) =>
+  /^[0-9]$/.test(value) ? `Digit${value}` : STROKE_CODE[value];
 
 function matches(stroke: KeyStroke, event: KeyEvent): boolean {
   if (!stroke.cmd && event.metaKey) return false;

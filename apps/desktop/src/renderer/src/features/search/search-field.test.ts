@@ -32,9 +32,10 @@ const controls = vi.hoisted(() => {
     contactLookup: vi.fn(),
     labelScope: vi.fn(),
     accountIds: ["gmail:one"],
-    shortcutSet: "mimestream" as "mimestream" | "apple" | "gmail",
   };
 });
+/** The keymap the mocked prefs report; read when the field renders. */
+let activeShortcutSet: "mimestream" | "apple" | "gmail" = "mimestream";
 // The widget shell is stubbed; test the real search field's callbacks and state without a browser.
 vi.mock("@base-ui/react/combobox", () => {
   const wrap = ({ children }: { children: ReactNode }) => createElement("div", null, children);
@@ -105,7 +106,7 @@ vi.mock("@effect/atom-react", () => ({
   useAtom: () => ["all", vi.fn()],
   useAtomValue: (atom: string) => {
     if (atom === "listQuery") return { accountIds: controls.accountIds };
-    if (atom === "prefs") return AsyncResult.success({ shortcutSet: controls.shortcutSet });
+    if (atom === "prefs") return AsyncResult.success({ shortcutSet: activeShortcutSet });
     if (atom === "labels")
       return AsyncResult.success([{ id: "work", name: 'Work "private"', accountId: "gmail:one" }]);
     if (atom === "contacts")
@@ -492,7 +493,7 @@ it("the placeholder names the search key of the active keymap", () => {
     ["apple", "Search  ⌥⌘F"],
     ["gmail", "Search  /"],
   ] as const) {
-    controls.shortcutSet = set;
+    activeShortcutSet = set;
     const dom = testDom();
     try {
       renderField(dom, "");
@@ -501,5 +502,5 @@ it("the placeholder names the search key of the active keymap", () => {
       dom.dispose();
     }
   }
-  controls.shortcutSet = "mimestream";
+  activeShortcutSet = "mimestream";
 });

@@ -220,7 +220,7 @@ export function MessageList({
   // Short first pages have no scrollbar. Ask for older mail once per list growth.
   useEffect(() => {
     if (!loading && window.total - viewport.top - viewport.height < 400) endReached.current();
-  }, [threads.length, loading, viewport.top, viewport.height, window.total]);
+  }, [loading, viewport.top, viewport.height, window.total]);
 
   return (
     <section
