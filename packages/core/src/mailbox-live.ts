@@ -20,7 +20,7 @@ import {
 } from "./attachments.js";
 import { makeDownloadBudget } from "./download-budget.js";
 import { parseRawDraft as unboundParseRawDraft } from "./drafts.js";
-import { InvalidInput } from "./errors.js";
+import { InvalidInput } from "./domain/errors.js";
 import { makeIndexer } from "./indexer.js";
 import { makeAccountsMailbox } from "./mailbox-accounts.js";
 import { makeAiMailbox } from "./mailbox-ai.js";

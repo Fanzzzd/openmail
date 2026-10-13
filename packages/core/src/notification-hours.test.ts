@@ -16,7 +16,7 @@ import {
   type ActiveHours,
   type IncomingMessage,
   type Provider,
-} from "./domain.js";
+} from "./domain/domain.js";
 import { makeFakeProvider } from "./platform/node/fake-provider.js";
 import { Mailbox } from "./mailbox.js";
 import { MailboxLive } from "./mailbox-live.js";

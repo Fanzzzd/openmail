@@ -5,7 +5,7 @@ import { Effect } from "effect";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { Mailbox } from "../../../../../packages/core/src/mailbox.js";
 import { fakeServer, TestMailbox } from "../../../../../packages/core/src/platform/node/testing.js";
-import type { IncomingMessage } from "../../../../../packages/core/src/domain.js";
+import type { IncomingMessage } from "../../../../../packages/core/src/domain/domain.js";
 
 vi.mock("@openmail/core", () => import("../../../../../packages/core/src/index.js"));
 vi.mock("electron", () => ({

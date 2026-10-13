@@ -6,7 +6,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { databaseLayer, MIGRATIONS } from "./platform/node/db.js";
-import { AccountSettings, DEFAULT_PREFS, accountName, type IncomingMessage } from "./domain.js";
+import {
+  AccountSettings,
+  DEFAULT_PREFS,
+  accountName,
+  type IncomingMessage,
+} from "./domain/domain.js";
 import { fakeServer, makeFakeProvider } from "./platform/node/fake-provider.js";
 import { MailboxLive } from "./mailbox-live.js";
 import { Mailbox } from "./mailbox.js";
@@ -17,7 +22,7 @@ import { StoreLive } from "./store.js";
 import { notificationAction, spaceAccountIds, dockUnreadCount } from "./system.js";
 import { TestMailbox } from "./platform/node/testing.js";
 import { TestClock } from "effect/testing";
-import { ProviderError } from "./errors.js";
+import { ProviderError } from "./domain/errors.js";
 const incoming = (id: string): IncomingMessage => ({
   providerId: id,
   threadId: id,

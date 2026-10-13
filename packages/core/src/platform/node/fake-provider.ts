@@ -19,21 +19,21 @@ import type {
   Label,
   MailOp,
   OutgoingMessage,
-} from "../../domain.js";
+} from "../../domain/domain.js";
 import {
   FeatureScopeMissing,
   PermanentError,
   SettingsScopeMissing,
   type ProviderFailure,
-} from "../../errors.js";
+} from "../../domain/errors.js";
 import type { Change, ConnectInput, DraftPush, ProviderAdapter } from "../../services.js";
 import {
   EMPTY_VACATION,
   type ServerFilter,
   type Vacation,
   type SendAs,
-} from "../../organization.js";
-import { FOLDER_BATCH_LIMIT, GMAIL_PERMANENT_DELETE_SCOPE } from "../../folder-actions.js";
+} from "../../domain/organization.js";
+import { FOLDER_BATCH_LIMIT, GMAIL_PERMANENT_DELETE_SCOPE } from "../../domain/folder-actions.js";
 import { matchesSearch } from "../../search.js";
 import { applyOpToLabels } from "../../store.js";
 
@@ -43,7 +43,10 @@ let counter = 0;
 /** A provider's server side, in memory. Tests read and change it directly. */
 export interface FakeServer {
   supportsPermanentDelete: boolean;
-  deleteFolderLabels: Record<import("../../folder-actions.js").DeleteFolder, readonly string[]>;
+  deleteFolderLabels: Record<
+    import("../../domain/folder-actions.js").DeleteFolder,
+    readonly string[]
+  >;
   grantedScopes: string[];
   contacts: Address[];
   contactGroups: import("../../contacts.js").ContactGroup[];
@@ -63,7 +66,7 @@ export interface FakeServer {
   deleted: (readonly string[])[];
   folderPages: (string | null)[];
   pulls: (string | null)[];
-  searched: import("../../domain.js").ThreadQuery[];
+  searched: import("../../domain/domain.js").ThreadQuery[];
   searchResults?: IncomingMessage[];
   pushed: { providerId: string; op: MailOp }[];
   batches: { providerIds: readonly string[]; op: MailOp }[];
@@ -83,7 +86,7 @@ export interface FakeServer {
   /** The next push, send, pull or draft call fails with this, once. */
   failNext?: ProviderFailure;
   /** Submission uncertainty is a send-only adapter result. */
-  sendFailure?: ProviderFailure | import("../../errors.js").SendUncertain;
+  sendFailure?: ProviderFailure | import("../../domain/errors.js").SendUncertain;
   /** A test-controlled network stall; local batch commits must not wait for it. */
   beforePush?: Effect.Effect<void, ProviderFailure>;
   settingsFailure?: SettingsScopeMissing;
@@ -551,7 +554,7 @@ export function makeFakeProvider(
     ...(options.batches
       ? {
           pushBatch: (
-            account: import("../../domain.js").Account,
+            account: import("../../domain/domain.js").Account,
             providerIds: readonly string[],
             op: MailOp,
           ) =>

@@ -2,7 +2,7 @@ import { lookup } from "node:dns/promises";
 import { request } from "node:https";
 import { Effect } from "effect";
 import { publicImageAddress } from "../../compose-images.js";
-import { ProviderError } from "../../errors.js";
+import { ProviderError } from "../../domain/errors.js";
 
 /** Resolve once and pin TLS to a public address. No cookies, authorization or redirect follow-up. */
 export const postUnsubscribe = (input: string) =>

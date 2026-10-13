@@ -1,6 +1,6 @@
 import { Effect, Option, Schema } from "effect";
-import { PermanentError, ProviderError } from "../../../errors.js";
-import { FOLDER_BATCH_LIMIT } from "../../../folder-actions.js";
+import { PermanentError, ProviderError } from "../../../domain/errors.js";
+import { FOLDER_BATCH_LIMIT } from "../../../domain/folder-actions.js";
 import {
   CACHED_HEADER_NAMES,
   cachedHeaders,

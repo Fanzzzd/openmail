@@ -1,8 +1,8 @@
 import { Clock, Effect, Option, Semaphore } from "effect";
-import { DEFAULT_CACHE_WINDOWS, keepBody, type BackfillState } from "./cache.js";
+import { DEFAULT_CACHE_WINDOWS, keepBody, type BackfillState } from "./domain/cache.js";
 import { trackImapBackfill } from "./imap-cursor.js";
-import type { ThreadQuery } from "./domain.js";
-import { ProviderError } from "./errors.js";
+import type { ThreadQuery } from "./domain/domain.js";
+import { ProviderError } from "./domain/errors.js";
 import type { PerformError } from "./mailbox.js";
 import type { Providers, Store } from "./services.js";
 
@@ -185,7 +185,7 @@ export function makeCacheMailbox(
   });
   const readerThread = Effect.fn("Mailbox.readerThread")(function* (
     id: string,
-  ): Effect.fn.Return<import("./domain.js").Message[], PerformError> {
+  ): Effect.fn.Return<import("./domain/domain.js").Message[], PerformError> {
     const messages = yield* store.getThread(id);
     const now = yield* Clock.currentTimeMillis;
     const failed = new Set<string>();
@@ -260,7 +260,7 @@ export function makeCacheMailbox(
     pauseBackfill: (accountId: string, paused: boolean) =>
       store.setBackfillPaused(accountId, paused).pipe(Effect.andThen(progress), Effect.asVoid),
     cacheWindows: store.cacheWindows,
-    setCacheWindow: (input: import("./cache.js").CacheWindowInput) =>
+    setCacheWindow: (input: import("./domain/cache.js").CacheWindowInput) =>
       Effect.gen(function* () {
         yield* store.getAccount(input.accountId);
         yield* store.setCacheWindow(input);

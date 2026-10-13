@@ -15,9 +15,9 @@ import {
   type Proposal,
   Provider,
   QueuedOp,
-} from "./domain.js";
+} from "./domain/domain.js";
 import { DerivedChunk } from "./media.js";
-import { isReauthReason } from "./errors.js";
+import { isReauthReason } from "./domain/errors.js";
 import { cleanDisplayName } from "./message-security.js";
 import { type PendingOp } from "./services.js";
 

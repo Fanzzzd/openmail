@@ -1,5 +1,5 @@
 import { Context, Effect } from "effect";
-import { ProviderError } from "./errors.js";
+import { ProviderError } from "./domain/errors.js";
 
 /** OS adapter sends a context-free HTTPS POST, with no redirects or ambient cookies. */
 export const UnsubscribeNetwork = Context.Reference<{

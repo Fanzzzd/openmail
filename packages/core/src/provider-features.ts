@@ -1,6 +1,6 @@
 import { Effect } from "effect";
-import type { Account } from "./domain.js";
-import { FeatureScopeMissing, InvalidInput, ProviderError } from "./errors.js";
+import type { Account } from "./domain/domain.js";
+import { FeatureScopeMissing, InvalidInput, ProviderError } from "./domain/errors.js";
 import { authFailure } from "./reauth.js";
 
 /** Translate optional API permissions before they reach the mail authentication path. */

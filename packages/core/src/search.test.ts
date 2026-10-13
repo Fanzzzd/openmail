@@ -1,7 +1,7 @@
 import { incoming as makeIncoming, TestMailbox, fakeServer } from "./platform/node/testing.js";
 import { assert, it } from "@effect/vitest";
 import { Effect, Layer, FileSystem, Path } from "effect";
-import { type IncomingMessage } from "./domain.js";
+import { type IncomingMessage } from "./domain/domain.js";
 import { imapSearch } from "./platform/node/imap-search.js";
 import {
   gmailSearch,
@@ -21,7 +21,7 @@ import {
   serverSearchIgnored,
   quoteSearchValue,
 } from "./search.js";
-import { fuzzyFolders } from "./organization.js";
+import { fuzzyFolders } from "./domain/organization.js";
 import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { Store } from "./services.js";
 import { StoreLive } from "./store.js";
@@ -32,7 +32,7 @@ import { NodeFileSystem, NodePath } from "@effect/platform-node";
 import { SqlClient } from "effect/sql";
 import { databaseLayer } from "./platform/node/db.js";
 import { NodeSystem } from "./platform/node/platform-node.js";
-import { InvalidInput } from "./errors.js";
+import { InvalidInput } from "./domain/errors.js";
 import { type DerivedChunk } from "./media.js";
 {
   const message: IncomingMessage = makeIncoming("m1", {

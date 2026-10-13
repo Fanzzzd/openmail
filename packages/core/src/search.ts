@@ -1,5 +1,5 @@
 import { stripMessageIdBrackets } from "./message-id.js";
-import { MAILBOX_LABEL } from "./mailbox-labels.js";
+import { MAILBOX_LABEL } from "./domain/mailbox-labels.js";
 import { Option, Schema } from "effect";
 import {
   SearchCondition,
@@ -12,9 +12,9 @@ import {
   type SearchCriteria,
   type ThreadQuery,
   type ThreadSummary,
-} from "./domain.js";
-import { InvalidInput } from "./errors.js";
-import type { FilterCriteria } from "./organization.js";
+} from "./domain/domain.js";
+import { InvalidInput } from "./domain/errors.js";
+import type { FilterCriteria } from "./domain/organization.js";
 
 const SEARCH_FOLDER_LABELS: Readonly<Record<string, string>> = MAILBOX_LABEL;
 

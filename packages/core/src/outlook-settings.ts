@@ -1,7 +1,7 @@
 import { reconcileProviderWrite, sameProviderWrite } from "./provider-write.js";
 import { Effect, Schema, Option } from "effect";
-import type { Account } from "./domain.js";
-import { PermanentError, ProviderError, SettingsScopeMissing } from "./errors.js";
+import type { Account } from "./domain/domain.js";
+import { PermanentError, ProviderError, SettingsScopeMissing } from "./domain/errors.js";
 import { authFailure } from "./reauth.js";
 import { graphTimestamp } from "./graph-time.js";
 import { escapeHtml } from "./print.js";
@@ -14,7 +14,7 @@ import {
   type FilterInput,
   type ServerFilter,
   type Vacation,
-} from "./organization.js";
+} from "./domain/organization.js";
 import {
   outlookConditions,
   outlookExceptions,

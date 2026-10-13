@@ -1,9 +1,9 @@
 import { gmailPages } from "./provider-pages.js";
 import { Effect, Result, Schema } from "effect";
 import { reconcileProviderWrite } from "./provider-write.js";
-import type { Account, Address } from "./domain.js";
+import type { Account, Address } from "./domain/domain.js";
 import type { CalendarInvite, CalendarTime, InviteResponse } from "./calendar.js";
-import { InvalidInput } from "./errors.js";
+import { InvalidInput } from "./domain/errors.js";
 import {
   type ContactGroup,
   type ContactPhoto,

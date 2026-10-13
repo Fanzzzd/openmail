@@ -18,10 +18,10 @@ import {
   validateRecurrenceStart,
   type CalendarEventEdits,
 } from "./event-recurrence.js";
-import { InvalidInput } from "./errors.js";
+import { InvalidInput } from "./domain/errors.js";
 export * from "./event-dates.js";
 export * from "./event-recurrence.js";
-import { Address, type Message, type Provider } from "./domain.js";
+import { Address, type Message, type Provider } from "./domain/domain.js";
 
 export const InviteResponse = Schema.Literals(["accepted", "tentative", "declined"]);
 export type InviteResponse = typeof InviteResponse.Type;

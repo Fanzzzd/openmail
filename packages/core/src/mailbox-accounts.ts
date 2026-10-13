@@ -1,7 +1,7 @@
 import { Clock, Effect, FiberSet, Schema } from "effect";
-import { AccountSettings } from "./domain.js";
-import { AuthError, FeatureScopeMissing, InvalidInput } from "./errors.js";
-import { GMAIL_PERMANENT_DELETE_SCOPE } from "./folder-actions.js";
+import { AccountSettings } from "./domain/domain.js";
+import { AuthError, FeatureScopeMissing, InvalidInput } from "./domain/errors.js";
+import { GMAIL_PERMANENT_DELETE_SCOPE } from "./domain/folder-actions.js";
 import { type makeFeatureMailbox } from "./mailbox-features.js";
 import { type MailboxDependencies, type MailboxRuntimeState } from "./mailbox-runtime.js";
 import { type Mailbox } from "./mailbox.js";

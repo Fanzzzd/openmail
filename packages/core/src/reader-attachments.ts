@@ -2,7 +2,7 @@ import { stripMessageIdBrackets } from "./message-id.js";
 import { Buffer } from "./platform/bytes.js";
 import { Effect, Result } from "effect";
 import type { MailCodecPort } from "./platform/mail-codec.js";
-import { InvalidInput, NotFound, ProviderError } from "./errors.js";
+import { InvalidInput, NotFound, ProviderError } from "./domain/errors.js";
 import type { AttachmentContent, AttachmentPartResult, Mailbox, PerformError } from "./mailbox.js";
 import type { EmbeddedMessage, ReaderAttachment } from "./attachment-view.js";
 import {
@@ -52,7 +52,7 @@ const parseMessage = (part: AttachmentContent, codec: MailCodecPort) =>
  * The budget includes roots, all decoded ancestor contents, and returned copies. */
 export function makeReaderAttachments(
   attachment: Mailbox["Service"]["attachment"],
-  thread: (id: string) => Effect.Effect<import("./domain.js").Message[], NotFound>,
+  thread: (id: string) => Effect.Effect<import("./domain/domain.js").Message[], NotFound>,
   codec: MailCodecPort,
 ) {
   const openTree = Effect.fnUntraced(function* (messageId: string) {

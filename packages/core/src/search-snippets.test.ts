@@ -2,7 +2,7 @@ import { assert, it } from "@effect/vitest";
 import { Effect, Layer, Option } from "effect";
 import { SqlClient } from "effect/sql";
 import { searchHighlightTerms, searchSnippet } from "./search-snippets.js";
-import type { IncomingMessage, SearchMatch } from "./domain.js";
+import type { IncomingMessage, SearchMatch } from "./domain/domain.js";
 import { Store } from "./services.js";
 import { StoreLive } from "./store.js";
 import { MemoryPlatform } from "./platform/node/platform-memory.js";

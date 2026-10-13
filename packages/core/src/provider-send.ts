@@ -1,7 +1,7 @@
 import type { PerformError } from "./mailbox.js";
 import { Clock, Effect, Schema } from "effect";
 import type { ApiError } from "./provider-http.js";
-import { AuthError, ProviderError, SendUncertain } from "./errors.js";
+import { AuthError, ProviderError, SendUncertain } from "./domain/errors.js";
 
 /** A negative result requires successful lookups unless the caller is confirming an uncertain send. */
 export const pollDelivery = <E, R>(

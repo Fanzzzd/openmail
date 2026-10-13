@@ -2,7 +2,7 @@ import { NodeFileSystem, NodePath } from "@effect/platform-node";
 import { assert, it } from "@effect/vitest";
 import { Effect, FileSystem, Layer, Path, Stream, Fiber } from "effect";
 import { databaseLayer } from "./platform/node/db.js";
-import { DEFAULT_PREFS, LEGACY_TOOLBAR_ACTIONS } from "./domain.js";
+import { DEFAULT_PREFS, LEGACY_TOOLBAR_ACTIONS } from "./domain/domain.js";
 import { StoreLive } from "./store.js";
 import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { Store } from "./services.js";

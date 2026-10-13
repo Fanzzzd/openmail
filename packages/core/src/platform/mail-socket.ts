@@ -1,5 +1,5 @@
 import { Context } from "effect";
-import { ProviderError, InvalidInput } from "../errors.js";
+import { ProviderError, InvalidInput } from "../domain/errors.js";
 import { Buffer } from "./bytes.js";
 
 /** TCP/TLS only. Protocol commands and credentials stay in core. */

@@ -2,7 +2,7 @@ import { TestClock } from "effect/testing";
 import { assert, it } from "@effect/vitest";
 import { Effect, Layer, Option, Schema, Stream } from "effect";
 import { HttpClient, HttpClientResponse } from "effect/http";
-import { type IncomingMessage, type Provider } from "./domain.js";
+import { type IncomingMessage, type Provider } from "./domain/domain.js";
 import { makeGmail } from "./gmail.js";
 import { makeOutlook } from "./outlook.js";
 import { MailboxLive } from "./mailbox-live.js";

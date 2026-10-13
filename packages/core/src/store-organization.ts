@@ -5,9 +5,9 @@ import {
   type AccountOrganization,
   type LabelPreference,
   type SendAs,
-} from "./organization.js";
+} from "./domain/organization.js";
 import { richComposeBody, textComposeHtml } from "./compose-body.js";
-import { INBOX_CATEGORIES, inboxCategories, Provider } from "./domain.js";
+import { INBOX_CATEGORIES, inboxCategories, Provider } from "./domain/domain.js";
 import { all, run } from "./sql-rows.js";
 
 const LabelPrefRow = Schema.Struct({

@@ -1,4 +1,4 @@
-import type { Address, MessageSecurity, Provider } from "./domain.js";
+import type { Address, MessageSecurity, Provider } from "./domain/domain.js";
 import { registrableDomain } from "./link-security.js";
 import { parseAppLink } from "./system.js";
 

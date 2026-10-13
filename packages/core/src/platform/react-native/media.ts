@@ -1,6 +1,6 @@
 import { Effect, Layer } from "effect";
 import { MediaError } from "../../media.js";
-import { ProviderError } from "../../errors.js";
+import { ProviderError } from "../../domain/errors.js";
 import { ImageNetwork, PdfWorker } from "../runtime.js";
 
 /** Hermes has no disposable PDF.js worker or browser DOM. Never upload PDF bytes as a fallback. */

@@ -1,9 +1,9 @@
 import { graphPageLink } from "./graph-pagination.js";
 import { assert, it } from "@effect/vitest";
-import { ProviderError } from "./errors.js";
+import { ProviderError } from "./domain/errors.js";
 import { backfillCachedHeaders } from "./header-backfill.js";
 import { parseCalendar } from "./invites.js";
-import { EMPTY_FILTER } from "./organization.js";
+import { EMPTY_FILTER } from "./domain/organization.js";
 import { draftCreation } from "./platform/node/draft-create-fixture.js";
 import {
   fakeHttp,
@@ -27,7 +27,7 @@ import {
 import { HttpClient, HttpClientError, HttpClientRequest, HttpClientResponse } from "effect/http";
 import { TestClock } from "effect/testing";
 import { simpleParser } from "mailparser";
-import { type Account, type OutgoingMessage } from "./domain.js";
+import { type Account, type OutgoingMessage } from "./domain/domain.js";
 import { MailboxLive } from "./mailbox-live.js";
 import { Mailbox } from "./mailbox.js";
 import { markdownDraftSource } from "./markdown-draft.js";
@@ -784,7 +784,7 @@ it.live("retry after the second attachment fails keeps one Outlook draft", () =>
           missing: () => Effect.succeed(false),
           begin: () => Effect.succeed({ messageId: "<client@example.test>", attempted: false }),
           attempted: () => Effect.void,
-          remember: (remote: import("./domain.js").DraftRemote) =>
+          remember: (remote: import("./domain/domain.js").DraftRemote) =>
             Effect.sync(() => {
               remembered = {
                 draftId: remote.draftId ?? "draft",

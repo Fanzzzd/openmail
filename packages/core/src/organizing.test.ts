@@ -9,7 +9,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, vi } from "vitest";
 import { databaseLayer, MIGRATIONS } from "./platform/node/db.js";
-import { DEFAULT_ACTIVE_HOURS, type IncomingMessage, type Provider } from "./domain.js";
+import { DEFAULT_ACTIVE_HOURS, type IncomingMessage, type Provider } from "./domain/domain.js";
 import { Mailbox } from "./mailbox.js";
 import {
   type GmailRuleDefinition,
@@ -17,11 +17,11 @@ import {
   parseSnoozeTime,
   systemFolderId,
   moveSourceLabel,
-} from "./organization.js";
+} from "./domain/organization.js";
 import { makeGmailSettings } from "./gmail-settings.js";
 import { gmailDelta } from "./gmail.js";
 import { destination } from "./outlook/graph.js";
-import { ProviderError } from "./errors.js";
+import { ProviderError } from "./domain/errors.js";
 import { fakeServer, makeFakeProvider } from "./platform/node/fake-provider.js";
 import { NodeSystem } from "./platform/node/platform-node.js";
 import { Store, type ProviderAdapter } from "./services.js";

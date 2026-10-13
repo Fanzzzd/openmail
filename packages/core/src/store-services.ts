@@ -1,4 +1,4 @@
-import { Provider } from "./domain.js";
+import { Provider } from "./domain/domain.js";
 import { Effect, Option, Schema } from "effect";
 import type { SqlClient } from "effect/sql";
 import { legacyScopes, OptionalService } from "./optional-services.js";

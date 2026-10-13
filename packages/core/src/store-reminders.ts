@@ -1,7 +1,7 @@
 import { Effect, Option, Schema } from "effect";
 import { type SqlClient } from "effect/sql";
-import { InvalidInput } from "./errors.js";
-import { applyOpToLabels } from "./mail-ops.js";
+import { InvalidInput } from "./domain/errors.js";
+import { applyOpToLabels } from "./domain/mail-ops.js";
 import { type Store } from "./services.js";
 import { all, first, run } from "./sql-rows.js";
 

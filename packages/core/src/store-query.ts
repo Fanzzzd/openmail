@@ -1,7 +1,7 @@
 import { Effect, Schema } from "effect";
 import { type SqlClient } from "effect/sql";
 import { type Fragment } from "effect/sql/Statement";
-import { type AttachmentType, type SearchCondition, type ThreadQuery } from "./domain.js";
+import { type AttachmentType, type SearchCondition, type ThreadQuery } from "./domain/domain.js";
 import {
   ATTACHMENT_TYPES,
   expressionHasSize,
@@ -21,7 +21,7 @@ import {
 import { SEARCH_FLAG_BITS } from "./db.js";
 import { bigramMatch } from "./search-bigrams.js";
 import { all } from "./sql-rows.js";
-import { MAILBOX_LABEL } from "./mailbox-labels.js";
+import { MAILBOX_LABEL } from "./domain/mailbox-labels.js";
 
 export type LocalQuery = ThreadQuery & {
   wordIndexReady?: boolean;

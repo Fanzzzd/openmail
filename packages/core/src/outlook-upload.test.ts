@@ -8,7 +8,7 @@ import {
   OUTLOOK_ATTACHMENT_THRESHOLD,
   OUTLOOK_MESSAGE_LIMIT,
 } from "./attachment-policy.js";
-import type { OutgoingAttachment, OutgoingMessage, SendPreparationState } from "./domain.js";
+import type { OutgoingAttachment, OutgoingMessage, SendPreparationState } from "./domain/domain.js";
 import { makeOutlook } from "./outlook.js";
 import { makeOutlookClient } from "./outlook/client.js";
 import {

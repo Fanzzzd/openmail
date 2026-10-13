@@ -1,6 +1,6 @@
 import { Effect } from "effect";
-import type { Account } from "./domain.js";
-import { FeatureScopeMissing, InvalidInput, type ProviderFailure } from "./errors.js";
+import type { Account } from "./domain/domain.js";
+import { FeatureScopeMissing, InvalidInput, type ProviderFailure } from "./domain/errors.js";
 import {
   FOLDER_BATCH_LIMIT,
   GMAIL_PERMANENT_DELETE_SCOPE,
@@ -10,7 +10,7 @@ import {
   type FolderPage,
   type FolderListOptions,
   type DeleteFolder,
-} from "./folder-actions.js";
+} from "./domain/folder-actions.js";
 import type { Mailbox } from "./mailbox.js";
 import type { Providers, Store } from "./services.js";
 

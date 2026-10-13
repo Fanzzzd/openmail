@@ -1,9 +1,9 @@
 import { Effect } from "effect";
 import { Buffer } from "../bytes.js";
 import { PlatformCrypto } from "../crypto.js";
-import type { Address, OutgoingMessage } from "../../domain.js";
+import type { Address, OutgoingMessage } from "../../domain/domain.js";
 import type { Threading } from "../mail-codec.js";
-import { PermanentError } from "../../errors.js";
+import { PermanentError } from "../../domain/errors.js";
 import { composeTransportHtml, normalizeComposeMessage } from "../../compose-body.js";
 
 const encoded = (value: string) => `=?UTF-8?B?${Buffer.from(value).toString("base64")}?=`;

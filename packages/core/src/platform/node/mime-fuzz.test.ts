@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { nodeMailCodec } from "./mail-codec.js";
 import { parseMobileMime } from "../react-native/mail-codec.js";
 import { hostileMime } from "../../parser-fuzz-corpus.js";
-import { PermanentError } from "../../errors.js";
+import { PermanentError } from "../../domain/errors.js";
 
 const options = {
   seed: 0x520047,

@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { DatabaseSync, type SQLInputValue } from "node:sqlite";
 import { Effect, Layer, Schema } from "effect";
 import { SqlClient } from "effect/sql";
-import type { IncomingMessage } from "../../../domain.js";
+import type { IncomingMessage } from "../../../domain/domain.js";
 import { MailboxLive } from "../../../mailbox-live.js";
 import { Store, Providers } from "../../../services.js";
 import { StoreLive } from "../../../store.js";

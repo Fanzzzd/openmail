@@ -9,7 +9,7 @@ import {
   type ImageDownloader,
 } from "./compose-images.js";
 import { Clock, Effect, Schema, Semaphore } from "effect";
-import type { Account, Actor, Command } from "./domain.js";
+import type { Account, Actor, Command } from "./domain/domain.js";
 import {
   calendarTimestamp,
   detectMailEvents,
@@ -22,7 +22,7 @@ import {
   type CalendarInvite,
   type InviteResponse,
 } from "./calendar.js";
-import { InvalidInput } from "./errors.js";
+import { InvalidInput } from "./domain/errors.js";
 import {
   inviteCanRespond,
   inviteReply,

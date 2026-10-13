@@ -9,8 +9,8 @@ import {
   Profile,
   type ProfileInput,
   type Provider,
-} from "./domain.js";
-import { type AuthError, InvalidInput, NotFound } from "./errors.js";
+} from "./domain/domain.js";
+import { type AuthError, InvalidInput, NotFound } from "./domain/errors.js";
 import { logReauth, reauthReason } from "./reauth.js";
 import { type PlatformCrypto } from "./platform/crypto.js";
 import { type Store } from "./services.js";

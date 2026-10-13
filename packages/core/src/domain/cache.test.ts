@@ -1,8 +1,8 @@
-import { applyNativeMigration } from "./platform/node/migrations.js";
-import { incoming as makeIncoming, TestMailbox } from "./platform/node/testing.js";
+import { applyNativeMigration } from "../platform/node/migrations.js";
+import { incoming as makeIncoming, TestMailbox } from "../platform/node/testing.js";
 import { NodeFileSystem, NodePath } from "@effect/platform-node";
 import { assert, it } from "@effect/vitest";
-import { lowMemoryTests } from "../vitest.low-memory.js";
+import { lowMemoryTests } from "../../vitest.low-memory.js";
 import { Deferred, Effect, Fiber, FileSystem, Layer, Option, Path, Stream } from "effect";
 import { TestClock } from "effect/testing";
 import { SqlClient } from "effect/sql";
@@ -11,23 +11,23 @@ import { mkdtempSync, rmSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { BackfillState, keepBody } from "./cache.js";
-import { databaseLayer, MIGRATIONS, splitStatements } from "./platform/node/db.js";
+import { databaseLayer, MIGRATIONS, splitStatements } from "../platform/node/db.js";
 import { type IncomingMessage } from "./domain.js";
 import { ProviderError } from "./errors.js";
-import { fakeServer, makeFakeProvider, type FakeServer } from "./platform/node/fake-provider.js";
-import { listWindow } from "./list-window.js";
-import { MailboxLive } from "./mailbox-live.js";
-import { Mailbox } from "./mailbox.js";
-import { MemoryPlatform } from "./platform/node/platform-memory.js";
-import { replyRecipients } from "./recipients.js";
-import { Providers, Store, Secrets, type ProviderAdapter } from "./services.js";
-import { StoreLive } from "./store.js";
+import { fakeServer, makeFakeProvider, type FakeServer } from "../platform/node/fake-provider.js";
+import { listWindow } from "../list-window.js";
+import { MailboxLive } from "../mailbox-live.js";
+import { Mailbox } from "../mailbox.js";
+import { MemoryPlatform } from "../platform/node/platform-memory.js";
+import { replyRecipients } from "../recipients.js";
+import { Providers, Store, Secrets, type ProviderAdapter } from "../services.js";
+import { StoreLive } from "../store.js";
 import {
   startAutoUpdates,
   type UpdateClient,
   startStoredUpdates,
   UPDATE_TOKEN_KEY,
-} from "./updates.js";
+} from "../updates.js";
 {
   const message = (id: string, overrides: Partial<IncomingMessage> = {}): IncomingMessage =>
     makeIncoming(id, {

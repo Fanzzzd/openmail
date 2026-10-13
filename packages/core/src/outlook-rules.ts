@@ -1,10 +1,10 @@
-import type { IncomingMessage, Message } from "./domain.js";
+import type { IncomingMessage, Message } from "./domain/domain.js";
 import {
   ruleImportance,
   type FilterCriteria,
   type FilterAction,
   type OutlookRulePredicates,
-} from "./organization.js";
+} from "./domain/organization.js";
 
 export function outlookConditions(c: FilterCriteria) {
   return {

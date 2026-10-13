@@ -5,7 +5,7 @@ import { SqlClient } from "effect/sql";
 import { MIGRATIONS, migrate } from "../../db.js";
 import { Store } from "../../services.js";
 import { StoreLive } from "../../store.js";
-import { IncomingMessage } from "../../domain.js";
+import { IncomingMessage } from "../../domain/domain.js";
 import { opSqliteLayer, type OpSqliteDatabase, type SqliteScalar } from "./sqlite.js";
 import { opSqliteShim as shim } from "../../../test-support/op-sqlite.js";
 

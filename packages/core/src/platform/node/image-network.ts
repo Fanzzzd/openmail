@@ -2,7 +2,7 @@ import { lookup } from "node:dns/promises";
 import { request as httpRequest } from "node:http";
 import { request as httpsRequest } from "node:https";
 import { Effect } from "effect";
-import { ProviderError } from "../../errors.js";
+import { ProviderError } from "../../domain/errors.js";
 import {
   publicImageAddress,
   readRasterImage,

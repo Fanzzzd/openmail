@@ -1,4 +1,4 @@
-import type { DraftRemote } from "./domain.js";
+import type { DraftRemote } from "./domain/domain.js";
 import type { DraftVersion } from "./services.js";
 
 export function draftVersionMetadata(

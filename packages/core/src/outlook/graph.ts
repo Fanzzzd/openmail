@@ -1,6 +1,6 @@
 import { Context, Effect, Option, Schema } from "effect";
-import { InferenceClassification, type MailOp } from "../domain.js";
-import { PermanentError, ProviderError, type ProviderFailure } from "../errors.js";
+import { InferenceClassification, type MailOp } from "../domain/domain.js";
+import { PermanentError, ProviderError, type ProviderFailure } from "../domain/errors.js";
 import { graphPageLink } from "../graph-pagination.js";
 import { BASE_SCOPES } from "../optional-services.js";
 import { ApiError } from "../provider-http.js";

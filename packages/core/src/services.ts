@@ -8,7 +8,7 @@ import type {
   FolderPage,
   FolderListOptions,
   PermanentDeleteBatch,
-} from "./folder-actions.js";
+} from "./domain/folder-actions.js";
 import type { DerivedChunk } from "./media.js";
 import type { makeSyncHealthStore } from "./store-sync-health.js";
 import type { makeSemanticStore } from "./store-semantic.js";
@@ -52,7 +52,7 @@ import type {
   TemplateInput,
   ThreadQuery,
   ThreadSummary,
-} from "./domain.js";
+} from "./domain/domain.js";
 import type {
   FeatureScopeMissing,
   AuthError,
@@ -63,7 +63,7 @@ import type {
   SettingsScopeMissing,
   ProviderFailure,
   SendUncertain,
-} from "./errors.js";
+} from "./domain/errors.js";
 import type {
   InviteResponseRecord,
   CalendarEvent,
@@ -85,9 +85,9 @@ import type {
   SendAs,
   ServerFilter,
   Vacation,
-} from "./organization.js";
+} from "./domain/organization.js";
 
-import type { BackfillPage, BackfillState, CacheWindow, CacheWindowInput } from "./cache.js";
+import type { BackfillPage, BackfillState, CacheWindow, CacheWindowInput } from "./domain/cache.js";
 
 // Platform
 
@@ -267,11 +267,11 @@ export class Store extends Context.Service<
     moveAccount(id: string, input: AccountPlacement): Effect.Effect<void, NotFound | InvalidInput>;
     rememberNotificationActions(
       id: string,
-      actions: import("./domain.js").Prefs["notificationActions"],
+      actions: import("./domain/domain.js").Prefs["notificationActions"],
     ): Effect.Effect<void>;
     notificationActions(
       id: string,
-    ): Effect.Effect<import("./domain.js").Prefs["notificationActions"]>;
+    ): Effect.Effect<import("./domain/domain.js").Prefs["notificationActions"]>;
     readonly syncHealthLabels: ReturnType<typeof makeSyncHealthStore>["syncHealthLabels"];
     readonly syncHealthLocal: ReturnType<typeof makeSyncHealthStore>["syncHealthLocal"];
     readonly listAccounts: Effect.Effect<Account[]>;
@@ -421,8 +421,10 @@ export class Store extends Context.Service<
 
     readonly cacheDatabaseFile: Effect.Effect<string>;
     readonly cacheNeedsVacuum: Effect.Effect<boolean>;
-    readonly cacheDatabaseSize: Effect.Effect<import("./cache.js").DatabasePages>;
-    compactCache(readOnly: boolean): Effect.Effect<import("./cache.js").CacheCompactionResult>;
+    readonly cacheDatabaseSize: Effect.Effect<import("./domain/cache.js").DatabasePages>;
+    compactCache(
+      readOnly: boolean,
+    ): Effect.Effect<import("./domain/cache.js").CacheCompactionResult>;
     readonly reclaimCachePages: Effect.Effect<void>;
     readonly cachedBodyBytes: Effect.Effect<number>;
     readonly bodySizes: Effect.Effect<{ accountId: string; bytes: number }[]>;
@@ -515,17 +517,17 @@ export class Store extends Context.Service<
 
     renewPendingOp(id: number, token: string): Effect.Effect<boolean>;
     ownsPendingOp(id: number, token: string): Effect.Effect<boolean>;
-    readonly listFailedOps: Effect.Effect<readonly import("./domain.js").FailedOp[]>;
+    readonly listFailedOps: Effect.Effect<readonly import("./domain/domain.js").FailedOp[]>;
     recordFailedOp(
       entry: Pick<
-        import("./domain.js").FailedOp,
+        import("./domain/domain.js").FailedOp,
         "accountId" | "providerId" | "kind" | "reason"
       > & { subject?: string | null; sender?: string | null; rejected?: readonly string[] },
     ): Effect.Effect<void>;
     getFailedOp(
       id: number,
     ): Effect.Effect<
-      { notice: import("./domain.js").FailedOp; rejected: readonly string[] },
+      { notice: import("./domain/domain.js").FailedOp; rejected: readonly string[] },
       NotFound
     >;
     recordCopyProgress(
@@ -597,7 +599,7 @@ export class Store extends Context.Service<
     /** Atomically remembers an id, including read/suppressed mail. True only once. */
     observeIncoming(accountId: string, identity: string): Effect.Effect<boolean>;
     enqueueNotification(id: string, digest: boolean): Effect.Effect<void>;
-    takeNotifications(now: number): Effect.Effect<import("./domain.js").NotificationBatch[]>;
+    takeNotifications(now: number): Effect.Effect<import("./domain/domain.js").NotificationBatch[]>;
     readonly prefs: Effect.Effect<Prefs>;
     setPrefs(patch: PrefsPatch): Effect.Effect<void>;
     readonly remoteAccess: Effect.Effect<import("./remote-access.js").RemoteAccessSettings>;

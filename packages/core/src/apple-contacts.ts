@@ -1,5 +1,5 @@
 import { Schema } from "effect";
-import type { Address } from "./domain.js";
+import type { Address } from "./domain/domain.js";
 import { mergeContacts, type ContactGroup } from "./contacts.js";
 
 export const AppleContactsStatus = Schema.Literals([

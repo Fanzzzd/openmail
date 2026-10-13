@@ -8,7 +8,7 @@ import {
   PermanentError,
   ProviderError,
   SendUncertain,
-} from "./errors.js";
+} from "./domain/errors.js";
 import { TestClock } from "effect/testing";
 import { HttpClientRequest } from "effect/http";
 import {

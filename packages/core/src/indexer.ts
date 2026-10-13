@@ -1,7 +1,12 @@
 import { makeDownloadBudget } from "./download-budget.js";
-import { AuthError, type ProviderError, type PermanentError, type NotFound } from "./errors.js";
+import {
+  AuthError,
+  type ProviderError,
+  type PermanentError,
+  type NotFound,
+} from "./domain/errors.js";
 import { Context, Effect, Option, Semaphore } from "effect";
-import type { Message } from "./domain.js";
+import type { Message } from "./domain/domain.js";
 import {
   DerivedChunk,
   IndexingProgress,

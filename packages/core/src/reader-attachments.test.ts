@@ -4,7 +4,7 @@ import { Effect, Layer } from "effect";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { type IncomingMessage, DEFAULT_PREFS } from "./domain.js";
+import { type IncomingMessage, DEFAULT_PREFS } from "./domain/domain.js";
 import { buildMime } from "./platform/node/compose.js";
 import { databaseLayer } from "./platform/node/db.js";
 import { Mailbox } from "./mailbox.js";

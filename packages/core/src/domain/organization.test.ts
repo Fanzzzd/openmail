@@ -1,18 +1,18 @@
-import { incoming as makeIncoming, fakeServer, TestMailbox } from "./platform/node/testing.js";
+import { incoming as makeIncoming, fakeServer, TestMailbox } from "../platform/node/testing.js";
 import { assert, it } from "@effect/vitest";
 import { Effect, Layer, Schema } from "effect";
 import { TestClock } from "effect/testing";
 import { type IncomingMessage, type Account } from "./domain.js";
 import { ProviderError, SettingsScopeMissing } from "./errors.js";
-import { makeFakeProvider } from "./platform/node/fake-provider.js";
-import { MailboxLive } from "./mailbox-live.js";
-import { Mailbox } from "./mailbox.js";
+import { makeFakeProvider } from "../platform/node/fake-provider.js";
+import { MailboxLive } from "../mailbox-live.js";
+import { Mailbox } from "../mailbox.js";
 import { EMPTY_FILTER, EMPTY_VACATION, snoozeTimes, sameFilterRule } from "./organization.js";
-import { MemoryPlatform } from "./platform/node/platform-memory.js";
-import { Providers, Store } from "./services.js";
-import { StoreLive } from "./store.js";
-import { filterQuery, matchesSearch, parseSearchQuery } from "./search.js";
-import { makeOutlookSettings } from "./outlook-settings.js";
+import { MemoryPlatform } from "../platform/node/platform-memory.js";
+import { Providers, Store } from "../services.js";
+import { StoreLive } from "../store.js";
+import { filterQuery, matchesSearch, parseSearchQuery } from "../search.js";
+import { makeOutlookSettings } from "../outlook-settings.js";
 {
   const incoming = (id: string, overrides: Partial<IncomingMessage> = {}): IncomingMessage =>
     makeIncoming(id, {

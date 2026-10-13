@@ -1,6 +1,6 @@
 import { Effect, Option, Schema } from "effect";
-import { PermanentError } from "../errors.js";
-import { FOLDER_BATCH_LIMIT, type PermanentDeleteBatch } from "../folder-actions.js";
+import { PermanentError } from "../domain/errors.js";
+import { FOLDER_BATCH_LIMIT, type PermanentDeleteBatch } from "../domain/folder-actions.js";
 import { graphPages } from "../provider-pages.js";
 import { type ProviderAdapter } from "../services.js";
 import type { OutlookClient } from "./client.js";

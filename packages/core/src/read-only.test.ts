@@ -14,11 +14,11 @@ import {
 } from "./read-only.js";
 import { Mailbox } from "./mailbox.js";
 import { Store } from "./services.js";
-import { EMPTY_FILTER } from "./organization.js";
+import { EMPTY_FILTER } from "./domain/organization.js";
 import { fakeServer, TestMailbox } from "./platform/node/testing.js";
 import { makeFakeProvider } from "./platform/node/fake-provider.js";
 import { detectMailEvents } from "./calendar.js";
-import { type IncomingMessage, type OutgoingMessage } from "./domain.js";
+import { type IncomingMessage, type OutgoingMessage } from "./domain/domain.js";
 {
   it.effect(
     "every real provider method is explicitly read-allowlisted or refused without calling it",

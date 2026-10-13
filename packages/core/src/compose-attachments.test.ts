@@ -9,7 +9,7 @@ import { composeMatches } from "./compose-find.js";
 import { buildMime } from "./platform/node/compose.js";
 import { richComposeBody, remoteComposeBody, normalizeComposeMessage } from "./compose-body.js";
 import { databaseLayer } from "./platform/node/db.js";
-import type { IncomingMessage, OutgoingAttachment, OutgoingMessage } from "./domain.js";
+import type { IncomingMessage, OutgoingAttachment, OutgoingMessage } from "./domain/domain.js";
 import { Mailbox } from "./mailbox.js";
 import { MailboxLive } from "./mailbox-live.js";
 import { MemoryPlatform } from "./platform/node/platform-memory.js";
@@ -18,7 +18,7 @@ import { Providers } from "./services.js";
 import { StoreLive } from "./store.js";
 import { makeFakeProvider } from "./platform/node/fake-provider.js";
 import { fakeServer, TestMailbox } from "./platform/node/testing.js";
-import { ProviderError } from "./errors.js";
+import { ProviderError } from "./domain/errors.js";
 
 const file = { filename: "same.txt", mimeType: "text/plain", content: "aGk=" };
 const outgoing: OutgoingMessage = {

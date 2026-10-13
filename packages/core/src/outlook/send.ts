@@ -13,9 +13,9 @@ import type {
   DraftRemote,
   OutgoingMessage,
   SendPreparationState,
-} from "../domain.js";
+} from "../domain/domain.js";
 import { draftVersionMetadata } from "../draft-version.js";
-import { PermanentError, ProviderError, type ProviderFailure } from "../errors.js";
+import { PermanentError, ProviderError, type ProviderFailure } from "../domain/errors.js";
 import { MarkdownDraftSource, markdownDraftSource } from "../markdown-draft.js";
 import { newMessageId } from "../message-id.js";
 import { htmlDocument } from "../mime.js";

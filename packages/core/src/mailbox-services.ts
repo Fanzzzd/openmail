@@ -1,6 +1,6 @@
 import type { makeFeatureMailbox } from "./mailbox-features.js";
 import { Clock, Effect } from "effect";
-import { InvalidInput } from "./errors.js";
+import { InvalidInput } from "./domain/errors.js";
 import type { Mailbox } from "./mailbox.js";
 import type { Store } from "./services.js";
 import { serviceGrants } from "./optional-services.js";

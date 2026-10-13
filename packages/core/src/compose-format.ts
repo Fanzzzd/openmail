@@ -1,4 +1,4 @@
-import { COMPOSE_FONT_FAMILIES } from "./domain.js";
+import { COMPOSE_FONT_FAMILIES } from "./domain/domain.js";
 import { parse, generate, ident, lexer } from "./css-tree-browser.js";
 
 export const COMPOSE_COLORS = [

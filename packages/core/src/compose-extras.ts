@@ -1,4 +1,4 @@
-import type { Address, InlineImageSize, OutgoingAttachment } from "./domain.js";
+import type { Address, InlineImageSize, OutgoingAttachment } from "./domain/domain.js";
 import { escapeComposeText } from "./compose-body.js";
 
 export const INLINE_IMAGE_WIDTHS = {

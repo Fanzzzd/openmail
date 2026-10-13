@@ -9,11 +9,11 @@ import {
   type MailOp,
   type Outcome,
   type OutgoingMessage,
-} from "./domain.js";
-import { InvalidInput, type ProviderError } from "./errors.js";
+} from "./domain/domain.js";
+import { InvalidInput, type ProviderError } from "./domain/errors.js";
 import { decodeProviderId } from "./imap-cursor.js";
 import { requireFocusedInboxScope } from "./optional-services.js";
-import { applyOpToLabels, folderTarget, invalidCategoryFolderOp } from "./mail-ops.js";
+import { applyOpToLabels, folderTarget, invalidCategoryFolderOp } from "./domain/mail-ops.js";
 import { type makeBatchMailbox } from "./mailbox-batch.js";
 import { eventFromInvite } from "./mailbox-features.js";
 import { type makeOrganizationMailbox } from "./mailbox-organization.js";

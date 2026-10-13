@@ -1,4 +1,4 @@
-import type { OutgoingAttachment, OutgoingMessage, Provider } from "./domain.js";
+import type { OutgoingAttachment, OutgoingMessage, Provider } from "./domain/domain.js";
 import { Buffer } from "./platform/bytes.js";
 
 // https://support.google.com/mail/answer/6590

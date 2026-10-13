@@ -1,5 +1,5 @@
 import type { CalendarEvent, CalendarTime } from "./calendar.js";
-import { InvalidInput } from "./errors.js";
+import { InvalidInput } from "./domain/errors.js";
 import { WINDOWS_ZONES } from "./windows-zones.js";
 
 const DAYS = {

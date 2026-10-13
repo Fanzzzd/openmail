@@ -1,6 +1,6 @@
 import { Predicate } from "effect";
 import type { ListResponse, MessageStructureObject } from "imapflow";
-import type { Attachment, IncomingMessage } from "../../../domain.js";
+import type { Attachment, IncomingMessage } from "../../../domain/domain.js";
 import { cachedHeaders, firstHeaders } from "../../../header-backfill.js";
 import { flagsOf, IMAP_SPECIAL_LABELS as SPECIAL_LABEL } from "../../../imap-helpers.js";
 

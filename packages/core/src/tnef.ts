@@ -1,4 +1,4 @@
-import { InvalidInput } from "./errors.js";
+import { InvalidInput } from "./domain/errors.js";
 
 /** MS-OXTNEF attachment extraction. No decompression, network, or filesystem access.
  * Spec: https://learn.microsoft.com/en-us/openspecs/exchange_server_protocols/ms-oxtnef/

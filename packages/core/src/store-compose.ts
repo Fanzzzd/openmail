@@ -30,8 +30,8 @@ import {
   type TemplateInput,
   type ThreadQuery,
   type ThreadSummary,
-} from "./domain.js";
-import { NotFound } from "./errors.js";
+} from "./domain/domain.js";
+import { NotFound } from "./domain/errors.js";
 import { imageSenderKey } from "./reading.js";
 import { richComposeBody, textComposeHtml, normalizeComposeMessage } from "./compose-body.js";
 import type { StoredDraft } from "./services.js";

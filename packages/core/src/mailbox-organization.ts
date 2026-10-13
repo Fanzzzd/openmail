@@ -1,8 +1,8 @@
 import { PlatformCrypto } from "./platform/crypto.js";
 import { Clock, Context, Effect, Semaphore } from "effect";
-import type { Account, Label, MailOp, ThreadQuery, Provider } from "./domain.js";
+import type { Account, Label, MailOp, ThreadQuery, Provider } from "./domain/domain.js";
 import { requireFocusedInboxScope } from "./optional-services.js";
-import { InvalidInput } from "./errors.js";
+import { InvalidInput } from "./domain/errors.js";
 import type { Mailbox } from "./mailbox.js";
 import {
   requiresFilterDeleteConfirmation,
@@ -18,7 +18,7 @@ import {
   type LabelChange,
   type SearchResult,
   type Vacation,
-} from "./organization.js";
+} from "./domain/organization.js";
 import {
   filterQuery,
   mergeSearchResults,

@@ -1,6 +1,6 @@
 import { PlatformCrypto } from "./platform/crypto.js";
 import { SEMANTIC_MAX_DISTANCE } from "./semantic-distance.js";
-import type { ThreadQuery } from "./domain.js";
+import type { ThreadQuery } from "./domain/domain.js";
 import type { Fragment } from "effect/sql/Statement";
 import { Context, Effect, Option, Schema } from "effect";
 import type { SqlClient } from "effect/sql";

@@ -1,6 +1,6 @@
 import { Clock, Effect, FiberSet, Option, Schema } from "effect";
-import { type Account } from "./domain.js";
-import { type ProviderFailure } from "./errors.js";
+import { type Account } from "./domain/domain.js";
+import { type ProviderFailure } from "./domain/errors.js";
 import { decodeProviderId, readCursor, recordPushedFlags } from "./imap-cursor.js";
 import { type MailboxDependencies, type MailboxRuntimeState } from "./mailbox-runtime.js";
 import { withPendingOps } from "./mailbox-shared.js";
@@ -185,7 +185,7 @@ export const makeFlushMailbox = (
       const settle = (
         account: Account,
         items: readonly PendingOp[],
-        push: Effect.Effect<ProviderPushResult, import("./errors.js").ProviderFailure>,
+        push: Effect.Effect<ProviderPushResult, import("./domain/errors.js").ProviderFailure>,
       ): Effect.Effect<void> =>
         push.pipe(
           Effect.result,

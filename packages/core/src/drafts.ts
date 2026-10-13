@@ -22,8 +22,8 @@ import type {
   Message,
   OutgoingAttachment,
   OutgoingMessage,
-} from "./domain.js";
-import { ProviderError } from "./errors.js";
+} from "./domain/domain.js";
+import { ProviderError } from "./domain/errors.js";
 import type { StoredDraft } from "./services.js";
 
 /** What a raw draft from the provider holds, ready for the compose window. */

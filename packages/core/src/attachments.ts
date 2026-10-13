@@ -7,7 +7,7 @@ import { Buffer } from "./platform/bytes.js";
 import { Effect } from "effect";
 import { parseMime } from "./platform/mail-codec.js";
 
-import { ProviderError } from "./errors.js";
+import { ProviderError } from "./domain/errors.js";
 
 /**
  * Which attachment of a message to fetch, as listed on the stored message.

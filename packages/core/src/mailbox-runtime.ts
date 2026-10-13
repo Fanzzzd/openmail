@@ -15,7 +15,7 @@ import {
   type inlineImagesFromRaw as unboundInlineImagesFromRaw,
   type inlineMediaFromRaw as unboundInlineMediaFromRaw,
 } from "./attachments.js";
-import { type Outcome, type Provider, type SyncResult } from "./domain.js";
+import { type Outcome, type Provider, type SyncResult } from "./domain/domain.js";
 import { type parseRawDraft as unboundParseRawDraft } from "./drafts.js";
 import { type ImapIdle } from "./imap-idle.js";
 import { type Mailbox, type MailboxEvent, type PerformError, type SyncState } from "./mailbox.js";

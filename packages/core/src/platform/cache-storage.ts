@@ -1,5 +1,5 @@
 import { Context, Effect } from "effect";
-import type { CacheFiles, CacheCompactionResult } from "../cache.js";
+import type { CacheFiles, CacheCompactionResult } from "../domain/cache.js";
 
 /** Measurement result when the platform cannot see the database files or volume. */
 export const UNMEASURED_CACHE_FILES: CacheFiles = { walBytes: 0, recoveryBytes: 0, disk: null };

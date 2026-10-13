@@ -1,7 +1,7 @@
 import { lstat, readdir, statfs } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
 import { Effect } from "effect";
-import type { CacheFiles } from "../../cache.js";
+import type { CacheFiles } from "../../domain/cache.js";
 import { UNMEASURED_CACHE_FILES } from "../cache-storage.js";
 
 /** Counts preserved corrupt/recovery copies without following symlinks or counting hard links twice. */

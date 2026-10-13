@@ -1,5 +1,5 @@
 import { beforeEach, expect, it, vi } from "vitest";
-import { PermanentError } from "../../errors.js";
+import { PermanentError } from "../../domain/errors.js";
 import type { MailCodecPort } from "../mail-codec.js";
 import { makeNodeMailCodec } from "./mail-codec.js";
 

@@ -6,7 +6,7 @@ import {
   type CacheWindowInput,
   DEFAULT_CACHE_WINDOWS,
   keepBody,
-} from "./cache.js";
+} from "./domain/cache.js";
 import type { CacheMaintenanceService } from "./platform/cache-storage.js";
 import { all, first, run } from "./sql-rows.js";
 import { makeCompactionStore } from "./store-compaction.js";

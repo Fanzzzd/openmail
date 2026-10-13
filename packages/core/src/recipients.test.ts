@@ -10,7 +10,7 @@ import {
 import { assert, it } from "@effect/vitest";
 import { Effect, Layer } from "effect";
 
-import type { Address, IncomingMessage, Message, OutgoingMessage } from "./domain.js";
+import type { Address, IncomingMessage, Message, OutgoingMessage } from "./domain/domain.js";
 import { Mailbox } from "./mailbox.js";
 import { fakeServer, makeFakeProvider } from "./platform/node/fake-provider.js";
 import { MailboxLive } from "./mailbox-live.js";

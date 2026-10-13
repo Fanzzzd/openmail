@@ -1,5 +1,5 @@
 import { Schema } from "effect";
-import { Address } from "./domain.js";
+import { Address } from "./domain/domain.js";
 import { CalendarInvite } from "./calendar.js";
 import { parseCalendar } from "./invites.js";
 import { prepareMessageHtml } from "./reader-html.js";

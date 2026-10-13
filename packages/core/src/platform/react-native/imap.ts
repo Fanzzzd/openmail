@@ -32,7 +32,7 @@ import {
   ProviderError,
   SendUncertain,
   type ProviderFailure,
-} from "../../errors.js";
+} from "../../domain/errors.js";
 import { isLoginRefusal } from "../../reauth.js";
 import { serverSavesSent, resolveImapSettings, imapSettingsKey } from "../../imap-settings.js";
 import {
@@ -53,7 +53,7 @@ import {
   type FolderCursor,
   type ImapCursor,
 } from "../../imap-cursor.js";
-import type { Account, ImapSettings, IncomingMessage } from "../../domain.js";
+import type { Account, ImapSettings, IncomingMessage } from "../../domain/domain.js";
 import { confirmDelivery } from "../../provider-send.js";
 import { htmlToText } from "../../mime.js";
 import { matchesSearch, searchMailboxLabel } from "../../search.js";
@@ -342,7 +342,7 @@ export async function smtpSession(
 const applyPush = async (
   client: ImapWire,
   ids: readonly string[],
-  op: import("../../domain.js").MailOp,
+  op: import("../../domain/domain.js").MailOp,
   messageIds: Map<string, string>,
   copiedDestinations: Set<string>,
   expected?: FolderCursor,

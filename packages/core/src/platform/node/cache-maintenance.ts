@@ -1,7 +1,7 @@
 import { Worker } from "node:worker_threads";
 import { Effect, Schema } from "effect";
 import { constVoid } from "effect/Function";
-import { CacheCompactionResult } from "../../cache.js";
+import { CacheCompactionResult } from "../../domain/cache.js";
 import type { CacheMaintenanceRequest } from "../cache-storage.js";
 import { exclusiveMaintenanceLease } from "./database-access.js";
 

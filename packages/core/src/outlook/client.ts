@@ -1,14 +1,14 @@
 import { Effect, Option, Schema } from "effect";
 import { HttpClient, HttpClientRequest } from "effect/http";
-import type { Account } from "../domain.js";
+import type { Account } from "../domain/domain.js";
 import {
   AuthError,
   ClientNotConfigured,
   InvalidInput,
   PermanentError,
   ProviderError,
-} from "../errors.js";
-import { type DeleteFolder } from "../folder-actions.js";
+} from "../domain/errors.js";
+import { type DeleteFolder } from "../domain/folder-actions.js";
 import { effectiveClients, refreshWithIssuer } from "../oauth-clients.js";
 import { OPTIONAL_SCOPES } from "../optional-services.js";
 import { MailCodec } from "../platform/mail-codec.js";

@@ -1,6 +1,6 @@
 import { PlatformCrypto } from "./platform/crypto.js";
-import { categoryKey } from "./categories.js";
-import { invalidCategoryFolderOp } from "./mail-ops.js";
+import { categoryKey } from "./domain/categories.js";
+import { invalidCategoryFolderOp } from "./domain/mail-ops.js";
 import { Clock, Effect, Option, Semaphore } from "effect";
 
 import {
@@ -11,10 +11,10 @@ import {
   type Message,
   type Provider,
   type IncomingMessage,
-} from "./domain.js";
+} from "./domain/domain.js";
 import { messagesFrom } from "./reading.js";
 import { requireFocusedInboxScope } from "./optional-services.js";
-import { InvalidInput } from "./errors.js";
+import { InvalidInput } from "./domain/errors.js";
 import type { Mailbox } from "./mailbox.js";
 import type { ReminderSnapshot, Store } from "./services.js";
 import { undoStateKey, type UndoState } from "./undo-journal.js";

@@ -1,6 +1,6 @@
 import { Effect, Exit } from "effect";
 import { expect, it, vi } from "vitest";
-import { PermanentError, ProviderError } from "../../errors.js";
+import { PermanentError, ProviderError } from "../../domain/errors.js";
 import { buildMime } from "./compose.js";
 import { openImap, smtpTransport } from "./imap/session.js";
 import { nodeMailCodec } from "./mail-codec.js";

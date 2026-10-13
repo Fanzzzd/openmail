@@ -2,8 +2,8 @@
 export * from "./compose-text.js";
 export * from "./compose-body.js";
 export { MODEL_KEY } from "./secrets.js";
-export * from "./domain.js";
-export * from "./errors.js";
+export * from "./domain/domain.js";
+export * from "./domain/errors.js";
 export * from "./print.js";
 export * from "./reader-html.js";
 export * from "./reading.js";
@@ -23,7 +23,7 @@ export {
   ProposalMailToolkit,
 } from "./tools.js";
 
-export * from "./organization.js";
+export * from "./domain/organization.js";
 export * from "./search.js";
 
 export * from "./media.js";
@@ -31,13 +31,13 @@ export * from "./media.js";
 export * from "./calendar.js";
 export * from "./contacts.js";
 
-export { deviceErrorReason, deviceFailure } from "./device-errors.js";
+export { deviceErrorReason, deviceFailure } from "./domain/device-errors.js";
 export * from "./system.js";
 
-export * from "./cache.js";
+export * from "./domain/cache.js";
 
 export * from "./list-window.js";
-export * from "./folder-actions.js";
+export * from "./domain/folder-actions.js";
 
 export * from "./updates.js";
 
@@ -59,7 +59,7 @@ export * from "./compose-images.js";
 export * from "./update-feed.js";
 export * from "./signatures.js";
 
-export * from "./categories.js";
+export * from "./domain/categories.js";
 export * from "./ai.js";
 export { messageModelText } from "./visible-text.js";
 export { ModelAnthropic, FakeModelLayer, type ModelOutput, type ModelRequest } from "./model.js";

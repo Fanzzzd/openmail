@@ -1,6 +1,6 @@
 import { Clock, Context, Effect, Option, Random, Schema } from "effect";
 import { jittered } from "./backoff.js";
-import { ProviderError } from "./errors.js";
+import { ProviderError } from "./domain/errors.js";
 
 export const BackgroundRead = Context.Reference<boolean>("openmail/BackgroundRead", {
   defaultValue: () => false,

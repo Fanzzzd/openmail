@@ -1,6 +1,6 @@
 import { Effect, Schema } from "effect";
 import type { SqlClient } from "effect/sql";
-import type { CacheCompactionResult } from "./cache.js";
+import type { CacheCompactionResult } from "./domain/cache.js";
 import type { CacheMaintenanceService } from "./platform/cache-storage.js";
 
 // All implicit-rowid FTS content tables must have an explicit INTEGER

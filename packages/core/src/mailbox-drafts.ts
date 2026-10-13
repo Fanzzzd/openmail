@@ -17,7 +17,7 @@ import {
   type DraftInput,
   type Message,
   type OutgoingMessage,
-} from "./domain.js";
+} from "./domain/domain.js";
 import { draftVersionMetadata } from "./draft-version.js";
 import {
   attachmentsKey,
@@ -28,7 +28,7 @@ import {
   toDraft,
   withDraftMarkdownSource,
 } from "./drafts.js";
-import { InvalidInput, NotFound, PermanentError, ProviderError } from "./errors.js";
+import { InvalidInput, NotFound, PermanentError, ProviderError } from "./domain/errors.js";
 import { isLocalFeedbackDraft } from "./feedback.js";
 import { withAgentOrigin } from "./mailbox-apply.js";
 import { type MailboxDependencies, type MailboxRuntimeState } from "./mailbox-runtime.js";

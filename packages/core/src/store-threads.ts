@@ -2,8 +2,13 @@ import { Effect, Schema } from "effect";
 import { type SqlClient } from "effect/sql";
 import { type Fragment } from "effect/sql/Statement";
 import { attachmentFilename } from "./attachment-filename.js";
-import { categoryKey } from "./categories.js";
-import { type Label, type SearchMatch, type ThreadQuery, type ThreadSummary } from "./domain.js";
+import { categoryKey } from "./domain/categories.js";
+import {
+  type Label,
+  type SearchMatch,
+  type ThreadQuery,
+  type ThreadSummary,
+} from "./domain/domain.js";
 import {
   exactSearchPhrase,
   searchHighlightTerms,

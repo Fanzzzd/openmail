@@ -1,6 +1,6 @@
 import { Effect, Schema } from "effect";
 import type { SqlClient } from "effect/sql";
-import { Address } from "./domain.js";
+import { Address } from "./domain/domain.js";
 import { ContactGroup, mergeContacts, type ContactSnapshot, type ContactSync } from "./contacts.js";
 import { all, run } from "./sql-rows.js";
 

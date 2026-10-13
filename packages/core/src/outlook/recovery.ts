@@ -1,6 +1,6 @@
 import { Effect, Schema } from "effect";
-import type { Account } from "../domain.js";
-import { ProviderError } from "../errors.js";
+import type { Account } from "../domain/domain.js";
+import { ProviderError } from "../domain/errors.js";
 import type { CachedHeaders } from "../header-backfill.js";
 import { BatchResponse, deferIfThrottled, verifyInChunks } from "../provider-batch.js";
 import { BackgroundRead } from "../provider-connectivity.js";

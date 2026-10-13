@@ -23,12 +23,12 @@ import {
   Profile,
   SyncResult,
   ThreadSummary,
-} from "./domain.js";
+} from "./domain/domain.js";
 import { Mailbox, ModelThread, type PerformError } from "./mailbox.js";
 import { CalendarEvent, CalendarInvite } from "./calendar.js";
 import { DerivedChunk } from "./media.js";
 import { NamedSignature } from "./signatures.js";
-import { SearchResult } from "./organization.js";
+import { SearchResult } from "./domain/organization.js";
 import {
   PageParameters,
   PageResult,

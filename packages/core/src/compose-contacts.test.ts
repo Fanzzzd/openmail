@@ -11,7 +11,7 @@ import {
   Prefs as importedPrefs,
   type IncomingMessage,
   type Account,
-} from "./domain.js";
+} from "./domain/domain.js";
 import { makeFakeProvider, fakeServer } from "./platform/node/fake-provider.js";
 import { Mailbox } from "./mailbox.js";
 import { MailboxLive } from "./mailbox-live.js";
@@ -44,7 +44,7 @@ import {
 } from "./compose-body.js";
 import { bestComposeSender } from "./compose-sender.js";
 import { buildMime } from "./platform/node/compose.js";
-import { FeatureScopeMissing, ProviderError } from "./errors.js";
+import { FeatureScopeMissing, ProviderError } from "./domain/errors.js";
 import { SqlClient } from "effect/sql";
 import { makeGmailFeatures } from "./gmail-features.js";
 import { makeOutlookFeatures } from "./outlook-features.js";

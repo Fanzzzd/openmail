@@ -8,8 +8,8 @@ import {
   type IncomingMessage,
   type Message,
   Prefs,
-} from "./domain.js";
-import { PermanentError } from "./errors.js";
+} from "./domain/domain.js";
+import { PermanentError } from "./domain/errors.js";
 import { Mailbox, type MailboxEvent } from "./mailbox.js";
 import {
   inQuietHours,

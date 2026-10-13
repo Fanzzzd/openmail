@@ -11,7 +11,7 @@ const makeReaderAttachments = (
 ) => unboundReader(attachment, thread, codec);
 import { AttachmentCache } from "./attachment-cache.js";
 import { buildMime } from "./platform/node/compose.js";
-import type { Message } from "./domain.js";
+import type { Message } from "./domain/domain.js";
 
 const message = (data: Uint8Array): Message => ({
   id: "message",

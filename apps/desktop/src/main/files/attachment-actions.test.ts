@@ -19,7 +19,7 @@ import { afterAll, beforeAll, beforeEach, expect, it, vi } from "vitest";
 import { Mailbox } from "../../../../../packages/core/src/mailbox.js";
 import { buildMime } from "../../../../../packages/core/src/platform/node/compose.js";
 import { fakeServer, TestMailbox } from "../../../../../packages/core/src/platform/node/testing.js";
-import type { IncomingMessage } from "../../../../../packages/core/src/domain.js";
+import type { IncomingMessage } from "../../../../../packages/core/src/domain/domain.js";
 
 const native = vi.hoisted(() => ({
   preview: vi.fn(),
@@ -721,7 +721,7 @@ for (const failure of ["list", "launch"] as const)
       Effect.gen(function* () {
         const error = new Error("fixture failure");
         const { DeviceError } = yield* Effect.promise(
-          () => import("../../../../../packages/core/src/errors.js"),
+          () => import("../../../../../packages/core/src/domain/errors.js"),
         );
         const fail = Effect.fail(new DeviceError({ message: error.message }));
         if (failure === "list") native.apps.mockReturnValue(fail);

@@ -1,5 +1,5 @@
 import { jittered } from "./backoff.js";
-import type { Account } from "./domain.js";
+import type { Account } from "./domain/domain.js";
 export const IDLE_RENEW_MS = 25 * 60_000;
 /** Capped exponential backoff with jitter, so accounts do not reconnect in lockstep. */
 export const idleRetryDelay = (failures: number, random = Math.random()) =>

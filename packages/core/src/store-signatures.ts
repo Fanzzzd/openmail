@@ -9,7 +9,7 @@ import {
 } from "./signatures.js";
 import { richComposeBody, textComposeHtml } from "./compose-body.js";
 import { all, first, run } from "./sql-rows.js";
-import { InvalidInput, NotFound } from "./errors.js";
+import { InvalidInput, NotFound } from "./domain/errors.js";
 
 export function makeSignatureStore(
   sql: SqlClient.SqlClient,

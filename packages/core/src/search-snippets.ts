@@ -1,4 +1,4 @@
-import type { SearchCriteria, ThreadQuery } from "./domain.js";
+import type { SearchCriteria, ThreadQuery } from "./domain/domain.js";
 import {
   parseSearchExpression,
   parseSearchQuery,

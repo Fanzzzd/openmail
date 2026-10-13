@@ -1,6 +1,6 @@
 import { Context, Effect } from "effect";
-import type { Address, OutgoingMessage } from "../domain.js";
-import type { PermanentError } from "../errors.js";
+import type { Address, OutgoingMessage } from "../domain/domain.js";
+import type { PermanentError } from "../domain/errors.js";
 
 export interface MimeAddress {
   readonly name: string;

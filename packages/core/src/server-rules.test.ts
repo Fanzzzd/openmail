@@ -11,7 +11,7 @@ import {
   type FilterCriteria,
   type FilterAction,
   type OutlookRulePredicates,
-} from "./organization.js";
+} from "./domain/organization.js";
 import { labelOps } from "./mailbox-organization.js";
 import { GraphMessage } from "./outlook/graph.js";
 import { expandedAttachments, parseGraphMessage } from "./outlook/parse.js";

@@ -5,7 +5,7 @@ import { TestClock } from "effect/testing";
 import { makeGmail } from "./gmail.js";
 import { makeOutlook } from "./outlook.js";
 import { MemoryPlatform } from "./platform/node/platform-memory.js";
-import type { Account } from "./domain.js";
+import type { Account } from "./domain/domain.js";
 
 for (const provider of ["gmail", "outlook"] as const) {
   it.effect(
@@ -188,7 +188,7 @@ it.effect("only explicit transport failures enter outage backoff", () =>
     const { makeProviderConnectivity } = yield* Effect.promise(
       () => import("./provider-connectivity.js"),
     );
-    const { ProviderError } = yield* Effect.promise(() => import("./errors.js"));
+    const { ProviderError } = yield* Effect.promise(() => import("./domain/errors.js"));
     const connectivity = makeProviderConnectivity();
     for (const error of [
       new ProviderError({ message: "Invalid response" }),

@@ -15,8 +15,8 @@ import {
   type Account,
   type IncomingMessage,
   type OutgoingMessage,
-} from "./domain.js";
-import { ProviderError } from "./errors.js";
+} from "./domain/domain.js";
+import { ProviderError } from "./domain/errors.js";
 import { makeFakeProvider } from "./platform/node/fake-provider.js";
 import { Mailbox } from "./mailbox.js";
 import { MailboxLive } from "./mailbox-live.js";

@@ -1,6 +1,6 @@
 import { Effect, Option, Ref } from "effect";
-import { adaptiveBodyLimit, cacheAccounting } from "./cache.js";
-import type { CacheCompactionResult } from "./cache.js";
+import { adaptiveBodyLimit, cacheAccounting } from "./domain/cache.js";
+import type { CacheCompactionResult } from "./domain/cache.js";
 import type { MailboxRuntimeState } from "./mailbox-runtime.js";
 import type { Store } from "./services.js";
 import type { AttachmentFileCache } from "./platform/runtime.js";

@@ -1,5 +1,5 @@
 import { Schema } from "effect";
-import type { Address } from "./domain.js";
+import type { Address } from "./domain/domain.js";
 
 export const ContactSync = Schema.Struct({
   accountId: Schema.String,

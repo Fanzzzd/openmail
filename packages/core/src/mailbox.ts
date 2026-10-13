@@ -12,7 +12,7 @@ import type {
 } from "./ai.js";
 import type { NamedSignature, NamedSignatureInput, SignatureDefault } from "./signatures.js";
 import type { ReaderAttachment, EmbeddedMessage } from "./attachment-view.js";
-import type { FolderScope, DeleteFolder } from "./folder-actions.js";
+import type { FolderScope, DeleteFolder } from "./domain/folder-actions.js";
 import type { DerivedChunk, IndexingProgress } from "./media.js";
 /**
  * Mailbox: the one interface desktop, CLI, MCP and the assistant use. Reading,
@@ -21,7 +21,7 @@ import type { DerivedChunk, IndexingProgress } from "./media.js";
  */
 import { Context, type Effect, Schema, type Stream } from "effect";
 
-import { SyncProgress as SyncProgressSchema } from "./domain.js";
+import { SyncProgress as SyncProgressSchema } from "./domain/domain.js";
 import type {
   Account,
   AccountSettings,
@@ -53,7 +53,7 @@ import type {
   TemplateInput,
   ThreadQuery,
   ThreadSummary,
-} from "./domain.js";
+} from "./domain/domain.js";
 import type {
   FeatureScopeMissing,
   AuthError,
@@ -64,7 +64,7 @@ import type {
   ProviderError,
   SendUncertain,
   SettingsScopeMissing,
-} from "./errors.js";
+} from "./domain/errors.js";
 import type {
   CalendarEvent,
   CalendarEventEdits,
@@ -87,9 +87,9 @@ import type {
   SendAs,
   ServerFilter,
   Vacation,
-} from "./organization.js";
+} from "./domain/organization.js";
 
-import type { BackfillState, CacheWindow, CacheWindowInput } from "./cache.js";
+import type { BackfillState, CacheWindow, CacheWindowInput } from "./domain/cache.js";
 
 import type { UpdateClient } from "./updates.js";
 
@@ -403,7 +403,7 @@ export class Mailbox extends Context.Service<
     // Profiles (spaces)
     readonly profiles: Effect.Effect<Profile[]>;
     /** Atomically consumes eligible arrivals; muted arrivals wait for a Profile digest. */
-    readonly takeNotifications: Effect.Effect<import("./domain.js").NotificationBatch[]>;
+    readonly takeNotifications: Effect.Effect<import("./domain/domain.js").NotificationBatch[]>;
     createProfile(input: ProfileInput): Effect.Effect<Profile>;
     updateProfile(id: string, input: ProfileInput): Effect.Effect<void>;
     deleteProfile(id: string): Effect.Effect<void>;
@@ -440,7 +440,7 @@ export class Mailbox extends Context.Service<
     ): Effect.Effect<Outcome, PerformError>;
     readonly proposals: Effect.Effect<Proposal[]>;
     prepareRejectedResend(noticeId: number): Effect.Effect<DraftInput, NotFound | InvalidInput>;
-    readonly listFailedOps: Effect.Effect<readonly import("./domain.js").FailedOp[]>;
+    readonly listFailedOps: Effect.Effect<readonly import("./domain/domain.js").FailedOp[]>;
     acknowledgeFailedOps(ids: readonly number[]): Effect.Effect<void>;
     audit(limit: number): Effect.Effect<AuditEntry[]>;
     /** The last MCP tool calls, newest first: tool names and outcomes only. */
@@ -565,9 +565,9 @@ export class Mailbox extends Context.Service<
       client: UpdateClient,
       options: import("./updates.js").UpdateOptions,
     ): Effect.Effect<() => void, ProviderError>;
-    readonly cacheDatabaseSize: Effect.Effect<import("./cache.js").CacheDatabaseSize>;
-    readonly compactCache: Effect.Effect<import("./cache.js").CacheCompactionResult>;
-    readonly cacheSize: Effect.Effect<import("./cache.js").CacheSize[]>;
+    readonly cacheDatabaseSize: Effect.Effect<import("./domain/cache.js").CacheDatabaseSize>;
+    readonly compactCache: Effect.Effect<import("./domain/cache.js").CacheCompactionResult>;
+    readonly cacheSize: Effect.Effect<import("./domain/cache.js").CacheSize[]>;
     clearCache(accountId?: string): Effect.Effect<void>;
     initializeProfiles(
       accept: boolean,
@@ -581,7 +581,9 @@ export class Mailbox extends Context.Service<
     readonly backfillState: Effect.Effect<BackfillState[]>;
     pauseBackfill(accountId: string, paused: boolean): Effect.Effect<void>;
     /** Requests one throttled page per scoped account, respecting pause. */
-    fetchOlder(query: ThreadQuery): Effect.Effect<import("./cache.js").OlderResult, PerformError>;
+    fetchOlder(
+      query: ThreadQuery,
+    ): Effect.Effect<import("./domain/cache.js").OlderResult, PerformError>;
 
     // Sync
     /** Syncs provider changes and the queue. IMAP validates UIDs before pushing; concurrent calls join. */

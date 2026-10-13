@@ -1,6 +1,6 @@
 import { Clock, Effect } from "effect";
 import type { HttpClientRequest } from "effect/http";
-import { ProviderError } from "./errors.js";
+import { ProviderError } from "./domain/errors.js";
 
 /**
  * Token refresh holds the adapter's refresh lock, which every request waits on. A stalled

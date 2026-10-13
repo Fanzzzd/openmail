@@ -5,8 +5,8 @@ import { Mailbox } from "./portable.js";
 import { Store } from "./services.js";
 import { buildMobileMime } from "./platform/react-native/compose.js";
 import { parseMobileMime } from "./platform/react-native/mail-codec.js";
-import { SendUncertain } from "./errors.js";
-import { type IncomingMessage, type OutgoingMessage } from "./domain.js";
+import { SendUncertain } from "./domain/errors.js";
+import { type IncomingMessage, type OutgoingMessage } from "./domain/domain.js";
 {
   const message: OutgoingMessage = {
     to: [{ name: "王工", address: "alice@example.test" }],

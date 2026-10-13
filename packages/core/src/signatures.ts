@@ -1,6 +1,6 @@
 import { Schema } from "effect";
-import { type Address, type SignatureKind, type Message } from "./domain.js";
-import { type SendAs } from "./organization.js";
+import { type Address, type SignatureKind, type Message } from "./domain/domain.js";
+import { type SendAs } from "./domain/organization.js";
 
 export const NamedSignatureInput = Schema.Struct({
   address: Schema.String,

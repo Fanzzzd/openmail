@@ -9,7 +9,7 @@ import {
   type Message,
   type Prefs,
   type QuietHours,
-} from "./domain.js";
+} from "./domain/domain.js";
 
 export const MailtoDraft = Schema.Struct({
   to: Schema.String,
@@ -200,7 +200,7 @@ export function notificationAction(
   actions: Prefs["notificationActions"],
   actionIndex: number,
   selectionIndex = -1,
-): import("./domain.js").MailOp | null {
+): import("./domain/domain.js").MailOp | null {
   const selected = actions[actionIndex];
   const action =
     selected === "menu" ? (["archive", "trash", "read"] as const)[selectionIndex] : selected;

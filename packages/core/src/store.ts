@@ -27,7 +27,7 @@ import { makeSyncHealthStore } from "./store-sync-health.js";
 import { makeThreadsStore } from "./store-threads.js";
 import { makeWordIndexStore } from "./store-word-index.js";
 import { makeUndoStore } from "./undo-journal.js";
-export { applyOpToLabels, folderTarget } from "./mail-ops.js";
+export { applyOpToLabels, folderTarget } from "./domain/mail-ops.js";
 export { accountId } from "./store-rows.js";
 /**
  * The Store service over SQLite. The only module that runs SQL. Rows are

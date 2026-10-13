@@ -1,6 +1,6 @@
 import { assert, it } from "@effect/vitest";
 import { Effect, Layer, ManagedRuntime, Option, Stream } from "effect";
-import { ProviderError } from "./errors.js";
+import { ProviderError } from "./domain/errors.js";
 import { TestClock } from "effect/testing";
 import { expect } from "vitest";
 import { Mailbox } from "./mailbox.js";

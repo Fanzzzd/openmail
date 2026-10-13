@@ -15,7 +15,7 @@ import {
   AI_TRIAGE_PROMPT_VERSION,
   isTriageInbox,
 } from "./ai.js";
-import { InvalidInput } from "./errors.js";
+import { InvalidInput } from "./domain/errors.js";
 import { Mailbox, type ModelThread } from "./mailbox.js";
 import type { Model } from "./model.js";
 import { modelContext } from "./model-view.js";

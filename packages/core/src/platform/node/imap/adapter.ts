@@ -1,8 +1,8 @@
 import { Effect, Option, Queue, Stream } from "effect";
 import { attachmentFromRaw, MEDIA_RAW_TOO_LARGE } from "../../../attachments.js";
-import type { Account, IncomingMessage } from "../../../domain.js";
-import { PermanentError, ProviderError, type ProviderFailure } from "../../../errors.js";
-import { FOLDER_BATCH_LIMIT, type PermanentDeleteBatch } from "../../../folder-actions.js";
+import type { Account, IncomingMessage } from "../../../domain/domain.js";
+import { PermanentError, ProviderError, type ProviderFailure } from "../../../domain/errors.js";
+import { FOLDER_BATCH_LIMIT, type PermanentDeleteBatch } from "../../../domain/folder-actions.js";
 import { decodeProviderId, readCursor, type ImapCursor } from "../../../imap-cursor.js";
 import { groupIdsByFolder } from "../../../imap-helpers.js";
 import { matchesSearch, parseSearchQuery, searchMailboxLabel } from "../../../search.js";

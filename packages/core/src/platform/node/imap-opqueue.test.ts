@@ -11,7 +11,7 @@ import { nodeMailCodec } from "./mail-codec.js";
 import { makeImapWith } from "./imap/adapter.js";
 import { incoming, fakeServer } from "./testing.js";
 import { makeFakeProvider } from "./fake-provider.js";
-import { ProviderError } from "../../errors.js";
+import { ProviderError } from "../../domain/errors.js";
 import { parseHeaders } from "./imap/parse.js";
 import { parseUidSet } from "../../imap-cursor.js";
 import { smtpTransport } from "./imap/session.js";
@@ -27,7 +27,7 @@ import {
   type ProviderAdapter,
   type ProviderPushContext,
 } from "../../services.js";
-import { type Account } from "../../domain.js";
+import { type Account } from "../../domain/domain.js";
 const settings = {
   preset: "custom",
   username: "me@example.com",

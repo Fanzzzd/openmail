@@ -1,8 +1,8 @@
 import { assert, it } from "@effect/vitest";
 import { Cause, Deferred, Effect, Fiber, Layer, Logger, Option, Stream } from "effect";
 import { TestClock } from "effect/testing";
-import { type IncomingMessage } from "./domain.js";
-import { PermanentError, ProviderError } from "./errors.js";
+import { type IncomingMessage } from "./domain/domain.js";
+import { PermanentError, ProviderError } from "./domain/errors.js";
 import { MailboxLive } from "./mailbox-live.js";
 import { Mailbox } from "./mailbox.js";
 import { fakeServer, makeFakeProvider } from "./platform/node/fake-provider.js";

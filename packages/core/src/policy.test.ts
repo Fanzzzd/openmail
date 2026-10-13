@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { type Actor, type Command } from "./domain.js";
+import { type Actor, type Command } from "./domain/domain.js";
 import { decide } from "./policy.js";
 {
   const actor: Actor = { kind: "agent", surface: "mcp", name: "openmail-assistant" };

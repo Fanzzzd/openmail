@@ -7,8 +7,8 @@ import { join } from "node:path";
 import { writeMigratedDatabase } from "../test-support/migrated-database.js";
 
 import { databaseLayer } from "./platform/node/db.js";
-import type { IncomingMessage, MailOp, Provider } from "./domain.js";
-import { AuthError } from "./errors.js";
+import type { IncomingMessage, MailOp, Provider } from "./domain/domain.js";
+import { AuthError } from "./domain/errors.js";
 import { makeFakeProvider } from "./platform/node/fake-provider.js";
 import { Mailbox } from "./mailbox.js";
 import { MailboxLive } from "./mailbox-live.js";

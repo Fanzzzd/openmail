@@ -135,8 +135,8 @@ export const Attachment = Schema.Struct({
 });
 export type Attachment = typeof Attachment.Type;
 
-export { DerivedChunk, IndexingProgress } from "./media.js";
-import { DerivedChunk } from "./media.js";
+export { DerivedChunk, IndexingProgress } from "../media.js";
+import { DerivedChunk } from "../media.js";
 
 const summaryFields = {
   id: Schema.String,

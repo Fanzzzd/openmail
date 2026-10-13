@@ -11,8 +11,8 @@ import {
   Semaphore,
   Stream,
 } from "effect";
-import { type Account, type FlushResult, type SyncResult } from "./domain.js";
-import { type AuthError, type ProviderError, type ProviderFailure } from "./errors.js";
+import { type Account, type FlushResult, type SyncResult } from "./domain/domain.js";
+import { type AuthError, type ProviderError, type ProviderFailure } from "./domain/errors.js";
 import { runTokenKeepAlive } from "./token-keepalive.js";
 import { backfillCachedHeaders } from "./header-backfill.js";
 import { ImapIdle } from "./imap-idle.js";

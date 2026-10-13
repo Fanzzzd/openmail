@@ -1,13 +1,13 @@
 import { assert, it } from "@effect/vitest";
 import { Effect, Layer, Option, Schema, Stream } from "effect";
 import { DatabaseSync } from "node:sqlite";
-import { DEFAULT_PREFS } from "./domain.js";
+import { DEFAULT_PREFS } from "./domain/domain.js";
 import { MIGRATIONS } from "./db.js";
 import { Mailbox } from "./mailbox.js";
 import { makeOutlook } from "./outlook.js";
 import { parseGraphMessage } from "./outlook/parse.js";
 import { GraphMessage } from "./outlook/graph.js";
-import { applyOpToLabels } from "./mail-ops.js";
+import { applyOpToLabels } from "./domain/mail-ops.js";
 import {
   account as makeAccount,
   incoming,

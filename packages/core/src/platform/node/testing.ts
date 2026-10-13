@@ -6,7 +6,7 @@ import type { Model } from "../../model.js";
 import type { ProviderAdapter, Secrets, Store } from "../../services.js";
 import { Effect, Layer } from "effect";
 
-import type { Account, IncomingMessage, OutgoingMessage, Provider } from "../../domain.js";
+import type { Account, IncomingMessage, OutgoingMessage, Provider } from "../../domain/domain.js";
 import { type FakeServer, fakeServer, makeFakeProvider } from "./fake-provider.js";
 import { MailboxLive, type MailboxOptions } from "../../mailbox-live.js";
 import type { Mailbox } from "../../mailbox.js";

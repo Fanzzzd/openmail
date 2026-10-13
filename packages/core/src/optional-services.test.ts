@@ -17,14 +17,14 @@ import {
   type ProviderAdapter,
 } from "./services.js";
 import { MemoryPlatform } from "./platform/node/platform-memory.js";
-import { type IncomingMessage } from "./domain.js";
+import { type IncomingMessage } from "./domain/domain.js";
 import { TestClock } from "effect/testing";
 import { DatabaseSync } from "node:sqlite";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { MIGRATIONS } from "./db.js";
-import { GMAIL_PERMANENT_DELETE_SCOPE } from "./folder-actions.js";
+import { GMAIL_PERMANENT_DELETE_SCOPE } from "./domain/folder-actions.js";
 {
   for (const provider of ["gmail", "outlook"] as const) {
     it.effect(

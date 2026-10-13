@@ -12,7 +12,7 @@ import {
   AI_ERRORS,
   type AiModelName,
 } from "./ai.js";
-import { InvalidInput, ProviderError } from "./errors.js";
+import { InvalidInput, ProviderError } from "./domain/errors.js";
 import { MODEL_KEY } from "./secrets.js";
 import { Secrets } from "./services.js";
 import type { AssistantToolkit } from "./tools.js";

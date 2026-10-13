@@ -1,4 +1,4 @@
-import type { Address, Message, OutgoingMessage } from "./domain.js";
+import type { Address, Message, OutgoingMessage } from "./domain/domain.js";
 
 /** Split recipient text and RFC groups, keeping quoted names and encoded words intact. */
 export function splitAddresses(value: string): string[] {

@@ -1,7 +1,7 @@
 import { compatibleMime } from "../mime-compat.js";
 import type { MailCodecPort } from "../mail-codec.js";
 import { buildMime } from "./compose.js";
-import { PermanentError } from "../../errors.js";
+import { PermanentError } from "../../domain/errors.js";
 export const makeNodeMailCodec = (parse: MailCodecPort["parse"]): MailCodecPort => ({
   parse: async (raw, options) => {
     if (raw.byteLength > 64 * 1024 * 1024)

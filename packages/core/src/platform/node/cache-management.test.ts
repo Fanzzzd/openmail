@@ -7,7 +7,7 @@ import { mkdtempSync, rmSync, writeFileSync, linkSync, symlinkSync } from "node:
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import { adaptiveBodyLimit, cacheAccounting } from "../../cache.js";
+import { adaptiveBodyLimit, cacheAccounting } from "../../domain/cache.js";
 import { MIGRATIONS } from "../../db.js";
 import { Mailbox } from "../../mailbox.js";
 import { makeMailboxRuntimeState } from "../../mailbox-runtime.js";

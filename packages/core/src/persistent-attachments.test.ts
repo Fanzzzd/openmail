@@ -14,8 +14,8 @@ import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { StoreLive } from "./store.js";
 import { fakeServer, makeFakeProvider } from "./platform/node/fake-provider.js";
 import { PersistentAttachments } from "./platform/node/persistent-attachments.js";
-import { type IncomingMessage } from "./domain.js";
-import { ProviderError } from "./errors.js";
+import { type IncomingMessage } from "./domain/domain.js";
+import { ProviderError } from "./domain/errors.js";
 import { TestClock } from "effect/testing";
 {
   const message = (id: number, label = "INBOX"): IncomingMessage => ({

@@ -6,7 +6,7 @@ import { Effect, FileSystem, Layer, Path } from "effect";
 import { SqlClient } from "effect/sql";
 import { DatabaseSync } from "node:sqlite";
 import { databaseLayer, MIGRATIONS } from "./platform/node/db.js";
-import { type IncomingMessage, type Prefs } from "./domain.js";
+import { type IncomingMessage, type Prefs } from "./domain/domain.js";
 import { Mailbox } from "./mailbox.js";
 import { Store } from "./services.js";
 import { StoreLive } from "./store.js";

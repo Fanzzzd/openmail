@@ -1,6 +1,6 @@
 import { Clock, Effect, Option, Schema, Stream } from "effect";
 import { HttpClient, HttpClientRequest } from "effect/http";
-import { FOLDER_BATCH_LIMIT, GMAIL_PERMANENT_DELETE_SCOPE } from "./folder-actions.js";
+import { FOLDER_BATCH_LIMIT, GMAIL_PERMANENT_DELETE_SCOPE } from "./domain/folder-actions.js";
 import { CACHED_HEADER_NAMES, type CachedHeaders, firstHeaders } from "./header-backfill.js";
 import { newMessageId } from "./message-id.js";
 import { messageSecurity } from "./message-security.js";
@@ -41,8 +41,8 @@ import type {
   IncomingMessage,
   MailOp,
   OutgoingMessage,
-} from "./domain.js";
-import { Label } from "./domain.js";
+} from "./domain/domain.js";
+import { Label } from "./domain/domain.js";
 import {
   AuthError,
   ClientNotConfigured,
@@ -50,7 +50,7 @@ import {
   PermanentError,
   ProviderError,
   type ProviderFailure,
-} from "./errors.js";
+} from "./domain/errors.js";
 import { charsetOf, decodeHeader, decodeUtf8First, parseAddressList } from "./mime.js";
 import {
   AppConfig,

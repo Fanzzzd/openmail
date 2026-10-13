@@ -7,7 +7,7 @@ import {
   type FlushResult,
   type Outcome,
   type OutgoingMessage,
-} from "./domain.js";
+} from "./domain/domain.js";
 import {
   AuthError,
   InvalidInput,
@@ -15,7 +15,7 @@ import {
   type FeatureScopeMissing,
   type ProviderFailure,
   SendUncertain,
-} from "./errors.js";
+} from "./domain/errors.js";
 import { type MailboxDependencies, type MailboxRuntimeState } from "./mailbox-runtime.js";
 import { WRITE_RECOVERY_WINDOW_MS } from "./mailbox-shared.js";
 import { type Mailbox } from "./mailbox.js";

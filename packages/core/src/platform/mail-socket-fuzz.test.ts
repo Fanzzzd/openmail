@@ -2,7 +2,7 @@ import * as fc from "fast-check";
 import { expect, it } from "vitest";
 import { ImapWire, MailWire, encodeFolder, decodeFolder, type MailSocket } from "./mail-socket.js";
 import { smtpSession } from "./react-native/imap.js";
-import { ProviderError, AuthError } from "../errors.js";
+import { ProviderError, AuthError } from "../domain/errors.js";
 
 const options = {
   seed: 0x520051,

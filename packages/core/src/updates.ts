@@ -1,4 +1,4 @@
-import type { ProviderError } from "./errors.js";
+import type { ProviderError } from "./domain/errors.js";
 import type { UpdateState } from "./update-state.js";
 import parse from "semver/functions/parse.js";
 import { Effect, Option, Schema } from "effect";

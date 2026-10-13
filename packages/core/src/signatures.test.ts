@@ -4,7 +4,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { databaseLayer } from "./platform/node/db.js";
-import { DEFAULT_PREFS } from "./domain.js";
+import { DEFAULT_PREFS } from "./domain/domain.js";
 import { fakeServer, makeFakeProvider } from "./platform/node/fake-provider.js";
 import { Mailbox } from "./mailbox.js";
 import { MailboxLive } from "./mailbox-live.js";

@@ -1,6 +1,6 @@
 import { Effect, Layer, Option, Schema } from "effect";
 import { HttpClient, HttpClientRequest, HttpClientResponse } from "effect/http";
-import { AuthError, ProviderError } from "../../errors.js";
+import { AuthError, ProviderError } from "../../domain/errors.js";
 import { tokenTimeout } from "../../provider-retry.js";
 import { tokenEndpointFailure } from "../../reauth.js";
 import { OAuth, type AuthorizeRequest, type TokenResponse } from "../../services.js";

@@ -1,7 +1,7 @@
 import { Cause, Clock, Effect, Option, Random, Schema } from "effect";
 import { type SqlClient } from "effect/sql";
-import { FailedOp, type QueuedOp } from "./domain.js";
-import { NotFound, ProviderError } from "./errors.js";
+import { FailedOp, type QueuedOp } from "./domain/domain.js";
+import { NotFound, ProviderError } from "./domain/errors.js";
 import { JITTER } from "./backoff.js";
 import { type Store } from "./services.js";
 import { all, first, run } from "./sql-rows.js";

@@ -1,13 +1,13 @@
 import { Effect, Schema } from "effect";
 
-import type { Provider } from "./domain.js";
+import type { Provider } from "./domain/domain.js";
 import {
   AuthError,
   isReauthReason,
   KEYCHAIN_LOCKED_MESSAGE,
   ProviderError,
   ReauthReason,
-} from "./errors.js";
+} from "./domain/errors.js";
 import { sha256Hex } from "./platform/crypto.js";
 
 /**

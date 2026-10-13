@@ -1,9 +1,9 @@
 import { graphPageLink } from "./graph-pagination.js";
 import { reconcileProviderWrite } from "./provider-write.js";
 import { Effect, Schema } from "effect";
-import type { Account, Address } from "./domain.js";
+import type { Account, Address } from "./domain/domain.js";
 import type { CalendarInvite, InviteResponse } from "./calendar.js";
-import { InvalidInput } from "./errors.js";
+import { InvalidInput } from "./domain/errors.js";
 import { mergeContacts } from "./contacts.js";
 import { featureRequest } from "./provider-features.js";
 

@@ -4,7 +4,7 @@
  * are removed, tracker URLs are stripped, and the document's CSP loads
  * nothing remote. The window that renders it also runs with JavaScript off.
  */
-import type { Address, Message } from "./domain.js";
+import type { Address, Message } from "./domain/domain.js";
 import { prepareMessageHtml } from "./reader-html.js";
 import { sanitizeReaderHtml } from "./reader-sanitize.js";
 

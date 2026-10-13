@@ -1,7 +1,7 @@
 import { Clock, Effect, Option, Schema } from "effect";
 import { type SqlClient } from "effect/sql";
 import { isSqlError } from "effect/sql/SqlError";
-import { type MessageSummary, type NotificationBatch } from "./domain.js";
+import { type MessageSummary, type NotificationBatch } from "./domain/domain.js";
 import { type Store } from "./services.js";
 import { all, first, run } from "./sql-rows.js";
 import { type makeComposeStore } from "./store-compose.js";

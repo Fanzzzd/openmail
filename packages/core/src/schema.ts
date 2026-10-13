@@ -4,8 +4,8 @@
 export * from "./compose-text.js";
 export * from "./compose-body.js";
 export * from "./compose-format.js";
-export * from "./domain.js";
-export * from "./errors.js";
+export * from "./domain/domain.js";
+export * from "./domain/errors.js";
 export { storedSyncFailureReason, SYNC_FAILURE_TEXT, SyncFailureReason } from "./sync-failure.js";
 export { IMAP_PRESETS, ImapConnectInput, ImapPreset } from "./imap-presets.js";
 export { Mailbox, MailboxEvent, ModelThread, SyncState } from "./mailbox.js";
@@ -17,7 +17,7 @@ export * from "./reader-sanitize.js";
 export * from "./reading.js";
 export * from "./trackers.js";
 
-export * from "./organization.js";
+export * from "./domain/organization.js";
 export * from "./search.js";
 
 export { htmlToText } from "./mime.js";
@@ -26,17 +26,17 @@ export * from "./media.js";
 export * from "./calendar.js";
 export * from "./contacts.js";
 
-export { deviceErrorReason, deviceFailure } from "./device-errors.js";
+export { deviceErrorReason, deviceFailure } from "./domain/device-errors.js";
 export * from "./system.js";
-export * from "./cache.js";
+export * from "./domain/cache.js";
 
 export * from "./list-window.js";
 
-export * from "./mail-ops.js";
+export * from "./domain/mail-ops.js";
 export * from "./recipients.js";
 
 export * from "./compose-sender.js";
-export * from "./folder-actions.js";
+export * from "./domain/folder-actions.js";
 
 export * from "./attachment-policy.js";
 
@@ -52,7 +52,7 @@ export * from "./compose-extras.js";
 
 export * from "./signatures.js";
 
-export * from "./categories.js";
+export * from "./domain/categories.js";
 export * from "./ai.js";
 export * from "./update-state.js";
 export * from "./compose-ai.js";

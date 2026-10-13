@@ -3,7 +3,7 @@ import { assert, it } from "@effect/vitest";
 import { Clock, Deferred, Effect, Fiber, ManagedRuntime, Option } from "effect";
 import { TestClock } from "effect/testing";
 import { SqlClient } from "effect/sql";
-import { AuthError, PermanentError, ProviderError, SendUncertain } from "./errors.js";
+import { AuthError, PermanentError, ProviderError, SendUncertain } from "./domain/errors.js";
 import { type MailboxOptions } from "./mailbox-live.js";
 import { Mailbox } from "./mailbox.js";
 import { TestMailbox } from "./platform/node/testing.js";

@@ -9,7 +9,7 @@ import { TestClock } from "effect/testing";
 import { simpleParser } from "mailparser";
 import { createServer } from "node:net";
 import { createTransport } from "nodemailer";
-import type { Account } from "./domain.js";
+import type { Account } from "./domain/domain.js";
 import { IMAP_PRESETS, type ImapConnectInput } from "./imap-presets.js";
 import {
   attachmentNodes,
@@ -2071,7 +2071,8 @@ for (const result of [false, undefined] as const) {
           }
           const exit = yield* Effect.exit<
             unknown,
-            import("./errors.js").ProviderFailure | import("./errors.js").SendUncertain,
+            | import("./domain/errors.js").ProviderFailure
+            | import("./domain/errors.js").SendUncertain,
             never
           >(operation);
           assert.deepStrictEqual(

@@ -1,8 +1,8 @@
 import { Effect, Schema } from "effect";
 import type { SqlClient } from "effect/sql";
 import { attachmentBytes, attachmentProblem, type AttachmentProblem } from "./attachment-policy.js";
-import type { OutgoingAttachment, Provider } from "./domain.js";
-import { OutgoingMessage } from "./domain.js";
+import type { OutgoingAttachment, Provider } from "./domain/domain.js";
+import { OutgoingMessage } from "./domain/domain.js";
 import { all, run } from "./sql-rows.js";
 
 export const MOBILE_ATTACHMENT_LIMIT = 15 * 1024 * 1024;

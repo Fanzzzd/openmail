@@ -1,6 +1,6 @@
 import { Effect, Option, Schema } from "effect";
 import type { SqlClient } from "effect/sql";
-import { InvalidInput } from "./errors.js";
+import { InvalidInput } from "./domain/errors.js";
 import { all, run } from "./sql-rows.js";
 
 /**

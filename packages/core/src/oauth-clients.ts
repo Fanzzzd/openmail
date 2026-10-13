@@ -1,6 +1,6 @@
 import { Clock, Effect, Option } from "effect";
 
-import { AuthError, ProviderError } from "./errors.js";
+import { AuthError, ProviderError } from "./domain/errors.js";
 import { isTestingModeExpiry } from "./reauth.js";
 import type { AppConfig, ClientConfig, ClientSources, OAuthIssuers } from "./services.js";
 

@@ -4,7 +4,7 @@ import PostalMime, { type Address } from "postal-mime";
 import { Layer } from "effect";
 import { buildMobileMime } from "./compose.js";
 import { MailCodec, type MimeAddresses, type MimeMessage } from "../mail-codec.js";
-import { PermanentError } from "../../errors.js";
+import { PermanentError } from "../../domain/errors.js";
 
 const addresses = (value: readonly Address[]): MimeAddresses => ({
   value,

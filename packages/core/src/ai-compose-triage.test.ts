@@ -4,7 +4,7 @@ import { TestClock } from "effect/testing";
 import { vi } from "vitest";
 import { composeAiDiff, composeAiReplacement } from "./compose-ai.js";
 import { richComposeBody, textComposeHtml } from "./compose-body.js";
-import type { IncomingMessage } from "./domain.js";
+import type { IncomingMessage } from "./domain/domain.js";
 import { Mailbox } from "./mailbox.js";
 import { MailboxLive } from "./mailbox-live.js";
 import { makeAiMailbox } from "./mailbox-ai.js";

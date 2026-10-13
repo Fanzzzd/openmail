@@ -1,7 +1,13 @@
 import { Clock, Effect, Option, Schema } from "effect";
 import { type SqlClient } from "effect/sql";
-import { type Actor, actorLabel, type AgentWriteMode, Command, type Proposal } from "./domain.js";
-import { NotFound } from "./errors.js";
+import {
+  type Actor,
+  actorLabel,
+  type AgentWriteMode,
+  Command,
+  type Proposal,
+} from "./domain/domain.js";
+import { NotFound } from "./domain/errors.js";
 import { sha256Hex } from "./platform/crypto.js";
 import { type Store } from "./services.js";
 import { all, first, run } from "./sql-rows.js";

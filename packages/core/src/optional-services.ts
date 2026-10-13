@@ -1,6 +1,6 @@
 import { Effect, Schema } from "effect";
-import type { Account, Provider } from "./domain.js";
-import { FeatureScopeMissing, SettingsScopeMissing } from "./errors.js";
+import type { Account, Provider } from "./domain/domain.js";
+import { FeatureScopeMissing, SettingsScopeMissing } from "./domain/errors.js";
 import type { ProviderAdapter, Store } from "./services.js";
 
 export const OptionalService = Schema.Literals(["contacts", "calendar", "settings"]);

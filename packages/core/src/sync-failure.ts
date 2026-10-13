@@ -1,6 +1,6 @@
 import { Effect, Schema } from "effect";
-import type { Account } from "./domain.js";
-import { KEYCHAIN_LOCKED_MESSAGE } from "./errors.js";
+import type { Account } from "./domain/domain.js";
+import { KEYCHAIN_LOCKED_MESSAGE } from "./domain/errors.js";
 import { sha256Hex } from "./platform/crypto.js";
 
 /** Why a sync failed, as stored and shown. Provider response bodies never reach the UI. */

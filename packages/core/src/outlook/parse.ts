@@ -1,7 +1,7 @@
 import { Effect, Schema } from "effect";
 import { type AttachmentRef, MEDIA_RAW_TOO_LARGE, pickAttachment } from "../attachments.js";
-import type { Account, Address, Attachment, IncomingMessage } from "../domain.js";
-import { PermanentError, ProviderError } from "../errors.js";
+import type { Account, Address, Attachment, IncomingMessage } from "../domain/domain.js";
+import { PermanentError, ProviderError } from "../domain/errors.js";
 import { cleanDisplayName, messageSecurity } from "../message-security.js";
 import { Buffer } from "../platform/bytes.js";
 import { finishInline, finishWith, type HtmlBody, HtmlText } from "../platform/html-text.js";
