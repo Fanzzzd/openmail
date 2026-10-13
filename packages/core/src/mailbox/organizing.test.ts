@@ -21,7 +21,7 @@ import {
   moveSourceLabel,
 } from "../domain/organization.js";
 import { makeGmailSettings } from "../providers/gmail/gmail-settings.js";
-import { gmailDelta } from "../providers/gmail/gmail.js";
+import { gmailDelta } from "../providers/gmail/labels.js";
 import { destination } from "../providers/outlook/graph.js";
 import { ProviderError } from "../domain/errors.js";
 import { fakeServer, makeFakeProvider } from "../platform/node/fake-provider.js";
