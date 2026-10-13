@@ -1,8 +1,8 @@
 import { assert, it } from "@effect/vitest";
 import { Effect, Layer, ConfigProvider, Option } from "effect";
 import { HttpClient } from "effect/http";
-import { makeGmail } from "../gmail.js";
-import { makeOutlook } from "../outlook.js";
+import { makeGmail } from "../providers/gmail/gmail.js";
+import { makeOutlook } from "../providers/outlook/outlook.js";
 import { makeImap } from "../platform/node/imap/adapter.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
 import {

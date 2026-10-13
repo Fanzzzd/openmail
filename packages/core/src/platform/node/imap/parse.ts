@@ -2,7 +2,10 @@ import { Predicate } from "effect";
 import type { ListResponse, MessageStructureObject } from "imapflow";
 import type { Attachment, IncomingMessage } from "../../../domain/domain.js";
 import { cachedHeaders, firstHeaders } from "../../../sync/header-backfill.js";
-import { flagsOf, IMAP_SPECIAL_LABELS as SPECIAL_LABEL } from "../../../imap-helpers.js";
+import {
+  flagsOf,
+  IMAP_SPECIAL_LABELS as SPECIAL_LABEL,
+} from "../../../providers/imap/imap-helpers.js";
 
 import { messageSecurity } from "../../../message-security.js";
 import { finishInline, type HtmlBody } from "../../html-text.js";

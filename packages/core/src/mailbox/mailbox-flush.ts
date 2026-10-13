@@ -1,7 +1,7 @@
 import { Clock, Effect, FiberSet, Option, Schema } from "effect";
 import { type Account } from "../domain/domain.js";
 import { type ProviderFailure } from "../domain/errors.js";
-import { decodeProviderId, readCursor, recordPushedFlags } from "../imap-cursor.js";
+import { decodeProviderId, readCursor, recordPushedFlags } from "../providers/imap/imap-cursor.js";
 import { type MailboxDependencies, type MailboxRuntimeState } from "./mailbox-runtime.js";
 import { withPendingOps } from "./mailbox-shared.js";
 import { READ_ONLY_MESSAGE } from "./read-only.js";

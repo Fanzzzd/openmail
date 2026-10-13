@@ -1,7 +1,7 @@
 import { AsyncEntry } from "@napi-rs/keyring";
 import { Effect, Layer, Option, Schedule } from "effect";
 
-import { keychainLocked } from "../../reauth.js";
+import { keychainLocked } from "../../providers/reauth.js";
 import { Secrets } from "../../services.js";
 
 // Refresh tokens and IMAP passwords live in the OS keychain. Error handling: docs/sync-correctness.md#重新登录的判定.

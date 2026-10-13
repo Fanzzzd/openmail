@@ -2,7 +2,7 @@ import { Clock, Effect, Option, Schema } from "effect";
 import { isOutlookClassification, type Account } from "../domain/domain.js";
 import type { Change, ProviderAdapter, Store } from "../services.js";
 import { sha256Hex } from "../platform/crypto.js";
-import { trackImapBackfill } from "../imap-cursor.js";
+import { trackImapBackfill } from "../providers/imap/imap-cursor.js";
 import { applyOpToLabels } from "../domain/mail-ops.js";
 import type { SyncHealth } from "./sync-health.js";
 

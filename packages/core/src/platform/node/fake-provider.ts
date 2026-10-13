@@ -1,5 +1,5 @@
-import { decodeProviderId as importedDecodeProviderId } from "../../imap-cursor.js";
-import { BASE_SCOPES, OPTIONAL_SCOPES } from "../../optional-services.js";
+import { decodeProviderId as importedDecodeProviderId } from "../../providers/imap/imap-cursor.js";
+import { BASE_SCOPES, OPTIONAL_SCOPES } from "../../providers/optional-services.js";
 import {
   calendarTimestamp,
   type CalendarEvent,

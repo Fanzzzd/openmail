@@ -46,8 +46,8 @@ import { bestComposeSender } from "./compose-sender.js";
 import { buildMime } from "./platform/node/compose.js";
 import { FeatureScopeMissing, ProviderError } from "./domain/errors.js";
 import { SqlClient } from "effect/sql";
-import { makeGmailFeatures } from "./gmail-features.js";
-import { makeOutlookFeatures } from "./outlook-features.js";
+import { makeGmailFeatures } from "./providers/gmail/gmail-features.js";
+import { makeOutlookFeatures } from "./providers/outlook/outlook-features.js";
 {
   const png =
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aZ2kAAAAASUVORK5CYII=";

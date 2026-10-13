@@ -17,7 +17,7 @@ import {
 } from "../attachments.js";
 import { type Outcome, type Provider, type SyncResult } from "../domain/domain.js";
 import { type parseRawDraft as unboundParseRawDraft } from "../drafts.js";
-import { type ImapIdle } from "../imap-idle.js";
+import { type ImapIdle } from "../providers/imap/imap-idle.js";
 import { type Mailbox, type MailboxEvent, type PerformError, type SyncState } from "./mailbox.js";
 import { type ModelRuntime, type Vision } from "../media.js";
 import { type Model } from "../model.js";

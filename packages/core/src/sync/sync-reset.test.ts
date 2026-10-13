@@ -3,8 +3,8 @@ import { assert, it } from "@effect/vitest";
 import { Effect, Layer, Option, Schema, Stream } from "effect";
 import { HttpClient, HttpClientResponse } from "effect/http";
 import { type IncomingMessage, type Provider } from "../domain/domain.js";
-import { makeGmail } from "../gmail.js";
-import { makeOutlook } from "../outlook.js";
+import { makeGmail } from "../providers/gmail/gmail.js";
+import { makeOutlook } from "../providers/outlook/outlook.js";
 import { MailboxLive } from "../mailbox/mailbox-live.js";
 import { Mailbox } from "../mailbox/mailbox.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
@@ -12,7 +12,7 @@ import { makeFakeProvider, fakeServer } from "../platform/node/fake-provider.js"
 import { Providers, Store, type ProviderAdapter } from "../services.js";
 import { StoreLive } from "../store/store.js";
 import { makeResetGuard } from "./sync-reset.js";
-import { parseGmailBatch } from "../provider-batch.js";
+import { parseGmailBatch } from "../providers/provider-batch.js";
 const mail = (providerId: string): IncomingMessage => ({
   providerId,
   threadId: providerId,

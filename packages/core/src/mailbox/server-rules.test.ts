@@ -1,7 +1,7 @@
 import { assert, it } from "@effect/vitest";
 import { Effect, Layer, Schema } from "effect";
-import { makeGmail } from "../gmail.js";
-import { makeOutlook } from "../outlook.js";
+import { makeGmail } from "../providers/gmail/gmail.js";
+import { makeOutlook } from "../providers/outlook/outlook.js";
 import { Mailbox } from "./mailbox.js";
 import { Store } from "../services.js";
 import {
@@ -13,9 +13,9 @@ import {
   type OutlookRulePredicates,
 } from "../domain/organization.js";
 import { labelOps } from "./mailbox-organization.js";
-import { GraphMessage } from "../outlook/graph.js";
-import { expandedAttachments, parseGraphMessage } from "../outlook/parse.js";
-import { evaluateOutlookRule } from "../outlook-rules.js";
+import { GraphMessage } from "../providers/outlook/graph.js";
+import { expandedAttachments, parseGraphMessage } from "../providers/outlook/parse.js";
+import { evaluateOutlookRule } from "../providers/outlook/outlook-rules.js";
 import { filterQuery, gmailSearch } from "../search.js";
 import { fakeHttp } from "../platform/node/fake-http.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";

@@ -1,8 +1,8 @@
 import type { ImapFlow } from "imapflow";
 import type { ImapSettings } from "../../domain/domain.js";
-import { IDLE_RENEW_MS } from "../../imap-idle.js";
+import { IDLE_RENEW_MS } from "../../providers/imap/imap-idle.js";
 
-export { IDLE_RENEW_MS, idleRetryDelay } from "../../imap-idle.js";
+export { IDLE_RENEW_MS, idleRetryDelay } from "../../providers/imap/imap-idle.js";
 
 export async function watchImapInbox(
   settings: ImapSettings,
@@ -67,4 +67,4 @@ export async function keepInboxIdle(
   }
 }
 
-export { ImapIdle } from "../../imap-idle.js";
+export { ImapIdle } from "../../providers/imap/imap-idle.js";

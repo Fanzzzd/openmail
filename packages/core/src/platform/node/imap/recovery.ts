@@ -11,8 +11,8 @@ import {
   encodeProviderId,
   uidSet,
   type ImapCursor,
-} from "../../../imap-cursor.js";
-import { retainedResetLabels } from "../../../imap-helpers.js";
+} from "../../../providers/imap/imap-cursor.js";
+import { retainedResetLabels } from "../../../providers/imap/imap-helpers.js";
 import { type ProviderAdapter } from "../../../services.js";
 import type { ResetVerification } from "../../../sync/sync-reset.js";
 import { imapSearch } from "../imap-search.js";

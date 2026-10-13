@@ -15,14 +15,14 @@ import { type Account, type FlushResult, type SyncResult } from "../domain/domai
 import { type AuthError, type ProviderError, type ProviderFailure } from "../domain/errors.js";
 import { runTokenKeepAlive } from "../sync/token-keepalive.js";
 import { backfillCachedHeaders } from "../sync/header-backfill.js";
-import { ImapIdle } from "../imap-idle.js";
+import { ImapIdle } from "../providers/imap/imap-idle.js";
 import { type makeCacheMailbox } from "./mailbox-cache.js";
 import { type makeFeatureMailbox } from "./mailbox-features.js";
 import { type makeOrganizationMailbox } from "./mailbox-organization.js";
 import { type MailboxDependencies, type MailboxRuntimeState } from "./mailbox-runtime.js";
 import { type Mailbox, type SyncState } from "./mailbox.js";
-import { BackgroundRead } from "../provider-connectivity.js";
-import { retryAfterMillis } from "../provider-retry.js";
+import { BackgroundRead } from "../providers/provider-connectivity.js";
+import { retryAfterMillis } from "../providers/provider-retry.js";
 import { type Change } from "../services.js";
 import { logSyncCrash, type SyncCrashDiagnostic } from "../sync/sync-crash.js";
 import { logSyncFailed, SYNC_FAILURE_TEXT, syncFailureText } from "../sync/sync-failure.js";

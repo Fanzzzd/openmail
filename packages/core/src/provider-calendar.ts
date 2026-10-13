@@ -1,4 +1,4 @@
-import { graphPageLink } from "./graph-pagination.js";
+import { graphPageLink } from "./providers/outlook/graph-pagination.js";
 import { sha256Hex } from "./platform/crypto.js";
 import { WINDOWS_ZONES } from "./windows-zones.js";
 import { Effect, Schema, Result, Semaphore } from "effect";
@@ -10,7 +10,7 @@ import {
   type CalendarTime,
 } from "./calendar.js";
 import { InvalidInput } from "./domain/errors.js";
-import { featureRequest } from "./provider-features.js";
+import { featureRequest } from "./providers/provider-features.js";
 import { graphTimestamp } from "./graph-time.js";
 import { validateEventRecurrenceForProvider } from "./event-recurrence.js";
 import { graphRecurrence } from "./graph-recurrence.js";

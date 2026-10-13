@@ -3,7 +3,7 @@ import { type SqlClient } from "effect/sql";
 import { isSqlError } from "effect/sql/SqlError";
 import { type IncomingMessage, type MailOp, type Message } from "../domain/domain.js";
 import { NotFound, ProviderError } from "../domain/errors.js";
-import { decodeProviderId } from "../imap-cursor.js";
+import { decodeProviderId } from "../providers/imap/imap-cursor.js";
 import { applyOpToLabels } from "../domain/mail-ops.js";
 import { cleanDisplayName } from "../message-security.js";
 import { type PlatformCrypto } from "../platform/crypto.js";

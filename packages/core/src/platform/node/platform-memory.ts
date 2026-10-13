@@ -21,7 +21,7 @@ import {
 import type { SqlClient } from "effect/sql";
 
 import { NodeRuntime } from "./runtime.js";
-import { appConfigFile } from "../../config.js";
+import { appConfigFile } from "../../providers/config.js";
 import { databaseLayer } from "./db.js";
 import { OAuthIssuersSql } from "../../store/store-oauth-issuers.js";
 import {

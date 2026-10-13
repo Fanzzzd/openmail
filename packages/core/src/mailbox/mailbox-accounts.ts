@@ -13,8 +13,8 @@ import {
   consentBatch,
   OPTIONAL_SCOPES,
   serviceGrants,
-} from "../optional-services.js";
-import { activeClient } from "../oauth-clients.js";
+} from "../providers/optional-services.js";
+import { activeClient } from "../providers/oauth-clients.js";
 import { type ConnectInput } from "../services.js";
 
 const accountMismatch = (signedInAs: string, expected: string) =>

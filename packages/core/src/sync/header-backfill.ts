@@ -1,7 +1,7 @@
 import { Clock, Effect, Schema } from "effect";
 import type { Account } from "../domain/domain.js";
 import type { ProviderAdapter, Store } from "../services.js";
-import { retryAfterMillis } from "../provider-retry.js";
+import { retryAfterMillis } from "../providers/provider-retry.js";
 import { ProviderError } from "../domain/errors.js";
 
 /** Headers needed for identity, threading, local header searches and security. */

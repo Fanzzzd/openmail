@@ -11,8 +11,8 @@ import {
   type OutgoingMessage,
 } from "../domain/domain.js";
 import { InvalidInput, type ProviderError } from "../domain/errors.js";
-import { decodeProviderId } from "../imap-cursor.js";
-import { requireFocusedInboxScope } from "../optional-services.js";
+import { decodeProviderId } from "../providers/imap/imap-cursor.js";
+import { requireFocusedInboxScope } from "../providers/optional-services.js";
 import { applyOpToLabels, folderTarget, invalidCategoryFolderOp } from "../domain/mail-ops.js";
 import { type makeBatchMailbox } from "./mailbox-batch.js";
 import { eventFromInvite } from "./mailbox-features.js";

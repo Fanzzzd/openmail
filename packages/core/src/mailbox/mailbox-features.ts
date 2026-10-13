@@ -1,4 +1,4 @@
-import { serviceAvailable } from "../optional-services.js";
+import { serviceAvailable } from "../providers/optional-services.js";
 import { PlatformCrypto } from "../platform/crypto.js";
 import { MailCodec, type MailCodecPort } from "../platform/mail-codec.js";
 import { bestComposeSender } from "../compose-sender.js";

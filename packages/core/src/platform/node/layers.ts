@@ -4,11 +4,11 @@ import { makeNodeModels } from "./embeddings-node.js";
 import { dataDir } from "./paths.js";
 import { Config, Effect, Layer } from "effect";
 
-import { makeGmail } from "../../gmail.js";
+import { makeGmail } from "../../providers/gmail/gmail.js";
 import { makeImap } from "./imap/adapter.js";
 import { MailboxLive, type MailboxOptions } from "../../mailbox/mailbox-live.js";
 import type { Mailbox } from "../../mailbox/mailbox.js";
-import { makeOutlook } from "../../outlook.js";
+import { makeOutlook } from "../../providers/outlook/outlook.js";
 import { NodeSystem, NodePlatform, type NodePlatformOptions } from "./platform-node.js";
 import { readOnlyAdapter } from "../../mailbox/read-only.js";
 import { Providers } from "../../services.js";

@@ -20,7 +20,7 @@ import { type MailboxDependencies, type MailboxRuntimeState } from "./mailbox-ru
 import { WRITE_RECOVERY_WINDOW_MS } from "./mailbox-shared.js";
 import { type Mailbox } from "./mailbox.js";
 import { mobileAttachmentProblem, type QueuedSend } from "./mobile-outbox.js";
-import { isDefiniteSendFailure } from "../provider-send.js";
+import { isDefiniteSendFailure } from "../providers/provider-send.js";
 import { READ_ONLY_MESSAGE } from "./read-only.js";
 import { isEmailAddress } from "../recipients.js";
 import { type StoredDraft } from "../services.js";

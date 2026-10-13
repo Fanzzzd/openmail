@@ -37,15 +37,19 @@ import {
   SendUncertain,
   type ProviderFailure,
 } from "../../domain/errors.js";
-import { isLoginRefusal } from "../../reauth.js";
-import { serverSavesSent, resolveImapSettings, imapSettingsKey } from "../../imap-settings.js";
+import { isLoginRefusal } from "../../providers/reauth.js";
+import {
+  serverSavesSent,
+  resolveImapSettings,
+  imapSettingsKey,
+} from "../../providers/imap/imap-settings.js";
 import {
   copyProgressKey,
   retainedResetLabels,
   flagsOf,
   groupIdsByFolder,
   IMAP_SPECIAL_LABELS as SPECIAL,
-} from "../../imap-helpers.js";
+} from "../../providers/imap/imap-helpers.js";
 import {
   folderRegressed,
   encodeProviderId,
@@ -56,9 +60,9 @@ import {
   parseUidSet,
   type FolderCursor,
   type ImapCursor,
-} from "../../imap-cursor.js";
+} from "../../providers/imap/imap-cursor.js";
 import type { Account, ImapSettings, IncomingMessage } from "../../domain/domain.js";
-import { confirmDelivery } from "../../provider-send.js";
+import { confirmDelivery } from "../../providers/provider-send.js";
 import { htmlToText } from "../../mime.js";
 import { matchesSearch, searchMailboxLabel } from "../../search.js";
 

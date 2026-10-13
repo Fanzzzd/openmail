@@ -11,7 +11,7 @@ import {
   type Provider,
 } from "../domain/domain.js";
 import { type AuthError, InvalidInput, NotFound } from "../domain/errors.js";
-import { logReauth, reauthReason } from "../reauth.js";
+import { logReauth, reauthReason } from "../providers/reauth.js";
 import { type PlatformCrypto } from "../platform/crypto.js";
 import { type Store } from "../services.js";
 import { all, first, run } from "./sql-rows.js";

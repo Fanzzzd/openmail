@@ -13,7 +13,7 @@ import {
   type IncomingMessage,
 } from "../domain/domain.js";
 import { messagesFrom } from "../reading.js";
-import { requireFocusedInboxScope } from "../optional-services.js";
+import { requireFocusedInboxScope } from "../providers/optional-services.js";
 import { InvalidInput } from "../domain/errors.js";
 import type { Mailbox } from "./mailbox.js";
 import type { ReminderSnapshot, Store } from "../services.js";

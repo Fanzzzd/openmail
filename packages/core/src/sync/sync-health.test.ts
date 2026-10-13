@@ -11,7 +11,7 @@ import { TestMailbox, fakeServer } from "../platform/node/testing.js";
 import { type IncomingMessage, type Provider } from "../domain/domain.js";
 import { makeSyncHealth, redactSyncHealth, type HealthVerdict } from "./sync-health.js";
 import { sha256Hex } from "../platform/crypto.js";
-import { makeGmail } from "../gmail.js";
+import { makeGmail } from "../providers/gmail/gmail.js";
 import { makeResetGuard } from "./sync-reset.js";
 import { HttpClient, HttpClientResponse } from "effect/http";
 import { ProviderError } from "../domain/errors.js";

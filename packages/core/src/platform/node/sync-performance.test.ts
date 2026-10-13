@@ -7,7 +7,7 @@ import { Effect, Layer } from "effect";
 import { expect, it, vi } from "vitest";
 import { Mailbox } from "../../mailbox/mailbox.js";
 import { MailboxLive } from "../../mailbox/mailbox-live.js";
-import { makeOutlook } from "../../outlook.js";
+import { makeOutlook } from "../../providers/outlook/outlook.js";
 import { Providers, Store } from "../../services.js";
 import { StoreLive } from "../../store/store.js";
 import { fakeHttp, graphFolderRoutes } from "./fake-http.js";

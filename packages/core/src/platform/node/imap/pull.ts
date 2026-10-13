@@ -8,9 +8,9 @@ import {
   parseUidSet,
   uidSet,
   type ImapCursor,
-} from "../../../imap-cursor.js";
-import type { Flags } from "../../../imap-helpers.js";
-import { flagsOf } from "../../../imap-helpers.js";
+} from "../../../providers/imap/imap-cursor.js";
+import type { Flags } from "../../../providers/imap/imap-helpers.js";
+import { flagsOf } from "../../../providers/imap/imap-helpers.js";
 import { type Change } from "../../../services.js";
 import { nodeMailCodec } from "../mail-codec.js";
 import { finishWith } from "../../html-text.js";

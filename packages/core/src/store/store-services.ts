@@ -1,7 +1,7 @@
 import { Provider } from "../domain/domain.js";
 import { Effect, Option, Schema } from "effect";
 import type { SqlClient } from "effect/sql";
-import { legacyScopes, OptionalService } from "../optional-services.js";
+import { legacyScopes, OptionalService } from "../providers/optional-services.js";
 import { first, run } from "./sql-rows.js";
 
 export function makeServiceStore(sql: SqlClient.SqlClient) {

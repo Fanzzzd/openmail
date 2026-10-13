@@ -93,8 +93,8 @@ it("the portable entry never loads a Node adapter through another core module", 
   visit(join(root, "portable.ts"));
   expect(violations).toEqual([]);
   expect(visited.has(join(root, "mailbox", "mailbox-live.ts"))).toBe(true);
-  expect(visited.has(join(root, "gmail.ts"))).toBe(true);
-  expect(visited.has(join(root, "outlook.ts"))).toBe(true);
+  expect(visited.has(join(root, "providers", "gmail", "gmail.ts"))).toBe(true);
+  expect(visited.has(join(root, "providers", "outlook", "outlook.ts"))).toBe(true);
 });
 it("the Node entry does not load mobile adapters or mobile-only workflows", () => {
   const visited = new Set<string>();

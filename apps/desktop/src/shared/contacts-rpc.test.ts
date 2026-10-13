@@ -1,12 +1,12 @@
-import { OPTIONAL_SCOPES } from "../../../../packages/core/src/optional-services.js";
+import { OPTIONAL_SCOPES } from "../../../../packages/core/src/providers/optional-services.js";
 import { Effect, Layer, Queue } from "effect";
 import { HttpClient, HttpClientResponse } from "effect/http";
 import { RpcClient, RpcGroup, RpcMessage, RpcSerialization, RpcServer } from "effect/rpc";
 import { expect, it } from "vitest";
 import { MailboxLive } from "../../../../packages/core/src/mailbox/mailbox-live.js";
 import { Mailbox } from "../../../../packages/core/src/mailbox/mailbox.js";
-import { makeOutlook } from "../../../../packages/core/src/outlook.js";
-import { makeGmail } from "../../../../packages/core/src/gmail.js";
+import { makeOutlook } from "../../../../packages/core/src/providers/outlook/outlook.js";
+import { makeGmail } from "../../../../packages/core/src/providers/gmail/gmail.js";
 import { Store, StoreLive } from "@openmail/core/testing/node";
 import { Providers } from "../../../../packages/core/src/services.js";
 import { MemoryPlatform } from "../../../../packages/core/src/platform/node/platform-memory.js";

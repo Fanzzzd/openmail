@@ -1,7 +1,7 @@
 import { PlatformCrypto } from "../platform/crypto.js";
 import { Clock, Context, Effect, Semaphore } from "effect";
 import type { Account, Label, MailOp, ThreadQuery, Provider } from "../domain/domain.js";
-import { requireFocusedInboxScope } from "../optional-services.js";
+import { requireFocusedInboxScope } from "../providers/optional-services.js";
 import { InvalidInput } from "../domain/errors.js";
 import type { Mailbox } from "./mailbox.js";
 import {
@@ -31,7 +31,7 @@ import {
   evaluateOutlookRule,
   outlookPreviewUnavailable,
   validOutlookPredicates,
-} from "../outlook-rules.js";
+} from "../providers/outlook/outlook-rules.js";
 
 const validateFilter = (input: FilterInput, provider: Provider) => {
   if (requiresFilterDeleteConfirmation(input) && !input.queryDeletionConfirmed)

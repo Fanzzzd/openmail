@@ -1,5 +1,9 @@
 import type { QueuedSend } from "./mobile-outbox.js";
-import type { OptionalService, AuthorizationFeature, ServiceGrant } from "../optional-services.js";
+import type {
+  OptionalService,
+  AuthorizationFeature,
+  ServiceGrant,
+} from "../providers/optional-services.js";
 import type {
   AiSettings,
   AiAccountSettings,

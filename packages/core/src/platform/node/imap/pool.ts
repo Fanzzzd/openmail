@@ -1,7 +1,7 @@
 import { Effect, Exit, Option, Scope } from "effect";
 import type { Account } from "../../../domain/domain.js";
-import { imapSettingsKey } from "../../../imap-settings.js";
-import { keyedLock } from "../../../provider-http.js";
+import { imapSettingsKey } from "../../../providers/imap/imap-settings.js";
+import { keyedLock } from "../../../providers/provider-http.js";
 import { Secrets, type ProviderAdapter } from "../../../services.js";
 import type { HtmlText } from "../../html-text.js";
 import { call, openImap, password, settingsOf, type Session } from "./session.js";

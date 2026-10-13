@@ -8,8 +8,8 @@ import {
   folderRegressed,
   uidSet,
   type FolderCursor,
-} from "../../../imap-cursor.js";
-import { copyProgressKey } from "../../../imap-helpers.js";
+} from "../../../providers/imap/imap-cursor.js";
+import { copyProgressKey } from "../../../providers/imap/imap-helpers.js";
 import { messageIdKey } from "../../../message-id.js";
 import { type ProviderPushContext } from "../../../services.js";
 import { call, describe, failure, isRefusal, searchUids, type Session } from "./session.js";

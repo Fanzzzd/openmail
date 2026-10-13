@@ -9,8 +9,8 @@ import { MailboxLive, type MailboxOptions } from "./mailbox/mailbox-live.js";
 import { ModelAnthropic } from "./model.js";
 import { StoreLive } from "./store/store.js";
 import { OAuthIssuersSql } from "./store/store-oauth-issuers.js";
-import { makeGmail } from "./gmail.js";
-import { makeOutlook } from "./outlook.js";
+import { makeGmail } from "./providers/gmail/gmail.js";
+import { makeOutlook } from "./providers/outlook/outlook.js";
 import { makeMobileImap } from "./platform/react-native/imap.js";
 import { Providers, type AppConfig, type OAuth, type Secrets } from "./services.js";
 

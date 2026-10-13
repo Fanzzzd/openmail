@@ -1,5 +1,5 @@
 import type { QueuedSend } from "./mailbox/mobile-outbox.js";
-import type { OptionalService, AuthorizationFeature } from "./optional-services.js";
+import type { OptionalService, AuthorizationFeature } from "./providers/optional-services.js";
 import type { NamedSignature, NamedSignatureInput, SignatureDefault } from "./signatures.js";
 import type { WordIndexState } from "./store/store-word-index.js";
 import type {
@@ -72,7 +72,7 @@ import type {
 } from "./calendar.js";
 import type { ContactSnapshot, ContactGroup, ContactSync } from "./contacts.js";
 import type { AttachmentRef } from "./attachments.js";
-import type { ImapConnectInput } from "./imap-presets.js";
+import type { ImapConnectInput } from "./providers/imap/imap-presets.js";
 import type { MarkdownDraftSource } from "./markdown-draft.js";
 
 import type {

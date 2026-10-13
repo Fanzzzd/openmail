@@ -3,7 +3,7 @@ import { Clock, Effect } from "effect";
 import { InvalidInput } from "../domain/errors.js";
 import type { Mailbox } from "./mailbox.js";
 import type { Store } from "../services.js";
-import { serviceGrants } from "../optional-services.js";
+import { serviceGrants } from "../providers/optional-services.js";
 
 export function makeOptionalServiceMailbox(
   store: Store["Service"],

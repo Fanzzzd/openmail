@@ -1,4 +1,4 @@
-import { sameProviderWrite } from "../provider-write.js";
+import { sameProviderWrite } from "../providers/provider-write.js";
 import { Schema } from "effect";
 import {
   ThreadSummary,

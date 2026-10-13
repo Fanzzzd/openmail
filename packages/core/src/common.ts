@@ -8,7 +8,7 @@ export * from "./print.js";
 export * from "./reader-html.js";
 export * from "./reading.js";
 export * from "./trackers.js";
-export { IMAP_PRESETS, ImapConnectInput, ImapPreset } from "./imap-presets.js";
+export { IMAP_PRESETS, ImapConnectInput, ImapPreset } from "./providers/imap/imap-presets.js";
 export { Mailbox, MailboxEvent, type PerformError, SyncState } from "./mailbox/mailbox.js";
 export { MailboxLive } from "./mailbox/mailbox-live.js";
 
@@ -79,7 +79,7 @@ export * from "./reader-sanitize.js";
 
 export * from "./sync/sync-health.js";
 
-export { ProviderDiagnostic } from "./provider-diagnostics.js";
+export { ProviderDiagnostic } from "./providers/provider-diagnostics.js";
 export { SyncResetDiagnostic } from "./sync/sync-reset.js";
 
 export * from "./search-snippets.js";

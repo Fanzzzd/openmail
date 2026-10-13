@@ -6,8 +6,8 @@ import { expect, it } from "vitest";
 // NodePlatform resolves the worker next to itself, which only the build has.
 import { NodePlatform } from "../../../dist/platform/node/platform-node.js";
 import { htmlToText } from "../../mime.js";
-import { GraphMessage } from "../../outlook/graph.js";
-import { graphBody, parseGraphMessage } from "../../outlook/parse.js";
+import { GraphMessage } from "../../providers/outlook/graph.js";
+import { graphBody, parseGraphMessage } from "../../providers/outlook/parse.js";
 import { hostileHtml, nestedHtml } from "../../parser-fuzz-corpus.js";
 import { finishWith, HtmlText } from "../html-text.js";
 import { syncHtml } from "./fixtures/sync-html.js";

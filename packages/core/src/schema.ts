@@ -11,7 +11,7 @@ export {
   SYNC_FAILURE_TEXT,
   SyncFailureReason,
 } from "./sync/sync-failure.js";
-export { IMAP_PRESETS, ImapConnectInput, ImapPreset } from "./imap-presets.js";
+export { IMAP_PRESETS, ImapConnectInput, ImapPreset } from "./providers/imap/imap-presets.js";
 export { Mailbox, MailboxEvent, ModelThread, SyncState } from "./mailbox/mailbox.js";
 export { type HeldSend, holdSend } from "./mailbox/undo-send.js";
 export * from "./print.js";
@@ -69,11 +69,11 @@ export * from "./link-security.js";
 
 export * from "./attachment-import.js";
 
-export * from "./optional-services.js";
+export * from "./providers/optional-services.js";
 
 export * from "./sync/sync-health.js";
 
-export { outlookPreviewUnavailable } from "./outlook-rules.js";
+export { outlookPreviewUnavailable } from "./providers/outlook/outlook-rules.js";
 export * from "./search-snippets.js";
 export * from "./search-highlight.js";
 export * from "./remote-access.js";

@@ -2,10 +2,10 @@ import { SyncCrashDiagnostic } from "../../sync/sync-crash.js";
 export { SyncCrashDiagnostic } from "../../sync/sync-crash.js";
 import { SyncResetDiagnostic } from "../../sync/sync-reset.js";
 export { SyncResetDiagnostic } from "../../sync/sync-reset.js";
-import { ProviderDiagnostic } from "../../provider-diagnostics.js";
-export { ProviderDiagnostic } from "../../provider-diagnostics.js";
-import { ReauthDiagnostic } from "../../reauth.js";
-export { ReauthDiagnostic } from "../../reauth.js";
+import { ProviderDiagnostic } from "../../providers/provider-diagnostics.js";
+export { ProviderDiagnostic } from "../../providers/provider-diagnostics.js";
+import { ReauthDiagnostic } from "../../providers/reauth.js";
+export { ReauthDiagnostic } from "../../providers/reauth.js";
 import { SyncFailedDiagnostic } from "../../sync/sync-failure.js";
 export { SyncFailedDiagnostic } from "../../sync/sync-failure.js";
 import {

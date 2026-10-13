@@ -13,7 +13,7 @@ import { incoming, fakeServer } from "./testing.js";
 import { makeFakeProvider } from "./fake-provider.js";
 import { ProviderError } from "../../domain/errors.js";
 import { parseHeaders } from "./imap/parse.js";
-import { parseUidSet } from "../../imap-cursor.js";
+import { parseUidSet } from "../../providers/imap/imap-cursor.js";
 import { smtpTransport } from "./imap/session.js";
 import { buildMime } from "./compose.js";
 import { MemoryPlatform } from "./platform-memory.js";
