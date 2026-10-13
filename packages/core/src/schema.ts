@@ -29,6 +29,19 @@ export * from "./reader/trackers.js";
 
 export * from "./domain/organization.js";
 export * from "./search/search.js";
+export {
+  parseSearchDate,
+  quoteSearchValue,
+  searchFolderValue,
+  searchWords,
+  unquoteSearchValue,
+} from "./search/search-tokens.js";
+export * from "./search/search-field.js";
+export * from "./search/attachment-types.js";
+export * from "./search/provider-search.js";
+export * from "./search/search-match.js";
+export * from "./search/fts.js";
+export * from "./search/ranking.js";
 
 export { htmlToText } from "./mime/mime.js";
 

@@ -14,12 +14,9 @@ import { BackgroundRead } from "../provider-connectivity.js";
 import { ApiError } from "../provider-http.js";
 import { graphPages } from "../provider-pages.js";
 import { uncertainWrite } from "../provider-retry.js";
-import {
-  graphSearch,
-  matchesSearch,
-  parseSearchQuery,
-  searchMailboxLabel,
-} from "../../search/search.js";
+import { parseSearchQuery, searchMailboxLabel } from "../../search/search.js";
+import { graphSearch } from "../../search/provider-search.js";
+import { matchesSearch } from "../../search/search-match.js";
 import type { ProviderAdapter } from "../adapter.js";
 import type { FolderStatus } from "../../sync/sync-records.js";
 import type { OutlookClient } from "./client.js";

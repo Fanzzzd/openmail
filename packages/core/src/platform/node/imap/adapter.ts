@@ -10,7 +10,8 @@ import {
   type ImapCursor,
 } from "../../../providers/imap/imap-cursor.js";
 import { groupIdsByFolder } from "../../../providers/imap/imap-helpers.js";
-import { matchesSearch, parseSearchQuery, searchMailboxLabel } from "../../../search/search.js";
+import { parseSearchQuery, searchMailboxLabel } from "../../../search/search.js";
+import { matchesSearch } from "../../../search/search-match.js";
 import { Secrets } from "../../auth.js";
 import type { Change, ProviderAdapter, ProviderPushContext } from "../../../providers/adapter.js";
 import { HtmlText } from "../../html-text.js";

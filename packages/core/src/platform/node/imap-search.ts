@@ -2,14 +2,12 @@ import type { SearchObject } from "imapflow";
 import type { ThreadQuery } from "../../domain/message.js";
 import {
   parseSearchQuery,
-  searchWords,
-  unquoteSearchValue,
-  searchCalendarDate,
   parseSearchExpression,
-  projectServerSearch,
-  serverSearchIgnored,
   hasSearchExpression,
 } from "../../search/search.js";
+import { searchWords, unquoteSearchValue } from "../../search/search-tokens.js";
+import { searchCalendarDate } from "../../search/search-field.js";
+import { projectServerSearch, serverSearchIgnored } from "../../search/provider-search.js";
 
 /** IMAP has no filename/attachment key; those are checked on fetched MIME. */
 export function imapSearch(query: ThreadQuery): SearchObject {

@@ -11,7 +11,7 @@ import { Store } from "../store/service.js";
 import { NodeSystem } from "../platform/node/platform-node.js";
 import { incoming } from "../platform/node/testing.js";
 import { SEARCH_FLAG_ATTACHMENT_TYPES_45 } from "../db/search-flags.js";
-import { ATTACHMENT_TYPES } from "./search.js";
+import { ATTACHMENT_TYPES } from "./attachment-types.js";
 
 const accountId = "gmail:me@example.com";
 const rows: Record<string, [text: string, html: string, attachments: string]> = {

@@ -3,24 +3,20 @@ import { assert, it } from "@effect/vitest";
 import { Effect, Layer, FileSystem, Path } from "effect";
 import type { IncomingMessage } from "../domain/message.js";
 import { imapSearch } from "../platform/node/imap-search.js";
+import { parseSearchQuery, parseSearchExpression, relativeSearchDate } from "./search.js";
+import { gmailSearch, graphSearch, serverSearchIgnored } from "./provider-search.js";
+import { matchesSearch } from "./search-match.js";
+import { mergeSearchResults } from "./ranking.js";
 import {
-  gmailSearch,
-  graphSearch,
-  matchesSearch,
-  mergeSearchResults,
-  parseSearchQuery,
   searchFieldParts,
   serializeSearchField,
   selectSearchOperator,
   searchDateSuggestions,
   searchValueSuggestions,
   modifySearchToken,
-  ATTACHMENT_TYPES,
-  parseSearchExpression,
-  relativeSearchDate,
-  serverSearchIgnored,
-  quoteSearchValue,
-} from "./search.js";
+} from "./search-field.js";
+import { ATTACHMENT_TYPES } from "./attachment-types.js";
+import { quoteSearchValue } from "./search-tokens.js";
 import { fuzzyFolders } from "../domain/organization.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
 import { Store } from "../store/service.js";

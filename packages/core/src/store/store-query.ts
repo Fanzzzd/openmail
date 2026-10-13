@@ -3,21 +3,17 @@ import { type SqlClient } from "effect/sql";
 import { type Fragment } from "effect/sql/Statement";
 import type { AttachmentType, SearchCondition, ThreadQuery } from "../domain/message.js";
 import {
-  ATTACHMENT_TYPES,
   expressionHasSize,
-  ftsSearchTerm,
   hasSearchExpression,
   parseSearchExpression,
   parseSearchQuery,
-  quoteSearchValue,
   type SearchExpression,
   searchIncludesSpecialFolders,
-  searchWords,
-  typedDrivePath,
-  unquoteSearchValue,
-  usesSubstringSearch,
-  wordTokens,
 } from "../search/search.js";
+import { ATTACHMENT_TYPES } from "../search/attachment-types.js";
+import { ftsSearchTerm, usesSubstringSearch, wordTokens } from "../search/fts.js";
+import { quoteSearchValue, searchWords, unquoteSearchValue } from "../search/search-tokens.js";
+import { typedDrivePath } from "../search/search-match.js";
 import { SEARCH_FLAG_BITS } from "../db/search-flags.js";
 import { bigramMatch } from "../search/search-bigrams.js";
 import { all } from "./sql-rows.js";

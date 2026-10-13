@@ -1,5 +1,5 @@
 import { searchTermRanges, type SearchRange } from "./search-snippets.js";
-import { wordTokens } from "./search.js";
+import { wordTokens } from "./fts.js";
 
 /** Bounds the work on a huge message; later hits stay unmarked. */
 const MAX_HITS = 500;

@@ -12,23 +12,21 @@ import { MemoryPlatform } from "../platform/node/platform-memory.js";
 import { Providers } from "../providers/adapter.js";
 import { Store } from "../store/service.js";
 import { StoreLive } from "../store/store.js";
+import { SEARCH_OPERATORS, parseSearchQuery } from "./search.js";
+import { attachmentHasType } from "./attachment-types.js";
 import {
-  SEARCH_OPERATORS,
-  attachmentHasType,
   editSearchToken,
-  gmailSearch,
-  graphSearch,
-  matchesSearch,
   modifySearchToken,
   negateSearchToken,
-  parseSearchQuery,
-  quoteSearchValue,
   searchDateSuggestions,
   searchFieldParts,
   searchTokenModifiers,
   searchValueSuggestions,
   selectSearchOperator,
-} from "./search.js";
+} from "./search-field.js";
+import { gmailSearch, graphSearch } from "./provider-search.js";
+import { matchesSearch } from "./search-match.js";
+import { quoteSearchValue } from "./search-tokens.js";
 import { imapSearch } from "../platform/node/imap-search.js";
 
 const incoming = (

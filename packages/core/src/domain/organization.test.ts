@@ -13,7 +13,8 @@ import { MemoryPlatform } from "../platform/node/platform-memory.js";
 import { Providers } from "../providers/adapter.js";
 import { Store } from "../store/service.js";
 import { StoreLive } from "../store/store.js";
-import { filterQuery, matchesSearch, parseSearchQuery } from "../search/search.js";
+import { filterQuery, parseSearchQuery } from "../search/search.js";
+import { matchesSearch } from "../search/search-match.js";
 import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
 {
   const incoming = (id: string, overrides: Partial<IncomingMessage> = {}): IncomingMessage =>

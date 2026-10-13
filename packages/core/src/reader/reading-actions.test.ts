@@ -12,7 +12,8 @@ import { Mailbox } from "../mailbox/mailbox.js";
 import { Store } from "../store/service.js";
 import { StoreLive } from "../store/store.js";
 import { gmailThreadUrl, officialMessageUrl, senderName, threadExpansion } from "./reading.js";
-import { parseSearchQuery, senderSearchQuery } from "../search/search.js";
+import { parseSearchQuery } from "../search/search.js";
+import { senderSearchQuery } from "../search/search-field.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
 import { parseAppLink, parseStableReference, privateMailLink, messageLink } from "../app/system.js";
 {

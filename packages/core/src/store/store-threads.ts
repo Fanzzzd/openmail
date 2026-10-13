@@ -20,21 +20,15 @@ import {
 } from "../search/search-profile.js";
 import { DerivedChunk } from "../ai/media.js";
 import {
-  ftsSearchTerm,
   hasSearchExpression,
-  keyOf,
   parseSearchQuery,
   parseSearchExpression,
-  proximityMatch,
-  quoteSearchValue,
-  reciprocalRankFusion,
   searchQueryError,
-  searchWords,
-  unquoteSearchValue,
-  usesSubstringSearch,
-  wordTokens,
   type SearchExpression,
 } from "../search/search.js";
+import { ftsSearchTerm, proximityMatch, usesSubstringSearch, wordTokens } from "../search/fts.js";
+import { keyOf, reciprocalRankFusion } from "../search/ranking.js";
+import { quoteSearchValue, searchWords, unquoteSearchValue } from "../search/search-tokens.js";
 import type { Store } from "./service.js";
 import { all, sqliteTextCompare } from "./sql-rows.js";
 import { type makeComposeStore } from "./store-compose.js";

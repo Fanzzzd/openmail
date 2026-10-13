@@ -11,13 +11,12 @@ import {
   parseSearchQuery,
   parseSearchExpression,
   hasSearchExpression,
-  searchWords,
-  wordTokens,
-  unquoteSearchValue,
-  matchesSearchCondition,
   searchIncludesSpecialFolders,
   type SearchExpression,
 } from "../../search/search.js";
+import { searchWords, unquoteSearchValue } from "../../search/search-tokens.js";
+import { wordTokens } from "../../search/fts.js";
+import { matchesSearchCondition } from "../../search/search-match.js";
 import { MAILBOX_LABEL } from "../../domain/mailbox-labels.js";
 import { Store } from "../../store/service.js";
 import { StoreLive } from "../../store/store.js";

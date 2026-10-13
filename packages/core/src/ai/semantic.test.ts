@@ -20,7 +20,7 @@ import {
   unavailableVision,
 } from "./media.js";
 import { textChunks } from "./text-chunks.js";
-import { semanticRankFusion } from "../search/search.js";
+import { semanticRankFusion } from "../search/ranking.js";
 
 it("body chunks cover the original and overlap the preceding sentence", () => {
   const text =

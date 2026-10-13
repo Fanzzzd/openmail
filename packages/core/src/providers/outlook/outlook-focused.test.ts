@@ -20,7 +20,7 @@ import { applyNativeMigration } from "../../platform/node/migrations.js";
 import { Store } from "../../store/service.js";
 import { StoreLive } from "../../store/store.js";
 import { makeResetGuard } from "../../sync/sync-reset.js";
-import { matchesSearch } from "../../search/search.js";
+import { matchesSearch } from "../../search/search-match.js";
 import { notificationEligible } from "../../app/system.js";
 
 const account = makeAccount("outlook");

@@ -1,13 +1,7 @@
 import type { SearchCriteria, ThreadQuery } from "../domain/message.js";
-import {
-  parseSearchExpression,
-  parseSearchQuery,
-  type SearchExpression,
-  searchWords,
-  unquoteSearchValue,
-  usesSubstringSearch,
-  wordTokens,
-} from "./search.js";
+import { parseSearchExpression, parseSearchQuery, type SearchExpression } from "./search.js";
+import { searchWords, unquoteSearchValue } from "./search-tokens.js";
+import { usesSubstringSearch, wordTokens } from "./fts.js";
 
 /** Only positive text terms contribute highlights; operators and exclusions do not. */
 export function searchHighlightTerms(query: ThreadQuery): string[] {

@@ -10,7 +10,9 @@ import { modelContext } from "../ai/model-view.js";
 import { Buffer } from "../platform/bytes.js";
 import { makeReaderAttachments } from "../mime/reader-attachments.js";
 import { gmailThreadUrl, officialMessageUrl, validMessageProviderId } from "../reader/reading.js";
-import { parseSearchQuery, quoteSearchValue, semanticRankFusion } from "../search/search.js";
+import { parseSearchQuery } from "../search/search.js";
+import { quoteSearchValue } from "../search/search-tokens.js";
+import { semanticRankFusion } from "../search/ranking.js";
 import { parseStableReference, privateMailLink } from "../app/system.js";
 
 const DEFAULT_MODEL_CHARS = 12_000;

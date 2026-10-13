@@ -14,7 +14,8 @@ import type { IncomingMessage } from "../../domain/message.js";
 import { PermanentError, ProviderError, type ProviderFailure } from "../../domain/errors.js";
 import type { Change, ProviderAdapter } from "../adapter.js";
 
-import { gmailSearch, searchIncludesSpecialFolders } from "../../search/search.js";
+import { searchIncludesSpecialFolders } from "../../search/search.js";
+import { gmailSearch } from "../../search/provider-search.js";
 import {
   INITIAL_CURSOR,
   is404,

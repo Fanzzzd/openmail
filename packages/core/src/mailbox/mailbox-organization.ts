@@ -21,13 +21,9 @@ import {
   type SearchResult,
   type Vacation,
 } from "../domain/organization.js";
-import {
-  filterQuery,
-  mergeSearchResults,
-  parseSearchQuery,
-  serverSearchIgnored,
-  searchQueryError,
-} from "../search/search.js";
+import { filterQuery, parseSearchQuery, searchQueryError } from "../search/search.js";
+import { mergeSearchResults } from "../search/ranking.js";
+import { serverSearchIgnored } from "../search/provider-search.js";
 import type { Providers } from "../providers/adapter.js";
 import type { Store } from "../store/service.js";
 import {
