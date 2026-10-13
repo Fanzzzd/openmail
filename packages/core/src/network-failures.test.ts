@@ -322,6 +322,33 @@ for (const provider of ["gmail", "outlook"] as const) {
     }),
   );
 
+  it.effect(
+    `${provider} send: a 2xx reply that is not JSON is SendUncertain without a second POST`,
+    () =>
+      Effect.gen(function* () {
+        // A captive portal or proxy can answer 200 with HTML after the request reached the provider.
+        const html = {
+          status: 200,
+          text: "<html>proxy</html>",
+          headers: { "content-type": "text/html" },
+        };
+        const { http, layer } = platformLayer(provider, {
+          "POST /messages/send": html,
+          "POST /me/sendMail": html,
+          ...sentRoutes(() => http.calls, false),
+        });
+        const { exit } = yield* make.pipe(
+          Effect.flatMap((adapter) =>
+            adapter.send(account, outgoing(), Option.none()).pipe(Effect.forkChild),
+          ),
+          Effect.flatMap((fiber) => settle(fiber)),
+          Effect.provide(layer),
+        );
+        assert.strictEqual(http.calls.filter(isSubmission).length, 1);
+        assert.strictEqual(failureOf(exit)?._tag, "SendUncertain");
+      }),
+  );
+
   for (const fault of ["ECONNRESET", "reset-body", "stall-headers", "stall-body"] as const)
     for (const delivered of [true, false])
       it.effect(

@@ -86,13 +86,19 @@ export function retryProviderRequest<
   });
 }
 
+/**
+ * A write whose outcome is unknown: the connection failed after the request may have left,
+ * the server failed (5xx), or it answered 2xx with a body that could not be read (a proxy's
+ * HTML page, a truncated reply). A 2xx ApiError only comes from an unreadable success body.
+ */
 export function uncertainWrite(error: {
   readonly status?: number | undefined;
   readonly requestNotSent?: boolean | undefined;
 }): boolean {
   return (
     (error.status === 0 && !error.requestNotSent) ||
-    (error.status !== undefined && error.status >= 500)
+    (error.status !== undefined && error.status >= 500) ||
+    (error.status !== undefined && error.status >= 200 && error.status < 300)
   );
 }
 
