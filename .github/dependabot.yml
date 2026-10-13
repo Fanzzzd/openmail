@@ -5,6 +5,23 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    ignore:
+      # electron-vite 5 supports only vite 5 to 7 (AGENTS.md). Lift this when
+      # electron-vite ships a release that accepts vite 8.
+      - dependency-name: "vite"
+        update-types: ["version-update:semver-major"]
+      # plugin-react 6 requires vite 8 and drops the babel option the Lingui
+      # macro and React Compiler run through. Moves together with vite.
+      - dependency-name: "@vitejs/plugin-react"
+        update-types: ["version-update:semver-major"]
+      # TypeScript 7 ships only the native compiler and no JS compiler API.
+      # Next.js, Expo's config loader and cosmiconfig still call that API.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      # Types follow the oldest Node we run on (engines: node >=22.13).
+      # Newer majors type APIs that Node 22 does not have.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
     groups:
       # Effect packages share one release train and must move together.
       effect:
