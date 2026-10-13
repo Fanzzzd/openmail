@@ -1,5 +1,5 @@
 import { Effect, Option, Predicate } from "effect";
-import type { DraftRemote, OutgoingMessage } from "../../../domain/domain.js";
+import type { DraftRemote, OutgoingMessage } from "../../../domain/changes.js";
 import { PermanentError, ProviderError } from "../../../domain/errors.js";
 import { decodeProviderId, encodeProviderId } from "../../../providers/imap/imap-cursor.js";
 import { serverSavesSent } from "../../../providers/imap/imap-settings.js";

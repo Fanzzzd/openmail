@@ -1,5 +1,5 @@
 import { Effect, Schema } from "effect";
-import type { Account } from "../../domain/domain.js";
+import type { Account } from "../../domain/account.js";
 import { ProviderError } from "../../domain/errors.js";
 import type { CachedHeaders, ResetVerification } from "../../sync/sync-records.js";
 import { BatchResponse, deferIfThrottled, verifyInChunks } from "../provider-batch.js";

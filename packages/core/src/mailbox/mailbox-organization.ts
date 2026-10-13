@@ -1,6 +1,8 @@
 import { PlatformCrypto } from "../platform/crypto.js";
 import { Clock, Context, Effect, Semaphore } from "effect";
-import type { Account, Label, MailOp, ThreadQuery, Provider } from "../domain/domain.js";
+import type { Account, Label, Provider } from "../domain/account.js";
+import type { MailOp } from "../domain/changes.js";
+import type { ThreadQuery } from "../domain/message.js";
 import { requireFocusedInboxScope } from "../providers/scoped-adapter.js";
 import { InvalidInput } from "../domain/errors.js";
 import type { Mailbox } from "./mailbox.js";

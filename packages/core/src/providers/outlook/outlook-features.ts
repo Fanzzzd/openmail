@@ -1,7 +1,8 @@
 import { graphPageLink } from "./graph-pagination.js";
 import { reconcileProviderWrite } from "../provider-write.js";
 import { Effect, Schema } from "effect";
-import type { Account, Address } from "../../domain/domain.js";
+import type { Account } from "../../domain/account.js";
+import type { Address } from "../../domain/message.js";
 import type { CalendarInvite, InviteResponse } from "../../calendar/calendar.js";
 import { InvalidInput } from "../../domain/errors.js";
 import { mergeContacts } from "../../contacts/contacts.js";

@@ -1,6 +1,6 @@
 import { Effect, Option } from "effect";
 import { attachmentRef, MAX_INLINE_BYTES, MEDIA_RAW_TOO_LARGE } from "../mime/attachments.js";
-import { type Message } from "../domain/domain.js";
+import type { Message } from "../domain/message.js";
 import { InvalidInput, NotFound } from "../domain/errors.js";
 import { type MailboxDependencies, type MailboxRuntimeState } from "./mailbox-runtime.js";
 import { cacheIO } from "./mailbox-shared.js";
@@ -166,7 +166,7 @@ export const makeReadingMailbox = (
   });
 
   const semanticThreads = Effect.fn("Mailbox.semanticThreads")(function* (
-    q: import("../domain/domain.js").ThreadQuery,
+    q: import("../domain/message.js").ThreadQuery,
   ) {
     const local = yield* store.listThreads(q);
     const parsed = parseSearchQuery(q);

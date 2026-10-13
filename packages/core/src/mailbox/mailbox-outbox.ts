@@ -1,13 +1,7 @@
 import { Clock, Deferred, Effect, Fiber, Option } from "effect";
 import { attachmentProblem, attachmentProblemMessage } from "../mime/attachment-policy.js";
-import {
-  type Actor,
-  type Command,
-  type DraftInput,
-  type FlushResult,
-  type Outcome,
-  type OutgoingMessage,
-} from "../domain/domain.js";
+import type { Actor, Command, FlushResult, Outcome } from "../domain/command.js";
+import type { DraftInput, OutgoingMessage } from "../domain/changes.js";
 import {
   AuthError,
   InvalidInput,

@@ -3,7 +3,7 @@ import { Effect } from "effect";
 import { ImageNetwork, type DownloadedImage } from "../platform/runtime.js";
 import { PlatformCrypto } from "../platform/crypto.js";
 import { isIP } from "../platform/ip.js";
-import type { OutgoingAttachment } from "../domain/domain.js";
+import type { OutgoingAttachment } from "../domain/changes.js";
 import { InvalidInput } from "../domain/errors.js";
 
 export const COMPOSE_IMAGE_LIMIT = 8 * 1024 * 1024;

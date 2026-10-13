@@ -1,5 +1,6 @@
 import { Clock, Effect, Option, Schema } from "effect";
-import { isOutlookClassification, type Account } from "../domain/domain.js";
+import { isOutlookClassification } from "../domain/message.js";
+import type { Account } from "../domain/account.js";
 import type { ProviderAdapter, ResetChange } from "../providers/adapter.js";
 import type { Store } from "../store/service.js";
 import { sha256Hex } from "../platform/crypto.js";

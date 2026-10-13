@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import type { Account } from "../domain/domain.js";
+import type { Account } from "../domain/account.js";
 import { FeatureScopeMissing, InvalidInput, type ProviderFailure } from "../domain/errors.js";
 import {
   FOLDER_BATCH_LIMIT,

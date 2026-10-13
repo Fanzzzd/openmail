@@ -3,12 +3,8 @@ import { type SqlClient } from "effect/sql";
 import { type Fragment } from "effect/sql/Statement";
 import { attachmentFilename } from "../mime/attachment-filename.js";
 import { categoryKey } from "../domain/categories.js";
-import {
-  type Label,
-  type SearchMatch,
-  type ThreadQuery,
-  type ThreadSummary,
-} from "../domain/domain.js";
+import type { Label } from "../domain/account.js";
+import type { SearchMatch, ThreadQuery, ThreadSummary } from "../domain/message.js";
 import {
   exactSearchPhrase,
   searchHighlightTerms,

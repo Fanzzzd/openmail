@@ -3,7 +3,7 @@ import { Clock, Deferred, Effect, Fiber, Layer, Logger, Option, Schema } from "e
 import { HttpClient, HttpClientError, HttpClientRequest, HttpClientResponse } from "effect/http";
 import { TestClock } from "effect/testing";
 
-import type { Account } from "../domain/domain.js";
+import type { Account } from "../domain/account.js";
 import { AuthError, KEYCHAIN_LOCKED_MESSAGE, ProviderError } from "../domain/errors.js";
 import { MailboxLive } from "../mailbox/mailbox-live.js";
 import { Mailbox } from "../mailbox/mailbox.js";

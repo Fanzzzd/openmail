@@ -1,6 +1,6 @@
 import { reconcileProviderWrite, sameProviderWrite } from "../provider-write.js";
 import { Effect, Schema, Option } from "effect";
-import type { Account } from "../../domain/domain.js";
+import type { Account } from "../../domain/account.js";
 import { PermanentError, ProviderError, SettingsScopeMissing } from "../../domain/errors.js";
 import { authFailure } from "../reauth.js";
 import { graphTimestamp } from "../../calendar/graph-time.js";

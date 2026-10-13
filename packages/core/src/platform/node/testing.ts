@@ -8,7 +8,9 @@ import type { Secrets } from "../auth.js";
 import type { Store } from "../../store/service.js";
 import { Effect, Layer } from "effect";
 
-import type { Account, IncomingMessage, OutgoingMessage, Provider } from "../../domain/domain.js";
+import type { Account, Provider } from "../../domain/account.js";
+import type { IncomingMessage } from "../../domain/message.js";
+import type { OutgoingMessage } from "../../domain/changes.js";
 import { type FakeServer, fakeServer, makeFakeProvider } from "./fake-provider.js";
 import { MailboxLive, type MailboxOptions } from "../../mailbox/mailbox-live.js";
 import type { Mailbox } from "../../mailbox/mailbox.js";

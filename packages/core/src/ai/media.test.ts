@@ -11,7 +11,7 @@ import { assert, it } from "@effect/vitest";
 import { Deferred, Effect, Fiber, Layer, Option, Schema } from "effect";
 import { SqlClient } from "effect/sql";
 import { type IndexerInput, makeIndexer } from "./indexer.js";
-import { type IncomingMessage, type ThreadSummary } from "../domain/domain.js";
+import type { IncomingMessage, ThreadSummary } from "../domain/message.js";
 import { MediaError, type Vision, unavailableVision } from "./media.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
 import { Store } from "../store/service.js";

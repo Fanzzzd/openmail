@@ -1,6 +1,6 @@
 import { Schema, Record } from "effect";
 import { MessageTextExplanation } from "../../visible-text/visible-text-diagnostics.js";
-import { Provider } from "../../domain/domain.js";
+import { Provider } from "../../domain/account.js";
 
 export const CORPUS_LIMITS = {
   messageTimeoutMs: 2000,

@@ -14,15 +14,14 @@ import {
   type MarkdownDraftSource,
 } from "./markdown-draft.js";
 
+import type { Address, Message } from "../domain/message.js";
 import type {
-  Address,
   ComposeMode,
   ComposeFont,
   Draft,
-  Message,
   OutgoingAttachment,
   OutgoingMessage,
-} from "../domain/domain.js";
+} from "../domain/changes.js";
 import { ProviderError } from "../domain/errors.js";
 import type { StoredDraft } from "../store/service.js";
 

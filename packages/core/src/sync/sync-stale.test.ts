@@ -1,7 +1,9 @@
 import { assert, it } from "@effect/vitest";
 import { Clock, Effect, Fiber, Logger, Option, Stream } from "effect";
 import { TestClock } from "effect/testing";
-import { type IncomingMessage, type OutgoingMessage, type Provider } from "../domain/domain.js";
+import type { IncomingMessage } from "../domain/message.js";
+import type { OutgoingMessage } from "../domain/changes.js";
+import type { Provider } from "../domain/account.js";
 import { Mailbox } from "../mailbox/mailbox.js";
 import { fakeServer, makeFakeProvider } from "../platform/node/fake-provider.js";
 import { TestMailbox } from "../platform/node/testing.js";

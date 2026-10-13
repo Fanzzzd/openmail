@@ -1,5 +1,5 @@
 import type { SearchObject } from "imapflow";
-import type { ThreadQuery } from "../../domain/domain.js";
+import type { ThreadQuery } from "../../domain/message.js";
 import {
   parseSearchQuery,
   searchWords,

@@ -1,7 +1,7 @@
 import { assert, it } from "@effect/vitest";
 import { Effect, Layer, Option, Schema, Stream } from "effect";
 import { DatabaseSync } from "node:sqlite";
-import { DEFAULT_PREFS } from "../../domain/domain.js";
+import { DEFAULT_PREFS } from "../../domain/prefs.js";
 import { MIGRATIONS } from "../../db/migrations.js";
 import { Mailbox } from "../../mailbox/mailbox.js";
 import { makeOutlook } from "./outlook.js";

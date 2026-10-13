@@ -1,7 +1,7 @@
 import { Effect, Schema } from "effect";
 import { type SqlClient } from "effect/sql";
 import { type Fragment } from "effect/sql/Statement";
-import { type AttachmentType, type SearchCondition, type ThreadQuery } from "../domain/domain.js";
+import type { AttachmentType, SearchCondition, ThreadQuery } from "../domain/message.js";
 import {
   ATTACHMENT_TYPES,
   expressionHasSize,

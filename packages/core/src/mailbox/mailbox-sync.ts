@@ -11,7 +11,9 @@ import {
   Semaphore,
   Stream,
 } from "effect";
-import { type Account, type FlushResult, type SyncResult } from "../domain/domain.js";
+import type { Account } from "../domain/account.js";
+import type { FlushResult } from "../domain/command.js";
+import type { SyncResult } from "../domain/sync-status.js";
 import { type AuthError, type ProviderError, type ProviderFailure } from "../domain/errors.js";
 import { runTokenKeepAlive } from "../sync/token-keepalive.js";
 import { backfillCachedHeaders } from "../sync/header-backfill.js";

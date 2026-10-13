@@ -9,7 +9,7 @@ import { databaseLayer, MIGRATIONS } from "../platform/node/db.js";
 import { StoreLive } from "./store.js";
 import { Store } from "./service.js";
 import { NodeSystem } from "../platform/node/platform-node.js";
-import type { IncomingMessage } from "../domain/domain.js";
+import type { IncomingMessage } from "../domain/message.js";
 
 const accountId = "gmail:me@example.com";
 const incoming = (providerId: string, bodyText: string): IncomingMessage => ({

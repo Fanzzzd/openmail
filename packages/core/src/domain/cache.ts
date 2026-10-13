@@ -37,7 +37,7 @@ export const BackfillState = Schema.Struct({
 export type BackfillState = typeof BackfillState.Type;
 
 export interface BackfillPage {
-  readonly messages: readonly import("./domain.js").IncomingMessage[];
+  readonly messages: readonly import("./message.js").IncomingMessage[];
   /** null means the account's historical snapshot is complete. */
   readonly cursor: string | null;
   readonly scanned: number;
@@ -52,8 +52,8 @@ export const DEFAULT_CACHE_WINDOWS = [
 
 /** Specific labels override ALL. For multi-label mail, the longest window wins. */
 export function keepBody(
-  message: Pick<import("./domain.js").IncomingMessage, "date" | "labels"> &
-    Partial<Pick<import("./domain.js").IncomingMessage, "isStarred">>,
+  message: Pick<import("./message.js").IncomingMessage, "date" | "labels"> &
+    Partial<Pick<import("./message.js").IncomingMessage, "isStarred">>,
   windows: readonly Pick<CacheWindow, "label" | "days">[],
   now: number,
 ): boolean {
@@ -126,7 +126,7 @@ export function cacheAccounting(
 export function adaptiveBodyLimit(
   size: ReturnType<typeof cacheAccounting>,
   disk: CacheFiles["disk"],
-  prefs: Pick<import("./domain.js").Prefs, "bodyCacheBytes" | "totalCacheBytes">,
+  prefs: Pick<import("./prefs.js").Prefs, "bodyCacheBytes" | "totalCacheBytes">,
   canReclaim = true,
 ) {
   const threshold = disk ? Math.min(5 * 1024 ** 3, disk.totalBytes * 0.1) : 0;

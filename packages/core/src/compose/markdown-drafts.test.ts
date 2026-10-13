@@ -3,7 +3,8 @@ import { Effect, Layer } from "effect";
 import { simpleParser } from "mailparser";
 
 import { buildMime } from "../platform/node/compose.js";
-import type { Provider, OutgoingMessage } from "../domain/domain.js";
+import type { Provider } from "../domain/account.js";
+import type { OutgoingMessage } from "../domain/changes.js";
 import { importedMessage, parseRawDraft } from "../platform/node/portable-helpers.js";
 import { Mailbox } from "../mailbox/mailbox.js";
 import { fakeServer, TestMailbox } from "../platform/node/testing.js";

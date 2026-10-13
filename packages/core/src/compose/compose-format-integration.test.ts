@@ -18,7 +18,7 @@ import {
   composeTransportHtml,
 } from "./compose-body.js";
 import { buildMime } from "../platform/node/compose.js";
-import type { Provider } from "../domain/domain.js";
+import type { Provider } from "../domain/account.js";
 
 const source =
   '<div dir="auto" style="text-align:right;margin-left:24px"><span style="font-family:Georgia;font-size:18px;color:#123;background-color:#fff">שלום <sup>2</sup><sub>3</sub><s>old</s><code>x</code></span></div><blockquote><blockquote>nested</blockquote></blockquote><ul type="dash"><li>dash</li></ul><ol type="1"><li>number</li></ol><pre> a  b\nc</pre>';

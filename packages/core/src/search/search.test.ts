@@ -1,7 +1,7 @@
 import { incoming as makeIncoming, TestMailbox, fakeServer } from "../platform/node/testing.js";
 import { assert, it } from "@effect/vitest";
 import { Effect, Layer, FileSystem, Path } from "effect";
-import { type IncomingMessage } from "../domain/domain.js";
+import type { IncomingMessage } from "../domain/message.js";
 import { imapSearch } from "../platform/node/imap-search.js";
 import {
   gmailSearch,

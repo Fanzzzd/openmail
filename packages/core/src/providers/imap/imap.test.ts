@@ -9,7 +9,7 @@ import { TestClock } from "effect/testing";
 import { simpleParser } from "mailparser";
 import { createServer } from "node:net";
 import { createTransport } from "nodemailer";
-import type { Account } from "../../domain/domain.js";
+import type { Account } from "../../domain/account.js";
 import { IMAP_PRESETS, type ImapConnectInput } from "./imap-presets.js";
 import {
   attachmentNodes,

@@ -11,13 +11,10 @@ import {
   preservedComposeHtml,
   remoteComposeBody,
 } from "../compose/compose-body.js";
-import {
-  type Account,
-  actorLabel,
-  type DraftInput,
-  type Message,
-  type OutgoingMessage,
-} from "../domain/domain.js";
+import type { Account } from "../domain/account.js";
+import { actorLabel } from "../domain/command.js";
+import type { DraftInput, OutgoingMessage } from "../domain/changes.js";
+import type { Message } from "../domain/message.js";
 import { draftVersionMetadata } from "../compose/draft-version.js";
 import {
   attachmentsKey,

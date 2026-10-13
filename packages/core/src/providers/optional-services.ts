@@ -1,5 +1,5 @@
 import { Schema } from "effect";
-import type { Provider } from "../domain/domain.js";
+import type { Provider } from "../domain/account.js";
 
 export const OptionalService = Schema.Literals(["contacts", "calendar", "settings"]);
 export type OptionalService = typeof OptionalService.Type;

@@ -1,7 +1,8 @@
 import { performance } from "node:perf_hooks";
 import { DatabaseSync } from "node:sqlite";
 import { Option, Schema } from "effect";
-import { Attachment, Message, Provider, type IncomingMessage } from "../../domain/domain.js";
+import { Attachment, Message, type IncomingMessage } from "../../domain/message.js";
+import { Provider } from "../../domain/account.js";
 import { htmlToText } from "../../mime/mime.js";
 import { modelContext } from "../../ai/model-view.js";
 import { prepareMessageHtml } from "../../reader/reader-html.js";

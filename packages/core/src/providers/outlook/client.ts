@@ -1,6 +1,7 @@
 import { Effect, Option, Schema } from "effect";
 import { HttpClient, HttpClientRequest } from "effect/http";
-import type { Account, Attachment } from "../../domain/domain.js";
+import type { Account } from "../../domain/account.js";
+import type { Attachment } from "../../domain/message.js";
 import {
   AuthError,
   ClientNotConfigured,

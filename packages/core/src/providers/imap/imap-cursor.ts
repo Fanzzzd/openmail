@@ -1,5 +1,5 @@
 import { Option, Predicate, Schema } from "effect";
-import type { IncomingMessage } from "../../domain/domain.js";
+import type { IncomingMessage } from "../../domain/message.js";
 import type { Change } from "../adapter.js";
 export function encodeProviderId(path: string, uidValidity: bigint | string, uid: number): string {
   return `${uidValidity}:${uid}:${path}`;

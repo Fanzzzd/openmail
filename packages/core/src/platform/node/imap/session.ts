@@ -1,6 +1,6 @@
 import { Effect, Option, Predicate } from "effect";
 import type { ImapFlow } from "imapflow";
-import type { Account, ImapSettings } from "../../../domain/domain.js";
+import type { Account, ImapSettings } from "../../../domain/account.js";
 import { AuthError, InvalidInput, ProviderError } from "../../../domain/errors.js";
 import { resolveImapSettings } from "../../../providers/imap/imap-settings.js";
 import { isLoginRefusal } from "../../../providers/reauth.js";

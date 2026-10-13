@@ -21,7 +21,7 @@ import {
   invitesFromRaw,
   parseCalendar,
 } from "../platform/node/portable-helpers.js";
-import { type IncomingMessage } from "../domain/domain.js";
+import type { IncomingMessage } from "../domain/message.js";
 import { Mailbox } from "../mailbox/mailbox.js";
 {
   const calendar = (event: string, method = "REQUEST", zones = "") =>

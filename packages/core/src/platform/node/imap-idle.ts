@@ -1,5 +1,5 @@
 import type { ImapFlow } from "imapflow";
-import type { ImapSettings } from "../../domain/domain.js";
+import type { ImapSettings } from "../../domain/account.js";
 import { IDLE_RENEW_MS } from "../../providers/imap/imap-idle.js";
 
 export { IDLE_RENEW_MS, idleRetryDelay } from "../../providers/imap/imap-idle.js";

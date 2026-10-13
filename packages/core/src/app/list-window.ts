@@ -1,4 +1,5 @@
-import type { Prefs, MailboxView } from "../domain/domain.js";
+import type { Prefs } from "../domain/prefs.js";
+import type { MailboxView } from "../domain/message.js";
 /** Fixed row geometry shared by the renderer and its large-list tests. */
 export const MESSAGE_ROW_HEIGHT = 84;
 export function listWindow(

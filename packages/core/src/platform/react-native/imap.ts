@@ -57,7 +57,8 @@ import {
   type FolderCursor,
   type ImapCursor,
 } from "../../providers/imap/imap-cursor.js";
-import type { Account, ImapSettings, IncomingMessage } from "../../domain/domain.js";
+import type { Account, ImapSettings } from "../../domain/account.js";
+import type { IncomingMessage } from "../../domain/message.js";
 import { confirmDelivery } from "../../providers/provider-send.js";
 import { htmlToText } from "../../mime/mime.js";
 import { matchesSearch, searchMailboxLabel } from "../../search/search.js";
@@ -346,7 +347,7 @@ export async function smtpSession(
 const applyPush = async (
   client: ImapWire,
   ids: readonly string[],
-  op: import("../../domain/domain.js").MailOp,
+  op: import("../../domain/changes.js").MailOp,
   messageIds: Map<string, string>,
   copiedDestinations: Set<string>,
   expected?: FolderCursor,

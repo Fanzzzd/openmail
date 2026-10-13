@@ -2,7 +2,7 @@ import { graphPageLink } from "../providers/outlook/graph-pagination.js";
 import { sha256Hex } from "../platform/crypto.js";
 import { WINDOWS_ZONES } from "./windows-zones.js";
 import { Effect, Schema, Result, Semaphore } from "effect";
-import type { Account } from "../domain/domain.js";
+import type { Account } from "../domain/account.js";
 import {
   calendarTimestamp,
   calendarWindow,

@@ -15,7 +15,7 @@ import { performance } from "node:perf_hooks";
 import { DatabaseSync } from "node:sqlite";
 import { Worker } from "node:worker_threads";
 import { Option, Record, Schema } from "effect";
-import { Provider } from "../../domain/domain.js";
+import { Provider } from "../../domain/account.js";
 import {
   CORPUS_ANOMALIES,
   CORPUS_LIMITS,

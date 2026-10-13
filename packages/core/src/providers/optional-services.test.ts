@@ -12,7 +12,7 @@ import { Store } from "../store/service.js";
 import { OAuth, AppConfig, Secrets, type AuthorizeRequest } from "../platform/auth.js";
 import type { ProviderAdapter } from "./adapter.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
-import { type IncomingMessage } from "../domain/domain.js";
+import type { IncomingMessage } from "../domain/message.js";
 import { TestClock } from "effect/testing";
 import { DatabaseSync } from "node:sqlite";
 import { mkdtempSync, rmSync } from "node:fs";

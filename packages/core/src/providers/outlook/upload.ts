@@ -1,7 +1,7 @@
 import { Clock, Effect, Option, Schema } from "effect";
 import { HttpClient, HttpClientRequest } from "effect/http";
 import { attachmentBytes, OUTLOOK_ATTACHMENT_THRESHOLD } from "../../mime/attachment-policy.js";
-import type { OutgoingAttachment } from "../../domain/domain.js";
+import type { OutgoingAttachment } from "../../domain/changes.js";
 import { PermanentError, ProviderError, type ProviderFailure } from "../../domain/errors.js";
 import { Buffer } from "../../platform/bytes.js";
 import { ApiError, transferAllowance } from "../provider-http.js";

@@ -6,7 +6,7 @@ import {
   type NotFound,
 } from "../domain/errors.js";
 import { Context, Effect, Option, Semaphore } from "effect";
-import type { Message } from "../domain/domain.js";
+import type { Message } from "../domain/message.js";
 import {
   DerivedChunk,
   IndexingProgress,

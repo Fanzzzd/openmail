@@ -1,12 +1,7 @@
 import { sameProviderWrite } from "../providers/provider-write.js";
 import { Schema } from "effect";
-import {
-  ThreadSummary,
-  type MailboxView,
-  type Provider,
-  CATEGORIES,
-  INBOX_CATEGORIES,
-} from "./domain.js";
+import { ThreadSummary, type MailboxView, CATEGORIES, INBOX_CATEGORIES } from "./message.js";
+import type { Provider } from "./account.js";
 
 export function moveSourceLabel(mailbox: MailboxView, currentLabel?: string): string | null {
   if (currentLabel?.startsWith("category:")) return null;

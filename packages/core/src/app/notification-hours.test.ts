@@ -8,15 +8,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { databaseLayer, MIGRATIONS } from "../platform/node/db.js";
-import {
-  DEFAULT_ACTIVE_HOURS,
-  DEFAULT_PREFS,
-  Prefs,
-  type Account,
-  type ActiveHours,
-  type IncomingMessage,
-  type Provider,
-} from "../domain/domain.js";
+import { DEFAULT_ACTIVE_HOURS, DEFAULT_PREFS, Prefs, type ActiveHours } from "../domain/prefs.js";
+import type { Account, Provider } from "../domain/account.js";
+import type { IncomingMessage } from "../domain/message.js";
 import { makeFakeProvider } from "../platform/node/fake-provider.js";
 import { Mailbox } from "../mailbox/mailbox.js";
 import { MailboxLive } from "../mailbox/mailbox-live.js";

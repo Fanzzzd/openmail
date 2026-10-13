@@ -2,7 +2,7 @@ import { sha256Hex } from "../../platform/crypto.js";
 import { Effect } from "effect";
 import { InvalidInput } from "../../domain/errors.js";
 import { IMAP_PRESETS, type ImapConnectInput } from "./imap-presets.js";
-import type { ImapSettings } from "../../domain/domain.js";
+import type { ImapSettings } from "../../domain/account.js";
 
 const invalid = (message: string) => Effect.fail(new InvalidInput({ message }));
 

@@ -1,7 +1,7 @@
 import { account as buildAccount } from "../platform/node/testing.js";
 import { Effect } from "effect";
 import { expect, it } from "vitest";
-import { type Account } from "../domain/domain.js";
+import type { Account } from "../domain/account.js";
 import { AuthError, FeatureScopeMissing, ProviderError } from "../domain/errors.js";
 import { featureRequest } from "./provider-features.js";
 const account: Account = buildAccount("outlook", { id: "outlook:fake", email: "fake@example.com" });

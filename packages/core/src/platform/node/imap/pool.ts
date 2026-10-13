@@ -1,5 +1,5 @@
 import { Effect, Exit, Option, Scope } from "effect";
-import type { Account } from "../../../domain/domain.js";
+import type { Account } from "../../../domain/account.js";
 import { imapSettingsKey } from "../../../providers/imap/imap-settings.js";
 import { keyedLock } from "../../../providers/provider-http.js";
 import { Secrets } from "../../auth.js";

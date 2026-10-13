@@ -7,7 +7,7 @@ import {
   IDLE_RENEW_MS,
   idleRetryDelay,
 } from "../../platform/node/imap-idle.js";
-import type { Account } from "../../domain/domain.js";
+import type { Account } from "../../domain/account.js";
 
 const account: Account = {
   id: "imap:test",

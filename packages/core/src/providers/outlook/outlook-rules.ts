@@ -1,4 +1,4 @@
-import type { IncomingMessage, Message } from "../../domain/domain.js";
+import type { IncomingMessage, Message } from "../../domain/message.js";
 import {
   ruleImportance,
   type FilterCriteria,

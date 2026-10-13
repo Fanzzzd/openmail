@@ -1,6 +1,6 @@
 import { Parser, parseDocument, ElementType } from "htmlparser2";
 import { escapeComposeText, richComposeBody } from "./compose-body.js";
-import type { OutgoingMessage } from "../domain/domain.js";
+import type { OutgoingMessage } from "../domain/changes.js";
 export type MobileComposeMark = { start: number; end: number; kind: "bold" | "italic" };
 type Node = ReturnType<typeof parseDocument>["children"][number];
 /** Restore the mobile editor's text and ranges from canonical sanitized HTML.

@@ -1,7 +1,9 @@
 import { Effect, Option, Schema } from "effect";
 import { HttpClientRequest } from "effect/http";
 import { categoryKey, mergeCategoryNames } from "../../domain/categories.js";
-import type { Account, Attachment, IncomingMessage, MailOp } from "../../domain/domain.js";
+import type { Account } from "../../domain/account.js";
+import type { Attachment, IncomingMessage } from "../../domain/message.js";
+import type { MailOp } from "../../domain/changes.js";
 import { AuthError, PermanentError, ProviderError } from "../../domain/errors.js";
 import { stripMessageIdBrackets } from "../../mime/message-id.js";
 import { makeOutlookFeatures } from "./outlook-features.js";

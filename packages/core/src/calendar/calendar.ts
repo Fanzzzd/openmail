@@ -23,7 +23,8 @@ export * from "./event-dates.js";
 export * from "./event-recurrence.js";
 export * from "./calendar-event.js";
 import { CalendarEvent } from "./calendar-event.js";
-import { Address, type Message, type Provider } from "../domain/domain.js";
+import { Address, type Message } from "../domain/message.js";
+import type { Provider } from "../domain/account.js";
 
 export const InviteResponse = Schema.Literals(["accepted", "tentative", "declined"]);
 export type InviteResponse = typeof InviteResponse.Type;

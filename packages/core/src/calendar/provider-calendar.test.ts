@@ -1,7 +1,7 @@
 import { assert, it } from "@effect/vitest";
 import { Effect, Schema } from "effect";
 import { makeProviderCalendar } from "./provider-calendar.js";
-import { type Account } from "../domain/domain.js";
+import type { Account } from "../domain/account.js";
 import { type CalendarEvent } from "./calendar.js";
 import { ProviderError } from "../domain/errors.js";
 import { calendarZoneName, localCalendarTimeZone } from "./event-dates.js";

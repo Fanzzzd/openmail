@@ -1,7 +1,7 @@
 import { createServer } from "node:net";
 import { assert, it } from "@effect/vitest";
 import { Effect } from "effect";
-import type { ImapSettings } from "../../../domain/domain.js";
+import type { ImapSettings } from "../../../domain/account.js";
 import { openImap, smtpTransport } from "./session.js";
 
 for (const protocol of ["imap", "smtp"] as const) {

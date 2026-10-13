@@ -1,7 +1,7 @@
 import { Cause, Effect, Schedule } from "effect";
 
 import { KEEP_ALIVE_CHECK, KEEP_ALIVE_MAX_AGE_MS } from "../providers/reauth.js";
-import type { Provider } from "../domain/domain.js";
+import type { Provider } from "../domain/account.js";
 import type { ProviderAdapter } from "../providers/adapter.js";
 import type { Store } from "../store/service.js";
 

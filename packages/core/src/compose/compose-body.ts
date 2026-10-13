@@ -4,7 +4,7 @@ import {
   COMPOSE_FONT_SIZES,
   type ComposeFont,
   type OutgoingMessage,
-} from "../domain/domain.js";
+} from "../domain/changes.js";
 
 import { composeStyle, composeStyleValue } from "./compose-format.js";
 import {

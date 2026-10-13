@@ -5,7 +5,7 @@ import { TestClock } from "effect/testing";
 import { makeGmail } from "./gmail/gmail.js";
 import { makeOutlook } from "./outlook/outlook.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
-import type { Account } from "../domain/domain.js";
+import type { Account } from "../domain/account.js";
 
 for (const provider of ["gmail", "outlook"] as const) {
   it.effect(

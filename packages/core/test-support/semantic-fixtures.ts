@@ -1,6 +1,6 @@
 import { Effect, Layer } from "effect";
 import { SqlClient } from "effect/sql";
-import type { IncomingMessage } from "../src/domain/domain.js";
+import type { IncomingMessage } from "../src/domain/message.js";
 import { type ModelRuntime, unavailableVision } from "../src/ai/media.js";
 import { MemoryPlatform } from "../src/platform/node/platform-memory.js";
 import { makeSemanticIndexer } from "../src/ai/semantic-indexer.js";

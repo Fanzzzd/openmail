@@ -1,12 +1,12 @@
 import { assert, it } from "@effect/vitest";
 import { Effect, Layer } from "effect";
 import { SqlClient } from "effect/sql";
-import {
-  type ThreadQuery,
-  type ThreadSummary,
-  type IncomingMessage,
-  type SearchCondition,
-} from "../../domain/domain.js";
+import type {
+  ThreadQuery,
+  ThreadSummary,
+  IncomingMessage,
+  SearchCondition,
+} from "../../domain/message.js";
 import {
   parseSearchQuery,
   parseSearchExpression,

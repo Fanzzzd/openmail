@@ -8,34 +8,36 @@ import type {
   Account,
   AccountPlacement,
   AccountSettings,
+  ImapSettings,
+  Label,
+  Profile,
+  ProfileInput,
+  Provider,
+} from "../domain/account.js";
+import type {
   Actor,
-  Address,
   AgentActivity,
   AgentWriteMode,
   AuditEntry,
   Command,
-  DraftCreateState,
-  DraftRemote,
-  ImapSettings,
-  IncomingMessage,
-  Label,
-  MailOp,
-  Message,
-  OutgoingMessage,
-  Prefs,
-  PrefsPatch,
-  Profile,
-  ProfileInput,
   Proposal,
-  Provider,
-  QueuedOp,
-  SendPreparationState,
-  Signature,
-  Template,
-  TemplateInput,
+} from "../domain/command.js";
+import type {
+  Address,
+  IncomingMessage,
+  Message,
   ThreadQuery,
   ThreadSummary,
-} from "../domain/domain.js";
+} from "../domain/message.js";
+import type {
+  DraftCreateState,
+  DraftRemote,
+  MailOp,
+  OutgoingMessage,
+  QueuedOp,
+  SendPreparationState,
+} from "../domain/changes.js";
+import type { Prefs, PrefsPatch, Signature, Template, TemplateInput } from "../domain/prefs.js";
 import { Context, type Effect, type Option } from "effect";
 import type { makeSemanticStore } from "./store-semantic.js";
 import type { makeMediaStore } from "./store-media.js";
@@ -125,11 +127,11 @@ export class Store extends Context.Service<
     moveAccount(id: string, input: AccountPlacement): Effect.Effect<void, NotFound | InvalidInput>;
     rememberNotificationActions(
       id: string,
-      actions: import("../domain/domain.js").Prefs["notificationActions"],
+      actions: import("../domain/prefs.js").Prefs["notificationActions"],
     ): Effect.Effect<void>;
     notificationActions(
       id: string,
-    ): Effect.Effect<import("../domain/domain.js").Prefs["notificationActions"]>;
+    ): Effect.Effect<import("../domain/prefs.js").Prefs["notificationActions"]>;
     readonly syncHealthLabels: ReturnType<typeof makeSyncHealthStore>["syncHealthLabels"];
     readonly syncHealthLocal: ReturnType<typeof makeSyncHealthStore>["syncHealthLocal"];
     readonly listAccounts: Effect.Effect<Account[]>;
@@ -379,17 +381,17 @@ export class Store extends Context.Service<
 
     renewPendingOp(id: number, token: string): Effect.Effect<boolean>;
     ownsPendingOp(id: number, token: string): Effect.Effect<boolean>;
-    readonly listFailedOps: Effect.Effect<readonly import("../domain/domain.js").FailedOp[]>;
+    readonly listFailedOps: Effect.Effect<readonly import("../domain/sync-status.js").FailedOp[]>;
     recordFailedOp(
       entry: Pick<
-        import("../domain/domain.js").FailedOp,
+        import("../domain/sync-status.js").FailedOp,
         "accountId" | "providerId" | "kind" | "reason"
       > & { subject?: string | null; sender?: string | null; rejected?: readonly string[] },
     ): Effect.Effect<void>;
     getFailedOp(
       id: number,
     ): Effect.Effect<
-      { notice: import("../domain/domain.js").FailedOp; rejected: readonly string[] },
+      { notice: import("../domain/sync-status.js").FailedOp; rejected: readonly string[] },
       NotFound
     >;
     recordCopyProgress(
@@ -461,9 +463,7 @@ export class Store extends Context.Service<
     /** Atomically remembers an id, including read/suppressed mail. True only once. */
     observeIncoming(accountId: string, identity: string): Effect.Effect<boolean>;
     enqueueNotification(id: string, digest: boolean): Effect.Effect<void>;
-    takeNotifications(
-      now: number,
-    ): Effect.Effect<import("../domain/domain.js").NotificationBatch[]>;
+    takeNotifications(now: number): Effect.Effect<import("../domain/prefs.js").NotificationBatch[]>;
     readonly prefs: Effect.Effect<Prefs>;
     setPrefs(patch: PrefsPatch): Effect.Effect<void>;
     readonly remoteAccess: Effect.Effect<import("../app/remote-access.js").RemoteAccessSettings>;

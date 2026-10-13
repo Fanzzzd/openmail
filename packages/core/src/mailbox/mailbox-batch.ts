@@ -3,15 +3,10 @@ import { categoryKey } from "../domain/categories.js";
 import { invalidCategoryFolderOp } from "../domain/mail-ops.js";
 import { Clock, Effect, Option, Semaphore } from "effect";
 
-import {
-  UNDO_HISTORY_TTL_MS,
-  isOutlookClassification,
-  type Actor,
-  type MailOp,
-  type Message,
-  type Provider,
-  type IncomingMessage,
-} from "../domain/domain.js";
+import { UNDO_HISTORY_TTL_MS, type Actor } from "../domain/command.js";
+import { isOutlookClassification, type Message, type IncomingMessage } from "../domain/message.js";
+import type { MailOp } from "../domain/changes.js";
+import type { Provider } from "../domain/account.js";
 import { messagesFrom } from "../reader/reading.js";
 import { requireFocusedInboxScope } from "../providers/scoped-adapter.js";
 import { InvalidInput } from "../domain/errors.js";

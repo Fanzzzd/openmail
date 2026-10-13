@@ -12,12 +12,10 @@ import { Effect, Option, Deferred, Fiber } from "effect";
 import { TestClock } from "effect/testing";
 import { simpleParser } from "mailparser";
 import { buildMime } from "../platform/node/compose.js";
-import {
-  type Actor,
-  DEFAULT_PREFS,
-  type IncomingMessage,
-  type OutgoingMessage,
-} from "../domain/domain.js";
+import type { Actor } from "../domain/command.js";
+import { DEFAULT_PREFS } from "../domain/prefs.js";
+import type { IncomingMessage } from "../domain/message.js";
+import type { OutgoingMessage } from "../domain/changes.js";
 import { ProviderError } from "../domain/errors.js";
 import { Mailbox } from "../mailbox/mailbox.js";
 import { applyComposeSignature, richComposeBody } from "./compose-body.js";

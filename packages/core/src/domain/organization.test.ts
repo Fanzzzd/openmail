@@ -2,7 +2,8 @@ import { incoming as makeIncoming, fakeServer, TestMailbox } from "../platform/n
 import { assert, it } from "@effect/vitest";
 import { Effect, Layer, Schema } from "effect";
 import { TestClock } from "effect/testing";
-import { type IncomingMessage, type Account } from "./domain.js";
+import type { IncomingMessage } from "./message.js";
+import type { Account } from "./account.js";
 import { ProviderError, SettingsScopeMissing } from "./errors.js";
 import { makeFakeProvider } from "../platform/node/fake-provider.js";
 import { MailboxLive } from "../mailbox/mailbox-live.js";

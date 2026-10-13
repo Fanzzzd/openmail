@@ -13,13 +13,9 @@ import { Clock, Context, Effect, Option, Schema } from "effect";
 import type { SqlClient } from "effect/sql";
 import type { Fragment } from "effect/sql/Statement";
 
+import { Address, type ThreadQuery, type ThreadSummary } from "../domain/message.js";
 import {
-  Address,
   DEFAULT_PREFS,
-  type DraftRemote,
-  DraftCreateState,
-  SendPreparationState,
-  OutgoingMessage,
   Prefs,
   PrefsPatch,
   ToolbarAction,
@@ -28,9 +24,13 @@ import {
   SignatureKind,
   type Template,
   type TemplateInput,
-  type ThreadQuery,
-  type ThreadSummary,
-} from "../domain/domain.js";
+} from "../domain/prefs.js";
+import {
+  type DraftRemote,
+  DraftCreateState,
+  SendPreparationState,
+  OutgoingMessage,
+} from "../domain/changes.js";
 import { NotFound } from "../domain/errors.js";
 import { imageSenderKey } from "../reader/reading.js";
 import {

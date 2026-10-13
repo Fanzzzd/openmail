@@ -6,12 +6,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { databaseLayer, MIGRATIONS } from "../platform/node/db.js";
-import {
-  AccountSettings,
-  DEFAULT_PREFS,
-  accountName,
-  type IncomingMessage,
-} from "../domain/domain.js";
+import { AccountSettings, accountName } from "../domain/account.js";
+import { DEFAULT_PREFS } from "../domain/prefs.js";
+import type { IncomingMessage } from "../domain/message.js";
 import { fakeServer, makeFakeProvider } from "../platform/node/fake-provider.js";
 import { MailboxLive } from "./mailbox-live.js";
 import { Mailbox } from "./mailbox.js";

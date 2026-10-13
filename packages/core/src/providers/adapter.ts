@@ -11,21 +11,20 @@ import type {
   SendUncertain,
   SettingsScopeMissing,
 } from "../domain/errors.js";
+import type { Account, ImapSettings, Label, Provider } from "../domain/account.js";
 import type {
-  Account,
   Address,
-  DraftCreateState,
-  DraftRemote,
-  ImapSettings,
   IncomingMessage,
   InferenceClassification,
-  Label,
+  ThreadQuery,
+} from "../domain/message.js";
+import type {
+  DraftCreateState,
+  DraftRemote,
   MailOp,
   OutgoingMessage,
-  Provider,
   SendPreparationState,
-  ThreadQuery,
-} from "../domain/domain.js";
+} from "../domain/changes.js";
 import type { AuthorizationFeature, OptionalService } from "./optional-services.js";
 import type { ImapConnectInput } from "./imap/imap-presets.js";
 import type { CalendarEvent, CalendarInvite, InviteResponse } from "../calendar/calendar.js";

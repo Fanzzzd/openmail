@@ -1,7 +1,8 @@
 import { Cause, Clock, Effect, Option, Schema } from "effect";
 import { type SqlClient } from "effect/sql";
 import { isSqlError } from "effect/sql/SqlError";
-import { type IncomingMessage, type MailOp, type Message } from "../domain/domain.js";
+import type { IncomingMessage, Message } from "../domain/message.js";
+import type { MailOp } from "../domain/changes.js";
 import { NotFound, ProviderError } from "../domain/errors.js";
 import { decodeProviderId } from "../providers/imap/imap-cursor.js";
 import { applyOpToLabels } from "../domain/mail-ops.js";

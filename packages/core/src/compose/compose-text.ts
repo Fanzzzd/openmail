@@ -5,7 +5,7 @@ import { recipientLabel } from "./recipients.js";
  * functions with no Node dependencies, exported through `@openmail/core/schema`
  * so the desktop renderer and a mobile app apply the same rules.
  */
-import type { Address } from "../domain/domain.js";
+import type { Address } from "../domain/message.js";
 
 /** The usenet signature separator: two dashes and a space on a line of their own. */
 export const SIGNATURE_SEPARATOR = "-- ";

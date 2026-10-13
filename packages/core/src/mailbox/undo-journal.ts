@@ -1,7 +1,8 @@
 import { categoryKey } from "../domain/categories.js";
 import { Clock, Effect, Schema } from "effect";
 import type { SqlClient } from "effect/sql";
-import { MailOp, UndoHistoryEntry, UNDO_HISTORY_TTL_MS } from "../domain/domain.js";
+import { MailOp } from "../domain/changes.js";
+import { UndoHistoryEntry, UNDO_HISTORY_TTL_MS } from "../domain/command.js";
 import { all, first, run } from "../store/sql-rows.js";
 
 export const UndoChange = Schema.Struct({ id: Schema.String, op: MailOp });

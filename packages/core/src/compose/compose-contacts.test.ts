@@ -6,12 +6,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { simpleParser } from "mailparser";
 import { databaseLayer } from "../platform/node/db.js";
-import {
-  DEFAULT_PREFS,
-  Prefs as importedPrefs,
-  type IncomingMessage,
-  type Account,
-} from "../domain/domain.js";
+import { DEFAULT_PREFS, Prefs as importedPrefs } from "../domain/prefs.js";
+import type { IncomingMessage } from "../domain/message.js";
+import type { Account } from "../domain/account.js";
 import { makeFakeProvider, fakeServer } from "../platform/node/fake-provider.js";
 import { Mailbox } from "../mailbox/mailbox.js";
 import { MailboxLive } from "../mailbox/mailbox-live.js";

@@ -1,7 +1,8 @@
 import { incoming as makeIncoming, fakeServer, TestMailbox } from "../platform/node/testing.js";
 import { assert, it } from "@effect/vitest";
 import { Effect, Schema, Layer } from "effect";
-import { type Account, type IncomingMessage } from "../domain/domain.js";
+import type { Account } from "../domain/account.js";
+import type { IncomingMessage } from "../domain/message.js";
 import { type CalendarEvent } from "./calendar.js";
 import { graphRecurrence } from "./graph-recurrence.js";
 import { graphTimestamp } from "./graph-time.js";

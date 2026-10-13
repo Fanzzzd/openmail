@@ -2,14 +2,9 @@ import { stripMessageIdBrackets } from "../mime/message-id.js";
 /** Protocol and notification decisions shared by desktop and tests. No platform APIs. */
 import { Schema } from "effect";
 
-import {
-  WEEKDAYS,
-  type Account,
-  type ActiveHours,
-  type Message,
-  type Prefs,
-  type QuietHours,
-} from "../domain/domain.js";
+import { WEEKDAYS, type ActiveHours, type Prefs, type QuietHours } from "../domain/prefs.js";
+import type { Account } from "../domain/account.js";
+import type { Message } from "../domain/message.js";
 
 export const MailtoDraft = Schema.Struct({
   to: Schema.String,
@@ -200,7 +195,7 @@ export function notificationAction(
   actions: Prefs["notificationActions"],
   actionIndex: number,
   selectionIndex = -1,
-): import("../domain/domain.js").MailOp | null {
+): import("../domain/changes.js").MailOp | null {
   const selected = actions[actionIndex];
   const action =
     selected === "menu" ? (["archive", "trash", "read"] as const)[selectionIndex] : selected;

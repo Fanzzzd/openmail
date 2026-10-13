@@ -27,7 +27,7 @@ import {
 } from "../../providers/adapter.js";
 import { Secrets } from "../auth.js";
 import { Store } from "../../store/service.js";
-import { type Account } from "../../domain/domain.js";
+import type { Account } from "../../domain/account.js";
 const settings = {
   preset: "custom",
   username: "me@example.com",

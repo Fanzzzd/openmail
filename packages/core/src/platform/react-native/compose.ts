@@ -1,7 +1,8 @@
 import { Effect } from "effect";
 import { Buffer } from "../bytes.js";
 import { PlatformCrypto } from "../crypto.js";
-import type { Address, OutgoingMessage } from "../../domain/domain.js";
+import type { Address } from "../../domain/message.js";
+import type { OutgoingMessage } from "../../domain/changes.js";
 import type { Threading } from "../mail-codec.js";
 import { PermanentError } from "../../domain/errors.js";
 import { composeTransportHtml, normalizeComposeMessage } from "../../compose/compose-body.js";

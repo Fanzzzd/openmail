@@ -4,7 +4,7 @@ import { Effect, FileSystem, Layer, Path, Schema } from "effect";
 import { SqlClient } from "effect/sql";
 import { NodeSystem } from "../platform/node/platform-node.js";
 import { databaseLayer } from "../platform/node/db.js";
-import type { AttachmentType, IncomingMessage } from "../domain/domain.js";
+import type { AttachmentType, IncomingMessage } from "../domain/message.js";
 import { makeFakeProvider, fakeServer } from "../platform/node/fake-provider.js";
 import { MailboxLive } from "../mailbox/mailbox-live.js";
 import { Mailbox } from "../mailbox/mailbox.js";

@@ -1,5 +1,5 @@
 import { Clock, Effect } from "effect";
-import type { Account } from "../domain/domain.js";
+import type { Account } from "../domain/account.js";
 import type { ProviderAdapter } from "../providers/adapter.js";
 import type { Store } from "../store/service.js";
 import { retryAfterMillis } from "../providers/provider-retry.js";

@@ -9,7 +9,8 @@ import {
 } from "../compose/compose-images.js";
 import type { ImageDownloader } from "../platform/runtime.js";
 import { Clock, Effect, Schema, Semaphore } from "effect";
-import type { Account, Actor, Command } from "../domain/domain.js";
+import type { Account } from "../domain/account.js";
+import type { Actor, Command } from "../domain/command.js";
 import {
   calendarTimestamp,
   detectMailEvents,

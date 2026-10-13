@@ -2,13 +2,9 @@ import { assert, it } from "@effect/vitest";
 import { Effect, Ref, Schema, Stream } from "effect";
 import { TestClock } from "effect/testing";
 
-import {
-  DEFAULT_PREFS,
-  type Account,
-  type IncomingMessage,
-  type Message,
-  Prefs,
-} from "../domain/domain.js";
+import { DEFAULT_PREFS, Prefs } from "../domain/prefs.js";
+import type { Account } from "../domain/account.js";
+import type { IncomingMessage, Message } from "../domain/message.js";
 import { PermanentError } from "../domain/errors.js";
 import { Mailbox, type MailboxEvent } from "../mailbox/mailbox.js";
 import {

@@ -5,8 +5,9 @@ import {
   attachmentProblem,
   type AttachmentProblem,
 } from "../mime/attachment-policy.js";
-import type { OutgoingAttachment, Provider } from "../domain/domain.js";
-import { OutgoingMessage } from "../domain/domain.js";
+import type { OutgoingAttachment } from "../domain/changes.js";
+import type { Provider } from "../domain/account.js";
+import { OutgoingMessage } from "../domain/changes.js";
 import { all, run } from "../store/sql-rows.js";
 
 export const MOBILE_ATTACHMENT_LIMIT = 15 * 1024 * 1024;

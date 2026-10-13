@@ -4,7 +4,7 @@ import { SqlClient } from "effect/sql";
 import { Store } from "./service.js";
 import { StoreLive } from "./store.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
-import type { IncomingMessage } from "../domain/domain.js";
+import type { IncomingMessage } from "../domain/message.js";
 
 const tables = ["messages_fts", "messages_words", "derived_fts", "derived_words"] as const;
 const message: IncomingMessage = {

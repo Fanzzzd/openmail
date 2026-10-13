@@ -1,6 +1,6 @@
 import { Effect, Schema } from "effect";
 
-import type { Provider } from "../domain/domain.js";
+import type { Provider } from "../domain/account.js";
 import {
   AuthError,
   isReauthReason,

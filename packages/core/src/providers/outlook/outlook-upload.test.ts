@@ -12,7 +12,7 @@ import type {
   OutgoingAttachment,
   OutgoingMessage,
   SendPreparationState,
-} from "../../domain/domain.js";
+} from "../../domain/changes.js";
 import { makeOutlook } from "./outlook.js";
 import { makeOutlookClient } from "./client.js";
 import {

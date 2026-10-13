@@ -57,7 +57,7 @@ const parseMessage = (part: AttachmentContent, codec: MailCodecPort) =>
  * The budget includes roots, all decoded ancestor contents, and returned copies. */
 export function makeReaderAttachments(
   attachment: Mailbox["Service"]["attachment"],
-  thread: (id: string) => Effect.Effect<import("../domain/domain.js").Message[], NotFound>,
+  thread: (id: string) => Effect.Effect<import("../domain/message.js").Message[], NotFound>,
   codec: MailCodecPort,
 ) {
   const openTree = Effect.fnUntraced(function* (messageId: string) {

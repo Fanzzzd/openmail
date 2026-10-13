@@ -1,6 +1,7 @@
 import { Effect, Option, Queue, Stream } from "effect";
 import { attachmentFromRaw, MEDIA_RAW_TOO_LARGE } from "../../../mime/attachments.js";
-import type { Account, IncomingMessage } from "../../../domain/domain.js";
+import type { Account } from "../../../domain/account.js";
+import type { IncomingMessage } from "../../../domain/message.js";
 import { PermanentError, ProviderError, type ProviderFailure } from "../../../domain/errors.js";
 import { FOLDER_BATCH_LIMIT, type PermanentDeleteBatch } from "../../../domain/folder-actions.js";
 import {

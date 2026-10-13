@@ -7,7 +7,7 @@ import { Providers } from "../providers/adapter.js";
 import { Store } from "../store/service.js";
 import { makeFakeProvider } from "../platform/node/fake-provider.js";
 import { TestClock } from "effect/testing";
-import type { IncomingMessage } from "../domain/domain.js";
+import type { IncomingMessage } from "../domain/message.js";
 import { FeatureScopeMissing } from "../domain/errors.js";
 import { Mailbox } from "./mailbox.js";
 import { fakeServer, TestMailbox } from "../platform/node/testing.js";

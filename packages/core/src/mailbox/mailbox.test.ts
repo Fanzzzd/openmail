@@ -7,7 +7,8 @@ import {
 import { assert, it } from "@effect/vitest";
 import { Effect, Fiber, Stream } from "effect";
 import { TestClock } from "effect/testing";
-import { type Actor, type IncomingMessage, type Message } from "../domain/domain.js";
+import type { Actor } from "../domain/command.js";
+import type { IncomingMessage, Message } from "../domain/message.js";
 import { AuthError, PermanentError, ProviderError } from "../domain/errors.js";
 import { Mailbox } from "./mailbox.js";
 import { SYNC_FAILURE_TEXT } from "../sync/sync-failure.js";

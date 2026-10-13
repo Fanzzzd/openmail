@@ -9,7 +9,8 @@ import {
   type InviteResponse,
 } from "./calendar.js";
 export { inviteCanRespond } from "./calendar.js";
-import type { Address, OutgoingMessage } from "../domain/domain.js";
+import type { Address } from "../domain/message.js";
+import type { OutgoingMessage } from "../domain/changes.js";
 import { InvalidInput, ProviderError } from "../domain/errors.js";
 import { graphTimestamp } from "./graph-time.js";
 import { decodeBytes } from "../mime/mime.js";

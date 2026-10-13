@@ -8,22 +8,17 @@
 import { Context, Effect, Exit, Layer, Option, Schema, SchemaGetter } from "effect";
 import { McpSchema, Tool, Toolkit } from "effect/ai";
 
+import { Account, Label, Profile } from "../domain/account.js";
 import {
-  Account,
   Attachment,
-  type Actor,
-  type Command,
   type Address,
-  type Proposal,
   CATEGORIES,
-  Label,
   MAILBOXES,
-  type MailOp,
-  Outcome,
-  Profile,
-  SyncResult,
   ThreadSummary,
-} from "../domain/domain.js";
+} from "../domain/message.js";
+import { type Actor, type Command, type Proposal, Outcome } from "../domain/command.js";
+import type { MailOp } from "../domain/changes.js";
+import { SyncResult } from "../domain/sync-status.js";
 import { Mailbox, type PerformError } from "../mailbox/mailbox.js";
 import { ModelThread } from "../ai/model-thread.js";
 import { CalendarEvent, CalendarInvite } from "../calendar/calendar.js";

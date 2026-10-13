@@ -30,39 +30,36 @@ import type { DerivedChunk, IndexingProgress } from "../ai/media.js";
  */
 import { Context, type Effect, Schema, type Stream } from "effect";
 
-import { SyncProgress as SyncProgressSchema } from "../domain/domain.js";
+import { SyncProgress as SyncProgressSchema } from "../domain/sync-status.js";
 import type {
   Account,
   AccountSettings,
   AccountPlacement,
+  Label,
+  Profile,
+  ProfileInput,
+} from "../domain/account.js";
+import type {
   BatchResult,
   UndoHistoryEntry,
-  MailOp,
   Actor,
-  Address,
   AgentWriteMode,
   AuditEntry,
   AgentActivity,
   Command,
-  Draft,
-  DraftInput,
-  InferenceClassification,
-  Label,
-  Message,
   Outcome,
-  OutgoingAttachment,
-  Prefs,
-  PrefsPatch,
-  Profile,
-  ProfileInput,
   Proposal,
-  Signature,
-  SyncResult,
-  Template,
-  TemplateInput,
+} from "../domain/command.js";
+import type { MailOp, Draft, DraftInput, OutgoingAttachment } from "../domain/changes.js";
+import type {
+  Address,
+  InferenceClassification,
+  Message,
   ThreadQuery,
   ThreadSummary,
-} from "../domain/domain.js";
+} from "../domain/message.js";
+import type { Prefs, PrefsPatch, Signature, Template, TemplateInput } from "../domain/prefs.js";
+import type { SyncResult } from "../domain/sync-status.js";
 import type {
   FeatureScopeMissing,
   AuthError,
@@ -385,7 +382,7 @@ export class Mailbox extends Context.Service<
     // Profiles (spaces)
     readonly profiles: Effect.Effect<Profile[]>;
     /** Atomically consumes eligible arrivals; muted arrivals wait for a Profile digest. */
-    readonly takeNotifications: Effect.Effect<import("../domain/domain.js").NotificationBatch[]>;
+    readonly takeNotifications: Effect.Effect<import("../domain/prefs.js").NotificationBatch[]>;
     createProfile(input: ProfileInput): Effect.Effect<Profile>;
     updateProfile(id: string, input: ProfileInput): Effect.Effect<void>;
     deleteProfile(id: string): Effect.Effect<void>;
@@ -422,7 +419,7 @@ export class Mailbox extends Context.Service<
     ): Effect.Effect<Outcome, PerformError>;
     readonly proposals: Effect.Effect<Proposal[]>;
     prepareRejectedResend(noticeId: number): Effect.Effect<DraftInput, NotFound | InvalidInput>;
-    readonly listFailedOps: Effect.Effect<readonly import("../domain/domain.js").FailedOp[]>;
+    readonly listFailedOps: Effect.Effect<readonly import("../domain/sync-status.js").FailedOp[]>;
     acknowledgeFailedOps(ids: readonly number[]): Effect.Effect<void>;
     audit(limit: number): Effect.Effect<AuditEntry[]>;
     /** The last MCP tool calls, newest first: tool names and outcomes only. */

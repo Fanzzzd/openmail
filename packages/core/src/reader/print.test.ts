@@ -1,6 +1,6 @@
 import { assert, it } from "@effect/vitest";
 
-import type { Message } from "../domain/domain.js";
+import type { Message } from "../domain/message.js";
 import { printableThread, stripActiveContent } from "./print.js";
 
 function message(overrides: Partial<Message>): Message {

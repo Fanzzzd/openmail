@@ -1,21 +1,16 @@
 import { Schema } from "effect";
+import { type Account, ImapSettings, Provider } from "../domain/account.js";
+import { Actor, AgentWriteMode, Command, type Proposal } from "../domain/command.js";
 import {
-  type Account,
-  Actor,
   Address,
-  AgentWriteMode,
   Attachment,
-  Command,
-  FailedOp,
-  ImapSettings,
   type Message,
   MessageSecurity,
   type MessageSummary,
-  NotificationActions,
-  type Proposal,
-  Provider,
-  QueuedOp,
-} from "../domain/domain.js";
+} from "../domain/message.js";
+import { FailedOp } from "../domain/sync-status.js";
+import { NotificationActions } from "../domain/prefs.js";
+import { QueuedOp } from "../domain/changes.js";
 import { DerivedChunk } from "../ai/media.js";
 import { isReauthReason } from "../domain/errors.js";
 import { cleanDisplayName } from "../reader/message-security.js";

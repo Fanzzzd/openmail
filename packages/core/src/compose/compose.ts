@@ -1,7 +1,8 @@
 import { Buffer } from "../platform/bytes.js";
 import { Effect } from "effect";
 import { MailCodec } from "../platform/mail-codec.js";
-import type { Address, OutgoingMessage } from "../domain/domain.js";
+import type { Address } from "../domain/message.js";
+import type { OutgoingMessage } from "../domain/changes.js";
 import type { Threading } from "../platform/mail-codec.js";
 export type { Threading } from "../platform/mail-codec.js";
 export const buildMime = (

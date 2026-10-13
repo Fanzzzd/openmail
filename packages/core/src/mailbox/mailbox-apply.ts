@@ -2,14 +2,13 @@ import { Clock, Effect, Option } from "effect";
 import { inspectAttachment } from "../mime/attachment-import.js";
 import {
   actorLabel,
-  type Account,
   type Actor,
   type Command,
   type FlushResult,
-  type MailOp,
   type Outcome,
-  type OutgoingMessage,
-} from "../domain/domain.js";
+} from "../domain/command.js";
+import type { Account } from "../domain/account.js";
+import type { MailOp, OutgoingMessage } from "../domain/changes.js";
 import { InvalidInput, type ProviderError } from "../domain/errors.js";
 import { decodeProviderId } from "../providers/imap/imap-cursor.js";
 import { requireFocusedInboxScope } from "../providers/scoped-adapter.js";

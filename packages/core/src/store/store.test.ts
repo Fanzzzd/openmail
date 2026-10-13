@@ -7,12 +7,8 @@ import { Effect, Exit, FileSystem, Layer, Option, Path, Schema } from "effect";
 import { TestClock } from "effect/testing";
 import { SqlClient } from "effect/sql";
 import { databaseLayer, MIGRATIONS, splitStatements } from "../platform/node/db.js";
-import {
-  DEFAULT_LIST_FILTERS,
-  type Actor,
-  type Command,
-  type IncomingMessage,
-} from "../domain/domain.js";
+import { DEFAULT_LIST_FILTERS, type IncomingMessage } from "../domain/message.js";
+import type { Actor, Command } from "../domain/command.js";
 import { MemoryFileSystem, MemoryPlatform } from "../platform/node/platform-memory.js";
 import { AuthError } from "../domain/errors.js";
 import { Store } from "./service.js";

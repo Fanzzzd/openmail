@@ -1,5 +1,5 @@
 import { Clock, Effect, Option, Schema } from "effect";
-import { Provider } from "../domain/domain.js";
+import { Provider } from "../domain/account.js";
 import { DEFAULT_CACHE_WINDOWS } from "../domain/cache.js";
 import { readCursor, parseUidSet } from "../providers/imap/imap-cursor.js";
 import { sha256Hex } from "../platform/crypto.js";

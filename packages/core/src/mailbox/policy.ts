@@ -1,4 +1,4 @@
-import type { Actor, AgentWriteMode, Command } from "../domain/domain.js";
+import type { Actor, AgentWriteMode, Command } from "../domain/command.js";
 
 export type Decision =
   | { readonly status: "applied" }

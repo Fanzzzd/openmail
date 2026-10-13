@@ -1,5 +1,5 @@
 import { Schema } from "effect";
-import { MailboxView } from "./domain.js";
+import { MailboxView } from "./message.js";
 import type { FeatureScopeMissing, InvalidInput, ProviderFailure } from "./errors.js";
 
 /** Folder identity only: list filters, search and paging never constrain whole-folder actions. */

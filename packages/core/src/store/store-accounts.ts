@@ -9,7 +9,7 @@ import {
   Profile,
   type ProfileInput,
   type Provider,
-} from "../domain/domain.js";
+} from "../domain/account.js";
 import { type AuthError, InvalidInput, NotFound } from "../domain/errors.js";
 import { logReauth, reauthReason } from "../providers/reauth.js";
 import { type PlatformCrypto } from "../platform/crypto.js";

@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { expect, it, vi } from "vitest";
-import type { Account } from "../../domain/domain.js";
+import type { Account } from "../../domain/account.js";
 import type { MailCodecPort, MimeMessage } from "../mail-codec.js";
 import { fakeServer, makeFakeProvider } from "./fake-provider.js";
 

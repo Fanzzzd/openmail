@@ -3,16 +3,15 @@ import { MAILBOX_LABEL } from "../domain/mailbox-labels.js";
 import { Option, Schema } from "effect";
 import {
   SearchCondition,
-  type Provider,
   type Address,
   type Attachment,
   type AttachmentType,
   type IncomingMessage,
-  type Label,
   type SearchCriteria,
   type ThreadQuery,
   type ThreadSummary,
-} from "../domain/domain.js";
+} from "../domain/message.js";
+import type { Provider, Label } from "../domain/account.js";
 import { InvalidInput } from "../domain/errors.js";
 import type { FilterCriteria } from "../domain/organization.js";
 

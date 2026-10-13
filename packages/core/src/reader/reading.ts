@@ -7,13 +7,9 @@ import { cleanDisplayName } from "./message-security.js";
  */
 import { constVoid } from "effect/Function";
 
-import type {
-  Address,
-  MarkReadDelay,
-  MessageSecurity,
-  Provider,
-  RemoteImageMode,
-} from "../domain/domain.js";
+import type { Address, MessageSecurity } from "../domain/message.js";
+import type { MarkReadDelay, RemoteImageMode } from "../domain/prefs.js";
+import type { Provider } from "../domain/account.js";
 
 /**
  * The sender's name for a header that shows the address beside it. Senders

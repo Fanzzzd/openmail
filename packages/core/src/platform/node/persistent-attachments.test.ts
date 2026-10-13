@@ -16,7 +16,7 @@ import { MemoryPlatform } from "./platform-memory.js";
 import { StoreLive } from "../../store/store.js";
 import { fakeServer, makeFakeProvider } from "./fake-provider.js";
 import { PersistentAttachments } from "./persistent-attachments.js";
-import { type IncomingMessage } from "../../domain/domain.js";
+import type { IncomingMessage } from "../../domain/message.js";
 import { ProviderError } from "../../domain/errors.js";
 import { TestClock } from "effect/testing";
 {

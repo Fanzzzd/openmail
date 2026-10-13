@@ -1,5 +1,5 @@
 import { Clock, Effect, Option, Stream } from "effect";
-import type { IncomingMessage } from "../../../domain/domain.js";
+import type { IncomingMessage } from "../../../domain/message.js";
 import { ProviderError } from "../../../domain/errors.js";
 import {
   encodeProviderId,

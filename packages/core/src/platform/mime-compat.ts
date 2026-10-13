@@ -1,7 +1,7 @@
 import { TextDecoder as PortableDecoder } from "./text-decoder.js";
 import { Buffer } from "./bytes.js";
 import { charsetOf, decodeBytes, decodeHeader } from "../mime/mime.js";
-import type { IncomingMessage } from "../domain/domain.js";
+import type { IncomingMessage } from "../domain/message.js";
 import type { MimeMessage, MimePart } from "./mail-codec.js";
 import { finishInline, type HtmlBody } from "./html-text.js";
 

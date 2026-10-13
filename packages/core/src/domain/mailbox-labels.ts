@@ -1,4 +1,4 @@
-import type { MailboxView } from "./domain.js";
+import type { MailboxView } from "./message.js";
 
 export const MAILBOX_LABEL: Readonly<Record<Exclude<MailboxView, "all">, string>> = {
   inbox: "INBOX",

@@ -6,7 +6,7 @@ import {
   type AgentWriteMode,
   Command,
   type Proposal,
-} from "../domain/domain.js";
+} from "../domain/command.js";
 import { NotFound } from "../domain/errors.js";
 import { sha256Hex } from "../platform/crypto.js";
 import type { Store } from "./service.js";

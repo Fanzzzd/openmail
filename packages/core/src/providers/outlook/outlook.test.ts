@@ -27,7 +27,8 @@ import {
 import { HttpClient, HttpClientError, HttpClientRequest, HttpClientResponse } from "effect/http";
 import { TestClock } from "effect/testing";
 import { simpleParser } from "mailparser";
-import { type Account, type OutgoingMessage } from "../../domain/domain.js";
+import type { Account } from "../../domain/account.js";
+import type { OutgoingMessage } from "../../domain/changes.js";
 import { MailboxLive } from "../../mailbox/mailbox-live.js";
 import { Mailbox } from "../../mailbox/mailbox.js";
 import { markdownDraftSource } from "../../compose/markdown-draft.js";
@@ -786,7 +787,7 @@ it.live("retry after the second attachment fails keeps one Outlook draft", () =>
           missing: () => Effect.succeed(false),
           begin: () => Effect.succeed({ messageId: "<client@example.test>", attempted: false }),
           attempted: () => Effect.void,
-          remember: (remote: import("../../domain/domain.js").DraftRemote) =>
+          remember: (remote: import("../../domain/changes.js").DraftRemote) =>
             Effect.sync(() => {
               remembered = {
                 draftId: remote.draftId ?? "draft",

@@ -10,12 +10,10 @@ import { DatabaseSync } from "node:sqlite";
 import { buildMime } from "../platform/node/compose.js";
 import { composeSender } from "./compose-sender.js";
 import { databaseLayer, MIGRATIONS } from "../platform/node/db.js";
-import {
-  DEFAULT_PREFS,
-  type Account,
-  type IncomingMessage,
-  type OutgoingMessage,
-} from "../domain/domain.js";
+import { DEFAULT_PREFS } from "../domain/prefs.js";
+import type { Account } from "../domain/account.js";
+import type { IncomingMessage } from "../domain/message.js";
+import type { OutgoingMessage } from "../domain/changes.js";
 import { ProviderError } from "../domain/errors.js";
 import { makeFakeProvider } from "../platform/node/fake-provider.js";
 import { Mailbox } from "../mailbox/mailbox.js";

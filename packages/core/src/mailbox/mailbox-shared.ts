@@ -1,5 +1,7 @@
 import { Effect } from "effect";
-import type { IncomingMessage, MailOp, Provider } from "../domain/domain.js";
+import type { IncomingMessage } from "../domain/message.js";
+import type { MailOp } from "../domain/changes.js";
+import type { Provider } from "../domain/account.js";
 import { applyOpToLabels } from "../domain/mail-ops.js";
 
 export const WRITE_RECOVERY_WINDOW_MS = 2 * 60_000;

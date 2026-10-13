@@ -16,7 +16,7 @@ import { DeviceError } from "../../../../../packages/core/src/domain/errors.js";
 import {
   DEFAULT_PREFS,
   type AttachmentSaveFolder,
-} from "../../../../../packages/core/src/domain/domain.js";
+} from "../../../../../packages/core/src/domain/prefs.js";
 import type { DownloadItem } from "../../shared/downloads";
 import { activeDownload, downloadsProgress } from "../../shared/downloads";
 import { attachmentFolder } from "./attachment-actions";

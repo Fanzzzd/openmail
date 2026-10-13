@@ -2,7 +2,7 @@ import { assert, it } from "@effect/vitest";
 import { Effect, Layer, Option, Stream } from "effect";
 import { ImapFlow } from "imapflow";
 import { vi } from "vitest";
-import { type IncomingMessage } from "../domain/domain.js";
+import type { IncomingMessage } from "../domain/message.js";
 import { Store } from "../store/service.js";
 import { StoreLive } from "../store/store.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";

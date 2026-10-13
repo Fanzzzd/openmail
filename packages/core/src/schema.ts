@@ -4,7 +4,12 @@
 export * from "./compose/compose-text.js";
 export * from "./compose/compose-body.js";
 export * from "./compose/compose-format.js";
-export * from "./domain/domain.js";
+export * from "./domain/account.js";
+export * from "./domain/message.js";
+export * from "./domain/changes.js";
+export * from "./domain/prefs.js";
+export * from "./domain/command.js";
+export * from "./domain/sync-status.js";
 export * from "./domain/errors.js";
 export {
   storedSyncFailureReason,

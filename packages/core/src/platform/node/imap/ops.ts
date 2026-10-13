@@ -1,6 +1,6 @@
 import { Effect, Option } from "effect";
 import type { ImapFlow, ListResponse, ResponseEvent } from "imapflow";
-import type { MailOp } from "../../../domain/domain.js";
+import type { MailOp } from "../../../domain/changes.js";
 import { PermanentError, ProviderError, type ProviderFailure } from "../../../domain/errors.js";
 import {
   decodeProviderId,

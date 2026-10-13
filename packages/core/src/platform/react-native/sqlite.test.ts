@@ -6,7 +6,7 @@ import { MIGRATIONS } from "../../db/migrations.js";
 import { migrate } from "../../db/migrate.js";
 import { Store } from "../../store/service.js";
 import { StoreLive } from "../../store/store.js";
-import { IncomingMessage } from "../../domain/domain.js";
+import { IncomingMessage } from "../../domain/message.js";
 import { opSqliteLayer, type OpSqliteDatabase, type SqliteScalar } from "./sqlite.js";
 import { opSqliteShim as shim } from "../../../test-support/op-sqlite.js";
 

@@ -18,7 +18,8 @@ import { EMPTY_FILTER } from "../domain/organization.js";
 import { fakeServer, TestMailbox } from "../platform/node/testing.js";
 import { makeFakeProvider } from "../platform/node/fake-provider.js";
 import { detectMailEvents } from "../calendar/calendar.js";
-import { type IncomingMessage, type OutgoingMessage } from "../domain/domain.js";
+import type { IncomingMessage } from "../domain/message.js";
+import type { OutgoingMessage } from "../domain/changes.js";
 {
   it.effect(
     "every real provider method is explicitly read-allowlisted or refused without calling it",

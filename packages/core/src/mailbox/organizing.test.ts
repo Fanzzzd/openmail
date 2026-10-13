@@ -9,7 +9,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, vi } from "vitest";
 import { databaseLayer, MIGRATIONS } from "../platform/node/db.js";
-import { DEFAULT_ACTIVE_HOURS, type IncomingMessage, type Provider } from "../domain/domain.js";
+import { DEFAULT_ACTIVE_HOURS } from "../domain/prefs.js";
+import type { IncomingMessage } from "../domain/message.js";
+import type { Provider } from "../domain/account.js";
 import { Mailbox } from "./mailbox.js";
 import {
   type GmailRuleDefinition,

@@ -6,7 +6,8 @@ import { Store } from "../store/service.js";
 import { buildMobileMime } from "../platform/react-native/compose.js";
 import { parseMobileMime } from "../platform/react-native/mail-codec.js";
 import { SendUncertain } from "../domain/errors.js";
-import { type IncomingMessage, type OutgoingMessage } from "../domain/domain.js";
+import type { IncomingMessage } from "../domain/message.js";
+import type { OutgoingMessage } from "../domain/changes.js";
 {
   const message: OutgoingMessage = {
     to: [{ name: "王工", address: "alice@example.test" }],

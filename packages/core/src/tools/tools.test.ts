@@ -5,7 +5,9 @@ import { assert, it } from "@effect/vitest";
 import { Clock, Context, Effect, Layer, Stream, Schema } from "effect";
 import { Tool } from "effect/ai";
 
-import type { Actor, Command, Outcome, ThreadQuery, OutgoingMessage } from "../domain/domain.js";
+import type { Actor, Command, Outcome } from "../domain/command.js";
+import type { ThreadQuery } from "../domain/message.js";
+import type { OutgoingMessage } from "../domain/changes.js";
 import { fakeServer, TestMailbox } from "../platform/node/testing.js";
 import { Mailbox } from "../mailbox/mailbox.js";
 import { NotFound } from "../domain/errors.js";
@@ -23,7 +25,7 @@ type Service = Mailbox["Service"];
 
 const notUsed = (name: string) => Effect.die(`Mailbox.${name} is not used in this test`);
 
-const testAccount = (id: string): import("../domain/domain.js").Account => ({
+const testAccount = (id: string): import("../domain/account.js").Account => ({
   id,
   provider: "gmail",
   email: "me@example.com",
@@ -34,7 +36,7 @@ const testAccount = (id: string): import("../domain/domain.js").Account => ({
   needsReauth: false,
   enabled: true,
 });
-const testMessage = (id: string): import("../domain/domain.js").Message => ({
+const testMessage = (id: string): import("../domain/message.js").Message => ({
   id,
   accountId: "a",
   threadId: "t",
@@ -53,7 +55,7 @@ const testMessage = (id: string): import("../domain/domain.js").Message => ({
   hasAttachments: false,
 });
 
-function testThread(id: string): Effect.Effect<import("../domain/domain.js").Message[]>;
+function testThread(id: string): Effect.Effect<import("../domain/message.js").Message[]>;
 function testThread(
   id: string,
   view: "model",
@@ -63,7 +65,7 @@ function testThread(
   id: string,
   view?: "model",
 ): Effect.Effect<
-  readonly import("../domain/domain.js").Message[] | import("../ai/model-thread.js").ModelThread
+  readonly import("../domain/message.js").Message[] | import("../ai/model-thread.js").ModelThread
 > {
   return view === "model"
     ? Effect.succeed({
@@ -563,7 +565,7 @@ it.effect("search returns local matched chunks and provenance without image byte
         visionRevision: null,
       },
     ],
-  } satisfies import("../domain/domain.js").ThreadSummary;
+  } satisfies import("../domain/message.js").ThreadSummary;
   return Effect.gen(function* () {
     const result = yield* run(
       call("search", { query: "in:attachment boarding" }),
@@ -948,7 +950,7 @@ it.effect(
   "long stable message ids keep usable cursors and count cursor bytes in the budget",
   () => {
     const id = `a/${"x".repeat(3000)}`;
-    const row: import("../domain/domain.js").ThreadSummary = {
+    const row: import("../domain/message.js").ThreadSummary = {
       id,
       accountId: "a",
       threadId: "t1",
@@ -1126,7 +1128,7 @@ it.effect(
 );
 
 it.effect("MCP thread listings and searches omit untrusted provider snippets", () => {
-  const row: import("../domain/domain.js").ThreadSummary = {
+  const row: import("../domain/message.js").ThreadSummary = {
     id: "a/m1",
     accountId: "a",
     threadId: "t1",

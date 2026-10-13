@@ -7,7 +7,8 @@ import {
   type SendAs,
 } from "../domain/organization.js";
 import { richComposeBody, textComposeHtml } from "../compose/compose-body.js";
-import { INBOX_CATEGORIES, inboxCategories, Provider } from "../domain/domain.js";
+import { INBOX_CATEGORIES, inboxCategories } from "../domain/message.js";
+import { Provider } from "../domain/account.js";
 import { all, run } from "./sql-rows.js";
 
 const LabelPrefRow = Schema.Struct({

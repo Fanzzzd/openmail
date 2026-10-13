@@ -1,7 +1,8 @@
 import { composeTransportHtml } from "../../compose/compose-body.js";
 import { Effect } from "effect";
 
-import type { Address, OutgoingMessage } from "../../domain/domain.js";
+import type { Address } from "../../domain/message.js";
+import type { OutgoingMessage } from "../../domain/changes.js";
 import { PermanentError } from "../../domain/errors.js";
 import { htmlDocument } from "../../mime/mime.js";
 import { draftTextFingerprint, markdownDraftSource } from "../../compose/markdown-draft.js";

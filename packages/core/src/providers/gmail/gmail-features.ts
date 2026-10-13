@@ -1,7 +1,8 @@
 import { gmailPages } from "../provider-pages.js";
 import { Effect, Result, Schema } from "effect";
 import { reconcileProviderWrite } from "../provider-write.js";
-import type { Account, Address } from "../../domain/domain.js";
+import type { Account } from "../../domain/account.js";
+import type { Address } from "../../domain/message.js";
 import type { CalendarInvite, CalendarTime, InviteResponse } from "../../calendar/calendar.js";
 import { InvalidInput } from "../../domain/errors.js";
 import {

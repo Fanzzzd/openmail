@@ -4,7 +4,7 @@ import { expect, it } from "vitest";
 import { linkNeedsConfirmation } from "../reader/link-security.js";
 import { visibleHtmlText, messageModelText } from "../visible-text/visible-text.js";
 import { toModelThread } from "./model-view.js";
-import { type Message } from "../domain/domain.js";
+import type { Message } from "../domain/message.js";
 {
   it("includes static details bodies shown by the reader", () => {
     expect(

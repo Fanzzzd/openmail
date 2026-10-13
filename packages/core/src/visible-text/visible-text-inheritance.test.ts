@@ -4,7 +4,7 @@ import { createVisibleTextTrace } from "./visible-text-diagnostics.js";
 import { sanitizeReaderHtml } from "../reader/reader-sanitize.js";
 import { htmlToText } from "../mime/mime.js";
 import { modelContext } from "../ai/model-view.js";
-import type { Message } from "../domain/domain.js";
+import type { Message } from "../domain/message.js";
 
 const template = (
   source: "inline" | "stylesheet",

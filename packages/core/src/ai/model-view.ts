@@ -1,6 +1,6 @@
 import { cleanDisplayName } from "../reader/message-security.js";
 import { messageModelText } from "../visible-text/visible-text.js";
-import type { Address, Message } from "../domain/domain.js";
+import type { Address, Message } from "../domain/message.js";
 import { ADDRESSED_QUOTE_HEADER } from "../compose/compose-text.js";
 import type { ModelThread } from "./model-thread.js";
 

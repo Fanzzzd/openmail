@@ -3,7 +3,7 @@ import { Deferred, Effect, Fiber, Layer, Option, Stream } from "effect";
 import { FetchHttpClient } from "effect/http";
 import { TestClock } from "effect/testing";
 import { vi } from "vitest";
-import type { IncomingMessage } from "../domain/domain.js";
+import type { IncomingMessage } from "../domain/message.js";
 import { Mailbox } from "../mailbox/mailbox.js";
 import { FakeModelLayer, ModelAnthropic, type ModelOutput, type ModelRequest } from "./model.js";
 import { fakeServer, TestMailbox } from "../platform/node/testing.js";

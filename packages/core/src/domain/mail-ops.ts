@@ -1,10 +1,7 @@
 import { mergeCategoryNames } from "./categories.js";
-import {
-  OUTLOOK_CATEGORIES,
-  isOutlookClassification,
-  type MailOp,
-  type Provider,
-} from "./domain.js";
+import { OUTLOOK_CATEGORIES, isOutlookClassification } from "./message.js";
+import type { MailOp } from "./changes.js";
+import type { Provider } from "./account.js";
 
 const FLAG_LABELS = new Set(["UNREAD", "STARRED", "IMPORTANT"]);
 

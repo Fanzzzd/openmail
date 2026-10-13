@@ -12,14 +12,9 @@ import { attachmentFromRaw } from "../../mime/attachments.js";
 import { MailCodec, type MailCodecPort } from "../mail-codec.js";
 import { nodeMailCodec } from "./mail-codec.js";
 import { buildMime } from "./compose.js";
-import type {
-  Address,
-  DraftRemote,
-  IncomingMessage,
-  Label,
-  MailOp,
-  OutgoingMessage,
-} from "../../domain/domain.js";
+import type { Address, IncomingMessage } from "../../domain/message.js";
+import type { DraftRemote, MailOp, OutgoingMessage } from "../../domain/changes.js";
+import type { Label } from "../../domain/account.js";
 import {
   FeatureScopeMissing,
   PermanentError,
@@ -66,7 +61,7 @@ export interface FakeServer {
   deleted: (readonly string[])[];
   folderPages: (string | null)[];
   pulls: (string | null)[];
-  searched: import("../../domain/domain.js").ThreadQuery[];
+  searched: import("../../domain/message.js").ThreadQuery[];
   searchResults?: IncomingMessage[];
   pushed: { providerId: string; op: MailOp }[];
   batches: { providerIds: readonly string[]; op: MailOp }[];
@@ -554,7 +549,7 @@ export function makeFakeProvider(
     ...(options.batches
       ? {
           pushBatch: (
-            account: import("../../domain/domain.js").Account,
+            account: import("../../domain/account.js").Account,
             providerIds: readonly string[],
             op: MailOp,
           ) =>

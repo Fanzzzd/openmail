@@ -12,7 +12,7 @@ import os from "node:os";
 import path from "node:path";
 import { BackfillState, keepBody } from "./cache.js";
 import { databaseLayer, MIGRATIONS, splitStatements } from "../platform/node/db.js";
-import { type IncomingMessage } from "./domain.js";
+import type { IncomingMessage } from "./message.js";
 import { ProviderError } from "./errors.js";
 import { fakeServer, makeFakeProvider, type FakeServer } from "../platform/node/fake-provider.js";
 import { listWindow } from "../app/list-window.js";
@@ -142,7 +142,7 @@ import {
           { mailbox: "inbox" },
           { mailbox: "inbox", flat: true },
           { search: "Header" },
-        ] satisfies import("./domain.js").ThreadQuery[]) {
+        ] satisfies import("./message.js").ThreadQuery[]) {
           const ids: string[] = [];
           let cursor: { before: number; beforeId: string } | undefined;
           for (;;) {
@@ -328,12 +328,14 @@ import {
       let calls = 0;
       const provider = {
         ...base,
-        pull: (a: import("./domain.js").Account, c: Option.Option<string>) =>
+        pull: (a: import("./account.js").Account, c: Option.Option<string>) =>
           Stream.fromEffect(
             Deferred.succeed(started, undefined).pipe(Effect.andThen(Deferred.await(release))),
           ).pipe(Stream.flatMap(() => base.pull(a, c))),
-        backfill: (a: import("./domain.js").Account, s: Pick<BackfillState, "cursor" | "before">) =>
-          Effect.sync(() => calls++).pipe(Effect.andThen(base.backfill(a, s))),
+        backfill: (
+          a: import("./account.js").Account,
+          s: Pick<BackfillState, "cursor" | "before">,
+        ) => Effect.sync(() => calls++).pipe(Effect.andThen(base.backfill(a, s))),
       };
 
       yield* Effect.gen(function* () {

@@ -4,7 +4,7 @@ import type { Store } from "../store/service.js";
 import { Effect } from "effect";
 import { focusedInboxGranted, serviceGranted, type OptionalService } from "./optional-services.js";
 import { FeatureScopeMissing, SettingsScopeMissing } from "../domain/errors.js";
-import type { Account } from "../domain/domain.js";
+import type { Account } from "../domain/account.js";
 import type { ProviderAdapter } from "./adapter.js";
 
 export const requireFocusedInboxScope = (store: Store["Service"], accountId: string) =>

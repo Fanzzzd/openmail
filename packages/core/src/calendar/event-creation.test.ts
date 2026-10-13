@@ -11,7 +11,7 @@ import {
 import { calendarParseDates, calendarDateCandidates, calendarWallTime } from "./event-dates.js";
 import { EventRecurrence, eventRecurrenceRule } from "./event-recurrence.js";
 import { makeProviderCalendar } from "./provider-calendar.js";
-import type { Account } from "../domain/domain.js";
+import type { Account } from "../domain/account.js";
 
 beforeAll(() => vi.stubEnv("TZ", "UTC"));
 afterAll(() => vi.unstubAllEnvs());

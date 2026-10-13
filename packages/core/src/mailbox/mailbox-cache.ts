@@ -1,7 +1,7 @@
 import { Clock, Effect, Option, Semaphore } from "effect";
 import { DEFAULT_CACHE_WINDOWS, keepBody, type BackfillState } from "../domain/cache.js";
 import { trackImapBackfill } from "../providers/imap/imap-cursor.js";
-import type { ThreadQuery } from "../domain/domain.js";
+import type { ThreadQuery } from "../domain/message.js";
 import { ProviderError } from "../domain/errors.js";
 import type { PerformError } from "./mailbox.js";
 import type { Providers } from "../providers/adapter.js";
@@ -186,7 +186,7 @@ export function makeCacheMailbox(
   });
   const readerThread = Effect.fn("Mailbox.readerThread")(function* (
     id: string,
-  ): Effect.fn.Return<import("../domain/domain.js").Message[], PerformError> {
+  ): Effect.fn.Return<import("../domain/message.js").Message[], PerformError> {
     const messages = yield* store.getThread(id);
     const now = yield* Clock.currentTimeMillis;
     const failed = new Set<string>();

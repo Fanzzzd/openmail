@@ -8,7 +8,7 @@ import { PermanentError, ProviderError, SendUncertain } from "../domain/errors.j
 import { Store } from "../store/service.js";
 import type { ProviderAdapter } from "../providers/adapter.js";
 import { fakeServer, makeFakeProvider } from "../platform/node/fake-provider.js";
-import { type IncomingMessage } from "../domain/domain.js";
+import type { IncomingMessage } from "../domain/message.js";
 {
   const withAdapter = <A, E>(
     adapter: ProviderAdapter,

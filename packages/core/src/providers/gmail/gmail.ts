@@ -33,15 +33,10 @@ import {
 import { GMAIL_MIME_LIMIT } from "../../mime/attachment-policy.js";
 import { type AttachmentRef, MEDIA_RAW_TOO_LARGE, pickAttachment } from "../../mime/attachments.js";
 import { type Threading, buildMime as unboundBuildMime } from "../../compose/compose.js";
-import type {
-  Account,
-  Attachment,
-  DraftRemote,
-  IncomingMessage,
-  MailOp,
-  OutgoingMessage,
-} from "../../domain/domain.js";
-import { Label } from "../../domain/domain.js";
+import type { Account } from "../../domain/account.js";
+import type { Attachment, IncomingMessage } from "../../domain/message.js";
+import type { DraftRemote, MailOp, OutgoingMessage } from "../../domain/changes.js";
+import { Label } from "../../domain/account.js";
 import {
   AuthError,
   ClientNotConfigured,

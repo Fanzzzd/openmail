@@ -1,5 +1,5 @@
 import { Clock, Effect, Option, Queue, Stream } from "effect";
-import type { Account } from "../../domain/domain.js";
+import type { Account } from "../../domain/account.js";
 import { ProviderError, type ProviderFailure } from "../../domain/errors.js";
 import { BackgroundRead } from "../provider-connectivity.js";
 import { logInvalidGraphCursor } from "../provider-diagnostics.js";

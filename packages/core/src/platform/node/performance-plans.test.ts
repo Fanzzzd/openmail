@@ -22,7 +22,7 @@ import {
 import { CurrentTransformer, type Transformer } from "effect/sql/Statement";
 import { StoreLive } from "../../store/store.js";
 import { MemoryPlatform } from "./platform-memory.js";
-import { type IncomingMessage } from "../../domain/domain.js";
+import type { IncomingMessage } from "../../domain/message.js";
 import { DatabaseSync } from "node:sqlite";
 import { databaseLayer, MIGRATIONS } from "./db.js";
 import { Mailbox } from "../../mailbox/mailbox.js";
