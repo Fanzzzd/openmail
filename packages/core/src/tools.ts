@@ -429,7 +429,7 @@ const ReadThread = readOnly(
 const SemanticSearch = readOnly(
   mailTool("semantic_search", {
     description:
-      "Find up to five conversations in one account by meaning, using its on-device text index. Use it when keyword search misses. Page with next_cursor.",
+      "Find up to five conversations in one account by meaning, using its on-device text index. Use it when keyword search misses. Message snippets are omitted. Page with next_cursor.",
     parameters: Schema.Struct({
       query: Schema.String.check(Schema.isMinLength(1), Schema.isMaxLength(4096)).annotate({
         description: "What the mail is about, in plain words.",

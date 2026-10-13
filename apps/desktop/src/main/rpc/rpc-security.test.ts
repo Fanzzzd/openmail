@@ -229,6 +229,34 @@ it("sanitizes typed failures, stacks, defects and parser details while keeping t
   expect(publicRpcResponse(data)).toBe(data);
 });
 
+it("AI failures keep their specific sentence across the RPC boundary", () => {
+  for (const error of [
+    {
+      _tag: "ProviderError",
+      message: "Anthropic rejected the API key. Check it in Settings → AI Access.",
+      status: 401,
+    },
+    {
+      _tag: "ProviderError",
+      message: "Anthropic's rate limit was reached. Wait a minute, then try again.",
+      status: 429,
+    },
+    {
+      _tag: "ProviderError",
+      message: "Can't reach Anthropic. Check your internet connection.",
+      reason: "connection",
+    },
+    { _tag: "InvalidInput", message: "AI model is unavailable." },
+  ]) {
+    const response = publicRpcResponse({
+      _tag: "Exit",
+      requestId: 1,
+      exit: { _tag: "Failure", cause: [{ _tag: "Fail", error }] },
+    });
+    expect(JSON.stringify(response)).toContain(JSON.stringify(error.message));
+  }
+});
+
 it("accepts different frame wrappers with the same stable Electron frame id", () => {
   const win = createMainWindow();
   const frame = {

@@ -369,7 +369,7 @@ exports[`tool input and output schemas are stable 1`] = `
     "readonly": true,
   },
   {
-    "description": "Find up to five conversations in one account by meaning, using its on-device text index. Use it when keyword search misses. Page with next_cursor.",
+    "description": "Find up to five conversations in one account by meaning, using its on-device text index. Use it when keyword search misses. Message snippets are omitted. Page with next_cursor.",
     "idempotent": true,
     "input": {
       "additionalProperties": true,
