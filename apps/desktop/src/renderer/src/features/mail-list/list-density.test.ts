@@ -20,7 +20,7 @@ vi.mock("../../ui/Tip", () => ({
   Tip: ({ children }: { children: ReactNode }) => children,
 }));
 vi.mock("../organize/ThreadActions", () => ({ ThreadMenuItems: () => null }));
-vi.mock("./AccountBadge", () => ({ AccountBadge: () => null }));
+vi.mock("./AccountBadge", () => ({ AccountBadge: () => null, useAccountName: () => "" }));
 vi.mock("../ai/TriageChip", () => ({ TriageChip: () => null }));
 import { MessageList } from "./MessageList";
 

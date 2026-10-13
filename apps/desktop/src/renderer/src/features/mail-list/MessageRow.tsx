@@ -5,13 +5,14 @@ import { ContextMenuContent } from "../../ui/Menu";
 import { MESSAGE_DRAG, ThreadMenuItems } from "../organize";
 import { displayName, shortDate } from "../../lib/format";
 import type { LIST_DENSITIES, Prefs, SwipeAction } from "@openmail/core/schema";
+import { plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMessageSwipe } from "./message-swipe-hook";
 import { MatchedText, SearchPreview, SearchSnippet, distinctAttachmentMatches } from "../search";
 import { labelChipColors } from "../../lib/label-colors";
 import { Paperclip, Star } from "lucide-react";
 import { actionNames } from "../../i18n/action-names";
-import { AccountBadge } from "./AccountBadge";
+import { AccountBadge, useAccountName } from "./AccountBadge";
 import { TriageChip } from "../ai";
 
 /** Opens a row, or adds it to the selection with ⌘ (toggle) or ⇧ (range). */
@@ -111,6 +112,8 @@ export const Row = memo(function Row({
   onSwipe: (thread: ThreadSummary, action: SwipeAction) => void;
 }) {
   const { i18n, t } = useLingui();
+  const accountLabel = useAccountName(m.accountId);
+  const messageCount = m.threadCount;
   const row = useRef<HTMLButtonElement>(null);
   const swipe = useMessageSwipe(row, swipeActions, (action) => onSwipe(m, action));
   const muted = accent ? "text-white" : "text-a11y-muted";
@@ -181,13 +184,6 @@ export const Row = memo(function Row({
             : undefined,
         }}
         tabIndex={tabbable ? 0 : -1}
-        aria-label={[
-          senders(m),
-          m.subject || t`(No subject)`,
-          shortDate(m.date, i18n),
-          ...(m.isUnread ? [t`Unread`] : []),
-          ...(m.isStarred ? [t`Starred`] : []),
-        ].join(", ")}
         aria-describedby={describedBy || undefined}
         aria-selected={selected}
         aria-setsize={total}
@@ -203,10 +199,24 @@ export const Row = memo(function Row({
           accent ? "bg-blue-600 text-white" : selected ? "bg-fill-pressed" : "hover:bg-fill-quiet"
         }`}
       >
+        {/* The name comes from this summary, sender and subject first as on screen. The
+            visible text is hidden from it so the preview is not read on every row; a search
+            reads the preview and its hits as the description. */}
         <span className="sr-only">
-          {m.isUnread && <Trans>Unread</Trans>} {m.isStarred && <Trans>Starred</Trans>}
+          {[
+            senders(m),
+            m.subject || t`(No subject)`,
+            shortDate(m.date, i18n),
+            ...(messageCount > 1
+              ? [plural(messageCount, { one: "# message", other: "# messages" })]
+              : []),
+            ...(m.isUnread ? [t`Unread`] : []),
+            ...(m.isStarred ? [t`Starred`] : []),
+            ...(m.hasAttachments ? [t`Has attachments`] : []),
+            ...(showAccount ? [accountLabel] : []),
+          ].join(", ")}
         </span>
-        <span className="relative flex items-baseline gap-1.5">
+        <span aria-hidden className="relative flex items-baseline gap-1.5">
           {m.isUnread && (
             <span
               className={`absolute top-1/2 -left-[18px] size-2 -translate-y-1/2 rounded-full ${accent ? "bg-white" : "bg-blue-500"}`}
@@ -222,7 +232,7 @@ export const Row = memo(function Row({
             {shortDate(m.date, i18n)}
           </span>
         </span>
-        <span className="mt-0.5 flex items-center gap-1.5 text-body">
+        <span aria-hidden className="mt-0.5 flex items-center gap-1.5 text-body">
           <span className="min-w-0 flex-1 truncate">
             {m.subject ? (
               <MatchedText
@@ -244,7 +254,7 @@ export const Row = memo(function Row({
           )}
         </span>
         {density.previewLines > 0 && (
-          <span className="mt-0.5 flex items-start gap-1.5">
+          <span aria-hidden className="mt-0.5 flex items-start gap-1.5">
             <span
               id={previewId}
               className={`min-w-0 flex-1 text-body ${density.previewLines === 2 ? "line-clamp-2" : "truncate"} ${muted}`}
@@ -256,7 +266,7 @@ export const Row = memo(function Row({
           </span>
         )}
         {density.attachments && m.hasAttachments && (
-          <span className={`mt-1 flex items-center gap-1.5 text-caption ${muted}`}>
+          <span aria-hidden className={`mt-1 flex items-center gap-1.5 text-caption ${muted}`}>
             <Paperclip className="size-3.5 shrink-0" />
             {m.attachmentNames?.length ? (
               m.attachmentNames.slice(0, 2).map((name, index) => (
@@ -271,7 +281,7 @@ export const Row = memo(function Row({
         )}
         {hasHits && (
           // The row's name is short; matches describe it, so a search says why the row matched.
-          <span id={matchesId} className="block">
+          <span id={matchesId} aria-hidden className="block">
             {attachmentHits.map((match, index) => (
               <span key={index} className={`mt-1 block truncate text-footnote ${muted}`}>
                 <SearchSnippet match={match} lead={8} />

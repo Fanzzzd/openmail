@@ -15,7 +15,9 @@ afterEach(async () => {
 it("first sync renders provider messages through RPC and persists the inbox", async () => {
   current = await flow({ messages: [] });
   const h = current;
-  await eventually(() => expect(screen.getByText("No messages here")).toBeTruthy());
+  await eventually(() =>
+    expect(screen.getByText("You're all caught up. Your Inbox is empty.")).toBeTruthy(),
+  );
   const pulls = h.server.pulls.length;
   for (const id of ["one", "two"]) h.server.messages.set(id, incoming(id));
   await h.event({ _tag: "NativeAction", action: "sync", triggeredByAccelerator: false });

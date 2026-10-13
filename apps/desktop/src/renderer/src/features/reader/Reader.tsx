@@ -43,6 +43,11 @@ interface Props {
   onComposeMessage: ComposeMessage;
   /** Single-pane layout: returns to the list, which then holds the search field. */
   onBack?: (() => void) | undefined;
+  /**
+   * The reader is the window's main landmark when it has the window to itself. Beside the list,
+   * the pane layout around both is the main landmark instead.
+   */
+  landmark?: boolean;
 }
 
 export function Reader({
@@ -61,8 +66,11 @@ export function Reader({
   onEditDraft,
   notify,
   onBack,
+  landmark = true,
 }: Props) {
   const { t } = useLingui();
+  // Inside the layout's main landmark a labelled section keeps the toolbar from reading as a banner.
+  const Landmark = landmark ? "main" : "section";
   const result = useAtomValue(threadAtom(messageId));
   const thread = AsyncResult.value(result);
   const messages = useReaderMessages(
@@ -87,7 +95,10 @@ export function Reader({
     ) : null;
 
   return (
-    <main className="flex h-full w-full min-w-0 flex-col bg-surface">
+    <Landmark
+      aria-label={landmark ? undefined : t`Reading pane`}
+      className="flex h-full w-full min-w-0 flex-col bg-surface"
+    >
       <header data-reader-toolbar className={`${titlebarRow} @container/bar gap-3 pr-4 pl-4`}>
         <TrafficLightSpace />
         {onBack && (
@@ -147,6 +158,6 @@ export function Reader({
           menuInToolbar={menuInToolbar}
         />
       )}
-    </main>
+    </Landmark>
   );
 }

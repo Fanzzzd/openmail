@@ -61,6 +61,8 @@ import { SidebarFooter } from "./SidebarFooter";
 import { useSidebarOrganize } from "./use-sidebar-organize";
 
 interface Props {
+  /** A complementary landmark, unless it sits inside the main landmark of the docked layout. */
+  landmark?: boolean;
   view: View;
   onView: (v: View) => void;
   onSpace: (space: SpaceId) => void;
@@ -96,6 +98,7 @@ export function Sidebar({
   onReauth,
   onProposals,
   onSettings,
+  landmark = true,
 }: Props) {
   const [categoriesOpen, setCategoriesOpen] = useState(true);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -164,8 +167,11 @@ export function Sidebar({
 
   const failures = syncFailures(accounts, syncState);
 
+  // Inside the layout's main landmark a labelled section keeps the footer from reading as contentinfo.
+  const Landmark = landmark ? "aside" : "section";
   return (
-    <aside
+    <Landmark
+      aria-label={landmark ? undefined : t`Sidebar`}
       onDropCapture={() => setDragAccount(null)}
       onDragEndCapture={() => setDragAccount(null)}
       className="@container/sidebar flex h-full w-full flex-col bg-neutral-100/60 dark:bg-neutral-950/70"
@@ -592,7 +598,7 @@ export function Sidebar({
         onSpace={onSpace}
         onEditProfile={onEditProfile}
       />
-    </aside>
+    </Landmark>
   );
 }
 

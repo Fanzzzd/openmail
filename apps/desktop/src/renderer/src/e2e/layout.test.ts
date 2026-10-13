@@ -501,7 +501,7 @@ it("a narrow window shows actions for several selected rows above the list", asy
 });
 
 /** The block an empty list shows: its sentence and the button for the next step. */
-const emptyList = async (text: string) => {
+const emptyList = async (text: string | RegExp) => {
   const sentence = await screen.findByText(text);
   return within(sentence.parentElement ?? sentence);
 };
@@ -514,7 +514,11 @@ it("an empty list says why and offers the next step", async () => {
 
   const syncs = () => h.requests.filter((request) => request.tag === "Sync").length;
   const before = syncs();
-  fireEvent.click((await emptyList("No messages here")).getByRole("button", { name: "Sync now" }));
+  fireEvent.click(
+    (await emptyList("You're all caught up. Your Inbox is empty.")).getByRole("button", {
+      name: "Sync now",
+    }),
+  );
   await eventually(() => expect(syncs()).toBeGreaterThan(before));
 
   fireEvent.click(screen.getByRole("button", { name: "Unread" }));
@@ -523,7 +527,7 @@ it("an empty list says why and offers the next step", async () => {
       name: "Turn off filters",
     }),
   );
-  await screen.findByText("No messages here");
+  await screen.findByText("You're all caught up. Your Inbox is empty.");
 
   fireEvent.change(screen.getByLabelText("Search mail", { exact: true }), {
     target: { value: "nothing-matches" },
@@ -541,6 +545,20 @@ it("an empty list says why and offers the next step", async () => {
   fireEvent.click(within(nav).getByRole("button", { name: "Drafts" }));
   fireEvent.click((await emptyList("No drafts")).getByRole("button", { name: "New message" }));
   await eventually(() => expect(screen.getByRole("textbox", { name: "Subject" })).toBeTruthy());
+});
+
+it("Snoozed, Trash and Spam explain themselves and have nothing to sync", async () => {
+  width = 1200;
+  current = await flow({ messages: [] });
+  const nav = await screen.findByRole("navigation", { name: "Mailboxes" });
+  for (const [mailbox, text] of [
+    ["Snoozed", /^No snoozed messages\. A snoozed message leaves the Inbox/],
+    ["Trash", "Trash is empty"],
+    ["Spam", "Spam is empty"],
+  ] as const) {
+    fireEvent.click(within(nav).getByRole("button", { name: mailbox }));
+    expect((await emptyList(text)).queryByRole("button")).toBeNull();
+  }
 });
 
 it("an undocked sidebar moves sign-in and sync failures above the list", async () => {

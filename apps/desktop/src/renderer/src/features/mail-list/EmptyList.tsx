@@ -1,7 +1,17 @@
 import { useEffect, useLayoutEffect, useRef, type ReactNode, type RefObject } from "react";
 import type { Mailbox } from "../../../../shared/api";
 import { Trans } from "@lingui/react/macro";
-import { FileText, Inbox, ListFilter, SearchX, Star } from "lucide-react";
+import {
+  CircleCheck,
+  Clock,
+  FileText,
+  Inbox,
+  ListFilter,
+  SearchX,
+  ShieldAlert,
+  Star,
+  Trash2,
+} from "lucide-react";
 
 export interface EmptyActions {
   onClearSearch: () => void;
@@ -88,6 +98,25 @@ export function EmptyList({
   } else if (actions?.syncing) {
     // During the first sync the list is empty only because nothing has arrived yet.
     text = <Trans>Syncing mail…</Trans>;
+    button = undefined;
+  } else if (mailbox === "snoozed") {
+    text = (
+      <Trans>
+        No snoozed messages. A snoozed message leaves the Inbox and comes back at the time you pick.
+      </Trans>
+    );
+    Icon = Clock;
+    button = undefined;
+  } else if (mailbox === "inbox") {
+    text = <Trans>You're all caught up. Your Inbox is empty.</Trans>;
+    Icon = CircleCheck;
+  } else if (mailbox === "trash") {
+    text = <Trans>Trash is empty</Trans>;
+    Icon = Trash2;
+    button = undefined;
+  } else if (mailbox === "spam") {
+    text = <Trans>Spam is empty</Trans>;
+    Icon = ShieldAlert;
     button = undefined;
   }
   return (

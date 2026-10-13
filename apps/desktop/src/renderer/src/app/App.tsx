@@ -311,8 +311,11 @@ export function App({ composeId }: { composeId?: string }) {
     onPermanentDelete: deleteBatch,
     onCreate: createBatchLabel,
   };
+  // The docked mail layout is one main landmark, so its resize handles sit inside a landmark.
+  const layoutIsMain = !narrow && paneMode === "mail";
   const sidebar = (
     <Sidebar
+      landmark={!(docked && layoutIsMain)}
       view={view}
       // The overview has no list; picking a mailbox there opens it in All.
       onView={viewFromDrawer((v) => changeView(v.space === OVERVIEW ? { ...v, space: ALL } : v))}
@@ -384,6 +387,7 @@ export function App({ composeId }: { composeId?: string }) {
   );
   const readerPane = (
     <Reader
+      landmark={!layoutIsMain}
       messageId={selectedId}
       threadKey={currentReaderThreadKey}
       onMarkUnread={() => setReadTarget(null)}
@@ -507,6 +511,7 @@ export function App({ composeId }: { composeId?: string }) {
           )}
           <Group
             key={`${paneMode}:${docked}`}
+            role={layoutIsMain ? "main" : undefined}
             className="min-w-0 flex-1"
             defaultLayout={savedLayout.defaultLayout}
             onLayoutChanged={savedLayout.onLayoutChanged}
