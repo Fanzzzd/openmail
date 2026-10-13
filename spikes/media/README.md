@@ -27,10 +27,10 @@ bin/vision classify samples/receipt.png
 bin/vision feature samples/receipt.png samples/receipt-similar.png samples/code.png
 ```
 
-Electron 测试要用仓库的 44.4.5 二进制，不能设置 `ELECTRON_RUN_AS_NODE`。本 worktree 没有 `node_modules`，实测使用 main 工作目录已有的同版本二进制。只启动 `electron-main.mjs`，不加载 openmail。它在 ready 前把 userData、sessionData 和日志目录改到 `artifacts/electron-profile/`，无窗口。
+Electron 测试要用仓库的 44.4.5 二进制，不能设置 `ELECTRON_RUN_AS_NODE`。在仓库根目录 `pnpm install` 后，用 desktop 依赖的 Electron 二进制。只启动 `electron-main.mjs`，不加载 openmail。它在 ready 前把 userData、sessionData 和日志目录改到 `artifacts/electron-profile/`，无窗口。
 
 ```sh
-MEDIA_ELECTRON_BIN='/Users/fanzhende/code/personal/openmail/node_modules/.pnpm/electron@44.4.5_supports-color@7.2.0/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron'
+MEDIA_ELECTRON_BIN="$(cd ../../apps/desktop && node -p 'require("electron")')"
 env -u ELECTRON_RUN_AS_NODE "$MEDIA_ELECTRON_BIN" electron-main.mjs
 ```
 

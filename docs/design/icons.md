@@ -2,7 +2,7 @@
 
 ## App icon
 
-The mark is the Flap o: a square o whose counter is an envelope, with the V fold hanging from the counter's top edge. It reads as the o of openmail and as mail, and stays an envelope at 32 px. The design rounds that led to it are in `docs/design/icon-options-v2/` (option R6-10, "Light").
+The mark is the Flap o: a square o whose counter is an envelope, with the V fold hanging from the counter's top edge. It reads as the o of openmail and as mail, and stays an envelope at 32 px. It came out of six design rounds (option R6-10, "Light"). The generators that remain are in `docs/design/icon-source/`; the rejected options are in git history before the open-source cleanup.
 
 Files in `apps/desktop/build/`:
 
@@ -39,12 +39,12 @@ The system derives the dark and tinted appearances.
 ### Regenerating
 
 ```sh
-python3 docs/design/icon-options-v2/build6.py --final   # geometry -> icon.icon, icon-small.icon, icon.svg
+python3 docs/design/icon-source/build6.py --final       # geometry -> icon.icon, icon-small.icon, icon.svg
 sh apps/desktop/build/render-icons.sh                   # -> icon.png, icon.icns, trayTemplate*.png
 pnpm exec oxfmt apps/desktop/build                       # the generator writes unformatted icon.json
 ```
 
-The final parameters are `FINAL` and `FINAL_SMALL` in `build6.py`. `build6.py` needs `shapely` and Pillow. `render-icons.sh` needs Xcode 26 (Icon Composer's `ictool`), Pillow and `rsvg-convert`.
+The final parameters are `FINAL` and `FINAL_SMALL` in `build6.py`. `build7.py --final` writes the dev icon, `icon-dev.icon`. Both import shared helpers from `build.py`, `build3.py` and `build5.py`. `build6.py` needs `shapely` and Pillow. `render-icons.sh` needs Xcode 26 (Icon Composer's `ictool`), Pillow and `rsvg-convert`.
 
 ## Provider icons
 

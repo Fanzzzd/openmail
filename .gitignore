@@ -24,3 +24,6 @@ apps/docs/.source/
 apps/docs/next-env.d.ts
 apps/docs/.vercel/
 apps/docs/*.tsbuildinfo
+
+# Python bytecode
+__pycache__/
