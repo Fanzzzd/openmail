@@ -36,10 +36,15 @@ updates:
       - dependency-name: "babel-preset-expo"
         update-types: ["version-update:semver-major"]
       # React Native is 0.x, so each minor (0.86 to 0.87) is the breaking step that follows
-      # an Expo SDK major. Only patches come through.
+      # an Expo SDK major. The native libraries are pinned to the versions the SDK lists in
+      # expo/bundledNativeModules.json. Only patches come through.
       - dependency-name: "react-native"
         update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "react-native-*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
       - dependency-name: "@react-native/*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "@react-native-community/*"
         update-types: ["version-update:semver-major", "version-update:semver-minor"]
     groups:
       # Effect packages share one release train and must move together.
