@@ -34,7 +34,7 @@ import { Mailbox } from "../../mailbox/mailbox.js";
 import { markdownDraftSource } from "../../compose/markdown-draft.js";
 import { renderMarkdown } from "../../compose/markdown.js";
 import { makeOutlook } from "./outlook.js";
-import { MARKDOWN_DRAFT_PROPERTY } from "./send.js";
+import { MARKDOWN_DRAFT_PROPERTY } from "./graph-message.js";
 import { parseGraphMessage } from "./parse.js";
 import { HtmlText } from "../../platform/html-text.js";
 import { MemoryPlatform, type MemoryPlatformOptions } from "../../platform/node/platform-memory.js";
