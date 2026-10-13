@@ -19,6 +19,7 @@ export {
   type InferenceProcessLauncher,
   MAILBOXES,
   MENU_BAR_MAIL_LIMIT,
+  MailToolError,
   MailToolkit,
   MailToolkitLayer,
   Mailbox,

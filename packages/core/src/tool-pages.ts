@@ -3,18 +3,17 @@ import { sha256Hex } from "./platform/crypto.js";
 import { Effect, Schema } from "effect";
 
 const ToolCursor = Schema.String.check(Schema.isMaxLength(24_000)).annotate({
-  description: "Opaque next_cursor from the same tool and filters. Omit for the first page.",
+  description: "next_cursor from the last page, with the same filters.",
 });
 export const ToolBudget = Schema.Int.check(Schema.isBetween({ minimum: 2000, maximum: 24_000 }))
   .annotate({
-    description:
-      "Maximum JSON UTF-8 bytes, a conservative token bound. Default 12000; 2000 to 24000.",
+    description: "Result size limit in UTF-8 JSON bytes. Default 12000.",
   })
   .pipe(Schema.withDecodingDefaultKey(Effect.succeed(12_000)));
 export const ToolLimit = (fallback = 25, maximum = 100) =>
   Schema.Int.check(Schema.isBetween({ minimum: 1, maximum }))
     .annotate({
-      description: `Maximum rows, 1 to ${maximum}. Default ${fallback}. The byte budget may return fewer.`,
+      description: `Default ${fallback}. token_budget may return fewer rows.`,
     })
     .pipe(Schema.withDecodingDefaultKey(Effect.succeed(fallback)));
 export const PageParameters = {

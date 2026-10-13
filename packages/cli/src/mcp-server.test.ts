@@ -20,6 +20,7 @@ const CallResult = Schema.Struct({
   content: Schema.Array(
     Schema.Struct({ type: Schema.String, text: Schema.optionalKey(Schema.String) }),
   ),
+  structuredContent: Schema.optionalKey(Schema.Unknown),
   isError: Schema.optionalKey(Schema.Boolean),
 });
 const run = promisify(execFile);
@@ -40,6 +41,7 @@ async function client(
   allowWrites = false,
   cli = false,
   seed: boolean | ((directory: string) => Promise<unknown>) = false,
+  protocolVersion = "2024-11-05",
 ) {
   const directory = await mkdtemp(join(tmpdir(), "openmail-mcp-test-"));
   if (seed) await (seed === true ? seedAttachmentMail : seed)(directory);
@@ -123,7 +125,7 @@ async function client(
       child.stdin.write(`${JSON.stringify({ jsonrpc: "2.0", id: requestId, method, params })}\n`);
     });
   const initialized = await request("initialize", {
-    protocolVersion: "2024-11-05",
+    protocolVersion,
     capabilities: {},
     clientInfo: { name: "test-client", version: "1" },
   });
@@ -178,6 +180,54 @@ test.concurrent.for([
   30_000,
 );
 
+// Clients put tools/list in the model's context on every turn, so it has a byte budget.
+test.concurrent("tools/list stays small and each description is two or three short sentences", async ({
+  expect,
+  onTestFinished,
+}) => {
+  const { request } = await client(onTestFinished);
+  const listed = await request("tools/list");
+  expect(Buffer.byteLength(JSON.stringify(listed))).toBeLessThanOrEqual(20 * 1024);
+  const { tools } = Schema.decodeUnknownSync(
+    Schema.Struct({
+      tools: Schema.Array(Schema.Struct({ name: Schema.String, description: Schema.String })),
+    }),
+  )(listed);
+  for (const tool of tools) expect(tool.description.length, tool.name).toBeLessThanOrEqual(400);
+}, 30_000);
+
+// MCP 2025-06-18 and later: a tool with an outputSchema returns structuredContent, and SHOULD
+// also return the same JSON as text for clients that only read content.
+test.concurrent("results carry structuredContent and the same JSON once as text", async ({
+  expect,
+  onTestFinished,
+}) => {
+  const { request } = await client(onTestFinished, false, false, true, "2025-06-18");
+  const called = Schema.decodeUnknownSync(CallResult)(
+    await request("tools/call", { name: "list_accounts", arguments: {} }),
+  );
+  expect(called.structuredContent).toMatchObject({ untrusted_mail: { accounts: [{}] } });
+  expect(called.content).toHaveLength(1);
+  expect(JSON.parse(called.content[0]?.text ?? "")).toEqual(called.structuredContent);
+}, 30_000);
+
+test.concurrent("CLI help lists each tool by its first sentence and shows the rest in its own help", async ({
+  expect,
+  onTestFinished,
+}) => {
+  const directory = await home(onTestFinished, "openmail-cli-help-test-");
+  const options = { env: { ...process.env, OPENMAIL_HOME: directory } };
+  const [top, own] = await Promise.all([
+    run(process.execPath, ["dist/cli.js", "--help"], options),
+    run(process.execPath, ["dist/cli.js", "read-thread", "--help"], options),
+  ]);
+  const first =
+    "Read a conversation as plain text, oldest message first, without quoted history, signatures or attachments";
+  expect(top.stdout).toContain(first);
+  expect(top.stdout).not.toContain("Use a message id from list_threads or search.");
+  expect(own.stdout).toContain("Use a message id from list_threads or search.");
+});
+
 test.concurrent("stdio MCP defaults to read-only tools, calls the shared Toolkit and rejects hidden writes", async ({
   expect,
   onTestFinished,
@@ -223,19 +273,24 @@ test.concurrent("openmail mcp --allow-writes exposes only supported proposals an
       },
     }),
   );
-  expect(called.content[0]?.text).toContain("enabled account with AI consent");
+  expect(called.isError).toBe(true);
+  expect(JSON.parse(called.content[0]?.text ?? "")).toEqual({
+    message: "Account missing is unknown, turned off, or does not allow AI access.",
+    code: "no_ai_consent",
+    hint: expect.stringContaining("access_status"),
+  });
 }, 30_000);
 
 const Initialized = Schema.Struct({ instructions: Schema.String });
+// access_status reads no mail, so its fields sit at the top level, not under untrusted_mail.
 const AccessStatus = Schema.fromJsonString(
   Schema.Struct({
-    untrusted_mail: Schema.Struct({
-      client: Schema.String,
-      readable_accounts: Schema.Array(Schema.Struct({ id: Schema.String })),
-      proposal_tools: Schema.Boolean,
-      write_mode: Schema.String,
-      next_steps: Schema.Array(Schema.String),
-    }),
+    client: Schema.String,
+    readable_accounts: Schema.Array(Schema.Struct({ id: Schema.String })),
+    proposal_tools: Schema.Boolean,
+    write_mode: Schema.String,
+    read_only_session: Schema.Boolean,
+    next_steps: Schema.Array(Schema.String),
   }),
 );
 
@@ -250,11 +305,13 @@ test.concurrent("MCP points the model at access_status and explains a refused pr
   const called = Schema.decodeUnknownSync(CallResult)(
     await request("tools/call", { name: "access_status", arguments: {} }),
   );
-  const status = Schema.decodeUnknownSync(AccessStatus)(called.content[0]?.text).untrusted_mail;
+  const status = Schema.decodeUnknownSync(AccessStatus)(called.content[0]?.text);
   expect(status.client).toBe("test-client");
   expect(status.readable_accounts.map((a) => a.id)).toEqual(["gmail:ocr@example.com"]);
   expect(status.proposal_tools).toBe(true);
   expect(status.write_mode).toBe("off");
+  // Proposal tools are listed, but write_mode off means this session cannot change mail.
+  expect(status.read_only_session).toBe(true);
   expect(status.next_steps.join(" ")).toContain("Read only");
   const refused = Schema.decodeUnknownSync(CallResult)(
     await request("tools/call", {
@@ -262,10 +319,15 @@ test.concurrent("MCP points the model at access_status and explains a refused pr
       arguments: { thread_ids: ["gmail:ocr@example.com/ocr"], action: "archive", rationale: "t" },
     }),
   );
-  expect(refused.content[0]?.text).toContain(
+  // A refused change is a tool error, so the model does not report it as done.
+  expect(refused.isError).toBe(true);
+  const failure = JSON.parse(refused.content[0]?.text ?? "");
+  expect(failure).toMatchObject({ code: "denied" });
+  expect(failure).not.toHaveProperty("_tag");
+  expect(failure.message).toContain(
     "The AI permission to change mail is Read only, so nothing changed.",
   );
-  expect(refused.content[0]?.text).toContain("Settings → AI Access");
+  expect(failure.hint).toContain("Settings → AI Access");
 }, 30_000);
 
 test.concurrent("write-mode help describes app-only permissions", async ({
@@ -468,8 +530,9 @@ test.concurrent("CLI mail tools explain a missing account or AI consent; MCP kee
   expect(typo.stderr).toContain("No account with id gmail:typo@example.com.");
   expect(json.code).toBe(1);
   expect(JSON.parse(json.stdout)).toEqual({
-    _tag: "MailToolError",
     message: expect.stringContaining("No accounts allow agent reads."),
+    code: "no_ai_consent",
+    hint: expect.stringContaining("access-status"),
   });
   // A tool error prints its message, not the encoded failure.
   expect(read).toMatchObject({ code: 1, stdout: "" });

@@ -37,7 +37,7 @@ error: Account gmail:me@example.com does not allow agent reads. Turn on 'Allow s
 error: No account with id gmail:typo@example.com. Run `openmail accounts list` to see them.
 ```
 
-A tool that fails prints its message the same way. With `--json`, the CLI also prints `{"_tag": "MailToolError", "message": "..."}` on stdout.
+A tool that fails prints its message the same way. With `--json`, the CLI also prints `{"message": "...", "code": "...", "hint": "..."}` on stdout, the same object an MCP client gets.
 
 ## Connect from the app
 
@@ -146,7 +146,9 @@ With write access turned on, the server adds 3 proposal tools:
 
 An MCP client can only read accounts for which you turned on **Allow sending mail text to the model** in **Settings → AI Access**. OpenMail checks this on every call. Mail reaches the MCP client, and from there the model provider that client uses. Choose clients you trust.
 
-Tool results put all mail content in an `untrusted_mail` field with a notice, so the model treats message text as data, not as instructions.
+Tool results put all mail content in an `untrusted_mail` field with a notice, so the model treats message text as data, not as instructions. OpenMail's own guidance, such as `access_status` and the message a proposal tool returns, sits outside that field.
+
+A failed call returns `isError` with a `message`, a `code` such as `not_found`, `no_ai_consent` or `denied`, and a `hint` that names the next step.
 
 ## Proposing changes
 
@@ -155,7 +157,7 @@ Write tools need two switches:
 1. Start the server with `--allow-writes`. In the app, check **Let … propose changes for you to approve** when you connect.
 2. Set **AI permission to change mail** in **Settings → AI Access** to something other than **Read only**.
 
-If the permission is **Read only**, a proposal tool changes nothing and tells the model where you can change it.
+If the permission is **Read only**, a proposal tool changes nothing. The call fails with code `denied` and tells the model where you can change it.
 
 Even then, the server adds only the proposal tools listed above. Each call creates a proposal. You review and approve it in the app. Drafts stay on your Mac until you open and save them. Sending always requires you to confirm in the app.
 

@@ -18,6 +18,7 @@ import {
   Mailbox,
   AgentIdentity,
   agentAccountGap,
+  MailToolError,
   MailToolkit,
   MailToolkitLayer,
   ReadMailToolkit,
@@ -55,6 +56,7 @@ import {
   syncTable,
 } from "./format.js";
 import { runMcp } from "./mcp-server.js";
+import { withToolDescription } from "./mcp-tools.js";
 import { oauthClientsFile } from "./oauth-clients.js";
 import { withProgress } from "./sync-progress.js";
 
@@ -463,7 +465,7 @@ const search = Command.make(
     );
     yield* print(result, o.json);
   }),
-).pipe(Command.withDescription(MailToolkit.tools.search.description ?? "Search mail"));
+).pipe(withToolDescription(MailToolkit.tools.search.description ?? "Search mail"));
 
 const show = Command.make(
   "show",
@@ -610,33 +612,34 @@ const isWriteTool = (name: ToolName) => name in ProposalMailToolkit.tools;
 const toolHandlers = MailToolkitLayer.pipe(
   Layer.provide(AgentIdentity.fixed("mcp", "openmail-cli")),
 );
-const ToolFailure = Schema.Struct({ message: Schema.String });
+const ToolFailure = Schema.toEncoded(MailToolError);
 /**
- * A tool failure prints its message on stderr and exits 1; --json also prints the
- * `MailToolError` object on stdout. Where MCP returns an empty result because the account
- * is unknown or lacks AI consent, the CLI fails and says why.
+ * A tool failure prints its message on stderr and exits 1; --json also prints
+ * `{message, code, hint}` on stdout, as MCP returns it. Where MCP returns an empty result
+ * because the account is unknown or lacks AI consent, the CLI fails and says why.
  */
 function invokeTool(name: ToolName, input: unknown, json: boolean) {
-  const toolFailure = (message: string) =>
-    (json ? print({ _tag: "MailToolError", message }, true) : Effect.void).pipe(
-      Effect.andThen(fail(message)),
-    );
+  const toolFailure = (failure: typeof ToolFailure.Type) =>
+    (json ? print(failure, true) : Effect.void).pipe(Effect.andThen(fail(failure.message)));
   return Effect.gen(function* () {
     const parameters = yield* Schema.decodeUnknownEffect(
       Schema.toEncoded(MailToolkit.tools[name].parametersSchema),
     )(input);
     const gap = yield* agentAccountGap(name, parameters);
-    if (gap !== null) return yield* toolFailure(gap);
+    if (gap !== null) return yield* toolFailure(Schema.encodeSync(MailToolError)(gap));
     const toolkit = yield* MailToolkit;
     const stream = yield* toolkit.handle(name, parameters);
     const last = yield* Stream.runLast(stream);
     if (Option.isNone(last)) return yield* fail("The tool returned no result.");
     if (last.value.isFailure)
       return yield* toolFailure(
-        Option.match(Schema.decodeUnknownOption(ToolFailure)(last.value.encodedResult), {
-          onNone: () => JSON.stringify(last.value.encodedResult),
-          onSome: (failure) => failure.message,
-        }),
+        Option.getOrElse(
+          Schema.decodeUnknownOption(ToolFailure)(last.value.encodedResult),
+          (): typeof ToolFailure.Type => ({
+            message: JSON.stringify(last.value.encodedResult),
+            code: "invalid_input",
+          }),
+        ),
       );
     return last.value.encodedResult;
   }).pipe(Effect.provide(toolHandlers));
@@ -711,7 +714,7 @@ const agentCommands = toolNames
       name.replaceAll("_", "-"),
       { input: toolInput, json: jsonFlag, allowWrites: allowWritesFlag },
       (options) => runToolCommand(name, options),
-    ).pipe(Command.withDescription(MailToolkit.tools[name].description ?? name)),
+    ).pipe(withToolDescription(MailToolkit.tools[name].description ?? name)),
   );
 
 const corpusFailure = (error: unknown) =>

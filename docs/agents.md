@@ -67,7 +67,9 @@ Claude 和 Cursor 的 JSON 都用 `mcpServers`：
 
 全局链接 CLI（`pnpm --dir packages/cli link --global`）后，`command` 也可以写 `openmail`、`args` 写 `["mcp"]`。Claude 从 Finder 启动时 PATH 很短，找不到命令时改成 `command -v openmail` 输出的绝对路径。`openmail mcp`、`openmail-mcp` 和 `OpenMail --mcp` 都在 stdio 上运行，stdout 只输出协议帧。
 
-服务启动说明告诉模型先调用 `access_status`。它返回可读账户、被隐藏账户的数量和原因（未开 AI 文本授权、账户已停用）、本客户端的写权限、是否提供提议工具，以及用户该去哪里改。被隐藏账户只给数量，不给地址。
+服务启动说明告诉模型先调用 `access_status`。它返回可读账户、被隐藏账户的数量和原因（未开 AI 文本授权、账户已停用）、本客户端的写权限、是否提供提议工具，以及用户该去哪里改。`read_only_session` 为真表示本会话改不了邮件：没有提议工具、写权限为只读，或设置了 `OPENMAIL_READ_ONLY`；后者单独由 `remote_writes_disabled` 给出。被隐藏账户只给数量，不给地址。
+
+`openmail --help` 的子命令列表只显示工具描述的第一句，`openmail <命令> --help` 显示全文。
 
 ## 读取与分页
 
@@ -91,7 +93,7 @@ openmail tool list_proposals --json
 
 | 工具                                  | 返回与后续参数                                                                                                           |
 | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `access_status`                       | 可读账户、被隐藏账户数及原因、写权限、是否有提议工具、给用户的下一步；不读邮件                                           |
+| `access_status`                       | 可读账户、被隐藏账户数及原因、写权限、是否有提议工具、会话能否改动邮件、给用户的下一步；不读邮件                         |
 | `list_accounts`、`list_profiles`      | 账户或分组 ID，传给列表、搜索和草稿提议                                                                                  |
 | `list_labels`                         | Gmail 用户标签、Outlook/IMAP 文件夹及 Gmail 分类；ID 用于列表筛选                                                        |
 | `list_threads`                        | 会话摘要；`id` 是代表消息 ID，用于读取及整理提议；`mailbox: "snoozed"` 查询稍后提醒                                      |
@@ -106,7 +108,9 @@ openmail tool list_proposals --json
 | `list_proposals`、`read_proposal`     | 待审批 ID 和审批界面展示的提议字段；省略 HTML、附件内容等隐藏字段，没有批准、拒绝或发送工具                              |
 | `sync`                                | 显式拉取邮件并推送现有队列，会访问服务商并产生既有队列的写入；输出受预算限制，`omitted` 表示省略的账户结果，可逐账户查询 |
 
-所有外发工具结果统一为 `{notice, untrusted_mail}`。主题、发件人、附件派生文本、邀请文字、提议理由以及账户、ID 和分页字段都在 `untrusted_mail` 中，不能当作指令。以下分页字段均从该对象读取。
+含邮件内容的工具结果统一为 `{notice, untrusted_mail}`。主题、发件人、附件派生文本、邀请文字、提议理由以及账户、ID 和分页字段都在 `untrusted_mail` 中，不能当作指令。以下分页字段均从该对象读取。`access_status` 和三个提议工具不读邮件，结果直接是 OpenMail 自己的字段（`next_steps`、`outcome`、`message`），不放进封装。不可信数据的规则只在服务启动说明（instructions）里写一次，不在每个工具描述里重复。
+
+工具失败时 MCP 返回 `isError: true`，内容为 `{message, code, hint}`，不含 `_tag`。`code` 取 `not_found`、`invalid_input`、`no_ai_consent`、`denied`、`reauth_required`、`provider_rejected` 或 `provider_unavailable`；`hint` 给下一步，例如找不到消息时指向 `list_threads`/`search`，缺授权时指向 `access_status`。策略拒绝的提议（`denied`）同样按失败返回。成功结果同时给 `structuredContent` 和同一份 JSON 文本：MCP 2025-06-18 起，声明了 outputSchema 的工具应返回 `structuredContent`，并为旧客户端在 TextContent 里附上序列化 JSON。tools/list 里的 outputSchema 只描述封装和顶层字段，行结构见结果本身；默认 20 个工具的 tools/list 控制在 20 KB 内，每个描述不超过 400 字符。
 
 列表使用 `next_cursor` 翻页，下一次保留原筛选条件，将它传给 `cursor`。会话游标同时包含时间和 ID，同时间邮件不会漏页。其他列表基于当前结果位置；邮件或索引变化后应重新查询。每页最多 100 行；搜索最多分页读取前 200 个候选，更多结果用 `truncated` 提示，须缩小查询。语义检索最多五个候选，联系人建议最多 100 个候选。
 

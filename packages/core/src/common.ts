@@ -16,6 +16,7 @@ export { AppConfig, Browser, type ClientConfig, Providers, Secrets } from "./ser
 export {
   AgentIdentity,
   agentAccountGap,
+  MailToolError,
   MailToolkit,
   MailToolkitLayer,
   ReadMailToolkit,

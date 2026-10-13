@@ -8,6 +8,7 @@ import { Tool } from "effect/ai";
 import type { Actor, Command, Outcome, ThreadQuery, OutgoingMessage } from "./domain.js";
 import { fakeServer, TestMailbox } from "./platform/node/testing.js";
 import { Mailbox } from "./mailbox.js";
+import { NotFound } from "./errors.js";
 import {
   AgentIdentity,
   cleanMcpClientName,
@@ -381,9 +382,36 @@ it.effect("a denied modify tells the model where the person can allow it", () =>
       call("modify_threads", { thread_ids: ["m1"], action: "archive", rationale: "r" }),
       layer,
     );
-    assert.match(JSON.stringify(result.encodedResult), /Settings → AI Access/);
+    // A refused change is a failed call, so MCP marks it isError and the model won't report it done.
+    assert.isTrue(result.isFailure);
+    assert.deepStrictEqual(result.encodedResult, {
+      message: "Not done: Changing mail is turned off.",
+      code: "denied",
+      hint: "Ask the person to change it in OpenMail under Settings → AI Access, then try again. Call access_status to check the current permission.",
+    });
   }),
 );
+
+it.effect("tool errors carry code and hint, with no _tag", () =>
+  Effect.gen(function* () {
+    const layer = stubMailbox({
+      thread: (id: string) => Effect.fail(new NotFound({ what: "message", id })),
+    });
+    const missing = yield* run(call("read_thread", { id: "missing" }), layer);
+    assert.isTrue(missing.isFailure);
+    assert.notProperty(missing.encodedResult, "_tag");
+    assert.include(missing.encodedResult, { code: "not_found" });
+    assert.match(JSON.stringify(missing.encodedResult), /list_threads or search/);
+  }),
+);
+
+it("tool descriptions stay short and leave the untrusted-data rule to the instructions", () => {
+  for (const tool of Object.values(MailToolkit.tools)) {
+    const description = tool.description ?? "";
+    assert.isAtMost(description.length, 400, tool.name);
+    assert.notMatch(description, /untrusted_mail|Mailbox\.|provenance/, tool.name);
+  }
+});
 
 it.effect("draft_message only ever performs a draft command as the agent", () =>
   Effect.gen(function* () {
@@ -1195,7 +1223,10 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
         )(result.encodedResult);
         assert.strictEqual(threadEnvelope.notice, UNTRUSTED_MAIL_NOTICE);
         assert.strictEqual(threadEnvelope.untrusted_mail.subject, mail.subject);
-        assert.include(threadEnvelope.untrusted_mail.messages[0]?.from ?? "", "Ignore rules");
+        const thread = Schema.decodeUnknownSync(MailToolkit.tools.read_thread.successSchema)(
+          result.encodedResult,
+        );
+        assert.include(thread.messages[0]?.from ?? "", "Ignore rules");
         yield* mailbox.setAgentWriteMode("propose");
         const proposed = yield* mailbox.perform(
           { kind: "draft", accountId: account.id, message: outgoing },
@@ -1251,7 +1282,7 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
           AgentIdentity.fixed("mcp", "claude-code", { proposalTools: true, recordsActivity: true }),
         ),
       );
-      const Status = Schema.toEncoded(MailToolkit.tools.access_status.successSchema);
+      const Status = MailToolkit.tools.access_status.successSchema;
       return Effect.gen(function* () {
         const mailbox = yield* Mailbox;
         const account = yield* mailbox.connect({ provider: "gmail" });
@@ -1259,7 +1290,9 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
         const status = Effect.gen(function* () {
           const result = (yield* Stream.runCollect(yield* toolkit.handle("access_status", {})))[0];
           assert.ok(result && !result.isFailure);
-          return Schema.decodeUnknownSync(Status)(result.encodedResult).untrusted_mail;
+          // access_status reads no mail, so its guidance is not wrapped in untrusted_mail.
+          assert.notProperty(result.encodedResult, "untrusted_mail");
+          return Schema.decodeUnknownSync(Status)(result.encodedResult);
         });
         const before = yield* status;
         assert.strictEqual(before.client, "claude-code");
@@ -1267,6 +1300,9 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
         assert.deepStrictEqual(before.hidden_accounts, { without_ai_consent: 1, turned_off: 0 });
         assert.strictEqual(before.write_mode, "off");
         assert.isTrue(before.proposal_tools);
+        // write_mode off: the session cannot change mail even with proposal tools listed.
+        assert.isTrue(before.read_only_session);
+        assert.isFalse(before.remote_writes_disabled);
         assert.match(before.next_steps.join(" "), /You can read no mail yet/);
         assert.match(before.next_steps.join(" "), /Read only, so they will refuse/);
         // The hidden account's address is not revealed.
@@ -1281,6 +1317,7 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
         );
         assert.deepStrictEqual(after.hidden_accounts, { without_ai_consent: 0, turned_off: 0 });
         assert.strictEqual(after.write_mode, "propose");
+        assert.isFalse(after.read_only_session);
         assert.match(after.next_steps.join(" "), /wait for the person to approve/);
 
         yield* Stream.runCollect(yield* toolkit.handle("read_thread", { id: "missing" }));
@@ -1428,11 +1465,21 @@ it.effect(
         ]),
     });
     return Effect.gen(function* () {
+      // These read no mail: their fields are OpenMail's own guidance, outside the envelope.
+      const appTools = new Set([
+        "access_status",
+        "modify_threads",
+        "snooze_threads",
+        "draft_message",
+      ]);
       for (const tool of Object.values(MailToolkit.tools)) {
-        expect(Schema.toJsonSchemaDocument(tool.successSchema).schema).toMatchObject({
-          type: "object",
-          required: ["notice", "untrusted_mail"],
-        });
+        const schema = Schema.toJsonSchemaDocument(tool.successSchema).schema;
+        if (appTools.has(tool.name)) expect(schema.properties).not.toHaveProperty("untrusted_mail");
+        else
+          expect(schema, tool.name).toMatchObject({
+            type: "object",
+            required: ["notice", "untrusted_mail"],
+          });
       }
       const responses = yield* run(
         Effect.all([
