@@ -68,15 +68,15 @@
     "tldts": "7.4.16"
   },
   "devDependencies": {
-    "@effect/vitest": "4.0.0-rc.118",
+    "@effect/vitest": "4.0.2",
     "@types/css-tree": "^3.2.0",
     "@types/mailparser": "^3.4.6",
     "@types/markdown-it": "^14.2.0",
-    "@types/node": "^22.20.4",
+    "@types/node": "^26.6.5",
     "@types/punycode.js": "npm:@types/punycode@2.1.4",
     "@types/semver": "^7.8.0",
     "fast-check": "^4.10.2",
     "typescript": "catalog:",
-    "vitest": "^5.0.2"
+    "vitest": "^5.0.3"
   }
 }
