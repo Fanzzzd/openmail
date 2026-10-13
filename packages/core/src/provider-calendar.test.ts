@@ -4,6 +4,7 @@ import { makeProviderCalendar } from "./provider-calendar.js";
 import { type Account } from "./domain.js";
 import { type CalendarEvent } from "./calendar.js";
 import { ProviderError } from "./errors.js";
+import { calendarZoneName, localCalendarTimeZone } from "./event-dates.js";
 const account: Account = {
   id: "gmail:me@gmail.com",
   provider: "gmail",
@@ -73,7 +74,11 @@ it.effect(
       assert.strictEqual(query.get("singleEvents"), "true");
       assert.strictEqual(query.get("timeMin"), new Date("2026-10-10T09:00:00").toISOString());
       assert.strictEqual(query.get("timeMax"), new Date("2026-10-10T10:00:00").toISOString());
-      assert.strictEqual(query.get("timeZone"), Intl.DateTimeFormat().resolvedOptions().timeZone);
+      // The local zone, under any of its names: a runner set to Etc/UTC may report UTC.
+      assert.strictEqual(
+        calendarZoneName(query.get("timeZone") ?? ""),
+        calendarZoneName(localCalendarTimeZone()),
+      );
       assert.strictEqual(new URL(f.reads[1] ?? "").searchParams.get("pageToken"), "next");
       const daily = {
         ...event,
