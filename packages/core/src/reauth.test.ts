@@ -511,7 +511,7 @@ it("IMAP: a socket drop, timeout or session cap during LOGIN is not a refusal", 
     }),
   ];
   for (const error of transient) {
-    assert.isFalse(isAuthFailure(error), String(error.message));
+    assert.isFalse(isAuthFailure(error), error.message);
     assert.strictEqual(imapFailure(ID, "imap.gmail.com", error)._tag, "ProviderError");
   }
   assert.isFalse(

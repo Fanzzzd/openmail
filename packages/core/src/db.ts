@@ -1555,7 +1555,7 @@ export const migrateTo = (targetVersion: number) =>
     yield* sql`PRAGMA foreign_keys = ON`;
     const initialVersion = yield* sql`PRAGMA user_version`;
     const opened = Number(initialVersion[0]?.user_version ?? 0);
-    if (opened > MIGRATIONS.length) return yield* Effect.die(new DatabaseTooNewError(opened));
+    if (opened > MIGRATIONS.length) yield* Effect.die(new DatabaseTooNewError(opened));
     if (opened === 0) yield* sql`PRAGMA auto_vacuum=INCREMENTAL`;
     const step = sql.withTransaction(
       Effect.gen(function* () {

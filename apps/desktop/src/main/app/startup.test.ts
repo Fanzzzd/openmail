@@ -91,14 +91,13 @@ vi.mock("../windows/windows", () => ({ focusMainWindow: native.focus }));
 
 const originalResourcesPath = Object.getOwnPropertyDescriptor(process, "resourcesPath");
 // index.ts installs process-wide handlers once; each test removes the ones it added.
-const vitestListeners = {
-  uncaughtException: process.listeners("uncaughtException"),
-  unhandledRejection: process.listeners("unhandledRejection"),
-};
+const keptExceptions = process.listeners("uncaughtException");
+const keptRejections = process.listeners("unhandledRejection");
 afterEach(() => {
-  for (const [event, kept] of Object.entries(vitestListeners))
-    for (const listener of process.listeners(event as keyof typeof vitestListeners))
-      if (!kept.includes(listener)) process.off(event, listener);
+  for (const listener of process.listeners("uncaughtException"))
+    if (!keptExceptions.includes(listener)) process.off("uncaughtException", listener);
+  for (const listener of process.listeners("unhandledRejection"))
+    if (!keptRejections.includes(listener)) process.off("unhandledRejection", listener);
   Reflect.deleteProperty(process, Symbol.for("openmail.processErrorHandlers"));
   vi.restoreAllMocks();
   if (originalResourcesPath) Object.defineProperty(process, "resourcesPath", originalResourcesPath);
@@ -227,7 +226,7 @@ it("a database from a newer OpenMail explains itself in a native dialog before e
   });
   const { DatabaseTooNewError } = await import("@openmail/core");
   native.failStart = true;
-  native.startError = new DatabaseTooNewError("too new");
+  native.startError = new DatabaseTooNewError(1000);
   await import("../index");
   await vi.waitFor(() => expect(native.exit).toHaveBeenCalledWith(1));
   expect(native.showErrorBox).toHaveBeenCalledWith(
