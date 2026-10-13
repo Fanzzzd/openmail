@@ -16,7 +16,7 @@ msgstr "(sin destinatarios)"
 
 #: src/renderer/src/features/ai/AiPanel.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/MessageRow.tsx
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/ThreadMessage.tsx
@@ -907,7 +907,7 @@ msgctxt "search match source"
 msgid "Attachment text"
 msgstr "Texto del adjunto"
 
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/MessageRow.tsx
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgid "Attachments"
 msgstr "Archivos adjuntos"
@@ -1401,7 +1401,7 @@ msgstr "Borrar formato"
 msgid "Clear recent searches"
 msgstr "Borrar búsquedas recientes"
 
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/EmptyList.tsx
 msgid "Clear search"
 msgstr "Borrar búsqueda"
 
@@ -3094,7 +3094,7 @@ msgstr "Archivo de imagen"
 msgid "Image recognition is unavailable on this platform."
 msgstr "El reconocimiento de imágenes no está disponible en esta plataforma."
 
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/MessageRow.tsx
 #: src/renderer/src/features/reader/MediaMatches.tsx
 msgid "Image region"
 msgstr "Región de la imagen"
@@ -3816,7 +3816,7 @@ msgstr "Fondo del mensaje"
 #. Email message text, never an anatomical body.
 #. Email message text, never an anatomical body.
 #. Email message text, never an anatomical body.
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/MessageRow.tsx
 #: src/renderer/src/features/reader/MediaMatches.tsx
 #: src/renderer/src/features/search/SearchSnippet.tsx
 msgctxt "message text"
@@ -4230,7 +4230,7 @@ msgstr "Nuevas notificaciones de correo"
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/EmptyList.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -4365,7 +4365,7 @@ msgstr "Sin etiquetas personalizadas"
 msgid "No downloads"
 msgstr "No hay descargas"
 
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/EmptyList.tsx
 msgid "No drafts"
 msgstr "No hay borradores"
 
@@ -4390,15 +4390,15 @@ msgstr "Sin etiqueta ni carpeta"
 msgid "No matches"
 msgstr "Sin coincidencias"
 
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/EmptyList.tsx
 msgid "No matching messages"
 msgstr "No hay mensajes coincidentes"
 
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/EmptyList.tsx
 msgid "No messages here"
 msgstr "No hay mensajes aquí"
 
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/EmptyList.tsx
 msgid "No messages match the filters"
 msgstr "Ningún mensaje coincide con los filtros."
 
@@ -4435,7 +4435,7 @@ msgstr "No es necesario responder"
 msgid "No shortcuts match."
 msgstr "Ningún atajo coincide."
 
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/EmptyList.tsx
 msgid "No starred messages. Star a message to find it here."
 msgstr "No hay mensajes destacados. Destaca un mensaje para encontrarlo aquí."
 
@@ -4916,7 +4916,7 @@ msgstr "Descripción general"
 
 #. placeholder {0}: chunk.page
 #. placeholder {0}: hit.page
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/MessageRow.tsx
 #: src/renderer/src/features/reader/MediaMatches.tsx
 msgid "Page {0}"
 msgstr "Página {0}"
@@ -6444,6 +6444,7 @@ msgid "Star message"
 msgstr "Destacar mensaje"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/MessageRow.tsx
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/lib/view.ts
@@ -6580,7 +6581,7 @@ msgstr "Error de sincronización ({count})"
 msgid "Sync health"
 msgstr "Estado de sincronización"
 
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/EmptyList.tsx
 #: src/renderer/src/features/sidebar/SidebarFooter.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Sync now"
@@ -6598,7 +6599,7 @@ msgstr "Sincronizado {time}"
 msgid "Syncing {fetched}/{total}"
 msgstr "Sincronizando {fetched}/{total}"
 
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/EmptyList.tsx
 msgid "Syncing mail…"
 msgstr "Sincronizando el correo…"
 
@@ -7100,7 +7101,7 @@ msgstr "Activarlo en los ajustes"
 msgid "Turn off"
 msgstr "Desactivar"
 
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/EmptyList.tsx
 msgid "Turn off filters"
 msgstr "Desactivar filtros"
 
@@ -7178,6 +7179,7 @@ msgid "Unknown organizer time zone; showing the original time."
 msgstr "Zona horaria del organizador desconocida; mostrando la hora original."
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/MessageRow.tsx
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Unread"
 msgstr "No leído"

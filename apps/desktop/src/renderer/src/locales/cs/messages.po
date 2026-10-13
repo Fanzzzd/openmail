@@ -16,7 +16,7 @@ msgstr "(bez příjemců)"
 
 #: src/renderer/src/features/ai/AiPanel.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/MessageRow.tsx
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/ThreadMessage.tsx
@@ -907,7 +907,7 @@ msgctxt "search match source"
 msgid "Attachment text"
 msgstr "Text přílohy"
 
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/MessageRow.tsx
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgid "Attachments"
 msgstr "Přílohy"
@@ -1401,7 +1401,7 @@ msgstr "Odstranit formátování"
 msgid "Clear recent searches"
 msgstr "Vymazat nedávná hledání"
 
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/EmptyList.tsx
 msgid "Clear search"
 msgstr "Vymazat hledání"
 
@@ -3094,7 +3094,7 @@ msgstr "Soubor obrázku"
 msgid "Image recognition is unavailable on this platform."
 msgstr "Rozpoznávání obrázků není na této platformě dostupné."
 
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/MessageRow.tsx
 #: src/renderer/src/features/reader/MediaMatches.tsx
 msgid "Image region"
 msgstr "Oblast obrázku"
@@ -3816,7 +3816,7 @@ msgstr "Pozadí zprávy"
 #. Email message text, never an anatomical body.
 #. Email message text, never an anatomical body.
 #. Email message text, never an anatomical body.
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/MessageRow.tsx
 #: src/renderer/src/features/reader/MediaMatches.tsx
 #: src/renderer/src/features/search/SearchSnippet.tsx
 msgctxt "message text"
@@ -4230,7 +4230,7 @@ msgstr "Upozornění na novou poštu"
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/EmptyList.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -4365,7 +4365,7 @@ msgstr "Žádné vlastní štítky"
 msgid "No downloads"
 msgstr "Žádná stahování"
 
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/EmptyList.tsx
 msgid "No drafts"
 msgstr "Žádné koncepty"
 
@@ -4390,15 +4390,15 @@ msgstr "Žádný štítek nebo složka"
 msgid "No matches"
 msgstr "Žádné shody"
 
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/EmptyList.tsx
 msgid "No matching messages"
 msgstr "Žádné odpovídající zprávy"
 
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/EmptyList.tsx
 msgid "No messages here"
 msgstr "Nejsou zde žádné zprávy"
 
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/EmptyList.tsx
 msgid "No messages match the filters"
 msgstr "Filtrům neodpovídají žádné zprávy"
 
@@ -4435,7 +4435,7 @@ msgstr "Odpověď není nutná"
 msgid "No shortcuts match."
 msgstr "Žádná zkratka neodpovídá."
 
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/EmptyList.tsx
 msgid "No starred messages. Star a message to find it here."
 msgstr "Žádné zprávy s hvězdičkou. Označte zprávu hvězdičkou a najdete ji tady."
 
@@ -4916,7 +4916,7 @@ msgstr "Přehled"
 
 #. placeholder {0}: chunk.page
 #. placeholder {0}: hit.page
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/MessageRow.tsx
 #: src/renderer/src/features/reader/MediaMatches.tsx
 msgid "Page {0}"
 msgstr "Stránka {0}"
@@ -6444,6 +6444,7 @@ msgid "Star message"
 msgstr "Označit zprávu hvězdičkou"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/MessageRow.tsx
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/lib/view.ts
@@ -6580,7 +6581,7 @@ msgstr "Synchronizace se nezdařila ({count})"
 msgid "Sync health"
 msgstr "Stav synchronizace"
 
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/EmptyList.tsx
 #: src/renderer/src/features/sidebar/SidebarFooter.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Sync now"
@@ -6598,7 +6599,7 @@ msgstr "Synchronizováno {time}"
 msgid "Syncing {fetched}/{total}"
 msgstr "Synchronizace {fetched}/{total}"
 
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/EmptyList.tsx
 msgid "Syncing mail…"
 msgstr "Synchronizace pošty…"
 
@@ -7100,7 +7101,7 @@ msgstr "Zapnout v nastavení"
 msgid "Turn off"
 msgstr "Vypnout"
 
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/EmptyList.tsx
 msgid "Turn off filters"
 msgstr "Vypnout filtry"
 
@@ -7178,6 +7179,7 @@ msgid "Unknown organizer time zone; showing the original time."
 msgstr "Neznámé časové pásmo organizátora; ukazuje původní čas."
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/MessageRow.tsx
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Unread"
 msgstr "Nepřečtené"

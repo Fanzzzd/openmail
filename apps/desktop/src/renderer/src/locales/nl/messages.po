@@ -16,7 +16,7 @@ msgstr "(geen geadresseerden)"
 
 #: src/renderer/src/features/ai/AiPanel.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/MessageRow.tsx
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/ThreadMessage.tsx
@@ -907,7 +907,7 @@ msgctxt "search match source"
 msgid "Attachment text"
 msgstr "Tekst van bijlage"
 
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/MessageRow.tsx
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgid "Attachments"
 msgstr "Bijlagen"
@@ -1401,7 +1401,7 @@ msgstr "Wis opmaak"
 msgid "Clear recent searches"
 msgstr "Recente zoekopdrachten wissen"
 
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/EmptyList.tsx
 msgid "Clear search"
 msgstr "Zoekopdracht wissen"
 
@@ -3094,7 +3094,7 @@ msgstr "Afbeeldingsbestand"
 msgid "Image recognition is unavailable on this platform."
 msgstr "Beeldherkenning is niet beschikbaar op dit platform."
 
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/MessageRow.tsx
 #: src/renderer/src/features/reader/MediaMatches.tsx
 msgid "Image region"
 msgstr "Afbeeldingsregio"
@@ -3816,7 +3816,7 @@ msgstr "Berichtachtergrond"
 #. Email message text, never an anatomical body.
 #. Email message text, never an anatomical body.
 #. Email message text, never an anatomical body.
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/MessageRow.tsx
 #: src/renderer/src/features/reader/MediaMatches.tsx
 #: src/renderer/src/features/search/SearchSnippet.tsx
 msgctxt "message text"
@@ -4230,7 +4230,7 @@ msgstr "Nieuwe e-mailmeldingen"
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/EmptyList.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -4365,7 +4365,7 @@ msgstr "Geen aangepaste labels"
 msgid "No downloads"
 msgstr "Geen downloads"
 
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/EmptyList.tsx
 msgid "No drafts"
 msgstr "Geen concepten"
 
@@ -4390,15 +4390,15 @@ msgstr "Geen label of map"
 msgid "No matches"
 msgstr "Geen overeenkomsten"
 
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/EmptyList.tsx
 msgid "No matching messages"
 msgstr "Geen overeenkomende berichten"
 
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/EmptyList.tsx
 msgid "No messages here"
 msgstr "Geen berichten hier"
 
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/EmptyList.tsx
 msgid "No messages match the filters"
 msgstr "Er zijn geen berichten die overeenkomen met de filters"
 
@@ -4435,7 +4435,7 @@ msgstr "Geen antwoord nodig"
 msgid "No shortcuts match."
 msgstr "Geen sneltoetsen gevonden."
 
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/EmptyList.tsx
 msgid "No starred messages. Star a message to find it here."
 msgstr "Geen berichten met ster. Geef een bericht een ster om het hier te vinden."
 
@@ -4916,7 +4916,7 @@ msgstr "Overzicht"
 
 #. placeholder {0}: chunk.page
 #. placeholder {0}: hit.page
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/MessageRow.tsx
 #: src/renderer/src/features/reader/MediaMatches.tsx
 msgid "Page {0}"
 msgstr "Pagina {0}"
@@ -6444,6 +6444,7 @@ msgid "Star message"
 msgstr "Geef bericht een ster"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/MessageRow.tsx
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/lib/view.ts
@@ -6580,7 +6581,7 @@ msgstr "Synchronisatie mislukt ({count})"
 msgid "Sync health"
 msgstr "Synchronisatiestatus"
 
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/EmptyList.tsx
 #: src/renderer/src/features/sidebar/SidebarFooter.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Sync now"
@@ -6598,7 +6599,7 @@ msgstr "Gesynchroniseerd {time}"
 msgid "Syncing {fetched}/{total}"
 msgstr "Synchroniseren van {fetched}/{total}"
 
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/EmptyList.tsx
 msgid "Syncing mail…"
 msgstr "E-mail synchroniseren…"
 
@@ -7100,7 +7101,7 @@ msgstr "Inschakelen in instellingen"
 msgid "Turn off"
 msgstr "Uitschakelen"
 
-#: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/EmptyList.tsx
 msgid "Turn off filters"
 msgstr "Filters uitschakelen"
 
@@ -7178,6 +7179,7 @@ msgid "Unknown organizer time zone; showing the original time."
 msgstr "Onbekende tijdzone van de organisator; toont de oorspronkelijke tijd."
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/mail-list/MessageRow.tsx
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Unread"
 msgstr "Ongelezen"

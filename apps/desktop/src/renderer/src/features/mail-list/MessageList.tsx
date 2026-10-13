@@ -1,52 +1,29 @@
-import { labelChipColors } from "../../lib/label-colors";
-import { useMessageSwipe } from "./message-swipe-hook";
-import {
-  attachmentMatches,
-  distinctAttachmentMatches,
-  MatchedText,
-  SearchPreview,
-  SearchSnippet,
-} from "../search";
-import { TriageChip } from "../ai";
-import { swipeMailOp } from "./message-swipe";
-import { actionNames } from "../../i18n/action-names";
-import type { Prefs, SwipeAction } from "@openmail/core/schema";
-import { MESSAGE_DRAG, ThreadMenuItems } from "../organize";
-import { useAtomValue } from "@effect/atom-react";
-import { AsyncResult } from "effect/reactivity";
-import { prefsAtom } from "../../state/queries";
-import {
-  moveSourceLabel,
-  listWindow,
-  LIST_DENSITIES,
-  DEFAULT_PREFS,
-  searchUsesSize,
-} from "@openmail/core/schema";
-import { Toggle } from "@base-ui/react/toggle";
-import { constVoid } from "effect/Function";
-import { Trans, useLingui } from "@lingui/react/macro";
-import { FileText, Inbox, ListFilter, Paperclip, SearchX, Star, TriangleAlert } from "lucide-react";
-import {
-  useEffect,
-  useLayoutEffect,
-  useCallback,
-  useId,
-  memo,
-  useRef,
-  useState,
-  type ReactNode,
-  type RefObject,
-} from "react";
-
-import type { Label, MailOp, Mailbox, ThreadSummary, ThreadQuery } from "../../../../shared/api";
-import { displayName, shortDate } from "../../lib/format";
-import { AccountBadge } from "./AccountBadge";
+import { useCallback, useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
+import { EmptyList, type EmptyActions } from "./EmptyList";
+import type { Label, ThreadQuery, ThreadSummary } from "../../../../shared/api";
 import type { Filters } from "../../lib/view";
-import { ContextMenuContent, ContextMenuRoot, ContextMenuTrigger } from "../../ui/Menu";
-import type { ThreadState } from "../../lib/focused-inbox";
-import { Tip } from "../../ui/Tip";
-import { TrafficLightSpace } from "../../ui/TrafficLights";
+import { Row, RowMenu, type RowActions, type SelectRow } from "./MessageRow";
+import { Trans, useLingui } from "@lingui/react/macro";
+import {
+  DEFAULT_PREFS,
+  LIST_DENSITIES,
+  listWindow,
+  moveSourceLabel,
+  searchUsesSize,
+  type SwipeAction,
+} from "@openmail/core/schema";
+import { AsyncResult } from "effect/reactivity";
+import { useAtomValue } from "@effect/atom-react";
+import { prefsAtom } from "../../state/queries";
+import { attachmentMatches } from "../search";
+import { swipeMailOp } from "./message-swipe";
+import { constVoid } from "effect/Function";
 import { noticeRow, noticeTone, titlebarRow, touchTarget } from "../../ui/styles";
+import { TrafficLightSpace } from "../../ui/TrafficLights";
+import { TriangleAlert } from "lucide-react";
+import { ContextMenuContent, ContextMenuRoot, ContextMenuTrigger } from "../../ui/Menu";
+import { Tip } from "../../ui/Tip";
+import { Toggle } from "@base-ui/react/toggle";
 
 /** How the current selection was made. Keyboard selection gets the solid accent. */
 export type SelectionSource = "keyboard" | "mouse";
@@ -89,41 +66,10 @@ interface Props {
   selectedIds: ReadonlySet<string>;
   listRef: RefObject<HTMLDivElement | null>;
   selectionSource: SelectionSource;
-  onSelect: (id: string, modifiers: { toggle: boolean; range: boolean }) => void;
+  onSelect: SelectRow;
   onEndReached: () => void;
   /** What a row's context menu needs; the same handlers as the reader toolbar. */
   rowActions: RowActions;
-}
-
-interface EmptyActions {
-  onClearSearch: () => void;
-  onCompose: () => void;
-  onSync: () => void;
-  /** A sync is running, so Sync now has nothing to start. */
-  syncing: boolean;
-}
-
-interface RowActions {
-  grouped?: boolean;
-  currentLabel?: string | undefined;
-  mailbox: Mailbox;
-  /** User labels of every account. */
-  labels: readonly Label[];
-  stateOf: (thread: ThreadSummary) => ThreadState | null;
-  onOp: (thread: ThreadSummary, state: ThreadState, op: MailOp) => void;
-  onSwipeOp: (thread: ThreadSummary, state: ThreadState, op: MailOp) => void;
-  onCompose: (
-    thread: ThreadSummary,
-    mode: "reply" | "replyAll" | "forward",
-    asAttachment?: boolean,
-  ) => void;
-  /** Opens the thread in a window of its own; also on double-click. */
-  onOpenWindow: (thread: ThreadSummary) => void;
-  onSnooze: (thread: ThreadSummary) => void;
-  onPermanentDelete?: ((thread: ThreadSummary) => void) | undefined;
-  onFilter: (thread: ThreadSummary) => void;
-  onCreate?: ((thread: ThreadSummary, move: boolean) => void) | undefined;
-  batchMenu?: ReactNode;
 }
 
 export function MessageList({
@@ -496,30 +442,6 @@ export function MessageList({
   );
 }
 
-function RowMenu({ thread, actions }: { thread: ThreadSummary; actions: RowActions }) {
-  const state = actions.stateOf(thread);
-  if (!state) return null;
-  return (
-    <ContextMenuContent>
-      <ThreadMenuItems
-        state={state}
-        mailbox={actions.mailbox}
-        currentLabel={actions.currentLabel}
-        labels={actions.labels.filter((l) => l.accountId === thread.accountId)}
-        onCreate={actions.onCreate ? (move) => actions.onCreate?.(thread, move) : undefined}
-        onOp={(op) => actions.onOp(thread, state, op)}
-        onCompose={(mode, asAttachment) => actions.onCompose(thread, mode, asAttachment)}
-        onSnooze={() => actions.onSnooze(thread)}
-        onPermanentDelete={
-          actions.onPermanentDelete ? () => actions.onPermanentDelete?.(thread) : undefined
-        }
-        onFilter={state.provider === "imap" ? undefined : () => actions.onFilter(thread)}
-        onOpenWindow={() => actions.onOpenWindow(thread)}
-      />
-    </ContextMenuContent>
-  );
-}
-
 function FilterChip(props: {
   active: boolean;
   onChange: (active: boolean) => void;
@@ -538,352 +460,5 @@ function FilterChip(props: {
         {props.label}
       </Toggle>
     </Tip>
-  );
-}
-
-/** "Keith, Bruce, Neil": first names of the thread's senders. */
-function senders(t: ThreadSummary): string {
-  const people = t.participants.length ? t.participants : [t.from];
-  if (people.length === 1) return displayName(people[0]!);
-  return people.map((p) => displayName(p).split(/\s+/)[0]).join(", ");
-}
-
-const Row = memo(function Row({
-  thread: m,
-  position,
-  total,
-  tabbable,
-  rowHeight,
-  density,
-  labels,
-  selected,
-  accent,
-  menuOpen,
-  rule,
-  showAccount,
-  onSelect,
-  onOpen,
-  dragData,
-  swipeActions,
-  onSwipe,
-}: {
-  thread: ThreadSummary;
-  rowHeight: number;
-  density: (typeof LIST_DENSITIES)[keyof typeof LIST_DENSITIES];
-  position: number;
-  total: number;
-  tabbable: boolean;
-  labels: Map<string, Label>;
-  selected: boolean;
-  accent: boolean;
-  /** The context menu is open for this row: outlined, as in macOS Mail. */
-  menuOpen: boolean;
-  rule: boolean;
-  showAccount: boolean;
-  onSelect: Props["onSelect"];
-  /** Double-click: open in a window of its own. */
-  onOpen: (thread: ThreadSummary) => void;
-  dragData: string;
-  swipeActions: Prefs["swipeActions"];
-  onSwipe: (thread: ThreadSummary, action: SwipeAction) => void;
-}) {
-  const { i18n, t } = useLingui();
-  const row = useRef<HTMLButtonElement>(null);
-  const swipe = useMessageSwipe(row, swipeActions, (action) => onSwipe(m, action));
-  const muted = accent ? "text-white" : "text-a11y-muted";
-  const matchesId = useId();
-  const previewId = useId();
-  const attachmentHits = distinctAttachmentMatches(m.searchMatches).slice(0, 2);
-  const derivedHits = m.searchMatches?.length ? [] : (m.derivedMatches?.slice(0, 2) ?? []);
-  const hasHits = attachmentHits.length > 0 || derivedHits.length > 0;
-  // A search says why each row matched: the fields and marked text, then attachment hits.
-  const searched = !!m.searchMatches?.length || !!m.related;
-  const describedBy = [
-    ...(searched && density.previewLines > 0 ? [previewId] : []),
-    ...(hasHits ? [matchesId] : []),
-  ].join(" ");
-  const chips = m.labels
-    .flatMap((id) => labels.get(`${m.accountId}/${id}`) ?? [])
-    .filter((l) => l.messageListVisibility !== "hide")
-    .slice(0, 2);
-  const labelChips = (
-    <>
-      {chips.map((l) => (
-        <span
-          key={l.id}
-          className={`max-w-24 shrink-0 truncate rounded px-1.5 text-footnote leading-[18px] ${
-            accent ? "bg-black/20 text-white" : l.color ? "colored-label" : "bg-fill-hover"
-          }`}
-          style={!accent && l.color ? labelChipColors(l.color) : undefined}
-        >
-          {l.name}
-        </span>
-      ))}
-    </>
-  );
-  const star = (
-    <>
-      {m.isStarred && (
-        <Star
-          className={`size-3.5 shrink-0 ${accent ? "fill-white text-white" : "fill-amber-600 text-amber-600 dark:fill-amber-400 dark:text-amber-400"}`}
-        />
-      )}
-    </>
-  );
-  return (
-    <div className="relative overflow-hidden rounded-card">
-      {swipe.distance !== 0 && (
-        <span
-          className={`absolute inset-y-0 flex items-center px-3 text-footnote font-medium ${swipe.distance < 0 ? "right-0" : "left-0"}`}
-          aria-live="polite"
-        >
-          {i18n._(actionNames[swipe.action])}
-        </span>
-      )}
-      <button
-        ref={row}
-        type="button"
-        draggable
-        onDragStart={(e) => {
-          e.dataTransfer.setData(MESSAGE_DRAG, dragData);
-          e.dataTransfer.effectAllowed = "move";
-        }}
-        data-id={m.id}
-        // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- an option element holds only text; the row holds the preview markup.
-        role="option"
-        style={{
-          height: rowHeight,
-          transform: swipe.distance
-            ? `translateX(${Math.max(-100, Math.min(100, swipe.distance))}px)`
-            : undefined,
-        }}
-        tabIndex={tabbable ? 0 : -1}
-        aria-label={[
-          senders(m),
-          m.subject || t`(No subject)`,
-          shortDate(m.date, i18n),
-          ...(m.isUnread ? [t`Unread`] : []),
-          ...(m.isStarred ? [t`Starred`] : []),
-        ].join(", ")}
-        aria-describedby={describedBy || undefined}
-        aria-selected={selected}
-        aria-setsize={total}
-        aria-posinset={position}
-        onClick={(event) =>
-          onSelect(m.id, { toggle: event.metaKey || event.ctrlKey, range: event.shiftKey })
-        }
-        onDoubleClick={() => onOpen(m)}
-        // Content centres in the fixed row height, so rows without an attachment line keep even margins.
-        className={`motion-reduce:!transform-none relative flex w-full flex-col justify-center overflow-hidden rounded-card py-2 pr-3 pl-7 text-left ${
-          menuOpen ? "ring-2 ring-blue-500 ring-inset" : ""
-        } ${
-          accent ? "bg-blue-600 text-white" : selected ? "bg-fill-pressed" : "hover:bg-fill-quiet"
-        }`}
-      >
-        <span className="sr-only">
-          {m.isUnread && <Trans>Unread</Trans>} {m.isStarred && <Trans>Starred</Trans>}
-        </span>
-        <span className="relative flex items-baseline gap-1.5">
-          {m.isUnread && (
-            <span
-              className={`absolute top-1/2 -left-[18px] size-2 -translate-y-1/2 rounded-full ${accent ? "bg-white" : "bg-blue-500"}`}
-            />
-          )}
-          <span className="min-w-0 truncate text-callout font-semibold">{senders(m)}</span>
-          {m.threadCount > 1 && (
-            <span className={`shrink-0 text-body tabular-nums ${muted}`}>{m.threadCount}</span>
-          )}
-          <span className="flex-1" />
-          {showAccount && <AccountBadge accountId={m.accountId} accent={accent} />}
-          <span className={`shrink-0 text-footnote tabular-nums ${muted}`}>
-            {shortDate(m.date, i18n)}
-          </span>
-        </span>
-        <span className="mt-0.5 flex items-center gap-1.5 text-body">
-          <span className="min-w-0 flex-1 truncate">
-            {m.subject ? (
-              <MatchedText
-                text={m.subject}
-                match={m.searchMatches?.find((match) => match.source === "subject")}
-              />
-            ) : (
-              <Trans>(No subject)</Trans>
-            )}
-          </span>
-          {!density.attachments && m.hasAttachments && (
-            <Paperclip className={`size-3.5 shrink-0 ${muted}`} />
-          )}
-          {density.previewLines === 0 && (
-            <>
-              {labelChips}
-              {star}
-            </>
-          )}
-        </span>
-        {density.previewLines > 0 && (
-          <span className="mt-0.5 flex items-start gap-1.5">
-            <span
-              id={previewId}
-              className={`min-w-0 flex-1 text-body ${density.previewLines === 2 ? "line-clamp-2" : "truncate"} ${muted}`}
-            >
-              <SearchPreview thread={m} lead={density.previewLines === 2 ? undefined : 24} />
-            </span>
-            {labelChips}
-            {star}
-          </span>
-        )}
-        {density.attachments && m.hasAttachments && (
-          <span className={`mt-1 flex items-center gap-1.5 text-caption ${muted}`}>
-            <Paperclip className="size-3.5 shrink-0" />
-            {m.attachmentNames?.length ? (
-              m.attachmentNames.slice(0, 2).map((name, index) => (
-                <span key={index} className="max-w-32 truncate rounded bg-fill-hover px-1">
-                  {name}
-                </span>
-              ))
-            ) : (
-              <Trans>Attachments</Trans>
-            )}
-          </span>
-        )}
-        {hasHits && (
-          // The row's name is short; matches describe it, so a search says why the row matched.
-          <span id={matchesId} className="block">
-            {attachmentHits.map((match, index) => (
-              <span key={index} className={`mt-1 block truncate text-footnote ${muted}`}>
-                <SearchSnippet match={match} lead={8} />
-              </span>
-            ))}
-            {derivedHits.map((hit, index) => (
-              <span key={index} className={`mt-1 block truncate text-footnote ${muted}`}>
-                {hit.source.kind === "body" ? (
-                  <Trans
-                    context="message text"
-                    comment="Email message text, never an anatomical body."
-                  >
-                    Message body
-                  </Trans>
-                ) : (
-                  hit.source.name
-                )}
-                {hit.page !== null && (
-                  <>
-                    {" "}
-                    · <Trans>Page {hit.page}</Trans>
-                  </>
-                )}
-                {hit.region !== null && (
-                  <>
-                    {" "}
-                    · <Trans>Image region</Trans>
-                  </>
-                )}
-                : {hit.text}
-              </span>
-            ))}
-          </span>
-        )}
-        {rule && <span className="absolute right-3 bottom-0 left-7 h-px bg-separator" />}
-      </button>
-      <TriageChip id={m.id} accountId={m.accountId} labels={m.labels} compact />
-    </div>
-  );
-});
-
-function EmptyListButton({
-  onClick,
-  focusLost,
-  children,
-}: {
-  onClick: () => void;
-  /** Set when the button leaves the document while it has focus. */
-  focusLost: RefObject<boolean>;
-  children: ReactNode;
-}) {
-  const ref = useRef<HTMLButtonElement>(null);
-  // An unmount cleanup in a layout effect runs while the button is still in the document.
-  useLayoutEffect(() => {
-    const button = ref.current;
-    return () => {
-      if (button && document.activeElement === button) focusLost.current = true;
-    };
-  }, [focusLost]);
-  return (
-    <button
-      ref={ref}
-      type="button"
-      onClick={onClick}
-      className="mt-2 rounded-item font-medium text-a11y-accent hover:underline dark:text-blue-400"
-    >
-      {children}
-    </button>
-  );
-}
-
-/** Why the list is empty, with the step that changes it. */
-function EmptyList({
-  searching,
-  filtered,
-  mailbox,
-  onClearFilters,
-  actions,
-}: {
-  searching: boolean;
-  filtered: boolean;
-  mailbox: Mailbox;
-  onClearFilters: () => void;
-  actions: EmptyActions | undefined;
-}) {
-  // Sync now goes away once the sync starts; focus moves to the status line instead of the body.
-  const status = useRef<HTMLOutputElement>(null);
-  const lostFocus = useRef(false);
-  useEffect(() => {
-    if (!lostFocus.current) return;
-    lostFocus.current = false;
-    status.current?.focus();
-  });
-  let text: ReactNode = <Trans>No messages here</Trans>;
-  let Icon = Inbox;
-  let button: { label: ReactNode; onClick: () => void } | undefined = actions && {
-    label: <Trans>Sync now</Trans>,
-    onClick: actions.onSync,
-  };
-  if (searching) {
-    text = <Trans>No matching messages</Trans>;
-    Icon = SearchX;
-    button = actions && { label: <Trans>Clear search</Trans>, onClick: actions.onClearSearch };
-  } else if (filtered) {
-    text = <Trans>No messages match the filters</Trans>;
-    Icon = ListFilter;
-    button = { label: <Trans>Turn off filters</Trans>, onClick: onClearFilters };
-  } else if (mailbox === "drafts") {
-    text = <Trans>No drafts</Trans>;
-    Icon = FileText;
-    button = actions && { label: <Trans>New message</Trans>, onClick: actions.onCompose };
-  } else if (mailbox === "starred") {
-    text = <Trans>No starred messages. Star a message to find it here.</Trans>;
-    Icon = Star;
-    button = undefined;
-  } else if (actions?.syncing) {
-    // During the first sync the list is empty only because nothing has arrived yet.
-    text = <Trans>Syncing mail…</Trans>;
-    button = undefined;
-  }
-  return (
-    <div className="flex shrink-0 flex-col items-center px-8 pt-16 pb-4 text-center text-a11y-muted">
-      <Icon
-        aria-hidden
-        strokeWidth={1.5}
-        className="mb-3 size-8 text-neutral-300 dark:text-neutral-600"
-      />
-      <output ref={status} tabIndex={-1} className="block max-w-56 outline-none">
-        {text}
-      </output>
-      {button && (
-        <EmptyListButton onClick={button.onClick} focusLost={lostFocus}>
-          {button.label}
-        </EmptyListButton>
-      )}
-    </div>
   );
 }
