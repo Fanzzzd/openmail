@@ -1,6 +1,6 @@
 # 依赖补丁
 
-`pnpm-workspace.yaml` 的 `patchedDependencies` 列出 `patches/` 里的补丁。补丁按版本号绑定，升级依赖时 pnpm 会因版本不匹配报错，这时按下面的条件决定删掉补丁还是重做。三个补丁都只影响手机端。最后一节是 Effect 的版本覆盖，升级 Effect 时一起看。
+`pnpm-workspace.yaml` 的 `patchedDependencies` 列出 `patches/` 里的补丁。补丁按版本号绑定，升级依赖时 pnpm 会因版本不匹配报错，这时按下面的条件决定删掉补丁还是重做。三个补丁都只影响手机端。最后两节是版本覆盖：Effect 的在升级 Effect 时一起看，lightningcss 的在升级 Tailwind 时看。
 
 ## react-native-tcp-socket@6.4.3
 
@@ -9,7 +9,7 @@ IMAP／SMTP 的 TCP 和 TLS 传输。补丁改了四处：
 - Android 的 TLS 连接校验证书主机名。上游 issue [#239](https://github.com/Rapsssito/react-native-tcp-socket/issues/239)，修复 PR [#240](https://github.com/Rapsssito/react-native-tcp-socket/pull/240)。
 - iOS 在 TLS 握手完成前不发 `connect`。上游 issue [#237](https://github.com/Rapsssito/react-native-tcp-socket/issues/237)，修复 PR [#238](https://github.com/Rapsssito/react-native-tcp-socket/pull/238)。
 - Android 的 STARTTLS 升级：读线程在升级期间让出 socket，不再用 `BufferedInputStream` 预读明文，否则会吞掉握手字节；升级完成后发 `connect`。
-- 两端在 STARTTLS 握手完成后才发 `secureConnect`（`src/TLSSocket.js`、`src/index.js`）。
+- 两端在 STARTTLS 握手完成后才发 `secureConnect`（`react-native-tcp-socket/src/TLSSocket.js`、`react-native-tcp-socket/src/index.js`）。
 
 后两项上游还没有 issue。删除条件：#240 和 #238 合并并发布，且新版本的 STARTTLS 升级在 Android 和 iOS 上都等握手完成再发 `secureConnect`。
 
@@ -34,3 +34,9 @@ IMAP／SMTP 的 TCP 和 TLS 传输。补丁改了四处：
 `pnpm-workspace.yaml` 的 `overrides` 把 `@effect/platform-node-shared` 固定在 4.0.2。Effect 的包按同一个版本号一起发布，`@effect/platform-node` 4.0.2 对它的依赖写的是 `^4.0.2`，pnpm 会解析到 4.0.3，而 4.0.3 要求 effect 4.0.3。没有这条覆盖，桌面和 CLI 会在 effect 4.0.2 上跑 4.0.3 的平台代码。
 
 Dependabot 不改 `overrides`。升级 Effect 家族时同一个提交里处理这一条：新版本的 `@effect/platform-node` 能解析到同版本的 `platform-node-shared` 时删掉覆盖，否则把它改成新的版本号。用 `pnpm peers check` 确认没有 effect 的 unmet peer。
+
+## 版本覆盖：lightningcss
+
+`@tailwindcss/node` 4.3.3 把 lightningcss 固定在 1.32.0。Tailwind 用它压缩生成的 CSS。1.32.0 不认识 `::highlight()` 伪元素，桌面 `styles.css` 的五条 `::highlight(openmail-*)` 规则每次构建都打印 "Found 5 warnings while optimizing generated CSS"。规则本身原样输出，警告是误报。1.33.0 能解析 `::highlight()`，`overrides` 里的 `"@tailwindcss/node>lightningcss": 1.33.0` 只替换 Tailwind 用的这一份。
+
+删除条件：`@tailwindcss/node` 的依赖升到 lightningcss 1.33 或更高。删掉后跑 `pnpm build`，确认桌面和文档站都没有这条警告。

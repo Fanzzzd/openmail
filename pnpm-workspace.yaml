@@ -18,6 +18,11 @@ overrides:
   # Move it with the rest of the Effect family, or drop it on the next bump
   # (docs/dependency-patches.md).
   "@effect/platform-node-shared": 4.0.2
+  # @tailwindcss/node 4.3.3 pins lightningcss 1.32.0, which does not parse ::highlight() and
+  # prints a false warning for each such rule in desktop and docs builds. 1.33.0 parses it.
+  # Drop this when @tailwindcss/node depends on lightningcss 1.33 or later
+  # (docs/dependency-patches.md).
+  "@tailwindcss/node>lightningcss": 1.33.0
 # Why each patch exists and when it can go: docs/dependency-patches.md
 patchedDependencies:
   expo-background-task@57.0.21: patches/expo-background-task@57.0.21.patch
