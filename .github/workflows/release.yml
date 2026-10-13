@@ -1,0 +1,107 @@
+name: Release
+
+# Builds the macOS DMG and ZIP for arm64 and x64 and attaches them to a GitHub Release.
+# With the Apple secrets the build is Developer ID signed and notarized. Without them it is
+# ad-hoc signed and the release is marked as a prerelease. See docs/release.md.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CI: "1"
+
+jobs:
+  release:
+    runs-on: macos-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+
+      - name: Enable pnpm through corepack
+        run: corepack enable
+
+      - name: Check the tag matches the app version
+        run: |
+          version="$(node -p 'require("./apps/desktop/package.json").version')"
+          if [ "$GITHUB_REF_NAME" != "v$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match apps/desktop/package.json version $version"
+            exit 1
+          fi
+
+      # Icon Composer's actool compiles build/icon.icon and needs Xcode 26.
+      - name: Select Xcode 26
+        run: |
+          xcode=""
+          for app in /Applications/Xcode_26*.app; do [ -d "$app" ] && xcode="$app"; done
+          if [ -n "$xcode" ]; then sudo xcode-select -s "$xcode"; fi
+          xcodebuild -version
+          xcodebuild -version | head -n 1 | grep -Eq 'Xcode (2[6-9]|[3-9][0-9])' \
+            || { echo "::error::Packaging needs Xcode 26 or later"; exit 1; }
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Decide signed or unsigned
+        id: mode
+        env:
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          if [ -n "$CSC_LINK" ] && [ -n "$CSC_KEY_PASSWORD" ] && [ -n "$APPLE_ID" ] \
+            && [ -n "$APPLE_APP_SPECIFIC_PASSWORD" ] && [ -n "$APPLE_TEAM_ID" ]; then
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Apple signing secrets are missing. Building an unsigned prerelease."
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build, sign and notarize
+        if: steps.mode.outputs.signed == 'true'
+        env:
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          OPENMAIL_GOOGLE_CLIENT_ID: ${{ secrets.OPENMAIL_GOOGLE_CLIENT_ID }}
+          OPENMAIL_GOOGLE_CLIENT_SECRET: ${{ secrets.OPENMAIL_GOOGLE_CLIENT_SECRET }}
+          OPENMAIL_MICROSOFT_CLIENT_ID: ${{ secrets.OPENMAIL_MICROSOFT_CLIENT_ID }}
+        run: pnpm --filter @openmail/desktop dist:signed
+
+      - name: Build unsigned
+        if: steps.mode.outputs.signed != 'true'
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+          OPENMAIL_GOOGLE_CLIENT_ID: ${{ secrets.OPENMAIL_GOOGLE_CLIENT_ID }}
+          OPENMAIL_GOOGLE_CLIENT_SECRET: ${{ secrets.OPENMAIL_GOOGLE_CLIENT_SECRET }}
+          OPENMAIL_MICROSOFT_CLIENT_ID: ${{ secrets.OPENMAIL_MICROSOFT_CLIENT_ID }}
+        run: pnpm --filter @openmail/desktop dist
+
+      - name: Upload to a GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SIGNED: ${{ steps.mode.outputs.signed }}
+        run: |
+          shopt -s nullglob
+          files=(apps/desktop/release/*.dmg apps/desktop/release/*.zip apps/desktop/release/*.blockmap apps/desktop/release/latest-mac.yml)
+          if [ ${#files[@]} -eq 0 ]; then echo "::error::No build output in apps/desktop/release"; exit 1; fi
+          flags=(--title "OpenMail ${GITHUB_REF_NAME#v}" --generate-notes --verify-tag)
+          if [ "$SIGNED" != "true" ]; then
+            # gh puts these notes before the generated ones.
+            flags+=(--prerelease --notes "This build is not signed or notarized. macOS Gatekeeper blocks it on first open: Control-click OpenMail.app, choose Open, then confirm. Auto-update stays off for unsigned builds.")
+          fi
+          gh release create "$GITHUB_REF_NAME" "${files[@]}" "${flags[@]}"

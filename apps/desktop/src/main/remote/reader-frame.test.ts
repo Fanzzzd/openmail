@@ -125,7 +125,8 @@ interface Result {
 
 const subject = (name: string) => `Frame case ${name}`;
 
-it.skipIf(!existsSync(path.join(webRoot, "web.html")))(
+// Skips without `pnpm build`, except under CI, where a missing web build fails.
+it.skipIf(!process.env.CI && !existsSync(path.join(webRoot, "web.html")))(
   "sizes each message frame to its page in Chromium",
   { timeout: 300_000 },
   async () => {

@@ -78,6 +78,44 @@ pnpm --filter @openmail/desktop dist:signed
 
 构建器的凭证规则见 [electron-builder 26 macOS 文档](https://www.electron.build/v26/docs/mac/)。签名与继承 plist 在 `apps/desktop/build/`；Apple Contacts helper 使用独立 entitlement，具体规则见 [Apple Contacts](apple-contacts.md#打包与权限)。
 
+## Release workflow (GitHub Actions)
+
+`.github/workflows/release.yml` runs when a tag matching `v*` is pushed. The tag must equal `v` plus the `version` in `apps/desktop/package.json`, or the job stops. It runs on `macos-latest`, selects Xcode 26 for Icon Composer, installs with `pnpm install --frozen-lockfile`, builds the arm64 and x64 DMG and ZIP, and attaches them, the blockmaps and `latest-mac.yml` to a GitHub Release with generated notes. Both build scripts keep `--publish never`; the workflow uploads with `gh release create`.
+
+Repository secrets:
+
+| Secret                                                       | Use                                                                                      |
+| ------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
+| `CSC_LINK`                                                   | Developer ID Application certificate as a base64 `.p12` or an HTTPS URL to it            |
+| `CSC_KEY_PASSWORD`                                           | Password of that `.p12`                                                                  |
+| `APPLE_ID`                                                   | Apple ID that submits for notarization                                                   |
+| `APPLE_APP_SPECIFIC_PASSWORD`                                | App-specific password of that Apple ID                                                   |
+| `APPLE_TEAM_ID`                                              | Team ID of the Developer ID certificate                                                  |
+| `OPENMAIL_GOOGLE_CLIENT_ID`, `OPENMAIL_GOOGLE_CLIENT_SECRET` | Optional. Built-in Google OAuth client, see [Built-in OAuth clients](#内置-oauth-客户端) |
+| `OPENMAIL_MICROSOFT_CLIENT_ID`                               | Optional. Built-in Microsoft OAuth client                                                |
+
+With all five Apple secrets set, the job runs `pnpm --filter @openmail/desktop dist:signed`: Developer ID signing, hardened runtime and notarization, and a normal release. If any of them is missing, it runs `pnpm --filter @openmail/desktop dist` instead: an ad-hoc signed build, a release marked as prerelease, and a note telling users how to get past Gatekeeper. Without the OAuth secrets the build has no built-in clients, and users register their own as in [Google](setup-google.md) and [Microsoft](setup-microsoft.md).
+
+To cut a release:
+
+```sh
+# bump "version" in apps/desktop/package.json, commit, then
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+## When the repo goes public
+
+Auto-update still reads the private repo with a GitHub token from the keychain. Change it in one commit after the repo is public:
+
+1. `apps/desktop/electron-builder.config.cjs`: drop `private: true` from `publish`.
+2. `packages/core/src/updates.ts`: `configureUpdates` calls `setFeedURL` with `provider: "github"`, `owner` and `repo` only. Remove `private` and `token` from the `UpdateClient.setFeedURL` type.
+3. `apps/desktop/src/main/updates/update-client.ts`: use electron-updater's public `GitHubProvider` instead of `PrivateGitHubProvider`.
+4. `packages/core/src/update-feed.ts`: drop the `authorization` header from `resolveUpdateFeed` and accept the public release asset URLs.
+5. `apps/desktop/src/main/updates/updates.ts`: remove the `updateTokenConfigured` gate. Keep the `codesign` Developer ID check; unsigned and ad-hoc builds still get no updates.
+6. Settings > General > Software update: remove the token field (`UpdateSettings.tsx`, the `UpdateTokenConfigured` query and the `SetUpdateToken` mutation) and delete the stored keychain item on upgrade.
+7. Update the 自动更新 section below and its tests.
+
 ## 自动更新
 
 core 接受 Electron updater 适配器，统一配置和发起网络检查。窗口显示后先检查钥匙串是否配置令牌，再用 `codesign --verify --deep --strict` 验证 app，并确认 Developer ID Application Authority 和 TeamIdentifier；开发环境、ad-hoc 包和未配置令牌的私库安装均不开启更新。

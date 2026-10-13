@@ -1,0 +1,27 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      # Effect packages share one release train and must move together.
+      effect:
+        patterns: ["effect", "@effect/*"]
+      expo:
+        patterns: ["expo", "expo-*", "@expo/*", "react-native", "react-native-*", "@react-native/*"]
+      lingui:
+        patterns: ["@lingui/*"]
+      tooling:
+        dependency-type: development
+      runtime:
+        dependency-type: production
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]

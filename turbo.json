@@ -27,6 +27,7 @@
     "test": {
       "dependsOn": ["^build"],
       "env": [
+        "CI",
         "OPENMAIL_LOW_MEMORY_TESTS",
         "VITEST_MAX_WORKERS",
         "OPENMAIL_PERF",
@@ -36,6 +37,7 @@
     "@openmail/desktop#test": {
       "dependsOn": ["^build", "build"],
       "env": [
+        "CI",
         "OPENMAIL_LOW_MEMORY_TESTS",
         "VITEST_MAX_WORKERS",
         "OPENMAIL_PERF",

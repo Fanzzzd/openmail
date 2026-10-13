@@ -1,0 +1,62 @@
+name: Check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI: "1"
+  OPENMAIL_LOW_MEMORY_TESTS: "1"
+  VITEST_MAX_WORKERS: "2"
+
+jobs:
+  check:
+    # The desktop build compiles Swift helpers, and core uses macOS-only native modules.
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+
+      - name: Enable pnpm through corepack
+        run: |
+          corepack enable
+          pnpm --version
+
+      - name: Locate the pnpm store
+        id: pnpm
+        run: echo "store=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ${{ steps.pnpm.outputs.store }}
+            ~/Library/Caches/electron
+          key: pnpm-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-${{ runner.arch }}-
+
+      - uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: turbo-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
+          restore-keys: turbo-${{ runner.os }}-${{ runner.arch }}-
+
+      - run: pnpm install --frozen-lockfile
+
+      # turbo.json asks for the TUI; --ui=stream gives CI plain logs.
+      - run: pnpm build --ui=stream
+      - run: pnpm check-types --ui=stream
+      - run: pnpm test --ui=stream --concurrency=1
+      - run: pnpm exec oxlint
+      - run: pnpm exec oxfmt --check .

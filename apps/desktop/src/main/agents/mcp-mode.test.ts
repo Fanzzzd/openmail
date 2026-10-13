@@ -33,8 +33,8 @@ const requests = [
 
 // Claude Code and Codex read `OpenMail --mcp`'s stdout as the protocol stream: a Chromium log
 // line or a banner there ends the session. Runs the built app (`pnpm build` first) with a
-// scratch OPENMAIL_HOME and profile, never the real ones.
-it.skipIf(!existsSync(entry))(
+// scratch OPENMAIL_HOME and profile, never the real ones. Under CI a missing build fails instead.
+it.skipIf(!process.env.CI && !existsSync(entry))(
   "OpenMail --mcp writes only JSON-RPC frames to stdout from start to exit",
   async () => {
     const work = mkdtempSync(path.join(tmpdir(), "openmail-mcp-mode-"));
