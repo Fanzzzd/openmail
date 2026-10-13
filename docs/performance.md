@@ -33,6 +33,8 @@ OPENMAIL_PERF=1 OPENMAIL_PERF_REPORT=/tmp/openmail-performance.json pnpm test:pe
 | 未读账户／标签徽标                     |     100 |
 | list_threads 首页 50 个会话            |      75 |
 | 常见词／CJK／运算符搜索，50 个会话     |     150 |
+| 稀有一／二字 CJK 搜索，50 个会话       |      50 |
+| 常见一／二字 CJK 搜索，50 个会话       |     150 |
 | has:drive／has:spreadsheet，50 个会话  |      50 |
 | 消息文本＋OCR 搜索，200 个会话         |     100 |
 | OCR 摘要搜索，50 个会话                |     150 |
@@ -62,6 +64,25 @@ fixture 中千分之一的邮件含 Google Sheet 链接，has:drive 和 has:spre
 迁移 35 增加读取索引。扩展 provider ID 索引以覆盖 `ORDER BY date DESC,id`，避免不命中查找遍历整个账户；新增 IMAP 路径索引、远程草稿部分索引和消息文本字节数覆盖索引。索引定义已按下节的写入与空间验收缩减。stale sweep 从每个来源按 provider ID 取有界页，再按 SQLite BINARY 顺序合并；游标结束时回绕。日期分页使用覆盖元数据索引，先排除已有更近匹配的消息，再检查该行的全文条件。零距离 AROUND 按日期分页读取；非零距离先按日期读取 NEAR 候选窗口，只对窗口内消息计算词位置和分组；取得结果页后停止；最多两个候选窗口，超过后走全库查询。消息文本预算分页使用时间下界和 `(COALESCE(body_opened_at,date),id)` 继续定位，见 [SQLite 行值分页](https://www.sqlite.org/rowvalue.html#scrolling_window_queries)。索引维护增加写入和磁盘成本。
 
 保留的扫描包括账户内标签 JSON、紧凑徽标投影、消息文本大小覆盖索引和 FTS 命中集合；它们不读取全部 HTML。reset 返回窗口内所有候选，`COUNT(DISTINCT thread_id)` 和已选长会话可使用临时排序。每条实际执行 SQL 的计划保存在临时 JSON；默认测试禁止裸扫大型 messages 表，并检查 stale 页没有全量 ORDER BY 排序。
+
+## 一／二字 CJK 搜索
+
+trigram 索引只能回答三个字符以上的词。一或两个汉字、假名、韩文或泰文等字符的搜索原先对每封邮件的主题、发件人和消息文本跑 LIKE，并对全部派生文本跑 LIKE。迁移 48（user_version 48）新增两个无内容 FTS5 表 `messages_bigrams` 和 `derived_bigrams`，`ascii` tokenizer，`detail=column`，`prefix='1'`。`search-bigrams.ts` 把这些文字的每个字符写成一个词：与下一个同类字符组成二字词，连续段末尾的字符单独成词。二字搜索查完全相同的词，一字搜索查以该字开头的词，结果与 LIKE 相同。无内容表不保存文本，开启 `contentless_delete`，SQLite 须为 3.43 及以上；Node、Electron 和 op-sqlite 内置的版本均满足。
+
+词在 JavaScript 里生成，触发器只把新增、改动或迁移前的行写入 `search_bigram_pending`，改动或删除时立即删掉旧词。启动后的后台循环和每次变更后 2 秒的去抖任务按每批 200 行写入，每批一个事务。队列中的行仍用 LIKE 查，因此任何时刻结果都完整，回填未完成时只是更慢。与 trigram 相同，探测超过 2048 条命中的常见词改为沿日期索引逐行检查。
+
+100k fixture 中十封邮件含“鲸鱼”。2026-10-13 在同一 fixture 上运行四项，五次热运行中位数，单位 ms；`OPENMAIL_PERF_MEASURE` 可用逗号分隔多个名称。一分钟负载 10–29，高于 12，结果只作对比：
+
+| 测量           | 修复前 | 修复后 |
+| -------------- | -----: | -----: |
+| 稀有二字“鲸鱼” |  127.1 |    4.5 |
+| 稀有一字“鲸”   |  123.7 |    3.6 |
+| 常见二字“预算” |   28.2 |   15.4 |
+| 常见一字“会”   |   30.1 |   16.0 |
+
+```sh
+OPENMAIL_PERF_MEASURE="search CJK rare 2-char,search CJK rare 1-char,search CJK common 2-char,search CJK common 1-char" pnpm test:perf
+```
 
 ## 消息文本与附件检索排名
 

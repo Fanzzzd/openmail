@@ -83,7 +83,11 @@ it.effect(
         iterations = 5,
       ) =>
         Effect.gen(function* () {
-          if (process.env.OPENMAIL_PERF_MEASURE && name !== process.env.OPENMAIL_PERF_MEASURE)
+          // A comma-separated list of measurement names runs only those.
+          if (
+            process.env.OPENMAIL_PERF_MEASURE &&
+            !process.env.OPENMAIL_PERF_MEASURE.split(",").includes(name)
+          )
             return;
           trace.start();
           yield* effect;
@@ -185,6 +189,23 @@ it.effect(
         ["search AROUND 3", "alpha AROUND 3 beta", 475],
       ] as const)
         yield* measure(name, budget, store.listThreads({ search, limit: 50 }));
+      // Ten of 100k messages contain 鲸鱼. One and two CJK characters are too short for trigrams;
+      // a sparse lookup gets the has:drive budget, a term in every message the CJK search budget.
+      for (const [name, search, budget, threads] of [
+        ["search CJK rare 2-char", "鲸鱼", 50, 10],
+        ["search CJK rare 1-char", "鲸", 50, 10],
+        ["search CJK common 2-char", "预算", 150, 50],
+        ["search CJK common 1-char", "会", 150, 50],
+      ] as const)
+        yield* measure(
+          name,
+          budget,
+          store
+            .listThreads({ search, limit: 50 })
+            .pipe(
+              Effect.tap((rows) => Effect.sync(() => assert.strictEqual(rows.length, threads))),
+            ),
+        );
       // The search field looks people up from the third typed character, as in "per".
       for (const [name, query] of [
         ["people suggestion prefix", "per"],

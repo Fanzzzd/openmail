@@ -379,6 +379,8 @@ export class Store extends Context.Service<
     readonly wordIndexReady: Effect.Effect<WordIndexState>;
     backfillWordIndex(batchSize?: number): Effect.Effect<{ processed: number; ready: boolean }>;
     backfillSearchFlags(batchSize?: number): Effect.Effect<{ processed: number; ready: boolean }>;
+    /** Indexes queued rows for one- and two-character CJK search; `ready` when the queue is empty. */
+    indexBigrams(batchSize?: number): Effect.Effect<{ processed: number; ready: boolean }>;
     listThreads(q: ThreadQuery): Effect.Effect<ThreadSummary[], InvalidInput>;
     /** Cached matches without page cursors; counts rows, not conversation members. */
     countThreads(q: ThreadQuery): Effect.Effect<number, InvalidInput>;

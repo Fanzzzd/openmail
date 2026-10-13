@@ -46,7 +46,8 @@ export function fixtureMessage(i: number, large = false): IncomingMessage {
     date: fixtureNow - (100_000 - i) * 120_000,
     snippet: "weekly alpha beta 预算批准",
     // One message in a thousand shares a Google Sheet, so has:drive must find sparse rows.
-    bodyText: `weekly alpha beta 预算批准，会议通知。\n${"Project update and delivery schedule. ".repeat(8)}${i % 1000 === 500 ? `\nSheet: https://docs.google.com/spreadsheets/d/${i}/edit` : ""}\nOn Monday someone wrote:\n> Earlier message`,
+    // Ten carry the rare CJK pair 鲸鱼, which a one- or two-character search must find.
+    bodyText: `weekly alpha beta 预算批准，会议通知。\n${"Project update and delivery schedule. ".repeat(8)}${i % 1000 === 500 ? `\nSheet: https://docs.google.com/spreadsheets/d/${i}/edit` : ""}${i % 10_000 === 4321 ? "\n鲸鱼出没" : ""}\nOn Monday someone wrote:\n> Earlier message`,
     bodyHtml: fixtureHtml[i % 2] ?? "",
     rfcMessageId: `<message${i}@example.com>`,
     labels: ["INBOX", folder, ...(i % 4 === 0 ? ["UNREAD"] : [])],
@@ -160,6 +161,9 @@ export const seedMailbox = (count: number) =>
     }
     while (!(yield* store.backfillWordIndex(500)).ready) {
       /* finish the actual background index */
+    }
+    while (!(yield* store.indexBigrams(1000)).ready) {
+      /* and the bigram queue the same background loop drains */
     }
     yield* sql`ANALYZE`;
   });

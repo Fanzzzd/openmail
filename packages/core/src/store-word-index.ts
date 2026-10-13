@@ -1,6 +1,7 @@
 import { Effect, Schema } from "effect";
 import type { SqlClient } from "effect/sql";
 import { BACKFILL_SEARCH_FLAGS } from "./db.js";
+import { bigramText } from "./search-bigrams.js";
 import { all, run } from "./sql-rows.js";
 
 const Progress = Schema.Struct({
@@ -75,5 +76,61 @@ export function makeWordIndexStore(sql: SqlClient.SqlClient) {
         }),
       )
       .pipe(Effect.orDie);
-  return { wordIndexReady, backfillWordIndex, backfillSearchFlags };
+  const PendingMessage = Schema.Struct({
+    row_id: Schema.Int,
+    subject: Schema.NullOr(Schema.String),
+    from_name: Schema.NullOr(Schema.String),
+    from_addr: Schema.NullOr(Schema.String),
+    body_text: Schema.NullOr(Schema.String),
+  });
+  const PendingChunk = Schema.Struct({ row_id: Schema.Int, text: Schema.NullOr(Schema.String) });
+  /**
+   * Writes bigram tokens for rows the triggers queued: new, changed or every
+   * row from before migration 48. A queued row stays searchable through LIKE.
+   */
+  const indexBigrams = (requested = 200) =>
+    sql
+      .withTransaction(
+        Effect.gen(function* () {
+          const batchSize = Math.min(Math.max(Math.floor(requested), 1), 1000);
+          const messages = yield* all(PendingMessage)(
+            sql`SELECT p.row_id,m.subject,m.from_name,m.from_addr,m.body_text FROM search_bigram_pending p JOIN messages m ON m.rowid=p.row_id WHERE p.kind='messages' ORDER BY p.row_id LIMIT ${batchSize}`,
+          );
+          const chunks =
+            messages.length < batchSize
+              ? yield* all(PendingChunk)(
+                  sql`SELECT p.row_id,d.text FROM search_bigram_pending p JOIN derived_chunks d ON d.id=p.row_id WHERE p.kind='derived' ORDER BY p.row_id LIMIT ${batchSize - messages.length}`,
+                )
+              : [];
+          for (const row of messages) {
+            const columns = [row.subject, row.from_name, row.from_addr, row.body_text].map(
+              bigramText,
+            );
+            yield* run(sql`DELETE FROM messages_bigrams WHERE rowid=${row.row_id}`);
+            if (columns.some(Boolean))
+              yield* run(
+                sql`INSERT INTO messages_bigrams(rowid,subject,from_name,from_addr,body_text) VALUES(${row.row_id},${columns[0] ?? ""},${columns[1] ?? ""},${columns[2] ?? ""},${columns[3] ?? ""})`,
+              );
+          }
+          for (const row of chunks) {
+            const text = bigramText(row.text);
+            yield* run(sql`DELETE FROM derived_bigrams WHERE rowid=${row.row_id}`);
+            if (text)
+              yield* run(
+                sql`INSERT INTO derived_bigrams(rowid,text) VALUES(${row.row_id},${text})`,
+              );
+          }
+          const done = [
+            ...messages.map((row) => ["messages", row.row_id] as const),
+            ...chunks.map((row) => ["derived", row.row_id] as const),
+          ];
+          if (done.length)
+            yield* run(
+              sql`DELETE FROM search_bigram_pending WHERE (kind,row_id) IN (SELECT json_extract(value,'$[0]'),json_extract(value,'$[1]') FROM json_each(${JSON.stringify(done)}))`,
+            );
+          return { processed: done.length, ready: done.length < batchSize };
+        }),
+      )
+      .pipe(Effect.orDie);
+  return { wordIndexReady, backfillWordIndex, backfillSearchFlags, indexBigrams };
 }

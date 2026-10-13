@@ -177,7 +177,11 @@ export const MailboxLive = (
         // write lock for optional, resumable search backfill.
         yield* backgroundReady;
         let indexed = false;
-        for (const step of [store.backfillWordIndex(), store.backfillSearchFlags()]) {
+        for (const step of [
+          store.backfillWordIndex(),
+          store.backfillSearchFlags(),
+          store.indexBigrams(),
+        ]) {
           let ready = false;
           while (!ready) {
             const batch = yield* step.pipe(
@@ -194,6 +198,25 @@ export const MailboxLive = (
           }
         }
         if (indexed) yield* changed;
+        // Synced and edited mail queues bigram rows; search reads them with LIKE until indexed.
+        // Drained after changes settle, not on a timer.
+        yield* Stream.fromPubSub(runtime.pubsub).pipe(
+          Stream.filter((event) => event._tag === "Changed" || event._tag === "NewMail"),
+          Stream.debounce("2 seconds"),
+          Stream.runForEach(() =>
+            Effect.gen(function* () {
+              let ready = false;
+              while (!ready) {
+                ready = (yield* store.indexBigrams()).ready;
+                if (!ready) yield* Effect.yieldNow;
+              }
+            }).pipe(
+              Effect.catchCause((cause) =>
+                Cause.hasInterrupts(cause) ? Effect.failCause(cause) : Effect.void,
+              ),
+            ),
+          ),
+        );
       }).pipe(Effect.forkScoped);
 
       const imapPullLock = (accountId: string) => {

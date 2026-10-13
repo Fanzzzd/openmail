@@ -216,6 +216,8 @@ export const makeThreadsStore = ({
     });
     if (
       query.textPage &&
+      // Rows still queued for the bigram index are only found by LIKE.
+      query.textPage.index !== "messages_bigrams" &&
       query.searchScope !== "folder" &&
       !query.messageIds &&
       !query.unreadOnly &&

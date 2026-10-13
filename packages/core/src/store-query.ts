@@ -19,6 +19,7 @@ import {
   wordTokens,
 } from "./search.js";
 import { SEARCH_FLAG_BITS } from "./db.js";
+import { bigramMatch } from "./search-bigrams.js";
 import { all } from "./sql-rows.js";
 import { MAILBOX_LABEL } from "./mailbox-labels.js";
 
@@ -27,7 +28,7 @@ export type LocalQuery = ThreadQuery & {
   derivedWordIndexReady?: boolean;
   rowBoundText?: boolean;
   proximityPage?: { kind: "prefilter" } | { kind: "exact"; messageIds?: readonly string[] };
-  textPage?: { index: "messages_words" | "messages_fts"; match: string };
+  textPage?: { index: "messages_words" | "messages_fts" | "messages_bigrams"; match: string };
 };
 
 export const expressionMedia = (text: string) =>
@@ -110,6 +111,26 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
         : sql`m.rowid IN (SELECT rowid FROM messages_fts WHERE messages_fts MATCH ${subjectOnly ? `subject : ${literal}` : literal})`;
     }
     const like = literalLike(text);
+    const bigram = bigramMatch(text);
+    if (bigram) {
+      // Indexed rows answer from the bigram index; rows still queued use LIKE.
+      const query = subjectOnly ? `subject : ${bigram}` : bigram;
+      const indexed = derived
+        ? rowBound
+          ? sql`EXISTS (SELECT 1 FROM derived_bigrams WHERE rowid=d.id AND derived_bigrams MATCH ${query})`
+          : sql`d.id IN (SELECT rowid FROM derived_bigrams WHERE derived_bigrams MATCH ${query})`
+        : rowBound
+          ? sql`EXISTS (SELECT 1 FROM messages_bigrams WHERE rowid=m.rowid AND messages_bigrams MATCH ${query})`
+          : sql`m.rowid IN (SELECT rowid FROM messages_bigrams WHERE messages_bigrams MATCH ${query})`;
+      const queued = derived
+        ? sql`(d.id IN (SELECT row_id FROM search_bigram_pending WHERE kind='derived') AND d.text LIKE ${like} ESCAPE '\\')`
+        : sql`(m.rowid IN (SELECT row_id FROM search_bigram_pending WHERE kind='messages') AND ${
+            subjectOnly
+              ? sql`m.subject LIKE ${like} ESCAPE '\\'`
+              : sql`(m.subject LIKE ${like} ESCAPE '\\' OR m.from_name LIKE ${like} ESCAPE '\\' OR m.from_addr LIKE ${like} ESCAPE '\\' OR m.body_text LIKE ${like} ESCAPE '\\')`
+          })`;
+      return sql`(${indexed} OR ${queued})`;
+    }
     return derived
       ? sql`d.text LIKE ${like} ESCAPE '\\'`
       : subjectOnly
@@ -432,6 +453,19 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
     if (!word || word.startsWith("-")) return q;
     const text = unquoteSearchValue(word.endsWith("*") ? word.slice(0, -1) : word);
     const ready = q.wordIndexReady && !usesSubstringSearch(text);
+    const bigram = ready ? undefined : bigramMatch(text);
+    if (bigram) {
+      const rows = yield* all(Schema.Struct({ n: Schema.Number }))(sql`SELECT COUNT(*) AS n FROM (
+        SELECT rowid FROM messages_bigrams WHERE messages_bigrams MATCH ${bigram} LIMIT 2049)`);
+      // Common short terms walk the date index too; queued rows still use LIKE per row.
+      return (rows[0]?.n ?? 0) > 2048
+        ? ({
+            ...q,
+            textPage: { index: "messages_bigrams", match: bigram },
+            rowBoundText: true,
+          } satisfies LocalQuery)
+        : q;
+    }
     if (!ready && Array.from(text).length < 3) return q;
     const match = ftsSearchTerm(ready ? word : quoteSearchValue(text));
     if (!match) return q;

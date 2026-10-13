@@ -1458,6 +1458,36 @@ CREATE TRIGGER snoozed_list_date_insert AFTER INSERT ON snoozed_messages BEGIN
      tool TEXT NOT NULL,
      ok INTEGER NOT NULL
    );`,
+  // user_version 48: bigram indexes for one- and two-character CJK searches (search-bigrams.ts).
+  // Core writes the tokens from JavaScript, so triggers only queue changed rows. A queued row
+  // is searched with LIKE until the background indexer writes its tokens.
+  `CREATE VIRTUAL TABLE messages_bigrams USING fts5(subject,from_name,from_addr,body_text,content='',contentless_delete=1,tokenize='ascii',detail=column,prefix='1');
+   CREATE VIRTUAL TABLE derived_bigrams USING fts5(text,content='',contentless_delete=1,tokenize='ascii',detail=column,prefix='1');
+   CREATE TABLE search_bigram_pending (kind TEXT NOT NULL, row_id INTEGER NOT NULL, PRIMARY KEY(kind,row_id)) WITHOUT ROWID;
+   INSERT INTO search_bigram_pending(kind,row_id) SELECT 'messages',rowid FROM messages;
+   INSERT INTO search_bigram_pending(kind,row_id) SELECT 'derived',id FROM derived_chunks;
+   CREATE TRIGGER messages_bigrams_ai AFTER INSERT ON messages BEGIN
+     INSERT INTO search_bigram_pending(kind,row_id) SELECT 'messages',new.rowid WHERE NOT EXISTS(SELECT 1 FROM search_bigram_pending WHERE kind='messages' AND row_id=new.rowid);
+   END;
+   CREATE TRIGGER messages_bigrams_au AFTER UPDATE OF subject,from_name,from_addr,body_text ON messages WHEN old.subject IS NOT new.subject OR old.from_name IS NOT new.from_name OR old.from_addr IS NOT new.from_addr OR old.body_text IS NOT new.body_text BEGIN
+     DELETE FROM messages_bigrams WHERE rowid=old.rowid;
+     INSERT INTO search_bigram_pending(kind,row_id) SELECT 'messages',new.rowid WHERE NOT EXISTS(SELECT 1 FROM search_bigram_pending WHERE kind='messages' AND row_id=new.rowid);
+   END;
+   CREATE TRIGGER messages_bigrams_ad AFTER DELETE ON messages BEGIN
+     DELETE FROM messages_bigrams WHERE rowid=old.rowid;
+     DELETE FROM search_bigram_pending WHERE kind='messages' AND row_id=old.rowid;
+   END;
+   CREATE TRIGGER derived_bigrams_ai AFTER INSERT ON derived_chunks BEGIN
+     INSERT INTO search_bigram_pending(kind,row_id) SELECT 'derived',new.id WHERE NOT EXISTS(SELECT 1 FROM search_bigram_pending WHERE kind='derived' AND row_id=new.id);
+   END;
+   CREATE TRIGGER derived_bigrams_au AFTER UPDATE OF text ON derived_chunks WHEN old.text IS NOT new.text BEGIN
+     DELETE FROM derived_bigrams WHERE rowid=old.id;
+     INSERT INTO search_bigram_pending(kind,row_id) SELECT 'derived',new.id WHERE NOT EXISTS(SELECT 1 FROM search_bigram_pending WHERE kind='derived' AND row_id=new.id);
+   END;
+   CREATE TRIGGER derived_bigrams_ad AFTER DELETE ON derived_chunks BEGIN
+     DELETE FROM derived_bigrams WHERE rowid=old.id;
+     DELETE FROM search_bigram_pending WHERE kind='derived' AND row_id=old.id;
+   END;`,
 ];
 
 /** Index of migration 37, the cache rowid rebuild. It runs when user_version equals this index. */

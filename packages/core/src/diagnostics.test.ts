@@ -522,6 +522,7 @@ it("enumerates every migrated plain table as retained state or disposable cache"
     "derived_words",
     "search_word_index",
     "search_word_rows",
+    "search_bigram_pending",
     "calendar_invites",
     "agent_activity",
   ]);
@@ -529,7 +530,7 @@ it("enumerates every migrated plain table as retained state or disposable cache"
     for (const row of db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all()) {
       if (
         typeof row.name !== "string" ||
-        /^(?:sqlite_|messages_fts|derived_fts|contact_candidates_fts|contact_organizations_fts|contact_completion_fts_|messages_words_|derived_words_)/.test(
+        /^(?:sqlite_|messages_fts|derived_fts|contact_candidates_fts|contact_organizations_fts|contact_completion_fts_|messages_words_|derived_words_|messages_bigrams|derived_bigrams)/.test(
           row.name,
         )
       )
