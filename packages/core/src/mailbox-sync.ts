@@ -507,10 +507,19 @@ export const makeSyncMailbox = (
         Effect.forkScoped,
       );
 
+      // A failed pass (a busy database, a defect) is logged; the next tick tries again.
       yield* deps
         .organization()
         .wakeSnoozed()
-        .pipe(Effect.repeat(Schedule.spaced("30 seconds")), Effect.forkScoped);
+        .pipe(
+          Effect.catchCause((cause) =>
+            Cause.hasInterruptsOnly(cause)
+              ? Effect.failCause(cause)
+              : Effect.logWarning("snooze wake failed", cause),
+          ),
+          Effect.repeat(Schedule.spaced("30 seconds")),
+          Effect.forkScoped,
+        );
       // Runs while sync is paused and in read-only sessions: it only refreshes tokens.
       yield* backgroundReady.pipe(
         Effect.andThen(runTokenKeepAlive(store, providers, changed)),

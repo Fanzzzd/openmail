@@ -1,8 +1,14 @@
-import { Effect, ManagedRuntime } from "effect";
-import { expect, it } from "vitest";
+import { assert, it } from "@effect/vitest";
+import { Effect, Layer, ManagedRuntime } from "effect";
+import { TestClock } from "effect/testing";
+import { expect } from "vitest";
 import { Mailbox } from "./mailbox.js";
+import { MailboxLive } from "./mailbox-live.js";
 import { splitWriteBatch } from "./mailbox-sync.js";
-import { fakeServer } from "./platform/node/fake-provider.js";
+import { fakeServer, makeFakeProvider } from "./platform/node/fake-provider.js";
+import { MemoryPlatform } from "./platform/node/platform-memory.js";
+import { Providers, Store } from "./services.js";
+import { StoreLive } from "./store.js";
 import { incoming, TestMailbox } from "./platform/node/testing.js";
 import { type Change } from "./services.js";
 
@@ -63,3 +69,45 @@ for (const provider of ["gmail", "outlook"] as const)
       await runtime.dispose();
     }
   });
+
+it.effect("the snooze wake loop keeps running after one failed pass", () =>
+  Effect.gen(function* () {
+    let calls = 0;
+    const flakyStore = Layer.effect(
+      Store,
+      Effect.map(Store, (store) => ({
+        ...store,
+        wakeSnoozed: (now: number) =>
+          Effect.suspend(() => {
+            calls++;
+            return calls === 1
+              ? Effect.die(new Error("database is locked"))
+              : store.wakeSnoozed(now);
+          }),
+      })),
+    ).pipe(Layer.provide(StoreLive));
+    const live = MailboxLive({
+      autoSync: "1 hour",
+      backgroundReady: Effect.never,
+      backgroundFlush: false,
+      imapIdle: false,
+    }).pipe(
+      Layer.provideMerge(
+        Layer.mergeAll(
+          flakyStore,
+          Layer.succeed(Providers, {
+            get: () => makeFakeProvider(fakeServer("me@example.test")),
+          }),
+        ).pipe(Layer.provideMerge(MemoryPlatform())),
+      ),
+    );
+    yield* Effect.gen(function* () {
+      yield* Mailbox;
+      yield* TestClock.adjust("1 second");
+      assert.strictEqual(calls, 1);
+      yield* TestClock.adjust("30 seconds");
+      yield* TestClock.adjust("30 seconds");
+      assert.strictEqual(calls, 3);
+    }).pipe(Effect.provide(live));
+  }),
+);
