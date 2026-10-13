@@ -3,6 +3,7 @@ import { runInNewContext } from "node:vm";
 import { afterAll, expect, it, vi } from "vitest";
 import { AtomRegistry } from "effect/reactivity";
 import { pagedList } from "./threads";
+import { waitLimit } from "../../../../../../packages/core/test-support/test-time.js";
 const calls = vi.hoisted(() => {
   vi.resetModules();
   return { older: vi.fn() };
@@ -33,18 +34,18 @@ it("failed Load older waits for a new user request across list refreshes", async
   const { loaded, wanted } = pagedList({ mailbox: "inbox" });
   const unsubscribe = registry.subscribe(loaded, () => null);
   try {
-    await vi.waitFor(() => expect(registry.get(loaded)._tag).toBe("Success"));
+    await vi.waitFor(() => expect(registry.get(loaded)._tag).toBe("Success"), waitLimit);
     registry.set(wanted, 2);
-    await vi.waitFor(() => expect(registry.get(loaded)._tag).toBe("Failure"));
+    await vi.waitFor(() => expect(registry.get(loaded)._tag).toBe("Failure"), waitLimit);
     expect(calls.older).toHaveBeenCalledTimes(1);
     registry.refresh(loaded);
-    await vi.waitFor(() => expect(registry.get(loaded).waiting).toBe(false));
+    await vi.waitFor(() => expect(registry.get(loaded).waiting).toBe(false), waitLimit);
     expect(calls.older).toHaveBeenCalledTimes(1);
     registry.refresh(loaded);
-    await vi.waitFor(() => expect(registry.get(loaded).waiting).toBe(false));
+    await vi.waitFor(() => expect(registry.get(loaded).waiting).toBe(false), waitLimit);
     expect(calls.older).toHaveBeenCalledTimes(1);
     registry.set(wanted, 3);
-    await vi.waitFor(() => expect(calls.older).toHaveBeenCalledTimes(2));
+    await vi.waitFor(() => expect(calls.older).toHaveBeenCalledTimes(2), waitLimit);
   } finally {
     unsubscribe();
     registry.dispose();

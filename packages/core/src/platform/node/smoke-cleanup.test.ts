@@ -4,6 +4,7 @@ import { mkdtemp, rm, access } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
+import { scaledMs } from "../../../test-support/test-time.js";
 
 for (const [signal, expected, keep] of [
   ["SIGINT", 130, false],
@@ -41,7 +42,7 @@ for (const [signal, expected, keep] of [
       worker.once("close", resolve);
     });
     try {
-      await expect.poll(() => output, { timeout: 5000 }).toContain("child:");
+      await expect.poll(() => output, { timeout: scaledMs(5000) }).toContain("child:");
       if (signal !== "normal") worker.kill(signal);
       expect(await finished, errors).toBe(expected);
       expect(output.match(/socket-closed/g)).toHaveLength(1);

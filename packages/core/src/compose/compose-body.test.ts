@@ -14,6 +14,7 @@ import {
 import { composeLink } from "./compose-nodes.js";
 import { renderMarkdown } from "./markdown.js";
 import { performance } from "node:perf_hooks";
+import { scaledMs } from "../../test-support/test-time.js";
 {
   describe("compose HTML boundary", () => {
     it("preserves four marks and decodes entities into the matching text alternative", () => {
@@ -463,7 +464,7 @@ import { performance } from "node:perf_hooks";
       const body = richComposeBody(`<pre><${tag}> x${spaces}y </${closing}></pre>`);
       const started = performance.now();
       const converted = composeConversion(body, "markdown");
-      assert.isBelow(performance.now() - started, 400);
+      assert.isBelow(performance.now() - started, scaledMs(400));
       assert.include(converted.body.text, `x${spaces}y`);
     }
   });

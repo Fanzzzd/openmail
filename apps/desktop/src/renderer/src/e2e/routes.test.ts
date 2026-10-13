@@ -2,6 +2,7 @@ import { act, fireEvent, screen, within } from "@testing-library/react/pure";
 import { afterEach, expect, it, vi } from "vitest";
 import { SETTLE_MS } from "../routes/router";
 import { advance, eventually, flow, key, row } from "./harness";
+import { scaledMs } from "../../../../../../packages/core/test-support/test-time.js";
 
 let current: Awaited<ReturnType<typeof flow>> | undefined;
 afterEach(async () => {
@@ -83,7 +84,11 @@ it("opens the thread a route names and keeps the open thread in the route", asyn
 it("opens the dialog a route names, and closing it leaves the route in place", async () => {
   const h = (current = await flow({ route: "/mail/all/sent?dialog=settings" }));
   // Settings is a lazy chunk; its first import in a cold jsdom run can take over a second.
-  const settings = await screen.findByRole("dialog", { name: "Settings" }, { timeout: 5000 });
+  const settings = await screen.findByRole(
+    "dialog",
+    { name: "Settings" },
+    { timeout: scaledMs(5000) },
+  );
   const length = h.router.history.length;
   fireEvent.keyDown(settings, { key: "Escape" });
   await eventually(() => expect(screen.queryByRole("dialog", { name: "Settings" })).toBeNull());
@@ -142,9 +147,11 @@ it("writes the URL once after rapid selection moves settle", async () => {
   const push = vi.spyOn(h.router.history, "push");
   const replace = vi.spyOn(h.router.history, "replace");
   vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
-  for (let i = 0; i < 300; i++) act(() => key(i % 2 ? "ArrowUp" : "ArrowDown"));
+  // 21 moves inside one settle window, far more than the writes allowed below. An odd count
+  // ends on the second row, so the one write carries the last move.
+  for (let i = 0; i < 21; i++) act(() => key(i % 2 ? "ArrowUp" : "ArrowDown"));
   await advance(SETTLE_MS + 50);
-  await eventually(() => expect(h.href()).toContain("thread="));
+  await eventually(() => expect(h.href()).toContain(`thread=${encodeURIComponent(h.id("two"))}`));
   expect(push).not.toHaveBeenCalled();
   expect(replace.mock.calls.length).toBeLessThanOrEqual(3);
   // A folder switch still writes at once and keeps its Back entry.

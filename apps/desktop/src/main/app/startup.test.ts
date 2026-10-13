@@ -1,6 +1,7 @@
 import { Effect, Layer, Logger } from "effect";
 import { EventEmitter } from "node:events";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { waitLimit } from "../../../../../packages/core/test-support/test-time.js";
 
 const native = vi.hoisted(() => ({
   primary: true,
@@ -132,19 +133,19 @@ beforeEach(async () => {
 it("any already-created window can release startup after the first window closes", async () => {
   await import("../index");
   const { app } = await import("electron");
-  await vi.waitFor(() => expect(native.nodeMailbox).toHaveBeenCalled());
+  await vi.waitFor(() => expect(native.nodeMailbox).toHaveBeenCalled(), waitLimit);
   const first = new EventEmitter();
   const second = new EventEmitter();
   app.emit("browser-window-created", undefined, first);
   app.emit("browser-window-created", undefined, second);
   first.emit("closed");
   second.emit("ready-to-show");
-  await vi.waitFor(() => expect(native.vision).toHaveBeenCalledOnce());
+  await vi.waitFor(() => expect(native.vision).toHaveBeenCalledOnce(), waitLimit);
   expect(first.listenerCount("ready-to-show")).toBe(0);
   expect(second.listenerCount("closed")).toBe(0);
   expect(app.listenerCount("browser-window-created")).toBe(0);
   app.emit("will-quit", { preventDefault: vi.fn() });
-  await vi.waitFor(() => expect(native.exit).toHaveBeenCalledWith(0));
+  await vi.waitFor(() => expect(native.exit).toHaveBeenCalledWith(0), waitLimit);
 }, 30_000);
 it("the second process exits before building core or opening any data", async () => {
   native.primary = false;
@@ -157,8 +158,9 @@ it("the second process exits before building core or opening any data", async ()
 it("a failed attachment temp sweep still runs the print temp sweep", async () => {
   native.cleanup.mockRejectedValue(new Error("attachment sweep failed"));
   await import("../index");
-  await vi.waitFor(() =>
-    expect(native.printCleanup).toHaveBeenCalledWith("/tmp/openmail-test-temp"),
+  await vi.waitFor(
+    () => expect(native.printCleanup).toHaveBeenCalledWith("/tmp/openmail-test-temp"),
+    waitLimit,
   );
 });
 it("handles open-url and forwarded second-instance URLs and enables desktop-only polling", async () => {
@@ -172,13 +174,13 @@ it("handles open-url and forwarded second-instance URLs and enables desktop-only
   expect(native.urls).toHaveBeenCalledWith("openmail://message/id");
   app.emit("second-instance", {}, ["OpenMail"]);
   expect(native.focus).toHaveBeenCalledOnce();
-  await vi.waitFor(() => expect(native.nodeMailbox).toHaveBeenCalled());
+  await vi.waitFor(() => expect(native.nodeMailbox).toHaveBeenCalled(), waitLimit);
   expect(native.vision).not.toHaveBeenCalled();
   const first = new EventEmitter();
   app.emit("browser-window-created", undefined, first);
   expect(native.vision).not.toHaveBeenCalled();
   first.emit("ready-to-show");
-  await vi.waitFor(() => expect(native.vision).toHaveBeenCalled());
+  await vi.waitFor(() => expect(native.vision).toHaveBeenCalled(), waitLimit);
   expect(native.vision).toHaveBeenCalledWith(expect.stringContaining("native/vision"));
   expect(first.listenerCount("ready-to-show")).toBe(0);
   expect(app.listenerCount("browser-window-created")).toBe(0);
@@ -193,11 +195,11 @@ it("handles open-url and forwarded second-instance URLs and enables desktop-only
       }),
     }),
   );
-  await vi.waitFor(() => expect(native.register).toHaveBeenCalledWith("openmail"));
+  await vi.waitFor(() => expect(native.register).toHaveBeenCalledWith("openmail"), waitLimit);
   expect(native.cleanup).toHaveBeenCalledWith("/tmp/openmail-test-temp");
   expect(native.printCleanup).toHaveBeenCalledWith("/tmp/openmail-test-temp");
   app.emit("will-quit", { preventDefault });
-  await vi.waitFor(() => expect(native.exit).toHaveBeenCalledWith(0));
+  await vi.waitFor(() => expect(native.exit).toHaveBeenCalledWith(0), waitLimit);
 });
 
 it("development builds in different worktrees do not request the shared packaged lock", async () => {
@@ -205,10 +207,10 @@ it("development builds in different worktrees do not request the shared packaged
   Object.defineProperty(app, "isPackaged", { configurable: true, value: false });
   native.primary = false;
   await import("../index");
-  await vi.waitFor(() => expect(native.nodeMailbox).toHaveBeenCalled());
+  await vi.waitFor(() => expect(native.nodeMailbox).toHaveBeenCalled(), waitLimit);
   expect(native.exit).not.toHaveBeenCalled();
   app.emit("will-quit", { preventDefault: vi.fn() });
-  await vi.waitFor(() => expect(native.exit).toHaveBeenCalledWith(0));
+  await vi.waitFor(() => expect(native.exit).toHaveBeenCalledWith(0), waitLimit);
   Object.defineProperty(app, "isPackaged", { configurable: true, value: true });
 });
 
@@ -218,7 +220,7 @@ it("startup defects remain visible on stderr while the file log receives only a 
     /* Capture console output in this regression. */
   });
   await import("../index");
-  await vi.waitFor(() => expect(native.exit).toHaveBeenCalledWith(1));
+  await vi.waitFor(() => expect(native.exit).toHaveBeenCalledWith(1), waitLimit);
   expect(stderr).toHaveBeenCalledWith(expect.stringContaining("startup regression failure"));
   expect(native.localLog).toHaveBeenCalledWith("startup-failed");
   expect(native.localLog.mock.calls[0]).toEqual(["startup-failed"]);
@@ -231,7 +233,7 @@ it("a database from a newer OpenMail explains itself in a native dialog before e
   native.failStart = true;
   native.startError = new DatabaseTooNewError(1000);
   await import("../index");
-  await vi.waitFor(() => expect(native.exit).toHaveBeenCalledWith(1));
+  await vi.waitFor(() => expect(native.exit).toHaveBeenCalledWith(1), waitLimit);
   expect(native.showErrorBox).toHaveBeenCalledWith(
     "This library was opened by a newer OpenMail",
     "Update OpenMail to the latest version to open it.",
@@ -260,9 +262,9 @@ it("the diagnostics logger replaces the raw Effect logger", async () => {
     /* Capture console output in this regression. */
   });
   await import("../index");
-  await vi.waitFor(() => expect(native.nodeMailbox).toHaveBeenCalled());
+  await vi.waitFor(() => expect(native.nodeMailbox).toHaveBeenCalled(), waitLimit);
   expect(existing).not.toHaveBeenCalled();
   expect(native.diagnosticLog).toHaveBeenCalled();
   (await import("electron")).app.emit("will-quit", { preventDefault: vi.fn() });
-  await vi.waitFor(() => expect(native.exit).toHaveBeenCalledWith(0));
+  await vi.waitFor(() => expect(native.exit).toHaveBeenCalledWith(0), waitLimit);
 });

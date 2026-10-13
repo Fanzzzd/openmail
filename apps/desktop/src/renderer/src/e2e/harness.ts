@@ -36,6 +36,7 @@ import { RpcMessage, RpcSerialization, RpcServer } from "effect/rpc";
 import { createMemoryHistory } from "@tanstack/react-router";
 import { createElement } from "react";
 import { vi } from "vitest";
+import { scaledMs } from "../../../../../../packages/core/test-support/test-time.js";
 import type { RpcBridge } from "../../../shared/channel";
 import type { DesktopEvent } from "../../../shared/desktop";
 import { mailboxHandlers } from "../../../shared/mailbox-handlers";
@@ -52,16 +53,39 @@ const unsupported = () => Effect.die(new Error("Unexpected desktop operation in 
 
 // Capture the real timer before tests replace debounce/undo timers.
 const schedulerTimeout = globalThis.setTimeout;
+const now = performance.now.bind(performance);
 const pause = (ms: number) =>
   new Promise<void>((resolve) => {
     schedulerTimeout(resolve, ms);
   });
 
-/** Wait on real scheduler turns even when the UI's debounce/undo timers are virtual. */
+/**
+ * The last time the app did observable work: a DOM change or an RPC frame either way. On a
+ * loaded machine a render or a reply can take seconds, so `eventually` waits for the app to go
+ * quiet rather than for a fixed time.
+ */
+let lastProgress = now();
+const progress = () => {
+  lastProgress = now();
+};
+new MutationObserver(progress).observe(document, {
+  subtree: true,
+  childList: true,
+  attributes: true,
+  characterData: true,
+});
+const quietMs = scaledMs(2500);
+
+/**
+ * Wait on real scheduler turns even when the UI's debounce/undo timers are virtual. Fails once
+ * the check has failed and the app has made no progress for `quietMs`, or after three times that
+ * in all, so a check that can never pass reports its own failure before the test timeout.
+ */
 export async function eventually(check: () => void | Promise<void>) {
-  const deadline = performance.now() + 2500;
+  const start = now();
+  lastProgress = start;
   let failure: unknown;
-  do {
+  for (;;) {
     try {
       await act(async () => {
         await check();
@@ -73,8 +97,9 @@ export async function eventually(check: () => void | Promise<void>) {
     await act(async () => {
       await pause(5);
     });
-  } while (performance.now() < deadline);
-  throw failure;
+    const at = now();
+    if (at - lastProgress > quietMs || at - start > 3 * quietMs) throw failure;
+  }
 }
 
 export async function advance(ms: number) {
@@ -398,6 +423,7 @@ export async function flow(
             // IO boundary, identical JSON frame encoding to the preload transport.
             const decoded = decodeRpcFrame(frame);
             if (!decoded) return;
+            progress();
             for (const message of decoded) if (message._tag === "Request") requests.push(message);
             // Electron IPC delivers on a later turn, including short-lived key clients.
             queueMicrotask(() =>
@@ -410,6 +436,7 @@ export async function flow(
             disconnects: yield* Queue.make<number>(),
             send: (_id, response) =>
               Effect.sync(() => {
+                progress();
                 const publicResponse = publicRpcResponse(response);
                 responses.push(publicResponse);
                 const frame = parser.encode(publicResponse);

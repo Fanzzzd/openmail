@@ -24,6 +24,7 @@ vi.mock("./rpc", async () => {
 });
 import { MailClient } from "./rpc";
 import { appleContactsStatusAtom } from "./apple-contacts";
+import { waitLimit } from "../../../../../../packages/core/test-support/test-time.js";
 
 afterAll(() => {
   vi.doUnmock("./rpc");
@@ -43,39 +44,50 @@ it("polled revocation and cache revisions invalidate mounted contacts without re
   const offContacts = registry.subscribe(contacts, () => null);
   const offStatus = registry.subscribe(appleContactsStatusAtom, () => null);
   try {
-    await vi.waitFor(() =>
-      expect(AsyncResult.getOrElse(registry.get(contacts), () => [])).toEqual([
-        "private@example.com",
-      ]),
+    await vi.waitFor(
+      () =>
+        expect(AsyncResult.getOrElse(registry.get(contacts), () => [])).toEqual([
+          "private@example.com",
+        ]),
+      waitLimit,
     );
-    await vi.waitFor(() =>
-      expect(AsyncResult.getOrElse(registry.get(appleContactsStatusAtom), () => null)?.status).toBe(
-        "authorized",
-      ),
+    await vi.waitFor(
+      () =>
+        expect(
+          AsyncResult.getOrElse(registry.get(appleContactsStatusAtom), () => null)?.status,
+        ).toBe("authorized"),
+      waitLimit,
     );
     const initialQueries = calls.queries.mock.calls.length;
     calls.state = { status: "denied", revision: 2 };
     calls.contacts = [];
     registry.refresh(appleContactsStatusAtom);
-    await vi.waitFor(() =>
-      expect(AsyncResult.getOrElse(registry.get(appleContactsStatusAtom), () => null)?.status).toBe(
-        "denied",
-      ),
+    await vi.waitFor(
+      () =>
+        expect(
+          AsyncResult.getOrElse(registry.get(appleContactsStatusAtom), () => null)?.status,
+        ).toBe("denied"),
+      waitLimit,
     );
-    await vi.waitFor(() =>
-      expect(AsyncResult.getOrElse(registry.get(contacts), () => ["stale"])).toEqual([]),
+    await vi.waitFor(
+      () => expect(AsyncResult.getOrElse(registry.get(contacts), () => ["stale"])).toEqual([]),
+      waitLimit,
     );
     expect(calls.queries.mock.calls.length).toBeGreaterThan(initialQueries);
     expect(calls.polls).toHaveBeenCalledTimes(2);
     const queries = calls.queries.mock.calls.length;
     registry.refresh(appleContactsStatusAtom);
-    await vi.waitFor(() => expect(calls.polls).toHaveBeenCalledTimes(3));
+    await vi.waitFor(() => expect(calls.polls).toHaveBeenCalledTimes(3), waitLimit);
     expect(calls.queries).toHaveBeenCalledTimes(queries);
     calls.state = { status: "denied", revision: 3 };
     calls.contacts = ["new@example.com"];
     registry.refresh(appleContactsStatusAtom);
-    await vi.waitFor(() =>
-      expect(AsyncResult.getOrElse(registry.get(contacts), () => [])).toEqual(["new@example.com"]),
+    await vi.waitFor(
+      () =>
+        expect(AsyncResult.getOrElse(registry.get(contacts), () => [])).toEqual([
+          "new@example.com",
+        ]),
+      waitLimit,
     );
     expect(calls.polls).toHaveBeenCalledTimes(4);
   } finally {

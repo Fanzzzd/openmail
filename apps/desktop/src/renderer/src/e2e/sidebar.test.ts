@@ -1,6 +1,7 @@
 import { afterEach, expect, it } from "vitest";
 import { fireEvent, screen } from "@testing-library/react/pure";
 import { flow, eventually } from "./harness";
+import { scaledMs } from "../../../../../../packages/core/test-support/test-time.js";
 let current: Awaited<ReturnType<typeof flow>> | undefined;
 afterEach(async () => {
   await current?.dispose();
@@ -108,7 +109,7 @@ it("with no account the sidebar lists no mailboxes and no sync status, and Add a
   const dialog = await screen.findByRole(
     "dialog",
     { name: "Add your first account" },
-    { timeout: 5000 },
+    { timeout: scaledMs(5000) },
   );
   await eventually(() =>
     expect(document.activeElement).toBe(screen.getByRole("button", { name: "Gmail" })),

@@ -10,6 +10,7 @@ import { TestMailbox } from "../platform/node/testing.js";
 import { fakeServer, makeFakeProvider } from "../platform/node/fake-provider.js";
 import { Store } from "../store/service.js";
 import type { ProviderAdapter } from "../providers/adapter.js";
+import { waitLimit } from "../../test-support/test-time.js";
 for (const action of ["discard", "send"] as const) {
   it.effect(`${action} queues Message-ID cleanup for an uncertain draft creation`, () =>
     core(
@@ -645,7 +646,9 @@ it("desktop undo intents and draft creation metadata survive reopening", async (
         const mailbox = yield* Mailbox;
         const store = yield* Store;
         // The resumed intent is due now; its worker sends in the background.
-        yield* Effect.promise(() => vi.waitFor(() => expect(server.sent).toHaveLength(1)));
+        yield* Effect.promise(() =>
+          vi.waitFor(() => expect(server.sent).toHaveLength(1), waitLimit),
+        );
         expect(yield* mailbox.queuedSends).toEqual([]);
         const draft = Option.getOrThrow(yield* store.getDraft("create-marker"));
         expect(draft.remote?.changeKey).toBe("version");
@@ -713,8 +716,10 @@ for (const status of ["waiting", "sending", "stale"] as const) {
           // A due "waiting" intent fails in its background worker; the others fail at start.
           const expected = status === "stale" ? "retryable" : "failed";
           yield* Effect.promise(() =>
-            vi.waitFor(async () =>
-              expect((await Effect.runPromise(mailbox.queuedSends))[0]?.status).toBe(expected),
+            vi.waitFor(
+              async () =>
+                expect((await Effect.runPromise(mailbox.queuedSends))[0]?.status).toBe(expected),
+              waitLimit,
             ),
           );
           expect(yield* store.sendUncertain("restart-failure")).toBe(status !== "stale");

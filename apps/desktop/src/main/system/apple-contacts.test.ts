@@ -88,6 +88,7 @@ vi.mock("electron", () => ({
   shell: { openExternal: native.open },
 }));
 import { desktopAppleContacts } from "./apple-contacts";
+import { waitLimit } from "../../../../../packages/core/test-support/test-time.js";
 
 afterEach(async () => {
   for (const quit of native.quits.splice(0)) quit();
@@ -139,7 +140,7 @@ it.skipIf(process.platform !== "darwin")(
           vi.waitFor(async () => {
             const suggestions = await Effect.runPromise(desktop.suggest("person", {}));
             expect(suggestions[0]?.name).toBe("Apple Name");
-          }),
+          }, waitLimit),
         );
         expect((yield* desktop.suggest("person", {}))[0]?.name).toBe("Apple Name");
         expect((yield* mailbox.suggestContacts("person"))[0]?.name).toBe("Server Name");

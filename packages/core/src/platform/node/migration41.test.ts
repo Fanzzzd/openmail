@@ -4,6 +4,7 @@ import { MIGRATIONS } from "../../db/migrations.js";
 import { splitStatements } from "../../db/migrate.js";
 import type { DerivedChunk } from "../../ai/media.js";
 import { applyNativeMigration } from "./migrations.js";
+import { scaledMs } from "../../../test-support/test-time.js";
 
 for (const partialWords of [false, true]) {
   it(`migration 41 removes only same-message duplicates with ${partialWords ? "partial" : "complete"} word FTS`, () => {
@@ -144,7 +145,9 @@ it("migration 41 backfills 10k chunks in a 100k-message fixture within three sec
     const started = performance.now();
     applyNativeMigration(db, migration, 41);
     const elapsed = performance.now() - started;
-    expect(elapsed, "10k chunk backfill must finish within three seconds").toBeLessThan(3000);
+    expect(elapsed, "10k chunk backfill must finish within three seconds").toBeLessThan(
+      scaledMs(3000),
+    );
     process.stdout.write(`Migration 41: ${elapsed.toFixed(1)} ms, 100k messages, 10k chunks\n`);
     expect(db.prepare("SELECT COUNT(*) AS n FROM derived_chunks").get()?.n).toBe(10000);
     expect(db.prepare("SELECT 1 FROM derived_chunks WHERE chunk_index IS NULL").all()).toHaveLength(

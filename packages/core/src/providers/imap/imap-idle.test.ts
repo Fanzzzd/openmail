@@ -8,6 +8,7 @@ import {
   idleRetryDelay,
 } from "../../platform/node/imap-idle.js";
 import type { Account } from "../../domain/account.js";
+import { waitLimit } from "../../../test-support/test-time.js";
 
 const account: Account = {
   id: "imap:test",
@@ -106,14 +107,16 @@ it("real IDLE socket selects only INBOX, signals changes, renews IDLE and closes
   try {
     await client.connect();
     const watching = keepInboxIdle(client, signal.signal, changed, () => null);
-    await vi.waitFor(() => expect(changed).toHaveBeenCalledTimes(3));
-    await vi.waitFor(() =>
-      expect(server.commands.filter((c) => c.endsWith(" IDLE")).length).toBeGreaterThanOrEqual(2),
+    await vi.waitFor(() => expect(changed).toHaveBeenCalledTimes(3), waitLimit);
+    await vi.waitFor(
+      () =>
+        expect(server.commands.filter((c) => c.endsWith(" IDLE")).length).toBeGreaterThanOrEqual(2),
+      waitLimit,
     );
     expect(server.commands.some((c) => /EXAMINE INBOX|EXAMINE "INBOX"/.test(c))).toBe(true);
     signal.abort();
     await watching.catch(() => null);
-    await vi.waitFor(() => expect(server.sockets.size).toBe(0));
+    await vi.waitFor(() => expect(server.sockets.size).toBe(0), waitLimit);
   } finally {
     client.close();
     await server.close();

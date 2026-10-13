@@ -9,6 +9,7 @@ import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { nextTurn } from "../test-support/event-loop";
+import { waitLimit } from "../../../../../packages/core/test-support/test-time.js";
 
 const snapshot = {
   status: "authorized",
@@ -57,7 +58,10 @@ function fixture(platform = "darwin") {
   };
 }
 async function loaded(controller: ReturnType<typeof createAppleContactsController>) {
-  await vi.waitFor(() => expect(controller.cache.identifier("local@example.com")).not.toBeNull());
+  await vi.waitFor(
+    () => expect(controller.cache.identifier("local@example.com")).not.toBeNull(),
+    waitLimit,
+  );
 }
 
 it("off/unsupported never launch the helper; only explicit enabling requests permission", async () => {
@@ -114,15 +118,21 @@ it("cached reads throttle authorization to ten seconds, coalesce work and honor 
   expect(f.calls).toEqual([["--status"]]);
   f.prefs.contactPhotos = true;
   await f.controller.read();
-  await vi.waitFor(() => expect(f.controller.cache.photo("local@example.com")).not.toBeNull());
+  await vi.waitFor(
+    () => expect(f.controller.cache.photo("local@example.com")).not.toBeNull(),
+    waitLimit,
+  );
   expect(f.calls.at(-1)).toEqual(["--read", "--photos"]);
   f.prefs.contactPhotos = false;
   await f.controller.read();
   expect(f.controller.cache.photo("local@example.com")).toBeNull();
-  await vi.waitFor(() => expect(f.calls.at(-1)).toEqual(["--read"]));
+  await vi.waitFor(() => expect(f.calls.at(-1)).toEqual(["--read"]), waitLimit);
   f.advance(60_001);
   await f.controller.poll();
-  await vi.waitFor(() => expect(f.calls.filter((args) => args[0] === "--read")).toHaveLength(3));
+  await vi.waitFor(
+    () => expect(f.calls.filter((args) => args[0] === "--read")).toHaveLength(3),
+    waitLimit,
+  );
 });
 
 it("a blocked whole-store refresh retains the snapshot and never delays suggestions or status polling", async () => {
@@ -153,7 +163,7 @@ it("a blocked whole-store refresh retains the snapshot and never delays suggesti
   blockRead = true;
   clock = 60_001;
   await controller.poll();
-  await vi.waitFor(() => expect(finish).toBeDefined());
+  await vi.waitFor(() => expect(finish).toBeDefined(), waitLimit);
   const read = await controller.read();
   expect(read).toBe("authorized");
   expect(controller.cache.alternatives("local@example.com")[0]?.name).toBe("Local Name");
@@ -166,8 +176,9 @@ it("a blocked whole-store refresh retains the snapshot and never delays suggesti
       contacts: snapshot.contacts.map((contact) => ({ ...contact, name: "Updated" })),
     }),
   );
-  await vi.waitFor(() =>
-    expect(controller.cache.alternatives("local@example.com")[0]?.name).toBe("Updated"),
+  await vi.waitFor(
+    () => expect(controller.cache.alternatives("local@example.com")[0]?.name).toBe("Updated"),
+    waitLimit,
   );
   expect((await controller.poll()).revision).toBeGreaterThan(before.revision);
 });
@@ -190,7 +201,7 @@ it.each(["request", "read"])("late %s results cannot restore disabled data", asy
     },
   });
   const late = mode === "request" ? controller.setEnabled(true) : controller.read();
-  await vi.waitFor(() => expect(finish).toBeDefined());
+  await vi.waitFor(() => expect(finish).toBeDefined(), waitLimit);
   expect(await controller.setEnabled(false)).toBe("off");
   finish?.(JSON.stringify(mode === "read" ? snapshot : { status: "authorized" }));
   await late;
@@ -217,7 +228,7 @@ it("revocation beats an earlier snapshot still loading", async () => {
         : JSON.stringify({ status: authorization }),
   });
   await controller.poll();
-  await vi.waitFor(() => expect(finish).toBeDefined());
+  await vi.waitFor(() => expect(finish).toBeDefined(), waitLimit);
   authorization = "denied";
   clock = 10_001;
   expect((await controller.poll()).status).toBe("denied");
@@ -268,7 +279,10 @@ it("malformed helper output clears data and generic request errors remain errors
   await loaded(controller);
   output = "private non-JSON data";
   await controller.refresh();
-  await vi.waitFor(() => expect(controller.cache.identifier("local@example.com")).toBeNull());
+  await vi.waitFor(
+    () => expect(controller.cache.identifier("local@example.com")).toBeNull(),
+    waitLimit,
+  );
   expect(await controller.read()).toBe("error");
   expect(await controller.setEnabled(true)).toBe("error");
 });

@@ -4,6 +4,7 @@ import { nodeMailCodec } from "./mail-codec.js";
 import { parseMobileMime } from "../react-native/mail-codec.js";
 import { hostileMime } from "../../reader/parser-fuzz-corpus.js";
 import { PermanentError } from "../../domain/errors.js";
+import { scaledMs } from "../../../test-support/test-time.js";
 
 const options = {
   seed: 0x520047,
@@ -43,7 +44,7 @@ for (const [name, parse] of codecs) {
             }
           },
         ),
-        { ...options, timeout: 5000 },
+        { ...options, timeout: scaledMs(5000) },
       );
     });
 
@@ -81,7 +82,7 @@ for (const [name, parse] of codecs) {
       } catch (error) {
         expect(error).toBeInstanceOf(PermanentError);
       }
-      expect(performance.now() - started).toBeLessThan(10_000);
+      expect(performance.now() - started).toBeLessThan(scaledMs(10_000));
       expect(process.memoryUsage().heapUsed - before).toBeLessThan(128 * 1024 * 1024);
     });
 

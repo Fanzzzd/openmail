@@ -31,6 +31,7 @@
         "CI",
         "OPENMAIL_LOW_MEMORY_TESTS",
         "VITEST_MAX_WORKERS",
+        "OPENMAIL_TEST_TIME_SCALE",
         "OPENMAIL_PERF",
         "OPENMAIL_PERF_REPORT"
       ]
@@ -41,6 +42,7 @@
         "CI",
         "OPENMAIL_LOW_MEMORY_TESTS",
         "VITEST_MAX_WORKERS",
+        "OPENMAIL_TEST_TIME_SCALE",
         "OPENMAIL_PERF",
         "OPENMAIL_PERF_REPORT"
       ]
@@ -49,6 +51,10 @@
       "dependsOn": ["^build"],
       "cache": false,
       "persistent": true
+    },
+    "@openmail/docs#test": {
+      "dependsOn": ["^build"],
+      "cache": false
     }
   }
 }

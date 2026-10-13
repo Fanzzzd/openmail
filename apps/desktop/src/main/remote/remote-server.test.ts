@@ -13,6 +13,7 @@ import {
   type GateConfig,
 } from "./remote-auth";
 import { contentDisposition, parsePartPath, startRemoteServer, WEB_CSP } from "./remote-server";
+import { waitLimit } from "../../../../../packages/core/test-support/test-time.js";
 
 const HOST = "mac.tail1234.ts.net";
 const config: GateConfig = { allowlist: ["Owner@github"], host: HOST, port: 8443 };
@@ -397,10 +398,16 @@ describe("remote server", () => {
     // The server takes the held slots once it reads their headers; poll until it does.
     const postUpload = () =>
       call("/api/upload?account=gmail-account", headers, "POST", upload.body);
-    await vi.waitFor(async () => expect((await postUpload()).status).toBe(503), { interval: 5 });
+    await vi.waitFor(async () => expect((await postUpload()).status).toBe(503), {
+      ...waitLimit,
+      interval: 5,
+    });
     for (const req of held) req.destroy();
     // Destroyed bodies free their slots once the server sees the sockets close.
-    await vi.waitFor(async () => expect((await postUpload()).status).toBe(200), { interval: 5 });
+    await vi.waitFor(async () => expect((await postUpload()).status).toBe(200), {
+      ...waitLimit,
+      interval: 5,
+    });
   });
 
   it("refuses uploads with another origin, no session or another content type", async () => {

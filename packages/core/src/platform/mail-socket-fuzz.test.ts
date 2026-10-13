@@ -3,6 +3,7 @@ import { expect, it } from "vitest";
 import { ImapWire, MailWire, encodeFolder, decodeFolder, type MailSocket } from "./mail-socket.js";
 import { smtpSession } from "./react-native/smtp.js";
 import { ProviderError, AuthError } from "../domain/errors.js";
+import { scaledMs } from "../../test-support/test-time.js";
 
 const options = {
   seed: 0x520051,
@@ -129,7 +130,7 @@ it("mail framing rejects one MiB unterminated lines and overlong byte reads with
   const wire = new MailWire(socketFor(new Uint8Array(1024 * 1024).fill(97), 4096));
   await expect(wire.line()).rejects.toBeInstanceOf(ProviderError);
   await expect(wire.bytes(Number.MAX_SAFE_INTEGER)).rejects.toBeInstanceOf(ProviderError);
-  expect(performance.now() - started).toBeLessThan(5000);
+  expect(performance.now() - started).toBeLessThan(scaledMs(5000));
 });
 
 it("SMTP reply parser accepts fragmented, well-formed multiline replies", async () => {

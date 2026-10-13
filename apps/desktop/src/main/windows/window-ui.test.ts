@@ -9,6 +9,7 @@ vi.mock("electron", () => ({
 import type { PromptAnswer, WindowUiEvent } from "../../shared/window-ui";
 import { withDeadline } from "../app/deadline";
 import { answerPrompt, askWindow, hasWindowUi, sendWindowUi, windowUiEvents } from "./window-ui";
+import { waitLimit } from "../../../../../packages/core/test-support/test-time.js";
 
 const target = (id: number) =>
   Object.assign(new EventEmitter(), { webContents: { id }, isDestroyed: () => false });
@@ -25,7 +26,7 @@ const listen = (id: number) => {
   return { received, stop: () => Effect.runPromise(Fiber.interrupt(fiber)) };
 };
 /** Resolves once the renderer subscription for `id` is registered. */
-const subscribed = (id: number) => vi.waitFor(() => expect(hasWindowUi(id)).toBe(true));
+const subscribed = (id: number) => vi.waitFor(() => expect(hasWindowUi(id)).toBe(true), waitLimit);
 afterEach(() => {
   vi.useRealTimers();
 });
@@ -46,7 +47,7 @@ it("once painted the React prompt answers with no deadline, and only its own win
   const fallback = vi.fn(() => Promise.resolve<PromptAnswer>("accept"));
   vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
   const result = askWindow(target(2), quit, fallback, 50);
-  await vi.waitFor(() => expect(renderer.received).toHaveLength(1), { interval: 1 });
+  await vi.waitFor(() => expect(renderer.received).toHaveLength(1), { ...waitLimit, interval: 1 });
   const id = promptId(renderer.received[0]);
   answerPrompt(2, id, "shown");
   answerPrompt(99, id, "accept");
@@ -64,7 +65,7 @@ it("an unpainted prompt is withdrawn and the native box asks instead", async () 
   await subscribed(3);
   const fallback = vi.fn(() => Promise.resolve<PromptAnswer>("accept"));
   expect(await askWindow(target(3), quit, fallback, 10)).toBe("accept");
-  await vi.waitFor(() => expect(renderer.received).toHaveLength(2));
+  await vi.waitFor(() => expect(renderer.received).toHaveLength(2), waitLimit);
   expect(renderer.received[1]).toEqual({ _tag: "PromptDone", id: promptId(renderer.received[0]) });
   await renderer.stop();
 });
@@ -80,7 +81,7 @@ it("closing the window or losing its renderer cancels a shown prompt", async () 
   expect(win.listenerCount("closed")).toBe(0);
 
   const reloaded = askWindow(target(4), quit, fallback, 1000);
-  await vi.waitFor(() => expect(renderer.received).toHaveLength(2));
+  await vi.waitFor(() => expect(renderer.received).toHaveLength(2), waitLimit);
   answerPrompt(4, promptId(renderer.received[1]), "shown");
   await renderer.stop();
   expect(await reloaded).toBe("cancel");

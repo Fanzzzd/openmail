@@ -1,5 +1,6 @@
 import { EventEmitter } from "node:events";
 import { expect, it, vi } from "vitest";
+import { waitLimit } from "../../../../../packages/core/test-support/test-time.js";
 
 const native = vi.hoisted(() => {
   vi.resetModules();
@@ -52,7 +53,10 @@ it.skipIf(process.platform !== "darwin")(
     const lastMenu = () => native.sent.mock.lastCall?.[1]?.menu;
     try {
       contents.emit("context-menu", undefined, params);
-      await vi.waitFor(() => expect(lastMenu()).toMatchObject({ writingTools: true, x: 50 }));
+      await vi.waitFor(
+        () => expect(lastMenu()).toMatchObject({ writingTools: true, x: 50 }),
+        waitLimit,
+      );
       expect(script.mock.lastCall?.[0]).toContain("data-openmail-compose-body");
       const openWritingTools = vi.fn<(state: { frame?: unknown; x: number; y: number }) => void>();
       textMenuCommand(win, { kind: "writingTools" }, openWritingTools);
@@ -62,21 +66,21 @@ it.skipIf(process.platform !== "darwin")(
       native.sent.mockClear();
       openWritingTools.mockClear();
       contents.emit("context-menu", undefined, params);
-      await vi.waitFor(() => expect(lastMenu()).toMatchObject({ writingTools: false }));
+      await vi.waitFor(() => expect(lastMenu()).toMatchObject({ writingTools: false }), waitLimit);
       textMenuCommand(win, { kind: "writingTools" }, openWritingTools);
       expect(openWritingTools).not.toHaveBeenCalled();
 
       script.mockClear();
       native.sent.mockClear();
       contents.emit("context-menu", undefined, { ...params, frame: {} });
-      await vi.waitFor(() => expect(lastMenu()).toMatchObject({ writingTools: false }));
+      await vi.waitFor(() => expect(lastMenu()).toMatchObject({ writingTools: false }), waitLimit);
       expect(script).not.toHaveBeenCalled();
 
       // A read-only right-click sends nothing: the editable one after it is the only new menu.
       native.sent.mockClear();
       contents.emit("context-menu", undefined, { ...params, isEditable: false, x: 1 });
       contents.emit("context-menu", undefined, { ...params, x: 2 });
-      await vi.waitFor(() => expect(native.sent).toHaveBeenCalledTimes(1));
+      await vi.waitFor(() => expect(native.sent).toHaveBeenCalledTimes(1), waitLimit);
       expect(lastMenu()).toMatchObject({ x: 2 });
     } finally {
       stop();

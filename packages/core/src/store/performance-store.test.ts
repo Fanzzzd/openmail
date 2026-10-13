@@ -5,6 +5,7 @@ import type { IncomingMessage } from "../domain/message.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
 import { Store } from "./service.js";
 import { StoreLive } from "./store.js";
+import { scaledMs } from "../../test-support/test-time.js";
 const message: IncomingMessage = {
   providerId: "one",
   threadId: "thread",
@@ -214,6 +215,6 @@ it.effect("AROUND reads candidate positions once for 5000 messages", () =>
       20,
     );
     const elapsed = performance.now() - start;
-    assert.isBelow(elapsed, 3000, `5k AROUND queries took ${elapsed.toFixed(1)} ms`);
+    assert.isBelow(elapsed, scaledMs(3000), `5k AROUND queries took ${elapsed.toFixed(1)} ms`);
   }).pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform())))),
 );

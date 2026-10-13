@@ -19,6 +19,7 @@ import { PersistentAttachments } from "./persistent-attachments.js";
 import type { IncomingMessage } from "../../domain/message.js";
 import { ProviderError } from "../../domain/errors.js";
 import { TestClock } from "effect/testing";
+import { waitLimit } from "../../../test-support/test-time.js";
 {
   const message = (id: number, label = "INBOX"): IncomingMessage => ({
     providerId: String(id).padStart(4, "0"),
@@ -366,10 +367,14 @@ import { TestClock } from "effect/testing";
             const third = yield* store.upsertAccount("gmail", "third@example.com");
             for (const a of [first, second, third]) yield* store.saveSyncCursor(a.id, "0");
             yield* TestClock.adjust("5 seconds");
-            yield* Effect.promise(() => vi.waitFor(() => assert.strictEqual(pulls.length, 2)));
+            yield* Effect.promise(() =>
+              vi.waitFor(() => assert.strictEqual(pulls.length, 2), waitLimit),
+            );
             pulls.length = 0;
             for (let i = 0; i < 10; i++) signals.get(first.id)?.();
-            yield* Effect.promise(() => vi.waitFor(() => assert.strictEqual(pulls.length, 1)));
+            yield* Effect.promise(() =>
+              vi.waitFor(() => assert.strictEqual(pulls.length, 1), waitLimit),
+            );
             assert.deepStrictEqual(pulls, [{ id: first.id, scope: "inbox" }]);
           }),
         adapter,
@@ -415,7 +420,7 @@ import { TestClock } from "effect/testing";
             const a = yield* s.upsertAccount("imap", "me@example.com");
             yield* s.saveSyncCursor(a.id, "0");
             yield* TestClock.adjust("5 seconds");
-            yield* Effect.promise(() => vi.waitFor(() => assert.isTrue(started)));
+            yield* Effect.promise(() => vi.waitFor(() => assert.isTrue(started), waitLimit));
           }),
         blocking,
         { imapIdle: true },

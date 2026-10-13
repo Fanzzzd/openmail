@@ -485,6 +485,7 @@ it.effect(
 
 export { syntheticPdf } from "../platform/node/fixtures/synthetic-pdf.js";
 import { syntheticPdf } from "../platform/node/fixtures/synthetic-pdf.js";
+import { scaledMs } from "../../test-support/test-time.js";
 
 it.effect(
   "extracts PDF text offline by page and records scanned-page deferral; battery throttles PDFs",
@@ -900,7 +901,7 @@ it("PDF page limits and a hung worker fail within a bounded time", async () => {
     ),
   );
   assert.strictEqual(timed._tag, "Failure");
-  assert.ok(performance.now() - start < 3000);
+  assert.ok(performance.now() - start < scaledMs(3000));
 });
 
 it.effect("activity during download keeps bytes and waits before OCR without redownloading", () =>

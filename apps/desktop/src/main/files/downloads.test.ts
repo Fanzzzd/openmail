@@ -21,6 +21,7 @@ import type { DownloadItem } from "../../shared/downloads";
 import { activeDownload, downloadsProgress } from "../../shared/downloads";
 import { attachmentFolder } from "./attachment-actions";
 import { createDownloads, writeUnique, type DownloadDeps } from "./downloads";
+import { waitLimit } from "../../../../../packages/core/test-support/test-time.js";
 
 let folder: string;
 beforeEach(async () => {
@@ -195,7 +196,7 @@ it("remove and clear keep active downloads, and late results of removed rows are
   });
   list.start([source("fast.txt")], folder);
   list.start([source("slow.txt")], folder);
-  await vi.waitFor(() => expect(list.list()[1]?.status).toBe("done"));
+  await vi.waitFor(() => expect(list.list()[1]?.status).toBe("done"), waitLimit);
   const slow = list.list()[0];
   expect(slow?.status).toBe("fetching");
   await Effect.runPromise(list.command(slow?.id ?? "", "remove"));

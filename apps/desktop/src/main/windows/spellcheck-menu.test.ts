@@ -1,5 +1,6 @@
 import { EventEmitter } from "node:events";
 import { expect, it, vi } from "vitest";
+import { waitLimit } from "../../../../../packages/core/test-support/test-time.js";
 
 const native = vi.hoisted(() => ({ sent: vi.fn() }));
 vi.mock("electron", () => ({
@@ -46,7 +47,7 @@ it("right-clicks become a TextMenu event; commands act on the main process's own
       dictionarySuggestions: ["hello", "help"],
       editFlags: { canCut: false, canCopy: true, canPaste: true },
     });
-    await vi.waitFor(() => expect(native.sent).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() => expect(native.sent).toHaveBeenCalledTimes(1), waitLimit);
     expect(native.sent).toHaveBeenCalledWith(3, {
       _tag: "TextMenu",
       menu: {
@@ -99,7 +100,7 @@ it("right-clicks become a TextMenu event; commands act on the main process's own
     // A read-only right-click sends nothing: the editable one after it is the only new menu.
     rightClick(false, 1);
     rightClick(true, 2);
-    await vi.waitFor(() => expect(native.sent).toHaveBeenCalledTimes(2));
+    await vi.waitFor(() => expect(native.sent).toHaveBeenCalledTimes(2), waitLimit);
     expect(native.sent.mock.lastCall?.[1]).toMatchObject({ menu: { x: 2 } });
   } finally {
     stop();

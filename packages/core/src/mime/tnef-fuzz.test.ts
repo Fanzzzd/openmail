@@ -2,6 +2,7 @@ import * as fc from "fast-check";
 import { expect, it } from "vitest";
 import { decodeTnef } from "./tnef.js";
 import { InvalidInput } from "../domain/errors.js";
+import { scaledMs } from "../../test-support/test-time.js";
 
 const options = {
   seed: 0x520054,
@@ -89,5 +90,5 @@ it("TNEF scans one MiB attachments within time and memory budgets", () => {
   );
   const started = performance.now();
   expect(decodeTnef(input)[0]?.data.length).toBe(1024 * 1024);
-  expect(performance.now() - started).toBeLessThan(5000);
+  expect(performance.now() - started).toBeLessThan(scaledMs(5000));
 });

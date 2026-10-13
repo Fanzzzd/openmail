@@ -30,6 +30,7 @@ import {
   startStoredUpdates,
   UPDATE_TOKEN_KEY,
 } from "../app/updates.js";
+import { scaledMs } from "../../test-support/test-time.js";
 {
   const message = (id: string, overrides: Partial<IncomingMessage> = {}): IncomingMessage =>
     makeIncoming(id, {
@@ -465,7 +466,7 @@ import {
             }
             // Generous CI ceiling; rejects whole-table ranking for each page.
             assert.ok(
-              performance.now() - started < 2000,
+              performance.now() - started < scaledMs(2000),
               "ten pages should complete in under two seconds",
             );
             yield* store.setCacheWindow({ accountId: "gmail:test", label: "INBOX", days: 30 });

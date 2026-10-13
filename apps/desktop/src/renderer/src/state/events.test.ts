@@ -24,6 +24,7 @@ vi.mock("./rpc", async () => {
   return { MailClient };
 });
 import { liveUpdatesAtom, syncStateAtom } from "./events";
+import { waitLimit } from "../../../../../../packages/core/test-support/test-time.js";
 
 afterAll(() => {
   vi.doUnmock("./rpc");
@@ -36,7 +37,7 @@ it("a woken snooze reminder does not end the live update stream", async () => {
   try {
     // Reading the atom starts the subscription; events after SnoozeDue must still arrive.
     registry.get(liveUpdatesAtom);
-    await vi.waitFor(() => expect(registry.get(syncStateAtom).lastFinishedAt).toBe(42));
+    await vi.waitFor(() => expect(registry.get(syncStateAtom).lastFinishedAt).toBe(42), waitLimit);
     expect(AsyncResult.isSuccess(registry.get(liveUpdatesAtom))).toBe(true);
   } finally {
     off();

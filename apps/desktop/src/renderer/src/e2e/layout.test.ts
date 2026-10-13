@@ -3,6 +3,7 @@ import { AuthError, ProviderError } from "@openmail/core/portable";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { act, fireEvent, screen, within } from "@testing-library/react/pure";
 import { clickButton, eventually, flow, key, row } from "./harness";
+import { scaledMs } from "../../../../../../packages/core/test-support/test-time.js";
 
 let current: Awaited<ReturnType<typeof flow>> | undefined;
 let width = 1200;
@@ -416,7 +417,11 @@ it("a narrow window shows dialogs as full-window sheets with a close button", as
   await eventually(() => expect(row(h.id("one"))).toBeTruthy());
   key(",", { metaKey: true }, document.body);
   // Settings is a lazy chunk; its first import in a cold jsdom run can take over a second.
-  const settings = await screen.findByRole("dialog", { name: "Settings" }, { timeout: 5000 });
+  const settings = await screen.findByRole(
+    "dialog",
+    { name: "Settings" },
+    { timeout: scaledMs(5000) },
+  );
   expect(settings.className).toContain("max-sm:inset-0");
   const tabs = within(settings).getByRole("tablist");
   expect(tabs.getAttribute("data-orientation")).toBe("horizontal");

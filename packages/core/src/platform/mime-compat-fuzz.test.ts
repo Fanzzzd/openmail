@@ -10,6 +10,7 @@ import {
   MAX_UU_BODY,
 } from "./mime-compat.js";
 import type { MimeMessage } from "./mail-codec.js";
+import { scaledMs } from "../../test-support/test-time.js";
 
 const options = {
   seed: 0x520049,
@@ -135,7 +136,7 @@ it("uuencode arbitrary text is bounded, and one MiB inputs meet time/memory budg
   expect(uuAttachments(text)).toEqual({ text, attachments: [] });
   const oversized = `${uu(new Uint8Array([1]))}${"x".repeat(MAX_UU_BODY)}`;
   expect(uuAttachments(oversized)).toEqual({ text: oversized, attachments: [] });
-  expect(performance.now() - started).toBeLessThan(5000);
+  expect(performance.now() - started).toBeLessThan(scaledMs(5000));
   expect(process.memoryUsage().heapUsed - before).toBeLessThan(128 * 1024 * 1024);
 });
 

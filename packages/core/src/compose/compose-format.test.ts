@@ -7,6 +7,7 @@ import {
   normalizeComposeMessage,
   composeConversion,
 } from "./compose-body.js";
+import { scaledMs } from "../../test-support/test-time.js";
 
 const formatted =
   '<div dir="rtl" style="text-align:justify;margin-left:24px"><span style="font-family:Georgia;font-size:18px;color:#aBc;background-color:rgb(1, 2, 255)"><sup>2</sup><sub>3</sub><s>old</s><code>x\u00a0&lt;\u00a0y</code></span></div><blockquote><blockquote>quote</blockquote></blockquote><ul type="dash"><li>one<ol type="1"><li>two</li></ol></li></ul><pre> a  b\nc</pre>';
@@ -135,7 +136,7 @@ describe("rich formatting boundary", () => {
     const input = `<span style="color:${" ".repeat(100000)}#123;unknown:${"x".repeat(100000)}">ok</span>${"<div><code>x</code></div>".repeat(15000)}`;
     const start = performance.now();
     const body = richComposeBody(input);
-    assert.isBelow(performance.now() - start, 3000);
+    assert.isBelow(performance.now() - start, scaledMs(3000));
     assert.include(body.html, 'style="color:#123"');
   });
 });

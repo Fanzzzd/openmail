@@ -8,6 +8,7 @@ import {
   nestedHtml,
 } from "../../../../../../../../packages/core/src/reader/parser-fuzz-corpus.js";
 import { sanitizeReaderHtml } from "./reader-html";
+import { scaledMs } from "../../../../../../../../packages/core/test-support/test-time.js";
 
 const options = {
   seed: 0x520058,
@@ -111,5 +112,5 @@ it("one MiB text and 10k nested tags obey reader time and output budgets", () =>
   const deep = sanitizeReaderHtml(nestedHtml(10_000), false);
   assertSafe(deep);
   expect(deep.length).toBeLessThan(150_000);
-  expect(performance.now() - started).toBeLessThan(15_000);
+  expect(performance.now() - started).toBeLessThan(scaledMs(15_000));
 }, 20_000);

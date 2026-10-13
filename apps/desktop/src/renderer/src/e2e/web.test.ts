@@ -20,6 +20,7 @@ import { setRpcBridge } from "../state/rpc-bridge";
 import { webSocketBridge, type WebConnection } from "../state/web-socket-bridge";
 import { TipProvider } from "../ui/Tip";
 import { eventually, incoming } from "./harness";
+import { scaledMs } from "../../../../../../packages/core/test-support/test-time.js";
 
 let dispose: (() => Promise<void>) | undefined;
 afterEach(async () => {
@@ -77,7 +78,10 @@ async function openWebApp() {
     });
     socket.once("close", () => handlers.closed());
   });
-  await vi.waitFor(() => expect(hub.listening).toBe(true), { timeout: 2_000, interval: 10 });
+  await vi.waitFor(() => expect(hub.listening).toBe(true), {
+    timeout: scaledMs(2_000),
+    interval: 10,
+  });
   const address = wss.address();
   const port = typeof address === "object" && address ? address.port : 0;
 

@@ -12,6 +12,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { RemoteAccessView } from "../../shared/remote-access";
 import { createRemoteAccess, type RemoteAccessDeps } from "./remote-access";
 import type { CliResult } from "./tailscale";
+import { scaledMs, waitLimit } from "../../../../../packages/core/test-support/test-time.js";
 
 const STATUS = JSON.stringify({
   BackendState: "Running",
@@ -270,7 +271,7 @@ describe("remote access controller", () => {
     h.hang();
     const started = performance.now();
     await h.controller.dispose();
-    expect(performance.now() - started).toBeLessThan(1000);
+    expect(performance.now() - started).toBeLessThan(scaledMs(1000));
     expect(h.rpcRunning()).toBe(0);
   });
 
@@ -308,9 +309,9 @@ describe("remote access controller", () => {
     h.calls.length = 0;
     h.tailscaleDown(false);
     await expect
-      .poll(() => h.calls.some((args) => args.join(" ") === "serve --https=8443 off"))
+      .poll(() => h.calls.some((args) => args.join(" ") === "serve --https=8443 off"), waitLimit)
       .toBe(true);
-    await expect.poll(() => h.last()?.status).toBe("off");
+    await expect.poll(() => h.last()?.status, waitLimit).toBe("off");
     await h.controller.dispose();
   });
 

@@ -3,6 +3,7 @@ import { expect, it } from "vitest";
 import { parseCalendar } from "./invites.js";
 import { structuredMailEvents } from "./structured-events.js";
 import { escapeHtml, stripActiveContent } from "../reader/print.js";
+import { scaledMs } from "../../test-support/test-time.js";
 
 const options = {
   seed: 0x520065,
@@ -91,7 +92,7 @@ it("calendar containers bound events, deep JSON graphs, NUL and huge calendar pr
   ]) {
     const started = performance.now();
     expect(parseCalendar(source)).toEqual([]);
-    expect(performance.now() - started).toBeLessThan(5000);
+    expect(performance.now() - started).toBeLessThan(scaledMs(5000));
   }
 });
 

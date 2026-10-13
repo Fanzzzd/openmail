@@ -164,6 +164,7 @@ import type { IncomingMessage } from "@openmail/core";
 import { Desktop, DesktopLive, receiveAppUrl, receiveOpenFile } from "./system";
 import { settle } from "../test-support/event-loop";
 import { createMainWindow, openComposeWindow, openThreadWindow } from "../windows/windows";
+import { waitLimit } from "../../../../../packages/core/test-support/test-time.js";
 
 // Expose test-only observations without narrowing Electron's production API with a cast.
 const observations = await vi.importMock<{
@@ -940,7 +941,7 @@ it("closing a main window with a pending send asks once, preserves it on Cancel 
             }),
         );
         win.close();
-        yield* Effect.promise(() => expect.poll(() => win.isDestroyed()).toBe(true));
+        yield* Effect.promise(() => expect.poll(() => win.isDestroyed(), waitLimit).toBe(true));
         expect(yield* mailbox.queuedSends).toEqual([]);
         expect((yield* mailbox.openDraft("window-close-draft")).message.subject).toBe("Close");
         expect(dialog.showMessageBox).toHaveBeenCalledTimes(2);
