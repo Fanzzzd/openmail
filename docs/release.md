@@ -80,7 +80,7 @@ pnpm --filter @openmail/desktop dist:signed
 
 ## Release workflow (GitHub Actions)
 
-`.github/workflows/release.yml` runs when a tag matching `v*` is pushed. The tag must equal `v` plus the `version` in `apps/desktop/package.json`, or the job stops. It runs on `macos-latest`, selects Xcode 26 for Icon Composer, installs with `pnpm install --frozen-lockfile`, builds the arm64 and x64 DMG and ZIP, and attaches them, the blockmaps and `latest-mac.yml` to a GitHub Release with generated notes. Both build scripts keep `--publish never`; the workflow uploads with `gh release create`.
+`.github/workflows/release.yml` runs when a tag matching `v*` is pushed. Its first job calls `check.yml`, the same build, type, test, lint and format checks that run on main, on the tagged commit. The release job needs that job, so a failing check stops the release before any secret is read. The release job has `contents: write`; the check job only reads. Actions are pinned by commit SHA with the version in a comment, and Dependabot updates the pins. The tag must equal `v` plus the `version` in `apps/desktop/package.json`, or the job stops. It runs on `macos-latest`, selects Xcode 26 for Icon Composer, installs with `pnpm install --frozen-lockfile`, builds the arm64 and x64 DMG and ZIP, and attaches them, the blockmaps and `latest-mac.yml` to a GitHub Release with generated notes. Both build scripts keep `--publish never`; the workflow uploads with `gh release create`.
 
 Repository secrets:
 

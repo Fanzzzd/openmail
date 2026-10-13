@@ -13,18 +13,25 @@ pnpm exec oxlint
 pnpm exec oxfmt --check .
 ```
 
-发布前另跑 `pnpm audit:prod`（即 `pnpm audit --prod`），检查所有 workspace 的生产依赖是否有已知漏洞。它要访问 npm registry，所以不在上面的离线检查里，CI 工作流另行接入。2026-10-13 的结果是 5 条，全部经手机（expo、react-native 的 metro）或文档站（next 的 postcss）引入：node-forge、braces、source-map-js 为 high，uuid、decode-uri-component 为 moderate，不在桌面、CLI 或 core 的依赖路径上。
-
 `pnpm build` 构建 core／CLI／桌面，并编译手机语言目录及检查类型。`pnpm test` 包含桌面完整邮件流程、桌面和手机 Lingui 目录同步／漏译，以及桌面术语与 ICU 检查。其他类型检查可单独运行 `pnpm check-types`。提交要求见 [AGENTS.md](../AGENTS.md)。
+
+[repo-paths.test.ts](../apps/docs/scripts/repo-paths.test.ts) 检查 `docs/` 和 `CONTRIBUTING.md` 里的链接、代码片段和命令中的仓库路径都存在，git 忽略的本地文件除外。结果取决于 apps/docs 以外的文件，所以 `@openmail/docs#test` 不走 turbo 缓存。
 
 桌面有几项测试读取构建产物，例如 `out/web` 里的网页版。turbo 在 `@openmail/desktop#test` 之前先跑桌面的 `build`，构建命中缓存时这一步约 0.3 秒。单独用 vitest 跑这些测试前先 `pnpm build`。
 
-`OPENMAIL_LOW_MEMORY_TESTS=1` 启用 `packages/core/vitest.low-memory.ts`：一个 worker、文件串行、单测与 hook 超时 60 秒。core 的测试文件共享一个模块图，但调用 `vi.mock` 或 `vi.doMock` 的文件单独放进隔离的 `mocking` 项目；共享模块图里这些文件会拿到先运行文件加载的真实模块，结果随文件顺序变化。普通运行，以及桌面、手机和 CLI 的所有运行，都隔离文件。完整邮件流程配置独立使用一个 worker 和 10 秒超时。
+`OPENMAIL_LOW_MEMORY_TESTS=1` 启用 `packages/core/vitest.low-memory.ts`：一个 worker、文件串行、单测与 hook 超时 60 秒。core 的测试文件共享一个模块图，但调用 `vi.mock` 或 `vi.doMock` 的文件单独放进隔离的 `mocking` 项目；共享模块图里这些文件会拿到先运行文件加载的真实模块，结果随文件顺序变化。普通运行，以及桌面、手机和 CLI 的所有运行，都隔离文件。完整邮件流程配置独立使用一个 worker 和 20 秒超时，按[负载下的测试](#负载下的测试)里的倍数放大。
+
+## 依赖审计
+
+`pnpm audit:prod` 运行 [audit-prod.mjs](../scripts/audit-prod.mjs)。它对整个 lockfile 跑 `pnpm audit --prod`，按依赖路径的起点分类。经桌面、CLI、core 或根目录到达的漏洞报错，退出码为 1。只经手机或文档站到达的漏洞打印为警告，不让命令失败；手机端随 Expo SDK 升级处理，文档站是静态导出。`pnpm audit` 不支持 `--filter`，所以分类在脚本里做。
+
+它要访问 npm registry，不在上面的离线检查里。[Audit 工作流](../.github/workflows/audit.yml)每周一 06:00 UTC 运行，也可以手动触发。2026-10-13 有 4 条警告，都来自手机（expo、react-native 的 metro）：node-forge、braces 为 high，uuid、decode-uri-component 为 moderate。source-map-js 曾经由 core 的 css-tree 到达，lockfile 已升到 1.2.2。
 
 ## 负载下的测试
 
 - 不用 sleep 同步。用 fake timers 推进计时，用 Effect Deferred 等待明确事件。
 - 墙钟预算只在 `OPENMAIL_PERF=1` 下断言，运行 `pnpm --filter @openmail/core test:perf`。
+- 必须用真实时间的上限（`vi.waitFor`、`expect.poll`、等待子进程、fuzz 的线性时间上限、完整流程的单测超时）都乘 [test-time.ts](../packages/core/test-support/test-time.ts) 的 `testTimeScale`：设置了 `CI` 时为 3，`OPENMAIL_TEST_TIME_SCALE` 可覆盖。`vi.waitFor` 和 `expect.poll` 传 `waitLimit`，它们自带的上限只有 1 秒。TestClock 和 fake timers 的虚拟时间不放大。
 - 数据库 fixture 用 [migrated-database.ts](../packages/core/test-support/migrated-database.ts) 生成独立副本。
 - 大文件用 [file-bytes.ts](../packages/core/test-support/file-bytes.ts) 比较完整字节。
 - 启动 worker 或 CLI 进程每次要几百毫秒。同一文件内复用 worker，做法见 `corpus-check.test.ts`。互不依赖的子进程测试用 `test.concurrent` 并发等待。每个测试最多串行等一次进程启动，前置启动放进 `beforeAll`。
@@ -33,7 +40,8 @@ pnpm exec oxfmt --check .
 
 ```sh
 pnpm exec vitest run --maxWorkers=1 \
-  src/outlook.test.ts src/outlook-focused.test.ts src/outlook-upload.test.ts \
+  src/providers/outlook/outlook.test.ts src/providers/outlook/outlook-focused.test.ts \
+  src/providers/outlook/outlook-upload.test.ts \
   src/platform/react-native/database-recovery.test.ts \
   src/platform/node/corpus-check.test.ts src/platform/node/visible-text-cost.test.ts
 ```
@@ -46,11 +54,11 @@ pnpm exec vitest run --maxWorkers=1 \
 
 | 路径                                                                                | 覆盖与限制                                                                                                 |
 | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `packages/core/src/*.test.ts`                                                       | 同步、离线队列、草稿、撤销、FTS、搜索、日历／联系人、AI 授权与模型协议；服务商网络使用 fake                |
+| `packages/core/src/**/*.test.ts`                                                    | 同步、离线队列、草稿、撤销、FTS、搜索、日历／联系人、AI 授权与模型协议；服务商网络使用 fake                |
 | `packages/core/src/platform/node/node-mailbox.test.ts`                              | 真实 NodeMailbox、临时数据库、MIME、附件缓存、PDF／图片输入与拒绝路径；IMAP 传输和密码使用 fake            |
 | `packages/core/src/platform-imports.test.ts`                                        | 非 Node 源码的导入、隐式全局和 portable 本地依赖图；不代替 Metro 或设备验证                                |
 | `packages/cli/src/mcp-server.test.ts`                                               | MCP 握手、工具 schema、身份、分页／预算和写权限                                                            |
-| `apps/desktop/src/main/*.test.ts`、renderer 测试                                    | 窗口与菜单处理器、RPC、键盘／选择／焦点、无障碍、编辑器和 AI 差异；OS 行为由支架提供                       |
+| `apps/desktop/src/main/**/*.test.ts`、renderer 测试                                 | 窗口与菜单处理器、RPC、键盘／选择／焦点、无障碍、编辑器和 AI 差异；OS 行为由支架提供                       |
 | `packages/core/src/platform/react-native/*.test.ts`、`apps/mobile/src/**/*.test.ts` | Node SQLite shim、OAuth／MIME adapters、Expo 服务 mocks；不证明 JSI、设备锁、WAL、安全存储或真实浏览器回调 |
 
 [performance-plans.test.ts](../packages/core/src/platform/node/performance-plans.test.ts) 集中检查真实 Store SQL 的索引；同步健康用例用 120 封邮件覆盖分页回绕和 Unicode ID 顺序，属于普通测试。10 万封的 [performance-large.test.ts](../packages/core/src/platform/node/performance-large.test.ts) 默认排除，须单独运行 `pnpm test:perf`；命令、报告、时延预算及迁移 35 的写入与磁盘成本只在[性能](performance.md)维护。
@@ -85,7 +93,7 @@ OPENMAIL_LOW_MEMORY_TESTS=1 pnpm --filter @openmail/desktop exec vitest run --co
 
 主流程覆盖首次同步、延迟已读、批量／单封撤销、草稿自动保存、撤销发送、回复／转发、附件提醒、服务器搜索、离线重试、草稿恢复、AI 关闭、提议审批、通知点击与键盘操作。耗时取决于机器，运行配置中的超时不代表产品响应时间。
 
-扩展时，在同一文件新增测试，通过 `flow()` 配置邮件、provider 和偏好；用 UI 操作触发行为，同时断言 `server` 调用记录和 `store` 状态。用 `eventually()` 等待 RPC，`advance()` 推进自动保存、已读和撤回计时。`server.failNext` 注入一次失败，`beforePush` 注入持续失败或 Deferred 阻塞。`holdLists()` 可阻塞列表 RPC，验证导航与搜索交错。`afterEach` 关闭 Registry、RPC、Mailbox 并删除临时数据库。
+扩展时，在同一文件新增测试，通过 `flow()` 配置邮件、provider 和偏好；用 UI 操作触发行为，同时断言 `server` 调用记录和 `store` 状态。用 `eventually()` 等待 RPC 和渲染，它在 DOM 和 RPC 连续 2.5 秒（乘 `testTimeScale`）没有变化后才报失败，总等待不超过这个时间的三倍；`advance()` 推进自动保存、已读和撤回计时。`server.failNext` 注入一次失败，`beforePush` 注入持续失败或 Deferred 阻塞。`holdLists()` 可阻塞列表 RPC，验证导航与搜索交错。`afterEach` 关闭 Registry、RPC、Mailbox 并删除临时数据库。
 
 同步重放回归在 `packages/core/src/mailbox/pending-pull.test.ts`，覆盖三种 provider 的稍后提醒、唤醒、Flags 更新及队列索引。
 
@@ -176,5 +184,5 @@ stdout 输出 JSON，stderr 输出步骤和预览日志：
 默认测试收集全部领域回归。`cache.test.ts` 的 100k 会话和 `performance-plans.test.ts` 的 150k 迁移仅在 `OPENMAIL_PERF=1` 时执行：
 
 ```sh
-OPENMAIL_PERF=1 OPENMAIL_LOW_MEMORY_TESTS=1 pnpm --filter @openmail/core exec vitest run src/cache.test.ts src/platform/node/performance-plans.test.ts
+OPENMAIL_PERF=1 OPENMAIL_LOW_MEMORY_TESTS=1 pnpm --filter @openmail/core exec vitest run src/domain/cache.test.ts src/platform/node/performance-plans.test.ts
 ```
