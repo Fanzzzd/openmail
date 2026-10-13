@@ -788,7 +788,7 @@ msgstr "Pas toe"
 msgid "Apply color"
 msgstr "Pas kleur toe"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Apply link"
 msgstr "Koppeling toepassen"
 
@@ -1019,6 +1019,7 @@ msgstr "Berichtteksten: {bodies} · Bijlagen: {attachments}"
 #. Email message text, never an anatomical body.
 #. Email message text, never an anatomical body.
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/PlainBody.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgctxt "message text"
 msgid "Body"
@@ -1151,7 +1152,8 @@ msgstr "De mailserver is momenteel niet bereikbaar."
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/ai/AiPanel.tsx
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 #: src/renderer/src/features/compose/components/TemplateVariables.tsx
@@ -1230,11 +1232,11 @@ msgstr "Kopie / Blinde kopie"
 msgid "Change"
 msgstr "Wijziging"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "Change mode"
 msgstr "Modus wijzigen"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "Change writing mode?"
 msgstr "Schrijfmodus wijzigen?"
 
@@ -1266,7 +1268,7 @@ msgstr "Zoek naar updates"
 msgid "Check for updates…"
 msgstr "Controleer op updates..."
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Check grammar on this Mac"
 msgstr "Grammatica op deze Mac controleren"
 
@@ -1291,7 +1293,7 @@ msgstr "Controleer de datum en herhalingsinstellingen"
 msgid "Checking for updates…"
 msgstr "Zoeken naar updates…"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Checking grammar…"
 msgstr "Grammatica controleren…"
 
@@ -1451,7 +1453,7 @@ msgstr "Sluit"
 msgid "Close compose window"
 msgstr "Sluit het opstelvenster"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 #: src/renderer/src/features/reader/FindBar.tsx
 msgid "Close find"
 msgstr "Sluit zoekbalk"
@@ -2434,7 +2436,7 @@ msgstr "Bewerk werkruimte"
 msgid "Edit template"
 msgstr "Sjabloon bewerken"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "Edit this draft body?"
 msgstr "Berichttekst van dit concept bewerken?"
 
@@ -2446,7 +2448,7 @@ msgstr "Bewerk deze regel in webmail om alle voorwaarden en acties te behouden."
 msgid "Edit token"
 msgstr "Token bewerken"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "Editing removes unsupported formatting and images from this draft. Lists, bold, italic, underline and links are kept."
 msgstr "Door te bewerken worden niet-ondersteunde opmaak en afbeeldingen uit dit concept verwijderd. Lijsten, vetgedrukt, cursief, onderstreept en links blijven behouden."
 
@@ -2709,11 +2711,12 @@ msgstr "Sneltoetsen filteren"
 msgid "Filters"
 msgstr "Filters"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Find and replace"
 msgstr "Vind en vervang"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Find in body"
 msgstr "Zoek in berichttekst"
 
@@ -3044,7 +3047,7 @@ msgid "Help"
 msgstr "Help"
 
 #. Invisible message text was removed before opening this draft in the editable rich composer. Do not include the removed text.
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgctxt "compose sanitization notice"
 msgid "Hidden text was removed."
 msgstr "Verborgen tekst is verwijderd."
@@ -3057,7 +3060,7 @@ msgstr "Verberg"
 msgid "Hide details"
 msgstr "Details verbergen"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Hide format bar"
 msgstr "Opmaakbalk verbergen"
 
@@ -3099,7 +3102,7 @@ msgstr "Beeldherkenning is niet beschikbaar op dit platform."
 msgid "Image region"
 msgstr "Afbeeldingsregio"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Image size"
 msgstr "Afbeeldingsgrootte"
 
@@ -3420,7 +3423,7 @@ msgstr "Laboratoria"
 msgid "Language"
 msgstr "Taal"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Large"
 msgstr "Groot"
 
@@ -3493,7 +3496,7 @@ msgstr "Laat {name} wijzigingen voorstellen die je goedkeurt"
 msgid "Light background"
 msgstr "Lichte achtergrond"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Link URL"
 msgstr "Link-URL"
 
@@ -3716,11 +3719,11 @@ msgstr "Markdown"
 msgid "Markdown composition"
 msgstr "Schrijven in Markdown"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Markdown replacements"
 msgstr "Markdown-vervangingen"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/PlainBody.tsx
 msgid "Markdown works: **bold**, `code`, ```code block```"
 msgstr "Markdown werkt: **vet**, `code`, ```codeblok```"
 
@@ -3774,7 +3777,7 @@ msgstr "MCP-toegang volgt de AI-toestemming voor dit account. Uitgeschakelde acc
 msgid "MCP can propose drafts only when the write mode is not \"{readOnly}\". You review drafts and confirm sending in the app."
 msgstr "MCP kan alleen concepten voorstellen als de schrijfmodus niet \"{readOnly}\" is. Je controleert concepten en bevestigt het versturen in de app."
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Medium"
 msgstr "Normaal"
 
@@ -3790,7 +3793,7 @@ msgstr "Reactie van de vergadering"
 msgid "Meeting updated"
 msgstr "Vergadering bijgewerkt"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Mention suggestions"
 msgstr "Suggesties voor vermeldingen"
 
@@ -4301,7 +4304,7 @@ msgstr "Volgende hierboven"
 msgid "Next below"
 msgstr "Volgende hieronder"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 #: src/renderer/src/features/reader/FindBar.tsx
 #: src/renderer/src/features/search/SearchHitBar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -4385,7 +4388,7 @@ msgstr "Geen grammaticasuggesties"
 msgid "No label or folder"
 msgstr "Geen label of map"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 #: src/renderer/src/features/reader/FindBar.tsx
 msgid "No matches"
 msgstr "Geen overeenkomsten"
@@ -4804,7 +4807,7 @@ msgstr "Organiseer direct"
 msgid "Organizer"
 msgstr "Organisator"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Original"
 msgstr "Origineel"
 
@@ -4813,7 +4816,7 @@ msgid "Original attachments are kept in Outlook without uploading them again."
 msgstr "Originele bijlagen worden in Outlook bewaard zonder ze opnieuw te uploaden."
 
 #. Status for a draft shown in a read-only preview that preserves its original layout.
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgctxt "compose formatting status"
 msgid "Original formatting kept"
 msgstr "Oorspronkelijke opmaak behouden"
@@ -4937,12 +4940,12 @@ msgstr "Wachtwoord"
 msgid "Paste"
 msgstr "Plak"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Paste and match style"
 msgstr "Plak en pas stijl aan"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Paste as quotation"
 msgstr "Plak als citaat"
@@ -5061,7 +5064,7 @@ msgstr "Voorbeeld: {0} berichten. Alleen de voorbeeldberichten worden gewijzigd 
 msgid "Previous / next view"
 msgstr "Vorige / volgende weergave"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 #: src/renderer/src/features/reader/FindBar.tsx
 #: src/renderer/src/features/search/SearchHitBar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -5468,11 +5471,11 @@ msgstr "Wordt wekelijks herhaald"
 msgid "Repeats yearly"
 msgstr "Wordt jaarlijks herhaald"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Replace"
 msgstr "Vervang"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Replace all"
 msgstr "Vervang alles"
 
@@ -5480,7 +5483,7 @@ msgstr "Vervang alles"
 msgid "Replace emoji text as you type"
 msgstr "Vervang emoji-tekst terwijl u typt"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Replace with"
 msgstr "Vervang door"
 
@@ -6116,7 +6119,7 @@ msgstr "Cc-veld tonen"
 msgid "Show Focused/Other"
 msgstr "Prioriteit/Overige tonen"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Show format bar"
 msgstr "Opmaakbalk weergeven"
@@ -6308,7 +6311,7 @@ msgstr "Grootte in bytes"
 msgid "Skip"
 msgstr "Sla over"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Small"
 msgstr "Klein"
 
@@ -6321,7 +6324,7 @@ msgstr "Kleinere tekst"
 msgid "Smaller than"
 msgstr "Kleiner dan"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Smart lists"
 msgstr "Slimme lijsten"
 
@@ -6359,7 +6362,7 @@ msgstr "Software-updates"
 msgid "Some conditions need metadata that is not cached. Save the rule for future mail on the server."
 msgstr "Sommige voorwaarden vereisen metadata die niet in de cache staan. Sla de regel op voor toekomstige e-mail op de server."
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "Some formatting cannot be kept in this mode. Link addresses are kept. You can undo the mode change."
 msgstr "Sommige opmaak kan in deze modus niet behouden blijven. Linkadressen worden bewaard. U kunt de moduswijziging ongedaan maken."
 
@@ -6880,7 +6883,7 @@ msgstr "Hiermee wordt de opgeslagen herstelkopie verwijderd. De regels op de ser
 msgid "This development build has no MCP server yet. Run pnpm build in the repository first."
 msgstr "Deze ontwikkelbuild heeft nog geen MCP-server. Voer eerst pnpm build uit in de repository."
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "This draft contains formatting or images this editor cannot keep. The original is preserved until you edit the body."
 msgstr "Dit concept bevat opmaak of afbeeldingen die deze editor niet kan behouden. Het origineel blijft bewaard totdat je de berichttekst bewerkt."
 
@@ -7298,7 +7301,7 @@ msgstr "Gebruik {token} voor een vrije variabele. Bij het invoegen van de sjablo
 msgid "Use a service name such as svc:openmail"
 msgstr "Voer een servicenaam in zoals svc:openmail"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Use an http, https or mailto link"
 msgstr "Gebruik een http-, https- of mailto-link"
 

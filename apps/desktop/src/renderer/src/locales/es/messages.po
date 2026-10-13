@@ -788,7 +788,7 @@ msgstr "Aplicar"
 msgid "Apply color"
 msgstr "Aplicar color"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Apply link"
 msgstr "Aplicar enlace"
 
@@ -1019,6 +1019,7 @@ msgstr "Textos de los mensajes: {bodies} · Archivos adjuntos: {attachments}"
 #. Email message text, never an anatomical body.
 #. Email message text, never an anatomical body.
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/PlainBody.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgctxt "message text"
 msgid "Body"
@@ -1151,7 +1152,8 @@ msgstr "No se puede conectar con el servidor de correo en este momento."
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/ai/AiPanel.tsx
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 #: src/renderer/src/features/compose/components/TemplateVariables.tsx
@@ -1230,11 +1232,11 @@ msgstr "Cc/Cco"
 msgid "Change"
 msgstr "Cambio"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "Change mode"
 msgstr "Cambiar modo"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "Change writing mode?"
 msgstr "¿Cambiar modo de escritura?"
 
@@ -1266,7 +1268,7 @@ msgstr "Buscar actualizaciones"
 msgid "Check for updates…"
 msgstr "Buscar actualizaciones..."
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Check grammar on this Mac"
 msgstr "Revisar la gramática en este Mac"
 
@@ -1291,7 +1293,7 @@ msgstr "Revisa la fecha y los ajustes de repetición"
 msgid "Checking for updates…"
 msgstr "Buscando actualizaciones…"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Checking grammar…"
 msgstr "Revisando la gramática…"
 
@@ -1451,7 +1453,7 @@ msgstr "Cerrar"
 msgid "Close compose window"
 msgstr "Cerrar ventana de redacción"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 #: src/renderer/src/features/reader/FindBar.tsx
 msgid "Close find"
 msgstr "Cerrar búsqueda"
@@ -2434,7 +2436,7 @@ msgstr "Editar espacio"
 msgid "Edit template"
 msgstr "Editar plantilla"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "Edit this draft body?"
 msgstr "¿Editar el texto de este borrador?"
 
@@ -2446,7 +2448,7 @@ msgstr "Edite esta regla en webmail para preservar todas las condiciones y accio
 msgid "Edit token"
 msgstr "Editar token"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "Editing removes unsupported formatting and images from this draft. Lists, bold, italic, underline and links are kept."
 msgstr "La edición elimina el formato y las imágenes no compatibles de este borrador. Se mantienen listas, negrita, cursiva, subrayado y enlaces."
 
@@ -2709,11 +2711,12 @@ msgstr "Filtrar atajos"
 msgid "Filters"
 msgstr "Filtros"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Find and replace"
 msgstr "Buscar y reemplazar"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Find in body"
 msgstr "Buscar en el texto del mensaje"
 
@@ -3044,7 +3047,7 @@ msgid "Help"
 msgstr "Ayuda"
 
 #. Invisible message text was removed before opening this draft in the editable rich composer. Do not include the removed text.
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgctxt "compose sanitization notice"
 msgid "Hidden text was removed."
 msgstr "Se ha eliminado el texto oculto."
@@ -3057,7 +3060,7 @@ msgstr "Ocultar"
 msgid "Hide details"
 msgstr "Ocultar detalles"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Hide format bar"
 msgstr "Ocultar barra de formato"
 
@@ -3099,7 +3102,7 @@ msgstr "El reconocimiento de imágenes no está disponible en esta plataforma."
 msgid "Image region"
 msgstr "Región de la imagen"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Image size"
 msgstr "Tamaño de imagen"
 
@@ -3420,7 +3423,7 @@ msgstr "Laboratorios"
 msgid "Language"
 msgstr "Idioma"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Large"
 msgstr "Grande"
 
@@ -3493,7 +3496,7 @@ msgstr "Permitir que {name} proponga cambios para que los apruebes"
 msgid "Light background"
 msgstr "Fondo claro"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Link URL"
 msgstr "URL del enlace"
 
@@ -3716,11 +3719,11 @@ msgstr "Markdown"
 msgid "Markdown composition"
 msgstr "Redacción en Markdown"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Markdown replacements"
 msgstr "Sustituciones de Markdown"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/PlainBody.tsx
 msgid "Markdown works: **bold**, `code`, ```code block```"
 msgstr "Markdown funciona: **negrita**, `código`, ```bloque de código```"
 
@@ -3774,7 +3777,7 @@ msgstr "El acceso MCP sigue el consentimiento de IA de esta cuenta. Las cuentas 
 msgid "MCP can propose drafts only when the write mode is not \"{readOnly}\". You review drafts and confirm sending in the app."
 msgstr "MCP solo puede proponer borradores si el modo de escritura no es «{readOnly}». Revisas los borradores y confirmas el envío en la aplicación."
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Medium"
 msgstr "Mediano"
 
@@ -3790,7 +3793,7 @@ msgstr "Respuesta de la reunión"
 msgid "Meeting updated"
 msgstr "Reunión actualizada"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Mention suggestions"
 msgstr "Sugerencias de menciones"
 
@@ -4301,7 +4304,7 @@ msgstr "Siguiente arriba"
 msgid "Next below"
 msgstr "Siguiente abajo"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 #: src/renderer/src/features/reader/FindBar.tsx
 #: src/renderer/src/features/search/SearchHitBar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -4385,7 +4388,7 @@ msgstr "No hay sugerencias gramaticales"
 msgid "No label or folder"
 msgstr "Sin etiqueta ni carpeta"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 #: src/renderer/src/features/reader/FindBar.tsx
 msgid "No matches"
 msgstr "Sin coincidencias"
@@ -4804,7 +4807,7 @@ msgstr "Organizar directamente"
 msgid "Organizer"
 msgstr "Organizador"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Original"
 msgstr "Original"
 
@@ -4813,7 +4816,7 @@ msgid "Original attachments are kept in Outlook without uploading them again."
 msgstr "Los archivos adjuntos originales se guardan en Outlook sin volver a cargarlos."
 
 #. Status for a draft shown in a read-only preview that preserves its original layout.
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgctxt "compose formatting status"
 msgid "Original formatting kept"
 msgstr "Formato original conservado"
@@ -4937,12 +4940,12 @@ msgstr "Contraseña"
 msgid "Paste"
 msgstr "Pegar"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Paste and match style"
 msgstr "Pegar con el mismo estilo"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Paste as quotation"
 msgstr "Pegar como cita"
@@ -5061,7 +5064,7 @@ msgstr "Vista previa: {0} mensajes. Solo los mensajes de la vista previa se camb
 msgid "Previous / next view"
 msgstr "Vista anterior / siguiente"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 #: src/renderer/src/features/reader/FindBar.tsx
 #: src/renderer/src/features/search/SearchHitBar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -5468,11 +5471,11 @@ msgstr "Se repite semanalmente"
 msgid "Repeats yearly"
 msgstr "Se repite anualmente"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Replace"
 msgstr "Reemplazar"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Replace all"
 msgstr "Reemplazar todo"
 
@@ -5480,7 +5483,7 @@ msgstr "Reemplazar todo"
 msgid "Replace emoji text as you type"
 msgstr "Reemplaza el texto emoji mientras escribes"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Replace with"
 msgstr "Reemplazar por"
 
@@ -6116,7 +6119,7 @@ msgstr "Mostrar campo CC"
 msgid "Show Focused/Other"
 msgstr "Mostrar Prioritarios/Otros"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Show format bar"
 msgstr "Mostrar barra de formato"
@@ -6308,7 +6311,7 @@ msgstr "Tamaño en bytes"
 msgid "Skip"
 msgstr "Omitir"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Small"
 msgstr "Pequeño"
 
@@ -6321,7 +6324,7 @@ msgstr "Texto más pequeño"
 msgid "Smaller than"
 msgstr "Más pequeño que"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Smart lists"
 msgstr "Listas inteligentes"
 
@@ -6359,7 +6362,7 @@ msgstr "Actualizaciones de software"
 msgid "Some conditions need metadata that is not cached. Save the rule for future mail on the server."
 msgstr "Algunas condiciones necesitan metadatos no guardados en caché. Guarde la regla para el correo futuro en el servidor."
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "Some formatting cannot be kept in this mode. Link addresses are kept. You can undo the mode change."
 msgstr "Algunos formatos no se pueden mantener en este modo. Las direcciones de enlace se mantienen. Puede deshacer el cambio de modo."
 
@@ -6880,7 +6883,7 @@ msgstr "Esto elimina la copia de recuperación guardada. Las reglas en el servid
 msgid "This development build has no MCP server yet. Run pnpm build in the repository first."
 msgstr "Esta compilación de desarrollo aún no tiene servidor MCP. Ejecuta primero pnpm build en el repositorio."
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "This draft contains formatting or images this editor cannot keep. The original is preserved until you edit the body."
 msgstr "Este borrador contiene formato o imágenes que el editor no puede conservar. El original se mantiene hasta que edites el texto del mensaje."
 
@@ -7298,7 +7301,7 @@ msgstr "Utilice {token} para una variable personalizada. Se le pedirá su valor 
 msgid "Use a service name such as svc:openmail"
 msgstr "Introduce un nombre de servicio como svc:openmail"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Use an http, https or mailto link"
 msgstr "Utilice un enlace http, https o mailto"
 

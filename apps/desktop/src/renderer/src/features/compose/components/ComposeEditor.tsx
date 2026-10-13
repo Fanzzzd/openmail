@@ -1,10 +1,17 @@
 import { isDesktop } from "../../../lib/platform";
 import { GrammarResults, useComposeGrammar } from "./ComposeGrammar";
 import { ComposeToolbar } from "./ComposeToolbar";
-import { MenuCheckboxItem, MenuItem, MenuRadioGroup, MenuSeparator } from "../../../ui/Menu";
-import { EDIT_MESSAGE_TEXT } from "../../../i18n/message-text";
+import { PlainBody } from "./PlainBody";
+import { useFormatOptions } from "../hooks/use-format-options";
+import { BodyNotices, LockedPreview, ModeChangePrompt } from "./BodyNotices";
+import { EditorMoreMenu } from "./EditorMoreMenu";
+import {
+  ComposeFindBar,
+  ComposeLinkBar,
+  MentionSuggestions,
+  editorButton,
+} from "./ComposeEditorBars";
 import { composePreviewHtml } from "../compose-preview";
-import { EmailFrame } from "../../reader/frame/EmailFrame";
 import { jumpDocumentSelection, jumpTextareaSelection } from "../../../lib/jump-selection";
 import { activeComposeMentions, resizeComposeImage } from "../compose-contacts-dom";
 /* oxlint-disable jsx-a11y/prefer-tag-over-role -- A contenteditable needs textbox semantics; textarea cannot retain rich marks. */
@@ -17,7 +24,7 @@ import {
 import { shortcutHint } from "../../../i18n/use-shortcut-text";
 import { Effect } from "effect";
 import { useRunMail, withMail, type MailEnv } from "../../../state/mail";
-import { AsyncResult, Atom, Reactivity } from "effect/reactivity";
+import { AsyncResult, Atom } from "effect/reactivity";
 import { suggestionsAtom } from "../../../state/queries";
 import { useLingui } from "@lingui/react/macro";
 import {
@@ -35,11 +42,9 @@ import {
   type Address,
   type InlineImageSize,
   type Prefs,
-  type PrefsPatch,
   mentionQuery,
   mentionHtml,
   emojiAtCaret,
-  EMPTY_QUOTE_HISTORY,
 } from "@openmail/core/schema";
 import {
   useLayoutEffect,
@@ -74,8 +79,6 @@ import {
   restoreFormatSelection,
   type FormatAction,
 } from "../compose-format-dom";
-import { Keys } from "../../../state/keys";
-import { Alert, AlertCancel, alertButton, alertPrimary } from "../../../ui/Dialog";
 
 const noSuggestions = Atom.make(AsyncResult.success<readonly Address[]>([]));
 interface Props {
@@ -115,17 +118,16 @@ export function ComposeEditor({
   const shortcut = (action: ShortcutAction) => shortcutHint(shortcutSet, action);
   const run = useRunMail();
   const richRef = useRef<HTMLDivElement>(null);
-  const [formatBar, setFormatBar] = useState(prefs.composeFormatBar);
-  const [smartLists, setSmartLists] = useState(prefs.composeSmartLists);
-  const [markdownReplacement, setMarkdownReplacement] = useState(prefs.composeMarkdownReplacement);
   const copiedStyle = useRef("");
   const smartUndo = useRef<{ body: ComposeBody; caret: number } | null>(null);
-  const saveFormatPrefs = (patch: PrefsPatch) =>
-    run(withMail((call) => call("SetPrefs", { patch })).pipe(Reactivity.mutation([Keys.prefs])));
-  const toggleFormatBar = () => {
-    setFormatBar(!formatBar);
-    saveFormatPrefs({ composeFormatBar: !formatBar });
-  };
+  const {
+    formatBar,
+    toggleFormatBar,
+    smartLists,
+    setSmartLists,
+    markdownReplacement,
+    setMarkdownReplacement,
+  } = useFormatOptions(prefs);
   const format = (action: FormatAction) => {
     if (!richRef.current || locked) return;
     copiedStyle.current = formatEditor(
@@ -163,7 +165,6 @@ export function ComposeEditor({
   const [href, setHref] = useState("");
   const [linkError, setLinkError] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
-  const [editPrompt, setEditPrompt] = useState(false);
   const [modePrompt, setModePrompt] = useState<ComposeBody | null>(null);
   const [modeUndo, setModeUndo] = useState<ComposeBody | null>(null);
   const remoteUnsupported = useMemo(
@@ -603,8 +604,6 @@ export function ComposeEditor({
       return;
     }
   };
-  const button =
-    "rounded p-1.5 text-a11y-muted hover:bg-fill-hover focus-visible:outline-a11y-focus";
 
   return (
     <div
@@ -639,7 +638,7 @@ export function ComposeEditor({
             {modeUndo && (
               <button
                 type="button"
-                className={button}
+                className={editorButton}
                 onClick={() => {
                   onChange(modeUndo);
                   setModeUndo(null);
@@ -650,293 +649,85 @@ export function ComposeEditor({
             {emojiUndo && (
               <button
                 type="button"
-                className={button}
+                className={editorButton}
                 onClick={undoEmoji}
               >{t`Undo emoji replacement`}</button>
             )}
           </>
         }
         more={
-          <>
-            <MenuItem disabled={locked} onClick={() => setFinding((value) => !value)}>
-              {t`Find and replace`}
-            </MenuItem>
-            <MenuItem
-              disabled={locked}
-              shortcut={shortcut("pasteMatchStyle")}
-              onClick={() => paste("matchStyle")}
-            >{t`Paste and match style`}</MenuItem>
-            <MenuItem
-              disabled={locked}
-              shortcut={shortcut("pasteQuotation")}
-              onClick={() => paste("quotation")}
-            >{t`Paste as quotation`}</MenuItem>
-            {body.kind === "rich" && (
-              <>
-                <MenuSeparator />
-                <MenuItem shortcut={shortcut("toggleFormatBar")} onClick={toggleFormatBar}>
-                  {formatBar ? t`Hide format bar` : t`Show format bar`}
-                </MenuItem>
-                <MenuCheckboxItem
-                  checked={smartLists}
-                  onCheckedChange={(next) => {
-                    setSmartLists(next);
-                    saveFormatPrefs({ composeSmartLists: next });
-                  }}
-                >{t`Smart lists`}</MenuCheckboxItem>
-                <MenuCheckboxItem
-                  checked={markdownReplacement}
-                  onCheckedChange={(next) => {
-                    setMarkdownReplacement(next);
-                    saveFormatPrefs({ composeMarkdownReplacement: next });
-                  }}
-                >{t`Markdown replacements`}</MenuCheckboxItem>
-                <MenuSeparator />
-                <MenuRadioGroup
-                  label={t`Image size`}
-                  value={prefs.inlineImageSize}
-                  disabled={locked}
-                  options={[
-                    { value: "small", label: t`Small` },
-                    { value: "medium", label: t`Medium` },
-                    { value: "large", label: t`Large` },
-                    { value: "original", label: t`Original` },
-                  ]}
-                  onValueChange={(size) => {
-                    onImageSize(size);
-                    resizeComposeImage(richRef.current, imageCid, size);
-                    changed();
-                  }}
-                />
-              </>
-            )}
-            {grammar.available && (
-              <>
-                <MenuSeparator />
-                <MenuItem disabled={grammar.disabled} onClick={grammar.check}>
-                  {grammar.checking ? t`Checking grammar…` : t`Check grammar on this Mac`}
-                </MenuItem>
-              </>
-            )}
-          </>
+          <EditorMoreMenu
+            locked={locked}
+            rich={body.kind === "rich"}
+            shortcut={shortcut}
+            onFind={() => setFinding((value) => !value)}
+            onPaste={paste}
+            formatBar={formatBar}
+            onToggleFormatBar={toggleFormatBar}
+            smartLists={smartLists}
+            onSmartLists={setSmartLists}
+            markdownReplacement={markdownReplacement}
+            onMarkdownReplacement={setMarkdownReplacement}
+            imageSize={prefs.inlineImageSize}
+            onImageSize={(size) => {
+              onImageSize(size);
+              resizeComposeImage(richRef.current, imageCid, size);
+              changed();
+            }}
+            grammar={grammar}
+          />
         }
       />
       {pasteError && <p role="alert">{t`Could not read clipboard`}</p>}
       {mention && mentionSuggestions.length > 0 && (
-        <div
-          className="shrink-0 border-b px-4 py-2 border-separator"
-          aria-label={t`Mention suggestions`}
-        >
-          {mentionSuggestions.map((person, index) => (
-            <button
-              key={person.address}
-              type="button"
-              className={`${button} ${index === mentionIndex ? "bg-blue-500/10" : ""}`}
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={() => pickMention(person)}
-            >
-              {person.name || person.address}
-            </button>
-          ))}
-        </div>
+        <MentionSuggestions people={mentionSuggestions} index={mentionIndex} onPick={pickMention} />
       )}
       {finding && (
-        <search
-          aria-label={t`Find and replace`}
-          className="flex shrink-0 flex-wrap items-center gap-2 px-4 py-2"
-        >
-          <input
-            autoFocus
-            aria-label={t`Find in body`}
-            placeholder={t`Find in body`}
-            value={findQuery}
-            onKeyDown={findKey}
-            onChange={(event) => {
-              setFindQuery(event.target.value);
-              setFindIndex(0);
-            }}
-            className="min-w-0 flex-1 rounded border px-2 py-1 border-separator"
-          />
-          <input
-            aria-label={t`Replace with`}
-            placeholder={t`Replace with`}
-            value={replacement}
-            onKeyDown={findKey}
-            onChange={(event) => setReplacement(event.target.value)}
-            className="min-w-0 flex-1 rounded border px-2 py-1 border-separator"
-          />
-          <output aria-live="polite">
-            {matches.length
-              ? `${(findIndex % matches.length) + 1}/${matches.length}`
-              : t`No matches`}
-          </output>
-          <button
-            type="button"
-            disabled={!matches.length}
-            className={button}
-            onClick={() => selectMatch((findIndex + matches.length - 1) % matches.length)}
-          >{t`Previous match`}</button>
-          <button
-            type="button"
-            disabled={!matches.length}
-            className={button}
-            onClick={() => selectMatch((findIndex + 1) % matches.length)}
-          >{t`Next match`}</button>
-          <button
-            type="button"
-            disabled={locked || !matches.length}
-            className={button}
-            onClick={() => replaceMatches(false)}
-          >{t`Replace`}</button>
-          <button
-            type="button"
-            disabled={locked || !matches.length}
-            className={button}
-            onClick={() => replaceMatches(true)}
-          >{t`Replace all`}</button>
-          <button
-            type="button"
-            className={button}
-            onClick={() => setFinding(false)}
-          >{t`Close find`}</button>
-        </search>
+        <ComposeFindBar
+          query={findQuery}
+          onQuery={(query) => {
+            setFindQuery(query);
+            setFindIndex(0);
+          }}
+          replacement={replacement}
+          onReplacement={setReplacement}
+          onKeyDown={findKey}
+          index={findIndex}
+          count={matches.length}
+          locked={locked}
+          onSelect={selectMatch}
+          onReplace={replaceMatches}
+          onClose={() => setFinding(false)}
+        />
       )}
       <GrammarResults grammar={grammar} locked={locked} />
-      {!locked && body.kind === "rich" && body.hiddenTextRemoved && (
-        <p
-          role="status"
-          className="shrink-0 border-b border-edge px-4 py-2 text-callout text-a11y-muted"
-        >
-          {t({
-            message: "Hidden text was removed.",
-            context: "compose sanitization notice",
-            comment:
-              "Invisible message text was removed before opening this draft in the editable rich composer. Do not include the removed text.",
-          })}
-        </p>
-      )}
-      {remoteUnsupported && (
-        <div
-          role="status"
-          className="shrink-0 border-b border-amber-200 bg-amber-50 px-4 py-2 text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-100"
-        >
-          <p className="font-medium">
-            {t({
-              message: "Original formatting kept",
-              context: "compose formatting status",
-              comment:
-                "Status for a draft shown in a read-only preview that preserves its original layout.",
-            })}
-          </p>
-          <p>{t`This draft contains formatting or images this editor cannot keep. The original is preserved until you edit the body.`}</p>
-          {locked && (
-            <button type="button" className={button} onClick={() => setEditPrompt(true)}>
-              {t(EDIT_MESSAGE_TEXT)}
-            </button>
-          )}
-        </div>
-      )}
-      <Alert
-        open={editPrompt}
-        onOpenChange={setEditPrompt}
-        title={t`Edit this draft body?`}
-        description={t`Editing removes unsupported formatting and images from this draft. Lists, bold, italic, underline and links are kept.`}
-      >
-        <AlertCancel>{t`Cancel`}</AlertCancel>
-        <button
-          type="button"
-          className={alertPrimary}
-          onClick={() => {
-            setUnlocked(true);
-            setEditPrompt(false);
-          }}
-        >
-          {t(EDIT_MESSAGE_TEXT)}
-        </button>
-      </Alert>
-      <Alert
+      <BodyNotices
+        hiddenTextRemoved={!locked && body.kind === "rich" && body.hiddenTextRemoved === true}
+        remoteUnsupported={remoteUnsupported}
+        locked={locked}
+        onUnlock={() => setUnlocked(true)}
+      />
+      <ModeChangePrompt
         open={modePrompt !== null}
-        onOpenChange={(open) => {
-          if (!open) setModePrompt(null);
+        onCancel={() => setModePrompt(null)}
+        onConfirm={() => {
+          if (modePrompt) changeMode(modePrompt);
         }}
-        title={t`Change writing mode?`}
-        description={t`Some formatting cannot be kept in this mode. Link addresses are kept. You can undo the mode change.`}
-      >
-        <AlertCancel>{t`Cancel`}</AlertCancel>
-        <button
-          type="button"
-          className={alertButton}
-          onClick={() => {
-            if (modePrompt) changeMode(modePrompt);
-          }}
-        >{t`Change mode`}</button>
-      </Alert>
+      />
       {linkOpen && (
-        <div className="flex shrink-0 flex-wrap items-center gap-2 px-4 py-2">
-          <input
-            autoFocus
-            aria-label={t`Link URL`}
-            value={href}
-            placeholder="https://"
-            className="min-w-0 flex-1 rounded border border-neutral-300 bg-transparent px-2 py-1 dark:border-neutral-600"
-            onChange={(e) => {
-              setHref(e.target.value);
-              setLinkError(false);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                addLink();
-              }
-              if (e.key === "Escape") {
-                e.preventDefault();
-                e.stopPropagation();
-                setLinkOpen(false);
-              }
-            }}
-          />
-          <button type="button" className={button} onClick={addLink}>{t`Apply link`}</button>
-          <button
-            type="button"
-            className={button}
-            onClick={() => setLinkOpen(false)}
-          >{t`Cancel`}</button>
-          {linkError && (
-            <span
-              role="alert"
-              className="w-full text-a11y-danger"
-            >{t`Use an http, https or mailto link`}</span>
-          )}
-        </div>
+        <ComposeLinkBar
+          href={href}
+          onHref={(next) => {
+            setHref(next);
+            setLinkError(false);
+          }}
+          error={linkError}
+          onApply={addLink}
+          onCancel={() => setLinkOpen(false)}
+        />
       )}
       {locked && body.kind === "rich" && (
-        <div className="bg-surface px-4 py-4">
-          <EmailFrame
-            html={composePreviewHtml(body, attachments)}
-            remote={false}
-            background="light"
-            zoom={100}
-            presentation="compose"
-            previous={EMPTY_QUOTE_HISTORY}
-            findQuery=""
-            findIndex={0}
-            onMatches={undefined}
-            onActivate={constVoid}
-            onKeyDown={(event) => {
-              const forwarded = new window.KeyboardEvent("keydown", {
-                key: event.key,
-                metaKey: event.metaKey,
-                ctrlKey: event.ctrlKey,
-                altKey: event.altKey,
-                shiftKey: event.shiftKey,
-                bubbles: true,
-                cancelable: true,
-              });
-              window.dispatchEvent(forwarded);
-              if (forwarded.defaultPrevented) event.preventDefault();
-            }}
-          />
-        </div>
+        <LockedPreview html={composePreviewHtml(body, attachments)} />
       )}
       {body.kind === "rich" ? (
         <div
@@ -996,49 +787,16 @@ export function ComposeEditor({
           onDrop={(e) => e.preventDefault()}
         />
       ) : (
-        <textarea
-          data-openmail-compose-body="true"
-          ref={(element) => {
-            bodyRef.current = element;
-          }}
-          value={body.text}
+        <PlainBody
+          body={body}
+          bodyRef={bodyRef}
+          emojiReplacement={prefs.emojiReplacement}
           onKeyDown={editorKey}
-          onChange={(e) => {
+          onEdit={(undo) => {
             setModeUndo(null);
-            setEmojiUndo(null);
-            const text = e.target.value;
-            const at = e.target.selectionStart;
-            const emojiChange =
-              prefs.emojiReplacement &&
-              !("isComposing" in e.nativeEvent && e.nativeEvent.isComposing === true)
-                ? emojiAtCaret(text.slice(0, at), body.kind === "markdown")
-                : null;
-            if (emojiChange) {
-              setEmojiUndo({ kind: body.kind, text });
-              const element = e.target;
-              const caret =
-                at + emojiChange.replacement.length - (emojiChange.end - emojiChange.start);
-              requestAnimationFrame(() => element.setSelectionRange(caret, caret));
-              onChange({
-                kind: body.kind,
-                text:
-                  text.slice(0, emojiChange.start) +
-                  emojiChange.replacement +
-                  text.slice(emojiChange.end),
-              });
-            } else onChange({ kind: body.kind, text });
+            setEmojiUndo(undo);
           }}
-          aria-label={t({
-            message: "Body",
-            context: "message text",
-            comment: "Email message text, never an anatomical body.",
-          })}
-          placeholder={
-            body.kind === "markdown"
-              ? t`Markdown works: **bold**, \`code\`, \`\`\`code block\`\`\``
-              : undefined
-          }
-          className={`min-h-0 flex-1 resize-none bg-transparent px-4 py-3 text-callout leading-relaxed outline-none placeholder:text-a11y-muted ${body.kind === "markdown" ? "font-mono text-body" : ""}`}
+          onChange={onChange}
         />
       )}
     </div>

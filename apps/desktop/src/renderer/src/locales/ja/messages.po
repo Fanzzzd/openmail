@@ -788,7 +788,7 @@ msgstr "適用"
 msgid "Apply color"
 msgstr "色を適用"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Apply link"
 msgstr "リンクを適用する"
 
@@ -1019,6 +1019,7 @@ msgstr "本文: {bodies} · 添付ファイル: {attachments}"
 #. Email message text, never an anatomical body.
 #. Email message text, never an anatomical body.
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/PlainBody.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgctxt "message text"
 msgid "Body"
@@ -1151,7 +1152,8 @@ msgstr "現在メールサーバーに接続できません。"
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/ai/AiPanel.tsx
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 #: src/renderer/src/features/compose/components/TemplateVariables.tsx
@@ -1230,11 +1232,11 @@ msgstr "Cc/Bcc"
 msgid "Change"
 msgstr "変更"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "Change mode"
 msgstr "モード変更"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "Change writing mode?"
 msgstr "書き込みモードを変更しますか?"
 
@@ -1266,7 +1268,7 @@ msgstr "アップデートを確認"
 msgid "Check for updates…"
 msgstr "アップデートを確認してください…"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Check grammar on this Mac"
 msgstr "このMacで文法をチェック"
 
@@ -1291,7 +1293,7 @@ msgstr "日時と繰り返し設定を確認してください"
 msgid "Checking for updates…"
 msgstr "アップデートを確認中…"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Checking grammar…"
 msgstr "文法をチェック中…"
 
@@ -1451,7 +1453,7 @@ msgstr "閉じる"
 msgid "Close compose window"
 msgstr "作成ウィンドウを閉じる"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 #: src/renderer/src/features/reader/FindBar.tsx
 msgid "Close find"
 msgstr "検索を閉じる"
@@ -2434,7 +2436,7 @@ msgstr "スペースを編集"
 msgid "Edit template"
 msgstr "テンプレートの編集"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "Edit this draft body?"
 msgstr "この下書きの本文を編集しますか？"
 
@@ -2446,7 +2448,7 @@ msgstr "Web メールでこのルールを編集して、すべての条件と�
 msgid "Edit token"
 msgstr "トークンの編集"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "Editing removes unsupported formatting and images from this draft. Lists, bold, italic, underline and links are kept."
 msgstr "編集すると、サポートされていない書式設定と画像がこの下書きから削除されます。リスト、太字、斜体、下線、リンクは保持されます。"
 
@@ -2709,11 +2711,12 @@ msgstr "ショートカットを絞り込む"
 msgid "Filters"
 msgstr "フィルタ"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Find and replace"
 msgstr "検索して置換する"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Find in body"
 msgstr "本文内を検索"
 
@@ -3044,7 +3047,7 @@ msgid "Help"
 msgstr "ヘルプ"
 
 #. Invisible message text was removed before opening this draft in the editable rich composer. Do not include the removed text.
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgctxt "compose sanitization notice"
 msgid "Hidden text was removed."
 msgstr "非表示のテキストを削除しました。"
@@ -3057,7 +3060,7 @@ msgstr "非表示"
 msgid "Hide details"
 msgstr "詳細を隠す"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Hide format bar"
 msgstr "フォーマットバーを隠す"
 
@@ -3099,7 +3102,7 @@ msgstr "このプラットフォームでは画像認識は利用できません
 msgid "Image region"
 msgstr "画像領域"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Image size"
 msgstr "画像サイズ"
 
@@ -3420,7 +3423,7 @@ msgstr "研究室"
 msgid "Language"
 msgstr "言語"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Large"
 msgstr "大きい"
 
@@ -3493,7 +3496,7 @@ msgstr "{name} による変更の提案を許可（実行前にあなたが承�
 msgid "Light background"
 msgstr "明るい背景"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Link URL"
 msgstr "リンクURL"
 
@@ -3716,11 +3719,11 @@ msgstr "Markdown"
 msgid "Markdown composition"
 msgstr "Markdownで作成"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Markdown replacements"
 msgstr "Markdownの置換"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/PlainBody.tsx
 msgid "Markdown works: **bold**, `code`, ```code block```"
 msgstr "マークダウンは機能します: **太字**、`code`、```code block```"
 
@@ -3774,7 +3777,7 @@ msgstr "MCP からのアクセスは、このアカウントの AI への同意�
 msgid "MCP can propose drafts only when the write mode is not \"{readOnly}\". You review drafts and confirm sending in the app."
 msgstr "書き込みモードが「{readOnly}」以外の場合のみ、MCP は下書きを提案できます。下書きの確認と送信の承認はアプリ内で行います。"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Medium"
 msgstr "中"
 
@@ -3790,7 +3793,7 @@ msgstr "会議の応答"
 msgid "Meeting updated"
 msgstr "会議が更新されました"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Mention suggestions"
 msgstr "メンション候補"
 
@@ -4301,7 +4304,7 @@ msgstr "上の次へ"
 msgid "Next below"
 msgstr "次は下に"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 #: src/renderer/src/features/reader/FindBar.tsx
 #: src/renderer/src/features/search/SearchHitBar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -4385,7 +4388,7 @@ msgstr "文法の提案はありません"
 msgid "No label or folder"
 msgstr "ラベルもフォルダもありません"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 #: src/renderer/src/features/reader/FindBar.tsx
 msgid "No matches"
 msgstr "一致する項目がありません"
@@ -4804,7 +4807,7 @@ msgstr "直接整理"
 msgid "Organizer"
 msgstr "主催者"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Original"
 msgstr "オリジナル"
 
@@ -4813,7 +4816,7 @@ msgid "Original attachments are kept in Outlook without uploading them again."
 msgstr "元の添付ファイルは再度アップロードされずに Outlook に保持されます。"
 
 #. Status for a draft shown in a read-only preview that preserves its original layout.
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgctxt "compose formatting status"
 msgid "Original formatting kept"
 msgstr "元の書式を保持しています"
@@ -4937,12 +4940,12 @@ msgstr "パスワード"
 msgid "Paste"
 msgstr "ペースト"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Paste and match style"
 msgstr "ペーストしてスタイルを合わせる"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Paste as quotation"
 msgstr "引用としてペースト"
@@ -5061,7 +5064,7 @@ msgstr "プレビュー: {0} メッセージ。既存のメールに適用する
 msgid "Previous / next view"
 msgstr "前のビュー / 次のビュー"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 #: src/renderer/src/features/reader/FindBar.tsx
 #: src/renderer/src/features/search/SearchHitBar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -5468,11 +5471,11 @@ msgstr "毎週繰り返す"
 msgid "Repeats yearly"
 msgstr "毎年繰り返す"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Replace"
 msgstr "置換"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Replace all"
 msgstr "すべて置き換える"
 
@@ -5480,7 +5483,7 @@ msgstr "すべて置き換える"
 msgid "Replace emoji text as you type"
 msgstr "入力時に絵文字テキストを置き換えます"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Replace with"
 msgstr "置換後の文字列"
 
@@ -6116,7 +6119,7 @@ msgstr "CCフィールドを表示"
 msgid "Show Focused/Other"
 msgstr "優先/その他を表示"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Show format bar"
 msgstr "フォーマットバーを表示"
@@ -6308,7 +6311,7 @@ msgstr "バイト単位のサイズ"
 msgid "Skip"
 msgstr "スキップ"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Small"
 msgstr "小さい"
 
@@ -6321,7 +6324,7 @@ msgstr "小さい文字"
 msgid "Smaller than"
 msgstr "より小さい"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Smart lists"
 msgstr "スマートリスト"
 
@@ -6359,7 +6362,7 @@ msgstr "ソフトウェアアップデート"
 msgid "Some conditions need metadata that is not cached. Save the rule for future mail on the server."
 msgstr "一部の条件にはキャッシュされていないメタデータが必要です。今後のメールに適用するルールをサーバーに保存できます。"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "Some formatting cannot be kept in this mode. Link addresses are kept. You can undo the mode change."
 msgstr "一部のフォーマットはこのモードでは維持できません。リンクアドレスは保持されます。モード変更を取り消すことができます。"
 
@@ -6880,7 +6883,7 @@ msgstr "これにより、保存されたリカバリ コピーが削除され�
 msgid "This development build has no MCP server yet. Run pnpm build in the repository first."
 msgstr "この開発ビルドにはまだ MCP サーバーがありません。先にリポジトリで pnpm build を実行してください。"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "This draft contains formatting or images this editor cannot keep. The original is preserved until you edit the body."
 msgstr "この下書きには、このエディタで保持できない書式または画像が含まれています。本文を編集するまで元のメッセージは保持されます。"
 
@@ -7298,7 +7301,7 @@ msgstr "カスタム変数には {token} を使用します。テンプレート
 msgid "Use a service name such as svc:openmail"
 msgstr "svc:openmail のようなサービス名を入力してください"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Use an http, https or mailto link"
 msgstr "http、https、または mailto リンクを使用します"
 

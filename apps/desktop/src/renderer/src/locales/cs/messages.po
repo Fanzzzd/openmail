@@ -788,7 +788,7 @@ msgstr "Použít"
 msgid "Apply color"
 msgstr "Použít barvu"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Apply link"
 msgstr "Použít odkaz"
 
@@ -1019,6 +1019,7 @@ msgstr "Texty zpráv: {bodies} · Přílohy: {attachments}"
 #. Email message text, never an anatomical body.
 #. Email message text, never an anatomical body.
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/PlainBody.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgctxt "message text"
 msgid "Body"
@@ -1151,7 +1152,8 @@ msgstr "K poštovnímu serveru se nyní nelze připojit."
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/ai/AiPanel.tsx
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 #: src/renderer/src/features/compose/components/TemplateVariables.tsx
@@ -1230,11 +1232,11 @@ msgstr "Kopie / Skrytá kopie"
 msgid "Change"
 msgstr "Změna"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "Change mode"
 msgstr "Změnit režim"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "Change writing mode?"
 msgstr "Změnit režim psaní?"
 
@@ -1266,7 +1268,7 @@ msgstr "Zkontrolovat aktualizace"
 msgid "Check for updates…"
 msgstr "Zkontrolovat aktualizace…"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Check grammar on this Mac"
 msgstr "Zkontrolovat gramatiku na tomto Macu"
 
@@ -1291,7 +1293,7 @@ msgstr "Zkontrolujte datum a nastavení opakování"
 msgid "Checking for updates…"
 msgstr "Kontrolují se aktualizace…"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Checking grammar…"
 msgstr "Kontrola gramatiky…"
 
@@ -1451,7 +1453,7 @@ msgstr "Zavřít"
 msgid "Close compose window"
 msgstr "Zavřít okno pro psaní"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 #: src/renderer/src/features/reader/FindBar.tsx
 msgid "Close find"
 msgstr "Zavřít hledání"
@@ -2434,7 +2436,7 @@ msgstr "Upravit prostor"
 msgid "Edit template"
 msgstr "Upravit šablonu"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "Edit this draft body?"
 msgstr "Upravit text tohoto konceptu?"
 
@@ -2446,7 +2448,7 @@ msgstr "Upravte toto pravidlo ve webové poště, abyste zachovali všechny podm
 msgid "Edit token"
 msgstr "Upravit token"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "Editing removes unsupported formatting and images from this draft. Lists, bold, italic, underline and links are kept."
 msgstr "Úpravou se z tohoto konceptu odstraní nepodporované formátování a obrázky. Seznamy, tučné, kurzíva, podtržení a odkazy jsou zachovány."
 
@@ -2709,11 +2711,12 @@ msgstr "Filtrovat zkratky"
 msgid "Filters"
 msgstr "Filtry"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Find and replace"
 msgstr "Najít a nahradit"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Find in body"
 msgstr "Hledat v textu zprávy"
 
@@ -3044,7 +3047,7 @@ msgid "Help"
 msgstr "Nápověda"
 
 #. Invisible message text was removed before opening this draft in the editable rich composer. Do not include the removed text.
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgctxt "compose sanitization notice"
 msgid "Hidden text was removed."
 msgstr "Skrytý text byl odstraněn."
@@ -3057,7 +3060,7 @@ msgstr "Skrýt"
 msgid "Hide details"
 msgstr "Skrýt podrobnosti"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Hide format bar"
 msgstr "Skrýt formátovací lištu"
 
@@ -3099,7 +3102,7 @@ msgstr "Rozpoznávání obrázků není na této platformě dostupné."
 msgid "Image region"
 msgstr "Oblast obrázku"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Image size"
 msgstr "Velikost obrázku"
 
@@ -3420,7 +3423,7 @@ msgstr "Laboratoře"
 msgid "Language"
 msgstr "Jazyk"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Large"
 msgstr "Velký"
 
@@ -3493,7 +3496,7 @@ msgstr "Povolit {name} navrhovat změny ke schválení"
 msgid "Light background"
 msgstr "světlé pozadí"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Link URL"
 msgstr "URL odkazu"
 
@@ -3716,11 +3719,11 @@ msgstr "Markdown"
 msgid "Markdown composition"
 msgstr "Psaní v Markdownu"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Markdown replacements"
 msgstr "Náhrady Markdownu"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/PlainBody.tsx
 msgid "Markdown works: **bold**, `code`, ```code block```"
 msgstr "Markdown funguje: **tučné**, `kód`, ```blok kódu```"
 
@@ -3774,7 +3777,7 @@ msgstr "Přístup MCP se řídí souhlasem s AI pro tento účet. Vypnuté účt
 msgid "MCP can propose drafts only when the write mode is not \"{readOnly}\". You review drafts and confirm sending in the app."
 msgstr "MCP může navrhovat koncepty pouze tehdy, když režim zápisu není „{readOnly}“. Koncepty zkontrolujete a odeslání potvrdíte v aplikaci."
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Medium"
 msgstr "Střední"
 
@@ -3790,7 +3793,7 @@ msgstr "Odpověď na schůzku"
 msgid "Meeting updated"
 msgstr "Schůzka aktualizována"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Mention suggestions"
 msgstr "Návrhy zmínek"
 
@@ -4301,7 +4304,7 @@ msgstr "Další výše"
 msgid "Next below"
 msgstr "Další níže"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 #: src/renderer/src/features/reader/FindBar.tsx
 #: src/renderer/src/features/search/SearchHitBar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -4385,7 +4388,7 @@ msgstr "Žádné gramatické návrhy"
 msgid "No label or folder"
 msgstr "Žádný štítek nebo složka"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 #: src/renderer/src/features/reader/FindBar.tsx
 msgid "No matches"
 msgstr "Žádné shody"
@@ -4804,7 +4807,7 @@ msgstr "Uspořádat přímo"
 msgid "Organizer"
 msgstr "Organizátor"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Original"
 msgstr "Originál"
 
@@ -4813,7 +4816,7 @@ msgid "Original attachments are kept in Outlook without uploading them again."
 msgstr "Původní přílohy jsou uloženy v aplikaci Outlook, aniž by byly znovu nahrány."
 
 #. Status for a draft shown in a read-only preview that preserves its original layout.
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgctxt "compose formatting status"
 msgid "Original formatting kept"
 msgstr "Původní formátování zachováno"
@@ -4937,12 +4940,12 @@ msgstr "Heslo"
 msgid "Paste"
 msgstr "Vložit"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Paste and match style"
 msgstr "Vložit a přizpůsobit styl"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Paste as quotation"
 msgstr "Vložit jako citaci"
@@ -5061,7 +5064,7 @@ msgstr "Náhled: {0} zpráv. Při použití na existující poštu se změní po
 msgid "Previous / next view"
 msgstr "Předchozí / další zobrazení"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 #: src/renderer/src/features/reader/FindBar.tsx
 #: src/renderer/src/features/search/SearchHitBar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -5468,11 +5471,11 @@ msgstr "Opakuje se týdně"
 msgid "Repeats yearly"
 msgstr "Opakuje se ročně"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Replace"
 msgstr "Nahradit"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Replace all"
 msgstr "Vyměňte všechny"
 
@@ -5480,7 +5483,7 @@ msgstr "Vyměňte všechny"
 msgid "Replace emoji text as you type"
 msgstr "Nahraďte text emodži při psaní"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Replace with"
 msgstr "Nahradit za"
 
@@ -6116,7 +6119,7 @@ msgstr "Zobrazit pole Kopie"
 msgid "Show Focused/Other"
 msgstr "Zobrazit Prioritní/Další"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Show format bar"
 msgstr "Zobrazit lištu formátu"
@@ -6308,7 +6311,7 @@ msgstr "Velikost v bajtech"
 msgid "Skip"
 msgstr "Přeskočit"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Small"
 msgstr "Malý"
 
@@ -6321,7 +6324,7 @@ msgstr "Menší text"
 msgid "Smaller than"
 msgstr "Menší než"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Smart lists"
 msgstr "Chytré seznamy"
 
@@ -6359,7 +6362,7 @@ msgstr "Aktualizace softwaru"
 msgid "Some conditions need metadata that is not cached. Save the rule for future mail on the server."
 msgstr "Některé podmínky vyžadují metadata, která nejsou v mezipaměti. Uložte pravidlo pro budoucí poštu na serveru."
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "Some formatting cannot be kept in this mode. Link addresses are kept. You can undo the mode change."
 msgstr "Některé formátování nelze v tomto režimu zachovat. Adresy odkazů jsou zachovány. Změnu režimu můžete vrátit zpět."
 
@@ -6880,7 +6883,7 @@ msgstr "Tím se smaže uložená kopie pro obnovení. Pravidla na serveru se nem
 msgid "This development build has no MCP server yet. Run pnpm build in the repository first."
 msgstr "Toto vývojové sestavení zatím nemá server MCP. Nejdřív v repozitáři spusťte pnpm build."
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "This draft contains formatting or images this editor cannot keep. The original is preserved until you edit the body."
 msgstr "Tento koncept obsahuje formátování nebo obrázky, které editor nedokáže zachovat. Originál zůstane zachován, dokud neupravíte text zprávy."
 
@@ -7298,7 +7301,7 @@ msgstr "Pro vlastní proměnnou použijte {token}. Při vkládání šablony bud
 msgid "Use a service name such as svc:openmail"
 msgstr "Zadejte název služby, např. svc:openmail"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Use an http, https or mailto link"
 msgstr "Použijte odkaz http, https nebo mailto"
 

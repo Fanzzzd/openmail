@@ -798,7 +798,7 @@ msgstr "应用"
 msgid "Apply color"
 msgstr "应用颜色"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Apply link"
 msgstr "应用链接"
 
@@ -1029,6 +1029,7 @@ msgstr "正文：{bodies} · 附件：{attachments}"
 #. Email message text, never an anatomical body.
 #. Email message text, never an anatomical body.
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/PlainBody.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgctxt "message text"
 msgid "Body"
@@ -1161,7 +1162,8 @@ msgstr "暂时无法连接邮件服务器。"
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/ai/AiPanel.tsx
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 #: src/renderer/src/features/compose/components/TemplateVariables.tsx
@@ -1240,11 +1242,11 @@ msgstr "抄送/密送"
 msgid "Change"
 msgstr "更改"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "Change mode"
 msgstr "切换模式"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "Change writing mode?"
 msgstr "切换撰写模式？"
 
@@ -1276,7 +1278,7 @@ msgstr "检查更新"
 msgid "Check for updates…"
 msgstr "检查更新…"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Check grammar on this Mac"
 msgstr "在此 Mac 上检查语法"
 
@@ -1301,7 +1303,7 @@ msgstr "请检查日期和重复设置"
 msgid "Checking for updates…"
 msgstr "正在检查更新…"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Checking grammar…"
 msgstr "正在检查语法…"
 
@@ -1461,7 +1463,7 @@ msgstr "关闭"
 msgid "Close compose window"
 msgstr "关闭写信窗口"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 #: src/renderer/src/features/reader/FindBar.tsx
 msgid "Close find"
 msgstr "关闭查找"
@@ -2444,7 +2446,7 @@ msgstr "编辑空间"
 msgid "Edit template"
 msgstr "编辑模板"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "Edit this draft body?"
 msgstr "编辑这封草稿的正文？"
 
@@ -2456,7 +2458,7 @@ msgstr "请在网页版编辑此规则，以保留全部条件和操作。"
 msgid "Edit token"
 msgstr "编辑条件"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "Editing removes unsupported formatting and images from this draft. Lists, bold, italic, underline and links are kept."
 msgstr "编辑将移除不支持的格式和图片，保留列表、粗体、斜体、下划线和链接。"
 
@@ -2719,11 +2721,12 @@ msgstr "筛选快捷键"
 msgid "Filters"
 msgstr "筛选条件"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Find and replace"
 msgstr "查找替换"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Find in body"
 msgstr "查找正文"
 
@@ -3054,7 +3057,7 @@ msgid "Help"
 msgstr "帮助"
 
 #. Invisible message text was removed before opening this draft in the editable rich composer. Do not include the removed text.
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgctxt "compose sanitization notice"
 msgid "Hidden text was removed."
 msgstr "已移除隐藏文本。"
@@ -3067,7 +3070,7 @@ msgstr "隐藏"
 msgid "Hide details"
 msgstr "隐藏详情"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Hide format bar"
 msgstr "隐藏格式栏"
 
@@ -3109,7 +3112,7 @@ msgstr "此平台暂不支持图片识别。"
 msgid "Image region"
 msgstr "图片区域"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Image size"
 msgstr "图片尺寸"
 
@@ -3430,7 +3433,7 @@ msgstr "实验功能"
 msgid "Language"
 msgstr "语言"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Large"
 msgstr "大"
 
@@ -3503,7 +3506,7 @@ msgstr "允许 {name} 提出改动建议，由你批准"
 msgid "Light background"
 msgstr "浅色背景"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Link URL"
 msgstr "链接地址"
 
@@ -3726,11 +3729,11 @@ msgstr "Markdown"
 msgid "Markdown composition"
 msgstr "Markdown 撰写"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Markdown replacements"
 msgstr "Markdown 即时替换"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/PlainBody.tsx
 msgid "Markdown works: **bold**, `code`, ```code block```"
 msgstr "支持 Markdown：**粗体**、`代码`、```代码块```"
 
@@ -3784,7 +3787,7 @@ msgstr "MCP 能否访问此账户，取决于它的 AI 授权。MCP 读取不到
 msgid "MCP can propose drafts only when the write mode is not \"{readOnly}\". You review drafts and confirm sending in the app."
 msgstr "写入模式不是“{readOnly}”时，MCP 才能以建议的形式写草稿。你在应用中审阅草稿并确认发送。"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Medium"
 msgstr "中"
 
@@ -3800,7 +3803,7 @@ msgstr "会议响应"
 msgid "Meeting updated"
 msgstr "会议已更新"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Mention suggestions"
 msgstr "提及建议"
 
@@ -4311,7 +4314,7 @@ msgstr "上一项"
 msgid "Next below"
 msgstr "下一项"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 #: src/renderer/src/features/reader/FindBar.tsx
 #: src/renderer/src/features/search/SearchHitBar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -4395,7 +4398,7 @@ msgstr "没有语法建议"
 msgid "No label or folder"
 msgstr "不加标签或文件夹"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 #: src/renderer/src/features/reader/FindBar.tsx
 msgid "No matches"
 msgstr "无匹配"
@@ -4814,7 +4817,7 @@ msgstr "直接整理"
 msgid "Organizer"
 msgstr "组织者"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Original"
 msgstr "原始尺寸"
 
@@ -4823,7 +4826,7 @@ msgid "Original attachments are kept in Outlook without uploading them again."
 msgstr "原附件由 Outlook 保留，无需重新上传。"
 
 #. Status for a draft shown in a read-only preview that preserves its original layout.
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgctxt "compose formatting status"
 msgid "Original formatting kept"
 msgstr "已保留原始格式"
@@ -4947,12 +4950,12 @@ msgstr "密码"
 msgid "Paste"
 msgstr "粘贴"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Paste and match style"
 msgstr "粘贴并匹配样式"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Paste as quotation"
 msgstr "粘贴为引用"
@@ -5071,7 +5074,7 @@ msgstr "预览：{0} 封邮件。应用到已有邮件时，只修改预览中�
 msgid "Previous / next view"
 msgstr "上一个视图 / 下一个视图"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 #: src/renderer/src/features/reader/FindBar.tsx
 #: src/renderer/src/features/search/SearchHitBar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -5478,11 +5481,11 @@ msgstr "每周重复"
 msgid "Repeats yearly"
 msgstr "每年重复"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Replace"
 msgstr "替换"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Replace all"
 msgstr "全部替换"
 
@@ -5490,7 +5493,7 @@ msgstr "全部替换"
 msgid "Replace emoji text as you type"
 msgstr "输入时替换 Emoji"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Replace with"
 msgstr "替换为"
 
@@ -6126,7 +6129,7 @@ msgstr "展开抄送栏"
 msgid "Show Focused/Other"
 msgstr "显示重点/其他"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Show format bar"
 msgstr "显示格式栏"
@@ -6318,7 +6321,7 @@ msgstr "大小（字节）"
 msgid "Skip"
 msgstr "跳过"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Small"
 msgstr "小"
 
@@ -6331,7 +6334,7 @@ msgstr "缩小文字"
 msgid "Smaller than"
 msgstr "小于"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Smart lists"
 msgstr "智能列表"
 
@@ -6369,7 +6372,7 @@ msgstr "软件更新"
 msgid "Some conditions need metadata that is not cached. Save the rule for future mail on the server."
 msgstr "部分条件需要未缓存的元数据。可保存规则，用于服务器上的新邮件。"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "Some formatting cannot be kept in this mode. Link addresses are kept. You can undo the mode change."
 msgstr "此模式会丢失部分格式，链接地址会保留。切换后可以撤销。"
 
@@ -6890,7 +6893,7 @@ msgstr "将删除保存的恢复副本，服务器规则不变。"
 msgid "This development build has no MCP server yet. Run pnpm build in the repository first."
 msgstr "这个开发构建还没有 MCP 服务器。请先在仓库中运行 pnpm build。"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "This draft contains formatting or images this editor cannot keep. The original is preserved until you edit the body."
 msgstr "草稿含有编辑器不支持的格式或图片。编辑正文前会保留原文。"
 
@@ -7308,7 +7311,7 @@ msgstr "用 {token} 等自定义变量，插入模板时填写其值。"
 msgid "Use a service name such as svc:openmail"
 msgstr "输入服务名称，例如 svc:openmail"
 
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+#: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Use an http, https or mailto link"
 msgstr "请输入 http、https 或 mailto 链接"
 
