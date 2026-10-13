@@ -20,6 +20,7 @@ const native = vi.hoisted(() => ({
   guardedRelaunch: vi.fn(async () => false),
   recover: (_code: number): boolean => false,
   dialogs: vi.fn(),
+  newer: vi.fn((_directory: string): number | undefined => undefined),
 }));
 vi.mock("@openmail/core", async () => ({
   ...(await import("../../../../../packages/core/src/platform/node/diagnostics.js")),
@@ -31,6 +32,7 @@ vi.mock("@openmail/core", async () => ({
     return native.integrity;
   },
   resetLocalCache: native.reset,
+  newerDatabaseVersion: (directory: string) => native.newer(directory),
 }));
 vi.mock("../windows/windows", () => ({
   configureWindowRecovery: (
@@ -110,6 +112,23 @@ it("shows the recovery choices before cache reset and leaves a previewable crash
   expect(recovery.hasCrashReport()).toBe(false);
   expect(native.relaunch).not.toHaveBeenCalled();
 });
+it("a database from a newer OpenMail never reaches safe mode or its cache reset", async () => {
+  const dir = temp();
+  const prior = createLocalDiagnostics(join(dir, "diagnostics"));
+  prior.begin();
+  for (let i = 0; i < 3; i++) prior.crash("renderer-crash", 137);
+  native.newer.mockReturnValueOnce(1000);
+  native.response = 1;
+  const recovery = await import("./reliability");
+  expect(await recovery.prepareReliability(dir)).toBe(true);
+  expect(native.dialogs).not.toHaveBeenCalled();
+  expect(native.check).not.toHaveBeenCalled();
+  expect(native.reset).not.toHaveBeenCalled();
+  // Startup then refuses the database and exits cleanly.
+  recovery.finishCleanly();
+  expect(createLocalDiagnostics(join(dir, "diagnostics")).begin().abnormalExit).toBe(false);
+});
+
 it("offers quit on failed integrity and never resets without a user choice", async () => {
   native.integrity = "unavailable";
   native.response = 2;

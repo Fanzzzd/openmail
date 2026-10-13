@@ -9,6 +9,7 @@ import {
   checkLocalDatabaseInWorker,
   createLocalDiagnostics,
   runtimeDiagnosticReason,
+  newerDatabaseVersion,
   resetLocalCache,
   DatabaseInUseError,
   InterruptedRecoveryError,
@@ -69,6 +70,8 @@ export const diagnosticsLogger = Logger.make((options) => {
     localLog("runtime-error", { reason });
   else if (options.logLevel === "Warn") localLog("runtime-warning", { reason });
 });
+/** A deliberate refusal to start (a newer database) is a clean exit, not a crash. */
+export const finishCleanly = () => diagnostics?.finish();
 export const diagnosticsPreview = (crashOnly: boolean) => diagnostics?.preview(crashOnly) ?? "";
 export const hasCrashReport = () => crashed;
 export const dismissCrashReport = () => {
@@ -175,10 +178,13 @@ export async function prepareReliability(directory: string) {
     app.exit(1);
     return false;
   }
-  const needsCheck = health.abnormalExit || health.safeMode;
+  // A database a newer OpenMail migrated is refused at startup with its own message. Safe mode
+  // must not offer Reset for it: the rebuild would write this version's schema into it.
+  const tooNew = newerDatabaseVersion(directory) !== undefined;
+  const needsCheck = !tooNew && (health.abnormalExit || health.safeMode);
   const integrity = needsCheck ? await checkWithProgress(directory) : "ok";
   if (needsCheck) localLog(integrity === "ok" ? "integrity-ok" : "integrity-failed");
-  const safeMode = health.safeMode || integrity !== "ok";
+  const safeMode = !tooNew && (health.safeMode || integrity !== "ok");
   if (safeMode && !(await chooseRecovery(integrity))) return false;
   let lastCrash = -Infinity;
   configureWindowRecovery(

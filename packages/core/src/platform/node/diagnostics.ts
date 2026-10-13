@@ -28,6 +28,7 @@ import {
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { Schema } from "effect";
+import { DatabaseTooNewError, MIGRATIONS } from "../../db.js";
 
 const DiagnosticEvent = Schema.Literals([
   "startup",
@@ -319,6 +320,27 @@ export function createLocalDiagnostics(
 
 export type IntegrityResult = "ok" | "corrupt" | "unavailable";
 /** Preflight before the mailbox opens the file. No SQLite text leaves this boundary. */
+/**
+ * The schema version of a database a newer OpenMail migrated, or undefined. Read-only; an
+ * unreadable file is left to the integrity check.
+ */
+export function newerDatabaseVersion(directory: string): number | undefined {
+  const file = join(directory, "mail.db");
+  if (!existsSync(file)) return undefined;
+  try {
+    const db = new DatabaseSync(file, { readOnly: true });
+    try {
+      const row = db.prepare("PRAGMA user_version").get();
+      const version = row && typeof row.user_version === "number" ? row.user_version : 0;
+      return version > MIGRATIONS.length ? version : undefined;
+    } finally {
+      db.close();
+    }
+  } catch {
+    return undefined;
+  }
+}
+
 export function checkLocalDatabase(directory: string): IntegrityResult {
   return databaseQuickCheck(join(directory, "mail.db"));
 }
@@ -335,6 +357,9 @@ export function checkLocalDatabaseInWorker(
 export function resetLocalCache(directory: string): CacheResetResult {
   const file = join(directory, "mail.db");
   if (!existsSync(file)) return { kind: "reset" };
+  // Rebuilding would write this version's schema into a newer OpenMail's database.
+  const newer = newerDatabaseVersion(directory);
+  if (newer !== undefined) throw new DatabaseTooNewError(newer);
   const integrity = checkLocalDatabase(directory);
   if (integrity === "corrupt") return rebuildCorruptDatabase(directory);
   if (integrity !== "ok") throw new Error("Local database unavailable");

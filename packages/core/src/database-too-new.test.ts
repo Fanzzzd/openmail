@@ -10,6 +10,7 @@ import { afterEach, expect, it } from "vitest";
 import { DatabaseTooNewError, migrate, MIGRATIONS } from "./db.js";
 import { databaseLayer } from "./platform/node/db.js";
 import { NodeSystem } from "./platform/node/platform-node.js";
+import { newerDatabaseVersion, resetLocalCache } from "./platform/node/diagnostics.js";
 
 const directories: string[] = [];
 afterEach(async () => {
@@ -99,3 +100,21 @@ it("opening waits for a lock another process holds briefly instead of failing as
   expect(defectOf(exit)).toBeUndefined();
   expect(versionOf(file)).toBe(MIGRATIONS.length);
 }, 30_000);
+
+it("cache reset refuses a database a newer OpenMail migrated and leaves it unchanged", async () => {
+  const file = await newerDatabase();
+  const directory = join(file, "..");
+  expect(newerDatabaseVersion(directory)).toBe(MIGRATIONS.length + 1);
+  expect(() => resetLocalCache(directory)).toThrow(DatabaseTooNewError);
+  const db = new DatabaseSync(file, { readOnly: true });
+  try {
+    expect(db.prepare("PRAGMA user_version").get()).toEqual({
+      user_version: MIGRATIONS.length + 1,
+    });
+    expect(db.prepare("SELECT name FROM sqlite_master WHERE name='messages'").get()).toBe(
+      undefined,
+    );
+  } finally {
+    db.close();
+  }
+});

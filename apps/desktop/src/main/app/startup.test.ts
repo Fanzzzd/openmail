@@ -10,6 +10,7 @@ const native = vi.hoisted(() => ({
   warnStart: false,
   diagnosticLog: vi.fn(),
   localLog: vi.fn(),
+  finishCleanly: vi.fn(),
   exit: vi.fn(),
   nodeMailbox: vi.fn(),
   vision: vi.fn(),
@@ -70,6 +71,7 @@ vi.mock("./reliability", () => ({
   prepareReliability: vi.fn(async () => true),
   diagnosticsLogger: Logger.make(() => native.diagnosticLog()),
   localLog: native.localLog,
+  finishCleanly: native.finishCleanly,
 }));
 vi.mock("./native-i18n", () => ({
   nativeAuthorizePage: vi.fn(),
@@ -233,6 +235,8 @@ it("a database from a newer OpenMail explains itself in a native dialog before e
     "This library was opened by a newer OpenMail",
     "Update OpenMail to the latest version to open it.",
   );
+  // A refusal is a clean exit, so the next launch does not count it as a crash.
+  expect(native.finishCleanly).toHaveBeenCalledBefore(native.exit);
 });
 it("the main process handles uncaught exceptions and unhandled rejections", async () => {
   const handled = Symbol.for("openmail.processErrorHandlers");

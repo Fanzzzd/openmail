@@ -31,7 +31,7 @@ import { prepareBackgroundWindows } from "./windows/reveal";
 import { showAppIdentity } from "./app/app-identity";
 import { mcpLaunchArgs, runMcpMode } from "./agents/mcp-mode";
 
-import { prepareReliability, diagnosticsLogger, localLog } from "./app/reliability";
+import { prepareReliability, diagnosticsLogger, finishCleanly, localLog } from "./app/reliability";
 import { registerProcessErrorHandlers } from "./app/process-errors";
 
 // First, so MCP mode and early startup are covered; localLog writes once diagnostics exist.
@@ -210,6 +210,9 @@ if (mcp) {
           if (error instanceof DatabaseTooNewError) {
             const labels = await nativeRecoveryLabels();
             dialog.showErrorBox(labels.newerDatabaseTitle, labels.newerDatabaseDetail);
+            // Exit 1 skips the quit handler's finish(); without it the next launches count
+            // this refusal as a crash and reach safe mode.
+            finishCleanly();
           }
           localLog("startup-failed");
           console.error(Cause.pretty(cause));
