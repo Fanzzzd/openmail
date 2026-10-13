@@ -11,7 +11,7 @@ allowBuilds:
   onnxruntime-node: false
   protobufjs: false
 catalog:
-  typescript: ^5.9.3
+  typescript: ^7.0.2
 # Why each patch exists and when it can go: docs/dependency-patches.md
 patchedDependencies:
   expo-background-task@57.0.21: patches/expo-background-task@57.0.21.patch
