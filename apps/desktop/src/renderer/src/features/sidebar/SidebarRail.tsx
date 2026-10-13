@@ -16,7 +16,7 @@ import {
   spaceAccounts,
   type View,
 } from "../../lib/view";
-import { MAILBOXES, spaceShortcutLabel, useMailboxCounts } from "./Sidebar";
+import { MAILBOXES, spaceShortcutLabel, useMailboxCounts } from "./sidebar-mailboxes";
 import { titlebarRow } from "../../ui/styles";
 import { Tip } from "../../ui/Tip";
 

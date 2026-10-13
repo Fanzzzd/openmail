@@ -164,7 +164,7 @@ msgstr "{label} suggestions"
 msgid "{more} more"
 msgstr "{more} plus"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/use-sidebar-organize.ts
 msgid "{name} ({owner})"
 msgstr "{name} ({owner})"
 
@@ -323,7 +323,7 @@ msgstr "Les comptes déjà ajoutés gardent le client avec lequel ils se sont co
 msgid "Action"
 msgstr "Action"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/use-sidebar-organize.ts
 msgid "Action failed"
 msgstr "L’action a échoué"
 
@@ -456,11 +456,11 @@ msgstr "Ajouter à Contacts"
 msgid "Add to dictionary"
 msgstr "Ajouter au dictionnaire"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
 msgid "Add to favorites"
 msgstr "Ajouter aux favoris"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
 msgid "Add to favorites in all accounts"
 msgstr "Ajouter aux favoris dans tous les comptes"
 
@@ -616,6 +616,7 @@ msgstr "Tous"
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
+#: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "All accounts"
 msgstr "Tous les comptes"
@@ -2423,6 +2424,7 @@ msgstr "Modifier la signature"
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 msgid "Edit space"
 msgstr "Modifier l’espace"
 
@@ -2648,11 +2650,11 @@ msgstr "échec"
 msgid "Favorite"
 msgstr "Préféré"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
 msgid "Favorite {name}"
 msgstr "Favori : {name}"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
 msgid "Favorite {name} in all accounts"
 msgstr "Favori : {name} dans tous les comptes"
 
@@ -3398,7 +3400,7 @@ msgstr "Libellé : {name}"
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
 #: src/renderer/src/features/search/SearchField.tsx
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Labels"
@@ -4133,7 +4135,7 @@ msgstr "Déplacer vers Autres"
 msgid "Move to To"
 msgstr "Déplacer vers À"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
 msgid "Move to top level"
 msgstr "Déplacer au niveau supérieur"
 
@@ -4264,7 +4266,7 @@ msgstr "Nouvelle signature"
 
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/overview/Overview.tsx
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 msgid "New space"
 msgstr "Nouvel espace"
 
@@ -4683,7 +4685,7 @@ msgstr "Ouvrir les réglages de notification macOS"
 msgid "Open only this message in a new window"
 msgstr "Ouvrir uniquement ce message dans une nouvelle fenêtre"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 msgid "Open space"
 msgstr "Ouvrir l’espace"
 
@@ -4869,7 +4871,7 @@ msgstr "Les réponses automatiques Outlook ne prennent pas en charge un sujet pe
 msgid "Outlook cannot upload attached messages of 3 MB or more. Remove this attachment before sending."
 msgstr "Outlook ne peut pas charger les messages joints de 3 Mo ou plus. Supprimez cette pièce jointe avant l’envoi."
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
 msgid "Outlook categories"
 msgstr "Catégories Outlook"
 
@@ -4905,8 +4907,8 @@ msgstr "La sortie a été tronquée à la limite de jetons. Elle n’a pas été
 
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/overview/Overview.tsx
-#: src/renderer/src/features/sidebar/Sidebar.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
+#: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 msgid "Overview"
 msgstr "Aperçu"
 
@@ -5364,11 +5366,11 @@ msgstr "Supprimer l’libellé actuelle"
 msgid "Remove favorite"
 msgstr "Supprimer le favori"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
 msgid "Remove from favorites"
 msgstr "Retirer des favoris"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
 msgid "Remove from favorites in all accounts"
 msgstr "Retirer des favoris dans tous les comptes"
 
@@ -6061,7 +6063,7 @@ msgid "Set up by hand"
 msgstr "Configurer manuellement"
 
 #: src/renderer/src/features/settings/Settings.tsx
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarFooter.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 #: src/renderer/src/state/desktop.ts
 msgid "Settings"
@@ -6384,8 +6386,8 @@ msgstr "Une erreur s’est produite. Réessayez."
 msgid "Something went wrong. Try again."
 msgstr "Une erreur s’est produite. Réessayez."
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
+#: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 msgid "Spaces"
 msgstr "Espaces"
 
@@ -6567,7 +6569,7 @@ msgstr "La synchronisation n’a pas pu se terminer. Elle sera relancée automat
 msgid "Sync failed"
 msgstr "La synchronisation a échoué"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarFooter.tsx
 msgid "Sync failed ({count})"
 msgstr "Échec de la synchronisation ({count})"
 
@@ -6576,7 +6578,7 @@ msgid "Sync health"
 msgstr "État de la synchronisation"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarFooter.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Sync now"
 msgstr "Synchronisez maintenant"
@@ -6585,11 +6587,11 @@ msgstr "Synchronisez maintenant"
 msgid "Sync window"
 msgstr "Période de synchronisation"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarFooter.tsx
 msgid "Synced {time}"
 msgstr "Synchronisé {time}"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarFooter.tsx
 msgid "Syncing {fetched}/{total}"
 msgstr "Synchronisation de {fetched}/{total}"
 
@@ -6602,7 +6604,7 @@ msgstr "Synchronisation des e-mails…"
 msgid "Syncing normally"
 msgstr "Synchroniser normalement"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarFooter.tsx
 msgid "Syncing…"
 msgstr "Synchronisation…"
 

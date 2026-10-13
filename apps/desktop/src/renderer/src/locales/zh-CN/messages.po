@@ -174,7 +174,7 @@ msgstr "{label}建议"
 msgid "{more} more"
 msgstr "还有 {more} 个"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/use-sidebar-organize.ts
 msgid "{name} ({owner})"
 msgstr "{name}（{owner}）"
 
@@ -333,7 +333,7 @@ msgstr "已添加的账户继续用登录时的客户端。"
 msgid "Action"
 msgstr "操作"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/use-sidebar-organize.ts
 msgid "Action failed"
 msgstr "操作失败"
 
@@ -466,11 +466,11 @@ msgstr "添加到通讯录"
 msgid "Add to dictionary"
 msgstr "加入词典"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
 msgid "Add to favorites"
 msgstr "添加到收藏夹"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
 msgid "Add to favorites in all accounts"
 msgstr "在所有账户中添加到收藏夹"
 
@@ -626,6 +626,7 @@ msgstr "全部"
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
+#: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "All accounts"
 msgstr "全部账户"
@@ -2433,6 +2434,7 @@ msgstr "编辑签名"
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 msgid "Edit space"
 msgstr "编辑空间"
 
@@ -2658,11 +2660,11 @@ msgstr "失败"
 msgid "Favorite"
 msgstr "收藏"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
 msgid "Favorite {name}"
 msgstr "收藏 {name}"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
 msgid "Favorite {name} in all accounts"
 msgstr "在所有账户中收藏 {name}"
 
@@ -3408,7 +3410,7 @@ msgstr "标签：{name}"
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
 #: src/renderer/src/features/search/SearchField.tsx
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Labels"
@@ -4143,7 +4145,7 @@ msgstr "移至其他"
 msgid "Move to To"
 msgstr "移到收件人"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
 msgid "Move to top level"
 msgstr "移到顶层"
 
@@ -4274,7 +4276,7 @@ msgstr "新建签名"
 
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/overview/Overview.tsx
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 msgid "New space"
 msgstr "新建空间"
 
@@ -4693,7 +4695,7 @@ msgstr "打开 macOS 通知设置"
 msgid "Open only this message in a new window"
 msgstr "在新窗口中只打开此邮件"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 msgid "Open space"
 msgstr "打开空间"
 
@@ -4879,7 +4881,7 @@ msgstr "Outlook 自动回复不支持自定主题"
 msgid "Outlook cannot upload attached messages of 3 MB or more. Remove this attachment before sending."
 msgstr "Outlook 不支持上传 3 MB 及以上的消息附件。请移除此附件后发送。"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
 msgid "Outlook categories"
 msgstr "Outlook 分类"
 
@@ -4915,8 +4917,8 @@ msgstr "输出已达到 token 上限，内容被截断，未缓存。"
 
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/overview/Overview.tsx
-#: src/renderer/src/features/sidebar/Sidebar.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
+#: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 msgid "Overview"
 msgstr "总览"
 
@@ -5374,11 +5376,11 @@ msgstr "移除当前标签"
 msgid "Remove favorite"
 msgstr "取消收藏"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
 msgid "Remove from favorites"
 msgstr "从收藏夹移除"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
 msgid "Remove from favorites in all accounts"
 msgstr "在所有账户中从收藏夹移除"
 
@@ -6071,7 +6073,7 @@ msgid "Set up by hand"
 msgstr "手动设置"
 
 #: src/renderer/src/features/settings/Settings.tsx
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarFooter.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 #: src/renderer/src/state/desktop.ts
 msgid "Settings"
@@ -6394,8 +6396,8 @@ msgstr "出了点问题，请再试一次。"
 msgid "Something went wrong. Try again."
 msgstr "出错了，请重试。"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
+#: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 msgid "Spaces"
 msgstr "空间"
 
@@ -6577,7 +6579,7 @@ msgstr "同步未能完成，稍后会自动重试。"
 msgid "Sync failed"
 msgstr "同步失败"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarFooter.tsx
 msgid "Sync failed ({count})"
 msgstr "同步失败（{count}）"
 
@@ -6586,7 +6588,7 @@ msgid "Sync health"
 msgstr "同步状态"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarFooter.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Sync now"
 msgstr "立即同步"
@@ -6595,11 +6597,11 @@ msgstr "立即同步"
 msgid "Sync window"
 msgstr "同步窗口"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarFooter.tsx
 msgid "Synced {time}"
 msgstr "已同步 {time}"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarFooter.tsx
 msgid "Syncing {fetched}/{total}"
 msgstr "同步中 {fetched}/{total}"
 
@@ -6612,7 +6614,7 @@ msgstr "正在同步邮件…"
 msgid "Syncing normally"
 msgstr "正常"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarFooter.tsx
 msgid "Syncing…"
 msgstr "同步中…"
 

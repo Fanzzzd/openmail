@@ -164,7 +164,7 @@ msgstr "{label} návrhy"
 msgid "{more} more"
 msgstr "{more} další"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/use-sidebar-organize.ts
 msgid "{name} ({owner})"
 msgstr "{name} ({owner})"
 
@@ -323,7 +323,7 @@ msgstr "Již přidané účty dál používají klienta, se kterým se přihlás
 msgid "Action"
 msgstr "Akce"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/use-sidebar-organize.ts
 msgid "Action failed"
 msgstr "Akce se nezdařila"
 
@@ -456,11 +456,11 @@ msgstr "Přidat do Kontaktů"
 msgid "Add to dictionary"
 msgstr "Přidat do slovníku"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
 msgid "Add to favorites"
 msgstr "Přidat do oblíbených"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
 msgid "Add to favorites in all accounts"
 msgstr "Přidat do oblíbených ve všech účtech"
 
@@ -616,6 +616,7 @@ msgstr "Vše"
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
+#: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "All accounts"
 msgstr "Všechny účty"
@@ -2423,6 +2424,7 @@ msgstr "Upravit podpis"
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 msgid "Edit space"
 msgstr "Upravit prostor"
 
@@ -2648,11 +2650,11 @@ msgstr "selhalo"
 msgid "Favorite"
 msgstr "Oblíbený"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
 msgid "Favorite {name}"
 msgstr "Oblíbená položka {name}"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
 msgid "Favorite {name} in all accounts"
 msgstr "Oblíbená položka {name} ve všech účtech"
 
@@ -3398,7 +3400,7 @@ msgstr "Štítek: {name}"
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
 #: src/renderer/src/features/search/SearchField.tsx
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Labels"
@@ -4133,7 +4135,7 @@ msgstr "Přesunout do Další"
 msgid "Move to To"
 msgstr "Přesunout do pole Komu"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
 msgid "Move to top level"
 msgstr "Přesunout na nejvyšší úroveň"
 
@@ -4264,7 +4266,7 @@ msgstr "Nový podpis"
 
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/overview/Overview.tsx
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 msgid "New space"
 msgstr "Nový prostor"
 
@@ -4683,7 +4685,7 @@ msgstr "Otevřete nastavení oznámení macOS"
 msgid "Open only this message in a new window"
 msgstr "Otevřít pouze tuto zprávu v novém okně"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 msgid "Open space"
 msgstr "Otevřít prostor"
 
@@ -4869,7 +4871,7 @@ msgstr "Automatické odpovědi aplikace Outlook nepodporují vlastní předmět"
 msgid "Outlook cannot upload attached messages of 3 MB or more. Remove this attachment before sending."
 msgstr "Outlook nemůže nahrát přiložené zprávy o velikosti 3 MB nebo větší. Před odesláním tuto přílohu odstraňte."
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
 msgid "Outlook categories"
 msgstr "Kategorie Outlooku"
 
@@ -4905,8 +4907,8 @@ msgstr "Výstup byl zkrácen kvůli limitu tokenů. Nebyl uložen do mezipaměti
 
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/overview/Overview.tsx
-#: src/renderer/src/features/sidebar/Sidebar.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
+#: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 msgid "Overview"
 msgstr "Přehled"
 
@@ -5364,11 +5366,11 @@ msgstr "Odebrat aktuální štítek"
 msgid "Remove favorite"
 msgstr "Odebrat oblíbené"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
 msgid "Remove from favorites"
 msgstr "Odebrat z oblíbených"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
 msgid "Remove from favorites in all accounts"
 msgstr "Odebrat z oblíbených ve všech účtech"
 
@@ -6061,7 +6063,7 @@ msgid "Set up by hand"
 msgstr "Nastavit ručně"
 
 #: src/renderer/src/features/settings/Settings.tsx
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarFooter.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 #: src/renderer/src/state/desktop.ts
 msgid "Settings"
@@ -6384,8 +6386,8 @@ msgstr "Něco se pokazilo. Zkuste to znovu."
 msgid "Something went wrong. Try again."
 msgstr "Něco se pokazilo. Zkuste to znovu."
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
+#: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 msgid "Spaces"
 msgstr "Prostory"
 
@@ -6567,7 +6569,7 @@ msgstr "Synchronizaci nebylo možné dokončit. Automaticky se zopakuje."
 msgid "Sync failed"
 msgstr "Synchronizace se nezdařila"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarFooter.tsx
 msgid "Sync failed ({count})"
 msgstr "Synchronizace se nezdařila ({count})"
 
@@ -6576,7 +6578,7 @@ msgid "Sync health"
 msgstr "Stav synchronizace"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarFooter.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Sync now"
 msgstr "Synchronizovat nyní"
@@ -6585,11 +6587,11 @@ msgstr "Synchronizovat nyní"
 msgid "Sync window"
 msgstr "Rozsah synchronizace"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarFooter.tsx
 msgid "Synced {time}"
 msgstr "Synchronizováno {time}"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarFooter.tsx
 msgid "Syncing {fetched}/{total}"
 msgstr "Synchronizace {fetched}/{total}"
 
@@ -6602,7 +6604,7 @@ msgstr "Synchronizace pošty…"
 msgid "Syncing normally"
 msgstr "Normální synchronizace"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarFooter.tsx
 msgid "Syncing…"
 msgstr "Synchronizace…"
 

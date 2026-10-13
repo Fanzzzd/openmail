@@ -164,7 +164,7 @@ msgstr "{label} の提案"
 msgid "{more} more"
 msgstr "{more} 詳細"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/use-sidebar-organize.ts
 msgid "{name} ({owner})"
 msgstr "{name}（{owner}）"
 
@@ -323,7 +323,7 @@ msgstr "追加済みのアカウントは、サインインしたときのクラ
 msgid "Action"
 msgstr "アクション"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/use-sidebar-organize.ts
 msgid "Action failed"
 msgstr "アクションが失敗しました"
 
@@ -456,11 +456,11 @@ msgstr "連絡先に追加"
 msgid "Add to dictionary"
 msgstr "辞書に追加"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
 msgid "Add to favorites"
 msgstr "お気に入りに追加"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
 msgid "Add to favorites in all accounts"
 msgstr "すべてのアカウントでお気に入りに追加"
 
@@ -616,6 +616,7 @@ msgstr "全て"
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
+#: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "All accounts"
 msgstr "すべてのアカウント"
@@ -2423,6 +2424,7 @@ msgstr "署名の編集"
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 msgid "Edit space"
 msgstr "スペースを編集"
 
@@ -2648,11 +2650,11 @@ msgstr "失敗"
 msgid "Favorite"
 msgstr "お気に入り"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
 msgid "Favorite {name}"
 msgstr "お気に入り: {name}"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
 msgid "Favorite {name} in all accounts"
 msgstr "お気に入り: すべてのアカウントの {name}"
 
@@ -3398,7 +3400,7 @@ msgstr "ラベル：{name}"
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
 #: src/renderer/src/features/search/SearchField.tsx
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Labels"
@@ -4133,7 +4135,7 @@ msgstr "その他へ移動"
 msgid "Move to To"
 msgstr "宛先に移動"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
 msgid "Move to top level"
 msgstr "最上位に移動"
 
@@ -4264,7 +4266,7 @@ msgstr "新しい署名"
 
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/overview/Overview.tsx
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 msgid "New space"
 msgstr "新しいスペース"
 
@@ -4683,7 +4685,7 @@ msgstr "macOS の通知設定を開く"
 msgid "Open only this message in a new window"
 msgstr "このメッセージのみを新しいウィンドウで開きます"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 msgid "Open space"
 msgstr "スペースを開く"
 
@@ -4869,7 +4871,7 @@ msgstr "Outlook の自動返信はカスタム件名をサポートしていま�
 msgid "Outlook cannot upload attached messages of 3 MB or more. Remove this attachment before sending."
 msgstr "Outlook では 3 MB 以上の添付メッセージをアップロードできません。送信前にこの添付ファイルを削除してください。"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
 msgid "Outlook categories"
 msgstr "Outlookのカテゴリ"
 
@@ -4905,8 +4907,8 @@ msgstr "トークン上限に達したため出力が切り詰められました
 
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/overview/Overview.tsx
-#: src/renderer/src/features/sidebar/Sidebar.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
+#: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 msgid "Overview"
 msgstr "概要"
 
@@ -5364,11 +5366,11 @@ msgstr "現在のラベルを削除する"
 msgid "Remove favorite"
 msgstr "お気に入りを削除"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
 msgid "Remove from favorites"
 msgstr "お気に入りから削除"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
 msgid "Remove from favorites in all accounts"
 msgstr "すべてのアカウントでお気に入りから削除"
 
@@ -6061,7 +6063,7 @@ msgid "Set up by hand"
 msgstr "手動で設定"
 
 #: src/renderer/src/features/settings/Settings.tsx
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarFooter.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 #: src/renderer/src/state/desktop.ts
 msgid "Settings"
@@ -6384,8 +6386,8 @@ msgstr "何か問題が発生しました。もう一度試してください。
 msgid "Something went wrong. Try again."
 msgstr "問題が発生しました。もう一度お試しください。"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
+#: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 msgid "Spaces"
 msgstr "スペース"
 
@@ -6567,7 +6569,7 @@ msgstr "同期を完了できませんでした。自動的に再試行します
 msgid "Sync failed"
 msgstr "同期に失敗しました"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarFooter.tsx
 msgid "Sync failed ({count})"
 msgstr "同期に失敗しました ({count})"
 
@@ -6576,7 +6578,7 @@ msgid "Sync health"
 msgstr "同期状態"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarFooter.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Sync now"
 msgstr "今すぐ同期する"
@@ -6585,11 +6587,11 @@ msgstr "今すぐ同期する"
 msgid "Sync window"
 msgstr "同期期間"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarFooter.tsx
 msgid "Synced {time}"
 msgstr "{time} を同期しました"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarFooter.tsx
 msgid "Syncing {fetched}/{total}"
 msgstr "{fetched}/{total} を同期しています"
 
@@ -6602,7 +6604,7 @@ msgstr "メールを同期中…"
 msgid "Syncing normally"
 msgstr "正常に同期しています"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarFooter.tsx
 msgid "Syncing…"
 msgstr "同期中…"
 
