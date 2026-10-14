@@ -323,7 +323,7 @@ it.effect("catch-up suppresses unread mail older than the previous sync", () => 
     const m = yield* Mailbox;
     yield* m.accounts.connect({ provider: "gmail" });
     yield* m.sync.sync();
-    yield* TestClock.adjust("10 seconds");
+    yield* TestClock.adjust("10 minutes");
     yield* m.sync.sync();
     const ids = yield* Ref.make<string[]>([]);
     yield* m.app.events.pipe(
@@ -333,8 +333,9 @@ it.effect("catch-up suppresses unread mail older than the previous sync", () => 
       Effect.forkScoped,
     );
     yield* Effect.yieldNow;
-    server.messages.set("old", incoming("old", { date: 9000 }));
-    server.messages.set("fresh", incoming("fresh", { date: 11000 }));
+    // Older than the previous sync's start by more than the 2-minute clock skew allowance.
+    server.messages.set("old", incoming("old", { date: 600_000 - 180_000 }));
+    server.messages.set("fresh", incoming("fresh", { date: 601_000 }));
     yield* m.sync.pollInbox();
     yield* Effect.yieldNow;
     assert.deepStrictEqual(yield* Ref.get(ids), [`${account.id}/fresh`]);

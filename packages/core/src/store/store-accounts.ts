@@ -221,8 +221,9 @@ export const makeAccountsStore = ({
     id: string,
     cursor: string,
     stamp = true,
+    syncedAt?: number,
   ) {
-    const now = yield* Clock.currentTimeMillis;
+    const now = syncedAt ?? (yield* Clock.currentTimeMillis);
     yield* run(
       sql`UPDATE accounts SET sync_cursor = ${cursor}, last_synced_at = CASE WHEN ${stamp ? 1 : 0} THEN ${now} ELSE last_synced_at END WHERE id = ${id}`,
     );

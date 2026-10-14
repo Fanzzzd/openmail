@@ -13,6 +13,13 @@ import { notificationEligible, profileNotificationsActive } from "../app/system.
 import { providerCapabilities } from "../providers/capabilities.js";
 
 /**
+ * A message's date comes from the server's clock and last_synced_at from ours.
+ * New mail dated up to this much before the last pull started still notifies;
+ * seen_incoming keeps a message from notifying twice.
+ */
+const NOTIFY_CLOCK_SKEW_MS = 2 * 60_000;
+
+/**
  * Applies a page of provider changes to the store during a pull: new and updated messages,
  * deletions, remapped ids, pending local ops replayed on top, and new-mail notifications.
  */
@@ -27,6 +34,7 @@ export const makeApplyChanges = (
     account: Account,
     counts: { changed: number; deleted: number },
     notificationsReady: boolean,
+    pullStartedAt: number,
     scope?: "inbox",
   ) => {
     const remapped = new Set<string>();
@@ -117,7 +125,7 @@ export const makeApplyChanges = (
                   first &&
                   !known &&
                   notificationsReady &&
-                  change.message.date >= (account.lastSyncedAt ?? 0) &&
+                  change.message.date >= (account.lastSyncedAt ?? 0) - NOTIFY_CLOCK_SKEW_MS &&
                   change.message.isUnread &&
                   change.message.labels.includes("INBOX")
                 ) {
@@ -278,7 +286,7 @@ export const makeApplyChanges = (
                 : scope
                   ? store.saveInboxCursor(account.id, change.cursor)
                   : store
-                      .saveSyncCursor(account.id, change.cursor)
+                      .saveSyncCursor(account.id, change.cursor, true, pullStartedAt)
                       .pipe(Effect.andThen(store.saveInboxCursor(account.id, change.cursor))),
             );
             break;

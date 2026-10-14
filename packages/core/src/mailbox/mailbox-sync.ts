@@ -124,6 +124,7 @@ export const makeSyncMailbox = (
       account: Account,
       counts: { changed: number; deleted: number },
       notificationsReady: boolean,
+      pullStartedAt: number,
       scope?: "inbox",
     ) => (batch: readonly Change[]) => Effect.Effect<void, ProviderError | AuthError>;
     organization: () => ReturnType<typeof makeOrganizationMailbox>;
@@ -179,6 +180,9 @@ export const makeSyncMailbox = (
         phase = next;
       });
     const counts = { changed: 0, deleted: 0 };
+    // Mail the server receives while this pull runs may miss its snapshot.
+    // The next pull notifies it because last_synced_at records this start.
+    const pullStartedAt = yield* Clock.currentTimeMillis;
     const guard = makeResetGuard(store, providers.get(account.provider), account, counts, budget);
     const apply = (current: Account, notificationsReady: boolean) =>
       Effect.fnUntraced(function* (batch: readonly Change[]) {
@@ -192,7 +196,13 @@ export const makeSyncMailbox = (
               change._tag === "RebuildFolder")
           ) {
             if (changes.length)
-              yield* applyChanges(current, counts, notificationsReady, scope)(changes);
+              yield* applyChanges(
+                current,
+                counts,
+                notificationsReady,
+                pullStartedAt,
+                scope,
+              )(changes);
             changes = [];
             yield* change._tag === "VerifyCandidates"
               ? guard.enqueue(change.providerIds)
@@ -200,7 +210,7 @@ export const makeSyncMailbox = (
           } else changes.push(change);
         }
         if (changes.length)
-          yield* applyChanges(current, counts, notificationsReady, scope)(changes);
+          yield* applyChanges(current, counts, notificationsReady, pullStartedAt, scope)(changes);
       });
     account = yield* store.getAccount(account.id).pipe(Effect.orDie);
     if (account.enabled === false) return { accountId: account.id, ...counts };

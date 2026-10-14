@@ -174,7 +174,13 @@ export class Store extends Context.Service<
     setSyncError(id: string, error: string | null): Effect.Effect<void>;
     getSyncCursor(id: string): Effect.Effect<Option.Option<string>>;
     /** Also stamps last_synced_at. */
-    saveSyncCursor(id: string, cursor: string, stamp?: boolean): Effect.Effect<void>;
+    saveSyncCursor(
+      id: string,
+      cursor: string,
+      stamp?: boolean,
+      /** When the pull that produced `cursor` started; defaults to now. */
+      syncedAt?: number,
+    ): Effect.Effect<void>;
 
     // Messages. Writes keep rowids stable for the FTS index (ON CONFLICT DO UPDATE).
     upsertMessage(accountId: string, m: IncomingMessage): Effect.Effect<void>;
