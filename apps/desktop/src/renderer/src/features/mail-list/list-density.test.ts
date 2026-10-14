@@ -100,8 +100,8 @@ it("each density keeps local results and shows search-specific errors", () => {
     expect(markup).toContain("Subject");
     expect(markup).toContain(
       density === "dense"
-        ? "outlook:me: Sign in again"
-        : "outlook:me: The server couldn&#x27;t complete this search.",
+        ? "Showing results from this Mac. outlook:me must sign in again to search the server."
+        : "Showing results from this Mac. outlook:me couldn&#x27;t search the server.",
     );
     expect(markup).not.toContain("The server rejected this change.");
     expect(markup.includes("Unique preview body")).toBe(LIST_DENSITIES[density].previewLines > 0);

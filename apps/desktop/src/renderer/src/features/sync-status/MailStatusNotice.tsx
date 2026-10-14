@@ -12,6 +12,7 @@ import { syncNow, useRunMail } from "../../state/mail";
 import { SignInAgainOnMac } from "../../ui/SignInAgainOnMac";
 import { noticeRow, noticeTone } from "../../ui/styles";
 import { syncErrorText } from "./sync-failure-text";
+import { accountName } from "../../lib/format";
 
 const action =
   "shrink-0 rounded-item font-semibold whitespace-nowrap outline-offset-1 outline-a11y-focus hover:underline focus-visible:outline-2";
@@ -86,14 +87,21 @@ export function SyncStatusAnnouncement({ failed }: { failed: boolean }) {
   return <ChangeAnnouncement text={failed ? t`Sync failed` : t`Syncing normally`} />;
 }
 
-/** A sync failure with Try again. When it leaves while it has focus, `onFocusList` takes focus. */
+/**
+ * A sync failure with Try again. The line names the accounts; the detail under it gives each
+ * account's reason, always when `detailed`, otherwise while the line has keyboard focus and for
+ * screen readers. When it leaves while it has focus, `onFocusList` takes focus.
+ */
 function SyncFailure({
-  names,
+  accounts,
   failed,
+  detailed = false,
   onFocusList,
 }: {
-  names: string;
+  /** The accounts whose names the line may show. */
+  accounts: readonly Account[];
   failed: readonly string[];
+  detailed?: boolean;
   onFocusList: () => void;
 }) {
   const run = useRunMail();
@@ -106,16 +114,35 @@ function SyncFailure({
       if (element?.contains(document.activeElement)) focusList();
     };
   }, []);
+  const failedAccounts = accounts.filter((a) => failed.some((e) => e.startsWith(`${a.id}: `)));
+  const names = failedAccounts.map(accountName).join(", ");
+  const reasons = failedAccounts.map((account) => {
+    const texts = failed
+      .filter((e) => e.startsWith(`${account.id}: `))
+      .map((failure) => syncErrorText(i18n, failure));
+    return `${accountName(account)}: ${[...new Set(texts)].join(" ")}`;
+  });
   return (
     <div ref={root}>
       <NoticeLine
         tone="danger"
         glyph={<CircleAlert aria-hidden className={icon} />}
-        title={[...new Set(failed.map((failure) => syncErrorText(i18n, failure)))].join("\n")}
+        title={reasons.join("\n")}
         action={
           <button type="button" onClick={() => run(syncNow)} className={action}>
             <Trans>Try again</Trans>
           </button>
+        }
+        detail={
+          reasons.length > 0 && (
+            <ul
+              className={`w-full pl-5 leading-4 ${detailed ? "" : "sr-only group-focus-within/notice:not-sr-only"}`}
+            >
+              {reasons.map((reason) => (
+                <li key={reason}>{reason}</li>
+              ))}
+            </ul>
+          )
         }
       >
         <p className="truncate">
@@ -341,10 +368,6 @@ export function MailStatusNotice({
   const keychain = failures.some(isKeychainLocked);
   const failed = failures.filter((failure) => !isKeychainLocked(failure));
   const offline = t`You're offline. Mail syncs again when you reconnect.`;
-  const names = space
-    .filter((a) => failed.some((e) => e.startsWith(`${a.id}: `)))
-    .map((a) => a.email)
-    .join(", ");
   const showFailure = failed.length > 0 && !syncState.running;
   const affected = new Set([
     ...expired.map((a) => a.id),
@@ -371,7 +394,14 @@ export function MailStatusNotice({
             affected={affected}
             onReauth={onReauth}
             failure={
-              showFailure && <SyncFailure names={names} failed={failed} onFocusList={onFocusList} />
+              showFailure && (
+                <SyncFailure
+                  accounts={space}
+                  failed={failed}
+                  detailed={affected >= 2}
+                  onFocusList={onFocusList}
+                />
+              )
             }
           />
         </div>
@@ -403,5 +433,30 @@ export function SidebarAccountIssues({
       onReauth={onReauth}
       className={className}
     />
+  );
+}
+
+/**
+ * The sidebar footer's sync problems, opened from "Sync failed (N)": the list notice's sync and
+ * keychain lines, with each account's reason written out.
+ */
+export function SyncFailureDetails({
+  accounts,
+  failures,
+  onFocusList,
+}: {
+  accounts: readonly Account[];
+  failures: readonly string[];
+  onFocusList: () => void;
+}) {
+  const failed = failures.filter((failure) => !isKeychainLocked(failure));
+  const keychain = failures.length > failed.length;
+  return (
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-1.5">
+      {keychain && <KeychainNotice />}
+      {failed.length > 0 && (
+        <SyncFailure accounts={accounts} failed={failed} detailed onFocusList={onFocusList} />
+      )}
+    </div>
   );
 }

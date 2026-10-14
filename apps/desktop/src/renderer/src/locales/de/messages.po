@@ -187,6 +187,10 @@ msgstr "Die Anmeldung von {email} ist abgelaufen. Die Synchronisierung ist angeh
 msgid "{email}'s sign-in was revoked or has expired. Sync is paused."
 msgstr "Die Anmeldung von {email} wurde widerrufen oder ist abgelaufen. Die Synchronisierung ist angehalten."
 
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "{failedSearch} couldn't search the server."
+msgstr "{failedSearch} konnte nicht auf dem Server suchen."
+
 #: src/renderer/src/features/ai/TriageChip.tsx
 msgid "{hours, plural, one {Snooze for # hour} other {Snooze for # hours}}"
 msgstr "{hours, plural, one {Um # Stunde zurückstellen} other {Um # Stunden zurückstellen}}"
@@ -262,6 +266,10 @@ msgstr "Anmeldung bei {provider} abgelaufen"
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "{provider} sign-in missing"
 msgstr "Anmeldung bei {provider} fehlt"
+
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "{reauthSearch} must sign in again to search the server."
+msgstr "{reauthSearch} muss sich erneut anmelden, um auf dem Server zu suchen."
 
 #: src/renderer/src/features/downloads/Downloads.tsx
 msgid "{received} of {size}"
@@ -6038,10 +6046,6 @@ msgid "Search can use at most {MAX_SEARCH_TERMS} words and operators. Remove som
 msgstr "Die Suche kann höchstens {MAX_SEARCH_TERMS} Wörter und Operatoren verwenden. Entferne einige."
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
-msgid "Search couldn't finish:"
-msgstr "Die Suche konnte nicht abgeschlossen werden:"
-
-#: src/renderer/src/features/mail-list/MessageList.tsx
 #: src/renderer/src/lib/errors.ts
 msgid "Search groups can nest at most {MAX_SEARCH_DEPTH} levels deep. Remove some parentheses."
 msgstr "Suchgruppen können höchstens {MAX_SEARCH_DEPTH} Ebenen tief verschachtelt werden. Entferne einige Klammern."
@@ -6427,6 +6431,10 @@ msgstr "Seitenleiste einblenden"
 msgid "Show unread count in the menu bar"
 msgstr "Anzahl der ungelesenen Artikel in der Menüleiste anzeigen"
 
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "Showing results from this Mac."
+msgstr "Ergebnisse von diesem Mac werden angezeigt."
+
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Sidebar"
@@ -6434,7 +6442,6 @@ msgstr "Seitenleiste"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
-#: src/renderer/src/features/mail-list/MessageList.tsx
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 #: src/renderer/src/features/settings/sections/ContactSettings.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
@@ -6826,6 +6833,10 @@ msgstr "Synchronisationsstatus"
 msgid "Sync now"
 msgstr "Jetzt synchronisieren"
 
+#: src/renderer/src/features/sidebar/SidebarFooter.tsx
+msgid "Sync problems"
+msgstr "Synchronisierungsprobleme"
+
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Sync window"
 msgstr "Synchronisationszeitraum"
@@ -7145,10 +7156,6 @@ msgstr "Der Absendername enthält eine andere E-Mail-Adresse."
 #: src/renderer/src/lib/errors.ts
 msgid "The server blocked the sign-in as unsafe. Turn on IMAP in your email's web settings, then sign in with the authorization code it generates."
 msgstr "Der Server hat die Anmeldung als unsicher blockiert. Aktiviere IMAP in den Web-Einstellungen deines E-Mail-Dienstes und melde dich mit dem dort erzeugten Autorisierungscode an."
-
-#: src/renderer/src/features/mail-list/MessageList.tsx
-msgid "The server couldn't complete this search."
-msgstr "Der Server konnte diese Suche nicht abschließen."
 
 #: src/renderer/src/lib/errors.ts
 msgid "The server refused this action."
@@ -7536,6 +7543,7 @@ msgid "Trusted authentication service (optional)"
 msgstr "Vertrauenswürdiger Authentifizierungsdienst (optional)"
 
 #: src/renderer/src/features/feedback/Feedback.tsx
+#: src/renderer/src/features/mail-list/MessageList.tsx
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Try again"
 msgstr "Erneut versuchen"

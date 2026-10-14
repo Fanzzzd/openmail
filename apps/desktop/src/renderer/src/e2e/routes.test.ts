@@ -1,5 +1,6 @@
 import { act, fireEvent, screen, within } from "@testing-library/react/pure";
 import { afterEach, expect, it, vi } from "vitest";
+import { Effect } from "effect";
 import { SETTLE_MS } from "../routes/router";
 import { advance, eventually, flow, key, row } from "./harness";
 import { scaledMs } from "../../../../../../packages/core/test-support/test-time.js";
@@ -210,4 +211,38 @@ it("each menu command opens its own dialog or route, and nothing else", async ()
   await h.event({ _tag: "Command", command: "compose" });
   await eventually(() => expect(screen.getByRole("textbox", { name: "Subject" })).toBeTruthy());
   expect(h.href()).toBe("/mail/all/inbox");
+});
+
+it("a failed server search says the results are local, names the account and can try again", async () => {
+  let calls = 0;
+  const h = (current = await flow({
+    route: "/mail/all/inbox?q=Original",
+    handlers: {
+      SearchServer: () =>
+        Effect.succeed({
+          threads: [],
+          truncated: false,
+          errors:
+            ++calls === 1
+              ? [
+                  {
+                    accountId: "gmail:me@gmail.com",
+                    message: "The server couldn't complete this search.",
+                  },
+                ]
+              : [],
+        }),
+    },
+  }));
+  const alert = await screen.findByText(
+    "Showing results from this Mac. me@gmail.com couldn't search the server.",
+    undefined,
+    { timeout: scaledMs(5000) },
+  );
+  expect(alert.closest('[role="alert"]')).toBeTruthy();
+  expect(alert.className).not.toContain("truncate");
+  expect(h.account.id).toBe("gmail:me@gmail.com");
+  fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+  await eventually(() => expect(calls).toBe(2));
+  await eventually(() => expect(screen.queryByText(/couldn't search the server/)).toBeNull());
 });

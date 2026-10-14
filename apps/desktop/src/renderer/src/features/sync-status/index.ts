@@ -4,6 +4,7 @@ export {
   reauthText,
   ReauthNotice,
   SidebarAccountIssues,
+  SyncFailureDetails,
   SyncStatusAnnouncement,
   syncFailures,
 } from "./MailStatusNotice";

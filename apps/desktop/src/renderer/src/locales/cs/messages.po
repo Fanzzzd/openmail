@@ -187,6 +187,10 @@ msgstr "Platnost přihlášení uživatele {email} vypršela. Synchronizace je p
 msgid "{email}'s sign-in was revoked or has expired. Sync is paused."
 msgstr "Přihlášení uživatele {email} bylo odvoláno nebo vypršelo. Synchronizace je pozastavena."
 
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "{failedSearch} couldn't search the server."
+msgstr "{failedSearch}: hledání na serveru se nezdařilo."
+
 #: src/renderer/src/features/ai/TriageChip.tsx
 msgid "{hours, plural, one {Snooze for # hour} other {Snooze for # hours}}"
 msgstr "{hours, plural, one {Odložit o # hodinu} few {Odložit o # hodiny} many {Odložit o # hodiny} other {Odložit o # hodin}}"
@@ -262,6 +266,10 @@ msgstr "Přihlášení k {provider} vypršelo"
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "{provider} sign-in missing"
 msgstr "Přihlášení k {provider} chybí"
+
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "{reauthSearch} must sign in again to search the server."
+msgstr "{reauthSearch}: pro hledání na serveru se znovu přihlaste."
 
 #: src/renderer/src/features/downloads/Downloads.tsx
 msgid "{received} of {size}"
@@ -6038,10 +6046,6 @@ msgid "Search can use at most {MAX_SEARCH_TERMS} words and operators. Remove som
 msgstr "Hledání může použít nejvýše {MAX_SEARCH_TERMS} slov a operátorů. Některé odeberte."
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
-msgid "Search couldn't finish:"
-msgstr "Hledání se nepodařilo dokončit:"
-
-#: src/renderer/src/features/mail-list/MessageList.tsx
 #: src/renderer/src/lib/errors.ts
 msgid "Search groups can nest at most {MAX_SEARCH_DEPTH} levels deep. Remove some parentheses."
 msgstr "Skupiny ve vyhledávání lze vnořit nejvýše do {MAX_SEARCH_DEPTH} úrovní. Odeberte některé závorky."
@@ -6427,6 +6431,10 @@ msgstr "Zobrazit postranní panel"
 msgid "Show unread count in the menu bar"
 msgstr "Zobrazit počet nepřečtených v řádku nabídek"
 
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "Showing results from this Mac."
+msgstr "Zobrazují se výsledky z tohoto Macu."
+
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Sidebar"
@@ -6434,7 +6442,6 @@ msgstr "Postranní panel"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
-#: src/renderer/src/features/mail-list/MessageList.tsx
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 #: src/renderer/src/features/settings/sections/ContactSettings.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
@@ -6826,6 +6833,10 @@ msgstr "Stav synchronizace"
 msgid "Sync now"
 msgstr "Synchronizovat nyní"
 
+#: src/renderer/src/features/sidebar/SidebarFooter.tsx
+msgid "Sync problems"
+msgstr "Problémy se synchronizací"
+
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Sync window"
 msgstr "Rozsah synchronizace"
@@ -7145,10 +7156,6 @@ msgstr "Jméno odesílatele obsahuje jinou e-mailovou adresu."
 #: src/renderer/src/lib/errors.ts
 msgid "The server blocked the sign-in as unsafe. Turn on IMAP in your email's web settings, then sign in with the authorization code it generates."
 msgstr "Server zablokoval přihlášení jako nebezpečné. Zapněte IMAP v nastavení webové pošty a přihlaste se vygenerovaným autorizačním kódem."
-
-#: src/renderer/src/features/mail-list/MessageList.tsx
-msgid "The server couldn't complete this search."
-msgstr "Server nemohl dokončit toto hledání."
 
 #: src/renderer/src/lib/errors.ts
 msgid "The server refused this action."
@@ -7536,6 +7543,7 @@ msgid "Trusted authentication service (optional)"
 msgstr "Důvěryhodná ověřovací služba (volitelné)"
 
 #: src/renderer/src/features/feedback/Feedback.tsx
+#: src/renderer/src/features/mail-list/MessageList.tsx
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Try again"
 msgstr "Zkusit znovu"

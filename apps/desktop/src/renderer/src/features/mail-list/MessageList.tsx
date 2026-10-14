@@ -30,7 +30,7 @@ import { attachmentMatches } from "../search";
 import { rowLayout, rowWindow } from "./row-layout";
 import { swipeMailOp } from "./message-swipe";
 import { constVoid } from "effect/Function";
-import { noticeRow, noticeTone, titlebarRow, touchTarget } from "../../ui/styles";
+import { buttonLink, noticeRow, noticeTone, titlebarRow, touchTarget } from "../../ui/styles";
 import { TrafficLightSpace } from "../../ui/TrafficLights";
 import { TriangleAlert } from "lucide-react";
 import { ContextMenuContent, ContextMenuRoot, ContextMenuTrigger } from "../../ui/Menu";
@@ -54,6 +54,8 @@ interface Props {
   emptyActions?: EmptyActions;
   /** The name to show for an account id, in search errors. */
   accountLabel?: (accountId: string) => string;
+  /** Runs the server search again after it failed for some accounts. */
+  onRetrySearch?: () => void;
   title: string;
   threads: readonly ThreadSummary[];
   loading: boolean;
@@ -93,6 +95,7 @@ export function MessageList({
   notice,
   emptyActions,
   accountLabel = (accountId) => accountId,
+  onRetrySearch,
   threads,
   loading,
   loadingMore = false,
@@ -120,7 +123,7 @@ export function MessageList({
   onEndReached,
   rowActions,
 }: Props) {
-  const { t } = useLingui();
+  const { t, i18n } = useLingui();
   const shortcutText = useShortcutText();
   // One status region stays mounted, so screen readers hear each change of its text.
   const count = threads.length;
@@ -133,10 +136,20 @@ export function MessageList({
         : exhausted
           ? t`${plural(count, { one: "# result", other: "# results" })}`
           : t`${plural(count, { one: "More than # result", other: "More than # results" })}`;
-  const searchMessages = searchErrorAccounts.map(
-    (accountId) =>
-      `${accountLabel(accountId)}: ${searchReauthAccounts.includes(accountId) ? t`Sign in again` : t`The server couldn't complete this search.`}`,
+  // Local results still show when a server search fails, so the notice says so first.
+  const listNames = (ids: readonly string[]) =>
+    new Intl.ListFormat(i18n.locale, { type: "conjunction" }).format(ids.map(accountLabel));
+  const failedSearch = listNames(
+    searchErrorAccounts.filter((accountId) => !searchReauthAccounts.includes(accountId)),
   );
+  const reauthSearch = listNames(
+    searchErrorAccounts.filter((accountId) => searchReauthAccounts.includes(accountId)),
+  );
+  const searchProblem = [
+    t`Showing results from this Mac.`,
+    ...(failedSearch ? [t`${failedSearch} couldn't search the server.`] : []),
+    ...(reauthSearch ? [t`${reauthSearch} must sign in again to search the server.`] : []),
+  ].join(" ");
   // Server results skip these operators; the list then applies the whole query to them locally.
   const searchIgnoredMessages = searchIgnored.map(({ accountId, operators }) => {
     const account = accountLabel(accountId);
@@ -350,16 +363,16 @@ export function MessageList({
         </output>
       )}
       {searchErrorAccounts.length > 0 && (
-        <output
-          role="alert"
-          title={searchMessages.join("\n")}
-          className={`mx-3 mb-2 ${noticeRow} ${noticeTone.warning}`}
-        >
-          <TriangleAlert aria-hidden className="size-3.5 shrink-0" />
-          <span className="min-w-0 flex-1 truncate">
-            <Trans>Search couldn't finish:</Trans> {searchMessages.join("; ")}
-          </span>
-        </output>
+        <div role="alert" className={`mx-3 mb-2 ${noticeRow} ${noticeTone.warning}`}>
+          <TriangleAlert aria-hidden className="size-3.5 shrink-0 self-start" />
+          {/* Wraps instead of truncating, so every account and reason stays readable. */}
+          <p className="min-w-0 flex-1">{searchProblem}</p>
+          {onRetrySearch && !searchingServer && (
+            <button type="button" onClick={onRetrySearch} className={`self-start ${buttonLink}`}>
+              <Trans>Try again</Trans>
+            </button>
+          )}
+        </div>
       )}
       {threads.length === 0 && !loading && !searchingServer && (
         <EmptyList

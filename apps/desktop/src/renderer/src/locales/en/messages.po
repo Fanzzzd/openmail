@@ -191,6 +191,10 @@ msgstr "{email}'s sign-in has expired. Sync is paused."
 msgid "{email}'s sign-in was revoked or has expired. Sync is paused."
 msgstr "{email}'s sign-in was revoked or has expired. Sync is paused."
 
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "{failedSearch} couldn't search the server."
+msgstr "{failedSearch} couldn't search the server."
+
 #: src/renderer/src/features/ai/TriageChip.tsx
 msgid "{hours, plural, one {Snooze for # hour} other {Snooze for # hours}}"
 msgstr "{hours, plural, one {Snooze for # hour} other {Snooze for # hours}}"
@@ -266,6 +270,10 @@ msgstr "{provider} sign-in expired"
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "{provider} sign-in missing"
 msgstr "{provider} sign-in missing"
+
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "{reauthSearch} must sign in again to search the server."
+msgstr "{reauthSearch} must sign in again to search the server."
 
 #: src/renderer/src/features/downloads/Downloads.tsx
 msgid "{received} of {size}"
@@ -6042,10 +6050,6 @@ msgid "Search can use at most {MAX_SEARCH_TERMS} words and operators. Remove som
 msgstr "Search can use at most {MAX_SEARCH_TERMS} words and operators. Remove some."
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
-msgid "Search couldn't finish:"
-msgstr "Search couldn't finish:"
-
-#: src/renderer/src/features/mail-list/MessageList.tsx
 #: src/renderer/src/lib/errors.ts
 msgid "Search groups can nest at most {MAX_SEARCH_DEPTH} levels deep. Remove some parentheses."
 msgstr "Search groups can nest at most {MAX_SEARCH_DEPTH} levels deep. Remove some parentheses."
@@ -6431,6 +6435,10 @@ msgstr "Show sidebar"
 msgid "Show unread count in the menu bar"
 msgstr "Show unread count in the menu bar"
 
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "Showing results from this Mac."
+msgstr "Showing results from this Mac."
+
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Sidebar"
@@ -6438,7 +6446,6 @@ msgstr "Sidebar"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
-#: src/renderer/src/features/mail-list/MessageList.tsx
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 #: src/renderer/src/features/settings/sections/ContactSettings.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
@@ -6830,6 +6837,10 @@ msgstr "Sync health"
 msgid "Sync now"
 msgstr "Sync now"
 
+#: src/renderer/src/features/sidebar/SidebarFooter.tsx
+msgid "Sync problems"
+msgstr "Sync problems"
+
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Sync window"
 msgstr "Sync window"
@@ -7149,10 +7160,6 @@ msgstr "The sender name contains a different email address."
 #: src/renderer/src/lib/errors.ts
 msgid "The server blocked the sign-in as unsafe. Turn on IMAP in your email's web settings, then sign in with the authorization code it generates."
 msgstr "The server blocked the sign-in as unsafe. Turn on IMAP in your email's web settings, then sign in with the authorization code it generates."
-
-#: src/renderer/src/features/mail-list/MessageList.tsx
-msgid "The server couldn't complete this search."
-msgstr "The server couldn't complete this search."
 
 #: src/renderer/src/lib/errors.ts
 msgid "The server refused this action."
@@ -7540,6 +7547,7 @@ msgid "Trusted authentication service (optional)"
 msgstr "Trusted authentication service (optional)"
 
 #: src/renderer/src/features/feedback/Feedback.tsx
+#: src/renderer/src/features/mail-list/MessageList.tsx
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Try again"
 msgstr "Try again"

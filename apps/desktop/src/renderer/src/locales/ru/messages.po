@@ -187,6 +187,10 @@ msgstr "Срок действия входа {email} истек. Синхрон�
 msgid "{email}'s sign-in was revoked or has expired. Sync is paused."
 msgstr "Вход {email} отозван или истёк. Синхронизация приостановлена."
 
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "{failedSearch} couldn't search the server."
+msgstr "{failedSearch}: не удалось выполнить поиск на сервере."
+
 #: src/renderer/src/features/ai/TriageChip.tsx
 msgid "{hours, plural, one {Snooze for # hour} other {Snooze for # hours}}"
 msgstr "{hours, plural, one {Отложить на # час} few {Отложить на # часа} many {Отложить на # часов} other {Отложить на # часа}}"
@@ -262,6 +266,10 @@ msgstr "Вход в {provider} истёк"
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "{provider} sign-in missing"
 msgstr "Данные входа {provider} отсутствуют"
+
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "{reauthSearch} must sign in again to search the server."
+msgstr "{reauthSearch}: войдите снова, чтобы искать на сервере."
 
 #: src/renderer/src/features/downloads/Downloads.tsx
 msgid "{received} of {size}"
@@ -6038,10 +6046,6 @@ msgid "Search can use at most {MAX_SEARCH_TERMS} words and operators. Remove som
 msgstr "Поиск может использовать не более {MAX_SEARCH_TERMS} слов и операторов. Удалите некоторые."
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
-msgid "Search couldn't finish:"
-msgstr "Не удалось завершить поиск:"
-
-#: src/renderer/src/features/mail-list/MessageList.tsx
 #: src/renderer/src/lib/errors.ts
 msgid "Search groups can nest at most {MAX_SEARCH_DEPTH} levels deep. Remove some parentheses."
 msgstr "Группы поиска могут быть вложены не более чем на {MAX_SEARCH_DEPTH} уровней. Удалите часть скобок."
@@ -6427,6 +6431,10 @@ msgstr "Показать боковую панель"
 msgid "Show unread count in the menu bar"
 msgstr "Показывать количество непрочитанных в строке меню"
 
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "Showing results from this Mac."
+msgstr "Показаны результаты с этого Mac."
+
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Sidebar"
@@ -6434,7 +6442,6 @@ msgstr "Боковая панель"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
-#: src/renderer/src/features/mail-list/MessageList.tsx
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 #: src/renderer/src/features/settings/sections/ContactSettings.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
@@ -6826,6 +6833,10 @@ msgstr "Состояние синхронизации"
 msgid "Sync now"
 msgstr "Синхронизировать сейчас"
 
+#: src/renderer/src/features/sidebar/SidebarFooter.tsx
+msgid "Sync problems"
+msgstr "Проблемы синхронизации"
+
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Sync window"
 msgstr "Период синхронизации"
@@ -7145,10 +7156,6 @@ msgstr "Имя отправителя содержит другой адрес �
 #: src/renderer/src/lib/errors.ts
 msgid "The server blocked the sign-in as unsafe. Turn on IMAP in your email's web settings, then sign in with the authorization code it generates."
 msgstr "Сервер заблокировал вход как небезопасный. Включите IMAP в веб-настройках почты и войдите с помощью созданного кода авторизации."
-
-#: src/renderer/src/features/mail-list/MessageList.tsx
-msgid "The server couldn't complete this search."
-msgstr "Сервер не смог завершить этот поиск."
 
 #: src/renderer/src/lib/errors.ts
 msgid "The server refused this action."
@@ -7536,6 +7543,7 @@ msgid "Trusted authentication service (optional)"
 msgstr "Доверенная служба аутентификации (необязательно)"
 
 #: src/renderer/src/features/feedback/Feedback.tsx
+#: src/renderer/src/features/mail-list/MessageList.tsx
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Try again"
 msgstr "Повторить"

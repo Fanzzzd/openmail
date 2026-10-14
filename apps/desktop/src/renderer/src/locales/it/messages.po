@@ -187,6 +187,10 @@ msgstr "L’accesso di {email} è scaduto. La sincronizzazione è in pausa."
 msgid "{email}'s sign-in was revoked or has expired. Sync is paused."
 msgstr "L’accesso di {email} è stato revocato o è scaduto. La sincronizzazione è in pausa."
 
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "{failedSearch} couldn't search the server."
+msgstr "{failedSearch} non è riuscito a cercare sul server."
+
 #: src/renderer/src/features/ai/TriageChip.tsx
 msgid "{hours, plural, one {Snooze for # hour} other {Snooze for # hours}}"
 msgstr "{hours, plural, one {Posticipa di # ora} other {Posticipa di # ore}}"
@@ -262,6 +266,10 @@ msgstr "Accesso a {provider} scaduto"
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "{provider} sign-in missing"
 msgstr "Accesso a {provider} mancante"
+
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "{reauthSearch} must sign in again to search the server."
+msgstr "{reauthSearch} deve accedere di nuovo per cercare sul server."
 
 #: src/renderer/src/features/downloads/Downloads.tsx
 msgid "{received} of {size}"
@@ -6038,10 +6046,6 @@ msgid "Search can use at most {MAX_SEARCH_TERMS} words and operators. Remove som
 msgstr "La ricerca può usare al massimo {MAX_SEARCH_TERMS} parole e operatori. Rimuovine alcuni."
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
-msgid "Search couldn't finish:"
-msgstr "Impossibile completare la ricerca:"
-
-#: src/renderer/src/features/mail-list/MessageList.tsx
 #: src/renderer/src/lib/errors.ts
 msgid "Search groups can nest at most {MAX_SEARCH_DEPTH} levels deep. Remove some parentheses."
 msgstr "I gruppi di ricerca possono essere annidati al massimo su {MAX_SEARCH_DEPTH} livelli. Rimuovi alcune parentesi."
@@ -6427,6 +6431,10 @@ msgstr "Mostra la barra laterale"
 msgid "Show unread count in the menu bar"
 msgstr "Mostra il conteggio dei non letti nella barra dei menu"
 
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "Showing results from this Mac."
+msgstr "Risultati mostrati da questo Mac."
+
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Sidebar"
@@ -6434,7 +6442,6 @@ msgstr "Barra laterale"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
-#: src/renderer/src/features/mail-list/MessageList.tsx
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 #: src/renderer/src/features/settings/sections/ContactSettings.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
@@ -6826,6 +6833,10 @@ msgstr "Stato della sincronizzazione"
 msgid "Sync now"
 msgstr "Sincronizza ora"
 
+#: src/renderer/src/features/sidebar/SidebarFooter.tsx
+msgid "Sync problems"
+msgstr "Problemi di sincronizzazione"
+
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Sync window"
 msgstr "Periodo di sincronizzazione"
@@ -7145,10 +7156,6 @@ msgstr "Il nome del mittente contiene un indirizzo email diverso."
 #: src/renderer/src/lib/errors.ts
 msgid "The server blocked the sign-in as unsafe. Turn on IMAP in your email's web settings, then sign in with the authorization code it generates."
 msgstr "Il server ha bloccato l'accesso perché non sicuro. Attiva IMAP nelle impostazioni web della tua posta, quindi accedi con il codice di autorizzazione generato."
-
-#: src/renderer/src/features/mail-list/MessageList.tsx
-msgid "The server couldn't complete this search."
-msgstr "Il server non ha potuto completare questa ricerca."
 
 #: src/renderer/src/lib/errors.ts
 msgid "The server refused this action."
@@ -7536,6 +7543,7 @@ msgid "Trusted authentication service (optional)"
 msgstr "Servizio di autenticazione attendibile (facoltativo)"
 
 #: src/renderer/src/features/feedback/Feedback.tsx
+#: src/renderer/src/features/mail-list/MessageList.tsx
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Try again"
 msgstr "Riprova"

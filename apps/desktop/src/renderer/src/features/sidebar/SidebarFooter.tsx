@@ -1,11 +1,13 @@
-import { useLingui } from "@lingui/react/macro";
+import { Popover } from "@base-ui/react/popover";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { useState } from "react";
 import { RefreshCw, Settings as SettingsIcon } from "lucide-react";
 import type { Account, SyncProgress, SyncState } from "../../../../shared/api";
 import { useShortcutText } from "../../i18n/use-shortcut-text";
 import { syncNow, useRunMail } from "../../state/mail";
-import { touchIcon } from "../../ui/styles";
+import { popupMotion, popupOffset, touchIcon } from "../../ui/styles";
 import { Tip } from "../../ui/Tip";
-import { SyncStatusAnnouncement } from "../sync-status";
+import { SyncFailureDetails, SyncStatusAnnouncement } from "../sync-status";
 import { dateFormat } from "../../lib/format";
 
 /** The sidebar's last row: sync progress or result, Settings and Sync now. */
@@ -25,6 +27,8 @@ export function SidebarFooter({
   const { t, i18n } = useLingui();
   const shortcut = useShortcutText();
   const run = useRunMail();
+  const [open, setOpen] = useState(false);
+  const failed = !syncState.running && failures.length > 0;
   /** The footer line: progress while syncing, then failures or the last sync time. */
   const syncStatus = () => {
     if (syncState.running) {
@@ -45,11 +49,41 @@ export function SidebarFooter({
   return (
     <footer className="flex items-center gap-2 px-4 py-2 text-footnote text-a11y-muted">
       {/* With no account there is nothing to sync, so the footer keeps only Settings. */}
-      <span className="line-clamp-2 min-w-0 flex-1" title={failures.join("\n")}>
+      <span className="line-clamp-2 min-w-0 flex-1">
         {/* Readable on mount too: the announcement below stays silent until the state changes. */}
         {accounts.length > 0 && (
           <>
-            <span>{syncStatus()}</span>
+            {failed ? (
+              // The failure opens the same lines the list shows when the sidebar is not docked.
+              <Popover.Root open={open} onOpenChange={setOpen}>
+                <Popover.Trigger className="rounded-item text-left text-red-700 outline-offset-1 outline-a11y-focus hover:underline focus-visible:outline-2 dark:text-red-300">
+                  {syncStatus()}
+                </Popover.Trigger>
+                <Popover.Portal>
+                  <Popover.Positioner
+                    side="top"
+                    align="start"
+                    sideOffset={popupOffset}
+                    className="z-[60] outline-none"
+                  >
+                    <Popover.Popup
+                      className={`no-drag w-[22rem] max-w-(--available-width) rounded-card bg-overlay p-3 text-body text-neutral-900 shadow-popup outline-none backdrop-blur-xl dark:text-neutral-100 ${popupMotion}`}
+                    >
+                      <Popover.Title className="mb-2 text-body font-semibold">
+                        <Trans>Sync problems</Trans>
+                      </Popover.Title>
+                      <SyncFailureDetails
+                        accounts={accounts}
+                        failures={failures}
+                        onFocusList={() => setOpen(false)}
+                      />
+                    </Popover.Popup>
+                  </Popover.Positioner>
+                </Popover.Portal>
+              </Popover.Root>
+            ) : (
+              <span>{syncStatus()}</span>
+            )}
             <SyncStatusAnnouncement failed={failures.length > 0} />
           </>
         )}

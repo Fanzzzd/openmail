@@ -194,7 +194,7 @@ const EMPTY: ThreadList = {
 };
 
 // Separate request: local hits can render while the network is in flight.
-const serverList = Atom.family((query: ListQuery) =>
+export const serverList = Atom.family((query: ListQuery) =>
   MailClient.runtime
     .atom(
       Effect.gen(function* () {

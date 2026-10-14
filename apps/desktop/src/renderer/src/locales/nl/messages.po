@@ -187,6 +187,10 @@ msgstr "De aanmelding van {email} is verlopen. Synchronisatie is gepauzeerd."
 msgid "{email}'s sign-in was revoked or has expired. Sync is paused."
 msgstr "De aanmelding van {email} is ingetrokken of verlopen. Synchronisatie is gepauzeerd."
 
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "{failedSearch} couldn't search the server."
+msgstr "{failedSearch} kon niet op de server zoeken."
+
 #: src/renderer/src/features/ai/TriageChip.tsx
 msgid "{hours, plural, one {Snooze for # hour} other {Snooze for # hours}}"
 msgstr "{hours, plural, one {Stel uit voor # uur} other {Stel uit voor # uur}}"
@@ -262,6 +266,10 @@ msgstr "Aanmelding bij {provider} verlopen"
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "{provider} sign-in missing"
 msgstr "Aanmelding bij {provider} ontbreekt"
+
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "{reauthSearch} must sign in again to search the server."
+msgstr "{reauthSearch} moet opnieuw aanmelden om op de server te zoeken."
 
 #: src/renderer/src/features/downloads/Downloads.tsx
 msgid "{received} of {size}"
@@ -6038,10 +6046,6 @@ msgid "Search can use at most {MAX_SEARCH_TERMS} words and operators. Remove som
 msgstr "Zoeken kan maximaal {MAX_SEARCH_TERMS} woorden en operatoren gebruiken. Verwijder er een paar."
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
-msgid "Search couldn't finish:"
-msgstr "Zoeken kon niet worden voltooid:"
-
-#: src/renderer/src/features/mail-list/MessageList.tsx
 #: src/renderer/src/lib/errors.ts
 msgid "Search groups can nest at most {MAX_SEARCH_DEPTH} levels deep. Remove some parentheses."
 msgstr "Zoekgroepen kunnen maximaal {MAX_SEARCH_DEPTH} niveaus diep genest worden. Verwijder een paar haakjes."
@@ -6427,6 +6431,10 @@ msgstr "Zijbalk tonen"
 msgid "Show unread count in the menu bar"
 msgstr "Toon ongelezen aantal in de menubalk"
 
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "Showing results from this Mac."
+msgstr "Resultaten van deze Mac worden getoond."
+
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Sidebar"
@@ -6434,7 +6442,6 @@ msgstr "Zijbalk"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
-#: src/renderer/src/features/mail-list/MessageList.tsx
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 #: src/renderer/src/features/settings/sections/ContactSettings.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
@@ -6826,6 +6833,10 @@ msgstr "Synchronisatiestatus"
 msgid "Sync now"
 msgstr "Synchroniseer nu"
 
+#: src/renderer/src/features/sidebar/SidebarFooter.tsx
+msgid "Sync problems"
+msgstr "Synchronisatieproblemen"
+
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Sync window"
 msgstr "Synchronisatieperiode"
@@ -7145,10 +7156,6 @@ msgstr "De naam van de afzender bevat een ander e-mailadres."
 #: src/renderer/src/lib/errors.ts
 msgid "The server blocked the sign-in as unsafe. Turn on IMAP in your email's web settings, then sign in with the authorization code it generates."
 msgstr "De server heeft het aanmelden als onveilig geblokkeerd. Schakel IMAP in bij de webinstellingen van je e-mail en meld je aan met de autorisatiecode die daar wordt gemaakt."
-
-#: src/renderer/src/features/mail-list/MessageList.tsx
-msgid "The server couldn't complete this search."
-msgstr "De server kon deze zoekopdracht niet voltooien."
 
 #: src/renderer/src/lib/errors.ts
 msgid "The server refused this action."
@@ -7536,6 +7543,7 @@ msgid "Trusted authentication service (optional)"
 msgstr "Vertrouwde authenticatiedienst (optioneel)"
 
 #: src/renderer/src/features/feedback/Feedback.tsx
+#: src/renderer/src/features/mail-list/MessageList.tsx
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Try again"
 msgstr "Opnieuw proberen"

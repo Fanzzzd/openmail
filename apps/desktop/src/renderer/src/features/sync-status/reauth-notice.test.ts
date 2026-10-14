@@ -192,10 +192,8 @@ it("a sync failure's tooltip shows fixed text, never the stored provider respons
   act(() => root.unmount());
   expect(titles.join("\n")).not.toContain("Quota exceeded");
   expect(titles.join("\n")).not.toContain(ok.id);
+  // The account goes by its name, with each distinct reason once.
   expect(titles).toContain(
-    [
-      "Sync couldn't finish. It will retry automatically.",
-      "The mail provider is limiting requests. Sync will try again later.",
-    ].join("\n"),
+    `${ok.email}: Sync couldn't finish. It will retry automatically. The mail provider is limiting requests. Sync will try again later.`,
   );
 });

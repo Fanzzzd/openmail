@@ -187,6 +187,10 @@ msgstr "{email} さんのサインインの有効期限が切れました。同�
 msgid "{email}'s sign-in was revoked or has expired. Sync is paused."
 msgstr "{email} さんのサインインは取り消されたか、有効期限が切れました。同期は一時停止されています。"
 
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "{failedSearch} couldn't search the server."
+msgstr "{failedSearch} はサーバー上で検索できませんでした。"
+
 #: src/renderer/src/features/ai/TriageChip.tsx
 msgid "{hours, plural, one {Snooze for # hour} other {Snooze for # hours}}"
 msgstr "{hours, plural, other {# 時間スヌーズ}}"
@@ -262,6 +266,10 @@ msgstr "{provider} のサインインの期限が切れました"
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "{provider} sign-in missing"
 msgstr "{provider} のサインイン情報がありません"
+
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "{reauthSearch} must sign in again to search the server."
+msgstr "{reauthSearch} でサーバー上を検索するには、再度サインインしてください。"
 
 #: src/renderer/src/features/downloads/Downloads.tsx
 msgid "{received} of {size}"
@@ -6038,10 +6046,6 @@ msgid "Search can use at most {MAX_SEARCH_TERMS} words and operators. Remove som
 msgstr "検索に使える単語と演算子は {MAX_SEARCH_TERMS} 個までです。いくつか削除してください。"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
-msgid "Search couldn't finish:"
-msgstr "検索を完了できませんでした："
-
-#: src/renderer/src/features/mail-list/MessageList.tsx
 #: src/renderer/src/lib/errors.ts
 msgid "Search groups can nest at most {MAX_SEARCH_DEPTH} levels deep. Remove some parentheses."
 msgstr "検索グループの入れ子は {MAX_SEARCH_DEPTH} 階層までです。括弧をいくつか削除してください。"
@@ -6427,6 +6431,10 @@ msgstr "サイドバーを表示"
 msgid "Show unread count in the menu bar"
 msgstr "メニューバーに未開封数を表示"
 
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "Showing results from this Mac."
+msgstr "この Mac 上の結果を表示しています。"
+
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Sidebar"
@@ -6434,7 +6442,6 @@ msgstr "サイドバー"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
-#: src/renderer/src/features/mail-list/MessageList.tsx
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 #: src/renderer/src/features/settings/sections/ContactSettings.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
@@ -6826,6 +6833,10 @@ msgstr "同期状態"
 msgid "Sync now"
 msgstr "今すぐ同期する"
 
+#: src/renderer/src/features/sidebar/SidebarFooter.tsx
+msgid "Sync problems"
+msgstr "同期の問題"
+
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Sync window"
 msgstr "同期期間"
@@ -7145,10 +7156,6 @@ msgstr "送信者名に別のメールアドレスが含まれています。"
 #: src/renderer/src/lib/errors.ts
 msgid "The server blocked the sign-in as unsafe. Turn on IMAP in your email's web settings, then sign in with the authorization code it generates."
 msgstr "サーバーが安全でないサインインとしてブロックしました。メールの Web 設定で IMAP を有効にし、生成された認証コードでサインインしてください。"
-
-#: src/renderer/src/features/mail-list/MessageList.tsx
-msgid "The server couldn't complete this search."
-msgstr "サーバーで検索を完了できませんでした。"
 
 #: src/renderer/src/lib/errors.ts
 msgid "The server refused this action."
@@ -7536,6 +7543,7 @@ msgid "Trusted authentication service (optional)"
 msgstr "信頼する認証サービス（任意）"
 
 #: src/renderer/src/features/feedback/Feedback.tsx
+#: src/renderer/src/features/mail-list/MessageList.tsx
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Try again"
 msgstr "再試行"

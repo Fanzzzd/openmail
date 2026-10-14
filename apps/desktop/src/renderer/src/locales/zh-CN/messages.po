@@ -197,6 +197,10 @@ msgstr "{email} 的登录已失效，同步已暂停。"
 msgid "{email}'s sign-in was revoked or has expired. Sync is paused."
 msgstr "{email} 的登录已被撤销或已过期，同步已暂停。"
 
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "{failedSearch} couldn't search the server."
+msgstr "{failedSearch} 无法在服务器上搜索。"
+
 #: src/renderer/src/features/ai/TriageChip.tsx
 msgid "{hours, plural, one {Snooze for # hour} other {Snooze for # hours}}"
 msgstr "{hours, plural, other {稍后提醒（# 小时）}}"
@@ -272,6 +276,10 @@ msgstr "{provider} 登录已过期"
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "{provider} sign-in missing"
 msgstr "缺少 {provider} 登录信息"
+
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "{reauthSearch} must sign in again to search the server."
+msgstr "{reauthSearch} 需要重新登录才能在服务器上搜索。"
 
 #: src/renderer/src/features/downloads/Downloads.tsx
 msgid "{received} of {size}"
@@ -6048,10 +6056,6 @@ msgid "Search can use at most {MAX_SEARCH_TERMS} words and operators. Remove som
 msgstr "搜索最多可使用 {MAX_SEARCH_TERMS} 个词和运算符。请删掉一些。"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
-msgid "Search couldn't finish:"
-msgstr "搜索未能完成："
-
-#: src/renderer/src/features/mail-list/MessageList.tsx
 #: src/renderer/src/lib/errors.ts
 msgid "Search groups can nest at most {MAX_SEARCH_DEPTH} levels deep. Remove some parentheses."
 msgstr "搜索分组最多嵌套 {MAX_SEARCH_DEPTH} 层。请删掉一些括号。"
@@ -6437,6 +6441,10 @@ msgstr "显示侧栏"
 msgid "Show unread count in the menu bar"
 msgstr "在菜单栏显示未读数"
 
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "Showing results from this Mac."
+msgstr "显示的是此 Mac 上的结果。"
+
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Sidebar"
@@ -6444,7 +6452,6 @@ msgstr "侧栏"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
-#: src/renderer/src/features/mail-list/MessageList.tsx
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 #: src/renderer/src/features/settings/sections/ContactSettings.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
@@ -6836,6 +6843,10 @@ msgstr "同步状态"
 msgid "Sync now"
 msgstr "立即同步"
 
+#: src/renderer/src/features/sidebar/SidebarFooter.tsx
+msgid "Sync problems"
+msgstr "同步问题"
+
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Sync window"
 msgstr "同步窗口"
@@ -7155,10 +7166,6 @@ msgstr "发件人名称含有不同的邮件地址。"
 #: src/renderer/src/lib/errors.ts
 msgid "The server blocked the sign-in as unsafe. Turn on IMAP in your email's web settings, then sign in with the authorization code it generates."
 msgstr "服务器把这次登录当作不安全登录拦截了。请在邮箱网页版的设置中开启 IMAP，再用生成的授权码登录。"
-
-#: src/renderer/src/features/mail-list/MessageList.tsx
-msgid "The server couldn't complete this search."
-msgstr "服务器未能完成搜索。"
 
 #: src/renderer/src/lib/errors.ts
 msgid "The server refused this action."
@@ -7546,6 +7553,7 @@ msgid "Trusted authentication service (optional)"
 msgstr "可信认证服务（可选）"
 
 #: src/renderer/src/features/feedback/Feedback.tsx
+#: src/renderer/src/features/mail-list/MessageList.tsx
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Try again"
 msgstr "重试"

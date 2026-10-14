@@ -1,8 +1,8 @@
-import { useAtomSet, useAtomValue } from "@effect/atom-react";
+import { RegistryContext, useAtomSet, useAtomValue } from "@effect/atom-react";
 import { useLingui } from "@lingui/react/macro";
 import { moveSourceLabel } from "@openmail/core/schema";
 import { SquarePen } from "lucide-react";
-import type { ComponentProps, ReactNode, RefObject } from "react";
+import { useContext, type ComponentProps, type ReactNode, type RefObject } from "react";
 import type { Account, Label } from "../../../shared/api";
 import { Downloads } from "../features/downloads/Downloads";
 import { BatchActions, BatchMenuItems } from "../features/mail-list/BatchActions";
@@ -21,6 +21,7 @@ import { spaceAccounts } from "../lib/view";
 import { syncStateAtom } from "../state/events";
 import { syncNow, useRunMail } from "../state/mail";
 import { recentSearches } from "../state/recent-searches";
+import { serverList } from "../state/threads";
 import { iconButton } from "../ui/styles";
 import type { ToastState } from "../ui/Toast";
 import { Tip } from "../ui/Tip";
@@ -80,6 +81,7 @@ export function MailListPane({
   const run = useRunMail();
   const shortcutText = useShortcutText();
   const syncState = useAtomValue(syncStateAtom);
+  const registry = useContext(RegistryContext);
   const setLabelCreation = useAtomSet(labelCreationAtom);
   const setSnoozeIds = useAtomSet(snoozeIdsAtom);
   const setFilterSeed = useAtomSet(filterSeedAtom);
@@ -122,6 +124,9 @@ export function MailListPane({
         onCompose: () => startCompose("new"),
         onSync: () => run(syncNow),
         syncing: syncState.running,
+      }}
+      onRetrySearch={() => {
+        if (listQuery?.search) registry.refresh(serverList(listQuery));
       }}
       accountLabel={(id) => {
         const account = accountList.find((a) => a.id === id);
