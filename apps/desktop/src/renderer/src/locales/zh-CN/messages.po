@@ -3480,6 +3480,10 @@ msgid "IMAP moves can't be undone after OpenMail restarts. Move the message back
 msgstr "OpenMail 重启后无法撤销 IMAP 移动。请手动把邮件移回去。"
 
 #: src/renderer/src/features/accounts/ImapStep.tsx
+msgid "IMAP port"
+msgstr "IMAP 端口"
+
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "IMAP server"
 msgstr "IMAP 服务器"
 
@@ -6939,6 +6943,10 @@ msgstr "智能列表"
 #: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "SMTP encryption"
 msgstr "SMTP 加密"
+
+#: src/renderer/src/features/accounts/ImapStep.tsx
+msgid "SMTP port"
+msgstr "SMTP 端口"
 
 #: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "SMTP server"

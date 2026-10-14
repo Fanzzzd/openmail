@@ -3470,6 +3470,10 @@ msgid "IMAP moves can't be undone after OpenMail restarts. Move the message back
 msgstr "Přesuny IMAP nelze po restartu OpenMail vrátit. Přesuňte zprávu zpět sami."
 
 #: src/renderer/src/features/accounts/ImapStep.tsx
+msgid "IMAP port"
+msgstr "Port IMAP"
+
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "IMAP server"
 msgstr "IMAP server"
 
@@ -6929,6 +6933,10 @@ msgstr "Chytré seznamy"
 #: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "SMTP encryption"
 msgstr "SMTP šifrování"
+
+#: src/renderer/src/features/accounts/ImapStep.tsx
+msgid "SMTP port"
+msgstr "Port SMTP"
 
 #: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "SMTP server"

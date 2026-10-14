@@ -3470,6 +3470,10 @@ msgid "IMAP moves can't be undone after OpenMail restarts. Move the message back
 msgstr "IMAP-Verschiebungen können nach einem Neustart von OpenMail nicht rückgängig gemacht werden. Verschiebe die Nachricht selbst zurück."
 
 #: src/renderer/src/features/accounts/ImapStep.tsx
+msgid "IMAP port"
+msgstr "IMAP-Port"
+
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "IMAP server"
 msgstr "IMAP-Server"
 
@@ -6929,6 +6933,10 @@ msgstr "Intelligente Listen"
 #: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "SMTP encryption"
 msgstr "SMTP-Verschlüsselung"
+
+#: src/renderer/src/features/accounts/ImapStep.tsx
+msgid "SMTP port"
+msgstr "SMTP-Port"
 
 #: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "SMTP server"

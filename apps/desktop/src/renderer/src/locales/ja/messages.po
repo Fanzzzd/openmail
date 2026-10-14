@@ -3470,6 +3470,10 @@ msgid "IMAP moves can't be undone after OpenMail restarts. Move the message back
 msgstr "OpenMail の再起動後は IMAP の移動を取り消せません。メッセージを手動で元に戻してください。"
 
 #: src/renderer/src/features/accounts/ImapStep.tsx
+msgid "IMAP port"
+msgstr "IMAP ポート"
+
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "IMAP server"
 msgstr "IMAP サーバー"
 
@@ -6929,6 +6933,10 @@ msgstr "スマートリスト"
 #: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "SMTP encryption"
 msgstr "SMTP 暗号化"
+
+#: src/renderer/src/features/accounts/ImapStep.tsx
+msgid "SMTP port"
+msgstr "SMTP ポート"
 
 #: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "SMTP server"

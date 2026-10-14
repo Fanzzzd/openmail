@@ -203,7 +203,13 @@ export function ImapStep({
               <Field label={t`IMAP server`} value={imapHost} onChange={setImapHost} />
             </div>
             <div className="w-20">
-              <Field label={t`Port`} value={imapPort} onChange={setImapPort} inputMode="numeric" />
+              <Field
+                label={t`Port`}
+                accessibleName={t`IMAP port`}
+                value={imapPort}
+                onChange={setImapPort}
+                inputMode="numeric"
+              />
             </div>
           </div>
           <div className="flex gap-2">
@@ -213,6 +219,7 @@ export function ImapStep({
             <div className="w-20">
               <Field
                 label={t`Port`}
+                accessibleName={t`SMTP port`}
                 value={smtpPort}
                 onChange={(v) => {
                   setSmtpPort(v);

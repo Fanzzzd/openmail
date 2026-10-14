@@ -15,6 +15,7 @@ export function Field({
   placeholder,
   onBlur,
   hint,
+  accessibleName,
 }: {
   label: string;
   value: string;
@@ -27,6 +28,11 @@ export function Field({
   onBlur?: () => void;
   /** One line under the field, read as its description. */
   hint?: string;
+  /**
+   * A fuller name for screen readers when the visible label repeats, such as "IMAP port" for
+   * "Port". It must contain the visible label.
+   */
+  accessibleName?: string;
 }) {
   const hintId = useId();
   const field = (
@@ -43,6 +49,7 @@ export function Field({
         onChange={(e) => onChange(e.target.value)}
         onBlur={onBlur}
         className={`selectable mt-1 h-8 ${formInput}`}
+        aria-label={accessibleName}
         aria-describedby={hint ? hintId : undefined}
       />
     </label>

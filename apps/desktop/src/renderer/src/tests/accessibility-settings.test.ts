@@ -301,9 +301,9 @@ it("Other IMAP fills empty server names from the email address on blur, without 
   fireEvent.blur(email);
   expect(field("IMAP server")).toHaveProperty("value", "imap.mail.example.org");
   expect(field("SMTP server")).toHaveProperty("value", "smtp.mail.example.org");
-  expect(
-    screen.getAllByRole("textbox", { name: "Port" }).map((port) => port.getAttribute("value")),
-  ).toEqual(["993", "465"]);
+  // Two fields show "Port"; their names say which server each belongs to.
+  expect(field("IMAP port")).toHaveProperty("value", "993");
+  expect(field("SMTP port")).toHaveProperty("value", "465");
   expect(screen.getByText(/Server names guessed from your email address/)).toBeTruthy();
   // A server the person typed is never replaced.
   fireEvent.change(field("IMAP server"), { target: { value: "mx.example.net" } });

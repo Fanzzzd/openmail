@@ -3470,6 +3470,10 @@ msgid "IMAP moves can't be undone after OpenMail restarts. Move the message back
 msgstr "IMAP-verplaatsingen kunnen niet ongedaan worden gemaakt nadat OpenMail opnieuw is gestart. Verplaats het bericht zelf terug."
 
 #: src/renderer/src/features/accounts/ImapStep.tsx
+msgid "IMAP port"
+msgstr "IMAP-poort"
+
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "IMAP server"
 msgstr "IMAP-server"
 
@@ -6929,6 +6933,10 @@ msgstr "Slimme lijsten"
 #: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "SMTP encryption"
 msgstr "SMTP-codering"
+
+#: src/renderer/src/features/accounts/ImapStep.tsx
+msgid "SMTP port"
+msgstr "SMTP-poort"
 
 #: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "SMTP server"
