@@ -128,7 +128,7 @@ export const PUBLIC_ERROR_MESSAGES = new Set([
   "Restored operations expire after 24 hours.",
   "Review AI suggestions in the app.",
   "Rule recovery is available for Gmail",
-  "Save an Anthropic API key in AI settings.",
+  "Save an Anthropic API key in Settings → AI Access.",
   "Search groups are nested too deeply. Simplify your query.",
   "Select 1 to 256 attachments",
   "Select at least one conversation.",

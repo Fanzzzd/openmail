@@ -65,7 +65,7 @@ export const INPUT_ERRORS: Record<string, MessageDescriptor> = {
   "This rule can only be applied to future mail on the server": msg`This filter can only apply to future mail on the server. Save it without applying it to existing mail.`,
   "Unsupported server rule": msg`OpenMail can't edit this server filter. Edit it in webmail.`,
   "Remote writes are disabled in this read-only session": msg`This session is read-only, so OpenMail can't change mail on the server. Restart OpenMail without read-only mode to make changes.`,
-  "Save an Anthropic API key in AI settings.": msg`Save an Anthropic API key in Settings → AI Access.`,
+  "Save an Anthropic API key in Settings → AI Access.": msg`Save an Anthropic API key in Settings → AI Access.`,
   "AI input could not be encoded.": AI_REQUEST_INVALID,
   "AI input budget exceeded. Ask about fewer messages.": msg`Too much mail for one AI request. Ask about fewer messages.`,
   "AI request failed. Check your key and try again.": msg`AI request failed. Check your key and try again.`,
