@@ -7,9 +7,6 @@ export type DateParseResult =
   | { kind: "invalid" };
 export type DateContext = { reference: number; timeZone: string };
 
-export function localCalendarTimeZone(): string {
-  return Intl.DateTimeFormat().resolvedOptions().timeZone;
-}
 function ianaZone(zone: string): string {
   return WINDOWS_ZONES[zone] ?? zone;
 }
@@ -36,9 +33,12 @@ export function calendarTimeDate(
   }
   return time.value.slice(0, 10);
 }
-export function calendarWallTime(timestamp: number, timeZone: string): string {
-  const parts = new Map(
-    new Intl.DateTimeFormat("en", {
+/** Building a DateTimeFormat costs far more than formatting, and callers reuse a few zones. */
+const wallFormats = new Map<string, Intl.DateTimeFormat>();
+function wallFormat(timeZone: string): Intl.DateTimeFormat {
+  let format = wallFormats.get(timeZone);
+  if (!format) {
+    format = new Intl.DateTimeFormat("en", {
       timeZone: ianaZone(timeZone),
       hourCycle: "h23",
       year: "numeric",
@@ -47,7 +47,15 @@ export function calendarWallTime(timestamp: number, timeZone: string): string {
       hour: "2-digit",
       minute: "2-digit",
       second: "2-digit",
-    })
+    });
+    if (wallFormats.size >= 64) wallFormats.clear();
+    wallFormats.set(timeZone, format);
+  }
+  return format;
+}
+export function calendarWallTime(timestamp: number, timeZone: string): string {
+  const parts = new Map(
+    wallFormat(timeZone)
       .formatToParts(timestamp)
       .map((p) => [p.type, p.value]),
   );
@@ -79,6 +87,25 @@ export function calendarWallInstants(wall: string, timeZone: string): number[] {
     .map((offset) => nominal - offset)
     .filter((stamp) => calendarWallTime(stamp, timeZone) === wall)
     .toSorted((a, b) => a - b);
+}
+
+/**
+ * Date-only and floating values belong to the user's local calendar day in `timeZone`, the
+ * PlatformHost zone. Comparing two values of the same kind may pass "UTC": wall order is exact.
+ */
+export function calendarTimestamp(time: CalendarTime, timeZone: string): number {
+  if (time.kind === "zoned") return time.timestamp ?? NaN;
+  const value = time.kind === "date" ? `${time.value}T00:00:00` : time.value;
+  const wall = (value.length === 16 ? `${value}:00` : value).slice(0, 19);
+  const nominal = Date.parse(`${wall}Z`);
+  if (!Number.isFinite(nominal) || new Date(nominal).toISOString().slice(0, 19) !== wall)
+    return NaN;
+  if (timeZone === "UTC") return nominal;
+  const [first] = calendarWallInstants(wall, timeZone);
+  if (first !== undefined) return first;
+  // A wall time that daylight saving skips keeps the offset from before the gap, as Date does.
+  const before = nominal - 12 * 3600000;
+  return nominal - (Date.parse(`${calendarWallTime(before, timeZone)}Z`) - before);
 }
 
 const WEEKDAYS = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];

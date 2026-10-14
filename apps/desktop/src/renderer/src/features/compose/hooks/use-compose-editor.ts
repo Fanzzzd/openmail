@@ -30,6 +30,7 @@ import { inheritsOriginals, withOriginalAttachments } from "../compose-originals
 import { formatAddress, parseAddresses, type Draft } from "../draft";
 import { EDIT_MESSAGE_TEXT } from "../../../i18n/message-text";
 import { useRunMail, withMail } from "../../../state/mail";
+import { localTimeZone } from "../../../lib/time-zone";
 const encodedBytes = (files: readonly { content: string }[]) =>
   files.reduce((sum, file) => sum + attachmentBytes(file.content), 0);
 
@@ -365,7 +366,8 @@ export function useComposeEditor({
           "",
         address: currentAddress,
       },
-      now: new Date(),
+      now: Date.now(),
+      timeZone: localTimeZone(),
       locale: i18n.locale,
       subject: draft.subject,
       to: parseAddresses(to).addresses,

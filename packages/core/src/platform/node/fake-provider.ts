@@ -376,10 +376,11 @@ export function makeFakeProvider(
       server.featureFailure
         ? Effect.fail(server.featureFailure)
         : Effect.succeed(
+            // The fake server keeps its calendar in UTC.
             server.calendarEvents.filter(
               (other) =>
-                calendarTimestamp(other.end) > calendarTimestamp(event.start) &&
-                calendarTimestamp(other.start) < calendarTimestamp(event.end),
+                calendarTimestamp(other.end, "UTC") > calendarTimestamp(event.start, "UTC") &&
+                calendarTimestamp(other.start, "UTC") < calendarTimestamp(event.end, "UTC"),
             ),
           ),
     createCalendarEvent: (_account, event) =>

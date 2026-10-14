@@ -42,7 +42,12 @@ import type { OutlookRead } from "./parse.js";
 import { expandedAttachments } from "./parse.js";
 import { makeOutlookPull } from "./pull.js";
 import { makeOutlookRecovery } from "./recovery.js";
-export const makeOutlookSync = (client: OutlookClient, reader: OutlookRead) =>
+/** `timeZone` is the PlatformHost zone, read per request: Graph returns calendar times in it. */
+export const makeOutlookSync = (
+  client: OutlookClient,
+  reader: OutlookRead,
+  timeZone: () => string,
+) =>
   Effect.sync(() => {
     const { connectivity, api, get, write, connect, keepAlive } = client;
 
@@ -494,11 +499,12 @@ export const makeOutlookSync = (client: OutlookClient, reader: OutlookRead) =>
             HttpClientRequest.get(`${GRAPH}${path}`).pipe(
               HttpClientRequest.setHeader(
                 "prefer",
-                `IdType="ImmutableId", outlook.timezone="${Intl.DateTimeFormat().resolvedOptions().timeZone}"`,
+                `IdType="ImmutableId", outlook.timezone="${timeZone()}"`,
               ),
             ),
           ).pipe(Effect.flatMap(decode(schema))),
         (id, path, body) => write(id, "POST", path, body),
+        timeZone,
       ),
       search,
       changeLabel,

@@ -24,6 +24,7 @@ import { type Mailbox, type MailboxEvent, type PerformError, type SyncState } fr
 import { type ModelRuntime, type Vision } from "../ai/media.js";
 import { type Model } from "../ai/model.js";
 import { type PlatformCrypto } from "../platform/crypto.js";
+import type { Host } from "../platform/host.js";
 import { type MailCodec } from "../platform/mail-codec.js";
 import { type AppVerifier, type AttachmentFiles, type ImageNetwork } from "../platform/runtime.js";
 import type { AppConfig, OAuthIssuers, Secrets } from "../platform/auth.js";
@@ -75,6 +76,8 @@ export interface MailboxOptions {
 }
 export interface MailboxDependencies {
   crypto: PlatformCrypto;
+  /** The machine's time zone and OS, from PlatformHost. */
+  host: Host;
   mailboxScope: Scope.Scope;
   codec: typeof MailCodec.Service;
   files: typeof AttachmentFiles.Service;

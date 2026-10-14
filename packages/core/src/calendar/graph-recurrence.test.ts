@@ -37,7 +37,7 @@ import { MailboxLive } from "../mailbox/mailbox-live.js";
   };
 
   it("Graph preserves TZID wall times through DST and maps all six patterns and three ranges", () => {
-    const mapped = graphRecurrence(event);
+    const mapped = graphRecurrence(event, "UTC");
     assert.deepStrictEqual(mapped.start, {
       dateTime: "2026-10-26T09:00:00",
       timeZone: "America/New_York",
@@ -81,13 +81,13 @@ import { MailboxLive } from "../mailbox/mailbox-live.js";
         { type: "relativeYearly", interval: 1, month: 10, daysOfWeek: ["monday"], index: "fourth" },
       ],
     ] satisfies [string, unknown][]) {
-      const result = graphRecurrence({ ...event, recurrence: [`RRULE:${rule}`] });
+      const result = graphRecurrence({ ...event, recurrence: [`RRULE:${rule}`] }, "UTC");
       assert.deepStrictEqual(result.recurrence.pattern, pattern);
       assert.strictEqual(result.recurrence.range.type, "noEnd");
     }
     // Inclusive UNTIL is converted in the event zone, including a cutoff before today's occurrence.
     assert.deepStrictEqual(
-      graphRecurrence({ ...event, recurrence: ["RRULE:FREQ=DAILY;UNTIL=20261103T135959Z"] })
+      graphRecurrence({ ...event, recurrence: ["RRULE:FREQ=DAILY;UNTIL=20261103T135959Z"] }, "UTC")
         .recurrence.range,
       {
         type: "endDate",
@@ -97,12 +97,15 @@ import { MailboxLive } from "../mailbox/mailbox-live.js";
       },
     );
     assert.deepStrictEqual(
-      graphRecurrence({
-        ...event,
-        start: { kind: "date", value: "2026-10-26" },
-        end: { kind: "date", value: "2026-10-27" },
-        recurrence: ["RRULE:FREQ=DAILY;UNTIL=20261029"],
-      }).recurrence.range.type,
+      graphRecurrence(
+        {
+          ...event,
+          start: { kind: "date", value: "2026-10-26" },
+          end: { kind: "date", value: "2026-10-27" },
+          recurrence: ["RRULE:FREQ=DAILY;UNTIL=20261029"],
+        },
+        "UTC",
+      ).recurrence.range.type,
       "endDate",
     );
   });
@@ -122,18 +125,21 @@ import { MailboxLive } from "../mailbox/mailbox-live.js";
       ["RRULE:FREQ=DAILY;FREQ=WEEKLY"],
       ["RRULE:FREQ=DAILY;UNTIL=20251001T090000Z"],
     ])
-      assert.throws(() => graphRecurrence({ ...event, recurrence }));
+      assert.throws(() => graphRecurrence({ ...event, recurrence }, "UTC"));
     assert.throws(() =>
-      graphRecurrence({
-        ...event,
-        start: {
-          ...event.start,
-          kind: "zoned",
-          zone: "Custom/Office",
-          value: "2026-10-26T09:00:00",
-          timestamp: event.start.kind === "zoned" ? event.start.timestamp : null,
+      graphRecurrence(
+        {
+          ...event,
+          start: {
+            ...event.start,
+            kind: "zoned",
+            zone: "Custom/Office",
+            value: "2026-10-26T09:00:00",
+            timestamp: event.start.kind === "zoned" ? event.start.timestamp : null,
+          },
         },
-      }),
+        "UTC",
+      ),
     );
   });
 
@@ -178,7 +184,7 @@ import { MailboxLive } from "../mailbox/mailbox-live.js";
         const body = Schema.decodeUnknownSync(Schema.Struct({ recurrence: Schema.Unknown }))(
           posts[0],
         );
-        assert.deepStrictEqual(body.recurrence, graphRecurrence(imported).recurrence);
+        assert.deepStrictEqual(body.recurrence, graphRecurrence(imported, "UTC").recurrence);
         const failed = yield* adapter
           .createCalendarEvent(account, {
             ...imported,
@@ -312,11 +318,14 @@ import { MailboxLive } from "../mailbox/mailbox-live.js";
       ["2026-10-26", "FREQ=YEARLY;BYMONTH=11;BYMONTHDAY=26"],
     ]) {
       assert.throws(() =>
-        graphRecurrence({
-          ...event,
-          start: { kind: "date", value: date ?? "" },
-          recurrence: [`RRULE:${rule}`],
-        }),
+        graphRecurrence(
+          {
+            ...event,
+            start: { kind: "date", value: date ?? "" },
+            recurrence: [`RRULE:${rule}`],
+          },
+          "UTC",
+        ),
       );
     }
   });

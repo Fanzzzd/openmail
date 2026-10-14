@@ -23,6 +23,14 @@ import {
 } from "../platform/node/portable-helpers.js";
 import type { IncomingMessage } from "../domain/message.js";
 import { Mailbox } from "../mailbox/mailbox.js";
+
+/** The host zone for these tests. NZDT is UTC+13 in October, so a stray UTC read shows. */
+const zone = "Pacific/Auckland";
+const detect = (message: Parameters<typeof detectMailEvents>[0]) =>
+  detectMailEvents(message, {
+    reference: message.date ?? Date.parse("2026-10-01T00:00:00Z"),
+    timeZone: zone,
+  });
 {
   const calendar = (event: string, method = "REQUEST", zones = "") =>
     `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nMETHOD:${method}\r\n${zones}BEGIN:VEVENT\r\nUID:meeting@example.com\r\nSEQUENCE:3\r\nSUMMARY:Planning\\, review\r\nLOCATION:Room 1\\nSecond floor\r\nORGANIZER;CN="Alice, Organizer":mailto:alice@example.com\r\nATTENDEE;CN=Me;PARTSTAT=NEEDS-ACTION:mailto:me@example.com\r\nATTENDEE;PARTSTAT=ACCEPTED:mailto:other@example.com\r\n${event}\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n`;
@@ -74,7 +82,7 @@ import { Mailbox } from "../mailbox/mailbox.js";
     });
     assert.ok(
       unknown?.invite.start &&
-        formatCalendarTime(unknown.invite.start, "en").includes("MadeUp/Zone"),
+        formatCalendarTime(unknown.invite.start, "en", zone).includes("MadeUp/Zone"),
     );
   });
 
@@ -194,17 +202,22 @@ import { Mailbox } from "../mailbox/mailbox.js";
       calendar("DTSTART;VALUE=DATE:20261001\r\nDTEND;VALUE=DATE:20261002"),
     );
     assert.ok(day);
-    assert.strictEqual(formatCalendarRange(day.invite, "en-US"), "Thursday, October 1, 2026");
+    assert.strictEqual(formatCalendarRange(day.invite, "en-US", zone), "Thursday, October 1, 2026");
     const [days] = parseCalendar(
       calendar("DTSTART;VALUE=DATE:20261001\r\nDTEND;VALUE=DATE:20261004"),
     );
     assert.ok(days);
-    assert.ok(formatCalendarRange(days.invite, "en-US").endsWith("Saturday, October 3, 2026"));
-    assert.deepStrictEqual(calendarRangeParts(day.invite, "en-US"), {
+    assert.ok(
+      formatCalendarRange(days.invite, "en-US", zone).endsWith("Saturday, October 3, 2026"),
+    );
+    assert.deepStrictEqual(calendarRangeParts(day.invite, "en-US", zone), {
       start: "Thursday, October 1, 2026",
       end: null,
     });
-    assert.strictEqual(calendarRangeParts(days.invite, "en-US").end, "Saturday, October 3, 2026");
+    assert.strictEqual(
+      calendarRangeParts(days.invite, "en-US", zone).end,
+      "Saturday, October 3, 2026",
+    );
     assert.deepStrictEqual(parseCalendar(calendar("DTSTART:20260231T090000Z")), []);
   });
 
@@ -335,21 +348,24 @@ import { Mailbox } from "../mailbox/mailbox.js";
     Buffer.from(`MIME-Version: 1.0\r\nContent-Type: text/calendar\r\n\r\n${source(method, title)}`);
 
   it("detects explicit dates and ranges in local time, preserves all-day dates and rejects invalid times", () => {
-    const [found] = detectMailEvents(message);
+    const [found] = detect(message);
     assert.ok(found);
     assert.deepStrictEqual(found.start, {
       kind: "zoned",
       value: "2026-10-10T09:00:00",
-      zone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      timestamp: new Date("2026-10-10T09:00:00").getTime(),
+      zone,
+      timestamp: Date.parse("2026-10-09T20:00:00Z"),
     });
-    assert.strictEqual(calendarTimestamp(found.end) - calendarTimestamp(found.start), 90 * 60000);
-    const [day] = detectMailEvents({ ...message, bodyText: "Meeting 2026-10-10" });
+    assert.strictEqual(
+      calendarTimestamp(found.end, zone) - calendarTimestamp(found.start, zone),
+      90 * 60000,
+    );
+    const [day] = detect({ ...message, bodyText: "Meeting 2026-10-10" });
     assert.ok(day);
     assert.deepStrictEqual(day.end, { kind: "date", value: "2026-10-11" });
-    assert.strictEqual(calendarWindow(day).timeMin, new Date("2026-10-10T00:00:00").toISOString());
+    assert.strictEqual(calendarWindow(day, zone).timeMin, "2026-10-09T11:00:00.000Z");
     assert.deepStrictEqual(
-      detectMailEvents({
+      detect({
         ...message,
         bodyText: "2026-02-31 09:00, 2026-10-10 24:30, 2026-10-10 12:80",
       }),
@@ -421,20 +437,74 @@ import { Mailbox } from "../mailbox/mailbox.js";
     },
   );
 
-  it("all-day query windows follow local DST rather than assuming every day has 24 hours", () => {
+  it("text detection and floating times follow the host zone, not the process zone", () => {
     const previous = process.env.TZ;
     process.env.TZ = "America/Los_Angeles";
     try {
-      const window = calendarWindow({
-        start: { kind: "date", value: "2026-03-08" },
-        end: { kind: "date", value: "2026-03-09" },
-      });
-      assert.strictEqual(window.timeMin, "2026-03-08T08:00:00.000Z");
-      assert.strictEqual(window.timeMax, "2026-03-09T07:00:00.000Z");
+      const [found] = detect(message);
+      assert.strictEqual(found?.start.kind === "zoned" ? found.start.zone : "", zone);
+      assert.strictEqual(
+        found?.start.kind === "zoned" ? found.start.timestamp : 0,
+        Date.parse("2026-10-09T20:00:00Z"),
+      );
+      assert.strictEqual(
+        calendarTimestamp({ kind: "floating", value: "2026-10-10T09:00:00" }, zone),
+        Date.parse("2026-10-09T20:00:00Z"),
+      );
+      assert.strictEqual(
+        formatCalendarTime(
+          {
+            kind: "zoned",
+            value: "2026-10-10T09:00:00Z",
+            zone: "UTC",
+            timestamp: Date.parse("2026-10-10T09:00:00Z"),
+          },
+          "en-US",
+          zone,
+        ),
+        "Oct 10, 2026, 10:00 PM (Pacific/Auckland); 2026-10-10 09:00:00 (UTC)",
+      );
     } finally {
       if (previous === undefined) delete process.env.TZ;
       else process.env.TZ = previous;
     }
+  });
+
+  it.effect("the mailbox detects events in the PlatformHost zone", () =>
+    Effect.gen(function* () {
+      const mailbox = yield* Mailbox;
+      const account = yield* mailbox.accounts.connect({ provider: "gmail" });
+      yield* mailbox.sync.sync();
+      const [found] = yield* mailbox.calendar.detectedEvents(`${account.id}/one`);
+      assert.deepStrictEqual(found?.start, {
+        kind: "zoned",
+        value: "2026-10-10T09:00:00",
+        zone,
+        timestamp: Date.parse("2026-10-09T20:00:00Z"),
+      });
+    }).pipe(
+      Effect.provide(
+        TestMailbox(
+          { gmail: fakeServer("me@gmail.com", [message]) },
+          { backgroundFlush: false },
+          {},
+          undefined,
+          { host: { timeZone: () => zone, os: "darwin", arch: "arm64" } },
+        ),
+      ),
+    ),
+  );
+
+  it("all-day query windows follow local DST rather than assuming every day has 24 hours", () => {
+    const window = calendarWindow(
+      {
+        start: { kind: "date", value: "2026-03-08" },
+        end: { kind: "date", value: "2026-03-09" },
+      },
+      "America/Los_Angeles",
+    );
+    assert.strictEqual(window.timeMin, "2026-03-08T08:00:00.000Z");
+    assert.strictEqual(window.timeMax, "2026-03-09T07:00:00.000Z");
   });
 }
 
@@ -655,7 +725,7 @@ import { Mailbox } from "../mailbox/mailbox.js";
         arrivalAirport: { name: "JFK" },
       },
     };
-    const events = detectMailEvents({
+    const events = detect({
       subject: "Reservation",
       bodyText: "",
       bodyHtml: `<script type="application/ld+json">${JSON.stringify(flight)}</script><img src="https://remote.invalid/image">`,
@@ -663,7 +733,7 @@ import { Mailbox } from "../mailbox/mailbox.js";
     assert.strictEqual(events.length, 1);
     assert.strictEqual(events[0]?.title, "UA110");
     assert.strictEqual(events[0]?.location, "SFO → JFK");
-    const train = detectMailEvents({
+    const train = detect({
       subject: "Train",
       bodyText: "",
       bodyHtml:
@@ -672,11 +742,14 @@ import { Mailbox } from "../mailbox/mailbox.js";
     assert.strictEqual(train[0]?.title, "G123");
     const event = events[0];
     assert.ok(event);
-    const ics = calendarEventIcs({
-      ...event,
-      title: "Trip, test\r\nLOCATION:injected",
-      description: "行程".repeat(80),
-    });
+    const ics = calendarEventIcs(
+      {
+        ...event,
+        title: "Trip, test\r\nLOCATION:injected",
+        description: "行程".repeat(80),
+      },
+      zone,
+    );
     assert.ok(!ics.includes("\r\nLOCATION:injected"));
     const parsed = parseCalendar(ics, true)[0]?.invite;
     assert.strictEqual(parsed?.title, "Trip, test\nLOCATION:injected");
@@ -695,7 +768,7 @@ import { Mailbox } from "../mailbox/mailbox.js";
       { "@type": "LodgingReservation", checkinTime: "2026-10-03", checkoutTime: "2026-10-05" },
     ])
       assert.strictEqual(
-        detectMailEvents({
+        detect({
           subject: "Stay",
           bodyText: "",
           bodyHtml: `<script type="application/ld+json">${JSON.stringify(reservation)}</script>`,
@@ -708,7 +781,7 @@ import { Mailbox } from "../mailbox/mailbox.js";
       { "@type": "Event", startDate: "2026-10-03T12:00", endDate: "2026-10-03T11:00" },
     ])
       assert.deepStrictEqual(
-        detectMailEvents({
+        detect({
           subject: "",
           bodyText: "",
           bodyHtml: `<script type="application/ld+json">${JSON.stringify(invalid)}</script>`,
@@ -716,7 +789,7 @@ import { Mailbox } from "../mailbox/mailbox.js";
         [],
       );
     assert.deepStrictEqual(
-      detectMailEvents({
+      detect({
         subject: "",
         bodyText: "",
         bodyHtml: '<script type="application/ld+json">{broken</script>',
@@ -758,7 +831,7 @@ import { Mailbox } from "../mailbox/mailbox.js";
 
   it("structured missing ends are estimated, date-only endDate is inclusive and unusable data falls back", () => {
     const parse = (data: unknown, bodyText = "") =>
-      detectMailEvents({
+      detect({
         subject: "Trip",
         bodyText,
         bodyHtml: `<script type="application/ld+json">${JSON.stringify(data)}</script>`,

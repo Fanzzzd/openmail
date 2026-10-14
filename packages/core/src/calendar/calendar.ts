@@ -1,7 +1,7 @@
 import { sha256Hex } from "../platform/crypto.js";
 import { structuredMailEvents } from "./structured-events.js";
-import { CalendarTime, calendarTimestamp } from "./calendar-time.js";
-export { CalendarTime, calendarTimestamp } from "./calendar-time.js";
+import { CalendarTime } from "./calendar-time.js";
+export { CalendarTime } from "./calendar-time.js";
 import { Schema } from "effect";
 import {
   calendarAmbiguousDays,
@@ -11,7 +11,7 @@ import {
   type DateParseResult,
   calendarWallTime,
   calendarZoneName,
-  localCalendarTimeZone,
+  calendarTimestamp,
 } from "./event-dates.js";
 import {
   eventRecurrenceRule,
@@ -41,9 +41,10 @@ export const InviteResponseRecord = Schema.Struct({
 });
 export type InviteResponseRecord = typeof InviteResponseRecord.Type;
 
-export function calendarWindow(event: Pick<CalendarEvent, "start" | "end">) {
-  const start = calendarTimestamp(event.start);
-  const end = calendarTimestamp(event.end);
+/** `timeZone` places date-only and floating events: the PlatformHost zone. */
+export function calendarWindow(event: Pick<CalendarEvent, "start" | "end">, timeZone: string) {
+  const start = calendarTimestamp(event.start, timeZone);
+  const end = calendarTimestamp(event.end, timeZone);
   if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start)
     throw new RangeError("Invalid calendar event time");
   return { timeMin: new Date(start).toISOString(), timeMax: new Date(end).toISOString() };
@@ -120,13 +121,13 @@ function usefulTextEvent(
   return dayNumber(start) - dayNumber(messageDay) <= 366 && nearWord();
 }
 
-/** The message date anchors relative expressions, so reopening never moves a candidate. */
+/**
+ * The message date anchors relative expressions, so reopening never moves a candidate. The
+ * caller passes the PlatformHost zone, and the current time when the message has no date.
+ */
 export function detectMailEvents(
   message: Pick<Message, "subject" | "bodyText"> & Partial<Pick<Message, "bodyHtml" | "date">>,
-  context: DateContext = {
-    reference: message.date ?? Date.now(),
-    timeZone: localCalendarTimeZone(),
-  },
+  context: DateContext,
 ): CalendarEvent[] {
   const structured = structuredMailEvents(message.bodyHtml ?? "", message.subject);
   if (structured.events.length || structured.cancelled) return structured.events;
@@ -180,6 +181,7 @@ export function editCalendarEvent(
   event: CalendarEvent,
   edits: CalendarEventEdits,
   reference: number,
+  timeZone: string,
 ): CalendarEvent {
   let result = event;
   if (edits.dates) {
@@ -210,7 +212,9 @@ export function editCalendarEvent(
     result = {
       ...result,
       recurrence:
-        edits.recurrence === null ? [] : [eventRecurrenceRule(edits.recurrence, result.start)],
+        edits.recurrence === null
+          ? []
+          : [eventRecurrenceRule(edits.recurrence, result.start, timeZone)],
     };
   }
   if (
@@ -221,7 +225,7 @@ export function editCalendarEvent(
     const { uid: _sourceUid, ...copy } = result;
     result = copy;
   }
-  calendarWindow(result);
+  calendarWindow(result, timeZone);
   validateRecurrenceStart(result);
   return result;
 }
@@ -270,21 +274,28 @@ export const CalendarInvite = Schema.Struct({
 });
 export type CalendarInvite = typeof CalendarInvite.Type;
 
-/** Local time plus the sender's zone. Date-only values do not shift zones. */
-export function formatCalendarTime(time: CalendarTime, locale: string): string {
+/**
+ * Time in `timeZone`, the reader's zone, plus the sender's zone. Date-only and floating values
+ * show their wall time unchanged.
+ */
+export function formatCalendarTime(time: CalendarTime, locale: string, timeZone: string): string {
   if (time.kind === "date")
     return new Intl.DateTimeFormat(locale, { dateStyle: "full", timeZone: "UTC" }).format(
       new Date(`${time.value}T00:00:00Z`),
     );
   if (time.kind === "floating")
-    return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(
-      new Date(time.value),
-    );
+    return new Intl.DateTimeFormat(locale, {
+      dateStyle: "medium",
+      timeStyle: "short",
+      timeZone: "UTC",
+    }).format(new Date(`${time.value}Z`));
   if (time.timestamp === null) return `${time.value.replace("T", " ")} (${time.zone})`;
-  const local = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(
-    time.timestamp,
-  );
-  const localZone = localCalendarTimeZone();
+  const local = new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone,
+  }).format(time.timestamp);
+  const localZone = timeZone;
   if (localZone === time.zone) return `${local} (${time.zone})`;
   return `${local} (${localZone}); ${time.value.replace("T", " ").replace(/Z$/, "")} (${time.zone})`;
 }
@@ -294,9 +305,10 @@ export function formatCalendarTime(time: CalendarTime, locale: string): string {
 export function calendarRangeParts(
   invite: Pick<CalendarInvite, "start" | "end">,
   locale: string,
+  timeZone: string,
 ): { start: string; end: string | null } {
   if (!invite.start) return { start: "", end: null };
-  const start = formatCalendarTime(invite.start, locale);
+  const start = formatCalendarTime(invite.start, locale, timeZone);
   if (!invite.end) return { start, end: null };
   if (invite.start.kind === "date" && invite.end.kind === "date") {
     const last = new Date(Date.parse(`${invite.end.value}T00:00:00Z`) - 86400000)
@@ -307,17 +319,18 @@ export function calendarRangeParts(
       end:
         last <= invite.start.value
           ? null
-          : formatCalendarTime({ kind: "date", value: last }, locale),
+          : formatCalendarTime({ kind: "date", value: last }, locale, timeZone),
     };
   }
-  return { start, end: formatCalendarTime(invite.end, locale) };
+  return { start, end: formatCalendarTime(invite.end, locale, timeZone) };
 }
 
 export function formatCalendarRange(
   invite: Pick<CalendarInvite, "start" | "end">,
   locale: string,
+  timeZone: string,
 ): string {
-  const { start, end } = calendarRangeParts(invite, locale);
+  const { start, end } = calendarRangeParts(invite, locale, timeZone);
   return end === null ? start : `${start} → ${end}`;
 }
 
@@ -420,10 +433,10 @@ const icsTime = (time: CalendarTime) => {
 };
 
 /** IANA TZID keeps a downloaded series on its local clock across DST. */
-function recurringIcsTime(time: CalendarTime): string {
+function recurringIcsTime(time: CalendarTime, timeZone: string): string {
   if (time.kind === "date") return icsTime(time);
-  const zone = time.kind === "zoned" ? time.zone : localCalendarTimeZone();
-  const stamp = calendarTimestamp(time);
+  const zone = time.kind === "zoned" ? time.zone : timeZone;
+  const stamp = calendarTimestamp(time, timeZone);
   const wall = calendarWallTime(stamp, zone).replaceAll("-", "").replaceAll(":", "");
   // Intl validates and canonicalizes the TZID before it becomes an ICS parameter.
   const canonical = calendarZoneName(zone);
@@ -431,8 +444,9 @@ function recurringIcsTime(time: CalendarTime): string {
 }
 
 /** Export confirmed events without needing a calendar permission. */
-export function calendarEventIcs(event: CalendarEvent): string {
-  calendarWindow(event);
+/** `timeZone` is the user's zone; a floating series is exported on that zone's clock. */
+export function calendarEventIcs(event: CalendarEvent, timeZone: string): string {
+  calendarWindow(event, timeZone);
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
@@ -441,8 +455,8 @@ export function calendarEventIcs(event: CalendarEvent): string {
     "BEGIN:VEVENT",
     `UID:${escapeCalendarText(event.uid ?? `openmail-${sha256Hex(event.key)}@openmail.local`)}`,
     "DTSTAMP:19700101T000000Z",
-    `DTSTART${event.recurrence.length ? recurringIcsTime(event.start) : icsTime(event.start)}`,
-    `DTEND${event.recurrence.length ? recurringIcsTime(event.end) : icsTime(event.end)}`,
+    `DTSTART${event.recurrence.length ? recurringIcsTime(event.start, timeZone) : icsTime(event.start)}`,
+    `DTEND${event.recurrence.length ? recurringIcsTime(event.end, timeZone) : icsTime(event.end)}`,
     `SUMMARY:${escapeCalendarText(event.title)}`,
     `LOCATION:${escapeCalendarText(event.location)}`,
     `DESCRIPTION:${escapeCalendarText(event.description)}`,

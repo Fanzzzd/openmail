@@ -197,11 +197,14 @@ import type { OutgoingMessage } from "../domain/changes.js";
         lastSyncedAt: null,
         lastSyncError: null,
       } as const;
-      const event = detectMailEvents({
-        subject: "Travel",
-        bodyText: "2026-10-03 09:00 to 10:00",
-        date: Date.parse("2026-10-01T00:00:00Z"),
-      })[0];
+      const event = detectMailEvents(
+        {
+          subject: "Travel",
+          bodyText: "2026-10-03 09:00 to 10:00",
+          date: Date.parse("2026-10-01T00:00:00Z"),
+        },
+        { reference: Date.parse("2026-10-01T00:00:00Z"), timeZone: "UTC" },
+      )[0];
       assert.ok(event);
       return Effect.gen(function* () {
         const effects: Effect.Effect<unknown, { readonly message: string }>[] = [

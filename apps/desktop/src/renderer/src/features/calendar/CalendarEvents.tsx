@@ -4,7 +4,6 @@ import {
   calendarEventIcs,
   CalendarEventEdits,
   editCalendarEvent,
-  localCalendarTimeZone,
   calendarIanaZones,
   calendarZoneName,
   validateEventRecurrenceForProvider,
@@ -28,6 +27,7 @@ import {
   accountsAtom,
 } from "../../state/queries";
 import { createCalendarEventAtom, reauthAtom } from "../../state/mutations";
+import { localTimeZone } from "../../lib/time-zone";
 import { canCall } from "../../lib/platform";
 import { SignInAgainOnMac } from "../../ui/SignInAgainOnMac";
 import { Keys } from "../../state/keys";
@@ -51,7 +51,7 @@ function editorTimeZone(event: CalendarEvent): string {
       /* Unknown source zones remain visible in the event details. */
     }
   }
-  return localCalendarTimeZone();
+  return localTimeZone();
 }
 const CHECK_SETTINGS = msg`Check the date and repeat settings`;
 function inputErrorText(error: unknown, i18n: I18n): string {
@@ -139,7 +139,7 @@ export function OverlappingEvents({
         <ul>
           {events.map((event) => (
             <li key={event.key}>
-              {event.title} · {formatCalendarRange(event, i18n.locale)}
+              {event.title} · {formatCalendarRange(event, i18n.locale, localTimeZone())}
             </li>
           ))}
         </ul>
@@ -208,8 +208,8 @@ function TextDates({ events, message }: { events: CalendarEvent[]; message: Mess
             disabled={added.has(event.key)}
             onClick={() => setOpened(event.key)}
           >
-            {Number.isFinite(calendarTimestamp(event.start))
-              ? formatCalendarRange(event, i18n.locale)
+            {Number.isFinite(calendarTimestamp(event.start, localTimeZone()))
+              ? formatCalendarRange(event, i18n.locale, localTimeZone())
               : event.dateInput}
             {event.start.kind === "date" && <> · {t`All day`}</>}
             {added.has(event.key) && <> · {t`Added to calendar`}</>}
@@ -277,14 +277,16 @@ function EventConfirmation({
       { ...event, recurrence: [] },
       dates ? { dates } : {},
       message.date,
+      localTimeZone(),
     );
     preview = editCalendarEvent(
       event,
       Schema.decodeUnknownSync(CalendarEventEdits)(edits),
       message.date,
+      localTimeZone(),
     );
     try {
-      validateEventRecurrenceForProvider(preview, provider);
+      validateEventRecurrenceForProvider(preview, provider, localTimeZone());
     } catch (error) {
       providerError = inputErrorText(error, i18n);
     }
@@ -294,7 +296,7 @@ function EventConfirmation({
   const [result, create] = useAtom(createCalendarEventAtom, { mode: "promiseExit" });
   const shown = preview ?? event;
   const range = preview
-    ? formatCalendarRange(preview, i18n.locale)
+    ? formatCalendarRange(preview, i18n.locale, localTimeZone())
     : (event.dateInput ?? t`Choose a date and time`);
   const dialog = open && (
     <Dialog
@@ -391,7 +393,7 @@ function EventConfirmation({
           disabled={result.waiting || !preview}
           onClick={() => {
             const url = URL.createObjectURL(
-              new Blob([calendarEventIcs(shown)], {
+              new Blob([calendarEventIcs(shown, localTimeZone())], {
                 type: "text/calendar;charset=utf-8",
               }),
             );

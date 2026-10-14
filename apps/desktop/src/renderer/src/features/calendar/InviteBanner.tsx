@@ -30,6 +30,7 @@ import { MeetingLinks } from "./MeetingLinks";
 import { NO_VALUE } from "../../i18n/message-text";
 import { formButton } from "../../ui/form-styles";
 import { Disclosure } from "../../ui/Disclosure";
+import { localTimeZone } from "../../lib/time-zone";
 
 export function InviteBanner({ message }: { message: Message }) {
   return (
@@ -73,7 +74,7 @@ function LoadedInvites({ message }: { message: Message }) {
 /** Each side of the range stays whole when it fits, so a narrow card breaks at the arrow. */
 function CalendarRange({ range }: { range: Pick<CalendarInvite, "start" | "end"> }) {
   const { i18n } = useLingui();
-  const { start, end } = calendarRangeParts(range, i18n.locale);
+  const { start, end } = calendarRangeParts(range, i18n.locale, localTimeZone());
   return end === null ? (
     start
   ) : (
@@ -121,7 +122,9 @@ function Recurrence({ invite }: { invite: CalendarInvite }) {
         </>
       }
     >
-      {invite.recurrenceId && <p>{formatCalendarTime(invite.recurrenceId, i18n.locale)}</p>}
+      {invite.recurrenceId && (
+        <p>{formatCalendarTime(invite.recurrenceId, i18n.locale, localTimeZone())}</p>
+      )}
       <ul className="break-words font-mono text-caption">
         {invite.recurrence.map((r) => (
           <li key={r}>{r}</li>

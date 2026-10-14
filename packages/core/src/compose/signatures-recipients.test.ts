@@ -391,7 +391,9 @@ it.effect(
 it("predefined template values use the current sender, recipient, date and fields once", () => {
   const context = {
     sender: { name: "Ada Lovelace", address: "ada@example.com" },
-    now: new Date(2026, 9, 2, 14, 30),
+    // 20:30 UTC on 2 October is 09:30 on 3 October in Auckland (NZDT, UTC+13).
+    now: Date.parse("2026-10-02T20:30:00Z"),
+    timeZone: "Pacific/Auckland",
     locale: "en-US",
     subject: "Report",
     to: message.to,
@@ -405,7 +407,7 @@ it("predefined template values use the current sender, recipient, date and field
       { project: "{date}" },
       context,
     ),
-    "Ada Lovelace|Ada|Lovelace|ada@example.com|John|Smith|10/2/2026|02:30 PM|2|10|2026|Report|John <j@acme.com>|||{date}",
+    "Ada Lovelace|Ada|Lovelace|ada@example.com|John|Smith|10/3/2026|09:30 AM|3|10|2026|Report|John <j@acme.com>|||{date}",
   );
   assert.deepStrictEqual(
     customTemplateVariables(

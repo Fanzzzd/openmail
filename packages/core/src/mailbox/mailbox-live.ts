@@ -251,6 +251,7 @@ export const MailboxLive = (
       // Cross-factory callbacks run after the complete mailbox has been constructed.
       const deps: MailboxDependencies = {
         crypto,
+        host,
         mailboxScope,
         codec,
         files,
@@ -425,6 +426,7 @@ export const MailboxLive = (
         options.imageDownloader ?? network.download,
         codec,
         crypto,
+        host,
       );
 
       const reserveBytes = yield* makeDownloadBudget;

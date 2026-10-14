@@ -5,6 +5,7 @@ import { makeOutlookRead } from "./parse.js";
 import { makeOutlookSend } from "./send.js";
 import { makeOutlookSync } from "./sync.js";
 import type { MailCodec } from "../../platform/mail-codec.js";
+import { PlatformHost } from "../../platform/host.js";
 import type { AppConfig, OAuth, OAuthIssuers, Secrets } from "../../platform/auth.js";
 import type { ProviderAdapter } from "../adapter.js";
 export const makeOutlook: Effect.Effect<
@@ -15,7 +16,8 @@ export const makeOutlook: Effect.Effect<
   const client = yield* makeOutlookClient;
   const parser = yield* makeOutlookRead(client);
   const send = yield* makeOutlookSend(client);
-  const sync = yield* makeOutlookSync(client, parser);
+  const host = yield* PlatformHost;
+  const sync = yield* makeOutlookSync(client, parser, host.timeZone);
   return {
     ...sync,
     ...send,

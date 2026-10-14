@@ -1,6 +1,7 @@
 import { parseDocument } from "htmlparser2";
 import { Option, Schema } from "effect";
-import { calendarTimestamp, type CalendarTime } from "./calendar-time.js";
+import type { CalendarTime } from "./calendar-time.js";
+import { calendarTimestamp } from "./event-dates.js";
 import type { CalendarEvent } from "./calendar-event.js";
 
 const Item = Schema.Struct({
@@ -77,7 +78,8 @@ function defaultEnd(start: CalendarTime, hours: number): CalendarTime {
     wall.setUTCHours(wall.getUTCHours() + hours);
     return { kind: "floating", value: wall.toISOString().slice(0, 19) };
   }
-  const timestamp = calendarTimestamp(start) + hours * 3600000;
+  // Only a zoned start reaches here, so the zone argument is unused.
+  const timestamp = calendarTimestamp(start, "UTC") + hours * 3600000;
   return { kind: "zoned", value: new Date(timestamp).toISOString(), zone: "UTC", timestamp };
 }
 
@@ -157,13 +159,14 @@ export function structuredMailEvents(
       (item.endDate || target.endDate)
     )
       end = defaultEnd(end, 1);
+    // Start and end share a kind, so comparing their wall times in UTC orders them exactly.
     if (
       !start ||
       !end ||
       start.kind !== end.kind ||
-      !Number.isFinite(calendarTimestamp(start)) ||
-      !Number.isFinite(calendarTimestamp(end)) ||
-      calendarTimestamp(end) <= calendarTimestamp(start)
+      !Number.isFinite(calendarTimestamp(start, "UTC")) ||
+      !Number.isFinite(calendarTimestamp(end, "UTC")) ||
+      calendarTimestamp(end, "UTC") <= calendarTimestamp(start, "UTC")
     )
       return;
     const departure = text(target.departureAirport ?? target.departureStation);

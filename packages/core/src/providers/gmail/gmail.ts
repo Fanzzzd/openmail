@@ -4,6 +4,7 @@ import { FOLDER_BATCH_LIMIT, GMAIL_PERMANENT_DELETE_SCOPE } from "../../domain/f
 import { OPTIONAL_SCOPES, isOptionalService } from "../optional-services.js";
 import { effectiveClients } from "../oauth-clients.js";
 import { MailCodec } from "../../platform/mail-codec.js";
+import { PlatformHost } from "../../platform/host.js";
 import { BackgroundRead } from "../provider-connectivity.js";
 import { logProviderFailure } from "../provider-diagnostics.js";
 import { featureRequest } from "../provider-features.js";
@@ -47,6 +48,7 @@ export const makeGmail: Effect.Effect<
   HttpClient.HttpClient | OAuth | AppConfig | OAuthIssuers | Secrets | MailCodec
 > = Effect.gen(function* () {
   const client = yield* makeGmailClient;
+  const host = yield* PlatformHost;
   const http = yield* HttpClient.HttpClient;
   const secrets = yield* Secrets;
   const {
@@ -202,6 +204,7 @@ export const makeGmail: Effect.Effect<
       (id, schema, url) => api(id, HttpClientRequest.get(url)).pipe(Effect.flatMap(decode(schema))),
       (id, url, body) =>
         api(id, HttpClientRequest.bodyJsonUnsafe(HttpClientRequest.post(url), body)),
+      host.timeZone,
     ),
     ...makeGmailFeatures(
       (id, schema, url) => api(id, HttpClientRequest.get(url)).pipe(Effect.flatMap(decode(schema))),

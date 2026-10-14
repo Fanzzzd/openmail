@@ -4,7 +4,8 @@ import { makeProviderCalendar } from "./provider-calendar.js";
 import type { Account } from "../domain/account.js";
 import { type CalendarEvent } from "./calendar.js";
 import { ProviderError } from "../domain/errors.js";
-import { calendarZoneName, localCalendarTimeZone } from "./event-dates.js";
+/** The PlatformHost zone the adapters get. NZDT is UTC+13 in October. */
+const hostZone = "Pacific/Auckland";
 const account: Account = {
   id: "gmail:me@gmail.com",
   provider: "gmail",
@@ -39,6 +40,7 @@ function fake(provider: "gmail" | "outlook", pages: readonly unknown[]) {
       Effect.sync(() => {
         writes.push({ path, body });
       }),
+    () => hostZone,
   );
   return { adapter, reads, writes };
 }
@@ -72,13 +74,10 @@ it.effect(
       assert.deepStrictEqual(found[0]?.start, { kind: "date", value: "2026-10-10" });
       const query = new URL(f.reads[0] ?? "").searchParams;
       assert.strictEqual(query.get("singleEvents"), "true");
-      assert.strictEqual(query.get("timeMin"), new Date("2026-10-10T09:00:00").toISOString());
-      assert.strictEqual(query.get("timeMax"), new Date("2026-10-10T10:00:00").toISOString());
-      // The local zone, under any of its names: a runner set to Etc/UTC may report UTC.
-      assert.strictEqual(
-        calendarZoneName(query.get("timeZone") ?? ""),
-        calendarZoneName(localCalendarTimeZone()),
-      );
+      // Floating times and the view zone follow the host zone, whatever the process zone is.
+      assert.strictEqual(query.get("timeMin"), "2026-10-09T20:00:00.000Z");
+      assert.strictEqual(query.get("timeMax"), "2026-10-09T21:00:00.000Z");
+      assert.strictEqual(query.get("timeZone"), hostZone);
       assert.strictEqual(new URL(f.reads[1] ?? "").searchParams.get("pageToken"), "next");
       const daily = {
         ...event,

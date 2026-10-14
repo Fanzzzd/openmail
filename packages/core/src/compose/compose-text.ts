@@ -182,12 +182,23 @@ export const TEMPLATE_VARIABLES = [
 ] as const;
 export interface TemplateContext {
   readonly sender?: Address;
-  readonly now?: Date;
+  /** Epoch milliseconds, from the caller's Clock. */
+  readonly now: number;
+  /** The IANA zone the date variables use: PlatformHost's, or the renderer's own zone. */
+  readonly timeZone: string;
   readonly locale?: string;
   readonly subject?: string;
   readonly to?: readonly Address[];
   readonly cc?: readonly Address[];
   readonly bcc?: readonly Address[];
+}
+/** An unknown zone falls back to UTC instead of throwing while a template fills. */
+function validTimeZone(timeZone: string): string {
+  try {
+    return new Intl.DateTimeFormat("en", { timeZone }).resolvedOptions().timeZone;
+  } catch {
+    return "UTC";
+  }
 }
 const templateAddresses = (list: readonly Address[] | undefined) =>
   (list ?? []).map((a) => recipientLabel(a, true)).join(", ");
@@ -205,7 +216,13 @@ export function templateVariables(
   };
   if (context === undefined) return base;
   const sender = context.sender ? nameParts(context.sender) : { first: "", last: "", full: "" };
-  const date = context.now ?? new Date();
+  const date = context.now;
+  const timeZone = validTimeZone(context.timeZone);
+  const parts = new Map(
+    new Intl.DateTimeFormat("en", { timeZone, year: "numeric", month: "numeric", day: "numeric" })
+      .formatToParts(date)
+      .map((part) => [part.type, part.value]),
+  );
 
   return {
     ...base,
@@ -217,11 +234,15 @@ export function templateVariables(
     sender_last_name: sender.last,
     sender_name: sender.full,
     sender_email: context.sender?.address ?? "",
-    date: date.toLocaleDateString(context.locale),
-    time: date.toLocaleTimeString(context.locale, { hour: "2-digit", minute: "2-digit" }),
-    day: String(date.getDate()),
-    month: String(date.getMonth() + 1),
-    year: String(date.getFullYear()),
+    date: new Intl.DateTimeFormat(context.locale, { timeZone }).format(date),
+    time: new Intl.DateTimeFormat(context.locale, {
+      timeZone,
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(date),
+    day: parts.get("day") ?? "",
+    month: parts.get("month") ?? "",
+    year: parts.get("year") ?? "",
     subject: context.subject ?? "",
     to: templateAddresses(context.to),
     cc: templateAddresses(context.cc),

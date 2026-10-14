@@ -12,10 +12,3 @@ export const CalendarTime = Schema.Union([
   }),
 ]);
 export type CalendarTime = typeof CalendarTime.Type;
-
-/** Date-only and floating values belong to the user's local calendar day. */
-export function calendarTimestamp(time: CalendarTime): number {
-  return time.kind === "zoned"
-    ? (time.timestamp ?? NaN)
-    : new Date(time.kind === "date" ? `${time.value}T00:00:00` : time.value).getTime();
-}

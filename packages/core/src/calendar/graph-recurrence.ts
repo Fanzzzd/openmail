@@ -71,9 +71,9 @@ function index(value: string): Index {
       return unsupported();
   }
 }
-function zone(time: CalendarTime): string {
-  const candidate =
-    time.kind === "zoned" ? time.zone : Intl.DateTimeFormat().resolvedOptions().timeZone;
+/** A zoned time keeps its zone; date-only and floating times use `local`, the PlatformHost zone. */
+function zone(time: CalendarTime, local: string): string {
+  const candidate = time.kind === "zoned" ? time.zone : local;
   const mapped = WINDOWS_ZONES[candidate] ?? candidate;
   try {
     return new Intl.DateTimeFormat("en", { timeZone: mapped }).resolvedOptions().timeZone;
@@ -101,8 +101,8 @@ function wallTime(timestamp: number, timeZone: string): string {
 }
 
 /** Keep the wall time and TZID so Graph can apply DST to future occurrences. */
-function recurringTime(time: CalendarTime) {
-  const timeZone = zone(time);
+function recurringTime(time: CalendarTime, local: string) {
+  const timeZone = zone(time, local);
   const dateTime =
     time.kind === "date"
       ? `${time.value}T00:00:00`
@@ -118,7 +118,10 @@ function recurringTime(time: CalendarTime) {
  * https://learn.microsoft.com/en-us/graph/api/resources/recurrencepattern
  * https://learn.microsoft.com/en-us/graph/api/resources/recurrencerange
  * Only lossless RRULE mappings. Exceptions/multiple rules are rejected before any POST. */
-export function graphRecurrence(event: CalendarEvent): {
+export function graphRecurrence(
+  event: CalendarEvent,
+  timeZone: string,
+): {
   start: ReturnType<typeof recurringTime>;
   end: ReturnType<typeof recurringTime>;
   recurrence: { pattern: Pattern; range: Range };
@@ -149,8 +152,8 @@ export function graphRecurrence(event: CalendarEvent): {
     )
   )
     return unsupported();
-  const start = recurringTime(event.start),
-    end = recurringTime(event.end);
+  const start = recurringTime(event.start, timeZone),
+    end = recurringTime(event.end, timeZone);
   const date = start.dateTime.slice(0, 10);
   const interval = positive(fields.get("INTERVAL") ?? "1");
   const weekday = [DAYS.SU, DAYS.MO, DAYS.TU, DAYS.WE, DAYS.TH, DAYS.FR, DAYS.SA][

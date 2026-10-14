@@ -7,7 +7,6 @@ import {
   calendarZoneName,
   calendarWallInstants,
   calendarDateValid,
-  localCalendarTimeZone,
 } from "./event-dates.js";
 import { InvalidInput } from "../domain/errors.js";
 
@@ -63,7 +62,11 @@ export type CalendarEventEdits = typeof CalendarEventEdits.Type;
 
 /** https://www.rfc-editor.org/rfc/rfc5545#section-3.3.10
  * RFC 5545: timed DTSTART requires a UTC UNTIL; date-only DTSTART requires a DATE UNTIL. */
-export function eventRecurrenceRule(rule: EventRecurrence, start: CalendarTime): string {
+export function eventRecurrenceRule(
+  rule: EventRecurrence,
+  start: CalendarTime,
+  timeZone: string,
+): string {
   if (start.kind === "zoned") calendarZoneName(start.zone);
   const pattern = rule.pattern;
   if (pattern.kind === "yearly-date" && !validMonthDay(pattern.month, pattern.day))
@@ -97,7 +100,7 @@ export function eventRecurrenceRule(rule: EventRecurrence, start: CalendarTime):
   if (rule.ending.kind === "count") body += `;COUNT=${rule.ending.count}`;
   if (rule.ending.kind === "until") {
     const date = rule.ending.date;
-    const zone = start.kind === "zoned" ? start.zone : localCalendarTimeZone();
+    const zone = start.kind === "zoned" ? start.zone : timeZone;
     const startDate = calendarTimeDate(start);
     if (!calendarDateValid(date) || date < startDate)
       throw new InvalidInput({ message: "Repeat end date must be on or after the event" });
@@ -121,9 +124,10 @@ export function eventRecurrenceRule(rule: EventRecurrence, start: CalendarTime):
 export function validateEventRecurrenceForProvider(
   event: CalendarEvent,
   provider: string | undefined,
+  timeZone: string,
 ): void {
   validateRecurrenceStart(event);
-  if (provider === "outlook" && event.recurrence.length) graphRecurrence(event);
+  if (provider === "outlook" && event.recurrence.length) graphRecurrence(event, timeZone);
 }
 export function recurrenceWeekdayName(day: RecurrenceWeekday, locale: string): string {
   const weekdays = RecurrenceWeekday.literals;

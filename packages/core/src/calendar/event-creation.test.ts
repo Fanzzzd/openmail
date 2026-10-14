@@ -97,12 +97,13 @@ it("ambiguous dates ask for explicit input in both languages; malformed dates ne
   );
   assert.ok(candidate);
   assert.strictEqual(candidate.dateInput, "Friday");
-  assert.ok(Number.isNaN(calendarTimestamp(candidate.start)));
-  assert.throws(() => editCalendarEvent(candidate, {}, friday.reference));
+  assert.ok(Number.isNaN(calendarTimestamp(candidate.start, "UTC")));
+  assert.throws(() => editCalendarEvent(candidate, {}, friday.reference, "UTC"));
   const resolved = editCalendarEvent(
     candidate,
     { dates: { input: "2026-10-16 15:00", timeZone: friday.timeZone } },
     friday.reference,
+    "UTC",
   );
   assert.strictEqual(resolved.start.value, "2026-10-16T15:00:00");
 });
@@ -118,14 +119,17 @@ it("DST gaps fail and folds ask; offsets explicitly resolve a fold; relative day
     assert.strictEqual(parsed.kind, "parsed");
     if (parsed.kind === "parsed")
       assert.strictEqual(
-        calendarTimestamp(parsed.start),
+        calendarTimestamp(parsed.start, "UTC"),
         Date.parse(`2026-11-01T01:30:00${offset}`),
       );
   }
   const tomorrow = calendarParseDates("tomorrow 3pm", ny);
   assert.strictEqual(tomorrow.kind, "parsed");
   if (tomorrow.kind === "parsed")
-    assert.strictEqual(calendarTimestamp(tomorrow.start), Date.parse("2026-03-08T19:00:00Z"));
+    assert.strictEqual(
+      calendarTimestamp(tomorrow.start, "UTC"),
+      Date.parse("2026-03-08T19:00:00Z"),
+    );
   const tokyo = calendarParseDates("tomorrow", {
     reference: Date.parse("2026-12-31T23:00:00Z"),
     timeZone: "Asia/Tokyo",
@@ -210,7 +214,7 @@ it.effect(
           { kind: "until", date: "2026-11-03" },
         ] satisfies EventRecurrence["ending"][]) {
           const rule = { pattern, ending };
-          const recurrence = eventRecurrenceRule(rule, event.start);
+          const recurrence = eventRecurrenceRule(rule, event.start, "UTC");
           const suffix =
             ending.kind === "never"
               ? ""
@@ -218,7 +222,7 @@ it.effect(
                 ? ";COUNT=5"
                 : ";UNTIL=20261104T045959Z";
           assert.strictEqual(recurrence, `RRULE:${base}${suffix}`);
-          const updated = editCalendarEvent(event, { recurrence: rule }, context.reference);
+          const updated = editCalendarEvent(event, { recurrence: rule }, context.reference, "UTC");
           for (const provider of ["gmail", "outlook"] satisfies ("gmail" | "outlook")[]) {
             const reads: string[] = [],
               posts: unknown[] = [];
@@ -287,18 +291,26 @@ it("UNTIL uses the last day's DST offset and all-day DATE form; invalid repeat i
     ending: { kind: "until", date: "2027-03-14" },
   };
   assert.strictEqual(
-    eventRecurrenceRule(rule, event.start),
+    eventRecurrenceRule(rule, event.start, "UTC"),
     "RRULE:FREQ=DAILY;INTERVAL=1;UNTIL=20270315T035959Z",
   );
   assert.strictEqual(
-    eventRecurrenceRule(rule, { kind: "date", value: "2026-10-26" }),
+    eventRecurrenceRule(rule, { kind: "date", value: "2026-10-26" }, "UTC"),
     "RRULE:FREQ=DAILY;INTERVAL=1;UNTIL=20270314",
   );
   assert.throws(() =>
-    eventRecurrenceRule({ ...rule, ending: { kind: "until", date: "2026-02-31" } }, event.start),
+    eventRecurrenceRule(
+      { ...rule, ending: { kind: "until", date: "2026-02-31" } },
+      event.start,
+      "UTC",
+    ),
   );
   assert.throws(() =>
-    eventRecurrenceRule({ ...rule, ending: { kind: "until", date: "2025-12-31" } }, event.start),
+    eventRecurrenceRule(
+      { ...rule, ending: { kind: "until", date: "2025-12-31" } },
+      event.start,
+      "UTC",
+    ),
   );
   assert.throws(() =>
     Schema.decodeUnknownSync(EventRecurrence)({
@@ -321,6 +333,7 @@ it.effect(
         const recurrence = eventRecurrenceRule(
           { pattern, ending: { kind: "never" } },
           { kind: "date", value: start },
+          "UTC",
         );
         const updated = {
           ...event,
@@ -388,6 +401,7 @@ it.effect("all monthly weekday positions, including fifth and last, keep their e
           eventRecurrenceRule(
             { pattern, ending: { kind: "count", count: 2 } },
             { kind: "date", value: date },
+            "UTC",
           ),
         ],
       };
@@ -465,8 +479,9 @@ it("downloaded recurrence preserves the event TZID rather than fixing future occ
       },
     },
     context.reference,
+    "UTC",
   );
-  const file = calendarEventIcs(recurring);
+  const file = calendarEventIcs(recurring, "UTC");
   assert.match(file, /DTSTART;TZID=America\/New_York:20261026T090000/);
   assert.match(file, /DTEND;TZID=America\/New_York:20261026T100000/);
   assert.match(file, /UNTIL=20261104T045959Z/);
@@ -477,7 +492,7 @@ it("detection keeps ambiguous range endpoints and rejects truncated numbers and 
   for (const input of ["tomorrow 3pm–7", "tomorrow 3"]) {
     const [candidate] = detectMailEvents({ ...reference, bodyText: `Call ${input}` }, context);
     assert.strictEqual(candidate?.dateInput, input);
-    assert.ok(candidate && Number.isNaN(calendarTimestamp(candidate.start)));
+    assert.ok(candidate && Number.isNaN(calendarTimestamp(candidate.start, "UTC")));
   }
   for (const input of ["tomorrow 3pmish", "10月123日", "Oct 123", "2026-10-10T09:00:00.000Z"]) {
     assert.deepStrictEqual(detectMailEvents({ ...reference, bodyText: input }, context), [], input);
@@ -539,12 +554,14 @@ it("changing a start date flags a pattern mismatch even before provider selectio
       },
     },
     context.reference,
+    "UTC",
   );
   assert.throws(() =>
     editCalendarEvent(
       recurring,
       { dates: { input: "2026-10-27 09:00", timeZone: "America/New_York" } },
       context.reference,
+      "UTC",
     ),
   );
 });
@@ -558,9 +575,13 @@ it.effect(
         published,
         { dates: { input: "2026-10-27 09:00", timeZone: "America/New_York" } },
         context.reference,
+        "UTC",
       );
       assert.strictEqual(copy.uid, undefined);
-      assert.strictEqual(editCalendarEvent(published, {}, context.reference).uid, published.uid);
+      assert.strictEqual(
+        editCalendarEvent(published, {}, context.reference, "UTC").uid,
+        published.uid,
+      );
       const posts: unknown[] = [];
       const adapter = makeProviderCalendar(
         "gmail",
@@ -631,6 +652,7 @@ it("recurrence date extraction does not swallow a bad source zone", () => {
         value: "2026-10-26T09:00:00",
         timestamp: Date.parse("2026-10-26T13:00:00Z"),
       },
+      "UTC",
     ),
   );
 });

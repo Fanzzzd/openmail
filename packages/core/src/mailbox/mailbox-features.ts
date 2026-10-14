@@ -6,6 +6,7 @@ import {
   COMPOSE_IMAGE_LIMIT,
 } from "../compose/compose-images.js";
 import type { ImageDownloader } from "../platform/runtime.js";
+import type { Host } from "../platform/host.js";
 import { Effect, Schema, Semaphore } from "effect";
 import type { Account } from "../domain/account.js";
 import type { Actor, Command } from "../domain/command.js";
@@ -32,7 +33,8 @@ import type { Providers } from "../providers/adapter.js";
 import type { Store } from "../store/service.js";
 import { providerCapabilities } from "../providers/capabilities.js";
 
-export function eventFromInvite(invite: CalendarInvite): CalendarEvent | null {
+/** `timeZone` places a floating start when the invite has no end: the PlatformHost zone. */
+export function eventFromInvite(invite: CalendarInvite, timeZone: string): CalendarEvent | null {
   if (!invite.start || invite.cancelled) return null;
   const start = invite.start;
   let end = invite.end;
@@ -42,7 +44,7 @@ export function eventFromInvite(invite: CalendarInvite): CalendarEvent | null {
       day.setUTCDate(day.getUTCDate() + 1);
       end = { kind: "date", value: day.toISOString().slice(0, 10) };
     } else {
-      const timestamp = calendarTimestamp(start) + 3600000;
+      const timestamp = calendarTimestamp(start, timeZone) + 3600000;
       if (!Number.isFinite(timestamp)) return null;
       end = { kind: "zoned", value: new Date(timestamp).toISOString(), zone: "UTC", timestamp };
     }
@@ -68,6 +70,7 @@ export function makeFeatureMailbox(
   downloadImage: ImageDownloader,
   codec: MailCodecPort,
   crypto: PlatformCrypto,
+  host: Host,
 ) {
   const imageAttachment = (...args: Parameters<typeof unboundImageAttachment>) =>
     unboundImageAttachment(...args).pipe(Effect.provideService(PlatformCrypto, crypto));
@@ -116,7 +119,7 @@ export function makeFeatureMailbox(
       // Never reinterpret an iTIP request/response/cancellation as a new personal event.
       if (parsed.some((p) => p.invite.method !== "PUBLISH")) return [];
       return parsed.flatMap((p) => {
-        const event = eventFromInvite(p.invite);
+        const event = eventFromInvite(p.invite, host.timeZone());
         return event
           ? [
               {
@@ -136,7 +139,10 @@ export function makeFeatureMailbox(
           : [];
       });
     }
-    return detectMailEvents(message).map((event) => ({ ...event, key: JSON.stringify(event) }));
+    return detectMailEvents(message, {
+      reference: message.date,
+      timeZone: host.timeZone(),
+    }).map((event) => ({ ...event, key: JSON.stringify(event) }));
   });
   return {
     imageFromFile: imageAttachment,
@@ -176,7 +182,7 @@ export function makeFeatureMailbox(
       Effect.gen(function* () {
         const { parsed, account } = yield* parsedInvites(messageId);
         const invite = parsed.find((p) => p.invite.key === key)?.invite;
-        const event = invite && eventFromInvite(invite);
+        const event = invite && eventFromInvite(invite, host.timeZone());
         const adapter = providers.get(account.provider);
         if (!event || !providerCapabilities(account.provider).calendar || !adapter.calendarEvents)
           return yield* new InvalidInput({
@@ -213,6 +219,7 @@ export function makeFeatureMailbox(
                 event,
                 Schema.decodeUnknownSync(CalendarEventEdits)(edits ?? {}),
                 message.date,
+                host.timeZone(),
               ),
             catch: (error) =>
               error instanceof InvalidInput

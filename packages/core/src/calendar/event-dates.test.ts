@@ -55,7 +55,7 @@ it("a rule that omits DTSTART fails for Google as well as Outlook", () => {
     end: { kind: "date", value: "2026-10-27" },
     recurrence: ["RRULE:FREQ=WEEKLY;BYDAY=WE;COUNT=3"],
   };
-  assert.throws(() => validateEventRecurrenceForProvider(event, "gmail"));
+  assert.throws(() => validateEventRecurrenceForProvider(event, "gmail", "UTC"));
 });
 
 it("every English weekday pair follows the documented next/this/bare rule", () => {
@@ -213,6 +213,7 @@ it("recurrence rules reject an unknown time zone", () => {
         eventRecurrenceRule(
           { pattern: { kind: "daily", interval: 1 }, ending },
           { kind: "zoned", value: "2026-10-08T11:00:00", zone: "Bad/Zone", timestamp },
+          "UTC",
         ),
       );
   }

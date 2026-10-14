@@ -71,25 +71,23 @@ function googleZone(zone: string): string | undefined {
   );
   return GOOGLE_ZONES.has(canonical) ? canonical : undefined;
 }
-function googleInput(time: CalendarTime, recurring: boolean) {
+function googleInput(time: CalendarTime, recurring: boolean, timeZone: string) {
   if (time.kind === "date") return { date: time.value };
-  const zone = googleZone(
-    time.kind === "floating" ? Intl.DateTimeFormat().resolvedOptions().timeZone : time.zone,
-  );
+  const zone = googleZone(time.kind === "floating" ? timeZone : time.zone);
   if (recurring && !zone)
     throw new InvalidInput({
       message: "This recurring event has a time zone Google Calendar cannot use",
     });
-  const timestamp = calendarTimestamp(time);
+  const timestamp = calendarTimestamp(time, timeZone);
   if (!Number.isFinite(timestamp)) throw new RangeError("Invalid calendar event time");
   return { dateTime: new Date(timestamp).toISOString(), ...(zone ? { timeZone: zone } : {}) };
 }
-function graphInput(time: CalendarTime) {
+function graphInput(time: CalendarTime, timeZone: string) {
   if (time.kind === "zoned" && time.timestamp !== null)
     return { dateTime: new Date(time.timestamp).toISOString().replace(/Z$/, ""), timeZone: "UTC" };
   return {
     dateTime: time.kind === "date" ? `${time.value}T00:00:00` : time.value,
-    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    timeZone,
   };
 }
 
@@ -105,6 +103,8 @@ export function makeProviderCalendar<
   provider: "gmail" | "outlook",
   get: <A>(id: string, schema: Schema.Decoder<A>, path: string) => Effect.Effect<A, E>,
   post: (id: string, path: string, body: unknown) => Effect.Effect<unknown, E>,
+  /** The PlatformHost zone. It places date-only and floating events and sets Google's view zone. */
+  timeZone: () => string = () => "UTC",
 ) {
   const creationLock = Semaphore.makeUnsafe(1);
   const imported = new Set<string>();
@@ -115,7 +115,7 @@ export function makeProviderCalendar<
         "calendar",
         Effect.gen(function* () {
           const window = yield* Effect.try({
-            try: () => calendarWindow(event),
+            try: () => calendarWindow(event, timeZone()),
             catch: () => new InvalidInput({ message: "Invalid calendar event time" }),
           });
           const events: CalendarEvent[] = [];
@@ -127,9 +127,7 @@ export function makeProviderCalendar<
                 ...window,
                 singleEvents: "true",
                 orderBy: "startTime",
-                ...(googleZone(Intl.DateTimeFormat().resolvedOptions().timeZone)
-                  ? { timeZone: googleZone(Intl.DateTimeFormat().resolvedOptions().timeZone) }
-                  : {}),
+                ...(googleZone(timeZone()) ? { timeZone: googleZone(timeZone()) } : {}),
                 ...(token ? { pageToken: token } : {}),
               });
               const page = yield* get(account.id, GooglePage, `${GOOGLE}?${query.toString()}`);
@@ -218,11 +216,11 @@ export function makeProviderCalendar<
           "calendar",
           Effect.gen(function* () {
             yield* Effect.try({
-              try: () => calendarWindow(event),
+              try: () => calendarWindow(event, timeZone()),
               catch: () => new InvalidInput({ message: "Invalid calendar event time" }),
             });
             yield* Effect.try({
-              try: () => validateEventRecurrenceForProvider(event, provider),
+              try: () => validateEventRecurrenceForProvider(event, provider, timeZone()),
               catch: (error) =>
                 error instanceof InvalidInput
                   ? error
@@ -247,8 +245,8 @@ export function makeProviderCalendar<
                   ? {
                       summary: event.title,
                       iCalUID: importUid,
-                      start: googleInput(event.start, event.recurrence.length > 0),
-                      end: googleInput(event.end, event.recurrence.length > 0),
+                      start: googleInput(event.start, event.recurrence.length > 0, timeZone()),
+                      end: googleInput(event.end, event.recurrence.length > 0, timeZone()),
                       location: event.location,
                       description: event.description,
                       ...(event.recurrence.length ? { recurrence: event.recurrence } : {}),
@@ -257,8 +255,11 @@ export function makeProviderCalendar<
                       subject: event.title,
                       transactionId: identity,
                       ...(event.recurrence.length
-                        ? graphRecurrence(event)
-                        : { start: graphInput(event.start), end: graphInput(event.end) }),
+                        ? graphRecurrence(event, timeZone())
+                        : {
+                            start: graphInput(event.start, timeZone()),
+                            end: graphInput(event.end, timeZone()),
+                          }),
                       isAllDay: event.start.kind === "date",
                       location: { displayName: event.location },
                       body: { contentType: "text", content: event.description },

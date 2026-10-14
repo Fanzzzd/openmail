@@ -12,6 +12,7 @@ import { useRunMail, withMail } from "../../../state/mail";
 import { Dialog } from "../../../ui/Dialog";
 import { buttonPrimary, buttonSecondary } from "../../../ui/styles";
 import { LazyEmailFrame } from "../body/MessageBodyShell";
+import { localTimeZone } from "../../../lib/time-zone";
 
 /** Review imported data inside the app. Files never launch an OS handler. */
 export function AttachmentImportDialog({
@@ -125,8 +126,9 @@ export function AttachmentImportDialog({
               <p>{invite.title}</p>
               {invite.start && (
                 <p>
-                  {formatCalendarTime(invite.start, i18n.locale)}
-                  {invite.end && ` – ${formatCalendarTime(invite.end, i18n.locale)}`}
+                  {formatCalendarTime(invite.start, i18n.locale, localTimeZone())}
+                  {invite.end &&
+                    ` – ${formatCalendarTime(invite.end, i18n.locale, localTimeZone())}`}
                 </p>
               )}
               <p>{invite.location}</p>

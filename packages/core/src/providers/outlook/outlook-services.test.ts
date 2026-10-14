@@ -3,6 +3,7 @@ import { parseCalendar } from "../../calendar/invites.js";
 import { fakeHttp } from "../../platform/node/fake-http.js";
 import { Effect, Option, Schema } from "effect";
 import { GRAPH, account, run } from "../../../test-support/outlook-fixtures.js";
+import { PlatformHost } from "../../platform/host.js";
 for (const response of ["accepted", "tentative", "declined"] as const) {
   it.live(`uncertain Outlook ${response} response is reconciled without another POST`, () =>
     Effect.gen(function* () {
@@ -273,12 +274,16 @@ it.effect(
           );
           yield* adapter.createCalendarEvent(account, event);
         }),
+      ).pipe(
+        // The adapter takes the zone from PlatformHost, not from the process.
+        Effect.provideService(PlatformHost, {
+          timeZone: () => "Pacific/Auckland",
+          os: "darwin",
+          arch: "arm64",
+        }),
       );
       const read = http.calls.find((call) => call.url.pathname.endsWith("/calendarView"));
-      assert.strictEqual(
-        read?.prefer,
-        `IdType="ImmutableId", outlook.timezone="${Intl.DateTimeFormat().resolvedOptions().timeZone}"`,
-      );
+      assert.strictEqual(read?.prefer, `IdType="ImmutableId", outlook.timezone="Pacific/Auckland"`);
       const write = http.calls.find((call) => call.url.pathname.endsWith("/events"));
       assert.deepStrictEqual(write?.body, {
         subject: "Train",
@@ -287,11 +292,11 @@ it.effect(
         ).transactionId,
         start: {
           dateTime: "2026-10-10T00:00:00",
-          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          timeZone: "Pacific/Auckland",
         },
         end: {
           dateTime: "2026-10-11T00:00:00",
-          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          timeZone: "Pacific/Auckland",
         },
         isAllDay: true,
         location: { displayName: "Station" },

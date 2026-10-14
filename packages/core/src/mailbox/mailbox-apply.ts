@@ -91,6 +91,7 @@ export const makeApplyMailbox = (
     readOnly,
     unsubscribeNetwork,
     mutate,
+    host,
   } = deps;
 
   // Running commands
@@ -421,7 +422,7 @@ export const makeApplyMailbox = (
             inspection?.kind === "calendar"
               ? inspection.invites.find((i) => i.key === key && i.method === "PUBLISH")
               : undefined;
-          const event = invite ? eventFromInvite(invite) : null;
+          const event = invite ? eventFromInvite(invite, host.timeZone()) : null;
           if (!event) return yield* new InvalidInput({ message: "This event cannot be imported" });
           yield* adapter.createCalendarEvent(account, event);
           yield* store.appendAudit({
