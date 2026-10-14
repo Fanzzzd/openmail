@@ -1,6 +1,7 @@
 // Seeds a demo OpenMail data directory with fake accounts and mail, for screenshots and
 // manual testing. Every address uses example.com, example.org or example.net.
-// It also turns on "Ask me first" for agents and adds one pending MCP proposal to approve.
+// It also turns on "Ask me first" for agents, then asks the built CLI's MCP server, as Claude
+// Code, to archive three newsletters, so one AI suggestion waits for approval.
 //
 //   pnpm build
 //   node scripts/demo-data.mjs /tmp/openmail-demo        # or OPENMAIL_DEMO_HOME=/tmp/openmail-demo
@@ -8,10 +9,12 @@
 //
 // The script refuses the real data directory and any directory that already has a mail.db,
 // unless --force is given (the real directory is refused even then).
+import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, rmSync } from "node:fs";
 import { createRequire } from "node:module";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
+import { createInterface } from "node:readline";
 import { DatabaseSync } from "node:sqlite";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -45,6 +48,11 @@ mkdirSync(home, { recursive: true });
 const testing = join(root, "packages/core/dist/platform/node/testing.js");
 if (!existsSync(testing)) {
   console.error("packages/core/dist is missing. Run `pnpm build` first.");
+  process.exit(2);
+}
+const cli = join(root, "packages/cli/dist/cli.js");
+if (!existsSync(cli)) {
+  console.error("packages/cli/dist is missing. Run `pnpm build` first.");
   process.exit(2);
 }
 const coreRequire = createRequire(join(root, "packages/core/package.json"));
@@ -409,35 +417,34 @@ const program = Effect.gen(function* () {
   });
   const other = yield* store.upsertAccount("imap", work.address);
   for (const m of imap) yield* store.upsertMessage(other.id, m);
-  // An agent proposal waiting for approval, made the way the MCP modify_threads tool makes it:
-  // with "Ask me first" on, an MCP agent's change becomes a proposal instead of running.
+  // "Ask me first": an MCP agent's change becomes an AI suggestion instead of running.
   const mailbox = yield* Mailbox;
   yield* mailbox.proposals.setAgentWriteMode("propose");
-  yield* mailbox.organize.perform(
-    {
-      kind: "modify",
-      threads: ["newsletter-rust", "newsletter-frontend", "newsletter-product"].map(
-        (id) => `${google.id}/${id}`,
-      ),
-      op: { kind: "archive" },
-    },
-    {
-      kind: "agent",
-      surface: "mcp",
-      name: "claude-code",
-      rationale:
-        "These three are newsletters. Archiving takes them out of the inbox and keeps them in All Mail.",
-    },
-  );
   yield* store.checkpoint;
+  return google.id;
 });
 
-await Effect.runPromise(
+const googleId = await Effect.runPromise(
   program.pipe(
     Effect.provide(TestMailbox({}, { backgroundFlush: false }, {}, Layer.empty, { database })),
     Effect.scoped,
   ),
 );
+
+// The pending AI suggestion comes from a real MCP request: the built CLI's MCP server, called
+// as Claude Code calls it. It only writes the local database, so it needs no network.
+const suggestion = await callMcp("claude-code", "modify_threads", {
+  message_ids: ["newsletter-rust", "newsletter-frontend", "newsletter-product"].map(
+    (id) => `${googleId}/${id}`,
+  ),
+  action: "archive",
+  rationale:
+    "These three are newsletters. Archiving takes them out of the inbox and keeps them in All Mail.",
+});
+if (suggestion.isError) {
+  console.error(`The MCP request failed: ${suggestion.content?.[0]?.text ?? "no message"}`);
+  process.exit(1);
+}
 
 // Screenshot-friendly preferences: English, no first-run prompts, nothing marked read by a glance.
 const db = new DatabaseSync(database);
@@ -452,3 +459,56 @@ db.exec("PRAGMA wal_checkpoint(TRUNCATE); PRAGMA journal_mode=DELETE");
 const count = db.prepare("SELECT COUNT(*) AS n FROM messages").get()?.n;
 db.close();
 console.log(`Seeded ${String(count)} messages in 2 accounts at ${home}`);
+
+/** Runs `openmail mcp --allow-writes` on the demo home, makes one tool call as `client`, and exits. */
+async function callMcp(client, name, input) {
+  const child = spawn(
+    process.execPath,
+    ["--disable-warning=ExperimentalWarning", cli, "mcp", "--allow-writes"],
+    { env: { ...process.env, OPENMAIL_HOME: home }, stdio: ["pipe", "pipe", "inherit"] },
+  );
+  const exited = new Promise((done) => {
+    child.once("exit", done);
+  });
+  const send = (frame) => child.stdin.write(`${JSON.stringify({ jsonrpc: "2.0", ...frame })}\n`);
+  // Answers by request id; a reply that arrives first waits here for its caller.
+  const answers = new Map();
+  const waiting = new Map();
+  createInterface({ input: child.stdout }).on("line", (line) => {
+    const frame = JSON.parse(line);
+    if (frame.id === undefined) return;
+    const answer = waiting.get(frame.id);
+    if (answer) answer(frame);
+    else answers.set(frame.id, frame);
+  });
+  const response = async (id) => {
+    const frame =
+      answers.get(id) ??
+      (await Promise.race([
+        new Promise((answer) => {
+          waiting.set(id, answer);
+        }),
+        exited.then(() => {
+          throw new Error("The MCP server exited before it answered.");
+        }),
+      ]));
+    if (frame.error) throw new Error(`MCP error: ${JSON.stringify(frame.error)}`);
+    return frame.result;
+  };
+  send({
+    id: 1,
+    method: "initialize",
+    params: {
+      protocolVersion: "2025-06-18",
+      capabilities: {},
+      clientInfo: { name: client, version: "1.0.0" },
+    },
+  });
+  await response(1);
+  send({ method: "notifications/initialized" });
+  send({ id: 2, method: "tools/call", params: { name, arguments: input } });
+  const result = await response(2);
+  child.stdin.end();
+  await exited;
+  return result;
+}

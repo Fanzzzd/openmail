@@ -199,9 +199,9 @@ export default function HomePage() {
       <section className="mx-auto w-full max-w-5xl px-6 pt-16">
         <h2 className="text-2xl font-semibold">AI agents, with your approval</h2>
         <p className="mt-3 max-w-3xl text-fd-muted-foreground">
-          Here Claude Code asked over MCP to archive three newsletters. OpenMail listed the request
-          under AI suggestions with the agent's reason. The newsletters left the inbox only after
-          Approve.
+          Here an MCP request under Claude Code's client name asked to archive three newsletters.
+          OpenMail listed the request under AI suggestions with the agent's reason. The newsletters
+          left the inbox only after Approve.
         </p>
         <img
           src="/media/approval-flow.webp"

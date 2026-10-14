@@ -20,7 +20,7 @@ OpenMail is in early testing. Expect rough edges, and please report them in [Iss
 
 ![An agent suggests archiving three newsletters; the user approves it in OpenMail](docs/media/approval.gif)
 
-In this recording, Claude Code asked over MCP to archive three newsletters. OpenMail listed the request under **AI suggestions** with the agent's reason. The newsletters left the inbox only after **Approve**.
+In this recording, an MCP request under Claude Code's client name asks to archive three newsletters. OpenMail lists it under **AI suggestions** with the agent's reason. The newsletters leave the inbox only after **Approve**.
 
 - **Per-account consent.** An agent sees an account only after you turn on **Allow AI to read this account** for it in **Settings → AI Access**. OpenMail checks this on every tool call.
 - **Read-only by default.** MCP tools read and search mail. **Changes by AI apps** starts at **Read only**, which makes every write tool refuse.
@@ -52,7 +52,7 @@ See [CLI and MCP](https://openmail-docs.vercel.app/docs/cli-and-mcp) for the too
   </tr>
 </table>
 
-The screenshots and the recording use fake mail from [`scripts/demo-data.mjs`](scripts/demo-data.mjs), including the pending AI suggestion.
+The screenshots and the recording use fake mail from [`scripts/demo-data.mjs`](scripts/demo-data.mjs). The script also makes the pending AI suggestion: it calls `modify_threads` on the built CLI's MCP server under Claude Code's client name, `claude-code`.
 
 ## How it compares
 

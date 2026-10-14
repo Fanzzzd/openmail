@@ -362,6 +362,18 @@ describe("proposals", () => {
     expect(proposal.status).toBe("pending");
   });
 
+  test("the demo suggestion came through the MCP server as Claude Code", () => {
+    // Only a tool call through `openmail mcp` records agent activity.
+    const db = new DatabaseSync(join(seeded, "home", "mail.db"), { readOnly: true });
+    try {
+      expect(db.prepare("SELECT client, tool, ok FROM agent_activity").all()).toEqual([
+        { client: "claude-code", tool: "modify_threads", ok: 1 },
+      ]);
+    } finally {
+      db.close();
+    }
+  });
+
   describe("after reject", () => {
     const home = sharedHome();
     let rejected: Awaited<ReturnType<typeof openmail>>;

@@ -20,7 +20,7 @@ OpenMail 处于早期测试阶段，还有不少粗糙的地方。遇到问题�
 
 ![代理建议归档三封订阅邮件，用户在 OpenMail 中批准](docs/media/approval.gif)
 
-录屏里，Claude Code 通过 MCP 请求归档三封订阅邮件。OpenMail 把请求连同代理给出的理由列在 **AI suggestions** 里。点 **Approve** 之后，这三封邮件才离开收件箱。
+录屏里，一个以 Claude Code 客户端名发出的 MCP 请求要求归档三封订阅邮件。OpenMail 把请求连同代理给出的理由列在 **AI suggestions** 里。点 **Approve** 之后，这三封邮件才离开收件箱。
 
 - **按账户授权。** 你在 **Settings → AI Access** 里为某个账户打开 **Allow AI to read this account** 之后，代理才能看到它。每次工具调用都会检查这项授权。
 - **默认只读。** MCP 工具可以读取和搜索邮件。**Changes by AI apps** 默认是 **Read only**，此时所有写工具都会拒绝执行。
@@ -52,7 +52,7 @@ OpenMail 处于早期测试阶段，还有不少粗糙的地方。遇到问题�
   </tr>
 </table>
 
-截图和录屏使用 [`scripts/demo-data.mjs`](scripts/demo-data.mjs) 生成的假邮件，待批准的 AI 建议也由它生成。
+截图和录屏使用 [`scripts/demo-data.mjs`](scripts/demo-data.mjs) 生成的假邮件。待批准的 AI 建议也由这个脚本生成：它以 Claude Code 的客户端名 `claude-code` 调用构建出的 CLI 里 MCP 服务器的 `modify_threads`。
 
 ## 对比
 

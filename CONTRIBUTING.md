@@ -40,7 +40,7 @@ OPENMAIL_HOME="$HOME/OpenMail-dev" node packages/cli/dist/cli.js accounts list
 
 Tokens and passwords still go to the macOS keychain under the service `openmail`, one item per account, named like `gmail:alex@example.com`. Signing in to the same address from a dev data directory replaces the installed app's token for it.
 
-For a populated mailbox without a real account, seed fake mail with `node scripts/demo-data.mjs "$HOME/OpenMail-dev"` after `pnpm build`. It also sets the AI permission to **Ask me first** and adds one pending agent proposal, so **AI suggestions** has something to approve.
+For a populated mailbox without a real account, seed fake mail with `node scripts/demo-data.mjs "$HOME/OpenMail-dev"` after `pnpm build`. It also sets the AI permission to **Ask me first** and asks the built CLI's MCP server, as Claude Code, to archive three newsletters, so **AI suggestions** has something to approve.
 
 Set `OPENMAIL_READ_ONLY=1` to block every remote write (sending, moves, flags) while you try things.
 
