@@ -18,6 +18,7 @@ import { StoreLive } from "../store/store.js";
 import { fakeServer, makeFakeProvider } from "../platform/node/fake-provider.js";
 import { TestMailbox } from "../platform/node/testing.js";
 import type { ModelRuntime, DerivedChunk } from "./media.js";
+import type { Host } from "../platform/host.js";
 
 const accountId = "gmail:me@gmail.com";
 const id = `${accountId}/m1`;
@@ -127,6 +128,7 @@ function fixture(
   stream: Model["Service"]["stream"],
   canTriage: () => boolean = () => true,
   models?: ModelRuntime,
+  host?: Host,
 ) {
   const server = fakeServer(
     "me@gmail.com",
@@ -162,6 +164,9 @@ function fixture(
       Effect.void,
       (id) => store.purgeAccountProposals(id),
       canTriage,
+      undefined,
+      undefined,
+      host,
     );
     return { m, store, ai, server };
   });
@@ -221,7 +226,7 @@ it.effect(
 );
 
 it.effect(
-  "automatic summaries pause like triage and stop at the daily cap until the next UTC day",
+  "automatic summaries pause like triage and stop at the daily cap until the next local day",
   () => {
     let calls = 0;
     let eligible = false;
@@ -231,6 +236,9 @@ it.effect(
         return output("Summary");
       },
       () => eligible,
+      undefined,
+      // UTC-8 at the epoch: TestClock's 1970-01-01T00:00Z is still 1969-12-31 there.
+      { timeZone: () => "America/Los_Angeles" },
     );
     return Effect.gen(function* () {
       const { m, store, ai } = yield* f.setup;
@@ -247,17 +255,22 @@ it.effect(
       yield* ai.autoSummaries(ids.slice(0, 3));
       assert.strictEqual(calls, 3);
       // Use up the rest of today's cap; the next new thread waits for tomorrow.
-      const day = new Date(0).toISOString().slice(0, 10);
+      const day = "1969-12-31";
       for (let i = 3; i < AUTO_SUMMARY_DAILY_CAP; i++)
         assert.isTrue(yield* store.ai.claimAutoSummary(day, AUTO_SUMMARY_DAILY_CAP));
       yield* ai.autoSummaries(ids.slice(3));
       assert.strictEqual(calls, 3);
       assert.isFalse(yield* store.ai.claimAutoSummary(day, AUTO_SUMMARY_DAILY_CAP));
-      yield* TestClock.adjust("1 day");
+      // 07:59 UTC is still the same local day in Los Angeles.
+      yield* TestClock.adjust("7 hours");
+      yield* ai.autoSummaries(ids.slice(3));
+      assert.strictEqual(calls, 3);
+      // 08:00 UTC is local midnight: a new day.
+      yield* TestClock.adjust("1 hour");
       yield* ai.autoSummaries(ids.slice(3));
       assert.strictEqual(calls, 5);
       // A summary the person asks for is never capped.
-      const tomorrow = new Date(86_400_000).toISOString().slice(0, 10);
+      const tomorrow = "1970-01-01";
       let left = true;
       while (left) left = yield* store.ai.claimAutoSummary(tomorrow, AUTO_SUMMARY_DAILY_CAP);
       yield* store.ai.deleteSummary(`${accountId}/m1`);
@@ -267,31 +280,41 @@ it.effect(
   },
 );
 
-it.effect("an automatic summary that fails or is cut off gives its daily cap slot back", () => {
-  let calls = 0;
-  const f = fixture(() => {
-    calls++;
-    if (calls === 1) return output("Cut off", "length");
-    if (calls === 2) return Stream.die(new Error("The model is down"));
-    return output("Summary");
-  });
-  return Effect.gen(function* () {
-    const { m, store, ai } = yield* f.setup;
-    yield* m.ai.setAiKey("fake");
-    yield* m.ai.setAiAccount({ ...consent, autoTriage: false, autoSummaries: true });
-    // One slot left today.
-    const day = new Date(0).toISOString().slice(0, 10);
-    for (let i = 1; i < AUTO_SUMMARY_DAILY_CAP; i++)
-      assert.isTrue(yield* store.ai.claimAutoSummary(day, AUTO_SUMMARY_DAILY_CAP));
-    const ids = Array.from({ length: 3 }, (_, i) => `${accountId}/m${i + 1}`);
-    yield* ai.autoSummaries(ids);
-    assert.strictEqual(calls, 3, "the cut-off and the failed summary did not use the last slot");
-    assert.isNull(yield* ai.aiSummary(ids[0] ?? ""));
-    assert.isNotNull(yield* ai.aiSummary(ids[2] ?? ""));
-    // The saved summary took it.
-    assert.isFalse(yield* store.ai.claimAutoSummary(day, AUTO_SUMMARY_DAILY_CAP));
-  }).pipe(Effect.provide(f.layer));
-});
+it.effect(
+  "an automatic summary gives its cap slot back only when it failed before any output",
+  () => {
+    let calls = 0;
+    const f = fixture(() => {
+      calls++;
+      // Never reached the model: not billed.
+      if (calls === 1) return Stream.die(new Error("Can't reach Anthropic"));
+      // Billed, then cut off at the token limit.
+      if (calls === 2) return output("Cut off", "length");
+      // Billed, then the stream broke.
+      if (calls === 3)
+        return Stream.concat(
+          Stream.make({ _tag: "Delta", text: "Half" } satisfies ModelOutput),
+          Stream.die(new Error("The stream broke")),
+        );
+      return output("Summary");
+    });
+    return Effect.gen(function* () {
+      const { m, store, ai } = yield* f.setup;
+      yield* m.ai.setAiKey("fake");
+      yield* m.ai.setAiAccount({ ...consent, autoTriage: false, autoSummaries: true });
+      // Two slots left today.
+      const day = new Date(0).toISOString().slice(0, 10);
+      for (let i = 2; i < AUTO_SUMMARY_DAILY_CAP; i++)
+        assert.isTrue(yield* store.ai.claimAutoSummary(day, AUTO_SUMMARY_DAILY_CAP));
+      const ids = Array.from({ length: 3 }, (_, i) => `${accountId}/m${i + 1}`);
+      yield* ai.autoSummaries(ids);
+      assert.strictEqual(calls, 3, "the unbilled failure gave its slot to the third thread");
+      assert.isNull(yield* ai.aiSummary(ids[1] ?? ""));
+      // The cut-off and the broken summary used the two slots.
+      assert.isFalse(yield* store.ai.claimAutoSummary(day, AUTO_SUMMARY_DAILY_CAP));
+    }).pipe(Effect.provide(f.layer));
+  },
+);
 
 for (const action of [
   { kind: "archive" },

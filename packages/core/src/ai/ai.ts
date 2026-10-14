@@ -153,8 +153,8 @@ export const AI_INPUT_BUDGET = 120_000;
 /** Bytes of a thread a summary reads. Longer threads keep their newest messages. */
 export const AI_SUMMARY_INPUT = 80_000;
 /**
- * Automatic summaries per UTC day, across accounts. Only saved summaries count; summaries the
- * person asks for are not capped.
+ * Automatic summaries per local calendar day, across accounts. Every summary Anthropic billed
+ * counts, saved or cut off; summaries the person asks for are not capped.
  */
 export const AUTO_SUMMARY_DAILY_CAP = 50;
 /** Bytes of a thread the assistant reads per read_thread, and of the thread a question is about. */

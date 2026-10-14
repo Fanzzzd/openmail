@@ -21,7 +21,7 @@ import type { Model } from "../ai/model.js";
 import { localThread, modelContext } from "../ai/model-view.js";
 import { MODEL_KEY } from "../ai/secrets.js";
 import type { Secrets } from "../platform/auth.js";
-import { type Host, nowLine } from "../platform/host.js";
+import { type Host, localDay, nowLine } from "../platform/host.js";
 import type { Store } from "../store/service.js";
 import { AssistantToolkit, MailToolkitLayer, ToolGate } from "../tools/tools.js";
 import { toolError } from "../tools/tool-common.js";
@@ -560,12 +560,19 @@ export function makeAiMailbox(
           );
           // A summary already cached in this language costs nothing and counts against no cap.
           if (yield* saved) continue;
-          const day = new Date(yield* Clock.currentTimeMillis).toISOString().slice(0, 10);
+          // The cap follows the person's calendar day, not UTC's.
+          const day = localDay(yield* Clock.currentTimeMillis, host.timeZone());
           if (!(yield* store.ai.claimAutoSummary(day, AUTO_SUMMARY_DAILY_CAP))) return;
-          yield* Stream.runDrain(summarize(id, locale)).pipe(Effect.catchCause(() => Effect.void));
-          // Only a saved summary uses the cap. A failed or cut-off one is not cached, so it
-          // gives its claim back.
-          if (!(yield* saved)) yield* store.ai.releaseAutoSummary(day);
+          // Set by the stream, which may still fail afterwards.
+          const seen = { output: false };
+          yield* Stream.runForEach(summarize(id, locale), (event) =>
+            Effect.sync(() => {
+              if (event._tag === "Delta" || event._tag === "Done") seen.output = true;
+            }),
+          ).pipe(Effect.catchCause(() => Effect.void));
+          // Anthropic bills a summary once it streams output, even a cut-off one. Only a request
+          // that failed before any output gives its claim back.
+          if (!seen.output && !(yield* saved)) yield* store.ai.releaseAutoSummary(day);
         }
       }),
   };
