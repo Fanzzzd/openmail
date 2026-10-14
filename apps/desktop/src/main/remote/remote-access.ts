@@ -12,7 +12,7 @@ import {
   type RemoteAccessView,
   type TailscaleState,
 } from "../../shared/remote-access";
-import { createSessions, GOING_AWAY, type GateConfig } from "./remote-auth";
+import { createSessions, GOING_AWAY, newProxySecret, type GateConfig } from "./remote-auth";
 import { createConnectionHub, type ConnectionHub } from "./remote-rpc-server";
 import { type ForbiddenText, startRemoteServer, type RemoteServer } from "./remote-server";
 import {
@@ -44,6 +44,8 @@ export interface RemoteAccessDeps {
   log?: (reason: string) => void;
   /** The not-allowed page's text in the app's language. */
   forbiddenText?: () => Promise<ForbiddenText>;
+  /** Tests fix the launch's proxy secret; the app makes a random one. */
+  proxySecret?: string;
   /** How long quitting waits for `tailscale serve off`. */
   quitTimeoutMs?: number;
   /** First retry delay for a mapping a turn-off couldn't remove; doubles up to retryMaxMs. */
@@ -92,6 +94,11 @@ export function createRemoteAccess(deps: RemoteAccessDeps) {
   let retry: ReturnType<typeof setTimeout> | undefined;
   let retryDelay = 0;
   const sessions = createSessions();
+  /**
+   * The path Serve's mapping adds to each request. Made per launch, kept only in
+   * memory and in Tailscale's serve config, never logged.
+   */
+  const proxySecret = deps.proxySecret ?? newProxySecret();
   const listeners = new Set<(view: RemoteAccessView) => void>();
 
   const view = (): RemoteAccessView => ({
@@ -254,14 +261,19 @@ export function createRemoteAccess(deps: RemoteAccessDeps) {
     if (local.port !== settings.port) await save({ ...settings, port: local.port });
     const current = await runCli(SERVE_STATUS_ARGS);
     if (current.code !== 0) return fail("serveFailed");
-    const target = { port: local.port, previousPort, service: settings.service };
+    const target = {
+      port: local.port,
+      previousPort,
+      service: settings.service,
+      secret: proxySecret,
+    };
     const check = checkServe(current.stdout, target);
     if (check.kind === "conflict") return fail(check.reason === "funnel" ? "funnel" : "conflict");
     if (check.kind === "stale" && (await runCli(serveOffArgs(target))).code !== 0)
       return fail("serveFailed");
     if (check.kind !== "ours" && (await runCli(serveOnArgs(target))).code !== 0)
       return fail("serveFailed");
-    gate = { allowlist: settings.allowlist, host, port: httpsPort() };
+    gate = { allowlist: settings.allowlist, host, port: httpsPort(), proxySecret };
     // The check above already replaced any older mapping for this target.
     if (leftover?.service === settings.service) forget();
     url = publicUrl(tailscale, settings.service);

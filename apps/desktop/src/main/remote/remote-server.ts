@@ -336,7 +336,7 @@ export async function startRemoteServer(options: RemoteServerOptions) {
         "content-type": "text/html; charset=utf-8",
       });
     }
-    send(response, gate.status, "Forbidden");
+    send(response, gate.status, gate.status === 404 ? "Not found" : "Forbidden");
   };
   // Null while the server is starting or stopping: say "try again" so a
   // page's reconnect probe keeps retrying instead of reading it as signed out.
@@ -344,7 +344,7 @@ export async function startRemoteServer(options: RemoteServerOptions) {
     const config = options.gate();
     if (!config) return null;
     return checkRequest(
-      { remoteAddress: request.socket.remoteAddress, headers: request.headers },
+      { remoteAddress: request.socket.remoteAddress, headers: request.headers, url: request.url },
       config,
     );
   };
@@ -363,7 +363,7 @@ export async function startRemoteServer(options: RemoteServerOptions) {
         return send(response, 503, "Starting", { "retry-after": STARTING_RETRY_SECONDS });
       }
       if (!gate.ok) return refuse(gate, request, response);
-      const url = new URL(request.url ?? "/", "http://remote.invalid");
+      const url = new URL(gate.path, "http://remote.invalid");
       const method = request.method ?? "GET";
 
       if (url.pathname.startsWith("/api/")) {
@@ -438,7 +438,7 @@ export async function startRemoteServer(options: RemoteServerOptions) {
     }
     if (!gate.ok) return reject(gate.status, gate.reason);
     if (!sameOrigin(request)) return reject(403, "bad-origin");
-    const url = new URL(request.url ?? "/", "http://remote.invalid");
+    const url = new URL(gate.path, "http://remote.invalid");
     if (url.pathname !== "/rpc") return reject(404, "bad-path");
     const owner = session(request, gate.login);
     if (!owner) return reject(401, "no-session");

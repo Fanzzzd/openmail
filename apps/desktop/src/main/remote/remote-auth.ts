@@ -27,17 +27,49 @@ export interface GateConfig {
   host: string;
   /** The HTTPS port browsers use; 443 is omitted from Host and Origin. */
   port: number;
+  /**
+   * The random path prefix Serve's proxy target adds to every request, made at
+   * launch and kept in memory. Another macOS user on this Mac can reach the
+   * 127.0.0.1 port and forge the identity headers, but can't learn this.
+   */
+  proxySecret: string;
 }
 
 interface RequestFacts {
   remoteAddress: string | undefined;
   headers: IncomingHttpHeaders;
+  /** The request target as it arrived, with Serve's secret prefix. */
+  url: string | undefined;
 }
 
 export type GateResult =
-  | { ok: true; login: string; name: string }
-  | { ok: false; status: 403 | 421; reason: GateReason };
-type GateReason = "not-loopback" | "funnel" | "no-identity" | "bad-host" | "not-allowed";
+  | { ok: true; login: string; name: string; path: string }
+  | { ok: false; status: 403 | 404 | 421; reason: GateReason };
+type GateReason =
+  | "not-loopback"
+  | "not-proxied"
+  | "funnel"
+  | "no-identity"
+  | "bad-host"
+  | "not-allowed";
+
+/** A launch's proxy secret: 32 random bytes, safe in a URL path segment. */
+export const newProxySecret = () => randomBytes(32).toString("base64url");
+
+/**
+ * The request target without Serve's `/<secret>` prefix, or null when the
+ * prefix is missing or wrong. Serve sends `/<secret>/rest?query` for
+ * `/rest?query`; the comparison takes the same time for any wrong secret.
+ */
+export function stripProxySecret(url: string | undefined, secret: string): string | null {
+  if (!url?.startsWith("/") || !secret) return null;
+  const end = url.slice(1).search(/[/?]/);
+  const given = Buffer.from(end === -1 ? url.slice(1) : url.slice(1, end + 1));
+  const expected = Buffer.from(secret);
+  if (given.length !== expected.length || !timingSafeEqual(given, expected)) return null;
+  const rest = end === -1 ? "" : url.slice(end + 1);
+  return rest.startsWith("/") ? rest : `/${rest}`;
+}
 
 const LOOPBACK = new Set(["127.0.0.1", "::1", "::ffff:127.0.0.1"]);
 const one = (value: string | string[] | undefined) =>
@@ -68,13 +100,16 @@ export function decodeName(value: string | undefined, fallback: string): string 
 }
 
 /**
- * Every request: from 127.0.0.1 (Serve's proxy), never through Funnel, with
- * the Serve identity header, for the tailnet host (so DNS rebinding fails),
- * and from an allowlisted login.
+ * Every request: from 127.0.0.1 (Serve's proxy) under the launch's secret
+ * path prefix, never through Funnel, with the Serve identity header, for the
+ * tailnet host (so DNS rebinding fails), and from an allowlisted login. The
+ * result's `path` is the request target without the prefix.
  */
 export function checkRequest(facts: RequestFacts, config: GateConfig): GateResult {
   if (!facts.remoteAddress || !LOOPBACK.has(facts.remoteAddress))
     return { ok: false, status: 403, reason: "not-loopback" };
+  const path = stripProxySecret(facts.url, config.proxySecret);
+  if (path === null) return { ok: false, status: 404, reason: "not-proxied" };
   if (facts.headers[FUNNEL_HEADER] !== undefined)
     return { ok: false, status: 403, reason: "funnel" };
   const login = requestLogin(facts.headers);
@@ -85,7 +120,7 @@ export function checkRequest(facts: RequestFacts, config: GateConfig): GateResul
     return { ok: false, status: 421, reason: "bad-host" };
   if (!config.allowlist.some((allowed) => sameLogin(allowed, login)))
     return { ok: false, status: 403, reason: "not-allowed" };
-  return { ok: true, login, name: decodeName(one(facts.headers[NAME_HEADER]), login) };
+  return { ok: true, login, name: decodeName(one(facts.headers[NAME_HEADER]), login), path };
 }
 
 /** The Tailscale login a request names, as checkRequest reads it; undefined if none. */

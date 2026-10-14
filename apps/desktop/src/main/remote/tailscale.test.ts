@@ -54,23 +54,25 @@ describe("tailscale status", () => {
   });
 });
 
+const SECRET = "a".repeat(43);
+
 describe("serve commands", () => {
   it("builds the exact argv for a node port and for a Tailscale Service", () => {
     expect(STATUS_ARGS).toEqual(["status", "--json"]);
     expect(SERVE_STATUS_ARGS).toEqual(["serve", "status", "--json"]);
-    expect(serveOnArgs({ port: 53111, service: "" })).toEqual([
+    expect(serveOnArgs({ port: 53111, service: "", secret: SECRET })).toEqual([
       "serve",
       "--bg",
       "--https=8443",
-      "http://127.0.0.1:53111",
+      `http://127.0.0.1:53111/${SECRET}`,
     ]);
     expect(serveOffArgs({ service: "" })).toEqual(["serve", "--https=8443", "off"]);
-    expect(serveOnArgs({ port: 53111, service: "svc:openmail" })).toEqual([
+    expect(serveOnArgs({ port: 53111, service: "svc:openmail", secret: SECRET })).toEqual([
       "serve",
       "--service=svc:openmail",
       "--bg",
       "--https=443",
-      "http://127.0.0.1:53111",
+      `http://127.0.0.1:53111/${SECRET}`,
     ]);
     expect(serveOffArgs({ service: "svc:openmail" })).toEqual([
       "serve",
@@ -82,13 +84,16 @@ describe("serve commands", () => {
 
   it("never builds a Funnel command and refuses bad ports", () => {
     for (const args of [
-      serveOnArgs({ port: 1, service: "" }),
-      serveOnArgs({ port: 65535, service: "svc:openmail" }),
+      serveOnArgs({ port: 1, service: "", secret: SECRET }),
+      serveOnArgs({ port: 65535, service: "svc:openmail", secret: SECRET }),
       serveOffArgs({ service: "" }),
     ])
       expect(args.join(" ")).not.toMatch(/funnel/i);
-    expect(() => serveOnArgs({ port: 0, service: "" })).toThrow();
-    expect(() => serveOnArgs({ port: 70000, service: "" })).toThrow();
+    expect(() => serveOnArgs({ port: 0, service: "", secret: SECRET })).toThrow();
+    expect(() => serveOnArgs({ port: 70000, service: "", secret: SECRET })).toThrow();
+    // The secret is a single path segment of at least 32 URL-safe characters.
+    for (const secret of ["", "short", `${SECRET}/x`, `${SECRET}?q`, `${SECRET} x`])
+      expect(() => serveOnArgs({ port: 53111, service: "", secret })).toThrow();
   });
 });
 
@@ -126,6 +131,28 @@ describe("serve conflicts", () => {
     expect(
       checkServe(mapping("http://127.0.0.1:41000"), { ...target, previousPort: 41000 }),
     ).toEqual({ kind: "stale" });
+  });
+
+  it("treats its port with another launch's secret as stale, and any secret as removable", () => {
+    const launch = { ...target, secret: SECRET };
+    expect(checkServe(mapping(`http://127.0.0.1:53111/${SECRET}`), launch)).toEqual({
+      kind: "ours",
+    });
+    expect(checkServe(mapping(`http://127.0.0.1:53111/${"b".repeat(43)}`), launch)).toEqual({
+      kind: "stale",
+    });
+    // A mapping from a build before the secret.
+    expect(checkServe(mapping("http://127.0.0.1:53111"), launch)).toEqual({ kind: "stale" });
+    expect(
+      checkServe(mapping(`http://127.0.0.1:41000/${"b".repeat(43)}`), {
+        ...launch,
+        previousPort: 41000,
+      }),
+    ).toEqual({ kind: "stale" });
+    // Removing a mapping (no secret given) finds it whatever its secret.
+    expect(checkServe(mapping(`http://127.0.0.1:53111/${"b".repeat(43)}`), target)).toEqual({
+      kind: "ours",
+    });
   });
 
   it("refuses to overwrite someone else's mapping on 8443", () => {

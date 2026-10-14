@@ -159,6 +159,11 @@ export function parseStatus(json: string): TailscaleState {
 interface ServeTarget {
   /** 127.0.0.1 port of the OpenMail server. */
   port: number;
+  /**
+   * This launch's proxy secret, the path Serve's target adds to every request.
+   * Without it (removing a mapping) any mapping to the port counts as OpenMail's.
+   */
+  secret?: string;
   /** The port OpenMail used last time; a mapping to it is OpenMail's own, now stale. */
   previousPort?: number;
   /** svc:name, or empty for this node's own name. */
@@ -169,16 +174,21 @@ const httpsPort = (target: ServeTarget) =>
   target.service ? REMOTE_SERVICE_PORT : REMOTE_HTTPS_PORT;
 const backend = (port: number) => `http://127.0.0.1:${port}`;
 
-/** `tailscale serve` argv. Serve only: Funnel is never part of it. */
-export function serveOnArgs(target: ServeTarget): string[] {
+/**
+ * `tailscale serve` argv. Serve only: Funnel is never part of it. Serve keeps
+ * the target's path and puts it in front of every request path, so the
+ * server only answers requests that came through this mapping.
+ */
+export function serveOnArgs(target: ServeTarget & { secret: string }): string[] {
   if (!Number.isInteger(target.port) || target.port < 1 || target.port > 65_535)
     throw new Error("Invalid port");
+  if (!/^[\w-]{32,}$/.test(target.secret)) throw new Error("Invalid proxy secret");
   return [
     "serve",
     ...(target.service ? [`--service=${target.service}`] : []),
     "--bg",
     `--https=${httpsPort(target)}`,
-    backend(target.port),
+    `${backend(target.port)}/${target.secret}`,
   ];
 }
 
@@ -212,6 +222,7 @@ type ServeCheck =
   | { kind: "stale" }
   | { kind: "conflict"; reason: "port" | "handlers" | "funnel" | "tcp" | "foreground" };
 
+/** A Serve proxy target as its origin and path; path is "" for none. */
 const normalizeProxy = (value: unknown) => {
   const raw = text(value);
   if (!raw) return null;
@@ -219,7 +230,10 @@ const normalizeProxy = (value: unknown) => {
   try {
     const url = new URL(withScheme);
     const host = url.hostname === "localhost" ? "127.0.0.1" : url.hostname;
-    return `${url.protocol}//${host}:${url.port}${url.pathname === "/" ? "" : url.pathname}`;
+    return {
+      origin: `${url.protocol}//${host}:${url.port}`,
+      path: url.pathname === "/" ? "" : url.pathname,
+    };
   } catch {
     return null;
   }
@@ -252,8 +266,12 @@ function checkConfig(
     const [path, handler] = handlers[0] ?? ["", undefined];
     const proxy = normalizeProxy(record(handler).Proxy);
     if (path !== "/") return { kind: "conflict", reason: "handlers" };
-    if (proxy === backend(target.port)) continue;
-    if (target.previousPort && proxy === backend(target.previousPort)) stale = true;
+    // Our port with another launch's secret (or none, from older builds) is ours, but stale.
+    if (proxy?.origin === backend(target.port)) {
+      if (target.secret !== undefined && proxy.path !== `/${target.secret}`) stale = true;
+      continue;
+    }
+    if (target.previousPort && proxy?.origin === backend(target.previousPort)) stale = true;
     else return { kind: "conflict", reason: "handlers" };
   }
   return stale ? { kind: "stale" } : { kind: "ours" };
@@ -261,8 +279,9 @@ function checkConfig(
 
 /**
  * Compares `tailscale serve status --json` with the mapping OpenMail wants. A
- * port already mapped to exactly our backend is ours; anything else on that
- * port, or Funnel on it, is a conflict OpenMail refuses to overwrite.
+ * port already mapped to exactly our backend and secret is ours; our port with
+ * another secret is stale; anything else on that port, or Funnel on it, is a
+ * conflict OpenMail refuses to overwrite.
  */
 export function checkServe(json: string, target: ServeTarget): ServeCheck {
   let parsed: unknown;

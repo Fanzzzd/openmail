@@ -113,9 +113,10 @@ A user can use OpenMail on this Mac from a browser on a phone or another compute
 ```
 Phone browser ──WireGuard (tailnet)──▶ Tailscale app on the Mac
                                      │  tailscale serve --https=8443
-                                     │  adds Tailscale-User-Login / -Name, keeps Host
+                                     │  adds Tailscale-User-Login / -Name, keeps Host,
+                                     │  prefixes every path with /<proxy secret>
                                      ▼
-                     OpenMail main process http://127.0.0.1:<port>
+                     OpenMail main process http://127.0.0.1:<port>/<proxy secret>
                        ├─ GET /, /assets/*    out/web static files
                        ├─ GET /api/attachment attachment download
                        ├─ POST /api/upload    attachment upload
@@ -130,24 +131,26 @@ The main process only handles transport: HTTP, WebSocket, sessions and Tailscale
 
 - OpenMail first looks for the Tailscale app's bundled `/Applications/Tailscale.app/Contents/MacOS/Tailscale`. Then it looks for a separately installed CLI at `/opt/homebrew/bin/tailscale`, `/usr/local/bin/tailscale` and `tailscale` in the absolute-path directories on `PATH` (`tailscaleCandidates` in `tailscale.ts`). They all talk to the same tailscaled, so `status`, `serve` and identity headers behave the same. Every call uses `execFile` with a fixed argv, never a shell. OpenMail installs nothing. When none is found, the settings page links to tailscale.com/download.
 - Before turning on, it checks in order that Tailscale is installed, signed in, and that the tailnet has HTTPS certificates (`CertDomains` in `status --json` is not empty).
-- It reads `serve status --json` first. If port 8443 is already taken by another mapping, a TCP forward, a foreground serve or Funnel, it refuses and overwrites nothing. Then it runs `tailscale serve --bg --https=8443 http://127.0.0.1:<port>`.
+- It reads `serve status --json` first. If port 8443 is already taken by another mapping, a TCP forward, a foreground serve or Funnel, it refuses and overwrites nothing. Then it runs `tailscale serve --bg --https=8443 http://127.0.0.1:<port>/<proxy secret>`. A mapping to this app's port with another launch's secret, or with none, is this app's stale mapping; it is removed and published again.
+- The proxy secret is 32 random bytes (base64url), made at each launch (`newProxySecret`), kept only in main-process memory and in Tailscale's serve config, and never logged. Serve keeps the target's path and puts it in front of every request path, so a browser's `/mail/all` reaches the server as `/<secret>/mail/all`. Another macOS user on the Mac can connect to the 127.0.0.1 port and forge every Tailscale header, but without the secret every request gets 404. See [Outside the boundary](#outside-the-boundary) for who can still learn it.
 - Turning off runs `tailscale serve --https=8443 off`, and only when the mapping points at this app's port. If `serve status` or `serve off` fails, for example because Tailscale is not running, it does not report "off". The status is `error` with the problem `removeFailed`, and the settings page says the mapping could not be removed. The controller remembers the mapping and retries after 30 seconds (`RETRY_MS`), doubling the wait up to 5 minutes (`RETRY_MAX_MS`), and on every Refresh. Once Tailscale is back, it removes the mapping with the same ownership check.
 - The read-only session (`OPENMAIL_READ_ONLY=1`, used by smoke for example) never runs the Tailscale CLI. It treats Tailscale as not installed and neither publishes nor removes mappings (`sessionTailscale`).
 - If the setting is off at startup but a port was saved (the last run may have crashed while on), it checks once the same way and removes a mapping that points at this app's old port. If Tailscale is unreachable, it reports no error and retries in the background.
 - Quitting the app removes the mapping too, waiting at most 3 seconds (`QUIT_TIMEOUT_MS`). The setting stays on, and the next launch publishes again. Otherwise, while the app is closed, the mapping would point at an empty loopback port, and another local process or another macOS user could take the port and receive tailnet traffic and identity headers. If the wait times out or the CLI fails, the mapping stays, and at the next launch `serve status` recognizes it as this app's old mapping and replaces it.
-- The serve target is TCP loopback only. The macOS GUI Tailscale is a sandboxed network extension and most likely cannot read a unix socket in the user's home directory. The target will not switch to a socket before that is tested.
+- The serve target is TCP loopback only. Recent Tailscale releases accept `unix:` targets, and a socket readable only by the user would shut other local users out without a secret. The macOS Tailscale app runs tailscaled as a sandboxed network extension that most likely cannot open a socket in the user's home directory, so the target will not switch to a socket before that is tested.
 - OpenMail never runs `tailscale funnel`. If `serve status` shows `AllowFunnel` for the port, it refuses to start.
 - An optional Tailscale Service (such as `svc:openmail`) uses `serve --service=svc:openmail --https=443` instead.
 
 ### Per-request checks
 
-`checkRequest` (`remote-auth.ts`) checks these in order. Any failure returns 403 or 421:
+`checkRequest` (`remote-auth.ts`) checks these in order. Any failure returns 403, 404 or 421:
 
 1. The TCP source is loopback. The server listens only on 127.0.0.1; this check guards against a wrong listen address.
-2. There is no `Tailscale-Funnel-Request` header.
-3. There is a `Tailscale-User-Login` header. Serve adds it only for devices in the tailnet that belong to a user. Direct local access and tagged devices have none, so they are rejected.
-4. `Host` equals `<magicdns>:8443` (or the Service's host name). This blocks DNS rebinding.
-5. The login is in the allowlist, case-insensitively. By default the list holds this Mac's own tailnet login, written once the first time remote access turns on. It holds at most 64 logins.
+2. The request target starts with `/<proxy secret>`, compared in constant time (`stripProxySecret`). A request without it gets 404 before any header is read. The rest of the target is the path the server routes, for pages, `/api/*` and the `/rpc` upgrade alike.
+3. There is no `Tailscale-Funnel-Request` header.
+4. There is a `Tailscale-User-Login` header. Serve adds it only for devices in the tailnet that belong to a user. Direct local access and tagged devices have none, so they are rejected.
+5. `Host` equals `<magicdns>:8443` (or the Service's host name). This blocks DNS rebinding.
+6. The login is in the allowlist, case-insensitively. By default the list holds this Mac's own tailnet login, written once the first time remote access turns on. It holds at most 64 logins.
 
 WebSocket upgrades and uploads also require `Origin` to equal `https://<host>`.
 
@@ -189,9 +192,14 @@ Denied: local files and Finder, opening the browser, printing, windows, the clip
 
 ### Outside the boundary
 
-- Local processes of the same user can connect to 127.0.0.1 directly and forge Tailscale headers. They can already read the database and the memory of processes with keychain access, so they are outside this boundary. Web pages in a browser cannot send custom headers cross-origin, and the Host check blocks DNS rebinding.
+- Local processes of the same user can read the proxy secret, connect to 127.0.0.1 directly and forge Tailscale headers. They can already read the database and the memory of processes with keychain access, so they are outside this boundary. Web pages in a browser cannot send custom headers cross-origin, and the Host check blocks DNS rebinding.
+- Other macOS users on the same Mac can reach the 127.0.0.1 port while remote access is on. The proxy secret keeps them out unless they learn it, which they can in these cases:
+  - While `tailscale serve --bg` runs at publish time, the secret is in its argv, and `ps` on macOS shows other users' arguments. The window is the CLI's run time, once per launch or turn-on.
+  - With a CLI-only tailscaled (Homebrew or the standalone daemon), any local user may read the serve config through tailscaled's socket (`tailscale serve status`), which includes the secret.
+  - With the standalone Tailscale app, members of the admin group can read the LocalAPI token in `/Library/Tailscale`, and so the serve config. Admin users can also become root, which is outside this boundary anyway. With the Mac App Store app, the token is in the owner's sandbox container and other users can't read it.
+    On a Mac shared with untrusted local accounts, turn remote access on only with the Tailscale app, and treat every admin account as trusted.
 - A login in the allowlist can sign in from any tailnet device that belongs to that user. Restricting devices needs tailnet access policies.
 - If removing the mapping times out or fails on quit, the mapping stays until the next launch. The port-takeover risk during that time is described under [Publishing](#publishing).
 - Disconnect cannot block a login that is still in the allowlist; see [Sessions](#sessions).
 
-Verification: `remote-server.test.ts` (auth matrix, session issuing scope, limits, sweeping, CSP, traversal, attachment download and upload limits, upload concurrency, WebSocket Origin and disconnect), `remote-rpcs.test.ts`, `tailscale.test.ts` (serve arguments, conflict detection and CLI lookup order), `remote-access.test.ts` (on/off flow with a fake CLI, removing the mapping on quit, the timeout when the CLI hangs, `removeFailed` and retry when Tailscale is unreachable, cleaning up a mapping left by a crash at startup, keeping the port when no CLI is found), and `e2e/web.test.ts` (the browser renders the inbox over WebSocket; it clicks every control in every tab of the web settings page and asserts the server saw no denied or failed calls). With `OPENMAIL_WEB_SHOT=<dir>`, `web-shot.test.ts` uses Electron's Chromium to capture the build output at 390 px and 1280 px.
+Verification: `remote-server.test.ts` (auth matrix, the proxy secret on pages, downloads, uploads and the WebSocket, session issuing scope, limits, sweeping, CSP, traversal, attachment download and upload limits, upload concurrency, WebSocket Origin and disconnect), `remote-rpcs.test.ts`, `tailscale.test.ts` (serve arguments, the secret in the target, stale mappings from earlier launches, conflict detection and CLI lookup order), `remote-access.test.ts` (on/off flow with a fake CLI, removing the mapping on quit, the timeout when the CLI hangs, `removeFailed` and retry when Tailscale is unreachable, cleaning up a mapping left by a crash at startup, keeping the port when no CLI is found), and `e2e/web.test.ts` (the browser renders the inbox over WebSocket; it clicks every control in every tab of the web settings page and asserts the server saw no denied or failed calls). With `OPENMAIL_WEB_SHOT=<dir>`, `web-shot.test.ts` uses Electron's Chromium to capture the build output at 390 px and 1280 px.

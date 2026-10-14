@@ -25,7 +25,13 @@ import {
 import { waitLimit } from "../../../../../packages/core/test-support/test-time.js";
 
 const HOST = "mac.tail1234.ts.net";
-const config: GateConfig = { allowlist: ["Owner@github"], host: HOST, port: 8443 };
+const SECRET = "k".repeat(43);
+const config: GateConfig = {
+  allowlist: ["Owner@github"],
+  host: HOST,
+  port: 8443,
+  proxySecret: SECRET,
+};
 const ORIGIN = `https://${HOST}:8443`;
 const OWNER = "owner@github";
 const tailnet = (login = "owner@github") => ({
@@ -35,15 +41,49 @@ const tailnet = (login = "owner@github") => ({
 });
 
 describe("identity gate", () => {
-  const facts = (headers: IncomingHttpHeaders, remoteAddress = "127.0.0.1") => ({
+  const facts = (
+    headers: IncomingHttpHeaders,
+    remoteAddress = "127.0.0.1",
+    url = `/${SECRET}/`,
+  ) => ({
     remoteAddress,
     headers,
+    url,
   });
   it("accepts an allowlisted tailnet login on the tailnet host", () => {
     expect(checkRequest(facts(tailnet()), config)).toEqual({
       ok: true,
       login: "owner@github",
       name: "René",
+      path: "/",
+    });
+  });
+  it("strips Serve's secret prefix and keeps the rest of the target", () => {
+    for (const [url, path] of [
+      [`/${SECRET}`, "/"],
+      [`/${SECRET}/`, "/"],
+      [`/${SECRET}/mail/all?x=1`, "/mail/all?x=1"],
+      [`/${SECRET}?x=1`, "/?x=1"],
+      [`/${SECRET}/rpc`, "/rpc"],
+    ])
+      expect(checkRequest(facts(tailnet(), "127.0.0.1", url), config)).toMatchObject({
+        ok: true,
+        path,
+      });
+  });
+  it.each([
+    ["no prefix", "/"],
+    ["an app route without the prefix", "/mail/all"],
+    ["a wrong secret", `/${"x".repeat(43)}/`],
+    ["a longer secret", `/${SECRET}x/`],
+    ["a shorter secret", `/${SECRET.slice(1)}/`],
+    ["the secret later in the path", `/a/${SECRET}/`],
+    ["an absolute URL", `http://${HOST}/${SECRET}/`],
+  ])("refuses a forged identity with %s, before reading it", (_, url) => {
+    expect(checkRequest(facts(tailnet(), "127.0.0.1", url), config)).toEqual({
+      ok: false,
+      status: 404,
+      reason: "not-proxied",
     });
   });
   it.each([
@@ -268,11 +308,24 @@ describe("remote server", () => {
     await rm(base, { recursive: true, force: true });
   });
 
-  const call = (pathname: string, headers: Record<string, string>, method = "GET", body?: Buffer) =>
+  /** A request as Serve forwards it: `prefixed` false is one sent to the port directly. */
+  const call = (
+    pathname: string,
+    headers: Record<string, string>,
+    method = "GET",
+    body?: Buffer,
+    prefixed = true,
+  ) =>
     new Promise<{ status: number; headers: IncomingHttpHeaders; body: Buffer }>(
       (resolve, reject) => {
         const req = httpRequest(
-          { host: "127.0.0.1", port: server.port, path: pathname, method, headers },
+          {
+            host: "127.0.0.1",
+            port: server.port,
+            path: prefixed ? `/${SECRET}${pathname}` : pathname,
+            method,
+            headers,
+          },
           (res) => {
             const chunks: Buffer[] = [];
             res.on("data", (chunk: Buffer) => chunks.push(chunk));
@@ -514,7 +567,7 @@ describe("remote server", () => {
         {
           host: "127.0.0.1",
           port: server.port,
-          path: "/api/upload?account=gmail-account",
+          path: `/${SECRET}/api/upload?account=gmail-account`,
           method: "POST",
           headers: { ...headers, "transfer-encoding": "chunked" },
         },
@@ -532,7 +585,7 @@ describe("remote server", () => {
       const req = httpRequest({
         host: "127.0.0.1",
         port: server.port,
-        path: "/api/upload?account=gmail-account",
+        path: `/${SECRET}/api/upload?account=gmail-account`,
         method: "POST",
         headers: { ...headers, "content-length": String(upload.body.length) },
       });
@@ -585,13 +638,44 @@ describe("remote server", () => {
     ).toBe(415);
   });
 
-  const open = (headers: Record<string, string>) =>
+  const open = (headers: Record<string, string>, pathname = `/${SECRET}/rpc`) =>
     new Promise<{ status: number; socket?: WebSocket }>((resolve) => {
-      const socket = new WebSocket(`ws://127.0.0.1:${server.port}/rpc`, { headers });
+      const socket = new WebSocket(`ws://127.0.0.1:${server.port}${pathname}`, { headers });
       socket.once("open", () => resolve({ status: 101, socket }));
       socket.once("unexpected-response", (_, res) => resolve({ status: res.statusCode ?? 0 }));
       socket.once("error", () => resolve({ status: 0 }));
     });
+
+  it("refuses another local user's forged requests that lack Serve's secret prefix", async () => {
+    // Another macOS user can reach 127.0.0.1 and copy every header, even a session cookie.
+    const cookie = await signIn();
+    const forged = { ...tailnet(), cookie, origin: ORIGIN };
+    for (const pathname of ["/", "/mail/all/inbox", "/assets/app.js", "/api/session"]) {
+      const reply = await call(pathname, forged, "GET", undefined, false);
+      expect(reply.status, pathname).toBe(404);
+      expect(reply.headers["set-cookie"], pathname).toBeUndefined();
+    }
+    expect(
+      (await call("/api/attachment?message=m1&part=0.1", forged, "GET", undefined, false)).status,
+    ).toBe(404);
+    const upload = multipart([{ name: "a.txt", type: "text/plain", data: Buffer.from("x") }]);
+    expect(
+      (
+        await call(
+          "/api/upload?account=gmail-account",
+          { ...forged, "content-type": upload.type },
+          "POST",
+          upload.body,
+          false,
+        )
+      ).status,
+    ).toBe(404);
+    expect((await open(forged, "/rpc")).status).toBe(404);
+    expect((await open(forged, `/${"x".repeat(43)}/rpc`)).status).toBe(404);
+    const proxied = await open(forged);
+    expect(proxied.status).toBe(101);
+    proxied.socket?.close();
+  });
 
   it("upgrades the RPC socket only for the right origin, login and session", async () => {
     const cookie = await signIn();

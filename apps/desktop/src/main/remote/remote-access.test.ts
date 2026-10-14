@@ -24,6 +24,10 @@ const STATUS = JSON.stringify({
   User: { "7": { LoginName: "owner@github" } },
 });
 
+/** The launch's proxy secret, fixed for the tests. */
+const SECRET = "s".repeat(43);
+const backend = (port: number) => `http://127.0.0.1:${port}/${SECRET}`;
+
 let root: string;
 beforeEach(async () => {
   root = await mkdtemp(path.join(tmpdir(), "openmail-remote-"));
@@ -83,6 +87,7 @@ function harness(options: {
       return { code: 0, stdout: "" };
     },
     webRoot: root,
+    proxySecret: SECRET,
     quitTimeoutMs: 50,
     retryMs: options.retryMs ?? 20,
     ...(options.retryMaxMs ? { retryMaxMs: options.retryMaxMs } : {}),
@@ -121,7 +126,7 @@ const ours = (port: number) =>
   JSON.stringify({
     TCP: { "8443": { HTTPS: true } },
     Web: {
-      "mac.tail1234.ts.net:8443": { Handlers: { "/": { Proxy: `http://127.0.0.1:${port}` } } },
+      "mac.tail1234.ts.net:8443": { Handlers: { "/": { Proxy: backend(port) } } },
     },
   });
 
@@ -143,7 +148,7 @@ describe("remote access controller", () => {
     expect(h.calls).toEqual([
       ["status", "--json"],
       ["serve", "status", "--json"],
-      ["serve", "--bg", "--https=8443", `http://127.0.0.1:${port}`],
+      ["serve", "--bg", "--https=8443", backend(port)],
     ]);
     expect(h.last()).toMatchObject({
       enabled: true,
@@ -170,6 +175,22 @@ describe("remote access controller", () => {
     ]);
     expect(h.last()).toMatchObject({ enabled: false, status: "off", url: null });
     expect(h.rpcRunning()).toBe(0);
+  });
+
+  it("replaces its mapping from an earlier launch, which used another secret", async () => {
+    const earlier = (port: number) => ours(port).replace(SECRET, "e".repeat(43));
+    const h = harness({ serve: earlier });
+    await h.controller.init();
+    await h.controller.setEnabled(true);
+    const port = h.stored().port;
+    expect(h.calls).toEqual([
+      ["status", "--json"],
+      ["serve", "status", "--json"],
+      ["serve", "--https=8443", "off"],
+      ["serve", "--bg", "--https=8443", backend(port)],
+    ]);
+    expect(h.last()).toMatchObject({ status: "on" });
+    await h.controller.dispose();
   });
 
   it("refuses to overwrite a conflicting mapping and leaves it alone when turned off", async () => {
@@ -242,7 +263,7 @@ describe("remote access controller", () => {
       "--service=svc:openmail",
       "--bg",
       "--https=443",
-      `http://127.0.0.1:${port}`,
+      backend(port),
     ]);
     expect(h.last()?.url).toBe("https://openmail.tail1234.ts.net");
     await h.controller.dispose();
@@ -264,12 +285,7 @@ describe("remote access controller", () => {
 
     const next = harness({ settings: first.stored() });
     await next.controller.init();
-    expect(next.calls.at(-1)).toEqual([
-      "serve",
-      "--bg",
-      "--https=8443",
-      `http://127.0.0.1:${port}`,
-    ]);
+    expect(next.calls.at(-1)).toEqual(["serve", "--bg", "--https=8443", backend(port)]);
     expect(next.last()).toMatchObject({ status: "on" });
     await next.controller.dispose();
   });
@@ -278,14 +294,14 @@ describe("remote access controller", () => {
   const openBrowser = async (port: number) => {
     const headers = { host: "mac.tail1234.ts.net:8443", "tailscale-user-login": "owner@github" };
     const cookie = await new Promise<string>((resolve, reject) => {
-      httpRequest({ host: "127.0.0.1", port, path: "/", headers }, (res) => {
+      httpRequest({ host: "127.0.0.1", port, path: `/${SECRET}/`, headers }, (res) => {
         res.resume();
         resolve((res.headers["set-cookie"]?.[0] ?? "").split(";")[0] ?? "");
       })
         .on("error", reject)
         .end();
     });
-    const socket = new WebSocket(`ws://127.0.0.1:${port}/rpc`, {
+    const socket = new WebSocket(`ws://127.0.0.1:${port}/${SECRET}/rpc`, {
       headers: { ...headers, origin: "https://mac.tail1234.ts.net:8443", cookie },
     });
     await new Promise((resolve, reject) => {

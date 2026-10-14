@@ -9,7 +9,7 @@ import type { IncomingMessage, Prefs } from "@openmail/core/schema";
 import { fakeServer, TemporaryTestMailbox } from "@openmail/core/testing/node";
 import { Effect, Fiber, Layer, ManagedRuntime } from "effect";
 import { desktopRoot } from "../../../renderer/src/test-support/paths";
-import { createSessions, type GateConfig } from "../remote-auth";
+import { createSessions, newProxySecret, type GateConfig } from "../remote-auth";
 import { createConnectionHub, remoteRpcServer } from "../remote-rpc-server";
 import { startRemoteServer } from "../remote-server";
 
@@ -64,7 +64,8 @@ export async function serveWebApp(messages: IncomingMessage[], prefs: Partial<Pr
   );
   await runtime.runPromise(m.sync.sync());
 
-  const gate: GateConfig = { allowlist: [LOGIN], host: HOST, port: 8443 };
+  const proxySecret = newProxySecret();
+  const gate: GateConfig = { allowlist: [LOGIN], host: HOST, port: 8443, proxySecret };
   const hub = createConnectionHub();
   const rpc = Effect.runFork(
     Layer.launch(remoteRpcServer(hub)).pipe(Effect.provideService(Mailbox, m)),
@@ -79,8 +80,9 @@ export async function serveWebApp(messages: IncomingMessage[], prefs: Partial<Pr
     onConnection: hub.onConnection,
   });
 
-  // Stand-in for Tailscale Serve: adds the identity header and the tailnet
-  // Host and Origin, the way a browser at https://HOST:8443 would arrive.
+  // Stand-in for Tailscale Serve: adds the secret path prefix, the identity
+  // header and the tailnet Host and Origin, the way a browser at
+  // https://HOST:8443 would arrive.
   const rewrite = (
     headers: Record<string, string | string[] | undefined>,
     login: string = LOGIN,
@@ -129,7 +131,7 @@ export async function serveWebApp(messages: IncomingMessage[], prefs: Partial<Pr
       {
         host: "127.0.0.1",
         port: local.port,
-        path: intruder ? req.url?.slice(INTRUDER.length) : req.url,
+        path: `/${proxySecret}${intruder ? req.url?.slice(INTRUDER.length) : req.url}`,
         method: req.method,
         headers: rewrite(req.headers, intruder ? "intruder@github" : LOGIN),
       },
@@ -148,7 +150,7 @@ export async function serveWebApp(messages: IncomingMessage[], prefs: Partial<Pr
     sockets.add(socket);
     socket.once("close", () => sockets.delete(socket));
     const upstream = connect(local.port, "127.0.0.1", () => {
-      const lines = [`${req.method} ${req.url} HTTP/1.1`];
+      const lines = [`${req.method} /${proxySecret}${req.url} HTTP/1.1`];
       for (const [key, value] of Object.entries(rewrite(req.headers)))
         for (const item of Array.isArray(value) ? value : [value]) lines.push(`${key}: ${item}`);
       upstream.write(`${lines.join("\r\n")}\r\n\r\n`);
