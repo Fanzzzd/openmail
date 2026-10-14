@@ -5563,7 +5563,6 @@ msgid "Redo"
 msgstr "重做"
 
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
-#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Refresh"
 msgstr "刷新"
 

@@ -393,7 +393,7 @@ export function RemoteAccessSettings() {
             onClick={() => refresh({ payload: undefined })}
           >
             <RefreshCw className="size-3.5" />
-            <Trans>Refresh</Trans>
+            <Trans>Check again</Trans>
           </button>
         </SettingsRow>
       </SettingsGroup>

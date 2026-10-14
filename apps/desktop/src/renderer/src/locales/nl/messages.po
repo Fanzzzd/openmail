@@ -5553,7 +5553,6 @@ msgid "Redo"
 msgstr "Opnieuw"
 
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
-#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Refresh"
 msgstr "Vernieuwen"
 

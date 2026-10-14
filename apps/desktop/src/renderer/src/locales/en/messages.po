@@ -5557,7 +5557,6 @@ msgid "Redo"
 msgstr "Redo"
 
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
-#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Refresh"
 msgstr "Refresh"
 
