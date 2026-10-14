@@ -206,7 +206,7 @@ import { GMAIL_PERMANENT_DELETE_SCOPE } from "../domain/folder-actions.js";
           "1234567890",
         );
         assert.strictEqual((yield* store.getMessage(`${gmail.id}/draft`)).bodyText, "1234567890");
-        assert.strictEqual((yield* m.threads({ search: "old" }))[0]?.subject, "old");
+        assert.strictEqual((yield* m.reading.threads({ search: "old" }))[0]?.subject, "old");
         const database = yield* m.cacheDatabaseSize;
         assert.ok(database.totalBytes > 0);
         assert.ok(database.reusableBytes >= 0 && database.reusableBytes <= database.totalBytes);
@@ -492,7 +492,7 @@ import { GMAIL_PERMANENT_DELETE_SCOPE } from "../domain/folder-actions.js";
       yield* m.sync();
       flagsOnly = true;
       yield* m.sync();
-      assert.strictEqual((yield* m.threads({ mailbox: "drafts" }))[0]?.isStarred, true);
+      assert.strictEqual((yield* m.reading.threads({ mailbox: "drafts" }))[0]?.isStarred, true);
       yield* m.compose.saveDraft({
         id: draft.id,
         accountId: account.id,
@@ -501,7 +501,7 @@ import { GMAIL_PERMANENT_DELETE_SCOPE } from "../domain/folder-actions.js";
       for (const [id, message] of server.messages)
         server.messages.set(id, { ...message, isStarred: true });
       yield* m.sync();
-      const cleared = (yield* m.threads({ mailbox: "drafts" }))[0];
+      const cleared = (yield* m.reading.threads({ mailbox: "drafts" }))[0];
       assert.strictEqual(cleared?.isStarred, false);
       assert.ok(!cleared?.labels.includes("Label_work"));
     }).pipe(

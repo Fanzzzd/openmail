@@ -64,7 +64,9 @@ function harness(options: {
             ),
           ),
       },
-      attachmentPart: () => Effect.die("unused"),
+      reading: {
+        attachmentPart: () => Effect.die("unused"),
+      },
       accounts: Effect.succeed([]),
     },
     installed: async () => installed,

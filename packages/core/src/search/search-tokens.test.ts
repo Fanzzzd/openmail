@@ -265,7 +265,7 @@ it.effect(
       }
       for (const accountId of ids)
         for (const { type } of fixtures) {
-          const result = yield* mail.searchServer({
+          const result = yield* mail.reading.searchServer({
             accountIds: [accountId],
             search: `has:${type} cc:carol -from:mallory label:"Work \\"private\\""`,
           });
@@ -275,7 +275,7 @@ it.effect(
           );
           assert.deepStrictEqual(result.errors, []);
         }
-      const excluded = yield* mail.searchServer({ search: "-has:pdf" });
+      const excluded = yield* mail.reading.searchServer({ search: "-has:pdf" });
       assert.strictEqual(excluded.threads.length, 15);
       assert.strictEqual(server.searched.length, 18);
     }).pipe(

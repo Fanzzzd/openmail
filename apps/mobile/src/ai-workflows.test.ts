@@ -163,8 +163,10 @@ it("assistant archive, label and draft writes stay proposals even in allow mode,
         );
         const proposals = yield* mailbox.proposals;
         expect(proposals).toHaveLength(3);
-        expect((yield* mailbox.thread(messageId))[0]?.labels).toContain("INBOX");
-        expect((yield* mailbox.thread(messageId))[0]?.labels).not.toContain("Label_project");
+        expect((yield* mailbox.reading.thread(messageId))[0]?.labels).toContain("INBOX");
+        expect((yield* mailbox.reading.thread(messageId))[0]?.labels).not.toContain(
+          "Label_project",
+        );
         expect(server.sent).toEqual([]);
         expect(server.draftLog).toEqual([]);
         for (const proposal of proposals) {
@@ -177,8 +179,8 @@ it("assistant archive, label and draft writes stay proposals even in allow mode,
             expect(draft.message.text).toBe("Proposed reply");
           }
         }
-        expect((yield* mailbox.thread(messageId))[0]?.labels).not.toContain("INBOX");
-        expect((yield* mailbox.thread(messageId))[0]?.labels).toContain("Label_project");
+        expect((yield* mailbox.reading.thread(messageId))[0]?.labels).not.toContain("INBOX");
+        expect((yield* mailbox.reading.thread(messageId))[0]?.labels).toContain("Label_project");
         expect(server.sent).toEqual([]);
       }),
     );
@@ -302,7 +304,7 @@ for (const provider of ["gmail", "outlook", "imap"] as const)
               signatureId: signature.id,
             });
           const id = `${account.id}/m`;
-          const original = (yield* mailbox.thread(id))[0];
+          const original = (yield* mailbox.reading.thread(id))[0];
           expect(
             (yield* signedMobileMessage(mailbox, account.id, composeMessage("new"))).text,
           ).toContain("My signature");
@@ -323,13 +325,17 @@ for (const provider of ["gmail", "outlook", "imap"] as const)
           ).toBe("");
           yield* mailbox.snoozeWithUndo([id], Date.now() + 60000);
           expect(
-            (yield* mailbox.threads(pageQuery(account.id, "snoozed"))).map((thread) => thread.id),
+            (yield* mailbox.reading.threads(pageQuery(account.id, "snoozed"))).map(
+              (thread) => thread.id,
+            ),
           ).toContain(id);
           const unsnooze = yield* mailbox.modifyWithUndo([id], { kind: "inbox" });
-          expect(yield* mailbox.threads(pageQuery(account.id, "snoozed"))).toEqual([]);
+          expect(yield* mailbox.reading.threads(pageQuery(account.id, "snoozed"))).toEqual([]);
           yield* mailbox.undoBatch(unsnooze.undoId);
           expect(
-            (yield* mailbox.threads(pageQuery(account.id, "snoozed"))).map((thread) => thread.id),
+            (yield* mailbox.reading.threads(pageQuery(account.id, "snoozed"))).map(
+              (thread) => thread.id,
+            ),
           ).toContain(id);
         }),
       );
@@ -402,7 +408,10 @@ it("mobile reviews every recipient when the original was expunged and preserves 
         expect(reviewed).toBe(true);
         const failed = {
           ...mailbox,
-          thread: () => Effect.die(new ProviderError({ message: "Offline" })),
+          reading: {
+            ...mailbox.reading,
+            thread: () => Effect.die(new ProviderError({ message: "Offline" })),
+          },
         };
         expect(
           (yield* mobileRecipientWarnings(failed, account.id, message).pipe(Effect.exit))._tag,

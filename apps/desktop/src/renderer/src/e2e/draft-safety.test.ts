@@ -114,7 +114,7 @@ it("pagehide saves a composer's unsaved typing", async () => {
   expect(h.requests.some((request) => request.tag === "SaveDraft")).toBe(false);
   window.dispatchEvent(new Event("pagehide"));
   await eventually(async () =>
-    expect(await h.run(h.m.threads({ mailbox: "drafts" }))).toHaveLength(1),
+    expect(await h.run(h.m.reading.threads({ mailbox: "drafts" }))).toHaveLength(1),
   );
 });
 

@@ -151,7 +151,7 @@ it.effect(
         (yield* Effect.flip(mailbox.outbox.sendAgain("gmail:me@example.com/sent")))._tag,
         "ProviderError",
       );
-      assert.deepStrictEqual(yield* mailbox.threads({ mailbox: "drafts" }), []);
+      assert.deepStrictEqual(yield* mailbox.reading.threads({ mailbox: "drafts" }), []);
     }).pipe(Effect.provide(TestMailbox({ gmail: server })));
   },
 );

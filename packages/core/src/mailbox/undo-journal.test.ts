@@ -176,7 +176,7 @@ import { makeBatchMailbox } from "./mailbox-batch.js";
             "category:A",
             "category:B",
           ]);
-          assert.ok((yield* m.labels()).some((label) => label.id === "category:A"));
+          assert.ok((yield* m.reading.labels()).some((label) => label.id === "category:A"));
           return result.undoId;
         }).pipe(Effect.provide(session()));
         yield* Effect.gen(function* () {
@@ -250,14 +250,14 @@ import { makeBatchMailbox } from "./mailbox-batch.js";
           yield* m.sync();
           const now = yield* Clock.currentTimeMillis;
           const batch = yield* m.snoozeWithUndo(["gmail:me@example.com/one"], now + 60_000);
-          assert.strictEqual((yield* m.threads({ mailbox: "snoozed" })).length, 1);
+          assert.strictEqual((yield* m.reading.threads({ mailbox: "snoozed" })).length, 1);
           return batch.undoId;
         }).pipe(Effect.provide(session()));
         yield* Effect.gen(function* () {
           const m = yield* Mailbox;
           yield* m.undoBatch(undoId);
-          assert.strictEqual((yield* m.threads({ mailbox: "snoozed" })).length, 0);
-          assert.strictEqual((yield* m.threads({ mailbox: "inbox" })).length, 1);
+          assert.strictEqual((yield* m.reading.threads({ mailbox: "snoozed" })).length, 0);
+          assert.strictEqual((yield* m.reading.threads({ mailbox: "inbox" })).length, 1);
           assert.strictEqual(server.pushed.length, 0);
         }).pipe(Effect.provide(session()));
       }).pipe(Effect.scoped),
@@ -493,14 +493,14 @@ import { makeBatchMailbox } from "./mailbox-batch.js";
         yield* m.sync();
         const id = `${account.id}/one`;
         const batch = yield* m.snoozeWithUndo([id], 2000000000000);
-        assert.ok((yield* m.thread(id))[0]?.labels.includes("SNOOZED"));
+        assert.ok((yield* m.reading.thread(id))[0]?.labels.includes("SNOOZED"));
         yield* m.undoBatch(batch.undoId);
-        assert.ok((yield* m.thread(id))[0]?.labels.includes("INBOX"));
-        assert.strictEqual((yield* m.threads({ mailbox: "snoozed" })).length, 0);
+        assert.ok((yield* m.reading.thread(id))[0]?.labels.includes("INBOX"));
+        assert.strictEqual((yield* m.reading.threads({ mailbox: "snoozed" })).length, 0);
         yield* m.snooze([id], 2000000000000);
         const change = yield* m.snoozeWithUndo([id], 2100000000000);
         yield* m.undoBatch(change.undoId);
-        assert.strictEqual((yield* m.threads({ mailbox: "snoozed" })).length, 1);
+        assert.strictEqual((yield* m.reading.threads({ mailbox: "snoozed" })).length, 1);
         assert.strictEqual(server.pushed.length, 0);
       }).pipe(Effect.provide(TestMailbox({ gmail: server })));
     },

@@ -373,9 +373,13 @@ it("background wakes reminders locally while offline, respects account notificat
   await runtime.runPromise(
     Effect.flatMap(Store, (store) => store.snooze(message.id, Date.now() - 1000)),
   );
-  expect((await runtime.runPromise(mailbox.thread(message.id)))[0]?.labels).toContain("SNOOZED");
+  expect((await runtime.runPromise(mailbox.reading.thread(message.id)))[0]?.labels).toContain(
+    "SNOOZED",
+  );
   await runBackgroundRefresh();
-  expect((await runtime.runPromise(mailbox.thread(message.id)))[0]?.labels).toContain("SNOOZED");
+  expect((await runtime.runPromise(mailbox.reading.thread(message.id)))[0]?.labels).toContain(
+    "SNOOZED",
+  );
   await saveBackgroundPreferences(runtime, {
     ...DEFAULT_MOBILE_BACKGROUND,
     refresh: true,
@@ -384,7 +388,7 @@ it("background wakes reminders locally while offline, respects account notificat
   native.online = false;
   const poll = vi.spyOn(mailbox, "pollInbox");
   await runBackgroundRefresh();
-  const woken = (await runtime.runPromise(mailbox.thread(message.id)))[0];
+  const woken = (await runtime.runPromise(mailbox.reading.thread(message.id)))[0];
   expect(woken?.labels).toContain("INBOX");
   expect(woken?.labels).not.toContain("SNOOZED");
   expect(poll).not.toHaveBeenCalled();
@@ -446,7 +450,9 @@ it("an open offline app wakes an actual snoozed thread on the foreground timer a
   try {
     await vi.advanceTimersByTimeAsync(30_000);
     await vi.waitFor(() => expect(native.schedule).toHaveBeenCalledTimes(1));
-    expect((await runtime.runPromise(mailbox.thread(message.id)))[0]?.labels).toContain("INBOX");
+    expect((await runtime.runPromise(mailbox.reading.thread(message.id)))[0]?.labels).toContain(
+      "INBOX",
+    );
     await vi.advanceTimersByTimeAsync(60_000);
     expect(native.schedule).toHaveBeenCalledTimes(1);
   } finally {

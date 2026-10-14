@@ -119,7 +119,7 @@ beforeEach(() => {
 const downloadsFor = (m: Mailbox["Service"]) => {
   const pending: Promise<void>[] = [];
   const list = createDownloads({
-    fetch: (source) => m.attachmentPart(source.messageId, source.path),
+    fetch: (source) => m.reading.attachmentPart(source.messageId, source.path),
     blocked: ({ filename }) => /\.(command|webloc)$/.test(filename),
     quarantine: () => Effect.void,
     openPath: native.open,
@@ -216,7 +216,7 @@ it("dot-only attachment filenames save into the attachment folder without a dial
       Effect.gen(function* () {
         yield* m.app.setPrefs({ attachmentSaveFolder: { kind: "custom", path: output } });
         const { list, settle } = downloadsFor(m);
-        expect((yield* m.attachmentPart(id, [2])).filename).toBe(" .. ");
+        expect((yield* m.reading.attachmentPart(id, [2])).filename).toBe(" .. ");
         expect(
           yield* attachmentAction(m, parent, { messageId: id, paths: [[2]], action: "save" }, list),
         ).toEqual({ count: 1, failures: [] });
@@ -234,7 +234,7 @@ it("dot-only attachment filenames produce a private temp file before drag-out", 
   await withFiles(
     (m, id, parent) =>
       Effect.gen(function* () {
-        expect((yield* m.attachmentPart(id, [2])).filename).toBe(" .. ");
+        expect((yield* m.reading.attachmentPart(id, [2])).filename).toBe(" .. ");
         yield* prepareAttachmentDrag(m, parent, { messageId: id, paths: [[2]] });
         expect(
           yield* attachmentAction(
@@ -324,7 +324,7 @@ it("multi-copy writes native file URIs; drag uses prepared files without another
         ).pipe(Effect.result))._tag,
       ).toBe("Failure");
       yield* prepareAttachmentDrag(m, parent, { messageId: id, paths });
-      const fetch = vi.spyOn(m, "attachmentParts");
+      const fetch = vi.spyOn(m.reading, "attachmentParts");
       expect(
         yield* attachmentAction(m, parent, { messageId: id, paths, action: "drag" }, noDownloads),
       ).toEqual({
@@ -360,10 +360,10 @@ it("multi-copy writes native file URIs; drag uses prepared files without another
 it("a slow previous selection cannot replace the latest prepared drag", async () => {
   await withFiles((m, id, parent) =>
     Effect.gen(function* () {
-      const original = m.attachmentParts.bind(m);
+      const original = m.reading.attachmentParts.bind(m);
       const started = yield* Deferred.make<void>();
       const release = yield* Deferred.make<void>();
-      vi.spyOn(m, "attachmentParts").mockImplementation((messageId, target) =>
+      vi.spyOn(m.reading, "attachmentParts").mockImplementation((messageId, target) =>
         original(messageId, target).pipe(
           Effect.tap(() =>
             target[0]?.[0] === 0
@@ -399,7 +399,7 @@ it("Save To asks for a folder, keeps duplicate filenames, and cancel fetches not
   await withFiles((m, id, parent) =>
     Effect.gen(function* () {
       const { list, settle } = downloadsFor(m);
-      const fetch = vi.spyOn(m, "attachmentPart");
+      const fetch = vi.spyOn(m.reading, "attachmentPart");
       const request = { messageId: id, paths: [[0], [1]] };
       expect(yield* saveAttachmentsTo(m, list, parent, request)).toBe(0);
       expect(fetch).not.toHaveBeenCalled();

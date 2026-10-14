@@ -99,7 +99,7 @@ export const makeToolContext = Effect.gen(function* () {
   ) => Effect.flatMap(accountIdsFor(id), (ids) => (ids.length ? f(ids) : Effect.succeed([])));
   const requireMessage = (id: string) =>
     Effect.gen(function* () {
-      const message = (yield* mailbox.thread(id).pipe(Effect.mapError(toToolError))).find(
+      const message = (yield* mailbox.reading.thread(id).pipe(Effect.mapError(toToolError))).find(
         (m) => m.id === id,
       );
       if (!message)
@@ -159,7 +159,7 @@ export const makeToolContext = Effect.gen(function* () {
   const visibleProposals = Effect.gen(function* () {
     const allowed = new Set(yield* accountIdsFor());
     const rows = yield* mailbox.proposals;
-    const owners = yield* mailbox.messageAccounts(threadsOf(rows));
+    const owners = yield* mailbox.reading.messageAccounts(threadsOf(rows));
     return rows.filter(visibleTo(allowed, owners));
   });
   /** One pending proposal the caller may read, or None. */
@@ -168,7 +168,7 @@ export const makeToolContext = Effect.gen(function* () {
       const row = yield* mailbox.proposal(id).pipe(Effect.option);
       if (Option.isNone(row) || row.value.status !== "pending") return Option.none<Proposal>();
       const allowed = new Set(yield* accountIdsFor());
-      const owners = yield* mailbox.messageAccounts(threadsOf([row.value]));
+      const owners = yield* mailbox.reading.messageAccounts(threadsOf([row.value]));
       return visibleTo(allowed, owners)(row.value) ? row : Option.none<Proposal>();
     });
   return {

@@ -173,7 +173,7 @@ export const threadHandlers = ({
         accountIds = accountIds.filter((id) => inProfile.has(id));
         if (!accountIds.length) return { threads: [] };
       }
-      const rows = yield* mailbox
+      const rows = yield* mailbox.reading
         .threads({
           mailbox: p.mailbox,
           accountIds,
@@ -214,9 +214,9 @@ export const threadHandlers = ({
       };
       if (!q.accountIds.length) return { threads: [], truncated: false, ignored: [], errors: [] };
       const found = p.server
-        ? yield* mailbox.searchServer(q).pipe(Effect.mapError(toToolError))
+        ? yield* mailbox.reading.searchServer(q).pipe(Effect.mapError(toToolError))
         : {
-            threads: yield* mailbox.threads(q).pipe(Effect.mapError(toToolError)),
+            threads: yield* mailbox.reading.threads(q).pipe(Effect.mapError(toToolError)),
             truncated: false,
             errors: [],
           };
@@ -250,7 +250,7 @@ export const threadHandlers = ({
     }),
     read_thread: Effect.fnUntraced(function* ({ message_id, token_budget }) {
       yield* requireMessage(message_id);
-      const view = yield* mailbox
+      const view = yield* mailbox.reading
         .threadForModel(message_id, token_budget)
         .pipe(Effect.mapError(toToolError));
       return yield* toolAttempt(() => boundThread(view, token_budget));

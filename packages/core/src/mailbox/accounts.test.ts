@@ -113,17 +113,26 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
           assert.deepStrictEqual(yield* mailbox.pollInbox(), []);
           yield* mailbox.fetchOlder({ accountIds: [id] });
           yield* mailbox.calendar.refreshContacts(id);
-          assert.deepStrictEqual((yield* mailbox.searchServer({ search: "Alice" })).threads, []);
+          assert.deepStrictEqual(
+            (yield* mailbox.reading.searchServer({ search: "Alice" })).threads,
+            [],
+          );
           assert.strictEqual(server.failNext, failure);
           server.failNext = undefined;
-          assert.deepStrictEqual(yield* mailbox.threads({ mailbox: "all", accountIds: [id] }), []);
-          assert.deepStrictEqual(yield* mailbox.unreadCounts, {});
-          assert.deepStrictEqual(yield* mailbox.unreadByLabel(), {});
+          assert.deepStrictEqual(
+            yield* mailbox.reading.threads({ mailbox: "all", accountIds: [id] }),
+            [],
+          );
+          assert.deepStrictEqual(yield* mailbox.reading.unreadCounts, {});
+          assert.deepStrictEqual(yield* mailbox.reading.unreadByLabel(), {});
           assert.deepStrictEqual(yield* mailbox.app.takeNotifications, []);
           assert.deepStrictEqual(yield* mailbox.compose.suggestContacts("alice"), []);
           assert.deepStrictEqual(yield* mailbox.compose.suggestContacts("contact"), []);
           assert.strictEqual((yield* store.listPendingOps).length, 1);
-          assert.strictEqual((yield* mailbox.thread(`${id}/initial`))[0]?.bodyText, "cached body");
+          assert.strictEqual(
+            (yield* mailbox.reading.thread(`${id}/initial`))[0]?.bodyText,
+            "cached body",
+          );
           assert.strictEqual(tokens.get(id), token);
           const accounts = yield* mailbox.accounts;
           assert.strictEqual(accountName(accounts[0]!), "Personal");
@@ -153,7 +162,7 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
           yield* mailbox.sync(id);
           assert.strictEqual((yield* store.listPendingOps).length, 0);
           assert.ok(
-            (yield* mailbox.threads({ mailbox: "all" })).some(
+            (yield* mailbox.reading.threads({ mailbox: "all" })).some(
               (m) => m.id === `${id}/while-disabled`,
             ),
           );
@@ -372,7 +381,7 @@ it.effect(
         assert.strictEqual(aliases, beforeAliases);
         assert.isFalse(yield* store.hasMessage(`${account.id}/late`));
         assert.strictEqual(
-          (yield* mailbox.thread(`${account.id}/initial`))[0]?.bodyText,
+          (yield* mailbox.reading.thread(`${account.id}/initial`))[0]?.bodyText,
           "cached body",
         );
         assert.deepStrictEqual(yield* mailbox.app.takeNotifications, []);

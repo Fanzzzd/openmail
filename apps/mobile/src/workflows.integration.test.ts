@@ -29,12 +29,14 @@ for (const provider of ["gmail", "outlook"] as const) {
           const mailbox = yield* Mailbox;
           const account = yield* mailbox.connect({ provider });
           yield* mailbox.sync(account.id);
-          const row = (yield* mailbox.threads(
+          const row = (yield* mailbox.reading.threads(
             searchQuery(account.id, "from:alice@example.test is:unread budget"),
           ))[0];
           if (!row) throw new Error("missing message");
           const result = yield* mailbox.modifyWithUndo([row.id], { kind: "read", value: true });
-          expect((yield* mailbox.threads({ accountIds: [account.id] }))[0]?.isUnread).toBe(false);
+          expect((yield* mailbox.reading.threads({ accountIds: [account.id] }))[0]?.isUnread).toBe(
+            false,
+          );
           yield* mailbox.undoBatch(result.undoId);
           const moved = yield* mailbox.modifyWithUndo(
             [row.id],

@@ -175,7 +175,7 @@ export const DesktopLive = Layer.effect(
      * folder finds it. A message no longer stored here opens on the web.
      */
     const showThread = (id: string) =>
-      mailbox.thread(id).pipe(
+      mailbox.reading.thread(id).pipe(
         Effect.flatMap((messages) =>
           Effect.map(mailbox.accounts, (accounts) => {
             const owner = accounts.find((account) => account.id === messages[0]?.accountId);
@@ -194,7 +194,7 @@ export const DesktopLive = Layer.effect(
         Effect.catchTag("NotFound", () =>
           Effect.gen(function* () {
             const prefs = yield* mailbox.app.prefs;
-            const url = yield* mailbox.messageWebUrl(id);
+            const url = yield* mailbox.reading.messageWebUrl(id);
             yield* Effect.promise(() => openExternal(url, prefs.cleanLinks !== false));
           }).pipe(Effect.catch(() => Effect.sync(() => linkError("missing")))),
         ),
@@ -226,7 +226,7 @@ export const DesktopLive = Layer.effect(
             // Legacy uncached links retain their launch behavior. New single links resolve and validate ownership.
             const id =
               link.id.startsWith("rfc:") || link.single !== undefined
-                ? yield* mailbox.resolveMailLink(link.id)
+                ? yield* mailbox.reading.resolveMailLink(link.id)
                 : link.id;
             if (link.single) openMessageWindow(id);
             else yield* showThread(id);
@@ -290,11 +290,11 @@ export const DesktopLive = Layer.effect(
         const accountIds = spaceAccountIds(activeSpace, accounts);
         const prefs = yield* mailbox.app.prefs;
         configureSpelling(prefs);
-        const folderCounts = yield* mailbox.unreadCounts;
+        const folderCounts = yield* mailbox.reading.unreadCounts;
         const counts = prefs.threadGrouping
           ? Object.fromEntries(
               yield* Effect.forEach(accounts, (account) =>
-                mailbox
+                mailbox.reading
                   .threadCount({
                     mailbox: "inbox",
                     accountIds: [account.id],
@@ -322,7 +322,7 @@ export const DesktopLive = Layer.effect(
           ]),
         );
         const unread = accountIds.reduce((total, id) => total + (counts[id] ?? 0), 0);
-        const recent = yield* mailbox
+        const recent = yield* mailbox.reading
           .threads({
             mailbox: "inbox",
             unreadOnly: true,
@@ -709,7 +709,9 @@ export const DesktopLive = Layer.effect(
       for (const notification of history) {
         const link = parseAppLink(notification.id);
         if (link?.kind === "message") {
-          const messages = yield* mailbox.thread(link.id).pipe(Effect.orElseSucceed(() => []));
+          const messages = yield* mailbox.reading
+            .thread(link.id)
+            .pipe(Effect.orElseSucceed(() => []));
           const accounts = yield* mailbox.accounts;
           const ids = messages.map((m) => m.accountId);
           if (ids.some((id) => accounts.find((a) => a.id === id)?.enabled === false)) {

@@ -18,7 +18,10 @@ export default function Mailboxes() {
   const [failed, setFailed] = useState(false);
   const labels = useMailboxQuery(
     useCallback(
-      () => runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.labels([accountId]))),
+      () =>
+        runtime.runPromise(
+          Effect.flatMap(Mailbox, (mailbox) => mailbox.reading.labels([accountId])),
+        ),
       [runtime, accountId],
     ),
   );
@@ -26,7 +29,7 @@ export default function Mailboxes() {
     useCallback(
       () =>
         runtime.runPromise(
-          Effect.flatMap(Mailbox, (mailbox) => mailbox.unreadByLabel([accountId])),
+          Effect.flatMap(Mailbox, (mailbox) => mailbox.reading.unreadByLabel([accountId])),
         ),
       [runtime, accountId],
     ),

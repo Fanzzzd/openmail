@@ -131,7 +131,7 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
         ...(yield* mailbox.sendAs).map((a) => a.address),
       ];
       for (let read = 0; read < 2; read++) {
-        const [cached] = yield* mailbox.thread(`${account.id}/one`);
+        const [cached] = yield* mailbox.reading.thread(`${account.id}/one`);
         assert.ok(cached);
         assert.deepStrictEqual(cached.replyTo, message.replyTo);
         assert.deepStrictEqual(replyRecipients(cached, ownAddresses, true), {
@@ -139,7 +139,7 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
           cc: [other],
         });
       }
-      const [original] = yield* mailbox.thread(`${account.id}/one`);
+      const [original] = yield* mailbox.reading.thread(`${account.id}/one`);
       assert.ok(original);
       const targets = replyRecipients(original, ownAddresses, true);
       yield* mailbox.perform(
@@ -163,7 +163,7 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
       assert.deepStrictEqual(server.sent[0]?.message.cc, [other]);
       server.messages.set("one", { ...message, from: alias, to: [me, other] });
       yield* mailbox.sync();
-      const [self] = yield* mailbox.thread(`${account.id}/one`);
+      const [self] = yield* mailbox.reading.thread(`${account.id}/one`);
       assert.ok(self);
       assert.deepStrictEqual(replyRecipients(self, ownAddresses, true), { to: [other], cc: [] });
     }).pipe(

@@ -45,21 +45,21 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
       Effect.gen(function* () {
         server.messages.set("remote", incoming("remote", { date: 3000 }));
         server.messages.set("same", incoming("same", { threadId: "t-m1", date: 4000 }));
-        assert.strictEqual((yield* m.threads({ search: "report" })).length, 2);
-        const found = yield* m.searchServer({
+        assert.strictEqual((yield* m.reading.threads({ search: "report" })).length, 2);
+        const found = yield* m.reading.searchServer({
           search: "report",
           accountIds: ["gmail:me@gmail.com"],
         });
         assert.strictEqual(found.threads.length, 3);
         assert.strictEqual(found.threads[0]?.id, "gmail:me@gmail.com/same");
-        assert.strictEqual((yield* m.thread("gmail:me@gmail.com/remote")).length, 1);
+        assert.strictEqual((yield* m.reading.thread("gmail:me@gmail.com/remote")).length, 1);
         server.failNext = new ProviderError({ message: "offline" });
-        const offline = yield* m.searchServer({ search: "report" });
+        const offline = yield* m.reading.searchServer({ search: "report" });
         assert.strictEqual(offline.threads.length, 3);
         assert.strictEqual(offline.errors.length, 1);
         assert.strictEqual((yield* m.accounts)[0]?.needsReauth, false);
         assert.strictEqual(
-          (yield* m.searchServer({ search: "report", accountIds: [] })).threads.length,
+          (yield* m.reading.searchServer({ search: "report", accountIds: [] })).threads.length,
           0,
         );
       }),
@@ -74,22 +74,22 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
           yield* m.snooze(["gmail:me@gmail.com/m1"], 10_000);
           assert.strictEqual(server.pushed.length, 0); // Hiding is local; Gmail has no snooze API.
           yield* m.sync();
-          assert.strictEqual((yield* m.threads({ mailbox: "inbox" })).length, 1);
-          assert.strictEqual((yield* m.threads({ mailbox: "snoozed" })).length, 1);
+          assert.strictEqual((yield* m.reading.threads({ mailbox: "inbox" })).length, 1);
+          assert.strictEqual((yield* m.reading.threads({ mailbox: "snoozed" })).length, 1);
           server.messages.set("reply", incoming("reply", { threadId: "t-m1", date: 1500 }));
           yield* m.sync();
-          assert.strictEqual((yield* m.threads({ mailbox: "inbox" })).length, 1);
+          assert.strictEqual((yield* m.reading.threads({ mailbox: "inbox" })).length, 1);
           yield* TestClock.adjust("10 seconds");
           yield* m.wakeSnoozed();
-          const inbox = yield* m.threads({ mailbox: "inbox" });
+          const inbox = yield* m.reading.threads({ mailbox: "inbox" });
           assert.strictEqual(inbox[0]?.threadId, "t-m1");
           assert.strictEqual(inbox[0]?.isUnread, true);
-          assert.deepStrictEqual(yield* m.threads({ mailbox: "snoozed" }), []);
+          assert.deepStrictEqual(yield* m.reading.threads({ mailbox: "snoozed" }), []);
           assert.strictEqual(server.pushed.length, 2);
           yield* m.wakeSnoozed();
           assert.strictEqual(server.pushed.length, 2);
           yield* m.sync();
-          assert.strictEqual((yield* m.threads({ mailbox: "inbox" }))[0]?.isUnread, true);
+          assert.strictEqual((yield* m.reading.threads({ mailbox: "inbox" }))[0]?.isUnread, true);
         }),
       ),
   );
@@ -113,7 +113,7 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
       yield* Effect.gen(function* () {
         const m = yield* Mailbox;
         yield* m.wakeSnoozed();
-        const inbox = yield* m.threads({ mailbox: "inbox" });
+        const inbox = yield* m.reading.threads({ mailbox: "inbox" });
         assert.strictEqual(inbox.length, 1);
         assert.strictEqual(inbox[0]?.isUnread, true);
       }).pipe(Effect.provide(MailboxLive({ backgroundFlush: false })));
@@ -129,14 +129,15 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
         yield* m.wakeSnoozed();
         assert.strictEqual(server.pushed.length, 0); // The dependent move waits for the failed unread op.
         assert.strictEqual(
-          (yield* m.threads({ mailbox: "inbox" })).find((row) => row.id === "gmail:me@gmail.com/m1")
-            ?.isUnread,
+          (yield* m.reading.threads({ mailbox: "inbox" })).find(
+            (row) => row.id === "gmail:me@gmail.com/m1",
+          )?.isUnread,
           true,
         );
         yield* TestClock.adjust("5 seconds");
         yield* m.sync();
         assert.strictEqual(server.pushed.length, 2);
-        assert.strictEqual((yield* m.thread("gmail:me@gmail.com/m1"))[0]?.isUnread, true);
+        assert.strictEqual((yield* m.reading.thread("gmail:me@gmail.com/m1"))[0]?.isUnread, true);
       }),
     ),
   );
@@ -146,7 +147,7 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
       Effect.gen(function* () {
         const id = "gmail:me@gmail.com";
         yield* m.changeLabel(id, { kind: "create", name: "Customers" });
-        const [label] = yield* m.labels([id]);
+        const [label] = yield* m.reading.labels([id]);
         assert.ok(label);
         yield* m.changeLabel(id, { kind: "rename", id: label.id, name: "Clients" });
         yield* m.changeLabel(id, { kind: "color", id: label.id, color: "#4986e7" });
@@ -159,12 +160,12 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
         });
         yield* m.setOrganization({ accountId: id, categories: false });
         yield* m.sync();
-        assert.strictEqual((yield* m.labels([id]))[0]?.name, "Clients");
-        assert.strictEqual((yield* m.labels([id]))[0]?.color, "#4986e7");
+        assert.strictEqual((yield* m.reading.labels([id]))[0]?.name, "Clients");
+        assert.strictEqual((yield* m.reading.labels([id]))[0]?.color, "#4986e7");
         assert.strictEqual((yield* m.labelPreferences)[0]?.favorite, true);
         assert.strictEqual((yield* m.organization)[0]?.categories, false);
         yield* m.changeLabel(id, { kind: "delete", id: label.id });
-        assert.deepStrictEqual(yield* m.labels([id]), []);
+        assert.deepStrictEqual(yield* m.reading.labels([id]), []);
         const exit = yield* Effect.exit(m.changeLabel(id, { kind: "delete", id: "INBOX" }));
         assert.strictEqual(exit._tag, "Failure");
       }),
@@ -301,7 +302,7 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
         const sync = yield* m.sync();
         assert.strictEqual(sync[0]?.error, undefined);
         assert.strictEqual((yield* m.accounts)[0]?.needsReauth, false);
-        assert.strictEqual((yield* m.threads({ mailbox: "inbox" })).length, 2);
+        assert.strictEqual((yield* m.reading.threads({ mailbox: "inbox" })).length, 2);
       }),
     ),
   );
@@ -365,9 +366,11 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
       Effect.gen(function* () {
         yield* m.snooze(["gmail:me@gmail.com/m1"], 1000);
         yield* TestClock.adjust("2 seconds");
-        yield* m.threads({ mailbox: "inbox" });
+        yield* m.reading.threads({ mailbox: "inbox" });
         assert.strictEqual(server.pushed.length, 0);
-        assert.ok((yield* m.thread("gmail:me@gmail.com/m1"))[0]?.labels.includes("SNOOZED"));
+        assert.ok(
+          (yield* m.reading.thread("gmail:me@gmail.com/m1"))[0]?.labels.includes("SNOOZED"),
+        );
         yield* m.sync();
         assert.strictEqual(server.pushed.length, 2);
       }),
@@ -419,9 +422,9 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
           { kind: "modify", threads: ["gmail:me@gmail.com/m1"], op: { kind: "archive" } },
           { kind: "user", surface: "app" },
         );
-        assert.ok(!(yield* m.thread("gmail:me@gmail.com/m1"))[0]?.labels.includes("INBOX"));
-        yield* m.searchServer({ search: "report" });
-        assert.ok(!(yield* m.thread("gmail:me@gmail.com/m1"))[0]?.labels.includes("INBOX"));
+        assert.ok(!(yield* m.reading.thread("gmail:me@gmail.com/m1"))[0]?.labels.includes("INBOX"));
+        yield* m.reading.searchServer({ search: "report" });
+        assert.ok(!(yield* m.reading.thread("gmail:me@gmail.com/m1"))[0]?.labels.includes("INBOX"));
         assert.strictEqual(server.pushed.length, 0);
       }),
     ),
@@ -438,18 +441,18 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
         const account = yield* m.connect({ provider: "gmail" });
         yield* m.sync();
         yield* m.snooze([`${account.id}/reply`], 1000);
-        let members = yield* m.thread(`${account.id}/reply`);
+        let members = yield* m.reading.thread(`${account.id}/reply`);
         assert.ok(members.find((x) => x.id.endsWith("/original"))?.labels.includes("SNOOZED"));
         assert.deepStrictEqual(members.find((x) => x.id.endsWith("/reply"))?.labels, ["SENT"]);
         yield* m.sync();
-        assert.strictEqual((yield* m.threads({ mailbox: "snoozed" })).length, 1);
+        assert.strictEqual((yield* m.reading.threads({ mailbox: "snoozed" })).length, 1);
         yield* TestClock.adjust("2 seconds");
         yield* m.wakeSnoozed();
         assert.deepStrictEqual(
           server.pushed.map((p) => p.providerId),
           ["original", "original"],
         );
-        members = yield* m.thread(`${account.id}/reply`);
+        members = yield* m.reading.thread(`${account.id}/reply`);
         assert.ok(members.find((x) => x.id.endsWith("/original"))?.labels.includes("INBOX"));
         assert.ok(members.find((x) => x.id.endsWith("/original"))?.labels.includes("SENT"));
         assert.deepStrictEqual(members.find((x) => x.id.endsWith("/reply"))?.labels, ["SENT"]);
@@ -475,7 +478,7 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
       const m = yield* Mailbox;
       const account = yield* m.connect({ provider: "outlook" });
       yield* m.changeLabel(account.id, { kind: "create", name: "Test" });
-      const folder = (yield* m.labels([account.id])).find((l) => l.name === "Test");
+      const folder = (yield* m.reading.labels([account.id])).find((l) => l.name === "Test");
       assert.ok(folder);
       yield* m.changeLabel(account.id, { kind: "color", id: folder.id, color: "#b99aff" });
       assert.strictEqual(colorCalls, 0);
@@ -486,7 +489,7 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
       yield* m.changeLabel(account.id, { kind: "rename", id: folder.id, name: "Renamed" });
       yield* m.sync();
       assert.strictEqual(
-        (yield* m.labels([account.id])).find((l) => l.id === folder.id)?.name,
+        (yield* m.reading.labels([account.id])).find((l) => l.id === folder.id)?.name,
         "Renamed",
       );
       assert.strictEqual(
@@ -494,7 +497,7 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
         "#b99aff",
       );
       yield* m.changeLabel(account.id, { kind: "delete", id: folder.id });
-      assert.ok(!(yield* m.labels([account.id])).some((l) => l.id === folder.id));
+      assert.ok(!(yield* m.reading.labels([account.id])).some((l) => l.id === folder.id));
       assert.ok(!(yield* m.labelPreferences).some((p) => p.id === folder.id));
     }).pipe(
       Effect.provide(
@@ -560,16 +563,16 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
           "CATEGORY_PERSONAL",
           "CATEGORY_UPDATES",
         ]);
-        const messages = yield* mailbox.unreadByLabel([account.id], undefined, false);
-        const conversations = yield* mailbox.unreadByLabel([account.id], undefined, true);
+        const messages = yield* mailbox.reading.unreadByLabel([account.id], undefined, false);
+        const conversations = yield* mailbox.reading.unreadByLabel([account.id], undefined, true);
         assert.strictEqual(messages["INBOX"], 2);
         assert.strictEqual(conversations["INBOX"], 1);
         assert.strictEqual(messages["STARRED"], 2);
         assert.strictEqual(conversations["STARRED"], 1);
         assert.strictEqual(messages["DRAFT"], 1);
-        assert.strictEqual((yield* mailbox.unreadCounts)[account.id], 1);
+        assert.strictEqual((yield* mailbox.reading.unreadCounts)[account.id], 1);
         yield* mailbox.app.setPrefs({ threadGrouping: false });
-        assert.strictEqual((yield* mailbox.unreadCounts)[account.id], 2);
+        assert.strictEqual((yield* mailbox.reading.unreadCounts)[account.id], 2);
       }).pipe(
         Effect.provide(
           TestMailbox({
@@ -604,12 +607,14 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
           const id = `${account.id}/m`;
           yield* mailbox.modifyWithUndo([id], { kind: "important", value: true });
           assert.strictEqual(
-            (yield* mailbox.threads({ accountIds: [account.id], search: "is:important" })).length,
+            (yield* mailbox.reading.threads({ accountIds: [account.id], search: "is:important" }))
+              .length,
             1,
           );
           yield* mailbox.modifyWithUndo([id], { kind: "important", value: false });
           assert.strictEqual(
-            (yield* mailbox.threads({ accountIds: [account.id], search: "is:important" })).length,
+            (yield* mailbox.reading.threads({ accountIds: [account.id], search: "is:important" }))
+              .length,
             0,
           );
         }
@@ -631,7 +636,7 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
         const account = yield* mailbox.connect({ provider: "gmail" });
         yield* mailbox.sync();
         yield* mailbox.changeLabel(account.id, { kind: "create", name: "Work" });
-        const label = (yield* mailbox.labels([account.id]))[0];
+        const label = (yield* mailbox.reading.labels([account.id]))[0];
         assert.ok(label);
         const input = {
           ...EMPTY_FILTER,
@@ -652,7 +657,7 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
         const preview = yield* mailbox.prepareFilter(account.id, input);
         assert.strictEqual(preview.matches.length, 1);
         yield* mailbox.applyFilter(account.id, input, preview.token);
-        const [message] = yield* mailbox.thread(`${account.id}/a`);
+        const [message] = yield* mailbox.reading.thread(`${account.id}/a`);
         assert.ok(message?.labels.includes("CATEGORY_UPDATES"));
         assert.ok(!message?.labels.includes("IMPORTANT"));
       }).pipe(Effect.provide(TestMailbox({ gmail: fakeServer("me@example.com", fixtures) }))),

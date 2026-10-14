@@ -70,7 +70,7 @@ it.effect(
       assert.include(opened.message.originalHtml ?? "", "<b>bold</b>");
       assert.deepStrictEqual(server.draftLog, []);
       assert.deepStrictEqual(
-        (yield* mailbox.threads({ mailbox: "drafts" })).map((row) => row.id),
+        (yield* mailbox.reading.threads({ mailbox: "drafts" })).map((row) => row.id),
         ["outlook:me@example.com/remote"],
       );
     }).pipe(Effect.provide(layer));

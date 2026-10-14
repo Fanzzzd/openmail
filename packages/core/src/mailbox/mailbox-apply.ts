@@ -423,7 +423,7 @@ export const makeApplyMailbox = (
               message: "Calendar access is unavailable for this account",
             });
           const inspection = inspectAttachment(
-            yield* deps.mailbox().attachmentPart(messageId, path),
+            yield* deps.mailbox().reading.attachmentPart(messageId, path),
           );
           const invite =
             inspection?.kind === "calendar"

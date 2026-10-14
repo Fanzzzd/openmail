@@ -196,7 +196,7 @@ it.effect(
       yield* Effect.yieldNow;
       assert.deepStrictEqual(yield* notices(), [`${account.id}/new`]);
       assert.isTrue(
-        (yield* m.threads({ mailbox: "inbox" })).some((t) => t.id === `${account.id}/new`),
+        (yield* m.reading.threads({ mailbox: "inbox" })).some((t) => t.id === `${account.id}/new`),
       );
       yield* m.sync();
       yield* m.pollInbox();
@@ -231,14 +231,20 @@ it.effect("desktop polling repeats every 45 seconds", () => {
     yield* m.sync();
     server.messages.set("first", incoming("first"));
     yield* TestClock.adjust("44 seconds");
-    assert.isFalse((yield* m.threads({ mailbox: "inbox" })).some((m) => m.subject === "first"));
+    assert.isFalse(
+      (yield* m.reading.threads({ mailbox: "inbox" })).some((m) => m.subject === "first"),
+    );
     yield* TestClock.adjust("1 second");
     yield* TestClock.adjust("250 millis");
-    assert.isTrue((yield* m.threads({ mailbox: "inbox" })).some((m) => m.subject === "first"));
+    assert.isTrue(
+      (yield* m.reading.threads({ mailbox: "inbox" })).some((m) => m.subject === "first"),
+    );
     server.messages.set("second", incoming("second"));
     yield* TestClock.adjust("45 seconds");
     yield* TestClock.adjust("250 millis");
-    assert.isTrue((yield* m.threads({ mailbox: "inbox" })).some((m) => m.subject === "second"));
+    assert.isTrue(
+      (yield* m.reading.threads({ mailbox: "inbox" })).some((m) => m.subject === "second"),
+    );
   }).pipe(
     Effect.provide(
       TestMailbox({ gmail: server }, { inboxPoll: "45 seconds", backgroundFlush: false }),
@@ -255,7 +261,7 @@ it.effect("CLI and MCP mailbox layers do not start new-mail polling", () => {
     server.messages.set("later", incoming("later"));
     yield* TestClock.adjust("2 minutes");
     assert.isFalse(
-      (yield* m.threads({ mailbox: "inbox" })).some((thread) => thread.subject === "later"),
+      (yield* m.reading.threads({ mailbox: "inbox" })).some((thread) => thread.subject === "later"),
     );
   }).pipe(Effect.provide(TestMailbox({ gmail: server })));
 });
@@ -290,7 +296,7 @@ it.effect("IMAP mail moved into Inbox under a different UID stays seen", () => {
     yield* m.sync();
     yield* Effect.yieldNow;
     assert.isFalse((yield* Ref.get(events)).some((event) => event._tag === "NewMail"));
-    assert.strictEqual((yield* m.threads({ mailbox: "inbox" })).length, 1);
+    assert.strictEqual((yield* m.reading.threads({ mailbox: "inbox" })).length, 1);
   }).pipe(Effect.provide(TestMailbox({ imap: server })));
 });
 
@@ -332,7 +338,7 @@ it.effect("catch-up suppresses unread mail older than the previous sync", () => 
     yield* m.pollInbox();
     yield* Effect.yieldNow;
     assert.deepStrictEqual(yield* Ref.get(ids), [`${account.id}/fresh`]);
-    assert.strictEqual((yield* m.threads({ mailbox: "inbox" })).length, 2);
+    assert.strictEqual((yield* m.reading.threads({ mailbox: "inbox" })).length, 2);
   }).pipe(Effect.provide(TestMailbox({ gmail: server })));
 });
 
@@ -385,10 +391,10 @@ it.effect("offline inbox polling backs off independently until recovery", () => 
     server.messages.set("later", incoming("later", { date: 100_000 }));
     yield* TestClock.adjust("45 seconds");
     yield* TestClock.adjust("250 millis");
-    assert.deepStrictEqual(yield* m.threads({ mailbox: "inbox" }), []);
+    assert.deepStrictEqual(yield* m.reading.threads({ mailbox: "inbox" }), []);
     yield* TestClock.adjust("45 seconds");
     yield* TestClock.adjust("250 millis");
-    assert.strictEqual((yield* m.threads({ mailbox: "inbox" })).length, 1);
+    assert.strictEqual((yield* m.reading.threads({ mailbox: "inbox" })).length, 1);
   }).pipe(
     Effect.provide(
       TestMailbox({ gmail: server }, { inboxPoll: "45 seconds", backgroundFlush: false }),
@@ -404,10 +410,10 @@ it.effect("battery polling waits twice as long as AC polling", () => {
     server.messages.set("battery", incoming("battery"));
     yield* TestClock.adjust("45 seconds");
     yield* TestClock.adjust("250 millis");
-    assert.deepStrictEqual(yield* m.threads({ mailbox: "inbox" }), []);
+    assert.deepStrictEqual(yield* m.reading.threads({ mailbox: "inbox" }), []);
     yield* TestClock.adjust("45 seconds");
     yield* TestClock.adjust("250 millis");
-    assert.strictEqual((yield* m.threads({ mailbox: "inbox" })).length, 1);
+    assert.strictEqual((yield* m.reading.threads({ mailbox: "inbox" })).length, 1);
   }).pipe(
     Effect.provide(
       TestMailbox(

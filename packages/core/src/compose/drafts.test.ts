@@ -62,7 +62,7 @@ import { replyFromAddress } from "./signatures.js";
   }
 
   const draftIds = (m: Mailbox["Service"]) =>
-    Effect.map(m.threads({ mailbox: "drafts" }), (list) => list.map((t) => t.id));
+    Effect.map(m.reading.threads({ mailbox: "drafts" }), (list) => list.map((t) => t.id));
 
   it.effect("a draft saves locally, syncs to the provider and stays one entry in Drafts", () =>
     withMail((m, server) =>
@@ -107,7 +107,7 @@ import { replyFromAddress } from "./signatures.js";
           yield* m.compose.saveDraft({ id: "draft:1", accountId: GMAIL, message: draftMessage() });
           yield* m.sync();
           const [row] = yield* draftIds(m);
-          const [copy] = yield* m.thread(row!);
+          const [copy] = yield* m.reading.thread(row!);
           assert.strictEqual(copy?.draftId, "draft:1");
 
           // Gmail replaces the message on update: the reader's copy is gone.
@@ -122,8 +122,8 @@ import { replyFromAddress } from "./signatures.js";
 
           // A message that is not a copy of a local draft has none.
           yield* m.sync();
-          const [inbox] = yield* m.threads({ mailbox: "inbox" });
-          assert.strictEqual((yield* m.thread(inbox!.id))[0]?.draftId, undefined);
+          const [inbox] = yield* m.reading.threads({ mailbox: "inbox" });
+          assert.strictEqual((yield* m.reading.thread(inbox!.id))[0]?.draftId, undefined);
         }),
       [incoming("i1")],
     ),
@@ -173,7 +173,7 @@ import { replyFromAddress } from "./signatures.js";
     withMail(
       (m, server) =>
         Effect.gen(function* () {
-          const [thread] = yield* m.threads({ mailbox: "inbox" });
+          const [thread] = yield* m.reading.threads({ mailbox: "inbox" });
           const reply = draftMessage({
             mode: "reply",
             inReplyTo: thread!.id,
@@ -186,7 +186,7 @@ import { replyFromAddress } from "./signatures.js";
           );
           assert.strictEqual(outcome.status === "applied" && outcome.flush?.done, 2);
           assert.strictEqual(server.sent.length, 1);
-          assert.deepStrictEqual(yield* m.threads({ mailbox: "inbox" }), []);
+          assert.deepStrictEqual(yield* m.reading.threads({ mailbox: "inbox" }), []);
           assert.deepStrictEqual(
             server.pushed.map((p) => p.op),
             [{ kind: "archive" }],

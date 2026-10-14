@@ -82,7 +82,10 @@ export function ThreadMenu({
   );
   const labels = useMailboxQuery(
     useCallback(
-      () => runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.labels([accountId]))),
+      () =>
+        runtime.runPromise(
+          Effect.flatMap(Mailbox, (mailbox) => mailbox.reading.labels([accountId])),
+        ),
       [runtime, accountId],
     ),
   );
@@ -91,7 +94,7 @@ export function ThreadMenu({
       () =>
         runtime.runPromise(
           Effect.flatMap(Mailbox, (mailbox) =>
-            Effect.forEach(ids, (id) => mailbox.thread(id)).pipe(
+            Effect.forEach(ids, (id) => mailbox.reading.thread(id)).pipe(
               Effect.map((threads) =>
                 threads.some((messages) =>
                   messages.some((message) => message.labels.includes("SNOOZED")),

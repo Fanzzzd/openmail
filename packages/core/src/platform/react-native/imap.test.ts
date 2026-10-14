@@ -352,18 +352,25 @@ it("runs mobile IMAP through shared connect, sync, reader, contacts, flags, move
         const stored = yield* (yield* Secrets).get(account.id);
         expect(stored).toEqual(expect.objectContaining({ value: "app-password" }));
         expect((yield* mailbox.sync(account.id)).every((item) => !item.error)).toBe(true);
-        const message = (yield* mailbox.threads({ accountIds: [account.id], label: "INBOX" }))[0];
+        const message = (yield* mailbox.reading.threads({
+          accountIds: [account.id],
+          label: "INBOX",
+        }))[0];
         if (!message) throw new Error("No synced message");
-        expect((yield* mailbox.readerThread(message.id))[0]?.bodyHtml).toContain("cid:photo");
-        expect((yield* mailbox.inlineImages(message.id))["photo"]).toBe(
+        expect((yield* mailbox.reading.readerThread(message.id))[0]?.bodyHtml).toContain(
+          "cid:photo",
+        );
+        expect((yield* mailbox.reading.inlineImages(message.id))["photo"]).toBe(
           "data:image/png;base64,AQID",
         );
-        expect((yield* mailbox.attachment(message.id, 0)).data).toEqual(new Uint8Array([4, 5, 6]));
+        expect((yield* mailbox.reading.attachment(message.id, 0)).data).toEqual(
+          new Uint8Array([4, 5, 6]),
+        );
         expect(
           (yield* mailbox.compose.suggestContacts("alice", { accountIds: [account.id] }))[0]
             ?.address,
         ).toBe("alice@example.test");
-        expect((yield* mailbox.unreadByLabel([account.id])).INBOX).toBe(1);
+        expect((yield* mailbox.reading.unreadByLabel([account.id])).INBOX).toBe(1);
         for (const op of [
           { kind: "read", value: true },
           { kind: "star", value: true },

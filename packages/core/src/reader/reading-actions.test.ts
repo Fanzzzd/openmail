@@ -126,13 +126,13 @@ import { parseAppLink, parseStableReference, privateMailLink, messageLink } from
         input: { preset: "icloud", email: imap.email, password: "test" },
       });
       yield* m.sync();
-      assert.deepStrictEqual(yield* m.rawMessageBytes(`${ga.id}/second`), bytes);
+      assert.deepStrictEqual(yield* m.reading.rawMessageBytes(`${ga.id}/second`), bytes);
       assert.strictEqual(
-        yield* m.messageWebUrl(`${ga.id}/first`),
+        yield* m.reading.messageWebUrl(`${ga.id}/first`),
         gmailThreadUrl(ga.email, "conversation"),
       );
       assert.strictEqual(
-        yield* m.messageWebUrl(`${ga.id}/second`),
+        yield* m.reading.messageWebUrl(`${ga.id}/second`),
         gmailThreadUrl(ga.email, "conversation"),
       );
       const id = `${oa.id}/first`;
@@ -142,26 +142,26 @@ import { parseAppLink, parseStableReference, privateMailLink, messageLink } from
         webLink: "https://outlook.live.com/mail/id/from-provider",
       });
       assert.strictEqual(
-        yield* m.messageWebUrl(id),
+        yield* m.reading.messageWebUrl(id),
         "https://outlook.live.com/mail/id/from-provider",
       );
       assert.strictEqual(
-        (yield* m.thread(id))[0]?.webLink,
+        (yield* m.reading.thread(id))[0]?.webLink,
         "https://outlook.live.com/mail/id/from-provider",
       );
       const fetched = outlook.bodyFetched.length;
       outlook.messages.delete("first");
       assert.strictEqual(
-        yield* m.messageWebUrl(id),
+        yield* m.reading.messageWebUrl(id),
         "https://outlook.live.com/mail/id/from-provider",
       );
       assert.strictEqual(outlook.bodyFetched.length, fetched);
       assert.strictEqual(
-        (yield* m.messageWebUrl(`${ia.id}/first`).pipe(Effect.result))._tag,
+        (yield* m.reading.messageWebUrl(`${ia.id}/first`).pipe(Effect.result))._tag,
         "Failure",
       );
       assert.strictEqual(
-        (yield* m.rawMessageBytes(`${ga.id}/missing`).pipe(Effect.result))._tag,
+        (yield* m.reading.rawMessageBytes(`${ga.id}/missing`).pipe(Effect.result))._tag,
         "Failure",
       );
     }).pipe(Effect.provide(TestMailbox({ gmail, outlook, imap })));
@@ -176,7 +176,7 @@ import { parseAppLink, parseStableReference, privateMailLink, messageLink } from
       const account = yield* m.connect({ provider: "outlook" });
       yield* m.sync();
       assert.strictEqual(
-        (yield* m.messageWebUrl(`${account.id}/first`).pipe(Effect.result))._tag,
+        (yield* m.reading.messageWebUrl(`${account.id}/first`).pipe(Effect.result))._tag,
         "Failure",
       );
     }).pipe(Effect.provide(TestMailbox({ outlook })));
@@ -206,7 +206,7 @@ import { parseAppLink, parseStableReference, privateMailLink, messageLink } from
       );
       assert.strictEqual(gmail.sent.length, 1);
       assert.deepStrictEqual(
-        (yield* mailbox.knownSenders(account.id, addresses)).toSorted(),
+        (yield* mailbox.reading.knownSenders(account.id, addresses)).toSorted(),
         addresses.toSorted(),
       );
     }).pipe(Effect.provide(TestMailbox({ gmail })));
@@ -384,14 +384,14 @@ import { parseAppLink, parseStableReference, privateMailLink, messageLink } from
         const m = yield* Mailbox;
         const a = yield* m.connect({ provider: "gmail" }),
           b = yield* m.connect({ provider: "outlook" });
-        assert.match(yield* m.messageWebUrl(`${a.id}/deadbeef`), /#all\/deadbeef$/);
+        assert.match(yield* m.reading.messageWebUrl(`${a.id}/deadbeef`), /#all\/deadbeef$/);
         assert.strictEqual(
-          yield* m.messageWebUrl(`${b.id}/one`),
+          yield* m.reading.messageWebUrl(`${b.id}/one`),
           "https://outlook.live.com/mail/0/id/one",
         );
         outlook.messages.set("one", { ...message, webLink: "https://evil.example/mail/one" });
         assert.strictEqual(
-          (yield* m.messageWebUrl(`${b.id}/one`).pipe(Effect.result))._tag,
+          (yield* m.reading.messageWebUrl(`${b.id}/one`).pipe(Effect.result))._tag,
           "Failure",
         );
         assert.strictEqual(gmail.pushed.length + outlook.pushed.length, 0);
@@ -430,7 +430,7 @@ import { parseAppLink, parseStableReference, privateMailLink, messageLink } from
         const before = server.bodyFetched.length;
         for (const id of ["one", "two"])
           assert.strictEqual(
-            (yield* m.messageWebUrl(`${account.id}/${id}`).pipe(Effect.result))._tag,
+            (yield* m.reading.messageWebUrl(`${account.id}/${id}`).pipe(Effect.result))._tag,
             "Failure",
           );
         assert.strictEqual(server.bodyFetched.length, before);
@@ -475,7 +475,7 @@ import { parseAppLink, parseStableReference, privateMailLink, messageLink } from
           },
         });
         yield* mailbox.sync();
-        const link = yield* mailbox.privateMailLink(`${account.id}/old`, "message");
+        const link = yield* mailbox.reading.privateMailLink(`${account.id}/old`, "message");
         const parsed = parseAppLink(link);
         assert.ok(parsed?.kind === "message");
         assert.deepStrictEqual(parseStableReference(parsed.id), {
@@ -492,7 +492,7 @@ import { parseAppLink, parseStableReference, privateMailLink, messageLink } from
         server.messages.delete("old");
         server.messages.set("new", fixture("new", { rfcMessageId: "<stable@example.com>" }));
         yield* mailbox.sync();
-        assert.strictEqual(yield* mailbox.resolveMailLink(parsed.id), `${account.id}/new`);
+        assert.strictEqual(yield* mailbox.reading.resolveMailLink(parsed.id), `${account.id}/new`);
         server.messages.set(
           "uncached",
           fixture("uncached", { rfcMessageId: "<uncached@example.com>" }),
@@ -503,7 +503,10 @@ import { parseAppLink, parseStableReference, privateMailLink, messageLink } from
         );
         const target = parseAppLink(uncached);
         assert.ok(target?.kind === "message");
-        assert.strictEqual(yield* mailbox.resolveMailLink(target.id), `${account.id}/uncached`);
+        assert.strictEqual(
+          yield* mailbox.reading.resolveMailLink(target.id),
+          `${account.id}/uncached`,
+        );
         assert.ok(server.searched.some((q) => q.search?.includes("rfc822msgid:")));
       }).pipe(Effect.provide(TestMailbox({ imap: server })));
     },
@@ -542,7 +545,7 @@ import { parseAppLink, parseStableReference, privateMailLink, messageLink } from
         const account = yield* mailbox.connect({ provider: "gmail" });
         yield* mailbox.sync();
         const id = `${account.id}/m`;
-        const link = parseAppLink(yield* mailbox.privateMailLink(id, "message"));
+        const link = parseAppLink(yield* mailbox.reading.privateMailLink(id, "message"));
         assert.ok(link?.kind === "message");
         yield* mailbox.setAccountSettings(account.id, {
           enabled: false,
@@ -550,7 +553,7 @@ import { parseAppLink, parseStableReference, privateMailLink, messageLink } from
           color: null,
         });
         for (const reference of [link.id, id]) {
-          const result = yield* mailbox.resolveMailLink(reference).pipe(Effect.result);
+          const result = yield* mailbox.reading.resolveMailLink(reference).pipe(Effect.result);
           assert.strictEqual(result._tag, "Failure");
         }
         assert.strictEqual(server.searched.length, 0);

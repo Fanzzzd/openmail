@@ -505,7 +505,9 @@ import { Mailbox } from "../mailbox/mailbox.js";
         }
         const fetched = server.bodyFetched.length;
         for (const suffix of ["../events", "A?redirect=evil", "A#fragment", "%2Fusers", "A\nB"]) {
-          const result = yield* m.messageWebUrl(`${account.id}/${suffix}`).pipe(Effect.result);
+          const result = yield* m.reading
+            .messageWebUrl(`${account.id}/${suffix}`)
+            .pipe(Effect.result);
           assert.strictEqual(result._tag === "Failure" && result.failure._tag, "InvalidInput");
         }
         assert.strictEqual(server.bodyFetched.length, fetched);

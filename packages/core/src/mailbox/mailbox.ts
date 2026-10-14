@@ -629,8 +629,7 @@ export interface MailboxApp {
 
 export class Mailbox extends Context.Service<
   Mailbox,
-  MailboxReading &
-    MailboxOrganize &
+  MailboxOrganize &
     MailboxProposals &
     MailboxAccounts &
     MailboxSync & {

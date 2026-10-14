@@ -211,7 +211,7 @@ it("an editable imported draft explains that hidden text was removed, including 
   expect(editor.textContent).not.toContain("SECRET");
   key("s", { metaKey: true }, editor);
   await eventually(() => expect(h.server.draftLog).toHaveLength(1));
-  const stored = (await h.run(h.m.threads({ mailbox: "drafts" })))[0];
+  const stored = (await h.run(h.m.reading.threads({ mailbox: "drafts" })))[0];
   if (!stored) throw new Error("Missing saved draft");
   const reopened = await h.run(h.m.compose.openDraft(stored.id));
   expect(reopened.message.hiddenTextRemoved).toBe(true);

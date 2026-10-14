@@ -105,7 +105,7 @@ export default function Compose() {
           Effect.gen(function* () {
             if (params.draftId) return yield* mailbox.compose.openDraft(params.draftId);
             const original = params.messageId
-              ? (yield* mailbox.readerThread(params.messageId)).find(
+              ? (yield* mailbox.reading.readerThread(params.messageId)).find(
                   (message) => message.id === params.messageId,
                 )
               : undefined;

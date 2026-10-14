@@ -217,11 +217,12 @@ it.skipIf(process.platform !== "darwin")(
             Schema.Struct({ urls: Schema.Array(Schema.String) }),
           )(native.share.mock.lastCall?.[0]);
           expect(sharing.urls).toHaveLength(1);
-          if (kind === "web") expect(sharing.urls[0]).toBe(yield* mailbox.messageWebUrl(id));
+          if (kind === "web")
+            expect(sharing.urls[0]).toBe(yield* mailbox.reading.messageWebUrl(id));
           else {
             const link = parseAppLink(sharing.urls[0] ?? "");
             expect(link?.kind).toBe("message");
-            expect(sharing.urls[0]).toBe(yield* mailbox.privateMailLink(id, kind));
+            expect(sharing.urls[0]).toBe(yield* mailbox.reading.privateMailLink(id, kind));
           }
           expect(native.popup.mock.lastCall).toEqual([{ window: parent }]);
         }

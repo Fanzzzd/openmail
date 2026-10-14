@@ -88,9 +88,12 @@ import { scaledMs } from "../../test-support/test-time.js";
               assert.strictEqual((yield* store.getMessage(id)).bodyCached, true);
               assert.isUndefined((yield* store.getMessage(id)).replyTo);
               server.failNext = new ProviderError({ message: "Offline", status: 503 });
-              assert.strictEqual((yield* mailbox.readerThread(id))[0]?.bodyRefresh, "failed");
+              assert.strictEqual(
+                (yield* mailbox.reading.readerThread(id))[0]?.bodyRefresh,
+                "failed",
+              );
               assert.isUndefined((yield* store.getMessage(id)).replyTo);
-              const [ready] = yield* mailbox.readerThread(id);
+              const [ready] = yield* mailbox.reading.readerThread(id);
               assert.ok(ready);
               assert.deepStrictEqual(ready.replyTo, original.replyTo);
               assert.deepStrictEqual(ready.to, original.to);
@@ -101,14 +104,14 @@ import { scaledMs } from "../../test-support/test-time.js";
                 original.replyTo?.length ? original.replyTo : [original.from],
               );
               assert.deepStrictEqual(yield* sql`SELECT rowid FROM messages WHERE id=${id}`, before);
-              yield* mailbox.readerThread(id);
+              yield* mailbox.reading.readerThread(id);
             }
             assert.deepStrictEqual(server.bodyFetched, ["legacy", "empty"]);
             // Known headers continue to support offline reading of an evicted body.
             const knownId = `${account.id}/empty`;
             yield* sql`UPDATE messages SET body_cached=0 WHERE id=${knownId}`;
             server.failNext = new ProviderError({ message: "Offline", status: 503 });
-            assert.deepStrictEqual((yield* mailbox.readerThread(knownId))[0]?.replyTo, []);
+            assert.deepStrictEqual((yield* mailbox.reading.readerThread(knownId))[0]?.replyTo, []);
             yield* sql`INSERT INTO messages_fts(messages_fts,rank) VALUES ('integrity-check',1)`;
             assert.strictEqual(
               (yield* store.listThreads({ search: "unique-body-term" })).length,
@@ -263,7 +266,7 @@ import { scaledMs } from "../../test-support/test-time.js";
           yield* m.pauseBackfill(a.id, false);
           yield* m.fetchOlder({ accountIds: [a.id] });
           assert.strictEqual((yield* m.backfillState)[0]?.fetched, 100);
-          const [head] = yield* m.threads({ mailbox: "all" });
+          const [head] = yield* m.reading.threads({ mailbox: "all" });
           assert.ok(head);
           assert.strictEqual((yield* store.getMessage(head.id)).bodyCached, false);
           const ref = yield* store.messageRef(head.id);
@@ -271,14 +274,17 @@ import { scaledMs } from "../../test-support/test-time.js";
           assert.ok(remote);
           const replyTo = [{ name: "Reply", address: "reply@example.com" }];
           server.messages.set(ref.providerId, { ...remote, replyTo });
-          const full = (yield* m.readerThread(head.id))[0];
+          const full = (yield* m.reading.readerThread(head.id))[0];
           assert.deepStrictEqual(full?.replyTo, replyTo);
           assert.strictEqual(full?.bodyText, "unique-body-term");
           assert.strictEqual(full?.bodyCached, true);
           yield* TestClock.adjust("10 seconds");
           yield* m.fetchOlder({ accountIds: [a.id] });
           assert.strictEqual((yield* m.backfillState)[0]?.done, true);
-          assert.strictEqual((yield* m.threads({ mailbox: "all", limit: 1000 })).length, 120);
+          assert.strictEqual(
+            (yield* m.reading.threads({ mailbox: "all", limit: 1000 })).length,
+            120,
+          );
           assert.deepStrictEqual(yield* store.getSyncCursor(a.id), Option.some("normal-cursor"));
         }).pipe(Effect.provide(MailboxLive({ backgroundFlush: false })));
       }).pipe(Effect.provide(dependencies));
@@ -309,7 +315,7 @@ import { scaledMs } from "../../test-support/test-time.js";
         );
         yield* TestClock.adjust("5 minutes");
         yield* m.fetchOlder({});
-        assert.strictEqual((yield* m.thread(`${account.id}/old`))[0]?.isUnread, true);
+        assert.strictEqual((yield* m.reading.thread(`${account.id}/old`))[0]?.isUnread, true);
         assert.strictEqual((yield* m.backfillState)[0]?.done, true);
       }).pipe(Effect.provide(TestMailbox.withAdapter(adapter)));
     },
@@ -621,7 +627,7 @@ import { scaledMs } from "../../test-support/test-time.js";
           yield* TestClock.adjust("500 days");
           const now = 500 * 86_400_000;
           assert.strictEqual(yield* s.evictBodies(account.id, now), 1);
-          assert.strictEqual((yield* m.thread(id))[0]?.bodyCached, false);
+          assert.strictEqual((yield* m.reading.thread(id))[0]?.bodyCached, false);
           assert.deepStrictEqual(
             yield* sql`SELECT generation,status FROM derived_jobs WHERE message_id=${id}`,
             job,
@@ -630,8 +636,8 @@ import { scaledMs } from "../../test-support/test-time.js";
             (yield* sql`SELECT text FROM derived_chunks WHERE message_id=${id}`).length,
             1,
           );
-          yield* m.readerThread(id);
-          assert.strictEqual((yield* m.thread(id))[0]?.bodyCached, true);
+          yield* m.reading.readerThread(id);
+          assert.strictEqual((yield* m.reading.thread(id))[0]?.bodyCached, true);
           assert.deepStrictEqual(
             yield* sql`SELECT generation,status FROM derived_jobs WHERE message_id=${id}`,
             job,
@@ -691,14 +697,14 @@ import { scaledMs } from "../../test-support/test-time.js";
             });
           const id = `${account.id}/a`;
           const before = yield* sql`SELECT body_cached,body_opened_at FROM messages ORDER BY id`;
-          assert.strictEqual((yield* m.thread(id)).length, 2);
-          yield* m.threadForModel(id);
+          assert.strictEqual((yield* m.reading.thread(id)).length, 2);
+          yield* m.reading.threadForModel(id);
           assert.deepStrictEqual(
             yield* sql`SELECT body_cached,body_opened_at FROM messages ORDER BY id`,
             before,
           );
           assert.deepStrictEqual(server.bodyFetched, []);
-          const messages = yield* m.readerThread(id);
+          const messages = yield* m.reading.readerThread(id);
           assert.strictEqual(messages.length, 2);
           assert.strictEqual(messages.find((row) => row.id === id)?.bodyCached, false);
           assert.strictEqual(
@@ -891,7 +897,7 @@ import { scaledMs } from "../../test-support/test-time.js";
             (yield* sql`SELECT id FROM vector_items WHERE message_id=${id}`).length,
             1,
           );
-          yield* m.readerThread(id);
+          yield* m.reading.readerThread(id);
           assert.strictEqual(
             (yield* sql`SELECT id FROM vector_items WHERE message_id=${id}`).length,
             0,
@@ -928,7 +934,7 @@ import { scaledMs } from "../../test-support/test-time.js";
         yield* store.upsertMessage(account.id, mail("legacy"));
         const id = `${account.id}/legacy`;
         yield* sql`UPDATE messages SET reply_to_json=NULL WHERE id=${id}`;
-        const [cached] = yield* (yield* Mailbox).readerThread(id);
+        const [cached] = yield* (yield* Mailbox).reading.readerThread(id);
         assert.strictEqual(cached?.bodyText, "unique-body-term");
         assert.strictEqual(cached?.bodyRefresh, "failed");
         assert.isUndefined(cached?.replyTo);
@@ -956,7 +962,7 @@ import { scaledMs } from "../../test-support/test-time.js";
             account.id,
             mail("legacy", { bodyCached: false, bodyText: "", bodyHtml: "" }),
           );
-          const fiber = yield* (yield* Mailbox)
+          const fiber = yield* (yield* Mailbox).reading
             .readerThread(`${account.id}/legacy`)
             .pipe(Effect.forkChild);
           yield* TestClock.adjust("5 seconds");

@@ -103,7 +103,7 @@ export function desktopAppleContacts(mailbox: Mailbox["Service"]) {
     /** Known senders from the mail store plus addresses on an Apple Contacts card. */
     knownSenders: (accountId: string, addresses: readonly string[]) =>
       Effect.gen(function* () {
-        const known = yield* mailbox.knownSenders(accountId, addresses);
+        const known = yield* mailbox.reading.knownSenders(accountId, addresses);
         yield* read;
         if (!(yield* available([accountId]))) return known;
         const cards = addresses

@@ -88,7 +88,7 @@ it("cancel and a missing destination leave files intact and never fetch MIME", a
       const mailbox = yield* Mailbox;
       const account = yield* mailbox.connect({ provider: "gmail" });
       yield* mailbox.sync();
-      const raw = vi.spyOn(mailbox, "rawMessageBytes");
+      const raw = vi.spyOn(mailbox.reading, "rawMessageBytes");
       expect(yield* saveMessage(mailbox, null, `${account.id}/two`)).toBe(false);
       expect(yield* saveMessage(mailbox, null, `${account.id}/two`)).toBe(false);
       expect(raw).not.toHaveBeenCalled();

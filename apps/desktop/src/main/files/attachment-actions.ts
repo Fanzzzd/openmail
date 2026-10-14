@@ -60,8 +60,8 @@ const blocked = (parts: readonly { filename: string; mimeType?: string }[]) => {
     : Effect.void;
 };
 const resolve = Effect.fnUntraced(function* (m: Mailbox["Service"], request: DragRequest) {
-  const resolved = yield* m.attachmentParts(request.messageId, request.paths);
-  const parts: Effect.Success<ReturnType<Mailbox["Service"]["attachmentPart"]>>[] = [];
+  const resolved = yield* m.reading.attachmentParts(request.messageId, request.paths);
+  const parts: Effect.Success<ReturnType<Mailbox["Service"]["reading"]["attachmentPart"]>>[] = [];
   for (const part of resolved) {
     if (part.kind === "failed") return yield* part.error;
     parts.push(part.content);
@@ -164,7 +164,7 @@ let downloads: Downloads | undefined;
 /** One list for the app, shared by every window's Downloads panel. */
 export const appDownloads = (m: Mailbox["Service"], run: (effect: Effect.Effect<void>) => void) =>
   (downloads ??= createDownloads({
-    fetch: (source) => m.attachmentPart(source.messageId, source.path),
+    fetch: (source) => m.reading.attachmentPart(source.messageId, source.path),
     blocked: isBlocked,
     quarantine,
     openPath: (file) => shell.openPath(file),
@@ -189,7 +189,9 @@ export const queueDownloads: (
 ) {
   if (request.paths.length > MAX_DOWNLOADS_PER_CALL)
     return yield* new DeviceError({ message: "Too many attachments in one save" });
-  const listed = yield* m.readerAttachments(request.messageId).pipe(Effect.orElseSucceed(() => []));
+  const listed = yield* m.reading
+    .readerAttachments(request.messageId)
+    .pipe(Effect.orElseSucceed(() => []));
   return list.start(
     request.paths.map((value) => {
       const known = listed.find((file) => pathKey(file.path) === pathKey(value));

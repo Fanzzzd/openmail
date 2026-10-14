@@ -279,7 +279,7 @@ it.effect(
       yield* measure(
         "thread model text long chain",
         500,
-        mail.threadForModel(`${gmail}/m0`, 12000),
+        mail.reading.threadForModel(`${gmail}/m0`, 12000),
       );
       assert.strictEqual(Buffer.byteLength(largeHtml), 200 * 1024);
       yield* measure(

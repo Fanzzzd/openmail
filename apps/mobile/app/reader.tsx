@@ -41,7 +41,7 @@ function ReaderMessage({ message, remoteImages }: { message: Message; remoteImag
   const runtime = useMailbox();
   const fetchInline = useCallback(
     (id: string) =>
-      runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.inlineImages(id))),
+      runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.reading.inlineImages(id))),
     [runtime],
   );
   const inline = useMessageInlineImages(message.id, message.bodyHtml, html, fetchInline);
@@ -66,7 +66,7 @@ function ReaderMessage({ message, remoteImages }: { message: Message; remoteImag
     setAttachmentFailed(false);
     try {
       const content = await runtime.runPromise(
-        Effect.flatMap(Mailbox, (mailbox) => mailbox.attachment(message.id, index)),
+        Effect.flatMap(Mailbox, (mailbox) => mailbox.reading.attachment(message.id, index)),
       );
       await shareReceivedAttachment(content);
     } catch {
@@ -194,7 +194,7 @@ export default function Reader() {
       () =>
         runtime.runPromise(
           Effect.flatMap(Mailbox, (mailbox) =>
-            Effect.all({ prefs: mailbox.app.prefs, imageSenders: mailbox.imageSenders }),
+            Effect.all({ prefs: mailbox.app.prefs, imageSenders: mailbox.reading.imageSenders }),
           ),
         ),
       [runtime],
@@ -208,9 +208,9 @@ export default function Reader() {
       () =>
         runtime.runPromise(
           Effect.flatMap(Mailbox, (mailbox) =>
-            Effect.flatMap(mailbox.readerThread(messageId), (thread) =>
+            Effect.flatMap(mailbox.reading.readerThread(messageId), (thread) =>
               Effect.map(
-                mailbox.knownSenders(
+                mailbox.reading.knownSenders(
                   accountId,
                   thread.map((m) => m.from.address),
                 ),

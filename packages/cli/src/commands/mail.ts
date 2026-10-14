@@ -179,7 +179,7 @@ const list = Command.make(
           ? { before: o.before.value }
           : {};
     const rows = accountIds.length
-      ? yield* mailbox.threads({
+      ? yield* mailbox.reading.threads({
           mailbox: o.mailbox,
           accountIds,
           ...(Option.isSome(o.label) ? { label: o.label.value } : {}),
@@ -225,8 +225,8 @@ const search = Command.make(
     const found: SearchResult = !accountIds.length
       ? { threads: [], truncated: false, errors: [] }
       : o.server
-        ? yield* mailbox.searchServer(query)
-        : { threads: yield* mailbox.threads(query), truncated: false, errors: [] };
+        ? yield* mailbox.reading.searchServer(query)
+        : { threads: yield* mailbox.reading.threads(query), truncated: false, errors: [] };
     const all = found.threads.slice(0, SEARCH_CAP);
     const threads = all.slice(offset, offset + o.limit);
     const next =
@@ -278,7 +278,7 @@ const show = Command.make(
   },
   Effect.fn(function* (o) {
     const mailbox = yield* Mailbox;
-    const all = yield* mailbox.thread(o.id);
+    const all = yield* mailbox.reading.thread(o.id);
     const picked = o.thread ? all : all.filter((m) => m.id === o.id);
     const messages = picked.map((m) => (o.html ? m : { ...m, bodyHtml: undefined }));
     yield* print(o.thread ? messages : messages[0], o.json, () =>

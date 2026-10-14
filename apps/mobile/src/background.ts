@@ -86,7 +86,7 @@ export async function updateBadge(runtime: BackgroundRuntime) {
   const preferences = await backgroundPreferences(runtime);
   const count = preferences.badge
     ? await runtime.runPromise(
-        Effect.flatMap(Mailbox, (mailbox) => mailbox.unreadCounts).pipe(
+        Effect.flatMap(Mailbox, (mailbox) => mailbox.reading.unreadCounts).pipe(
           Effect.map((counts) => Object.values(counts).reduce((sum, n) => sum + n, 0)),
         ),
       )
@@ -107,7 +107,9 @@ export const deliverNewMail = (event: NotificationEvent) =>
     yield* Effect.promise(configureLocalChannel);
     const threads = new Set<string>();
     for (const id of event.ids) {
-      const messages = yield* mailbox.thread(id).pipe(Effect.catch(() => Effect.succeed([])));
+      const messages = yield* mailbox.reading
+        .thread(id)
+        .pipe(Effect.catch(() => Effect.succeed([])));
       const message = messages.find((item) => item.id === id);
       if (!message) continue;
       if (event._tag === "SnoozeDue") {

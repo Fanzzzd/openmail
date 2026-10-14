@@ -270,7 +270,7 @@ for (const source of ["TRASH", "SPAM"] as const) {
           source,
           true,
         );
-        const label = (yield* m.labels([accountId]))[0];
+        const label = (yield* m.reading.labels([accountId]))[0];
         assert.ok(label);
         assert.deepStrictEqual((yield* store.getMessage(`${accountId}/one`)).labels, [label.id]);
         yield* m.sync();
@@ -287,7 +287,7 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
       fixture(provider, (m, _store, server, accountId) =>
         Effect.gen(function* () {
           yield* m.changeLabel(accountId, { kind: "create", name: "Clients" });
-          const parent = (yield* m.labels([accountId]))[0];
+          const parent = (yield* m.reading.labels([accountId]))[0];
           assert.ok(parent);
           const result = yield* m.createLabelAndApply(
             accountId,
@@ -298,9 +298,11 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
             "INBOX",
             false,
           );
-          const child = (yield* m.labels([accountId])).find((l) => l.name === "Clients/Reports");
+          const child = (yield* m.reading.labels([accountId])).find(
+            (l) => l.name === "Clients/Reports",
+          );
           assert.ok(child);
-          for (const message of yield* m.thread(`${accountId}/one`)) {
+          for (const message of yield* m.reading.thread(`${accountId}/one`)) {
             assert.ok(message.labels.includes(child.id));
             assert.ok(!message.labels.includes("INBOX"));
           }
@@ -314,7 +316,7 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
           );
           yield* m.undoBatch(result.undoId);
           assert.ok(
-            (yield* m.thread(`${accountId}/one`)).every((message) =>
+            (yield* m.reading.thread(`${accountId}/one`)).every((message) =>
               message.labels.includes("INBOX"),
             ),
           );
@@ -327,8 +329,8 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
       Effect.gen(function* () {
         yield* m.changeLabel(accountId, { kind: "create", name: "A" });
         yield* m.changeLabel(accountId, { kind: "create", name: "B" });
-        const a = (yield* m.labels([accountId])).find((l) => l.name === "A");
-        const b = (yield* m.labels([accountId])).find((l) => l.name === "B");
+        const a = (yield* m.reading.labels([accountId])).find((l) => l.name === "A");
+        const b = (yield* m.reading.labels([accountId])).find((l) => l.name === "B");
         assert.ok(a);
         assert.ok(b);
         yield* m.setLabelPreference({
@@ -340,7 +342,7 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
           position: 3,
         });
         yield* m.changeLabel(accountId, { kind: "parent", id: a.id, parentId: b.id });
-        const moved = (yield* m.labels([accountId])).find((l) => l.name === "B/A");
+        const moved = (yield* m.reading.labels([accountId])).find((l) => l.name === "B/A");
         assert.ok(moved);
         assert.strictEqual((yield* m.labelPreferences).find((p) => p.id === moved.id)?.position, 3);
         assert.strictEqual(
@@ -356,7 +358,7 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
           "Failure",
         );
         yield* m.changeLabel(accountId, { kind: "parent", id: moved.id, parentId: null });
-        assert.ok((yield* m.labels([accountId])).some((l) => l.name === "A"));
+        assert.ok((yield* m.reading.labels([accountId])).some((l) => l.name === "A"));
       }),
     ),
   );
@@ -427,7 +429,7 @@ it.effect("Gmail Move To with no source label preserves Inbox and can undo the a
   fixture("gmail", (m, store, server, accountId) =>
     Effect.gen(function* () {
       yield* m.changeLabel(accountId, { kind: "create", name: "Destination" });
-      const label = (yield* m.labels([accountId]))[0];
+      const label = (yield* m.reading.labels([accountId]))[0];
       assert.ok(label);
       const result = yield* m.modifyWithUndo(
         [`${accountId}/one`],
@@ -457,7 +459,7 @@ it.effect("Gmail label application keeps Inbox; Remove Current Label keeps all o
         null,
         true,
       );
-      const label = (yield* m.labels([accountId]))[0];
+      const label = (yield* m.reading.labels([accountId]))[0];
       assert.ok(label);
       assert.deepStrictEqual((yield* store.getMessage(`${accountId}/one`)).labels, [
         "INBOX",
@@ -506,7 +508,7 @@ it.effect(
     fixture("gmail", (m, _store, server, accountId) =>
       Effect.gen(function* () {
         yield* m.changeLabel(accountId, { kind: "create", name: "Hidden" });
-        const label = (yield* m.labels([accountId]))[0];
+        const label = (yield* m.reading.labels([accountId]))[0];
         assert.ok(label);
         yield* m.changeLabel(accountId, {
           kind: "visibility",
@@ -516,7 +518,10 @@ it.effect(
         });
         yield* m.sync();
         assert.strictEqual(server.labels[0]?.labelListVisibility, "labelShowIfUnread");
-        assert.strictEqual((yield* m.labels([accountId]))[0]?.messageListVisibility, "hide");
+        assert.strictEqual(
+          (yield* m.reading.labels([accountId]))[0]?.messageListVisibility,
+          "hide",
+        );
       }),
     ),
 );

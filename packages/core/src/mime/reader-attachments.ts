@@ -57,7 +57,7 @@ const parseMessage = (part: AttachmentContent, codec: MailCodecPort) =>
 /** One request owns one tree. Each root and decoded prefix is visited once.
  * The budget includes roots, all decoded ancestor contents, and returned copies. */
 export function makeReaderAttachments(
-  attachment: Mailbox["Service"]["attachment"],
+  attachment: Mailbox["Service"]["reading"]["attachment"],
   thread: (id: string) => Effect.Effect<import("../domain/message.js").Message[], NotFound>,
   codec: MailCodecPort,
 ) {

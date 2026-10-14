@@ -87,7 +87,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
           );
           yield* mailbox.sync();
           const id = `${account.id}/chosen`;
-          const original = yield* mailbox.thread(id);
+          const original = yield* mailbox.reading.thread(id);
           const ops: MailOp[] = [
             { kind: "archive" },
             { kind: "trash" },
@@ -100,7 +100,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
             yield* mailbox.sync();
             assert.ok(server.pushed.length > 0);
             assert.ok(server.pushed.every((push) => push.providerId === "chosen"));
-            const thread = yield* mailbox.thread(id);
+            const thread = yield* mailbox.reading.thread(id);
             assert.deepStrictEqual(
               thread.filter((message) => message.id !== id),
               original.filter((message) => message.id !== id),
@@ -113,7 +113,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
             if (op.kind === "read") assert.ok(selected.isUnread);
             yield* mailbox.undoBatch(batch.undoId);
             yield* mailbox.sync();
-            assert.deepStrictEqual(yield* mailbox.thread(id), original);
+            assert.deepStrictEqual(yield* mailbox.reading.thread(id), original);
           }
           server.pushed.length = 0;
           const suffix = yield* mailbox.markUnreadFrom(id);
@@ -123,7 +123,10 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
             "newer",
           ]);
           assert.deepStrictEqual(
-            (yield* mailbox.thread(id)).map((message) => [message.subject, message.isUnread]),
+            (yield* mailbox.reading.thread(id)).map((message) => [
+              message.subject,
+              message.isUnread,
+            ]),
             [
               ["older", false],
               ["chosen", true],
@@ -133,10 +136,13 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
               ["newer", true],
             ],
           );
-          assert.strictEqual((yield* mailbox.thread(`${account.id}/other`))[0]?.isUnread, false);
+          assert.strictEqual(
+            (yield* mailbox.reading.thread(`${account.id}/other`))[0]?.isUnread,
+            false,
+          );
           yield* mailbox.undoBatch(suffix.undoId);
           yield* mailbox.sync();
-          assert.ok((yield* mailbox.thread(id)).every((message) => !message.isUnread));
+          assert.ok((yield* mailbox.reading.thread(id)).every((message) => !message.isUnread));
           for (const excluded of ["draft", "trashed", "spam"]) {
             server.pushed.length = 0;
             const batch = yield* mailbox.markUnreadFrom(`${account.id}/${excluded}`);

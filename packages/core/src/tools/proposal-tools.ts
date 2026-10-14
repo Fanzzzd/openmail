@@ -319,7 +319,7 @@ export const proposalHandlers = ({
           ? undefined
           : mcp
             ? yield* requireMessage(replyId)
-            : (yield* mailbox.thread(replyId).pipe(Effect.mapError(toToolError))).find(
+            : (yield* mailbox.reading.thread(replyId).pipe(Effect.mapError(toToolError))).find(
                 (m) => m.id === replyId,
               );
       if (replyId !== undefined && !original)

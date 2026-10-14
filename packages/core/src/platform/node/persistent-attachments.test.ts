@@ -110,7 +110,10 @@ import { waitLimit } from "../../../test-support/test-time.js";
             });
             const query = { mailbox: "all" as const, label: "Projects", accountIds: [account.id] };
             assert.isFalse((yield* mailbox.fetchOlder(query)).done);
-            assert.strictEqual((yield* mailbox.threads({ ...query, limit: 500 })).length, 100);
+            assert.strictEqual(
+              (yield* mailbox.reading.threads({ ...query, limit: 500 })).length,
+              100,
+            );
             assert.strictEqual(
               (yield* store.getMessage(`${account.id}/${existing.providerId}`)).isUnread,
               false,
@@ -122,10 +125,13 @@ import { waitLimit } from "../../../test-support/test-time.js";
             assert.isTrue(
               (yield* mailbox.fetchOlder({ mailbox: "inbox", accountIds: [account.id] })).done,
             );
-            assert.strictEqual((yield* mailbox.threads({ mailbox: "inbox" })).length, 1);
+            assert.strictEqual((yield* mailbox.reading.threads({ mailbox: "inbox" })).length, 1);
             assert.isFalse((yield* mailbox.fetchOlder(query)).done);
             assert.isTrue((yield* mailbox.fetchOlder(query)).done);
-            assert.strictEqual((yield* mailbox.threads({ ...query, limit: 500 })).length, 220);
+            assert.strictEqual(
+              (yield* mailbox.reading.threads({ ...query, limit: 500 })).length,
+              220,
+            );
             const requests = remote.folderPages.length;
             assert.isTrue((yield* mailbox.fetchOlder(query)).done);
             assert.strictEqual(remote.folderPages.length, requests);
@@ -179,7 +185,7 @@ import { waitLimit } from "../../../test-support/test-time.js";
             const a = yield* store.upsertAccount("gmail", remote.email);
             for (const original of remote.messages.values())
               yield* store.upsertMessage(a.id, original);
-            const file = yield* m.attachment(`${a.id}/0001`, 0);
+            const file = yield* m.reading.attachment(`${a.id}/0001`, 0);
             assert.isAbove(file.data.length, 0);
             assert.isAbove((yield* m.cacheSize)[0]?.attachmentBytes ?? 0, 0);
           }),
@@ -190,16 +196,16 @@ import { waitLimit } from "../../../test-support/test-time.js";
             const a = (yield* m.accounts)[0];
             if (!a) throw new Error("Missing account");
             remote.failNext = new ProviderError({ message: "Offline" });
-            assert.isAbove((yield* m.attachment(`${a.id}/0001`, 0)).data.length, 0);
+            assert.isAbove((yield* m.reading.attachment(`${a.id}/0001`, 0)).data.length, 0);
             yield* m.clearCache(a.id);
             assert.strictEqual((yield* m.cacheSize)[0]?.attachmentBytes, 0);
-            assert.strictEqual((yield* m.thread(`${a.id}/0001`))[0]?.bodyCached, false);
-            assert.strictEqual((yield* m.thread(`${a.id}/0002`))[0]?.bodyCached, true);
+            assert.strictEqual((yield* m.reading.thread(`${a.id}/0001`))[0]?.bodyCached, false);
+            assert.strictEqual((yield* m.reading.thread(`${a.id}/0002`))[0]?.bodyCached, true);
             assert.strictEqual(
-              (yield* Effect.flip(m.attachment(`${a.id}/0001`, 0)))._tag,
+              (yield* Effect.flip(m.reading.attachment(`${a.id}/0001`, 0)))._tag,
               "ProviderError",
             );
-            yield* m.attachment(`${a.id}/0001`, 0);
+            yield* m.reading.attachment(`${a.id}/0001`, 0);
             yield* m.perform(
               { kind: "removeAccount", accountId: a.id },
               { kind: "user", surface: "app" },

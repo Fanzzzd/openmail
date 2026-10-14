@@ -104,7 +104,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
           ]);
           assert.strictEqual([...server.messages.values()][0]?.isStarred, provider !== "gmail");
           yield* mailbox.sync();
-          const rows = yield* mailbox.threads({ mailbox: "drafts" });
+          const rows = yield* mailbox.reading.threads({ mailbox: "drafts" });
           assert.strictEqual(rows.length, 1);
           assert.strictEqual(rows[0]?.isStarred, true);
           yield* mailbox.compose.saveDraft({
@@ -156,7 +156,7 @@ it.effect(
         );
         assert.strictEqual(rejected._tag, "InvalidInput");
       }
-      assert.deepStrictEqual(yield* mailbox.threads({ mailbox: "drafts" }), []);
+      assert.deepStrictEqual(yield* mailbox.reading.threads({ mailbox: "drafts" }), []);
     }).pipe(Effect.provide(TestMailbox())),
 );
 

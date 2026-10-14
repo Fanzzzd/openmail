@@ -73,14 +73,14 @@ export default function Threads() {
             search
               ? searchSource === "server"
                 ? Effect.succeed([])
-                : mailbox.threads(searchQuery(accountId, search))
-              : mailbox.threads(pageQuery(accountId, label, last)),
+                : mailbox.reading.threads(searchQuery(accountId, search))
+              : mailbox.reading.threads(pageQuery(accountId, label, last)),
           ),
         );
         if (search && page.length === 0) {
           const result = await runtime.runPromise(
             Effect.flatMap(Mailbox, (mailbox) =>
-              mailbox.searchServer(searchQuery(accountId, search)),
+              mailbox.reading.searchServer(searchQuery(accountId, search)),
             ),
           );
           if (state.epoch !== epoch) return;

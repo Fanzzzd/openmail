@@ -5786,7 +5786,7 @@ for (const partial of ["omitted", "signed", "complete"] as const) {
         const saved = yield* store.upsertAccount("outlook", account.email);
         const id = `${saved.id}/${graph.id}`;
         yield* store.upsertMessage(saved.id, parseGraphMessage(graph, "INBOX", [pdf]));
-        const search = yield* mailbox.searchServer({
+        const search = yield* mailbox.reading.searchServer({
           search: "attachment-preservation",
           accountIds: [saved.id],
           searchScope: "all",
@@ -5801,7 +5801,9 @@ for (const partial of ["omitted", "signed", "complete"] as const) {
               call.url.pathname.endsWith("/attachments") || call.url.pathname.endsWith("/$value"),
           ),
         );
-        const hydrated = (yield* mailbox.readerThread(id)).find((message) => message.id === id);
+        const hydrated = (yield* mailbox.reading.readerThread(id)).find(
+          (message) => message.id === id,
+        );
         assert.ok(hydrated);
         assert.deepStrictEqual(hydrated.attachments, partial === "complete" ? [] : fullAttachments);
         if (partial !== "complete") assert.strictEqual(hydrated.bodyText, "Full reader body");

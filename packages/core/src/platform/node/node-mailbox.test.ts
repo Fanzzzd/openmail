@@ -173,16 +173,16 @@ it("real NodeMailbox captures MIME, files, PDF, image transport and random servi
         const mailbox = Context.get(context, Mailbox);
         expect(Option.isNone(yield* Effect.serviceOption(MailCodec))).toBe(true);
 
-        expect((yield* mailbox.attachment(id, 0)).data).toEqual(pdf);
+        expect((yield* mailbox.reading.attachment(id, 0)).data).toEqual(pdf);
         expect(fetch.mock.calls.some((call) => call[1].bodyStructure)).toBe(true);
-        expect(Buffer.from((yield* mailbox.attachmentPart(id, [1, 0])).data).toString()).toBe(
-          "Leaf",
-        );
+        expect(
+          Buffer.from((yield* mailbox.reading.attachmentPart(id, [1, 0])).data).toString(),
+        ).toBe("Leaf");
         expect(
           (yield* mailbox.compose.composeAttachments(id)).map((part) => part.filename),
         ).toContain("document.pdf");
         expect((yield* mailbox.calendar.invitations(id))[0]?.title).toBe("Layer invite");
-        expect((yield* mailbox.inlineImages(id))["inline@openmail"]).toContain(
+        expect((yield* mailbox.reading.inlineImages(id))["inline@openmail"]).toContain(
           "data:image/png;base64,",
         );
         expect(

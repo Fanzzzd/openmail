@@ -92,7 +92,7 @@ export const saveMessage: (
   parent: BrowserWindow | null,
   messageId: string,
 ): Effect.fn.Return<boolean, FileError> {
-  const message = (yield* m.thread(messageId)).find((item) => item.id === messageId);
+  const message = (yield* m.reading.thread(messageId)).find((item) => item.id === messageId);
   const options = {
     defaultPath: path.join(
       app.getPath("downloads"),
@@ -104,7 +104,7 @@ export const saveMessage: (
     parent ? dialog.showSaveDialog(parent, options) : dialog.showSaveDialog(options),
   );
   if (choice.canceled || !choice.filePath) return false;
-  yield* write(choice.filePath, yield* m.rawMessageBytes(messageId));
+  yield* write(choice.filePath, yield* m.reading.rawMessageBytes(messageId));
   return true;
 });
 
@@ -118,7 +118,7 @@ export const openAttachment: (
   messageId: string,
   index: number,
 ): Effect.fn.Return<void, FileError> {
-  const content = yield* m.attachment(messageId, index);
+  const content = yield* m.reading.attachment(messageId, index);
   const name = safeFilename(content.filename);
   if (EXECUTABLE.test(name) || attachmentImportKind(content) !== null) {
     // Fails here; nothing below runs.
@@ -179,7 +179,7 @@ export const printThread: (
   parent: BrowserWindow | null,
   request: PrintRequest,
 ): Effect.fn.Return<boolean, FileError> {
-  const thread = yield* m.readerThread(request.id);
+  const thread = yield* m.reading.readerThread(request.id);
   const messages = request.only ? thread.filter((x) => x.id === request.only) : thread;
   const subject = messages.at(-1)?.subject || thread.at(-1)?.subject || "";
 
@@ -201,7 +201,9 @@ export const printThread: (
   const inline: Record<string, Record<string, string>> = {};
   for (const message of messages) {
     if (!/\bcid:/i.test(message.bodyHtml)) continue;
-    inline[message.id] = yield* m.inlineImages(message.id).pipe(Effect.orElseSucceed(() => ({})));
+    inline[message.id] = yield* m.reading
+      .inlineImages(message.id)
+      .pipe(Effect.orElseSucceed(() => ({})));
   }
   const format = new Intl.DateTimeFormat(request.locale, {
     dateStyle: "full",

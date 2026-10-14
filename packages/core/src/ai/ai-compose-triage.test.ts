@@ -295,7 +295,7 @@ for (const action of [
       if (action.kind === "label") assert.ok(message.labels.includes("custom"));
       if (action.kind === "replyNeeded") assert.strictEqual(message.isStarred, true);
       if (action.kind === "snooze")
-        assert.strictEqual((yield* m.threads({ mailbox: "snoozed" })).length, 1);
+        assert.strictEqual((yield* m.reading.threads({ mailbox: "snoozed" })).length, 1);
       assert.strictEqual(
         (yield* m.ai.decideAiTriage(id, true, "app").pipe(Effect.exit))._tag,
         "Failure",
@@ -581,7 +581,7 @@ for (const action of [
           assert.deepStrictEqual((yield* store.getMessage(id)).labels, labels);
           assert.strictEqual(server.pushed.length, 0);
           assert.strictEqual(server.sent.length, 0);
-          assert.strictEqual((yield* m.threads({ mailbox: "snoozed" })).length, 0);
+          assert.strictEqual((yield* m.reading.threads({ mailbox: "snoozed" })).length, 0);
         }).pipe(Effect.provide(f.layer));
       },
     );

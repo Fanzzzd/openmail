@@ -21,10 +21,10 @@ function ProposalReview({ proposal }: { proposal: Proposal }) {
           Effect.flatMap(Mailbox, (mailbox) =>
             Effect.gen(function* () {
               if (command.kind !== "modify") return [];
-              const labels = yield* mailbox.labels();
+              const labels = yield* mailbox.reading.labels();
               const descriptions: string[] = [];
               for (const id of command.threads) {
-                const messages = yield* mailbox.thread(id);
+                const messages = yield* mailbox.reading.thread(id);
                 const message = messages[0];
                 if (!message) throw new Error("Missing proposal thread");
                 const op = command.op;

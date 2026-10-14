@@ -313,7 +313,7 @@ import { type DerivedChunk } from "../ai/media.js";
     return Effect.gen(function* () {
       const mail = yield* Mailbox;
       yield* mail.connect({ provider: "gmail" });
-      const results = yield* mail.searchServer({ search: 'folder:"inbox"' });
+      const results = yield* mail.reading.searchServer({ search: 'folder:"inbox"' });
       assert.deepStrictEqual(
         results.threads.map((thread) => thread.threadId),
         ["inbox"],
@@ -323,7 +323,7 @@ import { type DerivedChunk } from "../ai/media.js";
       assert.ok(account);
       yield* mail.setAccountSettings(account.id, { enabled: false, description: "", color: null });
       const calls = server.searched.length;
-      const disabled = yield* mail.searchServer({
+      const disabled = yield* mail.reading.searchServer({
         accountIds: [account.id],
         search: 'folder:"inbox"',
       });
@@ -500,7 +500,7 @@ import { type DerivedChunk } from "../ai/media.js";
           ["-has:drive", ["spoof"]],
         ] satisfies [string, string[]][]) {
           assert.deepStrictEqual(
-            (yield* mailbox.threads({ search: query }))
+            (yield* mailbox.reading.threads({ search: query }))
               .map((m) => m.id.split("/").at(-1))
               .toSorted((a, b) => (a ?? "").localeCompare(b ?? "")),
             ids,

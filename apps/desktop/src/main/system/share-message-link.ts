@@ -11,8 +11,8 @@ export const shareMessageLink = (
     if (process.platform !== "darwin" || !parent || parent.isDestroyed())
       return yield* new DeviceError({ message: "Message sharing is unavailable." });
     const url = yield* request.kind === "web"
-      ? mailbox.messageWebUrl(request.id)
-      : mailbox.privateMailLink(request.id, request.kind);
+      ? mailbox.reading.messageWebUrl(request.id)
+      : mailbox.reading.privateMailLink(request.id, request.kind);
     // Share one URL chosen by the user. Never include message text or tokens.
     yield* Effect.try({
       try: () => {

@@ -144,7 +144,7 @@ it.skipIf(process.platform !== "darwin")(
         );
         expect((yield* desktop.suggest("person", {}))[0]?.name).toBe("Apple Name");
         expect((yield* mailbox.compose.suggestContacts("person"))[0]?.name).toBe("Server Name");
-        expect(yield* mailbox.knownSenders(account.id, ["work@example.com"])).toEqual([]);
+        expect(yield* mailbox.reading.knownSenders(account.id, ["work@example.com"])).toEqual([]);
         expect(
           yield* desktop.knownSenders(account.id, ["Work@example.com", "stranger@example.com"]),
         ).toEqual(["work@example.com"]);

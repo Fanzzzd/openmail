@@ -528,12 +528,15 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
             important: true,
           };
           assert.strictEqual(
-            (yield* mailbox.threads({ ...folder, listFilters: filters })).length,
+            (yield* mailbox.reading.threads({ ...folder, listFilters: filters })).length,
             3,
           );
-          assert.strictEqual(yield* mailbox.threadCount({ ...folder, listFilters: filters }), 3);
           assert.strictEqual(
-            (yield* mailbox.threads({
+            yield* mailbox.reading.threadCount({ ...folder, listFilters: filters }),
+            3,
+          );
+          assert.strictEqual(
+            (yield* mailbox.reading.threads({
               mailbox: "all",
               label: "custom",
               listFilters: { ...filters, inInbox: true },
@@ -541,7 +544,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
             0,
           );
           assert.strictEqual(
-            (yield* mailbox.threads({
+            (yield* mailbox.reading.threads({
               mailbox: "all",
               label: "custom",
               listFilters: { ...filters, enabled: false, inInbox: true },
@@ -549,17 +552,21 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
             2,
           );
           assert.strictEqual(
-            (yield* mailbox.threads({
+            (yield* mailbox.reading.threads({
               ...folder,
               listFilters: { ...DEFAULT_LIST_FILTERS, enabled: true, important: true },
             })).length,
             1,
           );
-          const page = yield* mailbox.threads({ ...folder, listFilters: filters, limit: 1 });
+          const page = yield* mailbox.reading.threads({
+            ...folder,
+            listFilters: filters,
+            limit: 1,
+          });
           const first = page[0];
           assert.ok(first);
           assert.strictEqual(
-            (yield* mailbox.threads({
+            (yield* mailbox.reading.threads({
               ...folder,
               listFilters: filters,
               before: first.date,
@@ -577,7 +584,10 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
           assert.isTrue(server.messages.get("other")?.isUnread);
           assert.isTrue(server.folderPages.length >= 3);
           assert.isTrue(server.batches.every((b) => b.providerIds.length <= 100));
-          assert.strictEqual((yield* mailbox.threads({ ...folder, unreadOnly: true })).length, 0);
+          assert.strictEqual(
+            (yield* mailbox.reading.threads({ ...folder, unreadOnly: true })).length,
+            0,
+          );
           assert.strictEqual(
             yield* mailbox.markFolderRead({
               mailbox: "all",
@@ -627,7 +637,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
             if (empty._tag === "Failure")
               assert.strictEqual(empty.failure._tag, "FeatureScopeMissing");
             assert.strictEqual(server.deleted.length, 0);
-            assert.strictEqual((yield* mailbox.thread(loaded)).length, 1);
+            assert.strictEqual((yield* mailbox.reading.thread(loaded)).length, 1);
             assert.isFalse((yield* mailbox.accounts)[0]?.needsReauth);
             yield* mailbox.modifyWithUndo([loaded], { kind: "trash" }, true);
             assert.isTrue(server.messages.get("loaded")?.labels.includes("TRASH"));
@@ -713,7 +723,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
           assert.isFalse((yield* mailbox.app.prefs).showMore);
           yield* mailbox.app.setPrefs({ showMore: true });
           assert.isTrue((yield* mailbox.app.prefs).showMore);
-          const threads = yield* mailbox.threads({ mailbox: "all", limit: 1000 });
+          const threads = yield* mailbox.reading.threads({ mailbox: "all", limit: 1000 });
           assert.isFalse(threads.some((row) => ["first", "second"].includes(row.subject)));
         }).pipe(Effect.provide(layer));
       }),

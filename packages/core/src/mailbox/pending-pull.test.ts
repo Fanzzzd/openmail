@@ -95,8 +95,8 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
           assert.deepStrictEqual(yield* store.reminderSnapshot(id), before);
           assert.include((yield* store.getMessage(id)).labels, "SNOOZED");
           assert.notInclude((yield* store.getMessage(id)).labels, "INBOX");
-          assert.strictEqual((yield* m.threads({ mailbox: "snoozed" }))[0]?.id, id);
-          assert.deepStrictEqual(yield* m.threads({ mailbox: "inbox" }), []);
+          assert.strictEqual((yield* m.reading.threads({ mailbox: "snoozed" }))[0]?.id, id);
+          assert.deepStrictEqual(yield* m.reading.threads({ mailbox: "inbox" }), []);
           assert.isAbove((yield* store.listPendingOps).length, 0);
           assert.strictEqual(server.pushed.length, 0);
         }).pipe(Effect.provide(layer));

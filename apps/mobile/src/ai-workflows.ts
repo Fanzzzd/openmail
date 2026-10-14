@@ -61,12 +61,12 @@ export function mobileRecipientWarnings(
   message: OutgoingMessage,
 ) {
   return Effect.gen(function* () {
-    const known = yield* mailbox.knownSenders(
+    const known = yield* mailbox.reading.knownSenders(
       accountId,
       [...message.to, ...message.cc, ...message.bcc].map((a) => a.address),
     );
     const thread = message.agentOrigin?.replyTo
-      ? yield* mailbox
+      ? yield* mailbox.reading
           .thread(message.agentOrigin.replyTo)
           .pipe(Effect.catchTag("NotFound", () => Effect.succeed([])))
       : [];

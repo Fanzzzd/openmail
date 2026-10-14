@@ -159,7 +159,7 @@ const Handlers = MailRpcs.toLayer(
       OpenMessageWeb: ({ id }) =>
         Effect.gen(function* () {
           const prefs = yield* m.app.prefs;
-          const url = yield* m.messageWebUrl(id);
+          const url = yield* m.reading.messageWebUrl(id);
           yield* Effect.promise(() => openExternal(url, prefs.cleanLinks !== false));
         }),
       SearchSender: ({ address }) => desktop.search(senderSearchQuery(address)),
@@ -297,9 +297,10 @@ const Handlers = MailRpcs.toLayer(
           createMainWindow();
         }),
       CopyMessageLink: ({ id, kind }) =>
-        (kind === "web" ? m.messageWebUrl(id) : m.privateMailLink(id, kind ?? "message")).pipe(
-          Effect.flatMap((link) => Effect.promise(() => clipboard.writeText(link))),
-        ),
+        (kind === "web"
+          ? m.reading.messageWebUrl(id)
+          : m.reading.privateMailLink(id, kind ?? "message")
+        ).pipe(Effect.flatMap((link) => Effect.promise(() => clipboard.writeText(link)))),
       SetActiveSpace: ({ space }, { client }) => desktop.setSpace(client.id, space),
       NativeEdit: ({ action }, { client }) =>
         Effect.sync(() => {

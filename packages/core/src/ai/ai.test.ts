@@ -141,7 +141,7 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
         const proposals = yield* m.proposals;
         assert.strictEqual(proposals.length, provider === "gmail" ? 1 : 0);
         assert.strictEqual(server.pushed.length, 0);
-        assert.ok((yield* m.thread(id))[0]?.labels.includes("INBOX"));
+        assert.ok((yield* m.reading.thread(id))[0]?.labels.includes("INBOX"));
       }).pipe(
         Effect.provide(TestMailbox({ [provider]: server }, { backgroundFlush: false }, {}, fake)),
       );
@@ -388,7 +388,7 @@ it.effect("summaries stream text only, reuse hashes, invalidate input/model chan
     yield* m.connect({ provider: "gmail" });
     yield* m.sync();
     yield* m.ai.setAiAccount(consent);
-    const context = yield* m.thread(messageId, "model", 1000);
+    const context = yield* m.reading.thread(messageId, "model", 1000);
     assert.ok(Buffer.byteLength(JSON.stringify(context)) <= 1000);
     assert.ok(context.messages[0]?.id === messageId);
     const first = yield* Stream.runCollect(m.ai.summarize(messageId));

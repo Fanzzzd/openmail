@@ -64,7 +64,7 @@ export const attachmentHandlers = ({ mailbox, requireMessage }: ToolContext) => 
         p,
         Effect.andThen(
           requireMessage(p.message_id),
-          mailbox.thread(p.message_id).pipe(Effect.mapError(toToolError)),
+          mailbox.reading.thread(p.message_id).pipe(Effect.mapError(toToolError)),
         ).pipe(
           Effect.flatMap((messages) => {
             const message = messages.find((m) => m.id === p.message_id);

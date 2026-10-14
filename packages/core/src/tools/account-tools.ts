@@ -192,7 +192,7 @@ export const accountHandlers = ({
         "list_labels",
         p,
         forAccounts(p.account_id, (ids) =>
-          Effect.map(mailbox.labels(ids), (rows) =>
+          Effect.map(mailbox.reading.labels(ids), (rows) =>
             rows.map((row) => ({ ...row, name: shortText(row.name) })),
           ),
         ),

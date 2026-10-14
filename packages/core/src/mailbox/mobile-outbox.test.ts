@@ -282,15 +282,15 @@ import type { OutgoingMessage } from "../domain/changes.js";
           const input = { id: "draft:discard", accountId: account.id, message };
           yield* mailbox.outbox.queueSend(input, 0);
           expect(
-            (yield* mailbox.threads({ accountIds: [account.id], mailbox: "drafts" })).some(
+            (yield* mailbox.reading.threads({ accountIds: [account.id], mailbox: "drafts" })).some(
               (row) => row.id === input.id,
             ),
           ).toBe(true);
           yield* mailbox.compose.discardDraft(input.id);
           expect(yield* mailbox.outbox.queuedSends).toEqual([]);
-          expect(yield* mailbox.threads({ accountIds: [account.id], mailbox: "drafts" })).toEqual(
-            [],
-          );
+          expect(
+            yield* mailbox.reading.threads({ accountIds: [account.id], mailbox: "drafts" }),
+          ).toEqual([]);
           yield* mailbox.outbox.flushQueuedSends();
           expect(server.sent).toEqual([]);
         }),
@@ -337,7 +337,7 @@ import type { OutgoingMessage } from "../domain/changes.js";
             const mailbox = yield* Mailbox;
             const account = yield* mailbox.connect({ provider });
             yield* mailbox.sync(account.id);
-            const row = (yield* mailbox.threads({ accountIds: [account.id] }))[0];
+            const row = (yield* mailbox.reading.threads({ accountIds: [account.id] }))[0];
             expect(row).toBeDefined();
             if (!row) throw new Error("missing thread");
             for (const op of [

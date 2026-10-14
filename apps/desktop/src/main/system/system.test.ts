@@ -758,14 +758,17 @@ it("periodic refresh logs a SQL defect and runs again at the next interval", asy
       const mailbox = yield* Mailbox;
       return Mailbox.of({
         ...mailbox,
-        unreadCounts: Effect.suspend(() => {
-          attempts++;
-          if (failNext) {
-            failNext = false;
-            return Effect.die(busyError());
-          }
-          return mailbox.unreadCounts;
-        }),
+        reading: {
+          ...mailbox.reading,
+          unreadCounts: Effect.suspend(() => {
+            attempts++;
+            if (failNext) {
+              failNext = false;
+              return Effect.die(busyError());
+            }
+            return mailbox.reading.unreadCounts;
+          }),
+        },
       });
     }),
   ).pipe(Layer.provide(TestMailbox()));

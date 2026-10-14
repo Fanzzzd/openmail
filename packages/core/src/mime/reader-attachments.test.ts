@@ -145,9 +145,9 @@ import { inspectAttachment } from "./attachment-import.js";
             specialFolderBadges: { starred: false, drafts: true, spam: false },
           });
           const id = `${account.id}/original`;
-          const files = yield* m.readerAttachments(id);
+          const files = yield* m.reading.readerAttachments(id);
           const calls = fetched.mock.calls.length;
-          yield* m.readerAttachments(id);
+          yield* m.reading.readerAttachments(id);
           assert.strictEqual(fetched.mock.calls.length, calls);
           assert.deepStrictEqual(
             files.map((file) => file.path),
@@ -156,14 +156,14 @@ import { inspectAttachment } from "./attachment-import.js";
           assert.strictEqual(files[5]?.decodeError, true);
           assert.ok(files.every((file) => !("data" in file)));
           assert.strictEqual(
-            Buffer.from((yield* m.attachmentPart(id, [0, 1])).data).toString(),
+            Buffer.from((yield* m.reading.attachmentPart(id, [0, 1])).data).toString(),
             "second",
           );
           assert.strictEqual(
-            Buffer.from((yield* m.attachmentPart(id, [2])).data).toString(),
+            Buffer.from((yield* m.reading.attachmentPart(id, [2])).data).toString(),
             "top",
           );
-          const inside = yield* m.embeddedMessage(id, [1]);
+          const inside = yield* m.reading.embeddedMessage(id, [1]);
           assert.strictEqual(inside.subject, "Inside");
           assert.include(inside.from, "sender@example.com");
           assert.include(inside.to, "to@example.com");
@@ -175,16 +175,16 @@ import { inspectAttachment } from "./attachment-import.js";
             [[1, 0]],
           );
           assert.strictEqual(
-            Buffer.from((yield* m.attachmentPart(id, [1, 0])).data).toString(),
+            Buffer.from((yield* m.reading.attachmentPart(id, [1, 0])).data).toString(),
             "inside",
           );
           for (const invalid of [[], [-1], [0, 99], Array.from({ length: 9 }, () => 0)])
             assert.strictEqual(
-              (yield* m.attachmentPart(id, invalid).pipe(Effect.result))._tag,
+              (yield* m.reading.attachmentPart(id, invalid).pipe(Effect.result))._tag,
               "Failure",
             );
           assert.strictEqual(
-            (yield* m.embeddedMessage(id, [2]).pipe(Effect.result))._tag,
+            (yield* m.reading.embeddedMessage(id, [2]).pipe(Effect.result))._tag,
             "Failure",
           );
           return id;
@@ -198,7 +198,7 @@ import { inspectAttachment } from "./attachment-import.js";
             drafts: true,
             spam: false,
           });
-          assert.strictEqual((yield* m.readerAttachments(id)).length, 6);
+          assert.strictEqual((yield* m.reading.readerAttachments(id)).length, 6);
         }).pipe(Effect.provide(layer()));
       }),
     );

@@ -25,7 +25,7 @@ export interface ContactsBackend {
   knownSenders(
     accountId: string,
     addresses: readonly string[],
-  ): ReturnType<MailboxService["knownSenders"]>;
+  ): ReturnType<MailboxService["reading"]["knownSenders"]>;
 }
 
 /** Contacts from the mail accounts alone, without Apple Contacts. */
@@ -37,7 +37,7 @@ export const accountContacts = (m: MailboxService): ContactsBackend => ({
     Effect.flatMap(m.app.prefs, (prefs) =>
       prefs.contactPhotos ? m.calendar.contactPhoto(accountId, address) : Effect.succeed(null),
     ),
-  knownSenders: (accountId, addresses) => m.knownSenders(accountId, addresses),
+  knownSenders: (accountId, addresses) => m.reading.knownSenders(accountId, addresses),
 });
 
 export interface MailboxHandlerOptions {
@@ -80,10 +80,10 @@ export function mailboxHandlers(m: MailboxService, options: MailboxHandlerOption
       m.compose.suggestSender(current, recipients, accountIds),
     RefreshContacts: ({ accountId }) => m.calendar.refreshContacts(accountId),
 
-    Threads: ({ query }) => m.threads(query),
-    ThreadCount: ({ query }) => m.threadCount(query),
-    Thread: ({ id }) => m.readerThread(id),
-    RawMessage: ({ id }) => m.rawMessage(id),
+    Threads: ({ query }) => m.reading.threads(query),
+    ThreadCount: ({ query }) => m.reading.threadCount(query),
+    Thread: ({ id }) => m.reading.readerThread(id),
+    RawMessage: ({ id }) => m.reading.rawMessage(id),
     KnownSenders: ({ accountId, addresses }) => contacts.knownSenders(accountId, addresses),
     SuggestContacts: ({ query, exclude, accountIds }) =>
       contacts.suggest(query, {
@@ -97,12 +97,12 @@ export function mailboxHandlers(m: MailboxService, options: MailboxHandlerOption
     SetModelsEnabled: ({ enabled }) => m.ai.setModelsEnabled(enabled),
     SetIndexingPaused: ({ paused }) => m.ai.setIndexingPaused(paused),
     MediaImage: ({ chunk }) => m.ai.mediaImage(chunk),
-    InlineImages: ({ id }) => m.inlineImages(id),
-    ImageSenders: () => m.imageSenders,
-    SetImageSender: ({ entry, allowed }) => m.setImageSender(entry, allowed),
-    ReaderAttachments: ({ messageId }) => m.readerAttachments(messageId),
+    InlineImages: ({ id }) => m.reading.inlineImages(id),
+    ImageSenders: () => m.reading.imageSenders,
+    SetImageSender: ({ entry, allowed }) => m.reading.setImageSender(entry, allowed),
+    ReaderAttachments: ({ messageId }) => m.reading.readerAttachments(messageId),
     InspectAttachment: ({ messageId, path }) =>
-      m.attachmentPart(messageId, path).pipe(
+      m.reading.attachmentPart(messageId, path).pipe(
         Effect.flatMap((content) => {
           const inspection = inspectAttachment(content);
           return inspection
@@ -115,12 +115,12 @@ export function mailboxHandlers(m: MailboxService, options: MailboxHandlerOption
     SetClassificationOverride: ({ messageId, classifyAs }) =>
       m.setClassificationOverride(messageId, classifyAs),
     Unsubscribe: ({ messageId }) => m.unsubscribe(messageId, USER),
-    EmbeddedMessage: ({ messageId, path }) => m.embeddedMessage(messageId, path),
+    EmbeddedMessage: ({ messageId, path }) => m.reading.embeddedMessage(messageId, path),
     MarkUnreadFrom: ({ id }) => m.markUnreadFrom(id),
-    Labels: ({ accountIds }) => m.labels(accountIds),
-    UnreadCounts: () => m.unreadCounts,
+    Labels: ({ accountIds }) => m.reading.labels(accountIds),
+    UnreadCounts: () => m.reading.unreadCounts,
     UnreadByLabel: ({ accountIds, within, conversations }) =>
-      m.unreadByLabel(accountIds, within, conversations),
+      m.reading.unreadByLabel(accountIds, within, conversations),
 
     BackfillState: () => m.backfillState,
     PauseBackfill: ({ accountId, paused }) => m.pauseBackfill(accountId, paused),
@@ -129,7 +129,7 @@ export function mailboxHandlers(m: MailboxService, options: MailboxHandlerOption
     CompactCache: () => m.compactCache,
     CacheWindows: () => m.cacheWindows,
     SetCacheWindow: ({ input }) => m.setCacheWindow(input),
-    SearchServer: ({ query }) => m.searchServer(query),
+    SearchServer: ({ query }) => m.reading.searchServer(query),
     ChangeLabel: ({ accountId, change }) => m.changeLabel(accountId, change),
     ReorderFavorites: ({ order }) => m.reorderFavorites(order),
     LabelPreferences: () => m.labelPreferences,

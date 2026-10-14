@@ -221,7 +221,7 @@ it("new compose autosaves, holds send, Cmd+Z reopens it, and the second send del
   const draftId = h.requests.find((request) => request.tag === "SaveDraft")?.payload;
   expect(draftId).toBeTruthy();
   expect(saved.push.message.text).toContain("A new note");
-  expect(await h.run(h.m.threads({ mailbox: "drafts" }))).toHaveLength(1);
+  expect(await h.run(h.m.reading.threads({ mailbox: "drafts" }))).toHaveLength(1);
   clickButton("Send");
   await eventually(() => expect(screen.queryByRole("textbox", { name: "Subject" })).toBeNull());
   await advance(4999);
@@ -244,7 +244,7 @@ it("new compose autosaves, holds send, Cmd+Z reopens it, and the second send del
   });
   expect(h.server.sent[0]?.message.text).toContain("A new note");
   await eventually(async () =>
-    expect(await h.run(h.m.threads({ mailbox: "drafts" }))).toHaveLength(0),
+    expect(await h.run(h.m.reading.threads({ mailbox: "drafts" }))).toHaveLength(0),
   );
   expect(screen.getAllByText("Sent").length).toBeGreaterThan(0);
 });
@@ -449,7 +449,7 @@ it.each(["retry", "local"] as const)(
     await advance(2000);
     await eventually(() => expect(screen.getByRole("button", { name: "Retry" })).toBeTruthy());
     expect(h.server.draftLog).toHaveLength(0);
-    const drafts = await h.run(h.m.threads({ mailbox: "drafts" }));
+    const drafts = await h.run(h.m.reading.threads({ mailbox: "drafts" }));
     const draft = drafts[0];
     if (!draft) throw new Error("Missing local draft");
     expect((await h.run(h.m.compose.openDraft(draft.id))).message.text).toContain(
@@ -751,7 +751,7 @@ it.each(["missing", "failed"] as const)(
     await h.run(h.store.rememberMailedAddresses(h.account.id, ["alice@example.com"]));
     if (state === "missing") await h.run(h.store.deleteMessage(h.account.id, "one"));
     else
-      vi.spyOn(h.m, "readerThread").mockImplementation(() =>
+      vi.spyOn(h.m.reading, "readerThread").mockImplementation(() =>
         Effect.fail(new ProviderError({ message: "Read failed" })),
       );
     clickButton("Send");

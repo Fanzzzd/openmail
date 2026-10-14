@@ -276,47 +276,51 @@ export function makeAiMailbox(
                 return budget(selected.map(toModelAccount)).pipe(Effect.as(selected));
               }),
             ).pipe(Effect.catch(() => Effect.succeed([]))),
-            labels: (accountIds) =>
-              Effect.andThen(guard, Effect.flatMap(m.labels(scope(accountIds)), budget)).pipe(
-                Effect.catch(() => Effect.succeed([])),
-              ),
-            threads: (q) =>
-              Effect.gen(function* () {
-                yield* guard;
-                const accountIds = scope(q.accountIds);
-                if (accountIds.length === 0) return [];
-                const found = yield* m.threads({
-                  ...q,
-                  accountIds,
-                  limit: Math.min(q.limit ?? 5, 5),
-                });
-                const safe = found.map((thread) => ({
-                  ...thread,
-                  snippet: "",
-                  attachmentNames: [],
-                  derivedMatches: [],
-                  searchMatches: [],
-                }));
-                for (const thread of safe)
-                  sources.set(thread.id, { id: thread.id, subject: thread.subject });
-                return yield* budget(safe);
-              }),
-            // The thread the question is about is already in the prompt; reading it again
-            // would only spend the budget.
-            threadForModel: (id, maxChars) =>
-              Effect.gen(function* () {
-                const head = (yield* store.getThread(id))[0];
-                if (
-                  selectedThread &&
-                  head?.accountId === selectedThread.accountId &&
-                  head.threadId === selectedThread.threadId
-                )
-                  return yield* new InvalidInput({
-                    message:
-                      "This conversation is already in the question above. Answer from it; read_thread is for other conversations.",
+            reading: {
+              ...m.reading,
+              labels: (accountIds) =>
+                Effect.andThen(
+                  guard,
+                  Effect.flatMap(m.reading.labels(scope(accountIds)), budget),
+                ).pipe(Effect.catch(() => Effect.succeed([]))),
+              threads: (q) =>
+                Effect.gen(function* () {
+                  yield* guard;
+                  const accountIds = scope(q.accountIds);
+                  if (accountIds.length === 0) return [];
+                  const found = yield* m.reading.threads({
+                    ...q,
+                    accountIds,
+                    limit: Math.min(q.limit ?? 5, 5),
                   });
-                return yield* read(id, maxChars);
-              }),
+                  const safe = found.map((thread) => ({
+                    ...thread,
+                    snippet: "",
+                    attachmentNames: [],
+                    derivedMatches: [],
+                    searchMatches: [],
+                  }));
+                  for (const thread of safe)
+                    sources.set(thread.id, { id: thread.id, subject: thread.subject });
+                  return yield* budget(safe);
+                }),
+              // The thread the question is about is already in the prompt; reading it again
+              // would only spend the budget.
+              threadForModel: (id, maxChars) =>
+                Effect.gen(function* () {
+                  const head = (yield* store.getThread(id))[0];
+                  if (
+                    selectedThread &&
+                    head?.accountId === selectedThread.accountId &&
+                    head.threadId === selectedThread.threadId
+                  )
+                    return yield* new InvalidInput({
+                      message:
+                        "This conversation is already in the question above. Answer from it; read_thread is for other conversations.",
+                    });
+                  return yield* read(id, maxChars);
+                }),
+            },
             ai: {
               ...m.ai,
               semanticSearch: (q) =>

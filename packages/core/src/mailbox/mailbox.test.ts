@@ -42,14 +42,14 @@ import type { ProviderAdapter } from "../providers/adapter.js";
   it.effect("a person's archive changes local labels, reaches the provider and is audited", () =>
     withGmail([incoming("m1")], (m, server) =>
       Effect.gen(function* () {
-        const [thread] = yield* m.threads({ mailbox: "inbox" });
+        const [thread] = yield* m.reading.threads({ mailbox: "inbox" });
         assert.ok(thread);
         const outcome = yield* m.perform(
           { kind: "modify", threads: [thread.id], op: { kind: "archive" } },
           user,
         );
         assert.strictEqual(outcome.status, "applied");
-        assert.deepStrictEqual(yield* m.threads({ mailbox: "inbox" }), []);
+        assert.deepStrictEqual(yield* m.reading.threads({ mailbox: "inbox" }), []);
         assert.deepStrictEqual(server.pushed, [{ providerId: "m1", op: { kind: "archive" } }]);
         const [entry] = yield* m.audit(10);
         assert.ok(entry);
@@ -62,7 +62,7 @@ import type { ProviderAdapter } from "../providers/adapter.js";
   it.effect("agents are read-only until allowed; proposals run only when a person approves", () =>
     withGmail([incoming("m1")], (m, server) =>
       Effect.gen(function* () {
-        const [thread] = yield* m.threads({});
+        const [thread] = yield* m.reading.threads({});
         const archive = { kind: "modify", threads: [thread!.id], op: { kind: "archive" } } as const;
 
         const denied = yield* m.perform(archive, agent);
@@ -97,7 +97,7 @@ import type { ProviderAdapter } from "../providers/adapter.js";
   it.effect("MCP cannot propose a send; a person's reply carries the original", () =>
     withGmail([incoming("m1")], (m, server) =>
       Effect.gen(function* () {
-        const [thread] = yield* m.threads({});
+        const [thread] = yield* m.reading.threads({});
         const message = {
           to: [{ name: "", address: "alice@example.com" }],
           cc: [],
@@ -160,7 +160,7 @@ import type { ProviderAdapter } from "../providers/adapter.js";
   it.effect("an auth failure pauses the account and keeps the change queued", () =>
     withGmail([incoming("m1")], (m, server) =>
       Effect.gen(function* () {
-        const [thread] = yield* m.threads({});
+        const [thread] = yield* m.reading.threads({});
         server.failNext = new AuthError({ accountId: thread!.accountId, message: "revoked" });
         const outcome = yield* m.perform(
           { kind: "modify", threads: [thread!.id], op: { kind: "read", value: true } },
@@ -170,7 +170,7 @@ import type { ProviderAdapter } from "../providers/adapter.js";
         const [account] = yield* m.accounts;
         assert.strictEqual(account?.needsReauth, true);
         // Local state changed anyway.
-        assert.strictEqual((yield* m.thread(thread!.id))[0]?.isUnread, false);
+        assert.strictEqual((yield* m.reading.thread(thread!.id))[0]?.isUnread, false);
 
         const [result] = yield* m.sync();
         assert.strictEqual(result?.needsReauth, true);
@@ -195,7 +195,7 @@ import type { ProviderAdapter } from "../providers/adapter.js";
   it.effect("a transient push failure retries after backoff on the next sync", () =>
     withGmail([incoming("m1")], (m, server) =>
       Effect.gen(function* () {
-        const [thread] = yield* m.threads({});
+        const [thread] = yield* m.reading.threads({});
         server.failNext = new ProviderError({ message: "503" });
         yield* m.perform(
           { kind: "modify", threads: [thread!.id], op: { kind: "star", value: true } },
@@ -223,7 +223,7 @@ import type { ProviderAdapter } from "../providers/adapter.js";
         assert.strictEqual(result?.error, undefined);
         assert.deepStrictEqual((yield* m.syncState).errors, []);
         assert.strictEqual((yield* m.accounts)[0]?.lastSyncError, null);
-        assert.strictEqual((yield* m.threads({ mailbox: "inbox" })).length, 2);
+        assert.strictEqual((yield* m.reading.threads({ mailbox: "inbox" })).length, 2);
       }),
     ),
   );
@@ -244,7 +244,7 @@ import type { ProviderAdapter } from "../providers/adapter.js";
         for (let second = 0; second < 10; second++) yield* TestClock.adjust("1 second");
         const [result] = yield* Fiber.join(fiber);
         assert.strictEqual(result?.error, undefined);
-        assert.strictEqual((yield* m.threads({ mailbox: "inbox" })).length, 2);
+        assert.strictEqual((yield* m.reading.threads({ mailbox: "inbox" })).length, 2);
       }),
     ),
   );
@@ -380,25 +380,25 @@ import type { ProviderAdapter } from "../providers/adapter.js";
       (m, server) =>
         Effect.gen(function* () {
           server.raw.set("m1", new TextEncoder().encode(RELATED));
-          const [thread] = yield* m.threads({});
+          const [thread] = yield* m.reading.threads({});
           const id = thread!.id;
 
-          const raw = yield* m.rawMessage(id);
+          const raw = yield* m.reading.rawMessage(id);
           assert.include(raw, "Subject: Logo");
 
-          const first = yield* m.attachment(id, 0);
+          const first = yield* m.reading.attachment(id, 0);
           assert.strictEqual(first.filename, "报价.txt");
           assert.strictEqual(new TextDecoder().decode(first.data), "价格表");
-          const second = yield* m.attachment(id, 1);
+          const second = yield* m.reading.attachment(id, 1);
           assert.strictEqual(new TextDecoder().decode(second.data), "second copy");
-          const missing = yield* Effect.flip(m.attachment(id, 2));
+          const missing = yield* Effect.flip(m.reading.attachment(id, 2));
           assert.strictEqual(missing._tag, "NotFound");
 
-          const inline = yield* m.inlineImages(id);
+          const inline = yield* m.reading.inlineImages(id);
           assert.deepStrictEqual(Object.keys(inline), ["logo@x"]);
           assert.match(inline["logo@x"] ?? "", /^data:image\/png;base64,/);
           server.raw.delete("m1");
-          assert.deepStrictEqual(yield* m.inlineImages(id), inline);
+          assert.deepStrictEqual(yield* m.reading.inlineImages(id), inline);
         }),
     );
   });
@@ -406,12 +406,12 @@ import type { ProviderAdapter } from "../providers/adapter.js";
   it.effect("the remote image allowlist stores addresses and domains in lower case", () =>
     withGmail([], (m) =>
       Effect.gen(function* () {
-        yield* m.setImageSender("News@Shop.com", true);
-        yield* m.setImageSender("@Example.ORG", true);
-        yield* m.setImageSender("  ", true);
-        assert.deepStrictEqual(yield* m.imageSenders, ["example.org", "news@shop.com"]);
-        yield* m.setImageSender("EXAMPLE.org", false);
-        assert.deepStrictEqual(yield* m.imageSenders, ["news@shop.com"]);
+        yield* m.reading.setImageSender("News@Shop.com", true);
+        yield* m.reading.setImageSender("@Example.ORG", true);
+        yield* m.reading.setImageSender("  ", true);
+        assert.deepStrictEqual(yield* m.reading.imageSenders, ["example.org", "news@shop.com"]);
+        yield* m.reading.setImageSender("EXAMPLE.org", false);
+        assert.deepStrictEqual(yield* m.reading.imageSenders, ["news@shop.com"]);
       }),
     ),
   );
@@ -426,7 +426,7 @@ import type { ProviderAdapter } from "../providers/adapter.js";
             { kind: "modify", threads: ["gmail:me@gmail.com/m1"], op: { kind: "archive" } },
             user,
           );
-          assert.strictEqual((yield* m.threads({ mailbox: "inbox" })).length, gone ? 0 : 1);
+          assert.strictEqual((yield* m.reading.threads({ mailbox: "inbox" })).length, gone ? 0 : 1);
           assert.ok((yield* m.audit(10)).some((entry) => entry.action === "sync-failed"));
         }),
       ),
@@ -441,7 +441,7 @@ import type { ProviderAdapter } from "../providers/adapter.js";
           user,
         );
         for (let attempt = 0; attempt < 4; attempt++) yield* m.sync();
-        assert.strictEqual((yield* m.threads({ mailbox: "inbox" })).length, 0);
+        assert.strictEqual((yield* m.reading.threads({ mailbox: "inbox" })).length, 0);
         assert.isFalse((yield* m.audit(10)).some((entry) => entry.action === "sync-failed"));
       }),
     ),
@@ -693,12 +693,12 @@ it.effect(
       assert.isNull(yield* mailbox.compose.draftStatus(draft.id));
       assert.ok((yield* store.listPendingOps).some((op) => op.op.kind === "deleteDraft"));
       yield* mailbox.sync(account.id);
-      assert.deepStrictEqual(yield* mailbox.threads({ mailbox: "drafts" }), []);
+      assert.deepStrictEqual(yield* mailbox.reading.threads({ mailbox: "drafts" }), []);
       yield* TestClock.adjust("10 minutes");
       yield* mailbox.sync(account.id);
       assert.strictEqual(server.drafts.size, 0);
       assert.strictEqual(server.draftLog.filter((entry) => entry.kind === "delete").length, 1);
-      assert.deepStrictEqual(yield* mailbox.threads({ mailbox: "drafts" }), []);
+      assert.deepStrictEqual(yield* mailbox.reading.threads({ mailbox: "drafts" }), []);
       assert.deepStrictEqual(yield* mailbox.proposals, []);
     }).pipe(Effect.provide(TestMailbox({ gmail: server })));
   },
