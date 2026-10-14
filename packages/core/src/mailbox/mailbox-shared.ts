@@ -6,6 +6,8 @@ import type { Provider } from "../domain/account.js";
 import { applyOpToLabels } from "../domain/mail-ops.js";
 
 export const WRITE_RECOVERY_WINDOW_MS = 2 * 60_000;
+/** What restoring or saving a draft the person already discarded fails with. */
+export const DISCARDED_DRAFT_MESSAGE = "This draft was already discarded.";
 
 export const cacheIO = <A>(work: () => Promise<A>, fallback: A) =>
   Effect.tryPromise(work).pipe(

@@ -30,7 +30,7 @@ import { InvalidInput, NotFound, PermanentError, ProviderError } from "../domain
 import { isLocalFeedbackDraft } from "../app/feedback.js";
 import { withAgentOrigin } from "./mailbox-apply.js";
 import { type MailboxDependencies, type MailboxRuntimeState } from "./mailbox-runtime.js";
-import { WRITE_RECOVERY_WINDOW_MS } from "./mailbox-shared.js";
+import { DISCARDED_DRAFT_MESSAGE, WRITE_RECOVERY_WINDOW_MS } from "./mailbox-shared.js";
 import { type Mailbox } from "./mailbox.js";
 import { renderMarkdown } from "../compose/markdown.js";
 import { newMessageId } from "../mime/message-id.js";
@@ -349,6 +349,14 @@ export const makeDraftsMailbox = (
       return yield* new InvalidInput({ message: "Invalid draft label or keyword" });
     const saved = yield* store.transaction(
       Effect.gen(function* () {
+        // A save that arrives after the person discarded the draft must not bring it back.
+        const discard = yield* store.draftDiscard(input.id);
+        if (Option.isSome(discard))
+          return yield* new InvalidInput({
+            message: discard.value.discarded
+              ? DISCARDED_DRAFT_MESSAGE
+              : "This draft is being discarded. Undo the discard to keep it.",
+          });
         const existing = yield* store.getDraft(input.id);
         const localOnly = Option.isSome(existing) && existing.value.localOnly;
         if (Option.isSome(existing)) {

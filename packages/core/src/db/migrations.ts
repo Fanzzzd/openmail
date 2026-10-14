@@ -1383,6 +1383,14 @@ CREATE TRIGGER snoozed_list_date_insert AFTER INSERT ON snoozed_messages BEGIN
      DELETE FROM derived_bigrams WHERE rowid=old.id;
      DELETE FROM search_bigram_pending WHERE kind='derived' AND row_id=old.id;
    END;`,
+  // user_version 49: discards the person asked for, kept across restarts. A row with discarded=0
+  // is a held discard due at discard_at; discarded=1 is a tombstone that makes late saves of that
+  // draft id fail until it is pruned.
+  `CREATE TABLE draft_discards (
+     id TEXT PRIMARY KEY,
+     discard_at INTEGER NOT NULL,
+     discarded INTEGER NOT NULL DEFAULT 0
+   );`,
 ];
 
 /** Index of migration 37, the cache rowid rebuild. It runs when user_version equals this index. */

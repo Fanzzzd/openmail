@@ -79,6 +79,13 @@ export interface PendingOp {
 }
 
 /** A draft as the store keeps it, with where the provider has its copy. */
+/** A discard the person asked for: held until `discardAt`, or done (`discarded`) at that time. */
+export interface DraftDiscard {
+  readonly id: string;
+  readonly discardAt: number;
+  readonly discarded: boolean;
+}
+
 export interface StoredDraft {
   id: string;
   accountId: string;
@@ -452,6 +459,16 @@ export class Store extends Context.Service<
      * of the account when `messageId` is unset), unless a push is queued.
      */
     dropSyncedDrafts(accountId: string, messageId?: string): Effect.Effect<void>;
+    /** Holds a discard of the draft until `discardAt`; survives a restart. */
+    holdDraftDiscard(id: string, discardAt: number): Effect.Effect<void>;
+    /** Takes a held discard back. True when one was held. */
+    releaseDraftDiscard(id: string): Effect.Effect<boolean>;
+    /** Records that the draft was discarded, so a late save of its id fails. */
+    markDraftDiscarded(id: string): Effect.Effect<void>;
+    draftDiscard(id: string): Effect.Effect<Option.Option<DraftDiscard>>;
+    readonly draftDiscards: Effect.Effect<readonly DraftDiscard[]>;
+    /** Forgets finished discards recorded before `before`. */
+    pruneDraftDiscards(before: number): Effect.Effect<void>;
 
     // Compose settings
     /** Indexed incoming-message bookkeeping, cascaded with the account. */

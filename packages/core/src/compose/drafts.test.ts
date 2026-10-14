@@ -233,18 +233,56 @@ import { replyFromAddress } from "./signatures.js";
     ),
   );
 
-  it.effect("saving a draft whose discard is held keeps the draft", () =>
+  it.effect("a late save during a held discard fails and leaves the discard in place", () =>
     withMail((m, server) =>
       Effect.gen(function* () {
         yield* m.saveDraft({ id: "draft:1", accountId: GMAIL, message: draftMessage() });
         yield* m.discardDraftLater("draft:1", 10_000);
+        const late = yield* Effect.flip(
+          m.saveDraft({ id: "draft:1", accountId: GMAIL, message: draftMessage({ text: "late" }) }),
+        );
+        assert.strictEqual(late._tag, "InvalidInput");
+        yield* TestClock.adjust("10 seconds");
+        assert.strictEqual(server.drafts.size, 0);
+        assert.deepStrictEqual(yield* draftIds(m), []);
+      }),
+    ),
+  );
+
+  it.effect("a late save after the discard finished does not recreate the draft", () =>
+    withMail((m, server) =>
+      Effect.gen(function* () {
+        yield* m.saveDraft({ id: "draft:1", accountId: GMAIL, message: draftMessage() });
+        yield* m.discardDraftLater("draft:1", 10_000);
+        yield* TestClock.adjust("10 seconds");
+        const late = yield* Effect.flip(
+          m.saveDraft({ id: "draft:1", accountId: GMAIL, message: draftMessage({ text: "late" }) }),
+        );
+        assert.strictEqual(late._tag, "InvalidInput");
+        yield* m.saveDraft({ id: "draft:2", accountId: GMAIL, message: draftMessage() });
+        yield* m.discardDraft("draft:2");
+        const afterNow = yield* Effect.flip(
+          m.saveDraft({ id: "draft:2", accountId: GMAIL, message: draftMessage() }),
+        );
+        assert.strictEqual(afterNow._tag, "InvalidInput");
+        assert.strictEqual(server.drafts.size, 0);
+        assert.deepStrictEqual(yield* draftIds(m), []);
+      }),
+    ),
+  );
+
+  it.effect("undoing a held discard lets the draft save again", () =>
+    withMail((m) =>
+      Effect.gen(function* () {
+        yield* m.saveDraft({ id: "draft:1", accountId: GMAIL, message: draftMessage() });
+        yield* m.discardDraftLater("draft:1", 10_000);
+        yield* m.restoreDraft("draft:1");
         yield* m.saveDraft({
           id: "draft:1",
           accountId: GMAIL,
           message: draftMessage({ text: "kept" }),
         });
         yield* TestClock.adjust("1 minute");
-        assert.strictEqual(server.drafts.size, 1);
         assert.strictEqual((yield* m.openDraft("draft:1")).message.text, "kept");
       }),
     ),

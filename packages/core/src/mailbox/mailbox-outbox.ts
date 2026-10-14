@@ -12,7 +12,7 @@ import {
   SendUncertain,
 } from "../domain/errors.js";
 import { type MailboxDependencies, type MailboxRuntimeState } from "./mailbox-runtime.js";
-import { WRITE_RECOVERY_WINDOW_MS } from "./mailbox-shared.js";
+import { DISCARDED_DRAFT_MESSAGE, WRITE_RECOVERY_WINDOW_MS } from "./mailbox-shared.js";
 import { type Mailbox } from "./mailbox.js";
 import { mobileAttachmentProblem, type QueuedSend } from "./mobile-outbox.js";
 import { isDefiniteSendFailure } from "../providers/provider-send.js";
@@ -20,6 +20,9 @@ import { READ_ONLY_MESSAGE } from "./read-only.js";
 import { isEmailAddress } from "../compose/recipients.js";
 import type { StoredDraft } from "../store/service.js";
 import { providerCapabilities } from "../providers/capabilities.js";
+
+/** A finished discard keeps its draft id this long, so a save arriving late can't recreate it. */
+const DISCARD_TOMBSTONE_MS = 7 * 24 * 60 * 60 * 1000;
 
 const isWaitingSend = (item: QueuedSend) => item.status === "waiting";
 
@@ -540,7 +543,8 @@ export const makeOutboxMailbox = (
     });
   const start = Effect.gen(function* () {
     // Recover interrupted claims only in send-owning app layers; CLI/MCP never resume desktop intents.
-    if (!readOnly && (options.resumeDesktopSends || options.localDraftQueue))
+    if (!readOnly && (options.resumeDesktopSends || options.localDraftQueue)) {
+      yield* resumeHeldDiscards;
       for (const item of yield* store.queuedSends) {
         if (item.status === "sending") {
           yield* store.transaction(
@@ -560,20 +564,50 @@ export const makeOutboxMailbox = (
             : scheduleQueuedSend(item.id, item.due, item.deliveryId);
         }
       }
+    }
   });
+  /** Records the discard before deleting, so a save racing it can't bring the draft back. */
   const discardNow = (id: string) =>
     store
-      .deleteQueuedSend(id)
-      .pipe(Effect.andThen(discardDraft(id)), runtime.outboxLock.withPermits(1));
+      .markDraftDiscarded(id)
+      .pipe(
+        Effect.andThen(store.deleteQueuedSend(id)),
+        Effect.andThen(discardDraft(id)),
+        runtime.outboxLock.withPermits(1),
+      );
 
-  /** Discards waiting for their undo window. The draft stays untouched until the worker runs. */
+  /**
+   * Discards waiting for their undo window. The draft stays untouched until the worker runs.
+   * Each also has a draft_discards row, so a restart inside the window still discards it.
+   */
   const heldDiscards = new Map<string, Fiber.Fiber<void>>();
   /** Takes a held discard back; the worker removes its entry before it starts deleting. */
   const releaseDiscard = (id: string) =>
-    Effect.suspend(() => {
+    Effect.gen(function* () {
       const worker = heldDiscards.get(id);
       heldDiscards.delete(id);
-      return worker ? Fiber.interrupt(worker).pipe(Effect.as(true)) : Effect.succeed(false);
+      if (worker) yield* Fiber.interrupt(worker);
+      const stored = yield* store.releaseDraftDiscard(id);
+      return worker !== undefined || stored;
+    });
+
+  /** Runs the discard at `at` unless it is taken back first, here or by another process. */
+  const holdUntil = (id: string, at: number) =>
+    Effect.gen(function* () {
+      const now = yield* Clock.currentTimeMillis;
+      const worker = yield* Effect.sleep(Math.max(0, at - now)).pipe(
+        Effect.andThen(
+          Effect.gen(function* () {
+            if (heldDiscards.get(id) !== worker) return;
+            heldDiscards.delete(id);
+            const held = yield* store.draftDiscard(id);
+            if (Option.isNone(held) || held.value.discarded) return;
+            yield* discardNow(id);
+          }).pipe(Effect.uninterruptible),
+        ),
+        Effect.forkIn(mailboxScope),
+      );
+      heldDiscards.set(id, worker);
     });
 
   const discardDraftLater = (id: string, holdMs: number) =>
@@ -585,19 +619,26 @@ export const makeOutboxMailbox = (
         yield* discardNow(id);
         return false;
       }
-      const worker = yield* Effect.sleep(holdMs).pipe(
-        Effect.andThen(
-          Effect.suspend(() => {
-            if (heldDiscards.get(id) !== worker) return Effect.void;
-            heldDiscards.delete(id);
-            return discardNow(id);
-          }).pipe(Effect.uninterruptible),
-        ),
-        Effect.forkIn(mailboxScope),
-      );
-      heldDiscards.set(id, worker);
+      const at = (yield* Clock.currentTimeMillis) + holdMs;
+      yield* store.holdDraftDiscard(id, at);
+      yield* holdUntil(id, at);
       return true;
     }).pipe(Effect.uninterruptible);
+
+  /**
+   * At start: discards whose window passed while OpenMail was not running happen now, and the
+   * rest wait out what is left of theirs. Old tombstones go.
+   */
+  const resumeHeldDiscards = Effect.gen(function* () {
+    const now = yield* Clock.currentTimeMillis;
+    yield* store.pruneDraftDiscards(now - DISCARD_TOMBSTONE_MS);
+    for (const held of yield* store.draftDiscards) {
+      if (held.discarded || heldDiscards.has(held.id)) continue;
+      if (Option.isNone(yield* store.getDraft(held.id))) yield* store.markDraftDiscarded(held.id);
+      else if (held.discardAt <= now) yield* discardNow(held.id);
+      else yield* holdUntil(held.id, held.discardAt);
+    }
+  });
 
   /** The mailbox is closing: finish the discards the person asked for. */
   const finishHeldDiscards = Effect.suspend(() => {
@@ -643,13 +684,12 @@ export const makeOutboxMailbox = (
       restoreDraft: (id) =>
         Effect.gen(function* () {
           const draft = (yield* releaseDiscard(id)) ? yield* draftStatus(id) : null;
-          if (!draft)
-            return yield* new InvalidInput({ message: "This draft was already discarded." });
+          if (!draft) return yield* new InvalidInput({ message: DISCARDED_DRAFT_MESSAGE });
           return draft;
         }),
 
-      // Editing or opening a draft whose discard is held keeps it.
-      saveDraft: (input) => releaseDiscard(input.id).pipe(Effect.andThen(saveDraft(input))),
+      // A save of a draft whose discard is held or done fails (persistDraft); opening it keeps it.
+      saveDraft,
 
       openDraft: (id) => releaseDiscard(id).pipe(Effect.andThen(openDraft(id))),
     } satisfies Pick<

@@ -16,7 +16,7 @@ import {
   OutgoingMessage,
 } from "../domain/changes.js";
 import { normalizeComposeMessage } from "../compose/compose-body.js";
-import type { StoredDraft } from "./service.js";
+import type { DraftDiscard, StoredDraft } from "./service.js";
 import { all, first, run } from "./sql-rows.js";
 
 const DraftRow = Schema.Struct({
@@ -367,8 +367,58 @@ export function makeDraftStore(sql: SqlClient.SqlClient) {
       )
       .pipe(Effect.orDie);
 
+  const DiscardRow = Schema.Struct({
+    id: Schema.String,
+    discard_at: Schema.Number,
+    discarded: Schema.BooleanFromBit,
+  });
+  const toDiscard = (row: typeof DiscardRow.Type): DraftDiscard => ({
+    id: row.id,
+    discardAt: row.discard_at,
+    discarded: row.discarded,
+  });
+
+  const holdDraftDiscard = Effect.fn("Store.holdDraftDiscard")((id: string, discardAt: number) =>
+    run(sql`INSERT INTO draft_discards(id,discard_at,discarded) VALUES(${id},${discardAt},0)
+      ON CONFLICT(id) DO UPDATE SET discard_at=excluded.discard_at, discarded=0`),
+  );
+
+  /** Drops a held discard; a finished one stays. True when one was held. */
+  const releaseDraftDiscard = Effect.fn("Store.releaseDraftDiscard")(function* (id: string) {
+    const rows = yield* all(IdRow)(
+      sql`DELETE FROM draft_discards WHERE id=${id} AND discarded=0 RETURNING id`,
+    );
+    return rows.length > 0;
+  });
+
+  const markDraftDiscarded = Effect.fn("Store.markDraftDiscarded")(function* (id: string) {
+    const now = yield* Clock.currentTimeMillis;
+    yield* run(sql`INSERT INTO draft_discards(id,discard_at,discarded) VALUES(${id},${now},1)
+      ON CONFLICT(id) DO UPDATE SET discard_at=excluded.discard_at, discarded=1`);
+  });
+
+  const draftDiscard = Effect.fn("Store.draftDiscard")((id: string) =>
+    first(DiscardRow)(sql`SELECT id,discard_at,discarded FROM draft_discards WHERE id=${id}`).pipe(
+      Effect.map(Option.map(toDiscard)),
+    ),
+  );
+
+  const draftDiscards = all(DiscardRow)(
+    sql`SELECT id,discard_at,discarded FROM draft_discards ORDER BY discard_at`,
+  ).pipe(Effect.map((rows) => rows.map(toDiscard)));
+
+  const pruneDraftDiscards = Effect.fn("Store.pruneDraftDiscards")((before: number) =>
+    run(sql`DELETE FROM draft_discards WHERE discarded=1 AND discard_at < ${before}`),
+  );
+
   return {
     localDrafts,
+    holdDraftDiscard,
+    releaseDraftDiscard,
+    markDraftDiscarded,
+    draftDiscard,
+    draftDiscards,
+    pruneDraftDiscards,
     countLocalDrafts,
     getDraft,
     draftByRemoteMessage,

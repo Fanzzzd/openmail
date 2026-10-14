@@ -10,6 +10,7 @@ export const RECOVERY_TABLES = [
   "agent_policies",
   "proposals",
   "drafts",
+  "draft_discards",
   "pending_ops",
   "failed_ops",
   "prefs",
