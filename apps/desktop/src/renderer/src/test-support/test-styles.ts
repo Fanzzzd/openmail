@@ -13,7 +13,7 @@ export function builtStyles() {
 }
 
 type Theme = "light" | "dark";
-type Paint = "color" | "background-color";
+type Paint = "color" | "background-color" | "border-color";
 
 const escapeClass = (name: string) => `.${name.replace(/[^\w-]/g, (c) => `\\${c}`)}`;
 const inDarkMedia = (node: Node) => {
@@ -104,6 +104,16 @@ export function builtPalette(css: Root = builtStyles()) {
     /** WCAG 2.1 contrast of an element's text against what is painted under it. */
     contrast: (element: Element, theme: Theme) =>
       text(element, theme).contrast(background(element, theme), "WCAG21"),
+    /**
+     * Non-text contrast (WCAG 1.4.11) of an element's own fill or border against what is
+     * painted under the element.
+     */
+    indicator: (element: Element, paint: "background-color" | "border-color", theme: Theme) => {
+      const color = own(element, paint, theme);
+      if (!color) throw new Error(`No ${paint} on ${element.className}`);
+      const under = element.parentElement ? background(element.parentElement, theme) : undefined;
+      return color.contrast(under ?? resolve("var(--a11y-surface)", theme), "WCAG21");
+    },
     /** The built declarations of one utility class and its variants, as `prop: value` strings. */
     declarations: (name: string) => {
       const found: string[] = [];

@@ -104,7 +104,7 @@ it("classification moves all Inbox messages in the conversation and Undo restore
   const h = current;
   await eventually(() => expect(row(h.id("one"))).toBeTruthy());
   fireEvent.click(row(h.id("one")));
-  await screen.findByRole("article", { name: "Selected message" });
+  await screen.findByRole("article", { name: /^Selected message/ });
   clickButton("Focused/Other");
   fireEvent.click(await screen.findByRole("menuitem", { name: "Move to Other" }));
   await eventually(async () => {

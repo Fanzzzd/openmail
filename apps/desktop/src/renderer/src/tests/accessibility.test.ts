@@ -516,7 +516,11 @@ it("audits the main sidebar, virtual list and reader with fixture messages", asy
     "false",
     "false",
   ]);
-  expect(screen.getByRole("heading", { level: 3, name: message.subject })).toBeTruthy();
+  // The subject heads the thread; each message is headed by sender and time.
+  expect(screen.getByRole("heading", { level: 2, name: message.subject })).toBeTruthy();
+  expect(
+    screen.getByRole("heading", { level: 3, name: new RegExp(`^${message.from.name}, `) }),
+  ).toBeTruthy();
   await audit();
   options[0]?.focus();
   fireEvent.keyDown(options[0] ?? document.body, { key: "F10", shiftKey: true });
@@ -524,6 +528,69 @@ it("audits the main sidebar, virtual list and reader with fixture messages", asy
   await audit();
   fireEvent.keyDown(screen.getByRole("menu"), { key: "Escape" });
   await waitFor(() => expect(document.activeElement).toBe(options[0]));
+});
+
+it("names a row's label chips and AI suggestion, keeps the chip out of the tab order and decides it from the menu", async () => {
+  fixture.values.set("AiSettings", {
+    keyConfigured: true,
+    accounts: [{ accountId: account.id, allowed: true, autoTriage: true }],
+  });
+  fixture.values.set("AiTriage", {
+    status: "pending",
+    action: { kind: "archive" },
+    reason: "No action needed",
+    model: "Test model",
+  });
+  const work = { accountId: account.id, id: "Label_work", name: "Work", color: null };
+  render(
+    localized(
+      h(
+        "main",
+        null,
+        h(
+          MessageList,
+          listProps({
+            threads: [{ ...thread, labels: ["INBOX", "Label_work"] }],
+            labels: new Map([[`${account.id}/Label_work`, work]]),
+          }),
+        ),
+      ),
+    ),
+  );
+  const option = screen.getByRole("option");
+  expect(option.textContent).toContain("Work");
+  expect(screen.getByRole("option", { name: /, Work, AI suggestion: Archive$/ })).toBe(option);
+  const chip = option.parentElement?.querySelector("button:not([role])");
+  expect(chip?.getAttribute("tabindex")).toBe("-1");
+  await audit();
+  option.focus();
+  fireEvent.keyDown(option, { key: "F10", shiftKey: true });
+  fireEvent.click(await screen.findByRole("menuitem", { name: "Accept AI suggestion: Archive" }));
+  expect(fixture.decide).toHaveBeenCalledWith(
+    expect.objectContaining({ payload: { id: thread.id, accept: true } }),
+  );
+  fixture.values.set("AiTriage", null);
+  fixture.values.delete("AiSettings");
+});
+
+it("gives collapsed messages a heading and an expanded state", () => {
+  render(
+    localized(
+      h(ThreadView, {
+        messages: [message, { ...message, id: `${message.id}-2`, date: message.date + 1 }],
+        selectedId: `${message.id}-2`,
+        single: false,
+        notify: vi.fn(),
+      }),
+    ),
+  );
+  const collapsed = document.querySelector(`[data-message-id="${message.id}"]`);
+  expect(collapsed?.getAttribute("aria-expanded")).toBe("false");
+  expect(collapsed?.parentElement?.tagName).toBe("H3");
+  expect(
+    screen.getByRole("button", { name: "Collapse message" }).getAttribute("aria-expanded"),
+  ).toBe("true");
+  expect(screen.getByRole("article", { name: /^Selected message from Alice, / })).toBeTruthy();
 });
 
 it("names a row's message count, attachments and account, with the account initial on screen", async () => {
@@ -982,6 +1049,43 @@ it("announces undo politely and errors assertively", () => {
   expect(screen.getByRole("alert").getAttribute("aria-live")).toBe("assertive");
 });
 
+it("keeps a toast while it is hovered or focused, and returns focus when it closes", () => {
+  vi.useFakeTimers();
+  try {
+    const onDone = vi.fn();
+    const run = vi.fn();
+    const origin = document.createElement("button");
+    document.body.append(origin);
+    render(
+      h(Toast, {
+        toast: { id: 1, text: "Draft discarded", action: { label: "Undo", run } },
+        onDone,
+      }),
+    );
+    const undo = screen.getByRole("button", { name: "Undo" });
+    const toast = undo.parentElement!;
+    fireEvent.mouseEnter(toast);
+    act(() => {
+      vi.advanceTimersByTime(10_000);
+    });
+    expect(onDone).not.toHaveBeenCalled();
+    fireEvent.mouseLeave(toast);
+    origin.focus();
+    act(() => undo.focus());
+    act(() => {
+      vi.advanceTimersByTime(10_000);
+    });
+    expect(onDone).not.toHaveBeenCalled();
+    fireEvent.keyDown(undo, { key: "Escape" });
+    expect(onDone).toHaveBeenCalledTimes(1);
+    expect(document.activeElement).toBe(origin);
+    expect(run).not.toHaveBeenCalled();
+    origin.remove();
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
 it("announces AI state changes without putting streamed text in a live region", () => {
   const result = {
     text: "First token",
@@ -1376,7 +1480,7 @@ it("a failed body refresh preserves the reader and cached preview with a non-blo
       }),
     ),
   );
-  expect(screen.getByRole("article", { name: "Selected message" }).textContent).toContain(
+  expect(screen.getByRole("article", { name: /^Selected message/ }).textContent).toContain(
     "Cached preview while offline",
   );
   expect(
@@ -2150,6 +2254,32 @@ it("audits list notices, announces offline and sync failure once and keeps focus
   expect(document.activeElement).toBe(screen.getByRole("option"));
   remounted.rerender(notice(true, ok));
   expect(statuses()).toEqual(["", "Syncing normally"]);
+});
+
+it("marks the selected row and the active message at 3:1 non-text contrast in both themes", () => {
+  const palette = builtPalette();
+  render(
+    localized(
+      h(
+        "main",
+        null,
+        h(MessageList, listProps({ selectedId: thread.id, selectedIds: new Set([thread.id]) })),
+        h(ThreadView, {
+          messages: [message, { ...message, id: `${message.id}-2`, date: message.date + 1 }],
+          selectedId: message.id,
+          single: false,
+          notify: vi.fn(),
+        }),
+      ),
+    ),
+  );
+  const bar = document.querySelector("[data-selection-bar]");
+  const active = screen.getByRole("article", { name: /^Selected message/ });
+  expect(bar).toBeTruthy();
+  for (const theme of ["light", "dark"] as const) {
+    expect(palette.indicator(bar!, "background-color", theme), theme).toBeGreaterThanOrEqual(3);
+    expect(palette.indicator(active, "border-color", theme), theme).toBeGreaterThanOrEqual(3);
+  }
 });
 
 it("keeps list notices, the batch count badge, empty list text and search marks at WCAG AA", () => {

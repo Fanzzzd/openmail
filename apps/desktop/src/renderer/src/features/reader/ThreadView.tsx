@@ -35,6 +35,7 @@ import { isBackKey } from "../../lib/responsive-layout";
 import { forwardFrameKey } from "./frame/forward-frame-key";
 import { constVoid } from "effect/Function";
 import {
+  ACTIVE_MESSAGE_BORDER,
   Avatar,
   Expanded,
   MessageHead,
@@ -583,23 +584,28 @@ export function ThreadView({
               }
             />
           ) : (
-            <button
-              key={m.id}
-              data-message-id={m.id}
-              type="button"
-              onClick={() => {
-                activate(m.id);
-                toggle(m.id);
-              }}
-              onFocus={() => activate(m.id)}
-              className={`@container/message flex w-full gap-3 py-3 text-left ${m.id === activeId ? "border-l-2 border-blue-400 pl-2" : ""}`}
-            >
-              <Avatar message={m} />
-              <span className="min-w-0 flex-1 max-w-[75ch]">
-                <MessageHead message={m} />
-                <span className="mt-0.5 block truncate text-body text-a11y-muted">{m.snippet}</span>
-              </span>
-            </button>
+            // A heading per collapsed message, as for expanded ones; the button discloses it.
+            <h3 key={m.id}>
+              <button
+                data-message-id={m.id}
+                type="button"
+                aria-expanded={false}
+                onClick={() => {
+                  activate(m.id);
+                  toggle(m.id);
+                }}
+                onFocus={() => activate(m.id)}
+                className={`@container/message flex w-full gap-3 py-3 text-left ${m.id === activeId ? `border-l-2 ${ACTIVE_MESSAGE_BORDER} pl-2` : ""}`}
+              >
+                <Avatar message={m} />
+                <span className="min-w-0 flex-1 max-w-[75ch]">
+                  <MessageHead message={m} />
+                  <span className="mt-0.5 block truncate text-body text-a11y-muted">
+                    {m.snippet}
+                  </span>
+                </span>
+              </button>
+            </h3>
           ),
         )}
       </div>

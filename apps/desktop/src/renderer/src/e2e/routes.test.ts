@@ -59,7 +59,7 @@ it("opens the thread a route names and keeps the open thread in the route", asyn
     h.router.navigate({ href: `/mail/all/inbox?thread=${encodeURIComponent(h.id("two"))}` }),
   );
   await eventually(() =>
-    expect(screen.getByRole("article", { name: "Selected message" }).textContent).toContain(
+    expect(screen.getByRole("article", { name: /^Selected message/ }).textContent).toContain(
       "Original two",
     ),
   );
@@ -76,7 +76,7 @@ it("opens the thread a route names and keeps the open thread in the route", asyn
   await eventually(() => expect(h.href()).toBe("/mail/all/sent"));
   act(() => h.router.history.back());
   await eventually(() => expect(row(h.id("one")).getAttribute("aria-selected")).toBe("true"));
-  expect(screen.getByRole("article", { name: "Selected message" }).textContent).toContain(
+  expect(screen.getByRole("article", { name: /^Selected message/ }).textContent).toContain(
     "Original one",
   );
 });

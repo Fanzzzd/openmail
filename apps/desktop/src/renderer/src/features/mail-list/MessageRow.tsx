@@ -13,7 +13,7 @@ import { labelChipColors } from "../../lib/label-colors";
 import { Paperclip, Star } from "lucide-react";
 import { actionNames } from "../../i18n/action-names";
 import { AccountBadge, useAccountName } from "./AccountBadge";
-import { TriageChip } from "../ai";
+import { TriageChip, TriageMenuItems, TriageSummary } from "../ai";
 
 /** Opens a row, or adds it to the selection with ⌘ (toggle) or ⇧ (range). */
 export type SelectRow = (id: string, modifiers: { toggle: boolean; range: boolean }) => void;
@@ -61,9 +61,13 @@ export function RowMenu({ thread, actions }: { thread: ThreadSummary; actions: R
         onFilter={state.provider === "imap" ? undefined : () => actions.onFilter(thread)}
         onOpenWindow={() => actions.onOpenWindow(thread)}
       />
+      <TriageMenuItems id={thread.id} accountId={thread.accountId} labels={thread.labels} />
     </ContextMenuContent>
   );
 }
+
+/** Marks a selected row while the list is not focused, in both themes. */
+export const SELECTION_BAR = "bg-neutral-500 dark:bg-neutral-400";
 
 /** "Keith, Bruce, Neil": first names of the thread's senders. */
 function senders(t: ThreadSummary): string {
@@ -214,8 +218,10 @@ export const Row = memo(function Row({
             ...(m.isUnread ? [t`Unread`] : []),
             ...(m.isStarred ? [t`Starred`] : []),
             ...(m.hasAttachments ? [t`Has attachments`] : []),
+            ...chips.map((label) => label.name),
             ...(showAccount ? [accountLabel] : []),
           ].join(", ")}
+          <TriageSummary id={m.id} accountId={m.accountId} labels={m.labels} />
         </span>
         <span aria-hidden className="relative flex items-baseline gap-1.5">
           {m.isUnread && (
@@ -316,6 +322,14 @@ export const Row = memo(function Row({
               </span>
             ))}
           </span>
+        )}
+        {selected && !accent && (
+          // The pale selection fill alone is 1.2:1 against the list; this bar is over 3:1.
+          <span
+            aria-hidden
+            data-selection-bar
+            className={`absolute inset-y-2 left-1 w-[3px] rounded-full ${SELECTION_BAR}`}
+          />
         )}
         {rule && <span className="absolute right-3 bottom-0 left-7 h-px bg-separator" />}
       </button>

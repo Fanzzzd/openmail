@@ -150,6 +150,9 @@ export function MessageHead({
   );
 }
 
+/** The active message's left edge: 3:1 against the reader in both themes. */
+export const ACTIVE_MESSAGE_BORDER = "border-blue-600 dark:border-blue-400";
+
 export function Expanded({
   message: m,
   searchMatches,
@@ -214,7 +217,7 @@ export function Expanded({
   findIndex: number;
   onMatches: ((count: number) => void) | undefined;
 }) {
-  const { t } = useLingui();
+  const { t, i18n } = useLingui();
   const shortcut = useShortcutText();
   const dark = useDarkMode();
   const [override, setOverride] = useAtom(messageBackgroundAtom(m.id));
@@ -238,6 +241,8 @@ export function Expanded({
   const alwaysLoad = address && authenticated ? () => allow(address, true) : undefined;
 
   const separator = t({ message: ", ", comment: "Separator between list items" });
+  const sender = displayName(m.from);
+  const sent = threadDate(m.date, i18n);
   const to = m.to.map(displayName).join(separator) || "—";
   const cc = m.cc.map(displayName).join(separator);
   return (
@@ -247,10 +252,13 @@ export function Expanded({
       onKeyDownCapture={(event) => {
         if (event.nativeEvent.isTrusted) onActivate();
       }}
-      aria-label={active ? t`Selected message` : t`Message`}
-      className={`@container/message py-3 ${active ? "border-l-2 border-blue-400 pl-2" : ""}`}
+      aria-label={
+        active ? t`Selected message from ${sender}, ${sent}` : t`Message from ${sender}, ${sent}`
+      }
+      className={`@container/message py-3 ${active ? `border-l-2 ${ACTIVE_MESSAGE_BORDER} pl-2` : ""}`}
     >
-      <h3 className="sr-only">{m.subject || t`(No subject)`}</h3>
+      {/* The thread's heading has the subject; each message is found by sender and time. */}
+      <h3 className="sr-only">{t`${sender}, ${sent}`}</h3>
       {onEditDraft && (
         <div className="mb-2 flex items-center gap-2 rounded-control bg-red-500/[0.06] px-3 py-1.5 text-body">
           <span className="flex-1 text-a11y-danger dark:text-red-400">
@@ -290,6 +298,7 @@ export function Expanded({
             type="button"
             onClick={onCollapse}
             aria-label={t`Collapse message`}
+            aria-expanded
             className="size-7 shrink-0 p-1.5 text-a11y-muted"
           >
             <ChevronDown className="size-4" />

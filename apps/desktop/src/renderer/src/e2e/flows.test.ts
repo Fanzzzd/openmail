@@ -35,7 +35,7 @@ it("opening a thread delays mark read and switching cancels the previous timer",
   vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
   fireEvent.click(row(h.id("one")));
   await eventually(() =>
-    expect(screen.getByRole("article", { name: "Selected message" }).textContent).toContain(
+    expect(screen.getByRole("article", { name: /^Selected message/ }).textContent).toContain(
       "Original one",
     ),
   );
@@ -64,7 +64,7 @@ it.each([
     await eventually(() => expect(row(h.id("one"))).toBeTruthy());
     fireEvent.click(row(h.id("one")));
     await eventually(() =>
-      expect(screen.getByRole("article", { name: "Selected message" })).toBeTruthy(),
+      expect(screen.getByRole("article", { name: /^Selected message/ })).toBeTruthy(),
     );
     clickButton(button);
     await eventually(() => expect(row(h.id("two")).getAttribute("aria-selected")).toBe("true"));
@@ -88,7 +88,7 @@ it("Gmail labels remain additive and Cmd+Z removes only the added label", async 
   await eventually(() => expect(row(h.id("one"))).toBeTruthy());
   fireEvent.click(row(h.id("one")));
   await eventually(() =>
-    expect(screen.getByRole("article", { name: "Selected message" })).toBeTruthy(),
+    expect(screen.getByRole("article", { name: /^Selected message/ })).toBeTruthy(),
   );
   key("l", { metaKey: true });
   await eventually(() => expect(screen.getByRole("option", { name: "Work" })).toBeTruthy());
@@ -115,7 +115,7 @@ it("snooze advances selection and Cmd+Z restores the inbox and reminder", async 
   await eventually(() => expect(row(h.id("one"))).toBeTruthy());
   fireEvent.click(row(h.id("one")));
   await eventually(() =>
-    expect(screen.getByRole("article", { name: "Selected message" })).toBeTruthy(),
+    expect(screen.getByRole("article", { name: /^Selected message/ })).toBeTruthy(),
   );
   clickButton("Conversation actions");
   fireEvent.click(await screen.findByRole("menuitem", { name: "Snooze" }));
@@ -261,7 +261,7 @@ it.each(["reply", "replyAll", "forward"] as const)(
     await eventually(() => expect(row(h.id("one"))).toBeTruthy());
     fireEvent.click(row(h.id("one")));
     await eventually(() =>
-      expect(screen.getByRole("article", { name: "Selected message" })).toBeTruthy(),
+      expect(screen.getByRole("article", { name: /^Selected message/ })).toBeTruthy(),
     );
     key(mode === "forward" ? "f" : "r", { metaKey: true, shiftKey: mode !== "reply" });
     await eventually(() =>
@@ -367,7 +367,7 @@ it("offline archive survives conflicting server pull and retries the queue once"
   await eventually(() => expect(row(h.id("one"))).toBeTruthy());
   fireEvent.click(row(h.id("one")));
   await eventually(() =>
-    expect(screen.getByRole("article", { name: "Selected message" })).toBeTruthy(),
+    expect(screen.getByRole("article", { name: /^Selected message/ })).toBeTruthy(),
   );
   h.server.beforePush = Effect.fail(new ProviderError({ message: "offline", status: 503 }));
   clickButton("Archive");
@@ -408,7 +408,7 @@ it.each(["outlook", "imap"] as const)(
     await eventually(() => expect(row(h.id("one"))).toBeTruthy());
     fireEvent.click(row(h.id("one")));
     await eventually(() =>
-      expect(screen.getByRole("article", { name: "Selected message" })).toBeTruthy(),
+      expect(screen.getByRole("article", { name: /^Selected message/ })).toBeTruthy(),
     );
     key("m", { metaKey: true, shiftKey: true });
     await eventually(() => expect(screen.getByRole("option", { name: "Work" })).toBeTruthy());
@@ -477,7 +477,7 @@ it("AI disabled keeps reading and composing off the network", async () => {
   await eventually(() => expect(row(h.id("one"))).toBeTruthy());
   fireEvent.click(row(h.id("one")));
   await eventually(() =>
-    expect(screen.getByRole("article", { name: "Selected message" })).toBeTruthy(),
+    expect(screen.getByRole("article", { name: /^Selected message/ })).toBeTruthy(),
   );
   expect(screen.queryByRole("button", { name: "Summarize" })).toBeNull();
   key("r", { metaKey: true });
@@ -551,7 +551,7 @@ it("notification click event opens the requested thread and clears an active sea
   // Main resolves a notification's thread to its account's All Mail, as showThread does.
   await h.event({ _tag: "Navigate", href: threadRoute(h, "arrival") });
   await eventually(() =>
-    expect(screen.getByRole("article", { name: "Selected message" }).textContent).toContain(
+    expect(screen.getByRole("article", { name: /^Selected message/ }).textContent).toContain(
       "Original arrival",
     ),
   );
@@ -572,7 +572,7 @@ it("keyboard-only list to reader to reply to send keeps the selected original", 
   key("ArrowDown");
   await eventually(() => expect(row(h.id("two")).getAttribute("aria-selected")).toBe("true"));
   await eventually(() =>
-    expect(screen.getByRole("article", { name: "Selected message" })).toBeTruthy(),
+    expect(screen.getByRole("article", { name: /^Selected message/ })).toBeTruthy(),
   );
   key("ArrowRight");
   await eventually(() =>
@@ -607,7 +607,7 @@ it("provider latency leaves the local archive and selection responsive", async (
   await eventually(() => expect(row(h.id("one"))).toBeTruthy());
   fireEvent.click(row(h.id("one")));
   await eventually(() =>
-    expect(screen.getByRole("article", { name: "Selected message" })).toBeTruthy(),
+    expect(screen.getByRole("article", { name: /^Selected message/ })).toBeTruthy(),
   );
   h.server.beforePush = Effect.andThen(
     Deferred.succeed(entered, undefined),
@@ -636,14 +636,14 @@ it("notification click followed by immediate search clears hidden selection befo
   // Main resolves a notification's thread to its account's All Mail, as showThread does.
   await h.event({ _tag: "Navigate", href: threadRoute(h, "one") });
   await eventually(() =>
-    expect(screen.getByRole("article", { name: "Selected message" }).textContent).toContain(
+    expect(screen.getByRole("article", { name: /^Selected message/ }).textContent).toContain(
       "Original one",
     ),
   );
   edit("Search mail", "does-not-match");
   await release();
   await eventually(() => expect(screen.getByText("No matching messages")).toBeTruthy());
-  expect(screen.queryByRole("article", { name: "Selected message" })).toBeNull();
+  expect(screen.queryByRole("article", { name: /^Selected message/ })).toBeNull();
   const pushes = h.server.pushed.length;
   key("a", { metaKey: true, ctrlKey: true }, window);
   await eventually(() => expect(screen.queryByRole("button", { name: "Archive" })).toBeNull());

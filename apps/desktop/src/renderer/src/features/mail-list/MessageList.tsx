@@ -128,8 +128,8 @@ export function MessageList({
       : count === 0
         ? t`No results`
         : exhausted
-          ? plural(count, { one: "# result", other: "# results" })
-          : plural(count, { one: "More than # result", other: "More than # results" });
+          ? t`${plural(count, { one: "# result", other: "# results" })}`
+          : t`${plural(count, { one: "More than # result", other: "More than # results" })}`;
   const searchMessages = searchErrorAccounts.map(
     (accountId) =>
       `${accountLabel(accountId)}: ${searchReauthAccounts.includes(accountId) ? t`Sign in again` : t`The server could not complete this search.`}`,

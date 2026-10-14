@@ -33,7 +33,7 @@ const resize = (next: number) => {
   });
 };
 
-const reader = () => screen.queryByRole("article", { name: "Selected message" });
+const reader = () => screen.queryByRole("article", { name: /^Selected message/ });
 
 /**
  * jsdom has no layout: puts a 52 px header row at `left`, `top` in the

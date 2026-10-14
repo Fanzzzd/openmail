@@ -252,7 +252,7 @@ it("forward preview and send exclude every hidden-content probe", async () => {
   await eventually(() => expect(row(h.id("one"))).toBeTruthy());
   fireEvent.click(row(h.id("one")));
   await eventually(() =>
-    expect(screen.getByRole("article", { name: "Selected message" })).toBeTruthy(),
+    expect(screen.getByRole("article", { name: /^Selected message/ })).toBeTruthy(),
   );
   key("f", { metaKey: true, shiftKey: true });
   await eventually(() => expect(screen.getByText("Original formatting kept")).toBeTruthy());
