@@ -127,15 +127,15 @@ export function ThreadViewMenuItems({
           <MenuItem onClick={() => copyLink("message", t`Message link copied`)}>
             {t`Copy link to message`}
           </MenuItem>
-          <MenuItem onClick={() => copyLink("thread", t`Thread link copied`)}>
-            {t`Copy link to thread`}
+          <MenuItem onClick={() => copyLink("thread", t`Conversation link copied`)}>
+            {t`Copy link to conversation`}
           </MenuItem>
         </>
       )}
       {canShare && (
         <>
           <MenuItem onClick={() => shareLink("message")}>{t`Send message link to…`}</MenuItem>
-          <MenuItem onClick={() => shareLink("thread")}>{t`Send thread link to…`}</MenuItem>
+          <MenuItem onClick={() => shareLink("thread")}>{t`Send conversation link to…`}</MenuItem>
           {canOpenWeb && (
             <MenuItem onClick={() => shareLink("web")}>{t`Send web mail link to…`}</MenuItem>
           )}

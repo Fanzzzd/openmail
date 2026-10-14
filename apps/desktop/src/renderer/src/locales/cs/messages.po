@@ -1833,6 +1833,10 @@ msgstr "Pokračovat ke konceptu"
 msgid "Conversation actions"
 msgstr "Akce konverzace"
 
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
+msgid "Conversation link copied"
+msgstr "Odkaz na konverzaci zkopírován"
+
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Conversations"
 msgstr "Konverzace"
@@ -1874,12 +1878,12 @@ msgid "Copy config for {name}"
 msgstr "Kopírovat konfiguraci pro {name}"
 
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
-msgid "Copy link to message"
-msgstr "Zkopírujte odkaz do zprávy"
+msgid "Copy link to conversation"
+msgstr "Kopírovat odkaz na konverzaci"
 
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
-msgid "Copy link to thread"
-msgstr "Kopírovat odkaz na konverzaci"
+msgid "Copy link to message"
+msgstr "Zkopírujte odkaz do zprávy"
 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Copy redacted report"
@@ -4518,6 +4522,10 @@ msgstr "Další výše"
 msgid "Next below"
 msgstr "Další níže"
 
+#: src/renderer/src/i18n/shortcut-names.ts
+msgid "Next conversation"
+msgstr "Další konverzace"
+
 #: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 #: src/renderer/src/features/reader/FindBar.tsx
 #: src/renderer/src/features/search/SearchHitBar.tsx
@@ -4528,10 +4536,6 @@ msgstr "Další shoda"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Next tab"
 msgstr "Další panel"
-
-#: src/renderer/src/i18n/shortcut-names.ts
-msgid "Next thread"
-msgstr "Další konverzace"
 
 #: src/renderer/src/state/desktop.ts
 msgid "Next view"
@@ -5344,6 +5348,10 @@ msgstr "Náhled není dostupný. Filtr se použije na budoucí poštu na serveru
 msgid "Previous / next view"
 msgstr "Předchozí / další zobrazení"
 
+#: src/renderer/src/i18n/shortcut-names.ts
+msgid "Previous conversation"
+msgstr "Předchozí konverzace"
+
 #: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 #: src/renderer/src/features/reader/FindBar.tsx
 #: src/renderer/src/features/search/SearchHitBar.tsx
@@ -5354,10 +5362,6 @@ msgstr "Předchozí shoda"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Previous tab"
 msgstr "Předchozí panel"
-
-#: src/renderer/src/i18n/shortcut-names.ts
-msgid "Previous thread"
-msgstr "Předchozí konverzace"
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Previous time:"
@@ -6254,6 +6258,12 @@ msgstr "Odeslat a archivovat"
 msgid "Send anyway"
 msgstr "Přesto odeslat"
 
+#: src/renderer/src/features/reader/ThreadMessage.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
+#: src/renderer/src/i18n/shortcut-names.ts
+msgid "Send conversation link to…"
+msgstr "Odeslat odkaz na konverzaci do…"
+
 #: src/renderer/src/features/settings/sections/audit-actions.ts
 msgid "Send failed"
 msgstr "Odeslání selhalo"
@@ -6275,12 +6285,6 @@ msgstr "Odeslat odkaz na zprávu do…"
 #: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "Send this message without a subject?"
 msgstr "Odeslat tuto zprávu bez předmětu?"
-
-#: src/renderer/src/features/reader/ThreadMessage.tsx
-#: src/renderer/src/features/reader/ThreadViewMenu.tsx
-#: src/renderer/src/i18n/shortcut-names.ts
-msgid "Send thread link to…"
-msgstr "Odeslat odkaz na konverzaci do…"
 
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
@@ -7089,6 +7093,10 @@ msgstr "Asistent vyčerpal všechny kroky dřív, než odpověď dokončil. Polo
 msgid "The body is not cached. Try opening this message again when connected."
 msgstr "Text zprávy není uložen v mezipaměti. Po připojení zkuste zprávu otevřít znovu."
 
+#: src/renderer/src/lib/errors.ts
+msgid "The conversation changed. Summarize it again."
+msgstr "Konverzace se změnila. Vytvořte shrnutí znovu."
+
 #: src/main/app/native-i18n.ts
 msgid "The database integrity check (quick_check) failed or the file is unavailable. Reset rebuilds a damaged database from readable local records and keeps the original file. Keychain tokens are kept."
 msgstr "Kontrola integrity databáze (quick_check) selhala nebo je soubor nedostupný. Reset obnoví poškozenou databázi z čitelných místních záznamů a zachová původní soubor. Klíčenky jsou uloženy."
@@ -7276,10 +7284,6 @@ msgstr "Server odmítl přihlášení."
 #: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "The server rejected the sign-in. Check the email address, and make sure you entered an app-specific password or authorization code, not your web password."
 msgstr "Server odmítl přihlášení. Zkontrolujte e-mailovou adresu a ujistěte se, že jste zadali heslo pro konkrétní aplikaci nebo autorizační kód, nikoli heslo pro web."
-
-#: src/renderer/src/lib/errors.ts
-msgid "The thread changed. Summarize it again."
-msgstr "Konverzace se změnila. Vytvořte shrnutí znovu."
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgid "There is not enough free disk space to compact safely."
@@ -7509,10 +7513,6 @@ msgstr "Tento návrh už není dostupný."
 #: src/renderer/src/lib/errors.ts
 msgid "This time is skipped or repeated by daylight saving. Enter a date and time with a UTC offset."
 msgstr "Letní čas tento čas vynechává nebo opakuje. Zadejte datum a čas s posunem vůči UTC."
-
-#: src/renderer/src/features/reader/ThreadViewMenu.tsx
-msgid "Thread link copied"
-msgstr "Odkaz na konverzaci zkopírován"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Thursday"

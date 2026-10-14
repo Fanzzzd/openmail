@@ -737,7 +737,7 @@ it("the thread ends with Reply, Reply all and Forward, and has one menu for the 
   const thread = screen.getByRole("document");
   expect(within(thread).queryByRole("button", { name: "More actions" })).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "Conversation actions" }));
-  expect(await screen.findByRole("menuitem", { name: "Copy link to thread" })).toBeTruthy();
+  expect(await screen.findByRole("menuitem", { name: "Copy link to conversation" })).toBeTruthy();
   expect(screen.getByRole("menuitem", { name: /^Bigger text/ })).toBeTruthy();
   key("Escape");
   await eventually(() =>

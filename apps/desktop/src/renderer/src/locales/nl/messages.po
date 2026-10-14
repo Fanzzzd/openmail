@@ -1833,6 +1833,10 @@ msgstr "Ga verder naar concept"
 msgid "Conversation actions"
 msgstr "Gespreksacties"
 
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
+msgid "Conversation link copied"
+msgstr "Link naar gesprek gekopieerd"
+
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Conversations"
 msgstr "Gesprekken"
@@ -1874,12 +1878,12 @@ msgid "Copy config for {name}"
 msgstr "Kopieer configuratie voor {name}"
 
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
-msgid "Copy link to message"
-msgstr "Kopieer link naar bericht"
+msgid "Copy link to conversation"
+msgstr "Kopieer link naar gesprek"
 
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
-msgid "Copy link to thread"
-msgstr "Kopieer link naar gesprek"
+msgid "Copy link to message"
+msgstr "Kopieer link naar bericht"
 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Copy redacted report"
@@ -4518,6 +4522,10 @@ msgstr "Volgende hierboven"
 msgid "Next below"
 msgstr "Volgende hieronder"
 
+#: src/renderer/src/i18n/shortcut-names.ts
+msgid "Next conversation"
+msgstr "Volgend gesprek"
+
 #: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 #: src/renderer/src/features/reader/FindBar.tsx
 #: src/renderer/src/features/search/SearchHitBar.tsx
@@ -4528,10 +4536,6 @@ msgstr "Volgende overeenkomst"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Next tab"
 msgstr "Volgend tabblad"
-
-#: src/renderer/src/i18n/shortcut-names.ts
-msgid "Next thread"
-msgstr "Volgend gesprek"
 
 #: src/renderer/src/state/desktop.ts
 msgid "Next view"
@@ -5344,6 +5348,10 @@ msgstr "Voorbeeld niet beschikbaar. Het filter geldt voor toekomstige e-mail op 
 msgid "Previous / next view"
 msgstr "Vorige / volgende weergave"
 
+#: src/renderer/src/i18n/shortcut-names.ts
+msgid "Previous conversation"
+msgstr "Vorig gesprek"
+
 #: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 #: src/renderer/src/features/reader/FindBar.tsx
 #: src/renderer/src/features/search/SearchHitBar.tsx
@@ -5354,10 +5362,6 @@ msgstr "Vorige overeenkomst"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Previous tab"
 msgstr "Vorig tabblad"
-
-#: src/renderer/src/i18n/shortcut-names.ts
-msgid "Previous thread"
-msgstr "Vorig gesprek"
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Previous time:"
@@ -6254,6 +6258,12 @@ msgstr "Verstuur en archiveer"
 msgid "Send anyway"
 msgstr "Verstuur toch"
 
+#: src/renderer/src/features/reader/ThreadMessage.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
+#: src/renderer/src/i18n/shortcut-names.ts
+msgid "Send conversation link to…"
+msgstr "Gesprekslink versturen naar…"
+
 #: src/renderer/src/features/settings/sections/audit-actions.ts
 msgid "Send failed"
 msgstr "Versturen mislukt"
@@ -6275,12 +6285,6 @@ msgstr "Berichtlink versturen naar…"
 #: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "Send this message without a subject?"
 msgstr "Dit bericht zonder onderwerp versturen?"
-
-#: src/renderer/src/features/reader/ThreadMessage.tsx
-#: src/renderer/src/features/reader/ThreadViewMenu.tsx
-#: src/renderer/src/i18n/shortcut-names.ts
-msgid "Send thread link to…"
-msgstr "Gesprekslink versturen naar…"
 
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
@@ -7089,6 +7093,10 @@ msgstr "De assistent heeft alle stappen gebruikt voordat hij klaar was. Stel een
 msgid "The body is not cached. Try opening this message again when connected."
 msgstr "De berichttekst is niet opgeslagen in de cache. Open dit bericht opnieuw zodra je verbinding hebt."
 
+#: src/renderer/src/lib/errors.ts
+msgid "The conversation changed. Summarize it again."
+msgstr "Het gesprek is gewijzigd. Vat het opnieuw samen."
+
 #: src/main/app/native-i18n.ts
 msgid "The database integrity check (quick_check) failed or the file is unavailable. Reset rebuilds a damaged database from readable local records and keeps the original file. Keychain tokens are kept."
 msgstr "De database-integriteitscontrole (quick_check) is mislukt of het bestand is niet beschikbaar. Reset herbouwt een beschadigde database op basis van leesbare lokale records en behoudt het originele bestand. Sleutelhangertokens worden bewaard."
@@ -7276,10 +7284,6 @@ msgstr "De server heeft het aanmelden geweigerd."
 #: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "The server rejected the sign-in. Check the email address, and make sure you entered an app-specific password or authorization code, not your web password."
 msgstr "De server heeft de aanmelding afgewezen. Controleer het e-mailadres en zorg ervoor dat je een app-specifiek wachtwoord of autorisatiecode hebt ingevoerd, en niet je webwachtwoord."
-
-#: src/renderer/src/lib/errors.ts
-msgid "The thread changed. Summarize it again."
-msgstr "Het gesprek is gewijzigd. Vat het opnieuw samen."
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgid "There is not enough free disk space to compact safely."
@@ -7509,10 +7513,6 @@ msgstr "Deze suggestie is niet meer beschikbaar."
 #: src/renderer/src/lib/errors.ts
 msgid "This time is skipped or repeated by daylight saving. Enter a date and time with a UTC offset."
 msgstr "Deze tijd wordt overgeslagen of herhaald door de zomertijd. Voer een datum en tijd met UTC-offset in."
-
-#: src/renderer/src/features/reader/ThreadViewMenu.tsx
-msgid "Thread link copied"
-msgstr "Link naar gesprek gekopieerd"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Thursday"

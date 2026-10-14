@@ -1833,6 +1833,10 @@ msgstr "Перейти к черновику"
 msgid "Conversation actions"
 msgstr "Действия с перепиской"
 
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
+msgid "Conversation link copied"
+msgstr "Ссылка на переписку скопирована"
+
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Conversations"
 msgstr "Переписки"
@@ -1874,12 +1878,12 @@ msgid "Copy config for {name}"
 msgstr "Копировать конфигурацию для {name}"
 
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
-msgid "Copy link to message"
-msgstr "Скопировать ссылку на сообщение"
+msgid "Copy link to conversation"
+msgstr "Скопировать ссылку на переписку"
 
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
-msgid "Copy link to thread"
-msgstr "Скопировать ссылку на переписку"
+msgid "Copy link to message"
+msgstr "Скопировать ссылку на сообщение"
 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Copy redacted report"
@@ -4518,6 +4522,10 @@ msgstr "Далее выше"
 msgid "Next below"
 msgstr "Далее ниже"
 
+#: src/renderer/src/i18n/shortcut-names.ts
+msgid "Next conversation"
+msgstr "Следующая переписка"
+
 #: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 #: src/renderer/src/features/reader/FindBar.tsx
 #: src/renderer/src/features/search/SearchHitBar.tsx
@@ -4528,10 +4536,6 @@ msgstr "Следующее совпадение"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Next tab"
 msgstr "Следующая вкладка"
-
-#: src/renderer/src/i18n/shortcut-names.ts
-msgid "Next thread"
-msgstr "Следующая переписка"
 
 #: src/renderer/src/state/desktop.ts
 msgid "Next view"
@@ -5344,6 +5348,10 @@ msgstr "Предпросмотр недоступен. Фильтр будет �
 msgid "Previous / next view"
 msgstr "Предыдущий / следующий вид"
 
+#: src/renderer/src/i18n/shortcut-names.ts
+msgid "Previous conversation"
+msgstr "Предыдущая переписка"
+
 #: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 #: src/renderer/src/features/reader/FindBar.tsx
 #: src/renderer/src/features/search/SearchHitBar.tsx
@@ -5354,10 +5362,6 @@ msgstr "Предыдущее совпадение"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Previous tab"
 msgstr "Предыдущая вкладка"
-
-#: src/renderer/src/i18n/shortcut-names.ts
-msgid "Previous thread"
-msgstr "Предыдущая переписка"
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Previous time:"
@@ -6254,6 +6258,12 @@ msgstr "Отправить и архивировать"
 msgid "Send anyway"
 msgstr "Всё равно отправить"
 
+#: src/renderer/src/features/reader/ThreadMessage.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
+#: src/renderer/src/i18n/shortcut-names.ts
+msgid "Send conversation link to…"
+msgstr "Отправить ссылку на переписку в…"
+
 #: src/renderer/src/features/settings/sections/audit-actions.ts
 msgid "Send failed"
 msgstr "Не удалось отправить"
@@ -6275,12 +6285,6 @@ msgstr "Отправить ссылку на сообщение в…"
 #: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "Send this message without a subject?"
 msgstr "Отправить это сообщение без темы?"
-
-#: src/renderer/src/features/reader/ThreadMessage.tsx
-#: src/renderer/src/features/reader/ThreadViewMenu.tsx
-#: src/renderer/src/i18n/shortcut-names.ts
-msgid "Send thread link to…"
-msgstr "Отправить ссылку на переписку в…"
 
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
@@ -7089,6 +7093,10 @@ msgstr "Ассистент израсходовал все шаги, не зак
 msgid "The body is not cached. Try opening this message again when connected."
 msgstr "Текст сообщения не сохранён в кэше. Попробуйте открыть сообщение снова после подключения."
 
+#: src/renderer/src/lib/errors.ts
+msgid "The conversation changed. Summarize it again."
+msgstr "Переписка изменилась. Создайте сводку заново."
+
 #: src/main/app/native-i18n.ts
 msgid "The database integrity check (quick_check) failed or the file is unavailable. Reset rebuilds a damaged database from readable local records and keeps the original file. Keychain tokens are kept."
 msgstr "Проверка целостности базы данных (quick_check) не удалась или файл недоступен. Сброс восстанавливает повреждённую базу данных из читаемых локальных записей и сохраняет исходный файл. Жетоны связки ключей сохраняются."
@@ -7276,10 +7284,6 @@ msgstr "Сервер отклонил вход."
 #: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "The server rejected the sign-in. Check the email address, and make sure you entered an app-specific password or authorization code, not your web password."
 msgstr "Сервер отклонил вход. Проверьте адрес электронной почты и убедитесь, что вы ввели пароль или код авторизации для конкретного приложения, а не свой веб-пароль."
-
-#: src/renderer/src/lib/errors.ts
-msgid "The thread changed. Summarize it again."
-msgstr "Переписка изменилась. Создайте сводку заново."
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgid "There is not enough free disk space to compact safely."
@@ -7509,10 +7513,6 @@ msgstr "Это предложение больше недоступно."
 #: src/renderer/src/lib/errors.ts
 msgid "This time is skipped or repeated by daylight saving. Enter a date and time with a UTC offset."
 msgstr "Это время пропускается или повторяется из-за перехода на летнее время. Введите дату и время со смещением от UTC."
-
-#: src/renderer/src/features/reader/ThreadViewMenu.tsx
-msgid "Thread link copied"
-msgstr "Ссылка на переписку скопирована"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Thursday"

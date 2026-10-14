@@ -1843,6 +1843,10 @@ msgstr "打开草稿"
 msgid "Conversation actions"
 msgstr "对话操作"
 
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
+msgid "Conversation link copied"
+msgstr "已复制对话链接"
+
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Conversations"
 msgstr "对话"
@@ -1884,12 +1888,12 @@ msgid "Copy config for {name}"
 msgstr "复制 {name} 的配置"
 
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
-msgid "Copy link to message"
-msgstr "复制邮件链接"
+msgid "Copy link to conversation"
+msgstr "复制对话链接"
 
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
-msgid "Copy link to thread"
-msgstr "复制对话链接"
+msgid "Copy link to message"
+msgstr "复制邮件链接"
 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Copy redacted report"
@@ -4528,6 +4532,10 @@ msgstr "上一项"
 msgid "Next below"
 msgstr "下一项"
 
+#: src/renderer/src/i18n/shortcut-names.ts
+msgid "Next conversation"
+msgstr "下一个对话"
+
 #: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 #: src/renderer/src/features/reader/FindBar.tsx
 #: src/renderer/src/features/search/SearchHitBar.tsx
@@ -4538,10 +4546,6 @@ msgstr "下一处"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Next tab"
 msgstr "下一个页签"
-
-#: src/renderer/src/i18n/shortcut-names.ts
-msgid "Next thread"
-msgstr "下一个对话"
 
 #: src/renderer/src/state/desktop.ts
 msgid "Next view"
@@ -5354,6 +5358,10 @@ msgstr "预览不可用。过滤器将用于服务器上的新邮件。"
 msgid "Previous / next view"
 msgstr "上一个视图 / 下一个视图"
 
+#: src/renderer/src/i18n/shortcut-names.ts
+msgid "Previous conversation"
+msgstr "上一个对话"
+
 #: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 #: src/renderer/src/features/reader/FindBar.tsx
 #: src/renderer/src/features/search/SearchHitBar.tsx
@@ -5364,10 +5372,6 @@ msgstr "上一处"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Previous tab"
 msgstr "上一个页签"
-
-#: src/renderer/src/i18n/shortcut-names.ts
-msgid "Previous thread"
-msgstr "上一个对话"
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Previous time:"
@@ -6264,6 +6268,12 @@ msgstr "发送并归档"
 msgid "Send anyway"
 msgstr "仍然发送"
 
+#: src/renderer/src/features/reader/ThreadMessage.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
+#: src/renderer/src/i18n/shortcut-names.ts
+msgid "Send conversation link to…"
+msgstr "发送对话链接到…"
+
 #: src/renderer/src/features/settings/sections/audit-actions.ts
 msgid "Send failed"
 msgstr "发送失败"
@@ -6285,12 +6295,6 @@ msgstr "发送邮件链接到…"
 #: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "Send this message without a subject?"
 msgstr "确认发送无主题邮件？"
-
-#: src/renderer/src/features/reader/ThreadMessage.tsx
-#: src/renderer/src/features/reader/ThreadViewMenu.tsx
-#: src/renderer/src/i18n/shortcut-names.ts
-msgid "Send thread link to…"
-msgstr "发送对话链接到…"
 
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
@@ -7099,6 +7103,10 @@ msgstr "助手在完成回答前用完了所有步骤。请把问题问得更具
 msgid "The body is not cached. Try opening this message again when connected."
 msgstr "正文未缓存。联网后请重新打开这封邮件。"
 
+#: src/renderer/src/lib/errors.ts
+msgid "The conversation changed. Summarize it again."
+msgstr "对话已变更。请重新生成摘要。"
+
 #: src/main/app/native-i18n.ts
 msgid "The database integrity check (quick_check) failed or the file is unavailable. Reset rebuilds a damaged database from readable local records and keeps the original file. Keychain tokens are kept."
 msgstr "数据库完整性检查（quick_check）失败，或文件无法访问。重置会用可读的本地记录重建损坏的数据库，并保留原文件和钥匙串令牌。"
@@ -7286,10 +7294,6 @@ msgstr "服务器拒绝了登录。"
 #: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "The server rejected the sign-in. Check the email address, and make sure you entered an app-specific password or authorization code, not your web password."
 msgstr "服务器拒绝了登录。请检查邮箱地址，并确认填的是应用专用密码或授权码，不是网页登录密码。"
-
-#: src/renderer/src/lib/errors.ts
-msgid "The thread changed. Summarize it again."
-msgstr "对话已变更。请重新生成摘要。"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgid "There is not enough free disk space to compact safely."
@@ -7519,10 +7523,6 @@ msgstr "此建议已不可用。"
 #: src/renderer/src/lib/errors.ts
 msgid "This time is skipped or repeated by daylight saving. Enter a date and time with a UTC offset."
 msgstr "这个时间因夏令时被跳过或重复。请输入带 UTC 偏移的日期和时间。"
-
-#: src/renderer/src/features/reader/ThreadViewMenu.tsx
-msgid "Thread link copied"
-msgstr "已复制对话链接"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Thursday"

@@ -1833,6 +1833,10 @@ msgstr "Continua alla bozza"
 msgid "Conversation actions"
 msgstr "Azioni della conversazione"
 
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
+msgid "Conversation link copied"
+msgstr "Link alla conversazione copiato"
+
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Conversations"
 msgstr "Conversazioni"
@@ -1874,12 +1878,12 @@ msgid "Copy config for {name}"
 msgstr "Copia la configurazione per {name}"
 
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
-msgid "Copy link to message"
-msgstr "Copia il collegamento al messaggio"
+msgid "Copy link to conversation"
+msgstr "Copia link alla conversazione"
 
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
-msgid "Copy link to thread"
-msgstr "Copia link alla conversazione"
+msgid "Copy link to message"
+msgstr "Copia il collegamento al messaggio"
 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Copy redacted report"
@@ -4518,6 +4522,10 @@ msgstr "Avanti sopra"
 msgid "Next below"
 msgstr "Avanti sotto"
 
+#: src/renderer/src/i18n/shortcut-names.ts
+msgid "Next conversation"
+msgstr "Conversazione successiva"
+
 #: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 #: src/renderer/src/features/reader/FindBar.tsx
 #: src/renderer/src/features/search/SearchHitBar.tsx
@@ -4528,10 +4536,6 @@ msgstr "Corrispondenza successiva"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Next tab"
 msgstr "Pannello successivo"
-
-#: src/renderer/src/i18n/shortcut-names.ts
-msgid "Next thread"
-msgstr "Conversazione successiva"
 
 #: src/renderer/src/state/desktop.ts
 msgid "Next view"
@@ -5344,6 +5348,10 @@ msgstr "Anteprima non disponibile. Il filtro si applicherà ai nuovi messaggi su
 msgid "Previous / next view"
 msgstr "Vista precedente / successiva"
 
+#: src/renderer/src/i18n/shortcut-names.ts
+msgid "Previous conversation"
+msgstr "Conversazione precedente"
+
 #: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 #: src/renderer/src/features/reader/FindBar.tsx
 #: src/renderer/src/features/search/SearchHitBar.tsx
@@ -5354,10 +5362,6 @@ msgstr "Corrispondenza precedente"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Previous tab"
 msgstr "Pannello precedente"
-
-#: src/renderer/src/i18n/shortcut-names.ts
-msgid "Previous thread"
-msgstr "Conversazione precedente"
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Previous time:"
@@ -6254,6 +6258,12 @@ msgstr "Invia e archivia"
 msgid "Send anyway"
 msgstr "Invia comunque"
 
+#: src/renderer/src/features/reader/ThreadMessage.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
+#: src/renderer/src/i18n/shortcut-names.ts
+msgid "Send conversation link to…"
+msgstr "Invia il link della conversazione a…"
+
 #: src/renderer/src/features/settings/sections/audit-actions.ts
 msgid "Send failed"
 msgstr "Invio non riuscito"
@@ -6275,12 +6285,6 @@ msgstr "Invia il link del messaggio a…"
 #: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "Send this message without a subject?"
 msgstr "Inviare questo messaggio senza oggetto?"
-
-#: src/renderer/src/features/reader/ThreadMessage.tsx
-#: src/renderer/src/features/reader/ThreadViewMenu.tsx
-#: src/renderer/src/i18n/shortcut-names.ts
-msgid "Send thread link to…"
-msgstr "Invia il link della conversazione a…"
 
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
@@ -7089,6 +7093,10 @@ msgstr "L’assistente ha esaurito tutti i passaggi prima di finire. Fai una dom
 msgid "The body is not cached. Try opening this message again when connected."
 msgstr "Il testo del messaggio non è nella cache. Prova a riaprire il messaggio quando sei connesso."
 
+#: src/renderer/src/lib/errors.ts
+msgid "The conversation changed. Summarize it again."
+msgstr "La conversazione è cambiata. Riassumila di nuovo."
+
 #: src/main/app/native-i18n.ts
 msgid "The database integrity check (quick_check) failed or the file is unavailable. Reset rebuilds a damaged database from readable local records and keeps the original file. Keychain tokens are kept."
 msgstr "Il controllo dell’integrità del database (quick_check) non è riuscito oppure il file non è disponibile. Reset ricostruisce un database danneggiato da record locali leggibili e mantiene il file originale. I token del portachiavi vengono conservati."
@@ -7276,10 +7284,6 @@ msgstr "Il server ha rifiutato l’accesso."
 #: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "The server rejected the sign-in. Check the email address, and make sure you entered an app-specific password or authorization code, not your web password."
 msgstr "Il server ha rifiutato l’accesso. Controlla l’indirizzo e-mail e assicurati di aver inserito una password o un codice di autorizzazione specifico per l’app, non la password web."
-
-#: src/renderer/src/lib/errors.ts
-msgid "The thread changed. Summarize it again."
-msgstr "La conversazione è cambiata. Riassumila di nuovo."
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgid "There is not enough free disk space to compact safely."
@@ -7509,10 +7513,6 @@ msgstr "Questo suggerimento non è più disponibile."
 #: src/renderer/src/lib/errors.ts
 msgid "This time is skipped or repeated by daylight saving. Enter a date and time with a UTC offset."
 msgstr "Questo orario viene saltato o ripetuto per l’ora legale. Inserisci una data e un’ora con uno scostamento UTC."
-
-#: src/renderer/src/features/reader/ThreadViewMenu.tsx
-msgid "Thread link copied"
-msgstr "Link alla conversazione copiato"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Thursday"

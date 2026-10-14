@@ -1833,6 +1833,10 @@ msgstr "下書きに進む"
 msgid "Conversation actions"
 msgstr "スレッドの操作"
 
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
+msgid "Conversation link copied"
+msgstr "スレッドへのリンクをコピーしました"
+
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Conversations"
 msgstr "スレッド"
@@ -1874,12 +1878,12 @@ msgid "Copy config for {name}"
 msgstr "{name} の設定をコピー"
 
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
-msgid "Copy link to message"
-msgstr "メッセージへのリンクをコピーする"
+msgid "Copy link to conversation"
+msgstr "スレッドへのリンクをコピー"
 
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
-msgid "Copy link to thread"
-msgstr "スレッドへのリンクをコピー"
+msgid "Copy link to message"
+msgstr "メッセージへのリンクをコピーする"
 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Copy redacted report"
@@ -4518,6 +4522,10 @@ msgstr "上の次へ"
 msgid "Next below"
 msgstr "次は下に"
 
+#: src/renderer/src/i18n/shortcut-names.ts
+msgid "Next conversation"
+msgstr "次のスレッド"
+
 #: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 #: src/renderer/src/features/reader/FindBar.tsx
 #: src/renderer/src/features/search/SearchHitBar.tsx
@@ -4528,10 +4536,6 @@ msgstr "次の一致"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Next tab"
 msgstr "次のタブ"
-
-#: src/renderer/src/i18n/shortcut-names.ts
-msgid "Next thread"
-msgstr "次のスレッド"
 
 #: src/renderer/src/state/desktop.ts
 msgid "Next view"
@@ -5344,6 +5348,10 @@ msgstr "プレビューを利用できません。フィルターはサーバー
 msgid "Previous / next view"
 msgstr "前のビュー / 次のビュー"
 
+#: src/renderer/src/i18n/shortcut-names.ts
+msgid "Previous conversation"
+msgstr "前のスレッド"
+
 #: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 #: src/renderer/src/features/reader/FindBar.tsx
 #: src/renderer/src/features/search/SearchHitBar.tsx
@@ -5354,10 +5362,6 @@ msgstr "前の一致"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Previous tab"
 msgstr "前のタブ"
-
-#: src/renderer/src/i18n/shortcut-names.ts
-msgid "Previous thread"
-msgstr "前のスレッド"
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Previous time:"
@@ -6254,6 +6258,12 @@ msgstr "送信してアーカイブ"
 msgid "Send anyway"
 msgstr "そのまま送信"
 
+#: src/renderer/src/features/reader/ThreadMessage.tsx
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
+#: src/renderer/src/i18n/shortcut-names.ts
+msgid "Send conversation link to…"
+msgstr "スレッドのリンクを送信…"
+
 #: src/renderer/src/features/settings/sections/audit-actions.ts
 msgid "Send failed"
 msgstr "送信できませんでした"
@@ -6275,12 +6285,6 @@ msgstr "メッセージのリンクを送信…"
 #: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "Send this message without a subject?"
 msgstr "件名なしでこのメッセージを送信しますか？"
-
-#: src/renderer/src/features/reader/ThreadMessage.tsx
-#: src/renderer/src/features/reader/ThreadViewMenu.tsx
-#: src/renderer/src/i18n/shortcut-names.ts
-msgid "Send thread link to…"
-msgstr "スレッドのリンクを送信…"
 
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
@@ -7089,6 +7093,10 @@ msgstr "アシスタントは回答を終える前にすべての手順を使い
 msgid "The body is not cached. Try opening this message again when connected."
 msgstr "本文がキャッシュされていません。接続後にこのメッセージをもう一度開いてください。"
 
+#: src/renderer/src/lib/errors.ts
+msgid "The conversation changed. Summarize it again."
+msgstr "スレッドが変更されました。要約を再生成してください。"
+
 #: src/main/app/native-i18n.ts
 msgid "The database integrity check (quick_check) failed or the file is unavailable. Reset rebuilds a damaged database from readable local records and keeps the original file. Keychain tokens are kept."
 msgstr "データベースの整合性チェック (quick_check) が失敗したか、ファイルが使用できません。リセットは、読み取り可能なローカル レコードから破損したデータベースを再構築し、元のファイルを保持します。キーチェーントークンは保持されます。"
@@ -7276,10 +7284,6 @@ msgstr "サーバーがサインインを拒否しました。"
 #: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "The server rejected the sign-in. Check the email address, and make sure you entered an app-specific password or authorization code, not your web password."
 msgstr "サーバーがサインインを拒否しました。メールアドレスを確認し、Web パスワードではなく、アプリ固有のパスワードまたは認証コードを入力したことを確認してください。"
-
-#: src/renderer/src/lib/errors.ts
-msgid "The thread changed. Summarize it again."
-msgstr "スレッドが変更されました。要約を再生成してください。"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgid "There is not enough free disk space to compact safely."
@@ -7509,10 +7513,6 @@ msgstr "この提案はもう利用できません。"
 #: src/renderer/src/lib/errors.ts
 msgid "This time is skipped or repeated by daylight saving. Enter a date and time with a UTC offset."
 msgstr "この時刻は夏時間によって飛ばされるか繰り返されます。UTC オフセット付きの日付と時刻を入力してください。"
-
-#: src/renderer/src/features/reader/ThreadViewMenu.tsx
-msgid "Thread link copied"
-msgstr "スレッドへのリンクをコピーしました"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Thursday"

@@ -75,7 +75,7 @@ export const INPUT_ERRORS: Record<string, MessageDescriptor> = {
   "AI stream ended before completion.": msg`The AI answer stopped before it finished. Try again.`,
   "AI model is unavailable.": msg`The AI model isn't available right now. Try again later.`,
   "AI request timed out.": msg`The AI request took too long. Try again.`,
-  "The thread changed. Summarize it again.": msg`The thread changed. Summarize it again.`,
+  "The thread changed. Summarize it again.": msg`The conversation changed. Summarize it again.`,
   "Invalid AI compose request.": AI_REQUEST_INVALID,
 
   "Enter a single API key.": msg`Enter a single API key.`,

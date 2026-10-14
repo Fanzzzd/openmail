@@ -357,7 +357,7 @@ export function Expanded({
           {onShare && (
             <>
               <MenuItem onClick={() => onShare("message")}>{t`Send message link to…`}</MenuItem>
-              <MenuItem onClick={() => onShare("thread")}>{t`Send thread link to…`}</MenuItem>
+              <MenuItem onClick={() => onShare("thread")}>{t`Send conversation link to…`}</MenuItem>
               {onOpenWeb && (
                 <MenuItem onClick={() => onShare("web")}>{t`Send web mail link to…`}</MenuItem>
               )}
