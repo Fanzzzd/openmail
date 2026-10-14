@@ -5,7 +5,8 @@ import { Mailbox } from "@openmail/core/portable";
 import { fakeServer, TemporaryTestMailbox } from "@openmail/core/testing/node";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react/pure";
 import { createMemoryHistory } from "@tanstack/react-router";
-import { Effect, Fiber, Layer, ManagedRuntime } from "effect";
+import { Effect, Exit, Fiber, Layer, ManagedRuntime } from "effect";
+import { RpcClient, type RpcClientError } from "effect/rpc";
 import { AtomRegistry } from "effect/reactivity";
 import { createElement } from "react";
 import { WebSocket as NodeWebSocket, WebSocketServer } from "ws";
@@ -16,6 +17,8 @@ import { setPlatform } from "../lib/platform";
 import { AppRouterProvider } from "../routes/provider";
 import { createAppRouter, historyFor, initialLocation } from "../routes/router";
 import { historyAtom, locationAtom } from "../state/location";
+import { MailRpcs } from "../../../shared/rpc";
+import { ElectronProtocol } from "../state/rpc";
 import { setRpcBridge } from "../state/rpc-bridge";
 import { webSocketBridge, type WebConnection } from "../state/web-socket-bridge";
 import { TipProvider } from "../ui/Tip";
@@ -33,7 +36,7 @@ afterEach(async () => {
  * The web build against the Mac's real remote RPC server and fake mail. The
  * server records each denied call and each failed one.
  */
-async function openWebApp() {
+async function openWebApp(mailbox: (m: Mailbox["Service"]) => Mailbox["Service"] = (m) => m) {
   i18n.loadAndActivate({ locale: "en", messages: {} });
   const server = fakeServer("me@gmail.com", [
     incoming("one", { subject: "Quarterly report" }),
@@ -58,7 +61,7 @@ async function openWebApp() {
         denied: (tag) => denied.push(tag),
         failure: (tag) => failures.push(tag),
       }),
-    ).pipe(Effect.provideService(Mailbox, m)),
+    ).pipe(Effect.provideService(Mailbox, mailbox(m))),
   );
   const wss = new WebSocketServer({ host: "127.0.0.1", port: 0 });
   await new Promise<void>((resolve) => {
@@ -132,7 +135,14 @@ async function openWebApp() {
   await eventually(() => {
     expect(screen.getAllByText("Quarterly report").length).toBeGreaterThan(0);
   });
-  return { denied, failures, tags, states };
+  return {
+    denied,
+    failures,
+    tags,
+    states,
+    server,
+    sync: () => mailboxRuntime.runPromise(m.sync()),
+  };
 }
 
 it("the web build renders the inbox over a WebSocket and calls only remote RPCs", async () => {
@@ -198,3 +208,38 @@ it(
     expect(failures).toEqual([]);
   },
 );
+
+it("a remote handler that dies or is interrupted fails only its own call; live updates keep arriving", async () => {
+  const web = await openWebApp((m) => ({
+    ...m,
+    audit: () => Effect.die(new Error("handler bug")),
+    undoHistory: Effect.interrupt,
+  }));
+  const call = <A, E>(
+    f: (
+      client: RpcClient.FromGroup<typeof MailRpcs, RpcClientError.RpcClientError>,
+    ) => Effect.Effect<A, E>,
+  ) =>
+    Effect.runPromiseExit(
+      RpcClient.make(MailRpcs).pipe(
+        Effect.flatMap(f),
+        Effect.provide(ElectronProtocol),
+        Effect.scoped,
+      ),
+    );
+  const died = await call((client) => client.Audit({ limit: 1 }));
+  expect(Exit.isFailure(died)).toBe(true);
+  expect(JSON.stringify(died)).not.toContain("handler bug");
+  expect(Exit.isFailure(await call((client) => client.UndoHistory()))).toBe(true);
+  expect(Exit.isSuccess(await call((client) => client.Accounts()))).toBe(true);
+
+  // A sync the Mac runs on its own reaches the page only through Events.
+  web.server.messages.set("arrival", incoming("arrival", { subject: "Arrived later" }));
+  await web.sync();
+  await eventually(() => {
+    expect(screen.getAllByText("Arrived later").length).toBeGreaterThan(0);
+  });
+  // The socket stayed up, and the Mac's log names the call that died.
+  expect(web.states).not.toContain("lost");
+  expect(web.failures).toContain("Audit");
+});

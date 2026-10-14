@@ -9,7 +9,7 @@ import {
 import { shareMessageLink } from "../system/share-message-link";
 import { openExternal } from "../security/external";
 import { trustedSender } from "../security/security";
-import { makeStringProtocol } from "./rpc-security";
+import { stringRpcServer, type StringTransport } from "./rpc-security";
 import { mailboxHandlers } from "../../shared/mailbox-handlers";
 import { desktopAppleContacts } from "../system/apple-contacts";
 import { currentUpdateState } from "../updates/update-state";
@@ -45,7 +45,6 @@ import { becomeDefaultClient, defaultClientStatus } from "../system/default-clie
 import { diagnosticSnapshot, IMAP_PRESETS, Mailbox, senderSearchQuery } from "@openmail/core";
 import { diagnosticEnvironment } from "../app/diagnostic-environment";
 import { Effect, FiberSet, Layer, Queue, Stream } from "effect";
-import { RpcSerialization, RpcServer } from "effect/rpc";
 import {
   app,
   BrowserWindow,
@@ -85,7 +84,7 @@ const focusApp = Effect.sync(() => BrowserWindow.getAllWindows()[0]?.focus());
  * RPC server transport over Electron IPC. Each renderer (webContents) is one
  * client; its id is the client id. Frames are JSON strings.
  */
-const ElectronProtocol = makeStringProtocol({
+const electronTransport: StringTransport = {
   attach: (input) => {
     const watched = new Set<number>();
     const onFrame = (event: IpcMainEvent, frame: unknown) => {
@@ -114,7 +113,7 @@ const ElectronProtocol = makeStringProtocol({
     localLog("rpc-failure", { rpc: tag });
     process.stderr.write(`[rpc-failure] ${tag}\n`);
   },
-});
+};
 
 const Handlers = MailRpcs.toLayer(
   Effect.gen(function* () {
@@ -323,8 +322,6 @@ const Handlers = MailRpcs.toLayer(
 );
 
 /** The RPC server the renderer talks to. Needs the Mailbox. */
-export const RpcServerLive = RpcServer.layer(MailRpcs).pipe(
+export const RpcServerLive = stringRpcServer(MailRpcs, electronTransport).pipe(
   Layer.provide(Handlers),
-  Layer.provide(ElectronProtocol),
-  Layer.provide(RpcSerialization.layerJson),
 );

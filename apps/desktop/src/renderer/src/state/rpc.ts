@@ -18,7 +18,7 @@ declare global {
  * RPC client transport over a string pipe: the preload's IPC bridge in the
  * desktop app, a WebSocket to the Mac in the web build.
  */
-const ElectronProtocol = Layer.effect(
+export const ElectronProtocol = Layer.effect(
   RpcClient.Protocol,
   Effect.gen(function* () {
     const serialization = yield* RpcSerialization.RpcSerialization;
@@ -30,6 +30,13 @@ const ElectronProtocol = Layer.effect(
         // Route by request owner even before a short-lived client's receive
         // loop starts. Protocol.make buffers early replies for that client.
         const owners = new Map<string | number, number>();
+        // A failure for every request in flight. A short-lived client's receive loop may not
+        // have started yet; writing to it by owner buffers the failure until it does.
+        const everyClient = (write: (id: number) => Effect.Effect<void>) => {
+          const ids = new Set([...clientIds, ...owners.values()]);
+          owners.clear();
+          return Effect.forEach(ids, write, { discard: true });
+        };
         const off = bridge.onFrame((frame) => {
           run(
             Effect.forEach(
@@ -42,7 +49,7 @@ const ElectronProtocol = Layer.effect(
                   return writeResponse(owner, response);
                 }
                 if (response._tag === "Defect" || response._tag === "ClientProtocolError")
-                  owners.clear();
+                  return everyClient((id) => writeResponse(id, response));
                 return Effect.forEach(clientIds, (id) => writeResponse(id, response));
               },
               { discard: true },
@@ -60,8 +67,7 @@ const ElectronProtocol = Layer.effect(
           }),
         } as const;
         const offReset = bridge.onReset?.(() => {
-          owners.clear();
-          run(Effect.forEach(clientIds, (id) => writeResponse(id, lost), { discard: true }));
+          run(everyClient((id) => writeResponse(id, lost)));
         });
         yield* Effect.addFinalizer(() =>
           Effect.sync(() => {

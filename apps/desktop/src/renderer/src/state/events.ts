@@ -19,18 +19,24 @@ export const syncStateAtom = Atom.make<SyncState>({
 /** Messages fetched so far in the running sync; null between syncs. */
 export const syncProgressAtom = Atom.make<SyncProgress | null>(null).pipe(Atom.keepAlive);
 
+/** Waits before following Events again, by failures since its last event. */
+export const RESUBSCRIBE_MS = [1000, 2000, 5000, 15_000, 30_000];
+
 /**
  * Reads the current sync state, then follows the event stream: sync state and
  * progress go into their atoms, and a finished sync or a `Changed` notice
  * invalidates every mail query.
  *
- * In the web build the socket to the Mac can drop. The subscription then
- * starts again once the connection is back, and every query reads again,
- * since events sent in between were missed.
+ * The subscription starts again when it ends with any failure: in the web
+ * build the socket to the Mac can drop, and a defect in the main process
+ * fails the stream. Every query then reads again, since events sent in
+ * between were missed. While it keeps failing before its first event, the
+ * waits grow from 1 to 30 seconds.
  */
 export const liveUpdatesAtom = MailClient.runtime.atom((get) => {
   get.mount(appleContactsStatusAtom);
   let resubscribing = false;
+  let failures = 0;
   return Effect.gen(function* () {
     const call = yield* MailClient;
     const reactivity = yield* Reactivity.Reactivity;
@@ -38,6 +44,11 @@ export const liveUpdatesAtom = MailClient.runtime.atom((get) => {
     if (resubscribing) yield* reactivity.invalidate(Object.values(Keys));
     resubscribing = true;
     yield* call("Events", undefined).pipe(
+      Stream.tap(() =>
+        Effect.sync(() => {
+          failures = 0;
+        }),
+      ),
       Stream.runForEach(
         Match.typeTags<MailboxEvent, Effect.Effect<void>>()({
           SyncState: ({ state }) =>
@@ -58,7 +69,16 @@ export const liveUpdatesAtom = MailClient.runtime.atom((get) => {
       ),
     );
   }).pipe(
-    // Its only failure is the transport's (RpcClientError).
-    Effect.retry({ schedule: Schedule.spaced("1 second") }),
+    // Typed failures and defects alike. Interrupting the atom still stops it.
+    Effect.sandbox,
+    Effect.retry({
+      schedule: Schedule.spaced(0).pipe(
+        Schedule.modifyDelay(() =>
+          Effect.sync(
+            () => RESUBSCRIBE_MS[Math.min(failures++, RESUBSCRIBE_MS.length - 1)] ?? 1000,
+          ),
+        ),
+      ),
+    }),
   );
 });

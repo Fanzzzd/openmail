@@ -1,7 +1,6 @@
 import { Mailbox } from "@openmail/core";
 import { Effect, Layer } from "effect";
-import { RpcSerialization, RpcServer } from "effect/rpc";
-import { makeStringProtocol } from "../rpc/rpc-security";
+import { stringRpcServer, type StringTransport } from "../rpc/rpc-security";
 import { remoteHandlers } from "./remote-handlers";
 import { remoteDisposition, RemoteRpcs } from "./remote-rpcs";
 import type { ConnectionListener, RemoteConnection } from "./remote-server";
@@ -42,9 +41,9 @@ const quiet: RemoteRpcLog = { denied: ignore, failure: ignore };
  * Effect RPC over the remote WebSockets, with the same envelope checks, error
  * scrubbing and failure tracking as Electron IPC. Each socket is one client.
  */
-const remoteProtocol = (hub: ConnectionHub, log: RemoteRpcLog) => {
+const remoteTransport = (hub: ConnectionHub, log: RemoteRpcLog): StringTransport => {
   const clients = new Map<number, RemoteConnection>();
-  return makeStringProtocol({
+  return {
     attach: (input) => {
       let next = 0;
       const off = hub.listen((connection) => {
@@ -75,12 +74,12 @@ const remoteProtocol = (hub: ConnectionHub, log: RemoteRpcLog) => {
         if (message._tag === "Request" && remoteDisposition(message.tag) === "denied")
           log.denied(message.tag);
     },
-  });
+  };
 };
 
 /** The remote RPC server. Only RemoteRpcs exist here; everything else has no handler. */
 export const remoteRpcServer = (hub: ConnectionHub, log: RemoteRpcLog = quiet) =>
-  RpcServer.layer(RemoteRpcs).pipe(
+  stringRpcServer(RemoteRpcs, remoteTransport(hub, log)).pipe(
     Layer.provide(
       RemoteRpcs.toLayer(
         Effect.gen(function* () {
@@ -88,6 +87,4 @@ export const remoteRpcServer = (hub: ConnectionHub, log: RemoteRpcLog = quiet) =
         }),
       ),
     ),
-    Layer.provide(remoteProtocol(hub, log)),
-    Layer.provide(RpcSerialization.layerJson),
   );

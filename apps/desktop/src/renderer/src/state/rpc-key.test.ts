@@ -55,6 +55,32 @@ it("a short-lived key client receives a validation reply before its receive loop
   }
 });
 
+it("a short-lived client fails on a client-wide defect that arrives before its receive loop starts", async () => {
+  const listeners = new Set<(frame: string) => void>();
+  const bridge: RpcBridge = {
+    onFrame: (listener) => {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+    send: () => {
+      const frame = JSON.stringify(publicRpcResponse({ _tag: "Defect", defect: "boom" }));
+      // Synchronous, as in the key reply test above.
+      for (const listener of listeners) listener(frame);
+    },
+  };
+  vi.stubGlobal("window", { openmailRpc: bridge });
+  try {
+    const exit = await Effect.runPromiseExit(
+      submitAiKey("fixture").pipe(Effect.timeout("1 second")),
+    );
+    expect(JSON.stringify(exit)).toContain("Internal RPC failure");
+  } finally {
+    vi.unstubAllGlobals();
+  }
+});
+
 it("smoke health bridge uses allowed Accounts/SyncHealth RPCs and preserves offline counts in redacted JSON", async () => {
   const { readSyncHealth } = await import("./rpc");
   const listeners = new Set<(frame: string) => void>();

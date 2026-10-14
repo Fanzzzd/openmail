@@ -1,5 +1,5 @@
 import { Effect, FiberSet, Layer, Queue, Schema } from "effect";
-import { type RpcMessage, RpcSerialization, RpcServer } from "effect/rpc";
+import { type Rpc, type RpcGroup, type RpcMessage, RpcSerialization, RpcServer } from "effect/rpc";
 import { MailError } from "@openmail/core/schema";
 import { MAX_RPC_FRAME } from "../../shared/channel";
 import { PUBLIC_ERROR_MESSAGES } from "../../shared/public-error-messages";
@@ -193,4 +193,18 @@ export const makeStringProtocol = (transport: StringTransport) =>
         }),
       );
     }),
+  );
+
+/**
+ * The RPC server over a string transport. A handler that dies fails only its own request.
+ * Effect RPC's default instead sends the client one Defect frame, which fails every request
+ * the client has in flight: a window's Events subscription and its other streams with it.
+ */
+export const stringRpcServer = <Rpcs extends Rpc.Any>(
+  group: RpcGroup.RpcGroup<Rpcs>,
+  transport: StringTransport,
+) =>
+  RpcServer.layer(group, { disableFatalDefects: true }).pipe(
+    Layer.provide(makeStringProtocol(transport)),
+    Layer.provide(RpcSerialization.layerJson),
   );

@@ -1,5 +1,5 @@
 import type { NativePickerResult } from "../../../shared/native-compose";
-import { decodeRpcFrame, publicRpcResponse } from "../../../main/rpc/rpc-security";
+import { stringRpcServer } from "../../../main/rpc/rpc-security";
 import { RegistryContext } from "@effect/atom-react";
 import { i18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
@@ -20,19 +20,9 @@ import {
   TemporaryTestMailbox,
 } from "@openmail/core/testing/node";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react/pure";
-import {
-  Deferred,
-  Effect,
-  Fiber,
-  FiberSet,
-  Layer,
-  ManagedRuntime,
-  PubSub,
-  Queue,
-  Stream,
-} from "effect";
+import { Deferred, Effect, Fiber, Layer, ManagedRuntime, PubSub, Stream } from "effect";
 import { AtomRegistry } from "effect/reactivity";
-import { RpcMessage, RpcSerialization, RpcServer } from "effect/rpc";
+import type { Rpc, RpcGroup, RpcMessage } from "effect/rpc";
 import { createMemoryHistory } from "@tanstack/react-router";
 import { createElement } from "react";
 import { vi } from "vitest";
@@ -139,6 +129,11 @@ export function incoming(
   };
 }
 
+type MailRpc = RpcGroup.Rpcs<typeof MailRpcs>;
+type HandlerOverrides = {
+  readonly [Current in MailRpc as Current["_tag"]]?: Rpc.ToHandlerFn<Current, never>;
+};
+
 interface FlowHarness {
   server: FakeServer;
   m: Mailbox["Service"];
@@ -187,6 +182,8 @@ export async function flow(
     noAccounts?: boolean;
     /** Prefs requests wait until `releasePrefs`, as on a slow first load. */
     holdPrefs?: boolean;
+    /** Replaces these main-process handlers, after every other option. */
+    handlers?: HandlerOverrides;
   } = {},
 ): Promise<FlowHarness> {
   const provider = options.provider ?? "gmail";
@@ -446,61 +443,35 @@ export async function flow(
       DisconnectRemoteSession: unsupported,
       DesktopEvents: () =>
         Stream.fromPubSub(desktop).pipe(Stream.onStart(Deferred.succeed(desktopReady, undefined))),
+      ...options.handlers,
     }),
   );
-  const protocol = Layer.effect(
-    RpcServer.Protocol,
-    Effect.gen(function* () {
-      const serialization = yield* RpcSerialization.RpcSerialization;
-      return yield* RpcServer.Protocol.make(
-        Effect.fnUntraced(function* (writeRequest) {
-          const parser = serialization.makeUnsafe();
-          const dispatch = yield* FiberSet.makeRuntime();
-          bridge.send = (frame) => {
-            // IO boundary, identical JSON frame encoding to the preload transport.
-            const decoded = decodeRpcFrame(frame);
-            if (!decoded) return;
-            progress();
-            for (const message of decoded) if (message._tag === "Request") requests.push(message);
-            // Electron IPC delivers on a later turn, including short-lived key clients.
-            queueMicrotask(() =>
-              dispatch(
-                Effect.forEach(decoded, (message) => writeRequest(1, message), { discard: true }),
-              ),
-            );
-          };
-          return {
-            disconnects: yield* Queue.make<number>(),
-            send: (_id, response) =>
-              Effect.sync(() => {
-                progress();
-                const publicResponse = publicRpcResponse(response);
-                responses.push(publicResponse);
-                const frame = parser.encode(publicResponse);
-                if (typeof frame === "string")
-                  queueMicrotask(() => {
-                    for (const listener of listeners) listener(frame);
-                  });
-              }),
-            end: () => Effect.void,
-            clientIds: Effect.succeed(new Set([1])),
-            initialMessage: Effect.succeedNone,
-            supportsAck: true,
-            supportsTransferables: false,
-            supportsSpanPropagation: false,
-            supportsNotifications: true,
-            codecFor: serialization.codecFor,
-          };
-        }),
-      );
-    }),
-  );
+  // The app's own server and protocol, over an in-memory pipe for one window.
   const rpcRuntime = ManagedRuntime.make(
-    RpcServer.layer(MailRpcs).pipe(
-      Layer.provide(handlers),
-      Layer.provide(protocol),
-      Layer.provide(RpcSerialization.layerJson),
-    ),
+    stringRpcServer(MailRpcs, {
+      attach: (input) => {
+        bridge.send = (frame) => {
+          progress();
+          // Electron IPC delivers on a later turn, including short-lived key clients.
+          queueMicrotask(() => input.frame(1, frame));
+        };
+        return () => {
+          bridge.send = () => null;
+        };
+      },
+      inspect: (_, batch) => {
+        for (const message of batch) if (message._tag === "Request") requests.push(message);
+      },
+      send: (_, frame) => {
+        progress();
+        // IO boundary: the frame the server just encoded.
+        responses.push(JSON.parse(frame) as RpcMessage.FromServerEncoded);
+        queueMicrotask(() => {
+          for (const listener of listeners) listener(frame);
+        });
+      },
+      failure: () => null,
+    }).pipe(Layer.provide(handlers)),
   );
   await rpcRuntime.runPromise(Effect.void);
   const registry = AtomRegistry.make();
