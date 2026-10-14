@@ -62,9 +62,9 @@ Every scope is requested from the user's own Mac by the desktop app. The optiona
 - **What it does:** for a calendar invitation the user received, finds the matching event, records the user's Accept, Maybe or Decline answer, and shows conflicting events.
 - **When requested:** only after the user connects Calendar.
 
-### `openid`, `email`, `profile`
+### No identity scopes
 
-These identify which Google account was added, so the app can show it and use the right address.
+OpenMail doesn't request `openid`, `email` or `profile`. It reads the account address from the Gmail API's `users.getProfile`, which `gmail.modify` covers. The Data Access page declares exactly the seven scopes above.
 
 ## Limited Use
 
