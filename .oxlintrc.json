@@ -50,12 +50,6 @@
   },
   "overrides": [
     {
-      "files": ["packages/backend/**"],
-      "rules": {
-        "unicorn/no-array-sort": "off"
-      }
-    },
-    {
       "files": ["**/*.test.ts"],
       "rules": {
         "eslint/no-shadow": "off",
@@ -63,53 +57,15 @@
       }
     },
     {
-      "files": [
-        "packages/memory-mcp/**",
-        "apps/web/scripts/**",
-        "scripts/**",
-        "apps/mobile/scripts/**"
-      ],
+      "files": ["scripts/**", "apps/mobile/scripts/**"],
       "rules": {
         "eslint/no-console": "off"
-      }
-    },
-    {
-      "files": ["packages/backend/convex/**"],
-      "rules": {
-        "eslint/no-console": [
-          "error",
-          {
-            "allow": ["warn", "error"]
-          }
-        ]
       }
     },
     {
       "files": ["apps/desktop/src/main/**"],
       "rules": {
         "eslint/no-console": "off"
-      }
-    },
-    {
-      "files": ["apps/web/src/**"],
-      "rules": {
-        "eslint/no-restricted-imports": [
-          "error",
-          {
-            "paths": [
-              {
-                "name": "@convex-dev/prosemirror-sync/blocknote",
-                "importNames": ["useBlockNoteSync"],
-                "message": "Use useCollabSync from @/lib/collab-sync. onSyncError is optional in the library and omitting it makes a broken collaborative session invisible: the failure rethrows out of a floating promise and the snapshot write swallows it."
-              },
-              {
-                "name": "@convex-dev/presence/react",
-                "importNames": ["default"],
-                "message": "Use usePresenceRoom from @/lib/presence. The heartbeat interval is the entire cost of presence and the library default (10s) is four times what we want; a per-call-site interval drifts."
-              }
-            ]
-          }
-        ]
       }
     },
     {

@@ -22,7 +22,7 @@ import { configureWindowRecovery } from "../windows/windows";
 import { showDatabaseProgress } from "./database-upgrade";
 import type { RecoveryPrompt } from "../../shared/recovery";
 import { nativeAsk } from "../system/native-fallback";
-import { openRecoveryWindow, recoveryPrompt, type RecoveryDeps } from "./recovery-window";
+import { openRecoveryWindow, recoveryPrompt } from "./recovery-window";
 
 let diagnostics: ReturnType<typeof createLocalDiagnostics> | undefined;
 let crashed = false;
@@ -93,15 +93,10 @@ const nativeRecoveryPrompt = (prompt: RecoveryPrompt) =>
     defaultId: prompt.defaultId,
     cancelId: prompt.cancelId,
   });
-let openSurface: RecoveryDeps["open"] = openRecoveryWindow;
-/** Tests replace the window; production always opens renderer/recovery.html. */
-export const setRecoverySurface = (open: RecoveryDeps["open"]) => {
-  openSurface = open;
-};
 const ask = (prompt: Omit<RecoveryPrompt, "defaultId" | "cancelId"> & Partial<RecoveryPrompt>) =>
   recoveryPrompt(
     { defaultId: 0, cancelId: 0, ...prompt },
-    { open: openSurface, fallback: nativeRecoveryPrompt },
+    { open: openRecoveryWindow, fallback: nativeRecoveryPrompt },
   );
 type Labels = Awaited<ReturnType<typeof nativeRecoveryLabels>>;
 const resetFailure = (labels: Labels, error: unknown) =>
