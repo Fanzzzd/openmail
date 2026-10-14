@@ -111,11 +111,14 @@ export default function PrivacyPage() {
           <tr>
             <td>A diagnostics log</td>
             <td>
-              The same folder. It holds fixed fields only: time, provider, HTTP method, endpoint
-              template, status code, failure category and an account hash keyed with a random secret
-              that stays on your Mac. It contains no message content, addresses, full URLs or
-              tokens. The secret is in <code>diagnostics.key</code> in the same folder. A copied or
-              attached export numbers accounts instead of showing the hash. It is never uploaded.
+              The same folder. It holds fixed fields only: time, event type, provider, HTTP method,
+              endpoint template, status code, failure category, the name of a failed internal
+              request and whether it failed, was a defect or was interrupted, the phase and counts
+              of a sync reset, crash and abnormal-exit entries with an exit code, and hashes of the
+              account and folder. The hashes are keyed with a random secret that stays on your Mac.
+              The log contains no message content, addresses, full URLs or tokens. The secret is in{" "}
+              <code>diagnostics.key</code> in the same folder. An export replaces every hash with a
+              number that is valid for that export only. It is never uploaded.
               The Feedback window lets you attach it to an email that you send yourself.
             </td>
           </tr>
