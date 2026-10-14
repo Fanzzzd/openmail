@@ -433,20 +433,31 @@ export const makeDraftsMailbox = (
     return yield* publicDraft(Option.getOrElse(yield* store.getDraft(id), () => draft));
   });
 
-  const discardDraft = Effect.fn("Mailbox.discardDraft")(function* (id: string) {
-    const draft = yield* store.getDraft(id);
-    if (Option.isNone(draft)) return;
-    yield* store.transaction(
+  /**
+   * Deletes the draft and queues its provider delete. `alongside` runs first in
+   * the same transaction, so the outbox's tombstone and queued-send delete
+   * land together with the draft delete or not at all.
+   */
+  const discardDraft = Effect.fn("Mailbox.discardDraft")(function* (
+    id: string,
+    alongside: Effect.Effect<void> = Effect.void,
+  ) {
+    const draft = yield* store.transaction(
       Effect.gen(function* () {
-        yield* removeDraft(draft.value);
+        yield* alongside;
+        const stored = yield* store.getDraft(id);
+        if (Option.isNone(stored)) return stored;
+        yield* removeDraft(stored.value);
         yield* store.appendAudit({
           actor: { kind: "user", surface: "app" },
-          accountId: draft.value.accountId,
+          accountId: stored.value.accountId,
           action: "discard_draft",
-          detail: { draftId: id, subject: draft.value.message.subject },
+          detail: { draftId: id, subject: stored.value.message.subject },
         });
+        return stored;
       }),
     );
+    if (Option.isNone(draft)) return;
     if (draft.value.proposalId !== null) yield* settleProposal(draft.value.proposalId, false);
     yield* flushLater;
     yield* changed;

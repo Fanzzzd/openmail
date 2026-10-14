@@ -51,7 +51,7 @@ export const makeOutboxMailbox = (
       input: DraftInput,
       enqueue: boolean,
     ) => Effect.Effect<StoredDraft, NotFound | InvalidInput>;
-    discardDraft: Mailbox["Service"]["discardDraft"];
+    discardDraft: (id: string, alongside?: Effect.Effect<void>) => Effect.Effect<void>;
     draftStatus: Mailbox["Service"]["draftStatus"];
     saveDraft: Mailbox["Service"]["saveDraft"];
     openDraft: Mailbox["Service"]["openDraft"];
@@ -566,15 +566,16 @@ export const makeOutboxMailbox = (
       }
     }
   });
-  /** Records the discard before deleting, so a save racing it can't bring the draft back. */
+  /**
+   * Records the discard, so a save racing it can't bring the draft back, in the
+   * same transaction that deletes the queued send and the draft: a crash leaves
+   * all of it or none.
+   */
   const discardNow = (id: string) =>
-    store
-      .markDraftDiscarded(id)
-      .pipe(
-        Effect.andThen(store.deleteQueuedSend(id)),
-        Effect.andThen(discardDraft(id)),
-        runtime.outboxLock.withPermits(1),
-      );
+    discardDraft(
+      id,
+      store.markDraftDiscarded(id).pipe(Effect.andThen(store.deleteQueuedSend(id))),
+    ).pipe(runtime.outboxLock.withPermits(1));
 
   /**
    * Discards waiting for their undo window. The draft stays untouched until the worker runs.
@@ -627,14 +628,19 @@ export const makeOutboxMailbox = (
 
   /**
    * At start: discards whose window passed while OpenMail was not running happen now, and the
-   * rest wait out what is left of theirs. Old tombstones go.
+   * rest wait out what is left of theirs. A finished discard whose draft is still there, left
+   * by a version that wrote the tombstone apart from the delete, is finished too. Old
+   * tombstones go.
    */
   const resumeHeldDiscards = Effect.gen(function* () {
     const now = yield* Clock.currentTimeMillis;
     yield* store.pruneDraftDiscards(now - DISCARD_TOMBSTONE_MS);
     for (const held of yield* store.draftDiscards) {
-      if (held.discarded || heldDiscards.has(held.id)) continue;
-      if (Option.isNone(yield* store.getDraft(held.id))) yield* store.markDraftDiscarded(held.id);
+      if (heldDiscards.has(held.id)) continue;
+      const exists = Option.isSome(yield* store.getDraft(held.id));
+      if (held.discarded) {
+        if (exists) yield* discardNow(held.id);
+      } else if (!exists) yield* store.markDraftDiscarded(held.id);
       else if (held.discardAt <= now) yield* discardNow(held.id);
       else yield* holdUntil(held.id, held.discardAt);
     }
