@@ -1,10 +1,10 @@
 import { useLingui } from "@lingui/react/macro";
 import type { Address } from "@openmail/core/schema";
 import type { KeyboardEvent } from "react";
+import { touchIcon } from "../../../ui/styles";
 
 /** A small text button in the editor's toolbar rows and bars. */
-export const editorButton =
-  "rounded p-1.5 text-a11y-muted hover:bg-fill-hover focus-visible:outline-a11y-focus";
+export const editorButton = `rounded p-1.5 ${touchIcon} text-a11y-muted hover:bg-fill-hover focus-visible:outline-a11y-focus`;
 
 /** People matching the @mention being typed; the arrow keys move `index`. */
 export function MentionSuggestions({

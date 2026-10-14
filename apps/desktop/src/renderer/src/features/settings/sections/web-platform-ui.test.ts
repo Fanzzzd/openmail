@@ -3,6 +3,7 @@ import { setupI18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
 import { DEFAULT_PREFS } from "@openmail/core/schema";
 import { cleanup, render, screen } from "@testing-library/react";
+import { Effect } from "effect";
 import { AsyncResult } from "effect/reactivity";
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
@@ -16,6 +17,11 @@ vi.mock("@effect/atom-react", () => ({
 vi.mock("../../../state/queries", () => ({ prefsAtom: "prefs" }));
 vi.mock("../../../state/mutations", () => ({ setPrefsAtom: "setPrefs" }));
 vi.mock("./IndexingSettings", () => ({ IndexingSettings: () => null }));
+vi.mock("../../../state/mail", () => ({
+  useRunMail: () => vi.fn(),
+  withMail: () => Effect.never,
+  syncNow: null,
+}));
 vi.mock("../../../lib/responsive-layout", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../../lib/responsive-layout")>()),
   useLayoutMode: () => "narrow",
@@ -27,6 +33,9 @@ import { Dialog, narrowSheet, SheetDragStrip } from "../../../ui/Dialog";
 import { buttonSecondary, iconButton, itemClass, touchTarget } from "../../../ui/styles";
 import { TrafficLightSpace } from "../../../ui/TrafficLights";
 import { InteractionSettings } from "./InteractionSettings";
+import { SidebarFooter } from "../../sidebar/SidebarFooter";
+import { AttachmentList } from "../../reader/attachments/Attachments";
+import { editorButton } from "../../compose/components/ComposeEditorBars";
 
 afterEach(() => {
   cleanup();
@@ -134,4 +143,48 @@ it("gives buttons, icon buttons and menu rows a 44 px target on a phone in the w
   expect(readFileSync(path.join(desktopRoot, "src/renderer/index.html"), "utf8")).not.toContain(
     "data-platform",
   );
+});
+
+it("gives the sidebar footer, attachment chips and editor buttons a 44 px target on a phone", () => {
+  setPlatform("web");
+  const touch = (element: Element) => {
+    expect(element.className, element.outerHTML).toMatch(/coarse:(?:min-)?h-11/);
+  };
+  render(
+    localized(
+      h(SidebarFooter, {
+        accounts: [{ id: "a1" } as never],
+        syncState: { running: false, lastFinishedAt: null } as never,
+        progress: null,
+        failures: [],
+        onSettings: vi.fn(),
+      }),
+    ),
+  );
+  for (const name of ["Settings", "Sync now"]) {
+    const button = screen.getByRole("button", { name });
+    touch(button);
+    expect(button.className).toContain("coarse:min-w-11");
+  }
+  cleanup();
+  render(
+    localized(
+      h(AttachmentList, {
+        messageId: "a1:m1",
+        files: [
+          {
+            path: [0],
+            filename: "agenda.pdf",
+            mimeType: "application/pdf",
+            size: 128,
+            embedded: false,
+            decodeError: false,
+          },
+        ],
+        notify: vi.fn(),
+      }),
+    ),
+  );
+  touch(screen.getByRole("link", { name: /agenda\.pdf/ }));
+  expect(editorButton).toContain("coarse:min-h-11 coarse:min-w-11");
 });

@@ -31,6 +31,7 @@ import { OpenWithSubmenu } from "./OpenWithMenu";
 import type { Notify } from "../notify";
 import { LazyEmailFrame } from "../body/MessageBodyShell";
 import { DropdownMenu, MenuItem } from "../../../ui/Menu";
+import { touchIcon } from "../../../ui/styles";
 import { Tip } from "../../../ui/Tip";
 
 export function Attachments({
@@ -284,7 +285,7 @@ export function AttachmentList({
               </>
             );
             const chip =
-              "flex h-9 max-w-[min(20rem,100%)] min-w-0 items-center gap-1.5 rounded-control border border-edge px-2.5 text-body hover:bg-fill-hover";
+              "flex h-9 coarse:h-11 max-w-[min(20rem,100%)] min-w-0 items-center gap-1.5 rounded-control border border-edge px-2.5 text-body hover:bg-fill-hover";
             return file.embedded ? (
               <button
                 key={pathKey(file.path)}
@@ -345,7 +346,7 @@ export function AttachmentList({
           return (
             <span
               key={pathKey(file.path)}
-              className={`flex h-8 max-w-[min(20rem,100%)] items-center rounded-control border text-body ${hit ? "border-amber-500 bg-amber-500/10" : "border-edge"}`}
+              className={`flex h-8 coarse:h-11 max-w-[min(20rem,100%)] items-center rounded-control border text-body ${hit ? "border-amber-500 bg-amber-500/10" : "border-edge"}`}
               title={hit ? hit.snippet : undefined}
             >
               <input
@@ -396,7 +397,7 @@ export function AttachmentList({
                   type="button"
                   aria-label={t`Preview ${file.filename}`}
                   onClick={() => action("preview", [file])}
-                  className="px-1.5 text-a11y-muted"
+                  className={`px-1.5 text-a11y-muted ${touchIcon}`}
                 >
                   <Eye className="size-3.5" />
                 </button>
@@ -406,7 +407,7 @@ export function AttachmentList({
                   type="button"
                   aria-label={t`Save ${file.filename}`}
                   onClick={() => action("save", [file])}
-                  className="px-1.5 text-a11y-muted"
+                  className={`px-1.5 text-a11y-muted ${touchIcon}`}
                 >
                   <Download className="size-3.5" />
                 </button>
@@ -416,7 +417,7 @@ export function AttachmentList({
                   <button
                     type="button"
                     aria-label={t`Actions for ${file.filename}`}
-                    className="px-1.5 text-a11y-muted"
+                    className={`px-1.5 text-a11y-muted ${touchIcon}`}
                   >
                     <MoreHorizontal className="size-3.5" />
                   </button>

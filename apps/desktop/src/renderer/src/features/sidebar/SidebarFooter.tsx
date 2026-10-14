@@ -3,6 +3,7 @@ import { RefreshCw, Settings as SettingsIcon } from "lucide-react";
 import type { Account, SyncProgress, SyncState } from "../../../../shared/api";
 import { useShortcutText } from "../../i18n/use-shortcut-text";
 import { syncNow, useRunMail } from "../../state/mail";
+import { touchIcon } from "../../ui/styles";
 import { Tip } from "../../ui/Tip";
 import { SyncStatusAnnouncement } from "../sync-status";
 import { dateFormat } from "../../lib/format";
@@ -58,7 +59,7 @@ export function SidebarFooter({
           type="button"
           aria-label={t`Settings`}
           onClick={onSettings}
-          className="rounded p-1 hover:bg-fill-hover"
+          className={`rounded p-1 ${touchIcon} hover:bg-fill-hover`}
         >
           <SettingsIcon className="size-3.5" />
         </button>
@@ -69,7 +70,7 @@ export function SidebarFooter({
             type="button"
             aria-label={t`Sync now`}
             onClick={() => run(syncNow)}
-            className="rounded p-1 hover:bg-fill-hover"
+            className={`rounded p-1 ${touchIcon} hover:bg-fill-hover`}
           >
             <RefreshCw className={`size-3.5 ${syncState.running ? "animate-spin" : ""}`} />
           </button>
