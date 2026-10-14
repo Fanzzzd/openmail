@@ -28,6 +28,25 @@ describe("input error translations", () => {
     );
   });
 
+  it("end every message with a period and name the next step", () => {
+    const english = setupI18n({ locale: "en", messages: { en: {} } });
+    const texts = Object.values(INPUT_ERRORS).map((descriptor) => english._(descriptor));
+    expect(texts.filter((text) => !/[.?!]$/.test(text))).toEqual([]);
+    for (const [message, text] of [
+      [
+        "Calendar response was not sent",
+        "Your response wasn't sent. Try again, or respond from your calendar.",
+      ],
+      ["Unknown label or folder", "This label or folder no longer exists. Refresh the list."],
+      [
+        "Too many tailnet logins",
+        "Remote access allows up to 64 tailnet logins. Remove some, then save again.",
+      ],
+      ["Unsupported server rule", "OpenMail can't edit this server filter. Edit it in webmail."],
+    ] as const)
+      expect(errorText(english, new InvalidInput({ message }))).toBe(text);
+  });
+
   it("explain internal calendar failures with a next step", () => {
     const english = setupI18n({ locale: "en", messages: { en: {} } });
     for (const message of [

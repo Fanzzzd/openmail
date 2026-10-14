@@ -99,7 +99,7 @@ it("ambiguous dates block confirmation until the person chooses an explicit date
   await eventually(() => expect(row(h.id("one"))).toBeTruthy());
   fireEvent.click(row(h.id("one")));
   await openTextDate();
-  expect(screen.getByText("Date is ambiguous. Enter an explicit date and time")).toBeTruthy();
+  expect(screen.getByText("This date is ambiguous. Enter an explicit date and time.")).toBeTruthy();
   expect(screen.getByLabelText("Event date or range").getAttribute("aria-invalid")).toBe("true");
   expect(
     screen.getByRole("button", { name: "Confirm and add event" }).hasAttribute("disabled"),
@@ -146,7 +146,9 @@ it("Outlook shows a lossless-mapping error before confirmation for a month-end r
   fireEvent.click(row(h.id("one")));
   await openTextDate();
   await choose("Repeat pattern", "Monthly by date");
-  expect(screen.getByText("This recurrence cannot be represented in Outlook")).toBeTruthy();
+  expect(
+    screen.getByText("Outlook can't save this repeat pattern. Choose a simpler one."),
+  ).toBeTruthy();
   expect(
     screen.getByRole("button", { name: "Confirm and add event" }).hasAttribute("disabled"),
   ).toBe(true);
@@ -171,7 +173,11 @@ it("changing the start flags the rule mismatch and leaves the editor available t
   fireEvent.change(screen.getByLabelText("Event date or range"), {
     target: { value: "2026-10-27 09:00–10:00" },
   });
-  expect(screen.getByText("Repeat pattern must include the event start date")).toBeTruthy();
+  expect(
+    screen.getByText(
+      "The repeat pattern must include the event's start date. Change the pattern or the start date.",
+    ),
+  ).toBeTruthy();
   expect(
     screen.getByRole("button", { name: "Confirm and add event" }).hasAttribute("disabled"),
   ).toBe(true);
@@ -200,7 +206,7 @@ it("DST gaps have an explicit offset prompt before any creation", async () => {
   await choose("Time zone", "America/New_York");
   expect(
     screen.getByText(
-      "This time is skipped or repeated by daylight saving. Enter a date and time with a UTC offset",
+      "This time is skipped or repeated by daylight saving. Enter a date and time with a UTC offset.",
     ),
   ).toBeTruthy();
   expect(
