@@ -62,7 +62,7 @@ const click = (selector, text = "") =>
 const shown = (selector) =>
   `(() => { const el = document.querySelector(${JSON.stringify(selector)}); return !!el && el.getClientRects().length > 0; })()`;
 const hasText = (text) => `document.body.innerText.includes(${JSON.stringify(text)})`;
-const LOST = "Lost the connection to your Mac";
+const LOST = "Can't reach OpenMail on your Mac";
 
 async function main() {
   const out = {};
