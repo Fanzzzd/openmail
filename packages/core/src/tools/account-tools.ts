@@ -84,7 +84,7 @@ export const AccessStatus = readOnly(
 export const ListProfiles = readOnly(
   mailTool("list_profiles", {
     description:
-      "List profiles, the groups of accounts OpenMail calls spaces, such as Work and Personal. Pass an id as profile_id to list_threads. Page with next_cursor.",
+      "List spaces, the groups of accounts such as Work and Personal. The tool and its profile_id argument keep the name profile. Pass an id as profile_id to list_threads. Page with next_cursor.",
     parameters: Schema.Struct(PageParameters),
     success: Schema.Struct({ ...PageResult, profiles: Schema.Array(Profile) }),
     failure: MailToolError,

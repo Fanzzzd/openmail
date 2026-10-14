@@ -50,7 +50,7 @@ GLOBAL FLAGS
 SUBCOMMANDS
   access_status       Report which accounts this client can read, how many are hidden and why, whether it can propose changes, and the person's local time and time zone
   list_accounts       List the mail accounts this client can read
-  list_profiles       List profiles, the groups of accounts OpenMail calls spaces, such as Work and Personal
+  list_profiles       List spaces, the groups of accounts such as Work and Personal
   list_labels         List labels (Gmail) and folders (Outlook, IMAP) per account, plus Gmail categories
   list_threads        List conversations in a mailbox from the local copy, newest first
   search              Search the local copy with words and Gmail-style operators
