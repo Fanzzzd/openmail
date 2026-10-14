@@ -244,9 +244,9 @@ export function makeFilterMailbox({
     if (unknownRuleLabel(input, labelsForRule))
       return yield* new InvalidInput({ message: "Choose a label or folder from this account" });
     const preview = yield* Effect.gen(function* () {
-      switch (account.provider) {
-        case "outlook": {
-          // KQL cannot represent arbitrary literal containment; search only supplies candidates.
+      switch (rules.preview) {
+        case "cache": {
+          // Outlook: KQL cannot represent arbitrary literal containment; search only supplies candidates.
           const unavailable = yield* localOutlookPreview(
             accountId,
             account.email,
@@ -272,7 +272,7 @@ export function makeFilterMailbox({
             truncated: result.truncated || page.truncated || page.messages.length > 200,
           };
         }
-        case "gmail": {
+        case "server": {
           const page = yield* cacheSearchPage(account, {
             ...filterQuery(input.criteria),
             accountIds: [accountId],
@@ -288,10 +288,8 @@ export function makeFilterMailbox({
           })).filter(eligibleForFilter);
           return { matches, truncated: page.truncated || page.messages.length > 200 };
         }
-        case "imap":
-          return yield* new InvalidInput({ message: "Unsupported server rule" });
         default: {
-          const _exhaustive: never = account.provider;
+          const _exhaustive: never = rules.preview;
           return _exhaustive;
         }
       }

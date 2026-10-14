@@ -12,9 +12,21 @@ const SOURCES = [
   "apps/mobile/app",
   "apps/mobile/src",
 ];
-/** `provider === "gmail"`, `a.provider !== 'imap'`, and the same with the literal first. */
-const COMPARISON =
-  /\bprovider\s*[!=]==\s*["'`]|["'`](?:gmail|outlook|imap)["'`]\s*[!=]==\s*[\w.?]*provider\b/g;
+/**
+ * `provider === "gmail"`, `a.provider !== 'imap'`, the same with the literal first,
+ * `switch (account.provider)` and each `case "outlook":`. A switch with three cases counts four.
+ */
+const COMPARISON = new RegExp(
+  [
+    /\bprovider\s*[!=]==\s*["'`]/,
+    /["'`](?:gmail|outlook|imap)["'`]\s*[!=]==\s*[\w.?]*provider\b/,
+    /\bswitch\s*\(\s*[\w.?]*\bprovider\s*\)/,
+    /\bcase\s+["'`](?:gmail|outlook|imap)["'`]\s*:/,
+  ]
+    .map((pattern) => pattern.source)
+    .join("|"),
+  "g",
+);
 
 /**
  * Provider code: the adapters, the capability table and the platform layers
@@ -111,8 +123,14 @@ it("matches both operand orders and every quote style", () => {
     "provider !== 'imap'",
     '"outlook" === account?.provider',
     "providerName === other",
+    "switch (account.provider) {",
+    "switch (a?.provider) {",
+    'case "gmail":',
+    "case 'imap': {",
+    "switch (providerName) {",
+    'case "focused":',
   ].join("\n");
-  expect(sample.match(COMPARISON)).toHaveLength(3);
+  expect(sample.match(COMPARISON)).toHaveLength(7);
 });
 
 it("the identity list holds only files that still compare names", () => {

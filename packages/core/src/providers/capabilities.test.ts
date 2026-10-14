@@ -4,7 +4,9 @@ import type { Provider } from "../domain/account.js";
 import type { MailOp } from "../domain/changes.js";
 import { Mailbox } from "../mailbox/mailbox.js";
 import { incoming, Store, TestMailbox } from "../platform/node/testing.js";
+import { CATEGORIES, OUTLOOK_CATEGORIES } from "../domain/message.js";
 import {
+  inboxCategories,
   labelOpMoves,
   oauthProvider,
   providerCapabilities,
@@ -44,6 +46,14 @@ it("a label op moves the message only on folder accounts", () => {
     [false, true, true],
   );
   assert.isFalse(labelOpMoves(providerCapabilities("outlook"), remove));
+});
+
+it("the inbox categories follow inboxTabs", () => {
+  assert.deepStrictEqual(PROVIDERS.map(inboxCategories), [CATEGORIES, OUTLOOK_CATEGORIES, []]);
+  assert.deepStrictEqual(
+    PROVIDERS.map((provider) => providerCapabilities(provider).inboxTabs),
+    ["categories", "focused", null],
+  );
 });
 
 it("the OAuth guards follow signIn", () => {

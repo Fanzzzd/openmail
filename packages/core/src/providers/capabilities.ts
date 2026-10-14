@@ -6,6 +6,7 @@
  */
 import type { Provider } from "../domain/account.js";
 import type { MailOp } from "../domain/changes.js";
+import { CATEGORIES, OUTLOOK_CATEGORIES, type INBOX_CATEGORIES } from "../domain/message.js";
 
 /** Server filters (Gmail) or rules (Outlook). */
 export interface RuleCapabilities {
@@ -168,6 +169,13 @@ const TABLE: Record<Provider, ProviderCapabilities> = {
 };
 
 export const providerCapabilities = (provider: Provider): ProviderCapabilities => TABLE[provider];
+
+/** The category labels the inbox splits into, following the account's inbox tabs. */
+export function inboxCategories(provider: Provider): readonly (typeof INBOX_CATEGORIES)[number][] {
+  const tabs = TABLE[provider].inboxTabs;
+  if (tabs === "categories") return CATEGORIES;
+  return tabs === "focused" ? OUTLOOK_CATEGORIES : [];
+}
 
 /**
  * Whether the account can run this op at all. Core rejects an unsupported

@@ -2,7 +2,6 @@
 
 import { Schema } from "effect";
 import { DerivedChunk } from "../ai/media.js";
-import type { Provider } from "./account.js";
 
 export const Address = Schema.Struct({
   name: Schema.String,
@@ -194,21 +193,6 @@ export const isOutlookClassification = (
 export const INBOX_CATEGORIES = [...CATEGORIES, "CATEGORY_OTHER"] as const;
 export const InferenceClassification = Schema.Literals(["focused", "other"]);
 export type InferenceClassification = typeof InferenceClassification.Type;
-export function inboxCategories(provider: Provider) {
-  switch (provider) {
-    case "outlook":
-      return OUTLOOK_CATEGORIES;
-    case "gmail":
-      return CATEGORIES;
-    case "imap":
-      return [];
-    default: {
-      const exhaustive: never = provider;
-      return exhaustive;
-    }
-  }
-}
-
 /** Parsed search operators, shared by local queries and provider adapters. */
 export const AttachmentType = Schema.Literals([
   "pdf",
