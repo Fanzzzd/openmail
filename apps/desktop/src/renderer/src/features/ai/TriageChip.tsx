@@ -5,6 +5,7 @@ import { isTriageInbox } from "@openmail/core/schema";
 import { AsyncResult } from "effect/reactivity";
 import { Sparkles } from "lucide-react";
 import { useState } from "react";
+import { SOMETHING_WENT_WRONG } from "../../lib/errors";
 import { MailClient } from "../../state/rpc";
 import { Keys } from "../../state/keys";
 import { labelsAtom } from "../../state/queries";
@@ -121,7 +122,7 @@ function Suggestion({
   accountId: string;
   compact: boolean;
 }) {
-  const { t } = useLingui();
+  const { t, i18n } = useLingui();
   const [open, setOpen] = useState(false);
   const suggestion = useSuggestion(id, accountId);
   if (!suggestion) return null;
@@ -159,11 +160,7 @@ function Suggestion({
               </button>
             </div>
           )}
-          {result._tag === "Failure" && (
-            <p role="alert">
-              <Trans>Something went wrong. Please try again.</Trans>
-            </p>
-          )}
+          {result._tag === "Failure" && <p role="alert">{i18n._(SOMETHING_WENT_WRONG)}</p>}
           <button type="button" onClick={() => setOpen(false)}>
             <Trans>Close</Trans>
           </button>

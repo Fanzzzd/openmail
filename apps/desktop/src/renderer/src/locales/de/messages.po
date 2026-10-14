@@ -6713,13 +6713,7 @@ msgstr "Einige Empfänger haben diese Nachricht nicht erhalten."
 msgid "Something else on this Mac already uses Tailscale Serve on this port. OpenMail won't replace it. Remove that mapping or use a Tailscale Service name below."
 msgstr "Etwas anderes auf diesem Mac nutzt Tailscale Serve bereits auf diesem Port. OpenMail ersetzt das nicht. Entferne diese Zuordnung oder verwende unten einen Tailscale-Service-Namen."
 
-#: src/renderer/src/app/use-native-menu-bridge.ts
-#: src/renderer/src/features/ai/TriageChip.tsx
 #: src/renderer/src/lib/errors.ts
-msgid "Something went wrong. Please try again."
-msgstr "Etwas ist schiefgelaufen. Bitte versuche es erneut."
-
-#: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "Something went wrong. Try again."
 msgstr "Etwas ist schiefgelaufen. Versuche es erneut."
 

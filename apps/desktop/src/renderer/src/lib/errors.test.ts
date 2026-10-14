@@ -14,7 +14,7 @@ describe("input error translations", () => {
 
   it("translate every message the main process lets through", () => {
     const english = setupI18n({ locale: "en", messages: { en: {} } });
-    const generic = "Something went wrong. Please try again.";
+    const generic = "Something went wrong. Try again.";
     const raw = [...PUBLIC_ERROR_MESSAGES].filter(
       (message) =>
         message !== "the operation failed." &&

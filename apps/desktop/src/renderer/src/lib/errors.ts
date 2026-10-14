@@ -27,6 +27,8 @@ const CALENDAR_LOAD_FAILED = msg`Couldn't load the calendar from the server. Try
 const CONTACTS_LOAD_FAILED = msg`Couldn't load contacts from the server. Try again in a few minutes.`;
 const UNDO_NEEDS_SERVER = msg`This can't be undone right now. Try again when you're online.`;
 const AI_REQUEST_INVALID = msg`Couldn't prepare the AI request. Try again.`;
+/** The one sentence for a failure with nothing more specific to say. */
+export const SOMETHING_WENT_WRONG = msg`Something went wrong. Try again.`;
 /**
  * Every message the main process lets through (shared/public-error-messages.ts) has a
  * translation here; errors.test.ts checks both ways, so no English core text reaches the UI.
@@ -286,7 +288,7 @@ export function errorText(i18n: I18n, error: AppError): string {
     NotFound: (e) => i18n._(NOT_FOUND[e.what]),
     DeviceError: (e) => {
       const reason = DEVICE_REASONS[e.message] ?? INPUT_ERRORS[e.message];
-      return i18n._(reason ?? msg`Something went wrong. Please try again.`);
+      return i18n._(reason ?? SOMETHING_WENT_WRONG);
     },
     PermanentError: (e) => i18n._(INPUT_ERRORS[e.message] ?? msg`The server refused this action.`),
     ProviderError: (e) => {
@@ -296,8 +298,7 @@ export function errorText(i18n: I18n, error: AppError): string {
       return i18n._(reason ?? msg`Can't reach the mail server right now.`);
     },
     // Main replaces other text with "the operation failed."; nothing reaches the UI untranslated.
-    InvalidInput: (e) =>
-      i18n._(INPUT_ERRORS[e.message] ?? msg`Something went wrong. Please try again.`),
+    InvalidInput: (e) => i18n._(INPUT_ERRORS[e.message] ?? SOMETHING_WENT_WRONG),
     // In the web build the transport is the socket to the Mac, which can drop mid-request.
     RpcClientError: () =>
       isDesktop()
@@ -309,9 +310,7 @@ export function errorText(i18n: I18n, error: AppError): string {
 /** The typed error in `cause`, or a generic sentence for a defect or interruption. */
 export function causeText<E extends AppError>(i18n: I18n, cause: Cause.Cause<E>): string {
   const error = Cause.findErrorOption(cause);
-  return error._tag === "Some"
-    ? errorText(i18n, error.value)
-    : i18n._(msg`Something went wrong. Please try again.`);
+  return error._tag === "Some" ? errorText(i18n, error.value) : i18n._(SOMETHING_WENT_WRONG);
 }
 
 /** Error text for a failed result; null while it has not failed. */

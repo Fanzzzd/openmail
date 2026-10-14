@@ -2,7 +2,7 @@ import { msg } from "@lingui/core/macro";
 import type { MessageDescriptor } from "@lingui/core";
 import type { DockFileReason } from "../../../shared/dock-files";
 import { nativeShareKind, providerMenuState } from "../../../shared/native-actions";
-import { causeText } from "../lib/errors";
+import { causeText, SOMETHING_WENT_WRONG } from "../lib/errors";
 import { isTypingTarget } from "../lib/typing-target";
 import { useLingui } from "@lingui/react/macro";
 import { attachmentProblem } from "@openmail/core/schema";
@@ -304,7 +304,7 @@ const LINK_ERROR_MESSAGES: Record<
   MessageDescriptor
 > = {
   missing: msg`It is no longer stored here and has no web link.`,
-  failed: msg`Something went wrong. Please try again.`,
+  failed: SOMETHING_WENT_WRONG,
 };
 
 const DOCK_FILE_MESSAGES: Record<DockFileReason, MessageDescriptor> = {

@@ -11,6 +11,7 @@ import ClaudeCodeIcon from "~icons/thesvg-color/claude-code";
 
 import type { Account } from "../../../../../shared/api";
 import { AiClientError, type AiClientId } from "../../../../../shared/ai-clients";
+import { SOMETHING_WENT_WRONG } from "../../../lib/errors";
 import { scrollBehavior } from "../../../lib/scroll-motion";
 
 /**
@@ -124,7 +125,7 @@ export const failureText = (i18n: I18n, cause: Cause.Cause<unknown>) => {
   const error = Cause.findErrorOption(cause);
   return error._tag === "Some" && error.value instanceof AiClientError
     ? clientErrorText(i18n, error.value)
-    : i18n._(msg`Something went wrong. Try again.`);
+    : i18n._(SOMETHING_WENT_WRONG);
 };
 
 const codeBase =
