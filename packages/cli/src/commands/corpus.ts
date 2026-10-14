@@ -1,6 +1,14 @@
 /** corpus-check: offline diagnostics on a read-only mailbox snapshot. */
 
-import { Failed, fail, jsonFlag, optionalInt, optionalString, print } from "./common.js";
+import {
+  Failed,
+  fail,
+  jsonFlag,
+  rawJsonText,
+  optionalInt,
+  optionalString,
+  printRaw,
+} from "./common.js";
 import {
   CorpusCheckError,
   corpusCheck,
@@ -43,7 +51,7 @@ export const corpus = Command.make(
           corpusCheck({ db, explain: explainHash.value, runKeyFile: runKey.value, signal }),
         catch: corpusFailure,
       });
-      return yield* print(report, json);
+      return yield* printRaw(report, json, rawJsonText);
     }
     const runKeyFile =
       Option.getOrUndefined(runKey) ??
@@ -61,7 +69,7 @@ export const corpus = Command.make(
       catch: corpusFailure,
     });
     if (explainReady && runKeyFile) yield* Console.error(`Run key file: ${runKeyFile}`);
-    return yield* print(report, json, formatCorpusReport);
+    return yield* printRaw(report, json, formatCorpusReport);
   }),
 ).pipe(
   Command.withDescription("Run offline, content-free diagnostics on a read-only mailbox snapshot"),
