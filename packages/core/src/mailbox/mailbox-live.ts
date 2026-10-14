@@ -27,6 +27,7 @@ import { makeIndexer } from "../ai/indexer.js";
 import { makeAccountsMailbox } from "./mailbox-accounts.js";
 import { makeAiMailbox } from "./mailbox-ai.js";
 import { makeApplyMailbox } from "./mailbox-apply.js";
+import { makeApplyChanges } from "./mailbox-pull-changes.js";
 import { makeBatchMailbox } from "./mailbox-batch.js";
 import { makeCacheMailbox } from "./mailbox-cache.js";
 import { makeDraftsMailbox } from "./mailbox-drafts.js";
@@ -291,7 +292,6 @@ export const MailboxLive = (
           send: (...args) => outboxMailbox.send(...args),
           removeDraft: (...args) => draftsMailbox.removeDraft(...args),
           flushLater: Effect.suspend(() => flushMailbox.flushLater),
-          batchMailbox: () => batchMailbox,
         },
         runtime,
       );
@@ -303,7 +303,7 @@ export const MailboxLive = (
       const syncMailbox = makeSyncMailbox(
         {
           ...deps,
-          applyChanges: (...args) => applyMailbox.applyChanges(...args),
+          applyChanges: makeApplyChanges({ ...deps, batchMailbox: () => batchMailbox }),
           organization: () => organization,
           flush: (...args) => flushMailbox.flush(...args),
           features: () => features,
