@@ -1,6 +1,6 @@
 # 0003 Group the Mailbox interface
 
-Status: proposed.
+Status: accepted. Migrated in steps 1 to 4; the final group list is under Result.
 
 ## Context
 
@@ -47,3 +47,29 @@ Each step leaves `pnpm build && pnpm check-types && pnpm test` green, so the mig
 - Test fakes that build a partial `Mailbox` can fill only the groups they use.
 - Member names inside a group can drop their prefix later (`mailbox.ai.summary` instead of `aiSummary`). That rename is not part of this migration.
 - The remote RPC table in `shared/remote-policy.ts` lists RPC tags, not Mailbox members, so it does not change.
+
+## Result
+
+The migration ran as planned with these changes to the table:
+
+- `sendAs` and `syncSendAs` sit in `organize`, next to the organization part that implements them.
+- `readOnlySession` sits in `proposals`, next to the write modes.
+- `messageAccounts` and `threadCount` sit in `reading`. `markUnreadFrom`, `unsubscribe`, `setClassificationOverride`, `createLabelAndApply` and `undoHistory` sit in `organize`.
+- `closeSessions` and `syncHealth` sit in `sync`. `takeNotifications`, `diagnosticsState` and `events` sit in `app`.
+- `accounts`, `sync` and `proposals` clash with a member of the same name. Those groups joined the type in their own step, and the members are now `mailbox.accounts.accounts`, `mailbox.sync.sync` and `mailbox.proposals.proposals`. Renaming them is part of the later prefix rename.
+- Inline members moved to `mailbox-app.ts` (app), `mailbox-compose.ts` (signatures, templates, recipients), `mailbox-ai.ts` (local models), `mailbox-storage.ts` (cache size) and `mailbox-accounts.ts` (`initializeProfiles`). The wrappers for `searchServer`, `changeLabel` and `setAiAccount` moved into their parts as callbacks.
+
+Final groups, 178 members:
+
+| Group       | Members | Interface          | Parts                                                                                                         |
+| ----------- | ------- | ------------------ | ------------------------------------------------------------------------------------------------------------- |
+| `reading`   | 24      | `MailboxReading`   | `mailbox-reading.ts`                                                                                          |
+| `organize`  | 36      | `MailboxOrganize`  | `mailbox-apply.ts`, `mailbox-batch.ts`, `mailbox-organization.ts`, `mailbox-filters.ts`, `mailbox-folders.ts` |
+| `proposals` | 12      | `MailboxProposals` | `mailbox-apply.ts`                                                                                            |
+| `compose`   | 27      | `MailboxCompose`   | `mailbox-drafts.ts`, `mailbox-outbox.ts`, `mailbox-compose.ts`, `mailbox-features.ts`                         |
+| `outbox`    | 10      | `MailboxOutbox`    | `mailbox-outbox.ts`, `mailbox-drafts.ts`                                                                      |
+| `accounts`  | 16      | `MailboxAccounts`  | `mailbox-accounts.ts`, `mailbox-services.ts`                                                                  |
+| `ai`        | 17      | `MailboxAi`        | `mailbox-ai.ts`, `mailbox-reading.ts`                                                                         |
+| `sync`      | 16      | `MailboxSync`      | `mailbox-sync.ts`, `mailbox-cache.ts`, `mailbox-storage.ts`                                                   |
+| `calendar`  | 9       | `MailboxCalendar`  | `mailbox-features.ts`, `mailbox-apply.ts`                                                                     |
+| `app`       | 11      | `MailboxApp`       | `mailbox-app.ts`                                                                                              |

@@ -12,7 +12,7 @@ UIDNEXT 回退且 UIDVALIDITY 未变时，旧 UID 已不可信。core 先失效�
 
 COPY 前按排队操作、源 provider ID 和目标文件夹持久记录 issued 进度，成功回复后记录 accepted。首次操作正常复制，即使目标已有相同 Message-ID；重试才按进度查询目标，查到后只重做源副本删除。明确拒绝会清除对应进度；丢失回复时保留。源、目标均不存在且没有进度时返回 PermanentError，终止操作并 reconcile；有进度但结果未确认时继续等待。批量操作逐封记录，不能把一封的进度当作另一封的进度。
 
-COPYUID 缺失时按 Message-ID 查目标 UID。已有 Message-ID 但 UID 未确认时保留源副本和队列；没有 Message-ID 且已确认 COPY 成功时完成源删除，排队 reconcile，并暂停本轮对旧 ID 的后续操作，由下一次拉取恢复缓存。重试前核对源邮件身份；比较时去掉尖括号和空白。身份不符时停止操作，failed_ops 显示 “Message identity changed”，在线 reconcile 恢复当前服务器消息；离线保留缓存并排队 reconcile，不复制或删除复用 UID 的消息。Mailbox.perform 的 IMAP copy 直接进入队列，不使用移动目标判断；非 IMAP 的 copy 在任何入队前返回 InvalidInput，混合账户选择也不执行部分复制。手机特殊文件夹同时匹配路径末级名称，例如 `INBOX.Sent`；CREATE 的 `NO [ALREADYEXISTS]` 视为已存在。
+COPYUID 缺失时按 Message-ID 查目标 UID。已有 Message-ID 但 UID 未确认时保留源副本和队列；没有 Message-ID 且已确认 COPY 成功时完成源删除，排队 reconcile，并暂停本轮对旧 ID 的后续操作，由下一次拉取恢复缓存。重试前核对源邮件身份；比较时去掉尖括号和空白。身份不符时停止操作，failed_ops 显示 “Message identity changed”，在线 reconcile 恢复当前服务器消息；离线保留缓存并排队 reconcile，不复制或删除复用 UID 的消息。`mailbox.organize.perform` 的 IMAP copy 直接进入队列，不使用移动目标判断；非 IMAP 的 copy 在任何入队前返回 InvalidInput，混合账户选择也不执行部分复制。手机特殊文件夹同时匹配路径末级名称，例如 `INBOX.Sent`；CREATE 的 `NO [ALREADYEXISTS]` 视为已存在。
 
 Node IMAP 标记、复制和删除返回 false 时按 ProviderError 重试；PERMANENTFLAGS 禁止所需标记时永久失败。草稿 APPEND 前记录 Message-ID，重试先查已追加副本，避免重复追加。退避期间的编辑或手动重试保留这份身份和进度；发现内容已变则替换恢复的副本，最终只保留最新的可见副本。恢复的 UID 与旧引用相同时不删除该副本。丢弃草稿或保留本地副本时，排队按已记录的 Message-ID 清理未确认副本；切换账户时在原账户清理，不把旧身份用于新账户。新草稿 UID 未知时保留旧副本并失败；新关联已确定而旧副本清理失败时，排队 deleteDraft 重试清理。
 
@@ -137,7 +137,7 @@ node packages/cli/dist/cli.js health --json
 OPENMAIL_READ_ONLY=1 node packages/cli/dist/cli.js health --account 'gmail:me@example.com' --json
 ```
 
-省略 `--account` 检查全部账户。`Mailbox.syncHealth` 请求 Gmail 标签计数、Graph 文件夹计数或 IMAP STATUS；摘要计数低于本地时，只读查询消息集合复核，不读取消息文本、不修改服务商。约十秒网络预算、最多四个并发请求；失败的文件夹保留本地数并标为服务商不可用。smoke 同样输出该报告，运行方式见[测试](testing.md#desktop-production-build-smoke-test)。
+省略 `--account` 检查全部账户。`mailbox.sync.syncHealth` 请求 Gmail 标签计数、Graph 文件夹计数或 IMAP STATUS；摘要计数低于本地时，只读查询消息集合复核，不读取消息文本、不修改服务商。约十秒网络预算、最多四个并发请求；失败的文件夹保留本地数并标为服务商不可用。smoke 同样输出该报告，运行方式见[测试](testing.md#desktop-production-build-smoke-test)。
 
 | 报告项                           | 含义                                                                                                                                                                        |
 | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -168,7 +168,7 @@ CLI、桌面复制及 smoke 导出通过 `redactSyncHealth` 将自定义标签�
 
 ## 断网与同步恢复
 
-Gmail／Outlook 的后台拉取、计数、验证及维护共用每账户断网退避；只把明确 status 0 的非延期失败计入。传输失败从五秒开始指数等待，最长五分钟；等待期间不重新刷新 token 或发起后台请求，延期不写 provider-failure。发送、打开正文和下载附件绕过断网等待，成功会重置失败次数；手动 Sync RPC 先调用 portable `Mailbox.resetConnectivity`。发送提交失败仍按既有发送确认流程查询 Sent，提交和确认不会被断网等待拦截。系统唤醒、renderer online 和手机 AppState active 事件清除断网和 Inbox 轮询等待，立即恢复同步。手机未安装 NetInfo，使用既有 expo-network 的 addNetworkStateListener 处理前台网络恢复；服务端 Retry-After 独立保存，不能被这些事件清除。
+Gmail／Outlook 的后台拉取、计数、验证及维护共用每账户断网退避；只把明确 status 0 的非延期失败计入。传输失败从五秒开始指数等待，最长五分钟；等待期间不重新刷新 token 或发起后台请求，延期不写 provider-failure。发送、打开正文和下载附件绕过断网等待，成功会重置失败次数；手动 Sync RPC 先调用 portable `mailbox.sync.resetConnectivity`。发送提交失败仍按既有发送确认流程查询 Sent，提交和确认不会被断网等待拦截。系统唤醒、renderer online 和手机 AppState active 事件清除断网和 Inbox 轮询等待，立即恢复同步。手机未安装 NetInfo，使用既有 expo-network 的 addNetworkStateListener 处理前台网络恢复；服务端 Retry-After 独立保存，不能被这些事件清除。
 
 Gmail／Graph 请求在 60 秒内收不到响应头，或响应体 60 秒没有新数据时，按 status 0 的传输失败处理；请求体每 20 KiB 另给响应头 1 秒上传时间。发送随后走 Sent 精确 Message-ID 确认。token 刷新限时 60 秒，超时不标记重新登录。
 

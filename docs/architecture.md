@@ -43,38 +43,53 @@ oxlint's `import/no-cycle` (`ignoreTypes: false`) blocks import cycles. Cycles m
 
 ## Modules
 
-| Module           | Entry and responsibility                                                                                                                                                                                                                                                             |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Mailbox          | `mailbox/mailbox.ts` defines the Effect service. `mailbox/mailbox-live.ts` wires sync, the queue, policy and events                                                                                                                                                                  |
-| Mailbox parts    | Under `mailbox/`: `mailbox-batch.ts` (batches), `mailbox-folders.ts` (destructive folder operations), `mailbox-cache.ts` (cache), `mailbox-features.ts` (calendar and contacts), `mailbox-organization.ts` (organizing), `mailbox-filters.ts` (provider rules), `mailbox-ai.ts` (AI) |
-| Store            | `store/service.ts` defines the port. `store/store.ts` and `store/store-*.ts` implement the queries. `db/migrations.ts` holds the append-only migrations and `db/capabilities.ts` describes database capabilities                                                                     |
-| ProviderAdapter  | `providers/adapter.ts` defines the interface. `providers/gmail/gmail.ts`, `providers/outlook/outlook.ts` and `platform/node/imap/adapter.ts` implement the protocols                                                                                                                 |
-| Models and tools | `ai/model.ts` provides Model. `tools/tools.ts` provides MailToolkit. `tools/tool-pages.ts` handles cursors and budgets                                                                                                                                                               |
-| Local indexing   | `ai/indexer.ts`, `ai/semantic-indexer.ts` and the media and semantic Stores handle derived text and vectors                                                                                                                                                                          |
-| Node platform    | `platform/node/` implements the database, secrets, OAuth, IMAP/SMTP, MIME, files, PDF and the inference worker                                                                                                                                                                       |
-| Mobile platform  | `platform/react-native/` provides the SQL, OAuth, MIME and IMAP/SMTP adapters. The Expo OS Layers are in `apps/mobile/src/platform/`                                                                                                                                                 |
+| Module           | Entry and responsibility                                                                                                                                                                                         |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Mailbox          | `mailbox/mailbox.ts` defines the Effect service and one interface per group. `mailbox/mailbox-live.ts` builds the groups from the parts and wires sync, the queue, policy and events                             |
+| Mailbox parts    | Under `mailbox/`, one or more `mailbox-*.ts` per group. The table in [Mailbox interface](#mailbox-interface) lists them                                                                                          |
+| Store            | `store/service.ts` defines the port. `store/store.ts` and `store/store-*.ts` implement the queries. `db/migrations.ts` holds the append-only migrations and `db/capabilities.ts` describes database capabilities |
+| ProviderAdapter  | `providers/adapter.ts` defines the interface. `providers/gmail/gmail.ts`, `providers/outlook/outlook.ts` and `platform/node/imap/adapter.ts` implement the protocols                                             |
+| Models and tools | `ai/model.ts` provides Model. `tools/tools.ts` provides MailToolkit. `tools/tool-pages.ts` handles cursors and budgets                                                                                           |
+| Local indexing   | `ai/indexer.ts`, `ai/semantic-indexer.ts` and the media and semantic Stores handle derived text and vectors                                                                                                      |
+| Node platform    | `platform/node/` implements the database, secrets, OAuth, IMAP/SMTP, MIME, files, PDF and the inference worker                                                                                                   |
+| Mobile platform  | `platform/react-native/` provides the SQL, OAuth, MIME and IMAP/SMTP adapters. The Expo OS Layers are in `apps/mobile/src/platform/`                                                                             |
 
 ## Mailbox interface
 
 Mailbox is an Effect `Context.Service`. `NodeMailbox(options)` returns an assembled Layer. The mobile app provides mobile Layers to `MailboxLive`. Callers get Mailbox, then run its Effects or consume its Streams.
 
-| Method                                                             | Behavior                                                                                               |
-| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
-| `threads(query)`, `threadCount(query)`                             | Lists and counts conversations or single messages, with date or ID paging                              |
-| `thread(id)`                                                       | Reads a local conversation. Makes no provider request and fetches no cold bodies                       |
-| `readerThread(id)`                                                 | The desktop's explicit fetch of missing message text. A failed message keeps its headers               |
-| `thread(id, "model", tokenBudget)`, `threadForModel(id, maxChars)` | Builds plain-text model context that carries message IDs                                               |
-| `perform(command, actor)`                                          | Checks policy and returns `applied`, `proposed` or `denied`                                            |
-| `modifyWithUndo`, `undoBatch`, `undoHistory`                       | Batch and single changes with durable undo                                                             |
-| `saveDraft`, `openDraft`, `discardDraft`                           | Manage the user's drafts. Model drafts use the draft command of `perform`                              |
-| `queueUndoSend`, `awaitUndoSend`, `cancelQueuedSend`               | Durable undo send on desktop. Core handles the wait and the delivery                                   |
-| `sync(accountId?)`, `pollInbox`                                    | Full sync and a light inbox poll. The CLI and MCP server start no desktop poll timer                   |
-| `listFailedOps`, `acknowledgeFailedOps`, `prepareRejectedResend`   | List and dismiss failure notices, and prepare a new draft that resends only to rejected addresses      |
-| `syncHealth(accountId)`                                            | Reads provider counts and the local projection, and returns a sync health report                       |
-| `optionalServices`, `reauth`, `setServiceEnabled`                  | Report service grants, open the official consent page, and turn services on or off locally             |
-| `events`                                                           | A stream of `Changed`, sync state and progress, new mail, backfill progress and update settings events |
+Mailbox has ten groups. A group is a namespace on the one service, typed by an interface in `mailbox/mailbox.ts` and built by its parts. Callers write `mailbox.reading.thread(id)` or `mailbox.organize.perform(command, actor)`. No group exposes the Store. Every member that changes mail runs policy and audit inside its part. Test fakes fill only the groups they use. ADR [0003](adr/0003-mailbox-interface.md) records the decision.
 
-`mailbox/mailbox.ts` is the reference for the remaining account, Profile, settings, contacts, calendar, cache and AI methods. Permanent delete and emptying a folder go through separate confirmation calls. They are not part of the ordinary MailOps model tools can use.
+| Group       | Members                                                                                                                      | Parts                                                                                                         |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `reading`   | Threads and counts, local and reader threads, raw messages, attachments, inline images, labels, unread counts, server search | `mailbox-reading.ts`                                                                                          |
+| `organize`  | `perform`, batch changes with undo, snooze, labels and favorites, filters, vacation, send-as, folder actions, unsubscribe    | `mailbox-apply.ts`, `mailbox-batch.ts`, `mailbox-organization.ts`, `mailbox-filters.ts`, `mailbox-folders.ts` |
+| `proposals` | Proposals and decisions, agent write modes, failed changes, audit, agent activity, the read-only flag                        | `mailbox-apply.ts`                                                                                            |
+| `compose`   | Drafts and held discards, signatures, templates, recipient suggestions, compose images                                       | `mailbox-drafts.ts`, `mailbox-outbox.ts`, `mailbox-compose.ts`, `mailbox-features.ts`                         |
+| `outbox`    | Undo send, the mobile send queue, send again                                                                                 | `mailbox-outbox.ts`, `mailbox-drafts.ts`                                                                      |
+| `accounts`  | Sign-in and reauth, account settings, optional services, OAuth clients, profiles (spaces)                                    | `mailbox-accounts.ts`, `mailbox-services.ts`                                                                  |
+| `ai`        | AI settings, summaries, questions, compose AI, triage, semantic search, on-device models                                     | `mailbox-ai.ts`, `mailbox-reading.ts`                                                                         |
+| `sync`      | `sync`, `pollInbox`, connectivity, sessions, sync health, backfill, cache windows and size                                   | `mailbox-sync.ts`, `mailbox-cache.ts`, `mailbox-storage.ts`                                                   |
+| `calendar`  | Invitations, calendar events, calendar import, the contacts snapshot                                                         | `mailbox-features.ts`, `mailbox-apply.ts`                                                                     |
+| `app`       | Prefs, notifications, diagnostics, updates, remote access, `events`                                                          | `mailbox-app.ts`                                                                                              |
+
+| Member                                                                                       | Behavior                                                                                               |
+| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `reading.threads(query)`, `reading.threadCount(query)`                                       | Lists and counts conversations or single messages, with date or ID paging                              |
+| `reading.thread(id)`                                                                         | Reads a local conversation. Makes no provider request and fetches no cold bodies                       |
+| `reading.readerThread(id)`                                                                   | The desktop's explicit fetch of missing message text. A failed message keeps its headers               |
+| `reading.thread(id, "model", tokenBudget)`, `reading.threadForModel(id, maxChars)`           | Builds plain-text model context that carries message IDs                                               |
+| `organize.perform(command, actor)`                                                           | Checks policy and returns `applied`, `proposed` or `denied`                                            |
+| `organize.modifyWithUndo`, `organize.undoBatch`, `organize.undoHistory`                      | Batch and single changes with durable undo                                                             |
+| `compose.saveDraft`, `compose.openDraft`, `compose.discardDraft`                             | Manage the user's drafts. Model drafts use the draft command of `perform`                              |
+| `outbox.queueUndoSend`, `outbox.awaitUndoSend`, `outbox.cancelQueuedSend`                    | Durable undo send on desktop. Core handles the wait and the delivery                                   |
+| `sync.sync(accountId?)`, `sync.pollInbox`                                                    | Full sync and a light inbox poll. The CLI and MCP server start no desktop poll timer                   |
+| `proposals.listFailedOps`, `proposals.acknowledgeFailedOps`, `compose.prepareRejectedResend` | List and dismiss failure notices, and prepare a new draft that resends only to rejected addresses      |
+| `sync.syncHealth(accountId)`                                                                 | Reads provider counts and the local projection, and returns a sync health report                       |
+| `accounts.optionalServices`, `accounts.reauth`, `accounts.setServiceEnabled`                 | Report service grants, open the official consent page, and turn services on or off locally             |
+| `app.events`                                                                                 | A stream of `Changed`, sync state and progress, new mail, backfill progress and update settings events |
+
+`mailbox/mailbox.ts` is the reference for the remaining members of each group. Permanent delete and emptying a folder (`organize.permanentlyDelete`, `organize.emptyFolder`) go through separate confirmation calls. They are not part of the ordinary MailOps model tools can use. Permanent delete and emptying a folder go through separate confirmation calls. They are not part of the ordinary MailOps model tools can use.
 
 ### Policy and changes
 

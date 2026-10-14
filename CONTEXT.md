@@ -18,7 +18,8 @@ OpenMail caches mail on the local machine. The desktop app, the CLI and the MCP 
 | Draft                    | Local editable content in the `drafts` table. Its local ID is separate from the server draft or message ID.                                                                      |
 | Label                    | One representation of Gmail labels and Outlook or IMAP folders. Operations must follow each provider's semantics.                                                                |
 | Profile                  | A group of accounts, shown as a space in the UI. It sets the account scope, notification hours and window choice. A profile is not an account.                                   |
-| Command                  | A serializable change to mail. `Mailbox.perform` checks permissions and runs it.                                                                                                 |
+| Mailbox group            | A namespace on Mailbox: `reading`, `organize`, `proposals`, `compose`, `outbox`, `accounts`, `ai`, `sync`, `calendar` or `app`, one interface per group.                         |
+| Command                  | A serializable change to mail. `mailbox.organize.perform` checks permissions and runs it.                                                                                        |
 | Actor                    | The identity and entry point of a user or agent. It feeds policy decisions and the audit log.                                                                                    |
 | Proposal                 | An agent command waiting for the user's approval, called an AI suggestion in the UI and docs. Writes from MCP and from the built-in assistant both go through the proposal flow. |
 | Agent write mode         | `off`, `propose` or `allow`; the UI calls it Changes by AI apps, with Read only and Ask me first. `allow` applies nothing directly today, so the UI shows it as Ask me first.    |
