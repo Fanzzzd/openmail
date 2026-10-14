@@ -15,6 +15,10 @@ allowBuilds:
   protobufjs: false
 catalog:
   typescript: ^5.9.3
+# Electron patch releases carry Chromium security fixes; take them before pnpm's release-age
+# window ends. Drop an entry once that version is older than the window.
+minimumReleaseAgeExclude:
+  - electron@44.7.2
 overrides:
   # Effect packages ship in lockstep. @effect/platform-node 4.0.3 asks for
   # ^4.0.3 of this one, which resolves to 4.0.4 and needs effect 4.0.4.

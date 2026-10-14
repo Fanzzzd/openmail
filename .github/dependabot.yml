@@ -66,6 +66,11 @@ updates:
         patterns: ["expo", "expo-*", "@expo/*", "react-native", "react-native-*", "@react-native/*"]
       lingui:
         patterns: ["@lingui/*"]
+      # Electron patch releases carry Chromium security fixes. Its own group keeps them
+      # from waiting on a tooling bump that fails checks. Listed before tooling, because
+      # Dependabot puts each dependency into the first group that matches.
+      electron:
+        patterns: ["electron"]
       tooling:
         dependency-type: development
       runtime:
