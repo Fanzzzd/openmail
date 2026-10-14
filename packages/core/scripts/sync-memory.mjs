@@ -1,10 +1,31 @@
 const log = (value) => process.stdout.write(`${value}\n`);
-// Run after the core build: node --expose-gc packages/core/scripts/sync-memory.mjs
-// Optional module argument permits measuring a compiled historical fetchMessages.
+// Run after the core build: node --expose-gc packages/core/scripts/sync-memory.mjs [module]
+// Measures fetchMessages against a fake ImapFlow client; no IMAP server is needed.
+// The optional module argument permits measuring a compiled historical fetchMessages.
 import { Effect } from "effect";
 import { ImapFlow } from "imapflow";
 import { performance } from "node:perf_hooks";
-const { fetchMessages } = await import(process.argv[2] ?? "../dist/imap.js");
+import { pathToFileURL } from "node:url";
+
+const usage = "usage: node --expose-gc packages/core/scripts/sync-memory.mjs [path/to/pull.js]";
+if (typeof global.gc !== "function") {
+  process.stderr.write(`${usage}\nThe script needs --expose-gc.\n`);
+  process.exit(2);
+}
+const target = process.argv[2]
+  ? pathToFileURL(process.argv[2]).href
+  : new URL("../dist/platform/node/imap/pull.js", import.meta.url).href;
+const load = (url) =>
+  import(url).catch((cause) => {
+    process.stderr.write(`${usage}\nCould not load ${url}: ${cause.message}\nBuild core first.\n`);
+    process.exit(2);
+  });
+const { fetchMessages } = await load(target);
+const { HtmlText } = await load(new URL("../dist/platform/html-text.js", import.meta.url).href);
+if (typeof fetchMessages !== "function") {
+  process.stderr.write(`${usage}\n${target} does not export fetchMessages.\n`);
+  process.exit(2);
+}
 const count = 25;
 const payload = Buffer.alloc(4 * 1024 * 1024, 65).toString("base64");
 const source = `From: alice@example.com\r\nSubject: Report\r\nMIME-Version: 1.0\r\nContent-Type: multipart/mixed; boundary=x\r\n\r\n--x\r\nContent-Type: text/plain\r\n\r\nShort report\r\n--x\r\nContent-Type: application/octet-stream\r\nContent-Transfer-Encoding: base64\r\nContent-Disposition: attachment; filename=report.bin\r\n\r\n${payload}\r\n--x--\r\n`;
@@ -58,12 +79,15 @@ const timer = setInterval(sample, 5);
 try {
   const start = performance.now();
   const messages = await Effect.runPromise(
-    fetchMessages(
-      { accountId: "imap:test", settings, client },
-      { path: "INBOX", label: "INBOX" },
-      "1",
-      Array.from({ length: count }, (_, i) => i + 1),
-    ),
+    Effect.gen(function* () {
+      const htmlText = yield* HtmlText;
+      return yield* fetchMessages(
+        { accountId: "imap:test", settings, client, htmlText },
+        { path: "INBOX", label: "INBOX" },
+        "1",
+        Array.from({ length: count }, (_, i) => i + 1),
+      );
+    }),
   );
   sample();
   log(
