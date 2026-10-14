@@ -6,9 +6,11 @@
 
 English | [简体中文](README.zh-CN.md)
 
-OpenMail keeps your mail in a SQLite database on your Mac. The app, a CLI and an MCP server all use that one database. AI agents such as Claude Code and Codex can read the accounts you allow. When an agent wants to change your mail, OpenMail turns the change into a proposal, and nothing happens until you approve it in the app.
+**Your mail on your Mac, readable by the agents you allow.**
 
 ![OpenMail inbox with a conversation open](docs/media/hero.png)
+
+OpenMail keeps your mail in a SQLite database on your Mac. The app, a CLI and an MCP server all use that one database. AI agents such as Claude Code and Codex can read the accounts you allow. When an agent wants to change your mail, OpenMail turns the change into a proposal, and nothing happens until you approve it in the app.
 
 OpenMail is a keyboard-first mail client for macOS. It syncs Gmail, personal Outlook and IMAP accounts. The app talks directly to your mail provider. There is no OpenMail server and no telemetry.
 

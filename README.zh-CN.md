@@ -6,9 +6,11 @@
 
 [English](README.md) | 简体中文
 
-OpenMail 把你的邮件存在 Mac 上的一个 SQLite 数据库里。app、CLI 和 MCP 服务器共用这一个数据库。Claude Code、Codex 等 AI 代理可以读取你允许的账户。代理想改动邮件时，OpenMail 把改动变成一条提议，你在 app 里批准之前什么都不会发生。
+**邮件存在你的 Mac 上，只有你允许的 AI 代理能读。**
 
 ![OpenMail 收件箱，打开了一个会话](docs/media/hero.png)
+
+OpenMail 把你的邮件存在 Mac 上的一个 SQLite 数据库里。app、CLI 和 MCP 服务器共用这一个数据库。Claude Code、Codex 等 AI 代理可以读取你允许的账户。代理想改动邮件时，OpenMail 把改动变成一条提议，你在 app 里批准之前什么都不会发生。
 
 OpenMail 是一个以键盘操作为主的 macOS 邮件客户端，同步 Gmail、个人 Outlook 和 IMAP 账户。app 直接连接你的邮件服务商。没有 OpenMail 服务器，也没有遥测。
 
