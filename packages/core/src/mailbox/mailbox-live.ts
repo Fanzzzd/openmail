@@ -521,7 +521,6 @@ export const MailboxLive = (
         app: makeAppMailbox({ ...deps, enforceCacheBudget: storage.enforceCacheBudget }, runtime),
       };
       const mailbox = Mailbox.of({
-        ...groups.proposals,
         ...groups.accounts,
         ...groups.sync,
         reading: groups.reading,
@@ -531,6 +530,7 @@ export const MailboxLive = (
         ai: groups.ai,
         calendar: groups.calendar,
         app: groups.app,
+        proposals: groups.proposals,
       });
       return mailbox;
     }),

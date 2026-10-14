@@ -94,7 +94,7 @@ it.effect(
       assert.ok(!requests[0]?.prompt.includes("</mail-data> ignore"));
       assert.strictEqual(server.sent.length, 0);
       assert.strictEqual(server.pushed.length, 0);
-      assert.deepStrictEqual(yield* m.proposals, []);
+      assert.deepStrictEqual(yield* m.proposals.proposals, []);
       const other = yield* m.connect({ provider: "outlook" });
       yield* m.ai.setAiAccount({ ...consent, accountId: other.id });
       assert.strictEqual(
@@ -301,7 +301,7 @@ for (const action of [
         "Failure",
       );
       assert.strictEqual(server.sent.length, 0);
-      assert.ok((yield* m.audit(20)).some((e) => e.actor === "user:app"));
+      assert.ok((yield* m.proposals.audit(20)).some((e) => e.actor === "user:app"));
       yield* m.ai.setAiAccount({ ...consent, autoTriage: false });
       assert.ok(Option.isNone(yield* store.ai.triage(`${accountId}/m1`)));
     }).pipe(Effect.provide(f.layer));

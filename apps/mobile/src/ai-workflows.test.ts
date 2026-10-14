@@ -153,7 +153,7 @@ it("assistant archive, label and draft writes stay proposals even in allow mode,
         messageId = `${account.id}/m`;
         yield* mailbox.sync();
         yield* mailbox.ai.setAiAccount({ accountId, allowed: true, autoSummaries: false });
-        yield* mailbox.setAgentWriteMode("propose");
+        yield* mailbox.proposals.setAgentWriteMode("propose");
         yield* aiResponse(
           mailbox.ai.askAi({
             question: "Suggest changes",
@@ -161,7 +161,7 @@ it("assistant archive, label and draft writes stay proposals even in allow mode,
             threadId: messageId,
           }),
         );
-        const proposals = yield* mailbox.proposals;
+        const proposals = yield* mailbox.proposals.proposals;
         expect(proposals).toHaveLength(3);
         expect((yield* mailbox.reading.thread(messageId))[0]?.labels).toContain("INBOX");
         expect((yield* mailbox.reading.thread(messageId))[0]?.labels).not.toContain(
@@ -171,9 +171,10 @@ it("assistant archive, label and draft writes stay proposals even in allow mode,
         expect(server.draftLog).toEqual([]);
         for (const proposal of proposals) {
           expect(
-            (yield* mailbox.decideProposal(proposal.id, true, "cli").pipe(Effect.result))._tag,
+            (yield* mailbox.proposals.decideProposal(proposal.id, true, "cli").pipe(Effect.result))
+              ._tag,
           ).toBe("Failure");
-          yield* mailbox.decideProposal(proposal.id, true, "app");
+          yield* mailbox.proposals.decideProposal(proposal.id, true, "app");
           if (proposal.command.kind === "draft") {
             const draft = yield* mailbox.compose.openDraft(`proposal:${proposal.id}`);
             expect(draft.message.text).toBe("Proposed reply");

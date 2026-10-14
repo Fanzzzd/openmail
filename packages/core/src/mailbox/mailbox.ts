@@ -629,8 +629,7 @@ export interface MailboxApp {
 
 export class Mailbox extends Context.Service<
   Mailbox,
-  MailboxProposals &
-    MailboxAccounts &
+  MailboxAccounts &
     MailboxSync & {
       readonly reading: MailboxReading;
       readonly organize: MailboxOrganize;
@@ -639,5 +638,6 @@ export class Mailbox extends Context.Service<
       readonly ai: MailboxAi;
       readonly calendar: MailboxCalendar;
       readonly app: MailboxApp;
+      readonly proposals: MailboxProposals;
     }
 >()("openmail/Mailbox") {}

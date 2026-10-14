@@ -123,9 +123,9 @@ export const accountHandlers = ({
     const withoutConsent = enabled.length - readable.length;
     const turnedOff = accounts.length - enabled.length;
     const name = current.surface === "mcp" ? cleanMcpClientName(current.name) : current.name;
-    const writeMode = yield* mailbox.agentWriteModeFor(name);
+    const writeMode = yield* mailbox.proposals.agentWriteModeFor(name);
     const proposalTools = current.proposalTools ?? false;
-    const remoteWritesDisabled = mailbox.readOnlySession;
+    const remoteWritesDisabled = mailbox.proposals.readOnlySession;
     const steps: string[] = [];
     if (!accounts.length)
       steps.push("No mail account is connected. The person adds one in the OpenMail app.");

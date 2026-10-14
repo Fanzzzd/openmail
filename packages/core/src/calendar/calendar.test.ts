@@ -414,7 +414,9 @@ import { Mailbox } from "../mailbox/mailbox.js";
           ["busy"],
         );
         assert.strictEqual(server.createdEvents.length, 1);
-        assert.ok((yield* m.audit(10)).some((entry) => entry.action === "calendar_create"));
+        assert.ok(
+          (yield* m.proposals.audit(10)).some((entry) => entry.action === "calendar_create"),
+        );
       }).pipe(Effect.provide(TestMailbox({ gmail: server })));
     },
   );

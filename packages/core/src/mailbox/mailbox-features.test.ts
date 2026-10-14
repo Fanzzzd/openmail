@@ -68,7 +68,7 @@ it.effect(
       const [parsed] = parseCalendar(reply.content);
       assert.strictEqual(parsed?.invite.method, "REPLY");
       assert.strictEqual(parsed?.invite.attendees[0]?.status, "ACCEPTED");
-      const audit = yield* m.audit(20);
+      const audit = yield* m.proposals.audit(20);
       assert.ok(audit.some((a) => a.action === "send" && a.actor === "user:app"));
       assert.ok(audit.some((a) => a.action === "calendar_response"));
       server.raw.set("m1", raw("CANCEL"));

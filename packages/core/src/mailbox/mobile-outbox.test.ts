@@ -376,7 +376,7 @@ import type { OutgoingMessage } from "../domain/changes.js";
             expect(yield* mailbox.outbox.queuedSends).toEqual([]);
             expect(Option.isNone(yield* (yield* Store).getDraft(draft.id))).toBe(true);
             expect(
-              (yield* mailbox.audit(100)).some(
+              (yield* mailbox.proposals.audit(100)).some(
                 (entry) => entry.action === "send" && entry.actor === "user:app",
               ),
             ).toBe(true);

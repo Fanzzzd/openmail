@@ -491,7 +491,7 @@ it.effect(
       assert.deepStrictEqual(yield* store.syncHealthLocal(account.id, "DRAFT", false), before);
       assert.isTrue(Option.isSome(yield* store.getDraft("unmirrored")));
       assert.deepStrictEqual(yield* store.listPendingOps, []);
-      assert.deepStrictEqual(yield* mailbox.listFailedOps, []);
+      assert.deepStrictEqual(yield* mailbox.proposals.listFailedOps, []);
     }).pipe(
       Effect.provide(
         TestMailbox.withAdapter(adapter, { options: { backgroundFlush: false, imapIdle: false } }),

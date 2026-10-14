@@ -101,7 +101,7 @@ export const MailToolkitLayer = MailToolkit.toLayer(
         Effect.onExit((exit) =>
           Effect.flatMap(identity.current, (current) =>
             current.recordsActivity
-              ? mailbox.recordAgentActivity({
+              ? mailbox.proposals.recordAgentActivity({
                   client: cleanMcpClientName(current.name),
                   tool,
                   ok: Exit.isSuccess(exit),

@@ -88,11 +88,11 @@ import type { IncomingMessage } from "../domain/message.js";
         const account = yield* store.upsertAccount("gmail", "me@example.com");
         yield* store.enqueueOp(account.id, "m1", { kind: "archive" });
         yield* mailbox.sync();
-        const failures = yield* mailbox.listFailedOps;
+        const failures = yield* mailbox.proposals.listFailedOps;
         assert.strictEqual(failures.length, 1);
         assert.strictEqual(failures[0]?.reason, "Access denied");
-        yield* mailbox.acknowledgeFailedOps(failures.map((f) => f.id));
-        assert.deepStrictEqual(yield* mailbox.listFailedOps, []);
+        yield* mailbox.proposals.acknowledgeFailedOps(failures.map((f) => f.id));
+        assert.deepStrictEqual(yield* mailbox.proposals.listFailedOps, []);
       }),
     ),
   );
@@ -209,7 +209,7 @@ import type { IncomingMessage } from "../domain/message.js";
         );
         assert.isTrue(Option.isSome(yield* store.getDraft("draft")));
         assert.isTrue(yield* store.sendUncertain("draft"));
-        const failed = yield* mailbox.listFailedOps;
+        const failed = yield* mailbox.proposals.listFailedOps;
         assert.strictEqual(failed.length, 2);
         assert.isTrue(
           failed.some((f) => f.kind === "sendPartial" && f.reason.includes("rejected@example.com")),
@@ -307,7 +307,7 @@ import type { IncomingMessage } from "../domain/message.js";
         yield* store.enqueueOp(account.id, "m1", { kind: "star", value: true });
         yield* TestClock.adjust("8 days");
         yield* mailbox.sync();
-        assert.strictEqual((yield* mailbox.listFailedOps).length, 1);
+        assert.strictEqual((yield* mailbox.proposals.listFailedOps).length, 1);
         assert.strictEqual((yield* store.listPendingOps)[0]?.op.kind, "reconcile");
       }),
     ),
@@ -447,7 +447,7 @@ import type { IncomingMessage } from "../domain/message.js";
             { kind: "send", accountId: account.id, draftId: "original", message },
             { kind: "user", surface: "app" },
           );
-          const [notice] = yield* mailbox.listFailedOps;
+          const [notice] = yield* mailbox.proposals.listFailedOps;
           assert.ok(notice);
           assert.strictEqual(notice.subject, "A subject");
           assert.strictEqual(notice.sender, "me@example.com");
@@ -636,7 +636,9 @@ import type { IncomingMessage } from "../domain/message.js";
         yield* store.enqueueOp(account.id, "missing", { kind: "reconcile" });
         for (let attempt = 0; attempt < 3; attempt++) yield* mailbox.sync();
         assert.strictEqual((yield* store.listPendingOps).length, 1);
-        assert.isFalse((yield* mailbox.audit(30)).some((entry) => entry.action === "sync-failed"));
+        assert.isFalse(
+          (yield* mailbox.proposals.audit(30)).some((entry) => entry.action === "sync-failed"),
+        );
       }),
       { fetchMessage: () => Effect.fail(new ProviderError({ message: "Still offline" })) },
     ),

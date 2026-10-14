@@ -412,7 +412,7 @@ const program = Effect.gen(function* () {
   // An agent proposal waiting for approval, made the way the MCP modify_threads tool makes it:
   // with "Ask me first" on, an MCP agent's change becomes a proposal instead of running.
   const mailbox = yield* Mailbox;
-  yield* mailbox.setAgentWriteMode("propose");
+  yield* mailbox.proposals.setAgentWriteMode("propose");
   yield* mailbox.organize.perform(
     {
       kind: "modify",

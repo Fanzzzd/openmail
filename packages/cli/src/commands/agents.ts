@@ -13,7 +13,7 @@ const proposalsList = Command.make(
   { json: jsonFlag },
   Effect.fn(function* ({ json }) {
     const mailbox = yield* Mailbox;
-    yield* print(yield* mailbox.proposals, json, proposalTable);
+    yield* print(yield* mailbox.proposals.proposals, json, proposalTable);
   }),
 ).pipe(Command.withDescription("List changes agents asked for that wait for a person"));
 
@@ -38,7 +38,7 @@ const proposalsReject = Command.make(
   { id: proposalId },
   Effect.fn(function* ({ id }) {
     const mailbox = yield* Mailbox;
-    yield* mailbox.decideProposal(id, false, "cli");
+    yield* mailbox.proposals.decideProposal(id, false, "cli");
     yield* Console.log(`Rejected proposal ${id}.`);
   }),
 ).pipe(Command.withDescription("Reject a proposed change. Approving happens only in the app."));
@@ -68,7 +68,7 @@ const writeMode = Command.make(
   { json: jsonFlag },
   Effect.fn(function* ({ json }) {
     const mailbox = yield* Mailbox;
-    const view = writeModeView(yield* mailbox.agentWriteMode);
+    const view = writeModeView(yield* mailbox.proposals.agentWriteMode);
     yield* print({ changes_by_ai_apps: view.changes_by_ai_apps }, json, () =>
       [
         `Changes by AI apps: ${view.label}`,
@@ -96,7 +96,7 @@ const audit = Command.make(
   },
   Effect.fn(function* ({ limit, json }) {
     const mailbox = yield* Mailbox;
-    yield* print(yield* mailbox.audit(limit), json, auditTable);
+    yield* print(yield* mailbox.proposals.audit(limit), json, auditTable);
   }),
 ).pipe(Command.withDescription("Show recent changes and who made them"));
 

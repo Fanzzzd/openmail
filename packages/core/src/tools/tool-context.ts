@@ -131,7 +131,7 @@ export const makeToolContext = Effect.gen(function* () {
     Effect.gen(function* () {
       if (actor.kind !== "agent")
         return yield* mailbox.organize.perform(command, actor).pipe(Effect.mapError(toToolError));
-      const pending = (yield* mailbox.proposals).filter((p) => p.actor.kind === "agent");
+      const pending = (yield* mailbox.proposals.proposals).filter((p) => p.actor.kind === "agent");
       const mine = pending.filter(
         (p) =>
           p.actor.kind === "agent" &&
@@ -158,14 +158,14 @@ export const makeToolContext = Effect.gen(function* () {
 
   const visibleProposals = Effect.gen(function* () {
     const allowed = new Set(yield* accountIdsFor());
-    const rows = yield* mailbox.proposals;
+    const rows = yield* mailbox.proposals.proposals;
     const owners = yield* mailbox.reading.messageAccounts(threadsOf(rows));
     return rows.filter(visibleTo(allowed, owners));
   });
   /** One pending proposal the caller may read, or None. */
   const visibleProposal = (id: number) =>
     Effect.gen(function* () {
-      const row = yield* mailbox.proposal(id).pipe(Effect.option);
+      const row = yield* mailbox.proposals.proposal(id).pipe(Effect.option);
       if (Option.isNone(row) || row.value.status !== "pending") return Option.none<Proposal>();
       const allowed = new Set(yield* accountIdsFor());
       const owners = yield* mailbox.reading.messageAccounts(threadsOf([row.value]));

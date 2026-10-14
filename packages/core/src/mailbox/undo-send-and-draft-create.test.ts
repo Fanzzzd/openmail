@@ -743,7 +743,7 @@ for (const status of ["waiting", "sending", "stale"] as const) {
           );
           expect(yield* store.sendUncertain("restart-failure")).toBe(status !== "stale");
           expect(server.sent).toHaveLength(0);
-          const notices = yield* mailbox.listFailedOps;
+          const notices = yield* mailbox.proposals.listFailedOps;
           expect(notices).toHaveLength(1);
           expect(notices[0]).toMatchObject({
             kind: "send",
@@ -831,7 +831,7 @@ it.effect(
         assert.strictEqual(sends, 0);
         assert.strictEqual((yield* mailbox.outbox.queuedSends)[0]?.status, "retryable");
         assert.isFalse(yield* store.sendUncertain(intent.id));
-        assert.strictEqual((yield* mailbox.listFailedOps)[0]?.kind, "send");
+        assert.strictEqual((yield* mailbox.proposals.listFailedOps)[0]?.kind, "send");
         assert.isTrue(Option.isSome(yield* store.getDraft(intent.id)));
       }),
       {

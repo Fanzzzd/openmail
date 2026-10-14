@@ -246,7 +246,7 @@ export async function flow(
     ).id;
   }
   if (options.agentDraft) {
-    await run(m.setAgentWriteMode("propose"));
+    await run(m.proposals.setAgentWriteMode("propose"));
     const outcome = await run(
       m.organize.perform(
         { kind: "draft", accountId: account.id, message: options.agentDraft.message },
@@ -424,7 +424,7 @@ export async function flow(
         ),
       RefreshRemoteAccess: () => Effect.void,
       AiClients: () =>
-        Effect.map(m.agentActivity(200), (activity) => ({
+        Effect.map(m.proposals.agentActivity(200), (activity) => ({
           launch: {
             command: "/Applications/OpenMail.app/Contents/MacOS/OpenMail",
             args: ["--mcp"],

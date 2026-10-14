@@ -38,9 +38,25 @@ const ProposalPage = Schema.Struct({
 });
 
 type Service = Mailbox["Service"];
-type Groups = "reading" | "organize" | "compose" | "outbox" | "ai" | "calendar" | "app";
+type Groups =
+  | "reading"
+  | "organize"
+  | "compose"
+  | "outbox"
+  | "ai"
+  | "calendar"
+  | "app"
+  | "proposals";
 /** Groups whose members are no longer flat on Service. */
-type Moved = "ai" | "calendar" | "outbox" | "app" | "compose" | "reading" | "organize";
+type Moved =
+  | "ai"
+  | "calendar"
+  | "outbox"
+  | "app"
+  | "compose"
+  | "reading"
+  | "organize"
+  | "proposals";
 type Flat = Omit<Service, Exclude<Groups, Moved>>;
 type Overrides = Partial<Omit<Flat, Moved>> & { [G in Moved]?: Partial<Service[G]> };
 
@@ -131,8 +147,20 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
       hiddenContacts: notUsed("hiddenContacts"),
       setContactHidden: () => notUsed("setContactHidden"),
     },
-    listFailedOps: notUsed("listFailedOps"),
-    acknowledgeFailedOps: () => notUsed("acknowledgeFailedOps"),
+    proposals: {
+      listFailedOps: notUsed("listFailedOps"),
+      acknowledgeFailedOps: () => notUsed("acknowledgeFailedOps"),
+      decideProposal: () => notUsed("decideProposal"),
+      proposals: Effect.succeed([]),
+      audit: () => notUsed("audit"),
+      agentActivity: () => Effect.succeed([]),
+      recordAgentActivity: () => Effect.void,
+      agentWriteModeFor: () => Effect.succeed("off" as const),
+      readOnlySession: false,
+      agentWriteMode: notUsed("agentWriteMode"),
+      setAgentWriteMode: () => notUsed("setAgentWriteMode"),
+      proposal: () => notUsed("proposal"),
+    },
     syncHealth: () => notUsed("syncHealth"),
     app: {
       diagnosticsState: notUsed("diagnosticsState"),
@@ -297,23 +325,14 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
     updateProfile: () => notUsed("updateProfile"),
     deleteProfile: () => notUsed("deleteProfile"),
     assignProfile: () => notUsed("assignProfile"),
-    decideProposal: () => notUsed("decideProposal"),
-    proposals: Effect.succeed([]),
-    audit: () => notUsed("audit"),
-    agentActivity: () => Effect.succeed([]),
-    recordAgentActivity: () => Effect.void,
-    agentWriteModeFor: () => Effect.succeed("off" as const),
-    readOnlySession: false,
-    agentWriteMode: notUsed("agentWriteMode"),
-    setAgentWriteMode: () => notUsed("setAgentWriteMode"),
     sync: () => notUsed("sync"),
     pollInbox: () => notUsed("pollInbox"),
     syncState: notUsed("syncState"),
-    proposal: () => notUsed("proposal"),
   };
   const flat: Flat = {
     ...base,
     ...overrides,
+    proposals: { ...base.proposals, ...overrides.proposals },
     organize: { ...base.organize, ...overrides.organize },
     reading: { ...base.reading, ...overrides.reading },
     compose: { ...base.compose, ...overrides.compose },
@@ -325,15 +344,18 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
   // Like the real Mailbox: one proposal comes from the same rows, owners from the same messages.
   const merged: Flat = {
     ...flat,
-    proposal:
-      overrides.proposal ??
-      ((id) =>
-        Effect.flatMap(flat.proposals, (rows) => {
-          const row = rows.find((r) => r.id === id);
-          return row
-            ? Effect.succeed(row)
-            : Effect.fail(new NotFound({ what: "proposal", id: String(id) }));
-        })),
+    proposals: {
+      ...flat.proposals,
+      proposal:
+        overrides.proposals?.proposal ??
+        ((id) =>
+          Effect.flatMap(flat.proposals.proposals, (rows) => {
+            const row = rows.find((r) => r.id === id);
+            return row
+              ? Effect.succeed(row)
+              : Effect.fail(new NotFound({ what: "proposal", id: String(id) }));
+          })),
+    },
     reading: {
       ...flat.reading,
       messageAccounts:
@@ -635,7 +657,9 @@ it.effect("an agent's identical proposal returns the waiting one, and 50 pending
   Effect.gen(function* () {
     const pending: import("../domain/command.js").Proposal[] = [];
     const layer = stubMailbox({
-      proposals: Effect.sync(() => [...pending]),
+      proposals: {
+        proposals: Effect.sync(() => [...pending]),
+      },
       organize: {
         perform: (command, actor) =>
           Effect.sync(() => {
@@ -1122,7 +1146,7 @@ it.effect("all MCP write tools create only proposals; only app approval changes 
         autoSummaries: false,
       });
       yield* mailbox.sync();
-      yield* mailbox.setAgentWriteMode("propose");
+      yield* mailbox.proposals.setAgentWriteMode("propose");
       const id = `${account.id}/m1`;
       const before = yield* mailbox.reading.thread(id);
       for (const action of [
@@ -1161,19 +1185,21 @@ it.effect("all MCP write tools create only proposals; only app approval changes 
       });
       assert.isFalse(draft.isFailure);
       assert.deepStrictEqual(yield* mailbox.reading.thread(id), before);
-      assert.strictEqual((yield* mailbox.proposals).length, 9);
+      assert.strictEqual((yield* mailbox.proposals.proposals).length, 9);
       yield* mailbox.sync();
       assert.strictEqual(server.pushed.length, 0);
       assert.strictEqual(server.drafts.size, 0);
       assert.strictEqual(server.sent.length, 0);
-      const proposal = (yield* mailbox.proposals).find((row) => row.command.kind === "snooze");
+      const proposal = (yield* mailbox.proposals.proposals).find(
+        (row) => row.command.kind === "snooze",
+      );
       assert.ok(proposal);
       assert.strictEqual(
-        (yield* Effect.flip(mailbox.decideProposal(proposal.id, true, "cli")))._tag,
+        (yield* Effect.flip(mailbox.proposals.decideProposal(proposal.id, true, "cli")))._tag,
         "InvalidInput",
       );
-      assert.ok((yield* mailbox.proposals).some((row) => row.id === proposal.id));
-      yield* mailbox.decideProposal(proposal.id, true, "app");
+      assert.ok((yield* mailbox.proposals.proposals).some((row) => row.id === proposal.id));
+      yield* mailbox.proposals.decideProposal(proposal.id, true, "app");
       assert.strictEqual((yield* mailbox.reading.threads({ mailbox: "snoozed" })).length, 1);
     }),
     TestMailbox({ gmail: server }),
@@ -1227,7 +1253,7 @@ it.effect(
           autoSummaries: false,
         });
         yield* mailbox.sync();
-        yield* mailbox.setAgentWriteMode("propose");
+        yield* mailbox.proposals.setAgentWriteMode("propose");
         const id = `${account.id}/m1`;
         const result = yield* call("modify_threads", {
           message_ids: [id],
@@ -1250,7 +1276,7 @@ it.effect(
         assert.isTrue(
           (yield* call("snooze_threads", { message_ids: [id], due: 0, rationale: "r" })).isFailure,
         );
-        assert.deepStrictEqual(yield* mailbox.proposals, []);
+        assert.deepStrictEqual(yield* mailbox.proposals.proposals, []);
         assert.strictEqual(server.pushed.length, 0);
       }),
       TestMailbox({ gmail: server }),
@@ -1308,48 +1334,50 @@ it.effect(
       const text = "Visible message text.\n".repeat(300);
       for (const kind of ["draft", "send"] as const) {
         const layer = stubMailbox({
-          proposals: Effect.succeed([
-            {
-              id: 42,
-              createdAt: 0,
-              status: "pending",
-              actor: { kind: "agent", surface: "rule", name: "writer" },
-              command: {
-                kind,
-                accountId: "a",
-                message: {
-                  from: {
-                    name: "Alias",
-                    address: "alias@example.com",
-                    contactKey: "hidden-from",
-                    company: "Hidden company",
-                  },
-                  to: [{ name: "To", address: "to@example.com", contactKey: "hidden-to" }],
-                  cc: [{ name: "Cc", address: "cc@example.com" }],
-                  bcc: [{ name: "Bcc", address: "bcc@example.com" }],
-                  subject: "Visible subject",
-                  text,
-                  mode: "replyAll",
-                  inReplyTo: "m1",
-                  html: "HTML_SECRET",
-                  originalHtml: "ORIGINAL_HTML_SECRET",
-                  attachments: [
-                    {
-                      filename: "hidden.pdf",
-                      mimeType: "application/pdf",
-                      content: "ATTACHMENT_SECRET",
+          proposals: {
+            proposals: Effect.succeed([
+              {
+                id: 42,
+                createdAt: 0,
+                status: "pending",
+                actor: { kind: "agent", surface: "rule", name: "writer" },
+                command: {
+                  kind,
+                  accountId: "a",
+                  message: {
+                    from: {
+                      name: "Alias",
+                      address: "alias@example.com",
+                      contactKey: "hidden-from",
+                      company: "Hidden company",
                     },
-                  ],
-                  calendar: { method: "REPLY", content: "CALENDAR_SECRET" },
-                  markdown: true,
-                  forwardAsAttachment: true,
-                  includeOriginalAttachments: true,
-                  signatureId: "hidden-signature",
-                  draftOrganization: { labels: ["hidden-label"], starred: true },
+                    to: [{ name: "To", address: "to@example.com", contactKey: "hidden-to" }],
+                    cc: [{ name: "Cc", address: "cc@example.com" }],
+                    bcc: [{ name: "Bcc", address: "bcc@example.com" }],
+                    subject: "Visible subject",
+                    text,
+                    mode: "replyAll",
+                    inReplyTo: "m1",
+                    html: "HTML_SECRET",
+                    originalHtml: "ORIGINAL_HTML_SECRET",
+                    attachments: [
+                      {
+                        filename: "hidden.pdf",
+                        mimeType: "application/pdf",
+                        content: "ATTACHMENT_SECRET",
+                      },
+                    ],
+                    calendar: { method: "REPLY", content: "CALENDAR_SECRET" },
+                    markdown: true,
+                    forwardAsAttachment: true,
+                    includeOriginalAttachments: true,
+                    signatureId: "hidden-signature",
+                    draftOrganization: { labels: ["hidden-label"], starred: true },
+                  },
                 },
               },
-            },
-          ]),
+            ]),
+          },
         });
         let offset = 0;
         let joined = "";
@@ -1426,15 +1454,17 @@ it.effect(
         const result = yield* run(
           call("read_proposal", { id: "1" }),
           stubMailbox({
-            proposals: Effect.succeed([
-              {
-                id: 1,
-                createdAt: 0,
-                status: "pending",
-                actor: { kind: "agent", surface: "rule", name: "rule" },
-                command,
-              },
-            ]),
+            proposals: {
+              proposals: Effect.succeed([
+                {
+                  id: 1,
+                  createdAt: 0,
+                  status: "pending",
+                  actor: { kind: "agent", surface: "rule", name: "rule" },
+                  command,
+                },
+              ]),
+            },
           }),
         );
         assert.isFalse(result.isFailure);
@@ -1525,7 +1555,7 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
         allowed: true,
         autoSummaries: false,
       });
-      yield* mailbox.setAgentWriteMode("propose");
+      yield* mailbox.proposals.setAgentWriteMode("propose");
       const toolkit = yield* MailToolkit;
       const id = `${account.id}/m1`;
       const now = yield* Clock.currentTimeMillis;
@@ -1602,7 +1632,7 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
       assert.strictEqual(unknown?.code, "invalid_input");
       assert.match(unknown?.hint ?? "", /token_budget/);
       // Nothing above became a proposal.
-      assert.deepStrictEqual(yield* mailbox.proposals, []);
+      assert.deepStrictEqual(yield* mailbox.proposals.proposals, []);
     }).pipe(
       Effect.provide(
         Layer.mergeAll(handlers, mailboxLayer, AgentIdentity.fixed("mcp", "error-client")),
@@ -1716,7 +1746,7 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
           result.encodedResult,
         );
         assert.include(thread.messages[0]?.from ?? "", "Ignore rules");
-        yield* mailbox.setAgentWriteMode("propose");
+        yield* mailbox.proposals.setAgentWriteMode("propose");
         const proposed = yield* mailbox.organize.perform(
           { kind: "draft", accountId: account.id, message: outgoing },
           { kind: "agent", surface: "mcp", name: "audit-client", rationale: "Untrusted reason" },
@@ -1761,7 +1791,7 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
           allowed: false,
           autoSummaries: false,
         });
-        assert.deepStrictEqual(yield* mailbox.proposals, []);
+        assert.deepStrictEqual(yield* mailbox.proposals.proposals, []);
         assert.isNull(yield* mailbox.compose.draftStatus(draft.id));
       }).pipe(Effect.provide(Layer.mergeAll(mailboxLayer, handlers)));
     },
@@ -1809,7 +1839,7 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
           allowed: true,
           autoSummaries: false,
         });
-        yield* mailbox.setAgentWriteMode("propose");
+        yield* mailbox.proposals.setAgentWriteMode("propose");
         const after = yield* status;
         assert.deepStrictEqual(
           after.readable_accounts.map((a) => a.id),
@@ -1821,7 +1851,7 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
         assert.match(after.next_steps.join(" "), /wait for the person to approve/);
 
         yield* Stream.runCollect(yield* toolkit.handle("read_thread", { message_id: "missing" }));
-        const activity = yield* mailbox.agentActivity(10);
+        const activity = yield* mailbox.proposals.agentActivity(10);
         assert.deepStrictEqual(
           activity.map(({ client, tool, ok }) => ({ client, tool, ok })),
           [
@@ -1843,7 +1873,7 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
     return Effect.gen(function* () {
       const toolkit = yield* MailToolkit;
       yield* Stream.runCollect(yield* toolkit.handle("access_status", {}));
-      assert.deepStrictEqual(yield* (yield* Mailbox).agentActivity(10), []);
+      assert.deepStrictEqual(yield* (yield* Mailbox).proposals.agentActivity(10), []);
     }).pipe(Effect.provide(Layer.mergeAll(mailboxLayer, handlers)));
   });
 
@@ -1855,7 +1885,7 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
       const store = yield* Store;
       const account = yield* mailbox.connect({ provider: "gmail" });
       yield* mailbox.sync();
-      yield* mailbox.setAgentWriteMode("propose");
+      yield* mailbox.proposals.setAgentWriteMode("propose");
       const result = yield* mailbox.organize.perform(
         {
           kind: "modify",
@@ -1867,10 +1897,10 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
       assert.ok(result.status === "proposed");
       yield* store.replaceLabels(account.id, [{ id: "Label_1", name: "INBOX", color: null }]);
       assert.strictEqual(
-        (yield* Effect.flip(mailbox.decideProposal(result.proposalId, true, "app")))._tag,
+        (yield* Effect.flip(mailbox.proposals.decideProposal(result.proposalId, true, "app")))._tag,
         "InvalidInput",
       );
-      assert.strictEqual((yield* mailbox.proposals).length, 1);
+      assert.strictEqual((yield* mailbox.proposals.proposals).length, 1);
       assert.strictEqual(server.pushed.length, 0);
     }).pipe(Effect.provide(TestMailbox({ gmail: server })));
   });
@@ -1883,7 +1913,7 @@ it.effect("MCP write tools refuse invisible accounts before creating any proposa
       const mailbox = yield* Mailbox;
       const account = yield* mailbox.connect({ provider: "gmail" });
       yield* mailbox.sync();
-      yield* mailbox.setAgentWriteMode("propose");
+      yield* mailbox.proposals.setAgentWriteMode("propose");
       const id = `${account.id}/m1`;
       const attempt = () =>
         Effect.all([
@@ -1902,7 +1932,7 @@ it.effect("MCP write tools refuse invisible accounts before creating any proposa
           }),
         ]);
       for (const result of yield* attempt()) assert.isTrue(result.isFailure);
-      assert.deepStrictEqual(yield* mailbox.proposals, []);
+      assert.deepStrictEqual(yield* mailbox.proposals.proposals, []);
       yield* mailbox.ai.setAiAccount({
         accountId: account.id,
         allowed: true,
@@ -1914,7 +1944,7 @@ it.effect("MCP write tools refuse invisible accounts before creating any proposa
         color: null,
       });
       for (const result of yield* attempt()) assert.isTrue(result.isFailure);
-      assert.deepStrictEqual(yield* mailbox.proposals, []);
+      assert.deepStrictEqual(yield* mailbox.proposals.proposals, []);
       assert.strictEqual(server.drafts.size, 0);
       assert.strictEqual(server.pushed.length, 0);
     }),
@@ -2071,7 +2101,9 @@ it.effect("a client that changes its name still stops at 200 pending proposals i
     );
     let performed = 0;
     const layer = stubMailbox({
-      proposals: Effect.sync(() => [...pending]),
+      proposals: {
+        proposals: Effect.sync(() => [...pending]),
+      },
       organize: {
         perform: () =>
           Effect.sync(() => {
@@ -2117,15 +2149,17 @@ it.effect(
       const lookups: (readonly string[])[] = [];
       let listed = 0;
       const layer = stubMailbox({
-        proposals: Effect.sync(() => {
-          listed++;
-          return rows;
-        }),
-        proposal: (id) => {
-          const row = rows.find((r) => r.id === id);
-          return row
-            ? Effect.succeed(row)
-            : Effect.fail(new NotFound({ what: "proposal", id: String(id) }));
+        proposals: {
+          proposals: Effect.sync(() => {
+            listed++;
+            return rows;
+          }),
+          proposal: (id) => {
+            const row = rows.find((r) => r.id === id);
+            return row
+              ? Effect.succeed(row)
+              : Effect.fail(new NotFound({ what: "proposal", id: String(id) }));
+          },
         },
         reading: {
           // Loading a thread brings its bodies; ownership never needs that.
@@ -2257,7 +2291,9 @@ it.effect("tools fail as not_found for an account, profile or id the client cann
             templates: Effect.succeed([]),
             namedSignatures: Effect.succeed([]),
           },
-          proposals: Effect.succeed([]),
+          proposals: {
+            proposals: Effect.succeed([]),
+          },
         }),
       );
       assert.strictEqual(failureOf(missing).code, "not_found");

@@ -51,7 +51,9 @@ function ProposalReview({ proposal }: { proposal: Proposal }) {
     setFailed(false);
     try {
       const outcome = await runtime.runPromise(
-        Effect.flatMap(Mailbox, (mailbox) => mailbox.decideProposal(proposal.id, approve, "app")),
+        Effect.flatMap(Mailbox, (mailbox) =>
+          mailbox.proposals.decideProposal(proposal.id, approve, "app"),
+        ),
       );
       if (outcome.status !== "applied") throw new Error("Proposal not applied");
       if (approve && command.kind === "draft")
@@ -142,7 +144,7 @@ export default function AiProposals() {
   const { i18n } = useLingui();
   const proposals = useMailboxQuery(
     useCallback(
-      () => runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.proposals)),
+      () => runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.proposals.proposals)),
       [runtime],
     ),
   );

@@ -51,7 +51,7 @@ import type { ProviderAdapter } from "../providers/adapter.js";
         assert.strictEqual(outcome.status, "applied");
         assert.deepStrictEqual(yield* m.reading.threads({ mailbox: "inbox" }), []);
         assert.deepStrictEqual(server.pushed, [{ providerId: "m1", op: { kind: "archive" } }]);
-        const [entry] = yield* m.audit(10);
+        const [entry] = yield* m.proposals.audit(10);
         assert.ok(entry);
         assert.strictEqual(entry.action, "archive");
         assert.strictEqual(entry.actor, "user:app");
@@ -69,27 +69,27 @@ import type { ProviderAdapter } from "../providers/adapter.js";
         assert.strictEqual(denied.status, "denied");
         assert.strictEqual(server.pushed.length, 0);
 
-        yield* m.setAgentWriteMode("propose");
+        yield* m.proposals.setAgentWriteMode("propose");
         const proposed = yield* m.organize.perform(archive, agent);
         assert.strictEqual(proposed.status, "proposed");
         assert.strictEqual(server.pushed.length, 0);
-        const [proposal] = yield* m.proposals;
+        const [proposal] = yield* m.proposals.proposals;
         assert.strictEqual(
           proposal?.actor.kind === "agent" && proposal.actor.rationale,
           "newsletter",
         );
 
-        yield* m.decideProposal(proposal!.id, true, "app");
+        yield* m.proposals.decideProposal(proposal!.id, true, "app");
         assert.strictEqual(server.pushed.length, 1);
-        assert.deepStrictEqual(yield* m.proposals, []);
+        assert.deepStrictEqual(yield* m.proposals.proposals, []);
 
-        yield* m.setAgentWriteMode("propose");
+        yield* m.proposals.setAgentWriteMode("propose");
         const applied = yield* m.organize.perform(
           { kind: "modify", threads: [thread!.id], op: { kind: "star", value: true } },
           agent,
         );
         assert.strictEqual(applied.status, "proposed");
-        assert.strictEqual((yield* m.audit(1))[0]?.actor, "agent:mcp:claude");
+        assert.strictEqual((yield* m.proposals.audit(1))[0]?.actor, "agent:mcp:claude");
       }),
     ),
   );
@@ -111,7 +111,7 @@ import type { ProviderAdapter } from "../providers/adapter.js";
         const accountId = thread!.accountId;
 
         // Even with proposals allowed, an agent never sends.
-        yield* m.setAgentWriteMode("propose");
+        yield* m.proposals.setAgentWriteMode("propose");
         const denied = yield* m.organize.perform({ kind: "send", accountId, message }, agent);
         assert.strictEqual(denied.status, "denied");
         assert.strictEqual(server.sent.length, 0);
@@ -150,9 +150,12 @@ import type { ProviderAdapter } from "../providers/adapter.js";
         accountId: "gmail:me@gmail.com",
         message: { to: [], cc: [], bcc: [], subject: "Re", text: "ok", attachments: [] },
       });
-      const refused = yield* Effect.flip(m.decideProposal(id, true, "cli"));
+      const refused = yield* Effect.flip(m.proposals.decideProposal(id, true, "cli"));
       assert.strictEqual(refused._tag, "InvalidInput");
-      assert.strictEqual((yield* m.proposals).find((p) => p.id === id)?.status, "pending");
+      assert.strictEqual(
+        (yield* m.proposals.proposals).find((p) => p.id === id)?.status,
+        "pending",
+      );
       assert.strictEqual(server.sent.length, 0);
     }).pipe(Effect.provide(TestMailbox({ gmail: server })));
   });
@@ -427,7 +430,7 @@ import type { ProviderAdapter } from "../providers/adapter.js";
             user,
           );
           assert.strictEqual((yield* m.reading.threads({ mailbox: "inbox" })).length, gone ? 0 : 1);
-          assert.ok((yield* m.audit(10)).some((entry) => entry.action === "sync-failed"));
+          assert.ok((yield* m.proposals.audit(10)).some((entry) => entry.action === "sync-failed"));
         }),
       ),
     );
@@ -442,7 +445,9 @@ import type { ProviderAdapter } from "../providers/adapter.js";
         );
         for (let attempt = 0; attempt < 4; attempt++) yield* m.sync();
         assert.strictEqual((yield* m.reading.threads({ mailbox: "inbox" })).length, 0);
-        assert.isFalse((yield* m.audit(10)).some((entry) => entry.action === "sync-failed"));
+        assert.isFalse(
+          (yield* m.proposals.audit(10)).some((entry) => entry.action === "sync-failed"),
+        );
       }),
     ),
   );
@@ -663,7 +668,7 @@ it.effect(
         allowed: true,
         autoSummaries: false,
       });
-      yield* mailbox.setAgentWriteMode("propose");
+      yield* mailbox.proposals.setAgentWriteMode("propose");
       const proposal = yield* mailbox.organize.perform(
         {
           kind: "draft",
@@ -699,7 +704,7 @@ it.effect(
       assert.strictEqual(server.drafts.size, 0);
       assert.strictEqual(server.draftLog.filter((entry) => entry.kind === "delete").length, 1);
       assert.deepStrictEqual(yield* mailbox.reading.threads({ mailbox: "drafts" }), []);
-      assert.deepStrictEqual(yield* mailbox.proposals, []);
+      assert.deepStrictEqual(yield* mailbox.proposals.proposals, []);
     }).pipe(Effect.provide(TestMailbox({ gmail: server })));
   },
 );
@@ -741,7 +746,7 @@ for (const provider of ["outlook", "gmail"] as const) {
             );
           }
           assert.deepStrictEqual(yield* store.listPendingOps, []);
-          assert.deepStrictEqual(yield* mailbox.listFailedOps, []);
+          assert.deepStrictEqual(yield* mailbox.proposals.listFailedOps, []);
           assert.strictEqual(pushes, 0);
         }
       }).pipe(

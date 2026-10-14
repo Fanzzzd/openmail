@@ -203,7 +203,7 @@ import { replyFromAddress } from "./signatures.js";
         yield* m.compose.discardDraft("draft:1");
         assert.strictEqual(server.drafts.size, 0);
         assert.deepStrictEqual(yield* draftIds(m), []);
-        assert.strictEqual((yield* m.audit(1))[0]?.action, "discard_draft");
+        assert.strictEqual((yield* m.proposals.audit(1))[0]?.action, "discard_draft");
       }),
     ),
   );
@@ -220,13 +220,13 @@ import { replyFromAddress } from "./signatures.js";
         yield* TestClock.adjust("1 minute");
         assert.strictEqual(server.drafts.size, 1);
         assert.deepStrictEqual(yield* draftIds(m), ["draft:1"]);
-        assert.notStrictEqual((yield* m.audit(1))[0]?.action, "discard_draft");
+        assert.notStrictEqual((yield* m.proposals.audit(1))[0]?.action, "discard_draft");
 
         assert.strictEqual(yield* m.compose.discardDraftLater("draft:1", 10_000), true);
         yield* TestClock.adjust("10 seconds");
         assert.strictEqual(server.drafts.size, 0);
         assert.deepStrictEqual(yield* draftIds(m), []);
-        assert.strictEqual((yield* m.audit(1))[0]?.action, "discard_draft");
+        assert.strictEqual((yield* m.proposals.audit(1))[0]?.action, "discard_draft");
         const late = yield* Effect.flip(m.compose.restoreDraft("draft:1"));
         assert.strictEqual(late._tag, "InvalidInput");
       }),
@@ -405,7 +405,7 @@ import { replyFromAddress } from "./signatures.js";
   it.effect("an MCP draft stays local until a person saves or sends it", () =>
     withMail((m, server) =>
       Effect.gen(function* () {
-        yield* m.setAgentWriteMode("propose");
+        yield* m.proposals.setAgentWriteMode("propose");
         const outcome = yield* m.organize.perform(
           { kind: "draft", accountId: GMAIL, message: draftMessage() },
           agent,
@@ -427,8 +427,8 @@ import { replyFromAddress } from "./signatures.js";
         );
         assert.strictEqual(server.sent.length, 1);
         assert.strictEqual(server.drafts.size, 0);
-        assert.deepStrictEqual(yield* m.proposals, []);
-        assert.ok((yield* m.audit(10)).some((e) => e.action === "approve"));
+        assert.deepStrictEqual(yield* m.proposals.proposals, []);
+        assert.ok((yield* m.proposals.audit(10)).some((e) => e.action === "approve"));
 
         // Rejecting a message proposal discards its draft.
         const second = yield* m.organize.perform(
@@ -437,7 +437,7 @@ import { replyFromAddress } from "./signatures.js";
         );
         yield* m.sync();
         assert.strictEqual(server.drafts.size, 0);
-        yield* m.decideProposal(
+        yield* m.proposals.decideProposal(
           second.status === "proposed" ? second.proposalId : -1,
           false,
           "app",
@@ -451,7 +451,7 @@ import { replyFromAddress } from "./signatures.js";
   it.effect("an agent cannot draft from an account that does not exist", () =>
     withMail((m) =>
       Effect.gen(function* () {
-        yield* m.setAgentWriteMode("propose");
+        yield* m.proposals.setAgentWriteMode("propose");
         const error = yield* Effect.flip(
           m.organize.perform(
             { kind: "draft", accountId: "gmail:nobody@x.com", message: draftMessage() },
@@ -459,7 +459,7 @@ import { replyFromAddress } from "./signatures.js";
           ),
         );
         assert.strictEqual(error._tag, "NotFound");
-        assert.deepStrictEqual(yield* m.proposals, []);
+        assert.deepStrictEqual(yield* m.proposals.proposals, []);
       }),
     ),
   );
@@ -1088,7 +1088,7 @@ import { replyFromAddress } from "./signatures.js";
             yield* TestClock.adjust("8 days");
             yield* m.sync();
             assert.strictEqual((yield* m.compose.openDraft("draft:attempts")).syncRetrying, false);
-            assert.strictEqual((yield* m.listFailedOps).length, 1);
+            assert.strictEqual((yield* m.proposals.listFailedOps).length, 1);
           }),
         (adapter) => ({
           ...adapter,

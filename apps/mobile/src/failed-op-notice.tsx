@@ -41,7 +41,10 @@ export function FailedOpNotice() {
         runtime.runPromise(
           Effect.gen(function* () {
             const mailbox = yield* Mailbox;
-            return { failures: yield* mailbox.listFailedOps, accounts: yield* mailbox.accounts };
+            return {
+              failures: yield* mailbox.proposals.listFailedOps,
+              accounts: yield* mailbox.accounts,
+            };
           }),
         ),
       [runtime],
@@ -112,7 +115,7 @@ export function FailedOpNotice() {
     try {
       await runtime.runPromise(
         Effect.flatMap(Mailbox, (mailbox) =>
-          mailbox.acknowledgeFailedOps(failures.map((entry) => entry.id)),
+          mailbox.proposals.acknowledgeFailedOps(failures.map((entry) => entry.id)),
         ),
       );
       setExpanded(false);

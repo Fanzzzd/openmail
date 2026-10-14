@@ -412,14 +412,14 @@ it("notification clicks open threads; Archive and Delete are audited as the pers
         notification.emit("action", { actionIndex: 0 });
         yield* settle();
         expect(server.pushed.at(-1)).toEqual({ providerId: "new", op: { kind: "archive" } });
-        expect((yield* m.audit(1))[0]?.actor).toBe("user:app");
+        expect((yield* m.proposals.audit(1))[0]?.actor).toBe("user:app");
         server.messages.set("delete", incoming("delete"));
         yield* m.pollInbox();
         yield* settle();
         observations.testState.notifications.at(-1)?.emit("action", { actionIndex: 1 });
         yield* settle();
         expect(server.pushed.at(-1)).toEqual({ providerId: "delete", op: { kind: "trash" } });
-        expect((yield* m.audit(1))[0]?.actor).toBe("user:app");
+        expect((yield* m.proposals.audit(1))[0]?.actor).toBe("user:app");
         yield* m.sync();
         yield* settle();
         expect(observations.testState.notifications).toHaveLength(2);

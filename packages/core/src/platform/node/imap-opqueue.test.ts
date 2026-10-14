@@ -1292,7 +1292,7 @@ for (const operation of ["move", "copy"] as const) {
               },
               { kind: "user", surface: "app" },
             );
-            const failures = yield* mailbox.listFailedOps;
+            const failures = yield* mailbox.proposals.listFailedOps;
             assert.strictEqual(failures.length, 1);
             assert.strictEqual(
               failures[0]?.reason,
@@ -1326,8 +1326,8 @@ for (const operation of ["move", "copy"] as const) {
               );
               assert.strictEqual(vi.spyOn(client, "messageCopy").mock.calls.length, 0);
             }
-            yield* mailbox.acknowledgeFailedOps(failures.map((item) => item.id));
-            assert.deepStrictEqual(yield* mailbox.listFailedOps, []);
+            yield* mailbox.proposals.acknowledgeFailedOps(failures.map((item) => item.id));
+            assert.deepStrictEqual(yield* mailbox.proposals.listFailedOps, []);
           }).pipe(
             Effect.provide(
               MailboxLive({ backgroundFlush: false, imapIdle: false }).pipe(

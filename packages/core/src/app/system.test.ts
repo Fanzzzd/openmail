@@ -218,7 +218,7 @@ it.effect(
       );
       assert.strictEqual(outcome.status, "applied");
       assert.deepStrictEqual(server.pushed.at(-1), { providerId: "new", op: { kind: "archive" } });
-      assert.strictEqual((yield* m.audit(1))[0]?.actor, "user:app");
+      assert.strictEqual((yield* m.proposals.audit(1))[0]?.actor, "user:app");
     }).pipe(Effect.provide(TestMailbox({ gmail: server })));
   },
 );

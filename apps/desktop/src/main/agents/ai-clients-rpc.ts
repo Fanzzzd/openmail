@@ -56,7 +56,7 @@ export const aiClientHandlers = (m: Mailbox["Service"]) => ({
     Effect.gen(function* () {
       const { launch, problem } = yield* currentLaunch;
       const clients = yield* Effect.promise(() => clientViews(systemHost(), launch));
-      const activity = yield* m.agentActivity(ACTIVITY_ROWS);
+      const activity = yield* m.proposals.agentActivity(ACTIVITY_ROWS);
       return { launch, launchProblem: problem, clients, activity };
     }),
   PreviewAiClientChange: ({ change }: { change: AiClientChange }) =>

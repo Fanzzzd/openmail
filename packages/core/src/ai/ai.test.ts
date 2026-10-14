@@ -138,7 +138,7 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
         yield* Stream.runDrain(
           m.ai.askAi({ question: "Use the mail's suggestions", accountIds: [account.id] }),
         );
-        const proposals = yield* m.proposals;
+        const proposals = yield* m.proposals.proposals;
         assert.strictEqual(proposals.length, provider === "gmail" ? 1 : 0);
         assert.strictEqual(server.pushed.length, 0);
         assert.ok((yield* m.reading.thread(id))[0]?.labels.includes("INBOX"));
@@ -255,7 +255,7 @@ it.effect("a Gmail label belonging only to another account cannot be proposed", 
     yield* Stream.runDrain(
       m.ai.askAi({ question: "Apply the mail's suggested label", accountIds: [accountId] }),
     );
-    assert.deepStrictEqual(yield* m.proposals, []);
+    assert.deepStrictEqual(yield* m.proposals.proposals, []);
     assert.strictEqual(server.pushed.length, 0);
   }).pipe(Effect.provide(Layer.mergeAll(mailboxLayer, storeLayer)));
 });
@@ -481,7 +481,7 @@ it.effect(
       yield* m.connect({ provider: "outlook" });
       yield* m.sync();
       yield* m.ai.setAiAccount(consent);
-      yield* m.setAgentWriteMode("propose");
+      yield* m.proposals.setAgentWriteMode("propose");
       const events = yield* Stream.runCollect(
         m.ai.askAi({
           question: "Find Friday and suggest a reply and archive",
@@ -495,7 +495,7 @@ it.effect(
       );
       assert.strictEqual(server.pushed.length, 0);
       assert.strictEqual(server.sent.length, 0);
-      const proposals = yield* m.proposals;
+      const proposals = yield* m.proposals.proposals;
       assert.strictEqual(proposals.length, 2);
       yield* m.sync();
       assert.strictEqual(server.draftLog.length, 0);
@@ -508,14 +508,14 @@ it.effect(
       const archive = proposals.find((p) => p.command.kind === "modify");
       assert.ok(archive);
       assert.strictEqual(
-        (yield* m.decideProposal(archive.id, true, "cli").pipe(Effect.exit))._tag,
+        (yield* m.proposals.decideProposal(archive.id, true, "cli").pipe(Effect.exit))._tag,
         "Failure",
       );
-      yield* m.decideProposal(archive.id, true, "app");
+      yield* m.proposals.decideProposal(archive.id, true, "app");
       assert.strictEqual(server.pushed.length, 1);
       assert.strictEqual(server.sent.length, 0);
-      yield* m.decideProposal(draft.id, false, "app");
-      assert.strictEqual((yield* m.proposals).length, 0);
+      yield* m.proposals.decideProposal(draft.id, false, "app");
+      assert.strictEqual((yield* m.proposals.proposals).length, 0);
     }).pipe(
       Effect.provide(TestMailbox({ gmail: server, outlook }, { backgroundFlush: false }, {}, fake)),
     );

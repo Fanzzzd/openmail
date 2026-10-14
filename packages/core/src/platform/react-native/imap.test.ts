@@ -396,7 +396,7 @@ it("runs mobile IMAP through shared connect, sync, reader, contacts, flags, move
         yield* mailbox.outbox.flushQueuedSends();
         expect(yield* mailbox.outbox.queuedSends).toEqual([]);
         expect(
-          (yield* mailbox.audit(100)).some(
+          (yield* mailbox.proposals.audit(100)).some(
             (entry) => entry.action === "send" && entry.actor === "user:app",
           ),
         ).toBe(true);
@@ -2013,7 +2013,7 @@ for (const operation of ["move", "copy"] as const) {
             },
             { kind: "user", surface: "app" },
           );
-          const failures = yield* mailbox.listFailedOps;
+          const failures = yield* mailbox.proposals.listFailedOps;
           expect(failures).toHaveLength(1);
           expect(failures[0]?.reason).toBe(
             "Message identity changed; sync before changing this message",
@@ -2032,8 +2032,8 @@ for (const operation of ["move", "copy"] as const) {
           ).toBe(false);
           yield* mailbox.sync(account.id);
           expect((yield* store.getMessage(id)).bodyText).toBe(before.bodyText);
-          yield* mailbox.acknowledgeFailedOps(failures.map((item) => item.id));
-          expect(yield* mailbox.listFailedOps).toEqual([]);
+          yield* mailbox.proposals.acknowledgeFailedOps(failures.map((item) => item.id));
+          expect(yield* mailbox.proposals.listFailedOps).toEqual([]);
         }),
       );
     } finally {

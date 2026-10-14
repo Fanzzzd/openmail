@@ -79,7 +79,7 @@ it.effect("a failed revocation is logged with a code and does not block removal"
       );
       assert.deepStrictEqual(outcome, { status: "applied" });
       assert.deepStrictEqual(yield* mailbox.accounts, []);
-      const [entry] = yield* mailbox.audit(5);
+      const [entry] = yield* mailbox.proposals.audit(5);
       assert.strictEqual(entry?.action, "removeAccount");
     }),
   ).pipe(Effect.map((codes) => assert.deepStrictEqual(codes, ["token-revoke-failed"]))),
@@ -98,7 +98,7 @@ it.effect("a keychain that refuses deletion still removes the account, audits it
       );
       assert.deepStrictEqual(outcome, { status: "applied", warning: "keychain-item-left" });
       assert.deepStrictEqual(yield* mailbox.accounts, []);
-      const [entry] = yield* mailbox.audit(5);
+      const [entry] = yield* mailbox.proposals.audit(5);
       assert.strictEqual(entry?.action, "removeAccount");
     }),
   ).pipe(Effect.map((codes) => assert.deepStrictEqual(codes, ["keychain-remove-failed"]))),

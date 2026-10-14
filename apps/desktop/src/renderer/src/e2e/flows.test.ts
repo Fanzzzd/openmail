@@ -298,7 +298,7 @@ it.each(["reply", "replyAll", "forward"] as const)(
       value: { providerId: "one", threadId: "t-one" },
     });
     expect(
-      (await h.run(h.m.audit(10))).some(
+      (await h.run(h.m.proposals.audit(10))).some(
         (entry) => entry.action === "send" && entry.actor === "user:app",
       ),
     ).toBe(true);
@@ -326,7 +326,9 @@ it("attachment reminder blocks send until the user explicitly confirms", async (
   clickButton("Send anyway");
   await eventually(() => expect(h.server.sent).toHaveLength(1));
   expect(h.server.sent[0]?.message.attachments).toEqual([]);
-  expect((await h.run(h.m.audit(10))).some((entry) => entry.action === "send")).toBe(true);
+  expect((await h.run(h.m.proposals.audit(10))).some((entry) => entry.action === "send")).toBe(
+    true,
+  );
 });
 
 it("Gmail operators search the server and persist an uncached match", async () => {
@@ -510,7 +512,7 @@ it("AI disabled keeps reading and composing off the network", async () => {
 it("proposals approve only the chosen change and rejection never pushes", async () => {
   current = await flow();
   const h = current;
-  await h.run(h.m.setAgentWriteMode("propose"));
+  await h.run(h.m.proposals.setAgentWriteMode("propose"));
   for (const id of ["one", "two"])
     await h.run(
       h.m.organize.perform(
@@ -539,7 +541,7 @@ it("proposals approve only the chosen change and rejection never pushes", async 
   await eventually(() =>
     expect(screen.getByText("No suggestions waiting for review.")).toBeTruthy(),
   );
-  expect(await h.run(h.m.proposals)).toEqual([]);
+  expect(await h.run(h.m.proposals.proposals)).toEqual([]);
   expect(h.server.pushed).toHaveLength(1);
   expect((await h.run(h.store.getMessage(h.id("one")))).labels).not.toContain("INBOX");
   expect((await h.run(h.store.getMessage(h.id("two")))).labels).toContain("INBOX");
@@ -605,7 +607,9 @@ it("keyboard-only list to reader to reply to send keeps the selected original", 
   expect(h.server.sent[0]?.original).toMatchObject({ _tag: "Some", value: { providerId: "two" } });
   expect(h.server.sent[0]?.message.to[0]?.address).toBe("alice@example.com");
   expect(h.server.sent[0]?.message.text).toContain("Keyboard reply");
-  expect((await h.run(h.m.audit(10))).some((entry) => entry.action === "send")).toBe(true);
+  expect((await h.run(h.m.proposals.audit(10))).some((entry) => entry.action === "send")).toBe(
+    true,
+  );
   expect(screen.queryByRole("textbox", { name: "Body" })).toBeNull();
 });
 
