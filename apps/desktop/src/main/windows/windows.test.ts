@@ -9,7 +9,7 @@ import { expect, it, vi } from "vitest";
 const created = vi.hoisted(() => {
   vi.resetModules();
   vi.doUnmock("./windows");
-  return new Array<unknown>();
+  return new Array<BrowserWindowConstructorOptions>();
 });
 vi.mock("electron", () => ({
   app: Object.assign(new EventEmitter(), {
@@ -357,13 +357,13 @@ it("thread, message and compose pop-outs open centred on the display of the wind
   ]) {
     created.length = 0;
     open();
-    const options = created[0] as BrowserWindowConstructorOptions;
-    expect(options.x).toBeGreaterThanOrEqual(1920);
-    expect((options.x ?? 0) + (options.width ?? 0)).toBeLessThanOrEqual(1920 + 2560);
-    expect(options.y).toBeGreaterThanOrEqual(25);
+    const options = created[0];
+    expect(options?.x).toBeGreaterThanOrEqual(1920);
+    expect((options?.x ?? 0) + (options?.width ?? 0)).toBeLessThanOrEqual(1920 + 2560);
+    expect(options?.y).toBeGreaterThanOrEqual(25);
   }
   // Without a parent the window keeps Electron's placement.
   created.length = 0;
   openThreadWindow("thread-without-parent");
-  expect((created[0] as BrowserWindowConstructorOptions).x).toBeUndefined();
+  expect(created[0]?.x).toBeUndefined();
 });
