@@ -1,5 +1,6 @@
 /**
- * Mail tracking services: the hosts their open pixels load from. The reader
+ * Mail tracking services: the hosts their open pixels load from, and below
+ * them the open-pixel paths they use on senders' own domains. The reader
  * strips these URLs from every message, even when remote images are allowed,
  * so opening a message never tells the sender it was read.
  *
@@ -45,7 +46,7 @@ export const TRACKERS: readonly Tracker[] = [
   { name: "beehiiv", hosts: ["beehiiv.com"], path: /\/o\/|open/i },
   { name: "Buttondown", hosts: ["buttondown.email", "buttondown.com"], path: OPEN },
   { name: "Ghost", hosts: ["ghost.io"], path: /\/o\/|open/i },
-  { name: "Klaviyo", hosts: ["klaviyomail.com", "trk.klaviyo.com"] },
+  { name: "Klaviyo", hosts: ["klaviyomail.com", "trk.klaviyo.com", /(^|\.)klclick\d*\.com$/i] },
   { name: "Omnisend", hosts: ["omnisend.com", "omnisrc.com"], path: OPEN },
   { name: "Moosend", hosts: ["moosend.com", "moosend-mail.com"], path: OPEN },
   { name: "SendPulse", hosts: ["stat-pulse.com"] },
@@ -83,7 +84,7 @@ export const TRACKERS: readonly Tracker[] = [
   { name: "Heap", hosts: ["heapanalytics.com"] },
   { name: "Pendo", hosts: ["pendo.io"], path: /\/data\/|ptm|track/i },
   { name: "Google Analytics", hosts: ["google-analytics.com", "analytics.google.com"] },
-  { name: "Facebook", hosts: ["facebook.com"], path: /^\/tr\b/i },
+  { name: "Facebook", hosts: ["facebook.com"], path: /^\/tr\b|^\/email_open_log_pic\.php/i },
   { name: "LinkedIn", hosts: ["linkedin.com"], path: /\/emimp\//i },
   { name: "Medium", hosts: ["medium.com"], path: /\/_\/stat/i },
   { name: "Quora", hosts: ["quora.com"], path: /mark_read|email_track/i },
@@ -138,6 +139,53 @@ export const TRACKERS: readonly Tracker[] = [
   { name: "Mailspring", hosts: ["getmailspring.com"], path: /open/i },
 ];
 
+/**
+ * Open pixels a sender serves from its own branded tracking domain, such as
+ * `links.example.com` set up as a CNAME to the service. The host says nothing,
+ * so these match the path and query, and only shapes no ordinary image has:
+ * each needs the service's own token format, not just a short path like `/o/`.
+ */
+export interface TrackingPath {
+  readonly name: string;
+  /** Matched against the decoded path and query, starting at `/`. */
+  readonly path: RegExp;
+  /** Narrows a shape that is distinctive only on the service's usual host name. */
+  readonly host?: RegExp;
+}
+
+const IMAGE_FILE = /\.(?:png|jpe?g|gif|webp|avif|svg|bmp|ico)$/i;
+
+export const TRACKING_PATHS: readonly TrackingPath[] = [
+  // SendGrid link branding: /wf/open?upn=<token>
+  { name: "SendGrid", path: /^\/wf\/open\?(?:[^#]*&)?upn=/i },
+  // Salesforce Marketing Cloud: open.aspx with an ffcb10- token, or a newer token with bmt=0
+  { name: "Salesforce Marketing Cloud", path: /^\/open\.aspx\?(?:ffcb10-|[^#]*&bmt=0(?:&|$))/i },
+  // Mailgun: /o/ and a zlib+base64url token (eJ...); on its default email.* host any token
+  { name: "Mailgun", path: /^\/o\/eJ[\w-]{16,}/ },
+  { name: "Mailgun", host: /^email\./i, path: /^\/o\/[\w.~=-]+$/ },
+  // Mailchimp and Mandrill on a custom domain: /track/open.php?u=<user>&id=<hex> or ?p=<token>
+  { name: "Mailchimp", path: /^\/track\/open\.php\?(?:u=\d+&id=[0-9a-f]{10}|p=)/i },
+  // HubSpot marketing (/e3t/Cto/) and sales (/e1t/o/<n>/)
+  { name: "HubSpot", path: /^\/e3t\/[BC]to\/|^\/e1t\/o\/\d+\// },
+  // Amazon SES custom open domain: /CI0/<SES message id>/<token>
+  {
+    name: "Amazon SES",
+    path: /^\/CI0\/[0-9a-f]{16}-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}-0{6}\//,
+  },
+  // Customer.io: /e/o/<base64 JSON, so eyJ...>
+  { name: "Customer.io", path: /^\/e\/o\/eyJ[\w=-]{8,}/ },
+  // Klaviyo: /o/<ULID>
+  { name: "Klaviyo", path: /^\/o\/01[0-9A-HJKMNP-TV-Z]{24}$/ },
+  // Iterable: /e/eo?_t=<hex>&_m=<hex>
+  { name: "Iterable", path: /^\/e\/eo\?_t=[0-9a-f]{32}&/i },
+  // SparkPost: /q/<token>~~/<token>~/
+  { name: "SparkPost", path: /^\/q\/[\w-]+~~\/[\w-]+~\// },
+  // Brevo: /tr/op/<long token>
+  { name: "Brevo", path: /^\/tr\/op\/[\w-]{40,}/ },
+  // Mailjet: /oo/<id>/<8 chars>/e.gif
+  { name: "Mailjet", path: /^\/oo\/[a-z0-9]+\/[a-z0-9]{8}\/e\.gif$/i },
+];
+
 const hostMatches = (host: string, pattern: string | RegExp) =>
   typeof pattern === "string"
     ? host === pattern || host.endsWith(`.${pattern}`)
@@ -181,6 +229,10 @@ export function trackerForUrl(url: URL): string | undefined {
     if (!tracker.hosts.some((h) => hostMatches(host, h))) continue;
     if (tracker.path && !tracker.path.test(path)) continue;
     return tracker.name;
+  }
+  for (const tracker of TRACKING_PATHS) {
+    if (tracker.host && (!tracker.host.test(host) || IMAGE_FILE.test(path))) continue;
+    if (tracker.path.test(path)) return tracker.name;
   }
   return undefined;
 }

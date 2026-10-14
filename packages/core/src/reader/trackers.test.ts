@@ -61,6 +61,64 @@ describe("trackerFor", () => {
     }
   });
 
+  it("matches open pixels on senders' own tracking domains by their path", () => {
+    const ses = "010101a1380f7084-247bebc7-2eb9-4767-9ba9-ef04624db6d0-000000";
+    const cases: [string, string][] = [
+      ["https://ablink.mail.example.com/wf/open?upn=1", "SendGrid"],
+      ["https://url7807.example.org/wf/open?upn=u001.3nc6YRwJabc", "SendGrid"],
+      ["https://links.e.example.com/open.aspx?ffcb10-abc", "Salesforce Marketing Cloud"],
+      [
+        "https://click.e.example.com/open.aspx?AHSZUNUYITHEHFYXA3IUMONHVM.10201&d=10201&bmt=0",
+        "Salesforce Marketing Cloud",
+      ],
+      ["https://email.mailgun.example.com/o/abc", "Mailgun"],
+      ["https://email-link.example.com/o/eJw8kk1vszAQhP9KxBkSWwZs", "Mailgun"],
+      [
+        "http://mail.example.com/track/open.php?u=30067758&amp;id=7a922cb3e1f04b5f9c2e",
+        "Mailchimp",
+      ],
+      ["https://click.example.com/track/open.php?p=eyJzIjoiabc", "Mailchimp"],
+      ["https://news.example.com/e3t/Cto/RI+113/cYXSn04/VWPYCD3abc", "HubSpot"],
+      ["https://t.example.com/e1t/o/5/f18dQhb0S7kv8?si=1&pi=01cd79e8", "HubSpot"],
+      [`http://59.email.example.com/CI0/${ses}/5R-24aG3abc=452`, "Amazon SES"],
+      ["https://email.example.ai/e/o/eyJlbWFpbF9pZCI6ImRnVDN3QXNMQUk2", "Customer.io"],
+      ["https://trk.example.com/o/01M4VYFVXZMP7D8BC4W6RZZV41", "Klaviyo"],
+      ["https://ctrk.klclick1.com/o/01M4VYFVXZMP7D8BC4W6RZZV41", "Klaviyo"],
+      [
+        "https://links.example.com/e/eo?_t=248ca2e0c4e04f6b9a1f3c2d5e6f7a8b&_m=8f6991aa&_e=x",
+        "Iterable",
+      ],
+      ["http://links1.example.com/q/ed8vQbZhAIiiOgJvGNXFeQ~~/AARGbBA~/71-Y9o~~", "SparkPost"],
+      ["https://r.forms.example.com/tr/op/6q17wIVoAbCdEfGhIjKlMnOpQrStUvWxYz0123456789", "Brevo"],
+      ["https://track.example.com/oo/abc123/abcd1234/e.gif", "Mailjet"],
+      ["https://www.facebook.com/email_open_log_pic.php?mid=1", "Facebook"],
+    ];
+    for (const [url, name] of cases) assert.strictEqual(trackerFor(url), name, url);
+  });
+
+  it("leaves ordinary images with similar paths alone", () => {
+    for (const url of [
+      "https://email.example.com/o/logo.png",
+      "https://email.example.com/o/images/hero",
+      "https://cdn.example.com/o/abc",
+      "https://cdn.example.com/o/eJ.png",
+      "https://www.example.com/wf/opener.png",
+      "https://www.example.com/wf/open/hero.png",
+      "https://www.example.com/open.aspx?page=2",
+      "https://shop.example.com/track/open-hours.png",
+      "https://shop.example.com/track/open.php?id=1",
+      "https://www.example.com/e3t/hero.png",
+      "https://www.example.com/e/o/hero.png",
+      "https://www.example.com/q/abc/def.png",
+      "https://www.example.com/tr/op/logo.png",
+      "https://www.example.com/oo/abc/logo.gif",
+      "https://www.example.com/o/products",
+      "https://www.example.com/CI0/logo.png",
+    ]) {
+      assert.strictEqual(trackerFor(url), undefined, url);
+    }
+  });
+
   it("matches a host by suffix only at a dot", () => {
     assert.strictEqual(trackerFor("https://notmailtrack.io/x.png"), undefined);
     assert.strictEqual(trackerFor("https://a.mailtrack.io/x.png"), "Mailtrack");
