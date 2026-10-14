@@ -83,8 +83,8 @@ msgid "{active, plural, one {Downloads (# in progress)} other {Downloads (# in p
 msgstr "{active, plural, other {ダウンロード（#件進行中）}}"
 
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
-msgid "{affected, plural, one {# account needs attention} other {# accounts need attention}}"
-msgstr "{affected, plural, other {#個のアカウントに対応が必要です}}"
+msgid "{affected, plural, one {Sync failed for # account} other {Sync failed for # accounts}}"
+msgstr "{affected, plural, other {#個のアカウントで同期に失敗しました}}"
 
 #: src/renderer/src/app/use-view-title.ts
 msgid "{baseTitle}: {user}"
@@ -5900,17 +5900,6 @@ msgstr "同期を再開する"
 msgid "Retention windows take precedence. Starred messages, retained message texts, drafts and outbox messages are kept even when the limit is exceeded. Zero disables the budget."
 msgstr "保存期間を優先します。上限を超えても、スター付きメール、保存期間内のメッセージ本文、下書き、送信トレイのメールは保持します。ゼロにすると容量制限を無効にします。"
 
-#: src/renderer/src/app/NoAccounts.tsx
-#: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
-#: src/renderer/src/features/downloads/Downloads.tsx
-#: src/renderer/src/features/reader/body/MessageBodyShell.tsx
-msgid "Retry"
-msgstr "再試行"
-
-#: src/renderer/src/features/downloads/Downloads.tsx
-msgid "Retry {name}"
-msgstr "{name} を再試行"
-
 #: src/renderer/src/features/compose/components/AddressFields.tsx
 msgid "Revert"
 msgstr "変更を元に戻す"
@@ -6902,6 +6891,7 @@ msgid "Sync couldn't finish. It will retry automatically."
 msgstr "同期を完了できませんでした。自動的に再試行します。"
 
 #: src/renderer/src/features/overview/Overview.tsx
+#: src/renderer/src/features/sidebar/SidebarFooter.tsx
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Sync failed"
 msgstr "同期に失敗しました"
@@ -6919,10 +6909,6 @@ msgstr "同期状態"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Sync now"
 msgstr "今すぐ同期する"
-
-#: src/renderer/src/features/sidebar/SidebarFooter.tsx
-msgid "Sync problems"
-msgstr "同期の問題"
 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Sync window"
@@ -7629,11 +7615,19 @@ msgstr "アプリが前面にある場合、または電源に接続されてい
 msgid "Trusted authentication service (optional)"
 msgstr "信頼する認証サービス（任意）"
 
+#: src/renderer/src/app/NoAccounts.tsx
+#: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
+#: src/renderer/src/features/downloads/Downloads.tsx
 #: src/renderer/src/features/feedback/Feedback.tsx
 #: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/reader/body/MessageBodyShell.tsx
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Try again"
 msgstr "再試行"
+
+#: src/renderer/src/features/downloads/Downloads.tsx
+msgid "Try downloading {name} again"
+msgstr "{name} のダウンロードを再試行"
 
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Try from:name or has:attachment"

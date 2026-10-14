@@ -68,7 +68,7 @@ export function SidebarFooter({
                   >
                     <Popover.Popup className={`${popupSurface} w-[22rem] p-3 ${popupMotion}`}>
                       <Popover.Title className="mb-2 text-body font-semibold">
-                        <Trans>Sync problems</Trans>
+                        <Trans>Sync failed</Trans>
                       </Popover.Title>
                       <SyncFailureDetails
                         accounts={accounts}

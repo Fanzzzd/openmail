@@ -83,8 +83,8 @@ msgid "{active, plural, one {Downloads (# in progress)} other {Downloads (# in p
 msgstr "{active, plural, one {Загрузки (# выполняется)} few {Загрузки (# выполняются)} many {Загрузки (# выполняется)} other {Загрузки (# выполняется)}}"
 
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
-msgid "{affected, plural, one {# account needs attention} other {# accounts need attention}}"
-msgstr "{affected, plural, one {# учётная запись требует внимания} few {# учётные записи требуют внимания} many {# учётных записей требуют внимания} other {# учётной записи требуют внимания}}"
+msgid "{affected, plural, one {Sync failed for # account} other {Sync failed for # accounts}}"
+msgstr "{affected, plural, one {Не удалось синхронизировать # учётную запись} few {Не удалось синхронизировать # учётные записи} many {Не удалось синхронизировать # учётных записей} other {Не удалось синхронизировать # учётной записи}}"
 
 #: src/renderer/src/app/use-view-title.ts
 msgid "{baseTitle}: {user}"
@@ -5900,17 +5900,6 @@ msgstr "Возобновить синхронизацию"
 msgid "Retention windows take precedence. Starred messages, retained message texts, drafts and outbox messages are kept even when the limit is exceeded. Zero disables the budget."
 msgstr "Сроки хранения имеют приоритет. Сообщения со звёздочкой, сохраняемые тексты сообщений, черновики и сообщения в исходящих остаются даже при превышении лимита. Ноль отключает лимит."
 
-#: src/renderer/src/app/NoAccounts.tsx
-#: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
-#: src/renderer/src/features/downloads/Downloads.tsx
-#: src/renderer/src/features/reader/body/MessageBodyShell.tsx
-msgid "Retry"
-msgstr "Повторить"
-
-#: src/renderer/src/features/downloads/Downloads.tsx
-msgid "Retry {name}"
-msgstr "Повторить {name}"
-
 #: src/renderer/src/features/compose/components/AddressFields.tsx
 msgid "Revert"
 msgstr "Отменить изменения"
@@ -6902,9 +6891,10 @@ msgid "Sync couldn't finish. It will retry automatically."
 msgstr "Не удалось завершить синхронизацию. Она будет повторена автоматически."
 
 #: src/renderer/src/features/overview/Overview.tsx
+#: src/renderer/src/features/sidebar/SidebarFooter.tsx
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Sync failed"
-msgstr "Синхронизация не удалась"
+msgstr "Не удалось синхронизировать"
 
 #: src/renderer/src/features/sidebar/SidebarFooter.tsx
 msgid "Sync failed ({count})"
@@ -6919,10 +6909,6 @@ msgstr "Состояние синхронизации"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Sync now"
 msgstr "Синхронизировать сейчас"
-
-#: src/renderer/src/features/sidebar/SidebarFooter.tsx
-msgid "Sync problems"
-msgstr "Проблемы синхронизации"
 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Sync window"
@@ -7629,11 +7615,19 @@ msgstr "Сортировка работает, когда приложение �
 msgid "Trusted authentication service (optional)"
 msgstr "Доверенная служба аутентификации (необязательно)"
 
+#: src/renderer/src/app/NoAccounts.tsx
+#: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
+#: src/renderer/src/features/downloads/Downloads.tsx
 #: src/renderer/src/features/feedback/Feedback.tsx
 #: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/reader/body/MessageBodyShell.tsx
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Try again"
 msgstr "Повторить"
+
+#: src/renderer/src/features/downloads/Downloads.tsx
+msgid "Try downloading {name} again"
+msgstr "Повторить загрузку {name}"
 
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Try from:name or has:attachment"

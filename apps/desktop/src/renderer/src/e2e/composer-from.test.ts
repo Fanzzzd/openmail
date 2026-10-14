@@ -106,7 +106,7 @@ it("best-From still changes the verified sender for new mail", async () => {
   await eventually(() => expect(from().textContent).toContain("alias@example.com"));
 });
 
-it("Retry sends current edits in one recovery request without first switching to local-only", async () => {
+it("Try again sends current edits in one recovery request without first switching to local-only", async () => {
   current = await flow({
     storedDraft: {
       message: { ...draft, cc: [], bcc: [], attachments: [] },
@@ -114,9 +114,9 @@ it("Retry sends current edits in one recovery request without first switching to
     },
   });
   const h = current;
-  await eventually(() => expect(screen.getByRole("button", { name: "Retry" })).toBeTruthy());
+  await eventually(() => expect(screen.getByRole("button", { name: "Try again" })).toBeTruthy());
   edit("Subject", "Current edits");
-  clickButton("Retry");
+  clickButton("Try again");
   await eventually(() =>
     expect(h.requests.filter((request) => request.tag === "RecoverDraft")).toHaveLength(1),
   );

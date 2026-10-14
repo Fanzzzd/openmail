@@ -93,8 +93,8 @@ msgid "{active, plural, one {Downloads (# in progress)} other {Downloads (# in p
 msgstr "{active, plural, other {下载（# 个进行中）}}"
 
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
-msgid "{affected, plural, one {# account needs attention} other {# accounts need attention}}"
-msgstr "{affected, plural, other {# 个账户需要处理}}"
+msgid "{affected, plural, one {Sync failed for # account} other {Sync failed for # accounts}}"
+msgstr "{affected, plural, other {# 个账户同步失败}}"
 
 #: src/renderer/src/app/use-view-title.ts
 msgid "{baseTitle}: {user}"
@@ -5910,17 +5910,6 @@ msgstr "恢复同步"
 msgid "Retention windows take precedence. Starred messages, retained message texts, drafts and outbox messages are kept even when the limit is exceeded. Zero disables the budget."
 msgstr "保留期限优先。即使超过上限，也会保留星标邮件、期限内的消息文本、草稿和发件箱邮件。设为零可停用容量限制。"
 
-#: src/renderer/src/app/NoAccounts.tsx
-#: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
-#: src/renderer/src/features/downloads/Downloads.tsx
-#: src/renderer/src/features/reader/body/MessageBodyShell.tsx
-msgid "Retry"
-msgstr "重试"
-
-#: src/renderer/src/features/downloads/Downloads.tsx
-msgid "Retry {name}"
-msgstr "重试 {name}"
-
 #: src/renderer/src/features/compose/components/AddressFields.tsx
 msgid "Revert"
 msgstr "还原"
@@ -6912,6 +6901,7 @@ msgid "Sync couldn't finish. It will retry automatically."
 msgstr "同步未能完成，稍后会自动重试。"
 
 #: src/renderer/src/features/overview/Overview.tsx
+#: src/renderer/src/features/sidebar/SidebarFooter.tsx
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Sync failed"
 msgstr "同步失败"
@@ -6929,10 +6919,6 @@ msgstr "同步状态"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Sync now"
 msgstr "立即同步"
-
-#: src/renderer/src/features/sidebar/SidebarFooter.tsx
-msgid "Sync problems"
-msgstr "同步问题"
 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Sync window"
@@ -7639,11 +7625,19 @@ msgstr "应用在前台或接电时生成整理建议。建议须经你确认。
 msgid "Trusted authentication service (optional)"
 msgstr "可信认证服务（可选）"
 
+#: src/renderer/src/app/NoAccounts.tsx
+#: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
+#: src/renderer/src/features/downloads/Downloads.tsx
 #: src/renderer/src/features/feedback/Feedback.tsx
 #: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/reader/body/MessageBodyShell.tsx
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Try again"
 msgstr "重试"
+
+#: src/renderer/src/features/downloads/Downloads.tsx
+msgid "Try downloading {name} again"
+msgstr "重新下载 {name}"
 
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Try from:name or has:attachment"

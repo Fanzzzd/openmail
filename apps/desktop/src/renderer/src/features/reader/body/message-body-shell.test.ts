@@ -13,7 +13,7 @@ vi.mock("./MessageBody", () => {
   return { EmailFrame: () => createElement("p", null, "message body") };
 });
 
-it("shows Retry when the body chunk fails to load, and Retry loads it again", async () => {
+it("shows Try again when the body chunk fails to load, and it loads the chunk again", async () => {
   const dom = testDom();
   const consoleError = vi.spyOn(console, "error").mockImplementation(constVoid);
   globalI18n.load("en", {});
@@ -44,7 +44,7 @@ it("shows Retry when the body chunk fails to load, and Retry loads it again", as
 
     chunk.fail = false;
     const retry = alert?.querySelector("button");
-    expect(retry?.textContent).toBe("Retry");
+    expect(retry?.textContent).toBe("Try again");
     act(() => retry?.click());
     expect(dom.element.querySelector("output[aria-busy]")).not.toBeNull();
     await act(() => loadMessageBody());

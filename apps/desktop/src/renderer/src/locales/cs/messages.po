@@ -83,8 +83,8 @@ msgid "{active, plural, one {Downloads (# in progress)} other {Downloads (# in p
 msgstr "{active, plural, one {Stahování (# probíhá)} few {Stahování (# probíhají)} many {Stahování (# probíhá)} other {Stahování (# probíhá)}}"
 
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
-msgid "{affected, plural, one {# account needs attention} other {# accounts need attention}}"
-msgstr "{affected, plural, one {# účet vyžaduje pozornost} few {# účty vyžadují pozornost} many {# účtu vyžaduje pozornost} other {# účtů vyžaduje pozornost}}"
+msgid "{affected, plural, one {Sync failed for # account} other {Sync failed for # accounts}}"
+msgstr "{affected, plural, one {Synchronizace se nezdařila u # účtu} few {Synchronizace se nezdařila u # účtů} many {Synchronizace se nezdařila u # účtu} other {Synchronizace se nezdařila u # účtů}}"
 
 #: src/renderer/src/app/use-view-title.ts
 msgid "{baseTitle}: {user}"
@@ -5900,17 +5900,6 @@ msgstr "Obnovit synchronizaci"
 msgid "Retention windows take precedence. Starred messages, retained message texts, drafts and outbox messages are kept even when the limit is exceeded. Zero disables the budget."
 msgstr "Doba uchování má přednost. Zprávy s hvězdičkou, uchovávané texty zpráv, koncepty a zprávy ve složce k odeslání zůstanou i při překročení limitu. Nula vypne limit."
 
-#: src/renderer/src/app/NoAccounts.tsx
-#: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
-#: src/renderer/src/features/downloads/Downloads.tsx
-#: src/renderer/src/features/reader/body/MessageBodyShell.tsx
-msgid "Retry"
-msgstr "Zkusit znovu"
-
-#: src/renderer/src/features/downloads/Downloads.tsx
-msgid "Retry {name}"
-msgstr "Zkusit znovu {name}"
-
 #: src/renderer/src/features/compose/components/AddressFields.tsx
 msgid "Revert"
 msgstr "Vrátit změny"
@@ -6902,6 +6891,7 @@ msgid "Sync couldn't finish. It will retry automatically."
 msgstr "Synchronizaci se nepodařilo dokončit. Automaticky se zopakuje."
 
 #: src/renderer/src/features/overview/Overview.tsx
+#: src/renderer/src/features/sidebar/SidebarFooter.tsx
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Sync failed"
 msgstr "Synchronizace se nezdařila"
@@ -6919,10 +6909,6 @@ msgstr "Stav synchronizace"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Sync now"
 msgstr "Synchronizovat nyní"
-
-#: src/renderer/src/features/sidebar/SidebarFooter.tsx
-msgid "Sync problems"
-msgstr "Problémy se synchronizací"
 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Sync window"
@@ -7629,11 +7615,19 @@ msgstr "Návrhy třídění se vytvářejí, když je aplikace v popředí nebo 
 msgid "Trusted authentication service (optional)"
 msgstr "Důvěryhodná ověřovací služba (volitelné)"
 
+#: src/renderer/src/app/NoAccounts.tsx
+#: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
+#: src/renderer/src/features/downloads/Downloads.tsx
 #: src/renderer/src/features/feedback/Feedback.tsx
 #: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/reader/body/MessageBodyShell.tsx
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Try again"
 msgstr "Zkusit znovu"
+
+#: src/renderer/src/features/downloads/Downloads.tsx
+msgid "Try downloading {name} again"
+msgstr "Zkusit znovu stáhnout {name}"
 
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Try from:name or has:attachment"

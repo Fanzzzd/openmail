@@ -83,8 +83,8 @@ msgid "{active, plural, one {Downloads (# in progress)} other {Downloads (# in p
 msgstr "{active, plural, one {Descargas (# en curso)} other {Descargas (# en curso)}}"
 
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
-msgid "{affected, plural, one {# account needs attention} other {# accounts need attention}}"
-msgstr "{affected, plural, one {# cuenta requiere atención} other {# cuentas requieren atención}}"
+msgid "{affected, plural, one {Sync failed for # account} other {Sync failed for # accounts}}"
+msgstr "{affected, plural, one {Error de sincronización en # cuenta} other {Error de sincronización en # cuentas}}"
 
 #: src/renderer/src/app/use-view-title.ts
 msgid "{baseTitle}: {user}"
@@ -5900,17 +5900,6 @@ msgstr "Reanudar sincronización"
 msgid "Retention windows take precedence. Starred messages, retained message texts, drafts and outbox messages are kept even when the limit is exceeded. Zero disables the budget."
 msgstr "Los plazos de conservación tienen prioridad. Los mensajes destacados, los textos de mensajes conservados, los borradores y los mensajes de la bandeja de salida se mantienen aunque se supere el límite. Cero desactiva el límite."
 
-#: src/renderer/src/app/NoAccounts.tsx
-#: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
-#: src/renderer/src/features/downloads/Downloads.tsx
-#: src/renderer/src/features/reader/body/MessageBodyShell.tsx
-msgid "Retry"
-msgstr "Reintentar"
-
-#: src/renderer/src/features/downloads/Downloads.tsx
-msgid "Retry {name}"
-msgstr "Reintentar {name}"
-
 #: src/renderer/src/features/compose/components/AddressFields.tsx
 msgid "Revert"
 msgstr "Revertir"
@@ -6902,6 +6891,7 @@ msgid "Sync couldn't finish. It will retry automatically."
 msgstr "No se pudo completar la sincronización. Se volverá a intentar automáticamente."
 
 #: src/renderer/src/features/overview/Overview.tsx
+#: src/renderer/src/features/sidebar/SidebarFooter.tsx
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Sync failed"
 msgstr "Error de sincronización"
@@ -6919,10 +6909,6 @@ msgstr "Estado de sincronización"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Sync now"
 msgstr "Sincronizar ahora"
-
-#: src/renderer/src/features/sidebar/SidebarFooter.tsx
-msgid "Sync problems"
-msgstr "Problemas de sincronización"
 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Sync window"
@@ -7629,11 +7615,19 @@ msgstr "Las sugerencias se generan cuando la aplicación está en primer plano o
 msgid "Trusted authentication service (optional)"
 msgstr "Servicio de autenticación de confianza (opcional)"
 
+#: src/renderer/src/app/NoAccounts.tsx
+#: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
+#: src/renderer/src/features/downloads/Downloads.tsx
 #: src/renderer/src/features/feedback/Feedback.tsx
 #: src/renderer/src/features/mail-list/MessageList.tsx
+#: src/renderer/src/features/reader/body/MessageBodyShell.tsx
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Try again"
 msgstr "Reintentar"
+
+#: src/renderer/src/features/downloads/Downloads.tsx
+msgid "Try downloading {name} again"
+msgstr "Reintentar la descarga de {name}"
 
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Try from:name or has:attachment"

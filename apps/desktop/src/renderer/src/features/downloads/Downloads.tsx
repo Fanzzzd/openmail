@@ -157,8 +157,8 @@ function DownloadRow({ item }: { item: DownloadItem }) {
         )}
         {failed && (
           <RowAction
-            tip={t`Retry`}
-            label={t`Retry ${name}`}
+            tip={t`Try again`}
+            label={t`Try downloading ${name} again`}
             icon={RotateCw}
             onClick={() => command("retry")}
           />

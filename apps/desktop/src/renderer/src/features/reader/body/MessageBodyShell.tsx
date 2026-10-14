@@ -19,7 +19,7 @@ export function loadMessageBody(): Promise<void> {
       loaded = await import("./MessageBody");
     } catch (error) {
       loaded = error instanceof Error ? error : new Error(String(error));
-      // A failed load is not cached, so Retry imports again.
+      // A failed load is not cached, so Try again imports again.
       loading = undefined;
     }
     for (const notify of listeners) notify();
@@ -71,7 +71,7 @@ function BodyFailed({ onRetry }: { onRetry: () => void }) {
     <div role="alert" className="mt-4 flex items-center gap-3 text-a11y-muted">
       <span>{t`Couldn't load this message.`}</span>
       <button type="button" onClick={onRetry} className="font-medium text-a11y-accent">
-        {t`Retry`}
+        {t`Try again`}
       </button>
     </div>
   );
@@ -105,7 +105,7 @@ function MessageBodyOrPlaceholder(props: ComponentProps<MessageBodyModule["Messa
   );
 }
 
-/** MessageBody from the body chunk, with the placeholder until it loads and Retry if it fails. */
+/** MessageBody from the body chunk, with the placeholder until it loads and Try again if it fails. */
 export function LazyMessageBody(props: ComponentProps<MessageBodyModule["MessageBody"]>) {
   return (
     <MessageBodyBoundary>
@@ -119,7 +119,7 @@ function EmailFrameOrPlaceholder(props: ComponentProps<MessageBodyModule["EmailF
   return body ? <body.EmailFrame {...props} /> : <FramePlaceholder background={props.background} />;
 }
 
-/** EmailFrame from the body chunk, with the placeholder box until it loads and Retry if it fails. */
+/** EmailFrame from the body chunk, with the placeholder box until it loads and Try again if it fails. */
 export function LazyEmailFrame(props: ComponentProps<MessageBodyModule["EmailFrame"]>) {
   return (
     <MessageBodyBoundary>

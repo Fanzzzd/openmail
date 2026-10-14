@@ -282,7 +282,8 @@ export function ReauthNotice({
 
 /**
  * Sign-in, keychain and sync problems. One affected account shows its lines; two or more fold
- * into one "N accounts need attention" line that opens to show them.
+ * into one "Sync failed for N accounts" line that opens to show them. "Sync failed" is the one
+ * name for this state: the sidebar footer and its popover use it too.
  */
 export function AccountIssues({
   expired,
@@ -321,8 +322,8 @@ export function AccountIssues({
         <CircleAlert aria-hidden className={icon} />
         <span className="min-w-0 flex-1 truncate font-medium">
           {plural(affected, {
-            one: "# account needs attention",
-            other: "# accounts need attention",
+            one: "Sync failed for # account",
+            other: "Sync failed for # accounts",
           })}
         </span>
         <ChevronRight

@@ -606,14 +606,12 @@ it("an undocked sidebar moves sign-in and sync failures above the list", async (
   expect(within(list()).queryByText(/Couldn't sync/)).toBeNull();
   // The footer's failure is a button that opens the same lines, with the reason written out.
   fireEvent.click(screen.getByRole("button", { name: "Sync failed (1)" }));
-  const problems = await screen.findByRole("dialog", { name: "Sync problems" });
+  const problems = await screen.findByRole("dialog", { name: "Sync failed" });
   expect(within(problems).getByText("Couldn't sync me@gmail.com.")).toBeTruthy();
   expect(within(problems).getByRole("listitem").textContent).toMatch(/^me@gmail\.com: /);
   expect(problems.textContent).not.toContain(h.account.id);
   fireEvent.keyDown(problems, { key: "Escape" });
-  await eventually(() =>
-    expect(screen.queryByRole("dialog", { name: "Sync problems" })).toBeNull(),
-  );
+  await eventually(() => expect(screen.queryByRole("dialog", { name: "Sync failed" })).toBeNull());
 
   resize(800);
   await eventually(() =>

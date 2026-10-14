@@ -455,7 +455,7 @@ it.each(["retry", "local"] as const)(
     writeBody("Keep these edits");
     h.server.failNext = new PermanentError({ message: "Rejected draft" });
     await advance(2000);
-    await eventually(() => expect(screen.getByRole("button", { name: "Retry" })).toBeTruthy());
+    await eventually(() => expect(screen.getByRole("button", { name: "Try again" })).toBeTruthy());
     expect(h.server.draftLog).toHaveLength(0);
     const drafts = await h.run(h.m.reading.threads({ mailbox: "drafts" }));
     const draft = drafts[0];
@@ -464,7 +464,7 @@ it.each(["retry", "local"] as const)(
       "Keep these edits",
     );
     edit("Subject", "Newest recovery edits");
-    clickButton(action === "retry" ? "Retry" : "Keep local copy");
+    clickButton(action === "retry" ? "Try again" : "Keep local copy");
     await eventually(async () =>
       expect((await h.run(h.m.compose.openDraft(draft.id))).message.subject).toBe(
         "Newest recovery edits",
@@ -473,7 +473,7 @@ it.each(["retry", "local"] as const)(
     if (action === "retry") {
       await eventually(() => expect(h.server.draftLog).toHaveLength(1));
       expect((await h.run(h.m.compose.openDraft(draft.id))).synced).toBe(true);
-      expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
+      expect(screen.queryByRole("button", { name: "Try again" })).toBeNull();
     } else {
       await eventually(() =>
         expect(screen.getByRole("button", { name: "Resume syncing" })).toBeTruthy(),

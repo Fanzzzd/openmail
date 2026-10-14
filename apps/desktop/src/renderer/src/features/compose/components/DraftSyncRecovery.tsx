@@ -44,7 +44,7 @@ export function DraftSyncRecovery({
           disabled={busy}
           className={buttonSecondary}
           onClick={() => onRecover("retry")}
-        >{t`Retry`}</button>
+        >{t`Try again`}</button>
         <button
           type="button"
           disabled={busy}

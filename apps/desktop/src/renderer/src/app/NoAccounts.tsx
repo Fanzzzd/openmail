@@ -5,7 +5,7 @@ import { canCall } from "../lib/platform";
 import { accountsAtom } from "../state/queries";
 import { buttonPrimary, buttonSecondary, titlebarRow } from "../ui/styles";
 
-/** The main pane with no account: a load error with Retry, or Add account. */
+/** The main pane with no account: a load error with Try again, or Add account. */
 export function NoAccounts({
   adding,
   onAdd,
@@ -29,7 +29,7 @@ export function NoAccounts({
             {t`Couldn't load your accounts.`} {causeText(i18n, accounts.cause)}
           </p>
           <button type="button" className={buttonSecondary} onClick={refresh}>
-            {t`Retry`}
+            {t`Try again`}
           </button>
         </div>
       ) : accounts._tag === "Success" && !adding ? (

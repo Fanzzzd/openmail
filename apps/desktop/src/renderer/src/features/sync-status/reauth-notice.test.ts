@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { setupI18n } from "@lingui/core";
+import { i18n, setupI18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
 import {
   KEYCHAIN_LOCKED_MESSAGE,
@@ -196,4 +196,24 @@ it("a sync failure's tooltip shows fixed text, never the stored provider respons
   expect(titles).toContain(
     `${ok.email}: Sync couldn't finish. It will retry automatically. The mail provider is limiting requests. Sync will try again later.`,
   );
+});
+
+it("two accounts with problems fold into one line under the same name as the sidebar's", () => {
+  // The folded line's plural reads the global catalog, as in the app.
+  i18n.loadAndActivate({ locale: "en", messages: {} });
+  const first = account();
+  const second = { ...account(), id: "gmail:you@gmail.com", email: "you@gmail.com" };
+  const shown = render(
+    createElement(MailStatusNotice, {
+      accounts: [first, second],
+      space: [first, second],
+      online: true,
+      syncState: { running: false, lastFinishedAt: 1, errors: [] },
+      accountIssues: true,
+      onReauth: vi.fn(),
+      onFocusList: vi.fn(),
+    }),
+  );
+  expect(shown).toContain("Sync failed for 2 accounts");
+  expect(shown).not.toContain("need attention");
 });
