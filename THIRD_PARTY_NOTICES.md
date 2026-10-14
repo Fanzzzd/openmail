@@ -30,7 +30,7 @@ The packaged app contains Electron and npm packages in two forms:
 
 `scripts/check-licenses.mjs` fails when a shipped package has no license file and no notice in this repository.
 
-Electron (MIT) and the Chromium it embeds, with Chromium's third-party components such as FFmpeg, ship their notices in `OpenMail.app/Contents/Resources/licenses/electron/`: `LICENSE` and `LICENSES.chromium.html`. The build copies both from `node_modules/electron/dist/` (`apps/desktop/build/electron-licenses.cjs`). Packaging stops when they are missing, and `scripts/smoke-dist.mjs` fails on a packaged app without them.
+Electron (MIT) and the Chromium it embeds, with Chromium's third-party components such as FFmpeg, ship their notices in `OpenMail.app/Contents/Resources/licenses/electron/`: `LICENSE` and `LICENSES.chromium.html`. The dist script copies both from `node_modules/electron/dist/`, or reads them from the Electron zip for the installed version when that folder lacks them (`apps/desktop/build/electron-licenses.cjs`). Packaging stops when they are missing, and `scripts/smoke-dist.mjs` fails on a packaged app without them.
 
 The license texts named in this file are in [docs/licenses/](docs/licenses/). The packaged app ships them in `OpenMail.app/Contents/Resources/licenses/`.
 

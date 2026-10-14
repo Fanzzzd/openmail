@@ -18,6 +18,9 @@ apps/mobile/android/
 # Built-in OAuth client values for local builds (docs/release.md)
 apps/desktop/oauth-clients.local.json
 
+# Electron's license notices, prepared by the desktop dist script (build/electron-licenses.cjs)
+apps/desktop/build/generated/
+
 # Next.js build state for the docs site
 apps/docs/.next/
 apps/docs/.source/

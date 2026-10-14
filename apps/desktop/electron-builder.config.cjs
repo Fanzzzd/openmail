@@ -23,7 +23,7 @@ module.exports = {
     { from: "../../docs/licenses", to: "licenses" },
     // Packages Vite compiled into out/, with their license texts (bundled-licenses.ts).
     { from: "out/licenses", to: "licenses/bundled" },
-    // Electron's MIT license and Chromium's notices, from node_modules/electron/dist.
+    // Electron's MIT license and Chromium's notices, which the dist script prepares.
     ...require("./build/electron-licenses.cjs").electronLicenseResources(),
     { from: "build/contacts-locales", to: ".", filter: ["**/InfoPlist.strings"] },
     { from: "build/trayTemplate.png", to: "trayTemplate.png" },
