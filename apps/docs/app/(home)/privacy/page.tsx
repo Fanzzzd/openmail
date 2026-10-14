@@ -99,10 +99,7 @@ export default function PrivacyPage() {
             </td>
           </tr>
           <tr>
-            <td>
-              OAuth refresh tokens, IMAP and SMTP passwords, your Anthropic API key, and the GitHub
-              access token used for updates if you save one
-            </td>
+            <td>OAuth refresh tokens, IMAP and SMTP passwords and your Anthropic API key</td>
             <td>The macOS Keychain</td>
           </tr>
           <tr>
@@ -117,9 +114,19 @@ export default function PrivacyPage() {
               The same folder. It holds fixed fields only: time, provider, HTTP method, endpoint
               template, status code, failure category and an account hash keyed with a random secret
               that stays on your Mac. It contains no message content, addresses, full URLs or
-              tokens. A copied or attached export numbers accounts instead of showing the hash. It
-              is never uploaded. The Feedback window lets you attach it to an email that you send
-              yourself.
+              tokens. The secret is in <code>diagnostics.key</code> in the same folder. A copied or
+              attached export numbers accounts instead of showing the hash. It is never uploaded.
+              The Feedback window lets you attach it to an email that you send yourself.
+            </td>
+          </tr>
+          <tr>
+            <td>Copies of attachments you open in other apps</td>
+            <td>
+              <code>~/Library/Application Support/OpenMail/Opened Attachments</code>, also when you
+              set <code>OPENMAIL_HOME</code>. Copies you have not changed are deleted 7 days after
+              you last opened them. Copies you edited stay until you clear them in Settings → Local
+              cache. Time Machine skips this folder. If you set Open attachments from to Downloads,
+              copies go to your attachment folder instead and OpenMail does not delete them.
             </td>
           </tr>
         </tbody>
@@ -277,8 +284,10 @@ export default function PrivacyPage() {
       <ul>
         <li>Data stays on your Mac until you delete it.</li>
         <li>
-          Removing an account in Settings deletes its local mail, attachments and Keychain entry.
-          Mail on your provider's server is not affected.
+          Removing an account in Settings deletes its local mail, attachments and Keychain entry,
+          and the copies of its attachments you opened and did not change. Copies you edited stay
+          until you clear them in Settings → Local cache. Mail on your provider's server is not
+          affected.
         </li>
         <li>
           To revoke OpenMail's access at the provider, use{" "}
@@ -287,8 +296,9 @@ export default function PrivacyPage() {
         </li>
         <li>
           To remove everything, delete the app, the folder{" "}
-          <code>~/Library/Application Support/openmail</code>, and the OpenMail entries in Keychain
-          Access.
+          <code>~/Library/Application Support/openmail</code> (and{" "}
+          <code>~/Library/Application Support/OpenMail</code> if you set <code>OPENMAIL_HOME</code>
+          ), and the OpenMail entries in Keychain Access.
         </li>
       </ul>
 

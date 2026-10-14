@@ -35,10 +35,13 @@ OpenMail is in early testing. There is no public download yet. To use it, [build
 
 ## Where OpenMail keeps data
 
-| Data                                        | Location                                   |
-| ------------------------------------------- | ------------------------------------------ |
-| Mail, attachments, search index, settings   | `~/Library/Application Support/openmail`   |
-| Refresh tokens, IMAP passwords, AI API key  | macOS Keychain                             |
-| Your own OAuth client ID and secret, if any | `config.json` in the data folder, mode 600 |
+| Data                                        | Location                                                    |
+| ------------------------------------------- | ----------------------------------------------------------- |
+| Mail, attachments, search index, settings   | `~/Library/Application Support/openmail`                    |
+| Refresh tokens, IMAP passwords, AI API key  | macOS Keychain                                              |
+| Your own OAuth client ID and secret, if any | `config.json` in the data folder, mode 600                  |
+| Attachments you open in other apps          | `~/Library/Application Support/OpenMail/Opened Attachments` |
 
-Set the `OPENMAIL_HOME` environment variable to use a different data folder for the app, CLI and MCP server.
+Set the `OPENMAIL_HOME` environment variable to use a different data folder for the app, CLI and MCP server. Opened attachments stay in the app's own folder either way.
+
+When you open an attachment, OpenMail writes a copy and hands it to the other app, so edits you save there stay. Copies you have not changed are deleted 7 days after you last opened them. Copies you edited stay until you clear them in **Settings → Local cache**. Removing an account deletes its unchanged copies. Time Machine skips the folder. If **Open attachments from** is set to Downloads, copies go to your attachment folder instead and OpenMail never deletes them.
