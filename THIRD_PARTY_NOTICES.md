@@ -23,21 +23,28 @@ Brand marks are trademarks of their owners. OpenMail shows them only to identify
 
 ## npm dependencies and Electron
 
-The packaged app contains Electron and the runtime npm packages of `apps/desktop` and `packages/core` with their dependencies. Most npm packages keep their license file inside the app's `node_modules`. Electron's license and Chromium's notices are published with each [Electron release](https://github.com/electron/electron/releases).
+The packaged app contains Electron and npm packages in two forms:
+
+- The runtime dependencies of `apps/desktop` and `packages/core` sit in the app's `node_modules`, each with the license file from its npm package.
+- Vite compiles the libraries the app window imports (React, Base UI, TanStack Router, Lucide and others) into the app's JavaScript bundles, so no `node_modules` copy of them ships. The build lists each of them with its license text in `OpenMail.app/Contents/Resources/licenses/bundled/`: `renderer.txt` for the app window and `web.txt` for the remote access web app.
+
+`scripts/check-licenses.mjs` fails when a shipped package has no license file and no notice in this repository. Electron's license and Chromium's notices are published with each [Electron release](https://github.com/electron/electron/releases).
 
 The license texts named in this file are in [docs/licenses/](docs/licenses/). The packaged app ships them in `OpenMail.app/Contents/Resources/licenses/`.
 
 These packages ship without a license file. Their notices are in [npm-packages-without-license.txt](docs/licenses/npm-packages-without-license.txt):
 
-| Package                                                            | License                                 |
-| ------------------------------------------------------------------ | --------------------------------------- |
-| `@img/sharp-libvips-darwin-arm64`, `-x64` 1.3.4                    | LGPL-3.0-or-later, see the next section |
-| `@napi-rs/keyring-darwin-arm64`, `-x64` 2.1.1                      | MIT                                     |
-| `@napi-rs/canvas-darwin-arm64`, `-x64` 1.0.11                      | MIT, with Skia under BSD 3-Clause       |
-| `onnxruntime-node` 1.30.0, `onnxruntime-common`, `onnxruntime-web` | MIT                                     |
-| `sqlite-vec`, `sqlite-vec-darwin-arm64`, `-x64` 0.1.9              | MIT or Apache-2.0, used under MIT       |
-| `lazy-val` 1.0.5                                                   | MIT                                     |
-| `guid-typescript` 1.0.9                                            | ISC                                     |
+| Package                                                                      | License                                 |
+| ---------------------------------------------------------------------------- | --------------------------------------- |
+| `@img/sharp-libvips-darwin-arm64`, `-x64` 1.3.4                              | LGPL-3.0-or-later, see the next section |
+| `@napi-rs/keyring-darwin-arm64`, `-x64` 2.1.1                                | MIT                                     |
+| `@napi-rs/canvas-darwin-arm64`, `-x64` 1.0.11                                | MIT, with Skia under BSD 3-Clause       |
+| `onnxruntime-node` 1.30.0, `onnxruntime-common`, `onnxruntime-web`           | MIT                                     |
+| `sqlite-vec`, `sqlite-vec-darwin-arm64`, `-x64` 0.1.9                        | MIT or Apache-2.0, used under MIT       |
+| `lazy-val` 1.0.5                                                             | MIT                                     |
+| `guid-typescript` 1.0.9                                                      | ISC                                     |
+| `redis`, `@redis/client`, `-bloom`, `-json`, `-search`, `-time-series` 6.2.1 | MIT                                     |
+| `qrcode-generator` 2.0.4, compiled into the bundles                          | MIT                                     |
 
 The ONNX Runtime library inside `onnxruntime-node` includes third-party code. Microsoft's notices for it are in [onnxruntime.txt](docs/licenses/onnxruntime.txt).
 
