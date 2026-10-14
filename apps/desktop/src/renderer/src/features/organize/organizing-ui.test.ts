@@ -440,7 +440,7 @@ it("Discard recovery requires confirmation and does not prepare or restore a ser
     });
     expect(calls.discard).not.toHaveBeenCalled();
     expect(dom.element.querySelector('[role="alertdialog"]')?.textContent).toContain(
-      "Rules on the server are unchanged.",
+      "Filters on the server are unchanged.",
     );
     const confirm = [
       ...dom.element.querySelectorAll<HTMLButtonElement>('[role="alertdialog"] button'),

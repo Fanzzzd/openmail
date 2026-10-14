@@ -449,7 +449,11 @@ it("AI failures name the cause, and key or consent problems link to AI Access", 
       AI_ERRORS.offline,
       false,
     ],
-    [new InvalidInput({ message: AI_ERRORS.unavailable }), AI_ERRORS.unavailable, false],
+    [
+      new InvalidInput({ message: AI_ERRORS.unavailable }),
+      "The AI model isn't available right now. Try again later.",
+      false,
+    ],
   ] as const;
   for (const [error, text, link] of cases) {
     const dom = testDom();
