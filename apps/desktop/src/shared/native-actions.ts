@@ -181,30 +181,42 @@ export const NATIVE_MENUS: readonly NativeMenu[] = [
   {
     name: "message",
     entries: [
+      // Reply and forward.
       "reply",
       "replyAll",
       "forward",
       "forwardAttachment",
+      "separator",
+      // Triage: where the conversation goes, then its marks, then labels and later.
       "archive",
       "trash",
       "spam",
       "inbox",
+      "separator",
       "read",
       "star",
       "important",
+      "separator",
       "label",
       "move",
       "snooze",
+      "separator",
+      // Open, keep and find.
       "openThread",
       "print",
       "saveMessage",
       "searchSender",
+      "separator",
+      // Share and view.
       "openMessageWeb",
       "shareMessageLink",
       "shareThreadLink",
       "shareWebLink",
+      "separator",
       "expandAll",
       "collapseAll",
+      "separator",
+      // Compose.
       "send",
       "sendArchive",
       "saveDraft",

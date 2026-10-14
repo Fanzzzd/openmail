@@ -188,3 +188,17 @@ it("the English menu labels before the renderer loads match the renderer's", () 
   expect(pairs.length).toBeGreaterThan(10);
   for (const [, key, text] of pairs) expect(defaults[key ?? ""], key).toBe(text);
 });
+
+it("the Message menu groups its actions with separators, none doubled or at an end", () => {
+  for (const platform of ["darwin", "win32"] as const) {
+    const message = labels(submenu(template(platform).menu, "Message"));
+    expect(message[0]).toBe("Reply");
+    expect(message.filter((label) => label === "---").length).toBeGreaterThanOrEqual(4);
+    expect(message.at(0)).not.toBe("---");
+    expect(message.at(-1)).not.toBe("---");
+    expect(message.join("|")).not.toContain("---|---");
+    // Triage, opening and compose each start a group.
+    for (const first of ["Archive", "Open thread", "Send"])
+      expect(message[message.indexOf(first) - 1], first).toBe("---");
+  }
+});
