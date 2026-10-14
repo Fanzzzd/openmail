@@ -43,7 +43,7 @@ lint 用 plany 同一套 oxlint 配置，type-aware。`no-unsafe-type-assertion`
 
 ### Issue tracker
 
-Issues live in GitHub Issues of the private repo `Fanzzzd/openmail`, via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+Issues live in GitHub Issues of the public repo `Fanzzzd/openmail`, via the `gh` CLI. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
