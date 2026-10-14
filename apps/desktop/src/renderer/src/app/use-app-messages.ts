@@ -1,6 +1,6 @@
 import type { MailOp } from "../../../shared/api";
 import type { MessageDescriptor } from "@lingui/core";
-import { msg } from "@lingui/core/macro";
+import { msg, plural } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 
 const OP_DONE: Record<MailOp["kind"], (op: MailOp) => MessageDescriptor> = {
@@ -35,7 +35,8 @@ export function useAppMessages() {
     isSignedInAgain: (email: string) => t`${email} is signed in again`,
     signInFailed: (reason: string) => t`Sign-in failed: ${reason}`,
     snoozed: t`Snoozed`,
-    permanentlyDeletedMessages: (count: number) => t`Permanently deleted ${count} messages`,
+    permanentlyDeletedMessages: (count: number) =>
+      t`${plural(count, { one: "Permanently deleted # message", other: "Permanently deleted # messages" })}`,
     couldntDelete: (reason: string) => t`Couldn't delete: ${reason}`,
     cantOpenTheDraft: (reason: string) => t`Can't open the draft: ${reason}`,
     couldNotOpenTheComposeWindow: t`Could not open the compose window`,

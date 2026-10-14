@@ -1,3 +1,4 @@
+import { plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Disclosure } from "../../../ui/Disclosure";
 import { redactSyncHealth, type HealthVerdict, type SyncHealth } from "@openmail/core/schema";
@@ -49,11 +50,13 @@ export function SyncHealthCheck({ accountId }: { accountId: string }) {
       () => setCopied(false),
     );
   };
-  const days = (value: number | null) => (value === null ? t`All mail` : t`${value} days`);
+  const days = (value: number | null) =>
+    value === null ? t`All mail` : t`${plural(value, { one: "# day", other: "# days" })}`;
+  const seconds = Math.floor((report?.cursorAgeMs ?? 0) / 1000);
   const age =
     report?.cursorAgeMs == null
       ? t`Never synced`
-      : t`${Math.floor(report.cursorAgeMs / 1000)} seconds`;
+      : t`${plural(seconds, { one: "# second", other: "# seconds" })}`;
   return (
     <section className="space-y-2" aria-label={t`Sync health`}>
       <button type="button" onClick={check} disabled={waiting} className={buttonLink}>

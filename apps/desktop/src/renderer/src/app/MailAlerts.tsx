@@ -1,3 +1,4 @@
+import { plural } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { PermanentDeletePermission } from "../features/organize/PermanentDeletePermission";
 import { Alert, AlertCancel, alertButton, alertDanger, alertPrimary } from "../ui/Dialog";
@@ -84,7 +85,7 @@ export function MailAlerts({
         onOpenChange={(open) => {
           if (!open) setDeleteRequest(null);
         }}
-        title={t`Delete ${deleteRequest?.ids.size ?? 0} conversations?`}
+        title={t`${plural(deleteRequest?.ids.size ?? 0, { one: "Delete # conversation?", other: "Delete # conversations?" })}`}
         description={t`These loaded conversations will be moved to Trash. You can undo this batch.`}
       >
         <AlertCancel>{t`Cancel`}</AlertCancel>

@@ -1,3 +1,4 @@
+import { plural } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import type { FolderScope } from "@openmail/core/schema";
 import { Cause, Effect, Option } from "effect";
@@ -37,8 +38,8 @@ export function FolderActions({
           onSuccess: (count) =>
             notify(
               empty
-                ? t`Permanently deleted ${count} messages`
-                : t`Marked ${count} messages as read`,
+                ? t`${plural(count, { one: "Permanently deleted # message", other: "Permanently deleted # messages" })}`
+                : t`${plural(count, { one: "Marked # message as read", other: "Marked # messages as read" })}`,
             ),
           onFailure: (cause) => {
             const error = Cause.findErrorOption(cause);

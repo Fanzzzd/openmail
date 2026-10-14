@@ -1,3 +1,4 @@
+import { plural } from "@lingui/core/macro";
 import type { Account } from "../../../../../shared/api";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useAtom, useAtomValue } from "@effect/atom-react";
@@ -89,7 +90,7 @@ export function PendingRuleRestorations({ account }: { account: Account }) {
         description={
           pending && (
             <>
-              {t`Restore the saved original rule on the server. Preview: ${pending.preview.matches.length} messages.`}
+              {t`Restore the saved original rule on the server. ${plural(pending.preview.matches.length, { one: "Preview: # message.", other: "Preview: # messages." })}`}
               {requiresFilterDeleteConfirmation(pending.backup.input) && <FilterDeletionWarning />}
             </>
           )

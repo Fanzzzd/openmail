@@ -1,3 +1,4 @@
+import { plural } from "@lingui/core/macro";
 import { ServiceHint, useServiceState } from "../accounts/OptionalServices";
 import { Button } from "@base-ui/react/button";
 import { useAtom, useAtomValue } from "@effect/atom-react";
@@ -90,13 +91,13 @@ function Recurrence({ invite }: { invite: CalendarInvite }) {
   const summary =
     interval > 1
       ? frequency === "DAILY"
-        ? t`Every ${interval} days`
+        ? t`${plural(interval, { one: "Every # day", other: "Every # days" })}`
         : frequency === "WEEKLY"
-          ? t`Every ${interval} weeks`
+          ? t`${plural(interval, { one: "Every # week", other: "Every # weeks" })}`
           : frequency === "MONTHLY"
-            ? t`Every ${interval} months`
+            ? t`${plural(interval, { one: "Every # month", other: "Every # months" })}`
             : frequency === "YEARLY"
-              ? t`Every ${interval} years`
+              ? t`${plural(interval, { one: "Every # year", other: "Every # years" })}`
               : t`Recurring meeting`
       : frequency === "DAILY"
         ? t`Repeats daily`
@@ -112,7 +113,9 @@ function Recurrence({ invite }: { invite: CalendarInvite }) {
       summary={
         <>
           {invite.recurrenceId ? t`One occurrence of a recurring meeting` : summary}
-          {count && <> · {t`${count} occurrences`}</>}
+          {count && (
+            <> · {t`${plural(Number(count), { one: "# occurrence", other: "# occurrences" })}`}</>
+          )}
         </>
       }
     >

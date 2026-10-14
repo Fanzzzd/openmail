@@ -1,3 +1,4 @@
+import { plural } from "@lingui/core/macro";
 import { ServiceHint } from "../../accounts/OptionalServices";
 import { Button } from "@base-ui/react/button";
 import { useAtom, useAtomValue } from "@effect/atom-react";
@@ -39,7 +40,7 @@ export function ContactSettings({ account }: { account: Account }) {
         <SettingsRow
           label={
             <>
-              {t`${count} cached contacts`}
+              {t`${plural(count, { one: "# cached contact", other: "# cached contacts" })}`}
               {status?.refreshedAt !== null && status?.refreshedAt !== undefined && (
                 <>
                   {" "}
