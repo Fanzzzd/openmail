@@ -96,8 +96,23 @@ export const makeDraftsMailbox = (
   ) {
     const stored = yield* store.getDraft(draftId);
     // Discarded, or moved to another account (a newer op pushes it there).
-    if (Option.isNone(stored) || stored.value.accountId !== account.id || stored.value.localOnly)
+    if (Option.isNone(stored) || stored.value.accountId !== account.id || stored.value.localOnly) {
+      // An earlier attempt of this op APPENDed a copy and then died before recording it.
+      // Discard skipped the op while it was claimed, so this attempt removes that copy.
+      const orphan = context?.appendedDraftMessageId;
+      if (orphan) {
+        const remote = { draftId: null, messageId: null, rfcMessageId: orphan };
+        yield* providers
+          .get(account.provider)
+          .deleteDraft(account, remote)
+          .pipe(
+            Effect.catch(() =>
+              store.enqueueOp(account.id, draftId, { kind: "deleteDraft", remote }),
+            ),
+          );
+      }
       return;
+    }
     const draft = stored.value;
     const adapter = providers.get(account.provider);
     const { message, original } = yield* prepare(draft.message).pipe(
