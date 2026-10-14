@@ -2,7 +2,7 @@ import { isEmpty, switchReplyMode, type ComposeMode, type Draft } from "../draft
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import type { Account, OutgoingMessage } from "../../../../../shared/api";
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useComposeMessages } from "../hooks/use-compose-messages";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useComposeDraft } from "../hooks/use-compose-draft";
@@ -270,6 +270,11 @@ export function Composer({
   const field =
     "h-9 min-w-0 flex-1 bg-transparent text-body outline-none placeholder:text-a11y-muted";
   const title = i18n._(TITLES[draft.mode]);
+  // A compose window is named after its subject in the Window menu and Mission Control.
+  const windowTitle = draft.subject.trim() || i18n._(TITLES.new);
+  useEffect(() => {
+    if (standalone) document.title = windowTitle;
+  }, [standalone, windowTitle]);
 
   return (
     // Trap keyboard focus while the composer is open; Escape follows the draft-close flow.

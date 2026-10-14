@@ -323,7 +323,7 @@ it("only main windows opt into native macOS tabs, and the tab button creates ano
   reader.emit("closed");
 });
 
-it("sanitizes reader window titles and keeps main and compose titles fixed", () => {
+it("sanitizes reader and compose window titles and keeps the main title fixed", () => {
   const subject = `Subject\n\u0000\u007f\u0080${"📬".repeat(250)}`;
   for (const [kind, win] of [
     ["main", createMainWindow()],
@@ -335,7 +335,7 @@ it("sanitizes reader window titles and keeps main and compose titles fixed", () 
     const event = { preventDefault: vi.fn() };
     win.emit("page-title-updated", event, subject);
     expect(event.preventDefault).toHaveBeenCalledOnce();
-    if (kind === "thread" || kind === "message") {
+    if (kind !== "main") {
       expect(title).toHaveBeenCalledWith(`Subject${"📬".repeat(193)}`);
       win.emit("page-title-updated", event, "\n\u0000");
       expect(title).toHaveBeenLastCalledWith("OpenMail");

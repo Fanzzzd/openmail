@@ -308,3 +308,14 @@ it("Close window closes an open sheet first, and the window otherwise", () => {
   );
   expect(closeSheet).toHaveBeenCalledOnce();
 });
+
+it("the Window menu is the system Window menu and keeps its own items first", () => {
+  const { menu } = template("darwin");
+  const window = menu.find((item) => item.label === DEFAULT_DESKTOP_LABELS.window);
+  expect(window?.role).toBe("windowMenu");
+  expect(labels(submenu(menu, DEFAULT_DESKTOP_LABELS.window))).toEqual([
+    "Minimize",
+    "Zoom",
+    "Bring all to front",
+  ]);
+});

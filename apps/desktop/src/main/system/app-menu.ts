@@ -206,6 +206,8 @@ export function applicationMenuTemplate(input: AppMenuInput): MenuItemConstructo
     ...menu("mailbox"),
     ...menu("format"),
     {
+      // The role makes it the system Window menu, which lists the open windows after our items.
+      role: "windowMenu",
       label: labels.window,
       submenu: [
         { role: "minimize", label: label("minimize") },

@@ -28,11 +28,15 @@ import { APP_TITLE, DEV_ICON } from "../app/app-identity";
 const here = path.dirname(fileURLToPath(import.meta.url));
 const MAC = process.platform === "darwin";
 
-/** Mail links open in the system browser; nothing navigates the app's own windows. */
+/**
+ * Mail links open in the system browser; nothing navigates the app's own windows. Reader and
+ * compose windows take their title from the renderer (the subject, or New message), so the
+ * Window menu and Mission Control can tell them apart; the main window keeps the app name.
+ */
 export function lockNavigation(win: BrowserWindow, kind: SavedWindow["kind"] = "main") {
   win.on("page-title-updated", (event, title) => {
     event.preventDefault();
-    if (kind === "thread" || kind === "message") win.setTitle(readerWindowTitle(title));
+    if (kind !== "main") win.setTitle(readerWindowTitle(title));
   });
   // Reader links are intercepted by the parent and reviewed through OpenMailLink.
   win.webContents.setWindowOpenHandler(() => ({ action: "deny" }));

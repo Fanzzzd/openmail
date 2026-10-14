@@ -128,3 +128,17 @@ it("Try again sends current edits in one recovery request without first switchin
   expect(document.body.textContent).not.toContain("Raw provider details");
   await eventually(() => expect(h.server.drafts.size).toBe(1));
 });
+
+it("a compose window is titled with its subject, or New message without one", async () => {
+  current = await flow({
+    storedDraft: {
+      message: { to: [], cc: [], bcc: [], subject: "", text: "", attachments: [] },
+    },
+  });
+  await eventually(() => expect(screen.getByRole("textbox", { name: "Subject" })).toBeTruthy());
+  await eventually(() => expect(document.title).toBe("New message"));
+  edit("Subject", "Quarterly plan");
+  await eventually(() => expect(document.title).toBe("Quarterly plan"));
+  edit("Subject", "  ");
+  await eventually(() => expect(document.title).toBe("New message"));
+});
