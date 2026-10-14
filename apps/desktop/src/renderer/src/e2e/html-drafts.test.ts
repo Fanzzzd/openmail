@@ -437,6 +437,9 @@ it.each(["reply", "forward"] as const)(
     expect(quoted.srcdoc).toMatch(/body \{ margin: 0; font: 14px\/1\.625 -apple-system/);
     const body = screen.getByRole("textbox", { name: "Body" });
     expect(body.getAttribute("contenteditable")).toBe("true");
+    // The editor's focus ring ends above the quote and its Edit quoted text row.
+    const ring = body.closest('[class*="focus-within:ring-2"]');
+    expect(ring?.contains(screen.getByRole("button", { name: "Edit quoted text" }))).toBe(false);
     expect(body.hidden).toBe(false);
     expect(screen.queryByText("Original formatting kept")).toBeNull();
     const user = userEvent.setup();

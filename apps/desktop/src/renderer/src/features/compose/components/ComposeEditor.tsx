@@ -434,6 +434,7 @@ export function ComposeEditor({
     if (action) richAction(action);
   });
   const rootRef = useRef<HTMLDivElement>(null);
+  const sizing = locked || quotedHtml !== undefined ? "shrink-0" : "min-h-0 flex-1";
   useEffect(() => {
     const root = rootRef.current;
     if (!root) return constVoid;
@@ -443,160 +444,162 @@ export function ComposeEditor({
   }, []);
 
   return (
-    <div
-      ref={rootRef}
-      className={`flex flex-col ${locked || quotedHtml !== undefined ? "shrink-0" : "min-h-0 flex-1"} focus-within:ring-2 focus-within:ring-inset focus-within:ring-a11y-focus`}
-    >
-      <ComposeToolbar
-        formatting={body.kind === "rich" && formatBar}
-        disabled={locked}
-        onFormat={format}
-        onStyle={style}
-        onCommand={command}
-        onLink={openLink}
-        shortcut={shortcut}
-        leading={
-          <>
-            <Select
-              aria-label={t`Writing mode`}
-              value={body.kind}
-              options={[
-                { value: "rich", label: t`Rich text` },
-                { value: "plain", label: t`Plain text` },
-                ...(prefs.labs.markdown || body.kind === "markdown"
-                  ? [{ value: "markdown" as const, label: t`Markdown` }]
-                  : []),
-              ]}
-              onValueChange={(kind) => {
-                const conversion = composeConversion(body, kind);
-                if (conversion.losesFormatting) setModePrompt(conversion.body);
-                else changeMode(conversion.body);
-              }}
-            />
-            {modeUndo && (
-              <button
-                type="button"
-                className={editorButton}
-                onClick={() => {
-                  onChange(modeUndo);
-                  setModeUndo(null);
-                  selectionRef.current = null;
+    <div ref={rootRef} className={`flex flex-col ${sizing}`}>
+      {/* The focus ring marks the editor. The read-only quote below has its own focusable button. */}
+      <div
+        className={`flex flex-col ${sizing} focus-within:ring-2 focus-within:ring-inset focus-within:ring-a11y-focus`}
+      >
+        <ComposeToolbar
+          formatting={body.kind === "rich" && formatBar}
+          disabled={locked}
+          onFormat={format}
+          onStyle={style}
+          onCommand={command}
+          onLink={openLink}
+          shortcut={shortcut}
+          leading={
+            <>
+              <Select
+                aria-label={t`Writing mode`}
+                value={body.kind}
+                options={[
+                  { value: "rich", label: t`Rich text` },
+                  { value: "plain", label: t`Plain text` },
+                  ...(prefs.labs.markdown || body.kind === "markdown"
+                    ? [{ value: "markdown" as const, label: t`Markdown` }]
+                    : []),
+                ]}
+                onValueChange={(kind) => {
+                  const conversion = composeConversion(body, kind);
+                  if (conversion.losesFormatting) setModePrompt(conversion.body);
+                  else changeMode(conversion.body);
                 }}
-              >{t`Undo mode change`}</button>
-            )}
-            {emojiUndo && (
-              <button
-                type="button"
-                className={editorButton}
-                onClick={undoEmoji}
-              >{t`Undo emoji replacement`}</button>
-            )}
-          </>
-        }
-        more={
-          <EditorMoreMenu
-            locked={locked}
-            rich={body.kind === "rich"}
-            shortcut={shortcut}
-            onFind={find.toggle}
-            onPaste={paste}
-            formatBar={formatBar}
-            onToggleFormatBar={toggleFormatBar}
-            smartLists={smartLists}
-            onSmartLists={setSmartLists}
-            markdownReplacement={markdownReplacement}
-            onMarkdownReplacement={setMarkdownReplacement}
-            imageSize={prefs.inlineImageSize}
-            onImageSize={(size) => {
-              onImageSize(size);
-              resizeComposeImage(richRef.current, imageCid, size);
-              changed();
-            }}
-            grammar={grammar}
+              />
+              {modeUndo && (
+                <button
+                  type="button"
+                  className={editorButton}
+                  onClick={() => {
+                    onChange(modeUndo);
+                    setModeUndo(null);
+                    selectionRef.current = null;
+                  }}
+                >{t`Undo mode change`}</button>
+              )}
+              {emojiUndo && (
+                <button
+                  type="button"
+                  className={editorButton}
+                  onClick={undoEmoji}
+                >{t`Undo emoji replacement`}</button>
+              )}
+            </>
+          }
+          more={
+            <EditorMoreMenu
+              locked={locked}
+              rich={body.kind === "rich"}
+              shortcut={shortcut}
+              onFind={find.toggle}
+              onPaste={paste}
+              formatBar={formatBar}
+              onToggleFormatBar={toggleFormatBar}
+              smartLists={smartLists}
+              onSmartLists={setSmartLists}
+              markdownReplacement={markdownReplacement}
+              onMarkdownReplacement={setMarkdownReplacement}
+              imageSize={prefs.inlineImageSize}
+              onImageSize={(size) => {
+                onImageSize(size);
+                resizeComposeImage(richRef.current, imageCid, size);
+                changed();
+              }}
+              grammar={grammar}
+            />
+          }
+        />
+        {pasteError && <p role="alert">{t`Couldn't read clipboard`}</p>}
+        {mentions.suggestions.length > 0 && (
+          <MentionSuggestions
+            people={mentions.suggestions}
+            index={mentions.index}
+            onPick={mentions.pick}
           />
-        }
-      />
-      {pasteError && <p role="alert">{t`Couldn't read clipboard`}</p>}
-      {mentions.suggestions.length > 0 && (
-        <MentionSuggestions
-          people={mentions.suggestions}
-          index={mentions.index}
-          onPick={mentions.pick}
-        />
-      )}
-      {find.finding && (
-        <ComposeFindBar
-          query={find.query}
-          onQuery={find.setQuery}
-          replacement={find.replacement}
-          onReplacement={find.setReplacement}
-          onKeyDown={(event) => {
-            editorKey(event);
-            find.barKey(event);
-          }}
-          index={find.index}
-          count={find.count}
+        )}
+        {find.finding && (
+          <ComposeFindBar
+            query={find.query}
+            onQuery={find.setQuery}
+            replacement={find.replacement}
+            onReplacement={find.setReplacement}
+            onKeyDown={(event) => {
+              editorKey(event);
+              find.barKey(event);
+            }}
+            index={find.index}
+            count={find.count}
+            locked={locked}
+            onSelect={find.select}
+            onReplace={find.replace}
+            onClose={find.close}
+          />
+        )}
+        <GrammarResults grammar={grammar} locked={locked} />
+        <BodyNotices
+          hiddenTextRemoved={!locked && body.kind === "rich" && body.hiddenTextRemoved === true}
+          remoteUnsupported={remoteUnsupported}
           locked={locked}
-          onSelect={find.select}
-          onReplace={find.replace}
-          onClose={find.close}
+          onUnlock={() => setUnlocked(true)}
         />
-      )}
-      <GrammarResults grammar={grammar} locked={locked} />
-      <BodyNotices
-        hiddenTextRemoved={!locked && body.kind === "rich" && body.hiddenTextRemoved === true}
-        remoteUnsupported={remoteUnsupported}
-        locked={locked}
-        onUnlock={() => setUnlocked(true)}
-      />
-      <ModeChangePrompt
-        open={modePrompt !== null}
-        onCancel={() => setModePrompt(null)}
-        onConfirm={() => {
-          if (modePrompt) changeMode(modePrompt);
-        }}
-      />
-      {linkOpen && (
-        <ComposeLinkBar
-          href={href}
-          onHref={(next) => {
-            setHref(next);
-            setLinkError(false);
+        <ModeChangePrompt
+          open={modePrompt !== null}
+          onCancel={() => setModePrompt(null)}
+          onConfirm={() => {
+            if (modePrompt) changeMode(modePrompt);
           }}
-          error={linkError}
-          onApply={addLink}
-          onCancel={() => setLinkOpen(false)}
         />
-      )}
-      {locked && body.kind === "rich" && (
-        <LockedPreview html={composePreviewHtml(body, attachments)} />
-      )}
-      {body.kind === "rich" ? (
-        <RichBody
-          font={body.font}
-          locked={locked}
-          quoted={quotedHtml !== undefined}
-          richRef={richRef}
-          bodyRef={bodyRef}
-          onImage={setImageCid}
-          onEdit={changed}
-          remember={remember}
-          onKeyDown={editorKey}
-          command={command}
-        />
-      ) : (
-        <PlainBody
-          body={body}
-          bodyRef={bodyRef}
-          emojiReplacement={prefs.emojiReplacement}
-          onKeyDown={editorKey}
-          onEdit={(undo) => {
-            setModeUndo(null);
-            setEmojiUndo(undo);
-          }}
-          onChange={onChange}
-        />
-      )}
+        {linkOpen && (
+          <ComposeLinkBar
+            href={href}
+            onHref={(next) => {
+              setHref(next);
+              setLinkError(false);
+            }}
+            error={linkError}
+            onApply={addLink}
+            onCancel={() => setLinkOpen(false)}
+          />
+        )}
+        {locked && body.kind === "rich" && (
+          <LockedPreview html={composePreviewHtml(body, attachments)} />
+        )}
+        {body.kind === "rich" ? (
+          <RichBody
+            font={body.font}
+            locked={locked}
+            quoted={quotedHtml !== undefined}
+            richRef={richRef}
+            bodyRef={bodyRef}
+            onImage={setImageCid}
+            onEdit={changed}
+            remember={remember}
+            onKeyDown={editorKey}
+            command={command}
+          />
+        ) : (
+          <PlainBody
+            body={body}
+            bodyRef={bodyRef}
+            emojiReplacement={prefs.emojiReplacement}
+            onKeyDown={editorKey}
+            onEdit={(undo) => {
+              setModeUndo(null);
+              setEmojiUndo(undo);
+            }}
+            onChange={onChange}
+          />
+        )}
+      </div>
       {body.kind === "rich" && quotedHtml !== undefined && (
         <QuotedOriginal
           html={quotedOriginalPreviewHtml(quotedHtml, body.font, attachments)}
