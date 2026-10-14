@@ -11,6 +11,7 @@ import { EmptyList, type EmptyActions } from "./EmptyList";
 import type { Label, ThreadQuery, ThreadSummary } from "../../../../shared/api";
 import type { Filters } from "../../lib/view";
 import { Row, RowMenu, type RowActions, type SelectRow } from "./MessageRow";
+import { plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
   DEFAULT_PREFS,
@@ -118,6 +119,17 @@ export function MessageList({
 }: Props) {
   const { t } = useLingui();
   const shortcutText = useShortcutText();
+  // One status region stays mounted, so screen readers hear each change of its text.
+  const count = threads.length;
+  const searchStatus = searchingServer
+    ? t`Searching server…`
+    : !searching || loading
+      ? ""
+      : count === 0
+        ? t`No results`
+        : exhausted
+          ? plural(count, { one: "# result", other: "# results" })
+          : plural(count, { one: "More than # result", other: "More than # results" });
   const searchMessages = searchErrorAccounts.map(
     (accountId) =>
       `${accountLabel(accountId)}: ${searchReauthAccounts.includes(accountId) ? t`Sign in again` : t`The server could not complete this search.`}`,
@@ -286,15 +298,18 @@ export function MessageList({
       </div>
 
       {notice}
+      <output aria-live="polite" aria-atomic="true" className="sr-only">
+        {searchStatus}
+      </output>
       {searchingServer && (
-        <output className="px-5 pb-2 text-footnote text-a11y-muted">
+        <p className="px-5 pb-2 text-footnote text-a11y-muted">
           <Trans>Searching server…</Trans>
-        </output>
+        </p>
       )}
       {searchTruncated && (
-        <output className="px-5 pb-2 text-footnote text-a11y-muted">
+        <p className="px-5 pb-2 text-footnote text-a11y-muted">
           <Trans>More matches exist. Narrow your search.</Trans>
-        </output>
+        </p>
       )}
       {searchIgnored.length > 0 && (
         <output className="px-5 pb-2 text-footnote text-orange-700 dark:text-orange-400">
@@ -329,7 +344,7 @@ export function MessageList({
           </span>
         </output>
       )}
-      {threads.length === 0 && !loading && (
+      {threads.length === 0 && !loading && !searchingServer && (
         <EmptyList
           searching={searching}
           filtered={

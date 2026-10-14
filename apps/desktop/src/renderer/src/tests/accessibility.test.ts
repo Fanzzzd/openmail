@@ -191,6 +191,7 @@ vi.mock("../state/mail", () => ({
     ),
   syncNow: Effect.void,
   openDraft: () => Effect.void,
+  saveDraft: () => Effect.void,
   draftStatus: () => Effect.succeed(null),
   openThreadWindow: () => Effect.void,
   openMessageWindow: () => Effect.void,
@@ -2049,11 +2050,40 @@ it("a server search in flight hides No more messages until it finishes", () => {
   const list = (searchingServer: boolean) =>
     localized(h("main", null, h(MessageList, listProps({ searching: true, searchingServer }))));
   const view = render(list(true));
-  expect(screen.getByText("Searching server…")).toBeTruthy();
+  expect(screen.getByText("Searching server…", { selector: "p" })).toBeTruthy();
   expect(screen.queryByText("No more messages")).toBeNull();
   view.rerender(list(false));
   expect(screen.queryByText("Searching server…")).toBeNull();
   expect(screen.getByText("No more messages")).toBeTruthy();
+});
+
+it("an empty server search shows no empty state until the server answers", () => {
+  const list = (searchingServer: boolean) =>
+    localized(
+      h("main", null, h(MessageList, listProps({ threads: [], searching: true, searchingServer }))),
+    );
+  const view = render(list(true));
+  expect(screen.queryByText("No matching messages")).toBeNull();
+  view.rerender(list(false));
+  expect(screen.getByText("No matching messages")).toBeTruthy();
+  expect(document.querySelector("output.sr-only[aria-live='polite']")?.textContent).toBe(
+    "No results",
+  );
+});
+
+it("one persistent status region announces search progress and the result count", () => {
+  const list = (overrides: Partial<Parameters<typeof MessageList>[0]>) =>
+    localized(h("main", null, h(MessageList, listProps(overrides))));
+  const view = render(list({ searching: false }));
+  const region = document.querySelector("output.sr-only[aria-live='polite']");
+  expect(region?.textContent).toBe("");
+  view.rerender(list({ searching: true, searchingServer: true }));
+  expect(document.querySelector("output.sr-only[aria-live='polite']")).toBe(region);
+  expect(region?.textContent).toBe("Searching server…");
+  view.rerender(list({ searching: true, threads: [thread, { ...thread, id: "two" }] }));
+  expect(region?.textContent).toBe("2 results");
+  view.rerender(list({ searching: true, exhausted: false }));
+  expect(region?.textContent).toBe("More than 1 result");
 });
 
 it("audits list notices, announces offline and sync failure once and keeps focus after Try again", async () => {
