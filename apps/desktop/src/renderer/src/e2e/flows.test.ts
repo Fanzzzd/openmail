@@ -287,6 +287,11 @@ it.each(["reply", "replyAll", "forward"] as const)(
       mode === "forward" ? "Forwarded message" : "> Original one",
     );
     expect(sent?.message.text).toContain("Flow signature");
+    // Rich replies quote in a blockquote; only the text alternative uses "> ".
+    if (mode !== "forward") {
+      expect(sent?.message.html).toMatch(/<blockquote[^>]*>[^]*Original one[^]*<\/blockquote>/);
+      expect(sent?.message.html).not.toContain("&gt; Original one");
+    }
     expect(sent?.message.to.map((address) => address.address)).toEqual([
       mode === "forward" ? "carol@example.com" : "alice@example.com",
     ]);

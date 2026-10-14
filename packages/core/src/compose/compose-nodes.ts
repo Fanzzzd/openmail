@@ -171,8 +171,10 @@ export function parseComposeNodes(input: string): HtmlNode[] {
       if (node.type !== ElementType.Tag) continue;
       const { name, attribs } = node;
       let style: string | undefined;
-      if (name === "blockquote")
+      if (name === "blockquote") {
         style = stripTransportStyle(attribs.style ?? "", QUOTE_TRANSPORT_STYLE);
+        if (attribs.type === "cite") delete attribs.type;
+      }
       if (name === "ul" && attribs.type === "dash") {
         const items = node.children.flatMap((child) =>
           child.type === ElementType.Tag && child.name === "li" ? [child] : [],

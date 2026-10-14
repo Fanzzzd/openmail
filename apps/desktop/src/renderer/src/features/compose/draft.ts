@@ -127,9 +127,20 @@ function replyHeader(i18n: I18n, m: Message): string {
   );
 }
 
-function quote(i18n: I18n, m: Message): string {
-  const lines = m.bodyText.trimEnd().split("\n");
-  return `\n\n${replyHeader(i18n, m)}\n${lines.map((l) => `> ${l}`).join("\n")}`;
+/**
+ * The quoted original under a reply: the header line, then the original in a cited blockquote.
+ * An HTML original goes through core's reader sanitizer and stays transport-only, as a forward's
+ * does. The text alternative and plain-text mode write the blockquote as "> " lines.
+ */
+function quote(i18n: I18n, m: Message): ComposeBody {
+  const header = textComposeHtml(`\n\n${replyHeader(i18n, m)}`);
+  if (m.bodyHtml)
+    return remoteComposeBody(
+      `${header}<blockquote type="cite">${preservedComposeHtml(m.bodyHtml)}</blockquote>`,
+    );
+  return richComposeBody(
+    `${header}<blockquote type="cite">${textComposeHtml(m.bodyText.trimEnd())}</blockquote>`,
+  );
 }
 
 /** The header block above a forwarded message's text, in the app language. */
@@ -190,11 +201,7 @@ export function draftFor(
   const forwardAsAttachment = mode === "forward" && asAttachment;
 
   const quoted = selectedText === undefined ? m : { ...m, bodyText: selectedText, bodyHtml: "" };
-  const body = forwardAsAttachment
-    ? ""
-    : mode === "forward"
-      ? `\n\n${forwardHeader(i18n, m)}\n\n${quoted.bodyText}`
-      : quote(i18n, quoted);
+  const body = forwardAsAttachment ? "" : `\n\n${forwardHeader(i18n, m)}\n\n${quoted.bodyText}`;
 
   return {
     id: newDraftId(),
@@ -209,11 +216,13 @@ export function draftFor(
     bcc: "",
     subject: mode === "forward" ? forwardSubject(m.subject) : replySubject(m.subject),
     body:
-      mode === "forward" && !forwardAsAttachment && quoted.bodyHtml
-        ? remoteComposeBody(
-            `${textComposeHtml(body.slice(0, body.length - quoted.bodyText.length))}${preservedComposeHtml(quoted.bodyHtml)}`,
-          )
-        : richComposeBody(textComposeHtml(body)),
+      mode !== "forward"
+        ? quote(i18n, quoted)
+        : !forwardAsAttachment && quoted.bodyHtml
+          ? remoteComposeBody(
+              `${textComposeHtml(body.slice(0, body.length - quoted.bodyText.length))}${preservedComposeHtml(quoted.bodyHtml)}`,
+            )
+          : richComposeBody(textComposeHtml(body)),
     ...(providerCapabilities(account.provider).serverForward &&
     mode === "forward" &&
     !forwardAsAttachment

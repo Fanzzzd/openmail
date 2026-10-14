@@ -63,6 +63,8 @@ export function composeTransportHtml(
             style: remainder ?? attribs.style ?? "",
           });
           attrs.style = [prefix, attrs.style].filter(Boolean).join(";");
+          // Mail clients recognise a cited blockquote as quoted text; the editor drops it again.
+          if (name === "blockquote") attrs.type = "cite";
           const attributes = Object.entries(attrs)
             .map(([key, value]) => ` ${key}="${escapeComposeText(value)}"`)
             .join("");

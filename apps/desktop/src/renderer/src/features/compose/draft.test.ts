@@ -8,6 +8,7 @@ import {
   applySignature,
   composeConversion,
   preservedComposeHtml,
+  composeTransportHtml,
 } from "@openmail/core/schema";
 import type { Account, Message } from "../../../../shared/api";
 import { catalogI18n } from "../../test-support/catalog-i18n";
@@ -103,6 +104,35 @@ it("forward preserves sanitized HTML while reply/forward selected quotes contain
     expect(outgoing.html).not.toContain("<table>");
     expect(draft.includeOriginalAttachments).toBe(mode === "forward");
   }
+});
+
+it("rich replies quote the original in a cited blockquote; text keeps > lines", () => {
+  const html = {
+    ...message,
+    bodyText: "Hello there\nSecond line",
+    bodyHtml:
+      '<p>Hello <b>there</b></p><p>Second line</p><script>evil()</script><img src="https://evil.test/track">',
+  };
+  for (const original of [html, { ...message, bodyText: "Hello there\nSecond line" }]) {
+    const draft = draftFor(english, "reply", original, account);
+    const body = draft.body.kind === "rich" ? draft.body : undefined;
+    expect(body?.html).toMatch(/On .* wrote:<\/div>?(<br>)*<blockquote>|wrote:<blockquote>/);
+    expect(body?.html).not.toContain("&gt; Hello");
+    expect(body?.html).not.toMatch(/script|evil\.test/);
+    const outgoing = toMessage(draft).message;
+    // The text/plain alternative still quotes with "> ", and the header line is not quoted.
+    expect(outgoing.text).toMatch(/wrote:\n> Hello there\n(> \n)?> Second line/);
+    expect(outgoing.text).not.toMatch(/> On /);
+    const wire = composeTransportHtml(outgoing) ?? "";
+    expect(wire).toMatch(/<blockquote [^>]*type="cite"/);
+    expect(wire).not.toMatch(/script|evil\.test/);
+    expect(outgoing.originalHtml ?? "").not.toMatch(/script|evil\.test/);
+    // Plain text mode writes the same quote as "> " lines.
+    const plain = composeConversion(draft.body, "plain").body;
+    expect(plain.text).toMatch(/> Hello there/);
+  }
+  const html2 = draftFor(english, "reply", html, account);
+  expect(html2.body.kind === "rich" ? html2.body.html : "").toContain("<strong>there</strong>");
 });
 
 it("reply drafts preserve quoted names, Reply-To and original threading", () => {
