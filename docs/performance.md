@@ -20,7 +20,7 @@ OPENMAIL_PERF=1 OPENMAIL_PERF_REPORT=/tmp/openmail-performance.json pnpm test:pe
 
 `pnpm test:perf` 也运行 `visible-text-cost.test.ts`。
 
-CI 中由 [perf.yml](../.github/workflows/perf.yml) 运行：每周一 06:00 UTC 定时，也可在 Actions 页手动触发（workflow_dispatch），不在每次 push 的 check 中运行。job 在 macos-latest 上先构建 core（同步测量从 `dist/` 加载 HTML worker），再执行 `pnpm test:perf`。套件只用 Node 和 `node:sqlite`，不开 Electron 窗口，不需要显示器或网络。共享 runner 噪声较大，job 设 `OPENMAIL_PERF_FACTOR=2`，所有墙钟预算乘以该系数；本地默认系数为 1，取值小于 1 或不是数字时按 1 处理。三份 JSON 报告（`OPENMAIL_PERF_REPORT`、`OPENMAIL_SPARSE_PERF_REPORT`、`OPENMAIL_SYNC_REPORT`）作为 `performance-report` artifact 上传，失败时也上传。系数实现见 `packages/core/test-support/perf-budget.ts`。日常套件的计时规则见[负载下的测试](testing.md#tests-under-load)。
+CI 中由 [perf.yml](../.github/workflows/perf.yml) 运行：每周一 06:00 UTC 定时，可在 Actions 页手动触发（workflow_dispatch），[release.yml](../.github/workflows/release.yml) 也通过 `workflow_call` 调用它，打 tag 发版前必须通过。它不在每次 push 的 check 中运行，push 时由下面的写入速率预算把关。job 在 macos-latest 上先构建 core（同步测量从 `dist/` 加载 HTML worker），再执行 `pnpm test:perf`。套件只用 Node 和 `node:sqlite`，不开 Electron 窗口，不需要显示器或网络。共享 runner 噪声较大，job 设 `OPENMAIL_PERF_FACTOR=2`，所有墙钟预算乘以该系数；本地默认系数为 1，取值小于 1 或不是数字时按 1 处理。三份 JSON 报告（`OPENMAIL_PERF_REPORT`、`OPENMAIL_SPARSE_PERF_REPORT`、`OPENMAIL_SYNC_REPORT`）作为 `performance-report` artifact 上传，失败时也上传。系数实现见 `packages/core/test-support/perf-budget.ts`。日常套件的计时规则见[负载下的测试](testing.md#tests-under-load)。
 
 每项先执行一次并单独采集 `EXPLAIN QUERY PLAN`，再取五次热运行中位数；remap、invalidate 和实际淘汰取三次。写入每次在事务末尾回滚，重复测量使用相同状态。断言中位数低于下表预算，JSON 同时保留各次时延、最大值和测量结束时的一／五／十五分钟负载。fixture 生成、查询计划采集及索引完整性检查不计入时延。
 
@@ -68,6 +68,26 @@ fixture 中千分之一的邮件含 Google Sheet 链接，has:drive 和 has:spre
 迁移 35 增加读取索引。扩展 provider ID 索引以覆盖 `ORDER BY date DESC,id`，避免不命中查找遍历整个账户；新增 IMAP 路径索引、远程草稿部分索引和消息文本字节数覆盖索引。索引定义已按下节的写入与空间验收缩减。stale sweep 从每个来源按 provider ID 取有界页，再按 SQLite BINARY 顺序合并；游标结束时回绕。日期分页使用覆盖元数据索引，先排除已有更近匹配的消息，再检查该行的全文条件。零距离 AROUND 按日期分页读取；非零距离先按日期读取 NEAR 候选窗口，只对窗口内消息计算词位置和分组；取得结果页后停止；最多两个候选窗口，超过后走全库查询。消息文本预算分页使用时间下界和 `(COALESCE(body_opened_at,date),id)` 继续定位，见 [SQLite 行值分页](https://www.sqlite.org/rowvalue.html#scrolling_window_queries)。索引维护增加写入和磁盘成本。
 
 保留的扫描包括账户内标签 JSON、紧凑徽标投影、消息文本大小覆盖索引和 FTS 命中集合；它们不读取全部 HTML。reset 返回窗口内所有候选，`COUNT(DISTINCT thread_id)` 和已选长会话可使用临时排序。每条实际执行 SQL 的计划保存在临时 JSON；默认测试禁止裸扫大型 messages 表，并检查 stale 页没有全量 ORDER BY 排序。
+
+## 写入速率预算
+
+`seed-rate.test.ts` 在默认 `pnpm test` 中运行，所以每次 push 的 Check 都会跑。它用真实打开路径（迁移加打开时的规划器统计刷新）新建一个文件数据库，再通过 `Store.upsertMessage` 写入 1 万封 fixture 邮件，每 500 封一个事务，按每 2,000 封记一次时间。两条断言：
+
+- 总时间低于 6,000 ms × `OPENMAIL_PERF_FACTOR` × max(1, 校准比)。参考机上约 3.7 s。
+- 最后 2,000 封的时间不超过前 2,000 封的 2.5 倍。参考机上是 1.1 倍。
+
+失败信息写出总时间、预算、校准比和每段时间。第 9 轮的回归（打开时的 `PRAGMA optimize` 给空 FTS5 表记了统计）放回去后，同一台机器上总时间是 12.8 s，最后一段是第一段的 4.9 倍，两条断言都失败。
+
+## 校准比
+
+共享 runner 的速度每次不同，单看毫秒数无法比较两次 CI 运行。第 11 轮在本地交替测量 `a4d1e203` 和 `53688a59`，10 万封写入都约 40.5 s，CI 上两者却差一倍，差距来自 runner 负载。性能套件开始时先在空闲进程里跑一段固定工作（`packages/core/test-support/perf-calibration.ts`）：
+
+- `cpuMs`：3,000 万次整数哈希的纯 JS 循环，取三次中位数。
+- `sqliteMs`：在临时文件数据库（WAL）里向带索引的表插入 20,000 行，每 2,000 行一个事务，取三次中位数。
+
+`ratio` 是两者相对参考机（Apple M3 Max，Node 24：CPU 33 ms，SQLite 35 ms）的几何平均。2 表示这台机器跑同样的固定工作慢一倍。
+
+三份报告都带 `calibration`。`openmail-performance.json` 还有 `seedPhases`（写邮件、OCR 文本块、词索引回填、二元组索引、ANALYZE 各阶段毫秒数）和 `calibratedSeedPhases`，每条查询结果有 `calibratedMs`。`calibratedMs = medianMs / ratio`，即换算到参考机的耗时。比较两次运行时看 `calibratedMs`：原始时间翻倍而 `calibratedMs` 不变，是 runner 变慢；`calibratedMs` 也翻倍，是代码变慢。预算断言仍按原始毫秒和 `OPENMAIL_PERF_FACTOR` 判断，校准比只用来读报告。例外是上面的写入速率预算，它的预算乘以校准比。
 
 ## 一／二字 CJK 搜索
 

@@ -104,10 +104,19 @@ export const PerformanceMailbox = () =>
     ),
   );
 
+/** Wall-clock milliseconds of each seeding phase, for the perf report. */
+export interface SeedPhases {
+  messagesMs: number;
+  ocrChunksMs: number;
+  wordIndexMs: number;
+  bigramsMs: number;
+  analyzeMs: number;
+}
+
 /**
  * Budgets run without planner statistics by default, as on a fresh install
  * before the first `PRAGMA optimize`. OPENMAIL_PERF_ANALYZE=1 measures the
- * analyzed variant.
+ * analyzed variant. Returns how long each phase took.
  */
 export const seedMailbox = (
   count: number,
@@ -128,6 +137,13 @@ export const seedMailbox = (
         })),
       );
     }
+    let phaseStart = performance.now();
+    const lap = () => {
+      const now = performance.now();
+      const ms = now - phaseStart;
+      phaseStart = now;
+      return ms;
+    };
     for (let start = 0; start < count; start += 500) {
       yield* store.transaction(
         Effect.gen(function* () {
@@ -142,6 +158,7 @@ export const seedMailbox = (
       if (count === 100_000 && start % 10_000 === 0)
         process.stdout.write(`Seeded ${start + 500}/100000\n`);
     }
+    const messagesMs = lap();
     // One extracted OCR chunk for each attachment: 10k chunks in the 100k fixture.
     for (let start = 0; start < count; start += 500) {
       yield* store.transaction(
@@ -171,13 +188,23 @@ export const seedMailbox = (
         }),
       );
     }
+    const ocrChunksMs = lap();
     while (!(yield* store.backfillWordIndex(500)).ready) {
       /* finish the actual background index */
     }
+    const wordIndexMs = lap();
     while (!(yield* store.indexBigrams(1000)).ready) {
       /* and the bigram queue the same background loop drains */
     }
+    const bigramsMs = lap();
     if (analyze) yield* sql`ANALYZE`;
+    return {
+      messagesMs,
+      ocrChunksMs,
+      wordIndexMs,
+      bigramsMs,
+      analyzeMs: lap(),
+    } satisfies SeedPhases;
   });
 
 const PlanRows = Schema.Array(Schema.Struct({ detail: Schema.String }));

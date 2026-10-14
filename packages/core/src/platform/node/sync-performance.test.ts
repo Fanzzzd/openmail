@@ -17,6 +17,7 @@ import { NodeHtmlText } from "./html-text.js";
 import { MemoryPlatform } from "./platform-memory.js";
 import { account } from "./testing.js";
 import { perfBudget } from "../../../test-support/perf-budget.js";
+import { calibratedMs, perfCalibration } from "../../../test-support/perf-calibration.js";
 
 const COUNT = 2000;
 const BLOCK_MS = 50;
@@ -131,6 +132,8 @@ function countBlocks() {
 it.skipIf(process.env.OPENMAIL_PERF !== "1")(
   "a 2k HTML Outlook sync keeps the event loop responsive",
   async () => {
+    // Before the statement trace patches node:sqlite, and on an idle process.
+    const calibration = perfCalibration();
     const directory = mkdtempSync(join(tmpdir(), "openmail-sync-performance-"));
     const trace = traceStatements();
     const delay = monitorEventLoopDelay({ resolution: 1 });
@@ -166,7 +169,9 @@ it.skipIf(process.env.OPENMAIL_PERF !== "1")(
           const elapsedMs = performance.now() - start;
           delay.disable();
           const report = {
+            calibration,
             elapsedMs,
+            calibratedElapsedMs: calibratedMs(elapsedMs),
             longestBlockMs: delay.max / 1e6,
             p95BlockMs: delay.percentile(95) / 1e6,
             p99BlockMs: delay.percentile(99) / 1e6,

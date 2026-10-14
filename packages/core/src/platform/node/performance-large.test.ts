@@ -13,6 +13,7 @@ import { sanitizeReaderHtml } from "../../reader/reader-sanitize.js";
 import { structuredMailEvents } from "../../calendar/structured-events.js";
 import { incoming } from "./testing.js";
 import { PERF_FACTOR, perfBudget } from "../../../test-support/perf-budget.js";
+import { calibratedMs, perfCalibration } from "../../../test-support/perf-calibration.js";
 import {
   PerformanceMailbox,
   fixtureAccounts,
@@ -25,6 +26,8 @@ import {
 it.effect(
   "100k mailbox stays within local performance budgets",
   () => {
+    // The fixed work runs first, on an idle process, so the ratio reflects the machine.
+    const calibration = perfCalibration();
     const trace = traceQueries();
     const mailbox = PerformanceMailbox();
     const handlers = MailToolkitLayer.pipe(
@@ -34,6 +37,7 @@ it.effect(
     const results: {
       name: string;
       medianMs: number;
+      calibratedMs: number;
       maxMs: number;
       budgetMs: number;
       loadAverage: number[];
@@ -46,9 +50,17 @@ it.effect(
         mail = yield* Mailbox,
         toolkit = yield* MailToolkit;
       yield* TestClock.setTime(fixtureNow);
+      process.stdout.write(
+        `Calibration: CPU ${calibration.cpuMs.toFixed(1)} ms, SQLite ${calibration.sqliteMs.toFixed(1)} ms, ratio ${calibration.ratio.toFixed(2)}\n`,
+      );
       const seedStart = performance.now();
-      yield* seedMailbox(100_000);
+      const seedPhases = yield* seedMailbox(100_000);
       const seedMs = performance.now() - seedStart;
+      process.stdout.write(
+        `Seed phases (ms): ${Object.entries(seedPhases)
+          .map(([phase, ms]) => `${phase} ${Math.round(ms)}`)
+          .join(", ")}\n`,
+      );
       const [counts] =
         yield* sql`SELECT COUNT(*) AS messages, (SELECT COUNT(*) FROM (SELECT account_id,thread_id FROM messages GROUP BY account_id,thread_id)) AS threads, (SELECT COUNT(*) FROM labels) AS labels FROM messages`;
       assert.deepStrictEqual(counts, { messages: 100_000, threads: 20_000, labels: 200 });
@@ -72,7 +84,12 @@ it.effect(
               threads: 20_000,
               longestChain: 204,
               htmlBytes: Buffer.byteLength(largeHtml),
+              calibration,
               seedMs,
+              seedPhases,
+              calibratedSeedPhases: Object.fromEntries(
+                Object.entries(seedPhases).map(([phase, ms]) => [phase, calibratedMs(ms)]),
+              ),
               memory: process.memoryUsage(),
               results,
             },
@@ -109,6 +126,7 @@ it.effect(
           results.push({
             name,
             medianMs,
+            calibratedMs: calibratedMs(medianMs),
             maxMs,
             budgetMs,
             loadAverage: loadavg(),
@@ -117,7 +135,7 @@ it.effect(
           });
           writeReport();
           process.stdout.write(
-            `${name}: ${medianMs.toFixed(2)} ms (max ${maxMs.toFixed(2)}, budget ${budgetMs})\n`,
+            `${name}: ${medianMs.toFixed(2)} ms (calibrated ${calibratedMs(medianMs).toFixed(2)}, max ${maxMs.toFixed(2)}, budget ${budgetMs})\n`,
           );
         });
       const gmail = fixtureAccounts[0],
@@ -431,6 +449,7 @@ for (const messageCount of [20_000, 100_000]) {
   it.effect(
     `${messageCount / 1000}k dense NEAR with sparse exact matches stays within the fallback budget`,
     () => {
+      const calibration = perfCalibration();
       const trace = traceQueries();
       return Effect.gen(function* () {
         const store = yield* Store;
@@ -504,7 +523,15 @@ for (const messageCount of [20_000, 100_000]) {
             samplesMs.push(performance.now() - start);
           }
           const medianMs = samplesMs.toSorted((a, b) => a - b)[2] ?? 0;
-          results.push({ name, medianMs, budgetMs, samplesMs, loadAverage: loadavg(), queries });
+          results.push({
+            name,
+            medianMs,
+            calibratedMs: calibratedMs(medianMs),
+            budgetMs,
+            samplesMs,
+            loadAverage: loadavg(),
+            queries,
+          });
           process.stdout.write(`${name}: ${medianMs.toFixed(2)} ms (budget ${budgetMs})\n`);
         }
         const output =
@@ -512,7 +539,7 @@ for (const messageCount of [20_000, 100_000]) {
         const reportPath = messageCount === 100_000 ? output : `${output}.${messageCount}.json`;
         writeFileSync(
           reportPath,
-          `${JSON.stringify({ messages: messageCount, exactMatches: 3, node: process.version, results }, null, 2)}\n`,
+          `${JSON.stringify({ messages: messageCount, exactMatches: 3, node: process.version, calibration, results }, null, 2)}\n`,
         );
         process.stdout.write(`Sparse report: ${reportPath}\n`);
         for (const result of results)
