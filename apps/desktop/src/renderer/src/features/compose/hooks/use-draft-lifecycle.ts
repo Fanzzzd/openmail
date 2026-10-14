@@ -259,13 +259,16 @@ export function useDraftLifecycle({
     );
   };
 
+  // The counters outlive one composer: the main window keeps them across inline drafts. Only a
+  // request made while this composer is open acts on it, never one left from an earlier draft.
+  const requestsAtOpen = useRef({ popOut: popOutRequested, close: closeRequested });
   const nativePopOut = useEffectEvent(() => onPopOut?.(draft));
   useEffect(() => {
-    if (popOutRequested > 0) queueMicrotask(() => nativePopOut());
+    if (popOutRequested > requestsAtOpen.current.popOut) queueMicrotask(() => nativePopOut());
   }, [popOutRequested]);
   const nativeClose = useEffectEvent(close);
   useEffect(() => {
-    if (closeRequested > 0) queueMicrotask(() => nativeClose());
+    if (closeRequested > requestsAtOpen.current.close) queueMicrotask(() => nativeClose());
   }, [closeRequested]);
 
   const status =

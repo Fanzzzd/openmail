@@ -5,7 +5,7 @@ import { AuthError, ProviderError, PermanentError } from "@openmail/core/portabl
 import { afterEach, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { fireEvent, screen, within } from "@testing-library/react/pure";
-import { flow, eventually, incoming, row, clickButton, advance, key } from "./harness";
+import { flow, eventually, incoming, row, clickButton, advance, key, wait } from "./harness";
 
 let current: Awaited<ReturnType<typeof flow>> | undefined;
 afterEach(async () => {
@@ -892,4 +892,11 @@ it("Close window closes Settings, then an inline composer through its close flow
   // The inline composer follows its own close flow, which asks about the unsaved draft.
   await eventually(() => expect(screen.getByRole("alertdialog")).toBeTruthy());
   expect(document.querySelector("[data-compose]")).toBeTruthy();
+  fireEvent.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Delete" }));
+  await eventually(() => expect(document.querySelector("[data-compose]")).toBeNull());
+  // The next inline draft stays open: the earlier close request does not carry over to it.
+  clickButton("New message");
+  await eventually(() => expect(screen.getByRole("textbox", { name: "Subject" })).toBeTruthy());
+  await wait(300);
+  expect(screen.getByRole("textbox", { name: "Subject" })).toBeTruthy();
 });
