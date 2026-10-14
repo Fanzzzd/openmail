@@ -210,8 +210,7 @@ export function useNativeMenuBridge({
         if (event.command === "feedback") {
           setCrashFeedback(false);
           setDialog("feedback");
-        }
-        if (event.command === "compose") startCompose("new");
+        } else if (event.command === "compose") startCompose("new");
         else if (event.command === "inbox") {
           changeView({ space: view.space === OVERVIEW ? ALL : view.space, mailbox: "inbox" });
           setQuery("");

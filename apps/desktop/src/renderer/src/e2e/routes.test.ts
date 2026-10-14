@@ -187,3 +187,27 @@ it("says when a link's message can't be opened", async () => {
     ),
   );
 });
+
+it("each menu command opens its own dialog or route, and nothing else", async () => {
+  const h = (current = await flow({ route: "/mail/all/sent" }));
+  await eventually(() => expect(title()).toBe("Sent"));
+  const close = async () => {
+    await act(() => h.router.navigate({ href: "/mail/all/sent" }));
+    await eventually(() => expect(h.href()).toBe("/mail/all/sent"));
+  };
+  for (const [command, href] of [
+    ["feedback", "/mail/all/sent?dialog=feedback"],
+    ["help", "/mail/all/sent?dialog=help"],
+    ["settings", "/mail/all/sent?dialog=settings"],
+  ] as const) {
+    await h.event({ _tag: "Command", command });
+    await eventually(() => expect(h.href()).toBe(href));
+    await close();
+  }
+  await h.event({ _tag: "Command", command: "inbox" });
+  await eventually(() => expect(title()).toBe("Inbox"));
+  expect(h.href()).toBe("/mail/all/inbox");
+  await h.event({ _tag: "Command", command: "compose" });
+  await eventually(() => expect(screen.getByRole("textbox", { name: "Subject" })).toBeTruthy());
+  expect(h.href()).toBe("/mail/all/inbox");
+});
