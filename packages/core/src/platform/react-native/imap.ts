@@ -45,6 +45,7 @@ import { resolveImapSettings, serverSavesSent } from "../../providers/imap/imap-
 import { applyPush } from "./imap-push.js";
 import { smtpSession } from "./smtp.js";
 import { confirmDelivery } from "../../providers/provider-send.js";
+import { cachedThreading } from "../../providers/send-original.js";
 import { searchMailboxLabel } from "../../search/search.js";
 import type { IncomingMessage } from "../../domain/message.js";
 import { matchesSearch } from "../../search/search-match.js";
@@ -503,6 +504,15 @@ export const makeMobileImap = Effect.gen(function* () {
                   ...(refs ? { references: refs } : {}),
                 };
               }),
+              // The original moved or is gone, or the read failed: thread on the cached headers.
+              // A transient failure with nothing cached still fails before SMTP.
+              Effect.catch((error) =>
+                original.value.cached?.messageId
+                  ? Effect.succeed(cachedThreading(original.value))
+                  : error._tag === "PermanentError"
+                    ? Effect.succeed({})
+                    : Effect.fail(error),
+              ),
             )
           : {};
         const raw = yield* codec.build({ name: "", address: account.email }, message, threading);

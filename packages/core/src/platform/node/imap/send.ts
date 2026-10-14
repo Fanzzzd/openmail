@@ -1,6 +1,7 @@
 import { Effect, Option, Predicate } from "effect";
 import type { DraftRemote, OutgoingMessage } from "../../../domain/changes.js";
-import { PermanentError, ProviderError } from "../../../domain/errors.js";
+import { type AuthError, PermanentError, ProviderError } from "../../../domain/errors.js";
+import { cachedThreading, type SendOriginal } from "../../../providers/send-original.js";
 import { decodeProviderId, encodeProviderId } from "../../../providers/imap/imap-cursor.js";
 import { serverSavesSent } from "../../../providers/imap/imap-settings.js";
 import { confirmDelivery } from "../../../providers/provider-send.js";
@@ -9,7 +10,7 @@ import type {
   ProviderAdapter,
   ProviderPushContext,
 } from "../../../providers/adapter.js";
-import { buildMime } from "../compose.js";
+import { buildMime, type Threading } from "../compose.js";
 
 import {
   MailCodec,
@@ -25,33 +26,57 @@ import {
   describe,
   failure,
   isAuthFailure,
+  isRefusal,
   searchUids,
   smtpTransport,
   type Session,
 } from "./session.js";
 
-/** Message-ID and References of the original, read from IMAP. Empty when it moved or is gone. */
-const threadingOf = (s: Session, providerId: string) =>
-  Option.match(decodeProviderId(providerId), {
-    onNone: () => Effect.succeed({}),
-    onSome: (ref) =>
-      Effect.gen(function* () {
-        const mailbox = yield* call(s, (c) => c.mailboxOpen(ref.path, { readOnly: true }));
-        if (String(mailbox.uidValidity) !== ref.uidValidity) return {};
-        const m = yield* call(s, (c) =>
-          c.fetchOne(
-            String(ref.uid),
-            { uid: true, headers: ["message-id", "references"] },
-            { uid: true },
-          ),
-        );
-        if (!m || !m.headers) return {};
-        const headers = parseHeaders(m.headers);
-        const messageId = headers.get("message-id");
-        const references = headers.get("references");
-        return { ...(messageId ? { messageId } : {}), ...(references ? { references } : {}) };
-      }).pipe(Effect.catchTag("ProviderError", () => Effect.succeed({}))),
-  });
+/**
+ * Message-ID and References of the original: IMAP's copy first, the cache when it moved or is
+ * gone. A failed read falls back to the cache too; with nothing cached it fails the send before
+ * SMTP, so a reply never goes out silently unthreaded because of a timeout.
+ */
+const threadingOf = (s: Session, original: SendOriginal) => {
+  const read: Effect.Effect<Option.Option<Threading>, AuthError | ProviderError> = Option.match(
+    decodeProviderId(original.providerId),
+    {
+      onNone: () => Effect.succeed(Option.none()),
+      onSome: (ref) =>
+        Effect.gen(function* () {
+          // NO to SELECT: the folder was renamed or deleted, which is not worth retrying.
+          const mailbox = yield* call(s, (c) =>
+            c.mailboxOpen(ref.path, { readOnly: true }).catch((error: unknown) => {
+              if (isRefusal(error)) return null;
+              throw error;
+            }),
+          );
+          if (!mailbox || String(mailbox.uidValidity) !== ref.uidValidity) return Option.none();
+          const m = yield* call(s, (c) =>
+            c.fetchOne(
+              String(ref.uid),
+              { uid: true, headers: ["message-id", "references"] },
+              { uid: true },
+            ),
+          );
+          if (!m || !m.headers) return Option.none();
+          const headers = parseHeaders(m.headers);
+          const messageId = headers.get("message-id");
+          const references = headers.get("references");
+          return messageId
+            ? Option.some({ messageId, ...(references ? { references } : {}) })
+            : Option.none();
+        }),
+    },
+  );
+  const cached = cachedThreading(original);
+  return read.pipe(
+    Effect.map(Option.getOrElse(() => cached)),
+    Effect.catchTag("ProviderError", (error) =>
+      cached.messageId ? Effect.succeed(cached) : Effect.fail(error),
+    ),
+  );
+};
 
 /**
  * Files the sent message in Sent. Servers that save SMTP mail themselves get
@@ -280,9 +305,7 @@ export const makeImapSend = ({
       ];
       if (!recipients.length) yield* new PermanentError({ message: "No recipients" });
       const { s, settings, pass } = yield* session(account);
-      const threading = Option.isSome(original)
-        ? yield* threadingOf(s, original.value.providerId)
-        : {};
+      const threading = Option.isSome(original) ? yield* threadingOf(s, original.value) : {};
       const raw = yield* buildMime({ name: "", address: account.email }, message, threading).pipe(
         Effect.mapError(
           (error) => new ProviderError({ message: `Cannot build the message: ${describe(error)}` }),
@@ -391,7 +414,7 @@ export const makeImapSend = ({
     Effect.gen(function* () {
       const { s } = yield* session(account);
       const threading = Option.isSome(draft.original)
-        ? yield* threadingOf(s, draft.original.value.providerId)
+        ? yield* threadingOf(s, draft.original.value)
         : {};
       const raw = yield* buildMime({ name: "", address: account.email }, draft.message, threading, {
         draft: true,
