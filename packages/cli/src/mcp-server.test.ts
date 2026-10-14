@@ -460,7 +460,7 @@ test.concurrent("write-mode reports the removed Organize directly mode as propos
   db.exec("PRAGMA user_version = 49");
   db.close();
   const status = await run(process.execPath, ["dist/cli.js", "agents", "write-mode"], options);
-  expect(status.stdout).toContain("Agent write mode: propose.");
+  expect(status.stdout).toContain("Changes by AI apps: Ask me first\n");
 }, 30_000);
 
 async function seedAttachmentMail(directory: string) {
