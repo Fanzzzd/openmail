@@ -401,23 +401,31 @@ export function relativeSearchDate(value: string, now: number): number | null {
 export const MAX_SEARCH_TERMS = 256;
 const expressionTokens = (input: string): string[] =>
   input.match(/-?(?:[^\s(){}"]|"(?:\\.|[^"\\])*(?:"|$))+|[(){}]|-(?=[({])/g) ?? [];
-/** Used at Effect and UI boundaries before invoking the synchronous parser. */
-export function searchInputError(input: string): InvalidInput | null {
+export const MAX_SEARCH_DEPTH = 32;
+/** Why the parser would refuse this input: too many terms or groups nested too deeply. */
+export function searchInputProblem(input: string): "terms" | "depth" | null {
   let terms = 0;
   let depth = 0;
   for (const token of expressionTokens(input)) {
     if (token === "(" || token === "{") depth++;
     else if (token === ")" || token === "}") depth = Math.max(0, depth - 1);
     else if (!["OR", "AND", "|", "-"].includes(token)) terms++;
-    if (terms > MAX_SEARCH_TERMS)
-      return new InvalidInput({
-        message: `Search supports at most ${MAX_SEARCH_TERMS} terms. Narrow your query.`,
-      });
-    if (depth > 32)
-      return new InvalidInput({
-        message: "Search groups are nested too deeply. Simplify your query.",
-      });
+    if (terms > MAX_SEARCH_TERMS) return "terms";
+    if (depth > MAX_SEARCH_DEPTH) return "depth";
   }
+  return null;
+}
+/** Used at Effect and UI boundaries before invoking the synchronous parser. */
+export function searchInputError(input: string): InvalidInput | null {
+  const problem = searchInputProblem(input);
+  if (problem === "terms")
+    return new InvalidInput({
+      message: `Search supports at most ${MAX_SEARCH_TERMS} terms. Narrow your query.`,
+    });
+  if (problem === "depth")
+    return new InvalidInput({
+      message: "Search groups are nested too deeply. Simplify your query.",
+    });
   return null;
 }
 

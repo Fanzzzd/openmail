@@ -139,7 +139,8 @@ it("unknown-size notices only appear for real size conditions, while omitted ope
           searchErrorAccounts: [],
           searchReauthAccounts: [],
           searchInputInvalid: false,
-          searchIgnored: ["label:work"],
+          searchIgnored: [{ accountId: "a1", operators: ["label:work"] }],
+          accountLabel: (id: string) => (id === "a1" ? "Work Gmail" : id),
           searchQuery: { search },
           filters: {
             enabled: false,
@@ -173,7 +174,8 @@ it("unknown-size notices only appear for real size conditions, while omitted ope
       ),
     );
     expect(markup.includes("Unknown message sizes are left unfiltered.")).toBe(sizeNotice);
-    expect(markup).toContain("label:work");
-    expect(markup).toContain("Some server predicates were omitted");
+    expect(markup).toContain(
+      "Work Gmail: the server can&#x27;t search with label:work. OpenMail searched the server without it and applied it to the results here.",
+    );
   }
 });

@@ -16,6 +16,8 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import {
   DEFAULT_PREFS,
   LIST_DENSITIES,
+  MAX_SEARCH_DEPTH,
+  MAX_SEARCH_TERMS,
   moveSourceLabel,
   searchUsesSize,
   type SwipeAction,
@@ -23,6 +25,7 @@ import {
 import { AsyncResult } from "effect/reactivity";
 import { useAtomValue } from "@effect/atom-react";
 import { prefsAtom } from "../../state/queries";
+import type { SearchIgnored, SearchInputProblem } from "../../state/threads";
 import { attachmentMatches } from "../search";
 import { rowLayout, rowWindow } from "./row-layout";
 import { swipeMailOp } from "./message-swipe";
@@ -63,8 +66,8 @@ interface Props {
   searchTruncated: boolean;
   searchErrorAccounts: readonly string[];
   searchReauthAccounts: readonly string[];
-  searchInputInvalid: boolean;
-  searchIgnored: readonly string[];
+  searchInputInvalid: false | SearchInputProblem;
+  searchIgnored: readonly SearchIgnored[];
   searchQuery?: ThreadQuery | undefined;
   filters: Filters;
   inLabel: boolean;
@@ -134,6 +137,15 @@ export function MessageList({
     (accountId) =>
       `${accountLabel(accountId)}: ${searchReauthAccounts.includes(accountId) ? t`Sign in again` : t`The server couldn't complete this search.`}`,
   );
+  // Server results skip these operators; the list then applies the whole query to them locally.
+  const searchIgnoredMessages = searchIgnored.map(({ accountId, operators }) => {
+    const account = accountLabel(accountId);
+    const names = operators.join(", ");
+    return t`${plural(operators.length, {
+      one: `${account}: the server can't search with ${names}. OpenMail searched the server without it and applied it to the results here.`,
+      other: `${account}: the server can't search with ${names}. OpenMail searched the server without them and applied them to the results here.`,
+    })}`;
+  });
   /** The row under the pointer at the right-click, set before the menu opens. */
   const pressed = useRef<string | null>(null);
   const [menuFor, setMenuFor] = useState<string | null>(null);
@@ -313,10 +325,7 @@ export function MessageList({
       )}
       {searchIgnored.length > 0 && (
         <output className="px-5 pb-2 text-footnote text-orange-700 dark:text-orange-400">
-          <Trans>
-            Some server predicates were omitted to preserve matches; local filters still apply:
-          </Trans>{" "}
-          {searchIgnored.join("; ")}
+          {searchIgnoredMessages.join(" ")}
         </output>
       )}
       {searchQuery && searchUsesSize(searchQuery) && (
@@ -329,7 +338,16 @@ export function MessageList({
           role="alert"
           className="px-5 pb-2 text-footnote text-orange-700 dark:text-orange-400"
         >
-          <Trans>Simplify your search query.</Trans>
+          {searchInputInvalid === "terms" ? (
+            <Trans>
+              Search can use at most {MAX_SEARCH_TERMS} words and operators. Remove some to search.
+            </Trans>
+          ) : (
+            <Trans>
+              Search groups can nest at most {MAX_SEARCH_DEPTH} levels deep. Remove some parentheses
+              to search.
+            </Trans>
+          )}
         </output>
       )}
       {searchErrorAccounts.length > 0 && (

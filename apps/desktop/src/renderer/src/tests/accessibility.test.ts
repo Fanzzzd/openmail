@@ -1954,7 +1954,8 @@ for (const [choice, name] of [
 }
 
 it("the Gmail built-in sign-in says what Google's unverified-app warning asks for; Outlook and own clients don't", () => {
-  const warning = "Google shows a warning that it hasn't verified OpenMail yet. Choose Advanced, then continue to OpenMail.";
+  const warning =
+    "Google shows a warning that it hasn't verified OpenMail yet. Choose Advanced, then continue to OpenMail.";
   fixture.values.set("clientSetupAtom", BUILT_IN_CLIENTS);
   render(localized(h(AddAccountDialog, { onClose: vi.fn(), onAdded: vi.fn() })));
   fireEvent.click(screen.getByRole("button", { name: "Gmail" }));
@@ -2177,6 +2178,25 @@ it("a server search in flight hides No more messages until it finishes", () => {
   view.rerender(list(false));
   expect(screen.queryByText("Searching server…")).toBeNull();
   expect(screen.getByText("No more messages")).toBeTruthy();
+});
+
+it("an unusable search names its limit instead of asking to simplify", () => {
+  const view = render(
+    localized(
+      h("main", null, h(MessageList, listProps({ searching: true, searchInputInvalid: "terms" }))),
+    ),
+  );
+  expect(screen.getByRole("alert").textContent).toBe(
+    "Search can use at most 256 words and operators. Remove some to search.",
+  );
+  view.rerender(
+    localized(
+      h("main", null, h(MessageList, listProps({ searching: true, searchInputInvalid: "depth" }))),
+    ),
+  );
+  expect(screen.getByRole("alert").textContent).toBe(
+    "Search groups can nest at most 32 levels deep. Remove some parentheses to search.",
+  );
 });
 
 it("an empty server search shows no empty state until the server answers", () => {

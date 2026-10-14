@@ -10,6 +10,7 @@ import {
   mergeSearchResults,
   parseSearchQuery,
   searchInputError,
+  searchInputProblem,
 } from "@openmail/core/schema";
 import { Effect, Option, Stream, Schedule } from "effect";
 import { AsyncResult, Atom } from "effect/reactivity";
@@ -164,8 +165,16 @@ export interface ThreadList {
   searchTruncated: boolean;
   searchErrorAccounts: readonly string[];
   searchReauthAccounts: readonly string[];
-  searchInputInvalid: boolean;
-  searchIgnored: readonly string[];
+  /** Why the search can't run: too many terms or too deep nesting. */
+  searchInputInvalid: false | SearchInputProblem;
+  /** Per account, the operators its server search can't use, as the person typed them. */
+  searchIgnored: readonly SearchIgnored[];
+}
+
+export type SearchInputProblem = "terms" | "depth";
+export interface SearchIgnored {
+  readonly accountId: string;
+  readonly operators: readonly string[];
 }
 
 const EMPTY: ThreadList = {
@@ -205,8 +214,8 @@ export const threadListAtom = Atom.writable(
   (get): ThreadList => {
     const query = get(listQueryAtom);
     if (!query) return EMPTY;
-    const invalid = searchInputError(query.search ?? "");
-    if (invalid) return { ...EMPTY, searchInputInvalid: true };
+    const invalid = searchInputProblem(query.search ?? "");
+    if (invalid) return { ...EMPTY, searchInputInvalid: invalid };
     const result = get(pagedList(query).loaded);
     const total = AsyncResult.getOrElse(
       get(MailClient.query("ThreadCount", { query }, { reactivityKeys: [Keys.threads] })),
@@ -224,7 +233,7 @@ export const threadListAtom = Atom.writable(
       loadError: result._tag === "Failure",
       searchingServer: server !== null && (server._tag === "Initial" || server.waiting),
       searchTruncated: remote?.truncated ?? false,
-      searchIgnored: remote?.ignored?.map((e) => `${e.accountId}: ${e.operators.join(", ")}`) ?? [],
+      searchIgnored: remote?.ignored ?? [],
       searchInputInvalid: false,
       searchErrorAccounts: remote?.errors.map((e) => e.accountId) ?? [],
       searchReauthAccounts:

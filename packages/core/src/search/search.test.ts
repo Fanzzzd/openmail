@@ -3,7 +3,13 @@ import { assert, it } from "@effect/vitest";
 import { Effect, Layer, FileSystem, Path } from "effect";
 import type { IncomingMessage } from "../domain/message.js";
 import { imapSearch } from "../platform/node/imap-search.js";
-import { parseSearchQuery, parseSearchExpression, relativeSearchDate } from "./search.js";
+import {
+  parseSearchQuery,
+  parseSearchExpression,
+  relativeSearchDate,
+  searchInputError,
+  searchInputProblem,
+} from "./search.js";
 import { gmailSearch, graphSearch, serverSearchIgnored } from "./provider-search.js";
 import { matchesSearch } from "./search-match.js";
 import { mergeSearchResults } from "./ranking.js";
@@ -1000,3 +1006,16 @@ import { type DerivedChunk } from "../ai/media.js";
       }).pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform())))),
   );
 }
+
+it("searchInputProblem names the limit an unusable search hits", () => {
+  assert.strictEqual(searchInputProblem("from:bob (a OR b)"), null);
+  assert.strictEqual(
+    searchInputProblem(Array.from({ length: 257 }, (_, i) => `w${i}`).join(" ")),
+    "terms",
+  );
+  assert.strictEqual(searchInputProblem("(".repeat(33) + "a"), "depth");
+  assert.strictEqual(
+    searchInputError("(".repeat(33) + "a")?.message,
+    "Search groups are nested too deeply. Simplify your query.",
+  );
+});
