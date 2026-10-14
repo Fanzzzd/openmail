@@ -42,6 +42,21 @@ msgctxt "calendar dates"
 msgid "{0, plural, one {# date found} other {# dates found}}"
 msgstr "{0, plural, other {找到 # 个日期}}"
 
+#. placeholder {0}: Number(count)
+#: src/renderer/src/features/calendar/InviteBanner.tsx
+msgid "{0, plural, one {# occurrence} other {# occurrences}}"
+msgstr "{0, plural, other {# 次}}"
+
+#. placeholder {0}: deleteRequest?.ids.size ?? 0
+#: src/renderer/src/app/MailAlerts.tsx
+msgid "{0, plural, one {Delete # conversation?} other {Delete # conversations?}}"
+msgstr "{0, plural, other {删除 # 个对话？}}"
+
+#. placeholder {0}: confirming.preview.matches.length
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
+msgid "{0, plural, one {Preview: # message.} other {Preview: # messages.}} Only the previewed messages will be changed when applying to existing mail."
+msgstr "{0, plural, other {预览：# 封邮件。}}应用到已有邮件时，只修改预览中的邮件。"
+
 #. placeholder {0}: folder.headerWindow.days
 #. placeholder {1}: folder.headerWindow.messageLimit
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
@@ -60,11 +75,6 @@ msgstr "已生成向量 {0} · 等待 {1} · 运行 {2} · 失败 {3}"
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 msgid "{0} more not loaded"
 msgstr "另有 {0} 项未加载"
-
-#. placeholder {0}: Math.floor(report.cursorAgeMs / 1000)
-#: src/renderer/src/features/settings/sections/SyncHealth.tsx
-msgid "{0} seconds"
-msgstr "{0} 秒"
 
 #: src/renderer/src/features/overview/Overview.tsx
 msgid "{accountCount, plural, one {# account} other {# accounts}}, {total} unread"
@@ -94,13 +104,21 @@ msgstr "{checked, plural, other {同步间隙回填旧邮件。已检查 # 封�
 msgid "{checked, plural, one {Older mail is up to date. # message checked.} other {Older mail is up to date. # messages checked.}}"
 msgstr "{checked, plural, other {旧邮件已回填。已检查 # 封邮件。}}"
 
+#: src/renderer/src/features/settings/sections/ContactSettings.tsx
+msgid "{count, plural, one {# cached contact} other {# cached contacts}}"
+msgstr "{count, plural, other {# 个已缓存联系人}}"
+
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
-msgid "{count, plural, one {# change could not be saved} other {# changes could not be saved}}"
+msgid "{count, plural, one {# change couldn't be saved} other {# changes couldn't be saved}}"
 msgstr "{count, plural, other {# 项更改未能保存}}"
 
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "{count, plural, one {# message had rejected recipients} other {# messages had rejected recipients}}"
 msgstr "{count, plural, other {# 封邮件有收件人被拒收}}"
+
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "{count, plural, one {# result} other {# results}}"
+msgstr "{count, plural, other {# 个结果}}"
 
 #: src/renderer/src/features/search/SearchHitBar.tsx
 msgid "{count, plural, one {# search match} other {# search matches}}"
@@ -114,17 +132,22 @@ msgstr "{count, plural, other {# 封已发送邮件在“已发送”中缺少�
 msgid "{count, plural, one {Blocked # tracker} other {Blocked # trackers}}"
 msgstr "{count, plural, other {已拦截 # 个追踪器}}"
 
+#: src/renderer/src/features/organize/FolderActions.tsx
+msgid "{count, plural, one {Marked # message as read} other {Marked # messages as read}}"
+msgstr "{count, plural, other {已将 # 封邮件标为已读}}"
+
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "{count, plural, one {More than # result} other {More than # results}}"
+msgstr "{count, plural, other {超过 # 个结果}}"
+
+#: src/renderer/src/app/use-app-messages.ts
+#: src/renderer/src/features/organize/FolderActions.tsx
+msgid "{count, plural, one {Permanently deleted # message} other {Permanently deleted # messages}}"
+msgstr "{count, plural, other {已永久删除 # 封邮件}}"
+
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "{count, plural, one {Saving # attachment to your attachment folder} other {Saving # attachments to your attachment folder}}"
 msgstr "{count, plural, other {正在将 # 个附件存到附件文件夹}}"
-
-#: src/renderer/src/features/settings/sections/ContactSettings.tsx
-msgid "{count} cached contacts"
-msgstr "已缓存 {count} 个联系人"
-
-#: src/renderer/src/features/calendar/InviteBanner.tsx
-msgid "{count} occurrences"
-msgstr "重复 {count} 次"
 
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 msgid "{count} selected (loaded)"
@@ -165,6 +188,22 @@ msgstr "{email} 的登录已被撤销或已过期，同步已暂停。"
 #: src/renderer/src/features/ai/TriageChip.tsx
 msgid "{hours, plural, one {Snooze for # hour} other {Snooze for # hours}}"
 msgstr "{hours, plural, other {稍后提醒（# 小时）}}"
+
+#: src/renderer/src/features/calendar/InviteBanner.tsx
+msgid "{interval, plural, one {Every # day} other {Every # days}}"
+msgstr "{interval, plural, other {每 # 天}}"
+
+#: src/renderer/src/features/calendar/InviteBanner.tsx
+msgid "{interval, plural, one {Every # month} other {Every # months}}"
+msgstr "{interval, plural, other {每 # 个月}}"
+
+#: src/renderer/src/features/calendar/InviteBanner.tsx
+msgid "{interval, plural, one {Every # week} other {Every # weeks}}"
+msgstr "{interval, plural, other {每 # 周}}"
+
+#: src/renderer/src/features/calendar/InviteBanner.tsx
+msgid "{interval, plural, one {Every # year} other {Every # years}}"
+msgstr "{interval, plural, other {每 # 年}}"
 
 #: src/renderer/src/features/compose/components/RecipientField.tsx
 msgid "{label} suggestions"
@@ -231,8 +270,13 @@ msgid "{received} of {size}"
 msgstr "{received} / {size}"
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
+#: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "{seconds, plural, one {# second} other {# seconds}}"
 msgstr "{seconds, plural, other {# 秒}}"
+
+#: src/renderer/src/features/reader/ThreadMessage.tsx
+msgid "{sender}, {sent}"
+msgstr "{sender}，{sent}"
 
 #: src/renderer/src/features/calendar/recurrence-summary.ts
 msgid "{summary} until {date}"
@@ -251,8 +295,8 @@ msgid "{total, plural, one {Covers the newest {kept} of # message} other {Covers
 msgstr "{total, plural, other {涵盖最新的 {kept} 封邮件（共 # 封）}}"
 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
-msgid "{value} days"
-msgstr "{value} 天"
+msgid "{value, plural, one {# day} other {# days}}"
+msgstr "{value, plural, other {# 天}}"
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "{who} ({status})"
@@ -293,12 +337,28 @@ msgid "A domain covers its subdomains. Known trackers stay blocked for these sen
 msgstr "域名包括它的子域名。对这些发件人，已知的追踪器照样拦截。"
 
 #: src/renderer/src/lib/errors.ts
+msgid "A folder can't be moved inside itself."
+msgstr "文件夹不能移到自身内部。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "A label on this draft isn't valid. Remove it and save again."
+msgstr "此草稿上有一个标签无效。请移除后重新保存。"
+
+#: src/renderer/src/lib/errors.ts
 msgid "A label or folder needs a valid name"
 msgstr "标签或文件夹需要有效名称"
+
+#: src/renderer/src/lib/errors.ts
+msgid "A message needs at least one recipient."
+msgstr "邮件至少需要一个收件人。"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "A previous daily quiet-hours setting is still active. Change this schedule to replace it."
 msgstr "原每日静音时段仍生效。修改此日程后替换。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "A signature needs a name and a sending address."
+msgstr "签名需要名称和发件地址。"
 
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 msgid "Above quoted text"
@@ -309,6 +369,10 @@ msgstr "引文上方"
 #: src/renderer/src/features/compose/components/ComposerAi.tsx
 msgid "Accept"
 msgstr "接受"
+
+#: src/renderer/src/features/ai/TriageChip.tsx
+msgid "Accept AI suggestion: {title}"
+msgstr "接受 AI 建议：{title}"
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Accepted"
@@ -374,6 +438,10 @@ msgstr "操作"
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Actions for {0}"
 msgstr "{0} 的操作"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Actions older than 24 hours can't be undone."
+msgstr "超过 24 小时的操作无法撤销。"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Active hours by space"
@@ -566,6 +634,14 @@ msgstr "AI 添加了陌生收件人："
 msgid "AI apps"
 msgstr "AI 应用"
 
+#: src/renderer/src/lib/errors.ts
+msgid "AI apps can only draft plain-text new messages and replies."
+msgstr "AI 应用只能写纯文本的新邮件草稿和回复草稿。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "AI apps can only suggest existing Gmail labels of the same account."
+msgstr "AI 应用只能建议同一账户中已有的 Gmail 标签。"
+
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "AI can read and search mail, but can't change anything."
 msgstr "AI 能读邮件、搜索，不能改动任何东西。"
@@ -577,10 +653,6 @@ msgstr "AI 草稿"
 #: src/renderer/src/lib/errors.ts
 msgid "AI input budget exceeded. Ask about fewer messages."
 msgstr "AI 输入超限。请减少提问涉及的消息数量。"
-
-#: src/renderer/src/lib/errors.ts
-msgid "AI input could not be encoded."
-msgstr "无法编码 AI 输入。"
 
 #: src/renderer/src/lib/errors.ts
 msgid "AI model is unavailable."
@@ -610,10 +682,18 @@ msgstr "AI 响应在完成前中断。"
 msgid "AI suggestion"
 msgstr "AI 建议"
 
+#: src/renderer/src/features/ai/TriageChip.tsx
+msgid "AI suggestion: {title}"
+msgstr "AI 建议：{title}"
+
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "AI suggestions"
 msgstr "AI 建议"
+
+#: src/renderer/src/lib/errors.ts
+msgid "AI suggestions need 1 to 20 conversations."
+msgstr "AI 建议需要 1 到 20 个对话。"
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -679,6 +759,10 @@ msgstr "将永久删除当前文件夹中的邮件，包括尚未加载的邮件
 msgid "Allow access from my tailnet"
 msgstr "允许从我的 tailnet 访问"
 
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
+msgid "Allow AI suggestions"
+msgstr "允许 AI 建议"
+
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "Allow AI to read this account"
@@ -695,10 +779,6 @@ msgstr "允许通知"
 #: src/renderer/src/features/organize/PermanentDeletePermission.tsx
 msgid "Allow permanent deletion for {email}?"
 msgstr "允许永久删除 {email} 的邮件？"
-
-#: src/renderer/src/features/settings/sections/AiClientCard.tsx
-msgid "Allow proposals"
-msgstr "允许提出建议"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Allowed"
@@ -826,6 +906,10 @@ msgstr "应用到已有邮件？"
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "Approve"
 msgstr "批准"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Approve AI suggestions in the app."
+msgstr "请在应用内批准 AI 建议。"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "Approve and edit"
@@ -977,6 +1061,14 @@ msgstr "自动回复"
 msgid "Automatic reply"
 msgstr "自动回复"
 
+#: src/renderer/src/lib/errors.ts
+msgid "Automatic triage is off."
+msgstr "自动分拣已关闭。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Automatic triage is paused."
+msgstr "自动分拣已暂停。"
+
 #: src/renderer/src/features/settings/sections/UpdateSettings.tsx
 msgid "Automatically download updates"
 msgstr "自动下载更新"
@@ -1098,10 +1190,6 @@ msgid "Calendar invitation"
 msgstr "日历邀请"
 
 #: src/renderer/src/lib/errors.ts
-msgid "Calendar pagination repeated a page"
-msgstr "日历分页重复返回同一页"
-
-#: src/renderer/src/lib/errors.ts
 msgid "Calendar response was not sent"
 msgstr "日历响应未发送"
 
@@ -1197,17 +1285,17 @@ msgstr "暂时无法连接邮件服务器。"
 msgid "Cancel"
 msgstr "取消"
 
-#: src/renderer/src/lib/errors.ts
-msgid "Cannot build calendar response"
-msgstr "无法生成日历响应"
-
-#: src/renderer/src/lib/errors.ts
-msgid "Cannot edit a series with recurrence overrides"
-msgstr "无法编辑含单次例外的重复事件"
-
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "Categories"
 msgstr "类别"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Categories can't be renamed, deleted or moved as folders."
+msgstr "类别不能像文件夹一样重命名、删除或移动。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Categories can't be used as folders. Use the categories action."
+msgstr "类别不能当作文件夹使用。请使用类别操作。"
 
 #: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/features/ai/Proposals.tsx
@@ -1348,6 +1436,10 @@ msgid "Choose a date and time"
 msgstr "请选择日期和时间"
 
 #: src/renderer/src/lib/errors.ts
+msgid "Choose a destination from this account"
+msgstr "请从此账户中选择目标位置"
+
+#: src/renderer/src/lib/errors.ts
 msgid "Choose a future reminder time"
 msgstr "请选择未来的提醒时间"
 
@@ -1364,8 +1456,24 @@ msgid "Choose a parent folder from this account"
 msgstr "请选择此账户的上级文件夹"
 
 #: src/renderer/src/lib/errors.ts
+msgid "Choose a sent message to send again."
+msgstr "请选择一封已发送的邮件来重发。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Choose a server folder."
+msgstr "请选择一个服务器文件夹。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Choose a size in bytes and a comparison"
+msgstr "请选择以字节为单位的大小和比较方式"
+
+#: src/renderer/src/lib/errors.ts
 msgid "Choose a user label or folder"
 msgstr "请选择自建标签或文件夹"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Choose a valid favorite position"
+msgstr "请选择有效的收藏位置"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Choose a verified send-as address for this account"
@@ -1387,6 +1495,18 @@ msgstr "请选择至少一项操作"
 #: src/renderer/src/app/ThreadWindow.tsx
 msgid "Choose Delete key action"
 msgstr "选择删除键动作"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Choose each favorite once"
+msgstr "每个收藏项只能选一次"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Choose folders from this account."
+msgstr "请选择此账户中的文件夹。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Choose messages from this account"
+msgstr "请选择此账户中的邮件"
 
 #: src/renderer/src/features/organize/MultiOrganization.tsx
 msgid "Choose multiple categories"
@@ -1426,6 +1546,7 @@ msgid "Clear recent searches"
 msgstr "清除最近搜索"
 
 #: src/renderer/src/features/mail-list/EmptyList.tsx
+#: src/renderer/src/features/search/SearchField.tsx
 msgid "Clear search"
 msgstr "清除搜索"
 
@@ -1545,7 +1666,7 @@ msgid "Compaction is unavailable on this platform."
 msgstr "此平台暂不支持压缩。"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
-msgid "Compaction was refused because search index alignment could not be guaranteed."
+msgid "Compaction was refused because search index alignment couldn't be guaranteed."
 msgstr "无法保证搜索索引对齐，已拒绝压缩。"
 
 #. Keyboard shortcuts section: writing, replying to and sending messages.
@@ -1571,16 +1692,28 @@ msgid "Confirm and add event"
 msgstr "确认添加事件"
 
 #: src/renderer/src/lib/errors.ts
-msgid "Confirm deletion for this rule"
-msgstr "请确认此规则的删除操作"
+msgid "Confirm deletion for this filter"
+msgstr "请确认删除此过滤器"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Confirm deletion of this server filter"
+msgstr "请确认删除此服务器过滤器"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Confirm discarding the saved filter"
+msgstr "请确认放弃已保存的过滤器"
+
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
+msgid "Confirm filter changes?"
+msgstr "确认修改过滤器？"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Confirm permanent deletion in the app."
+msgstr "请在应用内确认永久删除。"
 
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Confirm removal"
 msgstr "确认移除"
-
-#: src/renderer/src/features/settings/sections/FilterEditor.tsx
-msgid "Confirm rule changes?"
-msgstr "确认修改规则？"
 
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
@@ -1783,117 +1916,34 @@ msgstr "复制为本地签名"
 msgid "Copy webmail link"
 msgstr "复制网页邮箱链接"
 
+#: src/renderer/src/lib/errors.ts
+msgid "Couldn't change remote access. Try again."
+msgstr "无法更改远程访问。请重试。"
+
 #: src/renderer/src/app/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
-msgid "Could not check for updates. Try again later."
+msgid "Couldn't check for updates. Try again later."
 msgstr "无法检查更新，请稍后重试。"
 
 #: src/renderer/src/features/compose/components/ComposeGrammar.tsx
-msgid "Could not check grammar on this Mac."
+msgid "Couldn't check grammar on this Mac."
 msgstr "无法在此 Mac 上检查语法。"
 
 #: src/renderer/src/features/compose/hooks/use-compose-send.ts
-msgid "Could not check recipients."
+msgid "Couldn't check recipients."
 msgstr "无法检查收件人。"
 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
-msgid "Could not check sync health."
+msgid "Couldn't check sync health."
 msgstr "无法检查同步状态。"
-
-#: src/renderer/src/features/reader/attachments/Attachments.tsx
-msgid "Could not decode winmail.dat. You can save the original file."
-msgstr "无法解码 winmail.dat，可保存原文件。"
-
-#: src/renderer/src/features/sync-status/FailedOpNotice.tsx
-msgid "Could not dismiss this notice. Try again."
-msgstr "未能关闭此提示。请重试。"
-
-#: src/renderer/src/features/reader/attachments/AttachmentImportDialog.tsx
-msgid "Could not import this attachment."
-msgstr "无法导入此附件。"
-
-#: src/renderer/src/features/settings/sections/AppleContactsSettings.tsx
-msgid "Could not load Apple Contacts. Try refreshing."
-msgstr "无法加载 Apple 联系人。请尝试刷新。"
-
-#: src/renderer/src/features/mail-list/MessageList.tsx
-msgid "Could not load older messages. Try again."
-msgstr "无法加载更早的邮件，请重试。"
-
-#: src/renderer/src/features/calendar/InviteBanner.tsx
-msgid "Could not load the calendar invitation."
-msgstr "无法加载日历邀请。"
-
-#: src/renderer/src/app/use-app-messages.ts
-msgid "Could not load the next message"
-msgstr "无法加载下一封邮件"
-
-#: src/renderer/src/features/calendar/CalendarEvents.tsx
-msgid "Could not load your calendar."
-msgstr "无法加载日历。"
-
-#: src/renderer/src/features/settings/sections/SystemSettings.tsx
-msgid "Could not open notification settings."
-msgstr "无法打开通知设置。"
-
-#: src/renderer/src/app/use-app-messages.ts
-msgid "Could not open the compose window"
-msgstr "无法打开撰写窗口"
-
-#: src/renderer/src/app/use-app-messages.ts
-msgid "Could not open the draft"
-msgstr "无法打开草稿"
-
-#: src/renderer/src/app/use-app-messages.ts
-msgid "Could not open the feedback draft"
-msgstr "无法打开反馈草稿"
-
-#: src/renderer/src/features/compose/hooks/use-compose-editor.ts
-msgid "Could not open the system picker."
-msgstr "无法打开系统选择器。"
-
-#: src/renderer/src/features/sync-status/FailedOpNotice.tsx
-msgid "Could not prepare the resend draft. Try again."
-msgstr "未能准备重发草稿。请重试。"
-
-#: src/renderer/src/features/reader/attachments/Attachments.tsx
-msgid "Could not read attached message."
-msgstr "无法读取附加邮件。"
-
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
-msgid "Could not read clipboard"
-msgstr "无法读取剪贴板"
-
-#: src/renderer/src/features/settings/sections/SystemSettings.tsx
-msgid "Could not read system permission"
-msgstr "无法读取系统权限"
-
-#: src/renderer/src/app/use-native-menu-bridge.ts
-msgid "Could not read the attachments. Check the files and their permissions."
-msgstr "无法读取附件，请检查文件和访问权限。"
-
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
-#: src/renderer/src/features/settings/sections/SystemSettings.tsx
-msgid "Could not register OpenMail. Try again from the installed app."
-msgstr "注册失败，请从安装后的应用重试。"
-
-#: src/main/app/native-i18n.ts
-msgid "Could not reset the local cache"
-msgstr "无法重置本地缓存"
-
-#: src/renderer/src/features/settings/sections/AiSettings.tsx
-#: src/renderer/src/lib/ai-settings-errors.test.ts
-#: src/renderer/src/lib/errors.ts
-msgid "Could not save the API key in the system keychain."
-msgstr "无法将 API 密钥存入系统钥匙串。"
-
-#: src/renderer/src/features/sync-status/MailStatusNotice.tsx
-msgid "Could not sync {names}."
-msgstr "无法同步 {names}。"
 
 #: src/renderer/src/features/compose/components/RecipientField.tsx
 msgid "Couldn't copy address"
 msgstr "无法复制地址"
+
+#: src/renderer/src/features/reader/attachments/Attachments.tsx
+msgid "Couldn't decode winmail.dat. You can save the original file."
+msgstr "无法解码 winmail.dat，可保存原文件。"
 
 #: src/renderer/src/app/use-app-messages.ts
 msgid "Couldn't delete: {reason}"
@@ -1903,9 +1953,17 @@ msgstr "删除失败：{reason}"
 msgid "Couldn't discard: {reason}"
 msgstr "丢弃失败：{reason}"
 
+#: src/renderer/src/features/sync-status/FailedOpNotice.tsx
+msgid "Couldn't dismiss this notice. Try again."
+msgstr "未能关闭此提示。请重试。"
+
 #: src/renderer/src/features/downloads/Downloads.tsx
 msgid "Couldn't download {name}"
 msgstr "无法下载 {name}"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Couldn't find this attachment. Open the message again."
+msgstr "找不到此附件。请重新打开邮件。"
 
 #: src/renderer/src/features/downloads/Downloads.tsx
 msgid "Couldn't get the attachment"
@@ -1915,9 +1973,41 @@ msgstr "无法获取附件"
 msgid "Couldn't get the attachment: {reason}"
 msgstr "无法获取附件：{reason}"
 
+#: src/renderer/src/features/reader/attachments/AttachmentImportDialog.tsx
+msgid "Couldn't import this attachment."
+msgstr "无法导入此附件。"
+
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't insert the image. Use a public PNG, JPEG, GIF or WebP image up to 8 MB."
 msgstr "无法插入图片。请使用不超过 8 MB 的公网 PNG、JPEG、GIF 或 WebP 图片。"
+
+#: src/renderer/src/features/settings/sections/AppleContactsSettings.tsx
+msgid "Couldn't load Apple Contacts. Try refreshing."
+msgstr "无法加载 Apple 联系人。请尝试刷新。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Couldn't load contacts from the server. Try again in a few minutes."
+msgstr "无法从服务器加载联系人。请过几分钟再试。"
+
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "Couldn't load older messages. Try again."
+msgstr "无法加载更早的邮件，请重试。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Couldn't load the calendar from the server. Try again in a few minutes."
+msgstr "无法从服务器加载日历。请过几分钟再试。"
+
+#: src/renderer/src/features/calendar/InviteBanner.tsx
+msgid "Couldn't load the calendar invitation."
+msgstr "无法加载日历邀请。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Couldn't load the folder list from the server. Try again in a few minutes."
+msgstr "无法从服务器加载文件夹列表。请过几分钟再试。"
+
+#: src/renderer/src/app/use-app-messages.ts
+msgid "Couldn't load the next message"
+msgstr "无法加载下一封邮件"
 
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't load the original attachments: {reason}"
@@ -1935,13 +2025,65 @@ msgstr "无法加载此邮件。"
 msgid "Couldn't load your accounts."
 msgstr "无法加载你的账户。"
 
+#: src/renderer/src/features/calendar/CalendarEvents.tsx
+msgid "Couldn't load your calendar."
+msgstr "无法加载日历。"
+
+#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+msgid "Couldn't open notification settings."
+msgstr "无法打开通知设置。"
+
+#: src/renderer/src/app/use-app-messages.ts
+msgid "Couldn't open the compose window"
+msgstr "无法打开撰写窗口"
+
+#: src/renderer/src/app/use-app-messages.ts
+msgid "Couldn't open the draft"
+msgstr "无法打开草稿"
+
+#: src/renderer/src/app/use-app-messages.ts
+msgid "Couldn't open the feedback draft"
+msgstr "无法打开反馈草稿"
+
+#: src/renderer/src/features/compose/hooks/use-compose-editor.ts
+msgid "Couldn't open the system picker."
+msgstr "无法打开系统选择器。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Couldn't prepare a reply to this invitation. Respond from your calendar instead."
+msgstr "无法准备对此邀请的回复。请在日历中回复。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Couldn't prepare the AI request. Try again."
+msgstr "无法准备 AI 请求。请重试。"
+
+#: src/renderer/src/features/sync-status/FailedOpNotice.tsx
+msgid "Couldn't prepare the resend draft. Try again."
+msgstr "未能准备重发草稿。请重试。"
+
 #: src/renderer/src/features/reader/use-thread-print.ts
 msgid "Couldn't print: {reason}"
 msgstr "无法打印：{reason}"
 
+#: src/renderer/src/features/reader/attachments/Attachments.tsx
+msgid "Couldn't read attached message."
+msgstr "无法读取附加邮件。"
+
+#: src/renderer/src/features/compose/components/ComposeEditor.tsx
+msgid "Couldn't read clipboard"
+msgstr "无法读取剪贴板"
+
+#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+msgid "Couldn't read system permission"
+msgstr "无法读取系统权限"
+
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't read the attachment. Try adding it again."
 msgstr "无法读取附件，请重新添加。"
+
+#: src/renderer/src/app/use-native-menu-bridge.ts
+msgid "Couldn't read the attachments. Check the files and their permissions."
+msgstr "无法读取附件，请检查文件和访问权限。"
 
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't read the clipboard attachment."
@@ -1951,13 +2093,38 @@ msgstr "无法读取剪贴板附件。"
 msgid "Couldn't read the image."
 msgstr "无法读取图片。"
 
+#: src/renderer/src/lib/errors.ts
+msgid "Couldn't recover this draft. Close it and open it again."
+msgstr "无法恢复此草稿。请关闭后重新打开。"
+
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+msgid "Couldn't register OpenMail. Try again from the installed app."
+msgstr "注册失败，请从安装后的应用重试。"
+
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Couldn't remove the Tailscale mapping. Open Tailscale, and OpenMail removes it as soon as Tailscale responds."
 msgstr "无法移除 Tailscale 映射。打开 Tailscale，Tailscale 响应后 OpenMail 会立即移除它。"
 
+#: src/main/app/native-i18n.ts
+msgid "Couldn't reset the local cache"
+msgstr "无法重置本地缓存"
+
+#: src/renderer/src/app/use-app-messages.ts
+msgid "Couldn't restore the draft: {reason}"
+msgstr "无法恢复草稿：{reason}"
+
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't save"
 msgstr "保存失败"
+
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "Couldn't save the API key in the system keychain."
+msgstr "无法将 API 密钥存入系统钥匙串。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Couldn't save the API key in the system keychain. Unlock the keychain and try again."
+msgstr "无法将 API 密钥存入系统钥匙串。请解锁钥匙串后重试。"
 
 #: src/renderer/src/app/use-app-messages.ts
 msgid "Couldn't save the draft: {reason}"
@@ -1966,6 +2133,10 @@ msgstr "无法保存草稿：{reason}"
 #: src/renderer/src/features/reader/use-thread-print.ts
 msgid "Couldn't save the PDF: {reason}"
 msgstr "无法保存 PDF：{reason}"
+
+#: src/renderer/src/app/use-app-messages.ts
+msgid "Couldn't send {subject}: {reason}"
+msgstr "无法发送 {subject}：{reason}"
 
 #: src/renderer/src/app/use-app-messages.ts
 msgid "Couldn't send: {reason}"
@@ -1980,6 +2151,10 @@ msgstr "无法与邮件服务器建立安全连接。请检查端口和加密设
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't sync"
 msgstr "无法同步"
+
+#: src/renderer/src/features/sync-status/MailStatusNotice.tsx
+msgid "Couldn't sync {names}."
+msgstr "无法同步 {names}。"
 
 #: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "Couldn't write the file. Nothing was changed. {detail}"
@@ -2002,8 +2177,8 @@ msgid "Create an app password under Account Security in your Yahoo account."
 msgstr "在 Yahoo 账户的「账户安全」里生成应用密码。"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
-msgid "Create an app password under Settings > Privacy & Security, with IMAP and SMTP checked."
-msgstr "在「设置 > 隐私与安全」里新建应用密码，勾选 IMAP 和 SMTP。"
+msgid "Create an app password under Settings → Privacy & Security, with IMAP and SMTP checked."
+msgstr "在「设置 → 隐私与安全」里新建应用密码，勾选 IMAP 和 SMTP。"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Create an app-specific password under Sign-In and Security in your Apple Account."
@@ -2180,11 +2355,6 @@ msgstr "删除"
 msgid "Delete {0}"
 msgstr "删除 {0}"
 
-#. placeholder {0}: deleteRequest?.ids.size ?? 0
-#: src/renderer/src/app/MailAlerts.tsx
-msgid "Delete {0} conversations?"
-msgstr "删除 {0} 个对话？"
-
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "Delete draft"
 msgstr "删除草稿"
@@ -2216,6 +2386,10 @@ msgstr "已删除"
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 msgid "Deleting a folder also deletes its messages on the server."
 msgstr "删除文件夹也会删除服务器内的邮件。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Deleting the folder stalled on the same messages. Refresh and try again."
+msgstr "删除文件夹时卡在同一批邮件上。请刷新后重试。"
 
 #: src/renderer/src/features/settings/sections/audit-actions.ts
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
@@ -2296,6 +2470,10 @@ msgstr "磁盘空间不足，缓存预算已自动收紧。受保护内容会保
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "Dismiss"
 msgstr "忽略"
+
+#: src/renderer/src/features/ai/TriageChip.tsx
+msgid "Dismiss AI suggestion"
+msgstr "忽略 AI 建议"
 
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
 msgid "Display name"
@@ -2532,12 +2710,16 @@ msgid "Ends"
 msgstr "结束条件"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
-msgid "Enter a different OAuth client you registered yourself. New sign-ins use it. See {doc} in the repository."
-msgstr "填入你自己注册的另一个 OAuth 客户端。之后的新登录使用它。参见仓库里的 {doc}。"
+msgid "Enter a different OAuth client you registered yourself. New sign-ins use it."
+msgstr "填入你自己注册的另一个 OAuth 客户端。之后的新登录使用它。"
 
 #: src/renderer/src/features/organize/SnoozeDialog.tsx
 msgid "Enter a future reminder time"
 msgstr "请输入未来的提醒时间"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Enter a question and select accounts."
+msgstr "请输入问题并选择账户。"
 
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 msgid "Enter a signature name."
@@ -2547,7 +2729,6 @@ msgstr "请输入签名名称。"
 msgid "Enter a single access token"
 msgstr "请输入一个访问令牌"
 
-#: src/renderer/src/lib/ai-settings-errors.test.ts
 #: src/renderer/src/lib/errors.ts
 msgid "Enter a single API key."
 msgstr "请输入单个 API 密钥。"
@@ -2561,8 +2742,8 @@ msgid "Enter a template name."
 msgstr "请输入模板名称。"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
-msgid "Enter an OAuth client you registered yourself. New sign-ins use it instead of the built-in client. See {doc} in the repository."
-msgstr "填入你自己注册的 OAuth 客户端。之后的新登录改用它，不再用内置客户端。参见仓库里的 {doc}。"
+msgid "Enter an OAuth client you registered yourself. New sign-ins use it instead of the built-in client."
+msgstr "填入你自己注册的 OAuth 客户端。之后的新登录改用它，不再用内置客户端。"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Enter port numbers from 1 to 65535."
@@ -2575,6 +2756,10 @@ msgstr "填入邮箱服务商提供的 IMAP 和 SMTP 服务器地址。"
 #: src/renderer/src/features/feedback/Feedback.tsx
 msgid "Enter the project's feedback address"
 msgstr "填写项目反馈邮箱"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Enter valid category names."
+msgstr "请输入有效的类别名称。"
 
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Enter valid email addresses in To, Cc and Bcc."
@@ -2607,22 +2792,6 @@ msgstr "{interval, plural, other {每 # 年}}{month}的{ordinal}个{day}"
 #: src/renderer/src/features/calendar/recurrence-summary.ts
 msgid "Every {interval, plural, one {# year} other {# years}} on {date}"
 msgstr "{interval, plural, other {每 # 年}}的 {date}"
-
-#: src/renderer/src/features/calendar/InviteBanner.tsx
-msgid "Every {interval} days"
-msgstr "每 {interval} 天"
-
-#: src/renderer/src/features/calendar/InviteBanner.tsx
-msgid "Every {interval} months"
-msgstr "每 {interval} 个月"
-
-#: src/renderer/src/features/calendar/InviteBanner.tsx
-msgid "Every {interval} weeks"
-msgstr "每 {interval} 周"
-
-#: src/renderer/src/features/calendar/InviteBanner.tsx
-msgid "Every {interval} years"
-msgstr "每 {interval} 年"
 
 #: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Everyone"
@@ -2729,6 +2898,10 @@ msgstr "填写模板变量"
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Filter"
 msgstr "筛选"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Filter recovery is available for Gmail"
+msgstr "Gmail 支持恢复过滤器"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Filter shortcuts"
@@ -3100,6 +3273,14 @@ msgstr "高"
 msgid "How long a conversation stays open before it is marked as read. Manually: use {readShortcut} or the toolbar."
 msgstr "打开对话多久后标为已读。选「手动」时，用 {readShortcut} 或工具栏操作。"
 
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+msgid "How to register a Google OAuth client"
+msgstr "如何注册 Google OAuth 客户端"
+
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+msgid "How to register a Microsoft app"
+msgstr "如何注册 Microsoft 应用"
+
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "HTTPS certificates are off"
 msgstr "HTTPS 证书未开启"
@@ -3148,6 +3329,10 @@ msgstr "IMAP 账户"
 #: src/renderer/src/features/compose/components/DraftOrganization.tsx
 msgid "IMAP keywords, separated by commas"
 msgstr "IMAP 关键词，用逗号分隔"
+
+#: src/renderer/src/lib/errors.ts
+msgid "IMAP moves can't be undone after OpenMail restarts. Move the message back yourself."
+msgstr "OpenMail 重启后无法撤销 IMAP 移动。请手动把邮件移回去。"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "IMAP server"
@@ -3288,27 +3473,6 @@ msgstr "内部回复"
 #: src/renderer/src/features/calendar/EventRecurrenceEditor.tsx
 msgid "Interval"
 msgstr "间隔"
-
-#: src/renderer/src/lib/ai-settings-errors.test.ts
-#: src/renderer/src/lib/errors.ts
-msgid "Invalid AI account settings."
-msgstr "AI 账户设置无效。"
-
-#: src/renderer/src/lib/errors.ts
-msgid "Invalid AI compose request."
-msgstr "AI 撰写请求无效。"
-
-#: src/renderer/src/lib/errors.ts
-msgid "Invalid calendar event time"
-msgstr "日程时间无效"
-
-#: src/renderer/src/lib/errors.ts
-msgid "Invalid calendar pagination link"
-msgstr "日历分页链接无效"
-
-#: src/renderer/src/lib/errors.ts
-msgid "Invalid message link"
-msgstr "邮件链接无效"
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Invitation changes"
@@ -3754,10 +3918,6 @@ msgstr "Markdown 即时替换"
 msgid "Markdown works: **bold**, `code`, ```code block```"
 msgstr "支持 Markdown：**粗体**、`代码`、```代码块```"
 
-#: src/renderer/src/features/organize/FolderActions.tsx
-msgid "Marked {count} messages as read"
-msgstr "已将 {count} 封邮件标为已读"
-
 #: src/renderer/src/app/use-app-messages.ts
 msgid "Marked as important"
 msgstr "已标为重要"
@@ -3825,7 +3985,6 @@ msgid "Mention suggestions"
 msgstr "提及建议"
 
 #: src/renderer/src/features/reader/frame/EmailFrame.tsx
-#: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/features/settings/sections/VacationEditor.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Message"
@@ -3852,6 +4011,10 @@ msgstr "邮件背景"
 msgctxt "message text"
 msgid "Message body"
 msgstr "正文"
+
+#: src/renderer/src/features/reader/ThreadMessage.tsx
+msgid "Message from {sender}, {sent}"
+msgstr "来自 {sender} 的邮件，{sent}"
 
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Message link copied"
@@ -3894,7 +4057,7 @@ msgid "Message text contains"
 msgstr "消息文本包含"
 
 #: src/renderer/src/features/reader/body/MessageBody.tsx
-msgid "Message text could not be refreshed. Showing the cached version."
+msgid "Message text couldn't be refreshed. Showing the cached version."
 msgstr "消息文本无法刷新。正在显示缓存版本。"
 
 #: src/renderer/src/app/ThreadWindow.tsx
@@ -4455,6 +4618,10 @@ msgstr "没有可用的打印机。"
 msgid "No response needed"
 msgstr "无需回复"
 
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "No results"
+msgstr "无结果"
+
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "No shortcuts match."
 msgstr "没有匹配的快捷键。"
@@ -4607,12 +4774,12 @@ msgid "On battery: image recognition waits for AC power. PDF text indexing is th
 msgstr "电池供电时暂停图片识别，PDF 文字索引降速。"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
-msgid "On the web, turn on IMAP under Settings > POP3/SMTP/IMAP, then follow the prompts to generate an authorization code."
-msgstr "在网页版「设置 > POP3/SMTP/IMAP」开启 IMAP 服务，按提示生成授权码。"
+msgid "On the web, turn on IMAP under Settings → POP3/SMTP/IMAP, then follow the prompts to generate an authorization code."
+msgstr "在网页版「设置 → POP3/SMTP/IMAP」开启 IMAP 服务，按提示生成授权码。"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
-msgid "On the web, turn on IMAP/SMTP under Settings > Account & Security > Security Settings, then generate an authorization code."
-msgstr "在网页版「设置 > 账号与安全 > 安全设置」开启 IMAP/SMTP 服务，再生成授权码。"
+msgid "On the web, turn on IMAP/SMTP under Settings → Account & Security → Security Settings, then generate an authorization code."
+msgstr "在网页版「设置 → 账号与安全 → 安全设置」开启 IMAP/SMTP 服务，再生成授权码。"
 
 #: src/renderer/src/features/settings/sections/IndexingSettings.tsx
 msgid "On-device indexing"
@@ -4621,6 +4788,14 @@ msgstr "本机索引"
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "One occurrence of a recurring meeting"
 msgstr "重复会议中的一次"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Only archive and label suggestions are available."
+msgstr "只提供归档和标签建议。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Only Gmail needs an extra permission to delete permanently."
+msgstr "只有 Gmail 需要额外权限才能永久删除。"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Only inbox messages can be snoozed"
@@ -4650,6 +4825,10 @@ msgstr "仅永久删除所选邮件中属于当前废纸篓或垃圾邮件文件
 msgid "Only to me"
 msgstr "仅发送给我"
 
+#: src/renderer/src/lib/errors.ts
+msgid "Only Trash or Spam can be emptied."
+msgstr "只能清空废纸篓或垃圾邮件。"
+
 #: src/renderer/src/features/downloads/Downloads.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Open"
@@ -4671,6 +4850,10 @@ msgstr "打开 AI 权限"
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Open attachments from"
 msgstr "附件打开目录"
+
+#: src/renderer/src/app/use-app-messages.ts
+msgid "Open draft"
+msgstr "打开草稿"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Open email links in a new OpenMail draft."
@@ -4728,6 +4911,10 @@ msgstr "打开系统设置"
 msgid "Open Tailscale on this Mac and sign in."
 msgstr "在这台 Mac 上打开 Tailscale 并登录。"
 
+#: src/renderer/src/lib/errors.ts
+msgid "Open the draft to send it."
+msgstr "请打开草稿后发送。"
+
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Open this address on your phone or another computer"
 msgstr "在手机或另一台电脑上打开这个地址"
@@ -4749,11 +4936,11 @@ msgid "OpenMail can't read this config file, so it changes nothing. Fix the file
 msgstr "OpenMail 无法读取这个配置文件，因此不做任何改动。请修正文件后重试。{detail}"
 
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
-msgid "OpenMail could not load the AI settings, so it can't show which accounts AI apps can read. Close Settings and open it again."
+msgid "OpenMail couldn't load the AI settings, so it can't show which accounts AI apps can read. Close Settings and open it again."
 msgstr "OpenMail 无法载入 AI 设置，因此无法显示 AI 应用能读取哪些账户。请关闭设置后重新打开。"
 
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
-msgid "OpenMail could not read the API key from the keychain. Unlock the keychain, then open Settings again."
+msgid "OpenMail couldn't read the API key from the keychain. Unlock the keychain, then open Settings again."
 msgstr "OpenMail 无法从钥匙串读取 API 密钥。请解锁钥匙串，然后重新打开设置。"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
@@ -4799,12 +4986,12 @@ msgid "OpenMail sign-in"
 msgstr "OpenMail 登录"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
-msgid "OpenMail signs in with an OAuth client you register yourself. First enter the app you registered in Azure, with the Mobile and desktop applications type. Only personal outlook.com and Hotmail accounts are supported. See {doc} in the repository for the steps."
-msgstr "OpenMail 用你自己注册的 OAuth 客户端登录。先填入Azure 里注册的应用，类型选移动和桌面应用。只支持个人 outlook.com 和 hotmail 账户。步骤见仓库里的 {doc}。"
+msgid "OpenMail signs in with an OAuth client you register yourself. First enter the app you registered in Azure, with the Mobile and desktop applications type. Only personal outlook.com and Hotmail accounts are supported."
+msgstr "OpenMail 用你自己注册的 OAuth 客户端登录。先填入 Azure 里注册的应用，类型选移动和桌面应用。只支持个人 outlook.com 和 Hotmail 账户。"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
-msgid "OpenMail signs in with an OAuth client you register yourself. First enter the OAuth client you created in Google Cloud, with the Desktop app type. See {doc} in the repository for the steps."
-msgstr "OpenMail 用你自己注册的 OAuth 客户端登录。先填入Google Cloud 里创建的 OAuth 客户端，类型选桌面应用。步骤见仓库里的 {doc}。"
+msgid "OpenMail signs in with an OAuth client you register yourself. First enter the OAuth client you created in Google Cloud, with the Desktop app type."
+msgstr "OpenMail 用你自己注册的 OAuth 客户端登录。先填入 Google Cloud 里创建的 OAuth 客户端，类型选桌面应用。"
 
 #: src/renderer/src/features/feedback/Feedback.tsx
 msgid "OpenMail stopped unexpectedly"
@@ -4924,8 +5111,16 @@ msgid "Outlook chooses the reply subject."
 msgstr "回复主题由 Outlook 决定。"
 
 #: src/renderer/src/lib/errors.ts
+msgid "Outlook didn't return a web link for this message. Open it in Outlook on the web."
+msgstr "Outlook 未返回此邮件的网页链接。请在网页版 Outlook 中打开。"
+
+#: src/renderer/src/lib/errors.ts
 msgid "Outlook file attachments cannot exceed 150 MB"
 msgstr "Outlook 文件附件不能超过 150 MB。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Outlook filter sizes must be a multiple of 1024 bytes"
+msgstr "Outlook 过滤器的大小必须是 1024 字节的整数倍"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Outlook message requests cannot exceed 4 MB"
@@ -5029,11 +5224,6 @@ msgstr "永久删除"
 msgid "Permanently delete selected mail?"
 msgstr "永久删除所选邮件？"
 
-#: src/renderer/src/app/use-app-messages.ts
-#: src/renderer/src/features/organize/FolderActions.tsx
-msgid "Permanently deleted {count} messages"
-msgstr "已永久删除 {count} 封邮件"
-
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 msgid "Permission"
 msgstr "权限"
@@ -5089,18 +5279,17 @@ msgstr "预览 {0}"
 msgid "Preview changes"
 msgstr "预览修改"
 
+#: src/renderer/src/lib/errors.ts
+msgid "Preview the filter again before confirming"
+msgstr "确认前请重新预览过滤器"
+
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Preview unavailable"
 msgstr "预览不可用"
 
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
-msgid "Preview unavailable. The rule will apply to future mail on the server."
-msgstr "预览不可用。规则将用于服务器上的新邮件。"
-
-#. placeholder {0}: confirming.preview.matches.length
-#: src/renderer/src/features/settings/sections/FilterEditor.tsx
-msgid "Preview: {0} messages. Only the previewed messages will be changed when applying to existing mail."
-msgstr "预览：{0} 封邮件。应用到已有邮件时，只修改预览中的邮件。"
+msgid "Preview unavailable. The filter will apply to future mail on the server."
+msgstr "预览不可用。过滤器将用于服务器上的新邮件。"
 
 #. Keyboard shortcuts help: go back or forward through the views opened in this window, like a browser's Back and Forward.
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
@@ -5334,13 +5523,13 @@ msgstr "提醒时间"
 msgid "Reminder time"
 msgstr "提醒时间"
 
+#: src/renderer/src/lib/errors.ts
+msgid "Reminder time must be within the next year."
+msgstr "提醒时间必须在一年之内。"
+
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Remote access"
 msgstr "远程访问"
-
-#: src/renderer/src/lib/errors.ts
-msgid "Remote access could not be changed."
-msgstr "无法更改远程访问。"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Remote access needs MagicDNS and HTTPS Certificates turned on for your tailnet."
@@ -5554,7 +5743,7 @@ msgid "Reply all"
 msgstr "全部回复标记"
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
-msgid "Reply From"
+msgid "Reply from"
 msgstr "回复发件地址"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
@@ -5640,8 +5829,8 @@ msgstr "恢复规则？"
 
 #. placeholder {0}: pending.preview.matches.length
 #: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
-msgid "Restore the saved original rule on the server. Preview: {0} messages."
-msgstr "将在服务器恢复保存的原规则。预览：{0} 封邮件。"
+msgid "Restore the saved original rule on the server. {0, plural, one {Preview: # message.} other {Preview: # messages.}}"
+msgstr "将在服务器恢复保存的原规则。{0, plural, other {预览：# 封邮件。}}"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgid "Resume"
@@ -5681,6 +5870,10 @@ msgstr "检查 AI 收件人"
 #: src/renderer/src/features/ai/AiPanel.tsx
 msgid "Review AI suggestions"
 msgstr "查看 AI 建议"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Review AI suggestions in the app."
+msgstr "请在应用内查看 AI 建议。"
 
 #: src/renderer/src/features/reader/UnsubscribeButton.tsx
 msgid "Review an unsubscribe email before sending?"
@@ -5783,6 +5976,10 @@ msgstr "保存为 PDF…"
 msgid "Save draft"
 msgstr "保存草稿"
 
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
+msgid "Save filter"
+msgstr "保存过滤器"
+
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "Save key"
 msgstr "保存密钥"
@@ -5796,10 +5993,6 @@ msgstr "将邮件保存为 EML…"
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Save message as PDF…"
 msgstr "将这封邮件保存为 PDF…"
-
-#: src/renderer/src/features/settings/sections/FilterEditor.tsx
-msgid "Save rule"
-msgstr "保存规则"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Save selected"
@@ -5826,7 +6019,7 @@ msgid "Save to attachment folder"
 msgstr "保存到附件文件夹"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
-msgid "Save To…"
+msgid "Save to…"
 msgstr "保存到…"
 
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
@@ -5874,8 +6067,12 @@ msgid "Search  {searchKey}"
 msgstr "搜索  {searchKey}"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
-msgid "Search could not finish:"
-msgstr "搜索未完成："
+msgid "Search couldn't finish:"
+msgstr "搜索未能完成："
+
+#: src/renderer/src/lib/errors.ts
+msgid "Search groups are nested too deeply. Simplify your query."
+msgstr "搜索分组嵌套过深。请简化查询。"
 
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Search help"
@@ -5927,26 +6124,38 @@ msgstr "第二"
 msgid "Select {0}"
 msgstr "选择 {0}"
 
+#: src/renderer/src/lib/errors.ts
+msgid "Select 1 to 256 attachments"
+msgstr "请选择 1 到 256 个附件"
+
 #: src/renderer/src/features/reader/Reader.tsx
 msgid "Select a message"
 msgstr "选择一封邮件"
 
 #: src/renderer/src/features/ai/AiPanel.tsx
-msgid "Select accounts allowed in Settings > AI Access. The assistant searches mail and proposes drafts, labels or archive. You approve changes in AI suggestions."
-msgstr "在「设置 > AI 权限」中选择已允许的账户。助手会搜索邮件，提出草稿、标签或归档建议。改动需在「AI 建议」中确认。"
+msgid "Select accounts allowed in Settings → AI Access. The assistant searches mail and proposes drafts, labels or archive. You approve changes in AI suggestions."
+msgstr "在「设置 → AI 权限」中选择已允许的账户。助手会搜索邮件，提出草稿、标签或归档建议。改动需在「AI 建议」中确认。"
 
 #: src/renderer/src/app/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Select all"
 msgstr "全选"
 
+#: src/renderer/src/lib/errors.ts
+msgid "Select at least one conversation."
+msgstr "请选择至少一个对话。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Select between 1 and 1,000 conversations."
+msgstr "请选择 1 到 1,000 个对话。"
+
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Select conversation"
 msgstr "选择对话"
 
 #: src/renderer/src/features/reader/ThreadMessage.tsx
-msgid "Selected message"
-msgstr "已选邮件"
+msgid "Selected message from {sender}, {sent}"
+msgstr "已选中来自 {sender} 的邮件，{sent}"
 
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Selected message: {sender}, {subject}"
@@ -5963,6 +6172,10 @@ msgstr "移除邮件后的选择"
 #: src/renderer/src/features/settings/sections/IndexingSettings.tsx
 msgid "Semantic search is unavailable. Full-text search remains available."
 msgstr "语义搜索暂不可用，仍可全文搜索。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Semantic search isn't available right now."
+msgstr "语义搜索暂不可用。"
 
 #: src/renderer/src/app/use-compose-delivery.ts
 #: src/renderer/src/features/compose/components/Composer.tsx
@@ -6094,6 +6307,10 @@ msgstr "服务器总数 / 未读 / 对话"
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Server unavailable"
 msgstr "服务器不可用"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Server visibility is available for Gmail labels"
+msgstr "Gmail 标签支持设置服务器可见性"
 
 #: src/renderer/src/features/ai/AiPanel.tsx
 msgid "Set up built-in AI"
@@ -6373,6 +6590,7 @@ msgstr "SMTP 服务器"
 #: src/renderer/src/features/organize/SnoozeDialog.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
 #: src/renderer/src/i18n/action-names.ts
+#: src/renderer/src/i18n/shortcut-names.ts
 msgid "Snooze"
 msgstr "稍后提醒"
 
@@ -6395,17 +6613,21 @@ msgstr "软件更新"
 msgid "Some conditions need metadata that is not cached. Save the rule for future mail on the server."
 msgstr "部分条件需要未缓存的元数据。可保存规则，用于服务器上的新邮件。"
 
+#: src/renderer/src/lib/errors.ts
+msgid "Some filter conditions can't be checked against cached mail"
+msgstr "部分过滤条件无法对照缓存邮件检查"
+
 #: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "Some formatting cannot be kept in this mode. Link addresses are kept. You can undo the mode change."
 msgstr "此模式会丢失部分格式，链接地址会保留。切换后可以撤销。"
 
+#: src/renderer/src/lib/errors.ts
+msgid "Some occurrences of this series were changed, so the series can't be edited here. Edit it in your calendar."
+msgstr "此系列中的部分日程已被修改，无法在这里编辑整个系列。请在日历中编辑。"
+
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "Some recipients did not receive this message."
 msgstr "部分收件人未收到此邮件。"
-
-#: src/renderer/src/lib/errors.ts
-msgid "Some rule conditions cannot be evaluated from cached mail"
-msgstr "部分规则条件无法通过缓存邮件判断"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Some server predicates were omitted to preserve matches; local filters still apply:"
@@ -6534,8 +6756,8 @@ msgid "Stop loading images from {domain}"
 msgstr "不再自动加载 {domain} 的图片"
 
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
-msgid "Stop processing more rules"
-msgstr "停止处理后续规则"
+msgid "Stop processing more filters"
+msgstr "停止处理后续过滤器"
 
 #. placeholder {0}: a.address
 #: src/renderer/src/features/compose/components/RecipientField.tsx
@@ -6614,7 +6836,7 @@ msgid "Sync all"
 msgstr "同步全部"
 
 #: src/renderer/src/features/sync-status/sync-failure-text.ts
-msgid "Sync could not finish. It will retry automatically."
+msgid "Sync couldn't finish. It will retry automatically."
 msgstr "同步未能完成，稍后会自动重试。"
 
 #: src/renderer/src/features/overview/Overview.tsx
@@ -6749,9 +6971,25 @@ msgstr "还没有填写 {client} 的 OAuth 客户端。"
 msgid "The account was removed, but the keychain did not let OpenMail delete its saved sign-in. Open Keychain Access, search for openmail, and delete the item for that account."
 msgstr "账户已移除，但钥匙串不允许 OpenMail 删除其保存的登录信息。请打开“钥匙串访问”，搜索 openmail，然后删除该账户的项目。"
 
+#: src/renderer/src/lib/errors.ts
+msgid "The AI answer got too long. Ask a narrower question."
+msgstr "AI 回答过长。请把问题问得更具体。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "The AI needed too many steps. Ask a narrower question."
+msgstr "AI 需要的步骤太多。请把问题问得更具体。"
+
 #: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "The app's command failed. Nothing else was changed. {detail}"
 msgstr "应用的命令执行失败。其他内容未改动。{detail}"
+
+#: src/renderer/src/lib/errors.ts
+msgid "The assistant can only add user labels in Gmail."
+msgstr "助手只能在 Gmail 中添加用户标签。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "The assistant can only suggest drafts, labels and archiving."
+msgstr "助手只能建议草稿、标签和归档。"
 
 #: src/renderer/src/features/reader/body/MessageBody.tsx
 msgid "The body is not cached. Try opening this message again when connected."
@@ -6768,6 +7006,10 @@ msgstr "数据库完整性检查（quick_check）失败，或文件无法访问�
 #: src/main/app/native-i18n.ts
 msgid "The database was kept. Quit OpenMail and restore a local backup or contact support."
 msgstr "数据库已保留。请退出 OpenMail，恢复本地备份或联系支持。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "The destination account must belong to the target space"
+msgstr "目标账户必须属于目标空间"
 
 #: src/renderer/src/features/reader/frame/LinkConfirmDialog.tsx
 msgid "The displayed link may hide its destination. Check the real domain before opening."
@@ -6789,6 +7031,10 @@ msgstr "文件还不存在。OpenMail 会创建它。"
 msgid "The filter applies to future mail on the server."
 msgstr "过滤器会处理服务器上的新邮件。"
 
+#: src/renderer/src/lib/errors.ts
+msgid "The folder has more than 100,000 messages, the most one action can change."
+msgstr "此文件夹的邮件超过 100,000 封，超出单次操作的上限。"
+
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "The keychain is locked. Unlock your computer and sync resumes on its own."
 msgstr "钥匙串已锁定。解锁电脑后会自动恢复同步。"
@@ -6802,7 +7048,7 @@ msgid "The limit includes the database, attachments, WAL and recovery copies. Pr
 msgstr "上限包含数据库、附件、WAL 和恢复副本。受保护内容可超过上限。"
 
 #: src/main/app/native-i18n.ts
-msgid "The local database could not be verified"
+msgid "The local database couldn't be verified"
 msgstr "无法验证本地数据库"
 
 #: src/main/app/native-i18n.ts
@@ -6835,6 +7081,14 @@ msgstr "邮件服务器拒绝了 {email} 的密码，同步已暂停。"
 msgid "The menu lists up to 50 unread messages in the current space."
 msgstr "菜单最多显示当前空间的 50 封未读邮件。"
 
+#: src/renderer/src/lib/errors.ts
+msgid "The message changed on the server, so this can't be undone safely."
+msgstr "邮件已在服务器上更改，无法安全撤销。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "The message changed since then, so this can't be undone safely."
+msgstr "邮件之后已有更改，无法安全撤销。"
+
 #: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "The message mentions an attachment, but none is added."
 msgstr "邮件正文提到了附件，但还没有添加。"
@@ -6842,6 +7096,14 @@ msgstr "邮件正文提到了附件，但还没有添加。"
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "The message was sent, but its copy is missing from Sent."
 msgstr "邮件已发送，但“已发送”中缺少副本。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "The message you're replying to belongs to another account."
+msgstr "你回复的邮件属于另一个账户。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "The new folder isn't available yet. Try again in a moment."
+msgstr "新文件夹暂不可用。请稍后重试。"
 
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "The OAuth client that signed in {email} is no longer configured. Sync is paused."
@@ -6858,6 +7120,18 @@ msgstr "操作失败。"
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "The organizer differs from the message sender. Check the response recipient before replying."
 msgstr "组织者与邮件发件人不同，回复前请核对收件地址。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "The original attachments are over 30 MB. Forward without them."
+msgstr "原附件超过 30 MB。请不带附件转发。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "The original folder no longer exists."
+msgstr "原文件夹已不存在。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "The original message is too large to include. Forward it as an attachment."
+msgstr "原邮件太大，无法包含在内。请作为附件转发。"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "The other device needs the Tailscale app, signed in to the same tailnet. This Mac must stay on with OpenMail open. Quitting OpenMail takes the address offline until it opens again."
@@ -6876,8 +7150,16 @@ msgid "The rest is left out here. Copy gets the whole message."
 msgstr "其余部分这里没有显示。复制会得到整封邮件。"
 
 #: src/renderer/src/lib/errors.ts
+msgid "The selected conversation is no longer available."
+msgstr "所选对话已不可用。"
+
+#: src/renderer/src/lib/errors.ts
 msgid "The selected message is no longer available."
 msgstr "所选邮件已不存在。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "The selection has more than 100,000 messages. Select fewer."
+msgstr "所选内容超过 100,000 封邮件。请少选一些。"
 
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "The sender name contains a different email address."
@@ -6889,7 +7171,7 @@ msgid "The server blocked the sign-in as unsafe. Turn on IMAP in your email's we
 msgstr "服务器把这次登录当作不安全登录拦截了。请在邮箱网页版的设置中开启 IMAP，再用生成的授权码登录。"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
-msgid "The server could not complete this search."
+msgid "The server couldn't complete this search."
 msgstr "服务器未能完成搜索。"
 
 #: src/renderer/src/lib/errors.ts
@@ -6913,9 +7195,25 @@ msgstr "对话已变更。请重新生成摘要。"
 msgid "There is not enough free disk space to compact safely."
 msgstr "磁盘空闲空间不足，无法安全压缩。"
 
+#: src/renderer/src/lib/errors.ts
+msgid "These account settings aren't valid. Check them and try again."
+msgstr "这些账户设置无效。请检查后重试。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "These AI settings aren't valid. Check them and try again."
+msgstr "这些 AI 设置无效。请检查后重试。"
+
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "These are not email addresses: {list}"
 msgstr "这些不是邮件地址：{list}"
+
+#: src/renderer/src/lib/errors.ts
+msgid "These attachments are over 32 MB together. Save them to open them."
+msgstr "这些附件合计超过 32 MB。请保存后再打开。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "These conversations are no longer available. Refresh the list."
+msgstr "这些对话已不可用。请刷新列表。"
 
 #: src/renderer/src/app/MailAlerts.tsx
 msgid "These loaded conversations will be moved to Trash. You can undo this batch."
@@ -6925,9 +7223,41 @@ msgstr "这些已加载的对话将移到废纸篓，可以整批撤销。"
 msgid "Third"
 msgstr "第三"
 
+#: src/renderer/src/lib/errors.ts
+msgid "This account has no web mail link."
+msgstr "此账户没有网页版邮箱链接。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "This account is outside the selected accounts."
+msgstr "此账户不在所选账户中。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "This action isn't available for this account."
+msgstr "此账户不支持该操作。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "This AI suggestion can't be used. Dismiss it."
+msgstr "此 AI 建议无法使用。请忽略它。"
+
 #: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "This app isn't installed."
 msgstr "这个应用未安装。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "This attachment is over 32 MB. Save it to open it."
+msgstr "此附件超过 32 MB。请保存后再打开。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "This can no longer be undone."
+msgstr "已无法撤销。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "This can't be undone right now. Try again when you're online."
+msgstr "暂时无法撤销。请在联网后重试。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "This conversation's account is no longer connected."
+msgstr "此对话所属的账户已断开连接。"
 
 #: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 msgid "This deletes the saved recovery copy. Rules on the server are unchanged."
@@ -6946,8 +7276,33 @@ msgid "This draft has unsaved changes or is waiting to sync."
 msgstr "草稿有未保存的修改或正在等待同步。"
 
 #: src/renderer/src/lib/errors.ts
+msgid "This draft was already discarded."
+msgstr "此草稿已被舍弃。"
+
+#: src/renderer/src/lib/errors.ts
 msgid "This event is no longer available"
 msgstr "此事件已不可用"
+
+#: src/renderer/src/lib/errors.ts
+msgid "This event's time isn't valid. Check the start and end."
+msgstr "此日程的时间无效。请检查开始和结束时间。"
+
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
+#: src/renderer/src/lib/errors.ts
+msgid "This filter can only be applied to future mail on the server"
+msgstr "此过滤器只能用于服务器上的新邮件"
+
+#: src/renderer/src/lib/errors.ts
+msgid "This filter has already been restored"
+msgstr "此过滤器已恢复"
+
+#: src/renderer/src/lib/errors.ts
+msgid "This filter no longer exists"
+msgstr "此过滤器已不存在"
+
+#: src/renderer/src/lib/errors.ts
+msgid "This filter uses conditions or actions the editor can't keep"
+msgstr "此过滤器使用了编辑器无法保留的条件或操作"
 
 #: src/renderer/src/lib/errors.ts
 msgid "This invitation cannot be answered by this account"
@@ -6978,6 +7333,14 @@ msgstr "不支持此会议链接。"
 msgid "This message has no valid sender address."
 msgstr "此邮件没有有效的发件人地址。"
 
+#: src/renderer/src/lib/errors.ts
+msgid "This message isn't a draft."
+msgstr "此邮件不是草稿。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "This message link isn't valid."
+msgstr "此邮件链接无效。"
+
 #. Sent means the Sent mailbox.
 #: src/renderer/src/lib/errors.ts
 msgid "This message may have been sent. Check Sent before sending it again."
@@ -7004,17 +7367,20 @@ msgid "This removes the filter from the server. Existing messages are unchanged.
 msgstr "将从服务器移除此规则，已有邮件不变。"
 
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
-#: src/renderer/src/lib/errors.ts
-msgid "This rule can only be applied to future mail on the server"
-msgstr "此规则只能用于服务器上的新邮件"
-
-#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "This rule deletes messages. Confirm only if the preview matches the messages you intend to delete."
 msgstr "此规则会删除消息。仅当预览符合要删除的消息时才确认。"
 
 #: src/renderer/src/lib/errors.ts
+msgid "This server filter isn't supported"
+msgstr "不支持此服务器过滤器"
+
+#: src/renderer/src/lib/errors.ts
 msgid "This setting is only available on the Mac."
 msgstr "这项设置只能在 Mac 上更改。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "This signature belongs to another sending address or is no longer available."
+msgstr "此签名属于另一个发件地址，或已不可用。"
 
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "This space has no accounts yet."
@@ -7023,6 +7389,14 @@ msgstr "这个空间还没有账户。"
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "This space has no accounts yet. <0>Add account</0>"
 msgstr "这个空间还没有账户。<0>添加账户</0>"
+
+#: src/renderer/src/lib/errors.ts
+msgid "This suggestion couldn't be applied."
+msgstr "无法应用此建议。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "This suggestion is no longer available."
+msgstr "此建议已不可用。"
 
 #: src/renderer/src/lib/errors.ts
 msgid "This time is skipped or repeated by daylight saving. Enter a date and time with a UTC offset"
@@ -7069,6 +7443,10 @@ msgstr "发送给我"
 msgid "To or CC me"
 msgstr "发送或抄送给我"
 
+#: src/renderer/src/lib/errors.ts
+msgid "To sign in again, add the address again with its new password."
+msgstr "如需重新登录，请用新密码重新添加此地址。"
+
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "To: {to}"
 msgstr "收件人：{to}"
@@ -7113,6 +7491,10 @@ msgstr "语气"
 #: src/renderer/src/app/use-native-menu-bridge.ts
 msgid "Too many attachments. Attach up to 256 files."
 msgstr "附件过多，最多可添加 256 个文件。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Too many conversations in one AI suggestion."
+msgstr "单个 AI 建议中的对话太多。"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Too many tailnet logins"
@@ -7174,10 +7556,17 @@ msgstr "在设置中开启"
 msgid "Turn off filters"
 msgstr "关闭筛选"
 
-#: src/renderer/src/lib/ai-settings-errors.test.ts
 #: src/renderer/src/lib/errors.ts
 msgid "Turn on “Allow AI to read this account” for each selected account in Settings → AI Access."
 msgstr "请在「设置 → AI 权限」中为每个所选账户打开「允许 AI 读取这个账户」。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Turn on the account before sending."
+msgstr "发送前请先启用此账户。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Turn on the account before undoing this."
+msgstr "撤销前请先启用此账户。"
 
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 msgid "Turned off"
@@ -7212,7 +7601,7 @@ msgstr "撤销历史"
 msgid "Undo mode change"
 msgstr "撤销模式切换"
 
-#. placeholder {0}: new Date(entry.createdAt).toLocaleString(i18n.locale)
+#. placeholder {0}: new Date(entry.createdAt).toLocaleString(dateFormat(i18n).locale, { dateStyle: "medium", timeStyle: "short", ...dateFormat(i18n).clock })
 #: src/renderer/src/features/undo/UndoHistory.tsx
 msgid "Undo operation from {0}"
 msgstr "撤销 {0} 的操作"
@@ -7286,10 +7675,6 @@ msgstr "确认退订？"
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Unsupported on this platform"
 msgstr "此平台不支持"
-
-#: src/renderer/src/lib/errors.ts
-msgid "Unsupported server rule"
-msgstr "不支持的服务器规则"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Until"
@@ -7365,6 +7750,10 @@ msgid "Use {token} for a custom variable. You will be asked for its value when i
 msgstr "用 {token} 等自定义变量，插入模板时填写其值。"
 
 #: src/renderer/src/lib/errors.ts
+msgid "Use a PNG, JPEG, GIF or WebP image up to 8 MB"
+msgstr "请使用不超过 8 MB 的 PNG、JPEG、GIF 或 WebP 图片"
+
+#: src/renderer/src/lib/errors.ts
 msgid "Use a service name such as svc:openmail"
 msgstr "输入服务名称，例如 svc:openmail"
 
@@ -7435,6 +7824,14 @@ msgstr "显示的分类"
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Wait for attachments to finish loading."
 msgstr "请等待附件加载完成。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Wait for pending changes to sync before changing the folder."
+msgstr "请等待待处理的更改同步完成后再更改文件夹。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Wait for pending changes to these messages to sync, then undo."
+msgstr "请等待这些邮件的待处理更改同步完成，然后再撤销。"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgid "Wait for syncing and queued changes to finish before compacting."
