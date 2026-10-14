@@ -501,3 +501,53 @@ export function textPage<A extends object>(
     throw new Error("Headers exceed token_budget. Increase the budget.");
   return result;
 }
+
+/** Edit distance, for naming the parameter a misspelled key meant. */
+function distance(a: string, b: string): number {
+  let previous = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (const [i, ca] of [...a].entries()) {
+    const row = [i + 1];
+    for (const [j, cb] of [...b].entries())
+      row.push(
+        Math.min(
+          (previous[j + 1] ?? 0) + 1,
+          (row[j] ?? 0) + 1,
+          (previous[j] ?? 0) + (ca === cb ? 0 : 1),
+        ),
+      );
+    previous = row;
+  }
+  return previous[b.length] ?? 0;
+}
+
+/**
+ * The error for argument keys a tool does not declare, or null. Without it a typo such as
+ * acount_id is dropped and the call silently runs with the default. `parameters` is the
+ * tool's JSON Schema, as MCP advertises it.
+ */
+export function unknownArguments(parameters: unknown, input: unknown): MailToolError | null {
+  if (input === null || typeof input !== "object" || Array.isArray(input)) return null;
+  const properties =
+    parameters !== null && typeof parameters === "object" && "properties" in parameters
+      ? parameters.properties
+      : undefined;
+  const known =
+    properties !== null && typeof properties === "object" ? Object.keys(properties) : [];
+  const unknown = Object.keys(input).filter((key) => !known.includes(key));
+  if (!unknown.length) return null;
+  const named = unknown.map((key) => {
+    const closest = known
+      .map((name) => ({ name, d: distance(key, name) }))
+      .toSorted((a, b) => a.d - b.d)[0];
+    return closest && closest.d <= Math.max(2, Math.floor(key.length / 3))
+      ? `${JSON.stringify(key)} (did you mean ${JSON.stringify(closest.name)}?)`
+      : JSON.stringify(key);
+  });
+  return toolError(
+    "invalid_input",
+    `Unknown parameter${unknown.length > 1 ? "s" : ""}: ${named.join(", ")}.`,
+    known.length
+      ? `Valid parameters: ${known.join(", ")}. Fix the arguments and call the tool again.`
+      : "This tool takes no parameters. Call it with {}.",
+  );
+}

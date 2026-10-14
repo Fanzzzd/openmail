@@ -6,6 +6,7 @@ import {
   MailToolkit,
   ReadMailToolkit,
   MailToolkitLayer,
+  unknownArguments,
 } from "@openmail/core";
 import { Effect, Layer, Schema } from "effect";
 import { McpProtocol, McpSchema, McpServer } from "effect/ai";
@@ -34,24 +35,19 @@ export const mcpInstructions = (allowWrites: boolean): string =>
  * MCP 2025-11-25 asks servers to report input validation errors this way rather than as
  * JSON-RPC -32602, which clients show to the person and models never see.
  */
-const invalidArguments = (message: string) =>
+const toolErrorResult = (error: MailToolError) =>
   new McpSchema.CallToolResult({
     isError: true,
-    content: [
-      {
-        type: "text",
-        text: JSON.stringify(
-          Schema.encodeSync(MailToolError)(
-            new MailToolError({
-              code: "invalid_input",
-              message: `The arguments do not match the tool's input schema: ${message}`,
-              hint: "Fix the arguments as described and call the tool again.",
-            }),
-          ),
-        ),
-      },
-    ],
+    content: [{ type: "text", text: JSON.stringify(Schema.encodeSync(MailToolError)(error)) }],
   });
+const invalidArguments = (message: string) =>
+  toolErrorResult(
+    new MailToolError({
+      code: "invalid_input",
+      message: `The arguments do not match the tool's input schema: ${message}`,
+      hint: "Fix the arguments as described and call the tool again.",
+    }),
+  );
 
 /**
  * McpServer.toolkit, except that invalid arguments come back as an isError tool result.
@@ -68,14 +64,23 @@ const toolkitWithArgumentErrors = <Tools extends Record<string, Tool.Any>>(
         addTool: (registration) =>
           server.addTool({
             ...registration,
-            handle: (payload) =>
-              registration
-                .handle(payload)
-                .pipe(
-                  Effect.catchTag("InvalidParams", (error) =>
-                    Effect.succeed(invalidArguments(error.message)),
-                  ),
-                ),
+            // Unknown keys fail the call: a typo such as acount_id must not run with defaults.
+            tool: new McpSchema.Tool({
+              ...registration.tool,
+              inputSchema: { ...registration.tool.inputSchema, additionalProperties: false },
+            }),
+            handle: (payload) => {
+              const unknown = unknownArguments(registration.tool.inputSchema, payload);
+              return unknown
+                ? Effect.succeed(toolErrorResult(unknown))
+                : registration
+                    .handle(payload)
+                    .pipe(
+                      Effect.catchTag("InvalidParams", (error) =>
+                        Effect.succeed(invalidArguments(error.message)),
+                      ),
+                    );
+            },
           }),
       });
       yield* McpServer.registerToolkit(toolkit).pipe(

@@ -542,7 +542,7 @@ test.concurrent("list, search and show read as the person; agent tools still nee
       (done) => ({ code: 0, ...done }),
       (error: unknown) => Schema.decodeUnknownSync(Failure)(error),
     );
-  const [list, json, search, show, typo, tool, toolJson, read, mcpList, mcpTypo] =
+  const [list, json, search, show, typo, tool, toolJson, read, mcpList, mcpTypo, extraKey] =
     await Promise.all([
       cli("list"),
       cli("list", "--json"),
@@ -557,6 +557,7 @@ test.concurrent("list, search and show read as the person; agent tools still nee
         name: "list_threads",
         arguments: { account_id: "gmail:typo@example.com" },
       }),
+      cli("tool", "list_threads", "--input-json", '{"acount_id":"zzz"}', "--json"),
     ]);
   // People see a table: date, sender, subject and the id `show` takes. No JSON envelope.
   expect(list.code).toBe(0);
@@ -585,6 +586,12 @@ test.concurrent("list, search and show read as the person; agent tools still nee
   expect(read).toMatchObject({ code: 1, stdout: "" });
   expect(read.stderr).toContain("error: No message with id missing.");
   expect(read.stderr).not.toContain("_tag");
+  // --input-json rejects keys the tool does not declare, like MCP.
+  expect(extraKey.code).toBe(1);
+  expect(extraKey.stderr).toContain(
+    'error: Unknown parameter: "acount_id" (did you mean "account_id"?).',
+  );
+  expect(JSON.parse(extraKey.stdout)).toMatchObject({ code: "invalid_input" });
   // MCP: no readable account is an empty list (access_status explains); a bad id is not_found.
   const empty = Schema.decodeUnknownSync(CallResult)(mcpList);
   expect(empty.isError).not.toBe(true);
@@ -678,6 +685,23 @@ test.concurrent("MCP returns invalid tool arguments as an isError result, not a 
   const failure = JSON.parse(called.content[0]?.text ?? "");
   expect(failure).toMatchObject({ code: "invalid_input", hint: expect.any(String) });
   expect(failure.message).toContain("input schema");
+  // A misspelled key fails and names the key it meant, instead of running with defaults.
+  const typo = Schema.decodeUnknownSync(CallResult)(
+    await request("tools/call", {
+      name: "list_threads",
+      arguments: { acount_id: "zzz", mailboxx: "spam" },
+    }),
+  );
+  expect(typo.isError).toBe(true);
+  expect(JSON.parse(typo.content[0]?.text ?? "")).toEqual({
+    message:
+      'Unknown parameters: "acount_id" (did you mean "account_id"?), "mailboxx" (did you mean "mailbox"?).',
+    code: "invalid_input",
+    hint: expect.stringContaining("Valid parameters: mailbox, account_id"),
+  });
+  const { tools } = Schema.decodeUnknownSync(ToolList)(await request("tools/list"));
+  for (const tool of tools)
+    expect(tool.inputSchema, tool.name).toMatchObject({ additionalProperties: false });
   // An unknown tool is still a protocol error.
   await expect(request("tools/call", { name: "no_such_tool", arguments: {} })).rejects.toThrow();
 }, 30_000);

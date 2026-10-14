@@ -23,7 +23,8 @@ const tools = Command.make(
       (tool) => ({
         name: tool.name,
         description: tool.description,
-        inputSchema: Tool.getJsonSchema(tool),
+        // As MCP advertises it: unknown keys fail the call.
+        inputSchema: { ...Tool.getJsonSchema(tool), additionalProperties: false },
       }),
     );
     yield* print(rows, json, (all) =>

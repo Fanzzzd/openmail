@@ -7,7 +7,9 @@ import {
   AgentIdentity,
   MailToolError,
   agentAccountGap,
+  unknownArguments,
 } from "@openmail/core";
+import { Tool } from "effect/ai";
 import { Effect, Layer, Option, Schema, Stream } from "effect";
 import { Flag } from "effect/cli";
 import { fail, print } from "./common.js";
@@ -31,6 +33,8 @@ export function invokeTool(name: ToolName, input: unknown, json: boolean) {
   const toolFailure = (failure: typeof ToolFailure.Type) =>
     (json ? print(failure, true) : Effect.void).pipe(Effect.andThen(fail(failure.message)));
   return Effect.gen(function* () {
+    const unknown = unknownArguments(Tool.getJsonSchema(MailToolkit.tools[name]), input);
+    if (unknown) return yield* toolFailure(Schema.encodeSync(MailToolError)(unknown));
     const parameters = yield* Schema.decodeUnknownEffect(
       Schema.toEncoded(MailToolkit.tools[name].parametersSchema),
     )(input);

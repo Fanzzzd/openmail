@@ -63,6 +63,7 @@ export {
   senderSearchQuery,
   spaceAccountIds,
   unavailableVision,
+  unknownArguments,
   updateVersionAllowed,
 } from "../../common.js";
 export { NodeMailbox } from "./layers.js";

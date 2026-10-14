@@ -31,7 +31,7 @@ export {
   ProposalMailToolkit,
 } from "./tools/tools.js";
 export { AgentIdentity } from "./tools/agent-identity.js";
-export { MailToolError } from "./tools/tool-common.js";
+export { MailToolError, unknownArguments } from "./tools/tool-common.js";
 
 export * from "./domain/organization.js";
 export * from "./search/search.js";
