@@ -63,6 +63,7 @@
     },
     "@openmail/cli#test": {
       "dependsOn": ["^build", "build"],
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/scripts/demo-data.mjs"],
       "env": [
         "CI",
         "OPENMAIL_LOW_MEMORY_TESTS",

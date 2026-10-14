@@ -1,0 +1,322 @@
+// The command layer through its real interface: `node dist/cli.js` against a temp
+// OPENMAIL_HOME seeded by scripts/demo-data.mjs. Flag names, --json shapes and exit codes
+// are a contract for scripts and agents, so these tests read stdout, stderr and the code.
+import { execFile, spawn } from "node:child_process";
+import { cp, mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { promisify } from "node:util";
+import { Schema } from "effect";
+import { afterAll, beforeAll, describe, expect, test, vi, type TestContext } from "vitest";
+
+const run = promisify(execFile);
+const cli = fileURLToPath(new URL("../dist/cli.js", import.meta.url));
+const demoData = fileURLToPath(new URL("../../../scripts/demo-data.mjs", import.meta.url));
+// Every test starts node and opens the database, about 1 s on a loaded machine.
+vi.setConfig({ testTimeout: 20_000, hookTimeout: 60_000 });
+
+/**
+ * The keys scripts read from each --json output. When a shape changes on purpose,
+ * update it here; the tests below only compare against these lists.
+ */
+const KEYS = {
+  thread: [
+    "id",
+    "accountId",
+    "threadId",
+    "subject",
+    "from",
+    "date",
+    "snippet",
+    "labels",
+    "isUnread",
+    "isStarred",
+    "hasAttachments",
+    "threadCount",
+    "participants",
+  ],
+  message: [
+    "id",
+    "accountId",
+    "threadId",
+    "subject",
+    "from",
+    "date",
+    "snippet",
+    "labels",
+    "isUnread",
+    "isStarred",
+    "hasAttachments",
+    "to",
+    "cc",
+    "bcc",
+    "rfcMessageId",
+    "replyTo",
+    "bodyText",
+    "security",
+    "bodyCached",
+    "attachments",
+    "hasCalendar",
+  ],
+  account: ["id", "provider", "email", "createdAt", "enabled"],
+  proposal: ["id", "createdAt", "actor", "command", "status"],
+  space: ["id", "name", "icon", "color", "position", "accounts"],
+};
+/** Keys a thread carries only when they apply. */
+const OPTIONAL_THREAD = ["attachmentNames"];
+/** Every required key is present, and nothing outside required and optional. */
+function expectKeys(value: object, required: string[], optional: string[] = []) {
+  const keys = Object.keys(value);
+  expect(keys).toEqual(expect.arrayContaining(required));
+  expect(keys.filter((key) => !required.includes(key) && !optional.includes(key))).toEqual([]);
+}
+/** The key `list --json` and `search --json` print the next page's cursor under. */
+const CURSOR = "next_cursor";
+/** Seeded by demo-data.mjs: the four-message launch thread in the Gmail demo account. */
+const LAUNCH = "gmail:alex@example.com/demo-4";
+
+let seeded = "";
+beforeAll(async () => {
+  seeded = await mkdtemp(join(tmpdir(), "openmail-cli-test-"));
+  await run(process.execPath, [demoData, join(seeded, "home")]);
+});
+afterAll(() => rm(seeded, { recursive: true, force: true }));
+
+/** A copy of the seeded home for a test that changes it. */
+async function freshHome(onTestFinished: TestContext["onTestFinished"]) {
+  const directory = await mkdtemp(join(tmpdir(), "openmail-cli-write-"));
+  onTestFinished(() => rm(directory, { recursive: true, force: true }));
+  await cp(join(seeded, "home"), directory, { recursive: true });
+  return directory;
+}
+
+function openmail(args: string[], home = join(seeded, "home")) {
+  return new Promise<{ code: number | null; stdout: string; stderr: string }>((done, failed) => {
+    const child = spawn(process.execPath, ["--disable-warning=ExperimentalWarning", cli, ...args], {
+      env: { ...process.env, OPENMAIL_HOME: home },
+    });
+    let stdout = "";
+    let stderr = "";
+    child.stdout.setEncoding("utf8").on("data", (chunk: string) => (stdout += chunk));
+    child.stderr.setEncoding("utf8").on("data", (chunk: string) => (stderr += chunk));
+    child.once("error", failed);
+    child.once("close", (code) => done({ code, stdout, stderr }));
+  });
+}
+
+const Row = Schema.Record(Schema.String, Schema.Unknown);
+const row = Schema.decodeUnknownSync(Row);
+const rows = Schema.decodeUnknownSync(Schema.Array(Row));
+
+async function json(args: string[], home?: string): Promise<unknown> {
+  const result = await openmail([...args, "--json"], home);
+  expect(result.code, result.stderr).toBe(0);
+  return JSON.parse(result.stdout);
+}
+/** A --json output that is one object. */
+const object = async (args: string[], home?: string) => row(await json(args, home));
+/** A --json output that is a list of objects. */
+const list = async (args: string[], home?: string) => rows(await json(args, home));
+
+describe("help", () => {
+  test("lists every subcommand and exits 0", async () => {
+    const { code, stdout, stderr } = await openmail(["--help"]);
+    expect(code).toBe(0);
+    expect(stderr).toBe("");
+    for (const name of [
+      "accounts",
+      "spaces",
+      "sync",
+      "list",
+      "search",
+      "show",
+      "proposals",
+      "agents",
+      "audit",
+      "mcp",
+      "tools",
+      "tool",
+    ])
+      expect(stdout).toMatch(new RegExp(`^  ${name}\\s`, "m"));
+  });
+
+  test("list --help names its paging and filter flags", async () => {
+    const { code, stdout } = await openmail(["list", "--help"]);
+    expect(code).toBe(0);
+    for (const flag of [
+      "--mailbox",
+      "--account",
+      "--space",
+      "--label",
+      "--unread",
+      "--limit",
+      "--before",
+      "--cursor",
+      "--json",
+    ])
+      expect(stdout).toContain(flag);
+  });
+});
+
+describe("reading", () => {
+  test("list prints one line per thread and a cursor for the next page", async () => {
+    const { code, stdout } = await openmail(["list", "--limit", "2"]);
+    expect(code).toBe(0);
+    const lines = stdout.trimEnd().split("\n");
+    expect(lines).toHaveLength(3);
+    expect(lines[0]).toContain(LAUNCH);
+    expect(lines[0]).toContain("Re: Q4 launch plan: final review (4)");
+    expect(lines[2]).toMatch(/^More: add --cursor \S+$/);
+  });
+
+  test("list --json pages with the cursor it prints", async () => {
+    const first = await object(["list", "--limit", "2"]);
+    expect(Object.keys(first)).toEqual(["threads", CURSOR]);
+    const threads = rows(first.threads);
+    expect(threads).toHaveLength(2);
+    for (const thread of threads) expectKeys(thread, KEYS.thread, OPTIONAL_THREAD);
+    const cursor = first[CURSOR];
+    expect(typeof cursor).toBe("string");
+    const second = rows(
+      (await object(["list", "--limit", "2", "--cursor", String(cursor)])).threads,
+    );
+    expect(second).toHaveLength(2);
+    expect(second.map((thread) => thread.id)).not.toContain(threads[0]?.id);
+  });
+
+  test("list --unread --mailbox inbox returns only unread inbox threads", async () => {
+    const threads = rows((await object(["list", "--unread", "--mailbox", "inbox"])).threads);
+    expect(threads.length).toBeGreaterThan(0);
+    for (const thread of threads) {
+      expect(thread.isUnread).toBe(true);
+      expect(thread.labels).toContain("INBOX");
+    }
+  });
+
+  test("show prints headers and the message text", async () => {
+    const { code, stdout } = await openmail(["show", LAUNCH]);
+    expect(code).toBe(0);
+    expect(stdout).toMatch(/^From:\s+Priya Shah <priya@example\.org>$/m);
+    expect(stdout).toMatch(/^Subject: Re: Q4 launch plan: final review$/m);
+    expect(stdout).toContain(`Id:      ${LAUNCH}`);
+    expect(stdout).toContain("the embargo lifts on the 21st");
+  });
+
+  test("show --json is one message, show --thread --json the whole thread", async () => {
+    expect(Object.keys(await object(["show", LAUNCH]))).toEqual(KEYS.message);
+    const thread = await list(["show", "--thread", LAUNCH]);
+    expect(thread).toHaveLength(4);
+    for (const entry of thread) expect(Object.keys(entry)).toEqual(KEYS.message);
+  });
+
+  test("search finds by body words and prints the thread", async () => {
+    const { code, stdout } = await openmail(["search", "embargo"]);
+    expect(code).toBe(0);
+    expect(stdout.trimEnd().split("\n")).toEqual([expect.stringContaining(LAUNCH)]);
+    const result = await object(["search", "embargo"]);
+    expect(Object.keys(result)).toEqual(["threads", "truncated", "errors"]);
+    const threads = rows(result.threads);
+    expect(threads.map((thread) => thread.id)).toEqual([LAUNCH]);
+    for (const thread of threads)
+      expectKeys(thread, [...KEYS.thread, "searchMatches"], OPTIONAL_THREAD);
+  });
+
+  test("accounts list --json carries the account fields scripts read", async () => {
+    const accounts = await list(["accounts", "list"]);
+    expect(accounts.map((account) => account.provider)).toEqual(["gmail", "imap"]);
+    for (const account of accounts)
+      expect(Object.keys(account)).toEqual(expect.arrayContaining(KEYS.account));
+  });
+});
+
+describe("spaces", () => {
+  test("list is empty, add creates one, assign puts an account in it", async ({
+    onTestFinished,
+  }) => {
+    const home = await freshHome(onTestFinished);
+    expect((await openmail(["spaces", "list"], home)).stdout).toContain("no spaces");
+    expect(await json(["spaces", "list"], home)).toEqual([]);
+    const added = await openmail(["spaces", "add", "Work"], home);
+    expect(added.code).toBe(0);
+    expect(added.stdout).toMatch(/^Added space Work \(.+\)\.$/m);
+    const space = (await list(["spaces", "list"], home))[0] ?? {};
+    expect(space.name).toBe("Work");
+    expect(Object.keys(space)).toEqual(KEYS.space);
+    const assigned = await openmail(
+      ["spaces", "assign", "gmail:alex@example.com", String(space.id)],
+      home,
+    );
+    expect(assigned.code, assigned.stderr).toBe(0);
+    const after = (await list(["spaces", "list"], home))[0] ?? {};
+    expect(JSON.stringify(after.accounts)).toContain("gmail:alex@example.com");
+  });
+});
+
+describe("proposals", () => {
+  test("list shows the pending agent proposal; reject settles it", async ({ onTestFinished }) => {
+    const home = await freshHome(onTestFinished);
+    const text = await openmail(["proposals", "list"], home);
+    expect(text.code).toBe(0);
+    expect(text.stdout).toMatch(/^#1 .* pending +agent:mcp:claude-code$/m);
+    expect(text.stdout).toContain("archive: 3 thread(s)");
+    const proposal = (await list(["proposals", "list"], home))[0] ?? {};
+    expect(Object.keys(proposal)).toEqual(KEYS.proposal);
+    expect(proposal.status).toBe("pending");
+
+    const rejected = await openmail(["proposals", "reject", "1"], home);
+    expect(rejected.code, rejected.stderr).toBe(0);
+    expect(rejected.stdout).toBe("Rejected proposal 1.\n");
+    expect(await json(["proposals", "list"], home)).toEqual([]);
+    // The audit log records who rejected it.
+    const audit = await openmail(["audit", "--limit", "1"], home);
+    expect(audit.stdout).toMatch(/user:cli +reject/);
+  });
+
+  test("approving points to the app and exits 1", async () => {
+    const { code, stdout, stderr } = await openmail(["proposals", "approve", "1"]);
+    expect(code).toBe(1);
+    expect(stdout).toBe("");
+    expect(stderr).toBe(
+      "error: Approve proposals in OpenMail, under AI suggestions. The CLI and MCP cannot approve them.\n",
+    );
+  });
+});
+
+describe("errors", () => {
+  test("an unknown subcommand is a usage error: exit 2, short usage on stderr", async () => {
+    const { code, stdout, stderr } = await openmail(["bogus"]);
+    expect(code).toBe(2);
+    expect(stdout).toBe("");
+    expect(stderr).toBe(
+      'error: Unknown subcommand "bogus" for "openmail"\nUsage: openmail <subcommand> [flags]\nRun `openmail --help` for details.\n',
+    );
+  });
+
+  test("a bad flag value is a usage error that names the flag", async () => {
+    const { code, stdout, stderr } = await openmail(["list", "--limit", "abc"]);
+    expect(code).toBe(2);
+    expect(stdout).toBe("");
+    expect(stderr).toMatch(/^error: Invalid value for flag --limit: "abc"/);
+    expect(stderr).toContain("Run `openmail list --help` for details.");
+  });
+
+  test("a missing message is exit 1 with one line on stderr", async () => {
+    const { code, stdout, stderr } = await openmail(["show", "gmail:alex@example.com/nope"]);
+    expect(code).toBe(1);
+    expect(stdout).toBe("");
+    expect(stderr).toBe("error: No message with id gmail:alex@example.com/nope.\n");
+  });
+
+  test("a missing proposal is exit 1", async () => {
+    const { code, stderr } = await openmail(["proposals", "reject", "99"]);
+    expect(code).toBe(1);
+    expect(stderr).toBe("error: No proposal with id 99.\n");
+  });
+
+  test("agent write mode cannot be changed from the CLI", async () => {
+    const { code, stderr } = await openmail(["agents", "write-mode", "allow"]);
+    expect(code).toBe(1);
+    expect(stderr).toContain("can only be changed in the app");
+  });
+});
