@@ -16,6 +16,27 @@ pnpm exec oxfmt --check .
 
 手机端的 `build` 只编译 Lingui 目录和检查 TypeScript，不生成 iOS/Android 项目，不启动 Metro。测试使用 Vitest、Expo/RN mocks 和 Node SQLite shim。`pnpm check-types` 也包含手机端。pnpm 保留隔离安装；Expo Metro 自动发现 workspace 和 core 的真实软链接路径，autolinking 选择手机端的 React/native 依赖。`metro.config.cjs` 拒绝桌面 core 入口。不要把 workspace 改为 hoisted。
 
+## 在模拟器上运行
+
+需要 macOS、装有 iOS Simulator 运行时的 Xcode 和 CocoaPods。Metro 从 core 的 `dist` 加载 `@openmail/core/portable`，Lingui 目录也要先编译，所以先在仓库根目录构建：
+
+```sh
+pnpm build --filter=@openmail/mobile...
+cd apps/mobile && pnpm exec expo run:ios
+```
+
+`expo run:ios` 第一次运行时用 `app.config.ts` 生成 git 忽略的 `ios/`，执行 `pod install`，构建 debug 开发构建，装进模拟器并启动 Metro。原生代码没变时，之后在 `apps/mobile` 运行 `pnpm start` 即可。`--device "<模拟器名>"` 选择模拟器。
+
+IMAP 账户不需要任何环境变量。Gmail 和 Outlook 登录需要[客户端配置](#客户端配置)表里自己注册的 client ID；模拟器只用 iOS 这几项：
+
+```sh
+export EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=<自己的 Google iOS client ID>
+export EXPO_PUBLIC_MICROSOFT_CLIENT_ID=<自己的 Microsoft 公共客户端 ID>
+export OPENMAIL_IOS_BUNDLE_ID=<注册时填写的 bundle ID>  # 默认 com.openmail.mobile
+```
+
+`app.config.ts` 把这些值写进 `extra.mobileOAuth`，Metro 启动时读取，改了要重启 Metro。回调 scheme 和 bundle ID 写在原生项目里，改了 client ID 或 bundle ID 后运行 `pnpm exec expo prebuild --clean --platform ios`，再运行 `pnpm exec expo run:ios`。没有 client ID 的 provider 无法登录。
+
 ## 数据库
 
 锁定 `@op-engineering/op-sqlite` 18.2.5，发布包 `cpp/sqlite3.h` 中 SQLite 是 3.53.4。`package.json` 的 `op-sqlite.fts5=true` 开启编译选项，`iosSqlite=false` 使用打包版本。FTS5 trigram 最低需要 SQLite 3.34.0；启动时创建临时 trigram 表验证实际原生构建，再启用 WAL 并运行 core 的全部迁移，见 [db/migrations.ts](../../packages/core/src/db/migrations.ts)。缺少 tokenizer 就停止启动。向量能力报告 `vectors=false`。
