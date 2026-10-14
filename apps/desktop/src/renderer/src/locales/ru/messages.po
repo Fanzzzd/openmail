@@ -1876,7 +1876,7 @@ msgstr "Копировать конфигурацию для {name}"
 
 #: src/renderer/src/features/feedback/Feedback.tsx
 msgid "Copy diagnostics"
-msgstr "{'zh-CN': '复制诊断', 'cs': 'Zkopírovat diagnostiku', 'nl': 'Diagnostische gegevens kopiëren', 'fr': 'Copier les diagnostics', 'de': 'Diagnose kopieren', 'it': 'Copia diagnostica', 'ja': '診断をコピー', 'ru': 'Скопировать диагностику', 'es': 'Copiar diagnósticos'}"
+msgstr "Скопировать диагностику"
 
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Copy link to conversation"
@@ -4906,7 +4906,7 @@ msgstr "Открывайте ссылки электронной почты в �
 
 #: src/renderer/src/features/feedback/Feedback.tsx
 msgid "Open GitHub issues"
-msgstr "{'zh-CN': '打开 GitHub issues', 'cs': 'Otevřít GitHub issues', 'nl': 'GitHub-issues openen', 'fr': 'Ouvrir les issues GitHub', 'de': 'GitHub-Issues öffnen', 'it': 'Apri le issue di GitHub', 'ja': 'GitHub の Issues を開く', 'ru': 'Открыть issues на GitHub', 'es': 'Abrir issues de GitHub'}"
+msgstr "Открыть issues на GitHub"
 
 #: src/renderer/src/features/contacts/AppleContactActions.tsx
 msgid "Open in Contacts"
@@ -8098,7 +8098,7 @@ msgstr "Установлена последняя версия."
 
 #: src/renderer/src/features/feedback/Feedback.tsx
 msgid "You can also report on GitHub. Copy the diagnostics and paste them into a new issue."
-msgstr "{'zh-CN': '也可以在 GitHub 上报告。复制诊断，粘贴到新 issue 里。', 'cs': 'Můžete to nahlásit i na GitHubu. Zkopírujte diagnostiku a vložte ji do nového issue.', 'nl': 'Je kunt het ook op GitHub melden. Kopieer de diagnostische gegevens en plak ze in een nieuw issue.', 'fr': 'Vous pouvez aussi signaler le problème sur GitHub. Copiez les diagnostics et collez-les dans une nouvelle issue.', 'de': 'Du kannst es auch auf GitHub melden. Kopiere die Diagnose und füge sie in ein neues Issue ein.', 'it': 'Puoi anche segnalarlo su GitHub. Copia la diagnostica e incollala in una nuova issue.', 'ja': 'GitHub で報告することもできます。診断をコピーして、新しい Issue に貼り付けてください。', 'ru': 'Можно также сообщить на GitHub. Скопируйте диагностику и вставьте её в новый issue.', 'es': 'También puedes informar en GitHub. Copia los diagnósticos y pégalos en un nuevo issue.'}"
+msgstr "Можно также сообщить на GitHub. Скопируйте диагностику и вставьте её в новый issue."
 
 #: src/renderer/src/lib/errors.ts
 msgid "You signed in as {signedInAs}. Sign in with {expected} to continue."
