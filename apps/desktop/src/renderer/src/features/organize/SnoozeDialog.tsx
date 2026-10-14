@@ -48,9 +48,19 @@ export function SnoozeDialog({
           onClick={() => {
             void choose(preset.due);
           }}
-          className="block w-full rounded p-2 text-left hover:bg-blue-500/10"
+          className="flex w-full items-baseline justify-between gap-3 rounded p-2 text-left hover:bg-blue-500/10"
         >
-          {preset.name}
+          <span>{preset.name}</span>{" "}
+          {/* The time each preset resolves to, so "Next week" says which day. The space keeps the
+              two apart in the button's accessible name. */}
+          <span className="shrink-0 text-a11y-muted tabular-nums">
+            {new Date(preset.due).toLocaleString(dateFormat(i18n).locale, {
+              weekday: "short",
+              hour: "numeric",
+              minute: "2-digit",
+              ...dateFormat(i18n).clock,
+            })}
+          </span>
         </button>
       ))}
       <form

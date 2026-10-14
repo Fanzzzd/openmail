@@ -120,8 +120,9 @@ it("snooze advances selection and Cmd+Z restores the inbox and reminder", async 
   );
   clickButton("Conversation actions");
   fireEvent.click(await screen.findByRole("menuitem", { name: /^Snooze/ }));
-  await eventually(() => expect(screen.getByRole("button", { name: "In 3 hours" })).toBeTruthy());
-  clickButton("In 3 hours");
+  // Each preset's name ends with the time it will remind.
+  await eventually(() => expect(screen.getByRole("button", { name: /^In 3 hours / })).toBeTruthy());
+  clickButton(/^In 3 hours /);
   await eventually(() => expect(row(h.id("two")).getAttribute("aria-selected")).toBe("true"));
   expect((await h.run(h.store.getMessage(h.id("one")))).labels).toContain("SNOOZED");
   expect(h.server.pushed).toHaveLength(0);
