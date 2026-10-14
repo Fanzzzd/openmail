@@ -64,90 +64,94 @@ export function SidebarRail({
     spaceAccounts(space, accounts).reduce((n, a) => n + (unread[a.id] ?? 0), 0);
 
   return (
-    <div
-      data-mail-pane="sidebar"
-      data-sidebar-rail
-      className="flex h-full w-14 shrink-0 flex-col items-center border-r border-separator bg-neutral-100/60 dark:bg-neutral-950/70"
-    >
-      {/* The traffic lights sit in this strip. */}
-      <div className={`${titlebarRow} w-full`} />
-      <div className="flex shrink-0 flex-col items-center gap-1 pb-2">
-        <Tip label={t`Show sidebar`} shortcut={shortcut("toggleSidebar")} side="right">
-          <button
-            type="button"
-            aria-label={t`Show sidebar`}
-            onClick={onOpenSidebar}
-            className={`${cell(false)} text-a11y-muted`}
-          >
-            <PanelLeft className="size-4.5" />
-          </button>
-        </Tip>
-        <Tip label={t`New message`} shortcut={shortcut("compose")} side="right">
-          <button
-            type="button"
-            aria-label={t`New message`}
-            onClick={onCompose}
-            className={`${cell(false)} text-a11y-muted`}
-          >
-            <SquarePen className="size-4.5" />
-          </button>
-        </Tip>
-      </div>
-      <div className="flex min-h-0 w-full flex-1 flex-col items-center gap-3 overflow-y-auto border-t border-separator pt-2 pb-2">
-        <nav aria-label={t`Mailboxes`} className="flex flex-col items-center gap-1">
-          {MAILBOXES.filter(({ id }) => RAIL_MAILBOXES.has(id)).map(({ id, icon: Icon, color }) => (
-            <RailButton
-              key={id}
-              label={i18n._(MAILBOX_NAMES[id])}
-              current={
-                view.space !== OVERVIEW && view.mailbox === id && !view.label ? "page" : undefined
-              }
-              badge={specialFolderBadge(id, counts, prefs.specialFolderBadges)}
-              onClick={() => onView({ ...view, mailbox: id, label: undefined })}
+    <div data-mail-pane="sidebar" data-sidebar-rail className="flex h-full w-14 shrink-0 flex-col">
+      {/* The lights span 18 to 78 pt, wider than the rail. Their row belongs to the pane beside
+          the rail: the same surface and no divider, so the rail and its border start below the
+          lights, as VS Code's activity bar and Slack's workspace rail do. */}
+      <div data-rail-titlebar className={`${titlebarRow} w-full bg-surface`} />
+      <div className="flex min-h-0 w-full flex-1 flex-col items-center border-r border-separator bg-neutral-100/60 pt-2 dark:bg-neutral-950/70">
+        <div className="flex shrink-0 flex-col items-center gap-1 pb-2">
+          <Tip label={t`Show sidebar`} shortcut={shortcut("toggleSidebar")} side="right">
+            <button
+              type="button"
+              aria-label={t`Show sidebar`}
+              onClick={onOpenSidebar}
+              className={`${cell(false)} text-a11y-muted`}
             >
-              <Icon className={`size-4.5 ${color}`} />
+              <PanelLeft className="size-4.5" />
+            </button>
+          </Tip>
+          <Tip label={t`New message`} shortcut={shortcut("compose")} side="right">
+            <button
+              type="button"
+              aria-label={t`New message`}
+              onClick={onCompose}
+              className={`${cell(false)} text-a11y-muted`}
+            >
+              <SquarePen className="size-4.5" />
+            </button>
+          </Tip>
+        </div>
+        <div className="flex min-h-0 w-full flex-1 flex-col items-center gap-3 overflow-y-auto border-t border-separator pt-2 pb-2">
+          <nav aria-label={t`Mailboxes`} className="flex flex-col items-center gap-1">
+            {MAILBOXES.filter(({ id }) => RAIL_MAILBOXES.has(id)).map(
+              ({ id, icon: Icon, color }) => (
+                <RailButton
+                  key={id}
+                  label={i18n._(MAILBOX_NAMES[id])}
+                  current={
+                    view.space !== OVERVIEW && view.mailbox === id && !view.label
+                      ? "page"
+                      : undefined
+                  }
+                  badge={specialFolderBadge(id, counts, prefs.specialFolderBadges)}
+                  onClick={() => onView({ ...view, mailbox: id, label: undefined })}
+                >
+                  <Icon className={`size-4.5 ${color}`} />
+                </RailButton>
+              ),
+            )}
+          </nav>
+          <fieldset
+            aria-label={t`Spaces`}
+            className="mt-auto flex min-w-0 flex-col items-center gap-1 border-t border-separator pt-2"
+          >
+            <RailButton
+              label={t`Overview`}
+              shortcut="⌃1"
+              current={view.space === OVERVIEW || undefined}
+              badge={0}
+              onClick={() => onSpace(OVERVIEW)}
+            >
+              <LayoutGrid className="size-4 text-neutral-600 dark:text-neutral-300" />
             </RailButton>
-          ))}
-        </nav>
-        <fieldset
-          aria-label={t`Spaces`}
-          className="mt-auto flex min-w-0 flex-col items-center gap-1 border-t border-separator pt-2"
-        >
-          <RailButton
-            label={t`Overview`}
-            shortcut="⌃1"
-            current={view.space === OVERVIEW || undefined}
-            badge={0}
-            onClick={() => onSpace(OVERVIEW)}
-          >
-            <LayoutGrid className="size-4 text-neutral-600 dark:text-neutral-300" />
-          </RailButton>
-          <RailButton
-            label={t`All accounts`}
-            shortcut="⌃2"
-            current={view.space === ALL || undefined}
-            badge={spaceUnread(ALL)}
-            onClick={() => onSpace(ALL)}
-          >
-            <Layers className="size-4 text-neutral-600 dark:text-neutral-300" />
-          </RailButton>
-          {profiles.map((p, i) => (
             <RailButton
-              key={p.id}
-              label={p.name}
-              shortcut={spaceShortcutLabel(prefs.shortcutSet, i)}
-              current={view.space === p.id || undefined}
-              badge={spaceUnread(p.id)}
-              onClick={() => onSpace(p.id)}
+              label={t`All accounts`}
+              shortcut="⌃2"
+              current={view.space === ALL || undefined}
+              badge={spaceUnread(ALL)}
+              onClick={() => onSpace(ALL)}
             >
-              <span
-                className={`flex size-6 items-center justify-center rounded-full text-white text-body ${PROFILE_BG[p.color]}`}
+              <Layers className="size-4 text-neutral-600 dark:text-neutral-300" />
+            </RailButton>
+            {profiles.map((p, i) => (
+              <RailButton
+                key={p.id}
+                label={p.name}
+                shortcut={spaceShortcutLabel(prefs.shortcutSet, i)}
+                current={view.space === p.id || undefined}
+                badge={spaceUnread(p.id)}
+                onClick={() => onSpace(p.id)}
               >
-                {p.icon}
-              </span>
-            </RailButton>
-          ))}
-        </fieldset>
+                <span
+                  className={`flex size-6 items-center justify-center rounded-full text-white text-body ${PROFILE_BG[p.color]}`}
+                >
+                  {p.icon}
+                </span>
+              </RailButton>
+            ))}
+          </fieldset>
+        </div>
       </div>
     </div>
   );

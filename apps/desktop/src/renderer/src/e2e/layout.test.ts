@@ -211,6 +211,14 @@ it("a medium window docks an icon rail whose mailboxes and spaces hand focus to 
   const list = document.querySelector('[data-mail-pane="list"]');
   // The 56 px rail leaves the list header 40 px of the lights to clear.
   expect(lightSpaceAt(list?.querySelector("header"), 56)).toBe(40);
+  // The lights are wider than the rail. Their row over the rail takes the list's surface and
+  // no border; the rail's divider starts below it.
+  const [titlebar, body] = strip.children;
+  expect(strip.className).not.toMatch(/(^|\s)border/);
+  expect(titlebar?.hasAttribute("data-rail-titlebar")).toBe(true);
+  expect(titlebar?.className.split(" ")).toEqual(expect.arrayContaining(["h-13", "bg-surface"]));
+  expect(titlebar?.className).not.toMatch(/(^|\s)border/);
+  expect(body?.className.split(" ")).toContain("border-r");
 
   // Icons are named by their mailbox and unread count; the open one is current.
   const mailboxes = within(strip).getByRole("navigation", { name: "Mailboxes" });
