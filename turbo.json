@@ -48,7 +48,16 @@
         "VITEST_MAX_WORKERS",
         "OPENMAIL_TEST_TIME_SCALE",
         "OPENMAIL_PERF",
-        "OPENMAIL_PERF_REPORT"
+        "OPENMAIL_PERF_REPORT",
+        "OPENMAIL_PERF_FACTOR",
+        "OPENMAIL_PERF_MEASURE",
+        "OPENMAIL_SPARSE_PERF_REPORT",
+        "OPENMAIL_MIGRATION_REPORT",
+        "OPENMAIL_SYNC_REPORT",
+        "OPENMAIL_SEARCH_PROFILE",
+        "OPENMAIL_PROFILE_DATABASE",
+        "OPENMAIL_PROFILE_REPORT",
+        "OPENMAIL_TEST_MODELS"
       ]
     },
     "@openmail/repo-checks#test": {
@@ -97,7 +106,9 @@
         "OPENMAIL_TEST_TIME_SCALE",
         "OPENMAIL_PERF",
         "OPENMAIL_PERF_REPORT",
-        "OPENMAIL_PERF_FACTOR"
+        "OPENMAIL_PERF_FACTOR",
+        "OPENMAIL_WEB_SHOT",
+        "OPENMAIL_PHONE_WEB_DEBUG"
       ]
     },
     "@openmail/mobile#test": {

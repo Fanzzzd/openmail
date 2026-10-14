@@ -22,6 +22,7 @@ const EXEMPT: ReadonlySet<string> = new Set([
 
 const Task = Schema.Struct({
   inputs: Schema.optional(Schema.Array(Schema.String)),
+  env: Schema.optional(Schema.Array(Schema.String)),
   cache: Schema.optional(Schema.Boolean),
 });
 const Turbo = Schema.Struct({ tasks: Schema.Record(Schema.String, Task) });
@@ -162,6 +163,27 @@ it("files that package tests read outside their package are turbo inputs of the 
       const gap = `${manifest.name}#test reads ${path}`;
       if (!EXEMPT.has(gap) && !covered(path, inputs)) gaps.push(gap);
     }
+  }
+  expect(gaps).toEqual([]);
+});
+
+// Turbo's strict env mode hides variables that a task does not list, so an opt-in switch such
+// as OPENMAIL_TEST_MODELS=1 would silently do nothing under `pnpm test`.
+const ENV_READ =
+  /(?<!delete\s)process\.env(?:\.(OPENMAIL_\w+\b)|\["(OPENMAIL_\w+)"\])(?!\s*=[^=])/g;
+
+it("OPENMAIL_* variables that package tests read are env inputs of the test task", () => {
+  const gaps: string[] = [];
+  for (const { dir, manifest } of packages) {
+    if (!manifest.scripts?.test) continue;
+    const task = turbo.tasks[`${manifest.name}#test`] ?? turbo.tasks.test;
+    if (task?.cache === false) continue;
+    const env = new Set(task?.env ?? []);
+    for (const file of testFiles(dir))
+      for (const [, dotted, quoted] of readFileSync(join(root, file), "utf8").matchAll(ENV_READ)) {
+        const name = dotted ?? quoted ?? "";
+        if (!env.has(name)) gaps.push(`${manifest.name}#test: ${file} reads ${name}`);
+      }
   }
   expect(gaps).toEqual([]);
 });
