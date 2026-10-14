@@ -13,11 +13,10 @@ allowBuilds:
 catalog:
   typescript: ^5.9.3
 overrides:
-  # Effect packages ship in lockstep. @effect/platform-node 4.0.2 asks for
-  # ^4.0.2 of this one, which resolves to 4.0.3 and needs effect 4.0.3.
-  # Move it with the rest of the Effect family, or drop it on the next bump
-  # (docs/dependency-patches.md).
-  "@effect/platform-node-shared": 4.0.2
+  # Effect packages ship in lockstep. @effect/platform-node 4.0.3 asks for
+  # ^4.0.3 of this one, which resolves to 4.0.4 and needs effect 4.0.4.
+  # Move it with the rest of the Effect family (docs/dependency-patches.md).
+  "@effect/platform-node-shared": 4.0.3
   # @tailwindcss/node 4.3.3 pins lightningcss 1.32.0, which does not parse ::highlight() and
   # prints a false warning for each such rule in desktop and docs builds. 1.33.0 parses it.
   # Drop this when @tailwindcss/node depends on lightningcss 1.33 or later
@@ -26,7 +25,7 @@ overrides:
 # Why each patch exists and when it can go: docs/dependency-patches.md
 patchedDependencies:
   expo-background-task@57.0.21: patches/expo-background-task@57.0.21.patch
-  expo-notifications@57.0.21: patches/expo-notifications@57.0.21.patch
+  expo-notifications@57.0.22: patches/expo-notifications@57.0.22.patch
   react-native-tcp-socket@6.4.3: patches/react-native-tcp-socket@6.4.3.patch
 # Both macOS distributables need their N-API prebuilt optional dependencies.
 supportedArchitectures:

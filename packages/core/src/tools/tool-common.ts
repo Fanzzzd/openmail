@@ -14,6 +14,7 @@ import {
   renameRecordKeys,
   shortText,
   snakeKey,
+  ToolInt,
 } from "./tool-pages.js";
 import type { PerformError } from "../mailbox/mailbox.js";
 import { type Address, ThreadSummary } from "../domain/message.js";
@@ -94,7 +95,7 @@ const looseSchemas: Partial<Record<string, Schema.Codec<unknown>>> = {
   array: Schema.Array(Schema.Unknown),
   object: Schema.Record(Schema.String, Schema.Unknown),
   string: Schema.String,
-  integer: Schema.Int,
+  integer: ToolInt,
   boolean: Schema.Boolean,
 };
 

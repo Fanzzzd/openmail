@@ -14,7 +14,7 @@ import {
 } from "./tool-common.js";
 import { Effect, Schema } from "effect";
 import { NamedSignature } from "../compose/signatures.js";
-import { PageParameters, PageResult, ToolBudget, shortText } from "./tool-pages.js";
+import { PageParameters, PageResult, ToolBudget, ToolInt, shortText } from "./tool-pages.js";
 import type { HandlersFor, ToolContext } from "./tool-context.js";
 
 export const ListTemplates = collection(
@@ -34,7 +34,7 @@ export const ListSignatures = collection(
 );
 export const detailParameters = (id: string) => ({
   id: Schema.String.annotate({ description: id }),
-  offset: Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: 1_000_000 }))
+  offset: ToolInt.check(Schema.isBetween({ minimum: 0, maximum: 1_000_000 }))
     .annotate({ description: "next_offset from the last page. Default 0." })
     .pipe(Schema.withDecodingDefaultKey(Effect.succeed(0))),
   token_budget: ToolBudget,
@@ -52,7 +52,7 @@ export const ReadTemplate = readOnly(
       cc: Recipients,
       bcc: Recipients,
       text: Schema.String,
-      next_offset: Schema.optionalKey(Schema.Int),
+      next_offset: Schema.optionalKey(ToolInt),
     }),
     failure: MailToolError,
     failureMode: "return",
@@ -68,7 +68,7 @@ export const ReadSignature = readOnly(
       name: Schema.String,
       address: Schema.String,
       text: Schema.String,
-      next_offset: Schema.optionalKey(Schema.Int),
+      next_offset: Schema.optionalKey(ToolInt),
     }),
     failure: MailToolError,
     failureMode: "return",

@@ -12,7 +12,7 @@ import {
   readOnly,
   toToolError,
 } from "./tool-common.js";
-import { PageParameters, PageResult, shortText } from "./tool-pages.js";
+import { PageParameters, PageResult, ToolInt, shortText } from "./tool-pages.js";
 import { Tool } from "effect/ai";
 import { CATEGORIES } from "../domain/message.js";
 import type { HandlersFor, ToolContext } from "./tool-context.js";
@@ -53,8 +53,8 @@ export const AccessStatus = readOnly(
       readable_accounts: Schema.Array(ModelAccount),
       hidden_accounts: Schema.Struct({
         /** "Allow AI to read this account" is off for these accounts. */
-        without_ai_consent: Schema.Int,
-        turned_off: Schema.Int,
+        without_ai_consent: ToolInt,
+        turned_off: ToolInt,
       }),
       write_mode: Schema.Literals(["off", "propose", "allow"]),
       proposal_tools: Schema.Boolean,

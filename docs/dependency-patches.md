@@ -19,7 +19,7 @@ IMAP／SMTP 的 TCP 和 TLS 传输。补丁改了四处：
 
 上游 issue [expo/expo#48122](https://github.com/expo/expo/issues/48122) 提议让网络约束可配置。任务类型、标识符和电量约束没有上游 issue，属于 OpenMail 的取舍。删除条件：expo-background-task 允许按任务选择 app refresh 和自定义约束。在那之前每次升级都要重做这个补丁。
 
-## expo-notifications@57.0.21
+## expo-notifications@57.0.22
 
 本地新邮件通知。补丁做 OpenMail 自己的事，没有对应的上游缺陷：
 
@@ -31,9 +31,9 @@ IMAP／SMTP 的 TCP 和 TLS 传输。补丁改了四处：
 
 ## 版本覆盖：@effect/platform-node-shared
 
-`pnpm-workspace.yaml` 的 `overrides` 把 `@effect/platform-node-shared` 固定在 4.0.2。Effect 的包按同一个版本号一起发布，`@effect/platform-node` 4.0.2 对它的依赖写的是 `^4.0.2`，pnpm 会解析到 4.0.3，而 4.0.3 要求 effect 4.0.3。没有这条覆盖，桌面和 CLI 会在 effect 4.0.2 上跑 4.0.3 的平台代码。
+`pnpm-workspace.yaml` 的 `overrides` 把 `@effect/platform-node-shared` 固定在 4.0.3。Effect 的包按同一个版本号一起发布，`@effect/platform-node` 4.0.3 对它的依赖写的是 `^4.0.3`，pnpm 会解析到 4.0.4，而 4.0.4 要求 effect 4.0.4。没有这条覆盖，桌面和 CLI 会在 effect 4.0.3 上跑 4.0.4 的平台代码。
 
-Dependabot 不改 `overrides`。升级 Effect 家族时同一个提交里处理这一条：新版本的 `@effect/platform-node` 能解析到同版本的 `platform-node-shared` 时删掉覆盖，否则把它改成新的版本号。用 `pnpm peers check` 确认没有 effect 的 unmet peer。
+Dependabot 不改 `overrides`。Dependabot 的 #14 只把 `@effect/platform-node` 升到 4.0.3，覆盖仍把 `platform-node-shared` 留在 4.0.2，4.0.2 没有 `NodeAddressResolver.js`，core 的 12 个测试文件在导入时失败。升级 Effect 家族时同一个提交里处理这一条：新版本的 `@effect/platform-node` 能解析到同版本的 `platform-node-shared` 时删掉覆盖，否则把它改成新的版本号。Effect 发布下一个补丁版本后，`^` 范围通常会再次越过当前版本，所以一般是改版本号。用 `pnpm peers check` 确认没有 effect 的 unmet peer。
 
 ## 版本覆盖：lightningcss
 

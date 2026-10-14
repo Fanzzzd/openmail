@@ -24,6 +24,7 @@ import {
   PageParameters,
   PageResult,
   ToolBudget,
+  ToolInt,
   ToolLimit,
   encodeCursor,
   jsonBytes,
@@ -112,7 +113,7 @@ export const ReadThread = readOnly(
       "Read a conversation as plain text, oldest message first, without quoted history, signatures or attachments. Use a message id from list_threads or search. Older text is trimmed to fit max_chars; truncated counts what was cut.",
     parameters: Schema.Struct({
       id: ThreadId,
-      max_chars: Schema.Int.check(Schema.isBetween({ minimum: 2000, maximum: 24_000 }))
+      max_chars: ToolInt.check(Schema.isBetween({ minimum: 2000, maximum: 24_000 }))
         .annotate({
           description:
             "Result size in UTF-8 JSON bytes. Default 12000. Older messages are trimmed first.",
@@ -157,7 +158,7 @@ export const Sync = mailTool("sync", {
       AccountId.annotate({ description: "Only this account. Default: every account." }),
     ),
   }),
-  success: Schema.Struct({ results: Schema.Array(SyncResult), omitted: Schema.Int }),
+  success: Schema.Struct({ results: Schema.Array(SyncResult), omitted: ToolInt }),
   failure: MailToolError,
   failureMode: "return",
 })

@@ -2,16 +2,27 @@ import { Buffer } from "../platform/bytes.js";
 import { sha256Hex } from "../platform/crypto.js";
 import { Effect, Option, Schema } from "effect";
 
+/**
+ * Schema.Int, advertised as plain `type: "integer"`. Since Effect 4.0.3 Schema.Int adds
+ * safe-integer `minimum`/`maximum` to its JSON Schema, which collide with a parameter's own
+ * bounds and push them and the description into `allOf`. MCP clients and models read the
+ * top-level keys, so tool schemas keep the flat 4.0.2 form. Validation still rejects unsafe
+ * integers.
+ */
+export const ToolInt = Schema.Number.check(
+  Schema.isInt({ toJsonSchema: () => [{ type: "integer" }, true] }),
+);
+
 const ToolCursor = Schema.String.check(Schema.isMaxLength(24_000)).annotate({
   description: "next_cursor from the last page, with the same filters.",
 });
-export const ToolBudget = Schema.Int.check(Schema.isBetween({ minimum: 2000, maximum: 24_000 }))
+export const ToolBudget = ToolInt.check(Schema.isBetween({ minimum: 2000, maximum: 24_000 }))
   .annotate({
     description: "Result size limit in UTF-8 JSON bytes. Default 12000.",
   })
   .pipe(Schema.withDecodingDefaultKey(Effect.succeed(12_000)));
 export const ToolLimit = (fallback = 25, maximum = 100) =>
-  Schema.Int.check(Schema.isBetween({ minimum: 1, maximum }))
+  ToolInt.check(Schema.isBetween({ minimum: 1, maximum }))
     .annotate({
       description: `Default ${fallback}. token_budget may return fewer rows.`,
     })
@@ -25,7 +36,7 @@ export const PageResult = { next_cursor: Schema.optionalKey(Schema.String) };
 
 const Cursor = Schema.Struct({
   scope: Schema.String,
-  offset: Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: 100_000 })),
+  offset: ToolInt.check(Schema.isBetween({ minimum: 0, maximum: 100_000 })),
   date: Schema.optionalKey(Schema.Finite),
   id: Schema.optionalKey(Schema.String),
 });

@@ -14,7 +14,7 @@ import {
   toolError,
 } from "./tool-common.js";
 import { Effect, Schema } from "effect";
-import { PageParameters, PageResult, encodeCursor, shortText } from "./tool-pages.js";
+import { PageParameters, PageResult, ToolInt, encodeCursor, shortText } from "./tool-pages.js";
 import { Attachment } from "../domain/message.js";
 import { DerivedChunk } from "../ai/media.js";
 import type { HandlersFor, ToolContext } from "./tool-context.js";
@@ -27,7 +27,7 @@ export const ListAttachments = readOnly(
     success: Schema.Struct({
       ...PageResult,
       attachments: Schema.Array(
-        Schema.Struct({ ...Attachment.fields, message_id: Schema.String, index: Schema.Int }),
+        Schema.Struct({ ...Attachment.fields, message_id: Schema.String, index: ToolInt }),
       ),
     }),
     failure: MailToolError,
@@ -41,7 +41,7 @@ export const AttachmentText = readOnly(
     parameters: Schema.Struct({
       message_id: MessageId,
       attachment_index: Schema.optionalKey(
-        Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)).annotate({
+        ToolInt.check(Schema.isGreaterThanOrEqualTo(0)).annotate({
           description: "Only this attachment, by index from list_attachments.",
         }),
       ),
@@ -49,7 +49,7 @@ export const AttachmentText = readOnly(
     }),
     success: Schema.Struct({
       ...PageResult,
-      chunks: Schema.Array(Schema.Struct({ ...DerivedChunk.fields, text_offset: Schema.Int })),
+      chunks: Schema.Array(Schema.Struct({ ...DerivedChunk.fields, text_offset: ToolInt })),
     }),
     failure: MailToolError,
     failureMode: "return",

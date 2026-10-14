@@ -14,6 +14,7 @@ import { NotFound } from "../domain/errors.js";
 import { MailToolkit, MailToolkitLayer, ReadMailToolkit, ProposalMailToolkit } from "./tools.js";
 import { AgentIdentity, cleanMcpClientName } from "./agent-identity.js";
 import { UNTRUSTED_MAIL_NOTICE } from "./tool-common.js";
+import { ToolInt } from "./tool-pages.js";
 
 /** read_proposal as MCP sends it: the command is an object, a draft body one page of text. */
 const ProposalPage = Schema.Struct({
@@ -710,6 +711,21 @@ it.effect("search returns local matched chunks and provenance without image byte
 
 it("MCP exposes no permanent deletion or whole-folder destruction", () => {
   assert.isFalse(Object.keys(MailToolkit.tools).some((name) => /permanent|empty/i.test(name)));
+});
+
+it("tool integers advertise a flat schema and still reject unsafe integers", () => {
+  const limit = ToolInt.check(Schema.isBetween({ minimum: 1, maximum: 100 })).annotate({
+    description: "Rows.",
+  });
+  expect(Schema.toJsonSchemaDocument(limit).schema).toEqual({
+    type: "integer",
+    minimum: 1,
+    maximum: 100,
+    description: "Rows.",
+  });
+  expect(Schema.is(ToolInt)(Number.MAX_SAFE_INTEGER + 1)).toBe(false);
+  expect(Schema.is(ToolInt)(1.5)).toBe(false);
+  expect(Schema.is(ToolInt)(42)).toBe(true);
 });
 
 it("tool input and output schemas are stable", () => {

@@ -27,7 +27,7 @@ import { Tool } from "effect/ai";
 import { detailParameters } from "./compose-tools.js";
 import type { MailOp } from "../domain/changes.js";
 import type { HandlersFor, ToolContext } from "./tool-context.js";
-import { shortText } from "./tool-pages.js";
+import { ToolInt, shortText } from "./tool-pages.js";
 
 export const MODIFY_ACTIONS = [
   "archive",
@@ -136,7 +136,7 @@ export const ReadProposal = readOnly(
         description:
           "The change: kind, then threads and op, due, or account and message. A draft's message.text is one page of the body.",
       }),
-      next_offset: Schema.optionalKey(Schema.Int),
+      next_offset: Schema.optionalKey(ToolInt),
     }),
     failure: MailToolError,
     failureMode: "return",
