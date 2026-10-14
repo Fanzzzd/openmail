@@ -161,7 +161,7 @@ export function ThreadViewMenuItems({
         shortcut={shortcut("zoomIn")}
         onClick={() => setZoom(stepZoom(zoom, 1))}
       >
-        {t`Bigger text`}
+        {t`Larger text`}
       </MenuItem>
       <MenuItem
         icon={Minus}

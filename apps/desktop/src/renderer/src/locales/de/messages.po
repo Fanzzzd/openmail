@@ -1100,10 +1100,6 @@ msgstr "Vor dem Datum"
 msgid "Below quoted text"
 msgstr "Unter dem zitierten Text"
 
-#: src/renderer/src/features/reader/ThreadViewMenu.tsx
-msgid "Bigger text"
-msgstr "Größerer Text"
-
 #: src/renderer/src/features/reader/body/MessageBody.tsx
 msgid "Blocked before loading:"
 msgstr "Vor dem Laden blockiert:"
@@ -3654,6 +3650,7 @@ msgstr "Sprache"
 msgid "Large"
 msgstr "Groß"
 
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Larger text"
 msgstr "Größerer Text"

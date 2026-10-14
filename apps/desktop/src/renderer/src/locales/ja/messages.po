@@ -1100,10 +1100,6 @@ msgstr "日付より前"
 msgid "Below quoted text"
 msgstr "引用文の下"
 
-#: src/renderer/src/features/reader/ThreadViewMenu.tsx
-msgid "Bigger text"
-msgstr "大きなテキスト"
-
 #: src/renderer/src/features/reader/body/MessageBody.tsx
 msgid "Blocked before loading:"
 msgstr "読み込み前にブロック："
@@ -3654,6 +3650,7 @@ msgstr "言語"
 msgid "Large"
 msgstr "大きい"
 
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Larger text"
 msgstr "大きな文字"

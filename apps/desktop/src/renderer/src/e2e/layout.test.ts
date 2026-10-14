@@ -738,10 +738,10 @@ it("the thread ends with Reply, Reply all and Forward, and has one menu for the 
   expect(within(thread).queryByRole("button", { name: "More actions" })).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "Conversation actions" }));
   expect(await screen.findByRole("menuitem", { name: "Copy link to conversation" })).toBeTruthy();
-  expect(screen.getByRole("menuitem", { name: /^Bigger text/ })).toBeTruthy();
+  expect(screen.getByRole("menuitem", { name: /^Larger text/ })).toBeTruthy();
   key("Escape");
   await eventually(() =>
-    expect(screen.queryByRole("menuitem", { name: /^Bigger text/ })).toBeNull(),
+    expect(screen.queryByRole("menuitem", { name: /^Larger text/ })).toBeNull(),
   );
 
   fireEvent.click(within(bar).getByRole("button", { name: "Reply" }));
@@ -762,5 +762,5 @@ it("with the toolbar hidden, the subject row keeps the thread's menu", async () 
   fireEvent.click(
     within(screen.getByRole("document")).getByRole("button", { name: "More actions" }),
   );
-  expect(await screen.findByRole("menuitem", { name: /^Bigger text/ })).toBeTruthy();
+  expect(await screen.findByRole("menuitem", { name: /^Larger text/ })).toBeTruthy();
 });

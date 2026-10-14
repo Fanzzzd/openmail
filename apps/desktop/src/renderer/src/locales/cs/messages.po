@@ -1100,10 +1100,6 @@ msgstr "Před datem"
 msgid "Below quoted text"
 msgstr "Pod citovaným textem"
 
-#: src/renderer/src/features/reader/ThreadViewMenu.tsx
-msgid "Bigger text"
-msgstr "Větší text"
-
 #: src/renderer/src/features/reader/body/MessageBody.tsx
 msgid "Blocked before loading:"
 msgstr "Blokováno před načtením:"
@@ -3654,6 +3650,7 @@ msgstr "Jazyk"
 msgid "Large"
 msgstr "Velký"
 
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Larger text"
 msgstr "Větší text"

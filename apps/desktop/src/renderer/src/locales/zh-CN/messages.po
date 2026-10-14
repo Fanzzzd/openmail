@@ -1110,10 +1110,6 @@ msgstr "早于日期"
 msgid "Below quoted text"
 msgstr "引文下方"
 
-#: src/renderer/src/features/reader/ThreadViewMenu.tsx
-msgid "Bigger text"
-msgstr "放大文字"
-
 #: src/renderer/src/features/reader/body/MessageBody.tsx
 msgid "Blocked before loading:"
 msgstr "加载前已拦截："
@@ -3664,6 +3660,7 @@ msgstr "语言"
 msgid "Large"
 msgstr "大"
 
+#: src/renderer/src/features/reader/ThreadViewMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Larger text"
 msgstr "放大文字"
