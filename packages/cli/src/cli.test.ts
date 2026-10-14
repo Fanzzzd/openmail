@@ -152,7 +152,7 @@ describe("help", () => {
   });
 
   test("every positional argument says what it takes", async () => {
-    for (const [command, argument] of [
+    const commands = [
       [["accounts", "remove"], "account-id"],
       [["accounts", "reauth"], "account-id"],
       [["spaces", "add"], "name"],
@@ -161,13 +161,16 @@ describe("help", () => {
       [["sync"], "account"],
       [["search"], "query"],
       [["show"], "message-id"],
-    ] as const) {
-      const { stdout } = await openmail([...command, "--help"]);
-      expect(stdout, command.join(" ")).toMatch(
+    ] as const;
+    // Eight CLI starts in a row take over 20 s on a CI runner; run them side by side.
+    const outputs = await Promise.all(
+      commands.map(([command]) => openmail([...command, "--help"])),
+    );
+    for (const [index, [command, argument]] of commands.entries())
+      expect(outputs[index]?.stdout, command.join(" ")).toMatch(
         new RegExp(`^  ${argument}(\\.\\.\\.)? \\w+ +\\S`, "m"),
       );
-    }
-  });
+  }, 60_000);
 
   test("list --help names its paging and filter flags", async () => {
     const { code, stdout } = await openmail(["list", "--help"]);
