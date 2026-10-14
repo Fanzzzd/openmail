@@ -39,7 +39,7 @@ The first public version. Everything below is new.
 ### AI and agents
 
 - Optional AI per account, off by default: summaries, a mail assistant (Cmd-J), writing help and triage suggestions. Changes the assistant proposes wait for your approval.
-- CLI (`openmail`) and an MCP server for Claude Code, Codex, Claude and Cursor. Tools are read-only by default; write tools only create proposals, and sending always needs confirmation in the app.
+- CLI (`openmail`) and an MCP server for Claude Code, Codex, Claude and Cursor. Tools are read-only by default; write tools only create AI suggestions (`proposal` in the tool names), and sending always needs confirmation in the app.
 - Connect AI apps from Settings, with a diff to review before any config file changes.
 
 ### Remote access
