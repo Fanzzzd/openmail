@@ -73,15 +73,24 @@ function testFiles(dir: string): string[] {
   return readdirSync(join(root, dir), { withFileTypes: true }).flatMap((entry) => {
     const path = `${dir}/${entry.name}`;
     if (entry.isDirectory()) return SKIP.has(entry.name) ? [] : testFiles(path);
-    return /\.test\.[cm]?[jt]sx?$|^vitest\..*config\.[cm]?[jt]s$/.test(entry.name) ||
-      path.includes("/test-support/")
-      ? [path]
-      : [];
+    if (/\.test\.[cm]?[jt]sx?$|^vitest\..*config\.[cm]?[jt]s$/.test(entry.name)) return [path];
+    // Helpers that tests import read files and variables on their behalf.
+    const helper = path.includes("/test-support/") || path.includes("/fixtures/");
+    return helper && /\.[cm]?[jt]sx?$/.test(entry.name) ? [path] : [];
   });
 }
 
 const LITERAL = /(["'`])((?:\.\.\/)+[^"'`\s$]*|[\w.@-]+(?:\/[\w.@*-]+)+\/?)\1/g;
 const SCRIPT_FILE = /\.[cm]?js$/;
+const CONFIG_FILE = /config\.[cm]?[jt]s$/;
+// A literal only counts as a read when it reaches a call that opens, resolves or runs a path.
+// Other strings, such as a hostile filename in a test, name nothing the test reads.
+const PATH_USE =
+  /\b(?:readFileSync|readFile|readdirSync|readdir|statSync|stat|existsSync|createReadStream|cpSync|copyFileSync|copyFile|pathToFileURL|fileURLToPath|resolve|join|import|require|execFileSync|execFile|spawnSync|spawn|fork|new URL)\s*\(|\b(?:from|import)\s*$|\bnew URL\s*\(/;
+function reachesPathUse(source: string, index: number): boolean {
+  const statement = source.slice(Math.max(0, index - 400), index);
+  return PATH_USE.test(statement.slice(statement.lastIndexOf(";") + 1));
+}
 
 /**
  * Existing repo paths outside `dir` named in `file`. Scripts that the file loads or runs are
@@ -98,7 +107,9 @@ function outsideReads(
   const source = readFileSync(join(root, file), "utf8");
   const own = inside(dir, file);
   const reads: string[] = [];
-  for (const [, , literal = ""] of source.matchAll(LITERAL)) {
+  for (const match of source.matchAll(LITERAL)) {
+    const literal = match[2] ?? "";
+    if (!CONFIG_FILE.test(file) && !reachesPathUse(source, match.index)) continue;
     const upward = literal.startsWith("../");
     // Root scripts name repo paths from the root; package tests only count upward paths.
     if (!upward && own) continue;
@@ -161,7 +172,10 @@ it("files that package tests read outside their package are turbo inputs of the 
     ];
     for (const path of new Set(reads)) {
       const gap = `${manifest.name}#test reads ${path}`;
-      if (!EXEMPT.has(gap) && !covered(path, inputs)) gaps.push(gap);
+      if (!EXEMPT.has(gap) && !covered(path, inputs))
+        gaps.push(
+          `${gap}. Add "${TURBO_ROOT}${path}" to the task's inputs in turbo.json, or add "${gap}" to EXEMPT in test-inputs.test.ts if it is test data.`,
+        );
     }
   }
   expect(gaps).toEqual([]);
@@ -169,8 +183,19 @@ it("files that package tests read outside their package are turbo inputs of the 
 
 // Turbo's strict env mode hides variables that a task does not list, so an opt-in switch such
 // as OPENMAIL_TEST_MODELS=1 would silently do nothing under `pnpm test`.
+// Reads through `process.env`, through an alias such as `const { env } = process` or
+// `const env = process.env`, and through a destructuring pattern.
 const ENV_READ =
-  /(?<!delete\s)process\.env(?:\.(OPENMAIL_\w+\b)|\["(OPENMAIL_\w+)"\])(?!\s*=[^=])/g;
+  /(?<!delete\s(?:process\.)?)\benv(?:\.(OPENMAIL_\w+\b)|\["(OPENMAIL_\w+)"\])(?!\s*=[^=])/g;
+const ENV_DESTRUCTURE = /\{([^{}]*)\}\s*=\s*(?:process\.)?env\b(?!\.)/g;
+
+function envReads(source: string): string[] {
+  const direct = [...source.matchAll(ENV_READ)].map(([, dotted, quoted]) => dotted ?? quoted ?? "");
+  const destructured = [...source.matchAll(ENV_DESTRUCTURE)].flatMap(([, pattern = ""]) =>
+    [...pattern.matchAll(/\b(OPENMAIL_\w+)\b/g)].map(([, name = ""]) => name),
+  );
+  return [...direct, ...destructured];
+}
 
 it("OPENMAIL_* variables that package tests read are env inputs of the test task", () => {
   const gaps: string[] = [];
@@ -180,10 +205,36 @@ it("OPENMAIL_* variables that package tests read are env inputs of the test task
     if (task?.cache === false) continue;
     const env = new Set(task?.env ?? []);
     for (const file of testFiles(dir))
-      for (const [, dotted, quoted] of readFileSync(join(root, file), "utf8").matchAll(ENV_READ)) {
-        const name = dotted ?? quoted ?? "";
+      for (const name of new Set(envReads(readFileSync(join(root, file), "utf8"))))
         if (!env.has(name)) gaps.push(`${manifest.name}#test: ${file} reads ${name}`);
-      }
   }
   expect(gaps).toEqual([]);
+});
+
+it("finds OPENMAIL_* reads through aliases and destructuring", () => {
+  // Built from parts so that this file does not read the variables itself.
+  const name = (suffix: string) => `OPENMAIL_${suffix}`;
+  const sources = [
+    `const x = process.env.${name("A")} === "1";`,
+    `const x = process.env["${name("A")}"];`,
+    `const { ${name("A")} } = process.env;`,
+    `const { ${name("A")}: a = "x", ${name("B")} } = env;`,
+    `const env = process.env;\nconst x = env.${name("A")};`,
+    `const x = env["${name("A")}"];`,
+  ];
+  for (const source of sources) expect(envReads(source)).toContain(name("A"));
+  expect(envReads(`const { ${name("A")}, ${name("B")} } = process.env;`)).toEqual([
+    name("A"),
+    name("B"),
+  ]);
+  expect(envReads(`process.env.${name("A")} = "1"; delete process.env.${name("B")};`)).toEqual([]);
+  expect(envReads(`spawn(cmd, { env: { ...process.env, ${name("A")}: "1" } });`)).toEqual([]);
+});
+
+it("counts a path literal as a read only where a call uses it as a path", () => {
+  const hostile = `const hostile = "${"../"}../package.json";\nexpect(sanitize(hostile)).toBe("x");`;
+  const read = `const text = readFileSync(join(__dirname, "${"../"}../package.json"));`;
+  const at = (source: string) => source.indexOf("../");
+  expect(reachesPathUse(hostile, at(hostile))).toBe(false);
+  expect(reachesPathUse(read, at(read))).toBe(true);
 });
