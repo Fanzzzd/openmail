@@ -47,6 +47,14 @@ it("blocks remote-session launchers, plug-in bundles, certificates and the rest 
   for (const ext of ["rtf", "csv", "key", "pages", "numbers", "heic", "mov", "ics.pdf"])
     expect(EXECUTABLE.test(`file.${ext}`), ext).toBe(false);
 });
+it("blocks key material, keychains, provisioning profiles, disk image parts and vCard variants", () => {
+  for (const ext of "pem p12 pfx p7b p7c keychain keychain-db provisionprofile mobileprovision dmgpart vcard vcs PFX".split(
+    " ",
+  ))
+    expect(EXECUTABLE.test(`file.${ext}`), ext).toBe(true);
+  for (const ext of ["key", "p7", "pemx", "keychain.pdf"])
+    expect(EXECUTABLE.test(`file.${ext}`), ext).toBe(false);
+});
 it("replaces filename format characters and bounds UTF-8 length without losing the extension", () => {
   expect(safeFilename("report\u202E\u200F\u2066\u061C\uFEFF.pdf")).toBe("report_____.pdf");
   const name = safeFilename(`邮件😀${"邮件😀".repeat(699)}.mobileconfig`);

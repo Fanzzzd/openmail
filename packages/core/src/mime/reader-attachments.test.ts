@@ -17,7 +17,7 @@ import { makeFakeProvider } from "../platform/node/fake-provider.js";
 import { fakeServer } from "../platform/node/testing.js";
 import { StoreLive } from "../store/store.js";
 import { LIST_DENSITIES, listWindow, specialFolderBadge } from "../app/list-window.js";
-import { inspectAttachment } from "./attachment-import.js";
+import { attachmentImportKind, inspectAttachment } from "./attachment-import.js";
 {
   const original: IncomingMessage = {
     providerId: "original",
@@ -252,3 +252,20 @@ import { inspectAttachment } from "./attachment-import.js";
     ).toBe("html");
   });
 }
+
+it("routes vCard and vCalendar variants to the in-app preview", () => {
+  for (const [filename, mimeType, kind] of [
+    ["card.vcard", "application/octet-stream", "contacts"],
+    ["card.bin", "text/directory", "contacts"],
+    ["event.VCS", "application/octet-stream", "calendar"],
+    ["event.bin", "text/x-vcalendar", "calendar"],
+  ] as const)
+    expect(attachmentImportKind({ filename, mimeType }), filename).toBe(kind);
+  expect(
+    inspectAttachment({
+      filename: "card.vcard",
+      mimeType: "text/directory",
+      data: new TextEncoder().encode("BEGIN:VCARD\r\nFN:Bo\r\nEMAIL:bo@example.com\r\nEND:VCARD"),
+    }),
+  ).toEqual({ kind: "contacts", contacts: [{ name: "Bo", address: "bo@example.com" }] });
+});

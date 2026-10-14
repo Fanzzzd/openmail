@@ -18,9 +18,12 @@ export function attachmentImportKind(file: {
     /^(text\/html|application\/xhtml\+xml|image\/svg\+xml)$/i.test(file.mimeType)
   )
     return "html";
-  if (/\.ics$/i.test(file.filename) || file.mimeType.toLowerCase() === "text/calendar")
+  if (/\.(ics|vcs)$/i.test(file.filename) || /^text\/(calendar|x-vcalendar)$/i.test(file.mimeType))
     return "calendar";
-  if (/\.vcf$/i.test(file.filename) || /^(text\/(x-)?vcard)$/i.test(file.mimeType))
+  if (
+    /\.(vcf|vcard)$/i.test(file.filename) ||
+    /^text\/((x-)?vcard|directory)$/i.test(file.mimeType)
+  )
     return "contacts";
   return null;
 }
