@@ -340,6 +340,14 @@ describe("spaces", () => {
       expect(Object.keys(space)).toEqual(KEYS.space);
     });
 
+    test("add refuses a name that is taken in any letter case", async () => {
+      const again = await openmail(["spaces", "add", " work "], home.path);
+      expect(again.code).toBe(1);
+      expect(again.stdout).toBe("");
+      expect(again.stderr).toMatch(/^error: A space named Work already exists \(.+\)\.\nhint: /);
+      expect(await list(["spaces", "list"], home.path)).toHaveLength(1);
+    });
+
     test("assign puts an account in it", async () => {
       expect(assigned.code, assigned.stderr).toBe(0);
       const after = (await list(["spaces", "list"], home.path))[0] ?? {};

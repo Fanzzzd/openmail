@@ -252,6 +252,15 @@ const profilesAdd = Command.make(
   },
   Effect.fn(function* ({ name, icon, color }) {
     const mailbox = yield* Mailbox;
+    // Spaces are found by name in any letter case, so two with one name could not be told apart.
+    const taken = (yield* mailbox.accounts.profiles).find(
+      (space) => space.name.trim().toLowerCase() === name.trim().toLowerCase(),
+    );
+    if (taken)
+      yield* fail(`A space named ${taken.name} already exists (${taken.id}).`, {
+        code: "invalid_input",
+        hint: "Choose another name. `openmail spaces list` shows the spaces.",
+      });
     const p = yield* mailbox.accounts.createProfile({ name, icon, color });
     yield* Console.log(`Added space ${p.name} (${p.id}).`);
   }),
