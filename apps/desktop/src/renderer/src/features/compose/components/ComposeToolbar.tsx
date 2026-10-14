@@ -162,8 +162,9 @@ export function ComposeToolbar({
       ref={ref}
       aria-label={t`Formatting`}
       // A finger scrolls the row sideways when 44 px buttons outgrow it, so the
-      // writing mode keeps its full name; More stays pinned at the end.
-      className="flex shrink-0 items-center gap-0.5 overflow-hidden border-b border-separator px-4 py-1 coarse:overflow-x-auto"
+      // writing mode keeps its full name; More stays pinned at the end. The row has no
+      // end padding there: More carries it, so no button scrolls into a gap beside More.
+      className="flex shrink-0 items-center gap-0.5 overflow-hidden border-b border-separator px-4 py-1 coarse:overflow-x-auto coarse:pr-0"
     >
       <div className="mr-1 flex min-w-0 shrink items-center gap-1 coarse:shrink-0">{leading}</div>
       {formatting && (
@@ -203,66 +204,66 @@ export function ComposeToolbar({
         </>
       )}
       <span className="flex-1" />
-      <DropdownMenu
-        trigger={
-          <button
-            type="button"
-            aria-label={t`More formatting`}
-            className={`${button} coarse:sticky coarse:right-0 coarse:bg-raised`}
-          >
-            <Ellipsis className="size-4" />
-          </button>
-        }
-      >
-        {formatting && (
-          <>
-            {!shown.style && (
-              <>
-                {style.map(menuItem)}
-                <MenuSeparator />
-              </>
-            )}
-            {!shown.align && (
-              <>
-                {align.map(menuItem)}
-                <MenuSeparator />
-              </>
-            )}
-            {!shown.lists && lists.map(menuItem)}
-            {[
-              format(t`Dashed list`, "dashList"),
-              format(t`Indent list`, "indentList"),
-              format(t`Outdent list`, "outdentList"),
-              format(t`Increase indent`, "indentParagraph"),
-              format(t`Decrease indent`, "outdentParagraph"),
-              ...(shown.quote ? [] : [quote]),
-              format(t`Decrease quote level`, "quoteDecrease"),
-            ].map(menuItem)}
-            <MenuSeparator />
-            {[
-              format(t`Left to right`, "directionLtr"),
-              format(t`Right to left`, "directionRtl"),
-              format(t`Automatic direction`, "directionAuto"),
-            ].map(menuItem)}
-            <MenuSeparator />
-            {[
-              format(t`Inline code`, "inlineCode"),
-              format(t`Code block`, "blockCode"),
-              format(t`Superscript`, "superscript"),
-              format(t`Subscript`, "subscript"),
-            ].map(menuItem)}
-            <MenuSeparator />
-            {[
-              format(t`Copy style`, "copyStyle"),
-              format(t`Paste style`, "pasteStyle"),
-              format(t`Clear formatting`, "clearFormatting"),
-              { label: t`Remove link`, run: () => onCommand("unlink") },
-            ].map(menuItem)}
-            <MenuSeparator />
-          </>
-        )}
-        {more}
-      </DropdownMenu>
+      {/* Pinned to the end on a phone. Its padding covers the row's end, so buttons
+          scrolling under it stay hidden. */}
+      <span className="flex shrink-0 coarse:sticky coarse:right-0 coarse:bg-raised coarse:pr-4">
+        <DropdownMenu
+          trigger={
+            <button type="button" aria-label={t`More formatting`} className={button}>
+              <Ellipsis className="size-4" />
+            </button>
+          }
+        >
+          {formatting && (
+            <>
+              {!shown.style && (
+                <>
+                  {style.map(menuItem)}
+                  <MenuSeparator />
+                </>
+              )}
+              {!shown.align && (
+                <>
+                  {align.map(menuItem)}
+                  <MenuSeparator />
+                </>
+              )}
+              {!shown.lists && lists.map(menuItem)}
+              {[
+                format(t`Dashed list`, "dashList"),
+                format(t`Indent list`, "indentList"),
+                format(t`Outdent list`, "outdentList"),
+                format(t`Increase indent`, "indentParagraph"),
+                format(t`Decrease indent`, "outdentParagraph"),
+                ...(shown.quote ? [] : [quote]),
+                format(t`Decrease quote level`, "quoteDecrease"),
+              ].map(menuItem)}
+              <MenuSeparator />
+              {[
+                format(t`Left to right`, "directionLtr"),
+                format(t`Right to left`, "directionRtl"),
+                format(t`Automatic direction`, "directionAuto"),
+              ].map(menuItem)}
+              <MenuSeparator />
+              {[
+                format(t`Inline code`, "inlineCode"),
+                format(t`Code block`, "blockCode"),
+                format(t`Superscript`, "superscript"),
+                format(t`Subscript`, "subscript"),
+              ].map(menuItem)}
+              <MenuSeparator />
+              {[
+                format(t`Copy style`, "copyStyle"),
+                format(t`Paste style`, "pasteStyle"),
+                format(t`Clear formatting`, "clearFormatting"),
+                { label: t`Remove link`, run: () => onCommand("unlink") },
+              ].map(menuItem)}
+              <MenuSeparator />
+            </>
+          )}
+          {more}
+        </DropdownMenu>
+      </span>
     </KeyboardToolbar>
   );
 }

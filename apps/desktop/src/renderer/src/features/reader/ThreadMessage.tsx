@@ -102,7 +102,11 @@ export function MessageHead({
           {onSearchSender ? (
             <DropdownMenu
               trigger={
-                <button type="button" className="block max-w-full text-left hover:text-blue-600">
+                // A finger gets a 44 px tall target; the name stays centred in it.
+                <button
+                  type="button"
+                  className="block max-w-full text-left hover:text-blue-600 coarse:flex coarse:min-h-11 coarse:items-center"
+                >
                   {name}
                 </button>
               }

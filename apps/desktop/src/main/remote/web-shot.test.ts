@@ -234,10 +234,7 @@ app.whenReady().then(async () => {
         measured.fields.filter((field) => field.size !== "16px"),
         name,
       ).toEqual([]);
-      expect(
-        measured.small.filter((control) => control.label !== "Dana Whitfield"),
-        name,
-      ).toEqual([]);
+      expect(measured.small, name).toEqual([]);
       expect(measured.shortcuts, name).toEqual([]);
       expect(measured.clipped, name).toEqual([]);
       expect(measured.footerOverflow, name).toBe(false);
