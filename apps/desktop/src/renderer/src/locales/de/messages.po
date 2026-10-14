@@ -1381,10 +1381,6 @@ msgstr "Rechtschreibung während der Eingabe prüfen"
 msgid "Check sync health"
 msgstr "Synchronisationsstatus prüfen"
 
-#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "Check Tailscale again"
-msgstr "Tailscale erneut prüfen"
-
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 msgid "Check the date and repeat settings"
 msgstr "Datum und Wiederholungseinstellungen prüfen"

@@ -1381,10 +1381,6 @@ msgstr "入力中にスペルをチェック"
 msgid "Check sync health"
 msgstr "同期状態を確認"
 
-#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "Check Tailscale again"
-msgstr "Tailscale をもう一度確認"
-
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 msgid "Check the date and repeat settings"
 msgstr "日時と繰り返し設定を確認してください"

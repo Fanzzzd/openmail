@@ -1391,10 +1391,6 @@ msgstr "输入时检查拼写"
 msgid "Check sync health"
 msgstr "检查同步状态"
 
-#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "Check Tailscale again"
-msgstr "再次检查 Tailscale"
-
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 msgid "Check the date and repeat settings"
 msgstr "请检查日期和重复设置"

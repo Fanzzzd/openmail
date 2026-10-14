@@ -1381,10 +1381,6 @@ msgstr "Проверять орфографию при вводе"
 msgid "Check sync health"
 msgstr "Проверить синхронизацию"
 
-#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "Check Tailscale again"
-msgstr "Снова проверить Tailscale"
-
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 msgid "Check the date and repeat settings"
 msgstr "Проверьте дату и настройки повторения"

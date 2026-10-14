@@ -1381,10 +1381,6 @@ msgstr "Controleer spelling tijdens typen"
 msgid "Check sync health"
 msgstr "Synchronisatiestatus controleren"
 
-#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "Check Tailscale again"
-msgstr "Tailscale opnieuw controleren"
-
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 msgid "Check the date and repeat settings"
 msgstr "Controleer de datum en herhalingsinstellingen"

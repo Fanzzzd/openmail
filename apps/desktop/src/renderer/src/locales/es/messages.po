@@ -1381,10 +1381,6 @@ msgstr "Revisar ortografía al escribir"
 msgid "Check sync health"
 msgstr "Comprobar sincronización"
 
-#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "Check Tailscale again"
-msgstr "Comprobar Tailscale de nuevo"
-
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 msgid "Check the date and repeat settings"
 msgstr "Revisa la fecha y los ajustes de repetición"

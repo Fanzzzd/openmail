@@ -1385,10 +1385,6 @@ msgstr "Check spelling while typing"
 msgid "Check sync health"
 msgstr "Check sync health"
 
-#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "Check Tailscale again"
-msgstr "Check Tailscale again"
-
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 msgid "Check the date and repeat settings"
 msgstr "Check the date and repeat settings"

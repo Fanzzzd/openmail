@@ -1381,10 +1381,6 @@ msgstr "Kontrolovat pravopis při psaní"
 msgid "Check sync health"
 msgstr "Zkontrolovat stav synchronizace"
 
-#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-msgid "Check Tailscale again"
-msgstr "Znovu zkontrolovat Tailscale"
-
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 msgid "Check the date and repeat settings"
 msgstr "Zkontrolujte datum a nastavení opakování"

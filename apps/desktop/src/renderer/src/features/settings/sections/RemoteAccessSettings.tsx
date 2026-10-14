@@ -389,7 +389,6 @@ export function RemoteAccessSettings() {
           <button
             type="button"
             className={buttonSecondary}
-            aria-label={t`Check Tailscale again`}
             onClick={() => refresh({ payload: undefined })}
           >
             <RefreshCw className="size-3.5" />
