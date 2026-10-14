@@ -67,6 +67,8 @@ export interface AppMenuInput {
   readonly checkUpdates: () => void;
   readonly command: (name: "settings" | "help" | "compose") => void;
   readonly feedback: () => void;
+  /** Close window while a sheet covers the window: the renderer closes the sheet instead. */
+  readonly closeSheet: () => void;
   /** Opens the docs site in the default browser. */
   readonly openHelp: () => void;
   readonly attachFiles: () => void;
@@ -176,7 +178,9 @@ export function applicationMenuTemplate(input: AppMenuInput): MenuItemConstructo
               },
             ]),
         { type: "separator" },
-        { role: "close", label: label("close") },
+        input.menuState.sheet
+          ? { label: label("close"), accelerator: "CommandOrControl+W", click: input.closeSheet }
+          : { role: "close", label: label("close") },
       ],
     },
     {

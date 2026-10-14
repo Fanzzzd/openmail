@@ -29,6 +29,8 @@ interface DialogProps {
   finalFocus?: ComponentProps<typeof BaseDialog.Popup>["finalFocus"];
   /** The dialog draws its own close button, so a full-window sheet adds none. */
   ownClose?: boolean;
+  /** Shows the close button at every window width, not only on a full-window sheet. */
+  closeButton?: boolean;
   /** Opens over another dialog. Base UI skips a nested dialog's backdrop unless forced, so the
    * dialog underneath would show through undimmed. */
   nested?: boolean;
@@ -112,6 +114,7 @@ export function Dialog({
   initialFocus,
   finalFocus,
   ownClose = false,
+  closeButton = false,
   nested = false,
   maxHeight,
   children,
@@ -138,7 +141,7 @@ export function Dialog({
         >
           <SheetDragStrip />
           {children}
-          {narrow && onClose && !ownClose && <SheetClose />}
+          {(narrow || closeButton) && onClose && !ownClose && <SheetClose />}
         </BaseDialog.Popup>
       </BaseDialog.Portal>
     </BaseDialog.Root>

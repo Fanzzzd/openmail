@@ -40,6 +40,7 @@ export const DesktopEvent = Schema.Union([
   Schema.TaggedStruct("AttachFiles", {}),
   Schema.TaggedStruct("QuitCheck", {}),
   Schema.TaggedStruct("ComposeClose", {}),
+  Schema.TaggedStruct("CloseSheet", {}),
   Schema.TaggedStruct("PopOutDraft", { id: Schema.String }),
   Schema.TaggedStruct("Edit", { action: Schema.Literals(["undo", "selectAll"]) }),
   /** Show a screen in the main window; an href from shared/routes, checked again by the renderer. */
@@ -60,6 +61,7 @@ export function desktopEventRoute(
   if (
     event._tag === "AttachFiles" ||
     event._tag === "ComposeClose" ||
+    event._tag === "CloseSheet" ||
     event._tag === "PopOutDraft" ||
     event._tag === "Edit" ||
     event._tag === "UndoSend" ||

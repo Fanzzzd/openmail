@@ -690,6 +690,8 @@ it("native bridge defers search while a dialog is open and updates menu state", 
       composing: false,
       important: false,
       panes: { sidebar: true, toolbar: true, reader: true },
+      // An open dialog makes Close window close it before the window.
+      sheet: true,
     },
   });
   act(() => state.emit({ _tag: "Search", query: "deferred" }));

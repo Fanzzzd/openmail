@@ -610,6 +610,7 @@ export function App({ composeId }: { composeId?: string }) {
           onSend={send}
           onPopOut={isDesktop() ? popOut : undefined}
           popOutRequested={popOutRequested}
+          closeRequested={closeRequested}
         />
       )}
       <Toast toast={toast} onDone={hideToast} />

@@ -104,6 +104,8 @@ export const NativeMenuState = Schema.Struct({
   important: Schema.Boolean,
   web: Schema.optionalKey(Schema.Boolean),
   mailbox: Schema.optionalKey(Schema.Boolean),
+  /** A sheet covers the window (Settings, an inline composer). Close window closes it first. */
+  sheet: Schema.optionalKey(Schema.Boolean),
   /** Which panes the main window shows, so the View menu offers Show or Hide. */
   panes: Schema.optionalKey(
     Schema.Struct({ sidebar: Schema.Boolean, toolbar: Schema.Boolean, reader: Schema.Boolean }),

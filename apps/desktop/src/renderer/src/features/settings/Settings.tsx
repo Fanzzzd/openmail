@@ -202,6 +202,7 @@ export function Settings({
     <Dialog
       aria-label={t`Settings`}
       onClose={onClose}
+      closeButton
       className="flex h-[640px] w-[min(880px,calc(100vw-48px))] overflow-hidden max-sm:flex-col"
     >
       <Tabs.Root

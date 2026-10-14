@@ -372,6 +372,10 @@ export const DesktopLive = Layer.effect(
                 checkUpdates,
                 command,
                 feedback: () => deliver({ _tag: "Command", command: "feedback" }),
+                closeSheet: () => {
+                  const target = BrowserWindow.getFocusedWindow();
+                  if (target) deliver({ _tag: "CloseSheet" }, target);
+                },
                 openHelp: () =>
                   run(
                     Effect.tryPromise(() => openExternal(OPENMAIL_DOCS_URL)).pipe(

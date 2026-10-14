@@ -87,6 +87,7 @@ export function useNativeMenuBridge({
           state: {
             selected: Boolean(selectedId) && !dialog,
             composing: Boolean(compose) && !dialog,
+            sheet: Boolean(compose || dialog),
             ...providerMenuState(provider),
             panes: {
               sidebar: sidebarShown,
@@ -173,6 +174,11 @@ export function useNativeMenuBridge({
       case "ComposeClose":
         if (compose) setCloseRequested((n) => n + 1);
         else if (!hasPendingSends()) run(withMail((call) => call("CloseComposeWindow", undefined)));
+        break;
+      case "CloseSheet":
+        // Settings and the other app dialogs sit above an inline composer, so they close first.
+        if (dialog) setDialog(null);
+        else if (compose) setCloseRequested((n) => n + 1);
         break;
       case "ShowUndo":
         if (event.undo._tag === "Batch")

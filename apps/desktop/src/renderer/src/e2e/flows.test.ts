@@ -860,3 +860,35 @@ it("AI Access names the AI suggestions switch once, and explains it only with an
     current = undefined;
   }
 });
+
+it("Close window closes Settings, then an inline composer through its close flow", async () => {
+  current = await flow();
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  const menuStates = () =>
+    h.requests.filter((request) => request.tag === "SetNativeMenuState").map((r) => r.payload);
+  await h.event({ _tag: "Command", command: "settings" });
+  await eventually(() => expect(screen.getByRole("dialog", { name: "Settings" })).toBeTruthy());
+  await eventually(() => expect(menuStates().at(-1)).toMatchObject({ state: { sheet: true } }));
+  expect(
+    within(screen.getByRole("dialog", { name: "Settings" })).getByRole("button", {
+      name: "Close",
+    }),
+  ).toBeTruthy();
+  await h.event({ _tag: "CloseSheet" });
+  await eventually(() => expect(screen.queryByRole("dialog", { name: "Settings" })).toBeNull());
+  await eventually(() => expect(menuStates().at(-1)).toMatchObject({ state: { sheet: false } }));
+
+  clickButton("New message");
+  await eventually(() => expect(screen.getByRole("textbox", { name: "Subject" })).toBeTruthy());
+  edit("To", "carol@example.com");
+  edit("Subject", "Keep me");
+  writeBody("Unsaved text");
+  await eventually(() =>
+    expect(screen.getByRole("textbox", { name: "Subject" })).toHaveProperty("value", "Keep me"),
+  );
+  await h.event({ _tag: "CloseSheet" });
+  // The inline composer follows its own close flow, which asks about the unsaved draft.
+  await eventually(() => expect(screen.getByRole("alertdialog")).toBeTruthy());
+  expect(document.querySelector("[data-compose]")).toBeTruthy();
+});

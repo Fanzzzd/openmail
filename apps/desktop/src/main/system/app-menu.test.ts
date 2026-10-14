@@ -21,6 +21,7 @@ const template = (platform: NodeJS.Platform, shortcutSet: ShortcutSet = "mimestr
     checkUpdates: vi.fn(),
     command: vi.fn(),
     feedback: vi.fn(),
+    closeSheet: vi.fn(),
     openHelp,
     attachFiles: vi.fn(),
     newWindow: vi.fn(),
@@ -163,6 +164,7 @@ it("role items carry sentence-case labels instead of Electron's Title Case", () 
     checkUpdates: vi.fn(),
     command: vi.fn(),
     feedback: vi.fn(),
+    closeSheet: vi.fn(),
     openHelp: vi.fn(),
     attachFiles: vi.fn(),
     newWindow: vi.fn(),
@@ -238,6 +240,7 @@ it("the View menu's pane toggles say Show or Hide by what the focused window sho
           checkUpdates: vi.fn(),
           command: vi.fn(),
           feedback: vi.fn(),
+          closeSheet: vi.fn(),
           openHelp: vi.fn(),
           attachFiles: vi.fn(),
           newWindow: vi.fn(),
@@ -267,4 +270,41 @@ it("the View menu's pane toggles say Show or Hide by what the focused window sho
   expect(view(NO_MENU_SELECTION)).toEqual(
     expect.arrayContaining(["Show sidebar", "Show toolbar", "Show reading pane"]),
   );
+});
+
+it("Close window closes an open sheet first, and the window otherwise", () => {
+  const closeSheet = vi.fn<() => void>();
+  const build = (menuState: NativeMenuState) =>
+    applicationMenuTemplate({
+      platform: "darwin",
+      labels: DEFAULT_DESKTOP_LABELS,
+      shortcutSet: "mimestream",
+      undoAvailable: false,
+      menuState,
+      tabMenu: [],
+      checkUpdates: vi.fn(),
+      command: vi.fn(),
+      feedback: vi.fn(),
+      closeSheet,
+      openHelp: vi.fn(),
+      attachFiles: vi.fn(),
+      newWindow: vi.fn(),
+      edit: vi.fn(),
+      undoSend: vi.fn(),
+      nativeAction: vi.fn(),
+    });
+  const close = (menuState: NativeMenuState) =>
+    submenu(build(menuState), DEFAULT_DESKTOP_LABELS.file).find(
+      (item) => item.label === "Close window",
+    );
+  expect(close(NO_MENU_SELECTION)).toMatchObject({ role: "close" });
+  const sheet = close({ ...NO_MENU_SELECTION, sheet: true });
+  expect(sheet?.role).toBeUndefined();
+  expect(sheet?.accelerator).toBe("CommandOrControl+W");
+  sheet?.click?.(
+    Object.create(null),
+    undefined,
+    Object.assign(Object.create(null), { triggeredByAccelerator: true }),
+  );
+  expect(closeSheet).toHaveBeenCalledOnce();
 });
