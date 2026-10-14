@@ -17,54 +17,54 @@ const demoData = fileURLToPath(new URL("../../../scripts/demo-data.mjs", import.
 vi.setConfig({ testTimeout: 20_000, hookTimeout: 60_000 });
 
 /**
- * The keys scripts read from each --json output. When a shape changes on purpose,
+ * The keys scripts read from each --json output, snake_case at any depth like MCP. When a shape changes on purpose,
  * update it here; the tests below only compare against these lists.
  */
 const KEYS = {
   thread: [
     "id",
-    "accountId",
-    "threadId",
+    "account_id",
+    "thread_id",
     "subject",
     "from",
     "date",
     "snippet",
     "labels",
-    "isUnread",
-    "isStarred",
-    "hasAttachments",
-    "threadCount",
+    "is_unread",
+    "is_starred",
+    "has_attachments",
+    "thread_count",
     "participants",
   ],
   message: [
     "id",
-    "accountId",
-    "threadId",
+    "account_id",
+    "thread_id",
     "subject",
     "from",
     "date",
     "snippet",
     "labels",
-    "isUnread",
-    "isStarred",
-    "hasAttachments",
+    "is_unread",
+    "is_starred",
+    "has_attachments",
     "to",
     "cc",
     "bcc",
-    "rfcMessageId",
-    "replyTo",
-    "bodyText",
+    "rfc_message_id",
+    "reply_to",
+    "body_text",
     "security",
-    "bodyCached",
+    "body_cached",
     "attachments",
-    "hasCalendar",
+    "has_calendar",
   ],
-  account: ["id", "provider", "email", "createdAt", "enabled"],
-  proposal: ["id", "createdAt", "actor", "command", "status"],
+  account: ["id", "provider", "email", "created_at", "enabled"],
+  proposal: ["id", "created_at", "actor", "command", "status"],
   space: ["id", "name", "icon", "color", "position", "accounts"],
 };
 /** Keys a thread carries only when they apply. */
-const OPTIONAL_THREAD = ["attachmentNames"];
+const OPTIONAL_THREAD = ["attachment_names"];
 /** Every required key is present, and nothing outside required and optional. */
 function expectKeys(value: object, required: string[], optional: string[] = []) {
   const keys = Object.keys(value);
@@ -189,7 +189,7 @@ describe("reading", () => {
     const threads = rows((await object(["list", "--unread", "--mailbox", "inbox"])).threads);
     expect(threads.length).toBeGreaterThan(0);
     for (const thread of threads) {
-      expect(thread.isUnread).toBe(true);
+      expect(thread.is_unread).toBe(true);
       expect(thread.labels).toContain("INBOX");
     }
   });
@@ -219,7 +219,7 @@ describe("reading", () => {
     const threads = rows(result.threads);
     expect(threads.map((thread) => thread.id)).toEqual([LAUNCH]);
     for (const thread of threads)
-      expectKeys(thread, [...KEYS.thread, "searchMatches"], OPTIONAL_THREAD);
+      expectKeys(thread, [...KEYS.thread, "search_matches"], OPTIONAL_THREAD);
   });
 
   test("accounts list --json carries the account fields scripts read", async () => {
