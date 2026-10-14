@@ -24,8 +24,12 @@ jobs:
   check:
     uses: ./.github/workflows/check.yml
 
+  # The 100k-message query and insert budgets (docs/performance.md) on the same commit.
+  perf:
+    uses: ./.github/workflows/perf.yml
+
   release:
-    needs: check
+    needs: [check, perf]
     runs-on: macos-latest
     permissions:
       contents: write

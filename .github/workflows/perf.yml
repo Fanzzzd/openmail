@@ -1,12 +1,14 @@
 name: Performance
 
-# The 100k-message budgets in docs/performance.md. Weekly and on demand, not on every push:
-# the suite takes several minutes and shared runners are noisy.
+# The 100k-message budgets in docs/performance.md. Weekly, on demand, and before every release
+# (release.yml calls it), not on every push: the suite takes several minutes and shared runners
+# are noisy. Check runs the 10k seeding budget (seed-rate.test.ts) on every push.
 on:
   schedule:
     # Mondays 06:00 UTC.
     - cron: "0 6 * * 1"
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
