@@ -70,7 +70,7 @@ const approval: { title: string; body: string }[] = [
   },
   {
     title: "AI suggestions.",
-    body: "Write tools take two switches: check Let … make AI suggestions for you to approve when you connect the app, and set Changes by AI apps to Ask me first. Then modify_threads, snooze_threads and draft_message create AI suggestions. Each one waits in AI suggestions until you approve or reject it.",
+    body: "Write tools take two switches: check Allow AI suggestions when you connect the app, and set Changes by AI apps to Ask me first. Then modify_threads, snooze_threads and draft_message create AI suggestions. Each one waits in AI suggestions until you approve or reject it.",
   },
   {
     title: "No agent sends mail.",
