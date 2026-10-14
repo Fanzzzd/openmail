@@ -277,7 +277,7 @@ try {
   if (snapshot.accounts) await until(() => present('[role="listbox"][aria-busy="false"]'));
   const first = await evaluate('!!document.querySelector("[data-id][role=option]")');
   if (first) {
-    await click('[data-id][role="option"]', 'article[aria-label="Selected message"]', true);
+    await click('[data-id][role="option"]', "article[data-message-id]", true);
     step({ step: "first-thread", status: "passed" });
   } else
     step({

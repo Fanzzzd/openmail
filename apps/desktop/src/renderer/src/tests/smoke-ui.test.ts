@@ -12,10 +12,7 @@ it("smoke re-queries after a replaced list row and stops clicking once the reade
   try {
     const document = dom.window.document;
     dom.element.innerHTML = '<button data-id="one" role="option">First row</button>';
-    const expression = smokeClickExpression(
-      '[data-id][role="option"]',
-      'article[aria-label="Selected message"]',
-    );
+    const expression = smokeClickExpression('[data-id][role="option"]', "article[data-message-id]");
     const row = document.querySelector("button");
     if (!row) throw new Error("Missing row");
     row.addEventListener("click", () => {
@@ -27,7 +24,7 @@ it("smoke re-queries after a replaced list row and stops clicking once the reade
     document.querySelector("button")?.addEventListener("click", () => {
       clicks++;
       const article = document.createElement("article");
-      article.setAttribute("aria-label", "Selected message");
+      article.setAttribute("data-message-id", "m1");
       dom.element.append(article);
     });
     expect(runInNewContext(expression, { document })).toBe(true);
