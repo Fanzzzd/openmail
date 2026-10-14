@@ -27,6 +27,7 @@ import {
   agentAccountGap,
 } from "./tools.js";
 import { AgentIdentity, cleanMcpClientName } from "./agent-identity.js";
+import { snoozeDue } from "./proposal-tools.js";
 import {
   MailToolError,
   UNTRUSTED_MAIL_NOTICE,
@@ -1318,6 +1319,21 @@ it.effect(
         assert.match(floating.message, /has no UTC offset/);
         assert.match(floating.hint, /2026-10-15T09:00:00\+08:00/);
         assert.match((yield* failure("tomorrow")).message, /is not a time/);
+        // Date.parse rolls these over to another day instead of failing.
+        for (const impossible of [
+          "2026-02-30T09:00:00+08:00",
+          "2026-11-31T09:00:00+08:00",
+          "2027-02-29T09:00:00Z",
+          "2026-10-15T24:00:00+08:00",
+          "2026-10-15T09:60:00+08:00",
+          "2026-10-15T09:00:60+08:00",
+          "2026-13-01T09:00:00+08:00",
+          "2026-10-15T09:00:00+24:00",
+        ]) {
+          const error = yield* failure(impossible);
+          assert.match(error.message, /is not a valid date/, impossible);
+          assert.match(error.hint, /ISO 8601 with a UTC offset/);
+        }
         const past = yield* failure("2026-10-14T09:00:00+08:00");
         assert.include(past.message, "It is now 2026-10-14T21:00:00+08:00.");
         assert.strictEqual((yield* mailbox.proposals.proposals).length, 2);
@@ -1327,6 +1343,19 @@ it.effect(
       }),
     );
   },
+);
+
+it.effect("snoozeDue reads real calendar times at their offset", () =>
+  Effect.gen(function* () {
+    assert.strictEqual(
+      yield* snoozeDue("2028-02-29T23:59:59.5-12:00"),
+      Date.UTC(2028, 2, 1, 11, 59, 59, 500),
+    );
+    assert.strictEqual(yield* snoozeDue("2026-12-31T00:00+14:00"), Date.UTC(2026, 11, 30, 10));
+    assert.strictEqual(yield* snoozeDue(" 2026-10-15T09:00:00z "), Date.UTC(2026, 9, 15, 9));
+    const failed = yield* Effect.flip(snoozeDue("2026-04-31T09:00:00+08:00"));
+    assert.match(failed.message, /is not a valid date/);
+  }),
 );
 
 it.effect("every time in a tool result is ISO 8601 local time with its offset", () => {

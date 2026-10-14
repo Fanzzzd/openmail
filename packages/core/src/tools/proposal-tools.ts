@@ -51,6 +51,40 @@ const SNOOZE_DUE_HINT =
   "Pass due as a future time within the next year, as ISO 8601 with a UTC offset, such as 2026-10-15T09:00:00+08:00. access_status gives now and time_zone.";
 const ISO_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,9})?)?/;
 const ISO_OFFSET = /(?:Z|[+-]\d{2}:\d{2})$/i;
+const ISO_FIELDS =
+  /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d{1,9})?)?(?:Z|[+-](\d{2}):(\d{2}))$/i;
+
+/**
+ * Whether every calendar field is in range as written, at its own offset. Date.parse rolls
+ * 2026-02-30 over to March 2 and reads 24:00 as the next midnight; neither is what was meant.
+ */
+function realCalendarTime(text: string): boolean {
+  const match = ISO_FIELDS.exec(text);
+  if (!match) return false;
+  // Seconds and the offset are optional; a missing one, or Z, reads as zero.
+  const [
+    year = 0,
+    month = 0,
+    day = 0,
+    hour = 0,
+    minute = 0,
+    second = 0,
+    offsetHour = 0,
+    offsetMinute = 0,
+  ] = match.slice(1).map((field: string | undefined) => Number(field ?? 0));
+  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  return (
+    month >= 1 &&
+    month <= 12 &&
+    day >= 1 &&
+    day <= daysInMonth &&
+    hour <= 23 &&
+    minute <= 59 &&
+    second <= 59 &&
+    offsetHour <= 23 &&
+    offsetMinute <= 59
+  );
+}
 
 /**
  * The instant `due` names, or a tool error. ISO 8601 needs an offset: without one the time is
@@ -77,7 +111,7 @@ export function snoozeDue(due: number | string): Effect.Effect<number, MailToolE
       ),
     );
   const ms = Date.parse(text);
-  return Number.isFinite(ms)
+  return Number.isFinite(ms) && realCalendarTime(text)
     ? Effect.succeed(ms)
     : Effect.fail(
         toolError(
