@@ -176,6 +176,19 @@ Fetching remote message text and Reply-To has a five second limit for the whole 
 
 For a blank composer, `DraftStatus` queries only the local draft and returns `null` if the draft is unsaved or deleted. `OpenDraft` is for explicitly opening or importing an existing draft. The full flow tests check that opening and closing a blank composer causes no failed RPC and does not query messages for that draft ID. See [mailbox-handlers.ts](../apps/desktop/src/shared/mailbox-handlers.ts) and [flows.test.ts](../apps/desktop/src/renderer/src/e2e/flows.test.ts).
 
+## Titlebar resize check
+
+The controls beside the macOS traffic lights (the sidebar toggle, the search field, the first toolbar button) must not move while the window resizes. A DOM test cannot see this, so after building run:
+
+```sh
+pnpm build
+pnpm --filter @openmail/desktop test:titlebar
+```
+
+The script seeds demo data into a temporary `OPENMAIL_HOME` with [demo-data.mjs](../scripts/demo-data.mjs), starts the preview offline, read-only and with `OPENMAIL_BACKGROUND_WINDOWS=1`, and drives the main window over a local CDP connection. It narrows the window to 600 px, resizes it in 20 px steps and back with `window.resizeTo`, and records the left edge of the toggle and the search field once per painted frame. The sampler is a `ResizeObserver` created after the app's own, so it sees each frame's layout after the app's observers have run. Then it hides and shows the sidebar in a 1320 px window and fails on any frame that is in neither state. `--port <n>` attaches to a development build that is already running with `--remote-debugging-port=<n>` instead of starting one. The JSON report lists every check, the frames that moved, and `overlayXs`, the raw `getTitlebarAreaRect().x` values seen during the resize. The implementation is in [titlebar-resize.mjs](../apps/desktop/scripts/titlebar-resize.mjs).
+
+On macOS 26 `overlayXs` holds 96 and 87: after every resize step Electron reports the titlebar area 9 px left for one frame, through `getTitlebarAreaRect()` and `env(titlebar-area-x)` alike. [titlebar-area.ts](../apps/desktop/src/renderer/src/ui/titlebar-area.ts) keeps the last settled rect until a new one holds for 200 ms, and `TrafficLightSpace` writes its width to the DOM in the same frame instead of through React state. Regressions are in [titlebar-area.test.ts](../apps/desktop/src/renderer/src/ui/titlebar-area.test.ts) and the narrow window case in [layout.test.ts](../apps/desktop/src/renderer/src/e2e/layout.test.ts).
+
 ## Regressions by area
 
 - [undo-journal.test.ts](../packages/core/src/mailbox/undo-journal.test.ts), [signatures.test.ts](../packages/core/src/compose/signatures.test.ts): undo across restarts, and signatures.

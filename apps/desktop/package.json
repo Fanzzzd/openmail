@@ -15,7 +15,8 @@
     "i18n:extract": "lingui extract --clean",
     "dist": "pnpm --workspace-root exec turbo run build --filter=@openmail/desktop^... --ui=stream && pnpm build && electron-builder --config electron-builder.config.cjs --mac --publish never",
     "dist:signed": "OPENMAIL_SIGNED_BUILD=1 pnpm dist",
-    "i18n:missing": "node scripts/i18n-missing.mjs"
+    "i18n:missing": "node scripts/i18n-missing.mjs",
+    "test:titlebar": "node scripts/titlebar-resize.mjs"
   },
   "dependencies": {
     "@effect/atom-react": "4.0.3",
