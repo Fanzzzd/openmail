@@ -31,7 +31,7 @@ The first public version. Everything below is new.
 ### Desktop
 
 - Keyboard-first: three shortcut sets, link hints, Back and Forward, command menus.
-- Profiles to group accounts, notification hours, menu bar and Dock integration, multiple windows, `mailto:` and `openmail:` links.
+- Spaces to group accounts, notification hours by space, menu bar and Dock integration, multiple windows, `mailto:` and `openmail:` links.
 - Responsive layout from three panes down to one.
 - Interface in English, Simplified Chinese, Czech, Dutch, French, German, Italian, Japanese, Russian and Spanish.
 - Accessibility checks with axe, keyboard paths and screen reader labels.
