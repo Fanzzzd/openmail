@@ -508,7 +508,7 @@ msgstr "请在 Mac 上添加账户。"
 
 #: src/renderer/src/features/ai/AiPanel.tsx
 msgid "Add an Anthropic API key in Settings → AI Access to summarize."
-msgstr "在「设置 → AI 权限」中添加 Anthropic API 密钥后才能生成摘要。"
+msgstr "在“设置 → AI 权限”中添加 Anthropic API 密钥后才能生成摘要。"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Add an automatic reply message."
@@ -576,7 +576,7 @@ msgstr "在所有账户中添加到收藏夹"
 
 #: src/renderer/src/features/ai/AiPanel.tsx
 msgid "Add your Anthropic API key in Settings → AI Access, then allow the accounts the assistant may read."
-msgstr "先在「设置 → AI 权限」中添加你的 Anthropic API 密钥，再选择允许助手读取的账户。"
+msgstr "先在“设置 → AI 权限”中添加你的 Anthropic API 密钥，再选择允许助手读取的账户。"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Add your first account"
@@ -773,7 +773,7 @@ msgstr "允许 AI 读取这个账户"
 
 #: src/renderer/src/features/ai/AiPanel.tsx
 msgid "Allow an account in Settings → AI Access to ask about its mail."
-msgstr "在「设置 → AI 权限」中允许一个账户后，就能询问它的邮件。"
+msgstr "在“设置 → AI 权限”中允许一个账户后，就能询问它的邮件。"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Allow notifications"
@@ -854,7 +854,7 @@ msgstr "Anthropic API 密钥"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Anthropic rejected the API key. Check it in Settings → AI Access."
-msgstr "Anthropic 拒绝了这个 API 密钥。请在「设置 → AI 权限」中检查。"
+msgstr "Anthropic 拒绝了这个 API 密钥。请在“设置 → AI 权限”中检查。"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Anthropic's rate limit was reached. Wait a minute, then try again."
@@ -1058,7 +1058,7 @@ msgstr "自动回复"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Automatic triage is off. Turn it on in Settings → AI Access."
-msgstr "自动分拣已关闭。请在「设置 → AI 权限」中开启。"
+msgstr "自动分拣已关闭。请在“设置 → AI 权限”中开启。"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Automatic triage is paused. It runs while OpenMail is in the foreground or on AC power."
@@ -1750,7 +1750,7 @@ msgstr "通过 OpenMail 的 MCP 服务器，把 Claude Code、Codex 等 AI 应�
 
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 msgid "Connect this service in Settings → Accounts → Optional services."
-msgstr "请在设置 → 账户 → 可选服务中连接此服务。"
+msgstr "请在“设置 → 账户 → 可选服务”中连接此服务。"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Connected now"
@@ -2170,11 +2170,11 @@ msgstr "无法同步 {names}。"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Couldn't update the filter or put the previous version back. Choose Restore filter in Server filters to recover it."
-msgstr "无法更新过滤器，也无法恢复之前的版本。请在「服务器过滤器」中选择「恢复过滤器」来找回它。"
+msgstr "无法更新过滤器，也无法恢复之前的版本。请在“服务器过滤器”中选择“恢复过滤器”来找回它。"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Couldn't update the filter, so OpenMail put the previous version back. Open Server filters again before you edit it."
-msgstr "无法更新过滤器，OpenMail 已恢复之前的版本。编辑前请重新打开「服务器过滤器」。"
+msgstr "无法更新过滤器，OpenMail 已恢复之前的版本。编辑前请重新打开“服务器过滤器”。"
 
 #: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "Couldn't write the file. Nothing was changed. {detail}"
@@ -2194,15 +2194,15 @@ msgstr "创建"
 
 #: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Create an app password under Account Security in your Yahoo account."
-msgstr "在 Yahoo 账户的「账户安全」里生成应用密码。"
+msgstr "在 Yahoo 账户的“账户安全”里生成应用密码。"
 
 #: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Create an app password under Settings → Privacy & Security, with IMAP and SMTP checked."
-msgstr "在「设置 → 隐私与安全」里新建应用密码，勾选 IMAP 和 SMTP。"
+msgstr "在“设置 → 隐私与安全”里新建应用密码，勾选 IMAP 和 SMTP。"
 
 #: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Create an app-specific password under Sign-In and Security in your Apple Account."
-msgstr "在 Apple 账户的「登录与安全」里生成应用专用密码。"
+msgstr "在 Apple 账户的“登录与安全”里生成应用专用密码。"
 
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
@@ -2217,7 +2217,7 @@ msgstr "按这些邮件创建过滤器"
 
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
 msgid "Create Personal and Work spaces?"
-msgstr "创建「个人」和「工作」空间？"
+msgstr "创建“个人”和“工作”空间？"
 
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
 msgid "Create spaces"
@@ -2613,7 +2613,7 @@ msgstr "拖动 {0} 排序"
 
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Drag an account to reorder it or move it to another space. You can also use the space picker and the Move up and Move down buttons."
-msgstr "拖动账户可以调整顺序，或移到其他空间。也可以用空间选择器和「上移」「下移」按钮。"
+msgstr "拖动账户可以调整顺序，或移到其他空间。也可以用空间选择器和“上移”“下移”按钮。"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Drag selected to Finder"
@@ -3221,7 +3221,7 @@ msgstr "Google 目前把 OpenMail 的登录限制为 7 天。重新登录即可�
 
 #: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Google shows a warning that it hasn't verified OpenMail yet. Choose Advanced, then continue to OpenMail."
-msgstr "Google 会提示尚未验证 OpenMail。请选择「高级」，然后继续前往 OpenMail。"
+msgstr "Google 会提示尚未验证 OpenMail。请选择“高级”，然后继续前往 OpenMail。"
 
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
 msgid "Group accounts into spaces and switch between them at the bottom of the sidebar."
@@ -3229,7 +3229,7 @@ msgstr "把账户分进空间，在边栏底部切换空间。"
 
 #: src/renderer/src/features/overview/Overview.tsx
 msgid "Group accounts into spaces, like “Work” and “Personal”. Each space has its own inbox. Switch with {firstSpaceKey} to {lastSpaceKey}."
-msgstr "把账户分进空间，比如「工作」和「个人」。每个空间有自己的收件箱，用 {firstSpaceKey} 到 {lastSpaceKey} 切换。"
+msgstr "把账户分进空间，比如“工作”和“个人”。每个空间有自己的收件箱，用 {firstSpaceKey} 到 {lastSpaceKey} 切换。"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Group messages into conversations"
@@ -3301,7 +3301,7 @@ msgstr "高"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "How long a conversation stays open before it is marked as read. Manually: use {readShortcut} or the toolbar."
-msgstr "打开对话多久后标为已读。选「手动」时，用 {readShortcut} 或工具栏操作。"
+msgstr "打开对话多久后标为已读。选“手动”时，用 {readShortcut} 或工具栏操作。"
 
 #: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "How to register a Google OAuth client"
@@ -3397,7 +3397,7 @@ msgstr "重要邮件"
 
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 msgid "In “{elsewhere}”"
-msgstr "在「{elsewhere}」"
+msgstr "在“{elsewhere}”"
 
 #: src/renderer/src/features/organize/SnoozeDialog.tsx
 msgid "In 3 hours"
@@ -4401,7 +4401,7 @@ msgstr "已移至其他"
 
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 msgid "Moves from “{elsewhere}”"
-msgstr "从「{elsewhere}」移过来"
+msgstr "从“{elsewhere}”移过来"
 
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
@@ -4546,7 +4546,7 @@ msgstr "下一个窗口"
 #. allow is the translated per-account checkbox label in AI settings.
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 msgid "No account allows AI reads, so a connected app sees no mail. Turn on “{allow}” for an account above."
-msgstr "没有账户允许 AI 读取，所以已连接的应用看不到邮件。请在上面为一个账户打开「{allow}」。"
+msgstr "没有账户允许 AI 读取，所以已连接的应用看不到邮件。请在上面为一个账户打开“{allow}”。"
 
 #: src/renderer/src/features/overview/Overview.tsx
 msgid "No accounts yet"
@@ -4812,11 +4812,11 @@ msgstr "电池供电时暂停图片识别，PDF 文字索引降速。"
 
 #: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "On the web, turn on IMAP under Settings → POP3/SMTP/IMAP, then follow the prompts to generate an authorization code."
-msgstr "在网页版「设置 → POP3/SMTP/IMAP」开启 IMAP 服务，按提示生成授权码。"
+msgstr "在网页版“设置 → POP3/SMTP/IMAP”开启 IMAP 服务，按提示生成授权码。"
 
 #: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "On the web, turn on IMAP/SMTP under Settings → Account & Security → Security Settings, then generate an authorization code."
-msgstr "在网页版「设置 → 账号与安全 → 安全设置」开启 IMAP/SMTP 服务，再生成授权码。"
+msgstr "在网页版“设置 → 账号与安全 → 安全设置”开启 IMAP/SMTP 服务，再生成授权码。"
 
 #: src/renderer/src/features/settings/sections/IndexingSettings.tsx
 msgid "On-device indexing"
@@ -5462,7 +5462,7 @@ msgstr "阅读标记"
 #. allowSuggestions is the translated Allow AI suggestions button on each app below; setting and askFirst are the translated Changes by AI apps setting and its Ask me first option.
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 msgid "Read and search mail, read only by default. To archive, label or draft, an app needs “{allowSuggestions}” below and “{setting}” set to “{askFirst}”. You approve every AI suggestion in OpenMail, and sending always needs your confirmation here."
-msgstr "读取和搜索邮件，默认只读。应用要归档、加标签或写草稿，需要在下方点「{allowSuggestions}」，并把「{setting}」设为「{askFirst}」。每条 AI 建议都由你在 OpenMail 中批准，发送始终要在这里确认。"
+msgstr "读取和搜索邮件，默认只读。应用要归档、加标签或写草稿，需要在下方点“{allowSuggestions}”，并把“{setting}”设为“{askFirst}”。每条 AI 建议都由你在 OpenMail 中批准，发送始终要在这里确认。"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Read and send mail from your phone or another computer through your own tailnet. This Mac stays the host: mail, tokens and keys stay here, and nothing passes through OpenMail servers. OpenMail uses Tailscale Serve, which only devices on your tailnet can reach. It never uses Funnel, so the page is never on the public internet."
@@ -6009,7 +6009,7 @@ msgstr "全部保存"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Save an Anthropic API key in Settings → AI Access."
-msgstr "请在「设置 → AI 权限」中保存 Anthropic API 密钥。"
+msgstr "请在“设置 → AI 权限”中保存 Anthropic API 密钥。"
 
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Save as PDF…"
@@ -6179,7 +6179,7 @@ msgstr "选择一封邮件"
 
 #: src/renderer/src/features/ai/AiPanel.tsx
 msgid "Select accounts allowed in Settings → AI Access. The assistant searches mail and suggests drafts, labels or archiving. You approve each one in AI suggestions."
-msgstr "在「设置 → AI 权限」中选择已允许的账户。助手会搜索邮件，并建议草稿、标签或归档。每一项都由你在「AI 建议」中批准。"
+msgstr "在“设置 → AI 权限”中选择已允许的账户。助手会搜索邮件，并建议草稿、标签或归档。每一项都由你在“AI 建议”中批准。"
 
 #: src/renderer/src/app/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
@@ -6362,7 +6362,7 @@ msgstr "只有 Gmail 标签支持服务器可见性。"
 
 #: src/renderer/src/features/ai/AiPanel.tsx
 msgid "Set up AI on your Mac in Settings → AI Access."
-msgstr "请在 Mac 上的「设置 → AI 权限」中设置 AI。"
+msgstr "请在 Mac 上的“设置 → AI 权限”中设置 AI。"
 
 #: src/renderer/src/features/ai/AiPanel.tsx
 msgid "Set up built-in AI"
@@ -7404,7 +7404,7 @@ msgstr "这个过滤器已经恢复过了。"
 
 #: src/renderer/src/lib/errors.ts
 msgid "This filter no longer exists. Open Server filters again to see the current list."
-msgstr "这个过滤器已不存在。请重新打开「服务器过滤器」查看当前列表。"
+msgstr "这个过滤器已不存在。请重新打开“服务器过滤器”查看当前列表。"
 
 #: src/renderer/src/lib/errors.ts
 msgid "This filter uses conditions or actions the editor can't keep. Edit it in webmail."
@@ -7663,7 +7663,7 @@ msgstr "关闭快速筛选"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Turn on “Allow AI to read this account” for each selected account in Settings → AI Access."
-msgstr "请在「设置 → AI 权限」中为每个所选账户打开「允许 AI 读取这个账户」。"
+msgstr "请在“设置 → AI 权限”中为每个所选账户打开“允许 AI 读取这个账户”。"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Turn on quick filters"

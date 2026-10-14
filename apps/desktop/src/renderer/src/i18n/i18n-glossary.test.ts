@@ -73,7 +73,7 @@ it("the complete catalogs consistently use the mail glossary, message-text termi
         // Japanese naturally calls the message text 本文, without repeating メッセージ.
         if (locale === "ja" && source === "Message body" && term === "Message") continue;
         // QQ Mail's own settings menu is named 账号与安全; the path quotes it verbatim.
-        if (locale === "zh-CN" && term === "Account" && target.includes("「设置 → 账号与安全"))
+        if (locale === "zh-CN" && term === "Account" && target.includes("“设置 → 账号与安全"))
           continue;
         const selector = new RegExp(selectors[term] ?? `\\b${term}s?\\b`, "i");
         if (selector.test(visibleSource) && !new RegExp(pattern, "iu").test(target))
@@ -105,6 +105,12 @@ it("the complete catalogs consistently use the mail glossary, message-text termi
           ))
       )
         failures.push(`${locale}: style: ${source} → ${target}`);
+      // UI names and settings paths are quoted the local way: “” (nested ‘’) in Chinese,
+      // 「」 (nested 『』) in Japanese. A settings path is always quoted.
+      if (locale === "zh-CN" && (/[「」『』]/u.test(target) || /(?<![“‘])设置 →/u.test(target)))
+        failures.push(`${locale}: quotes: ${source} → ${target}`);
+      if (locale === "ja" && (/[“”‘’]/u.test(target) || /(?<![「『])設定 →/u.test(target)))
+        failures.push(`${locale}: quotes: ${source} → ${target}`);
       // An empty displayed value (no Cc, no location) is 无; 不选 is only a picker option.
       if (locale === "zh-CN" && message.context === "empty value" && target !== "无")
         failures.push(`${locale}: empty value: ${source} → ${target}`);

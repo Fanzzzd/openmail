@@ -1740,7 +1740,7 @@ msgstr "OpenMail の MCP サーバーを通じて、Claude Code、Codex など�
 
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 msgid "Connect this service in Settings → Accounts → Optional services."
-msgstr "設定 → アカウント → オプションサービスで接続してください。"
+msgstr "「設定 → アカウント → オプションサービス」で接続してください。"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Connected now"
@@ -7517,7 +7517,7 @@ msgstr "宛先"
 
 #: src/main/app/native-i18n.ts
 msgid "To allow it, open OpenMail on the Mac, go to Settings → Remote access and add {login} under Who can sign in."
-msgstr "許可するには、Mac で OpenMail を開き、設定 → リモートアクセス の「サインインできる人」に {login} を追加してください。"
+msgstr "許可するには、Mac で OpenMail を開き、「設定 → リモートアクセス」の「サインインできる人」に {login} を追加してください。"
 
 #: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "To me"
