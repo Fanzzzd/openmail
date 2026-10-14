@@ -34,7 +34,7 @@ Desktop, CLI and mobile:
 | Location                         | Contents                                                                                                                                                     |
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `apps/desktop/src/main/`         | The main process, by area: `app/`, `windows/`, `rpc/`, `security/`, `files/`, `updates/`, `system/`, `remote/`, `agents/`                                    |
-| `apps/desktop/src/shared/`       | Code shared by main and renderer: the RPC protocol in `rpc.ts`, Mailbox handlers, routes, the remote policy                                                  |
+| `apps/desktop/src/shared/`       | Code shared by main and renderer: the RPC protocol in `rpc.ts` (by domain in `rpcs/`), Mailbox handlers, routes, the remote policy                           |
 | `apps/desktop/src/renderer/src/` | The renderer. Its layer rules are under [Desktop and tests](#desktop-and-tests)                                                                              |
 | `packages/cli/src/`              | `cli.ts` assembles and runs the CLI. `commands/` holds commands by group: `accounts`, `mail`, `agents`, `tools`, `corpus`. `mcp-server.ts` is the MCP server |
 | `apps/mobile/`                   | The Expo app. `src/platform/` provides the OS Layers                                                                                                         |
@@ -161,7 +161,7 @@ The Indexer and semantic indexer handle local OCR, PDF text and vectors. Model d
 
 ## Desktop and tests
 
-The desktop main process assembles NodeMailbox, system capabilities and the RPC server. `shared/rpc.ts` defines the protocol and `shared/mailbox-handlers.ts` holds the shared Mailbox handlers. The sandboxed preload bridges only JSON. The renderer queries through RPC and Effect atoms. The main entry waits for Electron's ready event. Background indexing and the first sync run after the window's `ready-to-show`.
+The desktop main process assembles NodeMailbox, system capabilities and the RPC server. `shared/rpc.ts` combines the per-domain RPC definitions in `shared/rpcs/` into the protocol, and `shared/mailbox-handlers.ts` holds the shared Mailbox handlers. The sandboxed preload bridges only JSON. The renderer queries through RPC and Effect atoms. The main entry waits for Electron's ready event. Background indexing and the first sync run after the window's `ready-to-show`.
 
 Main process source is split by area: `app/` for startup, quit, recovery and local inference; `windows/` for windows, menus and spelling; `rpc/` for the RPC server; `security/` for protocols, external links and OAuth clients; `files/` for attachments, downloads and drag and drop; `updates/` for auto-update; `system/` for notifications, contacts, the default mail app and native compose; `remote/` for remote access over Tailscale; `agents/` for MCP mode and AI app connections. `index.ts` is the electron-vite entry. `new URL(…, import.meta.url)` resolves against the bundled `out/main/index.js`, so moving a source file does not change those paths.
 

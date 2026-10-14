@@ -41,7 +41,7 @@ Rules:
 - Tests sit in the same folder as the source file they test. An integration test that covers several modules goes in the domain folder it mainly checks. Node process tests go in `platform/node/`.
 - Split large files along interface boundaries, not by line count. Callers import the new modules directly. No compatibility file re-exports the old path.
 - The target is about 800 lines at most for non-generated source files. `db/migrations.ts` is an exception: `MIGRATIONS` is append-only SQL data, and splitting it would blur the rule "append at the end".
-- The desktop's `shared/rpc.ts` (about 820 lines) is also an exception. It is one `RpcGroup` declaration with one entry per RPC, and `shared/remote-policy.ts` lists the remotely callable RPCs against the same table. Splitting it into groups would make the two tables hard to compare.
+- The desktop's RPC declarations live by domain in `shared/rpcs/` (accounts, reading, attachments, organize, changes, compose, AI, desktop and others). Each file exports one RPC array. `shared/rpc.ts` combines them into the single `MailRpcs` group, and callers still import from `shared/rpc`. `shared/remote-policy.ts` lists the remotely callable RPCs by tag, whatever file declares them.
 
 ## Import cycles
 
