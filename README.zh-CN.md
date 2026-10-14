@@ -90,7 +90,7 @@ OpenMail 比以上产品都年轻，还有粗糙的地方。Gmail 功能以 Mime
 
 ## 快速上手
 
-1. 打开 OpenMail，选择 **Gmail**、**Outlook** 或某个 IMAP 服务商。源码构建不带内置 OAuth 客户端：按 [Google](docs/setup-google.md) 或 [Microsoft](docs/setup-microsoft.md) 的说明注册自己的客户端，填到添加账户页面。IMAP 只需要应用专用密码。
+1. 打开 OpenMail，选择 **Gmail**、**Outlook** 或某个 IMAP 服务商。源码构建不带内置 OAuth 客户端：按 [Using your own OAuth client](https://openmail-docs.vercel.app/docs/own-oauth-client) 的说明为 Google 或 Microsoft 注册自己的客户端，填到添加账户页面。IMAP 只需要应用专用密码。
 2. OpenMail 先下载最近的邮件，再在后台补全旧邮件。
 3. 按 `?` 查看快捷键，按 `⌘F` 搜索。[快捷键参考](https://openmail-docs.vercel.app/docs/keyboard-shortcuts)列出了全部三套。
 4. 要在 Claude Code 或 Codex 里使用邮件，打开 **Settings → AI Access**，允许对应账户，再在 **AI apps** 下连接该应用。也可以让任意 MCP 客户端运行 `/Applications/OpenMail.app/Contents/MacOS/OpenMail --mcp`。源码检出的 CLI 命令见 [Connect by hand](https://openmail-docs.vercel.app/docs/cli-and-mcp#connect-by-hand)。

@@ -30,7 +30,7 @@ The add-account screen says whether new sign-ins use the built-in client or your
    - If the status stays at **Testing**, refresh tokens expire after 7 days and you sign in again every week.
    - Click **Publish app** to switch to **In production**. You do not need to submit for review. At sign-in Google shows an "unverified app" warning; click **Advanced → Continue**. An unverified app allows up to 100 users, which is enough for personal use.
    - If **Publish app** is greyed out with "complete your configuration on the Branding page", stay in Testing. Add every Gmail address you want to sync under **Test users**, or Google rejects the sign-in. In Testing you sign in again every 7 days.
-   - The **Test users** input sits in an iframe. Scripts and CDP clicks miss it, so fill it in by hand or with computer use.
+   - To add a test user, click **Add users**, type the Gmail address in the dialog, and click **Save**. Browser scripts and CDP clicks do not reach this input, so type it by hand.
 5. Under **Data Access**, add the required `gmail.modify` and `gmail.send`, with the prefix `https://www.googleapis.com/auth/`. New accounts request only these two mail scopes. Add the optional services to your project one by one, as listed in the tables below.
 6. Go to **Clients → Create client**, choose **Desktop app**, and note the Client ID and Client secret.
 7. Enter both values on OpenMail's add-account screen. If the build has a built-in client, they go under **Use your own OAuth client**. Or use the CLI:

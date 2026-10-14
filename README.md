@@ -90,7 +90,7 @@ A build you make yourself opens normally. Gatekeeper blocks a downloaded build t
 
 ## Quick start
 
-1. Open OpenMail and pick **Gmail**, **Outlook** or an IMAP provider. A source build has no built-in OAuth client: register your own for [Google](docs/setup-google.md) or [Microsoft](docs/setup-microsoft.md) and paste it on the add-account screen. IMAP needs only an app password.
+1. Open OpenMail and pick **Gmail**, **Outlook** or an IMAP provider. A source build has no built-in OAuth client: register your own for Google or Microsoft as in [Using your own OAuth client](https://openmail-docs.vercel.app/docs/own-oauth-client) and paste it on the add-account screen. IMAP needs only an app password.
 2. OpenMail downloads recent mail first and fills in older mail in the background.
 3. Press `?` to see the keyboard shortcuts and `⌘F` to search. The [shortcut reference](https://openmail-docs.vercel.app/docs/keyboard-shortcuts) lists all three sets.
 4. To use your mail from Claude Code or Codex, open **Settings → AI Access**, allow the account, then connect the app under **AI apps**. Or point any MCP client at `/Applications/OpenMail.app/Contents/MacOS/OpenMail --mcp`. [Connect by hand](https://openmail-docs.vercel.app/docs/cli-and-mcp#connect-by-hand) has the CLI command for a source checkout.
