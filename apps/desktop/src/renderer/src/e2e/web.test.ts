@@ -22,7 +22,8 @@ import { ElectronProtocol } from "../state/rpc";
 import { setRpcBridge } from "../state/rpc-bridge";
 import { webSocketBridge, type WebConnection } from "../state/web-socket-bridge";
 import { TipProvider } from "../ui/Tip";
-import { eventually, incoming } from "./harness";
+import { eventually, incoming, key } from "./harness";
+import { expectComposeTabOrder } from "./compose-tab-check";
 import { scaledMs } from "../../../../../../packages/core/test-support/test-time.js";
 
 let dispose: (() => Promise<void>) | undefined;
@@ -156,6 +157,13 @@ it("the web build renders the inbox over a WebSocket and calls only remote RPCs"
   expect(denied).toEqual([]);
   // Signing in to a new account belongs to the Mac.
   expect(screen.queryByRole("button", { name: "Add email account" })).toBeNull();
+});
+
+it("the web composer keeps Subject and the body next to each other in Tab order", async () => {
+  await openWebApp();
+  fireEvent.click(screen.getByRole("button", { name: "New message" }));
+  await eventually(() => expect(screen.getByRole("textbox", { name: "Subject" })).toBeTruthy());
+  expectComposeTabOrder(key);
 });
 
 const dialogs = () => [...document.querySelectorAll('[role="dialog"], [role="alertdialog"]')];

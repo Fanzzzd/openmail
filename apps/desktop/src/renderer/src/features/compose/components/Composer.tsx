@@ -51,6 +51,7 @@ import { ComposeAttachments } from "./ComposeAttachments";
 import { ComposerAlerts } from "./ComposerAlerts";
 import { label, quiet, row } from "./composer-styles";
 import { AddressFields } from "./AddressFields";
+import { handleComposeTab } from "../compose-tab-order";
 
 /**
  * Footer widths, in px, below which the composer moves its less used footer
@@ -132,6 +133,7 @@ export function Composer({
 
   const run = useRunMail();
   const ccRef = useRef<HTMLInputElement>(null);
+  const subjectRef = useRef<HTMLInputElement>(null);
   const sourceThread = AsyncResult.getOrElse(
     useAtomValue(threadAtom(initial.inReplyTo ?? null)),
     () => [],
@@ -294,6 +296,7 @@ export function Composer({
           {/* oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- The entire composer accepts file drops; the attachment picker provides keyboard access. */}
           <form
             className="flex min-h-[360px] flex-1 flex-col overflow-y-auto"
+            onKeyDown={(event) => handleComposeTab(event, subjectRef.current, bodyRef.current)}
             onDragOver={(event) => {
               if (event.dataTransfer.types.includes("Files")) {
                 event.preventDefault();
@@ -387,6 +390,7 @@ export function Composer({
                 <Trans>Subject</Trans>
               </span>
               <input
+                ref={subjectRef}
                 aria-label={t`Subject`}
                 aria-describedby={error ? errorId : undefined}
                 value={draft.subject}
