@@ -56,7 +56,9 @@ export const makeGmailClient = Effect.gen(function* () {
     refresh: (accountId, refreshToken) =>
       refreshWithIssuer(
         { config, issuers },
-        { name: "Google", pick: (clients) => clients.google, testingMode: true },
+        // The built-in client's project left Testing on 2026-10-11, so Google no longer
+        // expires its tokens after 7 days. No testingMode.
+        { name: "Google", pick: (clients) => clients.google },
         accountId,
         (google) =>
           oauth

@@ -3216,8 +3216,8 @@ msgid "Google Calendar can't use this repeating event's time zone. Choose anothe
 msgstr "Google 日历无法使用这个重复日程的时区。请选择其他时区。"
 
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
-msgid "Google currently limits OpenMail's sign-in to 7 days. Sign in again to keep syncing {email}."
-msgstr "Google 目前把 OpenMail 的登录限制为 7 天。重新登录即可继续同步 {email}。"
+msgid "Google ended OpenMail's sign-in after 7 days. Sign in again to keep syncing {email}."
+msgstr "Google 在 7 天后结束了 OpenMail 的登录。重新登录即可继续同步 {email}。"
 
 #: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Google shows a warning that it hasn't verified OpenMail yet. Choose Advanced, then continue to OpenMail."

@@ -6,12 +6,15 @@ Follow this page when your build has no built-in client, or when you want to use
 
 ## Release status of the built-in client
 
-The official built-in client belongs to the Google Cloud project `openmail-510100`. It is in **Testing**:
+The official built-in client belongs to the Google Cloud project `openmail-510100`. Since 11 October 2026 it is **In production** and unverified:
 
-- Refresh tokens expire after 7 days, and the user has to sign in again. Core records the sign-in time. When a token issued by the built-in client gets `invalid_grant` at least 6.5 days after sign-in, core records the reason as `testing_mode_expiry`. The UI explains that Google currently limits OpenMail sign-ins to 7 days and asks the user to sign in again.
-- Only the addresses listed under the project's **Audience → Test users** can sign in. Google rejects every other address.
+- Any Google account can sign in. Google first shows "Google hasn't verified this app". The user clicks **Advanced**, then **Go to OpenMail (unsafe)**. The add-account screen says this before **Sign in with Google**.
+- Until Google verifies the app, at most 100 users can ever sign in with it.
+- Refresh tokens no longer expire after 7 days.
 
-Switching to **In production** without submitting for verification removes the 7-day expiry, caps the app at 100 users, and shows an "unverified app" warning on the consent page. Gmail's `gmail.modify`, `gmail.send` and `https://mail.google.com/` are restricted scopes, and full verification requires a CASA security assessment. Sources: [token expiry in Testing](https://developers.google.com/identity/protocols/oauth2#expiration), [user cap for unverified apps](https://support.google.com/cloud/answer/7454865), [restricted scope verification](https://developers.google.com/identity/protocols/oauth2/production-readiness/restricted-scope-verification). The verification submission is in [google-oauth-verification.md](google-oauth-verification.md).
+Before 11 October 2026 the project was in **Testing**. Google expired its refresh tokens 7 days after sign-in, and only the project's test users could sign in. Accounts paused by that limit keep the reason `testing_mode_expiry`, and the UI tells them that Google ended the sign-in after 7 days. Core no longer records this reason for new failures.
+
+Gmail's `gmail.modify`, `gmail.send` and `https://mail.google.com/` are restricted scopes, and full verification requires a CASA security assessment. Sources: [token expiry in Testing](https://developers.google.com/identity/protocols/oauth2#expiration), [user cap for unverified apps](https://support.google.com/cloud/answer/7454865), [restricted scope verification](https://developers.google.com/identity/protocols/oauth2/production-readiness/restricted-scope-verification). The verification submission and its status are in [google-oauth-verification.md](google-oauth-verification.md).
 
 ## Accounts and the issuing client
 

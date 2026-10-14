@@ -64,7 +64,7 @@ it("each reauth reason has its own message, and none asks the person to publish 
     ["token_revoked", "me@gmail.com's sign-in was revoked or has expired."],
     [
       "testing_mode_expiry",
-      "Google currently limits OpenMail's sign-in to 7 days. Sign in again to keep syncing me@gmail.com.",
+      "Google ended OpenMail's sign-in after 7 days. Sign in again to keep syncing me@gmail.com.",
     ],
     ["scope_missing", "me@gmail.com needs to grant mail permissions again."],
     ["client_mismatch", "The OAuth client that signed in me@gmail.com is no longer configured."],
@@ -79,7 +79,7 @@ it("each reauth reason has its own message, and none asks the person to publish 
     );
     expect(shown).toContain(text);
     expect(shown).toContain("Sign in again");
-    // The built-in client's Testing status is OpenMail's to fix, not the person's.
+    // Google's limits on the built-in client are OpenMail's to fix, not the person's.
     expect(shown).not.toMatch(/Publish|docs\//);
     seen.add(shown);
   }

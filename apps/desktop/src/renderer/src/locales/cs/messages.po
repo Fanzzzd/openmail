@@ -3206,8 +3206,8 @@ msgid "Google Calendar can't use this repeating event's time zone. Choose anothe
 msgstr "Google Calendar nemůže použít časové pásmo této opakované události. Vyberte jiné časové pásmo."
 
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
-msgid "Google currently limits OpenMail's sign-in to 7 days. Sign in again to keep syncing {email}."
-msgstr "Google nyní omezuje přihlášení do OpenMail na 7 dní. Přihlaste se znovu, aby synchronizace {email} pokračovala."
+msgid "Google ended OpenMail's sign-in after 7 days. Sign in again to keep syncing {email}."
+msgstr "Google ukončil přihlášení do OpenMail po 7 dnech. Přihlaste se znovu, aby synchronizace {email} pokračovala."
 
 #: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Google shows a warning that it hasn't verified OpenMail yet. Choose Advanced, then continue to OpenMail."

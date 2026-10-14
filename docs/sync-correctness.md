@@ -188,15 +188,15 @@ Graph 搜索集合的 `$select` 不含 internetMessageHeaders，attachments 的 
 
 只有确定的答复会让账户暂停并提示重新登录，并在 `accounts.reauth_reason`（迁移 44）和诊断 `reauth` 事件里记下原因：
 
-| 触发                                                                           | 原因代码              |
-| ------------------------------------------------------------------------------ | --------------------- |
-| token 端点返回 400／401 `invalid_grant` 或 `interaction_required`              | `token_revoked`       |
-| 内置 Google 客户端签发的 token 返回 `invalid_grant`，且签发时间至少在 6.5 天前 | `testing_mode_expiry` |
-| token 端点返回 `consent_required`                                              | `scope_missing`       |
-| `invalid_client`、`unauthorized_client`，或签发 token 的客户端已不在配置里     | `client_mismatch`     |
-| 钥匙串里没有该账户的条目                                                       | `keychain_missing`    |
-| TCP 和 TLS 已建立后 IMAP LOGIN 被拒，或 SMTP 535                               | `imap_auth_failed`    |
-| API 401：清掉缓存的 access token，强制刷新一次后重试，仍是 401                 | `token_revoked`       |
+| 触发                                                                                                                                                   | 原因代码              |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------- |
+| token 端点返回 400／401 `invalid_grant` 或 `interaction_required`                                                                                      | `token_revoked`       |
+| 2026-10-11 前：内置 Google 客户端签发的 token 返回 `invalid_grant`，且签发时间至少在 6.5 天前。此后内置项目已发布，core 不再产生该原因，已存的记录保留 | `testing_mode_expiry` |
+| token 端点返回 `consent_required`                                                                                                                      | `scope_missing`       |
+| `invalid_client`、`unauthorized_client`，或签发 token 的客户端已不在配置里                                                                             | `client_mismatch`     |
+| 钥匙串里没有该账户的条目                                                                                                                               | `keychain_missing`    |
+| TCP 和 TLS 已建立后 IMAP LOGIN 被拒，或 SMTP 535                                                                                                       | `imap_auth_failed`    |
+| API 401：清掉缓存的 access token，强制刷新一次后重试，仍是 401                                                                                         | `token_revoked`       |
 
 其余都按可重试处理：断网和 DNS 失败、5xx、429、超时、强制刷新前的单次 401、token 端点的其他 4xx，以及 RFC 5530 的 `UNAVAILABLE`、`INUSE`、`LIMIT`、`SERVERBUG` 登录拒绝和 SMTP 454。发送的 401 同样先刷新再重试：401 表示服务端没有处理请求。
 

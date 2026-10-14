@@ -50,9 +50,10 @@ export const clientForToken = <C extends { readonly clientId: string }>(
  * Refreshes an account's token with the client that issued it, or asks for a
  * new sign-in when that client is gone. An account signed in before issuers
  * were recorded gets its issuer recorded after the first refresh that succeeds.
- * With `testingMode`, an invalid_grant at least 6.5 days after sign-in on a
- * token from the built-in client (its Google app is in Testing) is reported as
- * Google's Testing-mode expiry. The status of an own client is unknown.
+ * Set `testingMode` only while the built-in client's Google app is in Testing:
+ * then an invalid_grant at least 6.5 days after sign-in on a token from that
+ * client is reported as Google's Testing-mode expiry. The status of an own
+ * client is unknown.
  */
 export const refreshWithIssuer = <C extends { readonly clientId: string }, A>(
   deps: { config: AppConfig["Service"]; issuers: OAuthIssuers["Service"] },

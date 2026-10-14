@@ -6,7 +6,7 @@ This is what OpenMail submits to Google to verify the `openmail-510100` OAuth ap
 
 - Publishing status: In production, unverified. Users see the "Google hasn't verified this app" screen, and the app is capped at 100 users for its lifetime.
 - Verification removes both.
-- The Gmail sign-in step tells people what to click on that screen. When verification lands, set `GOOGLE_BUILT_IN_UNVERIFIED` in `apps/desktop/src/renderer/src/features/accounts/AddAccountDialog.tsx` to `false`, and update the FAQ and troubleshooting pages.
+- The Gmail sign-in step tells people what to click on that screen. When verification lands, set `GOOGLE_BUILT_IN_UNVERIFIED` in `apps/desktop/src/renderer/src/features/accounts/OAuthStep.tsx` to `false`, and update the FAQ and troubleshooting pages.
 - OpenMail requests restricted Gmail scopes, so verification also needs a CASA security assessment. A third-party lab authorised by Google runs it every year. Google contacts the developer about it after it reviews the scopes.
 
 ## App details for the form
@@ -111,6 +111,6 @@ Shots, about 3 minutes in total:
 ## Ways to avoid CASA
 
 - **Drop restricted scopes for most users.** IMAP with an app password needs no Google verification, but Gmail OAuth is a much better experience.
-- **Bring your own client.** Users register their own OAuth client, as `own-oauth-client.mdx` describes. Their app stays in Testing with a 7-day token expiry, so this suits developers, not general users.
+- **Bring your own client.** Users register their own OAuth client, as `own-oauth-client.mdx` describes. Their app either stays in Testing with a 7-day token expiry or goes to production unverified with the same warning, so this suits developers, not general users.
 
 Verification plus CASA is the only path where any Gmail user can sign in without warnings.

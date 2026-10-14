@@ -7,7 +7,7 @@ description: Answers to common questions about sign-in, privacy and supported ac
 
 Gmail access needs scopes that Google classifies as restricted (`gmail.modify` and `gmail.send`). Google verifies apps that request restricted scopes through a review that includes a third-party security assessment. OpenMail has not completed that review yet, so Google shows "Google hasn't verified this app" on the sign-in page. This applies to release builds, which sign in with OpenMail's Google project. A build from source has no built-in client, so you [register your own OAuth client](/docs/own-oauth-client) first.
 
-To continue, click **Advanced**, then **Go to OpenMail (unsafe)**. The warning is about the review status. It does not change what the app can do: OpenMail still gets only the permissions listed on the consent screen, and your mail still goes only to your Mac. Google limits unverified apps to 100 users.
+To continue, click **Advanced**, then **Go to OpenMail (unsafe)**. The warning is about the review status. It does not change what the app can do: OpenMail still gets only the permissions listed on the consent screen, and your mail still goes only to your Mac. Until Google verifies OpenMail, at most 100 people can ever sign in with OpenMail's Google project. Sign-ins do not expire after 7 days.
 
 If you prefer not to rely on OpenMail's Google project, [register your own OAuth client](/docs/own-oauth-client).
 
@@ -15,16 +15,16 @@ If you prefer not to rely on OpenMail's Google project, [register your own OAuth
 
 OpenMail pauses an account and asks you to sign in again only when the provider gives a definite answer that the saved sign-in no longer works. Network errors, timeouts and server errors are retried instead.
 
-| Message in the app                                                   | Cause                                                                                                                                             |
-| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Google currently limits OpenMail's sign-in to 7 days                 | OpenMail's Google project is in Google's testing mode, where Google expires refresh tokens after 7 days. This ends when the project is published. |
-| Sign-in was revoked or has expired                                   | You removed OpenMail's access in your Google or Microsoft account, changed your password, or the token expired.                                   |
-| Needs to grant mail permissions again                                | A permission OpenMail needs was not granted.                                                                                                      |
-| The OAuth client that signed in this account is no longer configured | You removed or replaced the OAuth client that issued this account's token.                                                                        |
-| Saved sign-in is missing from the keychain                           | The Keychain entry for the account was deleted.                                                                                                   |
-| The mail server rejected the password                                | The IMAP or SMTP server rejected the app-specific password.                                                                                       |
+| Message in the app                                                   | Cause                                                                                                                                                      |
+| -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Google ended OpenMail's sign-in after 7 days                         | The account signed in before 11 October 2026, when OpenMail's Google project was in Google's testing mode. Sign-ins since then do not expire after 7 days. |
+| Sign-in was revoked or has expired                                   | You removed OpenMail's access in your Google or Microsoft account, changed your password, or the token expired.                                            |
+| Needs to grant mail permissions again                                | A permission OpenMail needs was not granted.                                                                                                               |
+| The OAuth client that signed in this account is no longer configured | You removed or replaced the OAuth client that issued this account's token.                                                                                 |
+| Saved sign-in is missing from the keychain                           | The Keychain entry for the account was deleted.                                                                                                            |
+| The mail server rejected the password                                | The IMAP or SMTP server rejected the app-specific password.                                                                                                |
 
-The 7-day limit in the first row applies to release builds, which sign in with OpenMail's Google project. A build from source uses [your own OAuth client](/docs/own-oauth-client), with the limits of that client's publishing status.
+The 7-day limit in the first row applied to release builds, which sign in with OpenMail's Google project. Sign in again once and it does not come back. A build from source uses [your own OAuth client](/docs/own-oauth-client), with the limits of that client's publishing status.
 
 Microsoft expires refresh tokens for personal accounts after 90 days without use. While the app is open, OpenMail refreshes each account's token about every 6 days, even for paused accounts, so this limit is not reached.
 

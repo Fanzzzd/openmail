@@ -3206,8 +3206,8 @@ msgid "Google Calendar can't use this repeating event's time zone. Choose anothe
 msgstr "Google Calendar ne peut pas utiliser le fuseau horaire de cet événement récurrent. Choisissez un autre fuseau horaire."
 
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
-msgid "Google currently limits OpenMail's sign-in to 7 days. Sign in again to keep syncing {email}."
-msgstr "Google limite actuellement la connexion à OpenMail à 7 jours. Reconnectez-vous pour continuer à synchroniser {email}."
+msgid "Google ended OpenMail's sign-in after 7 days. Sign in again to keep syncing {email}."
+msgstr "Google a mis fin à la connexion à OpenMail après 7 jours. Reconnectez-vous pour continuer à synchroniser {email}."
 
 #: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Google shows a warning that it hasn't verified OpenMail yet. Choose Advanced, then continue to OpenMail."

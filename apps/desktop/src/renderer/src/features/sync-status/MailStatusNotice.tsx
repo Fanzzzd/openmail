@@ -158,9 +158,9 @@ export function reauthText(i18n: I18n, account: Account): string {
   const email = account.email;
   switch (account.reauthReason) {
     case "testing_mode_expiry":
-      // Core only reports this for the built-in client, whose app OpenMail publishes.
+      // Stored before the built-in client's Google project left Testing on 2026-10-11.
       return i18n._(
-        msg`Google currently limits OpenMail's sign-in to 7 days. Sign in again to keep syncing ${email}.`,
+        msg`Google ended OpenMail's sign-in after 7 days. Sign in again to keep syncing ${email}.`,
       );
     case "scope_missing":
       return i18n._(msg`${email} needs to grant mail permissions again. Sync is paused.`);
