@@ -1,7 +1,7 @@
 import type { NativePickerResult } from "../../../shared/native-compose";
 import { decodeRpcFrame, publicRpcResponse } from "../../../main/rpc/rpc-security";
 import { RegistryContext } from "@effect/atom-react";
-import { setupI18n } from "@lingui/core";
+import { i18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
 import {
   IMAP_PRESETS,
@@ -103,6 +103,13 @@ export async function eventually(check: () => void | Promise<void>) {
   }
 }
 
+/** Lets the app run for `ms` of real time, for checks that something does not happen. */
+export async function wait(ms: number) {
+  await act(async () => {
+    await pause(ms);
+  });
+}
+
 export async function advance(ms: number) {
   await act(async () => {
     await vi.advanceTimersByTimeAsync(ms);
@@ -144,6 +151,10 @@ interface FlowHarness {
   id(id: string): string;
   event(event: DesktopEvent): Promise<void>;
   holdLists(): Promise<() => Promise<void>>;
+  /** Answers the held Prefs requests; see the `holdPrefs` option. */
+  releasePrefs(): Promise<void>;
+  /** The draft the compose window opened with, if any. */
+  composeId: string | undefined;
   /** The window's router, on memory history. */
   router: AppRouter;
   /** The current route href, as the history holds it. */
@@ -157,6 +168,11 @@ export async function flow(
     messages?: IncomingMessage[];
     prefs?: PrefsPatch;
     agentDraft?: { message: OutgoingMessage; surface: "mcp" | "rule" | "assistant" };
+    /**
+     * Saves this draft through the real draft store and opens it in the compose window. With
+     * `failPush` its first push fails, so it opens as never synced.
+     */
+    storedDraft?: { message: OutgoingMessage; failPush?: FakeServer["failNext"] };
     /** Opens a server draft in the compose window through the real import path. */
     serverDraft?: { providerId: string; raw: Uint8Array };
     native?: {
@@ -169,6 +185,8 @@ export async function flow(
     route?: string;
     /** The renderer sees no accounts, as on first launch. */
     noAccounts?: boolean;
+    /** Prefs requests wait until `releasePrefs`, as on a slow first load. */
+    holdPrefs?: boolean;
   } = {},
 ): Promise<FlowHarness> {
   const provider = options.provider ?? "gmail";
@@ -216,6 +234,18 @@ export async function flow(
   if (options.serverDraft) {
     server.raw.set(options.serverDraft.providerId, options.serverDraft.raw);
     composeId = (await run(m.openDraft(`${account.id}/${options.serverDraft.providerId}`))).id;
+  }
+  if (options.storedDraft) {
+    server.failNext = options.storedDraft.failPush;
+    composeId = (
+      await run(
+        m.saveDraft({
+          id: `draft:${crypto.randomUUID()}`,
+          accountId: account.id,
+          message: options.storedDraft.message,
+        }),
+      )
+    ).id;
   }
   if (options.agentDraft) {
     await run(m.setAgentWriteMode("propose"));
@@ -266,6 +296,8 @@ export async function flow(
   };
   window.openmailRpc = bridge;
   let listWait: Effect.Effect<void> = Effect.void;
+  const prefsReady = await Effect.runPromise(Deferred.make<void>());
+  if (!options.holdPrefs) await Effect.runPromise(Deferred.succeed(prefsReady, undefined));
   const coreHandlers = mailboxHandlers(m);
   const handlers = MailRpcs.toLayer(
     MailRpcs.of({
@@ -277,13 +309,15 @@ export async function flow(
           Effect.suspend(() => listWait),
           coreHandlers.Threads(input),
         ),
+      Prefs: () => Effect.andThen(Deferred.await(prefsReady), coreHandlers.Prefs()),
       NotificationActionCapabilities: unsupported,
       SetAppleContacts: unsupported,
       OpenAppleContact: unsupported,
       AddAppleContact: unsupported,
       OpenAppleContactsSettings: unsupported,
       SaveMessage: unsupported,
-      OpenMessageWeb: unsupported,
+      // The main process opens a browser or a window; the request itself is what flows check.
+      OpenMessageWeb: () => Effect.void,
       SearchSender: unsupported,
       ReleaseAttachmentDrag: unsupported,
       PrepareAttachmentDrag: unsupported,
@@ -304,7 +338,7 @@ export async function flow(
       CheckForUpdates: unsupported,
       SwitchWindow: unsupported,
       ClipboardText: unsupported,
-      OpenSettings: unsupported,
+      OpenSettings: () => Effect.void,
       OpenComposeWindow: unsupported,
       ComposeWindowDraft: ({ id }) =>
         m.openDraft(id).pipe(Effect.map((draft) => ({ draft, recipients: null }))),
@@ -312,7 +346,7 @@ export async function flow(
       Diagnostics: unsupported,
       DismissCrashReport: unsupported,
       FeedbackAddress: unsupported,
-      NewWindow: unsupported,
+      NewWindow: () => Effect.void,
       NativeComposeCapabilities: () =>
         Effect.succeed({
           photos: Boolean(options.native),
@@ -484,7 +518,8 @@ export async function flow(
   await router.load();
   registry.set(locationAtom, initialLocation(router));
   registry.set(historyAtom, historyFor(router));
-  const i18n = setupI18n({ locale: "en", messages: { en: {} } });
+  // The app renders with the global instance, which core macros such as plural() read too.
+  i18n.loadAndActivate({ locale: "en", messages: {} });
   render(
     createElement(
       RegistryContext.Provider,
@@ -507,11 +542,17 @@ export async function flow(
     account,
     notifications,
     id: (id: string) => `${account.id}/${id}`,
+    composeId,
     router,
     href: () => `${router.history.location.pathname}${router.history.location.search}`,
     async event(event: DesktopEvent) {
       await act(async () => {
         await Effect.runPromise(PubSub.publish(desktop, event));
+      });
+    },
+    async releasePrefs() {
+      await act(async () => {
+        await Effect.runPromise(Deferred.succeed(prefsReady, undefined));
       });
     },
     async holdLists() {
