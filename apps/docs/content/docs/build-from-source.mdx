@@ -1,0 +1,48 @@
+---
+title: Build from source
+description: Build the OpenMail app and the openmail command on your Mac.
+---
+
+OpenMail has no published release yet. To use it, build it from the source on GitHub.
+
+## Prerequisites
+
+- macOS 13 or later, on Apple silicon or Intel.
+- Node 24, the version in the repository's `.nvmrc`. Node 22 is not supported.
+- pnpm through corepack. Run `corepack enable` once. The repository pins the pnpm version.
+- Xcode Command Line Tools: `xcode-select --install`. The build compiles the app's Swift helpers.
+- Xcode 26, only to package the app as a DMG. Icon Composer needs it.
+
+## Build the app
+
+```sh
+git clone https://github.com/Fanzzzd/openmail.git
+cd openmail
+pnpm install
+pnpm build
+pnpm --filter @openmail/desktop dist
+```
+
+`pnpm build` builds the mail core, the CLI and the desktop app. The last command packages the app. It writes a DMG and a ZIP for each architecture to `apps/desktop/release/`. It never publishes anything.
+
+## Run the app
+
+1. Open `apps/desktop/release/OpenMail-<version>-mac-<arch>.dmg`. Use `arm64` on Apple silicon and `x64` on Intel.
+2. Drag OpenMail to Applications.
+3. Your build is not notarized, so macOS Gatekeeper blocks the first open. Control-click OpenMail in Applications, choose **Open**, and confirm.
+4. Add an account. A source build has no built-in Google or Microsoft sign-in client. Register your own as in [Using your own OAuth client](/docs/own-oauth-client). IMAP accounts need only an app password.
+
+## Run the CLI and MCP server
+
+The CLI is built by `pnpm build`. Run it from the repository:
+
+```sh
+node packages/cli/dist/cli.js accounts list
+node packages/cli/dist/cli.js mcp
+```
+
+To type `openmail` from any directory, link the command with `pnpm --dir packages/cli link --global`. See [CLI and MCP](/docs/cli-and-mcp) for the commands and the MCP setup.
+
+## Develop OpenMail
+
+To run the app in development mode with a separate data folder, and to run the tests, follow [CONTRIBUTING.md](https://github.com/Fanzzzd/openmail/blob/main/CONTRIBUTING.md).

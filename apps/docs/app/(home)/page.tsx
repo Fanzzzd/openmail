@@ -148,7 +148,11 @@ export default function HomePage() {
             </Link>
           </div>
           <p className="mt-6 text-sm text-fd-muted-foreground">
-            OpenMail is in early testing. There is no public download yet.
+            OpenMail is in early testing. There is no public download yet.{" "}
+            <Link href="/docs/build-from-source" className="underline">
+              Build it from source
+            </Link>
+            .
           </p>
         </div>
       </section>
