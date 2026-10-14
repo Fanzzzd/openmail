@@ -96,4 +96,35 @@ describe("CLI dates", () => {
     expect(messageText(message)).toContain("Date:    2026-10-04 07:05\n");
     expect(accountTable([account])).toBe("a  last sync: 2026-10-04 07:05");
   });
+
+  it("show prints escape and bidi sequences from mail as escapes, keeping line breaks", () => {
+    const OSC = `${ESC}]8;;https://evil.example${ESC}\\`;
+    const message: Message = {
+      id: "gmail:a/m1",
+      accountId: "gmail:a",
+      threadId: "t1",
+      subject: `Invoice ${ESC}[2J\u202eFDP.exe`,
+      from: { name: `Bank${ESC}[31m`, address: "bank@example.com" },
+      to: [{ name: "", address: `me@example.com${ESC}[8m` }],
+      cc: [],
+      date: 0,
+      snippet: "",
+      labels: [],
+      isUnread: false,
+      isStarred: false,
+      hasAttachments: true,
+      bodyText: `Hello\r\n\t${OSC}click${ESC}]8;;${ESC}\\\n\u2067hidden\u2069 ${ESC}[1A\u0007end 👩‍💻`,
+      bodyHtml: "",
+      attachments: [{ filename: `a${ESC}[0m.pdf`, mimeType: "application/pdf", size: 1 }],
+    };
+    const text = messageText(message);
+    expect(text).not.toContain(ESC);
+    expect(text).not.toContain("\u0007");
+    expect(text).not.toMatch(/[\u202a-\u202e\u2066-\u2069\r]/u);
+    expect(text).toContain("Subject: Invoice \\u{1b}[2J\\u{202e}FDP.exe");
+    expect(text).toContain("From:    Bank\\u{1b}[31m <bank@example.com>");
+    expect(text).toContain("Attach:  a\\u{1b}[0m.pdf");
+    expect(text).toContain("Hello\n\t\\u{1b}]8;;https://evil.example\\u{1b}\\click");
+    expect(text).toContain("\\u{2067}hidden\\u{2069} \\u{1b}[1A\\u{7}end 👩‍💻");
+  });
 });

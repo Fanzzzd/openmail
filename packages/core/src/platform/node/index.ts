@@ -63,6 +63,7 @@ export {
   notificationButtonActions,
   parseAppLink,
   printable,
+  printableLines,
   printableThread,
   READ_ONLY_CONNECTION,
   redactSyncHealth,

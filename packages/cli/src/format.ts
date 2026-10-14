@@ -8,6 +8,7 @@ import {
   type SyncResult,
   actorLabel,
   printable,
+  printableLines,
 } from "@openmail/core";
 import type { ThreadSummary } from "@openmail/core/schema";
 
@@ -36,27 +37,37 @@ export function accountTable(rows: readonly Account[]): string {
     .join("\n");
 }
 
+const addresses = (list: readonly { readonly address: string }[]) =>
+  printable(list.map((a) => a.address).join(", "));
+/**
+ * A message for `openmail show`. Mail is untrusted: header fields and the body go through
+ * printable, so escape and bidi sequences in them show as `\u{...}` instead of driving the
+ * terminal. The body keeps its line breaks and tabs.
+ */
 export function messageText(m: Message): string {
   return [
-    `From:    ${m.from.name} <${m.from.address}>`,
-    `To:      ${m.to.map((a) => a.address).join(", ")}`,
-    ...(m.cc.length ? [`Cc:      ${m.cc.map((a) => a.address).join(", ")}`] : []),
+    `From:    ${printable(m.from.name)} <${printable(m.from.address)}>`,
+    `To:      ${addresses(m.to)}`,
+    ...(m.cc.length ? [`Cc:      ${addresses(m.cc)}`] : []),
     `Date:    ${stamp(m.date)}`,
-    `Subject: ${m.subject}`,
+    `Subject: ${printable(m.subject)}`,
     ...(m.attachments.length
-      ? [`Attach:  ${m.attachments.map((a) => a.filename).join(", ")}`]
+      ? [`Attach:  ${printable(m.attachments.map((a) => a.filename).join(", "))}`]
       : []),
-    `Id:      ${m.id}`,
+    `Id:      ${printable(m.id)}`,
     "",
-    m.bodyText,
+    printableLines(m.bodyText),
   ].join("\n");
 }
 
 const graphemes = new Intl.Segmenter(undefined, { granularity: "grapheme" });
 
-/** Cuts to `width` characters, with an ellipsis, then pads; control characters become spaces. */
+/**
+ * Cuts to `width` characters, with an ellipsis, then pads; control characters and bidi
+ * embeddings, overrides and isolates become spaces.
+ */
 function cell(text: string, width: number): string {
-  const flat = text.replace(/[\p{Cc}\p{Zl}\p{Zp}]+/gu, " ").trim();
+  const flat = text.replace(/[\p{Cc}\p{Zl}\p{Zp}\u202a-\u202e\u2066-\u2069]+/gu, " ").trim();
   const parts = Array.from(graphemes.segment(flat), (part) => part.segment);
   const cut = parts.length > width ? `${parts.slice(0, width - 1).join("")}…` : flat;
   return cut.padEnd(width);

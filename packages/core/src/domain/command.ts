@@ -69,6 +69,19 @@ export const printable = (text: string): string =>
     (char) => `\\u{${(char.codePointAt(0) ?? 0).toString(16)}}`,
   );
 
+/**
+ * Multi-line text from mail (a message body) as a terminal may show it: line breaks and tabs
+ * stay, a carriage return becomes a line break, and other control characters, bidi embeddings,
+ * overrides and isolates (U+202A-202E, U+2066-2069) and line or paragraph separators become
+ * visible `\u{...}` escapes. Other format characters, such as the joiners in emoji, stay.
+ */
+export const printableLines = (text: string): string =>
+  text
+    .replace(/\r\n?/g, "\n")
+    .replace(/[\p{Cc}\u202a-\u202e\u2066-\u2069\u2028\u2029]/gu, (char) =>
+      char === "\n" || char === "\t" ? char : `\\u{${(char.codePointAt(0) ?? 0).toString(16)}}`,
+    );
+
 export function actorLabel(actor: Actor): string {
   return actor.kind === "user" ? `user:${actor.surface}` : `agent:${actor.surface}:${actor.name}`;
 }
