@@ -19,8 +19,14 @@ afterAll(() => {
 });
 
 vi.mock("electron", () => ({
-  app: { isPackaged: true, getPreferredSystemLanguages: () => ["en"], getLocale: () => "en" },
+  app: {
+    isPackaged: true,
+    getPreferredSystemLanguages: () => ["en"],
+    getLocale: () => "en",
+    getSystemLocale: () => "en-US",
+  },
   nativeTheme: { shouldUseDarkColors: false },
+  systemPreferences: { getUserDefault: () => false },
   shell: { openExternal: vi.fn() },
   BrowserWindow: class Window extends EventEmitter {
     webContents = Object.assign(new EventEmitter(), {
