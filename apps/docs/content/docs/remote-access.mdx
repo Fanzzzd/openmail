@@ -62,6 +62,6 @@ The address becomes `https://openmail.<your-tailnet>.ts.net`. Leave the field em
 - **Tailscale isn't installed.** Install the Tailscale app, sign in, then press **Refresh**.
 - **Couldn't remove the Tailscale mapping.** Tailscale wasn't running when you turned remote access off. Open Tailscale. OpenMail removes the mapping as soon as Tailscale responds, or press **Refresh**.
 - **HTTPS certificates are off.** Turn on MagicDNS and HTTPS Certificates in the admin console, then press **Refresh**.
-- **Port 8443 is in use.** Another `tailscale serve` setting uses it. Run `tailscale serve status` to see it, and remove it if you no longer need it.
+- **Something else on this Mac already uses Tailscale Serve on this port.** Another `tailscale serve` setting uses port 8443. Run `tailscale serve status` to see it, and remove it if you no longer need it.
 - **The page doesn't load.** OpenMail is closed or the Mac is asleep. Quitting OpenMail takes the address offline, and opening it publishes the address again. Open OpenMail on the Mac.
 - **"Your Mac disconnected this browser."** The Mac disconnected it in **Browsers**, the session expired, or your login was removed. Reload the page. It connects again while your login is still on the list.

@@ -59,24 +59,37 @@ const shots: { src: string; alt: string }[] = [
 
 const REPO = "https://github.com/Fanzzzd/openmail";
 
+/** Approval bodies wrap app UI labels in double asterisks; scripts/ui-labels.test.ts checks them. */
 const approval: { title: string; body: string }[] = [
   {
     title: "Per-account consent.",
-    body: "An agent sees an account only after you turn on Allow AI to read this account for it. OpenMail checks this on every tool call.",
+    body: "An agent sees an account only after you turn on **Allow AI to read this account** for it. OpenMail checks this on every tool call.",
   },
   {
     title: "Read-only by default.",
-    body: "MCP tools read and search mail. Changes by AI apps starts at Read only, which makes every write tool refuse.",
+    body: "MCP tools read and search mail. **Changes by AI apps** starts at **Read only**, which makes every write tool refuse.",
   },
   {
     title: "AI suggestions.",
-    body: "Write tools take two switches: check Allow AI suggestions when you connect the app, and set Changes by AI apps to Ask me first. Then modify_threads, snooze_threads and draft_message create AI suggestions. Each one waits in AI suggestions until you approve or reject it.",
+    body: "Write tools take two switches: check **Allow AI suggestions** when you connect the app, and set **Changes by AI apps** to **Ask me first**. Then modify_threads, snooze_threads and draft_message create AI suggestions. Each one waits in **AI suggestions** until you approve or reject it.",
   },
   {
     title: "No agent sends mail.",
     body: "A drafted message opens in the composer, and you send it yourself.",
   },
 ];
+
+function withLabels(text: string): ReactNode[] {
+  return text.split(/\*\*(.+?)\*\*/).map((part, index) =>
+    index % 2 === 1 ? (
+      <span key={index} className="font-medium text-fd-foreground">
+        {part}
+      </span>
+    ) : (
+      part
+    ),
+  );
+}
 
 const products = ["OpenMail", "Mimestream", "Spark", "Thunderbird", "Apple Mail"] as const;
 const comparison: { label: string; cells: readonly [string, string, string, string, string] }[] = [
@@ -200,7 +213,7 @@ export default function HomePage() {
         <ul className="mt-6 grid gap-4 sm:grid-cols-2">
           {approval.map((item) => (
             <li key={item.title} className="text-fd-muted-foreground">
-              <strong className="text-fd-foreground">{item.title}</strong> {item.body}
+              <strong className="text-fd-foreground">{item.title}</strong> {withLabels(item.body)}
             </li>
           ))}
         </ul>

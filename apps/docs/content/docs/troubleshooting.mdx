@@ -13,7 +13,7 @@ OpenMail counts crashes. A crash is either a window that stopped unexpectedly or
 - **Reset local cache** deletes downloaded messages, labels, contacts and search indexes, then downloads mail again. It keeps accounts, settings, drafts, changes waiting to be sent and the sign-ins saved in the keychain.
 - **Quit** closes OpenMail without changing anything. It is the default.
 
-After an unclean exit, OpenMail also checks the database. If the check fails, the same prompt reads **The local database could not be verified**. Then **Reset local cache** rebuilds the database from the records it can still read. It keeps the damaged file next to `mail.db` as `mail.db.corrupt-<time>-<id>`.
+After an unclean exit, OpenMail also checks the database. If the check fails, the same prompt reads **The local database couldn't be verified**. Then **Reset local cache** rebuilds the database from the records it can still read. It keeps the damaged file next to `mail.db` as `mail.db.corrupt-<time>-<id>`.
 
 If the prompt says to close other OpenMail processes, quit any `openmail` command or MCP server that is running, then open the app again.
 
@@ -24,7 +24,7 @@ After a crash, the next start opens **OpenMail stopped unexpectedly**. It shows 
 **Settings → Local cache** shows how much space message text, attachments and indexes use.
 
 - **Clear all caches** removes downloaded message bodies and attachments for every account. **Clear account cache** does the same for one account. Headers and drafts stay, so search still finds messages. Opening a message downloads its body again.
-- **Message text cache limit**, **Attachment cache limit** and **Keep openmail under** cap the space OpenMail uses. Starred messages, drafts and messages in the outbox stay even above the limit.
+- **Message text cache limit**, **Attachment cache limit** and **Keep OpenMail under** cap the space OpenMail uses. Starred messages, drafts and messages in the outbox stay even above the limit.
 - **Compact now** returns free database pages to the disk. Wait for syncing and queued changes to finish first.
 
 Settings has no button that resets the whole database. Only the safe mode prompt above does that.
@@ -33,7 +33,7 @@ Settings has no button that resets the whole database. Only the safe mode prompt
 
 OpenMail writes a diagnostics log to `diagnostics/diagnostics.jsonl`. It records fixed fields only: event type, time, failure category, HTTP status and a hashed account ID. It never records message text, addresses, tokens or stack traces. The export starts with a summary line: the OpenMail version and build, the macOS, Electron and Node versions, the database version, and for each account (numbered, not named) its provider, sync state, time since the last successful sync and how many changes are waiting to upload. The log rotates at 256 KB and is never uploaded. See [Security model](/docs/security#diagnostics).
 
-To report a problem, choose **Help → Send Feedback…**:
+To report a problem, choose **Help → Send feedback…**:
 
 1. Enter the **Feedback address** (see [How do I contact the developer?](/docs/faq#how-do-i-contact-the-developer)) and pick a **Category**.
 2. Describe what happened.
@@ -51,9 +51,9 @@ The bottom of the sidebar shows the sync state: **Syncing…**, **Synced** with 
 A notice above the message list explains most failures:
 
 - **You're offline.** Mail syncs again when the connection comes back.
-- **Could not sync** an account. Click **Try again**.
+- **Couldn't sync** an account. Click **Try again**.
 - A sign-in or keychain notice. See the next two sections.
-- **change could not be saved.** Click **Details** to see which change the server refused.
+- **3 changes couldn't be saved.** Click **Details** to see which change the server refused.
 
 To check a single account, open **Settings → Accounts**, select the account and click **Check sync health**. The report compares the local message count with the server for each folder and shows how many changes are waiting. **Copy redacted report** copies it with your own folder names replaced by numbers, so you can add it to feedback.
 
