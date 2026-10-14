@@ -21,16 +21,17 @@ export function shortDate(ms: number, i18n: I18n): string {
   return d.toLocaleDateString(locale);
 }
 
+/** Account colors. Each is dark enough for white initials at WCAG AA (4.5:1). */
 const AVATAR_COLORS = [
-  "bg-rose-500",
-  "bg-orange-500",
-  "bg-amber-500",
-  "bg-emerald-500",
-  "bg-teal-500",
-  "bg-sky-500",
-  "bg-indigo-500",
-  "bg-violet-500",
-  "bg-fuchsia-500",
+  "bg-rose-700",
+  "bg-orange-700",
+  "bg-amber-700",
+  "bg-emerald-700",
+  "bg-teal-700",
+  "bg-sky-700",
+  "bg-indigo-600",
+  "bg-violet-600",
+  "bg-fuchsia-700",
 ];
 
 export function avatarColor(key: string): string {
@@ -87,16 +88,19 @@ function relativeDate(
   return `${day} ${time}`;
 }
 
-/** Tailwind classes per profile color key. Literal strings so Tailwind sees them. */
+/**
+ * Tailwind classes per profile color key. Literal strings so Tailwind sees them. Each is dark
+ * enough for white text at WCAG AA (4.5:1) when the space icon is a letter.
+ */
 export const PROFILE_BG: Record<string, string> = {
-  blue: "bg-blue-500",
-  violet: "bg-violet-500",
-  rose: "bg-rose-500",
-  orange: "bg-orange-500",
-  amber: "bg-amber-500",
-  emerald: "bg-emerald-500",
-  teal: "bg-teal-500",
-  slate: "bg-slate-500",
+  blue: "bg-blue-700",
+  violet: "bg-violet-700",
+  rose: "bg-rose-700",
+  orange: "bg-orange-700",
+  amber: "bg-amber-700",
+  emerald: "bg-emerald-700",
+  teal: "bg-teal-700",
+  slate: "bg-slate-600",
 };
 
 /** First grapheme, so a pasted emoji with modifiers stays whole. */

@@ -141,7 +141,7 @@ export function SidebarRail({
               onClick={() => onSpace(p.id)}
             >
               <span
-                className={`flex size-6 items-center justify-center rounded-full text-body ${PROFILE_BG[p.color]}`}
+                className={`flex size-6 items-center justify-center rounded-full text-white text-body ${PROFILE_BG[p.color]}`}
               >
                 {p.icon}
               </span>

@@ -92,7 +92,7 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
 
         <div className="mt-4 flex items-center gap-3">
           <span
-            className={`flex size-10 shrink-0 items-center justify-center rounded-full text-[20px] ${PROFILE_BG[color]}`}
+            className={`flex size-10 shrink-0 items-center justify-center rounded-full text-white text-[20px] ${PROFILE_BG[color]}`}
           >
             {icon}
           </span>

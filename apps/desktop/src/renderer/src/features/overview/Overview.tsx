@@ -158,7 +158,7 @@ function GroupCard({
       <header className="flex items-center gap-2.5 px-4 pt-3.5 pb-2">
         {group.profile ? (
           <span
-            className={`flex size-7 items-center justify-center rounded-full text-headline ${PROFILE_BG[group.profile.color]}`}
+            className={`flex size-7 items-center justify-center rounded-full text-white text-headline ${PROFILE_BG[group.profile.color]}`}
           >
             {group.profile.icon}
           </span>

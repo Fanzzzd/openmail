@@ -262,7 +262,7 @@ export function FavoriteStar({
         aria-label={label}
         aria-pressed={pressed}
         onClick={onToggle}
-        className={`px-1 text-amber-600 dark:text-amber-400 ${
+        className={`px-1 text-amber-800 dark:text-amber-400 ${
           pressed
             ? ""
             : "opacity-0 group-focus-within/item:opacity-100 group-hover/item:opacity-100 focus-visible:opacity-100"

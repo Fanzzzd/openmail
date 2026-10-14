@@ -16,10 +16,13 @@ import {
   type Proposal,
   type ThreadSummary,
   type CalendarInvite,
+  type SyncProgress,
+  type SyncState,
 } from "@openmail/core/schema";
 import { emptyDraft } from "../features/compose/draft";
 import { builtPalette } from "../test-support/test-styles";
 import { setPlatform } from "../lib/platform";
+import { avatarColor } from "../lib/format";
 
 const fixture = vi.hoisted(() => {
   vi.resetModules();
@@ -2350,3 +2353,72 @@ const moderateAllowlist: readonly {
   targets: readonly (readonly string[])[];
   reason: string;
 }[] = [];
+
+it("keeps every sidebar text at WCAG AA in light and dark themes", () => {
+  // jsdom cannot run axe's color-contrast rule, so this reads the shipped CSS instead.
+  const palette = builtPalette();
+  // One account per avatar color, so every initials badge is measured.
+  const colors = new Map<string, Account>();
+  for (let index = 0; colors.size < 9 && index < 1000; index++) {
+    const email = `person${index}@example.com`;
+    colors.set(avatarColor(email), {
+      ...account,
+      id: `gmail:${email}`,
+      email,
+      needsReauth: index === 0,
+    });
+  }
+  const accounts = [...colors.values()];
+  expect(accounts).toHaveLength(9);
+  fixture.values.set("labelsAtom", [
+    { accountId: accounts[0]?.id ?? "", id: "Label_work", name: "Work", color: "#16a765" },
+    { accountId: accounts[0]?.id ?? "", id: "Label_plain", name: "Receipts", color: null },
+  ]);
+  const sidebar = (syncState: SyncState, progress: SyncProgress | null) =>
+    localized(
+      h(Sidebar, {
+        view: { space: "all", mailbox: "inbox" },
+        onView: vi.fn(),
+        onSpace: vi.fn(),
+        onEditProfile: vi.fn(),
+        accounts,
+        profiles: [{ id: "work", name: "Work", icon: "W", color: "blue", position: 0 }],
+        unread: Object.fromEntries(accounts.map((item, index) => [item.id, index + 1])),
+        syncState,
+        progress,
+        proposals: 2,
+        onAddAccount: vi.fn(),
+        onCompose: vi.fn(),
+        onReauth: vi.fn(),
+        onProposals: vi.fn(),
+        onSettings: vi.fn(),
+      }),
+    );
+  const view = render(
+    sidebar({ running: false, errors: [`${accounts[0]?.id}: Offline`], lastFinishedAt: 1 }, null),
+  );
+  const failures = () => {
+    const found: string[] = [];
+    for (const element of view.container.querySelectorAll("*")) {
+      const text = [...element.childNodes]
+        .filter((node) => node.nodeType === Node.TEXT_NODE)
+        .map((node) => node.textContent ?? "")
+        .join("")
+        .trim();
+      if (!text) continue;
+      for (const theme of ["light", "dark"] as const) {
+        const ratio = palette.contrast(element, theme);
+        if (ratio < 4.5) found.push(`${theme} ${ratio.toFixed(2)} "${text}" ${element.className}`);
+      }
+    }
+    return found;
+  };
+  expect(failures()).toEqual([]);
+  view.rerender(
+    sidebar(
+      { running: true, errors: [], lastFinishedAt: 1 },
+      { accountId: accounts[1]?.id ?? "", fetched: 40, total: 100 },
+    ),
+  );
+  expect(failures()).toEqual([]);
+});
