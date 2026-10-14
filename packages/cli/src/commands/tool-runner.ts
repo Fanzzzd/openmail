@@ -5,6 +5,7 @@ import {
   ProposalMailToolkit,
   MailToolkitLayer,
   AgentIdentity,
+  CLI_AGENT_NAME,
   MailToolError,
   agentAccountGap,
   unknownArguments,
@@ -21,7 +22,7 @@ export const toolNames = Object.keys(MailToolkit.tools).filter(
 );
 export const isWriteTool = (name: ToolName) => name in ProposalMailToolkit.tools;
 const toolHandlers = MailToolkitLayer.pipe(
-  Layer.provide(AgentIdentity.fixed("mcp", "openmail-cli")),
+  Layer.provide(AgentIdentity.fixed("mcp", CLI_AGENT_NAME)),
 );
 const ToolFailure = Schema.toEncoded(MailToolError);
 const GAP_HINT = "Run `openmail tool access_status` to see what is readable.";

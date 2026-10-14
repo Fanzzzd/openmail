@@ -18,7 +18,7 @@ import { PageParameters, PageResult, ToolInt, shortText } from "./tool-pages.js"
 import { Tool } from "effect/ai";
 import { CATEGORIES } from "../domain/message.js";
 import type { HandlersFor, ToolContext } from "./tool-context.js";
-import { cleanMcpClientName } from "./agent-identity.js";
+import { CLI_AGENT_NAME, cleanMcpClientName } from "./agent-identity.js";
 
 export const toModelAccount = ({ id, provider, email, needsReauth }: Account) => ({
   id,
@@ -159,14 +159,18 @@ export const accountHandlers = ({
       steps.push(
         "An account needs to be signed in again in OpenMail. Its local mail stays readable; sync fails until then.",
       );
-    if (!proposalTools) steps.push(READ_ONLY_CONNECTION);
+    // `openmail tool` has no app card: each write tool call takes --allow-writes instead.
+    const cli = current.name === CLI_AGENT_NAME;
+    if (!proposalTools && !cli) steps.push(READ_ONLY_CONNECTION);
     else if (writeMode === "off")
       steps.push(
         "Proposal tools are listed, but Changes by AI apps is Read only, so they will refuse. The person can choose Ask me first under Changes by AI apps in Settings → AI Access.",
       );
     else
       steps.push(
-        "Changes you propose wait for the person to approve them in OpenMail. Nothing is sent without their confirmation in the app.",
+        cli
+          ? "Pass --allow-writes to the write tool. Changes you propose wait for the person to approve them in OpenMail. Nothing is sent without their confirmation in the app."
+          : "Changes you propose wait for the person to approve them in OpenMail. Nothing is sent without their confirmation in the app.",
       );
     if (remoteWritesDisabled)
       steps.push("Remote writes are turned off: sync fetches mail but pushes no changes.");

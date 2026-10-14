@@ -26,7 +26,7 @@ import {
   ProposalMailToolkit,
   agentAccountGap,
 } from "./tools.js";
-import { AgentIdentity, cleanMcpClientName } from "./agent-identity.js";
+import { AgentIdentity, CLI_AGENT_NAME, cleanMcpClientName } from "./agent-identity.js";
 import { snoozeDue } from "./proposal-tools.js";
 import {
   MailToolError,
@@ -2097,6 +2097,29 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
       assert.deepStrictEqual(yield* (yield* Mailbox).proposals.agentActivity(10), []);
     }).pipe(Effect.provide(Layer.mergeAll(mailboxLayer, handlers)));
   });
+
+  it.effect(
+    "access_status tells the CLI runner to pass --allow-writes, not to use the app card",
+    () => {
+      const mailboxLayer = TestMailbox({ gmail: fakeServer("me@gmail.com", [mail]) });
+      const status = (name: string) =>
+        Effect.gen(function* () {
+          const toolkit = yield* MailToolkit;
+          const last = yield* Stream.runLast(yield* toolkit.handle("access_status", {}));
+          assert.ok(last._tag === "Some" && "next_steps" in last.value.result);
+          return last.value.result.next_steps.join(" ");
+        }).pipe(
+          Effect.provide(MailToolkitLayer.pipe(Layer.provide(AgentIdentity.fixed("mcp", name)))),
+        );
+      return Effect.gen(function* () {
+        yield* (yield* Mailbox).proposals.setAgentWriteMode("propose");
+        const cli = yield* status(CLI_AGENT_NAME);
+        assert.include(cli, "Pass --allow-writes to the write tool.");
+        assert.notInclude(cli, "Allow AI suggestions");
+        assert.include(yield* status("claude-code"), "Allow AI suggestions");
+      }).pipe(Effect.provide(mailboxLayer));
+    },
+  );
 
   it.effect("assistant label proposals are checked against current labels at approval", () => {
     const server = fakeServer("me@gmail.com", [mail]);

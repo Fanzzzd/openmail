@@ -25,6 +25,8 @@ export const cleanMcpClientName = (name: string): string =>
     .trim() || "mcp";
 
 type AgentSurface = Extract<Actor, { kind: "agent" }>["surface"];
+/** The agent name `openmail tool` runs as. Write tools there take --allow-writes per call. */
+export const CLI_AGENT_NAME = "openmail-cli";
 
 /**
  * Who the model is. Read on every call: one MCP server can serve several
