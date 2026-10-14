@@ -124,4 +124,4 @@ pnpm exec electron-vite dev -- --user-data-dir="$HOME/OpenMail-dev"
 
 ## 许可证
 
-[MIT](LICENSE) © 2026 Fanzzzd and OpenMail contributors。第三方资源列在 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。服务商图标来自 [selfh.st](https://selfh.st/icons)（CC BY 4.0）。
+[MIT](LICENSE) © 2026 Fanzzzd and OpenMail contributors。第三方资源和库（包括 LGPL-3.0-or-later 授权的 libvips）列在 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。服务商图标来自 [selfh.st](https://selfh.st/icons)（CC BY 4.0）。

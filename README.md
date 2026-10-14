@@ -114,4 +114,4 @@ Bug reports, fixes and translations are welcome. Read [CONTRIBUTING.md](CONTRIBU
 
 ## License
 
-[MIT](LICENSE) © 2026 Fanzzzd and OpenMail contributors. Third-party assets are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Provider icons by [selfh.st](https://selfh.st/icons) (CC BY 4.0).
+[MIT](LICENSE) © 2026 Fanzzzd and OpenMail contributors. Third-party assets and libraries, including libvips under LGPL-3.0-or-later, are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Provider icons by [selfh.st](https://selfh.st/icons) (CC BY 4.0).

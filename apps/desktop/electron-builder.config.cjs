@@ -19,6 +19,8 @@ module.exports = {
   extraResources: [
     { from: "../../LICENSE", to: "LICENSE" },
     { from: "../../THIRD_PARTY_NOTICES.md", to: "THIRD_PARTY_NOTICES.md" },
+    // License texts that THIRD_PARTY_NOTICES.md names (LGPL for libvips, among others).
+    { from: "../../docs/licenses", to: "licenses" },
     { from: "build/contacts-locales", to: ".", filter: ["**/InfoPlist.strings"] },
     { from: "build/trayTemplate.png", to: "trayTemplate.png" },
     { from: "build/trayTemplate@2x.png", to: "trayTemplate@2x.png" },
