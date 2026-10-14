@@ -9,6 +9,8 @@ import { Dialog } from "../../ui/Dialog";
 import { formButton, formInput } from "../../ui/form-styles";
 import { dateFormat } from "../../lib/format";
 
+const TWO_DAYS = 2 * 24 * 60 * 60 * 1000;
+
 export function SnoozeDialog({
   threads,
   onClose,
@@ -25,7 +27,7 @@ export function SnoozeDialog({
   const [now] = useState(() => Date.now());
   const due = parseSnoozeTime(phrase || custom, now);
   const [result, run] = useAtom(snoozeAtom, { mode: "promiseExit" });
-  const [times] = useState(() => snoozeTimes(Date.now()));
+  const [times] = useState(() => snoozeTimes(now));
   const choose = async (reminderAt: number) => {
     const finished = onStart();
     const exit = await run({ payload: { threads, due: reminderAt }, reactivityKeys: MAIL_KEYS });
@@ -51,11 +53,13 @@ export function SnoozeDialog({
           className="flex w-full items-baseline justify-between gap-3 rounded p-2 text-left hover:bg-blue-500/10"
         >
           <span>{preset.name}</span>{" "}
-          {/* The time each preset resolves to, so "Next week" says which day. The space keeps the
-              two apart in the button's accessible name. */}
+          {/* The time each preset resolves to, so "Next week" says which day. A weekday alone
+              reads as this week, so a time more than two days out adds the date. The space keeps
+              the two apart in the button's accessible name. */}
           <span className="shrink-0 text-a11y-muted tabular-nums">
             {new Date(preset.due).toLocaleString(dateFormat(i18n).locale, {
               weekday: "short",
+              ...(preset.due - now > TWO_DAYS ? { day: "numeric", month: "short" } : {}),
               hour: "numeric",
               minute: "2-digit",
               ...dateFormat(i18n).clock,

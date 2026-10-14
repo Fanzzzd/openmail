@@ -542,7 +542,7 @@ it("audits the snooze form and associates invalid reminder input with its error"
   await audit();
 });
 
-it("snooze presets show the weekday and time they resolve to", () => {
+it("snooze presets show the weekday and time they resolve to, and the date beyond two days", () => {
   const now = new Date(2026, 9, 15, 14, 30).getTime();
   vi.useFakeTimers({ now, toFake: ["Date"] });
   try {
@@ -554,7 +554,7 @@ it("snooze presets show the weekday and time they resolve to", () => {
     const times = {
       "In 3 hours": "Thu 5:30 PM",
       "Tomorrow morning": "Fri 9:00 AM",
-      "Next week": "Thu 9:00 AM",
+      "Next week": "Thu, Oct 22, 9:00 AM",
     };
     // The accessible name reads the preset, then its time.
     for (const [name, time] of Object.entries(times))
