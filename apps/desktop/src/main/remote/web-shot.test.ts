@@ -76,7 +76,7 @@ const MEASURE = \`(() => {
     .filter(visible).map((e) => ({ label: e.getAttribute("aria-label") ?? e.tagName, size: getComputedStyle(e).fontSize }));
   const small = [...document.querySelectorAll("button, [role=menuitem], [role=option], [role=tab]")]
     .filter(visible).map((e) => ({ label: e.getAttribute("aria-label") || e.textContent.trim().slice(0, 30), h: Math.round(e.getBoundingClientRect().height) }))
-    .filter((e) => e.h < 40);
+    .filter((e) => e.h < 44);
   const placeholders = [...document.querySelectorAll("input[placeholder]")].filter(visible)
     .map((e) => e.getAttribute("placeholder")).filter((p) => p.endsWith(" /"));
   const shortcuts = [...(document.body.innerText.match(/[⌘⇧⌥⌃][^ ]*/g) ?? []), ...placeholders];
@@ -154,7 +154,7 @@ app.whenReady().then(async () => {
     ])
       expect(existsSync(path.join(dir, `${name}.png`)), name).toBe(true);
     // On a phone: no field under 16 px (iOS would zoom), and the toolbar,
-    // header, menu, chip and compose controls are at least 40 px tall. No
+    // header, menu, chip and compose controls are at least 44 px tall. No
     // keyboard shortcut text either: a phone has no keyboard to press it on.
     for (const name of [
       "web-390-inbox",

@@ -2,6 +2,7 @@ import { createBrowserHistory } from "@tanstack/history";
 
 import { ConnectionNotice } from "./features/remote";
 import { setPlatform } from "./lib/platform";
+import { trackKeyboardInset } from "./lib/keyboard-inset";
 import { renderApp } from "./routes/render-app";
 import { setRpcBridge } from "./state/rpc-bridge";
 import { flushUnsavedWork, hasUnsavedWork } from "./state/unsaved-work";
@@ -38,5 +39,6 @@ window.addEventListener("beforeunload", (event) => {
   flushUnsavedWork();
   if (hasUnsavedWork()) event.preventDefault();
 });
+trackKeyboardInset(window);
 
 renderApp(createBrowserHistory(), <ConnectionNotice />);

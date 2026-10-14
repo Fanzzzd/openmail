@@ -80,7 +80,7 @@
 /*
  * A finger on the web build: phones and tablets (web.html sets data-platform).
  * The desktop app never matches, so its sizes stay as they are. Recipes in
- * ui/styles.ts use it to give controls a 40 px touch target.
+ * ui/styles.ts use it to give controls a 44 px touch target.
  */
 @custom-variant coarse {
   @media (pointer: coarse) {
@@ -88,6 +88,22 @@
       @slot;
     }
   }
+}
+
+/*
+ * The web build in any browser. Safe-area insets (the notch, the home
+ * indicator, rounded corners) only apply there; in the desktop app they are 0.
+ */
+@custom-variant web {
+  &:where([data-platform="web"] *) {
+    @slot;
+  }
+}
+
+/* Set by lib/keyboard-inset.ts in the web build; 0 elsewhere. */
+html {
+  --visual-top: 0px;
+  --keyboard-inset: 0px;
 }
 
 /* Keyboard focus for controls the base rule below leaves out, such as text fields' wrappers. */

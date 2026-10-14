@@ -186,7 +186,7 @@ export function Sidebar({
               type="button"
               aria-label={t`Add email account`}
               onClick={onAddAccount}
-              className="rounded-control p-1 text-a11y-muted hover:bg-fill-hover"
+              className={`text-a11y-muted ${iconButton}`}
             >
               <Plus className="size-4.5" />
             </button>
@@ -197,7 +197,7 @@ export function Sidebar({
             type="button"
             aria-label={t`New message`}
             onClick={onCompose}
-            className="rounded-control p-1 text-a11y-muted hover:bg-fill-hover"
+            className={`text-a11y-muted ${iconButton}`}
           >
             <SquarePen className="size-4.5" />
           </button>

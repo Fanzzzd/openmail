@@ -12,7 +12,8 @@
 #
 # Outputs: icon.png (1024), icon-dev.png (1024, the Dock and window icon of
 # unpackaged runs), icon.icns (older macOS and the icns fallback),
-# trayTemplate.png and trayTemplate@2x.png.
+# trayTemplate.png and trayTemplate@2x.png, and the web build's home-screen
+# icons in ../src/renderer/web-public/icons.
 #
 # `render-icons.sh dev` only rebuilds icon-dev.png from icon-dev.icon.
 #
@@ -72,3 +73,32 @@ iconutil -c icns "$iconset" -o icon.icns
 
 rsvg-convert -w 22 -h 22 trayTemplate.svg -o trayTemplate.png
 rsvg-convert -w 44 -h 44 trayTemplate.svg -o trayTemplate@2x.png
+
+# Home-screen icons for the web build: the icon's body, full bleed, opaque,
+# since iOS and Android round the corners themselves.
+python3 - icon.png ../src/renderer/web-public/icons <<'PY'
+import sys
+from PIL import Image
+src = Image.open(sys.argv[1]).convert("RGBA")
+lo, hi = 100, 924
+top, bottom = src.getpixel((512, 200)), src.getpixel((512, 830))
+body = src.crop((lo, lo, hi, hi))
+n = hi - lo
+out = Image.new("RGB", (n, n))
+# The glyph and its shadow sit inside 240..760 of the 1024 canvas; around it
+# the body is a plain vertical gradient, drawn again without the squircle edge.
+g0, g1 = 240 - lo, 760 - lo
+px, po = body.load(), out.load()
+for y in range(n):
+    t = y / (n - 1)
+    c = tuple(round(top[i] * (1 - t) + bottom[i] * t) for i in range(3))
+    for x in range(n):
+        if g0 <= x < g1 and g0 <= y < g1:
+            r, g, b, a = px[x, y]
+            k = a / 255
+            po[x, y] = tuple(round(v * k + c[i] * (1 - k)) for i, v in enumerate((r, g, b)))
+        else:
+            po[x, y] = c
+for size, name in [(180, "apple-touch-icon.png"), (192, "icon-192.png"), (512, "icon-512.png")]:
+    out.resize((size, size), Image.LANCZOS).save(f"{sys.argv[2]}/{name}", optimize=True)
+PY

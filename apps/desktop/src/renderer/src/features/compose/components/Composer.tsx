@@ -435,7 +435,9 @@ export function Composer({
             {adding && <output className="px-4 py-2">{t`Loading attachments…`}</output>}
             <ComposeAttachments draft={draft} set={set} attachmentDrag={attachmentDrag} />
 
-            <footer className="flex shrink-0 items-center gap-2 border-t border-separator px-4 py-2.5">
+            {/* In a browser it sticks to the bottom of the sheet, which ends at the
+                on-screen keyboard, so Send stays in reach while typing. */}
+            <footer className="flex shrink-0 items-center gap-2 border-t border-separator px-4 py-2.5 web:sticky web:bottom-0 web:z-10 web:bg-raised">
               <Tip label={t`Send`} shortcut={shortcut("send")} side="top">
                 <button
                   type="submit"
@@ -449,7 +451,7 @@ export function Composer({
                   <button
                     type="button"
                     onClick={() => submit(true)}
-                    className="h-7 rounded-control border border-edge px-3 font-medium hover:bg-fill-hover"
+                    className={`h-7 rounded-control border border-edge px-3 ${touchTarget} font-medium hover:bg-fill-hover`}
                   >
                     <Trans>Send and archive</Trans>
                   </button>

@@ -18,16 +18,16 @@ export const popupMotion =
 export const popupOffset = 4;
 
 /**
- * A 40 px touch target on a phone or tablet in the web build (the `coarse`
- * variant in styles.css). Desktop sizes don't change.
+ * A 44 px touch target (Apple's minimum) on a phone or tablet in the web build
+ * (the `coarse` variant in styles.css). Desktop sizes don't change.
  */
-export const touchTarget = "coarse:min-h-10 coarse:min-w-10";
+export const touchTarget = "coarse:min-h-11 coarse:min-w-11";
 /** The same for an icon-only button: the icon stays centred in the larger box. */
 export const touchIcon = `coarse:inline-grid coarse:place-items-center ${touchTarget}`;
 
 /** One row in a menu or list. The highlight is the macOS accent with white text. */
 export const itemClass =
-  "flex min-h-[22px] coarse:min-h-10 cursor-default items-center gap-2 rounded-item px-2 outline-none select-none data-disabled:opacity-40 data-highlighted:bg-blue-600 data-highlighted:text-white";
+  "flex min-h-[22px] coarse:min-h-11 cursor-default items-center gap-2 rounded-item px-2 outline-none select-none data-disabled:opacity-40 data-highlighted:bg-blue-600 data-highlighted:text-white";
 
 /** Menu separator. */
 export const separatorClass = "mx-2 my-1 h-px bg-separator";
@@ -38,9 +38,13 @@ export const iconButton = `rounded-control p-1 ${touchIcon} transition-colors du
 /**
  * The first row of every window: the 52 px row main centres the traffic
  * lights in (TITLEBAR_HEIGHT). It drags the window; start it with
- * <TrafficLightSpace/> wherever the lights can sit over it.
+ * <TrafficLightSpace/> wherever the lights can sit over it. In the web build
+ * the first such row of a pane also clears the phone's status bar and notch
+ * (the safe-area inset); a second row, such as the list's title under its
+ * search field, stays 52 px.
  */
-export const titlebarRow = "drag flex h-13 shrink-0 items-center";
+export const titlebarRow =
+  "drag flex h-13 shrink-0 items-center web:first:h-[calc(3.25rem+env(safe-area-inset-top))] web:first:pt-[env(safe-area-inset-top)]";
 
 /** Keyboard shortcut next to a label. */
 export const kbdClass =
@@ -51,7 +55,7 @@ export const kbdClass =
  * and a pressed state.
  */
 const buttonBase =
-  "inline-flex h-7 coarse:min-h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-control px-3 text-body font-medium outline-offset-1 outline-a11y-focus transition-colors duration-100 focus-visible:outline-[3px] disabled:pointer-events-none disabled:opacity-50 motion-reduce:transition-none";
+  "inline-flex h-7 coarse:min-h-11 items-center justify-center gap-1.5 whitespace-nowrap rounded-control px-3 text-body font-medium outline-offset-1 outline-a11y-focus transition-colors duration-100 focus-visible:outline-[3px] disabled:pointer-events-none disabled:opacity-50 motion-reduce:transition-none";
 export const buttonSecondary = `${buttonBase} bg-white text-neutral-900 shadow-control ring-1 ring-edge hover:bg-neutral-50 active:bg-neutral-100 dark:bg-white/[0.08] dark:text-neutral-100 dark:hover:bg-white/[0.12] dark:active:bg-white/[0.16]`;
 export const buttonPrimary = `${buttonBase} bg-blue-600 text-white shadow-control hover:bg-blue-700 active:bg-blue-800`;
 export const buttonDanger = `${buttonBase} bg-red-600 text-white shadow-control outline-red-500/60 hover:bg-red-700 active:bg-red-800`;

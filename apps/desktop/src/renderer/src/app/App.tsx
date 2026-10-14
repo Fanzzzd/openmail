@@ -457,7 +457,7 @@ export function App({ composeId }: { composeId?: string }) {
     />
   );
   return (
-    <div className="flex h-full flex-col text-body text-neutral-900 dark:text-neutral-100">
+    <div className="flex h-full flex-col text-body text-neutral-900 web:pr-[env(safe-area-inset-right)] web:pl-[env(safe-area-inset-left)] dark:text-neutral-100">
       {canCall("InitializeProfiles") && (
         <DefaultProfilesPrompt
           accounts={accountList}

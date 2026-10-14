@@ -203,7 +203,7 @@ export function RecipientField({
                 event.dataTransfer.effectAllowed = "move";
                 onDragChip?.();
               }}
-              className={`group flex h-[22px] max-w-full items-center gap-0.5 rounded-[5px] pr-0.5 pl-1.5 coarse:h-10 coarse:gap-2 coarse:pl-2.5 outline-none focus:bg-blue-600 focus:text-white ${
+              className={`group flex h-[22px] max-w-full items-center gap-0.5 rounded-[5px] pr-0.5 pl-1.5 coarse:h-11 coarse:gap-2 coarse:pl-2.5 outline-none focus:bg-blue-600 focus:text-white ${
                 address
                   ? "bg-blue-500/10 text-blue-800 dark:bg-blue-400/15 dark:text-blue-200"
                   : "bg-red-500/10 text-red-700 dark:bg-red-400/15 dark:text-red-300"
@@ -243,7 +243,7 @@ export function RecipientField({
               <Combobox.ChipRemove
                 aria-label={t`Remove ${text}`}
                 tabIndex={-1}
-                className="flex size-4 shrink-0 items-center justify-center rounded-[3px] opacity-0 group-hover:opacity-70 group-focus-within:opacity-100 hover:bg-fill-pressed hover:opacity-100 coarse:size-10 coarse:opacity-70"
+                className="flex size-4 shrink-0 items-center justify-center rounded-[3px] opacity-0 group-hover:opacity-70 group-focus-within:opacity-100 hover:bg-fill-pressed hover:opacity-100 coarse:size-11 coarse:opacity-70"
               >
                 <X className="size-3" />
               </Combobox.ChipRemove>
@@ -389,7 +389,7 @@ function ChipActions({
           className={
             label === undefined
               ? `rounded p-0.5 hover:bg-black/10 ${touchIcon}`
-              : "block min-w-0 truncate rounded text-left leading-10"
+              : "block min-w-0 truncate rounded text-left leading-11"
           }
         >
           {label === undefined ? <MoreHorizontal className="size-3" /> : label}

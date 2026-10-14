@@ -14,7 +14,8 @@ import { defineConfig } from "vite";
 export default defineConfig({
   root: resolve(import.meta.dirname, "src/renderer"),
   base: "/",
-  publicDir: false,
+  // The manifest and home-screen icons, copied to out/web as they are.
+  publicDir: resolve(import.meta.dirname, "src/renderer/web-public"),
   plugins: [
     react({
       babel: { plugins: ["@lingui/babel-plugin-lingui-macro", "babel-plugin-react-compiler"] },

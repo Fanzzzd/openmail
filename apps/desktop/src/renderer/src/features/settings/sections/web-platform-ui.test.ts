@@ -120,10 +120,10 @@ it("keeps a centred sheet's top edge below the traffic lights on the Mac", () =>
   }
 });
 
-it("gives buttons, icon buttons and menu rows a 40 px target on a phone in the web build", () => {
+it("gives buttons, icon buttons and menu rows a 44 px target on a phone in the web build", () => {
   for (const recipe of [buttonSecondary, iconButton, itemClass])
-    expect(recipe).toContain("coarse:min-h-10");
-  expect(touchTarget).toBe("coarse:min-h-10 coarse:min-w-10");
+    expect(recipe).toContain("coarse:min-h-11");
+  expect(touchTarget).toBe("coarse:min-h-11 coarse:min-w-11");
   const css = readFileSync(path.join(desktopRoot, "src/renderer/src/styles.css"), "utf8");
   // The variant only matches the web build, so the Mac app keeps its sizes.
   expect(css).toMatch(

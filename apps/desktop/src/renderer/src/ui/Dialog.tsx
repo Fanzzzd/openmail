@@ -67,13 +67,25 @@ const SHEET_CAPS: Record<"desktop" | "web", Record<SheetCap | "window", string>>
 export const centredSheet = (maxHeight?: SheetCap) =>
   SHEET_CAPS[isDesktop() ? "desktop" : "web"][maxHeight ?? "window"];
 
+const NARROW_SHEET =
+  "max-sm:max-h-none max-sm:w-full max-sm:max-w-none max-sm:translate-none max-sm:rounded-none max-sm:data-ending-style:scale-none";
+/**
+ * The web build's full-screen sheet on a phone: it fills the part of the page
+ * the on-screen keyboard leaves (lib/keyboard-inset.ts), so the footer stays
+ * above the keyboard. Transparent borders in the sheet's colour clear the
+ * notch and the home indicator without replacing the caller's padding.
+ */
+const PHONE_SHEET =
+  "max-sm:inset-x-0 max-sm:top-(--visual-top) max-sm:bottom-(--keyboard-inset) max-sm:h-auto max-sm:border-transparent max-sm:border-t-[length:env(safe-area-inset-top)] max-sm:border-b-[length:max(0px,calc(env(safe-area-inset-bottom)_-_var(--keyboard-inset)))]";
+
 /**
  * Below MEDIUM_MIN (800 px, Tailwind's `sm`) a sheet fills the window, whatever size the caller asked for.
  * On the Mac its top stays clear for the traffic lights' row (`--titlebar-clearance`, from WindowChrome);
- * pair it with {@link SheetDragStrip}. A browser has no traffic lights, so the web build uses the whole height.
+ * pair it with {@link SheetDragStrip}. A browser has no traffic lights, so the web build uses the whole
+ * height above the keyboard, inside the safe area.
  */
 export const narrowSheet = () =>
-  `max-sm:inset-0 max-sm:h-full max-sm:max-h-none max-sm:w-full max-sm:max-w-none max-sm:translate-none max-sm:rounded-none max-sm:data-ending-style:scale-none ${isDesktop() ? "max-sm:pt-(--titlebar-clearance)" : ""}`;
+  `${NARROW_SHEET} ${isDesktop() ? "max-sm:inset-0 max-sm:h-full max-sm:pt-(--titlebar-clearance)" : PHONE_SHEET}`;
 
 /** The titlebar of a full-window sheet: it drags the window, as the titlebar it covers did. None in a browser. */
 export function SheetDragStrip() {
@@ -142,7 +154,7 @@ function SheetClose() {
   return (
     <BaseDialog.Close
       aria-label={t`Close`}
-      className={`no-drag fixed top-2.5 right-3 z-20 text-a11y-muted ${iconButton} coarse:top-0 coarse:right-1`}
+      className={`no-drag fixed top-2.5 right-3 z-20 text-a11y-muted ${iconButton} coarse:top-[env(safe-area-inset-top)] coarse:right-1`}
     >
       <X className="size-4" />
     </BaseDialog.Close>
@@ -183,7 +195,7 @@ export function Drawer({
             const active = document.activeElement;
             return !active || active === document.body || !!popup.current?.contains(active);
           }}
-          className="no-drag fixed inset-y-0 left-0 z-40 flex max-h-none w-72 max-w-[calc(100vw-48px)] flex-col overflow-hidden bg-neutral-100 text-body text-neutral-900 shadow-sheet outline-none transition-transform duration-200 ease-out data-ending-style:-translate-x-full data-starting-style:-translate-x-full motion-reduce:transition-none dark:bg-neutral-900 dark:text-neutral-100"
+          className="no-drag fixed inset-y-0 left-0 z-40 flex max-h-none w-72 web:pb-[env(safe-area-inset-bottom)] web:pl-[env(safe-area-inset-left)] max-w-[calc(100vw-48px)] flex-col overflow-hidden bg-neutral-100 text-body text-neutral-900 shadow-sheet outline-none transition-transform duration-200 ease-out data-ending-style:-translate-x-full data-starting-style:-translate-x-full motion-reduce:transition-none dark:bg-neutral-900 dark:text-neutral-100"
         >
           {children}
         </BaseDialog.Popup>
