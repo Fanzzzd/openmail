@@ -305,7 +305,7 @@ it.effect(
       );
       // MCP reads only accounts with AI consent; without it both tools return nothing.
       for (const accountId of fixtureAccounts)
-        yield* mail.setAiAccount({ accountId, allowed: true, autoSummaries: false });
+        yield* mail.ai.setAiAccount({ accountId, allowed: true, autoSummaries: false });
       const threadCount = (value: unknown) =>
         typeof value === "object" &&
         value !== null &&

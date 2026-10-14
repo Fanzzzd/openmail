@@ -635,7 +635,6 @@ export class Mailbox extends Context.Service<
     MailboxCompose &
     MailboxOutbox &
     MailboxAccounts &
-    MailboxAi &
     MailboxSync &
     MailboxCalendar &
     MailboxApp & {

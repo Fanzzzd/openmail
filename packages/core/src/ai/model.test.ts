@@ -96,14 +96,14 @@ it.effect("length-limited summaries remain visible as truncated and are never ca
     const m = yield* Mailbox;
     const account = yield* m.connect({ provider: "gmail" });
     yield* m.sync();
-    yield* m.setAiKey("test-secret-key");
-    yield* m.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });
+    yield* m.ai.setAiKey("test-secret-key");
+    yield* m.ai.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });
     const id = `${account.id}/m1`;
-    const events = yield* Stream.runCollect(m.summarize(id));
+    const events = yield* Stream.runCollect(m.ai.summarize(id));
     assert.ok(events.some((e) => e._tag === "Delta" && e.text === "Incomplete summary"));
     assert.ok(events.some((e) => e._tag === "Done" && e.truncated));
-    assert.strictEqual(yield* m.aiSummary(id), null);
-    yield* Stream.runDrain(m.summarize(id));
+    assert.strictEqual(yield* m.ai.aiSummary(id), null);
+    yield* Stream.runDrain(m.ai.summarize(id));
     assert.strictEqual(calls, 2, "truncated output must not become a cache hit");
   }).pipe(Effect.provide(TestMailbox({ gmail: server }, { backgroundFlush: false }, {}, live)));
 });
@@ -202,10 +202,10 @@ it.effect(
     return Effect.gen(function* () {
       const m = yield* Mailbox;
       const account = yield* m.connect({ provider: "gmail" });
-      yield* m.setAiKey("test-secret-key");
-      yield* m.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });
+      yield* m.ai.setAiKey("test-secret-key");
+      yield* m.ai.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });
       const events = yield* Stream.runCollect(
-        m.askAi({ question: "Find Friday", accountIds: [account.id] }),
+        m.ai.askAi({ question: "Find Friday", accountIds: [account.id] }),
       );
       assert.ok(events.some((event) => event._tag === "Delta" && event.text === "No mail found"));
       assert.strictEqual(calls, 2);
@@ -316,10 +316,10 @@ it.effect("re-reading the thread a question is about is a tool error, not a fail
     const m = yield* Mailbox;
     const account = yield* m.connect({ provider: "gmail" });
     yield* m.sync();
-    yield* m.setAiKey("k");
-    yield* m.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });
+    yield* m.ai.setAiKey("k");
+    yield* m.ai.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });
     const events = yield* Stream.runCollect(
-      m.askAi({
+      m.ai.askAi({
         question: "Did they agree elsewhere?",
         accountIds: [account.id],
         threadId: `${account.id}/t1-2`,
@@ -356,10 +356,10 @@ it.effect("a read that overruns the input budget comes back to the model as a to
     const m = yield* Mailbox;
     const account = yield* m.connect({ provider: "gmail" });
     yield* m.sync();
-    yield* m.setAiKey("k");
-    yield* m.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });
+    yield* m.ai.setAiKey("k");
+    yield* m.ai.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });
     const events = yield* Stream.runCollect(
-      m.askAi({ question: "What did they agree?", accountIds: [account.id] }),
+      m.ai.askAi({ question: "What did they agree?", accountIds: [account.id] }),
     );
     // The answer still arrives, and every request stayed under the budget.
     assert.ok(events.some((e) => e._tag === "Delta" && e.text === "Answer"));
@@ -378,10 +378,10 @@ it.effect("a summary of a thread too long to read whole says how many messages i
     const m = yield* Mailbox;
     const account = yield* m.connect({ provider: "gmail" });
     yield* m.sync();
-    yield* m.setAiKey("k");
-    yield* m.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });
+    yield* m.ai.setAiKey("k");
+    yield* m.ai.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });
     const id = `${account.id}/t-39`;
-    const events = yield* Stream.runCollect(m.summarize(id));
+    const events = yield* Stream.runCollect(m.ai.summarize(id));
     const done = [...events].find((e) => e._tag === "Done");
     assert.ok(done?._tag === "Done" && done.coverage);
     assert.strictEqual(done.coverage.total, 40);
@@ -389,8 +389,8 @@ it.effect("a summary of a thread too long to read whole says how many messages i
     assert.isBelow(done.coverage.kept, 40);
     // The newest message is the one the summary must read.
     assert.include(bodies[0] ?? "", "gmail:me@gmail.com/t-39");
-    assert.deepStrictEqual((yield* m.aiSummary(id))?.coverage, done.coverage);
+    assert.deepStrictEqual((yield* m.ai.aiSummary(id))?.coverage, done.coverage);
     // A short thread reads whole and carries no coverage.
-    yield* Stream.runDrain(m.summarize(`${account.id}/t-0`)).pipe(Effect.ignore);
+    yield* Stream.runDrain(m.ai.summarize(`${account.id}/t-0`)).pipe(Effect.ignore);
   }).pipe(Effect.provide(TestMailbox({ gmail: server }, { backgroundFlush: false }, {}, live)));
 });

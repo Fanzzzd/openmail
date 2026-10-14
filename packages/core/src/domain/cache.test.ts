@@ -873,7 +873,7 @@ import { scaledMs } from "../../test-support/test-time.js";
           const sql = yield* SqlClient.SqlClient;
           const s = yield* Store;
           const m = yield* Mailbox;
-          yield* m.setIndexingPaused(true);
+          yield* m.ai.setIndexingPaused(true);
           const account = yield* s.upsertAccount("gmail", server.email);
           const id = `${account.id}/old`;
           yield* s.upsertMessage(account.id, mail("old"));

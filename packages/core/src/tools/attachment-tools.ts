@@ -87,7 +87,7 @@ export const attachmentHandlers = ({ mailbox, requireMessage }: ToolContext) => 
       const scope = pageScope("attachment_text", p);
       const cursor = yield* cursorFor(p.cursor, scope);
       yield* requireMessage(p.message_id);
-      const rows = yield* mailbox.derivedChunks(p.message_id);
+      const rows = yield* mailbox.ai.derivedChunks(p.message_id);
       const candidates: (DerivedChunk & { text_offset: number })[] = [];
       let position = 0;
       outer: for (const row of rows) {

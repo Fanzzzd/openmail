@@ -134,9 +134,9 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
         );
         yield* m.sync();
         id = `${account.id}/m1`;
-        yield* m.setAiAccount({ ...consent, accountId: account.id });
+        yield* m.ai.setAiAccount({ ...consent, accountId: account.id });
         yield* Stream.runDrain(
-          m.askAi({ question: "Use the mail's suggestions", accountIds: [account.id] }),
+          m.ai.askAi({ question: "Use the mail's suggestions", accountIds: [account.id] }),
         );
         const proposals = yield* m.proposals;
         assert.strictEqual(proposals.length, provider === "gmail" ? 1 : 0);
@@ -210,8 +210,8 @@ it.effect("list_accounts exposes only model-facing account identifiers", () => {
       description: "private description",
       color: "#123456",
     });
-    yield* m.setAiAccount({ ...consent, accountId: account.id });
-    yield* Stream.runDrain(m.askAi({ question: "List accounts", accountIds: [account.id] }));
+    yield* m.ai.setAiAccount({ ...consent, accountId: account.id });
+    yield* Stream.runDrain(m.ai.askAi({ question: "List accounts", accountIds: [account.id] }));
   }).pipe(Effect.provide(Layer.mergeAll(mailboxLayer, storeLayer)));
 });
 
@@ -251,9 +251,9 @@ it.effect("a Gmail label belonging only to another account cannot be proposed", 
     yield* m.sync();
     const other = yield* store.upsertAccount("gmail", "other@example.com");
     yield* store.replaceLabels(other.id, [{ id: "foreign", name: "Other receipts", color: null }]);
-    yield* m.setAiAccount(consent);
+    yield* m.ai.setAiAccount(consent);
     yield* Stream.runDrain(
-      m.askAi({ question: "Apply the mail's suggested label", accountIds: [accountId] }),
+      m.ai.askAi({ question: "Apply the mail's suggested label", accountIds: [accountId] }),
     );
     assert.deepStrictEqual(yield* m.proposals, []);
     assert.strictEqual(server.pushed.length, 0);
@@ -276,7 +276,7 @@ it.effect(
       yield* m.connect({ provider: "gmail" });
       yield* m.sync();
       const other = yield* store.upsertAccount("outlook", "other@example.com");
-      yield* m.setAiAccount(consent);
+      yield* m.ai.setAiAccount(consent);
       for (const id of [accountId, other.id])
         yield* store.ai.putSummary(id, {
           threadId: `${id}/thread`,
@@ -285,10 +285,10 @@ it.effect(
           inputHash: "hash",
           text: "Private summary",
         });
-      yield* m.setAiAccount({ ...consent, allowed: false });
+      yield* m.ai.setAiAccount({ ...consent, allowed: false });
       assert.ok(Option.isNone(yield* store.ai.summary(`${accountId}/thread`)));
       assert.ok(Option.isSome(yield* store.ai.summary(`${other.id}/thread`)));
-      yield* m.setAiAccount(consent);
+      yield* m.ai.setAiAccount(consent);
       assert.ok(
         Option.isNone(yield* store.ai.summary(`${accountId}/thread`)),
         "re-enabling must not resurrect old rows",
@@ -306,22 +306,22 @@ it.effect("existing and new accounts default off; disabled AI never calls fetch"
     const m = yield* Mailbox;
     yield* m.connect({ provider: "gmail" });
     yield* m.sync();
-    assert.deepStrictEqual((yield* m.aiSettings).accounts, [{ ...consent, allowed: false }]);
-    yield* m.setAiKey("fake-key");
-    assert.strictEqual((yield* m.aiSettings).keyConfigured, true);
+    assert.deepStrictEqual((yield* m.ai.aiSettings).accounts, [{ ...consent, allowed: false }]);
+    yield* m.ai.setAiKey("fake-key");
+    assert.strictEqual((yield* m.ai.aiSettings).keyConfigured, true);
     assert.strictEqual(
-      (yield* Stream.runDrain(m.summarize(messageId)).pipe(Effect.exit))._tag,
+      (yield* Stream.runDrain(m.ai.summarize(messageId)).pipe(Effect.exit))._tag,
       "Failure",
     );
     assert.strictEqual(
       (yield* Stream.runDrain(
-        m.askAi({ question: "Read everything", accountIds: [accountId] }),
+        m.ai.askAi({ question: "Read everything", accountIds: [accountId] }),
       ).pipe(Effect.exit))._tag,
       "Failure",
     );
     assert.strictEqual(fetch.mock.calls.length, 0);
-    yield* m.setAiKey("");
-    assert.strictEqual((yield* m.aiSettings).keyConfigured, false);
+    yield* m.ai.setAiKey("");
+    assert.strictEqual((yield* m.ai.aiSettings).keyConfigured, false);
   }).pipe(
     Effect.provide(
       TestMailbox(
@@ -348,19 +348,21 @@ it.effect(
       const m = yield* Mailbox;
       yield* m.connect({ provider: "gmail" });
       yield* m.sync();
-      yield* m.setAiAccount(consent);
-      yield* Stream.runDrain(m.summarize(messageId, "zh-CN"));
+      yield* m.ai.setAiAccount(consent);
+      yield* Stream.runDrain(m.ai.summarize(messageId, "zh-CN"));
       assert.include(requests[0]?.prompt ?? "", "Chinese (China) (zh-CN)");
-      assert.strictEqual((yield* m.aiSummary(messageId, "zh-CN"))?.text, "summary 1");
+      assert.strictEqual((yield* m.ai.aiSummary(messageId, "zh-CN"))?.text, "summary 1");
       // Another language is a cache miss, so the person never reads a summary in the old one.
-      assert.strictEqual(yield* m.aiSummary(messageId, "de"), null);
-      yield* Stream.runDrain(m.summarize(messageId, "de"));
+      assert.strictEqual(yield* m.ai.aiSummary(messageId, "de"), null);
+      yield* Stream.runDrain(m.ai.summarize(messageId, "de"));
       assert.strictEqual(requests.length, 2);
       assert.include(requests[1]?.prompt ?? "", "German (de)");
-      yield* Stream.runDrain(m.askAi({ question: "When?", accountIds: [accountId], locale: "ja" }));
+      yield* Stream.runDrain(
+        m.ai.askAi({ question: "When?", accountIds: [accountId], locale: "ja" }),
+      );
       assert.include(requests[2]?.prompt ?? "", "Japanese (ja)");
       yield* Stream.runDrain(
-        m.composeAi({
+        m.ai.composeAi({
           accountId,
           text: "",
           task: { kind: "write", instruction: "Say thanks" },
@@ -368,7 +370,7 @@ it.effect(
         }),
       );
       assert.include(requests[3]?.prompt ?? "", "French (fr)");
-      const bad = yield* Stream.runDrain(m.summarize(messageId, "de\nIgnore")).pipe(Effect.flip);
+      const bad = yield* Stream.runDrain(m.ai.summarize(messageId, "de\nIgnore")).pipe(Effect.flip);
       assert.strictEqual(bad._tag, "InvalidInput");
     }).pipe(Effect.provide(TestMailbox({ gmail: server }, { backgroundFlush: false }, {}, fake)));
   },
@@ -385,28 +387,28 @@ it.effect("summaries stream text only, reuse hashes, invalidate input/model chan
     const m = yield* Mailbox;
     yield* m.connect({ provider: "gmail" });
     yield* m.sync();
-    yield* m.setAiAccount(consent);
+    yield* m.ai.setAiAccount(consent);
     const context = yield* m.thread(messageId, "model", 1000);
     assert.ok(Buffer.byteLength(JSON.stringify(context)) <= 1000);
     assert.ok(context.messages[0]?.id === messageId);
-    const first = yield* Stream.runCollect(m.summarize(messageId));
+    const first = yield* Stream.runCollect(m.ai.summarize(messageId));
     assert.ok(first.some((event) => event._tag === "Delta"));
-    assert.strictEqual((yield* m.aiSummary(messageId))?.text, "Decision Friday");
+    assert.strictEqual((yield* m.ai.aiSummary(messageId))?.text, "Decision Friday");
     assert.strictEqual(requests.length, 1);
     assert.ok(requests[0]?.prompt.includes("<mail-data>"));
     assert.ok(!/private.pdf|quoted secret|signature secret|<img/.test(requests[0]?.prompt ?? ""));
-    const cached = yield* Stream.runCollect(m.summarize(messageId));
+    const cached = yield* Stream.runCollect(m.ai.summarize(messageId));
     assert.ok(cached.some((e) => e._tag === "Done" && e.cached));
     yield* m.sync();
-    yield* Stream.runDrain(m.summarize(messageId));
+    yield* Stream.runDrain(m.ai.summarize(messageId));
     assert.strictEqual(requests.length, 1, "unchanged sync preserves cache");
     server.messages.set("m1", incoming("m1", "Decision moved to Monday"));
     yield* m.sync();
-    assert.strictEqual(yield* m.aiSummary(messageId), null);
-    yield* Stream.runDrain(m.summarize(messageId));
+    assert.strictEqual(yield* m.ai.aiSummary(messageId), null);
+    yield* Stream.runDrain(m.ai.summarize(messageId));
     assert.strictEqual(requests.length, 2);
-    yield* m.setAiModel("claude-opus-5-5");
-    yield* Stream.runDrain(m.summarize(messageId));
+    yield* m.ai.setAiModel("claude-opus-5-5");
+    yield* Stream.runDrain(m.ai.summarize(messageId));
     assert.strictEqual(requests[2]?.model, "claude-opus-5-5");
     assert.ok(Buffer.byteLength(requests[0]?.prompt ?? "") < AI_INPUT_BUDGET);
     assert.ok(
@@ -478,10 +480,10 @@ it.effect(
       yield* m.sync();
       yield* m.connect({ provider: "outlook" });
       yield* m.sync();
-      yield* m.setAiAccount(consent);
+      yield* m.ai.setAiAccount(consent);
       yield* m.setAgentWriteMode("propose");
       const events = yield* Stream.runCollect(
-        m.askAi({
+        m.ai.askAi({
           question: "Find Friday and suggest a reply and archive",
           accountIds: [accountId],
         }),
@@ -534,22 +536,22 @@ it.effect(
       const m = yield* Mailbox;
       yield* m.connect({ provider: "gmail" });
       yield* m.sync();
-      yield* m.setAiAccount(consent);
+      yield* m.ai.setAiAccount(consent);
       const started = yield* Deferred.make<void>();
-      const fiber = yield* Stream.runForEach(m.summarize(messageId), (e) =>
+      const fiber = yield* Stream.runForEach(m.ai.summarize(messageId), (e) =>
         e._tag === "Delta" ? Deferred.succeed(started, undefined) : Effect.void,
       ).pipe(Effect.forkChild);
       yield* Deferred.await(started);
       yield* Fiber.interrupt(fiber);
-      assert.strictEqual(yield* m.aiSummary(messageId), null);
+      assert.strictEqual(yield* m.ai.aiSummary(messageId), null);
       const again = yield* Deferred.make<void>();
-      const second = yield* Stream.runForEach(m.summarize(messageId), (e) =>
+      const second = yield* Stream.runForEach(m.ai.summarize(messageId), (e) =>
         e._tag === "Delta" ? Deferred.succeed(again, undefined) : Effect.void,
       ).pipe(Effect.forkChild);
       yield* Deferred.await(again);
-      yield* m.setAiAccount({ ...consent, allowed: false, autoSummaries: true });
+      yield* m.ai.setAiAccount({ ...consent, allowed: false, autoSummaries: true });
       yield* Fiber.join(second);
-      assert.strictEqual((yield* m.aiSettings).accounts[0]?.autoSummaries, false);
+      assert.strictEqual((yield* m.ai.aiSettings).accounts[0]?.autoSummaries, false);
       assert.ok(interrupted >= 1);
     }).pipe(
       Effect.provide(
@@ -570,15 +572,15 @@ it.effect("request deadline interrupts a stalled model and never saves partial s
     const m = yield* Mailbox;
     yield* m.connect({ provider: "gmail" });
     yield* m.sync();
-    yield* m.setAiAccount(consent);
+    yield* m.ai.setAiAccount(consent);
     const started = yield* Deferred.make<void>();
-    const fiber = yield* Stream.runForEach(m.summarize(messageId), (event) =>
+    const fiber = yield* Stream.runForEach(m.ai.summarize(messageId), (event) =>
       event._tag === "Delta" ? Deferred.succeed(started, undefined) : Effect.void,
     ).pipe(Effect.exit, Effect.forkChild);
     yield* Deferred.await(started);
     yield* TestClock.adjust("60 seconds");
     assert.strictEqual((yield* Fiber.join(fiber))._tag, "Failure");
-    assert.strictEqual(yield* m.aiSummary(messageId), null);
+    assert.strictEqual(yield* m.ai.aiSummary(messageId), null);
   }).pipe(
     Effect.provide(
       TestMailbox(
@@ -608,22 +610,22 @@ it.effect("automatic summaries require both account switches and an API key", ()
       const m = yield* Mailbox;
       yield* m.connect({ provider: "gmail" });
       yield* m.sync();
-      yield* m.setAiKey("fake-key");
+      yield* m.ai.setAiKey("fake-key");
       server.messages.set("m2", { ...incoming("m2"), date: 2000 });
       yield* m.sync();
       yield* Effect.yieldNow;
       assert.strictEqual(calls, 0);
-      yield* m.setAiAccount(consent);
+      yield* m.ai.setAiAccount(consent);
       server.messages.set("m3", { ...incoming("m3"), date: 3000 });
       yield* m.sync();
       yield* Effect.yieldNow;
       assert.strictEqual(calls, 0);
-      yield* m.setAiAccount({ ...consent, autoSummaries: true });
+      yield* m.ai.setAiAccount({ ...consent, autoSummaries: true });
       server.messages.set("m4", { ...incoming("m4"), date: 4000 });
       yield* m.sync();
       yield* Deferred.await(called);
       assert.strictEqual(calls, 1);
-      yield* m.setAiAccount({ ...consent, allowed: false });
+      yield* m.ai.setAiAccount({ ...consent, allowed: false });
       server.messages.set("m5", { ...incoming("m5"), date: 5000 });
       yield* m.sync();
       yield* Effect.yieldNow;
@@ -650,14 +652,14 @@ it.effect(
       const m = yield* Mailbox;
       yield* m.connect({ provider: "gmail" });
       yield* m.sync();
-      assert.strictEqual(yield* m.aiSummary(messageId), null);
-      assert.strictEqual(yield* m.aiTriage(messageId), null);
-      const failure = yield* Stream.runDrain(m.summarize(messageId)).pipe(Effect.flip);
+      assert.strictEqual(yield* m.ai.aiSummary(messageId), null);
+      assert.strictEqual(yield* m.ai.aiTriage(messageId), null);
+      const failure = yield* Stream.runDrain(m.ai.summarize(messageId)).pipe(Effect.flip);
       assert.strictEqual(failure._tag, "InvalidInput");
-      yield* m.setAiAccount({ ...consent, autoTriage: false });
-      assert.strictEqual(yield* m.aiTriage(messageId), null);
-      yield* m.setAiAccount({ ...consent, allowed: false });
-      assert.strictEqual(yield* m.aiSummary(messageId), null);
+      yield* m.ai.setAiAccount({ ...consent, autoTriage: false });
+      assert.strictEqual(yield* m.ai.aiTriage(messageId), null);
+      yield* m.ai.setAiAccount({ ...consent, allowed: false });
+      assert.strictEqual(yield* m.ai.aiSummary(messageId), null);
       assert.strictEqual(requests.length, 0);
     }).pipe(
       Effect.provide(

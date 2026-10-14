@@ -145,7 +145,7 @@ it("rewrites only the authored reply and preserves the signature, quote and unto
   );
   try {
     const mailbox = await runtime.runPromise(Mailbox);
-    const generate = vi.spyOn(mailbox, "composeAi").mockReturnValue(Stream.empty);
+    const generate = vi.spyOn(mailbox.ai, "composeAi").mockReturnValue(Stream.empty);
     const request = fixture.run.mock.calls[0]?.[0];
     if (!request) throw new Error("Missing AI request");
     request(mailbox);

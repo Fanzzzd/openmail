@@ -39,8 +39,10 @@ const ProposalPage = Schema.Struct({
 
 type Service = Mailbox["Service"];
 type Groups = "reading" | "organize" | "compose" | "outbox" | "ai" | "calendar" | "app";
-type Flat = Omit<Service, Groups>;
-type Overrides = Partial<Flat>;
+/** Groups whose members are no longer flat on Service. */
+type Moved = "ai";
+type Flat = Omit<Service, Exclude<Groups, Moved>>;
+type Overrides = Partial<Omit<Flat, Moved>> & { [G in Moved]?: Partial<Service[G]> };
 
 const notUsed = (name: string) => Effect.die(`Mailbox.${name} is not used in this test`);
 
@@ -117,28 +119,35 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
     cancelWaitingSend: () => notUsed("cancelWaitingSend"),
     cancelQueuedSend: () => notUsed("cancelQueuedSend"),
     flushQueuedSends: () => notUsed("flushQueuedSends"),
-    composeAi: () => Stream.never,
-    aiTriage: () => Effect.never,
-    decideAiTriage: () => Effect.never,
-    semanticSearch: () => Effect.never,
-    // Tools read consent from aiAccounts; aiSettings also reads the API key from the keychain.
-    aiSettings: notUsed("aiSettings"),
-    aiAccounts: Effect.map(
-      overrides.accounts ??
-        Effect.succeed([
-          testAccount("a"),
-          testAccount("gmail:a@example.com"),
-          testAccount("gmail:me@gmail.com"),
-          testAccount("gmail:me@example.com"),
-        ]),
-      (rows) => rows.map((a) => ({ accountId: a.id, allowed: true, autoSummaries: false })),
-    ),
-    setAiKey: () => notUsed("setAiKey"),
-    setAiAccount: () => notUsed("setAiAccount"),
-    setAiModel: () => notUsed("setAiModel"),
-    aiSummary: () => notUsed("aiSummary"),
-    summarize: () => Stream.empty,
-    askAi: () => Stream.empty,
+    ai: {
+      composeAi: () => Stream.never,
+      aiTriage: () => Effect.never,
+      decideAiTriage: () => Effect.never,
+      semanticSearch: () => Effect.never,
+      // Tools read consent from aiAccounts; aiSettings also reads the API key from the keychain.
+      aiSettings: notUsed("aiSettings"),
+      aiAccounts: Effect.map(
+        overrides.accounts ??
+          Effect.succeed([
+            testAccount("a"),
+            testAccount("gmail:a@example.com"),
+            testAccount("gmail:me@gmail.com"),
+            testAccount("gmail:me@example.com"),
+          ]),
+        (rows) => rows.map((a) => ({ accountId: a.id, allowed: true, autoSummaries: false })),
+      ),
+      setAiKey: () => notUsed("setAiKey"),
+      setAiAccount: () => notUsed("setAiAccount"),
+      setAiModel: () => notUsed("setAiModel"),
+      aiSummary: () => notUsed("aiSummary"),
+      summarize: () => Stream.empty,
+      askAi: () => Stream.empty,
+      indexingProgress: notUsed("indexingProgress"),
+      setModelsEnabled: () => notUsed("setModelsEnabled"),
+      setIndexingPaused: () => notUsed("setIndexingPaused"),
+      derivedChunks: () => notUsed("derivedChunks"),
+      mediaImage: () => notUsed("mediaImage"),
+    },
     privateMailLink: () => notUsed("privateMailLink"),
     resolveMailLink: () => notUsed("resolveMailLink"),
     setAccountSettings: () => Effect.die("unused"),
@@ -266,11 +275,6 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
     discardDraft: () => notUsed("discardDraft"),
     discardDraftLater: () => notUsed("discardDraftLater"),
     restoreDraft: () => notUsed("restoreDraft"),
-    indexingProgress: notUsed("indexingProgress"),
-    setModelsEnabled: () => notUsed("setModelsEnabled"),
-    setIndexingPaused: () => notUsed("setIndexingPaused"),
-    derivedChunks: () => notUsed("derivedChunks"),
-    mediaImage: () => notUsed("mediaImage"),
     prefs: notUsed("prefs"),
     setPrefs: () => notUsed("setPrefs"),
     signatures: notUsed("signatures"),
@@ -295,7 +299,11 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
     proposal: () => notUsed("proposal"),
     messageAccounts: () => notUsed("messageAccounts"),
   };
-  const flat: Flat = { ...base, ...overrides };
+  const flat: Flat = {
+    ...base,
+    ...overrides,
+    ai: { ...base.ai, ...overrides.ai },
+  };
   // Like the real Mailbox: one proposal comes from the same rows, owners from the same messages.
   const merged: Flat = {
     ...flat,
@@ -330,7 +338,6 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
     organize: merged,
     compose: merged,
     outbox: merged,
-    ai: merged,
     calendar: merged,
     app: merged,
   });
@@ -667,7 +674,9 @@ it.effect("access_status counts hidden accounts in English and names the app car
         ];
         const layer = stubMailbox({
           accounts: Effect.succeed(accounts),
-          aiAccounts: Effect.succeed([{ accountId: "a", allowed: true, autoSummaries: false }]),
+          ai: {
+            aiAccounts: Effect.succeed([{ accountId: "a", allowed: true, autoSummaries: false }]),
+          },
         });
         const result = yield* run(call("access_status", {}), layer);
         const status = Schema.decodeUnknownSync(MailToolkit.tools.access_status.successSchema)(
@@ -994,23 +1003,25 @@ it.effect(
         namedSignatures: Effect.succeed([
           { id: "sig:1", address: "me@example.com", name: "Default", text, source: "local" },
         ]),
-        derivedChunks: () =>
-          Effect.succeed([
-            {
-              messageId: "m1",
-              text,
-              source: {
-                kind: "attachment",
-                index: 2,
-                name: "file.pdf",
-                mimeType: "application/pdf",
+        ai: {
+          derivedChunks: () =>
+            Effect.succeed([
+              {
+                messageId: "m1",
+                text,
+                source: {
+                  kind: "attachment",
+                  index: 2,
+                  name: "file.pdf",
+                  mimeType: "application/pdf",
+                },
+                page: 3,
+                region: null,
+                pipelineVersion: "media-1",
+                visionRevision: null,
               },
-              page: 3,
-              region: null,
-              pipelineVersion: "media-1",
-              visionRevision: null,
-            },
-          ]),
+            ]),
+        },
       });
       let offset = 0;
       let joined = "";
@@ -1070,7 +1081,11 @@ it.effect("all MCP write tools create only proposals; only app approval changes 
     Effect.gen(function* () {
       const mailbox = yield* Mailbox;
       const account = yield* mailbox.connect({ provider: "gmail" });
-      yield* mailbox.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });
+      yield* mailbox.ai.setAiAccount({
+        accountId: account.id,
+        allowed: true,
+        autoSummaries: false,
+      });
       yield* mailbox.sync();
       yield* mailbox.setAgentWriteMode("propose");
       const id = `${account.id}/m1`;
@@ -1139,7 +1154,11 @@ it.effect("thread cursor preserves every conversation sharing a timestamp", () =
     Effect.gen(function* () {
       const mailbox = yield* Mailbox;
       const account = yield* mailbox.connect({ provider: "gmail" });
-      yield* mailbox.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });
+      yield* mailbox.ai.setAiAccount({
+        accountId: account.id,
+        allowed: true,
+        autoSummaries: false,
+      });
       yield* mailbox.sync();
       let cursor: string | undefined;
       const ids: string[] = [];
@@ -1167,7 +1186,11 @@ it.effect(
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
         const account = yield* mailbox.connect({ provider: "gmail" });
-        yield* mailbox.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });
+        yield* mailbox.ai.setAiAccount({
+          accountId: account.id,
+          allowed: true,
+          autoSummaries: false,
+        });
         yield* mailbox.sync();
         yield* mailbox.setAgentWriteMode("propose");
         const id = `${account.id}/m1`;
@@ -1456,7 +1479,11 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
       const mailbox = yield* Mailbox;
       const account = yield* mailbox.connect({ provider: "gmail" });
       yield* mailbox.sync();
-      yield* mailbox.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });
+      yield* mailbox.ai.setAiAccount({
+        accountId: account.id,
+        allowed: true,
+        autoSummaries: false,
+      });
       yield* mailbox.setAgentWriteMode("propose");
       const toolkit = yield* MailToolkit;
       const id = `${account.id}/m1`;
@@ -1566,7 +1593,11 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
       const mailbox = yield* Mailbox;
       const account = yield* mailbox.connect({ provider: "gmail" });
       yield* mailbox.sync();
-      yield* mailbox.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });
+      yield* mailbox.ai.setAiAccount({
+        accountId: account.id,
+        allowed: true,
+        autoSummaries: false,
+      });
       const toolkit = yield* MailToolkit;
       const id = `${account.id}/m1`;
       const results = [
@@ -1580,7 +1611,7 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
       assert.isNull(yield* agentAccountGap("list_threads", { account_id: account.id }));
       assert.deepStrictEqual(modelKeyReads, []);
       // The Settings UI still asks the keychain whether a key is set.
-      assert.isTrue((yield* mailbox.aiSettings).keyUnreadable);
+      assert.isTrue((yield* mailbox.ai.aiSettings).keyUnreadable);
       assert.deepStrictEqual(modelKeyReads, [MODEL_KEY]);
     }).pipe(
       Effect.provide(
@@ -1626,7 +1657,11 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
           });
         for (const name of ["read_thread", "list_attachments", "attachment_text"] as const)
           assert.isTrue(yield* read(name));
-        yield* mailbox.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });
+        yield* mailbox.ai.setAiAccount({
+          accountId: account.id,
+          allowed: true,
+          autoSummaries: false,
+        });
         const result = (yield* Stream.runCollect(
           yield* toolkit.handle("read_thread", { message_id: id }),
         ))[0];
@@ -1676,7 +1711,7 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
         });
         for (const name of ["read_thread", "list_attachments", "attachment_text"] as const)
           assert.isTrue(yield* read(name));
-        yield* mailbox.setAiAccount({
+        yield* mailbox.ai.setAiAccount({
           accountId: account.id,
           allowed: false,
           autoSummaries: false,
@@ -1724,7 +1759,11 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
         // The hidden account's address is not revealed.
         assert.notInclude(JSON.stringify(before), "me@gmail.com");
 
-        yield* mailbox.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });
+        yield* mailbox.ai.setAiAccount({
+          accountId: account.id,
+          allowed: true,
+          autoSummaries: false,
+        });
         yield* mailbox.setAgentWriteMode("propose");
         const after = yield* status;
         assert.deepStrictEqual(
@@ -1819,7 +1858,11 @@ it.effect("MCP write tools refuse invisible accounts before creating any proposa
         ]);
       for (const result of yield* attempt()) assert.isTrue(result.isFailure);
       assert.deepStrictEqual(yield* mailbox.proposals, []);
-      yield* mailbox.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });
+      yield* mailbox.ai.setAiAccount({
+        accountId: account.id,
+        allowed: true,
+        autoSummaries: false,
+      });
       yield* mailbox.setAccountSettings(account.id, {
         enabled: false,
         description: "",
@@ -1849,18 +1892,20 @@ it.effect(
             snippet: payload,
           },
         ]),
-      derivedChunks: () =>
-        Effect.succeed([
-          {
-            messageId: "m1",
-            text: payload,
-            source: { kind: "attachment", index: 0, name: payload, mimeType: "application/pdf" },
-            page: 1,
-            region: null,
-            pipelineVersion: "test",
-            visionRevision: null,
-          },
-        ]),
+      ai: {
+        derivedChunks: () =>
+          Effect.succeed([
+            {
+              messageId: "m1",
+              text: payload,
+              source: { kind: "attachment", index: 0, name: payload, mimeType: "application/pdf" },
+              page: 1,
+              region: null,
+              pipelineVersion: "test",
+              visionRevision: null,
+            },
+          ]),
+      },
       invitations: () =>
         Effect.succeed([
           {
@@ -2169,9 +2214,11 @@ it.effect(
       const all = yield* run(
         call("semantic_search", { query: "trip" }),
         stubMailbox({
-          semanticSearch: (q) => {
-            searched.push(q.accountIds);
-            return Effect.succeed([]);
+          ai: {
+            semanticSearch: (q) => {
+              searched.push(q.accountIds);
+              return Effect.succeed([]);
+            },
           },
         }),
       );
@@ -2180,7 +2227,9 @@ it.effect(
         ["a", "gmail:a@example.com", "gmail:me@gmail.com", "gmail:me@example.com"],
       ]);
       const layer = stubMailbox({
-        semanticSearch: () => Effect.fail(new IndexNotReady({ message: "Not indexed yet." })),
+        ai: {
+          semanticSearch: () => Effect.fail(new IndexNotReady({ message: "Not indexed yet." })),
+        },
       });
       const notReady = failureOf(
         yield* run(call("semantic_search", { query: "trip", account_id: "a" }), layer),

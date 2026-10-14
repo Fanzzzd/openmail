@@ -80,12 +80,12 @@ it.effect(
         task: { kind: "rewrite" as const, tone: "proofread" as const },
       };
       assert.strictEqual(
-        (yield* Stream.runDrain(m.composeAi(request)).pipe(Effect.exit))._tag,
+        (yield* Stream.runDrain(m.ai.composeAi(request)).pipe(Effect.exit))._tag,
         "Failure",
       );
       assert.strictEqual(requests.length, 0);
-      yield* m.setAiAccount(consent);
-      const result = yield* Stream.runCollect(m.composeAi(request));
+      yield* m.ai.setAiAccount(consent);
+      const result = yield* Stream.runCollect(m.ai.composeAi(request));
       assert.ok(result.some((e) => e._tag === "Delta" && e.text.includes("<script>")));
       assert.ok(requests[0]?.prompt.includes("proofread"));
       assert.ok(requests[0]?.prompt.includes("Please reply Friday"));
@@ -96,10 +96,11 @@ it.effect(
       assert.strictEqual(server.pushed.length, 0);
       assert.deepStrictEqual(yield* m.proposals, []);
       const other = yield* m.connect({ provider: "outlook" });
-      yield* m.setAiAccount({ ...consent, accountId: other.id });
+      yield* m.ai.setAiAccount({ ...consent, accountId: other.id });
       assert.strictEqual(
-        (yield* Stream.runDrain(m.composeAi({ ...request, accountId: other.id })).pipe(Effect.exit))
-          ._tag,
+        (yield* Stream.runDrain(m.ai.composeAi({ ...request, accountId: other.id })).pipe(
+          Effect.exit,
+        ))._tag,
         "Failure",
       );
       assert.strictEqual(requests.length, 1);
@@ -185,23 +186,23 @@ it.effect(
     return Effect.gen(function* () {
       const { m, ai } = yield* f.setup;
       const ids = Array.from({ length: 5 }, (_, i) => `${accountId}/m${i + 1}`);
-      assert.strictEqual((yield* m.aiSettings).accounts[0]?.autoTriage, false);
+      assert.strictEqual((yield* m.ai.aiSettings).accounts[0]?.autoTriage, false);
       yield* ai.autoTriage(ids);
-      yield* m.setAiKey("fake");
+      yield* m.ai.setAiKey("fake");
       eligible = true;
       yield* ai.autoTriage(ids);
       assert.strictEqual(calls, 0);
-      yield* m.setAiAccount({ ...consent, autoTriage: false, autoSummaries: true });
+      yield* m.ai.setAiAccount({ ...consent, autoTriage: false, autoSummaries: true });
       yield* ai.autoTriage(ids);
       assert.strictEqual(calls, 0);
-      yield* m.setAiAccount(consent);
+      yield* m.ai.setAiAccount(consent);
       eligible = false;
       yield* ai.autoTriage(ids);
       assert.strictEqual(calls, 0);
       eligible = true;
       yield* ai.autoTriage([id, id, ...ids]);
       assert.strictEqual(calls, 3);
-      const suggestion = yield* m.aiTriage(id);
+      const suggestion = yield* m.ai.aiTriage(id);
       assert.strictEqual(suggestion?.status, "pending");
       assert.ok(suggestion?.inputHash && suggestion.promptVersion === "triage-text-v2");
       yield* ai.autoTriage(ids);
@@ -233,8 +234,8 @@ it.effect(
     return Effect.gen(function* () {
       const { m, store, ai } = yield* f.setup;
       const ids = Array.from({ length: 5 }, (_, i) => `${accountId}/m${i + 1}`);
-      yield* m.setAiKey("fake");
-      yield* m.setAiAccount({ ...consent, autoTriage: false, autoSummaries: true });
+      yield* m.ai.setAiKey("fake");
+      yield* m.ai.setAiAccount({ ...consent, autoTriage: false, autoSummaries: true });
       // On battery with no focused window: nothing runs.
       yield* ai.autoSummaries(ids);
       assert.strictEqual(calls, 0);
@@ -259,7 +260,7 @@ it.effect(
       let left = true;
       while (left) left = yield* store.ai.claimAutoSummary(tomorrow, AUTO_SUMMARY_DAILY_CAP);
       yield* store.ai.deleteSummary(`${accountId}/m1`);
-      yield* Stream.runDrain(m.summarize(id));
+      yield* Stream.runDrain(m.ai.summarize(id));
       assert.strictEqual(calls, 6);
     }).pipe(Effect.provide(f.layer));
   },
@@ -275,16 +276,16 @@ for (const action of [
     const f = fixture(() => output(JSON.stringify({ action, reason: "Suggested next step" })));
     return Effect.gen(function* () {
       const { m, store, ai, server } = yield* f.setup;
-      yield* m.setAiKey("fake");
-      yield* m.setAiAccount(consent);
+      yield* m.ai.setAiKey("fake");
+      yield* m.ai.setAiAccount(consent);
       yield* ai.autoTriage([id]);
       assert.strictEqual(server.pushed.length, 0);
       assert.strictEqual(server.sent.length, 0);
       assert.strictEqual(
-        (yield* m.decideAiTriage(id, true, "cli").pipe(Effect.exit))._tag,
+        (yield* m.ai.decideAiTriage(id, true, "cli").pipe(Effect.exit))._tag,
         "Failure",
       );
-      yield* m.decideAiTriage(id, true, "app");
+      yield* m.ai.decideAiTriage(id, true, "app");
       assert.strictEqual(
         Option.getOrNull(yield* store.ai.triage(`${accountId}/m1`))?.status,
         "accepted",
@@ -296,12 +297,12 @@ for (const action of [
       if (action.kind === "snooze")
         assert.strictEqual((yield* m.threads({ mailbox: "snoozed" })).length, 1);
       assert.strictEqual(
-        (yield* m.decideAiTriage(id, true, "app").pipe(Effect.exit))._tag,
+        (yield* m.ai.decideAiTriage(id, true, "app").pipe(Effect.exit))._tag,
         "Failure",
       );
       assert.strictEqual(server.sent.length, 0);
       assert.ok((yield* m.audit(20)).some((e) => e.actor === "user:app"));
-      yield* m.setAiAccount({ ...consent, autoTriage: false });
+      yield* m.ai.setAiAccount({ ...consent, autoTriage: false });
       assert.ok(Option.isNone(yield* store.ai.triage(`${accountId}/m1`)));
     }).pipe(Effect.provide(f.layer));
   });
@@ -318,10 +319,10 @@ for (const text of [
     const f = fixture(() => output(text));
     return Effect.gen(function* () {
       const { m, ai, server } = yield* f.setup;
-      yield* m.setAiKey("fake");
-      yield* m.setAiAccount(consent);
+      yield* m.ai.setAiKey("fake");
+      yield* m.ai.setAiAccount(consent);
       yield* ai.autoTriage([id]);
-      assert.strictEqual(yield* m.aiTriage(id), null);
+      assert.strictEqual(yield* m.ai.aiTriage(id), null);
       assert.strictEqual(server.pushed.length, 0);
     }).pipe(Effect.provide(f.layer));
   });
@@ -335,20 +336,20 @@ it.effect("dismissed suggestions stay dismissed; changed inputs invalidate them"
   });
   return Effect.gen(function* () {
     const { m, ai, server } = yield* f.setup;
-    yield* m.setAiKey("fake");
-    yield* m.setAiAccount(consent);
+    yield* m.ai.setAiKey("fake");
+    yield* m.ai.setAiAccount(consent);
     yield* ai.autoTriage([id]);
-    yield* m.decideAiTriage(id, false, "app");
-    assert.strictEqual((yield* m.aiTriage(id))?.status, "dismissed");
+    yield* m.ai.decideAiTriage(id, false, "app");
+    assert.strictEqual((yield* m.ai.aiTriage(id))?.status, "dismissed");
     yield* TestClock.adjust("60 seconds");
     yield* ai.autoTriage([id]);
     assert.strictEqual(calls, 1);
     assert.strictEqual(server.pushed.length, 0);
     server.messages.set("m1", incoming("m1", { bodyText: "Changed mail" }));
     yield* m.sync();
-    assert.strictEqual(yield* m.aiTriage(id), null);
+    assert.strictEqual(yield* m.ai.aiTriage(id), null);
     assert.strictEqual(
-      (yield* m.decideAiTriage(id, true, "app").pipe(Effect.exit))._tag,
+      (yield* m.ai.decideAiTriage(id, true, "app").pipe(Effect.exit))._tag,
       "Failure",
     );
   }).pipe(Effect.provide(f.layer));
@@ -374,14 +375,14 @@ it.effect(
       );
       yield* Effect.gen(function* () {
         const { m, ai } = yield* f.setup;
-        yield* m.setAiKey("fake");
-        yield* m.setAiAccount(consent);
+        yield* m.ai.setAiKey("fake");
+        yield* m.ai.setAiAccount(consent);
         const fiber = yield* ai.autoTriage([id]).pipe(Effect.forkChild);
         yield* Deferred.await(started);
         eligible = false;
         yield* TestClock.adjust("1 second");
         yield* Fiber.join(fiber);
-        assert.strictEqual(yield* m.aiTriage(id), null);
+        assert.strictEqual(yield* m.ai.aiTriage(id), null);
       }).pipe(Effect.provide(f.layer));
     });
   },
@@ -468,17 +469,18 @@ it.effect(
         );
       }
       assert.strictEqual(
-        (yield* m.semanticSearch({ search: "meaning", accountIds: [accountId] }).pipe(Effect.exit))
-          ._tag,
+        (yield* m.ai
+          .semanticSearch({ search: "meaning", accountIds: [accountId] })
+          .pipe(Effect.exit))._tag,
         "Failure",
       );
       assert.strictEqual(queries, 0, "disabled account cannot even embed the query");
-      yield* m.setAiAccount(consent);
-      const mcpResult = yield* m.semanticSearch({ search: "meaning", accountIds: [accountId] });
+      yield* m.ai.setAiAccount(consent);
+      const mcpResult = yield* m.ai.semanticSearch({ search: "meaning", accountIds: [accountId] });
       assert.ok(JSON.stringify(mcpResult).includes("secret.pdf"));
       assert.ok(JSON.stringify(mcpResult).includes("media secret"));
       assert.ok(JSON.stringify(mcpResult).includes("private snippet"));
-      yield* Stream.runDrain(m.askAi({ question: "Find by meaning", accountIds: [accountId] }));
+      yield* Stream.runDrain(m.ai.askAi({ question: "Find by meaning", accountIds: [accountId] }));
       assert.strictEqual(queries, 2);
     }).pipe(Effect.provide(f.layer));
   },
@@ -508,7 +510,7 @@ it.effect(
         yield* ai.setAiAccount({ ...consent, allowed: false });
         yield* Fiber.join(fiber);
         assert.ok(Option.isNone(yield* store.ai.triage(`${accountId}/m1`)));
-        assert.strictEqual((yield* m.aiSettings).accounts[0]?.autoTriage, false);
+        assert.strictEqual((yield* m.ai.aiSettings).accounts[0]?.autoTriage, false);
       }).pipe(Effect.provide(f.layer));
     });
   },
@@ -524,17 +526,17 @@ it.effect("truncated triage output and removed Gmail user labels cannot be accep
   );
   return Effect.gen(function* () {
     const { m, ai, store, server } = yield* f.setup;
-    yield* m.setAiKey("fake");
-    yield* m.setAiAccount(consent);
+    yield* m.ai.setAiKey("fake");
+    yield* m.ai.setAiAccount(consent);
     yield* ai.autoTriage([id]);
-    assert.strictEqual(yield* m.aiTriage(id), null);
+    assert.strictEqual(yield* m.ai.aiTriage(id), null);
     truncated = false;
     yield* TestClock.adjust("60 seconds");
     yield* ai.autoTriage([id]);
-    assert.strictEqual((yield* m.aiTriage(id))?.action.kind, "label");
+    assert.strictEqual((yield* m.ai.aiTriage(id))?.action.kind, "label");
     yield* store.replaceLabels(accountId, []);
     assert.strictEqual(
-      (yield* m.decideAiTriage(id, true, "app").pipe(Effect.exit))._tag,
+      (yield* m.ai.decideAiTriage(id, true, "app").pipe(Effect.exit))._tag,
       "Failure",
     );
     assert.strictEqual(server.pushed.length, 0);
@@ -562,17 +564,17 @@ for (const action of [
         const f = fixture(() => output(JSON.stringify({ action, reason: "Next step" })));
         return Effect.gen(function* () {
           const { m, ai, store, server } = yield* f.setup;
-          yield* m.setAiKey("fake");
-          yield* m.setAiAccount(consent);
+          yield* m.ai.setAiKey("fake");
+          yield* m.ai.setAiAccount(consent);
           yield* ai.autoTriage([id]);
-          assert.strictEqual((yield* m.aiTriage(id))?.status, "pending");
+          assert.strictEqual((yield* m.ai.aiTriage(id))?.status, "pending");
           yield* store.upsertMessage(accountId, incoming("m1", { labels }));
           assert.ok(
             Option.isSome(yield* store.ai.triage(`${accountId}/m1`)),
             "folder-only changes leave the derived row for acceptance to validate",
           );
           assert.strictEqual(
-            (yield* m.decideAiTriage(id, true, "app").pipe(Effect.exit))._tag,
+            (yield* m.ai.decideAiTriage(id, true, "app").pipe(Effect.exit))._tag,
             "Failure",
           );
           assert.ok(Option.isNone(yield* store.ai.triage(`${accountId}/m1`)));
@@ -592,23 +594,23 @@ it.effect(
     const f = fixture(() => output('{"action":{"kind":"archive"},"reason":"Done"}'));
     return Effect.gen(function* () {
       const { m, ai, store } = yield* f.setup;
-      yield* m.setAiKey("fake");
-      yield* m.setAiAccount(consent);
+      yield* m.ai.setAiKey("fake");
+      yield* m.ai.setAiAccount(consent);
       yield* ai.autoTriage([id]);
-      const original = yield* m.aiTriage(id);
+      const original = yield* m.ai.aiTriage(id);
       assert.ok(original);
-      yield* Stream.runDrain(m.summarize(id));
-      const summary = yield* m.aiSummary(id);
+      yield* Stream.runDrain(m.ai.summarize(id));
+      const summary = yield* m.ai.aiSummary(id);
       assert.ok(summary);
       yield* store.upsertMessage(accountId, incoming("m1", { labels: ["UNREAD", "INBOX"] }));
-      assert.strictEqual((yield* m.aiTriage(id))?.inputHash, original.inputHash);
+      assert.strictEqual((yield* m.ai.aiTriage(id))?.inputHash, original.inputHash);
       yield* store.upsertMessage(
         accountId,
         incoming("m1", { labels: ["INBOX", "UNREAD", "custom"] }),
       );
-      assert.strictEqual(yield* m.aiTriage(id), null);
+      assert.strictEqual(yield* m.ai.aiTriage(id), null);
       assert.ok(Option.isNone(yield* store.ai.triage(`${accountId}/m1`)));
-      assert.strictEqual((yield* m.aiSummary(id))?.inputHash, summary.inputHash);
+      assert.strictEqual((yield* m.ai.aiSummary(id))?.inputHash, summary.inputHash);
     }).pipe(Effect.provide(f.layer));
   },
 );

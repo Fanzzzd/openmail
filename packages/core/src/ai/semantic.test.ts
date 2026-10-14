@@ -390,13 +390,13 @@ it.effect("Mailbox and MCP share semantic hits after persisted opt-in", () =>
     yield* mail.connect({ provider: "gmail" });
     yield* mail.sync();
     assert.strictEqual((yield* mail.threads({ search: "travel" })).length, 0);
-    yield* mail.setModelsEnabled(true);
+    yield* mail.ai.setModelsEnabled(true);
     yield* TestClock.adjust("15 seconds");
     const rows = yield* mail.threads({ search: "travel" });
     assert.strictEqual(rows.length, 1);
     assert.strictEqual(rows[0]?.derivedMatches?.[0]?.source.kind, "body");
     assert.ok(!JSON.stringify(rows).includes('"vector"'));
-    yield* mail.setModelsEnabled(false);
+    yield* mail.ai.setModelsEnabled(false);
     assert.strictEqual((yield* mail.threads({ search: "travel" })).length, 0);
   }).pipe(
     Effect.provide(
@@ -466,12 +466,12 @@ it.effect(
       const mail = yield* Mailbox;
       yield* mail.connect({ provider: "gmail" });
       yield* mail.sync();
-      yield* mail.setModelsEnabled(true);
+      yield* mail.ai.setModelsEnabled(true);
       yield* TestClock.adjust("15 seconds");
       idle = false;
       battery = true;
       assert.strictEqual((yield* mail.threads({ search: "travel" })).length, 1);
-      yield* mail.setIndexingPaused(true);
+      yield* mail.ai.setIndexingPaused(true);
       assert.strictEqual((yield* mail.threads({ search: "travel" })).length, 1);
     }).pipe(
       Effect.provide(

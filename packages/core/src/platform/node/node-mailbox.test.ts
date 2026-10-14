@@ -196,7 +196,7 @@ it("real NodeMailbox captures MIME, files, PDF, image transport and random servi
         expect(rejected._tag).toBe("ProviderError");
         expect(rejected.message).toContain("public image URL");
         yield* Deferred.succeed(ready, undefined);
-        const chunks = yield* mailbox.derivedChunks(id).pipe(
+        const chunks = yield* mailbox.ai.derivedChunks(id).pipe(
           Effect.repeat({
             while: (result) => result.length === 0,
             times: 100,

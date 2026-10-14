@@ -260,7 +260,7 @@ export const threadHandlers = ({
         "semantic_search",
         p,
         forAccounts(p.account_id, (ids) =>
-          mailbox.semanticSearch({ search: p.query, accountIds: ids, limit: 5 }).pipe(
+          mailbox.ai.semanticSearch({ search: p.query, accountIds: ids, limit: 5 }).pipe(
             Effect.mapError((e) =>
               e._tag === "IndexNotReady"
                 ? toolError(

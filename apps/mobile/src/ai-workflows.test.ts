@@ -58,21 +58,27 @@ it("mobile AI is off by default, uses selected models and visible thread text, a
         const account = yield* mailbox.connect({ provider: "gmail" });
         yield* mailbox.sync();
         const id = `${account.id}/m`;
-        const before = yield* mailbox.aiSettings;
+        const before = yield* mailbox.ai.aiSettings;
         expect(before.accounts.every((setting) => !setting.allowed)).toBe(true);
-        expect((yield* aiResponse(mailbox.summarize(id)).pipe(Effect.result))._tag).toBe("Failure");
+        expect((yield* aiResponse(mailbox.ai.summarize(id)).pipe(Effect.result))._tag).toBe(
+          "Failure",
+        );
         expect(
           (yield* aiResponse(
-            mailbox.askAi({ question: "Explain", accountIds: [account.id], threadId: id }),
+            mailbox.ai.askAi({ question: "Explain", accountIds: [account.id], threadId: id }),
           ).pipe(Effect.result))._tag,
         ).toBe("Failure");
         expect(requests).toHaveLength(0);
-        yield* mailbox.setAiKey("private-anthropic-key");
-        yield* mailbox.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });
-        yield* mailbox.setAiModel(AI_MODELS[2]);
-        expect(yield* aiResponse(mailbox.summarize(id))).toContain("https://example.test/image");
+        yield* mailbox.ai.setAiKey("private-anthropic-key");
+        yield* mailbox.ai.setAiAccount({
+          accountId: account.id,
+          allowed: true,
+          autoSummaries: false,
+        });
+        yield* mailbox.ai.setAiModel(AI_MODELS[2]);
+        expect(yield* aiResponse(mailbox.ai.summarize(id))).toContain("https://example.test/image");
         yield* aiResponse(
-          mailbox.askAi({
+          mailbox.ai.askAi({
             question: "Explain this thread",
             accountIds: [account.id],
             threadId: id,
@@ -85,14 +91,16 @@ it("mobile AI is off by default, uses selected models and visible thread text, a
           expect(request.prompt).not.toMatch(/HIDDEN_SECRET|PRIVATE_ATTACHMENT|private\.test/);
         }
         expect(JSON.stringify(yield* mailbox.prefs)).not.toContain("private-anthropic-key");
-        expect(JSON.stringify(yield* mailbox.aiSettings)).not.toContain("private-anthropic-key");
-        yield* mailbox.setAiAccount({
+        expect(JSON.stringify(yield* mailbox.ai.aiSettings)).not.toContain("private-anthropic-key");
+        yield* mailbox.ai.setAiAccount({
           accountId: account.id,
           allowed: false,
           autoSummaries: false,
         });
-        expect(yield* mailbox.aiSummary(id)).toBe(null);
-        expect((yield* aiResponse(mailbox.summarize(id)).pipe(Effect.result))._tag).toBe("Failure");
+        expect(yield* mailbox.ai.aiSummary(id)).toBe(null);
+        expect((yield* aiResponse(mailbox.ai.summarize(id)).pipe(Effect.result))._tag).toBe(
+          "Failure",
+        );
         expect(requests).toHaveLength(2);
       }),
     );
@@ -144,10 +152,10 @@ it("assistant archive, label and draft writes stay proposals even in allow mode,
         accountId = account.id;
         messageId = `${account.id}/m`;
         yield* mailbox.sync();
-        yield* mailbox.setAiAccount({ accountId, allowed: true, autoSummaries: false });
+        yield* mailbox.ai.setAiAccount({ accountId, allowed: true, autoSummaries: false });
         yield* mailbox.setAgentWriteMode("propose");
         yield* aiResponse(
-          mailbox.askAi({
+          mailbox.ai.askAi({
             question: "Suggest changes",
             accountIds: [accountId],
             threadId: messageId,
@@ -197,7 +205,11 @@ it("compose help returns a proposal without overwriting the saved draft or sendi
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
         const account = yield* mailbox.connect({ provider: "gmail" });
-        yield* mailbox.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });
+        yield* mailbox.ai.setAiAccount({
+          accountId: account.id,
+          allowed: true,
+          autoSummaries: false,
+        });
         const message = {
           ...composeMessage("new"),
           text: "Original HIDDEN_SECRET",
@@ -213,7 +225,7 @@ it("compose help returns a proposal without overwriting the saved draft or sendi
         });
         const before = (yield* mailbox.openDraft(draft.id)).message;
         const text = yield* aiResponse(
-          mailbox.composeAi({
+          mailbox.ai.composeAi({
             accountId: account.id,
             text: messageModelText(message.text, message.html).text,
             task: { kind: "rewrite", tone: "shorter" },

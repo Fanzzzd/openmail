@@ -14,7 +14,7 @@ export function useAiRequest(accountId: string) {
   const runtime = useMailbox();
   const settings = useMailboxQuery(
     useCallback(
-      () => runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.aiSettings)),
+      () => runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.ai.aiSettings)),
       [runtime],
     ),
     { keepPrevious: true },

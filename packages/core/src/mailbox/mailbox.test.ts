@@ -658,7 +658,11 @@ it.effect(
       const mailbox = yield* Mailbox;
       const store = yield* Store;
       const account = yield* mailbox.connect({ provider: "gmail" });
-      yield* mailbox.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });
+      yield* mailbox.ai.setAiAccount({
+        accountId: account.id,
+        allowed: true,
+        autoSummaries: false,
+      });
       yield* mailbox.setAgentWriteMode("propose");
       const proposal = yield* mailbox.perform(
         {
@@ -681,7 +685,11 @@ it.effect(
       assert.strictEqual(server.drafts.size, 1);
       // Simulate a temporary provider failure. The delete intent must remain durable.
       server.failNext = new ProviderError({ message: "Offline", deferred: true });
-      yield* mailbox.setAiAccount({ accountId: account.id, allowed: false, autoSummaries: false });
+      yield* mailbox.ai.setAiAccount({
+        accountId: account.id,
+        allowed: false,
+        autoSummaries: false,
+      });
       assert.isNull(yield* mailbox.draftStatus(draft.id));
       assert.ok((yield* store.listPendingOps).some((op) => op.op.kind === "deleteDraft"));
       yield* mailbox.sync(account.id);

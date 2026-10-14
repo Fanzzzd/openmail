@@ -22,7 +22,7 @@ export function AiSettings({ accounts }: { accounts: readonly Account[] }) {
   const [failed, setFailed] = useState(false);
   const settings = useMailboxQuery(
     useCallback(
-      () => runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.aiSettings)),
+      () => runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.ai.aiSettings)),
       [runtime],
     ),
     { keepPrevious: true },
@@ -71,7 +71,7 @@ export function AiSettings({ accounts }: { accounts: readonly Account[] }) {
         onPress={() => {
           const value = key;
           setKey("");
-          void change(Effect.flatMap(Mailbox, (mailbox) => mailbox.setAiKey(value)));
+          void change(Effect.flatMap(Mailbox, (mailbox) => mailbox.ai.setAiKey(value)));
         }}
       />
       {settings.kind === "ready" && (
@@ -85,7 +85,7 @@ export function AiSettings({ accounts }: { accounts: readonly Account[] }) {
                 disabled={busy}
                 label={i18n._({ id: "Remove key", message: "Remove key" })}
                 onPress={() =>
-                  void change(Effect.flatMap(Mailbox, (mailbox) => mailbox.setAiKey("")))
+                  void change(Effect.flatMap(Mailbox, (mailbox) => mailbox.ai.setAiKey("")))
                 }
               />
             </>
@@ -97,7 +97,7 @@ export function AiSettings({ accounts }: { accounts: readonly Account[] }) {
               disabled={busy || model === settings.value.model}
               label={model}
               onPress={() =>
-                void change(Effect.flatMap(Mailbox, (mailbox) => mailbox.setAiModel(model)))
+                void change(Effect.flatMap(Mailbox, (mailbox) => mailbox.ai.setAiModel(model)))
               }
             />
           ))}
@@ -108,7 +108,7 @@ export function AiSettings({ accounts }: { accounts: readonly Account[] }) {
             const setAllowed = (allowed: boolean) =>
               void change(
                 Effect.flatMap(Mailbox, (mailbox) =>
-                  mailbox.setAiAccount({
+                  mailbox.ai.setAiAccount({
                     ...saved,
                     allowed,
                     autoSummaries: allowed && saved.autoSummaries,
@@ -157,7 +157,7 @@ export function AiSettings({ accounts }: { accounts: readonly Account[] }) {
                   onValueChange={(autoSummaries) =>
                     void change(
                       Effect.flatMap(Mailbox, (mailbox) =>
-                        mailbox.setAiAccount({ ...saved, autoSummaries }),
+                        mailbox.ai.setAiAccount({ ...saved, autoSummaries }),
                       ),
                     )
                   }

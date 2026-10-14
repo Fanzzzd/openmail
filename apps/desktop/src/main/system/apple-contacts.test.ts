@@ -159,14 +159,14 @@ it.skipIf(process.platform !== "darwin")(
         expect(yield* desktop.groups("local")).toEqual([]);
         yield* desktop.open("person@example.com");
         expect(native.open).toHaveBeenCalledWith(`addressbook://${id}`);
-        yield* mailbox.setAiAccount({
+        yield* mailbox.ai.setAiAccount({
           accountId: account.id,
           allowed: true,
           autoSummaries: false,
           autoTriage: false,
         });
         yield* Stream.runDrain(
-          mailbox.composeAi({
+          mailbox.ai.composeAi({
             accountId: account.id,
             replyTo: `${account.id}/m1`,
             text: "Draft text",

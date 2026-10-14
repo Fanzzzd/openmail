@@ -35,7 +35,7 @@ export function ThreadAi({ accountId, messageId }: { accountId: string; messageI
     const key = `${accountId}:${messageId}`;
     if (!enabled || !account?.autoSummaries || automatic.current === key) return;
     automatic.current = key;
-    void run((mailbox) => mailbox.summarize(messageId));
+    void run((mailbox) => mailbox.ai.summarize(messageId));
   }, [accountId, messageId, enabled, account?.autoSummaries, run]);
   if (!ai.enabled) return null;
   const busy = ai.response.kind === "busy";
@@ -44,7 +44,7 @@ export function ThreadAi({ accountId, messageId }: { accountId: string; messageI
       <Button
         disabled={busy}
         label={i18n._({ id: "Summarize thread", message: "Summarize thread" })}
-        onPress={() => void ai.run((mailbox) => mailbox.summarize(messageId))}
+        onPress={() => void ai.run((mailbox) => mailbox.ai.summarize(messageId))}
       />
       <Text style={styles.subject}>
         {i18n._({ id: "Ask about this thread", message: "Ask about this thread" })}
@@ -62,7 +62,7 @@ export function ThreadAi({ accountId, messageId }: { accountId: string; messageI
         label={i18n._({ id: "Ask", message: "Ask" })}
         onPress={() =>
           void ai.run((mailbox) =>
-            mailbox.askAi({
+            mailbox.ai.askAi({
               accountIds: [accountId],
               threadId: messageId,
               question: question.trim(),
@@ -128,7 +128,7 @@ export function ComposeAi({
       signature,
     });
     void ai.run((mailbox) =>
-      mailbox.composeAi({
+      mailbox.ai.composeAi({
         accountId,
         text: messageModelText(part.text, authoredHtml ?? "").text,
         ...(message.inReplyTo ? { replyTo: message.inReplyTo } : {}),

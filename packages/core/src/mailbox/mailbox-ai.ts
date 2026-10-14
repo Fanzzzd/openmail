@@ -317,27 +317,30 @@ export function makeAiMailbox(
                   });
                 return yield* read(id, maxChars);
               }),
-            semanticSearch: (q) =>
-              Effect.gen(function* () {
-                yield* guard;
-                const accountIds = scope(q.accountIds);
-                if (!accountIds.length) return [];
-                const found = yield* m.semanticSearch({
-                  ...q,
-                  accountIds,
-                  limit: Math.min(q.limit ?? 5, 5),
-                });
-                const safe = found.map((thread) => ({
-                  ...thread,
-                  snippet: "",
-                  attachmentNames: [],
-                  derivedMatches: [],
-                  searchMatches: [],
-                }));
-                for (const thread of safe)
-                  sources.set(thread.id, { id: thread.id, subject: thread.subject });
-                return yield* budget(safe);
-              }),
+            ai: {
+              ...m.ai,
+              semanticSearch: (q) =>
+                Effect.gen(function* () {
+                  yield* guard;
+                  const accountIds = scope(q.accountIds);
+                  if (!accountIds.length) return [];
+                  const found = yield* m.ai.semanticSearch({
+                    ...q,
+                    accountIds,
+                    limit: Math.min(q.limit ?? 5, 5),
+                  });
+                  const safe = found.map((thread) => ({
+                    ...thread,
+                    snippet: "",
+                    attachmentNames: [],
+                    derivedMatches: [],
+                    searchMatches: [],
+                  }));
+                  for (const thread of safe)
+                    sources.set(thread.id, { id: thread.id, subject: thread.subject });
+                  return yield* budget(safe);
+                }),
+            },
             perform: (command, actor) =>
               Effect.gen(function* () {
                 yield* guard;
