@@ -48,6 +48,9 @@ export async function connectCdp(
       () => settle(new Error("CDP connection timeout")),
       ms(connectTimeoutMs),
     );
+    // setTimeout resolves to the Node or the DOM type depending on which tsconfig oxlint picks for
+    // this file, so the optional call is needed for one and redundant for the other.
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
     timer.unref?.();
     socket.addEventListener("open", opened);
     socket.addEventListener("error", failed);
