@@ -7,9 +7,10 @@
   "scripts": {
     "build": "pnpm i18n:compile && pnpm check-types",
     "check-types": "tsc --noEmit",
-    "test": "vitest run && lingui check sync --clean --workers 1 && lingui check missing --mode catalog --workers 1",
+    "test": "vitest run && lingui check sync --clean --workers 1 && lingui check missing --mode catalog --workers 1 && pnpm i18n:missing",
     "start": "expo start --dev-client",
     "i18n:extract": "lingui extract --clean",
+    "i18n:missing": "node ../desktop/scripts/i18n-missing.mjs src/locales",
     "i18n:compile": "lingui compile --typescript --strict && oxfmt src/locales/*/messages.ts"
   },
   "dependencies": {

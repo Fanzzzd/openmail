@@ -17,16 +17,18 @@ const identifiers = (text) =>
 export function catalogProblems(source, target) {
   return Object.entries(source).flatMap(([id, message]) => {
     if (message.obsolete) return [];
+    // Explicit ids (the mobile catalogs) keep the English text in the source msgstr.
+    const text = message.message ?? (message.translation || id);
     const translated = target[id];
     if (
       !translated?.translation?.trim() ||
       translated.obsolete ||
       translated.extra?.flags?.includes("fuzzy")
     ) {
-      return [{ message: message.message, reason: "missing msgstr" }];
+      return [{ message: text, reason: "missing msgstr" }];
     }
-    if (identifiers(message.message) !== identifiers(translated.translation)) {
-      return [{ message: message.message, reason: "ICU arguments or markup differ" }];
+    if (identifiers(text) !== identifiers(translated.translation)) {
+      return [{ message: text, reason: "ICU arguments or markup differ" }];
     }
     return [];
   });
@@ -55,6 +57,8 @@ export async function checkCatalogs(root, output = (line) => process.stdout.writ
   return failures;
 }
 
+// Usage: node i18n-missing.mjs [catalog directory]. The default is the desktop catalogs;
+// mobile passes src/locales.
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const root = process.argv[2]
     ? pathToFileURL(`${process.argv[2].replace(/\/$/, "")}/`)

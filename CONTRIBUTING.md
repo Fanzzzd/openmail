@@ -128,7 +128,7 @@ pnpm --filter @openmail/desktop i18n:extract
 pnpm --filter @openmail/desktop i18n:missing
 ```
 
-Fill every `msgstr` in `apps/desktop/src/renderer/src/locales/{locale}/messages.po` for zh-CN, cs, nl, fr, de, it, ja, ru and es. Keep ICU arguments, plurals and component tags as they are. Japanese plurals use only `other`. Follow the mail terms in `apps/desktop/src/renderer/src/locales/glossary.json`. `pnpm test` fails on any missing or out-of-sync translation. The mobile app has the same commands under `@openmail/mobile`.
+Fill every `msgstr` in `apps/desktop/src/renderer/src/locales/{locale}/messages.po` for zh-CN, cs, nl, fr, de, it, ja, ru and es. Keep ICU arguments, plurals and component tags as they are. Japanese plurals use only `other`. Follow the mail terms in `apps/desktop/src/renderer/src/locales/glossary.json`. `pnpm test` fails on any missing or out-of-sync translation. The mobile app has the same commands under `@openmail/mobile` (`i18n:extract`, `i18n:missing`), with its catalogs in `apps/mobile/src/locales/`.
 
 If you can't translate a language, say so in the pull request and a maintainer will fill it in.
 
