@@ -781,7 +781,7 @@ export function FirstRunDone({
           )}
           {defaultApp.failed && (
             <output role="alert" className="block basis-full text-footnote text-a11y-danger">
-              <Trans>Could not register OpenMail. Try again from the installed app.</Trans>
+              <Trans>Couldn't register OpenMail. Try again from the installed app.</Trans>
             </output>
           )}
         </div>

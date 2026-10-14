@@ -297,5 +297,5 @@ const DOCK_FILE_MESSAGES: Record<DockFileReason, MessageDescriptor> = {
   notFile: msg`Only regular files can be attached. Folders cannot be attached.`,
   tooLarge: msg`Attachments exceed the 30 MB compose limit.`,
   changed: msg`An attachment changed while reading. Try adding it again.`,
-  unreadable: msg`Could not read the attachments. Check the files and their permissions.`,
+  unreadable: msg`Couldn't read the attachments. Check the files and their permissions.`,
 };

@@ -127,7 +127,7 @@ export function OverlappingEvents({
               resultError(i18n, result)
             ) : (
               <>
-                <Trans>Could not load your calendar.</Trans> {resultError(i18n, result)}
+                <Trans>Couldn't load your calendar.</Trans> {resultError(i18n, result)}
               </>
             )}
           </p>

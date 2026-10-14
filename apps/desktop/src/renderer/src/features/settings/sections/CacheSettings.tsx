@@ -51,9 +51,7 @@ function CompactionStatus({ status }: { status: CacheCompactionResult | null }) 
       return <Trans>Compaction is unavailable in a read-only session.</Trans>;
     case "unsafe":
       return (
-        <Trans>
-          Compaction was refused because search index alignment could not be guaranteed.
-        </Trans>
+        <Trans>Compaction was refused because search index alignment couldn't be guaranteed.</Trans>
       );
     case "low-disk":
       return <Trans>There is not enough free disk space to compact safely.</Trans>;

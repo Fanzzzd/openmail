@@ -58,7 +58,7 @@ export function FailedOpNoticeContent({
   const partialCount = failures.filter((entry) => entry.kind === "sendPartial").length;
   const sentCopyCount = failures.filter((entry) => entry.kind === "sentCopyMissing").length;
   const changeTitle = (count: number) =>
-    t`${plural(count, { one: "# change could not be saved", other: "# changes could not be saved" })}`;
+    t`${plural(count, { one: "# change couldn't be saved", other: "# changes couldn't be saved" })}`;
   const partialTitle = (count: number) =>
     t`${plural(count, { one: "# message had rejected recipients", other: "# messages had rejected recipients" })}`;
   const sentCopyTitle = (count: number) =>
@@ -82,8 +82,8 @@ export function FailedOpNoticeContent({
           {t`Dismiss`}
         </button>
       </div>
-      {error && <p role="alert">{t`Could not dismiss this notice. Try again.`}</p>}
-      {resendError && <p role="alert">{t`Could not prepare the resend draft. Try again.`}</p>}
+      {error && <p role="alert">{t`Couldn't dismiss this notice. Try again.`}</p>}
+      {resendError && <p role="alert">{t`Couldn't prepare the resend draft. Try again.`}</p>}
       {expanded && (
         <ul className="mt-2 max-h-48 space-y-2 overflow-auto">
           {failures.map((entry) => (

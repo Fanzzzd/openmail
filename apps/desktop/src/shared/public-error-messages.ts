@@ -160,6 +160,7 @@ export const PUBLIC_ERROR_MESSAGES = new Set([
   "This meeting has been cancelled",
   "This meeting link is not supported.",
   "This message is not a draft.",
+  "This draft was already discarded.",
   "This operation can no longer be undone.",
   "This organization action is unavailable for this account.",
   "This recurrence cannot be represented in Outlook",

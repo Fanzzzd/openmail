@@ -71,7 +71,7 @@ it("keeps failed changes visible until acknowledged and exposes provider and del
   try {
     await act(async () => render(failures));
     expect(element.querySelector('[role="alert"]')?.textContent).toBe(
-      "2 changes could not be saved1 message had rejected recipients1 sent message is missing from Sent",
+      "2 changes couldn't be saved1 message had rejected recipients1 sent message is missing from Sent",
     );
     const details = element.querySelector("button");
     if (!details) throw new Error("Missing details action");
@@ -110,7 +110,7 @@ it("keeps failed changes visible until acknowledged and exposes provider and del
     if (!dismissButton) throw new Error("Missing dismiss action");
     await act(async () => dismissButton.click());
     expect(dismiss).toHaveBeenCalledWith([24, 21, 22, 23]);
-    expect(element.textContent).toContain("2 changes could not be saved");
+    expect(element.textContent).toContain("2 changes couldn't be saved");
     await act(async () => render([]));
     expect(element.textContent).toBe("");
   } finally {

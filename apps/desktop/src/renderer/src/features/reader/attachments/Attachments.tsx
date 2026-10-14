@@ -465,7 +465,7 @@ export function AttachmentList({
         ))}
       {files.some((file) => file.decodeError) && (
         <p className="mt-2 text-footnote text-a11y-muted">
-          <Trans>Could not decode winmail.dat. You can save the original file.</Trans>
+          <Trans>Couldn't decode winmail.dat. You can save the original file.</Trans>
         </p>
       )}
       {chosen.length > 0 && (
@@ -555,7 +555,7 @@ function EmbeddedReader({
   if (!message)
     return (
       <p className="mt-2 text-a11y-muted">
-        {failed ? t`Could not read attached message.` : t`Loading attached message…`}
+        {failed ? t`Couldn't read attached message.` : t`Loading attached message…`}
       </p>
     );
   return (

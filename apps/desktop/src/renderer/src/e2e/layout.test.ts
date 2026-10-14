@@ -580,15 +580,15 @@ it("an undocked sidebar moves sign-in and sync failures above the list", async (
   await h.event({ _tag: "NativeAction", action: "sync", triggeredByAccelerator: false });
   await eventually(() => expect(screen.getByText("Sync failed (1)")).toBeTruthy());
   // The docked sidebar already reports it; the list does not repeat it.
-  expect(within(list()).queryByText(/Could not sync/)).toBeNull();
+  expect(within(list()).queryByText(/Couldn't sync/)).toBeNull();
 
   resize(800);
   await eventually(() =>
-    expect(within(list()).getByText("Could not sync me@gmail.com.")).toBeTruthy(),
+    expect(within(list()).getByText("Couldn't sync me@gmail.com.")).toBeTruthy(),
   );
   failEvery(undefined);
   fireEvent.click(within(list()).getByRole("button", { name: "Try again" }));
-  await eventually(() => expect(within(list()).queryByText(/Could not sync/)).toBeNull());
+  await eventually(() => expect(within(list()).queryByText(/Couldn't sync/)).toBeNull());
 
   // An AuthError without a reason is a 401 after the forced refresh: token_revoked.
   failEvery(new AuthError({ message: "Expired" }));
@@ -601,7 +601,7 @@ it("an undocked sidebar moves sign-in and sync failures above the list", async (
     ).toBeTruthy(),
   );
   // An expired account is not also reported as a sync failure.
-  expect(within(list()).queryByText(/Could not sync/)).toBeNull();
+  expect(within(list()).queryByText(/Couldn't sync/)).toBeNull();
   expect(within(list()).getByRole("button", { name: "Sign in again" })).toBeTruthy();
 });
 

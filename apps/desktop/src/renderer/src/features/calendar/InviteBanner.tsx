@@ -49,7 +49,7 @@ function LoadedInvites({ message }: { message: Message }) {
         role="alert"
         className="mt-3 rounded-control border border-orange-300 p-3 text-orange-700 dark:text-orange-400"
       >
-        <Trans>Could not load the calendar invitation.</Trans> {resultError(i18n, invitations)}
+        <Trans>Couldn't load the calendar invitation.</Trans> {resultError(i18n, invitations)}
       </div>
     );
   const invites = AsyncResult.getOrElse(invitations, () => []);

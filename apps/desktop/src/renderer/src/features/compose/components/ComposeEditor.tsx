@@ -514,7 +514,7 @@ export function ComposeEditor({
           />
         }
       />
-      {pasteError && <p role="alert">{t`Could not read clipboard`}</p>}
+      {pasteError && <p role="alert">{t`Couldn't read clipboard`}</p>}
       {mentions.suggestions.length > 0 && (
         <MentionSuggestions
           people={mentions.suggestions}

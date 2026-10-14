@@ -139,7 +139,7 @@ export function GrammarResults({ grammar, locked }: { grammar: ComposeGrammar; l
           className="rounded px-2 py-1"
         >{t`Close`}</button>
       )}
-      {error && <p role="alert">{t`Could not check grammar on this Mac.`}</p>}
+      {error && <p role="alert">{t`Couldn't check grammar on this Mac.`}</p>}
       {result?.text === text && (
         <output className="block max-h-40 overflow-auto">
           {issues.length === 0 ? (

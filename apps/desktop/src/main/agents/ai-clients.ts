@@ -646,7 +646,7 @@ function changeMissing(
   change: AiClientChange,
   launch: McpLaunch,
 ): string | null {
-  if (view.state === "unreadable") return `The config could not be read back: ${view.problem}`;
+  if (view.state === "unreadable") return `The config couldn't be read back: ${view.problem}`;
   if (change.action === "disconnect")
     return view.state === "notConnected"
       ? null

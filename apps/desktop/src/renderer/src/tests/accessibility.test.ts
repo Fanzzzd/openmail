@@ -1440,13 +1440,13 @@ it("the list notice counts every account's sync errors but names only the open s
   // Visible text only: the status regions also hold "Sync failed".
   const shown = (text: string) => screen.getByText(text, { selector: "p" });
   view.rerender(notice(["gmail:old: Sign in again", "gmail:work: Forbidden"]));
-  expect(shown("Could not sync work@example.com.")).toBeTruthy();
+  expect(shown("Couldn't sync work@example.com.")).toBeTruthy();
   view.rerender(notice(["gmail:me: Forbidden"]));
   expect(shown("Sync failed")).toBeTruthy();
   // Offline joins the account notices instead of hiding them.
   view.rerender(notice(["gmail:work: Forbidden"], false));
   expect(shown("You're offline. Mail syncs again when you reconnect.")).toBeTruthy();
-  expect(shown("Could not sync work@example.com.")).toBeTruthy();
+  expect(shown("Couldn't sync work@example.com.")).toBeTruthy();
   // Failures are polite statuses, never assertive alerts.
   expect(screen.queryByRole("alert")).toBeNull();
 });
@@ -1484,7 +1484,7 @@ it("a failed body refresh preserves the reader and cached preview with a non-blo
     "Cached preview while offline",
   );
   expect(
-    screen.getByText("Message text could not be refreshed. Showing the cached version.").tagName,
+    screen.getByText("Message text couldn't be refreshed. Showing the cached version.").tagName,
   ).toBe("OUTPUT");
 });
 
@@ -2322,7 +2322,7 @@ it("keeps list notices, the batch count badge, empty list text and search marks 
     screen.getByText("You're offline. Mail syncs again when you reconnect.", { selector: "p" }),
     "offline notice",
   );
-  readable(screen.getByText("Could not sync me@example.com.", { selector: "p" }), "sync failure");
+  readable(screen.getByText("Couldn't sync me@example.com.", { selector: "p" }), "sync failure");
   readable(screen.getByRole("button", { name: "Try again" }), "Try again");
   readable(screen.getByText("2", { exact: true }), "batch count badge");
   cleanup();

@@ -87,7 +87,7 @@ export function useDesktopLabels() {
             updatesDisabled: t`Update checks require a signed, installed macOS app.`,
             updatesCurrent: t`OpenMail is up to date.`,
             updatesAvailable: t`Update available:`,
-            updatesFailed: t`Could not check for updates. Try again later.`,
+            updatesFailed: t`Couldn't check for updates. Try again later.`,
             ok: t`OK`,
             read: t`Mark read`,
             actionMenu: t`Actions`,

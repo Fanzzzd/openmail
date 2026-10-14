@@ -71,7 +71,7 @@ function AccessSummary({
           readable.kind === "loading" ? null : readable.kind === "failed" ? (
             <span className="text-orange-700 dark:text-orange-400">
               <Trans>
-                OpenMail could not load the AI settings, so it can't show which accounts AI apps can
+                OpenMail couldn't load the AI settings, so it can't show which accounts AI apps can
                 read. Close Settings and open it again.
               </Trans>
             </span>

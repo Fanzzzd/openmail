@@ -105,7 +105,7 @@ it("a locked keychain shows its own notice instead of a sign-in or a sync failur
   );
   expect(shown).toContain("The keychain is locked. Unlock your computer and sync resumes");
   expect(shown).not.toContain("Sign in again");
-  expect(shown).not.toContain("Could not sync");
+  expect(shown).not.toContain("Couldn't sync");
 });
 
 it("the line names the provider and what happened; the full address is in the tooltip and the reason", () => {
@@ -194,7 +194,7 @@ it("a sync failure's tooltip shows fixed text, never the stored provider respons
   expect(titles.join("\n")).not.toContain(ok.id);
   expect(titles).toContain(
     [
-      "Sync could not finish. It will retry automatically.",
+      "Sync couldn't finish. It will retry automatically.",
       "The mail provider is limiting requests. Sync will try again later.",
     ].join("\n"),
   );

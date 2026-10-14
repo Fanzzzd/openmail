@@ -45,7 +45,7 @@ export function AiSettings({ accounts }: { accounts: readonly Account[] }) {
       submitAiKey(value).pipe(
         Effect.catch((error) => Effect.sync(() => setKeyError(errorText(i18n, error)))),
         Effect.catchCause(() =>
-          Effect.sync(() => setKeyError(t`Could not save the API key in the system keychain.`)),
+          Effect.sync(() => setKeyError(t`Couldn't save the API key in the system keychain.`)),
         ),
         Effect.ensuring(Effect.sync(() => setSaving(false))),
       ),
@@ -119,7 +119,7 @@ export function AiSettings({ accounts }: { accounts: readonly Account[] }) {
         {settings?.keyUnreadable && (
           <p role="alert" className="mt-1.5 px-1 text-footnote text-a11y-danger">
             <Trans>
-              OpenMail could not read the API key from the keychain. Unlock the keychain, then open
+              OpenMail couldn't read the API key from the keychain. Unlock the keychain, then open
               Settings again.
             </Trans>
           </p>

@@ -73,7 +73,7 @@ export function DefaultMailClient() {
           )}
           {failed && (
             <output role="alert" className="mt-1 block text-orange-700 dark:text-orange-400">
-              <Trans>Could not register OpenMail. Try again from the installed app.</Trans>
+              <Trans>Couldn't register OpenMail. Try again from the installed app.</Trans>
             </output>
           )}
         </>
@@ -121,7 +121,7 @@ const PERMISSION_NAMES: Record<NotificationPermission, MessageDescriptor> = {
   authorized: msg`Allowed`,
   provisional: msg`Allowed quietly`,
   ephemeral: msg`Allowed temporarily`,
-  unknown: msg`Could not read system permission`,
+  unknown: msg`Couldn't read system permission`,
   unavailable: msg`Available in the installed macOS app`,
   unsupported: msg`Unsupported on this platform`,
 };
@@ -168,7 +168,7 @@ export function NotificationsSettings({ accounts }: { accounts: readonly Account
           hint={
             settingsFailed && (
               <output role="alert" className="text-orange-700 dark:text-orange-400">
-                <Trans>Could not open notification settings.</Trans>
+                <Trans>Couldn't open notification settings.</Trans>
               </output>
             )
           }

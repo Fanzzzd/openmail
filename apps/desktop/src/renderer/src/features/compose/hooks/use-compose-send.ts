@@ -86,7 +86,7 @@ export function useComposeSend({
           }),
         ).pipe(
           Effect.match({
-            onFailure: () => setError(t`Could not check recipients.`),
+            onFailure: () => setError(t`Couldn't check recipients.`),
             onSuccess: (recipients) => {
               if (
                 JSON.stringify(toDraftInput(latestDraft.current)) !==

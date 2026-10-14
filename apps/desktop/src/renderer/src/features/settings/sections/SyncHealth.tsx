@@ -64,7 +64,7 @@ export function SyncHealthCheck({ accountId }: { accountId: string }) {
       </button>
       {failed && (
         <p role="alert" className="text-a11y-danger">
-          {t`Could not check sync health.`}
+          {t`Couldn't check sync health.`}
         </p>
       )}
       {report && (

@@ -76,7 +76,7 @@ export function AttachmentImportDialog({
       className="w-[min(90vw,760px)] space-y-4 overflow-auto p-5"
     >
       <h2 className="font-semibold">{file.filename}</h2>
-      {failed && <p role="alert">{t`Could not import this attachment.`}</p>}
+      {failed && <p role="alert">{t`Couldn't import this attachment.`}</p>}
       {!inspection && !failed && <p>{t`Loading…`}</p>}
       {inspection?.kind === "html" && (
         <LazyEmailFrame

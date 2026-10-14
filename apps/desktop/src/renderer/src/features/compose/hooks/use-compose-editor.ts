@@ -205,7 +205,7 @@ export function useComposeEditor({
           },
           onFailure: () => {
             setAdding(false);
-            setError(t`Could not open the system picker.`);
+            setError(t`Couldn't open the system picker.`);
           },
         }),
       ),

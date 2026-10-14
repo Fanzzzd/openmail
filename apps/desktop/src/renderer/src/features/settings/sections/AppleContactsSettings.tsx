@@ -53,7 +53,7 @@ export function AppleContactsSettings() {
                         : state === "waiting"
                           ? t`Waiting for Contacts permission. Respond to the system prompt.`
                           : state === "error"
-                            ? t`Could not load Apple Contacts. Try refreshing.`
+                            ? t`Couldn't load Apple Contacts. Try refreshing.`
                             : null}
             </span>
           }

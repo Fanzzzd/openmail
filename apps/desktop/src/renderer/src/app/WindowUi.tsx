@@ -194,7 +194,7 @@ function UpdateResultAlert({
         ? t`OpenMail is up to date.`
         : result.status === "available"
           ? t`Update ${version} is available.`
-          : t`Could not check for updates. Try again later.`;
+          : t`Couldn't check for updates. Try again later.`;
   return (
     <Alert
       open

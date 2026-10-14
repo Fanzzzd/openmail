@@ -112,7 +112,7 @@ export function MessageBody({
       <div className="pt-4">
         {m.bodyRefresh === "failed" && (
           <output className="mb-3 block text-a11y-muted">
-            <Trans>Message text could not be refreshed. Showing the cached version.</Trans>
+            <Trans>Message text couldn't be refreshed. Showing the cached version.</Trans>
           </output>
         )}
         {m.bodyCached === false ? (

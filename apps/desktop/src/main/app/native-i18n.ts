@@ -65,7 +65,7 @@ function recoveryLabels(i18n: I18n) {
       msg`Update OpenMail to the latest version to open it. The library was not changed.`,
     ),
     safeMode: i18n._(msg`OpenMail safe mode`),
-    integrityFailed: i18n._(msg`The local database could not be verified`),
+    integrityFailed: i18n._(msg`The local database couldn't be verified`),
     crashDetail: i18n._(
       msg`OpenMail stopped unexpectedly three times within five minutes. Continue, reset the local mail cache and re-sync, or quit. Accounts, drafts and keychain tokens are kept.`,
     ),
@@ -87,7 +87,7 @@ function recoveryLabels(i18n: I18n) {
       i18n._(
         msg`Database recovery was interrupted. Restore a preserved database before reopening OpenMail. Preserved database: ${backup}`,
       ),
-    resetFailed: i18n._(msg`Could not reset the local cache`),
+    resetFailed: i18n._(msg`Couldn't reset the local cache`),
     resetFailedDetail: i18n._(
       msg`The database was kept. Quit OpenMail and restore a local backup or contact support.`,
     ),

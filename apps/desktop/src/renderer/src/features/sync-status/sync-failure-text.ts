@@ -11,7 +11,7 @@ const TEXT: Record<SyncFailureReason, MessageDescriptor> = {
   auth: msg`The server rejected the sign-in.`,
   network: msg`Can't reach the mail server right now.`,
   server: msg`The mail server had a problem. Sync will try again later.`,
-  unknown: msg`Sync could not finish. It will retry automatically.`,
+  unknown: msg`Sync couldn't finish. It will retry automatically.`,
   // The same sentences the app shows for these connection failures elsewhere.
   dns: msg`Can't find the mail server. Check the server name and your internet connection.`,
   refused: msg`The mail server refused the connection. Check the port.`,

@@ -119,7 +119,7 @@ function SyncFailure({
         }
       >
         <p className="truncate">
-          {names ? <Trans>Could not sync {names}.</Trans> : <Trans>Sync failed</Trans>}
+          {names ? <Trans>Couldn't sync {names}.</Trans> : <Trans>Sync failed</Trans>}
         </p>
       </NoticeLine>
     </div>

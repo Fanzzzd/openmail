@@ -132,7 +132,7 @@ export function MessageList({
           : t`${plural(count, { one: "More than # result", other: "More than # results" })}`;
   const searchMessages = searchErrorAccounts.map(
     (accountId) =>
-      `${accountLabel(accountId)}: ${searchReauthAccounts.includes(accountId) ? t`Sign in again` : t`The server could not complete this search.`}`,
+      `${accountLabel(accountId)}: ${searchReauthAccounts.includes(accountId) ? t`Sign in again` : t`The server couldn't complete this search.`}`,
   );
   /** The row under the pointer at the right-click, set before the menu opens. */
   const pressed = useRef<string | null>(null);
@@ -340,7 +340,7 @@ export function MessageList({
         >
           <TriangleAlert aria-hidden className="size-3.5 shrink-0" />
           <span className="min-w-0 flex-1 truncate">
-            <Trans>Search could not finish:</Trans> {searchMessages.join("; ")}
+            <Trans>Search couldn't finish:</Trans> {searchMessages.join("; ")}
           </span>
         </output>
       )}
@@ -449,7 +449,7 @@ export function MessageList({
         <output className="block shrink-0 p-3 text-center text-a11y-muted">
           {loadError && (
             <p role="alert" className="text-a11y-danger">
-              <Trans>Could not load older messages. Try again.</Trans>
+              <Trans>Couldn't load older messages. Try again.</Trans>
             </p>
           )}
           {loadingMore ? (

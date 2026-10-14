@@ -6,7 +6,7 @@ export const DEFAULT_DESKTOP_LABELS: DesktopLabels = {
   updatesDisabled: "Update checks require a signed, installed macOS app.",
   updatesCurrent: "OpenMail is up to date.",
   updatesAvailable: "Update available:",
-  updatesFailed: "Could not check for updates. Try again later.",
+  updatesFailed: "Couldn't check for updates. Try again later.",
   ok: "OK",
   read: "Mark read",
   actionMenu: "Actions",

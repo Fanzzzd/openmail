@@ -11,6 +11,36 @@ describe("input error translations", () => {
       Object.keys(INPUT_ERRORS).filter((message) => !PUBLIC_ERROR_MESSAGES.has(message)),
     ).toEqual([]);
   });
+
+  it("translate every message the main process lets through", () => {
+    const english = setupI18n({ locale: "en", messages: { en: {} } });
+    const generic = "Something went wrong. Please try again.";
+    const raw = [...PUBLIC_ERROR_MESSAGES].filter(
+      (message) =>
+        message !== "the operation failed." &&
+        message !== "no printers are available." &&
+        message !== "Contacts operation failed." &&
+        !INPUT_ERRORS[message],
+    );
+    expect(raw).toEqual([]);
+    expect(errorText(english, new InvalidInput({ message: "Queued delivery is paused" }))).toBe(
+      generic,
+    );
+  });
+
+  it("explain internal calendar failures with a next step", () => {
+    const english = setupI18n({ locale: "en", messages: { en: {} } });
+    for (const message of [
+      "Calendar pagination repeated a page",
+      "Invalid calendar pagination link",
+    ])
+      expect(errorText(english, new InvalidInput({ message }))).toBe(
+        "Couldn't load the calendar from the server. Try again in a few minutes.",
+      );
+    expect(
+      errorText(english, new InvalidInput({ message: "Cannot build calendar response" })),
+    ).toBe("Couldn't prepare a reply to this invitation. Respond from your calendar instead.");
+  });
 });
 
 it("fixed Outlook errors use the selected locale for validation and provider failures", () => {
