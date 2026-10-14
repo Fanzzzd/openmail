@@ -34,7 +34,7 @@ import type { ProviderAdapter } from "../providers/adapter.js";
     return Effect.gen(function* () {
       const mailbox = yield* Mailbox;
       yield* mailbox.accounts.connect({ provider: "gmail" });
-      yield* mailbox.sync();
+      yield* mailbox.sync.sync();
       return yield* body(mailbox, server);
     }).pipe(Effect.provide(TestMailbox({ gmail: server })));
   }
@@ -175,7 +175,7 @@ import type { ProviderAdapter } from "../providers/adapter.js";
         // Local state changed anyway.
         assert.strictEqual((yield* m.reading.thread(thread!.id))[0]?.isUnread, false);
 
-        const [result] = yield* m.sync();
+        const [result] = yield* m.sync.sync();
         assert.strictEqual(result?.needsReauth, true);
         assert.strictEqual(server.pushed.length, 0);
 
@@ -187,7 +187,7 @@ import type { ProviderAdapter } from "../providers/adapter.js";
           grantedScopes: server.grantedScopes,
           loginHint: server.email,
         });
-        yield* m.sync();
+        yield* m.sync.sync();
         assert.deepStrictEqual(server.pushed, [
           { providerId: "m1", op: { kind: "read", value: true } },
         ]);
@@ -206,7 +206,7 @@ import type { ProviderAdapter } from "../providers/adapter.js";
         );
         assert.strictEqual(server.pushed.length, 0);
         yield* TestClock.adjust("5 seconds");
-        yield* m.sync();
+        yield* m.sync.sync();
         assert.strictEqual(server.pushed.length, 1);
       }),
     ),
@@ -219,12 +219,12 @@ import type { ProviderAdapter } from "../providers/adapter.js";
         server.failNext = new ProviderError({
           message: "Gmail API 0: Transport error (GET /labels)",
         });
-        const fiber = yield* Effect.forkChild(m.sync());
+        const fiber = yield* Effect.forkChild(m.sync.sync());
         // The failure reaches the retry after the batch buffer drains, not synchronously.
         for (let second = 0; second < 6; second++) yield* TestClock.adjust("1 second");
         const [result] = yield* Fiber.join(fiber);
         assert.strictEqual(result?.error, undefined);
-        assert.deepStrictEqual((yield* m.syncState).errors, []);
+        assert.deepStrictEqual((yield* m.sync.syncState).errors, []);
         assert.strictEqual((yield* m.accounts.accounts)[0]?.lastSyncError, null);
         assert.strictEqual((yield* m.reading.threads({ mailbox: "inbox" })).length, 2);
       }),
@@ -241,7 +241,7 @@ import type { ProviderAdapter } from "../providers/adapter.js";
           reason: "quota",
           retryAfter: "90",
         });
-        const fiber = yield* Effect.forkChild(m.sync());
+        const fiber = yield* Effect.forkChild(m.sync.sync());
         for (let second = 0; second < 85; second++) yield* TestClock.adjust("1 second");
         assert.isUndefined(fiber.pollUnsafe());
         for (let second = 0; second < 10; second++) yield* TestClock.adjust("1 second");
@@ -256,7 +256,7 @@ import type { ProviderAdapter } from "../providers/adapter.js";
     withGmail([incoming("m1")], (m, server) =>
       Effect.gen(function* () {
         server.failNext = new ProviderError({ message: "Gmail API 400: bad", status: 400 });
-        const [result] = yield* m.sync();
+        const [result] = yield* m.sync.sync();
         // The stored error is a fixed sentence; the provider's body stays out of the UI.
         assert.strictEqual(result?.error, SYNC_FAILURE_TEXT.unknown);
         assert.strictEqual(
@@ -283,11 +283,11 @@ import type { ProviderAdapter } from "../providers/adapter.js";
           reason: "quota",
           retryAfter: "3600",
         });
-        const [result] = yield* m.sync();
+        const [result] = yield* m.sync.sync();
         assert.strictEqual(result?.error, SYNC_FAILURE_TEXT.quota);
         const account = (yield* m.accounts.accounts)[0];
         assert.strictEqual(account?.lastSyncError, SYNC_FAILURE_TEXT.quota);
-        assert.deepStrictEqual((yield* m.syncState).errors, [
+        assert.deepStrictEqual((yield* m.sync.syncState).errors, [
           `${account?.id}: ${SYNC_FAILURE_TEXT.quota}`,
         ]);
       }),
@@ -297,7 +297,7 @@ import type { ProviderAdapter } from "../providers/adapter.js";
   it.effect("concurrent syncs share one run", () =>
     withGmail([incoming("m1")], (m) =>
       Effect.gen(function* () {
-        const [a, b] = yield* Effect.all([m.sync(), m.sync()], { concurrency: 2 });
+        const [a, b] = yield* Effect.all([m.sync.sync(), m.sync.sync()], { concurrency: 2 });
         assert.strictEqual(a, b);
       }),
     ),
@@ -446,7 +446,7 @@ import type { ProviderAdapter } from "../providers/adapter.js";
           { kind: "modify", threads: ["gmail:me@gmail.com/m1"], op: { kind: "archive" } },
           user,
         );
-        for (let attempt = 0; attempt < 4; attempt++) yield* m.sync();
+        for (let attempt = 0; attempt < 4; attempt++) yield* m.sync.sync();
         assert.strictEqual((yield* m.reading.threads({ mailbox: "inbox" })).length, 0);
         assert.isFalse(
           (yield* m.proposals.audit(10)).some((entry) => entry.action === "sync-failed"),
@@ -497,7 +497,7 @@ import type { ProviderAdapter } from "../providers/adapter.js";
         const mailbox = yield* Mailbox;
         const store = yield* Store;
         const account = yield* mailbox.accounts.connect({ provider: "gmail" });
-        yield* mailbox.sync();
+        yield* mailbox.sync.sync();
         assert.strictEqual((yield* store.getMessage(`${account.id}/old`)).bodyText, "full body");
       }),
       {
@@ -517,9 +517,9 @@ import type { ProviderAdapter } from "../providers/adapter.js";
         const mailbox = yield* Mailbox;
         const account = yield* mailbox.accounts.connect({ provider: "gmail" });
         closed.length = 0;
-        yield* mailbox.setSyncPaused(true);
+        yield* mailbox.sync.setSyncPaused(true);
         assert.deepStrictEqual(closed, [undefined]);
-        yield* mailbox.setSyncPaused(false);
+        yield* mailbox.sync.setSyncPaused(false);
         yield* mailbox.accounts.setAccountSettings(account.id, {
           enabled: false,
           description: "Renamed",
@@ -558,7 +558,7 @@ import type { ProviderAdapter } from "../providers/adapter.js";
           labels: ["DRAFT"],
           date: 0,
         });
-        yield* mailbox.sync();
+        yield* mailbox.sync.sync();
         assert.strictEqual((yield* store.getDraft("draft:older"))._tag, "Some");
       }),
       {
@@ -700,10 +700,10 @@ it.effect(
       });
       assert.isNull(yield* mailbox.compose.draftStatus(draft.id));
       assert.ok((yield* store.listPendingOps).some((op) => op.op.kind === "deleteDraft"));
-      yield* mailbox.sync(account.id);
+      yield* mailbox.sync.sync(account.id);
       assert.deepStrictEqual(yield* mailbox.reading.threads({ mailbox: "drafts" }), []);
       yield* TestClock.adjust("10 minutes");
-      yield* mailbox.sync(account.id);
+      yield* mailbox.sync.sync(account.id);
       assert.strictEqual(server.drafts.size, 0);
       assert.strictEqual(server.draftLog.filter((entry) => entry.kind === "delete").length, 1);
       assert.deepStrictEqual(yield* mailbox.reading.threads({ mailbox: "drafts" }), []);

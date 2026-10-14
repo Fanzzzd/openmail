@@ -263,9 +263,9 @@ it.effect("refuses compaction while a real sync holds the lock", () =>
     yield* Effect.gen(function* () {
       const mailbox = yield* Mailbox;
       yield* mailbox.accounts.connect({ provider: "gmail" });
-      const sync = yield* mailbox.sync().pipe(Effect.forkChild);
+      const sync = yield* mailbox.sync.sync().pipe(Effect.forkChild);
       yield* Deferred.await(started);
-      assert.strictEqual(yield* mailbox.compactCache, "busy");
+      assert.strictEqual(yield* mailbox.sync.compactCache, "busy");
       yield* Deferred.succeed(release, undefined);
       yield* Fiber.join(sync);
     }).pipe(Effect.provide(layer));
@@ -296,7 +296,7 @@ it.effect(
 it.effect("read-only mailbox refuses compact now before touching the database", () =>
   Effect.gen(function* () {
     const mailbox = yield* Mailbox;
-    assert.strictEqual(yield* mailbox.compactCache, "read-only");
+    assert.strictEqual(yield* mailbox.sync.compactCache, "read-only");
   }).pipe(
     Effect.provide(
       TestMailbox().pipe(

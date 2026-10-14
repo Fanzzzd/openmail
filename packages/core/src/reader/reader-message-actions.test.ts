@@ -85,7 +85,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
               ? { provider, input: { preset: "icloud", email: server.email, password: "test" } }
               : { provider },
           );
-          yield* mailbox.sync();
+          yield* mailbox.sync.sync();
           const id = `${account.id}/chosen`;
           const original = yield* mailbox.reading.thread(id);
           const ops: MailOp[] = [
@@ -97,7 +97,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
           for (const op of ops) {
             server.pushed.length = 0;
             const batch = yield* mailbox.organize.modifyWithUndo([id], op, true);
-            yield* mailbox.sync();
+            yield* mailbox.sync.sync();
             assert.ok(server.pushed.length > 0);
             assert.ok(server.pushed.every((push) => push.providerId === "chosen"));
             const thread = yield* mailbox.reading.thread(id);
@@ -112,12 +112,12 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
             if (op.kind === "star") assert.ok(selected.isStarred);
             if (op.kind === "read") assert.ok(selected.isUnread);
             yield* mailbox.organize.undoBatch(batch.undoId);
-            yield* mailbox.sync();
+            yield* mailbox.sync.sync();
             assert.deepStrictEqual(yield* mailbox.reading.thread(id), original);
           }
           server.pushed.length = 0;
           const suffix = yield* mailbox.organize.markUnreadFrom(id);
-          yield* mailbox.sync();
+          yield* mailbox.sync.sync();
           assert.deepStrictEqual(server.pushed.map((push) => push.providerId).toSorted(), [
             "chosen",
             "newer",
@@ -141,18 +141,18 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
             false,
           );
           yield* mailbox.organize.undoBatch(suffix.undoId);
-          yield* mailbox.sync();
+          yield* mailbox.sync.sync();
           assert.ok((yield* mailbox.reading.thread(id)).every((message) => !message.isUnread));
           for (const excluded of ["draft", "trashed", "spam"]) {
             server.pushed.length = 0;
             const batch = yield* mailbox.organize.markUnreadFrom(`${account.id}/${excluded}`);
-            yield* mailbox.sync();
+            yield* mailbox.sync.sync();
             assert.deepStrictEqual(
               server.pushed.map((push) => push.providerId),
               ["newer"],
             );
             yield* mailbox.organize.undoBatch(batch.undoId);
-            yield* mailbox.sync();
+            yield* mailbox.sync.sync();
           }
           server.pushed.length = 0;
           assert.strictEqual(
@@ -160,7 +160,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
               ._tag,
             "Failure",
           );
-          yield* mailbox.sync();
+          yield* mailbox.sync.sync();
           assert.deepStrictEqual(server.pushed, []);
           assert.strictEqual(
             (yield* mailbox.organize.markUnreadFrom(`${account.id}/missing`).pipe(Effect.result))

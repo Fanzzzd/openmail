@@ -113,7 +113,7 @@ import { StoreLive } from "../store/store.js";
         const account = yield* store.upsertAccount("imap", "me@example.com");
         for (const uid of [1, 2])
           yield* store.upsertMessage(account.id, message(`7:${uid}:INBOX`, "<duplicate@x>"));
-        yield* mailbox.sync();
+        yield* mailbox.sync.sync();
         assert.deepStrictEqual(
           (yield* Effect.forEach([1, 2], (uid) => store.messageRef(`${account.id}/7:${uid}:INBOX`)))
             .map((ref) => ref.providerId)
@@ -173,8 +173,8 @@ import { StoreLive } from "../store/store.js";
             );
             if (polling) {
               yield* store.saveSyncCursor(account.id, "previous");
-              yield* mailbox.pollInbox();
-            } else yield* mailbox.sync();
+              yield* mailbox.sync.pollInbox();
+            } else yield* mailbox.sync.sync();
             const x = yield* store.messageIdForProvider(account.id, "7:5:INBOX");
             const y = yield* store.messageIdForProvider(account.id, "7:2:INBOX");
             assert.ok(x && y);
@@ -239,7 +239,7 @@ import { StoreLive } from "../store/store.js";
             },
           },
         );
-        yield* mailbox.sync();
+        yield* mailbox.sync.sync();
         server.pushed.length = 0;
         const undo = yield* mailbox.organize.undoBatch(undoId).pipe(Effect.result);
         assert.strictEqual(undo._tag, "Failure");
@@ -283,7 +283,7 @@ import { StoreLive } from "../store/store.js";
             yield* store.upsertMessage(imapAccount.id, message("7:1:INBOX", "<x@x>"));
             if (polling) yield* store.saveSyncCursor(imapAccount.id, "previous");
             const sync = yield* (
-              polling ? mailbox.pollInbox([imapAccount.id]) : mailbox.sync(imapAccount.id)
+              polling ? mailbox.sync.pollInbox([imapAccount.id]) : mailbox.sync.sync(imapAccount.id)
             ).pipe(Effect.forkChild);
             yield* Deferred.await(started);
             yield* store.enqueueOp(imapAccount.id, "7:1:INBOX", { kind: "star", value: true });
@@ -375,11 +375,11 @@ import { StoreLive } from "../store/store.js";
         const store = yield* Store;
         const mailbox = yield* Mailbox;
         const account = yield* store.upsertAccount("outlook", "me@example.com");
-        const first = yield* mailbox.sync(account.id);
+        const first = yield* mailbox.sync.sync(account.id);
         assert.strictEqual(first[0]?.error, "Sync could not finish. It will retry automatically.");
         failed = false;
-        assert.isUndefined((yield* mailbox.sync(account.id))[0]?.error);
-        assert.isFalse((yield* mailbox.syncState).running);
+        assert.isUndefined((yield* mailbox.sync.sync(account.id))[0]?.error);
+        assert.isFalse((yield* mailbox.sync.syncState).running);
       }),
     );
   });
@@ -420,7 +420,7 @@ import { StoreLive } from "../store/store.js";
             yield* TestClock.adjust("3 seconds");
             assert.isAtLeast(pulls, 2);
             assert.isNull((yield* store.getAccount(account.id)).lastSyncError);
-            assert.isFalse((yield* mailbox.syncState).running);
+            assert.isFalse((yield* mailbox.sync.syncState).running);
           }).pipe(Effect.provide(layer));
           const recorded = crashes.filter(
             (value) =>
@@ -460,10 +460,13 @@ import { StoreLive } from "../store/store.js";
           const store = yield* Store;
           const mailbox = yield* Mailbox;
           const account = yield* store.upsertAccount("outlook", "me@example.com");
-          assert.strictEqual((yield* mailbox.sync(account.id).pipe(Effect.exit))._tag, "Failure");
-          assert.isFalse((yield* mailbox.syncState).running);
+          assert.strictEqual(
+            (yield* mailbox.sync.sync(account.id).pipe(Effect.exit))._tag,
+            "Failure",
+          );
+          assert.isFalse((yield* mailbox.sync.syncState).running);
           interrupted = false;
-          assert.isUndefined((yield* mailbox.sync(account.id))[0]?.error);
+          assert.isUndefined((yield* mailbox.sync.sync(account.id))[0]?.error);
         }),
       );
     },
@@ -491,17 +494,17 @@ import { StoreLive } from "../store/store.js";
       };
       yield* Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        const first = yield* mailbox.sync(account.id).pipe(Effect.forkChild);
+        const first = yield* mailbox.sync.sync(account.id).pipe(Effect.forkChild);
         yield* Deferred.await(entered);
-        const waiter = yield* mailbox.sync(account.id).pipe(Effect.forkChild);
+        const waiter = yield* mailbox.sync.sync(account.id).pipe(Effect.forkChild);
         yield* Effect.yieldNow;
         yield* Deferred.succeed(release, undefined);
         const result = yield* Fiber.join(first);
         assert.deepStrictEqual(yield* Fiber.join(waiter), result);
         assert.strictEqual(result[0]?.error, "Sync could not finish. It will retry automatically.");
-        assert.isFalse((yield* mailbox.syncState).running);
+        assert.isFalse((yield* mailbox.sync.syncState).running);
         broken = false;
-        assert.isUndefined((yield* mailbox.sync(account.id))[0]?.error);
+        assert.isUndefined((yield* mailbox.sync.sync(account.id))[0]?.error);
       }).pipe(
         Effect.provide(
           MailboxLive({ backgroundFlush: false }).pipe(
@@ -577,16 +580,16 @@ import { StoreLive } from "../store/store.js";
         const store = yield* Store;
         const mailbox = yield* Mailbox;
         const account = yield* store.upsertAccount("outlook", "me@example.com");
-        yield* mailbox.sync(account.id);
+        yield* mailbox.sync.sync(account.id);
         offline = true;
-        yield* mailbox.pollInbox();
+        yield* mailbox.sync.pollInbox();
         const before = pulls;
-        yield* mailbox.pollInbox();
+        yield* mailbox.sync.pollInbox();
         assert.strictEqual(pulls, before);
-        yield* mailbox.setSyncPaused(true);
+        yield* mailbox.sync.setSyncPaused(true);
         offline = false;
-        yield* mailbox.setSyncPaused(false);
-        yield* mailbox.pollInbox();
+        yield* mailbox.sync.setSyncPaused(false);
+        yield* mailbox.sync.pollInbox();
         assert.strictEqual(resets, 1);
         assert.strictEqual(pulls, before + 1);
       }),

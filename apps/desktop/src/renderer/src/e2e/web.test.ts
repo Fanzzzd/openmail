@@ -48,7 +48,7 @@ async function openWebApp(mailbox: (m: Mailbox["Service"]) => Mailbox["Service"]
   await mailboxRuntime.runPromise(
     m.app.setPrefs({ language: "en", defaultProfilesPrompted: true, remoteImages: "ask" }),
   );
-  await mailboxRuntime.runPromise(m.sync());
+  await mailboxRuntime.runPromise(m.sync.sync());
 
   // The fake server side: the real remote RPC group and handlers on a WebSocket.
   const hub = createConnectionHub();
@@ -141,7 +141,7 @@ async function openWebApp(mailbox: (m: Mailbox["Service"]) => Mailbox["Service"]
     tags,
     states,
     server,
-    sync: () => mailboxRuntime.runPromise(m.sync()),
+    sync: () => mailboxRuntime.runPromise(m.sync.sync()),
   };
 }
 

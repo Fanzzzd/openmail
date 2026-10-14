@@ -256,7 +256,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
         const account = yield* store.upsertAccount(provider, "me@example.test");
         yield* store.upsertMessage(account.id, message(providerId, 1));
         yield* store.enqueueOp(account.id, providerId, { kind: "read", value: true });
-        const sync = yield* mailbox.sync(account.id);
+        const sync = yield* mailbox.sync.sync(account.id);
         assert.isUndefined(sync[0]?.error);
         const patched = yield* store.getMessage(`${account.id}/${providerId}`);
         assert.strictEqual(patched.rfcMessageId, `<${providerId}@example.test>`);
@@ -265,7 +265,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
         assert.deepStrictEqual(patched.labels, message(providerId, 1).labels);
         assert.strictEqual(requests, 1);
         assert.strictEqual((yield* store.headerBackfillState(account.id)).kind, "done");
-        yield* mailbox.sync(account.id);
+        yield* mailbox.sync.sync(account.id);
         assert.strictEqual(requests, 1);
       }).pipe(Effect.provide(runtime));
     },

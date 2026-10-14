@@ -47,7 +47,8 @@ type Groups =
   | "calendar"
   | "app"
   | "proposals"
-  | "accounts";
+  | "accounts"
+  | "sync";
 /** Groups whose members are no longer flat on Service. */
 type Moved =
   | "ai"
@@ -58,7 +59,8 @@ type Moved =
   | "reading"
   | "organize"
   | "proposals"
-  | "accounts";
+  | "accounts"
+  | "sync";
 type Flat = Omit<Service, Exclude<Groups, Moved>>;
 type Overrides = Partial<Omit<Flat, Moved>> & { [G in Moved]?: Partial<Service[G]> };
 
@@ -163,7 +165,24 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
       setAgentWriteMode: () => notUsed("setAgentWriteMode"),
       proposal: () => notUsed("proposal"),
     },
-    syncHealth: () => notUsed("syncHealth"),
+    sync: {
+      syncHealth: () => notUsed("syncHealth"),
+      cacheDatabaseSize: notUsed("cacheDatabaseSize"),
+      compactCache: notUsed("compactCache"),
+      closeSessions: () => notUsed("closeSessions"),
+      cacheSize: Effect.die("unused"),
+      clearCache: () => Effect.die("unused"),
+      resetConnectivity: () => Effect.die("unused"),
+      setSyncPaused: () => Effect.die("unused"),
+      cacheWindows: Effect.die("unused"),
+      setCacheWindow: () => Effect.die("unused"),
+      backfillState: Effect.die("unused"),
+      pauseBackfill: () => Effect.die("unused"),
+      fetchOlder: () => Effect.die("unused"),
+      sync: () => notUsed("sync"),
+      pollInbox: () => notUsed("pollInbox"),
+      syncState: notUsed("syncState"),
+    },
     app: {
       diagnosticsState: notUsed("diagnosticsState"),
       checkUpdates: () => Effect.die("unused"),
@@ -177,9 +196,6 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
       setPrefs: () => notUsed("setPrefs"),
       events: Stream.empty,
     },
-    cacheDatabaseSize: notUsed("cacheDatabaseSize"),
-    compactCache: notUsed("compactCache"),
-    closeSessions: () => notUsed("closeSessions"),
     accounts: {
       optionalServices: () => notUsed("optionalServices"),
       setServiceEnabled: () => notUsed("setServiceEnabled"),
@@ -319,22 +335,11 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
       threadCount: () => Effect.die("not used"),
       messageAccounts: () => notUsed("messageAccounts"),
     },
-    cacheSize: Effect.die("unused"),
-    clearCache: () => Effect.die("unused"),
-    resetConnectivity: () => Effect.die("unused"),
-    setSyncPaused: () => Effect.die("unused"),
-    cacheWindows: Effect.die("unused"),
-    setCacheWindow: () => Effect.die("unused"),
-    backfillState: Effect.die("unused"),
-    pauseBackfill: () => Effect.die("unused"),
-    fetchOlder: () => Effect.die("unused"),
-    sync: () => notUsed("sync"),
-    pollInbox: () => notUsed("pollInbox"),
-    syncState: notUsed("syncState"),
   };
   const flat: Flat = {
     ...base,
     ...overrides,
+    sync: { ...base.sync, ...overrides.sync },
     accounts: { ...base.accounts, ...overrides.accounts },
     proposals: { ...base.proposals, ...overrides.proposals },
     organize: { ...base.organize, ...overrides.organize },
@@ -1167,7 +1172,7 @@ it.effect("all MCP write tools create only proposals; only app approval changes 
         allowed: true,
         autoSummaries: false,
       });
-      yield* mailbox.sync();
+      yield* mailbox.sync.sync();
       yield* mailbox.proposals.setAgentWriteMode("propose");
       const id = `${account.id}/m1`;
       const before = yield* mailbox.reading.thread(id);
@@ -1208,7 +1213,7 @@ it.effect("all MCP write tools create only proposals; only app approval changes 
       assert.isFalse(draft.isFailure);
       assert.deepStrictEqual(yield* mailbox.reading.thread(id), before);
       assert.strictEqual((yield* mailbox.proposals.proposals).length, 9);
-      yield* mailbox.sync();
+      yield* mailbox.sync.sync();
       assert.strictEqual(server.pushed.length, 0);
       assert.strictEqual(server.drafts.size, 0);
       assert.strictEqual(server.sent.length, 0);
@@ -1242,7 +1247,7 @@ it.effect("thread cursor preserves every conversation sharing a timestamp", () =
         allowed: true,
         autoSummaries: false,
       });
-      yield* mailbox.sync();
+      yield* mailbox.sync.sync();
       let cursor: string | undefined;
       const ids: string[] = [];
       for (let page = 0; page < 5; page++) {
@@ -1274,7 +1279,7 @@ it.effect(
           allowed: true,
           autoSummaries: false,
         });
-        yield* mailbox.sync();
+        yield* mailbox.sync.sync();
         yield* mailbox.proposals.setAgentWriteMode("propose");
         const id = `${account.id}/m1`;
         const result = yield* call("modify_threads", {
@@ -1571,7 +1576,7 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
     return Effect.gen(function* () {
       const mailbox = yield* Mailbox;
       const account = yield* mailbox.accounts.connect({ provider: "gmail" });
-      yield* mailbox.sync();
+      yield* mailbox.sync.sync();
       yield* mailbox.ai.setAiAccount({
         accountId: account.id,
         allowed: true,
@@ -1685,7 +1690,7 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
     return Effect.gen(function* () {
       const mailbox = yield* Mailbox;
       const account = yield* mailbox.accounts.connect({ provider: "gmail" });
-      yield* mailbox.sync();
+      yield* mailbox.sync.sync();
       yield* mailbox.ai.setAiAccount({
         accountId: account.id,
         allowed: true,
@@ -1731,7 +1736,7 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
       return Effect.gen(function* () {
         const mailbox = yield* Mailbox;
         const account = yield* mailbox.accounts.connect({ provider: "gmail" });
-        yield* mailbox.sync();
+        yield* mailbox.sync.sync();
         const toolkit = yield* MailToolkit;
         const id = `${account.id}/m1`;
         const read = (name: "read_thread" | "list_attachments" | "attachment_text") =>
@@ -1906,7 +1911,7 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
       const mailbox = yield* Mailbox;
       const store = yield* Store;
       const account = yield* mailbox.accounts.connect({ provider: "gmail" });
-      yield* mailbox.sync();
+      yield* mailbox.sync.sync();
       yield* mailbox.proposals.setAgentWriteMode("propose");
       const result = yield* mailbox.organize.perform(
         {
@@ -1934,7 +1939,7 @@ it.effect("MCP write tools refuse invisible accounts before creating any proposa
     Effect.gen(function* () {
       const mailbox = yield* Mailbox;
       const account = yield* mailbox.accounts.connect({ provider: "gmail" });
-      yield* mailbox.sync();
+      yield* mailbox.sync.sync();
       yield* mailbox.proposals.setAgentWriteMode("propose");
       const id = `${account.id}/m1`;
       const attempt = () =>
@@ -2282,7 +2287,9 @@ it.effect("tools fail as not_found for an account, profile or id the client cann
       compose: {
         suggestContacts: () => Effect.succeed([]),
       },
-      sync: () => Effect.succeed([]),
+      sync: {
+        sync: () => Effect.succeed([]),
+      },
     });
     for (const account_id of ["bogus", "off"]) {
       const results = yield* Effect.all([

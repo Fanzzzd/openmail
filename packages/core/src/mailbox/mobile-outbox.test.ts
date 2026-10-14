@@ -336,7 +336,7 @@ import type { OutgoingMessage } from "../domain/changes.js";
           Effect.gen(function* () {
             const mailbox = yield* Mailbox;
             const account = yield* mailbox.accounts.connect({ provider });
-            yield* mailbox.sync(account.id);
+            yield* mailbox.sync.sync(account.id);
             const row = (yield* mailbox.reading.threads({ accountIds: [account.id] }))[0];
             expect(row).toBeDefined();
             if (!row) throw new Error("missing thread");
@@ -356,7 +356,7 @@ import type { OutgoingMessage } from "../domain/changes.js";
             );
             const draft = { id: "draft:mobile", accountId: account.id, message };
             yield* mailbox.compose.saveDraft(draft);
-            yield* mailbox.sync(account.id);
+            yield* mailbox.sync.sync(account.id);
             expect(server.draftLog).toEqual([]);
             expect((yield* mailbox.compose.openDraft(draft.id)).message.html).not.toContain(
               "script",

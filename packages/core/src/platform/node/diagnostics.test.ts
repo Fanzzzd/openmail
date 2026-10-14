@@ -216,7 +216,7 @@ it("resets a real cache then re-syncs through a fake provider while accounts and
       const m = yield* Mailbox;
       const account = yield* m.accounts.connect({ provider: "gmail" });
       accountId = account.id;
-      yield* m.sync();
+      yield* m.sync.sync();
       expect(yield* m.reading.threads({})).toHaveLength(1);
       yield* m.app.setPrefs({ undoSendSeconds: 10 });
       yield* m.compose.saveDraft({
@@ -251,7 +251,7 @@ it("resets a real cache then re-syncs through a fake provider while accounts and
       expect((yield* m.app.prefs).undoSendSeconds).toBe(10);
       expect((yield* m.compose.openDraft("shared-draft")).message.text).toBe("User feedback");
       expect(yield* m.reading.threads({})).toHaveLength(0);
-      yield* m.sync();
+      yield* m.sync.sync();
       expect(yield* m.reading.threads({})).toHaveLength(1);
       const draft = yield* m.compose.openDraft("shared-draft");
       yield* m.compose.saveDraft({

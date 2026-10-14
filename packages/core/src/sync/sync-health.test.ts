@@ -79,7 +79,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
           backfill: yield* store.backfillStates,
           message: yield* store.getMessage(`${account.id}/${id}`),
         };
-        const report = yield* mailbox.syncHealth(account.id);
+        const report = yield* mailbox.sync.syncHealth(account.id);
         assert.deepStrictEqual(
           {
             account: yield* store.getAccount(account.id),
@@ -143,7 +143,7 @@ for (const [provider, cursor, limit] of [
               },
             }),
         );
-        const report = yield* mailbox.syncHealth(account.id);
+        const report = yield* mailbox.sync.syncHealth(account.id);
         const folder = report.folders.find((entry) => entry.scope === "INBOX");
         assert.strictEqual(folder?.headerWindow?.messageLimit ?? null, limit);
         // Only IMAP takes its scopes from the cursor's folder paths.
@@ -170,7 +170,7 @@ it.effect(
       server.failNext = new ProviderError({
         message: "https://me:password@server.invalid/private",
       });
-      const report = yield* mailbox.syncHealth(account.id);
+      const report = yield* mailbox.sync.syncHealth(account.id);
       assert.strictEqual(report.folders[0]?.verdict, "server unavailable");
       const folder = report.folders.find((entry) => entry.scope === scope);
       assert.ok(folder);
@@ -207,14 +207,14 @@ it.effect(
       yield* store.upsertMessage(account.id, message("one"));
       yield* store.upsertMessage(other.id, message("two", ["INBOX"], true));
       yield* store.enqueueOp(other.id, "two", { kind: "read", value: false });
-      const report = yield* mailbox.syncHealth(account.id);
+      const report = yield* mailbox.sync.syncHealth(account.id);
       assert.strictEqual(report.folders[0]?.verdict, "local has fewer — missing");
       assert.strictEqual(report.folders[0]?.local.total, 1);
       assert.strictEqual(report.pendingOps, 0);
       yield* store.upsertMessage(account.id, message("one", ["INBOX"], true));
       server.messages.set("one", message("one"));
       assert.strictEqual(
-        (yield* mailbox.syncHealth(account.id)).folders[0]?.verdict,
+        (yield* mailbox.sync.syncHealth(account.id)).folders[0]?.verdict,
         "local has more — stale",
       );
     }).pipe(Effect.provide(TestMailbox({ gmail: server })));
@@ -276,7 +276,7 @@ it.effect(
           },
         }),
       );
-      const report = yield* mailbox.syncHealth(account.id);
+      const report = yield* mailbox.sync.syncHealth(account.id);
       assert.strictEqual(report.folders[0]?.local.total, 1);
       assert.strictEqual(report.folders[0]?.verdict, "local has fewer — missing");
       assert.strictEqual(report.folders[0]?.server.kind, "available");
@@ -470,7 +470,7 @@ it.effect(
         account.id,
       );
       const before = yield* store.syncHealthLocal(account.id, "DRAFT", false);
-      const report = yield* mailbox.syncHealth(account.id);
+      const report = yield* mailbox.sync.syncHealth(account.id);
       const folder = report.folders.find((entry) => entry.scope === "DRAFT");
       assert.strictEqual(folder?.local.total, 5);
       assert.strictEqual(folder?.server.kind === "available" && folder.server.total, 1);
@@ -516,7 +516,7 @@ it.effect(
       const account = yield* store.upsertAccount("outlook", "me@example.test");
       for (let index = 0; index < 51; index++)
         yield* store.upsertMessage(account.id, message(`draft-${index}`, ["DRAFT"]));
-      const fiber = yield* mailbox.syncHealth(account.id).pipe(Effect.forkChild);
+      const fiber = yield* mailbox.sync.syncHealth(account.id).pipe(Effect.forkChild);
       yield* TestClock.adjust("11 seconds");
       const report = yield* Fiber.join(fiber);
       const folder = report.folders.find((entry) => entry.scope === "DRAFT");

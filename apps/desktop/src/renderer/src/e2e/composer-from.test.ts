@@ -26,7 +26,7 @@ const alias = (accountId: string): SendAs => ({
 });
 async function withAlias(h: Flow) {
   h.server.aliases = [alias(h.account.id)];
-  await h.run(h.m.sync());
+  await h.run(h.m.sync.sync());
 }
 const draft = { to: [{ name: "", address: "alice@example.com" }], subject: "Reopened", text: "" };
 

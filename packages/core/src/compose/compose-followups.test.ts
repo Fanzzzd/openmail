@@ -98,7 +98,7 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
                 }
               : { provider },
           );
-          yield* mailbox.sync();
+          yield* mailbox.sync.sync();
           const draft = yield* mailbox.outbox.sendAgain(`${provider}:me@example.com/sent`);
           assert.notStrictEqual(draft.id, `${provider}:me@example.com/sent`);
           assert.deepStrictEqual(draft.message.to, outgoing.to);
@@ -139,13 +139,13 @@ it.effect(
     return Effect.gen(function* () {
       const mailbox = yield* Mailbox;
       yield* mailbox.accounts.connect({ provider: "gmail" });
-      yield* mailbox.sync();
+      yield* mailbox.sync.sync();
       assert.strictEqual(
         (yield* Effect.flip(mailbox.outbox.sendAgain("gmail:me@example.com/sent")))._tag,
         "InvalidInput",
       );
       server.messages.set("sent", original);
-      yield* mailbox.sync();
+      yield* mailbox.sync.sync();
       server.failNext = new ProviderError({ message: "offline" });
       assert.strictEqual(
         (yield* Effect.flip(mailbox.outbox.sendAgain("gmail:me@example.com/sent")))._tag,
@@ -162,7 +162,7 @@ it.effect("an existing remote draft is unsynced while its edited save is queued"
     const mailbox = yield* Mailbox;
     const account = yield* mailbox.accounts.connect({ provider: "gmail" });
     // Drain connect's detached sync before injecting a failure into the edited save.
-    yield* mailbox.sync();
+    yield* mailbox.sync.sync();
     const draft = yield* mailbox.compose.saveDraft({
       id: "draft:sync",
       accountId: account.id,
@@ -178,7 +178,7 @@ it.effect("an existing remote draft is unsynced while its edited save is queued"
     assert.strictEqual(edited.synced, false);
     assert.strictEqual((yield* mailbox.compose.openDraft(draft.id)).synced, false);
     yield* TestClock.adjust("5 seconds");
-    yield* mailbox.sync();
+    yield* mailbox.sync.sync();
     assert.strictEqual((yield* mailbox.compose.openDraft(draft.id)).synced, true);
   }).pipe(Effect.provide(TestMailbox({ gmail: server })));
 });

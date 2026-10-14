@@ -96,7 +96,7 @@ for (const provider of ["gmail", "imap", "outlook"] as const) {
                 }
               : { provider },
           );
-          yield* mailbox.sync();
+          yield* mailbox.sync.sync();
           const id = `${account.id}/original`;
           const parts = yield* mailbox.compose.composeAttachments(id);
           assert.deepStrictEqual(
@@ -169,7 +169,7 @@ it.effect(
     return Effect.gen(function* () {
       const mailbox = yield* Mailbox;
       const account = yield* mailbox.accounts.connect({ provider: "gmail" });
-      yield* mailbox.sync();
+      yield* mailbox.sync.sync();
       const error = yield* Effect.flip(
         mailbox.organize.perform(
           {
@@ -263,7 +263,7 @@ it.effect(
     return Effect.gen(function* () {
       const mailbox = yield* Mailbox;
       const account = yield* mailbox.accounts.connect({ provider: "gmail" });
-      yield* mailbox.sync();
+      yield* mailbox.sync.sync();
       server.failNext = new ProviderError({ message: "Must not fetch raw MIME" });
       const error = yield* Effect.flip(
         mailbox.compose.composeAttachments(`${account.id}/original`),

@@ -153,7 +153,7 @@ afterEach(async () => {
 const seed = async () => {
   const mailbox = await runtime.runPromise(Mailbox);
   const account = await runtime.runPromise(mailbox.accounts.connect({ provider: "gmail" }));
-  await runtime.runPromise(mailbox.sync());
+  await runtime.runPromise(mailbox.sync.sync());
   const message = source("new", account.id);
   await runtime.runPromise(
     Effect.flatMap(Store, (store) =>
@@ -204,7 +204,7 @@ it("opt-in is per account, claims persistently dedupe, and visible foreground In
 });
 it("background is off by default, skips restricted networks and power saving, then uses scoped incremental polling", async () => {
   const { mailbox, account } = await seed();
-  const poll = vi.spyOn(mailbox, "pollInbox").mockReturnValue(Effect.succeed([]));
+  const poll = vi.spyOn(mailbox.sync, "pollInbox").mockReturnValue(Effect.succeed([]));
   await runBackgroundRefresh();
   expect(poll).not.toHaveBeenCalled();
   await saveBackgroundPreferences(runtime, { ...DEFAULT_MOBILE_BACKGROUND, refresh: true });
@@ -223,7 +223,7 @@ it("OS expiration interrupts the actual core Effect and releases the task", asyn
   await saveBackgroundPreferences(runtime, { ...DEFAULT_MOBILE_BACKGROUND, refresh: true });
   let interrupted = false;
   const { promise: ready, resolve: started } = Promise.withResolvers<void>();
-  vi.spyOn(mailbox, "pollInbox").mockReturnValue(
+  vi.spyOn(mailbox.sync, "pollInbox").mockReturnValue(
     Effect.sync(started).pipe(
       Effect.andThen(Effect.never),
       Effect.onInterrupt(() =>
@@ -257,12 +257,12 @@ it("permissions are requested only at opt-in and badge is cleared when disabled"
 it("a slow account is interrupted at its share of the budget and the next account still refreshes", async () => {
   const { mailbox, account } = await seed();
   const other = await runtime.runPromise(mailbox.accounts.connect({ provider: "outlook" }));
-  await runtime.runPromise(mailbox.sync());
+  await runtime.runPromise(mailbox.sync.sync());
   await saveBackgroundPreferences(runtime, { ...DEFAULT_MOBILE_BACKGROUND, refresh: true });
   vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
   let interrupted = false;
   const { promise: ready, resolve: started } = Promise.withResolvers<void>();
-  const poll = vi.spyOn(mailbox, "pollInbox").mockImplementation((ids) =>
+  const poll = vi.spyOn(mailbox.sync, "pollInbox").mockImplementation((ids) =>
     ids?.includes(account.id)
       ? Effect.sync(started).pipe(
           Effect.andThen(Effect.never),
@@ -386,7 +386,7 @@ it("background wakes reminders locally while offline, respects account notificat
     accounts: [message.accountId],
   });
   native.online = false;
-  const poll = vi.spyOn(mailbox, "pollInbox");
+  const poll = vi.spyOn(mailbox.sync, "pollInbox");
   await runBackgroundRefresh();
   const woken = (await runtime.runPromise(mailbox.reading.thread(message.id)))[0];
   expect(woken?.labels).toContain("INBOX");

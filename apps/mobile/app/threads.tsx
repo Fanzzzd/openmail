@@ -117,7 +117,7 @@ export default function Threads() {
     setRefreshing(true);
     try {
       const result = await runtime.runPromise(
-        Effect.flatMap(Mailbox, (mailbox) => mailbox.sync(accountId)),
+        Effect.flatMap(Mailbox, (mailbox) => mailbox.sync.sync(accountId)),
       );
       await loadPage(true);
       setFailed(result.some((item) => Boolean(item.error)));

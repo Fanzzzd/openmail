@@ -218,7 +218,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
               ? { provider, input: { preset: "qq", email: server.email, password: "fake" } }
               : { provider },
           );
-          yield* m.sync();
+          yield* m.sync.sync();
           accountId = (yield* m.accounts.accounts)[0]!.id;
           const profile = yield* m.accounts.createProfile({
             name: "Work",
@@ -245,8 +245,8 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
                   ? { labels: ["INBOX", "UNREAD", "CATEGORY_PROMOTIONS"] }
                   : {}),
             });
-          yield* m.pollInbox();
-          yield* m.sync();
+          yield* m.sync.pollInbox();
+          yield* m.sync.sync();
           assert.deepStrictEqual(yield* m.app.takeNotifications, []);
           yield* m.organize.perform(
             { kind: "modify", threads: [`${accountId}/read`], op: { kind: "read", value: true } },
@@ -257,7 +257,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
             { kind: "user", surface: "app" },
           );
           server.messages.delete("delete");
-          yield* m.sync();
+          yield* m.sync.sync();
           yield* TestClock.setTime(at(3, 12).getTime());
           assert.deepStrictEqual(yield* m.app.takeNotifications, []);
         }).pipe(Effect.provide(layer()));
@@ -282,13 +282,13 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
               : [`${accountId}/keep`, `${accountId}/secondary`]
             ).toSorted(),
           );
-          yield* m.sync();
-          yield* m.pollInbox();
+          yield* m.sync.sync();
+          yield* m.sync.pollInbox();
           assert.deepStrictEqual(yield* m.app.takeNotifications, []);
           // A new quiet period with notifications disabled before resume yields no digest.
           yield* TestClock.setTime(at(5, 17).getTime());
           server.messages.set("disabled", incoming("disabled", yield* Clock.currentTimeMillis));
-          yield* m.pollInbox();
+          yield* m.sync.pollInbox();
           yield* m.app.setPrefs({ notifications: { [accountId]: "off" } });
           yield* TestClock.setTime(at(6, 9).getTime());
           assert.deepStrictEqual(yield* m.app.takeNotifications, []);
@@ -308,7 +308,7 @@ it.effect(
       yield* TestClock.setTime(at(2, 17).getTime());
       yield* m.accounts.connect({ provider: "gmail" });
       yield* m.accounts.connect({ provider: "outlook" });
-      yield* m.sync();
+      yield* m.sync.sync();
       const profile = yield* m.accounts.createProfile({
         name: "Work",
         icon: "briefcase",
@@ -319,14 +319,14 @@ it.effect(
       yield* m.app.setPrefs({ activeHours: { [profile.id]: workHours } });
       gmail.messages.set("g", incoming("g", yield* Clock.currentTimeMillis));
       outlook.messages.set("o", incoming("o", yield* Clock.currentTimeMillis));
-      yield* m.pollInbox();
+      yield* m.sync.pollInbox();
       yield* TestClock.setTime(at(5, 9).getTime());
       const batches = yield* m.app.takeNotifications;
       assert.strictEqual(batches.length, 1);
       assert.strictEqual(batches[0]?.kind, "digest");
       assert.strictEqual(batches[0]?.messages.length, 2);
       gmail.messages.set("now", incoming("now", yield* Clock.currentTimeMillis));
-      yield* m.pollInbox();
+      yield* m.sync.pollInbox();
       assert.strictEqual((yield* m.app.takeNotifications)[0]?.kind, "immediate");
       assert.deepStrictEqual(yield* m.app.takeNotifications, []);
     }).pipe(Effect.provide(TestMailbox({ gmail, outlook })));
@@ -339,24 +339,24 @@ it.effect("fake clock crosses midnight and resumes an ungrouped Profile's pendin
     const m = yield* Mailbox;
     yield* TestClock.setTime(at(2, 21, 59).getTime());
     yield* m.accounts.connect({ provider: "gmail" });
-    yield* m.sync();
+    yield* m.sync.sync();
     const hours: ActiveHours = {
       ...workHours,
       days: { ...workHours.days, friday: [{ start: 1320, end: 120 }], saturday: [] },
     };
     yield* m.app.setPrefs({ activeHours: { all: hours } });
     server.messages.set("waiting", incoming("waiting", yield* Clock.currentTimeMillis));
-    yield* m.pollInbox();
+    yield* m.sync.pollInbox();
     assert.deepStrictEqual(yield* m.app.takeNotifications, []);
     yield* TestClock.adjust("1 minute");
     assert.strictEqual((yield* m.app.takeNotifications)[0]?.kind, "digest");
     yield* TestClock.adjust("2 hours");
     server.messages.set("midnight", incoming("midnight", yield* Clock.currentTimeMillis));
-    yield* m.pollInbox();
+    yield* m.sync.pollInbox();
     assert.strictEqual((yield* m.app.takeNotifications)[0]?.kind, "immediate");
     yield* TestClock.adjust("2 hours");
     server.messages.set("closed", incoming("closed", yield* Clock.currentTimeMillis));
-    yield* m.pollInbox();
+    yield* m.sync.pollInbox();
     assert.deepStrictEqual(yield* m.app.takeNotifications, []);
   }).pipe(Effect.provide(TestMailbox({ gmail: server })));
 });
@@ -370,14 +370,14 @@ it.effect(
       const m = yield* Mailbox;
       yield* TestClock.setTime(new Date("2026-03-08T06:59:00Z").getTime());
       yield* m.accounts.connect({ provider: "gmail" });
-      yield* m.sync();
+      yield* m.sync.sync();
       const hours: ActiveHours = {
         ...workHours,
         days: { ...workHours.days, sunday: [{ start: 120, end: 240 }] },
       };
       yield* m.app.setPrefs({ activeHours: { all: hours } });
       server.messages.set("spring", incoming("spring", yield* Clock.currentTimeMillis));
-      yield* m.pollInbox();
+      yield* m.sync.pollInbox();
       assert.deepStrictEqual(yield* m.app.takeNotifications, []);
       yield* TestClock.adjust("1 minute");
       assert.strictEqual((yield* m.app.takeNotifications)[0]?.messages[0]?.subject, "spring");
@@ -388,7 +388,7 @@ it.effect(
         },
       });
       server.messages.set("fall", incoming("fall", yield* Clock.currentTimeMillis));
-      yield* m.pollInbox();
+      yield* m.sync.pollInbox();
       assert.deepStrictEqual(yield* m.app.takeNotifications, []);
       yield* TestClock.adjust("1 minute");
       assert.strictEqual((yield* m.app.takeNotifications)[0]?.messages[0]?.subject, "fall");
@@ -407,13 +407,13 @@ it.effect(
     return Effect.gen(function* () {
       const m = yield* Mailbox;
       yield* m.accounts.connect({ provider: "gmail" });
-      yield* m.sync();
+      yield* m.sync.sync();
       server.messages.set("fresh", incoming("fresh", yield* Clock.currentTimeMillis));
-      yield* m.sync();
+      yield* m.sync.sync();
       assert.strictEqual((yield* m.app.takeNotifications)[0]?.kind, "immediate");
       for (const id of ["old-a", "old-b"])
         server.messages.set(id, incoming(id, yield* Clock.currentTimeMillis));
-      yield* m.sync();
+      yield* m.sync.sync();
       yield* TestClock.adjust("2 days");
       const batches = yield* m.app.takeNotifications;
       assert.strictEqual(batches.length, 1);

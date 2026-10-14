@@ -77,7 +77,7 @@ import { makeBatchMailbox } from "./mailbox-batch.js";
           const handles = yield* Effect.gen(function* () {
             const m = yield* Mailbox;
             yield* connect(m, provider);
-            yield* m.sync();
+            yield* m.sync.sync();
             const handles: string[] = [];
             for (let index = 0; index < 55; index++) {
               handles.push(
@@ -87,7 +87,7 @@ import { makeBatchMailbox } from "./mailbox-batch.js";
                   true,
                 )).undoId,
               );
-              yield* m.sync();
+              yield* m.sync.sync();
             }
             return handles;
           }).pipe(Effect.provide(session()));
@@ -119,7 +119,7 @@ import { makeBatchMailbox } from "./mailbox-batch.js";
             assert.strictEqual(server.pushed.length, pushed);
             assert.strictEqual((yield* m.organize.undoHistory).length, 50);
             yield* m.organize.undoBatch(latest.undoId);
-            yield* m.sync();
+            yield* m.sync.sync();
             assert.strictEqual(server.messages.get("one")?.isStarred, false);
             assert.deepStrictEqual(server.messages.get("untouched")?.labels, ["INBOX", "UNREAD"]);
             assert.strictEqual((yield* m.organize.undoHistory).length, 49);
@@ -160,13 +160,13 @@ import { makeBatchMailbox } from "./mailbox-batch.js";
         const undoId = yield* Effect.gen(function* () {
           const m = yield* Mailbox;
           yield* connect(m, "outlook");
-          yield* m.sync();
+          yield* m.sync.sync();
           const result = yield* m.organize.modifyWithUndo(
             ["outlook:me@example.com/one", "outlook:me@example.com/two"],
             { kind: "categories", add: ["A", "B"], remove: ["Old"] },
             true,
           );
-          yield* m.sync();
+          yield* m.sync.sync();
           assert.deepStrictEqual(server.messages.get("one")?.labels, [
             "INBOX",
             "UNREAD",
@@ -185,7 +185,7 @@ import { makeBatchMailbox } from "./mailbox-batch.js";
         yield* Effect.gen(function* () {
           const m = yield* Mailbox;
           yield* m.organize.undoBatch(undoId);
-          yield* m.sync();
+          yield* m.sync.sync();
           assert.deepStrictEqual(
             [...(server.messages.get("one")?.labels ?? [])].toSorted(),
             ["INBOX", "UNREAD", "category:Old"].toSorted(),
@@ -208,7 +208,7 @@ import { makeBatchMailbox } from "./mailbox-batch.js";
         yield* Effect.gen(function* () {
           const m = yield* Mailbox;
           yield* connect(m, "imap");
-          yield* m.sync();
+          yield* m.sync.sync();
           const id = "imap:me@example.com/one";
           const result = yield* m.organize.modifyWithUndo(
             [id],
@@ -216,7 +216,7 @@ import { makeBatchMailbox } from "./mailbox-batch.js";
             true,
           );
           assert.strictEqual(result.undoId, "");
-          yield* m.sync();
+          yield* m.sync.sync();
           assert.strictEqual(server.messages.size, 3);
           assert.deepStrictEqual(server.messages.get("one")?.labels, ["INBOX", "UNREAD"]);
           assert.deepStrictEqual(
@@ -250,7 +250,7 @@ import { makeBatchMailbox } from "./mailbox-batch.js";
         const undoId = yield* Effect.gen(function* () {
           const m = yield* Mailbox;
           yield* connect(m, "gmail");
-          yield* m.sync();
+          yield* m.sync.sync();
           const now = yield* Clock.currentTimeMillis;
           const batch = yield* m.organize.snoozeWithUndo(
             ["gmail:me@example.com/one"],
@@ -277,13 +277,13 @@ import { makeBatchMailbox } from "./mailbox-batch.js";
         const m = yield* Mailbox,
           store = yield* Store;
         yield* connect(m, "gmail");
-        yield* m.sync();
+        yield* m.sync.sync();
         yield* m.organize.modifyWithUndo(
           ["gmail:me@example.com/one"],
           { kind: "star", value: true },
           true,
         );
-        yield* m.sync();
+        yield* m.sync.sync();
         assert.strictEqual((yield* m.organize.undoHistory).length, 1);
         yield* store.removeAccount("gmail:me@example.com");
         yield* connect(m, "gmail");
@@ -302,9 +302,9 @@ import { makeBatchMailbox } from "./mailbox-batch.js";
         const undoId = yield* Effect.gen(function* () {
           const m = yield* Mailbox;
           yield* connect(m, "gmail");
-          yield* m.sync();
+          yield* m.sync.sync();
           const batch = yield* m.organize.modifyWithUndo([id], { kind: "star", value: true }, true);
-          yield* m.sync();
+          yield* m.sync.sync();
           return batch.undoId;
         }).pipe(Effect.provide(session()));
         yield* Effect.gen(function* () {
@@ -327,7 +327,7 @@ import { makeBatchMailbox } from "./mailbox-batch.js";
       yield* Effect.gen(function* () {
         const m = yield* Mailbox;
         yield* connect(m, "outlook");
-        yield* m.sync();
+        yield* m.sync.sync();
         for (const op of [
           { kind: "move", labelId: "category:Work", removeLabelId: "INBOX" },
           { kind: "label", labelId: "category:Work", value: true },
@@ -362,13 +362,13 @@ import { makeBatchMailbox } from "./mailbox-batch.js";
       const undoId = yield* Effect.gen(function* () {
         const m = yield* Mailbox;
         yield* connect(m, "gmail");
-        yield* m.sync();
+        yield* m.sync.sync();
         const batch = yield* m.organize.modifyWithUndo(
           ["gmail:me@example.com/one"],
           { kind: "star", value: true },
           true,
         );
-        yield* m.sync();
+        yield* m.sync.sync();
         return batch.undoId;
       }).pipe(Effect.provide(session()));
       const db = new DatabaseSync(file);
@@ -398,13 +398,13 @@ import { makeBatchMailbox } from "./mailbox-batch.js";
         const undoId = yield* Effect.gen(function* () {
           const m = yield* Mailbox;
           yield* connect(m, "gmail");
-          yield* m.sync();
+          yield* m.sync.sync();
           const batch = yield* m.organize.modifyWithUndo(
             ["gmail:me@example.com/one"],
             { kind: "star", value: true },
             true,
           );
-          yield* m.sync();
+          yield* m.sync.sync();
           return batch.undoId;
         }).pipe(Effect.provide(session()));
         const db = new DatabaseSync(file);
@@ -437,13 +437,13 @@ import { makeBatchMailbox } from "./mailbox-batch.js";
         const undoId = yield* Effect.gen(function* () {
           const m = yield* Mailbox;
           yield* connect(m, "outlook");
-          yield* m.sync();
+          yield* m.sync.sync();
           const batch = yield* m.organize.modifyWithUndo(
             ["outlook:me@example.com/one"],
             { kind: "inbox" },
             true,
           );
-          yield* m.sync();
+          yield* m.sync.sync();
           return batch.undoId;
         }).pipe(Effect.provide(session()));
         server.labels = [];
@@ -464,13 +464,13 @@ import { makeBatchMailbox } from "./mailbox-batch.js";
       const undoId = yield* Effect.gen(function* () {
         const m = yield* Mailbox;
         yield* connect(m, "imap");
-        yield* m.sync();
+        yield* m.sync.sync();
         const batch = yield* m.organize.modifyWithUndo(
           ["imap:me@example.com/one"],
           { kind: "archive" },
           true,
         );
-        yield* m.sync();
+        yield* m.sync.sync();
         return batch.undoId;
       }).pipe(Effect.provide(session()));
       yield* Effect.gen(function* () {
@@ -502,7 +502,7 @@ import { makeBatchMailbox } from "./mailbox-batch.js";
       return Effect.gen(function* () {
         const m = yield* Mailbox;
         const account = yield* m.accounts.connect({ provider: "gmail" });
-        yield* m.sync();
+        yield* m.sync.sync();
         const id = `${account.id}/one`;
         const batch = yield* m.organize.snoozeWithUndo([id], 2000000000000);
         assert.ok((yield* m.reading.thread(id))[0]?.labels.includes("SNOOZED"));

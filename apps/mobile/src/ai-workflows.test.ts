@@ -56,7 +56,7 @@ it("mobile AI is off by default, uses selected models and visible thread text, a
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
         const account = yield* mailbox.accounts.connect({ provider: "gmail" });
-        yield* mailbox.sync();
+        yield* mailbox.sync.sync();
         const id = `${account.id}/m`;
         const before = yield* mailbox.ai.aiSettings;
         expect(before.accounts.every((setting) => !setting.allowed)).toBe(true);
@@ -151,7 +151,7 @@ it("assistant archive, label and draft writes stay proposals even in allow mode,
         const account = yield* mailbox.accounts.connect({ provider: "gmail" });
         accountId = account.id;
         messageId = `${account.id}/m`;
-        yield* mailbox.sync();
+        yield* mailbox.sync.sync();
         yield* mailbox.ai.setAiAccount({ accountId, allowed: true, autoSummaries: false });
         yield* mailbox.proposals.setAgentWriteMode("propose");
         yield* aiResponse(
@@ -292,7 +292,7 @@ for (const provider of ["gmail", "outlook", "imap"] as const)
                 }
               : { provider },
           );
-          yield* mailbox.sync();
+          yield* mailbox.sync.sync();
           const signature = yield* mailbox.compose.saveNamedSignature({
             address: account.email,
             name: "Mobile",

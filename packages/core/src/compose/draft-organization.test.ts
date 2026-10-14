@@ -103,7 +103,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
             ...(provider === "gmail" ? [] : organization.labels),
           ]);
           assert.strictEqual([...server.messages.values()][0]?.isStarred, provider !== "gmail");
-          yield* mailbox.sync();
+          yield* mailbox.sync.sync();
           const rows = yield* mailbox.reading.threads({ mailbox: "drafts" });
           assert.strictEqual(rows.length, 1);
           assert.strictEqual(rows[0]?.isStarred, true);
@@ -206,7 +206,7 @@ for (const provider of ["outlook", "imap"] satisfies Provider[]) {
               }
             : { provider },
         );
-        yield* mailbox.sync();
+        yield* mailbox.sync.sync();
         const opened = yield* mailbox.compose.openDraft(`${provider}:${server.email}/remote`);
         assert.strictEqual(opened.message.draftOrganization, undefined);
         yield* mailbox.compose.saveDraft({
@@ -258,7 +258,7 @@ it.effect(
         message: { ...message, draftOrganization: { labels: ["Label_work"], starred: true } },
       });
       assert.strictEqual(saved.synced, true);
-      yield* mailbox.sync();
+      yield* mailbox.sync.sync();
       assert.strictEqual(server.draftLog.length, 1);
       assert.strictEqual(server.drafts.size, 1);
       assert.strictEqual(decorations, 1);
@@ -305,7 +305,7 @@ for (const provider of ["outlook", "imap"] satisfies Provider[]) {
         const accountId = `${provider}:${server.email}`;
         const original = { labels: ["Work"], starred: true };
         // Connect starts a detached pull; finish it before asserting inline draft pushes.
-        yield* mailbox.sync(accountId);
+        yield* mailbox.sync.sync(accountId);
         const saved = yield* mailbox.compose.saveDraft({
           id: "draft:remote-edit",
           accountId,

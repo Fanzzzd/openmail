@@ -2311,7 +2311,7 @@ it.effect("a pushed read flag updates the UID record, so a later unread elsewher
       // Another device marks it unread before the next flag scan.
       server.delete("\\Seen");
       yield* TestClock.adjust("11 minutes");
-      yield* mailbox.sync(saved.id);
+      yield* mailbox.sync.sync(saved.id);
       assert.isTrue((yield* store.getMessage(id)).isUnread);
     }).pipe(
       Effect.provide(

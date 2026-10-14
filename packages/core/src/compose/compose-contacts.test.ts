@@ -417,7 +417,7 @@ import { makeOutlookFeatures } from "../providers/outlook/outlook-features.js";
         const m = yield* Mailbox;
         const first = yield* m.accounts.connect({ provider: "gmail" });
         const second = yield* m.accounts.connect({ provider: "outlook" });
-        yield* m.sync();
+        yield* m.sync.sync();
         yield* m.organize.syncSendAs(first.id);
         const current = { accountId: second.id, address: second.email };
         assert.deepStrictEqual(
@@ -522,7 +522,7 @@ import { makeOutlookFeatures } from "../providers/outlook/outlook-features.js";
         yield* Effect.gen(function* () {
           const m = yield* Mailbox;
           const account = yield* m.accounts.connect({ provider: "gmail" });
-          yield* m.sync();
+          yield* m.sync.sync();
           const draft = yield* m.compose.openDraft(`${account.id}/remote`);
           assert.deepStrictEqual(draft.message.composeFont, font);
           const body = outgoingComposeBody(draft.message);

@@ -62,7 +62,7 @@ export async function serveWebApp(messages: IncomingMessage[], prefs: Partial<Pr
       ...prefs,
     }),
   );
-  await runtime.runPromise(m.sync());
+  await runtime.runPromise(m.sync.sync());
 
   const gate: GateConfig = { allowlist: [LOGIN], host: HOST, port: 8443 };
   const hub = createConnectionHub();

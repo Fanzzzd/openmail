@@ -133,7 +133,7 @@ it("prints untrusted mail in a scriptless private window and restricts local loa
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
         const account = yield* mailbox.accounts.connect({ provider: "gmail" });
-        yield* mailbox.sync();
+        yield* mailbox.sync.sync();
         expect(
           yield* printThread(mailbox, null, {
             id: `${account.id}/one`,

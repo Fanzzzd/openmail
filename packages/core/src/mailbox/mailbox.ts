@@ -629,7 +629,7 @@ export interface MailboxApp {
 
 export class Mailbox extends Context.Service<
   Mailbox,
-  MailboxSync & {
+  {
     readonly reading: MailboxReading;
     readonly organize: MailboxOrganize;
     readonly compose: MailboxCompose;
@@ -637,6 +637,7 @@ export class Mailbox extends Context.Service<
     readonly ai: MailboxAi;
     readonly calendar: MailboxCalendar;
     readonly app: MailboxApp;
+    readonly sync: MailboxSync;
     readonly accounts: MailboxAccounts;
     readonly proposals: MailboxProposals;
   }

@@ -49,6 +49,6 @@ it("a handler that dies or is interrupted fails only its own call; live updates 
 
   // A sync the main process runs on its own reaches the window only through Events.
   h.server.messages.set("arrival", incoming("arrival", { date: Date.now() }));
-  await h.run(h.m.sync());
+  await h.run(h.m.sync.sync());
   await eventually(() => expect(row(h.id("arrival")).textContent).toContain("Flow arrival"));
 });

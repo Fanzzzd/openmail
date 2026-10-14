@@ -122,7 +122,7 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
           signature: "",
         },
       ];
-      yield* mailbox.sync();
+      yield* mailbox.sync.sync();
       // Seed known aliases for every provider; only Gmail discovers them remotely.
       const store = yield* Store;
       yield* store.replaceSendAs(account.id, server.aliases);
@@ -162,7 +162,7 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
       assert.deepStrictEqual(server.sent[0]?.message.to, [target]);
       assert.deepStrictEqual(server.sent[0]?.message.cc, [other]);
       server.messages.set("one", { ...message, from: alias, to: [me, other] });
-      yield* mailbox.sync();
+      yield* mailbox.sync.sync();
       const [self] = yield* mailbox.reading.thread(`${account.id}/one`);
       assert.ok(self);
       assert.deepStrictEqual(replyRecipients(self, ownAddresses, true), { to: [other], cc: [] });

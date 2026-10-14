@@ -278,7 +278,7 @@ export const threadHandlers = ({
       ).pipe(Effect.map(({ items, ...rest }) => ({ ...rest, threads: items }))),
     sync: ({ account_id, token_budget }) =>
       Effect.flatMap(accountIdsFor(account_id), (ids) =>
-        Effect.forEach(ids, (id) => mailbox.sync(id)).pipe(Effect.map((rows) => rows.flat())),
+        Effect.forEach(ids, (id) => mailbox.sync.sync(id)).pipe(Effect.map((rows) => rows.flat())),
       ).pipe(
         Effect.flatMap((all) =>
           bounded(

@@ -63,7 +63,7 @@ it.effect(
     return Effect.gen(function* () {
       const mailbox = yield* Mailbox;
       yield* mailbox.accounts.connect({ provider: "outlook" });
-      yield* mailbox.sync();
+      yield* mailbox.sync.sync();
       const opened = yield* mailbox.compose.openDraft("outlook:me@example.com/remote");
       assert.strictEqual(opened.message.markdown, undefined);
       assert.strictEqual(opened.message.text, "bold");
@@ -116,7 +116,7 @@ it.effect(
     return Effect.gen(function* () {
       const mailbox = yield* Mailbox;
       yield* mailbox.accounts.connect({ provider: "outlook" });
-      yield* mailbox.sync();
+      yield* mailbox.sync.sync();
       const opened = yield* mailbox.compose.openDraft("outlook:me@example.com/remote");
       assert.strictEqual(opened.message.text, "cached");
       assert.strictEqual(opened.message.originalHtml, "<b>cached</b>");
@@ -172,7 +172,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
         }).pipe(Effect.provide(TestMailbox({ [provider]: server })));
         const secondRemote = yield* Effect.gen(function* () {
           const mailbox = yield* connect();
-          yield* mailbox.sync();
+          yield* mailbox.sync.sync();
           const opened = yield* mailbox.compose.openDraft(`${accountId}/${firstRemote}`);
           assert.strictEqual(opened.message.markdown, true);
           assert.strictEqual(opened.message.text, source);
@@ -185,7 +185,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
         }).pipe(Effect.provide(TestMailbox({ [provider]: server })));
         yield* Effect.gen(function* () {
           const mailbox = yield* connect();
-          yield* mailbox.sync();
+          yield* mailbox.sync.sync();
           const opened = yield* mailbox.compose.openDraft(`${accountId}/${secondRemote}`);
           assert.strictEqual(opened.message.markdown, true);
           assert.strictEqual(opened.message.text, source.replace("bold", "edited"));

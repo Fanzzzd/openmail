@@ -608,7 +608,7 @@ it.effect("a locked keychain during sync shows the keychain state and never mark
     const m = yield* Mailbox;
     const store = yield* Store;
     const account = yield* store.upsertAccount("outlook", "me@outlook.com");
-    const sync = yield* Effect.forkChild(m.sync(account.id));
+    const sync = yield* Effect.forkChild(m.sync.sync(account.id));
     yield* TestClock.adjust("1 minute");
     const [result] = yield* Fiber.join(sync);
     assert.strictEqual(result?.error, KEYCHAIN_LOCKED_MESSAGE);

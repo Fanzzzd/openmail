@@ -88,7 +88,7 @@ it("sync preserves selected reply/find/expansion; forward/web keep their shortcu
 
   // A reply arrives; the chosen message, its find field and its expansion stay.
   h.server.messages.set("latest", message("latest", 1000));
-  await h.run(h.m.sync());
+  await h.run(h.m.sync.sync());
   await eventually(() => expect(article(h, "latest")).toBeTruthy());
   expect(selected().textContent).toContain("old original body");
   expect(findField()).not.toBeNull();
@@ -155,7 +155,7 @@ it("sync preserves selected reply/find/expansion; forward/web keep their shortcu
 
   // Once the chosen message leaves the thread, the window's own message takes over and find closes.
   h.server.messages.delete("old");
-  await h.run(h.m.sync());
+  await h.run(h.m.sync.sync());
   await eventually(() => expect(selected().textContent).toContain("new original body"));
   expect(findField()).toBeNull();
 });

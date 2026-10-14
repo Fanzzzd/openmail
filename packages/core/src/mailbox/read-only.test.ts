@@ -120,10 +120,10 @@ import type { OutgoingMessage } from "../domain/changes.js";
         const mailbox = yield* Mailbox,
           store = yield* Store;
         const account = yield* mailbox.accounts.connect({ provider: "gmail" });
-        yield* mailbox.sync();
+        yield* mailbox.sync.sync();
         yield* store.enqueueOp(account.id, "one", { kind: "star", value: true });
         const before = yield* store.listPendingOps;
-        yield* mailbox.sync();
+        yield* mailbox.sync.sync();
         assert.deepStrictEqual(yield* store.listPendingOps, before);
         yield* mailbox.organize.perform(
           { kind: "modify", threads: [`${account.id}/one`], op: { kind: "read", value: false } },
@@ -262,10 +262,10 @@ it.effect("an offline session syncs and checks health without one provider call"
     const mailbox = yield* Mailbox;
     const store = yield* Store;
     const account = yield* store.upsertAccount("gmail", "me@gmail.com");
-    const results = yield* mailbox.sync(account.id);
+    const results = yield* mailbox.sync.sync(account.id);
     assert.ok(results.length > 0);
     for (const result of results) assert.isString(result.error);
-    yield* mailbox.syncHealth(account.id).pipe(Effect.result);
+    yield* mailbox.sync.syncHealth(account.id).pipe(Effect.result);
     assert.strictEqual(server.pulls.length, 0);
     assert.strictEqual(server.pushed.length, 0);
     assert.strictEqual(server.sent.length, 0);

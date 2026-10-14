@@ -29,7 +29,7 @@ const health = Command.make(
       ? [account.value]
       : (yield* mailbox.accounts.accounts).map((item) => item.id);
     const reports = yield* Effect.forEach(ids, (id) =>
-      mailbox.syncHealth(id).pipe(Effect.map(redactSyncHealth)),
+      mailbox.sync.syncHealth(id).pipe(Effect.map(redactSyncHealth)),
     );
     yield* print(reports, json, (items) =>
       items.length === 0
@@ -68,7 +68,7 @@ const sync = Command.make(
     const mailbox = yield* Mailbox;
     const ids = yield* accountScope(account, Option.none());
     const results = yield* withProgress(
-      Effect.forEach(ids, (id) => mailbox.sync(id)).pipe(Effect.map((rows) => rows.flat())),
+      Effect.forEach(ids, (id) => mailbox.sync.sync(id)).pipe(Effect.map((rows) => rows.flat())),
       !json,
     );
     yield* print({ results }, json, (value) => syncTable(value.results));

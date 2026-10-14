@@ -518,7 +518,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
                 }
               : { provider },
           );
-          yield* mailbox.sync();
+          yield* mailbox.sync.sync();
           const folder = { mailbox: "inbox", accountIds: [account.id] } as const;
           const filters = {
             ...DEFAULT_LIST_FILTERS,
@@ -977,7 +977,7 @@ it.effect(
       const mailbox = yield* Mailbox;
       const store = yield* Store;
       const account = yield* mailbox.accounts.connect({ provider: "gmail" });
-      yield* mailbox.sync();
+      yield* mailbox.sync.sync();
       const result = yield* mailbox.accounts
         .reauth(account.id, "permanentDelete")
         .pipe(Effect.result);

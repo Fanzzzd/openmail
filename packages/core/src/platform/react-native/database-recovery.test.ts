@@ -379,7 +379,7 @@ describe("mobile database recovery", () => {
         Effect.gen(function* () {
           const mailbox = yield* Mailbox;
           const store = yield* Store;
-          yield* mailbox.sync("a");
+          yield* mailbox.sync.sync("a");
           expect((yield* store.listThreads({ accountIds: ["a"] })).length).toBe(1);
         }),
       );

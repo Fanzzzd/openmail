@@ -29,6 +29,6 @@ export function resumeConnectivity(
   work: () => Promise<unknown>,
 ) {
   return runtime
-    .runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.resetConnectivity()))
+    .runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.sync.resetConnectivity()))
     .then(work);
 }

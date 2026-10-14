@@ -28,7 +28,7 @@ for (const provider of ["gmail", "outlook"] as const) {
         Effect.gen(function* () {
           const mailbox = yield* Mailbox;
           const account = yield* mailbox.accounts.connect({ provider });
-          yield* mailbox.sync(account.id);
+          yield* mailbox.sync.sync(account.id);
           const row = (yield* mailbox.reading.threads(
             searchQuery(account.id, "from:alice@example.test is:unread budget"),
           ))[0];

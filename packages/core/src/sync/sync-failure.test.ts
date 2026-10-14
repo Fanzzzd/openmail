@@ -59,7 +59,7 @@ it.effect("an IMAP sync failure logs a fixed-field sync-failed event", () => {
     const store = yield* Store;
     const mailbox = yield* Mailbox;
     yield* store.upsertAccount("imap", "me@example.com");
-    const fiber = yield* Effect.forkChild(mailbox.sync());
+    const fiber = yield* Effect.forkChild(mailbox.sync.sync());
     for (let second = 0; second < 20; second++) yield* TestClock.adjust("1 second");
     const [result] = yield* Fiber.join(fiber);
     assert.strictEqual(result?.error, SYNC_FAILURE_TEXT.no_response);

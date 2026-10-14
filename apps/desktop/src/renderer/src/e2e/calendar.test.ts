@@ -46,7 +46,7 @@ it("event detection uses core results and refreshes same-id body changes without
   ).toBeTruthy();
   expect(h.requests.some((request) => request.tag === "DetectedEvents")).toBe(true);
   h.server.messages.set("one", reservation("CD456"));
-  await h.run(h.m.sync());
+  await h.run(h.m.sync.sync());
   await eventually(() => expect(screen.getByText("CD456")).toBeTruthy());
   expect(screen.queryByText("AB123")).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "Add to calendar" }));

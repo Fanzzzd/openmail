@@ -391,7 +391,7 @@ it("offline archive survives conflicting server pull and retries the queue once"
   const pulls = h.server.pulls.length;
   await h.event({ _tag: "NativeAction", action: "sync", triggeredByAccelerator: false });
   await eventually(() => expect(h.server.pulls.length).toBeGreaterThan(pulls));
-  await eventually(async () => expect((await h.run(h.m.syncState)).running).toBe(false));
+  await eventually(async () => expect((await h.run(h.m.sync.syncState)).running).toBe(false));
   expect((await h.run(h.store.getMessage(h.id("one")))).labels).not.toContain("INBOX");
   expect((await h.run(h.store.getMessage(h.id("one")))).isStarred).toBe(true);
   expect(document.querySelector(`[data-id="${h.id("one")}"]`)).toBeNull();

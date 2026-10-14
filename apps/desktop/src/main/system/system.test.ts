@@ -273,7 +273,7 @@ it("buffers cold launch links, targets one main window, and keeps each window's 
         const desktop = yield* Desktop;
         const m = yield* Mailbox;
         yield* m.accounts.connect({ provider: "gmail" });
-        yield* m.sync();
+        yield* m.sync.sync();
         const first = observations.testState.windows[0];
         expect(first).toBeDefined();
         if (!first) return;
@@ -356,7 +356,7 @@ it("dock menu accounts open their inbox through a Navigate href", async () => {
         const m = yield* Mailbox;
         const desktop = yield* Desktop;
         yield* m.accounts.connect({ provider: "gmail" });
-        yield* m.sync();
+        yield* m.sync.sync();
         yield* settle();
         // The fake Menu returns the template itself; inspect it as an IO boundary.
         const items = Schema.decodeUnknownSync(
@@ -394,11 +394,11 @@ it("notification clicks open threads; Archive and Delete are audited as the pers
         const m = yield* Mailbox;
         const desktop = yield* Desktop;
         yield* m.accounts.connect({ provider: "gmail" });
-        yield* m.sync();
+        yield* m.sync.sync();
         yield* settle();
         expect(observations.testState.notifications).toHaveLength(0);
         server.messages.set("new", incoming("new"));
-        yield* m.pollInbox();
+        yield* m.sync.pollInbox();
         yield* settle();
         const notification = observations.testState.notifications[0];
         expect(notification?.options.actions).toEqual([
@@ -418,13 +418,13 @@ it("notification clicks open threads; Archive and Delete are audited as the pers
         expect(server.pushed.at(-1)).toEqual({ providerId: "new", op: { kind: "archive" } });
         expect((yield* m.proposals.audit(1))[0]?.actor).toBe("user:app");
         server.messages.set("delete", incoming("delete"));
-        yield* m.pollInbox();
+        yield* m.sync.pollInbox();
         yield* settle();
         observations.testState.notifications.at(-1)?.emit("action", { actionIndex: 1 });
         yield* settle();
         expect(server.pushed.at(-1)).toEqual({ providerId: "delete", op: { kind: "trash" } });
         expect((yield* m.proposals.audit(1))[0]?.actor).toBe("user:app");
-        yield* m.sync();
+        yield* m.sync.sync();
         yield* settle();
         expect(observations.testState.notifications).toHaveLength(2);
         // Closing a subscriber releases it; the next event waits for a new renderer.
@@ -457,7 +457,7 @@ it.skipIf(process.platform !== "darwin")(
           const m = yield* Mailbox;
           const desktop = yield* Desktop;
           yield* m.accounts.connect({ provider: "gmail" });
-          yield* m.sync();
+          yield* m.sync.sync();
           restored.emit("click");
           const mainWindow = observations.testState.windows[0];
           expect(mainWindow).toBeDefined();
@@ -524,10 +524,10 @@ it("a burst over five unread messages produces one summary notification", async 
       Effect.gen(function* () {
         const m = yield* Mailbox;
         yield* m.accounts.connect({ provider: "gmail" });
-        yield* m.sync();
+        yield* m.sync.sync();
         for (let n = 0; n < 6; n++)
           server.messages.set(String(n), { ...incoming(String(n)), date: Date.now() + 1000 });
-        yield* m.pollInbox();
+        yield* m.sync.pollInbox();
         yield* settle();
         expect(observations.testState.notifications).toHaveLength(1);
         expect(observations.testState.notifications[0]?.options.title).toContain("6");
@@ -547,7 +547,7 @@ it("menu bar count is optional and its clickable list caps at 50 individual mess
         const m = yield* Mailbox;
         const desktop = yield* Desktop;
         yield* m.accounts.connect({ provider: "gmail" });
-        yield* m.sync();
+        yield* m.sync.sync();
         yield* settle();
         const tray = observations.testState.trays[0];
         expect(tray).toBeDefined();
@@ -594,7 +594,7 @@ it("sleep resume restores Dock counts and delivers one Profile digest after mute
       Effect.gen(function* () {
         const m = yield* Mailbox;
         yield* m.accounts.connect({ provider: "gmail" });
-        yield* m.sync();
+        yield* m.sync.sync();
         const account = (yield* m.accounts.accounts)[0];
         if (!account) throw new Error("Missing account");
         const profile = yield* m.accounts.createProfile({
@@ -607,7 +607,7 @@ it("sleep resume restores Dock counts and delivers one Profile digest after mute
           activeHours: { [profile.id]: { ...DEFAULT_ACTIVE_HOURS, enabled: true } },
         });
         for (const id of ["keep", "read", "delete"]) server.messages.set(id, incoming(id));
-        yield* m.pollInbox();
+        yield* m.sync.pollInbox();
         yield* m.organize.perform(
           { kind: "modify", threads: [`${account.id}/read`], op: { kind: "read", value: true } },
           { kind: "user", surface: "app" },
@@ -639,9 +639,9 @@ it("startup pending notifications wait for the first localized labels", async ()
     Effect.gen(function* () {
       const mailbox = yield* Mailbox;
       yield* mailbox.accounts.connect({ provider: "gmail" });
-      yield* mailbox.sync();
+      yield* mailbox.sync.sync();
       for (let i = 0; i < 6; i++) server.messages.set(String(i), incoming(String(i)));
-      yield* mailbox.pollInbox();
+      yield* mailbox.sync.pollInbox();
     }),
   ).pipe(Layer.provideMerge(TestMailbox({ gmail: server })));
   await Effect.runPromise(
@@ -674,11 +674,11 @@ it("ungrouped digests name all accounts when merged, and the email for a single 
         const mailbox = yield* Mailbox;
         yield* mailbox.accounts.connect({ provider: "gmail" });
         yield* mailbox.accounts.connect({ provider: "outlook" });
-        yield* mailbox.sync();
+        yield* mailbox.sync.sync();
         yield* mailbox.app.setPrefs({ quietHours: { all: { enabled: true, start: 0, end: 0 } } });
         gmail.messages.set("g", incoming("g"));
         outlook.messages.set("o", incoming("o"));
-        yield* mailbox.pollInbox();
+        yield* mailbox.sync.pollInbox();
         yield* settle();
         yield* mailbox.app.setPrefs({ quietHours: {} });
         yield* settle();
@@ -686,7 +686,7 @@ it("ungrouped digests name all accounts when merged, and the email for a single 
         expect(observations.testState.notifications[0]?.options.body).toBe("All accounts");
         yield* mailbox.app.setPrefs({ quietHours: { all: { enabled: true, start: 0, end: 0 } } });
         gmail.messages.set("single", incoming("single"));
-        yield* mailbox.pollInbox();
+        yield* mailbox.sync.pollInbox();
         yield* settle();
         yield* mailbox.app.setPrefs({ quietHours: {} });
         yield* settle();
@@ -739,16 +739,16 @@ it("the notification event consumer logs a SQL defect and processes later events
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
         yield* mailbox.accounts.connect({ provider: "gmail" });
-        yield* mailbox.sync();
+        yield* mailbox.sync.sync();
         yield* settle();
         failNext = true;
         server.messages.set("first", incoming("first"));
-        yield* mailbox.pollInbox();
+        yield* mailbox.sync.pollInbox();
         yield* settle();
         expect(failures).toBe(1);
         expect(logs.messages).toEqual([expect.arrayContaining(["system event refresh failed"])]);
         server.messages.set("second", incoming("second"));
-        yield* mailbox.pollInbox();
+        yield* mailbox.sync.pollInbox();
         yield* settle();
         expect(observations.testState.notifications).toHaveLength(2);
       }),
@@ -1095,11 +1095,11 @@ it("notification buttons keep their captured order; menu Mark read and disabled-
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
         const account = yield* mailbox.accounts.connect({ provider: "gmail" });
-        yield* mailbox.sync();
+        yield* mailbox.sync.sync();
         yield* mailbox.app.setPrefs({ notificationActions: ["menu", "read"] });
         yield* settle();
         server.messages.set("menu", incoming("menu"));
-        yield* mailbox.pollInbox();
+        yield* mailbox.sync.pollInbox();
         yield* settle();
         const menu = observations.testState.notifications.at(-1);
         expect(menu?.options.actions).toEqual(
@@ -1128,7 +1128,7 @@ it("notification buttons keep their captured order; menu Mark read and disabled-
           op: { kind: "read", value: true },
         });
         server.messages.set("disabled", incoming("disabled"));
-        yield* mailbox.pollInbox();
+        yield* mailbox.sync.pollInbox();
         yield* settle();
         const disabled = observations.testState.notifications.at(-1);
         yield* mailbox.accounts.setAccountSettings(account.id, {
@@ -1140,7 +1140,7 @@ it("notification buttons keep their captured order; menu Mark read and disabled-
         expect(disabled?.close).toHaveBeenCalled();
         const count = observations.testState.notifications.length;
         server.messages.set("hidden", incoming("hidden"));
-        yield* mailbox.pollInbox();
+        yield* mailbox.sync.pollInbox();
         yield* settle();
         expect(observations.testState.notifications).toHaveLength(count);
       }),
@@ -1430,20 +1430,23 @@ it("resume uses fallback inbox polling while IDLE reconnect owns its catch-up", 
       const base = yield* Mailbox;
       return Mailbox.of({
         ...base,
-        setSyncPaused: (paused) =>
-          Effect.sync(() => {
-            calls.paused = paused;
-          }),
-        sync: () =>
-          Effect.sync(() => {
-            calls.full++;
-            return [];
-          }),
-        pollInbox: () =>
-          Effect.sync(() => {
-            calls.inbox++;
-            return [];
-          }),
+        sync: {
+          ...base.sync,
+          setSyncPaused: (paused) =>
+            Effect.sync(() => {
+              calls.paused = paused;
+            }),
+          sync: () =>
+            Effect.sync(() => {
+              calls.full++;
+              return [];
+            }),
+          pollInbox: () =>
+            Effect.sync(() => {
+              calls.inbox++;
+              return [];
+            }),
+        },
       });
     }),
   ).pipe(Layer.provide(TestMailbox()));

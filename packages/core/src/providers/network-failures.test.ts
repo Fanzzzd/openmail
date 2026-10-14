@@ -497,18 +497,18 @@ for (const fault of ["ENOTFOUND", "reset-body", "stall-body"] as const)
         const store = yield* Store;
         const mailbox = yield* Mailbox;
         const saved = yield* store.upsertAccount("outlook", providers.outlook.account.email);
-        const failed = yield* settle(yield* mailbox.sync().pipe(Effect.forkChild));
+        const failed = yield* settle(yield* mailbox.sync.sync().pipe(Effect.forkChild));
         assert.strictEqual(failed.exit._tag, "Success");
         const offline = yield* store.getAccount(saved.id);
         assert.isFalse(offline.needsReauth);
         assert.strictEqual(offline.lastSyncError, SYNC_FAILURE_TEXT.network);
         // A second sync while the account backs off sends nothing.
         const pages = continuations();
-        yield* mailbox.sync();
+        yield* mailbox.sync.sync();
         assert.strictEqual(continuations(), pages);
         broken = false;
-        yield* mailbox.resetConnectivity();
-        yield* mailbox.sync();
+        yield* mailbox.sync.resetConnectivity();
+        yield* mailbox.sync.sync();
         const online = yield* store.getAccount(saved.id);
         assert.isNull(online.lastSyncError);
         assert.isFalse(online.needsReauth);
@@ -549,14 +549,14 @@ it.effect("queued ops wait out an outage in order and retry at once on reconnect
     // Five offline minutes of sync ticks cost a handful of attempts, not a tight loop.
     for (let tick = 0; tick < 60; tick++) {
       yield* TestClock.adjust("5 seconds");
-      yield* mailbox.sync();
+      yield* mailbox.sync.sync();
     }
     assert.isAtMost(pushes().length, 7);
     assert.isFalse((yield* store.getAccount(saved.id)).needsReauth);
     offline = false;
     const before = pushes().length;
-    yield* mailbox.resetConnectivity();
-    yield* mailbox.sync();
+    yield* mailbox.sync.resetConnectivity();
+    yield* mailbox.sync.sync();
     assert.deepStrictEqual(yield* store.listPendingOps, []);
     const replay = pushes()
       .slice(before)
@@ -584,8 +584,8 @@ it.effect("a reconnect leaves an op that backs off after a 429 waiting", () => {
     );
     assert.strictEqual(pushes(), 1);
     const [waiting] = yield* store.listPendingOps;
-    yield* mailbox.resetConnectivity();
-    yield* mailbox.sync();
+    yield* mailbox.sync.resetConnectivity();
+    yield* mailbox.sync.sync();
     assert.strictEqual(pushes(), 1);
     assert.strictEqual((yield* store.listPendingOps)[0]?.retryAt, waiting?.retryAt);
   }).pipe(Effect.provide(layer));

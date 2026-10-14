@@ -162,7 +162,7 @@ it.skipIf(process.env.OPENMAIL_PERF !== "1")(
           const stopGc = traceGc();
           delay.enable();
           const start = performance.now();
-          const [result] = yield* mailbox.sync(owner.id);
+          const [result] = yield* mailbox.sync.sync(owner.id);
           const elapsedMs = performance.now() - start;
           delay.disable();
           const report = {

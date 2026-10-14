@@ -121,7 +121,7 @@ const accountsAdd = Command.make(
       account = yield* mailbox.accounts.connect({ provider: o.provider });
     }
     yield* Console.log(`Added ${account.id}. Syncing…`);
-    const [result] = yield* withProgress(mailbox.sync(account.id), true);
+    const [result] = yield* withProgress(mailbox.sync.sync(account.id), true);
     if (result?.error) return yield* fail(result.error);
     return yield* Console.log(`Synced ${result?.changed ?? 0} messages.`);
   }),

@@ -183,7 +183,7 @@ it.effect(
       );
       yield* Effect.yieldNow;
       yield* m.accounts.connect({ provider: "gmail" });
-      yield* m.sync();
+      yield* m.sync.sync();
       const notices = () =>
         Ref.get(events).pipe(
           Effect.map((all) => all.filter((e) => e._tag === "NewMail").flatMap((e) => e.ids)),
@@ -192,23 +192,23 @@ it.effect(
       server.messages.set("new", incoming("new"));
       server.messages.set("read", incoming("read", { isUnread: false, labels: ["INBOX"] }));
       server.messages.set("archive", incoming("archive", { labels: ["UNREAD"] }));
-      yield* m.pollInbox();
+      yield* m.sync.pollInbox();
       yield* Effect.yieldNow;
       assert.deepStrictEqual(yield* notices(), [`${account.id}/new`]);
       assert.isTrue(
         (yield* m.reading.threads({ mailbox: "inbox" })).some((t) => t.id === `${account.id}/new`),
       );
-      yield* m.sync();
-      yield* m.pollInbox();
+      yield* m.sync.sync();
+      yield* m.sync.pollInbox();
       server.messages.set("read", incoming("read"));
-      yield* m.sync();
+      yield* m.sync.sync();
       yield* Effect.yieldNow;
       assert.deepStrictEqual(yield* notices(), [`${account.id}/new`]);
       // Reappearing ids remain seen after provider removal and a later re-import.
       server.messages.delete("new");
-      yield* m.sync();
+      yield* m.sync.sync();
       server.messages.set("new", incoming("new"));
-      yield* m.sync();
+      yield* m.sync.sync();
       yield* Effect.yieldNow;
       assert.deepStrictEqual(yield* notices(), [`${account.id}/new`]);
       // Notification actions use the same audited user pipeline, including offline retry.
@@ -228,7 +228,7 @@ it.effect("desktop polling repeats every 45 seconds", () => {
   return Effect.gen(function* () {
     const m = yield* Mailbox;
     yield* m.accounts.connect({ provider: "gmail" });
-    yield* m.sync();
+    yield* m.sync.sync();
     server.messages.set("first", incoming("first"));
     yield* TestClock.adjust("44 seconds");
     assert.isFalse(
@@ -257,7 +257,7 @@ it.effect("CLI and MCP mailbox layers do not start new-mail polling", () => {
   return Effect.gen(function* () {
     const m = yield* Mailbox;
     yield* m.accounts.connect({ provider: "gmail" });
-    yield* m.sync();
+    yield* m.sync.sync();
     server.messages.set("later", incoming("later"));
     yield* TestClock.adjust("2 minutes");
     assert.isFalse(
@@ -279,7 +279,7 @@ it.effect("IMAP mail moved into Inbox under a different UID stays seen", () => {
       provider: "imap",
       input: { preset: "qq", email: "me@example.com", password: "fake" },
     });
-    yield* m.sync();
+    yield* m.sync.sync();
     const events = yield* Ref.make<MailboxEvent[]>([]);
     yield* m.app.events.pipe(
       Stream.runForEach((event) => Ref.update(events, (all) => [...all, event])),
@@ -292,8 +292,8 @@ it.effect("IMAP mail moved into Inbox under a different UID stays seen", () => {
       providerId: "inbox:2",
       labels: ["INBOX", "UNREAD"],
     });
-    yield* m.pollInbox();
-    yield* m.sync();
+    yield* m.sync.pollInbox();
+    yield* m.sync.sync();
     yield* Effect.yieldNow;
     assert.isFalse((yield* Ref.get(events)).some((event) => event._tag === "NewMail"));
     assert.strictEqual((yield* m.reading.threads({ mailbox: "inbox" })).length, 1);
@@ -305,14 +305,14 @@ it.effect("idle inbox polling emits no Changed and preserves a full-sync error",
   return Effect.gen(function* () {
     const m = yield* Mailbox;
     yield* m.accounts.connect({ provider: "gmail" });
-    yield* m.sync();
+    yield* m.sync.sync();
     const events = yield* Ref.make<MailboxEvent[]>([]);
     yield* m.app.events.pipe(
       Stream.runForEach((event) => Ref.update(events, (all) => [...all, event])),
       Effect.forkScoped,
     );
     yield* Effect.yieldNow;
-    yield* m.pollInbox();
+    yield* m.sync.pollInbox();
     yield* Effect.yieldNow;
     assert.isFalse((yield* Ref.get(events)).some((event) => event._tag === "Changed"));
   }).pipe(Effect.provide(TestMailbox({ gmail: server })));
@@ -322,9 +322,9 @@ it.effect("catch-up suppresses unread mail older than the previous sync", () => 
   return Effect.gen(function* () {
     const m = yield* Mailbox;
     yield* m.accounts.connect({ provider: "gmail" });
-    yield* m.sync();
+    yield* m.sync.sync();
     yield* TestClock.adjust("10 seconds");
-    yield* m.sync();
+    yield* m.sync.sync();
     const ids = yield* Ref.make<string[]>([]);
     yield* m.app.events.pipe(
       Stream.runForEach((event) =>
@@ -335,7 +335,7 @@ it.effect("catch-up suppresses unread mail older than the previous sync", () => 
     yield* Effect.yieldNow;
     server.messages.set("old", incoming("old", { date: 9000 }));
     server.messages.set("fresh", incoming("fresh", { date: 11000 }));
-    yield* m.pollInbox();
+    yield* m.sync.pollInbox();
     yield* Effect.yieldNow;
     assert.deepStrictEqual(yield* Ref.get(ids), [`${account.id}/fresh`]);
     assert.strictEqual((yield* m.reading.threads({ mailbox: "inbox" })).length, 2);
@@ -349,9 +349,9 @@ it.effect(
     return Effect.gen(function* () {
       const m = yield* Mailbox;
       yield* m.accounts.connect({ provider: "gmail" });
-      yield* m.sync();
+      yield* m.sync.sync();
       server.failNext = new PermanentError({ message: "full sync error" });
-      yield* m.sync();
+      yield* m.sync.sync();
       const changes = yield* Ref.make(0);
       yield* m.app.events.pipe(
         Stream.runForEach((event) =>
@@ -360,19 +360,19 @@ it.effect(
         Effect.forkScoped,
       );
       yield* Effect.yieldNow;
-      yield* m.pollInbox();
+      yield* m.sync.pollInbox();
       assert.strictEqual((yield* m.accounts.accounts)[0]?.lastSyncError, SYNC_FAILURE_TEXT.unknown);
       yield* Effect.yieldNow;
       assert.strictEqual(yield* Ref.get(changes), 0);
       server.failNext = new PermanentError({ message: "offline" });
-      yield* m.pollInbox();
+      yield* m.sync.pollInbox();
       yield* Effect.yieldNow;
       assert.strictEqual(yield* Ref.get(changes), 1);
-      yield* m.pollInbox();
+      yield* m.sync.pollInbox();
       yield* Effect.yieldNow;
       assert.strictEqual(yield* Ref.get(changes), 1);
       yield* TestClock.adjust("90 seconds");
-      yield* m.pollInbox();
+      yield* m.sync.pollInbox();
       yield* Effect.yieldNow;
       assert.strictEqual(yield* Ref.get(changes), 2);
       assert.strictEqual((yield* m.accounts.accounts)[0]?.lastSyncError, SYNC_FAILURE_TEXT.unknown);
@@ -384,7 +384,7 @@ it.effect("offline inbox polling backs off independently until recovery", () => 
   return Effect.gen(function* () {
     const m = yield* Mailbox;
     yield* m.accounts.connect({ provider: "gmail" });
-    yield* m.sync();
+    yield* m.sync.sync();
     server.failNext = new PermanentError({ message: "offline" });
     yield* TestClock.adjust("45 seconds");
     yield* TestClock.adjust("250 millis");
@@ -406,7 +406,7 @@ it.effect("battery polling waits twice as long as AC polling", () => {
   return Effect.gen(function* () {
     const m = yield* Mailbox;
     yield* m.accounts.connect({ provider: "gmail" });
-    yield* m.sync();
+    yield* m.sync.sync();
     server.messages.set("battery", incoming("battery"));
     yield* TestClock.adjust("45 seconds");
     yield* TestClock.adjust("250 millis");

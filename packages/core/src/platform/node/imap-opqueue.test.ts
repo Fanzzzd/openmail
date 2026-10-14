@@ -1151,7 +1151,7 @@ it.effect(
           message: { ...message, text: "latest edited body" },
         });
         yield* TestClock.adjust("2 minutes");
-        yield* mailbox.sync();
+        yield* mailbox.sync.sync();
         assert.strictEqual(cloud.size, 1);
         const content = [...cloud.values()][0];
         assert.ok(content);
@@ -1318,7 +1318,7 @@ for (const operation of ["move", "copy"] as const) {
             if (offline) {
               reconciliationOffline = false;
               yield* TestClock.adjust("2 minutes");
-              yield* mailbox.sync(saved.id);
+              yield* mailbox.sync.sync(saved.id);
               assert.deepStrictEqual(yield* store.listPendingOps, []);
               assert.strictEqual(
                 (yield* store.getMessage(`${saved.id}/7:1:INBOX`)).bodyText,

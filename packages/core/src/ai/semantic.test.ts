@@ -388,7 +388,7 @@ it.effect("Mailbox and MCP share semantic hits after persisted opt-in", () =>
   Effect.gen(function* () {
     const mail = yield* Mailbox;
     yield* mail.accounts.connect({ provider: "gmail" });
-    yield* mail.sync();
+    yield* mail.sync.sync();
     assert.strictEqual((yield* mail.reading.threads({ search: "travel" })).length, 0);
     yield* mail.ai.setModelsEnabled(true);
     yield* TestClock.adjust("15 seconds");
@@ -465,7 +465,7 @@ it.effect(
     return Effect.gen(function* () {
       const mail = yield* Mailbox;
       yield* mail.accounts.connect({ provider: "gmail" });
-      yield* mail.sync();
+      yield* mail.sync.sync();
       yield* mail.ai.setModelsEnabled(true);
       yield* TestClock.adjust("15 seconds");
       idle = false;

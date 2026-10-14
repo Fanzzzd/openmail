@@ -224,7 +224,7 @@ export async function flow(
     }),
   );
   // Connect starts a detached sync. Drain it before exposing the renderer to the fixture.
-  await run(m.sync());
+  await run(m.sync.sync());
   await Promise.all(lazyLoads);
 
   let composeId: string | undefined;

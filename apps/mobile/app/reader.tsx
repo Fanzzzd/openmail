@@ -228,7 +228,7 @@ export default function Reader() {
     setFailed(false);
     try {
       const results = await runtime.runPromise(
-        Effect.flatMap(Mailbox, (mailbox) => mailbox.sync(accountId)),
+        Effect.flatMap(Mailbox, (mailbox) => mailbox.sync.sync(accountId)),
       );
       setFailed(results.some((item) => Boolean(item.error)));
     } catch {

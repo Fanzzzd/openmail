@@ -53,7 +53,7 @@ it("active and foreground online events clear portable backoff before work", asy
   const runtime = ManagedRuntime.make(TestMailbox());
   const mailbox = await runtime.runPromise(Mailbox);
   const calls: string[] = [];
-  vi.spyOn(mailbox, "resetConnectivity").mockImplementation(() =>
+  vi.spyOn(mailbox.sync, "resetConnectivity").mockImplementation(() =>
     Effect.sync(() => {
       calls.push("reset");
     }),

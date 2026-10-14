@@ -69,7 +69,7 @@ it.effect(
     return Effect.gen(function* () {
       const m = yield* Mailbox;
       yield* m.accounts.connect({ provider: "gmail" });
-      yield* m.sync();
+      yield* m.sync.sync();
       const imported = (yield* m.compose.namedSignatures)[0];
       assert.ok(imported);
       assert.strictEqual(imported.html, "<strong>Gmail</strong>");
@@ -121,7 +121,7 @@ it.effect(
         signature: "Changed",
         signatureHtml: "<i>Changed</i>",
       };
-      yield* m.sync();
+      yield* m.sync.sync();
       assert.strictEqual(
         (yield* m.compose.signatures).find((s) => s.kind === "reply")?.text,
         "edited",
@@ -273,7 +273,7 @@ for (const failure of [
           accountId,
           message: { ...message, text: "Edited after keeping" },
         });
-        yield* m.sync();
+        yield* m.sync.sync();
         assert.strictEqual(server.drafts.size, 0);
         assert.strictEqual(
           (yield* m.compose.openDraft(kept.id)).message.text,
@@ -301,7 +301,7 @@ it.effect("Retry recovers a permanently failed draft after its queue entry was r
     assert.strictEqual(retried.syncError, null);
     assert.strictEqual(server.drafts.size, 1);
     yield* m.compose.recoverDraft(retried.id, "local");
-    yield* m.sync();
+    yield* m.sync.sync();
     assert.strictEqual((yield* m.compose.openDraft(retried.id)).localOnly, true);
     assert.strictEqual((yield* m.compose.recoverDraft(retried.id, "retry")).synced, true);
     assert.strictEqual(server.drafts.size, 1);
@@ -326,7 +326,7 @@ it.effect(
     return Effect.gen(function* () {
       const m = yield* Mailbox;
       yield* m.accounts.connect({ provider: "gmail" });
-      yield* m.sync();
+      yield* m.sync.sync();
       assert.deepStrictEqual(yield* m.compose.suggestContacts("john acme"), [
         { name: "Server John", address: "j@acme.com" },
       ]);
@@ -348,11 +348,11 @@ it.effect(
         "sent",
         incoming("sent", { labels: ["SENT"], to: [{ name: "Jane", address: "j@acme.com" }] }),
       );
-      yield* m.sync();
+      yield* m.sync.sync();
       assert.deepStrictEqual(yield* m.compose.suggestContacts("john acme"), []);
       assert.strictEqual((yield* m.compose.suggestContacts("jane acme"))[0]?.name, "Jane");
       server.messages.delete("sent");
-      yield* m.sync();
+      yield* m.sync.sync();
       assert.deepStrictEqual(yield* m.compose.suggestContacts("jane acme"), []);
       yield* m.compose.setContactHidden("j@acme.com", true);
       assert.deepStrictEqual(yield* m.compose.suggestContacts("acme"), []);

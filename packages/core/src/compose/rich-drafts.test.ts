@@ -91,7 +91,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
                 }
               : { provider },
           );
-          yield* mailbox.sync();
+          yield* mailbox.sync.sync();
           const opened = yield* mailbox.compose.openDraft(`${provider}:${server.email}/remote`);
           assert.strictEqual(opened.message.html, expected.html);
           assert.strictEqual(opened.message.text, expected.text);
@@ -158,7 +158,7 @@ it.effect("offline remote draft import preserves and sanitizes cached HTML", () 
   return Effect.gen(function* () {
     const mailbox = yield* Mailbox;
     yield* mailbox.accounts.connect({ provider: "gmail" });
-    yield* mailbox.sync();
+    yield* mailbox.sync.sync();
     server.failNext = new ProviderError({ message: "offline" });
     const draft = yield* mailbox.compose.openDraft("gmail:me@gmail.com/remote");
     assert.strictEqual(draft.message.html, expected.html);

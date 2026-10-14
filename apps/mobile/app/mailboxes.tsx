@@ -39,7 +39,7 @@ export default function Mailboxes() {
     setFailed(false);
     try {
       const result = await runtime.runPromise(
-        Effect.flatMap(Mailbox, (mailbox) => mailbox.sync(accountId)),
+        Effect.flatMap(Mailbox, (mailbox) => mailbox.sync.sync(accountId)),
       );
       setFailed(result.some((item) => Boolean(item.error)));
     } catch {

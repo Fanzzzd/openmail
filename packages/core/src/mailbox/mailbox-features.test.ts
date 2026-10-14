@@ -49,7 +49,7 @@ it.effect(
         provider: "imap",
         input: { preset: "custom", email: "me@example.com", password: "test" },
       });
-      yield* m.sync();
+      yield* m.sync.sync();
       const id = `${account.id}/m1`;
       const [invite] = yield* m.calendar.invitations(id);
       assert.ok(invite);
@@ -96,7 +96,7 @@ it.effect(
     return Effect.gen(function* () {
       const m = yield* Mailbox;
       const account = yield* m.accounts.connect({ provider: "gmail" });
-      yield* m.sync();
+      yield* m.sync.sync();
       assert.strictEqual((yield* m.calendar.contactSync)[0]?.count, 3);
       assert.strictEqual(
         (yield* m.compose.suggestContacts("remote"))[0]?.address,
@@ -111,10 +111,10 @@ it.effect(
       assert.deepStrictEqual(yield* m.compose.suggestContacts("remote"), []);
       yield* m.compose.setContactHidden("remote@example.com", false);
       server.contacts = [{ name: "Updated", address: "updated@example.com" }];
-      yield* m.sync();
+      yield* m.sync.sync();
       assert.strictEqual((yield* m.calendar.contactSync)[0]?.count, 3);
       yield* TestClock.adjust("6 hours");
-      yield* m.sync();
+      yield* m.sync.sync();
       assert.strictEqual((yield* m.calendar.contactSync)[0]?.count, 1);
       assert.deepStrictEqual(yield* m.compose.suggestContacts("remote"), []);
       server.featureFailure = new FeatureScopeMissing({
@@ -126,7 +126,7 @@ it.effect(
       assert.strictEqual(result._tag, "Success");
       assert.strictEqual((yield* m.calendar.contactSync)[0]?.scopeMissing, true);
       assert.strictEqual((yield* m.compose.suggestContacts("updated")).length, 1);
-      const mail = yield* m.sync();
+      const mail = yield* m.sync.sync();
       assert.ok(!mail[0]?.error);
       assert.strictEqual((yield* m.accounts.accounts)[0]?.needsReauth, false);
       server.featureFailure = undefined;
@@ -148,13 +148,13 @@ it.effect(
     return Effect.gen(function* () {
       const m = yield* Mailbox;
       const account = yield* m.accounts.connect({ provider: "gmail" });
-      yield* m.sync();
+      yield* m.sync.sync();
       const [invite] = yield* m.calendar.invitations(`${account.id}/m1`);
       assert.ok(invite);
       for (const method of ["REQUEST", "CANCEL"]) {
         server.messages.set("m2", { ...incoming, providerId: "m2", date: 2000 });
         server.raw.set("m2", raw(method, 2));
-        yield* m.sync();
+        yield* m.sync.sync();
         yield* m.calendar.invitations(`${account.id}/m2`);
         const result = yield* m.calendar
           .respondInvite(`${account.id}/m1`, invite.key, "accepted", user)
@@ -186,7 +186,7 @@ it.effect("OAuth providers decide attendee identity for Gmail and Outlook aliase
       ["outlook", outlook],
     ] as const) {
       const account = yield* m.accounts.connect({ provider });
-      yield* m.sync();
+      yield* m.sync.sync();
       const [invite] = yield* m.calendar.invitations(`${account.id}/m1`);
       assert.ok(invite);
       yield* m.calendar.respondInvite(`${account.id}/m1`, invite.key, "accepted", user);
@@ -215,7 +215,7 @@ it.effect("IMAP flags an organizer differing from both From and Sender", () => {
       provider: "imap",
       input: { preset: "custom", email: server.email, password: "test" },
     });
-    yield* m.sync();
+    yield* m.sync.sync();
     const [invite] = yield* m.calendar.invitations(`${account.id}/m1`);
     assert.ok(invite);
     assert.strictEqual("organizerMismatch" in invite ? invite.organizerMismatch : undefined, true);
@@ -253,7 +253,7 @@ it.effect(
           signature: "",
         },
       ]);
-      yield* m.sync();
+      yield* m.sync.sync();
       for (const alias of ["login@example.com", "alias@example.com"]) {
         server.raw.set(
           "m1",

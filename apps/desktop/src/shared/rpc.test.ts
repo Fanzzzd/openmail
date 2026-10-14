@@ -124,15 +124,18 @@ it("manual Sync and network RPCs clear backoff before pulling", async () => {
       const calls: string[] = [];
       const handlers = mailboxHandlers({
         ...mailbox,
-        resetConnectivity: () =>
-          Effect.sync(() => {
-            calls.push("reset");
-          }),
-        sync: () =>
-          Effect.sync(() => {
-            calls.push("sync");
-            return [];
-          }),
+        sync: {
+          ...mailbox.sync,
+          resetConnectivity: () =>
+            Effect.sync(() => {
+              calls.push("reset");
+            }),
+          sync: () =>
+            Effect.sync(() => {
+              calls.push("sync");
+              return [];
+            }),
+        },
       });
       yield* handlers.Sync();
       yield* handlers.NetworkChanged();

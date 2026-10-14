@@ -494,7 +494,7 @@ import { type DerivedChunk } from "../ai/media.js";
       return Effect.gen(function* () {
         const mailbox = yield* Mailbox;
         yield* mailbox.accounts.connect({ provider: "gmail" });
-        yield* mailbox.sync();
+        yield* mailbox.sync.sync();
         for (const [query, ids] of [
           ["has:drive", ["doc", "drive", "sheet", "slides"]],
           ["has:document", ["doc"]],
@@ -800,7 +800,7 @@ import { type DerivedChunk } from "../ai/media.js";
         const mailbox = yield* Mailbox,
           store = yield* Store;
         const account = yield* mailbox.accounts.connect({ provider: "gmail" });
-        yield* mailbox.sync();
+        yield* mailbox.sync.sync();
         const searches: [string, string[]][] = [
           ["alpha AROUND 1 beta", ["forward", "reverse"]],
           ["alpha AROUND 0 beta", ["reverse"]],

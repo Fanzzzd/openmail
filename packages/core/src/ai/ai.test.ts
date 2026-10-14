@@ -132,7 +132,7 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
               }
             : { provider },
         );
-        yield* m.sync();
+        yield* m.sync.sync();
         id = `${account.id}/m1`;
         yield* m.ai.setAiAccount({ ...consent, accountId: account.id });
         yield* Stream.runDrain(
@@ -248,7 +248,7 @@ it.effect("a Gmail label belonging only to another account cannot be proposed", 
     const m = yield* Mailbox;
     const store = yield* Store;
     yield* m.accounts.connect({ provider: "gmail" });
-    yield* m.sync();
+    yield* m.sync.sync();
     const other = yield* store.upsertAccount("gmail", "other@example.com");
     yield* store.replaceLabels(other.id, [{ id: "foreign", name: "Other receipts", color: null }]);
     yield* m.ai.setAiAccount(consent);
@@ -274,7 +274,7 @@ it.effect(
       const m = yield* Mailbox;
       const store = yield* Store;
       yield* m.accounts.connect({ provider: "gmail" });
-      yield* m.sync();
+      yield* m.sync.sync();
       const other = yield* store.upsertAccount("outlook", "other@example.com");
       yield* m.ai.setAiAccount(consent);
       for (const id of [accountId, other.id])
@@ -305,7 +305,7 @@ it.effect("existing and new accounts default off; disabled AI never calls fetch"
   return Effect.gen(function* () {
     const m = yield* Mailbox;
     yield* m.accounts.connect({ provider: "gmail" });
-    yield* m.sync();
+    yield* m.sync.sync();
     assert.deepStrictEqual((yield* m.ai.aiSettings).accounts, [{ ...consent, allowed: false }]);
     yield* m.ai.setAiKey("fake-key");
     assert.strictEqual((yield* m.ai.aiSettings).keyConfigured, true);
@@ -347,7 +347,7 @@ it.effect(
     return Effect.gen(function* () {
       const m = yield* Mailbox;
       yield* m.accounts.connect({ provider: "gmail" });
-      yield* m.sync();
+      yield* m.sync.sync();
       yield* m.ai.setAiAccount(consent);
       yield* Stream.runDrain(m.ai.summarize(messageId, "zh-CN"));
       assert.include(requests[0]?.prompt ?? "", "Chinese (China) (zh-CN)");
@@ -386,7 +386,7 @@ it.effect("summaries stream text only, reuse hashes, invalidate input/model chan
   return Effect.gen(function* () {
     const m = yield* Mailbox;
     yield* m.accounts.connect({ provider: "gmail" });
-    yield* m.sync();
+    yield* m.sync.sync();
     yield* m.ai.setAiAccount(consent);
     const context = yield* m.reading.thread(messageId, "model", 1000);
     assert.ok(Buffer.byteLength(JSON.stringify(context)) <= 1000);
@@ -399,11 +399,11 @@ it.effect("summaries stream text only, reuse hashes, invalidate input/model chan
     assert.ok(!/private.pdf|quoted secret|signature secret|<img/.test(requests[0]?.prompt ?? ""));
     const cached = yield* Stream.runCollect(m.ai.summarize(messageId));
     assert.ok(cached.some((e) => e._tag === "Done" && e.cached));
-    yield* m.sync();
+    yield* m.sync.sync();
     yield* Stream.runDrain(m.ai.summarize(messageId));
     assert.strictEqual(requests.length, 1, "unchanged sync preserves cache");
     server.messages.set("m1", incoming("m1", "Decision moved to Monday"));
-    yield* m.sync();
+    yield* m.sync.sync();
     assert.strictEqual(yield* m.ai.aiSummary(messageId), null);
     yield* Stream.runDrain(m.ai.summarize(messageId));
     assert.strictEqual(requests.length, 2);
@@ -477,9 +477,9 @@ it.effect(
     return Effect.gen(function* () {
       const m = yield* Mailbox;
       yield* m.accounts.connect({ provider: "gmail" });
-      yield* m.sync();
+      yield* m.sync.sync();
       yield* m.accounts.connect({ provider: "outlook" });
-      yield* m.sync();
+      yield* m.sync.sync();
       yield* m.ai.setAiAccount(consent);
       yield* m.proposals.setAgentWriteMode("propose");
       const events = yield* Stream.runCollect(
@@ -497,7 +497,7 @@ it.effect(
       assert.strictEqual(server.sent.length, 0);
       const proposals = yield* m.proposals.proposals;
       assert.strictEqual(proposals.length, 2);
-      yield* m.sync();
+      yield* m.sync.sync();
       assert.strictEqual(server.draftLog.length, 0);
       const draft = proposals.find((p) => p.command.kind === "draft");
       assert.ok(draft);
@@ -538,7 +538,7 @@ it.effect(
     return Effect.gen(function* () {
       const m = yield* Mailbox;
       yield* m.accounts.connect({ provider: "gmail" });
-      yield* m.sync();
+      yield* m.sync.sync();
       yield* m.ai.setAiAccount(consent);
       const started = yield* Deferred.make<void>();
       const fiber = yield* Stream.runForEach(m.ai.summarize(messageId), (e) =>
@@ -574,7 +574,7 @@ it.effect("request deadline interrupts a stalled model and never saves partial s
   return Effect.gen(function* () {
     const m = yield* Mailbox;
     yield* m.accounts.connect({ provider: "gmail" });
-    yield* m.sync();
+    yield* m.sync.sync();
     yield* m.ai.setAiAccount(consent);
     const started = yield* Deferred.make<void>();
     const fiber = yield* Stream.runForEach(m.ai.summarize(messageId), (event) =>
@@ -612,25 +612,25 @@ it.effect("automatic summaries require both account switches and an API key", ()
     yield* Effect.gen(function* () {
       const m = yield* Mailbox;
       yield* m.accounts.connect({ provider: "gmail" });
-      yield* m.sync();
+      yield* m.sync.sync();
       yield* m.ai.setAiKey("fake-key");
       server.messages.set("m2", { ...incoming("m2"), date: 2000 });
-      yield* m.sync();
+      yield* m.sync.sync();
       yield* Effect.yieldNow;
       assert.strictEqual(calls, 0);
       yield* m.ai.setAiAccount(consent);
       server.messages.set("m3", { ...incoming("m3"), date: 3000 });
-      yield* m.sync();
+      yield* m.sync.sync();
       yield* Effect.yieldNow;
       assert.strictEqual(calls, 0);
       yield* m.ai.setAiAccount({ ...consent, autoSummaries: true });
       server.messages.set("m4", { ...incoming("m4"), date: 4000 });
-      yield* m.sync();
+      yield* m.sync.sync();
       yield* Deferred.await(called);
       assert.strictEqual(calls, 1);
       yield* m.ai.setAiAccount({ ...consent, allowed: false });
       server.messages.set("m5", { ...incoming("m5"), date: 5000 });
-      yield* m.sync();
+      yield* m.sync.sync();
       yield* Effect.yieldNow;
       assert.strictEqual(calls, 1);
     }).pipe(
@@ -654,7 +654,7 @@ it.effect(
     return Effect.gen(function* () {
       const m = yield* Mailbox;
       yield* m.accounts.connect({ provider: "gmail" });
-      yield* m.sync();
+      yield* m.sync.sync();
       assert.strictEqual(yield* m.ai.aiSummary(messageId), null);
       assert.strictEqual(yield* m.ai.aiTriage(messageId), null);
       const failure = yield* Stream.runDrain(m.ai.summarize(messageId)).pipe(Effect.flip);

@@ -1403,7 +1403,7 @@ it.effect(
                 inbox: `${GRAPH}/me/mailFolders/inbox/messages/delta?$deltatoken=expired`,
               }),
             );
-          const result = yield* mailbox.sync(account.id);
+          const result = yield* mailbox.sync.sync(account.id);
           assert.ok(result[0]?.error);
           assert.strictEqual(yield* store.hasMessage(`${account.id}/cached`), true);
         }).pipe(Effect.provide(layer), Effect.scoped);
@@ -4635,7 +4635,7 @@ it.effect(
         message: { to: [], cc: [], bcc: [], subject: "Draft", text: "Text", attachments: [] },
       });
       yield* store.setDraftRemote("editable", { draftId: "remote", messageId: "remote" }, null);
-      yield* mailbox.sync(saved.id);
+      yield* mailbox.sync.sync(saved.id);
       assert.strictEqual(yield* store.messageIdForProvider(saved.id, "remote"), null);
       assert.isTrue(Option.isNone(yield* store.getDraft("editable")));
     }).pipe(
@@ -4711,7 +4711,7 @@ for (const firstStatus of [200, 403]) {
         assert.isFalse(http.calls.some((c) => c.url.pathname.endsWith("/$batch")));
         pulling = false;
         yield* store.saveSyncCursor(saved.id, cursor);
-        yield* mailbox.sync(saved.id);
+        yield* mailbox.sync.sync(saved.id);
         if (status === 403) {
           assert.deepStrictEqual(
             (yield* store.pendingResetCandidates(saved.id)).map((c) => c.providerId),
@@ -4722,7 +4722,7 @@ for (const firstStatus of [200, 403]) {
             `${saved.id}/moving`,
           );
           status = 200;
-          yield* mailbox.sync(saved.id);
+          yield* mailbox.sync.sync(saved.id);
         }
         const current = yield* store.getMessage(`${saved.id}/moving`);
         assert.include(current.labels, "INBOX");
@@ -4801,7 +4801,7 @@ for (const status of [200, 404] as const) {
           { _tag: "VerifyCandidates", providerIds: ["feb"] },
         );
         yield* store.saveSyncCursor(saved.id, cursor);
-        yield* mailbox.sync(saved.id);
+        yield* mailbox.sync.sync(saved.id);
         const id = yield* store.messageIdForProvider(saved.id, "feb");
         assert.deepStrictEqual(yield* store.pendingResetCandidates(saved.id), []);
         if (status === 404) {
@@ -4893,7 +4893,7 @@ for (const { local, syncs } of [
         );
         for (const expected of syncs) {
           verified.push([]);
-          yield* mailbox.sync(saved.id);
+          yield* mailbox.sync.sync(saved.id);
           assert.strictEqual(verified.at(-1)?.length, expected);
         }
         // Only stored rows were verified, and each once.
@@ -5964,7 +5964,7 @@ it.effect("a failed folder keeps the delta links of folders that finished before
       const store = yield* Store;
       const mailbox = yield* Mailbox;
       yield* store.upsertAccount("outlook", account.email);
-      const failed = yield* mailbox.sync(account.id);
+      const failed = yield* mailbox.sync.sync(account.id);
       assert.ok(failed[0]?.error);
       const partial = yield* store.getSyncCursor(account.id);
       assert.ok(Option.isSome(partial));
@@ -5978,7 +5978,7 @@ it.effect("a failed folder keeps the delta links of folders that finished before
           .filter((c) => c.url.pathname.endsWith("/mailFolders/inbox/messages/delta"))
           .map((c) => c.url.searchParams.get("$deltatoken"));
       const before = inboxCalls().length;
-      const done = yield* mailbox.sync(account.id);
+      const done = yield* mailbox.sync.sync(account.id);
       assert.isUndefined(done[0]?.error);
       // The retry continues Inbox from its saved link instead of listing it again.
       assert.deepStrictEqual(inboxCalls().slice(before), ["inbox-done"]);

@@ -367,7 +367,7 @@ import { Mailbox } from "../mailbox/mailbox.js";
       return Effect.gen(function* () {
         const m = yield* Mailbox;
         const account = yield* m.accounts.connect({ provider: "gmail" });
-        yield* m.sync();
+        yield* m.sync.sync();
         const id = `${account.id}/one`;
         const [candidate] = yield* m.calendar.detectedEvents(id);
         assert.ok(candidate);
@@ -389,7 +389,7 @@ import { Mailbox } from "../mailbox/mailbox.js";
           attachments: [{ filename: "travel.ics", mimeType: "text/calendar", size: 300 }],
         });
         server.raw.set("one", raw("PUBLISH"));
-        yield* m.sync();
+        yield* m.sync.sync();
         const [published] = yield* m.calendar.detectedEvents(id);
         assert.ok(published);
         server.raw.set("one", raw("PUBLISH", "Changed details"));
@@ -481,7 +481,7 @@ import { Mailbox } from "../mailbox/mailbox.js";
       return Effect.gen(function* () {
         const m = yield* Mailbox,
           account = yield* m.accounts.connect({ provider: "outlook" });
-        yield* m.sync();
+        yield* m.sync.sync();
         const id = `${account.id}/one`,
           [candidate] = yield* m.calendar.detectedEvents(id);
         assert.ok(candidate);
@@ -600,7 +600,7 @@ import { Mailbox } from "../mailbox/mailbox.js";
       return Effect.gen(function* () {
         const mailbox = yield* Mailbox;
         const account = yield* mailbox.accounts.connect({ provider: "gmail" });
-        yield* mailbox.sync();
+        yield* mailbox.sync.sync();
         const id = `${account.id}/invite`;
         const [initial] = yield* mailbox.calendar.invitations(id);
         assert.ok(initial);
@@ -739,7 +739,7 @@ import { Mailbox } from "../mailbox/mailbox.js";
       return Effect.gen(function* () {
         const mailbox = yield* Mailbox;
         const account = yield* mailbox.accounts.connect({ provider: "gmail" });
-        yield* mailbox.sync();
+        yield* mailbox.sync.sync();
         const id = `${account.id}/one`,
           event = (yield* mailbox.calendar.detectedEvents(id))[0];
         assert.ok(event);

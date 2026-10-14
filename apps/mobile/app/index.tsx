@@ -48,7 +48,9 @@ export default function Accounts() {
     setBusy(true);
     setError(false);
     try {
-      const result = await runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.sync()));
+      const result = await runtime.runPromise(
+        Effect.flatMap(Mailbox, (mailbox) => mailbox.sync.sync()),
+      );
       setError(result.some((item) => Boolean(item.error)));
     } catch {
       setError(true);

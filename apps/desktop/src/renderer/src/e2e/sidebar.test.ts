@@ -43,7 +43,7 @@ it("Shift+F10 opens a label menu that moves a nested label to the top level", as
   current = await flow();
   const h = current;
   h.server.labels = [{ id: "Label_work", name: "Parent/Child", color: null }];
-  await h.run(h.m.sync());
+  await h.run(h.m.sync.sync());
   await eventually(() => expect(screen.getByRole("button", { name: "Parent/Child" })).toBeTruthy());
   const label = screen.getByRole("button", { name: "Parent/Child" });
   label.focus();

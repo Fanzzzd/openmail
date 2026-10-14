@@ -56,7 +56,7 @@ import { replyFromAddress } from "./signatures.js";
     return Effect.gen(function* () {
       const m = yield* Mailbox;
       yield* m.accounts.connect({ provider: "gmail" });
-      yield* m.sync();
+      yield* m.sync.sync();
       return yield* body(m, gmail, outlook);
     }).pipe(Effect.provide(TestMailbox({ gmail, outlook })));
   }
@@ -77,7 +77,7 @@ import { replyFromAddress } from "./signatures.js";
         assert.deepStrictEqual(yield* draftIds(m), ["draft:1"]);
 
         // After a pull the list shows the provider's copy, which opens the same draft.
-        yield* m.sync();
+        yield* m.sync.sync();
         const [row] = yield* draftIds(m);
         assert.ok(row?.startsWith(`${GMAIL}/`));
         assert.strictEqual((yield* m.compose.openDraft(row!)).id, "draft:1");
@@ -93,7 +93,7 @@ import { replyFromAddress } from "./signatures.js";
         assert.ok(second?.kind === "save");
         assert.strictEqual(second.push.remote?.draftId, [...server.drafts.keys()][0]);
         assert.deepStrictEqual(yield* draftIds(m), ["draft:1"]);
-        yield* m.sync();
+        yield* m.sync.sync();
         assert.strictEqual((yield* draftIds(m)).length, 1);
         assert.strictEqual((yield* m.compose.openDraft("draft:1")).message.text, "v2");
       }),
@@ -105,7 +105,7 @@ import { replyFromAddress } from "./signatures.js";
       (m) =>
         Effect.gen(function* () {
           yield* m.compose.saveDraft({ id: "draft:1", accountId: GMAIL, message: draftMessage() });
-          yield* m.sync();
+          yield* m.sync.sync();
           const [row] = yield* draftIds(m);
           const [copy] = yield* m.reading.thread(row!);
           assert.strictEqual(copy?.draftId, "draft:1");
@@ -121,7 +121,7 @@ import { replyFromAddress } from "./signatures.js";
           assert.strictEqual((yield* m.compose.openDraft(copy!.draftId!)).message.text, "v2");
 
           // A message that is not a copy of a local draft has none.
-          yield* m.sync();
+          yield* m.sync.sync();
           const [inbox] = yield* m.reading.threads({ mailbox: "inbox" });
           assert.strictEqual((yield* m.reading.thread(inbox!.id))[0]?.draftId, undefined);
         }),
@@ -143,7 +143,7 @@ import { replyFromAddress } from "./signatures.js";
         assert.deepStrictEqual(yield* draftIds(m), ["draft:1"]);
 
         yield* TestClock.adjust("5 seconds");
-        yield* m.sync();
+        yield* m.sync.sync();
         assert.strictEqual(server.drafts.size, 1);
         assert.strictEqual((yield* m.compose.openDraft("draft:1")).synced, true);
       }),
@@ -154,7 +154,7 @@ import { replyFromAddress } from "./signatures.js";
     withMail((m, server) =>
       Effect.gen(function* () {
         yield* m.compose.saveDraft({ id: "draft:1", accountId: GMAIL, message: draftMessage() });
-        yield* m.sync();
+        yield* m.sync.sync();
         const outcome = yield* m.organize.perform(
           { kind: "send", accountId: GMAIL, message: draftMessage(), draftId: "draft:1" },
           user,
@@ -300,12 +300,12 @@ import { replyFromAddress } from "./signatures.js";
     withMail((m, server) =>
       Effect.gen(function* () {
         yield* m.compose.saveDraft({ id: "draft:1", accountId: GMAIL, message: draftMessage() });
-        yield* m.sync();
+        yield* m.sync.sync();
         for (const [id, d] of server.drafts) {
           server.drafts.delete(id);
           server.messages.delete(d.messageId);
         }
-        yield* m.sync();
+        yield* m.sync.sync();
         assert.deepStrictEqual(yield* draftIds(m), []);
         assert.strictEqual((yield* Effect.flip(m.compose.openDraft("draft:1")))._tag, "NotFound");
       }),
@@ -319,7 +319,7 @@ import { replyFromAddress } from "./signatures.js";
         const [draft] = [...server.drafts.values()];
         const copy = server.messages.get(draft!.messageId)!;
         server.messages.set(copy.providerId, { ...copy, labels: ["SENT"] });
-        yield* m.sync();
+        yield* m.sync.sync();
         assert.deepStrictEqual(yield* draftIds(m), []);
         assert.strictEqual((yield* Effect.flip(m.compose.openDraft("draft:1")))._tag, "NotFound");
       }),
@@ -396,7 +396,7 @@ import { replyFromAddress } from "./signatures.js";
         );
         assert.strictEqual(outcome.status, "denied");
         assert.strictEqual((yield* draftIds(m)).length, 0);
-        yield* m.sync();
+        yield* m.sync.sync();
         assert.strictEqual(server.drafts.size, 0);
       }),
     ),
@@ -415,7 +415,7 @@ import { replyFromAddress } from "./signatures.js";
         assert.strictEqual((yield* draftIds(m)).length, 1);
         // MCP does not queue a provider save, including at the next app sync.
         assert.strictEqual(server.drafts.size, 0);
-        yield* m.sync();
+        yield* m.sync.sync();
         assert.strictEqual(server.drafts.size, 0);
         assert.strictEqual(server.sent.length, 0);
 
@@ -435,7 +435,7 @@ import { replyFromAddress } from "./signatures.js";
           { kind: "draft", accountId: GMAIL, message: draftMessage({ subject: "二" }) },
           agent,
         );
-        yield* m.sync();
+        yield* m.sync.sync();
         assert.strictEqual(server.drafts.size, 0);
         yield* m.proposals.decideProposal(
           second.status === "proposed" ? second.proposalId : -1,
@@ -1079,14 +1079,14 @@ import { replyFromAddress } from "./signatures.js";
               if (attempt > 1) yield* TestClock.adjust("1 hour");
               yield* attempt === 1
                 ? m.compose.saveDraft({ id: "draft:attempts", accountId, message })
-                : m.sync();
+                : m.sync.sync();
               const draft = yield* m.compose.openDraft("draft:attempts");
               assert.strictEqual(draft.syncRetrying, true);
               assert.strictEqual(draft.syncError, "Private network detail");
               assert.strictEqual(draft.message.text, message.text);
             }
             yield* TestClock.adjust("8 days");
-            yield* m.sync();
+            yield* m.sync.sync();
             assert.strictEqual((yield* m.compose.openDraft("draft:attempts")).syncRetrying, false);
             assert.strictEqual((yield* m.proposals.listFailedOps).length, 1);
           }),
@@ -1148,7 +1148,7 @@ import { replyFromAddress } from "./signatures.js";
           accountId: originalAccount.id,
           message,
         });
-        yield* mailbox.sync();
+        yield* mailbox.sync.sync();
         const oldCloudDrafts = [...gmail.drafts.entries()];
         const oldLogLength = gmail.draftLog.length;
         assert.strictEqual(oldCloudDrafts.length, 1);
@@ -1158,7 +1158,7 @@ import { replyFromAddress } from "./signatures.js";
           accountId: newAccount.id,
           message: { ...message, text: "Local edits after changing From" },
         });
-        yield* mailbox.sync();
+        yield* mailbox.sync.sync();
         const reopened = yield* mailbox.compose.openDraft(saved.id);
         assert.deepStrictEqual(
           {

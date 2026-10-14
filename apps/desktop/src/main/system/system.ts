@@ -548,18 +548,18 @@ export const DesktopLive = Layer.effect(
       Effect.repeat(Schedule.spaced("15 seconds")),
       Effect.forkScoped,
     );
-    const onSuspend = () => run(mailbox.setSyncPaused(true));
+    const onSuspend = () => run(mailbox.sync.setSyncPaused(true));
     const onResume = () =>
       run(
-        mailbox
+        mailbox.sync
           .setSyncPaused(false)
-          .pipe(Effect.andThen(mailbox.pollInbox()), Effect.andThen(refresh)),
+          .pipe(Effect.andThen(mailbox.sync.pollInbox()), Effect.andThen(refresh)),
       );
     powerMonitor.on("suspend", onSuspend);
     powerMonitor.on("resume", onResume);
     yield* watchOnline(
       () => net.isOnline(),
-      mailbox.resetConnectivity().pipe(Effect.andThen(mailbox.sync()), Effect.asVoid),
+      mailbox.sync.resetConnectivity().pipe(Effect.andThen(mailbox.sync.sync()), Effect.asVoid),
     );
     const onFocus = (_event: Electron.Event, win: BrowserWindow) => {
       if (isMainWindow(win)) activeSpace = spaces.get(win.webContents.id) ?? "all";

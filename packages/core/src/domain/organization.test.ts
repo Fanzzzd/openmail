@@ -35,7 +35,7 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
     return Effect.gen(function* () {
       const m = yield* Mailbox;
       yield* m.accounts.connect({ provider: "gmail" });
-      yield* m.sync();
+      yield* m.sync.sync();
       return yield* body(m, server);
     }).pipe(Effect.provide(TestMailbox({ gmail: server })));
   };
@@ -73,11 +73,11 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
         Effect.gen(function* () {
           yield* m.organize.snooze(["gmail:me@gmail.com/m1"], 10_000);
           assert.strictEqual(server.pushed.length, 0); // Hiding is local; Gmail has no snooze API.
-          yield* m.sync();
+          yield* m.sync.sync();
           assert.strictEqual((yield* m.reading.threads({ mailbox: "inbox" })).length, 1);
           assert.strictEqual((yield* m.reading.threads({ mailbox: "snoozed" })).length, 1);
           server.messages.set("reply", incoming("reply", { threadId: "t-m1", date: 1500 }));
-          yield* m.sync();
+          yield* m.sync.sync();
           assert.strictEqual((yield* m.reading.threads({ mailbox: "inbox" })).length, 1);
           yield* TestClock.adjust("10 seconds");
           yield* m.organize.wakeSnoozed();
@@ -88,7 +88,7 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
           assert.strictEqual(server.pushed.length, 2);
           yield* m.organize.wakeSnoozed();
           assert.strictEqual(server.pushed.length, 2);
-          yield* m.sync();
+          yield* m.sync.sync();
           assert.strictEqual((yield* m.reading.threads({ mailbox: "inbox" }))[0]?.isUnread, true);
         }),
       ),
@@ -135,7 +135,7 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
           true,
         );
         yield* TestClock.adjust("5 seconds");
-        yield* m.sync();
+        yield* m.sync.sync();
         assert.strictEqual(server.pushed.length, 2);
         assert.strictEqual((yield* m.reading.thread("gmail:me@gmail.com/m1"))[0]?.isUnread, true);
       }),
@@ -159,7 +159,7 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
           color: null,
         });
         yield* m.organize.setOrganization({ accountId: id, categories: false });
-        yield* m.sync();
+        yield* m.sync.sync();
         assert.strictEqual((yield* m.reading.labels([id]))[0]?.name, "Clients");
         assert.strictEqual((yield* m.reading.labels([id]))[0]?.color, "#4986e7");
         assert.strictEqual((yield* m.organize.labelPreferences)[0]?.favorite, true);
@@ -239,7 +239,7 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
             text: "Local signature",
           });
           server.aliases = server.aliases.map((a) => ({ ...a, signature: "Updated" }));
-          yield* m.sync();
+          yield* m.sync.sync();
           const signatures = yield* m.compose.signatures;
           assert.strictEqual(signatures.find((s) => s.kind === "new")?.text, "Local signature");
           assert.strictEqual(signatures.find((s) => s.kind === "reply")?.text, "Updated");
@@ -301,7 +301,7 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
           (yield* m.organize.vacation("gmail:me@gmail.com").pipe(Effect.flip))._tag,
           "SettingsScopeMissing",
         );
-        const sync = yield* m.sync();
+        const sync = yield* m.sync.sync();
         assert.strictEqual(sync[0]?.error, undefined);
         assert.strictEqual((yield* m.accounts.accounts)[0]?.needsReauth, false);
         assert.strictEqual((yield* m.reading.threads({ mailbox: "inbox" })).length, 2);
@@ -373,7 +373,7 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
         assert.ok(
           (yield* m.reading.thread("gmail:me@gmail.com/m1"))[0]?.labels.includes("SNOOZED"),
         );
-        yield* m.sync();
+        yield* m.sync.sync();
         assert.strictEqual(server.pushed.length, 2);
       }),
     ),
@@ -441,12 +441,12 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
       return Effect.gen(function* () {
         const m = yield* Mailbox;
         const account = yield* m.accounts.connect({ provider: "gmail" });
-        yield* m.sync();
+        yield* m.sync.sync();
         yield* m.organize.snooze([`${account.id}/reply`], 1000);
         let members = yield* m.reading.thread(`${account.id}/reply`);
         assert.ok(members.find((x) => x.id.endsWith("/original"))?.labels.includes("SNOOZED"));
         assert.deepStrictEqual(members.find((x) => x.id.endsWith("/reply"))?.labels, ["SENT"]);
-        yield* m.sync();
+        yield* m.sync.sync();
         assert.strictEqual((yield* m.reading.threads({ mailbox: "snoozed" })).length, 1);
         yield* TestClock.adjust("2 seconds");
         yield* m.organize.wakeSnoozed();
@@ -489,7 +489,7 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
         "#b99aff",
       );
       yield* m.organize.changeLabel(account.id, { kind: "rename", id: folder.id, name: "Renamed" });
-      yield* m.sync();
+      yield* m.sync.sync();
       assert.strictEqual(
         (yield* m.reading.labels([account.id])).find((l) => l.id === folder.id)?.name,
         "Renamed",
@@ -555,7 +555,7 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
         const account = yield* mailbox.accounts.connect({ provider: "gmail" });
-        yield* mailbox.sync();
+        yield* mailbox.sync.sync();
         yield* mailbox.organize.setOrganization({
           accountId: account.id,
           categories: true,
@@ -605,7 +605,7 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
         const mailbox = yield* Mailbox;
         for (const provider of ["gmail", "outlook"] as const) {
           const account = yield* mailbox.accounts.connect({ provider });
-          yield* mailbox.sync(account.id);
+          yield* mailbox.sync.sync(account.id);
           const id = `${account.id}/m`;
           yield* mailbox.organize.modifyWithUndo([id], { kind: "important", value: true });
           assert.strictEqual(
@@ -636,7 +636,7 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
         const account = yield* mailbox.accounts.connect({ provider: "gmail" });
-        yield* mailbox.sync();
+        yield* mailbox.sync.sync();
         yield* mailbox.organize.changeLabel(account.id, { kind: "create", name: "Work" });
         const label = (yield* mailbox.reading.labels([account.id]))[0];
         assert.ok(label);
@@ -791,7 +791,7 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
       return Effect.gen(function* () {
         const mailbox = yield* Mailbox;
         const account = yield* mailbox.accounts.connect({ provider: "outlook" });
-        yield* mailbox.sync();
+        yield* mailbox.sync.sync();
         const input = {
           ...EMPTY_FILTER,
           name: "Unsafe",

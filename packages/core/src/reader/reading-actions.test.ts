@@ -125,7 +125,7 @@ import { parseAppLink, parseStableReference, privateMailLink, messageLink } from
         provider: "imap",
         input: { preset: "icloud", email: imap.email, password: "test" },
       });
-      yield* m.sync();
+      yield* m.sync.sync();
       assert.deepStrictEqual(yield* m.reading.rawMessageBytes(`${ga.id}/second`), bytes);
       assert.strictEqual(
         yield* m.reading.messageWebUrl(`${ga.id}/first`),
@@ -174,7 +174,7 @@ import { parseAppLink, parseStableReference, privateMailLink, messageLink } from
     return Effect.gen(function* () {
       const m = yield* Mailbox;
       const account = yield* m.accounts.connect({ provider: "outlook" });
-      yield* m.sync();
+      yield* m.sync.sync();
       assert.strictEqual(
         (yield* m.reading.messageWebUrl(`${account.id}/first`).pipe(Effect.result))._tag,
         "Failure",
@@ -187,7 +187,7 @@ import { parseAppLink, parseStableReference, privateMailLink, messageLink } from
     return Effect.gen(function* () {
       const mailbox = yield* Mailbox;
       const account = yield* mailbox.accounts.connect({ provider: "gmail" });
-      yield* mailbox.sync();
+      yield* mailbox.sync.sync();
       const addresses = ["to@example.com", "cc@example.com", "bcc@example.com"];
       yield* mailbox.organize.perform(
         {
@@ -419,7 +419,7 @@ import { parseAppLink, parseStableReference, privateMailLink, messageLink } from
       return Effect.gen(function* () {
         const m = yield* Mailbox,
           account = yield* m.accounts.connect({ provider: "outlook" });
-        yield* m.sync();
+        yield* m.sync.sync();
         server.messages.set("one", { ...mail, webLink: "https://outlook.live.com/mail/id/one" });
         server.messages.set("two", {
           ...mail,
@@ -478,7 +478,7 @@ import { parseAppLink, parseStableReference, privateMailLink, messageLink } from
             smtpHost: "fake.invalid",
           },
         });
-        yield* mailbox.sync();
+        yield* mailbox.sync.sync();
         const link = yield* mailbox.reading.privateMailLink(`${account.id}/old`, "message");
         const parsed = parseAppLink(link);
         assert.ok(parsed?.kind === "message");
@@ -495,7 +495,7 @@ import { parseAppLink, parseStableReference, privateMailLink, messageLink } from
         assert.ok(thread?.kind === "message" && thread.single === false);
         server.messages.delete("old");
         server.messages.set("new", fixture("new", { rfcMessageId: "<stable@example.com>" }));
-        yield* mailbox.sync();
+        yield* mailbox.sync.sync();
         assert.strictEqual(yield* mailbox.reading.resolveMailLink(parsed.id), `${account.id}/new`);
         server.messages.set(
           "uncached",
@@ -547,7 +547,7 @@ import { parseAppLink, parseStableReference, privateMailLink, messageLink } from
       return Effect.gen(function* () {
         const mailbox = yield* Mailbox;
         const account = yield* mailbox.accounts.connect({ provider: "gmail" });
-        yield* mailbox.sync();
+        yield* mailbox.sync.sync();
         const id = `${account.id}/m`;
         const link = parseAppLink(yield* mailbox.reading.privateMailLink(id, "message"));
         assert.ok(link?.kind === "message");

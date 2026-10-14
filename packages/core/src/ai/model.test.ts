@@ -95,7 +95,7 @@ it.effect("length-limited summaries remain visible as truncated and are never ca
   return Effect.gen(function* () {
     const m = yield* Mailbox;
     const account = yield* m.accounts.connect({ provider: "gmail" });
-    yield* m.sync();
+    yield* m.sync.sync();
     yield* m.ai.setAiKey("test-secret-key");
     yield* m.ai.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });
     const id = `${account.id}/m1`;
@@ -315,7 +315,7 @@ it.effect("re-reading the thread a question is about is a tool error, not a fail
   return Effect.gen(function* () {
     const m = yield* Mailbox;
     const account = yield* m.accounts.connect({ provider: "gmail" });
-    yield* m.sync();
+    yield* m.sync.sync();
     yield* m.ai.setAiKey("k");
     yield* m.ai.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });
     const events = yield* Stream.runCollect(
@@ -355,7 +355,7 @@ it.effect("a read that overruns the input budget comes back to the model as a to
   return Effect.gen(function* () {
     const m = yield* Mailbox;
     const account = yield* m.accounts.connect({ provider: "gmail" });
-    yield* m.sync();
+    yield* m.sync.sync();
     yield* m.ai.setAiKey("k");
     yield* m.ai.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });
     const events = yield* Stream.runCollect(
@@ -377,7 +377,7 @@ it.effect("a summary of a thread too long to read whole says how many messages i
   return Effect.gen(function* () {
     const m = yield* Mailbox;
     const account = yield* m.accounts.connect({ provider: "gmail" });
-    yield* m.sync();
+    yield* m.sync.sync();
     yield* m.ai.setAiKey("k");
     yield* m.ai.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });
     const id = `${account.id}/t-39`;

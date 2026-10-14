@@ -129,7 +129,7 @@ it.skipIf(process.platform !== "darwin")(
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
         const account = yield* mailbox.accounts.connect({ provider: "gmail" });
-        yield* mailbox.sync();
+        yield* mailbox.sync.sync();
         yield* mailbox.calendar.refreshContacts(account.id);
         const desktop = desktopAppleContacts(mailbox);
         expect((yield* desktop.status).status).toBe("off");

@@ -279,7 +279,7 @@ for (const source of ["TRASH", "SPAM"] as const) {
         const label = (yield* m.reading.labels([accountId]))[0];
         assert.ok(label);
         assert.deepStrictEqual((yield* store.getMessage(`${accountId}/one`)).labels, [label.id]);
-        yield* m.sync();
+        yield* m.sync.sync();
         assert.deepStrictEqual(server.messages.get("one")?.labels, [label.id]);
       }),
     ),
@@ -312,7 +312,7 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
             assert.ok(message.labels.includes(child.id));
             assert.ok(!message.labels.includes("INBOX"));
           }
-          yield* m.sync();
+          yield* m.sync.sync();
           assert.deepStrictEqual(
             server.pushed.map((p) => p.op),
             [
@@ -453,7 +453,7 @@ it.effect("Gmail Move To with no source label preserves Inbox and can undo the a
         "INBOX",
         label.id,
       ]);
-      yield* m.sync();
+      yield* m.sync.sync();
       assert.deepStrictEqual(server.messages.get("one")?.labels, ["INBOX", label.id]);
       yield* m.organize.undoBatch(result.undoId);
       assert.deepStrictEqual((yield* store.getMessage(`${accountId}/one`)).labels, ["INBOX"]);
@@ -529,7 +529,7 @@ it.effect(
           labelListVisibility: "labelShowIfUnread",
           messageListVisibility: "hide",
         });
-        yield* m.sync();
+        yield* m.sync.sync();
         assert.strictEqual(server.labels[0]?.labelListVisibility, "labelShowIfUnread");
         assert.strictEqual(
           (yield* m.reading.labels([accountId]))[0]?.messageListVisibility,

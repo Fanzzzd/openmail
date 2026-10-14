@@ -89,11 +89,11 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
               : { provider },
           );
           id = account.id;
-          yield* mailbox.sync();
+          yield* mailbox.sync.sync();
           token = tokens.get(id) ?? "";
           assert.ok(token);
           server.messages.set("arrival", incoming("arrival"));
-          yield* mailbox.sync();
+          yield* mailbox.sync.sync();
           yield* store.enqueueOp(id, "initial", { kind: "read", value: true });
           yield* mailbox.app.setPrefs({
             showAccountLabels: true,
@@ -108,10 +108,10 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
           const failure = new ProviderError({ message: "must remain unused" });
           server.failNext = failure;
           server.messages.set("while-disabled", incoming("while-disabled"));
-          assert.deepStrictEqual(yield* mailbox.sync(), []);
-          assert.deepStrictEqual(yield* mailbox.sync(id), []);
-          assert.deepStrictEqual(yield* mailbox.pollInbox(), []);
-          yield* mailbox.fetchOlder({ accountIds: [id] });
+          assert.deepStrictEqual(yield* mailbox.sync.sync(), []);
+          assert.deepStrictEqual(yield* mailbox.sync.sync(id), []);
+          assert.deepStrictEqual(yield* mailbox.sync.pollInbox(), []);
+          yield* mailbox.sync.fetchOlder({ accountIds: [id] });
           yield* mailbox.calendar.refreshContacts(id);
           assert.deepStrictEqual(
             (yield* mailbox.reading.searchServer({ search: "Alice" })).threads,
@@ -159,7 +159,7 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
             description: "Personal",
             color: null,
           });
-          yield* mailbox.sync(id);
+          yield* mailbox.sync.sync(id);
           assert.strictEqual((yield* store.listPendingOps).length, 0);
           assert.ok(
             (yield* mailbox.reading.threads({ mailbox: "all" })).some(
@@ -276,7 +276,7 @@ it.effect(
     return Effect.gen(function* () {
       const mailbox = yield* Mailbox;
       const account = yield* mailbox.accounts.connect({ provider: "gmail" });
-      yield* mailbox.sync();
+      yield* mailbox.sync.sync();
       const started = yield* Deferred.make<void>();
       const release = yield* Deferred.make<void>();
       server.beforePush = Deferred.succeed(started, undefined).pipe(
@@ -303,13 +303,13 @@ it.effect(
       yield* Deferred.succeed(release, undefined);
       yield* Fiber.join(writing);
       assert.strictEqual(server.pushed.length, 1);
-      assert.deepStrictEqual(yield* mailbox.sync(), []);
+      assert.deepStrictEqual(yield* mailbox.sync.sync(), []);
       yield* mailbox.accounts.setAccountSettings(account.id, {
         enabled: true,
         description: "",
         color: null,
       });
-      yield* mailbox.sync();
+      yield* mailbox.sync.sync();
       assert.strictEqual(server.pushed.length, 2);
     }).pipe(Effect.provide(TestMailbox({ gmail: server })));
   },
@@ -348,11 +348,11 @@ it.effect(
         const mailbox = yield* Mailbox;
         const store = yield* Store;
         const account = yield* mailbox.accounts.connect({ provider: "gmail" });
-        yield* mailbox.sync();
+        yield* mailbox.sync.sync();
         const beforeAliases = aliases;
         stall = true;
         server.messages.set("late", incoming("late"));
-        const syncing = yield* mailbox.sync().pipe(Effect.forkChild);
+        const syncing = yield* mailbox.sync.sync().pipe(Effect.forkChild);
         yield* Deferred.await(started);
         const edit = yield* mailbox.accounts
           .setAccountSettings(account.id, {

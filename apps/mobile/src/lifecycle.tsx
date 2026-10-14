@@ -33,7 +33,7 @@ function useForeground() {
           const accounts = await runtime.runPromise(mailbox.accounts.accounts);
           await migrateForegroundSecrets(accounts.map((account) => account.id));
         },
-        sync: () => runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.sync())),
+        sync: () => runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.sync.sync())),
         send: () =>
           runtime.runPromise(
             Effect.flatMap(Mailbox, (mailbox) => mailbox.outbox.flushQueuedSends(isForeground)),
@@ -107,7 +107,7 @@ export function ForegroundLifecycle() {
       foreground
         ? resumeConnectivity(runtime, () => work(true)).catch(() => null)
         : runtime
-            .runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.closeSessions()))
+            .runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.sync.closeSessions()))
             .catch(() => null);
     void active(isForeground());
     const subscription = watchConnectivity(

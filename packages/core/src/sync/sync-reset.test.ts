@@ -275,7 +275,7 @@ for (const provider of ["outlook", "gmail"] as const)
                     "https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages/delta?$deltatoken=expired",
                 }),
           );
-          const result = yield* (yield* Mailbox).sync(account.id);
+          const result = yield* (yield* Mailbox).sync.sync(account.id);
           assert.isUndefined(result[0]?.error);
           assert.strictEqual(http.expired(), 1);
           if (outcome === "deferred")
@@ -324,7 +324,7 @@ it.effect("a listed Graph id stays kept when the complete message GET returns 40
             "https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages/delta?$deltatoken=expired",
         }),
       );
-      assert.isUndefined((yield* (yield* Mailbox).sync(account.id))[0]?.error);
+      assert.isUndefined((yield* (yield* Mailbox).sync.sync(account.id))[0]?.error);
       assert.strictEqual(
         yield* store.countThreads({ accountIds: [account.id], mailbox: "all", flat: true }),
         10,
@@ -365,13 +365,13 @@ it.effect("verification cap and persisted remainder continue on the next sync", 
       for (let index = 0; index < 620; index++)
         yield* store.upsertMessage(account.id, mail(`m${index}`));
       const mailbox = yield* Mailbox;
-      yield* mailbox.sync(account.id);
+      yield* mailbox.sync.sync(account.id);
       assert.strictEqual(
         yield* store.countThreads({ accountIds: [account.id], mailbox: "all", flat: true }),
         120,
       );
       assert.strictEqual((yield* store.pendingResetCandidates(account.id)).length, 120);
-      yield* mailbox.sync(account.id);
+      yield* mailbox.sync.sync(account.id);
       assert.strictEqual(
         yield* store.countThreads({ accountIds: [account.id], mailbox: "all", flat: true }),
         0,
@@ -494,15 +494,15 @@ for (const recovering of [true, false]) {
               }),
             );
           const mailbox = yield* Mailbox;
-          const before = (yield* mailbox.syncHealth(account.id)).folders.find(
+          const before = (yield* mailbox.sync.syncHealth(account.id)).folders.find(
             (folder) => folder.scope === "INBOX",
           );
           assert.ok(before?.server.kind === "available");
           assert.strictEqual(before.server.total, 28666);
           assert.strictEqual(before.local.total, 1200);
           for (let round = 0; round < 3; round++) {
-            assert.isUndefined((yield* mailbox.sync(account.id))[0]?.error);
-            const health = (yield* mailbox.syncHealth(account.id)).folders.find(
+            assert.isUndefined((yield* mailbox.sync.sync(account.id))[0]?.error);
+            const health = (yield* mailbox.sync.syncHealth(account.id)).folders.find(
               (folder) => folder.scope === "INBOX",
             );
             assert.ok(health);
@@ -548,7 +548,7 @@ it.effect("an early-ended Outlook window probes small gaps and retains its check
         account.id,
         JSON.stringify({ __idType: "immutable", inbox: previous }),
       );
-      assert.isUndefined((yield* (yield* Mailbox).sync(account.id))[0]?.error);
+      assert.isUndefined((yield* (yield* Mailbox).sync.sync(account.id))[0]?.error);
       assert.strictEqual(
         yield* store.countThreads({ accountIds: [account.id], mailbox: "all", flat: true }),
         12,
@@ -832,7 +832,7 @@ it.effect("Gmail recovery verifies a single missing message at the 90-day window
         yield* store.upsertMessage(account.id, { ...mail(`m${index}`), date: now });
       yield* store.upsertMessage(account.id, { ...mail("edge"), date: now - 90 * 86400000 + 1 });
       yield* store.saveSyncCursor(account.id, "expired");
-      yield* (yield* Mailbox).sync(account.id);
+      yield* (yield* Mailbox).sync.sync(account.id);
       assert.deepStrictEqual(http.verifiedIds, ["edge"]);
       assert.strictEqual(
         (yield* store.getMessage(`${account.id}/edge`)).bodyText,

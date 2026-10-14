@@ -153,7 +153,7 @@ import { GMAIL_PERMANENT_DELETE_SCOPE } from "../domain/folder-actions.js";
           assert.deepStrictEqual(yield* m.compose.suggestContacts("provider"), []);
           assert.deepStrictEqual(yield* store.disabledServices(account.id), ["contacts"]);
           assert.deepStrictEqual(yield* store.grantedScopes(account.id), server.grantedScopes);
-          yield* m.sync();
+          yield* m.sync.sync();
           assert.strictEqual((yield* m.accounts.accounts)[0]?.needsReauth, false);
           yield* m.accounts.setServiceEnabled(account.id, "contacts", true);
           assert.strictEqual((yield* m.accounts.optionalServices(account.id))[0]?.state, "granted");
@@ -213,7 +213,7 @@ import { GMAIL_PERMANENT_DELETE_SCOPE } from "../domain/folder-actions.js";
         );
         assert.strictEqual((yield* store.getMessage(`${gmail.id}/draft`)).bodyText, "1234567890");
         assert.strictEqual((yield* m.reading.threads({ search: "old" }))[0]?.subject, "old");
-        const database = yield* m.cacheDatabaseSize;
+        const database = yield* m.sync.cacheDatabaseSize;
         assert.ok(database.totalBytes > 0);
         assert.ok(database.reusableBytes >= 0 && database.reusableBytes <= database.totalBytes);
         yield* m.app.setPrefs({ bodyCacheBytes: 0 });
@@ -509,9 +509,9 @@ import { GMAIL_PERMANENT_DELETE_SCOPE } from "../domain/folder-actions.js";
           draftOrganization: { labels: ["Label_work"], starred: true },
         },
       });
-      yield* m.sync();
+      yield* m.sync.sync();
       flagsOnly = true;
-      yield* m.sync();
+      yield* m.sync.sync();
       assert.strictEqual((yield* m.reading.threads({ mailbox: "drafts" }))[0]?.isStarred, true);
       yield* m.compose.saveDraft({
         id: draft.id,
@@ -520,7 +520,7 @@ import { GMAIL_PERMANENT_DELETE_SCOPE } from "../domain/folder-actions.js";
       });
       for (const [id, message] of server.messages)
         server.messages.set(id, { ...message, isStarred: true });
-      yield* m.sync();
+      yield* m.sync.sync();
       const cleared = (yield* m.reading.threads({ mailbox: "drafts" }))[0];
       assert.strictEqual(cleared?.isStarred, false);
       assert.ok(!cleared?.labels.includes("Label_work"));

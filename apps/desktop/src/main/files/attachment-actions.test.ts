@@ -203,7 +203,7 @@ const withFiles = async (
           smtpPort: 465,
         },
       });
-      yield* m.sync();
+      yield* m.sync.sync();
       yield* f(m, `${account.id}/files`, new BrowserWindow());
     }).pipe(Effect.provide(TestMailbox({ imap: server }))),
   );

@@ -202,7 +202,7 @@ export async function runBackgroundRefresh() {
             !(yield* Effect.promise(networkAllowed))
           )
             break;
-          yield* mailbox.pollInbox([account.id], true).pipe(
+          yield* mailbox.sync.pollInbox([account.id], true).pipe(
             Effect.timeout(`${slice} millis`),
             Effect.catchCause(() => Effect.void),
           );

@@ -351,7 +351,7 @@ it("runs mobile IMAP through shared connect, sync, reader, contacts, flags, move
         expect(account.imap?.imapHost).toBe("imap.fastmail.com");
         const stored = yield* (yield* Secrets).get(account.id);
         expect(stored).toEqual(expect.objectContaining({ value: "app-password" }));
-        expect((yield* mailbox.sync(account.id)).every((item) => !item.error)).toBe(true);
+        expect((yield* mailbox.sync.sync(account.id)).every((item) => !item.error)).toBe(true);
         const message = (yield* mailbox.reading.threads({
           accountIds: [account.id],
           label: "INBOX",
@@ -416,7 +416,9 @@ it("runs mobile IMAP through shared connect, sync, reader, contacts, flags, move
     expect(test.commands).toContain("RCPT TO:<private@example.test>");
     expect(test.delivered[0]).not.toMatch(/^Bcc:/im);
     expect(test.delivered[0]).toContain("LmRvdApIZWxsbw==");
-    await test.runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.closeSessions()));
+    await test.runtime.runPromise(
+      Effect.flatMap(Mailbox, (mailbox) => mailbox.sync.closeSessions()),
+    );
     expect(test.sockets.every((socket) => socket.closed)).toBe(true);
   } finally {
     await test.runtime.dispose();
@@ -844,7 +846,7 @@ it("mobile rebuilds remap rows that backfill did not put in the cursor", async (
             },
           }),
         );
-        yield* mailbox.sync();
+        yield* mailbox.sync.sync();
         expect((yield* store.messageRef(`${account.id}/6:99:INBOX`)).providerId).toBe("9:1:INBOX");
         expect(yield* store.messageIdForProvider(account.id, "9:1:INBOX")).toBe(
           `${account.id}/6:99:INBOX`,
@@ -867,7 +869,7 @@ it("background IMAP pull refuses absent cursors and changed UIDVALIDITY before f
           provider: "imap",
           input: { preset: "fastmail", email: "me@example.test", password: "secret" },
         });
-        yield* mailbox.sync();
+        yield* mailbox.sync.sync();
         test.commands.length = 0;
         const adapter = (yield* Providers).get("imap");
         const stale = JSON.stringify({
@@ -1989,7 +1991,7 @@ for (const operation of ["move", "copy"] as const) {
             provider: "imap",
             input: { preset: "fastmail", email: "me@example.test", password: "secret" },
           });
-          yield* mailbox.sync(account.id);
+          yield* mailbox.sync.sync(account.id);
           const id = `${account.id}/9:1:INBOX`;
           const before = yield* store.getMessage(id);
           yield* store.upsertMessage(account.id, {
@@ -2032,7 +2034,7 @@ for (const operation of ["move", "copy"] as const) {
               .slice(commandStart)
               .some((command) => /UID COPY|UID STORE|UID EXPUNGE|UID MOVE/.test(command)),
           ).toBe(false);
-          yield* mailbox.sync(account.id);
+          yield* mailbox.sync.sync(account.id);
           expect((yield* store.getMessage(id)).bodyText).toBe(before.bodyText);
           yield* mailbox.proposals.acknowledgeFailedOps(failures.map((item) => item.id));
           expect(yield* mailbox.proposals.listFailedOps).toEqual([]);

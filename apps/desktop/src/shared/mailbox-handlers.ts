@@ -64,7 +64,7 @@ export function mailboxHandlers(m: MailboxService, options: MailboxHandlerOption
     OptionalServices: ({ accountId }) => m.accounts.optionalServices(accountId),
     SetServiceEnabled: ({ accountId, service, enabled }) =>
       m.accounts.setServiceEnabled(accountId, service, enabled),
-    SyncHealth: ({ accountId }) => m.syncHealth(accountId),
+    SyncHealth: ({ accountId }) => m.sync.syncHealth(accountId),
     Accounts: () => m.accounts.accounts,
     SetAccountSettings: ({ accountId, input }) => m.accounts.setAccountSettings(accountId, input),
     MoveAccount: ({ accountId, input }) => m.accounts.moveAccount(accountId, input),
@@ -127,13 +127,13 @@ export function mailboxHandlers(m: MailboxService, options: MailboxHandlerOption
     UnreadByLabel: ({ accountIds, within, conversations }) =>
       m.reading.unreadByLabel(accountIds, within, conversations),
 
-    BackfillState: () => m.backfillState,
-    PauseBackfill: ({ accountId, paused }) => m.pauseBackfill(accountId, paused),
-    FetchOlder: ({ query }) => m.fetchOlder(query),
-    CacheDatabaseSize: () => m.cacheDatabaseSize,
-    CompactCache: () => m.compactCache,
-    CacheWindows: () => m.cacheWindows,
-    SetCacheWindow: ({ input }) => m.setCacheWindow(input),
+    BackfillState: () => m.sync.backfillState,
+    PauseBackfill: ({ accountId, paused }) => m.sync.pauseBackfill(accountId, paused),
+    FetchOlder: ({ query }) => m.sync.fetchOlder(query),
+    CacheDatabaseSize: () => m.sync.cacheDatabaseSize,
+    CompactCache: () => m.sync.compactCache,
+    CacheWindows: () => m.sync.cacheWindows,
+    SetCacheWindow: ({ input }) => m.sync.setCacheWindow(input),
     SearchServer: ({ query }) => m.reading.searchServer(query),
     ChangeLabel: ({ accountId, change }) => m.organize.changeLabel(accountId, change),
     ReorderFavorites: ({ order }) => m.organize.reorderFavorites(order),
@@ -213,8 +213,8 @@ export function mailboxHandlers(m: MailboxService, options: MailboxHandlerOption
         : m.compose.discardDraft(id).pipe(Effect.as(false)),
     RestoreDraft: ({ id }) => m.compose.restoreDraft(id),
 
-    CacheSize: () => m.cacheSize,
-    ClearCache: ({ accountId }) => m.clearCache(accountId),
+    CacheSize: () => m.sync.cacheSize,
+    ClearCache: ({ accountId }) => m.sync.clearCache(accountId),
     InitializeProfiles: ({ accept, names }) => m.accounts.initializeProfiles(accept, names),
     Prefs: () => m.app.prefs,
     NamedSignatures: () => m.compose.namedSignatures,
@@ -247,9 +247,10 @@ export function mailboxHandlers(m: MailboxService, options: MailboxHandlerOption
     AgentWriteMode: () => m.proposals.agentWriteMode,
     SetAgentWriteMode: ({ mode }) => m.proposals.setAgentWriteMode(mode),
 
-    Sync: () => m.resetConnectivity().pipe(Effect.andThen(m.sync())),
-    NetworkChanged: () => m.resetConnectivity().pipe(Effect.andThen(m.sync()), Effect.asVoid),
-    SyncState: () => m.syncState,
+    Sync: () => m.sync.resetConnectivity().pipe(Effect.andThen(m.sync.sync())),
+    NetworkChanged: () =>
+      m.sync.resetConnectivity().pipe(Effect.andThen(m.sync.sync()), Effect.asVoid),
+    SyncState: () => m.sync.syncState,
     Events: () => m.app.events,
   } satisfies Partial<Parameters<typeof MailRpcs.of>[0]>;
 }

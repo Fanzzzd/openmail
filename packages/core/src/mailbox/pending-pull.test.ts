@@ -56,7 +56,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
               ? { provider, input: { preset: "icloud", email: server.email, password: "fake" } }
               : { provider },
           );
-          yield* m.sync();
+          yield* m.sync.sync();
           const id = `${account.id}/one`;
           server.beforePush = Effect.fail(new ProviderError({ message: "offline", status: 503 }));
           const batch = yield* m.organize.modifyWithUndo([id], {
@@ -76,13 +76,13 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
             yield* sql`CREATE TEMP TRIGGER count_label_writes AFTER UPDATE OF labels_json ON main.messages
               BEGIN UPDATE label_writes SET writes=writes+1 WHERE message_id=NEW.id; END`;
           }
-          yield* m.sync();
+          yield* m.sync.sync();
           if (flagsOnly) {
             // The changed flags need one upsert; they must not replay a separate label update.
             assert.strictEqual((yield* sql`SELECT writes FROM label_writes`)[0]?.["writes"], 1);
             const labels = yield* sql`SELECT labels_json FROM messages WHERE id=${id}`;
             yield* sql`UPDATE label_writes SET writes=0`;
-            yield* m.sync();
+            yield* m.sync.sync();
             assert.strictEqual((yield* sql`SELECT writes FROM label_writes`)[0]?.["writes"], 0);
             assert.deepStrictEqual(
               yield* sql`SELECT labels_json FROM messages WHERE id=${id}`,
@@ -134,7 +134,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
           ? { provider, input: { preset: "icloud", email: server.email, password: "fake" } }
           : { provider },
       );
-      yield* m.sync();
+      yield* m.sync.sync();
       const id = `${account.id}/one`;
       server.beforePush = Effect.fail(new ProviderError({ message: "offline", status: 503 }));
       yield* m.organize.modifyWithUndo([id], { kind: "read", value: true });
@@ -149,7 +149,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
       });
       const before = yield* store.reminderSnapshot(id);
       flagsOnly = true;
-      yield* m.sync();
+      yield* m.sync.sync();
       assert.deepStrictEqual(yield* store.reminderSnapshot(id), before);
       const message = yield* store.getMessage(id);
       assert.isTrue(message.isUnread);

@@ -139,7 +139,7 @@ import { inspectAttachment } from "./attachment-import.js";
                 }
               : { provider },
           );
-          yield* m.sync();
+          yield* m.sync.sync();
           yield* m.app.setPrefs({
             messageListDensity: "expanded",
             specialFolderBadges: { starred: false, drafts: true, spam: false },

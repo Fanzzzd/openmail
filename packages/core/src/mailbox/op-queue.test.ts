@@ -43,13 +43,13 @@ import type { IncomingMessage } from "../domain/message.js";
           const account = yield* store.upsertAccount("gmail", "me@example.com");
           yield* store.enqueueOp(account.id, "m1", { kind: "star", value: true });
           for (let i = 0; i < 8; i++) {
-            yield* mailbox.sync();
+            yield* mailbox.sync.sync();
             yield* TestClock.adjust("1 hour");
           }
           assert.strictEqual((yield* store.listPendingOps).length, 1);
-          yield* mailbox.sync();
+          yield* mailbox.sync.sync();
           const before = pushes;
-          yield* mailbox.sync();
+          yield* mailbox.sync.sync();
           assert.strictEqual(pushes, before);
         }),
       );
@@ -68,7 +68,7 @@ import type { IncomingMessage } from "../domain/message.js";
         yield* store.enqueueOp(account.id, "m1", { kind: "reconcile" });
         for (let i = 0; i < 8; i++) {
           yield* TestClock.adjust("1 day");
-          yield* mailbox.sync();
+          yield* mailbox.sync.sync();
         }
         assert.strictEqual((yield* store.listPendingOps).length, 1);
       }),
@@ -87,7 +87,7 @@ import type { IncomingMessage } from "../domain/message.js";
         const mailbox = yield* Mailbox;
         const account = yield* store.upsertAccount("gmail", "me@example.com");
         yield* store.enqueueOp(account.id, "m1", { kind: "archive" });
-        yield* mailbox.sync();
+        yield* mailbox.sync.sync();
         const failures = yield* mailbox.proposals.listFailedOps;
         assert.strictEqual(failures.length, 1);
         assert.strictEqual(failures[0]?.reason, "Access denied");
@@ -146,7 +146,7 @@ import type { IncomingMessage } from "../domain/message.js";
         const account = yield* store.upsertAccount("imap", "me@example.com");
         yield* sql`CREATE TRIGGER reject_remap BEFORE UPDATE OF provider_id ON pending_ops BEGIN SELECT RAISE(ABORT,'remap failed'); END`;
         yield* store.enqueueOp(account.id, "old", { kind: "star", value: true });
-        yield* mailbox.sync().pipe(Effect.exit);
+        yield* mailbox.sync.sync().pipe(Effect.exit);
         assert.strictEqual((yield* store.listPendingOps).length, 1);
       }),
     ),
@@ -167,7 +167,7 @@ import type { IncomingMessage } from "../domain/message.js";
         yield* store.enqueueOp(account.id, "m1", { kind: "star", value: true });
         const [op] = yield* store.listPendingOps;
         assert.ok(op);
-        const fiber = yield* Effect.forkChild(mailbox.sync());
+        const fiber = yield* Effect.forkChild(mailbox.sync.sync());
         yield* Effect.yieldNow;
         for (let i = 0; i < 6; i++) {
           yield* TestClock.adjust("30 seconds");
@@ -238,7 +238,7 @@ import type { IncomingMessage } from "../domain/message.js";
         });
         yield* store.setDraftRemote("draft", { draftId: "old", messageId: "old" }, null);
         yield* store.enqueueDraftSave(account.id, "draft");
-        yield* mailbox.sync();
+        yield* mailbox.sync.sync();
         assert.strictEqual(
           Option.getOrThrow(yield* store.getDraft("draft")).remote?.messageId,
           "new",
@@ -287,7 +287,7 @@ import type { IncomingMessage } from "../domain/message.js";
         yield* store.enqueueOp(account.id, "m1", { kind: "archive" });
         yield* store.deleteMessage(account.id, "m1");
         assert.strictEqual((yield* store.listPendingOps)[0]?.rfcMessageId, "<stable@example.com>");
-        yield* mailbox.sync();
+        yield* mailbox.sync.sync();
         assert.strictEqual(observed, "<stable@example.com>");
       }),
     );
@@ -306,7 +306,7 @@ import type { IncomingMessage } from "../domain/message.js";
         const account = yield* store.upsertAccount("gmail", "me@example.com");
         yield* store.enqueueOp(account.id, "m1", { kind: "star", value: true });
         yield* TestClock.adjust("8 days");
-        yield* mailbox.sync();
+        yield* mailbox.sync.sync();
         assert.strictEqual((yield* mailbox.proposals.listFailedOps).length, 1);
         assert.strictEqual((yield* store.listPendingOps)[0]?.op.kind, "reconcile");
       }),
@@ -335,7 +335,7 @@ import type { IncomingMessage } from "../domain/message.js";
           const account = yield* store.upsertAccount("gmail", "me@example.com");
           yield* store.enqueueOp(account.id, "one", { kind: "archive" });
           yield* store.enqueueOp(account.id, "two", { kind: "archive" });
-          const worker = yield* Effect.forkChild(mailbox.sync());
+          const worker = yield* Effect.forkChild(mailbox.sync.sync());
           yield* Deferred.await(entered);
           yield* sql`UPDATE pending_ops SET claim_token='other-worker' WHERE provider_id='one'`;
           yield* TestClock.adjust("30 seconds");
@@ -377,7 +377,7 @@ import type { IncomingMessage } from "../domain/message.js";
           });
           yield* store.setDraftRemote("draft", { draftId: "old", messageId: "old" }, null);
           yield* store.enqueueDraftSave(account.id, "draft");
-          const worker = yield* Effect.forkChild(mailbox.sync());
+          const worker = yield* Effect.forkChild(mailbox.sync.sync());
           yield* Deferred.await(entered);
           yield* sql`UPDATE pending_ops SET claim_token='other-worker' WHERE provider_id='draft'`;
           yield* store.setDraftRemote("draft", { draftId: "winner", messageId: "winner" }, null);
@@ -414,7 +414,7 @@ import type { IncomingMessage } from "../domain/message.js";
         yield* store.enqueueOp(account.id, "old", { kind: "archive" });
         yield* store.enqueueOp(account.id, "other", { kind: "archive" });
         yield* sql`CREATE TRIGGER reject_review_remap BEFORE UPDATE OF provider_id ON pending_ops BEGIN SELECT RAISE(ABORT,'simulated write failure'); END`;
-        yield* mailbox.sync();
+        yield* mailbox.sync.sync();
         assert.deepStrictEqual(pushed, ["other"]);
         assert.strictEqual((yield* store.listPendingOps).length, 1);
       }),
@@ -496,12 +496,12 @@ import type { IncomingMessage } from "../domain/message.js";
         const account = yield* store.upsertAccount("imap", "me@example.com");
         yield* store.enqueueOp(account.id, "7:1:INBOX", { kind: "archive" });
         yield* store.enqueueOp(account.id, "7:1:INBOX", { kind: "star", value: true });
-        yield* mailbox.sync();
+        yield* mailbox.sync.sync();
         assert.deepStrictEqual((yield* store.listPendingOps)[0]?.progress, [
           JSON.stringify(["7:1:INBOX", "Archive"]),
         ]);
         yield* TestClock.adjust("5 seconds");
-        yield* mailbox.sync();
+        yield* mailbox.sync.sync();
         assert.isTrue(retainedMarker);
         assert.isFalse(starred);
         assert.isTrue((yield* store.listPendingOps).some((op) => op.op.kind === "reconcile"));
@@ -538,7 +538,7 @@ import type { IncomingMessage } from "../domain/message.js";
           const account = yield* store.upsertAccount("gmail", "me@example.com");
           for (const id of ["one", "one", "slow"])
             yield* store.enqueueOp(account.id, id, { kind: "archive" });
-          const worker = yield* Effect.forkChild(mailbox.sync());
+          const worker = yield* Effect.forkChild(mailbox.sync.sync());
           yield* Deferred.await(entered);
           yield* TestClock.adjust("30 seconds");
           yield* Deferred.succeed(gate, undefined);
@@ -634,7 +634,7 @@ import type { IncomingMessage } from "../domain/message.js";
         const store = yield* Store;
         const account = yield* mailbox.accounts.connect({ provider: "gmail" });
         yield* store.enqueueOp(account.id, "missing", { kind: "reconcile" });
-        for (let attempt = 0; attempt < 3; attempt++) yield* mailbox.sync();
+        for (let attempt = 0; attempt < 3; attempt++) yield* mailbox.sync.sync();
         assert.strictEqual((yield* store.listPendingOps).length, 1);
         assert.isFalse(
           (yield* mailbox.proposals.audit(30)).some((entry) => entry.action === "sync-failed"),

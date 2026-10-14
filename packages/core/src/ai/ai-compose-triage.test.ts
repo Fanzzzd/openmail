@@ -72,7 +72,7 @@ it.effect(
     return Effect.gen(function* () {
       const m = yield* Mailbox;
       yield* m.accounts.connect({ provider: "gmail" });
-      yield* m.sync();
+      yield* m.sync.sync();
       const request = {
         accountId,
         replyTo: id,
@@ -152,7 +152,7 @@ function fixture(
     const secrets = yield* Secrets;
     const model = yield* Model;
     yield* m.accounts.connect({ provider: "gmail" });
-    yield* m.sync();
+    yield* m.sync.sync();
     const ai = makeAiMailbox(
       store,
       secrets,
@@ -346,7 +346,7 @@ it.effect("dismissed suggestions stay dismissed; changed inputs invalidate them"
     assert.strictEqual(calls, 1);
     assert.strictEqual(server.pushed.length, 0);
     server.messages.set("m1", incoming("m1", { bodyText: "Changed mail" }));
-    yield* m.sync();
+    yield* m.sync.sync();
     assert.strictEqual(yield* m.ai.aiTriage(id), null);
     assert.strictEqual(
       (yield* m.ai.decideAiTriage(id, true, "app").pipe(Effect.exit))._tag,

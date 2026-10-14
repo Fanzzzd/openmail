@@ -109,7 +109,7 @@ import { waitLimit } from "../../../test-support/test-time.js";
               isStarred: true,
             });
             const query = { mailbox: "all" as const, label: "Projects", accountIds: [account.id] };
-            assert.isFalse((yield* mailbox.fetchOlder(query)).done);
+            assert.isFalse((yield* mailbox.sync.fetchOlder(query)).done);
             assert.strictEqual(
               (yield* mailbox.reading.threads({ ...query, limit: 500 })).length,
               100,
@@ -123,17 +123,17 @@ import { waitLimit } from "../../../test-support/test-time.js";
             );
             // INBOX must start from its own first page, not the Projects continuation.
             assert.isTrue(
-              (yield* mailbox.fetchOlder({ mailbox: "inbox", accountIds: [account.id] })).done,
+              (yield* mailbox.sync.fetchOlder({ mailbox: "inbox", accountIds: [account.id] })).done,
             );
             assert.strictEqual((yield* mailbox.reading.threads({ mailbox: "inbox" })).length, 1);
-            assert.isFalse((yield* mailbox.fetchOlder(query)).done);
-            assert.isTrue((yield* mailbox.fetchOlder(query)).done);
+            assert.isFalse((yield* mailbox.sync.fetchOlder(query)).done);
+            assert.isTrue((yield* mailbox.sync.fetchOlder(query)).done);
             assert.strictEqual(
               (yield* mailbox.reading.threads({ ...query, limit: 500 })).length,
               220,
             );
             const requests = remote.folderPages.length;
-            assert.isTrue((yield* mailbox.fetchOlder(query)).done);
+            assert.isTrue((yield* mailbox.sync.fetchOlder(query)).done);
             assert.strictEqual(remote.folderPages.length, requests);
           }).pipe(Effect.provide(MailboxLive().pipe(Layer.provideMerge(dependencies))));
         }),
@@ -187,7 +187,7 @@ import { waitLimit } from "../../../test-support/test-time.js";
               yield* store.upsertMessage(a.id, original);
             const file = yield* m.reading.attachment(`${a.id}/0001`, 0);
             assert.isAbove(file.data.length, 0);
-            assert.isAbove((yield* m.cacheSize)[0]?.attachmentBytes ?? 0, 0);
+            assert.isAbove((yield* m.sync.cacheSize)[0]?.attachmentBytes ?? 0, 0);
           }),
         );
         yield* run(
@@ -197,8 +197,8 @@ import { waitLimit } from "../../../test-support/test-time.js";
             if (!a) throw new Error("Missing account");
             remote.failNext = new ProviderError({ message: "Offline" });
             assert.isAbove((yield* m.reading.attachment(`${a.id}/0001`, 0)).data.length, 0);
-            yield* m.clearCache(a.id);
-            assert.strictEqual((yield* m.cacheSize)[0]?.attachmentBytes, 0);
+            yield* m.sync.clearCache(a.id);
+            assert.strictEqual((yield* m.sync.cacheSize)[0]?.attachmentBytes, 0);
             assert.strictEqual((yield* m.reading.thread(`${a.id}/0001`))[0]?.bodyCached, false);
             assert.strictEqual((yield* m.reading.thread(`${a.id}/0002`))[0]?.bodyCached, true);
             assert.strictEqual(
@@ -311,9 +311,9 @@ import { waitLimit } from "../../../test-support/test-time.js";
           const m = yield* Mailbox;
           const account = yield* s.upsertAccount("outlook", "me@example.com");
           const query = { mailbox: "inbox" as const, accountIds: [account.id] };
-          yield* Effect.exit(m.fetchOlder(query));
+          yield* Effect.exit(m.sync.fetchOlder(query));
           cursors.length = 0;
-          yield* Effect.exit(m.fetchOlder(query));
+          yield* Effect.exit(m.sync.fetchOlder(query));
           assert.strictEqual(cursors[0], null);
         }),
       adapter,
@@ -334,7 +334,7 @@ import { waitLimit } from "../../../test-support/test-time.js";
             yield* Effect.promise(() =>
               writeFile(path.join(directory, "attachment-cache"), "Not a directory"),
             );
-            yield* m.clearCache(account.id);
+            yield* m.sync.clearCache(account.id);
             yield* m.organize.perform(
               { kind: "removeAccount", accountId: account.id },
               { kind: "user", surface: "app" },

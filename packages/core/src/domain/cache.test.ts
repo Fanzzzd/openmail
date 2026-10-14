@@ -248,24 +248,24 @@ import { scaledMs } from "../../test-support/test-time.js";
         yield* TestClock.adjust("500 days");
         const first = yield* Effect.gen(function* () {
           const m = yield* Mailbox;
-          yield* m.fetchOlder({ accountIds: [a.id] });
-          const state = (yield* m.backfillState)[0];
+          yield* m.sync.fetchOlder({ accountIds: [a.id] });
+          const state = (yield* m.sync.backfillState)[0];
           assert.strictEqual(state?.fetched, 50);
-          yield* m.fetchOlder({ accountIds: [a.id] });
-          assert.strictEqual((yield* m.backfillState)[0]?.fetched, 50);
-          yield* m.pauseBackfill(a.id, true);
+          yield* m.sync.fetchOlder({ accountIds: [a.id] });
+          assert.strictEqual((yield* m.sync.backfillState)[0]?.fetched, 50);
+          yield* m.sync.pauseBackfill(a.id, true);
           return state;
         }).pipe(Effect.provide(MailboxLive({ backgroundFlush: false })));
         assert.ok(first?.cursor);
         yield* TestClock.adjust("20 seconds");
         yield* Effect.gen(function* () {
           const m = yield* Mailbox;
-          assert.strictEqual((yield* m.backfillState)[0]?.paused, true);
-          yield* m.fetchOlder({ accountIds: [a.id] });
-          assert.strictEqual((yield* m.backfillState)[0]?.cursor, first.cursor);
-          yield* m.pauseBackfill(a.id, false);
-          yield* m.fetchOlder({ accountIds: [a.id] });
-          assert.strictEqual((yield* m.backfillState)[0]?.fetched, 100);
+          assert.strictEqual((yield* m.sync.backfillState)[0]?.paused, true);
+          yield* m.sync.fetchOlder({ accountIds: [a.id] });
+          assert.strictEqual((yield* m.sync.backfillState)[0]?.cursor, first.cursor);
+          yield* m.sync.pauseBackfill(a.id, false);
+          yield* m.sync.fetchOlder({ accountIds: [a.id] });
+          assert.strictEqual((yield* m.sync.backfillState)[0]?.fetched, 100);
           const [head] = yield* m.reading.threads({ mailbox: "all" });
           assert.ok(head);
           assert.strictEqual((yield* store.getMessage(head.id)).bodyCached, false);
@@ -279,8 +279,8 @@ import { scaledMs } from "../../test-support/test-time.js";
           assert.strictEqual(full?.bodyText, "unique-body-term");
           assert.strictEqual(full?.bodyCached, true);
           yield* TestClock.adjust("10 seconds");
-          yield* m.fetchOlder({ accountIds: [a.id] });
-          assert.strictEqual((yield* m.backfillState)[0]?.done, true);
+          yield* m.sync.fetchOlder({ accountIds: [a.id] });
+          assert.strictEqual((yield* m.sync.backfillState)[0]?.done, true);
           assert.strictEqual(
             (yield* m.reading.threads({ mailbox: "all", limit: 1000 })).length,
             120,
@@ -304,19 +304,19 @@ import { scaledMs } from "../../test-support/test-time.js";
         yield* TestClock.adjust("2 seconds");
         const m = yield* Mailbox;
         server.failNext = new ProviderError({ message: "limited", status: 429 });
-        yield* m.fetchOlder({});
-        assert.strictEqual((yield* m.backfillState)[0]?.fetched, 0);
-        assert.strictEqual((yield* m.backfillState)[0]?.lastError, "limited");
-        yield* m.fetchOlder({});
-        assert.strictEqual((yield* m.backfillState)[0]?.fetched, 0);
+        yield* m.sync.fetchOlder({});
+        assert.strictEqual((yield* m.sync.backfillState)[0]?.fetched, 0);
+        assert.strictEqual((yield* m.sync.backfillState)[0]?.lastError, "limited");
+        yield* m.sync.fetchOlder({});
+        assert.strictEqual((yield* m.sync.backfillState)[0]?.fetched, 0);
         yield* s.upsertMessage(
           account.id,
           message("old", { isUnread: true, labels: ["INBOX", "UNREAD"] }),
         );
         yield* TestClock.adjust("5 minutes");
-        yield* m.fetchOlder({});
+        yield* m.sync.fetchOlder({});
         assert.strictEqual((yield* m.reading.thread(`${account.id}/old`))[0]?.isUnread, true);
-        assert.strictEqual((yield* m.backfillState)[0]?.done, true);
+        assert.strictEqual((yield* m.sync.backfillState)[0]?.done, true);
       }).pipe(Effect.provide(TestMailbox.withAdapter(adapter)));
     },
   );
@@ -345,9 +345,9 @@ import { scaledMs } from "../../test-support/test-time.js";
         const a = yield* store.upsertAccount("gmail", server.email);
         yield* store.saveSyncCursor(a.id, "old");
         const m = yield* Mailbox;
-        const sync = yield* Effect.forkScoped(m.sync());
+        const sync = yield* Effect.forkScoped(m.sync.sync());
         yield* Deferred.await(started);
-        const older = yield* Effect.forkScoped(m.fetchOlder({}));
+        const older = yield* Effect.forkScoped(m.sync.fetchOlder({}));
         yield* Effect.yieldNow;
         assert.strictEqual(calls, 0);
         yield* Deferred.succeed(release, undefined);
@@ -747,7 +747,7 @@ import { scaledMs } from "../../test-support/test-time.js";
             kind: "deleteDraft",
             remote: { draftId: "draft-id", messageId: "deleted" },
           });
-          yield* m.fetchOlder({});
+          yield* m.sync.fetchOlder({});
           assert.deepStrictEqual(server.backfillFetched, ["missing"]);
           assert.strictEqual(
             (yield* s.messageRef(`${account.id}/deleted`).pipe(Effect.result))._tag,
@@ -769,7 +769,7 @@ import { scaledMs } from "../../test-support/test-time.js";
         const account = yield* s.upsertAccount("gmail", server.email);
         yield* s.saveSyncCursor(account.id, "normal");
         yield* TestClock.adjust("2 seconds");
-        yield* m.fetchOlder({});
+        yield* m.sync.fetchOlder({});
         assert.strictEqual(
           (yield* s.messageRef(`${account.id}/deleted`).pipe(Effect.result))._tag,
           "Failure",

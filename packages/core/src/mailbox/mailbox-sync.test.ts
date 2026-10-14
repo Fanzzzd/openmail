@@ -57,12 +57,12 @@ for (const provider of ["gmail", "outlook"] as const)
         Effect.gen(function* () {
           const m = yield* Mailbox;
           yield* m.accounts.connect({ provider });
-          yield* m.sync(); // cursor "1"
-          yield* m.pollInbox(); // inbox cursor "2"
+          yield* m.sync.sync(); // cursor "1"
+          yield* m.sync.pollInbox(); // inbox cursor "2"
           // Full syncs keep going (on a phone: in the foreground) while polls stop for a while.
-          yield* m.sync(); // cursor "2"
-          yield* m.sync(); // cursor "3"
-          yield* m.pollInbox();
+          yield* m.sync.sync(); // cursor "2"
+          yield* m.sync.sync(); // cursor "3"
+          yield* m.sync.pollInbox();
           // The poll starts from the newest full-sync cursor, not the one its last poll left.
           expect(server.pulls).toEqual([null, "1", "1", "2", "3"]);
         }),
@@ -136,7 +136,7 @@ it.live("a full sync pulls up to three accounts at once, each account once", () 
     const mailbox = yield* Mailbox;
     for (const name of ["a", "b", "c", "d", "e"])
       yield* store.upsertAccount("gmail", `${name}@example.test`);
-    const results = yield* mailbox.sync();
+    const results = yield* mailbox.sync.sync();
     assert.deepStrictEqual(
       results.map((result) => result.error),
       [undefined, undefined, undefined, undefined, undefined],
@@ -170,14 +170,14 @@ it.effect("a checkpoint cursor before a failed first sync does not mark the acco
     const store = yield* Store;
     const mailbox = yield* Mailbox;
     const account = yield* store.upsertAccount("gmail", "me@example.test");
-    const [result] = yield* mailbox.sync();
+    const [result] = yield* mailbox.sync.sync();
     assert.ok(result?.error);
     const after = yield* store.getAccount(account.id);
     assert.strictEqual(after.lastSyncedAt, null);
     assert.deepStrictEqual(yield* store.getSyncCursor(account.id), Option.some("initial:901"));
     assert.isTrue(Option.isNone(yield* store.getInboxCursor(account.id)));
     // Inbox polls wait for a completed first sync instead of listing the inbox again.
-    yield* mailbox.pollInbox();
+    yield* mailbox.sync.pollInbox();
     assert.deepStrictEqual(pulls, [{ cursor: undefined, scope: undefined }]);
   }).pipe(Effect.provide(layer));
 });

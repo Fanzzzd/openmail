@@ -95,9 +95,10 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
           yield* store.putDraft({ id: "remote", accountId: account.id, message: draft });
           yield* store.setDraftRemote("remote", { draftId: id(3), messageId: id(3) }, null);
         }
-        yield* mailbox.sync(account.id);
+        yield* mailbox.sync.sync(account.id);
         assert.strictEqual(
-          (yield* mailbox.syncHealth(account.id)).folders.find((f) => f.scope === scope)?.verdict,
+          (yield* mailbox.sync.syncHealth(account.id)).folders.find((f) => f.scope === scope)
+            ?.verdict,
           "in sync",
         );
         assert.strictEqual(yield* store.messageIdForProvider(account.id, id(2)), null);
@@ -130,7 +131,7 @@ it.effect("Gmail label-only history removes remote drafts and keeps system categ
     yield* store.upsertMessage(account.id, message("m1", ["DRAFT", "CATEGORY_SOCIAL"]));
     yield* store.putDraft({ id: "remote", accountId: account.id, message: draft });
     yield* store.setDraftRemote("remote", { draftId: "d1", messageId: "m1" }, null);
-    yield* mailbox.sync(account.id);
+    yield* mailbox.sync.sync(account.id);
     assert.isTrue(Option.isNone(yield* store.getDraft("remote")));
     assert.deepStrictEqual((yield* store.getMessage(`${account.id}/m1`)).labels, [
       "SENT",
@@ -167,27 +168,27 @@ it.effect(
       yield* store.upsertMessage(second.id, message("second", ["INBOX"]));
       // Accounts sync concurrently, so calls are compared per account.
       const of = (id: string) => calls.filter((call) => call.account === id).map((c) => c.ids);
-      yield* mailbox.sync();
+      yield* mailbox.sync.sync();
       assert.strictEqual(calls.length, 2);
       assert.strictEqual(of(first.id)[0]?.length, 500);
       assert.deepStrictEqual(of(second.id), [["second"]]);
       assert.strictEqual((yield* store.syncHealthLocal(first.id, "INBOX", false)).total, 503);
-      yield* mailbox.sync();
+      yield* mailbox.sync.sync();
       assert.strictEqual(calls.length, 2);
       yield* TestClock.adjust("59 minutes");
-      yield* mailbox.sync();
+      yield* mailbox.sync.sync();
       assert.strictEqual(calls.length, 2);
       fail = false;
       yield* TestClock.adjust("1 minute");
-      yield* mailbox.sync();
+      yield* mailbox.sync.sync();
       const rotated = of(first.id)[1];
       assert.strictEqual(rotated?.length, 500);
       assert.deepStrictEqual(rotated?.slice(0, 3), ["m500", "m501", "m502"]);
       assert.strictEqual(new Set(rotated).size, 500);
       assert.strictEqual((yield* store.syncHealthLocal(first.id, "INBOX", false)).total, 3);
       yield* TestClock.adjust("1 hour");
-      yield* mailbox.sync();
-      assert.strictEqual((yield* mailbox.syncHealth(first.id)).folders[0]?.verdict, "in sync");
+      yield* mailbox.sync.sync();
+      assert.strictEqual((yield* mailbox.sync.syncHealth(first.id)).folders[0]?.verdict, "in sync");
       // A fresh guard would still see the SQLite cooldown. It is not process-local.
       assert.isTrue(Option.isNone(yield* store.claimStaleSweep(first.id, 7_200_000)));
       assert.deepStrictEqual(server.pushed, []);
@@ -231,14 +232,15 @@ it.effect(
       yield* store.setDraftLocalOnly("protected", true);
       yield* store.setDraftSyncError("failed", "Unsaved edit");
       assert.strictEqual((yield* store.syncHealthLocal(account.id, "DRAFT", false)).total, 2);
-      yield* mailbox.sync(account.id);
+      yield* mailbox.sync.sync(account.id);
       assert.deepStrictEqual(ids, ["gone"]);
       assert.isTrue(Option.isNone(yield* store.getDraft("gone1")));
       assert.isTrue(Option.isNone(yield* store.getDraft("gone2")));
       for (const id of ["present", "unuploaded", "protected", "failed"])
         assert.isTrue(Option.isSome(yield* store.getDraft(id)));
       assert.strictEqual(
-        (yield* mailbox.syncHealth(account.id)).folders.find((f) => f.scope === "DRAFT")?.verdict,
+        (yield* mailbox.sync.syncHealth(account.id)).folders.find((f) => f.scope === "DRAFT")
+          ?.verdict,
         "in sync",
       );
       yield* store.upsertMessage(account.id, message("present", ["DRAFT"]));
@@ -265,7 +267,7 @@ it.effect("unavailable server counts never trigger a stale sweep", () => {
       mailbox = yield* Mailbox;
     const account = yield* store.upsertAccount("gmail", server.email);
     yield* store.upsertMessage(account.id, message("one", ["CATEGORY_PERSONAL"]));
-    const fiber = yield* mailbox.sync(account.id).pipe(Effect.forkChild);
+    const fiber = yield* mailbox.sync.sync(account.id).pipe(Effect.forkChild);
     yield* TestClock.adjust("11 seconds");
     yield* Fiber.join(fiber);
     assert.strictEqual(verifications, 0);
@@ -319,11 +321,12 @@ for (const [provider, scope, local, remote] of [
           }
         }
         assert.strictEqual(
-          (yield* mailbox.syncHealth(account.id)).folders.find((f) => f.scope === scope)?.verdict,
+          (yield* mailbox.sync.syncHealth(account.id)).folders.find((f) => f.scope === scope)
+            ?.verdict,
           "local has more — stale",
         );
-        yield* mailbox.sync(account.id);
-        const folder = (yield* mailbox.syncHealth(account.id)).folders.find(
+        yield* mailbox.sync.sync(account.id);
+        const folder = (yield* mailbox.sync.syncHealth(account.id)).folders.find(
           (f) => f.scope === scope,
         );
         assert.strictEqual(folder?.verdict, "in sync");
@@ -514,7 +517,7 @@ it.effect("one account's 500-id stale sweep cannot starve another account's rese
     yield* store.saveResetCandidates(second.id, [
       { providerId: "reset", rfcMessageId: null, labels: ["INBOX"] },
     ]);
-    yield* mailbox.sync();
+    yield* mailbox.sync.sync();
     // Accounts sync concurrently; each gets its own verification.
     assert.deepStrictEqual(
       checked.toSorted((a, b) => b.count - a.count),
@@ -559,7 +562,7 @@ for (const provider of ["gmail", "outlook"] satisfies Provider[]) {
         const mailbox = yield* Mailbox;
         const account = yield* store.upsertAccount(provider, server.email);
         yield* store.upsertMessage(account.id, message("m1", [scope]));
-        yield* mailbox.sync(account.id);
+        yield* mailbox.sync.sync(account.id);
         const diagnostic = logs.find(
           (value) =>
             typeof value === "object" &&
@@ -570,10 +573,10 @@ for (const provider of ["gmail", "outlook"] satisfies Provider[]) {
         assert.ok(diagnostic && typeof diagnostic === "object" && "incomplete" in diagnostic);
         assert.strictEqual(diagnostic.incomplete, 0);
         yield* TestClock.adjust("1 hour");
-        yield* mailbox.sync(account.id);
+        yield* mailbox.sync.sync(account.id);
         assert.strictEqual(checked, 1);
         yield* TestClock.adjust("24 hours");
-        yield* mailbox.sync(account.id);
+        yield* mailbox.sync.sync(account.id);
         assert.strictEqual(checked, 2);
       }).pipe(Effect.provide(runtime(adapter)), Effect.provide(Logger.layer([logger])));
     },
