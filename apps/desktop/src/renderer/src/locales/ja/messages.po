@@ -6331,6 +6331,8 @@ msgstr "差出人の名"
 msgid "Sender last name"
 msgstr "差出人の姓"
 
+#: src/renderer/src/features/accounts/ImapStep.tsx
+#: src/renderer/src/features/settings/sections/AccountControls.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Sender name"
 msgstr "差出人の名前"

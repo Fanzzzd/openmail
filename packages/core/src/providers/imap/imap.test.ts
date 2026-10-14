@@ -33,7 +33,7 @@ import {
   makeImap as unboundMakeImap,
   makeImapWith as unboundMakeImapWith,
 } from "../../platform/node/imap/adapter.js";
-import { resolveImapSettings } from "./imap-settings.js";
+import { imapSettingsKey, resolveImapSettings } from "./imap-settings.js";
 import { fetchMessages } from "../../platform/node/imap/pull.js";
 import { HtmlText } from "../../platform/html-text.js";
 import { Providers } from "../adapter.js";
@@ -2348,3 +2348,31 @@ it("pushed flags update only tracked UIDs in a folder with the same UIDVALIDITY"
   assert.isTrue(Option.isNone(recordPushedFlags(cursor, ["6:1:INBOX"], "read", true)));
   assert.isTrue(Option.isNone(recordPushedFlags(Option.none(), ["7:1:INBOX"], "read", true)));
 });
+
+it.effect("stores the sender name from setup and keeps it out of the session key", () =>
+  Effect.gen(function* () {
+    const named = yield* resolveImapSettings({
+      preset: "qq",
+      email: "me@qq.com",
+      password: "code",
+      senderName: "  Jane  Doe ",
+    });
+    assert.strictEqual(named.senderName, "Jane Doe");
+    const { senderName: _name, ...plain } = named;
+    assert.strictEqual(imapSettingsKey(named), imapSettingsKey(plain));
+    const blank = yield* resolveImapSettings({
+      preset: "qq",
+      email: "me@qq.com",
+      password: "code",
+      senderName: " ",
+    });
+    assert.isFalse("senderName" in blank);
+    yield* rejects({ preset: "qq", email: "me@qq.com", password: "code", senderName: "a\u0000b" });
+    yield* rejects({
+      preset: "qq",
+      email: "me@qq.com",
+      password: "code",
+      senderName: "x".repeat(201),
+    });
+  }),
+);

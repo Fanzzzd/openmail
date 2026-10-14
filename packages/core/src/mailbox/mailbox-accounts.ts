@@ -82,7 +82,16 @@ export const makeAccountsMailbox = (
     if (connected.clientId) yield* issuers.set(account.id, connected.clientId);
     if (oauth) yield* issuers.setIssuedAt(account.id, yield* Clock.currentTimeMillis);
     if (oauth) yield* store.setGrantedScopes(account.id, connected.scopes ?? []);
-    if (connected.imap) yield* store.setImapSettings(account.id, connected.imap);
+    if (connected.imap) {
+      // Sign in again sends only the login; keep the sender name chosen before.
+      const senderName = existing?.imap?.senderName;
+      yield* store.setImapSettings(
+        account.id,
+        connected.imap.senderName === undefined && senderName
+          ? { ...connected.imap, senderName }
+          : connected.imap,
+      );
+    }
     yield* providers.get(account.provider).closeSessions?.(account.id) ?? Effect.void;
     yield* store.clearReauth(account.id);
     yield* store.setSyncError(account.id, null);

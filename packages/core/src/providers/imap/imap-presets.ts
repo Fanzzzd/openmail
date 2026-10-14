@@ -103,5 +103,7 @@ export const ImapConnectInput = Schema.Struct({
   smtpHost: Schema.optionalKey(Schema.String),
   smtpPort: Schema.optionalKey(Schema.Int),
   smtpSecure: Schema.optionalKey(Schema.Boolean),
+  /** The name in From on sent mail. Absent or blank sends the address alone. */
+  senderName: Schema.optionalKey(Schema.String),
 });
 export type ImapConnectInput = typeof ImapConnectInput.Type;

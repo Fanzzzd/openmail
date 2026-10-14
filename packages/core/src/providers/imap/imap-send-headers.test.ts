@@ -50,7 +50,12 @@ const folder = (path: string, specialUse: string) => ({
 let smtpCalls = 0;
 const sendWith = (
   fetchOne: () => Promise<unknown>,
-  options: { from?: { name: string; address: string }; cached?: SendOriginal["cached"] } = {},
+  options: {
+    from?: { name: string; address: string };
+    cached?: SendOriginal["cached"];
+    senderName?: string;
+    draft?: boolean;
+  } = {},
 ) =>
   Effect.scoped(
     Effect.gen(function* () {
@@ -60,6 +65,7 @@ const sendWith = (
       vi.spyOn(client, "list").mockResolvedValue([
         folder("INBOX", "\\Inbox"),
         folder("Sent", "\\Sent"),
+        folder("Drafts", "\\Drafts"),
       ] as never);
       vi.spyOn(client, "mailboxOpen").mockResolvedValue({
         path: "INBOX",
@@ -71,13 +77,16 @@ const sendWith = (
       } as never);
       vi.spyOn(client, "search").mockResolvedValue([]);
       vi.spyOn(client, "fetchOne").mockImplementation(fetchOne as never);
-      vi.spyOn(client, "append").mockResolvedValue({
-        destination: "Sent",
-        uid: 9,
-        uidValidity: 7n,
-      } as never);
       let raw = "";
-      const settings = account.imap!;
+      vi.spyOn(client, "append").mockImplementation(((_path: string, content: Buffer) => {
+        if (options.draft) raw = content.toString();
+        return Promise.resolve({ destination: "Sent", uid: 9, uidValidity: 7n });
+      }) as never);
+      const settings = {
+        ...account.imap!,
+        ...(options.senderName ? { senderName: options.senderName } : {}),
+      };
+      const sender = { ...account, imap: settings };
       const adapter = yield* makeImapWith(
         () =>
           Effect.acquireRelease(
@@ -102,24 +111,35 @@ const sendWith = (
             return transport;
           }),
       );
-      yield* adapter.send(
-        account,
-        {
-          to: [{ name: "Bob", address: "bob@example.com" }],
-          cc: [],
-          bcc: [],
-          subject: "Re: hello",
-          text: "reply",
-          attachments: [],
-          mode: "reply",
-          ...(options.from ? { from: options.from } : {}),
-        },
-        Option.some({
-          providerId: encodeProviderId("INBOX", 7n, 1),
-          threadId: "t",
-          ...(options.cached ? { cached: options.cached } : {}),
-        }),
-      );
+      const message = {
+        to: [{ name: "Bob", address: "bob@example.com" }],
+        cc: [],
+        bcc: [],
+        subject: "Re: hello",
+        text: "reply",
+        attachments: [],
+        mode: "reply" as const,
+        ...(options.from ? { from: options.from } : {}),
+      };
+      const original = Option.some({
+        providerId: encodeProviderId("INBOX", 7n, 1),
+        threadId: "t",
+        ...(options.cached ? { cached: options.cached } : {}),
+      });
+      if (options.draft)
+        yield* adapter.saveDraft(sender, {
+          message,
+          original,
+          remote: null,
+          replaceAttachments: false,
+          creation: {
+            begin: () => Effect.succeed({ messageId: "<d@x>", attempted: false }),
+            attempted: () => Effect.void,
+            remember: () => Effect.void,
+            missing: () => Effect.succeed(true),
+          },
+        } as never);
+      else yield* adapter.send(sender, message, original);
       return raw;
     }),
   ).pipe(
@@ -175,5 +195,30 @@ it.effect("an original moved since the last sync threads on the cached headers",
   Effect.gen(function* () {
     const raw = yield* sendWith(async () => false, { cached });
     assert.strictEqual(headerOf(raw, "In-Reply-To"), "In-Reply-To: <cached@x>");
+  }),
+);
+
+// E9-8: IMAP mail went out as a bare address.
+it.effect("IMAP From carries the composer's display name", () =>
+  Effect.gen(function* () {
+    const raw = yield* sendWith(
+      async () => ({ uid: 1, headers: Buffer.from("Message-ID: <orig@x>\r\n\r\n") }),
+      { from: { name: "Jane Doe", address: "me@example.com" } },
+    );
+    assert.strictEqual(headerOf(raw, "From"), "From: Jane Doe <me@example.com>");
+  }),
+);
+
+it.effect("IMAP From falls back to the account's sender name", () =>
+  Effect.gen(function* () {
+    const raw = yield* sendWith(async () => false, { senderName: "Jane Sender" });
+    assert.strictEqual(headerOf(raw, "From"), "From: Jane Sender <me@example.com>");
+  }),
+);
+
+it.effect("the Drafts APPEND uses the account's sender name", () =>
+  Effect.gen(function* () {
+    const raw = yield* sendWith(async () => false, { senderName: "Jane Sender", draft: true });
+    assert.strictEqual(headerOf(raw, "From"), "From: Jane Sender <me@example.com>");
   }),
 );

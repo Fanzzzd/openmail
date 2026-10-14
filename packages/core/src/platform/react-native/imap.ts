@@ -41,7 +41,11 @@ import {
   groupIdsByFolder,
   retainedResetLabels,
 } from "../../providers/imap/imap-helpers.js";
-import { resolveImapSettings, serverSavesSent } from "../../providers/imap/imap-settings.js";
+import {
+  imapSender,
+  resolveImapSettings,
+  serverSavesSent,
+} from "../../providers/imap/imap-settings.js";
 import { applyPush } from "./imap-push.js";
 import { smtpSession } from "./smtp.js";
 import { confirmDelivery } from "../../providers/provider-send.js";
@@ -515,7 +519,7 @@ export const makeMobileImap = Effect.gen(function* () {
               ),
             )
           : {};
-        const raw = yield* codec.build({ name: "", address: account.email }, message, threading);
+        const raw = yield* codec.build(imapSender(account, message), message, threading);
         const recipients = [...message.to, ...message.cc, ...message.bcc].map((a) => a.address);
         if (!recipients.length) return yield* new PermanentError({ message: "No recipients" });
         yield* Effect.tryPromise({

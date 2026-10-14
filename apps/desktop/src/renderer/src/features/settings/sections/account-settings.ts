@@ -10,6 +10,7 @@ export function accountSettingsInput(
         description: string;
         color: string | null;
         imapAuthservId?: string | null;
+        imapSenderName?: string;
       },
 ): AccountSettings {
   return change.kind === "toggle"
@@ -24,6 +25,9 @@ export function accountSettingsInput(
         color: change.color,
         ...(account.imap && change.imapAuthservId !== undefined
           ? { imapAuthservId: change.imapAuthservId }
+          : {}),
+        ...(account.imap && change.imapSenderName !== undefined
+          ? { imapSenderName: change.imapSenderName }
           : {}),
       };
 }

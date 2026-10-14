@@ -71,6 +71,9 @@ export function ImapStep({
   const storedEmail = signInAgain?.email ?? "";
   const [email, setEmail] = useState(storedEmail);
   const [password, setPassword] = useState("");
+  // Blank sends the default: the account description, else the part of the address before @.
+  const [senderName, setSenderName] = useState(stored?.senderName ?? "");
+  const defaultSenderName = signInAgain?.description?.trim() || email.trim().split("@")[0] || "";
   const [username, setUsername] = useState(
     stored && stored.username !== storedEmail ? stored.username : "",
   );
@@ -84,7 +87,8 @@ export function ImapStep({
   const addError = imapErrorText(i18n, add);
 
   const submit = async () => {
-    const base = { preset, email: email.trim(), password };
+    const name = senderName.trim() || defaultSenderName;
+    const base = { preset, email: email.trim(), password, ...(name ? { senderName: name } : {}) };
     // Optional fields are left out, not sent as undefined: the main process
     // decodes the input strictly.
     const input: ImapConnectInput = custom
@@ -135,6 +139,12 @@ export function ImapStep({
         onChange={setEmail}
         type="email"
         autoFocus={!signInAgain}
+      />
+      <Field
+        label={t`Sender name`}
+        value={senderName}
+        onChange={setSenderName}
+        placeholder={defaultSenderName}
       />
       <Field
         label={secretLabel}

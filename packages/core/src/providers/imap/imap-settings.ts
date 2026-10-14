@@ -16,6 +16,8 @@ export const resolveImapSettings = Effect.fnUntraced(function* (
   }
   if ([input.username ?? email, input.password].some((value) => /[\r\n\0]/.test(value)))
     return yield* invalid("Invalid login characters");
+  const senderName = imapSenderName(input.senderName ?? "");
+  if (senderName === null) return yield* invalid("Enter a sender name of up to 200 characters");
   if (!input.password) return yield* invalid("Password is required");
   const preset = input.preset === "custom" ? undefined : IMAP_PRESETS[input.preset];
   if (input.preset !== "custom" && !preset) {
@@ -44,8 +46,16 @@ export const resolveImapSettings = Effect.fnUntraced(function* (
     smtpPort,
     // 465 is implicit TLS; 587 and 25 upgrade with STARTTLS.
     smtpSecure: input.smtpSecure ?? preset?.smtpSecure ?? smtpPort === 465,
+    ...(senderName ? { senderName } : {}),
   };
 });
+
+/** A sender name trimmed for the From header, "" for none, or null when it cannot be one. */
+export function imapSenderName(name: string): string | null {
+  const trimmed = name.replace(/\s+/g, " ").trim();
+  const control = [...trimmed].some((c) => c.charCodeAt(0) < 32 || c.charCodeAt(0) === 127);
+  return trimmed.length > 200 || control ? null : trimmed;
+}
 
 /** SMTP providers that file sent copies even for manually configured accounts. */
 export function serverSavesSent(settings: ImapSettings): boolean {
@@ -57,5 +67,15 @@ export function serverSavesSent(settings: ImapSettings): boolean {
   );
 }
 
-export const imapSettingsKey = (settings: ImapSettings) =>
+/** Identifies a server login. The sender name only changes outgoing headers, not the session. */
+export const imapSettingsKey = ({ senderName: _senderName, ...settings }: ImapSettings) =>
   sha256Hex(JSON.stringify(Object.entries(settings).toSorted(([a], [b]) => a.localeCompare(b))));
+
+/** From for IMAP mail: the composer's name, else the account's sender name, at the login address. */
+export const imapSender = (
+  account: { readonly email: string; readonly imap?: ImapSettings | undefined },
+  message: { readonly from?: { readonly name: string } | undefined },
+) => ({
+  name: message.from?.name.trim() || account.imap?.senderName || "",
+  address: account.email,
+});

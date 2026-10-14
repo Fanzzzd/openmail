@@ -3,7 +3,7 @@ import type { DraftRemote, OutgoingMessage } from "../../../domain/changes.js";
 import { type AuthError, PermanentError, ProviderError } from "../../../domain/errors.js";
 import { cachedThreading, type SendOriginal } from "../../../providers/send-original.js";
 import { decodeProviderId, encodeProviderId } from "../../../providers/imap/imap-cursor.js";
-import { serverSavesSent } from "../../../providers/imap/imap-settings.js";
+import { imapSender, serverSavesSent } from "../../../providers/imap/imap-settings.js";
 import { confirmDelivery } from "../../../providers/provider-send.js";
 import type {
   DraftPush,
@@ -306,7 +306,7 @@ export const makeImapSend = ({
       if (!recipients.length) yield* new PermanentError({ message: "No recipients" });
       const { s, settings, pass } = yield* session(account);
       const threading = Option.isSome(original) ? yield* threadingOf(s, original.value) : {};
-      const raw = yield* buildMime({ name: "", address: account.email }, message, threading).pipe(
+      const raw = yield* buildMime(imapSender(account, message), message, threading).pipe(
         Effect.mapError(
           (error) => new ProviderError({ message: `Cannot build the message: ${describe(error)}` }),
         ),
@@ -416,7 +416,7 @@ export const makeImapSend = ({
       const threading = Option.isSome(draft.original)
         ? yield* threadingOf(s, draft.original.value)
         : {};
-      const raw = yield* buildMime({ name: "", address: account.email }, draft.message, threading, {
+      const raw = yield* buildMime(imapSender(account, draft.message), draft.message, threading, {
         draft: true,
         ...(context?.appendedDraftMessageId ? { messageId: context.appendedDraftMessageId } : {}),
       }).pipe(

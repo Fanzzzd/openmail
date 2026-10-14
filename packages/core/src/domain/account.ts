@@ -24,6 +24,8 @@ export const ImapSettings = Schema.Struct({
   smtpSecure: Schema.Boolean,
   /** Explicit trust configuration; no IMAP host or preset implies an authserv-id. */
   authservId: Schema.optionalKey(Schema.NullOr(Schema.String)),
+  /** The name in From on sent mail and drafts. Absent sends the address alone. */
+  senderName: Schema.optionalKey(Schema.String),
 });
 export type ImapSettings = typeof ImapSettings.Type;
 
@@ -61,6 +63,8 @@ export const AccountSettings = Schema.Struct({
   ),
   description: Schema.String.check(Schema.isMaxLength(200)),
   color: Schema.NullOr(Schema.String.check(Schema.isPattern(/^#[0-9a-fA-F]{6}$/))),
+  /** IMAP only: the name in From. Empty sends the address alone. */
+  imapSenderName: Schema.optionalKey(Schema.String.check(Schema.isMaxLength(200))),
 });
 export type AccountSettings = typeof AccountSettings.Type;
 export const AccountPlacement = Schema.Struct({

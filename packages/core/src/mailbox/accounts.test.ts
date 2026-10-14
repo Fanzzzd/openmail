@@ -466,3 +466,34 @@ it.effect(
       );
     }).pipe(Effect.provide(StoreLive.pipe(Layer.provide(MemoryPlatform())))),
 );
+
+it.effect(
+  "an IMAP sender name is saved from settings, kept across saves, and cleared when blank",
+  () =>
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const account = yield* store.upsertAccount("imap", "me@fastmail.com");
+      yield* store.setImapSettings(account.id, {
+        preset: "fastmail",
+        username: account.email,
+        imapHost: "imap.fastmail.com",
+        imapPort: 993,
+        smtpHost: "smtp.fastmail.com",
+        smtpPort: 465,
+        smtpSecure: true,
+        senderName: "Me",
+      });
+      const settings = { enabled: true, description: "Fastmail", color: null };
+      yield* store.setAccountSettings(account.id, { ...settings, imapSenderName: "  Jane   Doe " });
+      assert.strictEqual((yield* store.getAccount(account.id)).imap?.senderName, "Jane Doe");
+      yield* store.setAccountSettings(account.id, settings);
+      assert.strictEqual((yield* store.getAccount(account.id)).imap?.senderName, "Jane Doe");
+      yield* store.setAccountSettings(account.id, { ...settings, imapSenderName: "" });
+      assert.strictEqual((yield* store.getAccount(account.id)).imap?.senderName, undefined);
+      const gmail = yield* store.upsertAccount("gmail", "me@gmail.com");
+      const refused = yield* store
+        .setAccountSettings(gmail.id, { ...settings, imapSenderName: "Jane" })
+        .pipe(Effect.flip);
+      assert.strictEqual(refused._tag, "InvalidInput");
+    }).pipe(Effect.provide(StoreLive.pipe(Layer.provide(MemoryPlatform())))),
+);

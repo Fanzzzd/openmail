@@ -83,3 +83,32 @@ it("IMAP trust edits are saved explicitly while toggles preserve the stored sett
     }).imapAuthservId,
   ).toBe(null);
 });
+
+it("Save sends the IMAP sender name only for IMAP accounts", () => {
+  const imap: Account = {
+    ...account,
+    id: "imap:me@example.com",
+    provider: "imap",
+    imap: {
+      preset: "custom",
+      username: "me@example.com",
+      imapHost: "imap.example.com",
+      imapPort: 993,
+      smtpHost: "smtp.example.com",
+      smtpPort: 465,
+      smtpSecure: true,
+      senderName: "Old",
+    },
+  };
+  const edits = {
+    kind: "appearance",
+    description: "Work",
+    color: null,
+    imapSenderName: "Jane Doe",
+  } as const;
+  expect(accountSettingsInput(imap, edits)).toMatchObject({ imapSenderName: "Jane Doe" });
+  expect(accountSettingsInput(account, edits)).not.toHaveProperty("imapSenderName");
+  expect(accountSettingsInput(imap, { kind: "toggle", enabled: false })).not.toHaveProperty(
+    "imapSenderName",
+  );
+});

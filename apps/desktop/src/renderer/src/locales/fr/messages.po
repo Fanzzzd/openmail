@@ -6331,6 +6331,8 @@ msgstr "Prénom de l’expéditeur"
 msgid "Sender last name"
 msgstr "Nom de famille de l’expéditeur"
 
+#: src/renderer/src/features/accounts/ImapStep.tsx
+#: src/renderer/src/features/settings/sections/AccountControls.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Sender name"
 msgstr "Nom de l’expéditeur"

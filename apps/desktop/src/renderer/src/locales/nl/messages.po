@@ -6331,6 +6331,8 @@ msgstr "Voornaam afzender"
 msgid "Sender last name"
 msgstr "Achternaam afzender"
 
+#: src/renderer/src/features/accounts/ImapStep.tsx
+#: src/renderer/src/features/settings/sections/AccountControls.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Sender name"
 msgstr "Naam afzender"

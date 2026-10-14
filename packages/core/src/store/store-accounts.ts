@@ -12,6 +12,7 @@ import {
 } from "../domain/account.js";
 import { type AuthError, InvalidInput, NotFound } from "../domain/errors.js";
 import { logReauth, reauthReason } from "../providers/reauth.js";
+import { imapSenderName } from "../providers/imap/imap-settings.js";
 import { type PlatformCrypto } from "../platform/crypto.js";
 import type { Store } from "./service.js";
 import { all, first, run } from "./sql-rows.js";
@@ -111,18 +112,31 @@ export const makeAccountsStore = ({
     input: AccountSettings,
   ) {
     const account = yield* getAccount(id);
+    let imap = account.imap;
     if (input.imapAuthservId !== undefined) {
-      if (!account.imap)
+      if (!imap)
         return yield* new InvalidInput({
           message: "Authentication service trust is only available for IMAP accounts",
         });
       const authservId = input.imapAuthservId?.toLowerCase() ?? null;
-      if ((account.imap.authservId ?? null) !== authservId) {
-        yield* run(
-          sql`UPDATE accounts SET settings_json=${JSON.stringify({ ...account.imap, authservId })} WHERE id=${id}`,
-        );
+      if ((imap.authservId ?? null) !== authservId) {
+        imap = { ...imap, authservId };
+        yield* run(sql`UPDATE accounts SET settings_json=${JSON.stringify(imap)} WHERE id=${id}`);
         // Existing results must not survive a change to the trust boundary.
         yield* run(sql`UPDATE messages SET security_json=NULL WHERE account_id=${id}`);
+      }
+    }
+    if (input.imapSenderName !== undefined) {
+      if (!imap)
+        return yield* new InvalidInput({ message: "Sender names are set for IMAP accounts" });
+      const senderName = imapSenderName(input.imapSenderName);
+      if (senderName === null)
+        return yield* new InvalidInput({ message: "Enter a sender name of up to 200 characters" });
+      if ((imap.senderName ?? "") !== senderName) {
+        const { senderName: _previous, ...rest } = imap;
+        yield* run(
+          sql`UPDATE accounts SET settings_json=${JSON.stringify(senderName ? { ...rest, senderName } : rest)} WHERE id=${id}`,
+        );
       }
     }
     yield* run(

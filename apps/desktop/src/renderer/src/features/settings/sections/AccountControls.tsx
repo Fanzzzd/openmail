@@ -31,6 +31,7 @@ export function AccountControls({
   const profiles = AsyncResult.getOrElse(useAtomValue(profilesAtom), () => []);
   const [description, setDescription] = useState(account.description ?? "");
   const [authservId, setAuthservId] = useState(account.imap?.authservId ?? "");
+  const [senderName, setSenderName] = useState(account.imap?.senderName ?? "");
   const [color, setColor] = useState(account.color ?? "#3b82f6");
   const [customColor, setCustomColor] = useState(!!account.color);
   const [result, save] = useAtom(setAccountSettingsAtom(account.id));
@@ -55,7 +56,9 @@ export function AccountControls({
           kind: "appearance",
           description,
           color: customColor ? color : null,
-          ...(account.imap ? { imapAuthservId: authservId.trim() || null } : {}),
+          ...(account.imap
+            ? { imapAuthservId: authservId.trim() || null, imapSenderName: senderName }
+            : {}),
         })
       }
       className={buttonLink}
@@ -105,6 +108,20 @@ export function AccountControls({
         {/* With an IMAP trust field, Save follows it so it comes after both fields in tab order. */}
         {!account.imap && saveButton}
       </div>
+      {account.imap && (
+        <label className="flex items-center gap-2">
+          <Trans>Sender name</Trans>
+          <span className="w-40">
+            <input
+              className={formInput}
+              value={senderName}
+              maxLength={200}
+              placeholder={account.email}
+              onChange={(e) => setSenderName(e.target.value)}
+            />
+          </span>
+        </label>
+      )}
       {account.imap && (
         <div className="space-y-1">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">

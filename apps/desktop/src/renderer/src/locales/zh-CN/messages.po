@@ -6341,6 +6341,8 @@ msgstr "发件人名字"
 msgid "Sender last name"
 msgstr "发件人姓氏"
 
+#: src/renderer/src/features/accounts/ImapStep.tsx
+#: src/renderer/src/features/settings/sections/AccountControls.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Sender name"
 msgstr "发件人姓名"

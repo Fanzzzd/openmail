@@ -12,6 +12,7 @@ export function Field({
   type,
   autoFocus,
   inputMode,
+  placeholder,
 }: {
   label: string;
   value: string;
@@ -20,6 +21,7 @@ export function Field({
   type?: "text" | "email";
   autoFocus?: boolean;
   inputMode?: "numeric";
+  placeholder?: string | undefined;
 }) {
   return (
     <label className="mt-3 block text-footnote font-medium text-a11y-muted">
@@ -29,6 +31,7 @@ export function Field({
         value={value}
         autoFocus={autoFocus}
         inputMode={inputMode}
+        placeholder={placeholder}
         spellCheck={false}
         autoCapitalize="off"
         onChange={(e) => onChange(e.target.value)}
