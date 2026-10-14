@@ -3514,6 +3514,10 @@ msgstr "Houd OpenMail onder"
 msgid "Keep the current repeat pattern"
 msgstr "Huidig herhaalpatroon behouden"
 
+#: src/renderer/src/features/compose/components/DraftConflictNotice.tsx
+msgid "Keep the newer version"
+msgstr "Nieuwere versie behouden"
+
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Kept on this Mac"
@@ -5790,6 +5794,10 @@ msgstr "Filter herstellen?"
 msgid "Restore message state"
 msgstr "Berichtstatus herstellen"
 
+#: src/renderer/src/features/compose/components/DraftConflictNotice.tsx
+msgid "Restore my version"
+msgstr "Mijn versie herstellen"
+
 #. placeholder {0}: pending.preview.matches.length
 #: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 msgid "Restore the saved original filter on the server. {0, plural, one {Preview: # message.} other {Preview: # messages.}}"
@@ -7246,6 +7254,14 @@ msgstr "Hiermee wordt de opgeslagen herstelkopie verwijderd. De filters op de se
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 msgid "This development build has no MCP server yet. Run pnpm build in the repository first."
 msgstr "Deze ontwikkelbuild heeft nog geen MCP-server. Voer eerst pnpm build uit in de repository."
+
+#: src/renderer/src/lib/errors.ts
+msgid "This draft changed in another window or on another device. Open it again to see the newer version."
+msgstr "Dit concept is gewijzigd in een ander venster of op een ander apparaat. Open het opnieuw om de nieuwere versie te zien."
+
+#: src/renderer/src/features/compose/components/DraftConflictNotice.tsx
+msgid "This draft changed in another window or on another device. The newer version is open."
+msgstr "Dit concept is gewijzigd in een ander venster of op een ander apparaat. De nieuwere versie is geopend."
 
 #: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "This draft contains formatting or images this editor cannot keep. The original is preserved until you edit the body."

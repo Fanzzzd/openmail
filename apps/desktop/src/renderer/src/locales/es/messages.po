@@ -3514,6 +3514,10 @@ msgstr "Limitar OpenMail a"
 msgid "Keep the current repeat pattern"
 msgstr "Mantener el patrón de repetición actual"
 
+#: src/renderer/src/features/compose/components/DraftConflictNotice.tsx
+msgid "Keep the newer version"
+msgstr "Conservar la versión más reciente"
+
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Kept on this Mac"
@@ -5790,6 +5794,10 @@ msgstr "¿Restaurar filtro?"
 msgid "Restore message state"
 msgstr "Restaurar el estado del mensaje"
 
+#: src/renderer/src/features/compose/components/DraftConflictNotice.tsx
+msgid "Restore my version"
+msgstr "Restaurar mi versión"
+
 #. placeholder {0}: pending.preview.matches.length
 #: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 msgid "Restore the saved original filter on the server. {0, plural, one {Preview: # message.} other {Preview: # messages.}}"
@@ -7246,6 +7254,14 @@ msgstr "Esto elimina la copia de recuperación guardada. Los filtros del servido
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 msgid "This development build has no MCP server yet. Run pnpm build in the repository first."
 msgstr "Esta compilación de desarrollo aún no tiene servidor MCP. Ejecuta primero pnpm build en el repositorio."
+
+#: src/renderer/src/lib/errors.ts
+msgid "This draft changed in another window or on another device. Open it again to see the newer version."
+msgstr "Este borrador cambió en otra ventana o en otro dispositivo. Ábrelo de nuevo para ver la versión más reciente."
+
+#: src/renderer/src/features/compose/components/DraftConflictNotice.tsx
+msgid "This draft changed in another window or on another device. The newer version is open."
+msgstr "Este borrador cambió en otra ventana o en otro dispositivo. Está abierta la versión más reciente."
 
 #: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "This draft contains formatting or images this editor cannot keep. The original is preserved until you edit the body."

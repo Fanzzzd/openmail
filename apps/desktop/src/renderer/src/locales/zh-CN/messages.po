@@ -3524,6 +3524,10 @@ msgstr "OpenMail 占用上限"
 msgid "Keep the current repeat pattern"
 msgstr "保留当前重复规则"
 
+#: src/renderer/src/features/compose/components/DraftConflictNotice.tsx
+msgid "Keep the newer version"
+msgstr "保留较新的版本"
+
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Kept on this Mac"
@@ -5800,6 +5804,10 @@ msgstr "恢复过滤器？"
 msgid "Restore message state"
 msgstr "恢复邮件状态"
 
+#: src/renderer/src/features/compose/components/DraftConflictNotice.tsx
+msgid "Restore my version"
+msgstr "恢复我的版本"
+
 #. placeholder {0}: pending.preview.matches.length
 #: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 msgid "Restore the saved original filter on the server. {0, plural, one {Preview: # message.} other {Preview: # messages.}}"
@@ -7256,6 +7264,14 @@ msgstr "将删除保存的恢复副本。服务器上的过滤器不变。"
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 msgid "This development build has no MCP server yet. Run pnpm build in the repository first."
 msgstr "这个开发构建还没有 MCP 服务器。请先在仓库中运行 pnpm build。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "This draft changed in another window or on another device. Open it again to see the newer version."
+msgstr "这份草稿已在另一个窗口或另一台设备上更改。请重新打开以查看较新的版本。"
+
+#: src/renderer/src/features/compose/components/DraftConflictNotice.tsx
+msgid "This draft changed in another window or on another device. The newer version is open."
+msgstr "这份草稿已在另一个窗口或另一台设备上更改。现在打开的是较新的版本。"
 
 #: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "This draft contains formatting or images this editor cannot keep. The original is preserved until you edit the body."

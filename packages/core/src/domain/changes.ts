@@ -142,6 +142,8 @@ export const Draft = Schema.Struct({
   /** A save remains queued and the enabled account can retry it automatically. */
   syncRetrying: Schema.optionalKey(Schema.Boolean),
   localOnly: Schema.optionalKey(Schema.Boolean),
+  /** Bumped by every local save; an editor sends the one it last saw as `expectedRevision`. */
+  revision: Schema.optionalKey(Schema.Number),
 });
 export type Draft = typeof Draft.Type;
 
@@ -149,6 +151,13 @@ export const DraftInput = Schema.Struct({
   id: Schema.String,
   accountId: Schema.String,
   message: OutgoingMessage,
+  /**
+   * The revision this editor last loaded or saved. A newer revision written by anyone
+   * else fails the save with DraftConflict instead of being overwritten.
+   */
+  expectedRevision: Schema.optionalKey(Schema.Number),
+  /** A stable id for one open editor, so its own queued saves never conflict. */
+  editor: Schema.optionalKey(Schema.String),
 });
 export type DraftInput = typeof DraftInput.Type;
 

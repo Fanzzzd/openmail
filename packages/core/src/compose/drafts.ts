@@ -152,6 +152,7 @@ export function toDraft(d: StoredDraft, pendingSave = false): Draft {
     synced: d.remote !== null && !pendingSave && !d.syncError && !d.localOnly,
     syncError: d.syncError,
     localOnly: d.localOnly,
+    revision: d.revision,
   };
 }
 

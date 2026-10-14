@@ -3514,6 +3514,10 @@ msgstr "Udržovat OpenMail pod limitem"
 msgid "Keep the current repeat pattern"
 msgstr "Zachovat současný vzor opakování"
 
+#: src/renderer/src/features/compose/components/DraftConflictNotice.tsx
+msgid "Keep the newer version"
+msgstr "Ponechat novější verzi"
+
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Kept on this Mac"
@@ -5790,6 +5794,10 @@ msgstr "Obnovit filtr?"
 msgid "Restore message state"
 msgstr "Obnovit stav zprávy"
 
+#: src/renderer/src/features/compose/components/DraftConflictNotice.tsx
+msgid "Restore my version"
+msgstr "Obnovit moji verzi"
+
 #. placeholder {0}: pending.preview.matches.length
 #: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 msgid "Restore the saved original filter on the server. {0, plural, one {Preview: # message.} other {Preview: # messages.}}"
@@ -7246,6 +7254,14 @@ msgstr "Tím se smaže uložená kopie pro obnovení. Filtry na serveru se nemě
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 msgid "This development build has no MCP server yet. Run pnpm build in the repository first."
 msgstr "Toto vývojové sestavení zatím nemá server MCP. Nejdřív v repozitáři spusťte pnpm build."
+
+#: src/renderer/src/lib/errors.ts
+msgid "This draft changed in another window or on another device. Open it again to see the newer version."
+msgstr "Tento koncept byl změněn v jiném okně nebo na jiném zařízení. Otevřete ho znovu, abyste viděli novější verzi."
+
+#: src/renderer/src/features/compose/components/DraftConflictNotice.tsx
+msgid "This draft changed in another window or on another device. The newer version is open."
+msgstr "Tento koncept byl změněn v jiném okně nebo na jiném zařízení. Je otevřená novější verze."
 
 #: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "This draft contains formatting or images this editor cannot keep. The original is preserved until you edit the body."

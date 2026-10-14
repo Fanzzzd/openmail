@@ -1393,6 +1393,10 @@ CREATE TRIGGER snoozed_list_date_insert AFTER INSERT ON snoozed_messages BEGIN
    );`,
   // user_version 50: "Organize directly" (allow) was removed; such rows now ask first.
   `UPDATE agent_policies SET modify = 'propose' WHERE modify = 'allow';`,
+  // user_version 51: each local save of a draft bumps its revision and records the editor that
+  // wrote it, so an editor saving from an older revision is refused instead of overwriting.
+  `ALTER TABLE drafts ADD COLUMN revision INTEGER NOT NULL DEFAULT 0;
+   ALTER TABLE drafts ADD COLUMN editor TEXT;`,
 ];
 
 /** Index of migration 37, the cache rowid rebuild. It runs when user_version equals this index. */

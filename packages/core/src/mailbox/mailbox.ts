@@ -64,6 +64,7 @@ import type {
   FeatureScopeMissing,
   AuthError,
   ClientNotConfigured,
+  DraftConflict,
   IndexNotReady,
   InvalidInput,
   NotFound,
@@ -152,7 +153,8 @@ export type PerformError =
   | ProviderError
   | SettingsScopeMissing
   | FeatureScopeMissing
-  | SendUncertain;
+  | SendUncertain
+  | DraftConflict;
 
 /** Local reads and provider fetches for one message or thread. Part: mailbox-reading.ts. */
 export interface MailboxReading {
@@ -364,12 +366,12 @@ export interface MailboxCompose {
   /** Optional local save status; null for a new or removed draft. No message import. */
   draftStatus(id: string): Effect.Effect<Draft | null>;
   /** Saves locally right away; the provider's copy follows through the change queue. */
-  saveDraft(input: DraftInput): Effect.Effect<Draft, NotFound | InvalidInput>;
+  saveDraft(input: DraftInput): Effect.Effect<Draft, NotFound | InvalidInput | DraftConflict>;
   recoverDraft(
     id: string,
     action: "retry" | "local",
     latest?: DraftInput,
-  ): Effect.Effect<Draft, NotFound | InvalidInput>;
+  ): Effect.Effect<Draft, NotFound | InvalidInput | DraftConflict>;
   /** Deletes the draft here and on the provider. An agent's draft rejects its proposal. */
   discardDraft(id: string): Effect.Effect<void>;
   /**
@@ -435,7 +437,7 @@ export interface MailboxOutbox {
     input: DraftInput,
     due: number,
     confirmResend?: boolean,
-  ): Effect.Effect<void, NotFound | InvalidInput | SendUncertain>;
+  ): Effect.Effect<void, NotFound | InvalidInput | SendUncertain | DraftConflict>;
   cancelDesktopUndoSends(owner?: string): Effect.Effect<void>;
   cancelWaitingSend(id: string): Effect.Effect<boolean>;
   /** Remove a mobile failed/waiting intent while keeping its draft; an active send cannot be cancelled. */
@@ -450,7 +452,7 @@ export interface MailboxOutbox {
       readonly confirmResend?: boolean;
       readonly owner?: string;
     },
-  ): Effect.Effect<void, NotFound | InvalidInput | SendUncertain>;
+  ): Effect.Effect<void, NotFound | InvalidInput | SendUncertain | DraftConflict>;
   awaitUndoSend(id: string): Effect.Effect<Outcome, PerformError>;
   sendAgain(id: string): Effect.Effect<Draft, PerformError>;
   /** Sends currently executing in core, including provider and cleanup work. */

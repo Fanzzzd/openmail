@@ -257,6 +257,10 @@ export function errorText(i18n: I18n, error: AppError): string {
               ? i18n._(msg`Sign in again to enable filters and automatic replies.`)
               : i18n._(msg`Sign in again to sync server contacts.`),
     SettingsScopeMissing: () => i18n._(msg`Sign in again to enable filters and automatic replies.`),
+    DraftConflict: () =>
+      i18n._(
+        msg`This draft changed in another window or on another device. Open it again to see the newer version.`,
+      ),
     SendUncertain: () =>
       i18n._(
         msg({
@@ -324,6 +328,17 @@ export function settingsScopeMissing<A, E extends AppError>(
   if (result._tag !== "Failure") return false;
   const error = Cause.findErrorOption(result.cause);
   return error._tag === "Some" && error.value._tag === "SettingsScopeMissing";
+}
+
+/** The newer draft revision when a save was refused because the draft changed elsewhere. */
+export function draftConflict<A, E extends AppError>(
+  result: AsyncResult.AsyncResult<A, E>,
+): number | null {
+  if (result._tag !== "Failure") return null;
+  const error = Cause.findErrorOption(result.cause);
+  return error._tag === "Some" && error.value._tag === "DraftConflict"
+    ? error.value.revision
+    : null;
 }
 
 export function messageMissing<A, E extends AppError>(

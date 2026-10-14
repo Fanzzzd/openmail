@@ -68,13 +68,22 @@ export interface Draft {
   /** The agent proposal this draft came from. */
   proposalId?: number;
   agentOrigin?: OutgoingMessage["agentOrigin"];
+  /**
+   * One open editor of this draft. Its own saves never conflict with each other; a save
+   * after someone else's is refused unless `revision` is the one they wrote.
+   */
+  editor?: string;
+  /** The stored revision this editor loaded; 0 for a draft not saved yet. */
+  revision?: number;
 }
 
 const newDraftId = () => `draft:${crypto.randomUUID()}`;
+export const newEditorId = () => `editor:${crypto.randomUUID()}`;
 
 export function emptyDraft(accountId: string): Draft {
   return {
     id: newDraftId(),
+    editor: newEditorId(),
     mode: "new",
     accountId,
     to: "",
@@ -189,6 +198,7 @@ export function draftFor(
 
   return {
     id: newDraftId(),
+    editor: newEditorId(),
     mode,
     accountId: account.id,
     ...(mode !== "forward" && replyFrom
@@ -224,6 +234,8 @@ export function fromStored(d: StoredDraft): Draft {
   const m = normalizeComposeMessage(d.message);
   return {
     id: d.id,
+    editor: newEditorId(),
+    revision: d.revision ?? 0,
     ...(m.agentOrigin ? { agentOrigin: m.agentOrigin } : {}),
     synced: d.synced,
     ...(m.signatureId === undefined ? {} : { signatureId: m.signatureId }),
@@ -291,7 +303,12 @@ export function toMessage(d: Draft): { message: OutgoingMessage; invalid: string
 
 /** What autosave stores. Recipient text that is not an address yet is left out. */
 export function toDraftInput(d: Draft): DraftInput {
-  return { id: d.id, accountId: d.accountId, message: toMessage(d).message };
+  return {
+    id: d.id,
+    accountId: d.accountId,
+    message: toMessage(d).message,
+    ...(d.editor ? { editor: d.editor, expectedRevision: d.revision ?? 0 } : {}),
+  };
 }
 
 export function isEmpty(d: Draft, signature?: string, options?: SignatureOptions): boolean {

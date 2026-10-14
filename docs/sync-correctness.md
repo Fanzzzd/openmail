@@ -60,6 +60,8 @@ Outlook 附件上传结果不确定时，读取全部附件页并核对文件名
 
 草稿更新的响应可能丢失。这时服务器已改了版本，客户端却没收到新 changeKey 或新 message ID。core 在发送 PATCH（Outlook）或 PUT（Gmail）前把这次写入内容的 SHA-256 存进 `DraftRemote.writeNonce`，写入本身也带上它。Outlook 用扩展属性 `OpenmailDraftWrite`，Gmail 用邮件头 `X-Openmail-Draft-Write`。下次保存时，如果版本比较判为冲突，适配器再读一次远端的 nonce；它等于本次内容的指纹或已存的 `writeNonce` 时，这次改动是自己的，原地更新，不另存草稿、不报冲突。确认保存成功的 `setDraftRemote` 清掉 `writeNonce`。回归见 [outlook-draft-lost-response.test.ts](../packages/core/src/providers/outlook/outlook-draft-lost-response.test.ts)和 [gmail-draft-lost-response.test.ts](../packages/core/src/providers/gmail/gmail-draft-lost-response.test.ts)。
 
+同一个本地草稿可能同时在 Mac 的撰写窗口和手机的远程网页里打开。迁移 51 给 `drafts` 加了 `revision` 和 `editor`：每次本地保存把 revision 加一，并记下保存它的编辑器会话。编辑器保存时带上 `DraftInput.expectedRevision`（它载入时的 revision，新草稿为 0）和自己的 `editor`。上一次保存来自别的编辑器、手机或 agent，且 revision 已经变了，core 就拒绝这次保存，返回 `DraftConflict`；同一编辑器排队中的保存互不冲突。撰写窗口收到 `DraftConflict` 后重新载入较新的版本，用一行提示说明，并提供“恢复我的版本”，点了就以较新的 revision 为基准保存自己的文本。不带 `expectedRevision` 的保存（CLI、MCP）照旧直接写入。回归见 [concurrent-draft.test.ts](../packages/core/src/mailbox/concurrent-draft.test.ts)和 [draft-conflict.test.ts](../apps/desktop/src/renderer/src/features/compose/hooks/draft-conflict.test.ts)。
+
 ### Outlook 大附件
 
 规则核对于 2026-10-07：

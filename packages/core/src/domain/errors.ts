@@ -157,6 +157,15 @@ export class FeatureScopeMissing extends Schema.TaggedError<FeatureScopeMissing>
   },
 ) {}
 
+/**
+ * The draft was saved elsewhere (another window, the phone, an agent) after this editor
+ * loaded it. The editor reloads `revision` and keeps its own text recoverable.
+ */
+export class DraftConflict extends Schema.TaggedError<DraftConflict>()("DraftConflict", {
+  id: Schema.String,
+  revision: Schema.Number,
+}) {}
+
 /** Submission completed ambiguously; a person must check Sent before retrying. */
 export class SendUncertain extends Schema.TaggedError<SendUncertain>()("SendUncertain", {
   message: Schema.String,
@@ -177,5 +186,6 @@ export const MailError = Schema.Union([
   SettingsScopeMissing,
   DeviceError,
   FeatureScopeMissing,
+  DraftConflict,
 ]);
 export type MailError = typeof MailError.Type;

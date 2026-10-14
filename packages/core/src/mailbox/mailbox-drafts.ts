@@ -26,7 +26,13 @@ import {
   toDraft,
   withDraftMarkdownSource,
 } from "../compose/drafts.js";
-import { InvalidInput, NotFound, PermanentError, ProviderError } from "../domain/errors.js";
+import {
+  DraftConflict,
+  InvalidInput,
+  NotFound,
+  PermanentError,
+  ProviderError,
+} from "../domain/errors.js";
 import { isLocalFeedbackDraft } from "../app/feedback.js";
 import { withAgentOrigin } from "./mailbox-apply.js";
 import { type MailboxDependencies, type MailboxRuntimeState } from "./mailbox-runtime.js";
@@ -374,6 +380,15 @@ export const makeDraftsMailbox = (
               : "This draft is being discarded. Undo the discard to keep it.",
           });
         const existing = yield* store.getDraft(input.id);
+        // Another editor, the phone or an agent saved after this editor loaded the draft.
+        // Its own earlier saves may still be arriving, so they never count as a conflict.
+        if (
+          Option.isSome(existing) &&
+          input.expectedRevision !== undefined &&
+          existing.value.revision !== input.expectedRevision &&
+          (input.editor === undefined || existing.value.editor !== input.editor)
+        )
+          return yield* new DraftConflict({ id: input.id, revision: existing.value.revision });
         const localOnly = Option.isSome(existing) && existing.value.localOnly;
         if (Option.isSome(existing)) {
           const old = existing.value;
@@ -395,6 +410,7 @@ export const makeDraftsMailbox = (
         const draft = yield* store.putDraft({
           id: input.id,
           accountId: input.accountId,
+          editor: input.editor ?? null,
           message: normalizeComposeMessage({
             ...input.message,
             ...(Option.isSome(existing) && existing.value.message.agentOrigin

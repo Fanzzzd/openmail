@@ -99,6 +99,10 @@ export interface StoredDraft {
   pushedOrganization: string | null;
   syncError: string | null;
   localOnly: boolean;
+  /** Bumped by every local save. */
+  revision: number;
+  /** The editor session of the last save, or null when core or an agent wrote it. */
+  editor: string | null;
 }
 
 /**
@@ -433,6 +437,8 @@ export class Store extends Context.Service<
       accountId: string;
       message: OutgoingMessage;
       proposalId?: number | null;
+      /** The editor session saving it; omitted when core or an agent writes it. */
+      editor?: string | null;
     }): Effect.Effect<StoredDraft>;
     /** Records the provider's copy. False when the draft was deleted locally meanwhile. */
     setDraftRemote(

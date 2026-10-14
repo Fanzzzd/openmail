@@ -3514,6 +3514,10 @@ msgstr "OpenMail begrenzen auf"
 msgid "Keep the current repeat pattern"
 msgstr "Aktuelles Wiederholungsmuster beibehalten"
 
+#: src/renderer/src/features/compose/components/DraftConflictNotice.tsx
+msgid "Keep the newer version"
+msgstr "Neuere Version behalten"
+
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Kept on this Mac"
@@ -5790,6 +5794,10 @@ msgstr "Filter wiederherstellen?"
 msgid "Restore message state"
 msgstr "Nachrichtenstatus wiederherstellen"
 
+#: src/renderer/src/features/compose/components/DraftConflictNotice.tsx
+msgid "Restore my version"
+msgstr "Meine Version wiederherstellen"
+
 #. placeholder {0}: pending.preview.matches.length
 #: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 msgid "Restore the saved original filter on the server. {0, plural, one {Preview: # message.} other {Preview: # messages.}}"
@@ -7246,6 +7254,14 @@ msgstr "Dadurch wird die gespeicherte Wiederherstellungskopie gelöscht. Die Fil
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 msgid "This development build has no MCP server yet. Run pnpm build in the repository first."
 msgstr "Dieser Entwicklungs-Build hat noch keinen MCP-Server. Führe zuerst pnpm build im Repository aus."
+
+#: src/renderer/src/lib/errors.ts
+msgid "This draft changed in another window or on another device. Open it again to see the newer version."
+msgstr "Dieser Entwurf wurde in einem anderen Fenster oder auf einem anderen Gerät geändert. Öffne ihn erneut, um die neuere Version zu sehen."
+
+#: src/renderer/src/features/compose/components/DraftConflictNotice.tsx
+msgid "This draft changed in another window or on another device. The newer version is open."
+msgstr "Dieser Entwurf wurde in einem anderen Fenster oder auf einem anderen Gerät geändert. Die neuere Version ist geöffnet."
 
 #: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "This draft contains formatting or images this editor cannot keep. The original is preserved until you edit the body."

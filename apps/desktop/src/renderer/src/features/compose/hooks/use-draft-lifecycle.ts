@@ -16,10 +16,10 @@ import type { OutgoingAttachment } from "../../../../../shared/api";
 import type { ComposeMessages } from "./use-compose-messages";
 import { draftSyncNotice } from "../components/DraftSyncRecovery";
 import { loadOriginalAttachments, withOriginalAttachments } from "../compose-originals";
-import { toDraftInput, type Draft } from "../draft";
+import { fromStored, toDraftInput, type Draft } from "../draft";
 import { requestDraftClose } from "../draft-close";
-import { causeText } from "../../../lib/errors";
-import { draftStatus, saveDraft, useRunMail, withMail } from "../../../state/mail";
+import { causeText, draftConflict } from "../../../lib/errors";
+import { draftStatus, openDraft, saveDraft, useRunMail, withMail } from "../../../state/mail";
 import { saveDraftAtom } from "../../../state/mutations";
 import { draftStatusAtom } from "../../../state/queries";
 import { onBackup, onFlush, setUnsaved } from "../../../state/unsaved-work";
@@ -77,6 +77,39 @@ export function useDraftLifecycle({
     saved.current = next;
     save(toDraftInput(next));
   };
+
+  /**
+   * Someone else saved this draft after this editor loaded it, so core refused our save.
+   * The editor shows the newer version and keeps the person's own text one click away.
+   */
+  const [conflict, setConflict] = useState<Draft | null>(null);
+  const conflictRevision = draftConflict(saveState);
+  const reloadNewer = useEffectEvent(() => {
+    const mine = draft;
+    run(
+      openDraft(draft.id).pipe(
+        Effect.matchCause({
+          onSuccess: (stored) => {
+            const newer = fromStored(stored);
+            saved.current = newer;
+            setDraft(newer);
+            setConflict(mine);
+          },
+          onFailure: (cause) => setError(causeText(i18n, cause)),
+        }),
+      ),
+    );
+  });
+  useEffect(() => {
+    if (conflictRevision !== null) reloadNewer();
+  }, [conflictRevision]);
+  /** Puts the person's own text back; the next save replaces the newer version on purpose. */
+  const restoreMine = () => {
+    if (!conflict) return;
+    setDraft({ ...conflict, revision: draft.revision ?? 0 });
+    setConflict(null);
+  };
+  const saveFailed = saveState._tag === "Failure" && conflictRevision === null;
 
   const remoteStatus = AsyncResult.getOrElse(useAtomValue(draftStatusAtom(draft.id)), () => null);
   const syncStatus = remoteStatus ?? (saveState._tag === "Success" ? saveState.value : null);
@@ -145,12 +178,11 @@ export function useDraftLifecycle({
   }, [run]);
   // The web build waits to reload while typing is unsaved.
   useEffect(() => {
-    const unsaved =
-      (draft !== saved.current && !empty) || saveState.waiting || saveState._tag === "Failure";
+    const unsaved = (draft !== saved.current && !empty) || saveState.waiting || saveFailed;
     setUnsaved(initial.id, unsaved);
     // Saved: the Mac's copy is current, so the tab's backup goes.
     if (!unsaved) clearDraftBackup(initial.id);
-  }, [initial.id, draft, empty, saveState]);
+  }, [initial.id, draft, empty, saveState, saveFailed]);
   // Closing, sending or discarding unmounts the composer: no backup outlives it.
   useEffect(
     () => () => {
@@ -161,14 +193,14 @@ export function useDraftLifecycle({
   );
   const backup = useEffectEvent(() => {
     if (empty || handedOff.current === draft) return;
-    const unsaved = draft !== saved.current || saveState.waiting || saveState._tag === "Failure";
+    const unsaved = draft !== saved.current || saveState.waiting || saveFailed;
     if (unsaved) writeDraftBackup(draft, known.current);
   });
   useEffect(() => onBackup(backup), []);
   // A save the dropped connection failed goes again once the Mac is back.
   const connection = useWebConnection();
   const retrySave = useEffectEvent(() => {
-    if (saveState._tag === "Failure" && !saveState.waiting) saveNow();
+    if (saveFailed && !saveState.waiting) saveNow();
   });
   useEffect(() => {
     if (connection === "open") retrySave();
@@ -239,7 +271,7 @@ export function useDraftLifecycle({
   const status =
     recovering || saveState.waiting
       ? messages.saving
-      : saveState._tag === "Failure"
+      : saveFailed
         ? messages.couldntSave
         : syncNotice === "local"
           ? messages.keptOnThisMac
@@ -266,5 +298,8 @@ export function useDraftLifecycle({
     syncNotice,
     close,
     status,
+    conflict,
+    restoreMine,
+    dismissConflict: () => setConflict(null),
   };
 }

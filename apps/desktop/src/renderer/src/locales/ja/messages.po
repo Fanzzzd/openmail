@@ -3514,6 +3514,10 @@ msgstr "OpenMail の使用容量上限"
 msgid "Keep the current repeat pattern"
 msgstr "現在の繰り返しパターンを維持"
 
+#: src/renderer/src/features/compose/components/DraftConflictNotice.tsx
+msgid "Keep the newer version"
+msgstr "新しいバージョンを残す"
+
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Kept on this Mac"
@@ -5790,6 +5794,10 @@ msgstr "フィルターを復元しますか？"
 msgid "Restore message state"
 msgstr "メッセージの状態を復元"
 
+#: src/renderer/src/features/compose/components/DraftConflictNotice.tsx
+msgid "Restore my version"
+msgstr "自分のバージョンに戻す"
+
 #. placeholder {0}: pending.preview.matches.length
 #: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 msgid "Restore the saved original filter on the server. {0, plural, one {Preview: # message.} other {Preview: # messages.}}"
@@ -7246,6 +7254,14 @@ msgstr "保存されたリカバリ コピーを削除します。サーバー�
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 msgid "This development build has no MCP server yet. Run pnpm build in the repository first."
 msgstr "この開発ビルドにはまだ MCP サーバーがありません。先にリポジトリで pnpm build を実行してください。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "This draft changed in another window or on another device. Open it again to see the newer version."
+msgstr "この下書きは別のウィンドウまたは別のデバイスで変更されました。新しいバージョンを見るには、もう一度開いてください。"
+
+#: src/renderer/src/features/compose/components/DraftConflictNotice.tsx
+msgid "This draft changed in another window or on another device. The newer version is open."
+msgstr "この下書きは別のウィンドウまたは別のデバイスで変更されました。新しいバージョンを表示しています。"
 
 #: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "This draft contains formatting or images this editor cannot keep. The original is preserved until you edit the body."

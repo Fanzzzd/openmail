@@ -477,6 +477,8 @@ test.concurrent("write-mode reports the removed Organize directly mode as propos
   const db = new DatabaseSync(join(directory, "mail.db"));
   db.exec(`INSERT INTO agent_policies(name, modify) VALUES('*', 'allow')
     ON CONFLICT(name) DO UPDATE SET modify = 'allow'`);
+  // Later migrations run again too, so undo what they added.
+  db.exec("ALTER TABLE drafts DROP COLUMN revision; ALTER TABLE drafts DROP COLUMN editor;");
   db.exec("PRAGMA user_version = 49");
   db.close();
   const status = await run(process.execPath, ["dist/cli.js", "agents", "write-mode"], options);

@@ -31,6 +31,8 @@ const DraftRow = Schema.Struct({
   pushed_organization: Schema.NullOr(Schema.String),
   sync_error: Schema.NullOr(Schema.String),
   local_only: Schema.BooleanFromBit,
+  revision: Schema.Number,
+  editor: Schema.NullOr(Schema.String),
   remote_json: Schema.NullOr(
     Schema.fromJsonString(
       Schema.Struct({
@@ -65,13 +67,15 @@ function toStoredDraft(r: typeof DraftRow.Type): StoredDraft {
     pushedOrganization: r.pushed_organization,
     syncError: r.sync_error,
     localOnly: r.local_only,
+    revision: r.revision,
+    editor: r.editor,
   };
 }
 
 /** Local drafts: their rows, remote copies, save queue and creation state. */
 export function makeDraftStore(sql: SqlClient.SqlClient) {
   const DRAFT_COLUMNS = sql.literal(`d.id, d.account_id, d.message_json, d.updated_at,
-    d.proposal_id, d.remote_draft_id, d.remote_message_id, d.pushed_attachments, d.pushed_organization, d.sync_error, d.local_only,
+    d.proposal_id, d.remote_draft_id, d.remote_message_id, d.pushed_attachments, d.pushed_organization, d.sync_error, d.local_only, d.revision, d.editor,
     (SELECT value_json FROM prefs WHERE key='draft-remote:' || d.id) AS remote_json`);
 
   // A queued push of one draft, found by the draft id inside the op.
@@ -100,13 +104,15 @@ export function makeDraftStore(sql: SqlClient.SqlClient) {
     accountId: string;
     message: OutgoingMessage;
     proposalId?: number | null;
+    editor?: string | null;
   }) {
     const now = yield* Clock.currentTimeMillis;
-    yield* run(sql`INSERT INTO drafts (id, account_id, message_json, updated_at, proposal_id)
+    yield* run(sql`INSERT INTO drafts (id, account_id, message_json, updated_at, proposal_id, revision, editor)
       VALUES (${draft.id}, ${draft.accountId}, ${JSON.stringify(draft.message)}, ${now},
-        ${draft.proposalId ?? null})
+        ${draft.proposalId ?? null}, 1, ${draft.editor ?? null})
       ON CONFLICT(id) DO UPDATE SET account_id = excluded.account_id,
         message_json = excluded.message_json, updated_at = excluded.updated_at,
+        revision = drafts.revision + 1, editor = excluded.editor,
         proposal_id = COALESCE(excluded.proposal_id, drafts.proposal_id),
         pushed_organization = CASE WHEN drafts.account_id = excluded.account_id THEN drafts.pushed_organization ELSE NULL END`);
     const saved = yield* getDraft(draft.id);

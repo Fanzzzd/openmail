@@ -6,6 +6,7 @@ import type { DraftInput, OutgoingMessage } from "../domain/changes.js";
 import {
   AuthError,
   InvalidInput,
+  type DraftConflict,
   type NotFound,
   type FeatureScopeMissing,
   type ProviderFailure,
@@ -50,7 +51,7 @@ export const makeOutboxMailbox = (
     persistDraft: (
       input: DraftInput,
       enqueue: boolean,
-    ) => Effect.Effect<StoredDraft, NotFound | InvalidInput>;
+    ) => Effect.Effect<StoredDraft, NotFound | InvalidInput | DraftConflict>;
     discardDraft: (id: string, alongside?: Effect.Effect<void>) => Effect.Effect<void>;
     draftStatus: MailboxCompose["draftStatus"];
     saveDraft: MailboxCompose["saveDraft"];

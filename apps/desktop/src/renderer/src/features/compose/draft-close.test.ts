@@ -44,7 +44,8 @@ it("clearing a stored draft asks; Cancel and Save retain it, and only explicit D
           body: { kind: "plain" as const, text: "Content" },
         };
         const initial = fromStored(yield* mailbox.compose.saveDraft(toDraftInput(draft)));
-        const cleared = { ...emptyDraft(account.id), id: draft.id };
+        // The same editor cleared every field.
+        const cleared = { ...emptyDraft(account.id), id: draft.id, editor: draft.editor };
         const action = yield* requestDraftClose({
           draft: cleared,
           initial,

@@ -3514,6 +3514,10 @@ msgstr "Limiter OpenMail à"
 msgid "Keep the current repeat pattern"
 msgstr "Conserver la règle de répétition actuelle"
 
+#: src/renderer/src/features/compose/components/DraftConflictNotice.tsx
+msgid "Keep the newer version"
+msgstr "Garder la version la plus récente"
+
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Kept on this Mac"
@@ -5790,6 +5794,10 @@ msgstr "Restaurer le filtre ?"
 msgid "Restore message state"
 msgstr "Restaurer l’état du message"
 
+#: src/renderer/src/features/compose/components/DraftConflictNotice.tsx
+msgid "Restore my version"
+msgstr "Restaurer ma version"
+
 #. placeholder {0}: pending.preview.matches.length
 #: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 msgid "Restore the saved original filter on the server. {0, plural, one {Preview: # message.} other {Preview: # messages.}}"
@@ -7246,6 +7254,14 @@ msgstr "Cela supprime la copie de récupération enregistrée. Les filtres sur l
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 msgid "This development build has no MCP server yet. Run pnpm build in the repository first."
 msgstr "Cette version de développement n’a pas encore de serveur MCP. Exécutez d’abord pnpm build dans le dépôt."
+
+#: src/renderer/src/lib/errors.ts
+msgid "This draft changed in another window or on another device. Open it again to see the newer version."
+msgstr "Ce brouillon a été modifié dans une autre fenêtre ou sur un autre appareil. Rouvrez-le pour voir la version la plus récente."
+
+#: src/renderer/src/features/compose/components/DraftConflictNotice.tsx
+msgid "This draft changed in another window or on another device. The newer version is open."
+msgstr "Ce brouillon a été modifié dans une autre fenêtre ou sur un autre appareil. La version la plus récente est ouverte."
 
 #: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "This draft contains formatting or images this editor cannot keep. The original is preserved until you edit the body."

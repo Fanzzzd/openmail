@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { Tip } from "../../../ui/Tip";
 import { DraftSyncRecovery } from "./DraftSyncRecovery";
+import { DraftConflictNotice } from "./DraftConflictNotice";
 import { ComposerAi } from "./ComposerAi";
 import { ComposeEditor } from "./ComposeEditor";
 import { Keys } from "../../../state/keys";
@@ -243,6 +244,9 @@ export function Composer({
     syncStatus,
     close,
     status,
+    conflict,
+    restoreMine,
+    dismissConflict,
   } = lifecycle;
 
   useComposeShortcuts({ draft, prefs, recipients, sendFlow, editor, lifecycle, ccRef });
@@ -438,6 +442,9 @@ export function Composer({
                 onValueChange={chooseSignature}
               />
             </div>
+            {conflict && (
+              <DraftConflictNotice onRestore={restoreMine} onDismiss={dismissConflict} />
+            )}
             <DraftSyncRecovery
               draft={syncStatus ?? initial}
               busy={recovering}
