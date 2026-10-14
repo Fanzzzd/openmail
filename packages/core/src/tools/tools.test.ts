@@ -2186,7 +2186,11 @@ it.effect(
       assert.isFalse(read.isFailure, JSON.stringify(read.encodedResult));
       assert.strictEqual(listed, 0);
       assert.deepStrictEqual(lookups, [["m7"]]);
-      for (const id of ["30", "31", "07", "x"])
+      // The number list_proposals returned works as it is.
+      const byNumber = yield* run(call("read_proposal", { id: 7 }), layer);
+      assert.isFalse(byNumber.isFailure, JSON.stringify(byNumber.encodedResult));
+      assert.deepStrictEqual(byNumber.encodedResult, read.encodedResult);
+      for (const id of ["30", "31", "07", "x", 30, 0, -1])
         assert.strictEqual(
           failureOf(yield* run(call("read_proposal", { id }), layer)).code,
           "not_found",

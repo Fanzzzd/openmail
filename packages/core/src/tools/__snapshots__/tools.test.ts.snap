@@ -1080,8 +1080,15 @@ exports[`tool input and output schemas are stable 1`] = `
       "additionalProperties": true,
       "properties": {
         "id": {
-          "description": "A pending proposal id from list_proposals, as a string.",
-          "type": "string",
+          "anyOf": [
+            {
+              "type": "integer",
+            },
+            {
+              "type": "string",
+            },
+          ],
+          "description": "A pending proposal id from list_proposals, as list_proposals returns it.",
         },
         "offset": {
           "description": "next_offset from the last page. Default 0.",

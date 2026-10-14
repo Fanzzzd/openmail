@@ -32,12 +32,16 @@ export const ListSignatures = collection(
     source: NamedSignature.fields.source,
   }),
 );
-export const detailParameters = (id: string) => ({
-  id: Schema.String.annotate({ description: id }),
+/** offset and token_budget, for a tool that pages one long text. */
+export const pageParameters = {
   offset: ToolInt.check(Schema.isBetween({ minimum: 0, maximum: 1_000_000 }))
     .annotate({ description: "next_offset from the last page. Default 0." })
     .pipe(Schema.withDecodingDefaultKey(Effect.succeed(0))),
   token_budget: ToolBudget,
+};
+export const detailParameters = (id: string) => ({
+  id: Schema.String.annotate({ description: id }),
+  ...pageParameters,
 });
 export const ReadTemplate = readOnly(
   mailTool("read_template", {

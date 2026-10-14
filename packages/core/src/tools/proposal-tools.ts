@@ -25,7 +25,7 @@ import {
 import { Clock, Effect, Option, Schema } from "effect";
 import { replyRecipients, replySubject } from "../compose/recipients.js";
 import { Tool } from "effect/ai";
-import { detailParameters } from "./compose-tools.js";
+import { pageParameters } from "./compose-tools.js";
 import type { MailOp } from "../domain/changes.js";
 import type { HandlersFor, ToolContext } from "./tool-context.js";
 import { ToolInt, shortText } from "./tool-pages.js";
@@ -136,9 +136,13 @@ export const ReadProposal = readOnly(
   mailTool("read_proposal", {
     description:
       "Read one pending proposal as the approval screen shows it. Use an id from list_proposals. A long draft body pages with next_offset.",
-    parameters: Schema.Struct(
-      detailParameters("A pending proposal id from list_proposals, as a string."),
-    ),
+    parameters: Schema.Struct({
+      // list_proposals returns the id as a number. Older clients send it as a string.
+      id: Schema.Union([ToolInt, Schema.String]).annotate({
+        description: "A pending proposal id from list_proposals, as list_proposals returns it.",
+      }),
+      ...pageParameters,
+    }),
     success: Schema.Struct({
       id: Schema.Number,
       command: Schema.Record(Schema.String, Schema.Unknown).annotate({
@@ -241,8 +245,9 @@ export const proposalHandlers = ({
         ),
       ),
     read_proposal: Effect.fnUntraced(function* (p) {
-      const row = /^[1-9]\d{0,15}$/.test(p.id)
-        ? Option.getOrUndefined(yield* visibleProposal(Number(p.id)))
+      const id = String(p.id);
+      const row = /^[1-9]\d{0,15}$/.test(id)
+        ? Option.getOrUndefined(yield* visibleProposal(Number(id)))
         : undefined;
       if (!row)
         return yield* toolError(
