@@ -75,7 +75,7 @@ import { CacheSettings } from "./sections/CacheSettings";
 import { ProviderIcon } from "../../ui/ProviderIcon";
 import { ReadingSettings } from "./sections/ReadingSettings";
 import { reauthText, syncErrorText } from "../sync-status";
-import { isKeychainLocked } from "@openmail/core/schema";
+import { isKeychainLocked, providerCapabilities } from "@openmail/core/schema";
 import { Alert, AlertCancel, alertDanger, Dialog } from "../../ui/Dialog";
 import { SettingsGroup, SettingsRow } from "../../ui/SettingsRows";
 import {
@@ -467,7 +467,11 @@ function AccountRow({
             type="button"
             disabled={reauth.waiting}
             // IMAP signs in again by adding the same address with a new password.
-            onClick={() => (a.provider === "imap" ? onAddAccount() : runReauth(undefined))}
+            onClick={() =>
+              providerCapabilities(a.provider).signIn === "password"
+                ? onAddAccount()
+                : runReauth(undefined)
+            }
             className={buttonLink}
           >
             <Trans>Sign in again</Trans>

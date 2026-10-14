@@ -1,6 +1,11 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { useLingui } from "@lingui/react/macro";
-import { DEFAULT_PREFS, READER_ZOOMS, type ReaderZoom } from "@openmail/core/schema";
+import {
+  DEFAULT_PREFS,
+  READER_ZOOMS,
+  type ReaderZoom,
+  providerCapabilities,
+} from "@openmail/core/schema";
 import { Effect } from "effect";
 import { AsyncResult } from "effect/reactivity";
 import { ChevronsDownUp, ChevronsUpDown, FileDown, Minus, Plus, Printer, Type } from "lucide-react";
@@ -60,7 +65,7 @@ export function ThreadViewMenuItems({
   const setPrefs = useAtomSet(setPrefsAtom);
   const accounts = AsyncResult.getOrElse(useAtomValue(accountsAtom), () => []);
   const provider = accounts.find((account) => account.id === messages[0]?.accountId)?.provider;
-  const canOpenWeb = provider === "gmail" || provider === "outlook";
+  const canOpenWeb = provider ? providerCapabilities(provider).webLink : false;
   const canShare = AsyncResult.getOrElse(
     useAtomValue(MailClient.query("AttachmentCapabilities", undefined)),
     () => ({ share: false }),

@@ -48,7 +48,7 @@ import { useViewTitle } from "./use-view-title";
 import { usePanelLayout } from "./use-panel-layout";
 import { ReaderToolbar, ResizeHandle, usePaneHost } from "./PaneLayout";
 import { Composer } from "./LazyDialogs";
-import { moveSourceLabel } from "@openmail/core/schema";
+import { moveSourceLabel, providerCapabilities } from "@openmail/core/schema";
 import type { Label, MailOp } from "../../../shared/api";
 import { Sidebar, SidebarToggle } from "../features/sidebar/Sidebar";
 import { NoAccounts } from "./NoAccounts";
@@ -436,7 +436,7 @@ export function App({ composeId }: { composeId?: string }) {
                 if (selectedId) setSnoozeIds([selectedId]);
               },
               onFilter:
-                selectedAccount?.provider === "imap"
+                selectedAccount && !providerCapabilities(selectedAccount.provider).rules
                   ? undefined
                   : () => {
                       if (selectedAccount && selected)

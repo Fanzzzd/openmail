@@ -1,3 +1,4 @@
+import { providerCapabilities } from "@openmail/core/schema";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 
@@ -74,13 +75,13 @@ export function scopeAccountIds(view: View, accounts: readonly Account[]): strin
   return spaceAccounts(view.space, accounts).map((a) => a.id);
 }
 
-/** Enabled Gmail/Outlook accounts in the current view's account or profile scope. */
+/** Enabled accounts with inbox tabs (Gmail categories, Outlook Focused/Other) in the current view's account or profile scope. */
 export function categoryAccounts(view: View, accounts: readonly Account[]): readonly Account[] {
   const ids = scopeAccountIds(view, accounts);
   return accounts.filter(
     (account) =>
       account.enabled !== false &&
-      (account.provider === "gmail" || account.provider === "outlook") &&
+      providerCapabilities(account.provider).inboxTabs !== null &&
       (ids === undefined || ids.includes(account.id)),
   );
 }

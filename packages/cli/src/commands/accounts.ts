@@ -2,7 +2,7 @@
 
 import { Argument, Command, Flag, Prompt } from "effect/cli";
 import { Config, Console, Effect, Option, Redacted } from "effect";
-import { IMAP_PRESETS, Mailbox, PROFILE_COLORS } from "@openmail/core";
+import { IMAP_PRESETS, Mailbox, PROFILE_COLORS, oauthProvider } from "@openmail/core";
 import { CLI, fail, jsonFlag, optionalString, optionalInt, print } from "./common.js";
 import { accountTable, outcomeText } from "../format.js";
 import { withProgress } from "../sync-progress.js";
@@ -85,7 +85,7 @@ const accountsAdd = Command.make(
   Effect.fn(function* (o) {
     const mailbox = yield* Mailbox;
     let account;
-    if (o.provider === "imap") {
+    if (!oauthProvider(o.provider)) {
       const preset = Option.getOrUndefined(o.preset);
       if (!preset) return yield* fail(`--preset is required for imap: ${presetNames.join(", ")}`);
       if (!presetNames.includes(preset)) {

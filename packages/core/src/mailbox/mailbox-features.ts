@@ -32,6 +32,7 @@ import {
 import type { Mailbox } from "./mailbox.js";
 import type { Providers } from "../providers/adapter.js";
 import type { Store } from "../store/service.js";
+import { providerCapabilities } from "../providers/capabilities.js";
 
 export function eventFromInvite(invite: CalendarInvite): CalendarEvent | null {
   if (!invite.start || invite.cancelled) return null;
@@ -80,7 +81,8 @@ export function makeFeatureMailbox(
     contactsLock.withPermit(
       Effect.gen(function* () {
         const account = yield* store.getAccount(accountId);
-        if (account.enabled === false || account.provider === "imap") return yield* Effect.void;
+        if (account.enabled === false || !providerCapabilities(account.provider).optionalServices)
+          return yield* Effect.void;
         const now = yield* Clock.currentTimeMillis;
         const previous = (yield* store.contactSync).find((s) => s.accountId === accountId);
         if (previous?.scopeMissing && !retryPermission) return yield* Effect.void;
@@ -224,7 +226,7 @@ export function makeFeatureMailbox(
           ...aliases
             .filter(
               (s) =>
-                a.provider === "gmail" &&
+                providerCapabilities(a.provider).sendAs &&
                 s.accountId === a.id &&
                 s.address.toLowerCase() !== a.email.toLowerCase(),
             )
@@ -244,7 +246,7 @@ export function makeFeatureMailbox(
         const invite = parsed.find((p) => p.invite.key === key)?.invite;
         const event = invite && eventFromInvite(invite);
         const adapter = providers.get(account.provider);
-        if (!event || account.provider === "imap" || !adapter.calendarEvents)
+        if (!event || !providerCapabilities(account.provider).calendar || !adapter.calendarEvents)
           return yield* new InvalidInput({
             message: "Calendar access is unavailable for this account",
           });
@@ -268,7 +270,7 @@ export function makeFeatureMailbox(
           const ref = yield* store.messageRef(messageId);
           const account = yield* store.getAccount(ref.accountId);
           const adapter = providers.get(account.provider);
-          if (account.provider === "imap" || !adapter.createCalendarEvent)
+          if (!providerCapabilities(account.provider).calendar || !adapter.createCalendarEvent)
             return yield* new InvalidInput({
               message: "Calendar access is unavailable for this account",
             });
@@ -301,8 +303,9 @@ export function makeFeatureMailbox(
     invitations: (messageId: string) =>
       Effect.gen(function* () {
         const { parsed, account } = yield* parsedInvites(messageId);
-        const addresses =
-          account.provider === "imap" ? yield* responseAddresses(account) : [account.email];
+        const addresses = !providerCapabilities(account.provider).calendar
+          ? yield* responseAddresses(account)
+          : [account.email];
         return yield* Effect.forEach(parsed, (p) =>
           Effect.gen(function* () {
             const attendee = matchingInviteAttendee(p.invite, addresses);
@@ -351,7 +354,9 @@ export function makeFeatureMailbox(
           const invitation = parsed.find(
             (p) => p.invite.key === key && p.invite.method === "REQUEST",
           );
-          const addresses = account.provider === "imap" ? yield* responseAddresses(account) : [];
+          const addresses = !providerCapabilities(account.provider).calendar
+            ? yield* responseAddresses(account)
+            : [];
           if (
             !invitation ||
             !inviteCanRespond(invitation.invite, account.email, account.provider, addresses)
@@ -396,7 +401,7 @@ export function makeFeatureMailbox(
                 return yield* new InvalidInput({ message: "This invitation has a newer update" });
             }
           }
-          if (account.provider === "imap") {
+          if (!providerCapabilities(account.provider).calendar) {
             const attendee = matchingInviteAttendee(invitation.invite, addresses);
             if (!attendee)
               return yield* new InvalidInput({

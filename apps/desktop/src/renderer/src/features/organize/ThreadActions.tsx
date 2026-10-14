@@ -1,6 +1,12 @@
 import { AsyncResult } from "effect/reactivity";
 import { prefsAtom } from "../../state/queries";
-import { DEFAULT_PREFS, moveSourceLabel, type ToolbarAction } from "@openmail/core/schema";
+import {
+  DEFAULT_PREFS,
+  moveSourceLabel,
+  providerCapabilities,
+  supportsOp,
+  type ToolbarAction,
+} from "@openmail/core/schema";
 import { Autocomplete } from "@base-ui/react/autocomplete";
 import { Toggle } from "@base-ui/react/toggle";
 import { Toolbar } from "@base-ui/react/toolbar";
@@ -95,7 +101,7 @@ const moveBack = (state: ThreadState, mailbox: Mailbox) => {
     (mailbox === "snoozed" ||
       mailbox === "trash" ||
       mailbox === "spam" ||
-      state.provider !== "gmail")
+      providerCapabilities(state.provider).organization === "folders")
   );
 };
 
@@ -125,7 +131,8 @@ export function ThreadActions({
 }: Props) {
   const { t } = useLingui();
   const shortcut = useShortcutText();
-  const folders = state.provider !== "gmail";
+  const caps = providerCapabilities(state.provider);
+  const folders = caps.organization === "folders";
   const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => DEFAULT_PREFS);
 
   const [moveOpen, setMoveOpen] = useState(false);
@@ -157,42 +164,41 @@ export function ThreadActions({
       removeLabelId={removeLabelId}
     />
   );
-  const labelControl =
-    state.provider === "gmail" ? (
-      <LabelPicker
-        open={labelOpen || (labelPicker && pickerMode === "label")}
-        onOpenChange={(open) => {
-          setLabelOpen(open);
-          if (!open) onLabelPicker(false);
-        }}
-        labels={labels}
-        target={organizationTarget}
-        current={state.labels}
-        folders={folders}
-        onPick={(label, value) => {
-          onLabelPicker(false);
-          setLabelOpen(false);
-          onOp({ kind: "label", labelId: label.id, value });
-        }}
-        tip={{
-          label: folders ? t`Move to folder` : t`Labels`,
-          shortcut: shortcut(folders ? "move" : "label"),
-        }}
-        trigger={
-          <Toolbar.Button aria-label={folders ? t`Move to folder` : t`Labels`} className={button}>
-            <Tag className="size-4" />
-          </Toolbar.Button>
-        }
-      />
-    ) : (
-      <MultiOrganization
-        provider={state.provider}
-        labels={labels}
-        current={state.labels}
-        onOp={onOp}
-        trigger={<Toolbar.Button className={`${button} whitespace-nowrap`} />}
-      />
-    );
+  const labelControl = !folders ? (
+    <LabelPicker
+      open={labelOpen || (labelPicker && pickerMode === "label")}
+      onOpenChange={(open) => {
+        setLabelOpen(open);
+        if (!open) onLabelPicker(false);
+      }}
+      labels={labels}
+      target={organizationTarget}
+      current={state.labels}
+      folders={folders}
+      onPick={(label, value) => {
+        onLabelPicker(false);
+        setLabelOpen(false);
+        onOp({ kind: "label", labelId: label.id, value });
+      }}
+      tip={{
+        label: t`Labels`,
+        shortcut: shortcut("label"),
+      }}
+      trigger={
+        <Toolbar.Button aria-label={t`Labels`} className={button}>
+          <Tag className="size-4" />
+        </Toolbar.Button>
+      }
+    />
+  ) : (
+    <MultiOrganization
+      provider={state.provider}
+      labels={labels}
+      current={state.labels}
+      onOp={onOp}
+      trigger={<Toolbar.Button className={`${button} whitespace-nowrap`} />}
+    />
+  );
   const controls: Record<ToolbarAction, ReactNode> = {
     archive: (
       <Action
@@ -243,7 +249,7 @@ export function ThreadActions({
         onPressedChange={(value) => onOp({ kind: "star", value })}
       />
     ),
-    important: state.provider !== "imap" && (
+    important: supportsOp(caps, "important") && (
       <Switch
         icon={Bookmark}
         pressed={state.isImportant}
@@ -256,15 +262,13 @@ export function ThreadActions({
     ),
     move: moveControl,
     label: labelControl,
-    removeLabel: currentLabel &&
-      state.provider === "gmail" &&
-      labels.some((l) => l.id === currentLabel) && (
-        <Action
-          icon={Tag}
-          label={t`Remove current label`}
-          onClick={() => onOp({ kind: "label", labelId: currentLabel, value: false })}
-        />
-      ),
+    removeLabel: currentLabel && !folders && labels.some((l) => l.id === currentLabel) && (
+      <Action
+        icon={Tag}
+        label={t`Remove current label`}
+        onClick={() => onOp({ kind: "label", labelId: currentLabel, value: false })}
+      />
+    ),
     sendAgain: onSendAgain && (
       <Action icon={MailPlus} label={t`Send again`} onClick={onSendAgain} />
     ),
@@ -322,7 +326,7 @@ export function ThreadActions({
     fittingCount(
       candidates,
       widths,
-      width === 0 ? 0 : Math.max(1, width - (state.provider === "outlook" ? 30 : 0)),
+      width === 0 ? 0 : Math.max(1, width - (supportsOp(caps, "classification") ? 30 : 0)),
     ),
     anchor,
   );
@@ -342,7 +346,7 @@ export function ThreadActions({
           {controls[action]}
         </span>
       ))}
-      {state.provider === "outlook" && <FocusedInboxActions state={state} onOp={onOp} />}
+      {supportsOp(caps, "classification") && <FocusedInboxActions state={state} onOp={onOp} />}
       <DropdownMenu
         trigger={
           <Toolbar.Button aria-label={t`Conversation actions`} className={button}>
@@ -411,7 +415,8 @@ export function ThreadMenuItems({
 }: Omit<Props, "labelPicker" | "onLabelPicker" | "threadMenu">) {
   const { t } = useLingui();
   const shortcut = useShortcutText();
-  const folders = state.provider !== "gmail";
+  const caps = providerCapabilities(state.provider);
+  const folders = caps.organization === "folders";
   return (
     <>
       {onOpenWindow && (
@@ -502,7 +507,7 @@ export function ThreadMenuItems({
       >
         {state.isStarred ? t`Unstar` : t`Star`}
       </MenuItem>
-      {state.provider !== "imap" && (
+      {supportsOp(caps, "important") && (
         <MenuItem
           icon={Bookmark}
           shortcut={shortcut("important")}
@@ -511,7 +516,7 @@ export function ThreadMenuItems({
           {state.isImportant ? t`Mark as not important` : t`Mark as important`}
         </MenuItem>
       )}
-      {currentLabel && state.provider === "gmail" && labels.some((l) => l.id === currentLabel) && (
+      {currentLabel && !folders && labels.some((l) => l.id === currentLabel) && (
         <MenuItem
           icon={Tag}
           onClick={() => onOp({ kind: "label", labelId: currentLabel, value: false })}
@@ -538,10 +543,10 @@ export function ThreadMenuItems({
           {onCreate && <MenuItem onClick={() => onCreate(true)}>{t`New label or folder`}</MenuItem>}
         </ContextSubmenu>
       )}
-      {onCreate && state.provider === "gmail" && (
+      {onCreate && !folders && (
         <MenuItem onClick={() => onCreate(false)}>{t`New label or folder`}</MenuItem>
       )}
-      {state.provider === "outlook" && (
+      {supportsOp(caps, "classification") && (
         <>
           <MenuItem
             icon={Inbox}
@@ -553,7 +558,7 @@ export function ThreadMenuItems({
           >{t`Move to Other`}</MenuItem>
         </>
       )}
-      {state.provider !== "gmail" && (
+      {folders && (
         <MultiOrganization
           provider={state.provider}
           labels={labels}
@@ -561,8 +566,8 @@ export function ThreadMenuItems({
           onOp={onOp}
         />
       )}
-      {labels.length > 0 && state.provider === "gmail" && (
-        <ContextSubmenu icon={Tag} label={folders ? t`Move to folder` : t`Labels`}>
+      {labels.length > 0 && !folders && (
+        <ContextSubmenu icon={Tag} label={t`Labels`}>
           {labels.map((l) => (
             <MenuCheckboxItem
               key={l.id}

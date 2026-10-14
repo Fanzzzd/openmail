@@ -4,7 +4,12 @@ import { memo, useId, useRef, type ReactNode } from "react";
 import { ContextMenuContent } from "../../ui/Menu";
 import { MESSAGE_DRAG, ThreadMenuItems } from "../organize";
 import { displayName, shortDate } from "../../lib/format";
-import type { LIST_DENSITIES, Prefs, SwipeAction } from "@openmail/core/schema";
+import {
+  providerCapabilities,
+  type LIST_DENSITIES,
+  type Prefs,
+  type SwipeAction,
+} from "@openmail/core/schema";
 import { msg, plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMessageSwipe } from "./message-swipe-hook";
@@ -58,7 +63,9 @@ export function RowMenu({ thread, actions }: { thread: ThreadSummary; actions: R
         onPermanentDelete={
           actions.onPermanentDelete ? () => actions.onPermanentDelete?.(thread) : undefined
         }
-        onFilter={state.provider === "imap" ? undefined : () => actions.onFilter(thread)}
+        onFilter={
+          providerCapabilities(state.provider).rules ? () => actions.onFilter(thread) : undefined
+        }
         onOpenWindow={() => actions.onOpenWindow(thread)}
       />
       <TriageMenuItems id={thread.id} accountId={thread.accountId} labels={thread.labels} />

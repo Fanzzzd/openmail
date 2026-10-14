@@ -1,4 +1,10 @@
-import { applyOpToLabels, parseSearchQuery, searchInputError } from "@openmail/core/schema";
+import {
+  applyOpToLabels,
+  parseSearchQuery,
+  searchInputError,
+  labelOpMoves,
+  providerCapabilities,
+} from "@openmail/core/schema";
 import type { Label, MailOp, Provider, ThreadQuery, ThreadSummary } from "../../../shared/api";
 
 /** Only flags and folder/label membership change in an organization operation. */
@@ -57,7 +63,7 @@ export function leavesList(
     case "snoozed":
       return (
         ["inbox", "archive", "trash", "spam", "move"].includes(op.kind) ||
-        (op.kind === "label" && op.value && provider !== "gmail")
+        labelOpMoves(providerCapabilities(provider), op)
       );
     case "all":
       return after.includes("TRASH") || after.includes("SPAM");

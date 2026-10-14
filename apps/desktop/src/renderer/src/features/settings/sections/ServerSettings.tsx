@@ -9,7 +9,7 @@ import { canCall } from "../../../lib/platform";
 import { ContactSettings } from "./ContactSettings";
 import { useAtom, useAtomValue } from "@effect/atom-react";
 import { filtersListAtom, sendAsAtom, vacationAtom } from "../../../state/queries";
-import { EMPTY_VACATION, type ServerFilter } from "@openmail/core/schema";
+import { EMPTY_VACATION, providerCapabilities, type ServerFilter } from "@openmail/core/schema";
 import { deleteFilterAtom, reauthAtom, syncSendAsAtom } from "../../../state/mutations";
 import { resultError, settingsScopeMissing } from "../../../lib/errors";
 import {
@@ -35,7 +35,9 @@ export { FilterEditor };
 
 export function ServerSettings({ accounts }: { accounts: readonly Account[] }) {
   const { t } = useLingui();
-  const available = accounts.filter((a) => a.enabled !== false && a.provider !== "imap");
+  const available = accounts.filter(
+    (a) => a.enabled !== false && providerCapabilities(a.provider).optionalServices,
+  );
   const [id, setId] = useState(available[0]?.id ?? "");
   const account = available.find((a) => a.id === id);
   if (!account)
@@ -178,12 +180,10 @@ function AccountServerSettings({ account }: { account: Account }) {
           </button>
         </div>
       </section>
-      {account.provider === "gmail" && (
-        <>
-          <PendingRuleRestorations account={account} />
-          <Aliases account={account} />
-        </>
+      {providerCapabilities(account.provider).rules?.recovery && (
+        <PendingRuleRestorations account={account} />
       )}
+      {providerCapabilities(account.provider).sendAs && <Aliases account={account} />}
       {editing && (
         <FilterEditor
           account={account}

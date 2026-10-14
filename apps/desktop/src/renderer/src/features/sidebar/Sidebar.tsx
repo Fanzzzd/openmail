@@ -29,7 +29,7 @@ import { CATEGORY_ICONS, MAILBOXES, useMailboxCounts } from "./sidebar-mailboxes
 import { accountColorValue, accountName } from "../../lib/format";
 import { favoriteView } from "./favorite-navigation";
 import { Effect } from "effect";
-import { DEFAULT_PREFS, specialFolderBadge } from "@openmail/core/schema";
+import { DEFAULT_PREFS, specialFolderBadge, providerCapabilities } from "@openmail/core/schema";
 import {
   DragLabel,
   DragMessages,
@@ -158,7 +158,8 @@ export function Sidebar({
   const profile = profiles.find((p) => p.id === view.space);
   const categorized = categoryAccounts({ ...view, label: undefined }, accounts);
   const categoryNames = inboxCategoryNames(
-    categorized.length > 0 && categorized.every((a) => a.provider === "outlook"),
+    categorized.length > 0 &&
+      categorized.every((a) => providerCapabilities(a.provider).inboxTabs === "focused"),
   );
   const hasCategories = categorized.some(
     (account) => organization.find((o) => o.accountId === account.id)?.categories !== false,
@@ -395,9 +396,9 @@ export function Sidebar({
                               accounts.some(
                                 (a) =>
                                   a.enabled !== false &&
-                                  (a.provider === "gmail" || a.provider === "outlook") &&
+                                  providerCapabilities(a.provider).inboxTabs !== null &&
                                   (!scope || scope.includes(a.id)) &&
-                                  (a.provider === "outlook"
+                                  (providerCapabilities(a.provider).inboxTabs === "focused"
                                     ? ["CATEGORY_PERSONAL", "CATEGORY_OTHER"].includes(category)
                                     : category !== "CATEGORY_OTHER") &&
                                   organization.find((o) => o.accountId === a.id)?.categories !==

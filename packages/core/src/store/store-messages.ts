@@ -31,6 +31,7 @@ import { makeSyncResetStore } from "./store-sync-reset.js";
 import { logSyncReset } from "../sync/sync-reset.js";
 
 import { type makeQueryStore } from "./store-query.js";
+import { labelOpMoves, providerCapabilities } from "../providers/capabilities.js";
 
 export const makeMessagesStore = ({
   sql,
@@ -249,7 +250,7 @@ export const makeMessagesStore = ({
       }
       if (incoming.labels.includes("DRAFT")) {
         const owner = yield* getAccount(account).pipe(Effect.orDie);
-        if (owner.provider === "gmail") {
+        if (providerCapabilities(owner.provider).organization === "labels") {
           const draft = yield* compose.draftByRemoteMessage(account, incoming.providerId);
           const draftOrganization = Option.isSome(draft)
             ? draft.value.message.draftOrganization
@@ -471,14 +472,14 @@ export const makeMessagesStore = ({
         );
       if (
         ["inbox", "archive", "trash", "spam", "move"].includes(op.kind) ||
-        (op.kind === "label" && op.value && row.value.provider !== "gmail")
+        labelOpMoves(providerCapabilities(row.value.provider), op)
       )
         yield* run(
           sql`UPDATE thread_reminders SET due_at=NULL, wake_pending=CASE WHEN ${op.kind} = 'inbox' THEN wake_pending ELSE 0 END WHERE (account_id, thread_id) IN (SELECT account_id, thread_id FROM messages WHERE id=${id})`,
         );
       if (
         ["archive", "trash", "spam", "move"].includes(op.kind) ||
-        (op.kind === "label" && op.value && row.value.provider !== "gmail")
+        labelOpMoves(providerCapabilities(row.value.provider), op)
       )
         yield* run(
           sql`DELETE FROM snoozed_messages WHERE (account_id, provider_id) IN (SELECT account_id, provider_id FROM messages WHERE id=${id})`,

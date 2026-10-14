@@ -2,6 +2,7 @@ import { sameProviderWrite } from "../providers/provider-write.js";
 import { Schema } from "effect";
 import { ThreadSummary, type MailboxView, CATEGORIES, INBOX_CATEGORIES } from "./message.js";
 import type { Provider } from "./account.js";
+import { providerCapabilities } from "../providers/capabilities.js";
 
 export function moveSourceLabel(mailbox: MailboxView, currentLabel?: string): string | null {
   if (currentLabel?.startsWith("category:")) return null;
@@ -187,9 +188,12 @@ export function gmailRuleLabels(a: FilterAction) {
   };
 }
 export function filterDestinationsSupported(action: FilterAction, provider: Provider): boolean {
+  const caps = providerCapabilities(provider);
+  const serverOnly = caps.rules?.serverOnlyActions === true;
+  const labelActions = caps.rules?.labelActions === true;
   const labels = gmailRuleLabels(action);
   if (
-    provider === "gmail" &&
+    caps.organization === "labels" &&
     (labels.addLabelIds.some(
       (id) =>
         labels.removeLabelIds.includes(id) ||
@@ -207,17 +211,17 @@ export function filterDestinationsSupported(action: FilterAction, provider: Prov
     return false;
   return (
     !(
-      provider !== "outlook" &&
+      !serverOnly &&
       (action.markImportance || action.assignCategories?.length || action.copyToFolder)
     ) &&
-    !(provider !== "gmail" && (action.addLabelIds?.length || action.removeLabelIds?.length)) &&
-    !(provider !== "outlook" && action.stopProcessing) &&
+    !(!labelActions && (action.addLabelIds?.length || action.removeLabelIds?.length)) &&
+    !(!serverOnly && action.stopProcessing) &&
     !(
       action.trash &&
       (action.archive || action.label || action.labels?.length || action.category)
     ) &&
-    !(action.archive && action.label && provider !== "gmail") &&
-    !(provider !== "gmail" && (action.labels?.length || action.category))
+    !(action.archive && action.label && caps.organization === "folders") &&
+    !(!labelActions && (action.labels?.length || action.category))
   );
 }
 export const FilterInput = Schema.Struct({

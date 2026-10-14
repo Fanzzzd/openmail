@@ -8,6 +8,7 @@ import { withPendingOps } from "./mailbox-shared.js";
 import { READ_ONLY_MESSAGE } from "./read-only.js";
 import type { PendingOp } from "../store/service.js";
 import type { ProviderPushContext, ProviderPushResult } from "../providers/adapter.js";
+import { providerCapabilities } from "../providers/capabilities.js";
 
 class PendingOpClaimLost extends Schema.TaggedError<PendingOpClaimLost>()("PendingOpClaimLost", {
   message: Schema.String,
@@ -303,7 +304,10 @@ export const makeFlushMailbox = (
           yield* store.removePendingOp(pending.id);
           continue;
         }
-        if (account.value.enabled === false || (skipImap && account.value.provider === "imap"))
+        if (
+          account.value.enabled === false ||
+          (skipImap && providerCapabilities(account.value.provider).sharedSession)
+        )
           continue;
         if (account.value.needsReauth) {
           result.reauth.push(account.value.id);
@@ -435,7 +439,7 @@ export const makeFlushMailbox = (
             ),
           ),
         );
-        yield* owner.provider === "imap"
+        yield* providerCapabilities(owner.provider).sharedSession
           ? imapPullLock(owner.id).withPermitsIfAvailable(1)(pushOne)
           : pushOne;
       }

@@ -14,6 +14,7 @@ import {
   type MailOp,
   type Label,
   type Provider,
+  providerCapabilities,
 } from "@openmail/core/portable";
 
 export function swipeAction(distance: number, prefs: Prefs["swipeActions"]): SwipeAction {
@@ -138,7 +139,7 @@ export function foregroundReminderTimer(active: () => boolean, wake: () => Promi
 
 export const labelDestinations = (provider: Provider, labels: readonly Label[]) =>
   labels.filter((label) =>
-    provider === "gmail"
+    providerCapabilities(provider).organization === "labels"
       ? label.id.startsWith("Label_")
       : !label.id.startsWith("category:") && !["DRAFT", "SENT"].includes(label.id),
   );

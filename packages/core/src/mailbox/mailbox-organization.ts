@@ -15,6 +15,7 @@ import { parseSearchQuery, searchQueryError } from "../search/search.js";
 import { mergeSearchResults } from "../search/ranking.js";
 import { serverSearchIgnored } from "../search/provider-search.js";
 import type { Providers } from "../providers/adapter.js";
+import { providerCapabilities } from "../providers/capabilities.js";
 import type { Store } from "../store/service.js";
 import { makeFilterMailbox } from "./mailbox-filters.js";
 
@@ -139,6 +140,7 @@ export function makeOrganizationMailbox(
     if (change.kind === "create" || change.kind === "rename")
       change = { ...change, name: change.name.trim() };
     const { account, adapter } = yield* owner(accountId);
+    const caps = providerCapabilities(account.provider);
     const labels = yield* store.listLabels([accountId]);
     if (change.kind !== "create" && !labels.some((l) => l.id === change.id))
       yield* new InvalidInput({ message: "Choose a user label or folder" });
@@ -153,7 +155,7 @@ export function makeOrganizationMailbox(
       !labels.some((l) => l.id === change.parentId)
     )
       yield* new InvalidInput({ message: "Choose a parent folder from this account" });
-    if (change.kind === "visibility" && account.provider !== "gmail")
+    if (change.kind === "visibility" && !caps.serverLabelStyle)
       yield* new InvalidInput({
         message: "Server visibility is available for Gmail labels",
       });
@@ -166,7 +168,7 @@ export function makeOrganizationMailbox(
     // Graph and IMAP have no folder color API. Local colors do not need a
     // server listing, which can lag immediately after a folder is created.
     const current =
-      change.kind === "color" && account.provider !== "gmail"
+      change.kind === "color" && !caps.serverLabelStyle
         ? labels
         : yield* adapter.changeLabel(account, change);
     yield* store.transaction(
@@ -175,7 +177,7 @@ export function makeOrganizationMailbox(
         if (change.kind === "delete") yield* store.moveLabelPreference(accountId, change.id, null);
         if (
           (change.kind === "rename" || change.kind === "parent") &&
-          account.provider !== "gmail"
+          caps.organization === "folders"
         ) {
           const old = labels.find((l) => l.id === change.id);
           const parent =
@@ -195,7 +197,7 @@ export function makeOrganizationMailbox(
             }
         }
         yield* audit(accountId, `label_${change.kind}`, change);
-        if (change.kind === "color" && account.provider !== "gmail") {
+        if (change.kind === "color" && !caps.serverLabelStyle) {
           const pref = (yield* store.labelPreferences).find(
             (p) => p.accountId === accountId && p.id === change.id,
           );
@@ -245,7 +247,7 @@ export function makeOrganizationMailbox(
   });
   const syncSendAs = Effect.fn("Mailbox.syncSendAs")(function* (accountId: string) {
     const { account, adapter } = yield* owner(accountId);
-    if (account.provider !== "gmail") return;
+    if (!providerCapabilities(account.provider).sendAs) return;
     const aliases = yield* adapter.sendAs(account);
     yield* store.transaction(store.replaceSendAs(account.id, aliases));
     yield* changed;
@@ -295,7 +297,10 @@ export function makeOrganizationMailbox(
         Effect.gen(function* () {
           const message = yield* store.getMessage(messageId);
           const { account, adapter } = yield* owner(message.accountId);
-          if (account.provider !== "outlook" || !adapter.setClassificationOverride)
+          if (
+            providerCapabilities(account.provider).inboxTabs !== "focused" ||
+            !adapter.setClassificationOverride
+          )
             return yield* new InvalidInput({ message: "Focused Inbox requires Outlook." });
           if (!message.from.address.trim() || /[\r\n\0]/.test(message.from.address))
             return yield* new InvalidInput({
@@ -404,9 +409,10 @@ export function makeOrganizationMailbox(
           )
             yield* new InvalidInput({ message: "The end must be after the start" });
           const { account, adapter } = yield* owner(accountId);
-          if (account.provider === "outlook" && (input.start === null) !== (input.end === null))
+          const vacation = providerCapabilities(account.provider).vacation;
+          if (vacation?.openEnded === false && (input.start === null) !== (input.end === null))
             yield* new InvalidInput({ message: "Outlook scheduled replies need both dates" });
-          if (account.provider === "outlook" && input.subject)
+          if (vacation?.subject === false && input.subject)
             yield* new InvalidInput({
               message: "Outlook automatic replies do not support a custom subject",
             });

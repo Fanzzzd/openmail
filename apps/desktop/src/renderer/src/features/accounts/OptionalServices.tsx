@@ -1,7 +1,12 @@
 import { useAtom, useAtomValue } from "@effect/atom-react";
 import { Switch } from "@base-ui/react/switch";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { consentBatch, type OptionalService, type ServiceGrant } from "@openmail/core/schema";
+import {
+  consentBatch,
+  providerCapabilities,
+  type OptionalService,
+  type ServiceGrant,
+} from "@openmail/core/schema";
 import { AsyncResult, Atom } from "effect/reactivity";
 import { useEffect, useRef, useState } from "react";
 import type { Account } from "../../../../shared/api";
@@ -85,7 +90,7 @@ export function OptionalServices({
   useEffect(() => {
     if (focus) ref.current?.focus();
   }, [focus]);
-  if (account.provider === "imap") return null;
+  if (!providerCapabilities(account.provider).optionalServices) return null;
   const names = {
     contacts: t`Contacts`,
     calendar: t`Calendar`,

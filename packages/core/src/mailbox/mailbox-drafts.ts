@@ -37,6 +37,7 @@ import { newMessageId } from "../mime/message-id.js";
 import { PlatformCrypto } from "../platform/crypto.js";
 import type { ProviderPushContext } from "../providers/adapter.js";
 import type { StoredDraft } from "../store/service.js";
+import { providerCapabilities } from "../providers/capabilities.js";
 
 export const makeDraftsMailbox = (
   deps: MailboxDependencies & { flushLater: Effect.Effect<void | boolean> },
@@ -191,7 +192,10 @@ export const makeDraftsMailbox = (
             }),
         },
         remote: draft.remote,
-        message: organizationChanged && account.provider !== "gmail" ? message : bodyMessage,
+        message:
+          organizationChanged && providerCapabilities(account.provider).organization === "folders"
+            ? message
+            : bodyMessage,
         original,
         replaceAttachments: key !== draft.pushedAttachments,
       },
@@ -244,7 +248,7 @@ export const makeDraftsMailbox = (
       organizationChanged &&
       remote.messageId &&
       draftOrganization &&
-      account.provider !== "gmail" &&
+      providerCapabilities(account.provider).organization === "folders" &&
       adapter.setDraftOrganization
     ) {
       organizationApplied = yield* adapter
@@ -478,7 +482,7 @@ export const makeDraftsMailbox = (
       : undefined;
     const draftOrganization =
       fetchedOrganization ??
-      (account.provider === "gmail"
+      (providerCapabilities(account.provider).organization === "labels"
         ? {
             labels: message.labels.filter((label) => label.startsWith("Label_")),
             starred: message.isStarred,

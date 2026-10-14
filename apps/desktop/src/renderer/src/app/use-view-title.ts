@@ -1,3 +1,4 @@
+import { providerCapabilities } from "@openmail/core/schema";
 import { useLingui } from "@lingui/react/macro";
 import type { Account, Label } from "../../../shared/api";
 import { MAILBOX_NAMES, categoryAccounts, inboxCategoryNames, type View } from "../lib/view";
@@ -13,7 +14,8 @@ export function useViewTitle(
   const categorized = categoryAccounts(view, accountList);
   const category = view.label
     ? inboxCategoryNames(
-        categorized.length > 0 && categorized.every((a) => a.provider === "outlook"),
+        categorized.length > 0 &&
+          categorized.every((a) => providerCapabilities(a.provider).inboxTabs === "focused"),
       )[view.label.id]
     : undefined;
   const baseTitle = view.label

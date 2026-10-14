@@ -19,6 +19,7 @@ import { isDefiniteSendFailure } from "../providers/provider-send.js";
 import { READ_ONLY_MESSAGE } from "./read-only.js";
 import { isEmailAddress } from "../compose/recipients.js";
 import type { StoredDraft } from "../store/service.js";
+import { providerCapabilities } from "../providers/capabilities.js";
 
 const isWaitingSend = (item: QueuedSend) => item.status === "waiting";
 
@@ -101,7 +102,7 @@ export const makeOutboxMailbox = (
     if (message.from && message.from.address.toLowerCase() !== account.email.toLowerCase()) {
       const aliases = yield* store.sendAs;
       if (
-        account.provider !== "gmail" ||
+        !providerCapabilities(account.provider).sendAs ||
         !aliases.some(
           (a) =>
             a.accountId === accountId &&

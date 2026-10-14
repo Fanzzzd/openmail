@@ -1,4 +1,4 @@
-import { deleteFolderForMailbox } from "@openmail/core/schema";
+import { deleteFolderForMailbox, providerCapabilities } from "@openmail/core/schema";
 import type { Account, ThreadQuery } from "../../../shared/api";
 import type { View } from "./view";
 
@@ -14,6 +14,10 @@ export function supportsInInboxFilter(
   const label = view.label;
   if (!label) return false;
   return label.accountId
-    ? accounts.some((account) => account.id === label.accountId && account.provider === "gmail")
+    ? accounts.some(
+        (account) =>
+          account.id === label.accountId &&
+          providerCapabilities(account.provider).organization === "labels",
+      )
     : label.id.startsWith("CATEGORY_");
 }

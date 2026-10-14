@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from "react";
 import { Text, View } from "react-native";
 import { useLingui } from "@lingui/react";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { Mailbox, type MailOp } from "@openmail/core/portable";
+import { Mailbox, type MailOp, providerCapabilities } from "@openmail/core/portable";
 import { Effect } from "effect";
 import { useMailbox, useMailboxQuery } from "./mailbox";
 import { Button, Sheet } from "./controls";
@@ -108,9 +108,11 @@ export function ThreadMenu({
   const apply = async (op: MailOp | { kind: "snooze"; due: number }) => {
     if (await actions.apply(ids, op)) close();
   };
+  const labelsModel =
+    account !== undefined && providerCapabilities(account.provider).organization === "labels";
   const chooseLabel = (id: string) =>
     apply(
-      account?.provider === "gmail"
+      labelsModel
         ? { kind: "label", labelId: id, value: true }
         : { kind: "move", labelId: id, removeLabelId: label ?? null },
     );
@@ -151,7 +153,7 @@ export function ThreadMenu({
             onPress={() => void apply({ kind: "star", value: false })}
           />
           <Button
-            label={account?.provider === "gmail" ? names.label : names.move}
+            label={labelsModel ? names.label : names.move}
             onPress={() => setPanel("labels")}
           />
           <Button label={names.snooze} onPress={() => setPanel("snooze")} />
@@ -169,7 +171,7 @@ export function ThreadMenu({
         labelDestinations(account?.provider ?? "gmail", labels.value).map((item) => (
           <View key={item.id}>
             <Button label={mailboxName(i18n, item)} onPress={() => void chooseLabel(item.id)} />
-            {account?.provider === "gmail" && (
+            {labelsModel && (
               <Button
                 label={i18n._({ id: "Remove label", message: "Remove label" })}
                 onPress={() => void apply({ kind: "label", labelId: item.id, value: false })}

@@ -11,6 +11,7 @@ import {
   type CalendarInvite,
   type InviteResponse,
   type Provider,
+  providerCapabilities,
 } from "@openmail/core/schema";
 import { AsyncResult } from "effect/reactivity";
 import { useState } from "react";
@@ -161,7 +162,7 @@ function Invitation({
   // A turned-off or ungranted calendar fails every call; ServiceHint explains instead.
   const calendar = useServiceState(message.accountId, "calendar");
   const calendarOff = calendar !== undefined && calendar !== "granted";
-  const recipient = provider === "imap" ? invite.organizer?.address : null;
+  const recipient = !providerCapabilities(provider).calendar ? invite.organizer?.address : null;
   const state = sent ?? attendee?.status.toLowerCase();
   const responseLabel = (response: string) =>
     response === "accepted"
@@ -300,7 +301,7 @@ function Invitation({
         <MeetingLinks sources={[invite.location, invite.description ?? "", invite.url ?? ""]} />
       )}
       <Recurrence invite={invite} />
-      {provider !== "imap" &&
+      {providerCapabilities(provider).calendar &&
         !calendarOff &&
         invite.method === "REQUEST" &&
         !invite.cancelled &&

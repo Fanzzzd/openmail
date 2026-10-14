@@ -1,4 +1,10 @@
-import type { MailOp, Prefs, Provider, MailboxView } from "@openmail/core/schema";
+import {
+  providerCapabilities,
+  type MailOp,
+  type Prefs,
+  type Provider,
+  type MailboxView,
+} from "@openmail/core/schema";
 import type { KeyEvent } from "../../../shared/shortcuts";
 
 export function usesDeletePreference(event: KeyEvent): boolean {
@@ -21,7 +27,7 @@ export function deleteKeyOp(
   if (context.currentLabel)
     return {
       op:
-        context.provider === "gmail"
+        context.provider && providerCapabilities(context.provider).organization === "labels"
           ? { kind: "label", labelId: context.currentLabel, value: false }
           : { kind: "archive" },
       fallback: false,

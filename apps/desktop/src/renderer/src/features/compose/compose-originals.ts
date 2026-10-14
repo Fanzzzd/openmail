@@ -1,11 +1,12 @@
 import { Effect, type Cause } from "effect";
 import type { OutgoingAttachment, Provider } from "../../../../shared/api";
 import type { Draft } from "./draft";
-import { composeCid, richComposeBody } from "@openmail/core/schema";
+import { composeCid, providerCapabilities, richComposeBody } from "@openmail/core/schema";
 
 export function inheritsOriginals(draft: Draft, provider: Provider | undefined): boolean {
   return (
-    provider === "outlook" &&
+    provider !== undefined &&
+    providerCapabilities(provider).serverForward &&
     draft.mode === "forward" &&
     !draft.forwardAsAttachment &&
     draft.includeOriginalAttachments === undefined

@@ -18,7 +18,7 @@ Core source files go into folders by the domains in [CONTEXT.md](../../CONTEXT.m
 | `store/`             | The Store port, `store-*.ts` queries, row decoding                                                          |
 | `db/`                | Append-only migrations, the migration runner, search-flag SQL, database capabilities                        |
 | `sync/`              | Sync health reports, sync reset, failure categories, header backfill, token keep-alive, backoff             |
-| `providers/`         | The ProviderAdapter port, HTTP, retry, diagnostics, optional services, OAuth clients, reauth                |
+| `providers/`         | The ProviderAdapter port, capabilities, HTTP, retry, diagnostics, optional services, OAuth clients, reauth  |
 | `providers/gmail/`   | The Gmail adapter, split into fetch, history, send and labels                                               |
 | `providers/outlook/` | The Outlook adapter (formerly `outlook/` and `outlook-*.ts`), Graph paging                                  |
 | `providers/imap/`    | IMAP cursors, presets and IDLE scheduling shared by both platforms. The protocol stays in `platform/`       |

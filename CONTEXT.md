@@ -8,6 +8,7 @@ OpenMail caches mail on the local machine. The desktop app, the CLI and the MCP 
 | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Account                  | A signed-in Gmail, personal Outlook or IMAP mailbox, with its provider identity and sync state.                                                                |
 | Provider                 | Gmail, Outlook or IMAP. A `ProviderAdapter` turns the protocol into core changes and operations.                                                               |
+| Provider capabilities    | What each provider can do, in `providers/capabilities.ts`. Callers read it instead of comparing provider names.                                                |
 | Optional service         | Per-account contacts, calendar or provider settings. OpenMail records the scope grant and the local on/off switch separately.                                  |
 | Read-only session        | `OPENMAIL_READ_ONLY=1` blocks remote writes. Network reads, token refresh and local writes still run.                                                          |
 | Sync health report       | Compares local and provider counts per folder or label, with cursor age and pending operations. It does not prove that contents match.                         |

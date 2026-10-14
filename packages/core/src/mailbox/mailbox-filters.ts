@@ -16,6 +16,7 @@ import {
 } from "../domain/organization.js";
 import { filterQuery, searchQueryError } from "../search/search.js";
 import type { Providers } from "../providers/adapter.js";
+import { providerCapabilities } from "../providers/capabilities.js";
 import type { Store } from "../store/service.js";
 import {
   evaluateOutlookRule,
@@ -27,17 +28,18 @@ import type { Mailbox } from "./mailbox.js";
 const validateFilter = (input: FilterInput, provider: Provider) => {
   if (requiresFilterDeleteConfirmation(input) && !input.queryDeletionConfirmed)
     return new InvalidInput({ message: "Confirm deletion for this rule" });
+  const rules = providerCapabilities(provider).rules;
   const c = input.criteria;
   const a = input.action;
   if (
-    (provider !== "outlook" && (c.outlook || c.outlookExceptions)) ||
-    (provider !== "gmail" && c.excludeChats) ||
+    (!rules?.exceptions && (c.outlook || c.outlookExceptions)) ||
+    (!rules?.excludeChats && c.excludeChats) ||
     !validOutlookPredicates(c.outlook) ||
     !validOutlookPredicates(c.outlookExceptions) ||
     (c.size !== undefined && c.outlook?.withinSizeRange)
   )
     return new InvalidInput({ message: "Unsupported server rule" });
-  if (provider === "outlook" && c.exceptAttachment === false)
+  if (rules?.exceptions && c.exceptAttachment === false)
     return new InvalidInput({ message: "Unsupported server rule" });
   if (
     !c.from.trim() &&
@@ -76,10 +78,10 @@ const validateFilter = (input: FilterInput, provider: Provider) => {
     return new InvalidInput({ message: "Choose at least one filter action" });
   if (c.size !== undefined && (!Number.isSafeInteger(c.size) || c.size < 0 || !c.sizeComparison))
     return new InvalidInput({ message: "Choose a size in bytes and a comparison" });
-  if (provider === "outlook" && c.size !== undefined && c.size % 1024 !== 0)
+  if (c.size !== undefined && c.size % (rules?.sizeStep ?? 1) !== 0)
     return new InvalidInput({ message: "Outlook rule sizes must be a multiple of 1024 bytes" });
   if (
-    provider !== "outlook" &&
+    !rules?.exceptions &&
     (c.exceptFrom || c.exceptTo || c.exceptSubject || c.exceptAttachment !== undefined)
   )
     return new InvalidInput({ message: "Unsupported server rule" });
@@ -235,10 +237,8 @@ export function makeFilterMailbox({
     const { account } = yield* owner(accountId);
     const invalid = validateFilter({ ...input, queryDeletionConfirmed: true }, account.provider);
     if (invalid) return yield* invalid;
-    if (
-      account.provider === "imap" ||
-      (account.provider === "outlook" && (input.criteria.query || input.action.star))
-    )
+    const rules = providerCapabilities(account.provider).rules;
+    if (!rules || (!rules.query && input.criteria.query) || (!rules.star && input.action.star))
       return yield* new InvalidInput({ message: "Unsupported server rule" });
     const labelsForRule = yield* store.listLabels([accountId]);
     if (unknownRuleLabel(input, labelsForRule))
@@ -318,7 +318,7 @@ export function makeFilterMailbox({
   });
   const clearRecoveredFilter = Effect.fnUntraced(function* (backup: FilterRestoration) {
     const { account, adapter } = yield* owner(backup.accountId);
-    if (account.provider !== "gmail")
+    if (!providerCapabilities(account.provider).rules?.recovery)
       return yield* new InvalidInput({ message: "Rule recovery is available for Gmail" });
     const existing = (yield* adapter.filters(account)).find(
       (filter) => filter.editable !== false && sameFilterRule(filter, backup.input),
@@ -385,7 +385,7 @@ export function makeFilterMailbox({
             token,
           );
           const { account, adapter } = yield* owner(accountId);
-          if (!adapter.restoreFilter || account.provider !== "gmail")
+          if (!adapter.restoreFilter || !providerCapabilities(account.provider).rules?.recovery)
             return yield* new InvalidInput({ message: "Rule recovery is available for Gmail" });
           previews.delete(token);
           const restored = yield* adapter.restoreFilter(account, backup.definition);
@@ -431,7 +431,8 @@ export function makeFilterMailbox({
           const { account } = yield* owner(accountId);
           if (
             preview.unavailable ||
-            (account.provider === "outlook" && outlookServerOnlyAction(input.action))
+            (providerCapabilities(account.provider).rules?.serverOnlyActions &&
+              outlookServerOnlyAction(input.action))
           )
             return yield* new InvalidInput({
               message: "This rule can only be applied to future mail on the server",
@@ -489,9 +490,10 @@ export function makeFilterMailbox({
     previewFilter: (accountId, criteria) =>
       Effect.gen(function* () {
         const { account } = yield* owner(accountId);
-        if (account.provider === "outlook" && criteria.exceptAttachment === false)
+        const rules = providerCapabilities(account.provider).rules;
+        if (rules?.exceptions && criteria.exceptAttachment === false)
           return yield* new InvalidInput({ message: "Unsupported server rule" });
-        if (account.provider === "outlook") {
+        if (rules?.preview === "cache") {
           const preview = yield* localOutlookPreview(accountId, account.email, criteria);
           if (preview.unavailable?.length)
             return yield* new InvalidInput({
@@ -500,7 +502,7 @@ export function makeFilterMailbox({
           return preview.matches;
         }
         const query = { ...filterQuery(criteria), accountIds: [accountId], flat: true, limit: 200 };
-        if (account.provider !== "gmail")
+        if (rules?.preview !== "server")
           return (yield* store.listThreads(query)).filter(eligibleForFilter);
         const page = yield* cacheSearchPage(account, query);
         return (yield* store.listThreads({

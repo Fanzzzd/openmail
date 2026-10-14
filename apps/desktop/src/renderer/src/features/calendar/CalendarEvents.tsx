@@ -13,6 +13,7 @@ import {
   formatCalendarRange,
   calendarTimestamp,
   type CalendarEvent,
+  providerCapabilities,
 } from "@openmail/core/schema";
 import type { I18n } from "@lingui/core";
 import { msg, plural } from "@lingui/core/macro";
@@ -401,7 +402,7 @@ function EventConfirmation({
             setOpen(false);
           }}
         >{t`Download calendar file`}</button>
-        {provider !== "imap" && (
+        {(!provider || providerCapabilities(provider).calendar) && (
           <button
             type="button"
             className={alertPrimary}

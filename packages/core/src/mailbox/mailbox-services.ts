@@ -4,6 +4,7 @@ import { InvalidInput } from "../domain/errors.js";
 import type { Mailbox } from "./mailbox.js";
 import type { Store } from "../store/service.js";
 import { serviceGrants } from "../providers/optional-services.js";
+import { providerCapabilities } from "../providers/capabilities.js";
 
 export function makeOptionalServiceMailbox(
   store: Store["Service"],
@@ -26,7 +27,7 @@ export function makeOptionalServiceMailbox(
         const account = yield* store.getAccount(accountId);
         const grants = serviceGrants(account.provider, yield* store.grantedScopes(accountId), []);
         if (
-          account.provider === "imap" ||
+          !providerCapabilities(account.provider).optionalServices ||
           (enabled &&
             !grants.some((grant) => grant.service === service && grant.state === "granted"))
         )

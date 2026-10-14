@@ -5,6 +5,7 @@ import { Schema } from "effect";
 import { WEEKDAYS, type ActiveHours, type Prefs, type QuietHours } from "../domain/prefs.js";
 import type { Account } from "../domain/account.js";
 import type { Message } from "../domain/message.js";
+import { providerCapabilities } from "../providers/capabilities.js";
 
 export const MailtoDraft = Schema.Struct({
   to: Schema.String,
@@ -149,11 +150,12 @@ export function notificationEligible(
   if (mode === "off" || !message.isUnread || !message.labels.includes("INBOX")) return false;
   if (message.labels.some((l) => ["DRAFT", "SENT", "SPAM", "TRASH", "SNOOZED"].includes(l)))
     return false;
+  const tabs = providerCapabilities(account.provider).inboxTabs;
   return (
     mode !== "primary" ||
-    (account.provider === "outlook"
+    (tabs === "focused"
       ? !message.labels.includes("CATEGORY_OTHER")
-      : account.provider !== "gmail" || !message.labels.some((l) => SECONDARY.has(l)))
+      : tabs !== "categories" || !message.labels.some((l) => SECONDARY.has(l)))
   );
 }
 

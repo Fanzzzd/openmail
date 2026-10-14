@@ -1,4 +1,4 @@
-import { categoryKey, mergeCategoryNames } from "@openmail/core/schema";
+import { categoryKey, mergeCategoryNames, providerCapabilities } from "@openmail/core/schema";
 import { cloneElement, type ReactElement, useState } from "react";
 import { useLingui } from "@lingui/react/macro";
 import type { Label, MailOp, Provider } from "../../../../shared/api";
@@ -25,7 +25,7 @@ export function MultiOrganization({
   trigger?: ReactElement<{ children?: string }>;
 }) {
   const { t } = useLingui();
-  const categories = provider === "outlook";
+  const categories = providerCapabilities(provider).categories;
   const available = labels.filter((label) => categories === label.id.startsWith("category:"));
   const [selected, setSelected] = useState<string[]>([]);
   const [touched, setTouched] = useState<ReadonlySet<string>>(new Set());

@@ -9,6 +9,7 @@ import type { MailOp } from "../domain/changes.js";
 import type { Provider } from "../domain/account.js";
 import { messagesFrom } from "../reader/reading.js";
 import { requireFocusedInboxScope } from "../providers/scoped-adapter.js";
+import { labelOpMoves, providerCapabilities, supportsOp } from "../providers/capabilities.js";
 import { InvalidInput } from "../domain/errors.js";
 import type { Mailbox } from "./mailbox.js";
 import type { ReminderSnapshot, Store } from "../store/service.js";
@@ -29,8 +30,9 @@ interface UndoBatch {
 
 /** Restore only the fields this op changed, using each message's actual state. */
 function inverse(message: Message, provider: Provider, op: MailOp): MailOp[] {
+  const caps = providerCapabilities(provider);
   if (op.kind === "read") return [{ kind: "read", value: !message.isUnread }];
-  if (op.kind === "important" && provider !== "imap")
+  if (op.kind === "important" && caps.important)
     return [{ kind: "important", value: message.labels.includes("IMPORTANT") }];
   if (op.kind === "star") return [{ kind: "star", value: message.isStarred }];
   if (op.kind === "classification")
@@ -58,13 +60,13 @@ function inverse(message: Message, provider: Provider, op: MailOp): MailOp[] {
     ];
   }
   if (op.kind === "copy") return [];
-  if (provider !== "gmail") {
+  if (caps.organization === "folders") {
     if (!folderTarget(op, message.labels)) return [];
     const folder = message.labels.find(
       (l) =>
         !["UNREAD", "STARRED", "IMPORTANT", "SNOOZED"].includes(l) &&
         !l.startsWith("category:") &&
-        !(provider === "outlook" && isOutlookClassification(l)),
+        !(caps.inboxTabs === "focused" && isOutlookClassification(l)),
     );
     switch (folder) {
       case "INBOX":
@@ -181,10 +183,12 @@ export const makeBatchMailbox = (
                 for (const id of ids) {
                   const message = yield* store.getMessage(id);
                   const account = yield* store.getAccount(message.accountId);
+                  const caps = providerCapabilities(account.provider);
                   if (
-                    ((op.kind === "categories" || op.kind === "classification") &&
-                      account.provider !== "outlook") ||
-                    (op.kind === "copy" && account.provider !== "imap")
+                    (op.kind === "categories" ||
+                      op.kind === "classification" ||
+                      op.kind === "copy") &&
+                    !supportsOp(caps, op.kind)
                   )
                     return yield* new InvalidInput({
                       message: "This organization action is unavailable for this account.",
@@ -223,10 +227,10 @@ export const makeBatchMailbox = (
                       message: "Choose a destination from this account",
                     });
                   if (
-                    account.provider !== "gmail" &&
+                    caps.organization === "folders" &&
                     op.kind !== "read" &&
                     op.kind !== "star" &&
-                    !(op.kind === "important" && account.provider === "outlook") &&
+                    !(op.kind === "important" && caps.important) &&
                     op.kind !== "categories" &&
                     op.kind !== "classification" &&
                     op.kind !== "copy" &&
@@ -241,7 +245,7 @@ export const makeBatchMailbox = (
                     op.kind === "trash" ||
                     op.kind === "spam" ||
                     op.kind === "move" ||
-                    (op.kind === "label" && op.value && account.provider !== "gmail")
+                    labelOpMoves(caps, op)
                   ) {
                     const reminder = yield* store.reminderSnapshot(id);
                     if (Option.isSome(reminder))
@@ -426,7 +430,8 @@ export const makeBatchMailbox = (
                 if (!expected) continue;
                 const account = yield* store.getAccount(expected.accountId);
                 const destination = folderTarget(change.op, expected.labels);
-                if (account.provider === "imap" && destination)
+                const caps = providerCapabilities(account.provider);
+                if (caps.moveChangesId && destination)
                   return yield* new InvalidInput({
                     message:
                       "IMAP moves change message UIDs and cannot be undone after restarting. Move the message back manually.",
@@ -435,8 +440,7 @@ export const makeBatchMailbox = (
                   destination && !["INBOX", "ARCHIVE", "TRASH", "SPAM"].includes(destination);
                 const checkDestination =
                   destination &&
-                  (account.provider === "outlook" ||
-                    (account.provider === "gmail" && destination.startsWith("Label_")));
+                  (caps.organization === "folders" || destination.startsWith("Label_"));
                 if (checkDestination) {
                   if (
                     custom &&

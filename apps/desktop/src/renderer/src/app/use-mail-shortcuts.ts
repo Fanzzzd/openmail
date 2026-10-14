@@ -1,3 +1,4 @@
+import { providerCapabilities, supportsOp } from "@openmail/core/schema";
 import { isDesktop } from "../lib/platform";
 import { Reactivity } from "effect/reactivity";
 import { type RefObject, useEffect, useEffectEvent } from "react";
@@ -356,7 +357,7 @@ export function useMailShortcuts({
           act({ kind: "star", value: !batchRows.every((row) => row.isStarred) });
         break;
       case "important":
-        if (threadState && threadState.provider !== "imap")
+        if (threadState && supportsOp(providerCapabilities(threadState.provider), "important"))
           act({ kind: "important", value: !threadState.isImportant });
         break;
       case "reply":

@@ -5,7 +5,7 @@ import { nativeShareKind } from "../../../shared/native-actions";
 import { causeText } from "../lib/errors";
 import { isTypingTarget } from "../lib/typing-target";
 import { useLingui } from "@lingui/react/macro";
-import { attachmentProblem } from "@openmail/core/schema";
+import { attachmentProblem, providerCapabilities } from "@openmail/core/schema";
 import { Effect } from "effect";
 import { constVoid } from "effect/Function";
 import { type RefObject, useEffect, useEffectEvent, useState } from "react";
@@ -85,7 +85,7 @@ export function useNativeMenuBridge({
             selected: Boolean(selectedId) && !dialog,
             composing: Boolean(compose) && !dialog,
             gmail: provider === "gmail",
-            ...(provider ? { web: provider === "gmail" || provider === "outlook" } : {}),
+            ...(provider ? { web: providerCapabilities(provider).webLink } : {}),
           },
         }),
       ),

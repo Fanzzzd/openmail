@@ -31,6 +31,7 @@ import { logSyncCrash, type SyncCrashDiagnostic } from "../sync/sync-crash.js";
 import { logSyncFailed, SYNC_FAILURE_TEXT, syncFailureText } from "../sync/sync-failure.js";
 import { makeSyncHealth } from "../sync/sync-health.js";
 import { makeResetGuard, resetBudgets, resetVerificationLimit } from "../sync/sync-reset.js";
+import { providerCapabilities } from "../providers/capabilities.js";
 
 // Changes per write transaction (an Upsert and its Progress are two). Each one blocks
 // the main thread; 100 real messages took up to 509 ms of CPU, 10 took up to 104 ms.
@@ -302,7 +303,7 @@ export const makeSyncMailbox = (
       ),
       Effect.andThen(scope ? Effect.void : store.finishInitialSync(account.id)),
       Effect.andThen(
-        !scope && account.provider === "gmail"
+        !scope && providerCapabilities(account.provider).sendAs
           ? store.getAccount(account.id).pipe(
               Effect.orDie,
               Effect.flatMap((a) =>
@@ -364,12 +365,12 @@ export const makeSyncMailbox = (
       accounts.filter((account) => account.enabled !== false),
       (account) =>
         Effect.gen(function* () {
-          const result: SyncResult = yield* account.provider === "imap"
-            ? pullAccount(account, undefined, false, budgets.imap).pipe(
-                imapPullLock(account.id).withPermits(1),
-              )
-            : pullAccount(account, undefined, false, budgets[account.provider]);
-          if (account.provider === "imap" && !result.error) yield* flush([account.id]);
+          const shared = providerCapabilities(account.provider).sharedSession;
+          const pull = pullAccount(account, undefined, false, budgets[account.provider]);
+          const result: SyncResult = yield* shared
+            ? pull.pipe(imapPullLock(account.id).withPermits(1))
+            : pull;
+          if (shared && !result.error) yield* flush([account.id]);
           if (!result.error) runtime.polling.delete(account.id);
           if (!account.needsReauth)
             yield* deps
@@ -461,12 +462,13 @@ export const makeSyncMailbox = (
         )
           continue;
         const before = yield* store.getInboxError(account.id);
-        const pulled: SyncResult = yield* account.provider === "imap"
+        const shared = providerCapabilities(account.provider).sharedSession;
+        const pulled: SyncResult = yield* shared
           ? pullAccount(account, "inbox", incrementalOnly).pipe(
               imapPullLock(account.id).withPermits(1),
             )
           : pullAccount(account, "inbox", incrementalOnly);
-        if (account.provider === "imap" && !pulled.error) yield* flush([account.id]);
+        if (shared && !pulled.error) yield* flush([account.id]);
         results.push(pulled);
         const error = yield* store.getInboxError(account.id);
         anyChange ||= pulled.changed + pulled.deleted > 0 || before !== error;
@@ -527,7 +529,7 @@ export const makeSyncMailbox = (
         const account = accounts[runtime.nextHeadersAccount % Math.max(1, accounts.length)];
         runtime.nextHeadersAccount++;
         if (!account) return;
-        yield* account.provider === "imap"
+        yield* providerCapabilities(account.provider).sharedSession
           ? maintainHeaders(account).pipe(
               imapPullLock(account.id).withPermitsIfAvailable(1),
               Effect.asVoid,

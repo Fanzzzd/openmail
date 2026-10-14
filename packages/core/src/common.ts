@@ -5,6 +5,7 @@ export { composeLink, escapeComposeText } from "./compose/compose-nodes.js";
 export { applyComposeSignature, composeTransportHtml } from "./compose/compose-transport.js";
 export { MODEL_KEY } from "./ai/secrets.js";
 export * from "./domain/account.js";
+export * from "./providers/capabilities.js";
 export * from "./domain/message.js";
 export * from "./domain/changes.js";
 export * from "./domain/prefs.js";

@@ -1,6 +1,6 @@
 import { useLingui } from "@lingui/react/macro";
 import { useAtomValue } from "@effect/atom-react";
-import { senderSearchQuery, type BatchResult } from "@openmail/core/schema";
+import { senderSearchQuery, type BatchResult, providerCapabilities } from "@openmail/core/schema";
 import { Effect } from "effect";
 import { AsyncResult } from "effect/reactivity";
 import type { MailOp, Message } from "../../../../shared/api";
@@ -73,7 +73,7 @@ export function useThreadMailActions({
         ),
       ),
     );
-  const canOpenWeb = provider === "gmail" || provider === "outlook";
+  const canOpenWeb = provider ? providerCapabilities(provider).webLink : false;
   const searchSender = (m: Message) =>
     isDesktop()
       ? run(withMail((call) => call("SearchSender", { address: m.from.address })))

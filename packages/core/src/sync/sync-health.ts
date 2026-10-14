@@ -6,6 +6,7 @@ import { sha256Hex } from "../platform/crypto.js";
 import type { Providers } from "../providers/adapter.js";
 import type { Store } from "../store/service.js";
 import { FolderStatus, Count, HealthCounts } from "./sync-records.js";
+import { providerCapabilities } from "../providers/capabilities.js";
 
 const ServerStatus = Schema.Union([
   Schema.Struct({ kind: Schema.Literal("available"), ...FolderStatus.fields }),
@@ -114,7 +115,9 @@ export function makeSyncHealth(
           Schema.fromJsonString(Schema.Struct({ __windowDays: Schema.Literal("90") })),
         )(cursor.value),
       );
-    const labels = yield* store.syncHealthLabels(accountId, account.provider === "gmail");
+    const caps = providerCapabilities(account.provider);
+    // Labels stack, so labels seen on messages count as scopes too.
+    const labels = yield* store.syncHealthLabels(accountId, caps.organization === "labels");
     const custom = (yield* store.cacheWindows).filter((entry) => entry.accountId === accountId);
     const windows = [
       ...DEFAULT_CACHE_WINDOWS.filter((entry) => !custom.some((w) => w.label === entry.label)),
@@ -138,7 +141,7 @@ export function makeSyncHealth(
               ...labels.filter(
                 (label) =>
                   !["SNOOZED", "OUTBOX"].includes(label) &&
-                  (account.provider !== "outlook" || !label.startsWith("category:")),
+                  (!caps.categories || !label.startsWith("category:")),
               ),
             ]),
           ];

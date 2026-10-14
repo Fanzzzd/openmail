@@ -19,6 +19,7 @@ import { proximityMatch, wholeWordMatch } from "./fts.js";
 import { contains } from "./search-tokens.js";
 import { stripMessageIdBrackets } from "../mime/message-id.js";
 import { attachmentHasType } from "./attachment-types.js";
+import { providerCapabilities } from "../providers/capabilities.js";
 
 export function matchesSearch(
   incoming: IncomingMessage,
@@ -27,7 +28,9 @@ export function matchesSearch(
   provider?: Provider,
 ): boolean {
   const message =
-    provider === "outlook" && !incoming.labels.includes("CATEGORY_OTHER")
+    provider &&
+    providerCapabilities(provider).inboxTabs === "focused" &&
+    !incoming.labels.includes("CATEGORY_OTHER")
       ? { ...incoming, labels: [...incoming.labels, "CATEGORY_PERSONAL"] }
       : incoming;
   const q = parseSearchQuery(raw);

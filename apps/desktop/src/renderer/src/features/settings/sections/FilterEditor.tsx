@@ -8,6 +8,7 @@ import {
   RULE_IMPORTANCE,
   outlookPreviewUnavailable,
   outlookServerOnlyAction,
+  providerCapabilities,
   requiresFilterDeleteConfirmation,
   ruleImportance,
   type FilterInput,
@@ -117,12 +118,14 @@ export function FilterEditor({
       { reactivityKeys: [Keys.threads] },
     ),
   );
+  const caps = providerCapabilities(account.provider);
+  const rules = caps.rules;
   const previewUnavailable =
-    account.provider === "outlook" &&
+    rules?.preview === "cache" &&
     (outlookPreviewUnavailable(input.criteria).length > 0 || preview._tag === "Failure");
   const matches = previewUnavailable ? [] : AsyncResult.getOrElse(preview, () => []);
   const count = matches.length;
-  const serverOnlyAction = account.provider === "outlook" && outlookServerOnlyAction(input.action);
+  const serverOnlyAction = !!rules?.serverOnlyActions && outlookServerOnlyAction(input.action);
   const previewBusy =
     previewCriteria !== input.criteria || preview._tag === "Initial" || preview.waiting;
   const submit = async (value: FilterInput, token: string) => {
@@ -180,7 +183,7 @@ export function FilterEditor({
               ? t`Save filter`
               : t`Create filter`}
         </h2>
-        {account.provider === "outlook" && (
+        {rules?.named && (
           <label className="block">
             <span className={fieldLabel}>{t`Name`}</span>
             <input
@@ -217,7 +220,7 @@ export function FilterEditor({
             onChange={(e) => criteria({ subject: e.target.value })}
           />
         </label>
-        {account.provider === "gmail" && (
+        {rules?.query && (
           <label className="block">
             <span className={fieldLabel}>{t`Search query`}</span>
             <input
@@ -262,7 +265,7 @@ export function FilterEditor({
             <input
               type="number"
               min="0"
-              step={account.provider === "outlook" ? "1024" : "1"}
+              step={String(rules?.sizeStep ?? 1)}
               className={formInput}
               disabled={!!input.criteria.outlook?.withinSizeRange}
               value={input.criteria.size ?? ""}
@@ -282,7 +285,7 @@ export function FilterEditor({
           />
           <span>{t`Has attachment`}</span>
         </label>
-        {account.provider === "outlook" && (
+        {rules?.exceptions && (
           <div className="space-y-4">
             <label className="block">
               <span className={fieldLabel}>{t`Except sender contains`}</span>
@@ -326,7 +329,7 @@ export function FilterEditor({
             </div>
           </div>
         )}
-        {account.provider === "outlook" && (
+        {rules?.exceptions && (
           <>
             <Disclosure summary={t`More conditions`} panelClassName="space-y-3">
               <OutlookPredicatesEditor
@@ -349,7 +352,7 @@ export function FilterEditor({
             </Disclosure>
           </>
         )}
-        {account.provider === "gmail" && (
+        {rules?.excludeChats && (
           <label className="flex items-center gap-2">
             <Checkbox
               checked={input.criteria.excludeChats ?? false}
@@ -363,7 +366,7 @@ export function FilterEditor({
             <Trans>Actions</Trans>
           </legend>
           <div className="clear-both space-y-2.5">
-            {account.provider === "outlook" && (
+            {rules?.serverOnlyActions && (
               <label className="flex items-center gap-2">
                 <Checkbox
                   checked={input.action.stopProcessing ?? false}
@@ -379,7 +382,7 @@ export function FilterEditor({
                   action({
                     archive,
                     trash: false,
-                    ...(account.provider === "gmail" ? {} : { label: null }),
+                    ...(caps.organization === "labels" ? {} : { label: null }),
                   })
                 }
               />
@@ -392,7 +395,7 @@ export function FilterEditor({
               />
               <span>{t`Mark as read`}</span>
             </label>
-            {account.provider === "gmail" && (
+            {rules?.star && (
               <label className="flex items-center gap-2">
                 <Checkbox
                   checked={input.action.star}
@@ -401,7 +404,7 @@ export function FilterEditor({
                 <span>{t`Star`}</span>
               </label>
             )}
-            {account.provider === "gmail" && (
+            {rules?.importanceLabel && (
               <Select
                 aria-label={t`Importance action`}
                 variant="field"
@@ -423,7 +426,7 @@ export function FilterEditor({
               />
             )}
 
-            {account.provider === "outlook" && (
+            {rules?.serverOnlyActions && (
               <>
                 <Select
                   aria-label={t`Importance action`}
@@ -470,7 +473,7 @@ export function FilterEditor({
                 />
               </>
             )}
-            {account.provider === "gmail" && (
+            {rules?.labelActions && (
               <>
                 <Select
                   aria-label={t`Category action`}
@@ -508,7 +511,7 @@ export function FilterEditor({
                 </fieldset>
               </>
             )}
-            {account.provider === "gmail" && (
+            {rules?.labelActions && (
               <Disclosure summary={t`More label actions`} panelClassName="space-y-3">
                 {(
                   [
@@ -576,7 +579,7 @@ export function FilterEditor({
                 action({
                   label: label || null,
                   trash: false,
-                  ...(account.provider === "gmail" ? {} : { archive: false }),
+                  ...(caps.organization === "labels" ? {} : { archive: false }),
                 })
               }
             />
@@ -588,7 +591,7 @@ export function FilterEditor({
               <Trans>Loading…</Trans>
             ) : previewUnavailable ? (
               <Trans>Preview unavailable</Trans>
-            ) : account.provider === "gmail" ? (
+            ) : rules?.preview === "server" ? (
               <Trans>Server preview: {count} messages</Trans>
             ) : (
               <Trans>Local preview: {count} messages</Trans>
@@ -661,7 +664,7 @@ export function FilterEditor({
             disabled={
               busy ||
               (mode === "apply" && (previewUnavailable || serverOnlyAction)) ||
-              (account.provider === "gmail" && (previewBusy || preview._tag !== "Success"))
+              (rules?.preview === "server" && (previewBusy || preview._tag !== "Success"))
             }
           >
             {mode === "apply"
@@ -686,7 +689,7 @@ export function FilterEditor({
                 : t`${plural(confirming.preview.matches.length, { one: "Preview: # message.", other: "Preview: # messages." })} Only the previewed messages will be changed when applying to existing mail.`}
               {confirming.preview.truncated && (
                 <span className="mt-2 block">
-                  {account.provider === "outlook"
+                  {rules?.preview === "cache"
                     ? t`The preview checked at most 201 server messages. Matching messages outside this sample may be missing.`
                     : t`The preview is limited to 200 messages. Narrow the conditions to process other messages.`}
                 </span>

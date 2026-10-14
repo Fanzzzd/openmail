@@ -18,6 +18,7 @@ import {
   remoteComposeBody,
   preservedComposeHtml,
   textComposeHtml,
+  providerCapabilities,
 } from "@openmail/core/schema";
 import type {
   Account,
@@ -203,11 +204,15 @@ export function draftFor(
             `${textComposeHtml(body.slice(0, body.length - quoted.bodyText.length))}${preservedComposeHtml(quoted.bodyHtml)}`,
           )
         : richComposeBody(textComposeHtml(body)),
-    ...(account.provider === "outlook" && mode === "forward" && !forwardAsAttachment
+    ...(providerCapabilities(account.provider).serverForward &&
+    mode === "forward" &&
+    !forwardAsAttachment
       ? {}
       : { includeOriginalAttachments: mode === "forward" && !forwardAsAttachment }),
     loadOriginalAttachments:
-      account.provider !== "outlook" && mode === "forward" && !forwardAsAttachment,
+      !providerCapabilities(account.provider).serverForward &&
+      mode === "forward" &&
+      !forwardAsAttachment,
     attachments: [],
     inReplyTo: m.id,
     forwardAsAttachment,

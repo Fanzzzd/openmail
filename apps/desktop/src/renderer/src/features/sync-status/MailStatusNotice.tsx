@@ -2,7 +2,7 @@ import { Collapsible } from "@base-ui/react/collapsible";
 import type { I18n } from "@lingui/core";
 import { msg, plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { isKeychainLocked } from "@openmail/core/schema";
+import { isKeychainLocked, providerCapabilities } from "@openmail/core/schema";
 import { ChevronRight, CircleAlert, Lock, WifiOff } from "lucide-react";
 import { type ReactNode, useEffectEvent, useLayoutEffect, useRef, useState } from "react";
 
@@ -237,7 +237,9 @@ export function ReauthNotice({
       }
       action={
         // IMAP signs in again through Add Account (Connect); OAuth providers through Reauth.
-        canCall(account.provider === "imap" ? "Connect" : "Reauth") ? (
+        canCall(
+          providerCapabilities(account.provider).signIn === "password" ? "Connect" : "Reauth",
+        ) ? (
           <button type="button" onClick={() => onReauth(account)} className={action}>
             <Trans>Sign in again</Trans>
           </button>

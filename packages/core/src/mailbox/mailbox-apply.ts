@@ -26,6 +26,7 @@ import { READ_ONLY_MESSAGE } from "./read-only.js";
 import type { Change } from "../providers/adapter.js";
 import type { StoredDraft } from "../store/service.js";
 import { notificationEligible, profileNotificationsActive } from "../app/system.js";
+import { providerCapabilities, supportsOp } from "../providers/capabilities.js";
 
 const isAiProposalActor = (actor: Actor): boolean =>
   actor.kind === "agent" &&
@@ -119,7 +120,7 @@ export const makeApplyMailbox = (
       for (const { accountId } of refs) {
         if (accounts.has(accountId)) continue;
         const account = yield* store.getAccount(accountId);
-        if (account.provider !== (command.op.kind === "copy" ? "imap" : "outlook"))
+        if (!supportsOp(providerCapabilities(account.provider), command.op.kind))
           return yield* new InvalidInput({
             message: "This organization action is unavailable for this account.",
           });
@@ -139,8 +140,8 @@ export const makeApplyMailbox = (
         command.op.kind === "classification" ||
         command.op.kind === "read" ||
         command.op.kind === "star" ||
-        (command.op.kind === "important" && account.provider === "outlook");
-      if (account.provider !== "gmail" && !flag) {
+        (command.op.kind === "important" && providerCapabilities(account.provider).important);
+      if (providerCapabilities(account.provider).organization === "folders" && !flag) {
         const labels = yield* store.messageLabels(accountId, providerId);
         if (command.op.kind !== "copy" && !folderTarget(command.op, labels)) continue;
       }
@@ -246,7 +247,7 @@ export const makeApplyMailbox = (
         const account = yield* store.getAccount(accountId);
         const label = (yield* store.listLabels([accountId])).find((l) => l.id === labelId);
         if (
-          account.provider !== "gmail" ||
+          providerCapabilities(account.provider).organization !== "labels" ||
           !label ||
           isSpecialAgentLabel(label.id) ||
           isSpecialAgentLabel(label.name)
@@ -461,18 +462,17 @@ export const makeApplyMailbox = (
                 const id = existingId ?? `${account.id}/${change.message.providerId}`;
                 const known = existingId !== null;
                 // IMAP moves assign a new folder/UID while preserving the mail itself.
-                const identity =
-                  account.provider === "imap"
-                    ? sha256Hex(
-                        JSON.stringify([
-                          change.message.threadId,
-                          change.message.date,
-                          change.message.from.address,
-                          change.message.subject,
-                          change.message.bodyText,
-                        ]),
-                      )
-                    : change.message.providerId;
+                const identity = providerCapabilities(account.provider).moveChangesId
+                  ? sha256Hex(
+                      JSON.stringify([
+                        change.message.threadId,
+                        change.message.date,
+                        change.message.from.address,
+                        change.message.subject,
+                        change.message.bodyText,
+                      ]),
+                    )
+                  : change.message.providerId;
                 const first = yield* store.observeIncoming(account.id, identity);
                 const remappedOps =
                   change._tag === "Remap"
@@ -723,7 +723,7 @@ export const makeApplyMailbox = (
           const adapter = providers.get(account.provider);
           if (
             account.enabled === false ||
-            account.provider === "imap" ||
+            !providerCapabilities(account.provider).calendar ||
             !adapter.createCalendarEvent
           )
             return yield* new InvalidInput({

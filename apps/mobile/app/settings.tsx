@@ -10,6 +10,7 @@ import {
   REMOTE_IMAGE_MODES,
   type Prefs,
   type PrefsPatch,
+  providerCapabilities,
 } from "@openmail/core/portable";
 import { Effect } from "effect";
 import { useMailbox, useMailboxQuery } from "../src/mailbox";
@@ -63,7 +64,7 @@ export default function Settings() {
             <Button
               label={i18n._({ id: "Sign in again", message: "Sign in again" })}
               onPress={() => {
-                if (account.provider === "imap") {
+                if (providerCapabilities(account.provider).signIn === "password") {
                   router.push({ pathname: "/imap-setup", params: { accountId: account.id } });
                   return;
                 }

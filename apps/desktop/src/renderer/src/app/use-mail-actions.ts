@@ -1,6 +1,6 @@
 import { requestFocusedPermission } from "../lib/focused-inbox";
 import { useLingui } from "@lingui/react/macro";
-import { type DeleteFolder, type Prefs } from "@openmail/core/schema";
+import { type DeleteFolder, type Prefs, providerCapabilities } from "@openmail/core/schema";
 import { Cause, Effect, Option } from "effect";
 import { Reactivity } from "effect/reactivity";
 import { useState } from "react";
@@ -206,7 +206,7 @@ export function useMailActions({
   };
 
   const reauth = (account: Account) => {
-    if (account.provider === "imap") {
+    if (providerCapabilities(account.provider).signIn === "password") {
       setSignInAgain(account.id);
       setDialog("add");
       return;

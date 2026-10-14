@@ -12,6 +12,7 @@ import {
   WEEKDAYS,
   type ActiveWindow,
   type Weekday,
+  providerCapabilities,
 } from "@openmail/core/schema";
 import { Effect } from "effect";
 import { AsyncResult } from "effect/reactivity";
@@ -275,7 +276,10 @@ export function NotificationsSettings({ accounts }: { accounts: readonly Account
               options={[
                 {
                   value: "primary",
-                  label: account.provider === "outlook" ? t`Focused` : t`Primary`,
+                  label:
+                    providerCapabilities(account.provider).inboxTabs === "focused"
+                      ? t`Focused`
+                      : t`Primary`,
                 },
                 { value: "inbox", label: t`Inbox` },
                 { value: "off", label: t`Off` },

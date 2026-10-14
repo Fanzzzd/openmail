@@ -10,6 +10,7 @@ import {
   UNDO_SEND_SECONDS,
   COMPOSE_FONT_FAMILIES,
   COMPOSE_FONT_SIZES,
+  providerCapabilities,
 } from "@openmail/core/schema";
 import { AsyncResult } from "effect/reactivity";
 
@@ -155,7 +156,7 @@ function DefaultFrom() {
       { accountId: a.id, address: a.email },
       ...aliases.filter(
         (s) =>
-          a.provider === "gmail" &&
+          providerCapabilities(a.provider).sendAs &&
           s.accountId === a.id &&
           s.address.toLowerCase() !== a.email.toLowerCase(),
       ),

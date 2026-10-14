@@ -14,6 +14,7 @@ import {
   type Message,
   type Prefs,
   type SendAs,
+  providerCapabilities,
 } from "@openmail/core/schema";
 import { Effect } from "effect";
 import { useRef, useState, type ClipboardEvent, type Dispatch, type SetStateAction } from "react";
@@ -221,7 +222,11 @@ export function useComposeEditor({
       });
       return;
     }
-    if (account?.provider === "outlook" && draft.mode === "forward") {
+    if (
+      account &&
+      providerCapabilities(account.provider).serverForward &&
+      draft.mode === "forward"
+    ) {
       setDraft((current) => {
         const { includeOriginalAttachments: _choice, ...rest } = current;
         return rest;

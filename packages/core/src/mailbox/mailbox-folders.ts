@@ -14,6 +14,7 @@ import {
 import type { Mailbox } from "./mailbox.js";
 import type { Providers } from "../providers/adapter.js";
 import type { Store } from "../store/service.js";
+import { providerCapabilities } from "../providers/capabilities.js";
 
 const requireConfirmation = (confirmed: boolean) =>
   confirmed
@@ -63,7 +64,7 @@ export function makeFolderMailbox(
         Effect.gen(function* () {
           if (!(yield* isEnabled(account))) return;
           if (
-            account.provider === "gmail" &&
+            providerCapabilities(account.provider).permanentDeleteScope &&
             !(yield* store.grantedScopes(account.id)).includes(GMAIL_PERMANENT_DELETE_SCOPE)
           )
             yield* new FeatureScopeMissing({

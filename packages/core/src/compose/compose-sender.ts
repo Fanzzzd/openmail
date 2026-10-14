@@ -2,6 +2,7 @@ import { Schema } from "effect";
 import type { SendAs } from "../domain/organization.js";
 import type { Account } from "../domain/account.js";
 import type { Prefs } from "../domain/prefs.js";
+import { providerCapabilities } from "../providers/capabilities.js";
 
 /** A fixed verified sender takes precedence; missing accounts/aliases follow the view again. */
 export function composeSender(
@@ -20,7 +21,7 @@ export function composeSender(
       (a) =>
         a.accountId === configured.id && a.address.toLowerCase() === fixed.address.toLowerCase(),
     );
-    if (configured.provider === "gmail" && alias)
+    if (providerCapabilities(configured.provider).sendAs && alias)
       return { accountId: configured.id, address: alias.address, name: alias.name };
   }
   const account =

@@ -3,6 +3,7 @@ import { Effect, Option, Schema } from "effect";
 import type { SqlClient } from "effect/sql";
 import { legacyScopes, OptionalService } from "../providers/optional-services.js";
 import { first, run } from "./sql-rows.js";
+import { providerCapabilities } from "../providers/capabilities.js";
 
 export function makeServiceStore(sql: SqlClient.SqlClient) {
   const switches = (id: string) =>
@@ -34,7 +35,11 @@ export function makeServiceStore(sql: SqlClient.SqlClient) {
       const account = yield* first(Schema.Struct({ provider: Provider }))(
         sql`SELECT provider FROM accounts WHERE id=${id}`,
       );
-      if (Option.isNone(account) || account.value.provider === "imap") return [];
+      if (
+        Option.isNone(account) ||
+        providerCapabilities(account.value.provider).signIn === "password"
+      )
+        return [];
       yield* run(
         sql`INSERT INTO account_oauth_scopes(account_id,scopes_json) VALUES(${id},${JSON.stringify(legacyScopes(account.value.provider))}) ON CONFLICT(account_id) DO NOTHING`,
       );

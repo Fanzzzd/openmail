@@ -1,5 +1,5 @@
 import type { Account } from "../../../../../shared/api";
-import { escapeHtml, htmlToText, type Vacation } from "@openmail/core/schema";
+import { escapeHtml, htmlToText, providerCapabilities, type Vacation } from "@openmail/core/schema";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { useAtom } from "@effect/atom-react";
@@ -90,7 +90,7 @@ export function VacationEditor({
             />
           </label>
         </div>
-        {account.provider === "gmail" ? (
+        {providerCapabilities(account.provider).vacation?.subject ? (
           <label className="block">
             <span className={fieldLabel}>{t`Subject`}</span>
             <input
@@ -113,7 +113,7 @@ export function VacationEditor({
             onChange={(e) => setInput({ ...input, body: e.target.value })}
           />
         </label>
-        {account.provider === "gmail" ? (
+        {providerCapabilities(account.provider).vacation?.audience === "contacts" ? (
           <label className="flex items-center gap-2">
             <Checkbox
               checked={input.contactsOnly}

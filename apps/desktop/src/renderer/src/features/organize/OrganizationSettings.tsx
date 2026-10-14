@@ -2,7 +2,7 @@ import { accountName } from "../../lib/format";
 import { categoryNames } from "../../i18n/organization-labels";
 import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { inboxCategories, type LabelChange } from "@openmail/core/schema";
+import { inboxCategories, providerCapabilities, type LabelChange } from "@openmail/core/schema";
 import { AsyncResult } from "effect/reactivity";
 import { useId, useState } from "react";
 import type { Account, Label } from "../../../../shared/api";
@@ -49,7 +49,8 @@ export function OrganizationSettings({ accounts }: { accounts: readonly Account[
   const [changed, change] = useAtom(changeLabelAtom, { mode: "promiseExit" });
   const account = accounts.find((a) => a.id === accountId);
   const categoryIds = account ? inboxCategories(account.provider) : [];
-  const names = categoryNames(t, account?.provider === "outlook");
+  const caps = account ? providerCapabilities(account.provider) : undefined;
+  const names = categoryNames(t, caps?.inboxTabs === "focused");
   const perform = async (input: LabelChange) => {
     const exit = await change({
       payload: { accountId, change: input },
@@ -79,7 +80,7 @@ export function OrganizationSettings({ accounts }: { accounts: readonly Account[
           />
         </SettingsRow>
       </SettingsGroup>
-      {(account?.provider === "gmail" || account?.provider === "outlook") && (
+      {account && caps?.inboxTabs && (
         <SettingsGroup>
           <SettingsCheckRow>
             <label className="flex items-center gap-2">
@@ -100,7 +101,7 @@ export function OrganizationSettings({ accounts }: { accounts: readonly Account[
                 }
               />
               <span>
-                {account.provider === "outlook" ? t`Show Focused/Other` : t`Show Gmail categories`}
+                {caps.inboxTabs === "focused" ? t`Show Focused/Other` : t`Show Gmail categories`}
               </span>
             </label>
           </SettingsCheckRow>
@@ -153,7 +154,7 @@ export function OrganizationSettings({ accounts }: { accounts: readonly Account[
                 className="flex min-h-10 flex-wrap items-center gap-x-3 gap-y-1 px-3 py-1.5"
               >
                 <span className="min-w-0 flex-1 truncate">{label.name}</span>
-                {account?.provider === "gmail" ? (
+                {caps?.serverLabelStyle ? (
                   <>
                     <Select
                       aria-label={t`Label list visibility`}
@@ -252,7 +253,7 @@ export function OrganizationSettings({ accounts }: { accounts: readonly Account[
         </ul>
         <div className="mt-2 flex flex-wrap items-start gap-x-4 gap-y-2 px-1">
           <div className="min-w-0 flex-1 basis-48 space-y-1">
-            {account && account.provider !== "gmail" && (
+            {account && !caps?.serverLabelStyle && (
               <p className={settingsHint}>
                 <Trans>Folder colors are stored on this computer only.</Trans>
               </p>
@@ -291,7 +292,7 @@ export function OrganizationSettings({ accounts }: { accounts: readonly Account[
         }}
         title={t`Delete label or folder?`}
         description={
-          account?.provider === "gmail"
+          caps?.organization === "labels"
             ? t`Messages keep their other labels.`
             : t`Deleting a folder also deletes its messages on the server.`
         }

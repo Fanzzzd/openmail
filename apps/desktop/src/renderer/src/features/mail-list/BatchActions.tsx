@@ -1,5 +1,5 @@
 import { MultiOrganization } from "../organize";
-import { moveSourceLabel } from "@openmail/core/schema";
+import { moveSourceLabel, providerCapabilities } from "@openmail/core/schema";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Archive, Mail, MailOpen, Star, Tag, Trash2 } from "lucide-react";
 import type { Account, Label, MailOp, Mailbox, ThreadSummary } from "../../../../shared/api";
@@ -60,12 +60,13 @@ export function BatchMenuItems({
         .map((account) => {
           const selected = rows.filter((row) => row.accountId === account.id);
           const available = labels.filter((label) => label.accountId === account.id);
+          const folders = providerCapabilities(account.provider).organization === "folders";
 
           return (
             <div key={account.id}>
               <MenuSeparator />
               <div className="px-2 py-1 text-footnote text-a11y-muted">
-                {account.email} · {account.provider === "gmail" ? t`Labels` : t`Move to folder`}
+                {account.email} · {folders ? t`Move to folder` : t`Labels`}
               </div>
               <ContextSubmenu icon={Tag} label={t`Move to`}>
                 {available
@@ -93,16 +94,14 @@ export function BatchMenuItems({
                   >{t`New label or folder`}</MenuItem>
                 )}
               </ContextSubmenu>
-              {currentLabel &&
-                account.provider === "gmail" &&
-                available.some((l) => l.id === currentLabel) && (
-                  <MenuItem
-                    onClick={() =>
-                      onOp({ kind: "label", labelId: currentLabel, value: false }, account.id)
-                    }
-                  >{t`Remove current label`}</MenuItem>
-                )}
-              {account.provider !== "gmail" && (
+              {currentLabel && !folders && available.some((l) => l.id === currentLabel) && (
+                <MenuItem
+                  onClick={() =>
+                    onOp({ kind: "label", labelId: currentLabel, value: false }, account.id)
+                  }
+                >{t`Remove current label`}</MenuItem>
+              )}
+              {folders && (
                 <MultiOrganization
                   provider={account.provider}
                   labels={available}
@@ -115,7 +114,7 @@ export function BatchMenuItems({
                 />
               )}
               {available
-                .filter(() => account.provider === "gmail")
+                .filter(() => !folders)
                 .map((label) => (
                   <MenuCheckboxItem
                     key={label.id}
@@ -125,7 +124,7 @@ export function BatchMenuItems({
                         {
                           kind: "label",
                           labelId: label.id,
-                          value: account.provider === "gmail" ? value : true,
+                          value: folders ? true : value,
                         },
                         account.id,
                       )
@@ -136,7 +135,7 @@ export function BatchMenuItems({
                 ))}
               {onCreate && (
                 <MenuItem
-                  onClick={() => onCreate(account.id, account.provider !== "gmail")}
+                  onClick={() => onCreate(account.id, folders)}
                 >{t`New label or folder`}</MenuItem>
               )}
             </div>

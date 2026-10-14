@@ -25,6 +25,7 @@ export * from "./calendar-event.js";
 import { CalendarEvent } from "./calendar-event.js";
 import { Address, type Message } from "../domain/message.js";
 import type { Provider } from "../domain/account.js";
+import { providerCapabilities } from "../providers/capabilities.js";
 
 export const InviteResponse = Schema.Literals(["accepted", "tentative", "declined"]);
 export type InviteResponse = typeof InviteResponse.Type;
@@ -351,7 +352,7 @@ export function inviteCanRespond(
   knownAddresses: readonly string[] = [],
 ): boolean {
   if (invite.method !== "REQUEST" || invite.cancelled || !invite.organizer) return false;
-  if (provider !== "imap") return true;
+  if (providerCapabilities(provider).calendar) return true;
   const attendee = matchingInviteAttendee(invite, [email, ...knownAddresses]);
   return (
     attendee !== null && invite.organizer.address.toLowerCase() !== attendee.address.toLowerCase()

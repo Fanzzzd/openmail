@@ -17,6 +17,11 @@ import {
 } from "../providers/optional-services.js";
 import { activeClient } from "../providers/oauth-clients.js";
 import type { ConnectInput } from "../providers/adapter.js";
+import {
+  oauthProvider,
+  providerCapabilities,
+  signsInWithOAuth,
+} from "../providers/capabilities.js";
 
 const accountMismatch = (signedInAs: string, expected: string) =>
   new AuthError({
@@ -40,44 +45,33 @@ export const makeAccountsMailbox = (
 
   const connect = Effect.fn("Mailbox.connect")(function* (input: ConnectInput, expect?: string) {
     const accounts = yield* store.listAccounts;
-    const hinted =
-      input.provider === "imap"
-        ? undefined
-        : accounts.find(
-            (account) =>
-              account.provider === input.provider &&
-              account.email.toLowerCase() === (input.loginHint ?? expect)?.toLowerCase(),
-          );
+    const oauth = signsInWithOAuth(input) ? input : undefined;
+    const hinted = oauth
+      ? accounts.find(
+          (account) =>
+            account.provider === oauth.provider &&
+            account.email.toLowerCase() === (oauth.loginHint ?? expect)?.toLowerCase(),
+        )
+      : undefined;
     // A known account keeps its stored grant; scopes the caller adds (a batch of
     // optional services) come on top of it.
     const scopes = hinted
-      ? [
-          ...new Set([
-            ...(yield* store.grantedScopes(hinted.id)),
-            ...(input.provider === "imap" ? [] : (input.grantedScopes ?? [])),
-          ]),
-        ]
-      : input.provider === "imap"
-        ? []
-        : (input.grantedScopes ?? []);
+      ? [...new Set([...(yield* store.grantedScopes(hinted.id)), ...(oauth?.grantedScopes ?? [])])]
+      : (oauth?.grantedScopes ?? []);
     let connected = yield* providers
       .get(input.provider)
-      .connect(
-        input.provider === "imap" || scopes.length === 0
-          ? input
-          : { ...input, grantedScopes: scopes },
-      );
+      .connect(!oauth || scopes.length === 0 ? input : { ...oauth, grantedScopes: scopes });
     // Re-add without a login hint discovers the identity before requesting its saved grant.
     const existing = accounts.find(
       (account) =>
         account.provider === input.provider &&
         account.email.toLowerCase() === connected.email.toLowerCase(),
     );
-    if (!hinted && existing && input.provider !== "imap" && input.grantedScopes === undefined) {
+    if (!hinted && existing && oauth && oauth.grantedScopes === undefined) {
       const previous = yield* store.grantedScopes(existing.id);
       connected = yield* providers
-        .get(input.provider)
-        .connect({ ...input, loginHint: existing.email, grantedScopes: previous });
+        .get(oauth.provider)
+        .connect({ ...oauth, loginHint: existing.email, grantedScopes: previous });
       if (connected.email.toLowerCase() !== existing.email.toLowerCase())
         return yield* accountMismatch(connected.email, existing.email);
     }
@@ -86,10 +80,8 @@ export const makeAccountsMailbox = (
     const account = yield* store.upsertAccount(input.provider, connected.email);
     yield* secrets.set(account.id, connected.secret);
     if (connected.clientId) yield* issuers.set(account.id, connected.clientId);
-    if (input.provider !== "imap")
-      yield* issuers.setIssuedAt(account.id, yield* Clock.currentTimeMillis);
-    if (input.provider !== "imap")
-      yield* store.setGrantedScopes(account.id, connected.scopes ?? []);
+    if (oauth) yield* issuers.setIssuedAt(account.id, yield* Clock.currentTimeMillis);
+    if (oauth) yield* store.setGrantedScopes(account.id, connected.scopes ?? []);
     if (connected.imap) yield* store.setImapSettings(account.id, connected.imap);
     yield* providers.get(account.provider).closeSessions?.(account.id) ?? Effect.void;
     yield* store.clearReauth(account.id);
@@ -118,13 +110,15 @@ export const makeAccountsMailbox = (
     feature?: AuthorizationFeature,
   ) {
     const account = yield* store.getAccount(accountId);
-    if (feature === "focusedInbox" && account.provider !== "outlook")
+    const caps = providerCapabilities(account.provider);
+    if (feature === "focusedInbox" && caps.inboxTabs !== "focused")
       return yield* new InvalidInput({ message: "Focused Inbox requires Outlook." });
-    if (feature === "permanentDelete" && account.provider !== "gmail")
+    if (feature === "permanentDelete" && !caps.permanentDeleteScope)
       return yield* new InvalidInput({
         message: "Only Gmail requires an extra permanent deletion permission.",
       });
-    if (account.provider === "imap") {
+    const provider = account.provider;
+    if (!oauthProvider(provider)) {
       return yield* new InvalidInput({
         message: "IMAP accounts sign in again by adding the address with a new password.",
       });
@@ -132,7 +126,6 @@ export const makeAccountsMailbox = (
     const stored = yield* store.grantedScopes(accountId);
     // One consent page for the clicked service and the services the person turned on
     // earlier that lost their grant. Untouched services are never requested.
-    const provider = account.provider;
     const batch = isOptionalService(feature)
       ? consentBatch(
           serviceGrants(

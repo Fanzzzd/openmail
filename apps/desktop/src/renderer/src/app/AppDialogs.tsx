@@ -1,3 +1,4 @@
+import { providerCapabilities } from "@openmail/core/schema";
 import { useAtom, useAtomValue } from "@effect/atom-react";
 import { useLingui } from "@lingui/react/macro";
 import { AsyncResult } from "effect/reactivity";
@@ -99,7 +100,9 @@ export function AppDialogs({
         (dialog === "add" || (!hasAccounts && accounts._tag === "Success" && !firstRunClosed)) && (
           <AddAccountDialog
             firstRun={!hasAccounts}
-            {...(signInAgain?.provider === "imap" ? { signInAgain } : {})}
+            {...(signInAgain && providerCapabilities(signInAgain.provider).signIn === "password"
+              ? { signInAgain }
+              : {})}
             onClose={() => {
               setDialog(null);
               setFirstRunClosed(true);

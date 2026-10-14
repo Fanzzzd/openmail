@@ -14,6 +14,7 @@ import { parseSearchQuery } from "../search/search.js";
 import { quoteSearchValue } from "../search/search-tokens.js";
 import { semanticRankFusion } from "../search/ranking.js";
 import { parseStableReference, privateMailLink } from "../app/system.js";
+import { providerCapabilities } from "../providers/capabilities.js";
 
 const DEFAULT_MODEL_CHARS = 12_000;
 
@@ -68,7 +69,7 @@ export const makeReadingMailbox = (
     const adapter = providers.get(account.provider);
     const providerId = id.slice(account.id.length + 1);
     if (!providerId) return yield* new InvalidInput({ message: "Invalid message link" });
-    if (account.provider === "imap")
+    if (!providerCapabilities(account.provider).webLink)
       return yield* new InvalidInput({
         message: "This account has no supported web mail link.",
       });

@@ -13,7 +13,7 @@ import { shortcutAction } from "../../../shared/shortcuts";
 
 import { useAtomMount, useAtomValue } from "@effect/atom-react";
 import { useLingui } from "@lingui/react/macro";
-import { DEFAULT_PREFS, markReadAfter } from "@openmail/core/schema";
+import { DEFAULT_PREFS, markReadAfter, providerCapabilities } from "@openmail/core/schema";
 import { Effect } from "effect";
 import { constVoid } from "effect/Function";
 import { AsyncResult } from "effect/reactivity";
@@ -313,6 +313,7 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
       );
     else dispatchNativeAction(prefs.shortcutSet, event.action, event.triggeredByAccelerator);
   });
+  const provider = account?.provider;
   useEffect(() => {
     run(
       withMail((call) =>
@@ -321,13 +322,13 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
             selected: Boolean(messages?.length) && !dialog,
             composing: false,
             mailbox: false,
-            gmail: account?.provider === "gmail",
-            web: account?.provider === "gmail" || account?.provider === "outlook",
+            gmail: provider === "gmail",
+            web: provider ? providerCapabilities(provider).webLink : false,
           },
         }),
       ),
     );
-  }, [run, messages?.length, dialog, account?.provider]);
+  }, [run, messages?.length, dialog, provider]);
 
   return (
     <div className="flex h-full flex-col bg-surface text-body text-neutral-900 dark:text-neutral-100">

@@ -5,6 +5,7 @@ import { KEEP_ALIVE_CHECK, KEEP_ALIVE_MAX_AGE_MS } from "../providers/reauth.js"
 import type { Provider } from "../domain/account.js";
 import type { ProviderAdapter } from "../providers/adapter.js";
 import type { Store } from "../store/service.js";
+import { providerCapabilities } from "../providers/capabilities.js";
 
 /** Only the keep-alive of each adapter is used. */
 export interface KeepAliveProviders {
@@ -24,7 +25,8 @@ export const keepTokensAlive = (
 ) =>
   Effect.gen(function* () {
     for (const account of yield* store.listAccounts) {
-      if (account.provider === "imap" || account.needsReauth) continue;
+      if (providerCapabilities(account.provider).signIn === "password" || account.needsReauth)
+        continue;
       const adapter = providers.get(account.provider);
       if (!adapter.keepAlive) continue;
       const result = yield* Effect.result(adapter.keepAlive(account.id, KEEP_ALIVE_MAX_AGE_MS));

@@ -2,6 +2,7 @@ import { mergeCategoryNames } from "./categories.js";
 import { OUTLOOK_CATEGORIES, isOutlookClassification } from "./message.js";
 import type { MailOp } from "./changes.js";
 import type { Provider } from "./account.js";
+import { labelOpMoves, providerCapabilities } from "../providers/capabilities.js";
 
 const FLAG_LABELS = new Set(["UNREAD", "STARRED", "IMPORTANT"]);
 
@@ -15,20 +16,18 @@ export function applyOpToLabels(
   op: MailOp,
   provider: Provider,
 ): string[] {
+  const caps = providerCapabilities(provider);
   const out = new Set(labels);
-  if (
-    ["inbox", "archive", "trash", "spam", "move"].includes(op.kind) ||
-    (op.kind === "label" && op.value && provider !== "gmail")
-  )
+  if (["inbox", "archive", "trash", "spam", "move"].includes(op.kind) || labelOpMoves(caps, op))
     out.delete("SNOOZED");
   const flag = (label: string, value: boolean) => (value ? out.add(label) : out.delete(label));
   if (op.kind === "read") flag("UNREAD", !op.value);
   else if (op.kind === "star") flag("STARRED", op.value);
-  else if (op.kind === "important" && provider !== "imap") flag("IMPORTANT", op.value);
-  else if (op.kind === "classification" && provider === "outlook") {
+  else if (op.kind === "important" && caps.important) flag("IMPORTANT", op.value);
+  else if (op.kind === "classification" && caps.inboxTabs === "focused") {
     for (const category of OUTLOOK_CATEGORIES) out.delete(category);
     out.add(op.value === "focused" ? "CATEGORY_PERSONAL" : "CATEGORY_OTHER");
-  } else if (op.kind === "categories" && provider === "outlook") {
+  } else if (op.kind === "categories" && caps.categories) {
     const current = [...out]
       .filter((label) => label.startsWith("category:"))
       .map((label) => label.slice(9));
@@ -36,7 +35,7 @@ export function applyOpToLabels(
     for (const name of mergeCategoryNames(current, op.add, op.remove)) out.add(`category:${name}`);
   } else if (op.kind === "copy" || op.kind === "categories" || op.kind === "classification")
     return [...labels];
-  else if (provider === "gmail") {
+  else if (caps.organization === "labels") {
     switch (op.kind) {
       case "important":
         flag("IMPORTANT", op.value);
@@ -71,7 +70,7 @@ export function applyOpToLabels(
         if (
           !FLAG_LABELS.has(l) &&
           !l.startsWith("category:") &&
-          !(provider === "outlook" && isOutlookClassification(l))
+          !(caps.inboxTabs === "focused" && isOutlookClassification(l))
         )
           out.delete(l);
       out.add(target);
