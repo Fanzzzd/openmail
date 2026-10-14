@@ -8,16 +8,24 @@ on:
   push:
     branches: [main]
   pull_request:
+    # Every apps/desktop input of `dist` and the titlebar check. The vitest configs are left out:
+    # they shape only the test run, which check.yml covers.
     paths:
       - apps/desktop/build/**
       - apps/desktop/bundled-licenses.ts
       - apps/desktop/electron-builder.config.cjs
       - apps/desktop/electron.vite.config.ts
+      - apps/desktop/vite.web.config.ts
+      - apps/desktop/lingui.config.ts
+      - apps/desktop/oauth-clients*
+      - apps/desktop/tsconfig*.json
       - apps/desktop/scripts/**
       - apps/desktop/src/**
       - apps/desktop/native/**
       - apps/desktop/package.json
       - package.json
+      - turbo.json
+      - LICENSE
       - pnpm-lock.yaml
       - pnpm-workspace.yaml
       - patches/**
