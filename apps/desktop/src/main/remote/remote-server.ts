@@ -137,7 +137,7 @@ interface RemoteServerOptions {
   webRoot: string;
   /** 0 picks a free port. */
   port: number;
-  /** Null while Tailscale details are unknown: every request is refused. */
+  /** Null while Tailscale details are unknown: every request gets 503 Starting. */
   gate: () => GateConfig | null;
   sessions: Sessions;
   attachment: (
@@ -297,6 +297,9 @@ async function handleUpload(
   );
 }
 
+/** Retry-After while the gate isn't set yet: start-up takes a few Tailscale CLI calls. */
+const STARTING_RETRY_SECONDS = "2";
+
 /** Fetch metadata where the browser sends it: only the page itself may ask for a session. */
 function sameSite(request: IncomingMessage) {
   const site = request.headers["sec-fetch-site"];
@@ -335,9 +338,11 @@ export async function startRemoteServer(options: RemoteServerOptions) {
     }
     send(response, gate.status, "Forbidden");
   };
-  const identify = (request: IncomingMessage): GateResult => {
+  // Null while the server is starting or stopping: say "try again" so a
+  // page's reconnect probe keeps retrying instead of reading it as signed out.
+  const identify = (request: IncomingMessage): GateResult | null => {
     const config = options.gate();
-    if (!config) return { ok: false, status: 403, reason: "no-identity" };
+    if (!config) return null;
     return checkRequest(
       { remoteAddress: request.socket.remoteAddress, headers: request.headers },
       config,
@@ -353,6 +358,10 @@ export async function startRemoteServer(options: RemoteServerOptions) {
   const server = createServer((request, response) => {
     void (async () => {
       const gate = identify(request);
+      if (!gate) {
+        options.log?.("starting");
+        return send(response, 503, "Starting", { "retry-after": STARTING_RETRY_SECONDS });
+      }
       if (!gate.ok) return refuse(gate, request, response);
       const url = new URL(request.url ?? "/", "http://remote.invalid");
       const method = request.method ?? "GET";
@@ -420,6 +429,13 @@ export async function startRemoteServer(options: RemoteServerOptions) {
       socket.end(`HTTP/1.1 ${status} Forbidden\r\nConnection: close\r\nContent-Length: 0\r\n\r\n`);
     };
     const gate = identify(request);
+    if (!gate) {
+      options.log?.("starting");
+      socket.end(
+        `HTTP/1.1 503 Service Unavailable\r\nRetry-After: ${STARTING_RETRY_SECONDS}\r\nConnection: close\r\nContent-Length: 0\r\n\r\n`,
+      );
+      return;
+    }
     if (!gate.ok) return reject(gate.status, gate.reason);
     if (!sameOrigin(request)) return reject(403, "bad-origin");
     const url = new URL(request.url ?? "/", "http://remote.invalid");

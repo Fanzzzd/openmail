@@ -194,6 +194,8 @@ it("reads the Mac's session answer", async () => {
   expect(await probeSession(reply(401))).toEqual({ status: "ended" });
   expect(await probeSession(reply(403))).toEqual({ status: "ended" });
   expect(await probeSession(reply(502))).toEqual({ status: "offline" });
+  // The Mac is starting remote access: retry, the session may still hold.
+  expect(await probeSession(reply(503, "Starting"))).toEqual({ status: "offline" });
   expect(
     await probeSession(async () => {
       throw new TypeError("network");

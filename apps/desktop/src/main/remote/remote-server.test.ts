@@ -209,6 +209,8 @@ describe("remote server", () => {
   const sessions = createSessions();
   const connections: string[] = [];
   const blob = new Uint8Array(600 * 1024).fill(7);
+  // Null while start-up still runs the Tailscale CLI calls.
+  let gate: GateConfig | null = config;
 
   beforeAll(async () => {
     base = await mkdtemp(path.join(tmpdir(), "openmail-web-"));
@@ -220,7 +222,7 @@ describe("remote server", () => {
     server = await startRemoteServer({
       webRoot: root,
       port: 0,
-      gate: () => config,
+      gate: () => gate,
       sessions,
       attachment: async (messageId, part) => {
         if (messageId !== "m1" || part.join(".") !== "0.1") throw new Error("missing");
@@ -587,5 +589,24 @@ describe("remote server", () => {
     });
     for (const session of sessions.list()) if (session.connected) sessions.disconnect(session.id);
     expect(await closed).toBe(4401);
+  });
+
+  it("answers 503 with Retry-After while start-up hasn't set the gate", async () => {
+    const cookie = await signIn();
+    const before = sessions.list().length;
+    gate = null;
+    try {
+      for (const pathname of ["/api/session", "/", "/api/attachment?id=m1&part=0.1"]) {
+        const reply = await call(pathname, { ...tailnet(), cookie });
+        expect(reply.status, pathname).toBe(503);
+        expect(reply.headers["retry-after"], pathname).toBe("2");
+        expect(reply.headers["set-cookie"], pathname).toBeUndefined();
+      }
+      expect((await open({ ...tailnet(), cookie, origin: ORIGIN })).status).toBe(503);
+      expect(sessions.list()).toHaveLength(before);
+    } finally {
+      gate = config;
+    }
+    expect((await call("/api/session", { ...tailnet(), cookie })).status).toBe(200);
   });
 });

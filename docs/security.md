@@ -151,6 +151,8 @@ The main process only handles transport: HTTP, WebSocket, sessions and Tailscale
 
 WebSocket upgrades and uploads also require `Origin` to equal `https://<host>`.
 
+Until start-up has confirmed the Serve mapping and set the gate, every request and upgrade gets 503 with `Retry-After: 2` and no cookie. The page reads 503 as offline and keeps retrying; only 401 and 403 end its session.
+
 ### Sessions
 
 The Tailscale identity is the credential. A session only ties one browser's WebSocket, downloads and uploads to its login, so they can be listed and disconnected.

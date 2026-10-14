@@ -208,6 +208,7 @@ export async function probeSession(
     return { status: "offline" };
   }
   if (response.status === 401 || response.status === 403) return { status: "ended" };
+  // 503 while the Mac starts remote access, and 5xx from Serve: try again later.
   if (!response.ok) return { status: "offline" };
   try {
     // IO boundary: the Mac's JSON reply.
