@@ -347,6 +347,7 @@ function Harness() {
     accountList: state.accounts,
     undoRef,
     showUndo,
+    sidebarShown: true,
   });
   useEffect(() => {
     model = { navigation, mailActions, composition };
@@ -684,7 +685,12 @@ it("native bridge defers search while a dialog is open and updates menu state", 
   });
   await flush();
   expect(state.calls.filter((call) => call.tag === "SetNativeMenuState").at(-1)?.payload).toEqual({
-    state: { selected: false, composing: false, important: false },
+    state: {
+      selected: false,
+      composing: false,
+      important: false,
+      panes: { sidebar: true, toolbar: true, reader: true },
+    },
   });
   act(() => state.emit({ _tag: "Search", query: "deferred" }));
   expect(model.navigation.query).toBe("");

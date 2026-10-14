@@ -127,6 +127,13 @@ export function useDesktopLabels() {
                   i18n._(menuActionName(action)),
                 ]),
               ),
+              // The View menu's pane toggles, by the pane's current state (nativeActionLabelKey).
+              showSidebar: t`Show sidebar`,
+              hideSidebar: t`Hide sidebar`,
+              showToolbar: t`Show toolbar`,
+              hideToolbar: t`Hide toolbar`,
+              showReader: t`Show reading pane`,
+              hideReader: t`Hide reading pane`,
             },
             checkUpdates: t`Check for updates…`,
             updatesDisabled: t`Update checks require a signed, installed macOS app.`,

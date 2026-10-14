@@ -104,8 +104,29 @@ export const NativeMenuState = Schema.Struct({
   important: Schema.Boolean,
   web: Schema.optionalKey(Schema.Boolean),
   mailbox: Schema.optionalKey(Schema.Boolean),
+  /** Which panes the main window shows, so the View menu offers Show or Hide. */
+  panes: Schema.optionalKey(
+    Schema.Struct({ sidebar: Schema.Boolean, toolbar: Schema.Boolean, reader: Schema.Boolean }),
+  ),
 });
 export type NativeMenuState = typeof NativeMenuState.Type;
+const PANE_TOGGLES: Partial<
+  Record<NativeAction, readonly [pane: "sidebar" | "toolbar" | "reader", key: string]>
+> = {
+  toggleSidebar: ["sidebar", "Sidebar"],
+  toggleToolbar: ["toolbar", "Toolbar"],
+  toggleReader: ["reader", "Reader"],
+};
+/**
+ * The menu label key of an action. The pane toggles name what they do now: `hideSidebar`
+ * while the sidebar shows, `showSidebar` while it is hidden or its window has no panes.
+ */
+export function nativeActionLabelKey(action: NativeAction, state: NativeMenuState): string {
+  const toggle = PANE_TOGGLES[action];
+  if (!toggle) return action;
+  const [pane, key] = toggle;
+  return `${state.panes?.[pane] ? "hide" : "show"}${key}`;
+}
 export const NO_MENU_SELECTION: NativeMenuState = {
   selected: false,
   composing: false,

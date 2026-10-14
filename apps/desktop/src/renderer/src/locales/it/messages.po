@@ -3285,6 +3285,18 @@ msgstr "Nascondi altre"
 msgid "Hide quoted text"
 msgstr "Nascondi il testo citato"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Hide reading pane"
+msgstr "Nascondi il pannello di lettura"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Hide sidebar"
+msgstr "Nascondi la barra laterale"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Hide toolbar"
+msgstr "Nascondi la barra strumenti"
+
 #: src/renderer/src/i18n/organization-labels.ts
 msgid "High"
 msgstr "Alta"
@@ -6474,17 +6486,14 @@ msgstr "Mostra solo Speciali"
 msgid "Show only unread"
 msgstr "Mostra solo non letti"
 
-#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Show or hide reading pane"
 msgstr "Mostra o nascondi il pannello di lettura"
 
-#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Show or hide sidebar"
 msgstr "Mostra o nascondi la barra laterale"
 
-#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Show or hide toolbar"
 msgstr "Mostra o nascondi la barra strumenti"
@@ -6499,10 +6508,22 @@ msgstr "Mostra originale"
 msgid "Show quoted text"
 msgstr "Mostra testo citato"
 
+#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
+#: src/renderer/src/state/desktop.ts
+msgid "Show reading pane"
+msgstr "Mostra il pannello di lettura"
+
+#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Show sidebar"
 msgstr "Mostra la barra laterale"
+
+#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
+#: src/renderer/src/state/desktop.ts
+msgid "Show toolbar"
+msgstr "Mostra la barra strumenti"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Show unread count in the menu bar"

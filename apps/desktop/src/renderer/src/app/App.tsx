@@ -238,6 +238,7 @@ export function App({ composeId }: { composeId?: string }) {
     accountList,
     undoRef,
     showUndo,
+    sidebarShown: layout.mode === "wide" ? prefs.sidebarVisible : layout.drawerOpen,
   });
 
   const paneNav = usePaneNavigation({ layout, navigation, run });

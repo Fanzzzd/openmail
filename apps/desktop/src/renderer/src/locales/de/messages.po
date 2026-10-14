@@ -3285,6 +3285,18 @@ msgstr "Andere ausblenden"
 msgid "Hide quoted text"
 msgstr "Zitierten Text ausblenden"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Hide reading pane"
+msgstr "Lesebereich ausblenden"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Hide sidebar"
+msgstr "Seitenleiste ausblenden"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Hide toolbar"
+msgstr "Symbolleiste ausblenden"
+
 #: src/renderer/src/i18n/organization-labels.ts
 msgid "High"
 msgstr "Hoch"
@@ -6474,17 +6486,14 @@ msgstr "Nur mit Stern markierte anzeigen"
 msgid "Show only unread"
 msgstr "Nur ungelesene anzeigen"
 
-#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Show or hide reading pane"
 msgstr "Lesebereich ein- oder ausblenden"
 
-#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Show or hide sidebar"
 msgstr "Seitenleiste ein- oder ausblenden"
 
-#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Show or hide toolbar"
 msgstr "Symbolleiste ein- oder ausblenden"
@@ -6499,10 +6508,22 @@ msgstr "Original anzeigen"
 msgid "Show quoted text"
 msgstr "Zitierten Text anzeigen"
 
+#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
+#: src/renderer/src/state/desktop.ts
+msgid "Show reading pane"
+msgstr "Lesebereich einblenden"
+
+#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Show sidebar"
 msgstr "Seitenleiste einblenden"
+
+#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
+#: src/renderer/src/state/desktop.ts
+msgid "Show toolbar"
+msgstr "Symbolleiste einblenden"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Show unread count in the menu bar"

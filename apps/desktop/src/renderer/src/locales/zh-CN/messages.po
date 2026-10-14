@@ -3295,6 +3295,18 @@ msgstr "隐藏其他"
 msgid "Hide quoted text"
 msgstr "收起引用"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Hide reading pane"
+msgstr "隐藏阅读面板"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Hide sidebar"
+msgstr "隐藏侧栏"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Hide toolbar"
+msgstr "隐藏工具栏"
+
 #: src/renderer/src/i18n/organization-labels.ts
 msgid "High"
 msgstr "高"
@@ -6484,17 +6496,14 @@ msgstr "只看星标"
 msgid "Show only unread"
 msgstr "只看未读"
 
-#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Show or hide reading pane"
 msgstr "显示或隐藏阅读面板"
 
-#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Show or hide sidebar"
 msgstr "显示或隐藏侧栏"
 
-#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Show or hide toolbar"
 msgstr "显示或隐藏工具栏"
@@ -6509,10 +6518,22 @@ msgstr "显示原始邮件"
 msgid "Show quoted text"
 msgstr "展开引用"
 
+#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
+#: src/renderer/src/state/desktop.ts
+msgid "Show reading pane"
+msgstr "显示阅读面板"
+
+#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Show sidebar"
 msgstr "显示侧栏"
+
+#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
+#: src/renderer/src/state/desktop.ts
+msgid "Show toolbar"
+msgstr "显示工具栏"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Show unread count in the menu bar"

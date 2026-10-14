@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import type { MenuItemConstructorOptions } from "electron";
 import { expect, it, vi } from "vitest";
-import { NativeAction, NO_MENU_SELECTION } from "../../shared/native-actions";
+import { NativeAction, NO_MENU_SELECTION, type NativeMenuState } from "../../shared/native-actions";
 import { isShortcutAction, shortcutAccelerator, type ShortcutSet } from "../../shared/shortcuts";
 import { applicationMenuTemplate, nativeActionAccelerator } from "./app-menu";
 import { DEFAULT_DESKTOP_LABELS } from "./default-labels";
@@ -97,10 +97,10 @@ it("the menu bar has View and Go, and Format groups its actions in submenus", ()
     "Help",
   ]);
   expect(labels(submenu(menu, "View"))).toEqual([
-    "Toggle sidebar",
-    "Toggle reader",
+    "Show sidebar",
+    "Show reading pane",
     "Toggle reading pane",
-    "Toggle toolbar",
+    "Show toolbar",
     "---",
     "Zoom in",
     "Zoom out",
@@ -222,4 +222,49 @@ it("Help starts with OpenMail help, which opens the docs site", () => {
   }
   // The safe external-open path accepts the docs site.
   expect(externalUrl(OPENMAIL_DOCS_URL)).toBe(`${OPENMAIL_DOCS_URL}/`);
+});
+
+it("the View menu's pane toggles say Show or Hide by what the focused window shows", () => {
+  const view = (menuState: NativeMenuState) =>
+    labels(
+      submenu(
+        applicationMenuTemplate({
+          platform: "darwin",
+          labels: DEFAULT_DESKTOP_LABELS,
+          shortcutSet: "mimestream",
+          undoAvailable: false,
+          menuState,
+          tabMenu: [],
+          checkUpdates: vi.fn(),
+          command: vi.fn(),
+          feedback: vi.fn(),
+          openHelp: vi.fn(),
+          attachFiles: vi.fn(),
+          newWindow: vi.fn(),
+          edit: vi.fn(),
+          undoSend: vi.fn(),
+          nativeAction: vi.fn(),
+        }),
+        "View",
+      ),
+    );
+  const shown = view({
+    ...NO_MENU_SELECTION,
+    panes: { sidebar: true, toolbar: true, reader: true },
+  });
+  expect(shown).toEqual(
+    expect.arrayContaining(["Hide sidebar", "Hide toolbar", "Hide reading pane"]),
+  );
+  const hidden = view({
+    ...NO_MENU_SELECTION,
+    panes: { sidebar: false, toolbar: true, reader: false },
+  });
+  expect(hidden).toEqual(
+    expect.arrayContaining(["Show sidebar", "Hide toolbar", "Show reading pane"]),
+  );
+  expect(hidden).not.toContain("Hide sidebar");
+  // A window without panes, such as a thread window, offers to show them.
+  expect(view(NO_MENU_SELECTION)).toEqual(
+    expect.arrayContaining(["Show sidebar", "Show toolbar", "Show reading pane"]),
+  );
 });

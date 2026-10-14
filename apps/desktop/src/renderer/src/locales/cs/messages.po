@@ -3285,6 +3285,18 @@ msgstr "Skrýt ostatní"
 msgid "Hide quoted text"
 msgstr "Skrýt citovaný text"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Hide reading pane"
+msgstr "Skrýt panel čtení"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Hide sidebar"
+msgstr "Skrýt postranní panel"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Hide toolbar"
+msgstr "Skrýt panel nástrojů"
+
 #: src/renderer/src/i18n/organization-labels.ts
 msgid "High"
 msgstr "Vysoká"
@@ -6474,17 +6486,14 @@ msgstr "Zobrazit jen s hvězdičkou"
 msgid "Show only unread"
 msgstr "Zobrazit jen nepřečtené"
 
-#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Show or hide reading pane"
 msgstr "Zobrazit nebo skrýt panel čtení"
 
-#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Show or hide sidebar"
 msgstr "Zobrazit nebo skrýt postranní panel"
 
-#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Show or hide toolbar"
 msgstr "Zobrazit nebo skrýt panel nástrojů"
@@ -6499,10 +6508,22 @@ msgstr "Zobrazit originál"
 msgid "Show quoted text"
 msgstr "Zobrazit citovaný text"
 
+#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
+#: src/renderer/src/state/desktop.ts
+msgid "Show reading pane"
+msgstr "Zobrazit panel čtení"
+
+#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Show sidebar"
 msgstr "Zobrazit postranní panel"
+
+#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
+#: src/renderer/src/state/desktop.ts
+msgid "Show toolbar"
+msgstr "Zobrazit panel nástrojů"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Show unread count in the menu bar"

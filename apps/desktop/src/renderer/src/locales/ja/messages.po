@@ -3285,6 +3285,18 @@ msgstr "ほかを非表示"
 msgid "Hide quoted text"
 msgstr "引用されたテキストを非表示にする"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Hide reading pane"
+msgstr "閲覧ペインを非表示"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Hide sidebar"
+msgstr "サイドバーを非表示"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Hide toolbar"
+msgstr "ツールバーを非表示"
+
 #: src/renderer/src/i18n/organization-labels.ts
 msgid "High"
 msgstr "高"
@@ -6474,17 +6486,14 @@ msgstr "スター付きのみ表示"
 msgid "Show only unread"
 msgstr "未開封のみ表示"
 
-#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Show or hide reading pane"
 msgstr "閲覧ペインを表示／非表示"
 
-#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Show or hide sidebar"
 msgstr "サイドバーの表示または非表示"
 
-#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Show or hide toolbar"
 msgstr "ツールバーを表示／非表示"
@@ -6499,10 +6508,22 @@ msgstr "元のメッセージを表示"
 msgid "Show quoted text"
 msgstr "引用されたテキストを表示"
 
+#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
+#: src/renderer/src/state/desktop.ts
+msgid "Show reading pane"
+msgstr "閲覧ペインを表示"
+
+#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Show sidebar"
 msgstr "サイドバーを表示"
+
+#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
+#: src/renderer/src/state/desktop.ts
+msgid "Show toolbar"
+msgstr "ツールバーを表示"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Show unread count in the menu bar"

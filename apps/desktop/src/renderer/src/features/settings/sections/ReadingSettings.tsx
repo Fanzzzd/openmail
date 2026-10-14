@@ -67,7 +67,7 @@ export function ReadingSettings() {
               checked={prefs?.sidebarVisible ?? true}
               onCheckedChange={(sidebarVisible) => setPrefs({ sidebarVisible })}
             />
-            <Trans>Show or hide sidebar</Trans>
+            <Trans>Show sidebar</Trans>
           </label>
         </SettingsCheckRow>
         <SettingsCheckRow>
@@ -77,7 +77,7 @@ export function ReadingSettings() {
               checked={prefs?.toolbarVisible ?? true}
               onCheckedChange={(toolbarVisible) => setPrefs({ toolbarVisible })}
             />
-            <Trans>Show or hide toolbar</Trans>
+            <Trans>Show toolbar</Trans>
           </label>
         </SettingsCheckRow>
         <SettingsCheckRow>
@@ -87,7 +87,7 @@ export function ReadingSettings() {
               checked={prefs?.readingPaneVisible ?? true}
               onCheckedChange={(readingPaneVisible) => setPrefs({ readingPaneVisible })}
             />
-            <Trans>Show or hide reading pane</Trans>
+            <Trans>Show reading pane</Trans>
           </label>
         </SettingsCheckRow>
         <StackedRow label={<Trans>Message list density</Trans>}>

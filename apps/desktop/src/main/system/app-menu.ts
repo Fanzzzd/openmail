@@ -5,6 +5,7 @@ import {
   isGoMailbox,
   NATIVE_MENUS,
   nativeActionEnabled,
+  nativeActionLabelKey,
   type NativeAction,
   type NativeMenuEntry,
   type NativeMenuState,
@@ -47,6 +48,12 @@ const DEFAULT_MENU_LABELS: Record<string, string> = {
   goSpam: "Spam",
   goBack: "Previous view",
   goForward: "Next view",
+  showSidebar: "Show sidebar",
+  hideSidebar: "Hide sidebar",
+  showToolbar: "Show toolbar",
+  hideToolbar: "Hide toolbar",
+  showReader: "Show reading pane",
+  hideReader: "Hide reading pane",
 };
 
 export interface AppMenuInput {
@@ -89,7 +96,7 @@ export function applicationMenuTemplate(input: AppMenuInput): MenuItemConstructo
     DEFAULT_MENU_LABELS[key] ??
     (key[0]?.toUpperCase() ?? "") + key.slice(1).replace(/[A-Z]/g, (l) => ` ${l.toLowerCase()}`);
   const actionItem = (action: NativeAction): MenuItemConstructorOptions => ({
-    label: label(action),
+    label: label(nativeActionLabelKey(action, input.menuState)),
     accelerator: nativeActionAccelerator(shortcutSet, action),
     enabled: nativeActionEnabled(action, input.menuState),
     click: (_item, _window, event) =>

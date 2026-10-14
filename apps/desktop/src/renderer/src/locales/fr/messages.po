@@ -3285,6 +3285,18 @@ msgstr "Masquer les autres"
 msgid "Hide quoted text"
 msgstr "Masquer le texte cité"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Hide reading pane"
+msgstr "Masquer le volet de lecture"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Hide sidebar"
+msgstr "Masquer la barre latérale"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Hide toolbar"
+msgstr "Masquer la barre d’outils"
+
 #: src/renderer/src/i18n/organization-labels.ts
 msgid "High"
 msgstr "Haute"
@@ -6474,17 +6486,14 @@ msgstr "Afficher uniquement les messages suivis"
 msgid "Show only unread"
 msgstr "Afficher uniquement les messages non lus"
 
-#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Show or hide reading pane"
 msgstr "Afficher ou masquer le volet de lecture"
 
-#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Show or hide sidebar"
 msgstr "Afficher ou masquer la barre latérale"
 
-#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Show or hide toolbar"
 msgstr "Afficher ou masquer la barre d’outils"
@@ -6499,10 +6508,22 @@ msgstr "Afficher l’original"
 msgid "Show quoted text"
 msgstr "Afficher le texte cité"
 
+#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
+#: src/renderer/src/state/desktop.ts
+msgid "Show reading pane"
+msgstr "Afficher le volet de lecture"
+
+#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Show sidebar"
 msgstr "Afficher la barre latérale"
+
+#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
+#: src/renderer/src/state/desktop.ts
+msgid "Show toolbar"
+msgstr "Afficher la barre d’outils"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Show unread count in the menu bar"

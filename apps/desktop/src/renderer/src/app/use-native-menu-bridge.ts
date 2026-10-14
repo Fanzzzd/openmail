@@ -41,8 +41,11 @@ export function useNativeMenuBridge({
   undoRef,
   showUndo,
   messages,
+  sidebarShown,
 }: {
   messages: AppMessages;
+  /** The docked sidebar or its drawer is on screen. */
+  sidebarShown: boolean;
   searchRef: RefObject<HTMLInputElement | null>;
   navigation: ReturnType<typeof useMailSelection>;
   composition: ReturnType<typeof useMailCompose>;
@@ -85,11 +88,25 @@ export function useNativeMenuBridge({
             selected: Boolean(selectedId) && !dialog,
             composing: Boolean(compose) && !dialog,
             ...providerMenuState(provider),
+            panes: {
+              sidebar: sidebarShown,
+              toolbar: prefs.toolbarVisible,
+              reader: prefs.readingPaneVisible,
+            },
           },
         }),
       ),
     );
-  }, [run, selectedId, compose, dialog, provider]);
+  }, [
+    run,
+    selectedId,
+    compose,
+    dialog,
+    provider,
+    sidebarShown,
+    prefs.toolbarVisible,
+    prefs.readingPaneVisible,
+  ]);
 
   const receiveDesktop = (event: DesktopEvent) => {
     setDesktopEvents((events) => events.filter((item) => item !== event));

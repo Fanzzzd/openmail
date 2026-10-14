@@ -3285,6 +3285,18 @@ msgstr "Verberg andere"
 msgid "Hide quoted text"
 msgstr "Geciteerde tekst verbergen"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Hide reading pane"
+msgstr "Leesvenster verbergen"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Hide sidebar"
+msgstr "Zijbalk verbergen"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Hide toolbar"
+msgstr "Knoppenbalk verbergen"
+
 #: src/renderer/src/i18n/organization-labels.ts
 msgid "High"
 msgstr "Hoog"
@@ -6474,17 +6486,14 @@ msgstr "Toon alleen met ster"
 msgid "Show only unread"
 msgstr "Toon alleen ongelezen"
 
-#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Show or hide reading pane"
 msgstr "Toon of verberg leesvenster"
 
-#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Show or hide sidebar"
 msgstr "Zijbalk tonen of verbergen"
 
-#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Show or hide toolbar"
 msgstr "Toon of verberg knoppenbalk"
@@ -6499,10 +6508,22 @@ msgstr "Toon origineel"
 msgid "Show quoted text"
 msgstr "Geciteerde tekst tonen"
 
+#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
+#: src/renderer/src/state/desktop.ts
+msgid "Show reading pane"
+msgstr "Leesvenster tonen"
+
+#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Show sidebar"
 msgstr "Zijbalk tonen"
+
+#: src/renderer/src/features/settings/sections/ReadingSettings.tsx
+#: src/renderer/src/state/desktop.ts
+msgid "Show toolbar"
+msgstr "Knoppenbalk tonen"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Show unread count in the menu bar"
