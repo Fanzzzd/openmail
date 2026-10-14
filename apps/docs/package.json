@@ -19,8 +19,8 @@
     "fumadocs-mdx": "15.4.7",
     "fumadocs-ui": "npm:@fumadocs/base-ui@16.17.1",
     "next": "16.4.0",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
   },
   "devDependencies": {
     "@openmail/core": "workspace:*",
