@@ -356,6 +356,8 @@ export async function flow(
       InspectAttachment: unsupported,
       Unsubscribe: unsupported,
       OpenMailLink: unsupported,
+      ShowUndo: (input) =>
+        PubSub.publish(desktop, { _tag: "ShowUndo", ...input }).pipe(Effect.asVoid),
       ComposeNew: () =>
         PubSub.publish(desktop, { _tag: "Command", command: "compose" }).pipe(Effect.asVoid),
       ComposeMessage: (input) =>

@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
   type Dispatch,
+  type RefObject,
   type SetStateAction,
 } from "react";
 import type { OutgoingAttachment } from "../../../../../shared/api";
@@ -18,7 +19,7 @@ import { loadOriginalAttachments, withOriginalAttachments } from "../compose-ori
 import { toDraftInput, type Draft } from "../draft";
 import { requestDraftClose } from "../draft-close";
 import { causeText } from "../../../lib/errors";
-import { draftStatus, useRunMail, withMail } from "../../../state/mail";
+import { draftStatus, saveDraft, useRunMail, withMail } from "../../../state/mail";
 import { saveDraftAtom } from "../../../state/mutations";
 import { draftStatusAtom } from "../../../state/queries";
 import { onFlush, setUnsaved } from "../../../state/unsaved-work";
@@ -38,6 +39,7 @@ export function useDraftLifecycle({
   onPopOut,
   popOutRequested,
   closeRequested,
+  handedOff,
   messages,
 }: {
   messages: ComposeMessages;
@@ -53,6 +55,8 @@ export function useDraftLifecycle({
   onPopOut: ((draft: Draft) => void) | undefined;
   popOutRequested: number;
   closeRequested: number;
+  /** The draft as send, discard, close or pop out took it; later edits make it stale. */
+  handedOff: RefObject<Draft | null>;
 }) {
   const { i18n } = useLingui();
   const saved = useRef(initial);
@@ -95,8 +99,6 @@ export function useDraftLifecycle({
   };
 
   // Autosave: locally at once, then to the provider through the queue.
-  const autosaveDue = () =>
-    !recovering && !adding && !closing && !checkingClose && draft !== saved.current && !empty;
   useEffect(() => {
     const due =
       !recovering && !adding && !closing && !checkingClose && draft !== saved.current && !empty;
@@ -109,11 +111,32 @@ export function useDraftLifecycle({
     return () => clearTimeout(timer);
   }, [draft, save, closing, checkingClose, empty, adding, recovering]);
 
-  // The web build: hiding the page saves at once, and a reload waits while typing is unsaved.
+  /**
+   * Saves typing the autosave has not reached yet. Runs when the composer unmounts without
+   * handing the draft off (another draft replaced it), when the page hides, and before quit.
+   */
   const flush = useEffectEvent(() => {
-    if (autosaveDue()) saveNow();
+    if (empty || adding || recovering || handedOff.current === draft || draft === saved.current)
+      return Effect.void;
+    saved.current = draft;
+    return saveDraft(toDraftInput(draft)).pipe(
+      Effect.ignore,
+      Effect.ensuring(Effect.sync(() => setUnsaved(initial.id, false))),
+    );
   });
-  useEffect(() => onFlush(() => flush()), []);
+  useEffect(() => {
+    const unregister = onFlush(
+      () =>
+        new Promise<void>((resolve) => {
+          run(flush().pipe(Effect.ensuring(Effect.sync(resolve))));
+        }),
+    );
+    return () => {
+      unregister();
+      run(flush());
+    };
+  }, [run]);
+  // The web build waits to reload while typing is unsaved.
   useEffect(() => {
     const unsaved =
       (draft !== saved.current && !empty) || saveState.waiting || saveState._tag === "Failure";

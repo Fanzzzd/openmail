@@ -68,6 +68,7 @@ vi.mock("../../state/mail", () => ({
     ),
   openDraft: () => Effect.succeed(null),
   draftStatus: () => Effect.succeed(null),
+  saveDraft: () => Effect.void,
 }));
 vi.mock("@base-ui/react/dialog", () => ({
   Dialog: {

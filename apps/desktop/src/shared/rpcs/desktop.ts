@@ -1,6 +1,6 @@
 import { ComposeRecipients } from "../window-state";
 import { Draft } from "@openmail/core/schema";
-import { DefaultClientStatus, DesktopEvent } from "../desktop";
+import { DefaultClientStatus, DesktopEvent, UndoNoticeFields } from "../desktop";
 import { DesktopLabels } from "../desktop-labels";
 import { PromptAnswer, TextMenuCommand, WindowUiEvent } from "../window-ui";
 import { Schema } from "effect";
@@ -17,6 +17,8 @@ export const DesktopRpcs = [
     error,
   }),
   Rpc.make("ComposeNew"),
+  /** Shows an undo toast in the main window for an action taken in a window that closes. */
+  Rpc.make("ShowUndo", { payload: UndoNoticeFields }),
   Rpc.make("OpenSettings"),
   Rpc.make("SwitchWindow", {
     payload: {

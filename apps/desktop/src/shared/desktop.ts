@@ -10,7 +10,23 @@ export const ComposeMessageFields = {
   asAttachment: Schema.Boolean,
 };
 
+/**
+ * An undo toast for the main window, from a window that closes after the action: a thread
+ * window that archived its thread, or a compose window whose draft was discarded.
+ */
+export const UndoNoticeFields = {
+  text: Schema.String.check(Schema.isMaxLength(500)),
+  undo: Schema.Union([
+    Schema.TaggedStruct("Batch", {
+      undoId: Schema.String,
+      ids: Schema.Array(Schema.String),
+    }),
+    Schema.TaggedStruct("Draft", { id: Schema.String }),
+  ]),
+};
+
 export const DesktopEvent = Schema.Union([
+  Schema.TaggedStruct("ShowUndo", UndoNoticeFields),
   Schema.TaggedStruct("ComposeMessage", ComposeMessageFields),
   Schema.TaggedStruct("NativeAction", {
     action: NativeAction,
@@ -47,6 +63,7 @@ export function desktopEventRoute(
     event._tag === "PopOutDraft" ||
     event._tag === "Edit" ||
     event._tag === "UndoSend" ||
+    event._tag === "ShowUndo" ||
     event._tag === "QuitCheck"
   )
     return "dispatch";

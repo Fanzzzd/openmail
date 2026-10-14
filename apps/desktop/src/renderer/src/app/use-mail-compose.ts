@@ -1,4 +1,4 @@
-import { isDesktop } from "../lib/platform";
+import { canCall, isDesktop } from "../lib/platform";
 import { useLingui } from "@lingui/react/macro";
 import type { Signature } from "@openmail/core/schema";
 import { FEEDBACK_DRAFT_PREFIX } from "@openmail/core/schema";
@@ -6,7 +6,7 @@ import { Effect } from "effect";
 import { constVoid } from "effect/Function";
 import { Atom } from "effect/reactivity";
 import type { Dispatch, SetStateAction } from "react";
-import { useEffect, useEffectEvent, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import type { Account, Proposal } from "../../../shared/api";
 import { type DesktopEvent } from "../../../shared/desktop";
 import type { AppMessages } from "./use-app-messages";
@@ -23,13 +23,25 @@ import {
   replyTarget,
   type ReaderSelection,
 } from "../features/reader/reader-selection";
-import { discardDraft, openDraft, saveDraft, useRunMail, withMail } from "../state/mail";
+import {
+  discardDraft,
+  openDraft,
+  restoreDraft,
+  saveDraft,
+  useRunMail,
+  withMail,
+} from "../state/mail";
 import { accountsAtom, prefsAtom, sendAsAtom, threadAtom } from "../state/queries";
 import { useBatchUndo } from "../state/undo";
 import { scopeAccountIds } from "../lib/view";
 import { useAtomSet } from "@effect/atom-react";
 import { dialogAtom } from "../state/ui";
 import type { useMailSelection } from "./use-mail-selection";
+
+/** Core holds a discarded draft this long; the toast closes first, so Undo never races it. */
+const DISCARD_HOLD_MS = 15_000;
+const DISCARD_TOAST_MS = 8000;
+
 export function useMailCompose({
   navigation,
   composeId,
@@ -60,6 +72,11 @@ export function useMailCompose({
   const { i18n } = useLingui();
 
   const [compose, setComposeState] = useState<Draft | null>(null);
+  /** The open inline draft now, for callbacks that finish after a later render. */
+  const composeRef = useRef<Draft | null>(null);
+  useEffect(() => {
+    composeRef.current = compose;
+  }, [compose]);
   const setCompose = (draft: Draft | null) => {
     if (composeId) {
       setComposeState(draft);
@@ -340,14 +357,89 @@ export function useMailCompose({
     );
   };
 
+  /**
+   * Shows a draft again without replacing another open draft: a compose window, or inline
+   * when nothing else is open. The web build has one composer; the open one saves as it closes.
+   */
+  const reopenDraft = (draft: Draft) => {
+    const open = composeRef.current;
+    if (composeId || !isDesktop() || !open || open.id === draft.id) {
+      setCompose(draft);
+      return;
+    }
+    run(
+      withMail((call) => call("OpenComposeWindow", { id: draft.id })).pipe(
+        Effect.catchCause(() =>
+          Effect.sync(() => say({ text: messages.couldNotOpenTheComposeWindow, tone: "error" })),
+        ),
+      ),
+    );
+  };
+  const anotherDraftOpen = (id: string) =>
+    !composeId && composeRef.current !== null && composeRef.current.id !== id;
+
+  /** Undo for a held discard; `latest` has typing the last autosave missed. */
+  const offerDiscardUndo = (id: string, latest: Draft | null) => {
+    let used = false;
+    const undo = () => {
+      if (used) return;
+      used = true;
+      if (undoRef.current === undo) undoRef.current = null;
+      setToast(null);
+      run(
+        restoreDraft(id).pipe(
+          Effect.flatMap((stored) =>
+            Effect.flatMap(loadDrafts, ({ fromStored, toDraftInput }) =>
+              latest
+                ? saveDraft(toDraftInput(latest)).pipe(Effect.as(latest))
+                : Effect.succeed(fromStored(stored)),
+            ),
+          ),
+          Effect.matchCause({
+            onSuccess: reopenDraft,
+            onFailure: (cause) =>
+              say({ text: messages.couldntRestoreTheDraft(causeText(i18n, cause)), tone: "error" }),
+          }),
+        ),
+      );
+    };
+    undoRef.current = undo;
+    say({
+      text: messages.draftDiscarded,
+      duration: DISCARD_TOAST_MS,
+      action: { label: messages.undo, run: undo },
+    });
+  };
+
+  /**
+   * Core holds the discard for the undo window, so nothing is deleted until it ends. A compose
+   * window closes at once; the main window shows its Undo.
+   */
   const discard = (draft: Draft) => {
     setCompose(null);
+    const holdMs = canCall("RestoreDraft") ? DISCARD_HOLD_MS : undefined;
     run(
-      discardDraft(draft.id).pipe(
+      loadDrafts.pipe(
+        Effect.flatMap(({ toDraftInput }) =>
+          // The main window cannot see this window's latest typing; core keeps it.
+          composeId && holdMs ? saveDraft(toDraftInput(draft)) : Effect.void,
+        ),
+        Effect.andThen(discardDraft(draft.id, holdMs)),
         Effect.matchCause({
-          onSuccess: () => {
-            say({ text: messages.draftDiscarded });
-            if (composeId) finishCompose();
+          onSuccess: (held) => {
+            if (composeId) {
+              if (held)
+                run(
+                  withMail((call) =>
+                    call("ShowUndo", {
+                      text: messages.draftDiscarded,
+                      undo: { _tag: "Draft", id: draft.id },
+                    }),
+                  ),
+                );
+              finishCompose();
+            } else if (held) offerDiscardUndo(draft.id, draft);
+            else say({ text: messages.draftDiscarded });
           },
           onFailure: (cause) => {
             const reason = causeText(i18n, cause);
@@ -362,6 +454,8 @@ export function useMailCompose({
     messages,
     run,
     setCompose,
+    reopenDraft,
+    anotherDraftOpen,
     say,
     composeId,
     finishCompose,
@@ -395,6 +489,7 @@ export function useMailCompose({
     feedbackDraft,
     closeCompose,
     discard,
+    offerDiscardUndo,
     send,
   };
 }

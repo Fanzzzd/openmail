@@ -74,7 +74,12 @@ export const ComposeRpcs = [
   Rpc.make("OpenDraft", { payload: { id: Schema.String }, success: Draft, error }),
   Rpc.make("DraftStatus", { payload: { id: Schema.String }, success: Schema.NullOr(Draft) }),
   Rpc.make("SaveDraft", { payload: { draft: DraftInput }, success: Draft, error }),
-  Rpc.make("DiscardDraft", { payload: { id: Schema.String } }),
+  /** With `holdMs`, core holds the discard for the undo window; true when it is held. */
+  Rpc.make("DiscardDraft", {
+    payload: { id: Schema.String, holdMs: Schema.optionalKey(Schema.Number) },
+    success: Schema.Boolean,
+  }),
+  Rpc.make("RestoreDraft", { payload: { id: Schema.String }, success: Draft, error }),
 
   // Compose settings
   Rpc.make("Prefs", { success: Prefs }),

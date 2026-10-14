@@ -16,6 +16,8 @@ import { useBatchUndo } from "../state/undo";
 export function useComposeDelivery({
   run,
   setCompose,
+  reopenDraft,
+  anotherDraftOpen,
   say,
   composeId,
   finishCompose,
@@ -27,6 +29,9 @@ export function useComposeDelivery({
   messages: AppMessages;
   run: ReturnType<typeof useRunMail>;
   setCompose: (draft: Draft | null) => void;
+  /** Shows the draft again without replacing another open draft. */
+  reopenDraft: (draft: Draft) => void;
+  anotherDraftOpen: (id: string) => boolean;
   say: (next: Omit<ToastState, "id">) => void;
   composeId: string | undefined;
   finishCompose: () => void;
@@ -89,7 +94,7 @@ export function useComposeDelivery({
     confirmResend: boolean,
   ) => {
     setCompose(null);
-    const reopen = () => setCompose(draft);
+    const reopen = () => reopenDraft(draft);
     const token = Symbol();
     const clearPending = () => {
       if (pendingSends.current.get(draft.id)?.token === token)
@@ -152,6 +157,17 @@ export function useComposeDelivery({
               if (error._tag === "Some" && error.value._tag === "SendUncertain")
                 uncertain.current.add(draft.id);
               const reason = causeText(i18n, cause);
+              // Another draft opened meanwhile: keep it, and offer this one.
+              if (anotherDraftOpen(draft.id)) {
+                say({
+                  text: draft.subject.trim()
+                    ? messages.couldntSendSubject(draft.subject.trim(), reason)
+                    : messages.couldntSend(reason),
+                  tone: "error",
+                  action: { label: messages.openDraft, run: reopen },
+                });
+                return;
+              }
               say({ text: messages.couldntSend(reason), tone: "error" });
               reopen();
             },

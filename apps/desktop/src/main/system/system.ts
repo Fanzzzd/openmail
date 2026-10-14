@@ -102,6 +102,7 @@ export class Desktop extends Context.Service<
     search(query: string): Effect.Effect<void>;
     compose(): Effect.Effect<void>;
     composeMessage(input: Extract<DesktopEvent, { _tag: "ComposeMessage" }>): Effect.Effect<void>;
+    showUndo(input: Extract<DesktopEvent, { _tag: "ShowUndo" }>): Effect.Effect<void>;
     openSettings(): Effect.Effect<void>;
   }
 >()("openmail/Desktop") {}
@@ -726,6 +727,7 @@ export const DesktopLive = Layer.effect(
     yield* refresh;
     return Desktop.of({
       composeMessage: (input) => Effect.sync(() => deliver(input)),
+      showUndo: (input) => Effect.sync(() => deliver(input)),
       compose: () =>
         Effect.sync(() =>
           deliver({ _tag: "Compose", draft: { to: "", cc: "", bcc: "", subject: "", body: "" } }),

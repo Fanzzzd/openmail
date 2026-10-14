@@ -32,11 +32,11 @@ setRpcBridge(
 
 // A hidden page may be frozen or discarded: drafts save now, not after their debounce.
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "hidden") flushUnsavedWork();
+  if (document.visibilityState === "hidden") void flushUnsavedWork();
 });
-window.addEventListener("pagehide", flushUnsavedWork);
+window.addEventListener("pagehide", () => void flushUnsavedWork());
 window.addEventListener("beforeunload", (event) => {
-  flushUnsavedWork();
+  void flushUnsavedWork();
   if (hasUnsavedWork()) event.preventDefault();
 });
 trackKeyboardInset(window);

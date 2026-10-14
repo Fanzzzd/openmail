@@ -30,6 +30,7 @@ const state = vi.hoisted(() => {
     aliases: new Array<SendAs>(),
     signatures: new Array<Signature>(),
     save: vi.fn(),
+    flushed: vi.fn(),
     calls: new Array<{ tag: string; payload: unknown }>(),
     fail: false,
   };
@@ -65,6 +66,7 @@ vi.mock("../../../state/mail", async () => {
     useRunMail: () => Effect.runFork,
     openDraft: () => Effect.fail(new NotFound({ what: "draft", id: "missing" })),
     draftStatus: () => Effect.succeed(null),
+    saveDraft: (draft: unknown) => Effect.sync(() => state.flushed(draft)),
     withMail: (
       f: (
         call: (tag: string, payload: unknown) => Effect.Effect<unknown, unknown>,
@@ -100,6 +102,7 @@ function Harness() {
   const { draft, setDraft, prefs } = useComposeDraft(initial);
   const [adding, setAdding] = useState(false);
   const ccRef = useRef<HTMLInputElement>(null);
+  const handedOff = useRef<Draft | null>(null);
   const set = (patch: Partial<Draft>) => {
     setDraft((current) => ({ ...current, ...patch }));
     sendFlow.setAsking(null);
@@ -154,11 +157,12 @@ function Harness() {
     onPopOut: popped,
     popOutRequested,
     closeRequested,
+    handedOff,
   });
   useComposeShortcuts({ draft, prefs, recipients, sendFlow, editor, lifecycle, ccRef });
   useEffect(() => {
-    model = { draft, setDraft, setAdding, recipients, sendFlow, editor, lifecycle };
-  }, [draft, setDraft, setAdding, recipients, sendFlow, editor, lifecycle]);
+    model = { draft, setDraft, setAdding, recipients, sendFlow, editor, lifecycle, handedOff };
+  }, [draft, setDraft, setAdding, recipients, sendFlow, editor, lifecycle, handedOff]);
   return null;
 }
 let model: {
@@ -169,6 +173,7 @@ let model: {
   sendFlow: ReturnType<typeof useComposeSend>;
   editor: ReturnType<typeof useComposeEditor>;
   lifecycle: ReturnType<typeof useDraftLifecycle>;
+  handedOff: React.RefObject<Draft | null>;
 };
 let dom: ReturnType<typeof testDom>;
 const mount = () =>
@@ -259,7 +264,7 @@ it("draft lifecycle debounces edits, pauses autosave during attachments and reco
   expect(model.lifecycle.recoveryError).not.toBe("");
 });
 
-it("native close and pop-out use the latest edits and unmount cancels autosave", async () => {
+it("native close and pop-out use the latest edits and unmount saves them once", async () => {
   vi.useFakeTimers();
   mount();
   act(() => model.setDraft((draft) => ({ ...draft, subject: "Latest" })));
@@ -272,9 +277,23 @@ it("native close and pop-out use the latest edits and unmount cancels autosave",
   await flush();
   expect(model.lifecycle.closing).toBe(true);
   expect(closed).not.toHaveBeenCalled();
+  state.flushed.mockClear();
   dom.render(null);
   await act(() => vi.advanceTimersByTimeAsync(3000));
   expect(state.save).not.toHaveBeenCalled();
+  expect(state.flushed).toHaveBeenCalledTimes(1);
+  expect(state.flushed.mock.calls[0]?.[0]).toMatchObject({ message: { subject: "Latest" } });
+});
+
+it("a draft handed off to send or discard is not saved again on unmount", async () => {
+  vi.useFakeTimers();
+  mount();
+  act(() => model.setDraft((draft) => ({ ...draft, subject: "Sent away" })));
+  model.handedOff.current = model.draft;
+  state.flushed.mockClear();
+  dom.render(null);
+  await act(() => vi.advanceTimersByTimeAsync(3000));
+  expect(state.flushed).not.toHaveBeenCalled();
 });
 
 it("recipient moves and mentions preserve manual recipients, and sender changes replace signatures", () => {

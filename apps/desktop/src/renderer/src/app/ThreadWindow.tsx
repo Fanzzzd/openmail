@@ -27,6 +27,7 @@ import { OPEN_SETTINGS_EVENT } from "../features/ai/open-ai-settings";
 import { readerThreadKey } from "../features/reader/reader-selection";
 import { ThreadViewMenuItems } from "../features/reader/ThreadViewMenu";
 import { useBatchUndo } from "../state/undo";
+import { useAppMessages } from "./use-app-messages";
 import { FocusedInboxPermission } from "../features/organize/FocusedInboxActions";
 import { ThreadActions } from "../features/organize/ThreadActions";
 import type { ThreadState } from "../lib/focused-inbox";
@@ -55,6 +56,7 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
   const run = useRunMail();
   useDesktopLabels();
   const { t, i18n } = useLingui();
+  const appMessages = useAppMessages();
   const [selectedMessage, setSelectedMessage] = useState(id);
   const [toast, setToast] = useState<ToastState | null>(null);
   const hideToast = useCallback(() => setToast(null), []);
@@ -139,6 +141,7 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
 
   const act = (op: MailOp, keepOpen = false) => {
     if (op.kind === "read" && !op.value) setMarked(true);
+    const leaves = LEAVES.has(op.kind) && !keepOpen;
     return run(
       (op.kind === "classification"
         ? modifyWithUndo([id], op, false).pipe(
@@ -153,9 +156,21 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
             ),
             Effect.asVoid,
           )
-        : single
-          ? modifyMessages([id], op).pipe(Effect.asVoid)
-          : modifyThreads([id], op).pipe(Effect.asVoid)
+        : leaves
+          ? // The window closes, so the main window offers Undo.
+            modifyWithUndo([id], op, single).pipe(
+              Effect.flatMap(({ undoId }) =>
+                withMail((call) =>
+                  call("ShowUndo", {
+                    text: appMessages.opDone(op),
+                    undo: { _tag: "Batch", undoId, ids: [id] },
+                  }),
+                ),
+              ),
+            )
+          : single
+            ? modifyMessages([id], op).pipe(Effect.asVoid)
+            : modifyThreads([id], op).pipe(Effect.asVoid)
       ).pipe(
         Effect.matchCause({
           onFailure: (cause) => {
@@ -164,7 +179,7 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
             say({ text: t`Action failed: ${reason}`, tone: "error" });
           },
           onSuccess: () => {
-            if (LEAVES.has(op.kind) && !keepOpen) window.close();
+            if (leaves) window.close();
           },
         }),
       ),

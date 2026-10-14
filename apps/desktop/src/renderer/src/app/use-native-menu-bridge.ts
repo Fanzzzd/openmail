@@ -18,6 +18,7 @@ import type { ToastState } from "../ui/Toast";
 import { loadDrafts } from "../features/compose/draft-loader";
 import { dispatchNativeAction } from "./native-actions";
 import { useDesktopEvents } from "../state/desktop";
+import { flushUnsavedWork } from "../state/unsaved-work";
 import { saveDraft, useRunMail, withMail } from "../state/mail";
 import { useBatchUndo } from "../state/undo";
 import { ALL, OVERVIEW } from "../lib/view";
@@ -38,6 +39,7 @@ export function useNativeMenuBridge({
   say,
   accountList,
   undoRef,
+  showUndo,
   messages,
 }: {
   messages: AppMessages;
@@ -49,6 +51,7 @@ export function useNativeMenuBridge({
   say: (next: Omit<ToastState, "id">) => void;
   accountList: readonly Account[];
   undoRef: ReturnType<typeof useBatchUndo>["undoRef"];
+  showUndo: ReturnType<typeof useBatchUndo>["showUndo"];
 }) {
   const [dialog, setDialog] = useAtom(dialogAtom);
   const editing = useAtomValue(editingProfileAtom);
@@ -68,6 +71,7 @@ export function useNativeMenuBridge({
     undoSend,
     startNewMessage,
     setCrashFeedback,
+    offerDiscardUndo,
   } = composition;
   const { i18n } = useLingui();
   const [desktopEvents, setDesktopEvents] = useState<readonly DesktopEvent[]>([]);
@@ -154,8 +158,14 @@ export function useNativeMenuBridge({
         if (compose) setCloseRequested((n) => n + 1);
         else if (!hasPendingSends()) run(withMail((call) => call("CloseComposeWindow", undefined)));
         break;
+      case "ShowUndo":
+        if (event.undo._tag === "Batch")
+          showUndo({ undoId: event.undo.undoId }, event.undo.ids, event.text);
+        else offerDiscardUndo(event.undo.id, null);
+        break;
       case "QuitCheck":
-        reportSendState();
+        // Save open composers' latest typing before main counts what is pending.
+        void flushUnsavedWork().then(reportSendState);
         break;
       case "UndoSend":
         undoSend();

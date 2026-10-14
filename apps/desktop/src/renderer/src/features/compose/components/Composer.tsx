@@ -65,14 +65,34 @@ export function Composer({
   standalone = false,
   closeRequested = 0,
   popOutRequested = 0,
-  onPopOut,
+  onPopOut: popOut,
   draft: initial,
   accounts,
   signatureFor,
-  onClose,
-  onDiscard,
-  onSend,
+  onClose: closeDraft,
+  onDiscard: discardDraft,
+  onSend: sendDraft,
 }: Props) {
+  /** The draft as send, discard, close or pop out took it, so unmounting does not save it. */
+  const handedOff = useRef<Draft | null>(null);
+  const onClose = (next: Draft, changed: boolean) => {
+    handedOff.current = next;
+    closeDraft(next, changed);
+  };
+  const onDiscard = (next: Draft) => {
+    handedOff.current = next;
+    discardDraft(next);
+  };
+  const onSend: Props["onSend"] = (next, message, options) => {
+    handedOff.current = next;
+    sendDraft(next, message, options);
+  };
+  const onPopOut =
+    popOut &&
+    ((next: Draft) => {
+      handedOff.current = next;
+      popOut(next);
+    });
   const errorId = useId();
   const messages = useComposeMessages();
   const { t, i18n } = useLingui();
@@ -188,6 +208,7 @@ export function Composer({
     onPopOut,
     popOutRequested,
     closeRequested,
+    handedOff,
   });
   const {
     saveState,
@@ -281,12 +302,12 @@ export function Composer({
                 </span>
               )}
               <span className="flex-1 truncate text-footnote text-a11y-muted">{status}</span>
-              {onPopOut && (
+              {popOut && (
                 <button
                   type="button"
                   className={quiet}
                   disabled={checkingClose || saveState.waiting}
-                  onClick={() => onPopOut(draft)}
+                  onClick={() => onPopOut?.(draft)}
                 >
                   <AppWindow className="size-4 sm:hidden" />
                   <span className="max-sm:sr-only">

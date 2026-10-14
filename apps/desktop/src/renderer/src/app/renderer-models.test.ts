@@ -346,6 +346,7 @@ function Harness() {
     say: notify,
     accountList: state.accounts,
     undoRef,
+    showUndo,
   });
   useEffect(() => {
     model = { navigation, mailActions, composition };
@@ -1007,6 +1008,9 @@ const messages = {
   sentAndArchived: `Sent and archived`,
   sent: `Sent`,
   couldntSend: (reason: string) => `Couldn't send: ${reason}`,
+  couldntSendSubject: (subject: string, reason: string) => `Couldn't send ${subject}: ${reason}`,
+  openDraft: `Open draft`,
+  couldntRestoreTheDraft: (reason: string) => `Couldn't restore the draft: ${reason}`,
   sending: `Sending…`,
   undo: `Undo`,
   gmailSize: `Gmail attachments exceed 25 MB in total. Remove attachments before sending.`,

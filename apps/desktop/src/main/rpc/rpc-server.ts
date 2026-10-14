@@ -251,6 +251,7 @@ const Handlers = MailRpcs.toLayer(
         }),
       ComposeNew: () => desktop.compose(),
       ComposeMessage: (input) => desktop.composeMessage({ _tag: "ComposeMessage", ...input }),
+      ShowUndo: (input) => desktop.showUndo({ _tag: "ShowUndo", ...input }),
       OpenSettings: () => desktop.openSettings(),
       ClaimInlineDraft: ({ id }, { client }) =>
         Effect.sync(() => claimInlineDraft(windowOf(client.id), id)),

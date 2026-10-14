@@ -237,6 +237,7 @@ export function App({ composeId }: { composeId?: string }) {
     say,
     accountList,
     undoRef,
+    showUndo,
   });
 
   const paneNav = usePaneNavigation({ layout, navigation, run });

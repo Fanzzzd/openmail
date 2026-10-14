@@ -7,6 +7,9 @@ const USER = { kind: "user", surface: "app" } as const;
 
 type MailboxService = Mailbox["Service"];
 
+/** A held discard never outlives a minute, whatever the caller asks. */
+const MAX_DISCARD_HOLD_MS = 60_000;
+
 /** Where contact suggestions, groups and photos come from. */
 export interface ContactsBackend {
   suggest(
@@ -196,7 +199,11 @@ export function mailboxHandlers(m: MailboxService, options: MailboxHandlerOption
     OpenDraft: ({ id }) => m.openDraft(id),
     DraftStatus: ({ id }) => m.draftStatus(id),
     SaveDraft: ({ draft }) => m.saveDraft(draft),
-    DiscardDraft: ({ id }) => m.discardDraft(id),
+    DiscardDraft: ({ id, holdMs }) =>
+      holdMs && holdMs > 0
+        ? m.discardDraftLater(id, Math.min(holdMs, MAX_DISCARD_HOLD_MS))
+        : m.discardDraft(id).pipe(Effect.as(false)),
+    RestoreDraft: ({ id }) => m.restoreDraft(id),
 
     CacheSize: () => m.cacheSize,
     ClearCache: ({ accountId }) => m.clearCache(accountId),
