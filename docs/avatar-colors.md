@@ -22,4 +22,4 @@ not a published Gmail identity hash. Most tones above are Material 800/900;
 `#3367d6` retains the Google blue and `#a65a00` darkens amber for white-text contrast.
 These choices favor the documented Google hue families within the existing 4.5:1
 contrast requirement. No authenticated Gmail screenshots or sender-color samples
-were available in slice 46, so the mapping remains an approximation and R26 stays partial.
+were available when the palette was chosen, so the mapping remains an approximation.

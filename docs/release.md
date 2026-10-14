@@ -146,14 +146,3 @@ A daily pass uses the date index to check only message text that may have expire
 ## Semantic search on Intel
 
 This release keeps ONNX Runtime 1.30.0 on the main line. Its npm package has no macOS x64 binding, and its postinstall does not download one; [upstream has an open issue](https://github.com/microsoft/onnxruntime/issues/27961). In the x64 build, mail, contacts, calendar and the universal Vision helper work. Loading the semantic model has to wait until upstream ships the binding or someone supplies a build of the same version. Until then core gates it: `onDeviceModelsSupported` in `platform/host.ts` reads the OS and architecture from `PlatformHost`, so on macOS x64 `NodeMailbox` builds no model runtime, nothing downloads the 226 MB of models or loads the binding, and Settings shows the model switch off with one line saying semantic search needs Apple silicon. No native binding from another version is mixed in, and the main-line runtime is not downgraded.
-
-## Past verification (release slice)
-
-These are the acceptance notes from the release slice. The test counts do not describe the current repo. The current automated checks are in [testing](testing.md), and acceptance steps still waiting on the owner are in the [roadmap](roadmap.md#待用户完成).
-
-- `pnpm build && pnpm test && pnpm exec oxlint && pnpm exec oxfmt --check .` passed: 330 core tests and 18 desktop tests, with one model integration test skipped by default. The only warnings were the two existing type assertions at IO boundaries.
-- `pnpm --filter @openmail/desktop dist` produced four packages, and `codesign --verify --deep --strict` passed for both apps. The build was not notarized or published.
-- Both arm64 and x64 (under Rosetta) launched with a temporary `--user-data-dir`. The renderer, the sandboxed preload and core SQLite all worked. On x64 the `node:sqlite` and keyring N-API modules also loaded on their own, without reading or writing real keychain items.
-- On arm64, 500 synthetic messages also checked paging and reader settings: 18 to 26 mounted rows, 84 px row height, and no render errors caught. The temporary account was set to need reauthorization, so the check never contacted a mail server.
-- In the arm64 package, ONNX, keyring and sqlite-vec loaded for real. x64 still lacks the upstream ONNX binding; the limit is described above.
-- Fixed a packaged-app startup error where the platform-node main entry loaded an unbundled Redis peer. Core now imports only the subpaths it uses. The package contains no build logs and no update token.
