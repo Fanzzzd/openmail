@@ -321,6 +321,7 @@ export const MailboxLive = (
           contacts: () => contacts,
           cache: () => cache,
           enforceCacheBudget: storage.enforceCacheBudget,
+          retryAcceptedSends: (accountId) => outboxMailbox.retryAcceptedSends(accountId),
         },
         runtime,
       );

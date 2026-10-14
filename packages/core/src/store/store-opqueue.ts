@@ -19,7 +19,14 @@ const SMTP_ACCEPTED = "smtp-accepted:";
 const SmtpAcceptedRow = Schema.Struct({
   key: Schema.String,
   value_json: Schema.fromJsonString(
-    Schema.Struct({ accountId: Schema.String, raw: Schema.String, at: Schema.Number }),
+    Schema.Struct({
+      accountId: Schema.String,
+      raw: Schema.String,
+      at: Schema.Number,
+      tries: Schema.optionalKey(Schema.Number),
+      subject: Schema.optionalKey(Schema.String),
+      sender: Schema.optionalKey(Schema.String),
+    }),
   ),
 });
 
@@ -247,6 +254,9 @@ export const makeOpQueueStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
           accountId: row.value_json.accountId,
           raw: new Uint8Array(Buffer.from(row.value_json.raw, "base64")),
           at: row.value_json.at,
+          tries: row.value_json.tries ?? 0,
+          subject: row.value_json.subject,
+          sender: row.value_json.sender,
         })),
       ),
     ),
@@ -263,6 +273,14 @@ export const makeOpQueueStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
       }),
     clearSmtpAccepted: (draftId) =>
       run(sql`DELETE FROM prefs WHERE key=${SMTP_ACCEPTED + draftId}`),
+    noteSentCopyFailure: (draftId, message) =>
+      run(
+        sql`UPDATE prefs SET value_json=json_set(value_json,
+          '$.tries', COALESCE(json_extract(value_json,'$.tries'),0)+1,
+          '$.subject', COALESCE(json_extract(value_json,'$.subject'),${message.subject}),
+          '$.sender', COALESCE(json_extract(value_json,'$.sender'),${message.sender}))
+        WHERE key=${SMTP_ACCEPTED + draftId} AND json_valid(value_json)`,
+      ),
   } satisfies Pick<
     Store["Service"],
     | "enqueueOp"
@@ -286,5 +304,6 @@ export const makeOpQueueStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
     | "smtpAccepted"
     | "markSmtpAccepted"
     | "clearSmtpAccepted"
+    | "noteSentCopyFailure"
   >;
 };

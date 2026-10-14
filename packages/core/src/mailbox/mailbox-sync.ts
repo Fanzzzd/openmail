@@ -132,6 +132,8 @@ export const makeSyncMailbox = (
     contacts: () => ReturnType<typeof makeContactsMailbox>;
     cache: () => ReturnType<typeof makeCacheMailbox>;
     enforceCacheBudget: (force?: boolean) => Effect.Effect<void>;
+    /** Files Sent copies still missing for sends SMTP accepted on this account. */
+    retryAcceptedSends: (accountId: string) => Effect.Effect<void>;
   },
   runtime: MailboxRuntimeState,
 ) => {
@@ -389,7 +391,11 @@ export const makeSyncMailbox = (
             ? pull.pipe(imapPullLock(account.id).withPermits(1))
             : pull;
           if (shared && !result.error) yield* flush([account.id]);
-          if (!result.error) runtime.polling.delete(account.id);
+          if (!result.error) {
+            runtime.polling.delete(account.id);
+            // The server answered; a Sent copy that failed earlier can be filed now.
+            yield* FiberSet.run(runtime.background, deps.retryAcceptedSends(account.id));
+          }
           if (!account.needsReauth)
             yield* deps
               .contacts()

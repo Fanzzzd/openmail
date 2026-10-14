@@ -19,10 +19,14 @@ import { mobileAttachmentProblem, type QueuedSend } from "./mobile-outbox.js";
 import { isDefiniteSendFailure } from "../providers/provider-send.js";
 import { READ_ONLY_MESSAGE } from "./read-only.js";
 import { isEmailAddress } from "../compose/recipients.js";
-import type { StoredDraft } from "../store/service.js";
+import type { SmtpAcceptedSend, StoredDraft } from "../store/service.js";
 import { providerCapabilities } from "../providers/capabilities.js";
 import { serverSavesSent } from "../providers/imap/imap-settings.js";
 import type { SendOriginal } from "../providers/send-original.js";
+
+/** A Sent copy that fails this many times, or for this long, becomes a sentCopyMissing notice. */
+const MAX_SENT_COPY_TRIES = 10;
+const SENT_COPY_RETRY_MS = 7 * 24 * 60 * 60 * 1000;
 
 /** A finished discard keeps its draft id this long, so a save arriving late can't recreate it. */
 const DISCARD_TOMBSTONE_MS = 7 * 24 * 60 * 60 * 1000;
@@ -547,13 +551,20 @@ export const makeOutboxMailbox = (
         yield* changed;
       }
     });
+  /** Drafts whose Sent copy is being filed now, so a sync retry never APPENDs a second copy. */
+  const filingSentCopies = new Set<string>();
   /**
    * SMTP accepted this send, then OpenMail stopped before the send finished. The message is out:
-   * file its Sent copy, then finish the send as the live path would have.
+   * finish the send as the live path would have, and file its Sent copy. The record stays until
+   * the copy is filed (saveSent skips a copy Sent already has by Message-ID), and the next
+   * successful sync of the account tries again. After MAX_SENT_COPY_TRIES failures or
+   * SENT_COPY_RETRY_MS the person gets a sentCopyMissing notice instead.
    */
-  const finishAcceptedSend = (accepted: { draftId: string; accountId: string; raw: Uint8Array }) =>
+  const finishAcceptedSend = (accepted: SmtpAcceptedSend) =>
     Effect.gen(function* () {
       const { draftId } = accepted;
+      if (filingSentCopies.has(draftId)) return;
+      filingSentCopies.add(draftId);
       const account = yield* store.getAccount(accepted.accountId).pipe(Effect.option);
       const adapter = Option.isSome(account) ? providers.get(account.value.provider) : undefined;
       const filed =
@@ -562,30 +573,55 @@ export const makeOutboxMailbox = (
           : undefined;
       const queued = (yield* store.queuedSends).find((item) => item.id === draftId);
       const draft = yield* store.getDraft(draftId);
+      const message = queued?.message ?? (Option.isSome(draft) ? draft.value.message : undefined);
+      const subject = accepted.subject ?? message?.subject ?? "";
+      const sender =
+        accepted.sender ??
+        message?.from?.address ??
+        (Option.isSome(account) ? account.value.email : "");
+      const now = yield* Clock.currentTimeMillis;
+      const failed = filed?._tag === "Failure";
+      const giveUp =
+        failed &&
+        (accepted.tries + 1 >= MAX_SENT_COPY_TRIES || now - accepted.at >= SENT_COPY_RETRY_MS);
       yield* store.transaction(
         Effect.gen(function* () {
           if (Option.isSome(draft)) yield* removeDraft(draft.value);
           yield* store.deleteQueuedSend(draftId);
           yield* store.setSendUncertain(draftId, false);
           yield* store.setSendPreparationState(draftId, null);
-          yield* store.clearSmtpAccepted(draftId);
+          yield* failed && !giveUp
+            ? store.noteSentCopyFailure(draftId, { subject, sender })
+            : store.clearSmtpAccepted(draftId);
         }),
       );
       if (Option.isSome(draft) && draft.value.proposalId !== null)
         yield* settleProposal(draft.value.proposalId, true);
-      if (filed?._tag === "Failure" && Option.isSome(account)) {
-        const message = queued?.message ?? (Option.isSome(draft) ? draft.value.message : undefined);
+      if (giveUp)
         yield* store.recordFailedOp({
           accountId: accepted.accountId,
           providerId: draftId,
           kind: "sentCopyMissing",
           reason: `SMTP accepted the message before OpenMail closed, but saving its Sent copy failed: ${filed.failure.message}`,
-          subject: message?.subject ?? "",
-          sender: message?.from?.address ?? account.value.email,
+          subject,
+          sender,
         });
-      }
       yield* changed;
-    });
+    }).pipe(Effect.ensuring(Effect.sync(() => filingSentCopies.delete(accepted.draftId))));
+
+  /** Sent copies still missing after SMTP accepted the send; a successful sync retries them. */
+  const retryAcceptedSends = (accountId?: string) =>
+    Effect.gen(function* () {
+      if (readOnly || !(options.resumeDesktopSends || options.localDraftQueue)) return;
+      const accepted = (yield* store.smtpAccepted).filter(
+        (entry) => accountId === undefined || entry.accountId === accountId,
+      );
+      yield* Effect.forEach(accepted, finishAcceptedSend, { discard: true });
+    }).pipe(
+      Effect.catchCause((cause) =>
+        logWarning("sent-copy-failed", "Finishing an accepted send failed", cause),
+      ),
+    );
 
   /** What to tell the person about a send that stopped mid-way with no SMTP answer recorded. */
   const interruptedMessage = (accountId: string) =>
@@ -604,13 +640,7 @@ export const makeOutboxMailbox = (
       yield* resumeHeldDiscards;
       const accepted = yield* store.smtpAccepted;
       // Filing in Sent waits for the server; start does not.
-      if (accepted.length)
-        yield* Effect.forEach(accepted, finishAcceptedSend, { discard: true }).pipe(
-          Effect.catchCause((cause) =>
-            logWarning("sent-copy-failed", "Finishing an accepted send failed", cause),
-          ),
-          Effect.forkIn(mailboxScope),
-        );
+      if (accepted.length) yield* retryAcceptedSends().pipe(Effect.forkIn(mailboxScope));
       for (const item of yield* store.queuedSends) {
         if (accepted.some((entry) => entry.draftId === item.id)) continue;
         if (item.status === "sending") {
@@ -720,6 +750,7 @@ export const makeOutboxMailbox = (
   return {
     send,
     start,
+    retryAcceptedSends,
     finishHeldDiscards,
     outbox: {
       queuedSends: store.queuedSends,

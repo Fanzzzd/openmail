@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, it, vi } from "vitest";
 import { Effect, Layer, ManagedRuntime, Option } from "effect";
+import { TestClock } from "effect/testing";
 import { Mailbox } from "./mailbox.js";
 import { ProviderError } from "../domain/errors.js";
 import { fakeServer } from "../platform/node/fake-provider.js";
@@ -126,7 +127,22 @@ it("start files the Sent copy of a send SMTP accepted before a crash and finishe
   );
 });
 
-it("a Sent copy that still fails after the restart is reported, and the send is not repeated", async () => {
+/** Waits until the record for the accepted send shows `tries` failed filings. */
+const failedTimes = (tries: number) =>
+  Effect.gen(function* () {
+    const store = yield* Store;
+    yield* Effect.promise(() =>
+      vi.waitFor(async () => {
+        expect((await Effect.runPromise(store.smtpAccepted)).map((entry) => entry.tries)).toEqual([
+          tries,
+        ]);
+      }, waitLimit),
+    );
+  });
+
+// R10 E1: one failed filing at launch (offline, say) cleared the record, so the Sent copy was
+// never filed even once the server was back.
+it("a Sent copy that fails at launch is filed on the next successful sync", async () => {
   const server = fakeServer("me@example.com");
   await restart(
     server,
@@ -134,6 +150,40 @@ it("a Sent copy that still fails after the restart is reported, and the send is 
       Effect.gen(function* () {
         const store = yield* Store;
         yield* store.markSmtpAccepted("draft:accepted", accountId, raw);
+        server.sentCopyFailure = new ProviderError({ message: "offline" });
+      }),
+    (accountId) =>
+      Effect.gen(function* () {
+        const store = yield* Store;
+        const mailbox = yield* Mailbox;
+        yield* failedTimes(1);
+        // The send itself is finished: no queue entry, draft or uncertainty is left.
+        expect(yield* mailbox.outbox.queuedSends).toEqual([]);
+        expect(Option.isNone(yield* store.getDraft("draft:accepted"))).toBe(true);
+        expect(yield* store.sendUncertain("draft:accepted")).toBe(false);
+        expect(yield* mailbox.proposals.listFailedOps).toEqual([]);
+        expect(server.sentCopies).toHaveLength(0);
+        yield* mailbox.sync.sync(accountId);
+        yield* settled;
+        expect(server.sentCopies.map((copy) => new TextDecoder().decode(copy))).toEqual([
+          new TextDecoder().decode(raw),
+        ]);
+        expect(yield* mailbox.proposals.listFailedOps).toEqual([]);
+        expect(server.sent).toHaveLength(0);
+      }),
+  );
+});
+
+it("a Sent copy that keeps failing is reported after the last try, and the send is not repeated", async () => {
+  const server = fakeServer("me@example.com");
+  await restart(
+    server,
+    (accountId) =>
+      Effect.gen(function* () {
+        const store = yield* Store;
+        yield* store.markSmtpAccepted("draft:accepted", accountId, raw);
+        for (let i = 0; i < 9; i++)
+          yield* store.noteSentCopyFailure("draft:accepted", { subject: "Accepted", sender: "" });
         server.sentCopyFailure = new ProviderError({ message: "APPEND refused" });
       }),
     () =>
@@ -149,6 +199,37 @@ it("a Sent copy that still fails after the restart is reported, and the send is 
         ]);
         expect(notices[0]?.reason).toContain("APPEND refused");
         expect(server.sent).toHaveLength(0);
+      }),
+  );
+});
+
+it("a Sent copy still missing after a week is reported with the subject it was sent with", async () => {
+  const server = fakeServer("me@example.com");
+  await restart(
+    server,
+    (accountId) =>
+      Effect.gen(function* () {
+        const store = yield* Store;
+        yield* Effect.gen(function* () {
+          yield* TestClock.setTime(Date.now() - 8 * 86_400_000);
+          yield* store.markSmtpAccepted("draft:accepted", accountId, raw);
+        }).pipe(Effect.provide(TestClock.layer()));
+        yield* store.noteSentCopyFailure("draft:accepted", {
+          subject: "Accepted",
+          sender: "me@example.com",
+        });
+        // The draft went away on the first try; the notice still names the message.
+        yield* store.deleteQueuedSend("draft:accepted");
+        yield* store.deleteDraft("draft:accepted");
+        server.sentCopyFailure = new ProviderError({ message: "APPEND refused" });
+      }),
+    () =>
+      Effect.gen(function* () {
+        const mailbox = yield* Mailbox;
+        yield* settled;
+        expect(yield* mailbox.proposals.listFailedOps).toMatchObject([
+          { kind: "sentCopyMissing", subject: "Accepted", sender: "me@example.com" },
+        ]);
       }),
   );
 });

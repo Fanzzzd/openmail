@@ -120,6 +120,18 @@ export interface ReminderSnapshot {
   members: readonly { providerId: string; wakePending: boolean }[];
 }
 
+/** A send SMTP accepted whose Sent copy is not filed yet. */
+export interface SmtpAcceptedSend {
+  readonly draftId: string;
+  readonly accountId: string;
+  readonly raw: Uint8Array;
+  readonly at: number;
+  /** Failed attempts to file the Sent copy. */
+  readonly tries: number;
+  readonly subject: string | undefined;
+  readonly sender: string | undefined;
+}
+
 export class Store extends Context.Service<
   Store,
   {
@@ -380,13 +392,18 @@ export class Store extends Context.Service<
     setSendUncertain(id: string, value: boolean): Effect.Effect<void>;
     /**
      * Sends SMTP accepted whose Sent copy may not be filed yet: the outbox writes one right after
-     * SMTP 250 and clears it when the send finishes, so a crash in between leaves it behind.
+     * SMTP 250 and clears it when the send finishes, so a crash in between leaves it behind. A
+     * record stays while filing the copy fails; `tries` counts those failures, and `subject` and
+     * `sender` are kept for the notice once the draft is gone.
      */
-    readonly smtpAccepted: Effect.Effect<
-      readonly { draftId: string; accountId: string; raw: Uint8Array; at: number }[]
-    >;
+    readonly smtpAccepted: Effect.Effect<readonly SmtpAcceptedSend[]>;
     markSmtpAccepted(draftId: string, accountId: string, raw: Uint8Array): Effect.Effect<void>;
     clearSmtpAccepted(draftId: string): Effect.Effect<void>;
+    /** Counts a failed Sent copy filing and keeps the first subject and sender it was given. */
+    noteSentCopyFailure(
+      draftId: string,
+      message: { subject: string; sender: string },
+    ): Effect.Effect<void>;
     readonly queuedSends: Effect.Effect<QueuedSend[]>;
     putQueuedSend(item: QueuedSend): Effect.Effect<void>;
     deleteQueuedSend(id: string): Effect.Effect<void>;
