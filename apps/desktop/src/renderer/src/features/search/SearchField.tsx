@@ -289,6 +289,21 @@ export function SearchField({
           </Combobox.Positioner>
         </Combobox.Portal>
       </Combobox.Root>
+      {value && (
+        <Tip label={t`Clear search`}>
+          <button
+            type="button"
+            aria-label={t`Clear search`}
+            onClick={() => {
+              onChange("");
+              fieldRef.current?.focus();
+            }}
+            className="flex size-5 shrink-0 items-center justify-center rounded-full text-a11y-muted hover:bg-fill-hover"
+          >
+            <X className="size-3.5" />
+          </button>
+        </Tip>
+      )}
       {dateTarget && (
         <input
           type="date"

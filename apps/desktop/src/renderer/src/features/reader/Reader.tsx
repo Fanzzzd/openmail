@@ -120,10 +120,12 @@ export function Reader({
           </div>
         )}
         {/* Beside the toolbar, search starts at 14rem: room for a query with the scope as an
-            icon. A header of 960 px leaves every default action room beside 20rem of search. */}
+            icon. A header of 960 px leaves every default action room beside 20rem of search.
+            While focused or holding a query it takes 20rem anyway; the toolbar folds actions. */}
         {!onBack && (
           <div
-            className={`flex min-w-0 ${prefs.toolbarVisible ? "flex-[0_1_14rem] @min-[960px]/bar:basis-80" : "flex-1"}`}
+            data-search-slot
+            className={`flex min-w-0 ${prefs.toolbarVisible ? `flex-[0_1_14rem] focus-within:basis-80 @min-[960px]/bar:basis-80 ${query ? "basis-80" : ""}` : "flex-1"}`}
           >
             <SearchField value={query} onChange={onQuery} inputRef={searchRef} />
           </div>

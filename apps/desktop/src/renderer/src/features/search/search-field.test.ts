@@ -504,3 +504,25 @@ it("the placeholder names the search key of the active keymap", () => {
   }
   activeShortcutSet = "mimestream";
 });
+
+it("a query shows a clear button that empties the field", () => {
+  const dom = testDom();
+  const changed = vi.fn();
+  const inputRef = createRef<HTMLInputElement>();
+  const i18n = setupI18n({ locale: "en", messages: { en: {} } });
+  const field = (value: string) =>
+    createElement(
+      I18nProvider,
+      { i18n },
+      createElement(SearchField, { value, inputRef, onChange: changed }),
+    );
+  dom.render(field(""));
+  expect(dom.element.querySelector('[aria-label="Clear search"]')).toBeNull();
+  dom.render(field("from:alice invoice"));
+  const clear = dom.element.querySelector('[aria-label="Clear search"]');
+  if (!clear) throw new Error("Missing Clear search");
+  act(() => {
+    clear.dispatchEvent(new dom.window.Event("click", { bubbles: true }));
+  });
+  expect(changed).toHaveBeenCalledWith("");
+});
