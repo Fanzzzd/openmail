@@ -376,7 +376,7 @@ export const DesktopLive = Layer.effect(
                   run(
                     Effect.tryPromise(() => openExternal(OPENMAIL_DOCS_URL)).pipe(
                       Effect.catchCause((cause) =>
-                        Effect.logWarning("could not open the help site", cause),
+                        logWarning("link-open-failed", "could not open the help site", cause),
                       ),
                     ),
                   ),
