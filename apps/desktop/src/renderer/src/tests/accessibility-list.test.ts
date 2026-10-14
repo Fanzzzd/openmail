@@ -8,6 +8,7 @@ import { MessageList } from "../features/mail-list/MessageList";
 import { Sidebar } from "../features/sidebar/Sidebar";
 import { MailStatusNotice } from "../features/sync-status/MailStatusNotice";
 import { BatchActions } from "../features/mail-list/BatchActions";
+import { UndoHistory } from "../features/undo/UndoHistory";
 import {
   fixture,
   account,
@@ -582,3 +583,27 @@ it("says which fields matched, marks the words, and marks nothing on a related r
   expect(related?.querySelector("mark")).toBeNull();
   await audit();
 });
+
+for (const entries of [[], [{ undoId: "u1", createdAt: Date.UTC(2026, 9, 14, 9, 30) }]]) {
+  it(`Undo history is a valid menu with ${entries.length ? "an operation" : "nothing to undo"}`, async () => {
+    const onUndo = vi.fn();
+    render(localized(h(UndoHistory, { entries, onUndo })));
+    fireEvent.click(screen.getByRole("button", { name: "Undo history" }));
+    const menu = await waitFor(() =>
+      screen.getByRole("menu", {
+        description:
+          "Operations from the last 24 hours. Restores labels, folders and flags after checking current state.",
+      }),
+    );
+    const items = within(menu).getAllByRole("menuitem");
+    expect(items).toHaveLength(1);
+    if (entries.length) {
+      fireEvent.click(items[0] ?? menu);
+      expect(onUndo).toHaveBeenCalledWith("u1");
+    } else {
+      expect(items[0]?.textContent).toBe("No operations to undo");
+      expect(items[0]?.getAttribute("aria-disabled")).toBe("true");
+    }
+    await audit();
+  });
+}

@@ -38,12 +38,15 @@ export function DropdownMenu({
   children,
   open,
   onOpenChange,
+  describedBy,
 }: {
   trigger: ReactElement;
   align?: "start" | "center" | "end";
   children: ReactNode;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  /** The id of text in the menu that describes it, read when the menu opens. */
+  describedBy?: string;
 }) {
   const { t } = useLingui();
   return (
@@ -56,7 +59,9 @@ export function DropdownMenu({
           align={align}
           sideOffset={4}
         >
-          <Menu.Popup className={popup}>{children}</Menu.Popup>
+          <Menu.Popup aria-describedby={describedBy} className={popup}>
+            {children}
+          </Menu.Popup>
         </Menu.Positioner>
       </Menu.Portal>
     </Menu.Root>
