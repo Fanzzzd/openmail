@@ -7,6 +7,11 @@ import { decodeRpcFrame, publicRpcResponse, type StringProtocolInput } from "./r
 import { MailRpcs } from "../../shared/rpc";
 import { APP_PAGE } from "../security/security-policy";
 import { configurePermissions, mayWriteClipboard, trustedSender } from "../security/security";
+import { scaledMs, waitLimit } from "../../../../../packages/core/test-support/test-time.js";
+
+/** Polls `check` until it holds, within the scaled wait limit. */
+const waitUntil = (check: () => boolean) =>
+  Effect.promise(() => vi.waitFor(() => expect(check()).toBe(true), waitLimit));
 
 const frames = vi.hoisted(() => {
   vi.resetModules();
@@ -439,12 +444,12 @@ it("a handler defect logs its RPC, kind and error class, and no message text", a
   );
   await Effect.runPromise(
     Effect.gen(function* () {
-      yield* Effect.sleep(10);
+      yield* waitUntil(() => input !== undefined);
       input?.frame(
         1,
         JSON.stringify({ _tag: "Request", id: "1", tag: "Threads", payload: null, headers: [] }),
       );
-      yield* Effect.sleep(50);
+      yield* waitUntil(() => failures.length > 0);
     }).pipe(
       Effect.provide(Layer.launch(server).pipe(Effect.forkScoped, Layer.effectDiscard)),
       Effect.scoped,
@@ -507,21 +512,22 @@ it("a reloaded page reusing request ids is answered only after its old client is
     Effect.scoped(
       Effect.gen(function* () {
         yield* Layer.build(layer);
-        yield* Effect.sleep(10);
-        // The crashed page's event stream holds request 0.
+        yield* waitUntil(() => input !== undefined);
+        // The crashed page's event stream holds request 0. Nothing observable marks the moment
+        // the server registers it, so each step gets a short real-time head start.
         input?.frame(7, request("DesktopEvents"));
-        yield* Effect.sleep(20);
-        // The reloaded page numbers from zero again: its first call is dropped.
+        yield* Effect.sleep(scaledMs(20));
+        // The reloaded page numbers from zero again: its first call is dropped. A missing
+        // answer has no event to wait on, so the check gives it a scaled window to show up.
         input?.frame(7, request("Diagnostics"));
-        yield* Effect.sleep(50);
+        yield* Effect.sleep(scaledMs(50));
         expect(answered()).toBe(false);
         // Ending the old client clears its streams; the same call is then answered.
         input?.disconnect(7);
-        yield* Effect.sleep(20);
+        yield* Effect.sleep(scaledMs(20));
         sent.length = 0;
         input?.frame(7, request("Diagnostics"));
-        for (let i = 0; i < 50 && !answered(); i++) yield* Effect.sleep(10);
-        expect(answered()).toBe(true);
+        yield* waitUntil(answered);
       }),
     ),
   );

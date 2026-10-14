@@ -12,3 +12,6 @@ export const scaledMs = (ms: number) => Math.round(ms * testTimeScale);
 
 /** Options for `vi.waitFor` and `expect.poll`, whose own default gives up after one second. */
 export const waitLimit = { timeout: scaledMs(2_000) };
+
+/** The `expect.poll` defaults for a Vitest config: the same scaled limit as `waitLimit`. */
+export const pollDefaults = { poll: waitLimit };
