@@ -31,7 +31,7 @@ import { isLocalFeedbackDraft } from "../app/feedback.js";
 import { withAgentOrigin } from "./mailbox-apply.js";
 import { type MailboxDependencies, type MailboxRuntimeState } from "./mailbox-runtime.js";
 import { DISCARDED_DRAFT_MESSAGE, WRITE_RECOVERY_WINDOW_MS } from "./mailbox-shared.js";
-import { type Mailbox } from "./mailbox.js";
+import type { MailboxCompose, MailboxOutbox } from "./mailbox.js";
 import { renderMarkdown } from "../compose/markdown.js";
 import { newMessageId } from "../mime/message-id.js";
 import { PlatformCrypto } from "../platform/crypto.js";
@@ -646,7 +646,8 @@ export const makeDraftsMailbox = (
     removeDraft,
     persistDraft,
     discardDraft,
-    service: {
+    outbox: { sendAgain } satisfies Pick<MailboxOutbox, "sendAgain">,
+    compose: {
       prepareRejectedResend: (noticeId) =>
         Effect.gen(function* () {
           const { notice, rejected } = yield* store.getFailedOp(noticeId);
@@ -688,19 +689,16 @@ export const makeDraftsMailbox = (
 
       draftStatus,
 
-      sendAgain,
-
       composeAttachments,
 
       saveDraft,
 
       recoverDraft,
     } satisfies Pick<
-      Mailbox["Service"],
+      MailboxCompose,
       | "prepareRejectedResend"
       | "openDraft"
       | "draftStatus"
-      | "sendAgain"
       | "composeAttachments"
       | "saveDraft"
       | "recoverDraft"

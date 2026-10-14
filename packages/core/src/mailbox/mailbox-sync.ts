@@ -23,7 +23,7 @@ import { type makeCacheMailbox } from "./mailbox-cache.js";
 import { type makeFeatureMailbox } from "./mailbox-features.js";
 import { type makeOrganizationMailbox } from "./mailbox-organization.js";
 import { type MailboxDependencies, type MailboxRuntimeState } from "./mailbox-runtime.js";
-import { type Mailbox, type SyncState } from "./mailbox.js";
+import type { MailboxSync, SyncState } from "./mailbox.js";
 import { BackgroundRead } from "../providers/provider-connectivity.js";
 import { retryAfterMillis } from "../providers/provider-retry.js";
 import type { Change } from "../providers/adapter.js";
@@ -611,7 +611,17 @@ export const makeSyncMailbox = (
   return {
     sync,
     start,
-    service: {
+    members: {
+      closeSessions: () =>
+        Effect.gen(function* () {
+          for (const provider of new Set(
+            (yield* store.listAccounts).map((account) => account.provider),
+          ))
+            yield* providers.get(provider).closeSessions?.() ?? Effect.void;
+        }),
+
+      syncHealth: makeSyncHealth(store, providers),
+
       resetConnectivity: () => resetConnectivity,
 
       setSyncPaused: (paused) =>
@@ -631,11 +641,15 @@ export const makeSyncMailbox = (
       pollInbox,
 
       syncState: Ref.get(runtime.syncState),
-
-      events: Stream.fromPubSub(runtime.pubsub),
     } satisfies Pick<
-      Mailbox["Service"],
-      "resetConnectivity" | "setSyncPaused" | "sync" | "pollInbox" | "syncState" | "events"
+      MailboxSync,
+      | "closeSessions"
+      | "syncHealth"
+      | "resetConnectivity"
+      | "setSyncPaused"
+      | "sync"
+      | "pollInbox"
+      | "syncState"
     >,
   };
 };

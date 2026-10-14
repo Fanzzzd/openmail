@@ -17,7 +17,12 @@ import { eventFromInvite } from "./mailbox-features.js";
 import { type makeOrganizationMailbox } from "./mailbox-organization.js";
 import { type MailboxDependencies, type MailboxRuntimeState } from "./mailbox-runtime.js";
 import { cacheIO } from "./mailbox-shared.js";
-import { type Mailbox, type PerformError } from "./mailbox.js";
+import type {
+  MailboxCalendar,
+  MailboxOrganize,
+  MailboxProposals,
+  PerformError,
+} from "./mailbox.js";
 import { decide } from "./policy.js";
 import { READ_ONLY_MESSAGE } from "./read-only.js";
 import type { StoredDraft } from "../store/service.js";
@@ -398,7 +403,7 @@ export const makeApplyMailbox = (
   });
   return {
     modify,
-    service: {
+    calendar: {
       importCalendarAttachment: (messageId, path, key, actor) =>
         Effect.gen(function* () {
           if (readOnly) return yield* new InvalidInput({ message: READ_ONLY_MESSAGE });
@@ -436,7 +441,8 @@ export const makeApplyMailbox = (
           yield* changed;
           return yield* Effect.void;
         }),
-
+    } satisfies Pick<MailboxCalendar, "importCalendarAttachment">,
+    organize: {
       unsubscribe: (messageId, actor) =>
         Effect.gen(function* () {
           if (readOnly) return yield* new InvalidInput({ message: READ_ONLY_MESSAGE });
@@ -464,14 +470,13 @@ export const makeApplyMailbox = (
         }),
 
       perform,
-
+    } satisfies Pick<MailboxOrganize, "unsubscribe" | "perform">,
+    proposals: {
       decideProposal,
 
       proposals: store.listProposals("pending"),
 
       proposal: (id) => store.getProposal(id),
-
-      messageAccounts: (ids) => store.messageAccounts(ids),
 
       listFailedOps: store.listFailedOps,
 
@@ -490,24 +495,6 @@ export const makeApplyMailbox = (
       agentWriteMode: store.agentWriteMode("*"),
 
       setAgentWriteMode: (mode) => mutate(store.setAgentWriteMode("*", mode)),
-    } satisfies Pick<
-      Mailbox["Service"],
-      | "importCalendarAttachment"
-      | "unsubscribe"
-      | "perform"
-      | "decideProposal"
-      | "proposals"
-      | "proposal"
-      | "messageAccounts"
-      | "listFailedOps"
-      | "acknowledgeFailedOps"
-      | "audit"
-      | "agentActivity"
-      | "recordAgentActivity"
-      | "agentWriteModeFor"
-      | "readOnlySession"
-      | "agentWriteMode"
-      | "setAgentWriteMode"
-    >,
+    } satisfies MailboxProposals,
   };
 };

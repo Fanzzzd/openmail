@@ -1,4 +1,3 @@
-import { normalizeRemoteAccess } from "../app/remote-access.js";
 import { logWarning } from "../domain/diagnostic-log.js";
 import { makeStorageMailbox } from "./mailbox-storage.js";
 import {
@@ -25,11 +24,13 @@ import { parseRawDraft as unboundParseRawDraft } from "../compose/drafts.js";
 import { InvalidInput } from "../domain/errors.js";
 import { makeIndexer } from "../ai/indexer.js";
 import { makeAccountsMailbox } from "./mailbox-accounts.js";
-import { makeAiMailbox } from "./mailbox-ai.js";
+import { makeAiMailbox, makeLocalModelsMailbox } from "./mailbox-ai.js";
+import { makeAppMailbox } from "./mailbox-app.js";
 import { makeApplyMailbox } from "./mailbox-apply.js";
 import { makeApplyChanges } from "./mailbox-pull-changes.js";
 import { makeBatchMailbox } from "./mailbox-batch.js";
 import { makeCacheMailbox } from "./mailbox-cache.js";
+import { makeComposeSettingsMailbox } from "./mailbox-compose.js";
 import { makeDraftsMailbox } from "./mailbox-drafts.js";
 import { makeFeatureMailbox } from "./mailbox-features.js";
 import { makeFlushMailbox } from "./mailbox-flush.js";
@@ -42,10 +43,8 @@ import {
   type MailboxDependencies,
   type MailboxOptions,
 } from "./mailbox-runtime.js";
-import { makeOptionalServiceMailbox } from "./mailbox-services.js";
-import { cacheIO } from "./mailbox-shared.js";
 import { makeSyncMailbox } from "./mailbox-sync.js";
-import { Mailbox, type MailboxEvent } from "./mailbox.js";
+import { Mailbox, type MailboxEvent, type MailboxSync } from "./mailbox.js";
 import { unavailableVision } from "../ai/media.js";
 import { Model, ModelUnavailable } from "../ai/model.js";
 import { scopedAdapter } from "../providers/scoped-adapter.js";
@@ -58,15 +57,7 @@ import { makeSemanticIndexer } from "../ai/semantic-indexer.js";
 import { AppConfig, OAuthIssuers, Secrets } from "../platform/auth.js";
 import { Providers } from "../providers/adapter.js";
 import { Store } from "../store/service.js";
-import { makeSyncHealth } from "../sync/sync-health.js";
 import { UnsubscribeNetwork } from "./unsubscribe.js";
-import {
-  checkVerifiedUpdates,
-  LEGACY_UPDATE_TOKEN_KEY,
-  startVerifiedUpdates,
-} from "../app/updates.js";
-
-const DEFAULT_SUGGESTIONS = 8;
 
 export type { MailboxOptions } from "./mailbox-runtime.js";
 export const MailboxLive = (
@@ -295,7 +286,10 @@ export const MailboxLive = (
         },
         runtime,
       );
-      const readingMailbox = makeReadingMailbox(deps, runtime);
+      const readingMailbox = makeReadingMailbox(
+        { ...deps, cache, organization: () => organization },
+        runtime,
+      );
       const accountsMailbox = makeAccountsMailbox(
         { ...deps, features: () => features, sync: (...args) => syncMailbox.sync(...args) },
         runtime,
@@ -322,9 +316,9 @@ export const MailboxLive = (
           flushLater: Effect.suspend(() => flushMailbox.flushLater),
           persistDraft: (...args) => draftsMailbox.persistDraft(...args),
           discardDraft: (...args) => draftsMailbox.discardDraft(...args),
-          draftStatus: (...args) => draftsMailbox.service.draftStatus(...args),
-          saveDraft: (...args) => draftsMailbox.service.saveDraft(...args),
-          openDraft: (...args) => draftsMailbox.service.openDraft(...args),
+          draftStatus: (...args) => draftsMailbox.compose.draftStatus(...args),
+          saveDraft: (...args) => draftsMailbox.compose.saveDraft(...args),
+          openDraft: (...args) => draftsMailbox.compose.openDraft(...args),
         },
         runtime,
       );
@@ -395,13 +389,19 @@ export const MailboxLive = (
                 wokenAt,
               });
           }),
+        (accountId, change) =>
+          change.kind === "color"
+            ? Effect.void
+            : options.backgroundFlush === false
+              ? syncMailbox.sync(accountId)
+              : FiberSet.run(runtime.background, syncMailbox.sync(accountId)),
       );
 
       const features = makeFeatureMailbox(
         store,
         providers,
         changed,
-        applyMailbox.service.perform,
+        applyMailbox.organize.perform,
         options.imageDownloader ?? network.download,
         codec,
         crypto,
@@ -420,7 +420,7 @@ export const MailboxLive = (
         ),
         message: (id) => store.getMessage(id).pipe(Effect.orDie),
         attachment: (id, index) =>
-          readingMailbox.service.attachment(id, index).pipe(Effect.map((part) => part.data)),
+          readingMailbox.reading.attachment(id, index).pipe(Effect.map((part) => part.data)),
         inline: (id) => readingMailbox.localInline(id),
         changed,
         markReauth: (id, error) => store.markReauth(id, error),
@@ -469,6 +469,7 @@ export const MailboxLive = (
         (ownerId) => store.purgeAccountProposals(ownerId, draftsMailbox.removeDraft),
         options.canTriage,
         options.systemLocale,
+        flushMailbox.flushLater,
       );
 
       // Subscribe before returning. Only opted-in auto-summary accounts can call the model.
@@ -479,232 +480,64 @@ export const MailboxLive = (
             : Effect.void,
         ).pipe(Effect.forkScoped);
       yield* outboxMailbox.start;
+      const { autoTriage: _autoTriage, autoSummaries: _autoSummaries, ...aiMembers } = ai;
+      const { forgetMessages: _forgetMessages, ...batchMembers } = batchMailbox;
+      const { searchServer: _searchServer, ...organizationMembers } = organization;
+      const { contactGroups, suggestSender, imageFromUrl, imageFromFile, ...calendarFeatures } =
+        features;
+      const { backfillOlder: _backfillOlder, readerThread: _readerThread, ...cacheMembers } = cache;
+      const { enforceCacheBudget: _enforceCacheBudget, ...storageMembers } = storage;
+      const groups = {
+        reading: readingMailbox.reading,
+        organize: {
+          ...applyMailbox.organize,
+          ...organizationMembers,
+          ...batchMembers,
+          ...folderMailbox,
+        },
+        proposals: applyMailbox.proposals,
+        compose: {
+          ...draftsMailbox.compose,
+          ...outboxMailbox.compose,
+          ...makeComposeSettingsMailbox(store, mutate),
+          contactGroups,
+          suggestSender,
+          imageFromUrl,
+          imageFromFile,
+        },
+        outbox: { ...outboxMailbox.outbox, ...draftsMailbox.outbox },
+        accounts: accountsMailbox.accounts,
+        ai: {
+          ...aiMembers,
+          ...readingMailbox.ai,
+          ...makeLocalModelsMailbox(store, indexer, options.models, mutate),
+        },
+        sync: {
+          ...syncMailbox.members,
+          ...cacheMembers,
+          ...storageMembers,
+        } satisfies MailboxSync,
+        calendar: { ...calendarFeatures, ...applyMailbox.calendar },
+        app: makeAppMailbox({ ...deps, enforceCacheBudget: storage.enforceCacheBudget }, runtime),
+      };
       const mailbox = Mailbox.of({
-        ...ai,
-        setAiAccount: (input) =>
-          ai.setAiAccount(input).pipe(Effect.andThen(flushMailbox.flushLater)),
-
-        remoteAccess: store.remoteAccess,
-        setRemoteAccess: (input) =>
-          normalizeRemoteAccess(input).pipe(
-            Effect.tap((settings) => store.setRemoteAccess(settings)),
-          ),
-
-        startUpdates: (client, updateOptions) =>
-          Effect.gen(function* () {
-            // Builds from the private repo kept a GitHub token; delete it once, missing or not.
-            if (yield* store.claimOnce("updates:legacy-token-removed"))
-              yield* secrets
-                .remove(LEGACY_UPDATE_TOKEN_KEY)
-                .pipe(Effect.catchCause(() => Effect.void));
-            const prefs = yield* store.prefs;
-            return yield* startVerifiedUpdates(
-              client,
-              {
-                ...updateOptions,
-                channel: prefs.updateChannel,
-                autoDownload: updateOptions.autoDownload ?? prefs.updateAutoDownload,
-              },
-              verifier.verify,
-            );
-          }),
-
-        ...organization,
-        ...batchMailbox,
-
-        ...folderMailbox,
-        ...features,
-
-        ...cache,
-        syncHealth: makeSyncHealth(store, providers),
-
-        cacheDatabaseSize: storage.cacheDatabaseSize,
-        compactCache: storage.compactCache,
-
-        cacheSize: Effect.gen(function* () {
-          const bodies = yield* store.bodySizes;
-          return yield* Effect.forEach(yield* store.listAccounts, (a) =>
-            Effect.gen(function* () {
-              const attachmentBytes = diskAttachments
-                ? yield* cacheIO(() => diskAttachments.size(a.id), 0)
-                : 0;
-              return {
-                accountId: a.id,
-                bodyBytes: bodies.find((b) => b.accountId === a.id)?.bytes ?? 0,
-                attachmentBytes,
-              };
-            }),
-          );
-        }),
-
-        clearCache: (accountId) =>
-          Effect.gen(function* () {
-            runtime.attachmentEpoch++;
-            runtime.attachmentCache.clear();
-            if (diskAttachments) yield* cacheIO(() => diskAttachments.clear(accountId), undefined);
-            for (const a of yield* store.listAccounts)
-              if (accountId === undefined || a.id === accountId) yield* store.clearBodies(a.id);
-            yield* changed;
-          }),
-
-        initializeProfiles: (accept, names) =>
-          store
-            .transaction(
-              Effect.gen(function* () {
-                const prefs = yield* store.prefs;
-                const accounts = yield* store.listAccounts;
-                if (prefs.defaultProfilesPrompted || accounts.length < 2) return;
-                yield* store.setPrefs({ defaultProfilesPrompted: true });
-                if (!accept || (yield* store.listProfiles).length) return;
-                yield* store.createProfile({ name: names.personal, icon: "🏠", color: "emerald" });
-                yield* store.createProfile({ name: names.work, icon: "💼", color: "blue" });
-              }),
-            )
-            .pipe(Effect.andThen(changed)),
-
-        searchServer: (query) =>
-          organization
-            .searchServer(query)
-            .pipe(Effect.tap(() => FiberSet.run(runtime.background, cache.fetchOlder(query)))),
-
-        changeLabel: (accountId, change) =>
-          organization
-            .changeLabel(accountId, change)
-            .pipe(
-              Effect.tap(() =>
-                change.kind === "color"
-                  ? Effect.void
-                  : options.backgroundFlush === false
-                    ? syncMailbox.sync(accountId).pipe(Effect.asVoid)
-                    : FiberSet.run(runtime.background, syncMailbox.sync(accountId)).pipe(
-                        Effect.asVoid,
-                      ),
-              ),
-            ),
-
-        checkUpdates: (client, updateOptions) =>
-          Effect.flatMap(store.prefs, (prefs) =>
-            checkVerifiedUpdates(
-              client,
-              {
-                ...updateOptions,
-                channel: prefs.updateChannel,
-                autoDownload: updateOptions.autoDownload ?? prefs.updateAutoDownload,
-              },
-              verifier.verify,
-            ).pipe(
-              Effect.ensuring(
-                Effect.flatMap(store.prefs, (latestPrefs) =>
-                  Effect.sync(() => {
-                    client.autoDownload = latestPrefs.updateAutoDownload;
-                  }),
-                ),
-              ),
-            ),
-          ),
-
-        rememberNotificationActions: (id, actions) =>
-          store.rememberNotificationActions(id, actions),
-
-        notificationActions: (id) => store.notificationActions(id),
-
-        ...makeOptionalServiceMailbox(store, changed, features.refreshContacts),
-        indexingProgress: Effect.gen(function* () {
-          const enabled = yield* store.semantics.enabled;
-          const counts = yield* store.semantics.counts;
-          return {
-            ...(yield* indexer.progress),
-            modelsEnabled: enabled,
-            models:
-              enabled && options.models
-                ? yield* options.models.status
-                : { kind: "disabled" as const },
-            semanticAvailable: store.semantics.vectors,
-            embeddingRunning: counts.running,
-            embeddingQueued: counts.queued,
-            embeddingDone: counts.done,
-            embeddingFailed: counts.failed,
-          };
-        }),
-
-        setModelsEnabled: (enabled) =>
-          mutate(
-            store.semantics
-              .setEnabled(enabled)
-              .pipe(
-                Effect.tap(() =>
-                  !enabled && options.models ? options.models.stop() : Effect.void,
-                ),
-              ),
-          ),
-
-        setIndexingPaused: (value) => mutate(indexer.setPaused(value)),
-
-        derivedChunks: store.media.chunks,
-
-        prefs: store.prefs,
-
-        setPrefs: (patch) =>
-          Effect.gen(function* () {
-            const previous = yield* store.prefs;
-            const resetState =
-              patch.updateChannel !== undefined && patch.updateChannel !== previous.updateChannel;
-            return yield* mutate(store.setPrefs(patch)).pipe(
-              Effect.tap(() =>
-                (patch.bodyCacheBytes !== undefined &&
-                  patch.bodyCacheBytes !== previous.bodyCacheBytes) ||
-                (patch.totalCacheBytes !== undefined &&
-                  patch.totalCacheBytes !== previous.totalCacheBytes)
-                  ? storage.enforceCacheBudget(true)
-                  : Effect.void,
-              ),
-              Effect.tap(() =>
-                patch.attachmentCacheBytes !== undefined && diskAttachments
-                  ? cacheIO(() => diskAttachments.trim(patch.attachmentCacheBytes ?? 0), undefined)
-                  : Effect.void,
-              ),
-              Effect.tap(() =>
-                patch.updateChannel !== undefined || patch.updateAutoDownload !== undefined
-                  ? emit({ _tag: "UpdateSettingsChanged", resetState })
-                  : Effect.void,
-              ),
-            );
-          }),
-
-        namedSignatures: store.namedSignatures,
-
-        signatureDefaults: store.signatureDefaults,
-
-        saveNamedSignature: (input, id) => mutate(store.saveNamedSignature(input, id)),
-
-        deleteNamedSignature: (id) => mutate(store.deleteNamedSignature(id)),
-
-        setSignatureDefault: (setting) => mutate(store.setSignatureDefault(setting)),
-
-        signatures: store.signatures,
-
-        setSignature: (signature) => mutate(store.setSignature(signature)),
-
-        templates: store.templates,
-
-        saveTemplate: (input, id) => mutate(store.saveTemplate(id ?? null, input)),
-
-        deleteTemplate: (id) => mutate(store.deleteTemplate(id)),
-
-        suggestContacts: (query, { limit = DEFAULT_SUGGESTIONS, exclude, accountIds } = {}) =>
-          store.suggestContacts(query, limit, exclude, accountIds),
-
-        contactAlternatives: (address) => store.contactAlternatives(address),
-
-        hiddenContacts: store.hiddenContacts,
-
-        setContactHidden: (address, hidden) => mutate(store.setContactHidden(address, hidden)),
-        ...draftsMailbox.service,
-        ...applyMailbox.service,
-        ...readingMailbox.service,
-        ...syncMailbox.service,
-        ...accountsMailbox.service,
-        ...outboxMailbox.service,
+        ...groups.reading,
+        ...groups.organize,
+        ...groups.proposals,
+        ...groups.compose,
+        ...groups.outbox,
+        ...groups.accounts,
+        ...groups.ai,
+        ...groups.sync,
+        ...groups.calendar,
+        ...groups.app,
+        reading: groups.reading,
+        organize: groups.organize,
+        compose: groups.compose,
+        outbox: groups.outbox,
+        ai: groups.ai,
+        calendar: groups.calendar,
+        app: groups.app,
       });
       return mailbox;
     }),

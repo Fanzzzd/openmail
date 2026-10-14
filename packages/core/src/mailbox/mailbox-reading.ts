@@ -1,10 +1,12 @@
-import { Effect, Option } from "effect";
+import { Effect, FiberSet, Option } from "effect";
 import { attachmentRef, MAX_INLINE_BYTES, MEDIA_RAW_TOO_LARGE } from "../mime/attachments.js";
 import type { Message } from "../domain/message.js";
 import { IndexNotReady, InvalidInput, NotFound } from "../domain/errors.js";
 import { type MailboxDependencies, type MailboxRuntimeState } from "./mailbox-runtime.js";
 import { cacheIO } from "./mailbox-shared.js";
-import { type Mailbox } from "./mailbox.js";
+import type { MailboxAi, MailboxReading } from "./mailbox.js";
+import { type makeCacheMailbox } from "./mailbox-cache.js";
+import { type makeOrganizationMailbox } from "./mailbox-organization.js";
 import { type DerivedChunk, MediaError } from "../ai/media.js";
 import { modelContext } from "../ai/model-view.js";
 import { Buffer } from "../platform/bytes.js";
@@ -19,7 +21,10 @@ import { providerCapabilities } from "../providers/capabilities.js";
 const DEFAULT_MODEL_CHARS = 12_000;
 
 export const makeReadingMailbox = (
-  deps: MailboxDependencies & {},
+  deps: MailboxDependencies & {
+    cache: ReturnType<typeof makeCacheMailbox>;
+    organization: () => ReturnType<typeof makeOrganizationMailbox>;
+  },
   runtime: MailboxRuntimeState,
 ) => {
   const {
@@ -239,9 +244,7 @@ export const makeReadingMailbox = (
   }
   return {
     localInline,
-    service: {
-      threads: semanticThreads,
-
+    ai: {
       semanticSearch: (q) =>
         Effect.gen(function* () {
           if (!q.accountIds?.length || !q.search?.trim()) return [];
@@ -282,6 +285,11 @@ export const makeReadingMailbox = (
               : new InvalidInput({ message: "Semantic search is unavailable." }),
           ),
         ),
+
+      mediaImage,
+    } satisfies Pick<MailboxAi, "semanticSearch" | "mediaImage">,
+    reading: {
+      threads: semanticThreads,
 
       threadCount: (query) => store.countThreads(query),
 
@@ -348,28 +356,16 @@ export const makeReadingMailbox = (
       unreadByLabel: (accountIds, within, conversations) =>
         store.unreadByLabel(accountIds, within, conversations),
 
-      mediaImage,
-    } satisfies Pick<
-      Mailbox["Service"],
-      | "threads"
-      | "semanticSearch"
-      | "threadCount"
-      | "privateMailLink"
-      | "resolveMailLink"
-      | "thread"
-      | "threadForModel"
-      | "rawMessage"
-      | "rawMessageBytes"
-      | "messageWebUrl"
-      | "knownSenders"
-      | "attachment"
-      | "inlineImages"
-      | "imageSenders"
-      | "setImageSender"
-      | "labels"
-      | "unreadCounts"
-      | "unreadByLabel"
-      | "mediaImage"
-    >,
+      readerThread: deps.cache.readerThread,
+
+      messageAccounts: (ids) => store.messageAccounts(ids),
+
+      // A server search also pages older mail into the cache in the background.
+      searchServer: (query) =>
+        deps
+          .organization()
+          .searchServer(query)
+          .pipe(Effect.tap(() => FiberSet.run(runtime.background, deps.cache.fetchOlder(query)))),
+    } satisfies MailboxReading,
   };
 };

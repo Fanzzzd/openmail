@@ -13,7 +13,7 @@ import {
 } from "../domain/errors.js";
 import { type MailboxDependencies, type MailboxRuntimeState } from "./mailbox-runtime.js";
 import { DISCARDED_DRAFT_MESSAGE, WRITE_RECOVERY_WINDOW_MS } from "./mailbox-shared.js";
-import { type Mailbox } from "./mailbox.js";
+import type { MailboxCompose, MailboxOutbox } from "./mailbox.js";
 import { mobileAttachmentProblem, type QueuedSend } from "./mobile-outbox.js";
 import { isDefiniteSendFailure } from "../providers/provider-send.js";
 import { READ_ONLY_MESSAGE } from "./read-only.js";
@@ -52,9 +52,9 @@ export const makeOutboxMailbox = (
       enqueue: boolean,
     ) => Effect.Effect<StoredDraft, NotFound | InvalidInput>;
     discardDraft: (id: string, alongside?: Effect.Effect<void>) => Effect.Effect<void>;
-    draftStatus: Mailbox["Service"]["draftStatus"];
-    saveDraft: Mailbox["Service"]["saveDraft"];
-    openDraft: Mailbox["Service"]["openDraft"];
+    draftStatus: MailboxCompose["draftStatus"];
+    saveDraft: MailboxCompose["saveDraft"];
+    openDraft: MailboxCompose["openDraft"];
   },
   runtime: MailboxRuntimeState,
 ) => {
@@ -657,7 +657,7 @@ export const makeOutboxMailbox = (
     send,
     start,
     finishHeldDiscards,
-    service: {
+    outbox: {
       queuedSends: store.queuedSends,
 
       queueSend: (input, due, confirmResend) =>
@@ -682,7 +682,9 @@ export const makeOutboxMailbox = (
             items.filter((item) => item.desktopUndo && item.status === "waiting").length,
         ),
       ),
-
+    } satisfies Omit<MailboxOutbox, "sendAgain">,
+    // Held discards live here; compose takes these over the drafts part's own.
+    compose: {
       discardDraft: (id) => releaseDiscard(id).pipe(Effect.andThen(discardNow(id))),
 
       discardDraftLater,
@@ -699,21 +701,8 @@ export const makeOutboxMailbox = (
 
       openDraft: (id) => releaseDiscard(id).pipe(Effect.andThen(openDraft(id))),
     } satisfies Pick<
-      Mailbox["Service"],
-      | "queuedSends"
-      | "queueSend"
-      | "queueUndoSend"
-      | "awaitUndoSend"
-      | "cancelWaitingSend"
-      | "cancelQueuedSend"
-      | "cancelDesktopUndoSends"
-      | "flushQueuedSends"
-      | "pendingSendCount"
-      | "discardDraft"
-      | "discardDraftLater"
-      | "restoreDraft"
-      | "saveDraft"
-      | "openDraft"
+      MailboxCompose,
+      "discardDraft" | "discardDraftLater" | "restoreDraft" | "saveDraft" | "openDraft"
     >,
   };
 };

@@ -38,6 +38,9 @@ const ProposalPage = Schema.Struct({
 });
 
 type Service = Mailbox["Service"];
+type Groups = "reading" | "organize" | "compose" | "outbox" | "ai" | "calendar" | "app";
+type Flat = Omit<Service, Groups>;
+type Overrides = Partial<Flat>;
 
 const notUsed = (name: string) => Effect.die(`Mailbox.${name} is not used in this test`);
 
@@ -95,8 +98,8 @@ function testThread(
     : Effect.succeed([testMessage(id)]);
 }
 
-function stubMailbox(overrides: Partial<Service>): Layer.Layer<Mailbox> {
-  const base: Service = {
+function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
+  const base: Flat = {
     prepareRejectedResend: () => notUsed("prepareRejectedResend"),
     listFailedOps: notUsed("listFailedOps"),
     acknowledgeFailedOps: () => notUsed("acknowledgeFailedOps"),
@@ -292,14 +295,14 @@ function stubMailbox(overrides: Partial<Service>): Layer.Layer<Mailbox> {
     proposal: () => notUsed("proposal"),
     messageAccounts: () => notUsed("messageAccounts"),
   };
-  const merged: Service = { ...base, ...overrides };
+  const flat: Flat = { ...base, ...overrides };
   // Like the real Mailbox: one proposal comes from the same rows, owners from the same messages.
-  return Layer.succeed(Mailbox, {
-    ...merged,
+  const merged: Flat = {
+    ...flat,
     proposal:
       overrides.proposal ??
       ((id) =>
-        Effect.flatMap(merged.proposals, (rows) => {
+        Effect.flatMap(flat.proposals, (rows) => {
           const row = rows.find((r) => r.id === id);
           return row
             ? Effect.succeed(row)
@@ -310,7 +313,7 @@ function stubMailbox(overrides: Partial<Service>): Layer.Layer<Mailbox> {
       ((ids) =>
         Effect.map(
           Effect.forEach(ids, (id) =>
-            merged.thread(id).pipe(
+            flat.thread(id).pipe(
               Effect.map((ms) => [id, ms[0]?.accountId] as const),
               Effect.orElseSucceed(() => [id, undefined] as const),
             ),
@@ -320,6 +323,16 @@ function stubMailbox(overrides: Partial<Service>): Layer.Layer<Mailbox> {
               pairs.flatMap(([id, account]) => (account === undefined ? [] : [[id, account]])),
             ),
         )),
+  };
+  return Layer.succeed(Mailbox, {
+    ...merged,
+    reading: merged,
+    organize: merged,
+    compose: merged,
+    outbox: merged,
+    ai: merged,
+    calendar: merged,
+    app: merged,
   });
 }
 

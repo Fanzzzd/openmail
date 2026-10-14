@@ -29,7 +29,7 @@ import {
   inviteReply,
   invitesFromRaw as unboundInvitesFromRaw,
 } from "../calendar/invites.js";
-import type { Mailbox } from "./mailbox.js";
+import type { MailboxCalendar, MailboxCompose, MailboxOrganize } from "./mailbox.js";
 import type { Providers } from "../providers/adapter.js";
 import type { Store } from "../store/service.js";
 import { providerCapabilities } from "../providers/capabilities.js";
@@ -66,7 +66,7 @@ export function makeFeatureMailbox(
   store: Store["Service"],
   providers: Providers["Service"],
   changed: Effect.Effect<unknown>,
-  perform: Mailbox["Service"]["perform"],
+  perform: MailboxOrganize["perform"],
   downloadImage: ImageDownloader,
   codec: MailCodecPort,
   crypto: PlatformCrypto,
@@ -442,20 +442,17 @@ export function makeFeatureMailbox(
         }),
       ),
   } satisfies Pick<
-    Mailbox["Service"],
+    MailboxCalendar,
     | "contactSync"
     | "refreshContacts"
     | "invitations"
     | "respondInvite"
-    | "contactGroups"
     | "contactPhoto"
-    | "imageFromUrl"
-    | "imageFromFile"
-    | "suggestSender"
     | "calendarEvents"
     | "detectedEvents"
     | "createCalendarEvent"
-  >;
+  > &
+    Pick<MailboxCompose, "contactGroups" | "imageFromUrl" | "imageFromFile" | "suggestSender">;
 }
 
 function googleContactPhotoUrl(input: string): boolean {

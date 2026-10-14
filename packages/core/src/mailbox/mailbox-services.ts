@@ -1,7 +1,7 @@
 import type { makeFeatureMailbox } from "./mailbox-features.js";
 import { Clock, Effect } from "effect";
 import { InvalidInput } from "../domain/errors.js";
-import type { Mailbox } from "./mailbox.js";
+import type { MailboxAccounts } from "./mailbox.js";
 import type { Store } from "../store/service.js";
 import { serviceGrants } from "../providers/optional-services.js";
 import { providerCapabilities } from "../providers/capabilities.js";
@@ -46,5 +46,5 @@ export function makeOptionalServiceMailbox(
         yield* changed;
         return yield* Effect.void;
       }),
-  } satisfies Pick<Mailbox["Service"], "optionalServices" | "setServiceEnabled">;
+  } satisfies Pick<MailboxAccounts, "optionalServices" | "setServiceEnabled">;
 }

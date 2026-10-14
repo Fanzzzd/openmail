@@ -23,7 +23,7 @@ import {
   outlookPreviewUnavailable,
   validOutlookPredicates,
 } from "../providers/outlook/outlook-rules.js";
-import type { Mailbox } from "./mailbox.js";
+import type { MailboxOrganize } from "./mailbox.js";
 
 const validateFilter = (input: FilterInput, provider: Provider) => {
   if (requiresFilterDeleteConfirmation(input) && !input.queryDeletionConfirmed)
@@ -542,7 +542,7 @@ export function makeFilterMailbox({
         }),
       ),
   } satisfies Pick<
-    Mailbox["Service"],
+    MailboxOrganize,
     | "prepareFilter"
     | "filterRestorations"
     | "prepareFilterRestoration"

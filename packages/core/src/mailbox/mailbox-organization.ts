@@ -3,7 +3,7 @@ import { Clock, Context, Effect, Semaphore } from "effect";
 import type { ThreadQuery } from "../domain/message.js";
 import { requireFocusedInboxScope } from "../providers/scoped-adapter.js";
 import { InvalidInput } from "../domain/errors.js";
-import type { Mailbox } from "./mailbox.js";
+import type { MailboxOrganize, MailboxReading } from "./mailbox.js";
 import {
   SYSTEM_FOLDERS,
   systemFolderId,
@@ -25,9 +25,12 @@ export function makeOrganizationMailbox(
   providers: Providers["Service"],
   changed: Effect.Effect<unknown>,
   flushLater: Effect.Effect<void>,
-  modifyWithUndo: Mailbox["Service"]["modifyWithUndo"],
+  modifyWithUndo: MailboxOrganize["modifyWithUndo"],
   crypto: PlatformCrypto = Context.get(Context.empty(), PlatformCrypto),
   onWake: (ids: readonly string[], wokenAt: number) => Effect.Effect<unknown> = () => Effect.void,
+  /** Runs after a label change commits; the live mailbox syncs the account. */
+  afterLabelChange: (accountId: string, change: LabelChange) => Effect.Effect<unknown> = () =>
+    Effect.void,
 ) {
   const labelLock = Semaphore.makeUnsafe(1);
   const ruleLock = Semaphore.makeUnsafe(1);
@@ -320,7 +323,8 @@ export function makeOrganizationMailbox(
           return yield* Effect.void;
         }),
       ),
-    changeLabel,
+    changeLabel: (accountId: string, change: LabelChange) =>
+      changeLabel(accountId, change).pipe(Effect.tap(() => afterLabelChange(accountId, change))),
     wakeSnoozed,
     syncSendAs,
     labelPreferences: store.labelPreferences,
@@ -421,33 +425,33 @@ export function makeOrganizationMailbox(
         }),
       ),
     sendAs: store.sendAs,
-  } satisfies Pick<
-    Mailbox["Service"],
-    | "prepareFilter"
-    | "filterRestorations"
-    | "restoreFilter"
-    | "prepareFilterRestoration"
-    | "discardFilterRestoration"
-    | "updateFilter"
-    | "applyFilter"
-    | "createLabelAndApply"
-    | "searchServer"
-    | "setClassificationOverride"
-    | "changeLabel"
-    | "wakeSnoozed"
-    | "syncSendAs"
-    | "reorderFavorites"
-    | "labelPreferences"
-    | "setLabelPreference"
-    | "organization"
-    | "setOrganization"
-    | "snooze"
-    | "filters"
-    | "previewFilter"
-    | "createFilter"
-    | "deleteFilter"
-    | "vacation"
-    | "setVacation"
-    | "sendAs"
-  >;
+  } satisfies Pick<MailboxReading, "searchServer"> &
+    Pick<
+      MailboxOrganize,
+      | "prepareFilter"
+      | "filterRestorations"
+      | "restoreFilter"
+      | "prepareFilterRestoration"
+      | "discardFilterRestoration"
+      | "updateFilter"
+      | "applyFilter"
+      | "createLabelAndApply"
+      | "setClassificationOverride"
+      | "changeLabel"
+      | "wakeSnoozed"
+      | "syncSendAs"
+      | "reorderFavorites"
+      | "labelPreferences"
+      | "setLabelPreference"
+      | "organization"
+      | "setOrganization"
+      | "snooze"
+      | "filters"
+      | "previewFilter"
+      | "createFilter"
+      | "deleteFilter"
+      | "vacation"
+      | "setVacation"
+      | "sendAs"
+    >;
 }

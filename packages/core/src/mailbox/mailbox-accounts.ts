@@ -1,11 +1,11 @@
 import { Clock, Effect, FiberSet, Schema } from "effect";
 import { AccountSettings } from "../domain/account.js";
-import { diagnosticsState } from "../domain/diagnostics-state.js";
 import { AuthError, FeatureScopeMissing, InvalidInput } from "../domain/errors.js";
 import { GMAIL_PERMANENT_DELETE_SCOPE } from "../domain/folder-actions.js";
 import { type makeFeatureMailbox } from "./mailbox-features.js";
 import { type MailboxDependencies, type MailboxRuntimeState } from "./mailbox-runtime.js";
-import { type Mailbox } from "./mailbox.js";
+import type { MailboxAccounts, MailboxSync } from "./mailbox.js";
+import { makeOptionalServiceMailbox } from "./mailbox-services.js";
 import {
   type AuthorizationFeature,
   serviceGranted,
@@ -35,7 +35,7 @@ const accountMismatch = (signedInAs: string, expected: string) =>
 export const makeAccountsMailbox = (
   deps: MailboxDependencies & {
     features: () => ReturnType<typeof makeFeatureMailbox>;
-    sync: Mailbox["Service"]["sync"];
+    sync: MailboxSync["sync"];
   },
   runtime: MailboxRuntimeState,
 ) => {
@@ -181,22 +181,12 @@ export const makeAccountsMailbox = (
     return result;
   });
   return {
-    service: {
-      closeSessions: () =>
-        Effect.gen(function* () {
-          for (const provider of new Set(
-            (yield* store.listAccounts).map((account) => account.provider),
-          ))
-            yield* providers.get(provider).closeSessions?.() ?? Effect.void;
-        }),
-
+    accounts: {
       accounts: store.listAccounts,
 
-      diagnosticsState: Effect.gen(function* () {
-        const now = yield* Clock.currentTimeMillis;
-        const counts = yield* store.diagnosticCounts(now);
-        return diagnosticsState({ ...counts, accounts: yield* store.listAccounts, now });
-      }),
+      ...makeOptionalServiceMailbox(store, changed, (...args) =>
+        deps.features().refreshContacts(...args),
+      ),
 
       setAccountSettings: (id, input) =>
         Effect.gen(function* () {
@@ -218,10 +208,6 @@ export const makeAccountsMailbox = (
         }),
 
       moveAccount: (id, input) => mutate(store.moveAccount(id, input)),
-
-      takeNotifications: Clock.currentTimeMillis.pipe(
-        Effect.flatMap((now) => store.takeNotifications(now)),
-      ),
 
       connect: (input) => connect(input),
 
@@ -252,24 +238,21 @@ export const makeAccountsMailbox = (
 
       assignProfile: (accountId, profileId) =>
         mutate(store.setAccountProfile(accountId, profileId)),
-    } satisfies Pick<
-      Mailbox["Service"],
-      | "closeSessions"
-      | "accounts"
-      | "diagnosticsState"
-      | "setAccountSettings"
-      | "moveAccount"
-      | "takeNotifications"
-      | "connect"
-      | "reauth"
-      | "clientSetup"
-      | "setClient"
-      | "clearClient"
-      | "profiles"
-      | "createProfile"
-      | "updateProfile"
-      | "deleteProfile"
-      | "assignProfile"
-    >,
+
+      initializeProfiles: (accept, names) =>
+        store
+          .transaction(
+            Effect.gen(function* () {
+              const prefs = yield* store.prefs;
+              const accounts = yield* store.listAccounts;
+              if (prefs.defaultProfilesPrompted || accounts.length < 2) return;
+              yield* store.setPrefs({ defaultProfilesPrompted: true });
+              if (!accept || (yield* store.listProfiles).length) return;
+              yield* store.createProfile({ name: names.personal, icon: "🏠", color: "emerald" });
+              yield* store.createProfile({ name: names.work, icon: "💼", color: "blue" });
+            }),
+          )
+          .pipe(Effect.andThen(changed)),
+    } satisfies MailboxAccounts,
   };
 };

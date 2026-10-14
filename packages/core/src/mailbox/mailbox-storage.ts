@@ -6,6 +6,7 @@ import type { Store } from "../store/service.js";
 import type { AttachmentFileCache } from "../platform/runtime.js";
 import { CacheStorage } from "../platform/cache-storage.js";
 import { cacheIO } from "./mailbox-shared.js";
+import type { MailboxSync } from "./mailbox.js";
 
 export const makeStorageMailbox = Effect.fn("makeStorageMailbox")(function* (
   store: Store["Service"],
@@ -84,5 +85,36 @@ export const makeStorageMailbox = Effect.fn("makeStorageMailbox")(function* (
     );
     return Option.isSome(result) && Option.isSome(result.value) ? result.value.value : "busy";
   });
-  return { cacheDatabaseSize: measure, enforceCacheBudget, compactCache };
+  return {
+    enforceCacheBudget,
+    cacheDatabaseSize: measure,
+    compactCache,
+    cacheSize: Effect.gen(function* () {
+      const bodies = yield* store.bodySizes;
+      return yield* Effect.forEach(yield* store.listAccounts, (a) =>
+        Effect.gen(function* () {
+          const attachmentBytes = attachments ? yield* cacheIO(() => attachments.size(a.id), 0) : 0;
+          return {
+            accountId: a.id,
+            bodyBytes: bodies.find((b) => b.accountId === a.id)?.bytes ?? 0,
+            attachmentBytes,
+          };
+        }),
+      );
+    }),
+    clearCache: (accountId?: string) =>
+      Effect.gen(function* () {
+        runtime.attachmentEpoch++;
+        runtime.attachmentCache.clear();
+        if (attachments) yield* cacheIO(() => attachments.clear(accountId), undefined);
+        for (const a of yield* store.listAccounts)
+          if (accountId === undefined || a.id === accountId) yield* store.clearBodies(a.id);
+        yield* changed;
+      }),
+  } satisfies Pick<
+    MailboxSync,
+    "cacheDatabaseSize" | "compactCache" | "cacheSize" | "clearCache"
+  > & {
+    enforceCacheBudget: unknown;
+  };
 });

@@ -12,7 +12,8 @@ import {
   AiComposeRequest,
 } from "../ai/ai.js";
 import { InvalidInput } from "../domain/errors.js";
-import { Mailbox } from "./mailbox.js";
+import { Mailbox, type MailboxAi } from "./mailbox.js";
+import type { IndexingProgress, ModelRuntime } from "../ai/media.js";
 import type { ModelThread } from "../ai/model-thread.js";
 import type { Model } from "../ai/model.js";
 import { modelContext } from "../ai/model-view.js";
@@ -38,6 +39,8 @@ export function makeAiMailbox(
   purgeAccountProposals: (accountId: string) => Effect.Effect<void>,
   canTriage: () => boolean = () => false,
   systemLocale: () => string | undefined = noLocale,
+  /** Pushes queued changes after a consent change; the live mailbox flushes later. */
+  flushLater: Effect.Effect<unknown> = Effect.void,
 ) {
   const requests = makeAiRequests(store, systemLocale);
   const { appLocale, cancel, check, input, cached, bounded, enabled } = requests;
@@ -473,7 +476,7 @@ export function makeAiMailbox(
           }),
         );
         yield* changed;
-      }),
+      }).pipe(Effect.andThen(flushLater)),
     setAiModel: (name: import("../ai/ai.js").AiModelName) =>
       Effect.andThen(cancel, Effect.andThen(store.ai.setModel(name), changed)).pipe(Effect.asVoid),
     aiSummary: (id: string, locale?: string) =>
@@ -525,4 +528,46 @@ export function makeAiMailbox(
         }
       }),
   };
+}
+
+/** On-device models and the media index: progress, switches and derived text. */
+export function makeLocalModelsMailbox(
+  store: Store["Service"],
+  indexer: {
+    readonly progress: Effect.Effect<IndexingProgress>;
+    setPaused(value: boolean): Effect.Effect<void>;
+  },
+  models: ModelRuntime | undefined,
+  mutate: <A, E>(effect: Effect.Effect<A, E>) => Effect.Effect<A, E>,
+) {
+  return {
+    indexingProgress: Effect.gen(function* () {
+      const enabled = yield* store.semantics.enabled;
+      const counts = yield* store.semantics.counts;
+      return {
+        ...(yield* indexer.progress),
+        modelsEnabled: enabled,
+        models: enabled && models ? yield* models.status : { kind: "disabled" as const },
+        semanticAvailable: store.semantics.vectors,
+        embeddingRunning: counts.running,
+        embeddingQueued: counts.queued,
+        embeddingDone: counts.done,
+        embeddingFailed: counts.failed,
+      };
+    }),
+
+    setModelsEnabled: (enabled) =>
+      mutate(
+        store.semantics
+          .setEnabled(enabled)
+          .pipe(Effect.tap(() => (!enabled && models ? models.stop() : Effect.void))),
+      ),
+
+    setIndexingPaused: (value) => mutate(indexer.setPaused(value)),
+
+    derivedChunks: store.media.chunks,
+  } satisfies Pick<
+    MailboxAi,
+    "indexingProgress" | "setModelsEnabled" | "setIndexingPaused" | "derivedChunks"
+  >;
 }
