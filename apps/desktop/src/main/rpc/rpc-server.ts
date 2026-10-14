@@ -206,13 +206,13 @@ const Handlers = MailRpcs.toLayer(
           });
         }),
       PrintThread: (request, { client }) => printThread(m, windowOf(client.id), request),
-      OpenThreadWindow: ({ id }) =>
+      OpenThreadWindow: ({ id }, { client }) =>
         Effect.sync(() => {
-          openThreadWindow(id);
+          openThreadWindow(id, windowOf(client.id));
         }),
-      OpenMessageWindow: ({ id }) =>
+      OpenMessageWindow: ({ id }, { client }) =>
         Effect.sync(() => {
-          openMessageWindow(id);
+          openMessageWindow(id, windowOf(client.id));
         }),
       OpenMeeting: ({ url }) =>
         m.app.prefs.pipe(Effect.flatMap((prefs) => openMeeting(url, prefs.cleanLinks !== false))),
@@ -264,11 +264,8 @@ const Handlers = MailRpcs.toLayer(
         m.compose.openDraft(id).pipe(
           Effect.andThen(
             Effect.sync(() => {
-              const win = openComposeWindow(
-                id,
-                undefined,
-                transfer ? windowOf(client.id) : undefined,
-              );
+              const parent = windowOf(client.id);
+              const win = openComposeWindow(id, undefined, transfer ? parent : undefined, parent);
               if (recipients) retainComposeRecipients(win, recipients);
             }),
           ),

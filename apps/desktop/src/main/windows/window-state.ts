@@ -72,3 +72,22 @@ function withHref({ selection, href, ...state }: SavedWindow): SavedWindow {
   const { messageId, ...view } = selection;
   return { ...state, href: mailHref(view, messageId ? { thread: messageId } : {}) };
 }
+
+/**
+ * A new window centred on `area`, the work area of the display its parent window is on, so a
+ * pop-out opens next to the window it came from rather than on the primary display. A window
+ * larger than the area is shrunk to fit it.
+ */
+export function centeredBounds(
+  size: { width: number; height: number },
+  area: SavedWindow["bounds"],
+): SavedWindow["bounds"] {
+  const width = Math.min(size.width, area.width);
+  const height = Math.min(size.height, area.height);
+  return {
+    x: Math.round(area.x + (area.width - width) / 2),
+    y: Math.round(area.y + (area.height - height) / 2),
+    width,
+    height,
+  };
+}

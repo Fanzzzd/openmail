@@ -2,7 +2,7 @@ import { afterEach, expect, it } from "vitest";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { visibleBounds, windowStateFile } from "./window-state";
+import { centeredBounds, visibleBounds, windowStateFile } from "./window-state";
 import type { SavedWindow } from "../../shared/window-state";
 const dirs: string[] = [];
 afterEach(() => {
@@ -74,4 +74,26 @@ it("keeps restored windows visible after a display is unplugged or resized", () 
       height: 400,
     }),
   ).toEqual({ x: 740, y: 400, width: 700, height: 500 });
+});
+
+it("a pop-out centres on its parent's display and shrinks to fit a small one", () => {
+  // A secondary display to the right of the primary, with a menu bar inset.
+  const secondary = { x: 1920, y: 25, width: 2560, height: 1415 };
+  expect(centeredBounds({ width: 760, height: 800 }, secondary)).toEqual({
+    x: 1920 + 900,
+    y: 25 + 308,
+    width: 760,
+    height: 800,
+  });
+  // A display left of and above the primary has negative coordinates.
+  const left = { x: -1280, y: -200, width: 1280, height: 776 };
+  expect(centeredBounds({ width: 820, height: 860 }, left)).toEqual({
+    x: -1280 + 230,
+    y: -200,
+    width: 820,
+    height: 776,
+  });
+  const bounds = centeredBounds({ width: 820, height: 860 }, secondary);
+  expect(bounds.x).toBeGreaterThanOrEqual(secondary.x);
+  expect(bounds.x + bounds.width).toBeLessThanOrEqual(secondary.x + secondary.width);
 });

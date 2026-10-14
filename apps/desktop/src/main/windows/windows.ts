@@ -13,7 +13,7 @@ import { TRAFFIC_LIGHT_POSITION } from "../../shared/window-chrome";
 import { appHref, composeHref, parseAppHref, threadHref } from "../../shared/routes";
 import type { ComposeRecipients, SavedWindow } from "../../shared/window-state";
 import { backgroundWindows, revealAndFocus, revealWindow } from "./reveal";
-import { visibleBounds, windowStateFile } from "./window-state";
+import { centeredBounds, visibleBounds, windowStateFile } from "./window-state";
 
 import {
   APP_PAGE,
@@ -190,6 +190,16 @@ interface WindowOptions {
   minHeight: number;
   /** The renderer route, from shared/routes; unset lands on the default view. */
   href?: string;
+  /** The window this one was opened from; a new window opens on its display. */
+  parent?: BrowserWindow | null | undefined;
+}
+
+/** A new window's bounds on its parent's display; undefined leaves Electron's placement. */
+function besideParent(options: WindowOptions) {
+  const parent = options.restored ? null : options.parent;
+  return parent && !parent.isDestroyed()
+    ? centeredBounds(options, screen.getDisplayMatching(parent.getBounds()).workArea)
+    : undefined;
 }
 
 function createAppWindow(options: WindowOptions): BrowserWindow {
@@ -199,7 +209,7 @@ function createAppWindow(options: WindowOptions): BrowserWindow {
         width: options.minWidth,
         height: options.minHeight,
       })
-    : undefined;
+    : besideParent(options);
   const win = new BrowserWindow({
     width: options.width,
     height: options.height,
@@ -353,8 +363,9 @@ export function focusMainWindow(): BrowserWindow {
 }
 
 /** A window showing one thread, by any message id in it. */
-export function openThreadWindow(messageId: string): BrowserWindow {
+export function openThreadWindow(messageId: string, parent?: BrowserWindow | null): BrowserWindow {
   return createAppWindow({
+    parent,
     width: 820,
     height: 860,
     minWidth: WINDOW_MIN.width,
@@ -366,8 +377,9 @@ export function openThreadWindow(messageId: string): BrowserWindow {
 }
 
 /** A window whose view and actions are scoped to one message, regardless of grouping. */
-export function openMessageWindow(messageId: string): BrowserWindow {
+export function openMessageWindow(messageId: string, parent?: BrowserWindow | null): BrowserWindow {
   return createAppWindow({
+    parent,
     width: 820,
     height: 860,
     minWidth: WINDOW_MIN.width,
@@ -387,6 +399,7 @@ export function openComposeWindow(
   draftId: string,
   restored?: SavedWindow,
   transfer?: BrowserWindow | null,
+  parent?: BrowserWindow | null,
 ): BrowserWindow {
   const editor = draftEditors.get(draftId);
   if (editor && (editor.kind === "window" || editor.win !== transfer)) {
@@ -404,6 +417,7 @@ export function openComposeWindow(
     target: draftId,
     restored,
     href: composeHref(draftId),
+    parent,
   });
   draftEditors.set(draftId, { win, kind: "window" });
   return win;

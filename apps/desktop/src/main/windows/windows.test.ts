@@ -18,7 +18,16 @@ vi.mock("electron", () => ({
     getLocale: () => "en",
     getSystemLocale: () => "en-GB",
   }),
-  screen: { getAllDisplays: () => [{ workArea: { x: 0, y: 24, width: 1920, height: 1056 } }] },
+  screen: {
+    getAllDisplays: () => [{ workArea: { x: 0, y: 24, width: 1920, height: 1056 } }],
+    // A second display to the right of the primary one.
+    getDisplayMatching: (rect: { x: number }) => ({
+      workArea:
+        rect.x >= 1920
+          ? { x: 1920, y: 25, width: 2560, height: 1415 }
+          : { x: 0, y: 24, width: 1920, height: 1056 },
+    }),
+  },
   nativeTheme: { shouldUseDarkColors: false },
   systemPreferences: { getUserDefault: () => false },
   shell: { openExternal: vi.fn(() => Promise.resolve()) },
@@ -30,6 +39,9 @@ vi.mock("electron", () => ({
     show = vi.fn();
     focus = vi.fn();
     setTitle = vi.fn();
+    getBounds() {
+      return this.getNormalBounds();
+    }
     getNormalBounds() {
       return {
         x: this.options.x ?? 0,
@@ -335,3 +347,23 @@ function page(win: BrowserWindow) {
   const url = new URL(vi.mocked(win).loadURL.mock.calls[0]?.[0] ?? "");
   return { query: Object.fromEntries(url.searchParams), hash: url.hash };
 }
+
+it("thread, message and compose pop-outs open centred on the display of the window they came from", () => {
+  const parent = new BrowserWindow({ x: 2400, y: 200, width: 1320, height: 860 });
+  for (const open of [
+    () => openThreadWindow("thread-on-second", parent),
+    () => openMessageWindow("message-on-second", parent),
+    () => openComposeWindow("draft-on-second", undefined, undefined, parent),
+  ]) {
+    created.length = 0;
+    open();
+    const options = created[0] as BrowserWindowConstructorOptions;
+    expect(options.x).toBeGreaterThanOrEqual(1920);
+    expect((options.x ?? 0) + (options.width ?? 0)).toBeLessThanOrEqual(1920 + 2560);
+    expect(options.y).toBeGreaterThanOrEqual(25);
+  }
+  // Without a parent the window keeps Electron's placement.
+  created.length = 0;
+  openThreadWindow("thread-without-parent");
+  expect((created[0] as BrowserWindowConstructorOptions).x).toBeUndefined();
+});
