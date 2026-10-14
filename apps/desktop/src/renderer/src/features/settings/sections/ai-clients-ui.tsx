@@ -11,6 +11,7 @@ import ClaudeCodeIcon from "~icons/thesvg-color/claude-code";
 
 import type { Account } from "../../../../../shared/api";
 import { AiClientError, type AiClientId } from "../../../../../shared/ai-clients";
+import { scrollBehavior } from "../../../lib/scroll-motion";
 
 /**
  * Which accounts AI apps can read, from AiSettings. Until it loads, or when it fails, the pane
@@ -84,7 +85,7 @@ export function PathText({ path }: { path: string }) {
 
 export function scrollToAnchor(id: string) {
   const target = document.getElementById(id);
-  target?.scrollIntoView({ block: "start", behavior: "smooth" });
+  target?.scrollIntoView({ block: "start", behavior: scrollBehavior() });
   target?.querySelector<HTMLElement>("input, button")?.focus({ preventScroll: true });
 }
 
