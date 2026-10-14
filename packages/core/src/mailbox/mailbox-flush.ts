@@ -234,9 +234,17 @@ export const makeFlushMailbox = (
                   }
                   const error = outcome.failure;
                   if (error._tag === "ProviderError" && error.remap) {
-                    // The server still has the mail under new ids: rename and retry now.
+                    // The server still has the mail under new ids: rename them and retry on the
+                    // next flush. Later ops on those messages wait too, so they cannot overtake.
                     yield* store.remapProviderIds(account.id, error.remap);
-                    for (const item of owned) yield* store.releasePendingOp(item.id, claimToken);
+                    for (const item of owned) {
+                      blocked.add(`${item.accountId}/${item.providerId}`);
+                      yield* store.releasePendingOp(item.id, claimToken);
+                    }
+                    for (const { from, to } of error.remap) {
+                      blocked.add(`${account.id}/${from}`);
+                      blocked.add(`${account.id}/${to}`);
+                    }
                     yield* refreshQueued;
                     return;
                   }

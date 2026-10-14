@@ -13,6 +13,7 @@ import { type ProviderAdapter, type Change } from "../../providers/adapter.js";
 import { Secrets } from "../auth.js";
 import { Store } from "../../store/service.js";
 import type { Account } from "../../domain/account.js";
+import { ProviderError } from "../../domain/errors.js";
 const settings = {
   preset: "custom",
   username: "me@example.com",
@@ -328,6 +329,47 @@ it.effect("UIDVALIDITY change: old mail found by Message-ID is remapped and the 
         assert.deepStrictEqual(yield* store.listPendingOps, []);
         assert.strictEqual((yield* store.getMessage(local)).isStarred, true);
       }).pipe(Effect.provide(testLayer(scripted(real, outsideWindow))));
+    }),
+  ),
+);
+
+it.effect("UIDVALIDITY change: a remapped op stays ahead of later ops on the same message", () =>
+  fixture((real) =>
+    Effect.gen(function* () {
+      const pushed: string[] = [];
+      const base = scripted(real, [{ _tag: "Cursor", cursor: JSON.stringify({ folders: {} }) }]);
+      const adapter: ProviderAdapter = {
+        ...base,
+        pushBatch: undefined,
+        push: (_acc, id, op) =>
+          id === "7:1:INBOX"
+            ? Effect.fail(
+                new ProviderError({
+                  message: "rebuilt",
+                  deferred: true,
+                  remap: [{ from: "7:1:INBOX", to: "8:5:INBOX" }],
+                }),
+              )
+            : Effect.sync(() => {
+                pushed.push(`${id} ${JSON.stringify(op)}`);
+              }),
+        fetchMessage: (_acc, id) => Effect.succeed(msg(id)),
+      };
+      return yield* Effect.gen(function* () {
+        const store = yield* Store;
+        const mailbox = yield* Mailbox;
+        const acc = yield* store.upsertAccount("imap", "me@example.com");
+        yield* store.upsertMessage(acc.id, msg("7:1:INBOX"));
+        yield* store.saveSyncCursor(acc.id, JSON.stringify({ folders: {} }), false);
+        yield* store.enqueueOp(acc.id, "7:1:INBOX", star);
+        yield* store.enqueueOp(acc.id, "7:1:INBOX", { kind: "star", value: false });
+        yield* mailbox.sync.sync();
+        yield* mailbox.sync.sync();
+        assert.deepStrictEqual(pushed, [
+          '8:5:INBOX {"kind":"star","value":true}',
+          '8:5:INBOX {"kind":"star","value":false}',
+        ]);
+      }).pipe(Effect.provide(testLayer(adapter)));
     }),
   ),
 );
