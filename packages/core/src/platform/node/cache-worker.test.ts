@@ -13,6 +13,12 @@ import { applyNativeMigration } from "./migrations.js";
 import { checkDatabaseUpgradeSpace, DatabaseUpgradeSpaceError } from "./database-upgrade.js";
 import { nodeCacheMaintenance } from "./cache-maintenance.js";
 import { acquireDatabaseAccess, registerDatabaseLease } from "./database-access.js";
+import { expectFileBytes } from "../../../test-support/file-bytes.js";
+import { scaledMs } from "../../../test-support/test-time.js";
+
+// Each test builds a migrated database and some start a worker: about 0.5 s idle, several
+// seconds on a loaded runner, so the budget scales with testTimeScale.
+vi.setConfig({ testTimeout: scaledMs(20_000) });
 
 function fixture(version = 37) {
   const directory = mkdtempSync(join(tmpdir(), "openmail-worker-test-"));
@@ -151,7 +157,7 @@ it("checks upgrade space before changing database bytes or dependent records", (
   } finally {
     db.close();
   }
-  expect(readFileSync(database.file)).toEqual(bytes);
+  expectFileBytes(database.file, bytes);
   database.dispose();
 });
 

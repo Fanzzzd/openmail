@@ -25,7 +25,26 @@ const CallResult = Schema.Struct({
   structuredContent: Schema.optionalKey(Schema.Unknown),
   isError: Schema.optionalKey(Schema.Boolean),
 });
-const run = promisify(execFile);
+const execFileAsync = promisify(execFile);
+/**
+ * Tests start several CLI processes on one OPENMAIL_HOME at once. Under load one of them can
+ * wait for another's migration lock and log a progress line to stderr. That line is expected
+ * contention, not output under test, so `run` drops it from stderr on success and failure.
+ */
+const MIGRATION_WAIT = /^.*Waiting for another process to finish database migrations.*\n?/gm;
+const withoutMigrationWait = <A extends { stderr: string }>(result: A): A => ({
+  ...result,
+  stderr: result.stderr.replace(MIGRATION_WAIT, ""),
+});
+const run = (file: string, args: readonly string[], options: { env: NodeJS.ProcessEnv }) =>
+  execFileAsync(file, args, { ...options, encoding: "utf8" }).then(
+    withoutMigrationWait,
+    (error: unknown) => {
+      if (error instanceof Error && "stderr" in error && typeof error.stderr === "string")
+        error.stderr = error.stderr.replace(MIGRATION_WAIT, "");
+      throw error;
+    },
+  );
 // Each test and hook waits on at most one `node dist/cli.js` start in series. A start opens and
 // migrates a database, about 1 s on a loaded machine, so the 5 s default fails without a real
 // fault. CI runners are slower still, so every budget scales with testTimeScale.
@@ -143,7 +162,7 @@ async function client(
         : Promise.resolve();
     child.stdin.end();
     await exited;
-    return { stdout: output, stderr };
+    return { stdout: output, stderr: stderr.replace(MIGRATION_WAIT, "") };
   };
   return { request, directory, initialized, close };
 }
