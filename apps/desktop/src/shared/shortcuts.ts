@@ -320,6 +320,18 @@ export function platformShortcutText(
     )
     .join(" / ");
 }
+/**
+ * Keys whose DOM name differs from Electron's accelerator name. Electron rejects "ArrowRight"
+ * as an invalid token and drops the menu shortcut, and a literal + would split the accelerator.
+ */
+const ELECTRON_KEYS: Record<string, string> = {
+  "+": "Plus",
+  " ": "Space",
+  ArrowUp: "Up",
+  ArrowDown: "Down",
+  ArrowLeft: "Left",
+  ArrowRight: "Right",
+};
 export function shortcutAccelerator(set: ShortcutSet, action: ShortcutAction): string | undefined {
   const stroke = KEYMAP[set][action].find((s) => s.cmd);
   if (!stroke) return undefined;
@@ -328,8 +340,7 @@ export function shortcutAccelerator(set: ShortcutSet, action: ShortcutAction): s
     ...(stroke.alt ? ["Alt"] : []),
     ...(stroke.shift ? ["Shift"] : []),
     "CommandOrControl",
-    // Electron spells the + key "Plus"; a literal + would split the accelerator.
-    stroke.key === "+" ? "Plus" : stroke.key,
+    ELECTRON_KEYS[stroke.key] ?? stroke.key,
   ].join("+");
 }
 

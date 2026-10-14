@@ -20,6 +20,10 @@ import {
   type KeyEvent,
 } from "./shortcuts";
 
+/** Accelerator tokens Electron parses: modifiers, single characters and named keys. */
+const ELECTRON_TOKEN =
+  /^(CommandOrControl|Control|Alt|Shift|Plus|Space|Up|Down|Left|Right|Enter|Escape|Backspace|Delete|Tab|Home|End|PageUp|PageDown|F\d{1,2}|[\x21-\x7e])$/;
+
 const event = (key: string, patch: Partial<KeyEvent> = {}): KeyEvent => ({
   key,
   metaKey: false,
@@ -200,6 +204,9 @@ it("every accelerator is unique and every shortcut leaves typing to the editor",
       const composerOnly = COMPOSER_ONLY_ACTIONS.includes(action);
       const accelerator = composerOnly ? undefined : shortcutAccelerator(set, action);
       if (accelerator) {
+        // Every token must be one Electron accepts, or the menu shortcut is silently dropped.
+        for (const token of accelerator.split("+"))
+          expect(token, accelerator).toMatch(ELECTRON_TOKEN);
         expect(accelerators.has(accelerator)).toBe(false);
         accelerators.add(accelerator);
       }

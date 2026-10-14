@@ -61,7 +61,7 @@ it("full screen affects the requesting window and native tabs use the central ke
     expect(controls.tab).toHaveBeenCalledWith("selectPreviousTab:");
     expect(nativeTabMenu("gmail")).toContainEqual({
       role: "selectNextTab",
-      accelerator: "Alt+CommandOrControl+ArrowRight",
+      accelerator: "Alt+CommandOrControl+Right",
     });
   } else expect(nativeTabMenu("gmail")).toEqual([]);
 });
