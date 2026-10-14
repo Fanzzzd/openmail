@@ -118,8 +118,8 @@ export default function PrivacyPage() {
               account and folder. The hashes are keyed with a random secret that stays on your Mac.
               The log contains no message content, addresses, full URLs or tokens. The secret is in{" "}
               <code>diagnostics.key</code> in the same folder. An export replaces every hash with a
-              number that is valid for that export only. It is never uploaded.
-              The Feedback window lets you attach it to an email that you send yourself.
+              number that is valid for that export only. It is never uploaded. The Feedback window
+              lets you attach it to an email that you send yourself.
             </td>
           </tr>
           <tr>
