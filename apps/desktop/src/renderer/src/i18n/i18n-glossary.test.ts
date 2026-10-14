@@ -146,6 +146,9 @@ function checkMessages(locale: string, catalog: Catalog, failures: string[]) {
       )
     )
       failures.push(`${locale}: libellé: ${source} → ${target}`);
+    // A limit OpenMail accepts is one it allows (zulässt); annimmt means "assumes".
+    if (locale === "de" && /OpenMail annimmt/u.test(target))
+      failures.push(`${locale}: style: ${source} → ${target}`);
     // Spanish addresses the reader with tú, German with du, Dutch with je and Russian with вы.
     if (locale === "es" && spanishUsted.some((pattern) => pattern.test(target)))
       failures.push(`${locale}: register: ${source} → ${target}`);
