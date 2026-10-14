@@ -18,9 +18,29 @@ export const jsonFlag = Flag.Boolean("json").pipe(
   Flag.withDefault(false),
 );
 
-const jsonText = (data: unknown) => JSON.stringify(data, null, 2);
+/**
+ * `accountId` → `account_id`, as in MCP results. Only identifier-shaped keys change, so
+ * data used as keys (ids, addresses, header names) keeps its spelling.
+ */
+const snakeKey = (key: string) =>
+  /^[a-z][A-Za-z0-9]*$/.test(key) ? key.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`) : key;
+const snakeKeys = (value: unknown): unknown =>
+  Array.isArray(value)
+    ? value.map(snakeKeys)
+    : value !== null && typeof value === "object"
+      ? Object.fromEntries(
+          Object.entries(value).map(([key, item]) => [snakeKey(key), snakeKeys(item)]),
+        )
+      : value;
+/** JSON with snake_case keys at any depth. toJSON runs first, so dates stay strings. */
+export const jsonText = (data: unknown) =>
+  JSON.stringify(snakeKeys(JSON.parse(JSON.stringify(data) ?? "null")), null, 2);
+const rawJsonText = (data: unknown) => JSON.stringify(data, null, 2);
 export const print = <A>(data: A, asJson: boolean, human: (data: A) => string = jsonText) =>
   Console.log(asJson ? jsonText(data) : human(data));
+/** For JSON whose keys are a format of their own, such as JSON Schema. */
+export const printRaw = <A>(data: A, asJson: boolean, human: (data: A) => string) =>
+  Console.log(asJson ? rawJsonText(data) : human(data));
 
 export const optionalString = (name: string, description: string) =>
   Flag.String(name).pipe(Flag.withDescription(description), Flag.optional);

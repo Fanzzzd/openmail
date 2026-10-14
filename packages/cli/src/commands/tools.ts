@@ -5,7 +5,7 @@ import { Effect } from "effect";
 import { Tool } from "effect/ai";
 import { Command } from "effect/cli";
 import { withToolDescription } from "../mcp-tools.js";
-import { jsonFlag, print } from "./common.js";
+import { jsonFlag, printRaw } from "./common.js";
 import {
   type ToolName,
   allowWritesFlag,
@@ -27,7 +27,8 @@ const tools = Command.make(
         inputSchema: { ...Tool.getJsonSchema(tool), additionalProperties: false },
       }),
     );
-    yield* print(rows, json, (all) =>
+    // Tool names and JSON Schema keywords (additionalProperties) keep their own spelling.
+    yield* printRaw(rows, json, (all) =>
       all.map((row) => `${row.name}: ${row.description}`).join("\n"),
     );
   }),

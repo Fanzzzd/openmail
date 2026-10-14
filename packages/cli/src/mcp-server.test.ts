@@ -578,9 +578,18 @@ test.concurrent("list, search and show read as the person; agent tools still nee
   expect(list.code).toBe(0);
   expect(list.stdout).toMatch(/^\d{4}-\d\d-\d\d \d\d:\d\d .*Hello.*gmail:plain@example\.com\/m1$/m);
   expect(list.stdout).not.toContain("untrusted_mail");
+  // CLI JSON uses snake_case keys like MCP and next_cursor, at any depth.
   expect(JSON.parse(json.stdout)).toMatchObject({
-    threads: [{ id: "gmail:plain@example.com/m1", subject: "Hello" }],
+    threads: [
+      {
+        id: "gmail:plain@example.com/m1",
+        subject: "Hello",
+        account_id: "gmail:plain@example.com",
+        is_unread: expect.any(Boolean),
+      },
+    ],
   });
+  expect(json.stdout).not.toMatch(/"[a-z]+[A-Z]\w*":/);
   expect(search.code).toBe(0);
   expect(search.stdout).toContain("gmail:plain@example.com/m1");
   expect(show.code).toBe(0);

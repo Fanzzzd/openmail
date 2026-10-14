@@ -28,7 +28,7 @@ openmail health --json
 openmail tools --json
 ```
 
-`list` and `search` print one line per conversation: date, sender, subject and the message id that `openmail show` takes. Unread conversations have a `*`. When there are more, the last line gives the `--cursor` for the next page. Add `--json` for the machine format: `{"threads": [...], "next_cursor": "..."}`.
+`list` and `search` print one line per conversation: date, sender, subject and the message id that `openmail show` takes. Unread conversations have a `*`. When there are more, the last line gives the `--cursor` for the next page. Add `--json` for the machine format: `{"threads": [...], "next_cursor": "..."}`. Every `--json` output uses snake_case keys at any depth, like MCP results: `account_id`, `is_unread`, `next_cursor`. Keys that are data, such as ids and addresses, keep their spelling. `openmail tools --json` is the exception: it prints the input schemas as MCP advertises them.
 
 Spaces group accounts, such as Work and Personal. `openmail spaces` manages them and `--space` filters `list`. The older `openmail profiles` and `--profile` still work.
 
@@ -46,7 +46,7 @@ openmail tool read_thread --input-json '{"id":"gmail:me@example.com/m1"}' --json
 openmail tool draft_message --allow-writes --input-json '{"account_id":"gmail:me@example.com","to":["alice@example.com"],"subject":"Status","body":"Tomorrow.","rationale":"Draft for review."}' --json
 ```
 
-`--allow-writes` exists only on the proposal tools. Where an MCP client gets an empty result because no account allows AI reads, `openmail tool` prints an error on stderr and exits with code 1:
+`--allow-writes` exists only on the write tools. Where an MCP client gets an empty result because no account allows AI reads, `openmail tool` prints an error on stderr and exits with code 1:
 
 ```text
 error: No accounts allow agent reads. Turn on 'Allow AI to read this account' in Settings → AI Access.
