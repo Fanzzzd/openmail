@@ -850,7 +850,7 @@ it("before-quit requests renderer state, asks for pending sends, and resumes qui
         const desktop = yield* Desktop;
         const mailbox = yield* Mailbox;
         const account = yield* mailbox.connect({ provider: "gmail" });
-        yield* mailbox.queueUndoSend(
+        yield* mailbox.outbox.queueUndoSend(
           {
             id: "approved-quit-draft",
             accountId: account.id,
@@ -884,7 +884,7 @@ it("before-quit requests renderer state, asks for pending sends, and resumes qui
         expect(preventDefault).toHaveBeenCalledOnce();
         expect(dialog.showMessageBox).toHaveBeenCalled();
         expect(app.quit).not.toHaveBeenCalled();
-        expect(yield* mailbox.queuedSends).toHaveLength(1);
+        expect(yield* mailbox.outbox.queuedSends).toHaveLength(1);
         vi.spyOn(dialog, "showMessageBox").mockResolvedValueOnce({
           response: 1,
           checkboxChecked: false,
@@ -892,7 +892,7 @@ it("before-quit requests renderer state, asks for pending sends, and resumes qui
         app.emit("before-quit", { preventDefault });
         yield* settle();
         expect(app.quit).toHaveBeenCalledOnce();
-        expect(yield* mailbox.queuedSends).toEqual([]);
+        expect(yield* mailbox.outbox.queuedSends).toEqual([]);
         expect((yield* mailbox.openDraft("approved-quit-draft")).message.subject).toBe("Quit");
         preventDefault.mockClear();
         app.emit("before-quit", { preventDefault });
@@ -914,7 +914,7 @@ it("closing a main window with a pending send asks once, preserves it on Cancel 
         if (!win) throw new Error("Missing main window");
         const mailbox = yield* Mailbox;
         const account = yield* mailbox.connect({ provider: "gmail" });
-        yield* mailbox.queueUndoSend(
+        yield* mailbox.outbox.queueUndoSend(
           {
             id: "window-close-draft",
             accountId: account.id,
@@ -936,7 +936,7 @@ it("closing a main window with a pending send asks once, preserves it on Cancel 
         win.close();
         yield* settle();
         expect(win.isDestroyed()).toBe(false);
-        expect(yield* mailbox.queuedSends).toHaveLength(1);
+        expect(yield* mailbox.outbox.queuedSends).toHaveLength(1);
         expect(dialog.showMessageBox).toHaveBeenCalledOnce();
         dialog.showMessageBox.mockImplementationOnce(
           () =>
@@ -946,7 +946,7 @@ it("closing a main window with a pending send asks once, preserves it on Cancel 
         );
         win.close();
         yield* Effect.promise(() => expect.poll(() => win.isDestroyed(), waitLimit).toBe(true));
-        expect(yield* mailbox.queuedSends).toEqual([]);
+        expect(yield* mailbox.outbox.queuedSends).toEqual([]);
         expect((yield* mailbox.openDraft("window-close-draft")).message.subject).toBe("Close");
         expect(dialog.showMessageBox).toHaveBeenCalledTimes(2);
       }),

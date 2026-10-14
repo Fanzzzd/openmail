@@ -1134,7 +1134,7 @@ for (const queued of [false, true])
           draftId: "unknown",
         });
         if (queued) {
-          yield* mailbox.queueUndoSend(
+          yield* mailbox.outbox.queueUndoSend(
             { id: "resend", accountId: saved.id, message: outgoing },
             (yield* Clock.currentTimeMillis) + 5000,
             { confirmResend: true },
@@ -1182,7 +1182,7 @@ it.effect("an oversized body and attachment combination fails before the undo wi
     const store = yield* Store;
     const mailbox = yield* Mailbox;
     const saved = yield* store.upsertAccount("outlook", account.email);
-    const error = yield* mailbox
+    const error = yield* mailbox.outbox
       .queueUndoSend(
         {
           id: "too-large",
@@ -1194,7 +1194,7 @@ it.effect("an oversized body and attachment combination fails before the undo wi
       .pipe(Effect.flip);
     assert.strictEqual(error._tag, "InvalidInput");
     assert.include(error.message, "25 MB");
-    assert.deepStrictEqual(yield* mailbox.queuedSends, []);
+    assert.deepStrictEqual(yield* mailbox.outbox.queuedSends, []);
     assert.strictEqual(server.calls.length, 0);
   }).pipe(Effect.provide(mailboxLayer(server)));
 });

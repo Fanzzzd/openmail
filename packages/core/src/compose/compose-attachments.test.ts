@@ -183,7 +183,7 @@ it.effect(
       assert.strictEqual(error._tag, "InvalidInput");
       assert.include(error.message, "SETUP.EXE");
       assert.strictEqual(server.sent.length, 0);
-      assert.strictEqual(yield* mailbox.pendingSendCount, 0);
+      assert.strictEqual(yield* mailbox.outbox.pendingSendCount, 0);
       server.failNext = new ProviderError({ message: "Original MIME unavailable" });
       const fetchError = yield* Effect.flip(mailbox.composeAttachments(`${account.id}/original`));
       assert.strictEqual(fetchError._tag, "ProviderError");

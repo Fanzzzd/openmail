@@ -99,7 +99,7 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
               : { provider },
           );
           yield* mailbox.sync();
-          const draft = yield* mailbox.sendAgain(`${provider}:me@example.com/sent`);
+          const draft = yield* mailbox.outbox.sendAgain(`${provider}:me@example.com/sent`);
           assert.notStrictEqual(draft.id, `${provider}:me@example.com/sent`);
           assert.deepStrictEqual(draft.message.to, outgoing.to);
           assert.deepStrictEqual(draft.message.cc, outgoing.cc);
@@ -141,14 +141,14 @@ it.effect(
       yield* mailbox.connect({ provider: "gmail" });
       yield* mailbox.sync();
       assert.strictEqual(
-        (yield* Effect.flip(mailbox.sendAgain("gmail:me@example.com/sent")))._tag,
+        (yield* Effect.flip(mailbox.outbox.sendAgain("gmail:me@example.com/sent")))._tag,
         "InvalidInput",
       );
       server.messages.set("sent", original);
       yield* mailbox.sync();
       server.failNext = new ProviderError({ message: "offline" });
       assert.strictEqual(
-        (yield* Effect.flip(mailbox.sendAgain("gmail:me@example.com/sent")))._tag,
+        (yield* Effect.flip(mailbox.outbox.sendAgain("gmail:me@example.com/sent")))._tag,
         "ProviderError",
       );
       assert.deepStrictEqual(yield* mailbox.threads({ mailbox: "drafts" }), []);
@@ -212,10 +212,10 @@ it.effect("core counts sends blocked at the provider and releases the count afte
         )
         .pipe(Effect.exit, Effect.forkScoped);
       yield* Deferred.await(entered);
-      assert.strictEqual(yield* mailbox.pendingSendCount, 1);
+      assert.strictEqual(yield* mailbox.outbox.pendingSendCount, 1);
       yield* Deferred.succeed(gate, undefined);
       yield* Fiber.join(sending);
-      assert.strictEqual(yield* mailbox.pendingSendCount, 0);
+      assert.strictEqual(yield* mailbox.outbox.pendingSendCount, 0);
     }).pipe(
       Effect.provide(
         MailboxLive({ backgroundFlush: false }).pipe(

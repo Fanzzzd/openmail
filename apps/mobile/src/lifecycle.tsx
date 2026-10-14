@@ -35,7 +35,7 @@ function useForeground() {
         sync: () => runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.sync())),
         send: () =>
           runtime.runPromise(
-            Effect.flatMap(Mailbox, (mailbox) => mailbox.flushQueuedSends(isForeground)),
+            Effect.flatMap(Mailbox, (mailbox) => mailbox.outbox.flushQueuedSends(isForeground)),
           ),
       }),
     [runtime],
@@ -94,7 +94,7 @@ export function ForegroundLifecycle() {
   );
   const outbox = useMailboxQuery(
     useCallback(
-      () => runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.queuedSends)),
+      () => runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.outbox.queuedSends)),
       [runtime],
     ),
   );

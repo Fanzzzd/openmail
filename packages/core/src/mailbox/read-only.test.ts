@@ -144,7 +144,7 @@ import type { OutgoingMessage } from "../domain/changes.js";
         assert.strictEqual(sent._tag, "Failure");
         if (sent._tag === "Failure") assert.strictEqual(sent.failure.message, READ_ONLY_MESSAGE);
         assert.strictEqual(
-          (yield* mailbox
+          (yield* mailbox.outbox
             .queueSend({ id: "local", accountId: account.id, message: outgoing }, 1)
             .pipe(Effect.result))._tag,
           "Failure",
@@ -165,7 +165,7 @@ import type { OutgoingMessage } from "../domain/changes.js";
           due: 0,
           status: "waiting",
         });
-        yield* mailbox.flushQueuedSends();
+        yield* mailbox.outbox.flushQueuedSends();
         assert.strictEqual((yield* store.queuedSends)[0]?.status, "waiting");
         assert.strictEqual(server.sent.length, 0);
         assert.ok((yield* store.listPendingOps).length >= 3);

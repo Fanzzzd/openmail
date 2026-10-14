@@ -384,9 +384,9 @@ it("runs mobile IMAP through shared connect, sync, reader, contacts, flags, move
             attachments: [],
           },
         };
-        yield* mailbox.queueSend(draft, 0);
-        yield* mailbox.flushQueuedSends();
-        expect(yield* mailbox.queuedSends).toEqual([]);
+        yield* mailbox.outbox.queueSend(draft, 0);
+        yield* mailbox.outbox.flushQueuedSends();
+        expect(yield* mailbox.outbox.queuedSends).toEqual([]);
         expect(
           (yield* mailbox.audit(100)).some(
             (entry) => entry.action === "send" && entry.actor === "user:app",
@@ -615,7 +615,7 @@ it("logs a redacted Sent warning after acknowledged SMTP without resending", asy
           provider: "imap",
           input: { preset: "fastmail", email: "me@example.test", password: "secret" },
         });
-        yield* mailbox.queueSend(
+        yield* mailbox.outbox.queueSend(
           {
             id: "draft:sent-warning",
             accountId: account.id,
@@ -630,9 +630,9 @@ it("logs a redacted Sent warning after acknowledged SMTP without resending", asy
           },
           0,
         );
-        yield* mailbox.flushQueuedSends();
-        yield* mailbox.flushQueuedSends();
-        expect(yield* mailbox.queuedSends).toEqual([]);
+        yield* mailbox.outbox.flushQueuedSends();
+        yield* mailbox.outbox.flushQueuedSends();
+        expect(yield* mailbox.outbox.queuedSends).toEqual([]);
       }).pipe(Effect.provide(Logger.layer([logger]))),
     );
     expect(test.delivered).toHaveLength(1);

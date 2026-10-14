@@ -30,13 +30,13 @@ import type { OutgoingMessage } from "../domain/changes.js";
           const mailbox = yield* Mailbox;
           const account = yield* mailbox.connect({ provider: "gmail" });
           const draft = { id: "draft:failed", accountId: account.id, message };
-          yield* mailbox.queueSend(draft, 0);
+          yield* mailbox.outbox.queueSend(draft, 0);
           server.sendFailure = new SendUncertain({ message: "Network lost after submission" });
-          yield* mailbox.flushQueuedSends();
-          expect((yield* mailbox.queuedSends)[0]?.status).toBe("failed");
-          yield* mailbox.flushQueuedSends();
+          yield* mailbox.outbox.flushQueuedSends();
+          expect((yield* mailbox.outbox.queuedSends)[0]?.status).toBe("failed");
+          yield* mailbox.outbox.flushQueuedSends();
           expect(server.sent).toEqual([]);
-          expect(yield* mailbox.cancelQueuedSend(draft.id)).toBe(true);
+          expect(yield* mailbox.outbox.cancelQueuedSend(draft.id)).toBe(true);
           expect((yield* mailbox.openDraft(draft.id)).message.subject).toBe(message.subject);
         }),
       );
@@ -77,7 +77,7 @@ import type { OutgoingMessage } from "../domain/changes.js";
         Effect.gen(function* () {
           const mailbox = yield* Mailbox;
           const account = yield* mailbox.connect({ provider: "gmail" });
-          const result = yield* mailbox
+          const result = yield* mailbox.outbox
             .queueSend(
               {
                 id: "draft:invalid",
@@ -88,7 +88,7 @@ import type { OutgoingMessage } from "../domain/changes.js";
             )
             .pipe(Effect.result);
           expect(result._tag).toBe("Failure");
-          expect(yield* mailbox.queuedSends).toEqual([]);
+          expect(yield* mailbox.outbox.queuedSends).toEqual([]);
         }),
       );
     } finally {
@@ -117,8 +117,14 @@ import type { OutgoingMessage } from "../domain/changes.js";
         Effect.gen(function* () {
           const mailbox = yield* Mailbox;
           const account = yield* mailbox.connect({ provider: "gmail" });
-          yield* mailbox.queueSend({ id: "draft:persisted", accountId: account.id, message }, 0);
-          yield* mailbox.queueSend({ id: "draft:interrupted", accountId: account.id, message }, 0);
+          yield* mailbox.outbox.queueSend(
+            { id: "draft:persisted", accountId: account.id, message },
+            0,
+          );
+          yield* mailbox.outbox.queueSend(
+            { id: "draft:interrupted", accountId: account.id, message },
+            0,
+          );
           const store = yield* Store;
           const interrupted = (yield* store.queuedSends).find(
             (item) => item.id === "draft:interrupted",
@@ -135,22 +141,22 @@ import type { OutgoingMessage } from "../domain/changes.js";
       await reopened.runPromise(
         Effect.gen(function* () {
           const mailbox = yield* Mailbox;
-          expect(yield* mailbox.queuedSends).toHaveLength(2);
-          yield* mailbox.flushQueuedSends();
+          expect(yield* mailbox.outbox.queuedSends).toHaveLength(2);
+          yield* mailbox.outbox.flushQueuedSends();
           expect(server.sent).toHaveLength(1);
-          expect((yield* mailbox.queuedSends)[0]?.status).toBe("failed");
+          expect((yield* mailbox.outbox.queuedSends)[0]?.status).toBe("failed");
           expect(yield* (yield* Store).sendUncertain("draft:interrupted")).toBe(true);
-          yield* mailbox.flushQueuedSends();
+          yield* mailbox.outbox.flushQueuedSends();
           expect(server.sent).toHaveLength(1);
-          const interrupted = (yield* mailbox.queuedSends)[0];
+          const interrupted = (yield* mailbox.outbox.queuedSends)[0];
           if (!interrupted) throw new Error("Missing interrupted send");
-          yield* mailbox.queueSend(
+          yield* mailbox.outbox.queueSend(
             { id: interrupted.id, accountId: interrupted.accountId, message: interrupted.message },
             Date.now() + 60000,
             true,
           );
-          expect((yield* mailbox.queuedSends)[0]?.status).toBe("waiting");
-          expect(yield* mailbox.cancelWaitingSend("draft:interrupted")).toBe(true);
+          expect((yield* mailbox.outbox.queuedSends)[0]?.status).toBe("waiting");
+          expect(yield* mailbox.outbox.cancelWaitingSend("draft:interrupted")).toBe(true);
           expect(
             (yield* mailbox.openDraft("draft:interrupted")).message.attachments[0]?.content,
           ).toBe("AQID");
@@ -173,10 +179,10 @@ import type { OutgoingMessage } from "../domain/changes.js";
           const mailbox = yield* Mailbox;
           const account = yield* mailbox.connect({ provider: "gmail" });
           for (const id of ["draft:first", "draft:second"])
-            yield* mailbox.queueSend({ id, accountId: account.id, message }, 0);
-          yield* mailbox.flushQueuedSends(() => server.sent.length === 0);
+            yield* mailbox.outbox.queueSend({ id, accountId: account.id, message }, 0);
+          yield* mailbox.outbox.flushQueuedSends(() => server.sent.length === 0);
           expect(server.sent).toHaveLength(1);
-          expect(yield* mailbox.queuedSends).toHaveLength(1);
+          expect(yield* mailbox.outbox.queuedSends).toHaveLength(1);
         }),
       );
     } finally {
@@ -194,7 +200,7 @@ import type { OutgoingMessage } from "../domain/changes.js";
         Effect.gen(function* () {
           const mailbox = yield* Mailbox;
           const account = yield* mailbox.connect({ provider: "gmail" });
-          const result = yield* mailbox
+          const result = yield* mailbox.outbox
             .queueSend(
               {
                 id: "draft:blocked",
@@ -210,7 +216,7 @@ import type { OutgoingMessage } from "../domain/changes.js";
             )
             .pipe(Effect.result);
           expect(result._tag).toBe("Failure");
-          expect(yield* mailbox.queuedSends).toEqual([]);
+          expect(yield* mailbox.outbox.queuedSends).toEqual([]);
           expect(server.sent).toEqual([]);
         }),
       );
@@ -240,7 +246,7 @@ import type { OutgoingMessage } from "../domain/changes.js";
               },
             ],
           };
-          const result = yield* mailbox
+          const result = yield* mailbox.outbox
             .queueSend({ id: "draft:too-large", accountId: account.id, message: oversized }, 0)
             .pipe(Effect.result);
           expect(result._tag).toBe("Failure");
@@ -251,8 +257,8 @@ import type { OutgoingMessage } from "../domain/changes.js";
             due: 0,
             status: "waiting",
           });
-          yield* mailbox.flushQueuedSends();
-          expect((yield* mailbox.queuedSends)[0]?.status).toBe("rejected");
+          yield* mailbox.outbox.flushQueuedSends();
+          expect((yield* mailbox.outbox.queuedSends)[0]?.status).toBe("rejected");
           expect(server.sent).toEqual([]);
         }),
       );
@@ -272,18 +278,18 @@ import type { OutgoingMessage } from "../domain/changes.js";
           const mailbox = yield* Mailbox;
           const account = yield* mailbox.connect({ provider: "gmail" });
           const input = { id: "draft:discard", accountId: account.id, message };
-          yield* mailbox.queueSend(input, 0);
+          yield* mailbox.outbox.queueSend(input, 0);
           expect(
             (yield* mailbox.threads({ accountIds: [account.id], mailbox: "drafts" })).some(
               (row) => row.id === input.id,
             ),
           ).toBe(true);
           yield* mailbox.discardDraft(input.id);
-          expect(yield* mailbox.queuedSends).toEqual([]);
+          expect(yield* mailbox.outbox.queuedSends).toEqual([]);
           expect(yield* mailbox.threads({ accountIds: [account.id], mailbox: "drafts" })).toEqual(
             [],
           );
-          yield* mailbox.flushQueuedSends();
+          yield* mailbox.outbox.flushQueuedSends();
           expect(server.sent).toEqual([]);
         }),
       );
@@ -354,16 +360,16 @@ import type { OutgoingMessage } from "../domain/changes.js";
             expect((yield* mailbox.openDraft(draft.id)).message.attachments[0]?.content).toBe(
               "AQID",
             );
-            yield* mailbox.queueSend(draft, Date.now() + 60000);
-            yield* mailbox.flushQueuedSends();
+            yield* mailbox.outbox.queueSend(draft, Date.now() + 60000);
+            yield* mailbox.outbox.flushQueuedSends();
             expect(server.sent).toHaveLength(0);
-            expect(yield* mailbox.cancelWaitingSend(draft.id)).toBe(true);
-            yield* mailbox.queueSend(draft, 0);
-            yield* mailbox.flushQueuedSends();
-            yield* mailbox.flushQueuedSends();
+            expect(yield* mailbox.outbox.cancelWaitingSend(draft.id)).toBe(true);
+            yield* mailbox.outbox.queueSend(draft, 0);
+            yield* mailbox.outbox.flushQueuedSends();
+            yield* mailbox.outbox.flushQueuedSends();
             expect(server.sent).toHaveLength(1);
             expect(server.sent[0]?.message.html).not.toContain("script");
-            expect(yield* mailbox.queuedSends).toEqual([]);
+            expect(yield* mailbox.outbox.queuedSends).toEqual([]);
             expect(Option.isNone(yield* (yield* Store).getDraft(draft.id))).toBe(true);
             expect(
               (yield* mailbox.audit(100)).some(

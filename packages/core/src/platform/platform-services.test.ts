@@ -125,7 +125,7 @@ it("a mailbox keeps its own MIME and random services after the platform Layer is
       const mailbox = Context.get(context, Mailbox);
       const account = yield* mailbox.connect({ provider: "gmail" });
       yield* mailbox.sync();
-      const draft = yield* mailbox.sendAgain(`${account.id}/sent`);
+      const draft = yield* mailbox.outbox.sendAgain(`${account.id}/sent`);
       expect(draft.id).toBe(`draft:${uuid}`);
       expect(draft.message.text).toBe("Decoded on mobile");
       expect(parses).toBe(1);

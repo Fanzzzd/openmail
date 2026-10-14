@@ -242,7 +242,7 @@ it("compose help returns a proposal without overwriting the saved draft or sendi
           message: { ...message, text, html: undefined },
         });
         expect((yield* mailbox.openDraft(draft.id)).message.text).toBe(text);
-        expect(yield* mailbox.queuedSends).toEqual([]);
+        expect(yield* mailbox.outbox.queuedSends).toEqual([]);
       }),
     );
   } finally {

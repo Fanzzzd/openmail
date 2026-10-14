@@ -40,7 +40,7 @@ const ProposalPage = Schema.Struct({
 type Service = Mailbox["Service"];
 type Groups = "reading" | "organize" | "compose" | "outbox" | "ai" | "calendar" | "app";
 /** Groups whose members are no longer flat on Service. */
-type Moved = "ai" | "calendar";
+type Moved = "ai" | "calendar" | "outbox";
 type Flat = Omit<Service, Exclude<Groups, Moved>>;
 type Overrides = Partial<Omit<Flat, Moved>> & { [G in Moved]?: Partial<Service[G]> };
 
@@ -124,11 +124,18 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
       contactSync: notUsed("contactSync"),
       refreshContacts: () => notUsed("refreshContacts"),
     },
-    queuedSends: notUsed("queuedSends"),
-    queueSend: () => notUsed("queueSend"),
-    cancelWaitingSend: () => notUsed("cancelWaitingSend"),
-    cancelQueuedSend: () => notUsed("cancelQueuedSend"),
-    flushQueuedSends: () => notUsed("flushQueuedSends"),
+    outbox: {
+      queuedSends: notUsed("queuedSends"),
+      queueSend: () => notUsed("queueSend"),
+      cancelWaitingSend: () => notUsed("cancelWaitingSend"),
+      cancelQueuedSend: () => notUsed("cancelQueuedSend"),
+      flushQueuedSends: () => notUsed("flushQueuedSends"),
+      sendAgain: () => Effect.die("unused"),
+      pendingSendCount: Effect.succeed(0),
+      cancelDesktopUndoSends: () => notUsed("cancelDesktopUndoSends"),
+      queueUndoSend: () => notUsed("queueUndoSend"),
+      awaitUndoSend: () => notUsed("awaitUndoSend"),
+    },
     ai: {
       composeAi: () => Stream.never,
       aiTriage: () => Effect.never,
@@ -266,14 +273,9 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
     agentWriteMode: notUsed("agentWriteMode"),
     setAgentWriteMode: () => notUsed("setAgentWriteMode"),
     composeAttachments: () => Effect.die("unused"),
-    sendAgain: () => Effect.die("unused"),
-    pendingSendCount: Effect.succeed(0),
     openDraft: () => notUsed("openDraft"),
     draftStatus: () => notUsed("draftStatus"),
     saveDraft: () => notUsed("saveDraft"),
-    cancelDesktopUndoSends: () => notUsed("cancelDesktopUndoSends"),
-    queueUndoSend: () => notUsed("queueUndoSend"),
-    awaitUndoSend: () => notUsed("awaitUndoSend"),
     discardDraft: () => notUsed("discardDraft"),
     discardDraftLater: () => notUsed("discardDraftLater"),
     restoreDraft: () => notUsed("restoreDraft"),
@@ -304,6 +306,7 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
   const flat: Flat = {
     ...base,
     ...overrides,
+    outbox: { ...base.outbox, ...overrides.outbox },
     calendar: { ...base.calendar, ...overrides.calendar },
     ai: { ...base.ai, ...overrides.ai },
   };
@@ -340,7 +343,6 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
     reading: merged,
     organize: merged,
     compose: merged,
-    outbox: merged,
     app: merged,
   });
 }

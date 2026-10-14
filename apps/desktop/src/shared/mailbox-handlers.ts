@@ -186,15 +186,15 @@ export function mailboxHandlers(m: MailboxService, options: MailboxHandlerOption
       ),
 
     QueueUndoSend: ({ draft, due, archive, confirmResend }, { client }) =>
-      m.queueUndoSend(draft, due, {
+      m.outbox.queueUndoSend(draft, due, {
         archive,
         confirmResend,
         owner: `${ownerPrefix}${client.id}`,
       }),
-    AwaitUndoSend: ({ id }) => m.awaitUndoSend(id),
-    CancelWaitingSend: ({ id }) => m.cancelWaitingSend(id),
+    AwaitUndoSend: ({ id }) => m.outbox.awaitUndoSend(id),
+    CancelWaitingSend: ({ id }) => m.outbox.cancelWaitingSend(id),
     ComposeAttachments: ({ id }) => m.composeAttachments(id),
-    SendAgain: ({ id }) => m.sendAgain(id),
+    SendAgain: ({ id }) => m.outbox.sendAgain(id),
     RecoverDraft: ({ id, action, draft }) => m.recoverDraft(id, action, draft),
     OpenDraft: ({ id }) => m.openDraft(id),
     DraftStatus: ({ id }) => m.draftStatus(id),

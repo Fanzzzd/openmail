@@ -583,7 +583,7 @@ export const DesktopLive = Layer.effect(
     const cancelWaitingDesktopSends = (owner?: string) =>
       new Promise<void>((resolve, reject) => {
         run(
-          mailbox
+          mailbox.outbox
             .cancelDesktopUndoSends(owner)
             .pipe(Effect.matchCause({ onSuccess: resolve, onFailure: reject })),
         );
@@ -620,7 +620,7 @@ export const DesktopLive = Layer.effect(
         void closeGuard(event);
       });
       win.once("closed", () => {
-        run(mailbox.cancelDesktopUndoSends(String(id)));
+        run(mailbox.outbox.cancelDesktopUndoSends(String(id)));
         pending.delete(id);
         listeners.delete(id);
         spaces.delete(id);
@@ -650,7 +650,7 @@ export const DesktopLive = Layer.effect(
                   })),
                 ),
               );
-              const outbox = yield* mailbox.pendingSendCount;
+              const outbox = yield* mailbox.outbox.pendingSendCount;
               resolve(held + outbox);
             }).pipe(Effect.catchCause(() => Effect.sync(() => resolve(sendStates.total())))),
           );

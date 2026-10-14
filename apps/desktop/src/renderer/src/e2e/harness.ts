@@ -300,7 +300,7 @@ export async function flow(
     MailRpcs.of({
       ...coreHandlers,
       QueueUndoSend: ({ draft, due, archive, confirmResend }, { client }) =>
-        m.queueUndoSend(draft, due, { archive, confirmResend, owner: String(client.id) }),
+        m.outbox.queueUndoSend(draft, due, { archive, confirmResend, owner: String(client.id) }),
       Threads: (input) =>
         Effect.andThen(
           Effect.suspend(() => listWait),

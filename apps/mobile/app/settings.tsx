@@ -39,7 +39,7 @@ export default function Settings() {
   );
   const queued = useMailboxQuery(
     useCallback(
-      () => runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.queuedSends)),
+      () => runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.outbox.queuedSends)),
       [runtime],
     ),
   );
@@ -263,7 +263,9 @@ export default function Settings() {
                 onPress={() => {
                   void runtime
                     .runPromise(
-                      Effect.flatMap(Mailbox, (mailbox) => mailbox.cancelQueuedSend(item.id)),
+                      Effect.flatMap(Mailbox, (mailbox) =>
+                        mailbox.outbox.cancelQueuedSend(item.id),
+                      ),
                     )
                     .then(() => {
                       return router.push({
@@ -280,7 +282,7 @@ export default function Settings() {
               onPress={() => {
                 void runtime
                   .runPromise(
-                    Effect.flatMap(Mailbox, (mailbox) => mailbox.cancelQueuedSend(item.id)),
+                    Effect.flatMap(Mailbox, (mailbox) => mailbox.outbox.cancelQueuedSend(item.id)),
                   )
                   .catch(() => setFailed(true));
               }}

@@ -276,7 +276,7 @@ const Handlers = MailRpcs.toLayer(
           }),
         ),
       CloseComposeWindow: (_, { client }) =>
-        m
+        m.outbox
           .cancelDesktopUndoSends(String(client.id))
           .pipe(Effect.andThen(Effect.sync(() => approveComposeClose(windowOf(client.id))))),
       SetWindowRoute: ({ href }, { client }) =>

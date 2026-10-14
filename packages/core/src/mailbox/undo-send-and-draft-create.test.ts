@@ -77,14 +77,14 @@ it.effect("approved quit cancels waiting desktop sends and preserves drafts", ()
     Effect.gen(function* () {
       const mailbox = yield* Mailbox;
       const account = yield* mailbox.connect({ provider: "gmail" });
-      yield* mailbox.queueUndoSend(
+      yield* mailbox.outbox.queueUndoSend(
         { id: "quit-wait", accountId: account.id, message: outgoing },
         5000,
       );
-      yield* mailbox.cancelDesktopUndoSends();
+      yield* mailbox.outbox.cancelDesktopUndoSends();
       yield* TestClock.adjust("6 seconds");
       assert.strictEqual(sends, 0);
-      assert.deepStrictEqual(yield* mailbox.queuedSends, []);
+      assert.deepStrictEqual(yield* mailbox.outbox.queuedSends, []);
       assert.isTrue(Option.isSome(yield* (yield* Store).getDraft("quit-wait")));
     }),
     {
@@ -103,7 +103,7 @@ it.effect("direct send rejects a waiting queued send of the same draft", () => {
       const mailbox = yield* Mailbox;
       const account = yield* mailbox.connect({ provider: "gmail" });
       const input = { id: "already-queued", accountId: account.id, message: outgoing };
-      yield* mailbox.queueSend(input, 0);
+      yield* mailbox.outbox.queueSend(input, 0);
       const direct = yield* mailbox
         .perform(
           { kind: "send", draftId: input.id, accountId: account.id, message: outgoing },
@@ -112,7 +112,7 @@ it.effect("direct send rejects a waiting queued send of the same draft", () => {
         .pipe(Effect.result);
       assert.strictEqual(direct._tag === "Failure" && direct.failure._tag, "InvalidInput");
       assert.strictEqual(sends, 0);
-      yield* mailbox.flushQueuedSends();
+      yield* mailbox.outbox.flushQueuedSends();
       assert.strictEqual(sends, 1);
     }),
     {
@@ -188,27 +188,29 @@ it.effect("closing a composer cancels only its waiting desktop sends", () =>
     Effect.gen(function* () {
       const mailbox = yield* Mailbox;
       const account = yield* mailbox.connect({ provider: "gmail" });
-      yield* mailbox.queueUndoSend(
+      yield* mailbox.outbox.queueUndoSend(
         { id: "compose-a", accountId: account.id, message: outgoing },
         60000,
         { archive: false, confirmResend: false, owner: "a" },
       );
-      yield* mailbox.queueUndoSend(
+      yield* mailbox.outbox.queueUndoSend(
         { id: "compose-b", accountId: account.id, message: outgoing },
         60000,
         { archive: false, confirmResend: false, owner: "b" },
       );
-      yield* mailbox.queueUndoSend(
+      yield* mailbox.outbox.queueUndoSend(
         { id: "ownerless", accountId: account.id, message: outgoing },
         60000,
       );
-      yield* mailbox.queueSend({ id: "mobile", accountId: account.id, message: outgoing }, 60000);
-      yield* mailbox.cancelDesktopUndoSends("a");
-      assert.deepStrictEqual((yield* mailbox.queuedSends).map((item) => item.id).toSorted(), [
-        "compose-b",
-        "mobile",
-        "ownerless",
-      ]);
+      yield* mailbox.outbox.queueSend(
+        { id: "mobile", accountId: account.id, message: outgoing },
+        60000,
+      );
+      yield* mailbox.outbox.cancelDesktopUndoSends("a");
+      assert.deepStrictEqual(
+        (yield* mailbox.outbox.queuedSends).map((item) => item.id).toSorted(),
+        ["compose-b", "mobile", "ownerless"],
+      );
       assert.isTrue(Option.isSome(yield* (yield* Store).getDraft("compose-a")));
     }),
   ),
@@ -222,14 +224,14 @@ for (const failure of [false, true]) {
         Effect.gen(function* () {
           const mailbox = yield* Mailbox;
           const account = yield* mailbox.connect({ provider: "gmail" });
-          yield* mailbox.queueUndoSend(
+          yield* mailbox.outbox.queueUndoSend(
             { id: "finished-worker", accountId: account.id, message: outgoing },
             5000,
           );
           yield* TestClock.adjust("6 seconds");
-          const waiter = yield* mailbox.awaitUndoSend("finished-worker").pipe(Effect.result);
+          const waiter = yield* mailbox.outbox.awaitUndoSend("finished-worker").pipe(Effect.result);
           assert.strictEqual(waiter._tag === "Failure" && waiter.failure._tag, "InvalidInput");
-          assert.strictEqual(yield* mailbox.pendingSendCount, 0);
+          assert.strictEqual(yield* mailbox.outbox.pendingSendCount, 0);
         }),
         {
           send: () =>
@@ -321,14 +323,14 @@ it.effect("queued partial delivery preserves the draft and resend protection", (
       const store = yield* Store;
       const account = yield* mailbox.connect({ provider: "gmail" });
       const input = { id: "partial-send", accountId: account.id, message: outgoing };
-      yield* mailbox.queueSend(input, 0);
-      yield* mailbox.flushQueuedSends();
+      yield* mailbox.outbox.queueSend(input, 0);
+      yield* mailbox.outbox.flushQueuedSends();
       assert.isTrue(yield* store.sendUncertain(input.id));
-      assert.strictEqual((yield* mailbox.queuedSends)[0]?.status, "failed");
+      assert.strictEqual((yield* mailbox.outbox.queuedSends)[0]?.status, "failed");
       assert.isTrue(Option.isSome(yield* store.getDraft(input.id)));
-      yield* mailbox.flushQueuedSends();
+      yield* mailbox.outbox.flushQueuedSends();
       assert.strictEqual(sends, 1);
-      const retry = yield* mailbox.queueSend(input, 0).pipe(Effect.result);
+      const retry = yield* mailbox.outbox.queueSend(input, 0).pipe(Effect.result);
       assert.strictEqual(retry._tag === "Failure" && retry.failure._tag, "SendUncertain");
     }),
     {
@@ -446,12 +448,12 @@ for (const failure of [
         const store = yield* Store;
         const account = yield* mailbox.connect({ provider: "gmail" });
         const draft = { id: "retryable", accountId: account.id, message: outgoing };
-        yield* mailbox.queueSend(draft, 0);
-        yield* mailbox.flushQueuedSends();
-        assert.strictEqual((yield* mailbox.queuedSends)[0]?.status, "retryable");
+        yield* mailbox.outbox.queueSend(draft, 0);
+        yield* mailbox.outbox.flushQueuedSends();
+        assert.strictEqual((yield* mailbox.outbox.queuedSends)[0]?.status, "retryable");
         assert.isFalse(yield* store.sendUncertain(draft.id));
-        yield* mailbox.queueSend(draft, 0);
-        assert.strictEqual((yield* mailbox.queuedSends)[0]?.status, "waiting");
+        yield* mailbox.outbox.queueSend(draft, 0);
+        assert.strictEqual((yield* mailbox.outbox.queuedSends)[0]?.status, "waiting");
       }),
       { send: () => Effect.fail(failure) },
     ),
@@ -470,9 +472,9 @@ for (const queued of [false, true]) {
           const input = { id: "imap-failure", accountId: account.id, message: outgoing };
           yield* store.putDraft(input);
           if (queued) {
-            yield* mailbox.queueSend(input, 0);
-            yield* mailbox.flushQueuedSends();
-            assert.strictEqual((yield* mailbox.queuedSends)[0]?.status, "retryable");
+            yield* mailbox.outbox.queueSend(input, 0);
+            yield* mailbox.outbox.flushQueuedSends();
+            assert.strictEqual((yield* mailbox.outbox.queuedSends)[0]?.status, "retryable");
           } else {
             const failure = yield* mailbox
               .perform(
@@ -483,8 +485,8 @@ for (const queued of [false, true]) {
             assert.strictEqual(failure._tag === "Failure" && failure.failure._tag, "ProviderError");
           }
           assert.isFalse(yield* store.sendUncertain(input.id));
-          yield* mailbox.queueSend(input, 60000);
-          assert.strictEqual((yield* mailbox.queuedSends)[0]?.status, "waiting");
+          yield* mailbox.outbox.queueSend(input, 60000);
+          assert.strictEqual((yield* mailbox.outbox.queuedSends)[0]?.status, "waiting");
         }),
         { send: () => Effect.fail(new ProviderError({ message: "SMTP message rejected" })) },
       ),
@@ -500,10 +502,13 @@ it.effect("interruption during a claimed send retains durable resend protection"
         const mailbox = yield* Mailbox;
         store = yield* Store;
         const account = yield* mailbox.connect({ provider: "gmail" });
-        yield* mailbox.queueSend({ id: "crash", accountId: account.id, message: outgoing }, 0);
-        const sending = yield* mailbox.flushQueuedSends().pipe(Effect.forkChild);
+        yield* mailbox.outbox.queueSend(
+          { id: "crash", accountId: account.id, message: outgoing },
+          0,
+        );
+        const sending = yield* mailbox.outbox.flushQueuedSends().pipe(Effect.forkChild);
         yield* Deferred.await(entered);
-        assert.strictEqual((yield* mailbox.queuedSends)[0]?.status, "sending");
+        assert.strictEqual((yield* mailbox.outbox.queuedSends)[0]?.status, "sending");
         assert.isTrue(yield* store.sendUncertain("crash"));
         yield* Fiber.interrupt(sending);
         assert.isTrue(yield* store.sendUncertain("crash"));
@@ -527,16 +532,16 @@ it.effect("disconnecting the renderer waiter does not cancel core's undo send", 
       const mailbox = yield* Mailbox;
       const account = yield* mailbox.connect({ provider: "gmail" });
       const now = yield* Clock.currentTimeMillis;
-      yield* mailbox.queueUndoSend(
+      yield* mailbox.outbox.queueUndoSend(
         { id: "undo", accountId: account.id, message: outgoing },
         now + 5000,
       );
-      assert.strictEqual(yield* mailbox.pendingSendCount, 1);
-      const renderer = yield* mailbox.awaitUndoSend("undo").pipe(Effect.forkChild);
+      assert.strictEqual(yield* mailbox.outbox.pendingSendCount, 1);
+      const renderer = yield* mailbox.outbox.awaitUndoSend("undo").pipe(Effect.forkChild);
       yield* Fiber.interrupt(renderer);
       yield* TestClock.adjust("6 seconds");
       assert.strictEqual(sent, 1);
-      assert.deepStrictEqual(yield* mailbox.queuedSends, []);
+      assert.deepStrictEqual(yield* mailbox.outbox.queuedSends, []);
     }),
     {
       send: () =>
@@ -555,12 +560,12 @@ it.effect("an old cancelled timer cannot send a newly queued version of the same
       const account = yield* mailbox.connect({ provider: "gmail" });
       const now = yield* Clock.currentTimeMillis;
       const input = { id: "undo-requeue", accountId: account.id, message: outgoing };
-      yield* mailbox.queueUndoSend(input, now + 5000);
-      const oldWaiter = yield* mailbox.awaitUndoSend(input.id).pipe(Effect.forkChild);
+      yield* mailbox.outbox.queueUndoSend(input, now + 5000);
+      const oldWaiter = yield* mailbox.outbox.awaitUndoSend(input.id).pipe(Effect.forkChild);
       yield* Effect.yieldNow;
-      assert.isTrue(yield* mailbox.cancelWaitingSend(input.id));
+      assert.isTrue(yield* mailbox.outbox.cancelWaitingSend(input.id));
       assert.strictEqual((yield* Fiber.await(oldWaiter))._tag, "Failure");
-      yield* mailbox.queueUndoSend(input, now + 10000);
+      yield* mailbox.outbox.queueUndoSend(input, now + 10000);
       yield* TestClock.adjust("6 seconds");
       assert.strictEqual(sent, 0);
       yield* TestClock.adjust("5 seconds");
@@ -597,7 +602,7 @@ it("desktop undo intents and draft creation metadata survive reopening", async (
         const mailbox = yield* Mailbox;
         const store = yield* Store;
         const account = yield* mailbox.connect({ provider: "gmail" });
-        yield* mailbox.queueUndoSend(
+        yield* mailbox.outbox.queueUndoSend(
           { id: "restart-undo", accountId: account.id, message: outgoing },
           Date.now() + 60000,
         );
@@ -631,9 +636,9 @@ it("desktop undo intents and draft creation metadata survive reopening", async (
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
         // Layer start runs synchronously, so a CLI resume would already have sent.
-        yield* mailbox.flushQueuedSends();
+        yield* mailbox.outbox.flushQueuedSends();
         expect(server.sent).toHaveLength(0);
-        expect((yield* mailbox.queuedSends)[0]?.status).toBe("waiting");
+        expect((yield* mailbox.outbox.queuedSends)[0]?.status).toBe("waiting");
       }),
     );
   } finally {
@@ -649,7 +654,7 @@ it("desktop undo intents and draft creation metadata survive reopening", async (
         yield* Effect.promise(() =>
           vi.waitFor(() => expect(server.sent).toHaveLength(1), waitLimit),
         );
-        expect(yield* mailbox.queuedSends).toEqual([]);
+        expect(yield* mailbox.outbox.queuedSends).toEqual([]);
         const draft = Option.getOrThrow(yield* store.getDraft("create-marker"));
         expect(draft.remote?.changeKey).toBe("version");
         expect(Option.getOrThrow(yield* store.draftCreateState("create-marker"))).toEqual({
@@ -718,7 +723,9 @@ for (const status of ["waiting", "sending", "stale"] as const) {
           yield* Effect.promise(() =>
             vi.waitFor(
               async () =>
-                expect((await Effect.runPromise(mailbox.queuedSends))[0]?.status).toBe(expected),
+                expect((await Effect.runPromise(mailbox.outbox.queuedSends))[0]?.status).toBe(
+                  expected,
+                ),
               waitLimit,
             ),
           );
@@ -738,16 +745,18 @@ for (const status of ["waiting", "sending", "stale"] as const) {
                 ? "expired"
                 : "interrupted",
           );
-          const queued = (yield* mailbox.queuedSends)[0];
+          const queued = (yield* mailbox.outbox.queuedSends)[0];
           if (!queued) throw new Error("Missing failed send");
           const input = { id: queued.id, accountId: queued.accountId, message: queued.message };
-          const refused = yield* mailbox.queueSend(input, Date.now() + 60000).pipe(Effect.result);
+          const refused = yield* mailbox.outbox
+            .queueSend(input, Date.now() + 60000)
+            .pipe(Effect.result);
           if (status === "stale") expect(refused._tag).toBe("Success");
           else {
             expect(refused._tag === "Failure" && refused.failure._tag).toBe("SendUncertain");
-            yield* mailbox.queueSend(input, Date.now() + 60000, true);
+            yield* mailbox.outbox.queueSend(input, Date.now() + 60000, true);
           }
-          expect((yield* mailbox.queuedSends)[0]?.status).toBe("waiting");
+          expect((yield* mailbox.outbox.queuedSends)[0]?.status).toBe("waiting");
           expect(yield* store.sendUncertain(input.id)).toBe(false);
         }),
       );
@@ -765,21 +774,24 @@ it.effect("a stalled provider send does not block queuing or undoing another dra
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
         const account = yield* mailbox.connect({ provider: "gmail" });
-        yield* mailbox.queueSend({ id: "stalled", accountId: account.id, message: outgoing }, 0);
-        const active = yield* mailbox.flushQueuedSends().pipe(Effect.forkChild);
+        yield* mailbox.outbox.queueSend(
+          { id: "stalled", accountId: account.id, message: outgoing },
+          0,
+        );
+        const active = yield* mailbox.outbox.flushQueuedSends().pipe(Effect.forkChild);
         yield* Deferred.await(entered);
-        const waiting = yield* mailbox
+        const waiting = yield* mailbox.outbox
           .queueUndoSend({ id: "other-draft", accountId: account.id, message: outgoing }, 60000)
           .pipe(Effect.timeout("1 second"), Effect.result, Effect.forkChild);
         yield* TestClock.adjust("1 second");
         assert.strictEqual((yield* Fiber.join(waiting))._tag, "Success");
-        const undo = yield* mailbox
+        const undo = yield* mailbox.outbox
           .cancelWaitingSend("other-draft")
           .pipe(Effect.timeout("1 second"), Effect.result, Effect.forkChild);
         yield* TestClock.adjust("1 second");
         const cancelled = yield* Fiber.join(undo);
         assert.isTrue(cancelled._tag === "Success" && cancelled.success);
-        assert.strictEqual((yield* mailbox.queuedSends)[0]?.status, "sending");
+        assert.strictEqual((yield* mailbox.outbox.queuedSends)[0]?.status, "sending");
         yield* Fiber.interrupt(active);
       }),
       { send: () => Deferred.succeed(entered, undefined).pipe(Effect.andThen(Effect.never)) },
@@ -796,7 +808,7 @@ it.effect(
         const mailbox = yield* Mailbox;
         const store = yield* Store;
         const account = yield* mailbox.connect({ provider: "gmail" });
-        yield* mailbox.queueUndoSend(
+        yield* mailbox.outbox.queueUndoSend(
           { id: "paused-window", accountId: account.id, message: outgoing },
           5000,
         );
@@ -805,7 +817,7 @@ it.effect(
         yield* store.putQueuedSend({ ...intent, due: -120001 });
         yield* TestClock.adjust("5 seconds");
         assert.strictEqual(sends, 0);
-        assert.strictEqual((yield* mailbox.queuedSends)[0]?.status, "retryable");
+        assert.strictEqual((yield* mailbox.outbox.queuedSends)[0]?.status, "retryable");
         assert.isFalse(yield* store.sendUncertain(intent.id));
         assert.strictEqual((yield* mailbox.listFailedOps)[0]?.kind, "send");
         assert.isTrue(Option.isSome(yield* store.getDraft(intent.id)));

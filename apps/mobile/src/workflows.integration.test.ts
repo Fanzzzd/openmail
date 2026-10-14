@@ -55,9 +55,9 @@ for (const provider of ["gmail", "outlook"] as const) {
           };
           yield* mailbox.saveDraft(draft);
           expect(server.draftLog).toEqual([]);
-          yield* mailbox.queueSend(draft, Date.now() + 60000);
+          yield* mailbox.outbox.queueSend(draft, Date.now() + 60000);
           expect(server.sent).toEqual([]);
-          expect(yield* mailbox.cancelWaitingSend(draft.id)).toBe(true);
+          expect(yield* mailbox.outbox.cancelWaitingSend(draft.id)).toBe(true);
         }),
       );
     } finally {
