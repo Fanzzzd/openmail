@@ -59,9 +59,10 @@ export const diagnosticsLogger = Logger.make((options) => {
     }
     const provider = Schema.decodeUnknownOption(ProviderDiagnostic)(message);
     if (provider._tag === "Some") {
-      localLog("provider-failure", provider.value);
+      // The stored line carries the keyed account hash; the unkeyed one never leaves memory.
+      const line = localLog("provider-failure", provider.value);
       classified = true;
-      process.stderr.write(`[provider-failure] ${JSON.stringify(provider.value)}\n`);
+      if (line !== undefined) process.stderr.write(`[provider-failure] ${line}\n`);
     }
   }
   if (classified) return;
@@ -73,8 +74,15 @@ export const diagnosticsLogger = Logger.make((options) => {
 /** A deliberate refusal to start (a newer database) is a clean exit, not a crash. */
 export const finishCleanly = () => diagnostics?.finish();
 /** The export the feedback email attaches: the snapshot line first, then the stored records. */
-export const diagnosticsPreview = (crashOnly: boolean, snapshot?: object) =>
-  [snapshot === undefined ? "" : JSON.stringify(snapshot), diagnostics?.preview(crashOnly) ?? ""]
+export const diagnosticsPreview = (
+  crashOnly: boolean,
+  snapshot?: object,
+  accountIds: readonly string[] = [],
+) =>
+  [
+    snapshot === undefined ? "" : JSON.stringify(snapshot),
+    diagnostics?.preview(crashOnly, accountIds) ?? "",
+  ]
     .filter(Boolean)
     .join("\n");
 export const hasCrashReport = () => crashed;
@@ -166,7 +174,10 @@ async function checkWithProgress(directory: string) {
 let recoveryDirectory = "";
 export async function prepareReliability(directory: string, appVersion?: string) {
   recoveryDirectory = directory;
-  diagnostics = createLocalDiagnostics(join(directory, "diagnostics"));
+  // The hash key sits beside the diagnostics folder, so sharing that folder does not share it.
+  diagnostics = createLocalDiagnostics(join(directory, "diagnostics"), {
+    keyFile: join(directory, "diagnostics.key"),
+  });
   const health = diagnostics.begin(appVersion);
   crashed = health.crashed;
   try {

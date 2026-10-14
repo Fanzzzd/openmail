@@ -14,7 +14,7 @@ import {
   rebuildCorruptDatabase,
   type CacheResetResult,
 } from "./database-recovery.js";
-import { createHash } from "node:crypto";
+import { createHash, createHmac, randomBytes } from "node:crypto";
 import {
   existsSync,
   mkdirSync,
@@ -290,9 +290,67 @@ export function diagnosticSnapshot(environment: unknown, state: unknown, at = Da
   };
 }
 
+const HASH = /^[a-f0-9]{16}$/;
+const INSTALL_KEY = /^[a-f0-9]{64}$/;
+
+/**
+ * The per-install HMAC key for diagnostic hashes, created on first use with mode 0600. Without
+ * it, an account hash in a shared log cannot be checked against a guessed address. When the file
+ * cannot be read or written, a key for this run only keeps hashes unlinkable.
+ */
+function installKey(file: string) {
+  const read = () => {
+    let text = "";
+    try {
+      text = readFileSync(file, "utf8").trim();
+    } catch {
+      /* A missing key is created below. */
+    }
+    return INSTALL_KEY.test(text) ? text : undefined;
+  };
+  const existing = read();
+  if (existing !== undefined) return existing;
+  const key = randomBytes(32).toString("hex");
+  try {
+    writeFileSync(`${file}.tmp`, key, { mode: 0o600 });
+    chmodSync(`${file}.tmp`, 0o600);
+    renameSync(`${file}.tmp`, file);
+  } catch {
+    /* A read-only data folder still gets unlinkable hashes for this run. */
+  }
+  return read() ?? key;
+}
+
+/** Keys the 16-digit hashes portable code emits, so the stored value depends on the install. */
+function keyHashes(record: Record<string, unknown>, key: () => string) {
+  const keyed = (kind: string, value: unknown) =>
+    typeof value === "string" && HASH.test(value)
+      ? createHmac("sha256", key()).update(`${kind}:${value}`).digest("hex").slice(0, 16)
+      : undefined;
+  return {
+    ...record,
+    ...("accountHash" in record ? { accountHash: keyed("account", record.accountHash) } : {}),
+    ...("folderHash" in record ? { folderHash: keyed("folder", record.folderHash) } : {}),
+  };
+}
+
+/** The number a hash already has in `map`, or the next free one from `first`. */
+function numbered(map: Map<string, number>, value: unknown, first: number) {
+  if (typeof value !== "string" || !HASH.test(value)) return Number.NaN;
+  const next = map.get(value) ?? Math.max(first - 1, ...map.values()) + 1;
+  map.set(value, next);
+  return next;
+}
+
 export function createLocalDiagnostics(
   directory: string,
-  options: { maxBytes?: number; archives?: number; now?: () => number } = {},
+  options: {
+    maxBytes?: number;
+    archives?: number;
+    now?: () => number;
+    /** Where the per-install hash key lives. Defaults to `diagnostics.key` in `directory`. */
+    keyFile?: string;
+  } = {},
 ) {
   try {
     mkdirSync(directory, { recursive: true, mode: 0o700 });
@@ -304,6 +362,20 @@ export function createLocalDiagnostics(
   const maxBytes = Math.max(512, options.maxBytes ?? 256 * 1024);
   const archives = Math.max(1, Math.min(5, options.archives ?? 3));
   const now = options.now ?? Date.now;
+  const keyFile = options.keyFile ?? join(directory, "diagnostics.key");
+  let key: string | undefined;
+  const hashKey = () => (key ??= installKey(keyFile));
+  /** The unkeyed and keyed hash of each listed account, mapped to its snapshot index. */
+  const accountIndexes = (accountIds: readonly string[]) => {
+    const indexes = new Map<string, number>();
+    for (const [index, id] of accountIds.entries()) {
+      const plain = createHash("sha256").update(id.toLowerCase()).digest("hex").slice(0, 16);
+      const keyed = keyHashes({ accountHash: plain }, hashKey).accountHash;
+      indexes.set(plain, index);
+      if (keyed !== undefined) indexes.set(keyed, index);
+    }
+    return indexes;
+  };
   let health: typeof Health.Type = EMPTY_HEALTH;
   try {
     health = Schema.decodeUnknownSync(Health)(JSON.parse(readFileSync(stateFile, "utf8")));
@@ -318,9 +390,12 @@ export function createLocalDiagnostics(
       /* Disk full/read-only storage must not prevent startup or recovery. */
     }
   };
+  /** Writes one record and returns its line without the newline, or undefined on failure. */
   const record = (event: DiagnosticEvent, data: unknown = {}) => {
+    let written: string | undefined;
     try {
-      const line = `${JSON.stringify(diagnosticRecord(event, data, now()))}\n`;
+      const text = JSON.stringify(keyHashes(diagnosticRecord(event, data, now()), hashKey));
+      const line = `${text}\n`;
       if (existsSync(file) && statSync(file).size + Buffer.byteLength(line) > maxBytes) {
         for (let i = archives; i > 1; i--)
           if (existsSync(`${file}.${i - 1}`)) renameSync(`${file}.${i - 1}`, `${file}.${i}`);
@@ -328,9 +403,11 @@ export function createLocalDiagnostics(
       }
       appendFileSync(file, line, { mode: 0o600 });
       chmodSync(file, 0o600);
+      written = text;
     } catch {
       /* Logging failure must not crash the app. */
     }
+    return written;
   };
   const crash = (kind: (typeof Crash.Type)["kind"], code = 0) => {
     const at = now();
@@ -373,7 +450,25 @@ export function createLocalDiagnostics(
       health = { ...health, pendingReport: false };
       persist();
     },
-    preview: (crashOnly = false) => {
+    /**
+     * The export for the feedback dialog. Accounts appear as `account`, the index the snapshot
+     * line uses for `accountIds`; accounts no longer listed get the next numbers. Folders get a
+     * number for this export. No hash leaves the file, so a shared export cannot be matched
+     * against a guessed address or against another export.
+     */
+    preview: (crashOnly = false, accountIds: readonly string[] = []) => {
+      const accounts = accountIndexes(accountIds);
+      const folders = new Map<string, number>();
+      const exported = (entry: Record<string, unknown>) => {
+        const { accountHash, folderHash, ...rest } = entry;
+        const account = numbered(accounts, accountHash, accountIds.length);
+        const folder = numbered(folders, folderHash, 0);
+        return JSON.stringify({
+          ...rest,
+          ...(Number.isNaN(account) ? {} : { account }),
+          ...(Number.isNaN(folder) ? {} : { folder }),
+        });
+      };
       // Re-encode stored records too: a tampered or older file cannot introduce free text.
       const entries: string[] = [];
       if (!crashOnly)
@@ -388,7 +483,7 @@ export function createLocalDiagnostics(
                   "at" in value && typeof value.at === "number" && Number.isFinite(value.at)
                     ? value.at
                     : 0;
-                entries.push(JSON.stringify(diagnosticRecord(value.event, value, at)));
+                entries.push(exported(diagnosticRecord(value.event, value, at)));
               }
             } catch {
               /* Ignore incomplete lines. */

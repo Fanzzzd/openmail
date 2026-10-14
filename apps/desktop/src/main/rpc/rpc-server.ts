@@ -284,11 +284,16 @@ const Handlers = MailRpcs.toLayer(
       SetWindowRoute: ({ href }, { client }) =>
         Effect.sync(() => setWindowRoute(windowOf(client.id), href)),
       Diagnostics: ({ crashOnly }) =>
-        m.app.diagnosticsState.pipe(
+        Effect.all([m.app.diagnosticsState, m.accounts.accounts]).pipe(
           // A broken database must not hide the rest of the report.
           Effect.catchCause(() => Effect.succeed(undefined)),
-          Effect.map((state) =>
-            diagnosticsPreview(crashOnly, diagnosticSnapshot(diagnosticEnvironment(), state)),
+          Effect.map((loaded) =>
+            diagnosticsPreview(
+              crashOnly,
+              diagnosticSnapshot(diagnosticEnvironment(), loaded?.[0]),
+              // Records name accounts by the snapshot's index, never by hash.
+              loaded?.[1].map((account) => account.id),
+            ),
           ),
         ),
       CrashReportPending: () => Effect.sync(hasCrashReport),

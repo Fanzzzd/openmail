@@ -115,9 +115,11 @@ export default function PrivacyPage() {
             <td>A diagnostics log</td>
             <td>
               The same folder. It holds fixed fields only: time, provider, HTTP method, endpoint
-              template, status code, failure category and a hashed account ID. It contains no
-              message content, addresses, full URLs or tokens. It is never uploaded. The Feedback
-              window lets you attach it to an email that you send yourself.
+              template, status code, failure category and an account hash keyed with a random secret
+              that stays on your Mac. It contains no message content, addresses, full URLs or
+              tokens. A copied or attached export numbers accounts instead of showing the hash. It
+              is never uploaded. The Feedback window lets you attach it to an email that you send
+              yourself.
             </td>
           </tr>
         </tbody>

@@ -4,6 +4,7 @@ import {
 } from "../../../test-support/migrated-database.js";
 import { expectFileBytes } from "../../../test-support/file-bytes.js";
 import { QUICK_CHECK_TIMEOUT_MS, RECOVERY_TABLES } from "./database-recovery.js";
+import { createHash } from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
 import { afterEach, expect, it, vi } from "vitest";
 import { Effect, Layer, Stream, Fiber, Schema } from "effect";
@@ -15,6 +16,7 @@ import {
   readFileSync,
   readdirSync,
   rmSync,
+  statSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -302,6 +304,84 @@ it("resets a real cache then re-syncs through a fake provider while accounts and
       expect(server.sent).toHaveLength(1);
     }).pipe(Effect.provide(layer())),
   );
+});
+
+const ACCOUNT_ID = "gmail:alice@example.com";
+const unkeyed = (value: string) => createHash("sha256").update(value).digest("hex").slice(0, 16);
+const reset = (accountId: string, folder: string) => ({
+  _tag: "SyncResetDiagnostic",
+  provider: "gmail",
+  accountHash: unkeyed(accountId.toLowerCase()),
+  folderHash: unkeyed(folder),
+  phase: "reset",
+  listed: 1,
+  kept: 1,
+  local: 1,
+  candidates: 0,
+  verified: 0,
+  incomplete: 0,
+  deferred: 0,
+});
+const storedHashes = (file: string) =>
+  readFileSync(file, "utf8")
+    .trim()
+    .split("\n")
+    .map(
+      (line) =>
+        Schema.decodeUnknownSync(Schema.Struct({ accountHash: Schema.String }))(JSON.parse(line))
+          .accountHash,
+    );
+
+it("keys account hashes per install, so the same address hashes differently elsewhere", () => {
+  const [first, second] = [temp(), temp()];
+  const a = createLocalDiagnostics(first);
+  const b = createLocalDiagnostics(second);
+  for (const log of [a, b]) {
+    log.record("sync-reset", reset(ACCOUNT_ID, "INBOX"));
+    log.record("runtime-error", { account: ACCOUNT_ID });
+  }
+  const [hashA, rawA] = storedHashes(a.file);
+  const [hashB] = storedHashes(b.file);
+  expect(hashA).toMatch(/^[a-f0-9]{16}$/);
+  expect(hashA).not.toBe(hashB);
+  expect(hashA).not.toBe(unkeyed(ACCOUNT_ID));
+  expect(rawA).not.toBe(unkeyed(ACCOUNT_ID));
+  expect(readFileSync(a.file, "utf8")).not.toContain(unkeyed("INBOX"));
+  // The key persists: a restart writes the same keyed hash.
+  createLocalDiagnostics(first).record("sync-reset", reset(ACCOUNT_ID, "INBOX"));
+  expect(storedHashes(a.file).at(-1)).toBe(hashA);
+  const key = join(first, "diagnostics.key");
+  expect(statSync(key).mode & 0o777).toBe(0o600);
+  const secret = readFileSync(key, "utf8");
+  expect(secret).toMatch(/^[a-f0-9]{64}$/);
+  expect(readFileSync(a.file, "utf8")).not.toContain(secret);
+  expect(a.preview()).not.toContain(secret);
+});
+
+it("names accounts in the export by snapshot index and folders by number, never by hash", () => {
+  const dir = temp();
+  const log = createLocalDiagnostics(dir);
+  log.record("sync-reset", reset(ACCOUNT_ID, "INBOX"));
+  log.record("sync-reset", reset("imap:removed@example.com", "Archive"));
+  log.record("sync-reset", reset(ACCOUNT_ID, "Archive"));
+  // An older build stored the unkeyed hash; the export maps it too.
+  writeFileSync(
+    `${log.file}.1`,
+    `${JSON.stringify({ at: 1, event: "sync-reset", ...reset(ACCOUNT_ID, "INBOX") })}\n`,
+  );
+  const preview = log.preview(false, ["outlook:bob@example.com", ACCOUNT_ID]);
+  const records = preview.split("\n").map((line) => JSON.parse(line));
+  // Account 0 has no records; a removed account gets the next number. The older record's
+  // folder hash is unkeyed, so the export counts it as a separate folder.
+  expect(records.map((record) => [record.account, record.folder])).toEqual([
+    [1, 0],
+    [1, 1],
+    [2, 2],
+    [1, 2],
+  ]);
+  expect(preview).not.toContain("Hash");
+  expect(preview).not.toMatch(/[a-f0-9]{16}/);
+  expect(log.preview()).not.toMatch(/[a-f0-9]{16}/);
 });
 
 it("declining the report does not erase the crash-loop counter", () => {
