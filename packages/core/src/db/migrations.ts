@@ -1397,6 +1397,11 @@ CREATE TRIGGER snoozed_list_date_insert AFTER INSERT ON snoozed_messages BEGIN
   // wrote it, so an editor saving from an older revision is refused instead of overwriting.
   `ALTER TABLE drafts ADD COLUMN revision INTEGER NOT NULL DEFAULT 0;
    ALTER TABLE drafts ADD COLUMN editor TEXT;`,
+  // user_version 52: Claude Haiku 5.5 replaced Claude Haiku 4.5 in the model list. A saved
+  // Haiku 4.5 choice moves to Haiku 5.5. Summaries and triage suggestions made by Haiku 4.5 no
+  // longer decode as a selectable model, and a cache hit needs the current model anyway.
+  `UPDATE ai_config SET model = 'claude-haiku-5-5' WHERE model = 'claude-haiku-4-5-20251001';
+   DELETE FROM derived WHERE model = 'claude-haiku-4-5-20251001' AND kind IN ('summary', 'triage');`,
 ];
 
 /** Index of migration 37, the cache rowid rebuild. It runs when user_version equals this index. */

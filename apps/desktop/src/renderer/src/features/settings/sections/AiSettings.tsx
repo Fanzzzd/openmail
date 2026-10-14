@@ -1,7 +1,13 @@
 import { useAtom, useAtomValue } from "@effect/atom-react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Select } from "../../../ui/Select";
-import { AI_MODELS, AI_SUMMARY_INPUT, AUTO_SUMMARY_DAILY_CAP } from "@openmail/core/schema";
+import {
+  AI_MODELS,
+  AI_SUMMARY_INPUT,
+  AUTO_SUMMARY_DAILY_CAP,
+  aiModelName,
+  type AiModelName,
+} from "@openmail/core/schema";
 import { AsyncResult } from "effect/reactivity";
 import { Effect } from "effect";
 import { useId, useRef, useState } from "react";
@@ -30,6 +36,12 @@ const modelMutation = MailClient.mutation("SetAiModel");
 
 export function AiSettings({ accounts }: { accounts: readonly Account[] }) {
   const { t, i18n } = useLingui();
+  /** List prices per token, relative to Sonnet, the default. */
+  const costNote: Record<AiModelName, string> = {
+    "claude-sonnet-5-5": t`Default`,
+    "claude-opus-5-5": t`About twice the cost`,
+    "claude-haiku-5-5": t`About 1/20 of the cost`,
+  };
   const modelId = useId();
   const settings = AsyncResult.getOrElse(useAtomValue(aiSettingsAtom), () => null);
   // Uncontrolled input: the key is never put in React state, atoms or preferences.
@@ -108,7 +120,10 @@ export function AiSettings({ accounts }: { accounts: readonly Account[] }) {
               className="min-w-48"
               value={settings?.model ?? AI_MODELS[0]}
               disabled={modelResult.waiting}
-              options={AI_MODELS.map((name) => ({ value: name, label: name }))}
+              options={AI_MODELS.map((id) => ({
+                value: id,
+                label: `${aiModelName(id)} · ${costNote[id]}`,
+              }))}
               onValueChange={(model) => setModel({ payload: { model }, reactivityKeys: [Keys.ai] })}
             />
           </SettingsRow>

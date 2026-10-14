@@ -362,9 +362,17 @@ msgstr "Un paramètre d’heures calmes quotidien précédent est toujours actif
 msgid "A signature needs a name and a sending address."
 msgstr "Une signature doit avoir un nom et une adresse d’envoi."
 
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "About 1/20 of the cost"
+msgstr "Environ 1/20 du coût"
+
 #: src/renderer/src/state/desktop.ts
 msgid "About OpenMail"
 msgstr "À propos d’OpenMail"
+
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "About twice the cost"
+msgstr "Environ le double du coût"
 
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 msgid "Above quoted text"
@@ -2327,6 +2335,7 @@ msgid "Decrease quote level"
 msgstr "Diminuer le niveau de citation"
 
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Default"
 msgstr "Par défaut"

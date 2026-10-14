@@ -1,6 +1,12 @@
 import { useAtomValue } from "@effect/atom-react";
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
-import { AI_ERRORS, type AiCoverage, type AiEvent, type AiSource } from "@openmail/core/schema";
+import {
+  AI_ERRORS,
+  aiModelName,
+  type AiCoverage,
+  type AiEvent,
+  type AiSource,
+} from "@openmail/core/schema";
 import { Cause, Effect, Fiber, Stream } from "effect";
 import { AsyncResult } from "effect/reactivity";
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
@@ -244,7 +250,7 @@ export function AiOutput({
   openSource: (id: string) => void;
 }) {
   const { t, i18n } = useLingui();
-  const model = result.model;
+  const model = aiModelName(result.model);
   return (
     <div className="space-y-2">
       <output aria-atomic="true" className="sr-only">
@@ -317,7 +323,7 @@ function AllowedThreadSummary({ id, keyConfigured }: { id: string; keyConfigured
     () => null,
   );
   const result = useAiStream();
-  const model = cached?.model ?? "";
+  const model = aiModelName(cached?.model ?? "");
   const open = (sourceId: string) => run(openMessageWindow(sourceId));
   return (
     <section className="mb-4 space-y-2 rounded border border-violet-500/20 p-3">

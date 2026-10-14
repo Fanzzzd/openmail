@@ -1,7 +1,7 @@
 import { useAtom, useAtomValue } from "@effect/atom-react";
 import { plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { isTriageInbox } from "@openmail/core/schema";
+import { aiModelName, isTriageInbox } from "@openmail/core/schema";
 import { AsyncResult } from "effect/reactivity";
 import { Sparkles } from "lucide-react";
 import { useState } from "react";
@@ -149,7 +149,7 @@ function Suggestion({
         >
           <h2 className="font-semibold">{title}</h2>
           <p className="whitespace-pre-wrap break-words">{row.reason}</p>
-          <p className="text-footnote text-a11y-muted">{row.model}</p>
+          <p className="text-footnote text-a11y-muted">{aiModelName(row.model)}</p>
           {row.status === "pending" && (
             <div className="flex gap-3">
               <button type="button" disabled={result.waiting} onClick={() => decide(true)}>

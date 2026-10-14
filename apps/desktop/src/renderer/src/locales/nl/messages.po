@@ -362,9 +362,17 @@ msgstr "Een eerdere dagelijkse stille uren-instelling is nog steeds actief. Wijz
 msgid "A signature needs a name and a sending address."
 msgstr "Een handtekening heeft een naam en een verzendadres nodig."
 
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "About 1/20 of the cost"
+msgstr "Ongeveer 1/20 van de kosten"
+
 #: src/renderer/src/state/desktop.ts
 msgid "About OpenMail"
 msgstr "Over OpenMail"
+
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "About twice the cost"
+msgstr "Ongeveer dubbele kosten"
 
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 msgid "Above quoted text"
@@ -2327,6 +2335,7 @@ msgid "Decrease quote level"
 msgstr "Verlaag citaatniveau"
 
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Default"
 msgstr "Standaard"

@@ -362,9 +362,17 @@ msgstr "Eine frühere Einstellung für tägliche Ruhezeiten ist noch aktiv. Änd
 msgid "A signature needs a name and a sending address."
 msgstr "Eine Signatur braucht einen Namen und eine Absendeadresse."
 
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "About 1/20 of the cost"
+msgstr "Etwa 1/20 der Kosten"
+
 #: src/renderer/src/state/desktop.ts
 msgid "About OpenMail"
 msgstr "Über OpenMail"
+
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "About twice the cost"
+msgstr "Etwa doppelte Kosten"
 
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 msgid "Above quoted text"
@@ -2327,6 +2335,7 @@ msgid "Decrease quote level"
 msgstr "Zitatebene verringern"
 
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Default"
 msgstr "Standard"

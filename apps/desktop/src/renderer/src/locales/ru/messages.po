@@ -362,9 +362,17 @@ msgstr "Предыдущая ежедневная настройка тихих 
 msgid "A signature needs a name and a sending address."
 msgstr "У подписи должны быть название и адрес отправки."
 
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "About 1/20 of the cost"
+msgstr "Около 1/20 стоимости"
+
 #: src/renderer/src/state/desktop.ts
 msgid "About OpenMail"
 msgstr "О программе OpenMail"
+
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "About twice the cost"
+msgstr "Примерно вдвое дороже"
 
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 msgid "Above quoted text"
@@ -2327,6 +2335,7 @@ msgid "Decrease quote level"
 msgstr "Уменьшить уровень цитирования"
 
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Default"
 msgstr "По умолчанию"

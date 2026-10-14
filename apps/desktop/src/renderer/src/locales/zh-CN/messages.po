@@ -372,9 +372,17 @@ msgstr "原每日静音时段仍生效。修改此日程后替换。"
 msgid "A signature needs a name and a sending address."
 msgstr "签名需要名称和发件地址。"
 
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "About 1/20 of the cost"
+msgstr "费用约为 1/20"
+
 #: src/renderer/src/state/desktop.ts
 msgid "About OpenMail"
 msgstr "关于 OpenMail"
+
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "About twice the cost"
+msgstr "费用约为两倍"
 
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 msgid "Above quoted text"
@@ -2337,6 +2345,7 @@ msgid "Decrease quote level"
 msgstr "减少引用层级"
 
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Default"
 msgstr "默认"

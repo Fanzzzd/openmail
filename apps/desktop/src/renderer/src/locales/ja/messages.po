@@ -362,9 +362,17 @@ msgstr "以前の毎日の静かな時間の設定はまだ有効です。この
 msgid "A signature needs a name and a sending address."
 msgstr "署名には名前と送信元アドレスが必要です。"
 
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "About 1/20 of the cost"
+msgstr "料金は約 1/20"
+
 #: src/renderer/src/state/desktop.ts
 msgid "About OpenMail"
 msgstr "OpenMail について"
+
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "About twice the cost"
+msgstr "料金は約 2 倍"
 
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 msgid "Above quoted text"
@@ -2327,6 +2335,7 @@ msgid "Decrease quote level"
 msgstr "引用レベルを下げる"
 
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Default"
 msgstr "デフォルト"

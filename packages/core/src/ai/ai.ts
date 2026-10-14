@@ -1,12 +1,20 @@
 import { Schema } from "effect";
 
-export const AI_MODELS = [
-  "claude-sonnet-5-5",
-  "claude-opus-5-5",
-  "claude-haiku-4-5-20251001",
-] as const;
+export const AI_MODELS = ["claude-sonnet-5-5", "claude-opus-5-5", "claude-haiku-5-5"] as const;
 export const AiModelName = Schema.Literals(AI_MODELS);
 export type AiModelName = typeof AiModelName.Type;
+/** Product names for the model ids. Names are never translated. */
+export const AI_MODEL_NAMES: Record<AiModelName, string> = {
+  "claude-sonnet-5-5": "Claude Sonnet 5.5",
+  "claude-opus-5-5": "Claude Opus 5.5",
+  "claude-haiku-5-5": "Claude Haiku 5.5",
+};
+/**
+ * The product name for a model id. Results saved by a model that is no longer offered keep
+ * their id, so an unknown id is shown as it is.
+ */
+const modelNames = new Map<string, string>(Object.entries(AI_MODEL_NAMES));
+export const aiModelName = (id: string): string => modelNames.get(id) ?? id;
 export const AiAccountSettings = Schema.Struct({
   accountId: Schema.String,
   allowed: Schema.Boolean,
@@ -172,10 +180,10 @@ export function isTriageInbox(labels: readonly string[]): boolean {
 export const AI_PROMPT_VERSION = "mail-text-v2";
 /**
  * The most input one model request may carry, in UTF-8 bytes. Bytes bound tokens conservatively,
- * including CJK, without a provider call, so 120 KB stays under 120K tokens: well inside the
- * 200K window of the smallest selectable model (Haiku 4.5; Sonnet 5.5 and Opus 5.5 have 1M).
- * At list prices a full request costs at most about $0.12 on Haiku, $0.24 on Sonnet and $0.48
- * on Opus; English mail runs near 4 bytes a token, about a quarter of that.
+ * including CJK, without a provider call, so 120 KB stays under 120K tokens: well inside the 1M
+ * window of every selectable model. At list prices a full request's input costs at most about
+ * $0.012 on Haiku 5.5, $0.24 on Sonnet 5.5 and $0.48 on Opus 5.5; English mail runs near 4
+ * bytes a token, about a quarter of that.
  */
 export const AI_INPUT_BUDGET = 120_000;
 /** Bytes of a thread a summary reads. Longer threads keep their newest messages. */

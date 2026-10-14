@@ -362,9 +362,17 @@ msgstr "Předchozí nastavení denních klidových hodin je stále aktivní. Zm�
 msgid "A signature needs a name and a sending address."
 msgstr "Podpis potřebuje název a adresu odesílatele."
 
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "About 1/20 of the cost"
+msgstr "Asi 1/20 ceny"
+
 #: src/renderer/src/state/desktop.ts
 msgid "About OpenMail"
 msgstr "O aplikaci OpenMail"
+
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "About twice the cost"
+msgstr "Asi dvojnásobná cena"
 
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 msgid "Above quoted text"
@@ -2327,6 +2335,7 @@ msgid "Decrease quote level"
 msgstr "Snížit úroveň citace"
 
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Default"
 msgstr "Výchozí"

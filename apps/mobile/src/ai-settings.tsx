@@ -4,6 +4,7 @@ import { useLingui } from "@lingui/react";
 import {
   Mailbox,
   AI_MODELS,
+  aiModelName,
   signatureDefault,
   type Account,
   type SignatureKind,
@@ -95,7 +96,7 @@ export function AiSettings({ accounts }: { accounts: readonly Account[] }) {
             <Button
               key={model}
               disabled={busy || model === settings.value.model}
-              label={model}
+              label={aiModelName(model)}
               onPress={() =>
                 void change(Effect.flatMap(Mailbox, (mailbox) => mailbox.ai.setAiModel(model)))
               }
