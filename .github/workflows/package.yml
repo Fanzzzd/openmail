@@ -81,6 +81,10 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
         run: pnpm --filter @openmail/desktop dist
 
+      # Every packaged npm package ships a license text or is listed in docs/licenses.
+      - name: Check bundled licenses
+        run: node scripts/check-licenses.mjs
+
       - name: Launch the packaged arm64 app
         env:
           OPENMAIL_DIST_REPORT_DIR: ${{ runner.temp }}/dist-smoke

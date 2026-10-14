@@ -170,7 +170,7 @@ export function mailData(value: unknown): string {
 
 /** The sentences the app shows for each kind of model failure; the renderer translates them. */
 export const AI_ERRORS = {
-  noKey: "Save an Anthropic API key in AI settings.",
+  noKey: "Save an Anthropic API key in Settings → AI Access.",
   noConsent:
     "Turn on “Allow AI to read this account” for each selected account in Settings → AI Access.",
   invalidKey: "Anthropic rejected the API key. Check it in Settings → AI Access.",
