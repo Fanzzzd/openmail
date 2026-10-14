@@ -415,10 +415,10 @@ for (const { criteria, matches } of evaluableCases) {
         unavailable: [],
       });
       assert.deepStrictEqual(
-        (yield* mailbox.previewFilter(saved.id, c)).map((m) => m.id),
+        (yield* mailbox.organize.previewFilter(saved.id, c)).map((m) => m.id),
         expected,
       );
-      const prepared = yield* mailbox.prepareFilter(saved.id, {
+      const prepared = yield* mailbox.organize.prepareFilter(saved.id, {
         ...EMPTY_FILTER,
         criteria: c,
         action: { ...EMPTY_FILTER.action, markRead: true },
@@ -457,17 +457,19 @@ for (const predicate of additionalPredicates.filter(
           action: { ...EMPTY_FILTER.action, markRead: true },
         };
         assert.strictEqual(
-          (yield* mailbox.previewFilter(saved.id, input.criteria).pipe(Effect.result))._tag,
+          (yield* mailbox.organize.previewFilter(saved.id, input.criteria).pipe(Effect.result))
+            ._tag,
           "Failure",
         );
-        const prepared = yield* mailbox.prepareFilter(saved.id, input);
+        const prepared = yield* mailbox.organize.prepareFilter(saved.id, input);
         assert.ok(prepared.unavailable?.length);
         assert.deepStrictEqual(prepared.matches, []);
         assert.strictEqual(
-          (yield* mailbox.applyFilter(saved.id, input, prepared.token).pipe(Effect.result))._tag,
+          (yield* mailbox.organize.applyFilter(saved.id, input, prepared.token).pipe(Effect.result))
+            ._tag,
           "Failure",
         );
-        const created = yield* mailbox.createFilter(saved.id, input, prepared.token);
+        const created = yield* mailbox.organize.createFilter(saved.id, input, prepared.token);
         assert.ok(created.id);
         assert.deepStrictEqual(server.pushed, []);
       }).pipe(Effect.provide(TestMailbox({ outlook: server })));
@@ -540,9 +542,10 @@ for (const action of [
           criteria: { ...EMPTY_FILTER.criteria, subject: "Budget" },
           action: { ...EMPTY_FILTER.action, ...action },
         };
-        const preview = yield* mailbox.prepareFilter(saved.id, input);
+        const preview = yield* mailbox.organize.prepareFilter(saved.id, input);
         assert.strictEqual(
-          (yield* mailbox.applyFilter(saved.id, input, preview.token).pipe(Effect.result))._tag,
+          (yield* mailbox.organize.applyFilter(saved.id, input, preview.token).pipe(Effect.result))
+            ._tag,
           "Failure",
         );
         assert.deepStrictEqual(server.pushed, []);
@@ -574,8 +577,8 @@ it.effect("Gmail label actions apply additions and removals to previewed message
         removeLabelIds: ["UNREAD", "STARRED", "Label_old"],
       },
     };
-    const preview = yield* mailbox.prepareFilter(saved.id, input);
-    assert.strictEqual(yield* mailbox.applyFilter(saved.id, input, preview.token), 1);
+    const preview = yield* mailbox.organize.prepareFilter(saved.id, input);
+    assert.strictEqual(yield* mailbox.organize.applyFilter(saved.id, input, preview.token), 1);
     const cached = yield* store.getMessage(`${saved.id}/match`);
     assert.strictEqual(cached.isUnread, false);
     assert.strictEqual(cached.isStarred, false);
@@ -627,13 +630,14 @@ it.effect("Gmail raw trash-label actions retain query deletion confirmation", ()
       criteria: { ...EMPTY_FILTER.criteria, query: "Budget" },
       action: { ...EMPTY_FILTER.action, addLabelIds: ["TRASH"] },
     };
-    const preview = yield* mailbox.prepareFilter(saved.id, input);
+    const preview = yield* mailbox.organize.prepareFilter(saved.id, input);
     assert.strictEqual(
-      (yield* mailbox.createFilter(saved.id, input, preview.token).pipe(Effect.result))._tag,
+      (yield* mailbox.organize.createFilter(saved.id, input, preview.token).pipe(Effect.result))
+        ._tag,
       "Failure",
     );
     assert.strictEqual(server.filters.length, 0);
-    yield* mailbox.createFilter(
+    yield* mailbox.organize.createFilter(
       saved.id,
       { ...input, queryDeletionConfirmed: true },
       preview.token,
@@ -681,15 +685,16 @@ for (const area of ["outlook", "outlookExceptions"] as const) {
             action: { ...EMPTY_FILTER.action, markRead: true },
           };
           assert.strictEqual(
-            (yield* mailbox.previewFilter(saved.id, criteria).pipe(Effect.result))._tag,
+            (yield* mailbox.organize.previewFilter(saved.id, criteria).pipe(Effect.result))._tag,
             "Failure",
           );
-          const unavailable = yield* mailbox.prepareFilter(saved.id, input);
+          const unavailable = yield* mailbox.organize.prepareFilter(saved.id, input);
           assert.ok(unavailable.unavailable?.includes(predicate));
           assert.deepStrictEqual(unavailable.matches, []);
           assert.strictEqual(
-            (yield* mailbox.applyFilter(saved.id, input, unavailable.token).pipe(Effect.result))
-              ._tag,
+            (yield* mailbox.organize
+              .applyFilter(saved.id, input, unavailable.token)
+              .pipe(Effect.result))._tag,
             "Failure",
           );
           yield* store.replaceSendAs(saved.id, [
@@ -705,10 +710,12 @@ for (const area of ["outlook", "outlookExceptions"] as const) {
             .map((id) => `${saved.id}/${id}`)
             .toSorted();
           assert.deepStrictEqual(
-            (yield* mailbox.previewFilter(saved.id, criteria)).map((row) => row.id).toSorted(),
+            (yield* mailbox.organize.previewFilter(saved.id, criteria))
+              .map((row) => row.id)
+              .toSorted(),
             expected,
           );
-          const known = yield* mailbox.prepareFilter(saved.id, input);
+          const known = yield* mailbox.organize.prepareFilter(saved.id, input);
           assert.strictEqual(known.unavailable, undefined);
           assert.deepStrictEqual(known.matches.map((row) => row.id).toSorted(), expected);
         }).pipe(Effect.provide(TestMailbox({ outlook: server })));
@@ -731,23 +738,25 @@ for (const provider of ["gmail", "outlook"] as const) {
           criteria: { ...EMPTY_FILTER.criteria, subject: "Budget" },
           action: { ...EMPTY_FILTER.action, trash: true },
         };
-        const preview = yield* mailbox.prepareFilter(saved.id, input);
+        const preview = yield* mailbox.organize.prepareFilter(saved.id, input);
         assert.strictEqual(
-          (yield* mailbox.createFilter(saved.id, input, preview.token).pipe(Effect.result))._tag,
+          (yield* mailbox.organize.createFilter(saved.id, input, preview.token).pipe(Effect.result))
+            ._tag,
           "Failure",
         );
         assert.strictEqual(
-          (yield* mailbox.applyFilter(saved.id, input, preview.token).pipe(Effect.result))._tag,
+          (yield* mailbox.organize.applyFilter(saved.id, input, preview.token).pipe(Effect.result))
+            ._tag,
           "Failure",
         );
-        yield* mailbox.createFilter(
+        yield* mailbox.organize.createFilter(
           saved.id,
           { ...input, queryDeletionConfirmed: true },
           preview.token,
         );
-        const confirmed = yield* mailbox.prepareFilter(saved.id, input);
+        const confirmed = yield* mailbox.organize.prepareFilter(saved.id, input);
         assert.strictEqual(
-          yield* mailbox.applyFilter(
+          yield* mailbox.organize.applyFilter(
             saved.id,
             { ...input, queryDeletionConfirmed: true },
             confirmed.token,
@@ -814,18 +823,18 @@ it.effect(
       const saved = yield* store.upsertAccount("outlook", outlookAccount.email);
       yield* store.upsertMessage(saved.id, unseen);
       const criteria = { ...EMPTY_FILTER.criteria, hasWords: "budget" };
-      assert.strictEqual((yield* mailbox.previewFilter(saved.id, criteria)).length, 1);
+      assert.strictEqual((yield* mailbox.organize.previewFilter(saved.id, criteria)).length, 1);
       const input = {
         ...EMPTY_FILTER,
         criteria,
         action: { ...EMPTY_FILTER.action, markRead: true },
       };
-      const bounded = yield* mailbox.prepareFilter(saved.id, input);
+      const bounded = yield* mailbox.organize.prepareFilter(saved.id, input);
       assert.strictEqual(bounded.truncated, true);
       assert.deepStrictEqual(bounded.matches, []);
       assert.strictEqual(server.searched[0]?.search, undefined);
       server.searchResults = [{ ...unseen, bodyCached: false }];
-      const uncached = yield* mailbox.prepareFilter(saved.id, input);
+      const uncached = yield* mailbox.organize.prepareFilter(saved.id, input);
       assert.ok(uncached.unavailable?.includes("bodyOrSubjectContains"));
       assert.deepStrictEqual(uncached.matches, []);
     }).pipe(Effect.provide(TestMailbox({ outlook: server })));

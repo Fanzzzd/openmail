@@ -1153,7 +1153,7 @@ for (const queued of [false, true])
           );
           yield* TestClock.adjust("6 seconds");
         } else
-          yield* mailbox.perform(
+          yield* mailbox.organize.perform(
             {
               kind: "send",
               accountId: saved.id,

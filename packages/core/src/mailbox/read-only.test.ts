@@ -125,7 +125,7 @@ import type { OutgoingMessage } from "../domain/changes.js";
         const before = yield* store.listPendingOps;
         yield* mailbox.sync();
         assert.deepStrictEqual(yield* store.listPendingOps, before);
-        yield* mailbox.perform(
+        yield* mailbox.organize.perform(
           { kind: "modify", threads: [`${account.id}/one`], op: { kind: "read", value: false } },
           actor,
         );
@@ -138,7 +138,7 @@ import type { OutgoingMessage } from "../domain/changes.js";
         assert.strictEqual(Option.getOrThrow(yield* store.getDraft("local")).remote, null);
         assert.strictEqual(server.draftLog.length, 0);
         assert.strictEqual(server.pushed.length, 0);
-        const sent = yield* mailbox
+        const sent = yield* mailbox.organize
           .perform({ kind: "send", accountId: account.id, message: outgoing }, actor)
           .pipe(Effect.result);
         assert.strictEqual(sent._tag, "Failure");
@@ -150,7 +150,7 @@ import type { OutgoingMessage } from "../domain/changes.js";
           "Failure",
         );
         for (const action of [
-          mailbox.unsubscribe(`${account.id}/one`, actor),
+          mailbox.organize.unsubscribe(`${account.id}/one`, actor),
           mailbox.calendar.importCalendarAttachment(`${account.id}/one`, [0], "event", actor),
         ]) {
           const result = yield* action.pipe(Effect.result);

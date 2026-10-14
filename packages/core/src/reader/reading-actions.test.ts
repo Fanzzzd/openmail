@@ -189,7 +189,7 @@ import { parseAppLink, parseStableReference, privateMailLink, messageLink } from
       const account = yield* mailbox.connect({ provider: "gmail" });
       yield* mailbox.sync();
       const addresses = ["to@example.com", "cc@example.com", "bcc@example.com"];
-      yield* mailbox.perform(
+      yield* mailbox.organize.perform(
         {
           kind: "send",
           accountId: account.id,

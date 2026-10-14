@@ -282,7 +282,7 @@ it.effect(
       server.beforePush = Deferred.succeed(started, undefined).pipe(
         Effect.andThen(Deferred.await(release)),
       );
-      const writing = yield* mailbox
+      const writing = yield* mailbox.organize
         .perform(
           {
             kind: "modify",

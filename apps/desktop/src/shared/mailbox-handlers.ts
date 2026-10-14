@@ -64,7 +64,8 @@ export function mailboxHandlers(m: MailboxService, options: MailboxHandlerOption
     Accounts: () => m.accounts,
     SetAccountSettings: ({ accountId, input }) => m.setAccountSettings(accountId, input),
     MoveAccount: ({ accountId, input }) => m.moveAccount(accountId, input),
-    RemoveAccount: ({ accountId }) => m.perform({ kind: "removeAccount", accountId }, USER),
+    RemoveAccount: ({ accountId }) =>
+      m.organize.perform({ kind: "removeAccount", accountId }, USER),
 
     CalendarEvents: ({ messageId, key }) => m.calendar.calendarEvents(messageId, key),
     DetectedEvents: ({ messageId }) => m.calendar.detectedEvents(messageId),
@@ -113,10 +114,10 @@ export function mailboxHandlers(m: MailboxService, options: MailboxHandlerOption
     ImportCalendarAttachment: ({ messageId, path, key }) =>
       m.calendar.importCalendarAttachment(messageId, path, key, USER),
     SetClassificationOverride: ({ messageId, classifyAs }) =>
-      m.setClassificationOverride(messageId, classifyAs),
-    Unsubscribe: ({ messageId }) => m.unsubscribe(messageId, USER),
+      m.organize.setClassificationOverride(messageId, classifyAs),
+    Unsubscribe: ({ messageId }) => m.organize.unsubscribe(messageId, USER),
     EmbeddedMessage: ({ messageId, path }) => m.reading.embeddedMessage(messageId, path),
-    MarkUnreadFrom: ({ id }) => m.markUnreadFrom(id),
+    MarkUnreadFrom: ({ id }) => m.organize.markUnreadFrom(id),
     Labels: ({ accountIds }) => m.reading.labels(accountIds),
     UnreadCounts: () => m.reading.unreadCounts,
     UnreadByLabel: ({ accountIds, within, conversations }) =>
@@ -130,32 +131,35 @@ export function mailboxHandlers(m: MailboxService, options: MailboxHandlerOption
     CacheWindows: () => m.cacheWindows,
     SetCacheWindow: ({ input }) => m.setCacheWindow(input),
     SearchServer: ({ query }) => m.reading.searchServer(query),
-    ChangeLabel: ({ accountId, change }) => m.changeLabel(accountId, change),
-    ReorderFavorites: ({ order }) => m.reorderFavorites(order),
-    LabelPreferences: () => m.labelPreferences,
-    SetLabelPreference: ({ input }) => m.setLabelPreference(input),
-    Organization: () => m.organization,
-    SetOrganization: ({ input }) => m.setOrganization(input),
-    Snooze: ({ threads, due }) => m.snoozeWithUndo(threads, due),
-    Filters: ({ accountId }) => m.filters(accountId),
-    PreviewFilter: ({ accountId, criteria }) => m.previewFilter(accountId, criteria),
-    PrepareFilter: ({ accountId, input }) => m.prepareFilter(accountId, input),
-    FilterRestorations: ({ accountId }) => m.filterRestorations(accountId),
-    PrepareFilterRestoration: ({ accountId, id }) => m.prepareFilterRestoration(accountId, id),
+    ChangeLabel: ({ accountId, change }) => m.organize.changeLabel(accountId, change),
+    ReorderFavorites: ({ order }) => m.organize.reorderFavorites(order),
+    LabelPreferences: () => m.organize.labelPreferences,
+    SetLabelPreference: ({ input }) => m.organize.setLabelPreference(input),
+    Organization: () => m.organize.organization,
+    SetOrganization: ({ input }) => m.organize.setOrganization(input),
+    Snooze: ({ threads, due }) => m.organize.snoozeWithUndo(threads, due),
+    Filters: ({ accountId }) => m.organize.filters(accountId),
+    PreviewFilter: ({ accountId, criteria }) => m.organize.previewFilter(accountId, criteria),
+    PrepareFilter: ({ accountId, input }) => m.organize.prepareFilter(accountId, input),
+    FilterRestorations: ({ accountId }) => m.organize.filterRestorations(accountId),
+    PrepareFilterRestoration: ({ accountId, id }) =>
+      m.organize.prepareFilterRestoration(accountId, id),
     DiscardFilterRestoration: ({ accountId, id, confirmed }) =>
-      m.discardFilterRestoration(accountId, id, confirmed),
+      m.organize.discardFilterRestoration(accountId, id, confirmed),
     RestoreFilter: ({ accountId, id, token, queryDeletionConfirmed }) =>
-      m.restoreFilter(accountId, id, token, queryDeletionConfirmed),
-    UpdateFilter: ({ accountId, id, input, token }) => m.updateFilter(accountId, id, input, token),
-    ApplyFilter: ({ accountId, input, token }) => m.applyFilter(accountId, input, token),
+      m.organize.restoreFilter(accountId, id, token, queryDeletionConfirmed),
+    UpdateFilter: ({ accountId, id, input, token }) =>
+      m.organize.updateFilter(accountId, id, input, token),
+    ApplyFilter: ({ accountId, input, token }) => m.organize.applyFilter(accountId, input, token),
     CreateLabelAndApply: ({ accountId, name, parentId, threads, move, removeLabelId, flat }) =>
-      m.createLabelAndApply(accountId, name, parentId, threads, move, removeLabelId, flat),
-    CreateFilter: ({ accountId, input, token }) => m.createFilter(accountId, input, token),
-    DeleteFilter: ({ accountId, id, confirmed }) => m.deleteFilter(accountId, id, confirmed),
-    Vacation: ({ accountId }) => m.vacation(accountId),
-    SetVacation: ({ accountId, input }) => m.setVacation(accountId, input),
-    SendAs: () => m.sendAs,
-    SyncSendAs: ({ accountId }) => m.syncSendAs(accountId),
+      m.organize.createLabelAndApply(accountId, name, parentId, threads, move, removeLabelId, flat),
+    CreateFilter: ({ accountId, input, token }) => m.organize.createFilter(accountId, input, token),
+    DeleteFilter: ({ accountId, id, confirmed }) =>
+      m.organize.deleteFilter(accountId, id, confirmed),
+    Vacation: ({ accountId }) => m.organize.vacation(accountId),
+    SetVacation: ({ accountId, input }) => m.organize.setVacation(accountId, input),
+    SendAs: () => m.organize.sendAs,
+    SyncSendAs: ({ accountId }) => m.organize.syncSendAs(accountId),
 
     Profiles: () => m.profiles,
     CreateProfile: ({ input }) => m.createProfile(input),
@@ -164,16 +168,16 @@ export function mailboxHandlers(m: MailboxService, options: MailboxHandlerOption
     AssignProfile: ({ accountId, profileId }) => m.assignProfile(accountId, profileId),
 
     PermanentlyDelete: ({ threads, flat, folder, confirmed }) =>
-      m.permanentlyDelete(threads, flat, folder, confirmed),
-    EmptyFolder: ({ folder, confirmed }) => m.emptyFolder(folder, confirmed),
-    MarkFolderRead: ({ folder }) => m.markFolderRead(folder),
-    ResetFavorites: ({ accountIds }) => m.resetFavorites(accountIds),
-    Modify: ({ threads, op }) => m.perform({ kind: "modify", threads, op }, USER),
-    ModifyWithUndo: ({ threads, op, flat }) => m.modifyWithUndo(threads, op, flat),
-    UndoHistory: () => m.undoHistory,
-    UndoBatch: ({ undoId }) => m.undoBatch(undoId),
+      m.organize.permanentlyDelete(threads, flat, folder, confirmed),
+    EmptyFolder: ({ folder, confirmed }) => m.organize.emptyFolder(folder, confirmed),
+    MarkFolderRead: ({ folder }) => m.organize.markFolderRead(folder),
+    ResetFavorites: ({ accountIds }) => m.organize.resetFavorites(accountIds),
+    Modify: ({ threads, op }) => m.organize.perform({ kind: "modify", threads, op }, USER),
+    ModifyWithUndo: ({ threads, op, flat }) => m.organize.modifyWithUndo(threads, op, flat),
+    UndoHistory: () => m.organize.undoHistory,
+    UndoBatch: ({ undoId }) => m.organize.undoBatch(undoId),
     Send: ({ accountId, message, draftId, archive, confirmResend }) =>
-      m.perform(
+      m.organize.perform(
         {
           kind: "send",
           accountId,

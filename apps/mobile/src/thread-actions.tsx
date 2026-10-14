@@ -29,8 +29,8 @@ export function useThreadActions() {
       const result = await runtime.runPromise(
         Effect.flatMap(Mailbox, (mailbox) =>
           op.kind === "snooze"
-            ? mailbox.snoozeWithUndo(ids, op.due)
-            : mailbox.modifyWithUndo(ids, op),
+            ? mailbox.organize.snoozeWithUndo(ids, op.due)
+            : mailbox.organize.modifyWithUndo(ids, op),
         ),
       );
       notice(
@@ -40,7 +40,7 @@ export function useThreadActions() {
           until: Date.now() + 10000,
           undo: () =>
             runtime.runPromise(
-              Effect.flatMap(Mailbox, (mailbox) => mailbox.undoBatch(result.undoId)),
+              Effect.flatMap(Mailbox, (mailbox) => mailbox.organize.undoBatch(result.undoId)),
             ),
         }),
       );

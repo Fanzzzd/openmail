@@ -33,18 +33,21 @@ for (const provider of ["gmail", "outlook"] as const) {
             searchQuery(account.id, "from:alice@example.test is:unread budget"),
           ))[0];
           if (!row) throw new Error("missing message");
-          const result = yield* mailbox.modifyWithUndo([row.id], { kind: "read", value: true });
+          const result = yield* mailbox.organize.modifyWithUndo([row.id], {
+            kind: "read",
+            value: true,
+          });
           expect((yield* mailbox.reading.threads({ accountIds: [account.id] }))[0]?.isUnread).toBe(
             false,
           );
-          yield* mailbox.undoBatch(result.undoId);
-          const moved = yield* mailbox.modifyWithUndo(
+          yield* mailbox.organize.undoBatch(result.undoId);
+          const moved = yield* mailbox.organize.modifyWithUndo(
             [row.id],
             provider === "gmail"
               ? { kind: "label", labelId: "Label_project", value: true }
               : { kind: "move", labelId: "ARCHIVE", removeLabelId: "INBOX" },
           );
-          yield* mailbox.undoBatch(moved.undoId);
+          yield* mailbox.organize.undoBatch(moved.undoId);
           const draft = {
             id: `draft:${provider}`,
             accountId: account.id,

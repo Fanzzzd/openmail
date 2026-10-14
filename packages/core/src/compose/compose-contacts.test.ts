@@ -156,7 +156,7 @@ import { makeOutlookFeatures } from "../providers/outlook/outlook-features.js";
           yield* m.setAccountSettings(id, { enabled: false, description: "", color: null });
           assert.strictEqual(yield* m.calendar.contactPhoto(id, alice.address), null);
           assert.deepStrictEqual(yield* m.compose.contactGroups(""), []);
-          yield* m.perform(
+          yield* m.organize.perform(
             { kind: "removeAccount", accountId: id },
             { kind: "user", surface: "app" },
           );
@@ -414,7 +414,7 @@ import { makeOutlookFeatures } from "../providers/outlook/outlook-features.js";
         const first = yield* m.connect({ provider: "gmail" });
         const second = yield* m.connect({ provider: "outlook" });
         yield* m.sync();
-        yield* m.syncSendAs(first.id);
+        yield* m.organize.syncSendAs(first.id);
         const current = { accountId: second.id, address: second.email };
         assert.deepStrictEqual(
           yield* m.compose.suggestSender(current, [alice.address], [first.id, second.id]),

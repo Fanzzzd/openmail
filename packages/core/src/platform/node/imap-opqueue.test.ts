@@ -1281,7 +1281,7 @@ for (const operation of ["move", "copy"] as const) {
               incoming("7:2:INBOX", { bodyText: "unrelated body" }),
             );
             yield* store.putDraft({ id: "local-draft", accountId: saved.id, message });
-            yield* mailbox.perform(
+            yield* mailbox.organize.perform(
               {
                 kind: "modify",
                 threads: [`${saved.id}/7:1:INBOX`],

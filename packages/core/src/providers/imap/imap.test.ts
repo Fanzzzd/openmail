@@ -2297,7 +2297,7 @@ it.effect("a pushed read flag updates the UID record, so a later unread elsewher
       yield* store.upsertMessage(saved.id, incoming("7:1:INBOX"));
       const id = yield* store.messageIdForProvider(saved.id, "7:1:INBOX");
       assert.ok(id);
-      yield* mailbox.perform(
+      yield* mailbox.organize.perform(
         { kind: "modify", threads: [id], op: { kind: "read", value: true } },
         { kind: "user", surface: "app" },
       );

@@ -44,7 +44,7 @@ import type { ProviderAdapter } from "../providers/adapter.js";
       Effect.gen(function* () {
         const [thread] = yield* m.reading.threads({ mailbox: "inbox" });
         assert.ok(thread);
-        const outcome = yield* m.perform(
+        const outcome = yield* m.organize.perform(
           { kind: "modify", threads: [thread.id], op: { kind: "archive" } },
           user,
         );
@@ -65,12 +65,12 @@ import type { ProviderAdapter } from "../providers/adapter.js";
         const [thread] = yield* m.reading.threads({});
         const archive = { kind: "modify", threads: [thread!.id], op: { kind: "archive" } } as const;
 
-        const denied = yield* m.perform(archive, agent);
+        const denied = yield* m.organize.perform(archive, agent);
         assert.strictEqual(denied.status, "denied");
         assert.strictEqual(server.pushed.length, 0);
 
         yield* m.setAgentWriteMode("propose");
-        const proposed = yield* m.perform(archive, agent);
+        const proposed = yield* m.organize.perform(archive, agent);
         assert.strictEqual(proposed.status, "proposed");
         assert.strictEqual(server.pushed.length, 0);
         const [proposal] = yield* m.proposals;
@@ -84,7 +84,7 @@ import type { ProviderAdapter } from "../providers/adapter.js";
         assert.deepStrictEqual(yield* m.proposals, []);
 
         yield* m.setAgentWriteMode("propose");
-        const applied = yield* m.perform(
+        const applied = yield* m.organize.perform(
           { kind: "modify", threads: [thread!.id], op: { kind: "star", value: true } },
           agent,
         );
@@ -112,11 +112,11 @@ import type { ProviderAdapter } from "../providers/adapter.js";
 
         // Even with proposals allowed, an agent never sends.
         yield* m.setAgentWriteMode("propose");
-        const denied = yield* m.perform({ kind: "send", accountId, message }, agent);
+        const denied = yield* m.organize.perform({ kind: "send", accountId, message }, agent);
         assert.strictEqual(denied.status, "denied");
         assert.strictEqual(server.sent.length, 0);
 
-        yield* m.perform({ kind: "send", accountId, message }, user);
+        yield* m.organize.perform({ kind: "send", accountId, message }, user);
         assert.strictEqual(server.sent.length, 1);
         const original = server.sent[0]!.original;
         assert.strictEqual(original._tag === "Some" && original.value.providerId, "m1");
@@ -162,7 +162,7 @@ import type { ProviderAdapter } from "../providers/adapter.js";
       Effect.gen(function* () {
         const [thread] = yield* m.reading.threads({});
         server.failNext = new AuthError({ accountId: thread!.accountId, message: "revoked" });
-        const outcome = yield* m.perform(
+        const outcome = yield* m.organize.perform(
           { kind: "modify", threads: [thread!.id], op: { kind: "read", value: true } },
           user,
         );
@@ -197,7 +197,7 @@ import type { ProviderAdapter } from "../providers/adapter.js";
       Effect.gen(function* () {
         const [thread] = yield* m.reading.threads({});
         server.failNext = new ProviderError({ message: "503" });
-        yield* m.perform(
+        yield* m.organize.perform(
           { kind: "modify", threads: [thread!.id], op: { kind: "star", value: true } },
           user,
         );
@@ -422,7 +422,7 @@ import type { ProviderAdapter } from "../providers/adapter.js";
         Effect.gen(function* () {
           server.failNext = new PermanentError({ message: "Refused" });
           if (gone) server.messages.delete("m1");
-          yield* m.perform(
+          yield* m.organize.perform(
             { kind: "modify", threads: ["gmail:me@gmail.com/m1"], op: { kind: "archive" } },
             user,
           );
@@ -436,7 +436,7 @@ import type { ProviderAdapter } from "../providers/adapter.js";
     withGmail([incoming("m1")], (m, server) =>
       Effect.gen(function* () {
         server.beforePush = Effect.fail(new ProviderError({ message: "Refused repeatedly" }));
-        yield* m.perform(
+        yield* m.organize.perform(
           { kind: "modify", threads: ["gmail:me@gmail.com/m1"], op: { kind: "archive" } },
           user,
         );
@@ -519,7 +519,7 @@ import type { ProviderAdapter } from "../providers/adapter.js";
         });
         assert.ok(closed.includes(account.id));
         closed.length = 0;
-        yield* mailbox.perform({ kind: "removeAccount", accountId: account.id }, user);
+        yield* mailbox.organize.perform({ kind: "removeAccount", accountId: account.id }, user);
         assert.deepStrictEqual(closed, [account.id]);
       }),
       {
@@ -664,7 +664,7 @@ it.effect(
         autoSummaries: false,
       });
       yield* mailbox.setAgentWriteMode("propose");
-      const proposal = yield* mailbox.perform(
+      const proposal = yield* mailbox.organize.perform(
         {
           kind: "draft",
           accountId: account.id,
@@ -726,7 +726,7 @@ for (const provider of ["outlook", "gmail"] as const) {
         const imapId = `${imap.id}/1:1:INBOX`;
         const unsupportedId = `${unsupported.id}/one`;
         for (const targets of [[unsupportedId], [imapId, unsupportedId]]) {
-          const result = yield* mailbox
+          const result = yield* mailbox.organize
             .perform(
               { kind: "modify", threads: targets, op: { kind: "copy", labelIds: ["Projects"] } },
               { kind: "user", surface: "app" },

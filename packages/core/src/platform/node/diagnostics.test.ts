@@ -295,7 +295,7 @@ it("resets a real cache then re-syncs through a fake provider while accounts and
       expect((yield* m.compose.openDraft("feedback:local")).message.text).toBe("Reviewed locally");
       expect(server.draftLog).toHaveLength(saves);
       expect(server.sent).toHaveLength(0);
-      yield* m.perform(
+      yield* m.organize.perform(
         { kind: "send", accountId, message: feedback, draftId: "feedback:local" },
         { kind: "user", surface: "app" },
       );

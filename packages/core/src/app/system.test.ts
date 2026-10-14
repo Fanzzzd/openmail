@@ -212,7 +212,7 @@ it.effect(
       yield* Effect.yieldNow;
       assert.deepStrictEqual(yield* notices(), [`${account.id}/new`]);
       // Notification actions use the same audited user pipeline, including offline retry.
-      const outcome = yield* m.perform(
+      const outcome = yield* m.organize.perform(
         { kind: "modify", threads: [`${account.id}/new`], op: { kind: "archive" } },
         { kind: "user", surface: "app" },
       );

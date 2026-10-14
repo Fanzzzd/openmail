@@ -103,11 +103,11 @@ for (const provider of ["gmail", "outlook"] as const) {
           };
           server.filters.push(existing);
           assert.strictEqual(
-            (yield* m.deleteFilter(accountId, existing.id).pipe(Effect.result))._tag,
+            (yield* m.organize.deleteFilter(accountId, existing.id).pipe(Effect.result))._tag,
             "Failure",
           );
           assert.strictEqual(server.filters.length, 1);
-          yield* m.deleteFilter(accountId, existing.id, true);
+          yield* m.organize.deleteFilter(accountId, existing.id, true);
           assert.deepStrictEqual(server.filters, []);
           assert.deepStrictEqual(server.searched, []);
         }),
@@ -124,17 +124,19 @@ for (const provider of ["gmail", "outlook"] as const) {
               incoming(label, { labels: [label] }),
             ),
           ];
-          const preview = yield* m.prepareFilter(accountId, rule);
+          const preview = yield* m.organize.prepareFilter(accountId, rule);
           assert.deepStrictEqual(
             preview.matches.map((message) => message.id),
             [`${accountId}/one`],
           );
           assert.deepStrictEqual(
-            (yield* m.previewFilter(accountId, rule.criteria)).map((message) => message.id),
+            (yield* m.organize.previewFilter(accountId, rule.criteria)).map(
+              (message) => message.id,
+            ),
             provider === "gmail" ? [`${accountId}/one`] : [`${accountId}/two`, `${accountId}/one`],
           );
           yield* store.upsertMessage(accountId, incoming("late"));
-          assert.strictEqual(yield* m.applyFilter(accountId, rule, preview.token), 1);
+          assert.strictEqual(yield* m.organize.applyFilter(accountId, rule, preview.token), 1);
           assert.deepStrictEqual(
             server.pushed.map((op) => op.providerId),
             ["one"],
@@ -161,7 +163,7 @@ it.effect(
       "imap",
       (m, store, server, accountId) =>
         Effect.gen(function* () {
-          yield* m.createLabelAndApply(
+          yield* m.organize.createLabelAndApply(
             accountId,
             "  Client.Report  ",
             null,
@@ -201,13 +203,14 @@ it.effect(
         Effect.gen(function* () {
           server.filters.push({ ...rule, id: "old" });
           const edited = { ...rule, name: "Edited" };
-          const preview = yield* m.prepareFilter(accountId, edited);
+          const preview = yield* m.organize.prepareFilter(accountId, edited);
           assert.strictEqual(
-            (yield* m.updateFilter(accountId, "old", edited, preview.token).pipe(Effect.result))
-              ._tag,
+            (yield* m.organize
+              .updateFilter(accountId, "old", edited, preview.token)
+              .pipe(Effect.result))._tag,
             "Failure",
           );
-          const backup = (yield* m.filterRestorations(accountId))[0];
+          const backup = (yield* m.organize.filterRestorations(accountId))[0];
           assert.ok(backup);
           assert.strictEqual(backup.originalId, "old");
           assert.strictEqual(backup.input.name, "Reports");
@@ -216,19 +219,22 @@ it.effect(
             action: { removeLabelIds: ["UNREAD"] },
           });
           assert.strictEqual(
-            (yield* m.restoreFilter(accountId, backup.id, "no-preview").pipe(Effect.result))._tag,
+            (yield* m.organize
+              .restoreFilter(accountId, backup.id, "no-preview")
+              .pipe(Effect.result))._tag,
             "Failure",
           );
-          const first = yield* m.prepareFilter(accountId, backup.input);
+          const first = yield* m.organize.prepareFilter(accountId, backup.input);
           server.failNext = new ProviderError({ message: "still offline" });
           assert.strictEqual(
-            (yield* m.restoreFilter(accountId, backup.id, first.token).pipe(Effect.result))._tag,
+            (yield* m.organize.restoreFilter(accountId, backup.id, first.token).pipe(Effect.result))
+              ._tag,
             "Failure",
           );
-          assert.strictEqual((yield* m.filterRestorations(accountId)).length, 1);
-          const second = yield* m.prepareFilter(accountId, backup.input);
-          yield* m.restoreFilter(accountId, backup.id, second.token);
-          assert.deepStrictEqual(yield* m.filterRestorations(accountId), []);
+          assert.strictEqual((yield* m.organize.filterRestorations(accountId)).length, 1);
+          const second = yield* m.organize.prepareFilter(accountId, backup.input);
+          yield* m.organize.restoreFilter(accountId, backup.id, second.token);
+          assert.deepStrictEqual(yield* m.organize.filterRestorations(accountId), []);
           assert.strictEqual(server.filters.length, 1);
         }),
       (adapter, server) => ({
@@ -261,7 +267,7 @@ for (const source of ["TRASH", "SPAM"] as const) {
         const message = incoming("one", { labels: [source] });
         server.messages.set("one", message);
         yield* store.upsertMessage(accountId, message);
-        yield* m.createLabelAndApply(
+        yield* m.organize.createLabelAndApply(
           accountId,
           "Destination",
           null,
@@ -286,10 +292,10 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
     () =>
       fixture(provider, (m, _store, server, accountId) =>
         Effect.gen(function* () {
-          yield* m.changeLabel(accountId, { kind: "create", name: "Clients" });
+          yield* m.organize.changeLabel(accountId, { kind: "create", name: "Clients" });
           const parent = (yield* m.reading.labels([accountId]))[0];
           assert.ok(parent);
-          const result = yield* m.createLabelAndApply(
+          const result = yield* m.organize.createLabelAndApply(
             accountId,
             "Reports",
             parent.id,
@@ -314,7 +320,7 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
               { kind: "move", labelId: child.id, removeLabelId: "INBOX" },
             ],
           );
-          yield* m.undoBatch(result.undoId);
+          yield* m.organize.undoBatch(result.undoId);
           assert.ok(
             (yield* m.reading.thread(`${accountId}/one`)).every((message) =>
               message.labels.includes("INBOX"),
@@ -327,13 +333,13 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
   it.effect(`${provider}: reparenting rejects cycles, supports root, and retains favorites`, () =>
     fixture(provider, (m, _store, _server, accountId) =>
       Effect.gen(function* () {
-        yield* m.changeLabel(accountId, { kind: "create", name: "A" });
-        yield* m.changeLabel(accountId, { kind: "create", name: "B" });
+        yield* m.organize.changeLabel(accountId, { kind: "create", name: "A" });
+        yield* m.organize.changeLabel(accountId, { kind: "create", name: "B" });
         const a = (yield* m.reading.labels([accountId])).find((l) => l.name === "A");
         const b = (yield* m.reading.labels([accountId])).find((l) => l.name === "B");
         assert.ok(a);
         assert.ok(b);
-        yield* m.setLabelPreference({
+        yield* m.organize.setLabelPreference({
           accountId,
           id: a.id,
           favorite: true,
@@ -341,23 +347,26 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
           color: null,
           position: 3,
         });
-        yield* m.changeLabel(accountId, { kind: "parent", id: a.id, parentId: b.id });
+        yield* m.organize.changeLabel(accountId, { kind: "parent", id: a.id, parentId: b.id });
         const moved = (yield* m.reading.labels([accountId])).find((l) => l.name === "B/A");
         assert.ok(moved);
-        assert.strictEqual((yield* m.labelPreferences).find((p) => p.id === moved.id)?.position, 3);
         assert.strictEqual(
-          (yield* m
+          (yield* m.organize.labelPreferences).find((p) => p.id === moved.id)?.position,
+          3,
+        );
+        assert.strictEqual(
+          (yield* m.organize
             .changeLabel(accountId, { kind: "parent", id: b.id, parentId: moved.id })
             .pipe(Effect.result))._tag,
           "Failure",
         );
         assert.strictEqual(
-          (yield* m
+          (yield* m.organize
             .changeLabel(accountId, { kind: "parent", id: moved.id, parentId: moved.id })
             .pipe(Effect.result))._tag,
           "Failure",
         );
-        yield* m.changeLabel(accountId, { kind: "parent", id: moved.id, parentId: null });
+        yield* m.organize.changeLabel(accountId, { kind: "parent", id: moved.id, parentId: null });
         assert.ok((yield* m.reading.labels([accountId])).some((l) => l.name === "A"));
       }),
     ),
@@ -374,9 +383,9 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
             notifications: { [accountId]: "inbox" },
             quietHours: { [profile.id]: { enabled: true, start: 0, end: 0 } },
           });
-          yield* m.snooze([`${accountId}/one`], 1000);
+          yield* m.organize.snooze([`${accountId}/one`], 1000);
           yield* TestClock.adjust("2 seconds");
-          yield* m.wakeSnoozed();
+          yield* m.organize.wakeSnoozed();
           assert.deepStrictEqual(yield* m.app.takeNotifications, []);
           yield* m.app.setPrefs({
             quietHours: {},
@@ -403,7 +412,7 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
           assert.strictEqual(batches[0]?.kind, "digest");
           assert.strictEqual(batches[0]?.messages.length, 1);
           assert.ok(batches[0]?.messages[0]?.labels.includes("INBOX"));
-          yield* m.wakeSnoozed();
+          yield* m.organize.wakeSnoozed();
           assert.deepStrictEqual(yield* m.app.takeNotifications, []);
         }),
       ),
@@ -428,10 +437,10 @@ it("Gmail Move To sends one add/remove delta and Outlook uses the target folder"
 it.effect("Gmail Move To with no source label preserves Inbox and can undo the added label", () =>
   fixture("gmail", (m, store, server, accountId) =>
     Effect.gen(function* () {
-      yield* m.changeLabel(accountId, { kind: "create", name: "Destination" });
+      yield* m.organize.changeLabel(accountId, { kind: "create", name: "Destination" });
       const label = (yield* m.reading.labels([accountId]))[0];
       assert.ok(label);
-      const result = yield* m.modifyWithUndo(
+      const result = yield* m.organize.modifyWithUndo(
         [`${accountId}/one`],
         { kind: "move", labelId: label.id, removeLabelId: null },
         true,
@@ -442,7 +451,7 @@ it.effect("Gmail Move To with no source label preserves Inbox and can undo the a
       ]);
       yield* m.sync();
       assert.deepStrictEqual(server.messages.get("one")?.labels, ["INBOX", label.id]);
-      yield* m.undoBatch(result.undoId);
+      yield* m.organize.undoBatch(result.undoId);
       assert.deepStrictEqual((yield* store.getMessage(`${accountId}/one`)).labels, ["INBOX"]);
     }),
   ),
@@ -450,7 +459,7 @@ it.effect("Gmail Move To with no source label preserves Inbox and can undo the a
 it.effect("Gmail label application keeps Inbox; Remove Current Label keeps all other labels", () =>
   fixture("gmail", (m, store, _server, accountId) =>
     Effect.gen(function* () {
-      yield* m.createLabelAndApply(
+      yield* m.organize.createLabelAndApply(
         accountId,
         "Work",
         null,
@@ -466,7 +475,7 @@ it.effect("Gmail label application keeps Inbox; Remove Current Label keeps all o
         label.id,
       ]);
       assert.deepStrictEqual((yield* store.getMessage(`${accountId}/two`)).labels, ["INBOX"]);
-      yield* m.modifyWithUndo(
+      yield* m.organize.modifyWithUndo(
         [`${accountId}/one`],
         { kind: "label", labelId: label.id, value: false },
         true,
@@ -482,7 +491,7 @@ it.effect("cross-account destinations and creation are rejected before server wr
       yield* store.upsertMessage(other.id, incoming("foreign"));
       yield* store.replaceLabels(other.id, [{ id: "foreign-label", name: "Foreign", color: null }]);
       assert.strictEqual(
-        (yield* m
+        (yield* m.organize
           .modifyWithUndo([`${accountId}/one`], {
             kind: "move",
             labelId: "foreign-label",
@@ -492,7 +501,7 @@ it.effect("cross-account destinations and creation are rejected before server wr
         "Failure",
       );
       assert.strictEqual(
-        (yield* m
+        (yield* m.organize
           .createLabelAndApply(accountId, "New", null, [`${other.id}/foreign`], true, "INBOX", true)
           .pipe(Effect.result))._tag,
         "Failure",
@@ -507,10 +516,10 @@ it.effect(
   () =>
     fixture("gmail", (m, _store, server, accountId) =>
       Effect.gen(function* () {
-        yield* m.changeLabel(accountId, { kind: "create", name: "Hidden" });
+        yield* m.organize.changeLabel(accountId, { kind: "create", name: "Hidden" });
         const label = (yield* m.reading.labels([accountId]))[0];
         assert.ok(label);
-        yield* m.changeLabel(accountId, {
+        yield* m.organize.changeLabel(accountId, {
           kind: "visibility",
           id: label.id,
           labelListVisibility: "labelShowIfUnread",
@@ -530,7 +539,7 @@ it.effect("system and user folders can be favorited and reordered atomically", (
     Effect.gen(function* () {
       const ids = [systemFolderId("inbox"), systemFolderId("all"), systemFolderId("snoozed")];
       for (const [position, id] of ids.entries())
-        yield* m.setLabelPreference({
+        yield* m.organize.setLabelPreference({
           accountId,
           id,
           favorite: true,
@@ -538,22 +547,22 @@ it.effect("system and user folders can be favorited and reordered atomically", (
           color: null,
           position,
         });
-      yield* m.reorderFavorites(ids.toReversed().map((id) => ({ accountId, id })));
+      yield* m.organize.reorderFavorites(ids.toReversed().map((id) => ({ accountId, id })));
       assert.deepStrictEqual(
-        (yield* m.labelPreferences).map((p) => p.id),
+        (yield* m.organize.labelPreferences).map((p) => p.id),
         ids.toReversed(),
       );
-      yield* m.reorderFavorites([
+      yield* m.organize.reorderFavorites([
         { accountId, id: systemFolderId("inbox") },
         { accountId, id: systemFolderId("snoozed") },
       ]);
       assert.deepStrictEqual(
-        (yield* m.labelPreferences).map((p) => p.id),
+        (yield* m.organize.labelPreferences).map((p) => p.id),
         ids,
       );
-      const before = yield* m.labelPreferences;
+      const before = yield* m.organize.labelPreferences;
       assert.strictEqual(
-        (yield* m
+        (yield* m.organize
           .reorderFavorites([
             { accountId, id: ids[0] ?? "" },
             { accountId, id: "missing" },
@@ -561,7 +570,7 @@ it.effect("system and user folders can be favorited and reordered atomically", (
           .pipe(Effect.result))._tag,
         "Failure",
       );
-      assert.deepStrictEqual(yield* m.labelPreferences, before);
+      assert.deepStrictEqual(yield* m.organize.labelPreferences, before);
     }),
   ),
 );
@@ -573,30 +582,36 @@ for (const provider of ["gmail", "outlook"] as const) {
       fixture(provider, (m, _store, server, accountId) =>
         Effect.gen(function* () {
           assert.strictEqual(
-            (yield* m.createFilter(accountId, rule).pipe(Effect.result))._tag,
+            (yield* m.organize.createFilter(accountId, rule).pipe(Effect.result))._tag,
             "Failure",
           );
-          const preview = yield* m.prepareFilter(accountId, rule);
+          const preview = yield* m.organize.prepareFilter(accountId, rule);
           assert.strictEqual(preview.matches.length, 2);
           assert.strictEqual(server.pushed.length, 0);
-          const original = yield* m.createFilter(accountId, rule, preview.token);
+          const original = yield* m.organize.createFilter(accountId, rule, preview.token);
           assert.strictEqual(
-            (yield* m.createFilter(accountId, rule, preview.token).pipe(Effect.result))._tag,
+            (yield* m.organize.createFilter(accountId, rule, preview.token).pipe(Effect.result))
+              ._tag,
             "Failure",
           );
           const edited = { ...rule, name: "Updated", action: { ...rule.action, archive: true } };
-          const updatePreview = yield* m.prepareFilter(accountId, edited);
-          const next = yield* m.updateFilter(accountId, original.id, edited, updatePreview.token);
+          const updatePreview = yield* m.organize.prepareFilter(accountId, edited);
+          const next = yield* m.organize.updateFilter(
+            accountId,
+            original.id,
+            edited,
+            updatePreview.token,
+          );
           assert.strictEqual(next.name, "Updated");
           assert.strictEqual(server.filters.length, 1);
           assert.strictEqual(next.id === original.id, provider === "outlook");
           assert.strictEqual(
-            (yield* m
+            (yield* m.organize
               .updateFilter(accountId, next.id, edited, updatePreview.token)
               .pipe(Effect.result))._tag,
             "Failure",
           );
-          yield* m.deleteFilter(accountId, next.id, true);
+          yield* m.organize.deleteFilter(accountId, next.id, true);
           assert.deepStrictEqual(server.filters, []);
         }),
       ),
@@ -611,16 +626,17 @@ for (const provider of ["gmail", "outlook"] as const) {
             queryDeletionConfirmed: true as const,
             action: { ...EMPTY_FILTER.action, trash: true },
           };
-          const preview = yield* m.prepareFilter(accountId, deleting);
+          const preview = yield* m.organize.prepareFilter(accountId, deleting);
           server.messages.set("after-preview", incoming("after-preview"));
           yield* store.upsertMessage(accountId, incoming("after-preview"));
-          assert.strictEqual(yield* m.applyFilter(accountId, deleting, preview.token), 2);
+          assert.strictEqual(yield* m.organize.applyFilter(accountId, deleting, preview.token), 2);
           assert.deepStrictEqual(server.pushed.map((p) => p.providerId).toSorted(), ["one", "two"]);
           assert.ok(
             (yield* store.getMessage(`${accountId}/after-preview`)).labels.includes("INBOX"),
           );
           assert.strictEqual(
-            (yield* m.applyFilter(accountId, deleting, preview.token).pipe(Effect.result))._tag,
+            (yield* m.organize.applyFilter(accountId, deleting, preview.token).pipe(Effect.result))
+              ._tag,
             "Failure",
           );
         }),
@@ -632,14 +648,14 @@ it.effect(
   () =>
     fixture("gmail", (m, store, server, accountId) =>
       Effect.gen(function* () {
-        const preview = yield* m.prepareFilter(accountId, rule);
+        const preview = yield* m.organize.prepareFilter(accountId, rule);
         const other = yield* store.upsertAccount("gmail", "other@example.com");
         assert.strictEqual(
-          (yield* m.applyFilter(other.id, rule, preview.token).pipe(Effect.result))._tag,
+          (yield* m.organize.applyFilter(other.id, rule, preview.token).pipe(Effect.result))._tag,
           "Failure",
         );
         assert.strictEqual(
-          (yield* m
+          (yield* m.organize
             .applyFilter(
               accountId,
               { ...rule, action: { ...rule.action, trash: true } },
@@ -650,12 +666,12 @@ it.effect(
         );
         yield* TestClock.adjust("5 minutes");
         assert.strictEqual(
-          (yield* m.applyFilter(accountId, rule, preview.token).pipe(Effect.result))._tag,
+          (yield* m.organize.applyFilter(accountId, rule, preview.token).pipe(Effect.result))._tag,
           "Failure",
         );
         server.failNext = new ProviderError({ message: "offline" });
         assert.strictEqual(
-          (yield* m.prepareFilter(accountId, rule).pipe(Effect.result))._tag,
+          (yield* m.organize.prepareFilter(accountId, rule).pipe(Effect.result))._tag,
           "Failure",
         );
         assert.strictEqual(server.pushed.length, 0);
@@ -668,11 +684,11 @@ it.effect("truncated rule previews explicitly bound the confirmed apply to 200 m
       server.searchResults = Array.from({ length: 205 }, (_, i) =>
         incoming(`match-${i}`, { threadId: `thread-${i}` }),
       );
-      const preview = yield* m.prepareFilter(accountId, rule);
+      const preview = yield* m.organize.prepareFilter(accountId, rule);
       assert.strictEqual(preview.truncated, true);
       assert.strictEqual(preview.matches.length, 200);
       yield* store.deleteMessage(accountId, "match-0");
-      assert.strictEqual(yield* m.applyFilter(accountId, rule, preview.token), 199);
+      assert.strictEqual(yield* m.organize.applyFilter(accountId, rule, preview.token), 199);
       assert.strictEqual(server.pushed.length, 199);
     }),
   ),
@@ -815,22 +831,30 @@ it.effect(
           const label = { id: "Label_1", name: "Reports", color: null };
           server.labels.push(label);
           yield* store.replaceLabels(accountId, [label]);
-          const loaded = (yield* m.filters(accountId))[0];
+          const loaded = (yield* m.organize.filters(accountId))[0];
           assert.ok(loaded);
           assert.notStrictEqual(loaded.editable, false);
           assert.strictEqual(loaded.action.archive, true);
           assert.strictEqual(loaded.action.label, label.id);
           const edited = { ...loaded, action: { ...loaded.action, markRead: true } };
-          const preview = yield* m.prepareFilter(accountId, edited);
-          const updated = yield* m.updateFilter(accountId, loaded.id, edited, preview.token);
+          const preview = yield* m.organize.prepareFilter(accountId, edited);
+          const updated = yield* m.organize.updateFilter(
+            accountId,
+            loaded.id,
+            edited,
+            preview.token,
+          );
           assert.strictEqual(updated.action.archive, true);
           assert.strictEqual(updated.action.label, label.id);
           assert.deepStrictEqual(writes.find((write) => write.method === "POST")?.body, {
             criteria: edited.criteria,
             action: { addLabelIds: ["Label_1"], removeLabelIds: ["INBOX", "UNREAD"] },
           });
-          const applyPreview = yield* m.prepareFilter(accountId, updated);
-          assert.strictEqual(yield* m.applyFilter(accountId, updated, applyPreview.token), 2);
+          const applyPreview = yield* m.organize.prepareFilter(accountId, updated);
+          assert.strictEqual(
+            yield* m.organize.applyFilter(accountId, updated, applyPreview.token),
+            2,
+          );
           assert.ok(
             [...server.messages.values()].every(
               (message) => message.labels.includes(label.id) && !message.labels.includes("INBOX"),
@@ -890,7 +914,7 @@ for (const provider of ["gmail", "outlook"] as const) {
         ];
         for (const action of combinations)
           assert.strictEqual(
-            (yield* m
+            (yield* m.organize
               .prepareFilter(accountId, { ...rule, action: { ...rule.action, ...action } })
               .pipe(Effect.result))._tag,
             "Failure",
@@ -919,16 +943,16 @@ it.effect(
         };
         yield* store.saveFilterRestoration(backup);
         server.filters.push({ ...original, name: "Renamed", id: "already-restored" });
-        assert.deepStrictEqual(yield* m.prepareFilterRestoration(accountId, backup.id), {
+        assert.deepStrictEqual(yield* m.organize.prepareFilterRestoration(accountId, backup.id), {
           kind: "complete",
         });
-        assert.deepStrictEqual(yield* m.filterRestorations(accountId), []);
+        assert.deepStrictEqual(yield* m.organize.filterRestorations(accountId), []);
         yield* store.saveFilterRestoration(backup);
         assert.strictEqual(
-          (yield* m.restoreFilter(accountId, backup.id, "expired-preview")).id,
+          (yield* m.organize.restoreFilter(accountId, backup.id, "expired-preview")).id,
           "already-restored",
         );
-        assert.deepStrictEqual(yield* m.filterRestorations(accountId), []);
+        assert.deepStrictEqual(yield* m.organize.filterRestorations(accountId), []);
         assert.strictEqual(server.filters.length, 1);
         assert.deepStrictEqual(server.searched, []);
       }),
@@ -950,16 +974,16 @@ it.effect(
             action: { removeLabelIds: ["UNREAD"] },
           },
         });
-        const prepared = yield* m.prepareFilterRestoration(accountId, "backup");
+        const prepared = yield* m.organize.prepareFilterRestoration(accountId, "backup");
         assert.strictEqual(prepared.kind, "preview");
         if (prepared.kind !== "preview") return;
         server.filters.push({ ...rule, name: "Manual recovery", id: "manual" });
         assert.strictEqual(
-          (yield* m.restoreFilter(accountId, "backup", prepared.preview.token)).id,
+          (yield* m.organize.restoreFilter(accountId, "backup", prepared.preview.token)).id,
           "manual",
         );
         assert.strictEqual(server.filters.length, 1);
-        assert.deepStrictEqual(yield* m.filterRestorations(accountId), []);
+        assert.deepStrictEqual(yield* m.organize.filterRestorations(accountId), []);
       }),
     ),
 );
@@ -978,15 +1002,15 @@ it.effect("a lossy rule projection or failed server lookup cannot erase a recove
         },
       });
       server.filters.push({ ...rule, id: "unsupported", editable: false });
-      const prepared = yield* m.prepareFilterRestoration(accountId, "backup");
+      const prepared = yield* m.organize.prepareFilterRestoration(accountId, "backup");
       assert.strictEqual(prepared.kind, "preview");
-      assert.strictEqual((yield* m.filterRestorations(accountId)).length, 1);
+      assert.strictEqual((yield* m.organize.filterRestorations(accountId)).length, 1);
       server.failNext = new ProviderError({ message: "offline" });
       assert.strictEqual(
-        (yield* m.prepareFilterRestoration(accountId, "backup").pipe(Effect.result))._tag,
+        (yield* m.organize.prepareFilterRestoration(accountId, "backup").pipe(Effect.result))._tag,
         "Failure",
       );
-      assert.strictEqual((yield* m.filterRestorations(accountId)).length, 1);
+      assert.strictEqual((yield* m.organize.filterRestorations(accountId)).length, 1);
     }),
   ),
 );
@@ -1005,15 +1029,17 @@ it.effect(
         });
         server.filters.push({ ...rule, id: "server-rule" });
         assert.strictEqual(
-          (yield* m.discardFilterRestoration(accountId, "backup", false).pipe(Effect.result))._tag,
+          (yield* m.organize
+            .discardFilterRestoration(accountId, "backup", false)
+            .pipe(Effect.result))._tag,
           "Failure",
         );
-        assert.strictEqual((yield* m.filterRestorations(accountId)).length, 1);
+        assert.strictEqual((yield* m.organize.filterRestorations(accountId)).length, 1);
         const other = yield* store.upsertAccount("gmail", "other@example.com");
-        yield* m.discardFilterRestoration(other.id, "backup", true);
-        assert.strictEqual((yield* m.filterRestorations(accountId)).length, 1);
-        yield* m.discardFilterRestoration(accountId, "backup", true);
-        assert.deepStrictEqual(yield* m.filterRestorations(accountId), []);
+        yield* m.organize.discardFilterRestoration(other.id, "backup", true);
+        assert.strictEqual((yield* m.organize.filterRestorations(accountId)).length, 1);
+        yield* m.organize.discardFilterRestoration(accountId, "backup", true);
+        assert.deepStrictEqual(yield* m.organize.filterRestorations(accountId), []);
         assert.strictEqual(server.filters.length, 1);
         assert.deepStrictEqual(server.searched, []);
       }),

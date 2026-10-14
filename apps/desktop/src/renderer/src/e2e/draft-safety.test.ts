@@ -85,8 +85,8 @@ it("a failed send leaves the draft open since then and offers the failed one", a
   await newDraft(h, "First draft");
   writeBody("Will fail");
   const gate = Deferred.makeUnsafe<void>();
-  const perform = h.m.perform.bind(h.m);
-  vi.spyOn(h.m, "perform").mockImplementation((command, actor) =>
+  const perform = h.m.organize.perform.bind(h.m);
+  vi.spyOn(h.m.organize, "perform").mockImplementation((command, actor) =>
     command.kind === "send"
       ? Deferred.await(gate).pipe(
           Effect.andThen(Effect.fail(new ProviderError({ message: "down", status: 503 }))),
@@ -144,9 +144,9 @@ it("archiving in a conversation window asks the main window to offer Undo", asyn
   await eventually(() => expect(close).toHaveBeenCalled());
   const notice = h.requests.find((request) => request.tag === "ShowUndo");
   expect(notice?.payload).toMatchObject({ text: "Archived", undo: { _tag: "Batch" } });
-  const undoId = (await h.run(h.m.undoHistory))[0]?.undoId ?? "";
+  const undoId = (await h.run(h.m.organize.undoHistory))[0]?.undoId ?? "";
   expect((await h.run(h.store.getMessage(h.id("one")))).labels).not.toContain("INBOX");
-  await h.run(h.m.undoBatch(undoId));
+  await h.run(h.m.organize.undoBatch(undoId));
   expect((await h.run(h.store.getMessage(h.id("one")))).labels).toContain("INBOX");
 });
 

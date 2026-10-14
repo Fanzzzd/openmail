@@ -131,9 +131,9 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
             { kind: "label", labelId: "custom", value: false },
           ];
           for (const op of ops) {
-            const batch = yield* mailbox.modifyWithUndo([...selected, ...selected], op);
+            const batch = yield* mailbox.organize.modifyWithUndo([...selected, ...selected], op);
             yield* mailbox.sync();
-            yield* mailbox.undoBatch(batch.undoId);
+            yield* mailbox.organize.undoBatch(batch.undoId);
             yield* mailbox.sync();
             assert.deepStrictEqual(
               fields((yield* Effect.forEach(selected, (id) => mailbox.reading.thread(id))).flat()),
@@ -148,13 +148,13 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
               fields((yield* Effect.forEach(selected, (id) => mailbox.reading.thread(id))).flat()),
               originals,
             );
-            const repeated = yield* mailbox.undoBatch(batch.undoId).pipe(Effect.flip);
+            const repeated = yield* mailbox.organize.undoBatch(batch.undoId).pipe(Effect.flip);
             assert.strictEqual(repeated._tag, "InvalidInput");
           }
-          const partial = yield* mailbox.modifyWithUndo([selected[0]!, "missing"], {
+          const partial = yield* mailbox.organize.modifyWithUndo([selected[0]!, "missing"], {
             kind: "trash",
           });
-          yield* mailbox.undoBatch(partial.undoId);
+          yield* mailbox.organize.undoBatch(partial.undoId);
           yield* mailbox.sync();
           assert.deepStrictEqual(
             fields((yield* Effect.forEach(selected, (id) => mailbox.reading.thread(id))).flat()),
@@ -194,13 +194,13 @@ it.effect("flat batches and undo touch only selected messages in a conversation"
     assert.strictEqual(yield* mailbox.reading.threadCount({ flat: true }), 2);
     const a = rows.find((row) => row.subject === "a");
     assert.ok(a);
-    const batch = yield* mailbox.modifyWithUndo([a.id], { kind: "trash" }, true);
+    const batch = yield* mailbox.organize.modifyWithUndo([a.id], { kind: "trash" }, true);
     yield* mailbox.sync();
     assert.deepStrictEqual(
       server.pushed.map((push) => push.providerId),
       ["a"],
     );
-    yield* mailbox.undoBatch(batch.undoId);
+    yield* mailbox.organize.undoBatch(batch.undoId);
     yield* mailbox.sync();
     assert.ok(!server.pushed.some((push) => push.providerId === "b"));
     assert.deepStrictEqual(server.messages.get("a")?.labels.toSorted(), ["INBOX", "UNREAD"]);
@@ -244,9 +244,9 @@ for (const provider of ["outlook", "imap"] as const) {
         const original = fields(
           (yield* Effect.forEach(ids, (id) => mailbox.reading.thread(id))).flat(),
         );
-        const batch = yield* mailbox.modifyWithUndo(ids, { kind: "trash" });
+        const batch = yield* mailbox.organize.modifyWithUndo(ids, { kind: "trash" });
         yield* mailbox.sync();
-        yield* mailbox.undoBatch(batch.undoId);
+        yield* mailbox.organize.undoBatch(batch.undoId);
         yield* mailbox.sync();
         assert.deepStrictEqual(
           fields((yield* Effect.forEach(ids, (id) => mailbox.reading.thread(id))).flat()),
@@ -280,7 +280,7 @@ it.effect("a stalled push does not block local commit, undo or mark-read", () =>
       Effect.andThen(Deferred.await(release)),
     );
     const first = yield* Effect.forkChild(
-      mailbox.modifyWithUndo(
+      mailbox.organize.modifyWithUndo(
         rows.map((row) => row.id),
         { kind: "archive" },
       ),
@@ -289,8 +289,11 @@ it.effect("a stalled push does not block local commit, undo or mark-read", () =>
     yield* TestClock.adjust("1 second");
     assert.ok(first.pollUnsafe());
     const batch = yield* Fiber.join(first);
-    yield* mailbox.undoBatch(batch.undoId);
-    const read = yield* mailbox.modifyWithUndo([rows[0]!.id], { kind: "read", value: true });
+    yield* mailbox.organize.undoBatch(batch.undoId);
+    const read = yield* mailbox.organize.modifyWithUndo([rows[0]!.id], {
+      kind: "read",
+      value: true,
+    });
     assert.ok(read.undoId);
     assert.strictEqual((yield* mailbox.reading.threads({})).length, 2);
     assert.strictEqual((yield* mailbox.reading.thread(rows[0]!.id))[0]?.isUnread, false);
@@ -312,17 +315,23 @@ it.effect("sync-deleted batch IDs are skipped both at commit and at undo", () =>
     assert.ok(a && b);
     server.messages.delete("b");
     yield* mailbox.sync();
-    const batch = yield* mailbox.modifyWithUndo([a.id, b.id], { kind: "star", value: true });
+    const batch = yield* mailbox.organize.modifyWithUndo([a.id, b.id], {
+      kind: "star",
+      value: true,
+    });
     assert.strictEqual((yield* mailbox.reading.thread(a.id))[0]?.isStarred, true);
-    yield* mailbox.undoBatch(batch.undoId);
+    yield* mailbox.organize.undoBatch(batch.undoId);
     yield* mailbox.sync();
-    const second = yield* mailbox.modifyWithUndo([a.id], { kind: "archive" });
+    const second = yield* mailbox.organize.modifyWithUndo([a.id], { kind: "archive" });
     yield* mailbox.sync();
     server.messages.delete("a");
     yield* mailbox.sync();
-    yield* mailbox.undoBatch(second.undoId);
-    const vanished = yield* mailbox.modifyWithUndo([a.id, b.id], { kind: "star", value: true });
-    yield* mailbox.undoBatch(vanished.undoId);
+    yield* mailbox.organize.undoBatch(second.undoId);
+    const vanished = yield* mailbox.organize.modifyWithUndo([a.id, b.id], {
+      kind: "star",
+      value: true,
+    });
+    yield* mailbox.organize.undoBatch(vanished.undoId);
     assert.strictEqual((yield* mailbox.reading.threads({})).length, 0);
     assert.ok(!server.pushed.some((push) => push.providerId === "b"));
   }).pipe(Effect.provide(TestMailbox({ gmail: server })));
@@ -354,7 +363,7 @@ it.effect("loaded counts respect grouping, filters and ignored paging cursors", 
       5,
     );
     const five = yield* mailbox.reading.threads({ mailbox: "inbox", unreadOnly: true });
-    yield* mailbox.modifyWithUndo(
+    yield* mailbox.organize.modifyWithUndo(
       five.map((row) => row.id),
       { kind: "archive" },
     );
@@ -378,7 +387,7 @@ it.effect("cross-account undo works while authentication leaves the forward batc
     const account = (yield* mailbox.accounts).find((account) => account.provider === "gmail");
     assert.ok(account);
     gmail.failNext = new AuthError({ accountId: account.id, message: "revoked" });
-    const batch = yield* mailbox.modifyWithUndo(
+    const batch = yield* mailbox.organize.modifyWithUndo(
       rows.map((row) => row.id),
       { kind: "trash" },
     );
@@ -387,7 +396,7 @@ it.effect("cross-account undo works while authentication leaves the forward batc
       (yield* mailbox.accounts).find((item) => item.id === account.id)?.needsReauth,
       true,
     );
-    yield* mailbox.undoBatch(batch.undoId);
+    yield* mailbox.organize.undoBatch(batch.undoId);
     yield* mailbox.sync();
     assert.deepStrictEqual(
       fields((yield* Effect.forEach(rows, (row) => mailbox.reading.thread(row.id))).flat()),
@@ -411,11 +420,11 @@ it.effect("undo restores a batch's snoozed membership and original due time", ()
     const rows = yield* mailbox.reading.threads({});
     const ids = rows.map((row) => row.id);
     const due = (yield* Clock.currentTimeMillis) + 3600000;
-    yield* mailbox.snooze(ids, due);
+    yield* mailbox.organize.snooze(ids, due);
     const before = fields((yield* Effect.forEach(ids, (id) => mailbox.reading.thread(id))).flat());
-    const batch = yield* mailbox.modifyWithUndo(ids, { kind: "trash" });
+    const batch = yield* mailbox.organize.modifyWithUndo(ids, { kind: "trash" });
     assert.strictEqual((yield* mailbox.reading.threads({ mailbox: "snoozed" })).length, 0);
-    yield* mailbox.undoBatch(batch.undoId);
+    yield* mailbox.organize.undoBatch(batch.undoId);
     yield* mailbox.sync();
     assert.strictEqual((yield* mailbox.reading.threads({ mailbox: "snoozed" })).length, 2);
     assert.deepStrictEqual(
@@ -444,14 +453,14 @@ it.effect("undo uses captured message IDs and preserves unrelated later flag cha
     yield* mailbox.sync();
     const row = (yield* mailbox.reading.threads({}))[0];
     assert.ok(row);
-    const batch = yield* mailbox.modifyWithUndo([row.id], { kind: "read", value: true });
-    yield* mailbox.perform(
+    const batch = yield* mailbox.organize.modifyWithUndo([row.id], { kind: "read", value: true });
+    yield* mailbox.organize.perform(
       { kind: "modify", threads: [row.id], op: { kind: "star", value: true } },
       { kind: "user", surface: "app" },
     );
     server.messages.set("new", message("new", ["INBOX"], "shared"));
     yield* mailbox.sync();
-    yield* mailbox.undoBatch(batch.undoId);
+    yield* mailbox.organize.undoBatch(batch.undoId);
     yield* mailbox.sync();
     const messages = yield* mailbox.reading.thread(row.id);
     assert.strictEqual(messages.find((message) => message.id.endsWith("/a"))?.isUnread, true);

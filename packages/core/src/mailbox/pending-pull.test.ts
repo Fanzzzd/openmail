@@ -59,12 +59,12 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
           yield* m.sync();
           const id = `${account.id}/one`;
           server.beforePush = Effect.fail(new ProviderError({ message: "offline", status: 503 }));
-          const batch = yield* m.modifyWithUndo([id], {
+          const batch = yield* m.organize.modifyWithUndo([id], {
             kind: sequence === "inbox" ? "inbox" : "archive",
           });
-          if (sequence === "archive-undo") yield* m.undoBatch(batch.undoId);
+          if (sequence === "archive-undo") yield* m.organize.undoBatch(batch.undoId);
           const due = (yield* Clock.currentTimeMillis) + 60_000;
-          yield* m.snoozeWithUndo([id], due);
+          yield* m.organize.snoozeWithUndo([id], due);
           const before = yield* store.reminderSnapshot(id);
           assert.isTrue(Option.isSome(before));
           flagsOnly = pull === "flags";
@@ -137,8 +137,8 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
       yield* m.sync();
       const id = `${account.id}/one`;
       server.beforePush = Effect.fail(new ProviderError({ message: "offline", status: 503 }));
-      yield* m.modifyWithUndo([id], { kind: "read", value: true });
-      yield* m.modifyWithUndo([id], { kind: "star", value: true });
+      yield* m.organize.modifyWithUndo([id], { kind: "read", value: true });
+      yield* m.organize.modifyWithUndo([id], { kind: "star", value: true });
       yield* store.restoreReminder({
         accountId: account.id,
         threadId: "thread",

@@ -345,59 +345,64 @@ export function makeAiMailbox(
                   return yield* budget(safe);
                 }),
             },
-            perform: (command, actor) =>
-              Effect.gen(function* () {
-                yield* guard;
-                if (command.kind !== "draft" && command.kind !== "modify")
-                  return yield* new InvalidInput({
-                    message: "The assistant can only propose drafts, labels and archive.",
-                  });
-                if (command.kind === "modify") {
-                  if (command.op.kind !== "archive" && command.op.kind !== "label")
+            organize: {
+              ...m.organize,
+              perform: (command, actor) =>
+                Effect.gen(function* () {
+                  yield* guard;
+                  if (command.kind !== "draft" && command.kind !== "modify")
                     return yield* new InvalidInput({
-                      message: "Only archive and label proposals are available.",
+                      message: "The assistant can only propose drafts, labels and archive.",
                     });
-                  if (command.threads.length > 20)
-                    return yield* new InvalidInput({ message: "Too many threads in a proposal." });
-                  const op = command.op;
-                  if (op.kind === "label" && !op.value)
-                    return yield* new InvalidInput({
-                      message: "The assistant can only add user labels in Gmail.",
-                    });
-                  for (const id of command.threads) {
-                    const view = yield* read(id, AI_THREAD_INPUT, false);
-                    if (op.kind === "label") {
-                      const account = yield* store.getAccount(view.accountId);
-                      const labels = yield* store.listLabels([account.id]);
-                      const label = labels.find(
-                        (item) => item.accountId === account.id && item.id === op.labelId,
-                      );
-                      if (
-                        providerCapabilities(account.provider).organization !== "labels" ||
-                        !label ||
-                        isSpecialLabel(label.id) ||
-                        isSpecialLabel(label.name)
-                      )
-                        return yield* new InvalidInput({
-                          message: "The assistant can only add user labels in Gmail.",
-                        });
+                  if (command.kind === "modify") {
+                    if (command.op.kind !== "archive" && command.op.kind !== "label")
+                      return yield* new InvalidInput({
+                        message: "Only archive and label proposals are available.",
+                      });
+                    if (command.threads.length > 20)
+                      return yield* new InvalidInput({
+                        message: "Too many threads in a proposal.",
+                      });
+                    const op = command.op;
+                    if (op.kind === "label" && !op.value)
+                      return yield* new InvalidInput({
+                        message: "The assistant can only add user labels in Gmail.",
+                      });
+                    for (const id of command.threads) {
+                      const view = yield* read(id, AI_THREAD_INPUT, false);
+                      if (op.kind === "label") {
+                        const account = yield* store.getAccount(view.accountId);
+                        const labels = yield* store.listLabels([account.id]);
+                        const label = labels.find(
+                          (item) => item.accountId === account.id && item.id === op.labelId,
+                        );
+                        if (
+                          providerCapabilities(account.provider).organization !== "labels" ||
+                          !label ||
+                          isSpecialLabel(label.id) ||
+                          isSpecialLabel(label.name)
+                        )
+                          return yield* new InvalidInput({
+                            message: "The assistant can only add user labels in Gmail.",
+                          });
+                      }
                     }
+                  } else {
+                    if (!ids.includes(command.accountId))
+                      return yield* new InvalidInput({
+                        message: "This account is outside the selected accounts.",
+                      });
+                    if (command.message.inReplyTo)
+                      yield* read(command.message.inReplyTo, AI_THREAD_INPUT, false);
                   }
-                } else {
-                  if (!ids.includes(command.accountId))
-                    return yield* new InvalidInput({
-                      message: "This account is outside the selected accounts.",
-                    });
-                  if (command.message.inReplyTo)
-                    yield* read(command.message.inReplyTo, AI_THREAD_INPUT, false);
-                }
-                return yield* m.perform(command, {
-                  ...actor,
-                  kind: "agent",
-                  surface: "rule",
-                  name: "openmail-assistant",
-                });
-              }),
+                  return yield* m.organize.perform(command, {
+                    ...actor,
+                    kind: "agent",
+                    surface: "rule",
+                    name: "openmail-assistant",
+                  });
+                }),
+            },
           };
           const toolkit = yield* AssistantToolkit.pipe(
             Effect.provide(

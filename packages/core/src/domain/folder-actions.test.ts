@@ -575,7 +575,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
             2,
           );
           for (let i = 0; i < 251; i++) server.messages.set(`remote${i}`, message(`remote${i}`));
-          assert.strictEqual(yield* mailbox.markFolderRead(folder), 252);
+          assert.strictEqual(yield* mailbox.organize.markFolderRead(folder), 252);
           assert.isTrue(
             [...server.messages.values()]
               .filter((m) => m.labels.includes("INBOX"))
@@ -589,7 +589,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
             0,
           );
           assert.strictEqual(
-            yield* mailbox.markFolderRead({
+            yield* mailbox.organize.markFolderRead({
               mailbox: "all",
               label: "custom",
               accountIds: [account.id],
@@ -610,27 +610,34 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
               message("categoryTrash", ["TRASH", "CATEGORY_SOCIAL", "UNREAD"]),
             );
             const category = { accountIds: [account.id], label: "CATEGORY_SOCIAL" };
-            assert.strictEqual(yield* mailbox.markFolderRead({ ...category, mailbox: "inbox" }), 1);
+            assert.strictEqual(
+              yield* mailbox.organize.markFolderRead({ ...category, mailbox: "inbox" }),
+              1,
+            );
             assert.isTrue(server.messages.get("categoryArchive")?.isUnread);
-            assert.strictEqual(yield* mailbox.markFolderRead({ ...category, mailbox: "all" }), 1);
+            assert.strictEqual(
+              yield* mailbox.organize.markFolderRead({ ...category, mailbox: "all" }),
+              1,
+            );
             assert.isTrue(server.messages.get("categoryTrash")?.isUnread);
             server.messages.delete("categoryTrash");
           }
           const loaded = `${account.id}/loaded`;
           assert.isTrue(
-            (yield* mailbox.permanentlyDelete([loaded], true, "trash", false).pipe(Effect.result))
-              ._tag === "Failure",
+            (yield* mailbox.organize
+              .permanentlyDelete([loaded], true, "trash", false)
+              .pipe(Effect.result))._tag === "Failure",
           );
           assert.strictEqual(server.deleted.length, 0);
           if (provider === "gmail") {
-            yield* mailbox.modifyWithUndo([loaded], { kind: "trash" }, true);
-            const missing = yield* mailbox
+            yield* mailbox.organize.modifyWithUndo([loaded], { kind: "trash" }, true);
+            const missing = yield* mailbox.organize
               .permanentlyDelete([loaded], true, "trash", true)
               .pipe(Effect.result);
             assert.strictEqual(missing._tag, "Failure");
             if (missing._tag === "Failure")
               assert.strictEqual(missing.failure._tag, "FeatureScopeMissing");
-            const empty = yield* mailbox
+            const empty = yield* mailbox.organize
               .emptyFolder({ mailbox: "trash", accountIds: [account.id] }, true)
               .pipe(Effect.result);
             assert.strictEqual(empty._tag, "Failure");
@@ -639,9 +646,9 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
             assert.strictEqual(server.deleted.length, 0);
             assert.strictEqual((yield* mailbox.reading.thread(loaded)).length, 1);
             assert.isFalse((yield* mailbox.accounts)[0]?.needsReauth);
-            yield* mailbox.modifyWithUndo([loaded], { kind: "trash" }, true);
+            yield* mailbox.organize.modifyWithUndo([loaded], { kind: "trash" }, true);
             assert.isTrue(server.messages.get("loaded")?.labels.includes("TRASH"));
-            yield* mailbox.modifyWithUndo([loaded], { kind: "inbox" }, true);
+            yield* mailbox.organize.modifyWithUndo([loaded], { kind: "inbox" }, true);
             yield* mailbox.reauth(account.id, "permanentDelete");
             assert.deepStrictEqual(server.connects.at(-1), {
               provider: "gmail",
@@ -653,7 +660,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
             });
           }
           assert.isTrue(
-            (yield* mailbox
+            (yield* mailbox.organize
               .permanentlyDelete(
                 Array.from({ length: 1001 }, () => loaded),
                 true,
@@ -663,20 +670,21 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
               .pipe(Effect.result))._tag === "Failure",
           );
           assert.isTrue(
-            (yield* mailbox.emptyFolder(folder, true).pipe(Effect.result))._tag === "Failure",
-          );
-          assert.isTrue(
-            (yield* mailbox.emptyFolder({ mailbox: "trash" }, false).pipe(Effect.result))._tag ===
+            (yield* mailbox.organize.emptyFolder(folder, true).pipe(Effect.result))._tag ===
               "Failure",
           );
-          yield* mailbox.modifyWithUndo([`${account.id}/first`], { kind: "trash" }, false);
+          assert.isTrue(
+            (yield* mailbox.organize.emptyFolder({ mailbox: "trash" }, false).pipe(Effect.result))
+              ._tag === "Failure",
+          );
+          yield* mailbox.organize.modifyWithUndo([`${account.id}/first`], { kind: "trash" }, false);
           assert.strictEqual(
-            yield* mailbox.permanentlyDelete([`${account.id}/first`], true, "trash", true),
+            yield* mailbox.organize.permanentlyDelete([`${account.id}/first`], true, "trash", true),
             1,
           );
           assert.isTrue(server.messages.has("second"));
           assert.strictEqual(
-            yield* mailbox.permanentlyDelete(
+            yield* mailbox.organize.permanentlyDelete(
               [`${account.id}/second`, `${account.id}/second`],
               false,
               "trash",
@@ -693,7 +701,10 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
             for (let i = 0; i < count; i++)
               server.messages.set(`${label}${i}`, message(`${label}${i}`, [label]));
             assert.strictEqual(
-              yield* mailbox.emptyFolder({ mailbox: mailboxName, accountIds: [account.id] }, true),
+              yield* mailbox.organize.emptyFolder(
+                { mailbox: mailboxName, accountIds: [account.id] },
+                true,
+              ),
               count,
             );
             assert.isFalse([...server.messages.values()].some((m) => m.labels.includes(label)));
@@ -702,7 +713,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
           assert.isTrue(server.messages.has("loaded"));
           assert.isTrue(server.deleted.every((ids) => ids.length <= 100));
           if (provider === "imap") assert.isTrue(server.deleted.some((ids) => ids.length === 100));
-          yield* mailbox.setLabelPreference({
+          yield* mailbox.organize.setLabelPreference({
             accountId: account.id,
             id: "custom",
             favorite: true,
@@ -710,8 +721,8 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
             position: 9,
             color: "#112233",
           });
-          yield* mailbox.resetFavorites([account.id]);
-          assert.deepStrictEqual((yield* mailbox.labelPreferences)[0], {
+          yield* mailbox.organize.resetFavorites([account.id]);
+          assert.deepStrictEqual((yield* mailbox.organize.labelPreferences)[0], {
             accountId: account.id,
             id: "custom",
             favorite: false,

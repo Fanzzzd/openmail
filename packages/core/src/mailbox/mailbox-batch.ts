@@ -145,7 +145,11 @@ export const makeBatchMailbox = (
     const crypto = yield* PlatformCrypto;
     const lock = yield* Semaphore.make(1);
     const history = new Map<string, UndoBatch>();
-    const modifyWithUndo: Mailbox["Service"]["modifyWithUndo"] = (threads, op, flat = false) =>
+    const modifyWithUndo: Mailbox["Service"]["organize"]["modifyWithUndo"] = (
+      threads,
+      op,
+      flat = false,
+    ) =>
       lock
         .withPermits(1)(
           Effect.gen(function* () {
@@ -298,7 +302,7 @@ export const makeBatchMailbox = (
           Effect.tap(() => changed),
           Effect.tap(() => flushLater),
         );
-    const snoozeWithUndo: Mailbox["Service"]["snoozeWithUndo"] = (threads, due) =>
+    const snoozeWithUndo: Mailbox["Service"]["organize"]["snoozeWithUndo"] = (threads, due) =>
       lock
         .withPermits(1)(
           Effect.gen(function* () {
@@ -375,7 +379,7 @@ export const makeBatchMailbox = (
           }),
         )
         .pipe(Effect.tap(() => changed));
-    const undoBatch: Mailbox["Service"]["undoBatch"] = (undoId) =>
+    const undoBatch: Mailbox["Service"]["organize"]["undoBatch"] = (undoId) =>
       lock
         .withPermits(1)(
           Effect.gen(function* () {
@@ -500,7 +504,7 @@ export const makeBatchMailbox = (
           Effect.tap(() => changed),
           Effect.tap(() => flushLater),
         );
-    const markUnreadFrom: Mailbox["Service"]["markUnreadFrom"] = (id) =>
+    const markUnreadFrom: Mailbox["Service"]["organize"]["markUnreadFrom"] = (id) =>
       Effect.gen(function* () {
         const messages = messagesFrom(yield* store.getThread(id), id).filter(
           (message) => !message.labels.some((label) => ["DRAFT", "TRASH", "SPAM"].includes(label)),

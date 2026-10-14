@@ -163,8 +163,8 @@ it.each([
     edit("Subject", "Error recovery");
     writeBody("Keep this draft");
     // The core API produces these typed failures; exercise the real transport and UI recovery.
-    const perform = h.m.perform.bind(h.m);
-    vi.spyOn(h.m, "perform").mockImplementation((command, actor) =>
+    const perform = h.m.organize.perform.bind(h.m);
+    vi.spyOn(h.m.organize, "perform").mockImplementation((command, actor) =>
       command.kind === "send" ? Effect.fail(error) : perform(command, actor),
     );
     clickButton("Send");
@@ -513,7 +513,7 @@ it("proposals approve only the chosen change and rejection never pushes", async 
   await h.run(h.m.setAgentWriteMode("propose"));
   for (const id of ["one", "two"])
     await h.run(
-      h.m.perform(
+      h.m.organize.perform(
         { kind: "modify", threads: [h.id(id)], op: { kind: "archive" } },
         { kind: "agent", surface: "mcp", name: "Flow agent", rationale: `Review ${id}` },
       ),

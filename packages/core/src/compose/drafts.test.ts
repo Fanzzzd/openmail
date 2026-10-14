@@ -155,7 +155,7 @@ import { replyFromAddress } from "./signatures.js";
       Effect.gen(function* () {
         yield* m.compose.saveDraft({ id: "draft:1", accountId: GMAIL, message: draftMessage() });
         yield* m.sync();
-        const outcome = yield* m.perform(
+        const outcome = yield* m.organize.perform(
           { kind: "send", accountId: GMAIL, message: draftMessage(), draftId: "draft:1" },
           user,
         );
@@ -180,7 +180,7 @@ import { replyFromAddress } from "./signatures.js";
             subject: "Re: 主题 m1",
           });
           yield* m.compose.saveDraft({ id: "draft:r", accountId: GMAIL, message: reply });
-          const outcome = yield* m.perform(
+          const outcome = yield* m.organize.perform(
             { kind: "send", accountId: GMAIL, message: reply, draftId: "draft:r", archive: true },
             user,
           );
@@ -390,7 +390,7 @@ import { replyFromAddress } from "./signatures.js";
   it.effect("a read-only MCP agent cannot create a draft", () =>
     withMail((m, server) =>
       Effect.gen(function* () {
-        const outcome = yield* m.perform(
+        const outcome = yield* m.organize.perform(
           { kind: "draft", accountId: GMAIL, message: draftMessage() },
           agent,
         );
@@ -406,7 +406,7 @@ import { replyFromAddress } from "./signatures.js";
     withMail((m, server) =>
       Effect.gen(function* () {
         yield* m.setAgentWriteMode("propose");
-        const outcome = yield* m.perform(
+        const outcome = yield* m.organize.perform(
           { kind: "draft", accountId: GMAIL, message: draftMessage() },
           agent,
         );
@@ -421,7 +421,7 @@ import { replyFromAddress } from "./signatures.js";
 
         const draft = yield* m.compose.openDraft(`proposal:${proposalId}`);
         assert.strictEqual(draft.proposalId, proposalId);
-        yield* m.perform(
+        yield* m.organize.perform(
           { kind: "send", accountId: GMAIL, message: draft.message, draftId: draft.id },
           user,
         );
@@ -431,7 +431,7 @@ import { replyFromAddress } from "./signatures.js";
         assert.ok((yield* m.audit(10)).some((e) => e.action === "approve"));
 
         // Rejecting a message proposal discards its draft.
-        const second = yield* m.perform(
+        const second = yield* m.organize.perform(
           { kind: "draft", accountId: GMAIL, message: draftMessage({ subject: "二" }) },
           agent,
         );
@@ -453,7 +453,7 @@ import { replyFromAddress } from "./signatures.js";
       Effect.gen(function* () {
         yield* m.setAgentWriteMode("propose");
         const error = yield* Effect.flip(
-          m.perform(
+          m.organize.perform(
             { kind: "draft", accountId: "gmail:nobody@x.com", message: draftMessage() },
             agent,
           ),
@@ -468,7 +468,7 @@ import { replyFromAddress } from "./signatures.js";
     withMail(
       (m, server) =>
         Effect.gen(function* () {
-          yield* m.perform(
+          yield* m.organize.perform(
             {
               kind: "send",
               accountId: GMAIL,
@@ -499,7 +499,7 @@ import { replyFromAddress } from "./signatures.js";
   it.effect("Markdown bodies go out with a rendered HTML part", () =>
     withMail((m, server) =>
       Effect.gen(function* () {
-        yield* m.perform(
+        yield* m.organize.perform(
           {
             kind: "send",
             accountId: GMAIL,
@@ -520,7 +520,7 @@ import { replyFromAddress } from "./signatures.js";
       (m, server) =>
         Effect.gen(function* () {
           const source = "**bold**\n\n- list\n\n```\ncode\n```";
-          yield* m.perform(
+          yield* m.organize.perform(
             {
               kind: "send",
               accountId: GMAIL,

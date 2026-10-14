@@ -521,7 +521,6 @@ export const MailboxLive = (
         app: makeAppMailbox({ ...deps, enforceCacheBudget: storage.enforceCacheBudget }, runtime),
       };
       const mailbox = Mailbox.of({
-        ...groups.organize,
         ...groups.proposals,
         ...groups.accounts,
         ...groups.sync,

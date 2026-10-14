@@ -26,7 +26,7 @@ for (const action of ["discard", "send"] as const) {
         });
         yield* action === "discard"
           ? mailbox.compose.discardDraft(input.id)
-          : mailbox.perform(
+          : mailbox.organize.perform(
               { kind: "send", draftId: input.id, accountId: account.id, message: outgoing },
               { kind: "user", surface: "app" },
             );
@@ -104,7 +104,7 @@ it.effect("direct send rejects a waiting queued send of the same draft", () => {
       const account = yield* mailbox.connect({ provider: "gmail" });
       const input = { id: "already-queued", accountId: account.id, message: outgoing };
       yield* mailbox.outbox.queueSend(input, 0);
-      const direct = yield* mailbox
+      const direct = yield* mailbox.organize
         .perform(
           { kind: "send", draftId: input.id, accountId: account.id, message: outgoing },
           { kind: "user", surface: "app" },
@@ -488,7 +488,7 @@ for (const queued of [false, true]) {
             yield* mailbox.outbox.flushQueuedSends();
             assert.strictEqual((yield* mailbox.outbox.queuedSends)[0]?.status, "retryable");
           } else {
-            const failure = yield* mailbox
+            const failure = yield* mailbox.organize
               .perform(
                 { kind: "send", draftId: input.id, accountId: account.id, message: outgoing },
                 { kind: "user", surface: "app" },
@@ -524,7 +524,7 @@ it.effect("interruption during a claimed send retains durable resend protection"
         assert.isTrue(yield* store.sendUncertain("crash"));
         yield* Fiber.interrupt(sending);
         assert.isTrue(yield* store.sendUncertain("crash"));
-        const retry = yield* mailbox
+        const retry = yield* mailbox.organize
           .perform(
             { kind: "send", draftId: "crash", accountId: account.id, message: outgoing },
             { kind: "user", surface: "app" },

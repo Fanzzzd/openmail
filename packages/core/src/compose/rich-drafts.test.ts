@@ -130,7 +130,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
             accountId: reopened.accountId,
             message: edited,
           });
-          yield* mailbox.perform(
+          yield* mailbox.organize.perform(
             { kind: "send", accountId: reopened.accountId, draftId: id, message: saved.message },
             user,
           );
@@ -171,7 +171,7 @@ it.effect("sending HTML directly also sanitizes and derives the text alternative
   return Effect.gen(function* () {
     const mailbox = yield* Mailbox;
     yield* mailbox.connect({ provider: "gmail" });
-    yield* mailbox.perform(
+    yield* mailbox.organize.perform(
       {
         kind: "send",
         accountId: "gmail:me@gmail.com",
@@ -244,7 +244,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
         const push = server.draftLog.at(-1);
         assert.ok(push?.kind === "save");
         assert.deepStrictEqual(push.push.message.attachments, [normal]);
-        yield* mailbox.perform({ kind: "send", accountId, message: edited.message }, user);
+        yield* mailbox.organize.perform({ kind: "send", accountId, message: edited.message }, user);
         const sent = server.sent.at(-1);
         assert.ok(sent);
         const mime = yield* buildMime({ name: "", address: server.email }, sent.message);

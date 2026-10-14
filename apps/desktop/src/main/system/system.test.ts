@@ -600,11 +600,11 @@ it("sleep resume restores Dock counts and delivers one Profile digest after mute
         });
         for (const id of ["keep", "read", "delete"]) server.messages.set(id, incoming(id));
         yield* m.pollInbox();
-        yield* m.perform(
+        yield* m.organize.perform(
           { kind: "modify", threads: [`${account.id}/read`], op: { kind: "read", value: true } },
           { kind: "user", surface: "app" },
         );
-        yield* m.perform(
+        yield* m.organize.perform(
           { kind: "modify", threads: [`${account.id}/delete`], op: { kind: "trash" } },
           { kind: "user", surface: "app" },
         );

@@ -413,7 +413,7 @@ const program = Effect.gen(function* () {
   // with "Ask me first" on, an MCP agent's change becomes a proposal instead of running.
   const mailbox = yield* Mailbox;
   yield* mailbox.setAgentWriteMode("propose");
-  yield* mailbox.perform(
+  yield* mailbox.organize.perform(
     {
       kind: "modify",
       threads: ["newsletter-rust", "newsletter-frontend", "newsletter-product"].map(

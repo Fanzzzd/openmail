@@ -40,7 +40,7 @@ const ProposalPage = Schema.Struct({
 type Service = Mailbox["Service"];
 type Groups = "reading" | "organize" | "compose" | "outbox" | "ai" | "calendar" | "app";
 /** Groups whose members are no longer flat on Service. */
-type Moved = "ai" | "calendar" | "outbox" | "app" | "compose" | "reading";
+type Moved = "ai" | "calendar" | "outbox" | "app" | "compose" | "reading" | "organize";
 type Flat = Omit<Service, Exclude<Groups, Moved>>;
 type Overrides = Partial<Omit<Flat, Moved>> & { [G in Moved]?: Partial<Service[G]> };
 
@@ -152,7 +152,44 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
     closeSessions: () => notUsed("closeSessions"),
     optionalServices: () => notUsed("optionalServices"),
     setServiceEnabled: () => notUsed("setServiceEnabled"),
-    unsubscribe: () => notUsed("unsubscribe"),
+    organize: {
+      unsubscribe: () => notUsed("unsubscribe"),
+      permanentlyDelete: () => notUsed("permanentlyDelete"),
+      emptyFolder: () => notUsed("emptyFolder"),
+      markFolderRead: () => notUsed("markFolderRead"),
+      resetFavorites: () => notUsed("resetFavorites"),
+      setClassificationOverride: () => notUsed("setClassificationOverride"),
+      changeLabel: () => notUsed("changeLabel"),
+      setLabelPreference: () => notUsed("setLabelPreference"),
+      setOrganization: () => notUsed("setOrganization"),
+      snoozeWithUndo: () => notUsed("snoozeWithUndo"),
+      snooze: () => notUsed("snooze"),
+      wakeSnoozed: () => notUsed("wakeSnoozed"),
+      filters: () => notUsed("filters"),
+      filterRestorations: () => notUsed("filterRestorations"),
+      restoreFilter: () => notUsed("restoreFilter"),
+      prepareFilterRestoration: () => notUsed("prepareFilterRestoration"),
+      discardFilterRestoration: () => notUsed("discardFilterRestoration"),
+      previewFilter: () => notUsed("previewFilter"),
+      reorderFavorites: () => Effect.die("not used"),
+      prepareFilter: () => Effect.die("not used"),
+      updateFilter: () => Effect.die("not used"),
+      applyFilter: () => Effect.die("not used"),
+      createLabelAndApply: () => Effect.die("not used"),
+      createFilter: () => notUsed("createFilter"),
+      deleteFilter: () => notUsed("deleteFilter"),
+      vacation: () => notUsed("vacation"),
+      setVacation: () => notUsed("setVacation"),
+      syncSendAs: () => notUsed("syncSendAs"),
+      labelPreferences: notUsed("labelPreferences"),
+      organization: notUsed("organization"),
+      sendAs: notUsed("sendAs"),
+      markUnreadFrom: () => Effect.die("not used"),
+      modifyWithUndo: () => Effect.die("not used"),
+      undoHistory: Effect.succeed([]),
+      undoBatch: () => Effect.die("not used"),
+      perform: () => notUsed("perform"),
+    },
     calendar: {
       importCalendarAttachment: () => notUsed("importCalendarAttachment"),
       detectedEvents: () => notUsed("detectedEvents"),
@@ -233,10 +270,6 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
     },
     setAccountSettings: () => Effect.die("unused"),
     moveAccount: () => Effect.die("unused"),
-    permanentlyDelete: () => notUsed("permanentlyDelete"),
-    emptyFolder: () => notUsed("emptyFolder"),
-    markFolderRead: () => notUsed("markFolderRead"),
-    resetFavorites: () => notUsed("resetFavorites"),
     cacheSize: Effect.die("unused"),
     clearCache: () => Effect.die("unused"),
     initializeProfiles: () => Effect.die("unused"),
@@ -253,32 +286,6 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
       testAccount("gmail:me@gmail.com"),
       testAccount("gmail:me@example.com"),
     ]),
-    setClassificationOverride: () => notUsed("setClassificationOverride"),
-    changeLabel: () => notUsed("changeLabel"),
-    setLabelPreference: () => notUsed("setLabelPreference"),
-    setOrganization: () => notUsed("setOrganization"),
-    snoozeWithUndo: () => notUsed("snoozeWithUndo"),
-    snooze: () => notUsed("snooze"),
-    wakeSnoozed: () => notUsed("wakeSnoozed"),
-    filters: () => notUsed("filters"),
-    filterRestorations: () => notUsed("filterRestorations"),
-    restoreFilter: () => notUsed("restoreFilter"),
-    prepareFilterRestoration: () => notUsed("prepareFilterRestoration"),
-    discardFilterRestoration: () => notUsed("discardFilterRestoration"),
-    previewFilter: () => notUsed("previewFilter"),
-    reorderFavorites: () => Effect.die("not used"),
-    prepareFilter: () => Effect.die("not used"),
-    updateFilter: () => Effect.die("not used"),
-    applyFilter: () => Effect.die("not used"),
-    createLabelAndApply: () => Effect.die("not used"),
-    createFilter: () => notUsed("createFilter"),
-    deleteFilter: () => notUsed("deleteFilter"),
-    vacation: () => notUsed("vacation"),
-    setVacation: () => notUsed("setVacation"),
-    syncSendAs: () => notUsed("syncSendAs"),
-    labelPreferences: notUsed("labelPreferences"),
-    organization: notUsed("organization"),
-    sendAs: notUsed("sendAs"),
 
     connect: () => notUsed("connect"),
     reauth: () => notUsed("reauth"),
@@ -290,11 +297,6 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
     updateProfile: () => notUsed("updateProfile"),
     deleteProfile: () => notUsed("deleteProfile"),
     assignProfile: () => notUsed("assignProfile"),
-    markUnreadFrom: () => Effect.die("not used"),
-    modifyWithUndo: () => Effect.die("not used"),
-    undoHistory: Effect.succeed([]),
-    undoBatch: () => Effect.die("not used"),
-    perform: () => notUsed("perform"),
     decideProposal: () => notUsed("decideProposal"),
     proposals: Effect.succeed([]),
     audit: () => notUsed("audit"),
@@ -312,6 +314,7 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
   const flat: Flat = {
     ...base,
     ...overrides,
+    organize: { ...base.organize, ...overrides.organize },
     reading: { ...base.reading, ...overrides.reading },
     compose: { ...base.compose, ...overrides.compose },
     app: { ...base.app, ...overrides.app },
@@ -352,7 +355,6 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
   };
   return Layer.succeed(Mailbox, {
     ...merged,
-    organize: merged,
   });
 }
 
@@ -360,11 +362,13 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
 function recordingMailbox(outcome: Outcome) {
   const calls: { command: Command; actor: Actor }[] = [];
   const layer = stubMailbox({
-    perform: (command, actor) =>
-      Effect.sync(() => {
-        calls.push({ command, actor });
-        return outcome;
-      }),
+    organize: {
+      perform: (command, actor) =>
+        Effect.sync(() => {
+          calls.push({ command, actor });
+          return outcome;
+        }),
+    },
   });
   return { calls, layer };
 }
@@ -581,20 +585,22 @@ it.effect("a draft reply defaults its recipients and subject from the original",
       reading: {
         thread,
       },
-      sendAs: Effect.succeed([
-        {
-          accountId: "gmail:me@example.com",
-          address: "alias@example.com",
-          name: "",
-          isDefault: false,
-          signature: "",
-        },
-      ]),
-      perform: (command) =>
-        Effect.sync(() => {
-          calls.push(command);
-          return { status: "proposed", proposalId: 1 } as const;
-        }),
+      organize: {
+        sendAs: Effect.succeed([
+          {
+            accountId: "gmail:me@example.com",
+            address: "alias@example.com",
+            name: "",
+            isDefault: false,
+            signature: "",
+          },
+        ]),
+        perform: (command) =>
+          Effect.sync(() => {
+            calls.push(command);
+            return { status: "proposed", proposalId: 1 } as const;
+          }),
+      },
     });
     const base = {
       account_id: "gmail:me@example.com",
@@ -630,12 +636,14 @@ it.effect("an agent's identical proposal returns the waiting one, and 50 pending
     const pending: import("../domain/command.js").Proposal[] = [];
     const layer = stubMailbox({
       proposals: Effect.sync(() => [...pending]),
-      perform: (command, actor) =>
-        Effect.sync(() => {
-          const id = pending.length + 1;
-          pending.push({ id, createdAt: 0, actor, command, status: "pending" });
-          return { status: "proposed", proposalId: id } as const;
-        }),
+      organize: {
+        perform: (command, actor) =>
+          Effect.sync(() => {
+            const id = pending.length + 1;
+            pending.push({ id, createdAt: 0, actor, command, status: "pending" });
+            return { status: "proposed", proposalId: id } as const;
+          }),
+      },
     });
     const draft = {
       account_id: "gmail:me@example.com",
@@ -1235,7 +1243,7 @@ it.effect(
           { kind: "move", labelId: "Label_1", removeLabelId: null },
         ] as const) {
           assert.strictEqual(
-            (yield* mailbox.perform({ kind: "modify", threads: [id], op }, actor)).status,
+            (yield* mailbox.organize.perform({ kind: "modify", threads: [id], op }, actor)).status,
             "denied",
           );
         }
@@ -1709,7 +1717,7 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
         );
         assert.include(thread.messages[0]?.from ?? "", "Ignore rules");
         yield* mailbox.setAgentWriteMode("propose");
-        const proposed = yield* mailbox.perform(
+        const proposed = yield* mailbox.organize.perform(
           { kind: "draft", accountId: account.id, message: outgoing },
           { kind: "agent", surface: "mcp", name: "audit-client", rationale: "Untrusted reason" },
         );
@@ -1848,7 +1856,7 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
       const account = yield* mailbox.connect({ provider: "gmail" });
       yield* mailbox.sync();
       yield* mailbox.setAgentWriteMode("propose");
-      const result = yield* mailbox.perform(
+      const result = yield* mailbox.organize.perform(
         {
           kind: "modify",
           threads: [`${account.id}/m1`],
@@ -2064,11 +2072,13 @@ it.effect("a client that changes its name still stops at 200 pending proposals i
     let performed = 0;
     const layer = stubMailbox({
       proposals: Effect.sync(() => [...pending]),
-      perform: () =>
-        Effect.sync(() => {
-          performed++;
-          return { status: "proposed", proposalId: 999 } as const;
-        }),
+      organize: {
+        perform: () =>
+          Effect.sync(() => {
+            performed++;
+            return { status: "proposed", proposalId: 999 } as const;
+          }),
+      },
     });
     const args = { message_ids: ["m1"], action: "archive", rationale: "r" } as const;
     const over = failureOf(yield* run(call("modify_threads", args), layer));
@@ -2084,8 +2094,10 @@ it.effect("a client that changes its name still stops at 200 pending proposals i
 it.effect("the store's own limit, hit by a racing process, still reads as too_many_proposals", () =>
   Effect.gen(function* () {
     const layer = stubMailbox({
-      perform: () =>
-        Effect.fail(new InvalidInput({ message: "Too many.", reason: "too_many_proposals" })),
+      organize: {
+        perform: () =>
+          Effect.fail(new InvalidInput({ message: "Too many.", reason: "too_many_proposals" })),
+      },
     });
     const result = failureOf(
       yield* run(

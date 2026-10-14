@@ -205,7 +205,7 @@ it.effect("core counts sends blocked at the provider and releases the count afte
     yield* Effect.gen(function* () {
       const mailbox = yield* Mailbox;
       const account = yield* mailbox.connect({ provider: "gmail" });
-      const sending = yield* mailbox
+      const sending = yield* mailbox.organize
         .perform(
           { kind: "send", accountId: account.id, message: outgoing },
           { kind: "user", surface: "app" },

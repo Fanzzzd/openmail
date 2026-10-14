@@ -71,7 +71,7 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
     () =>
       withMailbox((m, server) =>
         Effect.gen(function* () {
-          yield* m.snooze(["gmail:me@gmail.com/m1"], 10_000);
+          yield* m.organize.snooze(["gmail:me@gmail.com/m1"], 10_000);
           assert.strictEqual(server.pushed.length, 0); // Hiding is local; Gmail has no snooze API.
           yield* m.sync();
           assert.strictEqual((yield* m.reading.threads({ mailbox: "inbox" })).length, 1);
@@ -80,13 +80,13 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
           yield* m.sync();
           assert.strictEqual((yield* m.reading.threads({ mailbox: "inbox" })).length, 1);
           yield* TestClock.adjust("10 seconds");
-          yield* m.wakeSnoozed();
+          yield* m.organize.wakeSnoozed();
           const inbox = yield* m.reading.threads({ mailbox: "inbox" });
           assert.strictEqual(inbox[0]?.threadId, "t-m1");
           assert.strictEqual(inbox[0]?.isUnread, true);
           assert.deepStrictEqual(yield* m.reading.threads({ mailbox: "snoozed" }), []);
           assert.strictEqual(server.pushed.length, 2);
-          yield* m.wakeSnoozed();
+          yield* m.organize.wakeSnoozed();
           assert.strictEqual(server.pushed.length, 2);
           yield* m.sync();
           assert.strictEqual((yield* m.reading.threads({ mailbox: "inbox" }))[0]?.isUnread, true);
@@ -107,12 +107,12 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
       yield* store.upsertMessage(account.id, incoming("m1"));
       yield* Effect.gen(function* () {
         const m = yield* Mailbox;
-        yield* m.snooze([`${account.id}/m1`], 1000);
+        yield* m.organize.snooze([`${account.id}/m1`], 1000);
       }).pipe(Effect.provide(MailboxLive({ backgroundFlush: false })));
       yield* TestClock.adjust("2 seconds");
       yield* Effect.gen(function* () {
         const m = yield* Mailbox;
-        yield* m.wakeSnoozed();
+        yield* m.organize.wakeSnoozed();
         const inbox = yield* m.reading.threads({ mailbox: "inbox" });
         assert.strictEqual(inbox.length, 1);
         assert.strictEqual(inbox[0]?.isUnread, true);
@@ -123,10 +123,10 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
   it.effect("offline wake does not lose unread or inbox state on stale sync", () =>
     withMailbox((m, server) =>
       Effect.gen(function* () {
-        yield* m.snooze(["gmail:me@gmail.com/m1"], 1000);
+        yield* m.organize.snooze(["gmail:me@gmail.com/m1"], 1000);
         yield* TestClock.adjust("2 seconds");
         server.failNext = new ProviderError({ message: "offline" });
-        yield* m.wakeSnoozed();
+        yield* m.organize.wakeSnoozed();
         assert.strictEqual(server.pushed.length, 0); // The dependent move waits for the failed unread op.
         assert.strictEqual(
           (yield* m.reading.threads({ mailbox: "inbox" })).find(
@@ -146,27 +146,29 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
     withMailbox((m) =>
       Effect.gen(function* () {
         const id = "gmail:me@gmail.com";
-        yield* m.changeLabel(id, { kind: "create", name: "Customers" });
+        yield* m.organize.changeLabel(id, { kind: "create", name: "Customers" });
         const [label] = yield* m.reading.labels([id]);
         assert.ok(label);
-        yield* m.changeLabel(id, { kind: "rename", id: label.id, name: "Clients" });
-        yield* m.changeLabel(id, { kind: "color", id: label.id, color: "#4986e7" });
-        yield* m.setLabelPreference({
+        yield* m.organize.changeLabel(id, { kind: "rename", id: label.id, name: "Clients" });
+        yield* m.organize.changeLabel(id, { kind: "color", id: label.id, color: "#4986e7" });
+        yield* m.organize.setLabelPreference({
           accountId: id,
           id: label.id,
           visible: false,
           favorite: true,
           color: null,
         });
-        yield* m.setOrganization({ accountId: id, categories: false });
+        yield* m.organize.setOrganization({ accountId: id, categories: false });
         yield* m.sync();
         assert.strictEqual((yield* m.reading.labels([id]))[0]?.name, "Clients");
         assert.strictEqual((yield* m.reading.labels([id]))[0]?.color, "#4986e7");
-        assert.strictEqual((yield* m.labelPreferences)[0]?.favorite, true);
-        assert.strictEqual((yield* m.organization)[0]?.categories, false);
-        yield* m.changeLabel(id, { kind: "delete", id: label.id });
+        assert.strictEqual((yield* m.organize.labelPreferences)[0]?.favorite, true);
+        assert.strictEqual((yield* m.organize.organization)[0]?.categories, false);
+        yield* m.organize.changeLabel(id, { kind: "delete", id: label.id });
         assert.deepStrictEqual(yield* m.reading.labels([id]), []);
-        const exit = yield* Effect.exit(m.changeLabel(id, { kind: "delete", id: "INBOX" }));
+        const exit = yield* Effect.exit(
+          m.organize.changeLabel(id, { kind: "delete", id: "INBOX" }),
+        );
         assert.strictEqual(exit._tag, "Failure");
       }),
     ),
@@ -184,13 +186,13 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
             criteria: { ...EMPTY_FILTER.criteria, from: "alice@example.com" },
             action: { ...EMPTY_FILTER.action, markRead: true },
           };
-          assert.strictEqual((yield* m.previewFilter(id, input.criteria)).length, 2);
+          assert.strictEqual((yield* m.organize.previewFilter(id, input.criteria)).length, 2);
           assert.strictEqual(server.searched.length, 1);
-          const prepared = yield* m.prepareFilter(id, input);
-          const filter = yield* m.createFilter(id, input, prepared.token);
-          assert.strictEqual((yield* m.filters(id))[0]?.id, filter.id);
-          yield* m.deleteFilter(id, filter.id, true);
-          assert.deepStrictEqual(yield* m.filters(id), []);
+          const prepared = yield* m.organize.prepareFilter(id, input);
+          const filter = yield* m.organize.createFilter(id, input, prepared.token);
+          assert.strictEqual((yield* m.organize.filters(id))[0]?.id, filter.id);
+          yield* m.organize.deleteFilter(id, filter.id, true);
+          assert.deepStrictEqual(yield* m.organize.filters(id), []);
           const vacation = {
             ...EMPTY_VACATION,
             enabled: true,
@@ -200,14 +202,14 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
             body: "Back tomorrow",
             contactsOnly: true,
           };
-          yield* m.setVacation(id, vacation);
-          assert.deepStrictEqual(yield* m.vacation(id), vacation);
+          yield* m.organize.setVacation(id, vacation);
+          assert.deepStrictEqual(yield* m.organize.vacation(id), vacation);
           assert.strictEqual(
-            (yield* Effect.exit(m.createFilter(id, EMPTY_FILTER)))._tag,
+            (yield* Effect.exit(m.organize.createFilter(id, EMPTY_FILTER)))._tag,
             "Failure",
           );
           assert.strictEqual(
-            (yield* Effect.exit(m.setVacation(id, { ...vacation, end: 500 })))._tag,
+            (yield* Effect.exit(m.organize.setVacation(id, { ...vacation, end: 500 })))._tag,
             "Failure",
           );
         }),
@@ -229,7 +231,7 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
               signature: "Gmail signature",
             },
           ];
-          yield* m.syncSendAs(id);
+          yield* m.organize.syncSendAs(id);
           assert.strictEqual((yield* m.compose.signatures).length, 2);
           yield* m.compose.setSignature({
             address: "alias@example.com",
@@ -250,14 +252,14 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
             text: "Hello",
             attachments: [],
           };
-          yield* m.perform(
+          yield* m.organize.perform(
             { kind: "send", accountId: id, message },
             { kind: "user", surface: "app" },
           );
           assert.strictEqual(server.sent[0]?.message.from?.address, "alias@example.com");
           assert.strictEqual(
             (yield* Effect.exit(
-              m.perform(
+              m.organize.perform(
                 {
                   kind: "send",
                   accountId: id,
@@ -269,7 +271,7 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
             "Failure",
           );
           server.aliases = [];
-          yield* m.syncSendAs(id);
+          yield* m.organize.syncSendAs(id);
           assert.strictEqual((yield* m.compose.signatures).length, 1);
         }),
       ),
@@ -292,11 +294,11 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
           message: "Missing settings scope",
         });
         assert.strictEqual(
-          (yield* m.filters("gmail:me@gmail.com").pipe(Effect.flip))._tag,
+          (yield* m.organize.filters("gmail:me@gmail.com").pipe(Effect.flip))._tag,
           "SettingsScopeMissing",
         );
         assert.strictEqual(
-          (yield* m.vacation("gmail:me@gmail.com").pipe(Effect.flip))._tag,
+          (yield* m.organize.vacation("gmail:me@gmail.com").pipe(Effect.flip))._tag,
           "SettingsScopeMissing",
         );
         const sync = yield* m.sync();
@@ -322,7 +324,7 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
         const m = yield* Mailbox;
         const account = yield* store.upsertAccount(provider, server.email);
         for (const message of members) yield* store.upsertMessage(account.id, message);
-        yield* m.snooze([`${account.id}/inbox`], 1000);
+        yield* m.organize.snooze([`${account.id}/inbox`], 1000);
         for (const message of members.slice(1)) {
           assert.deepStrictEqual(
             (yield* store.getMessage(`${account.id}/${message.providerId}`)).labels,
@@ -335,7 +337,7 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
           );
         }
         yield* TestClock.adjust("2 seconds");
-        yield* m.wakeSnoozed();
+        yield* m.organize.wakeSnoozed();
         assert.deepStrictEqual(
           server.pushed.map((p) => p.providerId),
           ["inbox", "inbox"],
@@ -364,7 +366,7 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
   it.effect("read-only listing never wakes or pushes an overdue reminder", () =>
     withMailbox((m, server) =>
       Effect.gen(function* () {
-        yield* m.snooze(["gmail:me@gmail.com/m1"], 1000);
+        yield* m.organize.snooze(["gmail:me@gmail.com/m1"], 1000);
         yield* TestClock.adjust("2 seconds");
         yield* m.reading.threads({ mailbox: "inbox" });
         assert.strictEqual(server.pushed.length, 0);
@@ -382,7 +384,7 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
       Effect.gen(function* () {
         server.searchResults = [incoming("m1"), incoming("remote")];
         const query = "-from:spam@example.com OR {from:alice to:me} in:anywhere larger:1";
-        const preview = yield* m.previewFilter("gmail:me@gmail.com", {
+        const preview = yield* m.organize.previewFilter("gmail:me@gmail.com", {
           ...EMPTY_FILTER.criteria,
           query,
         });
@@ -400,11 +402,11 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
           criteria: { ...EMPTY_FILTER.criteria, query: "-from:spam OR from:alice" },
           action: { ...EMPTY_FILTER.action, trash: true },
         };
-        const exit = yield* Effect.exit(m.createFilter("gmail:me@gmail.com", filter));
+        const exit = yield* Effect.exit(m.organize.createFilter("gmail:me@gmail.com", filter));
         assert.strictEqual(exit._tag, "Failure");
         assert.strictEqual(server.filters.length, 0);
-        const prepared = yield* m.prepareFilter("gmail:me@gmail.com", filter);
-        yield* m.createFilter(
+        const prepared = yield* m.organize.prepareFilter("gmail:me@gmail.com", filter);
+        yield* m.organize.createFilter(
           "gmail:me@gmail.com",
           { ...filter, queryDeletionConfirmed: true },
           prepared.token,
@@ -418,7 +420,7 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
     withMailbox((m, server) =>
       Effect.gen(function* () {
         server.failNext = new ProviderError({ message: "offline" });
-        yield* m.perform(
+        yield* m.organize.perform(
           { kind: "modify", threads: ["gmail:me@gmail.com/m1"], op: { kind: "archive" } },
           { kind: "user", surface: "app" },
         );
@@ -440,14 +442,14 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
         const m = yield* Mailbox;
         const account = yield* m.connect({ provider: "gmail" });
         yield* m.sync();
-        yield* m.snooze([`${account.id}/reply`], 1000);
+        yield* m.organize.snooze([`${account.id}/reply`], 1000);
         let members = yield* m.reading.thread(`${account.id}/reply`);
         assert.ok(members.find((x) => x.id.endsWith("/original"))?.labels.includes("SNOOZED"));
         assert.deepStrictEqual(members.find((x) => x.id.endsWith("/reply"))?.labels, ["SENT"]);
         yield* m.sync();
         assert.strictEqual((yield* m.reading.threads({ mailbox: "snoozed" })).length, 1);
         yield* TestClock.adjust("2 seconds");
-        yield* m.wakeSnoozed();
+        yield* m.organize.wakeSnoozed();
         assert.deepStrictEqual(
           server.pushed.map((p) => p.providerId),
           ["original", "original"],
@@ -477,28 +479,28 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
     return Effect.gen(function* () {
       const m = yield* Mailbox;
       const account = yield* m.connect({ provider: "outlook" });
-      yield* m.changeLabel(account.id, { kind: "create", name: "Test" });
+      yield* m.organize.changeLabel(account.id, { kind: "create", name: "Test" });
       const folder = (yield* m.reading.labels([account.id])).find((l) => l.name === "Test");
       assert.ok(folder);
-      yield* m.changeLabel(account.id, { kind: "color", id: folder.id, color: "#b99aff" });
+      yield* m.organize.changeLabel(account.id, { kind: "color", id: folder.id, color: "#b99aff" });
       assert.strictEqual(colorCalls, 0);
       assert.strictEqual(
-        (yield* m.labelPreferences).find((p) => p.id === folder.id)?.color,
+        (yield* m.organize.labelPreferences).find((p) => p.id === folder.id)?.color,
         "#b99aff",
       );
-      yield* m.changeLabel(account.id, { kind: "rename", id: folder.id, name: "Renamed" });
+      yield* m.organize.changeLabel(account.id, { kind: "rename", id: folder.id, name: "Renamed" });
       yield* m.sync();
       assert.strictEqual(
         (yield* m.reading.labels([account.id])).find((l) => l.id === folder.id)?.name,
         "Renamed",
       );
       assert.strictEqual(
-        (yield* m.labelPreferences).find((p) => p.id === folder.id)?.color,
+        (yield* m.organize.labelPreferences).find((p) => p.id === folder.id)?.color,
         "#b99aff",
       );
-      yield* m.changeLabel(account.id, { kind: "delete", id: folder.id });
+      yield* m.organize.changeLabel(account.id, { kind: "delete", id: folder.id });
       assert.ok(!(yield* m.reading.labels([account.id])).some((l) => l.id === folder.id));
-      assert.ok(!(yield* m.labelPreferences).some((p) => p.id === folder.id));
+      assert.ok(!(yield* m.organize.labelPreferences).some((p) => p.id === folder.id));
     }).pipe(
       Effect.provide(
         MailboxLive({ backgroundFlush: false }).pipe(
@@ -554,12 +556,12 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
         const mailbox = yield* Mailbox;
         const account = yield* mailbox.connect({ provider: "gmail" });
         yield* mailbox.sync();
-        yield* mailbox.setOrganization({
+        yield* mailbox.organize.setOrganization({
           accountId: account.id,
           categories: true,
           selectedCategories: ["CATEGORY_PERSONAL", "CATEGORY_UPDATES"],
         });
-        assert.deepStrictEqual((yield* mailbox.organization)[0]?.selectedCategories, [
+        assert.deepStrictEqual((yield* mailbox.organize.organization)[0]?.selectedCategories, [
           "CATEGORY_PERSONAL",
           "CATEGORY_UPDATES",
         ]);
@@ -605,13 +607,13 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
           const account = yield* mailbox.connect({ provider });
           yield* mailbox.sync(account.id);
           const id = `${account.id}/m`;
-          yield* mailbox.modifyWithUndo([id], { kind: "important", value: true });
+          yield* mailbox.organize.modifyWithUndo([id], { kind: "important", value: true });
           assert.strictEqual(
             (yield* mailbox.reading.threads({ accountIds: [account.id], search: "is:important" }))
               .length,
             1,
           );
-          yield* mailbox.modifyWithUndo([id], { kind: "important", value: false });
+          yield* mailbox.organize.modifyWithUndo([id], { kind: "important", value: false });
           assert.strictEqual(
             (yield* mailbox.reading.threads({ accountIds: [account.id], search: "is:important" }))
               .length,
@@ -635,7 +637,7 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
         const mailbox = yield* Mailbox;
         const account = yield* mailbox.connect({ provider: "gmail" });
         yield* mailbox.sync();
-        yield* mailbox.changeLabel(account.id, { kind: "create", name: "Work" });
+        yield* mailbox.organize.changeLabel(account.id, { kind: "create", name: "Work" });
         const label = (yield* mailbox.reading.labels([account.id]))[0];
         assert.ok(label);
         const input = {
@@ -654,9 +656,9 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
             category: "CATEGORY_UPDATES" as const,
           },
         };
-        const preview = yield* mailbox.prepareFilter(account.id, input);
+        const preview = yield* mailbox.organize.prepareFilter(account.id, input);
         assert.strictEqual(preview.matches.length, 1);
-        yield* mailbox.applyFilter(account.id, input, preview.token);
+        yield* mailbox.organize.applyFilter(account.id, input, preview.token);
         const [message] = yield* mailbox.reading.thread(`${account.id}/a`);
         assert.ok(message?.labels.includes("CATEGORY_UPDATES"));
         assert.ok(!message?.labels.includes("IMPORTANT"));
@@ -797,15 +799,16 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
           action: { ...EMPTY_FILTER.action, markRead: true },
         };
         assert.strictEqual(
-          (yield* mailbox.prepareFilter(account.id, input).pipe(Effect.result))._tag,
+          (yield* mailbox.organize.prepareFilter(account.id, input).pipe(Effect.result))._tag,
           "Failure",
         );
         assert.strictEqual(
-          (yield* mailbox.createFilter(account.id, input).pipe(Effect.result))._tag,
+          (yield* mailbox.organize.createFilter(account.id, input).pipe(Effect.result))._tag,
           "Failure",
         );
         assert.strictEqual(
-          (yield* mailbox.previewFilter(account.id, input.criteria).pipe(Effect.result))._tag,
+          (yield* mailbox.organize.previewFilter(account.id, input.criteria).pipe(Effect.result))
+            ._tag,
           "Failure",
         );
         assert.deepStrictEqual(server.filters, []);

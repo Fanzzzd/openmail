@@ -203,7 +203,7 @@ import type { IncomingMessage } from "../domain/message.js";
           attachments: [],
         };
         yield* store.putDraft({ id: "draft", accountId: account.id, message });
-        yield* mailbox.perform(
+        yield* mailbox.organize.perform(
           { kind: "send", accountId: account.id, draftId: "draft", message },
           { kind: "user", surface: "app" },
         );
@@ -443,7 +443,7 @@ import type { IncomingMessage } from "../domain/message.js";
             attachments: [],
           };
           yield* store.putDraft({ id: "original", accountId: account.id, message });
-          yield* mailbox.perform(
+          yield* mailbox.organize.perform(
             { kind: "send", accountId: account.id, draftId: "original", message },
             { kind: "user", surface: "app" },
           );
@@ -605,14 +605,14 @@ import type { IncomingMessage } from "../domain/message.js";
           message: outgoing,
         } as const;
         assert.strictEqual(
-          (yield* mailbox.perform(command, user).pipe(Effect.flip))._tag,
+          (yield* mailbox.organize.perform(command, user).pipe(Effect.flip))._tag,
           "SendUncertain",
         );
-        const blocked = yield* mailbox.perform(command, user).pipe(Effect.result);
+        const blocked = yield* mailbox.organize.perform(command, user).pipe(Effect.result);
         assert.strictEqual(blocked._tag, "Failure");
         assert.strictEqual(submissions, 1);
         assert.isTrue(yield* store.sendUncertain("draft:unknown"));
-        yield* mailbox.perform({ ...command, confirmResend: true }, user);
+        yield* mailbox.organize.perform({ ...command, confirmResend: true }, user);
         assert.strictEqual(submissions, 2);
         assert.isFalse(yield* store.sendUncertain("draft:unknown"));
       }),

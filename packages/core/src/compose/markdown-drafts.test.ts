@@ -189,7 +189,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
           const opened = yield* mailbox.compose.openDraft(`${accountId}/${secondRemote}`);
           assert.strictEqual(opened.message.markdown, true);
           assert.strictEqual(opened.message.text, source.replace("bold", "edited"));
-          yield* mailbox.perform(
+          yield* mailbox.organize.perform(
             { kind: "send", accountId, message: opened.message },
             { kind: "user", surface: "app" },
           );

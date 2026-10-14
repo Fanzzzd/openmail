@@ -178,7 +178,7 @@ for (const mode of ["reply", "forward"] as const) {
           } else {
             yield* action === "discard"
               ? mailbox.compose.discardDraft(input.id)
-              : mailbox.perform(
+              : mailbox.organize.perform(
                   { kind: "send", accountId: saved.id, draftId: input.id, message: input.message },
                   { kind: "user", surface: "app" },
                 );
@@ -258,7 +258,7 @@ for (const mode of ["reply", "forward"] as const) {
           cleanup = true;
           yield* action === "discard"
             ? mailbox.compose.discardDraft(input.id)
-            : mailbox.perform(
+            : mailbox.organize.perform(
                 { kind: "send", accountId: saved.id, draftId: input.id, message: input.message },
                 { kind: "user", surface: "app" },
               );

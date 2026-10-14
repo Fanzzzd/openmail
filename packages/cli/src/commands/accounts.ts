@@ -143,7 +143,7 @@ const accountsRemove = Command.make(
   { id: Argument.String("account-id") },
   Effect.fn(function* ({ id }) {
     const mailbox = yield* Mailbox;
-    const outcome = yield* mailbox.perform({ kind: "removeAccount", accountId: id }, CLI);
+    const outcome = yield* mailbox.organize.perform({ kind: "removeAccount", accountId: id }, CLI);
     yield* Console.log(
       outcome.status === "applied" && outcome.warning === "keychain-item-left"
         ? `Removed ${id} and its local mail. The keychain refused to delete its stored sign-in: open Keychain Access and delete the "openmail" item for ${id}.`

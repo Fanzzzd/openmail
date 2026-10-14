@@ -184,7 +184,7 @@ export function makeFolderMailbox(
       }
       return removed;
     });
-  const permanentlyDelete: Mailbox["Service"]["permanentlyDelete"] = (
+  const permanentlyDelete: Mailbox["Service"]["organize"]["permanentlyDelete"] = (
     threads,
     flat,
     folder,
@@ -313,7 +313,7 @@ export function makeFolderMailbox(
       }
       return count;
     });
-  const resetFavorites: Mailbox["Service"]["resetFavorites"] = (accountIds) =>
+  const resetFavorites: Mailbox["Service"]["organize"]["resetFavorites"] = (accountIds) =>
     store
       .transaction(
         Effect.gen(function* () {

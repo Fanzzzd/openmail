@@ -248,7 +248,7 @@ export async function flow(
   if (options.agentDraft) {
     await run(m.setAgentWriteMode("propose"));
     const outcome = await run(
-      m.perform(
+      m.organize.perform(
         { kind: "draft", accountId: account.id, message: options.agentDraft.message },
         {
           kind: "agent",
@@ -364,7 +364,7 @@ export async function flow(
       BecomeDefaultMailClient: unsupported,
       Connect: ({ input }) => m.connect(input),
       SetClassificationOverride: ({ messageId, classifyAs }) =>
-        m.setClassificationOverride(messageId, classifyAs),
+        m.organize.setClassificationOverride(messageId, classifyAs),
       Reauth: ({ accountId, feature }) => m.reauth(accountId, feature),
       ImapPresets: () => Effect.succeed(IMAP_PRESETS),
       AppleContactsStatus: () => Effect.succeed({ status: "off", revision: 0 }),

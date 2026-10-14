@@ -346,11 +346,11 @@ import type { OutgoingMessage } from "../domain/changes.js";
               { kind: "read", value: true },
               { kind: "star", value: true },
             ] as const) {
-              const result = yield* mailbox.modifyWithUndo([row.id], op);
-              yield* mailbox.undoBatch(result.undoId);
+              const result = yield* mailbox.organize.modifyWithUndo([row.id], op);
+              yield* mailbox.organize.undoBatch(result.undoId);
             }
-            const snooze = yield* mailbox.snoozeWithUndo([row.id], Date.now() + 86400000);
-            yield* mailbox.undoBatch(snooze.undoId);
+            const snooze = yield* mailbox.organize.snoozeWithUndo([row.id], Date.now() + 86400000);
+            yield* mailbox.organize.undoBatch(snooze.undoId);
             expect((yield* mailbox.compose.suggestContacts("alice"))[0]?.address).toBe(
               "alice@example.test",
             );

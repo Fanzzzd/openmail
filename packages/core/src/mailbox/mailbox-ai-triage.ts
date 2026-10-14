@@ -96,13 +96,13 @@ export function makeAiTriage(
         const action = row.action;
         if (action.kind === "snooze") {
           const now = yield* Clock.currentTimeMillis;
-          yield* mailbox().snoozeWithUndo([id], now + action.hours * 3_600_000);
+          yield* mailbox().organize.snoozeWithUndo([id], now + action.hours * 3_600_000);
         } else {
           if (action.kind === "label" && !(yield* validLabel(value.accountId, action.labelId)))
             return yield* new InvalidInput({
               message: "The assistant can only add user labels in Gmail.",
             });
-          const outcome = yield* mailbox().perform(
+          const outcome = yield* mailbox().organize.perform(
             {
               kind: "modify",
               threads: [id],

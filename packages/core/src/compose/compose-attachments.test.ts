@@ -129,7 +129,7 @@ for (const provider of ["gmail", "imap", "outlook"] as const) {
           const reopened = yield* mailbox.compose.openDraft(saved.id);
           assert.deepStrictEqual(reopened.message, saved.message);
           assert.strictEqual((yield* mailbox.app.prefs).quoteSelection, "always");
-          yield* mailbox.perform(
+          yield* mailbox.organize.perform(
             { kind: "send", accountId: saved.accountId, message: reopened.message },
             { kind: "user", surface: "app" },
           );
@@ -139,7 +139,7 @@ for (const provider of ["gmail", "imap", "outlook"] as const) {
           );
           assert.include(server.sent[0]?.message.html ?? "", "<table>");
           assert.notInclude(server.sent[0]?.message.html ?? "", "script");
-          yield* mailbox.perform(
+          yield* mailbox.organize.perform(
             {
               kind: "send",
               accountId: saved.accountId,
@@ -148,7 +148,7 @@ for (const provider of ["gmail", "imap", "outlook"] as const) {
             { kind: "user", surface: "app" },
           );
           assert.strictEqual(server.sent[1]?.message.attachments.length, 2);
-          yield* mailbox.perform(
+          yield* mailbox.organize.perform(
             {
               kind: "send",
               accountId: saved.accountId,
@@ -171,7 +171,7 @@ it.effect(
       const account = yield* mailbox.connect({ provider: "gmail" });
       yield* mailbox.sync();
       const error = yield* Effect.flip(
-        mailbox.perform(
+        mailbox.organize.perform(
           {
             kind: "send",
             accountId: account.id,

@@ -82,7 +82,7 @@ for (const provider of PROVIDERS)
         const account = yield* store.upsertAccount(provider, "me@example.test");
         const id = provider === "imap" ? "1:1:INBOX" : "one";
         yield* store.upsertMessage(account.id, incoming(id));
-        const result = yield* mailbox
+        const result = yield* mailbox.organize
           .modifyWithUndo([`${account.id}/${id}`], op)
           .pipe(Effect.result);
         const rejected =
@@ -104,7 +104,10 @@ for (const provider of PROVIDERS)
         const account = yield* store.upsertAccount(provider, "me@example.test");
         const id = provider === "imap" ? "1:1:INBOX" : "one";
         yield* store.upsertMessage(account.id, incoming(id));
-        yield* mailbox.modifyWithUndo([`${account.id}/${id}`], { kind: "important", value: true });
+        yield* mailbox.organize.modifyWithUndo([`${account.id}/${id}`], {
+          kind: "important",
+          value: true,
+        });
         const message = yield* store.getMessage(`${account.id}/${id}`);
         const writes = supportsOp(providerCapabilities(provider), "important");
         assert.strictEqual(message.labels.includes("IMPORTANT"), writes);
@@ -124,7 +127,7 @@ for (const provider of PROVIDERS)
         const id = provider === "imap" ? "1:1:INBOX" : "one";
         yield* store.upsertMessage(account.id, incoming(id));
         const op: MailOp = { kind: "label", labelId: "Work", value: true };
-        yield* mailbox.modifyWithUndo([`${account.id}/${id}`], op);
+        yield* mailbox.organize.modifyWithUndo([`${account.id}/${id}`], op);
         const { labels } = yield* store.getMessage(`${account.id}/${id}`);
         assert.include(labels, "Work");
         assert.strictEqual(

@@ -533,11 +533,14 @@ it.effect("queued ops wait out an outage in order and retry at once on reconnect
     const saved = yield* store.upsertAccount("gmail", providers.gmail.account.email);
     yield* store.upsertMessage(saved.id, incoming("one", { labels: ["INBOX", "UNREAD"] }));
     const thread = `${saved.id}/one`;
-    yield* mailbox.perform(
+    yield* mailbox.organize.perform(
       { kind: "modify", threads: [thread], op: { kind: "read", value: true } },
       actor,
     );
-    yield* mailbox.perform({ kind: "modify", threads: [thread], op: { kind: "archive" } }, actor);
+    yield* mailbox.organize.perform(
+      { kind: "modify", threads: [thread], op: { kind: "archive" } },
+      actor,
+    );
     assert.deepStrictEqual(
       (yield* store.listPendingOps).map((op) => op.op.kind),
       ["read", "archive"],
@@ -575,7 +578,7 @@ it.effect("a reconnect leaves an op that backs off after a 429 waiting", () => {
     const mailbox = yield* Mailbox;
     const saved = yield* store.upsertAccount("gmail", providers.gmail.account.email);
     yield* store.upsertMessage(saved.id, incoming("one", { labels: ["INBOX"] }));
-    yield* mailbox.perform(
+    yield* mailbox.organize.perform(
       { kind: "modify", threads: [`${saved.id}/one`], op: { kind: "archive" } },
       actor,
     );

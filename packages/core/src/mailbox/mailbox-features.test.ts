@@ -133,7 +133,7 @@ it.effect(
       yield* m.reauth(account.id);
       yield* m.calendar.refreshContacts(account.id);
       assert.strictEqual((yield* m.calendar.contactSync)[0]?.scopeMissing, false);
-      yield* m.perform({ kind: "removeAccount", accountId: account.id }, user);
+      yield* m.organize.perform({ kind: "removeAccount", accountId: account.id }, user);
       assert.deepStrictEqual(yield* m.calendar.contactSync, []);
       assert.deepStrictEqual(yield* m.compose.suggestContacts("updated"), []);
     }).pipe(Effect.provide(TestMailbox({ gmail: server })));

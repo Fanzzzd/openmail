@@ -130,7 +130,7 @@ export const makeToolContext = Effect.gen(function* () {
   const propose = (command: Command, actor: Actor) =>
     Effect.gen(function* () {
       if (actor.kind !== "agent")
-        return yield* mailbox.perform(command, actor).pipe(Effect.mapError(toToolError));
+        return yield* mailbox.organize.perform(command, actor).pipe(Effect.mapError(toToolError));
       const pending = (yield* mailbox.proposals).filter((p) => p.actor.kind === "agent");
       const mine = pending.filter(
         (p) =>
@@ -153,7 +153,7 @@ export const makeToolContext = Effect.gen(function* () {
           `${PENDING_PROPOSAL_TOTAL_LIMIT} AI proposals are already waiting for the person. Nothing was proposed.`,
           REVIEW_PROPOSALS_HINT,
         );
-      return yield* mailbox.perform(command, actor).pipe(Effect.mapError(toToolError));
+      return yield* mailbox.organize.perform(command, actor).pipe(Effect.mapError(toToolError));
     });
 
   const visibleProposals = Effect.gen(function* () {

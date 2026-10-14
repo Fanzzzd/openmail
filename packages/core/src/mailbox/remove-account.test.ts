@@ -54,7 +54,7 @@ it.effect("removal revokes the grant while the token is still stored, then delet
     Effect.gen(function* () {
       const mailbox = yield* Mailbox;
       const account = yield* mailbox.connect({ provider: "gmail" });
-      const outcome = yield* mailbox.perform(
+      const outcome = yield* mailbox.organize.perform(
         { kind: "removeAccount", accountId: account.id },
         user,
       );
@@ -73,7 +73,7 @@ it.effect("a failed revocation is logged with a code and does not block removal"
     Effect.gen(function* () {
       const mailbox = yield* Mailbox;
       const account = yield* mailbox.connect({ provider: "gmail" });
-      const outcome = yield* mailbox.perform(
+      const outcome = yield* mailbox.organize.perform(
         { kind: "removeAccount", accountId: account.id },
         user,
       );
@@ -92,7 +92,7 @@ it.effect("a keychain that refuses deletion still removes the account, audits it
     Effect.gen(function* () {
       const mailbox = yield* Mailbox;
       const account = yield* mailbox.connect({ provider: "gmail" });
-      const outcome = yield* mailbox.perform(
+      const outcome = yield* mailbox.organize.perform(
         { kind: "removeAccount", accountId: account.id },
         user,
       );

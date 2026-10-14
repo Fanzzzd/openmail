@@ -108,7 +108,7 @@ export default function Settings() {
                         void runtime
                           .runPromise(
                             Effect.flatMap(Mailbox, (mailbox) =>
-                              mailbox.perform(
+                              mailbox.organize.perform(
                                 { kind: "removeAccount", accountId: account.id },
                                 { kind: "user", surface: "app" },
                               ),

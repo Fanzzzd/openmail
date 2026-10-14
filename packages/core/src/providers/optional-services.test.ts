@@ -132,7 +132,10 @@ import { GMAIL_PERMANENT_DELETE_SCOPE } from "../domain/folder-actions.js";
             (yield* m.optionalServices(account.id)).map((grant) => grant.state),
             ["notGranted", "notGranted", provider === "outlook" ? "granted" : "notGranted"],
           );
-          assert.strictEqual((yield* m.vacation(account.id).pipe(Effect.result))._tag, "Success");
+          assert.strictEqual(
+            (yield* m.organize.vacation(account.id).pipe(Effect.result))._tag,
+            "Success",
+          );
           server.grantedScopes = [...BASE_SCOPES[provider], ...OPTIONAL_SCOPES[provider].contacts];
           yield* m.reauth(account.id, "contacts");
           assert.strictEqual((yield* m.optionalServices(account.id))[0]?.state, "granted");
@@ -338,13 +341,15 @@ import { GMAIL_PERMANENT_DELETE_SCOPE } from "../domain/folder-actions.js";
                 (contact) => contact.address === "old@example.com",
               ),
             );
-            assert.ok((yield* m.sendAs).some((alias) => alias.address === "alias@example.com"));
+            assert.ok(
+              (yield* m.organize.sendAs).some((alias) => alias.address === "alias@example.com"),
+            );
             assert.strictEqual((yield* m.app.prefs).bodyCacheBytes, 0);
           }).pipe(Effect.provide(layer()));
           yield* Effect.gen(function* () {
             const m = yield* Mailbox;
             assert.ok((yield* m.compose.suggestContacts("old")).length);
-            assert.ok((yield* m.sendAs).length);
+            assert.ok((yield* m.organize.sendAs).length);
             assert.strictEqual((yield* m.optionalServices(accountId))[0]?.state, "granted");
           }).pipe(Effect.provide(layer()));
         }).pipe(Effect.scoped),
@@ -388,16 +393,22 @@ import { GMAIL_PERMANENT_DELETE_SCOPE } from "../domain/folder-actions.js";
       return Effect.gen(function* () {
         const m = yield* Mailbox;
         const account = yield* m.connect({ provider: "gmail" });
-        yield* m.syncSendAs(account.id);
-        assert.ok((yield* m.sendAs).length);
-        assert.strictEqual((yield* m.filters(account.id).pipe(Effect.result))._tag, "Success");
-        assert.strictEqual((yield* m.vacation(account.id).pipe(Effect.result))._tag, "Success");
-        yield* m.setServiceEnabled(account.id, "settings", false);
-        assert.ok((yield* m.sendAs).length);
-        yield* m.syncSendAs(account.id);
-        assert.ok((yield* m.sendAs).length);
+        yield* m.organize.syncSendAs(account.id);
+        assert.ok((yield* m.organize.sendAs).length);
         assert.strictEqual(
-          (yield* m.setVacation(account.id, server.vacation).pipe(Effect.result))._tag,
+          (yield* m.organize.filters(account.id).pipe(Effect.result))._tag,
+          "Success",
+        );
+        assert.strictEqual(
+          (yield* m.organize.vacation(account.id).pipe(Effect.result))._tag,
+          "Success",
+        );
+        yield* m.setServiceEnabled(account.id, "settings", false);
+        assert.ok((yield* m.organize.sendAs).length);
+        yield* m.organize.syncSendAs(account.id);
+        assert.ok((yield* m.organize.sendAs).length);
+        assert.strictEqual(
+          (yield* m.organize.setVacation(account.id, server.vacation).pipe(Effect.result))._tag,
           "Failure",
         );
       }).pipe(Effect.provide(TestMailbox({ gmail: server })));

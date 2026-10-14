@@ -47,7 +47,7 @@ export function makeNotifications({
       if (!op) return;
       notification.close();
       run(
-        mailbox
+        mailbox.organize
           .perform({ kind: "modify", threads: [id], op }, { kind: "user", surface: "app" })
           .pipe(
             Effect.catchCause((cause) =>

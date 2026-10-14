@@ -445,7 +445,7 @@ it("an open offline app wakes an actual snoozed thread on the foreground timer a
   vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
   const stop = foregroundReminderTimer(
     () => native.state === "active",
-    () => runtime.runPromise(mailbox.wakeSnoozed()),
+    () => runtime.runPromise(mailbox.organize.wakeSnoozed()),
   );
   try {
     await vi.advanceTimersByTimeAsync(30_000);

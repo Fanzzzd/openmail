@@ -58,7 +58,7 @@ import { StoreLive } from "../store/store.js";
           const account = yield* store.upsertAccount("imap", "me@example.com");
           for (const uid of [1, 2])
             yield* store.upsertMessage(account.id, message(`7:${uid}:INBOX`, `<${uid}@x>`));
-          yield* mailbox.perform(
+          yield* mailbox.organize.perform(
             {
               kind: "modify",
               threads: [1, 2].map((uid) => `${account.id}/7:${uid}:INBOX`),
@@ -69,7 +69,7 @@ import { StoreLive } from "../store/store.js";
           for (const uid of [1, 2]) {
             const local = `${account.id}/7:${uid}:INBOX`;
             assert.strictEqual((yield* store.messageRef(local)).providerId, `8:${uid + 9}:Archive`);
-            yield* mailbox.perform(
+            yield* mailbox.organize.perform(
               { kind: "modify", threads: [local], op: { kind: "star", value: true } },
               { kind: "user", surface: "app" },
             );
@@ -218,7 +218,7 @@ import { StoreLive } from "../store/store.js";
         const account = yield* store.upsertAccount("imap", "me@example.com");
         const old = `${account.id}/7:1:INBOX`;
         yield* store.upsertMessage(account.id, message("7:1:INBOX", "<x@x>"));
-        const { undoId } = yield* mailbox.modifyWithUndo([old], { kind: "archive" });
+        const { undoId } = yield* mailbox.organize.modifyWithUndo([old], { kind: "archive" });
         yield* store.insertProposal(
           { kind: "agent", surface: "mcp", name: "test" },
           { kind: "modify", threads: [old], op: { kind: "star", value: true } },
@@ -241,11 +241,11 @@ import { StoreLive } from "../store/store.js";
         );
         yield* mailbox.sync();
         server.pushed.length = 0;
-        const undo = yield* mailbox.undoBatch(undoId).pipe(Effect.result);
+        const undo = yield* mailbox.organize.undoBatch(undoId).pipe(Effect.result);
         assert.strictEqual(undo._tag, "Failure");
         assert.deepStrictEqual(server.pushed, []);
         assert.deepStrictEqual(yield* store.listProposals("pending"), []);
-        assert.deepStrictEqual(yield* mailbox.undoHistory, []);
+        assert.deepStrictEqual(yield* mailbox.organize.undoHistory, []);
         assert.isTrue((yield* store.messageRef(old)).providerId.startsWith("unmapped:"));
         assert.strictEqual((yield* store.getMessage(old)).rfcMessageId, "<x@x>");
       }),
@@ -287,7 +287,7 @@ import { StoreLive } from "../store/store.js";
             ).pipe(Effect.forkChild);
             yield* Deferred.await(started);
             yield* store.enqueueOp(imapAccount.id, "7:1:INBOX", { kind: "star", value: true });
-            const modify = yield* mailbox
+            const modify = yield* mailbox.organize
               .perform(
                 { kind: "modify", threads: [`${gmail.id}/g`], op: { kind: "star", value: true } },
                 { kind: "user", surface: "app" },
@@ -333,7 +333,7 @@ import { StoreLive } from "../store/store.js";
         const account = yield* store.upsertAccount("imap", "me@example.com");
         const old = `${account.id}/7:1:INBOX`;
         yield* store.upsertMessage(account.id, message("7:1:INBOX", "<x@x>"));
-        yield* mailbox.perform(
+        yield* mailbox.organize.perform(
           { kind: "modify", threads: [old], op: { kind: "star", value: true } },
           { kind: "user", surface: "app" },
         );

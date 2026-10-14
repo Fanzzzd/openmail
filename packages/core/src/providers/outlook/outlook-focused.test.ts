@@ -220,7 +220,7 @@ for (const original of ["focused", "other"] as const) {
         yield* m.connect({ provider: "outlook" });
         yield* m.sync();
         const id = `${account.id}/one`;
-        const result = yield* m.modifyWithUndo(
+        const result = yield* m.organize.modifyWithUndo(
           [id],
           { kind: "classification", value: other },
           true,
@@ -235,7 +235,7 @@ for (const original of ["focused", "other"] as const) {
             ?.labels.includes(other === "focused" ? "CATEGORY_PERSONAL" : "CATEGORY_OTHER"),
         );
         assert.isTrue(server.messages.get("sibling")?.labels.includes(originalLabel));
-        yield* m.undoBatch(result.undoId);
+        yield* m.organize.undoBatch(result.undoId);
         yield* m.sync();
         assert.deepStrictEqual(
           (yield* store.getMessage(id)).labels.toSorted(),
@@ -296,8 +296,8 @@ it.effect(
       yield* store.setGrantedScopes(account.id, ["Mail.Read", "MailboxSettings.ReadWrite"]);
       const id = `${account.id}/one`;
       for (const work of [
-        m.modifyWithUndo([id], { kind: "classification", value: "other" }, true),
-        m.setClassificationOverride(id, "other"),
+        m.organize.modifyWithUndo([id], { kind: "classification", value: "other" }, true),
+        m.organize.setClassificationOverride(id, "other"),
       ]) {
         const result = yield* work.pipe(Effect.result);
         assert.strictEqual(result._tag, "Failure");
@@ -311,7 +311,7 @@ it.effect(
       assert.strictEqual((yield* store.listPendingOps).length, 0);
       assert.deepStrictEqual((yield* store.getMessage(id)).labels, ["INBOX", "CATEGORY_PERSONAL"]);
       yield* m.reauth(account.id, "focusedInbox");
-      yield* m.setClassificationOverride(id, "other");
+      yield* m.organize.setClassificationOverride(id, "other");
       assert.strictEqual(overrides, 1);
     }).pipe(
       Effect.provide(
@@ -449,13 +449,13 @@ it.effect(
       assert.isTrue(
         matchesSearch(incoming("unknown"), { search: "category:primary" }, [], "outlook"),
       );
-      const result = yield* m.modifyWithUndo(
+      const result = yield* m.organize.modifyWithUndo(
         [id],
         { kind: "classification", value: "other" },
         true,
       );
       assert.isTrue((yield* store.getMessage(id)).labels.includes("CATEGORY_OTHER"));
-      yield* m.undoBatch(result.undoId);
+      yield* m.organize.undoBatch(result.undoId);
       assert.isTrue((yield* store.getMessage(id)).labels.includes("CATEGORY_PERSONAL"));
     }).pipe(Effect.provide(TestMailbox({ outlook: server })));
   },
@@ -482,7 +482,7 @@ it.effect("sender overrides refuse account emails and aliases before any provide
       },
     ]);
     for (const id of ["own", "alias"]) {
-      const result = yield* m
+      const result = yield* m.organize
         .setClassificationOverride(`${account.id}/${id}`, "other")
         .pipe(Effect.result);
       assert.strictEqual(result._tag, "Failure");

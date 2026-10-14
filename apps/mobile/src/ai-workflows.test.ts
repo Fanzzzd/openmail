@@ -323,15 +323,15 @@ for (const provider of ["gmail", "outlook", "imap"] as const)
           expect(
             (yield* signedMobileMessage(mailbox, account.id, composeMessage("new"))).text,
           ).toBe("");
-          yield* mailbox.snoozeWithUndo([id], Date.now() + 60000);
+          yield* mailbox.organize.snoozeWithUndo([id], Date.now() + 60000);
           expect(
             (yield* mailbox.reading.threads(pageQuery(account.id, "snoozed"))).map(
               (thread) => thread.id,
             ),
           ).toContain(id);
-          const unsnooze = yield* mailbox.modifyWithUndo([id], { kind: "inbox" });
+          const unsnooze = yield* mailbox.organize.modifyWithUndo([id], { kind: "inbox" });
           expect(yield* mailbox.reading.threads(pageQuery(account.id, "snoozed"))).toEqual([]);
-          yield* mailbox.undoBatch(unsnooze.undoId);
+          yield* mailbox.organize.undoBatch(unsnooze.undoId);
           expect(
             (yield* mailbox.reading.threads(pageQuery(account.id, "snoozed"))).map(
               (thread) => thread.id,

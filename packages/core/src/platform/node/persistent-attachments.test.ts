@@ -206,7 +206,7 @@ import { waitLimit } from "../../../test-support/test-time.js";
               "ProviderError",
             );
             yield* m.reading.attachment(`${a.id}/0001`, 0);
-            yield* m.perform(
+            yield* m.organize.perform(
               { kind: "removeAccount", accountId: a.id },
               { kind: "user", surface: "app" },
             );
@@ -332,7 +332,7 @@ import { waitLimit } from "../../../test-support/test-time.js";
               writeFile(path.join(directory, "attachment-cache"), "Not a directory"),
             );
             yield* m.clearCache(account.id);
-            yield* m.perform(
+            yield* m.organize.perform(
               { kind: "removeAccount", accountId: account.id },
               { kind: "user", surface: "app" },
             );

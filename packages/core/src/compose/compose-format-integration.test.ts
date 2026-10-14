@@ -99,7 +99,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
           const draft = yield* mailbox.compose.openDraft(id);
           assert.strictEqual(draft.message.html, body.html);
           assert.strictEqual(composeHtmlHasUnsupported(draft.message.html ?? ""), false);
-          yield* mailbox.perform(
+          yield* mailbox.organize.perform(
             { kind: "send", accountId: draft.accountId, draftId: id, message: draft.message },
             { kind: "user", surface: "app" },
           );

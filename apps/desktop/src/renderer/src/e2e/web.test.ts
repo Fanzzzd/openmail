@@ -213,7 +213,7 @@ it("a remote handler that dies or is interrupted fails only its own call; live u
   const web = await openWebApp((m) => ({
     ...m,
     audit: () => Effect.die(new Error("handler bug")),
-    undoHistory: Effect.interrupt,
+    organize: { ...m.organize, undoHistory: Effect.interrupt },
   }));
   const call = <A, E>(
     f: (

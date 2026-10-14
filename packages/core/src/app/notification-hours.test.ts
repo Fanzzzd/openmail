@@ -248,11 +248,11 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
           yield* m.pollInbox();
           yield* m.sync();
           assert.deepStrictEqual(yield* m.app.takeNotifications, []);
-          yield* m.perform(
+          yield* m.organize.perform(
             { kind: "modify", threads: [`${accountId}/read`], op: { kind: "read", value: true } },
             { kind: "user", surface: "app" },
           );
-          yield* m.perform(
+          yield* m.organize.perform(
             { kind: "modify", threads: [`${accountId}/archive`], op: { kind: "archive" } },
             { kind: "user", surface: "app" },
           );

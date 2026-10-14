@@ -375,7 +375,7 @@ it("runs mobile IMAP through shared connect, sync, reader, contacts, flags, move
           { kind: "read", value: true },
           { kind: "star", value: true },
         ] as const) {
-          yield* mailbox.perform(
+          yield* mailbox.organize.perform(
             { kind: "modify", threads: [message.id], op },
             { kind: "user", surface: "app" },
           );
@@ -400,7 +400,7 @@ it("runs mobile IMAP through shared connect, sync, reader, contacts, flags, move
             (entry) => entry.action === "send" && entry.actor === "user:app",
           ),
         ).toBe(true);
-        yield* mailbox.perform(
+        yield* mailbox.organize.perform(
           {
             kind: "modify",
             threads: [message.id],
@@ -2002,7 +2002,7 @@ for (const operation of ["move", "copy"] as const) {
             message: { to: [], cc: [], bcc: [], subject: "local", text: "keep", attachments: [] },
           });
           const commandStart = test.commands.length;
-          yield* mailbox.perform(
+          yield* mailbox.organize.perform(
             {
               kind: "modify",
               threads: [id],

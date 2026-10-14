@@ -128,7 +128,7 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
       yield* store.replaceSendAs(account.id, server.aliases);
       const ownAddresses = [
         ...(yield* mailbox.accounts).map((a) => a.email),
-        ...(yield* mailbox.sendAs).map((a) => a.address),
+        ...(yield* mailbox.organize.sendAs).map((a) => a.address),
       ];
       for (let read = 0; read < 2; read++) {
         const [cached] = yield* mailbox.reading.thread(`${account.id}/one`);
@@ -142,7 +142,7 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
       const [original] = yield* mailbox.reading.thread(`${account.id}/one`);
       assert.ok(original);
       const targets = replyRecipients(original, ownAddresses, true);
-      yield* mailbox.perform(
+      yield* mailbox.organize.perform(
         {
           kind: "send",
           accountId: account.id,

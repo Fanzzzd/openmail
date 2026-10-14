@@ -26,7 +26,8 @@ function useForeground() {
       foregroundCoordinator({
         active: isForeground,
         online: deviceOnline,
-        wake: () => runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.wakeSnoozed())),
+        wake: () =>
+          runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.organize.wakeSnoozed())),
         prepare: async () => {
           const mailbox = await runtime.runPromise(Mailbox);
           const accounts = await runtime.runPromise(mailbox.accounts);
@@ -121,7 +122,7 @@ export function ForegroundLifecycle() {
   }, [work, runtime]);
   useEffect(() => {
     return foregroundReminderTimer(isForeground, () =>
-      runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.wakeSnoozed())),
+      runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.organize.wakeSnoozed())),
     );
   }, [runtime]);
   useEffect(() => {
