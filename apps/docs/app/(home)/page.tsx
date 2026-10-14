@@ -40,7 +40,7 @@ const features: { title: string; href: string; body: ReactNode }[] = [
   {
     title: "Safe reading",
     href: "/docs/security",
-    body: "Message HTML renders in a sandbox with scripts disabled. You choose when remote images load, and known trackers are blocked in every setting.",
+    body: "Message HTML renders in a sandbox with scripts disabled. Remote images load by default after known trackers are removed. You can load them only from known senders or ask each time.",
   },
 ];
 
@@ -329,8 +329,18 @@ export default function HomePage() {
               Message text for the accounts you allow, sent with your own API key.
             </li>
             <li>
-              <strong className="text-fd-foreground">Nothing else by default.</strong> Optional
-              features that reach other servers are listed in the{" "}
+              <strong className="text-fd-foreground">Senders’ image servers.</strong> Remote images
+              load by default, so a sender's server can see when you open the message. OpenMail
+              removes known tracking pixels first. You can load images only from known senders or
+              ask each time.
+            </li>
+            <li>
+              <strong className="text-fd-foreground">GitHub, for updates.</strong> Signed builds
+              check the public repository for new versions, without an account or token.
+            </li>
+            <li>
+              <strong className="text-fd-foreground">Nothing else unless you turn it on.</strong>{" "}
+              Optional features that reach other servers are listed in the{" "}
               <Link href="/privacy" className="underline">
                 privacy policy
               </Link>
