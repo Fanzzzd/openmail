@@ -42,13 +42,14 @@ export const applyPush = async (
   const uids = ids.map((id) => refOf(id).uid);
   const range = uidSet(uids);
   const validity = await client.select(ref.path, undefined, false);
-  const regressed =
-    validity === ref.uidValidity && folderRegressed(expected, ref.uidValidity, client.uidNext);
-  if (
-    validity !== ref.uidValidity ||
-    (expected && expected.uidValidity !== ref.uidValidity) ||
-    regressed
-  )
+  // A new UIDVALIDITY makes the id stale, not the message gone: wait for the pull's remap.
+  if (validity !== ref.uidValidity)
+    throw new ProviderError({
+      message: "Folder was rebuilt; the change waits for the next sync",
+      deferred: true,
+    });
+  const regressed = folderRegressed(expected, ref.uidValidity, client.uidNext);
+  if ((expected && expected.uidValidity !== ref.uidValidity) || regressed)
     throw new PermanentError({
       message: "Folder was rebuilt; sync before changing this message",
       ...(regressed ? { imapReset: { path: ref.path, uidValidity: ref.uidValidity } } : {}),

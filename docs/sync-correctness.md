@@ -6,6 +6,8 @@ UIDNEXT 回退且 UIDVALIDITY 未变时，旧 UID 已不可信。core 先失效�
 
 文件夹失效后，尚未同步的本地改动会被丢弃，包括标签、已读、星标、稍后提醒和排队的远端草稿删除；相关操作只保留无效 ID 的清理记录，孤立提醒行会删除。推送在 SELECT 后核对保存的 UIDVALIDITY 和 UIDNEXT 下界；发现回退便返回永久错误，等待重新同步。
 
+UIDVALIDITY 变了而下一轮拉取还没重映射时，桌面推送按排队时记下的 Message-ID 在新 UIDVALIDITY 下搜索。找到唯一一封就在 `ProviderError.remap` 里返回新 ID，队列改名后立即重试；找不到则返回可重试的 ProviderError，等拉取重映射。手机推送直接返回可重试错误。`fetchMessage` 对旧 ID 也返回可重试错误，reconcile 不再因此删除缓存行，所以 90 天重建窗口外的旧邮件保留，在用户第一次操作时按 Message-ID 改名。`remapProviderIds` 把改名后的排队操作设为立即可重试。回归见 [imap-uidvalidity-push.test.ts](../packages/core/src/platform/node/imap-uidvalidity-push.test.ts)。
+
 ## IMAP 复制、移动与草稿
 
 两端移动统一先 COPY、确认目标身份，再删除源副本。UIDPLUS 可定向清除源 UID；否则只加 `\Deleted`，不执行全局 EXPUNGE。两端同步、历史拉取与服务端搜索把 `\Deleted` 邮件视为不存在，避免恢复源文件夹副本。没有 UIDPLUS 时，服务器原件待其他客户端或服务器清除；永久删除仍要求 UIDPLUS。其他客户端撤销 `\Deleted` 后，旧 UID 要到重置游标后的完整窗口重扫才会重新出现。无 CONDSTORE 时，已有 UID 的标记最多每十分钟完整扫描一次。openmail 推送 `\Seen` 或 `\Flagged` 成功后，core 同时更新完整游标和收件箱游标中该 UID 的标记记录；否则其他设备随后改回原值时，服务器状态与旧记录相同，不会产生 Flags 变更。

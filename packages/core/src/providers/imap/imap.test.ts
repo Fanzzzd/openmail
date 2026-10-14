@@ -1324,7 +1324,7 @@ it.effect(
       const stale = yield* Effect.flip(
         adapter.push(account, encodeProviderId("INBOX", "7", 1), { kind: "copy", labelIds: ["A"] }),
       );
-      assert.strictEqual(stale._tag, "PermanentError");
+      assert.strictEqual(stale._tag, "ProviderError");
       assert.strictEqual(copy.mock.calls.length, 2);
       assert.strictEqual(move.mock.calls.length, 0);
       assert.strictEqual(remove.mock.calls.length, 0);

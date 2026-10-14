@@ -89,8 +89,10 @@ export const makeImapRecovery = ({
       if (Option.isNone(ref))
         return yield* new PermanentError({ message: `Not an IMAP message id: ${providerId}` });
       const { s } = yield* session(account);
+      // The folder was rebuilt. The next pull remaps the mail by Message-ID, so this
+      // id is stale, not proof the message is gone.
       if (!(yield* openFolderOf(s, ref.value, true)))
-        return yield* new PermanentError({ message: "IMAP UIDVALIDITY changed" });
+        return yield* new ProviderError({ message: "IMAP UIDVALIDITY changed", deferred: true });
       const folders = mapFolders(yield* call(s, (c) => c.list()));
       const folder = folders.find((f) => f.path === ref.value.path);
       const fetched = folder

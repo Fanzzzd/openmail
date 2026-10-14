@@ -82,6 +82,13 @@ export class ProviderError extends Schema.TaggedError<ProviderError>()("Provider
   ),
   deferred: Schema.optionalKey(Schema.Boolean),
   retryAfter: Schema.optionalKey(Schema.String),
+  /**
+   * The provider ids were stale (an IMAP folder got a new UIDVALIDITY) and the
+   * server still has the mail under these ids. The queue renames them and retries.
+   */
+  remap: Schema.optionalKey(
+    Schema.Array(Schema.Struct({ from: Schema.String, to: Schema.String })),
+  ),
 }) {}
 
 /** No OAuth client is registered for this provider yet. The app shows the setup step. */

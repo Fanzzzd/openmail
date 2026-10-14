@@ -175,8 +175,10 @@ export const makeMessagesStore = ({
                 }
                 yield* run(sql`UPDATE messages SET provider_id=${mapping.to} WHERE id=${source}`);
               }
+              // An op that waited for this remap (a rebuilt IMAP folder) can go now.
+              const remappedAt = yield* Clock.currentTimeMillis;
               yield* run(
-                sql`UPDATE pending_ops SET provider_id=${mapping.to} WHERE account_id=${account} AND provider_id=${mapping.from}`,
+                sql`UPDATE pending_ops SET provider_id=${mapping.to}, retry_at=MIN(retry_at, ${remappedAt}) WHERE account_id=${account} AND provider_id=${mapping.from}`,
               );
               yield* run(
                 sql`DELETE FROM snoozed_messages WHERE account_id=${account} AND provider_id=${mapping.to} AND EXISTS(SELECT 1 FROM snoozed_messages WHERE account_id=${account} AND provider_id=${mapping.from})`,

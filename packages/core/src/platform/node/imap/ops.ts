@@ -328,6 +328,39 @@ const readSourceIdentities = Effect.fnUntraced(function* (
   }
 });
 
+/**
+ * The folder got a new UIDVALIDITY, so the queued ids are stale. Finds each message by
+ * its Message-ID under the new UIDVALIDITY (the selected folder) and asks the queue to
+ * rename the ids and retry. Mail it cannot find yet waits for the next pull's remap;
+ * nothing here is treated as deleted.
+ */
+const staleValidity = Effect.fnUntraced(function* (
+  s: Session,
+  path: string,
+  oldValidity: string,
+  newValidity: string,
+  uids: readonly number[],
+  identities: ReadonlyMap<number, string>,
+) {
+  const remap: { from: string; to: string }[] = [];
+  for (const uid of uids) {
+    const messageId = identities.get(uid);
+    const found = messageId
+      ? yield* searchUids(s, { header: { "message-id": messageId }, deleted: false })
+      : [];
+    if (found.length === 1)
+      remap.push({
+        from: encodeProviderId(path, oldValidity, uid),
+        to: encodeProviderId(path, newValidity, found[0]!),
+      });
+  }
+  return yield* new ProviderError({
+    message: `Folder ${path} was rebuilt; the change waits for the next sync`,
+    deferred: true,
+    ...(remap.length ? { remap } : {}),
+  });
+});
+
 export const applyOp = Effect.fnUntraced(function* (
   s: Session,
   ref: { path: string; uidValidity: string; uid: number },
@@ -357,19 +390,15 @@ export const applyOp = Effect.fnUntraced(function* (
     return yield* mailbox.failure;
   }
   const selected = mailbox.success;
-  const regressed =
-    String(selected.uidValidity) === ref.uidValidity &&
-    folderRegressed(expected, ref.uidValidity, selected.uidNext);
-  if (
-    String(selected.uidValidity) !== ref.uidValidity ||
-    (expected && expected.uidValidity !== ref.uidValidity) ||
-    regressed
-  ) {
+  const validity = String(selected.uidValidity);
+  if (validity !== ref.uidValidity)
+    return yield* staleValidity(s, ref.path, ref.uidValidity, validity, uids, identities);
+  const regressed = folderRegressed(expected, ref.uidValidity, selected.uidNext);
+  if ((expected && expected.uidValidity !== ref.uidValidity) || regressed)
     yield* new PermanentError({
       message: `Folder ${ref.path} was rebuilt; the message id is stale`,
       ...(regressed ? { imapReset: { path: ref.path, uidValidity: ref.uidValidity } } : {}),
     });
-  }
   const found = yield* searchUids(s, { uid: uidSet(uids), deleted: false });
   if (uids.some((uid) => !found.includes(uid))) {
     const resumed = yield* resumeCopied(s, ref, uids, op, list, identities, context);

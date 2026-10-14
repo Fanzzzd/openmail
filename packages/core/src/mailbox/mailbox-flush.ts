@@ -233,6 +233,13 @@ export const makeFlushMailbox = (
                     return;
                   }
                   const error = outcome.failure;
+                  if (error._tag === "ProviderError" && error.remap) {
+                    // The server still has the mail under new ids: rename and retry now.
+                    yield* store.remapProviderIds(account.id, error.remap);
+                    for (const item of owned) yield* store.releasePendingOp(item.id, claimToken);
+                    yield* refreshQueued;
+                    return;
+                  }
                   if (error._tag === "AuthError") {
                     yield* store.markReauth(account.id, error);
                     result.reauth.push(account.id);
