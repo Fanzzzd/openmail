@@ -1997,6 +1997,10 @@ msgstr "Synchronisatiestatus kon niet worden gecontroleerd."
 msgid "Couldn't copy address"
 msgstr "Kan adres niet kopiëren"
 
+#: src/renderer/src/features/feedback/Feedback.tsx
+msgid "Couldn't copy diagnostics"
+msgstr "Kan diagnostische gegevens niet kopiëren"
+
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Couldn't decode winmail.dat. You can save the original file."
 msgstr "Kan winmail.dat niet decoderen. Je kunt het originele bestand opslaan."

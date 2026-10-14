@@ -1,5 +1,6 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Effect } from "effect";
+import { constVoid } from "effect/Function";
 import { useCallback, useEffect, useState } from "react";
 import type { OutgoingAttachment } from "../../../../shared/api";
 
@@ -11,6 +12,9 @@ import { useRunMail, withMail } from "../../state/mail";
 import { Alert, AlertCancel, alertPrimary } from "../../ui/Dialog";
 import { Select } from "../../ui/Select";
 import { buttonLink, buttonSecondary } from "../../ui/styles";
+
+/** How long Copy diagnostics says Copied. */
+const COPIED_FOR_MS = 2000;
 
 /** Where people without a feedback address can report instead. */
 export const GITHUB_ISSUES_URL = "https://github.com/Fanzzzd/openmail/issues";
@@ -39,6 +43,13 @@ export function Feedback({
   const [preview, setPreview] = useState<string | null | false>(null);
   const [attach, setAttach] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
+  // "Copied" goes back to the button's own label, so a second copy reads as one.
+  useEffect(() => {
+    if (!copied) return constVoid;
+    const timer = setTimeout(() => setCopied(false), COPIED_FOR_MS);
+    return () => clearTimeout(timer);
+  }, [copied]);
   useEffect(() => {
     // The address is optional; a failure leaves the field for the person to fill in.
     run(
@@ -166,13 +177,24 @@ export function Feedback({
             <Trans>Open GitHub issues</Trans>
           </button>
         </p>
+        {/* In the dialog, not a toast: the modal hides the rest of the window from screen readers. */}
+        {copyFailed && (
+          <p role="alert" className="mb-3 text-callout text-a11y-danger">
+            <Trans>Couldn't copy diagnostics</Trans>
+          </p>
+        )}
         <div className="flex justify-end gap-2">
           <button
             type="button"
             className={`mr-auto ${buttonSecondary}`}
             disabled={!preview}
             onClick={() => {
-              if (preview) void navigator.clipboard.writeText(preview).then(() => setCopied(true));
+              if (!preview) return;
+              setCopyFailed(false);
+              navigator.clipboard.writeText(preview).then(
+                () => setCopied(true),
+                () => setCopyFailed(true),
+              );
             }}
           >
             {copied ? <Trans>Copied</Trans> : <Trans>Copy diagnostics</Trans>}

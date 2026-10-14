@@ -77,9 +77,23 @@ it("without a feedback address, the diagnostics can be copied for a GitHub issue
   );
   // The draft needs an address; copying does not.
   expect(continueButton()).toHaveProperty("disabled", true);
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
   fireEvent.click(screen.getByRole("button", { name: "Copy diagnostics" }));
   await eventually(() => expect(writeText).toHaveBeenCalledWith('{"event":"snapshot"}'));
   await eventually(() => expect(screen.getByRole("button", { name: "Copied" })).toBeTruthy());
+  // Copied goes back to the button's label, so a second copy confirms again.
+  await advance(2_000);
+  await eventually(() =>
+    expect(screen.getByRole("button", { name: "Copy diagnostics" })).toBeTruthy(),
+  );
+  vi.useRealTimers();
+  // A clipboard that refuses says so in the dialog.
+  writeText.mockRejectedValueOnce(new Error("denied"));
+  fireEvent.click(screen.getByRole("button", { name: "Copy diagnostics" }));
+  await eventually(() =>
+    expect(screen.getByText("Couldn't copy diagnostics").getAttribute("role")).toBe("alert"),
+  );
+  expect(screen.getByRole("button", { name: "Copy diagnostics" })).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: "Open GitHub issues" }));
   await eventually(() => expect(opened).toEqual(["https://github.com/Fanzzzd/openmail/issues"]));
 });

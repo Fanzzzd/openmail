@@ -1997,6 +1997,10 @@ msgstr "同期状態を確認できませんでした。"
 msgid "Couldn't copy address"
 msgstr "アドレスをコピーできませんでした"
 
+#: src/renderer/src/features/feedback/Feedback.tsx
+msgid "Couldn't copy diagnostics"
+msgstr "診断をコピーできませんでした"
+
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Couldn't decode winmail.dat. You can save the original file."
 msgstr "winmail.dat をデコードできませんでした。元のファイルを保存できます。"

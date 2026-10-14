@@ -1997,6 +1997,10 @@ msgstr "Не удалось проверить синхронизацию."
 msgid "Couldn't copy address"
 msgstr "Не удалось скопировать адрес"
 
+#: src/renderer/src/features/feedback/Feedback.tsx
+msgid "Couldn't copy diagnostics"
+msgstr "Не удалось скопировать диагностику"
+
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Couldn't decode winmail.dat. You can save the original file."
 msgstr "Не удалось декодировать winmail.dat. Вы можете сохранить исходный файл."

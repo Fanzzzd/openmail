@@ -2001,6 +2001,10 @@ msgstr "Couldn't check sync health."
 msgid "Couldn't copy address"
 msgstr "Couldn't copy address"
 
+#: src/renderer/src/features/feedback/Feedback.tsx
+msgid "Couldn't copy diagnostics"
+msgstr "Couldn't copy diagnostics"
+
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Couldn't decode winmail.dat. You can save the original file."
 msgstr "Couldn't decode winmail.dat. You can save the original file."

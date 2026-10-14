@@ -1997,6 +1997,10 @@ msgstr "Stav synchronizace se nepodařilo zkontrolovat."
 msgid "Couldn't copy address"
 msgstr "Adresu se nepodařilo zkopírovat"
 
+#: src/renderer/src/features/feedback/Feedback.tsx
+msgid "Couldn't copy diagnostics"
+msgstr "Diagnostiku se nepodařilo zkopírovat"
+
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Couldn't decode winmail.dat. You can save the original file."
 msgstr "Soubor winmail.dat se nepodařilo dekódovat. Můžete uložit původní soubor."

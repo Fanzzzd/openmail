@@ -2007,6 +2007,10 @@ msgstr "无法检查同步状态。"
 msgid "Couldn't copy address"
 msgstr "无法复制地址"
 
+#: src/renderer/src/features/feedback/Feedback.tsx
+msgid "Couldn't copy diagnostics"
+msgstr "无法复制诊断"
+
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Couldn't decode winmail.dat. You can save the original file."
 msgstr "无法解码 winmail.dat，可保存原文件。"
