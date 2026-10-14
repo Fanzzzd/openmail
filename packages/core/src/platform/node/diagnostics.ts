@@ -245,18 +245,6 @@ const Platform = Schema.Literals(["darwin", "linux", "win32"]);
 const Arch = Schema.Literals(["arm64", "x64"]);
 const MAX_SNAPSHOT_ACCOUNTS = 50;
 
-/** What the host knows about itself. Every field is optional and re-validated. */
-export interface DiagnosticEnvironment {
-  readonly appVersion?: string;
-  readonly build?: string;
-  readonly packaged?: boolean;
-  readonly platform?: string;
-  readonly osVersion?: string;
-  readonly arch?: string;
-  readonly electronVersion?: string;
-  readonly nodeVersion?: string;
-}
-
 /**
  * The first line of a diagnostics export: build, runtime, schema version and per-account sync
  * state. Fixed fields only. Accounts appear by list position, never by address or hash.

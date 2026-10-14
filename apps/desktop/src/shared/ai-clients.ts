@@ -49,7 +49,6 @@ export const AiClientView = Schema.Union([
   Schema.Struct({ ...clientFields, state: Schema.Literal("unreadable"), problem: Schema.String }),
 ]);
 export type AiClientView = typeof AiClientView.Type;
-export type AiClientState = AiClientView["state"];
 
 export const AiLaunchProblem = Schema.Literals([
   /** Development build without `pnpm build`: packages/cli/dist/cli.js is missing. */
