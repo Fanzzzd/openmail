@@ -5,7 +5,7 @@ description: Answers to common questions about sign-in, privacy and supported ac
 
 ## Why does Google show an unverified app warning?
 
-Gmail access needs scopes that Google classifies as restricted (`gmail.modify` and `gmail.send`). Google verifies apps that request restricted scopes through a review that includes a third-party security assessment. OpenMail has not completed that review yet, so Google shows "Google hasn't verified this app" on the sign-in page.
+Gmail access needs scopes that Google classifies as restricted (`gmail.modify` and `gmail.send`). Google verifies apps that request restricted scopes through a review that includes a third-party security assessment. OpenMail has not completed that review yet, so Google shows "Google hasn't verified this app" on the sign-in page. This applies to release builds, which sign in with OpenMail's Google project. A build from source has no built-in client, so you [register your own OAuth client](/docs/own-oauth-client) first.
 
 To continue, click **Advanced**, then **Go to OpenMail (unsafe)**. The warning is about the review status. It does not change what the app can do: OpenMail still gets only the permissions listed on the consent screen, and your mail still goes only to your Mac. Google limits unverified apps to 100 users.
 
@@ -23,6 +23,8 @@ OpenMail pauses an account and asks you to sign in again only when the provider 
 | The OAuth client that signed in this account is no longer configured | You removed or replaced the OAuth client that issued this account's token.                                                                        |
 | Saved sign-in is missing from the keychain                           | The Keychain entry for the account was deleted.                                                                                                   |
 | The mail server rejected the password                                | The IMAP or SMTP server rejected the app-specific password.                                                                                       |
+
+The 7-day limit in the first row applies to release builds, which sign in with OpenMail's Google project. A build from source uses [your own OAuth client](/docs/own-oauth-client), with the limits of that client's publishing status.
 
 Microsoft expires refresh tokens for personal accounts after 90 days without use. While the app is open, OpenMail refreshes each account's token about every 6 days, even for paused accounts, so this limit is not reached.
 

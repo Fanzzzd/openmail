@@ -72,7 +72,7 @@ When an account needs a new sign-in, OpenMail pauses its sync and shows a notice
 | The saved sign-in is missing from the keychain.                      | The keychain item named `openmail` was deleted.                                                                            | Click **Sign in again**.                                                                                                     |
 | The mail server rejected the password.                               | An IMAP app password was revoked or changed.                                                                               | Click **Sign in again** and enter a new app password.                                                                        |
 
-If a Google account asks again every week, that is the Testing mode limit in the first row. See [Why do I need to sign in again?](/docs/faq#why-do-i-need-to-sign-in-again) for provider limits.
+If a Google account asks again every week, that is the Testing mode limit in the first row. It applies to release builds, which sign in with OpenMail's Google project. A build from source uses [your own OAuth client](/docs/own-oauth-client) and its publishing status. See [Why do I need to sign in again?](/docs/faq#why-do-i-need-to-sign-in-again) for provider limits.
 
 ## The keychain is locked
 
@@ -82,4 +82,4 @@ Unlock your Mac. If macOS asks whether OpenMail may use the keychain item, click
 
 ## Google says the app is unverified
 
-During Gmail sign-in, Google can show **Google hasn't verified this app**. Click **Advanced**, then **Go to OpenMail (unsafe)**. The FAQ explains [why the warning appears](/docs/faq#why-does-google-show-an-unverified-app-warning). To avoid it, [register your own OAuth client](/docs/own-oauth-client).
+During Gmail sign-in, Google can show **Google hasn't verified this app**. In a release build this comes from OpenMail's Google project. A build from source has no built-in client and signs in with [your own OAuth client](/docs/own-oauth-client). Click **Advanced**, then **Go to OpenMail (unsafe)**. The FAQ explains [why the warning appears](/docs/faq#why-does-google-show-an-unverified-app-warning). To avoid it, [register your own OAuth client](/docs/own-oauth-client).
