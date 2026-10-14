@@ -5,6 +5,7 @@ import type { ProviderError } from "../domain/errors.js";
 import { decodeProviderId } from "../providers/imap/imap-cursor.js";
 import { applyOpToLabels } from "../domain/mail-ops.js";
 import type { makeBatchMailbox } from "./mailbox-batch.js";
+import type { makeOrganizationMailbox } from "./mailbox-organization.js";
 import type { MailboxDependencies } from "./mailbox-runtime.js";
 import { withPendingOps } from "./mailbox-shared.js";
 import { sha256Hex } from "../platform/crypto.js";
@@ -26,6 +27,7 @@ const NOTIFY_CLOCK_SKEW_MS = 2 * 60_000;
 export const makeApplyChanges = (
   deps: MailboxDependencies & {
     batchMailbox: () => Effect.Success<ReturnType<typeof makeBatchMailbox>>;
+    organization: () => Pick<ReturnType<typeof makeOrganizationMailbox>, "wakeOnReply">;
   },
 ) => {
   const { store, providers, emit } = deps;
@@ -45,6 +47,7 @@ export const makeApplyChanges = (
       const now = new Date(yield* Clock.currentTimeMillis);
       const writes: Effect.Effect<void, ProviderError>[] = [];
       const newIds: string[] = [];
+      const repliedThreads = new Set<string>();
       const pendingById = new Map<string, MailOp[]>();
       const deletingDrafts = new Set<string>();
       for (const change of batch) {
@@ -121,14 +124,18 @@ export const makeApplyChanges = (
                 yield* store.upsertMessage(account.id, incoming);
                 const storedId =
                   (yield* store.messageIdForProvider(account.id, incoming.providerId)) ?? id;
-                if (
+                const arrived =
                   first &&
                   !known &&
                   notificationsReady &&
                   change.message.date >= (account.lastSyncedAt ?? 0) - NOTIFY_CLOCK_SKEW_MS &&
-                  change.message.isUnread &&
-                  change.message.labels.includes("INBOX")
-                ) {
+                  change.message.labels.includes("INBOX");
+                if (
+                  arrived &&
+                  !change.message.labels.some((l) => ["DRAFT", "SENT", "SPAM", "TRASH"].includes(l))
+                )
+                  repliedThreads.add(incoming.threadId);
+                if (arrived && change.message.isUnread) {
                   const message = {
                     ...change.message,
                     id: storedId,
@@ -335,6 +342,8 @@ export const makeApplyChanges = (
           yield* Effect.all(writes, { discard: true });
         }),
       );
+      if (repliedThreads.size)
+        yield* deps.organization().wakeOnReply(account.id, [...repliedThreads]);
       if (newIds.length) yield* emit({ _tag: "NewMail", accountId: account.id, ids: newIds });
     });
   };

@@ -76,7 +76,12 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
           yield* m.sync.sync();
           assert.strictEqual((yield* m.reading.threads({ mailbox: "inbox" })).length, 1);
           assert.strictEqual((yield* m.reading.threads({ mailbox: "snoozed" })).length, 1);
-          server.messages.set("reply", incoming("reply", { threadId: "t-m1", date: 1500 }));
+          // Our own reply sent elsewhere joins the thread outside the Inbox. New Inbox
+          // mail would end the snooze (snooze-reply.test.ts).
+          server.messages.set(
+            "reply",
+            incoming("reply", { threadId: "t-m1", date: 1500, labels: ["SENT"] }),
+          );
           yield* m.sync.sync();
           assert.strictEqual((yield* m.reading.threads({ mailbox: "inbox" })).length, 1);
           yield* TestClock.adjust("10 seconds");

@@ -219,34 +219,56 @@ export function makeOrganizationMailbox(
   });
   const changeLabel = (accountId: string, change: LabelChange) =>
     labelLock.withPermits(1)(changeLabelUnlocked(accountId, change));
-  const wakeSnoozed = Effect.fn("Mailbox.wakeSnoozed")(function* () {
-    const now = yield* Clock.currentTimeMillis;
-    const ids = yield* store.transaction(
+  /**
+   * Returns due conversations to the Inbox. A conversation woken by a reply
+   * (`replied` holds its [accountId, threadId] key) keeps its read state and
+   * raises no reminder: the reply has its own new-mail notification.
+   */
+  const wake = Effect.fnUntraced(function* (now: number, replied: ReadonlySet<string>) {
+    const reminded = yield* store.transaction(
       Effect.gen(function* () {
         const due = yield* store.wakeSnoozed(now);
         const notified = new Set<string>();
+        const timed: string[] = [];
         for (const id of due) {
           const ref = yield* store.messageRef(id).pipe(Effect.orDie);
-          for (const op of [{ kind: "read", value: false }, { kind: "inbox" }] as const) {
+          const message = yield* store.getMessage(id).pipe(Effect.orDie);
+          const key = JSON.stringify([message.accountId, message.threadId]);
+          const byReply = replied.has(key);
+          for (const op of byReply
+            ? ([{ kind: "inbox" }] as const)
+            : ([{ kind: "read", value: false }, { kind: "inbox" }] as const)) {
             yield* store.applyLocalOp(id, op);
             yield* store.enqueueOp(ref.accountId, ref.providerId, op);
           }
-          yield* audit(ref.accountId, "snooze_due", { id });
-          const message = yield* store.getMessage(id).pipe(Effect.orDie);
-          const key = JSON.stringify([message.accountId, message.threadId]);
+          yield* audit(ref.accountId, byReply ? "snooze_reply" : "snooze_due", { id });
+          if (byReply) continue;
+          timed.push(id);
           if (!notified.has(key)) {
             yield* store.enqueueNotification(id, false);
             notified.add(key);
           }
         }
-        return due;
+        return due.length ? timed : undefined;
       }),
     );
-    if (ids.length) {
-      yield* onWake(ids, now);
-      yield* changed;
-      yield* flushLater;
-    }
+    if (reminded === undefined) return;
+    if (reminded.length) yield* onWake(reminded, now);
+    yield* changed;
+    yield* flushLater;
+  });
+  const wakeSnoozed = Effect.fn("Mailbox.wakeSnoozed")(function* () {
+    yield* wake(yield* Clock.currentTimeMillis, new Set());
+  });
+  /** New Inbox mail in a snoozed conversation ends the snooze, as in Gmail. */
+  const wakeOnReply = Effect.fn("Mailbox.wakeOnReply")(function* (
+    accountId: string,
+    threadIds: readonly string[],
+  ) {
+    const now = yield* Clock.currentTimeMillis;
+    const woken = yield* store.endSnoozeOnReply(accountId, threadIds, now);
+    if (woken.length)
+      yield* wake(now, new Set(woken.map((threadId) => JSON.stringify([accountId, threadId]))));
   });
   const syncSendAs = Effect.fn("Mailbox.syncSendAs")(function* (accountId: string) {
     const { account, adapter } = yield* owner(accountId);
@@ -265,7 +287,7 @@ export function makeOrganizationMailbox(
     audit,
     ruleMutation,
   });
-  return {
+  const organize = {
     ...filterMailbox,
     createLabelAndApply: (accountId, name, parentId, threads, move, removeLabelId, flat) =>
       labelLock.withPermits(1)(
@@ -454,4 +476,5 @@ export function makeOrganizationMailbox(
       | "setVacation"
       | "sendAs"
     >;
+  return { ...organize, wakeOnReply };
 }

@@ -350,6 +350,12 @@ export class Store extends Context.Service<
     reminderSnapshot(id: string): Effect.Effect<Option.Option<ReminderSnapshot>, NotFound>;
     restoreReminder(snapshot: ReminderSnapshot): Effect.Effect<void>;
     wakeSnoozed(now: number): Effect.Effect<string[]>;
+    /** Makes active snoozes on these threads due now; returns the threads it changed. */
+    endSnoozeOnReply(
+      accountId: string,
+      threadIds: readonly string[],
+      now: number,
+    ): Effect.Effect<string[]>;
 
     // Profiles
     readonly listProfiles: Effect.Effect<Profile[]>;

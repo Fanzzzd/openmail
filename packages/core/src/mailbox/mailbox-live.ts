@@ -311,7 +311,11 @@ export const MailboxLive = (
       const syncMailbox = makeSyncMailbox(
         {
           ...deps,
-          applyChanges: makeApplyChanges({ ...deps, batchMailbox: () => batchMailbox }),
+          applyChanges: makeApplyChanges({
+            ...deps,
+            batchMailbox: () => batchMailbox,
+            organization: () => organization,
+          }),
           organization: () => organization,
           flush: (...args) => flushMailbox.flush(...args),
           contacts: () => contacts,
@@ -510,7 +514,11 @@ export const MailboxLive = (
       yield* outboxMailbox.start;
       const { autoTriage: _autoTriage, autoSummaries: _autoSummaries, ...aiMembers } = ai;
       const { forgetMessages: _forgetMessages, ...batchMembers } = batchMailbox;
-      const { searchServer: _searchServer, ...organizationMembers } = organization;
+      const {
+        searchServer: _searchServer,
+        wakeOnReply: _wakeOnReply,
+        ...organizationMembers
+      } = organization;
       const { suggestSender, imageFromUrl, imageFromFile, ...calendarFeatures } = features;
       const { backfillOlder: _backfillOlder, readerThread: _readerThread, ...cacheMembers } = cache;
       const { enforceCacheBudget: _enforceCacheBudget, ...storageMembers } = storage;

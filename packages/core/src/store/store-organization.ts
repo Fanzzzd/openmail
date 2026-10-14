@@ -152,7 +152,15 @@ export function makeOrganizationStore(sql: SqlClient.SqlClient) {
       }
       return ids;
     });
+  /** Makes active snoozes on these threads due now; returns the threads it changed. */
+  const endSnoozeOnReply = (accountId: string, threadIds: readonly string[], now: number) =>
+    all(Schema.Struct({ thread_id: Schema.String }))(
+      sql`UPDATE thread_reminders SET due_at=${now}
+        WHERE account_id=${accountId} AND thread_id IN (SELECT value FROM json_each(${JSON.stringify(threadIds)}))
+        AND due_at IS NOT NULL AND due_at>${now} RETURNING thread_id`,
+    ).pipe(Effect.map((rows) => rows.map((row) => row.thread_id)));
   return {
+    endSnoozeOnReply,
     filterRestorations,
     saveFilterRestoration,
     deleteFilterRestoration,
