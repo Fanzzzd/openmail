@@ -639,6 +639,12 @@ it("pane dividers are named and resize their panes with the arrow keys", async (
   expect(sidebar.tabIndex).toBe(0);
   expect(list.tabIndex).toBe(0);
   expect(list.getAttribute("aria-orientation")).toBe("vertical");
+  // Keyboard focus shows the 3:1 focus ring above the panes, not only a 1 px colour change.
+  for (const separator of [sidebar, list]) {
+    expect(separator.className).toContain("focus-ring");
+    expect(separator.className).toContain("focus-visible:z-10");
+    expect(separator.className).not.toMatch(/\boutline-none\b/);
+  }
 });
 
 it("a narrow window offers New message in the list header, and 720 px shows the list alone", async () => {

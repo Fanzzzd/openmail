@@ -39,7 +39,8 @@ export function usePaneHost() {
 /**
  * The line between two panes. It draws the 1 px border the panes used to
  * carry themselves; the group's resizeTargetMinimumSize widens what the
- * pointer can grab without widening the line.
+ * pointer can grab without widening the line. Keyboard focus draws the app's
+ * 2 px focus ring around it, raised over the panes so they don't cover it.
  */
 export function ResizeHandle({
   label,
@@ -52,7 +53,7 @@ export function ResizeHandle({
   return (
     <Separator
       aria-label={label}
-      className={`no-drag ${orientation === "vertical" ? "h-px" : "w-px"} bg-black/5 transition-colors outline-none data-[separator=active]:bg-blue-500 data-[separator=focus]:bg-blue-500 data-[separator=hover]:bg-blue-500/60 dark:bg-white/5`}
+      className={`no-drag ${orientation === "vertical" ? "h-px" : "w-px"} bg-black/5 transition-colors focus-ring relative focus-visible:z-10 data-[separator=active]:bg-blue-500 data-[separator=focus]:bg-blue-500 data-[separator=hover]:bg-blue-500/60 dark:bg-white/5`}
     />
   );
 }
