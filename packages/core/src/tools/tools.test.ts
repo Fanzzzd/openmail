@@ -464,6 +464,65 @@ it.effect("draft_message only ever performs a draft command as the agent", () =>
   }),
 );
 
+it.effect("a draft reply defaults its recipients and subject from the original", () =>
+  Effect.gen(function* () {
+    const calls: Command[] = [];
+    const original = {
+      ...testMessage("m9"),
+      accountId: "gmail:me@example.com",
+      subject: "报价",
+      from: { name: "Alice", address: "alice@example.com" },
+      to: [
+        { name: "", address: "me@example.com" },
+        { name: "", address: "alias@example.com" },
+        { name: "Bob", address: "bob@example.com" },
+      ],
+    };
+    const layer = stubMailbox({
+      thread: () => Effect.succeed([original]),
+      sendAs: Effect.succeed([
+        {
+          accountId: "gmail:me@example.com",
+          address: "alias@example.com",
+          name: "",
+          isDefault: false,
+          signature: "",
+        },
+      ]),
+      perform: (command) =>
+        Effect.sync(() => {
+          calls.push(command);
+          return { status: "proposed", proposalId: 1 } as const;
+        }),
+    });
+    const base = {
+      account_id: "gmail:me@example.com",
+      body: "收到。",
+      reply_to_message_id: "m9",
+      rationale: "r",
+    };
+    for (const mode of ["reply", "replyAll"] as const)
+      assert.isFalse((yield* run(call("draft_message", { ...base, mode }), layer)).isFailure);
+    const messages = calls.map((c) => (c.kind === "draft" ? c.message : undefined));
+    assert.deepStrictEqual(
+      messages.map((m) => [m?.subject, m?.to.map((a) => a.address), m?.cc.map((a) => a.address)]),
+      [
+        ["Re: 报价", ["alice@example.com"], []],
+        ["Re: 报价", ["alice@example.com"], ["bob@example.com"]],
+      ],
+    );
+    // A new message still needs a subject and a recipient.
+    const missing = yield* run(
+      call("draft_message", { account_id: "gmail:me@example.com", body: "b", rationale: "r" }),
+      layer,
+    );
+    assert.deepStrictEqual(missing.encodedResult, {
+      message: "New drafts need a subject.",
+      code: "invalid_input",
+    });
+  }),
+);
+
 it.effect("draft_message rejects a bad address without performing", () =>
   Effect.gen(function* () {
     const { calls, layer } = recordingMailbox({ status: "proposed", proposalId: 1 });
@@ -1669,21 +1728,34 @@ it.effect("tools fail as not_found for an account, profile or id the client cann
   }),
 );
 
-it.effect("semantic_search explains a missing account_id and an index that is not ready", () =>
-  Effect.gen(function* () {
-    const { IndexNotReady } = yield* Effect.promise(() => import("../domain/errors.js"));
-    const layer = stubMailbox({
-      semanticSearch: () => Effect.fail(new IndexNotReady({ message: "Not indexed yet." })),
-    });
-    const missing = failureOf(yield* run(call("semantic_search", { query: "trip" }), layer));
-    assert.strictEqual(missing.code, "invalid_input");
-    assert.include(missing.hint ?? "", "Pass an id from list_accounts");
-    const notReady = failureOf(
-      yield* run(call("semantic_search", { query: "trip", account_id: "a" }), layer),
-    );
-    assert.strictEqual(notReady.code, "not_ready");
-    assert.strictEqual(notReady.message, "Not indexed yet.");
-  }),
+it.effect(
+  "semantic_search searches every readable account by default and explains an index that is not ready",
+  () =>
+    Effect.gen(function* () {
+      const { IndexNotReady } = yield* Effect.promise(() => import("../domain/errors.js"));
+      const searched: (readonly string[] | undefined)[] = [];
+      const all = yield* run(
+        call("semantic_search", { query: "trip" }),
+        stubMailbox({
+          semanticSearch: (q) => {
+            searched.push(q.accountIds);
+            return Effect.succeed([]);
+          },
+        }),
+      );
+      assert.isFalse(all.isFailure);
+      assert.deepStrictEqual(searched, [
+        ["a", "gmail:a@example.com", "gmail:me@gmail.com", "gmail:me@example.com"],
+      ]);
+      const layer = stubMailbox({
+        semanticSearch: () => Effect.fail(new IndexNotReady({ message: "Not indexed yet." })),
+      });
+      const notReady = failureOf(
+        yield* run(call("semantic_search", { query: "trip", account_id: "a" }), layer),
+      );
+      assert.strictEqual(notReady.code, "not_ready");
+      assert.strictEqual(notReady.message, "Not indexed yet.");
+    }),
 );
 
 /** Every object key in a JSON value, at any depth. */

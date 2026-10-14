@@ -369,13 +369,13 @@ exports[`tool input and output schemas are stable 1`] = `
     "readonly": true,
   },
   {
-    "description": "Find up to five conversations in one account by meaning, using its on-device text index. Use it when keyword search misses. Message snippets are omitted. Page with next_cursor.",
+    "description": "Find up to five conversations by meaning, using the on-device text index. Use it when keyword search misses. Message snippets are omitted. Page with next_cursor.",
     "idempotent": true,
     "input": {
       "additionalProperties": true,
       "properties": {
         "account_id": {
-          "description": "Required for MCP. The account needs AI consent and a ready on-device text index.",
+          "description": "Only this account. Default: every account you can read. Each needs a ready on-device text index.",
           "type": "string",
         },
         "cursor": {
@@ -1308,12 +1308,12 @@ exports[`tool input and output schemas are stable 1`] = `
           "type": "string",
         },
         "subject": {
-          "description": "Ignored for replies, which keep the original subject.",
+          "description": "Required for new messages. Replies default to Re: and the original subject.",
           "maxLength": 998,
           "type": "string",
         },
         "to": {
-          "description": "Addresses as "name@example.com" or "Name <name@example.com>".",
+          "description": "Required for new messages. A reply without to, cc and bcc goes to the original's sender, or to everyone on it for replyAll. Entries are "name@example.com" or "Name <name@example.com>".",
           "items": {
             "maxLength": 320,
             "type": "string",
@@ -1324,8 +1324,6 @@ exports[`tool input and output schemas are stable 1`] = `
       },
       "required": [
         "account_id",
-        "to",
-        "subject",
         "body",
         "rationale",
       ],

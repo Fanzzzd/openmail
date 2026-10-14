@@ -1,7 +1,6 @@
 /** Tools that list, search, read and sync threads. */
 
 import {
-  ACCOUNT_ID_HINT,
   AccountId,
   MailToolError,
   ThreadId,
@@ -129,7 +128,7 @@ export const ReadThread = readOnly(
 export const SemanticSearch = readOnly(
   mailTool("semantic_search", {
     description:
-      "Find up to five conversations in one account by meaning, using its on-device text index. Use it when keyword search misses. Message snippets are omitted. Page with next_cursor.",
+      "Find up to five conversations by meaning, using the on-device text index. Use it when keyword search misses. Message snippets are omitted. Page with next_cursor.",
     parameters: Schema.Struct({
       query: Schema.String.check(Schema.isMinLength(1), Schema.isMaxLength(4096)).annotate({
         description: "What the mail is about, in plain words.",
@@ -137,7 +136,7 @@ export const SemanticSearch = readOnly(
       account_id: Schema.optionalKey(
         AccountId.annotate({
           description:
-            "Required for MCP. The account needs AI consent and a ready on-device text index.",
+            "Only this account. Default: every account you can read. Each needs a ready on-device text index.",
         }),
       ),
       ...PageParameters,
@@ -279,29 +278,19 @@ export const threadHandlers = ({
       page(
         "semantic_search",
         p,
-        Effect.flatMap(identity.current, (current) =>
-          !p.account_id && current.surface === "mcp"
-            ? Effect.fail(
-                toolError(
-                  "invalid_input",
-                  "semantic_search needs account_id: it searches one account's on-device index.",
-                  ACCOUNT_ID_HINT,
-                ),
-              )
-            : forAccounts(p.account_id, (ids) =>
-                mailbox.semanticSearch({ search: p.query, accountIds: ids, limit: 5 }).pipe(
-                  Effect.mapError((e) =>
-                    e._tag === "IndexNotReady"
-                      ? toolError(
-                          "not_ready",
-                          e.message,
-                          "Use search for keywords meanwhile, and tell the person why meaning search is unavailable.",
-                        )
-                      : toToolError(e),
-                  ),
-                  Effect.map((rows) => rows.map(compactThread)),
-                ),
-              ),
+        forAccounts(p.account_id, (ids) =>
+          mailbox.semanticSearch({ search: p.query, accountIds: ids, limit: 5 }).pipe(
+            Effect.mapError((e) =>
+              e._tag === "IndexNotReady"
+                ? toolError(
+                    "not_ready",
+                    e.message,
+                    "Use search for keywords meanwhile, and tell the person why meaning search is unavailable.",
+                  )
+                : toToolError(e),
+            ),
+            Effect.map((rows) => rows.map(compactThread)),
+          ),
         ),
       ).pipe(Effect.map(({ items, ...rest }) => ({ ...rest, threads: items }))),
     sync: ({ account_id, token_budget }) =>

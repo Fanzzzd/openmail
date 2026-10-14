@@ -2,6 +2,7 @@
 
 import {
   AccountId,
+  MESSAGE_ID_HINT,
   MailToolError,
   Rationale,
   Recipients,
@@ -21,6 +22,7 @@ import {
   toolError,
 } from "./tool-common.js";
 import { Effect, Schema } from "effect";
+import { replyRecipients, replySubject } from "../compose/recipients.js";
 import { Tool } from "effect/ai";
 import { detailParameters } from "./compose-tools.js";
 import type { MailOp } from "../domain/changes.js";
@@ -72,12 +74,19 @@ export const DraftMessage = appTool("draft_message", {
     "Propose a new message or reply as a local draft. The person reviews, edits and sends it in OpenMail; no tool sends mail. For a reply, pass reply_to_message_id.",
   parameters: Schema.Struct({
     account_id: AccountId.annotate({ description: "The account to send from (list_accounts)." }),
-    to: Recipients,
+    to: Schema.optionalKey(
+      Recipients.annotate({
+        description:
+          'Required for new messages. A reply without to, cc and bcc goes to the original\'s sender, or to everyone on it for replyAll. Entries are "name@example.com" or "Name <name@example.com>".',
+      }),
+    ),
     cc: Schema.optionalKey(Recipients),
     bcc: Schema.optionalKey(Recipients),
-    subject: Schema.String.check(Schema.isMaxLength(998)).annotate({
-      description: "Ignored for replies, which keep the original subject.",
-    }),
+    subject: Schema.optionalKey(
+      Schema.String.check(Schema.isMaxLength(998)).annotate({
+        description: "Required for new messages. Replies default to Re: and the original subject.",
+      }),
+    ),
     body: Schema.String.check(Schema.isMaxLength(24_000)).annotate({
       description: "Plain-text body. No HTML.",
     }),
@@ -260,23 +269,45 @@ export const proposalHandlers = ({
       return { outcome, message: yield* describe(outcome, "Snoozed conversations.") };
     }),
     draft_message: Effect.fnUntraced(function* (p) {
-      if ((yield* identity.current).surface === "mcp") {
-        yield* accountIdsFor(p.account_id);
-        if (p.reply_to_message_id) yield* requireMessage(p.reply_to_message_id);
-      }
-      const to = yield* addresses(p.to);
-      const cc = yield* addresses(p.cc);
-      const bcc = yield* addresses(p.bcc);
-      if (to.length + cc.length + bcc.length === 0) {
-        return yield* toolError("invalid_input", "The draft needs at least one recipient.");
-      }
-      const actor = yield* agent(p.rationale);
+      const mcp = (yield* identity.current).surface === "mcp";
+      if (mcp) yield* accountIdsFor(p.account_id);
       const mode = p.mode ?? (p.reply_to_message_id ? "reply" : "new");
       if ((mode === "new") === Boolean(p.reply_to_message_id))
         return yield* toolError(
           "invalid_input",
           "New drafts cannot have reply_to_message_id; replies require one.",
         );
+      const replyId = p.reply_to_message_id;
+      const original =
+        replyId === undefined
+          ? undefined
+          : mcp
+            ? yield* requireMessage(replyId)
+            : (yield* mailbox.thread(replyId).pipe(Effect.mapError(toToolError))).find(
+                (m) => m.id === replyId,
+              );
+      if (replyId !== undefined && !original)
+        return yield* toolError("not_found", `No message with id ${replyId}.`, MESSAGE_ID_HINT);
+      const subject = p.subject ?? (original ? replySubject(original.subject) : undefined);
+      if (subject === undefined)
+        return yield* toolError("invalid_input", "New drafts need a subject.");
+      let to = yield* addresses(p.to);
+      let cc = yield* addresses(p.cc);
+      const bcc = yield* addresses(p.bcc);
+      if (original && p.to === undefined && p.cc === undefined && p.bcc === undefined) {
+        // The person's own addresses never become reply recipients.
+        const own = [
+          ...(yield* mailbox.accounts).filter((a) => a.id === p.account_id).map((a) => a.email),
+          ...(yield* mailbox.sendAs)
+            .filter((a) => a.accountId === p.account_id)
+            .map((a) => a.address),
+        ];
+        ({ to, cc } = replyRecipients(original, own, mode === "replyAll"));
+      }
+      if (to.length + cc.length + bcc.length === 0) {
+        return yield* toolError("invalid_input", "The draft needs at least one recipient.");
+      }
+      const actor = yield* agent(p.rationale);
       const outcome = yield* mailbox
         .perform(
           {
@@ -286,7 +317,7 @@ export const proposalHandlers = ({
               to,
               cc,
               bcc,
-              subject: p.subject,
+              subject,
               text: p.body,
               attachments: [],
               mode,

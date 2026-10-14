@@ -42,8 +42,7 @@ const decodeCursorJson = Schema.decodeUnknownOption(Schema.fromJsonString(Cursor
 export function decodeCursor(raw: string | undefined, scope: string): PageCursor {
   if (!raw) return { scope, offset: 0 };
   const cursor = decodeCursorJson(Buffer.from(raw, "base64").toString("utf8"));
-  if (Option.isNone(cursor))
-    throw new Error("The cursor is not a next_cursor from OpenMail.");
+  if (Option.isNone(cursor)) throw new Error("The cursor is not a next_cursor from OpenMail.");
   if (cursor.value.scope !== scope)
     throw new Error(
       "The cursor belongs to another tool or other filters. Pass it with the filters of the call that returned it.",
