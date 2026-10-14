@@ -4444,11 +4444,16 @@ msgstr "{label} nach unten"
 msgid "Move {label} up"
 msgstr "{label} nach oben"
 
-#: src/renderer/src/features/settings/sections/AccountControls.tsx
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Move down"
 msgstr "Nach unten"
+
+#. Only the verb is visible. The account address is read by screen readers.
+#: src/renderer/src/features/settings/sections/AccountControls.tsx
+msgctxt "account row action"
+msgid "Move down <0>{email}</0>"
+msgstr "Nach unten <0>{email}</0>"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Move focus between panes"
@@ -4518,11 +4523,16 @@ msgstr "Auf die oberste Ebene verschieben"
 msgid "Move to Trash"
 msgstr "In den Papierkorb verschieben"
 
-#: src/renderer/src/features/settings/sections/AccountControls.tsx
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Move up"
 msgstr "Nach oben"
+
+#. Only the verb is visible. The account address is read by screen readers.
+#: src/renderer/src/features/settings/sections/AccountControls.tsx
+msgctxt "account row action"
+msgid "Move up <0>{email}</0>"
+msgstr "Nach oben <0>{email}</0>"
 
 #: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/features/ai/Proposals.tsx
@@ -5833,7 +5843,6 @@ msgstr "Externe Bilder blockiert"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-#: src/renderer/src/features/settings/Settings.tsx
 msgid "Remove"
 msgstr "Entfernen"
 
@@ -5861,6 +5870,12 @@ msgstr "{text} entfernen"
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Remove {token}"
 msgstr "{token} entfernen"
+
+#. Only the verb is visible. The account address is read by screen readers.
+#: src/renderer/src/features/settings/Settings.tsx
+msgctxt "account row action"
+msgid "Remove <0>{email}</0>"
+msgstr "Entfernen <0>{email}</0>"
 
 #: src/renderer/src/features/settings/sections/audit-actions.ts
 msgid "Remove account"
@@ -6212,7 +6227,6 @@ msgstr "Samstag"
 #: src/renderer/src/features/compose/components/TemplatePicker.tsx
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
-#: src/renderer/src/features/settings/sections/AccountControls.tsx
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
@@ -6224,6 +6238,12 @@ msgstr "Sichern"
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Save {0}"
 msgstr "Speichern {0}"
+
+#. Only the verb is visible. The account address is read by screen readers.
+#: src/renderer/src/features/settings/sections/AccountControls.tsx
+msgctxt "account row action"
+msgid "Save <0>{email}</0>"
+msgstr "Sichern <0>{email}</0>"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Save all"
@@ -6791,10 +6811,15 @@ msgstr "Seitenleiste"
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 #: src/renderer/src/features/settings/sections/ContactSettings.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
-#: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Sign in again"
 msgstr "Erneut anmelden"
+
+#. Only the verb is visible. The account address is read by screen readers.
+#: src/renderer/src/features/settings/Settings.tsx
+msgctxt "account row action"
+msgid "Sign in again <0>{email}</0>"
+msgstr "Erneut anmelden <0>{email}</0>"
 
 #: src/renderer/src/ui/SignInAgainOnMac.tsx
 msgid "Sign in again on your Mac"
@@ -7196,6 +7221,11 @@ msgstr "Synchronisierung fehlgeschlagen ({count})"
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Sync health"
 msgstr "Synchronisationsstatus"
+
+#. Region in an account's settings. The variable is the account's email address.
+#: src/renderer/src/features/settings/sections/SyncHealth.tsx
+msgid "Sync health for {email}"
+msgstr "Synchronisationsstatus für {email}"
 
 #: src/renderer/src/features/mail-list/EmptyList.tsx
 #: src/renderer/src/features/sidebar/SidebarFooter.tsx

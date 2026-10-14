@@ -4454,11 +4454,16 @@ msgstr "将{label}下移"
 msgid "Move {label} up"
 msgstr "将{label}上移"
 
-#: src/renderer/src/features/settings/sections/AccountControls.tsx
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Move down"
 msgstr "下移"
+
+#. Only the verb is visible. The account address is read by screen readers.
+#: src/renderer/src/features/settings/sections/AccountControls.tsx
+msgctxt "account row action"
+msgid "Move down <0>{email}</0>"
+msgstr "下移<0>：{email}</0>"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Move focus between panes"
@@ -4528,11 +4533,16 @@ msgstr "移到顶层"
 msgid "Move to Trash"
 msgstr "移到废纸篓"
 
-#: src/renderer/src/features/settings/sections/AccountControls.tsx
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Move up"
 msgstr "上移"
+
+#. Only the verb is visible. The account address is read by screen readers.
+#: src/renderer/src/features/settings/sections/AccountControls.tsx
+msgctxt "account row action"
+msgid "Move up <0>{email}</0>"
+msgstr "上移<0>：{email}</0>"
 
 #: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/features/ai/Proposals.tsx
@@ -5843,7 +5853,6 @@ msgstr "已拦截远程图片"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-#: src/renderer/src/features/settings/Settings.tsx
 msgid "Remove"
 msgstr "移除"
 
@@ -5871,6 +5880,12 @@ msgstr "移除 {text}"
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Remove {token}"
 msgstr "移除 {token}"
+
+#. Only the verb is visible. The account address is read by screen readers.
+#: src/renderer/src/features/settings/Settings.tsx
+msgctxt "account row action"
+msgid "Remove <0>{email}</0>"
+msgstr "移除<0>：{email}</0>"
 
 #: src/renderer/src/features/settings/sections/audit-actions.ts
 msgid "Remove account"
@@ -6222,7 +6237,6 @@ msgstr "星期六"
 #: src/renderer/src/features/compose/components/TemplatePicker.tsx
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
-#: src/renderer/src/features/settings/sections/AccountControls.tsx
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
@@ -6234,6 +6248,12 @@ msgstr "保存"
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Save {0}"
 msgstr "保存 {0}"
+
+#. Only the verb is visible. The account address is read by screen readers.
+#: src/renderer/src/features/settings/sections/AccountControls.tsx
+msgctxt "account row action"
+msgid "Save <0>{email}</0>"
+msgstr "保存<0>：{email}</0>"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Save all"
@@ -6801,10 +6821,15 @@ msgstr "侧栏"
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 #: src/renderer/src/features/settings/sections/ContactSettings.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
-#: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Sign in again"
 msgstr "重新登录"
+
+#. Only the verb is visible. The account address is read by screen readers.
+#: src/renderer/src/features/settings/Settings.tsx
+msgctxt "account row action"
+msgid "Sign in again <0>{email}</0>"
+msgstr "重新登录<0>：{email}</0>"
 
 #: src/renderer/src/ui/SignInAgainOnMac.tsx
 msgid "Sign in again on your Mac"
@@ -7206,6 +7231,11 @@ msgstr "同步失败（{count}）"
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Sync health"
 msgstr "同步状态"
+
+#. Region in an account's settings. The variable is the account's email address.
+#: src/renderer/src/features/settings/sections/SyncHealth.tsx
+msgid "Sync health for {email}"
+msgstr "{email} 的同步状态"
 
 #: src/renderer/src/features/mail-list/EmptyList.tsx
 #: src/renderer/src/features/sidebar/SidebarFooter.tsx

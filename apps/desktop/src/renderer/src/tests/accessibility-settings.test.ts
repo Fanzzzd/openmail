@@ -179,6 +179,31 @@ it("audits a custom attachment folder shown read-only with a picker button", asy
   await audit();
 });
 
+it("names each account row and its actions with the address, after the visible text", async () => {
+  const work = { ...account, id: "gmail:work", email: "work@example.com" };
+  render(
+    localized(
+      h(Settings, {
+        initialTab: "accounts",
+        accounts: [account, work],
+        onClose: vi.fn(),
+        onAddAccount: vi.fn(),
+      }),
+    ),
+  );
+  for (const email of [account.email, work.email]) {
+    const row = within(screen.getByRole("group", { name: email }));
+    for (const verb of ["Sign in again", "Remove", "Save", "Move up", "Move down"]) {
+      const button = row.getByRole("button", { name: `${verb} ${email}` });
+      // The visible text starts the accessible name (WCAG 2.5.3, label in name).
+      expect(button.firstChild?.textContent?.trim()).toBe(verb);
+      expect(button.querySelector(".sr-only")?.textContent).toBe(email);
+    }
+    expect(row.getByRole("region", { name: `Sync health for ${email}` })).toBeTruthy();
+  }
+  await audit();
+});
+
 it("existing accounts without an OAuth registration show the configuration state", () => {
   fixture.values.set("clientSetupAtom", NO_CLIENTS);
   render(

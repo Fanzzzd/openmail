@@ -4448,11 +4448,16 @@ msgstr "Move {label} down"
 msgid "Move {label} up"
 msgstr "Move {label} up"
 
-#: src/renderer/src/features/settings/sections/AccountControls.tsx
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Move down"
 msgstr "Move down"
+
+#. Only the verb is visible. The account address is read by screen readers.
+#: src/renderer/src/features/settings/sections/AccountControls.tsx
+msgctxt "account row action"
+msgid "Move down <0>{email}</0>"
+msgstr "Move down <0>{email}</0>"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Move focus between panes"
@@ -4522,11 +4527,16 @@ msgstr "Move to top level"
 msgid "Move to Trash"
 msgstr "Move to Trash"
 
-#: src/renderer/src/features/settings/sections/AccountControls.tsx
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Move up"
 msgstr "Move up"
+
+#. Only the verb is visible. The account address is read by screen readers.
+#: src/renderer/src/features/settings/sections/AccountControls.tsx
+msgctxt "account row action"
+msgid "Move up <0>{email}</0>"
+msgstr "Move up <0>{email}</0>"
 
 #: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/features/ai/Proposals.tsx
@@ -5837,7 +5847,6 @@ msgstr "Remote images blocked"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-#: src/renderer/src/features/settings/Settings.tsx
 msgid "Remove"
 msgstr "Remove"
 
@@ -5865,6 +5874,12 @@ msgstr "Remove {text}"
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Remove {token}"
 msgstr "Remove {token}"
+
+#. Only the verb is visible. The account address is read by screen readers.
+#: src/renderer/src/features/settings/Settings.tsx
+msgctxt "account row action"
+msgid "Remove <0>{email}</0>"
+msgstr "Remove <0>{email}</0>"
 
 #: src/renderer/src/features/settings/sections/audit-actions.ts
 msgid "Remove account"
@@ -6216,7 +6231,6 @@ msgstr "Saturday"
 #: src/renderer/src/features/compose/components/TemplatePicker.tsx
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
-#: src/renderer/src/features/settings/sections/AccountControls.tsx
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
@@ -6228,6 +6242,12 @@ msgstr "Save"
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Save {0}"
 msgstr "Save {0}"
+
+#. Only the verb is visible. The account address is read by screen readers.
+#: src/renderer/src/features/settings/sections/AccountControls.tsx
+msgctxt "account row action"
+msgid "Save <0>{email}</0>"
+msgstr "Save <0>{email}</0>"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Save all"
@@ -6795,10 +6815,15 @@ msgstr "Sidebar"
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 #: src/renderer/src/features/settings/sections/ContactSettings.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
-#: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Sign in again"
 msgstr "Sign in again"
+
+#. Only the verb is visible. The account address is read by screen readers.
+#: src/renderer/src/features/settings/Settings.tsx
+msgctxt "account row action"
+msgid "Sign in again <0>{email}</0>"
+msgstr "Sign in again <0>{email}</0>"
 
 #: src/renderer/src/ui/SignInAgainOnMac.tsx
 msgid "Sign in again on your Mac"
@@ -7200,6 +7225,11 @@ msgstr "Sync failed ({count})"
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Sync health"
 msgstr "Sync health"
+
+#. Region in an account's settings. The variable is the account's email address.
+#: src/renderer/src/features/settings/sections/SyncHealth.tsx
+msgid "Sync health for {email}"
+msgstr "Sync health for {email}"
 
 #: src/renderer/src/features/mail-list/EmptyList.tsx
 #: src/renderer/src/features/sidebar/SidebarFooter.tsx

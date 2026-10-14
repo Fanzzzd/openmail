@@ -10,7 +10,7 @@ import { buttonLink, settingsHint } from "../../../ui/styles";
 
 const head = "px-2 py-1 font-medium whitespace-nowrap";
 const cell = "px-2 py-1 align-top";
-export function SyncHealthCheck({ accountId }: { accountId: string }) {
+export function SyncHealthCheck({ accountId, email }: { accountId: string; email: string }) {
   const { t } = useLingui();
   const run = useRunMail();
   const [report, setReport] = useState<SyncHealth | null>(null);
@@ -58,7 +58,13 @@ export function SyncHealthCheck({ accountId }: { accountId: string }) {
       ? t`Never synced`
       : t`${plural(seconds, { one: "# second", other: "# seconds" })}`;
   return (
-    <section className="space-y-2" aria-label={t`Sync health`}>
+    <section
+      className="space-y-2"
+      aria-label={t({
+        message: `Sync health for ${email}`,
+        comment: "Region in an account's settings. The variable is the account's email address.",
+      })}
+    >
       <button type="button" onClick={check} disabled={waiting} className={buttonLink}>
         {waiting ? t`Checking sync health…` : t`Check sync health`}
       </button>

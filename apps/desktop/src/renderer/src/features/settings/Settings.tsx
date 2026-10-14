@@ -443,57 +443,71 @@ function AccountRow({
 
   return (
     <li {...dragProps} draggable={!moving} className="px-3 py-2.5">
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <ProviderIcon provider={a.imap?.preset ?? a.provider} className="size-5 shrink-0" />
-        <span className="min-w-0 flex-1 basis-40">
-          <span className="block truncate font-medium" title={a.email}>
-            {accountName(a)}
+      {/* The group names the row, so each control reads as this account's. */}
+      {/* oxlint-disable-next-line jsx-a11y/prefer-tag-over-role */}
+      <div role="group" aria-label={email}>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <ProviderIcon provider={a.imap?.preset ?? a.provider} className="size-5 shrink-0" />
+          <span className="min-w-0 flex-1 basis-40">
+            <span className="block truncate font-medium" title={a.email}>
+              {accountName(a)}
+            </span>
+            <span
+              className={`block truncate text-footnote ${status.className}`}
+              title={
+                a.needsReauth
+                  ? reauthText(i18n, a)
+                  : a.lastSyncError
+                    ? syncErrorText(i18n, a.lastSyncError)
+                    : undefined
+              }
+            >
+              {reauth.waiting
+                ? t`Finish signing in in your browser`
+                : (resultError(i18n, reauth) ?? status.text)}
+            </span>
           </span>
-          <span
-            className={`block truncate text-footnote ${status.className}`}
-            title={
-              a.needsReauth
-                ? reauthText(i18n, a)
-                : a.lastSyncError
-                  ? syncErrorText(i18n, a.lastSyncError)
-                  : undefined
-            }
-          >
-            {reauth.waiting
-              ? t`Finish signing in in your browser`
-              : (resultError(i18n, reauth) ?? status.text)}
+          <span className="flex shrink-0 items-center gap-3">
+            <button
+              type="button"
+              disabled={reauth.waiting}
+              // IMAP signs in again by adding the same address with a new password.
+              onClick={() =>
+                providerCapabilities(a.provider).signIn === "password"
+                  ? onAddAccount()
+                  : runReauth(undefined)
+              }
+              className={buttonLink}
+            >
+              <Trans
+                context="account row action"
+                comment="Only the verb is visible. The account address is read by screen readers."
+              >
+                Sign in again <span className="sr-only">{email}</span>
+              </Trans>
+            </button>
+            <button type="button" onClick={() => setConfirming(true)} className={removeLink}>
+              <Trans
+                context="account row action"
+                comment="Only the verb is visible. The account address is read by screen readers."
+              >
+                Remove <span className="sr-only">{email}</span>
+              </Trans>
+            </button>
           </span>
-        </span>
-        <span className="flex shrink-0 items-center gap-3">
-          <button
-            type="button"
-            disabled={reauth.waiting}
-            // IMAP signs in again by adding the same address with a new password.
-            onClick={() =>
-              providerCapabilities(a.provider).signIn === "password"
-                ? onAddAccount()
-                : runReauth(undefined)
-            }
-            className={buttonLink}
-          >
-            <Trans>Sign in again</Trans>
-          </button>
-          <button type="button" onClick={() => setConfirming(true)} className={removeLink}>
-            <Trans>Remove</Trans>
-          </button>
-        </span>
-      </div>
-      {/* Per-account settings sit under the name, past the 20 px icon and its 12 px gap. */}
-      <div className="mt-2 ml-8 space-y-2.5 text-footnote">
-        <AccountControls
-          key={`${a.id}:${a.description}:${a.color}:${a.imap?.authservId}`}
-          account={a}
-          accounts={accounts}
-          move={move}
-          moving={moving}
-        />
-        <OptionalServices account={a} focus={optionalFocus} />
-        <SyncHealthCheck accountId={a.id} />
+        </div>
+        {/* Per-account settings sit under the name, past the 20 px icon and its 12 px gap. */}
+        <div className="mt-2 ml-8 space-y-2.5 text-footnote">
+          <AccountControls
+            key={`${a.id}:${a.description}:${a.color}:${a.imap?.authservId}`}
+            account={a}
+            accounts={accounts}
+            move={move}
+            moving={moving}
+          />
+          <OptionalServices account={a} focus={optionalFocus} />
+          <SyncHealthCheck accountId={a.id} email={email} />
+        </div>
       </div>
       <Alert
         open={confirming}

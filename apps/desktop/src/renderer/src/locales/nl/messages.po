@@ -4444,11 +4444,16 @@ msgstr "Verplaats {label} naar beneden"
 msgid "Move {label} up"
 msgstr "Verplaats {label} omhoog"
 
-#: src/renderer/src/features/settings/sections/AccountControls.tsx
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Move down"
 msgstr "Omlaag"
+
+#. Only the verb is visible. The account address is read by screen readers.
+#: src/renderer/src/features/settings/sections/AccountControls.tsx
+msgctxt "account row action"
+msgid "Move down <0>{email}</0>"
+msgstr "Omlaag <0>{email}</0>"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Move focus between panes"
@@ -4518,11 +4523,16 @@ msgstr "Naar hoogste niveau verplaatsen"
 msgid "Move to Trash"
 msgstr "Verplaatsen naar prullenmand"
 
-#: src/renderer/src/features/settings/sections/AccountControls.tsx
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Move up"
 msgstr "Omhoog"
+
+#. Only the verb is visible. The account address is read by screen readers.
+#: src/renderer/src/features/settings/sections/AccountControls.tsx
+msgctxt "account row action"
+msgid "Move up <0>{email}</0>"
+msgstr "Omhoog <0>{email}</0>"
 
 #: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/features/ai/Proposals.tsx
@@ -5833,7 +5843,6 @@ msgstr "Externe afbeeldingen geblokkeerd"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
-#: src/renderer/src/features/settings/Settings.tsx
 msgid "Remove"
 msgstr "Verwijder"
 
@@ -5861,6 +5870,12 @@ msgstr "{text} verwijderen"
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Remove {token}"
 msgstr "{token} verwijderen"
+
+#. Only the verb is visible. The account address is read by screen readers.
+#: src/renderer/src/features/settings/Settings.tsx
+msgctxt "account row action"
+msgid "Remove <0>{email}</0>"
+msgstr "Verwijder <0>{email}</0>"
 
 #: src/renderer/src/features/settings/sections/audit-actions.ts
 msgid "Remove account"
@@ -6212,7 +6227,6 @@ msgstr "Zaterdag"
 #: src/renderer/src/features/compose/components/TemplatePicker.tsx
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
-#: src/renderer/src/features/settings/sections/AccountControls.tsx
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
@@ -6224,6 +6238,12 @@ msgstr "Bewaar"
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Save {0}"
 msgstr "Bewaar {0}"
+
+#. Only the verb is visible. The account address is read by screen readers.
+#: src/renderer/src/features/settings/sections/AccountControls.tsx
+msgctxt "account row action"
+msgid "Save <0>{email}</0>"
+msgstr "Bewaar <0>{email}</0>"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Save all"
@@ -6791,10 +6811,15 @@ msgstr "Zijbalk"
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 #: src/renderer/src/features/settings/sections/ContactSettings.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
-#: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Sign in again"
 msgstr "Meld je opnieuw aan"
+
+#. Only the verb is visible. The account address is read by screen readers.
+#: src/renderer/src/features/settings/Settings.tsx
+msgctxt "account row action"
+msgid "Sign in again <0>{email}</0>"
+msgstr "Meld je opnieuw aan <0>{email}</0>"
 
 #: src/renderer/src/ui/SignInAgainOnMac.tsx
 msgid "Sign in again on your Mac"
@@ -7196,6 +7221,11 @@ msgstr "Synchronisatie mislukt ({count})"
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Sync health"
 msgstr "Synchronisatiestatus"
+
+#. Region in an account's settings. The variable is the account's email address.
+#: src/renderer/src/features/settings/sections/SyncHealth.tsx
+msgid "Sync health for {email}"
+msgstr "Synchronisatiestatus voor {email}"
 
 #: src/renderer/src/features/mail-list/EmptyList.tsx
 #: src/renderer/src/features/sidebar/SidebarFooter.tsx

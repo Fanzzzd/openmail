@@ -28,6 +28,7 @@ export function AccountControls({
   move: (id: string, profileId: string | null, beforeId: string | null) => void;
 }) {
   const { t, i18n } = useLingui();
+  const email = account.email;
   const profiles = AsyncResult.getOrElse(useAtomValue(profilesAtom), () => []);
   const [description, setDescription] = useState(account.description ?? "");
   const [authservId, setAuthservId] = useState(account.imap?.authservId ?? "");
@@ -63,7 +64,12 @@ export function AccountControls({
       }
       className={buttonLink}
     >
-      <Trans>Save</Trans>
+      <Trans
+        context="account row action"
+        comment="Only the verb is visible. The account address is read by screen readers."
+      >
+        Save <span className="sr-only">{email}</span>
+      </Trans>
     </button>
   );
   return (
@@ -176,7 +182,12 @@ export function AccountControls({
           onClick={() => previous && move(account.id, account.profileId, previous.id)}
           className={quietButton}
         >
-          <Trans>Move up</Trans>
+          <Trans
+            context="account row action"
+            comment="Only the verb is visible. The account address is read by screen readers."
+          >
+            Move up <span className="sr-only">{email}</span>
+          </Trans>
         </button>
         <button
           type="button"
@@ -184,7 +195,12 @@ export function AccountControls({
           onClick={() => move(account.id, account.profileId, members[index + 2]?.id ?? null)}
           className={quietButton}
         >
-          <Trans>Move down</Trans>
+          <Trans
+            context="account row action"
+            comment="Only the verb is visible. The account address is read by screen readers."
+          >
+            Move down <span className="sr-only">{email}</span>
+          </Trans>
         </button>
       </div>
       {resultError(i18n, result) && (

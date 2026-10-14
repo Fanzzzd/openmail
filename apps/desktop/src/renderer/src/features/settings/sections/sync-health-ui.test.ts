@@ -50,7 +50,15 @@ it("account sync health is explicit, renders offline counts and copies a redacte
   const writeText = vi.fn().mockResolvedValue(undefined);
   vi.stubGlobal("navigator", { clipboard: { writeText } });
   const i18n = setupI18n({ locale: "en", messages: {} });
-  render(h(I18nProvider, { i18n }, h(SyncHealthCheck, { accountId: "gmail:me@example.com" })));
+  render(
+    h(
+      I18nProvider,
+      { i18n },
+      h(SyncHealthCheck, { accountId: "gmail:me@example.com", email: "me@example.com" }),
+    ),
+  );
+  // With two accounts there are two of these regions; the address tells them apart.
+  expect(screen.getByRole("region", { name: "Sync health for me@example.com" })).toBeTruthy();
   expect(fixture.calls).toEqual([]);
   fireEvent.click(screen.getByRole("button", { name: "Check sync health" }));
   await waitFor(() =>
