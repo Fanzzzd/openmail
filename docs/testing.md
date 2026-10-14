@@ -205,6 +205,8 @@ OPENMAIL_HOME=/tmp/openmail-demo OPENMAIL_READ_ONLY=1 OPENMAIL_OFFLINE=1 OPENMAI
 
 The implementation is in [appearance.ts](../apps/desktop/src/main/windows/appearance.ts).
 
+When the app gets `--user-data-dir`, that directory holds both Electron's profile and OpenMail's database, and the app ignores `OPENMAIL_HOME`. Pass the seeded directory to both: `OPENMAIL_HOME` for the CLI or an MCP server started from the same shell, `--user-data-dir` for the app. A `--user-data-dir` that differs from the seeded directory opens an empty profile. The precedence is in [main.ts](../apps/desktop/src/main/main.ts).
+
 ## Regressions by area
 
 - [undo-journal.test.ts](../packages/core/src/mailbox/undo-journal.test.ts), [signatures.test.ts](../packages/core/src/compose/signatures.test.ts): undo across restarts, and signatures.
