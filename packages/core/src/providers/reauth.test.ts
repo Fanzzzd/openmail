@@ -18,7 +18,6 @@ import { makeProviderHttp } from "./provider-http.js";
 import { providerReadFailure } from "./provider-send.js";
 import {
   isLoginRefusal,
-  isTestingModeExpiry,
   KEEP_ALIVE_MAX_AGE_MS,
   keychainLocked,
   ReauthDiagnostic,
@@ -61,12 +60,6 @@ it("only definitive OAuth codes ask for a new sign-in; everything else is retrie
   assert.notInclude(error.message, "secret");
 });
 
-it("Google's Testing-mode expiry is an invalid_grant at least 6.5 days after sign-in", () => {
-  assert.isTrue(isTestingModeExpiry(0, 6.5 * DAY));
-  assert.isTrue(isTestingModeExpiry(0, 30 * DAY));
-  assert.isFalse(isTestingModeExpiry(0, 2 * DAY));
-});
-
 const issuers = (issuedAt: number | undefined, issuer = "client"): OAuthIssuers["Service"] => ({
   get: () => Effect.succeed(Option.some(issuer)),
   set: () => Effect.void,
@@ -85,7 +78,7 @@ const config: AppConfig["Service"] = {
 const googleRefresh = (issuedAt: number | undefined, issuer = "client") =>
   refreshWithIssuer(
     { config, issuers: issuers(issuedAt, issuer) },
-    { name: "Google", pick: (clients) => clients.google, testingMode: true },
+    { name: "Google", pick: (clients) => clients.google },
     ID,
     () => Effect.fail(tokenEndpointFailure(ID, 400, '{"error":"invalid_grant"}')),
   ).pipe(
@@ -93,17 +86,13 @@ const googleRefresh = (issuedAt: number | undefined, issuer = "client") =>
     Effect.map((error) => error._tag === "AuthError" && error.reason),
   );
 
-it.effect(
-  "the built-in client's invalid_grant 7 days after sign-in is testing_mode_expiry; at 2 days, without a time, or from an own client it is a revocation",
-  () =>
-    Effect.gen(function* () {
-      yield* TestClock.setTime(40 * DAY);
-      assert.strictEqual(yield* googleRefresh(33 * DAY), "testing_mode_expiry");
-      assert.strictEqual(yield* googleRefresh(0), "testing_mode_expiry");
-      assert.strictEqual(yield* googleRefresh(38 * DAY), "token_revoked");
-      assert.strictEqual(yield* googleRefresh(undefined), "token_revoked");
-      assert.strictEqual(yield* googleRefresh(33 * DAY, "own"), "token_revoked");
-    }),
+it.effect("an invalid_grant is a revocation however long ago the sign-in was", () =>
+  Effect.gen(function* () {
+    yield* TestClock.setTime(40 * DAY);
+    assert.strictEqual(yield* googleRefresh(0), "token_revoked");
+    assert.strictEqual(yield* googleRefresh(33 * DAY), "token_revoked");
+    assert.strictEqual(yield* googleRefresh(undefined), "token_revoked");
+  }),
 );
 
 it.effect("a refresh token whose client is gone is client_mismatch", () =>

@@ -79,13 +79,6 @@ export const isLoginRefusal = (reply: {
   !(reply.text !== undefined && TRANSIENT_LOGIN_TEXT.test(reply.text)) &&
   !(reply.smtpCode !== undefined && reply.smtpCode < 500);
 
-/** Google expires refresh tokens of apps in Testing status seven days after consent. */
-const TESTING_MODE_MIN_MS = 6.5 * 86_400_000;
-
-/** An invalid_grant from the built-in Google client at least 6.5 days after sign-in. */
-export const isTestingModeExpiry = (issuedAt: number, now: number) =>
-  now - issuedAt >= TESTING_MODE_MIN_MS;
-
 /** A keep-alive refresh is due after this long without one, checked every KEEP_ALIVE_CHECK. */
 export const KEEP_ALIVE_MAX_AGE_MS = 6 * 86_400_000;
 export const KEEP_ALIVE_CHECK = "6 hours";

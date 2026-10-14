@@ -1,7 +1,6 @@
-import { Clock, Effect, Option } from "effect";
+import { Effect, Option } from "effect";
 
 import { AuthError, ProviderError } from "../domain/errors.js";
-import { isTestingModeExpiry } from "./reauth.js";
 import type { AppConfig, ClientConfig, ClientSources, OAuthIssuers } from "../platform/auth.js";
 
 /** Per provider, the first source that has a client. */
@@ -50,17 +49,12 @@ export const clientForToken = <C extends { readonly clientId: string }>(
  * Refreshes an account's token with the client that issued it, or asks for a
  * new sign-in when that client is gone. An account signed in before issuers
  * were recorded gets its issuer recorded after the first refresh that succeeds.
- * Set `testingMode` only while the built-in client's Google app is in Testing:
- * then an invalid_grant at least 6.5 days after sign-in on a token from that
- * client is reported as Google's Testing-mode expiry. The status of an own
- * client is unknown.
  */
 export const refreshWithIssuer = <C extends { readonly clientId: string }, A>(
   deps: { config: AppConfig["Service"]; issuers: OAuthIssuers["Service"] },
   provider: {
     name: string;
     pick: (clients: ClientConfig) => C | undefined;
-    testingMode?: boolean;
   },
   accountId: string,
   refresh: (client: C) => Effect.Effect<A, AuthError | ProviderError>,
@@ -86,23 +80,7 @@ export const refreshWithIssuer = <C extends { readonly clientId: string }, A>(
         reason: "configuration",
       });
     }
-    const result = yield* refresh(client).pipe(
-      Effect.catchIf(
-        (error) =>
-          provider.testingMode === true &&
-          client.clientId === provider.pick(sources.builtIn)?.clientId &&
-          error._tag === "AuthError" &&
-          error.reason === "token_revoked",
-        (error) =>
-          Effect.gen(function* () {
-            const issued = yield* deps.issuers.issuedAt(accountId);
-            const now = yield* Clock.currentTimeMillis;
-            return yield* Option.isSome(issued) && isTestingModeExpiry(issued.value, now)
-              ? new AuthError({ accountId, message: error.message, reason: "testing_mode_expiry" })
-              : error;
-          }),
-      ),
-    );
+    const result = yield* refresh(client);
     if (Option.isNone(issuer)) yield* deps.issuers.set(accountId, client.clientId);
     return result;
   });
