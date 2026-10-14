@@ -3,7 +3,7 @@
 exports[`tool input and output schemas are stable 1`] = `
 [
   {
-    "description": "Report which accounts this client can read, how many are hidden and why, and whether it can propose changes. Call it first, and again when a result is unexpectedly empty. Relay next_steps to the person.",
+    "description": "Report which accounts this client can read, how many are hidden and why, whether it can propose changes, and the person's local time and time zone. Call it first, and again when a result is unexpectedly empty. Relay next_steps to the person.",
     "idempotent": true,
     "input": {
       "additionalProperties": false,
@@ -26,6 +26,10 @@ exports[`tool input and output schemas are stable 1`] = `
           "next_steps": {
             "type": "array",
           },
+          "now": {
+            "description": "The current local time, ISO 8601 with a UTC offset, such as 2026-10-15T09:00:00+08:00. Every time in tool results uses this format.",
+            "type": "string",
+          },
           "proposal_tools": {
             "type": "boolean",
           },
@@ -39,6 +43,10 @@ exports[`tool input and output schemas are stable 1`] = `
           "remote_writes_disabled": {
             "description": "OPENMAIL_READ_ONLY is set: sync fetches mail but pushes no changes.",
             "type": "boolean",
+          },
+          "time_zone": {
+            "description": "The person's IANA time zone, such as Asia/Shanghai.",
+            "type": "string",
           },
           "write_mode": {
             "enum": [
@@ -57,6 +65,8 @@ exports[`tool input and output schemas are stable 1`] = `
           "read_only_session",
           "remote_writes_disabled",
           "next_steps",
+          "now",
+          "time_zone",
         ],
         "type": "object",
       },
@@ -1218,8 +1228,15 @@ exports[`tool input and output schemas are stable 1`] = `
       "additionalProperties": true,
       "properties": {
         "due": {
-          "description": "When the conversations return to the inbox, in epoch milliseconds: a future time within the next year.",
-          "type": "number",
+          "anyOf": [
+            {
+              "type": "string",
+            },
+            {
+              "type": "number",
+            },
+          ],
+          "description": "When the conversations return to the inbox: a future time within the next year, as ISO 8601 with a UTC offset, such as 2026-10-15T09:00:00+08:00. Epoch milliseconds also work.",
         },
         "message_ids": {
           "description": "Message ids from list_threads or search; each stands for its thread.",

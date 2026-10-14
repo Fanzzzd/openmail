@@ -47,7 +47,46 @@ const COMPOSE_MODES = { new: "new", reply: "reply", reply_all: "replyAll" } as c
 
 /** How far ahead snooze_threads may snooze, as Mailbox.perform allows. */
 const SNOOZE_HORIZON_MS = 365 * 86_400_000;
-const SNOOZE_DUE_HINT = "Pass due as a future time within the next year, in epoch milliseconds.";
+const SNOOZE_DUE_HINT =
+  "Pass due as a future time within the next year, as ISO 8601 with a UTC offset, such as 2026-10-15T09:00:00+08:00. access_status gives now and time_zone.";
+const ISO_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,9})?)?/;
+const ISO_OFFSET = /(?:Z|[+-]\d{2}:\d{2})$/i;
+
+/**
+ * The instant `due` names, or a tool error. ISO 8601 needs an offset: without one the time is
+ * ambiguous, so it fails with a hint instead of being read in some zone. Epoch milliseconds
+ * still work for older clients.
+ */
+export function snoozeDue(due: number | string): Effect.Effect<number, MailToolError> {
+  if (typeof due === "number") return Effect.succeed(due);
+  const text = due.trim();
+  if (!ISO_TIME.test(text))
+    return Effect.fail(
+      toolError(
+        "invalid_input",
+        `due ${JSON.stringify(shortText(text, 64))} is not a time.`,
+        SNOOZE_DUE_HINT,
+      ),
+    );
+  if (!ISO_OFFSET.test(text))
+    return Effect.fail(
+      toolError(
+        "invalid_input",
+        `due ${JSON.stringify(shortText(text, 64))} has no UTC offset, so the time is ambiguous.`,
+        "Add the offset of the person's time zone, such as 2026-10-15T09:00:00+08:00. access_status gives time_zone and now.",
+      ),
+    );
+  const ms = Date.parse(text);
+  return Number.isFinite(ms)
+    ? Effect.succeed(ms)
+    : Effect.fail(
+        toolError(
+          "invalid_input",
+          `due ${JSON.stringify(shortText(text, 64))} is not a valid date.`,
+          SNOOZE_DUE_HINT,
+        ),
+      );
+}
 
 export const ModifyThreads = appTool("modify_threads", {
   description:
@@ -167,9 +206,9 @@ export const SnoozeThreads = appTool("snooze_threads", {
       .annotate({
         description: "Message ids from list_threads or search; each stands for its thread.",
       }),
-    due: Schema.Finite.annotate({
+    due: Schema.Union([Schema.String, Schema.Finite]).annotate({
       description:
-        "When the conversations return to the inbox, in epoch milliseconds: a future time within the next year.",
+        "When the conversations return to the inbox: a future time within the next year, as ISO 8601 with a UTC offset, such as 2026-10-15T09:00:00+08:00. Epoch milliseconds also work.",
     }),
     rationale: Rationale,
   }),
@@ -291,13 +330,14 @@ export const proposalHandlers = ({
     }),
     snooze_threads: Effect.fnUntraced(function* (p) {
       const now = yield* Clock.currentTimeMillis;
-      if (p.due <= now)
+      const due = yield* snoozeDue(p.due);
+      if (due <= now)
         return yield* toolError(
           "invalid_input",
-          `The snooze time ${new Date(p.due).toISOString()} is in the past.`,
+          `The snooze time ${localIso(due, timeZone())} is in the past. It is now ${localIso(now, timeZone())}.`,
           SNOOZE_DUE_HINT,
         );
-      if (p.due > now + SNOOZE_HORIZON_MS)
+      if (due > now + SNOOZE_HORIZON_MS)
         return yield* toolError(
           "invalid_input",
           "The snooze time is more than a year away.",
@@ -305,7 +345,7 @@ export const proposalHandlers = ({
         );
       yield* requireThreads(p.message_ids);
       const actor = yield* agent(p.rationale);
-      const outcome = yield* propose({ kind: "snooze", threads: p.message_ids, due: p.due }, actor);
+      const outcome = yield* propose({ kind: "snooze", threads: p.message_ids, due }, actor);
       return { outcome, message: yield* describe(outcome, "Snoozed conversations.") };
     }),
     draft_message: Effect.fnUntraced(function* (p) {

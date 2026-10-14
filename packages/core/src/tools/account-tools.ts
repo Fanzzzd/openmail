@@ -2,7 +2,8 @@
 
 import { Account, Label, Profile } from "../domain/account.js";
 import { AgentWriteMode } from "../domain/command.js";
-import { Effect, Schema } from "effect";
+import { Clock, Effect, Schema } from "effect";
+import { localIso } from "../platform/host.js";
 import {
   AccountId,
   CONSENT_SWITCH,
@@ -47,7 +48,7 @@ export const ListAccounts = readOnly(
 export const AccessStatus = readOnly(
   appTool("access_status", {
     description:
-      "Report which accounts this client can read, how many are hidden and why, and whether it can propose changes. Call it first, and again when a result is unexpectedly empty. Relay next_steps to the person.",
+      "Report which accounts this client can read, how many are hidden and why, whether it can propose changes, and the person's local time and time zone. Call it first, and again when a result is unexpectedly empty. Relay next_steps to the person.",
     parameters: Tool.EmptyParams,
     success: Schema.Struct({
       client: Schema.String,
@@ -67,6 +68,13 @@ export const AccessStatus = readOnly(
         description: "OPENMAIL_READ_ONLY is set: sync fetches mail but pushes no changes.",
       }),
       next_steps: Schema.Array(Schema.String),
+      now: Schema.String.annotate({
+        description:
+          "The current local time, ISO 8601 with a UTC offset, such as 2026-10-15T09:00:00+08:00. Every time in tool results uses this format.",
+      }),
+      time_zone: Schema.String.annotate({
+        description: "The person's IANA time zone, such as Asia/Shanghai.",
+      }),
     }),
     failure: MailToolError,
     failureMode: "return",
@@ -112,6 +120,7 @@ export const READ_ONLY_CONNECTION =
 export const accountHandlers = ({
   mailbox,
   identity,
+  timeZone,
   accessibleAccounts,
   forAccounts,
 }: ToolContext) => {
@@ -126,6 +135,7 @@ export const accountHandlers = ({
     const writeMode = yield* mailbox.proposals.agentWriteModeFor(name);
     const proposalTools = current.proposalTools ?? false;
     const remoteWritesDisabled = mailbox.proposals.readOnlySession;
+    const zone = timeZone();
     const steps: string[] = [];
     if (!accounts.length)
       steps.push("No mail account is connected. The person adds one in the OpenMail app.");
@@ -169,6 +179,8 @@ export const accountHandlers = ({
       read_only_session: !proposalTools || writeMode === "off" || remoteWritesDisabled,
       remote_writes_disabled: remoteWritesDisabled,
       next_steps: steps,
+      now: localIso(yield* Clock.currentTimeMillis, zone),
+      time_zone: zone,
     };
   });
   return {

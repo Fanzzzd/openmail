@@ -123,7 +123,7 @@ With the CLI from source, use `"command": "openmail"` and `"args": ["mcp"]`. If 
 
 The server tells the model to start with the `access_status` tool. It lists the accounts the client can read, how many are hidden and why, and what you need to change in the app. It shows only the number of hidden accounts, never their addresses.
 
-Every time in a tool result is an ISO 8601 local time with its UTC offset, such as `2026-10-15T09:00:00+08:00`, in the Mac's time zone. `openmail tool` prints the same results. The CLI's own `--json` output, such as `openmail list --json` and `openmail audit --json`, keeps epoch milliseconds.
+Every time in a tool result is an ISO 8601 local time with its UTC offset, such as `2026-10-15T09:00:00+08:00`, in the Mac's time zone. `access_status` also returns `now` and `time_zone`, and `snooze_threads` takes `due` in the same format. A time without an offset fails with a hint, and epoch milliseconds still work. `openmail tool` prints the same results. The CLI's own `--json` output, such as `openmail list --json` and `openmail audit --json`, keeps epoch milliseconds.
 
 ## Default tools
 

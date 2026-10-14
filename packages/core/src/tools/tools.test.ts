@@ -3,6 +3,7 @@ import { expect } from "vitest";
 import { assert, it } from "@effect/vitest";
 
 import { Clock, Context, Effect, Layer, Option, Stream, Schema } from "effect";
+import { TestClock } from "effect/testing";
 import { Tool } from "effect/ai";
 
 import {
@@ -1264,6 +1265,70 @@ it("calendar times keep the sender's wall time and zone and show the instant in 
   assert.deepStrictEqual(toolCalendarTime(day, "Asia/Shanghai"), day);
 });
 
+it.effect(
+  "snooze_threads takes ISO 8601 with an offset or epoch ms, and access_status gives now and the zone",
+  () => {
+    const server = fakeServer("me@gmail.com", [toolMail("m1"), toolMail("m2"), toolMail("m3")]);
+    return run(
+      Effect.gen(function* () {
+        // 2026-10-14 21:00 in Shanghai.
+        yield* TestClock.setTime(Date.UTC(2026, 9, 14, 13));
+        const mailbox = yield* Mailbox;
+        const account = yield* mailbox.accounts.connect({ provider: "gmail" });
+        yield* mailbox.ai.setAiAccount({
+          accountId: account.id,
+          allowed: true,
+          autoSummaries: false,
+        });
+        yield* mailbox.sync.sync();
+        yield* mailbox.proposals.setAgentWriteMode("propose");
+        const status = yield* call("access_status", {});
+        assert.deepInclude(status.encodedResult, {
+          now: "2026-10-14T21:00:00+08:00",
+          time_zone: "Asia/Shanghai",
+        });
+        // The live repro: an agent passes the person's local time with its offset.
+        const iso = yield* call("snooze_threads", {
+          message_ids: [`${account.id}/m1`],
+          due: "2026-10-15T09:00:00+08:00",
+          rationale: "Tomorrow morning.",
+        });
+        assert.isFalse(iso.isFailure, JSON.stringify(iso.encodedResult));
+        const epoch = yield* call("snooze_threads", {
+          message_ids: [`${account.id}/m2`],
+          due: Date.UTC(2026, 9, 16),
+          rationale: "Friday.",
+        });
+        assert.isFalse(epoch.isFailure, JSON.stringify(epoch.encodedResult));
+        const dues = (yield* mailbox.proposals.proposals).flatMap((p) =>
+          p.command.kind === "snooze" ? [p.command.due] : [],
+        );
+        assert.sameMembers(dues, [Date.UTC(2026, 9, 15, 1), Date.UTC(2026, 9, 16)]);
+        const failure = (due: string) =>
+          Effect.map(
+            call("snooze_threads", { message_ids: [`${account.id}/m3`], due, rationale: "r" }),
+            (result) => {
+              assert.isTrue(result.isFailure);
+              return Schema.decodeUnknownSync(Schema.toEncoded(MailToolError))(
+                result.encodedResult,
+              );
+            },
+          );
+        const floating = yield* failure("2026-10-15T09:00:00");
+        assert.match(floating.message, /has no UTC offset/);
+        assert.match(floating.hint, /2026-10-15T09:00:00\+08:00/);
+        assert.match((yield* failure("tomorrow")).message, /is not a time/);
+        const past = yield* failure("2026-10-14T09:00:00+08:00");
+        assert.include(past.message, "It is now 2026-10-14T21:00:00+08:00.");
+        assert.strictEqual((yield* mailbox.proposals.proposals).length, 2);
+      }),
+      TestMailbox({ gmail: server }, undefined, undefined, Layer.empty, {
+        host: { timeZone: () => "Asia/Shanghai" },
+      }),
+    );
+  },
+);
+
 it.effect("every time in a tool result is ISO 8601 local time with its offset", () => {
   const server = fakeServer("me@gmail.com", [
     { ...toolMail("m1"), date: Date.UTC(2026, 9, 14, 1, 30) },
@@ -1692,7 +1757,7 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
         due: now - 1000,
         rationale: "r",
       });
-      assert.match(past.message, /^The snooze time .* is in the past\.$/);
+      assert.match(past.message, /^The snooze time \S+ is in the past\. It is now \S+\.$/);
       const space = yield* failure("list_threads", { profile_id: "nope" });
       assert.strictEqual(space.message, "No space with id nope.");
       // read_thread takes token_budget like every other tool; max_chars is unknown.
