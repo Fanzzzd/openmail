@@ -118,6 +118,8 @@ const native = {
   important: [cmd("i", { alt: true })],
   label: [cmd("l")],
   move: [shiftCmd("m")],
+  // Mail has no Snooze key; ⌃⌘ matches Archive and Sync, and ⌃⌘S is Show Sidebar on macOS.
+  snooze: [controlCmd("z")],
   openThread: [cmd("o")],
   next: [key("ArrowDown")],
   previous: [key("ArrowUp")],
@@ -146,6 +148,7 @@ export const KEYMAP = {
     important: [key("=")],
     label: [key("l"), cmd("l")],
     move: [key("v"), shiftCmd("m")],
+    snooze: [key("b")],
     openThread: [key("o")],
     next: [key("j"), key("ArrowDown")],
     previous: [key("k"), key("ArrowUp")],

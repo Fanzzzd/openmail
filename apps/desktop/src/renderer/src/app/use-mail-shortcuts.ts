@@ -70,7 +70,7 @@ export function useMailShortcuts({
   const history = useAtomValue(historyAtom);
   const editing = useAtomValue(editingProfileAtom);
   const [goToFolder, setGoToFolder] = useAtom(goToFolderAtom);
-  const snoozeIds = useAtomValue(snoozeIdsAtom);
+  const [snoozeIds, setSnoozeIds] = useAtom(snoozeIdsAtom);
   const filterSeed = useAtomValue(filterSeedAtom);
   const setPickerMode = useAtomSet(pickerModeAtom);
   const setLabelPicker = useAtomSet(labelPickerAtom);
@@ -370,6 +370,9 @@ export function useMailShortcuts({
         break;
       case "forwardAttachment":
         startCompose("forward", true);
+        break;
+      case "snooze":
+        if (batchRows.length) setSnoozeIds(batchRows.map((row) => row.id));
         break;
       case "label":
       case "move":

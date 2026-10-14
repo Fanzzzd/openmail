@@ -218,7 +218,9 @@ export function ThreadActions({
         onClick={() => onOp({ kind: "spam" })}
       />
     ),
-    snooze: onSnooze && <Action icon={Clock} label={t`Snooze`} onClick={onSnooze} />,
+    snooze: onSnooze && (
+      <Action icon={Clock} label={t`Snooze`} shortcut={shortcut("snooze")} onClick={onSnooze} />
+    ),
     filter: onFilter && (
       <Action icon={ListFilter} label={t`Create filter from these messages`} onClick={onFilter} />
     ),
@@ -420,7 +422,11 @@ export function ThreadMenuItems({
           <MenuSeparator />
         </>
       )}
-      {onSnooze && <MenuItem icon={Clock} onClick={onSnooze}>{t`Snooze`}</MenuItem>}
+      {onSnooze && (
+        <MenuItem icon={Clock} shortcut={shortcut("snooze")} onClick={onSnooze}>
+          {t`Snooze`}
+        </MenuItem>
+      )}
       {onFilter && (
         <MenuItem
           icon={ListFilter}

@@ -439,3 +439,15 @@ it("shifted digits and brackets match by physical key when the character differs
     false,
   );
 });
+
+it("Snooze has a key in every keymap: Gmail's b, and ⌃⌘Z in the Mac sets", () => {
+  expect(shortcutAction("gmail", event("b"))).toBe("snooze");
+  expect(shortcutAction("gmail", event("b"), true)).toBeNull();
+  for (const set of ["mimestream", "apple"] as const) {
+    expect(shortcutAction(set, event("z", { metaKey: true, ctrlKey: true }))).toBe("snooze");
+    expect(shortcutAction(set, event("z", { metaKey: true }))).toBe("undo");
+    expect(shortcutText(set, "snooze")).toBe("⌃⌘Z");
+    expect(shortcutAccelerator(set, "snooze")).toBe("Control+CommandOrControl+z");
+  }
+  expect(shortcutText("gmail", "snooze")).toBe("B");
+});

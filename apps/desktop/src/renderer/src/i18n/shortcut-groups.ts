@@ -52,6 +52,7 @@ export const SHORTCUT_GROUP: Record<ShortcutAction, ShortcutGroup> = {
   important: "triage",
   label: "triage",
   move: "triage",
+  snooze: "triage",
   inbox: "triage",
   select: "triage",
   undo: "triage",

@@ -68,6 +68,7 @@ export const ACTION_NAMES: Record<ShortcutAction, MessageDescriptor> = {
   important: msg`Important`,
   label: msg`Labels`,
   move: msg`Move to folder`,
+  snooze: msg`Snooze`,
   openThread: msg`Open in new window`,
   next: msg`Next thread`,
   previous: msg`Previous thread`,
