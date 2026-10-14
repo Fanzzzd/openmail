@@ -19,11 +19,10 @@ OpenMail has no published release yet. To use it, build it from the source on Gi
 git clone https://github.com/Fanzzzd/openmail.git
 cd openmail
 pnpm install
-pnpm build
 pnpm --filter @openmail/desktop dist
 ```
 
-`pnpm build` builds the mail core, the CLI and the desktop app. The last command packages the app. It writes a DMG and a ZIP for each architecture to `apps/desktop/release/`. It never publishes anything.
+The last command builds the mail core, the CLI and the desktop app, then packages the app. It writes a DMG and a ZIP for arm64 and for x64 to `apps/desktop/release/`, and downloads a second Electron build for the architecture your Mac does not run. It never publishes anything.
 
 ## Run the app
 
@@ -34,7 +33,7 @@ pnpm --filter @openmail/desktop dist
 
 ## Run the CLI and MCP server
 
-The CLI is built by `pnpm build`. Run it from the repository:
+`dist` and `pnpm build` both build the CLI. Run it from the repository:
 
 ```sh
 node packages/cli/dist/cli.js accounts list

@@ -22,6 +22,8 @@ OPENMAIL_LOW_MEMORY_TESTS=1 pnpm test
 
 `pnpm build` builds core, the CLI, the desktop app and the docs site, and type-checks the mobile app. `OPENMAIL_LOW_MEMORY_TESTS=1` runs core tests in one worker; drop it on a machine with plenty of memory. [docs/testing.md](docs/testing.md) lists the suites and how to run one.
 
+`pnpm --filter @openmail/desktop dist` packages the app. It builds core, the CLI and the desktop app itself, so it does not need `pnpm build` first. It writes a DMG and a ZIP for arm64 and for x64 to `apps/desktop/release/`, and downloads a second Electron build for the architecture your Mac does not run.
+
 ## Run the desktop app without touching your real mail
 
 `pnpm dev` uses the same data directory as an installed OpenMail: `~/Library/Application Support/openmail`. Start the dev app with a separate directory instead:

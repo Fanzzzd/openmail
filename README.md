@@ -80,9 +80,10 @@ There is no signed release yet. Published builds will appear on the [Releases pa
    git clone https://github.com/Fanzzzd/openmail.git
    cd openmail
    pnpm install
-   pnpm build
    pnpm --filter @openmail/desktop dist   # Xcode 26 optional, see step 1
    ```
+
+   `dist` builds core, the CLI and the desktop app first, so no separate `pnpm build` is needed. It packages an arm64 and an x64 app, and downloads a second Electron build for the architecture your Mac does not run.
 
 3. Open `apps/desktop/release/OpenMail-<version>-mac-<arch>.dmg` and drag OpenMail to Applications.
 

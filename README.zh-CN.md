@@ -80,9 +80,10 @@ OpenMail 比以上产品都年轻，还有粗糙的地方。Gmail 功能以 Mime
    git clone https://github.com/Fanzzzd/openmail.git
    cd openmail
    pnpm install
-   pnpm build
    pnpm --filter @openmail/desktop dist   # Xcode 26 可选，见第 1 步
    ```
+
+   `dist` 会先构建 core、CLI 和桌面 app，不用另外跑 `pnpm build`。它打包 arm64 和 x64 两个 app，会为本机之外的那个架构再下载一份 Electron。
 
 3. 打开 `apps/desktop/release/OpenMail-<version>-mac-<arch>.dmg`，把 OpenMail 拖到“应用程序”。
 
