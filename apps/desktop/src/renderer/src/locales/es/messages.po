@@ -4993,6 +4993,10 @@ msgstr "Solo se pueden adjuntar archivos normales. Las carpetas no se pueden adj
 msgid "Only selected Apple Contacts are available."
 msgstr "Solo están disponibles los contactos de Apple seleccionados."
 
+#: src/renderer/src/features/settings/sections/AccountControls.tsx
+msgid "Only shown in OpenMail"
+msgstr "Solo se muestra en OpenMail"
+
 #: src/renderer/src/features/search/search-suggestions.ts
 msgid "Only text inside attachments"
 msgstr "Solo el texto de los adjuntos"
@@ -6523,11 +6527,14 @@ msgstr "Nombre del remitente"
 msgid "Sender last name"
 msgstr "Apellido del remitente"
 
-#: src/renderer/src/features/accounts/ImapStep.tsx
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Sender name"
 msgstr "Nombre del remitente"
+
+#: src/renderer/src/features/accounts/ImapStep.tsx
+msgid "Sender name (optional)"
+msgstr "Nombre del remitente (opcional)"
 
 #: src/renderer/src/app/use-app-messages.ts
 msgid "Sending…"
@@ -6752,6 +6759,11 @@ msgstr "Mostrar recuento de no leídos en la barra de menú"
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Showing results from this Mac."
 msgstr "Se muestran resultados de esta Mac."
+
+#: src/renderer/src/features/accounts/ImapStep.tsx
+#: src/renderer/src/features/settings/sections/AccountControls.tsx
+msgid "Shown to recipients"
+msgstr "Lo ven los destinatarios"
 
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 msgid "Shows dates and invitations found in a message above it, so you can add them to your calendar after reviewing them."

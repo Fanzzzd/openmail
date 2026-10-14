@@ -4997,6 +4997,10 @@ msgstr "Only regular files can be attached. Folders cannot be attached."
 msgid "Only selected Apple Contacts are available."
 msgstr "Only selected Apple Contacts are available."
 
+#: src/renderer/src/features/settings/sections/AccountControls.tsx
+msgid "Only shown in OpenMail"
+msgstr "Only shown in OpenMail"
+
 #: src/renderer/src/features/search/search-suggestions.ts
 msgid "Only text inside attachments"
 msgstr "Only text inside attachments"
@@ -6527,11 +6531,14 @@ msgstr "Sender first name"
 msgid "Sender last name"
 msgstr "Sender last name"
 
-#: src/renderer/src/features/accounts/ImapStep.tsx
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Sender name"
 msgstr "Sender name"
+
+#: src/renderer/src/features/accounts/ImapStep.tsx
+msgid "Sender name (optional)"
+msgstr "Sender name (optional)"
 
 #: src/renderer/src/app/use-app-messages.ts
 msgid "Sending…"
@@ -6756,6 +6763,11 @@ msgstr "Show unread count in the menu bar"
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Showing results from this Mac."
 msgstr "Showing results from this Mac."
+
+#: src/renderer/src/features/accounts/ImapStep.tsx
+#: src/renderer/src/features/settings/sections/AccountControls.tsx
+msgid "Shown to recipients"
+msgstr "Shown to recipients"
 
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 msgid "Shows dates and invitations found in a message above it, so you can add them to your calendar after reviewing them."

@@ -4993,6 +4993,10 @@ msgstr "Přiložit lze jen běžné soubory. Složky nelze přiložit."
 msgid "Only selected Apple Contacts are available."
 msgstr "K dispozici jsou pouze vybrané kontakty Apple."
 
+#: src/renderer/src/features/settings/sections/AccountControls.tsx
+msgid "Only shown in OpenMail"
+msgstr "Zobrazuje se jen v OpenMail"
+
 #: src/renderer/src/features/search/search-suggestions.ts
 msgid "Only text inside attachments"
 msgstr "Jen text v přílohách"
@@ -6523,11 +6527,14 @@ msgstr "Křestní jméno odesílatele"
 msgid "Sender last name"
 msgstr "Příjmení odesílatele"
 
-#: src/renderer/src/features/accounts/ImapStep.tsx
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Sender name"
 msgstr "Jméno odesílatele"
+
+#: src/renderer/src/features/accounts/ImapStep.tsx
+msgid "Sender name (optional)"
+msgstr "Jméno odesílatele (volitelné)"
 
 #: src/renderer/src/app/use-app-messages.ts
 msgid "Sending…"
@@ -6752,6 +6759,11 @@ msgstr "Zobrazit počet nepřečtených v řádku nabídek"
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Showing results from this Mac."
 msgstr "Zobrazují se výsledky z tohoto Macu."
+
+#: src/renderer/src/features/accounts/ImapStep.tsx
+#: src/renderer/src/features/settings/sections/AccountControls.tsx
+msgid "Shown to recipients"
+msgstr "Vidí ho příjemci"
 
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 msgid "Shows dates and invitations found in a message above it, so you can add them to your calendar after reviewing them."

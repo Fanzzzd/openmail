@@ -4993,6 +4993,10 @@ msgstr "通常のファイルのみ添付できます。フォルダは添付で
 msgid "Only selected Apple Contacts are available."
 msgstr "選択した Apple の連絡先のみ利用できます。"
 
+#: src/renderer/src/features/settings/sections/AccountControls.tsx
+msgid "Only shown in OpenMail"
+msgstr "OpenMail 内でのみ表示"
+
 #: src/renderer/src/features/search/search-suggestions.ts
 msgid "Only text inside attachments"
 msgstr "添付ファイル内のテキストのみ"
@@ -6523,11 +6527,14 @@ msgstr "差出人の名"
 msgid "Sender last name"
 msgstr "差出人の姓"
 
-#: src/renderer/src/features/accounts/ImapStep.tsx
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Sender name"
 msgstr "差出人の名前"
+
+#: src/renderer/src/features/accounts/ImapStep.tsx
+msgid "Sender name (optional)"
+msgstr "差出人の名前（任意）"
 
 #: src/renderer/src/app/use-app-messages.ts
 msgid "Sending…"
@@ -6752,6 +6759,11 @@ msgstr "メニューバーに未開封数を表示"
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Showing results from this Mac."
 msgstr "この Mac 上の結果を表示しています。"
+
+#: src/renderer/src/features/accounts/ImapStep.tsx
+#: src/renderer/src/features/settings/sections/AccountControls.tsx
+msgid "Shown to recipients"
+msgstr "受信者に表示されます"
 
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 msgid "Shows dates and invitations found in a message above it, so you can add them to your calendar after reviewing them."

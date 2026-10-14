@@ -4993,6 +4993,10 @@ msgstr "Alleen gewone bestanden kunnen worden bijgevoegd. Mappen kunnen niet wor
 msgid "Only selected Apple Contacts are available."
 msgstr "Alleen geselecteerde Apple-contacten zijn beschikbaar."
 
+#: src/renderer/src/features/settings/sections/AccountControls.tsx
+msgid "Only shown in OpenMail"
+msgstr "Alleen zichtbaar in OpenMail"
+
 #: src/renderer/src/features/search/search-suggestions.ts
 msgid "Only text inside attachments"
 msgstr "Alleen tekst in bijlagen"
@@ -6523,11 +6527,14 @@ msgstr "Voornaam afzender"
 msgid "Sender last name"
 msgstr "Achternaam afzender"
 
-#: src/renderer/src/features/accounts/ImapStep.tsx
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Sender name"
 msgstr "Naam afzender"
+
+#: src/renderer/src/features/accounts/ImapStep.tsx
+msgid "Sender name (optional)"
+msgstr "Naam afzender (optioneel)"
 
 #: src/renderer/src/app/use-app-messages.ts
 msgid "Sending…"
@@ -6752,6 +6759,11 @@ msgstr "Toon ongelezen aantal in de menubalk"
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Showing results from this Mac."
 msgstr "Resultaten van deze Mac worden getoond."
+
+#: src/renderer/src/features/accounts/ImapStep.tsx
+#: src/renderer/src/features/settings/sections/AccountControls.tsx
+msgid "Shown to recipients"
+msgstr "Zichtbaar voor ontvangers"
 
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 msgid "Shows dates and invitations found in a message above it, so you can add them to your calendar after reviewing them."

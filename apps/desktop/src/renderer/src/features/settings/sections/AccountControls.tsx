@@ -93,34 +93,46 @@ export function AccountControls({
           )}
         </label>
       </div>
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <label className="flex items-center gap-2">
-          <Trans>Display name</Trans>
-          <span className="w-40">
-            <input
-              className={formInput}
-              value={description}
-              maxLength={200}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </span>
-        </label>
-        {/* With an IMAP trust field, Save follows it so it comes after both fields in tab order. */}
-        {!account.imap && saveButton}
+      <div className="space-y-1">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <label className="flex items-center gap-2">
+            <Trans>Display name</Trans>
+            <span className="w-40">
+              <input
+                className={formInput}
+                value={description}
+                maxLength={200}
+                aria-describedby={`account-display-hint-${account.id}`}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </span>
+          </label>
+          {/* With an IMAP trust field, Save follows it so it comes after both fields in tab order. */}
+          {!account.imap && saveButton}
+        </div>
+        <p id={`account-display-hint-${account.id}`} className={settingsHint}>
+          <Trans>Only shown in OpenMail</Trans>
+        </p>
       </div>
       {account.imap && (
-        <label className="flex items-center gap-2">
-          <Trans>Sender name</Trans>
-          <span className="w-40">
-            <input
-              className={formInput}
-              value={senderName}
-              maxLength={200}
-              placeholder={account.email}
-              onChange={(e) => setSenderName(e.target.value)}
-            />
-          </span>
-        </label>
+        <div className="space-y-1">
+          <label className="flex items-center gap-2">
+            <Trans>Sender name</Trans>
+            <span className="w-40">
+              <input
+                className={formInput}
+                value={senderName}
+                maxLength={200}
+                placeholder={account.email}
+                aria-describedby={`account-sender-hint-${account.id}`}
+                onChange={(e) => setSenderName(e.target.value)}
+              />
+            </span>
+          </label>
+          <p id={`account-sender-hint-${account.id}`} className={settingsHint}>
+            <Trans>Shown to recipients</Trans>
+          </p>
+        </div>
       )}
       {account.imap && (
         <div className="space-y-1">

@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 
 import { formInput } from "../../ui/styles";
 
@@ -14,6 +14,7 @@ export function Field({
   inputMode,
   placeholder,
   onBlur,
+  hint,
 }: {
   label: string;
   value: string;
@@ -24,8 +25,11 @@ export function Field({
   inputMode?: "numeric";
   placeholder?: string | undefined;
   onBlur?: () => void;
+  /** One line under the field, read as its description. */
+  hint?: string;
 }) {
-  return (
+  const hintId = useId();
+  const field = (
     <label className="mt-3 block text-footnote font-medium text-a11y-muted">
       {label}
       <input
@@ -39,8 +43,20 @@ export function Field({
         onChange={(e) => onChange(e.target.value)}
         onBlur={onBlur}
         className={`selectable mt-1 h-8 ${formInput}`}
+        aria-describedby={hint ? hintId : undefined}
       />
     </label>
+  );
+  // The hint sits outside the label, so it describes the field without joining its name.
+  return hint ? (
+    <>
+      {field}
+      <p id={hintId} className="mt-1 text-footnote text-a11y-muted">
+        {hint}
+      </p>
+    </>
+  ) : (
+    field
   );
 }
 

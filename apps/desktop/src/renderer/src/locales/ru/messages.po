@@ -4993,6 +4993,10 @@ msgstr "Можно прикреплять только обычные файлы
 msgid "Only selected Apple Contacts are available."
 msgstr "Доступны только выбранные контакты Apple."
 
+#: src/renderer/src/features/settings/sections/AccountControls.tsx
+msgid "Only shown in OpenMail"
+msgstr "Видно только в OpenMail"
+
 #: src/renderer/src/features/search/search-suggestions.ts
 msgid "Only text inside attachments"
 msgstr "Только текст во вложениях"
@@ -6523,11 +6527,14 @@ msgstr "Имя отправителя"
 msgid "Sender last name"
 msgstr "Фамилия отправителя"
 
-#: src/renderer/src/features/accounts/ImapStep.tsx
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Sender name"
 msgstr "Имя отправителя"
+
+#: src/renderer/src/features/accounts/ImapStep.tsx
+msgid "Sender name (optional)"
+msgstr "Имя отправителя (необязательно)"
 
 #: src/renderer/src/app/use-app-messages.ts
 msgid "Sending…"
@@ -6752,6 +6759,11 @@ msgstr "Показывать количество непрочитанных в 
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Showing results from this Mac."
 msgstr "Показаны результаты с этого Mac."
+
+#: src/renderer/src/features/accounts/ImapStep.tsx
+#: src/renderer/src/features/settings/sections/AccountControls.tsx
+msgid "Shown to recipients"
+msgstr "Видят получатели"
 
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 msgid "Shows dates and invitations found in a message above it, so you can add them to your calendar after reviewing them."

@@ -203,6 +203,51 @@ for (const choice of [null, "Other IMAP", "Gmail", "Outlook"] as const) {
   });
 }
 
+it("account names say who sees them: Display name in OpenMail, Sender name in recipients' mail", async () => {
+  const imapAccount = {
+    ...account,
+    id: "imap:me",
+    provider: "imap" as const,
+    imap: {
+      preset: "custom",
+      username: "me@example.com",
+      imapHost: "imap.example.com",
+      imapPort: 993,
+      smtpHost: "smtp.example.com",
+      smtpPort: 465,
+      smtpSecure: true,
+    },
+  };
+  render(
+    localized(
+      h(Settings, {
+        initialTab: "accounts",
+        accounts: [imapAccount],
+        onClose: vi.fn(),
+        onAddAccount: vi.fn(),
+      }),
+    ),
+  );
+  expect(
+    screen.getByRole("textbox", { name: "Display name", description: "Only shown in OpenMail" }),
+  ).toBeTruthy();
+  expect(
+    screen.getByRole("textbox", { name: "Sender name", description: "Shown to recipients" }),
+  ).toBeTruthy();
+  await audit();
+  cleanup();
+
+  fixture.values.set("clientSetupAtom", NO_CLIENTS);
+  render(localized(h(AddAccountDialog, { onClose: vi.fn(), onAdded: vi.fn() })));
+  fireEvent.click(screen.getByRole("button", { name: "Other IMAP" }));
+  expect(
+    screen.getByRole("textbox", {
+      name: "Sender name (optional)",
+      description: "Shown to recipients",
+    }),
+  ).toBeTruthy();
+});
+
 it("Other IMAP fills empty server names from the email address on blur, without a lookup", async () => {
   fixture.values.set("clientSetupAtom", NO_CLIENTS);
   render(localized(h(AddAccountDialog, { onClose: vi.fn(), onAdded: vi.fn() })));

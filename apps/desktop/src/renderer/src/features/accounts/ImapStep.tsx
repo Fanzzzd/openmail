@@ -162,10 +162,11 @@ export function ImapStep({
         onBlur={guessServers}
       />
       <Field
-        label={t`Sender name`}
+        label={t`Sender name (optional)`}
         value={senderName}
         onChange={setSenderName}
         placeholder={defaultSenderName}
+        hint={t`Shown to recipients`}
       />
       <Field
         label={secretLabel}

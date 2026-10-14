@@ -4993,6 +4993,10 @@ msgstr "Nur reguläre Dateien können angehängt werden. Ordner können nicht an
 msgid "Only selected Apple Contacts are available."
 msgstr "Nur ausgewählte Apple-Kontakte sind verfügbar."
 
+#: src/renderer/src/features/settings/sections/AccountControls.tsx
+msgid "Only shown in OpenMail"
+msgstr "Nur in OpenMail sichtbar"
+
 #: src/renderer/src/features/search/search-suggestions.ts
 msgid "Only text inside attachments"
 msgstr "Nur Text in Anhängen"
@@ -6523,11 +6527,14 @@ msgstr "Vorname des Absenders"
 msgid "Sender last name"
 msgstr "Nachname des Absenders"
 
-#: src/renderer/src/features/accounts/ImapStep.tsx
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Sender name"
 msgstr "Name des Absenders"
+
+#: src/renderer/src/features/accounts/ImapStep.tsx
+msgid "Sender name (optional)"
+msgstr "Name des Absenders (optional)"
 
 #: src/renderer/src/app/use-app-messages.ts
 msgid "Sending…"
@@ -6752,6 +6759,11 @@ msgstr "Anzahl der ungelesenen Artikel in der Menüleiste anzeigen"
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Showing results from this Mac."
 msgstr "Ergebnisse von diesem Mac werden angezeigt."
+
+#: src/renderer/src/features/accounts/ImapStep.tsx
+#: src/renderer/src/features/settings/sections/AccountControls.tsx
+msgid "Shown to recipients"
+msgstr "Für Empfänger sichtbar"
 
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 msgid "Shows dates and invitations found in a message above it, so you can add them to your calendar after reviewing them."

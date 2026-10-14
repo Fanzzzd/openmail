@@ -5003,6 +5003,10 @@ msgstr "只能添加普通文件，不能添加文件夹。"
 msgid "Only selected Apple Contacts are available."
 msgstr "仅可使用已选的 Apple 联系人。"
 
+#: src/renderer/src/features/settings/sections/AccountControls.tsx
+msgid "Only shown in OpenMail"
+msgstr "仅在 OpenMail 中显示"
+
 #: src/renderer/src/features/search/search-suggestions.ts
 msgid "Only text inside attachments"
 msgstr "仅搜索附件内的文本"
@@ -6533,11 +6537,14 @@ msgstr "发件人名字"
 msgid "Sender last name"
 msgstr "发件人姓氏"
 
-#: src/renderer/src/features/accounts/ImapStep.tsx
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Sender name"
 msgstr "发件人姓名"
+
+#: src/renderer/src/features/accounts/ImapStep.tsx
+msgid "Sender name (optional)"
+msgstr "发件人姓名（可选）"
 
 #: src/renderer/src/app/use-app-messages.ts
 msgid "Sending…"
@@ -6762,6 +6769,11 @@ msgstr "在菜单栏显示未读数"
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Showing results from this Mac."
 msgstr "显示的是此 Mac 上的结果。"
+
+#: src/renderer/src/features/accounts/ImapStep.tsx
+#: src/renderer/src/features/settings/sections/AccountControls.tsx
+msgid "Shown to recipients"
+msgstr "收件人可见"
 
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 msgid "Shows dates and invitations found in a message above it, so you can add them to your calendar after reviewing them."
