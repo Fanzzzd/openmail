@@ -244,7 +244,9 @@ export const makeFlushMailbox = (
                       yield* store.releasePendingOp(item.id, claimToken);
                       continue;
                     }
-                    blocked.add(`${item.accountId}/${item.providerId}`);
+                    // A cache refresh that keeps failing must not hold back the person's changes.
+                    if (item.op.kind !== "reconcile")
+                      blocked.add(`${item.accountId}/${item.providerId}`);
                     const expired =
                       item.op.kind !== "reconcile" &&
                       (yield* Clock.currentTimeMillis) - item.createdAt >= MAX_OP_AGE;
@@ -296,7 +298,7 @@ export const makeFlushMailbox = (
         const key = `${pending.accountId}/${pending.providerId}`;
         if (blocked.has(key) || result.reauth.includes(pending.accountId)) continue;
         if (pending.retryAt > (yield* Clock.currentTimeMillis)) {
-          blocked.add(key);
+          if (pending.op.kind !== "reconcile") blocked.add(key);
           continue;
         }
         const account = yield* store.getAccount(pending.accountId).pipe(Effect.option);
