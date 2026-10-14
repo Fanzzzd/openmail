@@ -27,7 +27,7 @@ export default function Settings() {
   const [failed, setFailed] = useState(false);
   const prefs = useMailboxQuery(
     useCallback(
-      () => runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.prefs)),
+      () => runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.app.prefs)),
       [runtime],
     ),
   );
@@ -45,7 +45,7 @@ export default function Settings() {
   );
   const update = async (patch: PrefsPatch) => {
     try {
-      await runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.setPrefs(patch)));
+      await runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.app.setPrefs(patch)));
     } catch {
       setFailed(true);
     }

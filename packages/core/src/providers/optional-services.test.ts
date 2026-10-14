@@ -199,7 +199,7 @@ import { GMAIL_PERMANENT_DELETE_SCOPE } from "../domain/folder-actions.js";
         yield* store.upsertMessage(gmail.id, incoming("draft", 0, ["DRAFT"]));
         yield* store.touchBody(`${gmail.id}/old`, 3);
         yield* store.touchBody(`${outlook.id}/recent`, 9);
-        yield* m.setPrefs({ bodyCacheBytes: 20 });
+        yield* m.app.setPrefs({ bodyCacheBytes: 20 });
         assert.strictEqual((yield* store.getMessage(`${gmail.id}/old`)).bodyCached, false);
         assert.strictEqual(
           (yield* store.getMessage(`${outlook.id}/recent`)).bodyText,
@@ -210,7 +210,7 @@ import { GMAIL_PERMANENT_DELETE_SCOPE } from "../domain/folder-actions.js";
         const database = yield* m.cacheDatabaseSize;
         assert.ok(database.totalBytes > 0);
         assert.ok(database.reusableBytes >= 0 && database.reusableBytes <= database.totalBytes);
-        yield* m.setPrefs({ bodyCacheBytes: 0 });
+        yield* m.app.setPrefs({ bodyCacheBytes: 0 });
         assert.strictEqual((yield* store.getMessage(`${outlook.id}/recent`)).bodyCached, true);
         assert.strictEqual((yield* store.getMessage(`${gmail.id}/draft`)).bodyCached, true);
       }).pipe(Effect.provide(TestMailbox())),
@@ -339,7 +339,7 @@ import { GMAIL_PERMANENT_DELETE_SCOPE } from "../domain/folder-actions.js";
               ),
             );
             assert.ok((yield* m.sendAs).some((alias) => alias.address === "alias@example.com"));
-            assert.strictEqual((yield* m.prefs).bodyCacheBytes, 0);
+            assert.strictEqual((yield* m.app.prefs).bodyCacheBytes, 0);
           }).pipe(Effect.provide(layer()));
           yield* Effect.gen(function* () {
             const m = yield* Mailbox;
@@ -414,7 +414,7 @@ import { GMAIL_PERMANENT_DELETE_SCOPE } from "../domain/folder-actions.js";
         const m = yield* Mailbox;
         const store = yield* Store;
         const account = yield* store.upsertAccount("gmail", "me@example.com");
-        assert.strictEqual((yield* m.prefs).bodyCacheBytes, 0);
+        assert.strictEqual((yield* m.app.prefs).bodyCacheBytes, 0);
         const protectedMail = [
           mail("inbox", { labels: ["INBOX"] }),
           mail("star", { isStarred: true }),
@@ -426,7 +426,7 @@ import { GMAIL_PERMANENT_DELETE_SCOPE } from "../domain/folder-actions.js";
         yield* store.setCacheWindow({ accountId: account.id, label: "Work", days: null });
         for (const message of [...protectedMail, mail("expired")])
           yield* store.upsertMessage(account.id, message);
-        yield* m.setPrefs({ bodyCacheBytes: 1 });
+        yield* m.app.setPrefs({ bodyCacheBytes: 1 });
         for (const message of protectedMail)
           assert.strictEqual(
             (yield* store.getMessage(`${account.id}/${message.providerId}`)).bodyCached,
@@ -435,7 +435,7 @@ import { GMAIL_PERMANENT_DELETE_SCOPE } from "../domain/folder-actions.js";
           );
         assert.strictEqual((yield* store.getMessage(`${account.id}/expired`)).bodyCached, false);
         yield* store.upsertMessage(account.id, mail("disabled"));
-        yield* m.setPrefs({ bodyCacheBytes: 0 });
+        yield* m.app.setPrefs({ bodyCacheBytes: 0 });
         assert.strictEqual((yield* store.getMessage(`${account.id}/disabled`)).bodyCached, true);
       }).pipe(Effect.provide(TestMailbox())),
   );

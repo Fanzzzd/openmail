@@ -64,10 +64,10 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
                 }
               : { provider },
           );
-          const prefs = yield* mailbox.prefs;
+          const prefs = yield* mailbox.app.prefs;
           assert.strictEqual(prefs.composeFormatBar, true);
           assert.strictEqual(prefs.composeSmartLists, true);
-          yield* mailbox.setPrefs({
+          yield* mailbox.app.setPrefs({
             composeFormatBar: false,
             composeSmartLists: false,
             composeMarkdownReplacement: false,
@@ -92,7 +92,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
         }).pipe(Effect.provide(layer()));
         yield* Effect.gen(function* () {
           const mailbox = yield* Mailbox;
-          const prefs = yield* mailbox.prefs;
+          const prefs = yield* mailbox.app.prefs;
           assert.strictEqual(prefs.composeFormatBar, false);
           assert.strictEqual(prefs.composeSmartLists, false);
           assert.strictEqual(prefs.composeMarkdownReplacement, false);

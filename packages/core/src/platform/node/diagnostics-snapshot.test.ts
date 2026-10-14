@@ -35,7 +35,7 @@ it.effect("the snapshot carries build, schema and per-account state as counts an
     yield* store.enqueueOp(gmail.id, "m1", { kind: "archive" });
     yield* store.enqueueOp(gmail.id, "m2", { kind: "archive" });
     yield* sql`UPDATE pending_ops SET attempts=2, last_error='alice@private.example rejected', retry_at=9e15 WHERE provider_id='m2'`;
-    const state = yield* mailbox.diagnosticsState;
+    const state = yield* mailbox.app.diagnosticsState;
     const snapshot = diagnosticSnapshot(
       {
         appVersion: "0.4.1",

@@ -76,7 +76,7 @@ export function MailboxProvider({ children }: { children: ReactNode }) {
           setReady(true);
         }
         const events = Effect.flatMap(Mailbox, (mailbox) =>
-          Stream.runForEach(mailbox.events, (event) =>
+          Stream.runForEach(mailbox.app.events, (event) =>
             Effect.sync(() => {
               if (isActive() && event._tag === "Changed") setRevision((value) => value + 1);
             }),

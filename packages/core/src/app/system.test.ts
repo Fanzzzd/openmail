@@ -152,12 +152,12 @@ it.effect(
   () =>
     Effect.gen(function* () {
       const m = yield* Mailbox;
-      yield* m.setPrefs({
+      yield* m.app.setPrefs({
         shortcutSet: "apple",
         notifications: { a: "off" },
         quietHours: { work: { enabled: true, start: 1320, end: 480 } },
       });
-      const prefs = yield* m.prefs;
+      const prefs = yield* m.app.prefs;
       assert.strictEqual(prefs.shortcutSet, "apple");
       assert.deepStrictEqual(prefs.notifications, { a: "off" });
       assert.deepStrictEqual(prefs.quietHours.work, { enabled: true, start: 1320, end: 480 });
@@ -177,7 +177,7 @@ it.effect(
     return Effect.gen(function* () {
       const m = yield* Mailbox;
       const events = yield* Ref.make<MailboxEvent[]>([]);
-      yield* m.events.pipe(
+      yield* m.app.events.pipe(
         Stream.runForEach((event) => Ref.update(events, (all) => [...all, event])),
         Effect.forkScoped,
       );
@@ -275,7 +275,7 @@ it.effect("IMAP mail moved into Inbox under a different UID stays seen", () => {
     });
     yield* m.sync();
     const events = yield* Ref.make<MailboxEvent[]>([]);
-    yield* m.events.pipe(
+    yield* m.app.events.pipe(
       Stream.runForEach((event) => Ref.update(events, (all) => [...all, event])),
       Effect.forkScoped,
     );
@@ -301,7 +301,7 @@ it.effect("idle inbox polling emits no Changed and preserves a full-sync error",
     yield* m.connect({ provider: "gmail" });
     yield* m.sync();
     const events = yield* Ref.make<MailboxEvent[]>([]);
-    yield* m.events.pipe(
+    yield* m.app.events.pipe(
       Stream.runForEach((event) => Ref.update(events, (all) => [...all, event])),
       Effect.forkScoped,
     );
@@ -320,7 +320,7 @@ it.effect("catch-up suppresses unread mail older than the previous sync", () => 
     yield* TestClock.adjust("10 seconds");
     yield* m.sync();
     const ids = yield* Ref.make<string[]>([]);
-    yield* m.events.pipe(
+    yield* m.app.events.pipe(
       Stream.runForEach((event) =>
         event._tag === "NewMail" ? Ref.update(ids, (all) => [...all, ...event.ids]) : Effect.void,
       ),
@@ -347,7 +347,7 @@ it.effect(
       server.failNext = new PermanentError({ message: "full sync error" });
       yield* m.sync();
       const changes = yield* Ref.make(0);
-      yield* m.events.pipe(
+      yield* m.app.events.pipe(
         Stream.runForEach((event) =>
           event._tag === "Changed" ? Ref.update(changes, (n) => n + 1) : Effect.void,
         ),

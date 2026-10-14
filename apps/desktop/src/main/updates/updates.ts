@@ -52,7 +52,7 @@ export const UpdatesLive = Layer.effectDiscard(
               !(yield* Effect.promise(() => isSignedMacApp(resolve(process.execPath, "../../.."))))
             )
               return null;
-            const prefs = yield* mailbox.prefs;
+            const prefs = yield* mailbox.app.prefs;
             return client.reserveInstall(prefs.updateChannel, version);
           }),
         ).catch(() => null),
@@ -63,13 +63,13 @@ export const UpdatesLive = Layer.effectDiscard(
       const restart = (resetState: boolean) =>
         Effect.gen(function* () {
           stop?.();
-          const prefs = yield* mailbox.prefs;
+          const prefs = yield* mailbox.app.prefs;
           const report = beginUpdateState({
             reset: resetState,
             downloadedVersion: client.downloadedVersion,
             channel: prefs.updateChannel,
           });
-          stop = yield* mailbox.startUpdates(client, {
+          stop = yield* mailbox.app.startUpdates(client, {
             packaged: app.isPackaged && process.platform === "darwin",
             bundle: resolve(process.execPath, "../../.."),
             onState: (state) =>
@@ -81,7 +81,7 @@ export const UpdatesLive = Layer.effectDiscard(
           });
         });
       yield* restart(true);
-      yield* mailbox.events.pipe(
+      yield* mailbox.app.events.pipe(
         Stream.filter((event) => event._tag === "UpdateSettingsChanged"),
         Stream.runForEach((event) => restart(event.resetState)),
       );
@@ -101,7 +101,7 @@ export function manualUpdateCheck(
     const result =
       app.isPackaged && process.platform === "darwin"
         ? yield* Effect.gen(function* () {
-            return yield* mailbox.checkUpdates(yield* loadUpdateClient, {
+            return yield* mailbox.app.checkUpdates(yield* loadUpdateClient, {
               packaged: true,
               bundle: resolve(process.execPath, "../../.."),
               onState: updateStateReporter(),
@@ -142,7 +142,7 @@ export function checkForUpdateState(mailbox: Mailbox["Service"], download: boole
   const onState = updateStateReporter();
   return Effect.gen(function* () {
     if (!app.isPackaged || process.platform !== "darwin") return;
-    yield* mailbox.checkUpdates(yield* loadUpdateClient, {
+    yield* mailbox.app.checkUpdates(yield* loadUpdateClient, {
       packaged: true,
       bundle: resolve(process.execPath, "../../.."),
       ...(download ? { autoDownload: true } : {}),

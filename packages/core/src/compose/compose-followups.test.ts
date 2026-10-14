@@ -266,7 +266,7 @@ it.effect(
       yield* Effect.gen(function* () {
         const mailbox = yield* Mailbox;
         assert.deepStrictEqual((yield* mailbox.templates)[0]?.bcc, []);
-        yield* mailbox.setPrefs({ defaultFrom: fixed });
+        yield* mailbox.app.setPrefs({ defaultFrom: fixed });
         yield* mailbox.saveTemplate(
           {
             name: "New",
@@ -282,9 +282,9 @@ it.effect(
       yield* Effect.gen(function* () {
         const mailbox = yield* Mailbox;
         assert.deepStrictEqual((yield* mailbox.templates)[0]?.bcc, outgoing.bcc);
-        assert.deepStrictEqual((yield* mailbox.prefs).defaultFrom, fixed);
-        yield* mailbox.setPrefs({ defaultFrom: null });
-        assert.strictEqual((yield* mailbox.prefs).defaultFrom, DEFAULT_PREFS.defaultFrom);
+        assert.deepStrictEqual((yield* mailbox.app.prefs).defaultFrom, fixed);
+        yield* mailbox.app.setPrefs({ defaultFrom: null });
+        assert.strictEqual((yield* mailbox.app.prefs).defaultFrom, DEFAULT_PREFS.defaultFrom);
       }).pipe(Effect.provide(layer()));
     }),
 );

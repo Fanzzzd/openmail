@@ -146,13 +146,13 @@ export const prepareAttachmentDrag: (
 
 /** Downloads go to the attachment folder setting. "ask" is a legacy value that now means Downloads. */
 export const attachmentFolder: (
-  m: Pick<Mailbox["Service"], "prefs">,
+  m: { readonly app: Pick<Mailbox["Service"]["app"], "prefs"> },
   downloadsPath: string,
 ) => Effect.Effect<string, DeviceError> = Effect.fnUntraced(function* (
-  m: Pick<Mailbox["Service"], "prefs">,
+  m: { readonly app: Pick<Mailbox["Service"]["app"], "prefs"> },
   downloadsPath: string,
 ) {
-  const setting = (yield* m.prefs).attachmentSaveFolder;
+  const setting = (yield* m.app.prefs).attachmentSaveFolder;
   const folder = setting?.kind === "custom" ? setting.path.trim() : downloadsPath;
   if (!path.isAbsolute(folder))
     return yield* new DeviceError({ message: "Choose an absolute attachment folder path" });

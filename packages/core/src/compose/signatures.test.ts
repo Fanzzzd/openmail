@@ -50,7 +50,7 @@ import { applyComposeSignature } from "./compose-transport.js";
         const b = yield* m.saveNamedSignature({ address: "me@example.com", name: "B", text: "B" });
         assert.ok(a.html?.includes("<strong>A</strong>"));
         assert.ok(!/PRIVATE_SCRIPT|tracker|javascript/.test(a.html ?? ""));
-        yield* m.setPrefs({
+        yield* m.app.setPrefs({
           signatureOrder: [b.id, a.id],
           signaturePosition: "below",
           signatureSeparator: false,
@@ -59,7 +59,7 @@ import { applyComposeSignature } from "./compose-transport.js";
       }).pipe(Effect.provide(session()));
       yield* Effect.gen(function* () {
         const m = yield* Mailbox;
-        const prefs = yield* m.prefs;
+        const prefs = yield* m.app.prefs;
         assert.strictEqual(prefs.signaturePosition, "below");
         assert.strictEqual(prefs.signatureSeparator, false);
         assert.deepStrictEqual(

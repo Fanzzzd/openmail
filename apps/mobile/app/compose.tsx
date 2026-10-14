@@ -286,7 +286,9 @@ export default function Compose() {
     try {
       await writer.save(currentMessage);
       await writer.flush();
-      const prefs = await runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.prefs));
+      const prefs = await runtime.runPromise(
+        Effect.flatMap(Mailbox, (mailbox) => mailbox.app.prefs),
+      );
       const due = Date.now() + prefs.undoSendSeconds * 1000;
       const queued = await runtime.runPromise(
         Effect.flatMap(Mailbox, (mailbox) =>

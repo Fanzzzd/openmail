@@ -46,7 +46,7 @@ async function openWebApp(mailbox: (m: Mailbox["Service"]) => Mailbox["Service"]
   const m = await mailboxRuntime.runPromise(Mailbox);
   await mailboxRuntime.runPromise(m.connect({ provider: "gmail" }));
   await mailboxRuntime.runPromise(
-    m.setPrefs({ language: "en", defaultProfilesPrompted: true, remoteImages: "ask" }),
+    m.app.setPrefs({ language: "en", defaultProfilesPrompted: true, remoteImages: "ask" }),
   );
   await mailboxRuntime.runPromise(m.sync());
 

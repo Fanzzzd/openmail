@@ -20,7 +20,7 @@ export const remoteHandlers = (m: Mailbox["Service"]) =>
     // Each browser connection owns its waiting sends, apart from desktop windows.
     ...mailboxHandlers(m, { ownerPrefix: "remote:" }),
     SetPrefs: ({ patch }) =>
-      remotePrefs(patch).pipe(Effect.flatMap((allowed) => m.setPrefs(allowed))),
+      remotePrefs(patch).pipe(Effect.flatMap((allowed) => m.app.setPrefs(allowed))),
     DesktopEvents: () => Stream.never,
     WindowUiEvents: () => Stream.never,
     SetNativeMenuState: () => Effect.void,

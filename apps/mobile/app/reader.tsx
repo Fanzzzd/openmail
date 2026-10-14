@@ -194,7 +194,7 @@ export default function Reader() {
       () =>
         runtime.runPromise(
           Effect.flatMap(Mailbox, (mailbox) =>
-            Effect.all({ prefs: mailbox.prefs, imageSenders: mailbox.imageSenders }),
+            Effect.all({ prefs: mailbox.app.prefs, imageSenders: mailbox.imageSenders }),
           ),
         ),
       [runtime],

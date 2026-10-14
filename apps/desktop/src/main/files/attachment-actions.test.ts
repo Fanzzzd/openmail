@@ -214,7 +214,7 @@ it("dot-only attachment filenames save into the attachment folder without a dial
   await withFiles(
     (m, id, parent) =>
       Effect.gen(function* () {
-        yield* m.setPrefs({ attachmentSaveFolder: { kind: "custom", path: output } });
+        yield* m.app.setPrefs({ attachmentSaveFolder: { kind: "custom", path: output } });
         const { list, settle } = downloadsFor(m);
         expect((yield* m.attachmentPart(id, [2])).filename).toBe(" .. ");
         expect(
@@ -539,7 +539,7 @@ it("save all continues after a disk failure, marks that download failed, and ret
   const destination = path.join(folder, "partial-save");
   await withFiles((m, id, parent) =>
     Effect.gen(function* () {
-      yield* m.setPrefs({ attachmentSaveFolder: { kind: "custom", path: destination } });
+      yield* m.app.setPrefs({ attachmentSaveFolder: { kind: "custom", path: destination } });
       const { list, settle } = downloadsFor(m);
       native.failFile = "/same.txt";
       const result = yield* attachmentAction(

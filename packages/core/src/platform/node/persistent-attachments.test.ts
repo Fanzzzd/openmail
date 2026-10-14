@@ -223,7 +223,7 @@ import { waitLimit } from "../../../test-support/test-time.js";
         yield* store.upsertAccount("gmail", "one@example.com");
         yield* m.initializeProfiles(true, names);
         assert.strictEqual((yield* m.profiles).length, 0);
-        assert.isFalse((yield* m.prefs).defaultProfilesPrompted);
+        assert.isFalse((yield* m.app.prefs).defaultProfilesPrompted);
         yield* store.upsertAccount("imap", "two@example.com");
         yield* Effect.all([m.initializeProfiles(true, names), m.initializeProfiles(true, names)], {
           concurrency: 2,

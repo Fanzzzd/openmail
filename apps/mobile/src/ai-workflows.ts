@@ -41,7 +41,7 @@ export function signedMobileMessage(
     );
     return {
       ...message,
-      text: applySignature(message.text, undefined, signature?.text, yield* mailbox.prefs),
+      text: applySignature(message.text, undefined, signature?.text, yield* mailbox.app.prefs),
     };
   });
 }

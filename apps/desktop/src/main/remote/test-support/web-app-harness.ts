@@ -55,7 +55,12 @@ export async function serveWebApp(messages: IncomingMessage[], prefs: Partial<Pr
   const m = await runtime.runPromise(Mailbox);
   await runtime.runPromise(m.connect({ provider: "gmail" }));
   await runtime.runPromise(
-    m.setPrefs({ language: "en", defaultProfilesPrompted: true, remoteImages: "ask", ...prefs }),
+    m.app.setPrefs({
+      language: "en",
+      defaultProfilesPrompted: true,
+      remoteImages: "ask",
+      ...prefs,
+    }),
   );
   await runtime.runPromise(m.sync());
 
@@ -164,7 +169,7 @@ export async function serveWebApp(messages: IncomingMessage[], prefs: Partial<Pr
   const port = typeof address === "object" && address ? address.port : 0;
   return {
     url: `http://127.0.0.1:${port}/`,
-    setPrefs: (patch: Partial<Prefs>) => runtime.runPromise(m.setPrefs(patch)),
+    setPrefs: (patch: Partial<Prefs>) => runtime.runPromise(m.app.setPrefs(patch)),
     close: async () => {
       serve.close();
       await local.close();

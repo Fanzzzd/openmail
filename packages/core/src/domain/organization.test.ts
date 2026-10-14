@@ -568,7 +568,7 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
         assert.strictEqual(conversations["STARRED"], 1);
         assert.strictEqual(messages["DRAFT"], 1);
         assert.strictEqual((yield* mailbox.unreadCounts)[account.id], 1);
-        yield* mailbox.setPrefs({ threadGrouping: false });
+        yield* mailbox.app.setPrefs({ threadGrouping: false });
         assert.strictEqual((yield* mailbox.unreadCounts)[account.id], 2);
       }).pipe(
         Effect.provide(

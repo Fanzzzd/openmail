@@ -160,8 +160,8 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
             fields((yield* Effect.forEach(selected, (id) => mailbox.thread(id))).flat()),
             originals,
           );
-          yield* mailbox.setPrefs({ nextSelection: "above" });
-          assert.strictEqual((yield* mailbox.prefs).nextSelection, "above");
+          yield* mailbox.app.setPrefs({ nextSelection: "above" });
+          assert.strictEqual((yield* mailbox.app.prefs).nextSelection, "above");
         }).pipe(Effect.provide(layer));
         yield* Effect.gen(function* () {
           const store = yield* Store;

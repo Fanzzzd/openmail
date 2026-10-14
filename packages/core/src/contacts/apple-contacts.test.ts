@@ -119,9 +119,9 @@ it.effect(
       const mailbox = yield* Mailbox;
       const cache = createAppleContactsCache();
       cache.replace(snapshot, true);
-      assert.strictEqual((yield* mailbox.prefs).useAppleContacts, false);
-      yield* mailbox.setPrefs({ useAppleContacts: true });
-      assert.strictEqual((yield* mailbox.prefs).useAppleContacts, true);
+      assert.strictEqual((yield* mailbox.app.prefs).useAppleContacts, false);
+      yield* mailbox.app.setPrefs({ useAppleContacts: true });
+      assert.strictEqual((yield* mailbox.app.prefs).useAppleContacts, true);
       assert.deepStrictEqual(yield* mailbox.suggestContacts("Apple"), []);
       assert.deepStrictEqual(yield* mailbox.contactGroups("Research"), []);
     }).pipe(Effect.provide(TestMailbox())),

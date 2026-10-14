@@ -152,7 +152,7 @@ export const DesktopLive = Layer.effect(
       }, 100);
     };
     for (const file of startupFiles.splice(0)) fileHandler(file);
-    const spellingCleanup = installSpellingMenu((patch) => run(mailbox.setPrefs(patch)));
+    const spellingCleanup = installSpellingMenu((patch) => run(mailbox.app.setPrefs(patch)));
     yield* Effect.addFinalizer(() =>
       Effect.sync(() => {
         fileHandler = undefined;
@@ -193,7 +193,7 @@ export const DesktopLive = Layer.effect(
         ),
         Effect.catchTag("NotFound", () =>
           Effect.gen(function* () {
-            const prefs = yield* mailbox.prefs;
+            const prefs = yield* mailbox.app.prefs;
             const url = yield* mailbox.messageWebUrl(id);
             yield* Effect.promise(() => openExternal(url, prefs.cleanLinks !== false));
           }).pipe(Effect.catch(() => Effect.sync(() => linkError("missing")))),
@@ -288,7 +288,7 @@ export const DesktopLive = Layer.effect(
         )
           activeSpace = "all";
         const accountIds = spaceAccountIds(activeSpace, accounts);
-        const prefs = yield* mailbox.prefs;
+        const prefs = yield* mailbox.app.prefs;
         configureSpelling(prefs);
         const folderCounts = yield* mailbox.unreadCounts;
         const counts = prefs.threadGrouping
@@ -530,7 +530,7 @@ export const DesktopLive = Layer.effect(
       if ((await notificationPermission()) === "notDetermined") await notificationPermission(true);
     }).pipe(Effect.forkScoped);
 
-    yield* mailbox.events.pipe(
+    yield* mailbox.app.events.pipe(
       Stream.runForEach((event) =>
         (event._tag === "NewMail" ? notify : event._tag === "Changed" ? refresh : Effect.void).pipe(
           Effect.catchCause((cause) =>
@@ -717,7 +717,7 @@ export const DesktopLive = Layer.effect(
             continue;
           }
           notificationAccounts.set(notification, ids);
-          wireNotification(notification, link.id, yield* mailbox.notificationActions(link.id));
+          wireNotification(notification, link.id, yield* mailbox.app.notificationActions(link.id));
         }
       }
     }

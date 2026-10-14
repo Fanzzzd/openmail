@@ -214,7 +214,7 @@ export async function flow(
     ),
   );
   await run(
-    m.setPrefs({
+    m.app.setPrefs({
       language: "en",
       markReadDelay: "manual",
       undoSendSeconds: 0,
@@ -264,11 +264,11 @@ export async function flow(
   const notificationReady = await Effect.runPromise(Deferred.make<void>());
   const notifications: NotificationBatch[] = [];
   const notificationFiber = mailboxRuntime.runFork(
-    m.events.pipe(
+    m.app.events.pipe(
       Stream.onStart(Deferred.succeed(notificationReady, undefined)),
       Stream.runForEach((event) =>
         event._tag === "NewMail"
-          ? m.takeNotifications.pipe(
+          ? m.app.takeNotifications.pipe(
               Effect.tap((batches) => Effect.sync(() => notifications.push(...batches))),
               Effect.asVoid,
             )
@@ -378,7 +378,7 @@ export async function flow(
       SetNativeMenuState: () => Effect.void,
       SpellcheckLanguages: () => Effect.succeed({ languages: [], automatic: true }),
       SetPrefs: ({ patch }) =>
-        rendererPrefs(patch).pipe(Effect.flatMap((value) => m.setPrefs(value))),
+        rendererPrefs(patch).pipe(Effect.flatMap((value) => m.app.setPrefs(value))),
       ChooseAttachmentFolder: unsupported,
       SuggestContacts: ({ query, exclude, accountIds }) =>
         m.suggestContacts(query, { exclude, accountIds }),

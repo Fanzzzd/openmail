@@ -14,7 +14,7 @@ export const withProgress = <A, E, R>(effect: Effect.Effect<A, E, R>, show: bool
     yield* Console.error("Syncing mail…");
     const mailbox = yield* Mailbox;
     const ready = yield* Deferred.make<void>();
-    const progress = yield* mailbox.events.pipe(
+    const progress = yield* mailbox.app.events.pipe(
       Stream.onStart(Deferred.succeed(ready, undefined)),
       Stream.runForEach((event) =>
         event._tag === "SyncProgress"

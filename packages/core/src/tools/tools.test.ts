@@ -40,7 +40,7 @@ const ProposalPage = Schema.Struct({
 type Service = Mailbox["Service"];
 type Groups = "reading" | "organize" | "compose" | "outbox" | "ai" | "calendar" | "app";
 /** Groups whose members are no longer flat on Service. */
-type Moved = "ai" | "calendar" | "outbox";
+type Moved = "ai" | "calendar" | "outbox" | "app";
 type Flat = Omit<Service, Exclude<Groups, Moved>>;
 type Overrides = Partial<Omit<Flat, Moved>> & { [G in Moved]?: Partial<Service[G]> };
 
@@ -106,7 +106,19 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
     listFailedOps: notUsed("listFailedOps"),
     acknowledgeFailedOps: () => notUsed("acknowledgeFailedOps"),
     syncHealth: () => notUsed("syncHealth"),
-    diagnosticsState: notUsed("diagnosticsState"),
+    app: {
+      diagnosticsState: notUsed("diagnosticsState"),
+      checkUpdates: () => Effect.die("unused"),
+      rememberNotificationActions: () => Effect.die("unused"),
+      notificationActions: () => Effect.die("unused"),
+      remoteAccess: Effect.die("unused"),
+      setRemoteAccess: () => Effect.die("unused"),
+      startUpdates: () => Effect.die("unused"),
+      takeNotifications: notUsed("takeNotifications"),
+      prefs: notUsed("prefs"),
+      setPrefs: () => notUsed("setPrefs"),
+      events: Stream.empty,
+    },
     cacheDatabaseSize: notUsed("cacheDatabaseSize"),
     compactCache: notUsed("compactCache"),
     closeSessions: () => notUsed("closeSessions"),
@@ -169,16 +181,10 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
     resolveMailLink: () => notUsed("resolveMailLink"),
     setAccountSettings: () => Effect.die("unused"),
     moveAccount: () => Effect.die("unused"),
-    checkUpdates: () => Effect.die("unused"),
-    rememberNotificationActions: () => Effect.die("unused"),
-    notificationActions: () => Effect.die("unused"),
     permanentlyDelete: () => notUsed("permanentlyDelete"),
     emptyFolder: () => notUsed("emptyFolder"),
     markFolderRead: () => notUsed("markFolderRead"),
     resetFavorites: () => notUsed("resetFavorites"),
-    remoteAccess: Effect.die("unused"),
-    setRemoteAccess: () => Effect.die("unused"),
-    startUpdates: () => Effect.die("unused"),
     cacheSize: Effect.die("unused"),
     clearCache: () => Effect.die("unused"),
     initializeProfiles: () => Effect.die("unused"),
@@ -252,7 +258,6 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
     unreadCounts: notUsed("unreadCounts"),
     unreadByLabel: () => notUsed("unreadByLabel"),
     profiles: notUsed("profiles"),
-    takeNotifications: notUsed("takeNotifications"),
     createProfile: () => notUsed("createProfile"),
     updateProfile: () => notUsed("updateProfile"),
     deleteProfile: () => notUsed("deleteProfile"),
@@ -279,8 +284,6 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
     discardDraft: () => notUsed("discardDraft"),
     discardDraftLater: () => notUsed("discardDraftLater"),
     restoreDraft: () => notUsed("restoreDraft"),
-    prefs: notUsed("prefs"),
-    setPrefs: () => notUsed("setPrefs"),
     signatures: notUsed("signatures"),
     namedSignatures: notUsed("namedSignatures"),
     signatureDefaults: notUsed("signatureDefaults"),
@@ -299,13 +302,13 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
     sync: () => notUsed("sync"),
     pollInbox: () => notUsed("pollInbox"),
     syncState: notUsed("syncState"),
-    events: Stream.empty,
     proposal: () => notUsed("proposal"),
     messageAccounts: () => notUsed("messageAccounts"),
   };
   const flat: Flat = {
     ...base,
     ...overrides,
+    app: { ...base.app, ...overrides.app },
     outbox: { ...base.outbox, ...overrides.outbox },
     calendar: { ...base.calendar, ...overrides.calendar },
     ai: { ...base.ai, ...overrides.ai },
@@ -343,7 +346,6 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
     reading: merged,
     organize: merged,
     compose: merged,
-    app: merged,
   });
 }
 

@@ -52,16 +52,18 @@ function harness(options: {
   let port = stored.port;
   const deps: RemoteAccessDeps = {
     mailbox: {
-      remoteAccess: Effect.sync(() => stored),
-      setRemoteAccess: (input) =>
-        normalizeRemoteAccess(input).pipe(
-          Effect.tap((saved) =>
-            Effect.sync(() => {
-              stored = saved;
-              port = saved.port;
-            }),
+      app: {
+        remoteAccess: Effect.sync(() => stored),
+        setRemoteAccess: (input) =>
+          normalizeRemoteAccess(input).pipe(
+            Effect.tap((saved) =>
+              Effect.sync(() => {
+                stored = saved;
+                port = saved.port;
+              }),
+            ),
           ),
-        ),
+      },
       attachmentPart: () => Effect.die("unused"),
       accounts: Effect.succeed([]),
     },

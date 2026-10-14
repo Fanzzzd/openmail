@@ -31,7 +31,9 @@ import {
 type MailboxService = Mailbox["Service"];
 
 export interface RemoteAccessDeps {
-  mailbox: Pick<MailboxService, "remoteAccess" | "setRemoteAccess" | "attachmentPart" | "accounts">;
+  mailbox: Pick<MailboxService, "attachmentPart" | "accounts"> & {
+    readonly app: Pick<MailboxService["app"], "remoteAccess" | "setRemoteAccess">;
+  };
   runCli: CliRunner;
   installed: () => Promise<boolean>;
   webRoot: string;
@@ -113,7 +115,7 @@ export function createRemoteAccess(deps: RemoteAccessDeps) {
     return next;
   };
   const save = async (next: RemoteAccessSettings) => {
-    settings = await run(mailbox.setRemoteAccess(next));
+    settings = await run(mailbox.app.setRemoteAccess(next));
     if (gate) gate = { ...gate, allowlist: settings.allowlist };
     sessions.retain(settings.allowlist);
   };
@@ -290,7 +292,7 @@ export function createRemoteAccess(deps: RemoteAccessDeps) {
     /** Loads settings; resumes publishing when the person left it on. */
     init: () =>
       serial(async () => {
-        settings = await run(mailbox.remoteAccess);
+        settings = await run(mailbox.app.remoteAccess);
         if (settings.enabled) return start();
         // Off, but a crash may have left the mapping behind. One try here; Refresh
         // and the next launch try again. No timer, so a stopped Tailscale isn't polled.
@@ -322,7 +324,7 @@ export function createRemoteAccess(deps: RemoteAccessDeps) {
     setService: (service: string) =>
       serial(async () => {
         const next = { ...settings, service };
-        await run(mailbox.setRemoteAccess(next).pipe(Effect.asVoid)); // validate first
+        await run(mailbox.app.setRemoteAccess(next).pipe(Effect.asVoid)); // validate first
         if (settings.enabled && status !== "off") await unpublish();
         await save(next);
         if (settings.enabled) await start();

@@ -123,7 +123,7 @@ const Handlers = MailRpcs.toLayer(
     const apple = desktopAppleContacts(m);
     const downloads = appDownloads(m, yield* FiberSet.makeRuntime());
     // The browser page after sign-in follows the language setting.
-    const signInLanguage = m.prefs.pipe(
+    const signInLanguage = m.app.prefs.pipe(
       Effect.tap((prefs) => Effect.sync(() => setNativeLanguage(prefs.language))),
       Effect.ignore,
     );
@@ -158,7 +158,7 @@ const Handlers = MailRpcs.toLayer(
       SaveMessage: ({ id }, { client }) => saveMessage(m, windowOf(client.id), id),
       OpenMessageWeb: ({ id }) =>
         Effect.gen(function* () {
-          const prefs = yield* m.prefs;
+          const prefs = yield* m.app.prefs;
           const url = yield* m.messageWebUrl(id);
           yield* Effect.promise(() => openExternal(url, prefs.cleanLinks !== false));
         }),
@@ -209,7 +209,7 @@ const Handlers = MailRpcs.toLayer(
           openMessageWindow(id);
         }),
       OpenMeeting: ({ url }) =>
-        m.prefs.pipe(Effect.flatMap((prefs) => openMeeting(url, prefs.cleanLinks !== false))),
+        m.app.prefs.pipe(Effect.flatMap((prefs) => openMeeting(url, prefs.cleanLinks !== false))),
       UpdateState: () => Effect.sync(currentUpdateState),
       CheckForUpdates: ({ download }) => checkForUpdateState(m, download),
       NativeComposeCapabilities: () => Effect.sync(() => nativeComposeCapabilities()),
@@ -243,7 +243,7 @@ const Handlers = MailRpcs.toLayer(
             if (parseAppLink(target)?.kind === "compose") receiveAppUrl(target);
             return;
           }
-          const prefs = yield* m.prefs;
+          const prefs = yield* m.app.prefs;
           yield* Effect.promise(() =>
             openExternal(cleanLink(target, prefs.cleanLinks !== false), false),
           );
@@ -282,7 +282,7 @@ const Handlers = MailRpcs.toLayer(
       SetWindowRoute: ({ href }, { client }) =>
         Effect.sync(() => setWindowRoute(windowOf(client.id), href)),
       Diagnostics: ({ crashOnly }) =>
-        m.diagnosticsState.pipe(
+        m.app.diagnosticsState.pipe(
           // A broken database must not hide the rest of the report.
           Effect.catchCause(() => Effect.succeed(undefined)),
           Effect.map((state) =>

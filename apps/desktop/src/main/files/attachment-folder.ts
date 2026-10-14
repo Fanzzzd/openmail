@@ -8,11 +8,11 @@ type ShowFolderDialog = (
 
 /** The person picks the folder in a native dialog; the renderer never supplies the path. */
 export const chooseAttachmentFolder = (
-  m: Pick<Mailbox["Service"], "prefs" | "setPrefs">,
+  m: { readonly app: Pick<Mailbox["Service"]["app"], "prefs" | "setPrefs"> },
   show: ShowFolderDialog,
 ) =>
   Effect.gen(function* () {
-    const current = (yield* m.prefs).attachmentSaveFolder;
+    const current = (yield* m.app.prefs).attachmentSaveFolder;
     const choice = yield* Effect.tryPromise({
       try: () =>
         show({
@@ -23,6 +23,6 @@ export const chooseAttachmentFolder = (
     });
     const folder = choice.filePaths[0];
     if (choice.canceled || !folder) return null;
-    yield* m.setPrefs({ attachmentSaveFolder: { kind: "custom", path: folder } });
+    yield* m.app.setPrefs({ attachmentSaveFolder: { kind: "custom", path: folder } });
     return folder;
   });

@@ -102,7 +102,7 @@ export const deliverNewMail = (event: NotificationEvent) =>
     if (!preferences.accounts.includes(event.accountId)) return;
     if (!(yield* Effect.promise(() => Notifications.getPermissionsAsync())).granted) return;
     const { i18n, activateLanguage } = yield* Effect.promise(() => import("./i18n"));
-    activateLanguage((yield* mailbox.prefs).language);
+    activateLanguage((yield* mailbox.app.prefs).language);
     const newMail = i18n._({ id: "New mail", message: "New mail" });
     yield* Effect.promise(configureLocalChannel);
     const threads = new Set<string>();
@@ -134,7 +134,7 @@ export const deliverNewMail = (event: NotificationEvent) =>
   });
 export function notificationEvents(runtime: BackgroundRuntime) {
   return Effect.flatMap(Mailbox, (mailbox) =>
-    Stream.runForEach(mailbox.events, (event) => {
+    Stream.runForEach(mailbox.app.events, (event) => {
       const action =
         event._tag === "NewMail" || event._tag === "SnoozeDue"
           ? deliverNewMail(event)
@@ -180,7 +180,7 @@ export async function runBackgroundRefresh() {
         if (!(yield* storage.preferences).refresh || isForeground()) return;
         const mailbox = yield* Mailbox;
         const pending: NotificationEvent[] = [];
-        const events = yield* Stream.runForEach(mailbox.events, (event) =>
+        const events = yield* Stream.runForEach(mailbox.app.events, (event) =>
           Effect.sync(() => {
             if (event._tag === "NewMail" || event._tag === "SnoozeDue") pending.push(event);
           }),

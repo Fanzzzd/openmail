@@ -230,7 +230,9 @@ it("the attachment folder follows the setting; legacy ask means Downloads, relat
   // No stored setting means the key is absent, as in a profile from before the setting existed.
   const { attachmentSaveFolder: _default, ...unset } = DEFAULT_PREFS;
   const prefs = (attachmentSaveFolder?: AttachmentSaveFolder) => ({
-    prefs: Effect.succeed(attachmentSaveFolder ? { ...unset, attachmentSaveFolder } : unset),
+    app: {
+      prefs: Effect.succeed(attachmentSaveFolder ? { ...unset, attachmentSaveFolder } : unset),
+    },
   });
   const custom = path.join(folder, "nested", "attachments");
   expect(

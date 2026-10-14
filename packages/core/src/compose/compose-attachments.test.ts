@@ -121,14 +121,14 @@ for (const provider of ["gmail", "imap", "outlook"] as const) {
               includeOriginalAttachments: true,
             },
           });
-          yield* mailbox.setPrefs({ quoteSelection: "always" });
+          yield* mailbox.app.setPrefs({ quoteSelection: "always" });
           return saved;
         }).pipe(Effect.provide(layer()));
         yield* Effect.gen(function* () {
           const mailbox = yield* Mailbox;
           const reopened = yield* mailbox.openDraft(saved.id);
           assert.deepStrictEqual(reopened.message, saved.message);
-          assert.strictEqual((yield* mailbox.prefs).quoteSelection, "always");
+          assert.strictEqual((yield* mailbox.app.prefs).quoteSelection, "always");
           yield* mailbox.perform(
             { kind: "send", accountId: saved.accountId, message: reopened.message },
             { kind: "user", surface: "app" },

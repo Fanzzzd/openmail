@@ -174,9 +174,9 @@ it("portable assembly exposes Mailbox alongside background storage and hides int
       const background = Context.get(context, MobileBackgroundStorage);
       expect(yield* mailbox.accounts).toEqual([]);
       expect(yield* background.preferences).toEqual(DEFAULT_MOBILE_BACKGROUND);
-      yield* mailbox.setPrefs({ markReadDelay: "manual" });
+      yield* mailbox.app.setPrefs({ markReadDelay: "manual" });
       yield* background.save({ ...DEFAULT_MOBILE_BACKGROUND, badge: true });
-      expect((yield* mailbox.prefs).markReadDelay).toBe("manual");
+      expect((yield* mailbox.app.prefs).markReadDelay).toBe("manual");
       expect((yield* background.preferences).badge).toBe(true);
     }).pipe(Effect.scoped),
   );

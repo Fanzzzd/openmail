@@ -556,9 +556,13 @@ import { replyFromAddress } from "./signatures.js";
   it.effect("preferences, signatures and templates are stored in core", () =>
     withMail((m) =>
       Effect.gen(function* () {
-        assert.deepStrictEqual(yield* m.prefs, DEFAULT_PREFS);
-        yield* m.setPrefs({ undoSendSeconds: 20, markReadDelay: "manual", threadGrouping: false });
-        assert.deepStrictEqual(yield* m.prefs, {
+        assert.deepStrictEqual(yield* m.app.prefs, DEFAULT_PREFS);
+        yield* m.app.setPrefs({
+          undoSendSeconds: 20,
+          markReadDelay: "manual",
+          threadGrouping: false,
+        });
+        assert.deepStrictEqual(yield* m.app.prefs, {
           ...DEFAULT_PREFS,
           undoSendSeconds: 20,
           markReadDelay: "manual",

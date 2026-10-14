@@ -34,7 +34,7 @@ export const accountContacts = (m: MailboxService): ContactsBackend => ({
   alternatives: (address) => m.contactAlternatives(address),
   groups: (query, accountIds) => m.contactGroups(query, accountIds),
   photo: (accountId, address) =>
-    Effect.flatMap(m.prefs, (prefs) =>
+    Effect.flatMap(m.app.prefs, (prefs) =>
       prefs.contactPhotos ? m.calendar.contactPhoto(accountId, address) : Effect.succeed(null),
     ),
   knownSenders: (accountId, addresses) => m.knownSenders(accountId, addresses),
@@ -208,7 +208,7 @@ export function mailboxHandlers(m: MailboxService, options: MailboxHandlerOption
     CacheSize: () => m.cacheSize,
     ClearCache: ({ accountId }) => m.clearCache(accountId),
     InitializeProfiles: ({ accept, names }) => m.initializeProfiles(accept, names),
-    Prefs: () => m.prefs,
+    Prefs: () => m.app.prefs,
     NamedSignatures: () => m.namedSignatures,
     SignatureDefaults: () => m.signatureDefaults,
     SaveNamedSignature: ({ input, id }) => m.saveNamedSignature(input, id),
@@ -242,6 +242,6 @@ export function mailboxHandlers(m: MailboxService, options: MailboxHandlerOption
     Sync: () => m.resetConnectivity().pipe(Effect.andThen(m.sync())),
     NetworkChanged: () => m.resetConnectivity().pipe(Effect.andThen(m.sync()), Effect.asVoid),
     SyncState: () => m.syncState,
-    Events: () => m.events,
+    Events: () => m.app.events,
   } satisfies Partial<Parameters<typeof MailRpcs.of>[0]>;
 }

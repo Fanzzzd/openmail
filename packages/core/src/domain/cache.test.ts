@@ -808,7 +808,7 @@ import { scaledMs } from "../../test-support/test-time.js";
             removeListener: () => null,
           };
           const start = Effect.map(
-            m.startUpdates(client, { packaged: false, bundle: "/tmp/test.app" }),
+            m.app.startUpdates(client, { packaged: false, bundle: "/tmp/test.app" }),
             (stop) => stop(),
           );
           yield* secrets.set(LEGACY_UPDATE_TOKEN_KEY, "old-release-token");
@@ -843,7 +843,7 @@ import { scaledMs } from "../../test-support/test-time.js";
           removeListener: () => null,
         };
         const states: string[] = [];
-        const stop = yield* m.startUpdates(client, {
+        const stop = yield* m.app.startUpdates(client, {
           packaged: false,
           bundle: "/tmp/test.app",
           onState: (state) => states.push(state.status),

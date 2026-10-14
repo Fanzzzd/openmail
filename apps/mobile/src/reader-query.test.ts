@@ -92,7 +92,7 @@ it("mailbox revision keeps the mounted reader and its resolved CID images while 
     if (!instance) throw new Error("No mailbox runtime");
     await act(async () => {
       await instance.runPromise(
-        Effect.flatMap(Mailbox, (mailbox) => mailbox.setPrefs({ remoteImages: "always" })),
+        Effect.flatMap(Mailbox, (mailbox) => mailbox.app.setPrefs({ remoteImages: "always" })),
       );
     });
     expect(load).toHaveBeenCalledTimes(2);

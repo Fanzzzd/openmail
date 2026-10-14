@@ -95,11 +95,11 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
           server.messages.set("arrival", incoming("arrival"));
           yield* mailbox.sync();
           yield* store.enqueueOp(id, "initial", { kind: "read", value: true });
-          yield* mailbox.setPrefs({
+          yield* mailbox.app.setPrefs({
             showAccountLabels: true,
             notificationActions: ["menu", "read"],
           });
-          yield* mailbox.rememberNotificationActions(`${id}/initial`, ["read"]);
+          yield* mailbox.app.rememberNotificationActions(`${id}/initial`, ["read"]);
           yield* mailbox.setAccountSettings(id, {
             enabled: false,
             description: "Personal",
@@ -119,7 +119,7 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
           assert.deepStrictEqual(yield* mailbox.threads({ mailbox: "all", accountIds: [id] }), []);
           assert.deepStrictEqual(yield* mailbox.unreadCounts, {});
           assert.deepStrictEqual(yield* mailbox.unreadByLabel(), {});
-          assert.deepStrictEqual(yield* mailbox.takeNotifications, []);
+          assert.deepStrictEqual(yield* mailbox.app.takeNotifications, []);
           assert.deepStrictEqual(yield* mailbox.suggestContacts("alice"), []);
           assert.deepStrictEqual(yield* mailbox.suggestContacts("contact"), []);
           assert.strictEqual((yield* store.listPendingOps).length, 1);
@@ -142,9 +142,9 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
           assert.strictEqual(account.description, "Personal");
           assert.strictEqual(account.color, "#123456");
           assert.strictEqual(tokens.get(id), token);
-          assert.deepStrictEqual(yield* mailbox.notificationActions(`${id}/initial`), ["read"]);
-          assert.isTrue((yield* mailbox.prefs).showAccountLabels);
-          assert.deepStrictEqual((yield* mailbox.prefs).notificationActions, ["menu", "read"]);
+          assert.deepStrictEqual(yield* mailbox.app.notificationActions(`${id}/initial`), ["read"]);
+          assert.isTrue((yield* mailbox.app.prefs).showAccountLabels);
+          assert.deepStrictEqual((yield* mailbox.app.prefs).notificationActions, ["menu", "read"]);
           yield* mailbox.setAccountSettings(id, {
             enabled: true,
             description: "Personal",
@@ -375,7 +375,7 @@ it.effect(
           (yield* mailbox.thread(`${account.id}/initial`))[0]?.bodyText,
           "cached body",
         );
-        assert.deepStrictEqual(yield* mailbox.takeNotifications, []);
+        assert.deepStrictEqual(yield* mailbox.app.takeNotifications, []);
       }).pipe(Effect.provide(layer));
     }),
 );

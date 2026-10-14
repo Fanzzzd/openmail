@@ -90,7 +90,7 @@ it("mobile AI is off by default, uses selected models and visible thread text, a
           expect(request.prompt).toContain("Visible decision");
           expect(request.prompt).not.toMatch(/HIDDEN_SECRET|PRIVATE_ATTACHMENT|private\.test/);
         }
-        expect(JSON.stringify(yield* mailbox.prefs)).not.toContain("private-anthropic-key");
+        expect(JSON.stringify(yield* mailbox.app.prefs)).not.toContain("private-anthropic-key");
         expect(JSON.stringify(yield* mailbox.ai.aiSettings)).not.toContain("private-anthropic-key");
         yield* mailbox.ai.setAiAccount({
           accountId: account.id,

@@ -709,10 +709,10 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
             position: 9,
             color: "#112233",
           });
-          yield* mailbox.setPrefs({ showMore: false });
-          assert.isFalse((yield* mailbox.prefs).showMore);
-          yield* mailbox.setPrefs({ showMore: true });
-          assert.isTrue((yield* mailbox.prefs).showMore);
+          yield* mailbox.app.setPrefs({ showMore: false });
+          assert.isFalse((yield* mailbox.app.prefs).showMore);
+          yield* mailbox.app.setPrefs({ showMore: true });
+          assert.isTrue((yield* mailbox.app.prefs).showMore);
           const threads = yield* mailbox.threads({ mailbox: "all", limit: 1000 });
           assert.isFalse(threads.some((row) => ["first", "second"].includes(row.subject)));
         }).pipe(Effect.provide(layer));

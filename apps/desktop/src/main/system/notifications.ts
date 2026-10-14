@@ -68,9 +68,9 @@ export function makeNotifications({
   const notify = Effect.gen(function* () {
     // Startup refresh and arrivals must wait for the renderer's Lingui labels.
     if (!ready() || !Notification.isSupported()) return;
-    const prefs = yield* mailbox.prefs;
+    const prefs = yield* mailbox.app.prefs;
     const actions = notificationButtonActions(prefs.notificationActions, process.platform);
-    const batches = yield* mailbox.takeNotifications;
+    const batches = yield* mailbox.app.takeNotifications;
     const accounts = yield* mailbox.accounts;
     const profiles = yield* mailbox.profiles;
     for (const batch of batches) {
@@ -129,7 +129,7 @@ export function makeNotifications({
           ),
         });
         notificationAccounts.set(notification, [message.accountId]);
-        yield* mailbox.rememberNotificationActions(id, actions);
+        yield* mailbox.app.rememberNotificationActions(id, actions);
         wireNotification(notification, id, actions);
         notification.show();
       }

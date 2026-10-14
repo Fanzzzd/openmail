@@ -62,8 +62,11 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
                 }
               : { provider },
           );
-          assert.strictEqual((yield* mailbox.prefs).deleteKeyAction, DEFAULT_PREFS.deleteKeyAction);
-          yield* mailbox.setPrefs({
+          assert.strictEqual(
+            (yield* mailbox.app.prefs).deleteKeyAction,
+            DEFAULT_PREFS.deleteKeyAction,
+          );
+          yield* mailbox.app.setPrefs({
             deleteKeyAction: "ask",
             readingPanePosition: "bottom",
             sidebarVisible: false,
@@ -85,7 +88,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
           const mailbox = yield* Mailbox;
           const opened = yield* mailbox.openDraft("draft:organization");
           assert.deepStrictEqual(opened.message.draftOrganization, organization);
-          const prefs = yield* mailbox.prefs;
+          const prefs = yield* mailbox.app.prefs;
           assert.strictEqual(prefs.deleteKeyAction, "ask");
           assert.strictEqual(prefs.readingPanePosition, "bottom");
           assert.strictEqual(prefs.sidebarVisible, false);

@@ -7,9 +7,9 @@ import { DEFAULT_REMOTE_ACCESS } from "./remote-access.js";
 it.effect("remote access is off by default and keeps a normalized allowlist", () =>
   Effect.gen(function* () {
     const mailbox = yield* Mailbox;
-    assert.deepStrictEqual(yield* mailbox.remoteAccess, DEFAULT_REMOTE_ACCESS);
+    assert.deepStrictEqual(yield* mailbox.app.remoteAccess, DEFAULT_REMOTE_ACCESS);
     assert.strictEqual(DEFAULT_REMOTE_ACCESS.enabled, false);
-    const saved = yield* mailbox.setRemoteAccess({
+    const saved = yield* mailbox.app.setRemoteAccess({
       ...DEFAULT_REMOTE_ACCESS,
       enabled: true,
       service: " SVC:OpenMail ",
@@ -17,7 +17,7 @@ it.effect("remote access is off by default and keeps a normalized allowlist", ()
     });
     assert.deepStrictEqual(saved.allowlist, ["owner@github", "friend@example.com"]);
     assert.strictEqual(saved.service, "svc:openmail");
-    assert.deepStrictEqual(yield* mailbox.remoteAccess, saved);
+    assert.deepStrictEqual(yield* mailbox.app.remoteAccess, saved);
   }).pipe(Effect.scoped, Effect.provide(TestMailbox())),
 );
 
@@ -32,9 +32,9 @@ it.effect("remote access rejects malformed logins and service names", () =>
       { ...DEFAULT_REMOTE_ACCESS, service: "openmail" },
       { ...DEFAULT_REMOTE_ACCESS, service: "svc:-openmail" },
     ]) {
-      const result = yield* Effect.result(mailbox.setRemoteAccess(input));
+      const result = yield* Effect.result(mailbox.app.setRemoteAccess(input));
       assert.strictEqual(result._tag, "Failure");
     }
-    assert.deepStrictEqual(yield* mailbox.remoteAccess, DEFAULT_REMOTE_ACCESS);
+    assert.deepStrictEqual(yield* mailbox.app.remoteAccess, DEFAULT_REMOTE_ACCESS);
   }).pipe(Effect.scoped, Effect.provide(TestMailbox())),
 );

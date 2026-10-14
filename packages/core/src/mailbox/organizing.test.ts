@@ -368,15 +368,15 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
         Effect.gen(function* () {
           const profile = yield* m.createProfile({ name: "Work", icon: "W", color: "blue" });
           yield* m.moveAccount(accountId, { profileId: profile.id, beforeId: null });
-          yield* m.setPrefs({
+          yield* m.app.setPrefs({
             notifications: { [accountId]: "inbox" },
             quietHours: { [profile.id]: { enabled: true, start: 0, end: 0 } },
           });
           yield* m.snooze([`${accountId}/one`], 1000);
           yield* TestClock.adjust("2 seconds");
           yield* m.wakeSnoozed();
-          assert.deepStrictEqual(yield* m.takeNotifications, []);
-          yield* m.setPrefs({
+          assert.deepStrictEqual(yield* m.app.takeNotifications, []);
+          yield* m.app.setPrefs({
             quietHours: {},
             activeHours: {
               [profile.id]: {
@@ -394,15 +394,15 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
               },
             },
           });
-          assert.deepStrictEqual(yield* m.takeNotifications, []);
-          yield* m.setPrefs({ activeHours: { [profile.id]: DEFAULT_ACTIVE_HOURS } });
-          const batches = yield* m.takeNotifications;
+          assert.deepStrictEqual(yield* m.app.takeNotifications, []);
+          yield* m.app.setPrefs({ activeHours: { [profile.id]: DEFAULT_ACTIVE_HOURS } });
+          const batches = yield* m.app.takeNotifications;
           assert.strictEqual(batches.length, 1);
           assert.strictEqual(batches[0]?.kind, "digest");
           assert.strictEqual(batches[0]?.messages.length, 1);
           assert.ok(batches[0]?.messages[0]?.labels.includes("INBOX"));
           yield* m.wakeSnoozed();
-          assert.deepStrictEqual(yield* m.takeNotifications, []);
+          assert.deepStrictEqual(yield* m.app.takeNotifications, []);
         }),
       ),
   );

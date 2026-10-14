@@ -128,16 +128,16 @@ import { SqlClient } from "effect/sql";
     () =>
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        const listener = yield* mailbox.events.pipe(
+        const listener = yield* mailbox.app.events.pipe(
           Stream.filter((event) => event._tag === "UpdateSettingsChanged"),
           Stream.take(3),
           Stream.runCollect,
           Effect.forkScoped,
         );
         yield* Effect.yieldNow;
-        yield* mailbox.setPrefs({ updateAutoDownload: false });
-        yield* mailbox.setPrefs({ updateChannel: "stable" });
-        yield* mailbox.setPrefs({ updateChannel: "latest" });
+        yield* mailbox.app.setPrefs({ updateAutoDownload: false });
+        yield* mailbox.app.setPrefs({ updateChannel: "stable" });
+        yield* mailbox.app.setPrefs({ updateChannel: "latest" });
         const events = yield* Fiber.join(listener);
         assert.deepStrictEqual(
           Array.from(events).map((event) => event.resetState),

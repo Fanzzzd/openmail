@@ -218,7 +218,7 @@ it("resets a real cache then re-syncs through a fake provider while accounts and
       accountId = account.id;
       yield* m.sync();
       expect(yield* m.threads({})).toHaveLength(1);
-      yield* m.setPrefs({ undoSendSeconds: 10 });
+      yield* m.app.setPrefs({ undoSendSeconds: 10 });
       yield* m.saveDraft({
         id: "shared-draft",
         accountId,
@@ -248,7 +248,7 @@ it("resets a real cache then re-syncs through a fake provider while accounts and
     Effect.gen(function* () {
       const m = yield* Mailbox;
       expect((yield* m.accounts).map((a) => a.id)).toEqual([accountId]);
-      expect((yield* m.prefs).undoSendSeconds).toBe(10);
+      expect((yield* m.app.prefs).undoSendSeconds).toBe(10);
       expect((yield* m.openDraft("shared-draft")).message.text).toBe("User feedback");
       expect(yield* m.threads({})).toHaveLength(0);
       yield* m.sync();
@@ -276,7 +276,7 @@ it("resets a real cache then re-syncs through a fake provider while accounts and
           },
         ],
       };
-      const change = yield* m.events.pipe(
+      const change = yield* m.app.events.pipe(
         Stream.filter((event) => event._tag === "Changed"),
         Stream.take(1),
         Stream.runCollect,

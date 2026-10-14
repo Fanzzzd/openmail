@@ -105,7 +105,7 @@ import { makeOutlookFeatures } from "../providers/outlook/outlook-features.js";
           yield* m.calendar.refreshContacts(id);
           assert.deepStrictEqual((yield* m.contactGroups("team", [id]))[0]?.members, [alice, bob]);
           assert.deepStrictEqual(yield* m.contactGroups("team", []), []);
-          yield* m.setPrefs({
+          yield* m.app.setPrefs({
             contactPhotos: false,
             composeFont: { family: "Georgia", size: 18 },
             inlineImageSize: "large",
@@ -113,7 +113,7 @@ import { makeOutlookFeatures } from "../providers/outlook/outlook-features.js";
           });
           assert.strictEqual(yield* m.calendar.contactPhoto(id, alice.address), null);
           assert.strictEqual(downloads.length, 0);
-          yield* m.setPrefs({ contactPhotos: true });
+          yield* m.app.setPrefs({ contactPhotos: true });
           assert.strictEqual(
             yield* m.calendar.contactPhoto(id, alice.address),
             `data:image/png;base64,${png}`,
@@ -126,9 +126,9 @@ import { makeOutlookFeatures } from "../providers/outlook/outlook-features.js";
         yield* Effect.gen(function* () {
           const m = yield* Mailbox;
           assert.strictEqual((yield* m.contactGroups("Team"))[0]?.members.length, 2);
-          assert.strictEqual((yield* m.prefs).composeFont.family, "Georgia");
-          assert.strictEqual((yield* m.prefs).inlineImageSize, "large");
-          assert.strictEqual((yield* m.prefs).emojiReplacement, false);
+          assert.strictEqual((yield* m.app.prefs).composeFont.family, "Georgia");
+          assert.strictEqual((yield* m.app.prefs).inlineImageSize, "large");
+          assert.strictEqual((yield* m.app.prefs).emojiReplacement, false);
           yield* m.calendar.contactPhoto(id, alice.address);
           assert.strictEqual(downloads.length, 1);
           server.featureFailure = new FeatureScopeMissing({
@@ -741,14 +741,14 @@ import { makeOutlookFeatures } from "../providers/outlook/outlook-features.js";
             m.calendar.contactPhoto(account.id, person.address),
           );
           yield* Deferred.await(started);
-          yield* m.setPrefs({ contactPhotos: false });
+          yield* m.app.setPrefs({ contactPhotos: false });
           yield* Deferred.succeed(release, undefined);
           assert.strictEqual(yield* Fiber.join(photo), null);
           assert.strictEqual(
             (yield* store.contactPhotoSource(account.id, person.address))?.dataUrl,
             null,
           );
-          yield* m.setPrefs({ contactPhotos: true });
+          yield* m.app.setPrefs({ contactPhotos: true });
           assert.strictEqual(
             yield* m.calendar.contactPhoto(account.id, person.address),
             `data:image/png;base64,${png}`,

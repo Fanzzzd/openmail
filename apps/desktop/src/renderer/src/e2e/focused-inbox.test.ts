@@ -43,7 +43,7 @@ it.each([false, true])(
           incoming("gmail-social", { labels: ["INBOX", "UNREAD", "CATEGORY_SOCIAL"] }),
         ),
       );
-      await h.run(h.m.setPrefs({ threadGrouping: false }));
+      await h.run(h.m.app.setPrefs({ threadGrouping: false }));
     }
     const allInbox = (await h.run(h.store.listThreads({ mailbox: "inbox", flat: true })))
       .map((message) => message.id)

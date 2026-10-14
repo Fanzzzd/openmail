@@ -88,7 +88,7 @@ export function ForegroundLifecycle() {
   const work = useForeground();
   const prefs = useMailboxQuery(
     useCallback(
-      () => runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.prefs)),
+      () => runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.app.prefs)),
       [runtime],
     ),
   );

@@ -126,7 +126,7 @@ export const openAttachment: (
       message: launcherBlockedMessage(name),
     });
   }
-  const downloads = (yield* m.prefs).attachmentOpenFolder === "downloads";
+  const downloads = (yield* m.app.prefs).attachmentOpenFolder === "downloads";
   const files = downloads
     ? [
         yield* freePath(app.getPath("downloads"), name).pipe(

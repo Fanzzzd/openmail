@@ -527,7 +527,6 @@ export const MailboxLive = (
         ...groups.compose,
         ...groups.accounts,
         ...groups.sync,
-        ...groups.app,
         reading: groups.reading,
         organize: groups.organize,
         compose: groups.compose,

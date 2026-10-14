@@ -140,7 +140,7 @@ import { inspectAttachment } from "./attachment-import.js";
               : { provider },
           );
           yield* m.sync();
-          yield* m.setPrefs({
+          yield* m.app.setPrefs({
             messageListDensity: "expanded",
             specialFolderBadges: { starred: false, drafts: true, spam: false },
           });
@@ -191,7 +191,7 @@ import { inspectAttachment } from "./attachment-import.js";
         }).pipe(Effect.provide(layer()));
         yield* Effect.gen(function* () {
           const m = yield* Mailbox;
-          const prefs = yield* m.prefs;
+          const prefs = yield* m.app.prefs;
           assert.strictEqual(prefs.messageListDensity, "expanded");
           assert.deepStrictEqual(prefs.specialFolderBadges, {
             starred: false,

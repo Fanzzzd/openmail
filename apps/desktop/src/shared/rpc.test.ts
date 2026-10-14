@@ -35,8 +35,8 @@ it("every Prefs field survives the real RPC client/server JSON codecs and is sto
         SetPrefs: ({ patch }) =>
           Effect.sync(() => {
             received.push(patch);
-          }).pipe(Effect.andThen(mailbox.setPrefs(patch))),
-        Prefs: () => mailbox.prefs,
+          }).pipe(Effect.andThen(mailbox.app.setPrefs(patch))),
+        Prefs: () => mailbox.app.prefs,
       };
     }),
   );

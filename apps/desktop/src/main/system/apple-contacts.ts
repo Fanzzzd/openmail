@@ -15,8 +15,8 @@ export function desktopAppleContacts(mailbox: Mailbox["Service"]) {
   const binary = nativeBinary("contacts");
   const contacts = createAppleContactsController({
     platform: process.platform,
-    prefs: () => Effect.runPromise(mailbox.prefs),
-    setEnabled: (enabled) => Effect.runPromise(mailbox.setPrefs({ useAppleContacts: enabled })),
+    prefs: () => Effect.runPromise(mailbox.app.prefs),
+    setEnabled: (enabled) => Effect.runPromise(mailbox.app.setPrefs({ useAppleContacts: enabled })),
     execute: (args) =>
       new Promise<string>((resolve, reject) => {
         execFile(
@@ -54,7 +54,7 @@ export function desktopAppleContacts(mailbox: Mailbox["Service"]) {
       Effect.gen(function* () {
         if (patch.useAppleContacts !== undefined || patch.contactPhotos !== undefined)
           contacts.invalidate();
-        yield* mailbox.setPrefs(patch);
+        yield* mailbox.app.setPrefs(patch);
         if (patch.useAppleContacts !== undefined || patch.contactPhotos !== undefined)
           contacts.invalidate();
       }),
@@ -84,7 +84,8 @@ export function desktopAppleContacts(mailbox: Mailbox["Service"]) {
     photo: (accountId: string, address: string) =>
       Effect.gen(function* () {
         yield* read;
-        if (!(yield* mailbox.prefs).contactPhotos || !(yield* available([accountId]))) return null;
+        if (!(yield* mailbox.app.prefs).contactPhotos || !(yield* available([accountId])))
+          return null;
         return (
           contacts.cache.photo(address) ??
           (yield* mailbox.calendar.contactPhoto(accountId, address))

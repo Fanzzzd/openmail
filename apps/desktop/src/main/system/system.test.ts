@@ -549,7 +549,7 @@ it("menu bar count is optional and its clickable list caps at 50 individual mess
         expect(tray).toBeDefined();
         if (!tray) return;
         expect(tray.title).toBe("");
-        yield* m.setPrefs({ menuBarUnreadCount: true });
+        yield* m.app.setPrefs({ menuBarUnreadCount: true });
         yield* settle();
         if (process.platform === "darwin") expect(tray.title).toBe("55");
         const menu = Schema.decodeUnknownSync(
@@ -571,7 +571,7 @@ it("menu bar count is optional and its clickable list caps at 50 individual mess
           .events(window.webContents.id)
           .pipe(Stream.take(1), Stream.runCollect);
         expect(opened[0]?._tag).toBe("Navigate");
-        yield* m.setPrefs({ menuBarUnreadCount: false });
+        yield* m.app.setPrefs({ menuBarUnreadCount: false });
         yield* settle();
         expect(tray.title).toBe("");
       }),
@@ -595,7 +595,7 @@ it("sleep resume restores Dock counts and delivers one Profile digest after mute
         if (!account) throw new Error("Missing account");
         const profile = yield* m.createProfile({ name: "Work", icon: "briefcase", color: "blue" });
         yield* m.assignProfile(account.id, profile.id);
-        yield* m.setPrefs({
+        yield* m.app.setPrefs({
           activeHours: { [profile.id]: { ...DEFAULT_ACTIVE_HOURS, enabled: true } },
         });
         for (const id of ["keep", "read", "delete"]) server.messages.set(id, incoming(id));
@@ -667,20 +667,20 @@ it("ungrouped digests name all accounts when merged, and the email for a single 
         yield* mailbox.connect({ provider: "gmail" });
         yield* mailbox.connect({ provider: "outlook" });
         yield* mailbox.sync();
-        yield* mailbox.setPrefs({ quietHours: { all: { enabled: true, start: 0, end: 0 } } });
+        yield* mailbox.app.setPrefs({ quietHours: { all: { enabled: true, start: 0, end: 0 } } });
         gmail.messages.set("g", incoming("g"));
         outlook.messages.set("o", incoming("o"));
         yield* mailbox.pollInbox();
         yield* settle();
-        yield* mailbox.setPrefs({ quietHours: {} });
+        yield* mailbox.app.setPrefs({ quietHours: {} });
         yield* settle();
         expect(observations.testState.notifications).toHaveLength(1);
         expect(observations.testState.notifications[0]?.options.body).toBe("All accounts");
-        yield* mailbox.setPrefs({ quietHours: { all: { enabled: true, start: 0, end: 0 } } });
+        yield* mailbox.app.setPrefs({ quietHours: { all: { enabled: true, start: 0, end: 0 } } });
         gmail.messages.set("single", incoming("single"));
         yield* mailbox.pollInbox();
         yield* settle();
-        yield* mailbox.setPrefs({ quietHours: {} });
+        yield* mailbox.app.setPrefs({ quietHours: {} });
         yield* settle();
         expect(observations.testState.notifications).toHaveLength(2);
         expect(observations.testState.notifications[1]?.options.body).toBe(gmail.email);
@@ -712,14 +712,17 @@ it("the notification event consumer logs a SQL defect and processes later events
       const mailbox = yield* Mailbox;
       return Mailbox.of({
         ...mailbox,
-        takeNotifications: Effect.suspend(() => {
-          if (failNext) {
-            failNext = false;
-            failures++;
-            return Effect.die(busyError());
-          }
-          return mailbox.takeNotifications;
-        }),
+        app: {
+          ...mailbox.app,
+          takeNotifications: Effect.suspend(() => {
+            if (failNext) {
+              failNext = false;
+              failures++;
+              return Effect.die(busyError());
+            }
+            return mailbox.app.takeNotifications;
+          }),
+        },
       });
     }),
   ).pipe(Layer.provide(TestMailbox({ gmail: server })));
@@ -1078,7 +1081,7 @@ it("notification buttons keep their captured order; menu Mark read and disabled-
         const mailbox = yield* Mailbox;
         const account = yield* mailbox.connect({ provider: "gmail" });
         yield* mailbox.sync();
-        yield* mailbox.setPrefs({ notificationActions: ["menu", "read"] });
+        yield* mailbox.app.setPrefs({ notificationActions: ["menu", "read"] });
         yield* settle();
         server.messages.set("menu", incoming("menu"));
         yield* mailbox.pollInbox();
@@ -1096,7 +1099,7 @@ it("notification buttons keep their captured order; menu Mark read and disabled-
                 { type: "button", text: "Mark read" },
               ],
         );
-        yield* mailbox.setPrefs({ notificationActions: ["trash"] });
+        yield* mailbox.app.setPrefs({ notificationActions: ["trash"] });
         yield* settle();
         menu?.emit(
           "action",

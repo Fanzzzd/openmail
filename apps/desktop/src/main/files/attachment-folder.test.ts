@@ -26,14 +26,16 @@ const fakeMailbox = (current: Prefs["attachmentSaveFolder"]) => {
   return {
     stored,
     mailbox: {
-      prefs: Effect.succeed({
-        ...DEFAULT_PREFS,
-        ...(current ? { attachmentSaveFolder: current } : {}),
-      }),
-      setPrefs: (patch: Partial<Prefs>) =>
-        Effect.sync(() => {
-          stored.push(patch);
+      app: {
+        prefs: Effect.succeed({
+          ...DEFAULT_PREFS,
+          ...(current ? { attachmentSaveFolder: current } : {}),
         }),
+        setPrefs: (patch: Partial<Prefs>) =>
+          Effect.sync(() => {
+            stored.push(patch);
+          }),
+      },
     },
   };
 };
