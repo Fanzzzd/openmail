@@ -10,8 +10,8 @@
 //
 // Needs `pnpm --filter @openmail/core build` (the dist script runs it) for the expected tool
 // list. Nothing here reads the real profile, OPENMAIL_HOME or the keychain.
-import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { execFileSync, spawn } from "node:child_process";
+import { appendFileSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import net from "node:net";
 import os from "node:os";
@@ -33,6 +33,31 @@ const wait = (ms) =>
     setTimeout(resolve, ms);
   });
 const running = (target) => target.exitCode === null && target.signalCode === null;
+
+/** Output of a diagnostic command, or why it failed; never throws. */
+function capture(command, argv) {
+  try {
+    return execFileSync(command, argv, { encoding: "utf8", timeout: 60_000, maxBuffer: 64 << 20 });
+  } catch (error) {
+    return `${command} failed: ${error instanceof Error ? error.message : String(error)}\n${error?.stdout ?? ""}`;
+  }
+}
+
+/**
+ * What a hung app process and its children are doing, for the timeout error. A process with
+ * no output is often blocked in a modal dialog or a keychain prompt, which `sample` shows.
+ */
+function describeHang(pid) {
+  const children = capture("pgrep", ["-P", String(pid)])
+    .split("\n")
+    .filter((line) => /^\d+$/.test(line));
+  const parts = [
+    `ps:\n${capture("ps", ["-o", "pid,ppid,stat,etime,command", "-p", [pid, ...children].join(",")])}`,
+  ];
+  for (const target of [String(pid), ...children])
+    parts.push(`sample ${target}:\n${capture("sample", [target, "3"])}`);
+  return parts.join("\n\n");
+}
 
 /** The environment an AI client starts the app with: none of this shell's Node, Electron or OpenMail settings. */
 function clientEnv(extra) {
@@ -59,7 +84,11 @@ function runApp(argv, env, { input = [], until = () => true, timeoutMs = 90_000 
       closed = true;
       child.stdin.end();
     };
-    const timer = setTimeout(() => child.kill("SIGKILL"), timeoutMs);
+    let hang = "";
+    const timer = setTimeout(() => {
+      if (child.pid) hang = describeHang(child.pid);
+      child.kill("SIGKILL");
+    }, timeoutMs);
     child.on("error", (error) => {
       clearTimeout(timer);
       reject(error);
@@ -73,7 +102,7 @@ function runApp(argv, env, { input = [], until = () => true, timeoutMs = 90_000 
     });
     child.once("close", (code, signal) => {
       clearTimeout(timer);
-      resolve({ code, signal, stdout, stderr });
+      resolve({ code, signal, stdout, stderr, hang });
     });
     for (const line of input) child.stdin.write(`${JSON.stringify(line)}\n`);
     if (!input.length) closeInput();
@@ -112,7 +141,7 @@ async function checkRunAsNode() {
     throw new Error("ELECTRON_RUN_AS_NODE=1 ran a script: the RunAsNode fuse is on.");
   if (result.code !== 0)
     throw new Error(
-      `With ELECTRON_RUN_AS_NODE=1 the app did not start and exit cleanly (${result.code ?? result.signal}): ${result.stderr}`,
+      `With ELECTRON_RUN_AS_NODE=1 the app did not start and exit cleanly (${result.code ?? result.signal}): ${result.stderr}\n${result.hang}`,
     );
   report.runAsNode = "ignored";
 }
@@ -141,7 +170,7 @@ async function checkMcp() {
     clientEnv({ OPENMAIL_HOME: path.join(scratch, "mcp-home") }),
     { input: requests, until: (stdout) => /"id":2[,}]/.test(stdout) },
   );
-  const context = `exit ${result.code ?? result.signal}\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}`;
+  const context = `exit ${result.code ?? result.signal}\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}\n${result.hang}`;
   if (result.code !== 0) throw new Error(`OpenMail --mcp did not exit cleanly. ${context}`);
   const lines = result.stdout.split("\n").filter(Boolean);
   const frames = lines.map((line) => {
@@ -170,6 +199,14 @@ async function checkGui() {
   let child;
   let ws;
   let log = "";
+  // Written as it arrives, so a job killed mid-check still leaves the log for the artifact.
+  const logFile = path.join(output, "startup.log");
+  mkdirSync(output, { recursive: true });
+  writeFileSync(logFile, "");
+  const record = (chunk) => {
+    log += chunk;
+    appendFileSync(logFile, chunk);
+  };
   /** @type {{ error: Error | null }} */
   const launch = { error: null };
   try {
@@ -186,17 +223,15 @@ async function checkGui() {
     child.on("error", (error) => {
       launch.error = error;
     });
-    child.stdout.on("data", (chunk) => {
-      log += chunk;
-    });
-    child.stderr.on("data", (chunk) => {
-      log += chunk;
-    });
+    child.stdout.on("data", record);
+    child.stderr.on("data", record);
     let page;
     for (let attempt = 0; attempt < 400; attempt++) {
       if (launch.error) throw launch.error;
       if (child.exitCode !== null) throw new Error(`App exited (${child.exitCode}): ${log}`);
-      const pages = await fetch(`http://127.0.0.1:${port}/json/list`)
+      const pages = await fetch(`http://127.0.0.1:${port}/json/list`, {
+        signal: AbortSignal.timeout(1000),
+      })
         .then((response) => response.json())
         .catch(() => []);
       page = pages.find((entry) => entry.type === "page" && entry.webSocketDebuggerUrl);
@@ -206,8 +241,18 @@ async function checkGui() {
     if (!page) throw new Error(`No renderer page within 120 seconds: ${log}`);
     ws = new WebSocket(page.webSocketDebuggerUrl);
     await new Promise((resolve, reject) => {
-      ws.addEventListener("open", resolve, { once: true });
-      ws.addEventListener("error", reject, { once: true });
+      const timer = setTimeout(() => reject(new Error("CDP connection timeout")), 10_000);
+      ws.addEventListener(
+        "open",
+        () => {
+          clearTimeout(timer);
+          resolve();
+        },
+        { once: true },
+      );
+      ws.addEventListener("error", () => reject(new Error("CDP connection failed")), {
+        once: true,
+      });
     });
     let nextId = 0;
     const pending = new Map();
@@ -219,10 +264,27 @@ async function checkGui() {
       if (frame.error) request.reject(new Error(JSON.stringify(frame.error)));
       else request.resolve(frame.result);
     });
+    ws.addEventListener("close", () => {
+      for (const request of pending.values()) request.reject(new Error(`CDP closed: ${log}`));
+      pending.clear();
+    });
     const call = (method, params) =>
       new Promise((resolve, reject) => {
         const id = ++nextId;
-        pending.set(id, { resolve, reject });
+        const timer = setTimeout(() => {
+          pending.delete(id);
+          reject(new Error(`CDP timeout: ${method}`));
+        }, 10_000);
+        pending.set(id, {
+          resolve: (value) => {
+            clearTimeout(timer);
+            resolve(value);
+          },
+          reject: (error) => {
+            clearTimeout(timer);
+            reject(error);
+          },
+        });
         ws.send(JSON.stringify({ id, method, params }));
       });
     let ready = false;
@@ -239,7 +301,6 @@ async function checkGui() {
     if (!ready || !existsSync(path.join(dataDir, "mail.db")))
       throw new Error(`Renderer/preload/core did not start: ${log}`);
     const screenshot = await call("Page.captureScreenshot", { format: "png" });
-    mkdirSync(output, { recursive: true });
     writeFileSync(path.join(output, "startup.png"), Buffer.from(screenshot.data, "base64"));
     report.started = true;
     report.screenshot = path.join(output, "startup.png");
@@ -256,8 +317,6 @@ async function checkGui() {
         });
       }
     }
-    mkdirSync(output, { recursive: true });
-    writeFileSync(path.join(output, "startup.log"), log);
   }
 }
 
