@@ -2216,7 +2216,7 @@ it("an unusable search names its limit instead of asking to simplify", () => {
     ),
   );
   expect(screen.getByRole("alert").textContent).toBe(
-    "Search can use at most 256 words and operators. Remove some to search.",
+    "Search can use at most 256 words and operators. Remove some.",
   );
   view.rerender(
     localized(
@@ -2224,7 +2224,7 @@ it("an unusable search names its limit instead of asking to simplify", () => {
     ),
   );
   expect(screen.getByRole("alert").textContent).toBe(
-    "Search groups can nest at most 32 levels deep. Remove some parentheses to search.",
+    "Search groups can nest at most 32 levels deep. Remove some parentheses.",
   );
 });
 

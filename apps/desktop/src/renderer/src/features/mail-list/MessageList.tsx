@@ -340,12 +340,12 @@ export function MessageList({
         >
           {searchInputInvalid === "terms" ? (
             <Trans>
-              Search can use at most {MAX_SEARCH_TERMS} words and operators. Remove some to search.
+              Search can use at most {MAX_SEARCH_TERMS} words and operators. Remove some.
             </Trans>
           ) : (
             <Trans>
-              Search groups can nest at most {MAX_SEARCH_DEPTH} levels deep. Remove some parentheses
-              to search.
+              Search groups can nest at most {MAX_SEARCH_DEPTH} levels deep. Remove some
+              parentheses.
             </Trans>
           )}
         </output>

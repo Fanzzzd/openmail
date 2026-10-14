@@ -1,5 +1,6 @@
 import type { I18n, MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
+import { MAX_SEARCH_DEPTH } from "@openmail/core/schema";
 import { Cause, Match } from "effect";
 import type { AsyncResult } from "effect/reactivity";
 import type { RpcClientError } from "effect/rpc";
@@ -183,7 +184,7 @@ export const INPUT_ERRORS: Record<string, MessageDescriptor> = {
   "Restored operations expire after 24 hours.": msg`Actions older than 24 hours can't be undone.`,
   "Review AI suggestions in the app.": msg`Review AI suggestions in the app.`,
   "Rule recovery is available for Gmail": msg`Filter recovery is only available for Gmail.`,
-  "Search groups are nested too deeply. Simplify your query.": msg`Search groups can nest at most 32 levels deep. Remove some parentheses.`,
+  "Search groups are nested too deeply. Simplify your query.": msg`Search groups can nest at most ${MAX_SEARCH_DEPTH} levels deep. Remove some parentheses.`,
   "Select 1 to 256 attachments": msg`Select 1 to 256 attachments.`,
   "Select at least one conversation.": msg`Select at least one conversation.`,
   "Select between 1 and 1,000 conversations.": msg`Select between 1 and 1,000 conversations.`,
