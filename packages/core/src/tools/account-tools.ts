@@ -102,6 +102,13 @@ export const ListLabels = readOnly(
   }),
 );
 
+/**
+ * What a read-only connection tells the model. The AI app card's button reconnects the app with
+ * proposal tools, and the app loads them only after it restarts its OpenMail connection.
+ */
+export const READ_ONLY_CONNECTION =
+  "This connection is read-only: it offers no tools that change mail. The person can click Allow AI suggestions on this app's card in OpenMail under Settings → AI Access. OpenMail then reconnects the app, and the tools appear after the app restarts or starts a new session.";
+
 export const accountHandlers = ({
   mailbox,
   identity,
@@ -128,20 +135,21 @@ export const accountHandlers = ({
       );
     else if (withoutConsent > 0)
       steps.push(
-        `${withoutConsent} more account(s) are hidden because ${CONSENT_SWITCH} is off for them. Only the person can turn it on, in Settings → AI Access.`,
+        withoutConsent === 1
+          ? `1 more account is hidden because ${CONSENT_SWITCH} is off for it. Only the person can turn it on, in Settings → AI Access.`
+          : `${withoutConsent} more accounts are hidden because ${CONSENT_SWITCH} is off for them. Only the person can turn it on, in Settings → AI Access.`,
       );
     if (turnedOff > 0)
       steps.push(
-        `${turnedOff} account(s) are turned off in OpenMail and stay hidden until the person turns them on.`,
+        turnedOff === 1
+          ? "1 account is turned off in OpenMail and stays hidden until the person turns it on."
+          : `${turnedOff} accounts are turned off in OpenMail and stay hidden until the person turns them on.`,
       );
     if (readable.some((a) => a.needsReauth))
       steps.push(
         "An account needs to be signed in again in OpenMail. Its local mail stays readable; sync fails until then.",
       );
-    if (!proposalTools)
-      steps.push(
-        "This connection is read-only: it offers no tools that change mail. The person can turn on proposals for this app in OpenMail under Settings → AI Access.",
-      );
+    if (!proposalTools) steps.push(READ_ONLY_CONNECTION);
     else if (writeMode === "off")
       steps.push(
         "Proposal tools are listed, but Changes by AI apps is Read only, so they will refuse. The person can choose Ask me first under Changes by AI apps in Settings → AI Access.",

@@ -42,11 +42,15 @@ export type ToolErrorCode = (typeof TOOL_ERROR_CODES)[number];
 export class MailToolError extends Schema.Error<MailToolError>("MailToolError")({
   message: Schema.String,
   code: Schema.Literals(TOOL_ERROR_CODES),
-  hint: Schema.optionalKey(Schema.String),
+  hint: Schema.String,
 }) {}
 
-export const toolError = (code: ToolErrorCode, message: string, hint?: string) =>
-  new MailToolError({ message, code, ...(hint === undefined ? {} : { hint }) });
+/** Every failure names the next step, so a model can recover without guessing. */
+export const toolError = (code: ToolErrorCode, message: string, hint: string) =>
+  new MailToolError({ message, code, hint });
+
+/** The next step for invalid input whose message already says what to change. */
+export const FIX_INPUT_HINT = "Change the arguments as the message says, then call the tool again.";
 
 export const ACCOUNT_ID_HINT =
   "Pass an id from list_accounts. access_status says why other accounts are hidden.";
@@ -244,23 +248,29 @@ export const collection = <N extends string, S extends Schema.Constraint>(
 
 // Handlers
 
-const NOT_FOUND_HINTS: Partial<Record<string, string>> = {
+const NOT_FOUND_HINTS: Record<string, string> = {
   account: ACCOUNT_ID_HINT,
   message: MESSAGE_ID_HINT,
   thread: MESSAGE_ID_HINT,
   proposal: "Get pending proposal ids from list_proposals.",
   label: "Get label ids from list_labels.",
-  profile: "Get profile ids from list_profiles.",
+  profile: "Pass a space id from list_profiles as profile_id.",
 };
+const NOT_FOUND_HINT = "Check the id; list tools such as list_threads return current ids.";
 
 export const toToolError = (e: PerformError): MailToolError => {
   switch (e._tag) {
     case "NotFound":
-      return toolError("not_found", `No ${e.what} with id ${e.id}.`, NOT_FOUND_HINTS[e.what]);
+      return toolError(
+        "not_found",
+        // The app calls a profile a space; the parameter keeps the name profile_id.
+        `No ${e.what === "profile" ? "space" : e.what} with id ${e.id}.`,
+        NOT_FOUND_HINTS[e.what] ?? NOT_FOUND_HINT,
+      );
     case "InvalidInput":
       return e.reason === "too_many_proposals"
         ? toolError("too_many_proposals", e.message, REVIEW_PROPOSALS_HINT)
-        : toolError("invalid_input", e.message);
+        : toolError("invalid_input", e.message, e.hint ?? FIX_INPUT_HINT);
     case "PermanentError":
       return toolError("provider_rejected", e.message, "Do not retry the same request.");
     case "AuthError":
@@ -346,6 +356,7 @@ export function approvalCommand(command: Command) {
     case "draft":
     case "send": {
       const message = command.message;
+      const mode = message.mode ?? (message.inReplyTo ? "reply" : "new");
       return {
         kind: command.kind,
         accountId: command.accountId,
@@ -356,7 +367,8 @@ export function approvalCommand(command: Command) {
           bcc: message.bcc.map(approvalAddress),
           subject: message.subject,
           text: message.text,
-          mode: message.mode ?? (message.inReplyTo ? "reply" : "new"),
+          // Spelled as draft_message takes it.
+          mode: mode === "replyAll" ? "reply_all" : mode,
           ...(message.inReplyTo ? { inReplyTo: message.inReplyTo } : {}),
         },
       };
@@ -388,7 +400,11 @@ export const toolAttempt = <A>(body: () => A) =>
   Effect.try({
     try: body,
     catch: (error) =>
-      toolError("invalid_input", error instanceof Error ? error.message : "Invalid tool request."),
+      toolError(
+        "invalid_input",
+        error instanceof Error ? error.message : "Invalid tool request.",
+        FIX_INPUT_HINT,
+      ),
   });
 export const pageScope = (
   name: string,
@@ -482,7 +498,7 @@ export function boundThread(view: ModelThread, budget: number): ModelThread {
       : { ...result, messages: result.messages.slice(1) };
   }
   if (jsonBytes(untrustedMail(result)) > budget)
-    throw new Error("Thread headers exceed the budget. Increase max_chars.");
+    throw new Error("Thread headers exceed token_budget. Increase token_budget.");
   return result;
 }
 export function textPage<A extends object>(

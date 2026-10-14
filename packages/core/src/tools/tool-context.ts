@@ -80,13 +80,17 @@ export const makeToolContext = Effect.gen(function* () {
               toolError("not_found", `No readable account with id ${id}.`, ACCOUNT_ID_HINT),
             ),
     );
-  /** Fails as not_found for an unknown profile id. */
+  /** Fails as not_found for an unknown space (profile) id. */
   const requireProfile = (id: string) =>
     Effect.flatMap(mailbox.profiles, (profiles) =>
       profiles.some((p) => p.id === id)
         ? Effect.void
         : Effect.fail(
-            toolError("not_found", `No profile with id ${id}.`, "Pass an id from list_profiles."),
+            toolError(
+              "not_found",
+              `No space with id ${id}.`,
+              "Pass a space id from list_profiles as profile_id.",
+            ),
           ),
     );
   const forAccounts = <A, E>(

@@ -46,15 +46,16 @@ openmail tool read_thread --input-json '{"message_id":"gmail:me@example.com/m1"}
 openmail tool draft_message --allow-writes --input-json '{"account_id":"gmail:me@example.com","to":["alice@example.com"],"subject":"Status","body":"Tomorrow.","rationale":"Draft for review."}' --json
 ```
 
-`--allow-writes` exists only on the write tools. Where an MCP client gets an empty result because no account allows AI reads, `openmail tool` prints an error on stderr and exits with code 1:
+`--allow-writes` exists only on the write tools. With `--json`, stdout gets exactly what an MCP client gets for the same call: the result, or `{"message": "...", "code": "...", "hint": "..."}` when the tool fails. Anything only the CLI says goes to stderr. A failed tool prints its message and hint there and exits with code 1. Where an MCP client gets an empty result or `not_found` because an account is unknown, turned off or doesn't allow AI reads, stderr says which, and the CLI exits with code 1:
 
 ```text
-error: No accounts allow agent reads. Turn on 'Allow AI to read this account' in Settings → AI Access.
-error: Account gmail:me@example.com does not allow agent reads. Turn on 'Allow AI to read this account' in Settings → AI Access.
+error: No account allows AI access. Only the person can turn on 'Allow AI to read this account', in Settings → AI Access.
+hint: Run `openmail tool access_status` to see what is readable.
+error: Account gmail:me@example.com does not allow AI access. Only the person can turn on 'Allow AI to read this account', in Settings → AI Access.
+hint: Run `openmail tool access_status` to see what is readable.
 error: No account with id gmail:typo@example.com. Run `openmail accounts list` to see them.
+hint: Run `openmail tool access_status` to see what is readable.
 ```
-
-A tool that fails prints its message the same way. With `--json`, the CLI also prints `{"message": "...", "code": "...", "hint": "..."}` on stdout, the same object an MCP client gets.
 
 ## Connect from the app
 

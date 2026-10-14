@@ -46,7 +46,9 @@ export const ListThreads = readOnly(
         .pipe(Schema.withDecodingDefaultKey(Effect.succeed("inbox" as const))),
       account_id: Schema.optionalKey(AccountId),
       profile_id: Schema.optionalKey(
-        Schema.String.annotate({ description: "Only accounts in this profile (list_profiles)." }),
+        Schema.String.annotate({
+          description: "Only accounts in this space, an id from list_profiles.",
+        }),
       ),
       label: Schema.optionalKey(
         Schema.String.annotate({
@@ -57,23 +59,9 @@ export const ListThreads = readOnly(
       unread_only: Schema.optionalKey(
         Schema.Boolean.annotate({ description: "Only unread threads." }),
       ),
-      before: Schema.optionalKey(
-        Schema.Finite.annotate({
-          description:
-            "Epoch ms. Only threads older than this; pass next_before from the last page.",
-        }),
-      ),
       ...PageParameters,
     }),
-    success: Schema.Struct({
-      ...PageResult,
-      threads: Schema.Array(ToolThread),
-      next_before: Schema.optionalKey(
-        Schema.Finite.annotate({
-          description: "Pass as before to get the next page. Absent on the last page.",
-        }),
-      ),
-    }),
+    success: Schema.Struct({ ...PageResult, threads: Schema.Array(ToolThread) }),
     failure: MailToolError,
     failureMode: "return",
   }),
@@ -110,15 +98,10 @@ export const Search = readOnly(
 export const ReadThread = readOnly(
   mailTool("read_thread", {
     description:
-      "Read a conversation as plain text, oldest message first, without quoted history, signatures or attachments. Pass a message_id from list_threads or search. Older text is trimmed to fit max_chars; truncated counts what was cut.",
+      "Read a conversation as plain text, oldest message first, without quoted history, signatures or attachments. Pass a message_id from list_threads or search. Older text is trimmed to fit token_budget; truncated counts the characters cut.",
     parameters: Schema.Struct({
       message_id: ThreadId,
-      max_chars: ToolInt.check(Schema.isBetween({ minimum: 2000, maximum: 24_000 }))
-        .annotate({
-          description:
-            "Result size in UTF-8 JSON bytes. Default 12000. Older messages are trimmed first.",
-        })
-        .pipe(Schema.withDecodingDefaultKey(Effect.succeed(12_000))),
+      token_budget: ToolBudget,
     }),
     success: ModelThread,
     failure: MailToolError,
@@ -196,11 +179,7 @@ export const threadHandlers = ({
           accountIds,
           ...(p.label ? { label: p.label } : {}),
           ...(p.unread_only ? { unreadOnly: true } : {}),
-          ...(cursor.date === undefined
-            ? p.before === undefined
-              ? {}
-              : { before: p.before }
-            : { before: cursor.date, beforeId: cursor.id }),
+          ...(cursor.date === undefined ? {} : { before: cursor.date, beforeId: cursor.id }),
           limit: p.limit + 1,
         })
         .pipe(Effect.mapError(toToolError));
@@ -210,15 +189,12 @@ export const threadHandlers = ({
         const result = {
           threads,
           ...(last && rows.length > threads.length
-            ? {
-                next_cursor: encodeCursor({ scope, offset: 0, date: last.date, id: last.id }),
-                next_before: last.date,
-              }
+            ? { next_cursor: encodeCursor({ scope, offset: 0, date: last.date, id: last.id }) }
             : {}),
         };
         if (jsonBytes(untrustedMail(result)) > p.token_budget)
           throw new Error(
-            "Message ids and cursor exceed token_budget. Increase the budget or narrow the filters.",
+            "Message ids and cursor exceed token_budget. Increase token_budget or narrow the filters.",
           );
         return result;
       });
@@ -228,6 +204,7 @@ export const threadHandlers = ({
         return yield* toolError(
           "invalid_input",
           "Server search is not available to the in-app assistant.",
+          "Search the local copy: leave out server.",
         );
       yield* cursorFor(p.cursor, pageScope("search", p));
       const q = {
@@ -258,7 +235,8 @@ export const threadHandlers = ({
       if (jsonBytes(untrustedMail({ ...result, ...notices, truncated: true })) > p.token_budget)
         return yield* toolError(
           "invalid_input",
-          "Search notices exceed token_budget. Narrow account_id or increase the budget.",
+          "Search notices exceed token_budget.",
+          "Narrow account_id or increase token_budget.",
         );
       return {
         ...result,
@@ -270,12 +248,12 @@ export const threadHandlers = ({
           (found.ignored?.length ?? 0) > 20,
       };
     }),
-    read_thread: Effect.fnUntraced(function* ({ message_id, max_chars }) {
+    read_thread: Effect.fnUntraced(function* ({ message_id, token_budget }) {
       yield* requireMessage(message_id);
       const view = yield* mailbox
-        .threadForModel(message_id, max_chars)
+        .threadForModel(message_id, token_budget)
         .pipe(Effect.mapError(toToolError));
-      return yield* toolAttempt(() => boundThread(view, max_chars));
+      return yield* toolAttempt(() => boundThread(view, token_budget));
     }),
     semantic_search: (p) =>
       page(

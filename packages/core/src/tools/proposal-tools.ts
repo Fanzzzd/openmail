@@ -1,6 +1,7 @@
 /** Tools that propose changes (modify, snooze, draft) and read pending proposals. Every change waits for approval in the app. */
 
 import {
+  ADDRESS_HINT,
   AccountId,
   MESSAGE_ID_HINT,
   MailToolError,
@@ -21,7 +22,7 @@ import {
   toolAttempt,
   toolError,
 } from "./tool-common.js";
-import { Effect, Option, Schema } from "effect";
+import { Clock, Effect, Option, Schema } from "effect";
 import { replyRecipients, replySubject } from "../compose/recipients.js";
 import { Tool } from "effect/ai";
 import { detailParameters } from "./compose-tools.js";
@@ -40,6 +41,13 @@ export const MODIFY_ACTIONS = [
 ] as const;
 export type ModifyAction = (typeof MODIFY_ACTIONS)[number];
 
+/** The draft_message mode as the tool takes it, and as a draft stores it. */
+const COMPOSE_MODES = { new: "new", reply: "reply", reply_all: "replyAll" } as const;
+
+/** How far ahead snooze_threads may snooze, as Mailbox.perform allows. */
+const SNOOZE_HORIZON_MS = 365 * 86_400_000;
+const SNOOZE_DUE_HINT = "Pass due as a future time within the next year, in epoch milliseconds.";
+
 export const ModifyThreads = appTool("modify_threads", {
   description:
     "Propose archiving, marking read or unread, starring, or adding or removing a Gmail label on up to 20 conversations. From MCP, nothing changes until the person approves it in OpenMail. Relay the returned message and do not retry.",
@@ -55,7 +63,8 @@ export const ModifyThreads = appTool("modify_threads", {
     }),
     label_id: Schema.optionalKey(
       Schema.String.annotate({
-        description: "Required for label and unlabel. A user label id from list_labels.",
+        description:
+          "Required for label and unlabel, refused with other actions. A user label id from list_labels.",
       }),
     ),
     rationale: Rationale,
@@ -77,7 +86,7 @@ export const DraftMessage = appTool("draft_message", {
     to: Schema.optionalKey(
       Recipients.annotate({
         description:
-          'Required for new messages. A reply without to, cc and bcc goes to the original\'s sender, or to everyone on it for replyAll. Entries are "name@example.com" or "Name <name@example.com>".',
+          'Required for new messages. A reply without to, cc and bcc goes to the original\'s sender, or to everyone on it for reply_all. Entries are "name@example.com" or "Name <name@example.com>".',
       }),
     ),
     cc: Schema.optionalKey(Recipients),
@@ -96,9 +105,9 @@ export const DraftMessage = appTool("draft_message", {
       }),
     ),
     mode: Schema.optionalKey(
-      Schema.Literals(["new", "reply", "replyAll"]).annotate({
+      Schema.Literals(["new", "reply", "reply_all"]).annotate({
         description:
-          "new, reply or replyAll. Default: reply when reply_to_message_id is set, else new.",
+          "new, reply or reply_all. Default: reply when reply_to_message_id is set, else new.",
       }),
     ),
     rationale: Rationale,
@@ -152,7 +161,8 @@ export const SnoozeThreads = appTool("snooze_threads", {
         description: "Message ids from list_threads or search; each stands for its thread.",
       }),
     due: Schema.Finite.annotate({
-      description: "When the conversations return to the inbox, in epoch milliseconds.",
+      description:
+        "When the conversations return to the inbox, in epoch milliseconds: a future time within the next year.",
     }),
     rationale: Rationale,
   }),
@@ -243,6 +253,12 @@ export const proposalHandlers = ({
       return yield* toolAttempt(() => proposalPage(row.id, approvalCommand(row.command), p));
     }),
     modify_threads: Effect.fnUntraced(function* (p) {
+      if (p.label_id !== undefined && p.action !== "label" && p.action !== "unlabel")
+        return yield* toolError(
+          "invalid_input",
+          `label_id works only with action label or unlabel, not ${p.action}.`,
+          `Leave out label_id to ${p.action}, or set action to label or unlabel.`,
+        );
       yield* requireThreads(p.message_ids);
       const op = opFor(p.action, p.label_id);
       if (!op) {
@@ -263,6 +279,19 @@ export const proposalHandlers = ({
       };
     }),
     snooze_threads: Effect.fnUntraced(function* (p) {
+      const now = yield* Clock.currentTimeMillis;
+      if (p.due <= now)
+        return yield* toolError(
+          "invalid_input",
+          `The snooze time ${new Date(p.due).toISOString()} is in the past.`,
+          SNOOZE_DUE_HINT,
+        );
+      if (p.due > now + SNOOZE_HORIZON_MS)
+        return yield* toolError(
+          "invalid_input",
+          "The snooze time is more than a year away.",
+          SNOOZE_DUE_HINT,
+        );
       yield* requireThreads(p.message_ids);
       const actor = yield* agent(p.rationale);
       const outcome = yield* propose({ kind: "snooze", threads: p.message_ids, due: p.due }, actor);
@@ -271,11 +300,18 @@ export const proposalHandlers = ({
     draft_message: Effect.fnUntraced(function* (p) {
       const mcp = (yield* identity.current).surface === "mcp";
       if (mcp) yield* accountIdsFor(p.account_id);
-      const mode = p.mode ?? (p.reply_to_message_id ? "reply" : "new");
-      if ((mode === "new") === Boolean(p.reply_to_message_id))
+      const mode = COMPOSE_MODES[p.mode ?? (p.reply_to_message_id ? "reply" : "new")];
+      if (mode === "new" && p.reply_to_message_id !== undefined)
         return yield* toolError(
           "invalid_input",
-          "New drafts cannot have reply_to_message_id; replies require one.",
+          "A new message cannot have reply_to_message_id.",
+          "To reply to that message, leave out mode or set it to reply or reply_all. For a new message, leave out reply_to_message_id.",
+        );
+      if (mode !== "new" && p.reply_to_message_id === undefined)
+        return yield* toolError(
+          "invalid_input",
+          `A ${p.mode === "reply_all" ? "reply to all" : "reply"} needs reply_to_message_id.`,
+          "Pass reply_to_message_id, the id from read_thread of the message you reply to, or set mode to new.",
         );
       const replyId = p.reply_to_message_id;
       const original =
@@ -290,7 +326,11 @@ export const proposalHandlers = ({
         return yield* toolError("not_found", `No message with id ${replyId}.`, MESSAGE_ID_HINT);
       const subject = p.subject ?? (original ? replySubject(original.subject) : undefined);
       if (subject === undefined)
-        return yield* toolError("invalid_input", "New drafts need a subject.");
+        return yield* toolError(
+          "invalid_input",
+          "A new message needs a subject.",
+          "Pass subject. A reply takes the original's subject when you pass reply_to_message_id.",
+        );
       let to = yield* addresses(p.to);
       let cc = yield* addresses(p.cc);
       const bcc = yield* addresses(p.bcc);
@@ -305,7 +345,13 @@ export const proposalHandlers = ({
         ({ to, cc } = replyRecipients(original, own, mode === "replyAll"));
       }
       if (to.length + cc.length + bcc.length === 0) {
-        return yield* toolError("invalid_input", "The draft needs at least one recipient.");
+        return yield* toolError(
+          "invalid_input",
+          "The draft needs at least one recipient.",
+          original
+            ? `The original has no one to reply to besides the person. Pass to. ${ADDRESS_HINT}`
+            : `Pass to with at least one address. ${ADDRESS_HINT}`,
+        );
       }
       const actor = yield* agent(p.rationale);
       const outcome = yield* propose(

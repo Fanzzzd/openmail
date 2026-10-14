@@ -634,19 +634,20 @@ test.concurrent("list, search and show read as the person; agent tools still nee
   expect(show.stdout).toContain("Subject: Hello");
   expect(typo.code).toBe(1);
   expect(typo.stderr).toContain("No account with id gmail:typo@example.com.");
-  // `openmail tool` runs as an agent, so consent applies and the error says where to turn it on.
+  // `openmail tool` runs as an agent, so consent applies and stderr says where to turn it on.
   expect(tool.code).toBe(1);
-  expect(tool.stderr).toContain(
-    "No accounts allow agent reads. Turn on 'Allow AI to read this account' in Settings → AI Access.",
+  expect(tool.stderr).toBe(
+    "error: No account allows AI access. Only the person can turn on 'Allow AI to read this account', in Settings → AI Access.\nhint: Run `openmail tool access_status` to see what is readable.\n",
   );
-  expect(JSON.parse(toolJson.stdout)).toEqual({
-    message: expect.stringContaining("No accounts allow agent reads."),
-    code: "no_ai_consent",
-    hint: expect.stringContaining("openmail tool access_status"),
-  });
-  // A tool error prints its message, not the encoded failure.
+  // --json prints exactly what MCP returns; the explanation stays on stderr.
+  const empty = Schema.decodeUnknownSync(CallResult)(mcpList);
+  expect(JSON.parse(toolJson.stdout)).toEqual(JSON.parse(empty.content[0]?.text ?? ""));
+  expect(toolJson.stderr).toContain("No account allows AI access.");
+  // A tool error prints its message and hint, not the encoded failure.
   expect(read).toMatchObject({ code: 1, stdout: "" });
-  expect(read.stderr).toContain("error: No message with id missing.");
+  expect(read.stderr).toContain(
+    "error: No message with id missing.\nhint: Get message ids from list_threads or search.",
+  );
   expect(read.stderr).not.toContain("_tag");
   // --input-json rejects keys the tool does not declare, like MCP.
   expect(extraKey.code).toBe(1);
@@ -655,7 +656,6 @@ test.concurrent("list, search and show read as the person; agent tools still nee
   );
   expect(JSON.parse(extraKey.stdout)).toMatchObject({ code: "invalid_input" });
   // MCP: no readable account is an empty list (access_status explains); a bad id is not_found.
-  const empty = Schema.decodeUnknownSync(CallResult)(mcpList);
   expect(empty.isError).not.toBe(true);
   expect(empty.content[0]?.text).toContain('"threads":[]');
   const missing = Schema.decodeUnknownSync(CallResult)(mcpTypo);
@@ -705,7 +705,7 @@ test.concurrent("CLI list --space reads as the person; tool list_threads checks 
     );
   const tool = (input: object) =>
     cli("tool", "list_threads", "--input-json", JSON.stringify(input));
-  const [inSpace, oldFlag, unknown, outside, agentAll, agentSpace, agentUnknown] =
+  const [inSpace, oldFlag, unknown, outside, agentAll, agentSpace, agentUnknown, agentJson] =
     await Promise.all([
       cli("list", "--space", profile),
       cli("list", "--profile", profile),
@@ -714,6 +714,7 @@ test.concurrent("CLI list --space reads as the person; tool list_threads checks 
       tool({}),
       tool({ profile_id: profile }),
       tool({ profile_id: "nope" }),
+      cli("tool", "list_threads", "--input-json", '{"profile_id":"nope"}', "--json"),
     ]);
   expect(inSpace.code).toBe(0);
   expect(inSpace.stdout).toContain("Standup");
@@ -728,10 +729,16 @@ test.concurrent("CLI list --space reads as the person; tool list_threads checks 
   expect(agentAll.code).toBe(0);
   expect(agentSpace.code).toBe(1);
   expect(agentSpace.stderr).toContain(
-    `No accounts in space ${profile} allow agent reads. Turn on 'Allow AI to read this account' in Settings → AI Access.`,
+    `No account in space ${profile} allows AI access. Only the person can turn on 'Allow AI to read this account', in Settings → AI Access.`,
   );
   expect(agentUnknown.code).toBe(1);
   expect(agentUnknown.stderr).toContain("No space with id nope.");
+  // stdout is the object MCP returns for the same call.
+  expect(JSON.parse(agentJson.stdout)).toEqual({
+    message: "No space with id nope.",
+    code: "not_found",
+    hint: "Pass a space id from list_profiles as profile_id.",
+  });
 }, 30_000);
 
 /** MCP 2025-11-25: input validation errors are tool results the model can read and correct. */
@@ -741,7 +748,7 @@ test.concurrent("MCP returns invalid tool arguments as an isError result, not a 
 }) => {
   const { request } = await client(onTestFinished, false, false, false, "2025-11-25");
   const called = Schema.decodeUnknownSync(CallResult)(
-    await request("tools/call", { name: "read_thread", arguments: { max_chars: 5 } }),
+    await request("tools/call", { name: "read_thread", arguments: { token_budget: 5 } }),
   );
   expect(called.isError).toBe(true);
   const failure = JSON.parse(called.content[0]?.text ?? "");

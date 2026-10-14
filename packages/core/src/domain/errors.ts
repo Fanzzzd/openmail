@@ -114,6 +114,8 @@ export class InvalidInput extends Schema.TaggedError<InvalidInput>()("InvalidInp
   message: Schema.String,
   /** `too_many_proposals`: the agent's or all agents' pending proposals are at their limit. */
   reason: Schema.optionalKey(Schema.Literal("too_many_proposals")),
+  /** For agents: the next step, when the message alone does not say how to fix the input. */
+  hint: Schema.optionalKey(Schema.String),
 }) {}
 
 /** Missing optional settings permission. Normal mail sync remains available. */

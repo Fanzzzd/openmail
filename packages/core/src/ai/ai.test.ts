@@ -73,7 +73,7 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
             assert.ok(request.toolkit);
             const toolkit = request.toolkit;
             yield* Stream.runDrain(
-              yield* toolkit.handle("read_thread", { message_id: id, max_chars: 1000 }),
+              yield* toolkit.handle("read_thread", { message_id: id, token_budget: 1000 }),
             );
             for (const label of ["TRASH", "deleteditems", "unknown"]) {
               const result = yield* Stream.runLast(
@@ -439,7 +439,7 @@ it.effect(
           const blocked = yield* Stream.runLast(
             yield* toolkit.handle("read_thread", {
               message_id: "outlook:me@outlook.com/m2",
-              max_chars: 1000,
+              token_budget: 1000,
             }),
           );
           assert.ok(blocked._tag === "Some" && blocked.value.isFailure);
@@ -448,7 +448,7 @@ it.effect(
           );
           assert.ok(!JSON.stringify(found).includes("private.pdf"));
           yield* Stream.runDrain(
-            yield* toolkit.handle("read_thread", { message_id: messageId, max_chars: 1000 }),
+            yield* toolkit.handle("read_thread", { message_id: messageId, token_budget: 1000 }),
           );
           const archive = yield* Stream.runLast(
             yield* toolkit.handle("modify_threads", {

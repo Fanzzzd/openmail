@@ -26,7 +26,7 @@ import {
   agentAccountGap,
 } from "./tools.js";
 import { AgentIdentity, cleanMcpClientName } from "./agent-identity.js";
-import { UNTRUSTED_MAIL_NOTICE } from "./tool-common.js";
+import { MailToolError, UNTRUSTED_MAIL_NOTICE, unknownArguments } from "./tool-common.js";
 import { ToolInt } from "./tool-pages.js";
 
 /** read_proposal as MCP sends it: the command is an object, a draft body one page of text. */
@@ -404,7 +404,7 @@ it.effect("modify_threads maps every action to its op", () =>
         call("modify_threads", {
           message_ids: ["m1"],
           action,
-          label_id: "Label_1",
+          ...(action === "label" || action === "unlabel" ? { label_id: "Label_1" } : {}),
           rationale: "r",
         }),
         layer,
@@ -565,7 +565,7 @@ it.effect("a draft reply defaults its recipients and subject from the original",
       reply_to_message_id: "m9",
       rationale: "r",
     };
-    for (const mode of ["reply", "replyAll"] as const)
+    for (const mode of ["reply", "reply_all"] as const)
       assert.isFalse((yield* run(call("draft_message", { ...base, mode }), layer)).isFailure);
     const messages = calls.map((c) => (c.kind === "draft" ? c.message : undefined));
     assert.deepStrictEqual(
@@ -581,8 +581,9 @@ it.effect("a draft reply defaults its recipients and subject from the original",
       layer,
     );
     assert.deepStrictEqual(missing.encodedResult, {
-      message: "New drafts need a subject.",
+      message: "A new message needs a subject.",
       code: "invalid_input",
+      hint: "Pass subject. A reply takes the original's subject when you pass reply_to_message_id.",
     });
   }),
 );
@@ -639,7 +640,48 @@ it.effect("draft_message rejects a bad address without performing", () =>
   }),
 );
 
-it.effect("list_threads narrows to a profile and pages with next_before", () =>
+it.effect("access_status counts hidden accounts in English and names the app card's button", () =>
+  Effect.gen(function* () {
+    const steps = (hidden: number, off: number) =>
+      Effect.gen(function* () {
+        const accounts = [
+          testAccount("a"),
+          ...Array.from({ length: hidden }, (_, i) => testAccount(`hidden-${i}`)),
+          ...Array.from({ length: off }, (_, i) => ({
+            ...testAccount(`off-${i}`),
+            enabled: false,
+          })),
+        ];
+        const layer = stubMailbox({
+          accounts: Effect.succeed(accounts),
+          aiAccounts: Effect.succeed([{ accountId: "a", allowed: true, autoSummaries: false }]),
+        });
+        const result = yield* run(call("access_status", {}), layer);
+        const status = Schema.decodeUnknownSync(MailToolkit.tools.access_status.successSchema)(
+          result.encodedResult,
+        );
+        return status.next_steps;
+      });
+    const one = yield* steps(1, 1);
+    assert.include(
+      one,
+      "1 more account is hidden because 'Allow AI to read this account' is off for it. Only the person can turn it on, in Settings → AI Access.",
+    );
+    assert.include(
+      one,
+      "1 account is turned off in OpenMail and stays hidden until the person turns it on.",
+    );
+    const two = (yield* steps(2, 2)).join(" ");
+    assert.include(two, "2 more accounts are hidden because");
+    assert.include(two, "2 accounts are turned off in OpenMail");
+    assert.notInclude(two, "(s)");
+    // A connection without proposal tools names the button that adds them and the reconnect.
+    assert.include(one.join(" "), "click Allow AI suggestions on this app's card");
+    assert.include(one.join(" "), "after the app restarts or starts a new session");
+  }),
+);
+
+it.effect("list_threads narrows to a space", () =>
   Effect.gen(function* () {
     const queries: ThreadQuery[] = [];
     const thread = (date: number) => ({
@@ -1032,7 +1074,7 @@ it.effect("all MCP write tools create only proposals; only app approval changes 
         const result = yield* call("modify_threads", {
           message_ids: [id],
           action,
-          label_id: "Label_1",
+          ...(action === "label" || action === "unlabel" ? { label_id: "Label_1" } : {}),
           rationale: "Review this change.",
         });
         assert.isFalse(result.isFailure);
@@ -1269,7 +1311,7 @@ it.effect(
             bcc: [{ name: "Bcc", address: "bcc@example.com" }],
             subject: "Visible subject",
             text: expect.any(String),
-            mode: "replyAll",
+            mode: "reply_all",
             in_reply_to: "m1",
           },
         });
@@ -1389,6 +1431,103 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
     text: "b",
     attachments: [],
   };
+
+  it.effect("every tool error an agent can hit has a message, a code and a hint", () => {
+    const server = fakeServer("me@gmail.com", [mail]);
+    const mailboxLayer = TestMailbox({ gmail: server });
+    const handlers = MailToolkitLayer.pipe(
+      Layer.provide(mailboxLayer),
+      Layer.provide(AgentIdentity.fixed("mcp", "error-client")),
+    );
+    return Effect.gen(function* () {
+      const mailbox = yield* Mailbox;
+      const account = yield* mailbox.connect({ provider: "gmail" });
+      yield* mailbox.sync();
+      yield* mailbox.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });
+      yield* mailbox.setAgentWriteMode("propose");
+      const toolkit = yield* MailToolkit;
+      const id = `${account.id}/m1`;
+      const now = yield* Clock.currentTimeMillis;
+      const draft = { account_id: account.id, body: "b", rationale: "r" };
+      const failure = (name: keyof Tools, params: unknown) =>
+        Effect.gen(function* () {
+          // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- each case is a deliberate bad call
+          const stream = yield* toolkit.handle(name, params as never);
+          const result = (yield* Stream.runCollect(stream))[0];
+          assert.ok(result?.isFailure, `${name} ${JSON.stringify(params)} fails`);
+          const error = Schema.decodeUnknownSync(Schema.toEncoded(MailToolError))(
+            result.encodedResult,
+          );
+          assert.isAbove(error.message.length, 0);
+          assert.isAbove(error.hint.length, 0, `${name}: ${error.message}`);
+          return error;
+        });
+      const cases: [keyof Tools, unknown, string, RegExp][] = [
+        [
+          "modify_threads",
+          { message_ids: [id], action: "label", label_id: "INBOX", rationale: "r" },
+          "invalid_input",
+          /action archive/,
+        ],
+        [
+          "modify_threads",
+          { message_ids: [id], action: "archive", label_id: "Label_1", rationale: "r" },
+          "invalid_input",
+          /Leave out label_id to archive/,
+        ],
+        ["draft_message", { ...draft, subject: "s" }, "invalid_input", /Pass to/],
+        ["draft_message", { ...draft, mode: "reply" }, "invalid_input", /reply_to_message_id/],
+        ["draft_message", { ...draft, mode: "reply_all" }, "invalid_input", /reply_to_message_id/],
+        [
+          "draft_message",
+          { ...draft, mode: "new", reply_to_message_id: id },
+          "invalid_input",
+          /leave out reply_to_message_id/,
+        ],
+        ["draft_message", { ...draft, to: ["a@example.com"] }, "invalid_input", /subject/],
+        [
+          "snooze_threads",
+          { message_ids: [id], due: now - 1000, rationale: "r" },
+          "invalid_input",
+          /future time/,
+        ],
+        [
+          "snooze_threads",
+          { message_ids: [id], due: now + 400 * 86_400_000, rationale: "r" },
+          "invalid_input",
+          /within the next year/,
+        ],
+        ["list_threads", { profile_id: "nope" }, "not_found", /list_profiles/],
+        ["read_thread", { message_id: `${account.id}/nope` }, "not_found", /list_threads/],
+      ];
+      for (const [name, params, code, hint] of cases) {
+        const error = yield* failure(name, params);
+        assert.strictEqual(error.code, code, error.message);
+        assert.match(error.hint, hint, error.message);
+      }
+      const past = yield* failure("snooze_threads", {
+        message_ids: [id],
+        due: now - 1000,
+        rationale: "r",
+      });
+      assert.match(past.message, /^The snooze time .* is in the past\.$/);
+      const space = yield* failure("list_threads", { profile_id: "nope" });
+      assert.strictEqual(space.message, "No space with id nope.");
+      // read_thread takes token_budget like every other tool; max_chars is unknown.
+      const unknown = unknownArguments(Tool.getJsonSchema(MailToolkit.tools.read_thread), {
+        message_id: id,
+        max_chars: 3000,
+      });
+      assert.strictEqual(unknown?.code, "invalid_input");
+      assert.match(unknown?.hint ?? "", /token_budget/);
+      // Nothing above became a proposal.
+      assert.deepStrictEqual(yield* mailbox.proposals, []);
+    }).pipe(
+      Effect.provide(
+        Layer.mergeAll(handlers, mailboxLayer, AgentIdentity.fixed("mcp", "error-client")),
+      ),
+    );
+  });
 
   it.effect("agent tool calls read AI consent without touching the keychain's API key", () => {
     const modelKeyReads: string[] = [];

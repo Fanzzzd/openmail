@@ -225,10 +225,6 @@ exports[`tool input and output schemas are stable 1`] = `
           "description": "An id from list_accounts.",
           "type": "string",
         },
-        "before": {
-          "description": "Epoch ms. Only threads older than this; pass next_before from the last page.",
-          "type": "number",
-        },
         "cursor": {
           "description": "next_cursor from the last page, with the same filters.",
           "maxLength": 24000,
@@ -260,7 +256,7 @@ exports[`tool input and output schemas are stable 1`] = `
           "type": "string",
         },
         "profile_id": {
-          "description": "Only accounts in this profile (list_profiles).",
+          "description": "Only accounts in this space, an id from list_profiles.",
           "type": "string",
         },
         "token_budget": {
@@ -431,20 +427,20 @@ exports[`tool input and output schemas are stable 1`] = `
     "readonly": true,
   },
   {
-    "description": "Read a conversation as plain text, oldest message first, without quoted history, signatures or attachments. Pass a message_id from list_threads or search. Older text is trimmed to fit max_chars; truncated counts what was cut.",
+    "description": "Read a conversation as plain text, oldest message first, without quoted history, signatures or attachments. Pass a message_id from list_threads or search. Older text is trimmed to fit token_budget; truncated counts the characters cut.",
     "idempotent": true,
     "input": {
       "additionalProperties": true,
       "properties": {
-        "max_chars": {
-          "description": "Result size in UTF-8 JSON bytes. Default 12000. Older messages are trimmed first.",
-          "maximum": 24000,
-          "minimum": 2000,
-          "type": "integer",
-        },
         "message_id": {
           "description": "A message id from list_threads or search. It stands for its whole thread.",
           "type": "string",
+        },
+        "token_budget": {
+          "description": "Result size limit in UTF-8 JSON bytes. Default 12000.",
+          "maximum": 24000,
+          "minimum": 2000,
+          "type": "integer",
         },
       },
       "required": [
@@ -1149,7 +1145,7 @@ exports[`tool input and output schemas are stable 1`] = `
           "type": "string",
         },
         "label_id": {
-          "description": "Required for label and unlabel. A user label id from list_labels.",
+          "description": "Required for label and unlabel, refused with other actions. A user label id from list_labels.",
           "type": "string",
         },
         "message_ids": {
@@ -1205,7 +1201,7 @@ exports[`tool input and output schemas are stable 1`] = `
       "additionalProperties": true,
       "properties": {
         "due": {
-          "description": "When the conversations return to the inbox, in epoch milliseconds.",
+          "description": "When the conversations return to the inbox, in epoch milliseconds: a future time within the next year.",
           "type": "number",
         },
         "message_ids": {
@@ -1288,11 +1284,11 @@ exports[`tool input and output schemas are stable 1`] = `
           "type": "array",
         },
         "mode": {
-          "description": "new, reply or replyAll. Default: reply when reply_to_message_id is set, else new.",
+          "description": "new, reply or reply_all. Default: reply when reply_to_message_id is set, else new.",
           "enum": [
             "new",
             "reply",
-            "replyAll",
+            "reply_all",
           ],
           "type": "string",
         },
@@ -1312,7 +1308,7 @@ exports[`tool input and output schemas are stable 1`] = `
           "type": "string",
         },
         "to": {
-          "description": "Required for new messages. A reply without to, cc and bcc goes to the original's sender, or to everyone on it for replyAll. Entries are "name@example.com" or "Name <name@example.com>".",
+          "description": "Required for new messages. A reply without to, cc and bcc goes to the original's sender, or to everyone on it for reply_all. Entries are "name@example.com" or "Name <name@example.com>".",
           "items": {
             "maxLength": 320,
             "type": "string",

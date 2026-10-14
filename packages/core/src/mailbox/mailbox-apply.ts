@@ -247,6 +247,7 @@ export const makeApplyMailbox = (
         )
           return yield* new InvalidInput({
             message: "AI proposals can only use existing Gmail user labels for the same account.",
+            hint: "Pass a user label id from list_labels for the conversation's account. System labels such as INBOX are refused; to take a conversation out of the inbox, use action archive.",
           });
       }
     }
@@ -261,6 +262,7 @@ export const makeApplyMailbox = (
       )
         return yield* new InvalidInput({
           message: "AI proposals support plain-text new messages and replies only.",
+          hint: "Draft a new message or a reply with a plain-text body.",
         });
       if (
         draft.inReplyTo &&
@@ -268,6 +270,7 @@ export const makeApplyMailbox = (
       )
         return yield* new InvalidInput({
           message: "Reply message belongs to another account.",
+          hint: "Pass the account_id of the account that received reply_to_message_id.",
         });
     }
     if (command.kind === "snooze" && command.due <= (yield* Clock.currentTimeMillis))
@@ -298,7 +301,10 @@ export const makeApplyMailbox = (
         return yield* new InvalidInput({ message: "Proposals need 1 to 20 conversations." });
       for (const thread of command.threads) {
         if ((yield* store.threadMessageIds(thread)).length === 0) {
-          return yield* new InvalidInput({ message: `No thread with id ${thread}.` });
+          return yield* new InvalidInput({
+            message: `No thread with id ${thread}.`,
+            hint: "Get message ids from list_threads or search.",
+          });
         }
       }
     }

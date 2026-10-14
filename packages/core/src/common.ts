@@ -32,6 +32,7 @@ export {
   ProposalMailToolkit,
 } from "./tools/tools.js";
 export { AgentIdentity } from "./tools/agent-identity.js";
+export { READ_ONLY_CONNECTION } from "./tools/account-tools.js";
 export { MailToolError, unknownArguments } from "./tools/tool-common.js";
 export { APPROVE_IN_APP } from "./mailbox/mailbox-apply.js";
 

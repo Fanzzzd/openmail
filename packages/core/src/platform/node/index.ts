@@ -64,6 +64,7 @@ export {
   parseAppLink,
   printable,
   printableThread,
+  READ_ONLY_CONNECTION,
   redactSyncHealth,
   resolveUpdateFeed,
   senderSearchQuery,

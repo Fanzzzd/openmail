@@ -40,7 +40,7 @@ import {
 import { Effect, Exit } from "effect";
 import { makeToolContext } from "./tool-context.js";
 import { cleanMcpClientName } from "./agent-identity.js";
-import { CONSENT_SWITCH, toolError } from "./tool-common.js";
+import { CONSENT_SWITCH } from "./tool-common.js";
 import { Mailbox } from "../mailbox/mailbox.js";
 
 export const ReadMailToolkit = Toolkit.make(
@@ -141,9 +141,7 @@ const ACCOUNT_SCOPED_TOOLS: ReadonlySet<string> = new Set([
   "sync",
 ]);
 
-const AGENT_CONSENT_HINT = `Turn on ${CONSENT_SWITCH} in Settings → AI Access.`;
-const noConsent = (message: string) =>
-  toolError("no_ai_consent", message, "Run `openmail tool access_status` to see what is readable.");
+const TURN_ON_CONSENT = `Only the person can turn on ${CONSENT_SWITCH}, in Settings → AI Access.`;
 
 const stringParam = (input: unknown, key: string): string | undefined => {
   if (typeof input !== "object" || input === null) return undefined;
@@ -152,10 +150,10 @@ const stringParam = (input: unknown, key: string): string | undefined => {
 };
 
 /**
- * Why a tool call from the CLI would read no account: an unknown or turned-off account id,
- * an unknown profile, or no account with AI consent (in the profile, when one is given).
- * Null when it can read one. MCP clients get the empty result instead, so this runs only
- * in the CLI.
+ * Why a tool call would read no account: an unknown or turned-off account id, an unknown
+ * space, or no account with AI consent (in the space, when one is given). Null when it can
+ * read one. MCP clients get the tool's own result; the CLI prints this on stderr next to it,
+ * so a person sees why the result is empty.
  */
 export const agentAccountGap = (tool: string, input: unknown) =>
   Effect.gen(function* () {
@@ -168,35 +166,27 @@ export const agentAccountGap = (tool: string, input: unknown) =>
     const consent = yield* mailbox.aiAccounts;
     const allowed = (id: string) => consent.some((s) => s.accountId === id && s.allowed);
     if (profileId !== undefined && !(yield* mailbox.profiles).some((p) => p.id === profileId))
-      return toolError(
-        "not_found",
-        `No space with id ${profileId}. Run \`openmail spaces list\` to see them.`,
-      );
+      return `No space with id ${profileId}. Run \`openmail spaces list\` to see them.`;
     const inScope = accounts.filter((a) => profileId === undefined || a.profileId === profileId);
     if (accountId !== undefined) {
       const account = accounts.find((a) => a.id === accountId);
       if (!account)
-        return toolError(
-          "not_found",
-          `No account with id ${accountId}. Run \`openmail accounts list\` to see them.`,
-        );
-      if (!inScope.includes(account))
-        return toolError("invalid_input", `Account ${accountId} is not in space ${profileId}.`);
-      if (account.enabled === false)
-        return noConsent(`Account ${accountId} is turned off in OpenMail.`);
+        return `No account with id ${accountId}. Run \`openmail accounts list\` to see them.`;
+      if (!inScope.includes(account)) return `Account ${accountId} is not in space ${profileId}.`;
+      if (account.enabled === false) return `Account ${accountId} is turned off in OpenMail.`;
       return allowed(accountId)
         ? null
-        : noConsent(`Account ${accountId} does not allow agent reads. ${AGENT_CONSENT_HINT}`);
+        : `Account ${accountId} does not allow AI access. ${TURN_ON_CONSENT}`;
     }
     const enabled = inScope.filter((a) => a.enabled !== false);
     if (profileId !== undefined) {
-      if (!enabled.length) return noConsent(`Space ${profileId} has no enabled mail accounts.`);
+      if (!enabled.length) return `Space ${profileId} has no enabled mail accounts.`;
       return enabled.some((a) => allowed(a.id))
         ? null
-        : noConsent(`No accounts in space ${profileId} allow agent reads. ${AGENT_CONSENT_HINT}`);
+        : `No account in space ${profileId} allows AI access. ${TURN_ON_CONSENT}`;
     }
-    if (!enabled.length) return noConsent("No enabled mail accounts.");
+    if (!enabled.length) return "No mail account is turned on in OpenMail.";
     return enabled.some((a) => allowed(a.id))
       ? null
-      : noConsent(`No accounts allow agent reads. ${AGENT_CONSENT_HINT}`);
+      : `No account allows AI access. ${TURN_ON_CONSENT}`;
   });

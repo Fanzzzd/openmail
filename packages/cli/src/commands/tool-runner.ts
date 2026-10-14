@@ -23,23 +23,30 @@ const toolHandlers = MailToolkitLayer.pipe(
   Layer.provide(AgentIdentity.fixed("mcp", "openmail-cli")),
 );
 const ToolFailure = Schema.toEncoded(MailToolError);
+const gapText = (gap: string) =>
+  `${gap}\nhint: Run \`openmail tool access_status\` to see what is readable.`;
 /**
- * A tool failure prints its message on stderr and exits 1; --json also prints
- * `{message, code, hint}` on stdout, as MCP returns it. Where MCP returns an empty result
- * because the account is unknown or lacks AI consent, the CLI fails and says why.
+ * Runs the tool as MCP does. With --json, stdout gets exactly the object MCP returns, the
+ * result or `{message, code, hint}`. Anything only the CLI says goes to stderr: a failure's
+ * message and hint, and why a call reads no account. A failure exits 1, and so does a result
+ * that is empty because the account is unknown, turned off or lacks AI consent.
  */
 /** @internal */
 export function invokeTool(name: ToolName, input: unknown, json: boolean) {
-  const toolFailure = (failure: typeof ToolFailure.Type) =>
-    (json ? print(failure, true) : Effect.void).pipe(Effect.andThen(fail(failure.message)));
+  // The top level prints the Failed message on stderr after "error: ".
+  const toolFailure = (failure: typeof ToolFailure.Type, gap: string | null) =>
+    (json ? print(failure, true) : Effect.void).pipe(
+      Effect.andThen(
+        fail(gap === null ? `${failure.message}\nhint: ${failure.hint}` : gapText(gap)),
+      ),
+    );
   return Effect.gen(function* () {
     const unknown = unknownArguments(Tool.getJsonSchema(MailToolkit.tools[name]), input);
-    if (unknown) return yield* toolFailure(Schema.encodeSync(MailToolError)(unknown));
+    if (unknown) return yield* toolFailure(Schema.encodeSync(MailToolError)(unknown), null);
     const parameters = yield* Schema.decodeUnknownEffect(
       Schema.toEncoded(MailToolkit.tools[name].parametersSchema),
     )(input);
     const gap = yield* agentAccountGap(name, parameters);
-    if (gap !== null) return yield* toolFailure(Schema.encodeSync(MailToolError)(gap));
     const toolkit = yield* MailToolkit;
     const stream = yield* toolkit.handle(name, parameters);
     const last = yield* Stream.runLast(stream);
@@ -51,10 +58,14 @@ export function invokeTool(name: ToolName, input: unknown, json: boolean) {
           (): typeof ToolFailure.Type => ({
             message: JSON.stringify(last.value.encodedResult),
             code: "invalid_input",
+            hint: "Report this result to the OpenMail developers.",
           }),
         ),
+        gap,
       );
-    return last.value.encodedResult;
+    if (gap === null) return last.value.encodedResult;
+    yield* print(last.value.encodedResult, json);
+    return yield* fail(gapText(gap));
   }).pipe(Effect.provide(toolHandlers));
 }
 /** @internal */
