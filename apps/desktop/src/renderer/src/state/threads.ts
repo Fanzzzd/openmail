@@ -234,7 +234,7 @@ export const threadListAtom = Atom.writable(
       searchingServer: server !== null && (server._tag === "Initial" || server.waiting),
       searchTruncated: remote?.truncated ?? false,
       searchIgnored: remote?.ignored ?? [],
-      searchInputInvalid: false,
+      searchInputInvalid: false as const,
       searchErrorAccounts: remote?.errors.map((e) => e.accountId) ?? [],
       searchReauthAccounts:
         remote?.errors.filter((e) => e.requiresReauth).map((e) => e.accountId) ?? [],

@@ -577,7 +577,7 @@ function General() {
 }
 
 function AgentPolicy() {
-  const { t, i18n } = useLingui();
+  const { i18n } = useLingui();
   const stored = AsyncResult.getOrElse(useAtomValue(agentModeAtom), () => null);
   const mode = stored === "allow" ? "propose" : stored;
   const setMode = useAtomSet(setAgentModeAtom);
