@@ -144,3 +144,20 @@ export function modelContext(messages: readonly Message[], tokenBudget = 6000): 
   }
   return view;
 }
+
+/**
+ * The newest `kept` of `total` messages a cut view still reads, or undefined when it reads all
+ * of them. A message counts as left out when the view dropped it or emptied its text; one whose
+ * oldest text was trimmed still counts as read.
+ */
+export function modelCoverage(
+  full: ModelThread,
+  view: ModelThread,
+): { kept: number; total: number } | undefined {
+  const texts = new Map(view.messages.map((m) => [m.id, m.text]));
+  const kept = full.messages.filter((m) => {
+    const text = texts.get(m.id);
+    return text !== undefined && (text.length > 0 || m.text.length === 0);
+  }).length;
+  return kept < full.messages.length ? { kept, total: full.messages.length } : undefined;
+}

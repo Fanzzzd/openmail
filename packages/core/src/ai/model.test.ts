@@ -260,3 +260,128 @@ it.effect("model failures map to one actionable sentence each, without the provi
     assert.strictEqual(yield* message().pipe(Effect.provide(noKey)), AI_ERRORS.noKey);
   });
 });
+
+/** A Live Model whose fetch answers with `responses` in turn and keeps each request body. */
+function scripted(responses: readonly (() => Response)[]) {
+  const bodies: string[] = [];
+  const fetch: typeof globalThis.fetch = async (input, init) => {
+    bodies.push(await new Request(input, init).text());
+    const next = responses[bodies.length - 1] ?? responses.at(-1);
+    if (!next) throw new Error("no scripted response");
+    return next();
+  };
+  const live = ModelAnthropic.pipe(
+    Layer.provide(
+      FetchHttpClient.layer.pipe(Layer.provide(Layer.succeed(FetchHttpClient.Fetch, fetch))),
+    ),
+  );
+  return { bodies, live };
+}
+const toolCall = (id: string, name: string, input: unknown) => () =>
+  sse(
+    { type: "tool_use", id, name, input: {} },
+    { type: "input_json_delta", partial_json: JSON.stringify(input) },
+    "tool_use",
+  );
+const answer = () => sse({ type: "text", text: "" }, { type: "text_delta", text: "Answer" });
+/** `count` messages of about `chars` characters each in thread `thread`. */
+const longThread = (thread: string, count: number, chars: number, from = 0) =>
+  Array.from({ length: count }, (_, i) => ({
+    providerId: `${thread}-${i}`,
+    threadId: thread,
+    subject: `Thread ${thread}`,
+    from: { name: "A", address: "a@example.com" },
+    to: [],
+    cc: [],
+    date: 1000 + from + i,
+    snippet: "",
+    bodyText: Array.from(
+      { length: Math.ceil(chars / 60) },
+      (_, line) => `Line ${line} of message ${i}, about the "contract" terms.`,
+    ).join("\n"),
+    bodyHtml: "",
+    labels: ["INBOX"],
+    attachments: [],
+    isUnread: false,
+    isStarred: false,
+  }));
+
+it.effect("re-reading the thread a question is about is a tool error, not a failed answer", () => {
+  const { bodies, live } = scripted([
+    toolCall("tool_1", "read_thread", { id: "gmail:me@gmail.com/t1-0" }),
+    answer,
+  ]);
+  const server = fakeServer("me@gmail.com", longThread("t1", 3, 3000));
+  return Effect.gen(function* () {
+    const m = yield* Mailbox;
+    const account = yield* m.connect({ provider: "gmail" });
+    yield* m.sync();
+    yield* m.setAiKey("k");
+    yield* m.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });
+    const events = yield* Stream.runCollect(
+      m.askAi({
+        question: "Did they agree elsewhere?",
+        accountIds: [account.id],
+        threadId: `${account.id}/t1-2`,
+      }),
+    );
+    assert.ok(events.some((e) => e._tag === "Delta" && e.text === "Answer"));
+    assert.strictEqual(bodies.length, 2);
+    assert.include(bodies[1] ?? "", "already in the question above");
+  }).pipe(Effect.provide(TestMailbox({ gmail: server }, { backgroundFlush: false }, {}, live)));
+});
+
+it.effect("a read that overruns the input budget comes back to the model as a tool error", () => {
+  const { bodies, live } = scripted([
+    toolCall("tool_1", "read_thread", { id: "gmail:me@gmail.com/a-0", max_chars: 24_000 }),
+    toolCall("tool_2", "read_thread", { id: "gmail:me@gmail.com/b-0", max_chars: 24_000 }),
+    toolCall("tool_3", "read_thread", { id: "gmail:me@gmail.com/c-0", max_chars: 24_000 }),
+    answer,
+  ]);
+  const server = fakeServer("me@gmail.com", [
+    ...longThread("a", 8, 6000),
+    ...longThread("b", 8, 6000, 100),
+    ...longThread("c", 8, 6000, 200),
+  ]);
+  return Effect.gen(function* () {
+    const m = yield* Mailbox;
+    const account = yield* m.connect({ provider: "gmail" });
+    yield* m.sync();
+    yield* m.setAiKey("k");
+    yield* m.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });
+    const events = yield* Stream.runCollect(
+      m.askAi({ question: "What did they agree?", accountIds: [account.id] }),
+    );
+    // The answer still arrives, and every request stayed under the budget.
+    assert.ok(events.some((e) => e._tag === "Delta" && e.text === "Answer"));
+    assert.strictEqual(bodies.length, 4);
+    for (const body of bodies) assert.isBelow(Buffer.byteLength(body), 120_000);
+    assert.notInclude(bodies[2] ?? "", "does not fit in the input budget");
+    assert.include(bodies[3] ?? "", "does not fit in the input budget");
+  }).pipe(Effect.provide(TestMailbox({ gmail: server }, { backgroundFlush: false }, {}, live)));
+});
+
+it.effect("a summary of a thread too long to read whole says how many messages it covers", () => {
+  const { bodies, live } = scripted([answer]);
+  // 40 messages of 4,000 characters: about 160 KB, twice the summary budget.
+  const server = fakeServer("me@gmail.com", longThread("t", 40, 4000));
+  return Effect.gen(function* () {
+    const m = yield* Mailbox;
+    const account = yield* m.connect({ provider: "gmail" });
+    yield* m.sync();
+    yield* m.setAiKey("k");
+    yield* m.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });
+    const id = `${account.id}/t-39`;
+    const events = yield* Stream.runCollect(m.summarize(id));
+    const done = [...events].find((e) => e._tag === "Done");
+    assert.ok(done?._tag === "Done" && done.coverage);
+    assert.strictEqual(done.coverage.total, 40);
+    assert.isAbove(done.coverage.kept, 10);
+    assert.isBelow(done.coverage.kept, 40);
+    // The newest message is the one the summary must read.
+    assert.include(bodies[0] ?? "", "gmail:me@gmail.com/t-39");
+    assert.deepStrictEqual((yield* m.aiSummary(id))?.coverage, done.coverage);
+    // A short thread reads whole and carries no coverage.
+    yield* Stream.runDrain(m.summarize(`${account.id}/t-0`)).pipe(Effect.ignore);
+  }).pipe(Effect.provide(TestMailbox({ gmail: server }, { backgroundFlush: false }, {}, live)));
+});

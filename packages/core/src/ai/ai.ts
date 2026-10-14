@@ -27,12 +27,20 @@ export const AiSettings = Schema.Struct({
 export type AiSettings = typeof AiSettings.Type;
 export const AiSource = Schema.Struct({ id: Schema.String, subject: Schema.String });
 export type AiSource = typeof AiSource.Type;
+/**
+ * How much of a long thread a summary read: the newest `kept` of `total` messages. Present only
+ * when older messages had to be left out to fit the input budget.
+ */
+export const AiCoverage = Schema.Struct({ kept: Schema.Int, total: Schema.Int });
+export type AiCoverage = typeof AiCoverage.Type;
 export const AiSummary = Schema.Struct({
   threadId: Schema.String,
   model: AiModelName,
   promptVersion: Schema.String,
   inputHash: Schema.String,
   text: Schema.String,
+  /** Not stored: aiSummary works it out from the thread each time. */
+  coverage: Schema.optionalKey(AiCoverage),
 });
 export type AiSummary = typeof AiSummary.Type;
 export const AiEvent = Schema.Union([
@@ -42,6 +50,7 @@ export const AiEvent = Schema.Union([
     model: AiModelName,
     cached: Schema.Boolean,
     truncated: Schema.Boolean,
+    coverage: Schema.optionalKey(AiCoverage),
   }),
 ]);
 export type AiEvent = typeof AiEvent.Type;
@@ -133,8 +142,18 @@ export function isTriageInbox(labels: readonly string[]): boolean {
   );
 }
 export const AI_PROMPT_VERSION = "mail-text-v2";
-// UTF-8 bytes bound tokens conservatively, including CJK, without a provider call.
-export const AI_INPUT_BUDGET = 24_000;
+/**
+ * The most input one model request may carry, in UTF-8 bytes. Bytes bound tokens conservatively,
+ * including CJK, without a provider call, so 120 KB stays under 120K tokens: well inside the
+ * 200K window of the smallest selectable model (Haiku 4.5; Sonnet 5.5 and Opus 5.5 have 1M).
+ * At list prices a full request costs at most about $0.12 on Haiku, $0.24 on Sonnet and $0.48
+ * on Opus; English mail runs near 4 bytes a token, about a quarter of that.
+ */
+export const AI_INPUT_BUDGET = 120_000;
+/** Bytes of a thread a summary reads. Longer threads keep their newest messages. */
+export const AI_SUMMARY_INPUT = 80_000;
+/** Bytes of a thread the assistant reads per read_thread, and of the thread a question is about. */
+export const AI_THREAD_INPUT = 24_000;
 export const AI_OUTPUT_TOKENS = 1024;
 export const AI_MAX_TURNS = 4;
 export const AI_SYSTEM =
