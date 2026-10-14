@@ -3,10 +3,29 @@
 import { contains, unquoteSearchValue } from "./search-tokens.js";
 import type { SearchCondition } from "../domain/message.js";
 
+/**
+ * Characters messages_words and derived_words split words at although unicode61 would glue them
+ * to the next letter: its Unicode tables predate the bidi isolates (U+2066 to U+2069), the
+ * Arabic letter mark (U+061C) and the emoji skin tone modifiers (U+1F3FB to U+1F3FF), so it
+ * reads them as unassigned token characters. Migration 53 passes these to the tokenizer's
+ * `separators` option.
+ */
+export const WORD_SEPARATORS =
+  "\u061C\u2066\u2067\u2068\u2069\u{1F3FB}\u{1F3FC}\u{1F3FD}\u{1F3FE}\u{1F3FF}";
+const SEPARATOR_SET = new Set(Array.from(WORD_SEPARATORS));
+const SOFT_HYPHEN = "\u00AD";
+
+/**
+ * Soft hyphens mark where a word may break, inside the word. unicode61 splits at them, so the
+ * store drops them from subjects, bodies and extracted text, and queries drop them too.
+ */
+export const withoutSoftHyphens = (text: string): string =>
+  text.includes(SOFT_HYPHEN) ? text.replaceAll(SOFT_HYPHEN, "") : text;
+
 /** Only a trailing, explicit star enables FTS prefix matching; all syntax is quoted. */
 export function ftsSearchTerm(value: string): string | null {
   const prefix = value.endsWith("*");
-  const text = unquoteSearchValue(prefix ? value.slice(0, -1) : value);
+  const text = withoutSoftHyphens(unquoteSearchValue(prefix ? value.slice(0, -1) : value));
   if (!/[\p{L}\p{N}]/u.test(text)) return null;
   return `"${text.replaceAll('"', '""')}"${prefix ? "*" : ""}`;
 }
@@ -49,13 +68,17 @@ function foldTokenChar(char: string): string {
   return out;
 }
 
-/** Splits text into the tokens the messages_words and derived_words indexes store. */
+/**
+ * Splits text into the tokens the messages_words and derived_words indexes store. Soft hyphens
+ * are skipped, as the stored text has none.
+ */
 export function wordTokens(text: string): string[] {
   const tokens: string[] = [];
   let token = "";
   for (const char of text) {
     const code = char.codePointAt(0) ?? 0;
-    if (code < 0x80 ? /[A-Za-z0-9]/u.test(char) : TOKEN_CHAR.test(char))
+    if (char === SOFT_HYPHEN) continue;
+    if (code < 0x80 ? /[A-Za-z0-9]/u.test(char) : !SEPARATOR_SET.has(char) && TOKEN_CHAR.test(char))
       token += code < 0x80 ? char.toLowerCase() : foldTokenChar(char);
     else if (token && DIACRITICS.has(code)) continue;
     else if (token) {

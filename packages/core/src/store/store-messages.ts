@@ -7,6 +7,7 @@ import { NotFound, ProviderError } from "../domain/errors.js";
 import { decodeProviderId } from "../providers/imap/imap-cursor.js";
 import { applyOpToLabels } from "../domain/mail-ops.js";
 import { cleanDisplayName } from "../reader/message-security.js";
+import { withoutSoftHyphens } from "../search/fts.js";
 import { type PlatformCrypto } from "../platform/crypto.js";
 import type { Store } from "./service.js";
 import { all, first, run } from "./sql-rows.js";
@@ -210,8 +211,14 @@ export const makeMessagesStore = ({
 
     const upsertMessage = Effect.fn("Store.upsertMessage")(function* (
       account: string,
-      incoming: IncomingMessage,
+      received: IncomingMessage,
     ) {
+      // Word search splits at soft hyphens; stored text has none (search/fts.ts).
+      const incoming: IncomingMessage = {
+        ...received,
+        subject: withoutSoftHyphens(received.subject),
+        bodyText: withoutSoftHyphens(received.bodyText),
+      };
       if (incoming.labels.some((l) => ["DRAFT", "TRASH", "SPAM"].includes(l)))
         yield* run(
           sql`DELETE FROM snoozed_messages WHERE account_id=${account} AND provider_id=${incoming.providerId}`,

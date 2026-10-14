@@ -46,13 +46,19 @@ export function makeWordIndexStore(sql: SqlClient.SqlClient) {
               : sql`SELECT id AS row_id FROM derived_chunks WHERE id>${pending.cursor} AND id<=${pending.end_rowid} ORDER BY id LIMIT ${batchSize}`,
           );
           const end = rows.at(-1)?.row_id ?? pending.end_rowid;
+          // Rows stored before soft hyphens were dropped lose them here. The update triggers
+          // reindex those rows in every search index, this one included.
           if (pending.kind === "messages") {
+            yield* run(sql`UPDATE messages SET subject=replace(subject,char(173),''),body_text=replace(body_text,char(173),'')
+        WHERE rowid>${pending.cursor} AND rowid<=${end} AND (instr(subject,char(173))>0 OR instr(body_text,char(173))>0)`);
             yield* run(sql`INSERT INTO messages_words(rowid,subject,from_name,from_addr,body_text)
         SELECT m.rowid,m.subject,m.from_name,m.from_addr,m.body_text FROM messages m WHERE m.rowid>${pending.cursor} AND m.rowid<=${end} AND NOT EXISTS(SELECT 1 FROM search_word_rows r WHERE r.kind='messages' AND r.row_id=m.rowid)`);
             yield* run(
               sql`INSERT OR IGNORE INTO search_word_rows(kind,row_id) SELECT 'messages',rowid FROM messages WHERE rowid>${pending.cursor} AND rowid<=${end}`,
             );
           } else {
+            yield* run(sql`UPDATE derived_chunks SET text=replace(text,char(173),'')
+        WHERE id>${pending.cursor} AND id<=${end} AND instr(text,char(173))>0`);
             yield* run(sql`INSERT INTO derived_words(rowid,text)
         SELECT d.id,d.text FROM derived_chunks d WHERE d.id>${pending.cursor} AND d.id<=${end} AND NOT EXISTS(SELECT 1 FROM search_word_rows r WHERE r.kind='derived' AND r.row_id=d.id)`);
             yield* run(

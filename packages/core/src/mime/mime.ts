@@ -1,4 +1,5 @@
 import { visibleHtmlText } from "../visible-text/visible-text.js";
+import { withoutSoftHyphens } from "../search/fts.js";
 import { Buffer } from "../platform/bytes.js";
 import { Result } from "effect";
 import { TextDecoder } from "../platform/text-decoder.js";
@@ -93,7 +94,7 @@ export function charsetOf(contentType: string | undefined): string | undefined {
 
 /** Last-resort plain text for HTML-only mail, so search and the CLI still see the words. */
 export function htmlToText(html: string): string {
-  return visibleHtmlText(html, { budgetFallback: "index-full-text" }).text;
+  return withoutSoftHyphens(visibleHtmlText(html, { budgetFallback: "index-full-text" }).text);
 }
 
 const META_CHARSET = '<meta http-equiv="Content-Type" content="text/html; charset=utf-8">';

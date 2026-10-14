@@ -1402,6 +1402,25 @@ CREATE TRIGGER snoozed_list_date_insert AFTER INSERT ON snoozed_messages BEGIN
   // longer decode as a selectable model, and a cache hit needs the current model anyway.
   `UPDATE ai_config SET model = 'claude-haiku-5-5' WHERE model = 'claude-haiku-4-5-20251001';
    DELETE FROM derived WHERE model = 'claude-haiku-4-5-20251001' AND kind IN ('summary', 'triage');`,
+  // user_version 53: messages_words and derived_words split words at the bidi isolates, the
+  // Arabic letter mark and the emoji skin tone modifiers (WORD_SEPARATORS in search/fts.ts).
+  // unicode61 glued them to the next word, so a name wrapped in U+2068 never matched "alice".
+  // The word indexes are dropped and recreated empty. The resumable background backfill
+  // (store-word-index.ts) fills them again and drops soft hyphens from the rows it reads; search
+  // uses the trigram index until it is done. The tables keep their external content and
+  // content_rowid, and no messages or derived_chunks rowid changes.
+  `DROP TABLE messages_word_positions;
+   DROP TABLE derived_word_positions;
+   DROP TABLE messages_words;
+   DROP TABLE derived_words;
+   DELETE FROM search_word_rows;
+   DELETE FROM search_word_index;
+   CREATE VIRTUAL TABLE messages_words USING fts5(subject,from_name,from_addr,body_text,content='messages',content_rowid='rowid',tokenize="unicode61 separators '\u061C\u2066\u2067\u2068\u2069\u{1F3FB}\u{1F3FC}\u{1F3FD}\u{1F3FE}\u{1F3FF}'");
+   CREATE VIRTUAL TABLE derived_words USING fts5(text,content='derived_chunks',content_rowid='id',tokenize="unicode61 separators '\u061C\u2066\u2067\u2068\u2069\u{1F3FB}\u{1F3FC}\u{1F3FD}\u{1F3FE}\u{1F3FF}'");
+   CREATE VIRTUAL TABLE messages_word_positions USING fts5vocab(messages_words, 'instance');
+   CREATE VIRTUAL TABLE derived_word_positions USING fts5vocab(derived_words, 'instance');
+   INSERT INTO search_word_index(kind,end_rowid,ready) SELECT 'messages',COALESCE(MAX(rowid),0),CASE WHEN MAX(rowid) IS NULL THEN 1 ELSE 0 END FROM messages;
+   INSERT INTO search_word_index(kind,end_rowid,ready) SELECT 'derived',COALESCE(MAX(id),0),CASE WHEN MAX(id) IS NULL THEN 1 ELSE 0 END FROM derived_chunks;`,
 ];
 
 /** Index of migration 37, the cache rowid rebuild. It runs when user_version equals this index. */
