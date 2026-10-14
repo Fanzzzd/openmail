@@ -20,7 +20,7 @@
     "@openmail/core": "workspace:*",
     "@react-native-community/datetimepicker": "9.1.0",
     "effect": "4.0.2",
-    "expo": "57.0.26",
+    "expo": "57.0.27",
     "expo-auth-session": "~57.0.13",
     "expo-background-task": "~57.0.21",
     "expo-battery": "~57.0.3",
