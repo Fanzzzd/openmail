@@ -1142,10 +1142,10 @@ it.effect(
         const mailbox = yield* Mailbox;
         const savedAccount = yield* store.upsertAccount("imap", account.email);
         yield* store.setImapSettings(savedAccount.id, settings);
-        yield* mailbox.saveDraft({ id: "lost-draft", accountId: savedAccount.id, message });
+        yield* mailbox.compose.saveDraft({ id: "lost-draft", accountId: savedAccount.id, message });
         const pending = yield* store.listPendingOps;
         assert.ok(pending[0]?.appendedMessageId);
-        yield* mailbox.saveDraft({
+        yield* mailbox.compose.saveDraft({
           id: "lost-draft",
           accountId: savedAccount.id,
           message: { ...message, text: "latest edited body" },

@@ -501,7 +501,10 @@ it.effect(
       assert.strictEqual(server.draftLog.length, 0);
       const draft = proposals.find((p) => p.command.kind === "draft");
       assert.ok(draft);
-      assert.strictEqual((yield* m.openDraft(`proposal:${draft.id}`)).message.text, "I agree");
+      assert.strictEqual(
+        (yield* m.compose.openDraft(`proposal:${draft.id}`)).message.text,
+        "I agree",
+      );
       const archive = proposals.find((p) => p.command.kind === "modify");
       assert.ok(archive);
       assert.strictEqual(

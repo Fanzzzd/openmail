@@ -219,7 +219,7 @@ it("resets a real cache then re-syncs through a fake provider while accounts and
       yield* m.sync();
       expect(yield* m.threads({})).toHaveLength(1);
       yield* m.app.setPrefs({ undoSendSeconds: 10 });
-      yield* m.saveDraft({
+      yield* m.compose.saveDraft({
         id: "shared-draft",
         accountId,
         message: {
@@ -249,17 +249,19 @@ it("resets a real cache then re-syncs through a fake provider while accounts and
       const m = yield* Mailbox;
       expect((yield* m.accounts).map((a) => a.id)).toEqual([accountId]);
       expect((yield* m.app.prefs).undoSendSeconds).toBe(10);
-      expect((yield* m.openDraft("shared-draft")).message.text).toBe("User feedback");
+      expect((yield* m.compose.openDraft("shared-draft")).message.text).toBe("User feedback");
       expect(yield* m.threads({})).toHaveLength(0);
       yield* m.sync();
       expect(yield* m.threads({})).toHaveLength(1);
-      const draft = yield* m.openDraft("shared-draft");
-      yield* m.saveDraft({
+      const draft = yield* m.compose.openDraft("shared-draft");
+      yield* m.compose.saveDraft({
         id: draft.id,
         accountId,
         message: { ...draft.message, text: "Edited in another window" },
       });
-      expect((yield* m.openDraft("shared-draft")).message.text).toBe("Edited in another window");
+      expect((yield* m.compose.openDraft("shared-draft")).message.text).toBe(
+        "Edited in another window",
+      );
       expect(server.sent).toHaveLength(0);
       const saves = server.draftLog.length;
       const feedback = {
@@ -283,14 +285,14 @@ it("resets a real cache then re-syncs through a fake provider while accounts and
         // Subscribe synchronously before saveDraft can publish Changed.
         Effect.forkChild({ startImmediately: true }),
       );
-      yield* m.saveDraft({ id: "feedback:local", accountId, message: feedback });
+      yield* m.compose.saveDraft({ id: "feedback:local", accountId, message: feedback });
       expect(yield* Fiber.join(change)).toHaveLength(1);
-      yield* m.saveDraft({
+      yield* m.compose.saveDraft({
         id: "feedback:local",
         accountId,
         message: { ...feedback, text: "Reviewed locally" },
       });
-      expect((yield* m.openDraft("feedback:local")).message.text).toBe("Reviewed locally");
+      expect((yield* m.compose.openDraft("feedback:local")).message.text).toBe("Reviewed locally");
       expect(server.draftLog).toHaveLength(saves);
       expect(server.sent).toHaveLength(0);
       yield* m.perform(

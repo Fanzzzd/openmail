@@ -360,7 +360,8 @@ it("runs mobile IMAP through shared connect, sync, reader, contacts, flags, move
         );
         expect((yield* mailbox.attachment(message.id, 0)).data).toEqual(new Uint8Array([4, 5, 6]));
         expect(
-          (yield* mailbox.suggestContacts("alice", { accountIds: [account.id] }))[0]?.address,
+          (yield* mailbox.compose.suggestContacts("alice", { accountIds: [account.id] }))[0]
+            ?.address,
         ).toBe("alice@example.test");
         expect((yield* mailbox.unreadByLabel([account.id])).INBOX).toBe(1);
         for (const op of [

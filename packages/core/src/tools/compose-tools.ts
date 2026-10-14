@@ -103,7 +103,7 @@ export const composeHandlers = ({ mailbox, forAccounts }: ToolContext) => {
       page(
         "list_templates",
         p,
-        Effect.map(mailbox.templates, (rows) =>
+        Effect.map(mailbox.compose.templates, (rows) =>
           rows.map(({ id, name, subject }) => ({
             id,
             name: shortText(name),
@@ -112,7 +112,7 @@ export const composeHandlers = ({ mailbox, forAccounts }: ToolContext) => {
         ),
       ),
     read_template: Effect.fnUntraced(function* (p) {
-      const row = (yield* mailbox.templates).find((r) => r.id === p.id);
+      const row = (yield* mailbox.compose.templates).find((r) => r.id === p.id);
       if (!row)
         return yield* toolError(
           "not_found",
@@ -138,7 +138,7 @@ export const composeHandlers = ({ mailbox, forAccounts }: ToolContext) => {
       page(
         "list_signatures",
         p,
-        Effect.map(mailbox.namedSignatures, (rows) =>
+        Effect.map(mailbox.compose.namedSignatures, (rows) =>
           rows.map(({ id, name, address, source }) => ({
             id,
             name: shortText(name),
@@ -148,7 +148,7 @@ export const composeHandlers = ({ mailbox, forAccounts }: ToolContext) => {
         ),
       ),
     read_signature: Effect.fnUntraced(function* (p) {
-      const row = (yield* mailbox.namedSignatures).find((r) => r.id === p.id);
+      const row = (yield* mailbox.compose.namedSignatures).find((r) => r.id === p.id);
       if (!row)
         return yield* toolError(
           "not_found",
@@ -165,7 +165,11 @@ export const composeHandlers = ({ mailbox, forAccounts }: ToolContext) => {
         p,
         Effect.map(
           forAccounts(p.account_id, (ids) =>
-            mailbox.suggestContacts(p.query, { limit: 100, exclude: p.exclude, accountIds: ids }),
+            mailbox.compose.suggestContacts(p.query, {
+              limit: 100,
+              exclude: p.exclude,
+              accountIds: ids,
+            }),
           ),
           (rows) => rows.map((r) => ({ ...r, name: shortText(r.name) })),
         ),

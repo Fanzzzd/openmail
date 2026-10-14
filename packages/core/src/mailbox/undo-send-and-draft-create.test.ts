@@ -25,7 +25,7 @@ for (const action of ["discard", "send"] as const) {
           attempted: true,
         });
         yield* action === "discard"
-          ? mailbox.discardDraft(input.id)
+          ? mailbox.compose.discardDraft(input.id)
           : mailbox.perform(
               { kind: "send", draftId: input.id, accountId: account.id, message: outgoing },
               { kind: "user", surface: "app" },
@@ -134,10 +134,10 @@ it.effect(
         const store = yield* Store;
         const account = yield* mailbox.connect({ provider: "gmail" });
         const input = { id: "bounded-create", accountId: account.id, message: outgoing };
-        yield* mailbox.saveDraft(input);
+        yield* mailbox.compose.saveDraft(input);
         assert.deepStrictEqual(misses, [false, false, false, false, true]);
         assert.isFalse(Option.getOrThrow(yield* store.draftCreateState(input.id)).attempted);
-        yield* mailbox.discardDraft(input.id);
+        yield* mailbox.compose.discardDraft(input.id);
         assert.isTrue(Option.isNone(yield* store.draftCreateState(input.id)));
       }),
       {
@@ -165,7 +165,11 @@ it.effect("elapsed creation time alone does not permit another POST", () => {
     Effect.gen(function* () {
       const mailbox = yield* Mailbox;
       const account = yield* mailbox.connect({ provider: "gmail" });
-      yield* mailbox.saveDraft({ id: "timed-create", accountId: account.id, message: outgoing });
+      yield* mailbox.compose.saveDraft({
+        id: "timed-create",
+        accountId: account.id,
+        message: outgoing,
+      });
       assert.deepStrictEqual(misses, [false, false, true]);
     }),
     {
@@ -250,7 +254,11 @@ it.effect("a late creation callback cannot overwrite or delete the winning draft
       sql = yield* SqlClient.SqlClient;
       store = yield* Store;
       const account = yield* mailbox.connect({ provider: "gmail" });
-      yield* mailbox.saveDraft({ id: "fenced-draft", accountId: account.id, message: outgoing });
+      yield* mailbox.compose.saveDraft({
+        id: "fenced-draft",
+        accountId: account.id,
+        message: outgoing,
+      });
       const draft = Option.getOrThrow(yield* store.getDraft("fenced-draft"));
       assert.strictEqual(draft.remote?.changeKey, "winner-version");
       assert.isFalse(
@@ -295,7 +303,11 @@ it.effect("a lost claim cannot mark another draft creation attempted", () => {
       sql = yield* SqlClient.SqlClient;
       store = yield* Store;
       const account = yield* mailbox.connect({ provider: "gmail" });
-      yield* mailbox.saveDraft({ id: "fenced-attempt", accountId: account.id, message: outgoing });
+      yield* mailbox.compose.saveDraft({
+        id: "fenced-attempt",
+        accountId: account.id,
+        message: outgoing,
+      });
       assert.strictEqual(posts, 0);
       assert.isFalse(Option.getOrThrow(yield* store.draftCreateState("fenced-attempt")).attempted);
     }),
@@ -375,8 +387,8 @@ it.effect("creation journal is persisted before the provider write and reused on
       journal = yield* Store;
       const account = yield* mailbox.connect({ provider: "gmail" });
       const draft = { id: "journal", accountId: account.id, message: outgoing };
-      yield* mailbox.saveDraft(draft);
-      yield* mailbox.saveDraft({ ...draft, message: { ...outgoing, text: "edited" } });
+      yield* mailbox.compose.saveDraft(draft);
+      yield* mailbox.compose.saveDraft({ ...draft, message: { ...outgoing, text: "edited" } });
       assert.strictEqual(creates, 1);
       const stored = yield* journal.getDraft(draft.id);
       assert.strictEqual(Option.getOrThrow(stored).remote?.messageId, "found");
@@ -410,7 +422,7 @@ it.effect("partially saved draft retains its ID and queues failed old-draft clea
       const mailbox = yield* Mailbox;
       const store = yield* Store;
       const account = yield* mailbox.connect({ provider: "outlook" });
-      yield* mailbox.saveDraft({ id: "partial", accountId: account.id, message: outgoing });
+      yield* mailbox.compose.saveDraft({ id: "partial", accountId: account.id, message: outgoing });
       const draft = Option.getOrThrow(yield* store.getDraft("partial"));
       assert.strictEqual(draft.remote?.messageId, "new");
       assert.strictEqual(draft.pushedAttachments, null);

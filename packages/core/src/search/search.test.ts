@@ -318,7 +318,7 @@ import { type DerivedChunk } from "../ai/media.js";
         results.threads.map((thread) => thread.threadId),
         ["inbox"],
       );
-      assert.deepStrictEqual(yield* mail.suggestContacts("Alice", { accountIds: [] }), []);
+      assert.deepStrictEqual(yield* mail.compose.suggestContacts("Alice", { accountIds: [] }), []);
       const account = (yield* mail.accounts)[0];
       assert.ok(account);
       yield* mail.setAccountSettings(account.id, { enabled: false, description: "", color: null });
@@ -330,7 +330,7 @@ import { type DerivedChunk } from "../ai/media.js";
       assert.deepStrictEqual(disabled.threads, []);
       assert.strictEqual(server.searched.length, calls);
       assert.deepStrictEqual(
-        yield* mail.suggestContacts("Alice", { accountIds: [account.id] }),
+        yield* mail.compose.suggestContacts("Alice", { accountIds: [account.id] }),
         [],
       );
     }).pipe(Effect.provide(TestMailbox({ gmail: server })));

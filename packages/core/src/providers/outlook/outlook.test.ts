@@ -84,7 +84,7 @@ it.effect(
       const store = yield* Store;
       const mailbox = yield* Mailbox;
       const saved = yield* store.upsertAccount("outlook", account.email);
-      yield* mailbox.saveDraft({
+      yield* mailbox.compose.saveDraft({
         id: "discard-uncertain",
         accountId: saved.id,
         message: { ...draftMessage, attachments: [] },
@@ -94,7 +94,7 @@ it.effect(
         Option.getOrThrow(yield* store.draftCreateState("discard-uncertain")).attempted,
       );
       cleanup = true;
-      yield* mailbox.discardDraft("discard-uncertain");
+      yield* mailbox.compose.discardDraft("discard-uncertain");
       assert.isFalse(copyExists);
       assert.isTrue(Option.isNone(yield* store.getDraft("discard-uncertain")));
       assert.isTrue(Option.isNone(yield* store.draftCreateState("discard-uncertain")));
@@ -165,19 +165,19 @@ for (const mode of ["reply", "forward"] as const) {
             accountId: saved.id,
             message: { ...draftMessage, attachments: [], mode, inReplyTo: `${saved.id}/source` },
           };
-          yield* mailbox.saveDraft(input);
+          yield* mailbox.compose.saveDraft(input);
           assert.isTrue(Option.getOrThrow(yield* store.draftCreateState(input.id)).attempted);
           visible = true;
           if (action === "retry") {
             yield* TestClock.adjust("2 minutes");
-            for (let attempt = 0; attempt < 3; attempt++) yield* mailbox.saveDraft(input);
+            for (let attempt = 0; attempt < 3; attempt++) yield* mailbox.compose.saveDraft(input);
             assert.strictEqual(
               Option.getOrThrow(yield* store.getDraft(input.id)).remote?.messageId,
               "our-copy",
             );
           } else {
             yield* action === "discard"
-              ? mailbox.discardDraft(input.id)
+              ? mailbox.compose.discardDraft(input.id)
               : mailbox.perform(
                   { kind: "send", accountId: saved.id, draftId: input.id, message: input.message },
                   { kind: "user", surface: "app" },
@@ -254,10 +254,10 @@ for (const mode of ["reply", "forward"] as const) {
             accountId: saved.id,
             message: { ...draftMessage, attachments: [], mode, inReplyTo: `${saved.id}/source` },
           };
-          yield* mailbox.saveDraft(input);
+          yield* mailbox.compose.saveDraft(input);
           cleanup = true;
           yield* action === "discard"
-            ? mailbox.discardDraft(input.id)
+            ? mailbox.compose.discardDraft(input.id)
             : mailbox.perform(
                 { kind: "send", accountId: saved.id, draftId: input.id, message: input.message },
                 { kind: "user", surface: "app" },
@@ -547,12 +547,12 @@ it.effect("opening a server draft captures its server version before the first s
       isUnread: false,
       isStarred: false,
     });
-    const opened = yield* mailbox.openDraft(`${saved.id}/server-draft`);
+    const opened = yield* mailbox.compose.openDraft(`${saved.id}/server-draft`);
     const before = Option.getOrThrow(yield* store.getDraft(opened.id));
     assert.strictEqual(before.remote?.changeKey, "k1");
     assert.strictEqual(before.remote?.lastWrittenAt, 1000);
     version = 2;
-    yield* mailbox.saveDraft({
+    yield* mailbox.compose.saveDraft({
       id: opened.id,
       accountId: saved.id,
       message: { ...opened.message, text: "Our edit" },

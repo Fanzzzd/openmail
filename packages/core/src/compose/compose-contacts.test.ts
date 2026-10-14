@@ -103,8 +103,11 @@ import { makeOutlookFeatures } from "../providers/outlook/outlook-features.js";
           const m = yield* Mailbox;
           yield* m.connect({ provider: "gmail" });
           yield* m.calendar.refreshContacts(id);
-          assert.deepStrictEqual((yield* m.contactGroups("team", [id]))[0]?.members, [alice, bob]);
-          assert.deepStrictEqual(yield* m.contactGroups("team", []), []);
+          assert.deepStrictEqual((yield* m.compose.contactGroups("team", [id]))[0]?.members, [
+            alice,
+            bob,
+          ]);
+          assert.deepStrictEqual(yield* m.compose.contactGroups("team", []), []);
           yield* m.app.setPrefs({
             contactPhotos: false,
             composeFont: { family: "Georgia", size: 18 },
@@ -125,7 +128,7 @@ import { makeOutlookFeatures } from "../providers/outlook/outlook-features.js";
         }).pipe(Effect.provide(layer()));
         yield* Effect.gen(function* () {
           const m = yield* Mailbox;
-          assert.strictEqual((yield* m.contactGroups("Team"))[0]?.members.length, 2);
+          assert.strictEqual((yield* m.compose.contactGroups("Team"))[0]?.members.length, 2);
           assert.strictEqual((yield* m.app.prefs).composeFont.family, "Georgia");
           assert.strictEqual((yield* m.app.prefs).inlineImageSize, "large");
           assert.strictEqual((yield* m.app.prefs).emojiReplacement, false);
@@ -137,7 +140,7 @@ import { makeOutlookFeatures } from "../providers/outlook/outlook-features.js";
             message: "Missing grant",
           });
           yield* m.calendar.refreshContacts(id).pipe(Effect.result);
-          assert.strictEqual((yield* m.contactGroups("Team")).length, 1);
+          assert.strictEqual((yield* m.compose.contactGroups("Team")).length, 1);
           assert.strictEqual(yield* m.calendar.contactPhoto(id, alice.address), null);
           assert.strictEqual(downloads.length, 1);
           delete server.featureFailure;
@@ -147,12 +150,12 @@ import { makeOutlookFeatures } from "../providers/outlook/outlook-features.js";
           server.contactGroups = [];
           yield* m.reauth(id);
           yield* m.calendar.refreshContacts(id);
-          assert.deepStrictEqual(yield* m.contactGroups("Team"), []);
+          assert.deepStrictEqual(yield* m.compose.contactGroups("Team"), []);
           yield* m.calendar.contactPhoto(id, alice.address);
           assert.strictEqual(downloads.length, 2);
           yield* m.setAccountSettings(id, { enabled: false, description: "", color: null });
           assert.strictEqual(yield* m.calendar.contactPhoto(id, alice.address), null);
-          assert.deepStrictEqual(yield* m.contactGroups(""), []);
+          assert.deepStrictEqual(yield* m.compose.contactGroups(""), []);
           yield* m.perform(
             { kind: "removeAccount", accountId: id },
             { kind: "user", surface: "app" },
@@ -414,18 +417,21 @@ import { makeOutlookFeatures } from "../providers/outlook/outlook-features.js";
         yield* m.syncSendAs(first.id);
         const current = { accountId: second.id, address: second.email };
         assert.deepStrictEqual(
-          yield* m.suggestSender(current, [alice.address], [first.id, second.id]),
+          yield* m.compose.suggestSender(current, [alice.address], [first.id, second.id]),
           { accountId: first.id, address: "alias@example.org", name: "Alias" },
         );
         assert.deepStrictEqual(
-          yield* m.suggestSender(current, [bob.address], [first.id, second.id]),
+          yield* m.compose.suggestSender(current, [bob.address], [first.id, second.id]),
           { accountId: first.id, address: "alias@example.org", name: "Alias" },
         );
-        assert.strictEqual(yield* m.suggestSender(current, [alice.address], [second.id]), null);
-        const image = yield* m.imageFromUrl("https://images.example.com/test.png");
+        assert.strictEqual(
+          yield* m.compose.suggestSender(current, [alice.address], [second.id]),
+          null,
+        );
+        const image = yield* m.compose.imageFromUrl("https://images.example.com/test.png");
         assert.strictEqual(limitSeen, COMPOSE_IMAGE_LIMIT);
         assert.ok(image.contentId);
-        const draft = yield* m.saveDraft({
+        const draft = yield* m.compose.saveDraft({
           id: "draft:image",
           accountId: first.id,
           message: {
@@ -445,7 +451,7 @@ import { makeOutlookFeatures } from "../providers/outlook/outlook-features.js";
         assert.deepStrictEqual(draft.message.composeFont, { family: "Georgia", size: 18 });
         yield* m.setAccountSettings(first.id, { enabled: false, description: "", color: null });
         assert.strictEqual(
-          yield* m.suggestSender(current, [alice.address], [first.id, second.id]),
+          yield* m.compose.suggestSender(current, [alice.address], [first.id, second.id]),
           null,
         );
       }).pipe(Effect.provide(layer));
@@ -509,13 +515,13 @@ import { makeOutlookFeatures } from "../providers/outlook/outlook-features.js";
           const m = yield* Mailbox;
           const account = yield* m.connect({ provider: "gmail" });
           yield* m.sync();
-          const draft = yield* m.openDraft(`${account.id}/remote`);
+          const draft = yield* m.compose.openDraft(`${account.id}/remote`);
           assert.deepStrictEqual(draft.message.composeFont, font);
           const body = outgoingComposeBody(draft.message);
           assert.ok(body.kind === "rich");
           assert.deepStrictEqual(body.font, font);
           assert.strictEqual(composeHtmlHasUnsupported(body.originalHtml ?? body.html), false);
-          const saved = yield* m.saveDraft({
+          const saved = yield* m.compose.saveDraft({
             id: draft.id,
             accountId: account.id,
             message: draft.message,
@@ -587,7 +593,7 @@ import { makeOutlookFeatures } from "../providers/outlook/outlook-features.js";
           );
         }
         assert.strictEqual(downloads, 2);
-        yield* m.imageFromUrl("https://public.example/image.png");
+        yield* m.compose.imageFromUrl("https://public.example/image.png");
         assert.strictEqual(downloads, 3);
       }).pipe(
         Effect.provide(

@@ -122,7 +122,7 @@ it.effect(
       assert.strictEqual((yield* mailbox.app.prefs).useAppleContacts, false);
       yield* mailbox.app.setPrefs({ useAppleContacts: true });
       assert.strictEqual((yield* mailbox.app.prefs).useAppleContacts, true);
-      assert.deepStrictEqual(yield* mailbox.suggestContacts("Apple"), []);
-      assert.deepStrictEqual(yield* mailbox.contactGroups("Research"), []);
+      assert.deepStrictEqual(yield* mailbox.compose.suggestContacts("Apple"), []);
+      assert.deepStrictEqual(yield* mailbox.compose.contactGroups("Research"), []);
     }).pipe(Effect.provide(TestMailbox())),
 );

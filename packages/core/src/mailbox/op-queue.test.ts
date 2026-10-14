@@ -451,7 +451,7 @@ import type { IncomingMessage } from "../domain/message.js";
           assert.ok(notice);
           assert.strictEqual(notice.subject, "A subject");
           assert.strictEqual(notice.sender, "me@example.com");
-          const resend = yield* mailbox.prepareRejectedResend(notice.id);
+          const resend = yield* mailbox.compose.prepareRejectedResend(notice.id);
           assert.notStrictEqual(resend.id, "original");
           assert.deepStrictEqual(resend.message.to, []);
           assert.deepStrictEqual(resend.message.cc, message.cc);
@@ -593,7 +593,11 @@ import type { IncomingMessage } from "../domain/message.js";
         const mailbox = yield* Mailbox;
         const store = yield* Store;
         const account = yield* mailbox.connect({ provider: "gmail" });
-        yield* mailbox.saveDraft({ id: "draft:unknown", accountId: account.id, message: outgoing });
+        yield* mailbox.compose.saveDraft({
+          id: "draft:unknown",
+          accountId: account.id,
+          message: outgoing,
+        });
         const command = {
           kind: "send",
           accountId: account.id,

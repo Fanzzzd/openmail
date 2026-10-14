@@ -64,7 +64,7 @@ it.effect(
       const mailbox = yield* Mailbox;
       yield* mailbox.connect({ provider: "outlook" });
       yield* mailbox.sync();
-      const opened = yield* mailbox.openDraft("outlook:me@example.com/remote");
+      const opened = yield* mailbox.compose.openDraft("outlook:me@example.com/remote");
       assert.strictEqual(opened.message.markdown, undefined);
       assert.strictEqual(opened.message.text, "bold");
       assert.include(opened.message.originalHtml ?? "", "<b>bold</b>");
@@ -117,7 +117,7 @@ it.effect(
       const mailbox = yield* Mailbox;
       yield* mailbox.connect({ provider: "outlook" });
       yield* mailbox.sync();
-      const opened = yield* mailbox.openDraft("outlook:me@example.com/remote");
+      const opened = yield* mailbox.compose.openDraft("outlook:me@example.com/remote");
       assert.strictEqual(opened.message.text, "cached");
       assert.strictEqual(opened.message.originalHtml, "<b>cached</b>");
       assert.strictEqual(calls, 0);
@@ -156,7 +156,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
       return Effect.gen(function* () {
         const firstRemote = yield* Effect.gen(function* () {
           const mailbox = yield* connect();
-          yield* mailbox.saveDraft({ id: "draft:markdown", accountId, message });
+          yield* mailbox.compose.saveDraft({ id: "draft:markdown", accountId, message });
           const entry = [...server.drafts.values()][0];
           assert.ok(entry);
           const raw = yield* buildMime(
@@ -173,12 +173,12 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
         const secondRemote = yield* Effect.gen(function* () {
           const mailbox = yield* connect();
           yield* mailbox.sync();
-          const opened = yield* mailbox.openDraft(`${accountId}/${firstRemote}`);
+          const opened = yield* mailbox.compose.openDraft(`${accountId}/${firstRemote}`);
           assert.strictEqual(opened.message.markdown, true);
           assert.strictEqual(opened.message.text, source);
           assert.strictEqual(opened.message.html, undefined);
           const updated = { ...opened.message, text: source.replace("bold", "edited") };
-          yield* mailbox.saveDraft({ id: opened.id, accountId, message: updated });
+          yield* mailbox.compose.saveDraft({ id: opened.id, accountId, message: updated });
           const entry = [...server.drafts.values()].at(-1);
           assert.ok(entry);
           return entry.messageId;
@@ -186,7 +186,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
         yield* Effect.gen(function* () {
           const mailbox = yield* connect();
           yield* mailbox.sync();
-          const opened = yield* mailbox.openDraft(`${accountId}/${secondRemote}`);
+          const opened = yield* mailbox.compose.openDraft(`${accountId}/${secondRemote}`);
           assert.strictEqual(opened.message.markdown, true);
           assert.strictEqual(opened.message.text, source.replace("bold", "edited"));
           yield* mailbox.perform(

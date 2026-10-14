@@ -40,7 +40,7 @@ const ProposalPage = Schema.Struct({
 type Service = Mailbox["Service"];
 type Groups = "reading" | "organize" | "compose" | "outbox" | "ai" | "calendar" | "app";
 /** Groups whose members are no longer flat on Service. */
-type Moved = "ai" | "calendar" | "outbox" | "app";
+type Moved = "ai" | "calendar" | "outbox" | "app" | "compose";
 type Flat = Omit<Service, Exclude<Groups, Moved>>;
 type Overrides = Partial<Omit<Flat, Moved>> & { [G in Moved]?: Partial<Service[G]> };
 
@@ -102,7 +102,35 @@ function testThread(
 
 function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
   const base: Flat = {
-    prepareRejectedResend: () => notUsed("prepareRejectedResend"),
+    compose: {
+      prepareRejectedResend: () => notUsed("prepareRejectedResend"),
+      contactGroups: () => notUsed("contactGroups"),
+      imageFromUrl: () => notUsed("imageFromUrl"),
+      imageFromFile: () => notUsed("imageFromFile"),
+      suggestSender: () => notUsed("suggestSender"),
+      composeAttachments: () => Effect.die("unused"),
+      openDraft: () => notUsed("openDraft"),
+      draftStatus: () => notUsed("draftStatus"),
+      saveDraft: () => notUsed("saveDraft"),
+      discardDraft: () => notUsed("discardDraft"),
+      discardDraftLater: () => notUsed("discardDraftLater"),
+      restoreDraft: () => notUsed("restoreDraft"),
+      signatures: notUsed("signatures"),
+      namedSignatures: notUsed("namedSignatures"),
+      signatureDefaults: notUsed("signatureDefaults"),
+      saveNamedSignature: () => notUsed("saveNamedSignature"),
+      deleteNamedSignature: () => notUsed("deleteNamedSignature"),
+      setSignatureDefault: () => notUsed("setSignatureDefault"),
+      recoverDraft: () => notUsed("recoverDraft"),
+      contactAlternatives: () => notUsed("contactAlternatives"),
+      setSignature: () => notUsed("setSignature"),
+      templates: notUsed("templates"),
+      saveTemplate: () => notUsed("saveTemplate"),
+      deleteTemplate: () => notUsed("deleteTemplate"),
+      suggestContacts: () => notUsed("suggestContacts"),
+      hiddenContacts: notUsed("hiddenContacts"),
+      setContactHidden: () => notUsed("setContactHidden"),
+    },
     listFailedOps: notUsed("listFailedOps"),
     acknowledgeFailedOps: () => notUsed("acknowledgeFailedOps"),
     syncHealth: () => notUsed("syncHealth"),
@@ -201,10 +229,6 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
       testAccount("gmail:me@gmail.com"),
       testAccount("gmail:me@example.com"),
     ]),
-    contactGroups: () => notUsed("contactGroups"),
-    imageFromUrl: () => notUsed("imageFromUrl"),
-    imageFromFile: () => notUsed("imageFromFile"),
-    suggestSender: () => notUsed("suggestSender"),
     searchServer: () => notUsed("searchServer"),
     setClassificationOverride: () => notUsed("setClassificationOverride"),
     changeLabel: () => notUsed("changeLabel"),
@@ -277,28 +301,6 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
     readOnlySession: false,
     agentWriteMode: notUsed("agentWriteMode"),
     setAgentWriteMode: () => notUsed("setAgentWriteMode"),
-    composeAttachments: () => Effect.die("unused"),
-    openDraft: () => notUsed("openDraft"),
-    draftStatus: () => notUsed("draftStatus"),
-    saveDraft: () => notUsed("saveDraft"),
-    discardDraft: () => notUsed("discardDraft"),
-    discardDraftLater: () => notUsed("discardDraftLater"),
-    restoreDraft: () => notUsed("restoreDraft"),
-    signatures: notUsed("signatures"),
-    namedSignatures: notUsed("namedSignatures"),
-    signatureDefaults: notUsed("signatureDefaults"),
-    saveNamedSignature: () => notUsed("saveNamedSignature"),
-    deleteNamedSignature: () => notUsed("deleteNamedSignature"),
-    setSignatureDefault: () => notUsed("setSignatureDefault"),
-    recoverDraft: () => notUsed("recoverDraft"),
-    contactAlternatives: () => notUsed("contactAlternatives"),
-    setSignature: () => notUsed("setSignature"),
-    templates: notUsed("templates"),
-    saveTemplate: () => notUsed("saveTemplate"),
-    deleteTemplate: () => notUsed("deleteTemplate"),
-    suggestContacts: () => notUsed("suggestContacts"),
-    hiddenContacts: notUsed("hiddenContacts"),
-    setContactHidden: () => notUsed("setContactHidden"),
     sync: () => notUsed("sync"),
     pollInbox: () => notUsed("pollInbox"),
     syncState: notUsed("syncState"),
@@ -308,6 +310,7 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
   const flat: Flat = {
     ...base,
     ...overrides,
+    compose: { ...base.compose, ...overrides.compose },
     app: { ...base.app, ...overrides.app },
     outbox: { ...base.outbox, ...overrides.outbox },
     calendar: { ...base.calendar, ...overrides.calendar },
@@ -345,7 +348,6 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
     ...merged,
     reading: merged,
     organize: merged,
-    compose: merged,
   });
 }
 
@@ -995,20 +997,22 @@ it.effect(
     Effect.gen(function* () {
       const text = "邮件😀\n".repeat(1000);
       const layer = stubMailbox({
-        templates: Effect.succeed([
-          {
-            id: "template:1",
-            name: "Reply",
-            subject: "s",
-            to: [],
-            cc: [],
-            body: text,
-            updatedAt: 0,
-          },
-        ]),
-        namedSignatures: Effect.succeed([
-          { id: "sig:1", address: "me@example.com", name: "Default", text, source: "local" },
-        ]),
+        compose: {
+          templates: Effect.succeed([
+            {
+              id: "template:1",
+              name: "Reply",
+              subject: "s",
+              to: [],
+              cc: [],
+              body: text,
+              updatedAt: 0,
+            },
+          ]),
+          namedSignatures: Effect.succeed([
+            { id: "sig:1", address: "me@example.com", name: "Default", text, source: "local" },
+          ]),
+        },
         ai: {
           derivedChunks: () =>
             Effect.succeed([
@@ -1703,11 +1707,15 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
           JSON.stringify(proposalEnvelope.untrusted_mail["command"]),
           "alice@example.com",
         );
-        const draft = yield* mailbox.openDraft(`proposal:${proposed.proposalId}`);
+        const draft = yield* mailbox.compose.openDraft(`proposal:${proposed.proposalId}`);
         assert.deepStrictEqual(draft.message.agentOrigin?.recipients, ["alice@example.com"]);
-        yield* mailbox.saveDraft({ id: draft.id, accountId: draft.accountId, message: outgoing });
+        yield* mailbox.compose.saveDraft({
+          id: draft.id,
+          accountId: draft.accountId,
+          message: outgoing,
+        });
         assert.deepStrictEqual(
-          (yield* mailbox.openDraft(draft.id)).message.agentOrigin?.recipients,
+          (yield* mailbox.compose.openDraft(draft.id)).message.agentOrigin?.recipients,
           ["alice@example.com"],
         );
         yield* mailbox.setAccountSettings(account.id, {
@@ -1723,7 +1731,7 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
           autoSummaries: false,
         });
         assert.deepStrictEqual(yield* mailbox.proposals, []);
-        assert.isNull(yield* mailbox.draftStatus(draft.id));
+        assert.isNull(yield* mailbox.compose.draftStatus(draft.id));
       }).pipe(Effect.provide(Layer.mergeAll(mailboxLayer, handlers)));
     },
   );
@@ -2172,7 +2180,9 @@ it.effect("tools fail as not_found for an account, profile or id the client cann
       profiles: Effect.succeed([]),
       labels: () => Effect.succeed([]),
       threads: () => Effect.succeed([]),
-      suggestContacts: () => Effect.succeed([]),
+      compose: {
+        suggestContacts: () => Effect.succeed([]),
+      },
       sync: () => Effect.succeed([]),
     });
     for (const account_id of ["bogus", "off"]) {
@@ -2202,8 +2212,10 @@ it.effect("tools fail as not_found for an account, profile or id the client cann
       const missing = yield* run(
         call(name, { id: "nope" }),
         stubMailbox({
-          templates: Effect.succeed([]),
-          namedSignatures: Effect.succeed([]),
+          compose: {
+            templates: Effect.succeed([]),
+            namedSignatures: Effect.succeed([]),
+          },
           proposals: Effect.succeed([]),
         }),
       );

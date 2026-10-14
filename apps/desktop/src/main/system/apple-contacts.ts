@@ -61,25 +61,29 @@ export function desktopAppleContacts(mailbox: Mailbox["Service"]) {
     suggest: (query: string, options: { exclude?: string; accountIds?: readonly string[] }) =>
       Effect.gen(function* () {
         yield* read;
-        return contacts.cache.suggest(query, yield* mailbox.suggestContacts(query, options), {
-          ...options,
-          hidden: yield* mailbox.hiddenContacts,
-          available: yield* available(options.accountIds),
-        });
+        return contacts.cache.suggest(
+          query,
+          yield* mailbox.compose.suggestContacts(query, options),
+          {
+            ...options,
+            hidden: yield* mailbox.compose.hiddenContacts,
+            available: yield* available(options.accountIds),
+          },
+        );
       }),
     groups: (query: string, accountIds?: readonly string[]) =>
       Effect.gen(function* () {
         yield* read;
         const local = (yield* available(accountIds))
-          ? contacts.cache.groups(query, yield* mailbox.hiddenContacts)
+          ? contacts.cache.groups(query, yield* mailbox.compose.hiddenContacts)
           : [];
-        return [...local, ...(yield* mailbox.contactGroups(query, accountIds))];
+        return [...local, ...(yield* mailbox.compose.contactGroups(query, accountIds))];
       }),
     alternatives: (address: string) =>
       Effect.gen(function* () {
         yield* read;
         const local = contacts.cache.alternatives(address);
-        return local.length ? local : yield* mailbox.contactAlternatives(address);
+        return local.length ? local : yield* mailbox.compose.contactAlternatives(address);
       }),
     photo: (accountId: string, address: string) =>
       Effect.gen(function* () {

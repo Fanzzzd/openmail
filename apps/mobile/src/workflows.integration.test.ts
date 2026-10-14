@@ -53,7 +53,7 @@ for (const provider of ["gmail", "outlook"] as const) {
               text: "queued offline",
             },
           };
-          yield* mailbox.saveDraft(draft);
+          yield* mailbox.compose.saveDraft(draft);
           expect(server.draftLog).toEqual([]);
           yield* mailbox.outbox.queueSend(draft, Date.now() + 60000);
           expect(server.sent).toEqual([]);

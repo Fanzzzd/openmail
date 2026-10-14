@@ -20,7 +20,7 @@ it("closing a blank never-stored draft does not save or delete anything", async 
           draft: initial,
           initial,
           empty: true,
-          lookup: mailbox.draftStatus(initial.id),
+          lookup: mailbox.compose.draftStatus(initial.id),
         });
         expect(action).toBe("close");
         expect(server.draftLog).toEqual([]);
@@ -43,24 +43,24 @@ it("clearing a stored draft asks; Cancel and Save retain it, and only explicit D
           subject: "Keep me",
           body: { kind: "plain" as const, text: "Content" },
         };
-        const initial = fromStored(yield* mailbox.saveDraft(toDraftInput(draft)));
+        const initial = fromStored(yield* mailbox.compose.saveDraft(toDraftInput(draft)));
         const cleared = { ...emptyDraft(account.id), id: draft.id };
         const action = yield* requestDraftClose({
           draft: cleared,
           initial,
           empty: isEmpty(cleared),
-          lookup: mailbox.draftStatus(draft.id),
+          lookup: mailbox.compose.draftStatus(draft.id),
         });
         expect(action).toBe("prompt");
         // Cancel makes no mutation and leaves the stored content available.
         expect(server.drafts.size).toBe(1);
-        expect((yield* mailbox.openDraft(draft.id)).message.subject).toBe("Keep me");
+        expect((yield* mailbox.compose.openDraft(draft.id)).message.subject).toBe("Keep me");
         expect(server.draftLog.filter((entry) => entry.kind === "delete")).toEqual([]);
-        yield* mailbox.saveDraft(toDraftInput(cleared));
+        yield* mailbox.compose.saveDraft(toDraftInput(cleared));
         expect(server.drafts.size).toBe(1);
-        expect((yield* mailbox.openDraft(draft.id)).message.subject).toBe("");
+        expect((yield* mailbox.compose.openDraft(draft.id)).message.subject).toBe("");
         expect(server.draftLog.filter((entry) => entry.kind === "delete")).toEqual([]);
-        yield* mailbox.discardDraft(draft.id);
+        yield* mailbox.compose.discardDraft(draft.id);
         expect(server.drafts.size).toBe(0);
         expect(server.draftLog.filter((entry) => entry.kind === "delete")).toHaveLength(1);
       }),

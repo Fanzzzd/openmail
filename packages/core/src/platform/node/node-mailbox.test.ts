@@ -178,21 +178,23 @@ it("real NodeMailbox captures MIME, files, PDF, image transport and random servi
         expect(Buffer.from((yield* mailbox.attachmentPart(id, [1, 0])).data).toString()).toBe(
           "Leaf",
         );
-        expect((yield* mailbox.composeAttachments(id)).map((part) => part.filename)).toContain(
-          "document.pdf",
-        );
+        expect(
+          (yield* mailbox.compose.composeAttachments(id)).map((part) => part.filename),
+        ).toContain("document.pdf");
         expect((yield* mailbox.calendar.invitations(id))[0]?.title).toBe("Layer invite");
         expect((yield* mailbox.inlineImages(id))["inline@openmail"]).toContain(
           "data:image/png;base64,",
         );
         expect(
-          (yield* mailbox.imageFromFile({
+          (yield* mailbox.compose.imageFromFile({
             filename: "image.png",
             mimeType: "image/png",
             content: png.toString("base64"),
           })).contentId,
         ).toMatch(/^image-[a-f0-9-]+@openmail$/);
-        const rejected = yield* Effect.flip(mailbox.imageFromUrl("http://127.0.0.1/image.png"));
+        const rejected = yield* Effect.flip(
+          mailbox.compose.imageFromUrl("http://127.0.0.1/image.png"),
+        );
         expect(rejected._tag).toBe("ProviderError");
         expect(rejected.message).toContain("public image URL");
         yield* Deferred.succeed(ready, undefined);

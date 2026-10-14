@@ -229,15 +229,15 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
             },
           ];
           yield* m.syncSendAs(id);
-          assert.strictEqual((yield* m.signatures).length, 2);
-          yield* m.setSignature({
+          assert.strictEqual((yield* m.compose.signatures).length, 2);
+          yield* m.compose.setSignature({
             address: "alias@example.com",
             kind: "new",
             text: "Local signature",
           });
           server.aliases = server.aliases.map((a) => ({ ...a, signature: "Updated" }));
           yield* m.sync();
-          const signatures = yield* m.signatures;
+          const signatures = yield* m.compose.signatures;
           assert.strictEqual(signatures.find((s) => s.kind === "new")?.text, "Local signature");
           assert.strictEqual(signatures.find((s) => s.kind === "reply")?.text, "Updated");
           const message = {
@@ -269,7 +269,7 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
           );
           server.aliases = [];
           yield* m.syncSendAs(id);
-          assert.strictEqual((yield* m.signatures).length, 1);
+          assert.strictEqual((yield* m.compose.signatures).length, 1);
         }),
       ),
   );

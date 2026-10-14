@@ -92,10 +92,10 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
               : { provider },
           );
           yield* mailbox.sync();
-          const opened = yield* mailbox.openDraft(`${provider}:${server.email}/remote`);
+          const opened = yield* mailbox.compose.openDraft(`${provider}:${server.email}/remote`);
           assert.strictEqual(opened.message.html, expected.html);
           assert.strictEqual(opened.message.text, expected.text);
-          const saved = yield* mailbox.saveDraft({
+          const saved = yield* mailbox.compose.saveDraft({
             id: opened.id,
             accountId: opened.accountId,
             message: { ...opened.message, subject: "Changed subject only", text: "stale again" },
@@ -118,14 +118,14 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
 
         yield* Effect.gen(function* () {
           const mailbox = yield* Mailbox;
-          const reopened = yield* mailbox.openDraft(id);
+          const reopened = yield* mailbox.compose.openDraft(id);
           assert.strictEqual(reopened.message.html, expected.html);
           assert.strictEqual(reopened.message.text, expected.text);
           assert.strictEqual(reopened.message.originalHtml, preservedComposeHtml(html));
           // Editing one marked span keeps all other formatting.
           const editedHtml = expected.html.replace("你好", "改过");
           const edited = { ...reopened.message, html: editedHtml, text: "stale after editing" };
-          const saved = yield* mailbox.saveDraft({
+          const saved = yield* mailbox.compose.saveDraft({
             id,
             accountId: reopened.accountId,
             message: edited,
@@ -160,7 +160,7 @@ it.effect("offline remote draft import preserves and sanitizes cached HTML", () 
     yield* mailbox.connect({ provider: "gmail" });
     yield* mailbox.sync();
     server.failNext = new ProviderError({ message: "offline" });
-    const draft = yield* mailbox.openDraft("gmail:me@gmail.com/remote");
+    const draft = yield* mailbox.compose.openDraft("gmail:me@gmail.com/remote");
     assert.strictEqual(draft.message.html, expected.html);
     assert.strictEqual(draft.message.text, expected.text);
   }).pipe(Effect.provide(TestMailbox({ gmail: server })));
@@ -220,7 +220,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
         const normal = { filename: "ordinary.png", mimeType: "image/png", content: "aGk=" };
         const inline = { ...normal, filename: "inline.png", contentId: "logo@example.com" };
         const accountId = `${provider}:${server.email}`;
-        const saved = yield* mailbox.saveDraft({
+        const saved = yield* mailbox.compose.saveDraft({
           id: "draft:images",
           accountId,
           message: {
@@ -235,7 +235,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
           },
         });
         assert.deepStrictEqual(saved.message.attachments, [normal, inline]);
-        const edited = yield* mailbox.saveDraft({
+        const edited = yield* mailbox.compose.saveDraft({
           id: saved.id,
           accountId,
           message: { ...saved.message, html: "<strong>after</strong>" },

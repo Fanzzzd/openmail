@@ -70,38 +70,41 @@ it.effect(
       const m = yield* Mailbox;
       yield* m.connect({ provider: "gmail" });
       yield* m.sync();
-      const imported = (yield* m.namedSignatures)[0];
+      const imported = (yield* m.compose.namedSignatures)[0];
       assert.ok(imported);
       assert.strictEqual(imported.html, "<strong>Gmail</strong>");
-      const short = yield* m.saveNamedSignature({
+      const short = yield* m.compose.saveNamedSignature({
         address: "ALIAS@example.com",
         name: "Short",
         text: "ignored",
         html: '<p><b>Short</b><img src="https://tracker.test"><a href="javascript:bad()">safe</a></p>',
       });
-      const long = yield* m.saveNamedSignature({
+      const long = yield* m.compose.saveNamedSignature({
         address: "alias@example.com",
         name: "Long",
         text: "Long text",
       });
-      yield* m.setSignatureDefault({
+      yield* m.compose.setSignatureDefault({
         address: "alias@example.com",
         kind: "new",
         signatureId: long.id,
       });
-      yield* m.setSignatureDefault({
+      yield* m.compose.setSignatureDefault({
         address: "alias@example.com",
         kind: "reply",
         signatureId: short.id,
       });
-      assert.strictEqual((yield* m.signatures).find((s) => s.kind === "new")?.text, "Long text");
       assert.strictEqual(
-        (yield* m.signatures).find((s) => s.kind === "reply")?.html,
+        (yield* m.compose.signatures).find((s) => s.kind === "new")?.text,
+        "Long text",
+      );
+      assert.strictEqual(
+        (yield* m.compose.signatures).find((s) => s.kind === "reply")?.html,
         "<div><strong>Short</strong>safe</div>",
       );
       assert.strictEqual(
         (yield* Effect.flip(
-          m.setSignatureDefault({
+          m.compose.setSignatureDefault({
             address: "other@example.com",
             kind: "new",
             signatureId: short.id,
@@ -109,7 +112,7 @@ it.effect(
         ))._tag,
         "InvalidInput",
       );
-      yield* m.saveNamedSignature(
+      yield* m.compose.saveNamedSignature(
         { address: short.address, name: "Renamed", text: "edited" },
         short.id,
       );
@@ -119,21 +122,27 @@ it.effect(
         signatureHtml: "<i>Changed</i>",
       };
       yield* m.sync();
-      assert.strictEqual((yield* m.signatures).find((s) => s.kind === "reply")?.text, "edited");
       assert.strictEqual(
-        (yield* m.namedSignatures).find((s) => s.id === short.id)?.name,
+        (yield* m.compose.signatures).find((s) => s.kind === "reply")?.text,
+        "edited",
+      );
+      assert.strictEqual(
+        (yield* m.compose.namedSignatures).find((s) => s.id === short.id)?.name,
         "Renamed",
       );
-      yield* m.deleteNamedSignature(short.id);
-      assert.strictEqual((yield* m.signatures).find((s) => s.kind === "reply")?.text, "Changed");
+      yield* m.compose.deleteNamedSignature(short.id);
+      assert.strictEqual(
+        (yield* m.compose.signatures).find((s) => s.kind === "reply")?.text,
+        "Changed",
+      );
       assert.deepStrictEqual(
         signatureDefault(
-          yield* m.namedSignatures,
-          yield* m.signatureDefaults,
+          yield* m.compose.namedSignatures,
+          yield* m.compose.signatureDefaults,
           long.address,
           "reply",
         ),
-        (yield* m.namedSignatures).find((s) => s.source === "gmail"),
+        (yield* m.compose.namedSignatures).find((s) => s.source === "gmail"),
       );
       assert.strictEqual(server.aliases[0].signature, "Changed");
     }).pipe(Effect.provide(TestMailbox({ gmail: server })));
@@ -252,24 +261,27 @@ for (const failure of [
         const m = yield* Mailbox;
         yield* m.connect({ provider: "gmail" });
         server.failNext = failure;
-        const saved = yield* m.saveDraft({ id: "draft:failed", accountId, message });
+        const saved = yield* m.compose.saveDraft({ id: "draft:failed", accountId, message });
         assert.strictEqual(saved.syncError, failure.message);
         assert.strictEqual(saved.synced, false);
-        assert.strictEqual((yield* m.openDraft(saved.id)).syncError, failure.message);
-        const kept = yield* m.recoverDraft(saved.id, "local");
+        assert.strictEqual((yield* m.compose.openDraft(saved.id)).syncError, failure.message);
+        const kept = yield* m.compose.recoverDraft(saved.id, "local");
         assert.strictEqual(kept.localOnly, true);
         assert.strictEqual(kept.syncError, null);
-        yield* m.saveDraft({
+        yield* m.compose.saveDraft({
           id: kept.id,
           accountId,
           message: { ...message, text: "Edited after keeping" },
         });
         yield* m.sync();
         assert.strictEqual(server.drafts.size, 0);
-        assert.strictEqual((yield* m.openDraft(kept.id)).message.text, "Edited after keeping");
-        assert.strictEqual((yield* m.openDraft(kept.id)).localOnly, true);
         assert.strictEqual(
-          (yield* Effect.flip(m.recoverDraft("missing", "retry")))._tag,
+          (yield* m.compose.openDraft(kept.id)).message.text,
+          "Edited after keeping",
+        );
+        assert.strictEqual((yield* m.compose.openDraft(kept.id)).localOnly, true);
+        assert.strictEqual(
+          (yield* Effect.flip(m.compose.recoverDraft("missing", "retry")))._tag,
           "NotFound",
         );
       }).pipe(Effect.provide(TestMailbox({ gmail: server })));
@@ -283,15 +295,15 @@ it.effect("Retry recovers a permanently failed draft after its queue entry was r
     const m = yield* Mailbox;
     yield* m.connect({ provider: "gmail" });
     server.failNext = new PermanentError({ message: "Rejected" });
-    yield* m.saveDraft({ id: "draft:retry", accountId, message });
-    const retried = yield* m.recoverDraft("draft:retry", "retry");
+    yield* m.compose.saveDraft({ id: "draft:retry", accountId, message });
+    const retried = yield* m.compose.recoverDraft("draft:retry", "retry");
     assert.strictEqual(retried.synced, true);
     assert.strictEqual(retried.syncError, null);
     assert.strictEqual(server.drafts.size, 1);
-    yield* m.recoverDraft(retried.id, "local");
+    yield* m.compose.recoverDraft(retried.id, "local");
     yield* m.sync();
-    assert.strictEqual((yield* m.openDraft(retried.id)).localOnly, true);
-    assert.strictEqual((yield* m.recoverDraft(retried.id, "retry")).synced, true);
+    assert.strictEqual((yield* m.compose.openDraft(retried.id)).localOnly, true);
+    assert.strictEqual((yield* m.compose.recoverDraft(retried.id, "retry")).synced, true);
     assert.strictEqual(server.drafts.size, 1);
   }).pipe(Effect.provide(TestMailbox({ gmail: server })));
 });
@@ -315,32 +327,35 @@ it.effect(
       const m = yield* Mailbox;
       yield* m.connect({ provider: "gmail" });
       yield* m.sync();
-      assert.deepStrictEqual(yield* m.suggestContacts("john acme"), [
+      assert.deepStrictEqual(yield* m.compose.suggestContacts("john acme"), [
         { name: "Server John", address: "j@acme.com" },
       ]);
-      assert.deepStrictEqual(yield* m.contactAlternatives("J@acme.com"), [
+      assert.deepStrictEqual(yield* m.compose.contactAlternatives("J@acme.com"), [
         { name: "Server John", address: "j@acme.com" },
         { name: "Server John", address: "john@other.com" },
       ]);
-      assert.strictEqual((yield* m.suggestContacts("john", { limit: 1 })).length, 1);
-      assert.deepStrictEqual(yield* m.suggestContacts('" OR * % _'), []);
-      assert.deepStrictEqual(yield* m.suggestContacts("john acme", { accountIds: [] }), []);
-      assert.deepStrictEqual(yield* m.suggestContacts("john acme", { exclude: "J@ACME.COM" }), []);
+      assert.strictEqual((yield* m.compose.suggestContacts("john", { limit: 1 })).length, 1);
+      assert.deepStrictEqual(yield* m.compose.suggestContacts('" OR * % _'), []);
+      assert.deepStrictEqual(yield* m.compose.suggestContacts("john acme", { accountIds: [] }), []);
+      assert.deepStrictEqual(
+        yield* m.compose.suggestContacts("john acme", { exclude: "J@ACME.COM" }),
+        [],
+      );
       server.contacts = [];
       yield* m.calendar.refreshContacts(accountId);
-      assert.strictEqual((yield* m.suggestContacts("john acme"))[0]?.name, "John Smith");
+      assert.strictEqual((yield* m.compose.suggestContacts("john acme"))[0]?.name, "John Smith");
       server.messages.set(
         "sent",
         incoming("sent", { labels: ["SENT"], to: [{ name: "Jane", address: "j@acme.com" }] }),
       );
       yield* m.sync();
-      assert.deepStrictEqual(yield* m.suggestContacts("john acme"), []);
-      assert.strictEqual((yield* m.suggestContacts("jane acme"))[0]?.name, "Jane");
+      assert.deepStrictEqual(yield* m.compose.suggestContacts("john acme"), []);
+      assert.strictEqual((yield* m.compose.suggestContacts("jane acme"))[0]?.name, "Jane");
       server.messages.delete("sent");
       yield* m.sync();
-      assert.deepStrictEqual(yield* m.suggestContacts("jane acme"), []);
-      yield* m.setContactHidden("j@acme.com", true);
-      assert.deepStrictEqual(yield* m.suggestContacts("acme"), []);
+      assert.deepStrictEqual(yield* m.compose.suggestContacts("jane acme"), []);
+      yield* m.compose.setContactHidden("j@acme.com", true);
+      assert.deepStrictEqual(yield* m.compose.suggestContacts("acme"), []);
     }).pipe(Effect.provide(TestMailbox({ gmail: server })));
   },
 );
@@ -350,7 +365,7 @@ it.effect(
   () =>
     Effect.gen(function* () {
       const m = yield* Mailbox;
-      const created = yield* m.saveTemplate({
+      const created = yield* m.compose.saveTemplate({
         name: "Greeting",
         subject: "Hello {first_name}",
         to: message.to,
@@ -358,15 +373,15 @@ it.effect(
         bcc: [{ name: "", address: "audit@example.com" }],
         body: "{sender_name} on {date} {time} {project}",
       });
-      const updated = yield* m.saveTemplate(
+      const updated = yield* m.compose.saveTemplate(
         { ...created, name: "Renamed", subject: "Changed", body: "Updated" },
         created.id,
       );
       assert.strictEqual(updated.id, created.id);
-      assert.strictEqual((yield* m.templates).length, 1);
+      assert.strictEqual((yield* m.compose.templates).length, 1);
       assert.strictEqual(updated.bcc?.[0]?.address, "audit@example.com");
-      yield* m.deleteTemplate(created.id);
-      assert.deepStrictEqual(yield* m.templates, []);
+      yield* m.compose.deleteTemplate(created.id);
+      assert.deepStrictEqual(yield* m.compose.templates, []);
     }).pipe(Effect.provide(TestMailbox())),
 );
 

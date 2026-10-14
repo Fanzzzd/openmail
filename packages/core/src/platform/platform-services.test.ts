@@ -129,13 +129,13 @@ it("a mailbox keeps its own MIME and random services after the platform Layer is
       expect(draft.id).toBe(`draft:${uuid}`);
       expect(draft.message.text).toBe("Decoded on mobile");
       expect(parses).toBe(1);
-      const image = yield* mailbox.imageFromFile({
+      const image = yield* mailbox.compose.imageFromFile({
         filename: "image.png",
         content: "iVBORw0KGgo=",
         mimeType: "image/png",
       });
       expect(image.contentId).toBe(`image-${uuid}@openmail`);
-      yield* mailbox.saveDraft({
+      yield* mailbox.compose.saveDraft({
         id: draft.id,
         accountId: account.id,
         message: { ...draft.message, subject: "Edited" },

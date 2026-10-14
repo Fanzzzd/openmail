@@ -255,7 +255,7 @@ it.each(["reply", "replyAll", "forward"] as const)(
     current = await flow();
     const h = current;
     await h.run(
-      h.m.setSignature({ address: h.account.email, kind: "reply", text: "Flow signature" }),
+      h.m.compose.setSignature({ address: h.account.email, kind: "reply", text: "Flow signature" }),
     );
     await h.event({ _tag: "NativeAction", action: "sync", triggeredByAccelerator: false });
     await eventually(() => expect(row(h.id("one"))).toBeTruthy());
@@ -452,21 +452,25 @@ it.each(["retry", "local"] as const)(
     const drafts = await h.run(h.m.threads({ mailbox: "drafts" }));
     const draft = drafts[0];
     if (!draft) throw new Error("Missing local draft");
-    expect((await h.run(h.m.openDraft(draft.id))).message.text).toContain("Keep these edits");
+    expect((await h.run(h.m.compose.openDraft(draft.id))).message.text).toContain(
+      "Keep these edits",
+    );
     edit("Subject", "Newest recovery edits");
     clickButton(action === "retry" ? "Retry" : "Keep local copy");
     await eventually(async () =>
-      expect((await h.run(h.m.openDraft(draft.id))).message.subject).toBe("Newest recovery edits"),
+      expect((await h.run(h.m.compose.openDraft(draft.id))).message.subject).toBe(
+        "Newest recovery edits",
+      ),
     );
     if (action === "retry") {
       await eventually(() => expect(h.server.draftLog).toHaveLength(1));
-      expect((await h.run(h.m.openDraft(draft.id))).synced).toBe(true);
+      expect((await h.run(h.m.compose.openDraft(draft.id))).synced).toBe(true);
       expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
     } else {
       await eventually(() =>
         expect(screen.getByRole("button", { name: "Resume syncing" })).toBeTruthy(),
       );
-      expect((await h.run(h.m.openDraft(draft.id))).localOnly).toBe(true);
+      expect((await h.run(h.m.compose.openDraft(draft.id))).localOnly).toBe(true);
       await advance(2000);
       expect(h.server.draftLog).toHaveLength(0);
       expect(await h.run(h.store.listPendingOps)).toHaveLength(0);

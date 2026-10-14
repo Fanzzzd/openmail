@@ -98,7 +98,7 @@ for (const provider of ["gmail", "imap", "outlook"] as const) {
           );
           yield* mailbox.sync();
           const id = `${account.id}/original`;
-          const parts = yield* mailbox.composeAttachments(id);
+          const parts = yield* mailbox.compose.composeAttachments(id);
           assert.deepStrictEqual(
             parts.map((part) => part.content),
             ["aGk=", "Ynll"],
@@ -107,7 +107,7 @@ for (const provider of ["gmail", "imap", "outlook"] as const) {
           const body = remoteComposeBody(
             '<table><tr><td style="color:red">Body</td></tr></table><script>unsafe()</script>',
           );
-          const saved = yield* mailbox.saveDraft({
+          const saved = yield* mailbox.compose.saveDraft({
             id: "draft:parts",
             accountId: account.id,
             message: {
@@ -126,7 +126,7 @@ for (const provider of ["gmail", "imap", "outlook"] as const) {
         }).pipe(Effect.provide(layer()));
         yield* Effect.gen(function* () {
           const mailbox = yield* Mailbox;
-          const reopened = yield* mailbox.openDraft(saved.id);
+          const reopened = yield* mailbox.compose.openDraft(saved.id);
           assert.deepStrictEqual(reopened.message, saved.message);
           assert.strictEqual((yield* mailbox.app.prefs).quoteSelection, "always");
           yield* mailbox.perform(
@@ -185,7 +185,9 @@ it.effect(
       assert.strictEqual(server.sent.length, 0);
       assert.strictEqual(yield* mailbox.outbox.pendingSendCount, 0);
       server.failNext = new ProviderError({ message: "Original MIME unavailable" });
-      const fetchError = yield* Effect.flip(mailbox.composeAttachments(`${account.id}/original`));
+      const fetchError = yield* Effect.flip(
+        mailbox.compose.composeAttachments(`${account.id}/original`),
+      );
       assert.strictEqual(fetchError._tag, "ProviderError");
       assert.include(fetchError.message, "Original MIME unavailable");
     }).pipe(Effect.provide(TestMailbox({ gmail: server })));
@@ -263,7 +265,9 @@ it.effect(
       const account = yield* mailbox.connect({ provider: "gmail" });
       yield* mailbox.sync();
       server.failNext = new ProviderError({ message: "Must not fetch raw MIME" });
-      const error = yield* Effect.flip(mailbox.composeAttachments(`${account.id}/original`));
+      const error = yield* Effect.flip(
+        mailbox.compose.composeAttachments(`${account.id}/original`),
+      );
       assert.strictEqual(error._tag, "InvalidInput");
       assert.strictEqual(server.failNext.message, "Must not fetch raw MIME");
     }).pipe(Effect.provide(TestMailbox({ gmail: server })));

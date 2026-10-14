@@ -896,7 +896,9 @@ it("before-quit requests renderer state, asks for pending sends, and resumes qui
         yield* settle();
         expect(app.quit).toHaveBeenCalledOnce();
         expect(yield* mailbox.outbox.queuedSends).toEqual([]);
-        expect((yield* mailbox.openDraft("approved-quit-draft")).message.subject).toBe("Quit");
+        expect((yield* mailbox.compose.openDraft("approved-quit-draft")).message.subject).toBe(
+          "Quit",
+        );
         preventDefault.mockClear();
         app.emit("before-quit", { preventDefault });
         expect(preventDefault).not.toHaveBeenCalled();
@@ -950,7 +952,9 @@ it("closing a main window with a pending send asks once, preserves it on Cancel 
         win.close();
         yield* Effect.promise(() => expect.poll(() => win.isDestroyed(), waitLimit).toBe(true));
         expect(yield* mailbox.outbox.queuedSends).toEqual([]);
-        expect((yield* mailbox.openDraft("window-close-draft")).message.subject).toBe("Close");
+        expect((yield* mailbox.compose.openDraft("window-close-draft")).message.subject).toBe(
+          "Close",
+        );
         expect(dialog.showMessageBox).toHaveBeenCalledTimes(2);
       }),
     ).pipe(Effect.provide(desktopLayer(fakeServer("me@gmail.com")))),

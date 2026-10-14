@@ -120,8 +120,8 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
           assert.deepStrictEqual(yield* mailbox.unreadCounts, {});
           assert.deepStrictEqual(yield* mailbox.unreadByLabel(), {});
           assert.deepStrictEqual(yield* mailbox.app.takeNotifications, []);
-          assert.deepStrictEqual(yield* mailbox.suggestContacts("alice"), []);
-          assert.deepStrictEqual(yield* mailbox.suggestContacts("contact"), []);
+          assert.deepStrictEqual(yield* mailbox.compose.suggestContacts("alice"), []);
+          assert.deepStrictEqual(yield* mailbox.compose.suggestContacts("contact"), []);
           assert.strictEqual((yield* store.listPendingOps).length, 1);
           assert.strictEqual((yield* mailbox.thread(`${id}/initial`))[0]?.bodyText, "cached body");
           assert.strictEqual(tokens.get(id), token);

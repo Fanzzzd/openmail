@@ -43,7 +43,7 @@ it("a held discard survives a crash: due ones go at start, pending ones resume a
         const store = yield* Store;
         const account = yield* mailbox.connect({ provider: "gmail" });
         for (const id of ["draft:due", "draft:soon", "draft:undo"])
-          yield* mailbox.saveDraft({ id, accountId: account.id, message: outgoing });
+          yield* mailbox.compose.saveDraft({ id, accountId: account.id, message: outgoing });
         // What a crash inside the window leaves: the stored deadline, no worker.
         yield* store.holdDraftDiscard("draft:due", Date.now() - 1000);
         yield* store.holdDraftDiscard("draft:soon", Date.now() + 300);
@@ -61,7 +61,7 @@ it("a held discard survives a crash: due ones go at start, pending ones resume a
         const store = yield* Store;
         expect(Option.isNone(yield* store.getDraft("draft:due"))).toBe(true);
         expect(Option.isSome(yield* store.getDraft("draft:soon"))).toBe(true);
-        const restored = yield* mailbox.restoreDraft("draft:undo");
+        const restored = yield* mailbox.compose.restoreDraft("draft:undo");
         expect(restored.id).toBe("draft:undo");
         expect(Option.isNone(yield* store.draftDiscard("draft:undo"))).toBe(true);
         yield* Effect.promise(() =>
@@ -71,13 +71,17 @@ it("a held discard survives a crash: due ones go at start, pending ones resume a
         );
         expect(Option.isSome(yield* store.getDraft("draft:undo"))).toBe(true);
         // The undone draft saves again; the discarded ones don't come back.
-        yield* mailbox.saveDraft({
+        yield* mailbox.compose.saveDraft({
           id: "draft:undo",
           accountId: restored.accountId,
           message: { ...outgoing, text: "kept" },
         });
         const late = yield* Effect.flip(
-          mailbox.saveDraft({ id: "draft:due", accountId: restored.accountId, message: outgoing }),
+          mailbox.compose.saveDraft({
+            id: "draft:due",
+            accountId: restored.accountId,
+            message: outgoing,
+          }),
         );
         expect(late._tag).toBe("InvalidInput");
       }),
@@ -111,7 +115,7 @@ it("start-up finishes a discard whose tombstone was written without the draft de
         const mailbox = yield* Mailbox;
         const store = yield* Store;
         accountId = (yield* mailbox.connect({ provider: "gmail" })).id;
-        yield* mailbox.saveDraft({ id: "draft:zombie", accountId, message: outgoing });
+        yield* mailbox.compose.saveDraft({ id: "draft:zombie", accountId, message: outgoing });
         // What an older build left after a crash between its separate steps.
         yield* store.markDraftDiscarded("draft:zombie");
       }),
@@ -130,7 +134,7 @@ it("start-up finishes a discard whose tombstone was written without the draft de
           (yield* store.draftDiscard("draft:zombie")).pipe(Option.map((d) => d.discarded)),
         ).toEqual(Option.some(true));
         const late = yield* Effect.flip(
-          mailbox.saveDraft({ id: "draft:zombie", accountId, message: outgoing }),
+          mailbox.compose.saveDraft({ id: "draft:zombie", accountId, message: outgoing }),
         );
         expect(late._tag).toBe("InvalidInput");
       }),
@@ -151,7 +155,7 @@ it("a discard that fails while deleting the draft writes no tombstone", async ()
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
         accountId = (yield* mailbox.connect({ provider: "gmail" })).id;
-        yield* mailbox.saveDraft({ id: "draft:busy", accountId, message: outgoing });
+        yield* mailbox.compose.saveDraft({ id: "draft:busy", accountId, message: outgoing });
       }),
     );
   } finally {
@@ -168,12 +172,12 @@ it("a discard that fails while deleting the draft writes no tombstone", async ()
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
         const store = yield* Store;
-        const exit = yield* Effect.exit(mailbox.discardDraft("draft:busy"));
+        const exit = yield* Effect.exit(mailbox.compose.discardDraft("draft:busy"));
         expect(Exit.isFailure(exit)).toBe(true);
         expect(Option.isSome(yield* store.getDraft("draft:busy"))).toBe(true);
         expect(Option.isNone(yield* store.draftDiscard("draft:busy"))).toBe(true);
         // The draft still saves, so nothing the person types is lost.
-        yield* mailbox.saveDraft({
+        yield* mailbox.compose.saveDraft({
           id: "draft:busy",
           accountId,
           message: { ...outgoing, text: "typed more" },
@@ -193,7 +197,7 @@ it("a discard that fails while deleting the draft writes no tombstone", async ()
         const mailbox = yield* Mailbox;
         const store = yield* Store;
         expect(Option.isSome(yield* store.getDraft("draft:busy"))).toBe(true);
-        yield* mailbox.discardDraft("draft:busy");
+        yield* mailbox.compose.discardDraft("draft:busy");
         expect(Option.isNone(yield* store.getDraft("draft:busy"))).toBe(true);
         expect(Option.isSome(yield* store.draftDiscard("draft:busy"))).toBe(true);
       }),

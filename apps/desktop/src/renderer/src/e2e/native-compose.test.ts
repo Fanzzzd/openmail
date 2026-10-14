@@ -54,7 +54,7 @@ it("native message sharing and Photos selection use RPC only after user action, 
   await eventually(async () => {
     const [thread] = await h.run(h.m.threads({ mailbox: "drafts" }));
     if (!thread) throw new Error("Draft not saved");
-    const draft = await h.run(h.m.openDraft(thread.id));
+    const draft = await h.run(h.m.compose.openDraft(thread.id));
     expect(draft.message.attachments).toContainEqual(file);
   });
   expect(picked).toBe(2);

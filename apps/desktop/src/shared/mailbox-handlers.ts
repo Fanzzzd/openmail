@@ -15,12 +15,12 @@ export interface ContactsBackend {
   suggest(
     query: string,
     options: { exclude?: string; accountIds?: readonly string[] },
-  ): ReturnType<MailboxService["suggestContacts"]>;
-  alternatives(address: string): ReturnType<MailboxService["contactAlternatives"]>;
+  ): ReturnType<MailboxService["compose"]["suggestContacts"]>;
+  alternatives(address: string): ReturnType<MailboxService["compose"]["contactAlternatives"]>;
   groups(
     query: string,
     accountIds?: readonly string[],
-  ): ReturnType<MailboxService["contactGroups"]>;
+  ): ReturnType<MailboxService["compose"]["contactGroups"]>;
   photo(accountId: string, address: string): ReturnType<MailboxService["calendar"]["contactPhoto"]>;
   knownSenders(
     accountId: string,
@@ -30,9 +30,9 @@ export interface ContactsBackend {
 
 /** Contacts from the mail accounts alone, without Apple Contacts. */
 export const accountContacts = (m: MailboxService): ContactsBackend => ({
-  suggest: (query, options) => m.suggestContacts(query, options),
-  alternatives: (address) => m.contactAlternatives(address),
-  groups: (query, accountIds) => m.contactGroups(query, accountIds),
+  suggest: (query, options) => m.compose.suggestContacts(query, options),
+  alternatives: (address) => m.compose.contactAlternatives(address),
+  groups: (query, accountIds) => m.compose.contactGroups(query, accountIds),
   photo: (accountId, address) =>
     Effect.flatMap(m.app.prefs, (prefs) =>
       prefs.contactPhotos ? m.calendar.contactPhoto(accountId, address) : Effect.succeed(null),
@@ -74,10 +74,10 @@ export function mailboxHandlers(m: MailboxService, options: MailboxHandlerOption
     RespondInvite: ({ messageId, key, response, label }) =>
       m.calendar.respondInvite(messageId, key, response, USER, label),
     ContactSync: () => m.calendar.contactSync,
-    ImageFromUrl: ({ url }) => m.imageFromUrl(url),
-    ImageFromFile: ({ file }) => m.imageFromFile(file),
+    ImageFromUrl: ({ url }) => m.compose.imageFromUrl(url),
+    ImageFromFile: ({ file }) => m.compose.imageFromFile(file),
     SuggestSender: ({ current, recipients, accountIds }) =>
-      m.suggestSender(current, recipients, accountIds),
+      m.compose.suggestSender(current, recipients, accountIds),
     RefreshContacts: ({ accountId }) => m.calendar.refreshContacts(accountId),
 
     Threads: ({ query }) => m.threads(query),
@@ -193,34 +193,34 @@ export function mailboxHandlers(m: MailboxService, options: MailboxHandlerOption
       }),
     AwaitUndoSend: ({ id }) => m.outbox.awaitUndoSend(id),
     CancelWaitingSend: ({ id }) => m.outbox.cancelWaitingSend(id),
-    ComposeAttachments: ({ id }) => m.composeAttachments(id),
+    ComposeAttachments: ({ id }) => m.compose.composeAttachments(id),
     SendAgain: ({ id }) => m.outbox.sendAgain(id),
-    RecoverDraft: ({ id, action, draft }) => m.recoverDraft(id, action, draft),
-    OpenDraft: ({ id }) => m.openDraft(id),
-    DraftStatus: ({ id }) => m.draftStatus(id),
-    SaveDraft: ({ draft }) => m.saveDraft(draft),
+    RecoverDraft: ({ id, action, draft }) => m.compose.recoverDraft(id, action, draft),
+    OpenDraft: ({ id }) => m.compose.openDraft(id),
+    DraftStatus: ({ id }) => m.compose.draftStatus(id),
+    SaveDraft: ({ draft }) => m.compose.saveDraft(draft),
     DiscardDraft: ({ id, holdMs }) =>
       holdMs && holdMs > 0
-        ? m.discardDraftLater(id, Math.min(holdMs, MAX_DISCARD_HOLD_MS))
-        : m.discardDraft(id).pipe(Effect.as(false)),
-    RestoreDraft: ({ id }) => m.restoreDraft(id),
+        ? m.compose.discardDraftLater(id, Math.min(holdMs, MAX_DISCARD_HOLD_MS))
+        : m.compose.discardDraft(id).pipe(Effect.as(false)),
+    RestoreDraft: ({ id }) => m.compose.restoreDraft(id),
 
     CacheSize: () => m.cacheSize,
     ClearCache: ({ accountId }) => m.clearCache(accountId),
     InitializeProfiles: ({ accept, names }) => m.initializeProfiles(accept, names),
     Prefs: () => m.app.prefs,
-    NamedSignatures: () => m.namedSignatures,
-    SignatureDefaults: () => m.signatureDefaults,
-    SaveNamedSignature: ({ input, id }) => m.saveNamedSignature(input, id),
-    DeleteNamedSignature: ({ id }) => m.deleteNamedSignature(id),
-    SetSignatureDefault: ({ setting }) => m.setSignatureDefault(setting),
-    Signatures: () => m.signatures,
-    Templates: () => m.templates,
-    SaveTemplate: ({ input, id }) => m.saveTemplate(input, id),
-    DeleteTemplate: ({ id }) => m.deleteTemplate(id),
-    HiddenContacts: () => m.hiddenContacts,
-    SetContactHidden: ({ address, hidden }) => m.setContactHidden(address, hidden),
-    PrepareRejectedResend: ({ noticeId }) => m.prepareRejectedResend(noticeId),
+    NamedSignatures: () => m.compose.namedSignatures,
+    SignatureDefaults: () => m.compose.signatureDefaults,
+    SaveNamedSignature: ({ input, id }) => m.compose.saveNamedSignature(input, id),
+    DeleteNamedSignature: ({ id }) => m.compose.deleteNamedSignature(id),
+    SetSignatureDefault: ({ setting }) => m.compose.setSignatureDefault(setting),
+    Signatures: () => m.compose.signatures,
+    Templates: () => m.compose.templates,
+    SaveTemplate: ({ input, id }) => m.compose.saveTemplate(input, id),
+    DeleteTemplate: ({ id }) => m.compose.deleteTemplate(id),
+    HiddenContacts: () => m.compose.hiddenContacts,
+    SetContactHidden: ({ address, hidden }) => m.compose.setContactHidden(address, hidden),
+    PrepareRejectedResend: ({ noticeId }) => m.compose.prepareRejectedResend(noticeId),
     FailedOps: () => m.listFailedOps,
     AcknowledgeFailedOps: ({ ids }) => m.acknowledgeFailedOps(ids),
     Audit: ({ limit }) => m.audit(limit),

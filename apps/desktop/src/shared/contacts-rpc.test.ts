@@ -124,7 +124,7 @@ for (const denied of [
         yield* client.RefreshContacts({ accountId });
         expect(calls.length).toBe(attempts);
         expect((yield* mailbox.accounts)[0]?.needsReauth).toBe(false);
-        expect(yield* mailbox.suggestContacts("fake")).toEqual([]);
+        expect(yield* mailbox.compose.suggestContacts("fake")).toEqual([]);
         expect(yield* mailbox.calendar.contactPhoto(accountId, "fake@example.com")).toBeNull();
       }).pipe(Effect.scoped, Effect.provide(layer)),
     );

@@ -752,9 +752,9 @@ it.effect(
             },
           ],
         });
-        const opened = yield* mailbox.openDraft(`${saved.id}/draft`);
+        const opened = yield* mailbox.compose.openDraft(`${saved.id}/draft`);
         assert.strictEqual(opened.message.attachments.length, 1);
-        const again = yield* mailbox.saveDraft({
+        const again = yield* mailbox.compose.saveDraft({
           id: opened.id,
           accountId: saved.id,
           message: { ...opened.message, text: "Edited message text" },

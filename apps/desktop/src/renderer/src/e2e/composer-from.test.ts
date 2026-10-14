@@ -53,7 +53,7 @@ for (const synced of [true, false])
       expect(screen.getByRole("textbox", { name: "Subject" })).toHaveProperty("value", "Reopened"),
     );
     if (!h.composeId) throw new Error("Missing stored draft");
-    expect((await h.run(h.m.openDraft(h.composeId))).synced).toBe(synced);
+    expect((await h.run(h.m.compose.openDraft(h.composeId))).synced).toBe(synced);
     await settle();
     expect(suggestions(h)).toHaveLength(0);
   });

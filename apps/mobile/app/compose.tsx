@@ -83,7 +83,7 @@ export default function Compose() {
         (message) =>
           runtime.runPromise(
             Effect.flatMap(Mailbox, (mailbox) =>
-              mailbox.saveDraft({
+              mailbox.compose.saveDraft({
                 id: draft?.id ?? id,
                 accountId: draft?.accountId ?? params.accountId,
                 message,
@@ -92,7 +92,7 @@ export default function Compose() {
           ),
         () =>
           runtime.runPromise(
-            Effect.flatMap(Mailbox, (mailbox) => mailbox.discardDraft(draft?.id ?? id)),
+            Effect.flatMap(Mailbox, (mailbox) => mailbox.compose.discardDraft(draft?.id ?? id)),
           ),
       ),
     [runtime, id, params.accountId, draft?.id, draft?.accountId],
@@ -103,7 +103,7 @@ export default function Compose() {
       .runPromise(
         Effect.flatMap(Mailbox, (mailbox) =>
           Effect.gen(function* () {
-            if (params.draftId) return yield* mailbox.openDraft(params.draftId);
+            if (params.draftId) return yield* mailbox.compose.openDraft(params.draftId);
             const original = params.messageId
               ? (yield* mailbox.readerThread(params.messageId)).find(
                   (message) => message.id === params.messageId,
@@ -124,7 +124,9 @@ export default function Compose() {
               ),
             );
             const attachments =
-              mode === "forward" && original ? yield* mailbox.composeAttachments(original.id) : [];
+              mode === "forward" && original
+                ? yield* mailbox.compose.composeAttachments(original.id)
+                : [];
             return { id, accountId: params.accountId, message: { ...message, attachments } };
           }),
         ),
@@ -147,8 +149,8 @@ export default function Compose() {
                 const account = accounts.find((entry) => entry.id === value.accountId);
                 const selected = account
                   ? signatureDefault(
-                      yield* mailbox.namedSignatures,
-                      yield* mailbox.signatureDefaults,
+                      yield* mailbox.compose.namedSignatures,
+                      yield* mailbox.compose.signatureDefaults,
                       value.message.from?.address ?? account.email,
                       value.message.mode === "new" ? "new" : "reply",
                     )
@@ -235,7 +237,7 @@ export default function Compose() {
       .runPromise(
         Effect.flatMap(Mailbox, (mailbox) =>
           query
-            ? mailbox.suggestContacts(query, { accountIds: [params.accountId], limit: 5 })
+            ? mailbox.compose.suggestContacts(query, { accountIds: [params.accountId], limit: 5 })
             : Effect.succeed([]),
         ),
       )

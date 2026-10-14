@@ -121,9 +121,9 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
         }).pipe(Effect.provide(layer()));
         yield* Effect.gen(function* () {
           const mailbox = yield* Mailbox;
-          const reopened = yield* mailbox.openDraft(draft.id);
+          const reopened = yield* mailbox.compose.openDraft(draft.id);
           assert.deepStrictEqual(reopened.message, draft.message);
-          yield* mailbox.discardDraft(draft.id);
+          yield* mailbox.compose.discardDraft(draft.id);
           assert.ok(server.messages.has("sent"));
         }).pipe(Effect.provide(layer()));
       }),
@@ -163,23 +163,23 @@ it.effect("an existing remote draft is unsynced while its edited save is queued"
     const account = yield* mailbox.connect({ provider: "gmail" });
     // Drain connect's detached sync before injecting a failure into the edited save.
     yield* mailbox.sync();
-    const draft = yield* mailbox.saveDraft({
+    const draft = yield* mailbox.compose.saveDraft({
       id: "draft:sync",
       accountId: account.id,
       message: outgoing,
     });
     assert.strictEqual(draft.synced, true);
     server.failNext = new ProviderError({ message: "offline" });
-    const edited = yield* mailbox.saveDraft({
+    const edited = yield* mailbox.compose.saveDraft({
       id: draft.id,
       accountId: account.id,
       message: { ...outgoing, subject: "Edited" },
     });
     assert.strictEqual(edited.synced, false);
-    assert.strictEqual((yield* mailbox.openDraft(draft.id)).synced, false);
+    assert.strictEqual((yield* mailbox.compose.openDraft(draft.id)).synced, false);
     yield* TestClock.adjust("5 seconds");
     yield* mailbox.sync();
-    assert.strictEqual((yield* mailbox.openDraft(draft.id)).synced, true);
+    assert.strictEqual((yield* mailbox.compose.openDraft(draft.id)).synced, true);
   }).pipe(Effect.provide(TestMailbox({ gmail: server })));
 });
 
@@ -265,9 +265,9 @@ it.effect(
       const fixed = { accountId: "gmail:me@example.com", address: "alias@example.com" };
       yield* Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        assert.deepStrictEqual((yield* mailbox.templates)[0]?.bcc, []);
+        assert.deepStrictEqual((yield* mailbox.compose.templates)[0]?.bcc, []);
         yield* mailbox.app.setPrefs({ defaultFrom: fixed });
-        yield* mailbox.saveTemplate(
+        yield* mailbox.compose.saveTemplate(
           {
             name: "New",
             subject: "Subject",
@@ -281,7 +281,7 @@ it.effect(
       }).pipe(Effect.provide(layer()));
       yield* Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        assert.deepStrictEqual((yield* mailbox.templates)[0]?.bcc, outgoing.bcc);
+        assert.deepStrictEqual((yield* mailbox.compose.templates)[0]?.bcc, outgoing.bcc);
         assert.deepStrictEqual((yield* mailbox.app.prefs).defaultFrom, fixed);
         yield* mailbox.app.setPrefs({ defaultFrom: null });
         assert.strictEqual((yield* mailbox.app.prefs).defaultFrom, DEFAULT_PREFS.defaultFrom);

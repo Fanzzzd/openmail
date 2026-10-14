@@ -130,7 +130,7 @@ import type { OutgoingMessage } from "../domain/changes.js";
           actor,
         );
         assert.strictEqual((yield* store.getMessage(`${account.id}/one`)).isUnread, true);
-        yield* mailbox.saveDraft({ id: "local", accountId: account.id, message: outgoing });
+        yield* mailbox.compose.saveDraft({ id: "local", accountId: account.id, message: outgoing });
         assert.strictEqual(
           Option.getOrThrow(yield* store.getDraft("local")).message.subject,
           "Local draft",

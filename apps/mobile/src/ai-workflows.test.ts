@@ -173,7 +173,7 @@ it("assistant archive, label and draft writes stay proposals even in allow mode,
           ).toBe("Failure");
           yield* mailbox.decideProposal(proposal.id, true, "app");
           if (proposal.command.kind === "draft") {
-            const draft = yield* mailbox.openDraft(`proposal:${proposal.id}`);
+            const draft = yield* mailbox.compose.openDraft(`proposal:${proposal.id}`);
             expect(draft.message.text).toBe("Proposed reply");
           }
         }
@@ -218,12 +218,12 @@ it("compose help returns a proposal without overwriting the saved draft or sendi
             { filename: "PRIVATE_ATTACHMENT", mimeType: "image/png", content: "PRIVATE_BYTES" },
           ],
         };
-        const draft = yield* mailbox.saveDraft({
+        const draft = yield* mailbox.compose.saveDraft({
           id: "draft:mobile-ai",
           accountId: account.id,
           message,
         });
-        const before = (yield* mailbox.openDraft(draft.id)).message;
+        const before = (yield* mailbox.compose.openDraft(draft.id)).message;
         const text = yield* aiResponse(
           mailbox.ai.composeAi({
             accountId: account.id,
@@ -235,13 +235,13 @@ it("compose help returns a proposal without overwriting the saved draft or sendi
         expect(requests[0]?.prompt).not.toMatch(
           /HIDDEN_SECRET|PRIVATE_ATTACHMENT|PRIVATE_BYTES|private\.test/,
         );
-        expect((yield* mailbox.openDraft(draft.id)).message).toEqual(before);
-        yield* mailbox.saveDraft({
+        expect((yield* mailbox.compose.openDraft(draft.id)).message).toEqual(before);
+        yield* mailbox.compose.saveDraft({
           id: draft.id,
           accountId: account.id,
           message: { ...message, text, html: undefined },
         });
-        expect((yield* mailbox.openDraft(draft.id)).message.text).toBe(text);
+        expect((yield* mailbox.compose.openDraft(draft.id)).message.text).toBe(text);
         expect(yield* mailbox.outbox.queuedSends).toEqual([]);
       }),
     );
@@ -290,13 +290,13 @@ for (const provider of ["gmail", "outlook", "imap"] as const)
               : { provider },
           );
           yield* mailbox.sync();
-          const signature = yield* mailbox.saveNamedSignature({
+          const signature = yield* mailbox.compose.saveNamedSignature({
             address: account.email,
             name: "Mobile",
             text: "My signature",
           });
           for (const kind of ["new", "reply"] as const)
-            yield* mailbox.setSignatureDefault({
+            yield* mailbox.compose.setSignatureDefault({
               address: account.email,
               kind,
               signatureId: signature.id,
@@ -313,7 +313,7 @@ for (const provider of ["gmail", "outlook", "imap"] as const)
               composeMessage("reply", original, [account.email]),
             )).text,
           ).toContain("My signature");
-          yield* mailbox.setSignatureDefault({
+          yield* mailbox.compose.setSignatureDefault({
             address: account.email,
             kind: "new",
             signatureId: null,

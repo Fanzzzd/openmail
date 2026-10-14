@@ -41,13 +41,17 @@ import { applyComposeSignature } from "./compose-transport.js";
       const session = sessions(join(directory, "mail.db"), fakeServer("me@example.com"));
       const ids = yield* Effect.gen(function* () {
         const m = yield* Mailbox;
-        const a = yield* m.saveNamedSignature({
+        const a = yield* m.compose.saveNamedSignature({
           address: "me@example.com",
           name: "A",
           text: "Ignored",
           html: '<b>A</b><span style="color:#ff0000">Red</span><script>PRIVATE_SCRIPT</script><img src="https://tracker.invalid"><a href="javascript:bad()">link</a>',
         });
-        const b = yield* m.saveNamedSignature({ address: "me@example.com", name: "B", text: "B" });
+        const b = yield* m.compose.saveNamedSignature({
+          address: "me@example.com",
+          name: "B",
+          text: "B",
+        });
         assert.ok(a.html?.includes("<strong>A</strong>"));
         assert.ok(!/PRIVATE_SCRIPT|tracker|javascript/.test(a.html ?? ""));
         yield* m.app.setPrefs({
@@ -63,7 +67,7 @@ import { applyComposeSignature } from "./compose-transport.js";
         assert.strictEqual(prefs.signaturePosition, "below");
         assert.strictEqual(prefs.signatureSeparator, false);
         assert.deepStrictEqual(
-          orderedSignatures(yield* m.namedSignatures, prefs.signatureOrder).map(
+          orderedSignatures(yield* m.compose.namedSignatures, prefs.signatureOrder).map(
             (signature) => signature.id,
           ),
           ids,

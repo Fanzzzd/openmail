@@ -93,7 +93,7 @@ export function FailedOpNotice() {
     setResendError(false);
     try {
       const draft = await runtime.runPromise(
-        Effect.flatMap(Mailbox, (mailbox) => mailbox.prepareRejectedResend(noticeId)),
+        Effect.flatMap(Mailbox, (mailbox) => mailbox.compose.prepareRejectedResend(noticeId)),
       );
       setExpanded(false);
       router.push({

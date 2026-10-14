@@ -71,7 +71,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
             readingPanePosition: "bottom",
             sidebarVisible: false,
           });
-          const saved = yield* mailbox.saveDraft({
+          const saved = yield* mailbox.compose.saveDraft({
             id: "draft:organization",
             accountId,
             message: { ...message, draftOrganization: organization },
@@ -86,13 +86,13 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
         }).pipe(Effect.provide(layer()));
         yield* Effect.gen(function* () {
           const mailbox = yield* Mailbox;
-          const opened = yield* mailbox.openDraft("draft:organization");
+          const opened = yield* mailbox.compose.openDraft("draft:organization");
           assert.deepStrictEqual(opened.message.draftOrganization, organization);
           const prefs = yield* mailbox.app.prefs;
           assert.strictEqual(prefs.deleteKeyAction, "ask");
           assert.strictEqual(prefs.readingPanePosition, "bottom");
           assert.strictEqual(prefs.sidebarVisible, false);
-          yield* mailbox.saveDraft({
+          yield* mailbox.compose.saveDraft({
             id: opened.id,
             accountId,
             message: { ...opened.message, text: "Edited" },
@@ -107,7 +107,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
           const rows = yield* mailbox.threads({ mailbox: "drafts" });
           assert.strictEqual(rows.length, 1);
           assert.strictEqual(rows[0]?.isStarred, true);
-          yield* mailbox.saveDraft({
+          yield* mailbox.compose.saveDraft({
             id: opened.id,
             accountId,
             message: { ...opened.message, draftOrganization: { labels: [], starred: false } },
@@ -126,7 +126,7 @@ it.effect(
       const mailbox = yield* Mailbox;
       yield* mailbox.connect({ provider: "gmail" });
       const invalid = yield* Effect.flip(
-        mailbox.saveDraft({
+        mailbox.compose.saveDraft({
           id: "draft:invalid",
           accountId: "gmail:me@gmail.com",
           message: { ...message, draftOrganization: { labels: ["TRASH"], starred: false } },
@@ -148,7 +148,7 @@ it.effect(
       });
       for (const label of ["\\Flagged", "space word", "Work\nInjected"]) {
         const rejected = yield* Effect.flip(
-          mailbox.saveDraft({
+          mailbox.compose.saveDraft({
             id: "draft:invalid-imap",
             accountId: "imap:me@example.com",
             message: { ...message, draftOrganization: { labels: [label], starred: true } },
@@ -207,9 +207,9 @@ for (const provider of ["outlook", "imap"] satisfies Provider[]) {
             : { provider },
         );
         yield* mailbox.sync();
-        const opened = yield* mailbox.openDraft(`${provider}:${server.email}/remote`);
+        const opened = yield* mailbox.compose.openDraft(`${provider}:${server.email}/remote`);
         assert.strictEqual(opened.message.draftOrganization, undefined);
-        yield* mailbox.saveDraft({
+        yield* mailbox.compose.saveDraft({
           id: opened.id,
           accountId: opened.accountId,
           message: { ...opened.message, text: "Edited" },
@@ -252,7 +252,7 @@ it.effect(
     return Effect.gen(function* () {
       const mailbox = yield* Mailbox;
       yield* mailbox.connect({ provider: "outlook" });
-      const saved = yield* mailbox.saveDraft({
+      const saved = yield* mailbox.compose.saveDraft({
         id: "draft:decorator",
         accountId: "outlook:me@example.com",
         message: { ...message, draftOrganization: { labels: ["Label_work"], starred: true } },
@@ -306,7 +306,7 @@ for (const provider of ["outlook", "imap"] satisfies Provider[]) {
         const original = { labels: ["Work"], starred: true };
         // Connect starts a detached pull; finish it before asserting inline draft pushes.
         yield* mailbox.sync(accountId);
-        const saved = yield* mailbox.saveDraft({
+        const saved = yield* mailbox.compose.saveDraft({
           id: "draft:remote-edit",
           accountId,
           message: { ...message, draftOrganization: original },
@@ -318,7 +318,7 @@ for (const provider of ["outlook", "imap"] satisfies Provider[]) {
           labels: ["DRAFT", "Other"],
           isStarred: false,
         });
-        yield* mailbox.saveDraft({
+        yield* mailbox.compose.saveDraft({
           id: saved.id,
           accountId,
           message: { ...saved.message, text: "New body" },
@@ -328,7 +328,7 @@ for (const provider of ["outlook", "imap"] satisfies Provider[]) {
         assert.strictEqual(last.push.message.draftOrganization, undefined);
         assert.strictEqual([...server.messages.values()][0]?.isStarred, false);
         assert.deepStrictEqual([...server.messages.values()][0]?.labels, ["DRAFT", "Other"]);
-        yield* mailbox.saveDraft({
+        yield* mailbox.compose.saveDraft({
           id: saved.id,
           accountId,
           message: { ...saved.message, draftOrganization: { labels: [], starred: false } },

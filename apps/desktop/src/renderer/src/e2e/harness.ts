@@ -230,13 +230,14 @@ export async function flow(
   let composeId: string | undefined;
   if (options.serverDraft) {
     server.raw.set(options.serverDraft.providerId, options.serverDraft.raw);
-    composeId = (await run(m.openDraft(`${account.id}/${options.serverDraft.providerId}`))).id;
+    composeId = (await run(m.compose.openDraft(`${account.id}/${options.serverDraft.providerId}`)))
+      .id;
   }
   if (options.storedDraft) {
     server.failNext = options.storedDraft.failPush;
     composeId = (
       await run(
-        m.saveDraft({
+        m.compose.saveDraft({
           id: `draft:${crypto.randomUUID()}`,
           accountId: account.id,
           message: options.storedDraft.message,
@@ -257,7 +258,7 @@ export async function flow(
       ),
     );
     if (outcome.status !== "proposed") throw new Error("Agent draft was not proposed");
-    composeId = (await run(m.openDraft(`proposal:${outcome.proposalId}`))).id;
+    composeId = (await run(m.compose.openDraft(`proposal:${outcome.proposalId}`))).id;
   }
   const desktop = await Effect.runPromise(PubSub.unbounded<DesktopEvent>());
   const desktopReady = await Effect.runPromise(Deferred.make<void>());
@@ -338,7 +339,7 @@ export async function flow(
       OpenSettings: () => Effect.void,
       OpenComposeWindow: unsupported,
       ComposeWindowDraft: ({ id }) =>
-        m.openDraft(id).pipe(Effect.map((draft) => ({ draft, recipients: null }))),
+        m.compose.openDraft(id).pipe(Effect.map((draft) => ({ draft, recipients: null }))),
       CloseComposeWindow: unsupported,
       Diagnostics: unsupported,
       DismissCrashReport: unsupported,
@@ -369,7 +370,7 @@ export async function flow(
       AppleContactsStatus: () => Effect.succeed({ status: "off", revision: 0 }),
       RefreshAppleContacts: () => Effect.succeed({ status: "off", revision: 0 }),
       AppleContactIdentifier: () => Effect.succeed(null),
-      ContactGroups: ({ query, accountIds }) => m.contactGroups(query, accountIds),
+      ContactGroups: ({ query, accountIds }) => m.compose.contactGroups(query, accountIds),
       ContactPhoto: ({ accountId, address }) => m.calendar.contactPhoto(accountId, address),
       AttachmentCapabilities: () => Effect.succeed({ share: Boolean(options.native) }),
       UpdateState: () => Effect.succeed({ status: "disabled" }),
@@ -381,8 +382,8 @@ export async function flow(
         rendererPrefs(patch).pipe(Effect.flatMap((value) => m.app.setPrefs(value))),
       ChooseAttachmentFolder: unsupported,
       SuggestContacts: ({ query, exclude, accountIds }) =>
-        m.suggestContacts(query, { exclude, accountIds }),
-      ContactAlternatives: ({ address }) => m.contactAlternatives(address),
+        m.compose.suggestContacts(query, { exclude, accountIds }),
+      ContactAlternatives: ({ address }) => m.compose.contactAlternatives(address),
       ImportCalendarAttachment: unsupported,
       InspectAttachment: unsupported,
       Unsubscribe: unsupported,

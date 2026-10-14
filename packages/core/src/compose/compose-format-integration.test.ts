@@ -72,7 +72,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
             composeSmartLists: false,
             composeMarkdownReplacement: false,
           });
-          const saved = yield* mailbox.saveDraft({
+          const saved = yield* mailbox.compose.saveDraft({
             id: "draft:format",
             accountId: `${provider}:${server.email}`,
             message: {
@@ -96,7 +96,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
           assert.strictEqual(prefs.composeFormatBar, false);
           assert.strictEqual(prefs.composeSmartLists, false);
           assert.strictEqual(prefs.composeMarkdownReplacement, false);
-          const draft = yield* mailbox.openDraft(id);
+          const draft = yield* mailbox.compose.openDraft(id);
           assert.strictEqual(draft.message.html, body.html);
           assert.strictEqual(composeHtmlHasUnsupported(draft.message.html ?? ""), false);
           yield* mailbox.perform(

@@ -137,21 +137,21 @@ import { GMAIL_PERMANENT_DELETE_SCOPE } from "../domain/folder-actions.js";
           yield* m.reauth(account.id, "contacts");
           assert.strictEqual((yield* m.optionalServices(account.id))[0]?.state, "granted");
           assert.ok(
-            (yield* m.suggestContacts("provider")).some(
+            (yield* m.compose.suggestContacts("provider")).some(
               (contact) => contact.address === "provider@example.com",
             ),
           );
           yield* m.setServiceEnabled(account.id, "contacts", false);
           assert.strictEqual((yield* m.optionalServices(account.id))[0]?.state, "turnedOff");
           yield* m.calendar.refreshContacts(account.id);
-          assert.deepStrictEqual(yield* m.suggestContacts("provider"), []);
+          assert.deepStrictEqual(yield* m.compose.suggestContacts("provider"), []);
           assert.deepStrictEqual(yield* store.disabledServices(account.id), ["contacts"]);
           assert.deepStrictEqual(yield* store.grantedScopes(account.id), server.grantedScopes);
           yield* m.sync();
           assert.strictEqual((yield* m.accounts)[0]?.needsReauth, false);
           yield* m.setServiceEnabled(account.id, "contacts", true);
           assert.strictEqual((yield* m.optionalServices(account.id))[0]?.state, "granted");
-          assert.ok((yield* m.suggestContacts("provider")).length);
+          assert.ok((yield* m.compose.suggestContacts("provider")).length);
           const denied = yield* m.reauth(account.id, "calendar").pipe(Effect.result);
           assert.strictEqual(
             denied._tag === "Failure" && denied.failure._tag,
@@ -246,8 +246,8 @@ import { GMAIL_PERMANENT_DELETE_SCOPE } from "../domain/folder-actions.js";
           yield* m.setServiceEnabled(account.id, "contacts", false);
           yield* Deferred.succeed(finish, undefined);
           yield* Fiber.join(refresh);
-          assert.deepStrictEqual(yield* m.suggestContacts("late"), []);
-          assert.deepStrictEqual(yield* m.contactGroups(""), []);
+          assert.deepStrictEqual(yield* m.compose.suggestContacts("late"), []);
+          assert.deepStrictEqual(yield* m.compose.contactGroups(""), []);
           assert.strictEqual((yield* m.optionalServices(account.id))[0]?.state, "turnedOff");
         }).pipe(
           Effect.provide(
@@ -334,7 +334,7 @@ import { GMAIL_PERMANENT_DELETE_SCOPE } from "../domain/folder-actions.js";
               ),
             );
             assert.ok(
-              (yield* m.suggestContacts("old")).some(
+              (yield* m.compose.suggestContacts("old")).some(
                 (contact) => contact.address === "old@example.com",
               ),
             );
@@ -343,7 +343,7 @@ import { GMAIL_PERMANENT_DELETE_SCOPE } from "../domain/folder-actions.js";
           }).pipe(Effect.provide(layer()));
           yield* Effect.gen(function* () {
             const m = yield* Mailbox;
-            assert.ok((yield* m.suggestContacts("old")).length);
+            assert.ok((yield* m.compose.suggestContacts("old")).length);
             assert.ok((yield* m.sendAs).length);
             assert.strictEqual((yield* m.optionalServices(accountId))[0]?.state, "granted");
           }).pipe(Effect.provide(layer()));
@@ -476,7 +476,7 @@ import { GMAIL_PERMANENT_DELETE_SCOPE } from "../domain/folder-actions.js";
     return Effect.gen(function* () {
       const m = yield* Mailbox;
       const account = yield* m.connect({ provider: "gmail" });
-      const draft = yield* m.saveDraft({
+      const draft = yield* m.compose.saveDraft({
         id: "draft:flags-real",
         accountId: account.id,
         message: {
@@ -493,7 +493,7 @@ import { GMAIL_PERMANENT_DELETE_SCOPE } from "../domain/folder-actions.js";
       flagsOnly = true;
       yield* m.sync();
       assert.strictEqual((yield* m.threads({ mailbox: "drafts" }))[0]?.isStarred, true);
-      yield* m.saveDraft({
+      yield* m.compose.saveDraft({
         id: draft.id,
         accountId: account.id,
         message: { ...draft.message, draftOrganization: { labels: [], starred: false } },

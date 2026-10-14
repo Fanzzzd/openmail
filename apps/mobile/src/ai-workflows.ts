@@ -34,8 +34,8 @@ export function signedMobileMessage(
     const account = (yield* mailbox.accounts).find((entry) => entry.id === accountId);
     if (!account) return message;
     const signature = signatureDefault(
-      yield* mailbox.namedSignatures,
-      yield* mailbox.signatureDefaults,
+      yield* mailbox.compose.namedSignatures,
+      yield* mailbox.compose.signatureDefaults,
       account.email,
       message.mode === "new" ? "new" : "reply",
     );

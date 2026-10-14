@@ -632,7 +632,6 @@ export class Mailbox extends Context.Service<
   MailboxReading &
     MailboxOrganize &
     MailboxProposals &
-    MailboxCompose &
     MailboxAccounts &
     MailboxSync & {
       readonly reading: MailboxReading;

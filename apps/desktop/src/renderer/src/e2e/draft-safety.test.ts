@@ -67,7 +67,9 @@ it("discard holds the provider delete for Undo, which reopens the latest typing"
   expect(screen.getByRole("textbox", { name: "Body" }).textContent).toContain("Unsaved words");
   await advance(30_000);
   expect(h.server.drafts.size).toBe(1);
-  expect((await h.run(h.m.openDraft(savedDraftId(h)))).message.text).toContain("Unsaved words");
+  expect((await h.run(h.m.compose.openDraft(savedDraftId(h)))).message.text).toContain(
+    "Unsaved words",
+  );
 
   clickButton("Discard draft");
   await eventually(() =>
@@ -176,5 +178,5 @@ it("discarding in a compose window holds the draft and asks the main window to o
   expect(discard).toMatchObject({ holdMs: 15_000 });
   const id =
     typeof discard === "object" && discard !== null && "id" in discard ? String(discard.id) : "";
-  expect((await h.run(h.m.restoreDraft(id))).message.subject).toBe("Window draft");
+  expect((await h.run(h.m.compose.restoreDraft(id))).message.subject).toBe("Window draft");
 });

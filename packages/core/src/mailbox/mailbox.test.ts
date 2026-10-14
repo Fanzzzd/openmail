@@ -680,8 +680,8 @@ it.effect(
         { kind: "agent", surface: "mcp", name: "client" },
       );
       assert.ok(proposal.status === "proposed");
-      const draft = yield* mailbox.openDraft(`proposal:${proposal.proposalId}`);
-      yield* mailbox.saveDraft(draft);
+      const draft = yield* mailbox.compose.openDraft(`proposal:${proposal.proposalId}`);
+      yield* mailbox.compose.saveDraft(draft);
       assert.strictEqual(server.drafts.size, 1);
       // Simulate a temporary provider failure. The delete intent must remain durable.
       server.failNext = new ProviderError({ message: "Offline", deferred: true });
@@ -690,7 +690,7 @@ it.effect(
         allowed: false,
         autoSummaries: false,
       });
-      assert.isNull(yield* mailbox.draftStatus(draft.id));
+      assert.isNull(yield* mailbox.compose.draftStatus(draft.id));
       assert.ok((yield* store.listPendingOps).some((op) => op.op.kind === "deleteDraft"));
       yield* mailbox.sync(account.id);
       assert.deepStrictEqual(yield* mailbox.threads({ mailbox: "drafts" }), []);

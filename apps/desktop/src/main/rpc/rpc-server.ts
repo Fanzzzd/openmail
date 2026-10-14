@@ -255,7 +255,7 @@ const Handlers = MailRpcs.toLayer(
       ClaimInlineDraft: ({ id }, { client }) =>
         Effect.sync(() => claimInlineDraft(windowOf(client.id), id)),
       OpenComposeWindow: ({ id, recipients, transfer }, { client }) =>
-        m.openDraft(id).pipe(
+        m.compose.openDraft(id).pipe(
           Effect.andThen(
             Effect.sync(() => {
               const win = openComposeWindow(
@@ -268,7 +268,7 @@ const Handlers = MailRpcs.toLayer(
           ),
         ),
       ComposeWindowDraft: ({ id }, { client }) =>
-        m.openDraft(id).pipe(
+        m.compose.openDraft(id).pipe(
           Effect.map((draft) => {
             const win = windowOf(client.id);
             registerComposeDraft(win, draft.id);

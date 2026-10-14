@@ -193,8 +193,8 @@ export function MobileSignatures({ account }: { account: Account }) {
           Effect.flatMap(Mailbox, (mailbox) =>
             Effect.gen(function* () {
               return {
-                library: yield* mailbox.namedSignatures,
-                defaults: yield* mailbox.signatureDefaults,
+                library: yield* mailbox.compose.namedSignatures,
+                defaults: yield* mailbox.compose.signatureDefaults,
               };
             }),
           ),
@@ -211,7 +211,7 @@ export function MobileSignatures({ account }: { account: Account }) {
         Effect.flatMap(Mailbox, (mailbox) =>
           Effect.gen(function* () {
             const signature = edit.text.trim()
-              ? yield* mailbox.saveNamedSignature(
+              ? yield* mailbox.compose.saveNamedSignature(
                   {
                     address: account.email,
                     name: edit.signature?.name ?? account.email,
@@ -220,7 +220,7 @@ export function MobileSignatures({ account }: { account: Account }) {
                   edit.signature?.source === "local" ? edit.signature.id : undefined,
                 )
               : null;
-            yield* mailbox.setSignatureDefault({
+            yield* mailbox.compose.setSignatureDefault({
               address: account.email.toLowerCase(),
               kind: edit.kind,
               signatureId: signature?.id ?? null,

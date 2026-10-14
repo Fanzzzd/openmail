@@ -37,7 +37,9 @@ import type { OutgoingMessage } from "../domain/changes.js";
           yield* mailbox.outbox.flushQueuedSends();
           expect(server.sent).toEqual([]);
           expect(yield* mailbox.outbox.cancelQueuedSend(draft.id)).toBe(true);
-          expect((yield* mailbox.openDraft(draft.id)).message.subject).toBe(message.subject);
+          expect((yield* mailbox.compose.openDraft(draft.id)).message.subject).toBe(
+            message.subject,
+          );
         }),
       );
     } finally {
@@ -158,7 +160,7 @@ import type { OutgoingMessage } from "../domain/changes.js";
           expect((yield* mailbox.outbox.queuedSends)[0]?.status).toBe("waiting");
           expect(yield* mailbox.outbox.cancelWaitingSend("draft:interrupted")).toBe(true);
           expect(
-            (yield* mailbox.openDraft("draft:interrupted")).message.attachments[0]?.content,
+            (yield* mailbox.compose.openDraft("draft:interrupted")).message.attachments[0]?.content,
           ).toBe("AQID");
         }),
       );
@@ -284,7 +286,7 @@ import type { OutgoingMessage } from "../domain/changes.js";
               (row) => row.id === input.id,
             ),
           ).toBe(true);
-          yield* mailbox.discardDraft(input.id);
+          yield* mailbox.compose.discardDraft(input.id);
           expect(yield* mailbox.outbox.queuedSends).toEqual([]);
           expect(yield* mailbox.threads({ accountIds: [account.id], mailbox: "drafts" })).toEqual(
             [],
@@ -349,17 +351,19 @@ import type { OutgoingMessage } from "../domain/changes.js";
             }
             const snooze = yield* mailbox.snoozeWithUndo([row.id], Date.now() + 86400000);
             yield* mailbox.undoBatch(snooze.undoId);
-            expect((yield* mailbox.suggestContacts("alice"))[0]?.address).toBe(
+            expect((yield* mailbox.compose.suggestContacts("alice"))[0]?.address).toBe(
               "alice@example.test",
             );
             const draft = { id: "draft:mobile", accountId: account.id, message };
-            yield* mailbox.saveDraft(draft);
+            yield* mailbox.compose.saveDraft(draft);
             yield* mailbox.sync(account.id);
             expect(server.draftLog).toEqual([]);
-            expect((yield* mailbox.openDraft(draft.id)).message.html).not.toContain("script");
-            expect((yield* mailbox.openDraft(draft.id)).message.attachments[0]?.content).toBe(
-              "AQID",
+            expect((yield* mailbox.compose.openDraft(draft.id)).message.html).not.toContain(
+              "script",
             );
+            expect(
+              (yield* mailbox.compose.openDraft(draft.id)).message.attachments[0]?.content,
+            ).toBe("AQID");
             yield* mailbox.outbox.queueSend(draft, Date.now() + 60000);
             yield* mailbox.outbox.flushQueuedSends();
             expect(server.sent).toHaveLength(0);
