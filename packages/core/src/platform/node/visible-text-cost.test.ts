@@ -1,6 +1,7 @@
 import { performance } from "node:perf_hooks";
 import { expect, it, vi } from "vitest";
 import { visibleHtmlText } from "../../visible-text/visible-text.js";
+import { perfBudget } from "../../../test-support/perf-budget.js";
 import {
   makeDeclarationParser,
   visibleStylesheetRules,
@@ -16,7 +17,7 @@ it("95 KB mail with 5000 declarations retains all 5000 paragraphs", () => {
   const result = visibleHtmlText(html);
   const ms = performance.now() - start;
   expect(result.text.split("\n")).toHaveLength(5000);
-  if (performanceBudgets) expect(ms).toBeLessThan(1000);
+  if (performanceBudgets) expect(ms).toBeLessThan(perfBudget(1000));
 });
 it("20000 media groups share one parsed query and compact declaration body", () => {
   const parser = makeDeclarationParser();
@@ -37,7 +38,7 @@ it("20000 media groups share one parsed query and compact declaration body", () 
   expect(maximumDeclarations).toBe(1);
   expect(media).toHaveBeenCalledTimes(1);
   expect(styles.size).toBe(1);
-  if (performanceBudgets) expect(ms).toBeLessThan(200);
+  if (performanceBudgets) expect(ms).toBeLessThan(perfBudget(200));
 });
 
 it.each([300, 1000])("%i narrow media rules keep 5000 matching paragraphs hidden", (count) => {
@@ -48,7 +49,7 @@ it.each([300, 1000])("%i narrow media rules keep 5000 matching paragraphs hidden
   const html = `<style>.x{display:none}${rules}</style>${"<p class=x>x</p>".repeat(5000)}`;
   const start = performance.now();
   const result = visibleHtmlText(html);
-  if (performanceBudgets) expect(performance.now() - start).toBeLessThan(1000);
+  if (performanceBudgets) expect(performance.now() - start).toBeLessThan(perfBudget(1000));
   expect(result).toEqual({ text: "", hidden: true });
 });
 
@@ -63,5 +64,5 @@ it("a 1 MB message text is tokenized once for eight search terms", async () => {
   expect(text.length).toBeGreaterThan(1_000_000);
   // Quarterly, invoice, review, Café, and "team, budget" merged with budget.
   expect(ranges).toHaveLength(17_000 * 5);
-  if (performanceBudgets) expect(ms).toBeLessThan(100);
+  if (performanceBudgets) expect(ms).toBeLessThan(perfBudget(100));
 });

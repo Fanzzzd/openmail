@@ -12,6 +12,7 @@ import { visibleHtmlText } from "../../visible-text/visible-text.js";
 import { sanitizeReaderHtml } from "../../reader/reader-sanitize.js";
 import { structuredMailEvents } from "../../calendar/structured-events.js";
 import { incoming } from "./testing.js";
+import { PERF_FACTOR, perfBudget } from "../../../test-support/perf-budget.js";
 import {
   PerformanceMailbox,
   fixtureAccounts,
@@ -60,7 +61,10 @@ it.effect(
           `${JSON.stringify(
             {
               complete,
-              withinBudgets: results.every((result) => result.medianMs < result.budgetMs),
+              withinBudgets: results.every(
+                (result) => result.medianMs < perfBudget(result.budgetMs),
+              ),
+              budgetFactor: PERF_FACTOR,
               node: process.version,
               messages: 100_000,
               accounts: 3,
@@ -412,8 +416,8 @@ it.effect(
       for (const result of results)
         assert.isBelow(
           result.medianMs,
-          result.budgetMs,
-          `${result.name}: ${result.medianMs.toFixed(2)} ms exceeds ${result.budgetMs} ms`,
+          perfBudget(result.budgetMs),
+          `${result.name}: ${result.medianMs.toFixed(2)} ms exceeds ${perfBudget(result.budgetMs)} ms`,
         );
     }).pipe(
       Effect.provide(Layer.mergeAll(handlers, mailbox, AgentIdentity.fixed("mcp", "perf"))),
@@ -511,7 +515,8 @@ for (const messageCount of [20_000, 100_000]) {
           `${JSON.stringify({ messages: messageCount, exactMatches: 3, node: process.version, results }, null, 2)}\n`,
         );
         process.stdout.write(`Sparse report: ${reportPath}\n`);
-        for (const result of results) assert.isBelow(result.medianMs, result.budgetMs, result.name);
+        for (const result of results)
+          assert.isBelow(result.medianMs, perfBudget(result.budgetMs), result.name);
       }).pipe(Effect.provide(PerformanceMailbox()), Effect.ensuring(Effect.sync(trace.restore)));
     },
     { timeout: 1_200_000 },

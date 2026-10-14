@@ -16,6 +16,7 @@ import { syncHtml } from "./fixtures/sync-html.js";
 import { NodeHtmlText } from "./html-text.js";
 import { MemoryPlatform } from "./platform-memory.js";
 import { account } from "./testing.js";
+import { perfBudget } from "../../../test-support/perf-budget.js";
 
 const COUNT = 2000;
 const BLOCK_MS = 50;
@@ -180,8 +181,8 @@ it.skipIf(process.env.OPENMAIL_PERF !== "1")(
           );
           expect(result?.error).toBeUndefined();
           expect(result?.changed).toBe(COUNT);
-          expect(report.p99BlockMs).toBeLessThan(BLOCK_MS);
-          expect(report.longestBlockMs).toBeLessThan(300);
+          expect(report.p99BlockMs).toBeLessThan(perfBudget(BLOCK_MS));
+          expect(report.longestBlockMs).toBeLessThan(perfBudget(300));
           // Preemption on a busy machine shows up as late timers too.
           if (report.loadAverage[0]! < availableParallelism() / 2)
             expect(report.blocksOver50Ms).toBe(0);

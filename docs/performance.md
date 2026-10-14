@@ -16,7 +16,9 @@ OPENMAIL_PERF=1 OPENMAIL_PERF_REPORT=/tmp/openmail-performance.json pnpm test:pe
 
 大数据套件是 `packages/core/src/platform/node/performance-large.test.ts`，默认 `pnpm test` 排除它。默认套件中的 `performance-plans.test.ts` 集中检查真实 Store 查询。同步健康与分页用例只写 120 封邮件；联系人用例保留原有候选规模。它们检查索引使用、分页回绕、孤立草稿去重和 Unicode ID 顺序。150k 迁移用例仅在 `OPENMAIL_PERF=1` 时执行。MCP 测量调用真实 Toolkit handler 与 Mailbox，provider 使用进程内 fake，不发网络请求。
 
-`pnpm test:perf` 也运行 `visible-text-cost.test.ts`。日常套件的计时规则见[负载下的测试](testing.md#tests-under-load)。
+`pnpm test:perf` 也运行 `visible-text-cost.test.ts`。
+
+CI 中由 [perf.yml](../.github/workflows/perf.yml) 运行：每周一 06:00 UTC 定时，也可在 Actions 页手动触发（workflow_dispatch），不在每次 push 的 check 中运行。job 在 macos-latest 上先构建 core（同步测量从 `dist/` 加载 HTML worker），再执行 `pnpm test:perf`。套件只用 Node 和 `node:sqlite`，不开 Electron 窗口，不需要显示器或网络。共享 runner 噪声较大，job 设 `OPENMAIL_PERF_FACTOR=2`，所有墙钟预算乘以该系数；本地默认系数为 1，取值小于 1 或不是数字时按 1 处理。三份 JSON 报告（`OPENMAIL_PERF_REPORT`、`OPENMAIL_SPARSE_PERF_REPORT`、`OPENMAIL_SYNC_REPORT`）作为 `performance-report` artifact 上传，失败时也上传。系数实现见 `packages/core/test-support/perf-budget.ts`。日常套件的计时规则见[负载下的测试](testing.md#tests-under-load)。
 
 每项先执行一次并单独采集 `EXPLAIN QUERY PLAN`，再取五次热运行中位数；remap、invalidate 和实际淘汰取三次。写入每次在事务末尾回滚，重复测量使用相同状态。断言中位数低于下表预算，JSON 同时保留各次时延、最大值和测量结束时的一／五／十五分钟负载。fixture 生成、查询计划采集及索引完整性检查不计入时延。
 

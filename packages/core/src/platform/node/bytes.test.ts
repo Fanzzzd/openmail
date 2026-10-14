@@ -2,6 +2,7 @@ import { selectByteCodec } from "../bytes.js";
 import { performance } from "node:perf_hooks";
 import { expect, it } from "vitest";
 import { originalAttachment } from "../../compose/drafts.js";
+import { perfBudget } from "../../../test-support/perf-budget.js";
 
 it("encodes a 25 MB attachment as base64 on Node", () => {
   const data = new Uint8Array(25 * 1024 * 1024).fill(0x39);
@@ -11,7 +12,7 @@ it("encodes a 25 MB attachment as base64 on Node", () => {
   expect(attachment.content.length).toBe(Math.ceil(data.length / 3) * 4);
   expect(attachment.content.slice(0, 8)).toBe("OTk5OTk5");
   // Wall-clock budgets only hold on an idle machine; `pnpm test:perf` enforces them.
-  if (process.env.OPENMAIL_PERF === "1") expect(elapsed).toBeLessThan(50);
+  if (process.env.OPENMAIL_PERF === "1") expect(elapsed).toBeLessThan(perfBudget(50));
 });
 
 it("the byte codec fallback matches native encodings without a native Buffer", () => {
