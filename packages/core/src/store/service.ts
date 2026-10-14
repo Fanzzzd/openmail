@@ -128,6 +128,8 @@ export interface SmtpAcceptedSend {
   readonly at: number;
   /** Failed attempts to file the Sent copy. */
   readonly tries: number;
+  /** When the last failed attempt ended; retries back off from it. */
+  readonly lastTryAt: number | undefined;
   readonly subject: string | undefined;
   readonly sender: string | undefined;
 }
@@ -415,13 +417,13 @@ export class Store extends Context.Service<
     releaseSmtpAccepted(draftId: string, token: string): Effect.Effect<void>;
     clearSmtpAccepted(draftId: string): Effect.Effect<void>;
     /**
-     * Counts a failed Sent copy filing, keeps the first subject and sender it was given, and
-     * releases the claim.
+     * Counts a failed Sent copy filing at the current time, keeps the first subject and sender
+     * it was given, and releases the claim. False when there is no record for `draftId`.
      */
     noteSentCopyFailure(
       draftId: string,
       message: { subject: string; sender: string },
-    ): Effect.Effect<void>;
+    ): Effect.Effect<boolean>;
     readonly queuedSends: Effect.Effect<QueuedSend[]>;
     putQueuedSend(item: QueuedSend): Effect.Effect<void>;
     deleteQueuedSend(id: string): Effect.Effect<void>;

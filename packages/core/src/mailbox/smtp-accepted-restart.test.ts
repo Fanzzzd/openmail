@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { expect, it, vi } from "vitest";
 import { Effect, Layer, ManagedRuntime, Option } from "effect";
 import { TestClock } from "effect/testing";
+import { SqlClient } from "effect/sql";
 import { Mailbox } from "./mailbox.js";
 import { ProviderError } from "../domain/errors.js";
 import { fakeServer } from "../platform/node/fake-provider.js";
@@ -92,6 +93,13 @@ const restart = async (
   }
 };
 
+/** Moves every record's last failed try an hour back, as if that time had passed. */
+const backdateLastTry = Effect.gen(function* () {
+  // The test layer provides SqlClient without naming it in its type.
+  const sql = Option.getOrThrow(yield* Effect.serviceOption(SqlClient.SqlClient));
+  yield* sql`UPDATE prefs SET value_json=json_set(value_json,'$.lastTryAt',json_extract(value_json,'$.lastTryAt')-3600000) WHERE key LIKE 'smtp-accepted:%'`;
+});
+
 const settled = Effect.gen(function* () {
   const store = yield* Store;
   yield* Effect.promise(() =>
@@ -163,6 +171,8 @@ it("a Sent copy that fails at launch is filed on the next successful sync", asyn
         expect(yield* store.sendUncertain("draft:accepted")).toBe(false);
         expect(yield* mailbox.proposals.listFailedOps).toEqual([]);
         expect(server.sentCopies).toHaveLength(0);
+        // The retry after a failure waits an hour (R11 R2); that hour has passed.
+        yield* backdateLastTry;
         yield* mailbox.sync.sync(accountId);
         yield* settled;
         expect(server.sentCopies.map((copy) => new TextDecoder().decode(copy))).toEqual([

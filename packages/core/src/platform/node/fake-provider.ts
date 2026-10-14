@@ -90,6 +90,8 @@ export interface FakeServer {
   acceptedMarks?: number;
   /** Runs after SMTP acceptance is reported, while the live send still holds its record. */
   afterAccepted?: Effect.Effect<void>;
+  /** The next accepted send reports that its Sent copy could not be saved. */
+  sentCopyMissing?: boolean;
   sentCopyFailure?: ProviderFailure;
   /** A test-controlled network stall; local batch commits must not wait for it. */
   beforePush?: Effect.Effect<void, ProviderFailure>;
@@ -589,11 +591,15 @@ export function makeFakeProvider(
         }),
         Effect.gen(function* () {
           server.sent.push({ message, original });
+          let sentCopyMissing = false;
           if (server.acceptedRaw && preparation?.accepted) {
             yield* preparation.accepted(server.acceptedRaw);
             server.acceptedMarks = (server.acceptedMarks ?? 0) + 1;
             if (server.afterAccepted) yield* server.afterAccepted;
+            sentCopyMissing = server.sentCopyMissing === true;
+            server.sentCopyMissing = false;
           }
+          return sentCopyMissing ? { sentCopyMissing } : {};
         }),
       ),
     getDraftOrganization: (account, id) =>

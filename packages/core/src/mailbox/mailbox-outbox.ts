@@ -201,8 +201,14 @@ export const makeOutboxMailbox = (
           ]),
         ),
       );
-    // The adapter filed the Sent copy or reported it missing; nothing is left to finish.
-    if (draftId) yield* store.clearSmtpAccepted(draftId);
+    const sender = message.from?.address ?? account.email;
+    // A Sent copy that failed goes to the accepted-send retry with the record, which gives up
+    // under its own limits. Otherwise the copy is filed and nothing is left to finish.
+    const handedOff =
+      draftId !== undefined &&
+      delivery?.sentCopyMissing === true &&
+      (yield* store.noteSentCopyFailure(draftId, { subject: message.subject, sender }));
+    if (draftId && !handedOff) yield* store.clearSmtpAccepted(draftId);
     if (delivery?.rejected?.length) {
       yield* store.recordFailedOp({
         accountId,
@@ -210,19 +216,19 @@ export const makeOutboxMailbox = (
         kind: "sendPartial",
         reason: delivery.rejected.join(", "),
         subject: message.subject,
-        sender: message.from?.address ?? account.email,
+        sender,
         rejected: delivery.rejected,
       });
       if (command.draftId) yield* store.setSendUncertain(command.draftId, true);
     }
-    if (delivery?.sentCopyMissing)
+    if (delivery?.sentCopyMissing && !handedOff)
       yield* store.recordFailedOp({
         accountId,
         providerId: command.draftId ?? "",
         kind: "sentCopyMissing",
         reason: "SMTP accepted the message, but saving its Sent copy failed.",
         subject: message.subject,
-        sender: message.from?.address ?? account.email,
+        sender,
       });
     yield* store.appendAudit({ actor, accountId, action: "send", detail });
     yield* store.rememberMailedAddresses(
@@ -579,7 +585,8 @@ export const makeOutboxMailbox = (
       yield* resumeHeldDiscards;
       const accepted = yield* store.smtpAccepted;
       // Filing in Sent waits for the server; start does not.
-      if (accepted.length) yield* retryAcceptedSends().pipe(Effect.forkIn(mailboxScope));
+      if (accepted.length)
+        yield* retryAcceptedSends(undefined, false).pipe(Effect.forkIn(mailboxScope));
       for (const item of yield* store.queuedSends) {
         if (accepted.some((entry) => entry.draftId === item.id)) continue;
         if (item.status === "sending") {

@@ -6,6 +6,16 @@ import type { MailboxDependencies } from "./mailbox-runtime.js";
 /** A Sent copy that fails this many times, or for this long, becomes a sentCopyMissing notice. */
 const MAX_SENT_COPY_TRIES = 10;
 const SENT_COPY_RETRY_MS = 7 * 24 * 60 * 60 * 1000;
+/** After a failed filing, a sync retries it 1 h later, then 2 h, 4 h and so on up to a day. */
+const FIRST_BACKOFF_MS = 60 * 60 * 1000;
+const MAX_BACKOFF_MS = 24 * 60 * 60 * 1000;
+
+/** When a sync may try the record again: right away until a filing has failed. */
+export const nextSentCopyTry = (accepted: SmtpAcceptedSend) =>
+  accepted.lastTryAt === undefined || accepted.tries === 0
+    ? 0
+    : accepted.lastTryAt +
+      Math.min(MAX_BACKOFF_MS, FIRST_BACKOFF_MS * 2 ** Math.min(accepted.tries - 1, 16));
 
 /** How often a holder renews its claim; well inside SMTP_ACCEPTED_CLAIM_TTL. */
 const CLAIM_RENEW_EVERY = "30 seconds";
@@ -46,10 +56,11 @@ export const makeAcceptedSends = (
     deps;
 
   /**
-   * SMTP accepted this send, then the send stopped before it finished. The message is out: finish
-   * the send as the live path would have, and file its Sent copy. The record stays until the copy
-   * is filed (saveSent skips a copy Sent already has by Message-ID), and the next successful sync
-   * of the account tries again. After MAX_SENT_COPY_TRIES failures or SENT_COPY_RETRY_MS the
+   * SMTP accepted this send, then the send stopped before it finished, or it finished and could
+   * not file its Sent copy. The message is out: finish the send as the live path would have, and
+   * file its Sent copy. The record stays until the copy is filed (saveSent skips a copy Sent
+   * already has by Message-ID), and a later successful sync of the account tries again, backing
+   * off by time (nextSentCopyTry). After MAX_SENT_COPY_TRIES failures or SENT_COPY_RETRY_MS the
    * person gets a sentCopyMissing notice instead.
    */
   const finishAcceptedSend = (accepted: SmtpAcceptedSend) =>
@@ -100,19 +111,25 @@ export const makeAcceptedSends = (
           accountId: accepted.accountId,
           providerId: draftId,
           kind: "sentCopyMissing",
-          reason: `SMTP accepted the message before OpenMail closed, but saving its Sent copy failed: ${filed.failure.message}`,
+          reason: `SMTP accepted the message, but saving its Sent copy failed: ${filed.failure.message}`,
           subject,
           sender,
         });
       yield* changed;
     });
 
-  /** Sent copies still missing after SMTP accepted the send; a successful sync retries them. */
-  const retryAcceptedSends = (accountId?: string) =>
+  /**
+   * Sent copies still missing after SMTP accepted the send. A successful sync retries those whose
+   * backoff has passed; the launch retry (`waitForBackoff` false) tries every one.
+   */
+  const retryAcceptedSends = (accountId?: string, waitForBackoff = true) =>
     Effect.gen(function* () {
       if (readOnly || !resumes) return;
+      const now = yield* Clock.currentTimeMillis;
       const accepted = (yield* store.smtpAccepted).filter(
-        (entry) => accountId === undefined || entry.accountId === accountId,
+        (entry) =>
+          (accountId === undefined || entry.accountId === accountId) &&
+          (!waitForBackoff || nextSentCopyTry(entry) <= now),
       );
       yield* Effect.forEach(accepted, finishAcceptedSend, { discard: true });
     }).pipe(
