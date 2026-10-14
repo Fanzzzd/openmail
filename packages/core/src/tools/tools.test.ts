@@ -1219,6 +1219,62 @@ it.effect("all MCP write tools create only proposals; only app approval changes 
   );
 });
 
+it.effect(
+  "suggest_contacts leaves out every address in exclude, and still takes one address",
+  () => {
+    const from = (id: string, address: string) => ({
+      ...toolMail(id),
+      from: { name: "", address },
+    });
+    const server = fakeServer("me@gmail.com", [
+      from("m1", "ann@example.com"),
+      from("m2", "bob@example.com"),
+      from("m3", "cat@example.com"),
+    ]);
+    return run(
+      Effect.gen(function* () {
+        const mailbox = yield* Mailbox;
+        const account = yield* mailbox.accounts.connect({ provider: "gmail" });
+        yield* mailbox.ai.setAiAccount({
+          accountId: account.id,
+          allowed: true,
+          autoSummaries: false,
+        });
+        yield* mailbox.sync.sync();
+        const suggested = (exclude?: string | readonly string[]) =>
+          Effect.gen(function* () {
+            const result = yield* call("suggest_contacts", {
+              query: "example",
+              ...(exclude === undefined ? {} : { exclude }),
+            });
+            assert.isFalse(result.isFailure);
+            if (!("contacts" in result.result)) return [];
+            return result.result.contacts.map((row) => row.address).toSorted();
+          });
+        assert.deepStrictEqual(yield* suggested(), [
+          "ann@example.com",
+          "bob@example.com",
+          "cat@example.com",
+        ]);
+        // The repro: two addresses already on the draft.
+        assert.deepStrictEqual(yield* suggested(["ann@example.com", " BOB@example.com"]), [
+          "cat@example.com",
+        ]);
+        assert.deepStrictEqual(yield* suggested("ann@example.com"), [
+          "bob@example.com",
+          "cat@example.com",
+        ]);
+        const tooMany = yield* call("suggest_contacts", {
+          query: "",
+          exclude: Array.from({ length: 51 }, (_, i) => `p${i}@example.com`),
+        });
+        assert.isTrue(tooMany.isFailure);
+      }),
+      TestMailbox({ gmail: server }),
+    );
+  },
+);
+
 it.effect("thread cursor preserves every conversation sharing a timestamp", () => {
   const server = fakeServer(
     "me@gmail.com",

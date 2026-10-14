@@ -135,28 +135,28 @@ The server hides write tools unless you turn them on. `sync` is the one default 
 
 By default the server offers 20 tools:
 
-| Tool               | What it does                                                                                 | Read-only |
-| ------------------ | -------------------------------------------------------------------------------------------- | --------- |
-| `access_status`    | Say which accounts the client can read, why others are hidden and what to change in the app. | Yes       |
-| `list_accounts`    | List connected accounts that allow MCP access.                                               | Yes       |
-| `list_profiles`    | List spaces, such as Work and Personal. MCP calls them profiles.                             | Yes       |
-| `list_labels`      | List labels (Gmail) and folders (Outlook, IMAP) per account.                                 | Yes       |
-| `list_threads`     | List conversations in a mailbox, newest first, from the local copy.                          | Yes       |
-| `search`           | Search mail with Gmail-style operators.                                                      | Yes       |
-| `semantic_search`  | Search by meaning, using the on-device text index. Snippets are omitted.                     | Yes       |
-| `read_thread`      | Read a conversation as plain text, oldest message first.                                     | Yes       |
-| `sync`             | Fetch new mail from the providers and push changes you already approved in the app.          | No        |
-| `list_templates`   | List templates.                                                                              | Yes       |
-| `read_template`    | Read a template's subject, recipients and plain-text body.                                   | Yes       |
-| `list_signatures`  | List signatures.                                                                             | Yes       |
-| `read_signature`   | Read a signature as plain text.                                                              | Yes       |
-| `suggest_contacts` | Suggest recipient addresses from local history and cached contacts.                          | Yes       |
-| `list_invites`     | Read calendar invitations in a message.                                                      | Yes       |
-| `calendar_overlap` | List calendar events that overlap an invitation.                                             | Yes       |
-| `list_attachments` | List a message's attachments: name, type and size.                                           | Yes       |
-| `attachment_text`  | Read text that on-device OCR or PDF extraction already produced.                             | Yes       |
-| `list_proposals`   | List AI suggestions that wait for your approval in the app.                                  | Yes       |
-| `read_proposal`    | Read one pending AI suggestion.                                                              | Yes       |
+| Tool               | What it does                                                                                         | Read-only |
+| ------------------ | ---------------------------------------------------------------------------------------------------- | --------- |
+| `access_status`    | Say which accounts the client can read, why others are hidden and what to change in the app.         | Yes       |
+| `list_accounts`    | List connected accounts that allow MCP access.                                                       | Yes       |
+| `list_profiles`    | List spaces, such as Work and Personal. MCP calls them profiles.                                     | Yes       |
+| `list_labels`      | List labels (Gmail) and folders (Outlook, IMAP) per account.                                         | Yes       |
+| `list_threads`     | List conversations in a mailbox, newest first, from the local copy.                                  | Yes       |
+| `search`           | Search mail with Gmail-style operators.                                                              | Yes       |
+| `semantic_search`  | Search by meaning, using the on-device text index. Snippets are omitted.                             | Yes       |
+| `read_thread`      | Read a conversation as plain text, oldest message first.                                             | Yes       |
+| `sync`             | Fetch new mail from the providers and push changes you already approved in the app.                  | No        |
+| `list_templates`   | List templates.                                                                                      | Yes       |
+| `read_template`    | Read a template's subject, recipients and plain-text body.                                           | Yes       |
+| `list_signatures`  | List signatures.                                                                                     | Yes       |
+| `read_signature`   | Read a signature as plain text.                                                                      | Yes       |
+| `suggest_contacts` | Suggest recipient addresses from local history and cached contacts, leaving out up to 50 in exclude. | Yes       |
+| `list_invites`     | Read calendar invitations in a message.                                                              | Yes       |
+| `calendar_overlap` | List calendar events that overlap an invitation.                                                     | Yes       |
+| `list_attachments` | List a message's attachments: name, type and size.                                                   | Yes       |
+| `attachment_text`  | Read text that on-device OCR or PDF extraction already produced.                                     | Yes       |
+| `list_proposals`   | List AI suggestions that wait for your approval in the app.                                          | Yes       |
+| `read_proposal`    | Read one pending AI suggestion.                                                                      | Yes       |
 
 With write access turned on, the server adds 3 write tools:
 

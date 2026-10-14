@@ -88,7 +88,13 @@ export const SuggestContacts = readOnly(
       }),
       account_id: Schema.optionalKey(AccountId),
       exclude: Schema.optionalKey(
-        Schema.String.annotate({ description: "Leave out addresses in this list." }),
+        Schema.Union([
+          Schema.Array(Schema.String.check(Schema.isMaxLength(320))).check(Schema.isMaxLength(50)),
+          // Older callers passed one address as a string.
+          Schema.String.check(Schema.isMaxLength(320)),
+        ]).annotate({
+          description: "Addresses to leave out, such as the draft's current recipients. Up to 50.",
+        }),
       ),
       ...PageParameters,
     }),

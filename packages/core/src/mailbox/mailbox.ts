@@ -416,7 +416,8 @@ export interface MailboxContacts {
     query: string,
     options?: {
       readonly limit?: number;
-      readonly exclude?: string;
+      /** One address or a list. */
+      readonly exclude?: string | readonly string[];
       readonly accountIds?: readonly string[];
     },
   ): Effect.Effect<Address[]>;

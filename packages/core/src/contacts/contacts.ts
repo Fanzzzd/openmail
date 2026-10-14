@@ -27,6 +27,14 @@ export interface ContactSnapshot {
 }
 
 /** Provider duplicates share a normalized address; keep the first nonempty name. */
+/**
+ * Addresses to leave out of suggestions, trimmed and lowercased. Takes one address or a list:
+ * the MCP tool once took a single string.
+ */
+export const excludedAddresses = (exclude: string | readonly string[] | undefined): string[] =>
+  (typeof exclude === "string" ? [exclude] : (exclude ?? []))
+    .map((address) => address.trim().toLowerCase())
+    .filter((address) => address !== "");
 export function mergeContacts(contacts: readonly Address[]): Address[] {
   const merged = new Map<string, Address>();
   for (const contact of contacts) {

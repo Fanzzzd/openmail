@@ -18,7 +18,8 @@ export const TOOL_SUMMARIES: Record<McpToolName, string> = {
   read_template: "Read a template's subject, recipients and plain-text body.",
   list_signatures: "List signatures.",
   read_signature: "Read a signature as plain text.",
-  suggest_contacts: "Suggest recipient addresses from local history and cached contacts.",
+  suggest_contacts:
+    "Suggest recipient addresses from local history and cached contacts, leaving out up to 50 in exclude.",
   list_invites: "Read calendar invitations in a message.",
   calendar_overlap: "List calendar events that overlap an invitation.",
   list_attachments: "List a message's attachments: name, type and size.",

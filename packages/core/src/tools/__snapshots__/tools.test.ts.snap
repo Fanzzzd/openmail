@@ -751,8 +751,21 @@ exports[`tool input and output schemas are stable 1`] = `
           "type": "string",
         },
         "exclude": {
-          "description": "Leave out addresses in this list.",
-          "type": "string",
+          "anyOf": [
+            {
+              "items": {
+                "maxLength": 320,
+                "type": "string",
+              },
+              "maxItems": 50,
+              "type": "array",
+            },
+            {
+              "maxLength": 320,
+              "type": "string",
+            },
+          ],
+          "description": "Addresses to leave out, such as the draft's current recipients. Up to 50.",
         },
         "limit": {
           "description": "Default 25. token_budget may return fewer rows.",

@@ -1,6 +1,6 @@
 import { Schema } from "effect";
 import type { Address } from "../domain/message.js";
-import { mergeContacts, type ContactGroup } from "./contacts.js";
+import { excludedAddresses, mergeContacts, type ContactGroup } from "./contacts.js";
 
 export const AppleContactsStatus = Schema.Literals([
   "off",
@@ -116,14 +116,20 @@ export function createAppleContactsCache() {
     suggest(
       query: string,
       existing: readonly Address[],
-      options: { hidden: readonly string[]; exclude?: string; limit?: number; available: boolean },
+      options: {
+        hidden: readonly string[];
+        exclude?: string | readonly string[];
+        limit?: number;
+        available: boolean;
+      },
     ): Address[] {
       if (!options.available) return [...existing];
-      const hidden = new Set(options.hidden.map(normalize));
+      const hidden = new Set([
+        ...options.hidden.map(normalize),
+        ...excludedAddresses(options.exclude),
+      ]);
       const allowed = (address: string) =>
-        !hidden.has(address) &&
-        address !== normalize(options.exclude ?? "") &&
-        !/noreply|no-reply|donotreply/.test(address);
+        !hidden.has(address) && !/noreply|no-reply|donotreply/.test(address);
       const local = [...byAddress]
         .filter(
           ([address, contact]) =>

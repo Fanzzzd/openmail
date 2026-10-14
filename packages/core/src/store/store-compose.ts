@@ -12,6 +12,7 @@ import { Clock, Context, Effect, Option, Schema } from "effect";
 import type { SqlClient } from "effect/sql";
 
 import { Address } from "../domain/message.js";
+import { excludedAddresses } from "../contacts/contacts.js";
 import {
   DEFAULT_PREFS,
   Prefs,
@@ -435,10 +436,11 @@ export function makeComposeStore(
   const suggestContacts = Effect.fn("Store.suggestContacts")(function* (
     query: string,
     limit: number,
-    exclude?: string,
+    exclude?: string | readonly string[],
     accountIds?: readonly string[],
   ) {
     if (accountIds?.length === 0) return [];
+    const excluded = excludedAddresses(exclude);
 
     const now = yield* Clock.currentTimeMillis;
     const tokens = query.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [];
@@ -470,7 +472,7 @@ export function makeComposeStore(
         WHERE h.address=s.address AND h.name!='' AND ${scope("h")}
         ORDER BY h.source DESC,h.date DESC,h.account_id,h.id LIMIT 1) AS name
       FROM scored s
-      WHERE s.address LIKE '%@%' AND s.address != ${exclude?.trim().toLowerCase() ?? ""}
+      WHERE s.address LIKE '%@%' AND s.address NOT IN ${sql.in(excluded.length ? excluded : [""])}
         AND NOT EXISTS(SELECT 1 FROM hidden_contacts hidden WHERE hidden.address=s.address)
         AND s.address NOT LIKE '%noreply%' AND s.address NOT LIKE '%no-reply%' AND s.address NOT LIKE '%donotreply%'
       ORDER BY s.score DESC,s.address LIMIT ${boundedLimit}`);

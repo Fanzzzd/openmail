@@ -563,7 +563,7 @@ export class Store extends Context.Service<
     suggestContacts(
       query: string,
       limit: number,
-      exclude?: string,
+      exclude?: string | readonly string[],
       accountIds?: readonly string[],
     ): Effect.Effect<Address[]>;
     contactAlternatives(address: string): Effect.Effect<readonly Address[]>;
