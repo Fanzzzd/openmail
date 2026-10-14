@@ -1953,6 +1953,24 @@ for (const [choice, name] of [
   });
 }
 
+it("the Gmail built-in sign-in says what Google's unverified-app warning asks for; Outlook and own clients don't", () => {
+  const warning = "Google shows a warning that it hasn't verified OpenMail yet. Choose Advanced, then continue to OpenMail.";
+  fixture.values.set("clientSetupAtom", BUILT_IN_CLIENTS);
+  render(localized(h(AddAccountDialog, { onClose: vi.fn(), onAdded: vi.fn() })));
+  fireEvent.click(screen.getByRole("button", { name: "Gmail" }));
+  expect(screen.getByText(warning)).toBeTruthy();
+  expect(document.body.textContent).not.toMatch(/7 days|seven days/i);
+  cleanup();
+  render(localized(h(AddAccountDialog, { onClose: vi.fn(), onAdded: vi.fn() })));
+  fireEvent.click(screen.getByRole("button", { name: "Outlook" }));
+  expect(screen.queryByText(warning)).toBeNull();
+  cleanup();
+  fixture.values.set("clientSetupAtom", { ...BUILT_IN_CLIENTS, googleClient: "own" });
+  render(localized(h(AddAccountDialog, { onClose: vi.fn(), onAdded: vi.fn() })));
+  fireEvent.click(screen.getByRole("button", { name: "Gmail" }));
+  expect(screen.queryByText(warning)).toBeNull();
+});
+
 it("with the user's own client active, the dialog says so and offers the built-in client", async () => {
   fixture.decide.mockClear();
   fixture.values.set("clientSetupAtom", { ...BUILT_IN_CLIENTS, googleClient: "own" });

@@ -43,6 +43,12 @@ const PRESET_NOTES: Record<string, MessageDescriptor> = {
   fastmail: msg`Create an app password under Settings → Privacy & Security, with IMAP and SMTP checked.`,
 };
 
+/**
+ * Google has not finished verifying OpenMail's built-in client, so its consent
+ * flow shows an unverified-app warning first. Set to false once verification lands.
+ */
+export const GOOGLE_BUILT_IN_UNVERIFIED = true;
+
 type OAuthProvider = "gmail" | "outlook";
 /** IMAP preset keys in core, plus "custom" for any other server. */
 type ImapChoice = "icloud" | "yahoo" | "qq" | "163" | "fastmail" | "custom";
@@ -287,6 +293,14 @@ function OAuthStep({
           </Trans>
         )}
       </p>
+      {gmail && active === "builtIn" && GOOGLE_BUILT_IN_UNVERIFIED && (
+        <p className="mt-2 text-a11y-muted">
+          <Trans>
+            Google shows a warning that it hasn't verified OpenMail yet. Choose Advanced, then
+            continue to OpenMail.
+          </Trans>
+        </p>
+      )}
       <p className="mt-2 text-footnote text-a11y-muted">
         {active === "own" ? (
           <Trans>New sign-ins use your own OAuth client.</Trans>
