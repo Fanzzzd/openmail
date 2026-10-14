@@ -1,6 +1,12 @@
 import { providerCapabilities, supportsOp, type Provider } from "@openmail/core/schema";
 import { Schema } from "effect";
-import { KEYMAP, type ShortcutAction, type ShortcutSet } from "./shortcuts";
+import {
+  KEYMAP,
+  NUMBERED_MAILBOXES,
+  type KeyStroke,
+  type ShortcutAction,
+  type ShortcutSet,
+} from "./shortcuts";
 
 export const NativeAction = Schema.Literals([
   "superscript",
@@ -70,6 +76,25 @@ export const NativeAction = Schema.Literals([
   "saveDraft",
   "templates",
   "showCc",
+
+  "toggleSidebar",
+  "toggleReader",
+  "toggleReadingPane",
+  "toggleToolbar",
+  "zoomIn",
+  "zoomOut",
+  "zoomReset",
+
+  "goInbox",
+  "goStarred",
+  "goSnoozed",
+  "goDrafts",
+  "goSent",
+  "goAll",
+  "goTrash",
+  "goSpam",
+  "goBack",
+  "goForward",
 ]);
 export type NativeAction = typeof NativeAction.Type;
 export const NativeMenuState = Schema.Struct({
@@ -94,10 +119,68 @@ export function providerMenuState(
   const caps = providerCapabilities(provider);
   return { important: supportsOp(caps, "important"), web: caps.webLink };
 }
-export const NATIVE_MENUS = [
+/** The Go menu's mailboxes, in the order of their ⌘1…⌘8 keys. */
+export const GO_MAILBOXES = {
+  goInbox: "inbox",
+  goStarred: "starred",
+  goSnoozed: "snoozed",
+  goDrafts: "drafts",
+  goSent: "sent",
+  goAll: "all",
+  goTrash: "trash",
+  goSpam: "spam",
+} as const satisfies Record<string, (typeof NUMBERED_MAILBOXES)[number]>;
+type GoMailboxAction = keyof typeof GO_MAILBOXES;
+export const isGoMailbox = (action: NativeAction): action is GoMailboxAction =>
+  Object.hasOwn(GO_MAILBOXES, action);
+/** The digit of a Go menu mailbox (1 for Inbox … 8 for Spam), or undefined for other actions. */
+export const goMailboxDigit = (action: NativeAction): number | undefined =>
+  isGoMailbox(action) ? NUMBERED_MAILBOXES.indexOf(GO_MAILBOXES[action]) + 1 : undefined;
+
+/** A submenu of a native menu, named by its label key. */
+export interface NativeSubmenu {
+  readonly submenu: "textStyle" | "alignment" | "lists" | "quoteLevel" | "direction";
+  readonly actions: readonly NativeAction[];
+}
+export type NativeMenuEntry = NativeAction | NativeSubmenu | "separator";
+export interface NativeMenu {
+  readonly name: "view" | "go" | "message" | "mailbox" | "format";
+  readonly entries: readonly NativeMenuEntry[];
+}
+
+export const NATIVE_MENUS: readonly NativeMenu[] = [
+  {
+    name: "view",
+    entries: [
+      "toggleSidebar",
+      "toggleReader",
+      "toggleReadingPane",
+      "toggleToolbar",
+      "separator",
+      "zoomIn",
+      "zoomOut",
+      "zoomReset",
+    ],
+  },
+  {
+    name: "go",
+    entries: [
+      "goInbox",
+      "goStarred",
+      "goSnoozed",
+      "goDrafts",
+      "goSent",
+      "goAll",
+      "goTrash",
+      "goSpam",
+      "separator",
+      "goBack",
+      "goForward",
+    ],
+  },
   {
     name: "message",
-    actions: [
+    entries: [
       "reply",
       "replyAll",
       "forward",
@@ -129,56 +212,73 @@ export const NATIVE_MENUS = [
       "showCc",
     ],
   },
-  { name: "mailbox", actions: ["sync", "goToFolder", "filterUnread", "search"] },
+  { name: "mailbox", entries: ["sync", "goToFolder", "filterUnread", "search"] },
   {
     name: "format",
-    actions: [
-      "superscript",
-      "subscript",
-      "alignLeft",
-      "alignCenter",
-      "alignRight",
-      "alignJustify",
-      "directionLtr",
-      "directionRtl",
-      "directionAuto",
-      "bulletList",
-      "numberList",
-      "dashList",
-      "inlineCode",
-      "blockCode",
+    entries: [
+      {
+        submenu: "textStyle",
+        actions: [
+          "bold",
+          "italic",
+          "underline",
+          "strikethrough",
+          "superscript",
+          "subscript",
+          "inlineCode",
+          "blockCode",
+        ],
+      },
+      { submenu: "alignment", actions: ["alignLeft", "alignCenter", "alignRight", "alignJustify"] },
+      {
+        submenu: "lists",
+        actions: ["bulletList", "numberList", "dashList", "indentList", "outdentList"],
+      },
+      { submenu: "quoteLevel", actions: ["quoteIncrease", "quoteDecrease"] },
+      { submenu: "direction", actions: ["directionLtr", "directionRtl", "directionAuto"] },
+      "separator",
+      "link",
       "indentParagraph",
       "outdentParagraph",
-      "indentList",
-      "outdentList",
-      "quoteIncrease",
-      "quoteDecrease",
+      "fontSizeIncrease",
+      "fontSizeDecrease",
+      "separator",
       "copyStyle",
       "pasteStyle",
       "clearFormatting",
-      "toggleFormatBar",
-      "fontSizeIncrease",
-      "fontSizeDecrease",
-
-      "bold",
-      "italic",
-      "underline",
-      "link",
-      "strikethrough",
       "pasteMatchStyle",
       "pasteQuotation",
+      "separator",
+      "toggleFormatBar",
     ],
   },
-] satisfies readonly { name: string; actions: readonly NativeAction[] }[];
+];
+
+/** Every action of a menu, its submenus included, in menu order. */
+export const nativeMenuActions = (menu: NativeMenu): NativeAction[] =>
+  menu.entries.flatMap((entry) =>
+    entry === "separator" ? [] : typeof entry === "string" ? [entry] : entry.actions,
+  );
+const menuNamed = (name: NativeMenu["name"]) =>
+  new Set(NATIVE_MENUS.filter((menu) => menu.name === name).flatMap(nativeMenuActions));
+const FORMAT_ACTIONS = menuNamed("format");
+const WINDOW_ACTIONS = new Set([...menuNamed("mailbox"), ...menuNamed("go")]);
+const VIEW_ACTIONS = menuNamed("view");
+const ZOOM_ACTIONS: ReadonlySet<NativeAction> = new Set(["zoomIn", "zoomOut", "zoomReset"]);
+
 export function nativeActionUsesEditor(action: NativeAction) {
   return (
-    NATIVE_MENUS[2]?.actions.some((a) => a === action) ||
+    FORMAT_ACTIONS.has(action) ||
     ["send", "sendArchive", "saveDraft", "templates", "showCc"].includes(action)
   );
 }
+/** Zoom acts on the reader, so its keys go to the reader's text rather than the window. */
+export const nativeActionUsesReader = (action: NativeAction) => ZOOM_ACTIONS.has(action);
 export function nativeActionEnabled(action: NativeAction, state: NativeMenuState) {
   if (nativeActionUsesEditor(action)) return state.composing;
-  if (NATIVE_MENUS[1]?.actions.some((a) => a === action))
+  if (ZOOM_ACTIONS.has(action)) return !state.composing;
+  // Mailbox, Go and the pane toggles act on the main window's list.
+  if (WINDOW_ACTIONS.has(action) || VIEW_ACTIONS.has(action))
     return !state.composing && state.mailbox !== false;
   return (
     state.selected &&
@@ -189,9 +289,20 @@ export function nativeActionEnabled(action: NativeAction, state: NativeMenuState
 }
 /** A Format menu action without a key reaches the focused compose body as this event. */
 export const EDITOR_ACTION_EVENT = "openmail:editor-action";
-/** Dispatch through existing handlers, including Composer and Reader, using the selected keymap. */
-export function nativeActionStroke(set: ShortcutSet, action: ShortcutAction) {
-  return KEYMAP[set][action][0];
+/**
+ * Dispatch through existing handlers, including Composer and Reader, using the selected keymap.
+ * Go menu keys are not in the keymap: ⌘1…⌘8 (⌃⌘ with Gmail keys) and ⌘[ ⌘] for Back and Forward.
+ */
+export function nativeActionStroke(set: ShortcutSet, action: NativeAction): KeyStroke | undefined {
+  if (isGoMailbox(action))
+    return {
+      key: String(goMailboxDigit(action)),
+      cmd: true,
+      ...(set === "gmail" ? { control: true } : {}),
+    };
+  if (action === "goBack") return { key: "[", cmd: true };
+  if (action === "goForward") return { key: "]", cmd: true };
+  return KEYMAP[set][action satisfies ShortcutAction][0];
 }
 
 export function nativeShareKind(action: NativeAction) {

@@ -362,6 +362,10 @@ msgstr "Předchozí nastavení denních klidových hodin je stále aktivní. Zm�
 msgid "A signature needs a name and a sending address."
 msgstr "Podpis potřebuje název a adresu odesílatele."
 
+#: src/renderer/src/state/desktop.ts
+msgid "About OpenMail"
+msgstr "O aplikaci OpenMail"
+
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 msgid "Above quoted text"
 msgstr "Nad citovaným textem"
@@ -693,6 +697,7 @@ msgid "Align right"
 msgstr "Zarovnat doprava"
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Alignment"
 msgstr "Zarovnání"
 
@@ -1118,6 +1123,10 @@ msgstr "Text zprávy"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Bold"
 msgstr "Tučné"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Bring all to front"
+msgstr "Převést vše do popředí"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Browsers"
@@ -1576,6 +1585,10 @@ msgstr "Zavřít hledání"
 msgid "Close other OpenMail processes (CLI/MCP), then restart this app and try recovery again."
 msgstr "Zavřete ostatní procesy OpenMail (CLI/MCP), restartujte tuto aplikaci a zkuste obnovu znovu."
 
+#: src/renderer/src/state/desktop.ts
+msgid "Close window"
+msgstr "Zavřít okno"
+
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Code block"
@@ -1838,6 +1851,7 @@ msgstr "Zkopírováno do složek"
 #: src/renderer/src/features/reader/RawMessage.tsx
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Copy"
 msgstr "Kopírovat"
 
@@ -2232,6 +2246,7 @@ msgid "Custom time"
 msgstr "Vlastní čas"
 
 #: src/renderer/src/app/WindowUi.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Cut"
 msgstr "Vyjmout"
 
@@ -2406,6 +2421,10 @@ msgstr "Zjistit události kalendáře ve zprávách"
 #: src/renderer/src/features/feedback/Feedback.tsx
 msgid "Diagnostics preview"
 msgstr "Náhled diagnostiky"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Direction"
+msgstr "Směr"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 #: src/renderer/src/features/settings/Settings.tsx
@@ -3168,6 +3187,10 @@ msgstr "Štítky a hvězdičky konceptů Gmailu zůstávají na tomto Macu. Gmai
 msgid "Gmail settings"
 msgstr "Nastavení Gmailu"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Go"
+msgstr "Přejít"
+
 #: src/renderer/src/features/organize/GoToFolder.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Go to folder"
@@ -3243,6 +3266,14 @@ msgstr "Skrýt podrobnosti"
 #: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Hide format bar"
 msgstr "Skrýt formátovací lištu"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Hide OpenMail"
+msgstr "Skrýt OpenMail"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Hide others"
+msgstr "Skrýt ostatní"
 
 #: src/renderer/src/features/reader/body/MessageBody.tsx
 #: src/renderer/src/features/reader/frame/EmailFrame.tsx
@@ -3674,6 +3705,10 @@ msgstr "světlé pozadí"
 #: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Link URL"
 msgstr "URL odkazu"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Lists"
+msgstr "Seznamy"
 
 #: src/renderer/src/features/reader/body/MessageBody.tsx
 #: src/renderer/src/features/reader/RemoteImagesPrompt.tsx
@@ -4128,6 +4163,10 @@ msgstr "Microsoft požádá o oprávnění upravovat poštu. Po přihlášení z
 msgid "Mimestream"
 msgstr "Mimestream"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Minimize"
+msgstr "Minimalizovat"
+
 #: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Minimum size (KiB)"
 msgstr "Minimální velikost (KiB)"
@@ -4480,6 +4519,10 @@ msgstr "Další panel"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Next thread"
 msgstr "Další konverzace"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Next view"
+msgstr "Další zobrazení"
 
 #: src/renderer/src/features/organize/SnoozeDialog.tsx
 msgid "Next week"
@@ -5161,6 +5204,7 @@ msgid "Password"
 msgstr "Heslo"
 
 #: src/renderer/src/app/WindowUi.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Paste"
 msgstr "Vložit"
 
@@ -5297,6 +5341,10 @@ msgstr "Předchozí konverzace"
 msgid "Previous time:"
 msgstr "Původní čas:"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Previous view"
+msgstr "Předchozí zobrazení"
+
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Previous window"
 msgstr "Předchozí okno"
@@ -5364,10 +5412,18 @@ msgstr "Ukončit"
 msgid "Quit and reopen Claude to load it."
 msgstr "Ukončete a znovu otevřete Claude, aby se změna načetla."
 
+#: src/renderer/src/state/desktop.ts
+msgid "Quit OpenMail"
+msgstr "Ukončit OpenMail"
+
 #: src/renderer/src/app/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Quit with messages waiting to send?"
 msgstr "Ukončit se zprávami čekajícími na odeslání?"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Quote level"
+msgstr "Úroveň citace"
 
 #: src/renderer/src/app/MailAlerts.tsx
 msgid "Quote only the selected text?"
@@ -5465,6 +5521,10 @@ msgstr "Opakující se setkání"
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Redacted report"
 msgstr "Anonymizovaná zpráva"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Redo"
+msgstr "Znovu"
 
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
@@ -6340,6 +6400,10 @@ msgstr "Zobrazit {name} ve Finderu"
 msgid "Show account names in unified folders"
 msgstr "Zobrazovat názvy účtů ve sjednocených složkách"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Show all"
+msgstr "Zobrazit vše"
+
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Show Cc field"
 msgstr "Zobrazit pole Kopie"
@@ -6941,6 +7005,10 @@ msgstr "Barva textu"
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Text size"
 msgstr "Velikost textu"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Text style"
+msgstr "Styl textu"
 
 #: src/renderer/src/lib/errors.ts
 msgid "The {client} OAuth client is not set up yet."
@@ -7829,6 +7897,10 @@ msgstr "Výsledek"
 msgid "Verifying…"
 msgstr "Ověřování…"
 
+#: src/renderer/src/state/desktop.ts
+msgid "View"
+msgstr "Zobrazení"
+
 #: src/renderer/src/features/reader/frame/EmailFrame.tsx
 msgid "View at 100%"
 msgstr "Zobrazit ve 100 %"
@@ -8016,3 +8088,9 @@ msgstr "Vaše překrývající se události"
 #: src/renderer/src/lib/errors.ts
 msgid "Your response wasn't sent. Try again, or respond from your calendar."
 msgstr "Vaše odpověď nebyla odeslána. Zkuste to znovu nebo odpovězte z kalendáře."
+
+#. macOS Window > Zoom: fills the screen with the window.
+#: src/renderer/src/state/desktop.ts
+msgctxt "window menu"
+msgid "Zoom"
+msgstr "Zvětšit nebo zmenšit"

@@ -52,3 +52,51 @@ it("native message commands act on the selection while editor commands reach the
     dom.dispose();
   }
 });
+
+it("View zoom reaches the reader's text and Go sends the window's folder and history keys", () => {
+  const dom = testDom();
+  class KeyEvent extends dom.window.Event {
+    constructor(type: string, init: KeyboardEventInit) {
+      super(type, { bubbles: init.bubbles, cancelable: init.cancelable });
+      Object.assign(this, {
+        key: init.key,
+        metaKey: init.metaKey,
+        ctrlKey: init.ctrlKey,
+        altKey: init.altKey,
+        shiftKey: init.shiftKey,
+      });
+    }
+  }
+  vi.stubGlobal("KeyboardEvent", KeyEvent);
+  try {
+    const { document } = dom.window;
+    const reader = document.createElement("div");
+    reader.setAttribute("data-reader-text", "");
+    reader.setAttribute("role", "document");
+    document.body.append(reader);
+    Object.defineProperty(document, "activeElement", { configurable: true, value: document.body });
+    const zoom = vi.fn();
+    const window = vi.fn();
+    reader.addEventListener("keydown", zoom);
+    document.body.addEventListener("keydown", window);
+    dispatchNativeAction("mimestream", "zoomIn", true);
+    expect(zoom).toHaveBeenCalledWith(expect.objectContaining({ key: "+", metaKey: true }));
+    window.mockClear();
+    dispatchNativeAction("mimestream", "goStarred", true);
+    expect(window).toHaveBeenCalledWith(
+      expect.objectContaining({ key: "2", metaKey: true, ctrlKey: false }),
+    );
+    dispatchNativeAction("gmail", "goSpam", true);
+    expect(window).toHaveBeenLastCalledWith(
+      expect.objectContaining({ key: "8", metaKey: true, ctrlKey: true }),
+    );
+    dispatchNativeAction("mimestream", "goBack", false);
+    expect(window).toHaveBeenLastCalledWith(expect.objectContaining({ key: "[", metaKey: true }));
+    dispatchNativeAction("mimestream", "toggleSidebar", true);
+    expect(window).toHaveBeenLastCalledWith(
+      expect.objectContaining({ key: "s", metaKey: true, altKey: true, shiftKey: true }),
+    );
+  } finally {
+    dom.dispose();
+  }
+});

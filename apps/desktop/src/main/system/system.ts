@@ -2,12 +2,8 @@ import { finishDatabaseUpgradeStartup } from "../app/database-upgrade";
 import { validOpenFile } from "../security/security-policy";
 import { nativeTabMenu } from "../windows/window-keys";
 import { readDockFiles, dockFileReason } from "../files/dock-files";
-import {
-  NATIVE_MENUS,
-  nativeActionEnabled,
-  NO_MENU_SELECTION,
-  type NativeMenuState,
-} from "../../shared/native-actions";
+import { NO_MENU_SELECTION, type NativeMenuState } from "../../shared/native-actions";
+import { applicationMenuTemplate } from "./app-menu";
 import { configureSpelling, installSpellingMenu } from "../windows/spellcheck";
 import { approveUpdateQuit } from "../updates/update-install";
 import { setRecoveryRelaunch } from "../app/recovery-actions";
@@ -50,7 +46,6 @@ import { shouldBufferDesktopEvent, type DesktopEvent } from "../../shared/deskto
 import { mailHref } from "../../shared/routes";
 import { openExternal } from "../security/external";
 import type { DesktopLabels } from "../../shared/desktop-labels";
-import { shortcutAccelerator } from "../../shared/shortcuts";
 import {
   createMainWindow,
   focusMainWindow,
@@ -365,154 +360,40 @@ export const DesktopLive = Layer.effect(
         if (menuKey !== nextMenuKey) {
           menuKey = nextMenuKey;
           Menu.setApplicationMenu(
-            Menu.buildFromTemplate([
-              ...(process.platform === "darwin"
-                ? [
-                    {
-                      role: "appMenu" as const,
-                      submenu: [
-                        { role: "about" as const },
-                        { label: labels.checkUpdates, click: checkUpdates },
-                        { type: "separator" as const },
-                        {
-                          label: labels.settings,
-                          accelerator: shortcutAccelerator(prefs.shortcutSet, "settings"),
-                          click: () => command("settings"),
-                        },
-                        { type: "separator" as const },
-                        { role: "hide" as const },
-                        { role: "hideOthers" as const },
-                        { role: "unhide" as const },
-                        { type: "separator" as const },
-                        { role: "quit" as const },
-                      ],
-                    },
-                  ]
-                : []),
-              {
-                label: labels.file,
-                submenu: [
-                  {
-                    label: labels.compose,
-                    accelerator: shortcutAccelerator(prefs.shortcutSet, "compose"),
-                    click: () => command("compose"),
-                  },
-                  {
-                    label: labels.attachFiles,
-                    accelerator: shortcutAccelerator(prefs.shortcutSet, "attach"),
-                    click: () => {
-                      const attachTarget = BrowserWindow.getFocusedWindow();
-                      deliver(
-                        { _tag: "AttachFiles" },
-                        attachTarget &&
-                          (isMainWindow(attachTarget) || isComposeWindow(attachTarget))
-                          ? attachTarget
-                          : focusMainWindow(),
-                      );
-                    },
-                  },
-                  {
-                    label: labels.newWindow,
-                    accelerator: shortcutAccelerator(prefs.shortcutSet, "newWindow"),
-                    click: () => createMainWindow(),
-                  },
-                  ...(process.platform !== "darwin"
-                    ? [
-                        {
-                          label: labels.settings,
-                          accelerator: shortcutAccelerator(prefs.shortcutSet, "settings"),
-                          click: () => command("settings"),
-                        },
-                      ]
-                    : []),
-                  { type: "separator" },
-                  { role: "close" },
-                ],
-              },
-              {
-                label: labels.edit,
-                submenu: [
-                  {
-                    label: labels.undo,
-                    accelerator: "CommandOrControl+Z",
-                    click: () => edit("undo"),
-                  },
-                  {
-                    label: labels.undoSend,
-                    enabled: undoAvailable,
-                    click: () => {
-                      const target = BrowserWindow.getFocusedWindow();
-                      if (target && (isMainWindow(target) || isComposeWindow(target)))
-                        deliver({ _tag: "UndoSend" }, target);
-                    },
-                  },
-                  { role: "redo" },
-                  { type: "separator" },
-                  { role: "cut" },
-                  { role: "copy" },
-                  { role: "paste" },
-                  {
-                    label: labels.selectAll,
-                    accelerator: "CommandOrControl+A",
-                    click: () => edit("selectAll"),
-                  },
-                ],
-              },
-              ...NATIVE_MENUS.map((group) => ({
-                label:
-                  labels.menuLabels?.[group.name] ??
-                  (group.name[0]?.toUpperCase() ?? "") + group.name.slice(1),
-                submenu: group.actions
-                  .filter((action) => process.platform === "darwin" || !action.startsWith("share"))
-                  .map((action) => ({
-                    label:
-                      labels.menuLabels?.[action] ??
-                      (action[0]?.toUpperCase() ?? "") +
-                        action.slice(1).replace(/[A-Z]/g, (letter) => ` ${letter.toLowerCase()}`),
-                    accelerator: shortcutAccelerator(prefs.shortcutSet, action),
-                    enabled: nativeActionEnabled(action, menuState),
-                    click: (
-                      _item: Electron.MenuItem,
-                      _window: Electron.BaseWindow | undefined,
-                      event: Electron.KeyboardEvent,
-                    ) => {
-                      const target = BrowserWindow.getFocusedWindow();
-                      if (target)
-                        deliver(
-                          {
-                            _tag: "NativeAction",
-                            action,
-                            triggeredByAccelerator: event.triggeredByAccelerator === true,
-                          },
-                          target,
-                        );
-                    },
-                  })),
-              })),
-              {
-                label: labels.window,
-                submenu: [
-                  { role: "minimize" },
-                  { role: "zoom" },
-                  { role: "front" },
-                  ...nativeTabMenu(prefs.shortcutSet),
-                ],
-              },
-              {
-                role: "help",
-                label: labels.helpMenu ?? "Help",
-                submenu: [
-                  { label: labels.help, click: () => command("help") },
-                  {
-                    label: labels.feedback,
-                    click: () => deliver({ _tag: "Command", command: "feedback" }),
-                  },
-                  ...(process.platform === "darwin"
-                    ? []
-                    : [{ label: labels.checkUpdates, click: checkUpdates }]),
-                ],
-              },
-            ]),
+            Menu.buildFromTemplate(
+              applicationMenuTemplate({
+                platform: process.platform,
+                labels,
+                shortcutSet: prefs.shortcutSet,
+                undoAvailable,
+                menuState,
+                tabMenu: nativeTabMenu(prefs.shortcutSet),
+                checkUpdates,
+                command,
+                feedback: () => deliver({ _tag: "Command", command: "feedback" }),
+                attachFiles: () => {
+                  const attachTarget = BrowserWindow.getFocusedWindow();
+                  deliver(
+                    { _tag: "AttachFiles" },
+                    attachTarget && (isMainWindow(attachTarget) || isComposeWindow(attachTarget))
+                      ? attachTarget
+                      : focusMainWindow(),
+                  );
+                },
+                newWindow: () => createMainWindow(),
+                edit,
+                undoSend: () => {
+                  const target = BrowserWindow.getFocusedWindow();
+                  if (target && (isMainWindow(target) || isComposeWindow(target)))
+                    deliver({ _tag: "UndoSend" }, target);
+                },
+                nativeAction: (action, triggeredByAccelerator) => {
+                  const target = BrowserWindow.getFocusedWindow();
+                  if (target)
+                    deliver({ _tag: "NativeAction", action, triggeredByAccelerator }, target);
+                },
+              }),
+            ),
           );
         }
         yield* notify;

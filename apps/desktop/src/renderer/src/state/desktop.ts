@@ -1,6 +1,14 @@
-import { NATIVE_MENUS } from "../../../shared/native-actions";
+import {
+  GO_MAILBOXES,
+  isGoMailbox,
+  NATIVE_MENUS,
+  nativeMenuActions,
+  type NativeAction,
+} from "../../../shared/native-actions";
+import type { MessageDescriptor } from "@lingui/core";
+import { msg, plural } from "@lingui/core/macro";
+import { MAILBOX_NAMES } from "../lib/view";
 import { ACTION_NAMES } from "../i18n/shortcut-names";
-import { plural } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { Effect, Fiber, Stream } from "effect";
 import { useEffect, useEffectEvent } from "react";
@@ -67,6 +75,14 @@ export function useDesktopEvents(receive: (event: DesktopEvent) => void) {
   }, [run]);
 }
 
+/** A native menu item's name: the shortcut's name, or the mailbox or view the Go menu opens. */
+function menuActionName(action: NativeAction): MessageDescriptor {
+  if (isGoMailbox(action)) return MAILBOX_NAMES[GO_MAILBOXES[action]];
+  if (action === "goBack") return msg`Previous view`;
+  if (action === "goForward") return msg`Next view`;
+  return ACTION_NAMES[action];
+}
+
 export function useDesktopLabels() {
   const { t, i18n } = useLingui();
   const run = useRunMail();
@@ -79,10 +95,37 @@ export function useDesktopLabels() {
               message: t`Message`,
               mailbox: t`Mailbox`,
               format: t`Format`,
+              view: t`View`,
+              go: t`Go`,
+              textStyle: t`Text style`,
+              alignment: t`Alignment`,
+              lists: t`Lists`,
+              quoteLevel: t`Quote level`,
+              direction: t`Direction`,
+              toggleFullScreen: i18n._(ACTION_NAMES.toggleFullScreen),
+              // Electron's role items default to English Title Case, so each gets its label here.
+              about: t`About OpenMail`,
+              hide: t`Hide OpenMail`,
+              hideOthers: t`Hide others`,
+              unhide: t`Show all`,
+              quit: t`Quit OpenMail`,
+              close: t`Close window`,
+              redo: t`Redo`,
+              cut: t`Cut`,
+              copy: t`Copy`,
+              paste: t`Paste`,
+              minimize: t`Minimize`,
+              zoom: t({
+                message: "Zoom",
+                context: "window menu",
+                comment: "macOS Window > Zoom: fills the screen with the window.",
+              }),
+              front: t`Bring all to front`,
               ...Object.fromEntries(
-                NATIVE_MENUS.flatMap((group) =>
-                  group.actions.map((action) => [action, i18n._(ACTION_NAMES[action])]),
-                ),
+                NATIVE_MENUS.flatMap(nativeMenuActions).map((action) => [
+                  action,
+                  i18n._(menuActionName(action)),
+                ]),
               ),
             },
             checkUpdates: t`Check for updates…`,

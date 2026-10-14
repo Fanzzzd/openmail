@@ -372,6 +372,10 @@ msgstr "原每日静音时段仍生效。修改此日程后替换。"
 msgid "A signature needs a name and a sending address."
 msgstr "签名需要名称和发件地址。"
 
+#: src/renderer/src/state/desktop.ts
+msgid "About OpenMail"
+msgstr "关于 OpenMail"
+
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 msgid "Above quoted text"
 msgstr "引文上方"
@@ -703,6 +707,7 @@ msgid "Align right"
 msgstr "右对齐"
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Alignment"
 msgstr "对齐"
 
@@ -1128,6 +1133,10 @@ msgstr "正文"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Bold"
 msgstr "粗体"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Bring all to front"
+msgstr "前置全部窗口"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Browsers"
@@ -1586,6 +1595,10 @@ msgstr "关闭查找"
 msgid "Close other OpenMail processes (CLI/MCP), then restart this app and try recovery again."
 msgstr "请关闭其他 OpenMail 进程（CLI／MCP），再重启此应用并重试恢复。"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Close window"
+msgstr "关闭窗口"
+
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Code block"
@@ -1848,6 +1861,7 @@ msgstr "已复制到文件夹"
 #: src/renderer/src/features/reader/RawMessage.tsx
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Copy"
 msgstr "复制"
 
@@ -2242,6 +2256,7 @@ msgid "Custom time"
 msgstr "自选时间"
 
 #: src/renderer/src/app/WindowUi.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Cut"
 msgstr "剪切"
 
@@ -2416,6 +2431,10 @@ msgstr "检测邮件中的日程"
 #: src/renderer/src/features/feedback/Feedback.tsx
 msgid "Diagnostics preview"
 msgstr "诊断预览"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Direction"
+msgstr "方向"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 #: src/renderer/src/features/settings/Settings.tsx
@@ -3178,6 +3197,10 @@ msgstr "Gmail 草稿标签和星标仅保存在本机。服务器草稿只允许
 msgid "Gmail settings"
 msgstr "Gmail 设置"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Go"
+msgstr "前往"
+
 #: src/renderer/src/features/organize/GoToFolder.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Go to folder"
@@ -3253,6 +3276,14 @@ msgstr "隐藏详情"
 #: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Hide format bar"
 msgstr "隐藏格式栏"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Hide OpenMail"
+msgstr "隐藏 OpenMail"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Hide others"
+msgstr "隐藏其他"
 
 #: src/renderer/src/features/reader/body/MessageBody.tsx
 #: src/renderer/src/features/reader/frame/EmailFrame.tsx
@@ -3684,6 +3715,10 @@ msgstr "浅色背景"
 #: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Link URL"
 msgstr "链接地址"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Lists"
+msgstr "列表"
 
 #: src/renderer/src/features/reader/body/MessageBody.tsx
 #: src/renderer/src/features/reader/RemoteImagesPrompt.tsx
@@ -4138,6 +4173,10 @@ msgstr "Microsoft 将请求邮件修改权限。登录后，请重新选择操�
 msgid "Mimestream"
 msgstr "Mimestream"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Minimize"
+msgstr "最小化"
+
 #: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Minimum size (KiB)"
 msgstr "最小大小（KiB）"
@@ -4490,6 +4529,10 @@ msgstr "下一个页签"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Next thread"
 msgstr "下一个对话"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Next view"
+msgstr "下一个视图"
 
 #: src/renderer/src/features/organize/SnoozeDialog.tsx
 msgid "Next week"
@@ -5171,6 +5214,7 @@ msgid "Password"
 msgstr "密码"
 
 #: src/renderer/src/app/WindowUi.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Paste"
 msgstr "粘贴"
 
@@ -5307,6 +5351,10 @@ msgstr "上一个对话"
 msgid "Previous time:"
 msgstr "原时间："
 
+#: src/renderer/src/state/desktop.ts
+msgid "Previous view"
+msgstr "上一个视图"
+
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Previous window"
 msgstr "上一个窗口"
@@ -5374,10 +5422,18 @@ msgstr "退出"
 msgid "Quit and reopen Claude to load it."
 msgstr "退出并重新打开 Claude 即可加载。"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Quit OpenMail"
+msgstr "退出 OpenMail"
+
 #: src/renderer/src/app/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Quit with messages waiting to send?"
 msgstr "仍有待发邮件，是否退出？"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Quote level"
+msgstr "引用层级"
 
 #: src/renderer/src/app/MailAlerts.tsx
 msgid "Quote only the selected text?"
@@ -5475,6 +5531,10 @@ msgstr "重复会议"
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Redacted report"
 msgstr "脱敏报告"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Redo"
+msgstr "重做"
 
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
@@ -6350,6 +6410,10 @@ msgstr "在访达中显示 {name}"
 msgid "Show account names in unified folders"
 msgstr "在统一文件夹中显示账户名称"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Show all"
+msgstr "全部显示"
+
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Show Cc field"
 msgstr "展开抄送栏"
@@ -6951,6 +7015,10 @@ msgstr "文字色"
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Text size"
 msgstr "文字大小"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Text style"
+msgstr "文本样式"
 
 #: src/renderer/src/lib/errors.ts
 msgid "The {client} OAuth client is not set up yet."
@@ -7839,6 +7907,10 @@ msgstr "判断"
 msgid "Verifying…"
 msgstr "正在验证…"
 
+#: src/renderer/src/state/desktop.ts
+msgid "View"
+msgstr "显示"
+
 #: src/renderer/src/features/reader/frame/EmailFrame.tsx
 msgid "View at 100%"
 msgstr "按 100% 显示"
@@ -8026,3 +8098,9 @@ msgstr "你的重叠日程"
 #: src/renderer/src/lib/errors.ts
 msgid "Your response wasn't sent. Try again, or respond from your calendar."
 msgstr "你的回复未发送。请重试，或在日历中回复。"
+
+#. macOS Window > Zoom: fills the screen with the window.
+#: src/renderer/src/state/desktop.ts
+msgctxt "window menu"
+msgid "Zoom"
+msgstr "缩放"

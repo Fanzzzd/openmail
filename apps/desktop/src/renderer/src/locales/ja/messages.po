@@ -362,6 +362,10 @@ msgstr "以前の毎日の静かな時間の設定はまだ有効です。この
 msgid "A signature needs a name and a sending address."
 msgstr "署名には名前と送信元アドレスが必要です。"
 
+#: src/renderer/src/state/desktop.ts
+msgid "About OpenMail"
+msgstr "OpenMail について"
+
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 msgid "Above quoted text"
 msgstr "引用文の上"
@@ -693,6 +697,7 @@ msgid "Align right"
 msgstr "右揃え"
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Alignment"
 msgstr "配置"
 
@@ -1118,6 +1123,10 @@ msgstr "本文"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Bold"
 msgstr "太字"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Bring all to front"
+msgstr "すべてを手前に移動"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Browsers"
@@ -1576,6 +1585,10 @@ msgstr "検索を閉じる"
 msgid "Close other OpenMail processes (CLI/MCP), then restart this app and try recovery again."
 msgstr "他の OpenMail プロセス (CLI/MCP) を閉じてから、このアプリを再起動し、リカバリを再試行します。"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Close window"
+msgstr "ウィンドウを閉じる"
+
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Code block"
@@ -1838,6 +1851,7 @@ msgstr "フォルダにコピーしました"
 #: src/renderer/src/features/reader/RawMessage.tsx
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Copy"
 msgstr "コピー"
 
@@ -2232,6 +2246,7 @@ msgid "Custom time"
 msgstr "カスタム時間"
 
 #: src/renderer/src/app/WindowUi.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Cut"
 msgstr "カット"
 
@@ -2406,6 +2421,10 @@ msgstr "メッセージ内のカレンダーイベントを検出する"
 #: src/renderer/src/features/feedback/Feedback.tsx
 msgid "Diagnostics preview"
 msgstr "診断プレビュー"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Direction"
+msgstr "方向"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 #: src/renderer/src/features/settings/Settings.tsx
@@ -3168,6 +3187,10 @@ msgstr "Gmail の下書きのラベルとスターはこの Mac に保持され�
 msgid "Gmail settings"
 msgstr "Gmail 設定"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Go"
+msgstr "移動"
+
 #: src/renderer/src/features/organize/GoToFolder.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Go to folder"
@@ -3243,6 +3266,14 @@ msgstr "詳細を隠す"
 #: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Hide format bar"
 msgstr "フォーマットバーを隠す"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Hide OpenMail"
+msgstr "OpenMail を非表示"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Hide others"
+msgstr "ほかを非表示"
 
 #: src/renderer/src/features/reader/body/MessageBody.tsx
 #: src/renderer/src/features/reader/frame/EmailFrame.tsx
@@ -3674,6 +3705,10 @@ msgstr "明るい背景"
 #: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Link URL"
 msgstr "リンク URL"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Lists"
+msgstr "リスト"
 
 #: src/renderer/src/features/reader/body/MessageBody.tsx
 #: src/renderer/src/features/reader/RemoteImagesPrompt.tsx
@@ -4128,6 +4163,10 @@ msgstr "Microsoft がメールの変更権限を求めます。ログイン後�
 msgid "Mimestream"
 msgstr "Mimestream"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Minimize"
+msgstr "しまう"
+
 #: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Minimum size (KiB)"
 msgstr "最小サイズ（KiB）"
@@ -4480,6 +4519,10 @@ msgstr "次のタブ"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Next thread"
 msgstr "次のスレッド"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Next view"
+msgstr "次の表示"
 
 #: src/renderer/src/features/organize/SnoozeDialog.tsx
 msgid "Next week"
@@ -5161,6 +5204,7 @@ msgid "Password"
 msgstr "パスワード"
 
 #: src/renderer/src/app/WindowUi.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Paste"
 msgstr "ペースト"
 
@@ -5297,6 +5341,10 @@ msgstr "前のスレッド"
 msgid "Previous time:"
 msgstr "変更前の日時："
 
+#: src/renderer/src/state/desktop.ts
+msgid "Previous view"
+msgstr "前の表示"
+
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Previous window"
 msgstr "前のウィンドウ"
@@ -5364,10 +5412,18 @@ msgstr "終了"
 msgid "Quit and reopen Claude to load it."
 msgstr "Claude を終了して開き直すと読み込まれます。"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Quit OpenMail"
+msgstr "OpenMail を終了"
+
 #: src/renderer/src/app/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Quit with messages waiting to send?"
 msgstr "メッセージの送信を待機している状態で終了しますか？"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Quote level"
+msgstr "引用レベル"
 
 #: src/renderer/src/app/MailAlerts.tsx
 msgid "Quote only the selected text?"
@@ -5465,6 +5521,10 @@ msgstr "定期的な会議"
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Redacted report"
 msgstr "匿名化レポート"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Redo"
+msgstr "やり直す"
 
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
@@ -6340,6 +6400,10 @@ msgstr "{name} を Finder に表示"
 msgid "Show account names in unified folders"
 msgstr "統合フォルダ内のアカウント名を表示する"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Show all"
+msgstr "すべてを表示"
+
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Show Cc field"
 msgstr "CC フィールドを表示"
@@ -6941,6 +7005,10 @@ msgstr "文字の色"
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Text size"
 msgstr "文字サイズ"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Text style"
+msgstr "テキストスタイル"
 
 #: src/renderer/src/lib/errors.ts
 msgid "The {client} OAuth client is not set up yet."
@@ -7829,6 +7897,10 @@ msgstr "判定"
 msgid "Verifying…"
 msgstr "確認中…"
 
+#: src/renderer/src/state/desktop.ts
+msgid "View"
+msgstr "表示"
+
 #: src/renderer/src/features/reader/frame/EmailFrame.tsx
 msgid "View at 100%"
 msgstr "100% で表示"
@@ -8016,3 +8088,9 @@ msgstr "重なっているイベント"
 #: src/renderer/src/lib/errors.ts
 msgid "Your response wasn't sent. Try again, or respond from your calendar."
 msgstr "返信は送信されませんでした。もう一度お試しいただくか、カレンダーから返信してください。"
+
+#. macOS Window > Zoom: fills the screen with the window.
+#: src/renderer/src/state/desktop.ts
+msgctxt "window menu"
+msgid "Zoom"
+msgstr "拡大／縮小"

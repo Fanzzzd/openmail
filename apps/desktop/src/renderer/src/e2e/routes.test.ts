@@ -246,3 +246,18 @@ it("a failed server search says the results are local, names the account and can
   await eventually(() => expect(calls).toBe(2));
   await eventually(() => expect(screen.queryByText(/couldn't search the server/)).toBeNull());
 });
+
+it("the Go menu opens mailboxes and steps back and forward through views", async () => {
+  const h = (current = await flow({ route: "/mail/all/inbox" }));
+  await eventually(() => expect(title()).toBe("Inbox"));
+  const go = (action: "goStarred" | "goSpam" | "goBack" | "goForward") =>
+    h.event({ _tag: "NativeAction", action, triggeredByAccelerator: true });
+  await go("goStarred");
+  await eventually(() => expect(title()).toBe("Starred"));
+  await go("goSpam");
+  await eventually(() => expect(title()).toBe("Spam"));
+  await go("goBack");
+  await eventually(() => expect(title()).toBe("Starred"));
+  await go("goForward");
+  await eventually(() => expect(title()).toBe("Spam"));
+});

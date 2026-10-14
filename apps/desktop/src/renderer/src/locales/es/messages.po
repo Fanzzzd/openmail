@@ -362,6 +362,10 @@ msgstr "Una configuración anterior de horas de silencio diarias todavía está 
 msgid "A signature needs a name and a sending address."
 msgstr "Una firma necesita un nombre y una dirección de envío."
 
+#: src/renderer/src/state/desktop.ts
+msgid "About OpenMail"
+msgstr "Acerca de OpenMail"
+
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 msgid "Above quoted text"
 msgstr "Encima del texto citado"
@@ -693,6 +697,7 @@ msgid "Align right"
 msgstr "Alinear a la derecha"
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Alignment"
 msgstr "Alineación"
 
@@ -1118,6 +1123,10 @@ msgstr "Texto del mensaje"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Bold"
 msgstr "Negrita"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Bring all to front"
+msgstr "Traer todo al frente"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Browsers"
@@ -1576,6 +1585,10 @@ msgstr "Cerrar búsqueda"
 msgid "Close other OpenMail processes (CLI/MCP), then restart this app and try recovery again."
 msgstr "Cierra los demás procesos de OpenMail (CLI/MCP), reinicia esta aplicación y vuelve a intentar la recuperación."
 
+#: src/renderer/src/state/desktop.ts
+msgid "Close window"
+msgstr "Cerrar ventana"
+
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Code block"
@@ -1838,6 +1851,7 @@ msgstr "Copiado en carpetas"
 #: src/renderer/src/features/reader/RawMessage.tsx
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Copy"
 msgstr "Copiar"
 
@@ -2232,6 +2246,7 @@ msgid "Custom time"
 msgstr "Hora personalizada"
 
 #: src/renderer/src/app/WindowUi.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Cut"
 msgstr "Cortar"
 
@@ -2406,6 +2421,10 @@ msgstr "Detectar eventos de calendario en mensajes"
 #: src/renderer/src/features/feedback/Feedback.tsx
 msgid "Diagnostics preview"
 msgstr "Vista previa de diagnóstico"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Direction"
+msgstr "Dirección"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 #: src/renderer/src/features/settings/Settings.tsx
@@ -3168,6 +3187,10 @@ msgstr "Las etiquetas y estrellas de los borradores de Gmail permanecen en este 
 msgid "Gmail settings"
 msgstr "Ajustes de Gmail"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Go"
+msgstr "Ir"
+
 #: src/renderer/src/features/organize/GoToFolder.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Go to folder"
@@ -3243,6 +3266,14 @@ msgstr "Ocultar detalles"
 #: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Hide format bar"
 msgstr "Ocultar barra de formato"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Hide OpenMail"
+msgstr "Ocultar OpenMail"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Hide others"
+msgstr "Ocultar otros"
 
 #: src/renderer/src/features/reader/body/MessageBody.tsx
 #: src/renderer/src/features/reader/frame/EmailFrame.tsx
@@ -3674,6 +3705,10 @@ msgstr "Fondo claro"
 #: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Link URL"
 msgstr "URL del enlace"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Lists"
+msgstr "Listas"
 
 #: src/renderer/src/features/reader/body/MessageBody.tsx
 #: src/renderer/src/features/reader/RemoteImagesPrompt.tsx
@@ -4128,6 +4163,10 @@ msgstr "Microsoft solicitará permiso para modificar el correo. Después de inic
 msgid "Mimestream"
 msgstr "Mimestream"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Minimize"
+msgstr "Minimizar"
+
 #: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Minimum size (KiB)"
 msgstr "Tamaño mínimo (KiB)"
@@ -4480,6 +4519,10 @@ msgstr "Pestaña siguiente"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Next thread"
 msgstr "Siguiente conversación"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Next view"
+msgstr "Vista siguiente"
 
 #: src/renderer/src/features/organize/SnoozeDialog.tsx
 msgid "Next week"
@@ -5161,6 +5204,7 @@ msgid "Password"
 msgstr "Contraseña"
 
 #: src/renderer/src/app/WindowUi.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Paste"
 msgstr "Pegar"
 
@@ -5297,6 +5341,10 @@ msgstr "Conversación anterior"
 msgid "Previous time:"
 msgstr "Hora anterior:"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Previous view"
+msgstr "Vista anterior"
+
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Previous window"
 msgstr "Ventana anterior"
@@ -5364,10 +5412,18 @@ msgstr "Salir"
 msgid "Quit and reopen Claude to load it."
 msgstr "Cierra y vuelve a abrir Claude para cargarlo."
 
+#: src/renderer/src/state/desktop.ts
+msgid "Quit OpenMail"
+msgstr "Salir de OpenMail"
+
 #: src/renderer/src/app/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Quit with messages waiting to send?"
 msgstr "¿Salir con mensajes esperando ser enviados?"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Quote level"
+msgstr "Nivel de cita"
 
 #: src/renderer/src/app/MailAlerts.tsx
 msgid "Quote only the selected text?"
@@ -5465,6 +5521,10 @@ msgstr "Reunión recurrente"
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Redacted report"
 msgstr "Informe anonimizado"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Redo"
+msgstr "Rehacer"
 
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
@@ -6340,6 +6400,10 @@ msgstr "Mostrar {name} en el Finder"
 msgid "Show account names in unified folders"
 msgstr "Mostrar nombres de cuentas en carpetas unificadas"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Show all"
+msgstr "Mostrar todo"
+
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Show Cc field"
 msgstr "Mostrar campo CC"
@@ -6941,6 +7005,10 @@ msgstr "Color del texto"
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Text size"
 msgstr "Tamaño del texto"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Text style"
+msgstr "Estilo de texto"
 
 #: src/renderer/src/lib/errors.ts
 msgid "The {client} OAuth client is not set up yet."
@@ -7829,6 +7897,10 @@ msgstr "Resultado"
 msgid "Verifying…"
 msgstr "Verificando…"
 
+#: src/renderer/src/state/desktop.ts
+msgid "View"
+msgstr "Visualización"
+
 #: src/renderer/src/features/reader/frame/EmailFrame.tsx
 msgid "View at 100%"
 msgstr "Ver al 100 %"
@@ -8016,3 +8088,9 @@ msgstr "Tus eventos superpuestos"
 #: src/renderer/src/lib/errors.ts
 msgid "Your response wasn't sent. Try again, or respond from your calendar."
 msgstr "Tu respuesta no se envió. Vuelve a intentarlo o responde desde tu calendario."
+
+#. macOS Window > Zoom: fills the screen with the window.
+#: src/renderer/src/state/desktop.ts
+msgctxt "window menu"
+msgid "Zoom"
+msgstr "Zoom"

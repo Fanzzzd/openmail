@@ -8,13 +8,16 @@ import { Schema } from "effect";
 import { COMPOSE_ATTACHMENT_LIMIT } from "@openmail/core";
 import { readDockFiles } from "./dock-files";
 import {
+  GO_MAILBOXES,
+  isGoMailbox,
   NativeAction,
   NATIVE_MENUS,
+  nativeMenuActions,
   nativeActionEnabled,
   nativeActionStroke,
   providerMenuState,
 } from "../../shared/native-actions";
-import { KEYMAP, matchesShortcut } from "../../shared/shortcuts";
+import { folderShortcut, historyShortcut, KEYMAP, matchesShortcut } from "../../shared/shortcuts";
 import { DesktopEvent, desktopEventRoute, shouldBufferDesktopEvent } from "../../shared/desktop";
 vi.mock("electron", () => ({
   app: new EventEmitter(),
@@ -54,21 +57,28 @@ it("Dock drops read bounded regular files and roundtrip as a deferred compose ev
 
 it("native mail menus share the keymap and selection/composer capability rules", () => {
   for (const group of NATIVE_MENUS)
-    for (const action of group.actions) {
+    for (const action of nativeMenuActions(group)) {
       expect(Schema.decodeUnknownSync(NativeAction)(action)).toBe(action);
       for (const set of ["mimestream", "gmail", "apple"] as const) {
         const stroke = nativeActionStroke(set, action);
+        const event = stroke && {
+          key: stroke.key,
+          metaKey: Boolean(stroke.cmd),
+          ctrlKey: Boolean(stroke.control),
+          altKey: Boolean(stroke.alt),
+          shiftKey: Boolean(stroke.shift),
+        };
+        // Go menu keys are the window's folder and history keys, not keymap entries.
+        if (isGoMailbox(action)) {
+          expect(event && folderShortcut(set, event)).toBe(GO_MAILBOXES[action]);
+          continue;
+        }
+        if (action === "goBack" || action === "goForward") {
+          expect(event && historyShortcut(event)).toBe(action === "goBack" ? "back" : "forward");
+          continue;
+        }
         expect(stroke).toEqual(KEYMAP[set][action][0]);
-        if (stroke)
-          expect(
-            matchesShortcut(set, action, {
-              key: stroke.key,
-              metaKey: Boolean(stroke.cmd),
-              ctrlKey: Boolean(stroke.control),
-              altKey: Boolean(stroke.alt),
-              shiftKey: Boolean(stroke.shift),
-            }),
-          ).toBe(true);
+        if (event) expect(matchesShortcut(set, action, event)).toBe(true);
       }
     }
   const empty = { selected: false, composing: false, important: false };

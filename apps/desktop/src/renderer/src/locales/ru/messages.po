@@ -362,6 +362,10 @@ msgstr "Предыдущая ежедневная настройка тихих 
 msgid "A signature needs a name and a sending address."
 msgstr "У подписи должны быть название и адрес отправки."
 
+#: src/renderer/src/state/desktop.ts
+msgid "About OpenMail"
+msgstr "О программе OpenMail"
+
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 msgid "Above quoted text"
 msgstr "Над цитируемым текстом"
@@ -693,6 +697,7 @@ msgid "Align right"
 msgstr "По правому краю"
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Alignment"
 msgstr "Выравнивание"
 
@@ -1118,6 +1123,10 @@ msgstr "Текст сообщения"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Bold"
 msgstr "Полужирный"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Bring all to front"
+msgstr "Переместить все окна вперёд"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Browsers"
@@ -1576,6 +1585,10 @@ msgstr "Закрыть поиск"
 msgid "Close other OpenMail processes (CLI/MCP), then restart this app and try recovery again."
 msgstr "Закройте другие процессы OpenMail (CLI/MCP), затем перезапустите это приложение и повторите попытку восстановления."
 
+#: src/renderer/src/state/desktop.ts
+msgid "Close window"
+msgstr "Закрыть окно"
+
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Code block"
@@ -1838,6 +1851,7 @@ msgstr "Скопировано в папки"
 #: src/renderer/src/features/reader/RawMessage.tsx
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Copy"
 msgstr "Копировать"
 
@@ -2232,6 +2246,7 @@ msgid "Custom time"
 msgstr "Пользовательское время"
 
 #: src/renderer/src/app/WindowUi.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Cut"
 msgstr "Вырезать"
 
@@ -2406,6 +2421,10 @@ msgstr "Обнаружение событий календаря в сообще
 #: src/renderer/src/features/feedback/Feedback.tsx
 msgid "Diagnostics preview"
 msgstr "Предварительный просмотр диагностики"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Direction"
+msgstr "Направление"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 #: src/renderer/src/features/settings/Settings.tsx
@@ -3168,6 +3187,10 @@ msgstr "Ярлыки и звёзды черновиков Gmail остаются
 msgid "Gmail settings"
 msgstr "Настройки Gmail"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Go"
+msgstr "Переход"
+
 #: src/renderer/src/features/organize/GoToFolder.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Go to folder"
@@ -3243,6 +3266,14 @@ msgstr "Скрыть подробности"
 #: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Hide format bar"
 msgstr "Скрыть панель формата"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Hide OpenMail"
+msgstr "Скрыть OpenMail"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Hide others"
+msgstr "Скрыть остальные"
 
 #: src/renderer/src/features/reader/body/MessageBody.tsx
 #: src/renderer/src/features/reader/frame/EmailFrame.tsx
@@ -3674,6 +3705,10 @@ msgstr "Светлый фон"
 #: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Link URL"
 msgstr "URL-адрес ссылки"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Lists"
+msgstr "Списки"
 
 #: src/renderer/src/features/reader/body/MessageBody.tsx
 #: src/renderer/src/features/reader/RemoteImagesPrompt.tsx
@@ -4128,6 +4163,10 @@ msgstr "Microsoft запросит разрешение на изменение 
 msgid "Mimestream"
 msgstr "Mimestream"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Minimize"
+msgstr "Свернуть"
+
 #: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Minimum size (KiB)"
 msgstr "Минимальный размер (КиБ)"
@@ -4480,6 +4519,10 @@ msgstr "Следующая вкладка"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Next thread"
 msgstr "Следующая переписка"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Next view"
+msgstr "Следующий вид"
 
 #: src/renderer/src/features/organize/SnoozeDialog.tsx
 msgid "Next week"
@@ -5161,6 +5204,7 @@ msgid "Password"
 msgstr "Пароль"
 
 #: src/renderer/src/app/WindowUi.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Paste"
 msgstr "Вставить"
 
@@ -5297,6 +5341,10 @@ msgstr "Предыдущая переписка"
 msgid "Previous time:"
 msgstr "Прежнее время:"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Previous view"
+msgstr "Предыдущий вид"
+
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Previous window"
 msgstr "Предыдущее окно"
@@ -5364,10 +5412,18 @@ msgstr "Выйти"
 msgid "Quit and reopen Claude to load it."
 msgstr "Закройте и снова откройте Claude, чтобы загрузить изменение."
 
+#: src/renderer/src/state/desktop.ts
+msgid "Quit OpenMail"
+msgstr "Завершить OpenMail"
+
 #: src/renderer/src/app/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Quit with messages waiting to send?"
 msgstr "Выйти с сообщениями, ожидающими отправки?"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Quote level"
+msgstr "Уровень цитирования"
 
 #: src/renderer/src/app/MailAlerts.tsx
 msgid "Quote only the selected text?"
@@ -5465,6 +5521,10 @@ msgstr "Повторяющаяся встреча"
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Redacted report"
 msgstr "Обезличенный отчёт"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Redo"
+msgstr "Повторить"
 
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
@@ -6340,6 +6400,10 @@ msgstr "Показать {name} в Finder"
 msgid "Show account names in unified folders"
 msgstr "Показывать имена учетных записей в объединенных папках"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Show all"
+msgstr "Показать все"
+
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Show Cc field"
 msgstr "Показать поле «Копия»"
@@ -6941,6 +7005,10 @@ msgstr "Цвет текста"
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Text size"
 msgstr "Размер текста"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Text style"
+msgstr "Стиль текста"
 
 #: src/renderer/src/lib/errors.ts
 msgid "The {client} OAuth client is not set up yet."
@@ -7829,6 +7897,10 @@ msgstr "Результат"
 msgid "Verifying…"
 msgstr "Проверка…"
 
+#: src/renderer/src/state/desktop.ts
+msgid "View"
+msgstr "Вид"
+
 #: src/renderer/src/features/reader/frame/EmailFrame.tsx
 msgid "View at 100%"
 msgstr "Показать в масштабе 100 %"
@@ -8016,3 +8088,9 @@ msgstr "Ваши пересекающиеся события"
 #: src/renderer/src/lib/errors.ts
 msgid "Your response wasn't sent. Try again, or respond from your calendar."
 msgstr "Ваш ответ не отправлен. Повторите попытку или ответьте из своего календаря."
+
+#. macOS Window > Zoom: fills the screen with the window.
+#: src/renderer/src/state/desktop.ts
+msgctxt "window menu"
+msgid "Zoom"
+msgstr "Изменить масштаб"

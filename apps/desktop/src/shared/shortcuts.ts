@@ -328,7 +328,8 @@ export function shortcutAccelerator(set: ShortcutSet, action: ShortcutAction): s
     ...(stroke.alt ? ["Alt"] : []),
     ...(stroke.shift ? ["Shift"] : []),
     "CommandOrControl",
-    stroke.key,
+    // Electron spells the + key "Plus"; a literal + would split the accelerator.
+    stroke.key === "+" ? "Plus" : stroke.key,
   ].join("+");
 }
 

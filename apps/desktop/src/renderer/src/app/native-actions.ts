@@ -4,6 +4,8 @@ import {
   NATIVE_MENUS,
   nativeActionStroke,
   nativeActionUsesEditor,
+  nativeActionUsesReader,
+  nativeMenuActions,
 } from "../../../shared/native-actions";
 import type { ShortcutSet } from "../../../shared/shortcuts";
 import { isTypingTarget } from "../lib/typing-target";
@@ -12,7 +14,7 @@ export function shouldDropNativeAction(action: NativeAction, triggeredByAccelera
   return (
     triggeredByAccelerator &&
     NATIVE_MENUS.some(
-      (menu) => menu.name !== "format" && menu.actions.some((candidate) => candidate === action),
+      (menu) => menu.name !== "format" && nativeMenuActions(menu).includes(action),
     ) &&
     isTypingTarget(document.activeElement)
   );
@@ -27,7 +29,9 @@ export function dispatchNativeAction(
   const stroke = nativeActionStroke(set, action);
   const target = nativeActionUsesEditor(action)
     ? (document.activeElement ?? window)
-    : document.body;
+    : nativeActionUsesReader(action)
+      ? readerText()
+      : document.body;
   if (!stroke) {
     // Rare formatting has no key, so the menu names the action instead.
     if (nativeActionUsesEditor(action))
@@ -44,5 +48,14 @@ export function dispatchNativeAction(
       bubbles: true,
       cancelable: true,
     }),
+  );
+}
+
+/** The reader text that zoom keys act on: the focused one, else the window's reader. */
+function readerText(): Element {
+  return (
+    document.activeElement?.closest('[data-reader-text][role="document"]') ??
+    document.querySelector('[data-reader-text][role="document"]') ??
+    document.body
   );
 }
