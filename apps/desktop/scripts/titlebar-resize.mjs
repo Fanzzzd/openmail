@@ -3,38 +3,79 @@
 //
 //   pnpm build
 //   node apps/desktop/scripts/titlebar-resize.mjs             # seeds demo data, starts the preview
+//   node apps/desktop/scripts/titlebar-resize.mjs --app apps/desktop/release/mac-arm64/OpenMail.app
 //   node apps/desktop/scripts/titlebar-resize.mjs --port 9333 # a dev app already on that CDP port
+//
+// --timeout (ms, default 120000) bounds the whole run. A started app that exits early fails the
+// run at once, and a failed report carries the app's stdout and stderr.
 import { execFileSync, spawn } from "node:child_process";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { smokeEnvironment } from "./smoke-ui.mjs";
 
 const { values } = parseArgs({
-  options: { port: { type: "string" }, timeout: { type: "string", default: "120000" } },
+  options: {
+    app: { type: "string" },
+    port: { type: "string" },
+    timeout: { type: "string", default: "120000" },
+  },
 });
 const deadline = Date.now() + Number(values.timeout);
 const sleep = (ms) =>
   new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
-const report = { attached: !!values.port, checks: [], failure: "" };
+const report = { attached: !!values.port, app: values.app ?? "preview", checks: [], failure: "" };
 /** @type {import("node:child_process").ChildProcess | undefined} */
 let child;
 /** @type {string | undefined} */
 let directory;
 /** @type {WebSocket | undefined} */
 let socket;
+/** The started app's stdout and stderr, interleaved, for the failure report. */
+let output = "";
+/** Why the started app stopped before the run ended. */
+let exited = "";
 
 async function until(action, what) {
   while (Date.now() < deadline) {
+    if (exited) throw new Error(`The app exited (${exited}) while waiting for ${what}`);
     const result = await action().catch(() => null);
     if (result) return result;
     await sleep(200);
   }
-  throw new Error(`Timed out waiting for ${what}`);
+  throw new Error(`Timed out after ${values.timeout} ms waiting for ${what}`);
+}
+
+/** Starts the packaged app at `--app`, or the electron-vite preview of the built sources. */
+function launch(port) {
+  const flags = [`--remote-debugging-port=${port}`, `--user-data-dir=${directory}`];
+  const options = {
+    env: smokeEnvironment(process.env, directory),
+    stdio: /** @type {const} */ (["ignore", "pipe", "pipe"]),
+    detached: true,
+  };
+  const started = values.app
+    ? spawn(join(resolve(values.app), "Contents/MacOS/OpenMail"), flags, options)
+    : spawn("pnpm", ["exec", "electron-vite", "preview", "--skipBuild", "--", ...flags], {
+        ...options,
+        cwd: fileURLToPath(new URL("..", import.meta.url)),
+      });
+  const record = (chunk) => {
+    output = (output + chunk).slice(-20_000);
+  };
+  started.stdout?.on("data", record);
+  started.stderr?.on("data", record);
+  started.on("error", (error) => {
+    exited = error.message;
+  });
+  started.on("exit", (code, signal) => {
+    exited = signal ?? `code ${code}`;
+  });
+  return started;
 }
 
 let sequence = 0;
@@ -108,28 +149,17 @@ try {
   if (!values.port) {
     directory = await mkdtemp(join(tmpdir(), "openmail-titlebar-"));
     const root = fileURLToPath(new URL("../../..", import.meta.url));
-    execFileSync(process.execPath, [join(root, "scripts/demo-data.mjs"), directory], {
-      stdio: "ignore",
-    });
+    try {
+      execFileSync(process.execPath, [join(root, "scripts/demo-data.mjs"), directory], {
+        encoding: "utf8",
+        stdio: "pipe",
+      });
+    } catch (error) {
+      output = `${error?.stdout ?? ""}${error?.stderr ?? ""}`;
+      throw new Error("Seeding demo data failed", { cause: error });
+    }
     port = 9200 + Math.floor(Math.random() * 500);
-    child = spawn(
-      "pnpm",
-      [
-        "exec",
-        "electron-vite",
-        "preview",
-        "--skipBuild",
-        "--",
-        `--remote-debugging-port=${port}`,
-        `--user-data-dir=${directory}`,
-      ],
-      {
-        cwd: fileURLToPath(new URL("..", import.meta.url)),
-        env: smokeEnvironment(process.env, directory),
-        stdio: "ignore",
-        detached: true,
-      },
-    );
+    child = launch(port);
   }
   const target = await until(async () => {
     const targets = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json();
@@ -252,14 +282,16 @@ try {
   report.failure = error instanceof Error ? error.message : String(error);
 } finally {
   socket?.close();
-  if (child?.pid) {
+  if (child?.pid && !exited) {
     try {
       process.kill(-child.pid, "SIGTERM");
     } catch {
-      // The preview already exited.
+      // The app already exited.
     }
-    await sleep(1500);
+    for (let waited = 0; !exited && waited < 5000; waited += 100) await sleep(100);
+    if (!exited) process.kill(-child.pid, "SIGKILL");
   }
+  if (report.failure && child) report.output = output;
   if (directory) await rm(directory, { recursive: true, force: true });
   process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
   if (report.failure) process.exitCode = 1;
