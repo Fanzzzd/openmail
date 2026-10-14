@@ -9,7 +9,7 @@ pnpm install
 pnpm --filter @openmail/desktop dist
 ```
 
-The output goes to `apps/desktop/release/`: a DMG and a ZIP for each of arm64 and x64. The command always passes `--publish never`, so it never creates a release, pushes a tag or uploads anything. A local build is only ad-hoc signed to repair Electron's seal. It needs no Apple Developer account and does not enable auto-update.
+The script first builds the workspace packages the app imports at runtime (`@openmail/core`, `@openmail/cli`) through `turbo run build --filter=@openmail/desktop^...`, then the app. Before packaging, `build/workspace-builds.cjs` checks that every export of those packages exists in their `dist` folders and stops the build otherwise. Without this, a clean checkout produced an app whose main entry could not load. The output goes to `apps/desktop/release/`: a DMG and a ZIP for each of arm64 and x64. The command always passes `--publish never`, so it never creates a release, pushes a tag or uploads anything. A local build is only ad-hoc signed to repair Electron's seal. It needs no Apple Developer account and does not enable auto-update.
 
 Local builds also turn on CookieEncryption. On first launch, or after an ad-hoc re-sign, macOS may ask for keychain access to the cookie encryption key, and repeated builds can ask again. That keychain item is separate from the OAuth tokens and API keys OpenMail stores. Check the prompt and the signing behaviour at release time; see [desktop security](security.md). Do not silence the prompt by turning the fuse off, because existing cookie storage can then become unreadable.
 

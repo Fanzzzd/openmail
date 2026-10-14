@@ -52,6 +52,7 @@ module.exports = {
   ],
   npmRebuild: false,
   asar: true,
+  beforePack: require("./build/workspace-builds.cjs").beforePack,
   afterPack: require("./build/security-fuses.cjs").afterPack,
   asarUnpack: [
     "**/*.node",
