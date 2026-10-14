@@ -347,6 +347,7 @@ it("AI answers render URLs and phone numbers as plain text", () => {
             sources: [],
             model: "",
             truncated: false,
+            coverage: undefined,
             status: "done",
             error: null,
             start: vi.fn(),
@@ -358,6 +359,42 @@ it("AI answers render URLs and phone numbers as plain text", () => {
     );
     expect(dom.element.textContent).toContain(text);
     expect(dom.element.querySelectorAll("a")).toHaveLength(0);
+  } finally {
+    dom.dispose();
+  }
+});
+
+it("a summary of a cut thread says how many of its messages it covers", () => {
+  const dom = testDom();
+  try {
+    const result = {
+      text: "Summary",
+      sources: [],
+      model: "claude-sonnet-5-5",
+      truncated: false,
+      status: "done" as const,
+      error: null,
+      start: vi.fn(),
+      cancel: vi.fn(),
+    };
+    dom.render(
+      localize(
+        createElement(AiOutput, {
+          result: { ...result, coverage: { kept: 12, total: 40 } },
+          openSource: vi.fn(),
+        }),
+      ),
+    );
+    expect(dom.element.textContent).toContain("Covers the newest 12 of 40 messages");
+    dom.render(
+      localize(
+        createElement(AiOutput, {
+          result: { ...result, coverage: undefined },
+          openSource: vi.fn(),
+        }),
+      ),
+    );
+    expect(dom.element.textContent).not.toContain("Covers the newest");
   } finally {
     dom.dispose();
   }
@@ -388,6 +425,7 @@ const failedOutput = (error: InvalidInput | ProviderError | null) =>
         sources: [{ id: "gmail:me/m1", subject: "Quarterly plan" }],
         model: "",
         truncated: false,
+        coverage: undefined,
         status: "failed",
         error,
         start: vi.fn(),

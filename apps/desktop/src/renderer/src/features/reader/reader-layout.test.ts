@@ -359,6 +359,26 @@ it("asks for calendar consent, not a new sign-in, when the provider refuses cale
   expect(screen.getByRole("button", { name: "Accept" })).toBeTruthy();
 });
 
+it("lists a reply's attendees with their status and optional flag in one message each", () => {
+  fixture.values.set("invitations", [
+    {
+      ...invite,
+      method: "REPLY",
+      attendees: [
+        { name: "Ann", address: "ann@example.com", status: "ACCEPTED", optional: true },
+        { name: "", address: "bo@example.com", status: "DECLINED", optional: false },
+      ],
+    },
+  ]);
+  fixture.values.set("OptionalServices", [{ service: "calendar", state: "granted" }]);
+  const view = render(
+    localized(h(InviteBanner, { message: message("m1", { hasCalendar: true }) })),
+  );
+  expect(view.container.textContent).toContain(
+    "Attendees: Ann <ann@example.com> (optional, Accepted) and bo@example.com (Declined)",
+  );
+});
+
 it("asks to sign in again only when the provider rejects the sign-in", () => {
   fixture.values.set("invitations", [invite]);
   fixture.values.set("OptionalServices", [{ service: "calendar", state: "granted" }]);

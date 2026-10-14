@@ -68,6 +68,18 @@ msgstr "{active, plural, other {ダウンロード（#件進行中）}}"
 msgid "{affected, plural, one {# account needs attention} other {# accounts need attention}}"
 msgstr "{affected, plural, other {#個のアカウントに対応が必要です}}"
 
+#: src/renderer/src/features/calendar/InviteBanner.tsx
+msgid "{attendee} ({status})"
+msgstr "{attendee}（{status}）"
+
+#: src/renderer/src/features/calendar/InviteBanner.tsx
+msgid "{attendee} (optional, {status})"
+msgstr "{attendee}（任意、{status}）"
+
+#: src/renderer/src/features/calendar/InviteBanner.tsx
+msgid "{attendee} (optional)"
+msgstr "{attendee}（任意）"
+
 #: src/renderer/src/app/use-view-title.ts
 msgid "{baseTitle}: {user}"
 msgstr "{baseTitle}: {user}"
@@ -235,6 +247,10 @@ msgstr "{summary}, {count, plural, other {#回}}"
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "{text} → {recipient}"
 msgstr "{text} → {recipient}"
+
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "{total, plural, one {Covers the newest {kept} of # message} other {Covers the newest {kept} of # messages}}"
+msgstr "{total, plural, other {全 # 件のうち新しい {kept} 件のメッセージを対象にしています}}"
 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "{value} days"
@@ -922,8 +938,8 @@ msgid "Attachments you save appear here."
 msgstr "保存した添付ファイルがここに表示されます。"
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
-msgid "Attendees"
-msgstr "出席者"
+msgid "Attendees:"
+msgstr "出席者："
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Authorization code"
@@ -3595,14 +3611,17 @@ msgstr "ローカル署名はこの Mac に残ります。 Gmail のデフォル
 msgid "Local total / unread / threads"
 msgstr "ローカル：合計 / 未読 / スレッド"
 
-#: src/renderer/src/features/calendar/CalendarEvents.tsx
-#: src/renderer/src/features/calendar/InviteBanner.tsx
-msgid "Location"
-msgstr "場所"
-
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Location changed:"
 msgstr "場所が変更されました:"
+
+#: src/renderer/src/features/calendar/InviteBanner.tsx
+msgid "Location:"
+msgstr "場所："
+
+#: src/renderer/src/features/calendar/CalendarEvents.tsx
+msgid "Location: {location}"
+msgstr "場所：{location}"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Lost the connection to the background process."
@@ -4785,10 +4804,6 @@ msgstr "OpenMail の MCP サーバーはまだここから起動できません�
 msgid "Operations from the last 24 hours. Restores labels, folders and flags after checking current state."
 msgstr "過去24時間の操作です。現在の状態を確認してから、ラベル、フォルダ、フラグを復元します。"
 
-#: src/renderer/src/features/calendar/InviteBanner.tsx
-msgid "Optional"
-msgstr "任意"
-
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 msgid "Optional services"
 msgstr "オプションサービス"
@@ -4806,8 +4821,8 @@ msgid "Organize directly"
 msgstr "直接整理"
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
-msgid "Organizer"
-msgstr "主催者"
+msgid "Organizer:"
+msgstr "主催者："
 
 #: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Original"
@@ -5836,6 +5851,10 @@ msgstr "保存中…"
 msgid "Search"
 msgstr "検索"
 
+#: src/renderer/src/features/search/SearchField.tsx
+msgid "Search  {searchKey}"
+msgstr "検索  {searchKey}"
+
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Search could not finish:"
 msgstr "検索を完了できませんでした:"
@@ -5910,6 +5929,10 @@ msgstr "スレッドを選択"
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Selected message"
 msgstr "選択したメッセージ"
+
+#: src/renderer/src/features/reader/ThreadMessage.tsx
+msgid "Selected message: {sender}, {subject}"
+msgstr "選択したメッセージ：{sender}、{subject}"
 
 #: src/renderer/src/app/MailAlerts.tsx
 msgid "Selected text"

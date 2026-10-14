@@ -68,6 +68,18 @@ msgstr "{active, plural, one {Downloads (# bezig)} other {Downloads (# bezig)}}"
 msgid "{affected, plural, one {# account needs attention} other {# accounts need attention}}"
 msgstr "{affected, plural, one {# account vraagt aandacht} other {# accounts vragen aandacht}}"
 
+#: src/renderer/src/features/calendar/InviteBanner.tsx
+msgid "{attendee} ({status})"
+msgstr "{attendee} ({status})"
+
+#: src/renderer/src/features/calendar/InviteBanner.tsx
+msgid "{attendee} (optional, {status})"
+msgstr "{attendee} (optioneel, {status})"
+
+#: src/renderer/src/features/calendar/InviteBanner.tsx
+msgid "{attendee} (optional)"
+msgstr "{attendee} (optioneel)"
+
 #: src/renderer/src/app/use-view-title.ts
 msgid "{baseTitle}: {user}"
 msgstr "{baseTitle}: {user}"
@@ -235,6 +247,10 @@ msgstr "{summary}, {count, plural, one {# keer} other {# keer}}"
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "{text} → {recipient}"
 msgstr "{text} → {recipient}"
+
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "{total, plural, one {Covers the newest {kept} of # message} other {Covers the newest {kept} of # messages}}"
+msgstr "{total, plural, one {Omvat de nieuwste {kept} van # bericht} other {Omvat de nieuwste {kept} van # berichten}}"
 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "{value} days"
@@ -922,8 +938,8 @@ msgid "Attachments you save appear here."
 msgstr "Bijlagen die je bewaart, verschijnen hier."
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
-msgid "Attendees"
-msgstr "Deelnemers"
+msgid "Attendees:"
+msgstr "Deelnemers:"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Authorization code"
@@ -3595,14 +3611,17 @@ msgstr "Lokale handtekeningen blijven op deze Mac staan. De standaardhandtekenin
 msgid "Local total / unread / threads"
 msgstr "Lokaal totaal / ongelezen / gesprekken"
 
-#: src/renderer/src/features/calendar/CalendarEvents.tsx
-#: src/renderer/src/features/calendar/InviteBanner.tsx
-msgid "Location"
-msgstr "Locatie"
-
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Location changed:"
 msgstr "Locatie gewijzigd:"
+
+#: src/renderer/src/features/calendar/InviteBanner.tsx
+msgid "Location:"
+msgstr "Locatie:"
+
+#: src/renderer/src/features/calendar/CalendarEvents.tsx
+msgid "Location: {location}"
+msgstr "Locatie: {location}"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Lost the connection to the background process."
@@ -4785,10 +4804,6 @@ msgstr "De MCP-server van OpenMail kan hier nog niet starten. Zie de opmerking h
 msgid "Operations from the last 24 hours. Restores labels, folders and flags after checking current state."
 msgstr "Acties van de afgelopen 24 uur. Herstelt labels, mappen en markeringen na controle van de huidige status."
 
-#: src/renderer/src/features/calendar/InviteBanner.tsx
-msgid "Optional"
-msgstr "Optioneel"
-
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 msgid "Optional services"
 msgstr "Optionele diensten"
@@ -4806,8 +4821,8 @@ msgid "Organize directly"
 msgstr "Organiseer direct"
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
-msgid "Organizer"
-msgstr "Organisator"
+msgid "Organizer:"
+msgstr "Organisator:"
 
 #: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Original"
@@ -5836,6 +5851,10 @@ msgstr "Bewaren…"
 msgid "Search"
 msgstr "Zoek"
 
+#: src/renderer/src/features/search/SearchField.tsx
+msgid "Search  {searchKey}"
+msgstr "Zoek  {searchKey}"
+
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Search could not finish:"
 msgstr "Zoeken kon niet worden voltooid:"
@@ -5910,6 +5929,10 @@ msgstr "Gesprek selecteren"
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Selected message"
 msgstr "Geselecteerd bericht"
+
+#: src/renderer/src/features/reader/ThreadMessage.tsx
+msgid "Selected message: {sender}, {subject}"
+msgstr "Geselecteerd bericht: {sender}, {subject}"
 
 #: src/renderer/src/app/MailAlerts.tsx
 msgid "Selected text"

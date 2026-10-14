@@ -68,6 +68,18 @@ msgstr "{active, plural, one {Téléchargements (# en cours)} other {Télécharg
 msgid "{affected, plural, one {# account needs attention} other {# accounts need attention}}"
 msgstr "{affected, plural, one {# compte requiert votre attention} other {# comptes requièrent votre attention}}"
 
+#: src/renderer/src/features/calendar/InviteBanner.tsx
+msgid "{attendee} ({status})"
+msgstr "{attendee} ({status})"
+
+#: src/renderer/src/features/calendar/InviteBanner.tsx
+msgid "{attendee} (optional, {status})"
+msgstr "{attendee} (facultatif, {status})"
+
+#: src/renderer/src/features/calendar/InviteBanner.tsx
+msgid "{attendee} (optional)"
+msgstr "{attendee} (facultatif)"
+
 #: src/renderer/src/app/use-view-title.ts
 msgid "{baseTitle}: {user}"
 msgstr "{baseTitle}: {user}"
@@ -235,6 +247,10 @@ msgstr "{summary}, {count, plural, one {# occurrence} other {# occurrences}}"
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "{text} → {recipient}"
 msgstr "{text} → {recipient}"
+
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "{total, plural, one {Covers the newest {kept} of # message} other {Covers the newest {kept} of # messages}}"
+msgstr "{total, plural, one {Couvre les {kept} messages les plus récents sur #} other {Couvre les {kept} messages les plus récents sur #}}"
 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "{value} days"
@@ -922,8 +938,8 @@ msgid "Attachments you save appear here."
 msgstr "Les pièces jointes que vous enregistrez apparaissent ici."
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
-msgid "Attendees"
-msgstr "Participants"
+msgid "Attendees:"
+msgstr "Participants :"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Authorization code"
@@ -3595,14 +3611,17 @@ msgstr "Les signatures locales restent sur ce Mac. Les signatures par défaut de
 msgid "Local total / unread / threads"
 msgstr "Local : total / non lus / conversations"
 
-#: src/renderer/src/features/calendar/CalendarEvents.tsx
-#: src/renderer/src/features/calendar/InviteBanner.tsx
-msgid "Location"
-msgstr "Lieu"
-
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Location changed:"
 msgstr "Localisation modifiée :"
+
+#: src/renderer/src/features/calendar/InviteBanner.tsx
+msgid "Location:"
+msgstr "Lieu :"
+
+#: src/renderer/src/features/calendar/CalendarEvents.tsx
+msgid "Location: {location}"
+msgstr "Lieu : {location}"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Lost the connection to the background process."
@@ -4785,10 +4804,6 @@ msgstr "Le serveur MCP d’OpenMail ne peut pas encore démarrer depuis cet empl
 msgid "Operations from the last 24 hours. Restores labels, folders and flags after checking current state."
 msgstr "Opérations des dernières 24 heures. Restaure les libellés, dossiers et indicateurs après vérification de l’état actuel."
 
-#: src/renderer/src/features/calendar/InviteBanner.tsx
-msgid "Optional"
-msgstr "Facultatif"
-
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 msgid "Optional services"
 msgstr "Services facultatifs"
@@ -4806,8 +4821,8 @@ msgid "Organize directly"
 msgstr "Modifier les messages directement"
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
-msgid "Organizer"
-msgstr "Organisateur"
+msgid "Organizer:"
+msgstr "Organisateur :"
 
 #: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Original"
@@ -5836,6 +5851,10 @@ msgstr "Enregistrement…"
 msgid "Search"
 msgstr "Rechercher"
 
+#: src/renderer/src/features/search/SearchField.tsx
+msgid "Search  {searchKey}"
+msgstr "Rechercher  {searchKey}"
+
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Search could not finish:"
 msgstr "La recherche n’a pas pu se terminer :"
@@ -5910,6 +5929,10 @@ msgstr "Sélectionner la conversation"
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Selected message"
 msgstr "Message sélectionné"
+
+#: src/renderer/src/features/reader/ThreadMessage.tsx
+msgid "Selected message: {sender}, {subject}"
+msgstr "Message sélectionné : {sender}, {subject}"
 
 #: src/renderer/src/app/MailAlerts.tsx
 msgid "Selected text"

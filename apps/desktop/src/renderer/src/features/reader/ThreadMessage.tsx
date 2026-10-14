@@ -421,9 +421,9 @@ export function Expanded({
 /** Mount the live region empty before announcing a newly opened thread. */
 export function SelectedMessageAnnouncement({ message }: { message: Message | undefined }) {
   const { t } = useLingui();
-  const text = message
-    ? `${t`Selected message`}: ${displayName(message.from)}, ${message.subject || t`(No subject)`}`
-    : "";
+  const sender = message ? displayName(message.from) : "";
+  const subject = message?.subject || t`(No subject)`;
+  const text = message ? t`Selected message: ${sender}, ${subject}` : "";
   const region = useRef<HTMLOutputElement>(null);
   useEffect(() => {
     if (region.current) region.current.textContent = text;

@@ -229,9 +229,7 @@ export function SearchField({
             }}
             ref={fieldRef}
             aria-label={t`Search mail`}
-            placeholder={
-              chips.length ? undefined : searchKey ? `${t`Search`}  ${searchKey}` : t`Search`
-            }
+            placeholder={chips.length ? undefined : searchKey ? t`Search  ${searchKey}` : t`Search`}
             className="h-6 min-w-10 flex-1 bg-transparent text-body text-ellipsis outline-none"
           />
         </Combobox.Chips>

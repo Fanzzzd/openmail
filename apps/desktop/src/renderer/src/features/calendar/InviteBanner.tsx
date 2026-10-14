@@ -243,13 +243,13 @@ function Invitation({
       <dl className="space-y-1">
         {invite.location && (
           <div>
-            <dt className="inline font-medium">{t`Location`}: </dt>
+            <dt className="inline font-medium">{t`Location:`} </dt>
             <dd className="inline">{invite.location}</dd>
           </div>
         )}
         {invite.organizer && (
           <div>
-            <dt className="inline font-medium">{t`Organizer`}: </dt>
+            <dt className="inline font-medium">{t`Organizer:`} </dt>
             <dd className="inline">
               {invite.organizer.name} &lt;{invite.organizer.address}&gt;
             </dd>
@@ -257,14 +257,30 @@ function Invitation({
         )}
         {!!invite.attendees.length && (
           <div>
-            <dt className="inline font-medium">{t`Attendees`}: </dt>
+            <dt className="inline font-medium">{t`Attendees:`} </dt>
             <dd className="inline">
-              {invite.attendees
-                .map(
-                  (a) =>
-                    `${a.name ? `${a.name} <${a.address}>` : a.address}${a.optional ? ` (${t`Optional`})` : ""}${invite.method === "REPLY" ? ` (${a.status === "ACCEPTED" ? t`Accepted` : a.status === "TENTATIVE" ? t`Tentative` : a.status === "DECLINED" ? t`Declined` : a.status})` : ""}`,
-                )
-                .join(", ")}
+              {new Intl.ListFormat(i18n.locale).format(
+                invite.attendees.map((a) => {
+                  const attendee = a.name ? `${a.name} <${a.address}>` : a.address;
+                  const status =
+                    invite.method !== "REPLY"
+                      ? undefined
+                      : a.status === "ACCEPTED"
+                        ? t`Accepted`
+                        : a.status === "TENTATIVE"
+                          ? t`Tentative`
+                          : a.status === "DECLINED"
+                            ? t`Declined`
+                            : a.status;
+                  return a.optional
+                    ? status
+                      ? t`${attendee} (optional, ${status})`
+                      : t`${attendee} (optional)`
+                    : status
+                      ? t`${attendee} (${status})`
+                      : attendee;
+                }),
+              )}
             </dd>
           </div>
         )}

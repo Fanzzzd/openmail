@@ -241,6 +241,7 @@ function EventConfirmation({
   dialogOnly?: { open: boolean; onClose: () => void; onAdded: () => void };
 }) {
   const { t, i18n } = useLingui();
+  const location = event.location || t`None`;
   const [cardOpen, setCardOpen] = useState(false);
   const open = dialogOnly ? dialogOnly.open : cardOpen;
   const setOpen = (next: boolean) => {
@@ -315,9 +316,7 @@ function EventConfirmation({
             <Trans>All day</Trans>
           </p>
         )}
-        <p>
-          {t`Location`}: {event.location || t`None`}
-        </p>
+        <p>{t`Location: ${location}`}</p>
         {event.description && <p className="whitespace-pre-wrap">{event.description}</p>}
         <label className="block">
           {t`Event date or range`}

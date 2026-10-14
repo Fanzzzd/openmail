@@ -68,6 +68,18 @@ msgstr "{active, plural, one {Download (# in corso)} other {Download (# in corso
 msgid "{affected, plural, one {# account needs attention} other {# accounts need attention}}"
 msgstr "{affected, plural, one {# account richiede attenzione} other {# account richiedono attenzione}}"
 
+#: src/renderer/src/features/calendar/InviteBanner.tsx
+msgid "{attendee} ({status})"
+msgstr "{attendee} ({status})"
+
+#: src/renderer/src/features/calendar/InviteBanner.tsx
+msgid "{attendee} (optional, {status})"
+msgstr "{attendee} (facoltativo, {status})"
+
+#: src/renderer/src/features/calendar/InviteBanner.tsx
+msgid "{attendee} (optional)"
+msgstr "{attendee} (facoltativo)"
+
 #: src/renderer/src/app/use-view-title.ts
 msgid "{baseTitle}: {user}"
 msgstr "{baseTitle}: {user}"
@@ -235,6 +247,10 @@ msgstr "{summary}, {count, plural, one {# occorrenza} other {# occorrenze}}"
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "{text} → {recipient}"
 msgstr "{text} → {recipient}"
+
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "{total, plural, one {Covers the newest {kept} of # message} other {Covers the newest {kept} of # messages}}"
+msgstr "{total, plural, one {Copre i {kept} messaggi più recenti su #} other {Copre i {kept} messaggi più recenti su #}}"
 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "{value} days"
@@ -922,8 +938,8 @@ msgid "Attachments you save appear here."
 msgstr "Gli allegati che salvi vengono mostrati qui."
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
-msgid "Attendees"
-msgstr "Partecipanti"
+msgid "Attendees:"
+msgstr "Partecipanti:"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Authorization code"
@@ -3595,14 +3611,17 @@ msgstr "Le firme locali rimangono su questo Mac. Le firme predefinite di Gmail v
 msgid "Local total / unread / threads"
 msgstr "Locale: totale / non letti / conversazioni"
 
-#: src/renderer/src/features/calendar/CalendarEvents.tsx
-#: src/renderer/src/features/calendar/InviteBanner.tsx
-msgid "Location"
-msgstr "Luogo"
-
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Location changed:"
 msgstr "La posizione è cambiata:"
+
+#: src/renderer/src/features/calendar/InviteBanner.tsx
+msgid "Location:"
+msgstr "Luogo:"
+
+#: src/renderer/src/features/calendar/CalendarEvents.tsx
+msgid "Location: {location}"
+msgstr "Luogo: {location}"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Lost the connection to the background process."
@@ -4785,10 +4804,6 @@ msgstr "Il server MCP di OpenMail non può ancora avviarsi da qui. Vedi la nota 
 msgid "Operations from the last 24 hours. Restores labels, folders and flags after checking current state."
 msgstr "Operazioni delle ultime 24 ore. Ripristina etichette, cartelle e contrassegni dopo aver controllato lo stato attuale."
 
-#: src/renderer/src/features/calendar/InviteBanner.tsx
-msgid "Optional"
-msgstr "Facoltativo"
-
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 msgid "Optional services"
 msgstr "Servizi facoltativi"
@@ -4806,8 +4821,8 @@ msgid "Organize directly"
 msgstr "Organizza direttamente"
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
-msgid "Organizer"
-msgstr "Organizzatore"
+msgid "Organizer:"
+msgstr "Organizzatore:"
 
 #: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Original"
@@ -5836,6 +5851,10 @@ msgstr "Salvataggio…"
 msgid "Search"
 msgstr "Cerca"
 
+#: src/renderer/src/features/search/SearchField.tsx
+msgid "Search  {searchKey}"
+msgstr "Cerca  {searchKey}"
+
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Search could not finish:"
 msgstr "Impossibile terminare la ricerca:"
@@ -5910,6 +5929,10 @@ msgstr "Seleziona conversazione"
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Selected message"
 msgstr "Messaggio selezionato"
+
+#: src/renderer/src/features/reader/ThreadMessage.tsx
+msgid "Selected message: {sender}, {subject}"
+msgstr "Messaggio selezionato: {sender}, {subject}"
 
 #: src/renderer/src/app/MailAlerts.tsx
 msgid "Selected text"

@@ -68,6 +68,18 @@ msgstr "{active, plural, one {Stahování (# probíhá)} few {Stahování (# pro
 msgid "{affected, plural, one {# account needs attention} other {# accounts need attention}}"
 msgstr "{affected, plural, one {# účet vyžaduje pozornost} few {# účty vyžadují pozornost} many {# účtu vyžaduje pozornost} other {# účtů vyžaduje pozornost}}"
 
+#: src/renderer/src/features/calendar/InviteBanner.tsx
+msgid "{attendee} ({status})"
+msgstr "{attendee} ({status})"
+
+#: src/renderer/src/features/calendar/InviteBanner.tsx
+msgid "{attendee} (optional, {status})"
+msgstr "{attendee} (volitelný, {status})"
+
+#: src/renderer/src/features/calendar/InviteBanner.tsx
+msgid "{attendee} (optional)"
+msgstr "{attendee} (volitelný)"
+
 #: src/renderer/src/app/use-view-title.ts
 msgid "{baseTitle}: {user}"
 msgstr "{baseTitle}: {user}"
@@ -235,6 +247,10 @@ msgstr "{summary}, {count, plural, one {# výskyt} few {# výskyty} other {# vý
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "{text} → {recipient}"
 msgstr "{text} → {recipient}"
+
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "{total, plural, one {Covers the newest {kept} of # message} other {Covers the newest {kept} of # messages}}"
+msgstr "{total, plural, one {Zahrnuje nejnovějších {kept} z # zprávy} few {Zahrnuje nejnovějších {kept} z # zpráv} many {Zahrnuje nejnovějších {kept} z # zprávy} other {Zahrnuje nejnovějších {kept} z # zpráv}}"
 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "{value} days"
@@ -922,8 +938,8 @@ msgid "Attachments you save appear here."
 msgstr "Uložené přílohy se zobrazí zde."
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
-msgid "Attendees"
-msgstr "Účastníci"
+msgid "Attendees:"
+msgstr "Účastníci:"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Authorization code"
@@ -3595,14 +3611,17 @@ msgstr "Místní podpisy zůstávají na tomto Macu. Výchozí podpisy Gmailu se
 msgid "Local total / unread / threads"
 msgstr "Místně: celkem / nepřečtené / konverzace"
 
-#: src/renderer/src/features/calendar/CalendarEvents.tsx
-#: src/renderer/src/features/calendar/InviteBanner.tsx
-msgid "Location"
-msgstr "Místo"
-
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Location changed:"
 msgstr "Místo změněno:"
+
+#: src/renderer/src/features/calendar/InviteBanner.tsx
+msgid "Location:"
+msgstr "Místo:"
+
+#: src/renderer/src/features/calendar/CalendarEvents.tsx
+msgid "Location: {location}"
+msgstr "Místo: {location}"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Lost the connection to the background process."
@@ -4785,10 +4804,6 @@ msgstr "Server MCP aplikace OpenMail se odsud zatím nemůže spustit. Viz pozn�
 msgid "Operations from the last 24 hours. Restores labels, folders and flags after checking current state."
 msgstr "Operace za posledních 24 hodin. Po ověření aktuálního stavu obnoví štítky, složky a příznaky."
 
-#: src/renderer/src/features/calendar/InviteBanner.tsx
-msgid "Optional"
-msgstr "Volitelné"
-
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 msgid "Optional services"
 msgstr "Volitelné služby"
@@ -4806,8 +4821,8 @@ msgid "Organize directly"
 msgstr "Uspořádat přímo"
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
-msgid "Organizer"
-msgstr "Organizátor"
+msgid "Organizer:"
+msgstr "Organizátor:"
 
 #: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Original"
@@ -5836,6 +5851,10 @@ msgstr "Ukládání…"
 msgid "Search"
 msgstr "Hledat"
 
+#: src/renderer/src/features/search/SearchField.tsx
+msgid "Search  {searchKey}"
+msgstr "Hledat  {searchKey}"
+
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Search could not finish:"
 msgstr "Hledání nemohlo dokončit:"
@@ -5910,6 +5929,10 @@ msgstr "Vybrat konverzaci"
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Selected message"
 msgstr "Vybraná zpráva"
+
+#: src/renderer/src/features/reader/ThreadMessage.tsx
+msgid "Selected message: {sender}, {subject}"
+msgstr "Vybraná zpráva: {sender}, {subject}"
 
 #: src/renderer/src/app/MailAlerts.tsx
 msgid "Selected text"

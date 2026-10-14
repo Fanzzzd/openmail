@@ -78,6 +78,18 @@ msgstr "{active, plural, other {下载（# 个进行中）}}"
 msgid "{affected, plural, one {# account needs attention} other {# accounts need attention}}"
 msgstr "{affected, plural, other {# 个账户需要处理}}"
 
+#: src/renderer/src/features/calendar/InviteBanner.tsx
+msgid "{attendee} ({status})"
+msgstr "{attendee}（{status}）"
+
+#: src/renderer/src/features/calendar/InviteBanner.tsx
+msgid "{attendee} (optional, {status})"
+msgstr "{attendee}（可选，{status}）"
+
+#: src/renderer/src/features/calendar/InviteBanner.tsx
+msgid "{attendee} (optional)"
+msgstr "{attendee}（可选）"
+
 #: src/renderer/src/app/use-view-title.ts
 msgid "{baseTitle}: {user}"
 msgstr "{baseTitle}：{user}"
@@ -245,6 +257,10 @@ msgstr "{summary}, {count, plural, other {# 次}}"
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "{text} → {recipient}"
 msgstr "{text} → {recipient}"
+
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "{total, plural, one {Covers the newest {kept} of # message} other {Covers the newest {kept} of # messages}}"
+msgstr "{total, plural, other {涵盖最新的 {kept} 封邮件（共 # 封）}}"
 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "{value} days"
@@ -932,8 +948,8 @@ msgid "Attachments you save appear here."
 msgstr "你保存的附件会显示在这里。"
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
-msgid "Attendees"
-msgstr "参与者"
+msgid "Attendees:"
+msgstr "参与者："
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Authorization code"
@@ -3605,14 +3621,17 @@ msgstr "本地签名保存在此 Mac，Gmail 默认签名从 Gmail 读取。"
 msgid "Local total / unread / threads"
 msgstr "本地总数 / 未读 / 对话"
 
-#: src/renderer/src/features/calendar/CalendarEvents.tsx
-#: src/renderer/src/features/calendar/InviteBanner.tsx
-msgid "Location"
-msgstr "地点"
-
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Location changed:"
 msgstr "地点变更："
+
+#: src/renderer/src/features/calendar/InviteBanner.tsx
+msgid "Location:"
+msgstr "地点："
+
+#: src/renderer/src/features/calendar/CalendarEvents.tsx
+msgid "Location: {location}"
+msgstr "地点：{location}"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Lost the connection to the background process."
@@ -4795,10 +4814,6 @@ msgstr "OpenMail 的 MCP 服务器暂时无法从这里启动。请看上方说�
 msgid "Operations from the last 24 hours. Restores labels, folders and flags after checking current state."
 msgstr "最近 24 小时的操作。核对当前状态后恢复标签、文件夹和标记。"
 
-#: src/renderer/src/features/calendar/InviteBanner.tsx
-msgid "Optional"
-msgstr "可选"
-
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 msgid "Optional services"
 msgstr "可选服务"
@@ -4816,8 +4831,8 @@ msgid "Organize directly"
 msgstr "直接整理"
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
-msgid "Organizer"
-msgstr "组织者"
+msgid "Organizer:"
+msgstr "组织者："
 
 #: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Original"
@@ -5846,6 +5861,10 @@ msgstr "保存中…"
 msgid "Search"
 msgstr "搜索"
 
+#: src/renderer/src/features/search/SearchField.tsx
+msgid "Search  {searchKey}"
+msgstr "搜索  {searchKey}"
+
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Search could not finish:"
 msgstr "搜索未完成："
@@ -5920,6 +5939,10 @@ msgstr "选择对话"
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Selected message"
 msgstr "已选邮件"
+
+#: src/renderer/src/features/reader/ThreadMessage.tsx
+msgid "Selected message: {sender}, {subject}"
+msgstr "已选邮件：{sender}，{subject}"
 
 #: src/renderer/src/app/MailAlerts.tsx
 msgid "Selected text"
