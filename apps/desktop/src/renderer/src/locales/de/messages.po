@@ -612,6 +612,10 @@ msgstr "Adresse oder Domain"
 msgid "Addresses no longer suggested"
 msgstr "Adressen werden nicht mehr vorgeschlagen"
 
+#: src/renderer/src/features/settings/sections/InteractionSettings.tsx
+msgid "Adds Markdown to the composer’s writing modes. The message is sent as formatted HTML with the Markdown as its plain text."
+msgstr "Fügt Markdown zu den Schreibmodi beim Verfassen hinzu. Die Nachricht wird als formatiertes HTML gesendet, mit dem Markdown als Nur-Text."
+
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Advanced: Tailscale Service"
 msgstr "Erweitert: Tailscale Service"
@@ -2887,10 +2891,6 @@ msgstr "Kategorien erweitern"
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Expanded"
 msgstr "Erweitert"
-
-#: src/renderer/src/features/settings/sections/InteractionSettings.tsx
-msgid "Experimental features can be enabled separately."
-msgstr "Experimentelle Funktionen können separat aktiviert werden."
 
 #: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "External replies"
@@ -6628,6 +6628,10 @@ msgstr "Anzahl der ungelesenen Artikel in der Menüleiste anzeigen"
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Showing results from this Mac."
 msgstr "Ergebnisse von diesem Mac werden angezeigt."
+
+#: src/renderer/src/features/settings/sections/InteractionSettings.tsx
+msgid "Shows dates and invitations found in a message above it, so you can add them to your calendar after reviewing them."
+msgstr "Zeigt Daten und Einladungen aus einer Nachricht darüber an, damit du sie nach dem Prüfen in deinen Kalender übernehmen kannst."
 
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx

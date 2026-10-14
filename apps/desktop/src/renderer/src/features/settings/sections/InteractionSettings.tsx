@@ -33,14 +33,22 @@ export function LabsSettings() {
   const { t } = useLingui();
   return (
     <>
-      <SettingsGroup footer={<Trans>Experimental features can be enabled separately.</Trans>}>
+      <SettingsGroup>
         {(
           [
-            { key: "markdown", label: t`Markdown composition` },
-            { key: "calendarDetection", label: t`Detect calendar events in messages` },
+            {
+              key: "markdown",
+              label: t`Markdown composition`,
+              hint: t`Adds Markdown to the composer’s writing modes. The message is sent as formatted HTML with the Markdown as its plain text.`,
+            },
+            {
+              key: "calendarDetection",
+              label: t`Detect calendar events in messages`,
+              hint: t`Shows dates and invitations found in a message above it, so you can add them to your calendar after reviewing them.`,
+            },
           ] as const
-        ).map(({ key, label }) => (
-          <SettingsCheckRow key={key}>
+        ).map(({ key, label, hint }) => (
+          <SettingsCheckRow key={key} hint={hint}>
             <label className="flex items-center gap-2">
               <Checkbox
                 checked={prefs.labs[key]}

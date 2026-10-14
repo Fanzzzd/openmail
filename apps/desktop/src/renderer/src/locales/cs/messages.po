@@ -612,6 +612,10 @@ msgstr "Adresa nebo doména"
 msgid "Addresses no longer suggested"
 msgstr "Adresy již nejsou nabízeny"
 
+#: src/renderer/src/features/settings/sections/InteractionSettings.tsx
+msgid "Adds Markdown to the composer’s writing modes. The message is sent as formatted HTML with the Markdown as its plain text."
+msgstr "Přidá Markdown mezi režimy psaní v editoru. Zpráva se odesílá jako formátované HTML a Markdown slouží jako její prostý text."
+
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Advanced: Tailscale Service"
 msgstr "Pokročilé: Tailscale Service"
@@ -2887,10 +2891,6 @@ msgstr "Rozbalte kategorie"
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Expanded"
 msgstr "Rozšířený"
-
-#: src/renderer/src/features/settings/sections/InteractionSettings.tsx
-msgid "Experimental features can be enabled separately."
-msgstr "Experimentální funkce lze aktivovat samostatně."
 
 #: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "External replies"
@@ -6628,6 +6628,10 @@ msgstr "Zobrazit počet nepřečtených v řádku nabídek"
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Showing results from this Mac."
 msgstr "Zobrazují se výsledky z tohoto Macu."
+
+#: src/renderer/src/features/settings/sections/InteractionSettings.tsx
+msgid "Shows dates and invitations found in a message above it, so you can add them to your calendar after reviewing them."
+msgstr "Nad zprávou zobrazí nalezená data a pozvánky, abyste je po kontrole mohli přidat do kalendáře."
 
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx

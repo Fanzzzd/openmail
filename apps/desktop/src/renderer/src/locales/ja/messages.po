@@ -612,6 +612,10 @@ msgstr "アドレスまたはドメイン"
 msgid "Addresses no longer suggested"
 msgstr "住所は提案されなくなりました"
 
+#: src/renderer/src/features/settings/sections/InteractionSettings.tsx
+msgid "Adds Markdown to the composer’s writing modes. The message is sent as formatted HTML with the Markdown as its plain text."
+msgstr "作成画面の書き方に Markdown を追加します。メッセージは書式付き HTML で送信され、Markdown はプレーンテキスト版になります。"
+
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Advanced: Tailscale Service"
 msgstr "詳細設定：Tailscale Service"
@@ -2887,10 +2891,6 @@ msgstr "カテゴリを展開する"
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Expanded"
 msgstr "拡張された"
-
-#: src/renderer/src/features/settings/sections/InteractionSettings.tsx
-msgid "Experimental features can be enabled separately."
-msgstr "実験的な機能は個別に有効にすることができます。"
 
 #: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "External replies"
@@ -6628,6 +6628,10 @@ msgstr "メニューバーに未開封数を表示"
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Showing results from this Mac."
 msgstr "この Mac 上の結果を表示しています。"
+
+#: src/renderer/src/features/settings/sections/InteractionSettings.tsx
+msgid "Shows dates and invitations found in a message above it, so you can add them to your calendar after reviewing them."
+msgstr "メッセージ内で見つかった日付や招待をその上に表示し、確認してからカレンダーに追加できるようにします。"
 
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx

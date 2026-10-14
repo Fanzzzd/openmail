@@ -612,6 +612,10 @@ msgstr "Adres of domein"
 msgid "Addresses no longer suggested"
 msgstr "Adressen worden niet langer voorgesteld"
 
+#: src/renderer/src/features/settings/sections/InteractionSettings.tsx
+msgid "Adds Markdown to the composer’s writing modes. The message is sent as formatted HTML with the Markdown as its plain text."
+msgstr "Voegt Markdown toe aan de schrijfmodi van de editor. Het bericht wordt verstuurd als opgemaakte HTML, met de Markdown als platte tekst."
+
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Advanced: Tailscale Service"
 msgstr "Geavanceerd: Tailscale Service"
@@ -2887,10 +2891,6 @@ msgstr "Vouw categorieën uit"
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Expanded"
 msgstr "Uitgebreid"
-
-#: src/renderer/src/features/settings/sections/InteractionSettings.tsx
-msgid "Experimental features can be enabled separately."
-msgstr "Experimentele functies kunnen afzonderlijk worden ingeschakeld."
 
 #: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "External replies"
@@ -6628,6 +6628,10 @@ msgstr "Toon ongelezen aantal in de menubalk"
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Showing results from this Mac."
 msgstr "Resultaten van deze Mac worden getoond."
+
+#: src/renderer/src/features/settings/sections/InteractionSettings.tsx
+msgid "Shows dates and invitations found in a message above it, so you can add them to your calendar after reviewing them."
+msgstr "Toont datums en uitnodigingen uit een bericht erboven, zodat je ze na controle aan je agenda kunt toevoegen."
 
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx

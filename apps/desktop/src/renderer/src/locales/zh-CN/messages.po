@@ -622,6 +622,10 @@ msgstr "地址或域名"
 msgid "Addresses no longer suggested"
 msgstr "不再建议的地址"
 
+#: src/renderer/src/features/settings/sections/InteractionSettings.tsx
+msgid "Adds Markdown to the composer’s writing modes. The message is sent as formatted HTML with the Markdown as its plain text."
+msgstr "在撰写窗口的写作模式中加入 Markdown。邮件以排好格式的 HTML 发送，Markdown 原文作为纯文本版本。"
+
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Advanced: Tailscale Service"
 msgstr "高级：Tailscale Service"
@@ -2897,10 +2901,6 @@ msgstr "展开分类"
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Expanded"
 msgstr "展开"
-
-#: src/renderer/src/features/settings/sections/InteractionSettings.tsx
-msgid "Experimental features can be enabled separately."
-msgstr "实验功能可逐项开启。"
 
 #: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "External replies"
@@ -6638,6 +6638,10 @@ msgstr "在菜单栏显示未读数"
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Showing results from this Mac."
 msgstr "显示的是此 Mac 上的结果。"
+
+#: src/renderer/src/features/settings/sections/InteractionSettings.tsx
+msgid "Shows dates and invitations found in a message above it, so you can add them to your calendar after reviewing them."
+msgstr "在邮件上方显示从中找到的日期和邀请，核对后可以加入日历。"
 
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
