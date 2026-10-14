@@ -6,6 +6,7 @@ This is what OpenMail submits to Google to verify the `openmail-510100` OAuth ap
 
 - Publishing status: In production, unverified. Users see the "Google hasn't verified this app" screen, and the app is capped at 100 users for its lifetime.
 - Verification removes both.
+- The Gmail sign-in step tells people what to click on that screen. When verification lands, set `GOOGLE_BUILT_IN_UNVERIFIED` in `apps/desktop/src/renderer/src/features/accounts/AddAccountDialog.tsx` to `false`, and update the FAQ and troubleshooting pages.
 - OpenMail requests restricted Gmail scopes, so verification also needs a CASA security assessment. A third-party lab authorised by Google runs it every year. Google contacts the developer about it after it reviews the scopes.
 
 ## App details for the form
