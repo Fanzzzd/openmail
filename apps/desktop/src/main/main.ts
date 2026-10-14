@@ -5,6 +5,7 @@ import { openExternal } from "./security/external";
 import { createShutdownHandler } from "./app/quit";
 import { prepareUpdateQuit } from "./updates/update-install";
 import { cleanupAttachmentTemps, cleanupPrintTemps } from "./files/attachment-temp";
+import { cleanupOpenedAttachments } from "./files/opened-attachments";
 import {
   logWarning,
   NodeMailbox,
@@ -82,8 +83,12 @@ if (mcp) {
     ready.pipe(
       Effect.andThen(
         Effect.all(
-          [cleanupAttachmentTemps, cleanupPrintTemps].map((cleanup) =>
-            Effect.tryPromise(() => cleanup(app.getPath("temp"))).pipe(
+          [
+            () => cleanupAttachmentTemps(app.getPath("temp")),
+            () => cleanupPrintTemps(app.getPath("temp")),
+            () => cleanupOpenedAttachments(app.getPath("userData")),
+          ].map((cleanup) =>
+            Effect.tryPromise(cleanup).pipe(
               Effect.catch((error) =>
                 logWarning("attachment-cleanup-failed", "Attachment temp cleanup failed", error),
               ),

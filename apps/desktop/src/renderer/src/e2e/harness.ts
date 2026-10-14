@@ -322,7 +322,6 @@ export async function flow(
       AttachmentAction: unsupported,
       SaveAttachmentsTo: unsupported,
       AttachmentApps: unsupported,
-      OpenAttachment: unsupported,
       Downloads: () => Stream.make([]),
       DownloadAction: unsupported,
       ClearDownloads: () => Effect.void,

@@ -57,11 +57,6 @@ export const AttachmentRpcs = [
     success: AttachmentActionResult,
     error,
   }),
-  /** Writes the attachment to a temporary folder and opens it with its default app. */
-  Rpc.make("OpenAttachment", {
-    payload: { messageId: Schema.String, index: Schema.Int },
-    error,
-  }),
   /** Downloads to a folder the person picks in the OS folder picker. 0 when cancelled. */
   Rpc.make("SaveAttachmentsTo", {
     payload: {

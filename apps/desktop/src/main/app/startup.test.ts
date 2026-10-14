@@ -70,6 +70,9 @@ vi.mock("../files/attachment-temp", () => ({
   cleanupAttachmentTemps: native.cleanup,
   cleanupPrintTemps: native.printCleanup,
 }));
+vi.mock("../files/opened-attachments", () => ({
+  cleanupOpenedAttachments: vi.fn(async () => undefined),
+}));
 vi.mock("./reliability", () => ({
   prepareReliability: vi.fn(async () => true),
   diagnosticsLogger: Logger.make(() => native.diagnosticLog()),

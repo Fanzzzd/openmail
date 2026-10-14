@@ -50,12 +50,23 @@ export async function cleanupPrintTemps(temp: string) {
   }
 }
 
-/** One private root per app process, 0700 directories and 0600 files. */
+/**
+ * One private root per app process, 0700 directories and 0600 files. Batches for drag, Quick
+ * Look, sharing and copying expire after `lifetime`; opened attachments live elsewhere
+ * (opened-attachments.ts). A batch written under a key is reused while it lives, and the 128 MB
+ * budget counts only batches the app still holds.
+ */
 export class AttachmentTemp {
   private readonly root: Promise<string>;
   private readonly batches = new Map<
     string,
-    { bytes: number; timer: ReturnType<typeof setTimeout> }
+    {
+      batch: TempBatch;
+      key: string | undefined;
+      bytes: number;
+      refs: number;
+      timer: ReturnType<typeof setTimeout>;
+    }
   >();
   private bytes = 0;
   private rootPath: string | undefined;
@@ -73,7 +84,40 @@ export class AttachmentTemp {
   async write(parts: readonly { filename: string; data: Uint8Array }[]): Promise<string[]> {
     return (await this.writeBatch(parts)).files;
   }
-  async writeBatch(parts: readonly { filename: string; data: Uint8Array }[]): Promise<TempBatch> {
+  private expire(batch: TempBatch) {
+    const timer = setTimeout(() => {
+      void this.drop(batch).catch(constVoid);
+    }, this.lifetime);
+    timer.unref();
+    return timer;
+  }
+  /** A live batch under `key` whose files are all still there. */
+  private async live(key: string) {
+    for (const tracked of this.batches.values()) {
+      if (tracked.key !== key) continue;
+      const present = await Promise.all(
+        tracked.batch.files.map((file) =>
+          lstat(file).then(
+            (info) => info.isFile(),
+            () => false,
+          ),
+        ),
+      );
+      if (present.every(Boolean)) return tracked;
+    }
+    return undefined;
+  }
+  async writeBatch(
+    parts: readonly { filename: string; data: Uint8Array }[],
+    key?: string,
+  ): Promise<TempBatch> {
+    const reused = key === undefined ? undefined : await this.live(key);
+    if (reused) {
+      clearTimeout(reused.timer);
+      reused.timer = this.expire(reused.batch);
+      reused.refs++;
+      return reused.batch;
+    }
     const bytes = parts.reduce((n, p) => n + p.data.byteLength, 0);
     const root = await this.root;
     if (this.bytes + bytes > 128 * 1024 * 1024)
@@ -89,11 +133,7 @@ export class AttachmentTemp {
         await writeFile(file, part.data, { mode: 0o600, flag: "wx" });
         batch.files.push(file);
       }
-      const timer = setTimeout(() => {
-        void this.remove(batch).catch(constVoid);
-      }, this.lifetime);
-      timer.unref();
-      this.batches.set(batch.folder, { bytes, timer });
+      this.batches.set(batch.folder, { batch, key, bytes, refs: 1, timer: this.expire(batch) });
       return batch;
     } catch (error) {
       this.bytes -= bytes;
@@ -101,7 +141,24 @@ export class AttachmentTemp {
       throw error;
     }
   }
+  /**
+   * The batch was handed to the OS (Quick Look reads it on its own). Its files stay until they
+   * expire, but they no longer count against the budget.
+   */
+  release(batch: TempBatch) {
+    const tracked = this.batches.get(batch.folder);
+    if (!tracked) return;
+    this.bytes -= tracked.bytes;
+    tracked.bytes = 0;
+  }
+  /** One holder is done with the batch; the last one removes it. */
   async remove(batch: TempBatch) {
+    const tracked = this.batches.get(batch.folder);
+    if (!tracked) return;
+    if (--tracked.refs > 0) return;
+    await this.drop(batch);
+  }
+  private async drop(batch: TempBatch) {
     const tracked = this.batches.get(batch.folder);
     if (!tracked) return;
     clearTimeout(tracked.timer);

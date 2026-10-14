@@ -45,7 +45,7 @@ const EXPECTED_REMOTE = [
 
 /** Representative calls that touch the Mac's disk, OS, windows, clipboard or keys. */
 const MUST_DENY = [
-  "SaveAttachmentsTo", "AttachmentAction", "OpenAttachment", "AttachmentApps",
+  "SaveAttachmentsTo", "AttachmentAction", "AttachmentApps",
   "PrepareAttachmentDrag", "ReleaseAttachmentDrag", "DownloadAction", "ClearDownloads",
   "SaveMessage", "PrintThread", "ChooseAttachmentFolder", "OpenMessageWeb", "OpenMailLink",
   "OpenMeeting", "SearchSender", "Connect", "Reauth", "SetGoogleClient", "SetMicrosoftClient",

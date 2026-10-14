@@ -464,6 +464,62 @@ it("all preview/open paths preserve the executable block and report shell failur
     }),
   );
 });
+// E9-4: "Open attachments from" was read only by a dead RPC; E9-3: opened copies expired.
+it("Open follows the Open attachments from setting and keeps internal copies past the temp batches", async () => {
+  await withFiles((m, id, parent) =>
+    Effect.gen(function* () {
+      yield* attachmentAction(
+        m,
+        parent,
+        { messageId: id, paths: [[0]], action: "open" },
+        noDownloads,
+      );
+      const internal = String(native.open.mock.calls[0]?.[0]);
+      expect(internal.startsWith(path.join(folder, "Opened Attachments") + path.sep)).toBe(true);
+      expect(yield* Effect.promise(() => readFile(internal, "utf8"))).toBe("one");
+      // Opening it again hands over the same copy.
+      yield* attachmentAction(
+        m,
+        parent,
+        { messageId: id, paths: [[0]], action: "open" },
+        noDownloads,
+      );
+      expect(native.open.mock.calls[1]?.[0]).toBe(internal);
+      // Temporary batches expiring or the app quitting do not touch it.
+      new AttachmentTemp(folder, 1).disposeSync();
+      expect(yield* Effect.promise(() => readFile(internal, "utf8"))).toBe("one");
+
+      yield* m.app.setPrefs({ attachmentOpenFolder: "downloads" });
+      yield* attachmentAction(
+        m,
+        parent,
+        { messageId: id, paths: [[1]], action: "open" },
+        noDownloads,
+      );
+      const downloaded = String(native.open.mock.calls[2]?.[0]);
+      expect(downloaded).toBe(path.join(folder, "same.txt"));
+      expect(yield* Effect.promise(() => readFile(downloaded, "utf8"))).toBe("two");
+      // A different attachment with the same name gets its own file.
+      yield* attachmentAction(
+        m,
+        parent,
+        { messageId: id, paths: [[0]], action: "open" },
+        noDownloads,
+      );
+      expect(native.open.mock.calls[3]?.[0]).toBe(path.join(folder, "same (2).txt"));
+      yield* attachmentAction(
+        m,
+        parent,
+        { messageId: id, paths: [[1]], action: "open" },
+        noDownloads,
+      );
+      expect(native.open.mock.calls[4]?.[0]).toBe(downloaded);
+      yield* m.app.setPrefs({ attachmentOpenFolder: "internal" });
+      for (const name of ["same.txt", "same (2).txt"])
+        yield* Effect.promise(() => rm(path.join(folder, name), { force: true }));
+    }),
+  );
+});
 it("temp storage expires and cleans up its directory; failed writes leave no partial files", async () => {
   vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
   const store = new AttachmentTemp(folder, 5);
@@ -480,11 +536,8 @@ it("temp storage expires and cleans up its directory; failed writes leave no par
     expect(removal).not.toHaveBeenCalled();
     expect((await stat(file)).isFile()).toBe(true);
     await vi.advanceTimersByTimeAsync(1);
-    expect(removal).toHaveBeenCalledTimes(1);
-    // The timer starts asynchronous filesystem work. Wait for that work, too.
-    const expired = removal.mock.results[0];
-    if (expired?.type !== "return") throw new Error("Expiry did not remove the batch");
-    await expired.value;
+    // Expiry removes the batch even while a holder still has it.
+    await vi.waitFor(() => expect(stat(file)).rejects.toThrow());
     await expect(stat(file)).rejects.toThrow();
     const long = await store.writeBatch([
       { filename: `${"x".repeat(300)}.txt`, data: Buffer.from("x") },

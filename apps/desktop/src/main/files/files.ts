@@ -1,4 +1,3 @@
-import { attachmentImportKind } from "@openmail/core/schema";
 import { configurePermissions, denyNavigation } from "../security/security";
 import { WINDOW_SECURITY } from "../security/security-policy";
 import { quarantine } from "../security/file-quarantine";
@@ -8,7 +7,7 @@ import { quarantine } from "../security/file-quarantine";
  * asks where to put it and writes it.
  */
 import { randomUUID } from "node:crypto";
-import { mkdtemp, rm, stat, writeFile } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -23,14 +22,13 @@ import {
 /** A mailbox failure, or one on this computer. */
 type FileError = PerformError | DeviceError;
 import { Effect } from "effect";
-import { app, BrowserWindow, dialog, session, shell } from "electron";
+import { app, BrowserWindow, dialog, session } from "electron";
 
 import type { PrintHeadings } from "../../shared/rpc";
 
 type MailboxService = Mailbox["Service"];
 
-import { EXECUTABLE, launcherBlockedMessage, safeFilename } from "./attachment-filenames";
-import { attachmentTemp } from "./attachment-temp";
+import { safeFilename } from "./attachment-filenames";
 
 /** A subject is text, not a path. Reserve space for the extension and preserve code points. */
 function subjectFilename(subject: string): string {
@@ -54,31 +52,6 @@ function subjectFilename(subject: string): string {
 const write = (file: string, data: Uint8Array) =>
   Effect.tryPromise({
     try: () => writeFile(file, data),
-    catch: deviceFailure,
-  }).pipe(Effect.andThen(quarantine(file)));
-
-const exists = (file: string) =>
-  Effect.promise(() =>
-    stat(file).then(
-      () => true,
-      () => false,
-    ),
-  );
-
-/** `name`, or "name (2).ext" and so on when the folder already has one. */
-const freePath = Effect.fnUntraced(function* (folder: string, name: string) {
-  const ext = path.extname(name);
-  const stem = name.slice(0, name.length - ext.length);
-  let candidate = path.join(folder, name);
-  for (let n = 2; yield* exists(candidate); n++) {
-    candidate = path.join(folder, `${stem} (${n})${ext}`);
-  }
-  return candidate;
-});
-
-const writeNew = (file: string, data: Uint8Array) =>
-  Effect.tryPromise({
-    try: () => writeFile(file, data, { flag: "wx" }),
     catch: deviceFailure,
   }).pipe(Effect.andThen(quarantine(file)));
 
@@ -106,43 +79,6 @@ export const saveMessage: (
   if (choice.canceled || !choice.filePath) return false;
   yield* write(choice.filePath, yield* m.reading.rawMessageBytes(messageId));
   return true;
-});
-
-/** Writes the attachment to its own temporary folder and opens it with the default app. */
-export const openAttachment: (
-  m: MailboxService,
-  messageId: string,
-  index: number,
-) => Effect.Effect<void, FileError> = Effect.fnUntraced(function* (
-  m: MailboxService,
-  messageId: string,
-  index: number,
-): Effect.fn.Return<void, FileError> {
-  const content = yield* m.reading.attachment(messageId, index);
-  const name = safeFilename(content.filename);
-  if (EXECUTABLE.test(name) || attachmentImportKind(content) !== null) {
-    // Fails here; nothing below runs.
-    yield* new DeviceError({
-      message: launcherBlockedMessage(name),
-    });
-  }
-  const downloads = (yield* m.app.prefs).attachmentOpenFolder === "downloads";
-  const files = downloads
-    ? [
-        yield* freePath(app.getPath("downloads"), name).pipe(
-          Effect.tap((file) => writeNew(file, content.data)),
-        ),
-      ]
-    : yield* Effect.tryPromise({
-        try: () => attachmentTemp(app).write([content]),
-        catch: deviceFailure,
-      });
-  const file = files[0];
-  if (!file) return yield* new DeviceError({ message: "No attachment file" });
-  yield* quarantine(file);
-  const error = yield* Effect.promise(() => shell.openPath(file));
-  if (error) yield* new DeviceError({ message: error });
-  return yield* Effect.void;
 });
 
 /**

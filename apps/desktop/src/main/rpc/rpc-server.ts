@@ -65,7 +65,7 @@ import { RPC_CHANNEL } from "../../shared/channel";
 import { RemoteAccess } from "../remote/remote-access-live";
 import { aiClientHandlers } from "../agents/ai-clients-rpc";
 import { MailRpcs } from "../../shared/rpc";
-import { openAttachment, printThread, saveMessage } from "../files/files";
+import { printThread, saveMessage } from "../files/files";
 import { openMeeting } from "../system/meeting";
 import { setNativeLanguage } from "../app/native-i18n";
 import {
@@ -179,7 +179,6 @@ const Handlers = MailRpcs.toLayer(
       SaveAttachmentsTo: (request, { client }) =>
         saveAttachmentsTo(m, downloads, windowOf(client.id), request),
       AttachmentApps: (request) => attachmentApps(m, request),
-      OpenAttachment: ({ messageId, index }) => openAttachment(m, messageId, index),
       Downloads: () =>
         demoDownloads(app.isPackaged, process.env)
           ? Stream.concat(Stream.make(DEMO_DOWNLOADS), Stream.never)

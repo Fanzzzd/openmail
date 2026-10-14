@@ -1,5 +1,5 @@
 import { attachmentImportKind } from "@openmail/core/schema";
-import { mkdir, stat } from "node:fs/promises";
+import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { Effect } from "effect";
@@ -23,6 +23,7 @@ import {
   type PerformError,
 } from "@openmail/core";
 import { attachmentTemp, type TempBatch } from "./attachment-temp";
+import { openedAttachments } from "./opened-attachments";
 import { EXECUTABLE, launcherBlockedMessage, safeFilename } from "./attachment-filenames";
 import {
   attachmentAppLabels,
@@ -71,9 +72,10 @@ const resolve = Effect.fnUntraced(function* (m: Mailbox["Service"], request: Dra
 });
 const temporary = Effect.fnUntraced(function* (
   parts: readonly { filename: string; data: Uint8Array }[],
+  key?: string,
 ) {
   const batch = yield* Effect.tryPromise({
-    try: () => attachmentTemp(app).writeBatch(parts),
+    try: () => attachmentTemp(app).writeBatch(parts, key),
     catch: deviceFailure,
   });
   for (const file of batch.files) yield* quarantine(file);
@@ -137,6 +139,7 @@ export const prepareAttachmentDrag: (
   if (previous?.kind === "ready") yield* remove(previous.batch);
   const parts = yield* resolve(m, request);
   if (parent.isDestroyed() || slots.get(slotId)?.token !== token) return yield* Effect.void;
+  // Unkeyed: each slot owns its batch, so replacing a selection frees its files at once.
   const batch = yield* temporary(parts);
   if (parent.isDestroyed() || slots.get(slotId)?.token !== token) yield* remove(batch);
   else
@@ -238,6 +241,94 @@ export const saveAttachmentsTo: (
   return yield* queueDownloads(m, list, request, folder);
 });
 
+type OpenedCopy = { file: string; created: boolean };
+
+/** `name` in `folder`, reusing a file there with the same bytes, else a free "name (2)" path. */
+const intoFolder = (folder: string, part: { filename: string; data: Uint8Array }) =>
+  Effect.tryPromise({
+    try: async (): Promise<OpenedCopy> => {
+      const name = safeFilename(part.filename);
+      const ext = path.extname(name);
+      const stem = name.slice(0, name.length - ext.length);
+      for (let n = 1; ; n++) {
+        const file = path.join(folder, n === 1 ? name : `${stem} (${n})${ext}`);
+        const existing = await stat(file).catch(() => null);
+        if (!existing) {
+          await writeFile(file, part.data, { flag: "wx" });
+          return { file, created: true };
+        }
+        if (
+          existing.isFile() &&
+          existing.size === part.data.byteLength &&
+          Buffer.from(await readFile(file)).equals(Buffer.from(part.data))
+        )
+          return { file, created: false };
+      }
+    },
+    catch: deviceFailure,
+  });
+
+/**
+ * Open and Open With hand the file to another app, which may keep it open for days and save
+ * edits in place. The copy goes to Downloads (the attachment folder) when "Open attachments
+ * from" says so, else to the per-user opened-attachments folder. Neither expires like the
+ * temporary batches.
+ */
+const openedCopies = Effect.fnUntraced(function* (
+  m: Mailbox["Service"],
+  request: DragRequest,
+  parts: readonly { filename: string; data: Uint8Array }[],
+) {
+  const downloads =
+    (yield* m.app.prefs).attachmentOpenFolder === "downloads"
+      ? yield* attachmentFolder(m, app.getPath("downloads"))
+      : undefined;
+  const copies: OpenedCopy[] = [];
+  for (const [index, part] of parts.entries()) {
+    const copy = downloads
+      ? yield* intoFolder(downloads, part)
+      : yield* Effect.tryPromise({
+          try: () =>
+            openedAttachments(app).write(
+              keyOf({ messageId: request.messageId, paths: [request.paths[index] ?? []] }),
+              part,
+            ),
+          catch: deviceFailure,
+        });
+    yield* quarantine(copy.file);
+    copies.push(copy);
+  }
+  // A launch that fails leaves nothing new in the internal folder.
+  const discard = downloads
+    ? Effect.void
+    : Effect.forEach(
+        copies.filter((copy) => copy.created),
+        (copy) =>
+          Effect.tryPromise({
+            try: () => openedAttachments(app).discard(copy.file),
+            catch: deviceFailure,
+          }).pipe(
+            Effect.catchCause((cause) =>
+              logWarning("attachment-cleanup-failed", "Opened attachment cleanup failed", cause),
+            ),
+          ),
+        { discard: true },
+      );
+  return { files: copies.map((copy) => copy.file), discard };
+});
+
+const openFiles = Effect.fnUntraced(function* (files: readonly string[]) {
+  for (const file of files) {
+    yield* Effect.tryPromise({ try: () => stat(file), catch: deviceFailure });
+    const error = yield* Effect.tryPromise({
+      try: () => shell.openPath(file),
+      catch: deviceFailure,
+    });
+    if (error) return yield* new DeviceError({ message: error });
+  }
+  return countResult(files.length);
+});
+
 /** The apps that can open one attachment. The file is written to a temporary folder and removed again. */
 export const attachmentApps: (
   m: Mailbox["Service"],
@@ -250,7 +341,10 @@ export const attachmentApps: (
     return yield* new DeviceError({
       message: "Choose one attachment on macOS to open with an application.",
     });
-  const batch = yield* temporary(yield* resolve(m, { ...request, paths: [request.path] }));
+  const batch = yield* temporary(
+    yield* resolve(m, { ...request, paths: [request.path] }),
+    keyOf({ messageId: request.messageId, paths: [request.path] }),
+  );
   return yield* Effect.gen(function* () {
     const file = batch.files[0];
     if (!file) return [];
@@ -322,7 +416,36 @@ export const attachmentAction: (
     }
     if (request.action === "share" && process.platform !== "darwin")
       return yield* new DeviceError({ message: "Attachment sharing is available on macOS" });
-    const batch = yield* temporary(yield* resolve(m, request));
+    if (
+      request.action === "openWith" &&
+      (process.platform !== "darwin" || request.paths.length !== 1)
+    )
+      return yield* new DeviceError({
+        message: "Choose one attachment on macOS to open with an application.",
+      });
+    if (request.action === "open" || request.action === "openWith") {
+      const parts = yield* resolve(m, request);
+      if (parent?.isDestroyed())
+        return yield* new DeviceError({ message: "Attachment window is closed" });
+      const opened = yield* openedCopies(m, request, parts);
+      if (request.action === "open")
+        return yield* openFiles(opened.files).pipe(Effect.tapError(() => opened.discard));
+      const application = request.application;
+      return yield* Effect.gen(function* () {
+        const file = opened.files[0];
+        if (!file) return countResult(0);
+        // The renderer names an app from AttachmentApps; it must still be registered for this file.
+        if (!application || !(yield* registeredAttachmentApps(file)).includes(application))
+          return yield* new DeviceError({
+            message: "No application is registered for this file type.",
+          });
+        if (parent?.isDestroyed())
+          return yield* new DeviceError({ message: "Attachment window is closed" });
+        yield* openAttachmentWith(application, file);
+        return countResult(1);
+      }).pipe(Effect.tapError(() => opened.discard));
+    }
+    const batch = yield* temporary(yield* resolve(m, request), keyOf(request));
     const files = batch.files;
     if (parent?.isDestroyed()) {
       yield* remove(batch);
@@ -336,39 +459,15 @@ export const attachmentAction: (
             try: () => parent.previewFile(first),
             catch: deviceFailure,
           }).pipe(Effect.result);
-          if (previewed._tag === "Success") return countResult(1);
+          if (previewed._tag === "Success") {
+            // Quick Look holds the file now; it expires with the batch but stops counting.
+            attachmentTemp(app).release(batch);
+            return countResult(1);
+          }
         }
-        break;
+        // No Quick Look: the default app opens the temporary copy.
+        return yield* openFiles(files);
       }
-      case "openWith":
-        return yield* Effect.gen(function* () {
-          if (process.platform !== "darwin" || files.length !== 1)
-            return yield* new DeviceError({
-              message: "Choose one attachment on macOS to open with an application.",
-            });
-          const file = files[0];
-          if (!file) return countResult(0);
-          const application = request.application;
-          // The renderer names an app from AttachmentApps; it must still be registered for this file.
-          if (!application || !(yield* registeredAttachmentApps(file)).includes(application))
-            return yield* new DeviceError({
-              message: "No application is registered for this file type.",
-            });
-          if (parent?.isDestroyed())
-            return yield* new DeviceError({ message: "Attachment window is closed" });
-          yield* openAttachmentWith(application, file);
-          return countResult(1);
-        }).pipe(
-          Effect.onExit((exit) =>
-            exit._tag === "Failure" || exit.value.count === 0
-              ? remove(batch).pipe(
-                  Effect.catchCause((cause) =>
-                    logWarning("attachment-cleanup-failed", "Open With cleanup failed", cause),
-                  ),
-                )
-              : Effect.void,
-          ),
-        );
       case "share":
         yield* Effect.try({
           try: () => new ShareMenu({ filePaths: files }).popup(parent ? { window: parent } : {}),
@@ -386,21 +485,10 @@ export const attachmentAction: (
           catch: deviceFailure,
         });
         return countResult(files.length);
-      case "open":
-        break;
       default: {
         const exhaustive: never = request.action;
         return exhaustive;
       }
     }
-    for (const file of files) {
-      yield* Effect.tryPromise({ try: () => stat(file), catch: deviceFailure });
-      const error = yield* Effect.tryPromise({
-        try: () => shell.openPath(file),
-        catch: deviceFailure,
-      });
-      if (error) return yield* new DeviceError({ message: error });
-    }
-    return countResult(files.length);
   },
 );
