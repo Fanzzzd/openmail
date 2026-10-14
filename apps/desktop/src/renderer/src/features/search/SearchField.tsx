@@ -402,7 +402,8 @@ function SuggestionRow({
     );
   return (
     <>
-      <span className="min-w-0 shrink-0 truncate">{item.label}</span>
+      {/* The name keeps its width up to the whole row; the detail truncates in what is left. */}
+      <span className="max-w-full min-w-0 shrink-0 truncate">{item.label}</span>
       {(item.description || item.detail) && (
         <span className="min-w-0 flex-1 truncate text-footnote opacity-70">
           {item.description ? i18n._(item.description) : item.detail}
