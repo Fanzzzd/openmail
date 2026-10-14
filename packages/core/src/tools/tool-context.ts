@@ -62,7 +62,7 @@ export const makeToolContext = Effect.gen(function* () {
   const accessibleAccounts = Effect.gen(function* () {
     const accounts = (yield* mailbox.accounts).filter((a) => a.enabled !== false);
     if ((yield* identity.current).surface !== "mcp") return accounts;
-    const consent = (yield* mailbox.aiSettings).accounts;
+    const consent = yield* mailbox.aiAccounts;
     return accounts.filter((a) => consent.some((s) => s.accountId === a.id && s.allowed));
   }).pipe(Effect.mapError(toToolError));
   /**

@@ -157,7 +157,10 @@ export type PerformError =
 export class Mailbox extends Context.Service<
   Mailbox,
   {
+    /** For the Settings UI: consent, model, and whether the keychain holds the API key. */
     readonly aiSettings: Effect.Effect<AiSettings, ProviderError>;
+    /** Per-account AI consent from the database. Never reads the keychain, so agent tool calls use it. */
+    readonly aiAccounts: Effect.Effect<readonly AiAccountSettings[]>;
     setAiKey(key: string): Effect.Effect<void, InvalidInput>;
     setAiAccount(input: AiAccountSettings): Effect.Effect<void, NotFound | InvalidInput>;
     setAiModel(model: AiModelName): Effect.Effect<void>;

@@ -437,6 +437,7 @@ export function makeAiMailbox(
         accounts: yield* store.ai.accounts,
       };
     }),
+    aiAccounts: store.ai.accounts,
     setAiKey: (key: string) =>
       Effect.gen(function* () {
         if (key.length > 4096 || /[\r\n]/.test(key))

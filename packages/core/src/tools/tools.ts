@@ -165,7 +165,7 @@ export const agentAccountGap = (tool: string, input: unknown) =>
       return null;
     const mailbox = yield* Mailbox;
     const accounts = yield* mailbox.accounts;
-    const consent = (yield* mailbox.aiSettings).accounts;
+    const consent = yield* mailbox.aiAccounts;
     const allowed = (id: string) => consent.some((s) => s.accountId === id && s.allowed);
     if (profileId !== undefined && !(yield* mailbox.profiles).some((p) => p.id === profileId))
       return toolError(

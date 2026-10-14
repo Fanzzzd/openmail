@@ -2,7 +2,7 @@ import { Store } from "../store/service.js";
 import { expect } from "vitest";
 import { assert, it } from "@effect/vitest";
 
-import { Clock, Context, Effect, Layer, Stream, Schema } from "effect";
+import { Clock, Context, Effect, Layer, Option, Stream, Schema } from "effect";
 import { Tool } from "effect/ai";
 
 import {
@@ -16,8 +16,15 @@ import type { ThreadQuery } from "../domain/message.js";
 import type { OutgoingMessage } from "../domain/changes.js";
 import { fakeServer, TestMailbox } from "../platform/node/testing.js";
 import { Mailbox } from "../mailbox/mailbox.js";
-import { InvalidInput, NotFound } from "../domain/errors.js";
-import { MailToolkit, MailToolkitLayer, ReadMailToolkit, ProposalMailToolkit } from "./tools.js";
+import { InvalidInput, NotFound, ProviderError } from "../domain/errors.js";
+import { MODEL_KEY } from "../ai/secrets.js";
+import {
+  MailToolkit,
+  MailToolkitLayer,
+  ReadMailToolkit,
+  ProposalMailToolkit,
+  agentAccountGap,
+} from "./tools.js";
 import { AgentIdentity, cleanMcpClientName } from "./agent-identity.js";
 import { UNTRUSTED_MAIL_NOTICE } from "./tool-common.js";
 import { ToolInt } from "./tool-pages.js";
@@ -111,7 +118,9 @@ function stubMailbox(overrides: Partial<Service>): Layer.Layer<Mailbox> {
     aiTriage: () => Effect.never,
     decideAiTriage: () => Effect.never,
     semanticSearch: () => Effect.never,
-    aiSettings: Effect.map(
+    // Tools read consent from aiAccounts; aiSettings also reads the API key from the keychain.
+    aiSettings: notUsed("aiSettings"),
+    aiAccounts: Effect.map(
       overrides.accounts ??
         Effect.succeed([
           testAccount("a"),
@@ -119,11 +128,7 @@ function stubMailbox(overrides: Partial<Service>): Layer.Layer<Mailbox> {
           testAccount("gmail:me@gmail.com"),
           testAccount("gmail:me@example.com"),
         ]),
-      (rows) => ({
-        keyConfigured: false,
-        model: "claude-sonnet-5-5" as const,
-        accounts: rows.map((a) => ({ accountId: a.id, allowed: true, autoSummaries: false })),
-      }),
+      (rows) => rows.map((a) => ({ accountId: a.id, allowed: true, autoSummaries: false })),
     ),
     setAiKey: () => notUsed("setAiKey"),
     setAiAccount: () => notUsed("setAiAccount"),
@@ -1384,6 +1389,53 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
     text: "b",
     attachments: [],
   };
+
+  it.effect("agent tool calls read AI consent without touching the keychain's API key", () => {
+    const modelKeyReads: string[] = [];
+    const server = fakeServer("me@gmail.com", [mail]);
+    const mailboxLayer = TestMailbox({ gmail: server }, undefined, undefined, Layer.empty, {
+      secretMethods: {
+        // A locked keychain that counts every read of the API key.
+        get: (key) =>
+          key === MODEL_KEY
+            ? Effect.sync(() => modelKeyReads.push(key)).pipe(
+                Effect.andThen(
+                  Effect.fail(new ProviderError({ message: "locked", reason: "keychain" })),
+                ),
+              )
+            : Effect.succeed(Option.none()),
+      },
+    });
+    const handlers = MailToolkitLayer.pipe(
+      Layer.provide(mailboxLayer),
+      Layer.provide(AgentIdentity.fixed("mcp", "keychain-client")),
+    );
+    return Effect.gen(function* () {
+      const mailbox = yield* Mailbox;
+      const account = yield* mailbox.connect({ provider: "gmail" });
+      yield* mailbox.sync();
+      yield* mailbox.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });
+      const toolkit = yield* MailToolkit;
+      const id = `${account.id}/m1`;
+      const results = [
+        yield* Stream.runCollect(yield* toolkit.handle("access_status", {})),
+        yield* Stream.runCollect(yield* toolkit.handle("list_accounts", {})),
+        yield* Stream.runCollect(yield* toolkit.handle("list_threads", {})),
+        yield* Stream.runCollect(yield* toolkit.handle("search", { query: "secrets" })),
+        yield* Stream.runCollect(yield* toolkit.handle("read_thread", { message_id: id })),
+      ];
+      for (const result of results) assert.isFalse(result[0]?.isFailure);
+      assert.isNull(yield* agentAccountGap("list_threads", { account_id: account.id }));
+      assert.deepStrictEqual(modelKeyReads, []);
+      // The Settings UI still asks the keychain whether a key is set.
+      assert.isTrue((yield* mailbox.aiSettings).keyUnreadable);
+      assert.deepStrictEqual(modelKeyReads, [MODEL_KEY]);
+    }).pipe(
+      Effect.provide(
+        Layer.mergeAll(handlers, mailboxLayer, AgentIdentity.fixed("mcp", "keychain-client")),
+      ),
+    );
+  });
 
   it("MCP client names are bounded and cannot hide controls or bidi overrides", () => {
     assert.strictEqual(cleanMcpClientName("\u202e\u0000 client\n\u2066 "), "client");
