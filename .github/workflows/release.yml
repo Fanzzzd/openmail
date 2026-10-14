@@ -104,6 +104,26 @@ jobs:
           OPENMAIL_MICROSOFT_CLIENT_ID: ${{ secrets.OPENMAIL_MICROSOFT_CLIENT_ID }}
         run: pnpm --filter @openmail/desktop dist
 
+      # Each launch uses a new temporary profile with no accounts. A packaged app whose
+      # renderer, preload or core does not start fails the job before anything is uploaded.
+      # The x64 app runs under Rosetta on an arm64 runner; the runner's native build always runs.
+      - name: Launch the packaged apps
+        env:
+          REPORT_DIR: ${{ runner.temp }}/dist-smoke
+        run: |
+          smoke() { OPENMAIL_DIST_REPORT_DIR="$REPORT_DIR/$1" node scripts/smoke-dist.mjs "apps/desktop/release/$2/OpenMail.app"; }
+          if [ "$(uname -m)" = "arm64" ]; then
+            smoke arm64 mac-arm64
+            if arch -x86_64 /usr/bin/true 2>/dev/null; then
+              smoke x64 mac
+            else
+              echo "::warning::Rosetta is not installed on this runner. The x64 app was not launched."
+            fi
+          else
+            smoke x64 mac
+            echo "::warning::This runner is x64. The arm64 app was not launched."
+          fi
+
       - name: Upload to a GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}

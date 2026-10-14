@@ -23,7 +23,7 @@ apps/desktop/release/mac-arm64/OpenMail.app/Contents/MacOS/OpenMail \
   --user-data-dir="$OPENMAIL_TEST_DATA"
 ```
 
-A repeatable launch check creates a temporary directory, verifies that the renderer, preload and core start, and saves a screenshot and logs:
+A repeatable launch check, which the release workflow also runs, creates a temporary directory, verifies that the renderer, preload and core start, and saves a screenshot and logs:
 
 ```sh
 node scripts/smoke-dist.mjs apps/desktop/release/mac-arm64/OpenMail.app
@@ -80,7 +80,9 @@ The builder's credential rules are in the [electron-builder 26 macOS docs](https
 
 ## Release workflow (GitHub Actions)
 
-`.github/workflows/release.yml` runs when a tag matching `v*` is pushed. Its first job calls `check.yml`, the same build, type, test, lint and format checks that run on main, on the tagged commit. The release job needs that job, so a failing check stops the release before any secret is read. The release job has `contents: write`; the check job only reads. Actions are pinned by commit SHA with the version in a comment, and Dependabot updates the pins. The tag must equal `v` plus the `version` in `apps/desktop/package.json`, or the job stops. It runs on `macos-latest`, selects Xcode 26 for Icon Composer, installs with `pnpm install --frozen-lockfile`, builds the arm64 and x64 DMG and ZIP, and attaches them, the blockmaps and `latest-mac.yml` to a GitHub Release with generated notes. Both build scripts keep `--publish never`; the workflow uploads with `gh release create`.
+`.github/workflows/release.yml` runs when a tag matching `v*` is pushed. Its first job calls `check.yml`, the same build, type, test, lint and format checks that run on main, on the tagged commit. The release job needs that job, so a failing check stops the release before any secret is read. The release job has `contents: write`; the check job only reads. Actions are pinned by commit SHA with the version in a comment, and Dependabot updates the pins. The tag must equal `v` plus the `version` in `apps/desktop/package.json`, or the job stops. It runs on `macos-latest`, selects Xcode 26 for Icon Composer, installs with `pnpm install --frozen-lockfile`, builds the arm64 and x64 DMG and ZIP, launches the packaged apps with `scripts/smoke-dist.mjs`, and attaches them, the blockmaps and `latest-mac.yml` to a GitHub Release with generated notes. Both build scripts keep `--publish never`; the workflow uploads with `gh release create`.
+
+The launch step runs before the upload. Each launch gets a new temporary profile with no accounts, so it reads no real data and starts no sign-in. If the renderer, preload or core does not start, the job fails and nothing is published. On the arm64 runner the arm64 app always launches. The x64 app launches under Rosetta when the runner has it, and the job prints a warning when it does not.
 
 Repository secrets:
 
