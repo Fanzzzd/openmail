@@ -261,7 +261,7 @@ function Invitation({
             <dd className="inline">
               {new Intl.ListFormat(i18n.locale).format(
                 invite.attendees.map((a) => {
-                  const attendee = a.name ? `${a.name} <${a.address}>` : a.address;
+                  const who = a.name ? `${a.name} <${a.address}>` : a.address;
                   const status =
                     invite.method !== "REPLY"
                       ? undefined
@@ -274,11 +274,11 @@ function Invitation({
                             : a.status;
                   return a.optional
                     ? status
-                      ? t`${attendee} (optional, ${status})`
-                      : t`${attendee} (optional)`
+                      ? t`${who} (optional, ${status})`
+                      : t`${who} (optional)`
                     : status
-                      ? t`${attendee} (${status})`
-                      : attendee;
+                      ? t`${who} (${status})`
+                      : who;
                 }),
               )}
             </dd>

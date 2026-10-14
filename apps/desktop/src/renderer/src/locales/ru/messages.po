@@ -68,18 +68,6 @@ msgstr "{active, plural, one {Загрузки (# выполняется)} few {
 msgid "{affected, plural, one {# account needs attention} other {# accounts need attention}}"
 msgstr "{affected, plural, one {# учётная запись требует внимания} few {# учётные записи требуют внимания} many {# учётных записей требуют внимания} other {# учётной записи требуют внимания}}"
 
-#: src/renderer/src/features/calendar/InviteBanner.tsx
-msgid "{attendee} ({status})"
-msgstr "{attendee} ({status})"
-
-#: src/renderer/src/features/calendar/InviteBanner.tsx
-msgid "{attendee} (optional, {status})"
-msgstr "{attendee} (необязательно, {status})"
-
-#: src/renderer/src/features/calendar/InviteBanner.tsx
-msgid "{attendee} (optional)"
-msgstr "{attendee} (необязательно)"
-
 #: src/renderer/src/app/use-view-title.ts
 msgid "{baseTitle}: {user}"
 msgstr "{baseTitle}: {user}"
@@ -255,6 +243,18 @@ msgstr "{total, plural, one {Учтены последние {kept} из # со�
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "{value} days"
 msgstr "{value} дней"
+
+#: src/renderer/src/features/calendar/InviteBanner.tsx
+msgid "{who} ({status})"
+msgstr "{who} ({status})"
+
+#: src/renderer/src/features/calendar/InviteBanner.tsx
+msgid "{who} (optional, {status})"
+msgstr "{who} (необязательно, {status})"
+
+#: src/renderer/src/features/calendar/InviteBanner.tsx
+msgid "{who} (optional)"
+msgstr "{who} (необязательно)"
 
 #: src/renderer/src/features/organize/SnoozeDialog.tsx
 msgid "1 week, tomorrow 9am, next monday"

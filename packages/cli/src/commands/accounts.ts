@@ -252,7 +252,7 @@ const profilesAssign = Command.make(
       );
     const found = space === "none" ? null : yield* findSpace(space);
     yield* mailbox.assignProfile(accountId, found?.id ?? null);
-    yield* Console.log(
+    return yield* Console.log(
       found ? `Moved ${accountId} to ${found.name}.` : `Removed ${accountId} from its space.`,
     );
   }),

@@ -49,6 +49,22 @@ const invalidArguments = (message: string) =>
     }),
   );
 
+/** The tool as tools/list shows it, with `additionalProperties: false` on its parameters. */
+const closedTool = (tool: McpSchema.Tool) =>
+  new McpSchema.Tool({
+    name: tool.name,
+    title: tool.title,
+    description: tool.description,
+    inputSchema: Object.fromEntries([
+      ...Object.entries(tool.inputSchema),
+      ["additionalProperties", false],
+    ]),
+    outputSchema: tool.outputSchema,
+    annotations: tool.annotations,
+    icons: tool.icons,
+    _meta: tool._meta,
+  });
+
 /**
  * McpServer.toolkit, except that invalid arguments come back as an isError tool result.
  * Effect's McpServer fails them with InvalidParams; this wraps each registered handler.
@@ -65,10 +81,7 @@ const toolkitWithArgumentErrors = <Tools extends Record<string, Tool.Any>>(
           server.addTool({
             ...registration,
             // Unknown keys fail the call: a typo such as acount_id must not run with defaults.
-            tool: new McpSchema.Tool({
-              ...registration.tool,
-              inputSchema: { ...registration.tool.inputSchema, additionalProperties: false },
-            }),
+            tool: closedTool(registration.tool),
             handle: (payload) => {
               const unknown = unknownArguments(registration.tool.inputSchema, payload);
               return unknown

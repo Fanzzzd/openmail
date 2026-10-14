@@ -506,14 +506,14 @@ export function textPage<A extends object>(
 /** Edit distance, for naming the parameter a misspelled key meant. */
 function distance(a: string, b: string): number {
   let previous = Array.from({ length: b.length + 1 }, (_, i) => i);
-  for (const [i, ca] of [...a].entries()) {
+  for (let i = 0; i < a.length; i++) {
     const row = [i + 1];
-    for (const [j, cb] of [...b].entries())
+    for (let j = 0; j < b.length; j++)
       row.push(
         Math.min(
           (previous[j + 1] ?? 0) + 1,
           (row[j] ?? 0) + 1,
-          (previous[j] ?? 0) + (ca === cb ? 0 : 1),
+          (previous[j] ?? 0) + (a[i] === b[j] ? 0 : 1),
         ),
       );
     previous = row;

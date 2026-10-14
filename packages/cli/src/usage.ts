@@ -31,7 +31,9 @@ export const withShortUsageErrors = <A, E, R>(
     let held: string | undefined;
     let usage = "";
     const short: CliOutput.Formatter = {
-      ...formatter,
+      formatCliError: (error) => formatter.formatCliError(error),
+      formatError: (error) => formatter.formatError(error),
+      formatVersion: (name, version) => formatter.formatVersion(name, version),
       formatHelpDoc: (doc) => {
         usage = doc.usage;
         help = formatter.formatHelpDoc(doc);

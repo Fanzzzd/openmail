@@ -68,18 +68,6 @@ msgstr "{active, plural, one {Downloads (# läuft)} other {Downloads (# laufen)}
 msgid "{affected, plural, one {# account needs attention} other {# accounts need attention}}"
 msgstr "{affected, plural, one {# Account braucht Aufmerksamkeit} other {# Accounts brauchen Aufmerksamkeit}}"
 
-#: src/renderer/src/features/calendar/InviteBanner.tsx
-msgid "{attendee} ({status})"
-msgstr "{attendee} ({status})"
-
-#: src/renderer/src/features/calendar/InviteBanner.tsx
-msgid "{attendee} (optional, {status})"
-msgstr "{attendee} (optional, {status})"
-
-#: src/renderer/src/features/calendar/InviteBanner.tsx
-msgid "{attendee} (optional)"
-msgstr "{attendee} (optional)"
-
 #: src/renderer/src/app/use-view-title.ts
 msgid "{baseTitle}: {user}"
 msgstr "{baseTitle}: {user}"
@@ -255,6 +243,18 @@ msgstr "{total, plural, one {Berücksichtigt die neuesten {kept} von # Nachricht
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "{value} days"
 msgstr "{value} Tage"
+
+#: src/renderer/src/features/calendar/InviteBanner.tsx
+msgid "{who} ({status})"
+msgstr "{who} ({status})"
+
+#: src/renderer/src/features/calendar/InviteBanner.tsx
+msgid "{who} (optional, {status})"
+msgstr "{who} (optional, {status})"
+
+#: src/renderer/src/features/calendar/InviteBanner.tsx
+msgid "{who} (optional)"
+msgstr "{who} (optional)"
 
 #: src/renderer/src/features/organize/SnoozeDialog.tsx
 msgid "1 week, tomorrow 9am, next monday"
