@@ -202,6 +202,10 @@ try {
     for (const width of widths) {
       await evaluate(`window.resizeTo(${width}, 720)`);
       await sleep(400);
+      // A tiling window manager or a small screen can hold the window at another width.
+      const actual = await evaluate("outerWidth");
+      if (actual !== width)
+        throw new Error(`The window is ${actual} px wide after resizing it to ${width} px`);
       const found = await evaluate(under);
       if (found.length > 0) crossings.push({ view, width, found });
     }
