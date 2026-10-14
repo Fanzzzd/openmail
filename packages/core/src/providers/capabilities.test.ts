@@ -1,4 +1,4 @@
-import { assert, it } from "@effect/vitest";
+import { assert, expect, it } from "@effect/vitest";
 import { Effect } from "effect";
 import type { Provider } from "../domain/account.js";
 import type { MailOp } from "../domain/changes.js";
@@ -14,94 +14,10 @@ import {
 
 const PROVIDERS = ["gmail", "outlook", "imap"] satisfies Provider[];
 
-it("gmail: labels stack, server filters, OAuth", () => {
-  assert.deepStrictEqual(providerCapabilities("gmail"), {
-    organization: "labels",
-    important: true,
-    inboxTabs: "categories",
-    categories: false,
-    copy: false,
-    serverLabelStyle: true,
-    moveChangesId: false,
-    rules: {
-      named: false,
-      query: true,
-      sizeStep: 1,
-      excludeChats: true,
-      exceptions: false,
-      star: true,
-      importanceLabel: true,
-      labelActions: true,
-      serverOnlyActions: false,
-      preview: "server",
-      recovery: true,
-    },
-    vacation: { subject: true, openEnded: true, audience: "contacts" },
-    optionalServices: true,
-    calendar: true,
-    sendAs: true,
-    signIn: "oauth",
-    sharedSession: false,
-    webLink: true,
-    permanentDeleteScope: true,
-    serverForward: false,
-  });
-});
-
-it("outlook: one folder plus categories, Focused/Other, server rules in 1 KB size steps", () => {
-  assert.deepStrictEqual(providerCapabilities("outlook"), {
-    organization: "folders",
-    important: true,
-    inboxTabs: "focused",
-    categories: true,
-    copy: false,
-    serverLabelStyle: false,
-    moveChangesId: false,
-    rules: {
-      named: true,
-      query: false,
-      sizeStep: 1024,
-      excludeChats: false,
-      exceptions: true,
-      star: false,
-      importanceLabel: false,
-      labelActions: false,
-      serverOnlyActions: true,
-      preview: "cache",
-      recovery: false,
-    },
-    vacation: { subject: false, openEnded: false, audience: "internalExternal" },
-    optionalServices: true,
-    calendar: true,
-    sendAs: false,
-    signIn: "oauth",
-    sharedSession: false,
-    webLink: true,
-    permanentDeleteScope: false,
-    serverForward: true,
-  });
-});
-
-it("imap: one folder, copy, password sign-in, one shared session, no server rules", () => {
-  assert.deepStrictEqual(providerCapabilities("imap"), {
-    organization: "folders",
-    important: false,
-    inboxTabs: null,
-    categories: false,
-    copy: true,
-    serverLabelStyle: false,
-    moveChangesId: true,
-    rules: null,
-    vacation: null,
-    optionalServices: false,
-    calendar: false,
-    sendAs: false,
-    signIn: "password",
-    sharedSession: true,
-    webLink: false,
-    permanentDeleteScope: false,
-    serverForward: false,
-  });
+// One snapshot so a table change shows up in review. The behaviour tests below
+// check what core and the guards do with each field.
+it("the capability table", () => {
+  expect(Object.fromEntries(PROVIDERS.map((p) => [p, providerCapabilities(p)]))).toMatchSnapshot();
 });
 
 it("supportsOp maps the gated op kinds to their capability", () => {
@@ -166,3 +82,44 @@ for (const provider of PROVIDERS)
         assert.strictEqual(rejected, !supportsOp(providerCapabilities(provider), op.kind));
       }).pipe(Effect.provide(TestMailbox())),
     );
+
+// Core skips an important op the account cannot store, like a move to the current folder.
+for (const provider of PROVIDERS)
+  it.effect(
+    `${provider}: mark important ${supportsOp(providerCapabilities(provider), "important") ? "writes" : "is skipped"}`,
+    () =>
+      Effect.gen(function* () {
+        const store = yield* Store;
+        const mailbox = yield* Mailbox;
+        const account = yield* store.upsertAccount(provider, "me@example.test");
+        const id = provider === "imap" ? "1:1:INBOX" : "one";
+        yield* store.upsertMessage(account.id, incoming(id));
+        yield* mailbox.modifyWithUndo([`${account.id}/${id}`], { kind: "important", value: true });
+        const message = yield* store.getMessage(`${account.id}/${id}`);
+        const writes = supportsOp(providerCapabilities(provider), "important");
+        assert.strictEqual(message.labels.includes("IMPORTANT"), writes);
+      }).pipe(Effect.provide(TestMailbox())),
+  );
+
+// A labelling op on a folder account moves the message out of the inbox.
+for (const provider of PROVIDERS)
+  it.effect(
+    `${provider}: adding a label ${labelOpMoves(providerCapabilities(provider), { kind: "label", labelId: "Work", value: true }) ? "moves" : "keeps"} the message`,
+    () =>
+      Effect.gen(function* () {
+        const store = yield* Store;
+        const mailbox = yield* Mailbox;
+        const account = yield* store.upsertAccount(provider, "me@example.test");
+        yield* store.replaceLabels(account.id, [{ id: "Work", name: "Work", color: null }]);
+        const id = provider === "imap" ? "1:1:INBOX" : "one";
+        yield* store.upsertMessage(account.id, incoming(id));
+        const op: MailOp = { kind: "label", labelId: "Work", value: true };
+        yield* mailbox.modifyWithUndo([`${account.id}/${id}`], op);
+        const { labels } = yield* store.getMessage(`${account.id}/${id}`);
+        assert.include(labels, "Work");
+        assert.strictEqual(
+          labels.includes("INBOX"),
+          !labelOpMoves(providerCapabilities(provider), op),
+        );
+      }).pipe(Effect.provide(TestMailbox())),
+  );
