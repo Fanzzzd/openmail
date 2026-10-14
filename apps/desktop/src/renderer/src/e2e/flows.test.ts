@@ -346,14 +346,18 @@ it("Gmail operators search the server and persist an uncached match", async () =
   expect(document.querySelector(`[data-id="${h.id("one")}"]`)).toBeNull();
 });
 
-it("server search fallback displays omitted predicates and keeps local filtering", async () => {
+it("server search fallback names the skipped operators and keeps local filtering", async () => {
   current = await flow({ provider: "imap" });
   const h = current;
   await eventually(() => expect(row(h.id("one"))).toBeTruthy());
   h.server.searchResults = [incoming("remote", { subject: "Folder report", labels: ["work"] })];
   edit("Search mail", "label:Work from:alice@example.com");
   await eventually(() =>
-    expect(screen.getByText(/Some server predicates were omitted/)).toBeTruthy(),
+    expect(
+      screen.getByText(
+        /the server can't search with .+\. OpenMail searched the server without (?:it|them) and applied/,
+      ).textContent,
+    ).not.toContain(h.id("one").split("/")[0]),
   );
   await eventually(() => expect(row(h.id("remote")).textContent).toContain("Folder report"));
   expect(h.server.searched.at(-1)?.search).toBe("label:Work from:alice@example.com");
