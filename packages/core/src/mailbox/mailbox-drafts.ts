@@ -378,7 +378,10 @@ export const makeDraftsMailbox = (
           const old = existing.value;
           // Detach a local copy from its old mirror; synced drafts remove that mirror.
           if (old.accountId !== input.accountId && old.remote) {
+            // The earlier send may still arrive, so the resend guard outlives the switch.
+            const uncertain = yield* store.sendUncertain(old.id);
             yield* localOnly ? store.deleteDraft(old.id) : removeDraft(old);
+            if (uncertain) yield* store.setSendUncertain(old.id, true);
           }
         } else {
           yield* store.appendAudit({
