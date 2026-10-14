@@ -7056,6 +7056,10 @@ msgstr "De assistent kan in Gmail alleen eigen labels toevoegen."
 msgid "The assistant can only suggest drafts, labels and archiving."
 msgstr "De assistent kan alleen concepten, labels en archiveren voorstellen."
 
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "The assistant used all its steps before it finished. Ask a narrower question."
+msgstr "De assistent heeft alle stappen gebruikt voordat hij klaar was. Stel een specifiekere vraag."
+
 #: src/renderer/src/features/reader/body/MessageBody.tsx
 msgid "The body is not cached. Try opening this message again when connected."
 msgstr "De berichttekst is niet opgeslagen in de cache. Open dit bericht opnieuw zodra je verbinding hebt."

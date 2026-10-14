@@ -1,9 +1,10 @@
 import { Buffer } from "../platform/bytes.js";
 import { Cause, Context, Effect, Layer, Option, Redacted, Stream } from "effect";
 import { AiError, Chat, type Toolkit } from "effect/ai";
-import { HttpClient } from "effect/http";
+import { HttpBody, HttpClient, HttpClientRequest } from "effect/http";
 import {
   AI_INPUT_BUDGET,
+  AI_FINAL_TURN,
   AI_MAX_TURNS,
   AI_OUTPUT_TOKENS,
   AI_SYSTEM,
@@ -27,7 +28,26 @@ export interface ModelRequest {
 }
 export type ModelOutput =
   | { readonly _tag: "Delta"; readonly text: string }
-  | { readonly _tag: "Finished"; readonly reason: "stop" | "length" };
+  /**
+   * stop: the model finished. length: it hit the output token limit. turns: it still asked for
+   * tools after AI_MAX_TURNS, which a final turn without tools should prevent.
+   */
+  | { readonly _tag: "Finished"; readonly reason: "stop" | "length" | "turns" };
+
+/**
+ * The request with tool_choice "none": the model sees the tools its earlier turns used, but must
+ * answer in text. Anthropic needs the tool definitions while the history holds tool calls, and
+ * the Effect provider drops them when told "none", so the request body is changed here.
+ */
+const withoutToolCalls = (request: HttpClientRequest.HttpClientRequest) => {
+  if (request.body._tag !== "Uint8Array") return request;
+  const payload: unknown = JSON.parse(new TextDecoder().decode(request.body.body));
+  if (payload === null || typeof payload !== "object" || !("tools" in payload)) return request;
+  return HttpClientRequest.setBody(
+    request,
+    HttpBody.jsonUnsafe({ ...payload, tool_choice: { type: "none" } }),
+  );
+};
 
 export class Model extends Context.Service<
   Model,
@@ -98,9 +118,12 @@ export const ModelAnthropic = Layer.effect(
               try: () => import("@effect/ai-anthropic"),
               catch: requestFailed,
             });
-            const client = AnthropicClient.layer({ apiKey: Redacted.make(key.value) }).pipe(
-              Layer.provide(Layer.succeed(HttpClient.HttpClient, http)),
-            );
+            // Set before the last turn of a tool conversation.
+            let final = false;
+            const client = AnthropicClient.layer({
+              apiKey: Redacted.make(key.value),
+              transformClient: HttpClient.mapRequest((r) => (final ? withoutToolCalls(r) : r)),
+            }).pipe(Layer.provide(Layer.succeed(HttpClient.HttpClient, http)));
             const chat = yield* Chat.empty;
             const system =
               request.purpose === "compose"
@@ -133,7 +156,11 @@ export const ModelAnthropic = Layer.effect(
                   let tools = false;
                   let finished = false;
                   let truncated = false;
-                  const options = { prompt: index === 0 ? request.prompt : [] };
+                  // The last turn after tool calls answers without tools, and is told so.
+                  final = index > 0 && index + 1 >= AI_MAX_TURNS;
+                  const options = {
+                    prompt: index === 0 ? request.prompt : final ? AI_FINAL_TURN : [],
+                  };
                   const parts = request.toolkit
                     ? chat.streamText({ ...options, toolkit: request.toolkit, concurrency: 1 })
                     : chat.streamText(options);
@@ -175,7 +202,12 @@ export const ModelAnthropic = Layer.effect(
                           return turn(index + 1);
                         return Stream.make({
                           _tag: "Finished",
-                          reason: truncated || tools ? "length" : "stop",
+                          reason:
+                            truncated || (tools && remaining <= 0)
+                              ? "length"
+                              : tools
+                                ? "turns"
+                                : "stop",
                         } satisfies ModelOutput);
                       }),
                     ),

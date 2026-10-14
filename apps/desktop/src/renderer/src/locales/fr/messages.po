@@ -7056,6 +7056,10 @@ msgstr "L’assistant peut uniquement ajouter des libellés utilisateur dans Gma
 msgid "The assistant can only suggest drafts, labels and archiving."
 msgstr "L’assistant peut uniquement suggérer des brouillons, des libellés et l’archivage."
 
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "The assistant used all its steps before it finished. Ask a narrower question."
+msgstr "L’assistant a utilisé toutes ses étapes avant de terminer. Posez une question plus précise."
+
 #: src/renderer/src/features/reader/body/MessageBody.tsx
 msgid "The body is not cached. Try opening this message again when connected."
 msgstr "Le texte du message n’est pas en cache. Réessayez d’ouvrir ce message une fois connecté."

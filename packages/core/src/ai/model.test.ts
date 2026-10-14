@@ -1,7 +1,7 @@
 import { assert, it } from "@effect/vitest";
 import { Effect, Layer, Schema, Stream } from "effect";
 import { FetchHttpClient } from "effect/http";
-import { AI_ERRORS } from "./ai.js";
+import { AI_ERRORS, AI_FINAL_TURN, AI_MAX_TURNS } from "./ai.js";
 import { Model, ModelAnthropic } from "./model.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
 import { MODEL_KEY } from "../platform/node/secrets.js";
@@ -393,4 +393,44 @@ it.effect("a summary of a thread too long to read whole says how many messages i
     // A short thread reads whole and carries no coverage.
     yield* Stream.runDrain(m.ai.summarize(`${account.id}/t-0`)).pipe(Effect.ignore);
   }).pipe(Effect.provide(TestMailbox({ gmail: server }, { backgroundFlush: false }, {}, live)));
+});
+
+const TurnPayload = Schema.Struct({
+  tool_choice: Schema.optionalKey(Schema.Unknown),
+  tools: Schema.optionalKey(Schema.Array(Schema.Unknown)),
+});
+
+it.effect("the last turn answers without tools, and a turn cap is not called a token limit", () => {
+  const search = (n: number) => toolCall(`tool_${n}`, "search", { query: `q${n}` });
+  return Effect.gen(function* () {
+    for (const last of [answer, search(4)]) {
+      const { bodies, live } = scripted([search(1), search(2), search(3), last]);
+      const events = yield* Effect.gen(function* () {
+        const m = yield* Mailbox;
+        const account = yield* m.accounts.connect({ provider: "gmail" });
+        yield* m.ai.setAiKey("k");
+        yield* m.ai.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });
+        return yield* Stream.runCollect(
+          m.ai.askAi({ question: "Find it", accountIds: [account.id] }),
+        );
+      }).pipe(Effect.provide(TestMailbox({}, { backgroundFlush: false }, {}, live)));
+      assert.strictEqual(bodies.length, AI_MAX_TURNS);
+      const payloads = bodies.map((body) =>
+        Schema.decodeUnknownSync(TurnPayload)(JSON.parse(body)),
+      );
+      for (const payload of payloads.slice(0, -1))
+        assert.deepStrictEqual(payload.tool_choice, { type: "auto" });
+      // The tools stay defined, since the history holds tool calls, but none may be called.
+      const final = payloads.at(-1);
+      assert.deepStrictEqual(final?.tool_choice, { type: "none" });
+      assert.isAbove(final?.tools?.length ?? 0, 0);
+      assert.include(bodies.at(-1) ?? "", AI_FINAL_TURN);
+      const done = events.find((event) => event._tag === "Done");
+      if (last === answer) {
+        assert.ok(events.some((e) => e._tag === "Delta" && e.text === "Answer"));
+        assert.deepInclude(done, { truncated: false });
+        assert.notProperty(done, "stopped");
+      } else assert.deepInclude(done, { truncated: true, stopped: "turns" });
+    }
+  });
 });

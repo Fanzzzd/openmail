@@ -65,20 +65,18 @@ export function makeAiMailbox(
           const value = yield* input(id, "summary", locale);
           const previous = yield* cached(value);
           const start: AiEvent = { _tag: "Sources", sources: value.sources };
-          if (previous)
-            return Stream.make(
-              start,
-              { _tag: "Delta", text: previous.text },
-              {
-                _tag: "Done",
-                model: previous.model,
-                cached: true,
-                truncated: false,
-                ...(value.coverage ? { coverage: value.coverage } : {}),
-              },
-            );
+          if (previous) {
+            const done: AiEvent = {
+              _tag: "Done",
+              model: previous.model,
+              cached: true,
+              truncated: false,
+              ...(value.coverage ? { coverage: value.coverage } : {}),
+            };
+            return Stream.make(start, { _tag: "Delta", text: previous.text }, done);
+          }
           let text = "";
-          let reason: "stop" | "length" = "length";
+          let reason: "stop" | "length" | "turns" = "length";
           const body = model
             .stream({
               model: value.model,
@@ -98,7 +96,7 @@ export function makeAiMailbox(
           const finish = Stream.fromEffect(
             Effect.gen(function* () {
               yield* check([value.accountId]);
-              if (reason === "length")
+              if (reason !== "stop")
                 return {
                   _tag: "Done",
                   model: value.model,
@@ -172,7 +170,7 @@ export function makeAiMailbox(
                 Stream.tap((output) =>
                   Effect.gen(function* () {
                     yield* check([request.accountId]);
-                    if (output._tag === "Finished") truncated = output.reason === "length";
+                    if (output._tag === "Finished") truncated = output.reason !== "stop";
                     else {
                       outputBytes += Buffer.byteLength(output.text);
                       if (outputBytes > 8192)
@@ -438,6 +436,7 @@ export function makeAiMailbox(
             ),
           );
           let truncated = true;
+          let turns = false;
           // Sources go out before the text that may cite them, so citations render as links
           // while the answer streams.
           let sent = 0;
@@ -446,7 +445,10 @@ export function makeAiMailbox(
             .pipe(
               Stream.tap((output) =>
                 Effect.sync(() => {
-                  if (output._tag === "Finished") truncated = output.reason === "length";
+                  if (output._tag === "Finished") {
+                    turns = output.reason === "turns";
+                    truncated = output.reason !== "stop";
+                  }
                 }),
               ),
               Stream.filter((output) => output._tag === "Delta"),
@@ -465,7 +467,13 @@ export function makeAiMailbox(
             Stream.suspend(() =>
               Stream.make(
                 { _tag: "Sources", sources: [...sources.values()] },
-                { _tag: "Done", model: selectedModel, cached: false, truncated },
+                {
+                  _tag: "Done",
+                  model: selectedModel,
+                  cached: false,
+                  truncated,
+                  ...(turns ? { stopped: "turns" as const } : {}),
+                },
               ),
             ),
           );

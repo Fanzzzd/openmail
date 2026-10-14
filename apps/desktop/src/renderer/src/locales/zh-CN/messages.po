@@ -7066,6 +7066,10 @@ msgstr "助手只能在 Gmail 中添加用户标签。"
 msgid "The assistant can only suggest drafts, labels and archiving."
 msgstr "助手只能建议草稿、标签和归档。"
 
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "The assistant used all its steps before it finished. Ask a narrower question."
+msgstr "助手在完成回答前用完了所有步骤。请把问题问得更具体些。"
+
 #: src/renderer/src/features/reader/body/MessageBody.tsx
 msgid "The body is not cached. Try opening this message again when connected."
 msgstr "正文未缓存。联网后请重新打开这封邮件。"

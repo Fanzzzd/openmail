@@ -7056,6 +7056,10 @@ msgstr "El asistente solo puede añadir etiquetas de usuario en Gmail."
 msgid "The assistant can only suggest drafts, labels and archiving."
 msgstr "El asistente solo puede sugerir borradores, etiquetas y archivar."
 
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "The assistant used all its steps before it finished. Ask a narrower question."
+msgstr "El asistente agotó todos sus pasos antes de terminar. Haz una pregunta más concreta."
+
 #: src/renderer/src/features/reader/body/MessageBody.tsx
 msgid "The body is not cached. Try opening this message again when connected."
 msgstr "El texto del mensaje no está en la caché. Intenta abrirlo de nuevo cuando tengas conexión."

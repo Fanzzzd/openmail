@@ -25,6 +25,7 @@ export function useAiStream() {
   const [sources, setSources] = useState<readonly AiSource[]>([]);
   const [model, setModel] = useState("");
   const [truncated, setTruncated] = useState(false);
+  const [stopped, setStopped] = useState<"turns" | undefined>(undefined);
   const [coverage, setCoverage] = useState<AiCoverage | undefined>(undefined);
   const [status, setStatus] = useState<"idle" | "running" | "done" | "failed">("idle");
   const [error, setError] = useState<AppError | null>(null);
@@ -56,6 +57,7 @@ export function useAiStream() {
     setSources([]);
     setModel("");
     setTruncated(false);
+    setStopped(undefined);
     setCoverage(undefined);
     setError(null);
     setStatus("running");
@@ -72,6 +74,7 @@ export function useAiStream() {
           case "Done":
             setModel(event.model);
             setTruncated(event.truncated);
+            setStopped(event.stopped);
             setCoverage(event.coverage);
             setStatus("done");
             break;
@@ -96,7 +99,7 @@ export function useAiStream() {
       ),
     );
   };
-  return { text, sources, model, truncated, coverage, status, error, start, cancel };
+  return { text, sources, model, truncated, stopped, coverage, status, error, start, cancel };
 }
 
 /** Failures the person fixes in Settings → AI Access: the key or an account's consent. */
@@ -265,7 +268,13 @@ export function AiOutput({
       <SummaryCoverage coverage={result.coverage} />
       {result.truncated && (
         <output>
-          <Trans>Output truncated at the token limit. It was not cached.</Trans>
+          {result.stopped === "turns" ? (
+            <Trans>
+              The assistant used all its steps before it finished. Ask a narrower question.
+            </Trans>
+          ) : (
+            <Trans>Output truncated at the token limit. It was not cached.</Trans>
+          )}
         </output>
       )}
       {result.status === "failed" && (

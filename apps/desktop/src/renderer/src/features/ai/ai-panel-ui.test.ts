@@ -347,6 +347,7 @@ it("AI answers render URLs and phone numbers as plain text", () => {
             sources: [],
             model: "",
             truncated: false,
+            stopped: undefined,
             coverage: undefined,
             status: "done",
             error: null,
@@ -364,6 +365,38 @@ it("AI answers render URLs and phone numbers as plain text", () => {
   }
 });
 
+it("an answer cut off by the turn cap says so instead of blaming the token limit", () => {
+  const dom = testDom();
+  try {
+    const result = {
+      text: "Partial",
+      sources: [],
+      model: "claude-sonnet-5-5",
+      truncated: true,
+      coverage: undefined,
+      status: "done" as const,
+      error: null,
+      start: vi.fn(),
+      cancel: vi.fn(),
+    };
+    dom.render(
+      localize(
+        createElement(AiOutput, { result: { ...result, stopped: "turns" }, openSource: vi.fn() }),
+      ),
+    );
+    expect(dom.element.textContent).toContain("used all its steps");
+    expect(dom.element.textContent).not.toContain("token limit");
+    dom.render(
+      localize(
+        createElement(AiOutput, { result: { ...result, stopped: undefined }, openSource: vi.fn() }),
+      ),
+    );
+    expect(dom.element.textContent).toContain("Output truncated at the token limit");
+  } finally {
+    dom.dispose();
+  }
+});
+
 it("a summary of a cut thread says how many of its messages it covers", () => {
   const dom = testDom();
   try {
@@ -372,6 +405,7 @@ it("a summary of a cut thread says how many of its messages it covers", () => {
       sources: [],
       model: "claude-sonnet-5-5",
       truncated: false,
+      stopped: undefined,
       status: "done" as const,
       error: null,
       start: vi.fn(),
@@ -427,6 +461,7 @@ const failedOutput = (error: InvalidInput | ProviderError | null) =>
         ],
         model: "",
         truncated: false,
+        stopped: undefined,
         coverage: undefined,
         status: "failed",
         error,
@@ -512,6 +547,7 @@ it("[message id] citations render as numbered links that open their source", () 
             sources,
             model: "",
             truncated: false,
+            stopped: undefined,
             coverage: undefined,
             status: "done",
             error: null,

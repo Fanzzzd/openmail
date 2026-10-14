@@ -7056,6 +7056,10 @@ msgstr "Asistent může v Gmailu přidávat jen uživatelské štítky."
 msgid "The assistant can only suggest drafts, labels and archiving."
 msgstr "Asistent může navrhovat jen koncepty, štítky a archivaci."
 
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "The assistant used all its steps before it finished. Ask a narrower question."
+msgstr "Asistent vyčerpal všechny kroky dřív, než odpověď dokončil. Položte užší otázku."
+
 #: src/renderer/src/features/reader/body/MessageBody.tsx
 msgid "The body is not cached. Try opening this message again when connected."
 msgstr "Text zprávy není uložen v mezipaměti. Po připojení zkuste zprávu otevřít znovu."

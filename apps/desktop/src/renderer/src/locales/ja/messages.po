@@ -7056,6 +7056,10 @@ msgstr "アシスタントが追加できるのは Gmail のユーザーラベ�
 msgid "The assistant can only suggest drafts, labels and archiving."
 msgstr "アシスタントが提案できるのは、下書き、ラベル、アーカイブのみです。"
 
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "The assistant used all its steps before it finished. Ask a narrower question."
+msgstr "アシスタントは回答を終える前にすべての手順を使い切りました。範囲を絞って質問してください。"
+
 #: src/renderer/src/features/reader/body/MessageBody.tsx
 msgid "The body is not cached. Try opening this message again when connected."
 msgstr "本文がキャッシュされていません。接続後にこのメッセージをもう一度開いてください。"
