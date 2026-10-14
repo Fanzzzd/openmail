@@ -211,8 +211,11 @@ function imapErrorText(
 // Gmail and Outlook
 
 const OAUTH_COPY: Record<OAuthProvider, { name: string; doc: string }> = {
-  gmail: { name: "Google", doc: "docs/setup-google.md" },
-  outlook: { name: "Microsoft", doc: "docs/setup-microsoft.md" },
+  gmail: { name: "Google", doc: "https://openmail-docs.vercel.app/docs/own-oauth-client#google" },
+  outlook: {
+    name: "Microsoft",
+    doc: "https://openmail-docs.vercel.app/docs/own-oauth-client#microsoft",
+  },
 };
 
 function OAuthStep({
@@ -229,7 +232,7 @@ function OAuthStep({
   const { i18n } = useLingui();
   // Cancel interrupts the sign-in; that is not an error to show.
   const signInError = AsyncResult.isInterrupted(signIn) ? null : resultError(i18n, signIn);
-  const { name, doc } = OAUTH_COPY[provider];
+  const { name } = OAUTH_COPY[provider];
 
   const signInNow = async () => {
     const exit = await runSignIn({ provider });
@@ -254,17 +257,16 @@ function OAuthStep({
         {provider === "gmail" ? (
           <Trans>
             OpenMail signs in with an OAuth client you register yourself. First enter the OAuth
-            client you created in Google Cloud, with the Desktop app type. See {doc} in the
-            repository for the steps.
+            client you created in Google Cloud, with the Desktop app type.
           </Trans>
         ) : (
           <Trans>
             OpenMail signs in with an OAuth client you register yourself. First enter the app you
             registered in Azure, with the Mobile and desktop applications type. Only personal
-            outlook.com and Hotmail accounts are supported. See {doc} in the repository for the
-            steps.
+            outlook.com and Hotmail accounts are supported.
           </Trans>
-        )}
+        )}{" "}
+        <SetupLink provider={provider} />
       </ClientForm>
     );
 
@@ -323,17 +325,36 @@ function OAuthStep({
           {builtIn ? (
             <Trans>
               Enter an OAuth client you registered yourself. New sign-ins use it instead of the
-              built-in client. See {doc} in the repository.
+              built-in client.
             </Trans>
           ) : (
             <Trans>
-              Enter a different OAuth client you registered yourself. New sign-ins use it. See {doc}{" "}
-              in the repository.
+              Enter a different OAuth client you registered yourself. New sign-ins use it.
             </Trans>
-          )}
+          )}{" "}
+          <SetupLink provider={provider} />
         </ClientForm>
       </Disclosure>
     </div>
+  );
+}
+
+/** The docs page with the steps to register a client for this provider. */
+function SetupLink({ provider }: { provider: OAuthProvider }) {
+  return (
+    <a
+      href={OAUTH_COPY[provider].doc}
+      target="_blank"
+      rel="noreferrer"
+      className="inline-flex items-center gap-1 text-a11y-accent hover:underline dark:text-blue-400"
+    >
+      {provider === "gmail" ? (
+        <Trans>How to register a Google OAuth client</Trans>
+      ) : (
+        <Trans>How to register a Microsoft app</Trans>
+      )}
+      <ExternalLink className="size-3" />
+    </a>
   );
 }
 

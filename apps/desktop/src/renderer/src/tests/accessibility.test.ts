@@ -1807,6 +1807,23 @@ it("without a built-in or saved client, adding Gmail asks for the user's own cli
   expect(within(form).getByLabelText("Client secret")).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Sign in with Google" })).toBeNull();
   expect(screen.queryByText("Use your own OAuth client")).toBeNull();
+  const steps = within(form).getByRole("link", { name: "How to register a Google OAuth client" });
+  expect(steps.getAttribute("href")).toBe(
+    "https://openmail-docs.vercel.app/docs/own-oauth-client#google",
+  );
+  expect(form.textContent).not.toContain("in the repository");
+});
+
+it("without a built-in or saved client, adding Outlook links to the Microsoft steps", () => {
+  fixture.values.set("clientSetupAtom", NO_CLIENTS);
+  render(localized(h(AddAccountDialog, { onClose: vi.fn(), onAdded: vi.fn() })));
+  fireEvent.click(screen.getByRole("button", { name: "Outlook" }));
+  const form = screen.getByRole("form", { name: "Microsoft client" });
+  expect(
+    within(form)
+      .getByRole("link", { name: "How to register a Microsoft app" })
+      .getAttribute("href"),
+  ).toBe("https://openmail-docs.vercel.app/docs/own-oauth-client#microsoft");
 });
 
 for (const [choice, name] of [
