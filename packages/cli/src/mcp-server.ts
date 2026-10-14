@@ -13,7 +13,7 @@ import { Effect, Layer, Schema } from "effect";
 import { McpProtocol, McpSchema, McpServer } from "effect/ai";
 import type { Tool, Toolkit } from "effect/ai";
 import { CLI_VERSION } from "./version.js";
-import { invalidArguments } from "./mcp-tools.js";
+import { invalidArguments } from "./tool-errors.js";
 
 /**
  * What the server tells the model at initialize. Claude Code and Codex show it to the model

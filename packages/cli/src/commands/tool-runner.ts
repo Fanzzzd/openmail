@@ -13,7 +13,7 @@ import { Tool } from "effect/ai";
 import { Effect, Layer, Option, Result, Schema, Stream } from "effect";
 import { Flag } from "effect/cli";
 import { fail, print } from "./common.js";
-import { invalidArguments } from "../mcp-tools.js";
+import { invalidArguments } from "../tool-errors.js";
 
 export type ToolName = keyof typeof MailToolkit.tools;
 export const toolNames = Object.keys(MailToolkit.tools).filter(
