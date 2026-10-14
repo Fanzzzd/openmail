@@ -185,115 +185,134 @@ export function OrganizationSettings({ accounts }: { accounts: readonly Account[
               color: null,
             };
             const current = (pref.color ?? label.color ?? "none").toLowerCase();
+            const name = label.name;
             return (
-              <li key={label.id} className={labelRow}>
-                <span className="min-w-0 flex-1 truncate">{label.name}</span>
-                {caps?.serverLabelStyle ? (
-                  <>
-                    <Select
-                      aria-label={t({ message: "In sidebar", context: "label settings column" })}
-                      value={label.labelListVisibility ?? "labelShow"}
-                      options={[
-                        { value: "labelShow", label: t`Show` },
-                        { value: "labelShowIfUnread", label: t`Show if unread` },
-                        { value: "labelHide", label: t`Hide` },
-                      ]}
-                      onValueChange={(labelListVisibility) => {
-                        void perform({
-                          kind: "visibility",
-                          id: label.id,
-                          labelListVisibility,
-                          messageListVisibility: label.messageListVisibility ?? "show",
-                        });
-                      }}
-                    />
-                    <Select
-                      aria-label={t({
-                        message: "In message list",
-                        context: "label settings column",
-                      })}
-                      value={label.messageListVisibility ?? "show"}
-                      options={[
-                        { value: "show", label: t`Show` },
-                        { value: "hide", label: t`Hide` },
-                      ]}
-                      onValueChange={(messageListVisibility) => {
-                        void perform({
-                          kind: "visibility",
-                          id: label.id,
-                          labelListVisibility: label.labelListVisibility ?? "labelShow",
-                          messageListVisibility,
-                        });
-                      }}
-                    />
-                  </>
-                ) : (
+              <li key={label.id} className="sm:col-span-full sm:grid sm:grid-cols-subgrid">
+                {/* The group names the row, so each control reads as this label's. A fieldset
+                    would lay its content out in an anonymous box, which drops the subgrid. */}
+                {/* oxlint-disable-next-line jsx-a11y/prefer-tag-over-role */}
+                <div role="group" aria-label={label.name} className={labelRow}>
+                  <span className="min-w-0 flex-1 truncate">{label.name}</span>
+                  {caps?.serverLabelStyle ? (
+                    <>
+                      <Select
+                        aria-label={t({ message: "In sidebar", context: "label settings column" })}
+                        value={label.labelListVisibility ?? "labelShow"}
+                        options={[
+                          { value: "labelShow", label: t`Show` },
+                          { value: "labelShowIfUnread", label: t`Show if unread` },
+                          { value: "labelHide", label: t`Hide` },
+                        ]}
+                        onValueChange={(labelListVisibility) => {
+                          void perform({
+                            kind: "visibility",
+                            id: label.id,
+                            labelListVisibility,
+                            messageListVisibility: label.messageListVisibility ?? "show",
+                          });
+                        }}
+                      />
+                      <Select
+                        aria-label={t({
+                          message: "In message list",
+                          context: "label settings column",
+                        })}
+                        value={label.messageListVisibility ?? "show"}
+                        options={[
+                          { value: "show", label: t`Show` },
+                          { value: "hide", label: t`Hide` },
+                        ]}
+                        onValueChange={(messageListVisibility) => {
+                          void perform({
+                            kind: "visibility",
+                            id: label.id,
+                            labelListVisibility: label.labelListVisibility ?? "labelShow",
+                            messageListVisibility,
+                          });
+                        }}
+                      />
+                    </>
+                  ) : (
+                    <label className="flex items-center gap-1.5">
+                      <Checkbox
+                        checked={pref.visible}
+                        onCheckedChange={(visible) =>
+                          setPref({
+                            payload: { input: { ...pref, visible } },
+                            reactivityKeys: [Keys.organization],
+                          })
+                        }
+                      />
+                      <span>{t`Show`}</span>
+                    </label>
+                  )}
                   <label className="flex items-center gap-1.5">
                     <Checkbox
-                      checked={pref.visible}
-                      onCheckedChange={(visible) =>
+                      checked={pref.favorite}
+                      onCheckedChange={(favorite) =>
                         setPref({
-                          payload: { input: { ...pref, visible } },
+                          payload: { input: { ...pref, favorite } },
                           reactivityKeys: [Keys.organization],
                         })
                       }
                     />
-                    <span>{t`Show`}</span>
+                    <span>{t`Favorite`}</span>
                   </label>
-                )}
-                <label className="flex items-center gap-1.5">
-                  <Checkbox
-                    checked={pref.favorite}
-                    onCheckedChange={(favorite) =>
-                      setPref({
-                        payload: { input: { ...pref, favorite } },
-                        reactivityKeys: [Keys.organization],
-                      })
-                    }
+                  <Select
+                    aria-label={t({ message: "Color", context: "label settings column" })}
+                    value={current}
+                    options={[
+                      { value: "none", label: t`Default`, icon: swatch(null) },
+                      ...LABEL_COLORS.map((color) => ({
+                        value: color.value,
+                        label: i18n._(color.name),
+                        icon: swatch(color.value),
+                      })),
+                      // A color set elsewhere, such as in Gmail, stays choosable and shows its swatch.
+                      ...(current === "none" ||
+                      LABEL_COLORS.some((color) => color.value === current)
+                        ? []
+                        : [
+                            {
+                              value: current,
+                              label: i18n._(labelColorName(current)),
+                              icon: swatch(current),
+                            },
+                          ]),
+                    ]}
+                    onValueChange={(color) => {
+                      void perform({
+                        kind: "color",
+                        id: label.id,
+                        color: color === "none" ? null : color,
+                      });
+                    }}
                   />
-                  <span>{t`Favorite`}</span>
-                </label>
-                <Select
-                  aria-label={t({ message: "Color", context: "label settings column" })}
-                  value={current}
-                  options={[
-                    { value: "none", label: t`Default`, icon: swatch(null) },
-                    ...LABEL_COLORS.map((color) => ({
-                      value: color.value,
-                      label: i18n._(color.name),
-                      icon: swatch(color.value),
-                    })),
-                    // A color set elsewhere, such as in Gmail, stays choosable and shows its swatch.
-                    ...(current === "none" || LABEL_COLORS.some((color) => color.value === current)
-                      ? []
-                      : [
-                          {
-                            value: current,
-                            label: i18n._(labelColorName(current)),
-                            icon: swatch(current),
-                          },
-                        ]),
-                  ]}
-                  onValueChange={(color) => {
-                    void perform({
-                      kind: "color",
-                      id: label.id,
-                      color: color === "none" ? null : color,
-                    });
-                  }}
-                />
-                <span className="flex gap-3">
-                  <button type="button" className={buttonLink} onClick={() => setEditing(label)}>
-                    <Trans>Rename</Trans>
-                  </button>
-                  <button
-                    type="button"
-                    className={`${rowAction} text-a11y-danger`}
-                    onClick={() => setDeleting(label)}
-                  >
-                    <Trans>Delete</Trans>
-                  </button>
-                </span>
+                  <span className="flex gap-3">
+                    {/* The hidden name completes the visible verb, so the accessible name still
+                      starts with what the button shows. */}
+                    <button type="button" className={buttonLink} onClick={() => setEditing(label)}>
+                      <Trans
+                        context="label settings row action"
+                        comment="Only the verb is visible. The label or folder name is read by screen readers."
+                      >
+                        Rename <span className="sr-only">{name}</span>
+                      </Trans>
+                    </button>
+                    <button
+                      type="button"
+                      className={`${rowAction} text-a11y-danger`}
+                      onClick={() => setDeleting(label)}
+                    >
+                      <Trans
+                        context="label settings row action"
+                        comment="Only the verb is visible. The label or folder name is read by screen readers."
+                      >
+                        Delete <span className="sr-only">{name}</span>
+                      </Trans>
+                    </button>
+                  </span>
+                </div>
               </li>
             );
           })}

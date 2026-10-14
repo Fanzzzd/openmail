@@ -2445,6 +2445,12 @@ msgstr "删除"
 msgid "Delete {0}"
 msgstr "删除 {0}"
 
+#. Only the verb is visible. The label or folder name is read by screen readers.
+#: src/renderer/src/features/organize/OrganizationSettings.tsx
+msgctxt "label settings row action"
+msgid "Delete <0>{name}</0>"
+msgstr "删除<0>{name}</0>"
+
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "Delete draft"
 msgstr "删除草稿"
@@ -5934,9 +5940,11 @@ msgstr "已移除 {recipient}"
 msgid "Removed star"
 msgstr "已去掉星标"
 
+#. Only the verb is visible. The label or folder name is read by screen readers.
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
-msgid "Rename"
-msgstr "重命名"
+msgctxt "label settings row action"
+msgid "Rename <0>{name}</0>"
+msgstr "重命名<0>{name}</0>"
 
 #: src/renderer/src/features/calendar/EventRecurrenceEditor.tsx
 msgid "Repeat"

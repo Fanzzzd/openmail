@@ -445,5 +445,16 @@ it("Organize labels its visibility columns and names every color, including one 
   const colors = screen.getAllByRole("combobox", { name: "Color" });
   expect(colors.map((color) => color.textContent)).toEqual(["Purple", "Green"]);
   for (const color of colors) expect(color.querySelector("span[aria-hidden]")).toBeTruthy();
+  // Each row is a group named for its label, and the row actions name the label too.
+  for (const name of ["Newsletters", "Work"]) {
+    const row = screen.getByRole("group", { name });
+    expect(within(row).getByRole("combobox", { name: "In sidebar" })).toBeTruthy();
+    expect(within(row).getByRole("checkbox", { name: "Favorite" })).toBeTruthy();
+    const rename = within(row).getByRole("button", { name: `Rename ${name}` });
+    const remove = within(row).getByRole("button", { name: `Delete ${name}` });
+    // The visible text starts the accessible name (WCAG 2.5.3, label in name).
+    expect(rename.querySelector(".sr-only")?.textContent).toBe(name);
+    expect(remove.firstChild?.textContent?.trim()).toBe("Delete");
+  }
   await audit();
 });

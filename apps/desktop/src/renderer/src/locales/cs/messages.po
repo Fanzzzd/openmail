@@ -2435,6 +2435,12 @@ msgstr "Smazat"
 msgid "Delete {0}"
 msgstr "Smazat {0}"
 
+#. Only the verb is visible. The label or folder name is read by screen readers.
+#: src/renderer/src/features/organize/OrganizationSettings.tsx
+msgctxt "label settings row action"
+msgid "Delete <0>{name}</0>"
+msgstr "Smazat <0>{name}</0>"
+
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "Delete draft"
 msgstr "Smazat koncept"
@@ -5924,9 +5930,11 @@ msgstr "Odebráno: {recipient}"
 msgid "Removed star"
 msgstr "Hvězdička odebrána"
 
+#. Only the verb is visible. The label or folder name is read by screen readers.
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
-msgid "Rename"
-msgstr "Přejmenovat"
+msgctxt "label settings row action"
+msgid "Rename <0>{name}</0>"
+msgstr "Přejmenovat <0>{name}</0>"
 
 #: src/renderer/src/features/calendar/EventRecurrenceEditor.tsx
 msgid "Repeat"
