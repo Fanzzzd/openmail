@@ -7643,6 +7643,7 @@ msgid "Turn it on in Settings"
 msgstr "在设置中开启"
 
 #: src/renderer/src/features/mail-list/EmptyList.tsx
+#: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Turn off quick filters"
 msgstr "关闭快速筛选"
 

@@ -29,6 +29,7 @@ import type { SearchIgnored, SearchInputProblem } from "../../state/threads";
 import { attachmentMatches } from "../search";
 import { rowLayout, rowWindow } from "./row-layout";
 import { swipeMailOp } from "./message-swipe";
+import { pressQuickFilter, quickFilterOn } from "./quick-filters";
 import { constVoid } from "effect/Function";
 import { buttonLink, noticeRow, noticeTone, titlebarRow, touchTarget } from "../../ui/styles";
 import { TrafficLightSpace } from "../../ui/TrafficLights";
@@ -298,31 +299,31 @@ export function MessageList({
               active={filters.enabled}
               onChange={(enabled) => onFilters({ ...filters, enabled })}
               label={t`Quick filters`}
-              tip={t`Turn on quick filters`}
+              tip={filters.enabled ? t`Turn off quick filters` : t`Turn on quick filters`}
               shortcut={shortcutText("filterUnread")}
             />
             <FilterChip
-              active={filters.unread}
-              onChange={(unread) => onFilters({ ...filters, unread, enabled: true })}
+              active={quickFilterOn(filters, "unread")}
+              onChange={(on) => onFilters(pressQuickFilter(filters, "unread", on))}
               label={t`Unread`}
               tip={t`Show only unread`}
             />
             <FilterChip
-              active={filters.starred}
-              onChange={(starred) => onFilters({ ...filters, starred, enabled: true })}
+              active={quickFilterOn(filters, "starred")}
+              onChange={(on) => onFilters(pressQuickFilter(filters, "starred", on))}
               label={t`Starred`}
               tip={t`Show only starred`}
             />
             <FilterChip
-              active={filters.important}
-              onChange={(important) => onFilters({ ...filters, important, enabled: true })}
+              active={quickFilterOn(filters, "important")}
+              onChange={(on) => onFilters(pressQuickFilter(filters, "important", on))}
               label={t`Important`}
               tip={t`Show important messages`}
             />
             {inLabel && (
               <FilterChip
-                active={filters.inInbox}
-                onChange={(inInbox) => onFilters({ ...filters, inInbox, enabled: true })}
+                active={quickFilterOn(filters, "inInbox")}
+                onChange={(on) => onFilters(pressQuickFilter(filters, "inInbox", on))}
                 label={t`In Inbox`}
                 tip={t`Show messages also in Inbox`}
               />

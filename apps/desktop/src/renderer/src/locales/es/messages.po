@@ -7633,6 +7633,7 @@ msgid "Turn it on in Settings"
 msgstr "Activarlo en los ajustes"
 
 #: src/renderer/src/features/mail-list/EmptyList.tsx
+#: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Turn off quick filters"
 msgstr "Desactivar los filtros rápidos"
 
