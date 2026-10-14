@@ -11,6 +11,7 @@ import {
   parseSearchExpression,
   searchQueryError,
   type SearchExpression,
+  searchHasNoWords,
 } from "../search/search.js";
 import { ftsSearchTerm, proximityMatch, wordTokens } from "../search/fts.js";
 import { keyOf, reciprocalRankFusion } from "../search/ranking.js";
@@ -160,6 +161,8 @@ export const makeThreadsStore = ({
   const countThreads = Effect.fn("Store.countThreads")(function* (raw: ThreadQuery) {
     const invalid = searchQueryError(raw);
     if (invalid) return yield* invalid;
+    // As listThreads: a search with no words finds nothing.
+    if (raw.search !== undefined && searchHasNoWords(raw.search)) return 0;
     const readiness = yield* wordIndex.wordIndexReady;
     const query = yield* planTextPage({
       ...(raw.search === undefined ? raw : parseSearchQuery(raw)),
@@ -385,7 +388,7 @@ export const makeThreadsStore = ({
       endPreparation?.();
       return yield* invalid;
     }
-    if (raw.search !== undefined && !raw.search.trim()) {
+    if (raw.search !== undefined && searchHasNoWords(raw.search)) {
       endPreparation?.();
       return [];
     }

@@ -175,3 +175,29 @@ it.effect("word search finds words next to soft hyphens and bidi isolates", () =
     ).toEqual([{ n: 0 }]);
   }).pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform())))),
 );
+
+// parseSearchQuery drops an empty phrase and lone format characters, so these used to match
+// every message.
+it.effect("a search whose words strip to nothing finds nothing, like a blank one", () =>
+  Effect.gen(function* () {
+    const store = yield* Store;
+    const a = yield* store.upsertAccount("gmail", "me@example.com");
+    yield* store.upsertMessage(a.id, {
+      ...base,
+      providerId: "one",
+      threadId: "one",
+      subject: "Quarterly report",
+      date: 1,
+      bodyText: "numbers",
+    });
+    yield* drain;
+    for (const search of [" ", '""', '"" ""', "\u00AD", "\u2068\u2069", "\u200B", '"\u00AD"'])
+      assert.deepStrictEqual(
+        [yield* store.listThreads({ search }), yield* store.countThreads({ search })],
+        [[], 0],
+        JSON.stringify(search),
+      );
+    assert.lengthOf(yield* store.listThreads({ search: 'report ""' }), 1);
+    assert.lengthOf(yield* store.listThreads({ search: "is:read ­" }), 1);
+  }).pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform())))),
+);

@@ -11,7 +11,7 @@ import {
   type SearchResult,
   type Vacation,
 } from "../domain/organization.js";
-import { parseSearchQuery, searchQueryError } from "../search/search.js";
+import { parseSearchQuery, searchHasNoWords, searchQueryError } from "../search/search.js";
 import { mergeSearchResults } from "../search/ranking.js";
 import { serverSearchIgnored } from "../search/provider-search.js";
 import type { Providers } from "../providers/adapter.js";
@@ -46,6 +46,9 @@ export function makeOrganizationMailbox(
   const searchServer = Effect.fn("Mailbox.searchServer")(function* (query: ThreadQuery) {
     const invalid = searchQueryError(query);
     if (invalid) return yield* invalid;
+    // A provider would read an empty query as "all mail".
+    if (query.search !== undefined && searchHasNoWords(query.search))
+      return { threads: [], truncated: false, errors: [] };
     const parsed = parseSearchQuery(query);
     const criteria = parsed.criteria;
     if (

@@ -52,6 +52,15 @@ export const SEARCH_OPERATORS = [
   "after:",
 ];
 
+/**
+ * Whether a search has nothing to look for: only blanks, double quotes and format characters
+ * (soft hyphens, zero-width spaces, bidi isolates). parseSearchQuery drops an empty phrase or
+ * a lone format character, so the query would otherwise match the whole mailbox; it finds
+ * nothing, like a blank one. Visible punctuation such as `!!!` stays a query.
+ */
+export const searchHasNoWords = (search: string): boolean =>
+  search.replace(/[\s"\p{Cf}]/gu, "") === "";
+
 /** Invalid/incomplete operators stay searchable text while the person is typing. */
 export function parseSearchQuery(query: ThreadQuery): ThreadQuery {
   const invalid = searchInputError(query.search ?? "");
