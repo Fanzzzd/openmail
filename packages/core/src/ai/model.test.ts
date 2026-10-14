@@ -524,11 +524,11 @@ function sseBlocks(
       },
     },
   ];
-  blocks.forEach((block, index) => {
+  for (const [index, block] of blocks.entries()) {
     events.push({ type: "content_block_start", index, content_block: block.start });
     for (const delta of block.deltas) events.push({ type: "content_block_delta", index, delta });
     events.push({ type: "content_block_stop", index });
-  });
+  }
   events.push(
     {
       type: "message_delta",

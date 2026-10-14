@@ -232,8 +232,9 @@ it("finds OPENMAIL_* reads through aliases and destructuring", () => {
 });
 
 it("counts a path literal as a read only where a call uses it as a path", () => {
-  const hostile = `const hostile = "${"../"}../package.json";\nexpect(sanitize(hostile)).toBe("x");`;
-  const read = `const text = readFileSync(join(__dirname, "${"../"}../package.json"));`;
+  const up = "../";
+  const hostile = `const hostile = "${up}../package.json";\nexpect(sanitize(hostile)).toBe("x");`;
+  const read = `const text = readFileSync(join(__dirname, "${up}../package.json"));`;
   const at = (source: string) => source.indexOf("../");
   expect(reachesPathUse(hostile, at(hostile))).toBe(false);
   expect(reachesPathUse(read, at(read))).toBe(true);
