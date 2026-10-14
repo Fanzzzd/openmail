@@ -166,6 +166,8 @@ export const makeMailboxRuntimeState = Effect.gen(function* () {
 export interface InflightSync {
   readonly accountId: string | undefined;
   readonly done: Deferred.Deferred<SyncResult[]>;
+  /** Accounts the run covers. Unset until the run has listed them. */
+  accountIds: ReadonlySet<string> | undefined;
 }
 export interface MailboxRuntimeState {
   adapters: Map<Provider, import("../providers/adapter.js").ProviderAdapter>;

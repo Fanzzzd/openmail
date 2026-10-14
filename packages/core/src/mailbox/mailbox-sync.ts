@@ -351,7 +351,10 @@ export const makeSyncMailbox = (
     );
   });
 
-  const runSync = Effect.fn("Mailbox.runSync")(function* (accountId?: string) {
+  const runSync = Effect.fn("Mailbox.runSync")(function* (
+    accountId: string | undefined,
+    inflight: InflightSync,
+  ) {
     yield* Ref.update(runtime.syncState, (s) => ({ ...s, running: true }));
     yield* emit({ _tag: "SyncState", state: yield* Ref.get(runtime.syncState) });
     yield* deps.organization().wakeSnoozed();
@@ -361,6 +364,7 @@ export const makeSyncMailbox = (
     const accounts = accountId
       ? [yield* store.getAccount(accountId).pipe(Effect.orDie)]
       : yield* store.listAccounts;
+    inflight.accountIds = new Set(accounts.map((a) => a.id));
     const budgets = resetBudgets();
     // Up to SYNC_ACCOUNTS accounts pull at once; each account appears once per run, and
     // syncLock keeps polls and other runs out. SQLite writes still go one transaction at a
@@ -401,21 +405,31 @@ export const makeSyncMailbox = (
 
   /**
    * One sync at a time. A call during a run that covers its account joins that run;
-   * a call for an account the run skips waits for it to finish and then runs.
+   * a call for an account the run skips waits for it to finish and then runs. A full
+   * run covers the accounts it listed, so an account added after that waits too.
    */
   const sync = Effect.fn("Mailbox.sync")(function* (accountId?: string) {
-    const done = yield* Deferred.make<SyncResult[]>();
+    const self: InflightSync = {
+      accountId,
+      done: yield* Deferred.make<SyncResult[]>(),
+      accountIds: undefined,
+    };
     for (;;) {
       const running = yield* Ref.modify(
         runtime.inflight,
         (current): [Option.Option<InflightSync>, Option.Option<InflightSync>] =>
-          Option.isSome(current)
-            ? [current, current]
-            : [Option.none(), Option.some({ accountId, done })],
+          Option.isSome(current) ? [current, current] : [Option.none(), Option.some(self)],
       );
       if (Option.isNone(running)) break;
       const other = running.value;
-      if (other.accountId === undefined || other.accountId === accountId) {
+      // An account that exists before a full run lists accounts is in that list.
+      const covers =
+        other.accountId === accountId ||
+        (other.accountId === undefined &&
+          (accountId === undefined ||
+            other.accountIds === undefined ||
+            other.accountIds.has(accountId)));
+      if (covers) {
         const results = yield* Deferred.await(other.done);
         return accountId === undefined || other.accountId !== undefined
           ? results
@@ -423,7 +437,7 @@ export const makeSyncMailbox = (
       }
       yield* Deferred.await(other.done).pipe(Effect.exit);
     }
-    return yield* runSync(accountId).pipe(
+    return yield* runSync(accountId, self).pipe(
       runtime.syncLock.withPermits(1),
       Effect.catchCause((cause) =>
         Cause.hasInterruptsOnly(cause)
@@ -451,7 +465,7 @@ export const makeSyncMailbox = (
       ),
       Effect.onExit((exit) =>
         Ref.set(runtime.inflight, Option.none()).pipe(
-          Effect.andThen(Deferred.done(done, exit)),
+          Effect.andThen(Deferred.done(self.done, exit)),
           Effect.andThen(
             exit._tag === "Failure"
               ? Ref.update(runtime.syncState, (s) => ({ ...s, running: false }))
