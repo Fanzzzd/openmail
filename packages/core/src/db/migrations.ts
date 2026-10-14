@@ -1421,6 +1421,29 @@ CREATE TRIGGER snoozed_list_date_insert AFTER INSERT ON snoozed_messages BEGIN
    CREATE VIRTUAL TABLE derived_word_positions USING fts5vocab(derived_words, 'instance');
    INSERT INTO search_word_index(kind,end_rowid,ready) SELECT 'messages',COALESCE(MAX(rowid),0),CASE WHEN MAX(rowid) IS NULL THEN 1 ELSE 0 END FROM messages;
    INSERT INTO search_word_index(kind,end_rowid,ready) SELECT 'derived',COALESCE(MAX(id),0),CASE WHEN MAX(id) IS NULL THEN 1 ELSE 0 END FROM derived_chunks;`,
+  // user_version 54: the word index backfill removes soft hyphens from stored subjects and
+  // bodies, and a resync of an older message stores its text without them. Neither changes what
+  // the person reads, so neither queues a new embedding for the message nor drops the AI
+  // summary and triage of its thread. Both triggers compare the text with U+00AD removed.
+  `DROP TRIGGER semantic_message_update;
+   CREATE TRIGGER semantic_message_update AFTER UPDATE OF body_text,body_html,attachments_json ON messages
+     WHEN old.attachments_json != new.attachments_json
+       OR ((old.body_cached=new.body_cached OR new.body_cached=1)
+         AND (replace(old.body_text,char(173),'') != replace(new.body_text,char(173),'')
+           OR old.body_html != new.body_html)) BEGIN
+     DELETE FROM vector_items WHERE message_id=new.id;
+     INSERT INTO semantic_jobs(message_id) VALUES(new.id)
+       ON CONFLICT(message_id) DO UPDATE SET generation=generation+1,status='queued',claim=NULL,
+       claimed_at=NULL,attempts=0,retry_at=0,note=NULL;
+   END;
+   DROP TRIGGER ai_derived_update;
+   CREATE TRIGGER ai_derived_update AFTER UPDATE OF body_text,subject,from_addr,to_json,cc_json,date ON messages
+     WHEN replace(old.body_text,char(173),'') IS NOT replace(new.body_text,char(173),'')
+       OR replace(old.subject,char(173),'') IS NOT replace(new.subject,char(173),'')
+       OR old.from_addr IS NOT new.from_addr OR old.to_json IS NOT new.to_json
+       OR old.cc_json IS NOT new.cc_json OR old.date IS NOT new.date BEGIN
+     DELETE FROM derived WHERE account_id=old.account_id AND thread_id=old.account_id || '/' || old.thread_id;
+   END;`,
 ];
 
 /** Index of migration 37, the cache rowid rebuild. It runs when user_version equals this index. */

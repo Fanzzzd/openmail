@@ -147,8 +147,8 @@ it.effect("word search finds words next to soft hyphens and bidi isolates", () =
       bodyText: "",
     });
     yield* sql`UPDATE messages SET body_text='an older con'||char(173)||'tract' WHERE provider_id='old'`;
-    // Rebuild the word indexes as the separators migration does.
-    const migration = MIGRATIONS.at(-1) ?? "";
+    // Rebuild the word indexes as the separators migration (user_version 53) does.
+    const migration = MIGRATIONS[52] ?? "";
     expect(migration).toContain("DROP TABLE messages_words");
     yield* sql.withTransaction(
       Effect.forEach(splitStatements(migration), (statement) => sql.unsafe(statement).unprepared),
