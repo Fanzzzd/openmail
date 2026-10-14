@@ -24,16 +24,21 @@ interface Props<T extends string> {
   valueClassName?: string;
   /**
    * "inline" is a borderless pop-up button for toolbars and setting rows.
-   * "field" is a full-width control with the 3:1 control boundary, like text inputs in forms.
+   * "field" is a control with the 3:1 control boundary, like text inputs in forms.
    */
   variant?: "inline" | "field";
+  /**
+   * The width of a field. It fills its container by default; a field that shares a flex row
+   * with its label needs a fixed width such as "w-32", or it takes the label's space.
+   */
+  fieldWidth?: string;
 }
 
 const triggerStyles = {
   inline:
     "h-7 gap-2 rounded-control px-1.5 -mx-1.5 outline-offset-0 not-data-disabled:hover:bg-fill-hover focus-visible:outline-[3px] data-popup-open:bg-fill-pressed",
   field:
-    "h-7 w-full justify-between gap-2 rounded-control bg-white px-2.5 shadow-control ring-1 ring-control outline-offset-1 not-data-disabled:hover:bg-neutral-50 focus-visible:outline-2 data-disabled:opacity-50 data-popup-open:ring-blue-600/60 dark:bg-white/[0.08] dark:not-data-disabled:hover:bg-white/[0.12]",
+    "h-7 justify-between gap-2 rounded-control bg-white px-2.5 shadow-control ring-1 ring-control outline-offset-1 not-data-disabled:hover:bg-neutral-50 focus-visible:outline-2 data-disabled:opacity-50 data-popup-open:ring-blue-600/60 dark:bg-white/[0.08] dark:not-data-disabled:hover:bg-white/[0.12]",
 } as const;
 
 /**
@@ -52,6 +57,7 @@ export function Select<T extends string>({
   className = "",
   valueClassName = "",
   variant = "inline",
+  fieldWidth = "w-full",
 }: Props<T>) {
   const current = options.find((o) => o.value === value);
   return (
@@ -66,7 +72,7 @@ export function Select<T extends string>({
       <BaseSelect.Trigger
         id={id}
         aria-label={label}
-        className={`group flex min-w-0 coarse:min-h-11 items-center text-left outline-a11y-focus ${triggerStyles[variant]} ${className}`}
+        className={`group flex min-w-0 coarse:min-h-11 items-center text-left outline-a11y-focus ${triggerStyles[variant]} ${variant === "field" ? fieldWidth : ""} ${className}`}
       >
         {current?.icon}
         <BaseSelect.Value

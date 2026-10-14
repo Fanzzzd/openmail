@@ -493,7 +493,8 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
                     <Select
                       aria-label={t`Keep bodies in ${label.name}`}
                       variant="field"
-                      className="w-32 shrink-0"
+                      fieldWidth="w-32"
+                      className="shrink-0"
                       value={currentValue}
                       options={options}
                       disabled={saveResult.waiting}
