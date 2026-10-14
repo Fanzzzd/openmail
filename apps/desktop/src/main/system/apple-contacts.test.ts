@@ -128,7 +128,7 @@ it.skipIf(process.platform !== "darwin")(
     await Effect.runPromise(
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        const account = yield* mailbox.connect({ provider: "gmail" });
+        const account = yield* mailbox.accounts.connect({ provider: "gmail" });
         yield* mailbox.sync();
         yield* mailbox.calendar.refreshContacts(account.id);
         const desktop = desktopAppleContacts(mailbox);
@@ -180,7 +180,7 @@ it.skipIf(process.platform !== "darwin")(
           /Apple Name|Private Organization|work@example.com|ABPerson|Local Team|thumbnail/,
         );
         expect(requests[0]?.toolkit).toBeUndefined();
-        yield* mailbox.setAccountSettings(account.id, {
+        yield* mailbox.accounts.setAccountSettings(account.id, {
           enabled: false,
           description: "",
           color: null,

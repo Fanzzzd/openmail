@@ -68,7 +68,7 @@ it.effect(
     ];
     return Effect.gen(function* () {
       const m = yield* Mailbox;
-      yield* m.connect({ provider: "gmail" });
+      yield* m.accounts.connect({ provider: "gmail" });
       yield* m.sync();
       const imported = (yield* m.compose.namedSignatures)[0];
       assert.ok(imported);
@@ -259,7 +259,7 @@ for (const failure of [
       const server = fakeServer("me@example.com");
       return Effect.gen(function* () {
         const m = yield* Mailbox;
-        yield* m.connect({ provider: "gmail" });
+        yield* m.accounts.connect({ provider: "gmail" });
         server.failNext = failure;
         const saved = yield* m.compose.saveDraft({ id: "draft:failed", accountId, message });
         assert.strictEqual(saved.syncError, failure.message);
@@ -293,7 +293,7 @@ it.effect("Retry recovers a permanently failed draft after its queue entry was r
   const server = fakeServer("me@example.com");
   return Effect.gen(function* () {
     const m = yield* Mailbox;
-    yield* m.connect({ provider: "gmail" });
+    yield* m.accounts.connect({ provider: "gmail" });
     server.failNext = new PermanentError({ message: "Rejected" });
     yield* m.compose.saveDraft({ id: "draft:retry", accountId, message });
     const retried = yield* m.compose.recoverDraft("draft:retry", "retry");
@@ -325,7 +325,7 @@ it.effect(
     ];
     return Effect.gen(function* () {
       const m = yield* Mailbox;
-      yield* m.connect({ provider: "gmail" });
+      yield* m.accounts.connect({ provider: "gmail" });
       yield* m.sync();
       assert.deepStrictEqual(yield* m.compose.suggestContacts("john acme"), [
         { name: "Server John", address: "j@acme.com" },

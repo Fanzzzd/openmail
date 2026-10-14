@@ -127,9 +127,9 @@ import { GMAIL_PERMANENT_DELETE_SCOPE } from "../domain/folder-actions.js";
         return Effect.gen(function* () {
           const m = yield* Mailbox;
           const store = yield* Store;
-          const account = yield* m.connect({ provider });
+          const account = yield* m.accounts.connect({ provider });
           assert.deepStrictEqual(
-            (yield* m.optionalServices(account.id)).map((grant) => grant.state),
+            (yield* m.accounts.optionalServices(account.id)).map((grant) => grant.state),
             ["notGranted", "notGranted", provider === "outlook" ? "granted" : "notGranted"],
           );
           assert.strictEqual(
@@ -137,25 +137,28 @@ import { GMAIL_PERMANENT_DELETE_SCOPE } from "../domain/folder-actions.js";
             "Success",
           );
           server.grantedScopes = [...BASE_SCOPES[provider], ...OPTIONAL_SCOPES[provider].contacts];
-          yield* m.reauth(account.id, "contacts");
-          assert.strictEqual((yield* m.optionalServices(account.id))[0]?.state, "granted");
+          yield* m.accounts.reauth(account.id, "contacts");
+          assert.strictEqual((yield* m.accounts.optionalServices(account.id))[0]?.state, "granted");
           assert.ok(
             (yield* m.compose.suggestContacts("provider")).some(
               (contact) => contact.address === "provider@example.com",
             ),
           );
-          yield* m.setServiceEnabled(account.id, "contacts", false);
-          assert.strictEqual((yield* m.optionalServices(account.id))[0]?.state, "turnedOff");
+          yield* m.accounts.setServiceEnabled(account.id, "contacts", false);
+          assert.strictEqual(
+            (yield* m.accounts.optionalServices(account.id))[0]?.state,
+            "turnedOff",
+          );
           yield* m.calendar.refreshContacts(account.id);
           assert.deepStrictEqual(yield* m.compose.suggestContacts("provider"), []);
           assert.deepStrictEqual(yield* store.disabledServices(account.id), ["contacts"]);
           assert.deepStrictEqual(yield* store.grantedScopes(account.id), server.grantedScopes);
           yield* m.sync();
-          assert.strictEqual((yield* m.accounts)[0]?.needsReauth, false);
-          yield* m.setServiceEnabled(account.id, "contacts", true);
-          assert.strictEqual((yield* m.optionalServices(account.id))[0]?.state, "granted");
+          assert.strictEqual((yield* m.accounts.accounts)[0]?.needsReauth, false);
+          yield* m.accounts.setServiceEnabled(account.id, "contacts", true);
+          assert.strictEqual((yield* m.accounts.optionalServices(account.id))[0]?.state, "granted");
           assert.ok((yield* m.compose.suggestContacts("provider")).length);
-          const denied = yield* m.reauth(account.id, "calendar").pipe(Effect.result);
+          const denied = yield* m.accounts.reauth(account.id, "calendar").pipe(Effect.result);
           assert.strictEqual(
             denied._tag === "Failure" && denied.failure._tag,
             "FeatureScopeMissing",
@@ -246,12 +249,15 @@ import { GMAIL_PERMANENT_DELETE_SCOPE } from "../domain/folder-actions.js";
           yield* store.setGrantedScopes(account.id, server.grantedScopes);
           const refresh = yield* m.calendar.refreshContacts(account.id).pipe(Effect.forkScoped);
           yield* Deferred.await(started);
-          yield* m.setServiceEnabled(account.id, "contacts", false);
+          yield* m.accounts.setServiceEnabled(account.id, "contacts", false);
           yield* Deferred.succeed(finish, undefined);
           yield* Fiber.join(refresh);
           assert.deepStrictEqual(yield* m.compose.suggestContacts("late"), []);
           assert.deepStrictEqual(yield* m.compose.contactGroups(""), []);
-          assert.strictEqual((yield* m.optionalServices(account.id))[0]?.state, "turnedOff");
+          assert.strictEqual(
+            (yield* m.accounts.optionalServices(account.id))[0]?.state,
+            "turnedOff",
+          );
         }).pipe(
           Effect.provide(
             TestMailbox.withAdapter(adapter, {
@@ -328,7 +334,7 @@ import { GMAIL_PERMANENT_DELETE_SCOPE } from "../domain/folder-actions.js";
             const m = yield* Mailbox;
             const store = yield* Store;
             assert.deepStrictEqual(
-              (yield* m.optionalServices(accountId)).map((grant) => grant.state),
+              (yield* m.accounts.optionalServices(accountId)).map((grant) => grant.state),
               ["granted", "granted", "granted"],
             );
             assert.ok(
@@ -350,7 +356,10 @@ import { GMAIL_PERMANENT_DELETE_SCOPE } from "../domain/folder-actions.js";
             const m = yield* Mailbox;
             assert.ok((yield* m.compose.suggestContacts("old")).length);
             assert.ok((yield* m.organize.sendAs).length);
-            assert.strictEqual((yield* m.optionalServices(accountId))[0]?.state, "granted");
+            assert.strictEqual(
+              (yield* m.accounts.optionalServices(accountId))[0]?.state,
+              "granted",
+            );
           }).pipe(Effect.provide(layer()));
         }).pipe(Effect.scoped),
     );
@@ -365,12 +374,12 @@ import { GMAIL_PERMANENT_DELETE_SCOPE } from "../domain/folder-actions.js";
       ];
       return Effect.gen(function* () {
         const m = yield* Mailbox;
-        const account = yield* m.connect({ provider });
-        yield* m.reauth(account.id);
+        const account = yield* m.accounts.connect({ provider });
+        yield* m.accounts.reauth(account.id);
         assert.deepStrictEqual(lastScopes(server), server.grantedScopes);
-        yield* m.connect({ provider, loginHint: account.email });
+        yield* m.accounts.connect({ provider, loginHint: account.email });
         assert.deepStrictEqual(lastScopes(server), server.grantedScopes);
-        yield* m.connect({ provider });
+        yield* m.accounts.connect({ provider });
         assert.deepStrictEqual(lastScopes(server), server.grantedScopes);
       }).pipe(Effect.provide(TestMailbox({ [provider]: server })));
     });
@@ -392,7 +401,7 @@ import { GMAIL_PERMANENT_DELETE_SCOPE } from "../domain/folder-actions.js";
       ];
       return Effect.gen(function* () {
         const m = yield* Mailbox;
-        const account = yield* m.connect({ provider: "gmail" });
+        const account = yield* m.accounts.connect({ provider: "gmail" });
         yield* m.organize.syncSendAs(account.id);
         assert.ok((yield* m.organize.sendAs).length);
         assert.strictEqual(
@@ -403,7 +412,7 @@ import { GMAIL_PERMANENT_DELETE_SCOPE } from "../domain/folder-actions.js";
           (yield* m.organize.vacation(account.id).pipe(Effect.result))._tag,
           "Success",
         );
-        yield* m.setServiceEnabled(account.id, "settings", false);
+        yield* m.accounts.setServiceEnabled(account.id, "settings", false);
         assert.ok((yield* m.organize.sendAs).length);
         yield* m.organize.syncSendAs(account.id);
         assert.ok((yield* m.organize.sendAs).length);
@@ -486,7 +495,7 @@ import { GMAIL_PERMANENT_DELETE_SCOPE } from "../domain/folder-actions.js";
     };
     return Effect.gen(function* () {
       const m = yield* Mailbox;
-      const account = yield* m.connect({ provider: "gmail" });
+      const account = yield* m.accounts.connect({ provider: "gmail" });
       const draft = yield* m.compose.saveDraft({
         id: "draft:flags-real",
         accountId: account.id,
@@ -533,12 +542,12 @@ it.effect(
     server.grantedScopes = [...BASE_SCOPES.gmail, ...OPTIONAL_SCOPES.gmail.calendar];
     return Effect.gen(function* () {
       const m = yield* Mailbox;
-      const account = yield* m.connect({ provider: "gmail" });
+      const account = yield* m.accounts.connect({ provider: "gmail" });
       // Calendar was turned on, then lost its grant at a later sign-in.
-      yield* m.setServiceEnabled(account.id, "calendar", true);
+      yield* m.accounts.setServiceEnabled(account.id, "calendar", true);
       server.grantedScopes = [...BASE_SCOPES.gmail];
-      yield* m.reauth(account.id);
-      assert.deepStrictEqual(yield* m.optionalServices(account.id), [
+      yield* m.accounts.reauth(account.id);
+      assert.deepStrictEqual(yield* m.accounts.optionalServices(account.id), [
         { service: "contacts", state: "notGranted" },
         { service: "calendar", state: "notGranted", wanted: true },
         { service: "settings", state: "notGranted" },
@@ -548,7 +557,7 @@ it.effect(
         ...OPTIONAL_SCOPES.gmail.calendar,
         ...OPTIONAL_SCOPES.gmail.settings,
       ];
-      yield* m.reauth(account.id, "settings");
+      yield* m.accounts.reauth(account.id, "settings");
       const request = server.connects.at(-1);
       assert.strictEqual(request?.provider !== "imap" && request?.loginHint, "me@gmail.com");
       const scopes = request?.provider === "imap" ? [] : (request?.grantedScopes ?? []);
@@ -559,7 +568,7 @@ it.effect(
       // Contacts was never turned on, so it is not requested.
       assert.notInclude(scopes, OPTIONAL_SCOPES.gmail.contacts[0]);
       assert.deepStrictEqual(
-        (yield* m.optionalServices(account.id)).map((grant) => grant.state),
+        (yield* m.accounts.optionalServices(account.id)).map((grant) => grant.state),
         ["notGranted", "granted", "granted"],
       );
     }).pipe(Effect.provide(TestMailbox({ gmail: server })));

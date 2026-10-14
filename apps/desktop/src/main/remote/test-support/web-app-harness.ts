@@ -53,7 +53,7 @@ export async function serveWebApp(messages: IncomingMessage[], prefs: Partial<Pr
     TemporaryTestMailbox({ gmail: fakeServer("me@gmail.com", messages) }),
   );
   const m = await runtime.runPromise(Mailbox);
-  await runtime.runPromise(m.connect({ provider: "gmail" }));
+  await runtime.runPromise(m.accounts.connect({ provider: "gmail" }));
   await runtime.runPromise(
     m.app.setPrefs({
       language: "en",

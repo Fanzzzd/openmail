@@ -387,7 +387,7 @@ it.effect("three-way RRF keeps an exact hit above a lone vector candidate", () =
 it.effect("Mailbox and MCP share semantic hits after persisted opt-in", () =>
   Effect.gen(function* () {
     const mail = yield* Mailbox;
-    yield* mail.connect({ provider: "gmail" });
+    yield* mail.accounts.connect({ provider: "gmail" });
     yield* mail.sync();
     assert.strictEqual((yield* mail.reading.threads({ search: "travel" })).length, 0);
     yield* mail.ai.setModelsEnabled(true);
@@ -464,7 +464,7 @@ it.effect(
     let battery = false;
     return Effect.gen(function* () {
       const mail = yield* Mailbox;
-      yield* mail.connect({ provider: "gmail" });
+      yield* mail.accounts.connect({ provider: "gmail" });
       yield* mail.sync();
       yield* mail.ai.setModelsEnabled(true);
       yield* TestClock.adjust("15 seconds");

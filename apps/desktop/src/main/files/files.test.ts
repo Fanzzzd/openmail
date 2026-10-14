@@ -63,7 +63,7 @@ it("saves the chosen message byte-for-byte, including non-UTF8 MIME", async () =
   const saved = await Effect.runPromise(
     Effect.gen(function* () {
       const mailbox = yield* Mailbox;
-      const account = yield* mailbox.connect({ provider: "gmail" });
+      const account = yield* mailbox.accounts.connect({ provider: "gmail" });
       yield* mailbox.sync();
       return yield* saveMessage(mailbox, null, `${account.id}/two`);
     }).pipe(Effect.provide(TestMailbox({ gmail: server }))),
@@ -86,7 +86,7 @@ it("cancel and a missing destination leave files intact and never fetch MIME", a
   await Effect.runPromise(
     Effect.gen(function* () {
       const mailbox = yield* Mailbox;
-      const account = yield* mailbox.connect({ provider: "gmail" });
+      const account = yield* mailbox.accounts.connect({ provider: "gmail" });
       yield* mailbox.sync();
       const raw = vi.spyOn(mailbox.reading, "rawMessageBytes");
       expect(yield* saveMessage(mailbox, null, `${account.id}/two`)).toBe(false);
@@ -106,7 +106,7 @@ it("provider failure leaves the chosen file intact", async () => {
   await Effect.runPromise(
     Effect.gen(function* () {
       const mailbox = yield* Mailbox;
-      const account = yield* mailbox.connect({ provider: "gmail" });
+      const account = yield* mailbox.accounts.connect({ provider: "gmail" });
       yield* mailbox.sync();
       server.messages.delete("two");
       expect(
@@ -134,7 +134,7 @@ it("EML subjects preserve slash-separated words, use a message fallback and fit 
       const saved = await Effect.runPromise(
         Effect.gen(function* () {
           const mailbox = yield* Mailbox;
-          const account = yield* mailbox.connect({ provider: "gmail" });
+          const account = yield* mailbox.accounts.connect({ provider: "gmail" });
           yield* mailbox.sync();
           return yield* saveMessage(mailbox, null, `${account.id}/one`);
         }).pipe(Effect.provide(TestMailbox({ gmail: server }))),

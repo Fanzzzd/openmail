@@ -46,7 +46,8 @@ type Groups =
   | "ai"
   | "calendar"
   | "app"
-  | "proposals";
+  | "proposals"
+  | "accounts";
 /** Groups whose members are no longer flat on Service. */
 type Moved =
   | "ai"
@@ -56,7 +57,8 @@ type Moved =
   | "compose"
   | "reading"
   | "organize"
-  | "proposals";
+  | "proposals"
+  | "accounts";
 type Flat = Omit<Service, Exclude<Groups, Moved>>;
 type Overrides = Partial<Omit<Flat, Moved>> & { [G in Moved]?: Partial<Service[G]> };
 
@@ -178,8 +180,29 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
     cacheDatabaseSize: notUsed("cacheDatabaseSize"),
     compactCache: notUsed("compactCache"),
     closeSessions: () => notUsed("closeSessions"),
-    optionalServices: () => notUsed("optionalServices"),
-    setServiceEnabled: () => notUsed("setServiceEnabled"),
+    accounts: {
+      optionalServices: () => notUsed("optionalServices"),
+      setServiceEnabled: () => notUsed("setServiceEnabled"),
+      setAccountSettings: () => Effect.die("unused"),
+      moveAccount: () => Effect.die("unused"),
+      initializeProfiles: () => Effect.die("unused"),
+      accounts: Effect.succeed([
+        testAccount("a"),
+        testAccount("gmail:a@example.com"),
+        testAccount("gmail:me@gmail.com"),
+        testAccount("gmail:me@example.com"),
+      ]),
+      connect: () => notUsed("connect"),
+      reauth: () => notUsed("reauth"),
+      clientSetup: notUsed("clientSetup"),
+      setClient: () => notUsed("setClient"),
+      clearClient: () => notUsed("clearClient"),
+      profiles: notUsed("profiles"),
+      createProfile: () => notUsed("createProfile"),
+      updateProfile: () => notUsed("updateProfile"),
+      deleteProfile: () => notUsed("deleteProfile"),
+      assignProfile: () => notUsed("assignProfile"),
+    },
     organize: {
       unsubscribe: () => notUsed("unsubscribe"),
       permanentlyDelete: () => notUsed("permanentlyDelete"),
@@ -249,7 +272,7 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
       // Tools read consent from aiAccounts; aiSettings also reads the API key from the keychain.
       aiSettings: notUsed("aiSettings"),
       aiAccounts: Effect.map(
-        overrides.accounts ??
+        overrides.accounts?.accounts ??
           Effect.succeed([
             testAccount("a"),
             testAccount("gmail:a@example.com"),
@@ -296,11 +319,8 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
       threadCount: () => Effect.die("not used"),
       messageAccounts: () => notUsed("messageAccounts"),
     },
-    setAccountSettings: () => Effect.die("unused"),
-    moveAccount: () => Effect.die("unused"),
     cacheSize: Effect.die("unused"),
     clearCache: () => Effect.die("unused"),
-    initializeProfiles: () => Effect.die("unused"),
     resetConnectivity: () => Effect.die("unused"),
     setSyncPaused: () => Effect.die("unused"),
     cacheWindows: Effect.die("unused"),
@@ -308,23 +328,6 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
     backfillState: Effect.die("unused"),
     pauseBackfill: () => Effect.die("unused"),
     fetchOlder: () => Effect.die("unused"),
-    accounts: Effect.succeed([
-      testAccount("a"),
-      testAccount("gmail:a@example.com"),
-      testAccount("gmail:me@gmail.com"),
-      testAccount("gmail:me@example.com"),
-    ]),
-
-    connect: () => notUsed("connect"),
-    reauth: () => notUsed("reauth"),
-    clientSetup: notUsed("clientSetup"),
-    setClient: () => notUsed("setClient"),
-    clearClient: () => notUsed("clearClient"),
-    profiles: notUsed("profiles"),
-    createProfile: () => notUsed("createProfile"),
-    updateProfile: () => notUsed("updateProfile"),
-    deleteProfile: () => notUsed("deleteProfile"),
-    assignProfile: () => notUsed("assignProfile"),
     sync: () => notUsed("sync"),
     pollInbox: () => notUsed("pollInbox"),
     syncState: notUsed("syncState"),
@@ -332,6 +335,7 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
   const flat: Flat = {
     ...base,
     ...overrides,
+    accounts: { ...base.accounts, ...overrides.accounts },
     proposals: { ...base.proposals, ...overrides.proposals },
     organize: { ...base.organize, ...overrides.organize },
     reading: { ...base.reading, ...overrides.reading },
@@ -722,7 +726,9 @@ it.effect("access_status counts hidden accounts in English and names the app car
           })),
         ];
         const layer = stubMailbox({
-          accounts: Effect.succeed(accounts),
+          accounts: {
+            accounts: Effect.succeed(accounts),
+          },
           ai: {
             aiAccounts: Effect.succeed([{ accountId: "a", allowed: true, autoSummaries: false }]),
           },
@@ -781,13 +787,15 @@ it.effect("list_threads narrows to a space", () =>
       needsReauth: false,
     });
     const layer = stubMailbox({
-      accounts: Effect.succeed([
-        account("gmail:a@example.com", "work"),
-        account("gmail:b@example.com", null),
-      ]),
-      profiles: Effect.succeed([
-        { id: "work", name: "Work", icon: "💼", color: "blue", position: 0 },
-      ]),
+      accounts: {
+        accounts: Effect.succeed([
+          account("gmail:a@example.com", "work"),
+          account("gmail:b@example.com", null),
+        ]),
+        profiles: Effect.succeed([
+          { id: "work", name: "Work", icon: "💼", color: "blue", position: 0 },
+        ]),
+      },
       reading: {
         threads: (q) =>
           Effect.sync(() => {
@@ -927,7 +935,11 @@ it.effect("schemas reject excessive limits, budgets, draft bodies and modificati
     for (const params of [{ limit: 101 }, { limit: 0 }, { token_budget: 24_001 }]) {
       const result = yield* run(
         call("list_accounts", params),
-        stubMailbox({ accounts: Effect.succeed([]) }),
+        stubMailbox({
+          accounts: {
+            accounts: Effect.succeed([]),
+          },
+        }),
       );
       assert.isTrue(result.isFailure);
     }
@@ -965,7 +977,11 @@ it.effect("paged metadata keeps ids and respects byte budgets and cursor filters
       color: "blue" as const,
       position: i,
     }));
-    const layer = stubMailbox({ profiles: Effect.succeed(rows) });
+    const layer = stubMailbox({
+      accounts: {
+        profiles: Effect.succeed(rows),
+      },
+    });
     const first = yield* run(call("list_profiles", { limit: 100, token_budget: 2000 }), layer);
     assert.isFalse(first.isFailure);
     if (!("profiles" in first.result)) return;
@@ -980,7 +996,11 @@ it.effect("paged metadata keeps ids and respects byte budgets and cursor filters
     assert.notStrictEqual(first.result.profiles[0]?.id, second.result.profiles[0]?.id);
     const invalid = yield* run(
       call("list_accounts", { cursor: first.result.next_cursor }),
-      stubMailbox({ accounts: Effect.succeed([]) }),
+      stubMailbox({
+        accounts: {
+          accounts: Effect.succeed([]),
+        },
+      }),
     );
     assert.isTrue(invalid.isFailure);
     const malformed = yield* run(call("list_profiles", { cursor: "not-a-cursor" }), layer);
@@ -991,7 +1011,9 @@ it.effect("paged metadata keeps ids and respects byte budgets and cursor filters
 it.effect("a bad cursor fails the same way in every paged tool, even with no accounts", () =>
   Effect.gen(function* () {
     const layer = stubMailbox({
-      accounts: Effect.succeed([]),
+      accounts: {
+        accounts: Effect.succeed([]),
+      },
       reading: {
         labels: () => Effect.succeed([]),
         threads: () => Effect.succeed([]),
@@ -1139,7 +1161,7 @@ it.effect("all MCP write tools create only proposals; only app approval changes 
   return run(
     Effect.gen(function* () {
       const mailbox = yield* Mailbox;
-      const account = yield* mailbox.connect({ provider: "gmail" });
+      const account = yield* mailbox.accounts.connect({ provider: "gmail" });
       yield* mailbox.ai.setAiAccount({
         accountId: account.id,
         allowed: true,
@@ -1214,7 +1236,7 @@ it.effect("thread cursor preserves every conversation sharing a timestamp", () =
   return run(
     Effect.gen(function* () {
       const mailbox = yield* Mailbox;
-      const account = yield* mailbox.connect({ provider: "gmail" });
+      const account = yield* mailbox.accounts.connect({ provider: "gmail" });
       yield* mailbox.ai.setAiAccount({
         accountId: account.id,
         allowed: true,
@@ -1246,7 +1268,7 @@ it.effect(
     return run(
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        const account = yield* mailbox.connect({ provider: "gmail" });
+        const account = yield* mailbox.accounts.connect({ provider: "gmail" });
         yield* mailbox.ai.setAiAccount({
           accountId: account.id,
           allowed: true,
@@ -1548,7 +1570,7 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
     );
     return Effect.gen(function* () {
       const mailbox = yield* Mailbox;
-      const account = yield* mailbox.connect({ provider: "gmail" });
+      const account = yield* mailbox.accounts.connect({ provider: "gmail" });
       yield* mailbox.sync();
       yield* mailbox.ai.setAiAccount({
         accountId: account.id,
@@ -1662,7 +1684,7 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
     );
     return Effect.gen(function* () {
       const mailbox = yield* Mailbox;
-      const account = yield* mailbox.connect({ provider: "gmail" });
+      const account = yield* mailbox.accounts.connect({ provider: "gmail" });
       yield* mailbox.sync();
       yield* mailbox.ai.setAiAccount({
         accountId: account.id,
@@ -1708,7 +1730,7 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
       );
       return Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        const account = yield* mailbox.connect({ provider: "gmail" });
+        const account = yield* mailbox.accounts.connect({ provider: "gmail" });
         yield* mailbox.sync();
         const toolkit = yield* MailToolkit;
         const id = `${account.id}/m1`;
@@ -1779,7 +1801,7 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
           (yield* mailbox.compose.openDraft(draft.id)).message.agentOrigin?.recipients,
           ["alice@example.com"],
         );
-        yield* mailbox.setAccountSettings(account.id, {
+        yield* mailbox.accounts.setAccountSettings(account.id, {
           enabled: false,
           description: "",
           color: null,
@@ -1811,7 +1833,7 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
       const Status = MailToolkit.tools.access_status.successSchema;
       return Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        const account = yield* mailbox.connect({ provider: "gmail" });
+        const account = yield* mailbox.accounts.connect({ provider: "gmail" });
         const toolkit = yield* MailToolkit;
         const status = Effect.gen(function* () {
           const result = (yield* Stream.runCollect(yield* toolkit.handle("access_status", {})))[0];
@@ -1883,7 +1905,7 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
     return Effect.gen(function* () {
       const mailbox = yield* Mailbox;
       const store = yield* Store;
-      const account = yield* mailbox.connect({ provider: "gmail" });
+      const account = yield* mailbox.accounts.connect({ provider: "gmail" });
       yield* mailbox.sync();
       yield* mailbox.proposals.setAgentWriteMode("propose");
       const result = yield* mailbox.organize.perform(
@@ -1911,7 +1933,7 @@ it.effect("MCP write tools refuse invisible accounts before creating any proposa
   return run(
     Effect.gen(function* () {
       const mailbox = yield* Mailbox;
-      const account = yield* mailbox.connect({ provider: "gmail" });
+      const account = yield* mailbox.accounts.connect({ provider: "gmail" });
       yield* mailbox.sync();
       yield* mailbox.proposals.setAgentWriteMode("propose");
       const id = `${account.id}/m1`;
@@ -1938,7 +1960,7 @@ it.effect("MCP write tools refuse invisible accounts before creating any proposa
         allowed: true,
         autoSummaries: false,
       });
-      yield* mailbox.setAccountSettings(account.id, {
+      yield* mailbox.accounts.setAccountSettings(account.id, {
         enabled: false,
         description: "",
         color: null,
@@ -2249,8 +2271,10 @@ it.effect("draft_message rejects a bare name instead of dropping it from the rec
 it.effect("tools fail as not_found for an account, profile or id the client cannot read", () =>
   Effect.gen(function* () {
     const layer = stubMailbox({
-      accounts: Effect.succeed([testAccount("a"), { ...testAccount("off"), enabled: false }]),
-      profiles: Effect.succeed([]),
+      accounts: {
+        accounts: Effect.succeed([testAccount("a"), { ...testAccount("off"), enabled: false }]),
+        profiles: Effect.succeed([]),
+      },
       reading: {
         labels: () => Effect.succeed([]),
         threads: () => Effect.succeed([]),

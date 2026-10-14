@@ -82,7 +82,7 @@ for (const provider of ["gmail", "imap", "outlook"] as const) {
           );
         const saved = yield* Effect.gen(function* () {
           const mailbox = yield* Mailbox;
-          const account = yield* mailbox.connect(
+          const account = yield* mailbox.accounts.connect(
             provider === "imap"
               ? {
                   provider,
@@ -168,7 +168,7 @@ it.effect(
     const server = fakeServer("me@example.com", [original]);
     return Effect.gen(function* () {
       const mailbox = yield* Mailbox;
-      const account = yield* mailbox.connect({ provider: "gmail" });
+      const account = yield* mailbox.accounts.connect({ provider: "gmail" });
       yield* mailbox.sync();
       const error = yield* Effect.flip(
         mailbox.organize.perform(
@@ -262,7 +262,7 @@ it.effect(
     ]);
     return Effect.gen(function* () {
       const mailbox = yield* Mailbox;
-      const account = yield* mailbox.connect({ provider: "gmail" });
+      const account = yield* mailbox.accounts.connect({ provider: "gmail" });
       yield* mailbox.sync();
       server.failNext = new ProviderError({ message: "Must not fetch raw MIME" });
       const error = yield* Effect.flip(

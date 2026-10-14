@@ -208,7 +208,7 @@ it.skipIf(process.platform !== "darwin")(
     await Effect.runPromise(
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        const account = yield* mailbox.connect({ provider: "gmail" });
+        const account = yield* mailbox.accounts.connect({ provider: "gmail" });
         yield* mailbox.sync();
         const id = `${account.id}/${message.providerId}`;
         for (const kind of ["message", "thread", "web"] as const) {

@@ -41,7 +41,7 @@ it("a held discard survives a crash: due ones go at start, pending ones resume a
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
         const store = yield* Store;
-        const account = yield* mailbox.connect({ provider: "gmail" });
+        const account = yield* mailbox.accounts.connect({ provider: "gmail" });
         for (const id of ["draft:due", "draft:soon", "draft:undo"])
           yield* mailbox.compose.saveDraft({ id, accountId: account.id, message: outgoing });
         // What a crash inside the window leaves: the stored deadline, no worker.
@@ -114,7 +114,7 @@ it("start-up finishes a discard whose tombstone was written without the draft de
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
         const store = yield* Store;
-        accountId = (yield* mailbox.connect({ provider: "gmail" })).id;
+        accountId = (yield* mailbox.accounts.connect({ provider: "gmail" })).id;
         yield* mailbox.compose.saveDraft({ id: "draft:zombie", accountId, message: outgoing });
         // What an older build left after a crash between its separate steps.
         yield* store.markDraftDiscarded("draft:zombie");
@@ -154,7 +154,7 @@ it("a discard that fails while deleting the draft writes no tombstone", async ()
     await first.runPromise(
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        accountId = (yield* mailbox.connect({ provider: "gmail" })).id;
+        accountId = (yield* mailbox.accounts.connect({ provider: "gmail" })).id;
         yield* mailbox.compose.saveDraft({ id: "draft:busy", accountId, message: outgoing });
       }),
     );

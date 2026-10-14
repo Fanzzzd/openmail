@@ -74,7 +74,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
           });
         const id = yield* Effect.gen(function* () {
           const mailbox = yield* Mailbox;
-          yield* mailbox.connect(
+          yield* mailbox.accounts.connect(
             provider === "imap"
               ? {
                   provider,
@@ -157,7 +157,7 @@ it.effect("offline remote draft import preserves and sanitizes cached HTML", () 
   const server = fakeServer("me@gmail.com", [remote]);
   return Effect.gen(function* () {
     const mailbox = yield* Mailbox;
-    yield* mailbox.connect({ provider: "gmail" });
+    yield* mailbox.accounts.connect({ provider: "gmail" });
     yield* mailbox.sync();
     server.failNext = new ProviderError({ message: "offline" });
     const draft = yield* mailbox.compose.openDraft("gmail:me@gmail.com/remote");
@@ -170,7 +170,7 @@ it.effect("sending HTML directly also sanitizes and derives the text alternative
   const server = fakeServer("me@gmail.com");
   return Effect.gen(function* () {
     const mailbox = yield* Mailbox;
-    yield* mailbox.connect({ provider: "gmail" });
+    yield* mailbox.accounts.connect({ provider: "gmail" });
     yield* mailbox.organize.perform(
       {
         kind: "send",
@@ -199,7 +199,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
       const server = fakeServer("me@example.com");
       return Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        yield* mailbox.connect(
+        yield* mailbox.accounts.connect(
           provider === "imap"
             ? {
                 provider,

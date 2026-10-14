@@ -81,7 +81,7 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
           );
         const draft = yield* Effect.gen(function* () {
           const mailbox = yield* Mailbox;
-          yield* mailbox.connect(
+          yield* mailbox.accounts.connect(
             provider === "imap"
               ? {
                   provider,
@@ -138,7 +138,7 @@ it.effect(
     ]);
     return Effect.gen(function* () {
       const mailbox = yield* Mailbox;
-      yield* mailbox.connect({ provider: "gmail" });
+      yield* mailbox.accounts.connect({ provider: "gmail" });
       yield* mailbox.sync();
       assert.strictEqual(
         (yield* Effect.flip(mailbox.outbox.sendAgain("gmail:me@example.com/sent")))._tag,
@@ -160,7 +160,7 @@ it.effect("an existing remote draft is unsynced while its edited save is queued"
   const server = fakeServer("me@example.com");
   return Effect.gen(function* () {
     const mailbox = yield* Mailbox;
-    const account = yield* mailbox.connect({ provider: "gmail" });
+    const account = yield* mailbox.accounts.connect({ provider: "gmail" });
     // Drain connect's detached sync before injecting a failure into the edited save.
     yield* mailbox.sync();
     const draft = yield* mailbox.compose.saveDraft({
@@ -204,7 +204,7 @@ it.effect("core counts sends blocked at the provider and releases the count afte
     );
     yield* Effect.gen(function* () {
       const mailbox = yield* Mailbox;
-      const account = yield* mailbox.connect({ provider: "gmail" });
+      const account = yield* mailbox.accounts.connect({ provider: "gmail" });
       const sending = yield* mailbox.organize
         .perform(
           { kind: "send", accountId: account.id, message: outgoing },

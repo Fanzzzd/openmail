@@ -34,7 +34,7 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
     const server = fakeServer("me@gmail.com", [incoming("m1"), incoming("newer", { date: 2000 })]);
     return Effect.gen(function* () {
       const m = yield* Mailbox;
-      yield* m.connect({ provider: "gmail" });
+      yield* m.accounts.connect({ provider: "gmail" });
       yield* m.sync();
       return yield* body(m, server);
     }).pipe(Effect.provide(TestMailbox({ gmail: server })));
@@ -57,7 +57,7 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
         const offline = yield* m.reading.searchServer({ search: "report" });
         assert.strictEqual(offline.threads.length, 3);
         assert.strictEqual(offline.errors.length, 1);
-        assert.strictEqual((yield* m.accounts)[0]?.needsReauth, false);
+        assert.strictEqual((yield* m.accounts.accounts)[0]?.needsReauth, false);
         assert.strictEqual(
           (yield* m.reading.searchServer({ search: "report", accountIds: [] })).threads.length,
           0,
@@ -303,7 +303,7 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
         );
         const sync = yield* m.sync();
         assert.strictEqual(sync[0]?.error, undefined);
-        assert.strictEqual((yield* m.accounts)[0]?.needsReauth, false);
+        assert.strictEqual((yield* m.accounts.accounts)[0]?.needsReauth, false);
         assert.strictEqual((yield* m.reading.threads({ mailbox: "inbox" })).length, 2);
       }),
     ),
@@ -440,7 +440,7 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
       const server = fakeServer("me@gmail.com", [inbox, sent]);
       return Effect.gen(function* () {
         const m = yield* Mailbox;
-        const account = yield* m.connect({ provider: "gmail" });
+        const account = yield* m.accounts.connect({ provider: "gmail" });
         yield* m.sync();
         yield* m.organize.snooze([`${account.id}/reply`], 1000);
         let members = yield* m.reading.thread(`${account.id}/reply`);
@@ -478,7 +478,7 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
     });
     return Effect.gen(function* () {
       const m = yield* Mailbox;
-      const account = yield* m.connect({ provider: "outlook" });
+      const account = yield* m.accounts.connect({ provider: "outlook" });
       yield* m.organize.changeLabel(account.id, { kind: "create", name: "Test" });
       const folder = (yield* m.reading.labels([account.id])).find((l) => l.name === "Test");
       assert.ok(folder);
@@ -554,7 +554,7 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
     () =>
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        const account = yield* mailbox.connect({ provider: "gmail" });
+        const account = yield* mailbox.accounts.connect({ provider: "gmail" });
         yield* mailbox.sync();
         yield* mailbox.organize.setOrganization({
           accountId: account.id,
@@ -604,7 +604,7 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
         for (const provider of ["gmail", "outlook"] as const) {
-          const account = yield* mailbox.connect({ provider });
+          const account = yield* mailbox.accounts.connect({ provider });
           yield* mailbox.sync(account.id);
           const id = `${account.id}/m`;
           yield* mailbox.organize.modifyWithUndo([id], { kind: "important", value: true });
@@ -635,7 +635,7 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
     () =>
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        const account = yield* mailbox.connect({ provider: "gmail" });
+        const account = yield* mailbox.accounts.connect({ provider: "gmail" });
         yield* mailbox.sync();
         yield* mailbox.organize.changeLabel(account.id, { kind: "create", name: "Work" });
         const label = (yield* mailbox.reading.labels([account.id]))[0];
@@ -790,7 +790,7 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
       const server = fakeServer("me@outlook.com");
       return Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        const account = yield* mailbox.connect({ provider: "outlook" });
+        const account = yield* mailbox.accounts.connect({ provider: "outlook" });
         yield* mailbox.sync();
         const input = {
           ...EMPTY_FILTER,

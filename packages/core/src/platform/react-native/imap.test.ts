@@ -344,7 +344,7 @@ it("runs mobile IMAP through shared connect, sync, reader, contacts, flags, move
     await test.runtime.runPromise(
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        const account = yield* mailbox.connect({
+        const account = yield* mailbox.accounts.connect({
           provider: "imap",
           input: { preset: "fastmail", email: "me@example.test", password: "app-password" },
         });
@@ -430,13 +430,15 @@ it("requires SMTP STARTTLS before credentials and rejects missing TLS support", 
     input: { preset: "icloud", email: "me@example.test", password: "secret" },
   } as const;
   try {
-    await test.runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.connect(input)));
+    await test.runtime.runPromise(
+      Effect.flatMap(Mailbox, (mailbox) => mailbox.accounts.connect(input)),
+    );
     expect(test.upgrades).toContain("smtp.mail.me.com");
     expect(test.commands.indexOf("STARTTLS")).toBeLessThan(
       test.commands.findIndex((line) => line.startsWith("AUTH PLAIN")),
     );
     const result = await blocked.runtime.runPromise(
-      Effect.flatMap(Mailbox, (mailbox) => mailbox.connect(input)).pipe(Effect.result),
+      Effect.flatMap(Mailbox, (mailbox) => mailbox.accounts.connect(input)).pipe(Effect.result),
     );
     expect(result._tag).toBe("Failure");
     expect(blocked.commands.some((line) => line.startsWith("AUTH"))).toBe(false);
@@ -461,7 +463,7 @@ it("rejects stale UIDVALIDITY before reading or mutating a message", async () =>
     await test.runtime.runPromise(
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        const account = yield* mailbox.connect({
+        const account = yield* mailbox.accounts.connect({
           provider: "imap",
           input: { preset: "fastmail", email: "me@example.test", password: "secret" },
         });
@@ -553,7 +555,7 @@ it("sends a UTF-8 password as an IMAP literal", async () => {
   try {
     await test.runtime.runPromise(
       Effect.flatMap(Mailbox, (mailbox) =>
-        mailbox.connect({
+        mailbox.accounts.connect({
           provider: "imap",
           input: { preset: "fastmail", email: "me@example.test", password: "密碼é" },
         }),
@@ -578,7 +580,7 @@ it("unfolds References and appends the original Message-ID exactly once in reply
     await test.runtime.runPromise(
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        const account = yield* mailbox.connect({
+        const account = yield* mailbox.accounts.connect({
           provider: "imap",
           input: { preset: "fastmail", email: "me@example.test", password: "secret" },
         });
@@ -619,7 +621,7 @@ it("logs a redacted Sent warning after acknowledged SMTP without resending", asy
     await test.runtime.runPromise(
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        const account = yield* mailbox.connect({
+        const account = yield* mailbox.accounts.connect({
           provider: "imap",
           input: { preset: "fastmail", email: "me@example.test", password: "secret" },
         });
@@ -730,7 +732,7 @@ it("mobile pushes reuse one connection and preserve COPYUID without unsafe EXPUN
     await test.runtime.runPromise(
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        const account = yield* mailbox.connect({
+        const account = yield* mailbox.accounts.connect({
           provider: "imap",
           input: { preset: "fastmail", email: "me@example.test", password: "secret" },
         });
@@ -759,7 +761,7 @@ it("mobile custom Office365 SMTP infers the server's Sent copy", async () => {
     await test.runtime.runPromise(
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        const account = yield* mailbox.connect({
+        const account = yield* mailbox.accounts.connect({
           provider: "imap",
           input: { preset: "fastmail", email: "me@example.test", password: "secret" },
         });
@@ -796,7 +798,7 @@ it("a successful mobile move tolerates malformed COPYUID metadata", async () => 
     await test.runtime.runPromise(
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        const account = yield* mailbox.connect({
+        const account = yield* mailbox.accounts.connect({
           provider: "imap",
           input: { preset: "fastmail", email: "me@example.test", password: "secret" },
         });
@@ -821,7 +823,7 @@ it("mobile rebuilds remap rows that backfill did not put in the cursor", async (
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
         const store = yield* Store;
-        const account = yield* mailbox.connect({
+        const account = yield* mailbox.accounts.connect({
           provider: "imap",
           input: { preset: "fastmail", email: "me@example.test", password: "secret" },
         });
@@ -861,7 +863,7 @@ it("background IMAP pull refuses absent cursors and changed UIDVALIDITY before f
     await test.runtime.runPromise(
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        const account = yield* mailbox.connect({
+        const account = yield* mailbox.accounts.connect({
           provider: "imap",
           input: { preset: "fastmail", email: "me@example.test", password: "secret" },
         });
@@ -930,7 +932,7 @@ it("interrupted pooled mobile pushes evict and close the socket", async () => {
   try {
     const account = await test.runtime.runPromise(
       Effect.gen(function* () {
-        return yield* (yield* Mailbox).connect({
+        return yield* (yield* Mailbox).accounts.connect({
           provider: "imap",
           input: { preset: "fastmail", email: "me@example.test", password: "secret" },
         });
@@ -962,7 +964,7 @@ it("mobile sync omits Deleted copies on a server without MOVE or UIDPLUS", async
   try {
     await test.runtime.runPromise(
       Effect.gen(function* () {
-        const account = yield* (yield* Mailbox).connect({
+        const account = yield* (yield* Mailbox).accounts.connect({
           provider: "imap",
           input: { preset: "fastmail", email: "me@example.test", password: "secret" },
         });
@@ -1002,7 +1004,7 @@ it("mobile sync brings back a message another client undeletes", async () => {
   try {
     await test.runtime.runPromise(
       Effect.gen(function* () {
-        const account = yield* (yield* Mailbox).connect({
+        const account = yield* (yield* Mailbox).accounts.connect({
           provider: "imap",
           input: { preset: "fastmail", email: "me@example.test", password: "secret" },
         });
@@ -1052,7 +1054,7 @@ it("mobile UIDNEXT regression invalidates old mappings before any refetch", asyn
   try {
     await test.runtime.runPromise(
       Effect.gen(function* () {
-        const account = yield* (yield* Mailbox).connect({
+        const account = yield* (yield* Mailbox).accounts.connect({
           provider: "imap",
           input: { preset: "fastmail", email: "me@example.test", password: "secret" },
         });
@@ -1082,7 +1084,7 @@ it("mobile pushes refuse regressed UIDNEXT before STORE or COPY", async () => {
   try {
     await test.runtime.runPromise(
       Effect.gen(function* () {
-        const account = yield* (yield* Mailbox).connect({
+        const account = yield* (yield* Mailbox).accounts.connect({
           provider: "imap",
           input: { preset: "fastmail", email: "me@example.test", password: "secret" },
         });
@@ -1316,7 +1318,7 @@ for (const response of ["disconnect", 554] as const) {
     try {
       await test.runtime.runPromise(
         Effect.gen(function* () {
-          const account = yield* (yield* Mailbox).connect({
+          const account = yield* (yield* Mailbox).accounts.connect({
             provider: "imap",
             input: { preset: "fastmail", email: "me@example.test", password: "secret" },
           });
@@ -1344,7 +1346,7 @@ it("mobile copy/move retries reuse the destination and resolve missing COPYUID",
   try {
     await test.runtime.runPromise(
       Effect.gen(function* () {
-        const account = yield* (yield* Mailbox).connect({
+        const account = yield* (yield* Mailbox).accounts.connect({
           provider: "imap",
           input: { preset: "fastmail", email: "me@example.test", password: "secret" },
         });
@@ -1375,7 +1377,7 @@ for (const existing of [true, false]) {
     try {
       await test.runtime.runPromise(
         Effect.gen(function* () {
-          const account = yield* (yield* Mailbox).connect({
+          const account = yield* (yield* Mailbox).accounts.connect({
             provider: "imap",
             input: { preset: "fastmail", email: "me@example.test", password: "secret" },
           });
@@ -1396,7 +1398,7 @@ it("mobile move holds queued operations when destination UID remains unresolved"
   try {
     await test.runtime.runPromise(
       Effect.gen(function* () {
-        const account = yield* (yield* Mailbox).connect({
+        const account = yield* (yield* Mailbox).accounts.connect({
           provider: "imap",
           input: { preset: "fastmail", email: "me@example.test", password: "secret" },
         });
@@ -1423,7 +1425,7 @@ for (const failures of [1, 2]) {
     try {
       await test.runtime.runPromise(
         Effect.gen(function* () {
-          const account = yield* (yield* Mailbox).connect({
+          const account = yield* (yield* Mailbox).accounts.connect({
             provider: "imap",
             input: { preset: "fastmail", email: "me@example.test", password: "secret" },
           });
@@ -1453,7 +1455,7 @@ it("multi-destination mobile copy waits for completed destinations while SEARCH 
   try {
     await test.runtime.runPromise(
       Effect.gen(function* () {
-        const account = yield* (yield* Mailbox).connect({
+        const account = yield* (yield* Mailbox).accounts.connect({
           provider: "imap",
           input: { preset: "fastmail", email: "me@example.test", password: "secret" },
         });
@@ -1481,7 +1483,7 @@ it("lost SMTP acknowledgement without a Sent match preserves SendUncertain", asy
   try {
     const account = await test.runtime.runPromise(
       Effect.flatMap(Mailbox, (mailbox) =>
-        mailbox.connect({
+        mailbox.accounts.connect({
           provider: "imap",
           input: { preset: "fastmail", email: "me@example.test", password: "secret" },
         }),
@@ -1511,7 +1513,7 @@ it("advertised native MOVE keeps the source when COPYUID and destination lookup 
   try {
     await test.runtime.runPromise(
       Effect.gen(function* () {
-        const account = yield* (yield* Mailbox).connect({
+        const account = yield* (yield* Mailbox).accounts.connect({
           provider: "imap",
           input: { preset: "fastmail", email: "me@example.test", password: "secret" },
         });
@@ -1537,7 +1539,7 @@ it("persisted Message-ID remaps an expunged source after mobile adapter restart"
   try {
     await test.runtime.runPromise(
       Effect.gen(function* () {
-        const account = yield* (yield* Mailbox).connect({
+        const account = yield* (yield* Mailbox).accounts.connect({
           provider: "imap",
           input: { preset: "fastmail", email: "me@example.test", password: "secret" },
         });
@@ -1575,7 +1577,7 @@ it("mobile move retries accepted Deleted flags after a lost acknowledgement", as
   try {
     await test.runtime.runPromise(
       Effect.gen(function* () {
-        const account = yield* (yield* Mailbox).connect({
+        const account = yield* (yield* Mailbox).accounts.connect({
           provider: "imap",
           input: { preset: "fastmail", email: "me@example.test", password: "secret" },
         });
@@ -1610,7 +1612,7 @@ for (const operation of ["move", "copy"] as const) {
     try {
       await test.runtime.runPromise(
         Effect.gen(function* () {
-          const account = yield* (yield* Mailbox).connect({
+          const account = yield* (yield* Mailbox).accounts.connect({
             provider: "imap",
             input: { preset: "fastmail", email: "me@example.test", password: "secret" },
           });
@@ -1640,7 +1642,7 @@ it("an externally removed source without persisted COPY progress fails permanent
   try {
     await test.runtime.runPromise(
       Effect.gen(function* () {
-        const account = yield* (yield* Mailbox).connect({
+        const account = yield* (yield* Mailbox).accounts.connect({
           provider: "imap",
           input: { preset: "fastmail", email: "me@example.test", password: "secret" },
         });
@@ -1670,7 +1672,7 @@ it("first COPY preserves a distinct source with the same Message-ID already in d
   try {
     await test.runtime.runPromise(
       Effect.gen(function* () {
-        const account = yield* (yield* Mailbox).connect({
+        const account = yield* (yield* Mailbox).accounts.connect({
           provider: "imap",
           input: { preset: "fastmail", email: "me@example.test", password: "secret" },
         });
@@ -1716,7 +1718,7 @@ for (const copyUid of [true, false]) {
     try {
       await test.runtime.runPromise(
         Effect.gen(function* () {
-          const account = yield* (yield* Mailbox).connect({
+          const account = yield* (yield* Mailbox).accounts.connect({
             provider: "imap",
             input: { preset: "fastmail", email: "me@example.test", password: "secret" },
           });
@@ -1744,7 +1746,7 @@ it("mobile normalizes stored Message-ID brackets and whitespace before identity 
   try {
     await test.runtime.runPromise(
       Effect.gen(function* () {
-        const account = yield* (yield* Mailbox).connect({
+        const account = yield* (yield* Mailbox).accounts.connect({
           provider: "imap",
           input: { preset: "fastmail", email: "me@example.test", password: "secret" },
         });
@@ -1780,7 +1782,7 @@ it("Courier INBOX-prefixed special folders match their leaf aliases", async () =
   try {
     await test.runtime.runPromise(
       Effect.gen(function* () {
-        const account = yield* (yield* Mailbox).connect({
+        const account = yield* (yield* Mailbox).accounts.connect({
           provider: "imap",
           input: { preset: "fastmail", email: "me@example.test", password: "secret" },
         });
@@ -1811,7 +1813,7 @@ it("accepted COPY without Message-ID retries only Deleted after restart", async 
   try {
     await test.runtime.runPromise(
       Effect.gen(function* () {
-        const account = yield* (yield* Mailbox).connect({
+        const account = yield* (yield* Mailbox).accounts.connect({
           provider: "imap",
           input: { preset: "fastmail", email: "me@example.test", password: "secret" },
         });
@@ -1852,7 +1854,7 @@ it("persisted COPY intent with source and destination absent waits without re-co
   try {
     await test.runtime.runPromise(
       Effect.gen(function* () {
-        const account = yield* (yield* Mailbox).connect({
+        const account = yield* (yield* Mailbox).accounts.connect({
           provider: "imap",
           input: { preset: "fastmail", email: "me@example.test", password: "secret" },
         });
@@ -1884,7 +1886,7 @@ it("a new queued move ignores an earlier operation's local COPY progress", async
   try {
     await test.runtime.runPromise(
       Effect.gen(function* () {
-        const account = yield* (yield* Mailbox).connect({
+        const account = yield* (yield* Mailbox).accounts.connect({
           provider: "imap",
           input: { preset: "fastmail", email: "me@example.test", password: "secret" },
         });
@@ -1914,7 +1916,7 @@ it("mobile IMAP header backfill uses folder-scoped PEEK fields, preserves flags 
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
         const store = yield* Store;
-        const account = yield* mailbox.connect({
+        const account = yield* mailbox.accounts.connect({
           provider: "imap",
           input: { preset: "fastmail", email: "me@example.test", password: "app-password" },
         });
@@ -1983,7 +1985,7 @@ for (const operation of ["move", "copy"] as const) {
         Effect.gen(function* () {
           const mailbox = yield* Mailbox;
           const store = yield* Store;
-          const account = yield* mailbox.connect({
+          const account = yield* mailbox.accounts.connect({
             provider: "imap",
             input: { preset: "fastmail", email: "me@example.test", password: "secret" },
           });

@@ -56,7 +56,7 @@ for (const provider of ["gmail", "outlook"] as const)
       await runtime.runPromise(
         Effect.gen(function* () {
           const m = yield* Mailbox;
-          yield* m.connect({ provider });
+          yield* m.accounts.connect({ provider });
           yield* m.sync(); // cursor "1"
           yield* m.pollInbox(); // inbox cursor "2"
           // Full syncs keep going (on a phone: in the foreground) while polls stop for a while.

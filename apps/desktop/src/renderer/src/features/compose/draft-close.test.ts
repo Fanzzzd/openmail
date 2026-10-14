@@ -14,7 +14,7 @@ it("closing a blank never-stored draft does not save or delete anything", async 
     Effect.scoped(
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        const account = yield* mailbox.connect({ provider: "gmail" });
+        const account = yield* mailbox.accounts.connect({ provider: "gmail" });
         const initial = emptyDraft(account.id);
         const action = yield* requestDraftClose({
           draft: initial,
@@ -36,7 +36,7 @@ it("clearing a stored draft asks; Cancel and Save retain it, and only explicit D
     Effect.scoped(
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        const account = yield* mailbox.connect({ provider: "gmail" });
+        const account = yield* mailbox.accounts.connect({ provider: "gmail" });
         const draft = {
           ...emptyDraft(account.id),
           to: "bob@example.com",

@@ -28,8 +28,8 @@ it.effect("the snapshot carries build, schema and per-account state as counts an
     const mailbox = yield* Mailbox;
     const store = yield* Store;
     const sql = yield* SqlClient.SqlClient;
-    const gmail = yield* mailbox.connect({ provider: "gmail" });
-    const outlook = yield* mailbox.connect({ provider: "outlook" });
+    const gmail = yield* mailbox.accounts.connect({ provider: "gmail" });
+    const outlook = yield* mailbox.accounts.connect({ provider: "outlook" });
     yield* store.setSyncError(gmail.id, `${gmail.id}: ${SYNC_FAILURE_TEXT.network}`);
     yield* store.setSyncError(outlook.id, KEYCHAIN_LOCKED_MESSAGE);
     yield* store.enqueueOp(gmail.id, "m1", { kind: "archive" });

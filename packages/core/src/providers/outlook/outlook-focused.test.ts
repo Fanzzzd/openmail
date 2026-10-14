@@ -128,8 +128,8 @@ it.effect(
     return Effect.gen(function* () {
       const mail = yield* Mailbox;
       const store = yield* Store;
-      yield* mail.connect({ provider: "outlook" });
-      yield* mail.connect({ provider: "gmail" });
+      yield* mail.accounts.connect({ provider: "outlook" });
+      yield* mail.accounts.connect({ provider: "gmail" });
       yield* mail.sync();
       const outlookIds = [account.id];
       const gmailIds = ["gmail:gmail@example.com"];
@@ -217,7 +217,7 @@ for (const original of ["focused", "other"] as const) {
       return Effect.gen(function* () {
         const m = yield* Mailbox;
         const store = yield* Store;
-        yield* m.connect({ provider: "outlook" });
+        yield* m.accounts.connect({ provider: "outlook" });
         yield* m.sync();
         const id = `${account.id}/one`;
         const result = yield* m.organize.modifyWithUndo(
@@ -291,7 +291,7 @@ it.effect(
     return Effect.gen(function* () {
       const m = yield* Mailbox;
       const store = yield* Store;
-      yield* m.connect({ provider: "outlook" });
+      yield* m.accounts.connect({ provider: "outlook" });
       yield* m.sync();
       yield* store.setGrantedScopes(account.id, ["Mail.Read", "MailboxSettings.ReadWrite"]);
       const id = `${account.id}/one`;
@@ -310,7 +310,7 @@ it.effect(
       assert.strictEqual(overrides, 0);
       assert.strictEqual((yield* store.listPendingOps).length, 0);
       assert.deepStrictEqual((yield* store.getMessage(id)).labels, ["INBOX", "CATEGORY_PERSONAL"]);
-      yield* m.reauth(account.id, "focusedInbox");
+      yield* m.accounts.reauth(account.id, "focusedInbox");
       yield* m.organize.setClassificationOverride(id, "other");
       assert.strictEqual(overrides, 1);
     }).pipe(
@@ -433,7 +433,7 @@ it.effect(
     return Effect.gen(function* () {
       const m = yield* Mailbox;
       const store = yield* Store;
-      yield* m.connect({ provider: "outlook" });
+      yield* m.accounts.connect({ provider: "outlook" });
       yield* m.sync();
       const id = `${account.id}/unknown`;
       assert.deepStrictEqual(
@@ -470,7 +470,7 @@ it.effect("sender overrides refuse account emails and aliases before any provide
   return Effect.gen(function* () {
     const m = yield* Mailbox;
     const store = yield* Store;
-    yield* m.connect({ provider: "outlook" });
+    yield* m.accounts.connect({ provider: "outlook" });
     yield* m.sync();
     yield* store.replaceSendAs(account.id, [
       {

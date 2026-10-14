@@ -76,7 +76,7 @@ export function ThreadMenu({
   const [picker, setPicker] = useState<"date" | "time" | null>(null);
   const accounts = useMailboxQuery(
     useCallback(
-      () => runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.accounts)),
+      () => runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.accounts.accounts)),
       [runtime],
     ),
   );

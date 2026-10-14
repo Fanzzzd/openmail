@@ -119,9 +119,9 @@ import { parseAppLink, parseStableReference, privateMailLink, messageLink } from
     gmail.raw.set("second", bytes);
     return Effect.gen(function* () {
       const m = yield* Mailbox;
-      const ga = yield* m.connect({ provider: "gmail" });
-      const oa = yield* m.connect({ provider: "outlook" });
-      const ia = yield* m.connect({
+      const ga = yield* m.accounts.connect({ provider: "gmail" });
+      const oa = yield* m.accounts.connect({ provider: "outlook" });
+      const ia = yield* m.accounts.connect({
         provider: "imap",
         input: { preset: "icloud", email: imap.email, password: "test" },
       });
@@ -173,7 +173,7 @@ import { parseAppLink, parseStableReference, privateMailLink, messageLink } from
     ]);
     return Effect.gen(function* () {
       const m = yield* Mailbox;
-      const account = yield* m.connect({ provider: "outlook" });
+      const account = yield* m.accounts.connect({ provider: "outlook" });
       yield* m.sync();
       assert.strictEqual(
         (yield* m.reading.messageWebUrl(`${account.id}/first`).pipe(Effect.result))._tag,
@@ -186,7 +186,7 @@ import { parseAppLink, parseStableReference, privateMailLink, messageLink } from
     const gmail = fakeServer("me@gmail.com");
     return Effect.gen(function* () {
       const mailbox = yield* Mailbox;
-      const account = yield* mailbox.connect({ provider: "gmail" });
+      const account = yield* mailbox.accounts.connect({ provider: "gmail" });
       yield* mailbox.sync();
       const addresses = ["to@example.com", "cc@example.com", "bcc@example.com"];
       yield* mailbox.organize.perform(
@@ -382,8 +382,8 @@ import { parseAppLink, parseStableReference, privateMailLink, messageLink } from
       ]);
       return Effect.gen(function* () {
         const m = yield* Mailbox;
-        const a = yield* m.connect({ provider: "gmail" }),
-          b = yield* m.connect({ provider: "outlook" });
+        const a = yield* m.accounts.connect({ provider: "gmail" }),
+          b = yield* m.accounts.connect({ provider: "outlook" });
         assert.match(yield* m.reading.messageWebUrl(`${a.id}/deadbeef`), /#all\/deadbeef$/);
         assert.strictEqual(
           yield* m.reading.messageWebUrl(`${b.id}/one`),
@@ -418,7 +418,7 @@ import { parseAppLink, parseStableReference, privateMailLink, messageLink } from
       const server = fakeServer("me@outlook.com", [mail]);
       return Effect.gen(function* () {
         const m = yield* Mailbox,
-          account = yield* m.connect({ provider: "outlook" });
+          account = yield* m.accounts.connect({ provider: "outlook" });
         yield* m.sync();
         server.messages.set("one", { ...mail, webLink: "https://outlook.live.com/mail/id/one" });
         server.messages.set("two", {
@@ -426,7 +426,11 @@ import { parseAppLink, parseStableReference, privateMailLink, messageLink } from
           providerId: "two",
           webLink: "https://outlook.live.com/mail/id/two",
         });
-        yield* m.setAccountSettings(account.id, { enabled: false, description: "", color: null });
+        yield* m.accounts.setAccountSettings(account.id, {
+          enabled: false,
+          description: "",
+          color: null,
+        });
         const before = server.bodyFetched.length;
         for (const id of ["one", "two"])
           assert.strictEqual(
@@ -464,7 +468,7 @@ import { parseAppLink, parseStableReference, privateMailLink, messageLink } from
       ]);
       return Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        const account = yield* mailbox.connect({
+        const account = yield* mailbox.accounts.connect({
           provider: "imap",
           input: {
             preset: "custom",
@@ -542,12 +546,12 @@ import { parseAppLink, parseStableReference, privateMailLink, messageLink } from
       ]);
       return Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        const account = yield* mailbox.connect({ provider: "gmail" });
+        const account = yield* mailbox.accounts.connect({ provider: "gmail" });
         yield* mailbox.sync();
         const id = `${account.id}/m`;
         const link = parseAppLink(yield* mailbox.reading.privateMailLink(id, "message"));
         assert.ok(link?.kind === "message");
-        yield* mailbox.setAccountSettings(account.id, {
+        yield* mailbox.accounts.setAccountSettings(account.id, {
           enabled: false,
           description: "",
           color: null,

@@ -17,7 +17,7 @@ for (const action of ["discard", "send"] as const) {
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
         const store = yield* Store;
-        const account = yield* mailbox.connect({ provider: "gmail" });
+        const account = yield* mailbox.accounts.connect({ provider: "gmail" });
         const input = { id: "uncertain-copy", accountId: account.id, message: outgoing };
         yield* store.putDraft(input);
         yield* store.setDraftCreateState(input.id, {
@@ -76,7 +76,7 @@ it.effect("approved quit cancels waiting desktop sends and preserves drafts", ()
   return core(
     Effect.gen(function* () {
       const mailbox = yield* Mailbox;
-      const account = yield* mailbox.connect({ provider: "gmail" });
+      const account = yield* mailbox.accounts.connect({ provider: "gmail" });
       yield* mailbox.outbox.queueUndoSend(
         { id: "quit-wait", accountId: account.id, message: outgoing },
         5000,
@@ -101,7 +101,7 @@ it.effect("direct send rejects a waiting queued send of the same draft", () => {
   return core(
     Effect.gen(function* () {
       const mailbox = yield* Mailbox;
-      const account = yield* mailbox.connect({ provider: "gmail" });
+      const account = yield* mailbox.accounts.connect({ provider: "gmail" });
       const input = { id: "already-queued", accountId: account.id, message: outgoing };
       yield* mailbox.outbox.queueSend(input, 0);
       const direct = yield* mailbox.organize
@@ -132,7 +132,7 @@ it.effect(
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
         const store = yield* Store;
-        const account = yield* mailbox.connect({ provider: "gmail" });
+        const account = yield* mailbox.accounts.connect({ provider: "gmail" });
         const input = { id: "bounded-create", accountId: account.id, message: outgoing };
         yield* mailbox.compose.saveDraft(input);
         assert.deepStrictEqual(misses, [false, false, false, false, true]);
@@ -164,7 +164,7 @@ it.effect("elapsed creation time alone does not permit another POST", () => {
   return core(
     Effect.gen(function* () {
       const mailbox = yield* Mailbox;
-      const account = yield* mailbox.connect({ provider: "gmail" });
+      const account = yield* mailbox.accounts.connect({ provider: "gmail" });
       yield* mailbox.compose.saveDraft({
         id: "timed-create",
         accountId: account.id,
@@ -191,7 +191,7 @@ it.effect("closing a composer cancels only its waiting desktop sends", () =>
   core(
     Effect.gen(function* () {
       const mailbox = yield* Mailbox;
-      const account = yield* mailbox.connect({ provider: "gmail" });
+      const account = yield* mailbox.accounts.connect({ provider: "gmail" });
       yield* mailbox.outbox.queueUndoSend(
         { id: "compose-a", accountId: account.id, message: outgoing },
         60000,
@@ -227,7 +227,7 @@ for (const failure of [false, true]) {
       core(
         Effect.gen(function* () {
           const mailbox = yield* Mailbox;
-          const account = yield* mailbox.connect({ provider: "gmail" });
+          const account = yield* mailbox.accounts.connect({ provider: "gmail" });
           yield* mailbox.outbox.queueUndoSend(
             { id: "finished-worker", accountId: account.id, message: outgoing },
             5000,
@@ -253,7 +253,7 @@ it.effect("a late creation callback cannot overwrite or delete the winning draft
       const mailbox = yield* Mailbox;
       sql = yield* SqlClient.SqlClient;
       store = yield* Store;
-      const account = yield* mailbox.connect({ provider: "gmail" });
+      const account = yield* mailbox.accounts.connect({ provider: "gmail" });
       yield* mailbox.compose.saveDraft({
         id: "fenced-draft",
         accountId: account.id,
@@ -302,7 +302,7 @@ it.effect("a lost claim cannot mark another draft creation attempted", () => {
       const mailbox = yield* Mailbox;
       sql = yield* SqlClient.SqlClient;
       store = yield* Store;
-      const account = yield* mailbox.connect({ provider: "gmail" });
+      const account = yield* mailbox.accounts.connect({ provider: "gmail" });
       yield* mailbox.compose.saveDraft({
         id: "fenced-attempt",
         accountId: account.id,
@@ -333,7 +333,7 @@ it.effect("queued partial delivery preserves the draft and resend protection", (
     Effect.gen(function* () {
       const mailbox = yield* Mailbox;
       const store = yield* Store;
-      const account = yield* mailbox.connect({ provider: "gmail" });
+      const account = yield* mailbox.accounts.connect({ provider: "gmail" });
       const input = { id: "partial-send", accountId: account.id, message: outgoing };
       yield* mailbox.outbox.queueSend(input, 0);
       yield* mailbox.outbox.flushQueuedSends();
@@ -361,7 +361,7 @@ it.effect("a remapped draft ID is authoritative over stored version metadata", (
       const mailbox = yield* Mailbox;
       const store = yield* Store;
       const sql = yield* SqlClient.SqlClient;
-      const account = yield* mailbox.connect({ provider: "gmail" });
+      const account = yield* mailbox.accounts.connect({ provider: "gmail" });
       yield* store.putDraft({ id: "remapped", accountId: account.id, message: outgoing });
       yield* store.setDraftRemote(
         "remapped",
@@ -385,7 +385,7 @@ it.effect("creation journal is persisted before the provider write and reused on
     Effect.gen(function* () {
       const mailbox = yield* Mailbox;
       journal = yield* Store;
-      const account = yield* mailbox.connect({ provider: "gmail" });
+      const account = yield* mailbox.accounts.connect({ provider: "gmail" });
       const draft = { id: "journal", accountId: account.id, message: outgoing };
       yield* mailbox.compose.saveDraft(draft);
       yield* mailbox.compose.saveDraft({ ...draft, message: { ...outgoing, text: "edited" } });
@@ -421,7 +421,7 @@ it.effect("partially saved draft retains its ID and queues failed old-draft clea
     Effect.gen(function* () {
       const mailbox = yield* Mailbox;
       const store = yield* Store;
-      const account = yield* mailbox.connect({ provider: "outlook" });
+      const account = yield* mailbox.accounts.connect({ provider: "outlook" });
       yield* mailbox.compose.saveDraft({ id: "partial", accountId: account.id, message: outgoing });
       const draft = Option.getOrThrow(yield* store.getDraft("partial"));
       assert.strictEqual(draft.remote?.messageId, "new");
@@ -458,7 +458,7 @@ for (const failure of [
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
         const store = yield* Store;
-        const account = yield* mailbox.connect({ provider: "gmail" });
+        const account = yield* mailbox.accounts.connect({ provider: "gmail" });
         const draft = { id: "retryable", accountId: account.id, message: outgoing };
         yield* mailbox.outbox.queueSend(draft, 0);
         yield* mailbox.outbox.flushQueuedSends();
@@ -513,7 +513,7 @@ it.effect("interruption during a claimed send retains durable resend protection"
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
         store = yield* Store;
-        const account = yield* mailbox.connect({ provider: "gmail" });
+        const account = yield* mailbox.accounts.connect({ provider: "gmail" });
         yield* mailbox.outbox.queueSend(
           { id: "crash", accountId: account.id, message: outgoing },
           0,
@@ -542,7 +542,7 @@ it.effect("disconnecting the renderer waiter does not cancel core's undo send", 
   return core(
     Effect.gen(function* () {
       const mailbox = yield* Mailbox;
-      const account = yield* mailbox.connect({ provider: "gmail" });
+      const account = yield* mailbox.accounts.connect({ provider: "gmail" });
       const now = yield* Clock.currentTimeMillis;
       yield* mailbox.outbox.queueUndoSend(
         { id: "undo", accountId: account.id, message: outgoing },
@@ -569,7 +569,7 @@ it.effect("an old cancelled timer cannot send a newly queued version of the same
   return core(
     Effect.gen(function* () {
       const mailbox = yield* Mailbox;
-      const account = yield* mailbox.connect({ provider: "gmail" });
+      const account = yield* mailbox.accounts.connect({ provider: "gmail" });
       const now = yield* Clock.currentTimeMillis;
       const input = { id: "undo-requeue", accountId: account.id, message: outgoing };
       yield* mailbox.outbox.queueUndoSend(input, now + 5000);
@@ -613,7 +613,7 @@ it("desktop undo intents and draft creation metadata survive reopening", async (
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
         const store = yield* Store;
-        const account = yield* mailbox.connect({ provider: "gmail" });
+        const account = yield* mailbox.accounts.connect({ provider: "gmail" });
         yield* mailbox.outbox.queueUndoSend(
           { id: "restart-undo", accountId: account.id, message: outgoing },
           Date.now() + 60000,
@@ -703,7 +703,7 @@ for (const status of ["waiting", "sending", "stale"] as const) {
         Effect.gen(function* () {
           const mailbox = yield* Mailbox;
           const store = yield* Store;
-          const account = yield* mailbox.connect({ provider: "gmail" });
+          const account = yield* mailbox.accounts.connect({ provider: "gmail" });
           yield* store.putDraft({
             id: "restart-failure",
             accountId: account.id,
@@ -785,7 +785,7 @@ it.effect("a stalled provider send does not block queuing or undoing another dra
     yield* core(
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        const account = yield* mailbox.connect({ provider: "gmail" });
+        const account = yield* mailbox.accounts.connect({ provider: "gmail" });
         yield* mailbox.outbox.queueSend(
           { id: "stalled", accountId: account.id, message: outgoing },
           0,
@@ -819,7 +819,7 @@ it.effect(
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
         const store = yield* Store;
-        const account = yield* mailbox.connect({ provider: "gmail" });
+        const account = yield* mailbox.accounts.connect({ provider: "gmail" });
         yield* mailbox.outbox.queueUndoSend(
           { id: "paused-window", accountId: account.id, message: outgoing },
           5000,
@@ -852,7 +852,7 @@ it.effect(
         const mailbox = yield* Mailbox;
         const store = yield* Store;
         const sql = yield* SqlClient.SqlClient;
-        const account = yield* mailbox.connect({ provider: "gmail" });
+        const account = yield* mailbox.accounts.connect({ provider: "gmail" });
         yield* store.putDraft({ id: "metadata-only", accountId: account.id, message: outgoing });
         const remote = {
           draftId: "d",

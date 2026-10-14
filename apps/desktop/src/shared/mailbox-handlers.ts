@@ -52,18 +52,22 @@ export function mailboxHandlers(m: MailboxService, options: MailboxHandlerOption
   const contacts = options.contacts ?? accountContacts(m);
   const ownerPrefix = options.ownerPrefix ?? "";
   return {
-    ClientSetup: () => m.clientSetup,
+    ClientSetup: () => m.accounts.clientSetup,
     SetGoogleClient: ({ clientId, clientSecret }) =>
-      m.setClient({ google: { clientId: clientId.trim(), clientSecret: clientSecret.trim() } }),
-    SetMicrosoftClient: ({ clientId }) => m.setClient({ microsoft: { clientId: clientId.trim() } }),
-    ClearClient: ({ provider }) => m.clearClient(provider === "gmail" ? "google" : "microsoft"),
-    OptionalServices: ({ accountId }) => m.optionalServices(accountId),
+      m.accounts.setClient({
+        google: { clientId: clientId.trim(), clientSecret: clientSecret.trim() },
+      }),
+    SetMicrosoftClient: ({ clientId }) =>
+      m.accounts.setClient({ microsoft: { clientId: clientId.trim() } }),
+    ClearClient: ({ provider }) =>
+      m.accounts.clearClient(provider === "gmail" ? "google" : "microsoft"),
+    OptionalServices: ({ accountId }) => m.accounts.optionalServices(accountId),
     SetServiceEnabled: ({ accountId, service, enabled }) =>
-      m.setServiceEnabled(accountId, service, enabled),
+      m.accounts.setServiceEnabled(accountId, service, enabled),
     SyncHealth: ({ accountId }) => m.syncHealth(accountId),
-    Accounts: () => m.accounts,
-    SetAccountSettings: ({ accountId, input }) => m.setAccountSettings(accountId, input),
-    MoveAccount: ({ accountId, input }) => m.moveAccount(accountId, input),
+    Accounts: () => m.accounts.accounts,
+    SetAccountSettings: ({ accountId, input }) => m.accounts.setAccountSettings(accountId, input),
+    MoveAccount: ({ accountId, input }) => m.accounts.moveAccount(accountId, input),
     RemoveAccount: ({ accountId }) =>
       m.organize.perform({ kind: "removeAccount", accountId }, USER),
 
@@ -161,11 +165,11 @@ export function mailboxHandlers(m: MailboxService, options: MailboxHandlerOption
     SendAs: () => m.organize.sendAs,
     SyncSendAs: ({ accountId }) => m.organize.syncSendAs(accountId),
 
-    Profiles: () => m.profiles,
-    CreateProfile: ({ input }) => m.createProfile(input),
-    UpdateProfile: ({ id, input }) => m.updateProfile(id, input),
-    DeleteProfile: ({ id }) => m.deleteProfile(id),
-    AssignProfile: ({ accountId, profileId }) => m.assignProfile(accountId, profileId),
+    Profiles: () => m.accounts.profiles,
+    CreateProfile: ({ input }) => m.accounts.createProfile(input),
+    UpdateProfile: ({ id, input }) => m.accounts.updateProfile(id, input),
+    DeleteProfile: ({ id }) => m.accounts.deleteProfile(id),
+    AssignProfile: ({ accountId, profileId }) => m.accounts.assignProfile(accountId, profileId),
 
     PermanentlyDelete: ({ threads, flat, folder, confirmed }) =>
       m.organize.permanentlyDelete(threads, flat, folder, confirmed),
@@ -211,7 +215,7 @@ export function mailboxHandlers(m: MailboxService, options: MailboxHandlerOption
 
     CacheSize: () => m.cacheSize,
     ClearCache: ({ accountId }) => m.clearCache(accountId),
-    InitializeProfiles: ({ accept, names }) => m.initializeProfiles(accept, names),
+    InitializeProfiles: ({ accept, names }) => m.accounts.initializeProfiles(accept, names),
     Prefs: () => m.app.prefs,
     NamedSignatures: () => m.compose.namedSignatures,
     SignatureDefaults: () => m.compose.signatureDefaults,

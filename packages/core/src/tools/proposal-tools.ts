@@ -337,7 +337,9 @@ export const proposalHandlers = ({
       if (original && p.to === undefined && p.cc === undefined && p.bcc === undefined) {
         // The person's own addresses never become reply recipients.
         const own = [
-          ...(yield* mailbox.accounts).filter((a) => a.id === p.account_id).map((a) => a.email),
+          ...(yield* mailbox.accounts.accounts)
+            .filter((a) => a.id === p.account_id)
+            .map((a) => a.email),
           ...(yield* mailbox.organize.sendAs)
             .filter((a) => a.accountId === p.account_id)
             .map((a) => a.address),

@@ -45,7 +45,7 @@ it.effect(
     server.raw.set("m1", raw());
     return Effect.gen(function* () {
       const m = yield* Mailbox;
-      const account = yield* m.connect({
+      const account = yield* m.accounts.connect({
         provider: "imap",
         input: { preset: "custom", email: "me@example.com", password: "test" },
       });
@@ -95,7 +95,7 @@ it.effect(
     ];
     return Effect.gen(function* () {
       const m = yield* Mailbox;
-      const account = yield* m.connect({ provider: "gmail" });
+      const account = yield* m.accounts.connect({ provider: "gmail" });
       yield* m.sync();
       assert.strictEqual((yield* m.calendar.contactSync)[0]?.count, 3);
       assert.strictEqual(
@@ -128,9 +128,9 @@ it.effect(
       assert.strictEqual((yield* m.compose.suggestContacts("updated")).length, 1);
       const mail = yield* m.sync();
       assert.ok(!mail[0]?.error);
-      assert.strictEqual((yield* m.accounts)[0]?.needsReauth, false);
+      assert.strictEqual((yield* m.accounts.accounts)[0]?.needsReauth, false);
       server.featureFailure = undefined;
-      yield* m.reauth(account.id);
+      yield* m.accounts.reauth(account.id);
       yield* m.calendar.refreshContacts(account.id);
       assert.strictEqual((yield* m.calendar.contactSync)[0]?.scopeMissing, false);
       yield* m.organize.perform({ kind: "removeAccount", accountId: account.id }, user);
@@ -147,7 +147,7 @@ it.effect(
     server.raw.set("m1", raw());
     return Effect.gen(function* () {
       const m = yield* Mailbox;
-      const account = yield* m.connect({ provider: "gmail" });
+      const account = yield* m.accounts.connect({ provider: "gmail" });
       yield* m.sync();
       const [invite] = yield* m.calendar.invitations(`${account.id}/m1`);
       assert.ok(invite);
@@ -185,7 +185,7 @@ it.effect("OAuth providers decide attendee identity for Gmail and Outlook aliase
       ["gmail", gmail],
       ["outlook", outlook],
     ] as const) {
-      const account = yield* m.connect({ provider });
+      const account = yield* m.accounts.connect({ provider });
       yield* m.sync();
       const [invite] = yield* m.calendar.invitations(`${account.id}/m1`);
       assert.ok(invite);
@@ -211,7 +211,7 @@ it.effect("IMAP flags an organizer differing from both From and Sender", () => {
   );
   return Effect.gen(function* () {
     const m = yield* Mailbox;
-    const account = yield* m.connect({
+    const account = yield* m.accounts.connect({
       provider: "imap",
       input: { preset: "custom", email: server.email, password: "test" },
     });
@@ -231,7 +231,7 @@ it.effect(
     return Effect.gen(function* () {
       const m = yield* Mailbox;
       const store = yield* Store;
-      const account = yield* m.connect({
+      const account = yield* m.accounts.connect({
         provider: "imap",
         input: { preset: "custom", email: server.email, password: "test" },
       });
@@ -302,7 +302,7 @@ it.effect("connect returns while optional contacts pagination is still blocked",
     });
     yield* Effect.gen(function* () {
       const m = yield* Mailbox;
-      const connecting = yield* Effect.forkChild(m.connect({ provider: "gmail" }));
+      const connecting = yield* Effect.forkChild(m.accounts.connect({ provider: "gmail" }));
       yield* Deferred.await(started);
       yield* Effect.yieldNow;
       const outcome = connecting.pollUnsafe();

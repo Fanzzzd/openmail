@@ -152,7 +152,7 @@ afterEach(async () => {
 });
 const seed = async () => {
   const mailbox = await runtime.runPromise(Mailbox);
-  const account = await runtime.runPromise(mailbox.connect({ provider: "gmail" }));
+  const account = await runtime.runPromise(mailbox.accounts.connect({ provider: "gmail" }));
   await runtime.runPromise(mailbox.sync());
   const message = source("new", account.id);
   await runtime.runPromise(
@@ -256,7 +256,7 @@ it("permissions are requested only at opt-in and badge is cleared when disabled"
 
 it("a slow account is interrupted at its share of the budget and the next account still refreshes", async () => {
   const { mailbox, account } = await seed();
-  const other = await runtime.runPromise(mailbox.connect({ provider: "outlook" }));
+  const other = await runtime.runPromise(mailbox.accounts.connect({ provider: "outlook" }));
   await runtime.runPromise(mailbox.sync());
   await saveBackgroundPreferences(runtime, { ...DEFAULT_MOBILE_BACKGROUND, refresh: true });
   vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });

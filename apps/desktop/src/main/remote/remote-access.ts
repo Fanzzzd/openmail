@@ -31,7 +31,8 @@ import {
 type MailboxService = Mailbox["Service"];
 
 export interface RemoteAccessDeps {
-  mailbox: Pick<MailboxService, "accounts"> & {
+  mailbox: {
+    readonly accounts: Pick<MailboxService["accounts"], "accounts">;
     readonly app: Pick<MailboxService["app"], "remoteAccess" | "setRemoteAccess">;
     readonly reading: Pick<MailboxService["reading"], "attachmentPart">;
   };
@@ -159,7 +160,8 @@ export function createRemoteAccess(deps: RemoteAccessDeps) {
       sessions,
       attachment: (messageId, path) => run(mailbox.reading.attachmentPart(messageId, path)),
       provider: async (accountId): Promise<Provider | null> =>
-        (await run(mailbox.accounts)).find((account) => account.id === accountId)?.provider ?? null,
+        (await run(mailbox.accounts.accounts)).find((account) => account.id === accountId)
+          ?.provider ?? null,
       onConnection: hub.onConnection,
       ...(deps.log ? { log: deps.log } : {}),
       ...(deps.forbiddenText ? { forbiddenText: deps.forbiddenText } : {}),

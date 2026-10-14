@@ -33,7 +33,7 @@ export default function Settings() {
   );
   const accounts = useMailboxQuery(
     useCallback(
-      () => runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.accounts)),
+      () => runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.accounts.accounts)),
       [runtime],
     ),
   );
@@ -69,7 +69,9 @@ export default function Settings() {
                   return;
                 }
                 void runtime
-                  .runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.reauth(account.id)))
+                  .runPromise(
+                    Effect.flatMap(Mailbox, (mailbox) => mailbox.accounts.reauth(account.id)),
+                  )
                   .catch(() => setFailed(true));
               }}
             />
@@ -83,7 +85,7 @@ export default function Settings() {
                 void runtime
                   .runPromise(
                     Effect.flatMap(Mailbox, (mailbox) =>
-                      mailbox.setAccountSettings(account.id, {
+                      mailbox.accounts.setAccountSettings(account.id, {
                         enabled: account.enabled === false,
                         description: account.description ?? "",
                         color: account.color ?? null,

@@ -193,7 +193,7 @@ import { waitLimit } from "../../../test-support/test-time.js";
         yield* run(
           Effect.gen(function* () {
             const m = yield* Mailbox;
-            const a = (yield* m.accounts)[0];
+            const a = (yield* m.accounts.accounts)[0];
             if (!a) throw new Error("Missing account");
             remote.failNext = new ProviderError({ message: "Offline" });
             assert.isAbove((yield* m.reading.attachment(`${a.id}/0001`, 0)).data.length, 0);
@@ -227,20 +227,23 @@ import { waitLimit } from "../../../test-support/test-time.js";
         const m = yield* Mailbox;
         const names = { personal: "Personal", work: "Work" };
         yield* store.upsertAccount("gmail", "one@example.com");
-        yield* m.initializeProfiles(true, names);
-        assert.strictEqual((yield* m.profiles).length, 0);
+        yield* m.accounts.initializeProfiles(true, names);
+        assert.strictEqual((yield* m.accounts.profiles).length, 0);
         assert.isFalse((yield* m.app.prefs).defaultProfilesPrompted);
         yield* store.upsertAccount("imap", "two@example.com");
-        yield* Effect.all([m.initializeProfiles(true, names), m.initializeProfiles(true, names)], {
-          concurrency: 2,
-        });
+        yield* Effect.all(
+          [m.accounts.initializeProfiles(true, names), m.accounts.initializeProfiles(true, names)],
+          {
+            concurrency: 2,
+          },
+        );
         assert.deepStrictEqual(
-          (yield* m.profiles).map((p) => p.name),
+          (yield* m.accounts.profiles).map((p) => p.name),
           ["Personal", "Work"],
         );
-        for (const p of yield* m.profiles) yield* m.deleteProfile(p.id);
-        yield* m.initializeProfiles(true, names);
-        assert.strictEqual((yield* m.profiles).length, 0);
+        for (const p of yield* m.accounts.profiles) yield* m.accounts.deleteProfile(p.id);
+        yield* m.accounts.initializeProfiles(true, names);
+        assert.strictEqual((yield* m.accounts.profiles).length, 0);
       }).pipe(
         Effect.provide(
           TestMailbox.withAdapter(makeFakeProvider(fakeServer("me@example.com")), {
@@ -336,7 +339,7 @@ import { waitLimit } from "../../../test-support/test-time.js";
               { kind: "removeAccount", accountId: account.id },
               { kind: "user", surface: "app" },
             );
-            assert.deepStrictEqual(yield* m.accounts, []);
+            assert.deepStrictEqual(yield* m.accounts.accounts, []);
             assert.isTrue(Option.isNone(yield* secrets.get(account.id)));
           }),
         makeFakeProvider(fakeServer("me@example.com")),

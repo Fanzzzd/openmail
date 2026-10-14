@@ -67,7 +67,9 @@ function harness(options: {
       reading: {
         attachmentPart: () => Effect.die("unused"),
       },
-      accounts: Effect.succeed([]),
+      accounts: {
+        accounts: Effect.succeed([]),
+      },
     },
     installed: async () => installed,
     runCli: async (args): Promise<CliResult> => {

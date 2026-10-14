@@ -123,7 +123,7 @@ it("a mailbox keeps its own MIME and random services after the platform Layer is
     Effect.gen(function* () {
       const context = yield* Layer.build(layer);
       const mailbox = Context.get(context, Mailbox);
-      const account = yield* mailbox.connect({ provider: "gmail" });
+      const account = yield* mailbox.accounts.connect({ provider: "gmail" });
       yield* mailbox.sync();
       const draft = yield* mailbox.outbox.sendAgain(`${account.id}/sent`);
       expect(draft.id).toBe(`draft:${uuid}`);
@@ -172,7 +172,7 @@ it("portable assembly exposes Mailbox alongside background storage and hides int
       expect(Context.getOption(context, Providers)._tag).toBe("None");
       const mailbox = Context.get(context, Mailbox);
       const background = Context.get(context, MobileBackgroundStorage);
-      expect(yield* mailbox.accounts).toEqual([]);
+      expect(yield* mailbox.accounts.accounts).toEqual([]);
       expect(yield* background.preferences).toEqual(DEFAULT_MOBILE_BACKGROUND);
       yield* mailbox.app.setPrefs({ markReadDelay: "manual" });
       yield* background.save({ ...DEFAULT_MOBILE_BACKGROUND, badge: true });

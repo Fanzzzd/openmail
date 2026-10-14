@@ -162,10 +162,13 @@ export const agentAccountGap = (tool: string, input: unknown) =>
     if (accountId === undefined && profileId === undefined && !ACCOUNT_SCOPED_TOOLS.has(tool))
       return null;
     const mailbox = yield* Mailbox;
-    const accounts = yield* mailbox.accounts;
+    const accounts = yield* mailbox.accounts.accounts;
     const consent = yield* mailbox.ai.aiAccounts;
     const allowed = (id: string) => consent.some((s) => s.accountId === id && s.allowed);
-    if (profileId !== undefined && !(yield* mailbox.profiles).some((p) => p.id === profileId))
+    if (
+      profileId !== undefined &&
+      !(yield* mailbox.accounts.profiles).some((p) => p.id === profileId)
+    )
       return `No space with id ${profileId}. Run \`openmail spaces list\` to see them.`;
     const inScope = accounts.filter((a) => profileId === undefined || a.profileId === profileId);
     if (accountId !== undefined) {

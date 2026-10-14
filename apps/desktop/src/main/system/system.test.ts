@@ -272,7 +272,7 @@ it("buffers cold launch links, targets one main window, and keeps each window's 
       Effect.gen(function* () {
         const desktop = yield* Desktop;
         const m = yield* Mailbox;
-        yield* m.connect({ provider: "gmail" });
+        yield* m.accounts.connect({ provider: "gmail" });
         yield* m.sync();
         const first = observations.testState.windows[0];
         expect(first).toBeDefined();
@@ -301,7 +301,11 @@ it("buffers cold launch links, targets one main window, and keeps each window's 
         first.focus();
         yield* desktop.setSpace(first.webContents.id, "all");
         expect(observations.testState.badge).toHaveBeenLastCalledWith(1);
-        const profile = yield* m.createProfile({ name: "Empty", color: "blue", icon: "briefcase" });
+        const profile = yield* m.accounts.createProfile({
+          name: "Empty",
+          color: "blue",
+          icon: "briefcase",
+        });
         const second = createMainWindow();
         second.focus();
         yield* desktop.setSpace(second.webContents.id, profile.id);
@@ -351,7 +355,7 @@ it("dock menu accounts open their inbox through a Navigate href", async () => {
       Effect.gen(function* () {
         const m = yield* Mailbox;
         const desktop = yield* Desktop;
-        yield* m.connect({ provider: "gmail" });
+        yield* m.accounts.connect({ provider: "gmail" });
         yield* m.sync();
         yield* settle();
         // The fake Menu returns the template itself; inspect it as an IO boundary.
@@ -389,7 +393,7 @@ it("notification clicks open threads; Archive and Delete are audited as the pers
       Effect.gen(function* () {
         const m = yield* Mailbox;
         const desktop = yield* Desktop;
-        yield* m.connect({ provider: "gmail" });
+        yield* m.accounts.connect({ provider: "gmail" });
         yield* m.sync();
         yield* settle();
         expect(observations.testState.notifications).toHaveLength(0);
@@ -452,7 +456,7 @@ it.skipIf(process.platform !== "darwin")(
         Effect.gen(function* () {
           const m = yield* Mailbox;
           const desktop = yield* Desktop;
-          yield* m.connect({ provider: "gmail" });
+          yield* m.accounts.connect({ provider: "gmail" });
           yield* m.sync();
           restored.emit("click");
           const mainWindow = observations.testState.windows[0];
@@ -519,7 +523,7 @@ it("a burst over five unread messages produces one summary notification", async 
     Effect.scoped(
       Effect.gen(function* () {
         const m = yield* Mailbox;
-        yield* m.connect({ provider: "gmail" });
+        yield* m.accounts.connect({ provider: "gmail" });
         yield* m.sync();
         for (let n = 0; n < 6; n++)
           server.messages.set(String(n), { ...incoming(String(n)), date: Date.now() + 1000 });
@@ -542,7 +546,7 @@ it("menu bar count is optional and its clickable list caps at 50 individual mess
       Effect.gen(function* () {
         const m = yield* Mailbox;
         const desktop = yield* Desktop;
-        yield* m.connect({ provider: "gmail" });
+        yield* m.accounts.connect({ provider: "gmail" });
         yield* m.sync();
         yield* settle();
         const tray = observations.testState.trays[0];
@@ -589,12 +593,16 @@ it("sleep resume restores Dock counts and delivers one Profile digest after mute
     Effect.scoped(
       Effect.gen(function* () {
         const m = yield* Mailbox;
-        yield* m.connect({ provider: "gmail" });
+        yield* m.accounts.connect({ provider: "gmail" });
         yield* m.sync();
-        const account = (yield* m.accounts)[0];
+        const account = (yield* m.accounts.accounts)[0];
         if (!account) throw new Error("Missing account");
-        const profile = yield* m.createProfile({ name: "Work", icon: "briefcase", color: "blue" });
-        yield* m.assignProfile(account.id, profile.id);
+        const profile = yield* m.accounts.createProfile({
+          name: "Work",
+          icon: "briefcase",
+          color: "blue",
+        });
+        yield* m.accounts.assignProfile(account.id, profile.id);
         yield* m.app.setPrefs({
           activeHours: { [profile.id]: { ...DEFAULT_ACTIVE_HOURS, enabled: true } },
         });
@@ -630,7 +638,7 @@ it("startup pending notifications wait for the first localized labels", async ()
   const seed = Layer.effectDiscard(
     Effect.gen(function* () {
       const mailbox = yield* Mailbox;
-      yield* mailbox.connect({ provider: "gmail" });
+      yield* mailbox.accounts.connect({ provider: "gmail" });
       yield* mailbox.sync();
       for (let i = 0; i < 6; i++) server.messages.set(String(i), incoming(String(i)));
       yield* mailbox.pollInbox();
@@ -664,8 +672,8 @@ it("ungrouped digests name all accounts when merged, and the email for a single 
     Effect.scoped(
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        yield* mailbox.connect({ provider: "gmail" });
-        yield* mailbox.connect({ provider: "outlook" });
+        yield* mailbox.accounts.connect({ provider: "gmail" });
+        yield* mailbox.accounts.connect({ provider: "outlook" });
         yield* mailbox.sync();
         yield* mailbox.app.setPrefs({ quietHours: { all: { enabled: true, start: 0, end: 0 } } });
         gmail.messages.set("g", incoming("g"));
@@ -730,7 +738,7 @@ it("the notification event consumer logs a SQL defect and processes later events
     Effect.scoped(
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        yield* mailbox.connect({ provider: "gmail" });
+        yield* mailbox.accounts.connect({ provider: "gmail" });
         yield* mailbox.sync();
         yield* settle();
         failNext = true;
@@ -855,7 +863,7 @@ it("before-quit requests renderer state, asks for pending sends, and resumes qui
       Effect.gen(function* () {
         const desktop = yield* Desktop;
         const mailbox = yield* Mailbox;
-        const account = yield* mailbox.connect({ provider: "gmail" });
+        const account = yield* mailbox.accounts.connect({ provider: "gmail" });
         yield* mailbox.outbox.queueUndoSend(
           {
             id: "approved-quit-draft",
@@ -921,7 +929,7 @@ it("closing a main window with a pending send asks once, preserves it on Cancel 
         const win = observations.testState.windows[0];
         if (!win) throw new Error("Missing main window");
         const mailbox = yield* Mailbox;
-        const account = yield* mailbox.connect({ provider: "gmail" });
+        const account = yield* mailbox.accounts.connect({ provider: "gmail" });
         yield* mailbox.outbox.queueUndoSend(
           {
             id: "window-close-draft",
@@ -1086,7 +1094,7 @@ it("notification buttons keep their captured order; menu Mark read and disabled-
     Effect.scoped(
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        const account = yield* mailbox.connect({ provider: "gmail" });
+        const account = yield* mailbox.accounts.connect({ provider: "gmail" });
         yield* mailbox.sync();
         yield* mailbox.app.setPrefs({ notificationActions: ["menu", "read"] });
         yield* settle();
@@ -1123,7 +1131,7 @@ it("notification buttons keep their captured order; menu Mark read and disabled-
         yield* mailbox.pollInbox();
         yield* settle();
         const disabled = observations.testState.notifications.at(-1);
-        yield* mailbox.setAccountSettings(account.id, {
+        yield* mailbox.accounts.setAccountSettings(account.id, {
           enabled: false,
           description: "Personal",
           color: null,

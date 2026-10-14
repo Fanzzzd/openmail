@@ -55,7 +55,7 @@ it("mobile AI is off by default, uses selected models and visible thread text, a
     await runtime.runPromise(
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        const account = yield* mailbox.connect({ provider: "gmail" });
+        const account = yield* mailbox.accounts.connect({ provider: "gmail" });
         yield* mailbox.sync();
         const id = `${account.id}/m`;
         const before = yield* mailbox.ai.aiSettings;
@@ -148,7 +148,7 @@ it("assistant archive, label and draft writes stay proposals even in allow mode,
     await runtime.runPromise(
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        const account = yield* mailbox.connect({ provider: "gmail" });
+        const account = yield* mailbox.accounts.connect({ provider: "gmail" });
         accountId = account.id;
         messageId = `${account.id}/m`;
         yield* mailbox.sync();
@@ -207,7 +207,7 @@ it("compose help returns a proposal without overwriting the saved draft or sendi
     await runtime.runPromise(
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        const account = yield* mailbox.connect({ provider: "gmail" });
+        const account = yield* mailbox.accounts.connect({ provider: "gmail" });
         yield* mailbox.ai.setAiAccount({
           accountId: account.id,
           allowed: true,
@@ -276,7 +276,7 @@ for (const provider of ["gmail", "outlook", "imap"] as const)
       await runtime.runPromise(
         Effect.gen(function* () {
           const mailbox = yield* Mailbox;
-          const account = yield* mailbox.connect(
+          const account = yield* mailbox.accounts.connect(
             provider === "imap"
               ? {
                   provider,
@@ -385,7 +385,7 @@ it("mobile reviews every recipient when the original was expunged and preserves 
     await runtime.runPromise(
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        const account = yield* mailbox.connect({ provider: "gmail" });
+        const account = yield* mailbox.accounts.connect({ provider: "gmail" });
         const message = {
           to: [{ name: "", address: "known@example.test" }],
           cc: [],

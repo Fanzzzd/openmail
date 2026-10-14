@@ -23,7 +23,7 @@ it("prints sync start before the operation and subscribes to progress", async ()
   await Effect.runPromise(
     Effect.gen(function* () {
       const mailbox = yield* Mailbox;
-      yield* mailbox.connect({ provider: "gmail" });
+      yield* mailbox.accounts.connect({ provider: "gmail" });
       yield* withProgress(
         Effect.gen(function* () {
           expect(yield* TestConsole.errorLines).toContain("Syncing mail…");
@@ -62,7 +62,7 @@ it("read-only sync returns with pending operations intact", async () => {
     Effect.gen(function* () {
       const mailbox = yield* Mailbox;
       const store = yield* Store;
-      const account = yield* mailbox.connect({ provider: "gmail" });
+      const account = yield* mailbox.accounts.connect({ provider: "gmail" });
       yield* store.enqueueOp(account.id, "fake-message", { kind: "star", value: true });
       const before = yield* store.listPendingOps;
       yield* withProgress(mailbox.sync(account.id), false);

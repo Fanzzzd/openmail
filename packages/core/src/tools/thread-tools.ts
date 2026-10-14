@@ -168,7 +168,9 @@ export const threadHandlers = ({
       if (!accountIds.length) return { threads: [] };
       if (p.profile_id) {
         const inProfile = new Set(
-          (yield* mailbox.accounts).filter((a) => a.profileId === p.profile_id).map((a) => a.id),
+          (yield* mailbox.accounts.accounts)
+            .filter((a) => a.profileId === p.profile_id)
+            .map((a) => a.id),
         );
         accountIds = accountIds.filter((id) => inProfile.has(id));
         if (!accountIds.length) return { threads: [] };

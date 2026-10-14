@@ -213,20 +213,20 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
         yield* Effect.gen(function* () {
           const m = yield* Mailbox;
           server.messages.set("initial", incoming("initial", yield* Clock.currentTimeMillis));
-          yield* m.connect(
+          yield* m.accounts.connect(
             provider === "imap"
               ? { provider, input: { preset: "qq", email: server.email, password: "fake" } }
               : { provider },
           );
           yield* m.sync();
-          accountId = (yield* m.accounts)[0]!.id;
-          const profile = yield* m.createProfile({
+          accountId = (yield* m.accounts.accounts)[0]!.id;
+          const profile = yield* m.accounts.createProfile({
             name: "Work",
             icon: "briefcase",
             color: "blue",
           });
           profileId = profile.id;
-          yield* m.assignProfile(accountId, profileId);
+          yield* m.accounts.assignProfile(accountId, profileId);
           yield* m.app.setPrefs({
             activeHours: { [profileId]: workHours },
             menuBarUnreadCount: true,
@@ -306,11 +306,16 @@ it.effect(
     return Effect.gen(function* () {
       const m = yield* Mailbox;
       yield* TestClock.setTime(at(2, 17).getTime());
-      yield* m.connect({ provider: "gmail" });
-      yield* m.connect({ provider: "outlook" });
+      yield* m.accounts.connect({ provider: "gmail" });
+      yield* m.accounts.connect({ provider: "outlook" });
       yield* m.sync();
-      const profile = yield* m.createProfile({ name: "Work", icon: "briefcase", color: "blue" });
-      for (const account of yield* m.accounts) yield* m.assignProfile(account.id, profile.id);
+      const profile = yield* m.accounts.createProfile({
+        name: "Work",
+        icon: "briefcase",
+        color: "blue",
+      });
+      for (const account of yield* m.accounts.accounts)
+        yield* m.accounts.assignProfile(account.id, profile.id);
       yield* m.app.setPrefs({ activeHours: { [profile.id]: workHours } });
       gmail.messages.set("g", incoming("g", yield* Clock.currentTimeMillis));
       outlook.messages.set("o", incoming("o", yield* Clock.currentTimeMillis));
@@ -333,7 +338,7 @@ it.effect("fake clock crosses midnight and resumes an ungrouped Profile's pendin
   return Effect.gen(function* () {
     const m = yield* Mailbox;
     yield* TestClock.setTime(at(2, 21, 59).getTime());
-    yield* m.connect({ provider: "gmail" });
+    yield* m.accounts.connect({ provider: "gmail" });
     yield* m.sync();
     const hours: ActiveHours = {
       ...workHours,
@@ -364,7 +369,7 @@ it.effect(
     return Effect.gen(function* () {
       const m = yield* Mailbox;
       yield* TestClock.setTime(new Date("2026-03-08T06:59:00Z").getTime());
-      yield* m.connect({ provider: "gmail" });
+      yield* m.accounts.connect({ provider: "gmail" });
       yield* m.sync();
       const hours: ActiveHours = {
         ...workHours,
@@ -401,7 +406,7 @@ it.effect(
     const server = fakeServer("me@gmail.com");
     return Effect.gen(function* () {
       const m = yield* Mailbox;
-      yield* m.connect({ provider: "gmail" });
+      yield* m.accounts.connect({ provider: "gmail" });
       yield* m.sync();
       server.messages.set("fresh", incoming("fresh", yield* Clock.currentTimeMillis));
       yield* m.sync();

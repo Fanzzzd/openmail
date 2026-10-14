@@ -503,7 +503,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
         );
         yield* Effect.gen(function* () {
           const mailbox = yield* Mailbox;
-          const account = yield* mailbox.connect(
+          const account = yield* mailbox.accounts.connect(
             provider === "imap"
               ? {
                   provider,
@@ -645,11 +645,11 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
               assert.strictEqual(empty.failure._tag, "FeatureScopeMissing");
             assert.strictEqual(server.deleted.length, 0);
             assert.strictEqual((yield* mailbox.reading.thread(loaded)).length, 1);
-            assert.isFalse((yield* mailbox.accounts)[0]?.needsReauth);
+            assert.isFalse((yield* mailbox.accounts.accounts)[0]?.needsReauth);
             yield* mailbox.organize.modifyWithUndo([loaded], { kind: "trash" }, true);
             assert.isTrue(server.messages.get("loaded")?.labels.includes("TRASH"));
             yield* mailbox.organize.modifyWithUndo([loaded], { kind: "inbox" }, true);
-            yield* mailbox.reauth(account.id, "permanentDelete");
+            yield* mailbox.accounts.reauth(account.id, "permanentDelete");
             assert.deepStrictEqual(server.connects.at(-1), {
               provider: "gmail",
               loginHint: account.email,
@@ -976,9 +976,11 @@ it.effect(
     return Effect.gen(function* () {
       const mailbox = yield* Mailbox;
       const store = yield* Store;
-      const account = yield* mailbox.connect({ provider: "gmail" });
+      const account = yield* mailbox.accounts.connect({ provider: "gmail" });
       yield* mailbox.sync();
-      const result = yield* mailbox.reauth(account.id, "permanentDelete").pipe(Effect.result);
+      const result = yield* mailbox.accounts
+        .reauth(account.id, "permanentDelete")
+        .pipe(Effect.result);
       assert.strictEqual(result._tag, "Failure");
       if (result._tag === "Failure") assert.strictEqual(result.failure._tag, "FeatureScopeMissing");
       assert.isFalse(

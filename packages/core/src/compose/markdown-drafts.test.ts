@@ -62,7 +62,7 @@ it.effect(
     );
     return Effect.gen(function* () {
       const mailbox = yield* Mailbox;
-      yield* mailbox.connect({ provider: "outlook" });
+      yield* mailbox.accounts.connect({ provider: "outlook" });
       yield* mailbox.sync();
       const opened = yield* mailbox.compose.openDraft("outlook:me@example.com/remote");
       assert.strictEqual(opened.message.markdown, undefined);
@@ -115,7 +115,7 @@ it.effect(
     );
     return Effect.gen(function* () {
       const mailbox = yield* Mailbox;
-      yield* mailbox.connect({ provider: "outlook" });
+      yield* mailbox.accounts.connect({ provider: "outlook" });
       yield* mailbox.sync();
       const opened = yield* mailbox.compose.openDraft("outlook:me@example.com/remote");
       assert.strictEqual(opened.message.text, "cached");
@@ -133,7 +133,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
       const connect = () =>
         Effect.gen(function* () {
           const mailbox = yield* Mailbox;
-          yield* mailbox.connect(
+          yield* mailbox.accounts.connect(
             provider === "imap"
               ? {
                   provider,

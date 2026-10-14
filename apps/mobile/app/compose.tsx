@@ -109,7 +109,7 @@ export default function Compose() {
                   (message) => message.id === params.messageId,
                 )
               : undefined;
-            const accounts = yield* mailbox.accounts;
+            const accounts = yield* mailbox.accounts.accounts;
             const mode =
               params.mode === "reply" || params.mode === "replyAll" || params.mode === "forward"
                 ? params.mode
@@ -145,7 +145,7 @@ export default function Compose() {
           .runPromise(
             Effect.flatMap(Mailbox, (mailbox) =>
               Effect.gen(function* () {
-                const accounts = yield* mailbox.accounts;
+                const accounts = yield* mailbox.accounts.accounts;
                 const account = accounts.find((entry) => entry.id === value.accountId);
                 const selected = account
                   ? signatureDefault(

@@ -51,7 +51,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
         return Effect.gen(function* () {
           const m = yield* Mailbox;
           const store = yield* Store;
-          const account = yield* m.connect(
+          const account = yield* m.accounts.connect(
             provider === "imap"
               ? { provider, input: { preset: "icloud", email: server.email, password: "fake" } }
               : { provider },
@@ -129,7 +129,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
     return Effect.gen(function* () {
       const m = yield* Mailbox;
       const store = yield* Store;
-      const account = yield* m.connect(
+      const account = yield* m.accounts.connect(
         provider === "imap"
           ? { provider, input: { preset: "icloud", email: server.email, password: "fake" } }
           : { provider },

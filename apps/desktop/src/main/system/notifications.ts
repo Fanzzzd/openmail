@@ -71,8 +71,8 @@ export function makeNotifications({
     const prefs = yield* mailbox.app.prefs;
     const actions = notificationButtonActions(prefs.notificationActions, process.platform);
     const batches = yield* mailbox.app.takeNotifications;
-    const accounts = yield* mailbox.accounts;
-    const profiles = yield* mailbox.profiles;
+    const accounts = yield* mailbox.accounts.accounts;
+    const profiles = yield* mailbox.accounts.profiles;
     for (const batch of batches) {
       const first = batch.messages[0];
       if (!first) continue;

@@ -269,13 +269,16 @@ export function makeAiMailbox(
               : question.question;
           const scoped: Mailbox["Service"] = {
             ...m,
-            accounts: Effect.andThen(
-              guard,
-              Effect.flatMap(m.accounts, (accounts) => {
-                const selected = accounts.filter((a) => ids.includes(a.id));
-                return budget(selected.map(toModelAccount)).pipe(Effect.as(selected));
-              }),
-            ).pipe(Effect.catch(() => Effect.succeed([]))),
+            accounts: {
+              ...m.accounts,
+              accounts: Effect.andThen(
+                guard,
+                Effect.flatMap(m.accounts.accounts, (accounts) => {
+                  const selected = accounts.filter((a) => ids.includes(a.id));
+                  return budget(selected.map(toModelAccount)).pipe(Effect.as(selected));
+                }),
+              ).pipe(Effect.catch(() => Effect.succeed([]))),
+            },
             reading: {
               ...m.reading,
               labels: (accountIds) =>

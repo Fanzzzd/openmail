@@ -123,7 +123,7 @@ import { inspectAttachment } from "./attachment-import.js";
           );
         const id = yield* Effect.gen(function* () {
           const m = yield* Mailbox;
-          const account = yield* m.connect(
+          const account = yield* m.accounts.connect(
             provider === "imap"
               ? {
                   provider,

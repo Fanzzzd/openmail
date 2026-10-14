@@ -47,7 +47,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
         const body = richComposeBody(source);
         const id = yield* Effect.gen(function* () {
           const mailbox = yield* Mailbox;
-          yield* mailbox.connect(
+          yield* mailbox.accounts.connect(
             provider === "imap"
               ? {
                   provider,

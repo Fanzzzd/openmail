@@ -11,7 +11,7 @@ afterEach(async () => {
 it("label unnest drop zone appears only during its account drag and clears on cancel and drop", async () => {
   current = await flow();
   const h = current;
-  await h.run(h.m.connect({ provider: "outlook" }));
+  await h.run(h.m.accounts.connect({ provider: "outlook" }));
   await eventually(() =>
     expect(screen.getByRole("button", { name: /me@outlook.com/ })).toBeTruthy(),
   );
@@ -69,7 +69,7 @@ it("top-level labels have no Move to top level menu action", async () => {
 it("favorite stars are named toggles off the tab order; in All accounts the menu favorites every account", async () => {
   current = await flow();
   const h = current;
-  await h.run(h.m.connect({ provider: "outlook" }));
+  await h.run(h.m.accounts.connect({ provider: "outlook" }));
   await eventually(() =>
     expect(screen.getByRole("button", { name: /me@outlook.com/ })).toBeTruthy(),
   );

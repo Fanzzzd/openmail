@@ -312,16 +312,20 @@ import { type DerivedChunk } from "../ai/media.js";
     server.searchResults = [inbox, sent];
     return Effect.gen(function* () {
       const mail = yield* Mailbox;
-      yield* mail.connect({ provider: "gmail" });
+      yield* mail.accounts.connect({ provider: "gmail" });
       const results = yield* mail.reading.searchServer({ search: 'folder:"inbox"' });
       assert.deepStrictEqual(
         results.threads.map((thread) => thread.threadId),
         ["inbox"],
       );
       assert.deepStrictEqual(yield* mail.compose.suggestContacts("Alice", { accountIds: [] }), []);
-      const account = (yield* mail.accounts)[0];
+      const account = (yield* mail.accounts.accounts)[0];
       assert.ok(account);
-      yield* mail.setAccountSettings(account.id, { enabled: false, description: "", color: null });
+      yield* mail.accounts.setAccountSettings(account.id, {
+        enabled: false,
+        description: "",
+        color: null,
+      });
       const calls = server.searched.length;
       const disabled = yield* mail.reading.searchServer({
         accountIds: [account.id],
@@ -489,7 +493,7 @@ import { type DerivedChunk } from "../ai/media.js";
       ];
       return Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        yield* mailbox.connect({ provider: "gmail" });
+        yield* mailbox.accounts.connect({ provider: "gmail" });
         yield* mailbox.sync();
         for (const [query, ids] of [
           ["has:drive", ["doc", "drive", "sheet", "slides"]],
@@ -795,7 +799,7 @@ import { type DerivedChunk } from "../ai/media.js";
       return Effect.gen(function* () {
         const mailbox = yield* Mailbox,
           store = yield* Store;
-        const account = yield* mailbox.connect({ provider: "gmail" });
+        const account = yield* mailbox.accounts.connect({ provider: "gmail" });
         yield* mailbox.sync();
         const searches: [string, string[]][] = [
           ["alpha AROUND 1 beta", ["forward", "reverse"]],

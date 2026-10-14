@@ -196,7 +196,7 @@ export async function flow(
   const store = await mailboxRuntime.runPromise(Store);
   const run = <A, E>(effect: Effect.Effect<A, E>): Promise<A> => mailboxRuntime.runPromise(effect);
   const account = await run(
-    m.connect(
+    m.accounts.connect(
       provider === "imap"
         ? {
             provider,
@@ -362,10 +362,10 @@ export async function flow(
       OpenNotificationSettings: unsupported,
       DefaultMailClient: () => Effect.succeed({ available: false, isDefault: false }),
       BecomeDefaultMailClient: unsupported,
-      Connect: ({ input }) => m.connect(input),
+      Connect: ({ input }) => m.accounts.connect(input),
       SetClassificationOverride: ({ messageId, classifyAs }) =>
         m.organize.setClassificationOverride(messageId, classifyAs),
-      Reauth: ({ accountId, feature }) => m.reauth(accountId, feature),
+      Reauth: ({ accountId, feature }) => m.accounts.reauth(accountId, feature),
       ImapPresets: () => Effect.succeed(IMAP_PRESETS),
       AppleContactsStatus: () => Effect.succeed({ status: "off", revision: 0 }),
       RefreshAppleContacts: () => Effect.succeed({ status: "off", revision: 0 }),

@@ -187,7 +187,7 @@ it.effect("built-in clients are never written to config.json", () =>
 );
 
 const setupOf = (config: ClientConfig, builtInClients: ClientConfig) =>
-  Effect.flatMap(Mailbox, (mailbox) => mailbox.clientSetup).pipe(
+  Effect.flatMap(Mailbox, (mailbox) => mailbox.accounts.clientSetup).pipe(
     Effect.provide(
       TestMailbox({}, { backgroundFlush: false }, {}, Layer.empty, { config, builtInClients }),
     ),

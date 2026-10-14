@@ -96,7 +96,7 @@ it("Thread RPC returns legacy cached text when fetchMessage fails with status ze
         bodyRefresh: "failed",
       });
       expect(messages[0]?.replyTo).toBeUndefined();
-      expect((yield* mailbox.accounts)[0]?.needsReauth).toBe(false);
+      expect((yield* mailbox.accounts.accounts)[0]?.needsReauth).toBe(false);
     }).pipe(
       Effect.scoped,
       Effect.provide(

@@ -235,8 +235,8 @@ import { MailboxLive } from "../mailbox/mailbox-live.js";
       );
       return Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        const account = yield* mailbox.connect({ provider: "gmail" });
-        yield* mailbox.connect({ provider: "outlook" });
+        const account = yield* mailbox.accounts.connect({ provider: "gmail" });
+        yield* mailbox.accounts.connect({ provider: "outlook" });
         yield* mailbox.sync();
         const id = `${account.id}/m1`;
         for (const providerId of ["m2", "m3", "m4"])
@@ -345,7 +345,7 @@ import { MailboxLive } from "../mailbox/mailbox-live.js";
       const provider = Layer.succeed(Providers, { get: () => adapter });
       return Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        const account = yield* mailbox.connect({ provider: "outlook" });
+        const account = yield* mailbox.accounts.connect({ provider: "outlook" });
         yield* mailbox.sync();
         const id = `${account.id}/personal`;
         const events = yield* mailbox.calendar.detectedEvents(id);
@@ -403,7 +403,7 @@ import { MailboxLive } from "../mailbox/mailbox-live.js";
         );
       return Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        const account = yield* mailbox.connect({ provider: "gmail" });
+        const account = yield* mailbox.accounts.connect({ provider: "gmail" });
         yield* mailbox.sync();
         yield* mailbox.calendar.invitations(`${account.id}/reply`);
         server.rawFetched.length = 0;

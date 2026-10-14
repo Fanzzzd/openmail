@@ -118,7 +118,7 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
       );
       return Effect.gen(function* () {
         const m = yield* Mailbox;
-        const account = yield* m.connect(
+        const account = yield* m.accounts.connect(
           provider === "imap"
             ? {
                 provider,
@@ -185,7 +185,7 @@ it.effect("list_accounts exposes only model-facing account identifiers", () => {
   return Effect.gen(function* () {
     const m = yield* Mailbox;
     const store = yield* Store;
-    const account = yield* m.connect({
+    const account = yield* m.accounts.connect({
       provider: "imap",
       input: {
         preset: "custom",
@@ -205,7 +205,7 @@ it.effect("list_accounts exposes only model-facing account identifiers", () => {
       smtpSecure: true,
     });
     yield* store.setSyncError(account.id, "private error");
-    yield* m.setAccountSettings(account.id, {
+    yield* m.accounts.setAccountSettings(account.id, {
       enabled: true,
       description: "private description",
       color: "#123456",
@@ -247,7 +247,7 @@ it.effect("a Gmail label belonging only to another account cannot be proposed", 
   return Effect.gen(function* () {
     const m = yield* Mailbox;
     const store = yield* Store;
-    yield* m.connect({ provider: "gmail" });
+    yield* m.accounts.connect({ provider: "gmail" });
     yield* m.sync();
     const other = yield* store.upsertAccount("gmail", "other@example.com");
     yield* store.replaceLabels(other.id, [{ id: "foreign", name: "Other receipts", color: null }]);
@@ -273,7 +273,7 @@ it.effect(
     return Effect.gen(function* () {
       const m = yield* Mailbox;
       const store = yield* Store;
-      yield* m.connect({ provider: "gmail" });
+      yield* m.accounts.connect({ provider: "gmail" });
       yield* m.sync();
       const other = yield* store.upsertAccount("outlook", "other@example.com");
       yield* m.ai.setAiAccount(consent);
@@ -304,7 +304,7 @@ it.effect("existing and new accounts default off; disabled AI never calls fetch"
   vi.stubGlobal("fetch", fetch);
   return Effect.gen(function* () {
     const m = yield* Mailbox;
-    yield* m.connect({ provider: "gmail" });
+    yield* m.accounts.connect({ provider: "gmail" });
     yield* m.sync();
     assert.deepStrictEqual((yield* m.ai.aiSettings).accounts, [{ ...consent, allowed: false }]);
     yield* m.ai.setAiKey("fake-key");
@@ -346,7 +346,7 @@ it.effect(
     });
     return Effect.gen(function* () {
       const m = yield* Mailbox;
-      yield* m.connect({ provider: "gmail" });
+      yield* m.accounts.connect({ provider: "gmail" });
       yield* m.sync();
       yield* m.ai.setAiAccount(consent);
       yield* Stream.runDrain(m.ai.summarize(messageId, "zh-CN"));
@@ -385,7 +385,7 @@ it.effect("summaries stream text only, reuse hashes, invalidate input/model chan
   });
   return Effect.gen(function* () {
     const m = yield* Mailbox;
-    yield* m.connect({ provider: "gmail" });
+    yield* m.accounts.connect({ provider: "gmail" });
     yield* m.sync();
     yield* m.ai.setAiAccount(consent);
     const context = yield* m.reading.thread(messageId, "model", 1000);
@@ -476,9 +476,9 @@ it.effect(
     );
     return Effect.gen(function* () {
       const m = yield* Mailbox;
-      yield* m.connect({ provider: "gmail" });
+      yield* m.accounts.connect({ provider: "gmail" });
       yield* m.sync();
-      yield* m.connect({ provider: "outlook" });
+      yield* m.accounts.connect({ provider: "outlook" });
       yield* m.sync();
       yield* m.ai.setAiAccount(consent);
       yield* m.proposals.setAgentWriteMode("propose");
@@ -537,7 +537,7 @@ it.effect(
     );
     return Effect.gen(function* () {
       const m = yield* Mailbox;
-      yield* m.connect({ provider: "gmail" });
+      yield* m.accounts.connect({ provider: "gmail" });
       yield* m.sync();
       yield* m.ai.setAiAccount(consent);
       const started = yield* Deferred.make<void>();
@@ -573,7 +573,7 @@ it.effect("request deadline interrupts a stalled model and never saves partial s
   const fake = FakeModelLayer(() => Stream.concat(deltaStream("partial"), Stream.never));
   return Effect.gen(function* () {
     const m = yield* Mailbox;
-    yield* m.connect({ provider: "gmail" });
+    yield* m.accounts.connect({ provider: "gmail" });
     yield* m.sync();
     yield* m.ai.setAiAccount(consent);
     const started = yield* Deferred.make<void>();
@@ -611,7 +611,7 @@ it.effect("automatic summaries require both account switches and an API key", ()
     const server = fakeServer("me@gmail.com", [incoming("m1")]);
     yield* Effect.gen(function* () {
       const m = yield* Mailbox;
-      yield* m.connect({ provider: "gmail" });
+      yield* m.accounts.connect({ provider: "gmail" });
       yield* m.sync();
       yield* m.ai.setAiKey("fake-key");
       server.messages.set("m2", { ...incoming("m2"), date: 2000 });
@@ -653,7 +653,7 @@ it.effect(
     const server = fakeServer("me@gmail.com", [incoming("m1")]);
     return Effect.gen(function* () {
       const m = yield* Mailbox;
-      yield* m.connect({ provider: "gmail" });
+      yield* m.accounts.connect({ provider: "gmail" });
       yield* m.sync();
       assert.strictEqual(yield* m.ai.aiSummary(messageId), null);
       assert.strictEqual(yield* m.ai.aiTriage(messageId), null);

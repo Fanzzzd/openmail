@@ -71,7 +71,7 @@ it.effect(
     const server = fakeServer("me@gmail.com", [incoming()]);
     return Effect.gen(function* () {
       const m = yield* Mailbox;
-      yield* m.connect({ provider: "gmail" });
+      yield* m.accounts.connect({ provider: "gmail" });
       yield* m.sync();
       const request = {
         accountId,
@@ -95,7 +95,7 @@ it.effect(
       assert.strictEqual(server.sent.length, 0);
       assert.strictEqual(server.pushed.length, 0);
       assert.deepStrictEqual(yield* m.proposals.proposals, []);
-      const other = yield* m.connect({ provider: "outlook" });
+      const other = yield* m.accounts.connect({ provider: "outlook" });
       yield* m.ai.setAiAccount({ ...consent, accountId: other.id });
       assert.strictEqual(
         (yield* Stream.runDrain(m.ai.composeAi({ ...request, accountId: other.id })).pipe(
@@ -151,7 +151,7 @@ function fixture(
     const store = yield* Store;
     const secrets = yield* Secrets;
     const model = yield* Model;
-    yield* m.connect({ provider: "gmail" });
+    yield* m.accounts.connect({ provider: "gmail" });
     yield* m.sync();
     const ai = makeAiMailbox(
       store,

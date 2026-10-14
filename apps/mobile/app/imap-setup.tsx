@@ -19,7 +19,7 @@ export default function ImapSetup() {
   const { i18n } = useLingui();
   const accounts = useMailboxQuery(
     useCallback(
-      () => runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.accounts)),
+      () => runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.accounts.accounts)),
       [runtime],
     ),
   );
@@ -68,7 +68,7 @@ function ImapForm({ account }: { account?: Account }) {
     };
     try {
       const connected = await runtime.runPromise(
-        Effect.flatMap(Mailbox, (mailbox) => mailbox.connect({ provider: "imap", input })),
+        Effect.flatMap(Mailbox, (mailbox) => mailbox.accounts.connect({ provider: "imap", input })),
       );
       setPassword("");
       router.replace({ pathname: "/mailboxes", params: { accountId: connected.id } });

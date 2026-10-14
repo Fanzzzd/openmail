@@ -182,7 +182,7 @@ it.effect(
         Effect.forkScoped,
       );
       yield* Effect.yieldNow;
-      yield* m.connect({ provider: "gmail" });
+      yield* m.accounts.connect({ provider: "gmail" });
       yield* m.sync();
       const notices = () =>
         Ref.get(events).pipe(
@@ -227,7 +227,7 @@ it.effect("desktop polling repeats every 45 seconds", () => {
   const server = fakeServer(account.email, [incoming("initial")]);
   return Effect.gen(function* () {
     const m = yield* Mailbox;
-    yield* m.connect({ provider: "gmail" });
+    yield* m.accounts.connect({ provider: "gmail" });
     yield* m.sync();
     server.messages.set("first", incoming("first"));
     yield* TestClock.adjust("44 seconds");
@@ -256,7 +256,7 @@ it.effect("CLI and MCP mailbox layers do not start new-mail polling", () => {
   const server = fakeServer(account.email, [incoming("initial")]);
   return Effect.gen(function* () {
     const m = yield* Mailbox;
-    yield* m.connect({ provider: "gmail" });
+    yield* m.accounts.connect({ provider: "gmail" });
     yield* m.sync();
     server.messages.set("later", incoming("later"));
     yield* TestClock.adjust("2 minutes");
@@ -275,7 +275,7 @@ it.effect("IMAP mail moved into Inbox under a different UID stays seen", () => {
   const server = fakeServer("me@example.com", [original]);
   return Effect.gen(function* () {
     const m = yield* Mailbox;
-    yield* m.connect({
+    yield* m.accounts.connect({
       provider: "imap",
       input: { preset: "qq", email: "me@example.com", password: "fake" },
     });
@@ -304,7 +304,7 @@ it.effect("idle inbox polling emits no Changed and preserves a full-sync error",
   const server = fakeServer(account.email);
   return Effect.gen(function* () {
     const m = yield* Mailbox;
-    yield* m.connect({ provider: "gmail" });
+    yield* m.accounts.connect({ provider: "gmail" });
     yield* m.sync();
     const events = yield* Ref.make<MailboxEvent[]>([]);
     yield* m.app.events.pipe(
@@ -321,7 +321,7 @@ it.effect("catch-up suppresses unread mail older than the previous sync", () => 
   const server = fakeServer(account.email);
   return Effect.gen(function* () {
     const m = yield* Mailbox;
-    yield* m.connect({ provider: "gmail" });
+    yield* m.accounts.connect({ provider: "gmail" });
     yield* m.sync();
     yield* TestClock.adjust("10 seconds");
     yield* m.sync();
@@ -348,7 +348,7 @@ it.effect(
     const server = fakeServer(account.email);
     return Effect.gen(function* () {
       const m = yield* Mailbox;
-      yield* m.connect({ provider: "gmail" });
+      yield* m.accounts.connect({ provider: "gmail" });
       yield* m.sync();
       server.failNext = new PermanentError({ message: "full sync error" });
       yield* m.sync();
@@ -361,7 +361,7 @@ it.effect(
       );
       yield* Effect.yieldNow;
       yield* m.pollInbox();
-      assert.strictEqual((yield* m.accounts)[0]?.lastSyncError, SYNC_FAILURE_TEXT.unknown);
+      assert.strictEqual((yield* m.accounts.accounts)[0]?.lastSyncError, SYNC_FAILURE_TEXT.unknown);
       yield* Effect.yieldNow;
       assert.strictEqual(yield* Ref.get(changes), 0);
       server.failNext = new PermanentError({ message: "offline" });
@@ -375,7 +375,7 @@ it.effect(
       yield* m.pollInbox();
       yield* Effect.yieldNow;
       assert.strictEqual(yield* Ref.get(changes), 2);
-      assert.strictEqual((yield* m.accounts)[0]?.lastSyncError, SYNC_FAILURE_TEXT.unknown);
+      assert.strictEqual((yield* m.accounts.accounts)[0]?.lastSyncError, SYNC_FAILURE_TEXT.unknown);
     }).pipe(Effect.provide(TestMailbox({ gmail: server })));
   },
 );
@@ -383,7 +383,7 @@ it.effect("offline inbox polling backs off independently until recovery", () => 
   const server = fakeServer(account.email);
   return Effect.gen(function* () {
     const m = yield* Mailbox;
-    yield* m.connect({ provider: "gmail" });
+    yield* m.accounts.connect({ provider: "gmail" });
     yield* m.sync();
     server.failNext = new PermanentError({ message: "offline" });
     yield* TestClock.adjust("45 seconds");
@@ -405,7 +405,7 @@ it.effect("battery polling waits twice as long as AC polling", () => {
   const server = fakeServer(account.email);
   return Effect.gen(function* () {
     const m = yield* Mailbox;
-    yield* m.connect({ provider: "gmail" });
+    yield* m.accounts.connect({ provider: "gmail" });
     yield* m.sync();
     server.messages.set("battery", incoming("battery"));
     yield* TestClock.adjust("45 seconds");

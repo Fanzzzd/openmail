@@ -592,7 +592,7 @@ import type { IncomingMessage } from "../domain/message.js";
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
         const store = yield* Store;
-        const account = yield* mailbox.connect({ provider: "gmail" });
+        const account = yield* mailbox.accounts.connect({ provider: "gmail" });
         yield* mailbox.compose.saveDraft({
           id: "draft:unknown",
           accountId: account.id,
@@ -632,7 +632,7 @@ import type { IncomingMessage } from "../domain/message.js";
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
         const store = yield* Store;
-        const account = yield* mailbox.connect({ provider: "gmail" });
+        const account = yield* mailbox.accounts.connect({ provider: "gmail" });
         yield* store.enqueueOp(account.id, "missing", { kind: "reconcile" });
         for (let attempt = 0; attempt < 3; attempt++) yield* mailbox.sync();
         assert.strictEqual((yield* store.listPendingOps).length, 1);

@@ -117,7 +117,7 @@ export const accountHandlers = ({
 }: ToolContext) => {
   const accessStatus = Effect.gen(function* () {
     const current = yield* identity.current;
-    const accounts = yield* mailbox.accounts.pipe(Effect.mapError(toToolError));
+    const accounts = yield* mailbox.accounts.accounts.pipe(Effect.mapError(toToolError));
     const readable = yield* accessibleAccounts;
     const enabled = accounts.filter((a) => a.enabled !== false);
     const withoutConsent = enabled.length - readable.length;
@@ -183,7 +183,7 @@ export const accountHandlers = ({
       page(
         "list_profiles",
         p,
-        Effect.map(mailbox.profiles, (rows) =>
+        Effect.map(mailbox.accounts.profiles, (rows) =>
           rows.map((row) => ({ ...row, name: shortText(row.name) })),
         ),
       ).pipe(Effect.map(({ items, ...rest }) => ({ ...rest, profiles: items }))),

@@ -31,7 +31,7 @@ export function signedMobileMessage(
   message: OutgoingMessage,
 ) {
   return Effect.gen(function* () {
-    const account = (yield* mailbox.accounts).find((entry) => entry.id === accountId);
+    const account = (yield* mailbox.accounts.accounts).find((entry) => entry.id === accountId);
     if (!account) return message;
     const signature = signatureDefault(
       yield* mailbox.compose.namedSignatures,

@@ -60,7 +60,7 @@ export const makeToolContext = Effect.gen(function* () {
     }));
 
   const accessibleAccounts = Effect.gen(function* () {
-    const accounts = (yield* mailbox.accounts).filter((a) => a.enabled !== false);
+    const accounts = (yield* mailbox.accounts.accounts).filter((a) => a.enabled !== false);
     if ((yield* identity.current).surface !== "mcp") return accounts;
     const consent = yield* mailbox.ai.aiAccounts;
     return accounts.filter((a) => consent.some((s) => s.accountId === a.id && s.allowed));
@@ -82,7 +82,7 @@ export const makeToolContext = Effect.gen(function* () {
     );
   /** Fails as not_found for an unknown space (profile) id. */
   const requireProfile = (id: string) =>
-    Effect.flatMap(mailbox.profiles, (profiles) =>
+    Effect.flatMap(mailbox.accounts.profiles, (profiles) =>
       profiles.some((p) => p.id === id)
         ? Effect.void
         : Effect.fail(

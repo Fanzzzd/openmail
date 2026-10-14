@@ -27,7 +27,7 @@ const health = Command.make(
     const mailbox = yield* Mailbox;
     const ids = Option.isSome(account)
       ? [account.value]
-      : (yield* mailbox.accounts).map((item) => item.id);
+      : (yield* mailbox.accounts.accounts).map((item) => item.id);
     const reports = yield* Effect.forEach(ids, (id) =>
       mailbox.syncHealth(id).pipe(Effect.map(redactSyncHealth)),
     );
@@ -116,8 +116,11 @@ const decodePageCursor = (raw: Option.Option<string>) =>
 const accountScope = (account: Option.Option<string>, space: Option.Option<string>) =>
   Effect.gen(function* () {
     const mailbox = yield* Mailbox;
-    const accounts = yield* mailbox.accounts;
-    if (Option.isSome(space) && !(yield* mailbox.profiles).some((p) => p.id === space.value))
+    const accounts = yield* mailbox.accounts.accounts;
+    if (
+      Option.isSome(space) &&
+      !(yield* mailbox.accounts.profiles).some((p) => p.id === space.value)
+    )
       return yield* fail(
         `No space with id ${space.value}. Run \`openmail spaces list\` to see them.`,
       );

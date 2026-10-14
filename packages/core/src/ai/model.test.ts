@@ -94,7 +94,7 @@ it.effect("length-limited summaries remain visible as truncated and are never ca
   ]);
   return Effect.gen(function* () {
     const m = yield* Mailbox;
-    const account = yield* m.connect({ provider: "gmail" });
+    const account = yield* m.accounts.connect({ provider: "gmail" });
     yield* m.sync();
     yield* m.ai.setAiKey("test-secret-key");
     yield* m.ai.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });
@@ -201,7 +201,7 @@ it.effect(
     );
     return Effect.gen(function* () {
       const m = yield* Mailbox;
-      const account = yield* m.connect({ provider: "gmail" });
+      const account = yield* m.accounts.connect({ provider: "gmail" });
       yield* m.ai.setAiKey("test-secret-key");
       yield* m.ai.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });
       const events = yield* Stream.runCollect(
@@ -314,7 +314,7 @@ it.effect("re-reading the thread a question is about is a tool error, not a fail
   const server = fakeServer("me@gmail.com", longThread("t1", 3, 3000));
   return Effect.gen(function* () {
     const m = yield* Mailbox;
-    const account = yield* m.connect({ provider: "gmail" });
+    const account = yield* m.accounts.connect({ provider: "gmail" });
     yield* m.sync();
     yield* m.ai.setAiKey("k");
     yield* m.ai.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });
@@ -354,7 +354,7 @@ it.effect("a read that overruns the input budget comes back to the model as a to
   ]);
   return Effect.gen(function* () {
     const m = yield* Mailbox;
-    const account = yield* m.connect({ provider: "gmail" });
+    const account = yield* m.accounts.connect({ provider: "gmail" });
     yield* m.sync();
     yield* m.ai.setAiKey("k");
     yield* m.ai.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });
@@ -376,7 +376,7 @@ it.effect("a summary of a thread too long to read whole says how many messages i
   const server = fakeServer("me@gmail.com", longThread("t", 40, 4000));
   return Effect.gen(function* () {
     const m = yield* Mailbox;
-    const account = yield* m.connect({ provider: "gmail" });
+    const account = yield* m.accounts.connect({ provider: "gmail" });
     yield* m.sync();
     yield* m.ai.setAiKey("k");
     yield* m.ai.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });

@@ -139,12 +139,12 @@ const Handlers = MailRpcs.toLayer(
         Effect.succeed(notificationActionCapabilities(process.platform)),
       Connect: ({ input }) =>
         signInLanguage.pipe(
-          Effect.andThen(m.connect(input)),
+          Effect.andThen(m.accounts.connect(input)),
           Effect.tap(() => focusApp),
         ),
       Reauth: ({ accountId, feature }) =>
         signInLanguage.pipe(
-          Effect.andThen(m.reauth(accountId, feature)),
+          Effect.andThen(m.accounts.reauth(accountId, feature)),
           Effect.tap(() => focusApp),
         ),
       ImapPresets: () => Effect.succeed(IMAP_PRESETS),

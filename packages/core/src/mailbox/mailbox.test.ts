@@ -33,7 +33,7 @@ import type { ProviderAdapter } from "../providers/adapter.js";
     const server = fakeServer("me@gmail.com", messages);
     return Effect.gen(function* () {
       const mailbox = yield* Mailbox;
-      yield* mailbox.connect({ provider: "gmail" });
+      yield* mailbox.accounts.connect({ provider: "gmail" });
       yield* mailbox.sync();
       return yield* body(mailbox, server);
     }).pipe(Effect.provide(TestMailbox({ gmail: server })));
@@ -127,9 +127,9 @@ import type { ProviderAdapter } from "../providers/adapter.js";
   it.effect("signing in again as another address is a typed account mismatch", () =>
     withGmail([incoming("m1")], (m, server) =>
       Effect.gen(function* () {
-        const [account] = yield* m.accounts;
+        const [account] = yield* m.accounts.accounts;
         server.email = "other@gmail.com";
-        const error = yield* Effect.flip(m.reauth(account!.id));
+        const error = yield* Effect.flip(m.accounts.reauth(account!.id));
         assert.strictEqual(error._tag, "AuthError");
         if (error._tag !== "AuthError") return;
         assert.strictEqual(error.reason, "account_mismatch");
@@ -170,7 +170,7 @@ import type { ProviderAdapter } from "../providers/adapter.js";
           user,
         );
         assert.strictEqual(outcome.status === "applied" && outcome.flush?.reauth.length, 1);
-        const [account] = yield* m.accounts;
+        const [account] = yield* m.accounts.accounts;
         assert.strictEqual(account?.needsReauth, true);
         // Local state changed anyway.
         assert.strictEqual((yield* m.reading.thread(thread!.id))[0]?.isUnread, false);
@@ -181,7 +181,7 @@ import type { ProviderAdapter } from "../providers/adapter.js";
 
         // Signing in again names the account to the consent page, clears the
         // flag, and the queued change goes out.
-        yield* m.reauth(account!.id);
+        yield* m.accounts.reauth(account!.id);
         assert.deepStrictEqual(server.connects.at(-1), {
           provider: "gmail",
           grantedScopes: server.grantedScopes,
@@ -225,7 +225,7 @@ import type { ProviderAdapter } from "../providers/adapter.js";
         const [result] = yield* Fiber.join(fiber);
         assert.strictEqual(result?.error, undefined);
         assert.deepStrictEqual((yield* m.syncState).errors, []);
-        assert.strictEqual((yield* m.accounts)[0]?.lastSyncError, null);
+        assert.strictEqual((yield* m.accounts.accounts)[0]?.lastSyncError, null);
         assert.strictEqual((yield* m.reading.threads({ mailbox: "inbox" })).length, 2);
       }),
     ),
@@ -259,7 +259,10 @@ import type { ProviderAdapter } from "../providers/adapter.js";
         const [result] = yield* m.sync();
         // The stored error is a fixed sentence; the provider's body stays out of the UI.
         assert.strictEqual(result?.error, SYNC_FAILURE_TEXT.unknown);
-        assert.strictEqual((yield* m.accounts)[0]?.lastSyncError, SYNC_FAILURE_TEXT.unknown);
+        assert.strictEqual(
+          (yield* m.accounts.accounts)[0]?.lastSyncError,
+          SYNC_FAILURE_TEXT.unknown,
+        );
       }),
     ),
   );
@@ -282,7 +285,7 @@ import type { ProviderAdapter } from "../providers/adapter.js";
         });
         const [result] = yield* m.sync();
         assert.strictEqual(result?.error, SYNC_FAILURE_TEXT.quota);
-        const account = (yield* m.accounts)[0];
+        const account = (yield* m.accounts.accounts)[0];
         assert.strictEqual(account?.lastSyncError, SYNC_FAILURE_TEXT.quota);
         assert.deepStrictEqual((yield* m.syncState).errors, [
           `${account?.id}: ${SYNC_FAILURE_TEXT.quota}`,
@@ -493,7 +496,7 @@ import type { ProviderAdapter } from "../providers/adapter.js";
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
         const store = yield* Store;
-        const account = yield* mailbox.connect({ provider: "gmail" });
+        const account = yield* mailbox.accounts.connect({ provider: "gmail" });
         yield* mailbox.sync();
         assert.strictEqual((yield* store.getMessage(`${account.id}/old`)).bodyText, "full body");
       }),
@@ -512,12 +515,12 @@ import type { ProviderAdapter } from "../providers/adapter.js";
     return core(
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        const account = yield* mailbox.connect({ provider: "gmail" });
+        const account = yield* mailbox.accounts.connect({ provider: "gmail" });
         closed.length = 0;
         yield* mailbox.setSyncPaused(true);
         assert.deepStrictEqual(closed, [undefined]);
         yield* mailbox.setSyncPaused(false);
-        yield* mailbox.setAccountSettings(account.id, {
+        yield* mailbox.accounts.setAccountSettings(account.id, {
           enabled: false,
           description: "Renamed",
           color: null,
@@ -541,7 +544,7 @@ import type { ProviderAdapter } from "../providers/adapter.js";
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
         const store = yield* Store;
-        const account = yield* mailbox.connect({ provider: "gmail" });
+        const account = yield* mailbox.accounts.connect({ provider: "gmail" });
         yield* store.putDraft({ id: "draft:older", accountId: account.id, message: outgoing });
         yield* store.setDraftRemote(
           "draft:older",
@@ -662,7 +665,7 @@ it.effect(
     return Effect.gen(function* () {
       const mailbox = yield* Mailbox;
       const store = yield* Store;
-      const account = yield* mailbox.connect({ provider: "gmail" });
+      const account = yield* mailbox.accounts.connect({ provider: "gmail" });
       yield* mailbox.ai.setAiAccount({
         accountId: account.id,
         allowed: true,

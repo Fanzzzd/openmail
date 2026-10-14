@@ -177,7 +177,7 @@ export const DesktopLive = Layer.effect(
     const showThread = (id: string) =>
       mailbox.reading.thread(id).pipe(
         Effect.flatMap((messages) =>
-          Effect.map(mailbox.accounts, (accounts) => {
+          Effect.map(mailbox.accounts.accounts, (accounts) => {
             const owner = accounts.find((account) => account.id === messages[0]?.accountId);
             navigate(
               mailHref(
@@ -220,7 +220,7 @@ export const DesktopLive = Layer.effect(
       else
         run(
           Effect.gen(function* () {
-            const accounts = yield* mailbox.accounts;
+            const accounts = yield* mailbox.accounts.accounts;
             const owner = accounts.find((account) => link.id.startsWith(`${account.id}/`));
             if (owner?.enabled === false) return;
             // Legacy uncached links retain their launch behavior. New single links resolve and validate ownership.
@@ -272,7 +272,7 @@ export const DesktopLive = Layer.effect(
     const refreshLock = yield* Semaphore.make(1);
     const refresh = refreshLock.withPermits(1)(
       Effect.gen(function* () {
-        const accounts = yield* mailbox.accounts;
+        const accounts = yield* mailbox.accounts.accounts;
         for (const [notification, ids] of notificationAccounts) {
           if (ids.some((id) => accounts.find((a) => a.id === id)?.enabled === false)) {
             notification.close();
@@ -280,7 +280,7 @@ export const DesktopLive = Layer.effect(
             notificationAccounts.delete(notification);
           }
         }
-        const profiles = yield* mailbox.profiles;
+        const profiles = yield* mailbox.accounts.profiles;
         if (
           activeSpace !== "all" &&
           activeSpace !== "overview" &&
@@ -712,7 +712,7 @@ export const DesktopLive = Layer.effect(
           const messages = yield* mailbox.reading
             .thread(link.id)
             .pipe(Effect.orElseSucceed(() => []));
-          const accounts = yield* mailbox.accounts;
+          const accounts = yield* mailbox.accounts.accounts;
           const ids = messages.map((m) => m.accountId);
           if (ids.some((id) => accounts.find((a) => a.id === id)?.enabled === false)) {
             notification.close();

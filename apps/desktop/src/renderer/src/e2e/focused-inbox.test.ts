@@ -27,7 +27,7 @@ it.each([false, true])(
     let gmailPrimary: string | undefined;
     let gmailSocial: string | undefined;
     if (mixed) {
-      const account = await h.run(h.m.connect({ provider: "gmail" }));
+      const account = await h.run(h.m.accounts.connect({ provider: "gmail" }));
       await h.run(h.m.sync(account.id));
       gmailPrimary = `${account.id}/gmail-primary`;
       gmailSocial = `${account.id}/gmail-social`;

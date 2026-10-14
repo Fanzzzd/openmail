@@ -43,7 +43,7 @@ export function FailedOpNotice() {
             const mailbox = yield* Mailbox;
             return {
               failures: yield* mailbox.proposals.listFailedOps,
-              accounts: yield* mailbox.accounts,
+              accounts: yield* mailbox.accounts.accounts,
             };
           }),
         ),

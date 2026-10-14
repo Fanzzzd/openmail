@@ -38,7 +38,7 @@ export function desktopAppleContacts(mailbox: Mailbox["Service"]) {
   let temp: AttachmentTemp | undefined;
   app.once("will-quit", () => temp?.disposeSync());
   const available = (accountIds?: readonly string[]) =>
-    Effect.map(mailbox.accounts, (accounts) =>
+    Effect.map(mailbox.accounts.accounts, (accounts) =>
       accounts.some(
         (account) =>
           account.enabled && (accountIds === undefined || accountIds.includes(account.id)),

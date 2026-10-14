@@ -214,7 +214,7 @@ it("resets a real cache then re-syncs through a fake provider while accounts and
   await Effect.runPromise(
     Effect.gen(function* () {
       const m = yield* Mailbox;
-      const account = yield* m.connect({ provider: "gmail" });
+      const account = yield* m.accounts.connect({ provider: "gmail" });
       accountId = account.id;
       yield* m.sync();
       expect(yield* m.reading.threads({})).toHaveLength(1);
@@ -247,7 +247,7 @@ it("resets a real cache then re-syncs through a fake provider while accounts and
   await Effect.runPromise(
     Effect.gen(function* () {
       const m = yield* Mailbox;
-      expect((yield* m.accounts).map((a) => a.id)).toEqual([accountId]);
+      expect((yield* m.accounts.accounts).map((a) => a.id)).toEqual([accountId]);
       expect((yield* m.app.prefs).undoSendSeconds).toBe(10);
       expect((yield* m.compose.openDraft("shared-draft")).message.text).toBe("User feedback");
       expect(yield* m.reading.threads({})).toHaveLength(0);

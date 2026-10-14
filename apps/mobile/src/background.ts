@@ -189,7 +189,7 @@ export async function runBackgroundRefresh() {
         ).pipe(Effect.forkScoped);
         yield* Effect.yieldNow;
         yield* mailbox.organize.wakeSnoozed();
-        const accounts = (yield* mailbox.accounts).filter(
+        const accounts = (yield* mailbox.accounts.accounts).filter(
           (account) =>
             account.enabled !== false && account.lastSyncedAt !== null && !account.needsReauth,
         );

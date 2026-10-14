@@ -377,8 +377,12 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
     () =>
       fixture(provider, (m, _store, _server, accountId) =>
         Effect.gen(function* () {
-          const profile = yield* m.createProfile({ name: "Work", icon: "W", color: "blue" });
-          yield* m.moveAccount(accountId, { profileId: profile.id, beforeId: null });
+          const profile = yield* m.accounts.createProfile({
+            name: "Work",
+            icon: "W",
+            color: "blue",
+          });
+          yield* m.accounts.moveAccount(accountId, { profileId: profile.id, beforeId: null });
           yield* m.app.setPrefs({
             notifications: { [accountId]: "inbox" },
             quietHours: { [profile.id]: { enabled: true, start: 0, end: 0 } },

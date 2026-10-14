@@ -366,7 +366,7 @@ import { Mailbox } from "../mailbox/mailbox.js";
       const server = fakeServer("me@gmail.com", [message]);
       return Effect.gen(function* () {
         const m = yield* Mailbox;
-        const account = yield* m.connect({ provider: "gmail" });
+        const account = yield* m.accounts.connect({ provider: "gmail" });
         yield* m.sync();
         const id = `${account.id}/one`;
         const [candidate] = yield* m.calendar.detectedEvents(id);
@@ -480,12 +480,16 @@ import { Mailbox } from "../mailbox/mailbox.js";
       const server = fakeServer("me@outlook.com", [mail]);
       return Effect.gen(function* () {
         const m = yield* Mailbox,
-          account = yield* m.connect({ provider: "outlook" });
+          account = yield* m.accounts.connect({ provider: "outlook" });
         yield* m.sync();
         const id = `${account.id}/one`,
           [candidate] = yield* m.calendar.detectedEvents(id);
         assert.ok(candidate);
-        yield* m.setAccountSettings(account.id, { enabled: false, description: "", color: null });
+        yield* m.accounts.setAccountSettings(account.id, {
+          enabled: false,
+          description: "",
+          color: null,
+        });
         assert.strictEqual(
           (yield* m.calendar.detectedEvents(id).pipe(Effect.result))._tag,
           "Failure",
@@ -595,7 +599,7 @@ import { Mailbox } from "../mailbox/mailbox.js";
       server.raw.set("invite", source(1));
       return Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        const account = yield* mailbox.connect({ provider: "gmail" });
+        const account = yield* mailbox.accounts.connect({ provider: "gmail" });
         yield* mailbox.sync();
         const id = `${account.id}/invite`;
         const [initial] = yield* mailbox.calendar.invitations(id);
@@ -734,7 +738,7 @@ import { Mailbox } from "../mailbox/mailbox.js";
       ]);
       return Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        const account = yield* mailbox.connect({ provider: "gmail" });
+        const account = yield* mailbox.accounts.connect({ provider: "gmail" });
         yield* mailbox.sync();
         const id = `${account.id}/one`,
           event = (yield* mailbox.calendar.detectedEvents(id))[0];

@@ -30,7 +30,7 @@ function useForeground() {
           runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.organize.wakeSnoozed())),
         prepare: async () => {
           const mailbox = await runtime.runPromise(Mailbox);
-          const accounts = await runtime.runPromise(mailbox.accounts);
+          const accounts = await runtime.runPromise(mailbox.accounts.accounts);
           await migrateForegroundSecrets(accounts.map((account) => account.id));
         },
         sync: () => runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.sync())),

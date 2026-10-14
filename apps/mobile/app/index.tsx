@@ -14,13 +14,13 @@ export default function Accounts() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
   const load = useCallback(
-    () => runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.accounts)),
+    () => runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.accounts.accounts)),
     [runtime],
   );
   const accounts = useMailboxQuery(load);
   const setup = useMailboxQuery(
     useCallback(
-      () => runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.clientSetup)),
+      () => runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.accounts.clientSetup)),
       [runtime],
     ),
   );
@@ -35,7 +35,7 @@ export default function Accounts() {
     setError(false);
     try {
       const account = await runtime.runPromise(
-        Effect.flatMap(Mailbox, (mailbox) => mailbox.connect({ provider })),
+        Effect.flatMap(Mailbox, (mailbox) => mailbox.accounts.connect({ provider })),
       );
       router.push({ pathname: "/mailboxes", params: { accountId: account.id } });
     } catch {

@@ -262,7 +262,7 @@ it.effect("refuses compaction while a real sync holds the lock", () =>
     );
     yield* Effect.gen(function* () {
       const mailbox = yield* Mailbox;
-      yield* mailbox.connect({ provider: "gmail" });
+      yield* mailbox.accounts.connect({ provider: "gmail" });
       const sync = yield* mailbox.sync().pipe(Effect.forkChild);
       yield* Deferred.await(started);
       assert.strictEqual(yield* mailbox.compactCache, "busy");

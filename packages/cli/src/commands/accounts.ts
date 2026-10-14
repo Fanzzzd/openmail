@@ -19,7 +19,7 @@ const configGoogle = Command.make(
   },
   Effect.fn(function* ({ clientId, clientSecret }) {
     const mailbox = yield* Mailbox;
-    yield* mailbox.setClient({ google: { clientId, clientSecret } });
+    yield* mailbox.accounts.setClient({ google: { clientId, clientSecret } });
     yield* Console.log("Saved Google OAuth client.");
   }),
 ).pipe(Command.withDescription("Set the Google OAuth desktop client (docs/setup-google.md)"));
@@ -33,7 +33,7 @@ const configMicrosoft = Command.make(
   },
   Effect.fn(function* ({ clientId }) {
     const mailbox = yield* Mailbox;
-    yield* mailbox.setClient({ microsoft: { clientId } });
+    yield* mailbox.accounts.setClient({ microsoft: { clientId } });
     yield* Console.log("Saved Microsoft OAuth client.");
   }),
 ).pipe(
@@ -52,7 +52,7 @@ const accountsList = Command.make(
   { json: jsonFlag },
   Effect.fn(function* ({ json }) {
     const mailbox = yield* Mailbox;
-    yield* print(yield* mailbox.accounts, json, accountTable);
+    yield* print(yield* mailbox.accounts.accounts, json, accountTable);
   }),
 ).pipe(Command.withDescription("List connected accounts"));
 
@@ -103,7 +103,7 @@ const accountsAdd = Command.make(
         : Option.isSome(fromEnv)
           ? fromEnv.value
           : yield* Prompt.run(Prompt.Password({ message: "App password" }));
-      account = yield* mailbox.connect({
+      account = yield* mailbox.accounts.connect({
         provider: "imap",
         input: {
           preset,
@@ -118,7 +118,7 @@ const accountsAdd = Command.make(
         },
       });
     } else {
-      account = yield* mailbox.connect({ provider: o.provider });
+      account = yield* mailbox.accounts.connect({ provider: o.provider });
     }
     yield* Console.log(`Added ${account.id}. Syncing…`);
     const [result] = yield* withProgress(mailbox.sync(account.id), true);
@@ -157,7 +157,7 @@ const accountsReauth = Command.make(
   { id: Argument.String("account-id") },
   Effect.fn(function* ({ id }) {
     const mailbox = yield* Mailbox;
-    const account = yield* mailbox.reauth(id);
+    const account = yield* mailbox.accounts.reauth(id);
     yield* Console.log(`Signed in ${account.id} again.`);
   }),
 ).pipe(Command.withDescription("Sign an account in again after its credentials stopped working"));
@@ -172,8 +172,8 @@ const profilesList = Command.make(
   { json: jsonFlag },
   Effect.fn(function* ({ json }) {
     const mailbox = yield* Mailbox;
-    const all = yield* mailbox.accounts;
-    const rows = (yield* mailbox.profiles).map((p) => ({
+    const all = yield* mailbox.accounts.accounts;
+    const rows = (yield* mailbox.accounts.profiles).map((p) => ({
       ...p,
       accounts: all.filter((a) => a.profileId === p.id).map((a) => a.id),
     }));
@@ -202,7 +202,7 @@ const profilesAdd = Command.make(
   },
   Effect.fn(function* ({ name, icon, color }) {
     const mailbox = yield* Mailbox;
-    const p = yield* mailbox.createProfile({ name, icon, color });
+    const p = yield* mailbox.accounts.createProfile({ name, icon, color });
     yield* Console.log(`Added space ${p.name} (${p.id}).`);
   }),
 ).pipe(Command.withDescription("Create a space"));
@@ -210,7 +210,7 @@ const profilesAdd = Command.make(
 /** A space by id, or by name when exactly one space has it (any letter case). */
 const findSpace = (idOrName: string) =>
   Effect.gen(function* () {
-    const spaces = yield* (yield* Mailbox).profiles;
+    const spaces = yield* (yield* Mailbox).accounts.profiles;
     const byId = spaces.find((p) => p.id === idOrName);
     if (byId) return byId;
     const named = spaces.filter((p) => p.name.toLowerCase() === idOrName.toLowerCase());
@@ -231,7 +231,7 @@ const profilesRemove = Command.make(
   Effect.fn(function* ({ space }) {
     const mailbox = yield* Mailbox;
     const found = yield* findSpace(space);
-    yield* mailbox.deleteProfile(found.id);
+    yield* mailbox.accounts.deleteProfile(found.id);
     yield* Console.log(`Removed space ${found.name} (${found.id}).`);
   }),
 ).pipe(Command.withDescription("Delete the space; its accounts become ungrouped"));
@@ -246,12 +246,12 @@ const profilesAssign = Command.make(
   },
   Effect.fn(function* ({ accountId, space }) {
     const mailbox = yield* Mailbox;
-    if (!(yield* mailbox.accounts).some((a) => a.id === accountId))
+    if (!(yield* mailbox.accounts.accounts).some((a) => a.id === accountId))
       return yield* fail(
         `No account with id ${accountId}. Run \`openmail accounts list\` to see them.`,
       );
     const found = space === "none" ? null : yield* findSpace(space);
-    yield* mailbox.assignProfile(accountId, found?.id ?? null);
+    yield* mailbox.accounts.assignProfile(accountId, found?.id ?? null);
     return yield* Console.log(
       found ? `Moved ${accountId} to ${found.name}.` : `Removed ${accountId} from its space.`,
     );

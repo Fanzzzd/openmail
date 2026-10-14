@@ -28,7 +28,7 @@ import type { OutgoingMessage } from "../domain/changes.js";
       await runtime.runPromise(
         Effect.gen(function* () {
           const mailbox = yield* Mailbox;
-          const account = yield* mailbox.connect({ provider: "gmail" });
+          const account = yield* mailbox.accounts.connect({ provider: "gmail" });
           const draft = { id: "draft:failed", accountId: account.id, message };
           yield* mailbox.outbox.queueSend(draft, 0);
           server.sendFailure = new SendUncertain({ message: "Network lost after submission" });
@@ -78,7 +78,7 @@ import type { OutgoingMessage } from "../domain/changes.js";
       await runtime.runPromise(
         Effect.gen(function* () {
           const mailbox = yield* Mailbox;
-          const account = yield* mailbox.connect({ provider: "gmail" });
+          const account = yield* mailbox.accounts.connect({ provider: "gmail" });
           const result = yield* mailbox.outbox
             .queueSend(
               {
@@ -118,7 +118,7 @@ import type { OutgoingMessage } from "../domain/changes.js";
       await first.runPromise(
         Effect.gen(function* () {
           const mailbox = yield* Mailbox;
-          const account = yield* mailbox.connect({ provider: "gmail" });
+          const account = yield* mailbox.accounts.connect({ provider: "gmail" });
           yield* mailbox.outbox.queueSend(
             { id: "draft:persisted", accountId: account.id, message },
             0,
@@ -179,7 +179,7 @@ import type { OutgoingMessage } from "../domain/changes.js";
       await runtime.runPromise(
         Effect.gen(function* () {
           const mailbox = yield* Mailbox;
-          const account = yield* mailbox.connect({ provider: "gmail" });
+          const account = yield* mailbox.accounts.connect({ provider: "gmail" });
           for (const id of ["draft:first", "draft:second"])
             yield* mailbox.outbox.queueSend({ id, accountId: account.id, message }, 0);
           yield* mailbox.outbox.flushQueuedSends(() => server.sent.length === 0);
@@ -201,7 +201,7 @@ import type { OutgoingMessage } from "../domain/changes.js";
       await runtime.runPromise(
         Effect.gen(function* () {
           const mailbox = yield* Mailbox;
-          const account = yield* mailbox.connect({ provider: "gmail" });
+          const account = yield* mailbox.accounts.connect({ provider: "gmail" });
           const result = yield* mailbox.outbox
             .queueSend(
               {
@@ -236,7 +236,7 @@ import type { OutgoingMessage } from "../domain/changes.js";
       await runtime.runPromise(
         Effect.gen(function* () {
           const mailbox = yield* Mailbox;
-          const account = yield* mailbox.connect({ provider: "outlook" });
+          const account = yield* mailbox.accounts.connect({ provider: "outlook" });
           const store = yield* Store;
           const oversized = {
             ...message,
@@ -278,7 +278,7 @@ import type { OutgoingMessage } from "../domain/changes.js";
       await runtime.runPromise(
         Effect.gen(function* () {
           const mailbox = yield* Mailbox;
-          const account = yield* mailbox.connect({ provider: "gmail" });
+          const account = yield* mailbox.accounts.connect({ provider: "gmail" });
           const input = { id: "draft:discard", accountId: account.id, message };
           yield* mailbox.outbox.queueSend(input, 0);
           expect(
@@ -335,7 +335,7 @@ import type { OutgoingMessage } from "../domain/changes.js";
         await runtime.runPromise(
           Effect.gen(function* () {
             const mailbox = yield* Mailbox;
-            const account = yield* mailbox.connect({ provider });
+            const account = yield* mailbox.accounts.connect({ provider });
             yield* mailbox.sync(account.id);
             const row = (yield* mailbox.reading.threads({ accountIds: [account.id] }))[0];
             expect(row).toBeDefined();

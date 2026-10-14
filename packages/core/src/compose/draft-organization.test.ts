@@ -45,7 +45,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
         };
         yield* Effect.gen(function* () {
           const mailbox = yield* Mailbox;
-          yield* mailbox.connect(
+          yield* mailbox.accounts.connect(
             provider === "imap"
               ? {
                   provider,
@@ -124,7 +124,7 @@ it.effect(
   () =>
     Effect.gen(function* () {
       const mailbox = yield* Mailbox;
-      yield* mailbox.connect({ provider: "gmail" });
+      yield* mailbox.accounts.connect({ provider: "gmail" });
       const invalid = yield* Effect.flip(
         mailbox.compose.saveDraft({
           id: "draft:invalid",
@@ -133,7 +133,7 @@ it.effect(
         }),
       );
       assert.strictEqual(invalid._tag, "InvalidInput");
-      yield* mailbox.connect({
+      yield* mailbox.accounts.connect({
         provider: "imap",
         input: {
           preset: "custom",
@@ -189,7 +189,7 @@ for (const provider of ["outlook", "imap"] satisfies Provider[]) {
       };
       return Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        yield* mailbox.connect(
+        yield* mailbox.accounts.connect(
           provider === "imap"
             ? {
                 provider,
@@ -251,7 +251,7 @@ it.effect(
     };
     return Effect.gen(function* () {
       const mailbox = yield* Mailbox;
-      yield* mailbox.connect({ provider: "outlook" });
+      yield* mailbox.accounts.connect({ provider: "outlook" });
       const saved = yield* mailbox.compose.saveDraft({
         id: "draft:decorator",
         accountId: "outlook:me@example.com",
@@ -285,7 +285,7 @@ for (const provider of ["outlook", "imap"] satisfies Provider[]) {
       const server = fakeServer("me@example.com");
       return Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        yield* mailbox.connect(
+        yield* mailbox.accounts.connect(
           provider === "imap"
             ? {
                 provider,

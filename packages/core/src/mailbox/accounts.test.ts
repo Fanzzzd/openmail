@@ -83,7 +83,7 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
         yield* Effect.gen(function* () {
           const mailbox = yield* Mailbox;
           const store = yield* Store;
-          const account = yield* mailbox.connect(
+          const account = yield* mailbox.accounts.connect(
             provider === "imap"
               ? { provider, input: { preset: "qq", email: server.email, password: "fake" } }
               : { provider },
@@ -100,7 +100,7 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
             notificationActions: ["menu", "read"],
           });
           yield* mailbox.app.rememberNotificationActions(`${id}/initial`, ["read"]);
-          yield* mailbox.setAccountSettings(id, {
+          yield* mailbox.accounts.setAccountSettings(id, {
             enabled: false,
             description: "Personal",
             color: "#123456",
@@ -134,7 +134,7 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
             "cached body",
           );
           assert.strictEqual(tokens.get(id), token);
-          const accounts = yield* mailbox.accounts;
+          const accounts = yield* mailbox.accounts.accounts;
           assert.strictEqual(accountName(accounts[0]!), "Personal");
           assert.deepStrictEqual(spaceAccountIds("all", accounts), []);
           assert.strictEqual(
@@ -146,7 +146,7 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
         yield* Effect.gen(function* () {
           const mailbox = yield* Mailbox;
           const store = yield* Store;
-          const account = (yield* mailbox.accounts)[0]!;
+          const account = (yield* mailbox.accounts.accounts)[0]!;
           assert.strictEqual(account.enabled, false);
           assert.strictEqual(account.description, "Personal");
           assert.strictEqual(account.color, "#123456");
@@ -154,7 +154,7 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
           assert.deepStrictEqual(yield* mailbox.app.notificationActions(`${id}/initial`), ["read"]);
           assert.isTrue((yield* mailbox.app.prefs).showAccountLabels);
           assert.deepStrictEqual((yield* mailbox.app.prefs).notificationActions, ["menu", "read"]);
-          yield* mailbox.setAccountSettings(id, {
+          yield* mailbox.accounts.setAccountSettings(id, {
             enabled: true,
             description: "Personal",
             color: null,
@@ -167,7 +167,7 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
             ),
           );
           assert.strictEqual(tokens.get(id), token);
-          assert.deepStrictEqual((yield* mailbox.accounts)[0]?.color, null);
+          assert.deepStrictEqual((yield* mailbox.accounts.accounts)[0]?.color, null);
         }).pipe(Effect.provide(layer()));
       }).pipe(Effect.scoped),
   );
@@ -275,7 +275,7 @@ it.effect(
     const server = fakeServer("me@example.com", [incoming("initial"), incoming("second")]);
     return Effect.gen(function* () {
       const mailbox = yield* Mailbox;
-      const account = yield* mailbox.connect({ provider: "gmail" });
+      const account = yield* mailbox.accounts.connect({ provider: "gmail" });
       yield* mailbox.sync();
       const started = yield* Deferred.make<void>();
       const release = yield* Deferred.make<void>();
@@ -293,18 +293,18 @@ it.effect(
         )
         .pipe(Effect.forkChild);
       yield* Deferred.await(started);
-      const disabling = yield* mailbox
+      const disabling = yield* mailbox.accounts
         .setAccountSettings(account.id, { enabled: false, description: "", color: null })
         .pipe(Effect.timeout("1 second"), Effect.forkChild);
       yield* TestClock.adjust("1 second");
       yield* Fiber.join(disabling);
-      assert.strictEqual((yield* mailbox.accounts)[0]?.enabled, false);
+      assert.strictEqual((yield* mailbox.accounts.accounts)[0]?.enabled, false);
       assert.strictEqual(writing.pollUnsafe(), undefined);
       yield* Deferred.succeed(release, undefined);
       yield* Fiber.join(writing);
       assert.strictEqual(server.pushed.length, 1);
       assert.deepStrictEqual(yield* mailbox.sync(), []);
-      yield* mailbox.setAccountSettings(account.id, {
+      yield* mailbox.accounts.setAccountSettings(account.id, {
         enabled: true,
         description: "",
         color: null,
@@ -347,14 +347,14 @@ it.effect(
       yield* Effect.gen(function* () {
         const mailbox = yield* Mailbox;
         const store = yield* Store;
-        const account = yield* mailbox.connect({ provider: "gmail" });
+        const account = yield* mailbox.accounts.connect({ provider: "gmail" });
         yield* mailbox.sync();
         const beforeAliases = aliases;
         stall = true;
         server.messages.set("late", incoming("late"));
         const syncing = yield* mailbox.sync().pipe(Effect.forkChild);
         yield* Deferred.await(started);
-        const edit = yield* mailbox
+        const edit = yield* mailbox.accounts
           .setAccountSettings(account.id, {
             enabled: true,
             description: "Renamed",
@@ -366,7 +366,7 @@ it.effect(
         assert.strictEqual((yield* store.getAccount(account.id)).description, "Renamed");
         assert.strictEqual((yield* store.getAccount(account.id)).color, "#abcdef");
         assert.strictEqual(syncing.pollUnsafe(), undefined);
-        const disabling = yield* mailbox
+        const disabling = yield* mailbox.accounts
           .setAccountSettings(account.id, {
             enabled: false,
             description: "Renamed",

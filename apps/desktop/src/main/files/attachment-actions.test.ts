@@ -191,7 +191,7 @@ const withFiles = async (
   return Effect.runPromise(
     Effect.gen(function* () {
       const m = yield* Mailbox;
-      const account = yield* m.connect({
+      const account = yield* m.accounts.connect({
         provider: "imap",
         input: {
           preset: "custom",

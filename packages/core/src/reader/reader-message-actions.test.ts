@@ -80,7 +80,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
         );
         yield* Effect.gen(function* () {
           const mailbox = yield* Mailbox;
-          const account = yield* mailbox.connect(
+          const account = yield* mailbox.accounts.connect(
             provider === "imap"
               ? { provider, input: { preset: "icloud", email: server.email, password: "test" } }
               : { provider },

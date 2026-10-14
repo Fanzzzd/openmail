@@ -292,7 +292,7 @@ async function inviteFlow(raw = invitation()) {
 
 it("says Calendar access is off instead of asking to sign in again", async () => {
   const h = await inviteFlow();
-  await h.run(h.m.setServiceEnabled(h.account.id, "calendar", false));
+  await h.run(h.m.accounts.setServiceEnabled(h.account.id, "calendar", false));
   await openThread(h, "m1");
   await eventually(() => expect(screen.getByText(/Calendar access is off/)).toBeTruthy());
   expect(screen.getByRole("button", { name: "Turn it on in Settings" })).toBeTruthy();

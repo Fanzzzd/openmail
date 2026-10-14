@@ -101,7 +101,7 @@ import { makeOutlookFeatures } from "../providers/outlook/outlook-features.js";
           );
         yield* Effect.gen(function* () {
           const m = yield* Mailbox;
-          yield* m.connect({ provider: "gmail" });
+          yield* m.accounts.connect({ provider: "gmail" });
           yield* m.calendar.refreshContacts(id);
           assert.deepStrictEqual((yield* m.compose.contactGroups("team", [id]))[0]?.members, [
             alice,
@@ -148,12 +148,16 @@ import { makeOutlookFeatures } from "../providers/outlook/outlook-features.js";
             { address: alice.address, url: "https://lh3.googleusercontent.com/2.png" },
           ];
           server.contactGroups = [];
-          yield* m.reauth(id);
+          yield* m.accounts.reauth(id);
           yield* m.calendar.refreshContacts(id);
           assert.deepStrictEqual(yield* m.compose.contactGroups("Team"), []);
           yield* m.calendar.contactPhoto(id, alice.address);
           assert.strictEqual(downloads.length, 2);
-          yield* m.setAccountSettings(id, { enabled: false, description: "", color: null });
+          yield* m.accounts.setAccountSettings(id, {
+            enabled: false,
+            description: "",
+            color: null,
+          });
           assert.strictEqual(yield* m.calendar.contactPhoto(id, alice.address), null);
           assert.deepStrictEqual(yield* m.compose.contactGroups(""), []);
           yield* m.organize.perform(
@@ -411,8 +415,8 @@ import { makeOutlookFeatures } from "../providers/outlook/outlook-features.js";
       );
       return Effect.gen(function* () {
         const m = yield* Mailbox;
-        const first = yield* m.connect({ provider: "gmail" });
-        const second = yield* m.connect({ provider: "outlook" });
+        const first = yield* m.accounts.connect({ provider: "gmail" });
+        const second = yield* m.accounts.connect({ provider: "outlook" });
         yield* m.sync();
         yield* m.organize.syncSendAs(first.id);
         const current = { accountId: second.id, address: second.email };
@@ -449,7 +453,11 @@ import { makeOutlookFeatures } from "../providers/outlook/outlook-features.js";
         assert.ok(draft.message.html?.includes(`cid:${image.contentId}`));
         assert.ok(!draft.message.html?.includes("https://images"));
         assert.deepStrictEqual(draft.message.composeFont, { family: "Georgia", size: 18 });
-        yield* m.setAccountSettings(first.id, { enabled: false, description: "", color: null });
+        yield* m.accounts.setAccountSettings(first.id, {
+          enabled: false,
+          description: "",
+          color: null,
+        });
         assert.strictEqual(
           yield* m.compose.suggestSender(current, [alice.address], [first.id, second.id]),
           null,
@@ -513,7 +521,7 @@ import { makeOutlookFeatures } from "../providers/outlook/outlook-features.js";
         server.raw.set("remote", raw);
         yield* Effect.gen(function* () {
           const m = yield* Mailbox;
-          const account = yield* m.connect({ provider: "gmail" });
+          const account = yield* m.accounts.connect({ provider: "gmail" });
           yield* m.sync();
           const draft = yield* m.compose.openDraft(`${account.id}/remote`);
           assert.deepStrictEqual(draft.message.composeFont, font);
@@ -568,7 +576,7 @@ import { makeOutlookFeatures } from "../providers/outlook/outlook-features.js";
       let downloads = 0;
       return Effect.gen(function* () {
         const m = yield* Mailbox;
-        const account = yield* m.connect({ provider: "gmail" });
+        const account = yield* m.accounts.connect({ provider: "gmail" });
         for (const url of [
           "https://evil.example/image.png",
           "http://lh3.googleusercontent.com/image.png",
@@ -741,7 +749,7 @@ import { makeOutlookFeatures } from "../providers/outlook/outlook-features.js";
         yield* Effect.gen(function* () {
           const m = yield* Mailbox;
           const store = yield* Store;
-          const account = yield* m.connect({ provider: "gmail" });
+          const account = yield* m.accounts.connect({ provider: "gmail" });
           yield* m.calendar.refreshContacts(account.id);
           const photo = yield* Effect.forkChild(
             m.calendar.contactPhoto(account.id, person.address),

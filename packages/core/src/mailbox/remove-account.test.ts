@@ -53,7 +53,7 @@ it.effect("removal revokes the grant while the token is still stored, then delet
     },
     Effect.gen(function* () {
       const mailbox = yield* Mailbox;
-      const account = yield* mailbox.connect({ provider: "gmail" });
+      const account = yield* mailbox.accounts.connect({ provider: "gmail" });
       const outcome = yield* mailbox.organize.perform(
         { kind: "removeAccount", accountId: account.id },
         user,
@@ -61,7 +61,7 @@ it.effect("removal revokes the grant while the token is still stored, then delet
       assert.deepStrictEqual(outcome, { status: "applied" });
       assert.deepStrictEqual(order, [`revoke ${account.id}`, `remove ${account.id}`]);
       assert.strictEqual(removed, account.id);
-      assert.deepStrictEqual(yield* mailbox.accounts, []);
+      assert.deepStrictEqual(yield* mailbox.accounts.accounts, []);
     }),
   ).pipe(Effect.map((codes) => assert.deepStrictEqual(codes, [])));
 });
@@ -72,13 +72,13 @@ it.effect("a failed revocation is logged with a code and does not block removal"
     {},
     Effect.gen(function* () {
       const mailbox = yield* Mailbox;
-      const account = yield* mailbox.connect({ provider: "gmail" });
+      const account = yield* mailbox.accounts.connect({ provider: "gmail" });
       const outcome = yield* mailbox.organize.perform(
         { kind: "removeAccount", accountId: account.id },
         user,
       );
       assert.deepStrictEqual(outcome, { status: "applied" });
-      assert.deepStrictEqual(yield* mailbox.accounts, []);
+      assert.deepStrictEqual(yield* mailbox.accounts.accounts, []);
       const [entry] = yield* mailbox.proposals.audit(5);
       assert.strictEqual(entry?.action, "removeAccount");
     }),
@@ -91,13 +91,13 @@ it.effect("a keychain that refuses deletion still removes the account, audits it
     { remove: () => Effect.fail(keychainLocked()) },
     Effect.gen(function* () {
       const mailbox = yield* Mailbox;
-      const account = yield* mailbox.connect({ provider: "gmail" });
+      const account = yield* mailbox.accounts.connect({ provider: "gmail" });
       const outcome = yield* mailbox.organize.perform(
         { kind: "removeAccount", accountId: account.id },
         user,
       );
       assert.deepStrictEqual(outcome, { status: "applied", warning: "keychain-item-left" });
-      assert.deepStrictEqual(yield* mailbox.accounts, []);
+      assert.deepStrictEqual(yield* mailbox.accounts.accounts, []);
       const [entry] = yield* mailbox.proposals.audit(5);
       assert.strictEqual(entry?.action, "removeAccount");
     }),

@@ -108,7 +108,7 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
     ).pipe(Layer.provideMerge(MemoryPlatform()));
     return Effect.gen(function* () {
       const mailbox = yield* Mailbox;
-      const account = yield* mailbox.connect(
+      const account = yield* mailbox.accounts.connect(
         provider === "imap"
           ? { provider, input: { preset: "custom", email: me.address, password: "test" } }
           : { provider },
@@ -127,7 +127,7 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
       const store = yield* Store;
       yield* store.replaceSendAs(account.id, server.aliases);
       const ownAddresses = [
-        ...(yield* mailbox.accounts).map((a) => a.email),
+        ...(yield* mailbox.accounts.accounts).map((a) => a.email),
         ...(yield* mailbox.organize.sendAs).map((a) => a.address),
       ];
       for (let read = 0; read < 2; read++) {

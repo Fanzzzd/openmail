@@ -38,7 +38,7 @@ import { makeBatchMailbox } from "./mailbox-batch.js";
   );
 
   const connect = (m: Mailbox["Service"], provider: Provider) =>
-    m.connect(
+    m.accounts.connect(
       provider === "imap"
         ? {
             provider,
@@ -501,7 +501,7 @@ import { makeBatchMailbox } from "./mailbox-batch.js";
       const server = fakeServer("me@gmail.com", [message]);
       return Effect.gen(function* () {
         const m = yield* Mailbox;
-        const account = yield* m.connect({ provider: "gmail" });
+        const account = yield* m.accounts.connect({ provider: "gmail" });
         yield* m.sync();
         const id = `${account.id}/one`;
         const batch = yield* m.organize.snoozeWithUndo([id], 2000000000000);

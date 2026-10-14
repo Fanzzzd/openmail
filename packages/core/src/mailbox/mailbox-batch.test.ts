@@ -94,7 +94,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
         );
         yield* Effect.gen(function* () {
           const mailbox = yield* Mailbox;
-          yield* mailbox.connect(
+          yield* mailbox.accounts.connect(
             provider === "imap"
               ? {
                   provider,
@@ -187,7 +187,7 @@ it.effect("flat batches and undo touch only selected messages in a conversation"
   ]);
   return Effect.gen(function* () {
     const mailbox = yield* Mailbox;
-    yield* mailbox.connect({ provider: "gmail" });
+    yield* mailbox.accounts.connect({ provider: "gmail" });
     yield* mailbox.sync();
     const rows = yield* mailbox.reading.threads({ flat: true });
     assert.strictEqual(yield* mailbox.reading.threadCount({}), 1);
@@ -223,7 +223,7 @@ for (const provider of ["outlook", "imap"] as const) {
       server.labels = [{ id: "custom/path", name: "Custom", color: null }];
       return Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        yield* mailbox.connect(
+        yield* mailbox.accounts.connect(
           provider === "imap"
             ? {
                 provider,
@@ -238,7 +238,7 @@ for (const provider of ["outlook", "imap"] as const) {
             : { provider },
         );
         yield* mailbox.sync();
-        const account = (yield* mailbox.accounts)[0];
+        const account = (yield* mailbox.accounts.accounts)[0];
         assert.ok(account);
         const ids = folders.map((_, index) => `${account.id}/m${index}`);
         const original = fields(
@@ -271,7 +271,7 @@ it.effect("a stalled push does not block local commit, undo or mark-read", () =>
   const server = fakeServer("me@gmail.com", [message("a"), message("b")]);
   return Effect.gen(function* () {
     const mailbox = yield* Mailbox;
-    yield* mailbox.connect({ provider: "gmail" });
+    yield* mailbox.accounts.connect({ provider: "gmail" });
     yield* mailbox.sync();
     const rows = yield* mailbox.reading.threads({});
     const started = yield* Deferred.make<void>();
@@ -307,7 +307,7 @@ it.effect("sync-deleted batch IDs are skipped both at commit and at undo", () =>
   const server = fakeServer("me@gmail.com", [message("a"), message("b")]);
   return Effect.gen(function* () {
     const mailbox = yield* Mailbox;
-    yield* mailbox.connect({ provider: "gmail" });
+    yield* mailbox.accounts.connect({ provider: "gmail" });
     yield* mailbox.sync();
     const rows = yield* mailbox.reading.threads({});
     const a = rows.find((row) => row.subject === "a");
@@ -346,7 +346,7 @@ it.effect("loaded counts respect grouping, filters and ignored paging cursors", 
   );
   return Effect.gen(function* () {
     const mailbox = yield* Mailbox;
-    yield* mailbox.connect({ provider: "gmail" });
+    yield* mailbox.accounts.connect({ provider: "gmail" });
     yield* mailbox.sync();
     const rows = yield* mailbox.reading.threads({ mailbox: "inbox", limit: 100 });
     assert.strictEqual(rows.length, 100);
@@ -376,15 +376,17 @@ it.effect("cross-account undo works while authentication leaves the forward batc
   const outlook = fakeServer("me@outlook.com", [message("b", ["custom", "STARRED"])]);
   return Effect.gen(function* () {
     const mailbox = yield* Mailbox;
-    yield* mailbox.connect({ provider: "gmail" });
-    yield* mailbox.connect({ provider: "outlook" });
+    yield* mailbox.accounts.connect({ provider: "gmail" });
+    yield* mailbox.accounts.connect({ provider: "outlook" });
     yield* mailbox.sync();
     const rows = yield* mailbox.reading.threads({ mailbox: "all" });
     assert.strictEqual(rows.length, 2);
     const before = fields(
       (yield* Effect.forEach(rows, (row) => mailbox.reading.thread(row.id))).flat(),
     );
-    const account = (yield* mailbox.accounts).find((account) => account.provider === "gmail");
+    const account = (yield* mailbox.accounts.accounts).find(
+      (account) => account.provider === "gmail",
+    );
     assert.ok(account);
     gmail.failNext = new AuthError({ accountId: account.id, message: "revoked" });
     const batch = yield* mailbox.organize.modifyWithUndo(
@@ -393,7 +395,7 @@ it.effect("cross-account undo works while authentication leaves the forward batc
     );
     yield* mailbox.sync();
     assert.strictEqual(
-      (yield* mailbox.accounts).find((item) => item.id === account.id)?.needsReauth,
+      (yield* mailbox.accounts.accounts).find((item) => item.id === account.id)?.needsReauth,
       true,
     );
     yield* mailbox.organize.undoBatch(batch.undoId);
@@ -402,7 +404,7 @@ it.effect("cross-account undo works while authentication leaves the forward batc
       fields((yield* Effect.forEach(rows, (row) => mailbox.reading.thread(row.id))).flat()),
       before,
     );
-    yield* mailbox.reauth(account.id);
+    yield* mailbox.accounts.reauth(account.id);
     yield* mailbox.sync();
     assert.deepStrictEqual(
       fields((yield* Effect.forEach(rows, (row) => mailbox.reading.thread(row.id))).flat()),
@@ -415,7 +417,7 @@ it.effect("undo restores a batch's snoozed membership and original due time", ()
   const server = fakeServer("me@gmail.com", [message("a"), message("b")]);
   return Effect.gen(function* () {
     const mailbox = yield* Mailbox;
-    yield* mailbox.connect({ provider: "gmail" });
+    yield* mailbox.accounts.connect({ provider: "gmail" });
     yield* mailbox.sync();
     const rows = yield* mailbox.reading.threads({});
     const ids = rows.map((row) => row.id);
@@ -449,7 +451,7 @@ it.effect("undo uses captured message IDs and preserves unrelated later flag cha
   const server = fakeServer("me@gmail.com", [message("a", ["INBOX", "UNREAD"], "shared")]);
   return Effect.gen(function* () {
     const mailbox = yield* Mailbox;
-    yield* mailbox.connect({ provider: "gmail" });
+    yield* mailbox.accounts.connect({ provider: "gmail" });
     yield* mailbox.sync();
     const row = (yield* mailbox.reading.threads({}))[0];
     assert.ok(row);
@@ -476,7 +478,7 @@ it.effect("Gmail queue batches identical operations in at most 1000 message IDs"
   return Effect.gen(function* () {
     const mailbox = yield* Mailbox;
     const store = yield* Store;
-    const account = yield* mailbox.connect({ provider: "gmail" });
+    const account = yield* mailbox.accounts.connect({ provider: "gmail" });
     // Seed the cache and queue directly. A fake sync pulls all 1002 messages per round,
     // and only the queue flush that starts the sync is under test here.
     yield* store.transaction(

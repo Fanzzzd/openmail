@@ -119,7 +119,7 @@ import type { OutgoingMessage } from "../domain/changes.js";
       return Effect.gen(function* () {
         const mailbox = yield* Mailbox,
           store = yield* Store;
-        const account = yield* mailbox.connect({ provider: "gmail" });
+        const account = yield* mailbox.accounts.connect({ provider: "gmail" });
         yield* mailbox.sync();
         yield* store.enqueueOp(account.id, "one", { kind: "star", value: true });
         const before = yield* store.listPendingOps;

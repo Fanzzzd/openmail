@@ -629,15 +629,15 @@ export interface MailboxApp {
 
 export class Mailbox extends Context.Service<
   Mailbox,
-  MailboxAccounts &
-    MailboxSync & {
-      readonly reading: MailboxReading;
-      readonly organize: MailboxOrganize;
-      readonly compose: MailboxCompose;
-      readonly outbox: MailboxOutbox;
-      readonly ai: MailboxAi;
-      readonly calendar: MailboxCalendar;
-      readonly app: MailboxApp;
-      readonly proposals: MailboxProposals;
-    }
+  MailboxSync & {
+    readonly reading: MailboxReading;
+    readonly organize: MailboxOrganize;
+    readonly compose: MailboxCompose;
+    readonly outbox: MailboxOutbox;
+    readonly ai: MailboxAi;
+    readonly calendar: MailboxCalendar;
+    readonly app: MailboxApp;
+    readonly accounts: MailboxAccounts;
+    readonly proposals: MailboxProposals;
+  }
 >()("openmail/Mailbox") {}

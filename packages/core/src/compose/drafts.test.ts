@@ -55,7 +55,7 @@ import { replyFromAddress } from "./signatures.js";
     const outlook = fakeServer("me@outlook.com");
     return Effect.gen(function* () {
       const m = yield* Mailbox;
-      yield* m.connect({ provider: "gmail" });
+      yield* m.accounts.connect({ provider: "gmail" });
       yield* m.sync();
       return yield* body(m, gmail, outlook);
     }).pipe(Effect.provide(TestMailbox({ gmail, outlook })));
@@ -551,7 +551,7 @@ import { replyFromAddress } from "./signatures.js";
   it.effect("switching the From account moves the provider's copy", () =>
     withMail((m, gmail, outlook) =>
       Effect.gen(function* () {
-        yield* m.connect({ provider: "outlook" });
+        yield* m.accounts.connect({ provider: "outlook" });
         yield* m.compose.saveDraft({ id: "draft:1", accountId: GMAIL, message: draftMessage() });
         assert.strictEqual(gmail.drafts.size, 1);
         yield* m.compose.saveDraft({ id: "draft:1", accountId: OUTLOOK, message: draftMessage() });
@@ -615,7 +615,7 @@ import { replyFromAddress } from "./signatures.js";
       withMail(
         (m) =>
           Effect.gen(function* () {
-            yield* m.connect({ provider: "outlook" });
+            yield* m.accounts.connect({ provider: "outlook" });
             const top = yield* m.compose.suggestContacts("", { exclude: "Me@Gmail.com" });
             assert.deepStrictEqual(
               top.map((a) => a.address),
@@ -1141,8 +1141,8 @@ import { replyFromAddress } from "./signatures.js";
         outlook = fakeServer("other@example.com");
       return Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        const originalAccount = yield* mailbox.connect({ provider: "gmail" });
-        const newAccount = yield* mailbox.connect({ provider: "outlook" });
+        const originalAccount = yield* mailbox.accounts.connect({ provider: "gmail" });
+        const newAccount = yield* mailbox.accounts.connect({ provider: "outlook" });
         const saved = yield* mailbox.compose.saveDraft({
           id: "draft:local-account-change",
           accountId: originalAccount.id,
