@@ -699,6 +699,29 @@ it.effect("paged metadata keeps ids and respects byte budgets and cursor filters
   }),
 );
 
+it.effect("a bad cursor fails the same way in every paged tool, even with no accounts", () =>
+  Effect.gen(function* () {
+    const layer = stubMailbox({
+      accounts: Effect.succeed([]),
+      labels: () => Effect.succeed([]),
+      threads: () => Effect.succeed([]),
+    });
+    for (const failed of [
+      yield* run(call("list_accounts", { cursor: "garbage" }), layer),
+      yield* run(call("list_labels", { cursor: "garbage" }), layer),
+      yield* run(call("search", { query: "x", cursor: "garbage" }), layer),
+      yield* run(call("list_threads", { cursor: "garbage" }), layer),
+    ]) {
+      assert.isTrue(failed.isFailure);
+      assert.deepStrictEqual(failed.encodedResult, {
+        message: "The cursor is not a next_cursor from OpenMail.",
+        code: "invalid_input",
+        hint: "Omit cursor to start from the first page.",
+      });
+    }
+  }),
+);
+
 it.effect("server search relays ignored operators, account errors and provider truncation", () =>
   Effect.gen(function* () {
     const result = yield* run(

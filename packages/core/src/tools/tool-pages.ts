@@ -1,6 +1,6 @@
 import { Buffer } from "../platform/bytes.js";
 import { sha256Hex } from "../platform/crypto.js";
-import { Effect, Schema } from "effect";
+import { Effect, Option, Schema } from "effect";
 
 const ToolCursor = Schema.String.check(Schema.isMaxLength(24_000)).annotate({
   description: "next_cursor from the last page, with the same filters.",
@@ -38,13 +38,17 @@ export const encodeCursor = (cursor: PageCursor) =>
     .replace(/\+/g, "-")
     .replace(/\//g, "_")
     .replace(/=+$/, "");
+const decodeCursorJson = Schema.decodeUnknownOption(Schema.fromJsonString(Cursor));
 export function decodeCursor(raw: string | undefined, scope: string): PageCursor {
   if (!raw) return { scope, offset: 0 };
-  const cursor = Schema.decodeUnknownSync(Schema.fromJsonString(Cursor))(
-    Buffer.from(raw, "base64").toString("utf8"),
-  );
-  if (cursor.scope !== scope) throw new Error("Cursor belongs to another tool or filters.");
-  return cursor;
+  const cursor = decodeCursorJson(Buffer.from(raw, "base64").toString("utf8"));
+  if (Option.isNone(cursor))
+    throw new Error("The cursor is not a next_cursor from OpenMail.");
+  if (cursor.value.scope !== scope)
+    throw new Error(
+      "The cursor belongs to another tool or other filters. Pass it with the filters of the call that returned it.",
+    );
+  return cursor.value;
 }
 /** `accountId` → `account_id`: tool results use snake_case keys, like tool parameters. */
 export const snakeKey = (key: string) => key.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);

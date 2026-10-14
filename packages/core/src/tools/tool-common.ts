@@ -391,8 +391,17 @@ export const pageScope = (
   const { cursor: _cursor, limit: _limit, token_budget: _budget, ...filters } = p;
   return cursorScope(name, filters);
 };
+export const CURSOR_HINT = "Omit cursor to start from the first page.";
 export const cursorFor = (raw: string | undefined, scope: string) =>
-  toolAttempt(() => decodeCursor(raw, scope));
+  Effect.try({
+    try: () => decodeCursor(raw, scope),
+    catch: (error) =>
+      toolError(
+        "invalid_input",
+        error instanceof Error ? error.message : "The cursor could not be read.",
+        CURSOR_HINT,
+      ),
+  });
 export const bounded = <A>(rows: readonly A[], limit: number, budget: number) =>
   toolAttempt(() => budgetRows(rows, limit, budget));
 export function page<A, E>(

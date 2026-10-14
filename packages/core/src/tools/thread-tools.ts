@@ -177,6 +177,9 @@ export const threadHandlers = ({
 }: ToolContext) => {
   return {
     list_threads: Effect.fnUntraced(function* (p) {
+      // A bad cursor fails before any account check, so it never pages silently from the top.
+      const scope = pageScope("list_threads", p);
+      const cursor = yield* cursorFor(p.cursor, scope);
       if (p.profile_id !== undefined) yield* requireProfile(p.profile_id);
       let accountIds = yield* accountIdsFor(p.account_id);
       if (!accountIds.length) return { threads: [] };
@@ -187,8 +190,6 @@ export const threadHandlers = ({
         accountIds = accountIds.filter((id) => inProfile.has(id));
         if (!accountIds.length) return { threads: [] };
       }
-      const scope = pageScope("list_threads", p);
-      const cursor = yield* cursorFor(p.cursor, scope);
       const rows = yield* mailbox
         .threads({
           mailbox: p.mailbox,
