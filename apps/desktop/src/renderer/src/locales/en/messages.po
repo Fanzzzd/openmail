@@ -7487,6 +7487,10 @@ msgid "The rest is left out here. Copy gets the whole message."
 msgstr "The rest is left out here. Copy gets the whole message."
 
 #: src/renderer/src/lib/errors.ts
+msgid "The result is longer than OpenMail accepts. Ask for a shorter message."
+msgstr "The result is longer than OpenMail accepts. Ask for a shorter message."
+
+#: src/renderer/src/lib/errors.ts
 msgid "The selected conversation is no longer available."
 msgstr "The selected conversation is no longer available."
 

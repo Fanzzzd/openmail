@@ -229,10 +229,12 @@ export type AiPurpose = keyof typeof AI_OUTPUT;
 export const composeOutputTokens = (draftChars: number) =>
   AI_OUTPUT.compose.maxTokens + Math.max(2048, Math.ceil(draftChars * 1.5));
 /**
- * UTF-8 bytes of compose output the app accepts: three times the draft, so a translation into
- * a script with longer encodings still fits, and at least 8 KB for a new message.
+ * UTF-8 bytes of compose output the app accepts: four bytes for each token of the request's
+ * budget, and at least 8 KB. The model stops at the token budget first, so this cap only
+ * catches a stream that ignores it.
  */
-export const composeOutputBytes = (draftBytes: number) => Math.max(8192, draftBytes * 3);
+export const composeOutputBytes = (draftChars: number) =>
+  Math.max(8192, composeOutputTokens(draftChars) * 4);
 /** The deadline of an AI request, in seconds. */
 export const AI_REQUEST_SECONDS = 60;
 /** A compose request's deadline: the usual minute plus 50 output tokens a second of its budget. */

@@ -132,6 +132,7 @@ export const INPUT_ERRORS: Record<string, MessageDescriptor> = {
   "A signature needs a name and sending address": msg`A signature needs a name and a sending address.`,
   "AI output budget exceeded.": msg`The AI answer got too long. Ask a narrower question.`,
   "AI draft output budget exceeded.": msg`The draft is too long to rewrite in one go. Shorten it or rewrite part of it.`,
+  "AI result output budget exceeded.": msg`The result is longer than OpenMail accepts. Ask for a shorter message.`,
   "Approve AI proposals in the app.": msg`Approve AI suggestions in the app.`,
   "Attachment exceeds the 32 MB reader limit": msg`This attachment is over 32 MB. Save it to open it.`,
   "Attachments and their containers exceed the 32 MB reader limit": msg`These attachments are over 32 MB together. Save them to open them.`,

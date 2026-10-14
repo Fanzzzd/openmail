@@ -7483,6 +7483,10 @@ msgid "The rest is left out here. Copy gets the whole message."
 msgstr "残りはここでは省略します。コピーするとメッセージ全体が取得されます。"
 
 #: src/renderer/src/lib/errors.ts
+msgid "The result is longer than OpenMail accepts. Ask for a shorter message."
+msgstr "結果が OpenMail の受け付ける長さを超えました。もっと短いメッセージを依頼してください。"
+
+#: src/renderer/src/lib/errors.ts
 msgid "The selected conversation is no longer available."
 msgstr "選択したスレッドはもう利用できません。"
 

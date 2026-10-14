@@ -168,7 +168,7 @@ export function makeAiMailbox(
             });
           let truncated = true;
           let outputBytes = 0;
-          const outputCap = composeOutputBytes(Buffer.byteLength(request.text));
+          const outputCap = composeOutputBytes(request.text.length);
           return Stream.concat(
             model
               .stream({
@@ -186,7 +186,12 @@ export function makeAiMailbox(
                     else {
                       outputBytes += Buffer.byteLength(output.text);
                       if (outputBytes > outputCap)
-                        yield* new InvalidInput({ message: "AI draft output budget exceeded." });
+                        yield* new InvalidInput({
+                          message:
+                            request.task.kind === "write"
+                              ? "AI result output budget exceeded."
+                              : "AI draft output budget exceeded.",
+                        });
                     }
                   }),
                 ),

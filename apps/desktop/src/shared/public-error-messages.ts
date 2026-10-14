@@ -34,6 +34,7 @@ export const PUBLIC_ERROR_MESSAGES = new Set([
   "AI model is unavailable.",
   "AI output budget exceeded.",
   "AI draft output budget exceeded.",
+  "AI result output budget exceeded.",
   "AI request failed. Check your key and try again.",
   "Anthropic rejected the API key. Check it in Settings → AI Access.",
   "Anthropic's rate limit was reached. Wait a minute, then try again.",

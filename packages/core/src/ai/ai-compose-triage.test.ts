@@ -130,7 +130,7 @@ it.effect(
   },
 );
 
-it.effect("compose sizes its output budget and byte cap to the draft", () => {
+it.effect("compose sizes its byte cap from the token budget", () => {
   const requests: ModelRequest[] = [];
   let reply = "";
   const server = fakeServer("me@gmail.com", [incoming()]);
@@ -151,11 +151,25 @@ it.effect("compose sizes its output budget and byte cap to the draft", () => {
     assert.strictEqual(requests[0]?.purpose, "compose");
     assert.strictEqual(requests[0]?.maxTokens, composeOutputTokens(AI_COMPOSE_TEXT));
     assert.ok(events.some((e) => e._tag === "Done" && !e.truncated));
-    // Past three times the draft's bytes, the request stops with its own message.
-    reply = "正".repeat(AI_COMPOSE_TEXT * 3 + 1);
+    // Past the cap sized from the token budget, a rewrite stops with the draft message.
+    const cap = composeOutputBytes(AI_COMPOSE_TEXT);
+    assert.strictEqual(cap, composeOutputTokens(AI_COMPOSE_TEXT) * 4);
+    reply = "x".repeat(cap + 1);
     const error = yield* Stream.runDrain(m.ai.composeAi(request)).pipe(Effect.flip);
     assert.strictEqual(error.message, "AI draft output budget exceeded.");
-    assert.strictEqual(composeOutputBytes(0), 8192, "a new message still gets 8 KB");
+    // A write task has no draft to blame, and an empty draft still gets the full token budget.
+    assert.strictEqual(composeOutputBytes(0), composeOutputTokens(0) * 4);
+    assert.ok(composeOutputBytes(0) > 8192, "the byte cap follows the token budget");
+    reply = "x".repeat(8193);
+    const written = yield* Stream.runCollect(
+      m.ai.composeAi({ accountId, text: "", task: { kind: "write", instruction: "Say hello" } }),
+    );
+    assert.ok(written.some((e) => e._tag === "Done"));
+    reply = "x".repeat(composeOutputBytes(0) + 1);
+    const tooLong = yield* Stream.runDrain(
+      m.ai.composeAi({ accountId, text: "", task: { kind: "write", instruction: "Say hello" } }),
+    ).pipe(Effect.flip);
+    assert.strictEqual(tooLong.message, "AI result output budget exceeded.");
   }).pipe(
     Effect.provide(
       TestMailbox(

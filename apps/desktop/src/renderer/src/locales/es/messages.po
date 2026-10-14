@@ -1660,7 +1660,7 @@ msgstr "Aplicar color a"
 #: src/renderer/src/features/ai/ai-names.ts
 msgctxt "change source"
 msgid "Command line"
-msgstr "Línea de comando"
+msgstr "Línea de comandos"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Compact"
@@ -7481,6 +7481,10 @@ msgstr "El patrón de repetición debe incluir la fecha de inicio del evento. Ca
 #: src/renderer/src/features/reader/RawMessage.tsx
 msgid "The rest is left out here. Copy gets the whole message."
 msgstr "El resto queda aquí. La copia recibe el mensaje completo."
+
+#: src/renderer/src/lib/errors.ts
+msgid "The result is longer than OpenMail accepts. Ask for a shorter message."
+msgstr "El resultado es más largo de lo que OpenMail acepta. Pide un mensaje más corto."
 
 #: src/renderer/src/lib/errors.ts
 msgid "The selected conversation is no longer available."

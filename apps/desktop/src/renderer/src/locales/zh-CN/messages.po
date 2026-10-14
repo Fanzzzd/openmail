@@ -7493,6 +7493,10 @@ msgid "The rest is left out here. Copy gets the whole message."
 msgstr "其余部分这里没有显示。复制会得到整封邮件。"
 
 #: src/renderer/src/lib/errors.ts
+msgid "The result is longer than OpenMail accepts. Ask for a shorter message."
+msgstr "结果超过了 OpenMail 能接受的长度。请要求写一条更短的消息。"
+
+#: src/renderer/src/lib/errors.ts
 msgid "The selected conversation is no longer available."
 msgstr "所选对话已不可用。"
 
