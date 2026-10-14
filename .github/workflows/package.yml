@@ -18,6 +18,13 @@ on:
       - pnpm-workspace.yaml
       - patches/**
       - scripts/smoke-dist.mjs
+      - packages/core/**
+      - packages/cli/**
+      - THIRD_PARTY_NOTICES.md
+      - docs/licenses/**
+      - scripts/check-licenses.mjs
+      - apps/desktop/scripts/titlebar-resize.mjs
+      - scripts/demo-data.mjs
       - .github/workflows/package.yml
   workflow_dispatch:
 
@@ -89,6 +96,11 @@ jobs:
         env:
           OPENMAIL_DIST_REPORT_DIR: ${{ runner.temp }}/dist-smoke
         run: node scripts/smoke-dist.mjs apps/desktop/release/mac-arm64/OpenMail.app
+
+      # The runner has a logged-in macOS session, so the window opens as in the smoke step. The
+      # check drives it over local CDP and takes no screenshots, so no permission prompt appears.
+      - name: Check the titlebar controls during resize
+        run: pnpm --filter @openmail/desktop test:titlebar
 
       # The screenshots and startup logs, also when a check fails.
       - if: always()
