@@ -413,6 +413,49 @@ it.effect("cross-account undo works while authentication leaves the forward batc
   }).pipe(Effect.provide(TestMailbox({ gmail, outlook })));
 });
 
+it.effect("batch changes, snoozes and their undos write one app-user audit row per op", () => {
+  const server = fakeServer("me@gmail.com", [
+    message("a", ["INBOX", "UNREAD"], "shared"),
+    message("b", ["INBOX", "UNREAD"], "shared"),
+    message("c", ["INBOX"]),
+  ]);
+  return Effect.gen(function* () {
+    const mailbox = yield* Mailbox;
+    yield* mailbox.accounts.connect({ provider: "gmail" });
+    yield* mailbox.sync.sync();
+    const rows = yield* mailbox.reading.threads({ flat: true });
+    const id = (subject: string) => rows.find((row) => row.subject === subject)?.id ?? "";
+    // The audit log redacts details, so each op shows as one row with its action and actor.
+    const audited = (action: string) =>
+      mailbox.proposals
+        .audit(100)
+        .pipe(
+          Effect.map((entries) =>
+            entries.filter((entry) => entry.action === action).map((entry) => entry.actor),
+          ),
+        );
+
+    const batch = yield* mailbox.organize.modifyWithUndo([id("a")], { kind: "read", value: true });
+    assert.deepStrictEqual(yield* audited("read"), ["user:app", "user:app"]);
+    yield* mailbox.organize.undoBatch(batch.undoId);
+    assert.deepStrictEqual(yield* audited("read"), [
+      "user:app",
+      "user:app",
+      "user:app",
+      "user:app",
+    ]);
+
+    const snoozed = yield* mailbox.organize.snoozeWithUndo(
+      [id("c")],
+      (yield* Clock.currentTimeMillis) + 3_600_000,
+    );
+    assert.deepStrictEqual(yield* audited("snooze"), ["user:app"]);
+    assert.deepStrictEqual(yield* audited("inbox"), []);
+    yield* mailbox.organize.undoBatch(snoozed.undoId);
+    assert.deepStrictEqual(yield* audited("inbox"), ["user:app"]);
+  }).pipe(Effect.provide(TestMailbox({ gmail: server }, { backgroundFlush: false })));
+});
+
 it.effect("undo restores a batch's snoozed membership and original due time", () => {
   const server = fakeServer("me@gmail.com", [message("a"), message("b")]);
   return Effect.gen(function* () {

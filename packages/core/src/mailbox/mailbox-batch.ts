@@ -3,7 +3,7 @@ import { categoryKey } from "../domain/categories.js";
 import { invalidCategoryFolderOp } from "../domain/mail-ops.js";
 import { Clock, Effect, Option, Semaphore } from "effect";
 
-import { UNDO_HISTORY_TTL_MS, type Actor } from "../domain/command.js";
+import { UNDO_HISTORY_TTL_MS } from "../domain/command.js";
 import { isOutlookClassification, type Message, type IncomingMessage } from "../domain/message.js";
 import type { MailOp } from "../domain/changes.js";
 import type { Provider } from "../domain/account.js";
@@ -15,8 +15,8 @@ import type { Mailbox } from "./mailbox.js";
 import type { ReminderSnapshot, Store } from "../store/service.js";
 import { undoStateKey, type UndoState } from "./undo-journal.js";
 import { applyOpToLabels, folderTarget } from "../store/store.js";
+import { APP_USER, applyMailOp, requireApplied } from "./mail-change.js";
 
-const user: Actor = { kind: "user", surface: "app" };
 interface Change {
   id: string;
   op: MailOp;
@@ -111,23 +111,7 @@ const applyChanges = (store: Store["Service"], changes: readonly Change[]) =>
         Effect.map((ref) => (Option.isSome(ref) ? [{ ...change, ...ref.value }] : [])),
       ),
     );
-    for (const change of resolved.flat()) {
-      yield* store.applyLocalOp(change.id, change.op);
-      if (change.op.kind === "copy") {
-        // Each destination owns a queue entry: a later failure must not repeat earlier copies.
-        for (const labelId of new Set(change.op.labelIds))
-          yield* store.enqueueOp(change.accountId, change.providerId, {
-            kind: "copy",
-            labelIds: [labelId],
-          });
-      } else yield* store.enqueueOp(change.accountId, change.providerId, change.op);
-      yield* store.appendAudit({
-        actor: user,
-        accountId: change.accountId,
-        action: change.op.kind,
-        detail: { id: change.id, op: change.op },
-      });
-    }
+    for (const change of resolved.flat()) yield* applyMailOp(store, APP_USER, change, change.op);
   });
 
 /** Durable organizational history; reminder restoration remains process-local. */
@@ -159,6 +143,7 @@ export const makeBatchMailbox = (
               return yield* new InvalidInput({
                 message: "Categories cannot be used as folders. Use the categories action.",
               });
+            yield* requireApplied({ kind: "modify", threads, op }, APP_USER);
             const undoId = crypto.randomUUID();
             const back = yield* store.transaction(
               Effect.gen(function* () {
@@ -311,6 +296,7 @@ export const makeBatchMailbox = (
               return yield* new InvalidInput({ message: "Choose a future reminder time" });
             if (!threads.length)
               return yield* new InvalidInput({ message: "Choose a conversation" });
+            yield* requireApplied({ kind: "snooze", threads, due }, APP_USER);
             const undoId = crypto.randomUUID();
             const back = yield* store.transaction(
               Effect.gen(function* () {
@@ -344,7 +330,7 @@ export const makeBatchMailbox = (
                       });
                     }
                   yield* store.appendAudit({
-                    actor: user,
+                    actor: APP_USER,
                     accountId: message.accountId,
                     action: "snooze",
                     detail: { id, due },
@@ -399,6 +385,11 @@ export const makeBatchMailbox = (
               return yield* new InvalidInput({
                 message: "This operation can no longer be undone.",
               });
+            for (const change of back.changes)
+              yield* requireApplied(
+                { kind: "modify", threads: [change.id], op: change.op },
+                APP_USER,
+              );
             const checkLocal = Effect.gen(function* () {
               if (live || !journal) return;
               const pending = yield* store.listPendingOps;
@@ -483,7 +474,15 @@ export const makeBatchMailbox = (
                 yield* applyChanges(store, back.changes);
                 for (const change of back.localChanges ?? []) {
                   const ref = yield* store.messageRef(change.id).pipe(Effect.option);
-                  if (Option.isSome(ref)) yield* store.applyLocalOp(change.id, change.op);
+                  if (Option.isNone(ref)) continue;
+                  // Snooze undo restores local state only; nothing is queued.
+                  yield* store.applyLocalOp(change.id, change.op);
+                  yield* store.appendAudit({
+                    actor: APP_USER,
+                    accountId: ref.value.accountId,
+                    action: change.op.kind,
+                    detail: { id: change.id, op: change.op },
+                  });
                 }
                 for (const reminder of back.reminders) {
                   const members = (yield* Effect.forEach(reminder.members, (member) =>

@@ -488,7 +488,7 @@ export const MailboxLive = (
       const { backfillOlder: _backfillOlder, readerThread: _readerThread, ...cacheMembers } = cache;
       const { enforceCacheBudget: _enforceCacheBudget, ...storageMembers } = storage;
       // Each group is one namespace of the one Mailbox service. Groups never expose the store;
-      // members that change mail run policy and audit inside their part.
+      // members that change mail write their audit row inside their part.
       const mailbox = Mailbox.of({
         reading: readingMailbox.reading,
         organize: {

@@ -24,6 +24,7 @@ import type {
   PerformError,
 } from "./mailbox.js";
 import { decide } from "./policy.js";
+import { applyMailOp } from "./mail-change.js";
 import { READ_ONLY_MESSAGE } from "./read-only.js";
 import type { StoredDraft } from "../store/service.js";
 import { providerCapabilities, supportsOp } from "../providers/capabilities.js";
@@ -144,16 +145,7 @@ export const makeApplyMailbox = (
         if (command.op.kind !== "copy" && !folderTarget(command.op, labels)) continue;
       }
       yield* store.transaction(
-        Effect.all([
-          store.applyLocalOp(id, command.op),
-          store.enqueueOp(accountId, providerId, command.op),
-          store.appendAudit({
-            actor,
-            accountId,
-            action: command.op.kind,
-            detail: { id, op: command.op },
-          }),
-        ]),
+        applyMailOp(store, actor, { id, accountId, providerId }, command.op),
       );
     }
     yield* changed;

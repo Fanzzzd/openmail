@@ -212,8 +212,9 @@ export interface MailboxReading {
 }
 
 /**
- * Changes to mail, labels, filters and folders. Every one is checked against policy and
- * audited. Parts: mailbox-apply.ts, mailbox-batch.ts, mailbox-organization.ts,
+ * Changes to mail, labels, filters and folders. Every change writes an audit row; message ops
+ * from `perform` and the undo batch path go through `applyMailOp` (mail-change.ts) after
+ * `decide`. Parts: mailbox-apply.ts, mailbox-batch.ts, mailbox-organization.ts,
  * mailbox-filters.ts, mailbox-folders.ts.
  */
 export interface MailboxOrganize {
@@ -301,7 +302,7 @@ export interface MailboxOrganize {
   markFolderRead(folder: FolderScope): Effect.Effect<number, PerformError>;
   resetFavorites(accountIds: readonly string[]): Effect.Effect<void, PerformError>;
   perform(command: Command, actor: Actor): Effect.Effect<Outcome, PerformError>;
-  /** App-only batch operations with exact per-message undo. */
+  /** App-only batch operations with exact per-message undo. They run `decide` and audit as the app user. */
   modifyWithUndo(
     threads: readonly string[],
     op: MailOp,

@@ -27,7 +27,7 @@ Keep `Mailbox` as the one service and the one layer. Give it named groups that m
 Rules for the groups:
 
 - A group is a namespace, not a separate service. There is still one `Mailbox` tag and one `MailboxLive` layer, so tests and the desktop keep providing one layer.
-- Every member that changes mail stays reachable only through a group that runs policy and audit. `organize`, `compose` and `outbox` keep their current entry points; no group exposes the store.
+- Every member that changes mail stays reachable only through a group, and its part writes the audit row. `organize`, `compose` and `outbox` keep their current entry points; no group exposes the store. The Result section lists where policy runs.
 - Some members are written inline in `mailbox-live.ts` today (prefs, templates, contact suggestions). They move into their group's part file in step 2.
 - Members that do not fit a group (prefs, updates, remote access, notification actions) go into `mailbox.app`. Prefer a small `app` group over stretching another group's meaning.
 - The desktop RPC files in `shared/rpcs/` already group by domain. Each RPC handler calls the matching group, so a reader can go from an RPC file to one group.
@@ -57,6 +57,7 @@ The migration ran as planned with these changes to the table:
 - `messageAccounts` and `threadCount` sit in `reading`. `markUnreadFrom`, `unsubscribe`, `setClassificationOverride`, `createLabelAndApply` and `undoHistory` sit in `organize`.
 - `closeSessions` and `syncHealth` sit in `sync`. `takeNotifications`, `diagnosticsState` and `events` sit in `app`.
 - `accounts`, `sync` and `proposals` clash with a member of the same name. Those groups joined the type in their own step, and the members are now `mailbox.accounts.accounts`, `mailbox.sync.sync` and `mailbox.proposals.proposals`. Renaming them is part of the later prefix rename.
+- Policy and audit: `perform` and the batch path with undo (`modifyWithUndo`, `snoozeWithUndo`, `undoBatch`) apply message ops through `applyMailOp` in `mail-change.ts`, which queues and audits each op. Both run `decide` from `policy.ts`; the batch path runs it for the app user. Other members that change mail audit in their part, as the app user when they take no Actor. Draft autosaves after the first save are not audited.
 - Inline members moved to `mailbox-app.ts` (app), `mailbox-compose.ts` (signatures, templates, recipients), `mailbox-ai.ts` (local models), `mailbox-storage.ts` (cache size) and `mailbox-accounts.ts` (`initializeProfiles`). The wrappers for `searchServer`, `changeLabel` and `setAiAccount` moved into their parts as callbacks.
 
 Final groups, 178 members:
