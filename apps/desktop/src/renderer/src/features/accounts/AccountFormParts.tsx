@@ -13,6 +13,7 @@ export function Field({
   autoFocus,
   inputMode,
   placeholder,
+  onBlur,
 }: {
   label: string;
   value: string;
@@ -22,6 +23,7 @@ export function Field({
   autoFocus?: boolean;
   inputMode?: "numeric";
   placeholder?: string | undefined;
+  onBlur?: () => void;
 }) {
   return (
     <label className="mt-3 block text-footnote font-medium text-a11y-muted">
@@ -35,6 +37,7 @@ export function Field({
         spellCheck={false}
         autoCapitalize="off"
         onChange={(e) => onChange(e.target.value)}
+        onBlur={onBlur}
         className={`selectable mt-1 h-8 ${formInput}`}
       />
     </label>

@@ -203,6 +203,29 @@ for (const choice of [null, "Other IMAP", "Gmail", "Outlook"] as const) {
   });
 }
 
+it("Other IMAP fills empty server names from the email address on blur, without a lookup", async () => {
+  fixture.values.set("clientSetupAtom", NO_CLIENTS);
+  render(localized(h(AddAccountDialog, { onClose: vi.fn(), onAdded: vi.fn() })));
+  fireEvent.click(screen.getByRole("button", { name: "Other IMAP" }));
+  const field = (name: string) => screen.getByRole("textbox", { name });
+  const email = field("Email address");
+  fireEvent.change(email, { target: { value: "me@mail.example.org" } });
+  fireEvent.blur(email);
+  expect(field("IMAP server")).toHaveProperty("value", "imap.mail.example.org");
+  expect(field("SMTP server")).toHaveProperty("value", "smtp.mail.example.org");
+  expect(
+    screen.getAllByRole("textbox", { name: "Port" }).map((port) => port.getAttribute("value")),
+  ).toEqual(["993", "465"]);
+  expect(screen.getByText(/Server names guessed from your email address/)).toBeTruthy();
+  // A server the person typed is never replaced.
+  fireEvent.change(field("IMAP server"), { target: { value: "mx.example.net" } });
+  fireEvent.change(email, { target: { value: "me@example.com" } });
+  fireEvent.blur(email);
+  expect(field("IMAP server")).toHaveProperty("value", "mx.example.net");
+  expect(fixture.decide).not.toHaveBeenCalled();
+  await audit();
+});
+
 it("after the first account, a short skippable step lists three shortcuts", async () => {
   const onClose = vi.fn();
   const onAiAccess = vi.fn();

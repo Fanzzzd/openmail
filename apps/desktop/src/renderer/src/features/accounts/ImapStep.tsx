@@ -30,6 +30,15 @@ const PRESET_NOTES: Record<string, MessageDescriptor> = {
 /** IMAP preset keys in core, plus "custom" for any other server. */
 export type ImapChoice = "icloud" | "yahoo" | "qq" | "163" | "fastmail" | "custom";
 
+/**
+ * The usual server names for an address's domain, imap.<domain> and smtp.<domain>. A guess from
+ * the text only: nothing is looked up, and the person can change both before adding.
+ */
+export function guessedServers(email: string): { imapHost: string; smtpHost: string } | null {
+  const domain = /^[^\s@]+@([a-z0-9-]+(?:\.[a-z0-9-]+)+)$/i.exec(email.trim())?.[1]?.toLowerCase();
+  return domain ? { imapHost: `imap.${domain}`, smtpHost: `smtp.${domain}` } : null;
+}
+
 /** A port field holds a whole number from 1 to 65535. */
 const validPort = (port: string) =>
   /^\d{1,5}$/.test(port.trim()) && Number(port) >= 1 && Number(port) <= 65535;
@@ -82,6 +91,17 @@ export function ImapStep({
   const [smtpHost, setSmtpHost] = useState(stored?.smtpHost ?? "");
   const [smtpPort, setSmtpPort] = useState(String(stored?.smtpPort ?? 465));
   const [smtpSecure, setSmtpSecure] = useState(stored?.smtpSecure ?? true);
+  const [guessed, setGuessed] = useState(false);
+  // Fill empty server fields from the address when it is complete; typed servers stay.
+  const guessServers = () => {
+    const guess = custom ? guessedServers(email) : null;
+    if (!guess) return;
+    const fillImap = !imapHost.trim();
+    const fillSmtp = !smtpHost.trim();
+    if (fillImap) setImapHost(guess.imapHost);
+    if (fillSmtp) setSmtpHost(guess.smtpHost);
+    if (fillImap || fillSmtp) setGuessed(true);
+  };
 
   const [add, runAdd] = useAtom(connectAtom(preset), { mode: "promiseExit" });
   const addError = imapErrorText(i18n, add);
@@ -139,6 +159,7 @@ export function ImapStep({
         onChange={setEmail}
         type="email"
         autoFocus={!signInAgain}
+        onBlur={guessServers}
       />
       <Field
         label={t`Sender name`}
@@ -201,6 +222,14 @@ export function ImapStep({
               />
             </div>
           </div>
+          {guessed && (
+            <p className="mt-1.5 text-footnote text-a11y-muted">
+              <Trans>
+                Server names guessed from your email address, with the standard ports. Check them
+                against your provider’s settings.
+              </Trans>
+            </p>
+          )}
           {!portsValid && (
             <p className="mt-1.5 text-footnote text-a11y-danger">
               <Trans>Enter port numbers from 1 to 65535.</Trans>

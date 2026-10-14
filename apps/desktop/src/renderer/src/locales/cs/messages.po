@@ -6446,6 +6446,10 @@ msgstr "Serverové filtry"
 msgid "Server filters and automatic replies are available for Gmail and Outlook."
 msgstr "Pro Gmail a Outlook jsou k dispozici serverové filtry a automatické odpovědi."
 
+#: src/renderer/src/features/accounts/ImapStep.tsx
+msgid "Server names guessed from your email address, with the standard ports. Check them against your provider’s settings."
+msgstr "Názvy serverů jsou odhadnuté z vaší e-mailové adresy a porty jsou standardní. Porovnejte je s nastavením svého poskytovatele."
+
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Server preview: {count} messages"
 msgstr "Náhled serveru: {count} zpráv"

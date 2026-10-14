@@ -6450,6 +6450,10 @@ msgstr "Server filters"
 msgid "Server filters and automatic replies are available for Gmail and Outlook."
 msgstr "Server filters and automatic replies are available for Gmail and Outlook."
 
+#: src/renderer/src/features/accounts/ImapStep.tsx
+msgid "Server names guessed from your email address, with the standard ports. Check them against your provider’s settings."
+msgstr "Server names guessed from your email address, with the standard ports. Check them against your provider’s settings."
+
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Server preview: {count} messages"
 msgstr "Server preview: {count} messages"

@@ -6446,6 +6446,10 @@ msgstr "サーバーフィルター"
 msgid "Server filters and automatic replies are available for Gmail and Outlook."
 msgstr "サーバー フィルターと自動返信は、Gmail と Outlook で利用できます。"
 
+#: src/renderer/src/features/accounts/ImapStep.tsx
+msgid "Server names guessed from your email address, with the standard ports. Check them against your provider’s settings."
+msgstr "サーバー名はメールアドレスから推測し、ポートは標準のものです。プロバイダーの設定と照らし合わせて確認してください。"
+
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Server preview: {count} messages"
 msgstr "サーバー プレビュー：{count} メッセージ"

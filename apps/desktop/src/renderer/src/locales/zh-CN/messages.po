@@ -6456,6 +6456,10 @@ msgstr "服务器过滤器"
 msgid "Server filters and automatic replies are available for Gmail and Outlook."
 msgstr "Gmail 和 Outlook 支持服务器过滤器和自动回复。"
 
+#: src/renderer/src/features/accounts/ImapStep.tsx
+msgid "Server names guessed from your email address, with the standard ports. Check them against your provider’s settings."
+msgstr "服务器地址是根据邮箱地址推测的，端口为标准端口。请对照邮箱服务商的设置核对。"
+
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Server preview: {count} messages"
 msgstr "服务器预览：{count} 封邮件"
