@@ -592,6 +592,12 @@ export const makeSyncMailbox = (
         Effect.andThen(deps.enforceCacheBudget().pipe(Effect.repeat(Schedule.spaced("1 hour")))),
         Effect.forkScoped,
       );
+      // Statistics follow the mailbox as it grows past the size seen at open.
+      yield* backgroundReady.pipe(
+        Effect.andThen(Effect.sleep("5 minutes")),
+        Effect.andThen(store.refreshPlannerStats.pipe(Effect.repeat(Schedule.spaced("1 hour")))),
+        Effect.forkScoped,
+      );
 
       // Start after the first normal sync. A single account/page per tick
       // prevents large accounts from starving smaller ones.

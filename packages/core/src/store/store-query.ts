@@ -290,8 +290,11 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
       where.push(
         sql`EXISTS (SELECT 1 FROM json_each(m.attachments_json) WHERE json_extract(value, '$.filename') LIKE ${literalLike(c.filename)} ESCAPE '\\')`,
       );
-    if (c.dateBefore !== undefined) where.push(sql`m.date < ${c.dateBefore}`);
-    if (c.dateAfter !== undefined) where.push(sql`m.date >= ${c.dateAfter}`);
+    // Unary plus keeps SQLite off messages_account_date. Without ANALYZE the
+    // planner prefers its date range over the thread index inside threadPage's
+    // correlated subqueries, which turns every page into an O(n^2) scan.
+    if (c.dateBefore !== undefined) where.push(sql`+m.date < ${c.dateBefore}`);
+    if (c.dateAfter !== undefined) where.push(sql`+m.date >= ${c.dateAfter}`);
     for (const label of c.labels ?? [])
       where.push(
         sql`(${hasLabel(label)} OR EXISTS (SELECT 1 FROM json_each(m.labels_json) j WHERE j.value IN (SELECT id FROM labels WHERE account_id=m.account_id AND name=${label})))`,
@@ -361,7 +364,7 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
 
   /** WHERE clauses of a thread list. Paging (`before`) is applied after collapsing threads. */
   const listFilter = (q: LocalQuery) => {
-    const where: Fragment[] = [sql`m.account_id IN (SELECT id FROM accounts WHERE enabled=1)`];
+    const where: Fragment[] = [sql`+m.account_id IN (SELECT id FROM accounts WHERE enabled=1)`];
     const mailbox =
       q.search !== undefined && q.searchScope !== "folder" ? "all" : (q.mailbox ?? "inbox");
     if (mailbox === "all") {

@@ -1,5 +1,6 @@
 import { Effect, Schema } from "effect";
-import type { SqlClient } from "effect/sql";
+import { SqlClient } from "effect/sql";
+import { optimizeQueryPlanner } from "../db/migrate.js";
 import type { AccountOpCounts } from "../domain/diagnostics-state.js";
 import { all } from "./sql-rows.js";
 
@@ -40,5 +41,10 @@ export function makeDiagnosticsStore(sql: SqlClient.SqlClient) {
         ),
       };
     }).pipe(Effect.withSpan("Store.diagnosticCounts"));
-  return { diagnosticCounts };
+  /** Cheap when statistics are current; the sync loop calls it hourly. */
+  const refreshPlannerStats = optimizeQueryPlanner().pipe(
+    Effect.provideService(SqlClient.SqlClient, sql),
+    Effect.withSpan("Store.refreshPlannerStats"),
+  );
+  return { diagnosticCounts, refreshPlannerStats };
 }

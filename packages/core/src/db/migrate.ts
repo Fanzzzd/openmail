@@ -150,4 +150,24 @@ export const migrateTo = (targetVersion: number) =>
     }
   });
 
-export const migrate = migrateTo(MIGRATIONS.length);
+/**
+ * Refreshes planner statistics where SQLite thinks they are missing or stale.
+ * Without them the planner can pick a date index over the thread index and
+ * turn a thread page into a scan per row. `analysis_limit` bounds each ANALYZE
+ * to a sample, so this costs milliseconds on a large mailbox. `0x10002` also
+ * checks tables this connection has not queried yet, which is what a fresh
+ * connection needs; the periodic call uses the default mask. A busy or
+ * read-only database skips the refresh.
+ */
+export const optimizeQueryPlanner = (mask?: number) =>
+  Effect.gen(function* () {
+    const sql = yield* SqlClient.SqlClient;
+    yield* sql`PRAGMA analysis_limit=400`;
+    yield* mask === undefined
+      ? sql`PRAGMA optimize`
+      : sql.unsafe(`PRAGMA optimize=${mask}`).unprepared;
+  }).pipe(Effect.ignore);
+
+export const migrate = migrateTo(MIGRATIONS.length).pipe(
+  Effect.andThen(optimizeQueryPlanner(0x10002)),
+);

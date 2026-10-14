@@ -148,6 +148,8 @@ export class Store extends Context.Service<
     readonly diagnosticCounts: ReturnType<
       typeof import("./store-diagnostics.js").makeDiagnosticsStore
     >["diagnosticCounts"];
+    /** Runs `PRAGMA optimize` so the query planner has statistics on a growing mailbox. */
+    readonly refreshPlannerStats: Effect.Effect<void>;
     readonly listAccounts: Effect.Effect<Account[]>;
     getAccount(id: string): Effect.Effect<Account, NotFound>;
     /** Inserts or returns the existing account `${provider}:${email}`. */

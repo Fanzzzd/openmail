@@ -8,6 +8,8 @@
 
 运行真实迁移和 `Store.upsertMessage`，临时数据库包含 100,000 封邮件、3 个账户、200 个标签／文件夹、20,000 个会话，其中 100 个长会话各有 204 封邮件。消息文本含 CJK 和引用历史，HTML 使用仓库中的 newsletter、Outlook Word fixture；独立解析测试输入为 200 KiB UTF-8，含内联 CSS、隐藏内容和 JSON-LD 事件。数据库生成在系统临时目录，Layer 关闭后删除。SQLite 页缓存 8 MiB，Node 堆上限 192 MiB；Effect 时钟固定为 2026-10-03，缓存窗口不受测试运行日期影响。
 
+fixture 默认不运行 `ANALYZE`，预算按新安装、还没有规划器统计时测量。设置 `OPENMAIL_PERF_ANALYZE=1` 测量有统计的情况。应用打开数据库时运行 `PRAGMA optimize=0x10002`（`analysis_limit=400`），同步循环每小时运行一次 `PRAGMA optimize`，见 `packages/core/src/db/migrate.ts`。
+
 ```sh
 OPENMAIL_PERF=1 pnpm test:perf
 # 可指定完整 SQL、查询计划和测量结果的输出位置：

@@ -104,7 +104,15 @@ export const PerformanceMailbox = () =>
     ),
   );
 
-export const seedMailbox = (count: number) =>
+/**
+ * Budgets run without planner statistics by default, as on a fresh install
+ * before the first `PRAGMA optimize`. OPENMAIL_PERF_ANALYZE=1 measures the
+ * analyzed variant.
+ */
+export const seedMailbox = (
+  count: number,
+  { analyze = process.env.OPENMAIL_PERF_ANALYZE === "1" }: { analyze?: boolean } = {},
+) =>
   Effect.gen(function* () {
     const store = yield* Store;
     const sql = yield* SqlClient.SqlClient;
@@ -169,7 +177,7 @@ export const seedMailbox = (count: number) =>
     while (!(yield* store.indexBigrams(1000)).ready) {
       /* and the bigram queue the same background loop drains */
     }
-    yield* sql`ANALYZE`;
+    if (analyze) yield* sql`ANALYZE`;
   });
 
 const PlanRows = Schema.Array(Schema.Struct({ detail: Schema.String }));

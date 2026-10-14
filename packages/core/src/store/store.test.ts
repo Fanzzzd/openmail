@@ -555,7 +555,8 @@ it.effect("split migrations build the same schema as running each script whole",
       }),
     );
     const ours = yield* Effect.flatMap(
-      sql`SELECT type, name, sql FROM sqlite_master ORDER BY name`,
+      // Opening runs PRAGMA optimize, which may add sqlite_stat1.
+      sql`SELECT type, name, sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_stat%' ORDER BY name`,
       Schema.decodeUnknownEffect(Master),
     );
 
