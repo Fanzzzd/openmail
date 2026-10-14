@@ -14,7 +14,7 @@ import {
 } from "../../shared/remote-access";
 import { createSessions, type GateConfig } from "./remote-auth";
 import { createConnectionHub, type ConnectionHub } from "./remote-rpc-server";
-import { startRemoteServer, type RemoteServer } from "./remote-server";
+import { type ForbiddenText, startRemoteServer, type RemoteServer } from "./remote-server";
 import {
   checkServe,
   NOT_INSTALLED,
@@ -38,6 +38,8 @@ export interface RemoteAccessDeps {
   /** Starts the remote RPC server on the hub; resolves to its stopper. */
   startRpc: (hub: ConnectionHub) => () => Promise<void>;
   log?: (reason: string) => void;
+  /** The not-allowed page's text in the app's language. */
+  forbiddenText?: () => Promise<ForbiddenText>;
   /** How long quitting waits for `tailscale serve off`. */
   quitTimeoutMs?: number;
   /** First retry delay for a mapping a turn-off couldn't remove; doubles up to retryMaxMs. */
@@ -156,6 +158,7 @@ export function createRemoteAccess(deps: RemoteAccessDeps) {
         (await run(mailbox.accounts)).find((account) => account.id === accountId)?.provider ?? null,
       onConnection: hub.onConnection,
       ...(deps.log ? { log: deps.log } : {}),
+      ...(deps.forbiddenText ? { forbiddenText: deps.forbiddenText } : {}),
     });
     server = started;
     stopRpc = deps.startRpc(hub);

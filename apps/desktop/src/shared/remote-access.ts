@@ -58,3 +58,9 @@ export type RemoteAccessView = typeof RemoteAccessView.Type;
 export const REMOTE_HTTPS_PORT = 8443;
 /** A Tailscale Service listens on the standard HTTPS port of its own name. */
 export const REMOTE_SERVICE_PORT = 443;
+
+/**
+ * GET with the session cookie: 200 and `{ build }` while the session holds,
+ * 401 once it ended. The web build asks before each reconnect.
+ */
+export const REMOTE_SESSION_PATH = "/api/session";

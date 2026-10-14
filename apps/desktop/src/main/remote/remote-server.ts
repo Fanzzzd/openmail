@@ -1,5 +1,6 @@
 import { createReadStream } from "node:fs";
-import { realpath, stat } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { readFile, realpath, stat } from "node:fs/promises";
 import {
   createServer,
   type IncomingMessage,
@@ -11,11 +12,13 @@ import path from "node:path";
 import { WebSocketServer, type WebSocket } from "ws";
 import { attachmentFilename, COMPOSE_ATTACHMENT_LIMIT, type Provider } from "@openmail/core/schema";
 import { MAX_RPC_FRAME } from "../../shared/channel";
+import { REMOTE_SESSION_PATH } from "../../shared/remote-access";
 import {
   checkOrigin,
   checkRequest,
   type GateConfig,
   type GateResult,
+  requestLogin,
   type Sessions,
 } from "./remote-auth";
 import { MAX_CONCURRENT_UPLOADS, readBody, readUpload, UPLOAD_SLACK } from "./remote-upload";
@@ -63,6 +66,58 @@ const TYPES: Record<string, string> = {
 /** The web build's page (vite.web.config.ts). Every app route serves it. */
 const APP_DOCUMENT = "web.html";
 
+/** The page a tailnet login outside the allowlist gets, in the Mac's UI language. */
+export interface ForbiddenText {
+  lang: string;
+  title: string;
+  /** Takes the login as plain text; the page escapes the result. */
+  detail: (login: string) => string;
+  fix: (login: string) => string;
+}
+
+export const ENGLISH_FORBIDDEN: ForbiddenText = {
+  lang: "en",
+  title: "This login can't open OpenMail",
+  detail: (login) =>
+    `Tailscale signed you in as ${login}, and that login isn't on this Mac's list.`,
+  fix: (login) =>
+    `To allow it, open OpenMail on the Mac, go to Settings → Remote access and add ${login} under Who can sign in.`,
+};
+
+const escapeHtml = (text: string) =>
+  text.replace(
+    /[&<>"']/g,
+    (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char] ?? "",
+  );
+
+/** A static page: no scripts, no remote resources, every text escaped. */
+export function forbiddenPage(text: ForbiddenText, login: string): string {
+  return `<!doctype html>
+<html lang="${escapeHtml(text.lang)}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>${escapeHtml(text.title)}</title>
+<style>
+body { font: 17px/1.45 -apple-system, BlinkMacSystemFont, system-ui, sans-serif; margin: 0;
+  padding: max(2rem, env(safe-area-inset-top)) max(1.5rem, env(safe-area-inset-right))
+  max(2rem, env(safe-area-inset-bottom)) max(1.5rem, env(safe-area-inset-left)); }
+main { max-width: 34rem; margin: 0 auto; }
+h1 { font-size: 1.4rem; margin: 0 0 1rem; }
+</style>
+</head>
+<body>
+<main>
+<h1>${escapeHtml(text.title)}</h1>
+<p>${escapeHtml(text.detail(login))}</p>
+<p>${escapeHtml(text.fix(login))}</p>
+</main>
+</body>
+</html>
+`;
+}
+
 /** Expired sessions lose their sockets this often. */
 const SWEEP_MS = 60_000;
 
@@ -94,6 +149,8 @@ interface RemoteServerOptions {
   onConnection: ConnectionListener;
   /** Refused request reasons, for stderr. Never logins, paths or bodies. */
   log?: (reason: string) => void;
+  /** The not-allowed page's text in the Mac's UI language; English without it. */
+  forbiddenText?: () => Promise<ForbiddenText>;
 }
 
 const send = (
@@ -249,8 +306,27 @@ export async function startRemoteServer(options: RemoteServerOptions) {
   const root = await realpath(options.webRoot);
   const wss = new WebSocketServer({ noServer: true, maxPayload: MAX_RPC_FRAME });
   let uploads = 0;
-  const refuse = (gate: GateResult & { ok: false }, response: ServerResponse) => {
+  // Which web build this is: a page from another build reloads after reconnecting.
+  const build = createHash("sha256")
+    .update(await readFile(path.join(root, APP_DOCUMENT)).catch(() => ""))
+    .digest("hex")
+    .slice(0, 16);
+  const refuse = async (
+    gate: GateResult & { ok: false },
+    request: IncomingMessage,
+    response: ServerResponse,
+  ) => {
     options.log?.(gate.reason);
+    const login = requestLogin(request.headers);
+    // A person's own browser, signed in to the tailnet as someone the list doesn't name: say how to fix it.
+    if (gate.reason === "not-allowed" && login && request.method === "GET") {
+      const text = await (options.forbiddenText?.() ?? Promise.resolve(ENGLISH_FORBIDDEN)).catch(
+        () => ENGLISH_FORBIDDEN,
+      );
+      return send(response, gate.status, forbiddenPage(text, login), {
+        "content-type": "text/html; charset=utf-8",
+      });
+    }
     send(response, gate.status, "Forbidden");
   };
   const identify = (request: IncomingMessage): GateResult => {
@@ -271,12 +347,14 @@ export async function startRemoteServer(options: RemoteServerOptions) {
   const server = createServer((request, response) => {
     void (async () => {
       const gate = identify(request);
-      if (!gate.ok) return refuse(gate, response);
+      if (!gate.ok) return refuse(gate, request, response);
       const url = new URL(request.url ?? "/", "http://remote.invalid");
       const method = request.method ?? "GET";
 
       if (url.pathname.startsWith("/api/")) {
         if (!session(request, gate.login)) return send(response, 401, "Sign in again");
+        if (url.pathname === REMOTE_SESSION_PATH && method === "GET")
+          return sendJson(response, 200, { build });
         if (url.pathname === "/api/attachment" && method === "GET")
           return handleAttachment(url, response, options.attachment);
         if (url.pathname === "/api/upload" && method === "POST") {

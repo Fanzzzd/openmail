@@ -12,7 +12,14 @@ import {
   MAX_SESSIONS,
   type GateConfig,
 } from "./remote-auth";
-import { contentDisposition, parsePartPath, startRemoteServer, WEB_CSP } from "./remote-server";
+import {
+  contentDisposition,
+  ENGLISH_FORBIDDEN,
+  forbiddenPage,
+  parsePartPath,
+  startRemoteServer,
+  WEB_CSP,
+} from "./remote-server";
 import { waitLimit } from "../../../../../packages/core/test-support/test-time.js";
 
 const HOST = "mac.tail1234.ts.net";
@@ -247,6 +254,40 @@ describe("remote server", () => {
     ).toBe(403);
     expect((await call("/", {})).status).toBe(403);
     expect((await call("/", tailnet(), "POST")).status).toBe(405);
+  });
+
+  it("tells a login outside the allowlist how to get in, as a static escaped page", async () => {
+    const page = await call("/mail/all/inbox", tailnet("intruder<b>@github"));
+    expect(page.status).toBe(403);
+    expect(page.headers["content-type"]).toBe("text/html; charset=utf-8");
+    expect(page.headers["content-security-policy"]).toBe(WEB_CSP);
+    expect(page.headers["set-cookie"]).toBeUndefined();
+    const html = page.body.toString();
+    expect(html).toContain("Tailscale signed you in as intruder&lt;b&gt;@github");
+    expect(html).toContain("Settings → Remote access");
+    expect(html).not.toMatch(/<script|src=|href=|url\(/i);
+    // The login is the visitor's own header: whatever it holds is text, never markup.
+    expect(forbiddenPage(ENGLISH_FORBIDDEN, '<img src=x onerror="alert(1)">&')).toContain(
+      "&lt;img src=x onerror=&quot;alert(1)&quot;&gt;&amp;",
+    );
+    // Other refusals and non-page requests stay terse.
+    const bad = await call("/", { ...tailnet(), host: "127.0.0.1" });
+    expect(bad.body.toString()).toBe("Forbidden");
+    expect((await call("/", tailnet("intruder@github"), "POST")).body.toString()).toBe("Forbidden");
+  });
+
+  it("answers the session check with the build, and 401 once the session is gone", async () => {
+    expect((await call("/api/session", tailnet())).status).toBe(401);
+    const cookie = await signIn();
+    const reply = await call("/api/session", { ...tailnet(), cookie });
+    expect(reply.status).toBe(200);
+    expect(reply.headers["set-cookie"]).toBeUndefined();
+    expect(JSON.parse(reply.body.toString())).toEqual({
+      build: expect.stringMatching(/^[0-9a-f]{16}$/),
+    });
+    expect((await call("/api/session", { ...tailnet("intruder@github"), cookie })).status).toBe(
+      403,
+    );
   });
 
   it("never serves files outside the web build", async () => {

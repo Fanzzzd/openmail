@@ -4,6 +4,7 @@ import { app } from "electron";
 import type { Language } from "@openmail/core/schema";
 import { loadCatalog } from "../../shared/catalogs";
 import { type Locale, systemLocale } from "../../shared/locales";
+import type { ForbiddenText } from "../remote/remote-server";
 
 /** The app catalog that matches the OS languages; also the language of background AI text. */
 export const osLocale = () => systemLocale([...app.getPreferredSystemLanguages(), app.getLocale()]);
@@ -30,6 +31,21 @@ export async function nativeAuthorizePage() {
     title: i18n._(msg`OpenMail sign-in`),
     doneText: i18n._(msg`Signed in. You can close this page and go back to OpenMail.`),
     failedText: i18n._(msg`Sign-in failed. Go back to OpenMail and try again.`),
+  };
+}
+
+/** The page a tailnet login outside the remote-access list gets, in the app's language. The server escapes it. */
+export async function nativeForbiddenText(): Promise<ForbiddenText> {
+  const i18n = await nativeI18n(appLanguage === "system" ? undefined : appLanguage);
+  return {
+    lang: i18n.locale,
+    title: i18n._(msg`This login can't open OpenMail`),
+    detail: (login) =>
+      i18n._(msg`Tailscale signed you in as ${login}, and that login isn't on this Mac's list.`),
+    fix: (login) =>
+      i18n._(
+        msg`To allow it, open OpenMail on the Mac, go to Settings → Remote access and add ${login} under Who can sign in.`,
+      ),
   };
 }
 

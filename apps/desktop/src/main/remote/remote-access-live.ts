@@ -3,6 +3,7 @@ import { Mailbox } from "@openmail/core";
 import { DeviceError, InvalidInput } from "@openmail/core/schema";
 import { Context, Effect, Fiber, Layer, Queue, Stream } from "effect";
 import type { RemoteAccessView } from "../../shared/remote-access";
+import { nativeForbiddenText } from "../app/native-i18n";
 import { localLog } from "../app/reliability";
 import { createRemoteAccess, type RemoteAccessController } from "./remote-access";
 import { remoteRpcServer } from "./remote-rpc-server";
@@ -72,6 +73,7 @@ export const RemoteAccessLive = Layer.effect(
         return () => Effect.runPromise(Fiber.interrupt(fiber).pipe(Effect.asVoid));
       },
       log: (reason) => process.stderr.write(`[remote-access] refused: ${reason}\n`),
+      forbiddenText: nativeForbiddenText,
     });
     yield* Effect.promise(() => controller.init().catch(() => null)).pipe(Effect.forkScoped);
     yield* Effect.addFinalizer(() => Effect.promise(() => controller.dispose().catch(() => null)));

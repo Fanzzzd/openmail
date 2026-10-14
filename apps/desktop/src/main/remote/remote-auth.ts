@@ -72,7 +72,7 @@ export function checkRequest(facts: RequestFacts, config: GateConfig): GateResul
     return { ok: false, status: 403, reason: "not-loopback" };
   if (facts.headers[FUNNEL_HEADER] !== undefined)
     return { ok: false, status: 403, reason: "funnel" };
-  const login = one(facts.headers[LOGIN_HEADER])?.trim();
+  const login = requestLogin(facts.headers);
   if (!login || login.length > 256 || /[\s,]/.test(login))
     return { ok: false, status: 403, reason: "no-identity" };
   const host = one(facts.headers.host)?.toLowerCase();
@@ -82,6 +82,9 @@ export function checkRequest(facts: RequestFacts, config: GateConfig): GateResul
     return { ok: false, status: 403, reason: "not-allowed" };
   return { ok: true, login, name: decodeName(one(facts.headers[NAME_HEADER]), login) };
 }
+
+/** The Tailscale login a request names, as checkRequest reads it; undefined if none. */
+export const requestLogin = (headers: IncomingHttpHeaders) => one(headers[LOGIN_HEADER])?.trim();
 
 /** WebSocket upgrades and uploads also need the page's own origin (no cross-site requests). */
 export function checkOrigin(headers: IncomingHttpHeaders, config: GateConfig): boolean {
