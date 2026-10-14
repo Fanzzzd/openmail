@@ -44,7 +44,7 @@ export function makeAiMailbox(
   /** Pushes queued changes after a consent change; the live mailbox flushes later. */
   flushLater: Effect.Effect<unknown> = Effect.void,
   /** The time zone the assistant's prompt and the mail dates it reads use. */
-  host: Host = { timeZone: () => "UTC" },
+  host: Host = { timeZone: () => "UTC", os: "unknown", arch: "unknown" },
 ) {
   const requests = makeAiRequests(store, systemLocale);
   const { appLocale, cancel, check, input, cached, bounded, enabled } = requests;
@@ -607,13 +607,16 @@ export function makeLocalModelsMailbox(
   },
   models: ModelRuntime | undefined,
   mutate: <A, E>(effect: Effect.Effect<A, E>) => Effect.Effect<A, E>,
+  /** An Intel Mac: the models cannot load, so they stay off and the switch says why. */
+  unsupported = false,
 ) {
   return {
     indexingProgress: Effect.gen(function* () {
-      const enabled = yield* store.semantics.enabled;
+      const enabled = !unsupported && (yield* store.semantics.enabled);
       const counts = yield* store.semantics.counts;
       return {
         ...(yield* indexer.progress),
+        ...(unsupported ? { modelsSupported: false } : {}),
         modelsEnabled: enabled,
         models: enabled && models ? yield* models.status : { kind: "disabled" as const },
         semanticAvailable: store.semantics.vectors,
@@ -627,7 +630,7 @@ export function makeLocalModelsMailbox(
     setModelsEnabled: (enabled) =>
       mutate(
         store.semantics
-          .setEnabled(enabled)
+          .setEnabled(enabled && !unsupported)
           .pipe(Effect.tap(() => (!enabled && models ? models.stop() : Effect.void))),
       ),
 

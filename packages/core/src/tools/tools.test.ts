@@ -173,7 +173,7 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
       syncState: notUsed("syncState"),
     },
     app: {
-      host: { timeZone: () => "UTC" },
+      host: { timeZone: () => "UTC", os: "unknown", arch: "unknown" },
       diagnosticsState: notUsed("diagnosticsState"),
       checkUpdates: () => Effect.die("unused"),
       rememberNotificationActions: () => Effect.die("unused"),
@@ -1323,7 +1323,7 @@ it.effect(
         assert.strictEqual((yield* mailbox.proposals.proposals).length, 2);
       }),
       TestMailbox({ gmail: server }, undefined, undefined, Layer.empty, {
-        host: { timeZone: () => "Asia/Shanghai" },
+        host: { timeZone: () => "Asia/Shanghai", os: "unknown", arch: "unknown" },
       }),
     );
   },
@@ -1369,7 +1369,7 @@ it.effect("every time in a tool result is ISO 8601 local time with its offset", 
           assert.match(JSON.parse(value ?? "0"), iso);
     }),
     TestMailbox({ gmail: server }, undefined, undefined, Layer.empty, {
-      host: { timeZone: () => "Asia/Shanghai" },
+      host: { timeZone: () => "Asia/Shanghai", os: "unknown", arch: "unknown" },
     }),
   );
 });

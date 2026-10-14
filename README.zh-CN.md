@@ -35,7 +35,7 @@ OpenMail 处于早期测试阶段，还有不少粗糙的地方。遇到问题�
 
 - **账户。** Gmail、个人 Outlook（outlook.com、hotmail.com、live.com）、iCloud、Yahoo、QQ、163、Fastmail，以及任意 IMAP/SMTP 服务器。不支持工作或学校的 Microsoft 365 账户。
 - **本地优先。** 阅读、搜索和整理都可以离线进行。改动先排队，联网后再同步到服务器。
-- **本地搜索。** 全文检索（SQLite FTS5）支持布尔、短语、日期、大小和附件运算符，可以合并服务器结果。可选本机 OCR、PDF 文本和语义搜索。
+- **本地搜索。** 全文检索（SQLite FTS5）支持布尔、短语、日期、大小和附件运算符，可以合并服务器结果。可选本机 OCR、PDF 文本和语义搜索。语义搜索需要 Apple 芯片：ONNX Runtime 没有 Intel Mac 版本，所以 Intel Mac 上它保持关闭。
 - **键盘优先。** 三套快捷键（Mimestream、Gmail、Apple Mail），消息内链接提示，前进和后退，列表、阅读区、撰写窗口和设置都能用键盘操作。
 - **通过 Tailscale 在手机上访问。** 通过你自己的 tailnet 在手机浏览器里打开邮箱。默认关闭，不暴露到公网，只允许你指定的 Tailscale 登录账号。
 - **十种语言。** 英语、简体中文、捷克语、荷兰语、法语、德语、意大利语、日语、俄语和西班牙语。

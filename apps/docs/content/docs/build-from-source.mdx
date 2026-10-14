@@ -7,7 +7,7 @@ OpenMail has no published release yet. To use it, build it from the source on Gi
 
 ## Prerequisites
 
-- macOS 13 or later, on Apple silicon or Intel.
+- macOS 13 or later, on Apple silicon or Intel. Semantic search needs Apple silicon.
 - OpenMail needs Node 24, the version in `.nvmrc`. Node 22 prints a `node:sqlite` warning on every CLI call, and Node 25 and later no longer ship corepack.
 - pnpm through corepack. Run `corepack enable` once. The repository pins the pnpm version.
 - Xcode Command Line Tools: `xcode-select --install`. The build compiles the app's Swift helpers.
@@ -27,7 +27,7 @@ pnpm --filter @openmail/desktop dist
 
 ## Run the app
 
-1. Open `apps/desktop/release/OpenMail-<version>-mac-<arch>.dmg`. Use `arm64` on Apple silicon and `x64` on Intel.
+1. Open `apps/desktop/release/OpenMail-<version>-mac-<arch>.dmg`. Use `arm64` on Apple silicon and `x64` on Intel. The `x64` build has no semantic search, because ONNX Runtime 1.30.0 has no macOS x64 binding.
 2. Drag OpenMail to Applications.
 3. Open OpenMail. A build you make yourself opens normally, because only downloaded files carry the quarantine flag that Gatekeeper checks. Gatekeeper blocks a downloaded build that is not notarized on first open. Open it once, then go to **System Settings → Privacy & Security** and click **Open Anyway**.
 4. Add an account. A source build has no built-in Google or Microsoft sign-in client. Register your own as in [Using your own OAuth client](/docs/own-oauth-client). IMAP accounts need only an app password.

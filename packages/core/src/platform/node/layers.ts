@@ -1,6 +1,7 @@
 import { ModelAnthropic } from "../../ai/model.js";
 import type { NodeModelsOptions } from "./embeddings-node.js";
 import { makeNodeModels } from "./embeddings-node.js";
+import { PlatformHost, onDeviceModelsSupported } from "../host.js";
 import { dataDir } from "./paths.js";
 import { Config, Effect, Layer } from "effect";
 
@@ -45,9 +46,12 @@ export const NodeMailbox = (options: NodeMailboxOptions = {}): Layer.Layer<Mailb
   Layer.unwrap(
     Effect.gen(function* () {
       const directory = options.dataDir ?? (yield* dataDir);
-      const models =
-        options.models ??
-        (yield* makeNodeModels(directory, undefined, { launch: options.inferenceProcess }));
+      // An Intel Mac has no ONNX binding: build no model runtime, so nothing downloads or loads.
+      const supported = onDeviceModelsSupported(yield* PlatformHost);
+      const models = !supported
+        ? undefined
+        : (options.models ??
+          (yield* makeNodeModels(directory, undefined, { launch: options.inferenceProcess })));
       const media = options.media;
       return MailboxLive({
         ...options,
@@ -65,7 +69,7 @@ export const NodeMailbox = (options: NodeMailboxOptions = {}): Layer.Layer<Mailb
                     return media.vision.version;
                   },
                   recognize: (data) => media.vision.recognize(data),
-                  imageVectors: models.images,
+                  ...(models ? { imageVectors: models.images } : {}),
                 },
               },
             }

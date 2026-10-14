@@ -9,6 +9,7 @@ import {
   PlatformHost,
 } from "@openmail/core/portable";
 import { Layer } from "effect";
+import { Platform } from "react-native";
 import { attachmentFilesLayer } from "./attachment-cache";
 import { FetchHttpClient } from "effect/http";
 import { configLayer, readMobileConfig } from "./config";
@@ -43,9 +44,11 @@ export function mobileMailboxLayer(inspection?: MobileDatabaseState) {
   ).pipe(Layer.provide(platform));
 }
 
-/** The device time zone from Hermes Intl, read on each call. */
+/** The device time zone from Hermes Intl, read on each call. Mobile runs no on-device models. */
 const hostLayer = Layer.succeed(PlatformHost, {
   timeZone: () => Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+  os: Platform.OS,
+  arch: "unknown",
 });
 
 const readerCapabilitiesLayer = Layer.mergeAll(

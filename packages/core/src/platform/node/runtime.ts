@@ -32,9 +32,11 @@ export const NodeRuntime = Layer.mergeAll(
   Layer.succeed(PdfWorker, { extract: pdfText }),
   Layer.succeed(AppVerifier, { verify: isSignedMacApp }),
 );
-/** The OS time zone from Intl, read on each call. */
+/** The OS time zone from Intl, read on each call, and the platform and architecture of this Node. */
 export const NodeHost = Layer.succeed(PlatformHost, {
   timeZone: () => Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+  os: process.platform,
+  arch: process.arch,
 });
 export const NodePaths = Layer.effect(
   AppPaths,

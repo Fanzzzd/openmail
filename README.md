@@ -35,7 +35,7 @@ See [CLI and MCP](https://openmail-docs.vercel.app/docs/cli-and-mcp) for the too
 
 - **Accounts.** Gmail, personal Outlook (outlook.com, hotmail.com, live.com), iCloud, Yahoo, QQ, 163, Fastmail and any IMAP/SMTP server. Work and school Microsoft 365 accounts are not supported.
 - **Local-first.** Reading, searching and organizing work offline. Changes queue up and reach the server when you are back online.
-- **Local search.** Full-text search (SQLite FTS5) with boolean, phrase, date, size and attachment operators, optionally merged with server results. Optional on-device OCR, PDF text and semantic search.
+- **Local search.** Full-text search (SQLite FTS5) with boolean, phrase, date, size and attachment operators, optionally merged with server results. Optional on-device OCR, PDF text and semantic search. Semantic search needs Apple silicon; on Intel Macs it stays off, because ONNX Runtime ships no Intel Mac build.
 - **Keyboard-first.** Three shortcut sets (Mimestream, Gmail, Apple Mail), link hints in messages, Back and Forward, and keyboard navigation through the list, reader, composer and settings.
 - **Phone access over Tailscale.** Open your mailbox in a phone browser through your own tailnet. Off by default, never on the public internet, limited to the Tailscale logins you allow.
 - **Ten languages.** English, Simplified Chinese, Czech, Dutch, French, German, Italian, Japanese, Russian and Spanish.

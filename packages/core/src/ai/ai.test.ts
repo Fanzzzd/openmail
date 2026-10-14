@@ -509,7 +509,7 @@ it.effect("the assistant knows the local time and zone, and reads mail dates in 
   }).pipe(
     Effect.provide(
       TestMailbox({ gmail: server }, { backgroundFlush: false }, {}, fake, {
-        host: { timeZone: () => "Asia/Shanghai" },
+        host: { timeZone: () => "Asia/Shanghai", os: "unknown", arch: "unknown" },
       }),
     ),
   );

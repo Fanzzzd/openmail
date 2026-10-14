@@ -7,12 +7,24 @@ export interface Host {
    * can change the zone or travel while the app runs.
    */
   readonly timeZone: () => string;
+  /** The OS as Node names it ("darwin", "linux", "win32"), or "ios", "android", "unknown". */
+  readonly os: string;
+  /** The CPU architecture of the running build ("arm64", "x64"), or "unknown". */
+  readonly arch: string;
 }
 
 /** Defaults to UTC, so tests and platforms without a host Layer stay deterministic. */
 export const PlatformHost = Context.Reference<Host>("openmail/PlatformHost", {
-  defaultValue: () => ({ timeZone: () => "UTC" }),
+  defaultValue: () => ({ timeZone: () => "UTC", os: "unknown", arch: "unknown" }),
 });
+
+/**
+ * Whether on-device models (semantic search, image vectors) can load here. ONNX Runtime 1.30.0
+ * ships no macOS x64 binding (docs/release.md), so an Intel Mac, or an x64 build under
+ * Rosetta, never downloads the models or starts the inference process.
+ */
+export const onDeviceModelsSupported = (host: Host): boolean =>
+  !(host.os === "darwin" && host.arch !== "arm64");
 
 const zoned = (ms: number, timeZone: string) => {
   try {

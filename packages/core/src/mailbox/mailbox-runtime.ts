@@ -45,7 +45,13 @@ export interface MailboxOptions {
   /** Desktop only. Independent inbox cursors leave full sync checkpoints untouched. */
   inboxPoll?: Duration.Input;
   pollOnBattery?: () => boolean;
+  /** On-device models. MailboxLive drops them where onDeviceModelsSupported is false. */
   models?: ModelRuntime;
+  /**
+   * Set by MailboxLive, not by callers: this machine cannot run on-device models (an Intel
+   * Mac), so semantic search and the model download stay off.
+   */
+  modelsUnsupported?: boolean;
   /**
    * Desktop reports foreground or AC power. Automatic triage and automatic summaries run only
    * while it is true; absent means neither runs.

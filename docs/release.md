@@ -145,7 +145,7 @@ A daily pass uses the date index to check only message text that may have expire
 
 ## Semantic search on Intel
 
-This release keeps ONNX Runtime 1.30.0 on the main line. Its npm package has no macOS x64 binding, and its postinstall does not download one; [upstream has an open issue](https://github.com/microsoft/onnxruntime/issues/27961). In the x64 build, mail, contacts, calendar and the universal Vision helper work. Loading the semantic model has to wait until upstream ships the binding or someone supplies a build of the same version. No native binding from another version is mixed in, and the main-line runtime is not downgraded.
+This release keeps ONNX Runtime 1.30.0 on the main line. Its npm package has no macOS x64 binding, and its postinstall does not download one; [upstream has an open issue](https://github.com/microsoft/onnxruntime/issues/27961). In the x64 build, mail, contacts, calendar and the universal Vision helper work. Loading the semantic model has to wait until upstream ships the binding or someone supplies a build of the same version. Until then core gates it: `onDeviceModelsSupported` in `platform/host.ts` reads the OS and architecture from `PlatformHost`, so on macOS x64 `NodeMailbox` builds no model runtime, nothing downloads the 226 MB of models or loads the binding, and Settings shows the model switch off with one line saying semantic search needs Apple silicon. No native binding from another version is mixed in, and the main-line runtime is not downgraded.
 
 ## Past verification (release slice)
 

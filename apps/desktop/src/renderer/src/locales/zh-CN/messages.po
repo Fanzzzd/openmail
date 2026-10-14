@@ -6222,6 +6222,10 @@ msgstr "语义搜索暂不可用，仍可全文搜索。"
 msgid "Semantic search isn't available right now. Try again later."
 msgstr "语义搜索暂时不可用。请稍后再试。"
 
+#: src/renderer/src/features/settings/sections/IndexingSettings.tsx
+msgid "Semantic search needs a Mac with Apple silicon. Full-text search still works."
+msgstr "语义搜索需要搭载 Apple 芯片的 Mac。全文搜索仍可使用。"
+
 #: src/renderer/src/app/use-compose-delivery.ts
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/settings/sections/audit-actions.ts

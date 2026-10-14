@@ -6212,6 +6212,10 @@ msgstr "La búsqueda semántica no está disponible. La búsqueda de texto compl
 msgid "Semantic search isn't available right now. Try again later."
 msgstr "La búsqueda semántica no está disponible en este momento. Vuelve a intentarlo más tarde."
 
+#: src/renderer/src/features/settings/sections/IndexingSettings.tsx
+msgid "Semantic search needs a Mac with Apple silicon. Full-text search still works."
+msgstr "La búsqueda semántica necesita un Mac con chip de Apple. La búsqueda de texto completo sigue funcionando."
+
 #: src/renderer/src/app/use-compose-delivery.ts
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/settings/sections/audit-actions.ts

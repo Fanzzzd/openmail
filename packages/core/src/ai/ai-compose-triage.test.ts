@@ -238,7 +238,7 @@ it.effect(
       () => eligible,
       undefined,
       // UTC-8 at the epoch: TestClock's 1970-01-01T00:00Z is still 1969-12-31 there.
-      { timeZone: () => "America/Los_Angeles" },
+      { timeZone: () => "America/Los_Angeles", os: "unknown", arch: "unknown" },
     );
     return Effect.gen(function* () {
       const { m, store, ai } = yield* f.setup;

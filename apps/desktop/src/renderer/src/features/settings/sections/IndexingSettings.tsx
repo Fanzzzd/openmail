@@ -16,6 +16,8 @@ export function IndexingSettings() {
   const pause = useAtomSet(pauseAtom);
   const models = useAtomSet(modelsAtom);
   if (!progress) return null;
+  // ONNX Runtime has no Intel Mac binding, so core never loads the models there.
+  const unsupported = progress.modelsSupported === false;
   const done = i18n.number(progress.done),
     queued = i18n.number(progress.queued),
     running = i18n.number(progress.running),
@@ -30,14 +32,21 @@ export function IndexingSettings() {
       <SettingsRow
         label={<Trans>Download on-device models, ~226 MB</Trans>}
         hint={
-          <Trans>
-            Images and PDF text are processed on this device. No content is sent to a cloud model.
-          </Trans>
+          unsupported ? (
+            <Trans>
+              Semantic search needs a Mac with Apple silicon. Full-text search still works.
+            </Trans>
+          ) : (
+            <Trans>
+              Images and PDF text are processed on this device. No content is sent to a cloud model.
+            </Trans>
+          )
         }
       >
         <Switch.Root
           className={switchTrack}
-          checked={progress.modelsEnabled ?? false}
+          disabled={unsupported}
+          checked={!unsupported && (progress.modelsEnabled ?? false)}
           aria-label={t`Download on-device models, ~226 MB`}
           onCheckedChange={(enabled) =>
             models({ payload: { enabled }, reactivityKeys: ["indexing"] })

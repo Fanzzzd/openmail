@@ -6212,6 +6212,10 @@ msgstr "Semantisch zoeken is niet beschikbaar. Zoeken in volledige tekst blijft 
 msgid "Semantic search isn't available right now. Try again later."
 msgstr "Semantisch zoeken is nu niet beschikbaar. Probeer het later opnieuw."
 
+#: src/renderer/src/features/settings/sections/IndexingSettings.tsx
+msgid "Semantic search needs a Mac with Apple silicon. Full-text search still works."
+msgstr "Semantisch zoeken heeft een Mac met Apple silicon nodig. Zoeken in volledige tekst werkt nog steeds."
+
 #: src/renderer/src/app/use-compose-delivery.ts
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/settings/sections/audit-actions.ts

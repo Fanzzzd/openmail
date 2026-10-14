@@ -6212,6 +6212,10 @@ msgstr "Sémantické vyhledávání není k dispozici. K dispozici zůstává fu
 msgid "Semantic search isn't available right now. Try again later."
 msgstr "Sémantické vyhledávání teď není k dispozici. Zkuste to znovu později."
 
+#: src/renderer/src/features/settings/sections/IndexingSettings.tsx
+msgid "Semantic search needs a Mac with Apple silicon. Full-text search still works."
+msgstr "Sémantické vyhledávání vyžaduje Mac s čipem Apple. Fulltextové vyhledávání funguje dál."
+
 #: src/renderer/src/app/use-compose-delivery.ts
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/settings/sections/audit-actions.ts

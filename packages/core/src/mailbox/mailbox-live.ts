@@ -59,11 +59,11 @@ import { AppConfig, OAuthIssuers, Secrets } from "../platform/auth.js";
 import { Providers } from "../providers/adapter.js";
 import { Store } from "../store/service.js";
 import { UnsubscribeNetwork } from "./unsubscribe.js";
-import { PlatformHost } from "../platform/host.js";
+import { PlatformHost, onDeviceModelsSupported } from "../platform/host.js";
 
 export type { MailboxOptions } from "./mailbox-runtime.js";
 export const MailboxLive = (
-  options: MailboxOptions = {},
+  requested: MailboxOptions = {},
 ): Layer.Layer<
   Mailbox,
   never,
@@ -99,6 +99,10 @@ export const MailboxLive = (
       const verifier = yield* AppVerifier;
 
       const host = yield* PlatformHost;
+      // No code path may download the models or load the ONNX binding where it cannot run.
+      const options: MailboxOptions = onDeviceModelsSupported(host)
+        ? requested
+        : { ...requested, models: undefined, modelsUnsupported: true };
 
       const parseRawDraft = (...args: Parameters<typeof unboundParseRawDraft>) =>
         unboundParseRawDraft(...args).pipe(Effect.provideService(MailCodec, codec));
@@ -533,7 +537,13 @@ export const MailboxLive = (
         ai: {
           ...aiMembers,
           ...readingMailbox.ai,
-          ...makeLocalModelsMailbox(store, indexer, options.models, mutate),
+          ...makeLocalModelsMailbox(
+            store,
+            indexer,
+            options.models,
+            mutate,
+            options.modelsUnsupported === true,
+          ),
         },
         sync: { ...syncMailbox.members, ...cacheMembers, ...storageMembers },
         calendar: { ...calendarFeatures, ...applyMailbox.calendar },

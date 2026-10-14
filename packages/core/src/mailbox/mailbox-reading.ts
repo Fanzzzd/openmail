@@ -254,6 +254,11 @@ export const makeReadingMailbox = (
               message: "This account is outside the selected accounts.",
             });
           const models = options.models;
+          if (options.modelsUnsupported)
+            return yield* new IndexNotReady({
+              message:
+                "Semantic search needs a Mac with Apple silicon. On this Mac the on-device model cannot run; keyword search works.",
+            });
           if (
             !models ||
             !store.semantics.vectors ||

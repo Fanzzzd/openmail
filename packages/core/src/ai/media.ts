@@ -72,6 +72,8 @@ export const IndexingProgress = Schema.Struct({
   done: Schema.Number,
   failed: Schema.Number,
   pipelineVersion: Schema.String,
+  /** False where on-device models cannot run (an Intel Mac); absent where they can. */
+  modelsSupported: Schema.optionalKey(Schema.Boolean),
   modelsEnabled: Schema.optionalKey(Schema.Boolean),
   models: Schema.optionalKey(ModelsStatus),
   semanticAvailable: Schema.optionalKey(Schema.Boolean),
