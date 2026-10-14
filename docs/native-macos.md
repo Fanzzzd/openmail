@@ -68,4 +68,4 @@ AppKit 的 [`QLPreviewView`](https://developer.apple.com/documentation/quicklook
 - macOS 共享菜单（`ShareMenu`），由系统服务提供。
 - Writing Tools、AutoFill 和 Services 的原生菜单，原因见上文 I02–I05。
 - 回退对话框（`native-fallback.ts`）。退出确认和手动检查更新的结果先交给窗口的 React，renderer 绘制后回报 shown；没有窗口订阅或 10 秒内没有回报时，主进程撤回 React 提示，改用原生对话框。提示显示后窗口关闭、重载或 renderer 崩溃，按取消处理，退出不会卡住。崩溃和数据库恢复先打开独立的 React 恢复窗口（`renderer/recovery.html`，同样的 sandbox 和 CSP），4 秒内没有绘制、加载失败或渲染进程退出时，改用原生对话框。恢复流程必须在 renderer 坏掉时也能完成。
-- 启动失败时的 `dialog.showErrorBox`（`index.ts`）。此时还没有窗口，进程随后退出。
+- 启动失败时的 `dialog.showErrorBox`（`main.ts`）。此时还没有窗口，进程随后退出。

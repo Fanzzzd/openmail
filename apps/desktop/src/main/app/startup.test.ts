@@ -95,7 +95,7 @@ vi.mock("../system/system", () => ({
 vi.mock("../windows/windows", () => ({ focusMainWindow: native.focus }));
 
 const originalResourcesPath = Object.getOwnPropertyDescriptor(process, "resourcesPath");
-// index.ts installs process-wide handlers once; each test removes the ones it added.
+// main.ts installs process-wide handlers once; each test removes the ones it added.
 const keptExceptions = process.listeners("uncaughtException");
 const keptRejections = process.listeners("unhandledRejection");
 afterEach(() => {
@@ -132,7 +132,7 @@ beforeEach(async () => {
 // The first test pays the cold transform of the main entry. That takes over 5 s
 // when `pnpm test` runs the core suite on the same cores.
 it("any already-created window can release startup after the first window closes", async () => {
-  await import("../index");
+  await import("../main");
   const { app } = await import("electron");
   await vi.waitFor(() => expect(native.nodeMailbox).toHaveBeenCalled(), waitLimit);
   const first = new EventEmitter();
@@ -150,7 +150,7 @@ it("any already-created window can release startup after the first window closes
 }, 30_000);
 it("the second process exits before building core or opening any data", async () => {
   native.primary = false;
-  await import("../index");
+  await import("../main");
   expect(native.exit).toHaveBeenCalledWith(0);
   expect(native.nodeMailbox).not.toHaveBeenCalled();
   expect(native.vision).not.toHaveBeenCalled();
@@ -158,14 +158,14 @@ it("the second process exits before building core or opening any data", async ()
 });
 it("a failed attachment temp sweep still runs the print temp sweep", async () => {
   native.cleanup.mockRejectedValue(new Error("attachment sweep failed"));
-  await import("../index");
+  await import("../main");
   await vi.waitFor(
     () => expect(native.printCleanup).toHaveBeenCalledWith("/tmp/openmail-test-temp"),
     waitLimit,
   );
 });
 it("handles open-url and forwarded second-instance URLs and enables desktop-only polling", async () => {
-  await import("../index");
+  await import("../main");
   const { app } = await import("electron");
   const preventDefault = vi.fn();
   app.emit("open-url", { preventDefault }, "mailto:to@example.com?subject=hello");
@@ -207,7 +207,7 @@ it("development builds in different worktrees do not request the shared packaged
   const { app } = await import("electron");
   Object.defineProperty(app, "isPackaged", { configurable: true, value: false });
   native.primary = false;
-  await import("../index");
+  await import("../main");
   await vi.waitFor(() => expect(native.nodeMailbox).toHaveBeenCalled(), waitLimit);
   expect(native.exit).not.toHaveBeenCalled();
   app.emit("will-quit", { preventDefault: vi.fn() });
@@ -220,7 +220,7 @@ it("startup defects remain visible on stderr while the file log receives only a 
   const stderr = vi.spyOn(console, "error").mockImplementation(() => {
     /* Capture console output in this regression. */
   });
-  await import("../index");
+  await import("../main");
   await vi.waitFor(() => expect(native.exit).toHaveBeenCalledWith(1), waitLimit);
   expect(stderr).toHaveBeenCalledWith(expect.stringContaining("startup regression failure"));
   expect(native.localLog).toHaveBeenCalledWith("startup-failed");
@@ -233,7 +233,7 @@ it("a database from a newer OpenMail explains itself in a native dialog before e
   const { DatabaseTooNewError } = await import("@openmail/core");
   native.failStart = true;
   native.startError = new DatabaseTooNewError(1000);
-  await import("../index");
+  await import("../main");
   await vi.waitFor(() => expect(native.exit).toHaveBeenCalledWith(1), waitLimit);
   expect(native.showErrorBox).toHaveBeenCalledWith(
     "This library was opened by a newer OpenMail",
@@ -247,7 +247,7 @@ it("the main process handles uncaught exceptions and unhandled rejections", asyn
   Reflect.deleteProperty(process, handled);
   const before = process.listenerCount("uncaughtException");
   const rejections = process.listenerCount("unhandledRejection");
-  await import("../index");
+  await import("../main");
   expect(process.listenerCount("uncaughtException")).toBe(before + 1);
   expect(process.listenerCount("unhandledRejection")).toBe(rejections + 1);
   vi.spyOn(process.stderr, "write").mockImplementation(() => true);
@@ -262,7 +262,7 @@ it("the diagnostics logger replaces the raw Effect logger", async () => {
   const existing = vi.spyOn(Logger.defaultLogger, "log").mockImplementation(() => {
     /* Capture console output in this regression. */
   });
-  await import("../index");
+  await import("../main");
   await vi.waitFor(() => expect(native.nodeMailbox).toHaveBeenCalled(), waitLimit);
   expect(existing).not.toHaveBeenCalled();
   expect(native.diagnosticLog).toHaveBeenCalled();
