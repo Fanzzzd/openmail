@@ -1112,6 +1112,11 @@ msgstr "引用文の下"
 msgid "Blocked before loading:"
 msgstr "読み込み前にブロック："
 
+#: src/renderer/src/features/organize/label-colors.ts
+msgctxt "label color"
+msgid "Blue"
+msgstr "青"
+
 #. Cached texts of email messages, never anatomical bodies, then the size of cached attachments.
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgctxt "cached message text"
@@ -1622,7 +1627,11 @@ msgstr "メッセージを折りたたむ"
 
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
+msgid "Color"
+msgstr "色"
+
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
+msgctxt "label settings column"
 msgid "Color"
 msgstr "色"
 
@@ -2244,6 +2253,12 @@ msgid "Cursor age: {age}. Pending operations: {0}."
 msgstr "カーソルの経過時間：{age}。保留中の操作：{0}。"
 
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
+msgid "Custom color"
+msgstr "カスタムカラー"
+
+#. A label color that is not close to any named color.
+#: src/renderer/src/features/organize/label-colors.ts
+msgctxt "label color"
 msgid "Custom color"
 msgstr "カスタムカラー"
 
@@ -3245,6 +3260,16 @@ msgstr "Google が 7 日後に OpenMail のサインインを終了しました�
 msgid "Google shows a warning that it hasn't verified OpenMail yet. Choose Advanced, then continue to OpenMail."
 msgstr "Google は OpenMail をまだ確認していないという警告を表示します。「詳細」を選び、OpenMail に進んでください。"
 
+#: src/renderer/src/features/organize/label-colors.ts
+msgctxt "label color"
+msgid "Gray"
+msgstr "グレー"
+
+#: src/renderer/src/features/organize/label-colors.ts
+msgctxt "label color"
+msgid "Green"
+msgstr "緑"
+
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
 msgid "Group accounts into spaces and switch between them at the bottom of the sidebar."
 msgstr "アカウントをスペースにまとめ、サイドバーの下部でスペースを切り替えます。"
@@ -3447,6 +3472,16 @@ msgstr "添付ファイル {attachmentName} 内："
 msgid "In Inbox"
 msgstr "受信内"
 
+#: src/renderer/src/features/organize/OrganizationSettings.tsx
+msgctxt "label settings column"
+msgid "In message list"
+msgstr "メッセージリスト"
+
+#: src/renderer/src/features/organize/OrganizationSettings.tsx
+msgctxt "label settings column"
+msgid "In sidebar"
+msgstr "サイドバー"
+
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "In sync"
 msgstr "同期済み"
@@ -3635,10 +3670,6 @@ msgstr "ラベル"
 #: src/renderer/src/app/use-app-messages.ts
 msgid "Label added"
 msgstr "ラベルを追加しました"
-
-#: src/renderer/src/features/organize/OrganizationSettings.tsx
-msgid "Label list visibility"
-msgstr "ラベルリストの可視性"
 
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
@@ -4084,10 +4115,6 @@ msgstr "メッセージリンクがコピーされました"
 msgid "Message list density"
 msgstr "メッセージリストの密度"
 
-#: src/renderer/src/features/organize/OrganizationSettings.tsx
-msgid "Message list visibility"
-msgstr "メッセージリストの可視性"
-
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Message order in a conversation"
 msgstr "スレッド内のメッセージの順序"
@@ -4440,6 +4467,11 @@ msgstr "「{elsewhere}」から移動"
 
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
+msgid "Name"
+msgstr "名前"
+
+#: src/renderer/src/features/organize/OrganizationSettings.tsx
+msgctxt "label settings column"
 msgid "Name"
 msgstr "名前"
 
@@ -5105,6 +5137,11 @@ msgstr "検索演算子"
 msgid "Optional services"
 msgstr "オプションサービス"
 
+#: src/renderer/src/features/organize/label-colors.ts
+msgctxt "label color"
+msgid "Orange"
+msgstr "オレンジ"
+
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Order"
 msgstr "順序"
@@ -5323,6 +5360,11 @@ msgstr "個人"
 msgid "Photos"
 msgstr "写真"
 
+#: src/renderer/src/features/organize/label-colors.ts
+msgctxt "label color"
+msgid "Pink"
+msgstr "ピンク"
+
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
 msgid "Plain text"
 msgstr "標準テキスト"
@@ -5442,6 +5484,11 @@ msgstr "プロモーション"
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Publish OpenMail as a Tailscale Service, such as svc:openmail, with its own name instead of port 8443 on this Mac. Define the service in the Tailscale admin console and approve this Mac as its host first. Leave empty to use this Mac's name."
 msgstr "OpenMail を svc:openmail のような Tailscale Service として、この Mac のポート 8443 の代わりに独自の名前で公開します。先に Tailscale 管理コンソールでサービスを定義し、この Mac をホストとして承認してください。この Mac の名前を使う場合は空欄のままにします。"
+
+#: src/renderer/src/features/organize/label-colors.ts
+msgctxt "label color"
+msgid "Purple"
+msgstr "紫"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
@@ -5582,6 +5629,11 @@ msgstr "復旧用コピー"
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Recurring meeting"
 msgstr "定期的な会議"
+
+#: src/renderer/src/features/organize/label-colors.ts
+msgctxt "label color"
+msgid "Red"
+msgstr "赤"
 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Redacted report"
@@ -7051,6 +7103,11 @@ msgstr "Tailscale が、アクセスしてきた人を OpenMail に知らせま�
 msgid "Target language"
 msgstr "翻訳先の言語"
 
+#: src/renderer/src/features/organize/label-colors.ts
+msgctxt "label color"
+msgid "Teal"
+msgstr "ティール"
+
 #: src/renderer/src/features/compose/components/TemplatePicker.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Template name"
@@ -8113,6 +8170,11 @@ msgstr "毎年、日付指定"
 #: src/renderer/src/features/calendar/EventRecurrenceEditor.tsx
 msgid "Yearly by weekday"
 msgstr "毎年、曜日指定"
+
+#: src/renderer/src/features/organize/label-colors.ts
+msgctxt "label color"
+msgid "Yellow"
+msgstr "黄"
 
 #: src/renderer/src/features/search/SearchField.tsx
 #: src/renderer/src/lib/format.ts

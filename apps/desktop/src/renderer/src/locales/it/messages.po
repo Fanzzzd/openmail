@@ -1112,6 +1112,11 @@ msgstr "Sotto il testo citato"
 msgid "Blocked before loading:"
 msgstr "Bloccato prima del caricamento:"
 
+#: src/renderer/src/features/organize/label-colors.ts
+msgctxt "label color"
+msgid "Blue"
+msgstr "Blu"
+
 #. Cached texts of email messages, never anatomical bodies, then the size of cached attachments.
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgctxt "cached message text"
@@ -1622,7 +1627,11 @@ msgstr "Comprimi messaggio"
 
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
+msgid "Color"
+msgstr "Colore"
+
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
+msgctxt "label settings column"
 msgid "Color"
 msgstr "Colore"
 
@@ -2244,6 +2253,12 @@ msgid "Cursor age: {age}. Pending operations: {0}."
 msgstr "Età del cursore: {age}. Operazioni in attesa: {0}."
 
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
+msgid "Custom color"
+msgstr "Colore personalizzato"
+
+#. A label color that is not close to any named color.
+#: src/renderer/src/features/organize/label-colors.ts
+msgctxt "label color"
 msgid "Custom color"
 msgstr "Colore personalizzato"
 
@@ -3245,6 +3260,16 @@ msgstr "Google ha terminato l’accesso a OpenMail dopo 7 giorni. Accedi di nuov
 msgid "Google shows a warning that it hasn't verified OpenMail yet. Choose Advanced, then continue to OpenMail."
 msgstr "Google mostra un avviso perché non ha ancora verificato OpenMail. Scegli “Avanzate”, poi continua su OpenMail."
 
+#: src/renderer/src/features/organize/label-colors.ts
+msgctxt "label color"
+msgid "Gray"
+msgstr "Grigio"
+
+#: src/renderer/src/features/organize/label-colors.ts
+msgctxt "label color"
+msgid "Green"
+msgstr "Verde"
+
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
 msgid "Group accounts into spaces and switch between them at the bottom of the sidebar."
 msgstr "Raggruppa gli account in spazi e passa dall’uno all’altro in fondo alla barra laterale."
@@ -3447,6 +3472,16 @@ msgstr "Nell’allegato {attachmentName}:"
 msgid "In Inbox"
 msgstr "Nella posta in arrivo"
 
+#: src/renderer/src/features/organize/OrganizationSettings.tsx
+msgctxt "label settings column"
+msgid "In message list"
+msgstr "Nell’elenco dei messaggi"
+
+#: src/renderer/src/features/organize/OrganizationSettings.tsx
+msgctxt "label settings column"
+msgid "In sidebar"
+msgstr "Nella barra laterale"
+
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "In sync"
 msgstr "Sincronizzato"
@@ -3635,10 +3670,6 @@ msgstr "Etichetta"
 #: src/renderer/src/app/use-app-messages.ts
 msgid "Label added"
 msgstr "Etichetta aggiunta"
-
-#: src/renderer/src/features/organize/OrganizationSettings.tsx
-msgid "Label list visibility"
-msgstr "Visibilità dell’elenco delle etichette"
 
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
@@ -4084,10 +4115,6 @@ msgstr "Link al messaggio copiato"
 msgid "Message list density"
 msgstr "Densità dell’elenco dei messaggi"
 
-#: src/renderer/src/features/organize/OrganizationSettings.tsx
-msgid "Message list visibility"
-msgstr "Visibilità dell’elenco dei messaggi"
-
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Message order in a conversation"
 msgstr "Ordine dei messaggi in una conversazione"
@@ -4440,6 +4467,11 @@ msgstr "Sposta da “{elsewhere}”"
 
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
+msgid "Name"
+msgstr "Nome"
+
+#: src/renderer/src/features/organize/OrganizationSettings.tsx
+msgctxt "label settings column"
 msgid "Name"
 msgstr "Nome"
 
@@ -5105,6 +5137,11 @@ msgstr "Operatori"
 msgid "Optional services"
 msgstr "Servizi facoltativi"
 
+#: src/renderer/src/features/organize/label-colors.ts
+msgctxt "label color"
+msgid "Orange"
+msgstr "Arancione"
+
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Order"
 msgstr "Ordine"
@@ -5323,6 +5360,11 @@ msgstr "Personale"
 msgid "Photos"
 msgstr "Foto"
 
+#: src/renderer/src/features/organize/label-colors.ts
+msgctxt "label color"
+msgid "Pink"
+msgstr "Rosa"
+
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
 msgid "Plain text"
 msgstr "Testo semplice"
@@ -5442,6 +5484,11 @@ msgstr "Promozioni"
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Publish OpenMail as a Tailscale Service, such as svc:openmail, with its own name instead of port 8443 on this Mac. Define the service in the Tailscale admin console and approve this Mac as its host first. Leave empty to use this Mac's name."
 msgstr "Pubblica OpenMail come Tailscale Service, ad esempio svc:openmail, con un nome proprio invece della porta 8443 di questo Mac. Prima definisci il servizio nella console di amministrazione di Tailscale e approva questo Mac come host. Lascia vuoto per usare il nome di questo Mac."
+
+#: src/renderer/src/features/organize/label-colors.ts
+msgctxt "label color"
+msgid "Purple"
+msgstr "Viola"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
@@ -5582,6 +5629,11 @@ msgstr "Copie di ripristino"
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Recurring meeting"
 msgstr "Incontro ricorrente"
+
+#: src/renderer/src/features/organize/label-colors.ts
+msgctxt "label color"
+msgid "Red"
+msgstr "Rosso"
 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Redacted report"
@@ -7051,6 +7103,11 @@ msgstr "Tailscale comunica a OpenMail chi si collega. Entrano solo questi login 
 msgid "Target language"
 msgstr "Lingua di destinazione"
 
+#: src/renderer/src/features/organize/label-colors.ts
+msgctxt "label color"
+msgid "Teal"
+msgstr "Verde acqua"
+
 #: src/renderer/src/features/compose/components/TemplatePicker.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Template name"
@@ -8113,6 +8170,11 @@ msgstr "Ogni anno per data"
 #: src/renderer/src/features/calendar/EventRecurrenceEditor.tsx
 msgid "Yearly by weekday"
 msgstr "Ogni anno per giorno della settimana"
+
+#: src/renderer/src/features/organize/label-colors.ts
+msgctxt "label color"
+msgid "Yellow"
+msgstr "Giallo"
 
 #: src/renderer/src/features/search/SearchField.tsx
 #: src/renderer/src/lib/format.ts

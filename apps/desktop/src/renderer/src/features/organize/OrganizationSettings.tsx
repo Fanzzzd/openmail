@@ -17,6 +17,7 @@ import { labelsAtom, labelPreferencesAtom, organizationAtom } from "../../state/
 import { Alert, AlertCancel, alertDanger, Dialog } from "../../ui/Dialog";
 import { Checkbox } from "../../ui/Checkbox";
 import { Select } from "../../ui/Select";
+import { LABEL_COLORS, labelColorName } from "./label-colors";
 
 import { SettingsCheckRow, SettingsGroup, SettingsRow } from "../../ui/SettingsRows";
 import {
@@ -31,6 +32,23 @@ import {
 /** A text action in a label row. Callers add the color. */
 const rowAction =
   "shrink-0 rounded-item font-medium outline-offset-1 outline-a11y-focus hover:underline focus-visible:outline-2";
+/**
+ * Label rows share columns with the header row above them: name, the two visibility choices (one
+ * checkbox for local folders), favorite, color and the row actions. A narrow sheet wraps instead.
+ */
+const labelColumns = (serverStyle: boolean) =>
+  serverStyle
+    ? "sm:grid-cols-[minmax(6rem,1fr)_auto_auto_auto_auto_auto]"
+    : "sm:grid-cols-[minmax(6rem,1fr)_auto_auto_auto_auto]";
+const labelRow =
+  "flex min-h-10 flex-wrap items-center gap-x-3 gap-y-1 px-3 py-1.5 sm:col-span-full sm:grid sm:grid-cols-subgrid";
+const swatch = (color: string | null) => (
+  <span
+    aria-hidden
+    className={`size-3 shrink-0 rounded-full ${color ? "" : "ring-1 ring-control ring-inset"}`}
+    style={color ? { backgroundColor: color } : undefined}
+  />
+);
 /** A field's label, above the field. */
 const fieldLabel = "mb-1 block text-footnote font-medium text-a11y-muted";
 
@@ -139,7 +157,25 @@ export function OrganizationSettings({ accounts }: { accounts: readonly Account[
         </SettingsGroup>
       )}
       <div>
-        <ul className={`empty:hidden ${settingsGroup}`}>
+        <ul
+          className={`empty:hidden sm:grid ${labelColumns(caps?.serverLabelStyle === true)} ${settingsGroup}`}
+        >
+          {labels.length > 0 && (
+            // Column headings for sighted readers; each control's accessible name says the same.
+            <li
+              aria-hidden
+              className={`${labelRow} min-h-0 py-1 text-footnote font-medium text-a11y-muted max-sm:hidden`}
+            >
+              <span>{t({ message: "Name", context: "label settings column" })}</span>
+              <span>{t({ message: "In sidebar", context: "label settings column" })}</span>
+              {caps?.serverLabelStyle && (
+                <span>{t({ message: "In message list", context: "label settings column" })}</span>
+              )}
+              <span />
+              <span>{t({ message: "Color", context: "label settings column" })}</span>
+              <span />
+            </li>
+          )}
           {labels.map((label) => {
             const pref = prefs.find((p) => p.accountId === accountId && p.id === label.id) ?? {
               accountId,
@@ -148,16 +184,14 @@ export function OrganizationSettings({ accounts }: { accounts: readonly Account[
               favorite: false,
               color: null,
             };
+            const current = (pref.color ?? label.color ?? "none").toLowerCase();
             return (
-              <li
-                key={label.id}
-                className="flex min-h-10 flex-wrap items-center gap-x-3 gap-y-1 px-3 py-1.5"
-              >
+              <li key={label.id} className={labelRow}>
                 <span className="min-w-0 flex-1 truncate">{label.name}</span>
                 {caps?.serverLabelStyle ? (
                   <>
                     <Select
-                      aria-label={t`Label list visibility`}
+                      aria-label={t({ message: "In sidebar", context: "label settings column" })}
                       value={label.labelListVisibility ?? "labelShow"}
                       options={[
                         { value: "labelShow", label: t`Show` },
@@ -174,7 +208,10 @@ export function OrganizationSettings({ accounts }: { accounts: readonly Account[
                       }}
                     />
                     <Select
-                      aria-label={t`Message list visibility`}
+                      aria-label={t({
+                        message: "In message list",
+                        context: "label settings column",
+                      })}
                       value={label.messageListVisibility ?? "show"}
                       options={[
                         { value: "show", label: t`Show` },
@@ -217,17 +254,25 @@ export function OrganizationSettings({ accounts }: { accounts: readonly Account[
                   <span>{t`Favorite`}</span>
                 </label>
                 <Select
-                  aria-label={t`Color`}
-                  value={pref.color ?? label.color ?? "none"}
+                  aria-label={t({ message: "Color", context: "label settings column" })}
+                  value={current}
                   options={[
-                    { value: "none", label: t`Default` },
-                    ...["#4986e7", "#fb4c2f", "#fbe983", "#16a765", "#b99aff"].map((color) => ({
-                      value: color,
-                      label: color,
-                      icon: (
-                        <span className="size-3 rounded-full" style={{ backgroundColor: color }} />
-                      ),
+                    { value: "none", label: t`Default`, icon: swatch(null) },
+                    ...LABEL_COLORS.map((color) => ({
+                      value: color.value,
+                      label: i18n._(color.name),
+                      icon: swatch(color.value),
                     })),
+                    // A color set elsewhere, such as in Gmail, stays choosable and shows its swatch.
+                    ...(current === "none" || LABEL_COLORS.some((color) => color.value === current)
+                      ? []
+                      : [
+                          {
+                            value: current,
+                            label: i18n._(labelColorName(current)),
+                            icon: swatch(current),
+                          },
+                        ]),
                   ]}
                   onValueChange={(color) => {
                     void perform({
@@ -237,16 +282,18 @@ export function OrganizationSettings({ accounts }: { accounts: readonly Account[
                     });
                   }}
                 />
-                <button type="button" className={buttonLink} onClick={() => setEditing(label)}>
-                  <Trans>Rename</Trans>
-                </button>
-                <button
-                  type="button"
-                  className={`${rowAction} text-a11y-danger`}
-                  onClick={() => setDeleting(label)}
-                >
-                  <Trans>Delete</Trans>
-                </button>
+                <span className="flex gap-3">
+                  <button type="button" className={buttonLink} onClick={() => setEditing(label)}>
+                    <Trans>Rename</Trans>
+                  </button>
+                  <button
+                    type="button"
+                    className={`${rowAction} text-a11y-danger`}
+                    onClick={() => setDeleting(label)}
+                  >
+                    <Trans>Delete</Trans>
+                  </button>
+                </span>
               </li>
             );
           })}

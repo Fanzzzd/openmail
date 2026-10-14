@@ -1122,6 +1122,11 @@ msgstr "引文下方"
 msgid "Blocked before loading:"
 msgstr "加载前已拦截："
 
+#: src/renderer/src/features/organize/label-colors.ts
+msgctxt "label color"
+msgid "Blue"
+msgstr "蓝色"
+
 #. Cached texts of email messages, never anatomical bodies, then the size of cached attachments.
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgctxt "cached message text"
@@ -1632,7 +1637,11 @@ msgstr "收起邮件"
 
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
+msgid "Color"
+msgstr "颜色"
+
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
+msgctxt "label settings column"
 msgid "Color"
 msgstr "颜色"
 
@@ -2254,6 +2263,12 @@ msgid "Cursor age: {age}. Pending operations: {0}."
 msgstr "游标年龄：{age}。待处理操作：{0}。"
 
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
+msgid "Custom color"
+msgstr "自定义颜色"
+
+#. A label color that is not close to any named color.
+#: src/renderer/src/features/organize/label-colors.ts
+msgctxt "label color"
 msgid "Custom color"
 msgstr "自定义颜色"
 
@@ -3255,6 +3270,16 @@ msgstr "Google 在 7 天后结束了 OpenMail 的登录。重新登录即可继�
 msgid "Google shows a warning that it hasn't verified OpenMail yet. Choose Advanced, then continue to OpenMail."
 msgstr "Google 会提示尚未验证 OpenMail。请选择“高级”，然后继续前往 OpenMail。"
 
+#: src/renderer/src/features/organize/label-colors.ts
+msgctxt "label color"
+msgid "Gray"
+msgstr "灰色"
+
+#: src/renderer/src/features/organize/label-colors.ts
+msgctxt "label color"
+msgid "Green"
+msgstr "绿色"
+
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
 msgid "Group accounts into spaces and switch between them at the bottom of the sidebar."
 msgstr "把账户分进空间，在边栏底部切换空间。"
@@ -3457,6 +3482,16 @@ msgstr "在附件 {attachmentName} 中："
 msgid "In Inbox"
 msgstr "在收件箱中"
 
+#: src/renderer/src/features/organize/OrganizationSettings.tsx
+msgctxt "label settings column"
+msgid "In message list"
+msgstr "邮件列表中"
+
+#: src/renderer/src/features/organize/OrganizationSettings.tsx
+msgctxt "label settings column"
+msgid "In sidebar"
+msgstr "侧栏中"
+
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "In sync"
 msgstr "已同步"
@@ -3645,10 +3680,6 @@ msgstr "标签"
 #: src/renderer/src/app/use-app-messages.ts
 msgid "Label added"
 msgstr "已加标签"
-
-#: src/renderer/src/features/organize/OrganizationSettings.tsx
-msgid "Label list visibility"
-msgstr "侧栏标签可见性"
 
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
@@ -4094,10 +4125,6 @@ msgstr "已复制邮件链接"
 msgid "Message list density"
 msgstr "邮件列表密度"
 
-#: src/renderer/src/features/organize/OrganizationSettings.tsx
-msgid "Message list visibility"
-msgstr "邮件列表标签可见性"
-
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Message order in a conversation"
 msgstr "对话内的邮件顺序"
@@ -4450,6 +4477,11 @@ msgstr "从“{elsewhere}”移过来"
 
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
+msgid "Name"
+msgstr "名称"
+
+#: src/renderer/src/features/organize/OrganizationSettings.tsx
+msgctxt "label settings column"
 msgid "Name"
 msgstr "名称"
 
@@ -5115,6 +5147,11 @@ msgstr "搜索运算符"
 msgid "Optional services"
 msgstr "可选服务"
 
+#: src/renderer/src/features/organize/label-colors.ts
+msgctxt "label color"
+msgid "Orange"
+msgstr "橙色"
+
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Order"
 msgstr "顺序"
@@ -5333,6 +5370,11 @@ msgstr "个人"
 msgid "Photos"
 msgstr "照片"
 
+#: src/renderer/src/features/organize/label-colors.ts
+msgctxt "label color"
+msgid "Pink"
+msgstr "粉色"
+
 #: src/renderer/src/features/compose/components/ComposeEditor.tsx
 msgid "Plain text"
 msgstr "纯文本"
@@ -5452,6 +5494,11 @@ msgstr "推广"
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Publish OpenMail as a Tailscale Service, such as svc:openmail, with its own name instead of port 8443 on this Mac. Define the service in the Tailscale admin console and approve this Mac as its host first. Leave empty to use this Mac's name."
 msgstr "把 OpenMail 发布为 Tailscale Service，例如 svc:openmail，用独立名称代替这台 Mac 的 8443 端口。需先在 Tailscale 管理控制台定义该服务，并批准这台 Mac 作为它的主机。留空则使用这台 Mac 的名称。"
+
+#: src/renderer/src/features/organize/label-colors.ts
+msgctxt "label color"
+msgid "Purple"
+msgstr "紫色"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
@@ -5592,6 +5639,11 @@ msgstr "恢复副本"
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Recurring meeting"
 msgstr "重复会议"
+
+#: src/renderer/src/features/organize/label-colors.ts
+msgctxt "label color"
+msgid "Red"
+msgstr "红色"
 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Redacted report"
@@ -7061,6 +7113,11 @@ msgstr "Tailscale 会告诉 OpenMail 访问者是谁。只有这些 tailnet 登�
 msgid "Target language"
 msgstr "目标语言"
 
+#: src/renderer/src/features/organize/label-colors.ts
+msgctxt "label color"
+msgid "Teal"
+msgstr "青色"
+
 #: src/renderer/src/features/compose/components/TemplatePicker.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Template name"
@@ -8123,6 +8180,11 @@ msgstr "每年按日期"
 #: src/renderer/src/features/calendar/EventRecurrenceEditor.tsx
 msgid "Yearly by weekday"
 msgstr "每年按星期"
+
+#: src/renderer/src/features/organize/label-colors.ts
+msgctxt "label color"
+msgid "Yellow"
+msgstr "黄色"
 
 #: src/renderer/src/features/search/SearchField.tsx
 #: src/renderer/src/lib/format.ts

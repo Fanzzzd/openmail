@@ -345,3 +345,37 @@ it("audits the settings tabs as a horizontal row in a narrow window", async () =
   expect(screen.getByRole("tablist").getAttribute("data-orientation")).toBe("horizontal");
   await audit();
 });
+
+it("Organize labels its visibility columns and names every color, including one set elsewhere", async () => {
+  fixture.values.set("labelsAtom", [
+    {
+      id: "Label_news",
+      accountId: account.id,
+      name: "Newsletters",
+      color: "#a479e2",
+      labelListVisibility: "labelShow",
+      messageListVisibility: "show",
+    },
+    { id: "Label_work", accountId: account.id, name: "Work", color: "#16a765" },
+  ]);
+  render(
+    localized(
+      h(Settings, {
+        initialTab: "organize",
+        accounts: [account],
+        onClose: vi.fn(),
+        onAddAccount: vi.fn(),
+      }),
+    ),
+  );
+  // The visible headings repeat what each control's accessible name says.
+  expect(document.querySelector("li[aria-hidden]")?.textContent).toBe(
+    "NameIn sidebarIn message listColor",
+  );
+  expect(screen.getAllByRole("combobox", { name: "In sidebar" })).toHaveLength(2);
+  expect(screen.getAllByRole("combobox", { name: "In message list" })).toHaveLength(2);
+  const colors = screen.getAllByRole("combobox", { name: "Color" });
+  expect(colors.map((color) => color.textContent)).toEqual(["Purple", "Green"]);
+  for (const color of colors) expect(color.querySelector("span[aria-hidden]")).toBeTruthy();
+  await audit();
+});
