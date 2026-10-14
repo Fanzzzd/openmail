@@ -135,20 +135,28 @@ export function InteractionSettings() {
                   <button
                     type="button"
                     className={buttonSecondary}
-                    aria-label={t`Move ${label} up`}
                     disabled={index <= 0}
                     onClick={() => save({ toolbarActions: moveToolbarAction(actions, action, -1) })}
                   >
-                    <Trans>Move up</Trans>
+                    <Trans
+                      context="toolbar action order"
+                      comment="Only the verb is visible. The toolbar action name is read by screen readers."
+                    >
+                      Move up <span className="sr-only">{label}</span>
+                    </Trans>
                   </button>
                   <button
                     type="button"
                     className={buttonSecondary}
-                    aria-label={t`Move ${label} down`}
                     disabled={index < 0 || index === actions.length - 1}
                     onClick={() => save({ toolbarActions: moveToolbarAction(actions, action, 1) })}
                   >
-                    <Trans>Move down</Trans>
+                    <Trans
+                      context="toolbar action order"
+                      comment="Only the verb is visible. The toolbar action name is read by screen readers."
+                    >
+                      Move down <span className="sr-only">{label}</span>
+                    </Trans>
                   </button>
                 </li>
               );

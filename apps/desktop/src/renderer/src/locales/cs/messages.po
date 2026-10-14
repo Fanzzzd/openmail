@@ -4436,15 +4436,6 @@ msgstr "Přesunout {0} později"
 msgid "Move {0} up"
 msgstr "Posunout {0} nahoru"
 
-#: src/renderer/src/features/settings/sections/InteractionSettings.tsx
-msgid "Move {label} down"
-msgstr "Posuňte {label} dolů"
-
-#: src/renderer/src/features/settings/sections/InteractionSettings.tsx
-msgid "Move {label} up"
-msgstr "Posunout {label} nahoru"
-
-#: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Move down"
 msgstr "Posuňte se dolů"
@@ -4454,6 +4445,12 @@ msgstr "Posuňte se dolů"
 msgctxt "account row action"
 msgid "Move down <0>{email}</0>"
 msgstr "Posuňte se dolů <0>{email}</0>"
+
+#. Only the verb is visible. The toolbar action name is read by screen readers.
+#: src/renderer/src/features/settings/sections/InteractionSettings.tsx
+msgctxt "toolbar action order"
+msgid "Move down <0>{label}</0>"
+msgstr "Posuňte se dolů <0>{label}</0>"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Move focus between panes"
@@ -4523,7 +4520,6 @@ msgstr "Přesunout na nejvyšší úroveň"
 msgid "Move to Trash"
 msgstr "Přesunout do koše"
 
-#: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Move up"
 msgstr "Posuňte se nahoru"
@@ -4533,6 +4529,12 @@ msgstr "Posuňte se nahoru"
 msgctxt "account row action"
 msgid "Move up <0>{email}</0>"
 msgstr "Posuňte se nahoru <0>{email}</0>"
+
+#. Only the verb is visible. The toolbar action name is read by screen readers.
+#: src/renderer/src/features/settings/sections/InteractionSettings.tsx
+msgctxt "toolbar action order"
+msgid "Move up <0>{label}</0>"
+msgstr "Posuňte se nahoru <0>{label}</0>"
 
 #: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/features/ai/Proposals.tsx

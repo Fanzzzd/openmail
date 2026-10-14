@@ -4436,15 +4436,6 @@ msgstr "Mover {0} más tarde"
 msgid "Move {0} up"
 msgstr "Mover {0} arriba"
 
-#: src/renderer/src/features/settings/sections/InteractionSettings.tsx
-msgid "Move {label} down"
-msgstr "Mover {label} hacia abajo"
-
-#: src/renderer/src/features/settings/sections/InteractionSettings.tsx
-msgid "Move {label} up"
-msgstr "Mover {label} hacia arriba"
-
-#: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Move down"
 msgstr "Bajar"
@@ -4454,6 +4445,12 @@ msgstr "Bajar"
 msgctxt "account row action"
 msgid "Move down <0>{email}</0>"
 msgstr "Bajar <0>{email}</0>"
+
+#. Only the verb is visible. The toolbar action name is read by screen readers.
+#: src/renderer/src/features/settings/sections/InteractionSettings.tsx
+msgctxt "toolbar action order"
+msgid "Move down <0>{label}</0>"
+msgstr "Bajar <0>{label}</0>"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Move focus between panes"
@@ -4523,7 +4520,6 @@ msgstr "Mover al nivel superior"
 msgid "Move to Trash"
 msgstr "Mover a la papelera"
 
-#: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Move up"
 msgstr "Subir"
@@ -4533,6 +4529,12 @@ msgstr "Subir"
 msgctxt "account row action"
 msgid "Move up <0>{email}</0>"
 msgstr "Subir <0>{email}</0>"
+
+#. Only the verb is visible. The toolbar action name is read by screen readers.
+#: src/renderer/src/features/settings/sections/InteractionSettings.tsx
+msgctxt "toolbar action order"
+msgid "Move up <0>{label}</0>"
+msgstr "Subir <0>{label}</0>"
 
 #: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/features/ai/Proposals.tsx

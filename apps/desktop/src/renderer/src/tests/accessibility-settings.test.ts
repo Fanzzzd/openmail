@@ -204,6 +204,24 @@ it("names each account row and its actions with the address, after the visible t
   await audit();
 });
 
+it("toolbar order buttons start their names with the visible Move up and Move down", async () => {
+  render(
+    localized(
+      h(Settings, {
+        initialTab: "interactions",
+        accounts: [account],
+        onClose: vi.fn(),
+        onAddAccount: vi.fn(),
+      }),
+    ),
+  );
+  const archive = screen.getByRole("button", { name: "Move up Archive" });
+  expect(archive.firstChild?.textContent?.trim()).toBe("Move up");
+  expect(archive.querySelector(".sr-only")?.textContent).toBe("Archive");
+  expect(screen.getByRole("button", { name: "Move down Archive" })).toBeTruthy();
+  await audit();
+});
+
 it("existing accounts without an OAuth registration show the configuration state", () => {
   fixture.values.set("clientSetupAtom", NO_CLIENTS);
   render(
