@@ -6695,6 +6695,10 @@ msgstr "Что-то пошло не так. Повторите попытку."
 msgid "Something went wrong. Try again."
 msgstr "Что-то пошло не так. Повторите попытку."
 
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Source {n}: {name}"
+msgstr "Источник {n}: {name}"
+
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
 msgid "Space"
 msgstr "Пространство"

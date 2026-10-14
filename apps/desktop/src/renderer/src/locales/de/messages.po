@@ -6695,6 +6695,10 @@ msgstr "Etwas ist schiefgelaufen. Bitte versuche es erneut."
 msgid "Something went wrong. Try again."
 msgstr "Etwas ist schiefgelaufen. Versuche es erneut."
 
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Source {n}: {name}"
+msgstr "Quelle {n}: {name}"
+
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
 msgid "Space"
 msgstr "Bereich"

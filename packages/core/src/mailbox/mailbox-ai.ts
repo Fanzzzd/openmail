@@ -12,6 +12,7 @@ import {
   type AiEvent,
   type AiSource,
   AiComposeRequest,
+  aiSource,
 } from "../ai/ai.js";
 import { InvalidInput } from "../domain/errors.js";
 import { Mailbox, type MailboxAi } from "./mailbox.js";
@@ -63,11 +64,7 @@ export function makeAiMailbox(
           const locale = yield* validLocale(requested);
           const value = yield* input(id, "summary", locale);
           const previous = yield* cached(value);
-          const sources: AiSource[] = value.view.messages.map((m) => ({
-            id: m.id,
-            subject: value.view.subject,
-          }));
-          const start: AiEvent = { _tag: "Sources", sources };
+          const start: AiEvent = { _tag: "Sources", sources: value.sources };
           if (previous)
             return Stream.make(
               start,
@@ -85,7 +82,7 @@ export function makeAiMailbox(
           const body = model
             .stream({
               model: value.model,
-              prompt: `Summarize the conversation, decisions and next steps. Cite message ids. ${aiLanguage(value.locale)}\n${mailData(localThread(value.view, host.timeZone()))}`,
+              prompt: `Summarize the conversation, decisions and next steps. After each point, cite the message it comes from as [id], with the message's id field. ${aiLanguage(value.locale)}\n${mailData(localThread(value.view, host.timeZone()))}`,
               check: check([value.accountId]),
             })
             .pipe(
@@ -251,9 +248,8 @@ export function makeAiMailbox(
           const read = (id: string, maxChars = AI_THREAD_INPUT, send = true) =>
             Effect.gen(function* () {
               yield* guard;
-              const view = yield* Effect.map(store.getThread(id), (messages) =>
-                modelContext(messages, Math.min(maxChars, AI_THREAD_INPUT)),
-              );
+              const messages = yield* store.getThread(id);
+              const view = modelContext(messages, Math.min(maxChars, AI_THREAD_INPUT));
               yield* check([view.accountId]);
               if (!ids.includes(view.accountId))
                 return yield* new InvalidInput({
@@ -269,8 +265,9 @@ export function makeAiMailbox(
                 })),
               };
               if (!send) return safe;
-              for (const message of safe.messages)
-                sources.set(message.id, { id: message.id, subject: safe.subject });
+              const kept = new Set(safe.messages.map((message) => message.id));
+              for (const message of messages)
+                if (kept.has(message.id)) sources.set(message.id, aiSource(message));
               return yield* budget(safe);
             });
           const selectedThread = question.threadId ? yield* read(question.threadId) : null;
@@ -325,8 +322,7 @@ export function makeAiMailbox(
                     derivedMatches: [],
                     searchMatches: [],
                   }));
-                  for (const thread of safe)
-                    sources.set(thread.id, { id: thread.id, subject: thread.subject });
+                  for (const thread of safe) sources.set(thread.id, aiSource(thread));
                   return yield* budget(safe);
                 }),
               // The thread the question is about is already in the prompt; reading it again
@@ -365,8 +361,7 @@ export function makeAiMailbox(
                     derivedMatches: [],
                     searchMatches: [],
                   }));
-                  for (const thread of safe)
-                    sources.set(thread.id, { id: thread.id, subject: thread.subject });
+                  for (const thread of safe) sources.set(thread.id, aiSource(thread));
                   return yield* budget(safe);
                 }),
             },
@@ -443,6 +438,9 @@ export function makeAiMailbox(
             ),
           );
           let truncated = true;
+          // Sources go out before the text that may cite them, so citations render as links
+          // while the answer streams.
+          let sent = 0;
           const body = model
             .stream({ model: selectedModel, prompt, toolkit, check: check(ids) })
             .pipe(
@@ -452,7 +450,15 @@ export function makeAiMailbox(
                 }),
               ),
               Stream.filter((output) => output._tag === "Delta"),
-              Stream.map((output): AiEvent => ({ _tag: "Delta", text: output.text })),
+              Stream.flatMap((output) => {
+                const delta: AiEvent = { _tag: "Delta", text: output.text };
+                if (sources.size === sent) return Stream.make(delta);
+                sent = sources.size;
+                return Stream.make(
+                  { _tag: "Sources", sources: [...sources.values()] } satisfies AiEvent,
+                  delta,
+                );
+              }),
             );
           return Stream.concat(
             body,
@@ -523,7 +529,13 @@ export function makeAiMailbox(
           ? Effect.flatMap(validLocale(locale), (valid) =>
               Effect.flatMap(input(id, "summary", valid), (value) =>
                 Effect.map(cached(value), (row) =>
-                  row && value.coverage ? { ...row, coverage: value.coverage } : row,
+                  row
+                    ? {
+                        ...row,
+                        sources: value.sources,
+                        ...(value.coverage ? { coverage: value.coverage } : {}),
+                      }
+                    : row,
                 ),
               ),
             )

@@ -6695,6 +6695,10 @@ msgstr "Si è verificato un errore. Riprova."
 msgid "Something went wrong. Try again."
 msgstr "Si è verificato un errore. Riprova."
 
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Source {n}: {name}"
+msgstr "Fonte {n}: {name}"
+
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
 msgid "Space"
 msgstr "Spazio"

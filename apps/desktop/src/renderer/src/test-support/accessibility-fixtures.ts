@@ -33,10 +33,12 @@ export const atomReactMock = async (
       atom === "keychainItemLeftAtom"
         ? false
         : AsyncResult.success(
-            fixture.values.get(atom) ??
-              (atom === "nativeCompose"
+            // A value set to null stays null: a query that found nothing, like no summary.
+            fixture.values.has(atom)
+              ? fixture.values.get(atom)
+              : atom === "nativeCompose"
                 ? { photos: false, continuity: false, grammar: false }
-                : []),
+                : [],
           ),
     // Mocked queries and mutations are strings; local UI atoms keep their real state.
     useAtom: (atom: unknown) =>

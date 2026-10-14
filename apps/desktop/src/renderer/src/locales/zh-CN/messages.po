@@ -6705,6 +6705,10 @@ msgstr "出了点问题，请再试一次。"
 msgid "Something went wrong. Try again."
 msgstr "出错了，请重试。"
 
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Source {n}: {name}"
+msgstr "来源 {n}：{name}"
+
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
 msgid "Space"
 msgstr "空间"

@@ -422,7 +422,9 @@ const failedOutput = (error: InvalidInput | ProviderError | null) =>
     createElement(AiOutput, {
       result: {
         text: "",
-        sources: [{ id: "gmail:me/m1", subject: "Quarterly plan" }],
+        sources: [
+          { id: "gmail:me/m1", subject: "Quarterly plan", from: "Alice", date: 1_760_000_000_000 },
+        ],
         model: "",
         truncated: false,
         coverage: undefined,
@@ -482,15 +484,54 @@ it("AI failures name the cause, and key or consent problems link to AI Access", 
   }
 });
 
-it("AI sources show the subject without the raw message id", () => {
+it("AI sources show the sender and local time without the raw message id", () => {
   const dom = testDom();
   try {
     dom.render(failedOutput(null));
-    const source = Array.from(dom.element.querySelectorAll("button")).find((item) =>
-      item.textContent.includes("Quarterly plan"),
-    );
-    expect(source?.textContent).toBe("Quarterly plan");
+    const source = Array.from(dom.element.querySelectorAll("li button"))[0];
+    expect(source?.textContent).toMatch(/^\[1\] Alice · .*2025/);
     expect(dom.element.textContent).not.toContain("gmail:me/m1");
+  } finally {
+    dom.dispose();
+  }
+});
+
+it("[message id] citations render as numbered links that open their source", () => {
+  const dom = testDom();
+  try {
+    const openSource = vi.fn();
+    const sources = [
+      { id: "gmail:me/m1", subject: "Plan", from: "Alice", date: 1_760_000_000_000 },
+      { id: "gmail:me/m2", subject: "Plan", from: "bob@example.com", date: 1_760_000_600_000 },
+    ];
+    dom.render(
+      localize(
+        createElement(AiOutput, {
+          result: {
+            text: "Alice proposed Friday [gmail:me/m1]. Bob agreed [gmail:me/m1, gmail:me/m2]. See [notes].",
+            sources,
+            model: "",
+            truncated: false,
+            coverage: undefined,
+            status: "done",
+            error: null,
+            start: vi.fn(),
+            cancel: vi.fn(),
+          },
+          openSource,
+        }),
+      ),
+    );
+    const text = dom.element.querySelector("p")?.textContent ?? "";
+    expect(text).toBe("Alice proposed Friday [1]. Bob agreed [1][2]. See [notes].");
+    const cite = dom.element.querySelector('sup button[aria-label^="Source 2:"]');
+    if (!(cite instanceof dom.window.HTMLButtonElement)) throw new Error("Missing citation");
+    act(() => cite.click());
+    expect(openSource).toHaveBeenCalledWith("gmail:me/m2");
+    const list = Array.from(dom.element.querySelectorAll("li")).map((li) => li.textContent);
+    expect(list[0]).toMatch(/^\[1\] Alice · /);
+    expect(list[1]).toMatch(/^\[2\] bob@example\.com · /);
+    expect(dom.element.textContent).not.toContain("gmail:me/");
   } finally {
     dom.dispose();
   }

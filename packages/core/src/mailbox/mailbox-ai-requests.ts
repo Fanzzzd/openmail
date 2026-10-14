@@ -8,6 +8,7 @@ import {
   AI_PROMPT_VERSION,
   AI_SUMMARY_INPUT,
   AI_THREAD_INPUT,
+  aiSource,
   isTriageInbox,
 } from "../ai/ai.js";
 import { InvalidInput } from "../domain/errors.js";
@@ -81,8 +82,11 @@ export function makeAiRequests(
         ),
       );
       const selectedModel = yield* store.ai.model;
+      const read = new Set(view.messages.map((m) => m.id));
       return {
         view,
+        /** The messages the view kept, oldest first, for citations. */
+        sources: messages.filter((m) => read.has(m.id)).map(aiSource),
         ...(coverage ? { coverage } : {}),
         threadId,
         accountId,

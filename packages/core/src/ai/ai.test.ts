@@ -515,6 +515,56 @@ it.effect("the assistant knows the local time and zone, and reads mail dates in 
   );
 });
 
+it.effect("summary and answer sources name each message's sender and date for citations", () => {
+  const server = fakeServer("me@gmail.com", [
+    { ...incoming("m1"), date: 1000 },
+    {
+      ...incoming("m2"),
+      from: { name: "", address: "bob@example.com" },
+      date: 2000,
+      threadId: "thread",
+    },
+  ]);
+  const fake = FakeModelLayer((request) =>
+    request.toolkit
+      ? Stream.unwrap(
+          Effect.gen(function* () {
+            const toolkit = request.toolkit;
+            assert.ok(toolkit);
+            yield* Stream.runDrain(
+              yield* toolkit.handle("read_thread", { message_id: `${accountId}/m2` }),
+            );
+            return textStream(`Bob replied [${accountId}/m2].`);
+          }),
+        ).pipe(Stream.orDie)
+      : textStream(`Decided Friday [${messageId}].`),
+  );
+  return Effect.gen(function* () {
+    const m = yield* Mailbox;
+    yield* m.accounts.connect({ provider: "gmail" });
+    yield* m.sync.sync();
+    yield* m.ai.setAiAccount(consent);
+    const expected = [
+      { id: messageId, subject: "Friday", from: "A", date: 1000 },
+      { id: `${accountId}/m2`, subject: "Friday", from: "bob@example.com", date: 2000 },
+    ];
+    const summary = yield* Stream.runCollect(m.ai.summarize(messageId));
+    assert.deepStrictEqual(summary[0], { _tag: "Sources", sources: expected });
+    // A cached summary comes back with the same sources, so its citations still resolve.
+    assert.deepStrictEqual((yield* m.ai.aiSummary(messageId))?.sources, expected);
+    const answer = yield* Stream.runCollect(
+      m.ai.askAi({ question: "Did Bob reply?", accountIds: [accountId] }),
+    );
+    const first = answer.findIndex((e) => e._tag === "Sources");
+    assert.isBelow(
+      first,
+      answer.findIndex((e) => e._tag === "Delta"),
+      "sources before text",
+    );
+    assert.deepStrictEqual(answer[first], { _tag: "Sources", sources: expected });
+  }).pipe(Effect.provide(TestMailbox({ gmail: server }, { backgroundFlush: false }, {}, fake)));
+});
+
 it.effect("summaries stream text only, reuse hashes, invalidate input/model changes", () => {
   const requests: ModelRequest[] = [];
   const server = fakeServer("me@gmail.com", [incoming("m1")]);

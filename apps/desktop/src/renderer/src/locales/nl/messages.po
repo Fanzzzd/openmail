@@ -6695,6 +6695,10 @@ msgstr "Er is iets misgegaan. Probeer het opnieuw."
 msgid "Something went wrong. Try again."
 msgstr "Er ging iets mis. Probeer het opnieuw."
 
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Source {n}: {name}"
+msgstr "Bron {n}: {name}"
+
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
 msgid "Space"
 msgstr "Ruimte"

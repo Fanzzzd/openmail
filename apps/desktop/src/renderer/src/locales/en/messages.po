@@ -6699,6 +6699,10 @@ msgstr "Something went wrong. Please try again."
 msgid "Something went wrong. Try again."
 msgstr "Something went wrong. Try again."
 
+#: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Source {n}: {name}"
+msgstr "Source {n}: {name}"
+
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
 msgid "Space"
 msgstr "Space"
