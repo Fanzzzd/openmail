@@ -266,8 +266,21 @@ export function Sidebar({
                   Add account
                 </button>
               </Trans>
+            ) : accounts.length > 0 ? (
+              <Trans>All accounts are disabled.</Trans>
+            ) : isDesktop() ? (
+              <Trans>
+                No accounts yet.{" "}
+                <button
+                  type="button"
+                  onClick={onAddAccount}
+                  className="text-a11y-accent dark:text-blue-400"
+                >
+                  Add account
+                </button>
+              </Trans>
             ) : (
-              <Trans>This space has no accounts yet.</Trans>
+              <Trans>No accounts yet.</Trans>
             )}
           </p>
         )}

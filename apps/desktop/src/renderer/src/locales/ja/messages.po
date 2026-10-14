@@ -715,6 +715,10 @@ msgid "All accounts"
 msgstr "すべてのアカウント"
 
 #: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "All accounts are disabled."
+msgstr "すべてのアカウントが無効です。"
+
+#: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "All accounts in this space"
 msgstr "このスペース内のすべてのアカウント"
 
@@ -4538,6 +4542,14 @@ msgstr "AI の読み取りを許可しているアカウントがないため、
 msgid "No accounts yet"
 msgstr "まだアカウントがありません"
 
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "No accounts yet."
+msgstr "まだアカウントがありません。"
+
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "No accounts yet. <0>Add account</0>"
+msgstr "まだアカウントがありません。<0>アカウントを追加</0>"
+
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "No activity yet."
 msgstr "まだ活動はありません。"
@@ -7458,10 +7470,6 @@ msgstr "この設定は Mac でのみ利用できます。Mac の OpenMail で�
 #: src/renderer/src/lib/errors.ts
 msgid "This signature belongs to another sending address or is no longer available."
 msgstr "この署名は別の送信元アドレスのものか、もう利用できません。"
-
-#: src/renderer/src/features/sidebar/Sidebar.tsx
-msgid "This space has no accounts yet."
-msgstr "このスペースにはまだアカウントがありません。"
 
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "This space has no accounts yet. <0>Add account</0>"

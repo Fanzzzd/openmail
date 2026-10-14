@@ -715,6 +715,10 @@ msgid "All accounts"
 msgstr "Todas las cuentas"
 
 #: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "All accounts are disabled."
+msgstr "Todas las cuentas están desactivadas."
+
+#: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "All accounts in this space"
 msgstr "Todas las cuentas en este espacio"
 
@@ -4538,6 +4542,14 @@ msgstr "Ninguna cuenta permite la lectura por IA, así que una aplicación conec
 msgid "No accounts yet"
 msgstr "Aún no hay cuentas"
 
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "No accounts yet."
+msgstr "Aún no hay cuentas."
+
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "No accounts yet. <0>Add account</0>"
+msgstr "Aún no hay cuentas. <0>Agregar cuenta</0>"
+
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "No activity yet."
 msgstr "Aún no hay actividad."
@@ -7458,10 +7470,6 @@ msgstr "Este ajuste solo está disponible en el Mac. Cámbialo en OpenMail en tu
 #: src/renderer/src/lib/errors.ts
 msgid "This signature belongs to another sending address or is no longer available."
 msgstr "Esta firma pertenece a otra dirección de envío o ya no está disponible."
-
-#: src/renderer/src/features/sidebar/Sidebar.tsx
-msgid "This space has no accounts yet."
-msgstr "Este espacio aún no tiene cuentas."
 
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "This space has no accounts yet. <0>Add account</0>"

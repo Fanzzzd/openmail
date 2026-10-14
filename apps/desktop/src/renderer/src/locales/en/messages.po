@@ -719,6 +719,10 @@ msgid "All accounts"
 msgstr "All accounts"
 
 #: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "All accounts are disabled."
+msgstr "All accounts are disabled."
+
+#: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "All accounts in this space"
 msgstr "All accounts in this space"
 
@@ -4542,6 +4546,14 @@ msgstr "No account allows AI reads, so a connected app sees no mail. Turn on “
 msgid "No accounts yet"
 msgstr "No accounts yet"
 
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "No accounts yet."
+msgstr "No accounts yet."
+
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "No accounts yet. <0>Add account</0>"
+msgstr "No accounts yet. <0>Add account</0>"
+
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "No activity yet."
 msgstr "No activity yet."
@@ -7462,10 +7474,6 @@ msgstr "This setting is only available on the Mac. Change it in OpenMail on your
 #: src/renderer/src/lib/errors.ts
 msgid "This signature belongs to another sending address or is no longer available."
 msgstr "This signature belongs to another sending address or is no longer available."
-
-#: src/renderer/src/features/sidebar/Sidebar.tsx
-msgid "This space has no accounts yet."
-msgstr "This space has no accounts yet."
 
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "This space has no accounts yet. <0>Add account</0>"

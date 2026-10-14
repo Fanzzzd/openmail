@@ -715,6 +715,10 @@ msgid "All accounts"
 msgstr "Všechny účty"
 
 #: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "All accounts are disabled."
+msgstr "Všechny účty jsou vypnuté."
+
+#: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "All accounts in this space"
 msgstr "Všechny účty v tomto prostoru"
 
@@ -4538,6 +4542,14 @@ msgstr "Žádný účet nepovoluje čtení pomocí AI, takže připojená aplika
 msgid "No accounts yet"
 msgstr "Zatím žádné účty"
 
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "No accounts yet."
+msgstr "Zatím žádné účty."
+
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "No accounts yet. <0>Add account</0>"
+msgstr "Zatím žádné účty. <0>Přidat účet</0>"
+
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "No activity yet."
 msgstr "Zatím žádná aktivita."
@@ -7458,10 +7470,6 @@ msgstr "Toto nastavení je k dispozici jen na Macu. Změňte ho v OpenMailu na s
 #: src/renderer/src/lib/errors.ts
 msgid "This signature belongs to another sending address or is no longer available."
 msgstr "Tento podpis patří k jiné adrese odesílatele nebo už není dostupný."
-
-#: src/renderer/src/features/sidebar/Sidebar.tsx
-msgid "This space has no accounts yet."
-msgstr "Tento prostor zatím nemá žádné účty."
 
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "This space has no accounts yet. <0>Add account</0>"

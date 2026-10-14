@@ -715,6 +715,10 @@ msgid "All accounts"
 msgstr "Все учётные записи"
 
 #: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "All accounts are disabled."
+msgstr "Все учётные записи отключены."
+
+#: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "All accounts in this space"
 msgstr "Все учётные записи в этом пространстве"
 
@@ -4538,6 +4542,14 @@ msgstr "Ни одна учётная запись не разрешает чте
 msgid "No accounts yet"
 msgstr "Учётная записьов пока нет"
 
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "No accounts yet."
+msgstr "Учётных записей пока нет."
+
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "No accounts yet. <0>Add account</0>"
+msgstr "Учётных записей пока нет. <0>Добавить учётную запись</0>"
+
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "No activity yet."
 msgstr "Пока нет активности."
@@ -7458,10 +7470,6 @@ msgstr "Эта настройка доступна только на Mac. Изм
 #: src/renderer/src/lib/errors.ts
 msgid "This signature belongs to another sending address or is no longer available."
 msgstr "Эта подпись относится к другому адресу отправки или больше недоступна."
-
-#: src/renderer/src/features/sidebar/Sidebar.tsx
-msgid "This space has no accounts yet."
-msgstr "В этом пространстве пока нет учётных записей."
 
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "This space has no accounts yet. <0>Add account</0>"

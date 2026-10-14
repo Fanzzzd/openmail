@@ -1,5 +1,5 @@
 import { afterEach, expect, it } from "vitest";
-import { fireEvent, screen } from "@testing-library/react/pure";
+import { fireEvent, screen, within } from "@testing-library/react/pure";
 import { flow, eventually } from "./harness";
 import { scaledMs } from "../../../../../../packages/core/test-support/test-time.js";
 let current: Awaited<ReturnType<typeof flow>> | undefined;
@@ -125,4 +125,9 @@ it("with no account the sidebar lists no mailboxes and no sync status, and Add a
   expect(screen.queryByRole("button", { name: /^Inbox/, hidden: true })).toBeNull();
   expect(screen.queryByRole("button", { name: "Sync now", hidden: true })).toBeNull();
   expect(document.body.textContent).not.toMatch(/Synced|Syncing/);
+  // Behind the dialog, All accounts says there are none and offers to add one.
+  expect(document.body.textContent).toContain("No accounts yet.");
+  expect(document.body.textContent).not.toContain("This space has no accounts yet.");
+  const nav = screen.getByRole("navigation", { name: "Mailboxes", hidden: true });
+  expect(within(nav).getByRole("button", { name: "Add account", hidden: true })).toBeTruthy();
 });

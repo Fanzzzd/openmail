@@ -725,6 +725,10 @@ msgid "All accounts"
 msgstr "全部账户"
 
 #: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "All accounts are disabled."
+msgstr "所有账户都已停用。"
+
+#: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "All accounts in this space"
 msgstr "这个空间的所有账户"
 
@@ -4548,6 +4552,14 @@ msgstr "没有账户允许 AI 读取，所以已连接的应用看不到邮件�
 msgid "No accounts yet"
 msgstr "还没有账户"
 
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "No accounts yet."
+msgstr "还没有账户。"
+
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "No accounts yet. <0>Add account</0>"
+msgstr "还没有账户。<0>添加账户</0>"
+
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "No activity yet."
 msgstr "还没有操作记录。"
@@ -7468,10 +7480,6 @@ msgstr "这个设置只能在 Mac 上更改。请在你 Mac 上的 OpenMail 中�
 #: src/renderer/src/lib/errors.ts
 msgid "This signature belongs to another sending address or is no longer available."
 msgstr "此签名属于另一个发件地址，或已不可用。"
-
-#: src/renderer/src/features/sidebar/Sidebar.tsx
-msgid "This space has no accounts yet."
-msgstr "这个空间还没有账户。"
 
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "This space has no accounts yet. <0>Add account</0>"

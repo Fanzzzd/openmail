@@ -715,6 +715,10 @@ msgid "All accounts"
 msgstr "Alle Accounts"
 
 #: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "All accounts are disabled."
+msgstr "Alle Accounts sind deaktiviert."
+
+#: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "All accounts in this space"
 msgstr "Alle Accounts in diesem Bereich"
 
@@ -4538,6 +4542,14 @@ msgstr "Kein Account erlaubt KI-Lesezugriff, daher sieht eine verbundene App kei
 msgid "No accounts yet"
 msgstr "Noch keine Accounts"
 
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "No accounts yet."
+msgstr "Noch keine Accounts."
+
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "No accounts yet. <0>Add account</0>"
+msgstr "Noch keine Accounts. <0>Account hinzufügen</0>"
+
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "No activity yet."
 msgstr "Noch keine Aktivität."
@@ -7458,10 +7470,6 @@ msgstr "Diese Einstellung ist nur auf dem Mac verfügbar. Ändere sie in OpenMai
 #: src/renderer/src/lib/errors.ts
 msgid "This signature belongs to another sending address or is no longer available."
 msgstr "Diese Signatur gehört zu einer anderen Absendeadresse oder ist nicht mehr verfügbar."
-
-#: src/renderer/src/features/sidebar/Sidebar.tsx
-msgid "This space has no accounts yet."
-msgstr "Dieser Bereich hat noch keine Accounts."
 
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "This space has no accounts yet. <0>Add account</0>"
