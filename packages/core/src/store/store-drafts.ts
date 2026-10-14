@@ -50,6 +50,7 @@ const LocalDraftRow = Schema.Struct({
 });
 
 const IdRow = Schema.Struct({ id: Schema.String });
+const RevisionRow = Schema.Struct({ revision: Schema.Number });
 
 function toStoredDraft(r: typeof DraftRow.Type): StoredDraft {
   const remote: DraftRemote | null =
@@ -107,12 +108,21 @@ export function makeDraftStore(sql: SqlClient.SqlClient) {
     editor?: string | null;
   }) {
     const now = yield* Clock.currentTimeMillis;
+    // Revisions come from one counter for all drafts, so a draft deleted and written
+    // again under the same id (an account switch, a resave after sync dropped it)
+    // never repeats a revision an editor already holds.
+    const { revision } = yield* first(RevisionRow)(
+      sql`INSERT INTO prefs(key,value_json)
+        VALUES('draft-revision',(SELECT COALESCE(MAX(revision),0)+1 FROM drafts))
+        ON CONFLICT(key) DO UPDATE SET value_json=CAST(value_json AS INTEGER)+1
+        RETURNING CAST(value_json AS INTEGER) AS revision`,
+    ).pipe(Effect.map(Option.getOrThrow));
     yield* run(sql`INSERT INTO drafts (id, account_id, message_json, updated_at, proposal_id, revision, editor)
       VALUES (${draft.id}, ${draft.accountId}, ${JSON.stringify(draft.message)}, ${now},
-        ${draft.proposalId ?? null}, 1, ${draft.editor ?? null})
+        ${draft.proposalId ?? null}, ${revision}, ${draft.editor ?? null})
       ON CONFLICT(id) DO UPDATE SET account_id = excluded.account_id,
         message_json = excluded.message_json, updated_at = excluded.updated_at,
-        revision = drafts.revision + 1, editor = excluded.editor,
+        revision = excluded.revision, editor = excluded.editor,
         proposal_id = COALESCE(excluded.proposal_id, drafts.proposal_id),
         pushed_organization = CASE WHEN drafts.account_id = excluded.account_id THEN drafts.pushed_organization ELSE NULL END`);
     const saved = yield* getDraft(draft.id);
