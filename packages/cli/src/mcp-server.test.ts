@@ -490,7 +490,7 @@ test.concurrent(
   async ({ expect, onTestFinished }) => {
     const directory = await home(onTestFinished, "openmail-cli-legacy-allow-");
     const options = { env: { ...process.env, OPENMAIL_HOME: directory } };
-    await run(process.execPath, ["dist/cli.js", "agents", "write-mode"], options);
+    writeMigratedDatabase(join(directory, "mail.db"));
     // A library last opened before migration 50, with the old setting on.
     const db = new DatabaseSync(join(directory, "mail.db"));
     db.exec(`INSERT INTO agent_policies(name, modify) VALUES('*', 'allow')
@@ -826,10 +826,23 @@ test.concurrent(
 test.concurrent(
   "openmail tool reports a missing argument with MCP's code and hint and names the tool",
   async ({ expect, onTestFinished }) => {
-    const { request, directory } = await client(onTestFinished, false, false, false, "2025-11-25");
-    const called = Schema.decodeUnknownSync(CallResult)(
-      await request("tools/call", { name: "read_thread", arguments: {} }),
-    );
+    // The CLI runs in its own directory, so it starts beside the MCP server.
+    const directory = await home(onTestFinished, "openmail-cli-tool-input-");
+    const options = { env: { ...process.env, OPENMAIL_HOME: directory } };
+    const cli = (...args: string[]) =>
+      run(process.execPath, ["dist/cli.js", "tool", "read_thread", ...args], options).catch(
+        (error: unknown) => Schema.decodeUnknownSync(Failure)(error),
+      );
+    const [called, json, text] = await Promise.all([
+      client(onTestFinished, false, false, false, "2025-11-25").then(async ({ request }) =>
+        Schema.decodeUnknownSync(CallResult)(
+          await request("tools/call", { name: "read_thread", arguments: {} }),
+        ),
+      ),
+      // --json prints exactly what MCP returns.
+      cli("--json"),
+      cli(),
+    ]);
     expect(called.isError).toBe(true);
     const mcp = JSON.parse(called.content[0]?.text ?? "");
     expect(mcp).toEqual({
@@ -838,19 +851,9 @@ test.concurrent(
         'The arguments for read_thread do not match its input schema: Missing key\n  at ["message_id"]',
       hint: "Fix the arguments as described and call the tool again.",
     });
-    const options = { env: { ...process.env, OPENMAIL_HOME: directory } };
-    // --json prints exactly what MCP returns.
-    const json = await run(
-      process.execPath,
-      ["dist/cli.js", "tool", "read_thread", "--json"],
-      options,
-    ).catch((error: unknown) => Schema.decodeUnknownSync(Failure)(error));
     expect(json.code).toBe(1);
     expect(JSON.parse(json.stdout)).toEqual(mcp);
     expect(json.stderr).toBe(`error: ${mcp.message}\nhint: ${mcp.hint}\n`);
-    const text = await run(process.execPath, ["dist/cli.js", "tool", "read_thread"], options).catch(
-      (error: unknown) => Schema.decodeUnknownSync(Failure)(error),
-    );
     expect(text).toMatchObject({ code: 1, stdout: "", stderr: json.stderr });
   },
   scaledMs(30_000),
@@ -922,18 +925,25 @@ test.concurrent("the CLI lists and rejects proposals but never approves one", as
     );
   const message =
     "error: Approve proposals in OpenMail, under AI suggestions. The CLI and MCP cannot approve them.\n";
-  for (const args of [[String(archive)], [String(send), "--yes"], []])
-    expect(await cli("proposals", "approve", ...args)).toMatchObject({
-      code: 1,
-      stdout: "",
-      stderr: message,
-    });
-  const help = await cli("proposals", "--help");
+  // Every start runs side by side; the database shows what the reject settled.
+  const [help, rejected, ...approvals] = await Promise.all([
+    cli("proposals", "--help"),
+    cli("proposals", "reject", String(archive)),
+    ...[[String(archive)], [String(send), "--yes"], []].map((args) =>
+      cli("proposals", "approve", ...args),
+    ),
+  ]);
+  for (const approval of approvals)
+    expect(approval).toMatchObject({ code: 1, stdout: "", stderr: message });
   expect(help.stdout).not.toMatch(/^\s+approve/m);
   expect(help.stdout).toContain("reject");
-  expect(await cli("proposals", "reject", String(archive))).toMatchObject({ code: 0 });
-  const list = await cli("proposals", "list");
-  expect(list.stdout.match(/pending/g)).toHaveLength(1);
+  expect(rejected).toMatchObject({ code: 0 });
+  const db = new DatabaseSync(join(directory, "mail.db"), { readOnly: true });
+  onTestFinished(() => db.close());
+  expect(db.prepare("SELECT id, status FROM proposals ORDER BY id").all()).toEqual([
+    { id: archive, status: "rejected" },
+    { id: send, status: "pending" },
+  ]);
 });
 
 /** Two spaces named Work, one named Home, and one account outside any space. */
@@ -958,47 +968,75 @@ async function seedSpaces(directory: string) {
   );
 }
 
-test.concurrent("spaces assign and remove fail on unknown ids and take an unambiguous name", async ({
+function spacesCli(directory: string, ...args: string[]) {
+  return run(process.execPath, ["dist/cli.js", ...args], {
+    env: { ...process.env, OPENMAIL_HOME: directory },
+  }).then(
+    (done) => ({ code: 0, ...done }),
+    (error: unknown) => Schema.decodeUnknownSync(Failure)(error),
+  );
+}
+
+test.concurrent("spaces assign fails on unknown ids and takes an unambiguous name", async ({
   expect,
   onTestFinished,
 }) => {
   const directory = await home(onTestFinished, "openmail-cli-spaces-test-");
   const empty = await home(onTestFinished, "openmail-cli-empty-test-");
   const { account, home: homeSpace } = await seedSpaces(directory);
-  const cli = (dir: string, ...args: string[]) =>
-    run(process.execPath, ["dist/cli.js", ...args], {
-      env: { ...process.env, OPENMAIL_HOME: dir },
-    }).then(
-      (done) => ({ code: 0, ...done }),
-      (error: unknown) => Schema.decodeUnknownSync(Failure)(error),
-    );
-  expect(await cli(directory, "spaces", "assign", "1", "x")).toMatchObject({
+  const [unknownAccount, unknownSpace, ambiguous, assigned, health] = await Promise.all([
+    spacesCli(directory, "spaces", "assign", "1", "x"),
+    spacesCli(directory, "spaces", "remove", "Nope"),
+    spacesCli(directory, "spaces", "assign", account, "work"),
+    spacesCli(directory, "spaces", "assign", account, "home"),
+    // health with no accounts says so, like accounts list.
+    spacesCli(empty, "health"),
+  ]);
+  expect(unknownAccount).toMatchObject({
     code: 1,
     stderr: "error: No account with id 1. Run `openmail accounts list` to see them.\n",
   });
-  expect(await cli(directory, "spaces", "remove", "Nope")).toMatchObject({
+  expect(unknownSpace).toMatchObject({
     code: 1,
     stderr: "error: No space with id or name Nope. Run `openmail spaces list` to see them.\n",
   });
-  expect(await cli(directory, "spaces", "assign", account, "work")).toMatchObject({
+  expect(ambiguous).toMatchObject({
     code: 1,
     stderr: expect.stringContaining("2 spaces are named work. Pass the space id"),
   });
-  expect(await cli(directory, "spaces", "assign", account, "home")).toMatchObject({
-    code: 0,
-    stdout: `Moved ${account} to Home.\n`,
-  });
-  expect((await cli(directory, "spaces", "list")).stdout).toContain(
-    `${homeSpace}\n      ${account}`,
-  );
-  expect(await cli(directory, "spaces", "remove", "Home")).toMatchObject({
-    code: 0,
-    stdout: `Removed space Home (${homeSpace}).\n`,
-  });
-  // health with no accounts says so, like accounts list.
-  expect(await cli(empty, "health")).toMatchObject({
+  expect(assigned).toMatchObject({ code: 0, stdout: `Moved ${account} to Home.\n` });
+  expect(health).toMatchObject({
     code: 0,
     stdout: "(no accounts; run `openmail accounts add gmail`)\n",
+  });
+  const db = new DatabaseSync(join(directory, "mail.db"), { readOnly: true });
+  onTestFinished(() => db.close());
+  expect(db.prepare("SELECT profile_id FROM accounts WHERE id = ?").get(account)).toEqual({
+    profile_id: homeSpace,
+  });
+});
+
+test.concurrent("spaces list shows an assigned account and remove takes a name", async ({
+  expect,
+  onTestFinished,
+}) => {
+  const listed = await home(onTestFinished, "openmail-cli-spaces-list-");
+  const removed = await home(onTestFinished, "openmail-cli-spaces-remove-");
+  const [{ account, home: listedHome }, { home: removedHome }] = await Promise.all([
+    seedSpaces(listed),
+    seedSpaces(removed),
+  ]);
+  const db = new DatabaseSync(join(listed, "mail.db"));
+  db.prepare("UPDATE accounts SET profile_id = ? WHERE id = ?").run(listedHome, account);
+  db.close();
+  const [list, remove] = await Promise.all([
+    spacesCli(listed, "spaces", "list"),
+    spacesCli(removed, "spaces", "remove", "Home"),
+  ]);
+  expect(list.stdout).toContain(`${listedHome}\n      ${account}`);
+  expect(remove).toMatchObject({
+    code: 0,
+    stdout: `Removed space Home (${removedHome}).\n`,
   });
 });
 
@@ -1009,17 +1047,22 @@ test("an unusable OPENMAIL_HOME prints one sentence naming the path and exits 1"
   const directory = await home(onTestFinished, "openmail-bad-home-");
   const file = join(directory, "not-a-folder");
   await writeFile(file, "");
-  for (const [target, why] of [
-    [file, "a file with that name is in the way"],
-    [join(file, "sub"), "part of the path is a file, not a folder"],
-  ] as const)
-    await expect(
-      run(process.execPath, ["dist/cli.js", "list"], {
-        env: { ...process.env, OPENMAIL_HOME: target },
+  await Promise.all(
+    (
+      [
+        [file, "a file with that name is in the way"],
+        [join(file, "sub"), "part of the path is a file, not a folder"],
+      ] as const
+    ).map(([target, why]) =>
+      expect(
+        run(process.execPath, ["dist/cli.js", "list"], {
+          env: { ...process.env, OPENMAIL_HOME: target },
+        }),
+      ).rejects.toMatchObject({
+        code: 1,
+        stdout: "",
+        stderr: `error: Can't use ${target} for OpenMail's data: ${why}. Set OPENMAIL_HOME to a folder you can write to.\n`,
       }),
-    ).rejects.toMatchObject({
-      code: 1,
-      stdout: "",
-      stderr: `error: Can't use ${target} for OpenMail's data: ${why}. Set OPENMAIL_HOME to a folder you can write to.\n`,
-    });
+    ),
+  );
 });

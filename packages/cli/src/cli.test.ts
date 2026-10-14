@@ -5,10 +5,11 @@ import { execFile, spawn } from "node:child_process";
 import { cp, mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { DatabaseSync } from "node:sqlite";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { Schema } from "effect";
-import { afterAll, beforeAll, describe, expect, test, vi, type TestContext } from "vitest";
+import { afterAll, beforeAll, describe, expect, test, vi } from "vitest";
 import { scaledMs } from "../../core/test-support/test-time.js";
 import { REMOVE_NEEDS_YES } from "./commands/accounts.js";
 
@@ -85,14 +86,6 @@ beforeAll(async () => {
   await run(process.execPath, [demoData, join(seeded, "home")]);
 });
 afterAll(() => rm(seeded, { recursive: true, force: true }));
-
-/** A copy of the seeded home for a test that changes it. */
-async function freshHome(onTestFinished: TestContext["onTestFinished"]) {
-  const directory = await mkdtemp(join(tmpdir(), "openmail-cli-write-"));
-  onTestFinished(() => rm(directory, { recursive: true, force: true }));
-  await cp(join(seeded, "home"), directory, { recursive: true });
-  return directory;
-}
 
 function openmail(args: string[], home = join(seeded, "home")) {
   return new Promise<{ code: number | null; stdout: string; stderr: string }>((done, failed) => {
@@ -207,8 +200,14 @@ describe("accounts remove", () => {
     expect(code).toBe(1);
     expect(stdout).toBe("");
     expect(stderr).toBe(`error: ${REMOVE_NEEDS_YES}\n`);
-    const accounts = await list(["accounts", "list"]);
-    expect(accounts.map((account) => account.id)).toContain("gmail:alex@example.com");
+    const db = new DatabaseSync(join(seeded, "home", "mail.db"), { readOnly: true });
+    try {
+      expect(
+        db.prepare("SELECT id FROM accounts WHERE id = ?").get("gmail:alex@example.com"),
+      ).toEqual({ id: "gmail:alex@example.com" });
+    } finally {
+      db.close();
+    }
   });
 
   test("an unknown id fails before asking", async () => {
@@ -296,47 +295,90 @@ describe("reading", () => {
   });
 });
 
+/**
+ * A copy of the seeded home for a describe block that changes it in `beforeAll`, removed after
+ * the block. Setup starts go in `beforeAll`, so each test waits on at most one CLI start.
+ */
+function sharedHome() {
+  const directory = { path: "" };
+  beforeAll(async () => {
+    directory.path = await mkdtemp(join(tmpdir(), "openmail-cli-write-"));
+    await cp(join(seeded, "home"), directory.path, { recursive: true });
+  });
+  afterAll(() => rm(directory.path, { recursive: true, force: true }));
+  return directory;
+}
+
 describe("spaces", () => {
-  test("list is empty, add creates one, assign puts an account in it", async ({
-    onTestFinished,
-  }) => {
-    const home = await freshHome(onTestFinished);
-    expect((await openmail(["spaces", "list"], home)).stdout).toContain("no spaces");
-    expect(await json(["spaces", "list"], home)).toEqual([]);
-    const added = await openmail(["spaces", "add", "Work"], home);
-    expect(added.code).toBe(0);
-    expect(added.stdout).toMatch(/^Added space Work \(.+\)\.$/m);
-    const space = (await list(["spaces", "list"], home))[0] ?? {};
-    expect(space.name).toBe("Work");
-    expect(Object.keys(space)).toEqual(KEYS.space);
-    const assigned = await openmail(
-      ["spaces", "assign", "gmail:alex@example.com", String(space.id)],
-      home,
-    );
-    expect(assigned.code, assigned.stderr).toBe(0);
-    const after = (await list(["spaces", "list"], home))[0] ?? {};
-    expect(JSON.stringify(after.accounts)).toContain("gmail:alex@example.com");
+  test("list starts empty", async () => {
+    const [text, listed] = await Promise.all([
+      openmail(["spaces", "list"]),
+      json(["spaces", "list"]),
+    ]);
+    expect(text.stdout).toContain("no spaces");
+    expect(listed).toEqual([]);
+  });
+
+  describe("after add and assign", () => {
+    const home = sharedHome();
+    let added: Awaited<ReturnType<typeof openmail>>;
+    let assigned: Awaited<ReturnType<typeof openmail>>;
+    let space: Record<string, unknown> = {};
+    beforeAll(async () => {
+      added = await openmail(["spaces", "add", "Work"], home.path);
+      space = (await list(["spaces", "list"], home.path))[0] ?? {};
+      assigned = await openmail(
+        ["spaces", "assign", "gmail:alex@example.com", String(space.id)],
+        home.path,
+      );
+    });
+
+    test("add creates the space with the keys scripts read", () => {
+      expect(added.code, added.stderr).toBe(0);
+      expect(added.stdout).toMatch(/^Added space Work \(.+\)\.$/m);
+      expect(space.name).toBe("Work");
+      expect(Object.keys(space)).toEqual(KEYS.space);
+    });
+
+    test("assign puts an account in it", async () => {
+      expect(assigned.code, assigned.stderr).toBe(0);
+      const after = (await list(["spaces", "list"], home.path))[0] ?? {};
+      expect(JSON.stringify(after.accounts)).toContain("gmail:alex@example.com");
+    });
   });
 });
 
 describe("proposals", () => {
-  test("list shows the pending agent proposal; reject settles it", async ({ onTestFinished }) => {
-    const home = await freshHome(onTestFinished);
-    const text = await openmail(["proposals", "list"], home);
+  test("list shows the pending agent proposal", async () => {
+    const [text, listed] = await Promise.all([
+      openmail(["proposals", "list"]),
+      list(["proposals", "list"]),
+    ]);
     expect(text.code).toBe(0);
     expect(text.stdout).toMatch(/^#1 .* pending +agent:mcp:claude-code$/m);
     expect(text.stdout).toContain("archive: 3 thread(s)");
-    const proposal = (await list(["proposals", "list"], home))[0] ?? {};
+    const proposal = listed[0] ?? {};
     expect(Object.keys(proposal)).toEqual(KEYS.proposal);
     expect(proposal.status).toBe("pending");
+  });
 
-    const rejected = await openmail(["proposals", "reject", "1"], home);
-    expect(rejected.code, rejected.stderr).toBe(0);
-    expect(rejected.stdout).toBe("Rejected proposal 1.\n");
-    expect(await json(["proposals", "list"], home)).toEqual([]);
-    // The audit log records who rejected it.
-    const audit = await openmail(["audit", "--limit", "1"], home);
-    expect(audit.stdout).toMatch(/user:cli +reject/);
+  describe("after reject", () => {
+    const home = sharedHome();
+    let rejected: Awaited<ReturnType<typeof openmail>>;
+    beforeAll(async () => {
+      rejected = await openmail(["proposals", "reject", "1"], home.path);
+    });
+
+    test("reject settles it and the audit log records who rejected it", async () => {
+      expect(rejected.code, rejected.stderr).toBe(0);
+      expect(rejected.stdout).toBe("Rejected proposal 1.\n");
+      const [pending, audit] = await Promise.all([
+        json(["proposals", "list"], home.path),
+        openmail(["audit", "--limit", "1"], home.path),
+      ]);
+      expect(pending).toEqual([]);
+      expect(audit.stdout).toMatch(/user:cli +reject/);
+    });
   });
 
   test("approving points to the app and exits 1", async () => {
