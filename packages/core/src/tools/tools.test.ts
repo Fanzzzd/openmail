@@ -156,6 +156,7 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
       proposal: () => notUsed("proposal"),
     },
     sync: {
+      refreshPlannerStats: notUsed("refreshPlannerStats"),
       syncHealth: () => notUsed("syncHealth"),
       cacheDatabaseSize: notUsed("cacheDatabaseSize"),
       compactCache: notUsed("compactCache"),

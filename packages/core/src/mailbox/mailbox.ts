@@ -574,6 +574,11 @@ export interface MailboxSync {
   /** Desktop's lightweight inbox poll; CLI/MCP do not start a timer. */
   pollInbox(accountIds?: readonly string[], incrementalOnly?: boolean): Effect.Effect<SyncResult[]>;
   readonly syncState: Effect.Effect<SyncState>;
+  /**
+   * Refreshes planner statistics, waiting at most 250 ms for another process's write lock.
+   * The app does this hourly; `openmail sync` calls it after fetching.
+   */
+  readonly refreshPlannerStats: Effect.Effect<void>;
 }
 
 /** Calendar invites and events. Parts: mailbox-features.ts, mailbox-apply.ts. */

@@ -57,18 +57,37 @@ it.effect("opening does not wait for a write lock another process holds", () =>
   }).pipe(Effect.scoped),
 );
 
+const resetStats = (file: string, rows: string) => {
+  const db = new DatabaseSync(file);
+  try {
+    db.exec(`DELETE FROM sqlite_stat1; ${rows}`);
+  } finally {
+    db.close();
+  }
+};
+
 it.effect("only the mailbox owner refreshes statistics on an analyzed database", () =>
   Effect.gen(function* () {
     const file = join(yield* temp, "mail.db");
     yield* open(file, { vectorExtension: null });
     assert.isAbove(statRows(file), 0, "a new database gets statistics on its first open");
-    const clear = new DatabaseSync(file);
-    clear.exec("DELETE FROM sqlite_stat1");
-    clear.close();
+    resetStats(file, "INSERT INTO sqlite_stat1(tbl,idx,stat) VALUES('messages',NULL,'1000')");
     yield* open(file, { vectorExtension: null });
-    assert.strictEqual(statRows(file), 0, "a CLI or MCP open skips PRAGMA optimize");
+    assert.strictEqual(statRows(file), 1, "a CLI or MCP open skips PRAGMA optimize");
     yield* open(file, { vectorExtension: null, plannerStatsOwner: true });
-    assert.isAbove(statRows(file), 0, "the desktop app refreshes on open");
+    assert.isAbove(statRows(file), 1, "the desktop app refreshes on open");
+  }).pipe(Effect.scoped),
+);
+
+// A first CLI open on a new mailbox recorded statistics for two small tables only. Later opens
+// saw sqlite_stat1 and skipped the refresh, so messages never got statistics without the app.
+it.effect("an open without statistics for messages refreshes them", () =>
+  Effect.gen(function* () {
+    const file = join(yield* temp, "mail.db");
+    yield* open(file, { vectorExtension: null });
+    resetStats(file, "INSERT INTO sqlite_stat1(tbl,idx,stat) VALUES('prefs',NULL,'1')");
+    yield* open(file, { vectorExtension: null });
+    assert.isAbove(statRows(file), 1);
   }).pipe(Effect.scoped),
 );
 
@@ -147,3 +166,33 @@ it.effect("storing a message without vectors does not touch the vector tables", 
     Effect.ensuring(Effect.sync(trace.restore)),
   );
 });
+
+// `openmail sync` ends with this refresh, so a mailbox the CLI fills gets statistics for it.
+it.effect("the sync refresh records statistics for messages once the mailbox has mail", () =>
+  Effect.gen(function* () {
+    const store = yield* Store;
+    const sql = yield* SqlClient.SqlClient;
+    const account = yield* store.upsertAccount("gmail", "me@example.com");
+    for (let i = 0; i < 50; i++)
+      yield* store.upsertMessage(account.id, {
+        providerId: `p${i}`,
+        threadId: `t${i}`,
+        subject: `s${i}`,
+        from: { name: "", address: "a@example.com" },
+        to: [],
+        cc: [],
+        date: i,
+        snippet: "",
+        bodyText: `body ${i}`,
+        bodyHtml: "",
+        labels: ["INBOX"],
+        attachments: [],
+        isUnread: false,
+        isStarred: false,
+      });
+    yield* sql`DELETE FROM sqlite_stat1 WHERE tbl='messages'`;
+    yield* store.listThreads({ limit: 5 });
+    yield* store.refreshPlannerStats;
+    assert.isAbove((yield* sql`SELECT 1 FROM sqlite_stat1 WHERE tbl='messages'`).length, 0);
+  }).pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform())))),
+);

@@ -217,10 +217,14 @@ export const optimizeQueryPlanner = (options: { mask?: number; busyTimeoutMs: nu
     );
   }).pipe(Effect.scoped, Effect.ignore);
 
-const hasPlannerStats = Effect.gen(function* () {
+/**
+ * Whether the planner has statistics for `messages`. Opening a new mailbox records only the
+ * small tables, so the check is for the table every list and search reads.
+ */
+export const plannerStatsPresent = Effect.gen(function* () {
   const sql = yield* SqlClient.SqlClient;
-  const rows = yield* sql`SELECT 1 FROM sqlite_master WHERE name = 'sqlite_stat1'`;
-  return rows.length > 0;
+  if (!(yield* sql`SELECT 1 FROM sqlite_master WHERE name = 'sqlite_stat1'`).length) return false;
+  return (yield* sql`SELECT 1 FROM sqlite_stat1 WHERE tbl = 'messages' LIMIT 1`).length > 0;
 });
 
 /**
@@ -232,7 +236,7 @@ const hasPlannerStats = Effect.gen(function* () {
  */
 export const optimizeOnOpen = (options: { owner: boolean; migrated: boolean }) =>
   Effect.gen(function* () {
-    if (options.owner || options.migrated || !(yield* hasPlannerStats))
+    if (options.owner || options.migrated || !(yield* plannerStatsPresent))
       yield* optimizeQueryPlanner({ mask: 0x10002, busyTimeoutMs: 0 });
   }).pipe(Effect.ignore);
 

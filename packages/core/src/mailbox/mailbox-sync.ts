@@ -705,6 +705,8 @@ export const makeSyncMailbox = (
       pollInbox,
 
       syncState: Ref.get(runtime.syncState),
+
+      refreshPlannerStats: store.refreshPlannerStats,
     } satisfies Pick<
       MailboxSync,
       | "closeSessions"
@@ -714,6 +716,7 @@ export const makeSyncMailbox = (
       | "sync"
       | "pollInbox"
       | "syncState"
+      | "refreshPlannerStats"
     >,
   };
 };

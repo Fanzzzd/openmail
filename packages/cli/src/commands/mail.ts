@@ -71,6 +71,8 @@ const sync = Command.make(
       Effect.forEach(ids, (id) => mailbox.sync.sync(id)).pipe(Effect.map((rows) => rows.flat())),
       !json,
     );
+    // The app refreshes planner statistics hourly; a CLI-only mailbox gets them here.
+    yield* mailbox.sync.refreshPlannerStats;
     yield* print({ results }, json, (value) => syncTable(value.results));
     return yield* results.some((r) => r.error) ? fail("Some accounts did not sync.") : Effect.void;
   }),
@@ -87,7 +89,10 @@ const limitFlag = Flag.Int("limit").pipe(
 
 /** `--space`, plus the hidden `--profile` it replaced, so older scripts keep working. */
 const spaceFlags = {
-  space: optionalString("space", "Only accounts in this space: its name or id (openmail spaces list)"),
+  space: optionalString(
+    "space",
+    "Only accounts in this space: its name or id (openmail spaces list)",
+  ),
   profile: optionalString("profile", "Same as --space").pipe(Flag.withHidden),
 };
 
