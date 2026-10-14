@@ -64,7 +64,7 @@ interface PackageJson {
 
 /** One section: name, version, declared license, then the license and notice files. */
 function describe(dir: string): string {
-  // IO boundary: a package's own package.json.
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- IO boundary: a package's own package.json.
   const pkg = JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) as PackageJson;
   const license = typeof pkg.license === "string" ? pkg.license : (pkg.license?.type ?? "unknown");
   const files = readdirSync(dir)

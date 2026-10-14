@@ -149,7 +149,7 @@ describe("remote RPC server", () => {
     const frames: Frame[] = [];
     let closed: number | undefined;
     const connection = hub.onConnection({
-      // IO boundary: the server's JSON frame.
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- IO boundary: the server's JSON frame.
       send: (frame) => frames.push(JSON.parse(frame) as Frame),
       close: (code) => {
         closed = code;

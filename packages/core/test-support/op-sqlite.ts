@@ -23,7 +23,7 @@ export function opSqliteShim(
         execute: async (query, params = []) => {
           const statement = db.prepare(query);
           if (statement.columns().length) {
-            // SQLite's declared row result is an IO boundary.
+            // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- IO boundary: SQLite's declared row result.
             const rows = statement.all(...params.map(bind)) as Record<string, SqliteScalar>[];
             return { rows, rowsAffected: 0 };
           }
@@ -46,6 +46,7 @@ export function opSqliteShim(
               insertId: Number(result.lastInsertRowid),
             };
           }
+          // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- IO boundary: SQLite's declared row result.
           const rows = statement.all(...params.map(bind)) as Record<string, SqliteScalar>[];
           return {
             rowsAffected: 0,

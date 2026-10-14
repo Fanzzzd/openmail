@@ -34,7 +34,7 @@ interface Measured {
   popups: string[];
 }
 const measuredShot = (dir: string, name: string): Measured =>
-  // IO boundary: JSON written by the screenshot script.
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- IO boundary: JSON written by the screenshot script.
   JSON.parse(readFileSync(path.join(dir, `${name}.json`), "utf8")) as Measured;
 
 /** Russian has the longest Send and Send and archive of the shipped languages. */

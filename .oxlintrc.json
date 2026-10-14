@@ -43,7 +43,7 @@
     "import/no-cycle": ["error", { "ignoreTypes": false }],
     "import/no-duplicates": "error",
     "typescript/no-unnecessary-condition": "error",
-    "typescript/no-unsafe-type-assertion": "warn",
+    "typescript/no-unsafe-type-assertion": "error",
     "eslint/prefer-object-spread": "error",
     "typescript/prefer-optional-chain": "error",
     "unicorn/no-array-for-each": "error"

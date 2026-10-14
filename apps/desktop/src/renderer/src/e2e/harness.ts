@@ -465,7 +465,7 @@ export async function flow(
       },
       send: (_, frame) => {
         progress();
-        // IO boundary: the frame the server just encoded.
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- IO boundary: the frame the server just encoded.
         responses.push(JSON.parse(frame) as RpcMessage.FromServerEncoded);
         queueMicrotask(() => {
           for (const listener of listeners) listener(frame);

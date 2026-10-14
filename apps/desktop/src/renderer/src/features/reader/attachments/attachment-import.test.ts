@@ -28,13 +28,12 @@ vi.mock("../../../state/mail", () => ({
 
 import { AttachmentImportDialog } from "./AttachmentImportDialog";
 
-window.matchMedia = (query: string) =>
-  ({
-    matches: false,
-    media: query,
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-  }) as never;
+vi.stubGlobal("matchMedia", (query: string) => ({
+  matches: false,
+  media: query,
+  addEventListener: vi.fn(),
+  removeEventListener: vi.fn(),
+}));
 
 afterEach(cleanup);
 const localized = (node: ReactNode) =>
@@ -45,7 +44,14 @@ it("keeps focus on an add button after it runs, and clears a failure once a retr
     localized(
       h(AttachmentImportDialog, {
         messageId: "m",
-        file: { filename: "ada.vcf", path: "ada.vcf" } as never,
+        file: {
+          path: [0],
+          filename: "ada.vcf",
+          mimeType: "text/vcard",
+          size: 10,
+          embedded: false,
+          decodeError: false,
+        },
         onClose: () => null,
       }),
     ),

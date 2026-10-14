@@ -74,7 +74,7 @@ async function openWebApp(mailbox: (m: Mailbox["Service"]) => Mailbox["Service"]
     });
     socket.on("message", (data: Buffer) => {
       const frame = data.toString("utf8");
-      // IO boundary: one encoded request frame.
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- IO boundary: one encoded request frame.
       const parsed = JSON.parse(frame) as { _tag?: string; tag?: string };
       if (parsed._tag === "Request" && parsed.tag) tags.push(parsed.tag);
       handlers.message(frame);

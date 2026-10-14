@@ -394,8 +394,14 @@ it("formatting keys follow Mimestream and the macOS text system", () => {
   ] as const;
   for (const set of ["mimestream", "apple", "gmail"] as const) {
     for (const [action, text] of cases) expect(shortcutText(set, action)).toBe(text);
-    for (const action of ["superscript", "subscript", "dashList", "copyStyle", "toggleFormatBar"])
-      expect(KEYMAP[set][action as "superscript"]).toEqual([]);
+    for (const action of [
+      "superscript",
+      "subscript",
+      "dashList",
+      "copyStyle",
+      "toggleFormatBar",
+    ] as const)
+      expect(KEYMAP[set][action]).toEqual([]);
   }
 });
 

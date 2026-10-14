@@ -65,7 +65,7 @@ export function readDraftBackup(storage = store(), now = Date.now()): DraftBacku
   if (!storage) return null;
   let backup: Partial<DraftBackup> | null;
   try {
-    // IO boundary: what this tab wrote earlier.
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- IO boundary: what this tab wrote earlier.
     backup = JSON.parse(storage.getItem(KEY) ?? "null") as Partial<DraftBackup> | null;
   } catch {
     storage.removeItem(KEY);

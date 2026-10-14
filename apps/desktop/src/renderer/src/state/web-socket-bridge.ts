@@ -211,7 +211,7 @@ export async function probeSession(
   // 503 while the Mac starts remote access, and 5xx from Serve: try again later.
   if (!response.ok) return { status: "offline" };
   try {
-    // IO boundary: the Mac's JSON reply.
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- IO boundary: the Mac's JSON reply.
     const body = (await response.json()) as { build?: unknown };
     return { status: "ok", build: typeof body.build === "string" ? body.build : "" };
   } catch {

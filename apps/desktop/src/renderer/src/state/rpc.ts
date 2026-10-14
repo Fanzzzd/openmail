@@ -40,6 +40,7 @@ export const ElectronProtocol = Layer.effect(
         const off = bridge.onFrame((frame) => {
           run(
             Effect.forEach(
+              // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- IO boundary: frames from the main process, decoded by Effect RPC's own schemas next.
               parser.decode(frame) as ReadonlyArray<RpcMessage.FromServerEncoded>,
               (response) => {
                 if (response._tag === "Exit" || response._tag === "Chunk") {
