@@ -1,4 +1,5 @@
 import { useLingui } from "@lingui/react/macro";
+import { buttonSecondary } from "../../../ui/styles";
 import type { StoredDraft } from "../../../../../shared/api";
 
 type SyncStatus = Pick<StoredDraft, "syncError" | "syncRetrying" | "localOnly">;
@@ -27,7 +28,7 @@ export function DraftSyncRecovery({
         <button
           type="button"
           disabled={busy}
-          className="ml-3"
+          className={`ml-3 ${buttonSecondary}`}
           onClick={() => onRecover("retry")}
         >{t`Resume syncing`}</button>
       </div>
@@ -37,11 +38,17 @@ export function DraftSyncRecovery({
     <div className="shrink-0 border-b px-4 py-2 border-separator">
       <output role="alert">{t`Couldn't sync`}</output>
       <p className="text-a11y-muted">{t`Your changes are saved on this Mac. Try again or keep a local copy.`}</p>
-      <div className="mt-1 flex gap-3">
-        <button type="button" disabled={busy} onClick={() => onRecover("retry")}>{t`Retry`}</button>
+      <div className="mt-2 flex flex-wrap gap-2">
         <button
           type="button"
           disabled={busy}
+          className={buttonSecondary}
+          onClick={() => onRecover("retry")}
+        >{t`Retry`}</button>
+        <button
+          type="button"
+          disabled={busy}
+          className={buttonSecondary}
           onClick={() => onRecover("local")}
         >{t`Keep local copy`}</button>
       </div>

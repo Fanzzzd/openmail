@@ -17,7 +17,7 @@ import { useComposeSend } from "../hooks/use-compose-send";
 import { useComposeEditor } from "../hooks/use-compose-editor";
 import { useDraftLifecycle } from "../hooks/use-draft-lifecycle";
 import { useComposeShortcuts } from "../hooks/use-compose-shortcuts";
-import { titlebarRow, touchTarget } from "../../../ui/styles";
+import { buttonPrimary, buttonSecondary, titlebarRow, touchTarget } from "../../../ui/styles";
 import { Dialog } from "@base-ui/react/dialog";
 import { SheetDragStrip, narrowSheet } from "../../../ui/Dialog";
 import { TrafficLightSpace } from "../../../ui/TrafficLights";
@@ -432,9 +432,14 @@ export function Composer({
                 <button
                   type="button"
                   disabled={adding}
+                  className={buttonPrimary}
                   onClick={loadImageUrl}
                 >{t`Insert image`}</button>
-                <button type="button" onClick={() => setImageUrlOpen(false)}>{t`Cancel`}</button>
+                <button
+                  type="button"
+                  className={buttonSecondary}
+                  onClick={() => setImageUrlOpen(false)}
+                >{t`Cancel`}</button>
               </div>
             )}
             <div className="flex shrink-0 items-center gap-3 border-b border-separator px-4 py-2">

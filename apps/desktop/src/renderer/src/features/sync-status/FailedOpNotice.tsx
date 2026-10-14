@@ -9,6 +9,7 @@ import type { FailedOp } from "../../../../shared/api";
 import { Keys } from "../../state/keys";
 import { useRunMail, withMail } from "../../state/mail";
 import { accountsAtom, failedOpsAtom } from "../../state/queries";
+import { buttonSecondary } from "../../ui/styles";
 
 const OPERATION_LABELS: Readonly<Record<string, MessageDescriptor>> = {
   read: msg`Read status`,
@@ -71,12 +72,18 @@ export function FailedOpNoticeContent({
           {partialCount > 0 && <span className="block">{partialTitle(partialCount)}</span>}
           {sentCopyCount > 0 && <span className="block">{sentCopyTitle(sentCopyCount)}</span>}
         </output>
-        <button type="button" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>
+        <button
+          type="button"
+          className={buttonSecondary}
+          aria-expanded={expanded}
+          onClick={() => setExpanded(!expanded)}
+        >
           {expanded ? t`Hide details` : t`Details`}
         </button>
         <button
           type="button"
           disabled={busy}
+          className={buttonSecondary}
           onClick={() => dismiss(failures.map((entry) => entry.id))}
         >
           {t`Dismiss`}
@@ -109,6 +116,7 @@ export function FailedOpNoticeContent({
                 <button
                   type="button"
                   disabled={busy}
+                  className={`mt-1 ${buttonSecondary}`}
                   onClick={() => resend(entry.id)}
                 >{t`Resend to rejected recipients`}</button>
               )}

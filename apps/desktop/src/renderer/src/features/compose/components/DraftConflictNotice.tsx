@@ -1,4 +1,5 @@
 import { useLingui } from "@lingui/react/macro";
+import { buttonSecondary } from "../../../ui/styles";
 
 /**
  * Someone saved this draft in another window or on another device after this editor
@@ -15,9 +16,17 @@ export function DraftConflictNotice({
   return (
     <div className="shrink-0 border-b px-4 py-2 border-separator">
       <output>{t`This draft changed in another window or on another device. The newer version is open.`}</output>
-      <div className="mt-1 flex gap-3">
-        <button type="button" onClick={onRestore}>{t`Restore my version`}</button>
-        <button type="button" onClick={onDismiss}>{t`Keep the newer version`}</button>
+      <div className="mt-2 flex flex-wrap gap-2">
+        <button
+          type="button"
+          className={buttonSecondary}
+          onClick={onRestore}
+        >{t`Restore my version`}</button>
+        <button
+          type="button"
+          className={buttonSecondary}
+          onClick={onDismiss}
+        >{t`Keep the newer version`}</button>
       </div>
     </div>
   );

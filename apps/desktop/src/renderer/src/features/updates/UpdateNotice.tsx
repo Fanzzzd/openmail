@@ -2,6 +2,7 @@ import { useAtomValue } from "@effect/atom-react";
 import { Trans } from "@lingui/react/macro";
 import { AsyncResult } from "effect/reactivity";
 import { updateStateAtom } from "../../state/queries";
+import { buttonSecondary } from "../../ui/styles";
 
 export function UpdateNotice({ onSettings }: { onSettings: () => void }) {
   const state = AsyncResult.getOrElse(useAtomValue(updateStateAtom), () => null);
@@ -23,7 +24,7 @@ export function UpdateNotice({ onSettings }: { onSettings: () => void }) {
           <Trans>Update {version} is available.</Trans>
         )}
       </span>
-      <button type="button" onClick={onSettings}>
+      <button type="button" className={buttonSecondary} onClick={onSettings}>
         <Trans>Software updates</Trans>
       </button>
     </output>
