@@ -1783,7 +1783,7 @@ it.effect("a client that changes its name still stops at 200 pending proposals i
           return { status: "proposed", proposalId: 999 } as const;
         }),
     });
-    const args = { thread_ids: ["m1"], action: "archive", rationale: "r" } as const;
+    const args = { message_ids: ["m1"], action: "archive", rationale: "r" } as const;
     const over = failureOf(yield* run(call("modify_threads", args), layer));
     assert.strictEqual(over.code, "too_many_proposals");
     assert.include(over.message, String(PENDING_PROPOSAL_TOTAL_LIMIT));
@@ -1802,7 +1802,7 @@ it.effect("the store's own limit, hit by a racing process, still reads as too_ma
     });
     const result = failureOf(
       yield* run(
-        call("modify_threads", { thread_ids: ["m1"], action: "archive", rationale: "r" }),
+        call("modify_threads", { message_ids: ["m1"], action: "archive", rationale: "r" }),
         layer,
       ),
     );
