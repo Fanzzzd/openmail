@@ -15,6 +15,7 @@ import { decideAtom } from "../../state/mutations";
 import { labelsAtom, threadAtom } from "../../state/queries";
 import { Dialog } from "../../ui/Dialog";
 import { dateFormat } from "../../lib/format";
+import { NO_VALUE } from "../../i18n/message-text";
 
 const OP_NAMES: Record<MailOp["kind"], (op: MailOp) => MessageDescriptor> = {
   read: (op) => (op.kind === "read" && op.value ? msg`Mark as read` : msg`Mark as unread`),
@@ -119,7 +120,6 @@ function Item({
       : command.kind === "snooze"
         ? t`Snooze`
         : "";
-  const more = count - threadIds.length;
   const dueText =
     command.kind === "snooze"
       ? new Date(command.due).toLocaleString(dateFormat(i18n).locale, {
@@ -165,23 +165,13 @@ function Item({
                 }
               />
             ))}
-            {more > 0 && (
-              <li className="text-a11y-muted">
-                <Trans>{more} more</Trans>
-              </li>
-            )}
           </ul>
         </>
       )}
       {command.kind === "snooze" && <p>{t`Until ${dueText}`}</p>}
       {outgoing && (
         <>
-          <p className="mt-1 font-medium">
-            <Trans>
-              From {from} to {to}
-            </Trans>
-          </p>
-          <DraftDetails message={outgoing.message} />
+          <DraftDetails message={outgoing.message} from={from} to={to} />
           <p className="mt-0.5 whitespace-pre-wrap break-words">
             {outgoing.message.subject || t`(No subject)`}
           </p>
@@ -271,7 +261,15 @@ const COMPOSE_MODES = {
   replyAll: msg`Reply all`,
   forward: msg`Forward`,
 };
-function DraftDetails({ message }: { message: OutgoingMessage }) {
+function DraftDetails({
+  message,
+  from,
+  to,
+}: {
+  message: OutgoingMessage;
+  from: string;
+  to: string;
+}) {
   const { t, i18n } = useLingui();
   const target = AsyncResult.getOrElse(
     useAtomValue(threadAtom(message.inReplyTo ?? null)),
@@ -284,13 +282,21 @@ function DraftDetails({ message }: { message: OutgoingMessage }) {
   return (
     <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 break-words">
       <dt>
+        <Trans>From</Trans>
+      </dt>
+      <dd>{from}</dd>
+      <dt>
+        <Trans>To</Trans>
+      </dt>
+      <dd>{to}</dd>
+      <dt>
         <Trans>Cc</Trans>
       </dt>
-      <dd>{message.cc.map(formatAddress).join(", ") || t`None`}</dd>
+      <dd>{message.cc.map(formatAddress).join(", ") || i18n._(NO_VALUE)}</dd>
       <dt>
         <Trans>Bcc</Trans>
       </dt>
-      <dd>{message.bcc.map(formatAddress).join(", ") || t`None`}</dd>
+      <dd>{message.bcc.map(formatAddress).join(", ") || i18n._(NO_VALUE)}</dd>
       <dt>
         <Trans>Mode</Trans>
       </dt>

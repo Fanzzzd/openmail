@@ -225,10 +225,6 @@ msgstr "{label}建议"
 msgid "{messageCount, plural, one {# message} other {# messages}}"
 msgstr "{messageCount, plural, other {# 封邮件}}"
 
-#: src/renderer/src/features/ai/Proposals.tsx
-msgid "{more} more"
-msgstr "还有 {more} 个"
-
 #: src/renderer/src/features/sidebar/use-sidebar-organize.ts
 msgid "{name} ({owner})"
 msgstr "{name}（{owner}）"
@@ -3057,16 +3053,13 @@ msgstr "星期五"
 msgid "Friendlier"
 msgstr "更友好"
 
+#: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/AddressFields.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/use-thread-print.ts
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "From"
 msgstr "发件人"
-
-#: src/renderer/src/features/ai/Proposals.tsx
-msgid "From {from} to {to}"
-msgstr "从 {from} 发给 {to}"
 
 #: src/renderer/src/features/reader/RemoteImagesPrompt.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
@@ -4638,9 +4631,6 @@ msgstr "收件箱没有未读"
 msgid "Nobody can sign in. Add a tailnet login below."
 msgstr "目前没有人能登录。请在下方添加 tailnet 登录名。"
 
-#: src/renderer/src/features/ai/Proposals.tsx
-#: src/renderer/src/features/calendar/CalendarEvents.tsx
-#: src/renderer/src/features/calendar/InviteBanner.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
@@ -4649,6 +4639,12 @@ msgstr "目前没有人能登录。请在下方添加 tailnet 登录名。"
 #: src/renderer/src/i18n/action-names.ts
 msgid "None"
 msgstr "不选"
+
+#. Shown in place of a value that is empty, such as no Cc recipients or no event location. Not an option in a list.
+#: src/renderer/src/i18n/message-text.ts
+msgctxt "empty value"
+msgid "None"
+msgstr "无"
 
 #: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 #: src/renderer/src/i18n/organization-labels.ts
@@ -7415,6 +7411,7 @@ msgstr "时区"
 msgid "Times follow this Mac's time zone. Outside a space's active hours, OpenMail holds its notifications and leaves its unread mail out of the Dock badge. When active hours start again, you get one summary of the unread mail that arrived."
 msgstr "时间按这台 Mac 的时区计算。在空间的活跃时段以外，OpenMail 暂缓这个空间的通知，Dock 图标的未读数也不计入它的邮件。活跃时段重新开始时，你会收到一条汇总，列出这段时间收到的未读邮件。"
 
+#: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/AddressFields.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/use-thread-print.ts

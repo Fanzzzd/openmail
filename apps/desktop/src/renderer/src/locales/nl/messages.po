@@ -215,10 +215,6 @@ msgstr "{label} suggesties"
 msgid "{messageCount, plural, one {# message} other {# messages}}"
 msgstr "{messageCount, plural, one {# bericht} other {# berichten}}"
 
-#: src/renderer/src/features/ai/Proposals.tsx
-msgid "{more} more"
-msgstr "{more} meer"
-
 #: src/renderer/src/features/sidebar/use-sidebar-organize.ts
 msgid "{name} ({owner})"
 msgstr "{name} ({owner})"
@@ -3047,16 +3043,13 @@ msgstr "Vrijdag"
 msgid "Friendlier"
 msgstr "Vriendelijker"
 
+#: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/AddressFields.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/use-thread-print.ts
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "From"
 msgstr "Van"
-
-#: src/renderer/src/features/ai/Proposals.tsx
-msgid "From {from} to {to}"
-msgstr "Van {from} naar {to}"
 
 #: src/renderer/src/features/reader/RemoteImagesPrompt.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
@@ -4628,15 +4621,18 @@ msgstr "Geen ongelezen mail in de Postvak IN"
 msgid "Nobody can sign in. Add a tailnet login below."
 msgstr "Niemand kan inloggen. Voeg hieronder een tailnet-login toe."
 
-#: src/renderer/src/features/ai/Proposals.tsx
-#: src/renderer/src/features/calendar/CalendarEvents.tsx
-#: src/renderer/src/features/calendar/InviteBanner.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 #: src/renderer/src/i18n/action-names.ts
+msgid "None"
+msgstr "Geen"
+
+#. Shown in place of a value that is empty, such as no Cc recipients or no event location. Not an option in a list.
+#: src/renderer/src/i18n/message-text.ts
+msgctxt "empty value"
 msgid "None"
 msgstr "Geen"
 
@@ -7405,6 +7401,7 @@ msgstr "Tijdzone"
 msgid "Times follow this Mac's time zone. Outside a space's active hours, OpenMail holds its notifications and leaves its unread mail out of the Dock badge. When active hours start again, you get one summary of the unread mail that arrived."
 msgstr "Tijden volgen de tijdzone van deze Mac. Buiten de actieve uren van een ruimte houdt OpenMail de meldingen van die ruimte vast en telt OpenMail de ongelezen e-mail ervan niet mee in de Dock-badge. Zodra de actieve uren weer beginnen, krijg je één overzicht van de ongelezen e-mail die in de tussentijd is binnengekomen."
 
+#: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/AddressFields.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/use-thread-print.ts

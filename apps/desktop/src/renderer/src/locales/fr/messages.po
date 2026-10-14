@@ -215,10 +215,6 @@ msgstr "{label} suggestions"
 msgid "{messageCount, plural, one {# message} other {# messages}}"
 msgstr "{messageCount, plural, one {# message} other {# messages}}"
 
-#: src/renderer/src/features/ai/Proposals.tsx
-msgid "{more} more"
-msgstr "{more} plus"
-
 #: src/renderer/src/features/sidebar/use-sidebar-organize.ts
 msgid "{name} ({owner})"
 msgstr "{name} ({owner})"
@@ -3047,16 +3043,13 @@ msgstr "Vendredi"
 msgid "Friendlier"
 msgstr "Plus cordial"
 
+#: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/AddressFields.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/use-thread-print.ts
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "From"
 msgstr "De"
-
-#: src/renderer/src/features/ai/Proposals.tsx
-msgid "From {from} to {to}"
-msgstr "De {from} à {to}"
 
 #: src/renderer/src/features/reader/RemoteImagesPrompt.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
@@ -4628,15 +4621,18 @@ msgstr "Aucun courrier non lu dans la boîte de réception"
 msgid "Nobody can sign in. Add a tailnet login below."
 msgstr "Personne ne peut se connecter. Ajoutez un identifiant tailnet ci-dessous."
 
-#: src/renderer/src/features/ai/Proposals.tsx
-#: src/renderer/src/features/calendar/CalendarEvents.tsx
-#: src/renderer/src/features/calendar/InviteBanner.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 #: src/renderer/src/i18n/action-names.ts
+msgid "None"
+msgstr "Aucun"
+
+#. Shown in place of a value that is empty, such as no Cc recipients or no event location. Not an option in a list.
+#: src/renderer/src/i18n/message-text.ts
+msgctxt "empty value"
 msgid "None"
 msgstr "Aucun"
 
@@ -7405,6 +7401,7 @@ msgstr "Fuseau horaire"
 msgid "Times follow this Mac's time zone. Outside a space's active hours, OpenMail holds its notifications and leaves its unread mail out of the Dock badge. When active hours start again, you get one summary of the unread mail that arrived."
 msgstr "Les horaires suivent le fuseau horaire de ce Mac. En dehors des heures d’activité d’un espace, OpenMail met ses notifications en attente et ne compte pas ses courriers non lus dans la pastille du Dock. À la reprise des heures d’activité, vous recevez un seul résumé des courriers non lus arrivés entre-temps."
 
+#: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/AddressFields.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/use-thread-print.ts

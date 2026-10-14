@@ -27,6 +27,7 @@ import {
   OverlappingEvents,
 } from "./CalendarEvents";
 import { MeetingLinks } from "./MeetingLinks";
+import { NO_VALUE } from "../../i18n/message-text";
 import { formButton } from "../../ui/form-styles";
 import { Disclosure } from "../../ui/Disclosure";
 
@@ -205,8 +206,8 @@ function Invitation({
           </p>
           {invite.previous.location !== invite.location && (
             <p>
-              <Trans>Location changed:</Trans> {invite.previous.location || t`None`} →{" "}
-              {invite.location || t`None`}
+              <Trans>Location changed:</Trans> {invite.previous.location || i18n._(NO_VALUE)} →{" "}
+              {invite.location || i18n._(NO_VALUE)}
             </p>
           )}
         </div>

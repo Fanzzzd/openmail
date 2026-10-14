@@ -105,6 +105,9 @@ it("the complete catalogs consistently use the mail glossary, message-text termi
           ))
       )
         failures.push(`${locale}: style: ${source} → ${target}`);
+      // An empty displayed value (no Cc, no location) is 无; 不选 is only a picker option.
+      if (locale === "zh-CN" && message.context === "empty value" && target !== "无")
+        failures.push(`${locale}: empty value: ${source} → ${target}`);
       // "Authorize permission" is not a doubled verb in French.
       if (locale === "fr" && /autoris\p{L}* l[’']autorisation/iu.test(target))
         failures.push(`${locale}: style: ${source} → ${target}`);

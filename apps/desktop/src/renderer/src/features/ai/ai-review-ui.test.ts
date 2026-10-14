@@ -125,6 +125,41 @@ for (const mode of ["reply", "replyAll", "forward"] as const) {
   });
 }
 
+it("draft approval labels From and To as fields and shows None for empty Cc and Bcc", () => {
+  const dom = render({
+    ...base,
+    command: {
+      kind: "draft",
+      accountId: account.id,
+      message: {
+        to: [{ name: "To", address: "to@example.com" }],
+        cc: [],
+        bcc: [],
+        subject: "Draft subject",
+        text: "Body",
+        mode: "new",
+        attachments: [],
+      },
+    },
+  });
+  try {
+    const fields = [...dom.element.querySelectorAll("dt")].map((dt) => [
+      dt.textContent,
+      dt.nextElementSibling?.textContent,
+    ]);
+    expect(fields.slice(0, 4)).toEqual([
+      ["From", "me@example.com"],
+      ["To", "To <to@example.com>"],
+      ["Cc", "None"],
+      ["Bcc", "None"],
+    ]);
+    // No sentence joins the two addresses, so translations cannot read it as a range.
+    expect(dom.element.textContent).not.toMatch(/From .* to /);
+  } finally {
+    dom.dispose();
+  }
+});
+
 it("label approval names the actual account label", () => {
   const dom = render({
     ...base,

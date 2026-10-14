@@ -36,6 +36,7 @@ import { Dialog, alertButton, alertPrimary } from "../../ui/Dialog";
 import { DropdownMenu, MenuItem } from "../../ui/Menu";
 import { Select } from "../../ui/Select";
 import { CalendarDays } from "lucide-react";
+import { NO_VALUE } from "../../i18n/message-text";
 import { EventRecurrenceEditor } from "./EventRecurrenceEditor";
 import { formButton, formInput } from "../../ui/form-styles";
 
@@ -242,7 +243,7 @@ function EventConfirmation({
   dialogOnly?: { open: boolean; onClose: () => void; onAdded: () => void };
 }) {
   const { t, i18n } = useLingui();
-  const location = event.location || t`None`;
+  const location = event.location || i18n._(NO_VALUE);
   const [cardOpen, setCardOpen] = useState(false);
   const open = dialogOnly ? dialogOnly.open : cardOpen;
   const setOpen = (next: boolean) => {
