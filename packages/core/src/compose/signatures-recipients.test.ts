@@ -327,7 +327,7 @@ it.effect(
       assert.deepStrictEqual(yield* m.suggestContacts("john acme", { accountIds: [] }), []);
       assert.deepStrictEqual(yield* m.suggestContacts("john acme", { exclude: "J@ACME.COM" }), []);
       server.contacts = [];
-      yield* m.refreshContacts(accountId);
+      yield* m.calendar.refreshContacts(accountId);
       assert.strictEqual((yield* m.suggestContacts("john acme"))[0]?.name, "John Smith");
       server.messages.set(
         "sent",

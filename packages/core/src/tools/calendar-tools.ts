@@ -41,7 +41,7 @@ export const calendarHandlers = ({ mailbox, requireMessage }: ToolContext) => {
         p,
         Effect.andThen(
           requireMessage(p.message_id),
-          mailbox.invitations(p.message_id).pipe(Effect.mapError(toToolError)),
+          mailbox.calendar.invitations(p.message_id).pipe(Effect.mapError(toToolError)),
         ).pipe(
           Effect.map((rows) =>
             rows.map((r) => ({
@@ -61,7 +61,7 @@ export const calendarHandlers = ({ mailbox, requireMessage }: ToolContext) => {
         p,
         Effect.andThen(
           requireMessage(p.message_id),
-          mailbox.calendarEvents(p.message_id, p.key).pipe(Effect.mapError(toToolError)),
+          mailbox.calendar.calendarEvents(p.message_id, p.key).pipe(Effect.mapError(toToolError)),
         ).pipe(
           Effect.map((rows) =>
             rows.map((r) => ({

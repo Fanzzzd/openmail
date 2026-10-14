@@ -40,7 +40,7 @@ const ProposalPage = Schema.Struct({
 type Service = Mailbox["Service"];
 type Groups = "reading" | "organize" | "compose" | "outbox" | "ai" | "calendar" | "app";
 /** Groups whose members are no longer flat on Service. */
-type Moved = "ai";
+type Moved = "ai" | "calendar";
 type Flat = Omit<Service, Exclude<Groups, Moved>>;
 type Overrides = Partial<Omit<Flat, Moved>> & { [G in Moved]?: Partial<Service[G]> };
 
@@ -113,7 +113,17 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
     optionalServices: () => notUsed("optionalServices"),
     setServiceEnabled: () => notUsed("setServiceEnabled"),
     unsubscribe: () => notUsed("unsubscribe"),
-    importCalendarAttachment: () => notUsed("importCalendarAttachment"),
+    calendar: {
+      importCalendarAttachment: () => notUsed("importCalendarAttachment"),
+      detectedEvents: () => notUsed("detectedEvents"),
+      calendarEvents: () => notUsed("calendarEvents"),
+      createCalendarEvent: () => notUsed("createCalendarEvent"),
+      invitations: () => notUsed("invitations"),
+      respondInvite: () => notUsed("respondInvite"),
+      contactPhoto: () => notUsed("contactPhoto"),
+      contactSync: notUsed("contactSync"),
+      refreshContacts: () => notUsed("refreshContacts"),
+    },
     queuedSends: notUsed("queuedSends"),
     queueSend: () => notUsed("queueSend"),
     cancelWaitingSend: () => notUsed("cancelWaitingSend"),
@@ -178,18 +188,10 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
       testAccount("gmail:me@gmail.com"),
       testAccount("gmail:me@example.com"),
     ]),
-    detectedEvents: () => notUsed("detectedEvents"),
-    calendarEvents: () => notUsed("calendarEvents"),
-    createCalendarEvent: () => notUsed("createCalendarEvent"),
-    invitations: () => notUsed("invitations"),
-    respondInvite: () => notUsed("respondInvite"),
     contactGroups: () => notUsed("contactGroups"),
-    contactPhoto: () => notUsed("contactPhoto"),
     imageFromUrl: () => notUsed("imageFromUrl"),
     imageFromFile: () => notUsed("imageFromFile"),
     suggestSender: () => notUsed("suggestSender"),
-    contactSync: notUsed("contactSync"),
-    refreshContacts: () => notUsed("refreshContacts"),
     searchServer: () => notUsed("searchServer"),
     setClassificationOverride: () => notUsed("setClassificationOverride"),
     changeLabel: () => notUsed("changeLabel"),
@@ -302,6 +304,7 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
   const flat: Flat = {
     ...base,
     ...overrides,
+    calendar: { ...base.calendar, ...overrides.calendar },
     ai: { ...base.ai, ...overrides.ai },
   };
   // Like the real Mailbox: one proposal comes from the same rows, owners from the same messages.
@@ -338,7 +341,6 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
     organize: merged,
     compose: merged,
     outbox: merged,
-    calendar: merged,
     app: merged,
   });
 }
@@ -1906,24 +1908,26 @@ it.effect(
             },
           ]),
       },
-      invitations: () =>
-        Effect.succeed([
-          {
-            key: "invite",
-            uid: "event",
-            sequence: 1,
-            method: "REQUEST",
-            cancelled: false,
-            title: payload,
-            start: null,
-            end: null,
-            location: payload,
-            organizer: { name: payload, address: "attacker@example.test" },
-            attendees: [],
-            recurrence: [],
-            recurrenceId: null,
-          },
-        ]),
+      calendar: {
+        invitations: () =>
+          Effect.succeed([
+            {
+              key: "invite",
+              uid: "event",
+              sequence: 1,
+              method: "REQUEST",
+              cancelled: false,
+              title: payload,
+              start: null,
+              end: null,
+              location: payload,
+              organizer: { name: payload, address: "attacker@example.test" },
+              attendees: [],
+              recurrence: [],
+              recurrenceId: null,
+            },
+          ]),
+      },
     });
     return Effect.gen(function* () {
       // These read no mail: their fields are OpenMail's own guidance, outside the envelope.

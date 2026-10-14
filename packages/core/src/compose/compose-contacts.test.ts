@@ -102,7 +102,7 @@ import { makeOutlookFeatures } from "../providers/outlook/outlook-features.js";
         yield* Effect.gen(function* () {
           const m = yield* Mailbox;
           yield* m.connect({ provider: "gmail" });
-          yield* m.refreshContacts(id);
+          yield* m.calendar.refreshContacts(id);
           assert.deepStrictEqual((yield* m.contactGroups("team", [id]))[0]?.members, [alice, bob]);
           assert.deepStrictEqual(yield* m.contactGroups("team", []), []);
           yield* m.setPrefs({
@@ -111,17 +111,17 @@ import { makeOutlookFeatures } from "../providers/outlook/outlook-features.js";
             inlineImageSize: "large",
             emojiReplacement: false,
           });
-          assert.strictEqual(yield* m.contactPhoto(id, alice.address), null);
+          assert.strictEqual(yield* m.calendar.contactPhoto(id, alice.address), null);
           assert.strictEqual(downloads.length, 0);
           yield* m.setPrefs({ contactPhotos: true });
           assert.strictEqual(
-            yield* m.contactPhoto(id, alice.address),
+            yield* m.calendar.contactPhoto(id, alice.address),
             `data:image/png;base64,${png}`,
           );
           assert.deepStrictEqual(downloads, [
             { url: server.contactPhotos[0]?.url, limit: CONTACT_PHOTO_LIMIT },
           ]);
-          assert.strictEqual(yield* m.contactPhoto(id, bob.address), null);
+          assert.strictEqual(yield* m.calendar.contactPhoto(id, bob.address), null);
         }).pipe(Effect.provide(layer()));
         yield* Effect.gen(function* () {
           const m = yield* Mailbox;
@@ -129,16 +129,16 @@ import { makeOutlookFeatures } from "../providers/outlook/outlook-features.js";
           assert.strictEqual((yield* m.prefs).composeFont.family, "Georgia");
           assert.strictEqual((yield* m.prefs).inlineImageSize, "large");
           assert.strictEqual((yield* m.prefs).emojiReplacement, false);
-          yield* m.contactPhoto(id, alice.address);
+          yield* m.calendar.contactPhoto(id, alice.address);
           assert.strictEqual(downloads.length, 1);
           server.featureFailure = new FeatureScopeMissing({
             accountId: id,
             feature: "contacts",
             message: "Missing grant",
           });
-          yield* m.refreshContacts(id).pipe(Effect.result);
+          yield* m.calendar.refreshContacts(id).pipe(Effect.result);
           assert.strictEqual((yield* m.contactGroups("Team")).length, 1);
-          assert.strictEqual(yield* m.contactPhoto(id, alice.address), null);
+          assert.strictEqual(yield* m.calendar.contactPhoto(id, alice.address), null);
           assert.strictEqual(downloads.length, 1);
           delete server.featureFailure;
           server.contactPhotos = [
@@ -146,18 +146,18 @@ import { makeOutlookFeatures } from "../providers/outlook/outlook-features.js";
           ];
           server.contactGroups = [];
           yield* m.reauth(id);
-          yield* m.refreshContacts(id);
+          yield* m.calendar.refreshContacts(id);
           assert.deepStrictEqual(yield* m.contactGroups("Team"), []);
-          yield* m.contactPhoto(id, alice.address);
+          yield* m.calendar.contactPhoto(id, alice.address);
           assert.strictEqual(downloads.length, 2);
           yield* m.setAccountSettings(id, { enabled: false, description: "", color: null });
-          assert.strictEqual(yield* m.contactPhoto(id, alice.address), null);
+          assert.strictEqual(yield* m.calendar.contactPhoto(id, alice.address), null);
           assert.deepStrictEqual(yield* m.contactGroups(""), []);
           yield* m.perform(
             { kind: "removeAccount", accountId: id },
             { kind: "user", surface: "app" },
           );
-          assert.strictEqual(yield* m.contactPhoto(id, alice.address), null);
+          assert.strictEqual(yield* m.calendar.contactPhoto(id, alice.address), null);
         }).pipe(Effect.provide(layer()));
       }),
   );
@@ -571,8 +571,8 @@ import { makeOutlookFeatures } from "../providers/outlook/outlook-features.js";
           "https://user:secret@lh3.googleusercontent.com/image.png",
         ]) {
           server.contactPhotos = [{ address: person.address, url }];
-          yield* m.refreshContacts(account.id);
-          assert.strictEqual(yield* m.contactPhoto(account.id, person.address), null);
+          yield* m.calendar.refreshContacts(account.id);
+          assert.strictEqual(yield* m.calendar.contactPhoto(account.id, person.address), null);
           assert.strictEqual(downloads, 0);
         }
         for (const url of [
@@ -580,9 +580,9 @@ import { makeOutlookFeatures } from "../providers/outlook/outlook-features.js";
           "https://lh3.googleusercontent.com/image.png",
         ]) {
           server.contactPhotos = [{ address: person.address, url }];
-          yield* m.refreshContacts(account.id);
+          yield* m.calendar.refreshContacts(account.id);
           assert.strictEqual(
-            yield* m.contactPhoto(account.id, person.address),
+            yield* m.calendar.contactPhoto(account.id, person.address),
             `data:image/png;base64,${png}`,
           );
         }
@@ -736,8 +736,10 @@ import { makeOutlookFeatures } from "../providers/outlook/outlook-features.js";
           const m = yield* Mailbox;
           const store = yield* Store;
           const account = yield* m.connect({ provider: "gmail" });
-          yield* m.refreshContacts(account.id);
-          const photo = yield* Effect.forkChild(m.contactPhoto(account.id, person.address));
+          yield* m.calendar.refreshContacts(account.id);
+          const photo = yield* Effect.forkChild(
+            m.calendar.contactPhoto(account.id, person.address),
+          );
           yield* Deferred.await(started);
           yield* m.setPrefs({ contactPhotos: false });
           yield* Deferred.succeed(release, undefined);
@@ -748,7 +750,7 @@ import { makeOutlookFeatures } from "../providers/outlook/outlook-features.js";
           );
           yield* m.setPrefs({ contactPhotos: true });
           assert.strictEqual(
-            yield* m.contactPhoto(account.id, person.address),
+            yield* m.calendar.contactPhoto(account.id, person.address),
             `data:image/png;base64,${png}`,
           );
           assert.strictEqual(downloads, 2);

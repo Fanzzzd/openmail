@@ -240,14 +240,14 @@ import { MailboxLive } from "../mailbox/mailbox-live.js";
         yield* mailbox.sync();
         const id = `${account.id}/m1`;
         for (const providerId of ["m2", "m3", "m4"])
-          yield* mailbox.invitations(`${account.id}/${providerId}`);
-        let [invite] = yield* mailbox.invitations(id);
+          yield* mailbox.calendar.invitations(`${account.id}/${providerId}`);
+        let [invite] = yield* mailbox.calendar.invitations(id);
         assert.ok(invite);
         assert.strictEqual(invite.threadStatus?.cancelled, false);
         assert.strictEqual(invite.threadStatus?.statuses[0]?.status, "ACCEPTED");
-        yield* mailbox.respondInvite(id, invite.key, "tentative", user);
+        yield* mailbox.calendar.respondInvite(id, invite.key, "tentative", user);
         assert.strictEqual(
-          (yield* mailbox.invitations(id))[0]?.threadStatus?.statuses[0]?.status,
+          (yield* mailbox.calendar.invitations(id))[0]?.threadStatus?.statuses[0]?.status,
           "TENTATIVE",
         );
         server.raw.set(
@@ -258,22 +258,29 @@ import { MailboxLive } from "../mailbox/mailbox-live.js";
               .replace("DTSTART:20261026T090000Z", "DTSTART:20261026T100000Z"),
           ),
         );
-        yield* mailbox.invitations(`${account.id}/m2`);
-        [invite] = yield* mailbox.invitations(id);
+        yield* mailbox.calendar.invitations(`${account.id}/m2`);
+        [invite] = yield* mailbox.calendar.invitations(id);
         assert.ok(invite);
         assert.strictEqual(invite.threadStatus?.sequence, 2);
         assert.notStrictEqual(invite.threadStatus?.statuses[0]?.status, "TENTATIVE");
         assert.strictEqual(
-          (yield* mailbox.respondInvite(id, invite.key, "accepted", user).pipe(Effect.result))._tag,
+          (yield* mailbox.calendar
+            .respondInvite(id, invite.key, "accepted", user)
+            .pipe(Effect.result))._tag,
           "Failure",
         );
-        const latest = (yield* mailbox.invitations(`${account.id}/m2`))[0];
+        const latest = (yield* mailbox.calendar.invitations(`${account.id}/m2`))[0];
         assert.ok(latest?.previous);
         server.raw.set("m2", raw("CANCEL", 2));
-        yield* mailbox.invitations(`${account.id}/m2`);
-        assert.strictEqual((yield* mailbox.invitations(id))[0]?.threadStatus?.cancelled, true);
+        yield* mailbox.calendar.invitations(`${account.id}/m2`);
         assert.strictEqual(
-          (yield* mailbox.respondInvite(id, invite.key, "accepted", user).pipe(Effect.result))._tag,
+          (yield* mailbox.calendar.invitations(id))[0]?.threadStatus?.cancelled,
+          true,
+        );
+        assert.strictEqual(
+          (yield* mailbox.calendar
+            .respondInvite(id, invite.key, "accepted", user)
+            .pipe(Effect.result))._tag,
           "Failure",
         );
         assert.strictEqual(server.responses.length, 1);
@@ -341,10 +348,10 @@ import { MailboxLive } from "../mailbox/mailbox-live.js";
         const account = yield* mailbox.connect({ provider: "outlook" });
         yield* mailbox.sync();
         const id = `${account.id}/personal`;
-        const events = yield* mailbox.detectedEvents(id);
+        const events = yield* mailbox.calendar.detectedEvents(id);
         const master = events.find((item) => item.recurrence.length);
         assert.ok(master?.hasRecurrenceOverrides);
-        const result = yield* mailbox
+        const result = yield* mailbox.calendar
           .createCalendarEvent(id, master.key, { kind: "user", surface: "app" })
           .pipe(Effect.result);
         assert.strictEqual(result._tag, "Failure");
@@ -398,15 +405,15 @@ import { MailboxLive } from "../mailbox/mailbox-live.js";
         const mailbox = yield* Mailbox;
         const account = yield* mailbox.connect({ provider: "gmail" });
         yield* mailbox.sync();
-        yield* mailbox.invitations(`${account.id}/reply`);
+        yield* mailbox.calendar.invitations(`${account.id}/reply`);
         server.rawFetched.length = 0;
-        const [invite] = yield* mailbox.invitations(`${account.id}/target`);
+        const [invite] = yield* mailbox.calendar.invitations(`${account.id}/target`);
         assert.ok(invite);
         assert.deepStrictEqual(server.rawFetched, ["target"]);
         assert.strictEqual(invite.threadStatus?.statuses[0]?.status, "ACCEPTED");
         server.raw.delete("reply");
         server.messages.delete("reply");
-        yield* mailbox.respondInvite(`${account.id}/target`, invite.key, "accepted", {
+        yield* mailbox.calendar.respondInvite(`${account.id}/target`, invite.key, "accepted", {
           kind: "user",
           surface: "app",
         });

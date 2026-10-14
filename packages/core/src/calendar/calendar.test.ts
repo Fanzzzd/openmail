@@ -369,7 +369,7 @@ import { Mailbox } from "../mailbox/mailbox.js";
         const account = yield* m.connect({ provider: "gmail" });
         yield* m.sync();
         const id = `${account.id}/one`;
-        const [candidate] = yield* m.detectedEvents(id);
+        const [candidate] = yield* m.calendar.detectedEvents(id);
         assert.ok(candidate);
         assert.strictEqual(server.createdEvents.length, 0);
         for (const actor of [
@@ -377,10 +377,11 @@ import { Mailbox } from "../mailbox/mailbox.js";
           { kind: "user", surface: "cli" },
         ] as const)
           assert.strictEqual(
-            (yield* m.createCalendarEvent(id, candidate.key, actor).pipe(Effect.result))._tag,
+            (yield* m.calendar.createCalendarEvent(id, candidate.key, actor).pipe(Effect.result))
+              ._tag,
             "Failure",
           );
-        yield* m.createCalendarEvent(id, candidate.key, { kind: "user", surface: "app" });
+        yield* m.calendar.createCalendarEvent(id, candidate.key, { kind: "user", surface: "app" });
         assert.strictEqual(server.createdEvents.length, 1);
         server.messages.set("one", {
           ...message,
@@ -389,18 +390,18 @@ import { Mailbox } from "../mailbox/mailbox.js";
         });
         server.raw.set("one", raw("PUBLISH"));
         yield* m.sync();
-        const [published] = yield* m.detectedEvents(id);
+        const [published] = yield* m.calendar.detectedEvents(id);
         assert.ok(published);
         server.raw.set("one", raw("PUBLISH", "Changed details"));
         assert.strictEqual(
-          (yield* m
+          (yield* m.calendar
             .createCalendarEvent(id, published.key, { kind: "user", surface: "app" })
             .pipe(Effect.result))._tag,
           "Failure",
         );
         server.raw.set("one", raw("REQUEST"));
-        assert.deepStrictEqual(yield* m.detectedEvents(id), []);
-        const [invite] = yield* m.invitations(id);
+        assert.deepStrictEqual(yield* m.calendar.detectedEvents(id), []);
+        const [invite] = yield* m.calendar.invitations(id);
         assert.ok(invite);
         server.calendarEvents.push(event, {
           ...event,
@@ -409,7 +410,7 @@ import { Mailbox } from "../mailbox/mailbox.js";
           end: { kind: "floating", value: "2026-10-10T12:00:00" },
         });
         assert.deepStrictEqual(
-          (yield* m.calendarEvents(id, invite.key)).map((e) => e.key),
+          (yield* m.calendar.calendarEvents(id, invite.key)).map((e) => e.key),
           ["busy"],
         );
         assert.strictEqual(server.createdEvents.length, 1);
@@ -480,21 +481,24 @@ import { Mailbox } from "../mailbox/mailbox.js";
           account = yield* m.connect({ provider: "outlook" });
         yield* m.sync();
         const id = `${account.id}/one`,
-          [candidate] = yield* m.detectedEvents(id);
+          [candidate] = yield* m.calendar.detectedEvents(id);
         assert.ok(candidate);
         yield* m.setAccountSettings(account.id, { enabled: false, description: "", color: null });
-        assert.strictEqual((yield* m.detectedEvents(id).pipe(Effect.result))._tag, "Failure");
         assert.strictEqual(
-          (yield* m
+          (yield* m.calendar.detectedEvents(id).pipe(Effect.result))._tag,
+          "Failure",
+        );
+        assert.strictEqual(
+          (yield* m.calendar
             .createCalendarEvent(id, candidate.key, { kind: "user", surface: "app" })
             .pipe(Effect.result))._tag,
           "Failure",
         );
         assert.strictEqual(server.createdEvents.length, 0);
         for (const request of [
-          m.invitations(id),
-          m.calendarEvents(id, "unused"),
-          m.respondInvite(id, "unused", "accepted", { kind: "user", surface: "app" }),
+          m.calendar.invitations(id),
+          m.calendar.calendarEvents(id, "unused"),
+          m.calendar.respondInvite(id, "unused", "accepted", { kind: "user", surface: "app" }),
         ]) {
           const result = yield* request.pipe(Effect.result);
           assert.strictEqual(result._tag === "Failure" && result.failure._tag, "InvalidInput");
@@ -590,18 +594,21 @@ import { Mailbox } from "../mailbox/mailbox.js";
         const account = yield* mailbox.connect({ provider: "gmail" });
         yield* mailbox.sync();
         const id = `${account.id}/invite`;
-        const [initial] = yield* mailbox.invitations(id);
+        const [initial] = yield* mailbox.calendar.invitations(id);
         assert.ok(initial);
-        yield* mailbox.respondInvite(id, initial.key, "accepted", { kind: "user", surface: "app" });
+        yield* mailbox.calendar.respondInvite(id, initial.key, "accepted", {
+          kind: "user",
+          surface: "app",
+        });
         assert.strictEqual(
-          (yield* mailbox.invitations(id))[0]?.threadStatus?.statuses.find(
+          (yield* mailbox.calendar.invitations(id))[0]?.threadStatus?.statuses.find(
             (a) => a.address === "me@example.com",
           )?.status,
           "ACCEPTED",
         );
         server.raw.set("invite", source(2));
         assert.strictEqual(
-          (yield* mailbox.invitations(id))[0]?.threadStatus?.statuses.find(
+          (yield* mailbox.calendar.invitations(id))[0]?.threadStatus?.statuses.find(
             (a) => a.address === "me@example.com",
           )?.status,
           "NEEDS-ACTION",
@@ -726,15 +733,15 @@ import { Mailbox } from "../mailbox/mailbox.js";
         const account = yield* mailbox.connect({ provider: "gmail" });
         yield* mailbox.sync();
         const id = `${account.id}/one`,
-          event = (yield* mailbox.detectedEvents(id))[0];
+          event = (yield* mailbox.calendar.detectedEvents(id))[0];
         assert.ok(event);
         assert.strictEqual(
-          (yield* mailbox
+          (yield* mailbox.calendar
             .createCalendarEvent(id, event.key, { kind: "agent", name: "test", surface: "mcp" })
             .pipe(Effect.result))._tag,
           "Failure",
         );
-        yield* mailbox.createCalendarEvent(id, event.key, actor);
+        yield* mailbox.calendar.createCalendarEvent(id, event.key, actor);
         assert.strictEqual(server.createdEvents.length, 1);
         assert.deepStrictEqual(server.rawFetched, []);
       }).pipe(Effect.provide(TestMailbox({ gmail: server })));

@@ -130,7 +130,7 @@ it.skipIf(process.platform !== "darwin")(
         const mailbox = yield* Mailbox;
         const account = yield* mailbox.connect({ provider: "gmail" });
         yield* mailbox.sync();
-        yield* mailbox.refreshContacts(account.id);
+        yield* mailbox.calendar.refreshContacts(account.id);
         const desktop = desktopAppleContacts(mailbox);
         expect((yield* desktop.status).status).toBe("off");
         expect(native.calls).not.toHaveBeenCalled();

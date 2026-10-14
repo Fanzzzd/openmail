@@ -85,7 +85,10 @@ export function desktopAppleContacts(mailbox: Mailbox["Service"]) {
       Effect.gen(function* () {
         yield* read;
         if (!(yield* mailbox.prefs).contactPhotos || !(yield* available([accountId]))) return null;
-        return contacts.cache.photo(address) ?? (yield* mailbox.contactPhoto(accountId, address));
+        return (
+          contacts.cache.photo(address) ??
+          (yield* mailbox.calendar.contactPhoto(accountId, address))
+        );
       }),
     identifier: (address: string) =>
       Effect.gen(function* () {

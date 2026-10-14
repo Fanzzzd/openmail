@@ -51,16 +51,16 @@ it.effect(
       });
       yield* m.sync();
       const id = `${account.id}/m1`;
-      const [invite] = yield* m.invitations(id);
+      const [invite] = yield* m.calendar.invitations(id);
       assert.ok(invite);
       assert.strictEqual(server.sent.length, 0);
       assert.strictEqual(server.responses.length, 0);
-      const agent = yield* m
+      const agent = yield* m.calendar
         .respondInvite(id, invite.key, "accepted", { kind: "agent", surface: "mcp", name: "bot" })
         .pipe(Effect.result);
       assert.strictEqual(agent._tag, "Failure");
       assert.strictEqual(server.sent.length, 0);
-      yield* m.respondInvite(id, invite.key, "accepted", user);
+      yield* m.calendar.respondInvite(id, invite.key, "accepted", user);
       assert.strictEqual(server.sent.length, 1);
       assert.strictEqual(server.responses.length, 0);
       const reply = server.sent[0]?.message.calendar;
@@ -73,7 +73,8 @@ it.effect(
       assert.ok(audit.some((a) => a.action === "calendar_response"));
       server.raw.set("m1", raw("CANCEL"));
       assert.strictEqual(
-        (yield* m.respondInvite(id, invite.key, "declined", user).pipe(Effect.result))._tag,
+        (yield* m.calendar.respondInvite(id, invite.key, "declined", user).pipe(Effect.result))
+          ._tag,
         "Failure",
       );
       assert.strictEqual(server.sent.length, 1);
@@ -96,7 +97,7 @@ it.effect(
       const m = yield* Mailbox;
       const account = yield* m.connect({ provider: "gmail" });
       yield* m.sync();
-      assert.strictEqual((yield* m.contactSync)[0]?.count, 3);
+      assert.strictEqual((yield* m.calendar.contactSync)[0]?.count, 3);
       assert.strictEqual((yield* m.suggestContacts("remote"))[0]?.address, "remote@example.com");
       assert.strictEqual((yield* m.suggestContacts("alice")).length, 1);
       assert.deepStrictEqual(yield* m.suggestContacts("me@", { exclude: "ME@example.com" }), []);
@@ -105,29 +106,29 @@ it.effect(
       yield* m.setContactHidden("remote@example.com", false);
       server.contacts = [{ name: "Updated", address: "updated@example.com" }];
       yield* m.sync();
-      assert.strictEqual((yield* m.contactSync)[0]?.count, 3);
+      assert.strictEqual((yield* m.calendar.contactSync)[0]?.count, 3);
       yield* TestClock.adjust("6 hours");
       yield* m.sync();
-      assert.strictEqual((yield* m.contactSync)[0]?.count, 1);
+      assert.strictEqual((yield* m.calendar.contactSync)[0]?.count, 1);
       assert.deepStrictEqual(yield* m.suggestContacts("remote"), []);
       server.featureFailure = new FeatureScopeMissing({
         accountId: account.id,
         feature: "contacts",
         message: "missing contacts scope",
       });
-      const result = yield* m.refreshContacts(account.id).pipe(Effect.result);
+      const result = yield* m.calendar.refreshContacts(account.id).pipe(Effect.result);
       assert.strictEqual(result._tag, "Success");
-      assert.strictEqual((yield* m.contactSync)[0]?.scopeMissing, true);
+      assert.strictEqual((yield* m.calendar.contactSync)[0]?.scopeMissing, true);
       assert.strictEqual((yield* m.suggestContacts("updated")).length, 1);
       const mail = yield* m.sync();
       assert.ok(!mail[0]?.error);
       assert.strictEqual((yield* m.accounts)[0]?.needsReauth, false);
       server.featureFailure = undefined;
       yield* m.reauth(account.id);
-      yield* m.refreshContacts(account.id);
-      assert.strictEqual((yield* m.contactSync)[0]?.scopeMissing, false);
+      yield* m.calendar.refreshContacts(account.id);
+      assert.strictEqual((yield* m.calendar.contactSync)[0]?.scopeMissing, false);
       yield* m.perform({ kind: "removeAccount", accountId: account.id }, user);
-      assert.deepStrictEqual(yield* m.contactSync, []);
+      assert.deepStrictEqual(yield* m.calendar.contactSync, []);
       assert.deepStrictEqual(yield* m.suggestContacts("updated"), []);
     }).pipe(Effect.provide(TestMailbox({ gmail: server })));
   },
@@ -142,14 +143,14 @@ it.effect(
       const m = yield* Mailbox;
       const account = yield* m.connect({ provider: "gmail" });
       yield* m.sync();
-      const [invite] = yield* m.invitations(`${account.id}/m1`);
+      const [invite] = yield* m.calendar.invitations(`${account.id}/m1`);
       assert.ok(invite);
       for (const method of ["REQUEST", "CANCEL"]) {
         server.messages.set("m2", { ...incoming, providerId: "m2", date: 2000 });
         server.raw.set("m2", raw(method, 2));
         yield* m.sync();
-        yield* m.invitations(`${account.id}/m2`);
-        const result = yield* m
+        yield* m.calendar.invitations(`${account.id}/m2`);
+        const result = yield* m.calendar
           .respondInvite(`${account.id}/m1`, invite.key, "accepted", user)
           .pipe(Effect.result);
         assert.strictEqual(result._tag, "Failure");
@@ -180,9 +181,9 @@ it.effect("OAuth providers decide attendee identity for Gmail and Outlook aliase
     ] as const) {
       const account = yield* m.connect({ provider });
       yield* m.sync();
-      const [invite] = yield* m.invitations(`${account.id}/m1`);
+      const [invite] = yield* m.calendar.invitations(`${account.id}/m1`);
       assert.ok(invite);
-      yield* m.respondInvite(`${account.id}/m1`, invite.key, "accepted", user);
+      yield* m.calendar.respondInvite(`${account.id}/m1`, invite.key, "accepted", user);
       assert.strictEqual(server.responses.length, 1);
       assert.strictEqual(server.sent.length, 0);
     }
@@ -209,7 +210,7 @@ it.effect("IMAP flags an organizer differing from both From and Sender", () => {
       input: { preset: "custom", email: server.email, password: "test" },
     });
     yield* m.sync();
-    const [invite] = yield* m.invitations(`${account.id}/m1`);
+    const [invite] = yield* m.calendar.invitations(`${account.id}/m1`);
     assert.ok(invite);
     assert.strictEqual("organizerMismatch" in invite ? invite.organizerMismatch : undefined, true);
     assert.strictEqual(server.sent.length, 0);
@@ -254,10 +255,10 @@ it.effect(
             raw().toString().replace("mailto:me@example.com", `mailto:${alias.toUpperCase()}`),
           ),
         );
-        const [invite] = yield* m.invitations(`${account.id}/m1`);
+        const [invite] = yield* m.calendar.invitations(`${account.id}/m1`);
         assert.ok(invite);
         assert.strictEqual(invite.responseAddress?.address, alias.toUpperCase());
-        yield* m.respondInvite(`${account.id}/m1`, invite.key, "tentative", user);
+        yield* m.calendar.respondInvite(`${account.id}/m1`, invite.key, "tentative", user);
         const content = server.sent.at(-1)?.message.calendar?.content;
         assert.ok(content);
         const [reply] = parseCalendar(content);

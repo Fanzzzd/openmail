@@ -370,7 +370,7 @@ export async function flow(
       RefreshAppleContacts: () => Effect.succeed({ status: "off", revision: 0 }),
       AppleContactIdentifier: () => Effect.succeed(null),
       ContactGroups: ({ query, accountIds }) => m.contactGroups(query, accountIds),
-      ContactPhoto: ({ accountId, address }) => m.contactPhoto(accountId, address),
+      ContactPhoto: ({ accountId, address }) => m.calendar.contactPhoto(accountId, address),
       AttachmentCapabilities: () => Effect.succeed({ share: Boolean(options.native) }),
       UpdateState: () => Effect.succeed({ status: "disabled" }),
       ...(options.noAccounts ? { Accounts: () => Effect.succeed([]) } : {}),

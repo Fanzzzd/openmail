@@ -21,7 +21,7 @@ export interface ContactsBackend {
     query: string,
     accountIds?: readonly string[],
   ): ReturnType<MailboxService["contactGroups"]>;
-  photo(accountId: string, address: string): ReturnType<MailboxService["contactPhoto"]>;
+  photo(accountId: string, address: string): ReturnType<MailboxService["calendar"]["contactPhoto"]>;
   knownSenders(
     accountId: string,
     addresses: readonly string[],
@@ -35,7 +35,7 @@ export const accountContacts = (m: MailboxService): ContactsBackend => ({
   groups: (query, accountIds) => m.contactGroups(query, accountIds),
   photo: (accountId, address) =>
     Effect.flatMap(m.prefs, (prefs) =>
-      prefs.contactPhotos ? m.contactPhoto(accountId, address) : Effect.succeed(null),
+      prefs.contactPhotos ? m.calendar.contactPhoto(accountId, address) : Effect.succeed(null),
     ),
   knownSenders: (accountId, addresses) => m.knownSenders(accountId, addresses),
 });
@@ -66,19 +66,19 @@ export function mailboxHandlers(m: MailboxService, options: MailboxHandlerOption
     MoveAccount: ({ accountId, input }) => m.moveAccount(accountId, input),
     RemoveAccount: ({ accountId }) => m.perform({ kind: "removeAccount", accountId }, USER),
 
-    CalendarEvents: ({ messageId, key }) => m.calendarEvents(messageId, key),
-    DetectedEvents: ({ messageId }) => m.detectedEvents(messageId),
+    CalendarEvents: ({ messageId, key }) => m.calendar.calendarEvents(messageId, key),
+    DetectedEvents: ({ messageId }) => m.calendar.detectedEvents(messageId),
     CreateCalendarEvent: ({ messageId, key, edits }) =>
-      m.createCalendarEvent(messageId, key, USER, edits),
-    Invitations: ({ messageId }) => m.invitations(messageId),
+      m.calendar.createCalendarEvent(messageId, key, USER, edits),
+    Invitations: ({ messageId }) => m.calendar.invitations(messageId),
     RespondInvite: ({ messageId, key, response, label }) =>
-      m.respondInvite(messageId, key, response, USER, label),
-    ContactSync: () => m.contactSync,
+      m.calendar.respondInvite(messageId, key, response, USER, label),
+    ContactSync: () => m.calendar.contactSync,
     ImageFromUrl: ({ url }) => m.imageFromUrl(url),
     ImageFromFile: ({ file }) => m.imageFromFile(file),
     SuggestSender: ({ current, recipients, accountIds }) =>
       m.suggestSender(current, recipients, accountIds),
-    RefreshContacts: ({ accountId }) => m.refreshContacts(accountId),
+    RefreshContacts: ({ accountId }) => m.calendar.refreshContacts(accountId),
 
     Threads: ({ query }) => m.threads(query),
     ThreadCount: ({ query }) => m.threadCount(query),
@@ -111,7 +111,7 @@ export function mailboxHandlers(m: MailboxService, options: MailboxHandlerOption
         }),
       ),
     ImportCalendarAttachment: ({ messageId, path, key }) =>
-      m.importCalendarAttachment(messageId, path, key, USER),
+      m.calendar.importCalendarAttachment(messageId, path, key, USER),
     SetClassificationOverride: ({ messageId, classifyAs }) =>
       m.setClassificationOverride(messageId, classifyAs),
     Unsubscribe: ({ messageId }) => m.unsubscribe(messageId, USER),

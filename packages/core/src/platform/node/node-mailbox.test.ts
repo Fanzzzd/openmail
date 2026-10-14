@@ -181,7 +181,7 @@ it("real NodeMailbox captures MIME, files, PDF, image transport and random servi
         expect((yield* mailbox.composeAttachments(id)).map((part) => part.filename)).toContain(
           "document.pdf",
         );
-        expect((yield* mailbox.invitations(id))[0]?.title).toBe("Layer invite");
+        expect((yield* mailbox.calendar.invitations(id))[0]?.title).toBe("Layer invite");
         expect((yield* mailbox.inlineImages(id))["inline@openmail"]).toContain(
           "data:image/png;base64,",
         );

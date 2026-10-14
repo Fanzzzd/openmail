@@ -112,7 +112,7 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
           assert.deepStrictEqual(yield* mailbox.sync(id), []);
           assert.deepStrictEqual(yield* mailbox.pollInbox(), []);
           yield* mailbox.fetchOlder({ accountIds: [id] });
-          yield* mailbox.refreshContacts(id);
+          yield* mailbox.calendar.refreshContacts(id);
           assert.deepStrictEqual((yield* mailbox.searchServer({ search: "Alice" })).threads, []);
           assert.strictEqual(server.failNext, failure);
           server.failNext = undefined;

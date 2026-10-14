@@ -528,7 +528,6 @@ export const MailboxLive = (
         ...groups.outbox,
         ...groups.accounts,
         ...groups.sync,
-        ...groups.calendar,
         ...groups.app,
         reading: groups.reading,
         organize: groups.organize,

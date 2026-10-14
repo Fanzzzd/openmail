@@ -114,18 +114,18 @@ for (const denied of [
           expect(result._tag).toBe("Failure");
           if (result._tag === "Failure") expect(result.failure._tag).toBe("AuthError");
           expect(authTags).toEqual(["RefreshContacts"]);
-          expect((yield* mailbox.contactSync)[0]?.scopeMissing).toBe(false);
+          expect((yield* mailbox.calendar.contactSync)[0]?.scopeMissing).toBe(false);
           return;
         }
         expect(authTags).toEqual([]);
         expect(result._tag).toBe("Success");
-        expect((yield* mailbox.contactSync)[0]?.scopeMissing).toBe(true);
+        expect((yield* mailbox.calendar.contactSync)[0]?.scopeMissing).toBe(true);
         const attempts = calls.length;
         yield* client.RefreshContacts({ accountId });
         expect(calls.length).toBe(attempts);
         expect((yield* mailbox.accounts)[0]?.needsReauth).toBe(false);
         expect(yield* mailbox.suggestContacts("fake")).toEqual([]);
-        expect(yield* mailbox.contactPhoto(accountId, "fake@example.com")).toBeNull();
+        expect(yield* mailbox.calendar.contactPhoto(accountId, "fake@example.com")).toBeNull();
       }).pipe(Effect.scoped, Effect.provide(layer)),
     );
   });

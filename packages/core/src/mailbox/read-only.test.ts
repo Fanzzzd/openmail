@@ -151,7 +151,7 @@ import type { OutgoingMessage } from "../domain/changes.js";
         );
         for (const action of [
           mailbox.unsubscribe(`${account.id}/one`, actor),
-          mailbox.importCalendarAttachment(`${account.id}/one`, [0], "event", actor),
+          mailbox.calendar.importCalendarAttachment(`${account.id}/one`, [0], "event", actor),
         ]) {
           const result = yield* action.pipe(Effect.result);
           assert.strictEqual(result._tag, "Failure");
