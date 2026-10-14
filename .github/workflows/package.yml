@@ -10,7 +10,11 @@ on:
   pull_request:
     paths:
       - apps/desktop/build/**
+      - apps/desktop/bundled-licenses.ts
       - apps/desktop/electron-builder.config.cjs
+      - apps/desktop/electron.vite.config.ts
+      - apps/desktop/scripts/**
+      - apps/desktop/src/**
       - apps/desktop/native/**
       - apps/desktop/package.json
       - package.json
@@ -23,7 +27,6 @@ on:
       - THIRD_PARTY_NOTICES.md
       - docs/licenses/**
       - scripts/check-licenses.mjs
-      - apps/desktop/scripts/titlebar-resize.mjs
       - scripts/demo-data.mjs
       - .github/workflows/package.yml
   workflow_dispatch:
@@ -31,9 +34,10 @@ on:
 permissions:
   contents: read
 
+# A new push to a pull request cancels its older run. A started run on main finishes.
 concurrency:
   group: package-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   CI: "1"
@@ -98,9 +102,13 @@ jobs:
         run: node scripts/smoke-dist.mjs apps/desktop/release/mac-arm64/OpenMail.app
 
       # The runner has a logged-in macOS session, so the window opens as in the smoke step. The
-      # check drives it over local CDP and takes no screenshots, so no permission prompt appears.
+      # check starts the packaged app on a demo profile, drives it over local CDP and takes no
+      # screenshots, so no permission prompt appears. A failed report carries the app's output.
       - name: Check the titlebar controls during resize
-        run: pnpm --filter @openmail/desktop test:titlebar
+        timeout-minutes: 5
+        run: >-
+          pnpm --filter @openmail/desktop test:titlebar
+          --app release/mac-arm64/OpenMail.app --timeout 180000
 
       # The screenshots and startup logs, also when a check fails.
       - if: always()
