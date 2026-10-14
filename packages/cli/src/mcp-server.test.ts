@@ -1,5 +1,5 @@
 import { execFile, spawn } from "node:child_process";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
@@ -873,4 +873,26 @@ test.concurrent("spaces assign and remove fail on unknown ids and take an unambi
     code: 0,
     stdout: "(no accounts; run `openmail accounts add gmail`)\n",
   });
+});
+
+test("an unusable OPENMAIL_HOME prints one sentence naming the path and exits 1", async ({
+  expect,
+  onTestFinished,
+}) => {
+  const directory = await home(onTestFinished, "openmail-bad-home-");
+  const file = join(directory, "not-a-folder");
+  await writeFile(file, "");
+  for (const [target, why] of [
+    [file, "a file with that name is in the way"],
+    [join(file, "sub"), "part of the path is a file, not a folder"],
+  ] as const)
+    await expect(
+      run(process.execPath, ["dist/cli.js", "list"], {
+        env: { ...process.env, OPENMAIL_HOME: target },
+      }),
+    ).rejects.toMatchObject({
+      code: 1,
+      stdout: "",
+      stderr: `error: Can't use ${target} for OpenMail's data: ${why}. Set OPENMAIL_HOME to a folder you can write to.\n`,
+    });
 });

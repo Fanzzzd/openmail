@@ -18,6 +18,7 @@ import { corpus } from "./commands/corpus.js";
 import { Failed, fail } from "./commands/common.js";
 import { withShortUsageErrors } from "./usage.js";
 import * as NodeRuntime from "@effect/platform-node/NodeRuntime";
+import { dataFolderError } from "./data-folder-error.js";
 
 /**
  * The CLI's browser: prints the consent URL on stderr, in case no browser can
@@ -80,6 +81,8 @@ const openmail = Command.make("openmail").pipe(
 function explain(error: unknown): string | undefined {
   if (CliError.isCliError(error) || !(error instanceof Error)) return undefined;
   if (!("_tag" in error)) return error.message;
+  const folder = dataFolderError(error, process.env.OPENMAIL_HOME);
+  if (folder) return folder;
   switch (error._tag) {
     case "UsageError":
       return undefined;
@@ -120,7 +123,9 @@ const appOnlyWriteMode =
   // A defect (a database from a newer OpenMail, a file another process keeps locked) also
   // gets one line on stderr. runMain would log it to stdout, where scripts never look.
   Effect.catchDefect((defect) => {
-    const message = defect instanceof Error ? defect.message : String(defect);
+    const message =
+      dataFolderError(defect, process.env.OPENMAIL_HOME) ??
+      (defect instanceof Error ? defect.message : String(defect));
     return Console.error(`error: ${message}`).pipe(
       Effect.andThen(Effect.fail(new Failed({ message }))),
     );
