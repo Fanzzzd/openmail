@@ -5654,7 +5654,7 @@ msgid "Review an unsubscribe email before sending?"
 msgstr "De afmeldmail controleren voordat u deze verstuurt?"
 
 #: src/renderer/src/features/ai/Proposals.tsx
-msgid "Review and Send"
+msgid "Review and send"
 msgstr "Controleren en verzenden"
 
 #: src/renderer/src/features/reader/attachments/AttachmentImportDialog.tsx

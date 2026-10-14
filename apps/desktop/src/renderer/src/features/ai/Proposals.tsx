@@ -227,7 +227,7 @@ function Item({
             }}
             className="h-7 rounded-control bg-blue-600 px-3 font-medium text-white hover:bg-blue-700"
           >
-            {builtIn ? <Trans>Approve and edit</Trans> : <Trans>Review and Send</Trans>}
+            {builtIn ? <Trans>Approve and edit</Trans> : <Trans>Review and send</Trans>}
           </button>
         )}
         <button

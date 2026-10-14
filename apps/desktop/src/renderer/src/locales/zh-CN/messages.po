@@ -5664,7 +5664,7 @@ msgid "Review an unsubscribe email before sending?"
 msgstr "发送前检查退订邮件？"
 
 #: src/renderer/src/features/ai/Proposals.tsx
-msgid "Review and Send"
+msgid "Review and send"
 msgstr "检查并发送"
 
 #: src/renderer/src/features/reader/attachments/AttachmentImportDialog.tsx

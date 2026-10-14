@@ -5654,7 +5654,7 @@ msgid "Review an unsubscribe email before sending?"
 msgstr "Zkontrolovat odhlašovací e-mail před odesláním?"
 
 #: src/renderer/src/features/ai/Proposals.tsx
-msgid "Review and Send"
+msgid "Review and send"
 msgstr "Zkontrolovat a odeslat"
 
 #: src/renderer/src/features/reader/attachments/AttachmentImportDialog.tsx

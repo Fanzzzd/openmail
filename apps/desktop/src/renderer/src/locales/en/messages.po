@@ -5658,8 +5658,8 @@ msgid "Review an unsubscribe email before sending?"
 msgstr "Review an unsubscribe email before sending?"
 
 #: src/renderer/src/features/ai/Proposals.tsx
-msgid "Review and Send"
-msgstr "Review and Send"
+msgid "Review and send"
+msgstr "Review and send"
 
 #: src/renderer/src/features/reader/attachments/AttachmentImportDialog.tsx
 msgid "Review the contacts before adding them."

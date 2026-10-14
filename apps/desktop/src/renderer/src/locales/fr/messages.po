@@ -5654,7 +5654,7 @@ msgid "Review an unsubscribe email before sending?"
 msgstr "Vérifier l’e-mail de désabonnement avant de l’envoyer ?"
 
 #: src/renderer/src/features/ai/Proposals.tsx
-msgid "Review and Send"
+msgid "Review and send"
 msgstr "Vérifier et envoyer"
 
 #: src/renderer/src/features/reader/attachments/AttachmentImportDialog.tsx

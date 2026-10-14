@@ -159,8 +159,8 @@ for (const surface of ["mcp", "rule"] as const) {
       const actions = Array.from(dom.element.querySelectorAll("button")).map(
         (button) => button.textContent,
       );
-      expect(actions).toContain(surface === "mcp" ? "Review and Send" : "Approve and edit");
-      expect(actions).not.toContain(surface === "mcp" ? "Approve and edit" : "Review and Send");
+      expect(actions).toContain(surface === "mcp" ? "Review and send" : "Approve and edit");
+      expect(actions).not.toContain(surface === "mcp" ? "Approve and edit" : "Review and send");
     } finally {
       dom.dispose();
     }
