@@ -16,8 +16,18 @@ const SOURCES = [
 const COMPARISON =
   /\bprovider\s*[!=]==\s*["'`]|["'`](?:gmail|outlook|imap)["'`]\s*[!=]==\s*[\w.?]*provider\b/g;
 
-/** Provider code: adapters, protocol clients and platform layers may branch on the name. */
-const ALLOWED_DIRS = ["packages/core/src/providers/", "packages/core/src/platform/"];
+/**
+ * Provider code: the adapters, the capability table and the platform layers
+ * may branch on the name. Shared files in providers/ (ports, OAuth scopes,
+ * the scoped adapter) are counted like any other caller.
+ */
+const ALLOWED = [
+  "packages/core/src/providers/gmail/",
+  "packages/core/src/providers/outlook/",
+  "packages/core/src/providers/imap/",
+  "packages/core/src/providers/capabilities.ts",
+  "packages/core/src/platform/",
+];
 
 /**
  * Identity uses outside providers/. These pick a brand name, an icon or an
@@ -40,9 +50,10 @@ const IDENTITY = new Set([
 ]);
 
 /**
- * Comparisons that remain outside providers/, per file. Each is protocol
- * detail (ID formats, cursor layout, endpoint choice, size limits, sync-health
- * budgets) that belongs in the adapter, not a capability callers read.
+ * Comparisons that remain outside the adapters, per file. Each is protocol
+ * detail (ID formats, cursor layout, endpoint choice, size limits) that
+ * belongs in the adapter or in providers/sync-profile.ts, not a capability
+ * callers read.
  * Lower a count when you move one into the adapter; never raise it. A new
  * question about what an account can do goes into providerCapabilities.
  */
@@ -63,8 +74,6 @@ const REMAINING: Record<string, number> = {
   "packages/core/src/reader/message-security.ts": 3,
   "packages/core/src/reader/reading.ts": 4,
   "packages/core/src/search/provider-search.ts": 4,
-  "packages/core/src/sync/sync-health.ts": 12,
-  "packages/core/src/sync/sync-reset.ts": 5,
 };
 
 function comparisons(): Record<string, number> {
@@ -78,7 +87,7 @@ function comparisons(): Record<string, number> {
       (file) =>
         /\.(?:ts|tsx|mts|cts)$/.test(file) &&
         !/\.test\.tsx?$/.test(file) &&
-        !ALLOWED_DIRS.some((dir) => file.startsWith(dir)) &&
+        !ALLOWED.some((path) => file.startsWith(path)) &&
         !IDENTITY.has(file),
     );
   expect(files.length).toBeGreaterThan(100);

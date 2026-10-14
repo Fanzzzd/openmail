@@ -1,5 +1,6 @@
 import { Schema } from "effect";
 import type { Provider } from "../domain/account.js";
+import { oauthProvider, providerCapabilities, type OAuthProvider } from "./capabilities.js";
 
 export const OptionalService = Schema.Literals(["contacts", "calendar", "settings"]);
 export type OptionalService = typeof OptionalService.Type;
@@ -30,7 +31,7 @@ export const BASE_SCOPES = {
     "Mail.Send",
     "MailboxSettings.ReadWrite",
   ],
-} satisfies Record<Exclude<Provider, "imap">, readonly string[]>;
+} satisfies Record<OAuthProvider, readonly string[]>;
 export const OPTIONAL_SCOPES = {
   gmail: {
     contacts: [`${GOOGLE}contacts.readonly`, `${GOOGLE}contacts.other.readonly`],
@@ -42,7 +43,19 @@ export const OPTIONAL_SCOPES = {
     calendar: ["Calendars.ReadWrite"],
     settings: ["MailboxSettings.ReadWrite"],
   },
-} satisfies Record<Exclude<Provider, "imap">, Record<OptionalService, readonly string[]>>;
+} satisfies Record<OAuthProvider, Record<OptionalService, readonly string[]>>;
+/** Broader scopes that also grant a service: Gmail's full mail scope covers settings. */
+const ALSO_GRANTED_BY: Record<
+  OAuthProvider,
+  Partial<Record<OptionalService, readonly string[]>>
+> = {
+  gmail: { settings: ["https://mail.google.com/"] },
+  outlook: {},
+};
+
+/** The account asks for contacts, calendar and settings as separate OAuth grants. */
+const offersOptionalServices = (provider: Provider): provider is OAuthProvider =>
+  oauthProvider(provider) && providerCapabilities(provider).optionalServices;
 
 /** Graph message classification and sender overrides both require the base Mail.ReadWrite grant. */
 export const focusedInboxGranted = (scopes: readonly string[]) =>
@@ -53,9 +66,11 @@ export const focusedInboxGranted = (scopes: readonly string[]) =>
 
 /** Compatibility baseline only for accounts whose scope metadata predates migration 19/Outlook reporting. */
 export function legacyScopes(provider: Provider): readonly string[] {
-  return provider === "imap"
-    ? []
-    : [...new Set([...BASE_SCOPES[provider], ...Object.values(OPTIONAL_SCOPES[provider]).flat()])];
+  if (!oauthProvider(provider)) return [];
+  const optional = offersOptionalServices(provider)
+    ? Object.values(OPTIONAL_SCOPES[provider]).flat()
+    : [];
+  return [...new Set([...BASE_SCOPES[provider], ...optional])];
 }
 
 export function serviceGranted(
@@ -63,14 +78,14 @@ export function serviceGranted(
   service: OptionalService,
   scopes: readonly string[],
 ) {
-  if (provider === "imap") return false;
+  if (!offersOptionalServices(provider)) return false;
   const grants = scopes.map((scope) =>
     scope.replace(/^https:\/\/graph.microsoft.com\//i, "").toLowerCase(),
   );
   // Contacts.Read/contacts.readonly is sufficient for saved contacts. The second scope adds suggestions.
   return (
     grants.includes((OPTIONAL_SCOPES[provider][service][0] ?? "").toLowerCase()) ||
-    (provider === "gmail" && scopes.includes("https://mail.google.com/") && service === "settings")
+    (ALSO_GRANTED_BY[provider][service] ?? []).some((scope) => scopes.includes(scope))
   );
 }
 
@@ -80,7 +95,7 @@ export function serviceGrants(
   disabled: readonly OptionalService[],
   enabled: readonly OptionalService[] = [],
 ): ServiceGrant[] {
-  if (provider === "imap") return [];
+  if (!offersOptionalServices(provider)) return [];
   return OptionalService.literals.map((service): ServiceGrant => {
     if (disabled.includes(service)) return { service, state: "turnedOff" };
     if (serviceGranted(provider, service, scopes)) return { service, state: "granted" };

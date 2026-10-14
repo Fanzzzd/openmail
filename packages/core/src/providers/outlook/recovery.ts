@@ -7,7 +7,7 @@ import { BackgroundRead } from "../provider-connectivity.js";
 import { ApiError } from "../provider-http.js";
 import { retryProvider } from "../provider-retry.js";
 import type { ProviderAdapter } from "../adapter.js";
-import { outlookStateLabel } from "../../sync/sync-reset.js";
+import { outlookStateLabel } from "../sync-profile.js";
 import type { OutlookClient, OutlookSyncSources } from "./client.js";
 import {
   decode,

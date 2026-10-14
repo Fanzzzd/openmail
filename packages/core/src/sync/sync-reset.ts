@@ -1,31 +1,21 @@
 import { Clock, Effect, Option, Schema } from "effect";
-import { isOutlookClassification } from "../domain/message.js";
 import type { Account } from "../domain/account.js";
 import type { ProviderAdapter, ResetChange } from "../providers/adapter.js";
 import type { Store } from "../store/service.js";
 import { sha256Hex } from "../platform/crypto.js";
 import { trackImapBackfill } from "../providers/imap/imap-cursor.js";
+import { syncProfile } from "../providers/sync-profile.js";
 import { applyOpToLabels } from "../domain/mail-ops.js";
 import type { SyncHealth } from "./sync-health.js";
 import type { ResetCandidate, ResetVerification } from "./sync-records.js";
 
-export const stateLabel = (label: string) =>
-  ["UNREAD", "STARRED", "IMPORTANT"].includes(label) || label.startsWith("category:");
-export const outlookStateLabel = (label: string) =>
-  stateLabel(label) || isOutlookClassification(label);
-export const RESET_VERIFICATION_LIMIT = 500;
-/**
- * Outlook verifies 20 ids per $batch request, so 2000 is 100 requests. A bulk delete on the
- * server reaches the local store within a few syncs; a throttled batch still defers the rest.
- */
-export const OUTLOOK_RESET_VERIFICATION_LIMIT = 2000;
 export const resetVerificationLimit = (provider: Account["provider"]) =>
-  provider === "outlook" ? OUTLOOK_RESET_VERIFICATION_LIMIT : RESET_VERIFICATION_LIMIT;
+  syncProfile(provider).resetVerificationLimit;
 /** One sync's verification budget per provider, shared by that provider's accounts. */
 export const resetBudgets = (): Record<Account["provider"], { remaining: number }> => ({
-  gmail: { remaining: RESET_VERIFICATION_LIMIT },
-  outlook: { remaining: OUTLOOK_RESET_VERIFICATION_LIMIT },
-  imap: { remaining: RESET_VERIFICATION_LIMIT },
+  gmail: { remaining: resetVerificationLimit("gmail") },
+  outlook: { remaining: resetVerificationLimit("outlook") },
+  imap: { remaining: resetVerificationLimit("imap") },
 });
 export const STALE_SWEEP_LIMIT = 500;
 const staleFingerprint = (candidate: ResetCandidate) =>
@@ -125,13 +115,13 @@ export function makeResetGuard(
                 : [pendingOp.op],
             );
             // Graph/IMAP presence probes read location only; preserve current local flags.
-            const preservedState = account.provider === "outlook" ? outlookStateLabel : stateLabel;
+            const missed = syncProfile(account.provider).probeMisses;
             const verifiedLabels =
-              account.provider === "gmail"
+              missed === null
                 ? [...result.labels]
                 : [
-                    ...result.labels.filter((label) => !preservedState(label)),
-                    ...local.labels.filter(preservedState),
+                    ...result.labels.filter((label) => !missed(label)),
+                    ...local.labels.filter(missed),
                   ];
             const labels = ops.reduce(
               (current, op) => applyOpToLabels(current, op, account.provider),
@@ -146,7 +136,7 @@ export function makeResetGuard(
             });
             // A reused UID namespace gets a fresh epoch ID, never the invalidated handle.
             if (candidate.resetProviderId) yield* store.deleteMessage(account.id, result.id);
-            if (account.provider === "imap") {
+            if (syncProfile(account.provider).folderPaths) {
               const cursor = yield* store.getSyncCursor(account.id);
               const tracked = trackImapBackfill(cursor, [
                 {
@@ -248,7 +238,7 @@ export function makeResetGuard(
     const selected = yield* store.staleCandidates(
       account.id,
       scopes,
-      account.provider === "imap",
+      syncProfile(account.provider).folderPaths,
       state.value.after,
       sweepBudget.remaining,
     );

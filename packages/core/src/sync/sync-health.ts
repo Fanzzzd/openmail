@@ -7,6 +7,7 @@ import type { Providers } from "../providers/adapter.js";
 import type { Store } from "../store/service.js";
 import { FolderStatus, Count, HealthCounts } from "./sync-records.js";
 import { providerCapabilities } from "../providers/capabilities.js";
+import { SYSTEM_SCOPES, syncProfile } from "../providers/sync-profile.js";
 
 const ServerStatus = Schema.Union([
   Schema.Struct({ kind: Schema.Literal("available"), ...FolderStatus.fields }),
@@ -54,24 +55,6 @@ export const SyncHealth = Schema.Struct({
 });
 export type SyncHealth = typeof SyncHealth.Type;
 
-const GMAIL_SCOPES = [
-  "INBOX",
-  "SENT",
-  "DRAFT",
-  "SPAM",
-  "TRASH",
-  "STARRED",
-  "IMPORTANT",
-  "UNREAD",
-  "CATEGORY_PERSONAL",
-  "CATEGORY_SOCIAL",
-  "CATEGORY_PROMOTIONS",
-  "CATEGORY_UPDATES",
-  "CATEGORY_FORUMS",
-];
-const OUTLOOK_SCOPES = ["INBOX", "SENT", "DRAFT", "SPAM", "TRASH", "ARCHIVE"];
-const SYSTEM_SCOPES = new Set([...GMAIL_SCOPES, ...OUTLOOK_SCOPES]);
-
 /** Counts compare message rows, never conversation rows or cached bodies. */
 export function healthVerdict(
   local: HealthCounts,
@@ -107,14 +90,17 @@ export function makeSyncHealth(
     const account = yield* store.getAccount(accountId);
     const now = yield* Clock.currentTimeMillis;
     const cursor = yield* store.getSyncCursor(accountId);
-    const outlookWindowed =
-      account.provider === "outlook" &&
-      Option.isSome(cursor) &&
-      Option.isSome(
-        Schema.decodeUnknownOption(
-          Schema.fromJsonString(Schema.Struct({ __windowDays: Schema.Literal("90") })),
-        )(cursor.value),
-      );
+    const profile = syncProfile(account.provider);
+    const marker = profile.windowMarker;
+    // Without a marker every first sync is bounded; with one, only cursors that carry it.
+    const firstSyncWindowed =
+      marker === null ||
+      (Option.isSome(cursor) &&
+        Option.isSome(
+          Schema.decodeUnknownOption(
+            Schema.fromJsonString(Schema.Struct({ [marker]: Schema.Literal("90") })),
+          )(cursor.value),
+        ));
     const caps = providerCapabilities(account.provider);
     // Labels stack, so labels seen on messages count as scopes too.
     const labels = yield* store.syncHealthLabels(accountId, caps.organization === "labels");
@@ -132,25 +118,24 @@ export function makeSyncHealth(
         ? Math.max(0, now - account.lastSyncedAt)
         : null;
     const paths = readCursor(cursor).folders;
-    const scopes =
-      account.provider === "imap"
-        ? Object.keys(paths)
-        : [
-            ...new Set([
-              ...(account.provider === "gmail" ? GMAIL_SCOPES : OUTLOOK_SCOPES),
-              ...labels.filter(
-                (label) =>
-                  !["SNOOZED", "OUTBOX"].includes(label) &&
-                  (!caps.categories || !label.startsWith("category:")),
-              ),
-            ]),
-          ];
+    const scopes = profile.folderPaths
+      ? Object.keys(paths)
+      : [
+          ...new Set([
+            ...profile.systemScopes,
+            ...labels.filter(
+              (label) =>
+                !["SNOOZED", "OUTBOX"].includes(label) &&
+                (!caps.categories || !label.startsWith("category:")),
+            ),
+          ]),
+        ];
     const folders = yield* Effect.forEach(
       scopes,
       (scope) =>
         Effect.gen(function* () {
-          const local = yield* store.syncHealthLocal(accountId, scope, account.provider === "imap");
-          const label = account.provider === "imap" ? (local.label ?? scope) : scope;
+          const local = yield* store.syncHealthLocal(accountId, scope, profile.folderPaths);
+          const label = profile.folderPaths ? (local.label ?? scope) : scope;
           const bodyCacheWindowDays =
             (
               windows.find((entry) => entry.label === label) ??
@@ -159,17 +144,10 @@ export function makeSyncHealth(
           // Cache settings expire bodies only. Header gaps can be expected while the
           // provider's bounded initial snapshot still awaits historical backfill.
           const headerWindow =
-            (account.provider !== "outlook" || outlookWindowed) &&
-            account.lastSyncedAt !== null &&
-            backfill?.done !== true
+            firstSyncWindowed && account.lastSyncedAt !== null && backfill?.done !== true
               ? {
                   days: 90,
-                  messageLimit:
-                    account.provider === "outlook"
-                      ? 5000
-                      : account.provider === "gmail"
-                        ? 2000
-                        : 1000,
+                  messageLimit: profile.initialHeaderLimit,
                   before: backfill?.before ?? null,
                 }
               : null;
@@ -182,7 +160,7 @@ export function makeSyncHealth(
               // Never serialize provider errors: they can contain URLs and credentials.
               Effect.catch(() => Effect.succeed<HealthFolder["server"]>({ kind: "unavailable" })),
             );
-          const tracked = account.provider === "imap" ? paths[scope] : undefined;
+          const tracked = profile.folderPaths ? paths[scope] : undefined;
           const missingTracked =
             tracked !== undefined && local.total < parseUidSet(tracked.uids).length;
           return {
@@ -206,11 +184,7 @@ export function makeSyncHealth(
           if (
             folder.server.kind !== "available" ||
             folder.local.total <= folder.server.total ||
-            !(
-              (account.provider === "gmail" &&
-                (folder.scope === "DRAFT" || folder.scope.startsWith("CATEGORY_"))) ||
-              (account.provider === "outlook" && folder.scope === "DRAFT")
-            )
+            !profile.recount(folder.scope)
           )
             return folder;
           const remaining = 10_000 - ((yield* Clock.currentTimeMillis) - now);
@@ -236,7 +210,7 @@ export function makeSyncHealth(
       Effect.gen(function* () {
         if (
           options.diagnoseDraftExcess === false ||
-          account.provider !== "outlook" ||
+          !profile.draftExcessDiagnostic ||
           folder.scope !== "DRAFT" ||
           folder.server.kind !== "available" ||
           folder.local.total <= folder.server.total
@@ -245,7 +219,7 @@ export function makeSyncHealth(
         const local = yield* store.syncHealthLocal(accountId, "DRAFT", false);
         // Bounded metadata reads establish absence/location without editing cache or composers.
         const sample = yield* store.staleCandidates(accountId, ["DRAFT"], false, "", 50);
-        const adapter = providers.get("outlook");
+        const adapter = providers.get(account.provider);
         const remaining = Math.min(1000, 10_000 - ((yield* Clock.currentTimeMillis) - now));
         const results =
           adapter.verifyResetCandidates && remaining > 0

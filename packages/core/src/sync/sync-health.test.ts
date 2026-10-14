@@ -118,6 +118,43 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
   }
 }
 
+for (const [provider, cursor, limit] of [
+  ["gmail", "cursor", 2000],
+  ["imap", null, 1000],
+  ["outlook", JSON.stringify({ __windowDays: "90" }), 5000],
+  ["outlook", "cursor", null],
+] satisfies [Provider, string | null, number | null][])
+  it.effect(
+    `${provider} health reports the first-sync header window ${limit ?? "only when the cursor marks one"}`,
+    () => {
+      const id = provider === "imap" ? "1:1:INBOX" : "one";
+      const server = fakeServer("me@example.com", [message(id)]);
+      return Effect.gen(function* () {
+        const store = yield* Store,
+          mailbox = yield* Mailbox;
+        const account = yield* store.upsertAccount(provider, "me@example.com");
+        yield* store.upsertMessage(account.id, message(id));
+        yield* store.saveSyncCursor(
+          account.id,
+          cursor ??
+            JSON.stringify({
+              folders: {
+                INBOX: { uidValidity: "1", lastUid: 1, uids: "1", unread: "", starred: "" },
+              },
+            }),
+        );
+        const report = yield* mailbox.syncHealth(account.id);
+        const folder = report.folders.find((entry) => entry.scope === "INBOX");
+        assert.strictEqual(folder?.headerWindow?.messageLimit ?? null, limit);
+        // Only IMAP takes its scopes from the cursor's folder paths.
+        assert.strictEqual(
+          report.folders.some((entry) => entry.scope === "SENT"),
+          provider !== "imap",
+        );
+      }).pipe(Effect.provide(TestMailbox({ [provider]: server })));
+    },
+  );
+
 it.effect(
   "health keeps local scopes and counts offline, redacts arbitrary folder names and errors",
   () => {

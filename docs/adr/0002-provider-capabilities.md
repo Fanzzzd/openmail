@@ -16,12 +16,13 @@ The renderer calls `providerCapabilities(account.provider)` on account data it a
 
 Rules:
 
-- Outside `providers/` and `platform/`, do not compare `provider` with a name to decide what an account can do. Read a capability, or add a field named for the question.
+- Outside the adapters (`providers/gmail/`, `providers/outlook/`, `providers/imap/`), `providers/capabilities.ts` and `platform/`, do not compare `provider` with a name to decide what an account can do. Read a capability, or add a field named for the question.
 - Brand names in copy, provider icons, OAuth client choice and e2e fixtures may use the name. `provider-names.test.ts` lists those files.
-- Protocol detail still outside the adapters keeps a per-file count in `provider-names.test.ts`, for example ID formats, cursor layout, endpoint choice, size limits and sync-health budgets. Lower the count when code moves into an adapter. Never raise it.
+- Sync layout that sync health and sync reset need (system scopes, the first-sync header window, recount scopes, reset budgets, what a presence probe returns) lives in `providers/sync-profile.ts`, a second per-provider table. It holds protocol detail, so callers outside sync do not read it.
+- Protocol detail still outside the adapters keeps a per-file count in `provider-names.test.ts`, for example ID formats, cursor layout, endpoint choice and size limits. Lower the count when code moves into an adapter. Never raise it.
 
 ## Consequences
 
-- 51 comparisons remain outside `providers/` and `platform/`, plus 20 identity uses. All are listed in `provider-names.test.ts`.
+- 34 comparisons remain outside the adapters and `platform/`, plus 20 identity uses. All are listed in `provider-names.test.ts`.
 - A new provider adds one row to the table. The remaining protocol comparisons still need a look.
 - The native menu's Mark important and Share web link items read `providerMenuState`, which uses the same table as the toolbar. Before this, the menu offered Mark important for Gmail only.

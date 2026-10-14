@@ -6,6 +6,7 @@ import { focusedInboxGranted, serviceGranted, type OptionalService } from "./opt
 import { FeatureScopeMissing, SettingsScopeMissing } from "../domain/errors.js";
 import type { Account } from "../domain/account.js";
 import type { ProviderAdapter } from "./adapter.js";
+import { providerCapabilities } from "./capabilities.js";
 
 export const requireFocusedInboxScope = (store: Store["Service"], accountId: string) =>
   Effect.gen(function* () {
@@ -24,7 +25,8 @@ export function serviceAvailable(
   service: OptionalService,
 ) {
   return Effect.gen(function* () {
-    if (account.provider === "imap") return true;
+    // Without optional grants there is nothing to gate.
+    if (!providerCapabilities(account.provider).optionalServices) return true;
     return (
       !(yield* store.disabledServices(account.id)).includes(service) &&
       serviceGranted(account.provider, service, yield* store.grantedScopes(account.id))
