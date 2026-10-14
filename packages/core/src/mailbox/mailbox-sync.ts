@@ -22,7 +22,11 @@ import { ImapIdle } from "../providers/imap/imap-idle.js";
 import { type makeCacheMailbox } from "./mailbox-cache.js";
 import { type makeContactsMailbox } from "./mailbox-contacts.js";
 import { type makeOrganizationMailbox } from "./mailbox-organization.js";
-import { type MailboxDependencies, type MailboxRuntimeState } from "./mailbox-runtime.js";
+import {
+  type InflightSync,
+  type MailboxDependencies,
+  type MailboxRuntimeState,
+} from "./mailbox-runtime.js";
 import type { MailboxSync, SyncState } from "./mailbox.js";
 import { BackgroundRead } from "../providers/provider-connectivity.js";
 import { retryAfterMillis } from "../providers/provider-retry.js";
@@ -395,12 +399,30 @@ export const makeSyncMailbox = (
     return results;
   });
 
-  /** One sync at a time: a call during a run waits for that run instead of starting another. */
+  /**
+   * One sync at a time. A call during a run that covers its account joins that run;
+   * a call for an account the run skips waits for it to finish and then runs.
+   */
   const sync = Effect.fn("Mailbox.sync")(function* (accountId?: string) {
-    const current = yield* Ref.get(runtime.inflight);
-    if (Option.isSome(current)) return yield* Deferred.await(current.value);
     const done = yield* Deferred.make<SyncResult[]>();
-    yield* Ref.set(runtime.inflight, Option.some(done));
+    for (;;) {
+      const running = yield* Ref.modify(
+        runtime.inflight,
+        (current): [Option.Option<InflightSync>, Option.Option<InflightSync>] =>
+          Option.isSome(current)
+            ? [current, current]
+            : [Option.none(), Option.some({ accountId, done })],
+      );
+      if (Option.isNone(running)) break;
+      const other = running.value;
+      if (other.accountId === undefined || other.accountId === accountId) {
+        const results = yield* Deferred.await(other.done);
+        return accountId === undefined || other.accountId !== undefined
+          ? results
+          : results.filter((r) => r.accountId === accountId || r.accountId === "all");
+      }
+      yield* Deferred.await(other.done).pipe(Effect.exit);
+    }
     return yield* runSync(accountId).pipe(
       runtime.syncLock.withPermits(1),
       Effect.catchCause((cause) =>

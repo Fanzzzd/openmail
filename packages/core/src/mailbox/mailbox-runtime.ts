@@ -125,7 +125,7 @@ export const makeMailboxRuntimeState = Effect.gen(function* () {
     lastFinishedAt: null,
     errors: [],
   });
-  const inflight = yield* Ref.make(Option.none<Deferred.Deferred<SyncResult[]>>());
+  const inflight = yield* Ref.make(Option.none<InflightSync>());
   const syncLock = yield* Semaphore.make(1);
   const polling = new Map<string, { failures: number; due: number }>();
   /** Background work (queue flushes after a draft save) that dies with the layer. */
@@ -162,6 +162,11 @@ export const makeMailboxRuntimeState = Effect.gen(function* () {
   };
   return runtime;
 });
+/** The running sync: one account, or every account when `accountId` is undefined. */
+export interface InflightSync {
+  readonly accountId: string | undefined;
+  readonly done: Deferred.Deferred<SyncResult[]>;
+}
 export interface MailboxRuntimeState {
   adapters: Map<Provider, import("../providers/adapter.js").ProviderAdapter>;
   attachmentCache: AttachmentCache;
@@ -170,7 +175,7 @@ export interface MailboxRuntimeState {
   attachmentEpoch: number;
   pubsub: PubSub.PubSub<MailboxEvent>;
   syncState: Ref.Ref<SyncState>;
-  inflight: Ref.Ref<Option.Option<Deferred.Deferred<SyncResult[]>>>;
+  inflight: Ref.Ref<Option.Option<InflightSync>>;
   syncLock: Semaphore.Semaphore;
   polling: Map<string, { failures: number; due: number }>;
   background: FiberSet.FiberSet;

@@ -101,7 +101,8 @@ export const makeAccountsMailbox = (
         .pipe(Effect.catch(() => Effect.void)),
     );
     yield* changed;
-    yield* Effect.forkDetach(sync());
+    // Only the new account needs a pull; a sync(account.id) already running is joined.
+    yield* Effect.forkDetach(sync(account.id));
     return yield* store.getAccount(account.id).pipe(Effect.orDie);
   });
 
