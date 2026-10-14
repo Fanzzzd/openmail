@@ -145,7 +145,11 @@ export function useMailCompose({
     run(
       newMessageDraft().pipe(
         Effect.flatMap((base) => {
-          if (!base) return Effect.void;
+          // With no account to send from, New message starts by adding one.
+          if (!base)
+            return Effect.sync(() => {
+              if (canCall("Connect")) setDialog("add");
+            });
           if (!mailto) {
             setCompose(base);
             return Effect.void;

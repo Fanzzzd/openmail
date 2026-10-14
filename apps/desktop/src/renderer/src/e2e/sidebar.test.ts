@@ -1,6 +1,6 @@
 import { afterEach, expect, it } from "vitest";
 import { fireEvent, screen, within } from "@testing-library/react/pure";
-import { flow, eventually } from "./harness";
+import { flow, eventually, key } from "./harness";
 import { scaledMs } from "../../../../../../packages/core/test-support/test-time.js";
 let current: Awaited<ReturnType<typeof flow>> | undefined;
 afterEach(async () => {
@@ -130,4 +130,23 @@ it("with no account the sidebar lists no mailboxes and no sync status, and Add a
   expect(document.body.textContent).not.toContain("This space has no accounts yet.");
   const nav = screen.getByRole("navigation", { name: "Mailboxes", hidden: true });
   expect(within(nav).getByRole("button", { name: "Add account", hidden: true })).toBeTruthy();
+});
+
+it("with no account, New message and the File menu's New message open Add account", async () => {
+  current = await flow({ noAccounts: true });
+  const h = current;
+  const addDialog = () => screen.queryByRole("dialog", { name: "Add your first account" });
+  await eventually(() => expect(addDialog()).toBeTruthy());
+  const closeAdd = async () => {
+    key("Escape");
+    await eventually(() => expect(addDialog()).toBeNull());
+  };
+  await closeAdd();
+  fireEvent.click(screen.getByRole("button", { name: "New message" }));
+  await eventually(() => expect(addDialog()).toBeTruthy());
+  expect(screen.queryByRole("textbox", { name: "Subject" })).toBeNull();
+  await closeAdd();
+  await h.event({ _tag: "Command", command: "compose" });
+  await eventually(() => expect(addDialog()).toBeTruthy());
+  expect(screen.queryByRole("textbox", { name: "Subject" })).toBeNull();
 });
