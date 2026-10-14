@@ -76,6 +76,19 @@ it("the complete catalogs consistently use the mail glossary, message-text termi
         )
       )
         expect(target, source).not.toMatch(/\bSie\b/);
+      // Japanese says 読み込み (not ロード) and メール (not 電子メール), puts no space after 。,
+      // and puts a space between a Latin word and Japanese text, as in AI アプリ.
+      if (
+        locale === "ja" &&
+        (/(?<!ダウン|アップ)ロード|電子メール|。 /u.test(target) ||
+          /[A-Za-z][\u3040-\u30FB\u30FD-\u30FF\u4E00-\u9FFF]|[\u3040-\u30FB\u30FD-\u30FF\u4E00-\u9FFF][A-Za-z]/u.test(
+            target,
+          ))
+      )
+        failures.push(`${locale}: style: ${source} → ${target}`);
+      // "Authorize permission" is not a doubled verb in French.
+      if (locale === "fr" && /autoris\p{L}* l[’']autorisation/iu.test(target))
+        failures.push(`${locale}: style: ${source} → ${target}`);
       if (locale === "es" && /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]/.test(target))
         expect(target[0], source).toBe(target[0]?.toUpperCase());
     }

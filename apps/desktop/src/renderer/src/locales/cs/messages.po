@@ -66,6 +66,14 @@ msgstr "{0} vloženo · {1} ve frontě · {2} běží · {3} se nezdařilo"
 msgid "{0} more not loaded"
 msgstr "{0} další nenačteno"
 
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "{account}: the server can't search with {names}. OpenMail searched the server without it and applied it to the results here."
+msgstr "{account}: server nemůže hledat s {names}. OpenMail prohledal server bez tohoto operátoru a použil ho na zdejší výsledky."
+
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "{account}: the server can't search with {names}. OpenMail searched the server without them and applied them to the results here."
+msgstr "{account}: server nemůže hledat s {names}. OpenMail prohledal server bez těchto operátorů a použil je na zdejší výsledky."
+
 #: src/renderer/src/features/overview/Overview.tsx
 msgid "{accountCount, plural, one {# account} other {# accounts}}, {total} unread"
 msgstr "{accountCount, plural, one {# účet} few {# účty} many {# účtu} other {# účtů}}, nepřečtených: {total}"
@@ -105,6 +113,10 @@ msgstr "{count, plural, one {# změnu se nepodařilo uložit} few {# změny se n
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "{count, plural, one {# message had rejected recipients} other {# messages had rejected recipients}}"
 msgstr "{count, plural, one {# zpráva měla odmítnuté příjemce} few {# zprávy měly odmítnuté příjemce} other {# zpráv mělo odmítnuté příjemce}}"
+
+#: src/renderer/src/state/desktop.ts
+msgid "{count, plural, one {# new message} other {# new messages}}"
+msgstr "{count, plural, one {# nová zpráva} few {# nové zprávy} many {# nové zprávy} other {# nových zpráv}}"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "{count, plural, one {# result} other {# results}}"
@@ -335,10 +347,6 @@ msgid "A label on this draft isn't valid. Remove it and save again."
 msgstr "Štítek na tomto konceptu není platný. Odeberte ho a uložte znovu."
 
 #: src/renderer/src/lib/errors.ts
-msgid "A label or folder needs a valid name"
-msgstr "Štítek nebo složka musí mít platný název"
-
-#: src/renderer/src/lib/errors.ts
 msgid "A message needs at least one recipient."
 msgstr "Zpráva potřebuje alespoň jednoho příjemce."
 
@@ -485,12 +493,12 @@ msgid "Add an Anthropic API key in Settings → AI Access to summarize."
 msgstr "Pro shrnutí přidejte klíč API Anthropic v Nastavení → Přístup AI."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Add an automatic reply message"
-msgstr "Přidejte zprávu s automatickou odpovědí"
+msgid "Add an automatic reply message."
+msgstr "Přidejte text zprávy automatické odpovědi."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Add at least one filter condition"
-msgstr "Přidejte alespoň jednu podmínku filtru"
+msgid "Add at least one filter condition."
+msgstr "Přidejte alespoň jednu podmínku filtru."
 
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Add at least one recipient"
@@ -633,24 +641,12 @@ msgid "AI apps can only suggest existing Gmail labels of the same account."
 msgstr "Aplikace AI mohou navrhovat jen existující štítky Gmailu ze stejného účtu."
 
 #: src/renderer/src/features/settings/Settings.tsx
-msgid "AI can read and search mail, but can't change anything."
-msgstr "AI umí číst a prohledávat poštu, ale nemůže nic měnit."
+msgid "AI apps can read and search mail, but can't change anything."
+msgstr "Aplikace AI mohou číst a prohledávat poštu, ale nemohou nic měnit."
 
 #: src/renderer/src/features/compose/components/Composer.tsx
 msgid "AI draft"
 msgstr "Koncept od AI"
-
-#: src/renderer/src/lib/errors.ts
-msgid "AI input budget exceeded. Ask about fewer messages."
-msgstr "Překročen limit vstupu AI. Zeptejte se na méně zpráv."
-
-#: src/renderer/src/lib/errors.ts
-msgid "AI model is unavailable."
-msgstr "Model AI není dostupný."
-
-#: src/renderer/src/features/settings/Settings.tsx
-msgid "AI permission to change mail"
-msgstr "Oprávnění AI ke změně pošty"
 
 #: src/renderer/src/features/ai/AiPanel.tsx
 msgid "AI request failed. Check account permissions and your API key, then try again."
@@ -659,14 +655,6 @@ msgstr "Požadavek AI selhal. Zkontrolujte oprávnění účtu a klíč API a zk
 #: src/renderer/src/lib/errors.ts
 msgid "AI request failed. Check your key and try again."
 msgstr "Požadavek AI selhal. Zkontrolujte klíč a zkuste to znovu."
-
-#: src/renderer/src/lib/errors.ts
-msgid "AI request timed out."
-msgstr "Vypršel časový limit požadavku AI."
-
-#: src/renderer/src/lib/errors.ts
-msgid "AI stream ended before completion."
-msgstr "Odpověď AI byla přerušena před dokončením."
 
 #: src/renderer/src/features/ai/TriageChip.tsx
 msgid "AI suggestion"
@@ -750,6 +738,7 @@ msgid "Allow access from my tailnet"
 msgstr "Povolit přístup z mého tailnetu"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 msgid "Allow AI suggestions"
 msgstr "Povolit návrhy AI"
 
@@ -867,10 +856,6 @@ msgstr "Apple Mail"
 msgid "Application (client) ID"
 msgstr "ID aplikace (klienta)"
 
-#: src/renderer/src/features/settings/Settings.tsx
-msgid "Applies to AI apps connected over MCP, such as Claude Code, and to your rules. It decides whether they can change your mail."
-msgstr "Platí pro aplikace AI připojené přes MCP, například Claude Code, a pro vaše pravidla. Určuje, zda mohou měnit vaši poštu."
-
 #: src/renderer/src/features/compose/components/DraftOrganization.tsx
 #: src/renderer/src/features/organize/MultiOrganization.tsx
 msgid "Apply"
@@ -953,7 +938,7 @@ msgstr "Zeptat se na poštu"
 msgid "Ask each time"
 msgstr "Pokaždé se ptejte"
 
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "Ask me first"
 msgstr "Nejdřív se mě zeptej"
 
@@ -1013,10 +998,6 @@ msgstr "Přílohy"
 msgid "Attachments exceed the 30 MB compose limit."
 msgstr "Přílohy přesahují limit 30 MB pro psaní."
 
-#: src/renderer/src/lib/errors.ts
-msgid "Attachments rejected before sending"
-msgstr "Přílohy byly před odesláním odmítnuty"
-
 #: src/renderer/src/features/downloads/Downloads.tsx
 msgid "Attachments you save appear here."
 msgstr "Uložené přílohy se zobrazí zde."
@@ -1052,12 +1033,12 @@ msgid "Automatic reply"
 msgstr "Automatická odpověď"
 
 #: src/renderer/src/lib/errors.ts
-msgid "Automatic triage is off."
-msgstr "Automatické třídění je vypnuté."
+msgid "Automatic triage is off. Turn it on in Settings → AI Access."
+msgstr "Automatické třídění je vypnuté. Zapněte ho v Nastavení → Přístup AI."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Automatic triage is paused."
-msgstr "Automatické třídění je pozastavené."
+msgid "Automatic triage is paused. It runs while OpenMail is in the foreground or on AC power."
+msgstr "Automatické třídění je pozastavené. Běží, když je OpenMail v popředí nebo počítač na síťovém napájení."
 
 #: src/renderer/src/features/settings/sections/UpdateSettings.tsx
 msgid "Automatically download updates"
@@ -1164,28 +1145,12 @@ msgid "Calendar access is off for this account."
 msgstr "Přístup ke kalendáři je pro tento účet vypnutý."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Calendar access is unavailable for this account"
-msgstr "Přístup ke kalendáři je pro tento účet nedostupný"
-
-#: src/renderer/src/lib/errors.ts
 msgid "Calendar access isn't granted for this account."
 msgstr "Pro tento účet není udělen přístup ke kalendáři."
-
-#: src/renderer/src/lib/errors.ts
-msgid "Calendar creation requires an in-app confirmation"
-msgstr "Vytvoření kalendáře vyžaduje potvrzení v aplikaci"
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Calendar invitation"
 msgstr "Pozvánka do kalendáře"
-
-#: src/renderer/src/lib/errors.ts
-msgid "Calendar response was not sent"
-msgstr "Odpověď na pozvánku nebyla odeslána"
-
-#: src/renderer/src/lib/errors.ts
-msgid "Calendar responses require a user action"
-msgstr "Odpovědi kalendáře vyžadují akci uživatele"
 
 #: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Call"
@@ -1201,6 +1166,10 @@ msgid "Can't find this account."
 msgstr "Tento účet nelze najít."
 
 #: src/renderer/src/lib/errors.ts
+msgid "Can't find this AI suggestion."
+msgstr "Tento návrh AI nelze najít."
+
+#: src/renderer/src/lib/errors.ts
 msgid "Can't find this attachment."
 msgstr "Tuto přílohu nelze najít."
 
@@ -1211,10 +1180,6 @@ msgstr "Tento koncept nelze najít."
 #: src/renderer/src/lib/errors.ts
 msgid "Can't find this message."
 msgstr "Tuto zprávu nelze najít."
-
-#: src/renderer/src/lib/errors.ts
-msgid "Can't find this proposal."
-msgstr "Tento návrh nelze najít."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Can't find this signature."
@@ -1284,7 +1249,7 @@ msgid "Categories"
 msgstr "Kategorie"
 
 #: src/renderer/src/lib/errors.ts
-msgid "Categories can't be renamed, deleted or moved as folders."
+msgid "Categories can't be renamed, deleted or moved like folders."
 msgstr "Kategorie nelze přejmenovat, smazat ani přesunout jako složky."
 
 #: src/renderer/src/lib/errors.ts
@@ -1351,6 +1316,10 @@ msgstr "Změnit klienta OAuth"
 #: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "Changes"
 msgstr "Změny"
+
+#: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
+msgid "Changes by AI apps"
+msgstr "Změny od aplikací AI"
 
 #: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "Changes to <0/>:"
@@ -1422,32 +1391,32 @@ msgid "Choose {editBody} before inserting an image."
 msgstr "Před vložením obrázku zvolte „{editBody}“."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Choose a conversation"
-msgstr "Vyberte konverzaci"
+msgid "Choose a conversation."
+msgstr "Vyberte konverzaci."
 
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 msgid "Choose a date and time"
 msgstr "Vyberte datum a čas"
 
 #: src/renderer/src/lib/errors.ts
-msgid "Choose a destination from this account"
-msgstr "Vyberte cíl z tohoto účtu"
+msgid "Choose a destination from this account."
+msgstr "Vyberte cíl z tohoto účtu."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Choose a future reminder time"
-msgstr "Vyberte budoucí čas připomenutí"
+msgid "Choose a future reminder time."
+msgstr "Vyberte čas připomenutí v budoucnosti."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Choose a label or folder from this account"
-msgstr "Vyberte štítek nebo složku z tohoto účtu"
+msgid "Choose a label or folder from this account."
+msgstr "Vyberte štítek nebo složku z tohoto účtu."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Choose a message from another sender."
 msgstr "Vyberte zprávu od jiného odesílatele."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Choose a parent folder from this account"
-msgstr "Vyberte nadřazenou složku z tohoto účtu"
+msgid "Choose a parent folder from this account."
+msgstr "Vyberte nadřazenou složku z tohoto účtu."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Choose a sent message to send again."
@@ -1458,20 +1427,16 @@ msgid "Choose a server folder."
 msgstr "Vyberte složku na serveru."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Choose a size in bytes and a comparison"
-msgstr "Zadejte velikost v bajtech a porovnání"
+msgid "Choose a size in bytes and a comparison."
+msgstr "Vyberte velikost v bajtech a porovnání."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Choose a user label or folder"
-msgstr "Vyberte uživatelský štítek nebo složku"
+msgid "Choose a user label or folder."
+msgstr "Vyberte uživatelský štítek nebo složku."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Choose a valid favorite position"
-msgstr "Vyberte platnou pozici v oblíbených"
-
-#: src/renderer/src/lib/errors.ts
-msgid "Choose a verified send-as address for this account"
-msgstr "Vyberte ověřenou adresu pro odesílání pro tento účet"
+msgid "Choose a verified send-as address for this account."
+msgstr "Vyberte ověřenou adresu pro odesílání pro tento účet."
 
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 msgid "Choose accounts"
@@ -1482,8 +1447,16 @@ msgid "Choose actions and use the buttons to change their order."
 msgstr "Vyberte akce a pomocí tlačítek změňte jejich pořadí."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Choose at least one filter action"
-msgstr "Vyberte alespoň jednu akci filtru"
+msgid "Choose an account in the target space."
+msgstr "Vyberte účet v cílovém prostoru."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Choose an end after the start."
+msgstr "Vyberte konec po začátku."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Choose at least one filter action."
+msgstr "Vyberte alespoň jednu akci filtru."
 
 #: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
@@ -1491,24 +1464,24 @@ msgid "Choose Delete key action"
 msgstr "Vybrat akci klávesy Delete"
 
 #: src/renderer/src/lib/errors.ts
-msgid "Choose each favorite once"
-msgstr "Každou oblíbenou položku vyberte jen jednou"
+msgid "Choose each favorite once."
+msgstr "Každou oblíbenou položku vyberte jen jednou."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Choose folders from this account."
 msgstr "Vyberte složky z tohoto účtu."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Choose messages from this account"
-msgstr "Vyberte zprávy z tohoto účtu"
+msgid "Choose messages from this account."
+msgstr "Vyberte zprávy z tohoto účtu."
 
 #: src/renderer/src/features/organize/MultiOrganization.tsx
 msgid "Choose multiple categories"
 msgstr "Vybrat více kategorií"
 
 #: src/renderer/src/lib/errors.ts
-msgid "Choose one destination for the filter"
-msgstr "Vyberte jeden cíl pro filtr"
+msgid "Choose one destination for the filter."
+msgstr "Vyberte pro filtr jeden cíl."
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Choose your email provider."
@@ -1686,16 +1659,16 @@ msgid "Confirm and add event"
 msgstr "Potvrďte a přidejte událost"
 
 #: src/renderer/src/lib/errors.ts
-msgid "Confirm deletion for this filter"
-msgstr "Potvrďte mazání tímto filtrem"
+msgid "Confirm deleting this filter."
+msgstr "Potvrďte smazání tohoto filtru."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Confirm deletion of this server filter"
-msgstr "Potvrďte smazání tohoto serverového filtru"
+msgid "Confirm deleting this server filter."
+msgstr "Potvrďte smazání tohoto serverového filtru."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Confirm discarding the saved filter"
-msgstr "Potvrďte zahození uloženého filtru"
+msgid "Confirm discarding the saved filter."
+msgstr "Potvrďte zahození uloženého filtru."
 
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Confirm filter changes?"
@@ -1708,6 +1681,10 @@ msgstr "Potvrďte trvalé smazání v aplikaci."
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Confirm removal"
 msgstr "Potvrďte odstranění"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Confirm the new event in OpenMail to create it."
+msgstr "Potvrďte novou událost v OpenMailu, aby se vytvořila."
 
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
@@ -1752,8 +1729,8 @@ msgid "Connected to {tailnet}"
 msgstr "Připojeno k {tailnet}"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
-msgid "Connected, can propose changes"
-msgstr "Připojeno, může navrhovat změny"
+msgid "Connected, can make AI suggestions"
+msgstr "Připojeno, může dávat návrhy AI"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Connected, read only"
@@ -2023,6 +2000,10 @@ msgstr "Účty se nepodařilo načíst."
 msgid "Couldn't load your calendar."
 msgstr "Kalendář se nepodařilo načíst."
 
+#: src/renderer/src/lib/errors.ts
+msgid "Couldn't move the favorite there. Drag it again."
+msgstr "Oblíbenou položku se tam nepodařilo přesunout. Přetáhněte ji znovu."
+
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Couldn't open notification settings."
 msgstr "Nastavení oznámení se nepodařilo otevřít."
@@ -2150,6 +2131,14 @@ msgstr "Synchronizace se nezdařila"
 msgid "Couldn't sync {names}."
 msgstr "Nepodařilo se synchronizovat: {names}."
 
+#: src/renderer/src/lib/errors.ts
+msgid "Couldn't update the filter or put the previous version back. Choose Restore filter in Server filters to recover it."
+msgstr "Filtr se nepodařilo aktualizovat ani vrátit předchozí verzi. Obnovíte ho volbou „Obnovit filtr“ v části Serverové filtry."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Couldn't update the filter, so OpenMail put the previous version back. Open Server filters again before you edit it."
+msgstr "Filtr se nepodařilo aktualizovat, a tak OpenMail vrátil předchozí verzi. Před úpravou znovu otevřete Serverové filtry."
+
 #: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "Couldn't write the file. Nothing was changed. {detail}"
 msgstr "Soubor nelze zapsat. Nic se nezměnilo. {detail}"
@@ -2261,10 +2250,6 @@ msgstr "Obnova databáze byla přerušena. Před opětovným otevřením OpenMai
 msgid "Date"
 msgstr "Datum"
 
-#: src/renderer/src/lib/errors.ts
-msgid "Date is ambiguous. Enter an explicit date and time"
-msgstr "Datum je nejednoznačné. Zadejte přesné datum a čas"
-
 #: src/renderer/src/features/compose/draft.ts
 msgctxt "outgoing forward header"
 msgid "Date: {date}"
@@ -2281,6 +2266,10 @@ msgstr "Den"
 #: src/renderer/src/features/calendar/EventRecurrenceEditor.tsx
 msgid "Day of month"
 msgstr "Den v měsíci"
+
+#: src/renderer/src/features/settings/Settings.tsx
+msgid "Decides whether AI apps connected over MCP, such as Claude Code, can suggest changes to your mail. The assistant in OpenMail always asks first."
+msgstr "Určuje, zda aplikace AI připojené přes MCP, například Claude Code, mohou navrhovat změny vaší pošty. Asistent v OpenMailu se vždy nejdřív zeptá."
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Decline"
@@ -2426,8 +2415,8 @@ msgid "Discard draft"
 msgstr "Zahodit koncept"
 
 #: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
-msgid "Discard saved rule?"
-msgstr "Zahodit uložené pravidlo?"
+msgid "Discard saved filter?"
+msgstr "Zahodit uložený filtr?"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 #: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
@@ -2640,8 +2629,8 @@ msgid "Edit this draft body?"
 msgstr "Upravit text tohoto konceptu?"
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
-msgid "Edit this rule in webmail to preserve all conditions and actions."
-msgstr "Upravte toto pravidlo ve webové poště, abyste zachovali všechny podmínky a akce."
+msgid "Edit this filter in webmail to keep all its conditions and actions."
+msgstr "Upravte tento filtr ve webové poště, aby se zachovaly všechny jeho podmínky a akce."
 
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Edit token"
@@ -2675,18 +2664,6 @@ msgstr "Vyprázdnit koš"
 msgid "Empty Trash?"
 msgstr "Vyprázdnit koš?"
 
-#: src/renderer/src/features/mail-list/MessageList.tsx
-msgid "Enable filters"
-msgstr "Povolit filtry"
-
-#: src/renderer/src/lib/errors.ts
-msgid "Enable this account to open mail on the web"
-msgstr "Povolte tento účet pro otevírání pošty na webu"
-
-#: src/renderer/src/lib/errors.ts
-msgid "Enable this account to use its calendar"
-msgstr "Povolte tomuto účtu používat jeho kalendář"
-
 #: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Enabled"
 msgstr "Zapnuto"
@@ -2712,6 +2689,10 @@ msgid "Enter a future reminder time"
 msgstr "Zadejte budoucí čas připomenutí"
 
 #: src/renderer/src/lib/errors.ts
+msgid "Enter a name for the label or folder."
+msgstr "Zadejte název štítku nebo složky."
+
+#: src/renderer/src/lib/errors.ts
 msgid "Enter a question and select accounts."
 msgstr "Zadejte otázku a vyberte účty."
 
@@ -2720,16 +2701,16 @@ msgid "Enter a signature name."
 msgstr "Zadejte název podpisu."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Enter a single access token"
-msgstr "Zadejte jeden přístupový token"
+msgid "Enter a single access token."
+msgstr "Zadejte jeden přístupový token."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Enter a single API key."
 msgstr "Zadejte jeden klíč API."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Enter a tailnet login such as name@github"
-msgstr "Zadejte přihlášení do tailnetu, např. name@github"
+msgid "Enter a tailnet login such as name@github."
+msgstr "Zadejte přihlášení do tailnetu, např. name@github."
 
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Enter a template name."
@@ -2889,21 +2870,13 @@ msgstr "Název souboru"
 msgid "Fill template variables"
 msgstr "Vyplňte proměnné šablony"
 
-#: src/renderer/src/features/mail-list/MessageList.tsx
-msgid "Filter"
-msgstr "Filtr"
-
 #: src/renderer/src/lib/errors.ts
-msgid "Filter recovery is available for Gmail"
-msgstr "Obnovení filtrů je k dispozici pro Gmail"
+msgid "Filter recovery is only available for Gmail."
+msgstr "Obnovení filtrů je k dispozici jen pro Gmail."
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Filter shortcuts"
 msgstr "Filtrovat zkratky"
-
-#: src/renderer/src/features/search/SearchField.tsx
-msgid "Filters"
-msgstr "Filtry"
 
 #: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 #: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
@@ -2955,8 +2928,8 @@ msgid "Focused"
 msgstr "Prioritní"
 
 #: src/renderer/src/lib/errors.ts
-msgid "Focused Inbox requires Outlook."
-msgstr "Prioritní doručená pošta vyžaduje Outlook."
+msgid "Focused Inbox is only available for Outlook accounts."
+msgstr "Prioritní doručená pošta je k dispozici jen pro účty Outlook."
 
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
@@ -3191,9 +3164,17 @@ msgstr "Nastavení Gmailu"
 msgid "Go to folder"
 msgstr "Přejděte do složky"
 
+#: src/renderer/src/lib/errors.ts
+msgid "Google Calendar can't use this repeating event's time zone. Choose another time zone."
+msgstr "Google Calendar nemůže použít časové pásmo této opakované události. Vyberte jiné časové pásmo."
+
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Google currently limits OpenMail's sign-in to 7 days. Sign in again to keep syncing {email}."
 msgstr "Google nyní omezuje přihlášení do OpenMail na 7 dní. Přihlaste se znovu, aby synchronizace {email} pokračovala."
+
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+msgid "Google shows a warning that it hasn't verified OpenMail yet. Choose Advanced, then continue to OpenMail."
+msgstr "Google zobrazí upozornění, že OpenMail zatím neověřil. Zvolte „Rozšířená nastavení“ a pak pokračujte do OpenMailu."
 
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
 msgid "Group accounts into spaces and choose a space in the window toolbar."
@@ -3477,12 +3458,12 @@ msgid "Invitation status in this conversation"
 msgstr "Stav pozvánky v této konverzaci"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
-msgid "It can propose archiving, labels, snoozes and drafts. Each waits for your approval."
-msgstr "Může navrhovat archivaci, štítky, odložení a koncepty. Každý návrh čeká na vaše schválení."
-
-#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "It can read and search allowed accounts. It can't change anything."
 msgstr "Může číst a prohledávat povolené účty. Nemůže nic měnit."
+
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
+msgid "It can suggest archiving, labels, snoozes and drafts. Each AI suggestion waits for your approval."
+msgstr "Může navrhovat archivaci, štítky, odložení a koncepty. Každý návrh AI čeká na vaše schválení."
 
 #: src/renderer/src/app/use-native-menu-bridge.ts
 msgid "It is no longer stored here and has no web link."
@@ -3520,10 +3501,6 @@ msgstr "Uchovávat texty zpráv ve složce {0}"
 msgid "Keep category"
 msgstr "Zachovat kategorii"
 
-#: src/renderer/src/features/calendar/EventRecurrenceEditor.tsx
-msgid "Keep existing rule"
-msgstr "Ponechat stávající pravidlo"
-
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Keep importance"
 msgstr "Ponechat důležitost"
@@ -3535,6 +3512,10 @@ msgstr "Ponechat místní kopii"
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgid "Keep OpenMail under"
 msgstr "Udržovat OpenMail pod limitem"
+
+#: src/renderer/src/features/calendar/EventRecurrenceEditor.tsx
+msgid "Keep the current repeat pattern"
+msgstr "Zachovat současný vzor opakování"
 
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
@@ -3670,8 +3651,8 @@ msgid "Left to right"
 msgstr "Zleva doprava"
 
 #: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
-msgid "Let {name} propose changes for you to approve"
-msgstr "Povolit {name} navrhovat změny ke schválení"
+msgid "Let {name} make AI suggestions for you to approve"
+msgstr "Povolit {name} dávat návrhy AI ke schválení"
 
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Light background"
@@ -3948,11 +3929,6 @@ msgstr "Maximální velikost (KiB)"
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "MCP access follows each account's AI setting above. MCP cannot read an account that is not enabled."
 msgstr "Přístup přes MCP se řídí nastavením AI u každého účtu výše. MCP nemůže číst účet, který není povolen."
-
-#. readOnly is the translated Read only write-mode label above.
-#: src/renderer/src/features/settings/Settings.tsx
-msgid "MCP can propose drafts only when the write mode is not \"{readOnly}\". You review drafts and confirm sending in the app."
-msgstr "MCP může navrhovat koncepty pouze tehdy, když režim zápisu není „{readOnly}“. Koncepty zkontrolujete a odeslání potvrdíte v aplikaci."
 
 #: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Medium"
@@ -4425,10 +4401,6 @@ msgstr "Nová zpráva"
 msgid "New message signature for {address}"
 msgstr "Nový podpis zprávy pro {address}"
 
-#: src/renderer/src/state/desktop.ts
-msgid "new messages"
-msgstr "nové zprávy"
-
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 msgid "New messages"
 msgstr "Nové zprávy"
@@ -4576,8 +4548,8 @@ msgid "No messages here"
 msgstr "Nejsou zde žádné zprávy"
 
 #: src/renderer/src/features/mail-list/EmptyList.tsx
-msgid "No messages match the filters"
-msgstr "Filtrům neodpovídají žádné zprávy"
+msgid "No messages match the quick filters"
+msgstr "Rychlým filtrům neodpovídají žádné zprávy"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "No mode picked yet. Remote images load, and known trackers stay blocked."
@@ -4788,8 +4760,8 @@ msgid "Only Gmail needs an extra permission to delete permanently."
 msgstr "Další oprávnění k trvalému mazání potřebuje jen Gmail."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Only inbox messages can be snoozed"
-msgstr "Odložit lze jen zprávy v doručené poště"
+msgid "Only Inbox messages can be snoozed. Move the message to the Inbox first."
+msgstr "Odložit lze jen zprávy v doručené poště. Nejdřív zprávu přesuňte do doručené pošty."
 
 #: src/renderer/src/app/MailAlerts.tsx
 msgid "Only messages in this Trash or Spam folder from the selected conversations will be permanently deleted. Inbox and Sent copies will remain. This cannot be undone."
@@ -4910,8 +4882,8 @@ msgid "Open this address on your phone or another computer"
 msgstr "Otevřete tuto adresu v telefonu nebo jiném počítači"
 
 #: src/renderer/src/lib/errors.ts
-msgid "Open this invitation in your calendar to add it before responding"
-msgstr "Než odpovíte, otevřete si tuto pozvánku ve svém kalendáři a přidejte ji"
+msgid "Open this invitation in your calendar to add it before responding."
+msgstr "Před odpovědí otevřete tuto pozvánku v kalendáři a přidejte ji."
 
 #: src/renderer/src/features/reader/frame/LinkConfirmDialog.tsx
 msgid "Open this link?"
@@ -4920,6 +4892,14 @@ msgstr "Otevřít tento odkaz?"
 #: src/renderer/src/features/reader/attachments/OpenWithMenu.tsx
 msgid "Open with"
 msgstr "Otevřít v aplikaci"
+
+#: src/renderer/src/lib/errors.ts
+msgid "OpenMail can't edit this server filter. Edit it in webmail."
+msgstr "OpenMail nemůže upravit tento serverový filtr. Upravte ho ve webové poště."
+
+#: src/renderer/src/lib/errors.ts
+msgid "OpenMail can't open this meeting link. Copy it into your browser instead."
+msgstr "OpenMail nemůže otevřít tento odkaz na schůzku. Zkopírujte ho do prohlížeče."
 
 #: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "OpenMail can't read this config file, so it changes nothing. Fix the file, then try again. {detail}"
@@ -4999,6 +4979,10 @@ msgstr "Server MCP aplikace OpenMail se odsud zatím nemůže spustit. Viz pozn�
 msgid "Operations from the last 24 hours. Restores labels, folders and flags after checking current state."
 msgstr "Operace za posledních 24 hodin. Po ověření aktuálního stavu obnoví štítky, složky a příznaky."
 
+#: src/renderer/src/features/search/SearchField.tsx
+msgid "Operators"
+msgstr "Operátory"
+
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 msgid "Optional services"
 msgstr "Volitelné služby"
@@ -5010,10 +4994,6 @@ msgstr "Pořadí"
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Organize"
 msgstr "Organizovat"
-
-#: src/renderer/src/features/settings/Settings.tsx
-msgid "Organize directly"
-msgstr "Uspořádat přímo"
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Organizer:"
@@ -5083,8 +5063,20 @@ msgid "Outlook attachment upload failed. Try saving or sending again."
 msgstr "Nahrání přílohy do Outlooku selhalo. Zkuste ji znovu uložit nebo odeslat."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Outlook automatic replies do not support a custom subject"
-msgstr "Automatické odpovědi aplikace Outlook nepodporují vlastní předmět"
+msgid "Outlook attachments can be up to 150 MB. Remove the larger file, then try again."
+msgstr "Přílohy v Outlooku mohou mít nejvýše 150 MB. Odeberte větší soubor a zkuste to znovu."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Outlook automatic replies can't have a custom subject. Clear the subject."
+msgstr "Automatické odpovědi v Outlooku nemohou mít vlastní předmět. Vymažte předmět."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Outlook can't save this repeat pattern. Choose a simpler one."
+msgstr "Outlook nemůže uložit tento vzor opakování. Vyberte jednodušší."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Outlook can't use this repeating event's time zone. Choose another time zone."
+msgstr "Outlook nemůže použít časové pásmo této opakované události. Vyberte jiné časové pásmo."
 
 #: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
@@ -5105,24 +5097,12 @@ msgid "Outlook didn't return a web link for this message. Open it in Outlook on 
 msgstr "Outlook pro tuto zprávu nevrátil webový odkaz. Otevřete ji v Outlooku na webu."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Outlook file attachments cannot exceed 150 MB"
-msgstr "Souborové přílohy v Outlooku nesmí překročit 150 MB"
+msgid "Outlook filter sizes must be whole kilobytes. Enter a multiple of 1024 bytes."
+msgstr "Velikosti ve filtrech Outlooku musí být v celých kilobajtech. Zadejte násobek 1024 bajtů."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Outlook filter sizes must be a multiple of 1024 bytes"
-msgstr "Velikosti ve filtrech Outlooku musí být násobkem 1024 bajtů"
-
-#: src/renderer/src/lib/errors.ts
-msgid "Outlook message requests cannot exceed 4 MB"
-msgstr "Požadavky na zprávy v Outlooku nesmí překročit 4 MB"
-
-#: src/renderer/src/lib/errors.ts
-msgid "Outlook message requests cannot exceed 4 MB. Large attached messages cannot be uploaded as Outlook items."
-msgstr "Požadavky na zprávy v Outlooku nesmí překročit 4 MB. Velké přiložené zprávy nelze nahrát jako položky Outlooku."
-
-#: src/renderer/src/lib/errors.ts
-msgid "Outlook scheduled replies need both dates"
-msgstr "Naplánované odpovědi aplikace Outlook vyžadují obě data"
+msgid "Outlook scheduled replies need a start and an end date. Enter both."
+msgstr "Naplánované odpovědi v Outlooku potřebují datum začátku a konce. Zadejte obě."
 
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 msgid "Outlook settings"
@@ -5214,10 +5194,6 @@ msgstr "Trvale smazat"
 msgid "Permanently delete selected mail?"
 msgstr "Trvale smazat vybranou poštu?"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
-msgid "Permission"
-msgstr "Oprávnění"
-
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Personal"
@@ -5270,8 +5246,8 @@ msgid "Preview changes"
 msgstr "Náhled změn"
 
 #: src/renderer/src/lib/errors.ts
-msgid "Preview the filter again before confirming"
-msgstr "Před potvrzením znovu zobrazte náhled filtru"
+msgid "Preview the filter again before confirming."
+msgstr "Před potvrzením si znovu zobrazte náhled filtru."
 
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Preview unavailable"
@@ -5354,6 +5330,10 @@ msgstr "QQ Mail"
 msgid "QR code for {url}"
 msgstr "QR kód pro {url}"
 
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "Quick filters"
+msgstr "Rychlé filtry"
+
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Quick Look"
 msgstr "Rychlý náhled"
@@ -5387,9 +5367,10 @@ msgctxt "incoming message action flag"
 msgid "Read"
 msgstr "Příznak přečtení"
 
+#. allowSuggestions is the translated Allow AI suggestions button on each app below; setting and askFirst are the translated Changes by AI apps setting and its Ask me first option.
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
-msgid "Read and search mail, read only by default. To archive, label or draft, an app needs proposals turned on below and a permission to change mail other than Read only. You approve every change in OpenMail, and sending always needs your confirmation here."
-msgstr "Čtení a prohledávání pošty, ve výchozím stavu pouze pro čtení. Aby aplikace mohla archivovat, přidávat štítky nebo psát koncepty, musí mít níže zapnuté návrhy a oprávnění ke změně pošty jiné než „Pouze pro čtení“. Každou změnu schvalujete v OpenMail a odeslání tu vždy potvrzujete."
+msgid "Read and search mail, read only by default. To archive, label or draft, an app needs “{allowSuggestions}” below and “{setting}” set to “{askFirst}”. You approve every AI suggestion in OpenMail, and sending always needs your confirmation here."
+msgstr "Čte a prohledává poštu, ve výchozím stavu jen pro čtení. Aby mohla archivovat, přidávat štítky nebo psát koncepty, potřebuje aplikace níže „{allowSuggestions}“ a nastavení „{setting}“ na „{askFirst}“. Každý návrh AI schvalujete v OpenMailu a odeslání vždy vyžaduje vaše potvrzení zde."
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Read and send mail from your phone or another computer through your own tailnet. This Mac stays the host: mail, tokens and keys stay here, and nothing passes through OpenMail servers. OpenMail uses Tailscale Serve, which only devices on your tailnet can reach. It never uses Funnel, so the page is never on the public internet."
@@ -5461,10 +5442,6 @@ msgstr "Obnoveno {copied} místních záznamů. Vynechané {skipped} nečitelné
 msgid "Recovery copies"
 msgstr "Kopie pro obnovu"
 
-#: src/renderer/src/lib/errors.ts
-msgid "Recurring event creation is unavailable for this account"
-msgstr "Vytváření opakované události není pro tento účet dostupné"
-
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Recurring meeting"
 msgstr "Opakující se setkání"
@@ -5521,6 +5498,10 @@ msgstr "Čas připomenutí musí být v průběhu příštího roku."
 msgid "Remote access"
 msgstr "Vzdálený přístup"
 
+#: src/renderer/src/lib/errors.ts
+msgid "Remote access allows up to 64 tailnet logins. Remove some, then save again."
+msgstr "Vzdálený přístup povoluje nejvýše 64 přihlášení do tailnetu. Některá odeberte a uložte znovu."
+
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Remote access needs MagicDNS and HTTPS Certificates turned on for your tailnet."
 msgstr "Vzdálený přístup vyžaduje zapnuté MagicDNS a certifikáty HTTPS ve vašem tailnetu."
@@ -5533,10 +5514,6 @@ msgstr "Vzdálené obrázky"
 #: src/renderer/src/features/reader/body/MessageBody.tsx
 msgid "Remote images blocked"
 msgstr "Vzdálené obrázky zablokovány"
-
-#: src/renderer/src/lib/errors.ts
-msgid "Remote writes are disabled in this read-only session"
-msgstr "V této relaci jen pro čtení jsou vzdálené změny zakázány"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
@@ -5653,17 +5630,9 @@ msgstr "Opakování"
 msgid "Repeat end date"
 msgstr "Datum konce opakování"
 
-#: src/renderer/src/lib/errors.ts
-msgid "Repeat end date must be on or after the event"
-msgstr "Konec opakování nesmí být před datem události"
-
 #: src/renderer/src/features/calendar/EventRecurrenceEditor.tsx
 msgid "Repeat pattern"
 msgstr "Pravidlo opakování"
-
-#: src/renderer/src/lib/errors.ts
-msgid "Repeat pattern must include the event start date"
-msgstr "Pravidlo opakování musí zahrnovat počáteční datum události"
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Repeats daily"
@@ -5797,6 +5766,10 @@ msgstr "Změnit šířku postranního panelu"
 msgid "Respond to this invitation from the message."
 msgstr "Na tuto pozvánku odpovězte ve zprávě."
 
+#: src/renderer/src/lib/errors.ts
+msgid "Respond to this invitation in OpenMail yourself."
+msgstr "Na tuto pozvánku odpovězte v OpenMailu sami."
+
 #: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "Restart Cursor to load it."
 msgstr "Restartujte Cursor, aby se změna načetla."
@@ -5805,22 +5778,22 @@ msgstr "Restartujte Cursor, aby se změna načetla."
 msgid "Restore"
 msgstr "Obnovit"
 
+#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
+msgid "Restore filter"
+msgstr "Obnovit filtr"
+
+#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
+msgid "Restore filter?"
+msgstr "Obnovit filtr?"
+
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "Restore message state"
 msgstr "Obnovit stav zprávy"
 
-#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
-msgid "Restore rule"
-msgstr "Obnovit pravidlo"
-
-#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
-msgid "Restore rule?"
-msgstr "Obnovit pravidlo?"
-
 #. placeholder {0}: pending.preview.matches.length
 #: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
-msgid "Restore the saved original rule on the server. {0, plural, one {Preview: # message.} other {Preview: # messages.}}"
-msgstr "Obnovte uložené původní pravidlo na serveru. {0, plural, one {Náhled: # zpráva.} few {Náhled: # zprávy.} many {Náhled: # zprávy.} other {Náhled: # zpráv.}}"
+msgid "Restore the saved original filter on the server. {0, plural, one {Preview: # message.} other {Preview: # messages.}}"
+msgstr "Obnovit na serveru uložený původní filtr. {0, plural, one {Náhled: # zpráva.} few {Náhled: # zprávy.} many {Náhled: # zprávy.} other {Náhled: # zpráv.}}"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgid "Resume"
@@ -5913,14 +5886,6 @@ msgstr "Krátký pohyb doprava"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Right to left"
 msgstr "Zprava doleva"
-
-#: src/renderer/src/features/ai/Proposals.tsx
-msgid "Rule"
-msgstr "Pravidlo"
-
-#: src/renderer/src/features/settings/Settings.tsx
-msgid "Rules can archive, label, and mark as read directly. MCP always proposes changes for you to approve in the app."
-msgstr "Pravidla mohou přímo archivovat, přidávat štítky a označovat poštu jako přečtenou. MCP vždy navrhuje změny, které schválíte v aplikaci."
 
 #: src/renderer/src/features/settings/sections/IndexingSettings.tsx
 msgid "Runs while idle. Scanned PDF pages, audio and video are not indexed yet."
@@ -6057,12 +6022,17 @@ msgid "Search  {searchKey}"
 msgstr "Hledat  {searchKey}"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "Search can use at most {MAX_SEARCH_TERMS} words and operators. Remove some."
+msgstr "Hledání může použít nejvýše {MAX_SEARCH_TERMS} slov a operátorů. Některé odeberte."
+
+#: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Search couldn't finish:"
 msgstr "Hledání se nepodařilo dokončit:"
 
+#: src/renderer/src/features/mail-list/MessageList.tsx
 #: src/renderer/src/lib/errors.ts
-msgid "Search groups are nested too deeply. Simplify your query."
-msgstr "Skupiny ve hledání jsou vnořené příliš hluboko. Zjednodušte dotaz."
+msgid "Search groups can nest at most {MAX_SEARCH_DEPTH} levels deep. Remove some parentheses."
+msgstr "Skupiny ve vyhledávání lze vnořit nejvýše do {MAX_SEARCH_DEPTH} úrovní. Odeberte některé závorky."
 
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Search help"
@@ -6115,16 +6085,16 @@ msgid "Select {0}"
 msgstr "Vyberte {0}"
 
 #: src/renderer/src/lib/errors.ts
-msgid "Select 1 to 256 attachments"
-msgstr "Vyberte 1 až 256 příloh"
+msgid "Select 1 to 256 attachments."
+msgstr "Vyberte 1 až 256 příloh."
 
 #: src/renderer/src/features/reader/Reader.tsx
 msgid "Select a message"
 msgstr "Vyberte zprávu"
 
 #: src/renderer/src/features/ai/AiPanel.tsx
-msgid "Select accounts allowed in Settings → AI Access. The assistant searches mail and proposes drafts, labels or archive. You approve changes in AI suggestions."
-msgstr "Vyberte povolené účty v Nastavení → Přístup AI. Asistent hledá v poště a navrhuje koncepty, štítky nebo archivaci. Změny schvalujete v návrzích AI."
+msgid "Select accounts allowed in Settings → AI Access. The assistant searches mail and suggests drafts, labels or archiving. You approve each one in AI suggestions."
+msgstr "Vyberte účty povolené v Nastavení → Přístup AI. Asistent prohledává poštu a navrhuje koncepty, štítky nebo archivaci. Každý návrh schválíte v Návrzích AI."
 
 #: src/renderer/src/app/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
@@ -6164,8 +6134,8 @@ msgid "Semantic search is unavailable. Full-text search remains available."
 msgstr "Sémantické vyhledávání není k dispozici. K dispozici zůstává fulltextové vyhledávání."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Semantic search isn't available right now."
-msgstr "Sémantické vyhledávání teď není k dispozici."
+msgid "Semantic search isn't available right now. Try again later."
+msgstr "Sémantické vyhledávání teď není k dispozici. Zkuste to znovu později."
 
 #: src/renderer/src/app/use-compose-delivery.ts
 #: src/renderer/src/features/compose/components/Composer.tsx
@@ -6299,8 +6269,8 @@ msgid "Server unavailable"
 msgstr "Server není dostupný"
 
 #: src/renderer/src/lib/errors.ts
-msgid "Server visibility is available for Gmail labels"
-msgstr "Viditelnost na serveru je k dispozici pro štítky Gmailu"
+msgid "Server visibility is only available for Gmail labels."
+msgstr "Viditelnost na serveru je k dispozici jen pro štítky Gmailu."
 
 #: src/renderer/src/features/ai/AiPanel.tsx
 msgid "Set up built-in AI"
@@ -6535,10 +6505,6 @@ msgstr "Přihlášeno jako {login}. Tento Mac je {device}."
 msgid "Signed in. You can close this page and go back to OpenMail."
 msgstr "Přihlášení proběhlo. Tuto stránku můžete zavřít a vrátit se do OpenMail."
 
-#: src/renderer/src/features/mail-list/MessageList.tsx
-msgid "Simplify your search query."
-msgstr "Zjednodušte vyhledávací dotaz."
-
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Size comparison"
 msgstr "Porovnání velikosti"
@@ -6599,13 +6565,17 @@ msgstr "Sociální sítě"
 msgid "Software updates"
 msgstr "Aktualizace softwaru"
 
+#: src/renderer/src/lib/errors.ts
+msgid "Some attachments can't be sent. Remove them, then send again."
+msgstr "Některé přílohy nelze odeslat. Odeberte je a odešlete znovu."
+
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
-msgid "Some conditions need metadata that is not cached. Save the rule for future mail on the server."
-msgstr "Některé podmínky vyžadují metadata, která nejsou v mezipaměti. Uložte pravidlo pro budoucí poštu na serveru."
+msgid "Some conditions need metadata that is not cached. Save the filter for future mail on the server."
+msgstr "Některé podmínky potřebují metadata, která nejsou v mezipaměti. Uložte filtr pro budoucí poštu na serveru."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Some filter conditions can't be checked against cached mail"
-msgstr "Některé podmínky filtru nelze ověřit na poště v mezipaměti"
+msgid "Some filter conditions can't be checked against cached mail. Save the filter for future mail on the server."
+msgstr "Některé podmínky filtru nelze ověřit na poště v mezipaměti. Uložte filtr pro budoucí poštu na serveru."
 
 #: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "Some formatting cannot be kept in this mode. Link addresses are kept. You can undo the mode change."
@@ -6618,10 +6588,6 @@ msgstr "Některé výskyty této série byly změněny, takže sérii zde nelze 
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "Some recipients did not receive this message."
 msgstr "Někteří příjemci tuto zprávu neobdrželi."
-
-#: src/renderer/src/features/mail-list/MessageList.tsx
-msgid "Some server predicates were omitted to preserve matches; local filters still apply:"
-msgstr "Některé serverové predikáty byly vynechány, aby se zachovaly shody; místní filtry stále platí:"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Something else on this Mac already uses Tailscale Serve on this port. OpenMail won't replace it. Remove that mapping or use a Tailscale Service name below."
@@ -6966,8 +6932,20 @@ msgid "The AI answer got too long. Ask a narrower question."
 msgstr "Odpověď AI je příliš dlouhá. Položte užší otázku."
 
 #: src/renderer/src/lib/errors.ts
+msgid "The AI answer stopped before it finished. Try again."
+msgstr "Odpověď AI skončila předčasně. Zkuste to znovu."
+
+#: src/renderer/src/lib/errors.ts
+msgid "The AI model isn't available right now. Try again later."
+msgstr "Model AI teď není k dispozici. Zkuste to znovu později."
+
+#: src/renderer/src/lib/errors.ts
 msgid "The AI needed too many steps. Ask a narrower question."
 msgstr "AI potřebovala příliš mnoho kroků. Položte užší otázku."
+
+#: src/renderer/src/lib/errors.ts
+msgid "The AI request took too long. Try again."
+msgstr "Požadavek na AI trval příliš dlouho. Zkuste to znovu."
 
 #: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "The app's command failed. Nothing else was changed. {detail}"
@@ -6985,10 +6963,6 @@ msgstr "Asistent může navrhovat jen koncepty, štítky a archivaci."
 msgid "The body is not cached. Try opening this message again when connected."
 msgstr "Text zprávy není uložen v mezipaměti. Po připojení zkuste zprávu otevřít znovu."
 
-#: src/renderer/src/lib/errors.ts
-msgid "The calendar organizer does not match this invitation"
-msgstr "Organizátor kalendáře neodpovídá této pozvánce"
-
 #: src/main/app/native-i18n.ts
 msgid "The database integrity check (quick_check) failed or the file is unavailable. Reset rebuilds a damaged database from readable local records and keeps the original file. Keychain tokens are kept."
 msgstr "Kontrola integrity databáze (quick_check) selhala nebo je soubor nedostupný. Reset obnoví poškozenou databázi z čitelných místních záznamů a zachová původní soubor. Klíčenky jsou uloženy."
@@ -6997,17 +6971,9 @@ msgstr "Kontrola integrity databáze (quick_check) selhala nebo je soubor nedost
 msgid "The database was kept. Quit OpenMail and restore a local backup or contact support."
 msgstr "Databáze byla zachována. Ukončete OpenMail a obnovte místní zálohu nebo kontaktujte podporu."
 
-#: src/renderer/src/lib/errors.ts
-msgid "The destination account must belong to the target space"
-msgstr "Cílový účet musí patřit do cílového prostoru"
-
 #: src/renderer/src/features/reader/frame/LinkConfirmDialog.tsx
 msgid "The displayed link may hide its destination. Check the real domain before opening."
 msgstr "Zobrazený odkaz může skrývat svůj cíl. Před otevřením zkontrolujte skutečnou doménu."
-
-#: src/renderer/src/lib/errors.ts
-msgid "The end must be after the start"
-msgstr "Konec musí být po startu"
 
 #: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "The file changed after the preview. Review the change again."
@@ -7112,12 +7078,16 @@ msgid "The organizer differs from the message sender. Check the response recipie
 msgstr "Organizátor se liší od odesílatele zprávy. Než odpovíte, zkontrolujte příjemce odpovědi."
 
 #: src/renderer/src/lib/errors.ts
+msgid "The organizer in your calendar doesn't match this invitation. Respond from your calendar instead."
+msgstr "Organizátor ve vašem kalendáři neodpovídá této pozvánce. Odpovězte raději z kalendáře."
+
+#: src/renderer/src/lib/errors.ts
 msgid "The original attachments are over 30 MB. Forward without them."
 msgstr "Původní přílohy mají více než 30 MB. Zprávu můžete přeposlat bez nich."
 
 #: src/renderer/src/lib/errors.ts
-msgid "The original folder no longer exists."
-msgstr "Původní složka už neexistuje."
+msgid "The original folder no longer exists. Move the message yourself."
+msgstr "Původní složka už neexistuje. Přesuňte zprávu sami."
 
 #: src/renderer/src/lib/errors.ts
 msgid "The original message is too large to include. Forward it as an attachment."
@@ -7135,6 +7105,14 @@ msgstr "Náhled ověřil nejvýše 201 zpráv na serveru. Odpovídající zpráv
 msgid "The preview is limited to 200 messages. Narrow the conditions to process other messages."
 msgstr "Náhled je omezen na 200 zpráv. Zužte podmínky pro zpracování dalších zpráv."
 
+#: src/renderer/src/lib/errors.ts
+msgid "The repeat end date is before the event. Choose a later end date."
+msgstr "Datum konce opakování je před událostí. Vyberte pozdější datum konce."
+
+#: src/renderer/src/lib/errors.ts
+msgid "The repeat pattern must include the event's start date. Change the pattern or the start date."
+msgstr "Vzor opakování musí zahrnovat datum začátku události. Změňte vzor nebo datum začátku."
+
 #: src/renderer/src/features/reader/RawMessage.tsx
 msgid "The rest is left out here. Copy gets the whole message."
 msgstr "Zbytek je zde vynechán. Kopírovat získá celou zprávu."
@@ -7144,8 +7122,8 @@ msgid "The selected conversation is no longer available."
 msgstr "Vybraná konverzace už není dostupná."
 
 #: src/renderer/src/lib/errors.ts
-msgid "The selected message is no longer available."
-msgstr "Vybraná zpráva již není dostupná."
+msgid "The selected message is no longer available. Refresh the list."
+msgstr "Vybraná zpráva už není k dispozici. Obnovte seznam."
 
 #: src/renderer/src/lib/errors.ts
 msgid "The selection has more than 100,000 messages. Select fewer."
@@ -7214,12 +7192,24 @@ msgid "Third"
 msgstr "Třetí"
 
 #: src/renderer/src/lib/errors.ts
-msgid "This account has no web mail link."
-msgstr "Tento účet nemá odkaz na webovou poštu."
+msgid "This account can't create repeating events. Create a single event instead."
+msgstr "Tento účet nemůže vytvářet opakované události. Vytvořte jednorázovou událost."
+
+#: src/renderer/src/lib/errors.ts
+msgid "This account has no calendar OpenMail can use. Add the event in your calendar app instead."
+msgstr "Tento účet nemá kalendář, který by OpenMail mohl použít. Přidejte událost v aplikaci kalendáře."
+
+#: src/renderer/src/lib/errors.ts
+msgid "This account has no web mail link. Open it in your provider's web mail."
+msgstr "Tento účet nemá odkaz na webovou poštu. Otevřete ho ve webové poště svého poskytovatele."
 
 #: src/renderer/src/lib/errors.ts
 msgid "This account is outside the selected accounts."
 msgstr "Tento účet není mezi vybranými účty."
+
+#: src/renderer/src/lib/errors.ts
+msgid "This account isn't on the invitation, so it can't respond. Respond from the invited account."
+msgstr "Tento účet není v pozvánce, a proto nemůže odpovědět. Odpovězte z pozvaného účtu."
 
 #: src/renderer/src/lib/errors.ts
 msgid "This action isn't available for this account."
@@ -7249,9 +7239,13 @@ msgstr "Tuto akci teď nelze vrátit zpět. Zkuste to znovu, až budete online."
 msgid "This conversation's account is no longer connected."
 msgstr "Účet této konverzace už není připojený."
 
+#: src/renderer/src/lib/errors.ts
+msgid "This date is ambiguous. Enter an explicit date and time."
+msgstr "Toto datum je nejednoznačné. Zadejte přesné datum a čas."
+
 #: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
-msgid "This deletes the saved recovery copy. Rules on the server are unchanged."
-msgstr "Tím se smaže uložená kopie pro obnovení. Pravidla na serveru se nemění."
+msgid "This deletes the saved recovery copy. Filters on the server are unchanged."
+msgstr "Tím se smaže uložená kopie pro obnovení. Filtry na serveru se nemění."
 
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 msgid "This development build has no MCP server yet. Run pnpm build in the repository first."
@@ -7270,38 +7264,48 @@ msgid "This draft was already discarded."
 msgstr "Tento koncept už byl zahozen."
 
 #: src/renderer/src/lib/errors.ts
-msgid "This event is no longer available"
-msgstr "Tato událost již není dostupná"
+msgid "This event no longer exists. Refresh the calendar."
+msgstr "Tato událost už neexistuje. Obnovte kalendář."
 
 #: src/renderer/src/lib/errors.ts
 msgid "This event's time isn't valid. Check the start and end."
 msgstr "Čas této události není platný. Zkontrolujte začátek a konec."
 
-#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/lib/errors.ts
+msgid "This filter can only apply to future mail on the server. Save it without applying it to existing mail."
+msgstr "Tento filtr lze na serveru použít jen na budoucí poštu. Uložte ho bez použití na existující poštu."
+
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "This filter can only be applied to future mail on the server"
 msgstr "Tento filtr lze použít pouze na budoucí poštu na serveru"
 
-#: src/renderer/src/lib/errors.ts
-msgid "This filter has already been restored"
-msgstr "Tento filtr už byl obnoven"
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
+msgid "This filter deletes messages. Confirm only if the preview matches the messages you intend to delete."
+msgstr "Tento filtr maže zprávy. Potvrďte jen tehdy, když náhled odpovídá zprávám, které chcete smazat."
 
 #: src/renderer/src/lib/errors.ts
-msgid "This filter no longer exists"
-msgstr "Tento filtr už neexistuje"
+msgid "This filter has already been restored."
+msgstr "Tento filtr už byl obnoven."
 
 #: src/renderer/src/lib/errors.ts
-msgid "This filter uses conditions or actions the editor can't keep"
-msgstr "Tento filtr používá podmínky nebo akce, které editor nedokáže zachovat"
+msgid "This filter no longer exists. Open Server filters again to see the current list."
+msgstr "Tento filtr už neexistuje. Aktuální seznam uvidíte po opětovném otevření Serverových filtrů."
 
 #: src/renderer/src/lib/errors.ts
-msgid "This invitation cannot be answered by this account"
-msgstr "Na tuto pozvánku tento účet nemůže odpovědět"
+msgid "This filter uses conditions or actions the editor can't keep. Edit it in webmail."
+msgstr "Tento filtr používá podmínky nebo akce, které editor nedokáže zachovat. Upravte ho ve webové poště."
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
-#: src/renderer/src/lib/errors.ts
 msgid "This invitation has a newer update"
 msgstr "Tato pozvánka má novější aktualizaci"
+
+#: src/renderer/src/lib/errors.ts
+msgid "This invitation was updated. Open the latest version to respond."
+msgstr "Tato pozvánka byla aktualizována. Pro odpověď otevřete nejnovější verzi."
+
+#: src/renderer/src/lib/errors.ts
+msgid "This label or folder no longer exists. Refresh the list."
+msgstr "Tento štítek nebo složka už neexistuje. Obnovte seznam."
 
 #: src/main/app/native-i18n.ts
 msgid "This library was opened by a newer OpenMail"
@@ -7312,16 +7316,20 @@ msgid "This login can't open OpenMail"
 msgstr "Toto přihlášení nemůže otevřít OpenMail"
 
 #: src/renderer/src/lib/errors.ts
-msgid "This meeting has been cancelled"
-msgstr "Tato schůzka byla zrušena"
+msgid "This meeting was cancelled, so there's nothing to respond to."
+msgstr "Tato schůzka byla zrušena, takže není na co odpovídat."
 
 #: src/renderer/src/lib/errors.ts
-msgid "This meeting link is not supported."
-msgstr "Tento odkaz na schůzku není podporován."
+msgid "This message has no valid sender address. Choose another message."
+msgstr "Tato zpráva nemá platnou adresu odesílatele. Vyberte jinou zprávu."
 
 #: src/renderer/src/lib/errors.ts
-msgid "This message has no valid sender address."
-msgstr "Tato zpráva nemá platnou adresu odesílatele."
+msgid "This message is over Outlook's 4 MB request limit, and Outlook can't upload large attached messages. Remove the attached message, then try again."
+msgstr "Tato zpráva překračuje limit požadavku Outlooku 4 MB a Outlook neumí nahrát velké přiložené zprávy. Odeberte přiloženou zprávu a zkuste to znovu."
+
+#: src/renderer/src/lib/errors.ts
+msgid "This message is over Outlook's 4 MB request limit. Remove attachments, then try again."
+msgstr "Tato zpráva překračuje limit požadavku Outlooku 4 MB. Odeberte přílohy a zkuste to znovu."
 
 #: src/renderer/src/lib/errors.ts
 msgid "This message isn't a draft."
@@ -7340,33 +7348,17 @@ msgstr "Tato zpráva již mohla být odeslána. Před dalším odesláním zkont
 msgid "This permission lets OpenMail permanently delete mail in this Gmail account. Google will ask for your consent. After granting it, confirm the deletion again."
 msgstr "Toto oprávnění umožňuje OpenMailu trvale smazat poštu v tomto účtu Gmail. Google vás požádá o souhlas. Po udělení smazání znovu potvrďte."
 
-#: src/renderer/src/lib/errors.ts
-msgid "This recurrence cannot be represented in Outlook"
-msgstr "Toto opakování nelze převést do Outlooku"
-
-#: src/renderer/src/lib/errors.ts
-msgid "This recurring event has a time zone Google Calendar cannot use"
-msgstr "Tato opakující se událost má časové pásmo, které Kalendář Google nemůže použít"
-
-#: src/renderer/src/lib/errors.ts
-msgid "This recurring event has a time zone Outlook cannot use"
-msgstr "Outlook nepodporuje časové pásmo této opakované události"
-
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "This removes the filter from the server. Existing messages are unchanged."
 msgstr "Tím se filtr odebere ze serveru. Stávající zprávy jsou nezměněny."
 
-#: src/renderer/src/features/settings/sections/FilterEditor.tsx
-msgid "This rule deletes messages. Confirm only if the preview matches the messages you intend to delete."
-msgstr "Toto pravidlo maže zprávy. Potvrďte pouze tehdy, pokud náhled odpovídá zprávám, které chcete smazat."
+#: src/renderer/src/lib/errors.ts
+msgid "This session is read-only, so OpenMail can't change mail on the server. Restart OpenMail without read-only mode to make changes."
+msgstr "Tato relace je jen pro čtení, takže OpenMail nemůže měnit poštu na serveru. Chcete-li provádět změny, spusťte OpenMail znovu bez režimu jen pro čtení."
 
 #: src/renderer/src/lib/errors.ts
-msgid "This server filter isn't supported"
-msgstr "Tento serverový filtr není podporován"
-
-#: src/renderer/src/lib/errors.ts
-msgid "This setting is only available on the Mac."
-msgstr "Toto nastavení je dostupné jen na Macu."
+msgid "This setting is only available on the Mac. Change it in OpenMail on your Mac."
+msgstr "Toto nastavení je k dispozici jen na Macu. Změňte ho v OpenMailu na svém Macu."
 
 #: src/renderer/src/lib/errors.ts
 msgid "This signature belongs to another sending address or is no longer available."
@@ -7389,8 +7381,8 @@ msgid "This suggestion is no longer available."
 msgstr "Tento návrh už není dostupný."
 
 #: src/renderer/src/lib/errors.ts
-msgid "This time is skipped or repeated by daylight saving. Enter a date and time with a UTC offset"
-msgstr "Letní čas tento čas vynechává nebo opakuje. Zadejte datum a čas s posunem vůči UTC"
+msgid "This time is skipped or repeated by daylight saving. Enter a date and time with a UTC offset."
+msgstr "Letní čas tento čas vynechává nebo opakuje. Zadejte datum a čas s posunem vůči UTC."
 
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Thread link copied"
@@ -7459,12 +7451,12 @@ msgid "Toggle full screen"
 msgstr "Přepnout režim celé obrazovky"
 
 #: src/renderer/src/i18n/shortcut-names.ts
-msgid "Toggle list filters"
-msgstr "Přepnout filtry seznamu"
-
-#: src/renderer/src/i18n/shortcut-names.ts
 msgid "Toggle message background"
 msgstr "Přepnout pozadí zprávy"
+
+#: src/renderer/src/i18n/shortcut-names.ts
+msgid "Toggle quick filters"
+msgstr "Přepnout rychlé filtry"
 
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Toggle reading pane position"
@@ -7487,8 +7479,8 @@ msgid "Too many conversations in one AI suggestion."
 msgstr "Příliš mnoho konverzací v jednom návrhu AI."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Too many tailnet logins"
-msgstr "Příliš mnoho přihlášení do tailnetu"
+msgid "Too much mail for one AI request. Ask about fewer messages."
+msgstr "Na jeden požadavek AI je to příliš mnoho pošty. Zeptejte se na méně zpráv."
 
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 msgid "Toolbar actions"
@@ -7543,12 +7535,16 @@ msgid "Turn it on in Settings"
 msgstr "Zapnout v nastavení"
 
 #: src/renderer/src/features/mail-list/EmptyList.tsx
-msgid "Turn off filters"
-msgstr "Vypnout filtry"
+msgid "Turn off quick filters"
+msgstr "Vypnout rychlé filtry"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Turn on “Allow AI to read this account” for each selected account in Settings → AI Access."
 msgstr "V Nastavení → Přístup AI zapněte u každého vybraného účtu „Povolit AI číst tento účet“."
+
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "Turn on quick filters"
+msgstr "Zapnout rychlé filtry"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Turn on the account before sending."
@@ -7557,6 +7553,14 @@ msgstr "Před odesláním zapněte účet."
 #: src/renderer/src/lib/errors.ts
 msgid "Turn on the account before undoing this."
 msgstr "Před vrácením zpět zapněte účet."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Turn on this account to open its mail on the web."
+msgstr "Zapněte tento účet, abyste mohli otevřít jeho poštu na webu."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Turn on this account to use its calendar."
+msgstr "Zapněte tento účet, abyste mohli používat jeho kalendář."
 
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 msgid "Turned off"
@@ -7618,10 +7622,6 @@ msgstr "Neseskupené účty"
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "unknown"
 msgstr "neznámý"
-
-#: src/renderer/src/lib/errors.ts
-msgid "Unknown label or folder"
-msgstr "Neznámý štítek nebo složka"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Unknown message sizes are left unfiltered."
@@ -7740,12 +7740,12 @@ msgid "Use {token} for a custom variable. You will be asked for its value when i
 msgstr "Pro vlastní proměnnou použijte {token}. Při vkládání šablony budete požádáni o její hodnotu."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Use a PNG, JPEG, GIF or WebP image up to 8 MB"
-msgstr "Použijte obrázek PNG, JPEG, GIF nebo WebP do 8 MB"
+msgid "Use a PNG, JPEG, GIF or WebP image up to 8 MB."
+msgstr "Použijte obrázek PNG, JPEG, GIF nebo WebP o velikosti nejvýše 8 MB."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Use a service name such as svc:openmail"
-msgstr "Zadejte název služby, např. svc:openmail"
+msgid "Use a service name such as svc:openmail."
+msgstr "Použijte název služby, např. svc:openmail."
 
 #: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Use an http, https or mailto link"
@@ -7864,8 +7864,8 @@ msgid "What AI apps can do"
 msgstr "Co mohou aplikace AI dělat"
 
 #: src/renderer/src/features/settings/Settings.tsx
-msgid "When AI wants to archive, label, or mark as read, it goes into AI suggestions first and runs only after you approve."
-msgstr "Když chce AI archivovat, přidat štítek nebo označit zprávu jako přečtenou, nejprve vytvoří návrh AI. Akce se provede až po schválení."
+msgid "When an AI app wants to archive, label, mark as read, snooze or draft, it adds an AI suggestion. Nothing changes until you approve it, and sending always needs your confirmation."
+msgstr "Když chce aplikace AI archivovat, přidat štítek, označit jako přečtené, odložit nebo napsat koncept, přidá návrh AI. Nic se nezmění, dokud ho neschválíte, a odeslání vždy vyžaduje vaše potvrzení."
 
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "When you allow an account, questions and selected mail text, subjects, sender and recipient addresses are sent to Anthropic using your API key. Images, attachments and media stay on this device. Requests may incur API charges. Automatic summaries run only when you enable them for an account."
@@ -7986,3 +7986,7 @@ msgstr "Pošta se synchronizuje. Tři zkratky na začátek:"
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 msgid "Your overlapping events"
 msgstr "Vaše překrývající se události"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Your response wasn't sent. Try again, or respond from your calendar."
+msgstr "Vaše odpověď nebyla odeslána. Zkuste to znovu nebo odpovězte z kalendáře."

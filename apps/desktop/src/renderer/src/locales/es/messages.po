@@ -66,6 +66,14 @@ msgstr "{0} incrustado · {1} en cola · {2} ejecutándose · {3} falló"
 msgid "{0} more not loaded"
 msgstr "{0} más no cargado"
 
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "{account}: the server can't search with {names}. OpenMail searched the server without it and applied it to the results here."
+msgstr "{account}: el servidor no puede buscar con {names}. OpenMail buscó en el servidor sin este operador y lo aplicó a los resultados aquí."
+
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "{account}: the server can't search with {names}. OpenMail searched the server without them and applied them to the results here."
+msgstr "{account}: el servidor no puede buscar con {names}. OpenMail buscó en el servidor sin estos operadores y los aplicó a los resultados aquí."
+
 #: src/renderer/src/features/overview/Overview.tsx
 msgid "{accountCount, plural, one {# account} other {# accounts}}, {total} unread"
 msgstr "{accountCount, plural, one {# cuenta} other {# cuentas}}, {total} sin leer"
@@ -105,6 +113,10 @@ msgstr "{count, plural, one {No se pudo guardar # cambio} other {No se pudieron 
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "{count, plural, one {# message had rejected recipients} other {# messages had rejected recipients}}"
 msgstr "{count, plural, one {# mensaje tuvo destinatarios rechazados} other {# mensajes tuvieron destinatarios rechazados}}"
+
+#: src/renderer/src/state/desktop.ts
+msgid "{count, plural, one {# new message} other {# new messages}}"
+msgstr "{count, plural, one {# mensaje nuevo} other {# mensajes nuevos}}"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "{count, plural, one {# result} other {# results}}"
@@ -335,10 +347,6 @@ msgid "A label on this draft isn't valid. Remove it and save again."
 msgstr "Una etiqueta de este borrador no es válida. Quítala y vuelve a guardar."
 
 #: src/renderer/src/lib/errors.ts
-msgid "A label or folder needs a valid name"
-msgstr "Una etiqueta o carpeta necesita un nombre válido"
-
-#: src/renderer/src/lib/errors.ts
 msgid "A message needs at least one recipient."
 msgstr "Un mensaje necesita al menos un destinatario."
 
@@ -485,12 +493,12 @@ msgid "Add an Anthropic API key in Settings → AI Access to summarize."
 msgstr "Añade una clave API de Anthropic en Ajustes → Acceso a IA para obtener resúmenes."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Add an automatic reply message"
-msgstr "Agregar un mensaje de respuesta automática"
+msgid "Add an automatic reply message."
+msgstr "Añade un mensaje de respuesta automática."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Add at least one filter condition"
-msgstr "Agregar al menos una condición de filtro"
+msgid "Add at least one filter condition."
+msgstr "Añade al menos una condición al filtro."
 
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Add at least one recipient"
@@ -633,24 +641,12 @@ msgid "AI apps can only suggest existing Gmail labels of the same account."
 msgstr "Las aplicaciones de IA solo pueden sugerir etiquetas de Gmail existentes de la misma cuenta."
 
 #: src/renderer/src/features/settings/Settings.tsx
-msgid "AI can read and search mail, but can't change anything."
-msgstr "La IA puede leer y buscar correo, pero no puede cambiar nada."
+msgid "AI apps can read and search mail, but can't change anything."
+msgstr "Las aplicaciones de IA pueden leer y buscar correo, pero no pueden cambiar nada."
 
 #: src/renderer/src/features/compose/components/Composer.tsx
 msgid "AI draft"
 msgstr "Borrador de IA"
-
-#: src/renderer/src/lib/errors.ts
-msgid "AI input budget exceeded. Ask about fewer messages."
-msgstr "Se superó el límite de entrada de IA. Pregunta sobre menos mensajes."
-
-#: src/renderer/src/lib/errors.ts
-msgid "AI model is unavailable."
-msgstr "El modelo de IA no está disponible."
-
-#: src/renderer/src/features/settings/Settings.tsx
-msgid "AI permission to change mail"
-msgstr "Permiso de IA para cambiar el correo"
 
 #: src/renderer/src/features/ai/AiPanel.tsx
 msgid "AI request failed. Check account permissions and your API key, then try again."
@@ -659,14 +655,6 @@ msgstr "La solicitud de IA falló. Comprueba los permisos de la cuenta y tu clav
 #: src/renderer/src/lib/errors.ts
 msgid "AI request failed. Check your key and try again."
 msgstr "La solicitud de IA falló. Comprueba la clave y vuelve a intentarlo."
-
-#: src/renderer/src/lib/errors.ts
-msgid "AI request timed out."
-msgstr "La solicitud de IA agotó el tiempo de espera."
-
-#: src/renderer/src/lib/errors.ts
-msgid "AI stream ended before completion."
-msgstr "La respuesta de IA se interrumpió antes de completarse."
 
 #: src/renderer/src/features/ai/TriageChip.tsx
 msgid "AI suggestion"
@@ -750,6 +738,7 @@ msgid "Allow access from my tailnet"
 msgstr "Permitir acceso desde mi tailnet"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
+#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 msgid "Allow AI suggestions"
 msgstr "Permitir sugerencias de IA"
 
@@ -867,10 +856,6 @@ msgstr "Apple Mail"
 msgid "Application (client) ID"
 msgstr "Id. de aplicación (cliente)"
 
-#: src/renderer/src/features/settings/Settings.tsx
-msgid "Applies to AI apps connected over MCP, such as Claude Code, and to your rules. It decides whether they can change your mail."
-msgstr "Se aplica a las aplicaciones de IA conectadas por MCP, como Claude Code, y a tus reglas. Decide si pueden cambiar tu correo."
-
 #: src/renderer/src/features/compose/components/DraftOrganization.tsx
 #: src/renderer/src/features/organize/MultiOrganization.tsx
 msgid "Apply"
@@ -953,7 +938,7 @@ msgstr "Preguntar sobre tu correo"
 msgid "Ask each time"
 msgstr "Pregunta cada vez"
 
-#: src/renderer/src/features/settings/Settings.tsx
+#: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "Ask me first"
 msgstr "Pregúntame primero"
 
@@ -1013,10 +998,6 @@ msgstr "Archivos adjuntos"
 msgid "Attachments exceed the 30 MB compose limit."
 msgstr "Los archivos adjuntos superan el límite de redacción de 30 MB."
 
-#: src/renderer/src/lib/errors.ts
-msgid "Attachments rejected before sending"
-msgstr "Los archivos adjuntos se rechazaron antes de enviar"
-
 #: src/renderer/src/features/downloads/Downloads.tsx
 msgid "Attachments you save appear here."
 msgstr "Los adjuntos que guardes aparecen aquí."
@@ -1052,12 +1033,12 @@ msgid "Automatic reply"
 msgstr "Respuesta automática"
 
 #: src/renderer/src/lib/errors.ts
-msgid "Automatic triage is off."
-msgstr "La clasificación automática está desactivada."
+msgid "Automatic triage is off. Turn it on in Settings → AI Access."
+msgstr "La clasificación automática está desactivada. Actívala en Ajustes → Acceso a IA."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Automatic triage is paused."
-msgstr "La clasificación automática está en pausa."
+msgid "Automatic triage is paused. It runs while OpenMail is in the foreground or on AC power."
+msgstr "La clasificación automática está en pausa. Funciona cuando OpenMail está en primer plano o el dispositivo está conectado a la corriente."
 
 #: src/renderer/src/features/settings/sections/UpdateSettings.tsx
 msgid "Automatically download updates"
@@ -1164,28 +1145,12 @@ msgid "Calendar access is off for this account."
 msgstr "El acceso al calendario está desactivado para esta cuenta."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Calendar access is unavailable for this account"
-msgstr "El acceso al calendario no está disponible para esta cuenta"
-
-#: src/renderer/src/lib/errors.ts
 msgid "Calendar access isn't granted for this account."
 msgstr "El acceso al calendario no está concedido para esta cuenta."
-
-#: src/renderer/src/lib/errors.ts
-msgid "Calendar creation requires an in-app confirmation"
-msgstr "La creación del calendario requiere una confirmación en la aplicación"
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Calendar invitation"
 msgstr "Invitación de calendario"
-
-#: src/renderer/src/lib/errors.ts
-msgid "Calendar response was not sent"
-msgstr "La respuesta a la invitación no se ha enviado"
-
-#: src/renderer/src/lib/errors.ts
-msgid "Calendar responses require a user action"
-msgstr "Las respuestas del calendario requieren una acción del usuario"
 
 #: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Call"
@@ -1201,6 +1166,10 @@ msgid "Can't find this account."
 msgstr "No se encuentra esta cuenta."
 
 #: src/renderer/src/lib/errors.ts
+msgid "Can't find this AI suggestion."
+msgstr "No se encuentra esta sugerencia de IA."
+
+#: src/renderer/src/lib/errors.ts
 msgid "Can't find this attachment."
 msgstr "No se encuentra este archivo adjunto."
 
@@ -1211,10 +1180,6 @@ msgstr "No se encuentra este borrador."
 #: src/renderer/src/lib/errors.ts
 msgid "Can't find this message."
 msgstr "No se encuentra este mensaje."
-
-#: src/renderer/src/lib/errors.ts
-msgid "Can't find this proposal."
-msgstr "No se encuentra esta propuesta."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Can't find this signature."
@@ -1284,8 +1249,8 @@ msgid "Categories"
 msgstr "Categorías"
 
 #: src/renderer/src/lib/errors.ts
-msgid "Categories can't be renamed, deleted or moved as folders."
-msgstr "Las categorías no se pueden renombrar, eliminar ni mover como carpetas."
+msgid "Categories can't be renamed, deleted or moved like folders."
+msgstr "Las categorías no se pueden renombrar, eliminar ni mover como las carpetas."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Categories can't be used as folders. Use the categories action."
@@ -1351,6 +1316,10 @@ msgstr "Cambiar el cliente OAuth"
 #: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "Changes"
 msgstr "Cambios"
+
+#: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
+msgid "Changes by AI apps"
+msgstr "Cambios de aplicaciones de IA"
 
 #: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "Changes to <0/>:"
@@ -1422,32 +1391,32 @@ msgid "Choose {editBody} before inserting an image."
 msgstr "Selecciona «{editBody}» antes de insertar una imagen."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Choose a conversation"
-msgstr "Elige una conversación"
+msgid "Choose a conversation."
+msgstr "Elige una conversación."
 
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 msgid "Choose a date and time"
 msgstr "Elige una fecha y una hora"
 
 #: src/renderer/src/lib/errors.ts
-msgid "Choose a destination from this account"
-msgstr "Elige un destino de esta cuenta"
+msgid "Choose a destination from this account."
+msgstr "Elige un destino de esta cuenta."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Choose a future reminder time"
-msgstr "Elija una hora de recordatorio futura"
+msgid "Choose a future reminder time."
+msgstr "Elige una hora futura para el recordatorio."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Choose a label or folder from this account"
-msgstr "Elija una etiqueta o carpeta de esta cuenta"
+msgid "Choose a label or folder from this account."
+msgstr "Elige una etiqueta o carpeta de esta cuenta."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Choose a message from another sender."
 msgstr "Elige un mensaje de otro remitente."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Choose a parent folder from this account"
-msgstr "Elija una carpeta principal de esta cuenta"
+msgid "Choose a parent folder from this account."
+msgstr "Elige una carpeta principal de esta cuenta."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Choose a sent message to send again."
@@ -1458,20 +1427,16 @@ msgid "Choose a server folder."
 msgstr "Elige una carpeta del servidor."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Choose a size in bytes and a comparison"
-msgstr "Elige un tamaño en bytes y una comparación"
+msgid "Choose a size in bytes and a comparison."
+msgstr "Elige un tamaño en bytes y una comparación."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Choose a user label or folder"
-msgstr "Elija una etiqueta o carpeta de usuario"
+msgid "Choose a user label or folder."
+msgstr "Elige una etiqueta o carpeta personal."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Choose a valid favorite position"
-msgstr "Elige una posición de favorito válida"
-
-#: src/renderer/src/lib/errors.ts
-msgid "Choose a verified send-as address for this account"
-msgstr "Elija una dirección de envío verificada para esta cuenta"
+msgid "Choose a verified send-as address for this account."
+msgstr "Elige una dirección de envío verificada para esta cuenta."
 
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 msgid "Choose accounts"
@@ -1482,8 +1447,16 @@ msgid "Choose actions and use the buttons to change their order."
 msgstr "Elija acciones y use los botones para cambiar su orden."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Choose at least one filter action"
-msgstr "Elija al menos una acción de filtro"
+msgid "Choose an account in the target space."
+msgstr "Elige una cuenta del espacio de destino."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Choose an end after the start."
+msgstr "Elige un final posterior al inicio."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Choose at least one filter action."
+msgstr "Elige al menos una acción del filtro."
 
 #: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
@@ -1491,24 +1464,24 @@ msgid "Choose Delete key action"
 msgstr "Elegir acción de la tecla Suprimir"
 
 #: src/renderer/src/lib/errors.ts
-msgid "Choose each favorite once"
-msgstr "Elige cada favorito una sola vez"
+msgid "Choose each favorite once."
+msgstr "Elige cada favorito una sola vez."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Choose folders from this account."
 msgstr "Elige carpetas de esta cuenta."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Choose messages from this account"
-msgstr "Elige mensajes de esta cuenta"
+msgid "Choose messages from this account."
+msgstr "Elige mensajes de esta cuenta."
 
 #: src/renderer/src/features/organize/MultiOrganization.tsx
 msgid "Choose multiple categories"
 msgstr "Elegir varias categorías"
 
 #: src/renderer/src/lib/errors.ts
-msgid "Choose one destination for the filter"
-msgstr "Elija un destino para el filtro"
+msgid "Choose one destination for the filter."
+msgstr "Elige un solo destino para el filtro."
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Choose your email provider."
@@ -1686,16 +1659,16 @@ msgid "Confirm and add event"
 msgstr "Confirmar y agregar evento"
 
 #: src/renderer/src/lib/errors.ts
-msgid "Confirm deletion for this filter"
-msgstr "Confirma la eliminación de este filtro"
+msgid "Confirm deleting this filter."
+msgstr "Confirma que quieres eliminar este filtro."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Confirm deletion of this server filter"
-msgstr "Confirma la eliminación de este filtro del servidor"
+msgid "Confirm deleting this server filter."
+msgstr "Confirma que quieres eliminar este filtro de servidor."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Confirm discarding the saved filter"
-msgstr "Confirma que quieres descartar el filtro guardado"
+msgid "Confirm discarding the saved filter."
+msgstr "Confirma que quieres descartar el filtro guardado."
 
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Confirm filter changes?"
@@ -1708,6 +1681,10 @@ msgstr "Confirma la eliminación permanente en la app."
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Confirm removal"
 msgstr "Confirmar eliminación"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Confirm the new event in OpenMail to create it."
+msgstr "Confirma el nuevo evento en OpenMail para crearlo."
 
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
@@ -1752,8 +1729,8 @@ msgid "Connected to {tailnet}"
 msgstr "Conectado a {tailnet}"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
-msgid "Connected, can propose changes"
-msgstr "Conectada, puede proponer cambios"
+msgid "Connected, can make AI suggestions"
+msgstr "Conectada, puede hacer sugerencias de IA"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Connected, read only"
@@ -2023,6 +2000,10 @@ msgstr "No se pudieron cargar sus cuentas."
 msgid "Couldn't load your calendar."
 msgstr "No se pudo cargar tu calendario."
 
+#: src/renderer/src/lib/errors.ts
+msgid "Couldn't move the favorite there. Drag it again."
+msgstr "No se pudo mover el favorito ahí. Arrástralo de nuevo."
+
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Couldn't open notification settings."
 msgstr "No se pudo abrir los ajustes de notificaciones."
@@ -2150,6 +2131,14 @@ msgstr "No se pudo sincronizar"
 msgid "Couldn't sync {names}."
 msgstr "No se pudo sincronizar {names}."
 
+#: src/renderer/src/lib/errors.ts
+msgid "Couldn't update the filter or put the previous version back. Choose Restore filter in Server filters to recover it."
+msgstr "No se pudo actualizar el filtro ni restaurar la versión anterior. Elige “Restaurar filtro” en Filtros de servidor para recuperarlo."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Couldn't update the filter, so OpenMail put the previous version back. Open Server filters again before you edit it."
+msgstr "No se pudo actualizar el filtro, así que OpenMail restauró la versión anterior. Vuelve a abrir Filtros de servidor antes de editarlo."
+
 #: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "Couldn't write the file. Nothing was changed. {detail}"
 msgstr "No se pudo escribir el archivo. No se cambió nada. {detail}"
@@ -2261,10 +2250,6 @@ msgstr "Se interrumpió la recuperación de la base de datos. Restaure una base 
 msgid "Date"
 msgstr "Fecha"
 
-#: src/renderer/src/lib/errors.ts
-msgid "Date is ambiguous. Enter an explicit date and time"
-msgstr "La fecha es ambigua. Introduce una fecha y hora exactas"
-
 #: src/renderer/src/features/compose/draft.ts
 msgctxt "outgoing forward header"
 msgid "Date: {date}"
@@ -2281,6 +2266,10 @@ msgstr "Día"
 #: src/renderer/src/features/calendar/EventRecurrenceEditor.tsx
 msgid "Day of month"
 msgstr "Día del mes"
+
+#: src/renderer/src/features/settings/Settings.tsx
+msgid "Decides whether AI apps connected over MCP, such as Claude Code, can suggest changes to your mail. The assistant in OpenMail always asks first."
+msgstr "Decide si las aplicaciones de IA conectadas por MCP, como Claude Code, pueden sugerir cambios en tu correo. El asistente de OpenMail siempre pregunta primero."
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Decline"
@@ -2426,8 +2415,8 @@ msgid "Discard draft"
 msgstr "Descartar borrador"
 
 #: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
-msgid "Discard saved rule?"
-msgstr "¿Descartar la regla guardada?"
+msgid "Discard saved filter?"
+msgstr "¿Descartar el filtro guardado?"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 #: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
@@ -2640,8 +2629,8 @@ msgid "Edit this draft body?"
 msgstr "¿Editar el texto de este borrador?"
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
-msgid "Edit this rule in webmail to preserve all conditions and actions."
-msgstr "Edite esta regla en webmail para preservar todas las condiciones y acciones."
+msgid "Edit this filter in webmail to keep all its conditions and actions."
+msgstr "Edita este filtro en el correo web para conservar todas sus condiciones y acciones."
 
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Edit token"
@@ -2675,18 +2664,6 @@ msgstr "Vaciar papelera"
 msgid "Empty Trash?"
 msgstr "¿Vaciar la papelera?"
 
-#: src/renderer/src/features/mail-list/MessageList.tsx
-msgid "Enable filters"
-msgstr "Habilitar filtros"
-
-#: src/renderer/src/lib/errors.ts
-msgid "Enable this account to open mail on the web"
-msgstr "Habilite esta cuenta para abrir correo en la web"
-
-#: src/renderer/src/lib/errors.ts
-msgid "Enable this account to use its calendar"
-msgstr "Habilite esta cuenta para usar su calendario"
-
 #: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Enabled"
 msgstr "Activado"
@@ -2712,6 +2689,10 @@ msgid "Enter a future reminder time"
 msgstr "Introduzca una hora de recordatorio futura"
 
 #: src/renderer/src/lib/errors.ts
+msgid "Enter a name for the label or folder."
+msgstr "Introduce un nombre para la etiqueta o carpeta."
+
+#: src/renderer/src/lib/errors.ts
 msgid "Enter a question and select accounts."
 msgstr "Escribe una pregunta y selecciona cuentas."
 
@@ -2720,16 +2701,16 @@ msgid "Enter a signature name."
 msgstr "Introduzca un nombre de firma."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Enter a single access token"
-msgstr "Introduzca un token de acceso único"
+msgid "Enter a single access token."
+msgstr "Introduce un solo token de acceso."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Enter a single API key."
 msgstr "Introduce una única clave API."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Enter a tailnet login such as name@github"
-msgstr "Introduce un inicio de sesión de tailnet como name@github"
+msgid "Enter a tailnet login such as name@github."
+msgstr "Introduce un inicio de sesión de tailnet como name@github."
 
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Enter a template name."
@@ -2889,21 +2870,13 @@ msgstr "Nombre de archivo"
 msgid "Fill template variables"
 msgstr "Llenar variables de plantilla"
 
-#: src/renderer/src/features/mail-list/MessageList.tsx
-msgid "Filter"
-msgstr "Filtro"
-
 #: src/renderer/src/lib/errors.ts
-msgid "Filter recovery is available for Gmail"
-msgstr "La recuperación de filtros está disponible para Gmail"
+msgid "Filter recovery is only available for Gmail."
+msgstr "La recuperación de filtros solo está disponible para Gmail."
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Filter shortcuts"
 msgstr "Filtrar atajos"
-
-#: src/renderer/src/features/search/SearchField.tsx
-msgid "Filters"
-msgstr "Filtros"
 
 #: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 #: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
@@ -2955,8 +2928,8 @@ msgid "Focused"
 msgstr "Prioritarios"
 
 #: src/renderer/src/lib/errors.ts
-msgid "Focused Inbox requires Outlook."
-msgstr "La bandeja de entrada Prioritarios requiere Outlook."
+msgid "Focused Inbox is only available for Outlook accounts."
+msgstr "La bandeja de entrada Prioritarios solo está disponible para cuentas de Outlook."
 
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
@@ -3191,9 +3164,17 @@ msgstr "Ajustes de Gmail"
 msgid "Go to folder"
 msgstr "Ir a la carpeta"
 
+#: src/renderer/src/lib/errors.ts
+msgid "Google Calendar can't use this repeating event's time zone. Choose another time zone."
+msgstr "Google Calendar no puede usar la zona horaria de este evento periódico. Elige otra zona horaria."
+
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Google currently limits OpenMail's sign-in to 7 days. Sign in again to keep syncing {email}."
 msgstr "Google limita por ahora el inicio de sesión en OpenMail a 7 días. Vuelve a iniciar sesión para seguir sincronizando {email}."
+
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+msgid "Google shows a warning that it hasn't verified OpenMail yet. Choose Advanced, then continue to OpenMail."
+msgstr "Google muestra una advertencia de que aún no ha verificado OpenMail. Elige “Configuración avanzada” y luego continúa a OpenMail."
 
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
 msgid "Group accounts into spaces and choose a space in the window toolbar."
@@ -3477,12 +3458,12 @@ msgid "Invitation status in this conversation"
 msgstr "Estado de la invitación en esta conversación"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
-msgid "It can propose archiving, labels, snoozes and drafts. Each waits for your approval."
-msgstr "Puede proponer archivar, etiquetar, posponer y crear borradores. Cada propuesta espera tu aprobación."
-
-#: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "It can read and search allowed accounts. It can't change anything."
 msgstr "Puede leer y buscar en las cuentas permitidas. No puede cambiar nada."
+
+#: src/renderer/src/features/settings/sections/AiClientCard.tsx
+msgid "It can suggest archiving, labels, snoozes and drafts. Each AI suggestion waits for your approval."
+msgstr "Puede sugerir archivar, etiquetar, posponer y crear borradores. Cada sugerencia de IA espera tu aprobación."
 
 #: src/renderer/src/app/use-native-menu-bridge.ts
 msgid "It is no longer stored here and has no web link."
@@ -3520,10 +3501,6 @@ msgstr "Conservar los textos de los mensajes en {0}"
 msgid "Keep category"
 msgstr "Mantener categoría"
 
-#: src/renderer/src/features/calendar/EventRecurrenceEditor.tsx
-msgid "Keep existing rule"
-msgstr "Mantener la regla actual"
-
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Keep importance"
 msgstr "Mantener importancia"
@@ -3535,6 +3512,10 @@ msgstr "Mantener copia local"
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgid "Keep OpenMail under"
 msgstr "Limitar OpenMail a"
+
+#: src/renderer/src/features/calendar/EventRecurrenceEditor.tsx
+msgid "Keep the current repeat pattern"
+msgstr "Mantener el patrón de repetición actual"
 
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
@@ -3670,8 +3651,8 @@ msgid "Left to right"
 msgstr "De izquierda a derecha"
 
 #: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
-msgid "Let {name} propose changes for you to approve"
-msgstr "Permitir que {name} proponga cambios para que los apruebes"
+msgid "Let {name} make AI suggestions for you to approve"
+msgstr "Permitir que {name} haga sugerencias de IA para que las apruebes"
 
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Light background"
@@ -3948,11 +3929,6 @@ msgstr "Tamaño máximo (KiB)"
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "MCP access follows each account's AI setting above. MCP cannot read an account that is not enabled."
 msgstr "El acceso MCP sigue el ajuste de IA de cada cuenta de arriba. MCP no puede leer una cuenta que no esté habilitada."
-
-#. readOnly is the translated Read only write-mode label above.
-#: src/renderer/src/features/settings/Settings.tsx
-msgid "MCP can propose drafts only when the write mode is not \"{readOnly}\". You review drafts and confirm sending in the app."
-msgstr "MCP solo puede proponer borradores si el modo de escritura no es «{readOnly}». Revisas los borradores y confirmas el envío en la aplicación."
 
 #: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Medium"
@@ -4425,10 +4401,6 @@ msgstr "Nuevo mensaje"
 msgid "New message signature for {address}"
 msgstr "Nueva firma de mensaje para {address}"
 
-#: src/renderer/src/state/desktop.ts
-msgid "new messages"
-msgstr "Nuevos mensajes"
-
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 msgid "New messages"
 msgstr "Nuevos mensajes"
@@ -4576,8 +4548,8 @@ msgid "No messages here"
 msgstr "No hay mensajes aquí"
 
 #: src/renderer/src/features/mail-list/EmptyList.tsx
-msgid "No messages match the filters"
-msgstr "Ningún mensaje coincide con los filtros."
+msgid "No messages match the quick filters"
+msgstr "Ningún mensaje coincide con los filtros rápidos"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "No mode picked yet. Remote images load, and known trackers stay blocked."
@@ -4788,8 +4760,8 @@ msgid "Only Gmail needs an extra permission to delete permanently."
 msgstr "Solo Gmail necesita un permiso adicional para eliminar de forma permanente."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Only inbox messages can be snoozed"
-msgstr "Solo se pueden posponer los mensajes de la Bandeja de entrada"
+msgid "Only Inbox messages can be snoozed. Move the message to the Inbox first."
+msgstr "Solo se pueden posponer los mensajes de la bandeja de entrada. Mueve primero el mensaje a la bandeja de entrada."
 
 #: src/renderer/src/app/MailAlerts.tsx
 msgid "Only messages in this Trash or Spam folder from the selected conversations will be permanently deleted. Inbox and Sent copies will remain. This cannot be undone."
@@ -4910,8 +4882,8 @@ msgid "Open this address on your phone or another computer"
 msgstr "Abre esta dirección en tu teléfono u otro ordenador"
 
 #: src/renderer/src/lib/errors.ts
-msgid "Open this invitation in your calendar to add it before responding"
-msgstr "Abre esta invitación en tu calendario para agregarla antes de responder."
+msgid "Open this invitation in your calendar to add it before responding."
+msgstr "Abre esta invitación en tu calendario para añadirla antes de responder."
 
 #: src/renderer/src/features/reader/frame/LinkConfirmDialog.tsx
 msgid "Open this link?"
@@ -4920,6 +4892,14 @@ msgstr "¿Abrir este enlace?"
 #: src/renderer/src/features/reader/attachments/OpenWithMenu.tsx
 msgid "Open with"
 msgstr "Abrir con"
+
+#: src/renderer/src/lib/errors.ts
+msgid "OpenMail can't edit this server filter. Edit it in webmail."
+msgstr "OpenMail no puede editar este filtro de servidor. Edítalo en el correo web."
+
+#: src/renderer/src/lib/errors.ts
+msgid "OpenMail can't open this meeting link. Copy it into your browser instead."
+msgstr "OpenMail no puede abrir este enlace de reunión. Cópialo en tu navegador."
 
 #: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "OpenMail can't read this config file, so it changes nothing. Fix the file, then try again. {detail}"
@@ -4999,6 +4979,10 @@ msgstr "El servidor MCP de OpenMail aún no puede iniciarse desde aquí. Consult
 msgid "Operations from the last 24 hours. Restores labels, folders and flags after checking current state."
 msgstr "Operaciones de las últimas 24 horas. Restaura etiquetas, carpetas y marcas después de comprobar el estado actual."
 
+#: src/renderer/src/features/search/SearchField.tsx
+msgid "Operators"
+msgstr "Operadores"
+
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 msgid "Optional services"
 msgstr "Servicios opcionales"
@@ -5010,10 +4994,6 @@ msgstr "Orden"
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Organize"
 msgstr "Organizar"
-
-#: src/renderer/src/features/settings/Settings.tsx
-msgid "Organize directly"
-msgstr "Organizar directamente"
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Organizer:"
@@ -5083,8 +5063,20 @@ msgid "Outlook attachment upload failed. Try saving or sending again."
 msgstr "No se pudo cargar el archivo adjunto de Outlook. Intenta guardar o enviar de nuevo."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Outlook automatic replies do not support a custom subject"
-msgstr "Las respuestas automáticas de Outlook no admiten un asunto personalizado"
+msgid "Outlook attachments can be up to 150 MB. Remove the larger file, then try again."
+msgstr "Los archivos adjuntos de Outlook pueden ocupar hasta 150 MB. Quita el archivo más grande y vuelve a intentarlo."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Outlook automatic replies can't have a custom subject. Clear the subject."
+msgstr "Las respuestas automáticas de Outlook no pueden tener un asunto personalizado. Borra el asunto."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Outlook can't save this repeat pattern. Choose a simpler one."
+msgstr "Outlook no puede guardar este patrón de repetición. Elige uno más sencillo."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Outlook can't use this repeating event's time zone. Choose another time zone."
+msgstr "Outlook no puede usar la zona horaria de este evento periódico. Elige otra zona horaria."
 
 #: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
@@ -5105,24 +5097,12 @@ msgid "Outlook didn't return a web link for this message. Open it in Outlook on 
 msgstr "Outlook no devolvió un enlace web para este mensaje. Ábrelo en Outlook en la web."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Outlook file attachments cannot exceed 150 MB"
-msgstr "Los archivos adjuntos de Outlook no pueden superar los 150 MB"
+msgid "Outlook filter sizes must be whole kilobytes. Enter a multiple of 1024 bytes."
+msgstr "Los tamaños de los filtros de Outlook deben ser kilobytes enteros. Introduce un múltiplo de 1024 bytes."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Outlook filter sizes must be a multiple of 1024 bytes"
-msgstr "Los tamaños de los filtros de Outlook deben ser múltiplos de 1024 bytes"
-
-#: src/renderer/src/lib/errors.ts
-msgid "Outlook message requests cannot exceed 4 MB"
-msgstr "Las solicitudes de mensajes de Outlook no pueden superar los 4 MB"
-
-#: src/renderer/src/lib/errors.ts
-msgid "Outlook message requests cannot exceed 4 MB. Large attached messages cannot be uploaded as Outlook items."
-msgstr "Las solicitudes de mensajes de Outlook no pueden superar los 4 MB. Los mensajes adjuntos grandes no se pueden cargar como elementos de Outlook."
-
-#: src/renderer/src/lib/errors.ts
-msgid "Outlook scheduled replies need both dates"
-msgstr "Las respuestas programadas de Outlook necesitan ambas fechas"
+msgid "Outlook scheduled replies need a start and an end date. Enter both."
+msgstr "Las respuestas programadas de Outlook necesitan una fecha de inicio y una de fin. Introduce ambas."
 
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 msgid "Outlook settings"
@@ -5214,10 +5194,6 @@ msgstr "Eliminar permanentemente"
 msgid "Permanently delete selected mail?"
 msgstr "¿Eliminar permanentemente el correo seleccionado?"
 
-#: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
-msgid "Permission"
-msgstr "Permiso"
-
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Personal"
@@ -5270,8 +5246,8 @@ msgid "Preview changes"
 msgstr "Vista previa de los cambios"
 
 #: src/renderer/src/lib/errors.ts
-msgid "Preview the filter again before confirming"
-msgstr "Vuelve a previsualizar el filtro antes de confirmar"
+msgid "Preview the filter again before confirming."
+msgstr "Vuelve a previsualizar el filtro antes de confirmar."
 
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Preview unavailable"
@@ -5354,6 +5330,10 @@ msgstr "QQ Mail"
 msgid "QR code for {url}"
 msgstr "Código QR de {url}"
 
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "Quick filters"
+msgstr "Filtros rápidos"
+
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Quick Look"
 msgstr "Vista rápida"
@@ -5387,9 +5367,10 @@ msgctxt "incoming message action flag"
 msgid "Read"
 msgstr "Marca para leer"
 
+#. allowSuggestions is the translated Allow AI suggestions button on each app below; setting and askFirst are the translated Changes by AI apps setting and its Ask me first option.
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
-msgid "Read and search mail, read only by default. To archive, label or draft, an app needs proposals turned on below and a permission to change mail other than Read only. You approve every change in OpenMail, and sending always needs your confirmation here."
-msgstr "Leer y buscar correo, solo lectura por defecto. Para archivar, etiquetar o crear borradores, una aplicación necesita las propuestas activadas abajo y un permiso para cambiar el correo distinto de «Solo lectura». Apruebas cada cambio en OpenMail, y el envío siempre requiere tu confirmación aquí."
+msgid "Read and search mail, read only by default. To archive, label or draft, an app needs “{allowSuggestions}” below and “{setting}” set to “{askFirst}”. You approve every AI suggestion in OpenMail, and sending always needs your confirmation here."
+msgstr "Leer y buscar correo, solo lectura por defecto. Para archivar, etiquetar o crear borradores, una aplicación necesita “{allowSuggestions}” activado abajo y “{setting}” con el valor “{askFirst}”. Apruebas cada sugerencia de IA en OpenMail, y el envío siempre requiere tu confirmación aquí."
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Read and send mail from your phone or another computer through your own tailnet. This Mac stays the host: mail, tokens and keys stay here, and nothing passes through OpenMail servers. OpenMail uses Tailscale Serve, which only devices on your tailnet can reach. It never uses Funnel, so the page is never on the public internet."
@@ -5461,10 +5442,6 @@ msgstr "{copied} registros locales recuperados. Se omitieron {skipped} elementos
 msgid "Recovery copies"
 msgstr "Copias de recuperación"
 
-#: src/renderer/src/lib/errors.ts
-msgid "Recurring event creation is unavailable for this account"
-msgstr "La creación de eventos recurrentes no está disponible para esta cuenta"
-
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Recurring meeting"
 msgstr "Reunión recurrente"
@@ -5521,6 +5498,10 @@ msgstr "La hora del recordatorio debe estar dentro del próximo año."
 msgid "Remote access"
 msgstr "Acceso remoto"
 
+#: src/renderer/src/lib/errors.ts
+msgid "Remote access allows up to 64 tailnet logins. Remove some, then save again."
+msgstr "El acceso remoto permite hasta 64 inicios de sesión de tailnet. Quita algunos y vuelve a guardar."
+
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Remote access needs MagicDNS and HTTPS Certificates turned on for your tailnet."
 msgstr "El acceso remoto necesita MagicDNS y certificados HTTPS activados en tu tailnet."
@@ -5533,10 +5514,6 @@ msgstr "Imágenes remotas"
 #: src/renderer/src/features/reader/body/MessageBody.tsx
 msgid "Remote images blocked"
 msgstr "Imágenes remotas bloqueadas"
-
-#: src/renderer/src/lib/errors.ts
-msgid "Remote writes are disabled in this read-only session"
-msgstr "Las modificaciones remotas están desactivadas en esta sesión de solo lectura"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
@@ -5653,17 +5630,9 @@ msgstr "Repetir"
 msgid "Repeat end date"
 msgstr "Fecha de fin de repetición"
 
-#: src/renderer/src/lib/errors.ts
-msgid "Repeat end date must be on or after the event"
-msgstr "La fecha de fin debe ser la del evento o posterior"
-
 #: src/renderer/src/features/calendar/EventRecurrenceEditor.tsx
 msgid "Repeat pattern"
 msgstr "Patrón de repetición"
-
-#: src/renderer/src/lib/errors.ts
-msgid "Repeat pattern must include the event start date"
-msgstr "La regla debe incluir la fecha de inicio del evento"
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Repeats daily"
@@ -5797,6 +5766,10 @@ msgstr "Cambiar el tamaño de la barra lateral"
 msgid "Respond to this invitation from the message."
 msgstr "Responda a esta invitación desde el mensaje."
 
+#: src/renderer/src/lib/errors.ts
+msgid "Respond to this invitation in OpenMail yourself."
+msgstr "Responde tú mismo a esta invitación en OpenMail."
+
 #: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "Restart Cursor to load it."
 msgstr "Reinicia Cursor para cargarlo."
@@ -5805,22 +5778,22 @@ msgstr "Reinicia Cursor para cargarlo."
 msgid "Restore"
 msgstr "Restaurar"
 
+#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
+msgid "Restore filter"
+msgstr "Restaurar filtro"
+
+#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
+msgid "Restore filter?"
+msgstr "¿Restaurar filtro?"
+
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "Restore message state"
 msgstr "Restaurar el estado del mensaje"
 
-#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
-msgid "Restore rule"
-msgstr "Restaurar regla"
-
-#: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
-msgid "Restore rule?"
-msgstr "¿Restaurar regla?"
-
 #. placeholder {0}: pending.preview.matches.length
 #: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
-msgid "Restore the saved original rule on the server. {0, plural, one {Preview: # message.} other {Preview: # messages.}}"
-msgstr "Restaura la regla original guardada en el servidor. {0, plural, one {Vista previa: # mensaje.} other {Vista previa: # mensajes.}}"
+msgid "Restore the saved original filter on the server. {0, plural, one {Preview: # message.} other {Preview: # messages.}}"
+msgstr "Restaura en el servidor el filtro original guardado. {0, plural, one {Vista previa: # mensaje.} other {Vista previa: # mensajes.}}"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgid "Resume"
@@ -5913,14 +5886,6 @@ msgstr "Deslizamiento corto hacia la derecha"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Right to left"
 msgstr "De derecha a izquierda"
-
-#: src/renderer/src/features/ai/Proposals.tsx
-msgid "Rule"
-msgstr "Regla"
-
-#: src/renderer/src/features/settings/Settings.tsx
-msgid "Rules can archive, label, and mark as read directly. MCP always proposes changes for you to approve in the app."
-msgstr "Las reglas pueden archivar correos, añadir etiquetas y marcarlos como leídos directamente. MCP siempre propone cambios que apruebas en la aplicación."
 
 #: src/renderer/src/features/settings/sections/IndexingSettings.tsx
 msgid "Runs while idle. Scanned PDF pages, audio and video are not indexed yet."
@@ -6057,12 +6022,17 @@ msgid "Search  {searchKey}"
 msgstr "Buscar  {searchKey}"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "Search can use at most {MAX_SEARCH_TERMS} words and operators. Remove some."
+msgstr "La búsqueda puede usar como máximo {MAX_SEARCH_TERMS} palabras y operadores. Quita algunos."
+
+#: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Search couldn't finish:"
 msgstr "La búsqueda no pudo terminar:"
 
+#: src/renderer/src/features/mail-list/MessageList.tsx
 #: src/renderer/src/lib/errors.ts
-msgid "Search groups are nested too deeply. Simplify your query."
-msgstr "Los grupos de búsqueda están anidados demasiado. Simplifica la consulta."
+msgid "Search groups can nest at most {MAX_SEARCH_DEPTH} levels deep. Remove some parentheses."
+msgstr "Los grupos de búsqueda pueden anidarse como máximo {MAX_SEARCH_DEPTH} niveles. Quita algunos paréntesis."
 
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Search help"
@@ -6115,16 +6085,16 @@ msgid "Select {0}"
 msgstr "Seleccione {0}"
 
 #: src/renderer/src/lib/errors.ts
-msgid "Select 1 to 256 attachments"
-msgstr "Selecciona de 1 a 256 adjuntos"
+msgid "Select 1 to 256 attachments."
+msgstr "Selecciona de 1 a 256 archivos adjuntos."
 
 #: src/renderer/src/features/reader/Reader.tsx
 msgid "Select a message"
 msgstr "Seleccione un mensaje"
 
 #: src/renderer/src/features/ai/AiPanel.tsx
-msgid "Select accounts allowed in Settings → AI Access. The assistant searches mail and proposes drafts, labels or archive. You approve changes in AI suggestions."
-msgstr "Selecciona las cuentas permitidas en Ajustes → Acceso a IA. El asistente busca correo y propone borradores, etiquetas o archivar. Apruebas los cambios en las sugerencias de IA."
+msgid "Select accounts allowed in Settings → AI Access. The assistant searches mail and suggests drafts, labels or archiving. You approve each one in AI suggestions."
+msgstr "Selecciona las cuentas permitidas en Ajustes → Acceso a IA. El asistente busca en el correo y sugiere borradores, etiquetas o archivar. Apruebas cada una en Sugerencias de IA."
 
 #: src/renderer/src/app/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
@@ -6164,8 +6134,8 @@ msgid "Semantic search is unavailable. Full-text search remains available."
 msgstr "La búsqueda semántica no está disponible. La búsqueda de texto completo sigue estando disponible."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Semantic search isn't available right now."
-msgstr "La búsqueda semántica no está disponible ahora."
+msgid "Semantic search isn't available right now. Try again later."
+msgstr "La búsqueda semántica no está disponible en este momento. Vuelve a intentarlo más tarde."
 
 #: src/renderer/src/app/use-compose-delivery.ts
 #: src/renderer/src/features/compose/components/Composer.tsx
@@ -6299,8 +6269,8 @@ msgid "Server unavailable"
 msgstr "Servidor no disponible"
 
 #: src/renderer/src/lib/errors.ts
-msgid "Server visibility is available for Gmail labels"
-msgstr "La visibilidad en el servidor está disponible para etiquetas de Gmail"
+msgid "Server visibility is only available for Gmail labels."
+msgstr "La visibilidad en el servidor solo está disponible para etiquetas de Gmail."
 
 #: src/renderer/src/features/ai/AiPanel.tsx
 msgid "Set up built-in AI"
@@ -6535,10 +6505,6 @@ msgstr "Sesión iniciada como {login}. Este Mac es {device}."
 msgid "Signed in. You can close this page and go back to OpenMail."
 msgstr "Sesión iniciada. Puede cerrar esta página y volver a OpenMail."
 
-#: src/renderer/src/features/mail-list/MessageList.tsx
-msgid "Simplify your search query."
-msgstr "Simplifica la consulta de búsqueda."
-
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Size comparison"
 msgstr "Comparación de tallas"
@@ -6599,13 +6565,17 @@ msgstr "Social"
 msgid "Software updates"
 msgstr "Actualizaciones de software"
 
+#: src/renderer/src/lib/errors.ts
+msgid "Some attachments can't be sent. Remove them, then send again."
+msgstr "Algunos archivos adjuntos no se pueden enviar. Quítalos y vuelve a enviar."
+
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
-msgid "Some conditions need metadata that is not cached. Save the rule for future mail on the server."
-msgstr "Algunas condiciones necesitan metadatos no guardados en caché. Guarde la regla para el correo futuro en el servidor."
+msgid "Some conditions need metadata that is not cached. Save the filter for future mail on the server."
+msgstr "Algunas condiciones necesitan metadatos que no están en caché. Guarda el filtro en el servidor para el correo futuro."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Some filter conditions can't be checked against cached mail"
-msgstr "Algunas condiciones del filtro no se pueden comprobar con el correo en caché"
+msgid "Some filter conditions can't be checked against cached mail. Save the filter for future mail on the server."
+msgstr "Algunas condiciones del filtro no se pueden comprobar con el correo en caché. Guarda el filtro en el servidor para el correo futuro."
 
 #: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "Some formatting cannot be kept in this mode. Link addresses are kept. You can undo the mode change."
@@ -6618,10 +6588,6 @@ msgstr "Algunas repeticiones de esta serie se cambiaron, así que la serie no se
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "Some recipients did not receive this message."
 msgstr "Algunos destinatarios no recibieron este mensaje."
-
-#: src/renderer/src/features/mail-list/MessageList.tsx
-msgid "Some server predicates were omitted to preserve matches; local filters still apply:"
-msgstr "Se omitieron algunos predicados del servidor para preservar las coincidencias; Los filtros locales aún se aplican:"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Something else on this Mac already uses Tailscale Serve on this port. OpenMail won't replace it. Remove that mapping or use a Tailscale Service name below."
@@ -6966,8 +6932,20 @@ msgid "The AI answer got too long. Ask a narrower question."
 msgstr "La respuesta de la IA es demasiado larga. Haz una pregunta más concreta."
 
 #: src/renderer/src/lib/errors.ts
+msgid "The AI answer stopped before it finished. Try again."
+msgstr "La respuesta de la IA se detuvo antes de terminar. Vuelve a intentarlo."
+
+#: src/renderer/src/lib/errors.ts
+msgid "The AI model isn't available right now. Try again later."
+msgstr "El modelo de IA no está disponible en este momento. Vuelve a intentarlo más tarde."
+
+#: src/renderer/src/lib/errors.ts
 msgid "The AI needed too many steps. Ask a narrower question."
 msgstr "La IA necesitó demasiados pasos. Haz una pregunta más concreta."
+
+#: src/renderer/src/lib/errors.ts
+msgid "The AI request took too long. Try again."
+msgstr "La solicitud a la IA tardó demasiado. Vuelve a intentarlo."
 
 #: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "The app's command failed. Nothing else was changed. {detail}"
@@ -6985,10 +6963,6 @@ msgstr "El asistente solo puede sugerir borradores, etiquetas y archivar."
 msgid "The body is not cached. Try opening this message again when connected."
 msgstr "El texto del mensaje no está en la caché. Intenta abrirlo de nuevo cuando tengas conexión."
 
-#: src/renderer/src/lib/errors.ts
-msgid "The calendar organizer does not match this invitation"
-msgstr "El organizador del calendario no coincide con esta invitación."
-
 #: src/main/app/native-i18n.ts
 msgid "The database integrity check (quick_check) failed or the file is unavailable. Reset rebuilds a damaged database from readable local records and keeps the original file. Keychain tokens are kept."
 msgstr "La verificación de integridad de la base de datos (quick_check) falló o el archivo no está disponible. Restablecer reconstruye una base de datos dañada a partir de registros locales legibles y conserva el archivo original. Se conservan las fichas de llavero."
@@ -6997,17 +6971,9 @@ msgstr "La verificación de integridad de la base de datos (quick_check) falló 
 msgid "The database was kept. Quit OpenMail and restore a local backup or contact support."
 msgstr "Se mantuvo la base de datos. Salga de OpenMail y restaure una copia de seguridad local o comuníquese con el soporte técnico."
 
-#: src/renderer/src/lib/errors.ts
-msgid "The destination account must belong to the target space"
-msgstr "La cuenta de destino debe pertenecer al espacio de destino"
-
 #: src/renderer/src/features/reader/frame/LinkConfirmDialog.tsx
 msgid "The displayed link may hide its destination. Check the real domain before opening."
 msgstr "El enlace mostrado puede ocultar su destino. Compruebe el dominio real antes de abrirlo."
-
-#: src/renderer/src/lib/errors.ts
-msgid "The end must be after the start"
-msgstr "El final debe ser después del comienzo."
 
 #: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "The file changed after the preview. Review the change again."
@@ -7112,12 +7078,16 @@ msgid "The organizer differs from the message sender. Check the response recipie
 msgstr "El organizador difiere del remitente del mensaje. Verifique el destinatario de la respuesta antes de responder."
 
 #: src/renderer/src/lib/errors.ts
+msgid "The organizer in your calendar doesn't match this invitation. Respond from your calendar instead."
+msgstr "El organizador en tu calendario no coincide con esta invitación. Responde desde tu calendario."
+
+#: src/renderer/src/lib/errors.ts
 msgid "The original attachments are over 30 MB. Forward without them."
 msgstr "Los adjuntos originales superan los 30 MB. Puedes reenviar el mensaje sin ellos."
 
 #: src/renderer/src/lib/errors.ts
-msgid "The original folder no longer exists."
-msgstr "La carpeta original ya no existe."
+msgid "The original folder no longer exists. Move the message yourself."
+msgstr "La carpeta original ya no existe. Mueve el mensaje tú mismo."
 
 #: src/renderer/src/lib/errors.ts
 msgid "The original message is too large to include. Forward it as an attachment."
@@ -7135,6 +7105,14 @@ msgstr "La vista previa comprobó como máximo 201 mensajes del servidor. Pueden
 msgid "The preview is limited to 200 messages. Narrow the conditions to process other messages."
 msgstr "La vista previa está limitada a 200 mensajes. Limite las condiciones para procesar otros mensajes."
 
+#: src/renderer/src/lib/errors.ts
+msgid "The repeat end date is before the event. Choose a later end date."
+msgstr "La fecha de fin de la repetición es anterior al evento. Elige una fecha de fin posterior."
+
+#: src/renderer/src/lib/errors.ts
+msgid "The repeat pattern must include the event's start date. Change the pattern or the start date."
+msgstr "El patrón de repetición debe incluir la fecha de inicio del evento. Cambia el patrón o la fecha de inicio."
+
 #: src/renderer/src/features/reader/RawMessage.tsx
 msgid "The rest is left out here. Copy gets the whole message."
 msgstr "El resto queda aquí. La copia recibe el mensaje completo."
@@ -7144,8 +7122,8 @@ msgid "The selected conversation is no longer available."
 msgstr "La conversación seleccionada ya no está disponible."
 
 #: src/renderer/src/lib/errors.ts
-msgid "The selected message is no longer available."
-msgstr "El mensaje seleccionado ya no está disponible."
+msgid "The selected message is no longer available. Refresh the list."
+msgstr "El mensaje seleccionado ya no está disponible. Actualiza la lista."
 
 #: src/renderer/src/lib/errors.ts
 msgid "The selection has more than 100,000 messages. Select fewer."
@@ -7214,12 +7192,24 @@ msgid "Third"
 msgstr "Tercer"
 
 #: src/renderer/src/lib/errors.ts
-msgid "This account has no web mail link."
-msgstr "Esta cuenta no tiene enlace de correo web."
+msgid "This account can't create repeating events. Create a single event instead."
+msgstr "Esta cuenta no puede crear eventos periódicos. Crea un evento único."
+
+#: src/renderer/src/lib/errors.ts
+msgid "This account has no calendar OpenMail can use. Add the event in your calendar app instead."
+msgstr "Esta cuenta no tiene ningún calendario que OpenMail pueda usar. Añade el evento en tu aplicación de calendario."
+
+#: src/renderer/src/lib/errors.ts
+msgid "This account has no web mail link. Open it in your provider's web mail."
+msgstr "Esta cuenta no tiene enlace al correo web. Ábrela en el correo web de tu proveedor."
 
 #: src/renderer/src/lib/errors.ts
 msgid "This account is outside the selected accounts."
 msgstr "Esta cuenta no está entre las cuentas seleccionadas."
+
+#: src/renderer/src/lib/errors.ts
+msgid "This account isn't on the invitation, so it can't respond. Respond from the invited account."
+msgstr "Esta cuenta no está en la invitación, así que no puede responder. Responde desde la cuenta invitada."
 
 #: src/renderer/src/lib/errors.ts
 msgid "This action isn't available for this account."
@@ -7249,9 +7239,13 @@ msgstr "Esto no se puede deshacer ahora. Inténtalo de nuevo cuando tengas conex
 msgid "This conversation's account is no longer connected."
 msgstr "La cuenta de esta conversación ya no está conectada."
 
+#: src/renderer/src/lib/errors.ts
+msgid "This date is ambiguous. Enter an explicit date and time."
+msgstr "Esta fecha es ambigua. Introduce una fecha y una hora explícitas."
+
 #: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
-msgid "This deletes the saved recovery copy. Rules on the server are unchanged."
-msgstr "Esto elimina la copia de recuperación guardada. Las reglas en el servidor no cambian."
+msgid "This deletes the saved recovery copy. Filters on the server are unchanged."
+msgstr "Esto elimina la copia de recuperación guardada. Los filtros del servidor no cambian."
 
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 msgid "This development build has no MCP server yet. Run pnpm build in the repository first."
@@ -7270,38 +7264,48 @@ msgid "This draft was already discarded."
 msgstr "Este borrador ya se descartó."
 
 #: src/renderer/src/lib/errors.ts
-msgid "This event is no longer available"
-msgstr "Este evento ya no está disponible"
+msgid "This event no longer exists. Refresh the calendar."
+msgstr "Este evento ya no existe. Actualiza el calendario."
 
 #: src/renderer/src/lib/errors.ts
 msgid "This event's time isn't valid. Check the start and end."
 msgstr "La hora de este evento no es válida. Revisa el inicio y el fin."
 
-#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/lib/errors.ts
+msgid "This filter can only apply to future mail on the server. Save it without applying it to existing mail."
+msgstr "Este filtro solo se puede aplicar al correo futuro en el servidor. Guárdalo sin aplicarlo al correo existente."
+
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "This filter can only be applied to future mail on the server"
 msgstr "Este filtro solo se puede aplicar al correo futuro en el servidor"
 
-#: src/renderer/src/lib/errors.ts
-msgid "This filter has already been restored"
-msgstr "Este filtro ya se restauró"
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
+msgid "This filter deletes messages. Confirm only if the preview matches the messages you intend to delete."
+msgstr "Este filtro elimina mensajes. Confirma solo si la vista previa coincide con los mensajes que quieres eliminar."
 
 #: src/renderer/src/lib/errors.ts
-msgid "This filter no longer exists"
-msgstr "Este filtro ya no existe"
+msgid "This filter has already been restored."
+msgstr "Este filtro ya se ha restaurado."
 
 #: src/renderer/src/lib/errors.ts
-msgid "This filter uses conditions or actions the editor can't keep"
-msgstr "Este filtro usa condiciones o acciones que el editor no puede conservar"
+msgid "This filter no longer exists. Open Server filters again to see the current list."
+msgstr "Este filtro ya no existe. Vuelve a abrir Filtros de servidor para ver la lista actual."
 
 #: src/renderer/src/lib/errors.ts
-msgid "This invitation cannot be answered by this account"
-msgstr "Esta invitación no puede ser respondida por esta cuenta."
+msgid "This filter uses conditions or actions the editor can't keep. Edit it in webmail."
+msgstr "Este filtro usa condiciones o acciones que el editor no puede conservar. Edítalo en el correo web."
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
-#: src/renderer/src/lib/errors.ts
 msgid "This invitation has a newer update"
 msgstr "Esta invitación tiene una actualización más reciente."
+
+#: src/renderer/src/lib/errors.ts
+msgid "This invitation was updated. Open the latest version to respond."
+msgstr "Esta invitación se ha actualizado. Abre la versión más reciente para responder."
+
+#: src/renderer/src/lib/errors.ts
+msgid "This label or folder no longer exists. Refresh the list."
+msgstr "Esta etiqueta o carpeta ya no existe. Actualiza la lista."
 
 #: src/main/app/native-i18n.ts
 msgid "This library was opened by a newer OpenMail"
@@ -7312,16 +7316,20 @@ msgid "This login can't open OpenMail"
 msgstr "Este inicio de sesión no puede abrir OpenMail"
 
 #: src/renderer/src/lib/errors.ts
-msgid "This meeting has been cancelled"
-msgstr "Esta reunión ha sido cancelada."
+msgid "This meeting was cancelled, so there's nothing to respond to."
+msgstr "Esta reunión se canceló, así que no hay nada que responder."
 
 #: src/renderer/src/lib/errors.ts
-msgid "This meeting link is not supported."
-msgstr "Este enlace de reunión no es compatible."
+msgid "This message has no valid sender address. Choose another message."
+msgstr "Este mensaje no tiene una dirección de remitente válida. Elige otro mensaje."
 
 #: src/renderer/src/lib/errors.ts
-msgid "This message has no valid sender address."
-msgstr "Este mensaje no tiene una dirección de remitente válida."
+msgid "This message is over Outlook's 4 MB request limit, and Outlook can't upload large attached messages. Remove the attached message, then try again."
+msgstr "Este mensaje supera el límite de 4 MB por solicitud de Outlook, y Outlook no puede subir mensajes adjuntos grandes. Quita el mensaje adjunto y vuelve a intentarlo."
+
+#: src/renderer/src/lib/errors.ts
+msgid "This message is over Outlook's 4 MB request limit. Remove attachments, then try again."
+msgstr "Este mensaje supera el límite de 4 MB por solicitud de Outlook. Quita archivos adjuntos y vuelve a intentarlo."
 
 #: src/renderer/src/lib/errors.ts
 msgid "This message isn't a draft."
@@ -7340,33 +7348,17 @@ msgstr "Es posible que este mensaje ya se haya enviado. Revisa «Enviado» antes
 msgid "This permission lets OpenMail permanently delete mail in this Gmail account. Google will ask for your consent. After granting it, confirm the deletion again."
 msgstr "Este permiso permite a OpenMail eliminar permanentemente el correo de esta cuenta de Gmail. Google le pedirá su consentimiento. Luego de otorgarlo, confirma nuevamente la eliminación."
 
-#: src/renderer/src/lib/errors.ts
-msgid "This recurrence cannot be represented in Outlook"
-msgstr "Este patrón de repetición no se puede representar en Outlook"
-
-#: src/renderer/src/lib/errors.ts
-msgid "This recurring event has a time zone Google Calendar cannot use"
-msgstr "Este evento recurrente tiene una zona horaria que Google Calendar no puede usar"
-
-#: src/renderer/src/lib/errors.ts
-msgid "This recurring event has a time zone Outlook cannot use"
-msgstr "Outlook no admite la zona horaria de este evento recurrente"
-
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "This removes the filter from the server. Existing messages are unchanged."
 msgstr "Esto elimina el filtro del servidor. Los mensajes existentes no se modifican."
 
-#: src/renderer/src/features/settings/sections/FilterEditor.tsx
-msgid "This rule deletes messages. Confirm only if the preview matches the messages you intend to delete."
-msgstr "Esta regla elimina mensajes. Confirme solo si la vista previa coincide con los mensajes que desea eliminar."
+#: src/renderer/src/lib/errors.ts
+msgid "This session is read-only, so OpenMail can't change mail on the server. Restart OpenMail without read-only mode to make changes."
+msgstr "Esta sesión es de solo lectura, así que OpenMail no puede cambiar el correo en el servidor. Reinicia OpenMail sin el modo de solo lectura para hacer cambios."
 
 #: src/renderer/src/lib/errors.ts
-msgid "This server filter isn't supported"
-msgstr "Este filtro del servidor no es compatible"
-
-#: src/renderer/src/lib/errors.ts
-msgid "This setting is only available on the Mac."
-msgstr "Este ajuste solo está disponible en el Mac."
+msgid "This setting is only available on the Mac. Change it in OpenMail on your Mac."
+msgstr "Este ajuste solo está disponible en el Mac. Cámbialo en OpenMail en tu Mac."
 
 #: src/renderer/src/lib/errors.ts
 msgid "This signature belongs to another sending address or is no longer available."
@@ -7389,8 +7381,8 @@ msgid "This suggestion is no longer available."
 msgstr "Esta sugerencia ya no está disponible."
 
 #: src/renderer/src/lib/errors.ts
-msgid "This time is skipped or repeated by daylight saving. Enter a date and time with a UTC offset"
-msgstr "Esta hora se omite o se repite por el cambio de hora. Introduce fecha y hora con diferencia UTC"
+msgid "This time is skipped or repeated by daylight saving. Enter a date and time with a UTC offset."
+msgstr "Esta hora se omite o se repite por el cambio de horario de verano. Introduce una fecha y una hora con una diferencia respecto a UTC."
 
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Thread link copied"
@@ -7459,12 +7451,12 @@ msgid "Toggle full screen"
 msgstr "Activar o desactivar la pantalla completa"
 
 #: src/renderer/src/i18n/shortcut-names.ts
-msgid "Toggle list filters"
-msgstr "Alternar filtros de lista"
-
-#: src/renderer/src/i18n/shortcut-names.ts
 msgid "Toggle message background"
 msgstr "Alternar fondo del mensaje"
+
+#: src/renderer/src/i18n/shortcut-names.ts
+msgid "Toggle quick filters"
+msgstr "Activar o desactivar los filtros rápidos"
 
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Toggle reading pane position"
@@ -7487,8 +7479,8 @@ msgid "Too many conversations in one AI suggestion."
 msgstr "Demasiadas conversaciones en una sugerencia de IA."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Too many tailnet logins"
-msgstr "Demasiados inicios de sesión de tailnet"
+msgid "Too much mail for one AI request. Ask about fewer messages."
+msgstr "Demasiado correo para una sola solicitud a la IA. Pregunta sobre menos mensajes."
 
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 msgid "Toolbar actions"
@@ -7543,12 +7535,16 @@ msgid "Turn it on in Settings"
 msgstr "Activarlo en los ajustes"
 
 #: src/renderer/src/features/mail-list/EmptyList.tsx
-msgid "Turn off filters"
-msgstr "Desactivar filtros"
+msgid "Turn off quick filters"
+msgstr "Desactivar los filtros rápidos"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Turn on “Allow AI to read this account” for each selected account in Settings → AI Access."
 msgstr "En Ajustes → Acceso a IA, activa «Permitir que la IA lea esta cuenta» para cada cuenta seleccionada."
+
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "Turn on quick filters"
+msgstr "Activar los filtros rápidos"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Turn on the account before sending."
@@ -7557,6 +7553,14 @@ msgstr "Activa la cuenta antes de enviar."
 #: src/renderer/src/lib/errors.ts
 msgid "Turn on the account before undoing this."
 msgstr "Activa la cuenta antes de deshacer esto."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Turn on this account to open its mail on the web."
+msgstr "Activa esta cuenta para abrir su correo en la web."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Turn on this account to use its calendar."
+msgstr "Activa esta cuenta para usar su calendario."
 
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 msgid "Turned off"
@@ -7618,10 +7622,6 @@ msgstr "Cuentas desagrupadas"
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "unknown"
 msgstr "Desconocido"
-
-#: src/renderer/src/lib/errors.ts
-msgid "Unknown label or folder"
-msgstr "Etiqueta o carpeta desconocida"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Unknown message sizes are left unfiltered."
@@ -7740,12 +7740,12 @@ msgid "Use {token} for a custom variable. You will be asked for its value when i
 msgstr "Utilice {token} para una variable personalizada. Se le pedirá su valor al insertar la plantilla."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Use a PNG, JPEG, GIF or WebP image up to 8 MB"
-msgstr "Usa una imagen PNG, JPEG, GIF o WebP de hasta 8 MB"
+msgid "Use a PNG, JPEG, GIF or WebP image up to 8 MB."
+msgstr "Usa una imagen PNG, JPEG, GIF o WebP de hasta 8 MB."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Use a service name such as svc:openmail"
-msgstr "Introduce un nombre de servicio como svc:openmail"
+msgid "Use a service name such as svc:openmail."
+msgstr "Usa un nombre de servicio como svc:openmail."
 
 #: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Use an http, https or mailto link"
@@ -7864,8 +7864,8 @@ msgid "What AI apps can do"
 msgstr "Qué pueden hacer las aplicaciones de IA"
 
 #: src/renderer/src/features/settings/Settings.tsx
-msgid "When AI wants to archive, label, or mark as read, it goes into AI suggestions first and runs only after you approve."
-msgstr "Cuando la IA quiere archivar, añadir una etiqueta o marcar un mensaje como leído, primero crea una sugerencia. La acción solo se ejecuta después de tu aprobación."
+msgid "When an AI app wants to archive, label, mark as read, snooze or draft, it adds an AI suggestion. Nothing changes until you approve it, and sending always needs your confirmation."
+msgstr "Cuando una aplicación de IA quiere archivar, etiquetar, marcar como leído, posponer o crear un borrador, añade una sugerencia de IA. Nada cambia hasta que la apruebes, y el envío siempre requiere tu confirmación."
 
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "When you allow an account, questions and selected mail text, subjects, sender and recipient addresses are sent to Anthropic using your API key. Images, attachments and media stay on this device. Requests may incur API charges. Automatic summaries run only when you enable them for an account."
@@ -7986,3 +7986,7 @@ msgstr "Tu correo se está sincronizando. Tres atajos para empezar:"
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 msgid "Your overlapping events"
 msgstr "Tus eventos superpuestos"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Your response wasn't sent. Try again, or respond from your calendar."
+msgstr "Tu respuesta no se envió. Vuelve a intentarlo o responde desde tu calendario."

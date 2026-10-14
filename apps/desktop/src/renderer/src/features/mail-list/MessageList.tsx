@@ -141,10 +141,9 @@ export function MessageList({
   const searchIgnoredMessages = searchIgnored.map(({ accountId, operators }) => {
     const account = accountLabel(accountId);
     const names = operators.join(", ");
-    return t`${plural(operators.length, {
-      one: `${account}: the server can't search with ${names}. OpenMail searched the server without it and applied it to the results here.`,
-      other: `${account}: the server can't search with ${names}. OpenMail searched the server without them and applied them to the results here.`,
-    })}`;
+    return operators.length === 1
+      ? t`${account}: the server can't search with ${names}. OpenMail searched the server without it and applied it to the results here.`
+      : t`${account}: the server can't search with ${names}. OpenMail searched the server without them and applied them to the results here.`;
   });
   /** The row under the pointer at the right-click, set before the menu opens. */
   const pressed = useRef<string | null>(null);
