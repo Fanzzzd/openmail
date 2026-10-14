@@ -6146,9 +6146,10 @@ msgstr "Pokračovat"
 msgid "Resume syncing"
 msgstr "Obnovit synchronizaci"
 
+#. Disabled is the first option of the limit menu next to this text. Use its translation.
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
-msgid "Retention windows take precedence. Starred messages, retained message texts, drafts and outbox messages are kept even when the limit is exceeded. Zero disables the budget."
-msgstr "Doba uchování má přednost. Zprávy s hvězdičkou, uchovávané texty zpráv, koncepty a zprávy ve složce k odeslání zůstanou i při překročení limitu. Nula vypne limit."
+msgid "Retention windows take precedence. Starred messages, retained message texts, drafts and outbox messages are kept even when the limit is exceeded. Choose Disabled to turn the limit off."
+msgstr "Doba uchování má přednost. Zprávy s hvězdičkou, uchovávané texty zpráv, koncepty a zprávy ve složce k odeslání zůstanou i při překročení limitu. Limit vypnete volbou „Vypnuto“."
 
 #: src/renderer/src/features/compose/components/AddressFields.tsx
 msgid "Revert"

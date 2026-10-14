@@ -6150,9 +6150,10 @@ msgstr "Resume"
 msgid "Resume syncing"
 msgstr "Resume syncing"
 
+#. Disabled is the first option of the limit menu next to this text. Use its translation.
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
-msgid "Retention windows take precedence. Starred messages, retained message texts, drafts and outbox messages are kept even when the limit is exceeded. Zero disables the budget."
-msgstr "Retention windows take precedence. Starred messages, retained message texts, drafts and outbox messages are kept even when the limit is exceeded. Zero disables the budget."
+msgid "Retention windows take precedence. Starred messages, retained message texts, drafts and outbox messages are kept even when the limit is exceeded. Choose Disabled to turn the limit off."
+msgstr "Retention windows take precedence. Starred messages, retained message texts, drafts and outbox messages are kept even when the limit is exceeded. Choose Disabled to turn the limit off."
 
 #: src/renderer/src/features/compose/components/AddressFields.tsx
 msgid "Revert"

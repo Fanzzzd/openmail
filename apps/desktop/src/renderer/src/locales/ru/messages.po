@@ -6146,9 +6146,10 @@ msgstr "Возобновить"
 msgid "Resume syncing"
 msgstr "Возобновить синхронизацию"
 
+#. Disabled is the first option of the limit menu next to this text. Use its translation.
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
-msgid "Retention windows take precedence. Starred messages, retained message texts, drafts and outbox messages are kept even when the limit is exceeded. Zero disables the budget."
-msgstr "Сроки хранения имеют приоритет. Сообщения со звёздочкой, сохраняемые тексты сообщений, черновики и сообщения в исходящих остаются даже при превышении лимита. Ноль отключает лимит."
+msgid "Retention windows take precedence. Starred messages, retained message texts, drafts and outbox messages are kept even when the limit is exceeded. Choose Disabled to turn the limit off."
+msgstr "Сроки хранения имеют приоритет. Сообщения со звёздочкой, сохраняемые тексты сообщений, черновики и сообщения в исходящих остаются даже при превышении лимита. Чтобы снять лимит, выберите «Отключено»."
 
 #: src/renderer/src/features/compose/components/AddressFields.tsx
 msgid "Revert"

@@ -6146,9 +6146,10 @@ msgstr "Reanudar"
 msgid "Resume syncing"
 msgstr "Reanudar sincronización"
 
+#. Disabled is the first option of the limit menu next to this text. Use its translation.
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
-msgid "Retention windows take precedence. Starred messages, retained message texts, drafts and outbox messages are kept even when the limit is exceeded. Zero disables the budget."
-msgstr "Los plazos de conservación tienen prioridad. Los mensajes destacados, los textos de mensajes conservados, los borradores y los mensajes de la bandeja de salida se mantienen aunque se supere el límite. Cero desactiva el límite."
+msgid "Retention windows take precedence. Starred messages, retained message texts, drafts and outbox messages are kept even when the limit is exceeded. Choose Disabled to turn the limit off."
+msgstr "Los plazos de conservación tienen prioridad. Los mensajes destacados, los textos de mensajes conservados, los borradores y los mensajes de la bandeja de salida se mantienen aunque se supere el límite. Elige «Desactivado» para quitar el límite."
 
 #: src/renderer/src/features/compose/components/AddressFields.tsx
 msgid "Revert"

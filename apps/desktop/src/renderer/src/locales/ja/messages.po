@@ -6146,9 +6146,10 @@ msgstr "再開"
 msgid "Resume syncing"
 msgstr "同期を再開する"
 
+#. Disabled is the first option of the limit menu next to this text. Use its translation.
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
-msgid "Retention windows take precedence. Starred messages, retained message texts, drafts and outbox messages are kept even when the limit is exceeded. Zero disables the budget."
-msgstr "保存期間を優先します。上限を超えても、スター付きメール、保存期間内のメッセージ本文、下書き、送信トレイのメールは保持します。ゼロにすると容量制限を無効にします。"
+msgid "Retention windows take precedence. Starred messages, retained message texts, drafts and outbox messages are kept even when the limit is exceeded. Choose Disabled to turn the limit off."
+msgstr "保存期間を優先します。上限を超えても、スター付きメール、保存期間内のメッセージ本文、下書き、送信トレイのメールは保持します。容量制限をなくすには「無効」を選択します。"
 
 #: src/renderer/src/features/compose/components/AddressFields.tsx
 msgid "Revert"

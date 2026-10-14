@@ -207,10 +207,10 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
               </Trans>
             }
             hint={
-              <Trans>
+              <Trans comment="Disabled is the first option of the limit menu next to this text. Use its translation.">
                 Retention windows take precedence. Starred messages, retained message texts, drafts
-                and outbox messages are kept even when the limit is exceeded. Zero disables the
-                budget.
+                and outbox messages are kept even when the limit is exceeded. Choose Disabled to
+                turn the limit off.
               </Trans>
             }
           >

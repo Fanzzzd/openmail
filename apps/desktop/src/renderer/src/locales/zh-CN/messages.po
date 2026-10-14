@@ -6156,9 +6156,10 @@ msgstr "继续"
 msgid "Resume syncing"
 msgstr "恢复同步"
 
+#. Disabled is the first option of the limit menu next to this text. Use its translation.
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
-msgid "Retention windows take precedence. Starred messages, retained message texts, drafts and outbox messages are kept even when the limit is exceeded. Zero disables the budget."
-msgstr "保留期限优先。即使超过上限，也会保留星标邮件、期限内的消息文本、草稿和发件箱邮件。设为零可停用容量限制。"
+msgid "Retention windows take precedence. Starred messages, retained message texts, drafts and outbox messages are kept even when the limit is exceeded. Choose Disabled to turn the limit off."
+msgstr "保留期限优先。即使超过上限，也会保留星标邮件、期限内的消息文本、草稿和发件箱邮件。选择“已停用”可取消容量限制。"
 
 #: src/renderer/src/features/compose/components/AddressFields.tsx
 msgid "Revert"

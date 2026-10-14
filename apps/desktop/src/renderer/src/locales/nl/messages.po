@@ -6146,9 +6146,10 @@ msgstr "Hervat"
 msgid "Resume syncing"
 msgstr "Synchronisatie hervatten"
 
+#. Disabled is the first option of the limit menu next to this text. Use its translation.
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
-msgid "Retention windows take precedence. Starred messages, retained message texts, drafts and outbox messages are kept even when the limit is exceeded. Zero disables the budget."
-msgstr "Bewaartermijnen hebben voorrang. Berichten met een ster, bewaarde berichtteksten, concepten en berichten in het postvak uit blijven behouden als de limiet wordt overschreden. Nul schakelt het budget uit."
+msgid "Retention windows take precedence. Starred messages, retained message texts, drafts and outbox messages are kept even when the limit is exceeded. Choose Disabled to turn the limit off."
+msgstr "Bewaartermijnen hebben voorrang. Berichten met een ster, bewaarde berichtteksten, concepten en berichten in het postvak uit blijven behouden als de limiet wordt overschreden. Kies “Uitgeschakeld” om de limiet uit te zetten."
 
 #: src/renderer/src/features/compose/components/AddressFields.tsx
 msgid "Revert"
