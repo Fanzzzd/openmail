@@ -8,6 +8,8 @@ import {
 } from "@openmail/core/schema";
 import { Effect } from "effect";
 import { constVoid } from "effect/Function";
+import { request as httpRequest } from "node:http";
+import { WebSocket } from "ws";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { RemoteAccessView } from "../../shared/remote-access";
 import { createRemoteAccess, type RemoteAccessDeps } from "./remote-access";
@@ -78,9 +80,11 @@ function harness(options: {
     quitTimeoutMs: 50,
     retryMs: options.retryMs ?? 20,
     ...(options.retryMaxMs ? { retryMaxMs: options.retryMaxMs } : {}),
-    startRpc: () => {
+    startRpc: (hub) => {
       rpcRunning++;
+      const stop = hub.listen(() => ({ message: constVoid, closed: constVoid }));
       return async () => {
+        stop();
         rpcRunning--;
       };
     },
@@ -262,6 +266,47 @@ describe("remote access controller", () => {
     ]);
     expect(next.last()).toMatchObject({ status: "on" });
     await next.controller.dispose();
+  });
+
+  /** Signs a browser in through the local server and opens its RPC socket. */
+  const openBrowser = async (port: number) => {
+    const headers = { host: "mac.tail1234.ts.net:8443", "tailscale-user-login": "owner@github" };
+    const cookie = await new Promise<string>((resolve, reject) => {
+      httpRequest({ host: "127.0.0.1", port, path: "/", headers }, (res) => {
+        res.resume();
+        resolve((res.headers["set-cookie"]?.[0] ?? "").split(";")[0] ?? "");
+      })
+        .on("error", reject)
+        .end();
+    });
+    const socket = new WebSocket(`ws://127.0.0.1:${port}/rpc`, {
+      headers: { ...headers, origin: "https://mac.tail1234.ts.net:8443", cookie },
+    });
+    await new Promise((resolve, reject) => {
+      socket.once("open", resolve);
+      socket.once("error", reject);
+    });
+    return {
+      closed: new Promise<number>((resolve) => {
+        socket.once("close", resolve);
+      }),
+    };
+  };
+
+  it("lets phones reconnect after a quit, and ends their sessions when turned off", async () => {
+    const quit = harness({ serve: ours });
+    await quit.controller.init();
+    await quit.controller.setEnabled(true);
+    const going = await openBrowser(quit.stored().port);
+    await quit.controller.dispose();
+    expect(await going.closed).toBe(1001);
+
+    const off = harness({ serve: ours });
+    await off.controller.init();
+    await off.controller.setEnabled(true);
+    const ending = await openBrowser(off.stored().port);
+    await off.controller.setEnabled(false);
+    expect(await ending.closed).toBe(4401);
   });
 
   it("quits within the timeout when the Tailscale CLI hangs", async () => {

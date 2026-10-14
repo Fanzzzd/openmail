@@ -12,7 +12,7 @@ import {
   type RemoteAccessView,
   type TailscaleState,
 } from "../../shared/remote-access";
-import { createSessions, type GateConfig } from "./remote-auth";
+import { createSessions, GOING_AWAY, type GateConfig } from "./remote-auth";
 import { createConnectionHub, type ConnectionHub } from "./remote-rpc-server";
 import { type ForbiddenText, startRemoteServer, type RemoteServer } from "./remote-server";
 import {
@@ -126,9 +126,10 @@ export function createRemoteAccess(deps: RemoteAccessDeps) {
       : { ...NOT_INSTALLED, installed: true };
   };
 
-  const stopLocal = async () => {
+  /** Quitting sends GOING_AWAY so pages reconnect after a relaunch; turning off ends sessions. */
+  const stopLocal = async (quitting = false) => {
     gate = null;
-    sessions.clear();
+    sessions.clear(quitting ? GOING_AWAY : undefined);
     const stopping = stopRpc;
     stopRpc = undefined;
     await stopping?.();
@@ -351,7 +352,7 @@ export function createRemoteAccess(deps: RemoteAccessDeps) {
           ]);
           clearTimeout(timer);
         }
-        await stopLocal();
+        await stopLocal(true);
       }),
   };
 }

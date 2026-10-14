@@ -297,6 +297,12 @@ async function handleUpload(
   );
 }
 
+/** Fetch metadata where the browser sends it: only the page itself may ask for a session. */
+function sameSite(request: IncomingMessage) {
+  const site = request.headers["sec-fetch-site"];
+  return site === undefined || site === "same-origin";
+}
+
 /**
  * The 127.0.0.1-only HTTP and WebSocket server Tailscale Serve proxies to.
  * Every request passes the identity gate; pages get a session cookie, and
@@ -352,9 +358,28 @@ export async function startRemoteServer(options: RemoteServerOptions) {
       const method = request.method ?? "GET";
 
       if (url.pathname.startsWith("/api/")) {
-        if (!session(request, gate.login)) return send(response, 401, "Sign in again");
-        if (url.pathname === REMOTE_SESSION_PATH && method === "GET")
-          return sendJson(response, 200, { build });
+        const owner = session(request, gate.login);
+        if (url.pathname === REMOTE_SESSION_PATH && method === "GET") {
+          if (owner)
+            return sendJson(
+              response,
+              200,
+              { build },
+              { "set-cookie": options.sessions.refresh(owner) },
+            );
+          // The page checks its session before it reconnects. A browser that
+          // passed the gate gets a new session, as loading the page gives it,
+          // unless the Mac ended its session or the request came from another site.
+          if (options.sessions.isRevoked(request.headers.cookie) || !sameSite(request))
+            return send(response, 401, "Sign in again");
+          return sendJson(
+            response,
+            200,
+            { build },
+            { "set-cookie": options.sessions.issue(gate.login, gate.name) },
+          );
+        }
+        if (!owner) return send(response, 401, "Sign in again");
         if (url.pathname === "/api/attachment" && method === "GET")
           return handleAttachment(url, response, options.attachment);
         if (url.pathname === "/api/upload" && method === "POST") {

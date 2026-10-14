@@ -9,11 +9,16 @@ const NAME_HEADER = "tailscale-user-name";
 /** Serve marks traffic that arrived through Funnel. */
 const FUNNEL_HEADER = "tailscale-funnel-request";
 const SESSION_COOKIE = "__Host-openmail-session";
-const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
+/** A session ends after this long without a request or an open socket. */
+export const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
 /** The oldest session goes when a new one would pass this. */
 export const MAX_SESSIONS = 50;
 /** Close code a browser gets when its session ends. */
 export const SESSION_ENDED = 4401;
+/** Close code a browser gets when OpenMail quits; it reconnects when the Mac is back. */
+export const GOING_AWAY = 1001;
+/** Ended sessions remembered so their browsers don't get a new one without a reload. */
+const MAX_REVOKED = 4 * MAX_SESSIONS;
 
 export interface GateConfig {
   /** Logins that may sign in, compared case-insensitively. */
@@ -116,36 +121,74 @@ interface Session {
 
 /**
  * Browser sessions, in memory. The cookie holds a random id and an HMAC under
- * a key made at launch, so restarting OpenMail ends every session. A session
- * belongs to one login; a request with another login does not match it.
+ * a key made at launch. A session belongs to one login; a request with
+ * another login does not match it. It lasts SESSION_TTL_MS from its last
+ * request, and never ends while a socket is open on it.
  *
- * The Tailscale login is the real credential: an allowlisted browser without
- * a session gets a new one on its next page load. Disconnecting a session
- * closes its sockets; removing the login from the allowlist keeps it out.
+ * The Tailscale login is the real credential, checked on every request; the
+ * cookie only binds a browser to a session the person can see and end. An
+ * allowlisted browser without a valid cookie gets a new session on its next
+ * page load or session check, so restarting OpenMail doesn't sign phones out.
+ * Sessions the Mac ended (Disconnect, or the session limit) are remembered
+ * until they would have expired: their browsers get no new session until the
+ * person reloads the page. Removing the login from the allowlist keeps it out.
+ * The record of ended sessions lives in memory: after a restart, a browser
+ * that was offline when it was disconnected gets a new session, as a reload
+ * would give it anyway.
  */
 export function createSessions(now: () => number = Date.now) {
   const key = randomBytes(32);
   const sessions = new Map<string, Session>();
+  /** Ended session ids and when the record lapses, oldest first. */
+  const revoked = new Map<string, number>();
   const sign = (id: string) => createHmac("sha256", key).update(id).digest("base64url");
   const changes = new Set<() => void>();
   const changed = () => {
     for (const listener of changes) listener();
   };
-  const end = (session: Session) => {
+  const end = (session: Session, code = SESSION_ENDED) => {
     sessions.delete(session.id);
-    for (const socket of session.sockets) socket.close(SESSION_ENDED, "Session ended");
+    for (const socket of session.sockets)
+      socket.close(code, code === SESSION_ENDED ? "Session ended" : "OpenMail quit");
     session.sockets.clear();
+  };
+  /** Ends a session on the Mac's decision, so its browser waits for a reload. */
+  const revoke = (session: Session) => {
+    end(session);
+    revoked.set(session.id, now() + SESSION_TTL_MS);
+    for (const [id, until] of revoked)
+      if (revoked.size > MAX_REVOKED || until <= now()) revoked.delete(id);
+      else break;
+  };
+  const cookie = (session: Session) =>
+    `${SESSION_COOKIE}=${session.id}.${sign(session.id)}; Path=/; Max-Age=${SESSION_TTL_MS / 1000}; HttpOnly; Secure; SameSite=Strict`;
+  /** The cookie's session id if its HMAC holds, whether or not the session still exists. */
+  const cookieId = (cookieHeader: string | undefined) => {
+    const value = readCookie(cookieHeader, SESSION_COOKIE);
+    const [id, mac] = value?.split(".") ?? [];
+    if (!id || !mac) return null;
+    const expected = Buffer.from(sign(id));
+    const given = Buffer.from(mac);
+    if (expected.length !== given.length || !timingSafeEqual(expected, given)) return null;
+    return id;
+  };
+  const touch = (session: Session, at = now()) => {
+    session.lastSeenAt = at;
+    session.expiresAt = at + SESSION_TTL_MS;
   };
   /** Ends expired sessions and those failing `keep`. True when any ended. */
   const prune = (keep: (session: Session) => boolean = () => true) => {
     const at = now();
-    let ended = false;
-    for (const session of sessions.values())
+    let anyEnded = false;
+    for (const session of sessions.values()) {
+      // An open socket is use: the session lasts while the page stays connected.
+      if (session.sockets.size > 0) touch(session, at);
       if (session.expiresAt <= at || !keep(session)) {
         end(session);
-        ended = true;
+        anyEnded = true;
       }
-    return ended;
+    }
+    return anyEnded;
   };
   return {
     /** A new session and its Set-Cookie value. */
@@ -155,11 +198,11 @@ export function createSessions(now: () => number = Date.now) {
       while (sessions.size >= MAX_SESSIONS) {
         const oldest = sessions.values().next().value;
         if (!oldest) break;
-        end(oldest);
+        revoke(oldest);
       }
       const id = randomBytes(24).toString("base64url");
       const at = now();
-      sessions.set(id, {
+      const session: Session = {
         id,
         login,
         name,
@@ -167,26 +210,34 @@ export function createSessions(now: () => number = Date.now) {
         expiresAt: at + SESSION_TTL_MS,
         lastSeenAt: at,
         sockets: new Set(),
-      });
+      };
+      sessions.set(id, session);
       changed();
-      return `${SESSION_COOKIE}=${id}.${sign(id)}; Path=/; Max-Age=${SESSION_TTL_MS / 1000}; HttpOnly; Secure; SameSite=Strict`;
+      return cookie(session);
     },
-    /** The session for a cookie, if it is valid, unexpired and for this login. */
+    /** The Set-Cookie value that keeps a live session's cookie as long as the session. */
+    refresh: (session: Session) => cookie(session),
+    /** Whether the cookie names a session the Mac ended; its browser waits for a reload. */
+    isRevoked(cookieHeader: string | undefined) {
+      const id = cookieId(cookieHeader);
+      const until = id ? revoked.get(id) : undefined;
+      return until !== undefined && until > now();
+    },
+    /**
+     * The session for a cookie, if it is valid, unexpired and for this login.
+     * Finding it counts as use and moves its expiry.
+     */
     find(cookieHeader: string | undefined, login: string): Session | null {
-      const value = readCookie(cookieHeader, SESSION_COOKIE);
-      const [id, mac] = value?.split(".") ?? [];
-      if (!id || !mac) return null;
-      const expected = Buffer.from(sign(id));
-      const given = Buffer.from(mac);
-      if (expected.length !== given.length || !timingSafeEqual(expected, given)) return null;
+      const id = cookieId(cookieHeader);
+      if (!id) return null;
       const session = sessions.get(id);
       if (!session || !sameLogin(session.login, login)) return null;
-      if (session.expiresAt <= now()) {
+      if (session.expiresAt <= now() && session.sockets.size === 0) {
         end(session);
         changed();
         return null;
       }
-      session.lastSeenAt = now();
+      touch(session);
       return session;
     },
     attach(session: Session, socket: SessionSocket) {
@@ -194,13 +245,14 @@ export function createSessions(now: () => number = Date.now) {
       changed();
       return () => {
         session.sockets.delete(socket);
+        touch(session);
         changed();
       };
     },
     /** Closes one browser's session. It reconnects on reload while its login is allowed. */
     disconnect(id: string) {
       const session = sessions.get(id);
-      if (session) end(session);
+      if (session) revoke(session);
       changed();
     },
     /** Closes expired sessions' sockets. Runs on a timer. */
@@ -212,8 +264,12 @@ export function createSessions(now: () => number = Date.now) {
       prune((session) => allowlist.some((allowed) => sameLogin(allowed, session.login)));
       changed();
     },
-    clear() {
-      for (const session of sessions.values()) end(session);
+    /**
+     * Ends every session. Turning remote access off sends SESSION_ENDED; quitting
+     * sends GOING_AWAY, so pages reconnect when OpenMail is back.
+     */
+    clear(code = SESSION_ENDED) {
+      for (const session of sessions.values()) end(session, code);
       changed();
     },
     list(): RemoteSession[] {

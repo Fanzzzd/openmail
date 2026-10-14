@@ -9,7 +9,9 @@ import {
   checkRequest,
   createSessions,
   decodeName,
+  GOING_AWAY,
   MAX_SESSIONS,
+  SESSION_TTL_MS,
   type GateConfig,
 } from "./remote-auth";
 import {
@@ -25,6 +27,7 @@ import { waitLimit } from "../../../../../packages/core/test-support/test-time.j
 const HOST = "mac.tail1234.ts.net";
 const config: GateConfig = { allowlist: ["Owner@github"], host: HOST, port: 8443 };
 const ORIGIN = `https://${HOST}:8443`;
+const OWNER = "owner@github";
 const tailnet = (login = "owner@github") => ({
   host: `${HOST}:8443`,
   "tailscale-user-login": login,
@@ -92,6 +95,17 @@ describe("sessions", () => {
     now += 12 * 60 * 60 * 1000;
     expect(sessions.find(header, "owner@github")).toBeNull();
   });
+  it("counts the 12 hours from the last use, not from sign-in", () => {
+    let now = 1_000;
+    const sessions = createSessions(() => now);
+    const header = sessions.issue("owner@github", "Owner").split(";")[0];
+    for (let hour = 0; hour < 3; hour++) {
+      now += 11 * 60 * 60 * 1000;
+      expect(sessions.find(header, "owner@github")).not.toBeNull();
+    }
+    now += SESSION_TTL_MS;
+    expect(sessions.find(header, "owner@github")).toBeNull();
+  });
   const connected = (sessions: ReturnType<typeof createSessions>, cookie: string) => {
     const session = sessions.find(cookie.split(";")[0], "owner@github");
     if (!session) throw new Error("no session");
@@ -107,21 +121,54 @@ describe("sessions", () => {
     expect(closed).toEqual([4401]);
     expect(sessions.list()).toEqual([]);
   });
-  it("sweeps expired sessions and closes their sockets", () => {
+  it("remembers sessions it disconnected, but not ones a restart forgot", () => {
+    const sessions = createSessions();
+    const cookie = sessions.issue("owner@github", "Owner").split(";")[0];
+    const other = sessions.issue("owner@github", "Owner").split(";")[0];
+    const { id } = connected(sessions, cookie ?? "");
+    sessions.disconnect(id);
+    expect(sessions.isRevoked(cookie)).toBe(true);
+    expect(sessions.isRevoked(other)).toBe(false);
+    expect(sessions.isRevoked(undefined)).toBe(false);
+    // After a relaunch the key is new: the old cookie is just unknown.
+    const relaunched = createSessions();
+    expect(relaunched.isRevoked(other)).toBe(false);
+    expect(relaunched.find(other, "owner@github")).toBeNull();
+  });
+  it("tells sockets to reconnect when OpenMail quits, and ends them when turned off", () => {
+    const sessions = createSessions();
+    const quit = connected(sessions, sessions.issue("owner@github", "Owner"));
+    sessions.clear(GOING_AWAY);
+    expect(quit.closed).toEqual([1001]);
+    const off = connected(sessions, sessions.issue("owner@github", "Owner"));
+    sessions.clear();
+    expect(off.closed).toEqual([4401]);
+  });
+  it("keeps a session with an open socket, and sweeps it once idle", () => {
     let now = 1_000;
     const sessions = createSessions(() => now);
-    const { closed } = connected(sessions, sessions.issue("owner@github", "Owner"));
+    const cookie = sessions.issue("owner@github", "Owner");
+    const session = sessions.find(cookie.split(";")[0], "owner@github");
+    if (!session) throw new Error("no session");
+    const closed: number[] = [];
+    const detach = sessions.attach(session, { close: (code) => closed.push(code ?? 0) });
+    now += 2 * SESSION_TTL_MS;
     sessions.sweep();
     expect(closed).toEqual([]);
-    now += 12 * 60 * 60 * 1000;
+    expect(sessions.list()).toHaveLength(1);
+    detach();
+    now += SESSION_TTL_MS - 1;
     sessions.sweep();
-    expect(closed).toEqual([4401]);
+    expect(sessions.list()).toHaveLength(1);
+    now += 1;
+    sessions.sweep();
     expect(sessions.list()).toEqual([]);
   });
   it("keeps at most MAX_SESSIONS, ending the oldest first", () => {
     let now = 1_000;
     const sessions = createSessions(() => now);
-    const { id: first, closed } = connected(sessions, sessions.issue("owner@github", "Owner"));
+    const oldest = sessions.issue("owner@github", "Owner");
+    const { id: first, closed } = connected(sessions, oldest);
     for (let i = 1; i < MAX_SESSIONS; i++) {
       now += 1;
       sessions.issue("owner@github", "Owner");
@@ -131,6 +178,8 @@ describe("sessions", () => {
     expect(sessions.list()).toHaveLength(MAX_SESSIONS);
     expect(sessions.list().some((session) => session.id === first)).toBe(false);
     expect(closed).toEqual([4401]);
+    // Its browser waits for a reload instead of evicting the next one.
+    expect(sessions.isRevoked(oldest.split(";")[0])).toBe(true);
   });
   it("ends sessions whose login leaves the allowlist", () => {
     const sessions = createSessions();
@@ -276,18 +325,46 @@ describe("remote server", () => {
     expect((await call("/", tailnet("intruder@github"), "POST")).body.toString()).toBe("Forbidden");
   });
 
-  it("answers the session check with the build, and 401 once the session is gone", async () => {
-    expect((await call("/api/session", tailnet())).status).toBe(401);
+  it("answers the session check with the build, and 401 once the Mac ended the session", async () => {
     const cookie = await signIn();
     const reply = await call("/api/session", { ...tailnet(), cookie });
     expect(reply.status).toBe(200);
-    expect(reply.headers["set-cookie"]).toBeUndefined();
+    // The same session, its cookie good for another 12 hours.
+    expect(reply.headers["set-cookie"]?.[0]?.split(";")[0]).toBe(cookie);
     expect(JSON.parse(reply.body.toString())).toEqual({
       build: expect.stringMatching(/^[0-9a-f]{16}$/),
     });
+    const id = sessions.find(cookie, OWNER)?.id ?? "";
+    sessions.disconnect(id);
+    expect((await call("/api/session", { ...tailnet(), cookie })).status).toBe(401);
+    // A reload still signs the browser in while its login is allowed.
+    expect(await signIn()).toMatch(/^__Host-openmail-session=/);
     expect((await call("/api/session", { ...tailnet("intruder@github"), cookie })).status).toBe(
       403,
     );
+  });
+
+  it("gives a browser without a live session a new one at the session check", async () => {
+    const before = sessions.list().length;
+    // No cookie, or one from before OpenMail restarted (signed under the old key).
+    for (const cookie of [undefined, "__Host-openmail-session=abc.def"]) {
+      const reply = await call("/api/session", {
+        ...tailnet(),
+        "sec-fetch-site": "same-origin",
+        ...(cookie ? { cookie } : {}),
+      });
+      expect(reply.status).toBe(200);
+      const fresh = reply.headers["set-cookie"]?.[0]?.split(";")[0] ?? "";
+      expect(sessions.find(fresh, OWNER)).not.toBeNull();
+    }
+    expect(sessions.list()).toHaveLength(before + 2);
+    // Another site can't mint sessions through the browser; nor can a login off the list.
+    const crossSite = await call("/api/session", { ...tailnet(), "sec-fetch-site": "cross-site" });
+    expect(crossSite.status).toBe(401);
+    expect(crossSite.headers["set-cookie"]).toBeUndefined();
+    expect((await call("/api/session", tailnet("intruder@github"))).status).toBe(403);
+    // Other API routes still need the session itself.
+    expect((await call("/api/attachment?message=m1&part=0.1", tailnet())).status).toBe(401);
   });
 
   it("never serves files outside the web build", async () => {
