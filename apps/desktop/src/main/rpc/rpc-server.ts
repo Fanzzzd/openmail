@@ -9,7 +9,7 @@ import {
 import { shareMessageLink } from "../system/share-message-link";
 import { openExternal } from "../security/external";
 import { trustedSender } from "../security/security";
-import { stringRpcServer, type StringTransport } from "./rpc-security";
+import { rpcFailureText, stringRpcServer, type StringTransport } from "./rpc-security";
 import { mailboxHandlers } from "../../shared/mailbox-handlers";
 import { desktopAppleContacts } from "../system/apple-contacts";
 import { currentUpdateState } from "../updates/update-state";
@@ -109,9 +109,9 @@ const electronTransport: StringTransport = {
     )
       target.send(RPC_CHANNEL, frame);
   },
-  failure: (tag) => {
-    localLog("rpc-failure", { rpc: tag });
-    process.stderr.write(`[rpc-failure] ${tag}\n`);
+  failure: (failure) => {
+    localLog("rpc-failure", failure);
+    process.stderr.write(`[rpc-failure] ${rpcFailureText(failure)}\n`);
   },
 };
 

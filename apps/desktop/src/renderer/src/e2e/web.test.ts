@@ -59,7 +59,7 @@ async function openWebApp(mailbox: (m: Mailbox["Service"]) => Mailbox["Service"]
     Layer.launch(
       remoteRpcServer(hub, {
         denied: (tag) => denied.push(tag),
-        failure: (tag) => failures.push(tag),
+        failure: (failure) => failures.push(failure.rpc),
       }),
     ).pipe(Effect.provideService(Mailbox, mailbox(m))),
   );

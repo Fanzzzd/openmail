@@ -84,6 +84,32 @@ const versionText = (value: unknown) => {
   return decoded._tag === "Some" ? decoded.value : undefined;
 };
 
+/**
+ * Error classes an rpc-failure record may name for a defect. A defect of any other class logs
+ * as "Other". A defect's message never reaches the log.
+ */
+export const RPC_DEFECT_CLASSES: ReadonlySet<string> = new Set([
+  "Error",
+  "TypeError",
+  "RangeError",
+  "ReferenceError",
+  "SyntaxError",
+  "URIError",
+  "EvalError",
+  "AggregateError",
+  "SqliteError",
+  "SqlError",
+  "SchemaError",
+  "DOMException",
+  "AbortError",
+  "Other",
+]);
+/** How a request failed: a typed error, a defect, or an interruption the client did not ask for. */
+export const RpcFailureKind = Schema.Literals(["failure", "defect", "interrupt"]);
+export type RpcFailureKind = typeof RpcFailureKind.Type;
+/** A typed error's _tag or a class name: an identifier, never text from the error. */
+const ERROR_NAME = /^[A-Z][A-Za-z0-9]{0,63}$/;
+
 /** Fixed fields only. Free text, causes, stack traces and nested payloads are never serialized. */
 export function diagnosticRecord(event: unknown, data: unknown = {}, at = Date.now()) {
   const decoded = Schema.decodeUnknownOption(DiagnosticEvent)(event);
@@ -165,6 +191,23 @@ export function diagnosticRecord(event: unknown, data: unknown = {}, at = Date.n
     /^[A-Z][A-Za-z0-9]{0,127}$/.test(fields.rpc)
       ? fields.rpc
       : undefined;
+  if (event === "rpc-failure") {
+    const kind = Schema.decodeUnknownOption(RpcFailureKind)(
+      "kind" in fields ? fields.kind : undefined,
+    );
+    const error = "error" in fields && typeof fields.error === "string" ? fields.error : "";
+    const named =
+      kind._tag === "Some" &&
+      ((kind.value === "failure" && ERROR_NAME.test(error)) ||
+        (kind.value === "defect" && RPC_DEFECT_CLASSES.has(error)));
+    return {
+      at,
+      event,
+      ...(rpc === undefined ? {} : { rpc }),
+      ...(kind._tag === "Some" ? { kind: kind.value } : {}),
+      ...(named ? { error } : {}),
+    };
+  }
   if (isRpcFailure) return { at, event, ...(rpc === undefined ? {} : { rpc }) };
   const appVersion =
     event === "startup" && "appVersion" in fields ? versionText(fields.appVersion) : undefined;

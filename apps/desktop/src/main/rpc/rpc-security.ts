@@ -1,6 +1,7 @@
 import { Effect, FiberSet, Layer, Queue, Schema } from "effect";
 import { type Rpc, type RpcGroup, type RpcMessage, RpcSerialization, RpcServer } from "effect/rpc";
 import { MailError } from "@openmail/core/schema";
+import { RPC_DEFECT_CLASSES, type RpcFailureKind } from "@openmail/core/node";
 import { MAX_RPC_FRAME } from "../../shared/channel";
 import { PUBLIC_ERROR_MESSAGES } from "../../shared/public-error-messages";
 import { MailRpcs } from "../../shared/rpc";
@@ -86,13 +87,55 @@ export function publicRpcResponse(
   };
 }
 
-/** Track only validated request tags, never payloads, credentials or account identifiers. */
-export function createRpcFailureTracker(record: (tag: string) => void) {
+/** A failed request as the local log records it: the RPC name, how it failed and an identifier. */
+export interface RpcFailure {
+  readonly rpc: string;
+  readonly kind: RpcFailureKind;
+  /** The typed error's _tag, or a defect's class from RPC_DEFECT_CLASSES ("Other" otherwise). */
+  readonly error?: string;
+}
+
+const ERROR_TAG = /^[A-Z][A-Za-z0-9]{0,63}$/;
+const field = (value: unknown, key: string) =>
+  typeof value === "object" && value !== null && key in value ? Reflect.get(value, key) : undefined;
+
+/** How an encoded cause failed. Reads only the error's _tag or the defect's class name. */
+type EncodedCause = Extract<RpcMessage.ExitEncoded<unknown, unknown>, { _tag: "Failure" }>["cause"];
+const describeFailure = (cause: EncodedCause): Omit<RpcFailure, "rpc"> | undefined => {
+  const fail = cause.find((item) => item._tag === "Fail");
+  if (fail) {
+    const tag = field(fail.error, "_tag");
+    return {
+      kind: "failure",
+      ...(typeof tag === "string" && ERROR_TAG.test(tag) ? { error: tag } : {}),
+    };
+  }
+  const die = cause.find((item) => item._tag === "Die");
+  if (die) {
+    const name = field(die.defect, "name");
+    return {
+      kind: "defect",
+      error: typeof name === "string" && RPC_DEFECT_CLASSES.has(name) ? name : "Other",
+    };
+  }
+  return cause.some((item) => item._tag === "Interrupt") ? { kind: "interrupt" } : undefined;
+};
+
+/** One line for stderr: "Threads defect TypeError". */
+export const rpcFailureText = (failure: RpcFailure) =>
+  [failure.rpc, failure.kind, failure.error].filter(Boolean).join(" ");
+
+/**
+ * Track only validated request tags, never payloads, credentials or account identifiers.
+ * A request the client interrupted itself is not a failure.
+ */
+export function createRpcFailureTracker(record: (failure: RpcFailure) => void) {
   const clients = new Map<number, Map<string, string>>();
   return {
     request(client: number, messages: readonly RpcMessage.FromClientEncoded[]) {
       let tags = clients.get(client);
       for (const message of messages) {
+        if (message._tag === "Interrupt") tags?.delete(String(message.requestId));
         if (message._tag !== "Request" || !MailRpcs.requests.has(message.tag)) continue;
         if (!tags) {
           tags = new Map();
@@ -108,8 +151,8 @@ export function createRpcFailureTracker(record: (tag: string) => void) {
       tags?.delete(String(response.requestId));
       if (!tags?.size) clients.delete(client);
       if (!tag || response.exit._tag !== "Failure") return;
-      if (response.exit.cause.some((cause) => cause._tag === "Fail" || cause._tag === "Die"))
-        record(tag);
+      const failure = describeFailure(response.exit.cause);
+      if (failure) record({ rpc: tag, ...failure });
     },
     disconnect(client: number) {
       clients.delete(client);
@@ -129,8 +172,8 @@ export interface StringTransport {
   attach(input: StringProtocolInput): () => void;
   send(clientId: number, frame: string): void;
   end?(clientId: number): void;
-  /** Tags of failed requests, for the local log. */
-  failure(tag: string): void;
+  /** Failed requests, for the local log. */
+  failure(failure: RpcFailure): void;
   /** Sees each validated batch before it runs. */
   inspect?(clientId: number, messages: readonly RpcMessage.FromClientEncoded[]): void;
 }
@@ -149,7 +192,7 @@ export const makeStringProtocol = (transport: StringTransport) =>
         Effect.fnUntraced(function* (writeRequest) {
           const disconnects = yield* Queue.make<number>();
           const clients = new Set<number>();
-          const failures = createRpcFailureTracker((tag) => transport.failure(tag));
+          const failures = createRpcFailureTracker((failure) => transport.failure(failure));
           const parser = serialization.makeUnsafe();
           const run = yield* FiberSet.makeRuntime();
           const detach = transport.attach({

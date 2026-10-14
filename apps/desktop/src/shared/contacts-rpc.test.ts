@@ -70,7 +70,7 @@ for (const denied of [
         const responses = yield* Queue.unbounded<RpcMessage.FromServerEncoded>();
         const disconnects = yield* Queue.unbounded<number>();
         const authTags: string[] = [];
-        const failures = createRpcFailureTracker((tag) => authTags.push(tag));
+        const failures = createRpcFailureTracker((failure) => authTags.push(failure.rpc));
         const protocol = Layer.succeed(RpcServer.Protocol, {
           run: (write) =>
             Queue.take(requests).pipe(

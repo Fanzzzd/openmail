@@ -86,6 +86,40 @@ it("RPC failure diagnostics retain only the method name across storage and previ
   });
 });
 
+it("RPC failure diagnostics keep the kind, a typed error tag and only allowed defect classes", () => {
+  const record = (fields: object) =>
+    diagnosticRecord("rpc-failure", { rpc: "Threads", ...fields }, 0);
+  expect(record({ kind: "defect", error: "TypeError" })).toEqual({
+    at: 0,
+    event: "rpc-failure",
+    rpc: "Threads",
+    kind: "defect",
+    error: "TypeError",
+  });
+  expect(
+    diagnosticRecord("rpc-failure", record({ kind: "failure", error: "NotFound" }), 0),
+  ).toEqual({ at: 0, event: "rpc-failure", rpc: "Threads", kind: "failure", error: "NotFound" });
+  expect(record({ kind: "interrupt" })).toEqual({
+    at: 0,
+    event: "rpc-failure",
+    rpc: "Threads",
+    kind: "interrupt",
+  });
+  // A defect class outside the list, error text and unknown kinds never survive.
+  for (const fields of [
+    { kind: "defect", error: "PrivateTokenError" },
+    { kind: "failure", error: "cannot read secret of undefined" },
+    { kind: "interrupt", error: "TypeError" },
+    { kind: "secret", error: "TypeError" },
+  ])
+    expect(JSON.stringify(record(fields))).not.toMatch(/Private|secret|"error"/);
+  expect(diagnosticRecord("rpc-auth-failure", { rpc: "Threads", kind: "defect" }, 0)).toEqual({
+    at: 0,
+    event: "rpc-auth-failure",
+    rpc: "Threads",
+  });
+});
+
 it("status zero means an actual transport failure; credentials and configuration have no HTTP status", () => {
   const records: unknown[] = [];
   const logger = Logger.make((options) =>

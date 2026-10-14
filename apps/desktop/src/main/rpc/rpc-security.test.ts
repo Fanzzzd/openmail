@@ -3,7 +3,7 @@ import { Effect, Exit, Layer, Queue, Schema } from "effect";
 import { RpcGroup, RpcMessage, RpcSerialization, RpcServer } from "effect/rpc";
 import { afterAll, expect, it, vi } from "vitest";
 import { MAX_RPC_FRAME } from "../../shared/channel";
-import { decodeRpcFrame, publicRpcResponse } from "./rpc-security";
+import { decodeRpcFrame, publicRpcResponse, type StringProtocolInput } from "./rpc-security";
 import { MailRpcs } from "../../shared/rpc";
 import { APP_PAGE } from "../security/security-policy";
 import { configurePermissions, mayWriteClipboard, trustedSender } from "../security/security";
@@ -317,7 +317,7 @@ it("allows fixed Outlook errors across RPC while stripping provider additions", 
 it("logs the RPC tag for every failure and separates clients, terminal responses and disconnects", async () => {
   const { createRpcFailureTracker } = await import("./rpc-security");
   const recorded: string[] = [];
-  const tracker = createRpcFailureTracker((tag) => recorded.push(tag));
+  const tracker = createRpcFailureTracker((failure) => recorded.push(failure.rpc));
   const request = (tag: string) =>
     decodeRpcFrame(
       JSON.stringify({
@@ -361,10 +361,10 @@ it("logs the RPC tag for every failure and separates clients, terminal responses
   expect(recorded).toEqual(["RefreshContacts", "ReaderAttachments"]);
 });
 
-it("RPC diagnostics include NotFound, validation failures and defects without recording payloads or normal interruptions", async () => {
+it("RPC diagnostics record the kind, the error tag and an allowed defect class, never payloads or text", async () => {
   const { createRpcFailureTracker } = await import("./rpc-security");
-  const recorded: string[] = [];
-  const tracker = createRpcFailureTracker((tag) => recorded.push(tag));
+  const recorded: unknown[] = [];
+  const tracker = createRpcFailureTracker((failure) => recorded.push(failure));
   const request = (id: number) =>
     decodeRpcFrame(
       JSON.stringify({
@@ -383,12 +383,73 @@ it("RPC diagnostics include NotFound, validation failures and defects without re
       },
     ],
     [{ _tag: "Fail" as const, error: { _tag: "InvalidInput", message: "private-token" } }],
+    [{ _tag: "Fail" as const, error: { _tag: "private-token here", message: "x" } }],
     [{ _tag: "Die" as const, defect: { message: "private-token", stack: "private stack" } }],
+    [{ _tag: "Die" as const, defect: { name: "TypeError", message: "private-token" } }],
+    [{ _tag: "Die" as const, defect: { name: "PrivateTokenError", message: "private-token" } }],
+    [{ _tag: "Die" as const, defect: "private-token" }],
     [{ _tag: "Interrupt" as const, fiberId: 123 }],
   ];
   for (const [id, cause] of causes.entries()) {
     tracker.request(1, request(id));
     tracker.response(1, { _tag: "Exit", requestId: id, exit: { _tag: "Failure", cause } });
   }
-  expect(recorded).toEqual(["OpenDraft", "OpenDraft", "OpenDraft"]);
+  // A request the client interrupted itself is not a failure.
+  tracker.request(1, request(99));
+  tracker.request(1, [{ _tag: "Interrupt", requestId: 99 }]);
+  tracker.response(1, {
+    _tag: "Exit",
+    requestId: 99,
+    exit: { _tag: "Failure", cause: [{ _tag: "Interrupt", fiberId: 1 }] },
+  });
+  expect(recorded).toEqual([
+    { rpc: "OpenDraft", kind: "failure", error: "NotFound" },
+    { rpc: "OpenDraft", kind: "failure", error: "InvalidInput" },
+    { rpc: "OpenDraft", kind: "failure" },
+    { rpc: "OpenDraft", kind: "defect", error: "Other" },
+    { rpc: "OpenDraft", kind: "defect", error: "TypeError" },
+    { rpc: "OpenDraft", kind: "defect", error: "Other" },
+    { rpc: "OpenDraft", kind: "defect", error: "Other" },
+    { rpc: "OpenDraft", kind: "interrupt" },
+  ]);
+  expect(JSON.stringify(recorded)).not.toContain("private");
+});
+
+it("a handler defect logs its RPC, kind and error class, and no message text", async () => {
+  const { stringRpcServer } = await import("./rpc-security");
+  const { Rpc } = await import("effect/rpc");
+  class Threads extends Rpc.make("Threads", { success: Schema.String }) {}
+  const Group = RpcGroup.make(Threads);
+  const failures: unknown[] = [];
+  const sent: string[] = [];
+  let input: StringProtocolInput | undefined;
+  const server = stringRpcServer(Group, {
+    attach: (i) => {
+      input = i;
+      return () => null;
+    },
+    send: (_client, frame) => sent.push(frame),
+    failure: (failure) => failures.push(failure),
+  }).pipe(
+    Layer.provide(
+      Group.toLayer({
+        Threads: () => Effect.die(new TypeError("cannot read secret of undefined")),
+      }),
+    ),
+  );
+  await Effect.runPromise(
+    Effect.gen(function* () {
+      yield* Effect.sleep(10);
+      input?.frame(
+        1,
+        JSON.stringify({ _tag: "Request", id: "1", tag: "Threads", payload: null, headers: [] }),
+      );
+      yield* Effect.sleep(50);
+    }).pipe(
+      Effect.provide(Layer.launch(server).pipe(Effect.forkScoped, Layer.effectDiscard)),
+      Effect.scoped,
+    ),
+  );
+  expect(failures).toEqual([{ rpc: "Threads", kind: "defect", error: "TypeError" }]);
+  expect(JSON.stringify([failures, sent])).not.toContain("secret");
 });

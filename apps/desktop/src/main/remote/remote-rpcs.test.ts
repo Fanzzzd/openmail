@@ -132,8 +132,15 @@ interface Frame {
 describe("remote RPC server", () => {
   it("answers listed RPCs with core data and fails denied ones without running them", async () => {
     const hub = createConnectionHub();
+    const denied: string[] = [];
+    const failures: unknown[] = [];
     const fiber = Effect.runFork(
-      Layer.launch(remoteRpcServer(hub)).pipe(Effect.provide(TestMailbox())),
+      Layer.launch(
+        remoteRpcServer(hub, {
+          denied: (tag) => denied.push(tag),
+          failure: (failure) => failures.push(failure),
+        }),
+      ).pipe(Effect.provide(TestMailbox())),
     );
     await vi.waitFor(() => expect(hub.listening).toBe(true), {
       timeout: scaledMs(5_000),
@@ -165,6 +172,16 @@ describe("remote RPC server", () => {
       // No stack or tag detail leaks out.
       expect(JSON.stringify(exit(id))).not.toContain("Unknown request tag");
     }
+    // The log names each denied RPC and how it failed, never the payload.
+    expect(denied).toEqual(["SaveAttachmentsTo", "SetRemoteAllowlist", "ClipboardText"]);
+    expect(failures).toEqual(
+      ["SaveAttachmentsTo", "SetRemoteAllowlist", "ClipboardText"].map((rpc) => ({
+        rpc,
+        kind: "defect",
+        error: "Other",
+      })),
+    );
+    expect(JSON.stringify(failures)).not.toContain("attacker");
     // Tags outside MailRpcs never reach the server: the socket closes.
     request("5", "BrandNewMacFeature");
     expect(closed).toBe(1008);

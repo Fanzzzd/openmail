@@ -66,7 +66,7 @@ export const RemoteAccessLive = Layer.effect(
           Layer.launch(
             remoteRpcServer(hub, {
               denied: (tag) => localLog("rpc-auth-failure", { rpc: tag }),
-              failure: (tag) => localLog("rpc-failure", { rpc: tag }),
+              failure: (failure) => localLog("rpc-failure", failure),
             }),
           ).pipe(Effect.provideService(Mailbox, mailbox)),
         );

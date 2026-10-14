@@ -1,6 +1,6 @@
 import { Mailbox } from "@openmail/core";
 import { Effect, Layer } from "effect";
-import { stringRpcServer, type StringTransport } from "../rpc/rpc-security";
+import { type RpcFailure, stringRpcServer, type StringTransport } from "../rpc/rpc-security";
 import { remoteHandlers } from "./remote-handlers";
 import { remoteDisposition, RemoteRpcs } from "./remote-rpcs";
 import type { ConnectionListener, RemoteConnection } from "./remote-server";
@@ -33,7 +33,7 @@ export interface RemoteRpcLog {
   /** A request for an RPC outside the remote table. */
   denied(tag: string): void;
   /** A request that failed. */
-  failure(tag: string): void;
+  failure(failure: RpcFailure): void;
 }
 const quiet: RemoteRpcLog = { denied: ignore, failure: ignore };
 
@@ -67,7 +67,7 @@ const remoteTransport = (hub: ConnectionHub, log: RemoteRpcLog): StringTransport
     },
     send: (clientId, frame) => clients.get(clientId)?.send(frame),
     end: (clientId) => clients.get(clientId)?.close(),
-    failure: (tag) => log.failure(tag),
+    failure: (failure) => log.failure(failure),
     // Denied tags reach a group without them and fail there.
     inspect: (_, messages) => {
       for (const message of messages)
