@@ -33,6 +33,37 @@ export const DesktopLabels = Schema.Struct({
   selectAll: Schema.String,
   window: Schema.String,
   feedback: Schema.String,
-  newMessages: Schema.String,
+  /** The digest title per plural category of `locale`, with # for the count. */
+  newMessages: Schema.Record(Schema.String, Schema.String),
+  locale: Schema.String,
 });
 export type DesktopLabels = typeof DesktopLabels.Type;
+
+/**
+ * Turns one ICU plural message into a template per plural category, so main can pick the
+ * right form without Lingui. `format` renders a count with the catalog's message; the
+ * count's formatted digits become #. Categories with no whole-number count are skipped.
+ */
+export function pluralTemplates(
+  locale: string,
+  format: (count: number) => string,
+  number: (count: number) => string,
+): Record<string, string> {
+  const rules = new Intl.PluralRules(locale);
+  const templates: Record<string, string> = {};
+  for (const category of rules.resolvedOptions().pluralCategories) {
+    // 2 before 0 and 1, so "other" in English is not built from a zero sample.
+    const sample = [2, 1, 0, ...Array.from({ length: 200 }, (_, i) => i + 3)].find(
+      (n) => rules.select(n) === category,
+    );
+    if (sample === undefined) continue;
+    templates[category] = format(sample).replace(number(sample), "#");
+  }
+  return templates;
+}
+
+/** The digest title for `count`, from the templates pluralTemplates built. */
+export function pluralText(locale: string, templates: Record<string, string>, count: number) {
+  const template = templates[new Intl.PluralRules(locale).select(count)] ?? templates.other ?? "#";
+  return template.replace("#", new Intl.NumberFormat(locale).format(count));
+}

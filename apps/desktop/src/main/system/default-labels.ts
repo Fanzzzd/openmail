@@ -31,6 +31,7 @@ export const DEFAULT_DESKTOP_LABELS: DesktopLabels = {
   cancel: "Cancel",
   selectAll: "Select all",
   window: "Window",
-  newMessages: "new messages",
+  newMessages: { one: "# new message", other: "# new messages" },
+  locale: "en",
   feedback: "Send feedback…",
 };

@@ -236,7 +236,8 @@ const englishLabels: DesktopLabels = {
   cancel: "Cancel",
   selectAll: "Select all",
   window: "Window",
-  newMessages: "new messages",
+  newMessages: { one: "# new message", other: "# new messages" },
+  locale: "en",
   feedback: "Send feedback…",
 };
 const localizedDesktopLayer = (mailbox: Layer.Layer<Mailbox>) =>
@@ -615,7 +616,7 @@ it("sleep resume restores Dock counts and delivers one Profile digest after mute
         yield* settle();
         expect(observations.testState.badge).toHaveBeenLastCalledWith(1);
         expect(observations.testState.notifications).toHaveLength(1);
-        expect(observations.testState.notifications[0]?.options.title).toBe("1 new messages");
+        expect(observations.testState.notifications[0]?.options.title).toBe("1 new message");
         powerMonitor.emit("resume");
         yield* settle();
         expect(observations.testState.notifications).toHaveLength(1);
@@ -643,7 +644,8 @@ it("startup pending notifications wait for the first localized labels", async ()
         expect(observations.testState.notifications).toHaveLength(0);
         yield* desktop.setLabels({
           ...englishLabels,
-          newMessages: "封新邮件",
+          newMessages: { other: "# 封新邮件" },
+          locale: "zh-CN",
           allAccounts: "所有账号",
         });
         expect(observations.testState.notifications).toHaveLength(1);

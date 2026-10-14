@@ -8,7 +8,7 @@ import {
 } from "@openmail/core";
 import { Effect } from "effect";
 import { Notification } from "electron";
-import type { DesktopLabels } from "../../shared/desktop-labels";
+import { type DesktopLabels, pluralText } from "../../shared/desktop-labels";
 
 /**
  * New-mail notifications: one per message, or a digest for a large batch. Clicking opens the
@@ -84,7 +84,7 @@ export function makeNotifications({
         const notification = new Notification({
           id: messageLink(first.id),
           groupId: batch.profileId ?? first.accountId,
-          title: `${batch.messages.length} ${labels().newMessages}`,
+          title: pluralText(labels().locale, labels().newMessages, batch.messages.length),
           body:
             profiles.find((p) => p.id === batch.profileId)?.name ??
             (singleAccount

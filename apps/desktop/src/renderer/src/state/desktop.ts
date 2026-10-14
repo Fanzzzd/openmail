@@ -1,11 +1,13 @@
 import { NATIVE_MENUS } from "../../../shared/native-actions";
 import { ACTION_NAMES } from "../i18n/shortcut-names";
+import { plural } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { Effect, Fiber, Stream } from "effect";
 import { useEffect, useEffectEvent } from "react";
 
 import { cleanLink, parseAppLink } from "@openmail/core/schema";
 import type { DesktopEvent } from "../../../shared/desktop";
+import { pluralTemplates } from "../../../shared/desktop-labels";
 import { externalUrl } from "../../../shared/external-url";
 import { isDesktop, openOnDevice } from "../lib/platform";
 import { useRunMail, withMail } from "./mail";
@@ -113,7 +115,12 @@ export function useDesktopLabels() {
             selectAll: t`Select all`,
             window: t`Window`,
             feedback: t`Send feedback…`,
-            newMessages: t`new messages`,
+            newMessages: pluralTemplates(
+              i18n.locale,
+              (count) => t`${plural(count, { one: "# new message", other: "# new messages" })}`,
+              (count) => i18n.number(count),
+            ),
+            locale: i18n.locale,
           },
         }),
       ),
