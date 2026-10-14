@@ -765,7 +765,7 @@ msgstr "Registra i client OAuth mobili nella configurazione dell’app per aggiu
 #: app/ai-proposals.tsx
 #: src/ai-controls.tsx
 msgid "Reject"
-msgstr "Rifiutare"
+msgstr "Rifiuta"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -800,7 +800,7 @@ msgstr "Rimuovi chiave"
 #. js-lingui-explicit-id
 #: src/thread-actions.tsx
 msgid "Remove label"
-msgstr "Rimuovere l’etichetta"
+msgstr "Rimuovi etichetta"
 
 #. js-lingui-explicit-id
 #: src/ai-settings.tsx

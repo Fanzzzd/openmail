@@ -889,7 +889,7 @@ msgstr "Applica colore"
 
 #: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Apply link"
-msgstr "Applicare il collegamento"
+msgstr "Applica collegamento"
 
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
@@ -2973,7 +2973,7 @@ msgstr "Correggi la grammatica e rileggi"
 
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Focus main window"
-msgstr "Mettere a fuoco la finestra principale"
+msgstr "Attiva la finestra principale"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 #: src/renderer/src/i18n/organization-labels.ts
@@ -3241,7 +3241,7 @@ msgstr "Raggruppa gli account in spazi, come “Lavoro” e “Personale”. Ogn
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Group messages into conversations"
-msgstr "Raggruppare i messaggi in conversazioni"
+msgstr "Raggruppa i messaggi in conversazioni"
 
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Has attachment"
@@ -3454,7 +3454,7 @@ msgstr "Includi corrispondenze"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
 msgid "Include original attachments"
-msgstr "Includere allegati originali"
+msgstr "Includi allegati originali"
 
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 msgid "Include signature separator"
@@ -5097,7 +5097,7 @@ msgstr "Ordine"
 
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Organize"
-msgstr "Organizzare"
+msgstr "Organizzazione"
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Organizer:"
@@ -5274,7 +5274,7 @@ msgstr "Pausa"
 
 #: src/renderer/src/features/settings/sections/IndexingSettings.tsx
 msgid "Pause indexing"
-msgstr "Mettere in pausa l’indicizzazione"
+msgstr "Sospendi indicizzazione"
 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Pending operations"
@@ -5331,7 +5331,7 @@ msgstr "Preparazione della modifica…"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Press ? outside a text field to show this list."
-msgstr "Premere ? all’esterno di un campo di testo per mostrare questo elenco."
+msgstr "Premi ? fuori da un campo di testo per mostrare questo elenco."
 
 #: src/renderer/src/features/accounts/FirstRunDone.tsx
 msgid "Press {help} for all shortcuts."
@@ -5896,7 +5896,7 @@ msgstr "Riavvia Cursor per applicare la modifica."
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Restore"
-msgstr "Ripristinare"
+msgstr "Ripristina"
 
 #: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 msgid "Restore filter"
@@ -5973,7 +5973,7 @@ msgstr "Controlla gli eventi prima di aggiungerli."
 
 #: src/renderer/src/features/feedback/Feedback.tsx
 msgid "Review the local diagnostics below. Nothing is uploaded. Continue opens an email draft that you review and send from your own account."
-msgstr "Esaminare la diagnostica locale di seguito. Non viene caricato nulla. Continua apre una bozza di email che rivedi e invii dal tuo account."
+msgstr "Esamina la diagnostica locale qui sotto. Non viene caricato nulla. Continua apre una bozza di email che rivedi e invii dal tuo account."
 
 #: src/renderer/src/features/compose/components/ComposerAi.tsx
 msgid "Rewrite"
@@ -7907,7 +7907,7 @@ msgstr "Usa un nome di servizio come svc:openmail."
 
 #: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Use an http, https or mailto link"
-msgstr "Utilizzare un collegamento http, https o mailto"
+msgstr "Usa un collegamento http, https o mailto"
 
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Use an image up to 8 MB."

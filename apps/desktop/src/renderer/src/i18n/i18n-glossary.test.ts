@@ -147,6 +147,16 @@ function checkMessages(locale: string, catalog: Catalog, failures: string[]) {
       failures.push(`${locale}: register: ${source} → ${target}`);
     if (locale === "ru" && russianInformal.some((pattern) => pattern.test(target)))
       failures.push(`${locale}: register: ${source} → ${target}`);
+    // Italian buttons, menu items and labels use the imperative (Applica, Sospendi), not the
+    // infinitive. Questions keep it (Inviare il messaggio?), and so do sentences.
+    if (
+      locale === "it" &&
+      source.length < 90 &&
+      !/[.?:]$/.test(source) &&
+      /^\p{Lu}\p{Ll}+(?:are|ere|ire)(?!\p{L})/u.test(target) &&
+      !/^Carattere(?!\p{L})/u.test(target)
+    )
+      failures.push(`${locale}: infinitive: ${source} → ${target}`);
     // Spanish text starts with a capital, unless it starts with a name such as iOS.
     if (
       locale === "es" &&
