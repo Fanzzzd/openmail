@@ -150,3 +150,18 @@ it("with no account, New message and the File menu's New message open Add accoun
   await eventually(() => expect(addDialog()).toBeTruthy());
   expect(screen.queryByRole("textbox", { name: "Subject" })).toBeNull();
 });
+
+it("account tiles are named by the account before the count and mark the current one", async () => {
+  current = await flow();
+  const h = current;
+  await h.run(h.m.accounts.connect({ provider: "outlook" }));
+  const tile = (name: RegExp) => screen.getByRole("button", { name });
+  await eventually(() => expect(tile(/^me@outlook\.com/)).toBeTruthy());
+  // The avatar initial is hidden; the name starts with the account and the count comes last.
+  await eventually(() => expect(tile(/^me@gmail\.com ?gmail\.com ?Gmail ?2$/)).toBeTruthy());
+  expect(tile(/^All ?\d+$/).getAttribute("aria-current")).toBe("page");
+  expect(tile(/^me@gmail\.com/).getAttribute("aria-current")).toBeNull();
+  fireEvent.click(tile(/^me@gmail\.com/));
+  await eventually(() => expect(tile(/^me@gmail\.com/).getAttribute("aria-current")).toBe("page"));
+  expect(tile(/^All ?\d+$/).getAttribute("aria-current")).toBeNull();
+});

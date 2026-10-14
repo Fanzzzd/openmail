@@ -114,7 +114,9 @@ export function Section({ title, children }: { title: string; children: ReactNod
 export function AccountAvatar({ account: a }: { account: Account }) {
   return (
     <span className="relative">
+      {/* The initial repeats the account name next to it, so screen readers skip it. */}
       <span
+        aria-hidden
         className={`flex size-6 items-center justify-center rounded-full text-footnote font-semibold text-white ${accountColorClass(a)}`}
         style={accountColorStyle(a)}
       >
@@ -143,6 +145,7 @@ export function Tile(props: {
       <button
         type="button"
         onClick={props.onClick}
+        aria-current={props.active ? "page" : undefined}
         // One row in a narrow sidebar, a card in two columns once it has room.
         className={`grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 rounded-card px-2 py-1.5 text-left [grid-template-areas:'icon_text_badge'] @min-[240px]/sidebar:grid-cols-[auto_minmax(0,1fr)] @min-[240px]/sidebar:gap-y-1.5 @min-[240px]/sidebar:px-2.5 @min-[240px]/sidebar:py-2 @min-[240px]/sidebar:[grid-template-areas:'icon_badge'_'text_text'] ${
           // Plain rows in one column; quiet cards once two columns make them tiles.
@@ -151,12 +154,6 @@ export function Tile(props: {
             : "hover:bg-fill-hover @min-[240px]/sidebar:bg-fill-quiet @min-[240px]/sidebar:hover:bg-fill-hover"
         }`}
       >
-        <span className="flex [grid-area:icon]">{props.icon}</span>
-        {props.badge > 0 && (
-          <span className="justify-self-end text-footnote text-a11y-muted tabular-nums [grid-area:badge]">
-            {i18n.number(props.badge)}
-          </span>
-        )}
         <span className="min-w-0 [grid-area:text]">
           <span className="block truncate text-body font-medium">{props.label}</span>
           {props.sublabel && (
@@ -167,6 +164,14 @@ export function Tile(props: {
             </span>
           )}
         </span>
+        {/* The icon (the provider mark) and the count follow the name in the DOM, so a screen
+            reader hears "Work, work.example, Gmail, 4"; the grid areas still draw them in place. */}
+        <span className="flex [grid-area:icon]">{props.icon}</span>
+        {props.badge > 0 && (
+          <span className="justify-self-end text-footnote text-a11y-muted tabular-nums [grid-area:badge]">
+            {i18n.number(props.badge)}
+          </span>
+        )}
       </button>
     </Tip>
   );
