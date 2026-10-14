@@ -204,4 +204,5 @@ app
     console.error(error);
     process.exitCode = 1;
   })
-  .finally(() => app.quit());
+  // app.quit() would exit with 0 even after an error.
+  .finally(() => app.exit(process.exitCode ?? 0));

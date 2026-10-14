@@ -308,6 +308,8 @@ async function main() {
     process.exitCode = 1;
   }
   fs.writeFileSync(outPath, JSON.stringify(results, null, 1));
-  app.quit();
+  // app.quit() exits with 0 whatever process.exitCode says, which hid driver errors
+  // behind a later assertion on missing results.
+  app.exit(process.exitCode ?? 0);
 }
 app.on("ready", () => void main());
