@@ -480,9 +480,13 @@ it.effect("agent policy falls back to '*' then off; proposals round-trip", () =>
       assert.strictEqual(yield* store.agentWriteMode("claude"), "off");
       yield* store.setAgentWriteMode("*", "propose");
       assert.strictEqual(yield* store.agentWriteMode("claude"), "propose");
-      yield* store.setAgentWriteMode("claude", "allow");
-      assert.strictEqual(yield* store.agentWriteMode("claude"), "allow");
+      yield* store.setAgentWriteMode("claude", "off");
+      assert.strictEqual(yield* store.agentWriteMode("claude"), "off");
       assert.strictEqual(yield* store.agentWriteMode("other"), "propose");
+      // "Organize directly" is gone: a row an older build writes still asks first.
+      const sql = yield* SqlClient.SqlClient;
+      yield* sql`UPDATE agent_policies SET modify = 'allow' WHERE name = 'claude'`;
+      assert.strictEqual(yield* store.agentWriteMode("claude"), "propose");
 
       const agent: Actor = { kind: "agent", surface: "mcp", name: "claude", rationale: "回复客户" };
       const send: Command = {
@@ -619,8 +623,8 @@ it.effect("a database from an older version migrates without losing mail", () =>
         ["季度报告"],
       );
       // Version 4 tables exist and work.
-      yield* store.setAgentWriteMode("*", "allow");
-      assert.strictEqual(yield* store.agentWriteMode("claude"), "allow");
+      yield* store.setAgentWriteMode("*", "propose");
+      assert.strictEqual(yield* store.agentWriteMode("claude"), "propose");
     });
     const disk = Layer.mergeAll(NodeFileSystem.layer, NodePath.layer);
     // Twice: the second open finds the database current and changes nothing.

@@ -425,6 +425,23 @@ describe.concurrent.each(["allow", "propose"])("CLI write-mode %s", (mode) => {
   });
 });
 
+test.concurrent("write-mode reports the removed Organize directly mode as propose", async ({
+  expect,
+  onTestFinished,
+}) => {
+  const directory = await home(onTestFinished, "openmail-cli-legacy-allow-");
+  const options = { env: { ...process.env, OPENMAIL_HOME: directory } };
+  await run(process.execPath, ["dist/cli.js", "agents", "write-mode"], options);
+  // A library last opened before migration 50, with the old setting on.
+  const db = new DatabaseSync(join(directory, "mail.db"));
+  db.exec(`INSERT INTO agent_policies(name, modify) VALUES('*', 'allow')
+    ON CONFLICT(name) DO UPDATE SET modify = 'allow'`);
+  db.exec("PRAGMA user_version = 49");
+  db.close();
+  const status = await run(process.execPath, ["dist/cli.js", "agents", "write-mode"], options);
+  expect(status.stdout).toContain("Agent write mode: propose.");
+}, 30_000);
+
 async function seedAttachmentMail(directory: string) {
   await Effect.runPromise(
     Effect.scoped(

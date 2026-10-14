@@ -42,7 +42,6 @@ exports[`tool input and output schemas are stable 1`] = `
             "enum": [
               "off",
               "propose",
-              "allow",
             ],
             "type": "string",
           },

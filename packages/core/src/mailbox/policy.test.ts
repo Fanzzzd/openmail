@@ -17,8 +17,7 @@ import { decide } from "./policy.js";
     ];
     for (const command of supported) {
       expect(decide(command, actor, "off").status).toBe("denied");
-      for (const mode of ["propose", "allow"] as const)
-        expect(decide(command, actor, mode)).toEqual({ status: "proposed" });
+      expect(decide(command, actor, "propose")).toEqual({ status: "proposed" });
     }
   });
 
@@ -33,7 +32,7 @@ import { decide } from "./policy.js";
         op: { kind: "move", labelId: "folder", removeLabelId: null },
       },
     ];
-    for (const mode of ["off", "propose", "allow"] as const) {
+    for (const mode of ["off", "propose"] as const) {
       for (const command of denied) expect(decide(command, actor, mode).status).toBe("denied");
       // Exercise an untyped runtime caller without claiming a future command is a current Command.
       const future: unknown = Reflect.apply(decide, undefined, [
@@ -45,31 +44,31 @@ import { decide } from "./policy.js";
     }
   });
 
-  it("non-MCP rules retain direct organization and proposed-send policy", () => {
+  it("non-MCP rules propose organization and sends, and change nothing when off", () => {
     const rule: Actor = { kind: "agent", surface: "rule", name: "rule" };
-    expect(
-      decide({ kind: "modify", threads: ["m1"], op: { kind: "archive" } }, rule, "allow"),
-    ).toEqual({ status: "applied" });
-    expect(decide({ kind: "send", accountId: "a", message }, rule, "allow")).toEqual({
+    const archive: Command = { kind: "modify", threads: ["m1"], op: { kind: "archive" } };
+    expect(decide(archive, rule, "propose")).toEqual({ status: "proposed" });
+    expect(decide(archive, rule, "off").status).toBe("denied");
+    expect(decide({ kind: "send", accountId: "a", message }, rule, "propose")).toEqual({
       status: "proposed",
     });
   });
 }
 
 {
-  it("denies unknown agent surfaces and future rule operations even in allow mode", () => {
+  it("denies unknown agent surfaces and future rule operations even in propose mode", () => {
     const command = { kind: "modify", threads: ["m"], op: { kind: "archive" } };
     const unknown: unknown = Reflect.apply(decide, undefined, [
       command,
       { kind: "agent", surface: "extension", name: "x" },
-      "allow",
+      "propose",
     ]);
     expect(unknown).toMatchObject({ status: "denied" });
     expect(
       Reflect.apply(decide, undefined, [
         { kind: "createCalendarEvent" },
         { kind: "agent", surface: "rule", name: "x" },
-        "allow",
+        "propose",
       ]),
     ).toMatchObject({ status: "denied" });
   });

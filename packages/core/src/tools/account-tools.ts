@@ -1,6 +1,7 @@
 /** Tools for accounts, AI access status, profiles and labels. */
 
 import { Account, Label, Profile } from "../domain/account.js";
+import { AgentWriteMode } from "../domain/command.js";
 import { Effect, Schema } from "effect";
 import {
   AccountId,
@@ -56,7 +57,7 @@ export const AccessStatus = readOnly(
         without_ai_consent: ToolInt,
         turned_off: ToolInt,
       }),
-      write_mode: Schema.Literals(["off", "propose", "allow"]),
+      write_mode: AgentWriteMode,
       proposal_tools: Schema.Boolean,
       read_only_session: Schema.Boolean.annotate({
         description:

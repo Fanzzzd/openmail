@@ -20,8 +20,8 @@ const outgoing = {
   attachments: [],
 };
 
-it("adds draft_discards as the last migration", () => {
-  expect(MIGRATIONS.at(-1)).toContain("CREATE TABLE draft_discards");
+it("adds draft_discards as migration 49", () => {
+  expect(MIGRATIONS[48]).toContain("CREATE TABLE draft_discards");
 });
 
 it("a held discard survives a crash: due ones go at start, pending ones resume and can be undone", async () => {

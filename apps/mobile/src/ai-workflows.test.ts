@@ -145,7 +145,7 @@ it("assistant archive, label and draft writes stay proposals even in allow mode,
         messageId = `${account.id}/m`;
         yield* mailbox.sync();
         yield* mailbox.setAiAccount({ accountId, allowed: true, autoSummaries: false });
-        yield* mailbox.setAgentWriteMode("allow");
+        yield* mailbox.setAgentWriteMode("propose");
         yield* aiResponse(
           mailbox.askAi({
             question: "Suggest changes",

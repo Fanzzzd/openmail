@@ -11,7 +11,7 @@ export type Decision =
  * modify mail only as their write mode allows. An agent never sends directly
  * and never removes an account; no setting changes that.
  *
- * `mode` gates every MCP proposal. Other agents retain their existing write policy.
+ * `mode` gates every MCP proposal. Other agents propose changes in `propose` mode.
  */
 export function decide(command: Command, actor: Actor, mode: AgentWriteMode): Decision {
   if (actor.kind === "user") {
@@ -64,7 +64,6 @@ export function decide(command: Command, actor: Actor, mode: AgentWriteMode): De
   if (actor.surface === "assistant" || actor.name === "openmail-assistant")
     return { status: "proposed" };
   if (command.kind === "send" || command.kind === "draft") return { status: "proposed" };
-  if (mode === "allow") return { status: "applied" };
   if (mode === "propose") return { status: "proposed" };
   return { status: "denied", reason: "Changing mail is turned off for agents." };
 }

@@ -479,7 +479,7 @@ it.effect(
       yield* m.connect({ provider: "outlook" });
       yield* m.sync();
       yield* m.setAiAccount(consent);
-      yield* m.setAgentWriteMode("allow");
+      yield* m.setAgentWriteMode("propose");
       const events = yield* Stream.runCollect(
         m.askAi({
           question: "Find Friday and suggest a reply and archive",

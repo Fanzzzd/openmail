@@ -83,7 +83,7 @@ import type { ProviderAdapter } from "../providers/adapter.js";
         assert.strictEqual(server.pushed.length, 1);
         assert.deepStrictEqual(yield* m.proposals, []);
 
-        yield* m.setAgentWriteMode("allow");
+        yield* m.setAgentWriteMode("propose");
         const applied = yield* m.perform(
           { kind: "modify", threads: [thread!.id], op: { kind: "star", value: true } },
           agent,
@@ -110,8 +110,8 @@ import type { ProviderAdapter } from "../providers/adapter.js";
         } as const;
         const accountId = thread!.accountId;
 
-        // Even with writes allowed, an agent never sends.
-        yield* m.setAgentWriteMode("allow");
+        // Even with proposals allowed, an agent never sends.
+        yield* m.setAgentWriteMode("propose");
         const denied = yield* m.perform({ kind: "send", accountId, message }, agent);
         assert.strictEqual(denied.status, "denied");
         assert.strictEqual(server.sent.length, 0);

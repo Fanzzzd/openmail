@@ -515,10 +515,7 @@ function AccountRow({
   );
 }
 
-/**
- * The stored "allow" mode applies nothing directly: MCP and the assistant always ask first.
- * The UI shows it as Ask me first and offers only these two.
- */
+/** MCP clients and the assistant always ask first; the only choice is whether MCP may ask. */
 const MODES: { id: AgentWriteMode; label: MessageDescriptor; detail: MessageDescriptor }[] = [
   {
     id: "off",
@@ -578,8 +575,7 @@ function General() {
 
 function AgentPolicy() {
   const { i18n } = useLingui();
-  const stored = AsyncResult.getOrElse(useAtomValue(agentModeAtom), () => null);
-  const mode = stored === "allow" ? "propose" : stored;
+  const mode = AsyncResult.getOrElse(useAtomValue(agentModeAtom), () => null);
   const setMode = useAtomSet(setAgentModeAtom);
 
   return (

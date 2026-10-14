@@ -1391,6 +1391,8 @@ CREATE TRIGGER snoozed_list_date_insert AFTER INSERT ON snoozed_messages BEGIN
      discard_at INTEGER NOT NULL,
      discarded INTEGER NOT NULL DEFAULT 0
    );`,
+  // user_version 50: "Organize directly" (allow) was removed; such rows now ask first.
+  `UPDATE agent_policies SET modify = 'propose' WHERE modify = 'allow';`,
 ];
 
 /** Index of migration 37, the cache rowid rebuild. It runs when user_version equals this index. */

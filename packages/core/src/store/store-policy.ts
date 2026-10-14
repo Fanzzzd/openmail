@@ -133,7 +133,10 @@ export const makePolicyStore = ({
   const agentWriteMode = Effect.fn("Store.agentWriteMode")(function* (name: string) {
     const row = yield* first(Mode)(sql`SELECT modify FROM agent_policies
         WHERE name IN (${name}, '*') ORDER BY name = '*' LIMIT 1`);
-    return Option.match(row, { onNone: (): AgentWriteMode => "off", onSome: (r) => r.modify });
+    return Option.match(row, {
+      onNone: (): AgentWriteMode => "off",
+      onSome: (r): AgentWriteMode => (r.modify === "allow" ? "propose" : r.modify),
+    });
   });
 
   const setAgentWriteMode = Effect.fn("Store.setAgentWriteMode")(

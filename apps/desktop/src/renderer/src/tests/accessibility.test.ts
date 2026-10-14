@@ -746,7 +746,7 @@ it("groups the keyboard shortcuts with Triage first and filters them by name or 
 });
 
 it("AI Access names one setting for AI app changes, with Read only and Ask me first", () => {
-  fixture.values.set("agentModeAtom", "allow");
+  fixture.values.set("agentModeAtom", "propose");
   render(
     localized(
       h(Settings, {
@@ -763,7 +763,6 @@ it("AI Access names one setting for AI app changes, with Read only and Ask me fi
       .getAllByRole("radio")
       .map((r) => r.getAttribute("aria-label")),
   ).toEqual(["Read only", "Ask me first"]);
-  // The stored "allow" mode applies nothing directly, so it reads as Ask me first.
   expect(
     within(group).getByRole("radio", { name: "Ask me first" }).getAttribute("aria-checked"),
   ).toBe("true");

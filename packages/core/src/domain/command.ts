@@ -104,7 +104,8 @@ export const Outcome = Schema.Union([
 ]);
 export type Outcome = typeof Outcome.Type;
 
-export const AgentWriteMode = Schema.Literals(["off", "propose", "allow"]);
+/** What MCP clients may do: nothing, or propose changes for the person to approve. */
+export const AgentWriteMode = Schema.Literals(["off", "propose"]);
 export type AgentWriteMode = typeof AgentWriteMode.Type;
 
 export const Proposal = Schema.Struct({

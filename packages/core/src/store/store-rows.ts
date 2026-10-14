@@ -1,6 +1,6 @@
 import { Schema } from "effect";
 import { type Account, ImapSettings, Provider } from "../domain/account.js";
-import { Actor, AgentWriteMode, Command, type Proposal } from "../domain/command.js";
+import { Actor, Command, type Proposal } from "../domain/command.js";
 import {
   Address,
   Attachment,
@@ -156,7 +156,12 @@ export const LabelsAndProvider = Schema.Struct({
 
 export const Cursor = Schema.Struct({ sync_cursor: Schema.NullOr(Schema.String) });
 
-export const Mode = Schema.Struct({ modify: AgentWriteMode });
+/**
+ * `allow` ("Organize directly") was removed; migration 50 rewrites it to
+ * `propose`, and a row written by an older build after that still reads as
+ * `propose`.
+ */
+export const Mode = Schema.Struct({ modify: Schema.Literals(["off", "propose", "allow"]) });
 
 export const Next = Schema.Struct({ next: Schema.Number });
 

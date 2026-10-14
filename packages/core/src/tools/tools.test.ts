@@ -1003,75 +1003,72 @@ const toolMail = (providerId: string) => ({
   isStarred: false,
 });
 
-it.effect(
-  "all MCP write tools create only proposals, even with allow policy; only app approval changes mail",
-  () => {
-    const server = fakeServer("me@gmail.com", [toolMail("m1")]);
-    server.labels = [{ id: "Label_1", name: "Work", color: null }];
-    return run(
-      Effect.gen(function* () {
-        const mailbox = yield* Mailbox;
-        const account = yield* mailbox.connect({ provider: "gmail" });
-        yield* mailbox.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });
-        yield* mailbox.sync();
-        yield* mailbox.setAgentWriteMode("allow");
-        const id = `${account.id}/m1`;
-        const before = yield* mailbox.thread(id);
-        for (const action of [
-          "archive",
-          "read",
-          "unread",
-          "star",
-          "unstar",
-          "label",
-          "unlabel",
-        ] as const) {
-          const result = yield* call("modify_threads", {
-            message_ids: [id],
-            action,
-            label_id: "Label_1",
-            rationale: "Review this change.",
-          });
-          assert.isFalse(result.isFailure);
-          if (!("outcome" in result.result)) return;
-          assert.strictEqual(result.result.outcome.status, "proposed");
-        }
-        const due = (yield* Clock.currentTimeMillis) + 3_600_000;
-        const snooze = yield* call("snooze_threads", {
+it.effect("all MCP write tools create only proposals; only app approval changes mail", () => {
+  const server = fakeServer("me@gmail.com", [toolMail("m1")]);
+  server.labels = [{ id: "Label_1", name: "Work", color: null }];
+  return run(
+    Effect.gen(function* () {
+      const mailbox = yield* Mailbox;
+      const account = yield* mailbox.connect({ provider: "gmail" });
+      yield* mailbox.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });
+      yield* mailbox.sync();
+      yield* mailbox.setAgentWriteMode("propose");
+      const id = `${account.id}/m1`;
+      const before = yield* mailbox.thread(id);
+      for (const action of [
+        "archive",
+        "read",
+        "unread",
+        "star",
+        "unstar",
+        "label",
+        "unlabel",
+      ] as const) {
+        const result = yield* call("modify_threads", {
           message_ids: [id],
-          due,
-          rationale: "Tomorrow.",
+          action,
+          label_id: "Label_1",
+          rationale: "Review this change.",
         });
-        assert.isFalse(snooze.isFailure);
-        const draft = yield* call("draft_message", {
-          account_id: account.id,
-          to: ["alice@example.com"],
-          subject: "Reply",
-          body: "Hello",
-          reply_to_message_id: id,
-          rationale: "Reply.",
-        });
-        assert.isFalse(draft.isFailure);
-        assert.deepStrictEqual(yield* mailbox.thread(id), before);
-        assert.strictEqual((yield* mailbox.proposals).length, 9);
-        yield* mailbox.sync();
-        assert.strictEqual(server.pushed.length, 0);
-        assert.strictEqual(server.drafts.size, 0);
-        assert.strictEqual(server.sent.length, 0);
-        const proposal = (yield* mailbox.proposals).find((row) => row.command.kind === "snooze");
-        assert.ok(proposal);
-        assert.strictEqual(
-          (yield* Effect.flip(mailbox.decideProposal(proposal.id, true, "cli")))._tag,
-          "InvalidInput",
-        );
-        assert.ok((yield* mailbox.proposals).some((row) => row.id === proposal.id));
-        yield* mailbox.decideProposal(proposal.id, true, "app");
-        assert.strictEqual((yield* mailbox.threads({ mailbox: "snoozed" })).length, 1);
-      }),
-      TestMailbox({ gmail: server }),
-    );
-  },
-);
+        assert.isFalse(result.isFailure);
+        if (!("outcome" in result.result)) return;
+        assert.strictEqual(result.result.outcome.status, "proposed");
+      }
+      const due = (yield* Clock.currentTimeMillis) + 3_600_000;
+      const snooze = yield* call("snooze_threads", {
+        message_ids: [id],
+        due,
+        rationale: "Tomorrow.",
+      });
+      assert.isFalse(snooze.isFailure);
+      const draft = yield* call("draft_message", {
+        account_id: account.id,
+        to: ["alice@example.com"],
+        subject: "Reply",
+        body: "Hello",
+        reply_to_message_id: id,
+        rationale: "Reply.",
+      });
+      assert.isFalse(draft.isFailure);
+      assert.deepStrictEqual(yield* mailbox.thread(id), before);
+      assert.strictEqual((yield* mailbox.proposals).length, 9);
+      yield* mailbox.sync();
+      assert.strictEqual(server.pushed.length, 0);
+      assert.strictEqual(server.drafts.size, 0);
+      assert.strictEqual(server.sent.length, 0);
+      const proposal = (yield* mailbox.proposals).find((row) => row.command.kind === "snooze");
+      assert.ok(proposal);
+      assert.strictEqual(
+        (yield* Effect.flip(mailbox.decideProposal(proposal.id, true, "cli")))._tag,
+        "InvalidInput",
+      );
+      assert.ok((yield* mailbox.proposals).some((row) => row.id === proposal.id));
+      yield* mailbox.decideProposal(proposal.id, true, "app");
+      assert.strictEqual((yield* mailbox.threads({ mailbox: "snoozed" })).length, 1);
+    }),
+    TestMailbox({ gmail: server }),
+  );
+});
 
 it.effect("thread cursor preserves every conversation sharing a timestamp", () => {
   const server = fakeServer(
@@ -1112,7 +1109,7 @@ it.effect(
         const account = yield* mailbox.connect({ provider: "gmail" });
         yield* mailbox.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });
         yield* mailbox.sync();
-        yield* mailbox.setAgentWriteMode("allow");
+        yield* mailbox.setAgentWriteMode("propose");
         const id = `${account.id}/m1`;
         const result = yield* call("modify_threads", {
           message_ids: [id],
@@ -1598,7 +1595,7 @@ it.effect("MCP write tools refuse invisible accounts before creating any proposa
       const mailbox = yield* Mailbox;
       const account = yield* mailbox.connect({ provider: "gmail" });
       yield* mailbox.sync();
-      yield* mailbox.setAgentWriteMode("allow");
+      yield* mailbox.setAgentWriteMode("propose");
       const id = `${account.id}/m1`;
       const attempt = () =>
         Effect.all([
