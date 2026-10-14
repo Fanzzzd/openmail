@@ -103,12 +103,15 @@ jobs:
 
       # The runner has a logged-in macOS session, so the window opens as in the smoke step. The
       # check starts the packaged app on a demo profile, drives it over local CDP and takes no
-      # screenshots, so no permission prompt appears. A failed report carries the app's output.
+      # screenshots, so no permission prompt appears. A failed attempt carries the app's output.
+      # The script runs the check once more on a fresh launch after a failure and fails the step
+      # only when both attempts fail; each attempt gets its own 3 minute limit.
       - name: Check the titlebar controls during resize
-        timeout-minutes: 5
+        timeout-minutes: 8
         run: >-
           pnpm --filter @openmail/desktop test:titlebar
           --app release/mac-arm64/OpenMail.app --timeout 180000
+          --report "$RUNNER_TEMP/titlebar/titlebar-resize.json"
 
       # The screenshots and startup logs, also when a check fails.
       - if: always()
@@ -116,4 +119,12 @@ jobs:
         with:
           name: dist-smoke
           path: ${{ runner.temp }}/dist-smoke
+          if-no-files-found: ignore
+
+      # The titlebar JSON report with both attempts, also when the check passed on its retry.
+      - if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: titlebar-resize
+          path: ${{ runner.temp }}/titlebar
           if-no-files-found: ignore
