@@ -35,7 +35,7 @@ const features: { title: string; href: string; body: ReactNode }[] = [
   {
     title: "CLI and MCP",
     href: "/docs/cli-and-mcp",
-    body: "A command line tool and an MCP server read the same local database. MCP is read-only by default. Write tools only create proposals, and sending always needs your confirmation in the app.",
+    body: "A command line tool and an MCP server read the same local database. MCP is read-only by default. Write tools only create AI suggestions, and sending always needs your confirmation in the app.",
   },
   {
     title: "Safe reading",
@@ -66,11 +66,11 @@ const approval: { title: string; body: string }[] = [
   },
   {
     title: "Read-only by default.",
-    body: "MCP tools read and search mail. The permission to change mail starts at Read only, which makes every write tool refuse.",
+    body: "MCP tools read and search mail. Changes by AI apps starts at Read only, which makes every write tool refuse.",
   },
   {
-    title: "Proposals.",
-    body: "With Ask me first, modify_threads, snooze_threads and draft_message create proposals. Each one waits in AI suggestions until you approve or reject it.",
+    title: "AI suggestions.",
+    body: "Write tools take two switches: check Let … make AI suggestions for you to approve when you connect the app, and set Changes by AI apps to Ask me first. Then modify_threads, snooze_threads and draft_message create AI suggestions. Each one waits in AI suggestions until you approve or reject it.",
   },
   {
     title: "No agent sends mail.",
@@ -121,7 +121,7 @@ export default function HomePage() {
             OpenMail keeps your mail in a SQLite database on your Mac. The app, a CLI and an MCP
             server all use that one database. AI agents such as Claude Code and Codex can read the
             accounts you allow. When an agent wants to change your mail, OpenMail turns the change
-            into a proposal, and nothing happens until you approve it in the app.
+            into an AI suggestion, and nothing happens until you approve it in the app.
           </p>
           <p className="mt-3 max-w-2xl text-fd-muted-foreground">
             It syncs Gmail, personal Outlook and IMAP accounts and talks directly to your mail
