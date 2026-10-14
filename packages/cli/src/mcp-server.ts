@@ -81,21 +81,19 @@ const toolkitWithArgumentErrors = <Tools extends Record<string, Tool.Any>>(
               const unknown = unknownArguments(registration.tool.inputSchema, payload);
               return unknown
                 ? Effect.succeed(toolErrorResult(unknown))
-                : registration
-                    .handle(payload)
-                    .pipe(
-                      Effect.catchTag("InvalidParams", (error) =>
-                        Effect.succeed(
-                          toolErrorResult(
-                            invalidArguments(
-                              registration.tool.name,
-                              // Effect's text names the tool too; say it once.
-                              error.message.replace(/^Invalid parameters for tool '[^']*': /, ""),
-                            ),
+                : registration.handle(payload).pipe(
+                    Effect.catchTag("InvalidParams", (error) =>
+                      Effect.succeed(
+                        toolErrorResult(
+                          invalidArguments(
+                            registration.tool.name,
+                            // Effect's text names the tool too; say it once.
+                            error.message.replace(/^Invalid parameters for tool '[^']*': /, ""),
                           ),
                         ),
                       ),
-                    );
+                    ),
+                  );
             },
           }),
       });

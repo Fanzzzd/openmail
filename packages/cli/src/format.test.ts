@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 import type { Account, Message } from "@openmail/core";
 import type { ThreadSummary } from "@openmail/core/schema";
-import { accountTable, auditTable, messageText, proposalTable, stamp, threadTable } from "./format.js";
+import {
+  accountTable,
+  auditTable,
+  messageText,
+  proposalTable,
+  stamp,
+  threadTable,
+} from "./format.js";
 
 const ESC = "\u001b";
 

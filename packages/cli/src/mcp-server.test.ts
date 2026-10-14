@@ -807,7 +807,8 @@ test.concurrent("openmail tool reports a missing argument with MCP's code and hi
   const mcp = JSON.parse(called.content[0]?.text ?? "");
   expect(mcp).toEqual({
     code: "invalid_input",
-    message: 'The arguments for read_thread do not match its input schema: Missing key\n  at ["message_id"]',
+    message:
+      'The arguments for read_thread do not match its input schema: Missing key\n  at ["message_id"]',
     hint: "Fix the arguments as described and call the tool again.",
   });
   const options = { env: { ...process.env, OPENMAIL_HOME: directory } };

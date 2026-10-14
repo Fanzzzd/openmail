@@ -163,7 +163,9 @@ describe("help", () => {
       [["show"], "message-id"],
     ] as const) {
       const { stdout } = await openmail([...command, "--help"]);
-      expect(stdout, command.join(" ")).toMatch(new RegExp(`^  ${argument}(\\.\\.\\.)? \\w+ +\\S`, "m"));
+      expect(stdout, command.join(" ")).toMatch(
+        new RegExp(`^  ${argument}(\\.\\.\\.)? \\w+ +\\S`, "m"),
+      );
     }
   });
 
@@ -188,7 +190,11 @@ describe("help", () => {
 describe("accounts remove", () => {
   // Removing for real would delete the account's keychain item, so these tests stop before it.
   test("without a terminal and --yes it removes nothing and exits 1", async () => {
-    const { code, stdout, stderr } = await openmail(["accounts", "remove", "gmail:alex@example.com"]);
+    const { code, stdout, stderr } = await openmail([
+      "accounts",
+      "remove",
+      "gmail:alex@example.com",
+    ]);
     expect(code).toBe(1);
     expect(stdout).toBe("");
     expect(stderr).toBe(`error: ${REMOVE_NEEDS_YES}\n`);

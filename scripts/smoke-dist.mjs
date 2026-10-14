@@ -113,7 +113,9 @@ function runApp(argv, env, { input = [], until = () => true, timeoutMs = 90_000 
 
 function checkLicenses() {
   const desktop = createRequire(path.join(root, "apps/desktop/package.json"));
-  const { ELECTRON_LICENSE_DIR, missingElectronLicenses } = desktop("./build/electron-licenses.cjs");
+  const { ELECTRON_LICENSE_DIR, missingElectronLicenses } = desktop(
+    "./build/electron-licenses.cjs",
+  );
   const dir = path.join(bundle, "Contents/Resources", ELECTRON_LICENSE_DIR);
   const missing = missingElectronLicenses(dir);
   if (missing.length) throw new Error(`Missing from ${dir}: ${missing.join(", ")}`);

@@ -14,7 +14,7 @@ function xcodeMajor(output) {
   return match ? Number(match[1]) : undefined;
 }
 
-/** The icon to package for the given `xcodebuild -version` output; undefined when it failed. */
+/** The icon to package for the given `xcodebuild -version` output; null when it failed. */
 function macIconFor(output) {
   const major = xcodeMajor(output);
   return major !== undefined && major >= MIN_XCODE ? ICON_COMPOSER : ICNS;
@@ -29,12 +29,12 @@ function readXcodeVersion() {
     });
   } catch {
     // Not installed, or xcode-select points at the Command Line Tools.
-    return undefined;
+    return null;
   }
 }
 
 /** Picks the icon and says so when it falls back. */
-function macIcon(read = readXcodeVersion, log = console.warn) {
+function macIcon(read = readXcodeVersion, log = (message) => process.stderr.write(`${message}\n`)) {
   const icon = macIconFor(read());
   if (icon === ICNS)
     log(

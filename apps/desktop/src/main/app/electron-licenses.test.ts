@@ -14,14 +14,20 @@ import { desktopRoot } from "../../renderer/src/test-support/paths";
 it("copies Electron's license and Chromium's notices into Resources/licenses/electron", () => {
   expect(electronLicenseResources("/x/electron/dist")).toEqual([
     { from: "/x/electron/dist/LICENSE", to: "licenses/electron/LICENSE" },
-    { from: "/x/electron/dist/LICENSES.chromium.html", to: "licenses/electron/LICENSES.chromium.html" },
+    {
+      from: "/x/electron/dist/LICENSES.chromium.html",
+      to: "licenses/electron/LICENSES.chromium.html",
+    },
   ]);
   const require = createRequire(import.meta.url);
   const config = Schema.decodeUnknownSync(
     Schema.Struct({ extraResources: Schema.Array(Schema.Struct({ to: Schema.String })) }),
   )(require(path.join(desktopRoot, "electron-builder.config.cjs")));
   expect(config.extraResources.map((entry) => entry.to)).toEqual(
-    expect.arrayContaining(["licenses/electron/LICENSE", "licenses/electron/LICENSES.chromium.html"]),
+    expect.arrayContaining([
+      "licenses/electron/LICENSE",
+      "licenses/electron/LICENSES.chromium.html",
+    ]),
   );
 });
 

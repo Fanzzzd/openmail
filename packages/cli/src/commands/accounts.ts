@@ -181,7 +181,7 @@ const accountsRemove = Command.make(
       return yield* fail(`No account with id ${id}. Run \`openmail accounts list\` to see them.`);
     yield* confirmRemoval(
       yes,
-      process.stdin.isTTY === true,
+      process.stdin.isTTY,
       Prompt.run(
         Prompt.Confirm({
           message: `Remove ${account.email}? Its local mail, local drafts and stored sign-in are deleted.`,
