@@ -42,6 +42,7 @@ export function MailListPane({
   online,
   docked,
   narrow,
+  composeButton,
   leading,
   title,
   showAccount,
@@ -63,6 +64,8 @@ export function MailListPane({
   online: boolean;
   docked: boolean;
   narrow: boolean;
+  /** No docked sidebar or rail shows New message, so the list header offers it. */
+  composeButton: boolean;
   leading: ReactNode;
   title: string;
   showAccount: boolean;
@@ -157,8 +160,7 @@ export function MailListPane({
       onFilters={setFilters}
       folderActions={
         <>
-          {/* One pane at a time hides the sidebar and its New message button. */}
-          {narrow && (
+          {composeButton && (
             <Tip label={t`New message`} shortcut={shortcutText("compose")}>
               <button
                 type="button"

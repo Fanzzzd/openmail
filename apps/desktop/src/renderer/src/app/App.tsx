@@ -375,6 +375,7 @@ export function App({ composeId }: { composeId?: string }) {
       online={online}
       docked={docked}
       narrow={narrow}
+      composeButton={!docked && !rail}
       leading={sidebarToggle}
       title={title}
       showAccount={!viewAccount && (scope?.length ?? accountList.length) > 1}

@@ -683,6 +683,36 @@ it("a narrow window offers New message in the list header, and 720 px shows the 
   await eventually(() => expect(screen.getByRole("textbox", { name: "Subject" })).toBeTruthy());
 });
 
+it("the list header offers New message whenever neither the sidebar nor the rail shows it", async () => {
+  const listHeader = () => {
+    const header = document.querySelector('[data-mail-pane="list"] header');
+    if (!(header instanceof HTMLElement)) throw new Error("Missing list header");
+    return header;
+  };
+  width = 1200;
+  current = await flow({ prefs: { sidebarVisible: false } });
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  expect(screen.queryByRole("navigation", { name: "Mailboxes" })).toBeNull();
+  fireEvent.click(within(listHeader()).getByRole("button", { name: "New message" }));
+  await eventually(() => expect(screen.getByRole("textbox", { name: "Subject" })).toBeTruthy());
+  await current.dispose();
+  // The docked sidebar and the medium rail each have their own button.
+  for (const [next, prefs] of [
+    [1200, { sidebarVisible: true }],
+    [900, { sidebarVisible: false }],
+  ] as const) {
+    width = next;
+    current = await flow({ prefs });
+    const c = current;
+    await eventually(() => expect(row(c.id("one"))).toBeTruthy());
+    expect(within(listHeader()).queryByRole("button", { name: "New message" })).toBeNull();
+    expect(screen.getAllByRole("button", { name: "New message" }).length).toBeGreaterThan(0);
+    await current.dispose();
+  }
+  current = undefined;
+});
+
 it("the thread ends with Reply, Reply all and Forward, and has one menu for the conversation", async () => {
   width = 1200;
   current = await flow();
