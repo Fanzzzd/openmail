@@ -11,7 +11,7 @@
 import { execFileSync, spawn } from "node:child_process";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { join, resolve as resolvePath } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { smokeEnvironment } from "./smoke-ui.mjs";
@@ -50,6 +50,10 @@ async function until(action, what) {
   throw new Error(`Timed out after ${values.timeout} ms waiting for ${what}`);
 }
 
+const record = (chunk) => {
+  output = (output + chunk).slice(-20_000);
+};
+
 /** Starts the packaged app at `--app`, or the electron-vite preview of the built sources. */
 function launch(port) {
   const flags = [`--remote-debugging-port=${port}`, `--user-data-dir=${directory}`];
@@ -59,14 +63,11 @@ function launch(port) {
     detached: true,
   };
   const started = values.app
-    ? spawn(join(resolve(values.app), "Contents/MacOS/OpenMail"), flags, options)
+    ? spawn(join(resolvePath(values.app), "Contents/MacOS/OpenMail"), flags, options)
     : spawn("pnpm", ["exec", "electron-vite", "preview", "--skipBuild", "--", ...flags], {
         ...options,
         cwd: fileURLToPath(new URL("..", import.meta.url)),
       });
-  const record = (chunk) => {
-    output = (output + chunk).slice(-20_000);
-  };
   started.stdout?.on("data", record);
   started.stderr?.on("data", record);
   started.on("error", (error) => {
@@ -292,8 +293,9 @@ try {
     } catch {
       // The app already exited.
     }
-    for (let waited = 0; !exited && waited < 5000; waited += 100) await sleep(100);
-    if (!exited) process.kill(-child.pid, "SIGKILL");
+    const stopped = () => !!exited;
+    for (let waited = 0; waited < 5000 && !stopped(); waited += 100) await sleep(100);
+    if (!stopped()) process.kill(-child.pid, "SIGKILL");
   }
   if (report.failure && child) report.output = output;
   if (directory) await rm(directory, { recursive: true, force: true });
