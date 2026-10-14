@@ -51,6 +51,8 @@ export const toolError = (code: ToolErrorCode, message: string, hint?: string) =
 export const ACCOUNT_ID_HINT =
   "Pass an id from list_accounts. access_status says why other accounts are hidden.";
 export const MESSAGE_ID_HINT = "Get message ids from list_threads or search.";
+export const REVIEW_PROPOSALS_HINT =
+  "Ask the person to review AI suggestions in OpenMail, then try again. list_proposals shows what is waiting.";
 export const ACCESS_STATUS_HINT =
   "Call access_status to see which accounts you can read and what the person can turn on.";
 
@@ -256,7 +258,9 @@ export const toToolError = (e: PerformError): MailToolError => {
     case "NotFound":
       return toolError("not_found", `No ${e.what} with id ${e.id}.`, NOT_FOUND_HINTS[e.what]);
     case "InvalidInput":
-      return toolError("invalid_input", e.message);
+      return e.reason === "too_many_proposals"
+        ? toolError("too_many_proposals", e.message, REVIEW_PROPOSALS_HINT)
+        : toolError("invalid_input", e.message);
     case "PermanentError":
       return toolError("provider_rejected", e.message, "Do not retry the same request.");
     case "AuthError":

@@ -1,3 +1,4 @@
+import { printable } from "@openmail/core/schema";
 import { Effect } from "effect";
 import { useRunMail, withMail } from "../../state/mail";
 import { useAtom, useAtomValue } from "@effect/atom-react";
@@ -141,7 +142,7 @@ function Item({
   return (
     <li className="px-5 py-4">
       <p className="text-footnote text-a11y-muted">
-        {surface} · {agent?.name ?? "AI"} ·{" "}
+        {surface} · {agent ? printable(agent.name) : "AI"} ·{" "}
         {new Date(p.createdAt).toLocaleString(dateFormat(i18n).locale, {
           month: "numeric",
           day: "numeric",

@@ -75,7 +75,7 @@ import { CacheSettings } from "./sections/CacheSettings";
 import { ProviderIcon } from "../../ui/ProviderIcon";
 import { ReadingSettings } from "./sections/ReadingSettings";
 import { reauthText, syncErrorText } from "../sync-status";
-import { isKeychainLocked, providerCapabilities } from "@openmail/core/schema";
+import { isKeychainLocked, printable, providerCapabilities } from "@openmail/core/schema";
 import { Alert, AlertCancel, alertDanger, Dialog } from "../../ui/Dialog";
 import { SettingsGroup, SettingsRow } from "../../ui/SettingsRows";
 import {
@@ -633,7 +633,7 @@ function AgentPolicy() {
 function actorName(i18n: I18n, actor: string): string {
   if (actor.startsWith("user:"))
     return actor === "user:cli" ? i18n._(msg`You (command line)`) : i18n._(msg`You`);
-  const agent = actor.split(":").slice(2).join(":") || i18n._(msg`unknown`);
+  const agent = printable(actor.split(":").slice(2).join(":")) || i18n._(msg`unknown`);
   return i18n._(msg`AI (${agent})`);
 }
 

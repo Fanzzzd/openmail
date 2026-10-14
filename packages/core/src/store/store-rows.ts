@@ -141,6 +141,7 @@ export const counts = (rows: ReadonlyArray<typeof Count.Type>): Record<string, n
 export const Id = Schema.Struct({ id: Schema.Number });
 
 export const MessageId = Schema.Struct({ id: Schema.String });
+export const MessageAccount = Schema.Struct({ id: Schema.String, account_id: Schema.String });
 
 export const Ref = Schema.Struct({ account_id: Schema.String, provider_id: Schema.String });
 

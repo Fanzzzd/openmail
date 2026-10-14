@@ -1,19 +1,27 @@
-import { Effect } from "effect";
+import { Effect, Option } from "effect";
 import { Mailbox } from "../mailbox/mailbox.js";
 import { AgentIdentity, cleanMcpClientName } from "./agent-identity.js";
-import type { Actor, Command, Outcome, Proposal } from "../domain/command.js";
+import {
+  type Actor,
+  type Command,
+  type Outcome,
+  PENDING_PROPOSAL_LIMIT,
+  PENDING_PROPOSAL_TOTAL_LIMIT,
+  type Proposal,
+} from "../domain/command.js";
 import {
   ACCESS_STATUS_HINT,
   ACCOUNT_ID_HINT,
   CONSENT_SWITCH,
   MESSAGE_ID_HINT,
+  REVIEW_PROPOSALS_HINT,
   toToolError,
   toolError,
 } from "./tool-common.js";
 import type { Tool, Toolkit } from "effect/ai";
 
-/** Pending proposals one client may have. More fail with too_many_proposals. */
-export const PENDING_PROPOSAL_LIMIT = 50;
+/** Pending proposals one client may have, and all agents together. More fail with too_many_proposals. */
+export { PENDING_PROPOSAL_LIMIT, PENDING_PROPOSAL_TOTAL_LIMIT };
 
 /** JSON with sorted object keys, so equal commands compare equal however they were built. */
 const canonicalJson = (value: unknown): string =>
@@ -21,6 +29,21 @@ const canonicalJson = (value: unknown): string =>
     item !== null && typeof item === "object" && !Array.isArray(item)
       ? Object.fromEntries(Object.entries(item).toSorted(([a], [b]) => a.localeCompare(b)))
       : item,
+  );
+
+/** Whether the caller may read every account the proposal touches; one lookup for all messages. */
+const visibleTo =
+  (allowed: ReadonlySet<string>, owners: ReadonlyMap<string, string>) => (row: Proposal) => {
+    const command = row.command;
+    const ids =
+      command.kind === "modify" || command.kind === "snooze"
+        ? command.threads.map((id) => owners.get(id))
+        : [command.accountId];
+    return ids.length > 0 && ids.every((id) => id !== undefined && allowed.has(id));
+  };
+const threadsOf = (rows: readonly Proposal[]) =>
+  rows.flatMap((row) =>
+    row.command.kind === "modify" || row.command.kind === "snooze" ? row.command.threads : [],
   );
 
 /** What every tool handler shares: the Mailbox, the caller's identity and the accounts it may read. */
@@ -94,16 +117,18 @@ export const makeToolContext = Effect.gen(function* () {
     );
 
   /**
-   * mailbox.perform for an agent's change, with two limits on its pending proposals: the same
-   * change again returns the waiting proposal instead of a second one (and a second draft), and
-   * a client with PENDING_PROPOSAL_LIMIT waiting gets too_many_proposals until the person
-   * decides some.
+   * mailbox.perform for an agent's change, with limits on pending proposals: the same change
+   * again returns the waiting proposal instead of a second one (and a second draft), and a
+   * client with PENDING_PROPOSAL_LIMIT waiting, or all agents with PENDING_PROPOSAL_TOTAL_LIMIT,
+   * gets too_many_proposals until the person decides some. The store enforces both limits in the
+   * insert itself; the checks here only give the clearer message.
    */
   const propose = (command: Command, actor: Actor) =>
     Effect.gen(function* () {
       if (actor.kind !== "agent")
         return yield* mailbox.perform(command, actor).pipe(Effect.mapError(toToolError));
-      const mine = (yield* mailbox.proposals).filter(
+      const pending = (yield* mailbox.proposals).filter((p) => p.actor.kind === "agent");
+      const mine = pending.filter(
         (p) =>
           p.actor.kind === "agent" &&
           p.actor.surface === actor.surface &&
@@ -116,29 +141,32 @@ export const makeToolContext = Effect.gen(function* () {
         return yield* toolError(
           "too_many_proposals",
           `${PENDING_PROPOSAL_LIMIT} proposals from this app are already waiting for the person. Nothing was proposed.`,
-          "Ask the person to review AI suggestions in OpenMail, then try again. list_proposals shows what is waiting.",
+          REVIEW_PROPOSALS_HINT,
+        );
+      if (pending.length >= PENDING_PROPOSAL_TOTAL_LIMIT)
+        return yield* toolError(
+          "too_many_proposals",
+          `${PENDING_PROPOSAL_TOTAL_LIMIT} AI proposals are already waiting for the person. Nothing was proposed.`,
+          REVIEW_PROPOSALS_HINT,
         );
       return yield* mailbox.perform(command, actor).pipe(Effect.mapError(toToolError));
     });
 
   const visibleProposals = Effect.gen(function* () {
     const allowed = new Set(yield* accountIdsFor());
-    const kept: Proposal[] = [];
-    for (const row of yield* mailbox.proposals) {
-      const command = row.command;
-      const ids =
-        command.kind === "modify" || command.kind === "snooze"
-          ? yield* Effect.forEach(command.threads, (id) =>
-              mailbox.thread(id).pipe(
-                Effect.map((ms) => ms[0]?.accountId ?? null),
-                Effect.orElseSucceed(() => null),
-              ),
-            )
-          : [command.accountId];
-      if (ids.length && ids.every((id) => id !== null && allowed.has(id))) kept.push(row);
-    }
-    return kept;
+    const rows = yield* mailbox.proposals;
+    const owners = yield* mailbox.messageAccounts(threadsOf(rows));
+    return rows.filter(visibleTo(allowed, owners));
   });
+  /** One pending proposal the caller may read, or None. */
+  const visibleProposal = (id: number) =>
+    Effect.gen(function* () {
+      const row = yield* mailbox.proposal(id).pipe(Effect.option);
+      if (Option.isNone(row) || row.value.status !== "pending") return Option.none<Proposal>();
+      const allowed = new Set(yield* accountIdsFor());
+      const owners = yield* mailbox.messageAccounts(threadsOf([row.value]));
+      return visibleTo(allowed, owners)(row.value) ? row : Option.none<Proposal>();
+    });
   return {
     mailbox,
     identity,
@@ -151,6 +179,7 @@ export const makeToolContext = Effect.gen(function* () {
     requireThreads,
     propose,
     visibleProposals,
+    visibleProposal,
   };
 });
 export type ToolContext = Effect.Success<typeof makeToolContext>;

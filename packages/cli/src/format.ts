@@ -7,6 +7,7 @@ import {
   type Proposal,
   type SyncResult,
   actorLabel,
+  printable,
 } from "@openmail/core";
 import type { ThreadSummary } from "@openmail/core/schema";
 
@@ -106,8 +107,10 @@ export function proposalTable(rows: readonly Proposal[]): string {
   return rows
     .map((p) => {
       const why =
-        p.actor.kind === "agent" && p.actor.rationale ? `\n      why: ${p.actor.rationale}` : "";
-      return `#${p.id}  ${stamp(p.createdAt)}  ${p.status.padEnd(8)}  ${actorLabel(p.actor)}\n      ${commandSummary(p.command)}${why}`;
+        p.actor.kind === "agent" && p.actor.rationale
+          ? `\n      why: ${printable(p.actor.rationale.replace(/\r?\n/g, " "))}`
+          : "";
+      return `#${p.id}  ${stamp(p.createdAt)}  ${p.status.padEnd(8)}  ${printable(actorLabel(p.actor))}\n      ${commandSummary(p.command)}${why}`;
     })
     .join("\n");
 }
@@ -118,7 +121,7 @@ export function auditTable(rows: readonly AuditEntry[]): string {
     .map((e) => {
       const detail = e.detail === undefined ? "" : JSON.stringify(e.detail);
       const short = detail.length > 80 ? `${detail.slice(0, 79)}…` : detail;
-      return `${stamp(e.at)}  ${e.actor.padEnd(24)}  ${e.action.padEnd(12)}  ${e.accountId ?? "-"}  ${short}`;
+      return `${stamp(e.at)}  ${printable(e.actor).padEnd(24)}  ${e.action.padEnd(12)}  ${e.accountId ?? "-"}  ${short}`;
     })
     .join("\n");
 }

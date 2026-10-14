@@ -62,6 +62,7 @@ export {
   supportsOp,
   notificationButtonActions,
   parseAppLink,
+  printable,
   printableThread,
   redactSyncHealth,
   resolveUpdateFeed,

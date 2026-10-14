@@ -112,6 +112,8 @@ export class IndexNotReady extends Schema.TaggedError<IndexNotReady>()("IndexNot
 /** Bad input from a person or an agent (invalid address, missing field). */
 export class InvalidInput extends Schema.TaggedError<InvalidInput>()("InvalidInput", {
   message: Schema.String,
+  /** `too_many_proposals`: the agent's or all agents' pending proposals are at their limit. */
+  reason: Schema.optionalKey(Schema.Literal("too_many_proposals")),
 }) {}
 
 /** Missing optional settings permission. Normal mail sync remains available. */

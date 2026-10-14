@@ -434,6 +434,10 @@ export class Mailbox extends Context.Service<
       surface: "app" | "cli",
     ): Effect.Effect<Outcome, PerformError>;
     readonly proposals: Effect.Effect<Proposal[]>;
+    /** One proposal, whatever its status; decided ones have no command payload. */
+    proposal(id: number): Effect.Effect<Proposal, NotFound>;
+    /** Which account each message id belongs to, without loading the messages. Unknown ids are missing. */
+    messageAccounts(ids: readonly string[]): Effect.Effect<ReadonlyMap<string, string>>;
     prepareRejectedResend(noticeId: number): Effect.Effect<DraftInput, NotFound | InvalidInput>;
     readonly listFailedOps: Effect.Effect<readonly import("../domain/sync-status.js").FailedOp[]>;
     acknowledgeFailedOps(ids: readonly number[]): Effect.Effect<void>;

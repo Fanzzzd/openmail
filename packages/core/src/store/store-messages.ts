@@ -19,6 +19,7 @@ import {
   Labels,
   LabelsAndProvider,
   MESSAGE_COLUMNS,
+  MessageAccount,
   MessageId,
   MessageRow,
   REDACT_DECIDED,
@@ -417,6 +418,16 @@ export const makeMessagesStore = ({
       return { accountId: row.value.account_id, providerId: row.value.provider_id };
     });
 
+    /** Which account each message id belongs to, by primary key. Unknown ids are left out. */
+    const messageAccounts = Effect.fn("Store.messageAccounts")(function* (ids: readonly string[]) {
+      const unique = [...new Set(ids)];
+      if (!unique.length) return new Map<string, string>();
+      const rows = yield* all(MessageAccount)(
+        sql`SELECT id, account_id FROM messages WHERE id IN ${sql.in(unique)}`,
+      );
+      return new Map(rows.map((r) => [r.id, r.account_id]));
+    });
+
     const threadMessageIds = Effect.fn("Store.threadMessageIds")(function* (id: string) {
       // `+t.date` keeps the planner on an (account_id, thread_id) index instead of walking the
       // account by date. Same-date messages keep the newest-rowid-first order explicitly.
@@ -540,6 +551,7 @@ export const makeMessagesStore = ({
         ),
       ),
       threadMessageIds,
+      messageAccounts,
       messageLabels,
       applyLocalOp,
       setMessageWebLink: (id, url) => run(sql`UPDATE messages SET web_link=${url} WHERE id=${id}`),
@@ -560,6 +572,7 @@ export const makeMessagesStore = ({
       | "remapProviderIds"
       | "checkpoint"
       | "threadMessageIds"
+      | "messageAccounts"
       | "messageLabels"
       | "applyLocalOp"
       | "setMessageWebLink"

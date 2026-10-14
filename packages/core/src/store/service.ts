@@ -279,6 +279,8 @@ export class Store extends Context.Service<
     getThread(id: string): Effect.Effect<Message[], NotFound>;
     messageRef(id: string): Effect.Effect<{ accountId: string; providerId: string }, NotFound>;
     threadMessageIds(id: string): Effect.Effect<string[]>;
+    /** Message id to account id, one primary-key lookup per id; unknown ids are missing. */
+    messageAccounts(ids: readonly string[]): Effect.Effect<ReadonlyMap<string, string>>;
     messageLabels(accountId: string, providerId: string): Effect.Effect<string[]>;
     /** Applies the op to the local labels and flags, following the account's provider model. */
     applyLocalOp(id: string, op: MailOp): Effect.Effect<void>;
@@ -572,7 +574,8 @@ export class Store extends Context.Service<
     listAgentActivity(limit: number): Effect.Effect<AgentActivity[]>;
     agentWriteMode(name: string): Effect.Effect<AgentWriteMode>;
     setAgentWriteMode(name: string, mode: AgentWriteMode): Effect.Effect<void>;
-    insertProposal(actor: Actor, command: Command): Effect.Effect<number>;
+    /** Fails with InvalidInput (too_many_proposals) when an agent's pending limits are full. */
+    insertProposal(actor: Actor, command: Command): Effect.Effect<number, InvalidInput>;
     listProposals(status: Proposal["status"]): Effect.Effect<Proposal[]>;
     getProposal(id: number): Effect.Effect<Proposal, NotFound>;
     setProposalStatus(id: number, status: "approved" | "rejected"): Effect.Effect<void>;

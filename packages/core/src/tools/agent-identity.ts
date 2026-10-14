@@ -4,11 +4,25 @@ import type { Actor } from "../domain/command.js";
 import { Context, Effect, Layer, Option } from "effect";
 import { McpSchema } from "effect/ai";
 
+/** Longest MCP client name kept, in code points. */
+export const MCP_CLIENT_NAME_MAX = 64;
+
+/**
+ * An MCP client's self-reported name as OpenMail stores it: NFC, whitespace runs as one space,
+ * no control, format or separator characters, at most MCP_CLIENT_NAME_MAX code points, and
+ * "mcp" when nothing is left. Policies, proposals and activity all key on this form.
+ */
 export const cleanMcpClientName = (name: string): string =>
-  name
-    .replace(/[\p{Cc}\p{Cf}\u2028\u2029]/gu, "")
-    .trim()
-    .slice(0, 100) || "mcp";
+  Array.from(
+    name
+      .normalize("NFC")
+      .replace(/[\p{Cc}\p{Cf}\u2028\u2029]/gu, (char) => (/\s/u.test(char) ? " " : ""))
+      .replace(/\s+/gu, " ")
+      .trim(),
+  )
+    .slice(0, MCP_CLIENT_NAME_MAX)
+    .join("")
+    .trim() || "mcp";
 
 type AgentSurface = Extract<Actor, { kind: "agent" }>["surface"];
 
@@ -38,7 +52,7 @@ export class AgentIdentity extends Context.Service<
       current: Effect.serviceOption(McpSchema.McpRequestContext).pipe(
         Effect.map((ctx) => ({
           surface: "mcp" as const,
-          name: Option.getOrUndefined(ctx)?.clientInfo?.name ?? "mcp",
+          name: cleanMcpClientName(Option.getOrUndefined(ctx)?.clientInfo?.name ?? "mcp"),
           proposalTools: options.proposalTools,
           recordsActivity: true,
         })),

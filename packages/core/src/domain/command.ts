@@ -53,6 +53,22 @@ export const Actor = Schema.Union([
 ]);
 export type Actor = typeof Actor.Type;
 
+/** Pending proposals one agent (surface and name) may have. */
+export const PENDING_PROPOSAL_LIMIT = 50;
+/** Pending agent proposals across every agent, so a client that changes its name stays bounded. */
+export const PENDING_PROPOSAL_TOTAL_LIMIT = 200;
+
+/**
+ * Text from an agent (its client name, an audit actor) as it may be shown: control, format and
+ * line or paragraph separator characters become visible `\u{...}` escapes, so a stored name can
+ * neither drive a terminal nor reorder the text around it.
+ */
+export const printable = (text: string): string =>
+  text.replace(
+    /[\p{Cc}\p{Cf}\u2028\u2029]/gu,
+    (char) => `\\u{${(char.codePointAt(0) ?? 0).toString(16)}}`,
+  );
+
 export function actorLabel(actor: Actor): string {
   return actor.kind === "user" ? `user:${actor.surface}` : `agent:${actor.surface}:${actor.name}`;
 }

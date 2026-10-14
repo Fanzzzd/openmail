@@ -781,6 +781,10 @@ export const makeApplyMailbox = (
 
       proposals: store.listProposals("pending"),
 
+      proposal: (id) => store.getProposal(id),
+
+      messageAccounts: (ids) => store.messageAccounts(ids),
+
       listFailedOps: store.listFailedOps,
 
       acknowledgeFailedOps: (ids) => mutate(store.acknowledgeFailedOps(ids)),
@@ -805,6 +809,8 @@ export const makeApplyMailbox = (
       | "perform"
       | "decideProposal"
       | "proposals"
+      | "proposal"
+      | "messageAccounts"
       | "listFailedOps"
       | "acknowledgeFailedOps"
       | "audit"

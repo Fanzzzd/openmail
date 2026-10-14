@@ -8,7 +8,12 @@ import { TestClock } from "effect/testing";
 import { SqlClient } from "effect/sql";
 import { databaseLayer, MIGRATIONS, splitStatements } from "../platform/node/db.js";
 import { DEFAULT_LIST_FILTERS, type IncomingMessage } from "../domain/message.js";
-import type { Actor, Command } from "../domain/command.js";
+import {
+  type Actor,
+  type Command,
+  PENDING_PROPOSAL_LIMIT,
+  PENDING_PROPOSAL_TOTAL_LIMIT,
+} from "../domain/command.js";
 import { MemoryFileSystem, MemoryPlatform } from "../platform/node/platform-memory.js";
 import { AuthError } from "../domain/errors.js";
 import { Store } from "./service.js";
@@ -405,6 +410,65 @@ it.effect("local ops update flags; the queue keeps order and counts attempts", (
       assert.match(JSON.stringify(earlier.detail), /"hash":"[a-f0-9]{64}"/);
       assert.ok(!JSON.stringify(earlier.detail).includes(`"id":`));
       assert.strictEqual((yield* store.listAudit(1)).length, 1);
+    }),
+  ),
+);
+
+it.effect("pending agent proposals stop at 50 per client and 200 in all, whatever the names", () =>
+  withStore(
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const archive: Command = { kind: "modify", threads: ["x"], op: { kind: "archive" } };
+      const agent = (name: string): Actor => ({ kind: "agent", surface: "mcp", name });
+      for (let i = 0; i < PENDING_PROPOSAL_LIMIT; i++)
+        yield* store.insertProposal(agent("claude-code"), archive);
+      const sameName = yield* Effect.flip(store.insertProposal(agent("claude-code"), archive));
+      assert.strictEqual(sameName.reason, "too_many_proposals");
+      // A new name has its own 50, until every agent together reaches 200.
+      for (let i = PENDING_PROPOSAL_LIMIT; i < PENDING_PROPOSAL_TOTAL_LIMIT; i++)
+        yield* store.insertProposal(agent(`rotated-${i}`), archive);
+      const rotated = yield* Effect.flip(store.insertProposal(agent("fresh-name"), archive));
+      assert.strictEqual(rotated.reason, "too_many_proposals");
+      assert.strictEqual(
+        (yield* store.listProposals("pending")).length,
+        PENDING_PROPOSAL_TOTAL_LIMIT,
+      );
+      // The person's own commands never count against agents, and deciding one frees a slot.
+      yield* store.insertProposal({ kind: "user", surface: "app" }, archive);
+      const [oldest] = yield* store.listProposals("pending");
+      assert.ok(oldest);
+      yield* store.setProposalStatus(oldest.id, "rejected");
+      yield* store.insertProposal(agent("fresh-name"), archive);
+    }),
+  ),
+);
+
+it.effect("messageAccounts maps message ids to accounts and leaves unknown ids out", () =>
+  withStore(
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const { id: a } = yield* store.upsertAccount("gmail", "a@example.com");
+      const { id: b } = yield* store.upsertAccount("gmail", "b@example.com");
+      yield* store.upsertMessage(a, message({ providerId: "m1" }));
+      yield* store.upsertMessage(b, message({ providerId: "m2" }));
+      const sql = yield* SqlClient.SqlClient;
+      const rows = yield* sql<{
+        id: string;
+        account_id: string;
+      }>`SELECT id, account_id FROM messages`;
+      const owners = yield* store.messageAccounts([
+        ...rows.map((r) => r.id),
+        "missing",
+        ...rows.map((r) => r.id),
+      ]);
+      assert.deepStrictEqual(
+        [...owners.entries()].toSorted(([x], [y]) => x.localeCompare(y)),
+        rows
+          .map((r) => [r.id, r.account_id] as [string, string])
+          .toSorted(([x], [y]) => x.localeCompare(y)),
+      );
+      assert.deepStrictEqual(new Set(owners.values()), new Set([a, b]));
+      assert.strictEqual((yield* store.messageAccounts([])).size, 0);
     }),
   ),
 );

@@ -3,11 +3,13 @@ import { type SqlClient } from "effect/sql";
 import {
   type Actor,
   actorLabel,
+  PENDING_PROPOSAL_LIMIT,
+  PENDING_PROPOSAL_TOTAL_LIMIT,
   type AgentWriteMode,
   Command,
   type Proposal,
 } from "../domain/command.js";
-import { NotFound } from "../domain/errors.js";
+import { InvalidInput, NotFound } from "../domain/errors.js";
 import { sha256Hex } from "../platform/crypto.js";
 import type { Store } from "./service.js";
 import { all, first, run } from "./sql-rows.js";
@@ -21,6 +23,10 @@ import {
   REDACT_DECIDED,
   toProposal,
 } from "./store-rows.js";
+
+/** An agent's proposal past PENDING_PROPOSAL_LIMIT or PENDING_PROPOSAL_TOTAL_LIMIT. */
+export const TOO_MANY_PROPOSALS =
+  "Too many AI proposals are already waiting for the person. Nothing was proposed.";
 
 /** Rows agent_activity keeps. Settings shows the last few calls per client. */
 const AGENT_ACTIVITY_ROWS = 500;
@@ -136,14 +142,32 @@ export const makePolicyStore = ({
           ON CONFLICT(name) DO UPDATE SET modify = excluded.modify`),
   );
 
+  /**
+   * Parks a command for a person. For an agent, one INSERT ... SELECT checks both pending limits
+   * and inserts, so concurrent MCP processes cannot pass them together. Past either limit it
+   * fails with InvalidInput, reason too_many_proposals, and inserts nothing.
+   */
   const insertProposal = Effect.fn("Store.insertProposal")(function* (
     actor: Actor,
     command: Command,
   ) {
     const now = yield* Clock.currentTimeMillis;
-    const row = yield* first(Id)(sql`INSERT INTO proposals (created_at, actor_json, command_json)
-        VALUES (${now}, ${JSON.stringify(actor)}, ${JSON.stringify(command)}) RETURNING id`);
-    if (Option.isNone(row)) return yield* Effect.die("INSERT ... RETURNING returned no row");
+    const values = sql`${now}, ${JSON.stringify(actor)}, ${JSON.stringify(command)}`;
+    const row =
+      actor.kind === "agent"
+        ? yield* first(Id)(sql`INSERT INTO proposals (created_at, actor_json, command_json)
+        SELECT ${values}
+        WHERE (SELECT count(*) FROM proposals WHERE status = 'pending'
+            AND json_extract(actor_json, '$.kind') = 'agent') < ${PENDING_PROPOSAL_TOTAL_LIMIT}
+          AND (SELECT count(*) FROM proposals WHERE status = 'pending'
+            AND json_extract(actor_json, '$.kind') = 'agent'
+            AND json_extract(actor_json, '$.surface') = ${actor.surface}
+            AND json_extract(actor_json, '$.name') = ${actor.name}) < ${PENDING_PROPOSAL_LIMIT}
+        RETURNING id`)
+        : yield* first(Id)(sql`INSERT INTO proposals (created_at, actor_json, command_json)
+        VALUES (${values}) RETURNING id`);
+    if (Option.isNone(row))
+      return yield* new InvalidInput({ message: TOO_MANY_PROPOSALS, reason: "too_many_proposals" });
     return row.value.id;
   });
 

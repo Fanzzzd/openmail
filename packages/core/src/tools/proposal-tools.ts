@@ -21,7 +21,7 @@ import {
   toolAttempt,
   toolError,
 } from "./tool-common.js";
-import { Effect, Schema } from "effect";
+import { Effect, Option, Schema } from "effect";
 import { replyRecipients, replySubject } from "../compose/recipients.js";
 import { Tool } from "effect/ai";
 import { detailParameters } from "./compose-tools.js";
@@ -213,6 +213,7 @@ export const proposalHandlers = ({
   requireThreads,
   propose,
   visibleProposals,
+  visibleProposal,
 }: ToolContext) => {
   return {
     list_proposals: (p) =>
@@ -230,7 +231,9 @@ export const proposalHandlers = ({
         ),
       ),
     read_proposal: Effect.fnUntraced(function* (p) {
-      const row = (yield* visibleProposals).find((r) => String(r.id) === p.id);
+      const row = /^[1-9]\d{0,15}$/.test(p.id)
+        ? Option.getOrUndefined(yield* visibleProposal(Number(p.id)))
+        : undefined;
       if (!row)
         return yield* toolError(
           "not_found",
