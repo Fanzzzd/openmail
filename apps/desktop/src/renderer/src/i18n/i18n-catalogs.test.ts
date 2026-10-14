@@ -163,3 +163,18 @@ it("Chinese incoming action flag labels have a separate noun context", async () 
     "Reply all": "全部回复标记",
   });
 });
+
+it("the English catalog only mirrors its source text", async () => {
+  // English is the source locale: a msgstr that differs from its msgid would show
+  // text nobody wrote in the code, such as "Confirm Remove" for "Confirm removal".
+  const url = new URL("../locales/en/messages.po", import.meta.url);
+  const catalog = await formatter().parse(readFileSync(url, "utf8"), {
+    locale: "en",
+    sourceLocale: "en",
+    filename: fileURLToPath(url),
+  });
+  const differing = Object.entries(catalog)
+    .map(([id, entry]) => ({ source: entry.message ?? id, translation: entry.translation ?? "" }))
+    .filter(({ source, translation }) => translation !== "" && translation !== source);
+  expect(differing).toEqual([]);
+});

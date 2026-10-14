@@ -1755,7 +1755,7 @@ msgstr "Confirm permanent deletion in the app."
 
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Confirm removal"
-msgstr "Confirm Remove"
+msgstr "Confirm removal"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Confirm the new event in OpenMail to create it."
