@@ -201,3 +201,30 @@ it.effect("a search whose words strip to nothing finds nothing, like a blank one
     assert.lengthOf(yield* store.listThreads({ search: "is:read ­" }), 1);
   }).pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform())))),
 );
+
+// Stored body_text has no soft hyphens, but snippets come from the HTML body, which keeps &shy;.
+it.effect("a word matched across a soft hyphen in HTML gets a snippet and a highlight", () =>
+  Effect.gen(function* () {
+    const store = yield* Store;
+    const a = yield* store.upsertAccount("gmail", "me@example.com");
+    yield* store.upsertMessage(a.id, {
+      ...base,
+      providerId: "html",
+      threadId: "html",
+      subject: "Newsletter",
+      date: 1,
+      bodyText: "Our infrastructure document is scheduled",
+      bodyHtml: "<p>Our infra&shy;structure docu\u00ADment is scheduled</p>",
+    });
+    yield* drain;
+    for (const search of ["infrastructure", "document"]) {
+      const [thread] = yield* store.listThreads({ search });
+      const match = thread?.searchMatches?.find((m) => m.source === "body");
+      if (!thread || !match) assert.fail(`no body match for ${search}`);
+      assert.notInclude(thread.snippet, "\u00AD");
+      const [range] = match.highlights;
+      assert.strictEqual(match.snippet.slice(range?.start, range?.end), search);
+      assert.strictEqual(thread.snippet, match.snippet);
+    }
+  }).pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform())))),
+);

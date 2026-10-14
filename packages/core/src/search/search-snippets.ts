@@ -1,7 +1,7 @@
 import type { SearchCriteria, ThreadQuery } from "../domain/message.js";
 import { parseSearchExpression, parseSearchQuery, type SearchExpression } from "./search.js";
 import { searchWords, unquoteSearchValue } from "./search-tokens.js";
-import { usesSubstringSearch, wordTokens } from "./fts.js";
+import { usesSubstringSearch, withoutSoftHyphens, wordTokens } from "./fts.js";
 
 /** Only positive text terms contribute highlights; operators and exclusions do not. */
 export function searchHighlightTerms(query: ThreadQuery): string[] {
@@ -94,7 +94,9 @@ export function searchSnippet(
   terms: readonly string[],
   mode: "words" | "substring" = "words",
 ) {
-  const visible = text.replace(/\s+/g, " ").trim();
+  // Soft hyphens are invisible, and the word indexes match across them; dropping them lets a
+  // highlight cover "infra\u00ADstructure" for "infrastructure".
+  const visible = withoutSoftHyphens(text).replace(/\s+/g, " ").trim();
   const merged = searchTermRanges(visible, terms, mode);
   const insideSurrogatePair = (offset: number) =>
     offset > 0 &&
