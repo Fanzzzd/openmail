@@ -20,10 +20,11 @@ const native = vi.hoisted(() => ({
   register: vi.fn(),
   cleanup: vi.fn(),
   printCleanup: vi.fn(),
+  appendSwitch: vi.fn(),
 }));
 vi.mock("electron", () => ({
   app: Object.assign(new EventEmitter(), {
-    commandLine: { getSwitchValue: () => "" },
+    commandLine: { getSwitchValue: () => "", appendSwitch: native.appendSwitch },
     setPath: vi.fn(),
     getPath: vi.fn(() => "/tmp/openmail-test-temp"),
     requestSingleInstanceLock: () => native.primary,
@@ -155,6 +156,11 @@ it("the second process exits before building core or opening any data", async ()
   expect(native.nodeMailbox).not.toHaveBeenCalled();
   expect(native.vision).not.toHaveBeenCalled();
   expect(native.cleanup).not.toHaveBeenCalled();
+});
+it("main turns off Chromium's soft navigation detector before any window", async () => {
+  await import("../main");
+  // Its CHECK on click timestamps killed the renderer when a zero-timestamp click closed a dialog.
+  expect(native.appendSwitch).toHaveBeenCalledWith("disable-features", "SoftNavigationDetection");
 });
 it("a failed attachment temp sweep still runs the print temp sweep", async () => {
   native.cleanup.mockRejectedValue(new Error("attachment sweep failed"));

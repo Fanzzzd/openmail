@@ -39,6 +39,11 @@ import { registerProcessErrorHandlers } from "./app/process-errors";
 // First, so MCP mode and early startup are covered; localLog writes once diagnostics exist.
 registerProcessErrorHandlers(localLog);
 registerSecuritySchemes();
+// Chromium's soft navigation detector CHECKs that a click is newer than the page
+// (soft_navigation_heuristics.cc, ReportSoftNavigationToMetrics). Synthetic input with a zero
+// timestamp, such as clicks posted by a virtual-display harness, then kills the renderer when
+// the click changes the URL, as closing a dialog does. The app reads no soft navigation entries.
+app.commandLine.appendSwitch("disable-features", "SoftNavigationDetection");
 prepareBackgroundWindows();
 applyDevelopmentAppearance();
 
