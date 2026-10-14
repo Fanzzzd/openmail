@@ -9,13 +9,15 @@ import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { Schema } from "effect";
 import { afterAll, beforeAll, describe, expect, test, vi, type TestContext } from "vitest";
+import { scaledMs } from "../../core/test-support/test-time.js";
 import { REMOVE_NEEDS_YES } from "./commands/accounts.js";
 
 const run = promisify(execFile);
 const cli = fileURLToPath(new URL("../dist/cli.js", import.meta.url));
 const demoData = fileURLToPath(new URL("../../../scripts/demo-data.mjs", import.meta.url));
-// Every test starts node and opens the database, about 1 s on a loaded machine.
-vi.setConfig({ testTimeout: 20_000, hookTimeout: 60_000 });
+// Every test starts node and opens the database, about 1 s on a loaded machine and slower on
+// a CI runner, so the budgets scale with testTimeScale.
+vi.setConfig({ testTimeout: scaledMs(20_000), hookTimeout: scaledMs(60_000) });
 
 /**
  * The keys scripts read from each --json output, snake_case at any depth like MCP. When a shape changes on purpose,
@@ -151,26 +153,30 @@ describe("help", () => {
     expect(stdout.trim()).toBe(`openmail v${version}`);
   });
 
-  test("every positional argument says what it takes", async () => {
-    const commands = [
-      [["accounts", "remove"], "account-id"],
-      [["accounts", "reauth"], "account-id"],
-      [["spaces", "add"], "name"],
-      [["spaces", "assign"], "account-id"],
-      [["proposals", "reject"], "proposal-id"],
-      [["sync"], "account"],
-      [["search"], "query"],
-      [["show"], "message-id"],
-    ] as const;
-    // Eight CLI starts in a row take over 20 s on a CI runner; run them side by side.
-    const outputs = await Promise.all(
-      commands.map(([command]) => openmail([...command, "--help"])),
-    );
-    for (const [index, [command, argument]] of commands.entries())
-      expect(outputs[index]?.stdout, command.join(" ")).toMatch(
-        new RegExp(`^  ${argument}(\\.\\.\\.)? \\w+ +\\S`, "m"),
+  test(
+    "every positional argument says what it takes",
+    async () => {
+      const commands = [
+        [["accounts", "remove"], "account-id"],
+        [["accounts", "reauth"], "account-id"],
+        [["spaces", "add"], "name"],
+        [["spaces", "assign"], "account-id"],
+        [["proposals", "reject"], "proposal-id"],
+        [["sync"], "account"],
+        [["search"], "query"],
+        [["show"], "message-id"],
+      ] as const;
+      // Eight CLI starts in a row take over 20 s on a CI runner; run them side by side.
+      const outputs = await Promise.all(
+        commands.map(([command]) => openmail([...command, "--help"])),
       );
-  }, 60_000);
+      for (const [index, [command, argument]] of commands.entries())
+        expect(outputs[index]?.stdout, command.join(" ")).toMatch(
+          new RegExp(`^  ${argument}(\\.\\.\\.)? \\w+ +\\S`, "m"),
+        );
+    },
+    scaledMs(60_000),
+  );
 
   test("list --help names its paging and filter flags", async () => {
     const { code, stdout } = await openmail(["list", "--help"]);

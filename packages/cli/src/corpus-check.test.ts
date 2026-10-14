@@ -13,6 +13,7 @@ import { corpusCheck } from "@openmail/core/node";
 import { Schema } from "effect";
 import { afterAll, beforeAll, describe, it } from "vitest";
 import { writeMigratedDatabase } from "../../core/test-support/migrated-database.js";
+import { scaledMs } from "../../core/test-support/test-time.js";
 
 const run = promisify(execFile);
 const cli = fileURLToPath(new URL("../dist/cli.js", import.meta.url));
@@ -114,7 +115,7 @@ function fixture() {
 const node = ["--disable-warning=ExperimentalWarning"];
 const options = (directory: string) => ({
   env: { ...process.env, OPENMAIL_HOME: join(directory, "must-not-exist") },
-  timeout: 30_000,
+  timeout: scaledMs(30_000),
 });
 
 // Each case waits on child processes; they run concurrently with each other.
