@@ -312,4 +312,8 @@ async function main() {
   // behind a later assertion on missing results.
   app.exit(process.exitCode ?? 0);
 }
-app.on("ready", () => void main());
+// A test run should not put an icon in the Dock.
+app.on("ready", () => {
+  app.dock?.hide();
+  void main();
+});

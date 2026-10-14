@@ -197,9 +197,13 @@ async function main() {
   fs.writeFileSync(outPath, JSON.stringify(out, null, 2));
 }
 
+// A test run should not put an icon in the Dock.
 app
   .whenReady()
-  .then(main)
+  .then(() => {
+    app.dock?.hide();
+    return main();
+  })
   .catch((error) => {
     console.error(error);
     process.exitCode = 1;
