@@ -192,7 +192,12 @@ try {
 
   // Nothing crosses the lights at any width, across the narrow, medium and wide breakpoints, in
   // the mail view and the overview. The rail is narrower than the lights.
-  const widths = [1320, 961, 960, 959, 880, 801, 800, 799, 640];
+  // CI runners have a 1024 px screen, so the wide checks use the widest window the screen holds.
+  const screenWidth = await evaluate("screen.availWidth");
+  if (screenWidth < 961)
+    throw new Error(`The screen is ${screenWidth} px wide; the wide layout needs at least 961 px`);
+  const wide = Math.min(1320, screenWidth);
+  const widths = [wide, 961, 960, 959, 880, 801, 800, 799, 640];
   const crossings = [];
   for (const view of ["Overview", "All accounts"]) {
     await evaluate("window.resizeTo(880, 720)");
@@ -253,7 +258,7 @@ try {
 
   // A wide window with the sidebar hidden: the toggle moves to the list header beside the
   // lights. Showing and hiding the sidebar must not paint a frame with the old spacer.
-  await evaluate("window.resizeTo(1320, 860)");
+  await evaluate(`window.resizeTo(${wide}, 860)`);
   await sleep(500);
   const key = `window.dispatchEvent(new KeyboardEvent("keydown", { key: "s", code: "KeyS", metaKey: true, altKey: true, shiftKey: true, bubbles: true }))`;
   const docked = () => evaluate("!!document.querySelector('[data-mail-pane=\"sidebar\"]')");
