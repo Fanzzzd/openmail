@@ -40,6 +40,7 @@ import { isTouchWeb } from "../../lib/platform";
 import { primaryShortcutText } from "../../../../shared/shortcuts";
 import { useShortcutSet } from "../../i18n/use-shortcut-text";
 import { itemClass, popupOffset, popupSurface } from "../../ui/styles";
+import { focusFirstResult } from "./result-focus";
 
 /** The operator reference on the docs site, opened in the default browser. */
 const SEARCH_HELP_URL = "https://openmail-docs.vercel.app/docs/search-operators";
@@ -63,6 +64,8 @@ export function SearchField({
   const scopeName = scope === "all" ? t`Search scope: All Mail` : t`Search scope: Current folder`;
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState<string | undefined>();
+  /** The text the last Enter ran, so a later key can tell the field has not changed since. */
+  const [submitted, setSubmitted] = useState<string | null>(null);
   const fieldRef = useRef<HTMLInputElement>(null);
   useImperativeHandle<HTMLInputElement | null, HTMLInputElement | null>(
     inputRef,
@@ -216,13 +219,29 @@ export function SearchField({
           ))}
           <Combobox.Input
             onKeyDown={(e) => {
+              // Once the search ran, Down or a second Enter moves on to the results.
+              const toResults =
+                !open &&
+                submitted === value &&
+                (e.key === "ArrowDown" || e.key === "Enter") &&
+                !e.shiftKey &&
+                !e.altKey &&
+                !e.metaKey &&
+                !e.ctrlKey;
+              if (toResults && focusFirstResult(document)) {
+                e.preventDefault();
+                e.preventBaseUIHandler();
+                return;
+              }
               const active = open && highlighted !== undefined ? byKey.get(highlighted) : undefined;
               const action = suggestionKeyAction(e, active, open ? groups : []);
               if (!action) return;
               e.preventDefault();
               if (action.kind === "submit") {
                 recentSearches.add(value);
-                onChange(`${value.trimEnd()} `);
+                const ran = `${value.trimEnd()} `;
+                onChange(ran);
+                setSubmitted(ran);
                 setOpen(false);
               } else if (action.kind === "complete") choose(action.suggestion);
               else recentSearches.remove(action.query);
