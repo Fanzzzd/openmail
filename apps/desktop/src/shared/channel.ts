@@ -11,4 +11,9 @@ export interface RpcBridge {
   send: (frame: string) => void;
   /** Returns an unsubscribe function. */
   onFrame: (listener: (frame: string) => void) => () => void;
+  /**
+   * The web build's socket: requests already sent will get no reply (the
+   * connection dropped or the session ended). Returns an unsubscribe function.
+   */
+  onReset?: (listener: () => void) => () => void;
 }

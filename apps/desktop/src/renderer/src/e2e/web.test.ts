@@ -89,11 +89,16 @@ async function openWebApp() {
   setPlatform("web");
   // jsdom's events and Node's WebSocket don't mix; the ws client speaks the same API.
   setRpcBridge(
-    webSocketBridge(
-      `ws://127.0.0.1:${port}/rpc`,
-      (state) => states.push(state),
-      (url) => new NodeWebSocket(url),
-    ),
+    webSocketBridge(`ws://127.0.0.1:${port}/rpc`, (state) => states.push(state), {
+      create: (url) => {
+        const socket = new NodeWebSocket(url);
+        // A browser reports a refused socket as a close only; ws also emits an error.
+        socket.on("error", () => null);
+        return socket;
+      },
+      // The server stops when the test ends; no reconnect while the file is still running.
+      delays: [60_000],
+    }),
   );
 
   const registry = AtomRegistry.make();

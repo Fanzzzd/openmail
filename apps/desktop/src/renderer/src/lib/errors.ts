@@ -5,6 +5,7 @@ import type { AsyncResult } from "effect/reactivity";
 import type { RpcClientError } from "effect/rpc";
 
 import type { MailError } from "../../../shared/api";
+import { isDesktop } from "./platform";
 
 /** What an RPC call can fail with: the main process's typed errors, or the transport. */
 export type AppError = MailError | RpcClientError.RpcClientError;
@@ -193,7 +194,11 @@ export function errorText(i18n: I18n, error: AppError): string {
           ? i18n._(msg`Something went wrong. Please try again.`)
           : e.message;
     },
-    RpcClientError: () => i18n._(msg`Lost the connection to the background process.`),
+    // In the web build the transport is the socket to the Mac, which can drop mid-request.
+    RpcClientError: () =>
+      isDesktop()
+        ? i18n._(msg`Lost the connection to the background process.`)
+        : i18n._(msg`Lost the connection to your Mac. Try again.`),
   });
 }
 

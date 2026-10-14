@@ -4,13 +4,39 @@ import { ConnectionNotice } from "./features/remote";
 import { setPlatform } from "./lib/platform";
 import { renderApp } from "./routes/render-app";
 import { setRpcBridge } from "./state/rpc-bridge";
-import { setWebConnection } from "./state/web-connection";
-import { rpcSocketUrl, webSocketBridge } from "./state/web-socket-bridge";
+import { flushUnsavedWork, hasUnsavedWork } from "./state/unsaved-work";
+import { setWebConnection, setWebUpdate } from "./state/web-connection";
+import { probeSession, rpcSocketUrl, webSocketBridge } from "./state/web-socket-bridge";
 import "./styles.css";
 
 // The web build, served by the Mac to the person's own devices over their
 // tailnet. Same app; RPC travels over a WebSocket and routes use real paths.
 setPlatform("web");
-setRpcBridge(webSocketBridge(rpcSocketUrl(window.location), setWebConnection));
+setRpcBridge(
+  webSocketBridge(rpcSocketUrl(window.location), setWebConnection, {
+    probe: () => probeSession(),
+    // A phone back from the lock screen or a network switch reconnects at once.
+    wake: (reconnect) => {
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") reconnect();
+      });
+      window.addEventListener("online", reconnect);
+    },
+    onUpdate: () => {
+      if (hasUnsavedWork()) setWebUpdate();
+      else window.location.reload();
+    },
+  }),
+);
+
+// A hidden page may be frozen or discarded: drafts save now, not after their debounce.
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") flushUnsavedWork();
+});
+window.addEventListener("pagehide", flushUnsavedWork);
+window.addEventListener("beforeunload", (event) => {
+  flushUnsavedWork();
+  if (hasUnsavedWork()) event.preventDefault();
+});
 
 renderApp(createBrowserHistory(), <ConnectionNotice />);

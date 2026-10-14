@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 import { createRequire } from "node:module";
 import { createServer, request as httpRequest } from "node:http";
 import { connect } from "node:net";
+import type { Duplex } from "node:stream";
 import path from "node:path";
 import { Mailbox } from "@openmail/core";
 import type { IncomingMessage, Prefs } from "@openmail/core/schema";
@@ -75,24 +76,57 @@ export async function serveWebApp(messages: IncomingMessage[], prefs: Partial<Pr
 
   // Stand-in for Tailscale Serve: adds the identity header and the tailnet
   // Host and Origin, the way a browser at https://HOST:8443 would arrive.
-  const rewrite = (headers: Record<string, string | string[] | undefined>) => {
+  const rewrite = (
+    headers: Record<string, string | string[] | undefined>,
+    login: string = LOGIN,
+  ) => {
     const next: Record<string, string | string[]> = {};
     for (const [key, value] of Object.entries(headers))
       if (value !== undefined && !key.startsWith("tailscale-")) next[key] = value;
     next.host = `${HOST}:8443`;
     if (next.origin) next.origin = `https://${HOST}:8443`;
-    next["tailscale-user-login"] = LOGIN;
+    next["tailscale-user-login"] = login;
     next["tailscale-user-name"] = "Owner";
     return next;
   };
+  // Test controls the page can call, as a phone would see its network:
+  // /__test/drop cuts every socket, /__test/block makes the Mac unreachable
+  // until /__test/unblock. Paths under /__intruder/ arrive as a login the
+  // allowlist doesn't name.
+  const sockets = new Set<Duplex>();
+  let blocked = false;
+  const control: Record<string, () => void> = {
+    "/__test/drop": () => {
+      for (const socket of sockets) socket.destroy();
+      sockets.clear();
+    },
+    "/__test/block": () => {
+      blocked = true;
+    },
+    "/__test/unblock": () => {
+      blocked = false;
+    },
+  };
+  const INTRUDER = "/__intruder";
   const serve = createServer((req, res) => {
+    const action = control[req.url ?? ""];
+    if (action) {
+      action();
+      res.writeHead(204, { "cache-control": "no-store" }).end();
+      return;
+    }
+    if (blocked) {
+      res.writeHead(502).end();
+      return;
+    }
+    const intruder = req.url?.startsWith(`${INTRUDER}/`) ?? false;
     const upstream = httpRequest(
       {
         host: "127.0.0.1",
         port: local.port,
-        path: req.url,
+        path: intruder ? req.url?.slice(INTRUDER.length) : req.url,
         method: req.method,
-        headers: rewrite(req.headers),
+        headers: rewrite(req.headers, intruder ? "intruder@github" : LOGIN),
       },
       (reply) => {
         res.writeHead(reply.statusCode ?? 502, reply.headers);
@@ -101,7 +135,13 @@ export async function serveWebApp(messages: IncomingMessage[], prefs: Partial<Pr
     );
     req.pipe(upstream);
   });
-  serve.on("upgrade", (req, socket, head) => {
+  serve.on("upgrade", (req, socket: Duplex, head) => {
+    if (blocked) {
+      socket.destroy();
+      return;
+    }
+    sockets.add(socket);
+    socket.once("close", () => sockets.delete(socket));
     const upstream = connect(local.port, "127.0.0.1", () => {
       const lines = [`${req.method} ${req.url} HTTP/1.1`];
       for (const [key, value] of Object.entries(rewrite(req.headers)))
@@ -113,6 +153,9 @@ export async function serveWebApp(messages: IncomingMessage[], prefs: Partial<Pr
     });
     upstream.on("error", () => socket.destroy());
     socket.on("error", () => upstream.destroy());
+    // A cut connection ends on both sides, as a dropped phone link would.
+    socket.once("close", () => upstream.destroy());
+    upstream.once("close", () => socket.destroy());
   });
   await new Promise<void>((resolve) => {
     serve.listen(0, "127.0.0.1", resolve);

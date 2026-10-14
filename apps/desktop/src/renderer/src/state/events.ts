@@ -2,7 +2,7 @@
  * Live updates from the main process. `liveUpdatesAtom` holds the one
  * subscription to the `Events` stream; mount it once at the app root.
  */
-import { Effect, Match, Stream } from "effect";
+import { Effect, Match, Schedule, Stream } from "effect";
 import { Atom, Reactivity } from "effect/reactivity";
 
 import type { MailboxEvent, SyncProgress, SyncState } from "../../../shared/api";
@@ -23,13 +23,20 @@ export const syncProgressAtom = Atom.make<SyncProgress | null>(null).pipe(Atom.k
  * Reads the current sync state, then follows the event stream: sync state and
  * progress go into their atoms, and a finished sync or a `Changed` notice
  * invalidates every mail query.
+ *
+ * In the web build the socket to the Mac can drop. The subscription then
+ * starts again once the connection is back, and every query reads again,
+ * since events sent in between were missed.
  */
 export const liveUpdatesAtom = MailClient.runtime.atom((get) => {
   get.mount(appleContactsStatusAtom);
+  let resubscribing = false;
   return Effect.gen(function* () {
     const call = yield* MailClient;
     const reactivity = yield* Reactivity.Reactivity;
     get.set(syncStateAtom, yield* call("SyncState", undefined));
+    if (resubscribing) yield* reactivity.invalidate(Object.values(Keys));
+    resubscribing = true;
     yield* call("Events", undefined).pipe(
       Stream.runForEach(
         Match.typeTags<MailboxEvent, Effect.Effect<void>>()({
@@ -50,5 +57,8 @@ export const liveUpdatesAtom = MailClient.runtime.atom((get) => {
         }),
       ),
     );
-  });
+  }).pipe(
+    // Its only failure is the transport's (RpcClientError).
+    Effect.retry({ schedule: Schedule.spaced("1 second") }),
+  );
 });

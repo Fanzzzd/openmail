@@ -21,6 +21,8 @@ import { causeText } from "../../../lib/errors";
 import { draftStatus, useRunMail, withMail } from "../../../state/mail";
 import { saveDraftAtom } from "../../../state/mutations";
 import { draftStatusAtom } from "../../../state/queries";
+import { onFlush, setUnsaved } from "../../../state/unsaved-work";
+import { useWebConnection } from "../../../state/web-connection";
 
 const AUTOSAVE_MS = 2000;
 export function useDraftLifecycle({
@@ -93,6 +95,8 @@ export function useDraftLifecycle({
   };
 
   // Autosave: locally at once, then to the provider through the queue.
+  const autosaveDue = () =>
+    !recovering && !adding && !closing && !checkingClose && draft !== saved.current && !empty;
   useEffect(() => {
     const due =
       !recovering && !adding && !closing && !checkingClose && draft !== saved.current && !empty;
@@ -104,6 +108,26 @@ export function useDraftLifecycle({
       : undefined;
     return () => clearTimeout(timer);
   }, [draft, save, closing, checkingClose, empty, adding, recovering]);
+
+  // The web build: hiding the page saves at once, and a reload waits while typing is unsaved.
+  const flush = useEffectEvent(() => {
+    if (autosaveDue()) saveNow();
+  });
+  useEffect(() => onFlush(() => flush()), []);
+  useEffect(() => {
+    const unsaved =
+      (draft !== saved.current && !empty) || saveState.waiting || saveState._tag === "Failure";
+    setUnsaved(initial.id, unsaved);
+  }, [initial.id, draft, empty, saveState]);
+  useEffect(() => () => setUnsaved(initial.id, false), [initial.id]);
+  // A save the dropped connection failed goes again once the Mac is back.
+  const connection = useWebConnection();
+  const retrySave = useEffectEvent(() => {
+    if (saveState._tag === "Failure" && !saveState.waiting) saveNow();
+  });
+  useEffect(() => {
+    if (connection === "open") retrySave();
+  }, [connection]);
 
   const originalsLoaded = useEffectEvent((files: readonly OutgoingAttachment[]) => {
     setDraft((current) => withOriginalAttachments(current, files));

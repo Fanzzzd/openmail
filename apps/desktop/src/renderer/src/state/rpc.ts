@@ -1,7 +1,7 @@
 import { redactSyncHealth, type SyncHealth } from "@openmail/core/schema";
 import { Effect, FiberSet, Layer } from "effect";
 import { AtomRpc } from "effect/reactivity";
-import { type RpcMessage, RpcClient, RpcSerialization } from "effect/rpc";
+import { type RpcMessage, RpcClient, RpcClientError, RpcSerialization } from "effect/rpc";
 
 import type { RpcBridge } from "../../../shared/channel";
 import { MailRpcs } from "../../../shared/rpc";
@@ -49,7 +49,26 @@ const ElectronProtocol = Layer.effect(
             ),
           );
         });
-        yield* Effect.addFinalizer(() => Effect.sync(off));
+        // The web build's socket dropped: requests sent on it get no reply, so fail them.
+        const lost = {
+          _tag: "ClientProtocolError",
+          error: new RpcClientError.RpcClientError({
+            reason: new RpcClientError.RpcClientDefect({
+              message: "Lost the connection to the Mac",
+              cause: null,
+            }),
+          }),
+        } as const;
+        const offReset = bridge.onReset?.(() => {
+          owners.clear();
+          run(Effect.forEach(clientIds, (id) => writeResponse(id, lost), { discard: true }));
+        });
+        yield* Effect.addFinalizer(() =>
+          Effect.sync(() => {
+            off();
+            offReset?.();
+          }),
+        );
         return {
           send: (clientId, request) =>
             Effect.sync(() => {
