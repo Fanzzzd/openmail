@@ -252,16 +252,22 @@ const profilesAdd = Command.make(
   },
   Effect.fn(function* ({ name, icon, color }) {
     const mailbox = yield* Mailbox;
+    const trimmed = name.trim();
+    if (trimmed === "")
+      yield* fail("A space needs a name.", {
+        code: "invalid_input",
+        hint: "Pass a name, such as `openmail spaces add Work`.",
+      });
     // Spaces are found by name in any letter case, so two with one name could not be told apart.
     const taken = (yield* mailbox.accounts.profiles).find(
-      (space) => space.name.trim().toLowerCase() === name.trim().toLowerCase(),
+      (space) => space.name.trim().toLowerCase() === trimmed.toLowerCase(),
     );
     if (taken)
       yield* fail(`A space named ${taken.name} already exists (${taken.id}).`, {
         code: "invalid_input",
         hint: "Choose another name. `openmail spaces list` shows the spaces.",
       });
-    const p = yield* mailbox.accounts.createProfile({ name, icon, color });
+    const p = yield* mailbox.accounts.createProfile({ name: trimmed, icon, color });
     yield* Console.log(`Added space ${p.name} (${p.id}).`);
   }),
 ).pipe(Command.withDescription("Create a space"));
@@ -272,7 +278,8 @@ const findSpace = (idOrName: string) =>
     const spaces = yield* (yield* Mailbox).accounts.profiles;
     const byId = spaces.find((p) => p.id === idOrName);
     if (byId) return byId;
-    const named = spaces.filter((p) => p.name.toLowerCase() === idOrName.toLowerCase());
+    const wanted = idOrName.trim().toLowerCase();
+    const named = spaces.filter((p) => p.name.trim().toLowerCase() === wanted);
     if (named.length === 1 && named[0]) return named[0];
     return yield* fail(
       named.length > 1

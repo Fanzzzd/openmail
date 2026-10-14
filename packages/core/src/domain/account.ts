@@ -99,8 +99,11 @@ export const Profile = Schema.Struct({
 });
 export type Profile = typeof Profile.Type;
 
+/** A space name without surrounding blanks. Names are found by text, so they are stored trimmed. */
+export const ProfileName = Schema.Trim.check(Schema.isMinLength(1));
+
 export const ProfileInput = Schema.Struct({
-  name: Schema.String,
+  name: ProfileName,
   icon: Schema.String,
   color: ProfileColor,
 });

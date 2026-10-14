@@ -7,7 +7,7 @@ import {
   type AccountSettings,
   type ImapSettings,
   Profile,
-  type ProfileInput,
+  ProfileInput,
   type Provider,
 } from "../domain/account.js";
 import { type AuthError, InvalidInput, NotFound } from "../domain/errors.js";
@@ -279,7 +279,11 @@ export const makeAccountsStore = ({
     Effect.withSpan("Store.listProfiles"),
   );
 
-  const createProfile = Effect.fn("Store.createProfile")(function* (input: ProfileInput) {
+  // Names are stored trimmed, so an empty one is a caller bug and dies here.
+  const profileInput = Schema.decodeSync(ProfileInput);
+
+  const createProfile = Effect.fn("Store.createProfile")(function* (raw: ProfileInput) {
+    const input = profileInput(raw);
     const id = crypto.randomUUID();
     const next = yield* first(Next)(
       sql`SELECT COALESCE(MAX(position), -1) + 1 AS next FROM profiles`,
@@ -290,10 +294,11 @@ export const makeAccountsStore = ({
     return { id, name: input.name, icon: input.icon, color: input.color, position };
   });
 
-  const updateProfile = Effect.fn("Store.updateProfile")((id: string, input: ProfileInput) =>
-    run(sql`UPDATE profiles SET name = ${input.name}, icon = ${input.icon},
-        color = ${input.color} WHERE id = ${id}`),
-  );
+  const updateProfile = Effect.fn("Store.updateProfile")(function* (id: string, raw: ProfileInput) {
+    const input = profileInput(raw);
+    yield* run(sql`UPDATE profiles SET name = ${input.name}, icon = ${input.icon},
+        color = ${input.color} WHERE id = ${id}`);
+  });
 
   /** Deletes the profile. Its accounts stay and become ungrouped (ON DELETE SET NULL). */
   const deleteProfile = Effect.fn("Store.deleteProfile")((id: string) =>

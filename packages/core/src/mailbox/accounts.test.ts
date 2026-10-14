@@ -1,12 +1,12 @@
 import { applyNativeMigration } from "../platform/node/migrations.js";
 import { assert, it } from "@effect/vitest";
-import { Deferred, Effect, Fiber, Layer, Option, Schema, Stream } from "effect";
+import { Deferred, Effect, Fiber, Layer, Option, Result, Schema, Stream } from "effect";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { databaseLayer, MIGRATIONS } from "../platform/node/db.js";
-import { AccountSettings, accountName } from "../domain/account.js";
+import { AccountSettings, ProfileInput, accountName } from "../domain/account.js";
 import { DEFAULT_PREFS } from "../domain/prefs.js";
 import type { IncomingMessage } from "../domain/message.js";
 import { fakeServer, makeFakeProvider } from "../platform/node/fake-provider.js";
@@ -496,4 +496,38 @@ it.effect(
         .pipe(Effect.flip);
       assert.strictEqual(refused._tag, "InvalidInput");
     }).pipe(Effect.provide(StoreLive.pipe(Layer.provide(MemoryPlatform())))),
+);
+
+it.effect("space names are stored trimmed and an empty name is refused", () =>
+  Effect.gen(function* () {
+    const mailbox = yield* Mailbox;
+    const created = yield* mailbox.accounts.createProfile({
+      name: "  Work  ",
+      icon: "W",
+      color: "blue",
+    });
+    assert.strictEqual(created.name, "Work");
+    yield* mailbox.accounts.updateProfile(created.id, {
+      name: " Home ",
+      icon: "H",
+      color: "blue",
+    });
+    assert.deepStrictEqual(
+      (yield* mailbox.accounts.profiles).map((profile) => profile.name),
+      ["Home"],
+    );
+    for (const name of ["", "   "]) {
+      const exit = yield* mailbox.accounts
+        .createProfile({ name, icon: "W", color: "blue" })
+        .pipe(Effect.exit);
+      assert.isTrue(exit._tag === "Failure");
+    }
+    // The RPC schema gives the desktop app the same rule.
+    const decode = Schema.decodeUnknownResult(ProfileInput);
+    assert.strictEqual(
+      Result.getOrThrow(decode({ name: " Work ", icon: "W", color: "blue" })).name,
+      "Work",
+    );
+    assert.isTrue(Result.isFailure(decode({ name: "  ", icon: "W", color: "blue" })));
+  }).pipe(Effect.provide(TestMailbox({ gmail: fakeServer("me@example.com", []) }))),
 );

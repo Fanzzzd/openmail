@@ -348,6 +348,21 @@ describe("spaces", () => {
       expect(await list(["spaces", "list"], home.path)).toHaveLength(1);
     });
 
+    test("add refuses an empty name and stores a padded one trimmed", async () => {
+      for (const name of ["", "   "]) {
+        const empty = await openmail(["spaces", "add", name], home.path);
+        expect(empty.code).toBe(1);
+        expect(empty.stderr).toMatch(/^error: A space needs a name\.\nhint: /);
+      }
+      const padded = await openmail(["spaces", "add", "  Play  "], home.path);
+      expect(padded.code, padded.stderr).toBe(0);
+      expect(padded.stdout).toMatch(/^Added space Play \(.+\)\.$/m);
+      const names = (await list(["spaces", "list"], home.path)).map((s) => s.name);
+      expect(names).toEqual(["Work", "Play"]);
+      const removed = await openmail(["spaces", "remove", " play "], home.path);
+      expect(removed.code, removed.stderr).toBe(0);
+    });
+
     test("assign puts an account in it", async () => {
       expect(assigned.code, assigned.stderr).toBe(0);
       const after = (await list(["spaces", "list"], home.path))[0] ?? {};
