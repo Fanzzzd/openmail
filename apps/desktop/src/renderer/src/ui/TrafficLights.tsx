@@ -12,6 +12,7 @@ import { useLayoutEffect, useRef, useSyncExternalStore } from "react";
 import {
   trafficLightClearance,
   trafficLightSpace,
+  trafficLightSpacer,
   type TitlebarArea,
 } from "../../../shared/window-chrome";
 import { isDesktop } from "../lib/platform";
@@ -105,16 +106,22 @@ export function TrafficLightSpace({ className = "" }: { className?: string }) {
     const space = anchor.current;
     const row = space?.parentElement;
     if (!space || !row) return constVoid;
+    let last = "";
     const measure = () => {
       const box = layoutBox(row);
       const style = getComputedStyle(row);
       const start = box.left + px(style.borderLeftWidth) + px(style.paddingLeft);
-      const width = trafficLightSpace(area, { ...box, left: start + px(style.columnGap) });
-      if (space.dataset.trafficLightSpace === String(width)) return;
-      space.dataset.trafficLightSpace = String(width);
+      const need = trafficLightSpace(area, { ...box, left: start });
+      const gap = px(style.columnGap);
+      if (`${need},${gap}` === last) return;
+      last = `${need},${gap}`;
+      const { shown, width, marginEnd } = trafficLightSpacer(need, gap);
+      // How far the row's first item moves: to the free area's left edge.
+      space.dataset.trafficLightSpace = String(shown ? need : 0);
       space.style.width = `${width}px`;
-      // With no width it leaves the flex row, so the row's gap does not add up either.
-      space.hidden = width === 0;
+      space.style.marginInlineEnd = marginEnd < 0 ? `${marginEnd}px` : "";
+      // A hidden spacer leaves the flex row, so the row's gap does not add up either.
+      space.hidden = !shown;
     };
     measure();
     const observer =

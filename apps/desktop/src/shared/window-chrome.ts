@@ -49,6 +49,28 @@ export function trafficLightSpace(area: TitlebarArea | null, box: Box): number {
   return Math.max(0, Math.ceil(area.x - box.left));
 }
 
+/**
+ * Whether a vertical pane divider at `x`, drawn from `top` down, stays clear
+ * of the lights: right of their free area's left edge, or below their row.
+ */
+export const dividerClearsLights = (
+  area: TitlebarArea | null,
+  divider: { x: number; top: number },
+) => !area || divider.x <= 0 || divider.x >= area.x || divider.top >= area.y + area.height;
+
+/**
+ * The spacer that puts a row's first item at the free area's left edge.
+ * `need` is the distance from the row's content start (after its border and
+ * padding) to that edge, from trafficLightSpace. A shown spacer adds the
+ * row's `gap` after itself, so it is that much narrower, and when the gap
+ * alone overshoots, a negative end margin takes the rest back. A row that
+ * needs nothing drops the spacer, gap and all.
+ */
+export function trafficLightSpacer(need: number, gap: number) {
+  if (need <= 0) return { shown: false, width: 0, marginEnd: 0 };
+  return { shown: true, width: Math.max(0, need - gap), marginEnd: Math.min(0, need - gap) };
+}
+
 /** The height a full-window sheet keeps clear at its top: the lights' row. Zero without lights. */
 export const trafficLightClearance = (area: TitlebarArea | null) =>
   area ? Math.ceil(area.y + area.height) : 0;
