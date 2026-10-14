@@ -37,6 +37,7 @@ import { ContextMenuContent, ContextMenuRoot, ContextMenuTrigger } from "../../u
 import { Tip } from "../../ui/Tip";
 import { useShortcutText } from "../../i18n/use-shortcut-text";
 import { Toggle } from "@base-ui/react/toggle";
+import { useScrollFade } from "../../lib/scroll-fade";
 
 /** How the current selection was made. Keyboard selection gets the solid accent. */
 export type SelectionSource = "keyboard" | "mouse";
@@ -125,6 +126,7 @@ export function MessageList({
 }: Props) {
   const { t, i18n } = useLingui();
   const shortcutText = useShortcutText();
+  const { ref: chipsRef, mask: chipsMask } = useScrollFade();
   // One status region stays mounted, so screen readers hear each change of its text.
   const count = threads.length;
   const searchStatus = searchingServer
@@ -278,9 +280,17 @@ export function MessageList({
         </h1>
         <div className="flex shrink-0 items-center gap-2">{folderActions}</div>
       </header>
-      {/* One row at any width; chips that do not fit scroll sideways. The
-          vertical padding keeps their focus ring inside the scroll box. */}
-      <div className="-mt-1 flex shrink-0 items-center gap-1 overflow-x-auto px-3 pt-1 pb-2">
+      {/* One row at any width; chips that do not fit scroll sideways, and a fade at a clipped
+          end shows there is more. The vertical padding keeps their focus ring inside the box. */}
+      <div
+        ref={chipsRef}
+        // The row holds the selection bar, nothing while searching, or the chips; a new key
+        // measures the new content.
+        key={selectionBar ? "selection" : searching ? "search" : inLabel ? "chips+inbox" : "chips"}
+        data-filter-chips
+        style={chipsMask ? { maskImage: chipsMask } : undefined}
+        className="-mt-1 flex shrink-0 items-center gap-1 overflow-x-auto px-3 pt-1 pb-2"
+      >
         {selectionBar}
         {!selectionBar && !searching && (
           <>
