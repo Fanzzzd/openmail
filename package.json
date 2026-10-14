@@ -15,10 +15,10 @@
     "cli": "node packages/cli/dist/cli.js"
   },
   "devDependencies": {
-    "@types/node": "^22.20.4",
+    "@types/node": "^22.20.5",
     "oxfmt": "^0.72.0",
     "oxlint": "^1.87.0",
-    "oxlint-tsgolint": "^7.0.2003",
+    "oxlint-tsgolint": "^7.0.2004",
     "turbo": "^2.11.7",
     "typescript": "catalog:"
   },
