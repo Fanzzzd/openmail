@@ -112,7 +112,7 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
           assert.deepStrictEqual(yield* mailbox.sync.sync(id), []);
           assert.deepStrictEqual(yield* mailbox.sync.pollInbox(), []);
           yield* mailbox.sync.fetchOlder({ accountIds: [id] });
-          yield* mailbox.calendar.refreshContacts(id);
+          yield* mailbox.contacts.refreshContacts(id);
           assert.deepStrictEqual(
             (yield* mailbox.reading.searchServer({ search: "Alice" })).threads,
             [],
@@ -126,8 +126,8 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
           assert.deepStrictEqual(yield* mailbox.reading.unreadCounts, {});
           assert.deepStrictEqual(yield* mailbox.reading.unreadByLabel(), {});
           assert.deepStrictEqual(yield* mailbox.app.takeNotifications, []);
-          assert.deepStrictEqual(yield* mailbox.compose.suggestContacts("alice"), []);
-          assert.deepStrictEqual(yield* mailbox.compose.suggestContacts("contact"), []);
+          assert.deepStrictEqual(yield* mailbox.contacts.suggestContacts("alice"), []);
+          assert.deepStrictEqual(yield* mailbox.contacts.suggestContacts("contact"), []);
           assert.strictEqual((yield* store.listPendingOps).length, 1);
           assert.strictEqual(
             (yield* mailbox.reading.thread(`${id}/initial`))[0]?.bodyText,

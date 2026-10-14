@@ -15,13 +15,13 @@ export interface ContactsBackend {
   suggest(
     query: string,
     options: { exclude?: string; accountIds?: readonly string[] },
-  ): ReturnType<MailboxService["compose"]["suggestContacts"]>;
-  alternatives(address: string): ReturnType<MailboxService["compose"]["contactAlternatives"]>;
+  ): ReturnType<MailboxService["contacts"]["suggestContacts"]>;
+  alternatives(address: string): ReturnType<MailboxService["contacts"]["contactAlternatives"]>;
   groups(
     query: string,
     accountIds?: readonly string[],
-  ): ReturnType<MailboxService["compose"]["contactGroups"]>;
-  photo(accountId: string, address: string): ReturnType<MailboxService["calendar"]["contactPhoto"]>;
+  ): ReturnType<MailboxService["contacts"]["contactGroups"]>;
+  photo(accountId: string, address: string): ReturnType<MailboxService["contacts"]["contactPhoto"]>;
   knownSenders(
     accountId: string,
     addresses: readonly string[],
@@ -30,12 +30,12 @@ export interface ContactsBackend {
 
 /** Contacts from the mail accounts alone, without Apple Contacts. */
 export const accountContacts = (m: MailboxService): ContactsBackend => ({
-  suggest: (query, options) => m.compose.suggestContacts(query, options),
-  alternatives: (address) => m.compose.contactAlternatives(address),
-  groups: (query, accountIds) => m.compose.contactGroups(query, accountIds),
+  suggest: (query, options) => m.contacts.suggestContacts(query, options),
+  alternatives: (address) => m.contacts.contactAlternatives(address),
+  groups: (query, accountIds) => m.contacts.contactGroups(query, accountIds),
   photo: (accountId, address) =>
     Effect.flatMap(m.app.prefs, (prefs) =>
-      prefs.contactPhotos ? m.calendar.contactPhoto(accountId, address) : Effect.succeed(null),
+      prefs.contactPhotos ? m.contacts.contactPhoto(accountId, address) : Effect.succeed(null),
     ),
   knownSenders: (accountId, addresses) => m.reading.knownSenders(accountId, addresses),
 });
@@ -78,12 +78,12 @@ export function mailboxHandlers(m: MailboxService, options: MailboxHandlerOption
     Invitations: ({ messageId }) => m.calendar.invitations(messageId),
     RespondInvite: ({ messageId, key, response, label }) =>
       m.calendar.respondInvite(messageId, key, response, USER, label),
-    ContactSync: () => m.calendar.contactSync,
+    ContactSync: () => m.contacts.contactSync,
     ImageFromUrl: ({ url }) => m.compose.imageFromUrl(url),
     ImageFromFile: ({ file }) => m.compose.imageFromFile(file),
     SuggestSender: ({ current, recipients, accountIds }) =>
       m.compose.suggestSender(current, recipients, accountIds),
-    RefreshContacts: ({ accountId }) => m.calendar.refreshContacts(accountId),
+    RefreshContacts: ({ accountId }) => m.contacts.refreshContacts(accountId),
 
     Threads: ({ query }) => m.reading.threads(query),
     ThreadCount: ({ query }) => m.reading.threadCount(query),
@@ -226,8 +226,8 @@ export function mailboxHandlers(m: MailboxService, options: MailboxHandlerOption
     Templates: () => m.compose.templates,
     SaveTemplate: ({ input, id }) => m.compose.saveTemplate(input, id),
     DeleteTemplate: ({ id }) => m.compose.deleteTemplate(id),
-    HiddenContacts: () => m.compose.hiddenContacts,
-    SetContactHidden: ({ address, hidden }) => m.compose.setContactHidden(address, hidden),
+    HiddenContacts: () => m.contacts.hiddenContacts,
+    SetContactHidden: ({ address, hidden }) => m.contacts.setContactHidden(address, hidden),
     PrepareRejectedResend: ({ noticeId }) => m.compose.prepareRejectedResend(noticeId),
     FailedOps: () => m.proposals.listFailedOps,
     AcknowledgeFailedOps: ({ ids }) => m.proposals.acknowledgeFailedOps(ids),

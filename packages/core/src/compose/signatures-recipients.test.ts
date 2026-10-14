@@ -327,35 +327,38 @@ it.effect(
       const m = yield* Mailbox;
       yield* m.accounts.connect({ provider: "gmail" });
       yield* m.sync.sync();
-      assert.deepStrictEqual(yield* m.compose.suggestContacts("john acme"), [
+      assert.deepStrictEqual(yield* m.contacts.suggestContacts("john acme"), [
         { name: "Server John", address: "j@acme.com" },
       ]);
-      assert.deepStrictEqual(yield* m.compose.contactAlternatives("J@acme.com"), [
+      assert.deepStrictEqual(yield* m.contacts.contactAlternatives("J@acme.com"), [
         { name: "Server John", address: "j@acme.com" },
         { name: "Server John", address: "john@other.com" },
       ]);
-      assert.strictEqual((yield* m.compose.suggestContacts("john", { limit: 1 })).length, 1);
-      assert.deepStrictEqual(yield* m.compose.suggestContacts('" OR * % _'), []);
-      assert.deepStrictEqual(yield* m.compose.suggestContacts("john acme", { accountIds: [] }), []);
+      assert.strictEqual((yield* m.contacts.suggestContacts("john", { limit: 1 })).length, 1);
+      assert.deepStrictEqual(yield* m.contacts.suggestContacts('" OR * % _'), []);
       assert.deepStrictEqual(
-        yield* m.compose.suggestContacts("john acme", { exclude: "J@ACME.COM" }),
+        yield* m.contacts.suggestContacts("john acme", { accountIds: [] }),
+        [],
+      );
+      assert.deepStrictEqual(
+        yield* m.contacts.suggestContacts("john acme", { exclude: "J@ACME.COM" }),
         [],
       );
       server.contacts = [];
-      yield* m.calendar.refreshContacts(accountId);
-      assert.strictEqual((yield* m.compose.suggestContacts("john acme"))[0]?.name, "John Smith");
+      yield* m.contacts.refreshContacts(accountId);
+      assert.strictEqual((yield* m.contacts.suggestContacts("john acme"))[0]?.name, "John Smith");
       server.messages.set(
         "sent",
         incoming("sent", { labels: ["SENT"], to: [{ name: "Jane", address: "j@acme.com" }] }),
       );
       yield* m.sync.sync();
-      assert.deepStrictEqual(yield* m.compose.suggestContacts("john acme"), []);
-      assert.strictEqual((yield* m.compose.suggestContacts("jane acme"))[0]?.name, "Jane");
+      assert.deepStrictEqual(yield* m.contacts.suggestContacts("john acme"), []);
+      assert.strictEqual((yield* m.contacts.suggestContacts("jane acme"))[0]?.name, "Jane");
       server.messages.delete("sent");
       yield* m.sync.sync();
-      assert.deepStrictEqual(yield* m.compose.suggestContacts("jane acme"), []);
-      yield* m.compose.setContactHidden("j@acme.com", true);
-      assert.deepStrictEqual(yield* m.compose.suggestContacts("acme"), []);
+      assert.deepStrictEqual(yield* m.contacts.suggestContacts("jane acme"), []);
+      yield* m.contacts.setContactHidden("j@acme.com", true);
+      assert.deepStrictEqual(yield* m.contacts.suggestContacts("acme"), []);
     }).pipe(Effect.provide(TestMailbox({ gmail: server })));
   },
 );

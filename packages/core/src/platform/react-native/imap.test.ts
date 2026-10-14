@@ -367,7 +367,7 @@ it("runs mobile IMAP through shared connect, sync, reader, contacts, flags, move
           new Uint8Array([4, 5, 6]),
         );
         expect(
-          (yield* mailbox.compose.suggestContacts("alice", { accountIds: [account.id] }))[0]
+          (yield* mailbox.contacts.suggestContacts("alice", { accountIds: [account.id] }))[0]
             ?.address,
         ).toBe("alice@example.test");
         expect((yield* mailbox.reading.unreadByLabel([account.id])).INBOX).toBe(1);

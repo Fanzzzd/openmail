@@ -32,6 +32,7 @@ import { makeBatchMailbox } from "./mailbox-batch.js";
 import { makeCacheMailbox } from "./mailbox-cache.js";
 import { makeComposeSettingsMailbox } from "./mailbox-compose.js";
 import { makeDraftsMailbox } from "./mailbox-drafts.js";
+import { makeContactsMailbox } from "./mailbox-contacts.js";
 import { makeFeatureMailbox } from "./mailbox-features.js";
 import { makeFlushMailbox } from "./mailbox-flush.js";
 import { makeFolderMailbox } from "./mailbox-folders.js";
@@ -291,7 +292,7 @@ export const MailboxLive = (
         runtime,
       );
       const accountsMailbox = makeAccountsMailbox(
-        { ...deps, features: () => features, sync: (...args) => syncMailbox.sync(...args) },
+        { ...deps, contacts: () => contacts, sync: (...args) => syncMailbox.sync(...args) },
         runtime,
       );
       const syncMailbox = makeSyncMailbox(
@@ -300,7 +301,7 @@ export const MailboxLive = (
           applyChanges: makeApplyChanges({ ...deps, batchMailbox: () => batchMailbox }),
           organization: () => organization,
           flush: (...args) => flushMailbox.flush(...args),
-          features: () => features,
+          contacts: () => contacts,
           cache: () => cache,
           enforceCacheBudget: storage.enforceCacheBudget,
         },
@@ -397,6 +398,13 @@ export const MailboxLive = (
               : FiberSet.run(runtime.background, syncMailbox.sync(accountId)),
       );
 
+      const contacts = makeContactsMailbox(
+        store,
+        providers,
+        changed,
+        mutate,
+        options.imageDownloader ?? network.download,
+      );
       const features = makeFeatureMailbox(
         store,
         providers,
@@ -483,8 +491,7 @@ export const MailboxLive = (
       const { autoTriage: _autoTriage, autoSummaries: _autoSummaries, ...aiMembers } = ai;
       const { forgetMessages: _forgetMessages, ...batchMembers } = batchMailbox;
       const { searchServer: _searchServer, ...organizationMembers } = organization;
-      const { contactGroups, suggestSender, imageFromUrl, imageFromFile, ...calendarFeatures } =
-        features;
+      const { suggestSender, imageFromUrl, imageFromFile, ...calendarFeatures } = features;
       const { backfillOlder: _backfillOlder, readerThread: _readerThread, ...cacheMembers } = cache;
       const { enforceCacheBudget: _enforceCacheBudget, ...storageMembers } = storage;
       // Each group is one namespace of the one Mailbox service. Groups never expose the store;
@@ -502,11 +509,11 @@ export const MailboxLive = (
           ...draftsMailbox.compose,
           ...outboxMailbox.compose,
           ...makeComposeSettingsMailbox(store, mutate),
-          contactGroups,
           suggestSender,
           imageFromUrl,
           imageFromFile,
         },
+        contacts: contacts.contacts,
         outbox: { ...outboxMailbox.outbox, ...draftsMailbox.outbox },
         accounts: accountsMailbox.accounts,
         ai: {

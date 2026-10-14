@@ -169,7 +169,7 @@ export const composeHandlers = ({ mailbox, forAccounts }: ToolContext) => {
         p,
         Effect.map(
           forAccounts(p.account_id, (ids) =>
-            mailbox.compose.suggestContacts(p.query, {
+            mailbox.contacts.suggestContacts(p.query, {
               limit: 100,
               exclude: p.exclude,
               accountIds: ids,

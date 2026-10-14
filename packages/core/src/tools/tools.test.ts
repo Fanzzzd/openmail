@@ -101,7 +101,6 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
   const base: Service = {
     compose: {
       prepareRejectedResend: () => notUsed("prepareRejectedResend"),
-      contactGroups: () => notUsed("contactGroups"),
       imageFromUrl: () => notUsed("imageFromUrl"),
       imageFromFile: () => notUsed("imageFromFile"),
       suggestSender: () => notUsed("suggestSender"),
@@ -119,14 +118,20 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
       deleteNamedSignature: () => notUsed("deleteNamedSignature"),
       setSignatureDefault: () => notUsed("setSignatureDefault"),
       recoverDraft: () => notUsed("recoverDraft"),
-      contactAlternatives: () => notUsed("contactAlternatives"),
       setSignature: () => notUsed("setSignature"),
       templates: notUsed("templates"),
       saveTemplate: () => notUsed("saveTemplate"),
       deleteTemplate: () => notUsed("deleteTemplate"),
+    },
+    contacts: {
       suggestContacts: () => notUsed("suggestContacts"),
+      contactAlternatives: () => notUsed("contactAlternatives"),
       hiddenContacts: notUsed("hiddenContacts"),
       setContactHidden: () => notUsed("setContactHidden"),
+      contactGroups: () => notUsed("contactGroups"),
+      contactPhoto: () => notUsed("contactPhoto"),
+      contactSync: notUsed("contactSync"),
+      refreshContacts: () => notUsed("refreshContacts"),
     },
     proposals: {
       listFailedOps: notUsed("listFailedOps"),
@@ -241,9 +246,6 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
       createCalendarEvent: () => notUsed("createCalendarEvent"),
       invitations: () => notUsed("invitations"),
       respondInvite: () => notUsed("respondInvite"),
-      contactPhoto: () => notUsed("contactPhoto"),
-      contactSync: notUsed("contactSync"),
-      refreshContacts: () => notUsed("refreshContacts"),
     },
     outbox: {
       queuedSends: notUsed("queuedSends"),
@@ -318,6 +320,7 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
     organize: { ...base.organize, ...overrides.organize },
     proposals: { ...base.proposals, ...overrides.proposals },
     compose: { ...base.compose, ...overrides.compose },
+    contacts: { ...base.contacts, ...overrides.contacts },
     outbox: { ...base.outbox, ...overrides.outbox },
     accounts: { ...base.accounts, ...overrides.accounts },
     ai: { ...base.ai, ...overrides.ai },
@@ -2262,7 +2265,7 @@ it.effect("tools fail as not_found for an account, profile or id the client cann
         labels: () => Effect.succeed([]),
         threads: () => Effect.succeed([]),
       },
-      compose: {
+      contacts: {
         suggestContacts: () => Effect.succeed([]),
       },
       sync: {

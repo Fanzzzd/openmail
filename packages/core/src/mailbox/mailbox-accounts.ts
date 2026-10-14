@@ -2,7 +2,7 @@ import { Clock, Effect, FiberSet, Schema } from "effect";
 import { AccountSettings } from "../domain/account.js";
 import { AuthError, FeatureScopeMissing, InvalidInput } from "../domain/errors.js";
 import { GMAIL_PERMANENT_DELETE_SCOPE } from "../domain/folder-actions.js";
-import { type makeFeatureMailbox } from "./mailbox-features.js";
+import { type makeContactsMailbox } from "./mailbox-contacts.js";
 import { type MailboxDependencies, type MailboxRuntimeState } from "./mailbox-runtime.js";
 import type { MailboxAccounts, MailboxSync } from "./mailbox.js";
 import { makeOptionalServiceMailbox } from "./mailbox-services.js";
@@ -34,7 +34,7 @@ const accountMismatch = (signedInAs: string, expected: string) =>
 
 export const makeAccountsMailbox = (
   deps: MailboxDependencies & {
-    features: () => ReturnType<typeof makeFeatureMailbox>;
+    contacts: () => ReturnType<typeof makeContactsMailbox>;
     sync: MailboxSync["sync"];
   },
   runtime: MailboxRuntimeState,
@@ -96,7 +96,7 @@ export const makeAccountsMailbox = (
     yield* FiberSet.run(
       runtime.background,
       deps
-        .features()
+        .contacts()
         .refreshContacts(account.id, true, true)
         .pipe(Effect.catch(() => Effect.void)),
     );
@@ -174,7 +174,7 @@ export const makeAccountsMailbox = (
     if (isOptionalService(feature)) yield* store.setServiceEnabled(accountId, feature, true);
     if (feature === "contacts")
       yield* deps
-        .features()
+        .contacts()
         .refreshContacts(accountId, true, true)
         .pipe(Effect.catch(() => Effect.void));
     yield* changed;
@@ -185,7 +185,7 @@ export const makeAccountsMailbox = (
       accounts: store.listAccounts,
 
       ...makeOptionalServiceMailbox(store, changed, (...args) =>
-        deps.features().refreshContacts(...args),
+        deps.contacts().refreshContacts(...args),
       ),
 
       setAccountSettings: (id, input) =>

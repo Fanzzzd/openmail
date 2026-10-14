@@ -340,12 +340,11 @@ export interface MailboxProposals {
 }
 
 /**
- * The person's own drafts, signatures, templates and recipients. Agents write their drafts
+ * The person's own drafts, signatures and templates. Agents write their drafts
  * through `organize.perform({ kind: "draft" })`. Parts: mailbox-drafts.ts, mailbox-outbox.ts
  * (held discards), mailbox-compose.ts, mailbox-features.ts.
  */
 export interface MailboxCompose {
-  contactGroups(query: string, accountIds?: readonly string[]): Effect.Effect<ContactGroup[]>;
   imageFromUrl(url: string): Effect.Effect<OutgoingAttachment, InvalidInput | ProviderError>;
   imageFromFile(file: OutgoingAttachment): Effect.Effect<OutgoingAttachment, InvalidInput>;
   suggestSender(
@@ -396,8 +395,13 @@ export interface MailboxCompose {
   /** Creates a template, or updates the one with `id`. */
   saveTemplate(input: TemplateInput, id?: string): Effect.Effect<Template, NotFound>;
   deleteTemplate(id: string): Effect.Effect<void>;
+}
 
-  // Recipients
+/**
+ * Recipient suggestions, hidden addresses, contact groups and photos, and the server contacts of
+ * the optional contacts service. Part: mailbox-contacts.ts.
+ */
+export interface MailboxContacts {
   /**
    * Addresses for the To, Cc and Bcc fields, from local mail history: people
    * written to and heard from, ranked by frequency and recency, merged with
@@ -418,6 +422,10 @@ export interface MailboxCompose {
   readonly hiddenContacts: Effect.Effect<string[]>;
   /** Hides an address from suggestions, or shows it again. */
   setContactHidden(address: string, hidden: boolean): Effect.Effect<void>;
+  contactGroups(query: string, accountIds?: readonly string[]): Effect.Effect<ContactGroup[]>;
+  contactPhoto(accountId: string, address: string): Effect.Effect<string | null>;
+  readonly contactSync: Effect.Effect<ContactSync[]>;
+  refreshContacts(accountId: string, force?: boolean): Effect.Effect<void, PerformError>;
 }
 
 /** Sends: the undo-send wait, the mobile send queue and send again. Part: mailbox-outbox.ts. */
@@ -564,7 +572,7 @@ export interface MailboxSync {
   readonly syncState: Effect.Effect<SyncState>;
 }
 
-/** Calendar invites and events, and the contacts snapshot. Parts: mailbox-features.ts, mailbox-apply.ts. */
+/** Calendar invites and events. Parts: mailbox-features.ts, mailbox-apply.ts. */
 export interface MailboxCalendar {
   importCalendarAttachment(
     messageId: string,
@@ -591,9 +599,6 @@ export interface MailboxCalendar {
     actor: Actor,
     label?: string,
   ): Effect.Effect<void, PerformError>;
-  contactPhoto(accountId: string, address: string): Effect.Effect<string | null>;
-  readonly contactSync: Effect.Effect<ContactSync[]>;
-  refreshContacts(accountId: string, force?: boolean): Effect.Effect<void, PerformError>;
 }
 
 /** App settings, notifications, diagnostics, updates, remote access and the event stream. Part: mailbox-app.ts. */
@@ -629,7 +634,7 @@ export interface MailboxApp {
 }
 
 /**
- * One service, ten groups. Each group is a namespace typed by its interface above and
+ * One service, eleven groups. Each group is a namespace typed by its interface above and
  * built by its part files; there is one tag and one layer (`MailboxLive`).
  */
 export class Mailbox extends Context.Service<
@@ -639,6 +644,7 @@ export class Mailbox extends Context.Service<
     readonly organize: MailboxOrganize;
     readonly proposals: MailboxProposals;
     readonly compose: MailboxCompose;
+    readonly contacts: MailboxContacts;
     readonly outbox: MailboxOutbox;
     readonly accounts: MailboxAccounts;
     readonly ai: MailboxAi;

@@ -237,7 +237,7 @@ export default function Compose() {
       .runPromise(
         Effect.flatMap(Mailbox, (mailbox) =>
           query
-            ? mailbox.compose.suggestContacts(query, { accountIds: [params.accountId], limit: 5 })
+            ? mailbox.contacts.suggestContacts(query, { accountIds: [params.accountId], limit: 5 })
             : Effect.succeed([]),
         ),
       )

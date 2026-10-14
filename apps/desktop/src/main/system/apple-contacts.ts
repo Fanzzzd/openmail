@@ -63,10 +63,10 @@ export function desktopAppleContacts(mailbox: Mailbox["Service"]) {
         yield* read;
         return contacts.cache.suggest(
           query,
-          yield* mailbox.compose.suggestContacts(query, options),
+          yield* mailbox.contacts.suggestContacts(query, options),
           {
             ...options,
-            hidden: yield* mailbox.compose.hiddenContacts,
+            hidden: yield* mailbox.contacts.hiddenContacts,
             available: yield* available(options.accountIds),
           },
         );
@@ -75,15 +75,15 @@ export function desktopAppleContacts(mailbox: Mailbox["Service"]) {
       Effect.gen(function* () {
         yield* read;
         const local = (yield* available(accountIds))
-          ? contacts.cache.groups(query, yield* mailbox.compose.hiddenContacts)
+          ? contacts.cache.groups(query, yield* mailbox.contacts.hiddenContacts)
           : [];
-        return [...local, ...(yield* mailbox.compose.contactGroups(query, accountIds))];
+        return [...local, ...(yield* mailbox.contacts.contactGroups(query, accountIds))];
       }),
     alternatives: (address: string) =>
       Effect.gen(function* () {
         yield* read;
         const local = contacts.cache.alternatives(address);
-        return local.length ? local : yield* mailbox.compose.contactAlternatives(address);
+        return local.length ? local : yield* mailbox.contacts.contactAlternatives(address);
       }),
     photo: (accountId: string, address: string) =>
       Effect.gen(function* () {
@@ -92,7 +92,7 @@ export function desktopAppleContacts(mailbox: Mailbox["Service"]) {
           return null;
         return (
           contacts.cache.photo(address) ??
-          (yield* mailbox.calendar.contactPhoto(accountId, address))
+          (yield* mailbox.contacts.contactPhoto(accountId, address))
         );
       }),
     identifier: (address: string) =>

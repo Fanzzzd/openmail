@@ -20,7 +20,7 @@ import { runTokenKeepAlive } from "../sync/token-keepalive.js";
 import { backfillCachedHeaders } from "../sync/header-backfill.js";
 import { ImapIdle } from "../providers/imap/imap-idle.js";
 import { type makeCacheMailbox } from "./mailbox-cache.js";
-import { type makeFeatureMailbox } from "./mailbox-features.js";
+import { type makeContactsMailbox } from "./mailbox-contacts.js";
 import { type makeOrganizationMailbox } from "./mailbox-organization.js";
 import { type MailboxDependencies, type MailboxRuntimeState } from "./mailbox-runtime.js";
 import type { MailboxSync, SyncState } from "./mailbox.js";
@@ -124,7 +124,7 @@ export const makeSyncMailbox = (
     ) => (batch: readonly Change[]) => Effect.Effect<void, ProviderError | AuthError>;
     organization: () => ReturnType<typeof makeOrganizationMailbox>;
     flush: (accountIds?: readonly string[], skipImap?: boolean) => Effect.Effect<FlushResult>;
-    features: () => ReturnType<typeof makeFeatureMailbox>;
+    contacts: () => ReturnType<typeof makeContactsMailbox>;
     cache: () => ReturnType<typeof makeCacheMailbox>;
     enforceCacheBudget: (force?: boolean) => Effect.Effect<void>;
   },
@@ -374,7 +374,7 @@ export const makeSyncMailbox = (
           if (!result.error) runtime.polling.delete(account.id);
           if (!account.needsReauth)
             yield* deps
-              .features()
+              .contacts()
               .refreshContacts(account.id, false)
               .pipe(Effect.catch(() => Effect.void));
           yield* store.getBackfillState(account.id);

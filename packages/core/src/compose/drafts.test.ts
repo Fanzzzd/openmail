@@ -616,39 +616,39 @@ import { replyFromAddress } from "./signatures.js";
         (m) =>
           Effect.gen(function* () {
             yield* m.accounts.connect({ provider: "outlook" });
-            const top = yield* m.compose.suggestContacts("", { exclude: "Me@Gmail.com" });
+            const top = yield* m.contacts.suggestContacts("", { exclude: "Me@Gmail.com" });
             assert.deepStrictEqual(
               top.map((a) => a.address),
               ["carol@example.com", "alice@example.com", "dave@example.com", "me@outlook.com"],
             );
             // The person's other account is suggested; so is this one when not writing from it.
             assert.deepStrictEqual(
-              (yield* m.compose.suggestContacts("me@", { exclude: "me@gmail.com" })).map(
+              (yield* m.contacts.suggestContacts("me@", { exclude: "me@gmail.com" })).map(
                 (a) => a.address,
               ),
               ["me@outlook.com"],
             );
             assert.deepStrictEqual(
-              (yield* m.compose.suggestContacts("me@", { exclude: "me@outlook.com" })).map(
+              (yield* m.contacts.suggestContacts("me@", { exclude: "me@outlook.com" })).map(
                 (a) => a.address,
               ),
               ["me@gmail.com"],
             );
             assert.strictEqual(top[0]?.name, "Carol Chen");
             assert.deepStrictEqual(
-              (yield* m.compose.suggestContacts("CHEN")).map((a) => a.address),
+              (yield* m.contacts.suggestContacts("CHEN")).map((a) => a.address),
               ["carol@example.com"],
             );
 
-            yield* m.compose.setContactHidden("Alice@Example.com", true);
-            assert.deepStrictEqual(yield* m.compose.hiddenContacts, ["alice@example.com"]);
+            yield* m.contacts.setContactHidden("Alice@Example.com", true);
+            assert.deepStrictEqual(yield* m.contacts.hiddenContacts, ["alice@example.com"]);
             assert.ok(
-              !(yield* m.compose.suggestContacts("")).some(
+              !(yield* m.contacts.suggestContacts("")).some(
                 (a) => a.address === "alice@example.com",
               ),
             );
-            yield* m.compose.setContactHidden("alice@example.com", false);
-            assert.strictEqual((yield* m.compose.suggestContacts("ali")).length, 1);
+            yield* m.contacts.setContactHidden("alice@example.com", false);
+            assert.strictEqual((yield* m.contacts.suggestContacts("ali")).length, 1);
           }),
         [
           incoming("s1", {

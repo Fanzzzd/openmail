@@ -102,46 +102,46 @@ import { makeOutlookFeatures } from "../providers/outlook/outlook-features.js";
         yield* Effect.gen(function* () {
           const m = yield* Mailbox;
           yield* m.accounts.connect({ provider: "gmail" });
-          yield* m.calendar.refreshContacts(id);
-          assert.deepStrictEqual((yield* m.compose.contactGroups("team", [id]))[0]?.members, [
+          yield* m.contacts.refreshContacts(id);
+          assert.deepStrictEqual((yield* m.contacts.contactGroups("team", [id]))[0]?.members, [
             alice,
             bob,
           ]);
-          assert.deepStrictEqual(yield* m.compose.contactGroups("team", []), []);
+          assert.deepStrictEqual(yield* m.contacts.contactGroups("team", []), []);
           yield* m.app.setPrefs({
             contactPhotos: false,
             composeFont: { family: "Georgia", size: 18 },
             inlineImageSize: "large",
             emojiReplacement: false,
           });
-          assert.strictEqual(yield* m.calendar.contactPhoto(id, alice.address), null);
+          assert.strictEqual(yield* m.contacts.contactPhoto(id, alice.address), null);
           assert.strictEqual(downloads.length, 0);
           yield* m.app.setPrefs({ contactPhotos: true });
           assert.strictEqual(
-            yield* m.calendar.contactPhoto(id, alice.address),
+            yield* m.contacts.contactPhoto(id, alice.address),
             `data:image/png;base64,${png}`,
           );
           assert.deepStrictEqual(downloads, [
             { url: server.contactPhotos[0]?.url, limit: CONTACT_PHOTO_LIMIT },
           ]);
-          assert.strictEqual(yield* m.calendar.contactPhoto(id, bob.address), null);
+          assert.strictEqual(yield* m.contacts.contactPhoto(id, bob.address), null);
         }).pipe(Effect.provide(layer()));
         yield* Effect.gen(function* () {
           const m = yield* Mailbox;
-          assert.strictEqual((yield* m.compose.contactGroups("Team"))[0]?.members.length, 2);
+          assert.strictEqual((yield* m.contacts.contactGroups("Team"))[0]?.members.length, 2);
           assert.strictEqual((yield* m.app.prefs).composeFont.family, "Georgia");
           assert.strictEqual((yield* m.app.prefs).inlineImageSize, "large");
           assert.strictEqual((yield* m.app.prefs).emojiReplacement, false);
-          yield* m.calendar.contactPhoto(id, alice.address);
+          yield* m.contacts.contactPhoto(id, alice.address);
           assert.strictEqual(downloads.length, 1);
           server.featureFailure = new FeatureScopeMissing({
             accountId: id,
             feature: "contacts",
             message: "Missing grant",
           });
-          yield* m.calendar.refreshContacts(id).pipe(Effect.result);
-          assert.strictEqual((yield* m.compose.contactGroups("Team")).length, 1);
-          assert.strictEqual(yield* m.calendar.contactPhoto(id, alice.address), null);
+          yield* m.contacts.refreshContacts(id).pipe(Effect.result);
+          assert.strictEqual((yield* m.contacts.contactGroups("Team")).length, 1);
+          assert.strictEqual(yield* m.contacts.contactPhoto(id, alice.address), null);
           assert.strictEqual(downloads.length, 1);
           delete server.featureFailure;
           server.contactPhotos = [
@@ -149,22 +149,22 @@ import { makeOutlookFeatures } from "../providers/outlook/outlook-features.js";
           ];
           server.contactGroups = [];
           yield* m.accounts.reauth(id);
-          yield* m.calendar.refreshContacts(id);
-          assert.deepStrictEqual(yield* m.compose.contactGroups("Team"), []);
-          yield* m.calendar.contactPhoto(id, alice.address);
+          yield* m.contacts.refreshContacts(id);
+          assert.deepStrictEqual(yield* m.contacts.contactGroups("Team"), []);
+          yield* m.contacts.contactPhoto(id, alice.address);
           assert.strictEqual(downloads.length, 2);
           yield* m.accounts.setAccountSettings(id, {
             enabled: false,
             description: "",
             color: null,
           });
-          assert.strictEqual(yield* m.calendar.contactPhoto(id, alice.address), null);
-          assert.deepStrictEqual(yield* m.compose.contactGroups(""), []);
+          assert.strictEqual(yield* m.contacts.contactPhoto(id, alice.address), null);
+          assert.deepStrictEqual(yield* m.contacts.contactGroups(""), []);
           yield* m.organize.perform(
             { kind: "removeAccount", accountId: id },
             { kind: "user", surface: "app" },
           );
-          assert.strictEqual(yield* m.calendar.contactPhoto(id, alice.address), null);
+          assert.strictEqual(yield* m.contacts.contactPhoto(id, alice.address), null);
         }).pipe(Effect.provide(layer()));
       }),
   );
@@ -585,8 +585,8 @@ import { makeOutlookFeatures } from "../providers/outlook/outlook-features.js";
           "https://user:secret@lh3.googleusercontent.com/image.png",
         ]) {
           server.contactPhotos = [{ address: person.address, url }];
-          yield* m.calendar.refreshContacts(account.id);
-          assert.strictEqual(yield* m.calendar.contactPhoto(account.id, person.address), null);
+          yield* m.contacts.refreshContacts(account.id);
+          assert.strictEqual(yield* m.contacts.contactPhoto(account.id, person.address), null);
           assert.strictEqual(downloads, 0);
         }
         for (const url of [
@@ -594,9 +594,9 @@ import { makeOutlookFeatures } from "../providers/outlook/outlook-features.js";
           "https://lh3.googleusercontent.com/image.png",
         ]) {
           server.contactPhotos = [{ address: person.address, url }];
-          yield* m.calendar.refreshContacts(account.id);
+          yield* m.contacts.refreshContacts(account.id);
           assert.strictEqual(
-            yield* m.calendar.contactPhoto(account.id, person.address),
+            yield* m.contacts.contactPhoto(account.id, person.address),
             `data:image/png;base64,${png}`,
           );
         }
@@ -750,9 +750,9 @@ import { makeOutlookFeatures } from "../providers/outlook/outlook-features.js";
           const m = yield* Mailbox;
           const store = yield* Store;
           const account = yield* m.accounts.connect({ provider: "gmail" });
-          yield* m.calendar.refreshContacts(account.id);
+          yield* m.contacts.refreshContacts(account.id);
           const photo = yield* Effect.forkChild(
-            m.calendar.contactPhoto(account.id, person.address),
+            m.contacts.contactPhoto(account.id, person.address),
           );
           yield* Deferred.await(started);
           yield* m.app.setPrefs({ contactPhotos: false });
@@ -764,7 +764,7 @@ import { makeOutlookFeatures } from "../providers/outlook/outlook-features.js";
           );
           yield* m.app.setPrefs({ contactPhotos: true });
           assert.strictEqual(
-            yield* m.calendar.contactPhoto(account.id, person.address),
+            yield* m.contacts.contactPhoto(account.id, person.address),
             `data:image/png;base64,${png}`,
           );
           assert.strictEqual(downloads, 2);

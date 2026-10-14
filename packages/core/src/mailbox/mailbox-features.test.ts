@@ -97,45 +97,45 @@ it.effect(
       const m = yield* Mailbox;
       const account = yield* m.accounts.connect({ provider: "gmail" });
       yield* m.sync.sync();
-      assert.strictEqual((yield* m.calendar.contactSync)[0]?.count, 3);
+      assert.strictEqual((yield* m.contacts.contactSync)[0]?.count, 3);
       assert.strictEqual(
-        (yield* m.compose.suggestContacts("remote"))[0]?.address,
+        (yield* m.contacts.suggestContacts("remote"))[0]?.address,
         "remote@example.com",
       );
-      assert.strictEqual((yield* m.compose.suggestContacts("alice")).length, 1);
+      assert.strictEqual((yield* m.contacts.suggestContacts("alice")).length, 1);
       assert.deepStrictEqual(
-        yield* m.compose.suggestContacts("me@", { exclude: "ME@example.com" }),
+        yield* m.contacts.suggestContacts("me@", { exclude: "ME@example.com" }),
         [],
       );
-      yield* m.compose.setContactHidden("REMOTE@example.com", true);
-      assert.deepStrictEqual(yield* m.compose.suggestContacts("remote"), []);
-      yield* m.compose.setContactHidden("remote@example.com", false);
+      yield* m.contacts.setContactHidden("REMOTE@example.com", true);
+      assert.deepStrictEqual(yield* m.contacts.suggestContacts("remote"), []);
+      yield* m.contacts.setContactHidden("remote@example.com", false);
       server.contacts = [{ name: "Updated", address: "updated@example.com" }];
       yield* m.sync.sync();
-      assert.strictEqual((yield* m.calendar.contactSync)[0]?.count, 3);
+      assert.strictEqual((yield* m.contacts.contactSync)[0]?.count, 3);
       yield* TestClock.adjust("6 hours");
       yield* m.sync.sync();
-      assert.strictEqual((yield* m.calendar.contactSync)[0]?.count, 1);
-      assert.deepStrictEqual(yield* m.compose.suggestContacts("remote"), []);
+      assert.strictEqual((yield* m.contacts.contactSync)[0]?.count, 1);
+      assert.deepStrictEqual(yield* m.contacts.suggestContacts("remote"), []);
       server.featureFailure = new FeatureScopeMissing({
         accountId: account.id,
         feature: "contacts",
         message: "missing contacts scope",
       });
-      const result = yield* m.calendar.refreshContacts(account.id).pipe(Effect.result);
+      const result = yield* m.contacts.refreshContacts(account.id).pipe(Effect.result);
       assert.strictEqual(result._tag, "Success");
-      assert.strictEqual((yield* m.calendar.contactSync)[0]?.scopeMissing, true);
-      assert.strictEqual((yield* m.compose.suggestContacts("updated")).length, 1);
+      assert.strictEqual((yield* m.contacts.contactSync)[0]?.scopeMissing, true);
+      assert.strictEqual((yield* m.contacts.suggestContacts("updated")).length, 1);
       const mail = yield* m.sync.sync();
       assert.ok(!mail[0]?.error);
       assert.strictEqual((yield* m.accounts.accounts)[0]?.needsReauth, false);
       server.featureFailure = undefined;
       yield* m.accounts.reauth(account.id);
-      yield* m.calendar.refreshContacts(account.id);
-      assert.strictEqual((yield* m.calendar.contactSync)[0]?.scopeMissing, false);
+      yield* m.contacts.refreshContacts(account.id);
+      assert.strictEqual((yield* m.contacts.contactSync)[0]?.scopeMissing, false);
       yield* m.organize.perform({ kind: "removeAccount", accountId: account.id }, user);
-      assert.deepStrictEqual(yield* m.calendar.contactSync, []);
-      assert.deepStrictEqual(yield* m.compose.suggestContacts("updated"), []);
+      assert.deepStrictEqual(yield* m.contacts.contactSync, []);
+      assert.deepStrictEqual(yield* m.contacts.suggestContacts("updated"), []);
     }).pipe(Effect.provide(TestMailbox({ gmail: server })));
   },
 );

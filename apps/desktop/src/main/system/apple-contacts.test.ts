@@ -130,7 +130,7 @@ it.skipIf(process.platform !== "darwin")(
         const mailbox = yield* Mailbox;
         const account = yield* mailbox.accounts.connect({ provider: "gmail" });
         yield* mailbox.sync.sync();
-        yield* mailbox.calendar.refreshContacts(account.id);
+        yield* mailbox.contacts.refreshContacts(account.id);
         const desktop = desktopAppleContacts(mailbox);
         expect((yield* desktop.status).status).toBe("off");
         expect(native.calls).not.toHaveBeenCalled();
@@ -143,19 +143,19 @@ it.skipIf(process.platform !== "darwin")(
           }, waitLimit),
         );
         expect((yield* desktop.suggest("person", {}))[0]?.name).toBe("Apple Name");
-        expect((yield* mailbox.compose.suggestContacts("person"))[0]?.name).toBe("Server Name");
+        expect((yield* mailbox.contacts.suggestContacts("person"))[0]?.name).toBe("Server Name");
         expect(yield* mailbox.reading.knownSenders(account.id, ["work@example.com"])).toEqual([]);
         expect(
           yield* desktop.knownSenders(account.id, ["Work@example.com", "stranger@example.com"]),
         ).toEqual(["work@example.com"]);
-        expect(yield* mailbox.compose.contactGroups("Local Team")).toEqual([]);
+        expect(yield* mailbox.contacts.contactGroups("Local Team")).toEqual([]);
         expect(yield* desktop.groups("local")).toMatchObject([
           { members: [{ address: "work@example.com" }] },
         ]);
         expect(yield* desktop.groups("local", [])).toEqual([]);
         expect(yield* desktop.suggest("Private Organization", { accountIds: [] })).toEqual([]);
         expect(yield* desktop.suggest("person", { exclude: "PERSON@example.com" })).toEqual([]);
-        yield* mailbox.compose.setContactHidden("work@example.com", true);
+        yield* mailbox.contacts.setContactHidden("work@example.com", true);
         expect(yield* desktop.groups("local")).toEqual([]);
         yield* desktop.open("person@example.com");
         expect(native.open).toHaveBeenCalledWith(`addressbook://${id}`);

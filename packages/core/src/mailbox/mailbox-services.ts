@@ -1,4 +1,4 @@
-import type { makeFeatureMailbox } from "./mailbox-features.js";
+import type { makeContactsMailbox } from "./mailbox-contacts.js";
 import { Clock, Effect } from "effect";
 import { InvalidInput } from "../domain/errors.js";
 import type { MailboxAccounts } from "./mailbox.js";
@@ -9,7 +9,7 @@ import { providerCapabilities } from "../providers/capabilities.js";
 export function makeOptionalServiceMailbox(
   store: Store["Service"],
   changed: Effect.Effect<unknown>,
-  refreshContacts: ReturnType<typeof makeFeatureMailbox>["refreshContacts"],
+  refreshContacts: ReturnType<typeof makeContactsMailbox>["refreshContacts"],
 ) {
   return {
     optionalServices: (accountId) =>

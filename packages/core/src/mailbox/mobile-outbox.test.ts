@@ -351,7 +351,7 @@ import type { OutgoingMessage } from "../domain/changes.js";
             }
             const snooze = yield* mailbox.organize.snoozeWithUndo([row.id], Date.now() + 86400000);
             yield* mailbox.organize.undoBatch(snooze.undoId);
-            expect((yield* mailbox.compose.suggestContacts("alice"))[0]?.address).toBe(
+            expect((yield* mailbox.contacts.suggestContacts("alice"))[0]?.address).toBe(
               "alice@example.test",
             );
             const draft = { id: "draft:mobile", accountId: account.id, message };
