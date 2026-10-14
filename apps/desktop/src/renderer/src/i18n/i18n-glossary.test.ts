@@ -25,6 +25,25 @@ const selectors: Record<string, string> = {
   Space: "(?<!disk )\\bspaces?\\b",
 };
 const patternsFor: Record<string, Partial<Record<string, string>>> = glossary;
+const word = (words: string, flags = "u") => new RegExp(`(?<!\\p{L})(?:${words})(?!\\p{L})`, flags);
+// Usted forms: the pronoun, usted imperatives, and su/sus/le where they address the reader.
+const spanishUsted = [
+  word("usted|ustedes", "iu"),
+  word(
+    "Elija|Haga|Pulse|Presione|presione|Introduzca|Ingrese|Vuelva|Compruebe|Verifique|Añada|Agregue|Abra|Asegúrese|asegúrese|Espere|Intente|Inténtelo|inténtelo|Seleccione|Inicie|Conecte|Instale|Revise|Guarde|Utilice|Autorice|Termine|Deje|Elimine|Restaure|Suelte|Adjunte|Asigne|Salga|Responda|Cambie|Limite|Puede cerrar|Puede deshacer|Inició sesión",
+  ),
+  word(
+    "(?:su|sus) (?:navegador|conexión|credenciales|cuentas|primera cuenta|calendario principal|hora local|consentimiento|propio cliente|información|contraseña web|cuenta de Google|cuenta personal|cuenta de Yahoo|cuenta Apple|cambios)|[Ss]e le pedirá|le pedirá",
+  ),
+];
+// Informal Russian: ты and its forms, and imperatives without -те.
+const russianInformal = [
+  word("ты|тебя|тебе|тобой|тво(?:й|я|ё|е|и|его|ему|ей|ю|им|их|ими)", "iu"),
+  word(
+    "Спроси|Спрашивай|Нажми|Выбери|Открой|Добавь|Проверь|Попробуй|Включи|Отключи|Введи|Подожди|Удали|Сохрани|Используй|Перейди|Вернись|Закрой|Убедись|Скопируй|Создай|Войди|Подключи|Разреши|Обнови|Укажи|Измени|Подтверди|Настрой|Отмени|Повтори",
+    "iu",
+  ),
+];
 
 it("the complete catalogs consistently use the mail glossary, message-text terminology and the actual Edit body label", async () => {
   const po = formatter();
@@ -89,6 +108,13 @@ it("the complete catalogs consistently use the mail glossary, message-text termi
       // "Authorize permission" is not a doubled verb in French.
       if (locale === "fr" && /autoris\p{L}* l[’']autorisation/iu.test(target))
         failures.push(`${locale}: style: ${source} → ${target}`);
+      // Spanish addresses the reader with tú, Dutch with je and Russian with вы.
+      if (locale === "es" && spanishUsted.some((pattern) => pattern.test(target)))
+        failures.push(`${locale}: register: ${source} → ${target}`);
+      if (locale === "nl" && /(?<!\p{L})(?:u|uw|uzelf)(?!\p{L})/iu.test(target))
+        failures.push(`${locale}: register: ${source} → ${target}`);
+      if (locale === "ru" && russianInformal.some((pattern) => pattern.test(target)))
+        failures.push(`${locale}: register: ${source} → ${target}`);
       if (locale === "es" && /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]/.test(target))
         expect(target[0], source).toBe(target[0]?.toUpperCase());
     }
