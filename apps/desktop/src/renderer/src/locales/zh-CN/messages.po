@@ -7009,6 +7009,10 @@ msgid "Tailscale signed you in as {login}, and that login isn't on this Mac's li
 msgstr "Tailscale 以 {login} 的身份让你登录，但这个登录名不在这台 Mac 的列表中。"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Tailscale status"
+msgstr "Tailscale 状态"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Tailscale tells OpenMail who is visiting. Only these tailnet logins get in. Removing a login disconnects its browsers and keeps them out. The list starts with this Mac's own login."
 msgstr "Tailscale 会告诉 OpenMail 访问者是谁。只有这些 tailnet 登录名可以进入。移除登录名会断开它的浏览器，之后也无法再访问。列表默认包含这台 Mac 自己的登录名。"
 

@@ -385,7 +385,7 @@ export function RemoteAccessSettings() {
       </p>
       <SettingsGroup title={<Trans>Tailscale</Trans>}>
         <Status view={view} />
-        <SettingsRow label={<Trans>Check again</Trans>}>
+        <SettingsRow label={<Trans>Tailscale status</Trans>}>
           <button
             type="button"
             className={buttonSecondary}

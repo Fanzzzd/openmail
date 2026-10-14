@@ -6999,6 +6999,10 @@ msgid "Tailscale signed you in as {login}, and that login isn't on this Mac's li
 msgstr "Tailscale inició tu sesión como {login}, y ese inicio de sesión no está en la lista de este Mac."
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
+msgid "Tailscale status"
+msgstr "Estado de Tailscale"
+
+#: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Tailscale tells OpenMail who is visiting. Only these tailnet logins get in. Removing a login disconnects its browsers and keeps them out. The list starts with this Mac's own login."
 msgstr "Tailscale indica a OpenMail quién accede. Solo entran estos inicios de sesión de tailnet. Quitar un inicio de sesión desconecta sus navegadores y les impide volver a entrar. La lista empieza con el inicio de sesión de este Mac."
 
