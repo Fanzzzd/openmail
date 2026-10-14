@@ -89,7 +89,7 @@ export function DraftOrganization({
         </>
       )}
       {open && (
-        <div className="absolute right-4 bottom-12 z-10 w-64 space-y-2 rounded-card bg-overlay p-3 shadow-popup backdrop-blur-xl">
+        <div className="absolute right-4 bottom-12 z-10 w-64 space-y-2 rounded-card bg-overlay p-3 shadow-popup">
           {localLabels && (
             <p className="text-footnote text-a11y-muted">{t`Gmail draft labels and stars stay on this Mac. Gmail only allows the Draft label on server drafts.`}</p>
           )}

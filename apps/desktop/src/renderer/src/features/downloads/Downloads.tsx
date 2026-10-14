@@ -233,7 +233,7 @@ export function Downloads() {
           <Popover.Positioner sideOffset={popupOffset} align="end" className="z-[60] outline-none">
             <Popover.Popup
               initialFocus={() => !automatic.current}
-              className={`no-drag flex max-h-[min(28rem,var(--available-height))] w-[22rem] max-w-(--available-width) flex-col overflow-hidden rounded-card bg-overlay text-body text-neutral-900 shadow-popup outline-none backdrop-blur-xl dark:text-neutral-100 ${popupMotion}`}
+              className={`no-drag flex max-h-[min(28rem,var(--available-height))] w-[22rem] max-w-(--available-width) flex-col overflow-hidden rounded-card bg-overlay text-body text-neutral-900 shadow-popup outline-none dark:text-neutral-100 ${popupMotion}`}
             >
               <div className="flex items-center justify-between gap-2 border-b border-separator px-4 pt-3 pb-2.5">
                 <Popover.Title className="text-body font-semibold">

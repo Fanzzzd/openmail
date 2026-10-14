@@ -149,3 +149,9 @@ it("retains user label hues with readable foregrounds on both themes and selecte
   // A red label stays red, rather than falling back to neutral message text.
   expect(labelChipColors("#ff0000")["--label-text-light"]).toMatch(/^#[a-f\d]{2}0000$/);
 });
+
+it("popups are opaque, so the transparent sidebar behind one never reads through", () => {
+  const overlays = [...css.matchAll(/--overlay:\s*([^;]+);/g)].map((match) => match[1]);
+  expect(overlays).toHaveLength(2);
+  for (const value of overlays) expect(value).toMatch(/^#[\da-f]{6}$/);
+});

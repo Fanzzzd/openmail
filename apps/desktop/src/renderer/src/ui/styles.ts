@@ -6,9 +6,12 @@
  * out of the titlebar drag region itself (no-drag).
  */
 
-/** Menus, pickers, selects and popovers: a translucent macOS panel, kept inside the window. */
+/**
+ * Menus, pickers, selects and popovers: an opaque panel kept inside the window. Opaque because
+ * the sidebar behind a popup is transparent, and blur there let its text read through.
+ */
 export const popupSurface =
-  "no-drag max-h-(--available-height) max-w-(--available-width) rounded-card bg-overlay text-body text-neutral-900 shadow-popup outline-none backdrop-blur-xl dark:text-neutral-100";
+  "no-drag max-h-(--available-height) max-w-(--available-width) rounded-card bg-overlay text-body text-neutral-900 shadow-popup outline-none dark:text-neutral-100";
 
 /** Scale-and-fade from the anchor. Off with reduced motion and for instant opens. */
 export const popupMotion =

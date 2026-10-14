@@ -182,7 +182,8 @@ body {
 
     --surface: #ffffff;
     --raised: #ffffff;
-    --overlay: rgb(255 255 255 / 0.94);
+    /* Opaque: the sidebar is transparent for vibrancy, so its text would show through. */
+    --overlay: #ffffff;
     --separator: rgb(0 0 0 / 0.08);
     --edge: rgb(0 0 0 / 0.11);
     --fill-quiet: rgb(0 0 0 / 0.035);
@@ -206,7 +207,7 @@ body {
 
       --surface: #171717;
       --raised: #262626;
-      --overlay: rgb(40 40 42 / 0.94);
+      --overlay: #28282a;
       --separator: rgb(255 255 255 / 0.08);
       --edge: rgb(255 255 255 / 0.1);
       --fill-quiet: rgb(255 255 255 / 0.04);

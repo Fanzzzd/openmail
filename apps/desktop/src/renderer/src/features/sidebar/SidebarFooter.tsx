@@ -5,7 +5,7 @@ import { RefreshCw, Settings as SettingsIcon } from "lucide-react";
 import type { Account, SyncProgress, SyncState } from "../../../../shared/api";
 import { useShortcutText } from "../../i18n/use-shortcut-text";
 import { syncNow, useRunMail } from "../../state/mail";
-import { popupMotion, popupOffset, touchIcon } from "../../ui/styles";
+import { popupMotion, popupOffset, popupSurface, touchIcon } from "../../ui/styles";
 import { Tip } from "../../ui/Tip";
 import { SyncFailureDetails, SyncStatusAnnouncement } from "../sync-status";
 import { dateFormat } from "../../lib/format";
@@ -66,9 +66,7 @@ export function SidebarFooter({
                     sideOffset={popupOffset}
                     className="z-[60] outline-none"
                   >
-                    <Popover.Popup
-                      className={`no-drag w-[22rem] max-w-(--available-width) rounded-card bg-overlay p-3 text-body text-neutral-900 shadow-popup outline-none backdrop-blur-xl dark:text-neutral-100 ${popupMotion}`}
-                    >
+                    <Popover.Popup className={`${popupSurface} w-[22rem] p-3 ${popupMotion}`}>
                       <Popover.Title className="mb-2 text-body font-semibold">
                         <Trans>Sync problems</Trans>
                       </Popover.Title>
