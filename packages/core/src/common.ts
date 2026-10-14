@@ -32,6 +32,7 @@ export {
 } from "./tools/tools.js";
 export { AgentIdentity } from "./tools/agent-identity.js";
 export { MailToolError, unknownArguments } from "./tools/tool-common.js";
+export { APPROVE_IN_APP } from "./mailbox/mailbox-apply.js";
 
 export * from "./domain/organization.js";
 export * from "./search/search.js";

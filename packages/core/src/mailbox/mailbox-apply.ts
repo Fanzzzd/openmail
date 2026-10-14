@@ -31,6 +31,10 @@ const isAiProposalActor = (actor: Actor): boolean =>
   actor.kind === "agent" &&
   (actor.surface === "mcp" || actor.surface === "assistant" || actor.name === "openmail-assistant");
 
+/** Where proposals are approved. The CLI and MCP only list and reject them. */
+export const APPROVE_IN_APP =
+  "Approve proposals in OpenMail, under AI suggestions. The CLI and MCP cannot approve them.";
+
 export const withAgentOrigin = (message: OutgoingMessage, actor: Actor): OutgoingMessage =>
   isAiProposalActor(actor)
     ? {
@@ -361,15 +365,9 @@ export const makeApplyMailbox = (
     surface: "app" | "cli",
   ) {
     const proposal = yield* store.getProposal(id);
-    if (approve && surface !== "app" && isAiProposalActor(proposal.actor))
-      return yield* new InvalidInput({ message: "Approve AI proposals in the app." });
-    // Approving a message outside the app would count as the in-app confirmation sending needs.
-    if (
-      approve &&
-      surface !== "app" &&
-      (proposal.command.kind === "send" || proposal.command.kind === "draft")
-    )
-      return yield* new InvalidInput({ message: "Review and send proposed messages in the app." });
+    // Only the person approves, in the app. An agent with a shell could run the CLI, so a CLI
+    // approval is not the person's confirmation that changes and sends need.
+    if (approve && surface !== "app") return yield* new InvalidInput({ message: APPROVE_IN_APP });
     if (proposal.status !== "pending") {
       return yield* new InvalidInput({
         message: `Proposal ${id} is already ${proposal.status}.`,

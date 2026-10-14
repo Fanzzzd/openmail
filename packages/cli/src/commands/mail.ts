@@ -17,7 +17,10 @@ import { messageText, syncTable, threadTable } from "../format.js";
 const health = Command.make(
   "health",
   {
-    account: Flag.String("account").pipe(Flag.optional),
+    account: Flag.String("account").pipe(
+      Flag.withDescription("Only this account (an id from `openmail accounts list`)"),
+      Flag.optional,
+    ),
     json: jsonFlag,
   },
   Effect.fn(function* ({ account, json }) {
@@ -29,19 +32,21 @@ const health = Command.make(
       mailbox.syncHealth(id).pipe(Effect.map(redactSyncHealth)),
     );
     yield* print(reports, json, (items) =>
-      items
-        .map((report) =>
-          [
-            `${report.provider} ${report.accountDomainHash}`,
-            `Cursor age: ${report.cursorAgeMs === null ? "never synced" : `${report.cursorAgeMs} ms`}; pending operations: ${report.pendingOps}`,
-            "Folder\tServer total/unread/threads\tLocal total/unread/threads\tBody cache days\tHeader window\tPending\tVerdict",
-            ...report.folders.map(
-              (folder) =>
-                `${folder.scope}\t${folder.server.kind === "available" ? `${folder.server.total}/${folder.server.unread}/${folder.server.threads ?? "—"}` : "unavailable"}\t${folder.local.total}/${folder.local.unread}/${folder.local.threads}\t${folder.bodyCacheWindowDays ?? "all"}\t${folder.headerWindow ? `${folder.headerWindow.days} days, ${folder.headerWindow.messageLimit} messages` : "all"}\t${folder.pendingOps}\t${folder.verdict}`,
-            ),
-          ].join("\n"),
-        )
-        .join("\n\n"),
+      items.length === 0
+        ? "(no accounts; run `openmail accounts add gmail`)"
+        : items
+            .map((report) =>
+              [
+                `${report.provider} ${report.accountDomainHash}`,
+                `Cursor age: ${report.cursorAgeMs === null ? "never synced" : `${report.cursorAgeMs} ms`}; pending operations: ${report.pendingOps}`,
+                "Folder\tServer total/unread/threads\tLocal total/unread/threads\tBody cache days\tHeader window\tPending\tVerdict",
+                ...report.folders.map(
+                  (folder) =>
+                    `${folder.scope}\t${folder.server.kind === "available" ? `${folder.server.total}/${folder.server.unread}/${folder.server.threads ?? "—"}` : "unavailable"}\t${folder.local.total}/${folder.local.unread}/${folder.local.threads}\t${folder.bodyCacheWindowDays ?? "all"}\t${folder.headerWindow ? `${folder.headerWindow.days} days, ${folder.headerWindow.messageLimit} messages` : "all"}\t${folder.pendingOps}\t${folder.verdict}`,
+                ),
+              ].join("\n"),
+            )
+            .join("\n\n"),
     );
   }),
 ).pipe(Command.withDescription("Compare cached messages with read-only server counts"));
@@ -143,7 +148,10 @@ const pageText = (threads: readonly ThreadSummary[], next: string | undefined, n
 const list = Command.make(
   "list",
   {
-    mailbox: Flag.Literals("mailbox", MAILBOXES).pipe(Flag.withDefault("inbox")),
+    mailbox: Flag.Literals("mailbox", MAILBOXES).pipe(
+      Flag.withDescription("Mailbox to list"),
+      Flag.withDefault("inbox"),
+    ),
     account: optionalString("account", "Only this account"),
     ...spaceFlags,
     label: optionalString("label", "Only threads with this label or folder id"),

@@ -20,18 +20,18 @@ openmail list --space <space-id> --label <label-id>
 openmail search 'from:alice@example.com has:attachment'
 openmail show '<message-id>' --thread
 openmail proposals list
-openmail proposals approve <id>
+openmail proposals reject <id>
 openmail agents write-mode
 openmail audit --limit 20
 ```
 
 OAuth 注册步骤见 [Google](setup-google.md) 与 [Microsoft](setup-microsoft.md)。IMAP 的 `--preset` 可选 `icloud`、`yahoo`、`qq`、`163`、`fastmail`、`custom`；`custom` 需要 `--imap-host` 和 `--smtp-host`。密码按顺序读取 `--password`、`OPENMAIL_IMAP_PASSWORD`、交互提示；交互提示无需在命令中填写密码。
 
-`list` 和 `search` 每个会话输出一行：时间、发件人、主题和 `show` 用的消息 ID，未读行带 `*`；还有下一页时，末行给出 `--cursor`。`--json` 输出 `{threads, next_cursor}`，行字段与 core 的 `ThreadSummary` 相同。空间（core 里叫 Profile）用 `openmail spaces` 管理，`list --space` 筛选；旧的 `openmail profiles` 和 `--profile` 仍可用，帮助里不再列出。
+`list` 和 `search` 每个会话输出一行：时间、发件人、主题和 `show` 用的消息 ID，未读行带 `*`；还有下一页时，末行给出 `--cursor`。`--json` 输出 `{threads, next_cursor}`，行字段与 core 的 `ThreadSummary` 相同。空间（core 里叫 Profile）用 `openmail spaces` 管理，`list --space` 筛选；旧的 `openmail profiles` 和 `--profile` 仍可用，帮助里不再列出。`spaces assign` 和 `spaces remove` 接受空间 ID，也接受只有一个空间使用的名称（不分大小写）；账户或空间不存在、名称对应多个空间时报错，退出码 1。用法错误（缺参数、未知参数或子命令）不打印整页帮助，只在 stderr 写错误、用法和 `--help` 提示，退出码 2。
 
 `list`、`search`、`show`、`sync` 和 `health` 是人在终端里输入的命令，以用户身份经 Mailbox 读取所有已启用账户，不检查逐账户 AI 授权。理由：用户自己的 shell 本来就能读 SQLite 文件，这里加授权检查挡不住任何人。AI 授权只约束代理入口：`openmail tool <工具名>` 和 `openmail mcp`。
 
-人工命令的改动以 `user:cli` 进入审计。`agents write-mode` 仅查看权限；传入模式参数会失败，修改须在 app 的设置中完成。`proposals approve` 可批准普通规则的整理提议；MCP 与内置助手提议须在 app 中批准。批准前 CLI 在交互终端里显示提议并要求确认；stdin 不是终端时拒绝执行，除非显式传入 `--yes`。消息提议（send、draft）在 CLI 中一律不能批准，`--yes` 也不行，core 的 `decideProposal` 同样拒绝非 app 的批准，因为脚本里的批准不能算作发送所需的 app 内人工确认。CLI 没有 send 命令，发送须在 app 中审阅。
+人工命令的改动以 `user:cli` 进入审计。`agents write-mode` 仅查看权限；传入模式参数会失败，修改须在 app 的设置中完成。CLI 只能列出（`proposals list`）和拒绝（`proposals reject`）提议，不能批准。批准只在 app 的 AI suggestions 里进行：能跑 shell 的代理也能调用 CLI，CLI 里的批准算不上用户本人的确认。旧的 `proposals approve` 仍能解析，但不出现在帮助里，调用时以退出码 1 失败并提示去 app 批准；core 的 `decideProposal` 同样拒绝所有非 app 的批准。CLI 没有 send 命令，发送须在 app 中审阅。
 
 只检查同步时运行 `openmail health --json`，单账户加 `--account <id>`。报告只比较服务商和本地计数，不同步或修复数据；字段解释只在[同步说明](sync-correctness.md#同步健康检查)维护。命令实现见 [cli.ts](../packages/cli/src/cli.ts)。
 

@@ -1,10 +1,10 @@
 /** proposals, agents, audit and mcp: what models asked for, may do and did. */
 
-import { Argument, Command, Flag, Prompt } from "effect/cli";
+import { Argument, Command, Flag } from "effect/cli";
 import { fail, jsonFlag, print } from "./common.js";
 import { Console, Effect } from "effect";
-import { Mailbox } from "@openmail/core";
-import { auditTable, commandSummary, outcomeText, proposalTable } from "../format.js";
+import { APPROVE_IN_APP, Mailbox } from "@openmail/core";
+import { auditTable, proposalTable } from "../format.js";
 import { runMcp } from "../mcp-server.js";
 
 const proposalsList = Command.make(
@@ -18,45 +18,19 @@ const proposalsList = Command.make(
 
 const proposalId = Argument.Int("proposal-id");
 
-/** An approval from a script is not a person's decision; only an interactive terminal counts. */
+/**
+ * Approving happens only in the app: an agent with a shell could run this command, so a CLI
+ * approval is not the person's confirmation. The old command stays, unlisted, so scripts that
+ * call it learn where to go instead of failing with a usage error.
+ */
 const proposalsApprove = Command.make(
   "approve",
   {
-    id: proposalId,
-    yes: Flag.Boolean("yes").pipe(
-      Flag.withDescription(
-        "Approve without the confirmation prompt (needed when stdin is not a terminal). Never approves messages.",
-      ),
-      Flag.withDefault(false),
-    ),
+    id: Argument.String("proposal-id").pipe(Argument.optional),
+    yes: Flag.Boolean("yes").pipe(Flag.withHidden, Flag.withDefault(false)),
   },
-  Effect.fn(function* ({ id, yes }) {
-    const mailbox = yield* Mailbox;
-    const proposal = (yield* mailbox.proposals).find((p) => p.id === id);
-    if (!proposal) return yield* fail(`No proposal with id ${id}.`);
-    if (proposal.command.kind === "send" || proposal.command.kind === "draft") {
-      return yield* fail(
-        `Proposal ${id} is a message (${commandSummary(proposal.command)}). Open openmail to review and send it; the CLI does not approve or send mail.`,
-      );
-    }
-    if (!yes) {
-      if (!process.stdin.isTTY)
-        return yield* fail(
-          "Approving needs a confirmation in an interactive terminal. Run it in a terminal, or pass --yes.",
-        );
-      const confirmed = yield* Prompt.run(
-        Prompt.Confirm({
-          message: `Approve proposal ${id}: ${commandSummary(proposal.command)}?`,
-        }),
-      );
-      if (!confirmed) return yield* Console.log(`Proposal ${id} is still pending.`);
-    }
-    const outcome = yield* mailbox.decideProposal(id, true, "cli");
-    return yield* Console.log(outcomeText(outcome, `Approved proposal ${id}.`));
-  }),
-).pipe(
-  Command.withDescription("Approve a proposed change after confirming; it runs as you (user:cli)"),
-);
+  () => fail(APPROVE_IN_APP),
+).pipe(Command.withDescription("Removed: approve proposals in the app"), Command.unlisted);
 
 const proposalsReject = Command.make(
   "reject",
@@ -66,10 +40,10 @@ const proposalsReject = Command.make(
     yield* mailbox.decideProposal(id, false, "cli");
     yield* Console.log(`Rejected proposal ${id}.`);
   }),
-).pipe(Command.withDescription("Reject a proposed change"));
+).pipe(Command.withDescription("Reject a proposed change. Approving happens only in the app."));
 
 const proposals = Command.make("proposals").pipe(
-  Command.withDescription("Review what agents asked to change"),
+  Command.withDescription("List and reject what agents asked to change; approve in the app"),
   Command.withSubcommands([proposalsList, proposalsApprove, proposalsReject]),
 );
 

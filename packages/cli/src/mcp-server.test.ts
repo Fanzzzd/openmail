@@ -243,16 +243,33 @@ test.concurrent("CLI help keeps tools under `tool`, lists each by its first sent
   // --allow-writes appears only where it does something.
   expect(own).not.toContain("--allow-writes");
   expect(proposal).toContain("--allow-writes");
+  // Usage errors exit 2 with a short message on stderr and nothing on stdout.
   await expect(
     run(process.execPath, ["dist/cli.js", "read-thread", "--input-json", "{}"], options),
-  ).rejects.toMatchObject({ code: 1 });
+  ).rejects.toMatchObject({ code: 2, stdout: "" });
   await expect(
     run(
       process.execPath,
       ["dist/cli.js", "tool", "read_thread", "--allow-writes", "--input-json", "{}"],
       options,
     ),
-  ).rejects.toMatchObject({ code: 1 });
+  ).rejects.toMatchObject({
+    code: 2,
+    stdout: "",
+    stderr:
+      "error: Unrecognized flag: --allow-writes in command openmail tool read_thread\nUsage: openmail tool read_thread [flags]\nRun `openmail tool read_thread --help` for details.\n",
+  });
+  await expect(
+    run(process.execPath, ["dist/cli.js", "spaces", "assign"], options),
+  ).rejects.toMatchObject({
+    code: 2,
+    stdout: "",
+    stderr: expect.stringMatching(/^error: Missing required argument: account-id\nUsage: /),
+  });
+  // Every flag says what it takes.
+  const google = await help("config", "google");
+  expect(google).toContain("--client-id string        Client ID of your Desktop app OAuth client");
+  expect(google).toContain("--client-secret string    Client secret");
 });
 
 test.concurrent("stdio MCP defaults to read-only tools, calls the shared Toolkit and rejects hidden writes", async ({
@@ -757,22 +774,96 @@ async function seedProposals(directory: string) {
   );
 }
 
-test.concurrent("proposals approve needs a terminal or --yes, and never approves a message", async ({
+test.concurrent("the CLI lists and rejects proposals but never approves one", async ({
   expect,
   onTestFinished,
 }) => {
   const directory = await home(onTestFinished, "openmail-cli-approve-test-");
   const { archive, send } = await seedProposals(directory);
   const options = { env: { ...process.env, OPENMAIL_HOME: directory } };
-  const approve = (...args: string[]) =>
-    run(process.execPath, ["dist/cli.js", "proposals", "approve", ...args], options);
-  // execFile gives the child a pipe for stdin, not a terminal.
-  await expect(approve(String(archive))).rejects.toMatchObject({
-    stderr: expect.stringContaining("interactive terminal"),
+  const cli = (...args: string[]) =>
+    run(process.execPath, ["dist/cli.js", ...args], options).then(
+      (done) => ({ code: 0, ...done }),
+      (error: unknown) => Schema.decodeUnknownSync(Failure)(error),
+    );
+  const message =
+    "error: Approve proposals in OpenMail, under AI suggestions. The CLI and MCP cannot approve them.\n";
+  for (const args of [[String(archive)], [String(send), "--yes"], []])
+    expect(await cli("proposals", "approve", ...args)).toMatchObject({
+      code: 1,
+      stdout: "",
+      stderr: message,
+    });
+  const help = await cli("proposals", "--help");
+  expect(help.stdout).not.toMatch(/^\s+approve/m);
+  expect(help.stdout).toContain("reject");
+  expect(await cli("proposals", "reject", String(archive))).toMatchObject({ code: 0 });
+  const list = await cli("proposals", "list");
+  expect(list.stdout.match(/pending/g)).toHaveLength(1);
+});
+
+/** Two spaces named Work, one named Home, and one account outside any space. */
+async function seedSpaces(directory: string) {
+  return Effect.runPromise(
+    Effect.scoped(
+      Effect.gen(function* () {
+        const store = yield* Store;
+        const account = yield* store.upsertAccount("gmail", "me@example.com");
+        const home = yield* store.createProfile({ name: "Home", icon: "🏠", color: "blue" });
+        for (let i = 0; i < 2; i++)
+          yield* store.createProfile({ name: "Work", icon: "💼", color: "blue" });
+        return { account: account.id, home: home.id };
+      }).pipe(
+        Effect.provide(
+          TestMailbox({}, { backgroundFlush: false }, {}, undefined, {
+            database: join(directory, "mail.db"),
+          }),
+        ),
+      ),
+    ),
+  );
+}
+
+test.concurrent("spaces assign and remove fail on unknown ids and take an unambiguous name", async ({
+  expect,
+  onTestFinished,
+}) => {
+  const directory = await home(onTestFinished, "openmail-cli-spaces-test-");
+  const empty = await home(onTestFinished, "openmail-cli-empty-test-");
+  const { account, home: homeSpace } = await seedSpaces(directory);
+  const cli = (dir: string, ...args: string[]) =>
+    run(process.execPath, ["dist/cli.js", ...args], {
+      env: { ...process.env, OPENMAIL_HOME: dir },
+    }).then(
+      (done) => ({ code: 0, ...done }),
+      (error: unknown) => Schema.decodeUnknownSync(Failure)(error),
+    );
+  expect(await cli(directory, "spaces", "assign", "1", "x")).toMatchObject({
+    code: 1,
+    stderr: "error: No account with id 1. Run `openmail accounts list` to see them.\n",
   });
-  await expect(approve(String(send), "--yes")).rejects.toMatchObject({
-    stderr: expect.stringContaining("does not approve or send mail"),
+  expect(await cli(directory, "spaces", "remove", "Nope")).toMatchObject({
+    code: 1,
+    stderr: "error: No space with id or name Nope. Run `openmail spaces list` to see them.\n",
   });
-  const list = await run(process.execPath, ["dist/cli.js", "proposals", "list"], options);
-  expect(list.stdout.match(/pending/g)).toHaveLength(2);
+  expect(await cli(directory, "spaces", "assign", account, "work")).toMatchObject({
+    code: 1,
+    stderr: expect.stringContaining("2 spaces are named work. Pass the space id"),
+  });
+  expect(await cli(directory, "spaces", "assign", account, "home")).toMatchObject({
+    code: 0,
+    stdout: `Moved ${account} to Home.\n`,
+  });
+  expect((await cli(directory, "spaces", "list")).stdout).toContain(
+    `${homeSpace}\n      ${account}`,
+  );
+  expect(await cli(directory, "spaces", "remove", "Home")).toMatchObject({
+    code: 0,
+    stdout: `Removed space Home (${homeSpace}).\n`,
+  });
+  // health with no accounts says so, like accounts list.
+  expect(await cli(empty, "health")).toMatchObject({
+    code: 0,
+    stdout: "(no accounts; run `openmail accounts add gmail`)\n",
+  });
 });

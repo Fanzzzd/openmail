@@ -16,6 +16,7 @@ import { toolCommands } from "./commands/tools.js";
 import { CliError, Command } from "effect/cli";
 import { corpus } from "./commands/corpus.js";
 import { Failed, fail } from "./commands/common.js";
+import { withShortUsageErrors } from "./usage.js";
 import * as NodeRuntime from "@effect/platform-node/NodeRuntime";
 
 /**
@@ -80,6 +81,8 @@ function explain(error: unknown): string | undefined {
   if (CliError.isCliError(error) || !(error instanceof Error)) return undefined;
   if (!("_tag" in error)) return error.message;
   switch (error._tag) {
+    case "UsageError":
+      return undefined;
     case "NotFound":
       return "what" in error && "id" in error
         ? `No ${String(error.what)} with id ${String(error.id)}.`
@@ -104,7 +107,7 @@ const appOnlyWriteMode =
   cliArgs.slice(2).some((arg) => !arg.startsWith("-"));
 (appOnlyWriteMode
   ? fail("Agent write mode can only be changed in the app under Settings > AI Access.")
-  : Command.run(openmail, { version: "0.1.0" })
+  : withShortUsageErrors(Command.run(openmail, { version: "0.1.0" }))
 ).pipe(
   Effect.catch((error) => {
     const message = explain(error);

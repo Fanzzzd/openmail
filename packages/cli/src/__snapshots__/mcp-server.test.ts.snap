@@ -24,7 +24,7 @@ SUBCOMMANDS
   list            List conversations in a mailbox, newest first
   search          Search mail with words and Gmail-style operators
   show            Print a message as plain text, or its whole thread
-  proposals       Review what agents asked to change
+  proposals       List and reject what agents asked to change; approve in the app
   agents          Permissions for MCP clients and other agents
   audit           Show recent changes and who made them
   mcp             Run the MCP server on stdio (same as \`openmail-mcp\`)
@@ -54,7 +54,7 @@ SUBCOMMANDS
   list_labels         List labels (Gmail) and folders (Outlook, IMAP) per account, plus Gmail categories
   list_threads        List conversations in a mailbox from the local copy, newest first
   search              Search the local copy with words and Gmail-style operators
-  semantic_search     Find up to five conversations in one account by meaning, using its on-device text index
+  semantic_search     Find up to five conversations by meaning, using the on-device text index
   read_thread         Read a conversation as plain text, oldest message first, without quoted history, signatures or attachments
   sync                Fetch new and changed mail from the providers into the local copy, and push changes the person already approved
   list_templates      List saved templates by id, name and subject

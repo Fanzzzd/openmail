@@ -10,8 +10,12 @@ import { withProgress } from "../sync-progress.js";
 const configGoogle = Command.make(
   "google",
   {
-    clientId: Flag.String("client-id"),
-    clientSecret: Flag.String("client-secret"),
+    clientId: Flag.String("client-id").pipe(
+      Flag.withDescription("Client ID of your Desktop app OAuth client in Google Cloud"),
+    ),
+    clientSecret: Flag.String("client-secret").pipe(
+      Flag.withDescription("Client secret of the same OAuth client"),
+    ),
   },
   Effect.fn(function* ({ clientId, clientSecret }) {
     const mailbox = yield* Mailbox;
@@ -22,7 +26,11 @@ const configGoogle = Command.make(
 
 const configMicrosoft = Command.make(
   "microsoft",
-  { clientId: Flag.String("client-id") },
+  {
+    clientId: Flag.String("client-id").pipe(
+      Flag.withDescription("Application (client) ID of your Azure app registration"),
+    ),
+  },
   Effect.fn(function* ({ clientId }) {
     const mailbox = yield* Mailbox;
     yield* mailbox.setClient({ microsoft: { clientId } });
@@ -187,7 +195,10 @@ const profilesAdd = Command.make(
       Flag.withDescription("Icon on the switcher"),
       Flag.withDefault("📁"),
     ),
-    color: Flag.Literals("color", PROFILE_COLORS).pipe(Flag.withDefault("blue")),
+    color: Flag.Literals("color", PROFILE_COLORS).pipe(
+      Flag.withDescription("Color on the switcher"),
+      Flag.withDefault("blue"),
+    ),
   },
   Effect.fn(function* ({ name, icon, color }) {
     const mailbox = yield* Mailbox;
@@ -196,28 +207,54 @@ const profilesAdd = Command.make(
   }),
 ).pipe(Command.withDescription("Create a space"));
 
+/** A space by id, or by name when exactly one space has it (any letter case). */
+const findSpace = (idOrName: string) =>
+  Effect.gen(function* () {
+    const spaces = yield* (yield* Mailbox).profiles;
+    const byId = spaces.find((p) => p.id === idOrName);
+    if (byId) return byId;
+    const named = spaces.filter((p) => p.name.toLowerCase() === idOrName.toLowerCase());
+    if (named.length === 1 && named[0]) return named[0];
+    return yield* fail(
+      named.length > 1
+        ? `${named.length} spaces are named ${idOrName}. Pass the space id; \`openmail spaces list\` shows them.`
+        : `No space with id or name ${idOrName}. Run \`openmail spaces list\` to see them.`,
+    );
+  });
+
+const spaceArgument = (description: string) =>
+  Argument.String("space").pipe(Argument.withDescription(description));
+
 const profilesRemove = Command.make(
   "remove",
-  { id: Argument.String("space-id") },
-  Effect.fn(function* ({ id }) {
+  { space: spaceArgument("Space id or name") },
+  Effect.fn(function* ({ space }) {
     const mailbox = yield* Mailbox;
-    yield* mailbox.deleteProfile(id);
-    yield* Console.log(`Removed space ${id}.`);
+    const found = yield* findSpace(space);
+    yield* mailbox.deleteProfile(found.id);
+    yield* Console.log(`Removed space ${found.name} (${found.id}).`);
   }),
 ).pipe(Command.withDescription("Delete the space; its accounts become ungrouped"));
 
 const profilesAssign = Command.make(
   "assign",
   {
-    accountId: Argument.String("account-id"),
-    profileId: Argument.String("space-id").pipe(
-      Argument.withDescription('Space id, or "none" to ungroup'),
+    accountId: Argument.String("account-id").pipe(
+      Argument.withDescription("An id from `openmail accounts list`"),
     ),
+    space: spaceArgument('Space id or name, or "none" to ungroup'),
   },
-  Effect.fn(function* ({ accountId, profileId }) {
+  Effect.fn(function* ({ accountId, space }) {
     const mailbox = yield* Mailbox;
-    yield* mailbox.assignProfile(accountId, profileId === "none" ? null : profileId);
-    yield* Console.log(`Moved ${accountId}.`);
+    if (!(yield* mailbox.accounts).some((a) => a.id === accountId))
+      return yield* fail(
+        `No account with id ${accountId}. Run \`openmail accounts list\` to see them.`,
+      );
+    const found = space === "none" ? null : yield* findSpace(space);
+    yield* mailbox.assignProfile(accountId, found?.id ?? null);
+    yield* Console.log(
+      found ? `Moved ${accountId} to ${found.name}.` : `Removed ${accountId} from its space.`,
+    );
   }),
 ).pipe(Command.withDescription("Put an account in a space"));
 

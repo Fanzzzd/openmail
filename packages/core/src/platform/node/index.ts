@@ -4,6 +4,7 @@ export {
   Actor,
   Address,
   AgentIdentity,
+  APPROVE_IN_APP,
   agentAccountGap,
   type AppLink,
   type ClientConfig,
