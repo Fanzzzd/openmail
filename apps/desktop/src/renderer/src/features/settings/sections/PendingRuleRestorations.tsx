@@ -60,7 +60,7 @@ export function PendingRuleRestorations({ account }: { account: Account }) {
                 if (exit._tag === "Success" && exit.value.kind === "preview")
                   setPending({ backup, preview: exit.value.preview });
               }}
-            >{t`Restore rule`}</button>
+            >{t`Restore filter`}</button>
             <button
               type="button"
               className={`${rowButton} text-a11y-danger`}
@@ -86,11 +86,11 @@ export function PendingRuleRestorations({ account }: { account: Account }) {
         onOpenChange={(open) => {
           if (!open) setPending(null);
         }}
-        title={t`Restore rule?`}
+        title={t`Restore filter?`}
         description={
           pending && (
             <>
-              {t`Restore the saved original rule on the server. ${plural(pending.preview.matches.length, { one: "Preview: # message.", other: "Preview: # messages." })}`}
+              {t`Restore the saved original filter on the server. ${plural(pending.preview.matches.length, { one: "Preview: # message.", other: "Preview: # messages." })}`}
               {requiresFilterDeleteConfirmation(pending.backup.input) && <FilterDeletionWarning />}
             </>
           )
@@ -118,15 +118,15 @@ export function PendingRuleRestorations({ account }: { account: Account }) {
             });
             if (exit._tag === "Success") setPending(null);
           }}
-        >{t`Restore rule`}</button>
+        >{t`Restore filter`}</button>
       </Alert>
       <Alert
         open={discarding !== null}
         onOpenChange={(open) => {
           if (!open) setDiscarding(null);
         }}
-        title={t`Discard saved rule?`}
-        description={t`This deletes the saved recovery copy. Rules on the server are unchanged.`}
+        title={t`Discard saved filter?`}
+        description={t`This deletes the saved recovery copy. Filters on the server are unchanged.`}
       >
         <AlertCancel>
           <Trans>Cancel</Trans>

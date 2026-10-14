@@ -249,7 +249,7 @@ export function EventRecurrenceEditor({
         disabled={disabled}
         value={rule === undefined ? "keep" : (pattern?.kind ?? "none")}
         options={[
-          { value: "keep", label: t`Keep existing rule` },
+          { value: "keep", label: t`Keep the current repeat pattern` },
           { value: "none", label: t`Does not repeat` },
           { value: "daily", label: t`Daily` },
           { value: "weekly", label: t`Weekly` },

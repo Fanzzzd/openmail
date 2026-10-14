@@ -68,7 +68,7 @@ Click **Connect** to add OpenMail's MCP server to the app. Before anything chang
 
 OpenMail changes only the `openmail` entry. A reconnect changes only its command, arguments and `OPENMAIL_HOME`, so keys you added yourself, such as `disabled` or `startup_timeout_sec`, stay. When OpenMail edits a file itself, it saves a backup next to it first. It never writes tokens or passwords into another app's config. If the file can't be read, OpenMail refuses and changes nothing.
 
-A connected app is read-only. In the confirmation, check **Let … propose changes for you to approve** to add the proposal tools. If a card says **Points at another OpenMail copy**, the entry points to another copy of the app, for example one you ran from a disk image. Click **Reconnect**.
+A connected app is read-only. In the confirmation, check **Let … make AI suggestions for you to approve** to add the [write tools](#ai-suggestions). If a card says **Points at another OpenMail copy**, the entry points to another copy of the app, for example one you ran from a disk image. Click **Reconnect**.
 
 Restart the app or start a new session after connecting. Claude must be quit and reopened.
 
@@ -81,7 +81,7 @@ Each card's **Set up by hand** section has the exact command or JSON for your Ma
 - A packaged app: `/Applications/OpenMail.app/Contents/MacOS/OpenMail --mcp`
 - The CLI from source: `openmail mcp` after you [link the command](#install-the-command), or `node /absolute/path/to/openmail/packages/cli/dist/cli.js mcp`. Use an absolute path, because MCP clients start the server from their own working directory.
 
-Add `--allow-writes` for the [proposal tools](#proposing-changes).
+Add `--allow-writes` for the [write tools](#ai-suggestions).
 
 Claude Code:
 
@@ -151,7 +151,7 @@ By default the server offers 20 tools:
 | `list_proposals`   | List changes that wait for your approval in the app.                                         | Yes       |
 | `read_proposal`    | Read one pending proposal.                                                                   | Yes       |
 
-With write access turned on, the server adds 3 proposal tools:
+With write access turned on, the server adds 3 write tools:
 
 | Tool             | What it does                                                                                                | Read-only |
 | ---------------- | ----------------------------------------------------------------------------------------------------------- | --------- |
@@ -163,28 +163,28 @@ With write access turned on, the server adds 3 proposal tools:
 
 An MCP client can only read accounts for which you turned on **Allow AI to read this account** in **Settings → AI Access**. OpenMail checks this on every call. Mail reaches the MCP client, and from there the model provider that client uses. Choose clients you trust.
 
-Tool results put all mail content in an `untrusted_mail` field with a notice, so the model treats message text as data, not as instructions. OpenMail's own guidance, such as `access_status` and the message a proposal tool returns, sits outside that field.
+Tool results put all mail content in an `untrusted_mail` field with a notice, so the model treats message text as data, not as instructions. OpenMail's own guidance, such as `access_status` and the message a write tool returns, sits outside that field.
 
-Every key in a result is snake_case, at any depth, like the tool parameters: `account_id`, `is_unread`, `next_cursor`, `needs_reauth`. Fields that would always be empty are left out. `read_proposal` returns the proposal as a `command` object.
+Every key in a result is snake_case, at any depth, like the tool parameters: `account_id`, `is_unread`, `next_cursor`, `needs_reauth`. Fields that would always be empty are left out. `read_proposal` returns the AI suggestion as a `command` object.
 
 A failed call returns `isError` with a `message`, a `code` and a `hint` that names the next step. The codes are `not_found`, `invalid_input`, `no_ai_consent`, `denied`, `not_ready`, `reauth_required`, `provider_rejected`, `provider_unavailable` and `too_many_proposals`. An `account_id`, `profile_id` or other id the client cannot read fails with `not_found`, so a typo never looks like an empty mailbox. `semantic_search` fails with `not_ready` while the on-device index has nothing for the account. Arguments that don't match a tool's input schema come back the same way, with code `invalid_input`, so the model can fix them; they are not JSON-RPC protocol errors. A key the tool does not declare, such as `acount_id`, fails the call and names the closest valid key. A `cursor` that is not the tool's own `next_cursor` fails too; omit `cursor` to start from the first page.
 
-## Proposing changes
+## AI suggestions
 
-Write tools need two switches:
+A change an agent asks for is an AI suggestion. The tools and the CLI call it a proposal (`list_proposals`, `openmail proposals`). Write tools need two switches:
 
-1. Start the server with `--allow-writes`. In the app, check **Let … propose changes for you to approve** when you connect.
-2. Set **AI permission to change mail** in **Settings → AI Access** to something other than **Read only**.
+1. Start the server with `--allow-writes`. In the app, check **Let … make AI suggestions for you to approve** when you connect.
+2. Set **Changes by AI apps** in **Settings → AI Access** to **Ask me first**.
 
-If the permission is **Read only**, a proposal tool changes nothing. The call fails with code `denied` and tells the model where you can change it.
+If **Changes by AI apps** is **Read only**, a write tool changes nothing. The call fails with code `denied` and tells the model where you can change it.
 
-Even then, the server adds only the proposal tools listed above. Each call creates a proposal. You review and approve it in the app. Drafts stay on your Mac until you open and save them. Sending always requires you to confirm in the app.
+Even then, the server adds only the write tools listed above. Each call creates an AI suggestion. You review and approve it in the app under **AI suggestions**. Drafts stay on your Mac until you open and save them. Sending always requires you to confirm in the app.
 
-There are no tools for permanent delete, emptying Trash, creating rules, forwarding settings, account or OAuth changes, or AI settings.
+There are no tools for permanent delete, emptying Trash, creating server filters, forwarding settings, account or OAuth changes, or AI settings.
 
-## Proposals in the CLI
+## AI suggestions in the CLI
 
-`openmail proposals list` shows pending proposals, and `openmail proposals reject <id>` rejects one. The CLI cannot approve proposals: you approve them in the app, under **AI suggestions**. An agent that can run shell commands could otherwise approve its own proposals, so only a click in the app counts as your confirmation.
+`openmail proposals list` shows pending AI suggestions, and `openmail proposals reject <id>` rejects one. The CLI cannot approve them: you approve them in the app, under **AI suggestions**. An agent that can run shell commands could otherwise approve its own AI suggestions, so only a click in the app counts as your confirmation.
 
 ## Read-only sessions
 

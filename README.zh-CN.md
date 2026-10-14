@@ -10,7 +10,7 @@
 
 ![OpenMail 收件箱，打开了一个会话](docs/media/hero.png)
 
-OpenMail 把你的邮件存在 Mac 上的一个 SQLite 数据库里。app、CLI 和 MCP 服务器共用这一个数据库。Claude Code、Codex 等 AI 代理可以读取你允许的账户。代理想改动邮件时，OpenMail 把改动变成一条提议，你在 app 里批准之前什么都不会发生。
+OpenMail 把你的邮件存在 Mac 上的一个 SQLite 数据库里。app、CLI 和 MCP 服务器共用这一个数据库。Claude Code、Codex 等 AI 代理可以读取你允许的账户。代理想改动邮件时，OpenMail 把改动变成一条 AI 建议，你在 app 里批准之前什么都不会发生。
 
 OpenMail 是一个以键盘操作为主的 macOS 邮件客户端，同步 Gmail、个人 Outlook 和 IMAP 账户。app 直接连接你的邮件服务商。没有 OpenMail 服务器，也没有遥测。
 
@@ -18,16 +18,16 @@ OpenMail 处于早期测试阶段，还有不少粗糙的地方。遇到问题�
 
 ## AI 代理，由你批准
 
-![代理提议归档三封订阅邮件，用户在 OpenMail 中批准](docs/media/approval.gif)
+![代理建议归档三封订阅邮件，用户在 OpenMail 中批准](docs/media/approval.gif)
 
 录屏里，Claude Code 通过 MCP 请求归档三封订阅邮件。OpenMail 把请求连同代理给出的理由列在 **AI suggestions** 里。点 **Approve** 之后，这三封邮件才离开收件箱。
 
 - **按账户授权。** 你在 **Settings → AI Access** 里为某个账户打开 **Allow AI to read this account** 之后，代理才能看到它。每次工具调用都会检查这项授权。
-- **默认只读。** MCP 工具可以读取和搜索邮件。改动邮件的权限默认是 **Read only**，此时所有写工具都会拒绝执行。
-- **提议。** 写工具需要两个开关：连接 app 时允许提议，并把权限设为 **Ask me first**。之后 `modify_threads`、`snooze_threads` 和 `draft_message` 只会创建提议。每条提议留在 **AI suggestions** 里，等你批准或拒绝。
+- **默认只读。** MCP 工具可以读取和搜索邮件。**Changes by AI apps** 默认是 **Read only**，此时所有写工具都会拒绝执行。
+- **AI 建议。** 写工具需要两个开关：连接 app 时勾选 **Let … make AI suggestions for you to approve**，并把 **Changes by AI apps** 设为 **Ask me first**。之后 `modify_threads`、`snooze_threads` 和 `draft_message` 只会创建 AI 建议。每条 AI 建议留在 **AI suggestions** 里，等你批准或拒绝。
 - **代理不能发信。** 代理起草的邮件会在撰写窗口打开，由你自己发送。
 - **在设置里连接。** OpenMail 可以替你连接 Claude Code、Codex、Claude 和 Cursor。它先显示配置 diff，只改 `openmail` 条目。其他 MCP 客户端可以运行 `/Applications/OpenMail.app/Contents/MacOS/OpenMail --mcp`。
-- **内置 AI，默认关闭。** 使用你自己的 Anthropic API key，只作用于你允许的账户：摘要、邮件助手、写作帮助和收件箱分拣。助手同样只提议改动，不直接执行。
+- **内置 AI，默认关闭。** 使用你自己的 Anthropic API key，只作用于你允许的账户：摘要、邮件助手、写作帮助和收件箱分拣。助手同样只给出 AI 建议，不直接改动邮件。
 
 工具列表和批准规则见 [CLI 与 MCP](https://openmail-docs.vercel.app/docs/cli-and-mcp)。
 
@@ -52,7 +52,7 @@ OpenMail 处于早期测试阶段，还有不少粗糙的地方。遇到问题�
   </tr>
 </table>
 
-截图和录屏使用 [`scripts/demo-data.mjs`](scripts/demo-data.mjs) 生成的假邮件，待批准的提议也由它生成。
+截图和录屏使用 [`scripts/demo-data.mjs`](scripts/demo-data.mjs) 生成的假邮件，待批准的 AI 建议也由它生成。
 
 ## 对比
 

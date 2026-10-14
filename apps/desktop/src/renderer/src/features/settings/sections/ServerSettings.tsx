@@ -122,7 +122,7 @@ function AccountServerSettings({ account }: { account: Account }) {
                 {f.editable === false && (
                   <span
                     className={`mt-0.5 block ${settingsHint}`}
-                  >{t`Edit this rule in webmail to preserve all conditions and actions.`}</span>
+                  >{t`Edit this filter in webmail to keep all its conditions and actions.`}</span>
                 )}
               </span>
               <button

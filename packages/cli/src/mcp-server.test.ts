@@ -368,9 +368,7 @@ test.concurrent("MCP points the model at access_status and explains a refused pr
   const failure = JSON.parse(refused.content[0]?.text ?? "");
   expect(failure).toMatchObject({ code: "denied" });
   expect(failure).not.toHaveProperty("_tag");
-  expect(failure.message).toContain(
-    "The AI permission to change mail is Read only, so nothing changed.",
-  );
+  expect(failure.message).toContain("Changes by AI apps is Read only, so nothing changed.");
   expect(failure.hint).toContain("Settings → AI Access");
 }, 30_000);
 

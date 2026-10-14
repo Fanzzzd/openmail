@@ -116,7 +116,7 @@ export function SearchField({
     recent: t`Recent`,
     people: t`People`,
     labels: t`Labels`,
-    filters: t`Filters`,
+    filters: t`Operators`,
     dates: t`Dates`,
   };
   const choose = (suggestion: SearchSuggestion) => {

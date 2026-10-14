@@ -84,9 +84,9 @@ export function EmptyList({
     Icon = SearchX;
     button = actions && { label: <Trans>Clear search</Trans>, onClick: actions.onClearSearch };
   } else if (filtered) {
-    text = <Trans>No messages match the filters</Trans>;
+    text = <Trans>No messages match the quick filters</Trans>;
     Icon = ListFilter;
-    button = { label: <Trans>Turn off filters</Trans>, onClick: onClearFilters };
+    button = { label: <Trans>Turn off quick filters</Trans>, onClick: onClearFilters };
   } else if (mailbox === "drafts") {
     text = <Trans>No drafts</Trans>;
     Icon = FileText;

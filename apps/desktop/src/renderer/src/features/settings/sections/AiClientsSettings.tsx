@@ -32,6 +32,8 @@ import {
   type ReadableAccounts,
   scrollToAnchor,
   WRITE_MODE_ANCHOR,
+  WRITE_MODE_NAME,
+  ASK_FIRST,
 } from "./ai-clients-ui";
 import { ClientCard } from "./AiClientCard";
 import { ConfirmChange } from "./ConfirmAiClientChange";
@@ -61,8 +63,11 @@ function AccessSummary({
   accounts: readonly Account[];
   readable: ReadableAccounts;
 }) {
-  const { t } = useLingui();
+  const { t, i18n } = useLingui();
   const allow = t`Allow AI to read this account`;
+  const allowSuggestions = t`Allow AI suggestions`;
+  const setting = i18n._(WRITE_MODE_NAME);
+  const askFirst = i18n._(ASK_FIRST);
   return (
     <SettingsGroup>
       <SettingsRow
@@ -98,10 +103,10 @@ function AccessSummary({
       <SettingsRow
         label={<Trans>What AI apps can do</Trans>}
         hint={
-          <Trans>
-            Read and search mail, read only by default. To archive, label or draft, an app needs
-            proposals turned on below and a permission to change mail other than Read only. You
-            approve every change in OpenMail, and sending always needs your confirmation here.
+          <Trans comment="allowSuggestions is the translated Allow AI suggestions button on each app below; setting and askFirst are the translated Changes by AI apps setting and its Ask me first option.">
+            Read and search mail, read only by default. To archive, label or draft, an app needs “
+            {allowSuggestions}” below and “{setting}” set to “{askFirst}”. You approve every AI
+            suggestion in OpenMail, and sending always needs your confirmation here.
           </Trans>
         }
       >
@@ -110,7 +115,7 @@ function AccessSummary({
           className={buttonLink}
           onClick={() => scrollToAnchor(WRITE_MODE_ANCHOR)}
         >
-          <Trans>Permission</Trans>
+          {setting}
         </button>
       </SettingsRow>
     </SettingsGroup>

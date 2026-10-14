@@ -321,7 +321,7 @@ export function Assistant({
           <p className="text-footnote text-a11y-muted">
             <Trans>
               Select accounts allowed in Settings → AI Access. The assistant searches mail and
-              proposes drafts, labels or archive. You approve changes in AI suggestions.
+              suggests drafts, labels or archiving. You approve each one in AI suggestions.
             </Trans>
           </p>
         )}

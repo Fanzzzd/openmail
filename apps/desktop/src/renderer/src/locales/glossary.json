@@ -210,7 +210,7 @@
     "ru": "друг",
     "es": "otros"
   },
-  "Proposal": {
+  "AI suggestion": {
     "zh-CN": "建议",
     "cs": "návrh|navrh|návrz",
     "nl": "voorstel|stel\\p{L}*\\b.*\\bvoor\\b|suggestie",
@@ -264,5 +264,27 @@
     "ja": "スペース",
     "ru": "пространств",
     "es": "espacio"
+  },
+  "Filter": {
+    "zh-CN": "过滤器",
+    "cs": "filtr",
+    "nl": "filter",
+    "fr": "filtre",
+    "de": "filter",
+    "it": "filtr",
+    "ja": "フィルター",
+    "ru": "фильтр",
+    "es": "filtro"
+  },
+  "Quick filters": {
+    "zh-CN": "快速筛选",
+    "cs": "rychl\\p{L}* filtr",
+    "nl": "snelfilter",
+    "fr": "filtres? rapides?",
+    "de": "schnellfilter",
+    "it": "filtr[io] rapid[io]",
+    "ja": "クイックフィルター",
+    "ru": "быстр\\p{L}* фильтр",
+    "es": "filtros? rápidos?"
   }
 }

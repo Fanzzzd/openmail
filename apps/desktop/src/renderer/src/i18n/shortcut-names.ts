@@ -76,7 +76,7 @@ export const ACTION_NAMES: Record<ShortcutAction, MessageDescriptor> = {
   print: msg`Print`,
   goToFolder: msg`Go to folder`,
   inbox: msg`Move to Inbox`,
-  filterUnread: msg`Toggle list filters`,
+  filterUnread: msg`Toggle quick filters`,
   templates: msg`Templates`,
   sendArchive: msg`Send and archive`,
   attach: msg`Attach files`,

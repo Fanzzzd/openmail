@@ -447,7 +447,7 @@ it("typing a filter name offers those filters with what they do", () => {
     renderField(dom, "invoice");
     expect(controls.items).toEqual([]);
     act(() => controls.type("has"));
-    expect(headings(dom)[0]).toBe("Filters");
+    expect(headings(dom)[0]).toBe("Operators");
     expect(dom.element.textContent).toContain("Messages with a PDF attachment");
     act(() => controls.type("has:p"));
     act(() => controls.pick("has:pdf"));

@@ -12,7 +12,7 @@ export type AppError = MailError | RpcClientError.RpcClientError;
 
 const NOT_FOUND = {
   account: msg`Can't find this account.`,
-  proposal: msg`Can't find this proposal.`,
+  proposal: msg`Can't find this AI suggestion.`,
   message: msg`Can't find this message.`,
   profile: msg`Can't find this space.`,
   draft: msg`Can't find this draft.`,
@@ -40,6 +40,8 @@ export const INPUT_ERRORS: Record<string, MessageDescriptor> = {
   "This message has no valid sender address.": msg`This message has no valid sender address.`,
   "Focused Inbox requires Outlook.": msg`Focused Inbox requires Outlook.`,
   "Outlook attachment upload failed. Try saving or sending again.": OUTLOOK_UPLOAD_FAILED,
+  "Filter update failed. The previous filter was restored; reload the filter list before editing again.": msg`Couldn't update the filter, so OpenMail put the previous version back. Open Server filters again before you edit it.`,
+  "Filter update failed and automatic recovery failed. Use Restore filter to recover the saved original filter.": msg`Couldn't update the filter or put the previous version back. Choose Restore filter in Server filters to recover it.`,
   "Invalid Outlook upload session": OUTLOOK_UPLOAD_FAILED,
   "Invalid Outlook upload byte ranges": OUTLOOK_UPLOAD_FAILED,
   "Could not read Outlook upload progress": OUTLOOK_UPLOAD_FAILED,

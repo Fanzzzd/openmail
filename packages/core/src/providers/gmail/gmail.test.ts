@@ -2104,7 +2104,7 @@ it.effect(
       const error = yield* run(failure, (a) =>
         a.updateFilter(account, "old", replacement).pipe(Effect.flip),
       );
-      assert.match(error.message, /previous rule was restored/);
+      assert.match(error.message, /previous filter was restored/);
       assert.deepStrictEqual(failure.calls.at(-1)?.body, {
         criteria: original.criteria,
         action: original.action,

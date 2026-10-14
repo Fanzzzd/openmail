@@ -10,6 +10,8 @@ export const PUBLIC_ERROR_MESSAGES = new Set([
   "Outlook message requests cannot exceed 4 MB. Large attached messages cannot be uploaded as Outlook items.",
   "Outlook file attachments cannot exceed 150 MB",
   "Outlook attachment upload failed. Try saving or sending again.",
+  "Filter update failed. The previous filter was restored; reload the filter list before editing again.",
+  "Filter update failed and automatic recovery failed. Use Restore filter to recover the saved original filter.",
   "Invalid Outlook upload session",
   "Invalid Outlook upload byte ranges",
   "Could not read Outlook upload progress",

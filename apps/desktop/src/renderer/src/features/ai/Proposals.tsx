@@ -103,12 +103,11 @@ function Item({
   const { command } = p;
   const threadIds = command.kind === "modify" || command.kind === "snooze" ? command.threads : [];
   const agent = p.actor.kind === "agent" ? p.actor : null;
+  // "rule" is the built-in assistant's code surface; the UI calls it the assistant.
   const surface = agent
     ? agent.surface === "mcp"
       ? "MCP"
-      : agent.surface === "rule"
-        ? t`Rule`
-        : t`Assistant`
+      : t`Assistant`
     : p.actor.surface === "cli"
       ? "CLI"
       : "APP";

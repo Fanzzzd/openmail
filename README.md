@@ -10,7 +10,7 @@ English | [简体中文](README.zh-CN.md)
 
 ![OpenMail inbox with a conversation open](docs/media/hero.png)
 
-OpenMail keeps your mail in a SQLite database on your Mac. The app, a CLI and an MCP server all use that one database. AI agents such as Claude Code and Codex can read the accounts you allow. When an agent wants to change your mail, OpenMail turns the change into a proposal, and nothing happens until you approve it in the app.
+OpenMail keeps your mail in a SQLite database on your Mac. The app, a CLI and an MCP server all use that one database. AI agents such as Claude Code and Codex can read the accounts you allow. When an agent wants to change your mail, OpenMail turns the change into an AI suggestion, and nothing happens until you approve it in the app.
 
 OpenMail is a keyboard-first mail client for macOS. It syncs Gmail, personal Outlook and IMAP accounts. The app talks directly to your mail provider. There is no OpenMail server and no telemetry.
 
@@ -18,16 +18,16 @@ OpenMail is in early testing. Expect rough edges, and please report them in [Iss
 
 ## AI agents, with your approval
 
-![An agent proposes archiving three newsletters; the user approves it in OpenMail](docs/media/approval.gif)
+![An agent suggests archiving three newsletters; the user approves it in OpenMail](docs/media/approval.gif)
 
 In this recording, Claude Code asked over MCP to archive three newsletters. OpenMail listed the request under **AI suggestions** with the agent's reason. The newsletters left the inbox only after **Approve**.
 
 - **Per-account consent.** An agent sees an account only after you turn on **Allow AI to read this account** for it in **Settings → AI Access**. OpenMail checks this on every tool call.
-- **Read-only by default.** MCP tools read and search mail. The permission to change mail starts at **Read only**, which makes every write tool refuse.
-- **Proposals.** Write tools take two switches: allow proposals when you connect the app, and set the permission to **Ask me first**. Then `modify_threads`, `snooze_threads` and `draft_message` create proposals. Each one waits in **AI suggestions** until you approve or reject it.
+- **Read-only by default.** MCP tools read and search mail. **Changes by AI apps** starts at **Read only**, which makes every write tool refuse.
+- **AI suggestions.** Write tools take two switches: check **Let … make AI suggestions for you to approve** when you connect the app, and set **Changes by AI apps** to **Ask me first**. Then `modify_threads`, `snooze_threads` and `draft_message` create AI suggestions. Each one waits in **AI suggestions** until you approve or reject it.
 - **No agent sends mail.** A drafted message opens in the composer, and you send it yourself.
 - **Connect from Settings.** OpenMail can connect Claude Code, Codex, Claude and Cursor for you. It shows the config diff first and edits only the `openmail` entry. Any other MCP client can run `/Applications/OpenMail.app/Contents/MacOS/OpenMail --mcp`.
-- **Built-in AI, off by default.** With your own Anthropic API key and only for the accounts you allow: summaries, a mail assistant, writing help and inbox triage. The assistant also proposes changes instead of making them.
+- **Built-in AI, off by default.** With your own Anthropic API key and only for the accounts you allow: summaries, a mail assistant, writing help and inbox triage. The assistant also makes AI suggestions instead of changing mail itself.
 
 See [CLI and MCP](https://openmail-docs.vercel.app/docs/cli-and-mcp) for the tool list and the approval rules.
 
@@ -52,7 +52,7 @@ See [CLI and MCP](https://openmail-docs.vercel.app/docs/cli-and-mcp) for the too
   </tr>
 </table>
 
-The screenshots and the recording use fake mail from [`scripts/demo-data.mjs`](scripts/demo-data.mjs), including the pending proposal.
+The screenshots and the recording use fake mail from [`scripts/demo-data.mjs`](scripts/demo-data.mjs), including the pending AI suggestion.
 
 ## How it compares
 

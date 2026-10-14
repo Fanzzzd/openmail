@@ -481,7 +481,7 @@ it("a narrow window shows actions for several selected rows above the list", asy
   await eventually(() => expect(row(h.id("one"))).toBeTruthy());
   const list = () => document.querySelector<HTMLElement>('[data-mail-pane="list"]')!;
   expect(within(list()).queryByRole("button", { name: "Batch actions" })).toBeNull();
-  expect(within(list()).getByRole("button", { name: "Filter" })).toBeTruthy();
+  expect(within(list()).getByRole("button", { name: "Quick filters" })).toBeTruthy();
   fireEvent.click(row(h.id("one")), { metaKey: true });
   fireEvent.click(row(h.id("two")), { metaKey: true });
   await eventually(() =>
@@ -491,7 +491,7 @@ it("a narrow window shows actions for several selected rows above the list", asy
   // batch bar, so one label picker opens at a time.
   expect(reader()).toBeNull();
   expect(screen.getAllByRole("button", { name: "Batch actions", hidden: true })).toHaveLength(1);
-  expect(within(list()).queryByRole("button", { name: "Filter" })).toBeNull();
+  expect(within(list()).queryByRole("button", { name: "Quick filters" })).toBeNull();
   expect(within(list()).getByText("2 selected (loaded)")).toBeTruthy();
   fireEvent.click(within(list()).getByRole("button", { name: "Archive" }));
   await eventually(async () => {
@@ -523,8 +523,8 @@ it("an empty list says why and offers the next step", async () => {
 
   fireEvent.click(screen.getByRole("button", { name: "Unread" }));
   fireEvent.click(
-    (await emptyList("No messages match the filters")).getByRole("button", {
-      name: "Turn off filters",
+    (await emptyList("No messages match the quick filters")).getByRole("button", {
+      name: "Turn off quick filters",
     }),
   );
   await screen.findByText("You're all caught up. Your Inbox is empty.");

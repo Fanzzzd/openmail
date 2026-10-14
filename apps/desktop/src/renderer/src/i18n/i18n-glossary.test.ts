@@ -14,7 +14,10 @@ const selectors: Record<string, string> = {
   Forward: "\\bforward(?:ed|ing)?\\b",
   Snooze: "\\bsnooz(?:e|ed|ing)\\b",
   Conversation: "\\b(?:threads?|conversations?)\\b",
-  Proposal: "\\b(?:propos(?:als?|es?|ed|ing)|AI suggestions?)\\b",
+  "AI suggestion": "\\b(?:propos(?:als?|es?|ed|ing)|AI suggestions?)\\b",
+  // Server filters. Quick filters are their own term, and "Filter shortcuts" is a verb.
+  Filter: "(?<!quick )\\b(?:server )?filters?\\b(?! shortcuts)",
+  "Quick filters": "\\bquick filters?\\b",
   "AI app": "\\bAI apps?\\b",
   "Remote images": "\\bremote images?\\b",
   "AI Access": "\\bAI Access\\b",

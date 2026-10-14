@@ -28,7 +28,7 @@ function StateText({ client }: { client: AiClientView }) {
       return (
         <span className="text-green-700 dark:text-green-400">
           {client.proposalTools ? (
-            <Trans>Connected, can propose changes</Trans>
+            <Trans>Connected, can make AI suggestions</Trans>
           ) : (
             <Trans>Connected, read only</Trans>
           )}
@@ -179,7 +179,8 @@ export function ClientCard({
           <p>
             {proposalTools ? (
               <Trans>
-                It can propose archiving, labels, snoozes and drafts. Each waits for your approval.
+                It can suggest archiving, labels, snoozes and drafts. Each AI suggestion waits for
+                your approval.
               </Trans>
             ) : (
               <Trans>It can read and search allowed accounts. It can't change anything.</Trans>

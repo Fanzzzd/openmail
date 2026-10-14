@@ -38,7 +38,7 @@ export function decide(command: Command, actor: Actor, mode: AgentWriteMode): De
       return {
         status: "denied",
         reason:
-          "The AI permission to change mail is Read only, so nothing changed. Ask the person to choose Ask me first in OpenMail under Settings → AI Access, then call this tool again.",
+          "Changes by AI apps is Read only, so nothing changed. Ask the person to choose Ask me first under Changes by AI apps in OpenMail Settings → AI Access, then call this tool again.",
       };
     return { status: "proposed" };
   }

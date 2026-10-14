@@ -275,8 +275,8 @@ export function MessageList({
             <FilterChip
               active={filters.enabled}
               onChange={(enabled) => onFilters({ ...filters, enabled })}
-              label={t`Filter`}
-              tip={t`Enable filters`}
+              label={t`Quick filters`}
+              tip={t`Turn on quick filters`}
               shortcut={shortcutText("filterUnread")}
             />
             <FilterChip

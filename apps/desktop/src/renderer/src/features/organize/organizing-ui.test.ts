@@ -238,7 +238,7 @@ for (const deletion of [true, false]) {
         form?.dispatchEvent(new editor.window.Event("submit", { bubbles: true, cancelable: true }));
       });
       const alert = editor.element.querySelector('[role="alertdialog"]');
-      expect(alert?.textContent.includes("This rule deletes messages.")).toBe(deletion);
+      expect(alert?.textContent.includes("This filter deletes messages.")).toBe(deletion);
       expect(calls.apply).not.toHaveBeenCalled();
       const confirm = [
         ...editor.element.querySelectorAll<HTMLButtonElement>('[role="alertdialog"] button'),
@@ -294,7 +294,7 @@ it("LabelEditor trims a name before submitting it", async () => {
   }
 });
 
-it("saved rule recovery exposes Restore rule and waits for a preview confirmation", async () => {
+it("saved rule recovery exposes Restore filter and waits for a preview confirmation", async () => {
   vi.clearAllMocks();
   calls.filters = [];
   calls.backups = [
@@ -314,7 +314,7 @@ it("saved rule recovery exposes Restore rule and waits for a preview confirmatio
   const dom = render(createElement(ServerSettings, { accounts: [account] }));
   try {
     const button = [...dom.element.querySelectorAll("button")].find(
-      (item) => item.textContent === "Restore rule",
+      (item) => item.textContent === "Restore filter",
     );
     expect(button).toBeDefined();
     await act(async () => {
@@ -326,7 +326,7 @@ it("saved rule recovery exposes Restore rule and waits for a preview confirmatio
     );
     const confirm = [
       ...dom.element.querySelectorAll<HTMLButtonElement>('[role="alertdialog"] button'),
-    ].find((item) => item.textContent === "Restore rule");
+    ].find((item) => item.textContent === "Restore filter");
     await act(async () => {
       confirm?.click();
     });
@@ -407,7 +407,7 @@ it("Restore clears an already existing rule without opening a creation confirmat
   calls.prepareRestoration.mockResolvedValueOnce({ _tag: "Success", value: { kind: "complete" } });
   try {
     const button = [...dom.element.querySelectorAll("button")].find(
-      (item) => item.textContent === "Restore rule",
+      (item) => item.textContent === "Restore filter",
     );
     await act(async () => {
       button?.click();
@@ -536,7 +536,7 @@ for (const provider of ["gmail", "outlook"] as const) {
         // and the dialog announces it once, without a separate alert role.
         const description = dialog?.getAttribute("aria-describedby");
         expect(dom.element.querySelector(`[id="${description}"]`)?.textContent).toContain(
-          "This rule deletes messages.",
+          "This filter deletes messages.",
         );
         expect(dialog?.querySelector('[role="alert"]')).toBeNull();
       } finally {

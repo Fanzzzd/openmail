@@ -52,7 +52,7 @@ export function FilterDeletionWarning() {
     // The alert dialog announces its description, so this needs no role of its own.
     <span className="mt-2 block font-medium text-a11y-danger">
       <Trans>
-        This rule deletes messages. Confirm only if the preview matches the messages you intend to
+        This filter deletes messages. Confirm only if the preview matches the messages you intend to
         delete.
       </Trans>
     </span>
@@ -601,7 +601,7 @@ export function FilterEditor({
           {previewUnavailable && (
             <p className={settingsHint}>
               <Trans>
-                Some conditions need metadata that is not cached. Save the rule for future mail on
+                Some conditions need metadata that is not cached. Save the filter for future mail on
                 the server.
               </Trans>
             </p>

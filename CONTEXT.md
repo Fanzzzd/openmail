@@ -4,33 +4,36 @@ OpenMail caches mail on the local machine. The desktop app, the CLI and the MCP 
 
 ## Terms
 
-| Term                     | Meaning                                                                                                                                                        |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Account                  | A signed-in Gmail, personal Outlook or IMAP mailbox, with its provider identity and sync state.                                                                |
-| Provider                 | Gmail, Outlook or IMAP. A `ProviderAdapter` turns the protocol into core changes and operations.                                                               |
-| Provider capabilities    | What each provider can do, in `providers/capabilities.ts`. Callers read it instead of comparing provider names.                                                |
-| Optional service         | Per-account contacts, calendar or provider settings. OpenMail records the scope grant and the local on/off switch separately.                                  |
-| Read-only session        | `OPENMAIL_READ_ONLY=1` blocks remote writes. Network reads, token refresh and local writes still run.                                                          |
-| Sync health report       | Compares local and provider counts per folder or label, with cursor age and pending operations. It does not prove that contents match.                         |
-| Message                  | The local mirror of a server message. The local ID includes the account identity; `providerId` is the server ID.                                               |
-| Thread                   | Messages in one account grouped by `threadId`. Lists and tools usually locate a thread by the ID of a representative message.                                  |
-| Message text             | The plain-text content of a message. HTML is a separate reading representation that OpenMail sanitizes and isolates.                                           |
-| Draft                    | Local editable content in the `drafts` table. Its local ID is separate from the server draft or message ID.                                                    |
-| Label                    | One representation of Gmail labels and Outlook or IMAP folders. Operations must follow each provider's semantics.                                              |
-| Profile                  | A group of accounts, shown as a space in the UI. It sets the account scope, notification hours and window choice. A profile is not an account.                 |
-| Command                  | A serializable change to mail. `Mailbox.perform` checks permissions and runs it.                                                                               |
-| Actor                    | The identity and entry point of a user or agent. It feeds policy decisions and the audit log.                                                                  |
-| Proposal                 | An agent command waiting for the user's approval. Writes from MCP and from the built-in assistant both go through the proposal flow.                           |
-| Operation queue          | `pending_ops`, the durable queue of local changes waiting to reach the provider. It supports claiming, retries and error records.                              |
-| Failed operation         | `FailedOp`. `failed_ops` stores push failures and send warnings. Desktop and mobile query them through Mailbox.                                                |
-| Reset verification queue | Reset or Outlook conflict candidates stored in prefs under `sync-reset:<account>`. Unverified entries stay, and the next sync continues verifying them.        |
-| Undo journal             | `UndoJournal`. `undo_batches` stores the inverse state of batch and single-message operations so undo survives a restart. Undo checks for later changes first. |
-| Derived data             | Search text and vectors, AI summaries and triage suggestions. Stored separately; never overwrites provider mail.                                               |
-| Model                    | The streaming Effect service for a third-party language model. The current implementation is Anthropic.                                                        |
-| ModelRuntime             | The on-device embedding inference interface. Its permissions are separate from the text grant for the third-party Model.                                       |
-| MailToolkit              | Core's set of model tools. The CLI, the MCP server and the built-in assistant reuse its schemas and handlers.                                                  |
-| Platform port            | A SQL, file, secret, OAuth, MIME, network or worker service that core needs from the host.                                                                     |
-| Layer                    | The Effect unit that supplies a concrete implementation for a service.                                                                                         |
+| Term                     | Meaning                                                                                                                                                                          |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Account                  | A signed-in Gmail, personal Outlook or IMAP mailbox, with its provider identity and sync state.                                                                                  |
+| Provider                 | Gmail, Outlook or IMAP. A `ProviderAdapter` turns the protocol into core changes and operations.                                                                                 |
+| Provider capabilities    | What each provider can do, in `providers/capabilities.ts`. Callers read it instead of comparing provider names.                                                                  |
+| Optional service         | Per-account contacts, calendar or provider settings. OpenMail records the scope grant and the local on/off switch separately.                                                    |
+| Read-only session        | `OPENMAIL_READ_ONLY=1` blocks remote writes. Network reads, token refresh and local writes still run.                                                                            |
+| Sync health report       | Compares local and provider counts per folder or label, with cursor age and pending operations. It does not prove that contents match.                                           |
+| Message                  | The local mirror of a server message. The local ID includes the account identity; `providerId` is the server ID.                                                                 |
+| Thread                   | Messages in one account grouped by `threadId`. Lists and tools usually locate a thread by the ID of a representative message.                                                    |
+| Message text             | The plain-text content of a message. HTML is a separate reading representation that OpenMail sanitizes and isolates.                                                             |
+| Draft                    | Local editable content in the `drafts` table. Its local ID is separate from the server draft or message ID.                                                                      |
+| Label                    | One representation of Gmail labels and Outlook or IMAP folders. Operations must follow each provider's semantics.                                                                |
+| Profile                  | A group of accounts, shown as a space in the UI. It sets the account scope, notification hours and window choice. A profile is not an account.                                   |
+| Command                  | A serializable change to mail. `Mailbox.perform` checks permissions and runs it.                                                                                                 |
+| Actor                    | The identity and entry point of a user or agent. It feeds policy decisions and the audit log.                                                                                    |
+| Proposal                 | An agent command waiting for the user's approval, called an AI suggestion in the UI and docs. Writes from MCP and from the built-in assistant both go through the proposal flow. |
+| Agent write mode         | `off`, `propose` or `allow`; the UI calls it Changes by AI apps, with Read only and Ask me first. `allow` applies nothing directly today, so the UI shows it as Ask me first.    |
+| Server filter            | A Gmail filter or an Outlook inbox rule on the provider. The UI and docs say filter; code says rule (`server-rules.ts`, `PendingRuleRestorations`).                              |
+| Quick filters            | The mail list's Unread, Starred, Important and In Inbox chips (`Filters` in code). They only narrow the list on screen.                                                          |
+| Operation queue          | `pending_ops`, the durable queue of local changes waiting to reach the provider. It supports claiming, retries and error records.                                                |
+| Failed operation         | `FailedOp`. `failed_ops` stores push failures and send warnings. Desktop and mobile query them through Mailbox.                                                                  |
+| Reset verification queue | Reset or Outlook conflict candidates stored in prefs under `sync-reset:<account>`. Unverified entries stay, and the next sync continues verifying them.                          |
+| Undo journal             | `UndoJournal`. `undo_batches` stores the inverse state of batch and single-message operations so undo survives a restart. Undo checks for later changes first.                   |
+| Derived data             | Search text and vectors, AI summaries and triage suggestions. Stored separately; never overwrites provider mail.                                                                 |
+| Model                    | The streaming Effect service for a third-party language model. The current implementation is Anthropic.                                                                          |
+| ModelRuntime             | The on-device embedding inference interface. Its permissions are separate from the text grant for the third-party Model.                                                         |
+| MailToolkit              | Core's set of model tools. The CLI, the MCP server and the built-in assistant reuse its schemas and handlers.                                                                    |
+| Platform port            | A SQL, file, secret, OAuth, MIME, network or worker service that core needs from the host.                                                                                       |
+| Layer                    | The Effect unit that supplies a concrete implementation for a service.                                                                                                           |
 
 - `messageId` means different things at different boundaries. Providers return the server ID. Mailbox and Store parameters take the local ID with the account prefix. The RFC Message-ID lives in `rfcMessageId`; it comes from the header and usually includes `<…>`. The three are not interchangeable.
 - A `MailOp` is a single change to mail, such as read, star, move or label. A `Command` adds the target and approval semantics. A `QueuedOp` also covers draft saves, deletes and reconcile.

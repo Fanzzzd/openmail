@@ -745,6 +745,35 @@ it("groups the keyboard shortcuts with Triage first and filters them by name or 
   await audit();
 });
 
+it("AI Access names one setting for AI app changes, with Read only and Ask me first", () => {
+  fixture.values.set("agentModeAtom", "allow");
+  render(
+    localized(
+      h(Settings, {
+        initialTab: "ai",
+        accounts: [account],
+        onClose: vi.fn(),
+        onAddAccount: vi.fn(),
+      }),
+    ),
+  );
+  const group = screen.getByRole("radiogroup", { name: "Changes by AI apps" });
+  expect(
+    within(group)
+      .getAllByRole("radio")
+      .map((r) => r.getAttribute("aria-label")),
+  ).toEqual(["Read only", "Ask me first"]);
+  // The stored "allow" mode applies nothing directly, so it reads as Ask me first.
+  expect(
+    within(group).getByRole("radio", { name: "Ask me first" }).getAttribute("aria-checked"),
+  ).toBe("true");
+  expect(screen.getByRole("button", { name: "Changes by AI apps" })).toBeTruthy();
+  expect(document.body.textContent).not.toMatch(
+    /Organize directly|write mode|proposals? turned on/i,
+  );
+  fixture.values.set("agentModeAtom", "off");
+});
+
 it("shows software updates without a GitHub token field", () => {
   render(
     localized(

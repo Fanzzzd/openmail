@@ -143,7 +143,7 @@ export const accountHandlers = ({
       );
     else if (writeMode === "off")
       steps.push(
-        "Proposal tools are listed, but the AI permission to change mail is Read only, so they will refuse. The person changes it in Settings → AI Access.",
+        "Proposal tools are listed, but Changes by AI apps is Read only, so they will refuse. The person can choose Ask me first under Changes by AI apps in Settings → AI Access.",
       );
     else
       steps.push(

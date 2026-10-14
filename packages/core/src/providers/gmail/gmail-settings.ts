@@ -275,8 +275,8 @@ export function makeGmailSettings<
         return yield* new ProviderError({
           message:
             restored._tag === "Success"
-              ? "Rule update failed. The previous rule was restored; reload the rule list before editing again."
-              : "Rule update failed and automatic recovery failed. Use Restore rule to recover the saved original rule.",
+              ? "Filter update failed. The previous filter was restored; reload the filter list before editing again."
+              : "Filter update failed and automatic recovery failed. Use Restore filter to recover the saved original filter.",
         });
       }),
     clearMissingScopes: (accountId: string) => missingSendAsScopes.delete(accountId),

@@ -42,11 +42,11 @@ OpenMail connects to IMAP and SMTP only over TLS. New mail arrives through IMAP 
 
 Each Gmail and Outlook account can connect extra services in **Settings → Accounts → Optional services**. Connecting one opens the provider's consent page again for that permission.
 
-| Service         | Used for                                                | Google permission                              | Microsoft permission           |
-| --------------- | ------------------------------------------------------- | ---------------------------------------------- | ------------------------------ |
-| Contacts        | Address completion from your saved and other contacts   | `contacts.readonly`, `contacts.other.readonly` | `Contacts.Read`, `People.Read` |
-| Calendar        | Answering invitations and showing conflicts             | `calendar.events`                              | `Calendars.ReadWrite`          |
-| Server settings | Creating and editing filters or rules, and auto-replies | `gmail.settings.basic`                         | `MailboxSettings.ReadWrite`    |
+| Service         | Used for                                              | Google permission                              | Microsoft permission           |
+| --------------- | ----------------------------------------------------- | ---------------------------------------------- | ------------------------------ |
+| Contacts        | Address completion from your saved and other contacts | `contacts.readonly`, `contacts.other.readonly` | `Contacts.Read`, `People.Read` |
+| Calendar        | Answering invitations and showing conflicts           | `calendar.events`                              | `Calendars.ReadWrite`          |
+| Server settings | Creating and editing server filters, and auto-replies | `gmail.settings.basic`                         | `MailboxSettings.ReadWrite`    |
 
 Turning a service off stops OpenMail from using it. It does not revoke the permission at Google or Microsoft. To revoke access completely, remove OpenMail at [myaccount.google.com/permissions](https://myaccount.google.com/permissions) or [account.live.com/consent/Manage](https://account.live.com/consent/Manage).
 

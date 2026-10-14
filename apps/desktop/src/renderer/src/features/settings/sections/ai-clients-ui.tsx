@@ -36,6 +36,9 @@ export function readableAccounts(
 /** Anchors in the AI Access tab that the cards link to. */
 export const CONSENT_ANCHOR = "ai-account-consent";
 export const WRITE_MODE_ANCHOR = "ai-write-mode";
+/** The setting that lets AI apps suggest changes, and its option that allows it. */
+export const WRITE_MODE_NAME = msg`Changes by AI apps`;
+export const ASK_FIRST = msg`Ask me first`;
 
 export const CLIENTS: Record<
   AiClientId,

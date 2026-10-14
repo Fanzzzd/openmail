@@ -2,7 +2,7 @@ import { ProfileSettings } from "../accounts";
 import { OptionalServices } from "../accounts/OptionalServices";
 import { AiSettings } from "./sections/AiSettings";
 import { AiClientsSettings } from "./sections/AiClientsSettings";
-import { WRITE_MODE_ANCHOR } from "./sections/ai-clients-ui";
+import { ASK_FIRST, WRITE_MODE_ANCHOR, WRITE_MODE_NAME } from "./sections/ai-clients-ui";
 import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
 import type { I18n, MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
@@ -515,21 +515,20 @@ function AccountRow({
   );
 }
 
+/**
+ * The stored "allow" mode applies nothing directly: MCP and the assistant always ask first.
+ * The UI shows it as Ask me first and offers only these two.
+ */
 const MODES: { id: AgentWriteMode; label: MessageDescriptor; detail: MessageDescriptor }[] = [
   {
     id: "off",
     label: msg`Read only`,
-    detail: msg`AI can read and search mail, but can't change anything.`,
+    detail: msg`AI apps can read and search mail, but can't change anything.`,
   },
   {
     id: "propose",
-    label: msg`Ask me first`,
-    detail: msg`When AI wants to archive, label, or mark as read, it goes into AI suggestions first and runs only after you approve.`,
-  },
-  {
-    id: "allow",
-    label: msg`Organize directly`,
-    detail: msg`Rules can archive, label, and mark as read directly. MCP always proposes changes for you to approve in the app.`,
+    label: ASK_FIRST,
+    detail: msg`When an AI app wants to archive, label, mark as read, snooze or draft, it adds an AI suggestion. Nothing changes until you approve it, and sending always needs your confirmation.`,
   },
 ];
 
@@ -579,23 +578,21 @@ function General() {
 
 function AgentPolicy() {
   const { t, i18n } = useLingui();
-  const readOnly = t`Read only`;
-  const mode = AsyncResult.getOrElse(useAtomValue(agentModeAtom), () => null);
+  const stored = AsyncResult.getOrElse(useAtomValue(agentModeAtom), () => null);
+  const mode = stored === "allow" ? "propose" : stored;
   const setMode = useAtomSet(setAgentModeAtom);
 
   return (
     <section id={WRITE_MODE_ANCHOR} className="scroll-mt-4">
-      <h3 className={settingsHeading}>
-        <Trans>AI permission to change mail</Trans>
-      </h3>
+      <h3 className={settingsHeading}>{i18n._(WRITE_MODE_NAME)}</h3>
       <p className={`mb-2 px-1 ${settingsHint}`}>
         <Trans>
-          Applies to AI apps connected over MCP, such as Claude Code, and to your rules. It decides
-          whether they can change your mail.
+          Decides whether AI apps connected over MCP, such as Claude Code, can suggest changes to
+          your mail. The assistant in OpenMail always asks first.
         </Trans>
       </p>
       <RadioGroup<AgentWriteMode | null>
-        aria-label={t`AI permission to change mail`}
+        aria-label={i18n._(WRITE_MODE_NAME)}
         value={mode}
         onValueChange={(next) => {
           if (next)
@@ -620,12 +617,6 @@ function AgentPolicy() {
           </Radio.Root>
         ))}
       </RadioGroup>
-      <p className={`mt-2 px-1 ${settingsHint}`}>
-        <Trans comment="readOnly is the translated Read only write-mode label above.">
-          MCP can propose drafts only when the write mode is not "{readOnly}". You review drafts and
-          confirm sending in the app.
-        </Trans>
-      </p>
     </section>
   );
 }
