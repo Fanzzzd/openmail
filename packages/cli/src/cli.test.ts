@@ -368,6 +368,18 @@ describe("spaces", () => {
       const after = (await list(["spaces", "list"], home.path))[0] ?? {};
       expect(JSON.stringify(after.accounts)).toContain("gmail:alex@example.com");
     });
+
+    test("list --space takes the space name in any letter case", async () => {
+      const [byName, byId] = await Promise.all([
+        json(["list", "--space", "work"], home.path),
+        json(["list", "--space", String(space.id)], home.path),
+      ]);
+      expect(JSON.stringify(byName)).toContain("gmail:alex@example.com");
+      expect(byName).toEqual(byId);
+      const unknown = await openmail(["list", "--space", "Nowhere"], home.path);
+      expect(unknown.code).toBe(1);
+      expect(unknown.stderr).toMatch(/^error: No space with id or name Nowhere\./);
+    });
   });
 });
 

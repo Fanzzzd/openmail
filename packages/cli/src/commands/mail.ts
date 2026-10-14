@@ -6,10 +6,10 @@
  */
 
 import { Argument, Command, Flag } from "effect/cli";
-import { Failed, fail, jsonFlag, optionalInt, optionalString, print } from "./common.js";
+import { Failed, fail, findSpace, jsonFlag, optionalInt, optionalString, print } from "./common.js";
 import { Effect, Option, Schema } from "effect";
 import { Buffer } from "node:buffer";
-import { MAILBOXES, Mailbox, redactSyncHealth } from "@openmail/core";
+import { MAILBOXES, Mailbox, printable, redactSyncHealth } from "@openmail/core";
 import type { SearchResult, ThreadSummary } from "@openmail/core/schema";
 import { withProgress } from "../sync-progress.js";
 import { messageText, syncTable, threadTable } from "../format.js";
@@ -87,7 +87,7 @@ const limitFlag = Flag.Int("limit").pipe(
 
 /** `--space`, plus the hidden `--profile` it replaced, so older scripts keep working. */
 const spaceFlags = {
-  space: optionalString("space", "Only accounts in this space (openmail spaces list)"),
+  space: optionalString("space", "Only accounts in this space: its name or id (openmail spaces list)"),
   profile: optionalString("profile", "Same as --space").pipe(Flag.withHidden),
 };
 
@@ -117,26 +117,20 @@ const accountScope = (account: Option.Option<string>, space: Option.Option<strin
   Effect.gen(function* () {
     const mailbox = yield* Mailbox;
     const accounts = yield* mailbox.accounts.accounts;
-    if (
-      Option.isSome(space) &&
-      !(yield* mailbox.accounts.profiles).some((p) => p.id === space.value)
-    )
-      return yield* fail(
-        `No space with id ${space.value}. Run \`openmail spaces list\` to see them.`,
-      );
+    const inSpace = Option.isSome(space) ? yield* findSpace(space.value) : undefined;
     if (Option.isSome(account)) {
       const found = accounts.find((a) => a.id === account.value);
       if (!found)
         return yield* fail(
           `No account with id ${account.value}. Run \`openmail accounts list\` to see them.`,
         );
-      if (Option.isSome(space) && found.profileId !== space.value)
-        return yield* fail(`Account ${account.value} is not in space ${space.value}.`);
+      if (inSpace && found.profileId !== inSpace.id)
+        return yield* fail(`Account ${account.value} is not in space ${printable(inSpace.name)}.`);
       return [found.id];
     }
     return accounts
       .filter((a) => a.enabled !== false)
-      .filter((a) => Option.isNone(space) || a.profileId === space.value)
+      .filter((a) => !inSpace || a.profileId === inSpace.id)
       .map((a) => a.id);
   });
 

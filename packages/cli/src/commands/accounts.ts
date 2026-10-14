@@ -3,7 +3,16 @@
 import { Argument, Command, Flag, Prompt } from "effect/cli";
 import { Config, Console, Effect, Option, Redacted } from "effect";
 import { IMAP_PRESETS, Mailbox, PROFILE_COLORS, oauthProvider } from "@openmail/core";
-import { CLI, type Failed, fail, jsonFlag, optionalString, optionalInt, print } from "./common.js";
+import {
+  CLI,
+  type Failed,
+  fail,
+  findSpace,
+  jsonFlag,
+  optionalString,
+  optionalInt,
+  print,
+} from "./common.js";
 import { accountTable, outcomeText } from "../format.js";
 import { withProgress } from "../sync-progress.js";
 
@@ -271,22 +280,6 @@ const profilesAdd = Command.make(
     yield* Console.log(`Added space ${p.name} (${p.id}).`);
   }),
 ).pipe(Command.withDescription("Create a space"));
-
-/** A space by id, or by name when exactly one space has it (any letter case). */
-const findSpace = (idOrName: string) =>
-  Effect.gen(function* () {
-    const spaces = yield* (yield* Mailbox).accounts.profiles;
-    const byId = spaces.find((p) => p.id === idOrName);
-    if (byId) return byId;
-    const wanted = idOrName.trim().toLowerCase();
-    const named = spaces.filter((p) => p.name.trim().toLowerCase() === wanted);
-    if (named.length === 1 && named[0]) return named[0];
-    return yield* fail(
-      named.length > 1
-        ? `${named.length} spaces are named ${idOrName}. Pass the space id; \`openmail spaces list\` shows them.`
-        : `No space with id or name ${idOrName}. Run \`openmail spaces list\` to see them.`,
-    );
-  });
 
 const spaceArgument = (description: string) =>
   Argument.String("space").pipe(Argument.withDescription(description));

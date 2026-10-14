@@ -1,6 +1,6 @@
 /** Pieces every command shares: the CLI actor, failures and output. */
 
-import type { Actor } from "@openmail/core";
+import { type Actor, Mailbox } from "@openmail/core";
 import { Console, Data, Effect, Runtime } from "effect";
 import { Flag } from "effect/cli";
 
@@ -63,3 +63,19 @@ export const optionalInt = (name: string, description: string) =>
 
 /** Where the person changes Changes by AI apps. The CLI only shows it. */
 export const WRITE_MODE_SETTING = "Settings → AI Access";
+
+/** A space by id, or by name when exactly one space has it (any letter case). */
+export const findSpace = (idOrName: string) =>
+  Effect.gen(function* () {
+    const spaces = yield* (yield* Mailbox).accounts.profiles;
+    const byId = spaces.find((p) => p.id === idOrName);
+    if (byId) return byId;
+    const wanted = idOrName.trim().toLowerCase();
+    const named = spaces.filter((p) => p.name.trim().toLowerCase() === wanted);
+    if (named.length === 1 && named[0]) return named[0];
+    return yield* fail(
+      named.length > 1
+        ? `${named.length} spaces are named ${idOrName}. Pass the space id; \`openmail spaces list\` shows them.`
+        : `No space with id or name ${idOrName}. Run \`openmail spaces list\` to see them.`,
+    );
+  });

@@ -786,9 +786,9 @@ test.concurrent(
     // The hidden --profile alias keeps older scripts working.
     expect(oldFlag.stdout).toBe(inSpace.stdout);
     expect(unknown.code).toBe(1);
-    expect(unknown.stderr).toContain("No space with id nope.");
+    expect(unknown.stderr).toContain("No space with id or name nope.");
     expect(outside.code).toBe(1);
-    expect(outside.stderr).toContain(`Account ${homeAccount} is not in space ${profile}.`);
+    expect(outside.stderr).toContain(`Account ${homeAccount} is not in space Work.`);
     // Another account has consent, so the unscoped agent list works.
     expect(agentAll.code).toBe(0);
     expect(agentSpace.code).toBe(1);
