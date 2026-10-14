@@ -41,6 +41,7 @@ import { liveUpdatesAtom } from "../state/events";
 import { Downloads } from "../features/downloads/Downloads";
 import { modifyMessages, modifyThreads, modifyWithUndo, useRunMail, withMail } from "../state/mail";
 import { accountsAtom, labelsAtom, prefsAtom, threadAtom, sendAsAtom } from "../state/queries";
+import { closeNewestSurface, useSurfaceOpen } from "../ui/open-surfaces";
 
 /** Ops after which the thread has left where it was; the window closes, as in Mail. */
 const LEAVES = new Set<MailOp["kind"]>(["archive", "trash", "spam"]);
@@ -284,6 +285,11 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
     asAttachment = false,
   ) => run(withMail((call) => call("ComposeMessage", { id: messageId, mode, asAttachment })));
   useDesktopEvents((event) => {
+    // Close window with a dialog or popover open closes that instead.
+    if (event._tag === "CloseSheet") {
+      closeNewestSurface();
+      return;
+    }
     if (
       event._tag !== "NativeAction" ||
       shouldDropNativeAction(event.action, event.triggeredByAccelerator)
@@ -313,6 +319,7 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
       );
     else dispatchNativeAction(prefs.shortcutSet, event.action, event.triggeredByAccelerator);
   });
+  const surfaceOpen = useSurfaceOpen();
   const provider = account?.provider;
   useEffect(() => {
     run(
@@ -322,12 +329,13 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
             selected: Boolean(messages?.length) && !dialog,
             composing: false,
             mailbox: false,
+            sheet: surfaceOpen,
             ...providerMenuState(provider),
           },
         }),
       ),
     );
-  }, [run, messages?.length, dialog, provider]);
+  }, [run, messages?.length, dialog, surfaceOpen, provider]);
 
   return (
     <div className="flex h-full flex-col bg-surface text-body text-neutral-900 dark:text-neutral-100">

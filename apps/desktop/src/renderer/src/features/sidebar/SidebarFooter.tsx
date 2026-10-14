@@ -9,6 +9,7 @@ import { popupMotion, popupOffset, popupSurface, touchIcon } from "../../ui/styl
 import { Tip } from "../../ui/Tip";
 import { SyncFailureDetails, SyncStatusAnnouncement } from "../sync-status";
 import { dateFormat } from "../../lib/format";
+import { useOpenSurface } from "../../ui/open-surfaces";
 
 /** The sidebar's last row: sync progress or result, Settings and Sync now. */
 export function SidebarFooter({
@@ -28,6 +29,7 @@ export function SidebarFooter({
   const shortcut = useShortcutText();
   const run = useRunMail();
   const [open, setOpen] = useState(false);
+  useOpenSurface(open, () => setOpen(false));
   const failed = !syncState.running && failures.length > 0;
   /** The footer line: progress while syncing, then failures or the last sync time. */
   const syncStatus = () => {

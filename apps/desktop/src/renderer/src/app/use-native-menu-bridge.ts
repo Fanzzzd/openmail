@@ -30,6 +30,7 @@ import { goToFolderAtom } from "../features/sidebar/go-to-folder";
 import { dialogAtom } from "../state/ui";
 import type { useMailCompose } from "./use-mail-compose";
 import type { useMailSelection } from "./use-mail-selection";
+import { closeNewestSurface, useSurfaceOpen } from "../ui/open-surfaces";
 export function useNativeMenuBridge({
   searchRef,
   navigation,
@@ -79,6 +80,7 @@ export function useNativeMenuBridge({
   const { i18n } = useLingui();
   const [desktopEvents, setDesktopEvents] = useState<readonly DesktopEvent[]>([]);
 
+  const surfaceOpen = useSurfaceOpen();
   const provider = threadState?.provider;
   useEffect(() => {
     run(
@@ -87,7 +89,7 @@ export function useNativeMenuBridge({
           state: {
             selected: Boolean(selectedId) && !dialog,
             composing: Boolean(compose) && !dialog,
-            sheet: Boolean(compose || dialog),
+            sheet: Boolean(compose || dialog || surfaceOpen),
             ...providerMenuState(provider),
             panes: {
               sidebar: sidebarShown,
@@ -103,6 +105,7 @@ export function useNativeMenuBridge({
     selectedId,
     compose,
     dialog,
+    surfaceOpen,
     provider,
     sidebarShown,
     prefs.toolbarVisible,
@@ -176,7 +179,9 @@ export function useNativeMenuBridge({
         else if (!hasPendingSends()) run(withMail((call) => call("CloseComposeWindow", undefined)));
         break;
       case "CloseSheet":
-        // Settings and the other app dialogs sit above an inline composer, so they close first.
+        // The newest dialog, sheet or popover closes first: a palette or popover over the mail,
+        // then Settings and the other app dialogs, which sit above an inline composer.
+        if (closeNewestSurface()) break;
         if (dialog) setDialog(null);
         else if (compose) setCloseRequested((n) => n + 1);
         break;

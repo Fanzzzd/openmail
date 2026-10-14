@@ -1,3 +1,4 @@
+import { useOpenSurface } from "./open-surfaces";
 import { useLingui } from "@lingui/react/macro";
 import { Popover } from "@base-ui/react/popover";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
@@ -41,6 +42,7 @@ export function PickerPopover({
   children,
 }: PopoverProps) {
   const { t } = useLingui();
+  useOpenSurface(open, () => onOpenChange(false));
   return (
     <Popover.Root modal="trap-focus" open={open} onOpenChange={(next) => onOpenChange(next)}>
       {trigger &&

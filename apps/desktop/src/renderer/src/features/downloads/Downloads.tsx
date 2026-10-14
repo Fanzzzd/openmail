@@ -28,6 +28,7 @@ import { FileIcon } from "../../ui/file-icon";
 import { ProgressBar, ProgressRing } from "../../ui/Progress";
 import { popupMotion, popupOffset } from "../../ui/styles";
 import { Tip } from "../../ui/Tip";
+import { useOpenSurface } from "../../ui/open-surfaces";
 
 const rowButton =
   "flex size-7 shrink-0 items-center justify-center rounded-control text-a11y-muted outline-offset-0 outline-a11y-focus transition-colors duration-100 hover:bg-fill-hover hover:text-neutral-900 focus-visible:outline-2 active:bg-fill-pressed motion-reduce:transition-none dark:hover:text-neutral-100";
@@ -202,6 +203,7 @@ export function Downloads() {
   useAtomMount(downloadsFeedAtom);
   const items = useAtomValue(downloadsAtom);
   const [open, setOpen] = useAtom(downloadsOpenAtom);
+  useOpenSurface(open, () => setOpen(false));
   const automatic = useRef(false);
   const announcement = useFinishedAnnouncement(items);
   const active = items.filter(activeDownload).length;

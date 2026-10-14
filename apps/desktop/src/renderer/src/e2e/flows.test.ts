@@ -900,3 +900,33 @@ it("Close window closes Settings, then an inline composer through its close flow
   await wait(300);
   expect(screen.getByRole("textbox", { name: "Subject" })).toBeTruthy();
 });
+
+it("Close window closes an open palette or dialog first, and only then the window", async () => {
+  current = await flow();
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  const sheet = () =>
+    h.requests.filter((request) => request.tag === "SetNativeMenuState").at(-1)?.payload;
+  await eventually(() => expect(sheet()).toMatchObject({ state: { sheet: false } }));
+
+  await h.event({ _tag: "NativeAction", action: "goToFolder", triggeredByAccelerator: false });
+  await eventually(() => expect(screen.getByRole("dialog", { name: "Go to folder" })).toBeTruthy());
+  await eventually(() => expect(sheet()).toMatchObject({ state: { sheet: true } }));
+  await h.event({ _tag: "CloseSheet" });
+  await eventually(() => expect(screen.queryByRole("dialog", { name: "Go to folder" })).toBeNull());
+  await eventually(() => expect(sheet()).toMatchObject({ state: { sheet: false } }));
+
+  fireEvent.click(row(h.id("one")));
+  await eventually(() =>
+    expect(screen.getByRole("article", { name: /^Selected message/ })).toBeTruthy(),
+  );
+  clickButton("Conversation actions");
+  fireEvent.click(await screen.findByRole("menuitem", { name: /^Snooze/ }));
+  await eventually(() => expect(screen.getByRole("dialog", { name: "Snooze" })).toBeTruthy());
+  await eventually(() => expect(sheet()).toMatchObject({ state: { sheet: true } }));
+  await h.event({ _tag: "CloseSheet" });
+  await eventually(() => expect(screen.queryByRole("dialog", { name: "Snooze" })).toBeNull());
+  await eventually(() => expect(sheet()).toMatchObject({ state: { sheet: false } }));
+  // Nothing else closed: the message stays selected.
+  expect(row(h.id("one")).getAttribute("aria-selected")).toBe("true");
+});

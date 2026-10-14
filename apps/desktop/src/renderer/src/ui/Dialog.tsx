@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 import { type ComponentProps, type ReactNode, useRef } from "react";
 import { isDesktop } from "../lib/platform";
 import { useLayoutMode } from "../lib/responsive-layout";
+import { useOpenSurface } from "./open-surfaces";
 import { buttonDanger, buttonPrimary, buttonSecondary, iconButton } from "./styles";
 
 type InitialFocus = ComponentProps<typeof BaseDialog.Popup>["initialFocus"];
@@ -120,6 +121,7 @@ export function Dialog({
   children,
 }: DialogProps) {
   const narrow = useLayoutMode() === "narrow";
+  useOpenSurface(true, onClose);
   return (
     <BaseDialog.Root
       open
@@ -181,6 +183,7 @@ export function Drawer({
   children: ReactNode;
 }) {
   const popup = useRef<HTMLDivElement>(null);
+  useOpenSurface(open, () => onOpenChange(false));
   return (
     <BaseDialog.Root open={open} onOpenChange={onOpenChange}>
       <BaseDialog.Portal>
@@ -218,6 +221,7 @@ interface AlertProps {
 
 /** A confirmation that needs an answer before anything else. Escape cancels. */
 export function Alert({ open, onOpenChange, title, description, children }: AlertProps) {
+  useOpenSurface(open, () => onOpenChange(false));
   return (
     <AlertDialog.Root open={open} onOpenChange={onOpenChange}>
       <AlertDialog.Portal>
