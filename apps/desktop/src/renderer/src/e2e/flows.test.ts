@@ -779,3 +779,26 @@ it.each(["missing", "failed"] as const)(
 
 const threadRoute = (h: Awaited<ReturnType<typeof flow>>, id: string) =>
   mailHref({ space: "all", mailbox: "all", accountId: h.account.id }, { thread: h.id(id) });
+
+it("a reply's mode picker is its visible title, with the title kept for screen readers", async () => {
+  current = await flow();
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  fireEvent.click(row(h.id("one")));
+  await eventually(() =>
+    expect(screen.getByRole("article", { name: /^Selected message/ })).toBeTruthy(),
+  );
+  key("r", { metaKey: true });
+  const composer = await screen.findByRole("dialog", { name: "Reply" });
+  const header = composer.querySelector("header");
+  if (!header) throw new Error("Missing composer header");
+  const title = within(header).getByText("Reply", { selector: "h2" });
+  expect(title.className).toContain("sr-only");
+  const picker = within(header).getByRole("combobox", { name: "Reply mode" });
+  expect(picker.textContent).toBe("Reply");
+  // Only the picker shows "Reply"; the header does not repeat it.
+  const visible = [...header.querySelectorAll("*")].filter(
+    (node) => node.children.length === 0 && node.textContent === "Reply",
+  );
+  expect(visible.filter((node) => !node.closest(".sr-only"))).toHaveLength(1);
+});

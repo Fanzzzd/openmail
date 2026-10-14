@@ -316,10 +316,17 @@ export function Composer({
               className={`${standalone ? `${titlebarRow} sticky top-0 z-10 bg-raised` : "flex min-h-11 shrink-0 items-center"} gap-2 border-b border-separator px-4`}
             >
               <TrafficLightSpace />
-              <Dialog.Title className="text-callout font-semibold">{title}</Dialog.Title>
+              {/* A reply's mode picker names the composer, so the title stays for screen readers
+                  only instead of repeating "Reply" next to it. */}
+              <Dialog.Title
+                className={original && account ? "sr-only" : "text-callout font-semibold"}
+              >
+                {title}
+              </Dialog.Title>
               {original && account && (
                 <Select
                   aria-label={t`Reply mode`}
+                  valueClassName="text-callout font-semibold"
                   value={draft.mode}
                   options={[
                     { value: "reply", label: t`Reply` },
