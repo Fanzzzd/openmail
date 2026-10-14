@@ -56,6 +56,28 @@ const containsProximity = (node: SearchExpression): boolean => {
   }
 };
 
+const listIndex = (q: LocalQuery) => {
+  const boundedPage = !!q.textPage || q.proximityPage?.kind === "prefilter";
+  // Across accounts SQLite otherwise sorts the entire inbox using the
+  // account/date index. Walk the global date index and stop at the limit.
+  // Search keeps the planner free to start from its selective FTS rowids.
+  return boundedPage && q.messageIds === undefined && q.accountIds?.length === 1
+    ? "messages_account_list_date_id"
+    : (boundedPage || q.search === undefined) &&
+        q.messageIds === undefined &&
+        q.accountIds?.length !== 1
+      ? "messages_list_date_id"
+      : undefined;
+};
+
+/**
+ * A search page on the plain table starts from the text index's rowids. Its account filter
+ * reads `+m.account_id`: without statistics SQLite preferred walking every message of the
+ * selected accounts through messages_account_date.
+ */
+export const searchDrivenList = (q: LocalQuery) =>
+  listIndex(q) === undefined && q.search !== undefined && q.search.trim() !== "";
+
 export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
   const hasLabel = (label: string) => labelIn(sql, label);
   const idsIn = (ids: readonly string[]) =>
@@ -435,30 +457,10 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
 
   // Stream the date/id index and resolve only selected conversations. The
   // CTE is inlined, so a 100k-thread inbox does not rank 100k rows per page.
-  const listIndex = (q: LocalQuery) => {
-    const boundedPage = !!q.textPage || q.proximityPage?.kind === "prefilter";
-    // Across accounts SQLite otherwise sorts the entire inbox using the
-    // account/date index. Walk the global date index and stop at the limit.
-    // Search keeps the planner free to start from its selective FTS rowids.
-    return boundedPage && q.messageIds === undefined && q.accountIds?.length === 1
-      ? "messages_account_list_date_id"
-      : (boundedPage || q.search === undefined) &&
-          q.messageIds === undefined &&
-          q.accountIds?.length !== 1
-        ? "messages_list_date_id"
-        : undefined;
-  };
   const listSource = (q: LocalQuery) => {
     const index = listIndex(q);
     return sql.literal(index ? `messages m INDEXED BY ${index}` : "messages m");
   };
-  /**
-   * A search page on the plain table starts from the text index's rowids. Its account filter
-   * reads `+m.account_id`: without statistics SQLite preferred walking every message of the
-   * selected accounts through messages_account_date.
-   */
-  const searchDrivenList = (q: LocalQuery) =>
-    listIndex(q) === undefined && q.search !== undefined && q.search.trim() !== "";
 
   const planTextPage = Effect.fnUntraced(function* (q: LocalQuery) {
     const words = searchWords(q.search ?? "");
