@@ -157,6 +157,11 @@ export const DraftRemote = Schema.Struct({
   rfcMessageId: Schema.optionalKey(Schema.String),
   changeKey: Schema.optionalKey(Schema.String),
   lastWrittenAt: Schema.optionalKey(Schema.Number),
+  /**
+   * Fingerprint of an update that was sent but not confirmed. A live draft that
+   * carries it holds our own write, not another client's edit.
+   */
+  writeNonce: Schema.optionalKey(Schema.String),
   draftId: Schema.NullOr(Schema.String),
   messageId: Schema.NullOr(Schema.String),
 });

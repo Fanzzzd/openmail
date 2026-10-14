@@ -9,7 +9,7 @@ export const buildMime = (
   from: Address,
   message: OutgoingMessage,
   threading?: Threading,
-  options?: { draft?: boolean; messageId?: string },
+  options?: { draft?: boolean; messageId?: string; writeNonce?: string },
 ) =>
   Effect.flatMap(MailCodec, (codec) => codec.build(from, message, threading, options)).pipe(
     Effect.map((raw) => Buffer.from(raw)),

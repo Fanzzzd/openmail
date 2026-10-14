@@ -450,6 +450,8 @@ export class Store extends Context.Service<
     setDraftLocalOnly(id: string, localOnly: boolean): Effect.Effect<void>;
     draftCreateState(id: string): Effect.Effect<Option.Option<DraftCreateState>>;
     setDraftCreateState(id: string, state: DraftCreateState | null): Effect.Effect<void>;
+    /** Persists the fingerprint of a draft update before it is sent. */
+    setDraftWriteNonce(id: string, nonce: string): Effect.Effect<void>;
     sendPreparationState(id: string): Effect.Effect<Option.Option<SendPreparationState>>;
     setSendPreparationState(id: string, state: SendPreparationState | null): Effect.Effect<void>;
     /** Deletes the draft and its queued saves that are not being pushed. */

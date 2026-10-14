@@ -3,7 +3,7 @@ import { Buffer } from "../bytes.js";
 import { PlatformCrypto } from "../crypto.js";
 import type { Address } from "../../domain/message.js";
 import type { OutgoingMessage } from "../../domain/changes.js";
-import type { Threading } from "../mail-codec.js";
+import { DRAFT_WRITE_HEADER, type Threading } from "../mail-codec.js";
 import { PermanentError } from "../../domain/errors.js";
 import { normalizeComposeMessage } from "../../compose/compose-body.js";
 import { composeTransportHtml } from "../../compose/compose-transport.js";
@@ -31,7 +31,7 @@ export const buildMobileMime = (
   from: Address,
   message: OutgoingMessage,
   threading: Threading = {},
-  options: { draft?: boolean; messageId?: string } = {},
+  options: { draft?: boolean; messageId?: string; writeNonce?: string } = {},
 ) =>
   Effect.flatMap(PlatformCrypto, (crypto) =>
     Effect.try({
@@ -50,6 +50,8 @@ export const buildMobileMime = (
           "MIME-Version: 1.0",
           `Content-Type: multipart/mixed; boundary="${mixed}"`,
         ];
+        if (options.draft && options.writeNonce)
+          headers.push(`${DRAFT_WRITE_HEADER}: ${headerSafe(options.writeNonce)}`);
         if ((prepared.mode === "reply" || prepared.mode === "replyAll") && threading.messageId) {
           headers.push(`In-Reply-To: ${headerSafe(threading.messageId)}`);
           headers.push(

@@ -58,6 +58,8 @@ Outlook 只在对应账户的 Drafts 文件夹中，凭精确的客户端 Messag
 
 Outlook 附件上传结果不确定时，读取全部附件页并核对文件名、内容字节及 Content-ID。恢复创建时只添加缺失附件。打开服务器草稿时即保存 changeKey 和 lastModifiedDateTime；远端版本只保存 changeKey 与服务端修改时间，不用本地时钟补值。更新前 GET 比较，只有版本不同且服务端修改时间晚于最后写入时，才另存本地版本并报告冲突。PATCH 后的部分失败会重读版本；读取失败则清除旧 changeKey，避免把本次写入当作其他客户端修改。Graph 的[消息更新文档](https://learn.microsoft.com/en-us/graph/api/message-update?view=graph-rest-1.0)未承诺 If-Match，当前比较仍存在 GET 与 PATCH 之间的竞态。
 
+草稿更新的响应可能丢失。这时服务器已改了版本，客户端却没收到新 changeKey 或新 message ID。core 在发送 PATCH（Outlook）或 PUT（Gmail）前把这次写入内容的 SHA-256 存进 `DraftRemote.writeNonce`，写入本身也带上它。Outlook 用扩展属性 `OpenmailDraftWrite`，Gmail 用邮件头 `X-Openmail-Draft-Write`。下次保存时，如果版本比较判为冲突，适配器再读一次远端的 nonce；它等于本次内容的指纹或已存的 `writeNonce` 时，这次改动是自己的，原地更新，不另存草稿、不报冲突。确认保存成功的 `setDraftRemote` 清掉 `writeNonce`。回归见 [outlook-draft-lost-response.test.ts](../packages/core/src/providers/outlook/outlook-draft-lost-response.test.ts)和 [gmail-draft-lost-response.test.ts](../packages/core/src/providers/gmail/gmail-draft-lost-response.test.ts)。
+
 ### Outlook 大附件
 
 规则核对于 2026-10-07：

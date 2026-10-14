@@ -28,6 +28,10 @@ const recipients = (list: readonly Address[]) =>
 export const MARKDOWN_DRAFT_PROPERTY =
   "String {57d14d35-4d11-4f8f-ae63-961883378d87} Name OpenmailMarkdownSource";
 
+/** Fingerprint of the last update written to a draft; see DraftRemote.writeNonce. */
+export const DRAFT_WRITE_PROPERTY =
+  "String {57d14d35-4d11-4f8f-ae63-961883378d87} Name OpenmailDraftWrite";
+
 export function graphFields(message: OutgoingMessage) {
   return {
     subject: message.subject,

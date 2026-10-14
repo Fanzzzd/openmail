@@ -424,6 +424,11 @@ export interface DraftPush {
     readonly remember: (remote: DraftRemote) => Effect.Effect<void>;
   };
   readonly remote: DraftRemote | null;
+  /**
+   * Persists the fingerprint of an update before it is sent, so a retry after a lost
+   * response recognises its own write. The result's remote leaves it out once confirmed.
+   */
+  readonly writing?: (nonce: string) => Effect.Effect<void, ProviderFailure>;
   /** Ready to send: Markdown rendered, a forwarded original attached. */
   readonly message: OutgoingMessage;
   readonly original: Option.Option<{ providerId: string; threadId: string }>;

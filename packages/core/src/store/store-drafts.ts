@@ -36,6 +36,7 @@ const DraftRow = Schema.Struct({
       Schema.Struct({
         changeKey: Schema.optionalKey(Schema.String),
         lastWrittenAt: Schema.optionalKey(Schema.Number),
+        writeNonce: Schema.optionalKey(Schema.String),
       }),
     ),
   ),
@@ -142,6 +143,11 @@ export function makeDraftStore(sql: SqlClient.SqlClient) {
     first(Schema.Struct({ value_json: Schema.fromJsonString(DraftCreateState) }))(
       sql`SELECT value_json FROM prefs WHERE key=${`draft-create:${id}`}`,
     ).pipe(Effect.map(Option.map((row) => row.value_json)));
+  /** Records an update about to be sent; the next confirmed setDraftRemote clears it. */
+  const setDraftWriteNonce = (id: string, nonce: string) =>
+    run(
+      sql`INSERT INTO prefs(key,value_json) SELECT ${`draft-remote:${id}`},${JSON.stringify({ writeNonce: nonce })} WHERE EXISTS(SELECT 1 FROM drafts WHERE id=${id}) ON CONFLICT(key) DO UPDATE SET value_json=json_set(value_json,'$.writeNonce',${nonce})`,
+    );
   const setDraftCreateState = (id: string, state: DraftCreateState | null) =>
     state
       ? run(
@@ -427,6 +433,7 @@ export function makeDraftStore(sql: SqlClient.SqlClient) {
     setDraftRemote,
     draftCreateState,
     setDraftCreateState,
+    setDraftWriteNonce,
     sendPreparationState,
     setSendPreparationState,
     setDraftOrganizationKey,

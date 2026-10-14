@@ -6,6 +6,7 @@ import type { OutgoingMessage } from "../../domain/changes.js";
 import { PermanentError } from "../../domain/errors.js";
 import { htmlDocument } from "../../mime/mime.js";
 import { draftTextFingerprint, markdownDraftSource } from "../../compose/markdown-draft.js";
+import { DRAFT_WRITE_HEADER } from "../mail-codec.js";
 
 const format = (a: Address) => (a.name ? { name: a.name, address: a.address } : a.address);
 
@@ -27,7 +28,7 @@ export const buildMime = Effect.fnUntraced(function* (
   from: Address,
   message: OutgoingMessage,
   threading: Threading = {},
-  options: { draft?: boolean; messageId?: string } = {},
+  options: { draft?: boolean; messageId?: string; writeNonce?: string } = {},
 ): Effect.fn.Return<Buffer, PermanentError> {
   const replying = message.mode === "reply" || message.mode === "replyAll";
   const references = [threading.references, threading.messageId].filter(Boolean).join(" ");
@@ -45,14 +46,16 @@ export const buildMime = Effect.fnUntraced(function* (
     bcc: message.bcc.map(format),
     subject: message.subject,
     ...(options.messageId ? { messageId: options.messageId } : {}),
-    headers:
-      options.draft && message.markdown
+    headers: {
+      ...(options.draft && message.markdown
         ? {
             "X-Openmail-Markdown": "1",
             "X-Openmail-Markdown-Body-SHA256": markdownDraftSource(message.text).bodyFingerprint,
             "X-Openmail-Markdown-Source-SHA256": draftTextFingerprint(message.text),
           }
-        : {},
+        : {}),
+      ...(options.draft && options.writeNonce ? { [DRAFT_WRITE_HEADER]: options.writeNonce } : {}),
+    },
     text: message.text,
     ...(message.html ? { html: htmlDocument(composeTransportHtml(message) ?? "") } : {}),
     ...(message.calendar ? { icalEvent: message.calendar } : {}),

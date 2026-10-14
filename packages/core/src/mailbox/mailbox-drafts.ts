@@ -207,6 +207,7 @@ export const makeDraftsMailbox = (
             }),
         },
         remote: draft.remote,
+        writing: (nonce) => withDraftClaim(store.setDraftWriteNonce(draftId, nonce)),
         message:
           organizationChanged && providerCapabilities(account.provider).organization === "folders"
             ? message

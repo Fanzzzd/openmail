@@ -17,8 +17,16 @@ import {
   draftKey,
   checkAttachmentSize,
   MARKDOWN_DRAFT_PROPERTY,
+  DRAFT_WRITE_PROPERTY,
   needsUpload,
 } from "./graph-message.js";
+import { sha256Hex } from "../../platform/crypto.js";
+
+const ExtendedProperties = Schema.Struct({
+  singleValueExtendedProperties: Schema.optionalKey(
+    Schema.Array(Schema.Struct({ id: Schema.String, value: Schema.String })),
+  ),
+});
 
 /** Saving, deleting and reading back Outlook drafts. */
 export const makeOutlookDrafts = (client: OutlookClient, draftState: OutlookDraftState) => {
@@ -61,6 +69,14 @@ export const makeOutlookDrafts = (client: OutlookClient, draftState: OutlookDraf
       };
       const attachments = message.attachments.map(fileAttachment);
       const uploaded = needsUpload(message, fields);
+      const nonce = sha256Hex(JSON.stringify(fields));
+      const updateFields = {
+        ...fields,
+        singleValueExtendedProperties: [
+          ...fields.singleValueExtendedProperties,
+          { id: DRAFT_WRITE_PROPERTY, value: nonce },
+        ],
+      };
       const addAttachments = (id: string, reconcile = false) =>
         uploaded
           ? syncUploadedAttachments(
@@ -244,11 +260,12 @@ export const makeOutlookDrafts = (client: OutlookClient, draftState: OutlookDraf
           }
           // Only this PATCH's 404 means the draft disappeared. Later attachment
           // failures must retain this ID instead of creating another message.
+          if (draft.writing) yield* draft.writing(nonce);
           const patched = yield* write(
             account.id,
             "PATCH",
             `/me/messages/${encodeURIComponent(id)}`,
-            fields,
+            updateFields,
           ).pipe(
             Effect.flatMap(decode(DraftVersion)),
             Effect.map(Option.some),
@@ -308,6 +325,25 @@ export const makeOutlookDrafts = (client: OutlookClient, draftState: OutlookDraf
           live.value.changeKey !== draft.remote.changeKey &&
           draft.remote.lastWrittenAt !== undefined &&
           Date.parse(live.value.lastModifiedDateTime ?? "") > draft.remote.lastWrittenAt;
+        // A PATCH whose response was lost changed the version too. The live draft
+        // carrying our write fingerprint is our own edit, so update it in place.
+        if (conflict) {
+          const written = yield* get(
+            account.id,
+            ExtendedProperties,
+            `/me/messages/${encodeURIComponent(known)}?$select=id&$expand=${encodeURIComponent(`singleValueExtendedProperties($filter=id eq '${DRAFT_WRITE_PROPERTY}')`)}`,
+          ).pipe(
+            Effect.map(
+              (found) =>
+                found.singleValueExtendedProperties?.find(
+                  (property) => property.id === DRAFT_WRITE_PROPERTY,
+                )?.value,
+            ),
+            Effect.orElseSucceed(() => null),
+          );
+          if (written && (written === nonce || written === draft.remote?.writeNonce))
+            conflict = false;
+        }
       }
       const id = known && !conflict ? yield* update(known) : yield* create;
       return {

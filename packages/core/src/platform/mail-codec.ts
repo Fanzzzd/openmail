@@ -56,9 +56,11 @@ export interface MailCodecPort {
     from: Address,
     message: OutgoingMessage,
     threading?: Threading,
-    options?: { draft?: boolean; messageId?: string },
+    options?: { draft?: boolean; messageId?: string; writeNonce?: string },
   ) => Effect.Effect<Uint8Array, PermanentError>;
 }
+/** Draft header carrying DraftRemote.writeNonce, so a retry recognises its own update. */
+export const DRAFT_WRITE_HEADER = "X-Openmail-Draft-Write";
 export class MailCodec extends Context.Service<MailCodec, MailCodecPort>()("openmail/MailCodec") {}
 export const parseMime = (raw: Uint8Array, options?: MimeParseOptions) =>
   Effect.flatMap(MailCodec, (codec) => Effect.tryPromise(() => codec.parse(raw, options)));

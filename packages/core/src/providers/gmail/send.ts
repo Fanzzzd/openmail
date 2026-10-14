@@ -1,6 +1,7 @@
 import { Clock, Effect, Option } from "effect";
 import { newMessageId } from "../../mime/message-id.js";
-import { PlatformCrypto } from "../../platform/crypto.js";
+import { PlatformCrypto, sha256Hex } from "../../platform/crypto.js";
+import { DRAFT_WRITE_HEADER } from "../../platform/mail-codec.js";
 import { gmailPages } from "../provider-pages.js";
 import { uncertainWrite } from "../provider-retry.js";
 import { deliverOrConfirm } from "../provider-send.js";
@@ -142,13 +143,18 @@ export const makeGmailSend = (client: GmailClient) => {
         threading = yield* fetchThreading(account.id, original.value.providerId);
         if (message.mode !== "forward") threadId = original.value.threadId;
       }
-      const makeBody = (messageId?: string) =>
+      const nonce = sha256Hex(JSON.stringify([message, threading, threadId ?? null]));
+      const makeBody = (messageId?: string, writeNonce?: string) =>
         Effect.gen(function* () {
           const raw = yield* buildMime(
             message.from ?? { name: "", address: account.email },
             message,
             threading,
-            { draft: true, ...(messageId ? { messageId } : {}) },
+            {
+              draft: true,
+              ...(messageId ? { messageId } : {}),
+              ...(writeNonce ? { writeNonce } : {}),
+            },
           );
           if (raw.byteLength > GMAIL_MIME_LIMIT)
             return yield* new PermanentError({
@@ -231,13 +237,32 @@ export const makeGmailSend = (client: GmailClient) => {
             Effect.catchIf(is404, () => Effect.succeed(Option.none())),
           )
         : Option.none();
-      const conflict =
+      let conflict =
         Option.isSome(current) &&
         !!draft.remote?.messageId &&
         current.value.message.id !== draft.remote.messageId;
+      // A PUT whose response was lost also gave the draft a new message id. The live
+      // message carrying our write fingerprint is our own edit, so update it in place.
+      if (conflict && Option.isSome(current)) {
+        const written = yield* get(
+          account.id,
+          Metadata,
+          `/messages/${encodeURIComponent(current.value.message.id)}?format=metadata&metadataHeaders=${DRAFT_WRITE_HEADER}`,
+        ).pipe(
+          Effect.map(({ payload }) =>
+            payload.headers
+              ?.find((h) => h.name.toLowerCase() === DRAFT_WRITE_HEADER.toLowerCase())
+              ?.value.replace(/\s+/g, ""),
+          ),
+          Effect.orElseSucceed(() => null),
+        );
+        if (written && (written === nonce || written === draft.remote?.writeNonce))
+          conflict = false;
+      }
       const saved = yield* Option.isSome(existing) && !conflict
         ? // Deleted in another client meanwhile: the person is still writing it.
-          makeBody().pipe(
+          (draft.writing ? draft.writing(nonce) : Effect.void).pipe(
+            Effect.andThen(makeBody(undefined, nonce)),
             Effect.flatMap((body) =>
               put(account.id, `/drafts/${encodeURIComponent(existing.value)}`, body),
             ),
