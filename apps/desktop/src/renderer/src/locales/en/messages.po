@@ -5919,8 +5919,8 @@ msgid "Save all"
 msgstr "Save all"
 
 #: src/renderer/src/lib/errors.ts
-msgid "Save an Anthropic API key in AI settings."
-msgstr "Save an Anthropic API key in AI settings."
+msgid "Save an Anthropic API key in Settings → AI Access."
+msgstr "Save an Anthropic API key in Settings → AI Access."
 
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Save as PDF…"
