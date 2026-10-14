@@ -11,7 +11,7 @@ const FUNNEL_HEADER = "tailscale-funnel-request";
 const SESSION_COOKIE = "__Host-openmail-session";
 /** A session ends after this long without a request or an open socket. */
 export const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
-/** The oldest session goes when a new one would pass this. */
+/** Past this, the least recently used idle session goes when a new one starts. */
 export const MAX_SESSIONS = 50;
 /** Close code a browser gets when its session ends. */
 export const SESSION_ENDED = 4401;
@@ -190,15 +190,29 @@ export function createSessions(now: () => number = Date.now) {
     }
     return anyEnded;
   };
+  /**
+   * The session to end at the limit: the least recently used one without an
+   * open socket, so cookie-less clients can't push a connected page out.
+   * Only when every session is connected, the least recently used of those.
+   */
+  const leastRecentlyUsed = () => {
+    let idle: Session | undefined;
+    let any: Session | undefined;
+    for (const session of sessions.values()) {
+      if (!any || session.lastSeenAt < any.lastSeenAt) any = session;
+      if (session.sockets.size === 0 && (!idle || session.lastSeenAt < idle.lastSeenAt))
+        idle = session;
+    }
+    return idle ?? any;
+  };
   return {
     /** A new session and its Set-Cookie value. */
     issue(login: string, name: string) {
       prune();
-      // Map order is insertion order, so the first entry is the oldest.
       while (sessions.size >= MAX_SESSIONS) {
-        const oldest = sessions.values().next().value;
-        if (!oldest) break;
-        revoke(oldest);
+        const evicted = leastRecentlyUsed();
+        if (!evicted) break;
+        revoke(evicted);
       }
       const id = randomBytes(24).toString("base64url");
       const at = now();

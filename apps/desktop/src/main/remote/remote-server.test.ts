@@ -164,22 +164,47 @@ describe("sessions", () => {
     sessions.sweep();
     expect(sessions.list()).toEqual([]);
   });
-  it("keeps at most MAX_SESSIONS, ending the oldest first", () => {
+  it("keeps at most MAX_SESSIONS, ending the least recently used idle one first", () => {
     let now = 1_000;
     const sessions = createSessions(() => now);
-    const oldest = sessions.issue("owner@github", "Owner");
-    const { id: first, closed } = connected(sessions, oldest);
+    // The oldest session has an open socket: a burst of cookie-less requests must not end it.
+    const live = connected(sessions, sessions.issue("owner@github", "Owner"));
+    const cookies: string[] = [];
     for (let i = 1; i < MAX_SESSIONS; i++) {
       now += 1;
-      sessions.issue("owner@github", "Owner");
+      cookies.push(sessions.issue("owner@github", "Owner").split(";")[0] ?? "");
     }
+    // The first idle one is used again, so the second idle one is now the least recently used.
+    now += 1;
+    expect(sessions.find(cookies[0], "owner@github")).not.toBeNull();
     expect(sessions.list()).toHaveLength(MAX_SESSIONS);
+    now += 1;
     sessions.issue("owner@github", "Owner");
-    expect(sessions.list()).toHaveLength(MAX_SESSIONS);
-    expect(sessions.list().some((session) => session.id === first)).toBe(false);
-    expect(closed).toEqual([4401]);
+    const ids = sessions.list().map((session) => session.id);
+    expect(ids).toHaveLength(MAX_SESSIONS);
+    expect(ids).toContain(live.id);
+    expect(live.closed).toEqual([]);
+    expect(sessions.find(cookies[0], "owner@github")).not.toBeNull();
+    expect(sessions.find(cookies[1], "owner@github")).toBeNull();
     // Its browser waits for a reload instead of evicting the next one.
-    expect(sessions.isRevoked(oldest.split(";")[0])).toBe(true);
+    expect(sessions.isRevoked(cookies[1])).toBe(true);
+  });
+  it("ends the least recently used connected session when every session is connected", () => {
+    let now = 1_000;
+    const sessions = createSessions(() => now);
+    const live: ReturnType<typeof connected>[] = [];
+    for (let i = 0; i < MAX_SESSIONS; i++) {
+      now += 1;
+      live.push(connected(sessions, sessions.issue("owner@github", "Owner")));
+    }
+    now += 1;
+    sessions.issue("owner@github", "Owner");
+    // An open socket counts as use at every check, so all are equally recent: the oldest goes.
+    expect(live.map((entry) => entry.closed)).toEqual([
+      [4401],
+      ...Array.from({ length: MAX_SESSIONS - 1 }, () => []),
+    ]);
+    expect(sessions.list()).toHaveLength(MAX_SESSIONS);
   });
   it("ends sessions whose login leaves the allowlist", () => {
     const sessions = createSessions();
