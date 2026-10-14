@@ -156,7 +156,7 @@ msgstr "Preguntar"
 
 #. js-lingui-explicit-id
 #: src/ai-controls.tsx
-msgid "Ask about this thread"
+msgid "Ask about this conversation"
 msgstr "Preguntar sobre esta conversación"
 
 #. js-lingui-explicit-id
@@ -540,7 +540,7 @@ msgstr "Más tarde hoy"
 #. js-lingui-explicit-id
 #: app/reader.tsx
 msgid "Load remote images"
-msgstr "Cargar imágenes externas"
+msgstr "Cargar imágenes remotas"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -1023,7 +1023,7 @@ msgstr "Asunto"
 
 #. js-lingui-explicit-id
 #: src/ai-controls.tsx
-msgid "Summarize thread"
+msgid "Summarize conversation"
 msgstr "Resumir conversación"
 
 #. js-lingui-explicit-id

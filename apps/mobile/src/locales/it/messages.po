@@ -156,8 +156,8 @@ msgstr "Chiedi"
 
 #. js-lingui-explicit-id
 #: src/ai-controls.tsx
-msgid "Ask about this thread"
-msgstr "Chiedi informazioni su questa conversazione"
+msgid "Ask about this conversation"
+msgstr "Chiedi su questa conversazione"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -479,7 +479,7 @@ msgstr "Da persone che conosco"
 #. js-lingui-explicit-id
 #: app/compose.tsx
 msgid "Have you checked Sent and confirmed that this message was not sent?"
-msgstr "Hai controllato «Inviata» e verificato che questo messaggio non sia stato inviato?"
+msgstr "Hai controllato “Inviata” e verificato che questo messaggio non sia stato inviato?"
 
 #. js-lingui-explicit-id
 #: src/background-settings.tsx
@@ -627,7 +627,7 @@ msgstr "Sposta nel cestino"
 #. js-lingui-explicit-id
 #: src/background-settings.tsx
 msgid "New Inbox mail notifications"
-msgstr "Notifiche dei nuovi messaggi in arrivo"
+msgstr "Notifiche dei nuovi messaggi nella posta in arrivo"
 
 #. js-lingui-explicit-id
 #: src/background.ts
@@ -1023,7 +1023,7 @@ msgstr "Oggetto"
 
 #. js-lingui-explicit-id
 #: src/ai-controls.tsx
-msgid "Summarize thread"
+msgid "Summarize conversation"
 msgstr "Riassumi conversazione"
 
 #. js-lingui-explicit-id
@@ -1054,7 +1054,7 @@ msgstr "Il messaggio è stato inviato, ma la sua copia non è presente nella pos
 #. js-lingui-explicit-id
 #: app/compose.tsx
 msgid "This message may have been sent. Check Sent before sending it again."
-msgstr "Questo messaggio potrebbe essere già stato inviato. Controlla «Inviata» prima di inviarlo di nuovo."
+msgstr "Questo messaggio potrebbe essere già stato inviato. Controlla “Inviata” prima di inviarlo di nuovo."
 
 #. js-lingui-explicit-id
 #: app/ai-proposals.tsx
@@ -1095,7 +1095,7 @@ msgstr "Annulla invio"
 #. js-lingui-explicit-id
 #: src/background-settings.tsx
 msgid "Unread Inbox badge"
-msgstr "Badge dei messaggi in arrivo non letti"
+msgstr "Badge dei messaggi non letti nella posta in arrivo"
 
 #. js-lingui-explicit-id
 #: src/thread-actions.tsx

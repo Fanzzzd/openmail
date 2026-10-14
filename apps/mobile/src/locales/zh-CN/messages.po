@@ -156,8 +156,8 @@ msgstr "提问"
 
 #. js-lingui-explicit-id
 #: src/ai-controls.tsx
-msgid "Ask about this thread"
-msgstr "询问此会话"
+msgid "Ask about this conversation"
+msgstr "询问此对话"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -283,7 +283,7 @@ msgstr "继续"
 #. js-lingui-explicit-id
 #: app/_layout.tsx
 msgid "Conversation"
-msgstr "会话"
+msgstr "对话"
 
 #. js-lingui-explicit-id
 #: src/failed-op-notice.tsx
@@ -744,7 +744,7 @@ msgstr "从可读取的记录重建本地数据库，并重新同步邮件。保
 #. js-lingui-explicit-id
 #: app/compose.tsx
 msgid "Recipients outside the original conversation:"
-msgstr "原会话之外的收件人："
+msgstr "原对话之外的收件人："
 
 #. js-lingui-explicit-id
 #: src/mailbox.tsx
@@ -815,7 +815,7 @@ msgstr "回复"
 #. js-lingui-explicit-id
 #: app/reader.tsx
 msgid "Reply all"
-msgstr "回复全部"
+msgstr "全部回复"
 
 #. js-lingui-explicit-id
 #: src/failed-op-notice.tsx
@@ -848,7 +848,7 @@ msgstr "检查 AI 收件人"
 #: app/settings.tsx
 #: src/ai-controls.tsx
 msgid "Review proposals"
-msgstr "审阅提议"
+msgstr "审阅建议"
 
 #. js-lingui-explicit-id
 #: src/ai-controls.tsx
@@ -1023,8 +1023,8 @@ msgstr "主题"
 
 #. js-lingui-explicit-id
 #: src/ai-controls.tsx
-msgid "Summarize thread"
-msgstr "生成会话摘要"
+msgid "Summarize conversation"
+msgstr "总结对话"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -1070,7 +1070,7 @@ msgstr "明天"
 #. js-lingui-explicit-id
 #: src/mailbox-name.ts
 msgid "Trash"
-msgstr "已删除"
+msgstr "废纸篓"
 
 #. js-lingui-explicit-id
 #: app/threads.tsx

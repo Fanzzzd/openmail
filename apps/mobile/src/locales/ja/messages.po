@@ -119,7 +119,7 @@ msgstr "更新のタイミングは Android が決定します。リアルタイ
 #. js-lingui-explicit-id
 #: src/ai-settings.tsx
 msgid "Anthropic API key"
-msgstr "AnthropicのAPIキー"
+msgstr "Anthropic API キー"
 
 #. js-lingui-explicit-id
 #: src/ai-settings.tsx
@@ -156,8 +156,8 @@ msgstr "質問する"
 
 #. js-lingui-explicit-id
 #: src/ai-controls.tsx
-msgid "Ask about this thread"
-msgstr "この会話について質問"
+msgid "Ask about this conversation"
+msgstr "このスレッドについて質問"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -362,7 +362,7 @@ msgstr "保存、添付、送信待ちへの追加に失敗しました。再試
 #. js-lingui-explicit-id
 #: src/undo.tsx
 msgid "Could not undo. Try again."
-msgstr "元に戻せませんでした。再試行してください。"
+msgstr "取り消せませんでした。もう一度お試しください。"
 
 #. js-lingui-explicit-id
 #: app/imap-setup.tsx
@@ -540,7 +540,7 @@ msgstr "今日の後で"
 #. js-lingui-explicit-id
 #: app/reader.tsx
 msgid "Load remote images"
-msgstr "外部画像を読み込む"
+msgstr "リモート画像を読み込む"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -703,7 +703,7 @@ msgstr "一部のみ配信"
 #. js-lingui-explicit-id
 #: src/received-attachments-view.tsx
 msgid "PDF text extraction is unavailable on mobile."
-msgstr "モバイルではPDFのテキスト抽出を利用できません。"
+msgstr "モバイルでは PDF のテキスト抽出を利用できません。"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -754,7 +754,7 @@ msgstr "ローカルレコードを{copied}件復旧しました。読み取れ�
 #. js-lingui-explicit-id
 #: src/mailbox.tsx
 msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
-msgstr "{copied} 個のローカル レコードを回復しました。 {skipped} 件の読み取り不可能な項目をスキップしました。元のデータベース: {backup}"
+msgstr "{copied} 個のローカル レコードを回復しました。{skipped} 件の読み取り不可能な項目をスキップしました。元のデータベース：{backup}"
 
 #. js-lingui-explicit-id
 #: app/index.tsx
@@ -905,7 +905,7 @@ msgstr "送信できませんでした。下書きを確認して再試行して
 #. js-lingui-explicit-id
 #: app/compose.tsx
 msgid "Send message?"
-msgstr "メールを送信しますか？"
+msgstr "メッセージを送信しますか？"
 
 #. js-lingui-explicit-id
 #: src/mailbox-name.ts
@@ -1023,8 +1023,8 @@ msgstr "件名"
 
 #. js-lingui-explicit-id
 #: src/ai-controls.tsx
-msgid "Summarize thread"
-msgstr "会話を要約"
+msgid "Summarize conversation"
+msgstr "スレッドを要約"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -1085,7 +1085,7 @@ msgstr "取り消す"
 #. js-lingui-explicit-id
 #: app/compose.tsx
 msgid "Undo AI edit"
-msgstr "AI 編集を元に戻す"
+msgstr "AI の編集を取り消す"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx

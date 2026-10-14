@@ -88,7 +88,7 @@ msgstr "L’IA a ajouté des destinataires inconnus :"
 #. js-lingui-explicit-id
 #: src/ai-controls.tsx
 msgid "AI request failed. Check your settings and try again."
-msgstr "La demande IA a échoué. Vérifiez vos paramètres et réessayez."
+msgstr "La demande IA a échoué. Vérifiez vos réglages et réessayez."
 
 #. js-lingui-explicit-id
 #: src/ai-settings.tsx
@@ -156,7 +156,7 @@ msgstr "Demander"
 
 #. js-lingui-explicit-id
 #: src/ai-controls.tsx
-msgid "Ask about this thread"
+msgid "Ask about this conversation"
 msgstr "Poser une question sur cette conversation"
 
 #. js-lingui-explicit-id
@@ -352,7 +352,7 @@ msgstr "Impossible de reconstruire la base de données locale"
 #: app/settings.tsx
 #: src/ai-settings.tsx
 msgid "Could not save settings. Try again."
-msgstr "Impossible d’enregistrer les paramètres. Réessayez."
+msgstr "Impossible d’enregistrer les réglages. Réessayez."
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -627,7 +627,7 @@ msgstr "Déplacer vers la corbeille"
 #. js-lingui-explicit-id
 #: src/background-settings.tsx
 msgid "New Inbox mail notifications"
-msgstr "Notifications des nouveaux messages reçus"
+msgstr "Notifications des nouveaux messages de la boîte de réception"
 
 #. js-lingui-explicit-id
 #: src/background.ts
@@ -1023,7 +1023,7 @@ msgstr "Objet"
 
 #. js-lingui-explicit-id
 #: src/ai-controls.tsx
-msgid "Summarize thread"
+msgid "Summarize conversation"
 msgstr "Résumer la conversation"
 
 #. js-lingui-explicit-id
@@ -1095,7 +1095,7 @@ msgstr "Annuler l’envoi"
 #. js-lingui-explicit-id
 #: src/background-settings.tsx
 msgid "Unread Inbox badge"
-msgstr "Badge des messages reçus non lus"
+msgstr "Badge des messages non lus de la boîte de réception"
 
 #. js-lingui-explicit-id
 #: src/thread-actions.tsx

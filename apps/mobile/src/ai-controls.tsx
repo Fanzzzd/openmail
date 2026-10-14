@@ -43,11 +43,11 @@ export function ThreadAi({ accountId, messageId }: { accountId: string; messageI
     <View style={styles.row}>
       <Button
         disabled={busy}
-        label={i18n._({ id: "Summarize thread", message: "Summarize thread" })}
+        label={i18n._({ id: "Summarize conversation", message: "Summarize conversation" })}
         onPress={() => void ai.run((mailbox) => mailbox.ai.summarize(messageId))}
       />
       <Text style={styles.subject}>
-        {i18n._({ id: "Ask about this thread", message: "Ask about this thread" })}
+        {i18n._({ id: "Ask about this conversation", message: "Ask about this conversation" })}
       </Text>
       <TextInput
         style={styles.input}

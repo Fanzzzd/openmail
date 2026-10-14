@@ -156,7 +156,7 @@ msgstr "Zeptat se"
 
 #. js-lingui-explicit-id
 #: src/ai-controls.tsx
-msgid "Ask about this thread"
+msgid "Ask about this conversation"
 msgstr "Zeptat se na tuto konverzaci"
 
 #. js-lingui-explicit-id
@@ -362,7 +362,7 @@ msgstr "Uložení, přiložení nebo zařazení zprávy do fronty selhalo. Zkust
 #. js-lingui-explicit-id
 #: src/undo.tsx
 msgid "Could not undo. Try again."
-msgstr "Akci se nepodařilo vrátit. Zkuste to znovu."
+msgstr "Nepodařilo se vrátit zpět. Zkuste to znovu."
 
 #. js-lingui-explicit-id
 #: app/imap-setup.tsx
@@ -1023,7 +1023,7 @@ msgstr "Předmět"
 
 #. js-lingui-explicit-id
 #: src/ai-controls.tsx
-msgid "Summarize thread"
+msgid "Summarize conversation"
 msgstr "Shrnout konverzaci"
 
 #. js-lingui-explicit-id
@@ -1085,12 +1085,12 @@ msgstr "Vrátit zpět"
 #. js-lingui-explicit-id
 #: app/compose.tsx
 msgid "Undo AI edit"
-msgstr "Vrátit úpravu AI"
+msgstr "Vrátit zpět úpravu AI"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
 msgid "Undo send"
-msgstr "Vrátit odeslání"
+msgstr "Odvolat odeslání"
 
 #. js-lingui-explicit-id
 #: src/background-settings.tsx

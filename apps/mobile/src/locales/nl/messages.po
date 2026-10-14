@@ -156,8 +156,8 @@ msgstr "Vraag"
 
 #. js-lingui-explicit-id
 #: src/ai-controls.tsx
-msgid "Ask about this thread"
-msgstr "Vraag over dit gesprek"
+msgid "Ask about this conversation"
+msgstr "Vraag stellen over dit gesprek"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -393,7 +393,7 @@ msgstr "Permanent verwijderen"
 #. js-lingui-explicit-id
 #: app/settings.tsx
 msgid "Delivery uncertain. Check Sent before trying again."
-msgstr "Verzending onzeker. Controleer Verzonden voordat je opnieuw probeert."
+msgstr "Verzending onzeker. Controleer Verstuurd voordat je het opnieuw probeert."
 
 #. js-lingui-explicit-id
 #: src/failed-op-notice.tsx
@@ -479,7 +479,7 @@ msgstr "Van mensen die ik ken"
 #. js-lingui-explicit-id
 #: app/compose.tsx
 msgid "Have you checked Sent and confirmed that this message was not sent?"
-msgstr "Hebt u „Verstuurd“ gecontroleerd en bevestigd dat dit bericht niet is verzonden?"
+msgstr "Heb je “Verstuurd” gecontroleerd en bevestigd dat dit bericht niet is verzonden?"
 
 #. js-lingui-explicit-id
 #: src/background-settings.tsx
@@ -627,7 +627,7 @@ msgstr "Verplaatsen naar prullenmand"
 #. js-lingui-explicit-id
 #: src/background-settings.tsx
 msgid "New Inbox mail notifications"
-msgstr "Meldingen voor nieuwe inboxberichten"
+msgstr "Meldingen voor nieuwe berichten in Postvak IN"
 
 #. js-lingui-explicit-id
 #: src/background.ts
@@ -963,7 +963,7 @@ msgstr "Zoekresultaten van de server worden weergegeven."
 #: app/index.tsx
 #: app/settings.tsx
 msgid "Sign in again"
-msgstr "Meld u opnieuw aan"
+msgstr "Meld je opnieuw aan"
 
 #. js-lingui-explicit-id
 #: src/ai-settings.tsx
@@ -1023,7 +1023,7 @@ msgstr "Onderwerp"
 
 #. js-lingui-explicit-id
 #: src/ai-controls.tsx
-msgid "Summarize thread"
+msgid "Summarize conversation"
 msgstr "Gesprek samenvatten"
 
 #. js-lingui-explicit-id
@@ -1054,7 +1054,7 @@ msgstr "Het bericht is verstuurd, maar de kopie ontbreekt in Verstuurd."
 #. js-lingui-explicit-id
 #: app/compose.tsx
 msgid "This message may have been sent. Check Sent before sending it again."
-msgstr "Dit bericht is mogelijk al verzonden. Controleer „Verstuurd“ voordat u het opnieuw verzendt."
+msgstr "Dit bericht is mogelijk al verzonden. Controleer “Verstuurd” voordat je het opnieuw verzendt."
 
 #. js-lingui-explicit-id
 #: app/ai-proposals.tsx
@@ -1095,7 +1095,7 @@ msgstr "Verzenden ongedaan maken"
 #. js-lingui-explicit-id
 #: src/background-settings.tsx
 msgid "Unread Inbox badge"
-msgstr "Badge voor ongelezen inboxberichten"
+msgstr "Badge voor ongelezen berichten in Postvak IN"
 
 #. js-lingui-explicit-id
 #: src/thread-actions.tsx

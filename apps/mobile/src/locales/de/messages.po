@@ -56,18 +56,18 @@ msgstr "Aktionen"
 #. js-lingui-explicit-id
 #: app/index.tsx
 msgid "Add Gmail account"
-msgstr "Gmail-Konto hinzufügen"
+msgstr "Gmail-Account hinzufügen"
 
 #. js-lingui-explicit-id
 #: app/_layout.tsx
 #: app/index.tsx
 msgid "Add IMAP/SMTP account"
-msgstr "IMAP/SMTP-Konto hinzufügen"
+msgstr "IMAP/SMTP-Account hinzufügen"
 
 #. js-lingui-explicit-id
 #: app/index.tsx
 msgid "Add Outlook account"
-msgstr "Outlook-Konto hinzufügen"
+msgstr "Outlook-Account hinzufügen"
 
 #. Proposed replacement for the authored message text only.
 #. js-lingui-explicit-id
@@ -98,7 +98,7 @@ msgstr "Erlauben"
 #. js-lingui-explicit-id
 #: src/ai-settings.tsx
 msgid "Allow Anthropic to receive this account's visible mail text for AI. Images and attachments stay on this device. Changes require your approval."
-msgstr "Erlaube Anthropic, den sichtbaren Nachrichtentext dieses Kontos für KI zu empfangen. Bilder und Anhänge bleiben auf diesem Gerät. Änderungen erfordern deine Zustimmung."
+msgstr "Erlaube Anthropic, den sichtbaren Nachrichtentext dieses Accounts für KI zu empfangen. Bilder und Anhänge bleiben auf diesem Gerät. Änderungen erfordern deine Zustimmung."
 
 #. js-lingui-explicit-id
 #: src/ai-settings.tsx
@@ -156,8 +156,8 @@ msgstr "Fragen"
 
 #. js-lingui-explicit-id
 #: src/ai-controls.tsx
-msgid "Ask about this thread"
-msgstr "Frage zu dieser Unterhaltung"
+msgid "Ask about this conversation"
+msgstr "Frage zu dieser Konversation"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -177,7 +177,7 @@ msgstr "Foto anhängen"
 #. js-lingui-explicit-id
 #: app/compose.tsx
 msgid "Attachments rejected before sending. Remove blocked or oversized attachments."
-msgstr "Anhänge vor dem Senden abgelehnt. Entfernen Sie blockierte oder zu große Anhänge."
+msgstr "Anhänge vor dem Senden abgelehnt. Entferne blockierte oder zu große Anhänge."
 
 #. js-lingui-explicit-id
 #: src/ai-settings.tsx
@@ -305,7 +305,7 @@ msgstr "Verbindung fehlgeschlagen. Prüfe die Server und das App-Passwort."
 #. js-lingui-explicit-id
 #: src/failed-op-notice.tsx
 msgid "Could not dismiss this notice. Try again."
-msgstr "Dieser Hinweis konnte nicht geschlossen werden. Versuchen Sie es erneut."
+msgstr "Dieser Hinweis konnte nicht geschlossen werden. Versuche es erneut."
 
 #. js-lingui-explicit-id
 #: src/background-settings.tsx
@@ -341,7 +341,7 @@ msgstr "Die lokale E-Mail-Datenbank konnte nicht geöffnet werden."
 #. js-lingui-explicit-id
 #: src/failed-op-notice.tsx
 msgid "Could not prepare the resend draft. Try again."
-msgstr "Der Entwurf zum erneuten Senden konnte nicht vorbereitet werden. Versuchen Sie es erneut."
+msgstr "Der Entwurf zum erneuten Senden konnte nicht vorbereitet werden. Versuche es erneut."
 
 #. js-lingui-explicit-id
 #: src/mailbox.tsx
@@ -372,7 +372,7 @@ msgstr "App-Passwort erstellen"
 #. js-lingui-explicit-id
 #: src/mailbox.tsx
 msgid "Database recovery was interrupted. Try recovery again."
-msgstr "Die Datenbankwiederherstellung wurde unterbrochen. Versuchen Sie es erneut."
+msgstr "Die Datenbankwiederherstellung wurde unterbrochen. Versuche es erneut."
 
 #. Action that moves messages to the Trash mailbox, not the mailbox name.
 #. js-lingui-explicit-id
@@ -403,7 +403,7 @@ msgstr "Details"
 #. js-lingui-explicit-id
 #: app/settings.tsx
 msgid "Disable account"
-msgstr "Konto deaktivieren"
+msgstr "Account deaktivieren"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -449,7 +449,7 @@ msgstr "E-Mail-Adresse"
 #. js-lingui-explicit-id
 #: app/settings.tsx
 msgid "Enable account"
-msgstr "Konto aktivieren"
+msgstr "Account aktivieren"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -479,7 +479,7 @@ msgstr "Von Personen, die ich kenne"
 #. js-lingui-explicit-id
 #: app/compose.tsx
 msgid "Have you checked Sent and confirmed that this message was not sent?"
-msgstr "Haben Sie „Gesendet“ geprüft und bestätigt, dass diese Nachricht nicht gesendet wurde?"
+msgstr "Hast du „Gesendet“ geprüft und bestätigt, dass diese Nachricht nicht gesendet wurde?"
 
 #. js-lingui-explicit-id
 #: src/background-settings.tsx
@@ -545,7 +545,7 @@ msgstr "Externe Bilder laden"
 #. js-lingui-explicit-id
 #: app/settings.tsx
 msgid "Loading remote images lets the sender see when you open a message and your IP address."
-msgstr "Wenn du entfernte Bilder lädst, sieht der Absender, wann du eine Nachricht öffnest, und deine IP-Adresse."
+msgstr "Wenn du externe Bilder lädst, sieht der Absender, wann du eine Nachricht öffnest, und deine IP-Adresse."
 
 #. js-lingui-explicit-id
 #: src/mailbox.tsx
@@ -739,7 +739,7 @@ msgstr "Lokale Datenbank neu aufbauen"
 #. js-lingui-explicit-id
 #: src/mailbox.tsx
 msgid "Rebuild the local database from readable records and re-sync mail. Local drafts and queued changes are kept when readable. The original database and secure tokens are kept."
-msgstr "Bauen Sie die lokale Datenbank aus lesbaren Datensätzen neu auf und synchronisieren Sie die E-Mails erneut. Lesbare lokale Entwürfe und Änderungen in der Warteschlange bleiben erhalten. Die ursprüngliche Datenbank und sicher gespeicherte Tokens bleiben erhalten."
+msgstr "Baue die lokale Datenbank aus lesbaren Datensätzen neu auf und synchronisiere die E-Mails erneut. Lesbare lokale Entwürfe und Änderungen in der Warteschlange bleiben erhalten. Die ursprüngliche Datenbank und sicher gespeicherte Tokens bleiben erhalten."
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -759,7 +759,7 @@ msgstr "{copied} lokale Datensätze wiederhergestellt. {skipped} unlesbare Eleme
 #. js-lingui-explicit-id
 #: app/index.tsx
 msgid "Register mobile OAuth clients in app config to add accounts."
-msgstr "Zum Hinzufügen von Konten mobile OAuth-Clients in der App-Konfiguration registrieren."
+msgstr "Registriere mobile OAuth-Clients in der App-Konfiguration, um Accounts hinzuzufügen."
 
 #. js-lingui-explicit-id
 #: app/ai-proposals.tsx
@@ -770,7 +770,7 @@ msgstr "Ablehnen"
 #. js-lingui-explicit-id
 #: app/settings.tsx
 msgid "Rejected before sending. Edit the draft and try again."
-msgstr "Vor dem Senden abgelehnt. Bearbeiten Sie den Entwurf und versuchen Sie es erneut."
+msgstr "Vor dem Senden abgelehnt. Bearbeite den Entwurf und versuche es erneut."
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -1023,8 +1023,8 @@ msgstr "Betreff"
 
 #. js-lingui-explicit-id
 #: src/ai-controls.tsx
-msgid "Summarize thread"
-msgstr "Unterhaltung zusammenfassen"
+msgid "Summarize conversation"
+msgstr "Konversation zusammenfassen"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -1054,7 +1054,7 @@ msgstr "Die Nachricht wurde gesendet, aber ihre Kopie fehlt in Gesendet."
 #. js-lingui-explicit-id
 #: app/compose.tsx
 msgid "This message may have been sent. Check Sent before sending it again."
-msgstr "Diese Nachricht wurde möglicherweise bereits gesendet. Prüfen Sie „Gesendet“, bevor Sie sie erneut senden."
+msgstr "Diese Nachricht wurde möglicherweise bereits gesendet. Prüfe „Gesendet“, bevor du sie erneut sendest."
 
 #. js-lingui-explicit-id
 #: app/ai-proposals.tsx
@@ -1115,4 +1115,4 @@ msgstr "Benutzername"
 #. js-lingui-explicit-id
 #: src/failed-op-notice.tsx
 msgid "Your draft was kept. Check Sent before sending again."
-msgstr "Ihr Entwurf wurde behalten. Prüfen Sie Gesendet, bevor Sie erneut senden."
+msgstr "Dein Entwurf wurde behalten. Prüfe „Gesendet“, bevor du erneut sendest."

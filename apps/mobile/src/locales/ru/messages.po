@@ -98,7 +98,7 @@ msgstr "Разрешить"
 #. js-lingui-explicit-id
 #: src/ai-settings.tsx
 msgid "Allow Anthropic to receive this account's visible mail text for AI. Images and attachments stay on this device. Changes require your approval."
-msgstr "Разрешите Anthropic получать видимый текст сообщений этого аккаунта для ИИ. Изображения и вложения остаются на устройстве. Изменения требуют вашего одобрения."
+msgstr "Разрешите Anthropic получать видимый текст сообщений этой учётной записи для ИИ. Изображения и вложения остаются на устройстве. Изменения требуют вашего одобрения."
 
 #. js-lingui-explicit-id
 #: src/ai-settings.tsx
@@ -156,7 +156,7 @@ msgstr "Спросить"
 
 #. js-lingui-explicit-id
 #: src/ai-controls.tsx
-msgid "Ask about this thread"
+msgid "Ask about this conversation"
 msgstr "Спросить об этой переписке"
 
 #. js-lingui-explicit-id
@@ -310,7 +310,7 @@ msgstr "Не удалось закрыть это уведомление. Поп
 #. js-lingui-explicit-id
 #: src/background-settings.tsx
 msgid "Could not enable background or notification settings. Check system permissions and try again."
-msgstr "Не удалось включить фоновое обновление или уведомления. Проверьте системные разрешения и повторите попытку."
+msgstr "Не удалось включить настройки фонового обновления или уведомлений. Проверьте системные разрешения и повторите попытку."
 
 #. js-lingui-explicit-id
 #: app/reader.tsx
@@ -403,7 +403,7 @@ msgstr "Подробности"
 #. js-lingui-explicit-id
 #: app/settings.tsx
 msgid "Disable account"
-msgstr "Отключить аккаунт"
+msgstr "Отключить учётную запись"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -449,7 +449,7 @@ msgstr "Адрес электронной почты"
 #. js-lingui-explicit-id
 #: app/settings.tsx
 msgid "Enable account"
-msgstr "Включить аккаунт"
+msgstr "Включить учётную запись"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -540,7 +540,7 @@ msgstr "Позже сегодня"
 #. js-lingui-explicit-id
 #: app/reader.tsx
 msgid "Load remote images"
-msgstr "Загрузить внешние изображения"
+msgstr "Загрузить удалённые изображения"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -775,7 +775,7 @@ msgstr "Отклонено до отправки. Измените чернов�
 #. js-lingui-explicit-id
 #: app/settings.tsx
 msgid "Remote images"
-msgstr "Внешние изображения"
+msgstr "Удалённые изображения"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -905,7 +905,7 @@ msgstr "Не удалось отправить. Проверьте чернов�
 #. js-lingui-explicit-id
 #: app/compose.tsx
 msgid "Send message?"
-msgstr "Отправить письмо?"
+msgstr "Отправить сообщение?"
 
 #. js-lingui-explicit-id
 #: src/mailbox-name.ts
@@ -1023,7 +1023,7 @@ msgstr "Тема"
 
 #. js-lingui-explicit-id
 #: src/ai-controls.tsx
-msgid "Summarize thread"
+msgid "Summarize conversation"
 msgstr "Кратко изложить переписку"
 
 #. js-lingui-explicit-id

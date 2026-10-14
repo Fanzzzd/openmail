@@ -60,101 +60,121 @@ const russianInformal = [
   ),
 ];
 
-it("the complete catalogs consistently use the mail glossary, message-text terminology and the actual Edit body label", async () => {
-  const po = formatter();
-  const failures: string[] = [];
-  for (const locale of ["zh-CN", "cs", "nl", "fr", "de", "it", "ja", "ru", "es"] as const) {
-    const file = new URL(`../locales/${locale}/messages.po`, import.meta.url);
-    const catalog = await po.parse(await readFile(file, "utf8"), {
-      locale,
-      sourceLocale: "en",
-      filename: fileURLToPath(file),
-    });
-    for (const message of Object.values(catalog)) {
-      const source = message.message ?? "";
-      const target = message.translation ?? "";
-      const visibleSource = source.replace(/\{[A-Za-z_]\w*\}/g, "");
-      for (const [term, patterns] of Object.entries(patternsFor)) {
-        // Terms without a pattern for this locale are not checked there (zh-CN has few).
-        const pattern = patterns[locale];
-        if (pattern === undefined) continue;
-        // Other is an Outlook tab only in its context or in explicit classification text.
-        if (
-          term === "Other" &&
-          message.context !== "outlook-inbox" &&
-          !/Focused\/Other|(?:to|in|Outlook) Other/.test(source)
-        )
-          continue;
-        // Japanese naturally calls the message text 本文, without repeating メッセージ.
-        if (locale === "ja" && source === "Message body" && term === "Message") continue;
-        // QQ Mail's own settings menu is named 账号与安全; the path quotes it verbatim.
-        if (locale === "zh-CN" && term === "Account" && target.includes("“设置 → 账号与安全"))
-          continue;
-        const selector = new RegExp(selectors[term] ?? `\\b${term}s?\\b`, "i");
-        if (selector.test(visibleSource) && !new RegExp(pattern, "iu").test(target))
-          failures.push(`${locale}: ${term}: ${source} → ${target}`);
-      }
-      // The UI calls an account group a space; "profile" is only the code name.
-      if (/\bprofiles?\b/i.test(source) || /\bprofil|プロファイル|профил|werkruimte/iu.test(target))
-        failures.push(`${locale}: Space: ${source} → ${target}`);
-      if (/\b(?:body|bodies)\b/i.test(source))
-        expect(target, `${locale}: ${source}`).not.toMatch(
-          /Leichen|Körper|corps|тела|тело|těla|tělo|遺体|身体|lichaam|\bcorpo\b|\bcuerpo\b/i,
-        );
+type Catalog = Awaited<ReturnType<ReturnType<typeof formatter>["parse"]>>;
+
+/** The checks every catalog's messages pass, the desktop app's and the mobile app's. */
+function checkMessages(locale: string, catalog: Catalog, failures: string[]) {
+  for (const [id, message] of Object.entries(catalog)) {
+    // Mobile catalogs use explicit ids, which are the English text.
+    const source = message.message ?? id;
+    const target = message.translation ?? "";
+    const visibleSource = source.replace(/\{[A-Za-z_]\w*\}/g, "");
+    for (const [term, patterns] of Object.entries(patternsFor)) {
+      // Terms without a pattern for this locale are not checked there (zh-CN has few).
+      const pattern = patterns[locale];
+      if (pattern === undefined) continue;
+      // Other is an Outlook tab only in its context or in explicit classification text.
       if (
-        locale === "de" &&
-        source.length < 90 &&
-        !source.endsWith(".") &&
-        /^(?:Add|Always|Apply|Ask|Attach|Authorize|Choose|Close|Confirm|Connect|Continue|Create|Describe|Download|Drag|Enable|Enter|Expand|Find|Finish|Group|Join|Load|Make|Modify|Move|Open|Pause|Replace|Reply|Resume|Search|Select|Sign|Stop|Use)\b/.test(
-          source,
-        )
+        term === "Other" &&
+        message.context !== "outlook-inbox" &&
+        !/Focused\/Other|(?:to|in|Outlook) Other/.test(source)
       )
-        expect(target, source).not.toMatch(/\bSie\b/);
-      // Japanese says 読み込み (not ロード) and メール (not 電子メール), puts no space after 。,
-      // and puts a space between a Latin word and Japanese text, as in AI アプリ.
-      if (
-        locale === "ja" &&
-        (/(?<!ダウン|アップ)ロード|電子メール|。 /u.test(target) ||
-          /[A-Za-z][\u3040-\u30FB\u30FD-\u30FF\u4E00-\u9FFF]|[\u3040-\u30FB\u30FD-\u30FF\u4E00-\u9FFF][A-Za-z]/u.test(
-            target,
-          ))
-      )
-        failures.push(`${locale}: style: ${source} → ${target}`);
-      // UI names and settings paths are quoted the local way: “” (nested ‘’) in Chinese,
-      // 「」 (nested 『』) in Japanese. A settings path is always quoted.
-      if (locale === "zh-CN" && (/[「」『』]/u.test(target) || /(?<![“‘])设置 →/u.test(target)))
-        failures.push(`${locale}: quotes: ${source} → ${target}`);
-      if (locale === "ja" && (/[“”‘’]/u.test(target) || /(?<![「『])設定 →/u.test(target)))
-        failures.push(`${locale}: quotes: ${source} → ${target}`);
-      // Text never uses ASCII quotes or apostrophes: placeholders, ICU syntax and component tags
-      // hold none, and a lone ' is ICU's escape character.
-      if (/["']/.test(target)) failures.push(`${locale}: ASCII quote: ${source} → ${target}`);
-      if (
-        foreignQuotes[locale]?.test(target) ||
-        ((locale === "de" || locale === "cs") &&
-          target.split("„").length !== target.split("“").length) ||
-        (locale === "fr" && /«(?![\s\u00A0\u202F])|(?<![\s\u00A0\u202F])»/u.test(target)) ||
-        ((locale === "es" || locale === "ru" || locale === "it") && /«\s|\s»|“\s|\s”/u.test(target))
-      )
-        failures.push(`${locale}: quotes: ${source} → ${target}`);
-      // An empty displayed value (no Cc, no location) is 无; 不选 is only a picker option.
-      if (locale === "zh-CN" && message.context === "empty value" && target !== "无")
-        failures.push(`${locale}: empty value: ${source} → ${target}`);
-      // "Authorize permission" is not a doubled verb in French.
-      if (locale === "fr" && /autoris\p{L}* l[’']autorisation/iu.test(target))
-        failures.push(`${locale}: style: ${source} → ${target}`);
-      // Spanish addresses the reader with tú, German with du, Dutch with je and Russian with вы.
-      if (locale === "es" && spanishUsted.some((pattern) => pattern.test(target)))
-        failures.push(`${locale}: register: ${source} → ${target}`);
-      if (locale === "de" && germanSie.test(target))
-        failures.push(`${locale}: register: ${source} → ${target}`);
-      if (locale === "nl" && /(?<!\p{L})(?:u|uw|uzelf)(?!\p{L})/iu.test(target))
-        failures.push(`${locale}: register: ${source} → ${target}`);
-      if (locale === "ru" && russianInformal.some((pattern) => pattern.test(target)))
-        failures.push(`${locale}: register: ${source} → ${target}`);
-      if (locale === "es" && /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]/.test(target))
-        expect(target[0], source).toBe(target[0]?.toUpperCase());
+        continue;
+      // Japanese naturally calls the message text 本文, without repeating メッセージ.
+      if (locale === "ja" && source === "Message body" && term === "Message") continue;
+      // QQ Mail's own settings menu is named 账号与安全; the path quotes it verbatim.
+      if (locale === "zh-CN" && term === "Account" && target.includes("“设置 → 账号与安全"))
+        continue;
+      const selector = new RegExp(selectors[term] ?? `\\b${term}s?\\b`, "i");
+      if (selector.test(visibleSource) && !new RegExp(pattern, "iu").test(target))
+        failures.push(`${locale}: ${term}: ${source} → ${target}`);
     }
+    // The UI calls an account group a space; "profile" is only the code name.
+    if (/\bprofiles?\b/i.test(source) || /\bprofil|プロファイル|профил|werkruimte/iu.test(target))
+      failures.push(`${locale}: Space: ${source} → ${target}`);
+    if (/\b(?:body|bodies)\b/i.test(source))
+      expect(target, `${locale}: ${source}`).not.toMatch(
+        /Leichen|Körper|corps|тела|тело|těla|tělo|遺体|身体|lichaam|\bcorpo\b|\bcuerpo\b/i,
+      );
+    if (
+      locale === "de" &&
+      source.length < 90 &&
+      !source.endsWith(".") &&
+      /^(?:Add|Always|Apply|Ask|Attach|Authorize|Choose|Close|Confirm|Connect|Continue|Create|Describe|Download|Drag|Enable|Enter|Expand|Find|Finish|Group|Join|Load|Make|Modify|Move|Open|Pause|Replace|Reply|Resume|Search|Select|Sign|Stop|Use)\b/.test(
+        source,
+      )
+    )
+      expect(target, source).not.toMatch(/\bSie\b/);
+    // Japanese says 読み込み (not ロード) and メール (not 電子メール), puts no space after 。,
+    // and puts a space between a Latin word and Japanese text, as in AI アプリ.
+    if (
+      locale === "ja" &&
+      (/(?<!ダウン|アップ)ロード|電子メール|。 /u.test(target) ||
+        /[A-Za-z][\u3040-\u30FB\u30FD-\u30FF\u4E00-\u9FFF]|[\u3040-\u30FB\u30FD-\u30FF\u4E00-\u9FFF][A-Za-z]/u.test(
+          target,
+        ))
+    )
+      failures.push(`${locale}: style: ${source} → ${target}`);
+    // UI names and settings paths are quoted the local way: “” (nested ‘’) in Chinese,
+    // 「」 (nested 『』) in Japanese. A settings path is always quoted.
+    if (locale === "zh-CN" && (/[「」『』]/u.test(target) || /(?<![“‘])设置 →/u.test(target)))
+      failures.push(`${locale}: quotes: ${source} → ${target}`);
+    if (locale === "ja" && (/[“”‘’]/u.test(target) || /(?<![「『])設定 →/u.test(target)))
+      failures.push(`${locale}: quotes: ${source} → ${target}`);
+    // Text never uses ASCII quotes or apostrophes: placeholders, ICU syntax and component tags
+    // hold none, and a lone ' is ICU's escape character.
+    if (/["']/.test(target)) failures.push(`${locale}: ASCII quote: ${source} → ${target}`);
+    if (
+      foreignQuotes[locale]?.test(target) ||
+      ((locale === "de" || locale === "cs") &&
+        target.split("„").length !== target.split("“").length) ||
+      (locale === "fr" && /«(?![\s\u00A0\u202F])|(?<![\s\u00A0\u202F])»/u.test(target)) ||
+      ((locale === "es" || locale === "ru" || locale === "it") && /«\s|\s»|“\s|\s”/u.test(target))
+    )
+      failures.push(`${locale}: quotes: ${source} → ${target}`);
+    // An empty displayed value (no Cc, no location) is 无; 不选 is only a picker option.
+    if (locale === "zh-CN" && message.context === "empty value" && target !== "无")
+      failures.push(`${locale}: empty value: ${source} → ${target}`);
+    // "Authorize permission" is not a doubled verb in French.
+    if (locale === "fr" && /autoris\p{L}* l[’']autorisation/iu.test(target))
+      failures.push(`${locale}: style: ${source} → ${target}`);
+    // Spanish addresses the reader with tú, German with du, Dutch with je and Russian with вы.
+    if (locale === "es" && spanishUsted.some((pattern) => pattern.test(target)))
+      failures.push(`${locale}: register: ${source} → ${target}`);
+    if (locale === "de" && germanSie.test(target))
+      failures.push(`${locale}: register: ${source} → ${target}`);
+    if (locale === "nl" && /(?<!\p{L})(?:u|uw|uzelf)(?!\p{L})/iu.test(target))
+      failures.push(`${locale}: register: ${source} → ${target}`);
+    if (locale === "ru" && russianInformal.some((pattern) => pattern.test(target)))
+      failures.push(`${locale}: register: ${source} → ${target}`);
+    // Spanish text starts with a capital, unless it starts with a name such as iOS.
+    if (
+      locale === "es" &&
+      /^[a-záéíóúüñ]/.test(target) &&
+      !/^(?:iOS|iPadOS|macOS|iCloud)\b/.test(target)
+    )
+      failures.push(`${locale}: capital: ${source} → ${target}`);
+  }
+}
+
+async function parseCatalog(file: URL, locale: string): Promise<Catalog> {
+  return formatter().parse(await readFile(file, "utf8"), {
+    locale,
+    sourceLocale: "en",
+    filename: fileURLToPath(file),
+  });
+}
+
+const LOCALES = ["zh-CN", "cs", "nl", "fr", "de", "it", "ja", "ru", "es"] as const;
+
+it("the complete catalogs consistently use the mail glossary, message-text terminology and the actual Edit body label", async () => {
+  const failures: string[] = [];
+  for (const locale of LOCALES) {
+    const catalog = await parseCatalog(
+      new URL(`../locales/${locale}/messages.po`, import.meta.url),
+      locale,
+    );
+    checkMessages(locale, catalog, failures);
     const label = Object.entries(catalog).find(
       ([, message]) => message.message === "Edit body" && message.context === "message text action",
     );
@@ -181,5 +201,19 @@ it("the complete catalogs consistently use the mail glossary, message-text termi
         Object.values(catalog).find((message) => message.message === "Discard")?.translation,
       ).toBe("Scarta");
   }
+  expect(failures).toEqual([]);
+});
+
+it("the mobile catalogs use the same glossary, quote styles and register", async () => {
+  const failures: string[] = [];
+  for (const locale of LOCALES)
+    checkMessages(
+      locale,
+      await parseCatalog(
+        new URL(`../../../../../mobile/src/locales/${locale}/messages.po`, import.meta.url),
+        locale,
+      ),
+      failures,
+    );
   expect(failures).toEqual([]);
 });

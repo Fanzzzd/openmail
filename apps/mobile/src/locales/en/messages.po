@@ -156,8 +156,8 @@ msgstr "Ask"
 
 #. js-lingui-explicit-id
 #: src/ai-controls.tsx
-msgid "Ask about this thread"
-msgstr "Ask about this thread"
+msgid "Ask about this conversation"
+msgstr "Ask about this conversation"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -1023,8 +1023,8 @@ msgstr "Subject"
 
 #. js-lingui-explicit-id
 #: src/ai-controls.tsx
-msgid "Summarize thread"
-msgstr "Summarize thread"
+msgid "Summarize conversation"
+msgstr "Summarize conversation"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
