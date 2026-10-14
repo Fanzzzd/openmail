@@ -1,10 +1,10 @@
-# 测试
+# Testing
 
-自动测试覆盖 core、CLI、桌面和手机邮件流程。它们使用 fake provider／Model、临时 SQLite 或内存数据库、DOM 和原生服务 mocks。完整邮件流程测试也在 jsdom 中运行；它们不启动 Electron、不读取真实邮箱或通讯录。真实账户、系统权限与签名包验收见[路线图](roadmap.md#待用户完成)。
+The automated tests cover the core, CLI, desktop and mobile mail flows. They use a fake provider and Model, temporary SQLite or in-memory databases, the DOM and mocks of native services. The full mail flow tests also run in jsdom. They do not start Electron and do not read a real mailbox or address book. Acceptance with real accounts, system permissions and signed builds is in the [roadmap](roadmap.md#待用户完成).
 
-## 仓库检查
+## Repository checks
 
-在仓库根目录运行：
+Run from the repo root:
 
 ```sh
 pnpm build
@@ -13,30 +13,30 @@ pnpm exec oxlint
 pnpm exec oxfmt --check .
 ```
 
-`pnpm build` 构建 core／CLI／桌面，并编译手机语言目录及检查类型。`pnpm test` 包含桌面完整邮件流程、桌面和手机 Lingui 目录同步／漏译，以及桌面术语与 ICU 检查。其他类型检查可单独运行 `pnpm check-types`。提交要求见 [AGENTS.md](../AGENTS.md)。
+`pnpm build` builds core, the CLI and the desktop app, compiles the mobile locale catalogs and type-checks them. `pnpm test` includes the desktop full mail flows, the desktop and mobile Lingui catalog sync and missing-translation checks, and the desktop glossary and ICU checks. Run `pnpm check-types` for the remaining type checks. The commit requirements are in [AGENTS.md](../AGENTS.md).
 
-[repo-paths.test.ts](../apps/docs/scripts/repo-paths.test.ts) 检查 `docs/` 和 `CONTRIBUTING.md` 里的链接、代码片段和命令中的仓库路径都存在，git 忽略的本地文件除外。结果取决于 apps/docs 以外的文件，所以 `@openmail/docs#test` 不走 turbo 缓存。
+[repo-paths.test.ts](../apps/docs/scripts/repo-paths.test.ts) checks that every repo path named in the links, code spans and commands of `docs/` and `CONTRIBUTING.md` exists. Local files that git ignores are exempt. The result depends on files outside apps/docs, so `@openmail/docs#test` skips the turbo cache.
 
-桌面有几项测试读取构建产物，例如 `out/web` 里的网页版。turbo 在 `@openmail/desktop#test` 之前先跑桌面的 `build`，构建命中缓存时这一步约 0.3 秒。单独用 vitest 跑这些测试前先 `pnpm build`。
+Some desktop tests read build output, such as the web build in `out/web`. Turbo runs the desktop `build` before `@openmail/desktop#test`. When the build hits the cache, that step takes about 0.3 seconds. Run `pnpm build` before you run these tests with vitest directly.
 
-`OPENMAIL_LOW_MEMORY_TESTS=1` 启用 `packages/core/vitest.low-memory.ts`：一个 worker、文件串行、单测与 hook 超时 60 秒。core 的测试文件共享一个模块图，但调用 `vi.mock` 或 `vi.doMock` 的文件单独放进隔离的 `mocking` 项目；共享模块图里这些文件会拿到先运行文件加载的真实模块，结果随文件顺序变化。普通运行，以及桌面、手机和 CLI 的所有运行，都隔离文件。完整邮件流程配置独立使用一个 worker 和 20 秒超时，按[负载下的测试](#负载下的测试)里的倍数放大。
+`OPENMAIL_LOW_MEMORY_TESTS=1` turns on `packages/core/vitest.low-memory.ts`: one worker, files run in series, and a 60 second timeout for tests and hooks. Core test files share one module graph. Files that call `vi.mock` or `vi.doMock` go into a separate isolated `mocking` project instead. In the shared graph, those files would get the real modules that an earlier file loaded, and the result would depend on file order. Normal runs, and every desktop, mobile and CLI run, isolate files. The full mail flow config has its own single worker and a 20 second timeout, scaled by the multiplier in [Tests under load](#tests-under-load).
 
-## 依赖审计
+## Dependency audit
 
-`pnpm audit:prod` 运行 [audit-prod.mjs](../scripts/audit-prod.mjs)。它对整个 lockfile 跑 `pnpm audit --prod`，按依赖路径的起点分类。经桌面、CLI、core 或根目录到达的漏洞报错，退出码为 1。只经手机或文档站到达的漏洞打印为警告，不让命令失败；手机端随 Expo SDK 升级处理，文档站是静态导出。`pnpm audit` 不支持 `--filter`，所以分类在脚本里做。
+`pnpm audit:prod` runs [audit-prod.mjs](../scripts/audit-prod.mjs). It runs `pnpm audit --prod` over the whole lockfile and sorts each finding by where its dependency path starts. A vulnerability reached through the desktop app, the CLI, core or the root fails the command with exit code 1. A vulnerability reached only through the mobile app or the docs site prints as a warning and does not fail the command. Mobile findings get fixed with Expo SDK upgrades, and the docs site is a static export. `pnpm audit` has no `--filter`, so the script does the sorting.
 
-它要访问 npm registry，不在上面的离线检查里。[Audit 工作流](../.github/workflows/audit.yml)每周一 06:00 UTC 运行，也可以手动触发。2026-10-13 有 4 条警告，都来自手机（expo、react-native 的 metro）：node-forge、braces 为 high，uuid、decode-uri-component 为 moderate。source-map-js 曾经由 core 的 css-tree 到达，lockfile 已升到 1.2.2。
+The audit needs the npm registry, so it is not part of the offline checks above. The [Audit workflow](../.github/workflows/audit.yml) runs every Monday at 06:00 UTC and can also be started by hand. On 2026-10-13 it reported 4 warnings, all from mobile (expo and react-native's metro): node-forge and braces at high, uuid and decode-uri-component at moderate. source-map-js used to arrive through core's css-tree; the lockfile now has 1.2.2.
 
-## 负载下的测试
+## Tests under load
 
-- 不用 sleep 同步。用 fake timers 推进计时，用 Effect Deferred 等待明确事件。
-- 墙钟预算只在 `OPENMAIL_PERF=1` 下断言，运行 `pnpm --filter @openmail/core test:perf`。
-- 必须用真实时间的上限（`vi.waitFor`、`expect.poll`、等待子进程、fuzz 的线性时间上限、完整流程的单测超时）都乘 [test-time.ts](../packages/core/test-support/test-time.ts) 的 `testTimeScale`：设置了 `CI` 时为 3，`OPENMAIL_TEST_TIME_SCALE` 可覆盖。`vi.waitFor` 和 `expect.poll` 传 `waitLimit`，它们自带的上限只有 1 秒。TestClock 和 fake timers 的虚拟时间不放大。
-- 数据库 fixture 用 [migrated-database.ts](../packages/core/test-support/migrated-database.ts) 生成独立副本。
-- 大文件用 [file-bytes.ts](../packages/core/test-support/file-bytes.ts) 比较完整字节。
-- 启动 worker 或 CLI 进程每次要几百毫秒。同一文件内复用 worker，做法见 `corpus-check.test.ts`。互不依赖的子进程测试用 `test.concurrent` 并发等待。每个测试最多串行等一次进程启动，前置启动放进 `beforeAll`。
+- Do not synchronize with sleep. Advance time with fake timers, and wait for explicit events with an Effect Deferred.
+- Assert wall-clock budgets only under `OPENMAIL_PERF=1`, with `pnpm --filter @openmail/core test:perf`.
+- Multiply every limit that must use real time by `testTimeScale` from [test-time.ts](../packages/core/test-support/test-time.ts). That covers `vi.waitFor`, `expect.poll`, waiting for a child process, the linear-time bounds in fuzz tests and the per-test timeout of the full flows. `testTimeScale` is 3 when `CI` is set, and `OPENMAIL_TEST_TIME_SCALE` overrides it. Pass `waitLimit` to `vi.waitFor` and `expect.poll`, because their own limit is only 1 second. Virtual time from TestClock and fake timers is not scaled.
+- Create database fixtures as independent copies with [migrated-database.ts](../packages/core/test-support/migrated-database.ts).
+- Compare large files byte for byte with [file-bytes.ts](../packages/core/test-support/file-bytes.ts).
+- Starting a worker or CLI process costs a few hundred milliseconds each time. Reuse the worker within a file, as `corpus-check.test.ts` does. Wait on independent child-process tests in parallel with `test.concurrent`. Each test should wait for at most one process start in series. Put setup starts in `beforeAll`.
 
-在 `packages/core` 重复并行运行以下命令，同时启动 4–6 个 `yes > /dev/null`；结束后终止本次创建的负载进程：
+To check, run the following commands repeatedly and in parallel from `packages/core`, while 4 to 6 `yes > /dev/null` processes run. Stop the load processes you started when you finish:
 
 ```sh
 pnpm exec vitest run --maxWorkers=1 \
@@ -46,142 +46,149 @@ pnpm exec vitest run --maxWorkers=1 \
   src/platform/node/corpus-check.test.ts src/platform/node/visible-text-cost.test.ts
 ```
 
-桌面从 `apps/desktop` 运行 `pnpm exec vitest run --maxWorkers=1 src/main/files/attachment-actions.test.ts`。
+For desktop, run `pnpm exec vitest run --maxWorkers=1 src/main/files/attachment-actions.test.ts` from `apps/desktop`.
 
-所有 Vitest 项目通过 `packages/core/test-support/temp-directory.ts` 使用各自的临时目录。启动时只清理该 helper 创建的、超过 24 小时的 `openmail-tests-*` 目录，不跟随软链接。测试仍须用 Effect scope、`afterEach` 或 `finally` 关闭数据库并删除 fixture；全局 teardown 会报告遗留的 `openmail-*`、`om-*` fixture 并删除整个目录，失败的测试也不会留下大数据库。性能 fixture 不跨运行缓存。search-profile 只保留显式指定的数据库，默认数据库在 `finally` 删除；corpus-check 的持久 explain key 由测试登记后删除。
+Every Vitest project gets its own temporary directory through `packages/core/test-support/temp-directory.ts`. At start-up it removes only `openmail-tests-*` directories that this helper created and that are older than 24 hours, and it does not follow symlinks. Tests must still close databases and delete fixtures with an Effect scope, `afterEach` or `finally`. The global teardown reports leftover `openmail-*` and `om-*` fixtures and deletes the whole directory, so a failed test does not leave a large database behind either. Performance fixtures are not cached between runs. search-profile keeps only a database you name explicitly and deletes the default one in `finally`. corpus-check registers its persistent explain key during the test and deletes it afterwards.
 
-## 验证范围
+## What the tests cover
 
-| 路径                                                                                | 覆盖与限制                                                                                                 |
-| ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `packages/core/src/**/*.test.ts`                                                    | 同步、离线队列、草稿、撤销、FTS、搜索、日历／联系人、AI 授权与模型协议；服务商网络使用 fake                |
-| `packages/core/src/platform/node/node-mailbox.test.ts`                              | 真实 NodeMailbox、临时数据库、MIME、附件缓存、PDF／图片输入与拒绝路径；IMAP 传输和密码使用 fake            |
-| `packages/core/src/platform-imports.test.ts`                                        | 非 Node 源码的导入、隐式全局和 portable 本地依赖图；不代替 Metro 或设备验证                                |
-| `packages/cli/src/mcp-server.test.ts`                                               | MCP 握手、工具 schema、身份、分页／预算和写权限                                                            |
-| `apps/desktop/src/main/**/*.test.ts`、renderer 测试                                 | 窗口与菜单处理器、RPC、键盘／选择／焦点、无障碍、编辑器和 AI 差异；OS 行为由支架提供                       |
-| `packages/core/src/platform/react-native/*.test.ts`、`apps/mobile/src/**/*.test.ts` | Node SQLite shim、OAuth／MIME adapters、Expo 服务 mocks；不证明 JSI、设备锁、WAL、安全存储或真实浏览器回调 |
+| Path                                                                                | Coverage and limits                                                                                                                                          |
+| ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `packages/core/src/**/*.test.ts`                                                    | Sync, the offline queue, drafts, undo, FTS, search, calendar and contacts, AI consent and the model protocol. Provider networking is fake.                   |
+| `packages/core/src/platform/node/node-mailbox.test.ts`                              | A real NodeMailbox, a temporary database, MIME, the attachment cache, PDF and image input and the rejection paths. IMAP transport and passwords are fake.    |
+| `packages/core/src/platform-imports.test.ts`                                        | Imports in non-Node sources, implicit globals and the portable local dependency graph. It does not replace Metro or device checks.                           |
+| `packages/cli/src/mcp-server.test.ts`                                               | The MCP handshake, tool schemas, identity, paging and budgets, and write permissions.                                                                        |
+| `apps/desktop/src/main/**/*.test.ts`, renderer tests                                | Window and menu handlers, RPC, keyboard, selection and focus, accessibility, the editor and AI diffs. Test scaffolding stands in for the OS.                 |
+| `packages/core/src/platform/react-native/*.test.ts`, `apps/mobile/src/**/*.test.ts` | The Node SQLite shim, OAuth and MIME adapters, and Expo service mocks. They do not prove JSI, device locking, WAL, secure storage or real browser callbacks. |
 
-[performance-plans.test.ts](../packages/core/src/platform/node/performance-plans.test.ts) 集中检查真实 Store SQL 的索引；同步健康用例用 120 封邮件覆盖分页回绕和 Unicode ID 顺序，属于普通测试。10 万封的 [performance-large.test.ts](../packages/core/src/platform/node/performance-large.test.ts) 默认排除，须单独运行 `pnpm test:perf`；命令、报告、时延预算及迁移 35 的写入与磁盘成本只在[性能](performance.md)维护。
+[performance-plans.test.ts](../packages/core/src/platform/node/performance-plans.test.ts) checks the indexes of the real Store SQL in one place. A sync health case with 120 messages covers paging wraparound and Unicode ID order; it is a normal test. The 100,000-message [performance-large.test.ts](../packages/core/src/platform/node/performance-large.test.ts) is excluded by default and runs only with `pnpm test:perf`. Its commands, reports, latency budgets and the write and disk cost of migration 35 are maintained only in [performance](performance.md).
 
-Apple Contacts 的假 helper、自检与实机边界只在 [Apple Contacts](apple-contacts.md#验证边界)维护。性能数据、查询计划和复现脚本只在[性能](performance.md)维护。
+The fake Apple Contacts helper, its self-check and the limits of testing on a real Mac are maintained only in [Apple Contacts](apple-contacts.md#验证边界). Performance data, query plans and reproduction scripts are maintained only in [performance](performance.md).
 
-`models.integration.test.ts` 默认跳过。它须显式设置 `OPENMAIL_TEST_MODELS=1`，并已有 `spikes/media/models/` 中要求的 E5 和 MobileCLIP 文件，才会运行本机推理。第三方 AI 的常规回归使用 fake Model／fetch，不做真实 API 请求。
+`models.integration.test.ts` is skipped by default. It runs on-device inference only when `OPENMAIL_TEST_MODELS=1` is set and the E5 and MobileCLIP files that `spikes/media/models/` asks for are present. Regular regressions for third-party AI use a fake Model and fetch, and make no real API requests.
 
-CLI 同步进度和 SIGINT／SIGTERM 退出测试在 `packages/cli/src/sync-progress.test.ts`，只用 fake provider 和内存数据库。钥匙串等待中断测试在 `packages/core/src/platform/node/secrets.test.ts`，替换原生 keyring，不访问系统凭证。CLI 在读取凭证前输出提示；Layer 初始化期间的凭证等待也可中断。macOS 实际权限弹窗仍需人工验收。
+The CLI sync progress and SIGINT/SIGTERM exit tests are in `packages/cli/src/sync-progress.test.ts`. They use only a fake provider and an in-memory database. The test for interrupting a keychain wait is in `packages/core/src/platform/node/secrets.test.ts`. It replaces the native keyring and never touches system credentials. The CLI prints a prompt before it reads credentials, and a credential wait during Layer initialization can also be interrupted. The real macOS permission prompt still needs a manual check.
 
-## 出站操作与发送回归
+## Outbound operations and sending regressions
 
-[出站规则](sync-correctness.md#出站操作队列)用假 provider、协议响应及临时 SQLite 验证，SMTP 阶段另用本地假服务器；不向真实账户发送，不启动 Electron，不代替手机原生传输验收。
+The [outbound rules](sync-correctness.md#出站操作队列) are tested with a fake provider, protocol responses and temporary SQLite, plus a local fake server for the SMTP stage. The tests send nothing to real accounts, do not start Electron and do not replace acceptance of native mobile transport.
 
-- [op-queue.test.ts](../packages/core/src/mailbox/op-queue.test.ts)：退避、过期、认领丢失、复制进度、重映射失败、草稿清理和仅向拒收地址重发。
-- [Node IMAP 回归](../packages/core/src/platform/node/imap-opqueue.test.ts)与[手机 IMAP 回归](../packages/core/src/platform/react-native/imap.test.ts)：复制恢复、缺失 UID／Message-ID、标记拒绝、特殊文件夹、SMTP 阶段和 Sent 保存失败。
-- [Outlook 回归](../packages/core/src/providers/outlook/outlook.test.ts)：永久写入拒绝与简短原因。
-- [桌面失败提示](../apps/desktop/src/renderer/src/features/sync-status/failed-op-notice.test.ts)与[手机失败提示](../apps/mobile/src/failed-op-notice.test.ts)：分类标题、操作与邮件详情、关闭提示及拒收重发入口；翻译检查沿用仓库命令。
+- [op-queue.test.ts](../packages/core/src/mailbox/op-queue.test.ts): backoff, expiry, lost claims, copy progress, remap failures, draft cleanup and resending only to rejected addresses.
+- [Node IMAP regressions](../packages/core/src/platform/node/imap-opqueue.test.ts) and [mobile IMAP regressions](../packages/core/src/platform/react-native/imap.test.ts): copy recovery, a missing UID or Message-ID, rejected flags, special folders, the SMTP stage and failures to save to Sent.
+- [Outlook regressions](../packages/core/src/providers/outlook/outlook.test.ts): permanent write rejections and their short reasons.
+- [Desktop failure notice](../apps/desktop/src/renderer/src/features/sync-status/failed-op-notice.test.ts) and [mobile failure notice](../apps/mobile/src/failed-op-notice.test.ts): category titles, operation and message details, dismissing the notice and the entry point to resend to rejected addresses. Translations are checked by the usual repo commands.
 
-离线重试测试推进 TestClock 或虚拟 Date，等待 retry_at 后再推送，避免把立即重试写成要求。
+Offline retry tests advance TestClock or a virtual Date and push only after retry_at, so they do not turn an immediate retry into a requirement.
 
-## 完整邮件流程
+## Full mail flows
 
-只跑完整邮件流程：
+To run only the full mail flows:
 
 ```sh
 pnpm --filter @openmail/core build
 OPENMAIL_LOW_MEMORY_TESTS=1 pnpm --filter @openmail/desktop exec vitest run --config vitest.e2e.config.ts
 ```
 
-`apps/desktop/src/renderer/src/e2e/flows.test.ts` 用 jsdom、Testing Library 渲染真实 App，经 preload 同款 JSON RPC 和 `shared/mailbox-handlers.ts` 调用真实 Mailbox。`harness.ts` 为每项测试创建临时 `node:sqlite` 数据库，复用 Gmail、Outlook、IMAP fake。窗口、剪贴板等桌面能力由支架提供，通知点击从核心通知队列进入桌面事件流。
+`apps/desktop/src/renderer/src/e2e/flows.test.ts` renders the real App with jsdom and Testing Library. It calls the real Mailbox through the same JSON RPC that preload uses and through `shared/mailbox-handlers.ts`. `harness.ts` creates a temporary `node:sqlite` database for each test and reuses the Gmail, Outlook and IMAP fakes. Test scaffolding provides desktop capabilities such as windows and the clipboard. Notification clicks enter the desktop event stream from the core notification queue.
 
-主流程覆盖首次同步、延迟已读、批量／单封撤销、草稿自动保存、撤销发送、回复／转发、附件提醒、服务器搜索、离线重试、草稿恢复、AI 关闭、提议审批、通知点击与键盘操作。耗时取决于机器，运行配置中的超时不代表产品响应时间。
+The main flows cover first sync, delayed mark-as-read, bulk and single-message undo, draft autosave, undo send, reply and forward, the attachment reminder, server search, offline retry, draft recovery, AI turned off, proposal approval, notification clicks and keyboard actions. Run time depends on the machine. The timeouts in the run config say nothing about product response time.
 
-扩展时，在同一文件新增测试，通过 `flow()` 配置邮件、provider 和偏好；用 UI 操作触发行为，同时断言 `server` 调用记录和 `store` 状态。用 `eventually()` 等待 RPC 和渲染，它在 DOM 和 RPC 连续 2.5 秒（乘 `testTimeScale`）没有变化后才报失败，总等待不超过这个时间的三倍；`lazyDialog` 声明的弹窗模块在 `flow()` 返回前已加载完，打开弹窗不再等模块导入；`advance()` 推进自动保存、已读和撤回计时。`server.failNext` 注入一次失败，`beforePush` 注入持续失败或 Deferred 阻塞。`holdLists()` 可阻塞列表 RPC，验证导航与搜索交错。`afterEach` 关闭 Registry、RPC、Mailbox 并删除临时数据库。
+To extend the flows, add a test in the same file and configure mail, providers and preferences through `flow()`. Trigger behavior through UI actions, and assert both the `server` call log and the `store` state.
 
-同步重放回归在 `packages/core/src/mailbox/pending-pull.test.ts`，覆盖三种 provider 的稍后提醒、唤醒、Flags 更新及队列索引。
+- `eventually()` waits for RPC and rendering. It fails only after the DOM and RPC have been unchanged for 2.5 seconds (times `testTimeScale`), and it waits no more than three times that in total.
+- Dialog modules declared with `lazyDialog` finish loading before `flow()` returns, so opening a dialog no longer waits for a module import.
+- `advance()` moves the autosave, mark-as-read and undo timers forward.
+- `server.failNext` injects one failure. `beforePush` injects a lasting failure or blocks on a Deferred.
+- `holdLists()` blocks list RPCs so you can test navigation and search interleaving.
+- `afterEach` closes the Registry, RPC and Mailbox and deletes the temporary database.
 
-检查每项流程能捕获故障：
+Sync replay regressions are in `packages/core/src/mailbox/pending-pull.test.ts`. They cover snooze, wake-up, flag updates and the queue index for all three providers.
+
+Check that each flow catches faults:
 
 ```sh
 node apps/desktop/scripts/e2e-mutations.mjs
 ```
 
-脚本串行临时修改行为，要求所选测试全部失败，每轮恢复文件；覆盖主流程及相关回归。新增流程时同步扩展脚本的故障案例。完成后再跑正常测试与仓库检查。
+The script temporarily changes behavior, one case at a time, requires every selected test to fail, and restores the file after each round. It covers the main flows and related regressions. When you add a flow, add its fault cases to the script. Afterwards run the normal tests and the repo checks.
 
-重置删除保护回归见 [sync-reset.test.ts](../packages/core/src/sync/sync-reset.test.ts)和 [sync-reset-imap.test.ts](../packages/core/src/sync/sync-reset-imap.test.ts)：覆盖窗口外缓存保留、存在性验证失败与持久续验、IMAP UID 复用，以及 Outlook delta 初始／410 重启／续页／增量的 Prefer 页大小。规则只在[同步说明](sync-correctness.md#重置删除保护)维护。
+Regressions for the reset deletion guard are in [sync-reset.test.ts](../packages/core/src/sync/sync-reset.test.ts) and [sync-reset-imap.test.ts](../packages/core/src/sync/sync-reset-imap.test.ts). They cover keeping cached mail outside the window, failed existence checks and persistent re-verification, IMAP UID reuse, and the Prefer page size for the initial, 410 restart, next-page and incremental Outlook delta requests. The rules are maintained only in [sync correctness](sync-correctness.md#重置删除保护).
 
-[sync-stale.test.ts](../packages/core/src/sync/sync-stale.test.ts) 检查扫描的每账户预算、小时冷却与重启续验、不可用计数、孤立远端草稿和待推送改动保护；[sync-reset.test.ts](../packages/core/src/sync/sync-reset.test.ts)及 [outlook.test.ts](../packages/core/src/providers/outlook/outlook.test.ts) 检查 Outlook 冲突的持久入队与游标保存顺序。
+[sync-stale.test.ts](../packages/core/src/sync/sync-stale.test.ts) checks the per-account scan budget, the hourly cooldown and re-verification after restart, the unavailable count, orphaned remote drafts, and the guard for changes still waiting to push. [sync-reset.test.ts](../packages/core/src/sync/sync-reset.test.ts) and [outlook.test.ts](../packages/core/src/providers/outlook/outlook.test.ts) check that Outlook conflicts are queued durably before the cursor is saved.
 
-[imap.test.ts](../packages/core/src/providers/imap/imap.test.ts)、[sync-reset.test.ts](../packages/core/src/sync/sync-reset.test.ts)和 [sync-reset-imap.test.ts](../packages/core/src/sync/sync-reset-imap.test.ts) 覆盖 SEARCH 失败与空集合的区别、小数量及空列表重置验证、遗漏文件夹和 UID 身份失效。[outlook.test.ts](../packages/core/src/providers/outlook/outlook.test.ts)及 [provider-calendar.test.ts](../packages/core/src/calendar/provider-calendar.test.ts) 检查 Graph key-segment 续页、外域拒绝、嵌套联系人文件夹、去重和 People 上限。
+[imap.test.ts](../packages/core/src/providers/imap/imap.test.ts), [sync-reset.test.ts](../packages/core/src/sync/sync-reset.test.ts) and [sync-reset-imap.test.ts](../packages/core/src/sync/sync-reset-imap.test.ts) cover telling a SEARCH failure from an empty set, reset verification with small counts and empty lists, missed folders and invalid UID identity. [outlook.test.ts](../packages/core/src/providers/outlook/outlook.test.ts) and [provider-calendar.test.ts](../packages/core/src/calendar/provider-calendar.test.ts) check Graph key-segment paging, rejection of foreign domains, nested contact folders, deduplication and the People limit.
 
-[provider-retry.test.ts](../packages/core/src/providers/provider-retry.test.ts)、[gmail.test.ts](../packages/core/src/providers/gmail/gmail.test.ts)和 [outlook.test.ts](../packages/core/src/providers/outlook/outlook.test.ts) 覆盖非幂等写入单次提交、丢失响应后的核对、草稿 ID 保留、附件续页、changeKey 冲突及 Trash 补偿。[undo-send-and-draft-create.test.ts](../packages/core/src/mailbox/undo-send-and-draft-create.test.ts)与 [mobile-outbox.test.ts](../packages/core/src/mailbox/mobile-outbox.test.ts) 检查创建日志、发送认领事务、明确失败重试、renderer 断开和数据库重开；同时覆盖与 合并后的迟到草稿回调、失效认领、ID 重映射及部分拒收保护；桌面 [renderer-models.test.ts](../apps/desktop/src/renderer/src/app/renderer-models.test.ts) 检查撤销的 core RPC。行为规则只在[同步说明](sync-correctness.md#草稿与其他写入)维护。普通低内存测试即可运行，无须启动 Electron。
+[provider-retry.test.ts](../packages/core/src/providers/provider-retry.test.ts), [gmail.test.ts](../packages/core/src/providers/gmail/gmail.test.ts) and [outlook.test.ts](../packages/core/src/providers/outlook/outlook.test.ts) cover single submission of non-idempotent writes, reconciliation after a lost response, keeping draft IDs, attachment paging, changeKey conflicts and Trash compensation. [undo-send-and-draft-create.test.ts](../packages/core/src/mailbox/undo-send-and-draft-create.test.ts) and [mobile-outbox.test.ts](../packages/core/src/mailbox/mobile-outbox.test.ts) check the creation log, the send-claim transaction, retries after a definite failure, a disconnected renderer and reopening the database. They also cover late draft callbacks after a merge, stale claims, ID remapping and the partial-rejection guard. On desktop, [renderer-models.test.ts](../apps/desktop/src/renderer/src/app/renderer-models.test.ts) checks the core RPC for undo. The behavior rules are maintained only in [sync correctness](sync-correctness.md#草稿与其他写入). A normal low-memory test run covers all of these without starting Electron.
 
-## 解析器 fuzz 与无障碍
+## Parser fuzzing and accessibility
 
-解析器属性测试使用固定 seed 的 fast-check 和恶意输入语料。覆盖 MIME／TNEF／兼容编码、HTML 清洗与重解析、可见文本、认证头、URL、搜索、日历、IMAP/SMTP 分片流和附件文件名。测试检查有界输出、幂等、协议分帧及清洗后没有活动内容，不能证明所有恶意输入都安全。入口见 core [parser-fuzz.test.ts](../packages/core/src/reader/parser-fuzz.test.ts)、[parser-fuzz-corpus.ts](../packages/core/src/reader/parser-fuzz-corpus.ts)、[mail-socket-fuzz.test.ts](../packages/core/src/platform/mail-socket-fuzz.test.ts)，以及桌面 [reader-html-fuzz.test.ts](../apps/desktop/src/renderer/src/features/reader/frame/reader-html-fuzz.test.ts)和[附件文件名测试](../apps/desktop/src/main/files/attachment-filenames-fuzz.test.ts)。
+The parser property tests use fast-check with fixed seeds and a corpus of malicious input. They cover MIME, TNEF and legacy encodings, HTML sanitizing and reparsing, visible text, authentication headers, URLs, search, calendar, chunked IMAP/SMTP streams and attachment filenames. The tests check for bounded output, idempotence, protocol framing and the absence of active content after sanitizing. They cannot prove that every malicious input is safe. The entry points are core [parser-fuzz.test.ts](../packages/core/src/reader/parser-fuzz.test.ts), [parser-fuzz-corpus.ts](../packages/core/src/reader/parser-fuzz-corpus.ts) and [mail-socket-fuzz.test.ts](../packages/core/src/platform/mail-socket-fuzz.test.ts), and on desktop [reader-html-fuzz.test.ts](../apps/desktop/src/renderer/src/features/reader/frame/reader-html-fuzz.test.ts) and the [attachment filename test](../apps/desktop/src/main/files/attachment-filenames-fuzz.test.ts).
 
-只跑 fuzz：
+To run only the fuzz tests:
 
 ```sh
 pnpm --filter @openmail/core exec vitest run fuzz
 pnpm --filter @openmail/desktop exec vitest run fuzz
 ```
 
-固定 seed 和轮数在各测试中维护。`OPENMAIL_LOW_MEMORY_TESTS=1` 会减少部分属性测试轮数；调查 fast-check 失败时保留输出中的 seed、path 和最小反例，用对应测试的参数重放。
+Each test keeps its own fixed seed and run count. `OPENMAIL_LOW_MEMORY_TESTS=1` lowers the run count of some property tests. When you investigate a fast-check failure, keep the seed, path and minimal counterexample from the output, and replay them with that test's parameters.
 
-[accessibility.test.ts](../apps/desktop/src/renderer/src/tests/accessibility.test.ts) 用 axe 检查主界面、设置、撰写、阅读及确认对话框；serious／critical 必须为零，moderate 必须准确匹配带理由的 [allowlist](../apps/desktop/src/renderer/src/tests/accessibility.test.ts)，当前为空。jsdom 不做布局和 canvas 对比度判断，axe 的 color-contrast 关闭；主题 token 对比度、focus 和 reduced motion 由 [accessibility-theme.test.ts](../apps/desktop/src/renderer/src/tests/accessibility-theme.test.ts)单独检查，另有 CSS 与语言回归。键盘路径、焦点恢复、控件名称和 live region 由 DOM 交互测试覆盖，不能代替 VoiceOver 或真机手势验收。
+[accessibility.test.ts](../apps/desktop/src/renderer/src/tests/accessibility.test.ts) runs axe on the main window, settings, the composer, the reader and confirmation dialogs. Serious and critical findings must be zero. Moderate findings must match the [allowlist](../apps/desktop/src/renderer/src/tests/accessibility.test.ts) exactly, with a reason for each entry; the allowlist is currently empty. jsdom does no layout or canvas contrast checks, so axe's color-contrast rule is off. [accessibility-theme.test.ts](../apps/desktop/src/renderer/src/tests/accessibility-theme.test.ts) checks theme token contrast, focus and reduced motion separately, and there are CSS and language regressions too. DOM interaction tests cover keyboard paths, focus restoration, control names and live regions. They do not replace checks with VoiceOver or gestures on a real device.
 
 ```sh
 pnpm --filter @openmail/desktop exec vitest run accessibility
 ```
 
-## 桌面生产构建 smoke
+## Desktop production build smoke test
 
-构建后在仓库根目录运行：
+After building, run from the repo root:
 
 ```sh
 pnpm build
 node apps/desktop/scripts/smoke.mjs --db /path/to/mail.db
 ```
 
-脚本启动 Electron 生产构建，通过本地 CDP 检查主窗口、首个缓存会话、撰写、Settings 和同步健康报告。它不发送邮件。实现见 [smoke.mjs](../apps/desktop/scripts/smoke.mjs)、[smoke-ui.mjs](../apps/desktop/scripts/smoke-ui.mjs)和 core [smoke.ts](../packages/core/src/platform/node/smoke.ts)。
+The script starts the Electron production build and, over a local CDP connection, checks the main window, the first cached conversation, the composer, Settings and the sync health report. It sends no mail. The implementation is in [smoke.mjs](../apps/desktop/scripts/smoke.mjs), [smoke-ui.mjs](../apps/desktop/scripts/smoke-ui.mjs) and core [smoke.ts](../packages/core/src/platform/node/smoke.ts).
 
-提供 `--db` 前先关闭原库的写入进程。脚本只复制原库、存在的 WAL 和同目录 `config.json`，发现复制期间文件变化即停止；只打开临时副本并迁移到当前版本。副本强制手动已读、英语界面，关闭首次 Profiles 建议，滑动操作全部设为无操作，Delete 键改为询问，原文件不变。脚本设置 `OPENMAIL_BACKGROUND_WINDOWS=1`：开发构建的窗口用 `showInactive()` 显示，不抢焦点，误触的按键和触控板滑动仍落在原来的应用。打包后的应用忽略这个变量。钥匙串项不复制，仍沿用标准 Secrets 读取和 token 刷新。没有 `config.json` 时，副本可能提示配置 OAuth client；这不等于需要重新登录。
+Before you pass `--db`, close every process that writes to the original database. The script copies only the database, its WAL if there is one, and `config.json` from the same directory. It stops if a file changes during the copy. It opens only the temporary copy and migrates it to the current version. The copy forces manual mark-as-read and the English UI, turns off the first-run Profiles suggestion, sets every swipe action to none and makes the Delete key ask first. The original files do not change. The script sets `OPENMAIL_BACKGROUND_WINDOWS=1`, so a development build shows its windows with `showInactive()` and does not take focus. Stray keystrokes and trackpad swipes still go to the app you were using. Packaged builds ignore this variable. Keychain items are not copied; the copy reads secrets and refreshes tokens the usual way. Without `config.json`, the copy may ask you to configure an OAuth client. That does not mean you need to sign in again.
 
-默认离线：启动设置 `OPENMAIL_OFFLINE=1`，core 的每个 provider 方法（同步、健康检查的服务端计数、联系人、token 刷新、IMAP 连接）都直接失败，不发出请求，报告的 `network` 为 false。这时 `syncHealth` 里各账户的服务端计数不可用，只有本地计数。要让副本连接真实服务商，加 `--network`。离线模式不拦截阅读器按远程图片设置加载的邮件图片。
+The smoke test is offline by default. It starts with `OPENMAIL_OFFLINE=1`, so every core provider method fails at once without sending a request: sync, server counts in the health check, contacts, token refresh and IMAP connections. The report's `network` is then false, and `syncHealth` has only local counts for each account. Add `--network` to let the copy connect to the real providers. Offline mode does not block message images that the reader loads under the remote-image setting.
 
-`--db` 可省略，使用空临时库。`--timeout` 是总等待毫秒数，默认 180000；`--port` 指定本地 CDP 端口，默认自动选取。`--keep` 保留临时库和诊断文件，报告输出 `directory`；默认删除。启动设置 `OPENMAIL_READ_ONLY=1` 和临时 `OPENMAIL_HOME`，并核对 Electron 的 `user-data-dir`。只读会话仍允许本地写入和网络读取，详细边界只在[架构](architecture.md#只读会话)维护。
+`--db` is optional; without it the script uses an empty temporary database. `--timeout` is the total wait in milliseconds, 180000 by default. `--port` sets the local CDP port, chosen automatically by default. `--keep` keeps the temporary database and diagnostics files and prints their `directory` in the report; by default they are deleted. The script starts the app with `OPENMAIL_READ_ONLY=1` and a temporary `OPENMAIL_HOME`, and checks Electron's `user-data-dir`. A read-only session still allows local writes and network reads. The exact limits are maintained only in [architecture](architecture.md#read-only-session).
 
-stdout 输出 JSON，stderr 输出步骤和预览日志：
+JSON goes to stdout. Steps and preview logs go to stderr:
 
-| 字段                                           | 含义                                                                                                |
-| ---------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `readOnly`、`network`、`copiedDatabase`        | 已启用只读会话，是否允许 provider 调用（`--network`），以及是否提供原库副本                         |
-| `steps`                                        | 每步 passed／skipped 及跳过原因；无缓存 Inbox 会话跳过阅读，无账户跳过撰写和 Settings               |
-| `syncHealth`                                   | 各账户脱敏同步健康报告；无账户为空，字段和判断见[同步说明](sync-correctness.md#同步健康检查)        |
-| `consoleErrors`、`exceptions`、`ipcRejections` | renderer 错误、异常和 RPC 拒绝；正常中断不计拒绝                                                    |
-| `failure`                                      | 步骤超时、预览退出或其他脚本失败原因；`CDP closed` 附带渲染进程是否崩溃、预览进程是否退出；成功为空 |
+| Field                                          | Meaning                                                                                                                                                                                     |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `readOnly`, `network`, `copiedDatabase`        | Whether the read-only session is on, whether provider calls are allowed (`--network`), and whether a copy of a database was provided.                                                       |
+| `steps`                                        | Each step as passed or skipped, with the reason for a skip. Without a cached Inbox conversation the reader step is skipped; without an account the composer and Settings steps are skipped. |
+| `syncHealth`                                   | The redacted sync health report for each account. Empty without accounts. Fields and checks are in [sync correctness](sync-correctness.md#同步健康检查).                                    |
+| `consoleErrors`, `exceptions`, `ipcRejections` | Renderer errors, exceptions and RPC rejections. Normal aborts do not count as rejections.                                                                                                   |
+| `failure`                                      | Why the script failed: a step timed out, the preview exited, or something else. `CDP closed` adds whether the renderer crashed and whether the preview process exited. Empty on success.    |
 
-步骤成功只证明所检查的窗口路径可用。`sync-health` passed 表示报告调用完成，服务商不可用或计数不一致仍需阅读 `syncHealth`；它不使脚本自动失败，也不修复同步。空库的跳过项不能算邮件流程验收。
+A passed step proves only that the window path it checks works. A passed `sync-health` means the report call finished. You still need to read `syncHealth` for unavailable providers or mismatched counts; those do not fail the script, and the script does not repair sync. Steps skipped on an empty database do not count as mail flow acceptance.
 
-只有来自 `about:srcdoc`、匹配固定 `img-src data: cid:` 提示的远程图片 CSP 拦截会被忽略。其他 console 错误、异常、RPC 拒绝或 `failure` 使退出码为 1。正常结束及 SIGINT／SIGTERM／SIGHUP 共用幂等清理，终止预览并按 `--keep` 删除或保留副本；信号退出码为 130／143／129，已有退出码不覆盖。回归见 [smoke.test.ts](../packages/core/src/platform/node/smoke.test.ts)、[smoke-cleanup.test.ts](../packages/core/src/platform/node/smoke-cleanup.test.ts)、[smoke-ui.test.ts](../apps/desktop/src/renderer/src/tests/smoke-ui.test.ts)和 [rpc-key.test.ts](../apps/desktop/src/renderer/src/state/rpc-key.test.ts)。
+The script ignores only remote image CSP blocks that come from `about:srcdoc` and match the fixed `img-src data: cid:` message. Any other console error, exception, RPC rejection or `failure` sets the exit code to 1. A normal exit and SIGINT, SIGTERM or SIGHUP share an idempotent cleanup that stops the preview and deletes or keeps the copy according to `--keep`. The signal exit codes are 130, 143 and 129, and an exit code that is already set is not overwritten. Regressions are in [smoke.test.ts](../packages/core/src/platform/node/smoke.test.ts), [smoke-cleanup.test.ts](../packages/core/src/platform/node/smoke-cleanup.test.ts), [smoke-ui.test.ts](../apps/desktop/src/renderer/src/tests/smoke-ui.test.ts) and [rpc-key.test.ts](../apps/desktop/src/renderer/src/state/rpc-key.test.ts).
 
-脱敏服务商诊断格式只在[安全说明](security.md#服务商诊断)维护。smoke 的原始 console、`failure` 和 stderr 不受该字段白名单约束，分享前检查内容。自动测试使用 DOM、临时库和 fake provider，不运行 Electron smoke，也不证明真实 OAuth、系统权限或签名成品。
+The redacted provider diagnostics format is maintained only in the [security notes](security.md#provider-diagnostics). The smoke test's raw console output, `failure` and stderr are not limited to that field allowlist, so check them before you share them. The automated tests use the DOM, temporary databases and fake providers. They do not run the Electron smoke test and do not prove real OAuth, system permissions or a signed build.
 
-远程消息文本／Reply-To 补全以整个会话五秒为上限，失败仍返回缓存及 `bodyRefresh="failed"`，不改变账户认证状态；未知 Reply-To 不自动猜测回复收件人。Node Layer 使用 FetchHttpClient 与 Node fetch，renderer 取消请求会中断 fetch。只读 GET 的实际传输失败等待 500 毫秒后重试一次，发送不重试。实现与回归见 [mailbox-live.ts](../packages/core/src/mailbox/mailbox-live.ts)、[provider-retry.ts](../packages/core/src/providers/provider-retry.ts)和 [read-only.test.ts](../packages/core/src/mailbox/read-only.test.ts)。
+Fetching remote message text and Reply-To has a five second limit for the whole conversation. On failure it still returns the cached copy with `bodyRefresh="failed"` and leaves the account's auth state alone. An unknown Reply-To is never guessed as the reply recipient. The Node Layer uses FetchHttpClient with Node fetch, and a renderer cancel aborts the fetch. A read-only GET that fails in transport waits 500 milliseconds and retries once. Sending never retries. The implementation and regressions are in [mailbox-live.ts](../packages/core/src/mailbox/mailbox-live.ts), [provider-retry.ts](../packages/core/src/providers/provider-retry.ts) and [read-only.test.ts](../packages/core/src/mailbox/read-only.test.ts).
 
-空白 Composer 的 `DraftStatus` 只查询本地草稿，未保存或已删除时返回 `null`；`OpenDraft` 用于明确打开或导入已有草稿。完整流程测试覆盖空白 Composer 打开、关闭时无失败 RPC，也不查询该草稿 ID 的消息，见 [mailbox-handlers.ts](../apps/desktop/src/shared/mailbox-handlers.ts)和 [flows.test.ts](../apps/desktop/src/renderer/src/e2e/flows.test.ts)。
+For a blank composer, `DraftStatus` queries only the local draft and returns `null` if the draft is unsaved or deleted. `OpenDraft` is for explicitly opening or importing an existing draft. The full flow tests check that opening and closing a blank composer causes no failed RPC and does not query messages for that draft ID. See [mailbox-handlers.ts](../apps/desktop/src/shared/mailbox-handlers.ts) and [flows.test.ts](../apps/desktop/src/renderer/src/e2e/flows.test.ts).
 
-## 按领域组织的回归
+## Regressions by area
 
-- [undo-journal.test.ts](../packages/core/src/mailbox/undo-journal.test.ts)、[signatures.test.ts](../packages/core/src/compose/signatures.test.ts)：跨重启撤销与签名。
-- [optional-services.test.ts](../packages/core/src/providers/optional-services.test.ts)：授权、服务开关与消息文本预算。
-- [graph-recurrence.test.ts](../packages/core/src/calendar/graph-recurrence.test.ts)、[calendar.test.ts](../packages/core/src/calendar/calendar.test.ts)：循环事件、邀请与邮件事件检测。
-- [search.test.ts](../packages/core/src/search/search.test.ts)、[preferences.test.ts](../packages/core/src/mailbox/preferences.test.ts)、[organization.test.ts](../packages/core/src/domain/organization.test.ts)：搜索、偏好、分类与规则。
-- [uid-remap.test.ts](../packages/core/src/mailbox/uid-remap.test.ts)：IMAP 身份映射。
-- [native-compose.test.ts](../apps/desktop/src/main/system/native-compose.test.ts)：原生分享、图片和语法辅助。
-- [sender-auth.test.ts](../packages/core/src/reader/sender-auth.test.ts)、[model-view-hiding.test.ts](../packages/core/src/ai/model-view-hiding.test.ts)：发件人认证与隐藏模型输入。
+- [undo-journal.test.ts](../packages/core/src/mailbox/undo-journal.test.ts), [signatures.test.ts](../packages/core/src/compose/signatures.test.ts): undo across restarts, and signatures.
+- [optional-services.test.ts](../packages/core/src/providers/optional-services.test.ts): consent, service switches and the message text budget.
+- [graph-recurrence.test.ts](../packages/core/src/calendar/graph-recurrence.test.ts), [calendar.test.ts](../packages/core/src/calendar/calendar.test.ts): recurring events, invites and detecting events in mail.
+- [search.test.ts](../packages/core/src/search/search.test.ts), [preferences.test.ts](../packages/core/src/mailbox/preferences.test.ts), [organization.test.ts](../packages/core/src/domain/organization.test.ts): search, preferences, categories and rules.
+- [uid-remap.test.ts](../packages/core/src/mailbox/uid-remap.test.ts): IMAP identity mapping.
+- [native-compose.test.ts](../apps/desktop/src/main/system/native-compose.test.ts): native sharing, images and writing aids.
+- [sender-auth.test.ts](../packages/core/src/reader/sender-auth.test.ts), [model-view-hiding.test.ts](../packages/core/src/ai/model-view-hiding.test.ts): sender authentication and hidden model input.
 
-`TestMailbox.withAdapter(adapter, opts)` 共用真实 Mailbox／Store 和内存平台，支持传入适配器或从 fake adapter 派生。`incoming()`、`outgoing()`、`account(provider)` 提供可覆盖的消息与账户；HTTP 和 IMAP 传输使用共享 fake。
+`TestMailbox.withAdapter(adapter, opts)` shares a real Mailbox and Store with the in-memory platform. You can pass an adapter or derive one from the fake adapter. `incoming()`, `outgoing()` and `account(provider)` provide messages and accounts you can override. HTTP and IMAP transport use shared fakes.
 
-默认测试收集全部领域回归。`cache.test.ts` 的 100k 会话和 `performance-plans.test.ts` 的 150k 迁移仅在 `OPENMAIL_PERF=1` 时执行：
+The default test run collects every area regression. The 100k-conversation case in `cache.test.ts` and the 150k migration case in `performance-plans.test.ts` run only when `OPENMAIL_PERF=1` is set:
 
 ```sh
 OPENMAIL_PERF=1 OPENMAIL_LOW_MEMORY_TESTS=1 pnpm --filter @openmail/core exec vitest run src/domain/cache.test.ts src/platform/node/performance-plans.test.ts

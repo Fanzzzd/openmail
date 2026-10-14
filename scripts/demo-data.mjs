@@ -1,5 +1,6 @@
 // Seeds a demo OpenMail data directory with fake accounts and mail, for screenshots and
 // manual testing. Every address uses example.com, example.org or example.net.
+// It also turns on "Ask me first" for agents and adds one pending MCP proposal to approve.
 //
 //   pnpm build
 //   node scripts/demo-data.mjs /tmp/openmail-demo        # or OPENMAIL_DEMO_HOME=/tmp/openmail-demo
@@ -49,6 +50,7 @@ if (!existsSync(testing)) {
 const coreRequire = createRequire(join(root, "packages/core/package.json"));
 const { Effect, Layer } = await import(pathToFileURL(coreRequire.resolve("effect")).href);
 const { Store, TestMailbox } = await import(pathToFileURL(testing).href);
+const { Mailbox } = await import(pathToFileURL(join(root, "packages/core/dist/common.js")).href);
 
 const now = Date.now();
 const minutes = (n) => now - n * 60_000;
@@ -198,6 +200,7 @@ const gmail = [
     body: ["Order #NW-20418. Total $81.50. Ships in 2 business days."],
   }),
   message({
+    providerId: "newsletter-rust",
     subject: "This week in Rust: async closures, faster builds",
     from: { name: "Rust Weekly", address: "newsletter@rustweekly.example.net" },
     date: hours(9),
@@ -220,6 +223,40 @@ const gmail = [
       "You are receiving this because you subscribed at rustweekly.example.net. Unsubscribe any time.",
     ),
     body: ["Issue 612: async closures are stable, incremental builds 30% faster, twelve new jobs."],
+  }),
+  message({
+    providerId: "newsletter-frontend",
+    subject: "Frontend Digest #218: container queries in practice",
+    from: { name: "Frontend Digest", address: "digest@frontend.example.net" },
+    date: days(6),
+    labels: ["INBOX", "CATEGORY_UPDATES", "Label_newsletters"],
+    bodyHtml: newsletter(
+      "Frontend Digest",
+      "Issue 218 · Five links worth your time",
+      [
+        ["Container queries in practice", "Three layouts rebuilt without media queries."],
+        ["Smaller bundles", "How one team cut 40 KB by dropping a date library."],
+      ],
+      "You subscribed at frontend.example.net. Unsubscribe any time.",
+    ),
+    body: ["Issue 218: container queries in practice, smaller bundles."],
+  }),
+  message({
+    providerId: "newsletter-product",
+    subject: "Product Notes: what we shipped in September",
+    from: { name: "Product Notes", address: "notes@product.example.org" },
+    date: days(8),
+    labels: ["INBOX", "CATEGORY_UPDATES", "Label_newsletters"],
+    bodyHtml: newsletter(
+      "Product Notes",
+      "September roundup",
+      [
+        ["Offline mode", "Edits made offline now sync when you reconnect."],
+        ["Shared views", "Send a saved filter to a teammate with one link."],
+      ],
+      "Product Notes · Unsubscribe",
+    ),
+    body: ["September roundup: offline mode, shared views."],
   }),
   message({
     subject: "Weekend hike?",
@@ -372,6 +409,26 @@ const program = Effect.gen(function* () {
   });
   const other = yield* store.upsertAccount("imap", work.address);
   for (const m of imap) yield* store.upsertMessage(other.id, m);
+  // An agent proposal waiting for approval, made the way the MCP modify_threads tool makes it:
+  // with "Ask me first" on, an MCP agent's change becomes a proposal instead of running.
+  const mailbox = yield* Mailbox;
+  yield* mailbox.setAgentWriteMode("propose");
+  yield* mailbox.perform(
+    {
+      kind: "modify",
+      threads: ["newsletter-rust", "newsletter-frontend", "newsletter-product"].map(
+        (id) => `${google.id}/${id}`,
+      ),
+      op: { kind: "archive" },
+    },
+    {
+      kind: "agent",
+      surface: "mcp",
+      name: "claude-code",
+      rationale:
+        "These three are newsletters. Archiving takes them out of the inbox and keeps them in All Mail.",
+    },
+  );
   yield* store.checkpoint;
 });
 

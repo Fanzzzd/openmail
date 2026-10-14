@@ -40,7 +40,7 @@ OPENMAIL_HOME="$HOME/OpenMail-dev" node packages/cli/dist/cli.js accounts list
 
 Tokens and passwords still go to the macOS keychain under the service `openmail`, one item per account, named like `gmail:alex@example.com`. Signing in to the same address from a dev data directory replaces the installed app's token for it.
 
-For a populated mailbox without a real account, seed fake mail with `node scripts/demo-data.mjs "$HOME/OpenMail-dev"` after `pnpm build`.
+For a populated mailbox without a real account, seed fake mail with `node scripts/demo-data.mjs "$HOME/OpenMail-dev"` after `pnpm build`. It also sets the AI permission to **Ask me first** and adds one pending agent proposal, so **AI suggestions** has something to approve.
 
 Set `OPENMAIL_READ_ONLY=1` to block every remote write (sending, moves, flags) while you try things.
 
@@ -104,16 +104,17 @@ pnpm build && pnpm check-types && pnpm test && pnpm exec oxlint && pnpm exec oxf
 [AGENTS.md](AGENTS.md) is the full list, in Chinese. In short:
 
 - `packages/core` is the only code that touches the network or the database. The desktop main process, the CLI and the MCP server call functions core exports. They write no SQL and call no provider API.
-- Node-specific core code lives only in `packages/core/src/platform/node/`. Other core sources import no `node:` modules and read no Node globals; runtime capabilities come from Effect platform services. Read [docs/platform-inventory.md](docs/platform-inventory.md) before changing platform code.
+- Node-specific core code lives only in `packages/core/src/platform/node/`. Other core sources import no `node:` modules, Node built-ins or Node-only packages, and read no Node globals; runtime capabilities come from Effect platform services. Only `platform/bytes.ts` may probe `globalThis.Buffer`, once at startup. Read [docs/platform-inventory.md](docs/platform-inventory.md) before changing platform code.
 - The database is `node:sqlite`. Do not switch to better-sqlite3.
 - Migrations live in the `MIGRATIONS` array in `packages/core/src/db/migrations.ts`. Append only; never edit an existing entry.
 - `messages_fts` is an external-content FTS table keyed by rowid. Write messages only through `upsertMessage`, never `INSERT OR REPLACE`.
 - Refresh tokens, IMAP passwords and AI keys go only to the system keychain (`packages/core/src/platform/node/secrets.ts`), never to the database or logs.
-- Only the user's own accounts, through the official consent page, with OpenMail's or the user's own OAuth client. Outlook uses the `consumers` tenant only.
+- Only the user's own accounts, through the official consent page, with OpenMail's or the user's own OAuth client. Never reuse another app's client ID or credentials, and never read tokens from another app's keychain items. Outlook uses the `consumers` tenant only; work Microsoft 365 needs the tenant admin's consent, which OpenMail does not work around.
 - Mail HTML is untrusted. The reader iframe's `sandbox` never includes `allow-scripts`, and its CSP blocks remote content unless the remote-image setting allows it. Known trackers are always removed.
 - MCP tools are read-only by default. A tool that changes mail needs an explicit switch, and sending always needs confirmation in the app.
-- Changes to another app's MCP config happen only after the user clicks and reviews the diff, and touch only the `openmail` entry.
-- Remote access is off by default, binds to 127.0.0.1 behind Tailscale Serve, and allows only the RPCs listed in `shared/remote-policy.ts`. New RPCs stay off that list unless there is a reason.
+- Changes to another app's MCP config happen only after the user clicks and reviews the diff, and touch only the `openmail` entry. Prefer that app's own CLI through `execFile` with a fixed argv. When editing a file directly, back it up, write atomically, and check that everything outside `openmail` is unchanged. Config never holds tokens. Tests use a temporary HOME and fake CLIs, never the real `~/.claude.json` or `~/.codex/config.toml`. See [docs/security.md](docs/security.md#connecting-ai-apps).
+- Remote access is off by default, binds to 127.0.0.1 behind Tailscale Serve (never Funnel), and allows only the RPCs listed in `shared/remote-policy.ts`. New RPCs stay off that list unless there is a reason. RPCs that touch local files, the system, the browser, OAuth, the keychain, AI keys, windows or the clipboard never go on it. See [docs/security.md](docs/security.md#remote-access).
+- The packaged app keeps the RunAsNode fuse off. `OpenMail --mcp` serves MCP from the main entry, not through `ELECTRON_RUN_AS_NODE`.
 - Electron: the main entry is ESM and must not `await app.whenReady()` at top level; the sandboxed preload builds as CJS; electron-vite 5 needs vite 7 or earlier.
 
 ## Translations

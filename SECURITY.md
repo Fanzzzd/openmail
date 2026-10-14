@@ -30,7 +30,7 @@ OpenMail has not had a stable release. Fixes land on `main` and go into the next
 
 ## Out of scope
 
-- Other processes running as the same macOS user. They can already read the database, call `127.0.0.1` with forged Tailscale headers, and use the user's keychain access. The trust boundary is the user account, as described in [docs/security.md](docs/security.md#不在边界内).
+- Other processes running as the same macOS user. They can already read the database, call `127.0.0.1` with forged Tailscale headers, and use the user's keychain access. The trust boundary is the user account, as described in [docs/security.md](docs/security.md#outside-the-boundary).
 - An attacker who controls the operating system or replaces the source or build tools.
 - Decisions the project made on purpose and documents:
   - Remote images load by default. Users can change this in settings; known trackers are removed under every setting.

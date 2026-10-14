@@ -1,108 +1,108 @@
-# Google OAuth 客户端设置
+# Google OAuth client setup
 
-桌面 app 和 CLI 默认用 openmail 自己注册的 Desktop 类型客户端登录，来源见[发布](release.md#内置-oauth-客户端)。添加 Gmail 时直接点 **Sign in with Google**，不需要下面的步骤。
+OpenMail signs in to Gmail with a Google OAuth client of the Desktop app type. A source checkout has none built in. A build gets a built-in client only when it is built with `OPENMAIL_GOOGLE_CLIENT_ID` and `OPENMAIL_GOOGLE_CLIENT_SECRET` set, or with `apps/desktop/oauth-clients.local.json` present (see [release](release.md#built-in-oauth-clients)). The CLI reads the same env vars and file.
 
-本页是进阶和自托管路径：构建里没有内置客户端，或你想用自己 Google Cloud 项目里的客户端。在 app 的 **Use your own OAuth client** 里填入的客户端优先于内置客户端，只影响之后的新登录；已有账户继续用签发其 refresh token 的客户端，见[账户与签发客户端](#账户与签发客户端)。
+Follow this page when your build has no built-in client, or when you want to use a client from your own Google Cloud project. Without a built-in client, the add-account screen asks for your client before **Sign in with Google**. With one, open **Use your own OAuth client** on that screen. A client you enter there wins over the built-in client for new sign-ins only. Existing accounts keep the client that issued their refresh token; see [accounts and the issuing client](#accounts-and-the-issuing-client).
 
-## 内置客户端的发布状态
+## Release status of the built-in client
 
-内置客户端属于 Google Cloud 项目 `openmail-510100`，目前停在 **Testing**：
+The official built-in client belongs to the Google Cloud project `openmail-510100`. It is in **Testing**:
 
-- refresh token 每 7 天过期，到期后要重新登录。core 在登录时记录签发时间。内置客户端签发的 token 在签发至少 6.5 天后收到 `invalid_grant` 时，原因记为 `testing_mode_expiry`，界面说明 Google 目前把 OpenMail 的登录限制为 7 天，请用户重新登录。
-- 只有项目 **Audience → Test users** 列出的地址能登录，其他地址会被拒绝。
+- Refresh tokens expire after 7 days, and the user has to sign in again. Core records the sign-in time. When a token issued by the built-in client gets `invalid_grant` at least 6.5 days after sign-in, core records the reason as `testing_mode_expiry`. The UI explains that Google currently limits OpenMail sign-ins to 7 days and asks the user to sign in again.
+- Only the addresses listed under the project's **Audience → Test users** can sign in. Google rejects every other address.
 
-切到 **In production** 但不提交验证时，7 天过期取消，最多 100 个用户，登录页显示“此应用未经验证”的警告。Gmail 的 `gmail.modify`、`gmail.send` 和 `https://mail.google.com/` 属于 restricted scope，完整验证需要通过 CASA 安全评估。依据：[Testing 状态的 token 过期](https://developers.google.com/identity/protocols/oauth2#expiration)、[未验证应用的用户上限](https://support.google.com/cloud/answer/7454865)、[restricted scope 验证](https://developers.google.com/identity/protocols/oauth2/production-readiness/restricted-scope-verification)。
+Switching to **In production** without submitting for verification removes the 7-day expiry, caps the app at 100 users, and shows an "unverified app" warning on the consent page. Gmail's `gmail.modify`, `gmail.send` and `https://mail.google.com/` are restricted scopes, and full verification requires a CASA security assessment. Sources: [token expiry in Testing](https://developers.google.com/identity/protocols/oauth2#expiration), [user cap for unverified apps](https://support.google.com/cloud/answer/7454865), [restricted scope verification](https://developers.google.com/identity/protocols/oauth2/production-readiness/restricted-scope-verification). The verification submission is in [google-oauth-verification.md](google-oauth-verification.md).
 
-## 账户与签发客户端
+## Accounts and the issuing client
 
-refresh token 只能和签发它的客户端一起使用。core 在登录成功后把签发客户端的 client ID 写进数据库的 `accounts.oauth_client_id`（迁移 43）。client ID 是公开值，不进钥匙串。续期时只用这个 client ID，在用户客户端、运行时环境变量和内置客户端里找完全相同的一个；都没有时报需要重新登录，不改用其他客户端。
+A refresh token works only with the client that issued it. After a successful sign-in, core writes the issuing client's client ID to `accounts.oauth_client_id` in the database (migration 43). A client ID is public, so it does not go to the keychain. A refresh uses only this client ID. Core looks for the exact same ID among the user's client, the runtime env vars and the built-in client. If none matches, the account asks for a new sign-in. Core never falls back to another client.
 
-迁移 43 之前登录的账户没有记录。旧版本只会用环境变量或 `config.json` 里的客户端签发 token，所以续期先用环境变量的客户端，再用用户客户端，绝不用内置客户端；第一次续期成功后补记。两者都不在时，账户提示重新登录。删除账户时这条记录随账户行一起删除。
+Accounts signed in before migration 43 have no record. Older versions issued tokens only with the client from env vars or `config.json`. So a refresh for such an account tries the env var client first, then the user's client, and never the built-in client. The first successful refresh records the client ID. If neither client exists, the account asks for a new sign-in. Deleting an account deletes the record with the account row.
 
-添加账户页显示新登录用的是内置客户端还是你自己的客户端。用自己的客户端且有内置客户端时，可以点 **Use the built-in client** 删除 `config.json` 里的客户端；已添加的账户继续用登录时的客户端。实现见 [oauth-clients.ts](../packages/core/src/providers/oauth-clients.ts)。
+The add-account screen says whether new sign-ins use the built-in client or your own. When you use your own client and the build has a built-in one, **Use the built-in client** removes your client from `config.json`. Accounts you already added keep the client they signed in with. The implementation is in [oauth-clients.ts](../packages/core/src/providers/oauth-clients.ts).
 
-## 注册自己的客户端
+## Register your own client
 
-1. 打开 <https://console.cloud.google.com/>，新建一个项目，比如 `openmail`。
-2. 进入 **APIs & Services → Library**，启用 **Gmail API**。使用可选日历或联系人服务时，再启用 **Google Calendar API** 或 **People API**。
-3. 进入 **Google Auth Platform → Branding**，填应用名和你的邮箱。User type 选 **External**。
-4. 进入 **Audience**：
-   - 状态停在 **Testing** 的话，refresh token 7 天后过期，每周要重新登录一次。
-   - 点 **Publish app** 切到 **In production**，不用提交审核。登录时 Google 会显示“此应用未经验证”，点“高级 → 继续”即可。未验证应用最多 100 个用户，自用够了。
-   - Publish app 是灰的、提示 “complete your configuration on the Branding page” 时，先留在 Testing：在 **Test users** 里加上要同步的 Gmail 地址，否则登录会被拒。Testing 状态下每 7 天要重新登录一次。
-   - Test users 的输入框在 iframe 里，脚本和 CDP 点不中，手动或用 computer use 操作。
-5. 在 **Data Access** 配置必需的 `gmail.modify`、`gmail.send`，完整前缀是 `https://www.googleapis.com/auth/`。新账户只请求这两个邮件权限。可选服务按下面的表逐项加入自己的项目。
-6. 进入 **Clients → Create client**，类型选 **Desktop app**，记下 Client ID 和 Client secret。
-7. 在 openmail app 的添加账户页填入这两个值（有内置客户端时在 **Use your own OAuth client** 里），或者用 CLI：
+1. Open <https://console.cloud.google.com/> and create a project, for example `openmail`.
+2. Go to **APIs & Services → Library** and enable **Gmail API**. For the optional calendar or contacts services, also enable **Google Calendar API** or **People API**.
+3. Go to **Google Auth Platform → Branding** and enter an app name and your email address. Choose **External** as the user type.
+4. Go to **Audience**:
+   - If the status stays at **Testing**, refresh tokens expire after 7 days and you sign in again every week.
+   - Click **Publish app** to switch to **In production**. You do not need to submit for review. At sign-in Google shows an "unverified app" warning; click **Advanced → Continue**. An unverified app allows up to 100 users, which is enough for personal use.
+   - If **Publish app** is greyed out with "complete your configuration on the Branding page", stay in Testing. Add every Gmail address you want to sync under **Test users**, or Google rejects the sign-in. In Testing you sign in again every 7 days.
+   - The **Test users** input sits in an iframe. Scripts and CDP clicks miss it, so fill it in by hand or with computer use.
+5. Under **Data Access**, add the required `gmail.modify` and `gmail.send`, with the prefix `https://www.googleapis.com/auth/`. New accounts request only these two mail scopes. Add the optional services to your project one by one, as listed in the tables below.
+6. Go to **Clients → Create client**, choose **Desktop app**, and note the Client ID and Client secret.
+7. Enter both values on OpenMail's add-account screen. If the build has a built-in client, they go under **Use your own OAuth client**. Or use the CLI:
 
    ```sh
    openmail config google --client-id <id> --client-secret <secret>
    openmail accounts add gmail
    ```
 
-Desktop 类型客户端的 secret 按 Google 的定义不算机密。openmail 把它存在 `config.json`（权限 600），把 refresh token 存在系统钥匙串。
+Google does not treat the secret of a Desktop app client as confidential. OpenMail stores it in `config.json` (mode 600) and stores the refresh token in the system keychain.
 
-## 可选服务
+## Optional services
 
-在 **Settings → Accounts → Optional services** 为每个账户分别连接服务。Google 授权仍使用本页注册的客户端，走官方同意页；请求包含基础邮件权限、数据库记录的既有授权和本次服务的 scope，并发送 `include_granted_scopes=true`。新授权状态取自 token 响应。升级时只有完全缺少 scope 记录的旧账户按旧版本完整权限登记；已有空记录或部分授权不补权限。启动不清缓存，实际 403 仍返回局部权限错误，不暂停邮件同步。
+Connect services per account under **Settings → Accounts → Optional services**. Google consent still uses the client registered on this page and goes through the official consent page. The request includes the base mail scopes, the grants already recorded in the database and the scopes of the service being connected, and it sends `include_granted_scopes=true`. Core takes the new grant state from the token response. On upgrade, only old accounts with no scope record at all are recorded with the full scope set of the old version. An empty or partial record gains no scopes. Startup does not clear caches. A real 403 still returns a scoped permission error and does not pause mail sync.
 
-普通重新登录、CLI `accounts reauth` 和重新添加已有账户都保留该账户存储的全部 scopes，包括永久删除权限；Google 始终发送 `include_granted_scopes=true`。重新添加时若未指定地址，先用官方授权识别账户，再为识别出的已有账户补发一次保留权限的授权请求。
+A normal sign-in again, CLI `accounts reauth` and re-adding an existing account all keep every scope stored for the account, including the permanent delete scope. Google requests always send `include_granted_scopes=true`. When you re-add an account without giving the address, core first identifies the account through the official consent page. It then sends one more consent request for the identified account that keeps its stored scopes.
 
-停用只控制本机使用，不撤销 Google 授权：
+Turning a service off only controls local use. It does not revoke the Google grant:
 
-| 开关           | 停用后的行为                                               | 清除的缓存                                           |
-| -------------- | ---------------------------------------------------------- | ---------------------------------------------------- |
-| Contacts       | 停止服务器联系人刷新；本地往来地址仍可补全                 | 服务器联系人、联系人分组、照片和对应的服务器补全条目 |
-| Calendar       | 停止服务器事件查询、创建和邀请响应；本地邀请仍可阅读       | 无                                                   |
-| Gmail Settings | 停止过滤器创建、修改、删除和自动回复修改；已有设置仍可读取 | 无，保留发件别名和签名                               |
+| Switch         | After turning it off                                                                                          | Caches cleared                                                                       |
+| -------------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Contacts       | Server contacts stop refreshing. Addresses from local mail still autocomplete                                 | Server contacts, contact groups, photos and the matching server autocomplete entries |
+| Calendar       | Server event lookup, event creation and invite replies stop. Local invites stay readable                      | None                                                                                 |
+| Gmail Settings | Creating, changing and deleting filters and changing auto-replies stop. Reading existing settings still works | None. Send-as aliases and signatures stay                                            |
 
-`sendAs.list` 使用基础 `gmail.modify` 即可读取，别名同步不受 Gmail Settings 开关影响。[依据](https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.settings.sendAs/list)
+`sendAs.list` works with the base `gmail.modify` scope, so alias sync does not depend on the Gmail Settings switch. [Source](https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.settings.sendAs/list)
 
-| 服务           | 在 Data Access 添加的 scope                    | 需启用的 API        |
+| Service        | Scopes to add under Data Access                | API to enable       |
 | -------------- | ---------------------------------------------- | ------------------- |
-| Contacts       | `contacts.readonly`、`contacts.other.readonly` | People API          |
+| Contacts       | `contacts.readonly`, `contacts.other.readonly` | People API          |
 | Calendar       | `calendar.events`                              | Google Calendar API |
 | Gmail Settings | `gmail.settings.basic`                         | Gmail API           |
 
-scope 都使用 `https://www.googleapis.com/auth/` 前缀。只授予 `contacts.readonly` 时仍可使用已保存联系人；其他联系人需要另一个 scope。日历操作、自动回复和过滤器修改在对应服务未授权或停用时给出入口提示，不停止收发。
+All scopes use the `https://www.googleapis.com/auth/` prefix. With only `contacts.readonly`, saved contacts still work. Other contacts need the second scope. When a service is not granted or is turned off, calendar actions, auto-replies and filter changes show a prompt to connect it. Sending and receiving continue.
 
-点某个服务的 **Connect** 时，同一次授权还会请求用户打开过、后来失去授权的服务；迁移 44 的 `enabled_json` 记录用户打开过哪些服务。从未打开过的服务不请求。请求的服务多于所点的一个时，打开浏览器前先列出其余服务，用户点 **Continue** 才继续。重新登录和连接服务都带 `login_hint`，Google 和 Microsoft 直接选中该账户。
+Clicking **Connect** on one service also requests the services the user turned on earlier and has since lost. The `enabled_json` column from migration 44 records which services the user has turned on. Services never turned on are not requested. When the request covers more services than the one clicked, OpenMail lists the others before opening the browser and continues only after the user clicks **Continue**. Signing in again and connecting a service both send `login_hint`, so Google and Microsoft preselect the account.
 
-Google 的[桌面 OAuth 文档](https://developers.google.com/identity/protocols/oauth2/native-app#identify-access-scopes)注明 installed apps 不支持增量授权。本实现重新走同意页并明确重列已知授权，不能据参数或本机测试认定真实客户端可无损增加授权。尚未真实账户验收；如授权页拒绝，检查自己项目的 API 与 Data Access，保留此限制，不换用其他应用客户端。
+Google's [desktop OAuth docs](https://developers.google.com/identity/protocols/oauth2/native-app#identify-access-scopes) say that installed apps do not support incremental authorization. This implementation goes through the consent page again and lists the known grants explicitly. The parameters and local tests do not prove that a real client can add scopes without losing any. This is not yet verified against a real account. If the consent page rejects the request, check the APIs and Data Access in your own project. Keep this limit, and do not switch to another app's client.
 
-新增能力只访问本人的数据：
+The new features access only the user's own data:
 
-| API                 | 端点与操作                                                                                                                       | OAuth scope                                               |
-| ------------------- | -------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| Google Calendar API | `calendars/primary/events?iCalUID=…` 查邀请，`events/{id}` PATCH 本人 attendee 的 `responseStatus`，`sendUpdates=all` 通知组织者 | `https://www.googleapis.com/auth/calendar.events`         |
-| People API          | `people/me/connections`，`personFields=names,emailAddresses`                                                                     | `https://www.googleapis.com/auth/contacts.readonly`       |
-| People API          | `otherContacts`，`readMask=names,emailAddresses`                                                                                 | `https://www.googleapis.com/auth/contacts.other.readonly` |
+| API                 | Endpoint and operation                                                                                                                                         | OAuth scope                                               |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| Google Calendar API | `calendars/primary/events?iCalUID=…` finds the invite; `events/{id}` PATCH sets the user's attendee `responseStatus`; `sendUpdates=all` notifies the organizer | `https://www.googleapis.com/auth/calendar.events`         |
+| People API          | `people/me/connections`, `personFields=names,emailAddresses`                                                                                                   | `https://www.googleapis.com/auth/contacts.readonly`       |
+| People API          | `otherContacts`, `readMask=names,emailAddresses`                                                                                                               | `https://www.googleapis.com/auth/contacts.other.readonly` |
 
-联系人每 6 小时刷新一次，失败后 1 小时再试，旧缓存继续补全。只有 `contacts.readonly` 时先补全已保存联系人，缺少可选 `contacts.other.readonly` 不阻止这部分缓存。隐藏地址同时排除本地往来邮件和服务器联系人。日历响应只在点击接受、暂定或拒绝后发送；日历里找不到邀请时，先用 Google Calendar 添加。没有启用 API 时需在上述 Cloud 项目启用，重新登录不能代替启用 API。
+Contacts refresh every 6 hours, and 1 hour after a failure. The old cache keeps serving autocomplete. With only `contacts.readonly`, saved contacts fill the cache, and the missing optional `contacts.other.readonly` does not block them. A hidden address is excluded from both local mail addresses and server contacts. A calendar reply goes out only after the user clicks accept, tentative or decline. When the invite is not in the calendar, add it with Google Calendar first. If an API is not enabled, enable it in the Cloud project above. Signing in again does not enable an API.
 
-依据：[Calendar events](https://developers.google.com/workspace/calendar/api/v3/reference/events)、[People connections](https://developers.google.com/people/api/rest/v1/people.connections/list)、[Other contacts](https://developers.google.com/people/api/rest/v1/otherContacts/list)。
+Sources: [Calendar events](https://developers.google.com/workspace/calendar/api/v3/reference/events), [People connections](https://developers.google.com/people/api/rest/v1/people.connections/list), [Other contacts](https://developers.google.com/people/api/rest/v1/otherContacts/list).
 
-过滤器列表可用已有 `gmail.modify` 或 `gmail.readonly` 读取，成功返回空列表时无需重新登录；创建或删除过滤器仍需 `gmail.settings.basic`。过滤器读取可用基础邮件权限；修改要求连接 Gmail Settings 服务；403 权限错误只提示连接该服务，不改变邮件同步状态。依据：[读取列表](https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.settings.filters/list)、[创建过滤器](https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.settings.filters/create)。
+Listing filters works with the existing `gmail.modify` or `gmail.readonly`. A successful empty list does not need a new sign-in. Creating or deleting a filter still needs `gmail.settings.basic`. Reading filters works with the base mail scopes, and changing them requires the Gmail Settings service. A 403 permission error only prompts to connect that service and does not change the mail sync state. Sources: [list filters](https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.settings.filters/list), [create filter](https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.settings.filters/create).
 
-代码依据：[optional-services.ts](../packages/core/src/providers/optional-services.ts) 定义基础及分服务 scopes，[store-services.ts](../packages/core/src/store/store-services.ts) 处理旧账户授权记录，[mailbox-services.ts](../packages/core/src/mailbox/mailbox-services.ts) 执行本机启停；官方授权与 token 响应处理见 [mailbox-live.ts](../packages/core/src/mailbox/mailbox-live.ts)、[Node OAuth](../packages/core/src/platform/node/oauth.ts)和[手机 OAuth](../packages/core/src/platform/react-native/oauth.ts)。迁移 33 只保存本机开关，不存凭证。局部权限错误与脱敏日志见[安全说明](security.md#服务商诊断)。
+Code: [optional-services.ts](../packages/core/src/providers/optional-services.ts) defines the base and per-service scopes. [store-services.ts](../packages/core/src/store/store-services.ts) handles grant records of old accounts. [mailbox-services.ts](../packages/core/src/mailbox/mailbox-services.ts) turns services on and off locally. Official consent and token response handling are in [mailbox-live.ts](../packages/core/src/mailbox/mailbox-live.ts), [Node OAuth](../packages/core/src/platform/node/oauth.ts) and [mobile OAuth](../packages/core/src/platform/react-native/oauth.ts). Migration 33 stores only the local switches, never credentials. Scoped permission errors and redacted logs are covered in the [security notes](security.md#provider-diagnostics).
 
-## 永久删除权限
+## Permanent delete permission
 
-Gmail 的 `gmail.modify` 不允许永久删除。需要从 app 永久删除或清空垃圾箱时，在自己项目的 **Data Access** 增加 `https://mail.google.com/`，再通过 app 的永久删除权限提示重新登录。core 只在该功能的授权流程额外请求这个 scope，并检查实际授予的权限；普通登录与收发仍只请求基础邮件 scopes。权限缺失不停止普通同步。CLI 的 `accounts reauth` 不新增这个额外 scope；已保存的永久删除权限仍随普通重新登录保留。
+Gmail's `gmail.modify` does not allow permanent deletion. To delete permanently or empty Trash from the app, add `https://mail.google.com/` under **Data Access** in your own project. Then sign in again from the app's permanent delete permission prompt. Core requests this scope only in that feature's consent flow and checks the scopes Google actually granted. Normal sign-in, sending and receiving request only the base mail scopes. A missing permission does not stop normal sync. CLI `accounts reauth` does not add this scope. A permanent delete scope already stored stays through a normal sign-in again.
 
-依据：[Gmail API scopes](https://developers.google.com/workspace/gmail/api/auth/scopes)。
+Source: [Gmail API scopes](https://developers.google.com/workspace/gmail/api/auth/scopes).
 
-## 手机端
+## Mobile
 
-手机端必须新建 iOS 和 Android 客户端，不使用 Desktop client ID 或 secret。先完成本页项目、API、Audience 和 Data Access 设置，再配置 `apps/mobile/app.config.ts` 使用的环境变量。
+The mobile app needs new iOS and Android clients. It does not use the Desktop client ID or secret. First set up the project, APIs, Audience and Data Access on this page. Then set the env vars that `apps/mobile/app.config.ts` reads.
 
-1. 确定自己应用的 bundle ID/package name，分别设 `OPENMAIL_IOS_BUNDLE_ID`、`OPENMAIL_ANDROID_PACKAGE`，默认都是 `com.openmail.mobile`。
-2. 在 **Google Auth Platform → Clients → Create client** 选 **iOS**，填写相同 Bundle ID。记下 client ID，设为 `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`。若控制台要求 App Store ID/Team ID，填写自己的应用/Apple team 信息。
-3. 再创建 **Android** 客户端，填写相同 Package name 和自己的签名证书 SHA-1。开发证书、发布证书、Play App Signing 证书可能不同；为实际使用的 package/证书创建匹配的客户端。可从自己的 keystore 用 `keytool -list -v -keystore <keystore>` 查看 SHA-1。
-4. Android client ID 设为 `EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID`。本切片采用 AuthSession 系统浏览器流程，需在该 Android 客户端 **Advanced Settings → Custom URI scheme** 启用自定义 scheme。Google 默认禁用它，并推荐原生 Google Identity Services；若控制台不允许启用，当前浏览器流程不能用于该客户端，需先接原生 SDK。不要拿 iOS/Desktop client ID 代替。
-5. 两个平台回调都按自己的 client ID 生成：`123.apps.googleusercontent.com` 对应 `com.googleusercontent.apps.123:/oauthredirect`。Expo 配置自动注册该 scheme。客户端 ID 变更后，重新生成并安装开发构建；Expo Go 不支持此回调。
-6. 用添加 Gmail 账户按钮打开官方授权页。AuthSession 发送 authorization code、PKCE S256 和 state，core 交换 token；手机客户端不发送 client secret。refresh token 仅进入 expo-secure-store。
+1. Decide your app's bundle ID and package name, and set `OPENMAIL_IOS_BUNDLE_ID` and `OPENMAIL_ANDROID_PACKAGE`. Both default to `com.openmail.mobile`.
+2. In **Google Auth Platform → Clients → Create client**, choose **iOS** and enter the same Bundle ID. Set the client ID as `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`. If the console asks for an App Store ID or Team ID, enter your own app and Apple team details.
+3. Create an **Android** client with the same Package name and the SHA-1 of your own signing certificate. The development, release and Play App Signing certificates can differ. Create a client that matches the package and certificate you actually use. `keytool -list -v -keystore <keystore>` shows the SHA-1 of your keystore.
+4. Set the Android client ID as `EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID`. The mobile app uses the AuthSession system browser flow, so enable the custom scheme under **Advanced Settings → Custom URI scheme** on that Android client. Google disables it by default and recommends native Google Identity Services. If the console does not let you enable it, the current browser flow cannot use that client, and the native SDK has to come first. Do not substitute the iOS or Desktop client ID.
+5. Both platforms derive the callback from their client ID: `123.apps.googleusercontent.com` maps to `com.googleusercontent.apps.123:/oauthredirect`. The Expo config registers the scheme. After a client ID change, rebuild and reinstall the development build. Expo Go does not support this callback.
+6. The add Gmail account button opens the official consent page. AuthSession sends the authorization code, PKCE S256 and state, and core exchanges the token. The mobile client sends no client secret. The refresh token goes only to expo-secure-store.
 
-手机授权流程已接入，仍需真实账户验收。普通登录与桌面共用基础邮件 scopes；可选服务在桌面按账户连接。
+The mobile consent flow is wired up but still needs verification with a real account. Normal sign-in uses the same base mail scopes as the desktop app. Optional services are connected per account on the desktop.
 
-依据：[注册 Android/iOS 客户端及 Advanced Settings](https://support.google.com/googleapi/answer/6158849?hl=en)、[Google 自定义 URI 限制与启用选项](https://developers.googleblog.com/improving-user-safety-in-oauth-flows-through-new-oauth-custom-uri-scheme-restrictions/)、[原生 OAuth PKCE](https://developers.google.com/identity/protocols/oauth2/native-app)。
+Sources: [register Android and iOS clients and Advanced Settings](https://support.google.com/googleapi/answer/6158849?hl=en), [Google custom URI restrictions and how to enable them](https://developers.googleblog.com/improving-user-safety-in-oauth-flows-through-new-oauth-custom-uri-scheme-restrictions/), [native OAuth with PKCE](https://developers.google.com/identity/protocols/oauth2/native-app).

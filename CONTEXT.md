@@ -1,67 +1,67 @@
-# 领域上下文
+# Domain context
 
-openmail 在本机缓存邮件。桌面、CLI 和 MCP 通过 core 共享数据库、操作队列与权限。手机端复用可移植 core，使用设备自己的数据库和安全存储。
+OpenMail caches mail on the local machine. The desktop app, the CLI and the MCP server share one database, one operation queue and one set of permissions through core. The mobile app reuses the portable core with the device's own database and secure storage.
 
-## 术语
+## Terms
 
-| 名称                 | 含义                                                                                      |
-| -------------------- | ----------------------------------------------------------------------------------------- |
-| 账户 Account         | 一个已登录的 Gmail、个人 Outlook 或 IMAP 邮箱，包含 provider 身份与同步状态               |
-| 服务商 provider      | Gmail、Outlook、IMAP；`ProviderAdapter` 把协议转成 core 的变更与操作                      |
-| 可选服务             | 每账户的联系人、日历或服务商设置；scope 授权与本机启停分别记录                            |
-| 只读会话             | `OPENMAIL_READ_ONLY=1` 禁止远程写入；允许网络读取、token 刷新及本地写入                   |
-| 同步健康报告         | 按文件夹／标签比较本地与服务商计数，附游标年龄和待推送操作；不证明内容一致                |
-| 邮件 Message         | 服务器邮件在本地的镜像；本地 ID 含账户身份，`providerId` 是服务器 ID                      |
-| 会话 Thread          | 同账户中按 `threadId` 归组的邮件；列表与工具通常用代表邮件 ID 定位会话                    |
-| 消息文本             | 邮件的纯文本内容；HTML 是另一个受清洗和隔离的阅读表示                                     |
-| 草稿 Draft           | `drafts` 表中的本地可编辑内容；本地 ID 与服务器草稿／邮件 ID 分开                         |
-| 标签 Label           | Gmail 标签或 Outlook／IMAP 文件夹的统一表示，操作须遵守各 provider 语义                   |
-| Profile              | 账户分组，界面中的空间；定义账户范围、通知时段和窗口选择，不等同于账户                    |
-| 命令 Command         | 可序列化的邮件改动，交给 `Mailbox.perform` 检查权限并执行                                 |
-| 操作者 Actor         | 用户或代理的身份与入口，影响策略判断并进入审计                                            |
-| 提议 Proposal        | 等待用户审批的代理命令；MCP 与内置助手的写入均受提议流程约束                              |
-| 操作队列 pending_ops | 本地改动待推送服务商的持久队列，支持认领、重试和错误记录                                  |
-| 失败提示 FailedOp    | `failed_ops` 保存推送失败与发送警告，桌面和手机经 Mailbox 查询                            |
-| 重置验证队列         | `sync-reset:<account>` 保存在 prefs 的重置或 Outlook 冲突候选；未验证项保留，下次同步续验 |
-| 撤销记录 UndoJournal | `undo_batches` 保存可跨重启恢复的批量／单封操作逆向状态，撤销前校验后续改动               |
-| 派生数据             | 搜索文本／向量、AI 摘要及分拣建议；单独保存，不覆盖服务商邮件                             |
-| Model                | 第三方语言模型的流式 Effect 服务；当前实现是 Anthropic                                    |
-| ModelRuntime         | 本机 embedding 推理接口，与第三方 Model 的文本授权分开                                    |
-| MailToolkit          | core 的模型工具集合，CLI、MCP 与内置助手复用其 schema 和处理器                            |
-| 平台端口             | core 所需的 SQL、文件、密钥、OAuth、MIME、网络或 worker 服务                              |
-| Layer                | 为 Effect 服务提供具体实现的组装单元                                                      |
+| Term                     | Meaning                                                                                                                                                        |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Account                  | A signed-in Gmail, personal Outlook or IMAP mailbox, with its provider identity and sync state.                                                                |
+| Provider                 | Gmail, Outlook or IMAP. A `ProviderAdapter` turns the protocol into core changes and operations.                                                               |
+| Optional service         | Per-account contacts, calendar or provider settings. OpenMail records the scope grant and the local on/off switch separately.                                  |
+| Read-only session        | `OPENMAIL_READ_ONLY=1` blocks remote writes. Network reads, token refresh and local writes still run.                                                          |
+| Sync health report       | Compares local and provider counts per folder or label, with cursor age and pending operations. It does not prove that contents match.                         |
+| Message                  | The local mirror of a server message. The local ID includes the account identity; `providerId` is the server ID.                                               |
+| Thread                   | Messages in one account grouped by `threadId`. Lists and tools usually locate a thread by the ID of a representative message.                                  |
+| Message text             | The plain-text content of a message. HTML is a separate reading representation that OpenMail sanitizes and isolates.                                           |
+| Draft                    | Local editable content in the `drafts` table. Its local ID is separate from the server draft or message ID.                                                    |
+| Label                    | One representation of Gmail labels and Outlook or IMAP folders. Operations must follow each provider's semantics.                                              |
+| Profile                  | A group of accounts, shown as a space in the UI. It sets the account scope, notification hours and window choice. A profile is not an account.                 |
+| Command                  | A serializable change to mail. `Mailbox.perform` checks permissions and runs it.                                                                               |
+| Actor                    | The identity and entry point of a user or agent. It feeds policy decisions and the audit log.                                                                  |
+| Proposal                 | An agent command waiting for the user's approval. Writes from MCP and from the built-in assistant both go through the proposal flow.                           |
+| Operation queue          | `pending_ops`, the durable queue of local changes waiting to reach the provider. It supports claiming, retries and error records.                              |
+| Failed operation         | `FailedOp`. `failed_ops` stores push failures and send warnings. Desktop and mobile query them through Mailbox.                                                |
+| Reset verification queue | Reset or Outlook conflict candidates stored in prefs under `sync-reset:<account>`. Unverified entries stay, and the next sync continues verifying them.        |
+| Undo journal             | `UndoJournal`. `undo_batches` stores the inverse state of batch and single-message operations so undo survives a restart. Undo checks for later changes first. |
+| Derived data             | Search text and vectors, AI summaries and triage suggestions. Stored separately; never overwrites provider mail.                                               |
+| Model                    | The streaming Effect service for a third-party language model. The current implementation is Anthropic.                                                        |
+| ModelRuntime             | The on-device embedding inference interface. Its permissions are separate from the text grant for the third-party Model.                                       |
+| MailToolkit              | Core's set of model tools. The CLI, the MCP server and the built-in assistant reuse its schemas and handlers.                                                  |
+| Platform port            | A SQL, file, secret, OAuth, MIME, network or worker service that core needs from the host.                                                                     |
+| Layer                    | The Effect unit that supplies a concrete implementation for a service.                                                                                         |
 
-- `messageId` 按边界区分：provider 返回服务器 ID；Mailbox／Store 参数用含账户前缀的本地 ID；RFC Message-ID 在 `rfcMessageId` 中，来自邮件头，通常带 `<…>`。三者不可互换。
-- `MailOp` 是 read、star、move、label 等单项邮件改动；`Command` 加上目标和审批语义；`QueuedOp` 还包括草稿保存、删除和 reconcile。
-- queued send（`queueSend`）保存离线／定时投递意图；delayed send（`queueUndoSend`）保存撤销发送的短暂等待。两者都写入 outbox 并显示 waiting，后者用 `desktopUndo` 标记。
-- `FolderScope`（mailbox、accountIds、label）表示整夹操作目标，不包含搜索、分页或未读筛选；标签／文件夹范围也非正式地称为 "label scope"。
+- `messageId` means different things at different boundaries. Providers return the server ID. Mailbox and Store parameters take the local ID with the account prefix. The RFC Message-ID lives in `rfcMessageId`; it comes from the header and usually includes `<…>`. The three are not interchangeable.
+- A `MailOp` is a single change to mail, such as read, star, move or label. A `Command` adds the target and approval semantics. A `QueuedOp` also covers draft saves, deletes and reconcile.
+- A queued send (`queueSend`) stores the intent to deliver offline or at a scheduled time. A delayed send (`queueUndoSend`) stores the short wait for undo send. Both write to the outbox and show as waiting; the delayed send carries the `desktopUndo` flag.
+- `FolderScope` (mailbox, accountIds, label) is the target of a whole-folder operation. It does not include search, paging or unread filters. A label or folder scope is also informally called a "label scope".
 
-## 模块入口
+## Module entry points
 
-core 的路径相对 `packages/core/src`。目录与领域的对应见 [ADR 0001](docs/adr/0001-core-layout.md)。
+Core paths are relative to `packages/core/src`. [ADR 0001](docs/adr/0001-core-layout.md) maps directories to domains.
 
-| 位置                                                                                         | 职责                                                                               |
-| -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| `domain/`、`store/service.ts`、`providers/adapter.ts`、`mailbox/mailbox.ts`                  | 领域 schema、Store 与 ProviderAdapter 端口、调用方 Mailbox 接口                    |
-| `mailbox/mailbox-live.ts`、`mailbox/mailbox-*.ts`                                            | 同步、策略、队列与审计的组装；分拆批量、文件夹、缓存、联系人／日历、整理与 AI 能力 |
-| `store/store.ts`、`store/store-*.ts`、`db/`                                                  | SQLite 查询、投影与追加迁移；消息写入经过 `upsertMessage`                          |
-| `providers/gmail/`、`providers/outlook/`、`platform/node/imap/`                              | 服务商适配器；拉取产出 Change，由 Mailbox 落库                                     |
-| `platform/react-native/imap.ts`、`platform/mail-socket.ts`                                   | 手机 IMAP/SMTP 协议与可移植传输；原生 TCP/TLS Layer 由 app 提供                    |
-| `mailbox/read-only.ts`、`providers/optional-services.ts`、`mailbox/mailbox-services.ts`      | 只读方法白名单、各服务 scopes 与本机启停                                           |
-| `sync/sync-reset.ts`、`store/store-sync-reset.ts`                                            | 限定重置删除范围、持久冲突候选、过期缓存扫描与服务商存在性验证                     |
-| `sync/sync-health.ts`、`store/store-sync-health.ts`、`providers/provider-diagnostics.ts`     | 同步健康报告、本地计数和脱敏服务商失败事件                                         |
-| `ai/model.ts`、`mailbox/mailbox-ai.ts`、`store/store-ai.ts`、`ai/model-view.ts`              | 第三方模型、账户授权、缓存、分拣与模型消息文本上下文                               |
-| `tools/`                                                                                     | 工具集合（每组工具一个模块）、身份、分页与输出预算                                 |
-| `ai/indexer.ts`、`ai/semantic-indexer.ts`、`store/store-media.ts`、`store/store-semantic.ts` | 本机 OCR／PDF 派生文本、向量与检索                                                 |
-| `platform/`、`platform/node/`、`platform/react-native/`                                      | 可移植端口、Node 实现、无 React Native 依赖的移动 SQL／OAuth／MIME adapters        |
-| `apps/desktop/src/main`、`preload`、`shared`                                                 | 窗口与系统能力、sandbox preload、RPC schema 和 Mailbox 处理器                      |
-| `apps/desktop/src/renderer/src/app`、`features`、`state`、`ui`                               | 界面组装 hooks、按功能分目录的组件、Effect atoms、共享组件                         |
-| `packages/cli/src/cli.ts`、`packages/cli/src/commands/`                                      | 人工 CLI 命令（按组分模块）和 stdio MCP server，共用 NodeMailbox                   |
-| `apps/mobile/app`、`apps/mobile/src/platform`                                                | Expo 路由、移动界面与 OS Layers，只调用 portable Mailbox                           |
-| `apps/desktop/src/renderer/src/e2e`                                                          | 真实 App、RPC、Mailbox 和临时 SQLite 的完整邮件流程测试                            |
-| `apps/desktop/scripts/smoke.mjs`                                                             | 用数据库副本启动生产构建，检查窗口与同步健康报告                                   |
-| `apps/mobile/src/background.ts`、core `mailbox/mobile-background.ts`                         | OS 后台增量刷新、本地通知、徽标和持久去重                                          |
+| Location                                                                                     | Responsibility                                                                                                      |
+| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `domain/`, `store/service.ts`, `providers/adapter.ts`, `mailbox/mailbox.ts`                  | Domain schemas, the Store and ProviderAdapter ports, the Mailbox interface callers use.                             |
+| `mailbox/mailbox-live.ts`, `mailbox/mailbox-*.ts`                                            | Assembles sync, policy, queue and audit. Split into batch, folder, cache, contacts and calendar, organizing and AI. |
+| `store/store.ts`, `store/store-*.ts`, `db/`                                                  | SQLite queries, projections and append-only migrations. Message writes go through `upsertMessage`.                  |
+| `providers/gmail/`, `providers/outlook/`, `platform/node/imap/`                              | Provider adapters. A fetch produces Changes, and Mailbox writes them to the store.                                  |
+| `platform/react-native/imap.ts`, `platform/mail-socket.ts`                                   | Mobile IMAP/SMTP protocol and portable transport. The app supplies the native TCP/TLS Layer.                        |
+| `mailbox/read-only.ts`, `providers/optional-services.ts`, `mailbox/mailbox-services.ts`      | The allowlist of read-only methods, per-service scopes and the local on/off switch.                                 |
+| `sync/sync-reset.ts`, `store/store-sync-reset.ts`                                            | Bounded reset deletes, durable conflict candidates, stale-cache scans and provider existence checks.                |
+| `sync/sync-health.ts`, `store/store-sync-health.ts`, `providers/provider-diagnostics.ts`     | The sync health report, local counts and redacted provider failure events.                                          |
+| `ai/model.ts`, `mailbox/mailbox-ai.ts`, `store/store-ai.ts`, `ai/model-view.ts`              | Third-party models, account grants, caching, triage and the message text context models see.                        |
+| `tools/`                                                                                     | The tool set (one module per group of tools), identity, paging and output budgets.                                  |
+| `ai/indexer.ts`, `ai/semantic-indexer.ts`, `store/store-media.ts`, `store/store-semantic.ts` | On-device OCR and PDF derived text, vectors and retrieval.                                                          |
+| `platform/`, `platform/node/`, `platform/react-native/`                                      | Portable ports, the Node implementation, and mobile SQL, OAuth and MIME adapters with no React Native dependency.   |
+| `apps/desktop/src/main`, `preload`, `shared`                                                 | Windows and system capabilities, the sandboxed preload, the RPC schema and Mailbox handlers.                        |
+| `apps/desktop/src/renderer/src/app`, `features`, `state`, `ui`                               | Hooks that assemble the UI, components by feature, Effect atoms and shared components.                              |
+| `packages/cli/src/cli.ts`, `packages/cli/src/commands/`, `packages/cli/src/mcp-server.ts`    | CLI commands for people (one module per group) and the stdio MCP server. Both use NodeMailbox.                      |
+| `apps/mobile/app`, `apps/mobile/src/platform`                                                | Expo routes, the mobile UI and OS Layers. They call only the portable Mailbox.                                      |
+| `apps/desktop/src/renderer/src/e2e`                                                          | Full mail-flow tests against the real App, RPC, Mailbox and a temporary SQLite database.                            |
+| `apps/desktop/scripts/smoke.mjs`                                                             | Starts the production build on a copy of the database and checks the window and the sync health report.             |
+| `apps/mobile/src/background.ts`, core `mailbox/mobile-background.ts`                         | OS background incremental refresh, local notifications, badges and durable deduplication.                           |
 
-## 规则来源
+## Where the rules live
 
-修改代码前读 [AGENTS.md](AGENTS.md)。模块接口与数据流见[架构](docs/architecture.md)，平台变更读[平台依赖清单](docs/platform-inventory.md)。模型工具与审批约束读[代理使用指南](docs/agents.md)，Apple 联系人接入读[Apple Contacts](docs/apple-contacts.md)。测试入口见[测试](docs/testing.md)，产品范围与真实验收见[路线图](docs/roadmap.md)。详细规则各自在这些文档维护。
+Read [AGENTS.md](AGENTS.md) before changing code. [Architecture](docs/architecture.md) covers module interfaces and data flow. Read the [platform inventory](docs/platform-inventory.md) before changing platform code. The [agent guide](docs/agents.md) covers model tools and approval rules, and [Apple Contacts](docs/apple-contacts.md) covers the Contacts integration. [Testing](docs/testing.md) lists the test entry points, and the [roadmap](docs/roadmap.md) covers product scope and real-account acceptance. Each of these documents maintains its own detailed rules.

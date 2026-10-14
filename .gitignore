@@ -27,3 +27,5 @@ apps/docs/*.tsbuildinfo
 
 # Python bytecode
 __pycache__/
+# Local icon explorations; the chosen icon is described in docs/design/icons.md
+docs/design/icon-options*/

@@ -35,11 +35,11 @@ OAuth 注册步骤见 [Google](setup-google.md) 与 [Microsoft](setup-microsoft.
 
 只检查同步时运行 `openmail health --json`，单账户加 `--account <id>`。报告只比较服务商和本地计数，不同步或修复数据；字段解释只在[同步说明](sync-correctness.md#同步健康检查)维护。命令实现见 [cli.ts](../packages/cli/src/cli.ts)。
 
-需要禁止远程写入时，在 CLI 或 MCP 启动前设置 `OPENMAIL_READ_ONLY=1`。该模式仍可读取网络及凭证、刷新 token 和写本地状态；`sync` 不推送既有队列。MCP 默认读取工具与此会话开关分别控制工具入口和远程写入，详细边界只在[架构](architecture.md#只读会话)维护。MCP 配置可加 `"env": { "OPENMAIL_READ_ONLY": "1" }`。
+需要禁止远程写入时，在 CLI 或 MCP 启动前设置 `OPENMAIL_READ_ONLY=1`。该模式仍可读取网络及凭证、刷新 token 和写本地状态；`sync` 不推送既有队列。MCP 默认读取工具与此会话开关分别控制工具入口和远程写入，详细边界只在[架构](architecture.md#read-only-session)维护。MCP 配置可加 `"env": { "OPENMAIL_READ_ONLY": "1" }`。
 
 ## 接入 AI 应用
 
-在 app 的「设置 > AI 权限 > AI 应用」里，每个客户端一张卡片：Claude Code、Codex、Claude（桌面版）和 Cursor。卡片显示是否安装、`openmail` 条目是否存在、是否指向当前 app，以及该客户端最近的工具调用。「连接」「重新连接」「断开连接」先弹出确认框，列出要运行的命令和配置文件 diff，点确认才执行。机制、备份和原子写入只在[安全说明](security.md#连接-ai-应用)维护。
+在 app 的「设置 > AI 权限 > AI 应用」里，每个客户端一张卡片：Claude Code、Codex、Claude（桌面版）和 Cursor。卡片显示是否安装、`openmail` 条目是否存在、是否指向当前 app，以及该客户端最近的工具调用。「连接」「重新连接」「断开连接」先弹出确认框，列出要运行的命令和配置文件 diff，点确认才执行。机制、备份和原子写入只在[安全说明](security.md#connecting-ai-apps)维护。
 
 | 客户端      | 连接方式                                                            | 配置文件                                                          |
 | ----------- | ------------------------------------------------------------------- | ----------------------------------------------------------------- |

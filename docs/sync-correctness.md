@@ -16,7 +16,7 @@ COPYUID 缺失时按 Message-ID 查目标 UID。已有 Message-ID 但 UID 未确
 
 Node IMAP 标记、复制和删除返回 false 时按 ProviderError 重试；PERMANENTFLAGS 禁止所需标记时永久失败。草稿 APPEND 前记录 Message-ID，重试先查已追加副本，避免重复追加。退避期间的编辑或手动重试保留这份身份和进度；发现内容已变则替换恢复的副本，最终只保留最新的可见副本。恢复的 UID 与旧引用相同时不删除该副本。丢弃草稿或保留本地副本时，排队按已记录的 Message-ID 清理未确认副本；切换账户时在原账户清理，不把旧身份用于新账户。新草稿 UID 未知时保留旧副本并失败；新关联已确定而旧副本清理失败时，排队 deleteDraft 重试清理。
 
-实现见 [Node IMAP](../packages/core/src/platform/node/imap/adapter.ts)、[手机 IMAP](../packages/core/src/platform/react-native/imap.ts)与 [Store](../packages/core/src/store/store.ts)。回归入口见[测试](testing.md#出站操作与发送回归)。
+实现见 [Node IMAP](../packages/core/src/platform/node/imap/adapter.ts)、[手机 IMAP](../packages/core/src/platform/react-native/imap.ts)与 [Store](../packages/core/src/store/store.ts)。回归入口见[测试](testing.md#outbound-operations-and-sending-regressions)。
 
 ## 出站操作队列
 
@@ -137,7 +137,7 @@ node packages/cli/dist/cli.js health --json
 OPENMAIL_READ_ONLY=1 node packages/cli/dist/cli.js health --account 'gmail:me@example.com' --json
 ```
 
-省略 `--account` 检查全部账户。`Mailbox.syncHealth` 请求 Gmail 标签计数、Graph 文件夹计数或 IMAP STATUS；摘要计数低于本地时，只读查询消息集合复核，不读取消息文本、不修改服务商。约十秒网络预算、最多四个并发请求；失败的文件夹保留本地数并标为服务商不可用。smoke 同样输出该报告，运行方式见[测试](testing.md#桌面生产构建-smoke)。
+省略 `--account` 检查全部账户。`Mailbox.syncHealth` 请求 Gmail 标签计数、Graph 文件夹计数或 IMAP STATUS；摘要计数低于本地时，只读查询消息集合复核，不读取消息文本、不修改服务商。约十秒网络预算、最多四个并发请求；失败的文件夹保留本地数并标为服务商不可用。smoke 同样输出该报告，运行方式见[测试](testing.md#desktop-production-build-smoke-test)。
 
 | 报告项                           | 含义                                                                                                                                                                        |
 | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

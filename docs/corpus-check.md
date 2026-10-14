@@ -37,7 +37,7 @@ pnpm cli corpus-check --db /path/to/mailbox-copy.db --run-key "$RUN_KEY" --json
 - `structure` 包含元素总数、固定 HTML 标签计数、文本节点数及字符数、注释与 MSO 条件注释数、最大深度、head 内的文本数量、body 是否位于 head 内、style 块和内联 style 属性数。自定义标签统一计入 `other`。
 - `stylesheetSelectorShapes` 仅计选择器类型和白名单语法，如 `class-selector`、`id-selector`、`attribute-selector`、`:not`、`:has`、组合器和 `@media`。未知伪类仅计 `pseudo-class`，未知 at-rule 计 `@other`；解析失败仅计数。
 - `removedByRule` 是实际过滤分支丢弃的文本节点数和字符数，覆盖 hidden／aria-hidden、display:none、visibility、opacity、零／极小字体、近似同色、负偏移、缩放、zoom、content-visibility、未能确定的 CSS、裁剪、filter opacity、绘制不确定、定位遮挡和 OMIT 标签。`removedBySource` 按 HTML 属性、内联样式、stylesheet 规则、继承值、OMIT、注释汇总同一批移除。两组是不同维度，不能相加。
-- 每个被剪掉的 DOM 子树只统计一次，归因于第一个触发的规则；被祖先剪掉后不继续给后代规则计数。font-size／visibility 则在文本叶节点上按有效继承值计数，允许后代覆盖；规则见[邮件内容保护](security.md#邮件内容保护)。MSO／普通注释不生成 DOM 文本节点，单独解析其惰性内容并统计潜在文本节点与字符，计入对应注释类别。这部分不能与实际 DOM 节点总数直接比较。
+- 每个被剪掉的 DOM 子树只统计一次，归因于第一个触发的规则；被祖先剪掉后不继续给后代规则计数。font-size／visibility 则在文本叶节点上按有效继承值计数，允许后代覆盖；规则见[邮件内容保护](security.md#mail-content-protection)。MSO／普通注释不生成 DOM 文本节点，单独解析其惰性内容并统计潜在文本节点与字符，计入对应注释类别。这部分不能与实际 DOM 节点总数直接比较。
 - 字符数采用 UTF-16 code unit，包含空白和 OMIT 标签中的 style／script 文本。`retainedTextNodes`、`retainedCharacters` 是保留节点的原始计数；`visibleCharacters` 是空白规范化后的文本长度。规范化消耗的空白不归入隐藏规则。
 - `budgetExceeded`、`cssRuleBudgetHits`、`nestingDepthLimitHits` 来自实际可见性检查。结构和选择器统计不执行浏览器布局，不读取外部 CSS。
 
@@ -92,7 +92,7 @@ FTS 阶段使用独立 `:memory:` 数据库的临时索引，每封处理后清�
 | timeout                 | 单封总处理期限耗尽，worker 被终止；core 调用方取消时也会中断当前邮件                                                                                                          |
 | message-size-limit      | 缓存字段超过 16 MiB，在 SQL 投影处跳过大字段，不读取其完整内容                                                                                                                |
 
-响应式邮件分别在 720px 和 1080px 参考阅读宽度计算级联，只保留所有环境场景和两个宽度都可见的同一文本节点。解除隐藏还须覆盖 0–8000 整数 CSS px；light／dark 等媒体环境独立求级联，动态伪类不能建立显示信任。具体媒体条件和不确定环境的处理见[邮件内容保护](security.md#邮件内容保护)。只在 600px 以下隐藏的桌面版本可保留；默认隐藏、仅在窄屏显示的移动版本被排除。诊断计数按 DOM 节点统计一次，不累加两个宽度的结果。
+响应式邮件分别在 720px 和 1080px 参考阅读宽度计算级联，只保留所有环境场景和两个宽度都可见的同一文本节点。解除隐藏还须覆盖 0–8000 整数 CSS px；light／dark 等媒体环境独立求级联，动态伪类不能建立显示信任。具体媒体条件和不确定环境的处理见[邮件内容保护](security.md#mail-content-protection)。只在 600px 以下隐藏的桌面版本可保留；默认隐藏、仅在窄屏显示的移动版本被排除。诊断计数按 DOM 节点统计一次，不累加两个宽度的结果。
 
 读取使用 SQLite iterator，一次只发送一行、等待处理结束再继续。统计采用固定直方图，报告样本和失败类数量有上限；不积累邮件、链接、token 或逐封耗时。超时或 worker 失败后终止并重新创建 worker，继续下一封。解析器有独立 V8 堆上限，该限制不等于整个进程的 RSS 上限。
 

@@ -13,9 +13,9 @@
 - 只碰用户名下账户、用 openmail 自己注册的 client 或用户自己注册的 client、走官方授权页拿 token。不复用别的 app 的凭证和 client ID，不借第一方 client ID，不从别的 app 的钥匙串项里读 token。Outlook 只走 `consumers` 租户（个人账户）；公司 M365 需要租户管理员授权应用，不绕过。
 - 邮件 HTML 是不可信内容。渲染层的 iframe 必须保持 `sandbox` 不含 `allow-scripts`。iframe 内的 CSP 拦截远程资源，只有用户的远程图片设置放行该消息时才加载图片。默认设置是加载，已知跟踪器在任何设置下都移除。
 - MCP 工具默认只读。新增会改动邮件的工具时，要有显式开关，发送必须经过 app 内人工确认。
-- 改别的应用的 MCP 配置（Claude Code、Codex、Claude、Cursor）只在用户点击并看过 diff 后进行：优先用该应用自己的 CLI，经 `execFile` 固定 argv；只动 `openmail` 条目，重新连接只改 `command`、`args` 和 `env.OPENMAIL_HOME`，保留用户自己的键；直接改文件时先在旁边备份，临时文件加 rename 原子写入，改完解析前后两份，除 `openmail` 外必须完全相同。配置里不放 token。开发和测试不碰真实的 `~/.claude.json`、`~/.codex/config.toml` 和 Claude 配置，用临时 HOME 和假 CLI。见 `docs/security.md#连接-ai-应用`。
+- 改别的应用的 MCP 配置（Claude Code、Codex、Claude、Cursor）只在用户点击并看过 diff 后进行：优先用该应用自己的 CLI，经 `execFile` 固定 argv；只动 `openmail` 条目，重新连接只改 `command`、`args` 和 `env.OPENMAIL_HOME`，保留用户自己的键；直接改文件时先在旁边备份，临时文件加 rename 原子写入，改完解析前后两份，除 `openmail` 外必须完全相同。配置里不放 token。开发和测试不碰真实的 `~/.claude.json`、`~/.codex/config.toml` 和 Claude 配置，用临时 HOME 和假 CLI。见 `docs/security.md#connecting-ai-apps`。
 - 打包 app 的 RunAsNode fuse 保持关闭。MCP 由 `OpenMail --mcp` 在主进程入口提供，不靠 `ELECTRON_RUN_AS_NODE`。
-- 远程访问默认关闭。服务只绑定 127.0.0.1，由 Tailscale Serve 转发，不用 Funnel。每个请求都要有 Tailscale-User-Login 且在允许列表内，并校验 Host、WebSocket 的 Origin 和会话 cookie。远程 RPC 走 `shared/remote-policy.ts` 的显式表（`main/remote/remote-rpcs.ts` 据此建 RPC 组），未列出的 RPC 一律拒绝；新增 RPC 时默认不加进去。web 构建里调用 RPC 的控件用 `canCall(tag)` 判断是否显示。碰本机文件、系统、浏览器、OAuth、钥匙串、MCP/AI key、窗口或剪贴板的 RPC 不进远程表。见 `docs/security.md#远程访问`。
+- 远程访问默认关闭。服务只绑定 127.0.0.1，由 Tailscale Serve 转发，不用 Funnel。每个请求都要有 Tailscale-User-Login 且在允许列表内，并校验 Host、WebSocket 的 Origin 和会话 cookie。远程 RPC 走 `shared/remote-policy.ts` 的显式表（`main/remote/remote-rpcs.ts` 据此建 RPC 组），未列出的 RPC 一律拒绝；新增 RPC 时默认不加进去。web 构建里调用 RPC 的控件用 `canCall(tag)` 判断是否显示。碰本机文件、系统、浏览器、OAuth、钥匙串、MCP/AI key、窗口或剪贴板的 RPC 不进远程表。见 `docs/security.md#remote-access`。
 
 ## Electron
 

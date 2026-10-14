@@ -1,103 +1,125 @@
-# openmail
+# OpenMail
+
+[![Check](https://github.com/Fanzzzd/openmail/actions/workflows/check.yml/badge.svg)](https://github.com/Fanzzzd/openmail/actions/workflows/check.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Platform: macOS 13+](https://img.shields.io/badge/platform-macOS%2013%2B-lightgrey.svg)](#安装)
 
 [English](README.md) | 简体中文
 
-本地优先的邮件客户端。桌面界面、CLI 和 MCP 共用 core 与本机 SQLite 数据库。手机端已有 Expo 邮件流程、IMAP/SMTP、后台刷新和本地通知，尚需真机验证。
+OpenMail 把你的邮件存在 Mac 上的一个 SQLite 数据库里。app、CLI 和 MCP 服务器共用这一个数据库。Claude Code、Codex 等 AI 代理可以读取你允许的账户。代理想改动邮件时，OpenMail 把改动变成一条提议，你在 app 里批准之前什么都不会发生。
 
-## 当前功能
+![OpenMail 收件箱，打开了一个会话](docs/media/hero.png)
 
-- 账户：Gmail、个人 Outlook，以及 iCloud、Yahoo、QQ、163、Fastmail 和自定义 IMAP/SMTP。OAuth 默认使用 openmail 自己注册的客户端，也可以换成用户自己注册的客户端；IMAP 使用应用专用密码或授权码。公司 M365 不在支持范围。
-- 同步与整理：增量同步、离线操作队列、旧邮件回填、批量及单封操作、持久撤销记录、稍后提醒、标签与嵌套文件夹、Gmail 分类、服务器过滤器和自动回复。IMAP IDLE 提供新邮件信号，断线时保留轮询。
-- 撰写：草稿自动保存与双向同步、富文本／纯文本／Markdown、回复与转发、附件转发、发送并归档、0 至 30 秒撤销发送、附件提醒、模板、命名签名、发件地址选择和联系人补全。支持服务器联系人；macOS 可显式开启 Apple Contacts。
-- 阅读与搜索：会话和单封视图、消息文本查找、原始邮件与 EML、打印和 PDF、附件打开与保存、远程图片控制、追踪器拦截。本地全文检索支持布尔、短语、日期、大小等运算符，并可合并服务器搜索；可选本机 OCR、PDF 文本和语义索引。
-- 桌面：Profiles 账户分组、通知时段、菜单栏、Dock、原生菜单、拼写检查、多窗口、邮件链接和三套快捷键。包含键盘导航与无障碍回归，界面支持英语、简体中文、捷克语、荷兰语、法语、德语、意大利语、日语、俄语、西班牙语。
-- AI：账户授权默认关闭。开启后可用 Anthropic 流式摘要、邮件助手、撰写改写与翻译、收件箱分拣建议。MCP 默认读取；写工具只创建提议，发送须在 app 中确认。授权、数据范围和工具限制见[架构](docs/architecture.md#model-端口)与[代理使用指南](docs/agents.md)。
+OpenMail 是一个以键盘操作为主的 macOS 邮件客户端，同步 Gmail、个人 Outlook 和 IMAP 账户。app 直接连接你的邮件服务商。没有 OpenMail 服务器，也没有遥测。
 
-代码已覆盖这些产品路径。真实账户、系统权限和签名成品的验收范围见[路线图](docs/roadmap.md#待用户完成)。功能对齐的剩余缺口见 [parity](docs/parity.md)。
+OpenMail 处于早期测试阶段，还有不少粗糙的地方。遇到问题请提交到 [Issues](https://github.com/Fanzzzd/openmail/issues)。
 
-可选联系人、日历和服务商设置按账户连接或停用，权限分别见 [Google](docs/setup-google.md#可选服务) 与 [Microsoft](docs/setup-microsoft.md#可选服务)。邮件内容保护包括发件人认证、可疑链接确认和模型输入的隐藏文本过滤，规则与源码见[安全说明](docs/security.md)。数据库迁移只追加，schema 版本等于 `MIGRATIONS` 的条数，见[架构](docs/architecture.md#provider-与-store)。同步重置带删除保护，范围与验证队列见[同步说明](docs/sync-correctness.md#重置删除保护)。
+## AI 代理，由你批准
 
-## 安装、构建与运行
+![代理提议归档三封订阅邮件，用户在 OpenMail 中批准](docs/media/approval.gif)
 
-桌面开发和打包目前以 macOS 为目标。使用 Node ≥22.13、pnpm 11.17.0；原生 helper 编译需要 Xcode Command Line Tools。
+录屏里，Claude Code 通过 MCP 请求归档三封订阅邮件。OpenMail 把请求连同代理给出的理由列在 **AI suggestions** 里。点 **Approve** 之后，这三封邮件才离开收件箱。
 
-在仓库根目录运行：
+- **按账户授权。** 你在 **Settings > AI Access** 里为某个账户打开 **Allow AI to read this account** 之后，代理才能看到它。每次工具调用都会检查这项授权。
+- **默认只读。** MCP 工具可以读取和搜索邮件。改动邮件的权限默认是 **Read only**，此时所有写工具都会拒绝执行。
+- **提议。** 写工具需要两个开关：连接 app 时允许提议，并把权限设为 **Ask me first**。之后 `modify_threads`、`snooze_threads` 和 `draft_message` 只会创建提议。每条提议留在 **AI suggestions** 里，等你批准或拒绝。
+- **代理不能发信。** 代理起草的邮件会在撰写窗口打开，由你自己发送。
+- **在设置里连接。** OpenMail 可以替你连接 Claude Code、Codex、Claude 和 Cursor。它先显示配置 diff，只改 `openmail` 条目。其他 MCP 客户端可以运行 `node packages/cli/dist/cli.js mcp`。
+- **内置 AI，默认关闭。** 使用你自己的 Anthropic API key，只作用于你允许的账户：摘要、邮件助手、写作帮助和收件箱分拣。助手同样只提议改动，不直接执行。
+
+工具列表和批准规则见 [CLI 与 MCP](https://openmail-docs.vercel.app/docs/cli-and-mcp)。
+
+## 功能
+
+- **账户。** Gmail、个人 Outlook（outlook.com、hotmail.com、live.com）、iCloud、Yahoo、QQ、163、Fastmail，以及任意 IMAP/SMTP 服务器。不支持工作或学校的 Microsoft 365 账户。
+- **本地优先。** 阅读、搜索和整理都可以离线进行。改动先排队，联网后再同步到服务器。
+- **本地搜索。** 全文检索（SQLite FTS5）支持布尔、短语、日期、大小和附件运算符，可以合并服务器结果。可选本机 OCR、PDF 文本和语义搜索。
+- **键盘优先。** 三套快捷键（Mimestream、Gmail、Apple Mail），消息内链接提示，前进和后退，列表、阅读区、撰写窗口和设置都能用键盘操作。
+- **通过 Tailscale 在手机上访问。** 通过你自己的 tailnet 在手机浏览器里打开邮箱。默认关闭，不暴露到公网，只允许你指定的 Tailscale 登录账号。
+- **十种语言。** 英语、简体中文、捷克语、荷兰语、法语、德语、意大利语、日语、俄语和西班牙语。
+- **安全阅读。** 邮件 HTML 在禁止脚本的沙箱里渲染。任何远程图片设置下都会移除已知跟踪器。
+
+<table>
+  <tr>
+    <td><img src="docs/media/search.png" alt="用 has:attachment 运算符搜索" /></td>
+    <td><img src="docs/media/settings.png" alt="设置：把 Claude Code、Codex 和 Claude 连接到邮件，默认只读" /></td>
+  </tr>
+  <tr>
+    <td><img src="docs/media/compose.png" alt="富文本撰写窗口和 Write with AI" /></td>
+    <td><img src="docs/media/dark.png" alt="深色模式下的 HTML 订阅邮件" /></td>
+  </tr>
+</table>
+
+截图和录屏使用 [`scripts/demo-data.mjs`](scripts/demo-data.mjs) 生成的假邮件，待批准的提议也由它生成。
+
+## 对比
+
+|                    | OpenMail                | Mimestream        | Spark                        | Thunderbird                    | Apple Mail         |
+| ------------------ | ----------------------- | ----------------- | ---------------------------- | ------------------------------ | ------------------ |
+| 源码               | 开源（MIT）             | 闭源              | 闭源                         | 开源（MPL 2.0）                | 闭源               |
+| 价格               | 免费                    | 付费订阅          | 免费，有付费方案             | 免费                           | macOS 自带         |
+| 平台               | macOS（手机端开发中）   | macOS             | macOS、iOS、Android、Windows | Windows、macOS、Linux、Android | macOS、iOS、iPadOS |
+| Gmail              | 支持（Gmail API）       | 支持（Gmail API） | 支持                         | 支持（IMAP）                   | 支持（IMAP）       |
+| 个人 Outlook       | 支持（Microsoft Graph） | 不支持            | 支持                         | 支持                           | 支持               |
+| 其他 IMAP          | 支持                    | 不支持            | 支持                         | 支持                           | 支持               |
+| 邮件经过厂商服务器 | 否                      | 否                | 部分功能会                   | 否                             | 否                 |
+| 成熟度             | 早期测试                | 成熟              | 成熟                         | 成熟                           | 成熟               |
+
+OpenMail 比以上产品都年轻，还有粗糙的地方。Gmail 功能以 Mimestream 为参照，差距记录在 [docs/parity.md](docs/parity.md)。表格依据各产品 2026 年 10 月的公开页面。如有错误，请提交 issue。
+
+## 安装
+
+目前还没有发布版本，需要从源码构建：
+
+1. 安装[前置依赖](CONTRIBUTING.md#prerequisites)：macOS 13+、`.nvmrc` 指定的 Node、通过 `corepack enable` 启用的 pnpm，以及 Xcode Command Line Tools。
+2. 构建并打包：
+
+   ```sh
+   git clone https://github.com/Fanzzzd/openmail.git
+   cd openmail
+   pnpm install
+   pnpm build
+   pnpm --filter @openmail/desktop dist   # 需要 Xcode 26
+   ```
+
+3. 打开 `apps/desktop/release/OpenMail-<version>-mac-<arch>.dmg`，把 OpenMail 拖到“应用程序”。
+
+发布版本上线后，可以从 [GitHub Releases](https://github.com/Fanzzzd/openmail/releases) 下载 DMG。未经公证的构建（包括你自己构建的）首次打开会被 Gatekeeper 拦截：在“应用程序”里按住 Control 点按 OpenMail，选择 **打开**，再确认。
+
+## 快速上手
+
+1. 打开 OpenMail，选择 **Gmail**、**Outlook** 或某个 IMAP 服务商。源码构建不带内置 OAuth 客户端：按 [Google](docs/setup-google.md) 或 [Microsoft](docs/setup-microsoft.md) 的说明注册自己的客户端，填到添加账户页面。IMAP 只需要应用专用密码。
+2. OpenMail 先下载最近的邮件，再在后台补全旧邮件。
+3. 按 `?` 查看快捷键，按 `⌘F` 搜索。[快捷键参考](https://openmail-docs.vercel.app/docs/keyboard-shortcuts)列出了全部三套。
+4. 要在 Claude Code 或 Codex 里使用邮件，打开 **Settings > AI Access**，允许对应账户，再在 **AI apps** 下连接该应用。也可以让任意 MCP 客户端运行 `node packages/cli/dist/cli.js mcp`。见 [CLI 与 MCP](https://openmail-docs.vercel.app/docs/cli-and-mcp)。
+
+## 隐私
+
+- 邮件、附件和搜索索引保存在 `~/Library/Application Support/openmail`（可用 `OPENMAIL_HOME` 修改）。
+- refresh token、IMAP 密码和 API key 只存进 macOS 钥匙串。
+- app 连接你的邮件服务商。只有你打开 AI 时，它才会用你自己的 key 连接 Anthropic，并且只涉及你允许的账户。
+- 没有遥测，没有统计分析，没有 OpenMail 服务器。
+
+详见[隐私政策](https://openmail-docs.vercel.app/privacy)和[安全模型](https://openmail-docs.vercel.app/docs/security)。
+
+## 文档
+
+用户文档：**[openmail-docs.vercel.app](https://openmail-docs.vercel.app)**。开发文档在 [`docs/`](docs/)：[架构](docs/architecture.md)、[测试](docs/testing.md)、[发布](docs/release.md)、[安全](docs/security.md)和[术语表](CONTEXT.md)。同步正确性、性能等部分深入说明仍是中文。
+
+## 参与贡献
+
+欢迎提交 bug 报告、修复和翻译。环境搭建、每个改动必须通过的检查和架构规则见 [CONTRIBUTING.md](CONTRIBUTING.md)。开发时请用单独的数据目录启动 app，不要碰已安装 OpenMail 的真实邮件：
 
 ```sh
-pnpm install --frozen-lockfile
 pnpm build
-pnpm dev
+cd apps/desktop
+pnpm exec electron-vite dev -- --user-data-dir="$HOME/OpenMail-dev"
 ```
 
-`pnpm build` 构建 core、CLI 和桌面，同时编译手机端语言目录并检查类型。它不生成手机原生应用。`pnpm dev` 启动 Electron 桌面端。
+`--user-data-dir` 会把 Electron 配置和 OpenMail 数据库都放进这个目录。没有真实账户时，可以运行 `node scripts/demo-data.mjs "$HOME/OpenMail-dev"` 填入假邮件。
 
-构建带内置 OAuth 客户端时（见[发布](docs/release.md#内置-oauth-客户端)），在 app 的添加账户页直接登录 Gmail 或 Outlook。没有内置客户端或想用自己的客户端时，按 [Google](docs/setup-google.md) 或 [Microsoft](docs/setup-microsoft.md) 注册，在添加账户页填入。构建后也可运行 `scripts/setup-oauth.sh` 完成配置与登录。IMAP 账户在 app 中选择预设并填写密码。
-
-打包还需 Xcode 26 编译 Icon Composer 图标。生成本地 macOS arm64／x64 DMG 和 ZIP：
-
-```sh
-pnpm --filter @openmail/desktop dist
-```
-
-本地包使用 ad-hoc 签名。正式签名、公证、安装包验证和自动更新配置见[发布说明](docs/release.md)。
-
-## CLI 与 MCP
-
-构建后无需全局安装即可调用 CLI：
-
-```sh
-node packages/cli/dist/cli.js accounts list
-node packages/cli/dist/cli.js health --json
-node packages/cli/dist/cli.js sync
-node packages/cli/dist/cli.js list --mailbox inbox --unread --json
-node packages/cli/dist/cli.js search 'from:alice@example.com has:attachment' --server --json
-node packages/cli/dist/cli.js tools --json
-```
-
-也可运行 `pnpm --dir packages/cli link --global`，之后使用 `openmail`。MCP 客户端的 stdio 配置如下，`args` 路径须替换为本机仓库绝对路径：
-
-```json
-{
-  "mcpServers": {
-    "openmail": {
-      "command": "node",
-      "args": ["/absolute/path/to/openmail/packages/cli/dist/cli.js", "mcp"]
-    }
-  }
-}
-```
-
-`openmail mcp` 和 `openmail-mcp` 共用工具与权限。CLI 没有发送命令。接入方式、分页、预算、写提议与审批边界只在[代理使用指南](docs/agents.md)维护。
-
-设置 `OPENMAIL_READ_ONLY=1` 可运行禁止远程写入的会话；本地存储仍可写，网络读取和 token 刷新仍可发生。边界见[架构](docs/architecture.md#只读会话)。生产构建 smoke 的运行方式见[测试](docs/testing.md#桌面生产构建-smoke)，同步健康报告见[同步说明](docs/sync-correctness.md#同步健康检查)。
-
-桌面、CLI 和 MCP 默认数据目录为 `~/Library/Application Support/openmail`，可用 `OPENMAIL_HOME` 覆盖。`mail.db` 保存邮件和设置，`config.json` 保存 OAuth 客户端配置；refresh token、IMAP 密码与 AI API 密钥经 core 存入系统钥匙串。手机端使用设备自己的数据库和安全存储，目前没有跨设备本地状态同步。
-
-## 手机端
-
-`apps/mobile` 使用 Expo、React Native 和 `@openmail/core/portable`。已接入 Gmail／个人 Outlook 授权、IMAP/SMTP、分页会话、受限 HTML 阅读、整理与撤销、撰写和确认发送，以及十种语言。测试通过 Node SQLite shim 和原生服务 mocks 验证核心路径。
-
-后台刷新、本地通知和徽标均默认关闭，OS 决定后台执行时间，无远程推送。原生 SQLite、Metro、OAuth、TLS 和通知仍需开发构建实测。实现见 [IMAP adapter](packages/core/src/platform/react-native/imap.ts)、[手机平台组装](apps/mobile/src/platform/index.ts)和[后台任务](apps/mobile/src/background.ts)。配置与限制只在[手机端说明](apps/mobile/README.md)维护。
-
-## 文档与检查
-
-- [领域术语与模块入口](CONTEXT.md)、[架构](docs/architecture.md)、[平台依赖清单](docs/platform-inventory.md)：探索或调整模块时读取。
-- [路线图](docs/roadmap.md)、[功能对齐审计](docs/parity.md)：查看进度、验收和剩余范围。
-- [测试](docs/testing.md)、[性能](docs/performance.md)：复现自动检查与测量。
-- [Apple Contacts](docs/apple-contacts.md)：查看本机通讯录权限、缓存和签名要求。
-- [仓库规则](AGENTS.md)：查看网络、数据库、凭证、邮件 HTML 和 MCP 的约束。
-
-```sh
-pnpm build
-OPENMAIL_LOW_MEMORY_TESTS=1 pnpm test
-pnpm exec oxlint
-pnpm exec oxfmt --check .
-```
+问题和想法请发到 [Discussions](https://github.com/Fanzzzd/openmail/discussions)。安全问题请按 [SECURITY.md](SECURITY.md) 私下报告。
 
 ## 许可证
 
-[MIT](LICENSE)。第三方资源的许可见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。参与开发见 [CONTRIBUTING.md](CONTRIBUTING.md)。
-
-## 致谢
-
-服务商图标来自 Iconify 图标包。selfh.st 图标使用 CC BY 4.0，见 [selfh.st/icons](https://selfh.st/icons)。
+[MIT](LICENSE) © 2026 Fanzzzd and OpenMail contributors。第三方资源列在 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。服务商图标来自 [selfh.st](https://selfh.st/icons)（CC BY 4.0）。

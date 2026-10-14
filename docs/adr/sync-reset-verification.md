@@ -1,25 +1,25 @@
-# 验证同步重置的删除候选
+# Verify sync reset delete candidates
 
-状态：已采纳。
+Status: accepted.
 
-## 背景
+## Context
 
-协调器在只读真实数据副本上运行 sync-health，得到以下结果：
+The coordinator ran sync-health on a read-only copy of real data and got these results:
 
-| Outlook 文件夹 |              服务端消息 |                  本地消息 |
-| -------------- | ----------------------: | ------------------------: |
-| Inbox          | 28,666，其中未读 26,042 | 重启前 1,199，重列举约 91 |
-| Sent           |                      98 |                        65 |
-| Archive        |                     103 |                        52 |
+| Outlook folder |         Messages on the server |                                      Local messages |
+| -------------- | -----------------------------: | --------------------------------------------------: |
+| Inbox          | 28,666, of which 26,042 unread | 1,199 before the restart, about 91 after re-listing |
+| Sent           |                             98 |                                                  65 |
+| Archive        |                            103 |                                                  52 |
 
-410 重启后的缺失不能解释为服务端 Inbox 缩小。已确认的客户端错误是：把未证明完整的 delta 列举当作整个文件夹的 keep 集合，清理约 1,100 条本地消息；源码还允许在没有 nextLink 或 deltaLink 时结束，并在缺少 conversationId 的单项 GET 返回 404 后漏记 listed ID。旧 Outlook 循环没有 90 天或 2,000 条截断，也没有日期过滤。当前实现明确限定日期范围，将每个列出的 ID 立即加入 keep，失败的完整读取稍后补取，并验证窗口内缺失项。
+The loss after the 410 restart cannot be explained by the server's Inbox shrinking. The confirmed client bug: a delta listing that was never shown to be complete served as the keep set for the whole folder, and about 1,100 local messages were deleted. The source also allowed the listing to end with neither a nextLink nor a deltaLink, and dropped a listed ID when the single-item GET for a message without a conversationId returned 404. The old Outlook loop had no 90-day or 2,000-message cutoff and no date filter. The current code limits the date range explicitly, adds every listed ID to the keep set at once, fetches failed full reads later, and verifies missing items inside the window.
 
-协调器随后在只读真实数据副本上验证 `532b888`：Outlook 保留 1,479 条，没有大规模删除。新诊断显示，410 重启后 Inbox 的 listing 阶段 `listed:50, kept:50`，reset 阶段全局 keep 为 53，文件夹范围内本地有 512 条。50 与旧初始 delta URL 的 `$top=50` 一致；这次观测中 Graph 把 `$top` 用作本轮上限，在 50 条后直接返回 deltaLink，没有 nextLink，适配器因而停止枚举。
+The coordinator then checked `532b888` on a read-only copy of real data. Outlook kept 1,479 messages and made no mass deletion. New diagnostics showed that after the 410 restart, the Inbox listing stage reported `listed:50, kept:50`, the reset stage had a global keep set of 53, and the folder held 512 local messages in scope. The 50 matched the `$top=50` in the old initial delta URL. In this observation Graph treated `$top` as the limit for the whole round. It returned a deltaLink with no nextLink after 50 messages, so the adapter stopped listing.
 
-根因修复将页大小移到 `odata.maxpagesize` 请求头，并从 delta 请求 URL 删除 `$top`，包括旧游标中的显式参数。回归假 Graph 在有 `$top` 时复现“50 条后结束”，改用请求头后按 50、50、23 分页交付全部 123 条；初始同步、410 重启、续页和下一轮增量都检查请求头与 ImmutableId 设置。窗口范围、5,000 条过滤上限的保护、逐项验证和持久续验继续生效。已有 28,666 条服务端计数、1,199 条窗内缓存与 91 条列举的回归仍通过 `syncHealth` 检查本地保留，并覆盖窗外邮件、UID 复用、移动和失败。
+The root-cause fix moves the page size into the `Prefer: odata.maxpagesize` request header and removes `$top` from delta request URLs, including explicit parameters in old cursors. A fake Graph in the regression test reproduces "stop after 50" when `$top` is present. With the header it pages 50, 50 and 23 and delivers all 123 messages. Initial sync, the 410 restart, continuation pages and the next incremental round all check the header and the ImmutableId setting. The window range, the guard on the 5,000-message filter limit, per-item verification and persistent re-verification stay in force. The existing regression with 28,666 server messages, 1,199 cached in the window and 91 listed still checks local retention through `syncHealth`, and covers mail outside the window, UID reuse, moves and failures.
 
-重试与发送确认实现见 [provider-retry.ts](../../packages/core/src/providers/provider-retry.ts)、[Gmail](../../packages/core/src/providers/gmail/gmail.ts)、[Outlook](../../packages/core/src/providers/outlook/outlook.ts)和 [mailbox-live.ts](../../packages/core/src/mailbox/mailbox-live.ts)。UID 重置与发送回归见 [uid-remap.test.ts](../../packages/core/src/mailbox/uid-remap.test.ts)及 [store.test.ts](../../packages/core/src/store/store.test.ts)。
+Retry and send confirmation live in [provider-retry.ts](../../packages/core/src/providers/provider-retry.ts), [Gmail](../../packages/core/src/providers/gmail/gmail.ts), [Outlook](../../packages/core/src/providers/outlook/outlook.ts) and [mailbox-live.ts](../../packages/core/src/mailbox/mailbox-live.ts). UID reset and send regressions are in [uid-remap.test.ts](../../packages/core/src/mailbox/uid-remap.test.ts) and [store.test.ts](../../packages/core/src/store/store.test.ts).
 
-## 决定与影响
+## Decision and impact
 
-不把未证明完整的服务端列举当作删除依据。删除候选进入持久验证队列，确认不存在后再删除。Graph 页大小通过请求头设置；失败及未验证项保留缓存。当前同步规则见[同步说明](../sync-correctness.md#重置删除保护)。
+A server listing that has not been shown to be complete is never grounds for deletion. Delete candidates go into a persistent verification queue and are deleted only after the server confirms they are gone. The Graph page size is set through a request header. Failed and unverified items stay in the cache. The current sync rules are in the [sync notes](../sync-correctness.md#重置删除保护).

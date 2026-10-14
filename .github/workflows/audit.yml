@@ -3,7 +3,7 @@ name: Audit
 # Checks production dependencies against the npm advisory database. It needs the registry, so
 # it runs weekly and on demand instead of in Check. An advisory that reaches the desktop app,
 # the CLI or core fails the run; mobile-only and docs-only advisories are warnings.
-# See docs/testing.md#依赖审计.
+# See docs/testing.md#dependency-audit.
 
 on:
   schedule:

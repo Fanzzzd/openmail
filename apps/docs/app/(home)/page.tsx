@@ -57,6 +57,57 @@ const shots: { src: string; alt: string }[] = [
   { src: "/media/dark.webp", alt: "Dark mode with an HTML newsletter open" },
 ];
 
+const REPO = "https://github.com/Fanzzzd/openmail";
+
+const approval: { title: string; body: string }[] = [
+  {
+    title: "Per-account consent.",
+    body: "An agent sees an account only after you turn on Allow AI to read this account for it. OpenMail checks this on every tool call.",
+  },
+  {
+    title: "Read-only by default.",
+    body: "MCP tools read and search mail. The permission to change mail starts at Read only, which makes every write tool refuse.",
+  },
+  {
+    title: "Proposals.",
+    body: "With Ask me first, modify_threads, snooze_threads and draft_message create proposals. Each one waits in AI suggestions until you approve or reject it.",
+  },
+  {
+    title: "No agent sends mail.",
+    body: "A drafted message opens in the composer, and you send it yourself.",
+  },
+];
+
+const products = ["OpenMail", "Mimestream", "Spark", "Thunderbird", "Apple Mail"] as const;
+const comparison: { label: string; cells: readonly [string, string, string, string, string] }[] = [
+  { label: "Source", cells: ["Open (MIT)", "Closed", "Closed", "Open (MPL 2.0)", "Closed"] },
+  {
+    label: "Price",
+    cells: ["Free", "Paid subscription", "Free, with paid plans", "Free", "Included with macOS"],
+  },
+  {
+    label: "Platforms",
+    cells: [
+      "macOS (mobile in development)",
+      "macOS",
+      "macOS, iOS, Android, Windows",
+      "Windows, macOS, Linux, Android",
+      "macOS, iOS, iPadOS",
+    ],
+  },
+  {
+    label: "Gmail",
+    cells: ["Yes (Gmail API)", "Yes (Gmail API)", "Yes", "Yes (IMAP)", "Yes (IMAP)"],
+  },
+  { label: "Personal Outlook", cells: ["Yes (Microsoft Graph)", "No", "Yes", "Yes", "Yes"] },
+  { label: "Other IMAP", cells: ["Yes", "No", "Yes", "Yes", "Yes"] },
+  {
+    label: "Mail path through a vendor's server",
+    cells: ["No", "No", "Yes, for some features", "No", "No"],
+  },
+  { label: "Maturity", cells: ["Early testing", "Mature", "Mature", "Mature", "Mature"] },
+];
+
 export default function HomePage() {
   return (
     <main className="flex flex-1 flex-col">
@@ -64,17 +115,28 @@ export default function HomePage() {
         <div className="mx-auto flex max-w-5xl flex-col items-center px-6 py-20 text-center">
           <img src="/logo.svg" alt="OpenMail app icon" width={96} height={96} className="mb-6" />
           <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
-            A local-first mail client for macOS
+            Your mail on your Mac, readable by the agents you allow
           </h1>
           <p className="mt-5 max-w-2xl text-lg text-fd-muted-foreground">
-            OpenMail syncs Gmail, personal Outlook and IMAP accounts into a database on your Mac.
-            The app talks directly to your mail provider. There is no OpenMail server and no
-            telemetry.
+            OpenMail keeps your mail in a SQLite database on your Mac. The app, a CLI and an MCP
+            server all use that one database. AI agents such as Claude Code and Codex can read the
+            accounts you allow. When an agent wants to change your mail, OpenMail turns the change
+            into a proposal, and nothing happens until you approve it in the app.
+          </p>
+          <p className="mt-3 max-w-2xl text-fd-muted-foreground">
+            It syncs Gmail, personal Outlook and IMAP accounts and talks directly to your mail
+            provider. There is no OpenMail server and no telemetry.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
+            <a
+              href={REPO}
+              className="rounded-lg bg-blue-600 px-5 py-2.5 font-medium text-white hover:bg-blue-700"
+            >
+              Star on GitHub
+            </a>
             <Link
               href="/docs"
-              className="rounded-lg bg-blue-600 px-5 py-2.5 font-medium text-white hover:bg-blue-700"
+              className="rounded-lg border border-fd-border px-5 py-2.5 font-medium hover:bg-fd-accent"
             >
               Read the docs
             </Link>
@@ -117,6 +179,36 @@ export default function HomePage() {
         </p>
       </section>
 
+      <section className="mx-auto w-full max-w-5xl px-6 pt-16">
+        <h2 className="text-2xl font-semibold">AI agents, with your approval</h2>
+        <p className="mt-3 max-w-3xl text-fd-muted-foreground">
+          Here Claude Code asked over MCP to archive three newsletters. OpenMail listed the request
+          under AI suggestions with the agent's reason. The newsletters left the inbox only after
+          Approve.
+        </p>
+        <img
+          src="/media/approval-flow.webp"
+          alt="An agent proposes archiving three newsletters; the user approves it in OpenMail"
+          width={1200}
+          height={750}
+          className="mt-6 w-full rounded-xl border border-fd-border shadow-lg"
+        />
+        <ul className="mt-6 grid gap-4 sm:grid-cols-2">
+          {approval.map((item) => (
+            <li key={item.title} className="text-fd-muted-foreground">
+              <strong className="text-fd-foreground">{item.title}</strong> {item.body}
+            </li>
+          ))}
+        </ul>
+        <p className="mt-4 text-fd-muted-foreground">
+          The{" "}
+          <Link href="/docs/cli-and-mcp" className="underline">
+            CLI and MCP
+          </Link>{" "}
+          page lists every tool and the approval rules.
+        </p>
+      </section>
+
       <section className="mx-auto w-full max-w-5xl px-6 py-16">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {features.map((feature) => (
@@ -129,6 +221,75 @@ export default function HomePage() {
               <p className="text-sm text-fd-muted-foreground">{feature.body}</p>
             </Link>
           ))}
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-5xl px-6 pb-16">
+        <h2 className="text-2xl font-semibold">How it compares</h2>
+        <div className="mt-6 overflow-x-auto rounded-xl border border-fd-border">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-fd-secondary/60">
+              <tr>
+                <th scope="col" className="p-3">
+                  <span className="sr-only">Feature</span>
+                </th>
+                {products.map((product) => (
+                  <th key={product} scope="col" className="p-3 font-semibold">
+                    {product}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {comparison.map((row) => (
+                <tr key={row.label} className="border-t border-fd-border">
+                  <th scope="row" className="p-3 font-medium">
+                    {row.label}
+                  </th>
+                  {row.cells.map((cell, index) => (
+                    <td
+                      key={products[index]}
+                      className={index === 0 ? "p-3 font-medium" : "p-3 text-fd-muted-foreground"}
+                    >
+                      {cell}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="mt-3 text-sm text-fd-muted-foreground">
+          OpenMail is younger than all of these and has rough edges. The table reflects the
+          products' public pages as of October 2026. If a cell is wrong, please{" "}
+          <a href={`${REPO}/issues`} className="underline">
+            open an issue
+          </a>
+          .
+        </p>
+      </section>
+
+      <section className="border-t border-fd-border bg-fd-secondary/40">
+        <div className="mx-auto flex max-w-5xl flex-col items-center px-6 py-14 text-center">
+          <h2 className="text-2xl font-semibold">Built in the open</h2>
+          <p className="mt-3 max-w-2xl text-fd-muted-foreground">
+            OpenMail is MIT-licensed. The source, issues and releases are on GitHub. Star the
+            repository to follow releases, and open an issue when something breaks.
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <a
+              href={REPO}
+              className="rounded-lg bg-blue-600 px-5 py-2.5 font-medium text-white hover:bg-blue-700"
+            >
+              Star Fanzzzd/openmail on GitHub
+            </a>
+            <a
+              href={`${REPO}/issues`}
+              className="rounded-lg border border-fd-border px-5 py-2.5 font-medium hover:bg-fd-accent"
+            >
+              Report an issue
+            </a>
+          </div>
         </div>
       </section>
 

@@ -1,54 +1,54 @@
-# 0001 core 按领域分目录
+# 0001 Core folders by domain
 
-状态：已采纳。
+Status: accepted.
 
-## 背景
+## Context
 
-`packages/core/src` 顶层有约 320 个文件，只有 `outlook/` 和 `platform/` 两个子目录。新贡献者只能靠文件名前缀找代码。madge 在 core 中找到 15 个导入环，在桌面源码中找到 12 个，全部经由 `import type`，所以 oxlint 已有的 `import/no-cycle`（默认忽略类型导入）没有拦下。`tools.ts`、`db.ts`、`gmail.ts`、`search.ts`、`domain.ts`、`services.ts` 等文件超过 1000 行。
+The top level of `packages/core/src` held about 320 files, with only two subfolders, `outlook/` and `platform/`. New contributors could find code only by file-name prefix. madge found 15 import cycles in core and 12 in the desktop source. All of them went through `import type`, so the existing oxlint rule `import/no-cycle` missed them, because it ignores type imports by default. Files such as `tools.ts`, `db.ts`, `gmail.ts`, `search.ts`, `domain.ts` and `services.ts` were over 1,000 lines.
 
-## 决定
+## Decision
 
-core 的源文件按 [CONTEXT.md](../../CONTEXT.md) 的领域分目录。目录名用术语表里已有的名字，文件保留原名，git 历史和现有文档里的文件名仍可搜索。
+Core source files go into folders by the domains in [CONTEXT.md](../../CONTEXT.md). Folder names use terms already in the glossary. Files keep their names, so git history and file names in existing docs stay searchable.
 
-| 目录                 | 内容                                                                      |
-| -------------------- | ------------------------------------------------------------------------- |
-| 根目录               | 只放包入口：`index.ts`、`common.ts`、`portable.ts`、`schema.ts`           |
-| `domain/`            | 领域 schema、错误类型、MailOp 与文件夹范围、分类、整理规则                |
-| `mailbox/`           | Mailbox 服务与 `mailbox-*.ts` 子模块、策略、只读会话、撤销记录、发件箱    |
-| `store/`             | Store 端口与 `store-*.ts` 查询、行解码                                    |
-| `db/`                | 追加迁移、迁移执行、搜索标志位 SQL、数据库能力                            |
-| `sync/`              | 同步健康报告、同步重置、失败分类、邮件头回填、token 保活、退避            |
-| `providers/`         | ProviderAdapter 端口、HTTP、重试、诊断、可选服务、OAuth client 与重新授权 |
-| `providers/gmail/`   | Gmail 适配器，按拉取、history、发送、标签拆分                             |
-| `providers/outlook/` | Outlook 适配器（原 `outlook/` 与 `outlook-*.ts`）、Graph 分页             |
-| `providers/imap/`    | 两端共用的 IMAP 游标、预设、IDLE 调度；协议实现仍在 `platform/`           |
-| `calendar/`          | 日历事件、时间与重复规则、邀请解析、Windows 时区表、服务商日历            |
-| `contacts/`          | 联系人与 Apple Contacts 快照                                              |
-| `compose/`           | 撰写正文、格式、Markdown 草稿、签名、收件人                               |
-| `mime/`              | MIME 解析、TNEF、附件策略与阅读附件、Message-ID                           |
-| `reader/`            | 阅读 HTML 清洗、跟踪器、链接与发件人安全、打印、阅读规则                  |
-| `visible-text/`      | 模型消息文本的可见文本提取                                                |
-| `search/`            | 查询解析、FTS、bigram、排名、片段与高亮                                   |
-| `ai/`                | Model、ModelRuntime、本机索引、向量检索、模型消息视图                     |
-| `tools/`             | MailToolkit，每组工具一个模块，`tool-pages.ts` 处理分页与预算             |
-| `app/`               | 桌面集成：链接与通知判断、更新、远程访问、反馈                            |
-| `platform/`          | 平台端口；`platform/node/` 和 `platform/react-native/` 不变               |
+| Folder               | Contents                                                                                                    |
+| -------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Top level            | Package entries only: `index.ts`, `common.ts`, `portable.ts`, `schema.ts`                                   |
+| `domain/`            | Domain schemas, error types, MailOp and folder scope, categories, organize rules                            |
+| `mailbox/`           | The Mailbox service and its `mailbox-*.ts` parts, policy, the read-only session, undo, outbox               |
+| `store/`             | The Store port, `store-*.ts` queries, row decoding                                                          |
+| `db/`                | Append-only migrations, the migration runner, search-flag SQL, database capabilities                        |
+| `sync/`              | Sync health reports, sync reset, failure categories, header backfill, token keep-alive, backoff             |
+| `providers/`         | The ProviderAdapter port, HTTP, retry, diagnostics, optional services, OAuth clients, reauth                |
+| `providers/gmail/`   | The Gmail adapter, split into fetch, history, send and labels                                               |
+| `providers/outlook/` | The Outlook adapter (formerly `outlook/` and `outlook-*.ts`), Graph paging                                  |
+| `providers/imap/`    | IMAP cursors, presets and IDLE scheduling shared by both platforms. The protocol stays in `platform/`       |
+| `calendar/`          | Calendar events, time and recurrence rules, invite parsing, the Windows time-zone table, provider calendars |
+| `contacts/`          | Contacts and Apple Contacts snapshots                                                                       |
+| `compose/`           | Composer body, formatting, Markdown drafts, signatures, recipients                                          |
+| `mime/`              | MIME parsing, TNEF, attachment policy and reader attachments, Message-ID                                    |
+| `reader/`            | Reader HTML cleaning, trackers, link and sender safety, printing, reader rules                              |
+| `visible-text/`      | Visible-text extraction for the message text models see                                                     |
+| `search/`            | Query parsing, FTS, bigrams, ranking, snippets and highlights                                               |
+| `ai/`                | Model, ModelRuntime, local indexing, vector search, the model's message view                                |
+| `tools/`             | The MailToolkit, one module per group of tools. `tool-pages.ts` handles paging and budgets                  |
+| `app/`               | Desktop integration: link and notification decisions, updates, remote access, feedback                      |
+| `platform/`          | Platform ports. `platform/node/` and `platform/react-native/` are unchanged                                 |
 
-规则：
+Rules:
 
-- Node 专用代码仍只在 `platform/node/`。`platform-imports.test.ts` 遍历整个 `src`，新目录自动纳入检查。
-- 包的导出路径不变。`package.json` 的 `exports` 只改指向的 dist 文件。desktop、CLI、mobile 的生产代码只经入口导入 core，测试里的深路径随文件移动更新。
-- 测试与被测源文件放在同一目录。覆盖多个模块的集成测试放在它主要验证的领域目录，Node 进程测试放在 `platform/node/`。
-- 拆分大文件按接口边界，不按行数切。拆出的模块由调用方直接导入，不留重导出旧路径的兼容文件。
-- 目标是非生成源文件不超过约 800 行。`db/migrations.ts` 例外：`MIGRATIONS` 是只追加的 SQL 数据，拆开会让“追加在末尾”这条规则变得含糊。
-- 桌面的 `shared/rpc.ts`（约 820 行）也是例外：它是一个 `RpcGroup` 声明，每个 RPC 一条，`shared/remote-policy.ts` 按同一张表列出远程可调用的 RPC，拆成几组会让两张表难以对照。
+- Node-specific code still lives only in `platform/node/`. `platform-imports.test.ts` walks all of `src`, so new folders are checked automatically.
+- The package export paths do not change. Only the dist files that `exports` in `package.json` points to change. Production code in desktop, the CLI and mobile imports core only through the entries. Deep paths in tests move with the files.
+- Tests sit in the same folder as the source file they test. An integration test that covers several modules goes in the domain folder it mainly checks. Node process tests go in `platform/node/`.
+- Split large files along interface boundaries, not by line count. Callers import the new modules directly. No compatibility file re-exports the old path.
+- The target is about 800 lines at most for non-generated source files. `db/migrations.ts` is an exception: `MIGRATIONS` is append-only SQL data, and splitting it would blur the rule "append at the end".
+- The desktop's `shared/rpc.ts` (about 820 lines) is also an exception. It is one `RpcGroup` declaration with one entry per RPC, and `shared/remote-policy.ts` lists the remotely callable RPCs against the same table. Splitting it into groups would make the two tables hard to compare.
 
-## 导入环
+## Import cycles
 
-共享类型下沉到叶子模块，打断所有环。门禁用 oxlint 的 `import/no-cycle` 并设 `ignoreTypes: false`，类型导入构成的环同样报错。全仓库检查约 1 秒，`pnpm exec oxlint` 已在提交前检查里，不新增依赖。
+Shared types move down into leaf modules, which breaks every cycle. The gate is oxlint's `import/no-cycle` with `ignoreTypes: false`, so cycles made of type imports fail too. The check takes about 1 second across the repo. `pnpm exec oxlint` is already in the pre-commit checks, and no dependency is added.
 
-## 后果
+## Consequences
 
-- 新文件要放进对应领域目录。顶层只允许入口文件，`platform-imports.test.ts` 检查这一点。
-- 文档里的源码路径要带目录。
-- 一次性移动会让未合并分支产生冲突。当前只有这一个分支在改代码，冲突成本低。
+- New files go into the matching domain folder. Only entry files may sit at the top level, and `platform-imports.test.ts` checks this.
+- Source paths in docs include the folder.
+- A one-time move causes conflicts in unmerged branches. Only this one branch was changing code at the time, so the cost was low.

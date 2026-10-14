@@ -1,5 +1,7 @@
 # Mimestream 功能对齐审计
 
+> Maintainer notes, in Chinese: a feature-by-feature audit of OpenMail against Mimestream, with the evidence for each row. The README links here for the remaining gaps.
+
 历史切片更新保存在 git 历史；当前能力与剩余工作见本表及[路线图](roadmap.md)。
 
 数据库迁移只追加，schema 版本等于 [db/migrations.ts](../packages/core/src/db/migrations.ts) 中 `MIGRATIONS` 的条数。

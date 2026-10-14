@@ -6,20 +6,35 @@
 
 English | [简体中文](README.zh-CN.md)
 
-A local-first, keyboard-first mail client for macOS, with AI and agent access that you control.
+OpenMail keeps your mail in a SQLite database on your Mac. The app, a CLI and an MCP server all use that one database. AI agents such as Claude Code and Codex can read the accounts you allow. When an agent wants to change your mail, OpenMail turns the change into a proposal, and nothing happens until you approve it in the app.
 
 ![OpenMail inbox with a conversation open](docs/media/hero.png)
 
-OpenMail syncs Gmail, personal Outlook and IMAP accounts into a SQLite database on your Mac. The app talks directly to your mail provider. There is no OpenMail server and no telemetry.
+OpenMail is a keyboard-first mail client for macOS. It syncs Gmail, personal Outlook and IMAP accounts. The app talks directly to your mail provider. There is no OpenMail server and no telemetry.
+
+OpenMail is in early testing. Expect rough edges, and please report them in [Issues](https://github.com/Fanzzzd/openmail/issues).
+
+## AI agents, with your approval
+
+![An agent proposes archiving three newsletters; the user approves it in OpenMail](docs/media/approval.gif)
+
+In this recording, Claude Code asked over MCP to archive three newsletters. OpenMail listed the request under **AI suggestions** with the agent's reason. The newsletters left the inbox only after **Approve**.
+
+- **Per-account consent.** An agent sees an account only after you turn on **Allow AI to read this account** for it in **Settings > AI Access**. OpenMail checks this on every tool call.
+- **Read-only by default.** MCP tools read and search mail. The permission to change mail starts at **Read only**, which makes every write tool refuse.
+- **Proposals.** Write tools take two switches: allow proposals when you connect the app, and set the permission to **Ask me first**. Then `modify_threads`, `snooze_threads` and `draft_message` create proposals. Each one waits in **AI suggestions** until you approve or reject it.
+- **No agent sends mail.** A drafted message opens in the composer, and you send it yourself.
+- **Connect from Settings.** OpenMail can connect Claude Code, Codex, Claude and Cursor for you. It shows the config diff first and edits only the `openmail` entry. Any other MCP client can run `node packages/cli/dist/cli.js mcp`.
+- **Built-in AI, off by default.** With your own Anthropic API key and only for the accounts you allow: summaries, a mail assistant, writing help and inbox triage. The assistant also proposes changes instead of making them.
+
+See [CLI and MCP](https://openmail-docs.vercel.app/docs/cli-and-mcp) for the tool list and the approval rules.
 
 ## Features
 
 - **Accounts.** Gmail, personal Outlook (outlook.com, hotmail.com, live.com), iCloud, Yahoo, QQ, 163, Fastmail and any IMAP/SMTP server. Work and school Microsoft 365 accounts are not supported.
-- **Local-first.** Mail lives in SQLite on your Mac. Reading, searching and organizing work offline; changes queue up and reach the server when you are back online.
-- **Fast local search.** Full-text search (SQLite FTS5) with boolean, phrase, date, size and attachment operators, optionally merged with server results. Optional on-device OCR, PDF text and semantic search.
+- **Local-first.** Reading, searching and organizing work offline. Changes queue up and reach the server when you are back online.
+- **Local search.** Full-text search (SQLite FTS5) with boolean, phrase, date, size and attachment operators, optionally merged with server results. Optional on-device OCR, PDF text and semantic search.
 - **Keyboard-first.** Three shortcut sets (Mimestream, Gmail, Apple Mail), link hints in messages, Back and Forward, and keyboard navigation through the list, reader, composer and settings.
-- **AI with approval.** Off by default, per account, with your own Anthropic API key: summaries, a mail assistant, writing help and inbox triage. The assistant proposes changes; nothing happens until you approve.
-- **MCP for Claude Code and Codex.** A CLI and an MCP server read the same local database. Tools are read-only by default. Write tools only create proposals, and sending always needs your confirmation in the app. Settings can connect Claude Code, Codex, Claude and Cursor for you after showing the config diff.
 - **Phone access over Tailscale.** Open your mailbox in a phone browser through your own tailnet. Off by default, never on the public internet, limited to the Tailscale logins you allow.
 - **Ten languages.** English, Simplified Chinese, Czech, Dutch, French, German, Italian, Japanese, Russian and Spanish.
 - **Safe reading.** Message HTML renders in a sandbox without scripts. Known trackers are removed under every remote-image setting.
@@ -35,7 +50,7 @@ OpenMail syncs Gmail, personal Outlook and IMAP accounts into a SQLite database 
   </tr>
 </table>
 
-The screenshots use fake mail from [`scripts/demo-data.mjs`](scripts/demo-data.mjs).
+The screenshots and the recording use fake mail from [`scripts/demo-data.mjs`](scripts/demo-data.mjs), including the pending proposal.
 
 ## How it compares
 
@@ -89,11 +104,11 @@ Details: [privacy policy](https://openmail-docs.vercel.app/privacy) and [securit
 
 ## Documentation
 
-User docs: **[openmail-docs.vercel.app](https://openmail-docs.vercel.app)**. Developer docs are in [`docs/`](docs/) (mostly in Chinese): [architecture](docs/architecture.md), [testing](docs/testing.md), [release](docs/release.md), [security](docs/security.md).
+User docs: **[openmail-docs.vercel.app](https://openmail-docs.vercel.app)**. Developer docs are in [`docs/`](docs/): [architecture](docs/architecture.md), [testing](docs/testing.md), [release](docs/release.md), [security](docs/security.md) and the [glossary](CONTEXT.md). Some deeper notes, such as sync correctness and performance, are still in Chinese.
 
 ## Contributing
 
-Bug reports, fixes and translations are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) for setup, the checks every change must pass and the architecture rules. Ask questions in [Discussions](https://github.com/Fanzzzd/openmail/discussions). Report security problems privately, as described in [SECURITY.md](SECURITY.md).
+Bug reports, fixes and translations are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) for setup, the checks every change must pass and the architecture rules. It also shows how to [run the dev app with a separate data directory](CONTRIBUTING.md#run-the-desktop-app-without-touching-your-real-mail), so development never touches your real mail. Ask questions in [Discussions](https://github.com/Fanzzzd/openmail/discussions). Report security problems privately, as described in [SECURITY.md](SECURITY.md).
 
 ## License
 

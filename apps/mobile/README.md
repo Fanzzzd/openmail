@@ -34,7 +34,7 @@ Effect `SqlClient` 使用同一连接、SQLite compiler、`BEGIN IMMEDIATE`、sa
 
 ## 客户端配置
 
-只使用自己注册的手机客户端，不填 secret。步骤分别见 [Google](../../docs/setup-google.md#手机端) 和 [Microsoft](../../docs/setup-microsoft.md#手机端)。配置项如下：
+只使用自己注册的手机客户端，不填 secret。步骤分别见 [Google](../../docs/setup-google.md#mobile) 和 [Microsoft](../../docs/setup-microsoft.md#mobile)。配置项如下：
 
 | 环境变量                                 | 内容                                                          |
 | ---------------------------------------- | ------------------------------------------------------------- |
