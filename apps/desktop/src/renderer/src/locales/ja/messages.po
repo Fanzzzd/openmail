@@ -1014,8 +1014,8 @@ msgstr "本文: {bodies} · 添付ファイル: {attachments}"
 #. Email message text, never an anatomical body.
 #. Email message text, never an anatomical body.
 #. Email message text, never an anatomical body.
-#: src/renderer/src/features/compose/components/ComposeEditor.tsx
 #: src/renderer/src/features/compose/components/PlainBody.tsx
+#: src/renderer/src/features/compose/components/RichBody.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgctxt "message text"
 msgid "Body"

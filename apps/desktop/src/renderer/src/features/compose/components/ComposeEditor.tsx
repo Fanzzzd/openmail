@@ -1,7 +1,10 @@
-import { isDesktop } from "../../../lib/platform";
 import { GrammarResults, useComposeGrammar } from "./ComposeGrammar";
 import { ComposeToolbar } from "./ComposeToolbar";
 import { PlainBody } from "./PlainBody";
+import { RichBody } from "./RichBody";
+import { useComposeFind } from "../hooks/use-compose-find";
+import { useComposeMentions } from "../hooks/use-compose-mentions";
+import { useComposePaste } from "../hooks/use-compose-paste";
 import { useFormatOptions } from "../hooks/use-format-options";
 import { BodyNotices, LockedPreview, ModeChangePrompt } from "./BodyNotices";
 import { EditorMoreMenu } from "./EditorMoreMenu";
@@ -12,10 +15,7 @@ import {
   editorButton,
 } from "./ComposeEditorBars";
 import { composePreviewHtml } from "../compose-preview";
-import { jumpDocumentSelection, jumpTextareaSelection } from "../../../lib/jump-selection";
-import { activeComposeMentions, resizeComposeImage } from "../compose-contacts-dom";
-/* oxlint-disable jsx-a11y/prefer-tag-over-role -- A contenteditable needs textbox semantics; textarea cannot retain rich marks. */
-import { useAtomValue } from "@effect/atom-react";
+import { resizeComposeImage } from "../compose-contacts-dom";
 import {
   matchesShortcut,
   type ShortcutAction,
@@ -23,17 +23,10 @@ import {
 } from "../../../../../shared/shortcuts";
 import { shortcutHint } from "../../../i18n/use-shortcut-text";
 import { EDITOR_ACTION_EVENT } from "../../../../../shared/native-actions";
-import { Effect } from "effect";
-import { useRunMail, withMail, type MailEnv } from "../../../state/mail";
-import { AsyncResult, Atom } from "effect/reactivity";
-import { suggestionsAtom } from "../../../state/queries";
 import { useLingui } from "@lingui/react/macro";
 import {
   composeReplacement,
-  composePaste,
   composeConversion,
-  composeMatches,
-  composeEditorText,
   composeHtmlHasUnsupported,
   editedComposeBody,
   composeLink,
@@ -43,8 +36,6 @@ import {
   type Address,
   type InlineImageSize,
   type Prefs,
-  mentionQuery,
-  mentionHtml,
   emojiAtCaret,
 } from "@openmail/core/schema";
 import {
@@ -62,11 +53,8 @@ import { constVoid } from "effect/Function";
 import {
   restoreEditorSelection,
   composeEditorHtml,
-  editorBody,
   editorCaretOffset,
   editorStartsParagraph,
-  selectEditorMatch,
-  replaceEditorMatches,
   type ComposeElement,
 } from "../compose-editor-dom";
 import type { OutgoingAttachment } from "../../../../../shared/api";
@@ -82,7 +70,6 @@ import {
   type FormatAction,
 } from "../compose-format-dom";
 
-const noSuggestions = Atom.make(AsyncResult.success<readonly Address[]>([]));
 interface Props {
   shortcutSet: ShortcutSet;
   prefs: Prefs;
@@ -96,12 +83,6 @@ interface Props {
   bodyRef: RefObject<ComposeElement | null>;
   selectionRef: RefObject<Range | null>;
 }
-
-const clipboardText = (): Effect.Effect<string, unknown, MailEnv> =>
-  isDesktop()
-    ? withMail((call) => call("ClipboardText", undefined))
-    : // The browser reads this device's clipboard, never the Mac's.
-      Effect.tryPromise(() => navigator.clipboard.readText());
 
 /** Rich-text actions the Format menu and its keys run on the body. */
 const RICH_ACTIONS = [
@@ -132,7 +113,6 @@ export function ComposeEditor({
 }: Props) {
   const { t } = useLingui();
   const shortcut = (action: ShortcutAction) => shortcutHint(shortcutSet, action);
-  const run = useRunMail();
   const richRef = useRef<HTMLDivElement>(null);
   const copiedStyle = useRef("");
   const smartUndo = useRef<{ body: ComposeBody; caret: number } | null>(null);
@@ -159,25 +139,12 @@ export function ComposeEditor({
     styleEditor(richRef.current, selectionRef.current, property, value);
     changed();
   };
-  const [pasteError, setPasteError] = useState(false);
-  const [mention, setMention] = useState<{ query: string; range: Range } | null>(null);
-  const [mentionIndex, setMentionIndex] = useState(0);
-  const mentioned = useRef(new Map<string, Address>());
-  const mentionSuggestions = AsyncResult.getOrElse(
-    useAtomValue(mention ? suggestionsAtom(mention.query, from) : noSuggestions),
-    () => [],
-  );
   const [imageCid, setImageCid] = useState<string | null>(null);
   const [emojiUndo, setEmojiUndo] = useState<ComposeBody | null>(null);
   const replacingEmoji = useRef(false);
   const lastEmitted = useRef<string | null>(null);
   const [previewCache] = useState(makeInlinePreviewCache);
   const [linkOpen, setLinkOpen] = useState(false);
-  const [finding, setFinding] = useState(false);
-  const [findQuery, setFindQuery] = useState("");
-  const [replacement, setReplacement] = useState("");
-  const [findIndex, setFindIndex] = useState(0);
-  const matches = composeMatches(composeEditorText(body), findQuery);
   const [href, setHref] = useState("");
   const [linkError, setLinkError] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
@@ -192,9 +159,18 @@ export function ComposeEditor({
   );
   const locked = remoteUnsupported && !unlocked;
   const grammar = useComposeGrammar({ body, bodyRef, onChange, locked });
+  const mentions = useComposeMentions({
+    from,
+    richRef,
+    selectionRef,
+    locked,
+    onMentionsChange,
+    insert: (html) => command("insertHTML", html),
+    onMention,
+  });
   const changeMode = (next: ComposeBody) => {
     setModeUndo(body);
-    setMention(null);
+    mentions.close();
     if (next.kind !== "rich") onMentionsChange([]);
     selectionRef.current = null;
     setLinkOpen(false);
@@ -202,9 +178,7 @@ export function ComposeEditor({
     onChange(next);
   };
 
-  const syncMentions = useEffectEvent(() =>
-    onMentionsChange(activeComposeMentions(richRef.current, mentioned.current)),
-  );
+  const syncMentions = useEffectEvent(() => mentions.refresh());
   useLayoutEffect(() => () => previewCache.dispose(), [previewCache]);
   useLayoutEffect(() => {
     previewCache.sync(attachments);
@@ -240,34 +214,6 @@ export function ComposeEditor({
     if (range && richRef.current?.contains(range.commonAncestorContainer)) {
       selectionRef.current = range.cloneRange();
     }
-  };
-  const refreshMentions = () =>
-    onMentionsChange(activeComposeMentions(richRef.current, mentioned.current));
-  const updateMentionQuery = () => {
-    const range = selectionRef.current;
-    if (!range?.collapsed || range.startContainer.nodeType !== Node.TEXT_NODE) {
-      setMention(null);
-      return;
-    }
-    const text = (range.startContainer.textContent ?? "").slice(0, range.startOffset);
-    const token = mentionQuery(text);
-    if (!token || range.startContainer.parentElement?.closest("a,pre,code")) {
-      setMention(null);
-      return;
-    }
-    const selected = range.cloneRange();
-    selected.setStart(range.startContainer, range.startOffset - token.length);
-    setMention({ query: token.query, range: selected });
-    setMentionIndex(0);
-  };
-  const pickMention = (person: Address) => {
-    if (!mention || locked || !richRef.current?.contains(mention.range.commonAncestorContainer))
-      return;
-    const id = crypto.randomUUID();
-    mentioned.current.set(id, person);
-    selectionRef.current = mention.range;
-    if (command("insertHTML", mentionHtml(person, id))) onMention(person);
-    setMention(null);
   };
   const undoEmoji = () => {
     if (!emojiUndo) return;
@@ -345,8 +291,8 @@ export function ComposeEditor({
     lastEmitted.current = next.html;
     remember();
     onChange(next);
-    refreshMentions();
-    updateMentionQuery();
+    mentions.refresh();
+    mentions.updateQuery();
   };
   const command = (name: string, value?: string) => {
     if (!richRef.current || locked) return false;
@@ -379,83 +325,24 @@ export function ComposeEditor({
     } else command("createLink", safe);
     setLinkOpen(false);
   };
-  const selectMatch = (index: number) => {
-    const match = matches[index];
-    if (match && bodyRef.current) selectEditorMatch(bodyRef.current, match.start, match.end);
-    setFindIndex(index);
-    remember();
-  };
-  const replaceMatches = (all: boolean) => {
-    const element = bodyRef.current;
-    if (!element || locked) return;
-    const targets = all
-      ? matches.toReversed()
-      : matches.slice(
-          findIndex % Math.max(1, matches.length),
-          (findIndex % Math.max(1, matches.length)) + 1,
-        );
-    if (!replaceEditorMatches(element, targets, replacement)) return;
-    if (element instanceof HTMLTextAreaElement) onChange(editorBody(element, body));
-    else changed();
-    setFindIndex(0);
-  };
-  const findKey = (event: KeyboardEvent<HTMLInputElement>) => {
-    editorKey(event);
-    if (event.defaultPrevented) return;
-    if (event.key === "Enter") {
-      event.preventDefault();
-      if (matches.length)
-        selectMatch((findIndex + (event.shiftKey ? matches.length - 1 : 1)) % matches.length);
-    }
-    if (event.key === "Escape") {
-      event.preventDefault();
-      event.stopPropagation();
-      setFinding(false);
-    }
-  };
-  const paste = (mode: "matchStyle" | "quotation") => {
-    if (locked) return;
-    remember();
-    const element = bodyRef.current;
-    const selection = selectionRef.current?.cloneRange() ?? null;
-    const snapshot = element instanceof HTMLTextAreaElement ? element.value : element?.innerHTML;
-    const caret =
-      element instanceof HTMLTextAreaElement
-        ? { start: element.selectionStart, end: element.selectionEnd }
-        : null;
-    setPasteError(false);
-    run(
-      clipboardText().pipe(
-        Effect.matchCause({
-          onFailure: () => setPasteError(true),
-          onSuccess: (text) => {
-            if (
-              !element ||
-              element !== bodyRef.current ||
-              (element instanceof HTMLDivElement && !element.isContentEditable)
-            )
-              return;
-            if (
-              snapshot !==
-              (element instanceof HTMLTextAreaElement ? element.value : element.innerHTML)
-            )
-              return;
-            const content = composePaste(text, mode);
-            if (element instanceof HTMLTextAreaElement) {
-              element.focus();
-              if (caret) element.setSelectionRange(caret.start, caret.end);
-              document.execCommand("insertText", false, content.text);
-              onChange(editorBody(element, body));
-            } else {
-              restoreEditorSelection(element, selection);
-              document.execCommand("insertHTML", false, content.html);
-              changed();
-            }
-          },
-        }),
-      ),
-    );
-  };
+  const find = useComposeFind({
+    body,
+    bodyRef,
+    shortcutSet,
+    locked,
+    onChange,
+    remember,
+    changed: () => changed(),
+  });
+  const { paste, pasteError } = useComposePaste({
+    body,
+    bodyRef,
+    selectionRef,
+    locked,
+    onChange,
+    remember,
+    changed: () => changed(),
+  });
   const editorKey = (event: KeyboardEvent<HTMLElement>) => {
     if (event.defaultPrevented) return;
     const inBody =
@@ -489,85 +376,9 @@ export function ComposeEditor({
         undoEmoji();
         return;
       }
-      if (
-        mention &&
-        mentionSuggestions.length &&
-        !event.metaKey &&
-        !event.ctrlKey &&
-        !event.altKey
-      ) {
-        if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-          event.preventDefault();
-          setMentionIndex(
-            (index) =>
-              (index + (event.key === "ArrowDown" ? 1 : -1) + mentionSuggestions.length) %
-              mentionSuggestions.length,
-          );
-          return;
-        }
-        if (event.key === "Enter" || event.key === "Tab") {
-          event.preventDefault();
-          const person = mentionSuggestions[mentionIndex];
-          if (person) pickMention(person);
-          return;
-        }
-        if (event.key === "Escape") {
-          event.preventDefault();
-          event.stopPropagation();
-          setMention(null);
-          return;
-        }
-      }
+      if (mentions.handleKey(event)) return;
     }
-    if (
-      matchesShortcut(shortcutSet, "search", event) &&
-      (event.metaKey || event.ctrlKey) &&
-      !event.altKey
-    ) {
-      event.preventDefault();
-      event.stopPropagation();
-      setFinding(true);
-      return;
-    }
-    if (matchesShortcut(shortcutSet, "jumpSelection", event) && inBody) {
-      event.preventDefault();
-      event.stopPropagation();
-      const element = bodyRef.current;
-      if (element instanceof HTMLTextAreaElement) {
-        jumpTextareaSelection(element);
-      } else jumpDocumentSelection(document);
-      return;
-    }
-    if (matchesShortcut(shortcutSet, "findSelection", event) && inBody) {
-      event.preventDefault();
-      event.stopPropagation();
-      const element = bodyRef.current;
-      const text =
-        element instanceof HTMLTextAreaElement
-          ? element.value.slice(element.selectionStart, element.selectionEnd)
-          : (window.getSelection()?.toString() ?? "");
-      if (text) {
-        setFindQuery(text);
-        setFindIndex(0);
-        setFinding(true);
-      }
-      return;
-    }
-    if (
-      matchesShortcut(shortcutSet, "findNext", event) ||
-      matchesShortcut(shortcutSet, "findPrevious", event)
-    ) {
-      event.preventDefault();
-      event.stopPropagation();
-      if (!finding) setFinding(true);
-      if (matches.length)
-        selectMatch(
-          (findIndex +
-            (matchesShortcut(shortcutSet, "findPrevious", event) ? matches.length - 1 : 1)) %
-            matches.length,
-        );
-      return;
-    }
+    if (find.handleKey(event, inBody === true)) return;
     if (!inBody || locked) return;
     if (
       matchesShortcut(shortcutSet, "pasteMatchStyle", event) ||
@@ -685,7 +496,7 @@ export function ComposeEditor({
             locked={locked}
             rich={body.kind === "rich"}
             shortcut={shortcut}
-            onFind={() => setFinding((value) => !value)}
+            onFind={find.toggle}
             onPaste={paste}
             formatBar={formatBar}
             onToggleFormatBar={toggleFormatBar}
@@ -704,25 +515,29 @@ export function ComposeEditor({
         }
       />
       {pasteError && <p role="alert">{t`Could not read clipboard`}</p>}
-      {mention && mentionSuggestions.length > 0 && (
-        <MentionSuggestions people={mentionSuggestions} index={mentionIndex} onPick={pickMention} />
+      {mentions.suggestions.length > 0 && (
+        <MentionSuggestions
+          people={mentions.suggestions}
+          index={mentions.index}
+          onPick={mentions.pick}
+        />
       )}
-      {finding && (
+      {find.finding && (
         <ComposeFindBar
-          query={findQuery}
-          onQuery={(query) => {
-            setFindQuery(query);
-            setFindIndex(0);
+          query={find.query}
+          onQuery={find.setQuery}
+          replacement={find.replacement}
+          onReplacement={find.setReplacement}
+          onKeyDown={(event) => {
+            editorKey(event);
+            find.barKey(event);
           }}
-          replacement={replacement}
-          onReplacement={setReplacement}
-          onKeyDown={findKey}
-          index={findIndex}
-          count={matches.length}
+          index={find.index}
+          count={find.count}
           locked={locked}
-          onSelect={selectMatch}
-          onReplace={replaceMatches}
-          onClose={() => setFinding(false)}
+          onSelect={find.select}
+          onReplace={find.replace}
+          onClose={find.close}
         />
       )}
       <GrammarResults grammar={grammar} locked={locked} />
@@ -755,61 +570,16 @@ export function ComposeEditor({
         <LockedPreview html={composePreviewHtml(body, attachments)} />
       )}
       {body.kind === "rich" ? (
-        <div
-          hidden={locked}
-          ref={(element) => {
-            richRef.current = element;
-            bodyRef.current = element;
-          }}
-          dir="auto"
-          data-openmail-compose-body={!locked ? "true" : undefined}
-          contentEditable={!locked}
-          autoCorrect="on"
-          suppressContentEditableWarning
-          tabIndex={0}
-          role="textbox"
-          aria-multiline="true"
-          aria-readonly={locked}
-          aria-label={t({
-            message: "Body",
-            context: "message text",
-            comment: "Email message text, never an anatomical body.",
-          })}
-          className="min-h-0 flex-1 overflow-auto px-4 py-3 text-callout leading-relaxed outline-none [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_a]:text-blue-600 [&_a]:underline [&_em]:italic [&_strong]:font-bold [&_s]:line-through [&_blockquote]:border-l-2 [&_blockquote]:pl-3 [&_img]:max-w-full [&_img:not([height])]:h-auto [&_img]:cursor-pointer [&_code]:font-mono [&_pre]:font-mono [&_pre]:whitespace-pre-wrap [&_ul[type=dash]>li]:list-none [&_ul[type=dash]>li]:before:content-['–_']"
-          style={body.font ? { fontFamily: body.font.family, fontSize: body.font.size } : undefined}
-          onClick={(event) => {
-            const target = event.target;
-            setImageCid(
-              target instanceof HTMLImageElement
-                ? (target.getAttribute("data-compose-cid") ??
-                    target.getAttribute("src")?.replace(/^cid:/, "") ??
-                    null)
-                : null,
-            );
-          }}
-          onInput={(event) =>
-            changed(
-              "inputType" in event.nativeEvent &&
-                event.nativeEvent.inputType === "insertText" &&
-                !("isComposing" in event.nativeEvent && event.nativeEvent.isComposing),
-            )
-          }
-          onCompositionEnd={() => changed(true)}
-          onKeyUp={remember}
-          onMouseUp={remember}
-          onBlur={remember}
+        <RichBody
+          font={body.font}
+          locked={locked}
+          richRef={richRef}
+          bodyRef={bodyRef}
+          onImage={setImageCid}
+          onEdit={changed}
+          remember={remember}
           onKeyDown={editorKey}
-          onPaste={(e) => {
-            if (e.defaultPrevented) return;
-            e.preventDefault();
-            if (locked) return;
-            remember();
-            const html = e.clipboardData.getData("text/html");
-            if (html) command("insertHTML", richComposeBody(html).html);
-            else command("insertText", e.clipboardData.getData("text/plain"));
-          }}
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={(e) => e.preventDefault()}
+          command={command}
         />
       ) : (
         <PlainBody
