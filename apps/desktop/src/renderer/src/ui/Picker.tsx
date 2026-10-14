@@ -13,7 +13,9 @@ interface PopoverProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** The button that opens it, rendered by Popover.Trigger. */
-  trigger: ReactElement;
+  trigger: ReactElement | null;
+  /** Without a trigger, such as when a menu item opens it: the element it is placed against. */
+  anchor?: Element | null | undefined;
   /** Tooltip on the trigger. */
   tip?: { label: string; shortcut?: string };
   side?: Side;
@@ -31,6 +33,7 @@ export function PickerPopover({
   open,
   onOpenChange,
   trigger,
+  anchor,
   tip,
   side = "bottom",
   finalFocus,
@@ -40,15 +43,22 @@ export function PickerPopover({
   const { t } = useLingui();
   return (
     <Popover.Root modal="trap-focus" open={open} onOpenChange={(next) => onOpenChange(next)}>
-      {tip ? (
-        <Tip label={tip.label} shortcut={tip.shortcut} side={side}>
+      {trigger &&
+        (tip ? (
+          <Tip label={tip.label} shortcut={tip.shortcut} side={side}>
+            <Popover.Trigger render={trigger} />
+          </Tip>
+        ) : (
           <Popover.Trigger render={trigger} />
-        </Tip>
-      ) : (
-        <Popover.Trigger render={trigger} />
-      )}
+        ))}
       <Popover.Portal>
-        <Popover.Positioner side={side} align="start" sideOffset={6} className="z-[60]">
+        <Popover.Positioner
+          anchor={anchor}
+          side={side}
+          align="start"
+          sideOffset={6}
+          className="z-[60]"
+        >
           <Popover.Popup
             aria-label={label}
             finalFocus={finalFocus}
@@ -69,7 +79,7 @@ export const pickerInput =
 
 /** Footer button of a picker. */
 export const pickerFooter =
-  "block h-8 w-full shrink-0 border-t border-separator px-3 text-left text-a11y-accent outline-none hover:bg-fill-hover focus-visible:bg-black/[0.05] dark:text-blue-400";
+  "block h-8 coarse:h-11 w-full shrink-0 border-t border-separator px-3 text-left text-a11y-accent outline-none hover:bg-fill-hover focus-visible:bg-black/[0.05] dark:text-blue-400";
 
 /** The list of a picker. */
 export const pickerList = "max-h-64 overflow-y-auto p-[5px] empty:hidden";

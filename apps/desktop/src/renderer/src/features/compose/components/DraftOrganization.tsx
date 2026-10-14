@@ -10,56 +10,84 @@ import { iconButton, touchIcon } from "../../../ui/styles";
 import { Tip } from "../../../ui/Tip";
 
 type Organization = NonNullable<OutgoingMessage["draftOrganization"]>;
+
+/** The names of the star and the labels controls, which depend on how the provider keeps them. */
+export function useDraftOrganizationNames(provider: Provider) {
+  const { t } = useLingui();
+  const caps = providerCapabilities(provider);
+  // Gmail drafts keep labels and stars on this Mac; folder accounts write categories or keywords.
+  const localLabels = caps.organization === "labels";
+  return {
+    star: localLabels ? t`Star draft on this Mac` : t`Star draft`,
+    organize: caps.categories
+      ? t`Draft categories`
+      : localLabels
+        ? t`Local draft labels`
+        : t`Draft keywords`,
+  };
+}
+
+/**
+ * The draft's star and labels. With `buttons` off, a narrow composer shows
+ * them in its More menu instead and opens the labels panel through `open`.
+ */
 export function DraftOrganization({
   provider,
   accountId,
   value,
   onChange,
+  open,
+  onOpenChange,
+  buttons = true,
 }: {
   provider: Provider;
   accountId: string;
   value: Organization;
   onChange: (value: Organization) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  buttons?: boolean;
 }) {
   const { t } = useLingui();
   const labels = AsyncResult.getOrElse(useAtomValue(labelsAtom([accountId])), () => []).filter(
     (label) => label.accountId === accountId && label.id.startsWith("Label_"),
   );
-  const [open, setOpen] = useState(false);
   const [names, setNames] = useState(value.labels.join(", "));
+  const [openedWith, setOpenedWith] = useState(open);
+  // Each time the panel opens, its field starts from the draft's current labels.
+  if (openedWith !== open) {
+    setOpenedWith(open);
+    if (open) setNames(value.labels.join(", "));
+  }
   const caps = providerCapabilities(provider);
-  // Gmail drafts keep labels and stars on this Mac; folder accounts write categories or keywords.
   const localLabels = caps.organization === "labels";
-  const organizeLabel = caps.categories
-    ? t`Draft categories`
-    : localLabels
-      ? t`Local draft labels`
-      : t`Draft keywords`;
+  const controls = useDraftOrganizationNames(provider);
   return (
     <>
-      <button
-        type="button"
-        aria-label={localLabels ? t`Star draft on this Mac` : t`Star draft`}
-        aria-pressed={value.starred}
-        onClick={() => onChange({ ...value, starred: !value.starred })}
-        className={`rounded px-2 py-1 ${touchIcon} hover:bg-black/5`}
-      >
-        {value.starred ? "★" : "☆"}
-      </button>
-      <Tip label={organizeLabel} side="top">
-        <button
-          type="button"
-          aria-label={organizeLabel}
-          aria-expanded={open}
-          onClick={() => {
-            setNames(value.labels.join(", "));
-            setOpen((previous) => !previous);
-          }}
-          className={`${iconButton} ${value.labels.length ? "text-a11y-accent" : "text-a11y-muted"}`}
-        >
-          <Tag className="size-4" />
-        </button>
-      </Tip>
+      {buttons && (
+        <>
+          <button
+            type="button"
+            aria-label={controls.star}
+            aria-pressed={value.starred}
+            onClick={() => onChange({ ...value, starred: !value.starred })}
+            className={`rounded px-2 py-1 ${touchIcon} hover:bg-black/5`}
+          >
+            {value.starred ? "★" : "☆"}
+          </button>
+          <Tip label={controls.organize} side="top">
+            <button
+              type="button"
+              aria-label={controls.organize}
+              aria-expanded={open}
+              onClick={() => onOpenChange(!open)}
+              className={`${iconButton} ${value.labels.length ? "text-a11y-accent" : "text-a11y-muted"}`}
+            >
+              <Tag className="size-4" />
+            </button>
+          </Tip>
+        </>
+      )}
       {open && (
         <div className="absolute right-4 bottom-12 z-10 w-64 space-y-2 rounded-card bg-overlay p-3 shadow-popup backdrop-blur-xl">
           {localLabels && (
@@ -113,7 +141,7 @@ export function DraftOrganization({
                           ),
                         ],
                       });
-                      setOpen(false);
+                      onOpenChange(false);
                     }
                   }}
                 />
@@ -132,12 +160,12 @@ export function DraftOrganization({
                       ),
                     ],
                   });
-                  setOpen(false);
+                  onOpenChange(false);
                 }}
               >{t`Apply`}</button>
             </>
           )}
-          <button type="button" onClick={() => setOpen(false)}>{t`Close`}</button>
+          <button type="button" onClick={() => onOpenChange(false)}>{t`Close`}</button>
         </div>
       )}
     </>

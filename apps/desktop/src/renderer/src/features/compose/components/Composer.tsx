@@ -22,21 +22,42 @@ import { Dialog } from "@base-ui/react/dialog";
 import { SheetDragStrip, narrowSheet } from "../../../ui/Dialog";
 import { TrafficLightSpace } from "../../../ui/TrafficLights";
 import { Select } from "../../../ui/Select";
-import { AppWindow, Ellipsis, FileText, ImagePlus, Link, Paperclip, Trash2, X } from "lucide-react";
+import {
+  AppWindow,
+  Archive,
+  Ellipsis,
+  FileText,
+  ImagePlus,
+  Link,
+  Paperclip,
+  Tag,
+  Trash2,
+  X,
+} from "lucide-react";
 import { Tip } from "../../../ui/Tip";
 import { DraftSyncRecovery } from "./DraftSyncRecovery";
 import { ComposerAi } from "./ComposerAi";
 import { ComposeEditor } from "./ComposeEditor";
 import { Keys } from "../../../state/keys";
 import { inheritsOriginals } from "../compose-originals";
-import { DropdownMenu, MenuItem } from "../../../ui/Menu";
-import { DraftOrganization } from "./DraftOrganization";
+import { DropdownMenu, MenuCheckboxItem, MenuItem, MenuSeparator } from "../../../ui/Menu";
+import { DraftOrganization, useDraftOrganizationNames } from "./DraftOrganization";
+import { useNodeWidth } from "../../../lib/use-element-width";
+import { isTouchWeb } from "../../../lib/platform";
 import { TemplatePicker } from "./TemplatePicker";
 import { TemplateVariables } from "./TemplateVariables";
 import { ComposeAttachments } from "./ComposeAttachments";
 import { ComposerAlerts } from "./ComposerAlerts";
 import { label, quiet, row } from "./composer-styles";
 import { AddressFields } from "./AddressFields";
+
+/**
+ * Footer widths, in px, below which the composer moves its less used footer
+ * controls into More. Touch controls are 44 px wide, so they need more room;
+ * both leave space for the longest translation of Send and archive.
+ */
+const COMPACT = 560;
+const COMPACT_TOUCH = 720;
 
 const TITLES: Record<Draft["mode"], MessageDescriptor> = {
   new: msg`New message`,
@@ -225,6 +246,20 @@ export function Composer({
   } = lifecycle;
 
   useComposeShortcuts({ draft, prefs, recipients, sendFlow, editor, lifecycle, ccRef });
+
+  // A narrow footer, such as on a phone, keeps Send, Attach, More and Discard
+  // in the row; Send and archive, Templates, the star and labels move into More.
+  const [footer, setFooter] = useState<HTMLElement | null>(null);
+  const footerWidth = useNodeWidth(footer);
+  const compact = footerWidth > 0 && footerWidth < (isTouchWeb() ? COMPACT_TOUCH : COMPACT);
+  const [organizing, setOrganizing] = useState(false);
+  const organization = draft.organization ?? { labels: [], starred: false };
+  const organizationNames = useDraftOrganizationNames(account?.provider ?? "gmail");
+  const organize = (next: typeof organization) => {
+    const updated = { ...draft, organization: next };
+    setDraft(updated);
+    saveNow(updated);
+  };
 
   const field =
     "h-9 min-w-0 flex-1 bg-transparent text-body outline-none placeholder:text-a11y-muted";
@@ -458,21 +493,24 @@ export function Composer({
 
             {/* In a browser it sticks to the bottom of the sheet, which ends at the
                 on-screen keyboard, so Send stays in reach while typing. */}
-            <footer className="flex shrink-0 items-center gap-2 border-t border-separator px-4 py-2.5 web:sticky web:bottom-0 web:z-10 web:bg-raised">
+            <footer
+              ref={setFooter}
+              className="flex shrink-0 items-center gap-2 border-t border-separator px-4 py-2.5 web:sticky web:bottom-0 web:z-10 web:bg-raised"
+            >
               <Tip label={t`Send`} shortcut={shortcut("send")} side="top">
                 <button
                   type="submit"
-                  className={`h-7 rounded-control bg-blue-600 px-3.5 ${touchTarget} font-medium text-white hover:bg-blue-700`}
+                  className={`h-7 shrink-0 rounded-control bg-blue-600 px-3.5 ${touchTarget} font-medium whitespace-nowrap text-white hover:bg-blue-700`}
                 >
                   <Trans>Send</Trans>
                 </button>
               </Tip>
-              {replying && (
+              {replying && !compact && (
                 <Tip label={t`Send and archive`} shortcut={shortcut("sendArchive")} side="top">
                   <button
                     type="button"
                     onClick={() => submit(true)}
-                    className={`h-7 rounded-control border border-edge px-3 ${touchTarget} font-medium hover:bg-fill-hover`}
+                    className={`h-7 shrink-0 rounded-control border border-edge px-3 ${touchTarget} font-medium whitespace-nowrap hover:bg-fill-hover`}
                   >
                     <Trans>Send and archive</Trans>
                   </button>
@@ -519,12 +557,11 @@ export function Composer({
                 <DraftOrganization
                   provider={account.provider}
                   accountId={account.id}
-                  value={draft.organization ?? { labels: [], starred: false }}
-                  onChange={(organization) => {
-                    const next = { ...draft, organization };
-                    setDraft(next);
-                    saveNow(next);
-                  }}
+                  value={organization}
+                  onChange={organize}
+                  open={organizing}
+                  onOpenChange={setOrganizing}
+                  buttons={!compact}
                 />
               )}
               <TemplatePicker
@@ -534,13 +571,16 @@ export function Composer({
                 onInsert={insertTemplate}
                 bodyRef={bodyRef}
                 tip={{ label: t`Templates`, shortcut: shortcut("templates") }}
+                anchor={compact ? footer : undefined}
                 trigger={
-                  <button type="button" aria-label={t`Templates`} className={quiet}>
-                    <FileText className="size-4" />
-                  </button>
+                  compact ? null : (
+                    <button type="button" aria-label={t`Templates`} className={quiet}>
+                      <FileText className="size-4" />
+                    </button>
+                  )
                 }
               />
-              {draft.body.kind === "rich" && (
+              {(compact || draft.body.kind === "rich") && (
                 <DropdownMenu
                   align="start"
                   trigger={
@@ -549,16 +589,50 @@ export function Composer({
                     </button>
                   }
                 >
-                  <MenuItem
-                    icon={ImagePlus}
-                    disabled={adding}
-                    onClick={() => imageFileRef.current?.click()}
-                  >{t`Image file`}</MenuItem>
-                  <MenuItem
-                    icon={Link}
-                    disabled={adding}
-                    onClick={() => setImageUrlOpen((open) => !open)}
-                  >{t`Image URL`}</MenuItem>
+                  {compact && (
+                    <>
+                      {replying && (
+                        <MenuItem
+                          icon={Archive}
+                          shortcut={shortcut("sendArchive")}
+                          onClick={() => submit(true)}
+                        >{t`Send and archive`}</MenuItem>
+                      )}
+                      <MenuItem
+                        icon={FileText}
+                        shortcut={shortcut("templates")}
+                        onClick={() => setPicker(true)}
+                      >{t`Templates`}</MenuItem>
+                      {account && (
+                        <>
+                          <MenuCheckboxItem
+                            checked={organization.starred}
+                            onCheckedChange={(starred) => organize({ ...organization, starred })}
+                          >
+                            {organizationNames.star}
+                          </MenuCheckboxItem>
+                          <MenuItem icon={Tag} onClick={() => setOrganizing(true)}>
+                            {organizationNames.organize}
+                          </MenuItem>
+                        </>
+                      )}
+                      {draft.body.kind === "rich" && <MenuSeparator />}
+                    </>
+                  )}
+                  {draft.body.kind === "rich" && (
+                    <>
+                      <MenuItem
+                        icon={ImagePlus}
+                        disabled={adding}
+                        onClick={() => imageFileRef.current?.click()}
+                      >{t`Image file`}</MenuItem>
+                      <MenuItem
+                        icon={Link}
+                        disabled={adding}
+                        onClick={() => setImageUrlOpen((open) => !open)}
+                      >{t`Image URL`}</MenuItem>
+                    </>
+                  )}
                 </DropdownMenu>
               )}
               <span

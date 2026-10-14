@@ -161,9 +161,11 @@ export function ComposeToolbar({
     <KeyboardToolbar
       ref={ref}
       aria-label={t`Formatting`}
-      className="flex shrink-0 items-center gap-0.5 overflow-hidden border-b border-separator px-4 py-1"
+      // A finger scrolls the row sideways when 44 px buttons outgrow it, so the
+      // writing mode keeps its full name; More stays pinned at the end.
+      className="flex shrink-0 items-center gap-0.5 overflow-hidden border-b border-separator px-4 py-1 coarse:overflow-x-auto"
     >
-      <div className="mr-1 flex min-w-0 shrink items-center gap-1">{leading}</div>
+      <div className="mr-1 flex min-w-0 shrink items-center gap-1 coarse:shrink-0">{leading}</div>
       {formatting && (
         <>
           <Separator />
@@ -203,7 +205,11 @@ export function ComposeToolbar({
       <span className="flex-1" />
       <DropdownMenu
         trigger={
-          <button type="button" aria-label={t`More formatting`} className={button}>
+          <button
+            type="button"
+            aria-label={t`More formatting`}
+            className={`${button} coarse:sticky coarse:right-0 coarse:bg-raised`}
+          >
             <Ellipsis className="size-4" />
           </button>
         }

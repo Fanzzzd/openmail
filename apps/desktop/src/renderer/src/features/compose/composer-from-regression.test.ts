@@ -82,7 +82,10 @@ vi.mock("@base-ui/react/dialog", () => ({
 vi.mock("./components/RecipientField", () => ({ RecipientField: () => null }));
 vi.mock("./components/ComposeEditor", () => ({ ComposeEditor: () => null }));
 vi.mock("./components/ComposerAi", () => ({ ComposerAi: () => null }));
-vi.mock("./components/DraftOrganization", () => ({ DraftOrganization: () => null }));
+vi.mock("./components/DraftOrganization", () => ({
+  DraftOrganization: () => null,
+  useDraftOrganizationNames: () => ({ star: "Star draft", organize: "Draft keywords" }),
+}));
 vi.mock("../../ui/Select", () => ({
   Select: (props: { value: string; "aria-label": string }) =>
     createElement("output", { "aria-label": props["aria-label"] }, props.value),
@@ -109,6 +112,8 @@ vi.mock("../../ui/Picker", () => ({
 vi.mock("../../ui/Menu", () => ({
   DropdownMenu: ({ trigger }: { trigger: ReactNode }) => trigger,
   MenuItem: () => null,
+  MenuCheckboxItem: () => null,
+  MenuSeparator: () => null,
 }));
 import { Composer } from "./components/Composer";
 

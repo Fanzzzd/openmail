@@ -23,6 +23,7 @@ export function TemplatePicker({
   open,
   onOpenChange,
   trigger,
+  anchor,
   tip,
   draft,
   onInsert,
@@ -30,7 +31,9 @@ export function TemplatePicker({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  trigger: ReactElement;
+  /** Null when a menu item opens it; it then sits against `anchor`. */
+  trigger: ReactElement | null;
+  anchor?: Element | null | undefined;
   tip: { label: string; shortcut: string };
   draft: Draft;
   onInsert: (t: Template) => void;
@@ -78,6 +81,7 @@ export function TemplatePicker({
         if (!next) reset();
       }}
       trigger={trigger}
+      anchor={anchor}
       tip={tip}
       side="top"
       finalFocus={bodyRef}
