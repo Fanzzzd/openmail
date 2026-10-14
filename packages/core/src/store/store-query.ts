@@ -362,8 +362,17 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
     }
   };
 
-  /** WHERE clauses of a thread list. Paging (`before`) is applied after collapsing threads. */
-  const listFilter = (q: LocalQuery) => {
+  /**
+   * WHERE clauses of a thread list. Paging (`before`) is applied after collapsing threads.
+   * `keyed`: the caller already pins rows by id or rowid. The account filter then reads
+   * `+m.account_id` so SQLite without statistics does not walk an account's whole date index
+   * instead of looking the rows up.
+   */
+  const listFilter = (
+    q: LocalQuery,
+    keyed = q.messageIds !== undefined ||
+      (q.proximityPage?.kind === "exact" && q.proximityPage.messageIds !== undefined),
+  ) => {
     const where: Fragment[] = [sql`+m.account_id IN (SELECT id FROM accounts WHERE enabled=1)`];
     const mailbox =
       q.search !== undefined && q.searchScope !== "folder" ? "all" : (q.mailbox ?? "inbox");
@@ -381,7 +390,10 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
       );
     if (q.label !== undefined && (q.search === undefined || q.searchScope === "folder"))
       where.push(hasLabel(q.label));
-    if (q.accountIds) where.push(inAccounts(q.accountIds));
+    if (q.accountIds)
+      where.push(
+        keyed ? accountScope(sql, q.accountIds, "+m.account_id") : inAccounts(q.accountIds),
+      );
     if (q.messageIds) where.push(sql`m.id IN (${idsIn(q.messageIds)})`);
     if (q.proximityPage?.kind === "exact" && q.proximityPage.messageIds)
       where.push(sql`m.id IN (${idsIn(q.proximityPage.messageIds)})`);
@@ -423,19 +435,30 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
 
   // Stream the date/id index and resolve only selected conversations. The
   // CTE is inlined, so a 100k-thread inbox does not rank 100k rows per page.
-  const listSource = (q: LocalQuery) => {
+  const listIndex = (q: LocalQuery) => {
     const boundedPage = !!q.textPage || q.proximityPage?.kind === "prefilter";
     // Across accounts SQLite otherwise sorts the entire inbox using the
     // account/date index. Walk the global date index and stop at the limit.
     // Search keeps the planner free to start from its selective FTS rowids.
     return boundedPage && q.messageIds === undefined && q.accountIds?.length === 1
-      ? sql.literal("messages m INDEXED BY messages_account_list_date_id")
+      ? "messages_account_list_date_id"
       : (boundedPage || q.search === undefined) &&
           q.messageIds === undefined &&
           q.accountIds?.length !== 1
-        ? sql.literal("messages m INDEXED BY messages_list_date_id")
-        : sql.literal("messages m");
+        ? "messages_list_date_id"
+        : undefined;
   };
+  const listSource = (q: LocalQuery) => {
+    const index = listIndex(q);
+    return sql.literal(index ? `messages m INDEXED BY ${index}` : "messages m");
+  };
+  /**
+   * A search page on the plain table starts from the text index's rowids. Its account filter
+   * reads `+m.account_id`: without statistics SQLite preferred walking every message of the
+   * selected accounts through messages_account_date.
+   */
+  const searchDrivenList = (q: LocalQuery) =>
+    listIndex(q) === undefined && q.search !== undefined && q.search.trim() !== "";
 
   const planTextPage = Effect.fnUntraced(function* (q: LocalQuery) {
     const words = searchWords(q.search ?? "");
@@ -489,6 +512,7 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
     textFilter,
     listFilter,
     listSource,
+    searchDrivenList,
     planTextPage,
   };
 };

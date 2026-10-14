@@ -91,6 +91,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       textFilter: query.textFilter,
       listFilter: query.listFilter,
       listSource: query.listSource,
+      searchDrivenList: query.searchDrivenList,
       planTextPage: query.planTextPage,
     });
     const reminders = makeRemindersStore({

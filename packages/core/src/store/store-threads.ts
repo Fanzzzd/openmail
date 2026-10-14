@@ -113,6 +113,7 @@ export const makeThreadsStore = ({
   textFilter,
   listFilter,
   listSource,
+  searchDrivenList,
   planTextPage,
 }: {
   sql: SqlClient.SqlClient;
@@ -122,6 +123,7 @@ export const makeThreadsStore = ({
   textFilter: ReturnType<typeof makeQueryStore>["textFilter"];
   listFilter: ReturnType<typeof makeQueryStore>["listFilter"];
   listSource: ReturnType<typeof makeQueryStore>["listSource"];
+  searchDrivenList: ReturnType<typeof makeQueryStore>["searchDrivenList"];
   planTextPage: ReturnType<typeof makeQueryStore>["planTextPage"];
 }) => {
   const { threadMessageIds, derivedRanking, loadBodies, attachMatches, pageFieldMatches } =
@@ -229,9 +231,10 @@ export const makeThreadsStore = ({
       AND n.date>=m.list_date AND (n.date > m.list_date OR (n.date=m.list_date AND n.id>m.id)))`;
     // SQLite may evaluate a row-bound MATCH before the correlated exclusion.
     // Skip old replies first, then open MATCH only for potential thread heads.
+    const searchDriven = searchDrivenList(q);
     const headFilter = q.textPage
-      ? sql`CASE WHEN ${newestMatch} THEN ${listFilter(q)} ELSE 0 END`
-      : sql`${newestMatch} AND ${listFilter(q)}`;
+      ? sql`CASE WHEN ${newestMatch} THEN ${listFilter(q, searchDriven || undefined)} ELSE 0 END`
+      : sql`${newestMatch} AND ${listFilter(q, searchDriven || undefined)}`;
     const query = (fast: boolean) =>
       (materialize
         ? grouped
@@ -253,7 +256,7 @@ export const makeThreadsStore = ({
               EXISTS(SELECT 1 FROM flag_candidates v WHERE v.account_id=m.account_id AND v.thread_id=m.thread_id AND v.is_starred=1)
             ) AS flags_json
           FROM ${fast ? sql`messages m` : listSource(q)}
-          WHERE ${accountScope(sql, q.accountIds)} AND ${fast ? sql`m.rowid IN (SELECT rowid FROM recent) AND ${listFilter(q)}` : headFilter}
+          WHERE ${fast ? sql`${accountScope(sql, q.accountIds, "+m.account_id")} AND m.rowid IN (SELECT rowid FROM recent) AND ${listFilter(q, true)}` : sql`${accountScope(sql, q.accountIds, searchDriven ? "+m.account_id" : "m.account_id")} AND ${headFilter}`}
             AND ${q.before === undefined ? sql.literal("1") : sql`(m.list_date < ${q.before} ${q.beforeId === undefined ? sql.literal("") : sql`OR (m.list_date = ${q.before} AND m.id < ${q.beforeId})`})`}
           ORDER BY m.list_date DESC,m.id DESC LIMIT ${limit}
         )

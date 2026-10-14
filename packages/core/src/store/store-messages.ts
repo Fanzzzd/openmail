@@ -413,9 +413,10 @@ export const makeMessagesStore = ({
         sql`SELECT account_id, thread_id FROM messages WHERE id = ${id}`,
       );
       if (Option.isNone(key)) return yield* new NotFound({ what: "message", id });
+      // +date: without planner statistics SQLite read the account's date index to skip the sort.
       const rows = yield* all(MessageRow)(sql`SELECT ${sql.literal(MESSAGE_COLUMNS)} FROM messages m
         WHERE account_id = ${key.value.account_id} AND thread_id = ${key.value.thread_id}
-        ORDER BY date`);
+        ORDER BY +date`);
       return rows.map(toMessage);
     });
 
