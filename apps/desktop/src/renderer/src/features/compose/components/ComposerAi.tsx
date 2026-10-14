@@ -58,6 +58,8 @@ export function ComposerAi({
   const { t, i18n } = useLingui();
   const settings = AsyncResult.getOrElse(useAtomValue(aiSettingsAtom), () => null);
   const allowed = settings?.accounts.some((a) => a.accountId === accountId && a.allowed);
+  // AI is off by default; the row appears once any account allows it.
+  const aiInUse = settings?.accounts.some((a) => a.allowed) ?? false;
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [undo, setUndo] = useState<{ before: ComposeBody; accepted: ComposeBody } | null>(null);
   const [instruction, setInstruction] = useState("");
@@ -122,31 +124,34 @@ export function ComposerAi({
   const diff = composeAiDiff(snapshot?.body.text ?? "", after);
   return (
     <>
-      <div className="flex shrink-0 gap-3 px-4 py-1 text-footnote text-violet-600 dark:text-violet-300">
-        <button
-          type="button"
-          className={touchTarget}
-          disabled={!allowed || !settings?.keyConfigured}
-          onClick={() => open()}
-        >
-          <Trans>Write with AI</Trans>
-          {hint && ` · ${hint}`}
-        </button>
-        {allowed && settings && !settings.keyConfigured && <AiAccessLink />}
-        {undo && (
+      {(aiInUse || undo) && (
+        <div className="flex shrink-0 gap-3 px-4 py-1 text-footnote text-violet-600 dark:text-violet-300">
           <button
             type="button"
-            onClick={() => {
-              const element = bodyRef.current;
-              const current = element ? editorBody(element, body) : body;
-              if (JSON.stringify(current) === JSON.stringify(undo.accepted)) onChange(undo.before);
-              setUndo(null);
-            }}
+            className={touchTarget}
+            disabled={!allowed || !settings?.keyConfigured}
+            onClick={() => open()}
           >
-            <Trans>Undo AI edit</Trans>
+            <Trans>Write with AI</Trans>
+            {hint && ` · ${hint}`}
           </button>
-        )}
-      </div>
+          {allowed && settings && !settings.keyConfigured && <AiAccessLink />}
+          {undo && (
+            <button
+              type="button"
+              onClick={() => {
+                const element = bodyRef.current;
+                const current = element ? editorBody(element, body) : body;
+                if (JSON.stringify(current) === JSON.stringify(undo.accepted))
+                  onChange(undo.before);
+                setUndo(null);
+              }}
+            >
+              <Trans>Undo AI edit</Trans>
+            </button>
+          )}
+        </div>
+      )}
       {snapshot && (
         <Dialog
           aria-label={t`Write with AI`}

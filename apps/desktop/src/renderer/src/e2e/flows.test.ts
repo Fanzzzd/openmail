@@ -483,6 +483,13 @@ it("AI disabled keeps reading and composing off the network", async () => {
   key("r", { metaKey: true });
   await eventually(() => expect(screen.getByRole("textbox", { name: "Body" })).toBeTruthy());
   expect(screen.queryByRole("button", { name: "Rewrite" })).toBeNull();
+  // With AI off everywhere, the composer has no disabled AI row.
+  expect(screen.queryByRole("button", { name: /Write with AI/ })).toBeNull();
+  await h.run(h.m.setAiAccount({ accountId: h.account.id, allowed: true, autoSummaries: false }));
+  await h.event({ _tag: "Command", command: "compose" });
+  await eventually(() =>
+    expect(screen.getByRole("button", { name: /Write with AI/ })).toBeTruthy(),
+  );
   const result = await h.run(h.m.summarize(h.id("one")).pipe(Stream.runCollect, Effect.result));
   expect(result._tag).toBe("Failure");
   expect((await h.run(h.store.getMessage(h.id("one")))).bodyText).toContain("Original one");
