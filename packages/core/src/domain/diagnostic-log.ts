@@ -36,6 +36,7 @@ export const LogCode = Schema.Literals([
   "system-refresh-failed",
   "keychain-remove-failed",
   "token-revoke-failed",
+  "planner-stats-skipped",
 ]);
 export type LogCode = typeof LogCode.Type;
 
@@ -73,3 +74,14 @@ export function logCodeOf(annotations: unknown): LogCode | undefined {
   );
   return decoded._tag === "Some" ? decoded.value : undefined;
 }
+
+/**
+ * A planner statistics refresh that did not run: another process held the write lock, or the
+ * database is read-only. Only the SQLite result code is recorded, never a path or message.
+ */
+export const PlannerStatsSkippedDiagnostic = Schema.Struct({
+  _tag: Schema.Literal("PlannerStatsSkippedDiagnostic"),
+  reason: Schema.Literal("planner-stats-skipped"),
+  code: Schema.optionalKey(Schema.Int),
+});
+export type PlannerStatsSkippedDiagnostic = typeof PlannerStatsSkippedDiagnostic.Type;

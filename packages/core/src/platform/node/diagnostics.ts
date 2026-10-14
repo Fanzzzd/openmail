@@ -31,6 +31,7 @@ import { Schema } from "effect";
 import { DatabaseTooNewError } from "../../db/migrate.js";
 import { MIGRATIONS } from "../../db/migrations.js";
 import { LogCode, logCodeOf } from "../../domain/diagnostic-log.js";
+export { PlannerStatsSkippedDiagnostic } from "../../domain/diagnostic-log.js";
 import { AccountDiagnostics } from "../../domain/diagnostics-state.js";
 
 const DiagnosticEvent = Schema.Literals([
@@ -258,6 +259,7 @@ export function diagnosticSnapshot(environment: unknown, state: unknown, at = Da
   };
   const fields = typeof state === "object" && state !== null ? state : {};
   const version = "schemaVersion" in fields ? fields.schemaVersion : undefined;
+  const statsPresent = "plannerStatsPresent" in fields ? fields.plannerStatsPresent : undefined;
   const rawAccounts =
     "accounts" in fields && Array.isArray(fields.accounts)
       ? fields.accounts.slice(0, MAX_SNAPSHOT_ACCOUNTS)
@@ -285,6 +287,7 @@ export function diagnosticSnapshot(environment: unknown, state: unknown, at = Da
         ? version
         : undefined,
     supportedSchemaVersion: MIGRATIONS.length,
+    ...(typeof statsPresent === "boolean" ? { plannerStatsPresent: statsPresent } : {}),
     providers,
     accounts,
   };

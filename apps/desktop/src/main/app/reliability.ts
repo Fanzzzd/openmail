@@ -6,6 +6,7 @@ import {
   SyncResetDiagnostic,
   SyncCrashDiagnostic,
   SyncFailedDiagnostic,
+  PlannerStatsSkippedDiagnostic,
   checkLocalDatabaseInWorker,
   createLocalDiagnostics,
   runtimeDiagnosticReason,
@@ -50,6 +51,12 @@ export const diagnosticsLogger = Logger.make((options) => {
     const syncFailed = Schema.decodeUnknownOption(SyncFailedDiagnostic)(message);
     if (syncFailed._tag === "Some") {
       localLog("runtime-warning", syncFailed.value);
+      classified = true;
+    }
+    const plannerStats = Schema.decodeUnknownOption(PlannerStatsSkippedDiagnostic)(message);
+    if (plannerStats._tag === "Some") {
+      // diagnosticRecord keeps the reason and the numeric SQLite code, nothing else.
+      localLog("runtime-warning", plannerStats.value);
       classified = true;
     }
     const reauth = Schema.decodeUnknownOption(ReauthDiagnostic)(message);

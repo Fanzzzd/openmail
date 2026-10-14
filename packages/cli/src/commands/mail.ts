@@ -7,7 +7,7 @@
 
 import { Argument, Command, Flag } from "effect/cli";
 import { Failed, fail, findSpace, jsonFlag, optionalInt, optionalString, print } from "./common.js";
-import { Effect, Option, Schema } from "effect";
+import { Effect, Logger, Option, Schema } from "effect";
 import { Buffer } from "node:buffer";
 import { MAILBOXES, Mailbox, printable, redactSyncHealth } from "@openmail/core";
 import type { SearchResult, ThreadSummary } from "@openmail/core/schema";
@@ -72,7 +72,8 @@ const sync = Command.make(
       !json,
     );
     // The app refreshes planner statistics hourly; a CLI-only mailbox gets them here.
-    yield* mailbox.sync.refreshPlannerStats;
+    // A refresh the app's writer keeps busy is skipped quietly; the app refreshes hourly.
+    yield* mailbox.sync.refreshPlannerStats.pipe(Effect.provide(Logger.layer([])));
     yield* print({ results }, json, (value) => syncTable(value.results));
     return yield* results.some((r) => r.error) ? fail("Some accounts did not sync.") : Effect.void;
   }),

@@ -422,6 +422,23 @@ it("IMAP sync failures are recorded as fixed sync-failed fields", async () => {
   expect(preview).not.toContain("private");
 });
 
+it("a skipped planner statistics refresh is recorded with its SQLite code only", async () => {
+  const dir = temp();
+  const recovery = await import("./reliability");
+  await recovery.prepareReliability(dir);
+  await Effect.runPromise(
+    Effect.logWarning({
+      _tag: "PlannerStatsSkippedDiagnostic",
+      reason: "planner-stats-skipped",
+      code: 5,
+      path: "/Users/private/mail.db",
+    }).pipe(Effect.provide(Logger.layer([recovery.diagnosticsLogger]))),
+  );
+  const preview = recovery.diagnosticsPreview(false);
+  expect(preview).toContain('"event":"runtime-warning","reason":"planner-stats-skipped","code":5');
+  expect(preview).not.toContain("private");
+});
+
 it("an abnormal exit checks the database in a worker behind a painted progress window", async () => {
   const dir = temp();
   createLocalDiagnostics(join(dir, "diagnostics")).begin();

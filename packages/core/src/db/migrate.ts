@@ -1,6 +1,7 @@
 /** Runs MIGRATIONS on the SqlClient the platform driver provides. */
 
-import { Clock, Effect, Schema } from "effect";
+import { Cause, Clock, Effect, Schema } from "effect";
+import { type PlannerStatsSkippedDiagnostic, throttledWarning } from "../domain/diagnostic-log.js";
 import { MIGRATIONS, ROWID_REBUILD_MIGRATION } from "./migrations.js";
 import { SqlClient } from "effect/sql";
 import { isSqlError } from "effect/sql/SqlError";
@@ -176,7 +177,12 @@ const OPTIMIZE_DEFAULT_MASK = 0xfffe;
  * restored afterwards. A busy or read-only database skips the refresh instead
  * of waiting behind another process's writer.
  */
-export const optimizeQueryPlanner = (options: { mask?: number; busyTimeoutMs: number }) =>
+export const optimizeQueryPlanner = (options: {
+  mask?: number;
+  busyTimeoutMs: number;
+  /** Log a skipped refresh (planner-stats-skipped). Off where a busy database is expected. */
+  report?: boolean;
+}) =>
   Effect.gen(function* () {
     const sql = yield* SqlClient.SqlClient;
     const connection = yield* sql.reserve;
@@ -211,11 +217,47 @@ export const optimizeQueryPlanner = (options: { mask?: number; busyTimeoutMs: nu
         yield* run(
           `DELETE FROM sqlite_stat1 WHERE tbl IN (SELECT value FROM json_each('${JSON.stringify([...internal]).replaceAll("'", "''")}'))`,
         );
-    }).pipe(
-      Effect.ignore,
-      Effect.ensuring(run(`PRAGMA busy_timeout = ${BUSY_TIMEOUT_MS}`).pipe(Effect.ignore)),
+    }).pipe(Effect.ensuring(run(`PRAGMA busy_timeout = ${BUSY_TIMEOUT_MS}`).pipe(Effect.ignore)));
+  }).pipe(
+    Effect.scoped,
+    Effect.catchCause((cause) =>
+      Cause.hasInterrupts(cause)
+        ? Effect.interrupt
+        : options.report === false
+          ? Effect.void
+          : plannerStatsSkipped({
+              _tag: "PlannerStatsSkippedDiagnostic",
+              reason: "planner-stats-skipped",
+              ...sqliteCode(cause),
+            } satisfies PlannerStatsSkippedDiagnostic),
+    ),
+  );
+
+/** A refresh that is always busy or read-only shows up in diagnostics, once an hour at most. */
+const plannerStatsSkipped = throttledWarning("planner-stats-skipped", 60 * 60_000);
+
+/** The SQLite result code (5 busy, 8 read-only) in a failure, from node:sqlite's `errcode`. */
+const sqliteCode = (cause: Cause.Cause<unknown>): { code?: number } => {
+  const seen = new Set<unknown>();
+  const find = (value: unknown): number | undefined => {
+    if (typeof value !== "object" || value === null || seen.has(value)) return undefined;
+    seen.add(value);
+    const code = Reflect.get(value, "errcode");
+    if (typeof code === "number" && Number.isSafeInteger(code)) return code;
+    return find(Reflect.get(value, "cause"));
+  };
+  for (const reason of cause.reasons) {
+    const code = find(
+      Cause.isFailReason(reason)
+        ? reason.error
+        : Cause.isDieReason(reason)
+          ? reason.defect
+          : undefined,
     );
-  }).pipe(Effect.scoped, Effect.ignore);
+    if (code !== undefined) return { code };
+  }
+  return {};
+};
 
 /**
  * Whether the planner has statistics for `messages`. Opening a new mailbox records only the
@@ -237,7 +279,9 @@ export const plannerStatsPresent = Effect.gen(function* () {
 export const optimizeOnOpen = (options: { owner: boolean; migrated: boolean }) =>
   Effect.gen(function* () {
     if (options.owner || options.migrated || !(yield* plannerStatsPresent))
-      yield* optimizeQueryPlanner({ mask: 0x10002, busyTimeoutMs: 0 });
+      // A CLI or MCP start next to the app's writer is expected to find it busy; only the
+      // mailbox owner's skipped refresh is worth a diagnostics line.
+      yield* optimizeQueryPlanner({ mask: 0x10002, busyTimeoutMs: 0, report: options.owner });
   }).pipe(Effect.ignore);
 
 /** Migrates and refreshes statistics as the mailbox owner does. */

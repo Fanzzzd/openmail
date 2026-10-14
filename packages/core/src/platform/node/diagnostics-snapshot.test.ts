@@ -63,6 +63,7 @@ it.effect("the snapshot carries build, schema and per-account state as counts an
       nodeVersion: "22.20.0",
       schemaVersion: MIGRATIONS.length,
       supportedSchemaVersion: MIGRATIONS.length,
+      plannerStatsPresent: false,
       providers: { gmail: 1, outlook: 1, imap: 0 },
       accounts: [
         {
@@ -90,6 +91,10 @@ it.effect("the snapshot carries build, schema and per-account state as counts an
     });
     const text = JSON.stringify(snapshot);
     for (const piece of PRIVATE) assert.notInclude(text, piece);
+    // Statistics for messages, as ANALYZE writes them on a filled mailbox.
+    yield* sql`ANALYZE sqlite_schema`;
+    yield* sql`INSERT INTO sqlite_stat1(tbl,idx,stat) VALUES('messages',NULL,'1000')`;
+    assert.isTrue((yield* mailbox.app.diagnosticsState).plannerStatsPresent);
   }).pipe(
     Effect.provide(
       // withAdapter's layer also exposes the SqlClient the test seeds with.

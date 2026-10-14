@@ -3,7 +3,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { assert, it } from "@effect/vitest";
-import { Effect, Layer } from "effect";
+import { Effect, Layer, Logger, References } from "effect";
+import { TestClock } from "effect/testing";
+import { logCodeOf } from "../../domain/diagnostic-log.js";
 import { SqlClient } from "effect/sql";
 import { databaseLayer, type DatabaseOptions } from "./db.js";
 import { NodeSystem } from "./platform-node.js";
@@ -88,6 +90,33 @@ it.effect("an open without statistics for messages refreshes them", () =>
     resetStats(file, "INSERT INTO sqlite_stat1(tbl,idx,stat) VALUES('prefs',NULL,'1')");
     yield* open(file, { vectorExtension: null });
     assert.isAbove(statRows(file), 1);
+  }).pipe(Effect.scoped),
+);
+
+it.effect("a refresh that finds the database locked logs planner-stats-skipped with the code", () =>
+  Effect.gen(function* () {
+    const file = join(yield* temp, "mail.db");
+    yield* open(file, { plannerStatsOwner: true });
+    const logged: unknown[] = [];
+    const logger = Logger.make((options) => {
+      if (logCodeOf(options.fiber.getRef(References.CurrentLogAnnotations)))
+        logged.push(...(Array.isArray(options.message) ? options.message : [options.message]));
+    });
+    // The warning is throttled to one an hour, and the first test here already logged one.
+    yield* TestClock.adjust("2 hours");
+    const writer = new DatabaseSync(file);
+    writer.exec("DELETE FROM sqlite_stat1; BEGIN IMMEDIATE");
+    try {
+      // A CLI or MCP start next to the app's writer expects a busy database and stays quiet.
+      for (const plannerStatsOwner of [false, true])
+        yield* open(file, { plannerStatsOwner }).pipe(Effect.provide(Logger.layer([logger])));
+    } finally {
+      writer.exec("ROLLBACK");
+      writer.close();
+    }
+    assert.deepStrictEqual(logged, [
+      { _tag: "PlannerStatsSkippedDiagnostic", reason: "planner-stats-skipped", code: 5 },
+    ]);
   }).pipe(Effect.scoped),
 );
 

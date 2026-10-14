@@ -36,6 +36,8 @@ export type AccountDiagnostics = typeof AccountDiagnostics.Type;
 export const DiagnosticsState = Schema.Struct({
   /** `PRAGMA user_version` of the open database. */
   schemaVersion: Schema.Int,
+  /** Whether SQLite has planner statistics for the messages table. */
+  plannerStatsPresent: Schema.optionalKey(Schema.Boolean),
   accounts: Schema.Array(AccountDiagnostics),
 });
 export type DiagnosticsState = typeof DiagnosticsState.Type;
@@ -52,6 +54,7 @@ const count = (value: number | undefined) =>
 /** Builds the state from the account list and per-account queue counts. */
 export function diagnosticsState(input: {
   readonly schemaVersion: number;
+  readonly plannerStatsPresent?: boolean;
   readonly accounts: readonly Account[];
   readonly ops: ReadonlyMap<string, AccountOpCounts>;
   readonly queuedSends: ReadonlyMap<string, number>;
@@ -59,6 +62,9 @@ export function diagnosticsState(input: {
 }): DiagnosticsState {
   return {
     schemaVersion: count(input.schemaVersion),
+    ...(input.plannerStatsPresent === undefined
+      ? {}
+      : { plannerStatsPresent: input.plannerStatsPresent }),
     accounts: input.accounts.map((account, index): AccountDiagnostics => {
       const ops = input.ops.get(account.id);
       const keychain = isKeychainLocked(account.lastSyncError);

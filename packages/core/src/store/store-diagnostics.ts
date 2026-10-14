@@ -1,6 +1,6 @@
 import { Effect, Schema } from "effect";
 import { SqlClient } from "effect/sql";
-import { optimizeQueryPlanner } from "../db/migrate.js";
+import { optimizeQueryPlanner, plannerStatsPresent } from "../db/migrate.js";
 import type { AccountOpCounts } from "../domain/diagnostics-state.js";
 import { all } from "./sql-rows.js";
 
@@ -31,8 +31,13 @@ export function makeDiagnosticsStore(sql: SqlClient.SqlClient) {
         sql`SELECT json_extract(value_json,'$.accountId') AS account_id, COUNT(*) AS sends
         FROM prefs WHERE key LIKE 'mobile-outbox:%' GROUP BY 1`,
       );
+      const statsPresent = yield* plannerStatsPresent.pipe(
+        Effect.provideService(SqlClient.SqlClient, sql),
+        Effect.catch(() => Effect.succeed(false)),
+      );
       return {
         schemaVersion: version[0]?.user_version ?? 0,
+        plannerStatsPresent: statsPresent,
         ops: new Map<string, AccountOpCounts>(ops.map((row) => [row.account_id, row])),
         queuedSends: new Map(
           sends.flatMap((row): [string, number][] =>
@@ -44,7 +49,7 @@ export function makeDiagnosticsStore(sql: SqlClient.SqlClient) {
   /**
    * Cheap when statistics are current; the sync loop calls it hourly and `openmail sync` at its
    * end. It waits at most 250 ms for another process's write lock and otherwise tries again
-   * later.
+   * later, logging planner-stats-skipped.
    */
   const refreshPlannerStats = optimizeQueryPlanner({ busyTimeoutMs: 250 }).pipe(
     Effect.provideService(SqlClient.SqlClient, sql),
