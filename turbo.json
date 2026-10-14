@@ -56,6 +56,9 @@
       "inputs": [
         "$TURBO_DEFAULT$",
         "$TURBO_ROOT$/.oxlintrc.json",
+        "$TURBO_ROOT$/turbo.json",
+        "$TURBO_ROOT$/{apps,packages}/*/package.json",
+        "$TURBO_ROOT$/scripts/*.{js,mjs,cjs}",
         "$TURBO_ROOT$/apps/**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}",
         "$TURBO_ROOT$/packages/**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}",
         "!$TURBO_ROOT$/{apps,packages}/**/node_modules/**",
@@ -84,7 +87,25 @@
         "$TURBO_ROOT$/docs/agents.md",
         "$TURBO_ROOT$/docs/licenses/**",
         "$TURBO_ROOT$/THIRD_PARTY_NOTICES.md",
+        "$TURBO_ROOT$/LICENSE",
         "$TURBO_ROOT$/scripts/check-licenses.mjs"
+      ],
+      "env": [
+        "CI",
+        "OPENMAIL_LOW_MEMORY_TESTS",
+        "VITEST_MAX_WORKERS",
+        "OPENMAIL_TEST_TIME_SCALE",
+        "OPENMAIL_PERF",
+        "OPENMAIL_PERF_REPORT",
+        "OPENMAIL_PERF_FACTOR"
+      ]
+    },
+    "@openmail/mobile#test": {
+      "dependsOn": ["^build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/apps/desktop/scripts/i18n-missing.mjs",
+        "$TURBO_ROOT$/patches/**"
       ],
       "env": [
         "CI",
