@@ -39,6 +39,14 @@ it("blocks other Finder location files, active documents, macro templates and Wi
   for (const ext of ["pdf", "docx", "xlsx", "png", "txt", "zip", "eml"])
     expect(EXECUTABLE.test(`file.${ext}`), ext).toBe(false);
 });
+it("blocks remote-session launchers, plug-in bundles, certificates and the rest of Outlook's level 1 list", () => {
+  for (const ext of "rdp ica vncloc RDP qlgenerator mdimporter component inputplugin systemextension dext wdgt service colorPicker cer crt der ade adp accde mdb mde hlp htc ins msh1 mst msu ps1xml psc1 psd1 pyc pyw pyz shb shs theme vb vbp website ws wsb wsc xbap xnk diagcab appcontent-ms searchConnector-ms iqy slk".split(
+    " ",
+  ))
+    expect(EXECUTABLE.test(`file.${ext}`), ext).toBe(true);
+  for (const ext of ["rtf", "csv", "key", "pages", "numbers", "heic", "mov", "ics.pdf"])
+    expect(EXECUTABLE.test(`file.${ext}`), ext).toBe(false);
+});
 it("replaces filename format characters and bounds UTF-8 length without losing the extension", () => {
   expect(safeFilename("report\u202E\u200F\u2066\u061C\uFEFF.pdf")).toBe("report_____.pdf");
   const name = safeFilename(`邮件😀${"邮件😀".repeat(699)}.mobileconfig`);
