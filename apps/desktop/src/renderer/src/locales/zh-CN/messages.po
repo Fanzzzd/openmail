@@ -148,23 +148,23 @@ msgstr "{email} 已重新登录"
 
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "{email} needs to grant mail permissions again. Sync is paused."
-msgstr "{email} 需要重新授予邮件权限，暂停同步。"
+msgstr "{email} 需要重新授予邮件权限，同步已暂停。"
 
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "{email}'s saved sign-in is missing from the keychain. Sync is paused."
-msgstr "钥匙串里找不到 {email} 保存的登录信息，暂停同步。"
+msgstr "钥匙串里找不到 {email} 保存的登录信息，同步已暂停。"
 
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "{email}'s sign-in has expired. Sync is paused."
-msgstr "{email} 的登录已失效，暂停同步。"
+msgstr "{email} 的登录已失效，同步已暂停。"
 
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "{email}'s sign-in was revoked or has expired. Sync is paused."
-msgstr "{email} 的登录已被撤销或已过期，暂停同步。"
+msgstr "{email} 的登录已被撤销或已过期，同步已暂停。"
 
 #: src/renderer/src/features/ai/TriageChip.tsx
 msgid "{hours, plural, one {Snooze for # hour} other {Snooze for # hours}}"
-msgstr "{hours, plural, other {推迟 # 小时}}"
+msgstr "{hours, plural, other {稍后提醒（# 小时）}}"
 
 #: src/renderer/src/features/compose/components/RecipientField.tsx
 msgid "{label} suggestions"
@@ -200,7 +200,7 @@ msgstr "{name} 会启动 OpenMail 的 MCP 服务器，读取你允许的账户�
 
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "{op} {count, plural, one {# conversation} other {# conversations}}"
-msgstr "{op} {count, plural, other {# 个会话}}"
+msgstr "{op} {count, plural, other {# 个对话}}"
 
 #: src/renderer/src/features/reader/body/MessageBody.tsx
 msgid "{pixels, plural, one {# tracking pixel} other {# tracking pixels}}"
@@ -278,7 +278,7 @@ msgstr "域名包括它的子域名。对这些发件人，已知的追踪器照
 
 #: src/renderer/src/lib/errors.ts
 msgid "A label or folder needs a valid name"
-msgstr "请填写有效名称"
+msgstr "标签或文件夹需要有效名称"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "A previous daily quiet-hours setting is still active. Change this schedule to replace it."
@@ -306,15 +306,15 @@ msgstr "账户"
 
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
 msgid "Account colour"
-msgstr "账号颜色"
+msgstr "账户颜色"
 
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
 msgid "Account enabled"
-msgstr "启用账号"
+msgstr "启用账户"
 
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
 msgid "Account space"
-msgstr "账号所属空间"
+msgstr "账户所属空间"
 
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/settings/Settings.tsx
@@ -412,7 +412,7 @@ msgstr "在「设置 → AI 权限」中添加 Anthropic API 密钥后才能生�
 
 #: src/renderer/src/lib/errors.ts
 msgid "Add an automatic reply message"
-msgstr "请填写自动回复正文"
+msgstr "请填写自动回复邮件的正文"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Add at least one filter condition"
@@ -430,7 +430,7 @@ msgstr "返回添加附件"
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Add email account"
-msgstr "添加邮箱"
+msgstr "添加邮件账户"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "Add label"
@@ -480,7 +480,7 @@ msgstr "先在「设置 → AI 权限」中添加你的 Anthropic API 密钥，�
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Add your first account"
-msgstr "添加第一个邮箱"
+msgstr "添加第一个账户"
 
 #: src/renderer/src/features/reader/attachments/AttachmentImportDialog.tsx
 msgid "Added"
@@ -528,7 +528,7 @@ msgstr "晚于日期"
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "After you click Send, the message waits this long. You can undo it until then."
-msgstr "点发送后先等这么久，期间可以撤销。"
+msgstr "点发送后，邮件先等待这么久，期间可以撤销。"
 
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "AI ({agent})"
@@ -735,7 +735,7 @@ msgstr "始终移动此发件人的邮件？"
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Always quote the whole message"
-msgstr "总是引用全文"
+msgstr "总是引用整封邮件"
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Always use selection"
@@ -1325,7 +1325,7 @@ msgstr "插入图片前，请选择“{editBody}”。"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Choose a conversation"
-msgstr "请选择会话"
+msgstr "请选择对话"
 
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 msgid "Choose a date and time"
@@ -1658,7 +1658,7 @@ msgstr "系统策略限制了通讯录访问。"
 
 #: src/renderer/src/features/reader/RemoteImagesPrompt.tsx
 msgid "Contacts and people you've sent mail to, when the sender is verified."
-msgstr "联系人和你发过邮件的人，且发件人需通过认证。"
+msgstr "联系人和你发送过邮件的人，且发件人需通过认证。"
 
 #: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Contacts only"
@@ -1689,11 +1689,11 @@ msgstr "打开草稿"
 
 #: src/renderer/src/features/organize/ThreadActions.tsx
 msgid "Conversation actions"
-msgstr "会话操作"
+msgstr "对话操作"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Conversations"
-msgstr "会话"
+msgstr "对话"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/RawMessage.tsx
@@ -1736,7 +1736,7 @@ msgstr "复制邮件链接"
 
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Copy link to thread"
-msgstr "复制会话链接"
+msgstr "复制对话链接"
 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Copy redacted report"
@@ -2035,7 +2035,7 @@ msgstr "自定义颜色"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Custom folder"
-msgstr "自定义目录"
+msgstr "自定义文件夹"
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 msgid "Custom hex color"
@@ -2167,7 +2167,7 @@ msgstr "删除 {0}"
 #. placeholder {0}: deleteRequest?.ids.size ?? 0
 #: src/renderer/src/app/MailAlerts.tsx
 msgid "Delete {0} conversations?"
-msgstr "删除 {0} 个会话？"
+msgstr "删除 {0} 个对话？"
 
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "Delete draft"
@@ -2461,7 +2461,7 @@ msgstr "编辑条件"
 
 #: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "Editing removes unsupported formatting and images from this draft. Lists, bold, italic, underline and links are kept."
-msgstr "编辑将移除不支持的格式和图片，保留列表、粗体、斜体、下划线和链接。"
+msgstr "编辑会移除此草稿中不支持的格式和图片，保留列表、粗体、斜体、下划线和链接。"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Edits <0>{configPath}</0>."
@@ -3022,7 +3022,7 @@ msgstr "把账户分进空间，比如「工作」和「个人」。每个空间
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Group messages into conversations"
-msgstr "按会话归组邮件"
+msgstr "按对话归组邮件"
 
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Has attachment"
@@ -3082,7 +3082,7 @@ msgstr "高"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "How long a conversation stays open before it is marked as read. Manually: use {readShortcut} or the toolbar."
-msgstr "打开会话多久后标为已读。选「手动」时，用 {readShortcut} 或工具栏操作。"
+msgstr "打开对话多久后标为已读。选「手动」时，用 {readShortcut} 或工具栏操作。"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "HTTPS certificates are off"
@@ -3263,7 +3263,7 @@ msgstr "在这台 Mac 上安装 Tailscale 应用并登录，然后回到这里�
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Internal folder"
-msgstr "应用内部目录"
+msgstr "应用内部文件夹"
 
 #: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Internal reply"
@@ -3300,7 +3300,7 @@ msgstr "邀请变更"
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Invitation status in this conversation"
-msgstr "会话中的邀请状态"
+msgstr "对话中的邀请状态"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "It can propose archiving, labels, snoozes and drafts. Each waits for your approval."
@@ -3603,7 +3603,7 @@ msgstr "本地签名保存在此 Mac，Gmail 默认签名从 Gmail 读取。"
 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Local total / unread / threads"
-msgstr "本地总数 / 未读 / 会话"
+msgstr "本地总数 / 未读 / 对话"
 
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 #: src/renderer/src/features/calendar/InviteBanner.tsx
@@ -3844,7 +3844,7 @@ msgstr "邮件列表标签可见性"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Message order in a conversation"
-msgstr "会话内的邮件顺序"
+msgstr "对话内的邮件顺序"
 
 #. Storage occupied by downloaded email message text.
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
@@ -4318,7 +4318,7 @@ msgstr "下一个页签"
 
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Next thread"
-msgstr "下一个会话"
+msgstr "下一个对话"
 
 #: src/renderer/src/features/organize/SnoozeDialog.tsx
 msgid "Next week"
@@ -4601,11 +4601,11 @@ msgstr "重复会议中的一次"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Only inbox messages can be snoozed"
-msgstr "只能为收件箱邮件设置提醒"
+msgstr "只有收件箱中的邮件可以稍后提醒"
 
 #: src/renderer/src/app/MailAlerts.tsx
 msgid "Only messages in this Trash or Spam folder from the selected conversations will be permanently deleted. Inbox and Sent copies will remain. This cannot be undone."
-msgstr "仅永久删除所选会话中属于当前垃圾箱或垃圾邮件文件夹的邮件。收件箱和已发送中的副本会保留。此操作无法撤销。"
+msgstr "仅永久删除所选对话中属于当前废纸篓或垃圾邮件文件夹的邮件。收件箱和已发送中的副本会保留。此操作无法撤销。"
 
 #: src/renderer/src/app/use-native-menu-bridge.ts
 msgid "Only regular files can be attached. Folders cannot be attached."
@@ -4621,7 +4621,7 @@ msgstr "仅搜索附件内的文本"
 
 #: src/renderer/src/app/MailAlerts.tsx
 msgid "Only the selected messages in this Trash or Spam folder will be permanently deleted. This cannot be undone."
-msgstr "仅永久删除所选邮件中属于当前垃圾箱或垃圾邮件文件夹的邮件。此操作无法撤销。"
+msgstr "仅永久删除所选邮件中属于当前废纸篓或垃圾邮件文件夹的邮件。此操作无法撤销。"
 
 #: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Only to me"
@@ -4993,7 +4993,7 @@ msgstr "联系人"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "People you know are your contacts and people you have sent mail to, when the message passes sender authentication. Known trackers stay blocked."
-msgstr "认识的人指你的联系人和你发过邮件的人，且消息需通过发件人认证。已知跟踪器始终拦截。"
+msgstr "认识的人指你的联系人和你发送过邮件的人，且邮件需通过发件人认证。已知跟踪器始终拦截。"
 
 #: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
@@ -5097,7 +5097,7 @@ msgstr "上一个页签"
 
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Previous thread"
-msgstr "上一个会话"
+msgstr "上一个对话"
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Previous time:"
@@ -5237,7 +5237,7 @@ msgstr "收件人姓名"
 
 #: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "Recipients outside the original conversation:"
-msgstr "原会话之外的收件人："
+msgstr "原对话之外的收件人："
 
 #: src/renderer/src/features/reader/RemoteImagesPrompt.tsx
 msgid "Recommended. Known tracking pixels stay blocked."
@@ -5522,7 +5522,7 @@ msgstr "回复标记"
 #: src/renderer/src/i18n/action-names.ts
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Reply all"
-msgstr "回复全部"
+msgstr "全部回复"
 
 #. Flag value on the incoming message, not an action to execute.
 #: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
@@ -5552,7 +5552,7 @@ msgstr "{address} 的回复签名"
 
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Reply to this conversation"
-msgstr "回复此会话"
+msgstr "回复此对话"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
@@ -5915,7 +5915,7 @@ msgstr "全选"
 
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Select conversation"
-msgstr "选择会话"
+msgstr "选择对话"
 
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Selected message"
@@ -5982,7 +5982,7 @@ msgstr "确认发送无主题邮件？"
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Send thread link to…"
-msgstr "发送会话链接到…"
+msgstr "发送对话链接到…"
 
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
@@ -6058,7 +6058,7 @@ msgstr "服务器预览：{count} 封邮件"
 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Server total / unread / threads"
-msgstr "服务器总数 / 未读 / 会话"
+msgstr "服务器总数 / 未读 / 对话"
 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Server unavailable"
@@ -6114,7 +6114,7 @@ msgstr "在访达中显示 {name}"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Show account names in unified folders"
-msgstr "在统一邮件夹中显示账号名称"
+msgstr "在统一文件夹中显示账户名称"
 
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Show Cc field"
@@ -6794,7 +6794,7 @@ msgstr "邮件服务器拒绝了连接。请检查端口。"
 
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "The mail server rejected the password for {email}. Sync is paused."
-msgstr "邮件服务器拒绝了 {email} 的密码，暂停同步。"
+msgstr "邮件服务器拒绝了 {email} 的密码，同步已暂停。"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "The menu lists up to 50 unread messages in the current space."
@@ -6802,7 +6802,7 @@ msgstr "菜单最多显示当前空间的 50 封未读邮件。"
 
 #: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "The message mentions an attachment, but none is added."
-msgstr "正文提到了附件，但还没有添加。"
+msgstr "邮件正文提到了附件，但还没有添加。"
 
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "The message was sent, but its copy is missing from Sent."
@@ -6810,7 +6810,7 @@ msgstr "邮件已发送，但“已发送”中缺少副本。"
 
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "The OAuth client that signed in {email} is no longer configured. Sync is paused."
-msgstr "为 {email} 登录的 OAuth 客户端已不在配置中，暂停同步。"
+msgstr "为 {email} 登录的 OAuth 客户端已不在配置中，同步已暂停。"
 
 #: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "The openmail entry is written in a form OpenMail won't edit. Change it by hand. {detail}"
@@ -6872,7 +6872,7 @@ msgstr "服务器拒绝了登录。请检查邮箱地址，并确认填的是应
 
 #: src/renderer/src/lib/errors.ts
 msgid "The thread changed. Summarize it again."
-msgstr "会话已变更。请重新生成摘要。"
+msgstr "对话已变更。请重新生成摘要。"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgid "There is not enough free disk space to compact safely."
@@ -6884,7 +6884,7 @@ msgstr "这些不是邮件地址：{list}"
 
 #: src/renderer/src/app/MailAlerts.tsx
 msgid "These loaded conversations will be moved to Trash. You can undo this batch."
-msgstr "这些已加载的会话将移至垃圾箱，可以整批撤销。"
+msgstr "这些已加载的对话将移到废纸篓，可以整批撤销。"
 
 #: src/renderer/src/features/calendar/recurrence-summary.ts
 msgid "Third"
@@ -6991,7 +6991,7 @@ msgstr "夏令时切换使该时间不存在或重复，请输入带 UTC 偏移�
 
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Thread link copied"
-msgstr "已复制会话链接"
+msgstr "已复制对话链接"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Thursday"
@@ -7092,11 +7092,11 @@ msgstr "翻译"
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 #: src/renderer/src/lib/view.ts
 msgid "Trash"
-msgstr "已删除"
+msgstr "废纸篓"
 
 #: src/renderer/src/features/mail-list/EmptyList.tsx
 msgid "Trash is empty"
-msgstr "已删除是空的"
+msgstr "废纸篓是空的"
 
 #. Keyboard shortcuts section: archive, delete, mark read, star and similar actions.
 #: src/renderer/src/i18n/shortcut-groups.ts
@@ -7355,7 +7355,7 @@ msgstr "使用账户默认地址"
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Use the address the message was sent to"
-msgstr "使用邮件收到时的地址"
+msgstr "使用这封邮件发往的地址"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Use the built-in client"
@@ -7363,7 +7363,7 @@ msgstr "改用内置客户端"
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Use the current account"
-msgstr "使用当前账号"
+msgstr "使用当前账户"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Use your own OAuth client"
@@ -7455,7 +7455,7 @@ msgstr "谁可以登录"
 
 #: src/renderer/src/app/MailAlerts.tsx
 msgid "Whole message"
-msgstr "全文"
+msgstr "整封邮件"
 
 #. Keyboard shortcuts section: windows, tabs, panes and app settings.
 #: src/renderer/src/i18n/shortcut-groups.ts

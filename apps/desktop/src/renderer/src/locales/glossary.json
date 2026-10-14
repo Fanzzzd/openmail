@@ -1,5 +1,6 @@
 {
   "Inbox": {
+    "zh-CN": "收件箱",
     "cs": "doručen(?:á|é|ou) pošt",
     "nl": "postvak in",
     "fr": "boîte de réception",
@@ -10,6 +11,7 @@
     "es": "bandeja de entrada"
   },
   "Archive": {
+    "zh-CN": "归档",
     "cs": "archiv",
     "nl": "archiv|archief",
     "fr": "archiv",
@@ -20,6 +22,7 @@
     "es": "archiv"
   },
   "Trash": {
+    "zh-CN": "废纸篓",
     "cs": "koš",
     "nl": "prullenmand",
     "fr": "corbeille",
@@ -30,6 +33,7 @@
     "es": "papelera"
   },
   "Spam": {
+    "zh-CN": "垃圾邮件",
     "cs": "nevyžádan",
     "nl": "ongewenste reclame",
     "fr": "courrier indésirable",
@@ -40,6 +44,7 @@
     "es": "correo no deseado"
   },
   "Draft": {
+    "zh-CN": "草稿",
     "cs": "koncept",
     "nl": "concept",
     "fr": "brouillon",
@@ -50,6 +55,7 @@
     "es": "borrador"
   },
   "Sent": {
+    "zh-CN": "发",
     "cs": "odesl|odesíl",
     "nl": "verstuur",
     "fr": "envoy",
@@ -60,6 +66,7 @@
     "es": "env[ií]"
   },
   "Snooze": {
+    "zh-CN": "稍后提醒",
     "cs": "odlo",
     "nl": "uitstel|uitgestel|stel uit",
     "fr": "report",
@@ -70,6 +77,7 @@
     "es": "pospon|pospuest"
   },
   "Reply": {
+    "zh-CN": "回复",
     "cs": "odpov",
     "nl": "antwoord",
     "fr": "répond|répon[sd]",
@@ -80,6 +88,7 @@
     "es": "respond|respuest"
   },
   "Reply all": {
+    "zh-CN": "全部回复",
     "cs": "odpov.*všem",
     "nl": "antwoord.*allen",
     "fr": "répond.*tous",
@@ -90,6 +99,7 @@
     "es": "responder a todos"
   },
   "Forward": {
+    "zh-CN": "转发",
     "cs": "přepos",
     "nl": "doorstuur|doorgestuur|stuur door",
     "fr": "transfér",
@@ -100,6 +110,7 @@
     "es": "reenvi"
   },
   "Label": {
+    "zh-CN": "标签",
     "cs": "štít",
     "nl": "label",
     "fr": "libell",
@@ -110,6 +121,7 @@
     "es": "etiquet"
   },
   "Folder": {
+    "zh-CN": "文件夹",
     "cs": "slož",
     "nl": "map",
     "fr": "dossier",
@@ -120,6 +132,7 @@
     "es": "carpet"
   },
   "Message": {
+    "zh-CN": "邮件|消息|正文",
     "cs": "zpráv",
     "nl": "bericht",
     "fr": "message",
@@ -130,6 +143,7 @@
     "es": "mensaje"
   },
   "Conversation": {
+    "zh-CN": "对话",
     "cs": "konverzac",
     "nl": "gesprek",
     "fr": "conversation",
@@ -140,6 +154,7 @@
     "es": "conversac"
   },
   "Account": {
+    "zh-CN": "账户",
     "cs": "úč",
     "nl": "account",
     "fr": "compt",
@@ -150,6 +165,7 @@
     "es": "cuenta"
   },
   "Settings": {
+    "zh-CN": "设置",
     "cs": "nastaven",
     "nl": "instelling",
     "fr": "réglage",
@@ -160,6 +176,7 @@
     "es": "ajuste"
   },
   "Undo": {
+    "zh-CN": "撤销",
     "cs": "vrátit zpět|vrácení zpět|odvol",
     "nl": "ongedaan|herstel",
     "fr": "annul",
