@@ -69,6 +69,27 @@ const sampler = `window.__titlebarFrames = (sample) => {
   requestAnimationFrame(tick);
   return () => { on = false; observer.disconnect(); probe.remove(); return frames; };
 }`;
+// What crosses the lights' box, from the window's left edge to the free area and down their row:
+// a pane divider (a border or a 1 px separator) or a control or heading.
+const underLights = `window.__underLights = (x, height) => {
+  const found = [];
+  const name = (el) => el.tagName.toLowerCase() + (el.getAttribute("aria-label") ? "[" + el.getAttribute("aria-label") + "]" : "") + (el.dataset.mailPane ? "[" + el.dataset.mailPane + "]" : "");
+  const drawn = (width, color) => parseFloat(width) > 0 && color !== "transparent" && !/,\\s*0\\)$/.test(color);
+  for (const el of document.querySelectorAll("body *")) {
+    const r = el.getBoundingClientRect();
+    if (r.width === 0 || r.height === 0 || r.top >= height || r.left >= x || r.right <= 0) continue;
+    const s = getComputedStyle(el);
+    if (s.visibility === "hidden" || s.opacity === "0") continue;
+    const lines = [];
+    if (drawn(s.borderRightWidth, s.borderRightColor)) lines.push(r.right);
+    if (drawn(s.borderLeftWidth, s.borderLeftColor)) lines.push(r.left);
+    if (el.getAttribute("role") === "separator" && r.width <= 2) lines.push(r.left);
+    for (const line of lines) if (line > 0.5 && line < x) found.push({ divider: name(el), x: Math.round(line), top: Math.round(r.top) });
+    if (el.matches("button, a, input, h1, h2, [role=combobox]") && r.width > 4 && r.height > 4 && r.left < x - 0.5)
+      found.push({ control: name(el), left: Math.round(r.left), top: Math.round(r.top) });
+  }
+  return found;
+}`;
 const left = (selector) =>
   `(() => { const el = document.querySelector(${JSON.stringify(selector)}); return el ? Math.round(el.getBoundingClientRect().left) : null; })()`;
 const toggle = 'button[aria-label="Show sidebar"]';
@@ -134,6 +155,41 @@ try {
   });
   await until(() => evaluate("!!navigator.windowControlsOverlay?.visible"), "the traffic lights");
   await evaluate(sampler);
+  await evaluate(underLights);
+  const lights = await evaluate("navigator.windowControlsOverlay.getTitlebarAreaRect().toJSON()");
+  const under = `window.__underLights(${lights.x}, ${lights.y + lights.height})`;
+
+  // Nothing crosses the lights at any width, across the narrow, medium and wide breakpoints, in
+  // the mail view and the overview. The rail is narrower than the lights.
+  const widths = [1320, 961, 960, 959, 880, 801, 800, 799, 640];
+  const crossings = [];
+  for (const view of ["Overview", "All accounts"]) {
+    await evaluate("window.resizeTo(880, 720)");
+    await sleep(400);
+    await evaluate(
+      `[...document.querySelectorAll("[data-sidebar-rail] button")].find((b) => b.textContent.trim().startsWith("${view}"))?.click()`,
+    );
+    for (const width of widths) {
+      await evaluate(`window.resizeTo(${width}, 720)`);
+      await sleep(400);
+      const found = await evaluate(under);
+      if (found.length > 0) crossings.push({ view, width, found });
+    }
+  }
+  const sweep = await evaluate(`(async () => {
+    window.resizeTo(1000, 720);
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    const stop = window.__titlebarFrames(() => ({ width: innerWidth, found: ${under} }));
+    for (let width = 1000; width >= 760; width -= 16) {
+      window.resizeTo(width, 720);
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    return stop().filter((frame) => frame.found.length > 0);
+  })()`);
+  report.checks.push({ name: "lights", widths, crossings, sweepFrames: sweep.slice(0, 5) });
+  if (crossings.length > 0 || sweep.length > 0)
+    throw new Error(`lights: ${crossings.length} widths and ${sweep.length} frames cross them`);
 
   // One pane at a time: the sidebar toggle and the search field share the lights' row.
   await evaluate("window.resizeTo(600, 700)");
