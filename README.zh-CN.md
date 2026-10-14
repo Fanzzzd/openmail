@@ -71,7 +71,7 @@ OpenMail 比以上产品都年轻，还有粗糙的地方。Gmail 功能以 Mime
 
 目前还没有发布版本，需要从源码构建：
 
-1. 安装[前置依赖](CONTRIBUTING.md#prerequisites)：macOS 13+、`.nvmrc` 指定的 Node、通过 `corepack enable` 启用的 pnpm，以及 Xcode Command Line Tools。
+1. 安装[前置依赖](CONTRIBUTING.md#prerequisites)：macOS 13+、Node 24（见 `.nvmrc`）、通过 `corepack enable` 启用的 pnpm，以及 Xcode Command Line Tools。
 2. 构建并打包：
 
    ```sh

@@ -5,7 +5,7 @@ Thanks for helping. This file covers setup, the checks a change must pass, and t
 ## Prerequisites
 
 - macOS 13 or later. The desktop app, its Swift helpers and packaging target macOS only.
-- Node from [`.nvmrc`](.nvmrc) (24.x). `package.json` requires at least 22.13 for `node:sqlite`.
+- Node 24, the version in [`.nvmrc`](.nvmrc). CI tests only Node 24, and `package.json` requires it. Node 22 prints an experimental warning for `node:sqlite` on every CLI call.
 - pnpm through corepack: `corepack enable`. The `packageManager` field pins the version.
 - Xcode Command Line Tools (`xcode-select --install`). `pnpm build` compiles the Swift helpers.
 - Xcode 26, only to build the DMG with `pnpm --filter @openmail/desktop dist`. Icon Composer needs it.
