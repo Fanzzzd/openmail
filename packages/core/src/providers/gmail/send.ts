@@ -5,6 +5,7 @@ import { DRAFT_WRITE_HEADER } from "../../platform/mail-codec.js";
 import { gmailPages } from "../provider-pages.js";
 import { uncertainWrite } from "../provider-retry.js";
 import { deliverOrConfirm } from "../provider-send.js";
+import { cachedThreading, type SendOriginal } from "../send-original.js";
 
 import { GMAIL_MIME_LIMIT } from "../../mime/attachment-policy.js";
 import { type Threading } from "../../compose/compose.js";
@@ -40,20 +41,29 @@ export const makeGmailSend = (client: GmailClient) => {
         return { messageId: header("Message-ID"), references: header("References") };
       }),
     );
+  /**
+   * Threading for a reply or forward, and the Gmail thread to file it in. When Gmail no
+   * longer has the original (purged from Trash, deleted elsewhere) the message goes out as a
+   * new Gmail thread that still carries the cached In-Reply-To and References.
+   */
+  const threadingFor = (accountId: string, message: OutgoingMessage, original: SendOriginal) =>
+    fetchThreading(accountId, original.providerId).pipe(
+      Effect.map((threading) => ({
+        threading,
+        // Forwards start a new thread; replies stay in the original one.
+        threadId: message.mode === "forward" ? undefined : original.threadId,
+      })),
+      Effect.catchIf(is404, () =>
+        Effect.succeed({ threading: cachedThreading(original), threadId: undefined }),
+      ),
+    );
 
   const send = Effect.fn("Gmail.send")(
-    function* (
-      account: Account,
-      message: OutgoingMessage,
-      original: Option.Option<{ providerId: string; threadId: string }>,
-    ) {
-      let threading: Threading = {};
-      let threadId: string | undefined;
-      if (Option.isSome(original)) {
-        threading = yield* fetchThreading(account.id, original.value.providerId);
-        // Forwards start a new thread; replies stay in the original one.
-        if (message.mode !== "forward") threadId = original.value.threadId;
-      }
+    function* (account: Account, message: OutgoingMessage, original: Option.Option<SendOriginal>) {
+      const { threading, threadId }: { threading: Threading; threadId: string | undefined } =
+        Option.isSome(original)
+          ? yield* threadingFor(account.id, message, original.value)
+          : { threading: {}, threadId: undefined };
       const sender = message.from ?? { name: "", address: account.email };
       const messageId = yield* newMessageId(sender.address).pipe(
         Effect.provideService(PlatformCrypto, crypto),
@@ -137,12 +147,10 @@ export const makeGmailSend = (client: GmailClient) => {
   const saveDraft = Effect.fn("Gmail.saveDraft")(
     function* (account: Account, draft: DraftPush) {
       const { message, original } = draft;
-      let threading: Threading = {};
-      let threadId: string | undefined;
-      if (Option.isSome(original)) {
-        threading = yield* fetchThreading(account.id, original.value.providerId);
-        if (message.mode !== "forward") threadId = original.value.threadId;
-      }
+      const { threading, threadId }: { threading: Threading; threadId: string | undefined } =
+        Option.isSome(original)
+          ? yield* threadingFor(account.id, message, original.value)
+          : { threading: {}, threadId: undefined };
       const nonce = sha256Hex(JSON.stringify([message, threading, threadId ?? null]));
       const makeBody = (messageId?: string, writeNonce?: string) =>
         Effect.gen(function* () {

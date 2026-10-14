@@ -19,11 +19,12 @@ import {
   keepsInherited,
   needsUpload,
 } from "./graph-message.js";
-import { ProviderError } from "../../domain/errors.js";
+import { PermanentError, ProviderError } from "../../domain/errors.js";
 import { GRAPH, SendRequest, WithId, decode, writeFailure } from "./graph.js";
 import { uncertainWrite } from "../provider-retry.js";
 import { HttpClientRequest } from "effect/http";
 import { makeOutlookDrafts } from "./drafts.js";
+import { cachedThreading, type SendOriginal } from "../send-original.js";
 
 export const makeOutlookSend = (client: OutlookClient) =>
   Effect.gen(function* () {
@@ -46,10 +47,60 @@ export const makeOutlookSend = (client: OutlookClient) =>
     const buildMime = (...args: Parameters<typeof unboundBuildMime>) =>
       unboundBuildMime(...args).pipe(Effect.provideService(MailCodec, codec));
 
+    /** createReply and createForward answer 404 once the original is deleted or purged. */
+    const originalGone = (error: { readonly _tag: string }) =>
+      error._tag === "ApiError" && "status" in error && error.status === 404;
+
+    /**
+     * A forward that keeps the original's attachments needs Outlook's copy of the original.
+     * Without it the attachments cannot be fetched, so the send fails before anything goes out.
+     */
+    const checkInheritedAttachments = (message: OutgoingMessage, original: SendOriginal) =>
+      keepsInherited(message) && original.hasAttachments
+        ? Effect.fail(
+            new PermanentError({
+              message:
+                "The original message is no longer in Outlook, so its attachments cannot be forwarded. Attach the files yourself or forward without them.",
+            }),
+          )
+        : Effect.void;
+
+    /**
+     * The original is gone from Outlook: send a new message as raw MIME, which keeps the
+     * cached In-Reply-To and References. Graph's JSON message only accepts x- headers.
+     */
+    const sendWithoutOriginal = (
+      account: Account,
+      message: OutgoingMessage,
+      original: SendOriginal,
+      messageId: string,
+    ) =>
+      Effect.gen(function* () {
+        yield* checkInheritedAttachments(message, original);
+        const mime = yield* buildMime(
+          message.from ?? { name: "", address: account.email },
+          message,
+          cachedThreading(original),
+          { messageId },
+        );
+        const body = mime.toString("base64");
+        yield* checkRequestSize(body);
+        yield* deliver(
+          account.id,
+          messageId,
+          api(
+            account.id,
+            HttpClientRequest.post(`${GRAPH}/me/sendMail`).pipe(
+              HttpClientRequest.bodyText(body, "text/plain"),
+            ),
+          ),
+        );
+      });
+
     const sendUploaded = (
       account: Account,
       message: OutgoingMessage,
-      original: Option.Option<{ providerId: string; threadId: string }>,
+      original: Option.Option<SendOriginal>,
       preparation?: SendPreparation,
     ) =>
       Effect.gen(function* () {
@@ -109,23 +160,42 @@ export const makeOutlookSend = (client: OutlookClient) =>
                 : mode === "reply"
                   ? "createReply"
                   : "createReplyAll";
-            const created = yield* write(
-              account.id,
-              "POST",
+            const newDraft = write(account.id, "POST", "/me/messages", fields);
+            // An original deleted since sync answers 404. Large attachments need an upload
+            // session on a draft, and Graph drafts take no In-Reply-To, so this one goes out unthreaded.
+            let threaded = reply;
+            const created = yield* (
               reply && Option.isSome(original)
-                ? `/me/messages/${encodeURIComponent(original.value.providerId)}/${action}`
-                : "/me/messages",
-              reply ? { message: { internetMessageId: messageId } } : fields,
+                ? write(
+                    account.id,
+                    "POST",
+                    `/me/messages/${encodeURIComponent(original.value.providerId)}/${action}`,
+                    { message: { internetMessageId: messageId } },
+                  ).pipe(
+                    Effect.catchIf(originalGone, () =>
+                      checkInheritedAttachments(message, original.value).pipe(
+                        Effect.andThen(
+                          Effect.suspend(() => {
+                            threaded = false;
+                            return newDraft;
+                          }),
+                        ),
+                      ),
+                    ),
+                  )
+                : newDraft
             ).pipe(
               Effect.flatMap(decode(WithId)),
               Effect.catchIf(
-                (error) => error._tag === "ApiError" && !uncertainWrite(error),
+                (error) =>
+                  error._tag === "PermanentError" ||
+                  (error._tag === "ApiError" && !uncertainWrite(error)),
                 (error) => save(null).pipe(Effect.andThen(Effect.fail(error))),
               ),
             );
             id = created.id;
             // createReply/createForward can assign their own Message-ID. Establish ours before adoption.
-            if (reply)
+            if (threaded)
               yield* write(account.id, "PATCH", `/me/messages/${encodeURIComponent(id)}`, fields);
           }
           const path = `/me/messages/${encodeURIComponent(id)}`;
@@ -182,7 +252,7 @@ export const makeOutlookSend = (client: OutlookClient) =>
       function* (
         account: Account,
         message: OutgoingMessage,
-        original: Option.Option<{ providerId: string; threadId: string }>,
+        original: Option.Option<SendOriginal>,
         preparation?: SendPreparation,
       ) {
         yield* checkAttachmentSize(message);
@@ -244,13 +314,15 @@ export const makeOutlookSend = (client: OutlookClient) =>
             replyAll: "createReplyAll",
             forward: "createForward",
           }[mode];
-          const draft = yield* write(
+          const created = yield* write(
             account.id,
             "POST",
             `/me/messages/${encodeURIComponent(original.value.providerId)}/${action}`,
             { message: { internetMessageId: messageId } },
           ).pipe(
             Effect.flatMap(decode(WithId)),
+            Effect.map(Option.some),
+            Effect.catchIf(originalGone, () => Effect.succeed(Option.none())),
             Effect.catchIf(
               (error) => error._tag === "ApiError" && uncertainWrite(error),
               (error) => {
@@ -278,6 +350,11 @@ export const makeOutlookSend = (client: OutlookClient) =>
               },
             ),
           );
+          if (Option.isNone(created)) {
+            yield* sendWithoutOriginal(account, message, original.value, messageId);
+            return;
+          }
+          const draft = created.value;
           const path = `/me/messages/${encodeURIComponent(draft.id)}`;
           let sendAttempted = false;
           yield* Effect.gen(function* () {

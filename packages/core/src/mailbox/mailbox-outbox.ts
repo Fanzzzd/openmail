@@ -21,6 +21,7 @@ import { READ_ONLY_MESSAGE } from "./read-only.js";
 import { isEmailAddress } from "../compose/recipients.js";
 import type { StoredDraft } from "../store/service.js";
 import { providerCapabilities } from "../providers/capabilities.js";
+import type { SendOriginal } from "../providers/send-original.js";
 
 /** A finished discard keeps its draft id this long, so a save arriving late can't recreate it. */
 const DISCARD_TOMBSTONE_MS = 7 * 24 * 60 * 60 * 1000;
@@ -37,7 +38,7 @@ export const makeOutboxMailbox = (
     prepare: (message: OutgoingMessage) => Effect.Effect<
       {
         message: OutgoingMessage;
-        original: Option.Option<{ providerId: string; threadId: string }>;
+        original: Option.Option<SendOriginal>;
       },
       NotFound | ProviderFailure
     >;

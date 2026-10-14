@@ -44,6 +44,7 @@ import { PlatformCrypto } from "../platform/crypto.js";
 import type { ProviderPushContext } from "../providers/adapter.js";
 import type { StoredDraft } from "../store/service.js";
 import { providerCapabilities } from "../providers/capabilities.js";
+import { sendOriginal } from "../providers/send-original.js";
 
 export const makeDraftsMailbox = (
   deps: MailboxDependencies & { flushLater: Effect.Effect<void | boolean> },
@@ -72,7 +73,7 @@ export const makeDraftsMailbox = (
     if (!message.forwardAsAttachment) {
       return {
         message: out,
-        original: Option.some({ providerId: ref.providerId, threadId: source.threadId }),
+        original: Option.some(sendOriginal(ref.providerId, source)),
       };
     }
     // The original lives on the account that received it.

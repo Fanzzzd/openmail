@@ -1,4 +1,5 @@
 import { decodeProviderId as importedDecodeProviderId } from "../../providers/imap/imap-cursor.js";
+import type { SendOriginal } from "../../providers/send-original.js";
 import { BASE_SCOPES, OPTIONAL_SCOPES } from "../../providers/optional-services.js";
 import {
   calendarTimestamp,
@@ -67,7 +68,7 @@ export interface FakeServer {
   batches: { providerIds: readonly string[]; op: MailOp }[];
   sent: {
     message: OutgoingMessage;
-    original: Option.Option<{ providerId: string; threadId: string }>;
+    original: Option.Option<SendOriginal>;
   }[];
   /** Drafts by draft id. Like Gmail, each save gives the draft a new message id. */
   drafts: Map<string, { messageId: string; push: DraftPush }>;

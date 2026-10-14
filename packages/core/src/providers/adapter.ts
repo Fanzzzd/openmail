@@ -36,6 +36,8 @@ import type {
   PermanentDeleteBatch,
 } from "../domain/folder-actions.js";
 import type { ContactSnapshot } from "../contacts/contacts.js";
+import type { SendOriginal } from "./send-original.js";
+export type { SendOriginal } from "./send-original.js";
 import type { BackfillPage, BackfillState } from "../domain/cache.js";
 import type {
   FilterInput,
@@ -346,12 +348,13 @@ export interface ProviderAdapter {
   ): Effect.Effect<ProviderPushResult, ProviderFailure>;
   /**
    * `original` is the message replied to or forwarded, when there is one. The
-   * adapter fetches its threading headers from the provider.
+   * adapter fetches its threading headers from the provider, and falls back to
+   * the cached ones in `original.cached` when the provider no longer has it.
    */
   send(
     account: Account,
     message: OutgoingMessage,
-    original: Option.Option<{ providerId: string; threadId: string }>,
+    original: Option.Option<SendOriginal>,
     preparation?: SendPreparation,
   ): Effect.Effect<
     void | { readonly rejected?: readonly string[]; readonly sentCopyMissing?: boolean },
@@ -431,7 +434,7 @@ export interface DraftPush {
   readonly writing?: (nonce: string) => Effect.Effect<void, ProviderFailure>;
   /** Ready to send: Markdown rendered, a forwarded original attached. */
   readonly message: OutgoingMessage;
-  readonly original: Option.Option<{ providerId: string; threadId: string }>;
+  readonly original: Option.Option<SendOriginal>;
   /** The attachments changed since the last push (providers that upload them one by one). */
   readonly replaceAttachments: boolean;
 }
