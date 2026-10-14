@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import type { MenuItemConstructorOptions } from "electron";
 import { expect, it, vi } from "vitest";
 import { NativeAction, NO_MENU_SELECTION } from "../../shared/native-actions";
@@ -170,4 +171,20 @@ it("role items carry sentence-case labels instead of Electron's Title Case", () 
   });
   expect(items(translated).find((item) => item.role === "close")?.label).toBe("Fenster schließen");
   expect(labels(translated)).toContain("Darstellung");
+});
+
+it("the English menu labels before the renderer loads match the renderer's", () => {
+  const source = readFileSync(
+    new URL("../../renderer/src/state/desktop.ts", import.meta.url),
+    "utf8",
+  );
+  const defaults: Record<string, unknown> = { ...DEFAULT_DESKTOP_LABELS };
+  // The top-level labels share one indent; the nested menu labels sit deeper.
+  const indent = /^(\s+)settings: t`/m.exec(source)?.[1] ?? "";
+  const line = new RegExp(`^${indent}(\\w+): t\`([^\`$]*)\`,$`, "gm");
+  const pairs = [...source.matchAll(line)].filter(
+    ([, key]) => typeof defaults[key ?? ""] === "string",
+  );
+  expect(pairs.length).toBeGreaterThan(10);
+  for (const [, key, text] of pairs) expect(defaults[key ?? ""], key).toBe(text);
 });

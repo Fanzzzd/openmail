@@ -401,7 +401,7 @@ msgid "Account"
 msgstr "账户"
 
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
-msgid "Account colour"
+msgid "Account color"
 msgstr "账户颜色"
 
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
@@ -2241,7 +2241,7 @@ msgid "Cursor age: {age}. Pending operations: {0}."
 msgstr "游标年龄：{age}。待处理操作：{0}。"
 
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
-msgid "Custom colour"
+msgid "Custom color"
 msgstr "自定义颜色"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
@@ -3994,7 +3994,7 @@ msgid "Medium"
 msgstr "中"
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
-msgid "Meeting cancelled"
+msgid "Meeting canceled"
 msgstr "会议已取消"
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
@@ -6385,13 +6385,16 @@ msgstr "手动设置"
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sidebar/SidebarFooter.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
-#: src/renderer/src/state/desktop.ts
 msgid "Settings"
 msgstr "设置"
 
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 msgid "Settings access is off for this account."
 msgstr "此账户的设置访问已关闭。"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Settings…"
+msgstr "设置…"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Share selected…"
@@ -6587,7 +6590,7 @@ msgid "Sign-in took too long. Try again and finish it in your browser."
 msgstr "登录超时。请重试，并在浏览器中完成登录。"
 
 #: src/renderer/src/lib/errors.ts
-msgid "Sign-in was cancelled."
+msgid "Sign-in was canceled."
 msgstr "已取消登录。"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
@@ -7433,7 +7436,7 @@ msgid "This login can't open OpenMail"
 msgstr "这个登录名无法打开 OpenMail"
 
 #: src/renderer/src/lib/errors.ts
-msgid "This meeting was cancelled, so there's nothing to respond to."
+msgid "This meeting was canceled, so there's nothing to respond to."
 msgstr "这个会议已取消，无需回复。"
 
 #: src/renderer/src/lib/errors.ts

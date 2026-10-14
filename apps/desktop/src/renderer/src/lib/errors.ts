@@ -100,7 +100,7 @@ export const INPUT_ERRORS: Record<string, MessageDescriptor> = {
   "Enter a single access token": msg`Enter a single access token.`,
 
   "This invitation cannot be answered by this account": msg`This account isn't on the invitation, so it can't respond. Respond from the invited account.`,
-  "This meeting has been cancelled": msg`This meeting was cancelled, so there's nothing to respond to.`,
+  "This meeting has been cancelled": msg`This meeting was canceled, so there's nothing to respond to.`,
   "Open this invitation in your calendar to add it before responding": msg`Open this invitation in your calendar to add it before responding.`,
   "The calendar organizer does not match this invitation": msg`The organizer in your calendar doesn't match this invitation. Respond from your calendar instead.`,
   "Calendar responses require a user action": msg`Respond to this invitation in OpenMail yourself.`,
@@ -269,7 +269,7 @@ export function errorText(i18n: I18n, error: AppError): string {
         }),
       ),
     AuthError: (e) => {
-      if (e.reason === "cancelled") return i18n._(msg`Sign-in was cancelled.`);
+      if (e.reason === "cancelled") return i18n._(msg`Sign-in was canceled.`);
       if (e.reason === "timeout")
         return i18n._(msg`Sign-in took too long. Try again and finish it in your browser.`);
       if (e.reason === "account_mismatch") {

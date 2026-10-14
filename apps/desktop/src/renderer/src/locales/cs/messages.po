@@ -391,7 +391,7 @@ msgid "Account"
 msgstr "Účet"
 
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
-msgid "Account colour"
+msgid "Account color"
 msgstr "Barva účtu"
 
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
@@ -2231,7 +2231,7 @@ msgid "Cursor age: {age}. Pending operations: {0}."
 msgstr "Stáří kurzoru: {age}. Čekající operace: {0}."
 
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
-msgid "Custom colour"
+msgid "Custom color"
 msgstr "Vlastní barva"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
@@ -3984,7 +3984,7 @@ msgid "Medium"
 msgstr "Střední"
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
-msgid "Meeting cancelled"
+msgid "Meeting canceled"
 msgstr "Schůzka zrušena"
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
@@ -6375,13 +6375,16 @@ msgstr "Nastavit ručně"
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sidebar/SidebarFooter.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
-#: src/renderer/src/state/desktop.ts
 msgid "Settings"
 msgstr "Nastavení"
 
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 msgid "Settings access is off for this account."
 msgstr "Přístup k nastavení je pro tento účet vypnutý."
+
+#: src/renderer/src/state/desktop.ts
+msgid "Settings…"
+msgstr "Nastavení…"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Share selected…"
@@ -6577,7 +6580,7 @@ msgid "Sign-in took too long. Try again and finish it in your browser."
 msgstr "Přihlášení trvalo příliš dlouho. Zkuste to znovu a dokončete ho v prohlížeči."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Sign-in was cancelled."
+msgid "Sign-in was canceled."
 msgstr "Přihlášení bylo zrušeno."
 
 #: src/renderer/src/features/compose/components/Composer.tsx
@@ -7423,7 +7426,7 @@ msgid "This login can't open OpenMail"
 msgstr "Toto přihlášení nemůže otevřít OpenMail"
 
 #: src/renderer/src/lib/errors.ts
-msgid "This meeting was cancelled, so there's nothing to respond to."
+msgid "This meeting was canceled, so there's nothing to respond to."
 msgstr "Tato schůzka byla zrušena, takže není na co odpovídat."
 
 #: src/renderer/src/lib/errors.ts

@@ -391,7 +391,7 @@ msgid "Account"
 msgstr "アカウント"
 
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
-msgid "Account colour"
+msgid "Account color"
 msgstr "アカウントの色"
 
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
@@ -2231,7 +2231,7 @@ msgid "Cursor age: {age}. Pending operations: {0}."
 msgstr "カーソルの経過時間：{age}。保留中の操作：{0}。"
 
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
-msgid "Custom colour"
+msgid "Custom color"
 msgstr "カスタムカラー"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
@@ -3984,7 +3984,7 @@ msgid "Medium"
 msgstr "中"
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
-msgid "Meeting cancelled"
+msgid "Meeting canceled"
 msgstr "会議がキャンセルされました"
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
@@ -6375,13 +6375,16 @@ msgstr "手動で設定"
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sidebar/SidebarFooter.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
-#: src/renderer/src/state/desktop.ts
 msgid "Settings"
 msgstr "設定"
 
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 msgid "Settings access is off for this account."
 msgstr "このアカウントの設定へのアクセスはオフです。"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Settings…"
+msgstr "設定…"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Share selected…"
@@ -6577,7 +6580,7 @@ msgid "Sign-in took too long. Try again and finish it in your browser."
 msgstr "サインインに時間がかかりすぎました。もう一度お試しのうえ、ブラウザーで完了してください。"
 
 #: src/renderer/src/lib/errors.ts
-msgid "Sign-in was cancelled."
+msgid "Sign-in was canceled."
 msgstr "サインインがキャンセルされました。"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
@@ -7423,7 +7426,7 @@ msgid "This login can't open OpenMail"
 msgstr "このログインでは OpenMail を開けません"
 
 #: src/renderer/src/lib/errors.ts
-msgid "This meeting was cancelled, so there's nothing to respond to."
+msgid "This meeting was canceled, so there's nothing to respond to."
 msgstr "この会議はキャンセルされたため、返信する必要はありません。"
 
 #: src/renderer/src/lib/errors.ts

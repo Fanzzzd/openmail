@@ -181,7 +181,7 @@ function Invitation({
     >
       <p className="font-semibold">
         {invite.cancelled
-          ? t`Meeting cancelled`
+          ? t`Meeting canceled`
           : invite.method === "REPLY"
             ? t`Meeting response`
             : t`Calendar invitation`}
@@ -215,7 +215,7 @@ function Invitation({
       {invite.threadStatus && (
         <Disclosure summary={t`Invitation status in this conversation`}>
           {invite.threadStatus.cancelled ? (
-            <p>{t`Meeting cancelled`}</p>
+            <p>{t`Meeting canceled`}</p>
           ) : invite.threadStatus.sequence > invite.sequence ? (
             <p>{t`This invitation has a newer update`}</p>
           ) : null}

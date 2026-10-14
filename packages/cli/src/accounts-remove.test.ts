@@ -29,7 +29,7 @@ describe("accounts remove asks first", () => {
     expect(decide(false, true, false)).toEqual({
       removes: false,
       asked: 1,
-      message: "Cancelled. Nothing was removed.",
+      message: "Canceled. Nothing was removed.",
     });
   });
 

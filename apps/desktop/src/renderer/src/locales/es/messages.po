@@ -391,7 +391,7 @@ msgid "Account"
 msgstr "Cuenta"
 
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
-msgid "Account colour"
+msgid "Account color"
 msgstr "Color de la cuenta"
 
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
@@ -2231,7 +2231,7 @@ msgid "Cursor age: {age}. Pending operations: {0}."
 msgstr "Antigüedad del cursor: {age}. Operaciones pendientes: {0}."
 
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
-msgid "Custom colour"
+msgid "Custom color"
 msgstr "Color personalizado"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
@@ -3984,7 +3984,7 @@ msgid "Medium"
 msgstr "Mediano"
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
-msgid "Meeting cancelled"
+msgid "Meeting canceled"
 msgstr "Reunión cancelada"
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
@@ -6375,13 +6375,16 @@ msgstr "Configurar manualmente"
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sidebar/SidebarFooter.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
-#: src/renderer/src/state/desktop.ts
 msgid "Settings"
 msgstr "Ajustes"
 
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 msgid "Settings access is off for this account."
 msgstr "El acceso a los ajustes está desactivado para esta cuenta."
+
+#: src/renderer/src/state/desktop.ts
+msgid "Settings…"
+msgstr "Ajustes…"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Share selected…"
@@ -6577,7 +6580,7 @@ msgid "Sign-in took too long. Try again and finish it in your browser."
 msgstr "El inicio de sesión tardó demasiado. Vuelve a intentarlo y complétalo en tu navegador."
 
 #: src/renderer/src/lib/errors.ts
-msgid "Sign-in was cancelled."
+msgid "Sign-in was canceled."
 msgstr "Se canceló el inicio de sesión."
 
 #: src/renderer/src/features/compose/components/Composer.tsx
@@ -7423,7 +7426,7 @@ msgid "This login can't open OpenMail"
 msgstr "Este inicio de sesión no puede abrir OpenMail"
 
 #: src/renderer/src/lib/errors.ts
-msgid "This meeting was cancelled, so there's nothing to respond to."
+msgid "This meeting was canceled, so there's nothing to respond to."
 msgstr "Esta reunión se canceló, así que no hay nada que responder."
 
 #: src/renderer/src/lib/errors.ts

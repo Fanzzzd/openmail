@@ -160,7 +160,7 @@ export const confirmRemoval = <E, R>(
     ? Effect.void
     : interactive
       ? Effect.flatMap(ask, (confirmed) =>
-          confirmed ? Effect.void : fail("Cancelled. Nothing was removed."),
+          confirmed ? Effect.void : fail("Canceled. Nothing was removed."),
         )
       : fail(REMOVE_NEEDS_YES);
 

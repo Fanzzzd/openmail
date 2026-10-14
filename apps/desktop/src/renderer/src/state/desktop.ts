@@ -136,7 +136,7 @@ export function useDesktopLabels() {
             ok: t`OK`,
             read: t`Mark read`,
             actionMenu: t`Actions`,
-            settings: t`Settings`,
+            settings: t`Settings…`,
             newWindow: t`New window`,
             compose: t`New message`,
             attachFiles: t`Attach files…`,

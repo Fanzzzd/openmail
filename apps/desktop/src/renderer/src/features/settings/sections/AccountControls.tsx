@@ -78,10 +78,10 @@ export function AccountControls({
         </label>
         <label className="flex h-6 items-center gap-2">
           <Checkbox checked={customColor} onCheckedChange={setCustomColor} />
-          <Trans>Custom colour</Trans>
+          <Trans>Custom color</Trans>
           {customColor && (
             <input
-              aria-label={t`Account colour`}
+              aria-label={t`Account color`}
               type="color"
               value={color}
               onChange={(e) => setColor(e.target.value)}

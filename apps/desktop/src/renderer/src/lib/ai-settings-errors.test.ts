@@ -86,7 +86,7 @@ it("sign-in and mail server failures say what happened from their reason, not th
   const i18n = setupI18n({ locale: "en", messages: { en: {} } });
   const auth = (fields: Partial<ConstructorParameters<typeof AuthError>[0]>) =>
     errorText(i18n, new AuthError({ message: "", ...fields }));
-  expect(auth({ reason: "cancelled" })).toBe("Sign-in was cancelled.");
+  expect(auth({ reason: "cancelled" })).toBe("Sign-in was canceled.");
   expect(auth({ reason: "timeout" })).toMatch(/^Sign-in took too long/);
   expect(
     auth({ reason: "account_mismatch", signedInAs: "b@gmail.com", expected: "a@gmail.com" }),

@@ -99,7 +99,7 @@ function explain(error: unknown): string | undefined {
     case "ProviderError":
       return `The mail provider did not answer: ${error.message}`;
     case "QuitError":
-      return "Cancelled.";
+      return "Canceled.";
     default:
       return error.message;
   }
