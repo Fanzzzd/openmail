@@ -77,6 +77,15 @@
     },
     "@openmail/desktop#test": {
       "dependsOn": ["^build", "build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/.oxlintrc.json",
+        "$TURBO_ROOT$/docs/security.md",
+        "$TURBO_ROOT$/docs/agents.md",
+        "$TURBO_ROOT$/docs/licenses/**",
+        "$TURBO_ROOT$/THIRD_PARTY_NOTICES.md",
+        "$TURBO_ROOT$/scripts/check-licenses.mjs"
+      ],
       "env": [
         "CI",
         "OPENMAIL_LOW_MEMORY_TESTS",
