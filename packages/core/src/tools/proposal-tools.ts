@@ -211,6 +211,7 @@ export const proposalHandlers = ({
   accountIdsFor,
   requireMessage,
   requireThreads,
+  propose,
   visibleProposals,
 }: ToolContext) => {
   return {
@@ -249,9 +250,7 @@ export const proposalHandlers = ({
         );
       }
       const actor = yield* agent(p.rationale);
-      const outcome = yield* mailbox
-        .perform({ kind: "modify", threads: p.thread_ids, op }, actor)
-        .pipe(Effect.mapError(toToolError));
+      const outcome = yield* propose({ kind: "modify", threads: p.thread_ids, op }, actor);
       return {
         outcome,
         message: yield* describe(
@@ -263,9 +262,7 @@ export const proposalHandlers = ({
     snooze_threads: Effect.fnUntraced(function* (p) {
       yield* requireThreads(p.thread_ids);
       const actor = yield* agent(p.rationale);
-      const outcome = yield* mailbox
-        .perform({ kind: "snooze", threads: p.thread_ids, due: p.due }, actor)
-        .pipe(Effect.mapError(toToolError));
+      const outcome = yield* propose({ kind: "snooze", threads: p.thread_ids, due: p.due }, actor);
       return { outcome, message: yield* describe(outcome, "Snoozed conversations.") };
     }),
     draft_message: Effect.fnUntraced(function* (p) {
@@ -308,25 +305,23 @@ export const proposalHandlers = ({
         return yield* toolError("invalid_input", "The draft needs at least one recipient.");
       }
       const actor = yield* agent(p.rationale);
-      const outcome = yield* mailbox
-        .perform(
-          {
-            kind: "draft",
-            accountId: p.account_id,
-            message: {
-              to,
-              cc,
-              bcc,
-              subject,
-              text: p.body,
-              attachments: [],
-              mode,
-              ...(p.reply_to_message_id ? { inReplyTo: p.reply_to_message_id } : {}),
-            },
+      const outcome = yield* propose(
+        {
+          kind: "draft",
+          accountId: p.account_id,
+          message: {
+            to,
+            cc,
+            bcc,
+            subject,
+            text: p.body,
+            attachments: [],
+            mode,
+            ...(p.reply_to_message_id ? { inReplyTo: p.reply_to_message_id } : {}),
           },
-          actor,
-        )
-        .pipe(Effect.mapError(toToolError));
+        },
+        actor,
+      );
       return {
         outcome,
         message: yield* describe(

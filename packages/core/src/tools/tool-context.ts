@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { Mailbox } from "../mailbox/mailbox.js";
 import { AgentIdentity, cleanMcpClientName } from "./agent-identity.js";
-import type { Actor, Proposal } from "../domain/command.js";
+import type { Actor, Command, Outcome, Proposal } from "../domain/command.js";
 import {
   ACCESS_STATUS_HINT,
   ACCOUNT_ID_HINT,
@@ -11,6 +11,17 @@ import {
   toolError,
 } from "./tool-common.js";
 import type { Tool, Toolkit } from "effect/ai";
+
+/** Pending proposals one client may have. More fail with too_many_proposals. */
+export const PENDING_PROPOSAL_LIMIT = 50;
+
+/** JSON with sorted object keys, so equal commands compare equal however they were built. */
+const canonicalJson = (value: unknown): string =>
+  JSON.stringify(value, (_key, item: unknown) =>
+    item !== null && typeof item === "object" && !Array.isArray(item)
+      ? Object.fromEntries(Object.entries(item).toSorted(([a], [b]) => a.localeCompare(b)))
+      : item,
+  );
 
 /** What every tool handler shares: the Mailbox, the caller's identity and the accounts it may read. */
 export const makeToolContext = Effect.gen(function* () {
@@ -82,6 +93,34 @@ export const makeToolContext = Effect.gen(function* () {
         : Effect.void,
     );
 
+  /**
+   * mailbox.perform for an agent's change, with two limits on its pending proposals: the same
+   * change again returns the waiting proposal instead of a second one (and a second draft), and
+   * a client with PENDING_PROPOSAL_LIMIT waiting gets too_many_proposals until the person
+   * decides some.
+   */
+  const propose = (command: Command, actor: Actor) =>
+    Effect.gen(function* () {
+      if (actor.kind !== "agent")
+        return yield* mailbox.perform(command, actor).pipe(Effect.mapError(toToolError));
+      const mine = (yield* mailbox.proposals).filter(
+        (p) =>
+          p.actor.kind === "agent" &&
+          p.actor.surface === actor.surface &&
+          p.actor.name === actor.name,
+      );
+      const key = canonicalJson(command);
+      const same = mine.find((p) => canonicalJson(p.command) === key);
+      if (same) return { status: "proposed", proposalId: same.id } satisfies Outcome;
+      if (mine.length >= PENDING_PROPOSAL_LIMIT)
+        return yield* toolError(
+          "too_many_proposals",
+          `${PENDING_PROPOSAL_LIMIT} proposals from this app are already waiting for the person. Nothing was proposed.`,
+          "Ask the person to review AI suggestions in OpenMail, then try again. list_proposals shows what is waiting.",
+        );
+      return yield* mailbox.perform(command, actor).pipe(Effect.mapError(toToolError));
+    });
+
   const visibleProposals = Effect.gen(function* () {
     const allowed = new Set(yield* accountIdsFor());
     const kept: Proposal[] = [];
@@ -110,6 +149,7 @@ export const makeToolContext = Effect.gen(function* () {
     requireProfile,
     requireMessage,
     requireThreads,
+    propose,
     visibleProposals,
   };
 });

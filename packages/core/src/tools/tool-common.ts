@@ -30,6 +30,7 @@ export const TOOL_ERROR_CODES = [
   "provider_rejected",
   "provider_unavailable",
   "not_ready",
+  "too_many_proposals",
 ] as const;
 export type ToolErrorCode = (typeof TOOL_ERROR_CODES)[number];
 

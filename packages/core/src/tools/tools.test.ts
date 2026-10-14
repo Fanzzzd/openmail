@@ -231,7 +231,7 @@ function stubMailbox(overrides: Partial<Service>): Layer.Layer<Mailbox> {
     undoBatch: () => Effect.die("not used"),
     perform: () => notUsed("perform"),
     decideProposal: () => notUsed("decideProposal"),
-    proposals: notUsed("proposals"),
+    proposals: Effect.succeed([]),
     audit: () => notUsed("audit"),
     agentActivity: () => Effect.succeed([]),
     recordAgentActivity: () => Effect.void,
@@ -467,7 +467,7 @@ it.effect("draft_message only ever performs a draft command as the agent", () =>
 it.effect("a draft reply defaults its recipients and subject from the original", () =>
   Effect.gen(function* () {
     const calls: Command[] = [];
-    const original = {
+    const original: import("../domain/message.js").Message = {
       ...testMessage("m9"),
       accountId: "gmail:me@example.com",
       subject: "报价",
@@ -478,8 +478,23 @@ it.effect("a draft reply defaults its recipients and subject from the original",
         { name: "Bob", address: "bob@example.com" },
       ],
     };
+    function thread(id: string): Effect.Effect<import("../domain/message.js").Message[]>;
+    function thread(
+      id: string,
+      view: "model",
+      tokenBudget?: number,
+    ): Effect.Effect<import("../ai/model-thread.js").ModelThread>;
+    function thread(
+      id: string,
+      view?: "model",
+    ): Effect.Effect<
+      | readonly import("../domain/message.js").Message[]
+      | import("../ai/model-thread.js").ModelThread
+    > {
+      return view === "model" ? testThread(id, view) : Effect.succeed([original]);
+    }
     const layer = stubMailbox({
-      thread: () => Effect.succeed([original]),
+      thread,
       sendAs: Effect.succeed([
         {
           accountId: "gmail:me@example.com",
@@ -520,6 +535,47 @@ it.effect("a draft reply defaults its recipients and subject from the original",
       message: "New drafts need a subject.",
       code: "invalid_input",
     });
+  }),
+);
+
+it.effect("an agent's identical proposal returns the waiting one, and 50 pending is the cap", () =>
+  Effect.gen(function* () {
+    const pending: import("../domain/command.js").Proposal[] = [];
+    const layer = stubMailbox({
+      proposals: Effect.sync(() => [...pending]),
+      perform: (command, actor) =>
+        Effect.sync(() => {
+          const id = pending.length + 1;
+          pending.push({ id, createdAt: 0, actor, command, status: "pending" });
+          return { status: "proposed", proposalId: id } as const;
+        }),
+    });
+    const draft = {
+      account_id: "gmail:me@example.com",
+      to: ["a@example.com"],
+      subject: "s",
+      body: "b",
+      rationale: "r",
+    };
+    const first = yield* run(call("draft_message", draft), layer);
+    const again = yield* run(call("draft_message", { ...draft, rationale: "again" }), layer);
+    assert.deepStrictEqual(
+      [first.encodedResult, again.encodedResult].map((r) =>
+        "outcome" in r ? r.outcome : undefined,
+      ),
+      [
+        { status: "proposed", proposal_id: 1 },
+        { status: "proposed", proposal_id: 1 },
+      ],
+    );
+    assert.strictEqual(pending.length, 1);
+    for (let i = 1; i < 50; i++)
+      yield* run(call("draft_message", { ...draft, body: `b${i}` }), layer);
+    assert.strictEqual(pending.length, 50);
+    const over = yield* run(call("draft_message", { ...draft, body: "one more" }), layer);
+    assert.isTrue(over.isFailure);
+    assert.include(JSON.stringify(over.encodedResult), '"code":"too_many_proposals"');
+    assert.strictEqual(pending.length, 50);
   }),
 );
 
