@@ -189,7 +189,7 @@ export function ClientCard({
               className={buttonLink}
               onClick={() => change("connect", !proposalTools)}
             >
-              {proposalTools ? <Trans>Make read only</Trans> : <Trans>Allow proposals</Trans>}
+              {proposalTools ? <Trans>Make read only</Trans> : <Trans>Allow AI suggestions</Trans>}
             </button>
           </p>
         )}

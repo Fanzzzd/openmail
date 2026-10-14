@@ -23,7 +23,7 @@ import { SettingsCheckRow, SettingsGroup, SettingsRow } from "../../../ui/Settin
 import { buttonLink, settingsHint } from "../../../ui/styles";
 import { SegmentedControl } from "../../../ui/SegmentedControl";
 
-/** Settings > Compose: undo send, signatures, templates, hidden recipients. */
+/** Settings → Compose: undo send, signatures, templates, hidden recipients. */
 export function ComposeSettings() {
   return (
     <>
@@ -276,9 +276,9 @@ function ReplyFrom() {
   const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => DEFAULT_PREFS);
   const setPrefs = useAtomSet(setPrefsAtom);
   return (
-    <SettingsRow label={t`Reply From`}>
+    <SettingsRow label={t`Reply from`}>
       <Select
-        aria-label={t`Reply From`}
+        aria-label={t`Reply from`}
         variant="field"
         className="max-w-64 min-w-40"
         value={prefs.replyFrom}

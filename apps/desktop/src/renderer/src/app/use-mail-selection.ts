@@ -327,7 +327,7 @@ export function useMailSelection({
 
   /**
    * Selects a thread. Opening an unread thread marks it read right away, after
-   * a few seconds, or never, as set in Settings > Reading.
+   * a few seconds, or never, as set in Settings → Reading.
    */
   const select = (id: string | null, source: SelectionSource) => {
     setSelectedId(id);

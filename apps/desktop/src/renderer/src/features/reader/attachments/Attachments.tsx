@@ -439,7 +439,7 @@ export function AttachmentList({
                   <Trans>Copy</Trans>
                 </MenuItem>
                 <MenuItem onClick={() => saveTo([file])}>
-                  <Trans>Save To…</Trans>
+                  <Trans>Save to…</Trans>
                 </MenuItem>
                 {share && (
                   <MenuItem onClick={() => action("share", [file])}>

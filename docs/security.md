@@ -91,7 +91,7 @@ The per-account "Allow AI to read this account" setting only restricts the agent
 
 ## Connecting AI apps
 
-"Settings > AI Access > AI apps" detects Claude Code, Codex, Claude and Cursor and reads their MCP config to work out the connection status. Reading only parses the config and never changes the file. OpenMail changes another app's config only after the user clicks "Connect", "Reconnect" or "Disconnect" and reviews the change in the confirmation dialog:
+"Settings → AI Access → AI apps" detects Claude Code, Codex, Claude and Cursor and reads their MCP config to work out the connection status. Reading only parses the config and never changes the file. OpenMail changes another app's config only after the user clicks "Connect", "Reconnect" or "Disconnect" and reviews the change in the confirmation dialog:
 
 - The dialog lists the commands to run (argv) and the config file diff. The main process recomputes the change before applying it and refuses if the preview token differs, asking for a new preview. When OpenMail edits the file directly, the token is a hash of the whole file. When it goes through a CLI, only the `openmail` entry is hashed, because Claude Code rewrites other parts of `~/.claude.json` at any time.
 - Claude Code uses `claude mcp add-json --scope user openmail <entry JSON>` and `claude mcp remove --scope user openmail`. `add` refuses an existing name, so reconnecting runs remove and then add-json. If add-json fails, OpenMail runs add-json again with the old entry to restore it. When `claude` is not found, the dialog only offers a command to copy.
@@ -108,7 +108,7 @@ The MCP server writes one `agent_activity` row per tool call (the CLI's `openmai
 
 ## Remote access
 
-A user can use OpenMail on this Mac from a browser on a phone or another computer. It is off by default and turns on in Settings > Remote access.
+A user can use OpenMail on this Mac from a browser on a phone or another computer. It is off by default and turns on in Settings → Remote access.
 
 ```
 Phone browser ──WireGuard (tailnet)──▶ Tailscale app on the Mac

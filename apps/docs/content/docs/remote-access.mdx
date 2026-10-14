@@ -16,12 +16,12 @@ Remote access is off by default.
 
 ## Turn it on
 
-1. Open **Settings > Remote access** on the Mac.
+1. Open **Settings → Remote access** on the Mac.
 2. Check that the Tailscale section shows your tailnet and no warnings.
 3. Turn on **Allow access from my tailnet**.
 4. On the other device, scan the QR code or open the address shown, such as `https://macbook-pro.tail1234.ts.net:8443`.
 
-OpenMail runs `tailscale serve --bg --https=8443` to publish itself on your tailnet. If something else already uses port 8443 on this Mac, OpenMail stops and tells you. It doesn't replace another app's setting. Turning remote access off removes the mapping. Quitting OpenMail removes it too, and the next launch adds it again. If Tailscale isn't running when you turn remote access off, Settings says it couldn't remove the mapping. OpenMail keeps trying in the background, at most every five minutes, until Tailscale responds or you change the setting. It also tries when you open **Settings > Remote access** or press **Refresh**, and at the next launch.
+OpenMail runs `tailscale serve --bg --https=8443` to publish itself on your tailnet. If something else already uses port 8443 on this Mac, OpenMail stops and tells you. It doesn't replace another app's setting. Turning remote access off removes the mapping. Quitting OpenMail removes it too, and the next launch adds it again. If Tailscale isn't running when you turn remote access off, Settings says it couldn't remove the mapping. OpenMail keeps trying in the background, at most every five minutes, until Tailscale responds or you change the setting. It also tries when you open **Settings → Remote access** or press **Refresh**, and at the next launch.
 
 OpenMail never uses Tailscale Funnel, so the page is never on the public internet.
 

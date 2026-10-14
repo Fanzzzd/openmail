@@ -38,9 +38,9 @@ const PRESET_NAMES: Record<string, MessageDescriptor> = {
 const PRESET_NOTES: Record<string, MessageDescriptor> = {
   icloud: msg`Create an app-specific password under Sign-In and Security in your Apple Account.`,
   yahoo: msg`Create an app password under Account Security in your Yahoo account.`,
-  qq: msg`On the web, turn on IMAP/SMTP under Settings > Account & Security > Security Settings, then generate an authorization code.`,
-  "163": msg`On the web, turn on IMAP under Settings > POP3/SMTP/IMAP, then follow the prompts to generate an authorization code.`,
-  fastmail: msg`Create an app password under Settings > Privacy & Security, with IMAP and SMTP checked.`,
+  qq: msg`On the web, turn on IMAP/SMTP under Settings → Account & Security → Security Settings, then generate an authorization code.`,
+  "163": msg`On the web, turn on IMAP under Settings → POP3/SMTP/IMAP, then follow the prompts to generate an authorization code.`,
+  fastmail: msg`Create an app password under Settings → Privacy & Security, with IMAP and SMTP checked.`,
 };
 
 type OAuthProvider = "gmail" | "outlook";

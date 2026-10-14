@@ -1,3 +1,4 @@
+import { plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { Account } from "../../../../../shared/api";
 import {
@@ -173,7 +174,11 @@ export function FilterEditor({
         }}
       >
         <h2 className="text-headline font-semibold">
-          {mode === "apply" ? t`Apply to existing mail` : initial ? t`Save rule` : t`Create filter`}
+          {mode === "apply"
+            ? t`Apply to existing mail`
+            : initial
+              ? t`Save filter`
+              : t`Create filter`}
         </h2>
         {account.provider === "outlook" && (
           <label className="block">
@@ -364,7 +369,7 @@ export function FilterEditor({
                   checked={input.action.stopProcessing ?? false}
                   onCheckedChange={(stopProcessing) => action({ stopProcessing })}
                 />
-                <span>{t`Stop processing more rules`}</span>
+                <span>{t`Stop processing more filters`}</span>
               </label>
             )}
             <label className="flex items-center gap-2">
@@ -600,7 +605,7 @@ export function FilterEditor({
           )}
           {mode === "apply" && serverOnlyAction && (
             <p className={settingsHint}>
-              <Trans>This rule can only be applied to future mail on the server</Trans>
+              <Trans>This filter can only be applied to future mail on the server</Trans>
             </p>
           )}
           {resultError(i18n, preview) && (
@@ -662,7 +667,7 @@ export function FilterEditor({
             {mode === "apply"
               ? t`Apply to existing mail`
               : initial
-                ? t`Save rule`
+                ? t`Save filter`
                 : t`Create filter`}
           </button>
         </div>
@@ -672,13 +677,13 @@ export function FilterEditor({
         onOpenChange={(open) => {
           if (!open) setConfirming(null);
         }}
-        title={mode === "apply" ? t`Apply to existing mail?` : t`Confirm rule changes?`}
+        title={mode === "apply" ? t`Apply to existing mail?` : t`Confirm filter changes?`}
         description={
           confirming && (
             <>
               {confirming.preview.unavailable?.length
-                ? t`Preview unavailable. The rule will apply to future mail on the server.`
-                : t`Preview: ${confirming.preview.matches.length} messages. Only the previewed messages will be changed when applying to existing mail.`}
+                ? t`Preview unavailable. The filter will apply to future mail on the server.`
+                : t`${plural(confirming.preview.matches.length, { one: "Preview: # message.", other: "Preview: # messages." })} Only the previewed messages will be changed when applying to existing mail.`}
               {confirming.preview.truncated && (
                 <span className="mt-2 block">
                   {account.provider === "outlook"

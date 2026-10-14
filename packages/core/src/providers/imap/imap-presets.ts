@@ -62,7 +62,7 @@ export const IMAP_PRESETS: Record<string, ImapPreset> = {
     smtpPort: 465,
     smtpSecure: true,
     appPasswordUrl: "https://mail.qq.com/",
-    note: "在网页版「设置 > 账号与安全 > 安全设置」开启 IMAP/SMTP 服务，再生成授权码。",
+    note: "在网页版「设置 → 账号与安全 → 安全设置」开启 IMAP/SMTP 服务，再生成授权码。",
     // Only when「SMTP发信后保存到服务器」is on; send appends when it is off.
     serverSavesSent: true,
   },
@@ -74,7 +74,7 @@ export const IMAP_PRESETS: Record<string, ImapPreset> = {
     smtpPort: 465,
     smtpSecure: true,
     appPasswordUrl: "https://mail.163.com/",
-    note: "在网页版「设置 > POP3/SMTP/IMAP」开启 IMAP 服务，按提示生成授权码。",
+    note: "在网页版「设置 → POP3/SMTP/IMAP」开启 IMAP 服务，按提示生成授权码。",
     serverSavesSent: true,
   },
   fastmail: {
@@ -85,7 +85,7 @@ export const IMAP_PRESETS: Record<string, ImapPreset> = {
     smtpPort: 465,
     smtpSecure: true,
     appPasswordUrl: "https://app.fastmail.com/settings/security/apps",
-    note: "在「设置 > 隐私与安全」里新建应用密码，勾选 IMAP 和 SMTP。",
+    note: "在「设置 → 隐私与安全」里新建应用密码，勾选 IMAP 和 SMTP。",
     serverSavesSent: false,
   },
 };

@@ -25,7 +25,7 @@ import { buttonLink, buttonSecondary, formInput, settingsHint } from "../../../u
 import { SegmentedControl } from "../../../ui/SegmentedControl";
 import { canCall } from "../../../lib/platform";
 
-/** Settings > Reading: when mail counts as read, conversations, message look, remote images. */
+/** Settings → Reading: when mail counts as read, conversations, message look, remote images. */
 export function ReadingSettings() {
   const { t } = useLingui();
   // Part of a sentence, not a hint beside a control, so the web build keeps it too.

@@ -498,7 +498,7 @@ for (const mode of ["save", "apply"] as const) {
             ?.dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
         });
         expect(dom.element.querySelector('[role="alertdialog"]')?.textContent).toContain(
-          "Preview unavailable. The rule will apply to future mail on the server.",
+          "Preview unavailable. The filter will apply to future mail on the server.",
         );
       }
     } finally {

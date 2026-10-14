@@ -114,7 +114,7 @@ core 接受 Electron updater 适配器，统一配置和发起网络检查。窗
 
 core 的 `resolveUpdateFeed`（[update-feed.ts](../packages/core/src/app/update-feed.ts)）不带凭证请求 GitHub API 选出 release。Stable 只取最新正式版；Latest 在正式版和预发布版中取 semver 最大的一个。清单只从该 release 的 `https://github.com/Fanzzzd/openmail/releases/download/<tag>/` 读取，重定向只接受 `release-assets.githubusercontent.com` 和 `objects.githubusercontent.com`。桌面适配器把 tag 交给 electron-updater 的 `GitHubProvider`，安装包从同一个 tag 下载，SDK 校验 sha512 和签名。未认证的 GitHub API 每个 IP 每小时限 60 次。Stable 每次检查调用 1 次，Latest 调用 2 次，release 超过 100 个时每多 100 个再加 1 次。
 
-「设置 > 常规 > 软件更新」显示更新版本和检查／下载状态。每 6 小时检查一次，主窗口显示可用更新。自动下载默认开启，可在设置中关闭并显式下载；下载完成后，退出时先检查待处理草稿，再重新核对签名和渠道资格后安装。网络失败不影响收发。macOS 更新需要 ZIP 和签名，见 [electron-builder 26 自动更新文档](https://www.electron.build/v26/docs/features/auto-update/)。
+「设置 → 常规 → 软件更新」显示更新版本和检查／下载状态。每 6 小时检查一次，主窗口显示可用更新。自动下载默认开启，可在设置中关闭并显式下载；下载完成后，退出时先检查待处理草稿，再重新核对签名和渠道资格后安装。网络失败不影响收发。macOS 更新需要 ZIP 和签名，见 [electron-builder 26 自动更新文档](https://www.electron.build/v26/docs/features/auto-update/)。
 
 仓库公开前的构建把 GitHub 令牌存在钥匙串项 `updates:github-release-token`。升级后第一次启动更新时，core 删除这一项。项不存在或删除失败都不提示；`prefs` 表的 `updates:legacy-token-removed` 记录已执行，之后的启动不再访问该项。
 
