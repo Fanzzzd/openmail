@@ -249,6 +249,8 @@ function stubMailbox(overrides: Partial<Service>): Layer.Layer<Mailbox> {
     queueUndoSend: () => notUsed("queueUndoSend"),
     awaitUndoSend: () => notUsed("awaitUndoSend"),
     discardDraft: () => notUsed("discardDraft"),
+    discardDraftLater: () => notUsed("discardDraftLater"),
+    restoreDraft: () => notUsed("restoreDraft"),
     indexingProgress: notUsed("indexingProgress"),
     setModelsEnabled: () => notUsed("setModelsEnabled"),
     setIndexingPaused: () => notUsed("setIndexingPaused"),

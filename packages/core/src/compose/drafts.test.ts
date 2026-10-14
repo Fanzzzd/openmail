@@ -208,6 +208,48 @@ import { replyFromAddress } from "./signatures.js";
     ),
   );
 
+  it.effect("a held discard touches nothing until its window ends, and restore keeps it", () =>
+    withMail((m, server) =>
+      Effect.gen(function* () {
+        yield* m.saveDraft({ id: "draft:1", accountId: GMAIL, message: draftMessage() });
+        assert.strictEqual(yield* m.discardDraftLater("draft:1", 10_000), true);
+        yield* TestClock.adjust("9 seconds");
+        assert.strictEqual(server.drafts.size, 1);
+        const restored = yield* m.restoreDraft("draft:1");
+        assert.strictEqual(restored.id, "draft:1");
+        yield* TestClock.adjust("1 minute");
+        assert.strictEqual(server.drafts.size, 1);
+        assert.deepStrictEqual(yield* draftIds(m), ["draft:1"]);
+        assert.notStrictEqual((yield* m.audit(1))[0]?.action, "discard_draft");
+
+        assert.strictEqual(yield* m.discardDraftLater("draft:1", 10_000), true);
+        yield* TestClock.adjust("10 seconds");
+        assert.strictEqual(server.drafts.size, 0);
+        assert.deepStrictEqual(yield* draftIds(m), []);
+        assert.strictEqual((yield* m.audit(1))[0]?.action, "discard_draft");
+        const late = yield* Effect.flip(m.restoreDraft("draft:1"));
+        assert.strictEqual(late._tag, "InvalidInput");
+      }),
+    ),
+  );
+
+  it.effect("saving a draft whose discard is held keeps the draft", () =>
+    withMail((m, server) =>
+      Effect.gen(function* () {
+        yield* m.saveDraft({ id: "draft:1", accountId: GMAIL, message: draftMessage() });
+        yield* m.discardDraftLater("draft:1", 10_000);
+        yield* m.saveDraft({
+          id: "draft:1",
+          accountId: GMAIL,
+          message: draftMessage({ text: "kept" }),
+        });
+        yield* TestClock.adjust("1 minute");
+        assert.strictEqual(server.drafts.size, 1);
+        assert.strictEqual((yield* m.openDraft("draft:1")).message.text, "kept");
+      }),
+    ),
+  );
+
   it.effect("a draft deleted in another client disappears after the next sync", () =>
     withMail((m, server) =>
       Effect.gen(function* () {

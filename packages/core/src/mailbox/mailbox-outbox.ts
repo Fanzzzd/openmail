@@ -48,6 +48,9 @@ export const makeOutboxMailbox = (
       enqueue: boolean,
     ) => Effect.Effect<StoredDraft, NotFound | InvalidInput>;
     discardDraft: Mailbox["Service"]["discardDraft"];
+    draftStatus: Mailbox["Service"]["draftStatus"];
+    saveDraft: Mailbox["Service"]["saveDraft"];
+    openDraft: Mailbox["Service"]["openDraft"];
   },
   runtime: MailboxRuntimeState,
 ) => {
@@ -66,6 +69,9 @@ export const makeOutboxMailbox = (
     crypto,
     mailboxScope,
     discardDraft,
+    draftStatus,
+    saveDraft,
+    openDraft,
   } = deps;
 
   /** Called within the send transaction, so clearing cannot lose the old draft's identity. */
@@ -554,9 +560,55 @@ export const makeOutboxMailbox = (
         }
       }
   });
+  const discardNow = (id: string) =>
+    store
+      .deleteQueuedSend(id)
+      .pipe(Effect.andThen(discardDraft(id)), runtime.outboxLock.withPermits(1));
+
+  /** Discards waiting for their undo window. The draft stays untouched until the worker runs. */
+  const heldDiscards = new Map<string, Fiber.Fiber<void>>();
+  /** Takes a held discard back; the worker removes its entry before it starts deleting. */
+  const releaseDiscard = (id: string) =>
+    Effect.suspend(() => {
+      const worker = heldDiscards.get(id);
+      heldDiscards.delete(id);
+      return worker ? Fiber.interrupt(worker).pipe(Effect.as(true)) : Effect.succeed(false);
+    });
+
+  const discardDraftLater = (id: string, holdMs: number) =>
+    Effect.gen(function* () {
+      yield* releaseDiscard(id);
+      const draft = yield* store.getDraft(id);
+      if (Option.isNone(draft)) return false;
+      if (holdMs <= 0 || draft.value.proposalId !== null) {
+        yield* discardNow(id);
+        return false;
+      }
+      const worker = yield* Effect.sleep(holdMs).pipe(
+        Effect.andThen(
+          Effect.suspend(() => {
+            if (heldDiscards.get(id) !== worker) return Effect.void;
+            heldDiscards.delete(id);
+            return discardNow(id);
+          }).pipe(Effect.uninterruptible),
+        ),
+        Effect.forkIn(mailboxScope),
+      );
+      heldDiscards.set(id, worker);
+      return true;
+    }).pipe(Effect.uninterruptible);
+
+  /** The mailbox is closing: finish the discards the person asked for. */
+  const finishHeldDiscards = Effect.suspend(() => {
+    const ids = [...heldDiscards.keys()];
+    heldDiscards.clear();
+    return Effect.forEach(ids, discardNow, { discard: true });
+  });
+
   return {
     send,
     start,
+    finishHeldDiscards,
     service: {
       queuedSends: store.queuedSends,
 
@@ -583,10 +635,22 @@ export const makeOutboxMailbox = (
         ),
       ),
 
-      discardDraft: (id) =>
-        store
-          .deleteQueuedSend(id)
-          .pipe(Effect.andThen(discardDraft(id)), runtime.outboxLock.withPermits(1)),
+      discardDraft: (id) => releaseDiscard(id).pipe(Effect.andThen(discardNow(id))),
+
+      discardDraftLater,
+
+      restoreDraft: (id) =>
+        Effect.gen(function* () {
+          const draft = (yield* releaseDiscard(id)) ? yield* draftStatus(id) : null;
+          if (!draft)
+            return yield* new InvalidInput({ message: "This draft was already discarded." });
+          return draft;
+        }),
+
+      // Editing or opening a draft whose discard is held keeps it.
+      saveDraft: (input) => releaseDiscard(input.id).pipe(Effect.andThen(saveDraft(input))),
+
+      openDraft: (id) => releaseDiscard(id).pipe(Effect.andThen(openDraft(id))),
     } satisfies Pick<
       Mailbox["Service"],
       | "queuedSends"
@@ -599,6 +663,10 @@ export const makeOutboxMailbox = (
       | "flushQueuedSends"
       | "pendingSendCount"
       | "discardDraft"
+      | "discardDraftLater"
+      | "restoreDraft"
+      | "saveDraft"
+      | "openDraft"
     >,
   };
 };

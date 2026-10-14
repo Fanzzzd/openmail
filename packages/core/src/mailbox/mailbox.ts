@@ -495,6 +495,14 @@ export class Mailbox extends Context.Service<
     ): Effect.Effect<Draft, NotFound | InvalidInput>;
     /** Deletes the draft here and on the provider. An agent's draft rejects its proposal. */
     discardDraft(id: string): Effect.Effect<void>;
+    /**
+     * Discards the draft after `holdMs` unless `restoreDraft` runs first. Nothing leaves this
+     * Mac or the provider until then; closing the mailbox discards held drafts at once. An
+     * agent's draft is discarded at once, and the result is false.
+     */
+    discardDraftLater(id: string, holdMs: number): Effect.Effect<boolean>;
+    /** Cancels a held discard and returns the draft as it was. Fails once the hold has ended. */
+    restoreDraft(id: string): Effect.Effect<Draft, InvalidInput>;
 
     // Compose settings
     readonly indexingProgress: Effect.Effect<IndexingProgress>;

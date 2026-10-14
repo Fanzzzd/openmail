@@ -12,6 +12,7 @@ import {
   PubSub,
   Ref,
   Schedule,
+  Scope,
   Semaphore,
   Stream,
 } from "effect";
@@ -321,9 +322,13 @@ export const MailboxLive = (
           flushLater: Effect.suspend(() => flushMailbox.flushLater),
           persistDraft: (...args) => draftsMailbox.persistDraft(...args),
           discardDraft: (...args) => draftsMailbox.discardDraft(...args),
+          draftStatus: (...args) => draftsMailbox.service.draftStatus(...args),
+          saveDraft: (...args) => draftsMailbox.service.saveDraft(...args),
+          openDraft: (...args) => draftsMailbox.service.openDraft(...args),
         },
         runtime,
       );
+      yield* Scope.addFinalizer(mailboxScope, outboxMailbox.finishHeldDiscards);
 
       const folderMailbox = makeFolderMailbox(store, providers, changed, (effect) =>
         flushMailbox.flushNow.pipe(
