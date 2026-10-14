@@ -177,8 +177,8 @@ export function AiSettings({ accounts }: { accounts: readonly Account[] }) {
                   hint={
                     <Trans>
                       Each automatic summary uses your Anthropic API key and sends up to {summaryKb}{" "}
-                      KB of the conversation. At most {summaryCap} a day across all accounts. Failed
-                      summaries don't count.
+                      KB of the conversation. At most {summaryCap} a day across all accounts.
+                      Summaries that fail before any text arrives don't count.
                     </Trans>
                   }
                 >

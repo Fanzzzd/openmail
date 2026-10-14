@@ -2610,8 +2610,8 @@ msgid "Drag selected to Finder"
 msgstr "Přetáhněte vybrané do Finderu"
 
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
-msgid "Each automatic summary uses your Anthropic API key and sends up to {summaryKb} KB of the conversation. At most {summaryCap} a day across all accounts. Failed summaries don't count."
-msgstr "Každé automatické shrnutí používá váš klíč API Anthropic a odešle až {summaryKb} KB konverzace. Nejvýše {summaryCap} denně za všechny účty. Neúspěšná shrnutí se nepočítají."
+msgid "Each automatic summary uses your Anthropic API key and sends up to {summaryKb} KB of the conversation. At most {summaryCap} a day across all accounts. Summaries that fail before any text arrives don't count."
+msgstr "Každé automatické shrnutí používá váš klíč API Anthropic a odešle až {summaryKb} KB konverzace. Nejvýše {summaryCap} denně za všechny účty. Shrnutí, která selžou dřív, než dorazí jakýkoli text, se nepočítají."
 
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx

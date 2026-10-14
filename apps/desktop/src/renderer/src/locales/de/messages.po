@@ -2610,8 +2610,8 @@ msgid "Drag selected to Finder"
 msgstr "Auswahl in den Finder ziehen"
 
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
-msgid "Each automatic summary uses your Anthropic API key and sends up to {summaryKb} KB of the conversation. At most {summaryCap} a day across all accounts. Failed summaries don't count."
-msgstr "Jede automatische Zusammenfassung nutzt deinen Anthropic-API-Schlüssel und sendet bis zu {summaryKb} KB der Konversation. Höchstens {summaryCap} pro Tag über alle Accounts. Fehlgeschlagene Zusammenfassungen zählen nicht."
+msgid "Each automatic summary uses your Anthropic API key and sends up to {summaryKb} KB of the conversation. At most {summaryCap} a day across all accounts. Summaries that fail before any text arrives don't count."
+msgstr "Jede automatische Zusammenfassung nutzt deinen Anthropic-API-Schlüssel und sendet bis zu {summaryKb} KB der Konversation. Höchstens {summaryCap} pro Tag über alle Accounts. Zusammenfassungen, die fehlschlagen, bevor Text ankommt, zählen nicht."
 
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
