@@ -7,6 +7,7 @@
   "type": "module",
   "main": "out/main/index.js",
   "scripts": {
+    "postinstall": "install-electron",
     "dev": "node build/build-vision.mjs && electron-vite dev",
     "build": "node build/build-vision.mjs && electron-vite build && vite build --config vite.web.config.ts --logLevel warn",
     "check-types": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",

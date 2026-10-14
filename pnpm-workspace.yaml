@@ -4,8 +4,9 @@ packages:
   # Tests that read source across packages; turbo.json lists the trees they read.
   - scripts/repo-checks
 allowBuilds:
-  # Electron's postinstall downloads the binary the desktop shell runs on.
-  electron: true
+  # Electron 44 has no install script. apps/desktop's postinstall runs its install-electron bin,
+  # which downloads the binary into node_modules/electron/dist and writes path.txt.
+  electron: false
   # Squirrel.Windows helper from electron-builder; its postinstall downloads unused binaries.
   electron-winstaller: false
   esbuild: true

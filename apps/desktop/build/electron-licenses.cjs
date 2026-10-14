@@ -3,9 +3,9 @@
 // both notices in build/generated/electron-licenses/. extraResources ships that folder in
 // Contents/Resources/licenses/electron/, and scripts/smoke-dist.mjs checks a packaged app has them.
 //
-// node_modules/electron/dist is not always there: Electron 44 has no postinstall and downloads
-// its binary the first time something requires `electron`, which a fresh CI install never does.
-// Without it, this file takes the two notices from the Electron zip for the installed version,
+// Electron 44 has no install script of its own. apps/desktop's postinstall runs its
+// install-electron bin, which fills node_modules/electron/dist, but an install with
+// --ignore-scripts skips that. Without dist, this file takes the two notices from the Electron zip for the installed version,
 // fetched through @electron/get into the cache electron-builder also uses.
 const { execFile } = require("node:child_process");
 const { existsSync, readFileSync } = require("node:fs");
