@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LegalPage } from "@/components/legal-page";
-import { contactEmail } from "@/lib/site";
+import { appName, contactEmail, socialMetadata } from "@/lib/site";
+
+const description =
+  "What data OpenMail handles, where it is stored, and which servers the app contacts.";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
-  description:
-    "What data OpenMail handles, where it is stored, and which servers the app contacts.",
+  description,
+  ...socialMetadata({ title: `Privacy Policy | ${appName}`, description, path: "/privacy" }),
 };
 
 const googleScopes: { scope: string; when: string; why: string }[] = [

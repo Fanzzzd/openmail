@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LegalPage } from "@/components/legal-page";
-import { contactEmail } from "@/lib/site";
+import { appName, contactEmail, socialMetadata } from "@/lib/site";
+
+const description = "Terms for using the OpenMail app and website.";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
-  description: "Terms for using the OpenMail app and website.",
+  description,
+  ...socialMetadata({ title: `Terms of Service | ${appName}`, description, path: "/terms" }),
 };
 
 export default function TermsPage() {

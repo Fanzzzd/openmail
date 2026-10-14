@@ -3,6 +3,7 @@ import { createRelativeLink } from "fumadocs-ui/mdx";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getMDXComponents } from "@/components/mdx";
+import { appName, socialMetadata } from "@/lib/site";
 import { source } from "@/lib/source";
 
 type Props = { params: Promise<{ slug?: string[] }> };
@@ -32,5 +33,11 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   const params = await props.params;
   const page = source.getPage(params.slug);
   if (!page) notFound();
-  return { title: page.data.title, description: page.data.description };
+  const description =
+    page.data.description ?? `${page.data.title} in the ${appName} documentation.`;
+  return {
+    title: page.data.title,
+    description,
+    ...socialMetadata({ title: `${page.data.title} | ${appName}`, description, path: page.url }),
+  };
 }
