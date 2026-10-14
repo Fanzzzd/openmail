@@ -37,10 +37,10 @@ import {
   SnoozeThreads,
   proposalHandlers,
 } from "./proposal-tools.js";
-import { Effect, Exit } from "effect";
+import { Context, Effect, Exit } from "effect";
 import { makeToolContext } from "./tool-context.js";
 import { cleanMcpClientName } from "./agent-identity.js";
-import { CONSENT_SWITCH } from "./tool-common.js";
+import { CONSENT_SWITCH, type MailToolError } from "./tool-common.js";
 import { Mailbox } from "../mailbox/mailbox.js";
 
 export const ReadMailToolkit = Toolkit.make(
@@ -82,10 +82,19 @@ export const AssistantToolkit = Toolkit.make(
   DraftMessage,
 );
 
+/**
+ * Runs once before every tool call, before the handler touches the Mailbox. A failure becomes
+ * the call's result. The in-app assistant charges its tool-call budget here.
+ */
+export const ToolGate = Context.Reference<Effect.Effect<void, MailToolError>>("openmail/ToolGate", {
+  defaultValue: () => Effect.void,
+});
+
 export const MailToolkitLayer = MailToolkit.toLayer(
   Effect.gen(function* () {
     const context = yield* makeToolContext;
     const { mailbox, identity } = context;
+    const gate = yield* ToolGate;
     const handlers = MailToolkit.of({
       ...accountHandlers(context),
       ...threadHandlers(context),
@@ -97,7 +106,7 @@ export const MailToolkitLayer = MailToolkit.toLayer(
 
     /** MCP calls leave a row in agent_activity, so Settings can show what each AI app did. */
     const tracked = <A, E, R>(tool: string, effect: Effect.Effect<A, E, R>) =>
-      effect.pipe(
+      Effect.andThen(gate, effect).pipe(
         Effect.onExit((exit) =>
           Effect.flatMap(identity.current, (current) =>
             current.recordsActivity
@@ -116,10 +125,13 @@ export const MailToolkitLayer = MailToolkit.toLayer(
 
 type AnyHandler = (params: never) => Effect.Effect<unknown, unknown, unknown>;
 
-/** Runs every handler through `wrap`, which gets the tool name and keeps the effect's types. */
+/** Runs every handler through `wrap`, which gets the tool name and keeps the effect's types; every handler already fails with MailToolError. */
 function wrapHandlers<H extends Record<string, AnyHandler>>(
   handlers: H,
-  wrap: <A, E, R>(tool: string, effect: Effect.Effect<A, E, R>) => Effect.Effect<A, E, R>,
+  wrap: <A, E, R>(
+    tool: string,
+    effect: Effect.Effect<A, E, R>,
+  ) => Effect.Effect<A, E | MailToolError, R>,
 ): H {
   const wrapped: Record<string, AnyHandler> = {};
   for (const [tool, handler] of Object.entries(handlers)) {

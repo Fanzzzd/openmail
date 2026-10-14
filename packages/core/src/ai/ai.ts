@@ -159,6 +159,8 @@ export const AI_SUMMARY_INPUT = 80_000;
 export const AUTO_SUMMARY_DAILY_CAP = 50;
 /** Bytes of a thread the assistant reads per read_thread, and of the thread a question is about. */
 export const AI_THREAD_INPUT = 24_000;
+/** Tool calls the assistant may make for one question. A call counts once, however many threads it touches. */
+export const AI_TOOL_CALLS = 12;
 export const AI_OUTPUT_TOKENS = 1024;
 export const AI_MAX_TURNS = 4;
 export const AI_SYSTEM =

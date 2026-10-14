@@ -5,6 +5,7 @@ import {
   aiLanguage,
   AI_INPUT_BUDGET,
   AI_THREAD_INPUT,
+  AI_TOOL_CALLS,
   AUTO_SUMMARY_DAILY_CAP,
   AiAccountSettings,
   AiQuestion,
@@ -21,7 +22,8 @@ import { modelContext } from "../ai/model-view.js";
 import { MODEL_KEY } from "../ai/secrets.js";
 import type { Secrets } from "../platform/auth.js";
 import type { Store } from "../store/service.js";
-import { AssistantToolkit, MailToolkitLayer } from "../tools/tools.js";
+import { AssistantToolkit, MailToolkitLayer, ToolGate } from "../tools/tools.js";
+import { toolError } from "../tools/tool-common.js";
 import { AgentIdentity } from "../tools/agent-identity.js";
 import { toModelAccount } from "../tools/account-tools.js";
 import { providerCapabilities } from "../providers/capabilities.js";
@@ -211,10 +213,20 @@ export function makeAiMailbox(
           let bytesLeft = AI_INPUT_BUDGET - Buffer.byteLength(question.question) - 24_000;
           let calls = 0;
           const sources = new Map<string, AiSource>();
-          const guard = Effect.gen(function* () {
-            yield* check(ids);
-            if (++calls > 12) yield* new InvalidInput({ message: "AI tool budget exceeded." });
-          });
+          // One charge per tool call, however many threads or lookups the call needs. The
+          // consent check still runs on every access, so turning AI off mid-answer stops reads.
+          const charge = Effect.suspend(() =>
+            ++calls > AI_TOOL_CALLS
+              ? Effect.fail(
+                  toolError(
+                    "denied",
+                    `This question has used all ${AI_TOOL_CALLS} tool calls.`,
+                    "Answer from what you have already read, and say what you could not check.",
+                  ),
+                )
+              : Effect.void,
+          );
+          const guard = check(ids);
           const scope = (requested?: readonly string[]) =>
             requested ? requested.filter((id) => ids.includes(id)) : ids;
           // A result that does not fit fails only that tool call: the model reads the error and
@@ -232,8 +244,8 @@ export function makeAiMailbox(
               return value;
             });
           const m = mailbox();
-          /** A thread for the model. `charge` is false for checks that send nothing to it. */
-          const read = (id: string, maxChars = AI_THREAD_INPUT, charge = true) =>
+          /** A thread for the model. `send` is false for checks that send nothing to it. */
+          const read = (id: string, maxChars = AI_THREAD_INPUT, send = true) =>
             Effect.gen(function* () {
               yield* guard;
               const view = yield* Effect.map(store.getThread(id), (messages) =>
@@ -253,7 +265,7 @@ export function makeAiMailbox(
                   attachments: [],
                 })),
               };
-              if (!charge) return safe;
+              if (!send) return safe;
               for (const message of safe.messages)
                 sources.set(message.id, { id: message.id, subject: safe.subject });
               return yield* budget(safe);
@@ -411,6 +423,7 @@ export function makeAiMailbox(
                 Layer.provide(
                   Layer.mergeAll(
                     Layer.succeed(Mailbox, scoped),
+                    Layer.succeed(ToolGate, charge),
                     AgentIdentity.fixed("rule", "openmail-assistant"),
                   ),
                 ),

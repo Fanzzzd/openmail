@@ -16,7 +16,7 @@ import { makeAiMailbox } from "../mailbox/mailbox-ai.js";
 import { Secrets } from "../platform/auth.js";
 import { ProviderError } from "../domain/errors.js";
 import { fakeServer, TestMailbox } from "../platform/node/testing.js";
-import { AI_INPUT_BUDGET, mailData } from "./ai.js";
+import { AI_INPUT_BUDGET, AI_TOOL_CALLS, mailData } from "./ai.js";
 import { makeFakeProvider } from "../platform/node/fake-provider.js";
 import { MailboxLive } from "../mailbox/mailbox-live.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
@@ -259,6 +259,107 @@ it.effect("a Gmail label belonging only to another account cannot be proposed", 
     assert.strictEqual(server.pushed.length, 0);
   }).pipe(Effect.provide(Layer.mergeAll(mailboxLayer, storeLayer)));
 });
+
+it.effect(
+  "the assistant pays one tool call per call, however many threads it touches, and says when the calls run out",
+  () => {
+    const server = fakeServer(
+      "me@gmail.com",
+      Array.from({ length: 10 }, (_, i) => incoming(`m${i}`)),
+    );
+    const outcomes: string[] = [];
+    const fake = FakeModelLayer((request) =>
+      Stream.unwrap(
+        Effect.gen(function* () {
+          assert.ok(request.toolkit);
+          const toolkit = request.toolkit;
+          const last = (stream: Stream.Stream<{ readonly encodedResult: unknown }, unknown>) =>
+            Effect.map(Stream.runLast(stream), (r) =>
+              Option.isSome(r) ? JSON.stringify(r.value.encodedResult) : "none",
+            );
+          // Ten threads in one proposal cost one call, not ten.
+          outcomes.push(
+            yield* last(
+              yield* toolkit.handle("modify_threads", {
+                message_ids: Array.from({ length: 10 }, (_, i) => `${accountId}/m${i}`),
+                action: "archive",
+                rationale: "Newsletters",
+              }),
+            ),
+          );
+          for (let i = 0; i < AI_TOOL_CALLS; i++)
+            outcomes.push(yield* last(yield* toolkit.handle("list_accounts", {})));
+          outcomes.push(
+            yield* last(yield* toolkit.handle("search", { query: "x", account_id: accountId })),
+          );
+          return textStream("Done");
+        }),
+      ).pipe(Stream.orDie),
+    );
+    const storeLayer = StoreLive.pipe(Layer.provideMerge(MemoryPlatform()));
+    const providers = Layer.succeed(Providers, { get: () => makeFakeProvider(server) });
+    const mailboxLayer = MailboxLive({ backgroundFlush: false }).pipe(
+      Layer.provide(Layer.mergeAll(storeLayer, providers, fake)),
+    );
+    return Effect.gen(function* () {
+      const m = yield* Mailbox;
+      yield* m.accounts.connect({ provider: "gmail" });
+      yield* m.sync.sync();
+      yield* m.ai.setAiAccount(consent);
+      yield* Stream.runDrain(m.ai.askAi({ question: "Archive these 10", accountIds: [accountId] }));
+      assert.strictEqual((yield* m.proposals.proposals).length, 1, outcomes[0]);
+      // Calls 2 to 12 still run; call 13 and later fail with the budget, not a missing account.
+      for (const outcome of outcomes.slice(1, AI_TOOL_CALLS)) assert.include(outcome, accountId);
+      for (const outcome of outcomes.slice(AI_TOOL_CALLS)) {
+        assert.include(outcome, `used all ${AI_TOOL_CALLS} tool calls`);
+        assert.notInclude(outcome, "No readable account");
+      }
+    }).pipe(Effect.provide(Layer.mergeAll(mailboxLayer, storeLayer)));
+  },
+);
+
+it.effect(
+  "the assistant checks consent again when a tool runs, not only when the question starts",
+  () => {
+    const server = fakeServer("me@gmail.com", [incoming("m1"), incoming("m2")]);
+    let outcome = "";
+    let revoke: Effect.Effect<void> = Effect.void;
+    const fake = FakeModelLayer((request) =>
+      Stream.unwrap(
+        Effect.gen(function* () {
+          assert.ok(request.toolkit);
+          // Straight to the store: setAiAccount would also cancel this request.
+          yield* revoke;
+          const result = yield* Stream.runLast(
+            yield* request.toolkit.handle("modify_threads", {
+              message_ids: [messageId, `${accountId}/m2`],
+              action: "archive",
+              rationale: "Old",
+            }),
+          );
+          outcome = Option.isSome(result) ? JSON.stringify(result.value.encodedResult) : "none";
+          return textStream("Done");
+        }),
+      ).pipe(Stream.orDie),
+    );
+    const storeLayer = StoreLive.pipe(Layer.provideMerge(MemoryPlatform()));
+    const providers = Layer.succeed(Providers, { get: () => makeFakeProvider(server) });
+    const mailboxLayer = MailboxLive({ backgroundFlush: false }).pipe(
+      Layer.provide(Layer.mergeAll(storeLayer, providers, fake)),
+    );
+    return Effect.gen(function* () {
+      const m = yield* Mailbox;
+      yield* m.accounts.connect({ provider: "gmail" });
+      yield* m.sync.sync();
+      const store = yield* Store;
+      yield* m.ai.setAiAccount(consent);
+      revoke = Effect.orDie(store.ai.setAccount({ ...consent, allowed: false }));
+      yield* Stream.runDrain(m.ai.askAi({ question: "Archive both", accountIds: [accountId] }));
+      assert.deepStrictEqual(yield* m.proposals.proposals, [], outcome);
+      assert.include(outcome, "AI Access", outcome);
+    }).pipe(Effect.provide(Layer.mergeAll(mailboxLayer, storeLayer)));
+  },
+);
 
 it.effect(
   "revoking account consent deletes all its persisted AI results and preserves other accounts",
