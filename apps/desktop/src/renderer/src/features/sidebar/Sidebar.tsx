@@ -270,7 +270,7 @@ export function Sidebar({
               <Trans>All accounts are disabled.</Trans>
             ) : isDesktop() ? (
               <Trans>
-                No accounts yet.{" "}
+                No email accounts yet.{" "}
                 <button
                   type="button"
                   onClick={onAddAccount}
@@ -280,7 +280,7 @@ export function Sidebar({
                 </button>
               </Trans>
             ) : (
-              <Trans>No accounts yet.</Trans>
+              <Trans>No email accounts yet.</Trans>
             )}
           </p>
         )}

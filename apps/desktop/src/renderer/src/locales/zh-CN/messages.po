@@ -4552,14 +4552,6 @@ msgstr "没有账户允许 AI 读取，所以已连接的应用看不到邮件�
 msgid "No accounts yet"
 msgstr "还没有账户"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
-msgid "No accounts yet."
-msgstr "还没有账户。"
-
-#: src/renderer/src/features/sidebar/Sidebar.tsx
-msgid "No accounts yet. <0>Add account</0>"
-msgstr "还没有账户。<0>添加账户</0>"
-
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "No activity yet."
 msgstr "还没有操作记录。"
@@ -4594,8 +4586,13 @@ msgid "No drafts"
 msgstr "没有草稿"
 
 #: src/renderer/src/app/NoAccounts.tsx
+#: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "No email accounts yet."
 msgstr "还没有邮箱账户。"
+
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "No email accounts yet. <0>Add account</0>"
+msgstr "还没有邮箱账户。<0>添加账户</0>"
 
 #: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "No external replies"

@@ -4542,14 +4542,6 @@ msgstr "Nessun account consente la lettura da parte dell’IA, quindi un’app c
 msgid "No accounts yet"
 msgstr "Nessun account ancora"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
-msgid "No accounts yet."
-msgstr "Ancora nessun account."
-
-#: src/renderer/src/features/sidebar/Sidebar.tsx
-msgid "No accounts yet. <0>Add account</0>"
-msgstr "Ancora nessun account. <0>Aggiungi account</0>"
-
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "No activity yet."
 msgstr "Nessuna attività ancora"
@@ -4584,8 +4576,13 @@ msgid "No drafts"
 msgstr "Nessuna bozza"
 
 #: src/renderer/src/app/NoAccounts.tsx
+#: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "No email accounts yet."
 msgstr "Nessun account di posta elettronica."
+
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "No email accounts yet. <0>Add account</0>"
+msgstr "Nessun account di posta elettronica. <0>Aggiungi account</0>"
 
 #: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "No external replies"

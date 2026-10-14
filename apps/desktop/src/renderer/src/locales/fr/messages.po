@@ -4542,14 +4542,6 @@ msgstr "Aucun compte n’autorise la lecture par l’IA, donc une application co
 msgid "No accounts yet"
 msgstr "Aucun compte pour l’instant"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
-msgid "No accounts yet."
-msgstr "Aucun compte pour l’instant."
-
-#: src/renderer/src/features/sidebar/Sidebar.tsx
-msgid "No accounts yet. <0>Add account</0>"
-msgstr "Aucun compte pour l’instant. <0>Ajouter un compte</0>"
-
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "No activity yet."
 msgstr "Aucune activité pour l’instant."
@@ -4584,8 +4576,13 @@ msgid "No drafts"
 msgstr "Aucun brouillon"
 
 #: src/renderer/src/app/NoAccounts.tsx
+#: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "No email accounts yet."
 msgstr "Aucun compte de messagerie pour l’instant."
+
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "No email accounts yet. <0>Add account</0>"
+msgstr "Aucun compte de messagerie pour l’instant. <0>Ajouter un compte</0>"
 
 #: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "No external replies"

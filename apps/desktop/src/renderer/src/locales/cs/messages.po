@@ -4542,14 +4542,6 @@ msgstr "Žádný účet nepovoluje čtení pomocí AI, takže připojená aplika
 msgid "No accounts yet"
 msgstr "Zatím žádné účty"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
-msgid "No accounts yet."
-msgstr "Zatím žádné účty."
-
-#: src/renderer/src/features/sidebar/Sidebar.tsx
-msgid "No accounts yet. <0>Add account</0>"
-msgstr "Zatím žádné účty. <0>Přidat účet</0>"
-
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "No activity yet."
 msgstr "Zatím žádná aktivita."
@@ -4584,8 +4576,13 @@ msgid "No drafts"
 msgstr "Žádné koncepty"
 
 #: src/renderer/src/app/NoAccounts.tsx
+#: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "No email accounts yet."
 msgstr "Zatím nemáte žádný e-mailový účet."
+
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "No email accounts yet. <0>Add account</0>"
+msgstr "Zatím nemáte žádný e-mailový účet. <0>Přidat účet</0>"
 
 #: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "No external replies"

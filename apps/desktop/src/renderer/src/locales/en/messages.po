@@ -4546,14 +4546,6 @@ msgstr "No account allows AI reads, so a connected app sees no mail. Turn on “
 msgid "No accounts yet"
 msgstr "No accounts yet"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
-msgid "No accounts yet."
-msgstr "No accounts yet."
-
-#: src/renderer/src/features/sidebar/Sidebar.tsx
-msgid "No accounts yet. <0>Add account</0>"
-msgstr "No accounts yet. <0>Add account</0>"
-
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "No activity yet."
 msgstr "No activity yet."
@@ -4588,8 +4580,13 @@ msgid "No drafts"
 msgstr "No drafts"
 
 #: src/renderer/src/app/NoAccounts.tsx
+#: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "No email accounts yet."
 msgstr "No email accounts yet."
+
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "No email accounts yet. <0>Add account</0>"
+msgstr "No email accounts yet. <0>Add account</0>"
 
 #: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "No external replies"

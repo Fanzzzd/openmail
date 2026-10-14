@@ -4542,14 +4542,6 @@ msgstr "Ни одна учётная запись не разрешает чте
 msgid "No accounts yet"
 msgstr "Учётная записьов пока нет"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
-msgid "No accounts yet."
-msgstr "Учётных записей пока нет."
-
-#: src/renderer/src/features/sidebar/Sidebar.tsx
-msgid "No accounts yet. <0>Add account</0>"
-msgstr "Учётных записей пока нет. <0>Добавить учётную запись</0>"
-
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "No activity yet."
 msgstr "Пока нет активности."
@@ -4584,8 +4576,13 @@ msgid "No drafts"
 msgstr "Нет черновиков"
 
 #: src/renderer/src/app/NoAccounts.tsx
+#: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "No email accounts yet."
 msgstr "Учетных записей электронной почты пока нет."
+
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "No email accounts yet. <0>Add account</0>"
+msgstr "Учетных записей электронной почты пока нет. <0>Добавить учётную запись</0>"
 
 #: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "No external replies"

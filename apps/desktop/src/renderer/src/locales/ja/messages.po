@@ -4542,14 +4542,6 @@ msgstr "AI の読み取りを許可しているアカウントがないため、
 msgid "No accounts yet"
 msgstr "まだアカウントがありません"
 
-#: src/renderer/src/features/sidebar/Sidebar.tsx
-msgid "No accounts yet."
-msgstr "まだアカウントがありません。"
-
-#: src/renderer/src/features/sidebar/Sidebar.tsx
-msgid "No accounts yet. <0>Add account</0>"
-msgstr "まだアカウントがありません。<0>アカウントを追加</0>"
-
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "No activity yet."
 msgstr "まだ活動はありません。"
@@ -4584,8 +4576,13 @@ msgid "No drafts"
 msgstr "下書きはありません"
 
 #: src/renderer/src/app/NoAccounts.tsx
+#: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "No email accounts yet."
 msgstr "メールアカウントはまだありません。"
+
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+msgid "No email accounts yet. <0>Add account</0>"
+msgstr "メールアカウントはまだありません。<0>アカウントを追加</0>"
 
 #: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "No external replies"

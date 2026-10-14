@@ -125,8 +125,8 @@ it("with no account the sidebar lists no mailboxes and no sync status, and Add a
   expect(screen.queryByRole("button", { name: /^Inbox/, hidden: true })).toBeNull();
   expect(screen.queryByRole("button", { name: "Sync now", hidden: true })).toBeNull();
   expect(document.body.textContent).not.toMatch(/Synced|Syncing/);
-  // Behind the dialog, All accounts says there are none and offers to add one.
-  expect(document.body.textContent).toContain("No accounts yet.");
+  // Behind the dialog, the sidebar names the state as the main pane does and offers Add account.
+  expect(document.body.textContent).toContain("No email accounts yet.");
   expect(document.body.textContent).not.toContain("This space has no accounts yet.");
   const nav = screen.getByRole("navigation", { name: "Mailboxes", hidden: true });
   expect(within(nav).getByRole("button", { name: "Add account", hidden: true })).toBeTruthy();
