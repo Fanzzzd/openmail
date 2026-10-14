@@ -11,6 +11,7 @@
 import type { Address, Message } from "../domain/message.js";
 import { prepareMessageHtml } from "./reader-html.js";
 import { sanitizeReaderHtml } from "./reader-sanitize.js";
+import { PRINT_CSP } from "./reader-csp.js";
 import { PRINT_SCOPE_ATTRIBUTE, printScope, scopePrintHtml } from "./print-css.js";
 
 export interface PrintHeadings {
@@ -28,8 +29,6 @@ export interface PrintInput {
   /** Inline images by message id, then Content-ID, as data: URLs. */
   inline?: Readonly<Record<string, Readonly<Record<string, string>>>>;
 }
-
-const CSP = "default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src data:";
 
 const CSS = `
   @page { margin: 16mm; }
@@ -85,7 +84,7 @@ export function printableThread(input: PrintInput): string {
     return `<section class="om-print-message"><div class="om-print-head">${rows}</div><div class="om-print-body" id="m-${index}" ${PRINT_SCOPE_ATTRIBUTE}>${body}</div></section>`;
   });
   return `<!doctype html><html><head><meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="${CSP}">
+<meta http-equiv="Content-Security-Policy" content="${PRINT_CSP}">
 <title>${escapeHtml(input.subject)}</title><style>${CSS}</style></head>
 <body><h1>${escapeHtml(input.subject)}</h1>${messages.join("\n")}</body></html>`;
 }

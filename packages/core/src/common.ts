@@ -15,6 +15,7 @@ export * from "./domain/diagnostics-state.js";
 export * from "./domain/errors.js";
 export * from "./domain/diagnostic-log.js";
 export * from "./reader/print.js";
+export * from "./reader/reader-csp.js";
 export * from "./reader/reader-html.js";
 export * from "./reader/reading.js";
 export * from "./reader/trackers.js";

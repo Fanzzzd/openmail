@@ -1,27 +1,17 @@
 import { readFileSync } from "node:fs";
 import { URL } from "node:url";
 import { expect, it, vi } from "vitest";
-import {
-  externalReaderLink,
-  handleReaderNavigation,
-  readerDocument,
-  READER_CSP,
-} from "./reader-html";
+import { READER_CSP_BLOCKED, READER_CSP_REMOTE_IMAGES } from "@openmail/core/portable";
+import { externalReaderLink, handleReaderNavigation, readerDocument } from "./reader-html";
 
-it("keeps desktop resource restrictions and adds form/base CSP before untrusted content", () => {
-  const desktop = readFileSync(
-    new URL("../../desktop/src/renderer/src/features/reader/frame/EmailFrame.tsx", import.meta.url),
-    "utf8",
-  );
-  const base = /const BLOCKED = "([^"]+)"/.exec(desktop)?.[1];
-  expect(base).toBeDefined();
-  expect(READER_CSP.startsWith(base ?? "missing")).toBe(true);
-  expect(READER_CSP).toContain("form-action 'none'");
-  expect(READER_CSP).toContain("base-uri 'none'");
+it("puts the shared reader CSP before untrusted content", () => {
   const html = readerDocument(
     '<img src="https://example.test/image.png"><script>alert(1)</script>',
   );
-  expect(html).toContain("Content-Security-Policy");
+  const policy = `<meta http-equiv="Content-Security-Policy" content="${READER_CSP_BLOCKED}">`;
+  expect(html.indexOf(policy)).toBeGreaterThan(-1);
+  expect(html.indexOf(policy)).toBeLessThan(html.indexOf("<body>"));
+  expect(readerDocument("", true)).toContain(`content="${READER_CSP_REMOTE_IMAGES}"`);
   expect(html).not.toContain("<script>");
   const view = readFileSync(new URL("../app/reader.tsx", import.meta.url), "utf8");
   expect(view).toContain("javaScriptEnabled={false}");

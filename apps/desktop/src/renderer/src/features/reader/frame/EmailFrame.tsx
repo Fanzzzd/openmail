@@ -3,6 +3,7 @@ import {
   READER_COLOURS,
   linkHint,
   linkNeedsConfirmation,
+  readerCsp,
 } from "@openmail/core/schema";
 import { useAtomValue } from "@effect/atom-react";
 import { AsyncResult } from "effect/reactivity";
@@ -32,19 +33,12 @@ import { FRAME_INITIAL_HEIGHT, frameSurface, type MessageBackground } from "../b
 import { HIGHLIGHT_CSS, useSearchHits } from "../../search";
 
 // Mail HTML is untrusted. It renders in a sandboxed iframe with scripts off,
-// and its own CSP blocks remote loads (tracking pixels) until images are
-// allowed for the message. Known trackers are stripped from the HTML before it
-// gets here (`prepareMessageHtml`), so allowing images never loads them.
-// `allow-same-origin` only lets this component measure and fit the document
-// and listen for shortcut keys; without `allow-scripts` the mail cannot use it.
-// The resource policy is also the baseline checked by the mobile reader.
-// Stylesheets never load from the network: a fetched sheet's own url() and
-// @import would skip the tracker and pixel filters that the mail's HTML went through.
-const BLOCKED = "default-src 'none'; img-src data: cid:; style-src 'unsafe-inline'; font-src data:";
-const ALLOWED =
-  "default-src 'none'; img-src data: cid: https:; style-src 'unsafe-inline'; font-src data: https:";
-const FRAME_RESTRICTIONS =
-  "script-src 'none'; object-src 'none'; frame-src 'none'; connect-src 'none'; base-uri 'none'; form-action 'none'";
+// and its own CSP (`readerCsp` in core) blocks remote loads (tracking pixels)
+// until images are allowed for the message. Known trackers are stripped from
+// the HTML before it gets here (`prepareMessageHtml`), so allowing images never
+// loads them. `allow-same-origin` only lets this component measure and fit the
+// document and listen for shortcut keys; without `allow-scripts` the mail
+// cannot use it. The mobile reader uses the same policy.
 
 interface Props {
   presentation?: "reader" | "compose";
@@ -191,7 +185,7 @@ export function EmailFrame({
   const safeHtml = useMemo(() => sanitizeReaderHtml(html, remote), [html, remote]);
   const doc = `<!doctype html><html lang="${i18n.locale}"><head><meta charset="utf-8">
 <meta http-equiv="x-dns-prefetch-control" content="off">
-<meta http-equiv="Content-Security-Policy" content="${remote ? ALLOWED : BLOCKED}; ${FRAME_RESTRICTIONS}">
+<meta http-equiv="Content-Security-Policy" content="${readerCsp(remote)}">
 <base target="_blank"><style>${css}</style></head><body dir="auto">${safeHtml}</body></html>`;
 
   useEffect(() => () => dispose.current?.(), []);

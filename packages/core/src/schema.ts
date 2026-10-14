@@ -25,6 +25,7 @@ export { Mailbox, MailboxEvent, SyncState } from "./mailbox/mailbox.js";
 export { ModelThread } from "./ai/model-thread.js";
 export { type HeldSend, holdSend } from "./mailbox/undo-send.js";
 export * from "./reader/print.js";
+export * from "./reader/reader-csp.js";
 export * from "./reader/reader-html.js";
 export { READER_BASE_CSS, READER_COLOURS } from "./reader/reader-style.js";
 export * from "./reader/reader-sanitize.js";
