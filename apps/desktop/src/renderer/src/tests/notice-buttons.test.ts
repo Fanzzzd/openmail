@@ -3,7 +3,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { setupI18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
-import { expect, it } from "vitest";
+import { expect, it, vi } from "vitest";
 import { DraftConflictNotice } from "../features/compose/components/DraftConflictNotice";
 import { DraftSyncRecovery } from "../features/compose/components/DraftSyncRecovery";
 
@@ -43,7 +43,7 @@ it("every button in a notice has a style class", () => {
 
 it("draft notices render push buttons with a touch-size minimum", () => {
   const i18n = setupI18n({ locale: "en", messages: { en: {} } });
-  const noop = () => undefined;
+  const noop = vi.fn();
   const render = (element: ReturnType<typeof createElement>) =>
     renderToStaticMarkup(createElement(I18nProvider, { i18n }, element));
   const markups = [
