@@ -50,6 +50,8 @@ const threadsOf = (rows: readonly Proposal[]) =>
 export const makeToolContext = Effect.gen(function* () {
   const mailbox = yield* Mailbox;
   const identity = yield* AgentIdentity;
+  /** The zone every time in a tool result is written in. */
+  const timeZone = () => mailbox.app.host.timeZone();
 
   const agent = (rationale: string) =>
     Effect.map(identity.current, (id): Actor => ({
@@ -174,6 +176,7 @@ export const makeToolContext = Effect.gen(function* () {
   return {
     mailbox,
     identity,
+    timeZone,
     agent,
     accessibleAccounts,
     accountIdsFor,

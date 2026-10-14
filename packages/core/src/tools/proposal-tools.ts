@@ -22,6 +22,7 @@ import {
   toolAttempt,
   toolError,
 } from "./tool-common.js";
+import { localIso } from "../platform/host.js";
 import { Clock, Effect, Option, Schema } from "effect";
 import { replyRecipients, replySubject } from "../compose/recipients.js";
 import { Tool } from "effect/ai";
@@ -122,7 +123,7 @@ export const DraftMessage = appTool("draft_message", {
   .annotate(Tool.OpenWorld, false);
 const ProposalSummary = Schema.Struct({
   id: Schema.Number,
-  createdAt: Schema.Number,
+  createdAt: Schema.String,
   agent: Schema.String,
   kind: Schema.String,
   rationale: Schema.String,
@@ -131,11 +132,13 @@ export const ListProposals = collection(
   "list_proposals",
   "List proposals waiting for the person's approval in OpenMail. Pass an id to read_proposal; no tool approves, rejects or sends. Page with next_cursor.",
   ProposalSummary,
+  true,
 );
 export const ReadProposal = readOnly(
   mailTool("read_proposal", {
     description:
       "Read one pending proposal as the approval screen shows it. Use an id from list_proposals. A long draft body pages with next_offset.",
+    times: true,
     parameters: Schema.Struct({
       // list_proposals returns the id as a number. Older clients send it as a string.
       id: Schema.Union([ToolInt, Schema.String]).annotate({
@@ -221,6 +224,7 @@ export function opFor(action: ModifyAction, labelId: string | undefined): MailOp
 export const proposalHandlers = ({
   mailbox,
   identity,
+  timeZone,
   agent,
   accountIdsFor,
   requireMessage,
@@ -237,7 +241,7 @@ export const proposalHandlers = ({
         Effect.map(visibleProposals, (rows) =>
           rows.map((r) => ({
             id: r.id,
-            createdAt: r.createdAt,
+            createdAt: localIso(r.createdAt, timeZone()),
             agent: r.actor.kind === "agent" ? shortText(r.actor.name) : r.actor.surface,
             kind: r.command.kind,
             rationale: r.actor.kind === "agent" ? shortText(r.actor.rationale ?? "") : "",
@@ -255,7 +259,9 @@ export const proposalHandlers = ({
           `No pending proposal with id ${p.id}.`,
           "Get pending proposal ids from list_proposals.",
         );
-      return yield* toolAttempt(() => proposalPage(row.id, approvalCommand(row.command), p));
+      return yield* toolAttempt(() =>
+        proposalPage(row.id, approvalCommand(row.command, timeZone()), p),
+      );
     }),
     modify_threads: Effect.fnUntraced(function* (p) {
       if (p.label_id !== undefined && p.action !== "label" && p.action !== "unlabel")

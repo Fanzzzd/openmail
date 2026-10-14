@@ -26,8 +26,14 @@ import {
   agentAccountGap,
 } from "./tools.js";
 import { AgentIdentity, cleanMcpClientName } from "./agent-identity.js";
-import { MailToolError, UNTRUSTED_MAIL_NOTICE, unknownArguments } from "./tool-common.js";
+import {
+  MailToolError,
+  UNTRUSTED_MAIL_NOTICE,
+  toolCalendarTime,
+  unknownArguments,
+} from "./tool-common.js";
 import { ToolInt } from "./tool-pages.js";
+import { localIso } from "../platform/host.js";
 
 /** read_proposal as MCP sends it: the command is an object, a draft body one page of text. */
 const ProposalPage = Schema.Struct({
@@ -848,7 +854,7 @@ it.effect("search returns local matched chunks and provenance without image byte
     assert.strictEqual(result.isFailure, false);
     const { snippet: _snippet, ...shown } = row;
     assert.deepStrictEqual(result.result, {
-      threads: [shown],
+      threads: [{ ...shown, date: localIso(row.date, "UTC") }],
       ignored: [],
       errors: [],
       truncated: false,
@@ -1243,6 +1249,66 @@ it.effect("thread cursor preserves every conversation sharing a timestamp", () =
   );
 });
 
+it("calendar times keep the sender's wall time and zone and show the instant in local time", () => {
+  const zoned = {
+    kind: "zoned",
+    value: "2026-10-15T09:00:00",
+    zone: "America/New_York",
+    timestamp: Date.UTC(2026, 9, 15, 13),
+  } as const;
+  assert.deepStrictEqual(toolCalendarTime(zoned, "Asia/Shanghai"), {
+    ...zoned,
+    timestamp: "2026-10-15T21:00:00+08:00",
+  });
+  const day = { kind: "date", value: "2026-10-15" } as const;
+  assert.deepStrictEqual(toolCalendarTime(day, "Asia/Shanghai"), day);
+});
+
+it.effect("every time in a tool result is ISO 8601 local time with its offset", () => {
+  const server = fakeServer("me@gmail.com", [
+    { ...toolMail("m1"), date: Date.UTC(2026, 9, 14, 1, 30) },
+  ]);
+  const iso = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/;
+  return run(
+    Effect.gen(function* () {
+      const mailbox = yield* Mailbox;
+      const account = yield* mailbox.accounts.connect({ provider: "gmail" });
+      yield* mailbox.ai.setAiAccount({
+        accountId: account.id,
+        allowed: true,
+        autoSummaries: false,
+      });
+      yield* mailbox.sync.sync();
+      yield* mailbox.proposals.setAgentWriteMode("propose");
+      const id = `${account.id}/m1`;
+      const shanghai = "2026-10-14T09:30:00+08:00";
+      const listed = yield* call("list_threads", {});
+      assert.include(JSON.stringify(listed.encodedResult), `"date":"${shanghai}"`);
+      const found = yield* call("search", { query: "hello" });
+      assert.include(JSON.stringify(found.encodedResult), `"date":"${shanghai}"`);
+      const read = yield* call("read_thread", { message_id: id });
+      assert.include(JSON.stringify(read.encodedResult), `"date":"${shanghai}"`);
+      yield* call("snooze_threads", { message_ids: [id], due: 3_600_000, rationale: "Later." });
+      const proposals = yield* call("list_proposals", {});
+      const text = JSON.stringify(proposals.encodedResult);
+      assert.include(text, '"created_at":"1970-01-01T08:00:00+08:00"');
+      const pending = (yield* mailbox.proposals.proposals)[0];
+      assert.ok(pending);
+      const proposal = yield* call("read_proposal", { id: pending.id });
+      assert.include(JSON.stringify(proposal.encodedResult), '"due":"1970-01-01T09:00:00+08:00"');
+      // No epoch milliseconds anywhere: every "date", "created_at" and "due" is one format.
+      for (const result of [listed, found, read, proposals, proposal])
+        for (const [, value] of JSON.stringify(result.encodedResult).matchAll(
+          /"(?:date|created_at|due)":("[^"]*"|\d+)/g,
+        ))
+          assert.match(JSON.parse(value ?? "0"), iso);
+    }),
+    TestMailbox({ gmail: server }, undefined, undefined, Layer.empty, {
+      host: { timeZone: () => "Asia/Shanghai" },
+    }),
+  );
+});
+
 it.effect(
   "MCP proposals reject system labels, folder moves, unsupported commands and invalid snooze times",
   () => {
@@ -1452,7 +1518,7 @@ it.effect(
         },
         {
           command: { kind: "snooze", threads: ["m1"], due: 1000 },
-          expected: { kind: "snooze", threads: ["m1"], due: 1000 },
+          expected: { kind: "snooze", threads: ["m1"], due: "1970-01-01T00:00:01+00:00" },
         },
       ];
       for (const { command, expected } of cases) {

@@ -18,6 +18,7 @@ import {
   toolError,
   untrustedMail,
 } from "./tool-common.js";
+import { localThread } from "../ai/model-view.js";
 import { Effect, Schema } from "effect";
 import { MAILBOXES } from "../domain/message.js";
 import {
@@ -40,6 +41,7 @@ export const ListThreads = readOnly(
   mailTool("list_threads", {
     description:
       "List conversations in a mailbox from the local copy, newest first. Each row is a thread's newest message; call sync first for mail from the last few minutes. Page with next_cursor and the same filters.",
+    times: true,
     parameters: Schema.Struct({
       mailbox: Schema.Literals(MAILBOXES)
         .annotate({ description: "Default inbox." })
@@ -71,6 +73,7 @@ export const Search = readOnly(
   mailTool("search", {
     description:
       "Search the local copy with words and Gmail-style operators. Use it to find specific mail; set server to also ask the provider. Returns up to 200 results; page with next_cursor.",
+    times: true,
     parameters: Schema.Struct({
       query: Schema.String.check(Schema.isMinLength(1), Schema.isMaxLength(4096)).annotate({
         description:
@@ -99,6 +102,7 @@ export const ReadThread = readOnly(
   mailTool("read_thread", {
     description:
       "Read a conversation as plain text, oldest message first, without quoted history, signatures or attachments. Pass a message_id from list_threads or search. Older text is trimmed to fit token_budget; truncated counts the characters cut.",
+    times: true,
     parameters: Schema.Struct({
       message_id: ThreadId,
       token_budget: ToolBudget,
@@ -113,6 +117,7 @@ export const SemanticSearch = readOnly(
   mailTool("semantic_search", {
     description:
       "Find up to five conversations by meaning, using the on-device text index. Use it when keyword search misses. Message snippets are omitted. Page with next_cursor.",
+    times: true,
     parameters: Schema.Struct({
       query: Schema.String.check(Schema.isMinLength(1), Schema.isMaxLength(4096)).annotate({
         description: "What the mail is about, in plain words.",
@@ -153,6 +158,7 @@ export const Sync = mailTool("sync", {
 export const threadHandlers = ({
   mailbox,
   identity,
+  timeZone,
   accountIdsFor,
   forAccounts,
   requireProfile,
@@ -185,8 +191,9 @@ export const threadHandlers = ({
           limit: p.limit + 1,
         })
         .pipe(Effect.mapError(toToolError));
-      const threads = yield* bounded(rows.map(compactThread), p.limit, p.token_budget);
-      const last = threads.at(-1);
+      const threads = yield* bounded(rows.map(compactThread(timeZone())), p.limit, p.token_budget);
+      // The cursor keeps the row's epoch milliseconds; only the result shows local time.
+      const last = rows[threads.length - 1];
       return yield* toolAttempt(() => {
         const result = {
           threads,
@@ -225,7 +232,7 @@ export const threadHandlers = ({
       const result = yield* page(
         "search",
         p,
-        Effect.succeed(found.threads.slice(0, 200).map(compactThread)),
+        Effect.succeed(found.threads.slice(0, 200).map(compactThread(timeZone()))),
       ).pipe(Effect.map(({ items, ...rest }) => ({ ...rest, threads: items })));
       const notices = {
         ignored: (found.ignored ?? []).slice(0, 20).map((n) => ({
@@ -255,7 +262,7 @@ export const threadHandlers = ({
       const view = yield* mailbox.reading
         .threadForModel(message_id, token_budget)
         .pipe(Effect.mapError(toToolError));
-      return yield* toolAttempt(() => boundThread(view, token_budget));
+      return yield* toolAttempt(() => boundThread(localThread(view, timeZone()), token_budget));
     }),
     semantic_search: (p) =>
       page(
@@ -272,7 +279,7 @@ export const threadHandlers = ({
                   )
                 : toToolError(e),
             ),
-            Effect.map((rows) => rows.map(compactThread)),
+            Effect.map((rows) => rows.map(compactThread(timeZone()))),
           ),
         ),
       ).pipe(Effect.map(({ items, ...rest }) => ({ ...rest, threads: items }))),
