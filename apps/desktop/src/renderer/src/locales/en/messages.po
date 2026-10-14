@@ -1841,6 +1841,7 @@ msgstr "Conversation link copied"
 msgid "Conversations"
 msgstr "Conversations"
 
+#: src/renderer/src/features/feedback/Feedback.tsx
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/RawMessage.tsx
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
@@ -1876,6 +1877,10 @@ msgstr "Copy command for {name}"
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Copy config for {name}"
 msgstr "Copy config for {name}"
+
+#: src/renderer/src/features/feedback/Feedback.tsx
+msgid "Copy diagnostics"
+msgstr "Copy diagnostics"
 
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Copy link to conversation"
@@ -4902,6 +4907,10 @@ msgstr "Open draft"
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Open email links in a new OpenMail draft."
 msgstr "Open email links in a new OpenMail draft."
+
+#: src/renderer/src/features/feedback/Feedback.tsx
+msgid "Open GitHub issues"
+msgstr "Open GitHub issues"
 
 #: src/renderer/src/features/contacts/AppleContactActions.tsx
 msgid "Open in Contacts"
@@ -8090,6 +8099,10 @@ msgstr "You (command line)"
 #: src/renderer/src/features/settings/sections/UpdateSettings.tsx
 msgid "You are up to date."
 msgstr "You are up to date."
+
+#: src/renderer/src/features/feedback/Feedback.tsx
+msgid "You can also report on GitHub. Copy the diagnostics and paste them into a new issue."
+msgstr "You can also report on GitHub. Copy the diagnostics and paste them into a new issue."
 
 #: src/renderer/src/lib/errors.ts
 msgid "You signed in as {signedInAs}. Sign in with {expected} to continue."

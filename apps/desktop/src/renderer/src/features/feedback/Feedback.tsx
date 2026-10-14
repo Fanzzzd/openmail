@@ -6,10 +6,14 @@ import type { OutgoingAttachment } from "../../../../shared/api";
 /** How long the dialog waits for the diagnostics before offering to retry or skip them. */
 export const DIAGNOSTICS_TIMEOUT = "10 seconds";
 import { isEmailAddress } from "@openmail/core/schema";
+import { openMailLink } from "../../state/desktop";
 import { useRunMail, withMail } from "../../state/mail";
 import { Alert, AlertCancel, alertPrimary } from "../../ui/Dialog";
 import { Select } from "../../ui/Select";
-import { buttonLink } from "../../ui/styles";
+import { buttonLink, buttonSecondary } from "../../ui/styles";
+
+/** Where people without a feedback address can report instead. */
+export const GITHUB_ISSUES_URL = "https://github.com/Fanzzzd/openmail/issues";
 
 export interface FeedbackInput {
   to: string;
@@ -34,6 +38,7 @@ export function Feedback({
   // null while loading; false when loading failed or timed out.
   const [preview, setPreview] = useState<string | null | false>(null);
   const [attach, setAttach] = useState(false);
+  const [copied, setCopied] = useState(false);
   useEffect(() => {
     // The address is optional; a failure leaves the field for the person to fill in.
     run(
@@ -149,7 +154,29 @@ export function Feedback({
             {preview ?? t`Loading diagnostics…`}
           </pre>
         )}
+        <p className="mb-3 text-callout text-a11y-muted">
+          <Trans>
+            You can also report on GitHub. Copy the diagnostics and paste them into a new issue.
+          </Trans>{" "}
+          <button
+            type="button"
+            className={buttonLink}
+            onClick={() => run(openMailLink(GITHUB_ISSUES_URL, false))}
+          >
+            <Trans>Open GitHub issues</Trans>
+          </button>
+        </p>
         <div className="flex justify-end gap-2">
+          <button
+            type="button"
+            className={`mr-auto ${buttonSecondary}`}
+            disabled={!preview}
+            onClick={() => {
+              if (preview) void navigator.clipboard.writeText(preview).then(() => setCopied(true));
+            }}
+          >
+            {copied ? <Trans>Copied</Trans> : <Trans>Copy diagnostics</Trans>}
+          </button>
           <AlertCancel>
             <Trans>Cancel</Trans>
           </AlertCancel>

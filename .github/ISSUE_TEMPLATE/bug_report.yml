@@ -72,5 +72,5 @@ body:
     id: logs
     attributes:
       label: Logs or screenshots
-      description: Help > Send Feedback… shows a redacted diagnostics preview you can copy. Check it before you paste.
+      description: Help > Send feedback… shows the redacted diagnostics. Click Copy diagnostics, check the text, then paste it here.
       render: text

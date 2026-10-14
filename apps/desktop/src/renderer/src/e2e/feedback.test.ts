@@ -58,3 +58,28 @@ it("diagnostics that never answer time out instead of loading forever", async ()
   );
   expect(continueButton()).toHaveProperty("disabled", false);
 });
+
+it("without a feedback address, the diagnostics can be copied for a GitHub issue", async () => {
+  const writeText = vi.fn().mockResolvedValue(undefined);
+  Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+  const opened: string[] = [];
+  const h = (current = await flow({
+    handlers: {
+      FeedbackAddress: () => Effect.succeed(""),
+      Diagnostics: () => Effect.succeed('{"event":"snapshot"}'),
+      OpenMailLink: ({ url }) => Effect.sync(() => void opened.push(url)),
+    },
+  }));
+  await eventually(() => expect(screen.getByRole("heading", { level: 1 })).toBeTruthy());
+  await h.event({ _tag: "Command", command: "feedback" });
+  await eventually(() =>
+    expect(screen.getByLabelText("Diagnostics preview").textContent).toContain("snapshot"),
+  );
+  // The draft needs an address; copying does not.
+  expect(continueButton()).toHaveProperty("disabled", true);
+  fireEvent.click(screen.getByRole("button", { name: "Copy diagnostics" }));
+  await eventually(() => expect(writeText).toHaveBeenCalledWith('{"event":"snapshot"}'));
+  await eventually(() => expect(screen.getByRole("button", { name: "Copied" })).toBeTruthy());
+  fireEvent.click(screen.getByRole("button", { name: "Open GitHub issues" }));
+  await eventually(() => expect(opened).toEqual(["https://github.com/Fanzzzd/openmail/issues"]));
+});
