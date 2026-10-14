@@ -106,5 +106,5 @@ export const makeAppMailbox = (
       }),
 
     events: Stream.fromPubSub(runtime.pubsub),
-  } satisfies MailboxApp;
+  } satisfies Omit<MailboxApp, "host">;
 };

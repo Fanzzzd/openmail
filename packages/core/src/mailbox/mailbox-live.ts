@@ -59,6 +59,7 @@ import { AppConfig, OAuthIssuers, Secrets } from "../platform/auth.js";
 import { Providers } from "../providers/adapter.js";
 import { Store } from "../store/service.js";
 import { UnsubscribeNetwork } from "./unsubscribe.js";
+import { PlatformHost } from "../platform/host.js";
 
 export type { MailboxOptions } from "./mailbox-runtime.js";
 export const MailboxLive = (
@@ -96,6 +97,8 @@ export const MailboxLive = (
       const unsubscribeNetwork = yield* UnsubscribeNetwork;
 
       const verifier = yield* AppVerifier;
+
+      const host = yield* PlatformHost;
 
       const parseRawDraft = (...args: Parameters<typeof unboundParseRawDraft>) =>
         unboundParseRawDraft(...args).pipe(Effect.provideService(MailCodec, codec));
@@ -488,6 +491,7 @@ export const MailboxLive = (
         options.canTriage,
         options.systemLocale,
         flushMailbox.flushLater,
+        host,
       );
 
       // Subscribe before returning. Only opted-in auto-summary accounts can call the model.
@@ -533,7 +537,10 @@ export const MailboxLive = (
         },
         sync: { ...syncMailbox.members, ...cacheMembers, ...storageMembers },
         calendar: { ...calendarFeatures, ...applyMailbox.calendar },
-        app: makeAppMailbox({ ...deps, enforceCacheBudget: storage.enforceCacheBudget }, runtime),
+        app: {
+          ...makeAppMailbox({ ...deps, enforceCacheBudget: storage.enforceCacheBudget }, runtime),
+          host,
+        },
       });
       return mailbox;
     }),

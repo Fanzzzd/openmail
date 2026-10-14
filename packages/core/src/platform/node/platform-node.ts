@@ -12,7 +12,7 @@ import type { SqlClient } from "effect/sql";
 
 import { AttachmentFiles, ImageNetwork, PdfWorker } from "../runtime.js";
 import { AppPaths } from "../paths.js";
-import { NodeRuntime, NodePaths } from "./runtime.js";
+import { NodeHost, NodeRuntime, NodePaths } from "./runtime.js";
 import { appConfigFile, readClientsFile } from "../../providers/config.js";
 import { firstClients } from "../../providers/oauth-clients.js";
 import { databaseLayer } from "./db.js";
@@ -128,6 +128,7 @@ const NodeBase = NodeChildProcessSpawner.layer.pipe(
 export const NodeSystem = Layer.mergeAll(
   NodeBase,
   NodeRuntime,
+  NodeHost,
   NodePaths.pipe(Layer.provide(NodeBase)),
 );
 

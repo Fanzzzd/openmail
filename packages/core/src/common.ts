@@ -95,6 +95,7 @@ export * from "./app/update-state.js";
 export * from "./contacts/apple-contacts.js";
 
 export * from "./platform/crypto.js";
+export * from "./platform/host.js";
 export * from "./platform/paths.js";
 export * from "./platform/mail-codec.js";
 export * from "./platform/runtime.js";

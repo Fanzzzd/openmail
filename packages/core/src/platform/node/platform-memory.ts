@@ -21,6 +21,7 @@ import {
 import type { SqlClient } from "effect/sql";
 
 import { NodeRuntime } from "./runtime.js";
+import { type Host, PlatformHost } from "../host.js";
 import { appConfigFile } from "../../providers/config.js";
 import { databaseLayer } from "./db.js";
 import { OAuthIssuersSql } from "../../store/store-oauth-issuers.js";
@@ -127,6 +128,8 @@ export interface MemoryPlatformOptions {
   builtInClients?: ClientConfig;
   /** Replaces the fake OAuth methods, e.g. to make refresh fail with AuthError. */
   oauth?: Partial<OAuth["Service"]>;
+  /** The machine's time zone. Defaults to PlatformHost's UTC, so tests do not follow the machine. */
+  host?: Host;
 }
 
 export type MemoryPlatformServices =
@@ -210,6 +213,7 @@ export function MemoryPlatform(
   return Layer.mergeAll(
     OAuthIssuersSql.pipe(Layer.provideMerge(databaseLayer(opts.database ?? ":memory:"))),
     NodeRuntime,
+    opts.host ? Layer.succeed(PlatformHost, opts.host) : Layer.empty,
     secrets,
     config,
     oauth.pipe(Layer.provideMerge(browserWithUrls)),

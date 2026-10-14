@@ -3,6 +3,7 @@ import { messageModelText } from "../visible-text/visible-text.js";
 import type { Address, Message } from "../domain/message.js";
 import { ADDRESSED_QUOTE_HEADER } from "../compose/compose-text.js";
 import type { ModelThread } from "./model-thread.js";
+import { localIso } from "../platform/host.js";
 
 const QUOTE_MARKERS = [
   /^On .{4,200} wrote:\s*$/i,
@@ -160,4 +161,18 @@ export function modelCoverage(
     return text !== undefined && (text.length > 0 || m.text.length === 0);
   }).length;
   return kept < full.messages.length ? { kept, total: full.messages.length } : undefined;
+}
+
+/**
+ * The view with each message date as local time with its offset, as a model reads it. Hashes
+ * and caches keep the UTC view, so a zone change never invalidates a summary.
+ */
+export function localThread(view: ModelThread, timeZone: string): ModelThread {
+  return {
+    ...view,
+    messages: view.messages.map((m) => {
+      const ms = Date.parse(m.date);
+      return Number.isNaN(ms) ? m : { ...m, date: localIso(ms, timeZone) };
+    }),
+  };
 }

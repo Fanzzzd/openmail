@@ -166,6 +166,7 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
       syncState: notUsed("syncState"),
     },
     app: {
+      host: { timeZone: () => "UTC" },
       diagnosticsState: notUsed("diagnosticsState"),
       checkUpdates: () => Effect.die("unused"),
       rememberNotificationActions: () => Effect.die("unused"),

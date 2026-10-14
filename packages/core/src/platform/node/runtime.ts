@@ -6,6 +6,7 @@ import { postUnsubscribe } from "./unsubscribe.js";
 import { createHash, createHmac, randomUUID } from "node:crypto";
 import { Effect, Layer } from "effect";
 import { PlatformCrypto } from "../crypto.js";
+import { PlatformHost } from "../host.js";
 import { MailCodec } from "../mail-codec.js";
 import { AppPaths } from "../paths.js";
 import { AppVerifier, AttachmentFiles, ImageNetwork, PdfWorker } from "../runtime.js";
@@ -31,6 +32,10 @@ export const NodeRuntime = Layer.mergeAll(
   Layer.succeed(PdfWorker, { extract: pdfText }),
   Layer.succeed(AppVerifier, { verify: isSignedMacApp }),
 );
+/** The OS time zone from Intl, read on each call. */
+export const NodeHost = Layer.succeed(PlatformHost, {
+  timeZone: () => Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+});
 export const NodePaths = Layer.effect(
   AppPaths,
   Effect.map(dataDir, (directory) => ({ dataDirectory: Effect.succeed(directory) })),

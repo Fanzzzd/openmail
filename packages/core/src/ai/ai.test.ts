@@ -477,6 +477,44 @@ it.effect(
   },
 );
 
+it.effect("the assistant knows the local time and zone, and reads mail dates in that zone", () => {
+  const requests: ModelRequest[] = [];
+  const server = fakeServer("me@gmail.com", [
+    { ...incoming("m1"), date: Date.UTC(2026, 9, 14, 1, 30) },
+  ]);
+  const fake = FakeModelLayer((request) => {
+    requests.push(request);
+    return textStream("ok");
+  });
+  return Effect.gen(function* () {
+    yield* TestClock.setTime(Date.UTC(2026, 9, 14, 13, 5));
+    const m = yield* Mailbox;
+    yield* m.accounts.connect({ provider: "gmail" });
+    yield* m.sync.sync();
+    yield* m.ai.setAiAccount(consent);
+    yield* Stream.runDrain(
+      m.ai.askAi({ question: "What is due tomorrow?", accountIds: [accountId] }),
+    );
+    assert.include(
+      requests[0]?.prompt ?? "",
+      "The current local time is 2026-10-14T21:05:00+08:00 (Asia/Shanghai).",
+    );
+    yield* Stream.runDrain(
+      m.ai.askAi({ question: "When?", accountIds: [accountId], threadId: messageId }),
+    );
+    assert.include(requests[1]?.prompt ?? "", "2026-10-14T09:30:00+08:00");
+    assert.notInclude(requests[1]?.prompt ?? "", "2026-10-14T01:30:00.000Z");
+    yield* Stream.runDrain(m.ai.summarize(messageId));
+    assert.include(requests[2]?.prompt ?? "", "2026-10-14T09:30:00+08:00");
+  }).pipe(
+    Effect.provide(
+      TestMailbox({ gmail: server }, { backgroundFlush: false }, {}, fake, {
+        host: { timeZone: () => "Asia/Shanghai" },
+      }),
+    ),
+  );
+});
+
 it.effect("summaries stream text only, reuse hashes, invalidate input/model changes", () => {
   const requests: ModelRequest[] = [];
   const server = fakeServer("me@gmail.com", [incoming("m1")]);

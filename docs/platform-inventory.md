@@ -52,6 +52,8 @@ The portable IMAP and SMTP protocol is in `platform/react-native/`. `imap.ts` as
 
 Database copying and copy migration for the dev smoke test are in `platform/node/smoke.ts`. The desktop script only calls this core export. Core reads `OPENMAIL_READ_ONLY=1` through Effect Config when it builds the Layer. `mailbox/read-only.ts` and `mailbox/mailbox-live.ts` hold the provider write blocking and the queue and send policy. No implicit Node global is involved.
 
+`PlatformHost` (`platform/host.ts`) gives core the machine's time zone as an IANA name. It is a function, so a zone change applies to the next request. `NodeHost` reads it from Intl in `platform/node/runtime.ts`, and the mobile Layer reads it from Hermes Intl. Without a host Layer the zone is UTC, which keeps tests independent of the machine. The assistant prompt, the mail dates a model reads and the agent tools use it through `localIso`.
+
 Shared exports are collected in `common.ts`. The Node entry re-exports only the names the desktop app and CLI use. It does not load mobile adapters or mobile-only workflows through `portable.ts`, and `platform-imports.test.ts` checks that dependency graph. Mobile keeps getting shared capabilities and the mobile platform assembly from `portable.ts`.
 
 Visible-text extraction first parses the reader's sanitized output and the reference shell as HTML5 with parse5 8.0.1. parse5-htmlparser2-tree-adapter 8.0.1 then connects the result to the existing selectors and walkers. Both entries are pure ESM parsing code and call no Node platform services. A regression test checks that table foster-parenting matches browser parsing. This check did not run Electron or Metro.

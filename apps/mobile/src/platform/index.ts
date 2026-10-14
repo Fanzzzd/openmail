@@ -6,6 +6,7 @@ import {
   MobileBackgroundStorageLive,
   mobileOAuthLayer,
   opSqliteLayer,
+  PlatformHost,
 } from "@openmail/core/portable";
 import { Layer } from "effect";
 import { attachmentFilesLayer } from "./attachment-cache";
@@ -29,6 +30,7 @@ export function mobileMailboxLayer(inspection?: MobileDatabaseState) {
     secretsLayer,
     transportLayer,
     cryptoLayer,
+    hostLayer,
     filesLayer,
     readerCapabilitiesLayer,
     browserLayer,
@@ -40,6 +42,11 @@ export function mobileMailboxLayer(inspection?: MobileDatabaseState) {
     MobileBackgroundStorageLive,
   ).pipe(Layer.provide(platform));
 }
+
+/** The device time zone from Hermes Intl, read on each call. */
+const hostLayer = Layer.succeed(PlatformHost, {
+  timeZone: () => Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+});
 
 const readerCapabilitiesLayer = Layer.mergeAll(
   mobileMailCodecLayer,

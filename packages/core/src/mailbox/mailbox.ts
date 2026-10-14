@@ -633,6 +633,8 @@ export interface MailboxApp {
     options: import("../app/updates.js").UpdateOptions,
   ): Effect.Effect<() => void>;
   readonly events: Stream.Stream<MailboxEvent>;
+  /** The machine's time zone, from the platform Layer. Agent tools write local times with it. */
+  readonly host: import("../platform/host.js").Host;
 }
 
 /**
