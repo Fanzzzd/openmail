@@ -9,6 +9,7 @@ import {
   AI_REQUEST_SECONDS,
   AI_SUMMARY_INPUT,
   AI_THREAD_INPUT,
+  AI_TRIAGE_INPUT,
   aiSource,
   isTriageInbox,
 } from "../ai/ai.js";
@@ -55,8 +56,12 @@ export function makeAiRequests(
       )
         yield* new InvalidInput({ message: AI_ERRORS.noConsent });
     });
-  /** Bytes of the thread each kind of request reads. Triage runs unasked, so it stays small. */
-  const INPUT_BYTES = { summary: AI_SUMMARY_INPUT, compose: AI_THREAD_INPUT, triage: 6000 };
+  /** Bytes of the thread each kind of request reads. */
+  const INPUT_BYTES = {
+    summary: AI_SUMMARY_INPUT,
+    compose: AI_THREAD_INPUT,
+    triage: AI_TRIAGE_INPUT,
+  };
   const input = (id: string, kind: "summary" | "compose" | "triage" = "summary", locale?: string) =>
     Effect.gen(function* () {
       const messages = yield* store.getThread(id);

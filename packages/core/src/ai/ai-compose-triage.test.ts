@@ -11,6 +11,7 @@ import { makeAiMailbox } from "../mailbox/mailbox-ai.js";
 import {
   AI_COMPOSE_TEXT,
   AUTO_SUMMARY_DAILY_CAP,
+  AUTO_TRIAGE_DAILY_CAP,
   composeOutputBytes,
   composeOutputTokens,
 } from "./ai.js";
@@ -358,6 +359,40 @@ it.effect(
       assert.isNull(yield* ai.aiSummary(ids[1] ?? ""));
       // The cut-off and the broken summary used the two slots.
       assert.isFalse(yield* store.ai.claimAutoSummary(day, AUTO_SUMMARY_DAILY_CAP));
+    }).pipe(Effect.provide(f.layer));
+  },
+);
+
+it.effect(
+  "automatic triage stops at the daily cap, and only a failure before any output gives its slot back",
+  () => {
+    let calls = 0;
+    const f = fixture(() => {
+      calls++;
+      // Never reached the model: not billed.
+      if (calls === 1) return Stream.die(new Error("Can't reach Anthropic"));
+      return output('{"action":{"kind":"archive"},"reason":"Finished"}');
+    });
+    return Effect.gen(function* () {
+      const { m, store, ai } = yield* f.setup;
+      yield* m.ai.setAiKey("fake");
+      yield* m.ai.setAiAccount(consent);
+      // One slot left today (the fixture's host is in UTC).
+      const day = new Date(0).toISOString().slice(0, 10);
+      for (let i = 1; i < AUTO_TRIAGE_DAILY_CAP; i++)
+        assert.isTrue(yield* store.ai.claimAutoTriage(day, AUTO_TRIAGE_DAILY_CAP));
+      const ids = Array.from({ length: 3 }, (_, i) => `${accountId}/m${i + 1}`);
+      yield* ai.autoTriage(ids);
+      assert.strictEqual(calls, 2, "the unbilled failure gave its slot to the second thread");
+      assert.strictEqual((yield* m.ai.aiTriage(ids[1] ?? ""))?.status, "pending");
+      assert.isNull(yield* m.ai.aiTriage(ids[2] ?? ""));
+      assert.isFalse(yield* store.ai.claimAutoTriage(day, AUTO_TRIAGE_DAILY_CAP));
+      // The summary cap is counted on its own.
+      assert.isTrue(yield* store.ai.claimAutoSummary(day, AUTO_SUMMARY_DAILY_CAP));
+      // The next day the two threads without a suggestion get one.
+      yield* TestClock.adjust("1 day");
+      yield* ai.autoTriage(ids);
+      assert.strictEqual(calls, 4);
     }).pipe(Effect.provide(f.layer));
   },
 );

@@ -2637,6 +2637,10 @@ msgstr "将选中附件拖到访达"
 msgid "Each automatic summary uses your Anthropic API key and sends up to {summaryKb} KB of the conversation. At most {summaryCap} a day across all accounts. Summaries that fail before any text arrives don't count."
 msgstr "每次自动摘要都使用你的 Anthropic API 密钥，并发送对话中最多 {summaryKb} KB 的内容。所有账户合计每天最多 {summaryCap} 次。在收到任何文本之前就失败的摘要不计入。"
 
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "Each triage suggestion uses your Anthropic API key and sends up to {triageKb} KB of the conversation. At most {triageCap} a day across all accounts. Suggestions that fail before any text arrives don't count."
+msgstr "每次整理建议都使用你的 Anthropic API 密钥，并发送对话中最多 {triageKb} KB 的内容。所有账户合计每天最多 {triageCap} 次。在收到任何文本之前就失败的建议不计入。"
+
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx

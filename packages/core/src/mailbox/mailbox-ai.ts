@@ -67,6 +67,7 @@ export function makeAiMailbox(
     changed,
     canTriage,
     requests,
+    host,
   );
   const summarize = (id: string, requested?: string) =>
     bounded(

@@ -2627,6 +2627,10 @@ msgstr "Auswahl in den Finder ziehen"
 msgid "Each automatic summary uses your Anthropic API key and sends up to {summaryKb} KB of the conversation. At most {summaryCap} a day across all accounts. Summaries that fail before any text arrives don't count."
 msgstr "Jede automatische Zusammenfassung nutzt deinen Anthropic-API-Schlüssel und sendet bis zu {summaryKb} KB der Konversation. Höchstens {summaryCap} pro Tag über alle Accounts. Zusammenfassungen, die fehlschlagen, bevor Text ankommt, zählen nicht."
 
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "Each triage suggestion uses your Anthropic API key and sends up to {triageKb} KB of the conversation. At most {triageCap} a day across all accounts. Suggestions that fail before any text arrives don't count."
+msgstr "Jeder Sortiervorschlag nutzt deinen Anthropic-API-Schlüssel und sendet bis zu {triageKb} KB der Konversation. Höchstens {triageCap} pro Tag über alle Accounts. Vorschläge, die fehlschlagen, bevor Text ankommt, zählen nicht."
+
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx

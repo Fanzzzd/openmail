@@ -2627,6 +2627,10 @@ msgstr "Sleep de geselecteerde naar Finder"
 msgid "Each automatic summary uses your Anthropic API key and sends up to {summaryKb} KB of the conversation. At most {summaryCap} a day across all accounts. Summaries that fail before any text arrives don't count."
 msgstr "Elke automatische samenvatting gebruikt je Anthropic API-sleutel en verstuurt tot {summaryKb} KB van het gesprek. Maximaal {summaryCap} per dag voor alle accounts samen. Samenvattingen die mislukken voordat er tekst binnenkomt, tellen niet mee."
 
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "Each triage suggestion uses your Anthropic API key and sends up to {triageKb} KB of the conversation. At most {triageCap} a day across all accounts. Suggestions that fail before any text arrives don't count."
+msgstr "Elke sorteersuggestie gebruikt je Anthropic API-sleutel en verstuurt tot {triageKb} KB van het gesprek. Maximaal {triageCap} per dag voor alle accounts samen. Suggesties die mislukken voordat er tekst binnenkomt, tellen niet mee."
+
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx

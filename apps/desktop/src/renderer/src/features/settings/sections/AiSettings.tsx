@@ -4,7 +4,9 @@ import { Select } from "../../../ui/Select";
 import {
   AI_MODELS,
   AI_SUMMARY_INPUT,
+  AI_TRIAGE_INPUT,
   AUTO_SUMMARY_DAILY_CAP,
+  AUTO_TRIAGE_DAILY_CAP,
   aiModelName,
   type AiModelName,
 } from "@openmail/core/schema";
@@ -28,6 +30,8 @@ import {
 const nativeCheck = "size-3.5 shrink-0 accent-blue-600";
 const summaryKb = AI_SUMMARY_INPUT / 1000;
 const summaryCap = AUTO_SUMMARY_DAILY_CAP;
+const triageKb = AI_TRIAGE_INPUT / 1000;
+const triageCap = AUTO_TRIAGE_DAILY_CAP;
 
 import { aiSettingsAtom } from "../../ai";
 import { CONSENT_ANCHOR } from "./ai-clients-ui";
@@ -213,7 +217,15 @@ export function AiSettings({ accounts }: { accounts: readonly Account[] }) {
                     <Trans>Automatically summarize new mail</Trans>
                   </label>
                 </SettingsCheckRow>
-                <SettingsCheckRow>
+                <SettingsCheckRow
+                  hint={
+                    <Trans>
+                      Each triage suggestion uses your Anthropic API key and sends up to {triageKb}{" "}
+                      KB of the conversation. At most {triageCap} a day across all accounts.
+                      Suggestions that fail before any text arrives don't count.
+                    </Trans>
+                  }
+                >
                   <label className="flex items-center gap-2">
                     <input
                       type="checkbox"

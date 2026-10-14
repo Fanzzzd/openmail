@@ -2627,6 +2627,10 @@ msgstr "選択したものをファインダーにドラッグします"
 msgid "Each automatic summary uses your Anthropic API key and sends up to {summaryKb} KB of the conversation. At most {summaryCap} a day across all accounts. Summaries that fail before any text arrives don't count."
 msgstr "自動要約は 1 件ごとに Anthropic API キーを使い、スレッドを最大 {summaryKb} KB 送信します。全アカウント合計で 1 日 {summaryCap} 件までです。テキストを受け取る前に失敗した要約は数えません。"
 
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "Each triage suggestion uses your Anthropic API key and sends up to {triageKb} KB of the conversation. At most {triageCap} a day across all accounts. Suggestions that fail before any text arrives don't count."
+msgstr "整理の提案は 1 件ごとに Anthropic API キーを使い、スレッドを最大 {triageKb} KB 送信します。全アカウント合計で 1 日 {triageCap} 件までです。テキストを受け取る前に失敗した提案は数えません。"
+
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx

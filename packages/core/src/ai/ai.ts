@@ -195,6 +195,13 @@ export const AI_SUMMARY_INPUT = 80_000;
  * counts, saved or cut off; summaries the person asks for are not capped.
  */
 export const AUTO_SUMMARY_DAILY_CAP = 50;
+/**
+ * Automatic triage requests per local calendar day, across accounts. Every request Anthropic
+ * billed counts, whatever it suggested; requests that failed before any output do not.
+ */
+export const AUTO_TRIAGE_DAILY_CAP = 100;
+/** Bytes of a thread a triage request reads. Triage runs unasked, so it stays small. */
+export const AI_TRIAGE_INPUT = 6000;
 /** Bytes of a thread the assistant reads per read_thread, and of the thread a question is about. */
 export const AI_THREAD_INPUT = 24_000;
 /** Tool calls the assistant may make for one question. A call counts once, however many threads it touches. */

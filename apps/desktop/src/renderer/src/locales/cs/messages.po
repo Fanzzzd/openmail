@@ -2627,6 +2627,10 @@ msgstr "Přetáhněte vybrané do Finderu"
 msgid "Each automatic summary uses your Anthropic API key and sends up to {summaryKb} KB of the conversation. At most {summaryCap} a day across all accounts. Summaries that fail before any text arrives don't count."
 msgstr "Každé automatické shrnutí používá váš klíč API Anthropic a odešle až {summaryKb} KB konverzace. Nejvýše {summaryCap} denně za všechny účty. Shrnutí, která selžou dřív, než dorazí jakýkoli text, se nepočítají."
 
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "Each triage suggestion uses your Anthropic API key and sends up to {triageKb} KB of the conversation. At most {triageCap} a day across all accounts. Suggestions that fail before any text arrives don't count."
+msgstr "Každý návrh třídění používá váš klíč API Anthropic a odešle až {triageKb} KB konverzace. Nejvýše {triageCap} denně za všechny účty. Návrhy, které selžou dřív, než dorazí jakýkoli text, se nepočítají."
+
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx

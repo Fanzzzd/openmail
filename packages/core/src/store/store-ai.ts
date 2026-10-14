@@ -14,6 +14,24 @@ const decode =
     Schema.decodeUnknownEffect(Schema.Array(schema))(rows).pipe(Effect.orDie);
 const run = (query: Effect.Effect<unknown, unknown>) => query.pipe(Effect.orDie, Effect.asVoid);
 export function makeAiStore(sql: SqlClient.SqlClient) {
+  /**
+   * Counts one automatic request against `day`'s cap in the `key` row of prefs. False once `cap`
+   * were claimed that day; a new day starts again at one. One statement, so app windows and
+   * processes share the count.
+   */
+  const claimDaily = (key: string, day: string, cap: number) =>
+    sql`INSERT INTO prefs(key,value_json) VALUES(${key},json_object('day',${day},'count',1))
+      ON CONFLICT(key) DO UPDATE SET value_json=CASE WHEN json_extract(value_json,'$.day')=${day}
+        THEN json_object('day',${day},'count',json_extract(value_json,'$.count')+1)
+        ELSE json_object('day',${day},'count',1) END
+      WHERE json_extract(value_json,'$.day') IS NOT ${day} OR json_extract(value_json,'$.count')<${cap}
+      RETURNING value_json`.pipe(
+      Effect.map((rows) => rows.length > 0),
+      Effect.orDie,
+    );
+  const releaseDaily = (key: string, day: string) =>
+    run(sql`UPDATE prefs SET value_json=json_object('day',${day},'count',json_extract(value_json,'$.count')-1)
+      WHERE key=${key} AND json_extract(value_json,'$.day')=${day} AND json_extract(value_json,'$.count')>0`);
   return {
     accounts: sql`SELECT a.id AS accountId, COALESCE(s.allowed,0)=1 AS allowed,
       COALESCE(s.auto_summaries,0)=1 AS autoSummaries, COALESCE(s.auto_triage,0)=1 AS autoTriage FROM accounts a
@@ -85,24 +103,14 @@ export function makeAiStore(sql: SqlClient.SqlClient) {
       run(sql`DELETE FROM derived WHERE thread_id=${threadId} AND kind='triage'`),
     deleteAccountTriage: (accountId: string) =>
       run(sql`DELETE FROM derived WHERE account_id=${accountId} AND kind='triage'`),
-    /**
-     * Counts one automatic summary against `day`'s cap. False once `cap` were claimed that day;
-     * a new day starts again at one. One statement, so app windows and processes share the count.
-     */
-    claimAutoSummary: (day: string, cap: number) =>
-      sql`INSERT INTO prefs(key,value_json) VALUES('ai-auto-summaries',json_object('day',${day},'count',1))
-      ON CONFLICT(key) DO UPDATE SET value_json=CASE WHEN json_extract(value_json,'$.day')=${day}
-        THEN json_object('day',${day},'count',json_extract(value_json,'$.count')+1)
-        ELSE json_object('day',${day},'count',1) END
-      WHERE json_extract(value_json,'$.day') IS NOT ${day} OR json_extract(value_json,'$.count')<${cap}
-      RETURNING value_json`.pipe(
-        Effect.map((rows) => rows.length > 0),
-        Effect.orDie,
-      ),
+    /** Counts one automatic summary against `day`'s cap, in the `ai-auto-summaries` row. */
+    claimAutoSummary: (day: string, cap: number) => claimDaily("ai-auto-summaries", day, cap),
     /** Gives back one claim on `day`, for an automatic summary that failed before any output. */
-    releaseAutoSummary: (day: string) =>
-      run(sql`UPDATE prefs SET value_json=json_object('day',${day},'count',json_extract(value_json,'$.count')-1)
-      WHERE key='ai-auto-summaries' AND json_extract(value_json,'$.day')=${day} AND json_extract(value_json,'$.count')>0`),
+    releaseAutoSummary: (day: string) => releaseDaily("ai-auto-summaries", day),
+    /** Counts one automatic triage request against `day`'s cap, in the `ai-auto-triage` row. */
+    claimAutoTriage: (day: string, cap: number) => claimDaily("ai-auto-triage", day, cap),
+    /** Gives back one claim on `day`, for a triage request that failed before any output. */
+    releaseAutoTriage: (day: string) => releaseDaily("ai-auto-triage", day),
     deleteAccountResults: (accountId: string) =>
       run(sql`DELETE FROM derived WHERE account_id=${accountId}`),
   };
