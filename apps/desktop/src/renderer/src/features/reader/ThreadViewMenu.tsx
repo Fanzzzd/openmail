@@ -137,7 +137,7 @@ export function ThreadViewMenuItems({
           <MenuItem onClick={() => shareLink("message")}>{t`Send message link to…`}</MenuItem>
           <MenuItem onClick={() => shareLink("thread")}>{t`Send conversation link to…`}</MenuItem>
           {canOpenWeb && (
-            <MenuItem onClick={() => shareLink("web")}>{t`Send web mail link to…`}</MenuItem>
+            <MenuItem onClick={() => shareLink("web")}>{t`Send webmail link to…`}</MenuItem>
           )}
         </>
       )}

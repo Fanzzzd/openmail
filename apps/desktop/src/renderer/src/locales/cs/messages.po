@@ -4920,7 +4920,7 @@ msgid "Open in Outlook"
 msgstr "Otevřete v aplikaci Outlook"
 
 #: src/renderer/src/i18n/shortcut-names.ts
-msgid "Open in web mail"
+msgid "Open in webmail"
 msgstr "Otevřít ve webové poště"
 
 #: src/renderer/src/features/downloads/Downloads.tsx
@@ -6285,8 +6285,8 @@ msgstr "Odeslat tuto zprávu bez předmětu?"
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
-msgid "Send web mail link to…"
-msgstr "Odeslat odkaz na webovou zprávu do…"
+msgid "Send webmail link to…"
+msgstr "Odeslat odkaz na webovou poštu do…"
 
 #: src/renderer/src/features/search/SearchSnippet.tsx
 msgctxt "search match source"
@@ -7320,7 +7320,7 @@ msgid "This account has no calendar OpenMail can use. Add the event in your cale
 msgstr "Tento účet nemá kalendář, který by OpenMail mohl použít. Přidejte událost v aplikaci kalendáře."
 
 #: src/renderer/src/lib/errors.ts
-msgid "This account has no web mail link. Open it in your provider's web mail."
+msgid "This account has no webmail link. Open it in your provider's webmail."
 msgstr "Tento účet nemá odkaz na webovou poštu. Otevřete ho ve webové poště svého poskytovatele."
 
 #: src/renderer/src/lib/errors.ts

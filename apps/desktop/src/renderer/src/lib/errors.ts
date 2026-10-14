@@ -205,7 +205,7 @@ export const INPUT_ERRORS: Record<string, MessageDescriptor> = {
   "The selected conversation is no longer available.": msg`The selected conversation is no longer available.`,
   "The selection exceeds 100,000 messages.": msg`The selection has more than 100,000 messages. Select fewer.`,
   "The signature belongs to another sending address or is unavailable": msg`This signature belongs to another sending address or is no longer available.`,
-  "This account has no supported web mail link.": msg`This account has no web mail link. Open it in your provider's web mail.`,
+  "This account has no supported web mail link.": msg`This account has no webmail link. Open it in your provider's webmail.`,
   "This account is outside the selected accounts.": msg`This account is outside the selected accounts.`,
   "This draft was already discarded.": msg`This draft was already discarded.`,
   "This message is not a draft.": msg`This message isn't a draft.`,

@@ -4920,7 +4920,7 @@ msgid "Open in Outlook"
 msgstr "Открыть в Outlook"
 
 #: src/renderer/src/i18n/shortcut-names.ts
-msgid "Open in web mail"
+msgid "Open in webmail"
 msgstr "Открыть в веб-почте"
 
 #: src/renderer/src/features/downloads/Downloads.tsx
@@ -6285,7 +6285,7 @@ msgstr "Отправить это сообщение без темы?"
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
-msgid "Send web mail link to…"
+msgid "Send webmail link to…"
 msgstr "Отправить ссылку на веб-почту в…"
 
 #: src/renderer/src/features/search/SearchSnippet.tsx
@@ -7320,7 +7320,7 @@ msgid "This account has no calendar OpenMail can use. Add the event in your cale
 msgstr "В этой учётной записи нет календаря, который может использовать OpenMail. Добавьте событие в приложении календаря."
 
 #: src/renderer/src/lib/errors.ts
-msgid "This account has no web mail link. Open it in your provider's web mail."
+msgid "This account has no webmail link. Open it in your provider's webmail."
 msgstr "У этой учётной записи нет ссылки на веб-почту. Откройте её в веб-почте своего провайдера."
 
 #: src/renderer/src/lib/errors.ts

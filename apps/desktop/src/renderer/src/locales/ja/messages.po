@@ -4920,8 +4920,8 @@ msgid "Open in Outlook"
 msgstr "Outlook で開く"
 
 #: src/renderer/src/i18n/shortcut-names.ts
-msgid "Open in web mail"
-msgstr "Web メールで開く"
+msgid "Open in webmail"
+msgstr "ウェブメールで開く"
 
 #: src/renderer/src/features/downloads/Downloads.tsx
 msgid "Open it from Finder"
@@ -6285,8 +6285,8 @@ msgstr "件名なしでこのメッセージを送信しますか？"
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
-msgid "Send web mail link to…"
-msgstr "Web メールのリンクを送信…"
+msgid "Send webmail link to…"
+msgstr "ウェブメールのリンクを送信…"
 
 #: src/renderer/src/features/search/SearchSnippet.tsx
 msgctxt "search match source"
@@ -7320,7 +7320,7 @@ msgid "This account has no calendar OpenMail can use. Add the event in your cale
 msgstr "このアカウントには OpenMail で使えるカレンダーがありません。カレンダーアプリで予定を追加してください。"
 
 #: src/renderer/src/lib/errors.ts
-msgid "This account has no web mail link. Open it in your provider's web mail."
+msgid "This account has no webmail link. Open it in your provider's webmail."
 msgstr "このアカウントにはウェブメールのリンクがありません。プロバイダのウェブメールで開いてください。"
 
 #: src/renderer/src/lib/errors.ts

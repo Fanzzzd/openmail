@@ -4930,8 +4930,8 @@ msgid "Open in Outlook"
 msgstr "在 Outlook 中打开"
 
 #: src/renderer/src/i18n/shortcut-names.ts
-msgid "Open in web mail"
-msgstr "在网页版邮箱中打开"
+msgid "Open in webmail"
+msgstr "在网页邮箱中打开"
 
 #: src/renderer/src/features/downloads/Downloads.tsx
 msgid "Open it from Finder"
@@ -6295,8 +6295,8 @@ msgstr "确认发送无主题邮件？"
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
-msgid "Send web mail link to…"
-msgstr "发送网页版邮件链接到…"
+msgid "Send webmail link to…"
+msgstr "发送网页邮箱链接到…"
 
 #: src/renderer/src/features/search/SearchSnippet.tsx
 msgctxt "search match source"
@@ -7330,7 +7330,7 @@ msgid "This account has no calendar OpenMail can use. Add the event in your cale
 msgstr "这个账户没有 OpenMail 可用的日历。请在你的日历应用中添加日程。"
 
 #: src/renderer/src/lib/errors.ts
-msgid "This account has no web mail link. Open it in your provider's web mail."
+msgid "This account has no webmail link. Open it in your provider's webmail."
 msgstr "这个账户没有网页版邮箱链接。请在服务商的网页版邮箱中打开。"
 
 #: src/renderer/src/lib/errors.ts

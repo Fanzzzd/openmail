@@ -4920,7 +4920,7 @@ msgid "Open in Outlook"
 msgstr "Openen in Outlook"
 
 #: src/renderer/src/i18n/shortcut-names.ts
-msgid "Open in web mail"
+msgid "Open in webmail"
 msgstr "Openen in webmail"
 
 #: src/renderer/src/features/downloads/Downloads.tsx
@@ -6285,7 +6285,7 @@ msgstr "Dit bericht zonder onderwerp versturen?"
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
-msgid "Send web mail link to…"
+msgid "Send webmail link to…"
 msgstr "Webmaillink versturen naar…"
 
 #: src/renderer/src/features/search/SearchSnippet.tsx
@@ -7320,7 +7320,7 @@ msgid "This account has no calendar OpenMail can use. Add the event in your cale
 msgstr "Dit account heeft geen agenda die OpenMail kan gebruiken. Voeg de afspraak toe in je agenda-app."
 
 #: src/renderer/src/lib/errors.ts
-msgid "This account has no web mail link. Open it in your provider's web mail."
+msgid "This account has no webmail link. Open it in your provider's webmail."
 msgstr "Dit account heeft geen link naar webmail. Open het in de webmail van je provider."
 
 #: src/renderer/src/lib/errors.ts
