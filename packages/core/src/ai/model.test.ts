@@ -496,3 +496,110 @@ it.effect("each feature sends its own output budget, adaptive thinking and effor
     ),
   );
 });
+
+/** One streamed assistant message made of several content blocks. */
+function sseBlocks(
+  blocks: readonly { start: unknown; deltas: readonly unknown[] }[],
+  reason: string,
+) {
+  const events: unknown[] = [
+    {
+      type: "message_start",
+      message: {
+        id: "msg_test",
+        type: "message",
+        role: "assistant",
+        model: "claude-sonnet-5-5",
+        content: [],
+        stop_reason: null,
+        stop_sequence: null,
+        usage: {
+          input_tokens: 30,
+          output_tokens: 0,
+          cache_creation: null,
+          cache_creation_input_tokens: null,
+          cache_read_input_tokens: null,
+          service_tier: null,
+        },
+      },
+    },
+  ];
+  blocks.forEach((block, index) => {
+    events.push({ type: "content_block_start", index, content_block: block.start });
+    for (const delta of block.deltas) events.push({ type: "content_block_delta", index, delta });
+    events.push({ type: "content_block_stop", index });
+  });
+  events.push(
+    {
+      type: "message_delta",
+      delta: { stop_reason: reason, stop_sequence: null },
+      usage: {
+        output_tokens: 12,
+        input_tokens: null,
+        cache_creation_input_tokens: null,
+        cache_read_input_tokens: null,
+      },
+    },
+    { type: "message_stop" },
+  );
+  const lines = events.map((event) => {
+    const type = Schema.decodeUnknownSync(Schema.Struct({ type: Schema.String }))(event).type;
+    return `event: ${type}\ndata: ${JSON.stringify(event)}\n\n`;
+  });
+  return new Response(lines.join(""), { headers: { "content-type": "text/event-stream" } });
+}
+
+const ReplayedMessages = Schema.Struct({
+  messages: Schema.Array(
+    Schema.Struct({
+      role: Schema.String,
+      content: Schema.Union([Schema.String, Schema.Array(Schema.Unknown)]),
+    }),
+  ),
+});
+
+it.effect(
+  "a thinking block with its signature is replayed before the tool call it preceded",
+  () => {
+    const thinkingThenTool = () =>
+      sseBlocks(
+        [
+          {
+            start: { type: "thinking", thinking: "", signature: "" },
+            deltas: [
+              { type: "thinking_delta", thinking: "Search first." },
+              { type: "signature_delta", signature: "SIG123" },
+            ],
+          },
+          {
+            start: { type: "tool_use", id: "tool_1", name: "search", input: {} },
+            deltas: [{ type: "input_json_delta", partial_json: '{"query":"q"}' }],
+          },
+        ],
+        "tool_use",
+      );
+    const { bodies, live } = scripted([thinkingThenTool, answer]);
+    return Effect.gen(function* () {
+      const m = yield* Mailbox;
+      const account = yield* m.accounts.connect({ provider: "gmail" });
+      yield* m.ai.setAiKey("k");
+      yield* m.ai.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });
+      yield* Stream.runCollect(m.ai.askAi({ question: "Find it", accountIds: [account.id] }));
+      assert.strictEqual(bodies.length, 2);
+      const { messages } = Schema.decodeUnknownSync(ReplayedMessages)(
+        JSON.parse(bodies[1] ?? "{}"),
+      );
+      const assistant = messages.find((message) => message.role === "assistant");
+      const content = Array.isArray(assistant?.content) ? assistant.content : [];
+      const types = content.map(
+        (block) => Schema.decodeUnknownSync(Schema.Struct({ type: Schema.String }))(block).type,
+      );
+      assert.deepStrictEqual(types, ["thinking", "tool_use"]);
+      const thinking = Schema.decodeUnknownSync(
+        Schema.Struct({ thinking: Schema.String, signature: Schema.String }),
+      )(content[0]);
+      assert.strictEqual(thinking.signature, "SIG123");
+      assert.strictEqual(thinking.thinking, "Search first.");
+    }).pipe(Effect.provide(TestMailbox({}, { backgroundFlush: false }, {}, live)));
+  },
+);
