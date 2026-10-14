@@ -27,9 +27,19 @@ export function makeMediaStore(
   const deleteVectorsForMessages = (predicate: Fragment) =>
     vectors
       ? Effect.gen(function* () {
-          const ids = sql`SELECT i.id FROM vector_items i JOIN messages m ON m.id=i.message_id WHERE ${predicate}`;
-          yield* run(sql`DELETE FROM derived_text_vectors WHERE rowid IN (${ids})`);
-          yield* run(sql`DELETE FROM derived_image_vectors WHERE rowid IN (${ids})`);
+          // Read the ids first: a vec0 DELETE with a subquery scans the whole vector table,
+          // and upsertMessage calls this for every message, almost always with no vectors.
+          const ids = (yield* all(Schema.Struct({ id: Schema.Number }))(
+            sql`SELECT i.id FROM vector_items i JOIN messages m ON m.id=i.message_id WHERE ${predicate}`,
+          )).map((row) => row.id);
+          if (!ids.length) return;
+          const list = JSON.stringify(ids);
+          yield* run(
+            sql`DELETE FROM derived_text_vectors WHERE rowid IN (SELECT value FROM json_each(${list}))`,
+          );
+          yield* run(
+            sql`DELETE FROM derived_image_vectors WHERE rowid IN (SELECT value FROM json_each(${list}))`,
+          );
         })
       : Effect.void;
   let currentVersion: string | undefined;

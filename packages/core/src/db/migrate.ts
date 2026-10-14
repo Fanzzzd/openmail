@@ -153,6 +153,9 @@ export const migrateTo = (targetVersion: number) =>
     }
   });
 
+/** `PRAGMA optimize`'s default mask; bit 0x01 makes it list the ANALYZE statements instead. */
+const OPTIMIZE_DEFAULT_MASK = 0xfffe;
+
 /**
  * Refreshes planner statistics where SQLite thinks they are missing or stale.
  * Without them the planner can pick a date index over the thread index and
@@ -160,6 +163,13 @@ export const migrateTo = (targetVersion: number) =>
  * to a sample, so this costs milliseconds on a large mailbox. `0x10002` also
  * checks tables this connection has not queried yet, which is what a fresh
  * connection needs; the periodic call uses the default mask.
+ *
+ * Internal tables of FTS5 and vec0 are never analyzed, and statistics an older
+ * version wrote for them are removed (they take effect from the next open). An
+ * empty FTS5 index has 2 rows in its %_data table; with that count recorded the
+ * planner reads every later segment lookup as a scan, and inserting 60k
+ * messages slowed from 5 s to 4 minutes per 10k. Their internal statements
+ * look rows up by key and need no statistics.
  *
  * ANALYZE needs the write lock. The connection is reserved so no other
  * statement runs with the short `busyTimeoutMs`, and the normal timeout is
@@ -174,9 +184,33 @@ export const optimizeQueryPlanner = (options: { mask?: number; busyTimeoutMs: nu
     yield* run(`PRAGMA busy_timeout = ${options.busyTimeoutMs}`);
     yield* Effect.gen(function* () {
       yield* run("PRAGMA analysis_limit=400");
-      yield* run(
-        options.mask === undefined ? "PRAGMA optimize" : `PRAGMA optimize=${options.mask}`,
+      const tables = yield* Schema.decodeUnknownEffect(
+        Schema.Array(Schema.Struct({ name: Schema.String, type: Schema.String })),
+      )(yield* run("PRAGMA main.table_list"));
+      // vec0 does not declare %_vector_chunksNN as a shadow table, so match the prefix too.
+      const virtual = tables.filter((table) => table.type === "virtual").map((t) => `${t.name}_`);
+      const internal = new Set(
+        tables
+          .filter(
+            (table) =>
+              table.type === "shadow" || virtual.some((prefix) => table.name.startsWith(prefix)),
+          )
+          .map((table) => table.name),
       );
+      const planned = yield* Schema.decodeUnknownEffect(
+        Schema.Array(Schema.Struct({ optimize: Schema.String })),
+      )(yield* run(`PRAGMA optimize=${(options.mask ?? OPTIMIZE_DEFAULT_MASK) | 1}`));
+      for (const { optimize } of planned) {
+        const table = /^ANALYZE "main"\."((?:[^"]|"")+)"$/
+          .exec(optimize)?.[1]
+          ?.replaceAll('""', '"');
+        if (table !== undefined && !internal.has(table))
+          yield* run(`ANALYZE "main"."${table.replaceAll('"', '""')}"`);
+      }
+      if (internal.size && tables.some((table) => table.name === "sqlite_stat1"))
+        yield* run(
+          `DELETE FROM sqlite_stat1 WHERE tbl IN (SELECT value FROM json_each('${JSON.stringify([...internal]).replaceAll("'", "''")}'))`,
+        );
     }).pipe(
       Effect.ignore,
       Effect.ensuring(run(`PRAGMA busy_timeout = ${BUSY_TIMEOUT_MS}`).pipe(Effect.ignore)),
