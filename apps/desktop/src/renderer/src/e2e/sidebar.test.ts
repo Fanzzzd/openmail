@@ -76,8 +76,15 @@ it("favorite stars are named toggles off the tab order; in All accounts the menu
   const star = screen.getByRole("button", { name: "Favorite Inbox in all accounts" });
   expect(star.tabIndex).toBe(-1);
   expect(star.getAttribute("aria-pressed")).toBe("false");
-  // The outline star waits for the pointer or focus on its row.
-  expect(star.className).toContain("opacity-0");
+  // The row's controls wait for the pointer or focus on the row, in place of its count, so every
+  // count ends at the same edge.
+  expect(star.parentElement?.className).toContain("opacity-0");
+  expect(star.parentElement?.className).toContain("group-hover/item:opacity-100");
+  expect(star.parentElement?.className).toContain("absolute");
+  const count = screen
+    .getByRole("button", { name: /^Inbox/ })
+    .querySelector("[data-sidebar-count]");
+  if (count) expect(count.className).toContain("group-hover/item:invisible");
   expect(screen.getByRole("button", { name: "Favorite Work" }).tabIndex).toBe(-1);
 
   const inbox = screen.getByRole("button", { name: /^Inbox/ });

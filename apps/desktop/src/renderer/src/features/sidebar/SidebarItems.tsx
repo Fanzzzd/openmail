@@ -183,9 +183,12 @@ export function Item(props: {
   buttonProps?: ButtonHTMLAttributes<HTMLButtonElement> | undefined;
 }) {
   const { i18n } = useLingui();
+  // Every row ends with its count at the same edge as the account rows above. The row's own
+  // controls (favorite star, Inbox categories, reorder arrows) take that end while the pointer or
+  // focus is on the row, in place of the count, so they never push counts into other columns.
   return (
     <div
-      className={`group/item flex h-7 w-full items-center rounded-control pr-2 text-body ${
+      className={`group/item relative flex h-7 w-full items-center rounded-control pr-2 text-body ${
         props.active ? "bg-fill-pressed" : "hover:bg-fill-hover"
       }`}
     >
@@ -203,12 +206,21 @@ export function Item(props: {
           {props.label}
         </span>
         {props.badge > 0 && (
-          <span className="text-footnote text-a11y-muted tabular-nums">
+          <span
+            data-sidebar-count
+            className={`text-footnote text-a11y-muted tabular-nums ${
+              props.disclosure ? "group-focus-within/item:invisible group-hover/item:invisible" : ""
+            }`}
+          >
             {i18n.number(props.badge)}
           </span>
         )}
       </button>
-      {props.disclosure}
+      {props.disclosure && (
+        <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center gap-0.5 opacity-0 group-focus-within/item:pointer-events-auto group-focus-within/item:opacity-100 group-hover/item:pointer-events-auto group-hover/item:opacity-100">
+          {props.disclosure}
+        </span>
+      )}
     </div>
   );
 }
@@ -238,7 +250,7 @@ export function useFavoriteMenuText() {
 
 /**
  * A row's favorite toggle. Out of the tab order: the row's context menu (Menu key or Shift+F10)
- * offers the same choice. The outline star shows while the pointer or focus is on the row.
+ * offers the same choice. It shows, filled or outlined, while the pointer or focus is on the row.
  */
 export function FavoriteStar({
   name,
@@ -262,11 +274,7 @@ export function FavoriteStar({
         aria-label={label}
         aria-pressed={pressed}
         onClick={onToggle}
-        className={`px-1 text-amber-800 dark:text-amber-400 ${
-          pressed
-            ? ""
-            : "opacity-0 group-focus-within/item:opacity-100 group-hover/item:opacity-100 focus-visible:opacity-100"
-        }`}
+        className="px-1 text-amber-800 dark:text-amber-400"
       >
         {pressed ? "★" : "☆"}
       </button>
