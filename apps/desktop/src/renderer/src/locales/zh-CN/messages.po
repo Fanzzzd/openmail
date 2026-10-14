@@ -6950,10 +6950,6 @@ msgid "The AI model isn't available right now. Try again later."
 msgstr "AI 模型暂时不可用。请稍后再试。"
 
 #: src/renderer/src/lib/errors.ts
-msgid "The AI needed too many steps. Ask a narrower question."
-msgstr "AI 需要的步骤太多。请把问题问得更具体。"
-
-#: src/renderer/src/lib/errors.ts
 msgid "The AI request took too long. Try again."
 msgstr "AI 请求超时。请重试。"
 

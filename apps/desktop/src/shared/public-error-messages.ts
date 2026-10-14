@@ -39,7 +39,6 @@ export const PUBLIC_ERROR_MESSAGES = new Set([
   "Can't reach Anthropic. Check your internet connection.",
   "AI request timed out.",
   "AI stream ended before completion.",
-  "AI tool budget exceeded.",
   "Add an automatic reply message",
   "Add at least one filter condition",
   "Turn on “Allow AI to read this account” for each selected account in Settings → AI Access.",

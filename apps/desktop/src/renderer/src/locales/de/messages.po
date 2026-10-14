@@ -6940,10 +6940,6 @@ msgid "The AI model isn't available right now. Try again later."
 msgstr "Das KI-Modell ist gerade nicht verfügbar. Versuche es später noch einmal."
 
 #: src/renderer/src/lib/errors.ts
-msgid "The AI needed too many steps. Ask a narrower question."
-msgstr "Die KI brauchte zu viele Schritte. Stelle eine engere Frage."
-
-#: src/renderer/src/lib/errors.ts
 msgid "The AI request took too long. Try again."
 msgstr "Die KI-Anfrage hat zu lange gedauert. Versuche es noch einmal."
 

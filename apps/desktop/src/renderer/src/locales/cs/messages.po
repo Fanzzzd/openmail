@@ -6940,10 +6940,6 @@ msgid "The AI model isn't available right now. Try again later."
 msgstr "Model AI teď není k dispozici. Zkuste to znovu později."
 
 #: src/renderer/src/lib/errors.ts
-msgid "The AI needed too many steps. Ask a narrower question."
-msgstr "AI potřebovala příliš mnoho kroků. Položte užší otázku."
-
-#: src/renderer/src/lib/errors.ts
 msgid "The AI request took too long. Try again."
 msgstr "Požadavek na AI trval příliš dlouho. Zkuste to znovu."
 

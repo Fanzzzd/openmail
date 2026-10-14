@@ -31,7 +31,7 @@
 pnpm build && pnpm check-types && pnpm test && pnpm exec oxlint && pnpm exec oxfmt --check .
 ```
 
-lint 用 plany 同一套 oxlint 配置，type-aware。`no-unsafe-type-assertion` 的警告只允许出现在 IO 边界（SQLite 行、HTTP JSON）。
+lint 用 plany 同一套 oxlint 配置，type-aware。`no-unsafe-type-assertion` 是 error，只允许出现在 IO 边界（SQLite 行、HTTP JSON、IPC 和 RPC 帧），每处加 disable 注释写明原因。
 
 界面文案用 Lingui，代码里写英文原文，翻译在 `apps/desktop/src/renderer/src/locales/{locale}/messages.po`。新增文案后跑 `pnpm --filter @openmail/desktop i18n:extract`，补齐 zh-CN、cs、nl、fr、de、it、ja、ru、es 的全部 `msgstr`，保留 ICU 参数、复数和组件标记。用 `pnpm --filter @openmail/desktop i18n:missing` 列出各语言漏译。`pnpm test` 会检查目录同步、每个目录的翻译完整性及参数；任何语言漏译都会失败。
 
