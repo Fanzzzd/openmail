@@ -7,7 +7,8 @@ import { richComposeBody, textComposeHtml } from "../compose/compose-body.js";
 import type { IncomingMessage } from "../domain/message.js";
 import { Mailbox } from "../mailbox/mailbox.js";
 import { MailboxLive } from "../mailbox/mailbox-live.js";
-import { AUTO_SUMMARY_DAILY_CAP, makeAiMailbox } from "../mailbox/mailbox-ai.js";
+import { makeAiMailbox } from "../mailbox/mailbox-ai.js";
+import { AUTO_SUMMARY_DAILY_CAP } from "./ai.js";
 import { Model, FakeModelLayer, type ModelOutput, type ModelRequest } from "./model.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
 import { Providers } from "../providers/adapter.js";
@@ -265,6 +266,32 @@ it.effect(
     }).pipe(Effect.provide(f.layer));
   },
 );
+
+it.effect("an automatic summary that fails or is cut off gives its daily cap slot back", () => {
+  let calls = 0;
+  const f = fixture(() => {
+    calls++;
+    if (calls === 1) return output("Cut off", "length");
+    if (calls === 2) return Stream.die(new Error("The model is down"));
+    return output("Summary");
+  });
+  return Effect.gen(function* () {
+    const { m, store, ai } = yield* f.setup;
+    yield* m.ai.setAiKey("fake");
+    yield* m.ai.setAiAccount({ ...consent, autoTriage: false, autoSummaries: true });
+    // One slot left today.
+    const day = new Date(0).toISOString().slice(0, 10);
+    for (let i = 1; i < AUTO_SUMMARY_DAILY_CAP; i++)
+      assert.isTrue(yield* store.ai.claimAutoSummary(day, AUTO_SUMMARY_DAILY_CAP));
+    const ids = Array.from({ length: 3 }, (_, i) => `${accountId}/m${i + 1}`);
+    yield* ai.autoSummaries(ids);
+    assert.strictEqual(calls, 3, "the cut-off and the failed summary did not use the last slot");
+    assert.isNull(yield* ai.aiSummary(ids[0] ?? ""));
+    assert.isNotNull(yield* ai.aiSummary(ids[2] ?? ""));
+    // The saved summary took it.
+    assert.isFalse(yield* store.ai.claimAutoSummary(day, AUTO_SUMMARY_DAILY_CAP));
+  }).pipe(Effect.provide(f.layer));
+});
 
 for (const action of [
   { kind: "archive" },

@@ -99,6 +99,10 @@ export function makeAiStore(sql: SqlClient.SqlClient) {
         Effect.map((rows) => rows.length > 0),
         Effect.orDie,
       ),
+    /** Gives back one claim on `day`, for an automatic summary that failed or was cut off. */
+    releaseAutoSummary: (day: string) =>
+      run(sql`UPDATE prefs SET value_json=json_object('day',${day},'count',json_extract(value_json,'$.count')-1)
+      WHERE key='ai-auto-summaries' AND json_extract(value_json,'$.day')=${day} AND json_extract(value_json,'$.count')>0`),
     deleteAccountResults: (accountId: string) =>
       run(sql`DELETE FROM derived WHERE account_id=${accountId}`),
   };

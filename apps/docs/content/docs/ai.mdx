@@ -26,7 +26,7 @@ Automatic summaries and triage suggestions have their own per-account switches a
 Both run in the background for new mail, only while an OpenMail window is focused or your Mac is on power. On battery with no focused window they pause, and new mail waits until you summarize it or open the app.
 
 - Each batch of new mail starts at most three automatic summaries and three triage suggestions.
-- Automatic summaries stop after 50 a day across all accounts. The count starts again at midnight UTC. Summaries you ask for are not counted and never capped.
+- Automatic summaries stop after 50 a day across all accounts. The count starts again at midnight UTC. A summary that fails or is cut off is not counted. Summaries you ask for are not counted and never capped.
 - A summary that is already cached for the conversation is not requested again.
 
 What this costs depends on the model you chose. An automatic summary sends up to 80 KB of message text, about 20,000 input tokens for English and more for Chinese or Japanese, and gets back at most 1,024 output tokens. At 50 a day that is at most about 1 million input tokens and 51,200 output tokens a day. A triage suggestion reads at most 6 KB of the conversation. Multiply by your model's prices on Anthropic's pricing page to get a daily ceiling. If that is too much, turn on automatic summaries for fewer accounts or pick a smaller model.

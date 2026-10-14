@@ -5,6 +5,7 @@ import {
   aiLanguage,
   AI_INPUT_BUDGET,
   AI_THREAD_INPUT,
+  AUTO_SUMMARY_DAILY_CAP,
   AiAccountSettings,
   AiQuestion,
   type AiEvent,
@@ -26,9 +27,6 @@ import { toModelAccount } from "../tools/account-tools.js";
 import { providerCapabilities } from "../providers/capabilities.js";
 import { makeAiRequests, noLocale, validLocale } from "./mailbox-ai-requests.js";
 import { isSpecialLabel, makeAiTriage } from "./mailbox-ai-triage.js";
-
-/** Automatic summaries per UTC day, across accounts. Summaries the person asks for are not capped. */
-export const AUTO_SUMMARY_DAILY_CAP = 50;
 
 export function makeAiMailbox(
   store: Store["Service"],
@@ -530,16 +528,19 @@ export function makeAiMailbox(
           const accountId = Option.isSome(thread) ? thread.value[0]?.accountId : undefined;
           if (!settings.some((a) => a.accountId === accountId && a.allowed && a.autoSummaries))
             continue;
-          // A summary already cached in this language costs nothing and counts against no cap.
-          const ready = yield* input(id, "summary", locale).pipe(
+          const saved = input(id, "summary", locale).pipe(
             Effect.flatMap(cached),
             Effect.map((row) => row !== null),
             Effect.orElseSucceed(() => false),
           );
-          if (ready) continue;
+          // A summary already cached in this language costs nothing and counts against no cap.
+          if (yield* saved) continue;
           const day = new Date(yield* Clock.currentTimeMillis).toISOString().slice(0, 10);
           if (!(yield* store.ai.claimAutoSummary(day, AUTO_SUMMARY_DAILY_CAP))) return;
           yield* Stream.runDrain(summarize(id, locale)).pipe(Effect.catchCause(() => Effect.void));
+          // Only a saved summary uses the cap. A failed or cut-off one is not cached, so it
+          // gives its claim back.
+          if (!(yield* saved)) yield* store.ai.releaseAutoSummary(day);
         }
       }),
   };
