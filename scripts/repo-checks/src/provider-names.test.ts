@@ -48,7 +48,7 @@ const ALLOWED = [
  */
 const IDENTITY = new Set([
   // Gmail and Outlook OAuth client setup.
-  "apps/desktop/src/renderer/src/features/accounts/AddAccountDialog.tsx",
+  "apps/desktop/src/renderer/src/features/accounts/OAuthStep.tsx",
   "apps/desktop/src/renderer/src/state/mutations.ts",
   "apps/desktop/src/shared/mailbox-handlers.ts",
   "apps/mobile/app/index.tsx",
