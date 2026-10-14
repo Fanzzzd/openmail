@@ -9,7 +9,12 @@ import {
 import { shareMessageLink } from "../system/share-message-link";
 import { openExternal } from "../security/external";
 import { trustedSender } from "../security/security";
-import { rpcFailureText, stringRpcServer, type StringTransport } from "./rpc-security";
+import {
+  rpcFailureText,
+  stringRpcServer,
+  watchRpcClient,
+  type StringTransport,
+} from "./rpc-security";
 import { mailboxHandlers } from "../../shared/mailbox-handlers";
 import { desktopAppleContacts } from "../system/apple-contacts";
 import { currentUpdateState } from "../updates/update-state";
@@ -92,10 +97,11 @@ const electronTransport: StringTransport = {
       const client = event.sender;
       if (!input.frame(client.id, frame) || watched.has(client.id)) return;
       watched.add(client.id);
-      client.once("destroyed", () => {
-        watched.delete(client.id);
-        input.disconnect(client.id);
-      });
+      watchRpcClient(
+        client,
+        () => input.disconnect(client.id),
+        () => watched.delete(client.id),
+      );
     };
     ipcMain.on(RPC_CHANNEL, onFrame);
     return () => ipcMain.off(RPC_CHANNEL, onFrame);

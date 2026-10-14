@@ -1956,6 +1956,10 @@ msgstr "Apple の連絡先を読み込めませんでした。更新してくだ
 msgid "Couldn't load contacts from the server. Try again in a few minutes."
 msgstr "サーバーから連絡先を読み込めませんでした。数分後にもう一度お試しください。"
 
+#: src/renderer/src/features/feedback/Feedback.tsx
+msgid "Couldn't load diagnostics. You can continue without them."
+msgstr "診断を読み込めませんでした。診断なしで続けられます。"
+
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Couldn't load older messages. Try again."
 msgstr "古いメッセージを読み込めませんでした。もう一度お試しください。"
@@ -7531,6 +7535,7 @@ msgstr "アプリが前面にある場合、または電源に接続されてい
 msgid "Trusted authentication service (optional)"
 msgstr "信頼する認証サービス（任意）"
 
+#: src/renderer/src/features/feedback/Feedback.tsx
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Try again"
 msgstr "再試行"

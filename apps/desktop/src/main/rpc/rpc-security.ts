@@ -1,3 +1,4 @@
+import type { EventEmitter } from "node:events";
 import { Effect, FiberSet, Layer, Queue, Schema } from "effect";
 import { type Rpc, type RpcGroup, type RpcMessage, RpcSerialization, RpcServer } from "effect/rpc";
 import { MailError } from "@openmail/core/schema";
@@ -251,3 +252,28 @@ export const stringRpcServer = <Rpcs extends Rpc.Any>(
     Layer.provide(makeStringProtocol(transport)),
     Layer.provide(RpcSerialization.layerJson),
   );
+
+/**
+ * Ends a renderer's RPC client when its page goes away. A crashed or reloaded page keeps its
+ * webContents id, and its new RPC client numbers requests from zero again. The server drops a
+ * request whose id one of the old page's streams still holds, so a call such as Diagnostics after
+ * a renderer crash never answered.
+ */
+export function watchRpcClient(
+  client: EventEmitter,
+  disconnect: () => void,
+  destroyed: () => void,
+) {
+  const gone = () => disconnect();
+  const navigated = (details: { isMainFrame: boolean; isSameDocument: boolean }) => {
+    if (details.isMainFrame && !details.isSameDocument) disconnect();
+  };
+  client.on("render-process-gone", gone);
+  client.on("did-start-navigation", navigated);
+  client.once("destroyed", () => {
+    client.off("render-process-gone", gone);
+    client.off("did-start-navigation", navigated);
+    destroyed();
+    disconnect();
+  });
+}

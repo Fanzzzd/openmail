@@ -1960,6 +1960,10 @@ msgstr "Couldn't load Apple Contacts. Try refreshing."
 msgid "Couldn't load contacts from the server. Try again in a few minutes."
 msgstr "Couldn't load contacts from the server. Try again in a few minutes."
 
+#: src/renderer/src/features/feedback/Feedback.tsx
+msgid "Couldn't load diagnostics. You can continue without them."
+msgstr "Couldn't load diagnostics. You can continue without them."
+
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Couldn't load older messages. Try again."
 msgstr "Couldn't load older messages. Try again."
@@ -7535,6 +7539,7 @@ msgstr "Triage runs while the app is in the foreground or on AC power. Suggestio
 msgid "Trusted authentication service (optional)"
 msgstr "Trusted authentication service (optional)"
 
+#: src/renderer/src/features/feedback/Feedback.tsx
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Try again"
 msgstr "Try again"

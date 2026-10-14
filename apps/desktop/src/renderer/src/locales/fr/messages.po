@@ -1956,6 +1956,10 @@ msgstr "Impossible de charger les contacts Apple. Essayez de les actualiser."
 msgid "Couldn't load contacts from the server. Try again in a few minutes."
 msgstr "Impossible de charger les contacts depuis le serveur. Réessayez dans quelques minutes."
 
+#: src/renderer/src/features/feedback/Feedback.tsx
+msgid "Couldn't load diagnostics. You can continue without them."
+msgstr "Impossible de charger les diagnostics. Vous pouvez continuer sans eux."
+
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Couldn't load older messages. Try again."
 msgstr "Impossible de charger les anciens messages. Réessayez."
@@ -7531,6 +7535,7 @@ msgstr "Les suggestions de tri sont générées quand l’application est au pre
 msgid "Trusted authentication service (optional)"
 msgstr "Service d’authentification de confiance (facultatif)"
 
+#: src/renderer/src/features/feedback/Feedback.tsx
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Try again"
 msgstr "Réessayer"

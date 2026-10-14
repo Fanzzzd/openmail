@@ -453,3 +453,76 @@ it("a handler defect logs its RPC, kind and error class, and no message text", a
   expect(failures).toEqual([{ rpc: "Threads", kind: "defect", error: "TypeError" }]);
   expect(JSON.stringify([failures, sent])).not.toContain("secret");
 });
+
+it("ends a renderer's RPC client when its page crashes, reloads or closes, not on in-page routes", async () => {
+  const { watchRpcClient } = await import("./rpc-security");
+  const contents = new EventEmitter();
+  const disconnect = vi.fn();
+  const destroyed = vi.fn();
+  watchRpcClient(contents, disconnect, destroyed);
+  contents.emit("did-start-navigation", { isMainFrame: true, isSameDocument: true });
+  contents.emit("did-start-navigation", { isMainFrame: false, isSameDocument: false });
+  expect(disconnect).not.toHaveBeenCalled();
+  contents.emit("render-process-gone", {}, { reason: "crashed", exitCode: 11 });
+  expect(disconnect).toHaveBeenCalledTimes(1);
+  contents.emit("did-start-navigation", { isMainFrame: true, isSameDocument: false });
+  expect(disconnect).toHaveBeenCalledTimes(2);
+  contents.emit("destroyed");
+  expect(destroyed).toHaveBeenCalledTimes(1);
+  expect(disconnect).toHaveBeenCalledTimes(3);
+  expect(contents.listenerCount("render-process-gone")).toBe(0);
+  expect(contents.listenerCount("did-start-navigation")).toBe(0);
+});
+
+it("a reloaded page reusing request ids is answered only after its old client is ended", async () => {
+  const { stringRpcServer } = await import("./rpc-security");
+  const { Rpc } = await import("effect/rpc");
+  const { Stream } = await import("effect");
+  // Two real tags, so the frames pass the envelope check: a stream and a plain call.
+  const Group = RpcGroup.make(
+    Rpc.make("DesktopEvents", { payload: {}, success: Schema.String, stream: true }),
+    Rpc.make("Diagnostics", { payload: {}, success: Schema.String }),
+  );
+  const handlers = Group.toLayer({
+    DesktopEvents: () => Stream.never,
+    Diagnostics: () => Effect.succeed("report"),
+  });
+  const sent: { requestId?: unknown; _tag?: unknown; exit?: { _tag?: unknown } }[] = [];
+  let input: Parameters<Parameters<typeof stringRpcServer>[1]["attach"]>[0] | undefined;
+  const layer = stringRpcServer(Group, {
+    attach: (next) => {
+      input = next;
+      return () => null;
+    },
+    send: (_client, frame) => {
+      for (const message of [JSON.parse(frame)].flat()) sent.push(message);
+    },
+    failure: () => null,
+  }).pipe(Layer.provide(handlers));
+  const request = (tag: string) =>
+    JSON.stringify({ _tag: "Request", id: "0", tag, payload: {}, headers: [] });
+  const answered = () =>
+    sent.some((message) => message._tag === "Exit" && message.requestId === "0");
+  await Effect.runPromise(
+    Effect.scoped(
+      Effect.gen(function* () {
+        yield* Layer.build(layer);
+        yield* Effect.sleep(10);
+        // The crashed page's event stream holds request 0.
+        input?.frame(7, request("DesktopEvents"));
+        yield* Effect.sleep(20);
+        // The reloaded page numbers from zero again: its first call is dropped.
+        input?.frame(7, request("Diagnostics"));
+        yield* Effect.sleep(50);
+        expect(answered()).toBe(false);
+        // Ending the old client clears its streams; the same call is then answered.
+        input?.disconnect(7);
+        yield* Effect.sleep(20);
+        sent.length = 0;
+        input?.frame(7, request("Diagnostics"));
+        for (let i = 0; i < 50 && !answered(); i++) yield* Effect.sleep(10);
+        expect(answered()).toBe(true);
+      }),
+    ),
+  );
+});

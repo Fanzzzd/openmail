@@ -1956,6 +1956,10 @@ msgstr "Impossibile caricare i contatti Apple. Prova ad aggiornarli."
 msgid "Couldn't load contacts from the server. Try again in a few minutes."
 msgstr "Impossibile caricare i contatti dal server. Riprova tra qualche minuto."
 
+#: src/renderer/src/features/feedback/Feedback.tsx
+msgid "Couldn't load diagnostics. You can continue without them."
+msgstr "Impossibile caricare la diagnostica. Puoi continuare senza."
+
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Couldn't load older messages. Try again."
 msgstr "Impossibile caricare i messaggi meno recenti. Riprova."
@@ -7531,6 +7535,7 @@ msgstr "I suggerimenti vengono generati quando l’app è in primo piano o il di
 msgid "Trusted authentication service (optional)"
 msgstr "Servizio di autenticazione attendibile (facoltativo)"
 
+#: src/renderer/src/features/feedback/Feedback.tsx
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Try again"
 msgstr "Riprova"

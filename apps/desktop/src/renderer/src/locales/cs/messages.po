@@ -1956,6 +1956,10 @@ msgstr "Kontakty Apple se nepodařilo načíst. Zkuste je obnovit."
 msgid "Couldn't load contacts from the server. Try again in a few minutes."
 msgstr "Kontakty ze serveru se nepodařilo načíst. Zkuste to znovu za pár minut."
 
+#: src/renderer/src/features/feedback/Feedback.tsx
+msgid "Couldn't load diagnostics. You can continue without them."
+msgstr "Diagnostiku se nepodařilo načíst. Můžete pokračovat bez ní."
+
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Couldn't load older messages. Try again."
 msgstr "Starší zprávy se nepodařilo načíst. Zkuste to znovu."
@@ -7531,6 +7535,7 @@ msgstr "Návrhy třídění se vytvářejí, když je aplikace v popředí nebo 
 msgid "Trusted authentication service (optional)"
 msgstr "Důvěryhodná ověřovací služba (volitelné)"
 
+#: src/renderer/src/features/feedback/Feedback.tsx
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Try again"
 msgstr "Zkusit znovu"
