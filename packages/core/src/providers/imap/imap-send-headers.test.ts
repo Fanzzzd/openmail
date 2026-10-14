@@ -10,6 +10,7 @@ import { encodeProviderId } from "./imap-cursor.js";
 import { makeImapWith as unboundMakeImapWith } from "../../platform/node/imap/adapter.js";
 import { Secrets } from "../../platform/auth.js";
 import type { SendOriginal } from "../send-original.js";
+import { draftCreation } from "../../platform/node/draft-create-fixture.js";
 
 const makeImapWith = (...args: Parameters<typeof unboundMakeImapWith>) =>
   unboundMakeImapWith(...args).pipe(Effect.provideService(MailCodec, nodeMailCodec));
@@ -49,7 +50,7 @@ const folder = (path: string, specialUse: string) => ({
 
 let smtpCalls = 0;
 const sendWith = (
-  fetchOne: () => Promise<unknown>,
+  fetchOne: () => ReturnType<ImapFlow["fetchOne"]>,
   options: {
     from?: { name: string; address: string };
     cached?: SendOriginal["cached"];
@@ -67,7 +68,7 @@ const sendWith = (
         folder("INBOX", "\\Inbox"),
         folder("Sent", "\\Sent"),
         folder("Drafts", "\\Drafts"),
-      ] as never);
+      ]);
       vi.spyOn(client, "mailboxOpen").mockResolvedValue({
         path: "INBOX",
         delimiter: "/",
@@ -75,17 +76,19 @@ const sendWith = (
         uidValidity: 7n,
         uidNext: 3,
         exists: 2,
-      } as never);
+      });
       vi.spyOn(client, "search").mockResolvedValue([]);
-      vi.spyOn(client, "fetchOne").mockImplementation(fetchOne as never);
+      vi.spyOn(client, "fetchOne").mockImplementation(fetchOne);
       let raw = "";
-      vi.spyOn(client, "append").mockImplementation(((_path: string, content: Buffer) => {
-        if (options.draft) raw = content.toString();
-        options.events?.push(`append ${_path}`);
-        return Promise.resolve({ destination: "Sent", uid: 9, uidValidity: 7n });
-      }) as never);
+      vi.spyOn(client, "append").mockImplementation((path, content) => {
+        const destination = String(path);
+        if (options.draft) raw = Buffer.from(content).toString();
+        options.events?.push(`append ${destination}`);
+        return Promise.resolve({ destination, uid: 9, uidValidity: 7n });
+      });
+      assert.ok(account.imap);
       const settings = {
-        ...account.imap!,
+        ...account.imap,
         ...(options.senderName ? { senderName: options.senderName } : {}),
       };
       const sender = { ...account, imap: settings };
@@ -98,18 +101,21 @@ const sendWith = (
         () =>
           Effect.sync(() => {
             const transport = createTransport({ host: "fake.invalid", port: 25 });
-            vi.spyOn(transport, "sendMail").mockImplementation(((mail: { raw: Buffer }) => {
+            vi.spyOn(transport, "sendMail").mockImplementation((mail) => {
               smtpCalls++;
-              raw = mail.raw.toString();
+              if (Buffer.isBuffer(mail.raw)) raw = mail.raw.toString();
               return Promise.resolve({
-                envelope: {},
+                envelope: { from: "me@example.com", to: ["bob@example.com"] },
                 accepted: ["bob@example.com"],
                 rejected: [],
                 pending: [],
                 response: "250",
                 messageId: "x",
+                envelopeTime: 0,
+                messageTime: 0,
+                messageSize: 100,
               });
-            }) as never);
+            });
             return transport;
           }),
       );
@@ -128,28 +134,22 @@ const sendWith = (
         threadId: "t",
         ...(options.cached ? { cached: options.cached } : {}),
       });
-      if (options.draft)
-        yield* adapter.saveDraft(sender, {
-          message,
-          original,
-          remote: null,
-          replaceAttachments: false,
-          creation: {
-            begin: () => Effect.succeed({ messageId: "<d@x>", attempted: false }),
-            attempted: () => Effect.void,
-            remember: () => Effect.void,
-            missing: () => Effect.succeed(true),
-          },
-        } as never);
-      else
-        yield* adapter.send(sender, message, original, {
-          load: Effect.succeed(Option.none()),
-          save: () => Effect.void,
-          accepted: (bytes) =>
-            Effect.sync(() => {
-              options.events?.push(`accepted ${bytes.byteLength > 0}`);
-            }),
-        });
+      yield* options.draft
+        ? adapter.saveDraft(sender, {
+            message,
+            original,
+            remote: null,
+            replaceAttachments: false,
+            creation: draftCreation(),
+          })
+        : adapter.send(sender, message, original, {
+            load: Effect.succeed(Option.none()),
+            save: () => Effect.void,
+            accepted: (bytes) =>
+              Effect.sync(() => {
+                options.events?.push(`accepted ${bytes.byteLength > 0}`);
+              }),
+          });
       return raw;
     }),
   ).pipe(
@@ -166,7 +166,7 @@ const headerOf = (raw: string, name: string) =>
   raw
     .split(/\r?\n\r?\n/)[0]!
     .split(/\r?\n/)
-    .find((l) => l.toLowerCase().startsWith(name.toLowerCase() + ":"));
+    .find((l) => l.toLowerCase().startsWith(`${name.toLowerCase()}:`));
 
 const cached = { messageId: "<cached@x>", references: "<root@x>" };
 const timeout = async () => {
@@ -176,6 +176,7 @@ const timeout = async () => {
 it.effect("a reply threads on the original's headers read from IMAP", () =>
   Effect.gen(function* () {
     const raw = yield* sendWith(async () => ({
+      seq: 1,
       uid: 1,
       headers: Buffer.from("Message-ID: <orig@x>\r\nReferences: <root@x>\r\n\r\n"),
     }));
@@ -212,7 +213,7 @@ it.effect("an original moved since the last sync threads on the cached headers",
 it.effect("IMAP From carries the composer's display name", () =>
   Effect.gen(function* () {
     const raw = yield* sendWith(
-      async () => ({ uid: 1, headers: Buffer.from("Message-ID: <orig@x>\r\n\r\n") }),
+      async () => ({ seq: 1, uid: 1, headers: Buffer.from("Message-ID: <orig@x>\r\n\r\n") }),
       { from: { name: "Jane Doe", address: "me@example.com" } },
     );
     assert.strictEqual(headerOf(raw, "From"), "From: Jane Doe <me@example.com>");

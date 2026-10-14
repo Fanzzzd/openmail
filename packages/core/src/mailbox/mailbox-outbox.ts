@@ -555,12 +555,10 @@ export const makeOutboxMailbox = (
     Effect.gen(function* () {
       const { draftId } = accepted;
       const account = yield* store.getAccount(accepted.accountId).pipe(Effect.option);
-      const fileSentCopy = Option.isSome(account)
-        ? providers.get(account.value.provider).fileSentCopy
-        : undefined;
+      const adapter = Option.isSome(account) ? providers.get(account.value.provider) : undefined;
       const filed =
-        Option.isSome(account) && fileSentCopy
-          ? yield* fileSentCopy(account.value, accepted.raw).pipe(Effect.result)
+        Option.isSome(account) && adapter?.fileSentCopy
+          ? yield* adapter.fileSentCopy(account.value, accepted.raw).pipe(Effect.result)
           : undefined;
       const queued = (yield* store.queuedSends).find((item) => item.id === draftId);
       const draft = yield* store.getDraft(draftId);

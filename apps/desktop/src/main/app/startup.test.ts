@@ -71,7 +71,7 @@ vi.mock("../files/attachment-temp", () => ({
   cleanupPrintTemps: native.printCleanup,
 }));
 vi.mock("../files/opened-attachments", () => ({
-  cleanupOpenedAttachments: vi.fn(async () => undefined),
+  cleanupOpenedAttachments: vi.fn(() => Promise.resolve()),
 }));
 vi.mock("./reliability", () => ({
   prepareReliability: vi.fn(async () => true),

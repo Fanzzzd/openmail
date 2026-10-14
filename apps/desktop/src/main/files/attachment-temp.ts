@@ -105,13 +105,13 @@ export class AttachmentTemp {
       );
       if (present.every(Boolean)) return tracked;
     }
-    return undefined;
+    return null;
   }
   async writeBatch(
     parts: readonly { filename: string; data: Uint8Array }[],
     key?: string,
   ): Promise<TempBatch> {
-    const reused = key === undefined ? undefined : await this.live(key);
+    const reused = key === undefined ? null : await this.live(key);
     if (reused) {
       clearTimeout(reused.timer);
       reused.timer = this.expire(reused.batch);

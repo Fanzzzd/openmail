@@ -53,8 +53,7 @@ export const resolveImapSettings = Effect.fnUntraced(function* (
 /** A sender name trimmed for the From header, "" for none, or null when it cannot be one. */
 export function imapSenderName(name: string): string | null {
   const trimmed = name.replace(/\s+/g, " ").trim();
-  const control = [...trimmed].some((c) => c.charCodeAt(0) < 32 || c.charCodeAt(0) === 127);
-  return trimmed.length > 200 || control ? null : trimmed;
+  return trimmed.length > 200 || /\p{Cc}/u.test(trimmed) ? null : trimmed;
 }
 
 /** SMTP providers that file sent copies even for manually configured accounts. */

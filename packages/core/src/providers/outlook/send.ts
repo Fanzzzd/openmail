@@ -26,6 +26,24 @@ import { HttpClientRequest } from "effect/http";
 import { makeOutlookDrafts } from "./drafts.js";
 import { cachedThreading, type SendOriginal } from "../send-original.js";
 
+/** createReply and createForward answer 404 once the original is deleted or purged. */
+const originalGone = (error: { readonly _tag: string }) =>
+  error._tag === "ApiError" && "status" in error && error.status === 404;
+
+/**
+ * A forward that keeps the original's attachments needs Outlook's copy of the original.
+ * Without it the attachments cannot be fetched, so the send fails before anything goes out.
+ */
+const checkInheritedAttachments = (message: OutgoingMessage, original: SendOriginal) =>
+  keepsInherited(message) && original.hasAttachments
+    ? Effect.fail(
+        new PermanentError({
+          message:
+            "The original message is no longer in Outlook, so its attachments cannot be forwarded. Attach the files yourself or forward without them.",
+        }),
+      )
+    : Effect.void;
+
 export const makeOutlookSend = (client: OutlookClient) =>
   Effect.gen(function* () {
     const { codec, api, get } = client;
@@ -46,24 +64,6 @@ export const makeOutlookSend = (client: OutlookClient) =>
 
     const buildMime = (...args: Parameters<typeof unboundBuildMime>) =>
       unboundBuildMime(...args).pipe(Effect.provideService(MailCodec, codec));
-
-    /** createReply and createForward answer 404 once the original is deleted or purged. */
-    const originalGone = (error: { readonly _tag: string }) =>
-      error._tag === "ApiError" && "status" in error && error.status === 404;
-
-    /**
-     * A forward that keeps the original's attachments needs Outlook's copy of the original.
-     * Without it the attachments cannot be fetched, so the send fails before anything goes out.
-     */
-    const checkInheritedAttachments = (message: OutgoingMessage, original: SendOriginal) =>
-      keepsInherited(message) && original.hasAttachments
-        ? Effect.fail(
-            new PermanentError({
-              message:
-                "The original message is no longer in Outlook, so its attachments cannot be forwarded. Attach the files yourself or forward without them.",
-            }),
-          )
-        : Effect.void;
 
     /**
      * The original is gone from Outlook: send a new message as raw MIME, which keeps the

@@ -279,14 +279,14 @@ const openedCopies = Effect.fnUntraced(function* (
   request: DragRequest,
   parts: readonly { filename: string; data: Uint8Array }[],
 ) {
-  const downloads =
+  const downloadFolder =
     (yield* m.app.prefs).attachmentOpenFolder === "downloads"
       ? yield* attachmentFolder(m, app.getPath("downloads"))
       : undefined;
   const copies: OpenedCopy[] = [];
   for (const [index, part] of parts.entries()) {
-    const copy = downloads
-      ? yield* intoFolder(downloads, part)
+    const copy = downloadFolder
+      ? yield* intoFolder(downloadFolder, part)
       : yield* Effect.tryPromise({
           try: () =>
             openedAttachments(app).write(
@@ -299,7 +299,7 @@ const openedCopies = Effect.fnUntraced(function* (
     copies.push(copy);
   }
   // A launch that fails leaves nothing new in the internal folder.
-  const discard = downloads
+  const discard = downloadFolder
     ? Effect.void
     : Effect.forEach(
         copies.filter((copy) => copy.created),
