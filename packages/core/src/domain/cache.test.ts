@@ -24,12 +24,7 @@ import { Providers, type ProviderAdapter } from "../providers/adapter.js";
 import { Store } from "../store/service.js";
 import { Secrets } from "../platform/auth.js";
 import { StoreLive } from "../store/store.js";
-import {
-  startAutoUpdates,
-  type UpdateClient,
-  startStoredUpdates,
-  UPDATE_TOKEN_KEY,
-} from "../app/updates.js";
+import { LEGACY_UPDATE_TOKEN_KEY, startAutoUpdates, type UpdateClient } from "../app/updates.js";
 import { scaledMs } from "../../test-support/test-time.js";
 {
   const message = (id: string, overrides: Partial<IncomingMessage> = {}): IncomingMessage =>
@@ -494,7 +489,7 @@ import { scaledMs } from "../../test-support/test-time.js";
     { timeout: lowMemoryTests.testTimeout === undefined ? 30_000 : 300_000 },
   );
 
-  it("unsigned, unpackaged and unauthenticated builds never configure or check updates", () => {
+  it("unsigned and unpackaged builds never configure or check updates", () => {
     let checks = 0;
     let feeds = 0;
     const client: UpdateClient = {
@@ -511,12 +506,11 @@ import { scaledMs } from "../../test-support/test-time.js";
       on: () => null,
       removeListener: () => null,
     };
-    startAutoUpdates(client, { signed: false, packaged: true, token: "secret" })();
-    startAutoUpdates(client, { signed: true, packaged: false, token: "secret" })();
-    startAutoUpdates(client, { signed: true, packaged: true, token: undefined })();
+    startAutoUpdates(client, { signed: false, packaged: true })();
+    startAutoUpdates(client, { signed: true, packaged: false })();
     assert.strictEqual(checks, 0);
     assert.strictEqual(feeds, 0);
-    const stop = startAutoUpdates(client, { signed: true, packaged: true, token: "secret" });
+    const stop = startAutoUpdates(client, { signed: true, packaged: true });
     assert.strictEqual(client.autoInstallOnAppQuit, false);
     stop();
     assert.strictEqual(client.autoDownload, false);
@@ -549,6 +543,7 @@ import { scaledMs } from "../../test-support/test-time.js";
     server: FakeServer,
     program: Effect.Effect<A, E, Mailbox | Store | SqlClient.SqlClient | Secrets>,
     adapt: (base: ProviderAdapter, store: Store["Service"]) => ProviderAdapter = (base) => base,
+    secrets?: Layer.Layer<Secrets>,
   ) => {
     const providers = Layer.effect(
       Providers,
@@ -558,8 +553,13 @@ import { scaledMs } from "../../test-support/test-time.js";
         return Providers.of({ get: () => adapter });
       }),
     ).pipe(Layer.provideMerge(StoreLive), Layer.provideMerge(MemoryPlatform()));
+    const mailbox = MailboxLive({ backgroundFlush: false });
     return program.pipe(
-      Effect.provide(MailboxLive({ backgroundFlush: false }).pipe(Layer.provideMerge(providers))),
+      Effect.provide(
+        (secrets ? mailbox.pipe(Layer.provide(secrets)) : mailbox).pipe(
+          Layer.provideMerge(providers),
+        ),
+      ),
     );
   };
 
@@ -785,51 +785,81 @@ import { scaledMs } from "../../test-support/test-time.js";
     );
   });
 
-  it.effect("update tokens live in Secrets and no token skips signature verification", () => {
+  it.effect(
+    "starting updates deletes the old GitHub token once and skips codesign when unpackaged",
+    () => {
+      const server = fakeServer("a@example.com");
+      return withMailbox(
+        server,
+        Effect.gen(function* () {
+          const m = yield* Mailbox;
+          const secrets = yield* Secrets;
+          let checks = 0;
+          const client: UpdateClient = {
+            autoDownload: false,
+            autoInstallOnAppQuit: false,
+            logger: null,
+            setFeedURL: () => null,
+            checkForUpdates: () => {
+              checks++;
+              return Promise.resolve(null);
+            },
+            on: () => null,
+            removeListener: () => null,
+          };
+          const start = Effect.map(
+            m.startUpdates(client, { packaged: false, bundle: "/tmp/test.app" }),
+            (stop) => stop(),
+          );
+          yield* secrets.set(LEGACY_UPDATE_TOKEN_KEY, "old-release-token");
+          yield* start;
+          assert.deepStrictEqual(yield* secrets.get(LEGACY_UPDATE_TOKEN_KEY), Option.none());
+          // Later launches leave the keychain alone.
+          yield* secrets.set(LEGACY_UPDATE_TOKEN_KEY, "old-release-token");
+          yield* start;
+          assert.deepStrictEqual(
+            yield* secrets.get(LEGACY_UPDATE_TOKEN_KEY),
+            Option.some("old-release-token"),
+          );
+          assert.strictEqual(checks, 0);
+        }),
+      );
+    },
+  );
+
+  it.effect("a keychain failure while deleting the old GitHub token does not stop updates", () => {
     const server = fakeServer("a@example.com");
     return withMailbox(
       server,
       Effect.gen(function* () {
         const m = yield* Mailbox;
-        const secrets = yield* Secrets;
-        const s = yield* Store;
-        assert.strictEqual(yield* m.updateTokenConfigured, false);
-        yield* m.setUpdateToken("private-release-token");
-        assert.deepStrictEqual(
-          yield* secrets.get(UPDATE_TOKEN_KEY),
-          Option.some("private-release-token"),
-        );
-        assert.strictEqual(yield* m.updateTokenConfigured, true);
-        assert.ok(!JSON.stringify(yield* s.prefs).includes("private-release-token"));
-        yield* m.setUpdateToken("");
-        assert.strictEqual(yield* m.updateTokenConfigured, false);
-        let verifies = 0;
-        let checks = 0;
         const client: UpdateClient = {
           autoDownload: false,
           autoInstallOnAppQuit: false,
           logger: null,
           setFeedURL: () => null,
-          checkForUpdates: () => {
-            checks++;
-            return Promise.resolve(null);
-          },
+          checkForUpdates: () => Promise.resolve(null),
           on: () => null,
           removeListener: () => null,
         };
-        const stop = yield* startStoredUpdates(
-          client,
-          { packaged: true, bundle: "/tmp/test.app" },
-          secrets.get(UPDATE_TOKEN_KEY),
-          () => {
-            verifies++;
-            return Promise.resolve(true);
-          },
-        );
+        const states: string[] = [];
+        const stop = yield* m.startUpdates(client, {
+          packaged: false,
+          bundle: "/tmp/test.app",
+          onState: (state) => states.push(state.status),
+        });
         stop();
-        assert.strictEqual(verifies, 0);
-        assert.strictEqual(checks, 0);
+        assert.deepStrictEqual(states, ["disabled"]);
       }),
+      (base) => base,
+      Layer.succeed(
+        Secrets,
+        Secrets.of({
+          get: () => Effect.succeed(Option.none()),
+          set: () => Effect.void,
+          remove: () => Effect.die(new Error("keychain locked")),
+        }),
+      ),
     );
   });
 

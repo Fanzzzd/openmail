@@ -1,6 +1,6 @@
 import { resolveUpdateFeed, updateVersionAllowed, type UpdateClient } from "@openmail/core";
 import type { AppUpdater } from "electron-updater";
-import { PrivateGitHubProvider } from "electron-updater/out/providers/PrivateGitHubProvider.js";
+import { GitHubProvider } from "electron-updater/out/providers/GitHubProvider.js";
 import {
   parseUpdateInfo,
   type ProviderRuntimeOptions,
@@ -90,20 +90,16 @@ export function updateClient(updater: AppUpdater): ManagedUpdateClient {
     },
     setFeedURL(options) {
       const channel = updater.allowPrerelease ? "latest" : "stable";
-      class ReleaseProvider extends PrivateGitHubProvider {
+      class ReleaseProvider extends GitHubProvider {
         constructor(
           _options: { provider: "custom" },
           appUpdater: AppUpdater,
           runtime: ProviderRuntimeOptions,
         ) {
-          super(options, appUpdater, options.token, runtime);
+          super(options, appUpdater, runtime);
         }
         override async getLatestVersion() {
-          const feed = await resolveUpdateFeed(
-            options.token,
-            channel,
-            `${this.getDefaultChannelName()}.yml`,
-          );
+          const feed = await resolveUpdateFeed(channel, `${this.getDefaultChannelName()}.yml`);
           const info = parseUpdateInfo(
             feed.manifest,
             `${this.getDefaultChannelName()}.yml`,
@@ -111,7 +107,8 @@ export function updateClient(updater: AppUpdater): ManagedUpdateClient {
           );
           if (info.version !== feed.version)
             throw new Error("Update manifest version does not match release");
-          return { ...info, assets: feed.assets };
+          // GitHubProvider.resolveFiles downloads packages from releases/download/<tag>/.
+          return { ...info, tag: feed.tag };
         }
       }
       configure = () => {

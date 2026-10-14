@@ -1,4 +1,3 @@
-import type { ProviderError } from "../domain/errors.js";
 import type { UpdateState } from "./update-state.js";
 import parse from "semver/functions/parse.js";
 import { Effect, Option, Schema } from "effect";
@@ -15,13 +14,7 @@ export interface UpdateClient {
   autoDownload: boolean;
   autoInstallOnAppQuit: boolean;
   logger: unknown;
-  setFeedURL(options: {
-    provider: "github";
-    owner: string;
-    repo: string;
-    private: boolean;
-    token: string;
-  }): void;
+  setFeedURL(options: { provider: "github"; owner: string; repo: string }): void;
   checkForUpdates(): Promise<unknown>;
   on(event: "error", listener: (error: Error) => void): unknown;
   removeListener(event: "error", listener: (error: Error) => void): unknown;
@@ -32,17 +25,11 @@ export function updateVersionAllowed(channel: "stable" | "latest", version: stri
   const parsed = parse(version);
   return parsed !== null && (channel === "latest" || parsed.prerelease.length === 0);
 }
-function configureUpdates(client: UpdateClient, token: string, channel: "stable" | "latest") {
+function configureUpdates(client: UpdateClient, channel: "stable" | "latest") {
   client.autoInstallOnAppQuit = false;
   client.logger = null;
   client.allowPrerelease = channel === "latest";
-  client.setFeedURL({
-    provider: "github",
-    owner: "Fanzzzd",
-    repo: "openmail",
-    private: true,
-    token,
-  });
+  client.setFeedURL({ provider: "github", owner: "Fanzzzd", repo: "openmail" });
 }
 
 const UpdateCheckMetadata = Schema.Struct({
@@ -97,13 +84,12 @@ export interface UpdateOptions {
   onState?: (state: UpdateState) => void;
 }
 
-/** Tokens are supplied on the user's machine, never embedded in app-update.yml. */
+/** Only a packaged, Developer ID signed app checks the public GitHub releases. */
 export function startAutoUpdates(
   client: UpdateClient,
   options: {
     signed: boolean;
     packaged: boolean;
-    token: string | undefined;
     channel?: "stable" | "latest";
     autoDownload?: boolean;
     onState?: (state: UpdateState) => void;
@@ -112,11 +98,11 @@ export function startAutoUpdates(
   client.autoInstallOnAppQuit = false;
   const report = options.onState ?? discardState;
   client.autoDownload = false;
-  if (!options.packaged || !options.signed || !options.token) {
+  if (!options.packaged || !options.signed) {
     report({ status: "disabled" });
     return () => null;
   }
-  configureUpdates(client, options.token, options.channel ?? "stable");
+  configureUpdates(client, options.channel ?? "stable");
   client.autoDownload = options.autoDownload ?? true;
   client.on("error", ignoreError);
   let active = true;
@@ -148,14 +134,14 @@ export function startAutoUpdates(
   };
 }
 
-export const UPDATE_TOKEN_KEY = "updates:github-release-token";
-/** Called after the window is visible. No stored token means no codesign process. */
-export function startStoredUpdates(
+/** Keychain item of the GitHub token that builds from the private repo used. Upgrades delete it once. */
+export const LEGACY_UPDATE_TOKEN_KEY = "updates:github-release-token";
+/** Called after the window is visible. A development run starts no codesign process. */
+export function startVerifiedUpdates(
   client: UpdateClient,
   options: UpdateOptions,
-  token: Effect.Effect<Option.Option<string>, ProviderError>,
   verify?: (bundle: string) => Promise<boolean>,
-): Effect.Effect<() => void, ProviderError> {
+): Effect.Effect<() => void> {
   return Effect.gen(function* () {
     client.autoInstallOnAppQuit = false;
     client.autoDownload = false;
@@ -164,14 +150,11 @@ export function startStoredUpdates(
       return () => null;
     };
     if (!options.packaged) return disabled();
-    const saved = yield* token;
-    if (Option.isNone(saved) || !saved.value) return disabled();
     const verifier = verify ?? (yield* AppVerifier).verify;
     const signed = yield* Effect.promise(() => verifier(options.bundle));
     return startAutoUpdates(client, {
       packaged: true,
       signed,
-      token: saved.value,
       channel: options.channel,
       autoDownload: options.autoDownload,
       onState: options.onState,
@@ -185,11 +168,10 @@ export type ManualUpdateResult =
   | { status: "available"; version: string }
   | { status: "error" };
 
-/** Manual checks obey the same packaging, signature and keychain gate as the timer. */
-export function checkStoredUpdates(
+/** Manual checks obey the same packaging and signature gate as the timer. */
+export function checkVerifiedUpdates(
   client: UpdateClient,
   options: UpdateOptions,
-  token: Effect.Effect<Option.Option<string>, ProviderError>,
   verify?: (bundle: string) => Promise<boolean>,
 ): Effect.Effect<ManualUpdateResult> {
   const report = options.onState ?? discardState;
@@ -203,17 +185,12 @@ export function checkStoredUpdates(
         report(disabled);
         return disabled;
       }
-      const saved = yield* token;
-      if (Option.isNone(saved) || !saved.value) {
-        report(disabled);
-        return disabled;
-      }
       const verifier = verify ?? (yield* AppVerifier).verify;
       if (!(yield* Effect.promise(() => verifier(options.bundle)))) {
         report(disabled);
         return disabled;
       }
-      configureUpdates(client, saved.value, options.channel ?? "stable");
+      configureUpdates(client, options.channel ?? "stable");
       client.autoDownload = options.autoDownload ?? true;
       client.on("error", ignoreError);
       return yield* Effect.promise(() =>

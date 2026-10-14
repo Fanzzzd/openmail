@@ -54,7 +54,7 @@ OpenMail is younger than all of these and has rough edges. Mimestream is the ref
 
 ## Install
 
-There is no release build yet. Build from source:
+There is no signed release yet. Published builds will appear on the [Releases page](https://github.com/Fanzzzd/openmail/releases). Until then, build from source:
 
 1. Install the [prerequisites](CONTRIBUTING.md#prerequisites): macOS 13+, Node from `.nvmrc`, pnpm through `corepack enable`, and the Xcode Command Line Tools.
 2. Build and package:
@@ -69,7 +69,7 @@ There is no release build yet. Build from source:
 
 3. Open `apps/desktop/release/OpenMail-<version>-mac-<arch>.dmg` and drag OpenMail to Applications.
 
-Once releases are published, download the DMG from [GitHub Releases](https://github.com/Fanzzzd/openmail/releases). Builds that are not notarized, including your own, are blocked by Gatekeeper on first open: Control-click OpenMail in Applications, choose **Open**, and confirm.
+Builds that are not notarized, including your own, are blocked by Gatekeeper on first open: Control-click OpenMail in Applications, choose **Open**, and confirm.
 
 ## Quick start
 

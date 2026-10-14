@@ -7,7 +7,7 @@ import { resolve } from "node:path";
 import { nativeAsk } from "../system/native-fallback";
 import { askWindow, listeningWindow } from "../windows/window-ui";
 
-/** Neither keychain access nor codesign delay the first window. */
+/** codesign never delays the first window. */
 export const shown = Effect.callback<void>((resume) => {
   const listeners = new Map<BrowserWindow, () => void>();
   const cleanup = () => {
@@ -48,7 +48,6 @@ export const UpdatesLive = Layer.effectDiscard(
           Effect.gen(function* () {
             const version = client.downloadedVersion;
             if (!version || !app.isPackaged || process.platform !== "darwin") return null;
-            if (!(yield* mailbox.updateTokenConfigured)) return null;
             if (
               !(yield* Effect.promise(() => isSignedMacApp(resolve(process.execPath, "../../.."))))
             )
@@ -93,7 +92,7 @@ export const UpdatesLive = Layer.effectDiscard(
   }),
 );
 
-/** Menu checks report a result in the focused window, without exposing updater errors or release credentials. */
+/** Menu checks report a result in the focused window, without exposing updater errors. */
 export function manualUpdateCheck(
   mailbox: Mailbox["Service"],
   labels: import("../../shared/desktop-labels").DesktopLabels,

@@ -144,6 +144,4 @@ export const refreshContactsAtom = MailClient.mutation("RefreshContacts");
 export const setCacheWindowAtom = MailClient.mutation("SetCacheWindow");
 export const pauseBackfillAtom = MailClient.mutation("PauseBackfill");
 
-export const setUpdateTokenAtom = MailClient.mutation("SetUpdateToken");
-
 export const createCalendarEventAtom = MailClient.mutation("CreateCalendarEvent");

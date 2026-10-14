@@ -83,8 +83,6 @@ vi.mock("../state/queries", () => ({
   contactSyncAtom: "contactSyncAtom",
   cacheWindowsAtom: "cacheWindowsAtom",
   backfillStateAtom: "backfillStateAtom",
-  updateTokenConfiguredAtom: "updateTokenConfiguredAtom",
-  privateUpdateFeedAtom: "privateUpdateFeedAtom",
   contactGroupsAtom: () => "contactGroupsAtom",
   contactPhotoAtom: () => "contactPhotoAtom",
   calendarEventsAtom: () => "calendarEventsAtom",
@@ -136,7 +134,6 @@ vi.mock("../state/mutations", () => ({
   refreshContactsAtom: "refreshContactsAtom",
   setCacheWindowAtom: "setCacheWindowAtom",
   pauseBackfillAtom: "pauseBackfillAtom",
-  setUpdateTokenAtom: "setUpdateTokenAtom",
   createCalendarEventAtom: "createCalendarEventAtom",
 }));
 vi.mock("../state/downloads", async () => {
@@ -671,27 +668,19 @@ it("groups the keyboard shortcuts with Triage first and filters them by name or 
   await audit();
 });
 
-it("shows the GitHub token field only for a build with a private update feed", () => {
-  const general = () =>
-    render(
-      localized(
-        h(Settings, {
-          initialTab: "general",
-          accounts: [account],
-          onClose: vi.fn(),
-          onAddAccount: vi.fn(),
-        }),
-      ),
-    );
-  fixture.values.set("privateUpdateFeedAtom", false);
-  const view = general();
+it("shows software updates without a GitHub token field", () => {
+  render(
+    localized(
+      h(Settings, {
+        initialTab: "general",
+        accounts: [account],
+        onClose: vi.fn(),
+        onAddAccount: vi.fn(),
+      }),
+    ),
+  );
   expect(screen.getByRole("button", { name: "Check for updates" })).toBeTruthy();
-  expect(screen.queryByRole("textbox", { name: "GitHub access token" })).toBeNull();
-  expect(document.body.textContent).not.toContain("GitHub access token");
-  view.unmount();
-  fixture.values.set("privateUpdateFeedAtom", true);
-  general();
-  expect(screen.getByLabelText("GitHub access token")).toBeTruthy();
+  expect(document.body.textContent).not.toMatch(/access token/i);
 });
 
 it("audits a custom attachment folder shown read-only with a picker button", async () => {

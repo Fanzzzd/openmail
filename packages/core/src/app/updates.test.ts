@@ -1,74 +1,70 @@
 import { vi } from "vitest";
 import { assert, it } from "@effect/vitest";
-import { Effect, Option } from "effect";
-import { checkStoredUpdates, startAutoUpdates, type UpdateClient } from "./updates.js";
+import { Effect } from "effect";
+import { checkVerifiedUpdates, startAutoUpdates, type UpdateClient } from "./updates.js";
 
-it.effect("manual checks gate network behind packaging, signature and the keychain token", () =>
-  Effect.gen(function* () {
-    let checks = 0;
-    let feeds = 0;
-    let verifies = 0;
-    let reads = 0;
-    let signed = true;
-    let token: string | undefined;
-    let response: unknown = { isUpdateAvailable: false };
-    let fail = false;
-    let listeners = 0;
-    const client: UpdateClient = {
-      autoDownload: false,
-      autoInstallOnAppQuit: false,
-      logger: {},
-      setFeedURL: () => {
-        feeds++;
-      },
-      checkForUpdates: () => {
-        checks++;
-        return fail
-          ? Promise.reject(new Error("secret-token-in-error"))
-          : Promise.resolve(response);
-      },
-      on: () => {
-        listeners++;
-      },
-      removeListener: () => {
-        listeners--;
-      },
-    };
-    const verify = async () => {
-      verifies++;
-      return signed;
-    };
-    const saved = Effect.sync(() => {
-      reads++;
-      return Option.fromUndefinedOr(token);
-    });
-    const check = (packaged = true) =>
-      checkStoredUpdates(client, { packaged, bundle: "/OpenMail.app" }, saved, verify);
-    assert.deepStrictEqual(yield* check(false), { status: "disabled" });
-    assert.strictEqual(reads, 0);
-    assert.deepStrictEqual(yield* check(), { status: "disabled" });
-    assert.strictEqual(verifies, 0);
-    token = "";
-    assert.deepStrictEqual(yield* check(), { status: "disabled" });
-    token = "private-token";
-    signed = false;
-    assert.deepStrictEqual(yield* check(), { status: "disabled" });
-    assert.strictEqual(checks, 0);
-    assert.strictEqual(feeds, 0);
-    signed = true;
-    assert.deepStrictEqual(yield* check(), { status: "upToDate" });
-    assert.strictEqual(client.logger, null);
-    response = { isUpdateAvailable: true, updateInfo: { version: "1.2.3" } };
-    assert.deepStrictEqual(yield* check(), { status: "available", version: "1.2.3" });
-    response = null;
-    assert.deepStrictEqual(yield* check(), { status: "error" });
-    fail = true;
-    assert.deepStrictEqual(yield* check(), { status: "error" });
-    assert.strictEqual(listeners, 0);
-  }),
+it.effect(
+  "manual checks gate network behind packaging and signature, then read the public feed",
+  () =>
+    Effect.gen(function* () {
+      let checks = 0;
+      let feeds = 0;
+      let verifies = 0;
+      let signed = true;
+      const feedOptions: unknown[] = [];
+      let response: unknown = { isUpdateAvailable: false };
+      let fail = false;
+      let listeners = 0;
+      const client: UpdateClient = {
+        autoDownload: false,
+        autoInstallOnAppQuit: false,
+        logger: {},
+        setFeedURL: (options) => {
+          feeds++;
+          feedOptions.push(options);
+        },
+        checkForUpdates: () => {
+          checks++;
+          return fail
+            ? Promise.reject(new Error("secret-token-in-error"))
+            : Promise.resolve(response);
+        },
+        on: () => {
+          listeners++;
+        },
+        removeListener: () => {
+          listeners--;
+        },
+      };
+      const verify = async () => {
+        verifies++;
+        return signed;
+      };
+      const check = (packaged = true) =>
+        checkVerifiedUpdates(client, { packaged, bundle: "/OpenMail.app" }, verify);
+      assert.deepStrictEqual(yield* check(false), { status: "disabled" });
+      assert.strictEqual(verifies, 0);
+      signed = false;
+      assert.deepStrictEqual(yield* check(), { status: "disabled" });
+      assert.strictEqual(checks, 0);
+      assert.strictEqual(feeds, 0);
+      signed = true;
+      assert.deepStrictEqual(yield* check(), { status: "upToDate" });
+      assert.strictEqual(client.logger, null);
+      assert.deepStrictEqual(feedOptions, [
+        { provider: "github", owner: "Fanzzzd", repo: "openmail" },
+      ]);
+      response = { isUpdateAvailable: true, updateInfo: { version: "1.2.3" } };
+      assert.deepStrictEqual(yield* check(), { status: "available", version: "1.2.3" });
+      response = null;
+      assert.deepStrictEqual(yield* check(), { status: "error" });
+      fail = true;
+      assert.deepStrictEqual(yield* check(), { status: "error" });
+      assert.strictEqual(listeners, 0);
+    }),
 );
 
-it.effect("both update channels retain packaging, signing and authentication gates", () =>
+it.effect("both update channels retain packaging and signing gates", () =>
   Effect.gen(function* () {
     let checks = 0,
       feeds = 0;
@@ -87,16 +83,14 @@ it.effect("both update channels retain packaging, signing and authentication gat
       removeListener: () => null,
     };
     for (const channel of ["stable", "latest"] as const) {
-      for (const [packaged, signed, token] of [
-        [false, true, "token"],
-        [true, false, "token"],
-        [true, true, ""],
+      for (const [packaged, signed] of [
+        [false, true],
+        [true, false],
       ] as const) {
         assert.deepStrictEqual(
-          yield* checkStoredUpdates(
+          yield* checkVerifiedUpdates(
             client,
             { packaged, bundle: "/OpenMail.app", channel },
-            Effect.succeed(Option.some(token)),
             async () => signed,
           ),
           { status: "disabled" },
@@ -104,10 +98,9 @@ it.effect("both update channels retain packaging, signing and authentication gat
       }
       assert.strictEqual(checks, channel === "stable" ? 0 : 1);
       assert.strictEqual(feeds, checks);
-      yield* checkStoredUpdates(
+      yield* checkVerifiedUpdates(
         client,
         { packaged: true, bundle: "/OpenMail.app", channel },
-        Effect.succeed(Option.some("token")),
         async () => true,
       );
       assert.strictEqual(client.allowPrerelease, channel === "latest");
@@ -116,7 +109,7 @@ it.effect("both update channels retain packaging, signing and authentication gat
   }),
 );
 
-it("automatic channel selection changes release eligibility only after all three gates pass", () => {
+it("automatic channel selection changes release eligibility only after both gates pass", () => {
   let checks = 0,
     feeds = 0;
   const client: UpdateClient = {
@@ -133,17 +126,15 @@ it("automatic channel selection changes release eligibility only after all three
     removeListener: () => null,
   };
   for (const channel of ["stable", "latest"] as const) {
-    for (const [packaged, signed, token] of [
-      [false, true, "token"],
-      [true, false, "token"],
-      [true, true, ""],
+    for (const [packaged, signed] of [
+      [false, true],
+      [true, false],
     ] as const)
-      startAutoUpdates(client, { packaged, signed, token, channel })();
+      startAutoUpdates(client, { packaged, signed, channel })();
     assert.strictEqual(checks, channel === "stable" ? 0 : 1);
     const stop = startAutoUpdates(client, {
       packaged: true,
       signed: true,
-      token: "token",
       channel,
     });
     assert.strictEqual(client.allowPrerelease, channel === "latest");
@@ -180,7 +171,6 @@ it("switching to Stable keeps a staged prerelease from being installed on quit",
   const stopLatest = startAutoUpdates(client, {
     packaged: true,
     signed: true,
-    token: "test",
     channel: "latest",
   });
   await Promise.resolve();
@@ -189,7 +179,6 @@ it("switching to Stable keeps a staged prerelease from being installed on quit",
   const stopStable = startAutoUpdates(client, {
     packaged: true,
     signed: true,
-    token: "test",
     channel: "stable",
   });
   try {
@@ -229,7 +218,6 @@ it("late downloads from Latest cannot unlock Stable; a completed Stable download
   const stopLatest = startAutoUpdates(client, {
     packaged: true,
     signed: true,
-    token: "fixture",
     channel: "latest",
   });
   await Promise.resolve();
@@ -237,7 +225,6 @@ it("late downloads from Latest cannot unlock Stable; a completed Stable download
   const stopStable = startAutoUpdates(client, {
     packaged: true,
     signed: true,
-    token: "fixture",
     channel: "stable",
   });
   try {
@@ -271,7 +258,6 @@ it("downloads never automatically hand a package to the native updater", async (
   const stop = startAutoUpdates(client, {
     packaged: true,
     signed: true,
-    token: "fixture",
     channel: "latest",
   });
   try {
@@ -314,7 +300,6 @@ it("background update status follows availability/downloads, honors opt-out and 
     startAutoUpdates(client, {
       packaged: true,
       signed: true,
-      token: "private-token",
       autoDownload,
       onState: (state) => states.push(state),
     });
@@ -358,15 +343,15 @@ it("background update status follows availability/downloads, honors opt-out and 
   });
   const failed = start(true);
   await flush();
-  fail(new Error("https://private-token@private-release.example/signed-url"));
+  fail(new Error("https://release-secret@release.example/signed-url"));
   await flush();
   assert.deepStrictEqual(states.at(-1), { status: "error" });
-  assert.ok(!JSON.stringify(states).includes("private-token"));
+  assert.ok(!JSON.stringify(states).includes("release-secret"));
   failed();
 });
 
 it.effect(
-  "manual download obeys signature/authentication gates and rejects an ineligible Stable version",
+  "manual download obeys packaging and signature gates and rejects an ineligible Stable version",
   () =>
     Effect.gen(function* () {
       const states: import("./update-state.js").UpdateState[] = [];
@@ -383,32 +368,30 @@ it.effect(
           return { isUpdateAvailable: true, updateInfo: { version: "2.0.0-beta.1" } };
         },
       };
+      yield* checkVerifiedUpdates(
+        client,
+        {
+          packaged: false,
+          bundle: "/OpenMail.app",
+          autoDownload: true,
+          onState: (state) => states.push(state),
+        },
+        async () => true,
+      );
       const options = {
         packaged: true,
         bundle: "/OpenMail.app",
         autoDownload: true,
         onState: (state: import("./update-state.js").UpdateState) => states.push(state),
       };
-      yield* checkStoredUpdates(client, options, Effect.succeed(Option.none()), async () => true);
       assert.deepStrictEqual(states, [{ status: "disabled" }]);
       assert.strictEqual(client.autoDownload, false);
-      yield* checkStoredUpdates(
-        client,
-        options,
-        Effect.succeed(Option.some("token")),
-        async () => false,
-      );
+      yield* checkVerifiedUpdates(client, options, async () => false);
       assert.strictEqual(checks, 0);
       assert.strictEqual(client.autoDownload, false);
-      assert.deepStrictEqual(
-        yield* checkStoredUpdates(
-          client,
-          options,
-          Effect.succeed(Option.some("token")),
-          async () => true,
-        ),
-        { status: "error" },
-      );
+      assert.deepStrictEqual(yield* checkVerifiedUpdates(client, options, async () => true), {
+        status: "error",
+      });
       assert.deepStrictEqual(states.at(-1), { status: "error" });
       assert.strictEqual(client.autoInstallOnAppQuit, false);
     }),
@@ -434,16 +417,14 @@ it("manual download restores automatic opt-out before the next timer check, incl
   const stop = startAutoUpdates(client, {
     packaged: true,
     signed: true,
-    token: "token",
     autoDownload: false,
   });
   try {
     await vi.advanceTimersByTimeAsync(0);
     await Effect.runPromise(
-      checkStoredUpdates(
+      checkVerifiedUpdates(
         client,
         { packaged: true, bundle: "/OpenMail.app", autoDownload: true },
-        Effect.succeed(Option.some("token")),
         async () => true,
       ),
     );
@@ -452,10 +433,9 @@ it("manual download restores automatic opt-out before the next timer check, incl
     assert.deepStrictEqual(observed, [false, true, false]);
     fail = true;
     await Effect.runPromise(
-      checkStoredUpdates(
+      checkVerifiedUpdates(
         client,
         { packaged: true, bundle: "/OpenMail.app", autoDownload: true },
-        Effect.succeed(Option.some("token")),
         async () => true,
       ),
     );

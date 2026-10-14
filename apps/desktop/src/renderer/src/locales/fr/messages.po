@@ -288,10 +288,6 @@ msgstr "Accepter"
 msgid "Accepted"
 msgstr "Accepté"
 
-#: src/renderer/src/features/settings/sections/UpdateSettings.tsx
-msgid "Access token saved"
-msgstr "Jeton d’accès enregistré"
-
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/Settings.tsx
@@ -2962,10 +2958,6 @@ msgstr "Obtenir Tailscale"
 msgid "Getting the attachment…"
 msgstr "Récupération de la pièce jointe…"
 
-#: src/renderer/src/features/settings/sections/UpdateSettings.tsx
-msgid "GitHub access token"
-msgstr "Jeton d’accès GitHub"
-
 #: src/renderer/src/i18n/shortcut-set-names.ts
 msgid "Gmail"
 msgstr "Gmail"
@@ -4326,10 +4318,6 @@ msgstr "La semaine prochaine"
 msgid "Next window"
 msgstr "Fenêtre suivante"
 
-#: src/renderer/src/features/settings/sections/UpdateSettings.tsx
-msgid "No access token saved"
-msgstr "Aucun jeton d’accès enregistré"
-
 #. allow is the translated per-account checkbox label in AI settings.
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 msgid "No account allows AI reads, so a connected app sees no mail. Turn on “{allow}” for an account above."
@@ -5429,10 +5417,6 @@ msgstr "Retirer l’étoile"
 msgid "Remove this account and its local mail from OpenMail. Mail on the server is not affected."
 msgstr "Supprimez ce compte et sa messagerie locale d’OpenMail. Le courrier sur le serveur n’est pas affecté."
 
-#: src/renderer/src/features/settings/sections/UpdateSettings.tsx
-msgid "Remove token"
-msgstr "Supprimer le jeton"
-
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Remove tracking parameters from links"
 msgstr "Supprimer les paramètres de suivi des liens"
@@ -5811,10 +5795,6 @@ msgstr "Enregistrer dans le dossier des pièces jointes"
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Save To…"
 msgstr "Enregistrer dans…"
-
-#: src/renderer/src/features/settings/sections/UpdateSettings.tsx
-msgid "Save token"
-msgstr "Enregistrer le jeton"
 
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
@@ -6298,10 +6278,6 @@ msgstr "Position de la signature dans les réponses"
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Signatures"
 msgstr "Signatures"
-
-#: src/renderer/src/features/settings/sections/UpdateSettings.tsx
-msgid "Signed builds use a GitHub access token to download private releases. The token is stored in your system keychain."
-msgstr "Les builds signés utilisent un jeton d’accès GitHub pour télécharger des versions privées. Le jeton est stocké dans le trousseau de votre système."
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Signed in as {login}. This Mac is {device}."
@@ -7307,8 +7283,8 @@ msgstr "La recherche ou le téléchargement de la mise à jour a échoué. Rées
 
 #: src/renderer/src/app/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
-msgid "Update checks require a signed, installed macOS app and a saved GitHub access token."
-msgstr "Les vérifications de mise à jour nécessitent une application macOS signée et installée et un jeton d’accès GitHub enregistré."
+msgid "Update checks require a signed, installed macOS app."
+msgstr "Les vérifications de mise à jour nécessitent une application macOS signée et installée."
 
 #: src/main/app/native-i18n.ts
 msgid "Update OpenMail to the latest version to open it. The library was not changed."
@@ -7318,10 +7294,6 @@ msgstr "Mettez OpenMail à jour vers la dernière version pour l’ouvrir. La ba
 #: src/renderer/src/lib/view.ts
 msgid "Updates"
 msgstr "Notifications"
-
-#: src/renderer/src/features/settings/sections/UpdateSettings.tsx
-msgid "Updates require a signed macOS build and a saved access token."
-msgstr "Les mises à jour nécessitent une version signée pour macOS et un jeton d’accès enregistré."
 
 #: src/renderer/src/features/settings/sections/UpdateSettings.tsx
 msgid "Updates require a signed, installed macOS build."

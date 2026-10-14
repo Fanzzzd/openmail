@@ -1,27 +1,20 @@
 import { Button } from "@base-ui/react/button";
-import { Input } from "@base-ui/react/input";
-import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
+import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { AsyncResult, Reactivity } from "effect/reactivity";
 import { useState } from "react";
-import { resultError } from "../../../lib/errors";
 import { Keys } from "../../../state/keys";
 import { useRunMail, withMail } from "../../../state/mail";
 import { Effect } from "effect";
 import { Checkbox } from "../../../ui/Checkbox";
 import { Select } from "../../../ui/Select";
 import { SettingsCheckRow, SettingsGroup, SettingsRow } from "../../../ui/SettingsRows";
-import { buttonPrimary, buttonSecondary, formInput } from "../../../ui/styles";
-import { setPrefsAtom, setUpdateTokenAtom } from "../../../state/mutations";
-import {
-  prefsAtom,
-  privateUpdateFeedAtom,
-  updateTokenConfiguredAtom,
-  updateStateAtom,
-} from "../../../state/queries";
+import { buttonPrimary, buttonSecondary } from "../../../ui/styles";
+import { setPrefsAtom } from "../../../state/mutations";
+import { prefsAtom, updateStateAtom } from "../../../state/queries";
 
 export function UpdateSettings() {
-  const { t, i18n } = useLingui();
+  const { t } = useLingui();
   const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => null);
   const setPrefs = useAtomSet(setPrefsAtom);
   const run = useRunMail();
@@ -36,24 +29,11 @@ export function UpdateSettings() {
       ),
     );
   };
-  // Only a build that updates from a private repo needs a token (docs/release.md).
-  const privateFeed = AsyncResult.getOrElse(useAtomValue(privateUpdateFeedAtom), () => false);
-  const configured = AsyncResult.getOrElse(useAtomValue(updateTokenConfiguredAtom), () => false);
-  const [token, setToken] = useState("");
-  const [result, save] = useAtom(setUpdateTokenAtom, { mode: "promiseExit" });
-  const submit = async (value: string) => {
-    const exit = await save({ payload: { token: value }, reactivityKeys: [Keys.cache] });
-    if (exit._tag === "Success") setToken("");
-  };
   const status =
     checking || state?.status === "checking" ? (
       <Trans>Checking for updates…</Trans>
     ) : state?.status === "disabled" ? (
-      privateFeed ? (
-        <Trans>Updates require a signed macOS build and a saved access token.</Trans>
-      ) : (
-        <Trans>Updates require a signed, installed macOS build.</Trans>
-      )
+      <Trans>Updates require a signed, installed macOS build.</Trans>
     ) : state?.status === "upToDate" ? (
       <Trans>You are up to date.</Trans>
     ) : state?.status === "error" ? (
@@ -68,17 +48,7 @@ export function UpdateSettings() {
       )
     ) : null;
   return (
-    <SettingsGroup
-      title={<Trans>Software updates</Trans>}
-      footer={
-        privateFeed && (
-          <Trans>
-            Signed builds use a GitHub access token to download private releases. The token is
-            stored in your system keychain.
-          </Trans>
-        )
-      }
-    >
+    <SettingsGroup title={<Trans>Software updates</Trans>}>
       <SettingsRow label={<output>{status}</output>}>
         <Button
           className={buttonSecondary}
@@ -124,43 +94,6 @@ export function UpdateSettings() {
           <Trans>Automatically download updates</Trans>
         </label>
       </SettingsCheckRow>
-      {privateFeed && (
-        <div className="space-y-2 px-3 py-2.5">
-          <output className="block">
-            {configured ? <Trans>Access token saved</Trans> : <Trans>No access token saved</Trans>}
-          </output>
-          <div className="flex flex-wrap gap-2">
-            <Input
-              type="password"
-              autoComplete="off"
-              value={token}
-              onValueChange={setToken}
-              aria-label={t`GitHub access token`}
-              placeholder={t`GitHub access token`}
-              className={`min-w-40 flex-1 basis-48 ${formInput}`}
-            />
-            <Button
-              className={buttonSecondary}
-              disabled={!token.trim() || result.waiting}
-              onClick={() => submit(token)}
-            >
-              <Trans>Save token</Trans>
-            </Button>
-            <Button
-              className={buttonSecondary}
-              disabled={!configured || result.waiting}
-              onClick={() => submit("")}
-            >
-              <Trans>Remove token</Trans>
-            </Button>
-          </div>
-          {resultError(i18n, result) && (
-            <output role="alert" className="block text-a11y-danger">
-              {resultError(i18n, result)}
-            </output>
-          )}
-        </div>
-      )}
     </SettingsGroup>
   );
 }

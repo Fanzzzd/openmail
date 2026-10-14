@@ -3,8 +3,7 @@ import type { DesktopLabels } from "../../shared/desktop-labels";
 /** English menu and notification labels, used until the renderer sends its Lingui ones. */
 export const DEFAULT_DESKTOP_LABELS: DesktopLabels = {
   checkUpdates: "Check for updates…",
-  updatesDisabled:
-    "Update checks require a signed, installed macOS app and a saved GitHub access token.",
+  updatesDisabled: "Update checks require a signed, installed macOS app.",
   updatesCurrent: "OpenMail is up to date.",
   updatesAvailable: "Update available:",
   updatesFailed: "Could not check for updates. Try again later.",

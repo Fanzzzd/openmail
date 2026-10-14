@@ -288,10 +288,6 @@ msgstr "承諾"
 msgid "Accepted"
 msgstr "承諾済み"
 
-#: src/renderer/src/features/settings/sections/UpdateSettings.tsx
-msgid "Access token saved"
-msgstr "アクセストークンが保存されました"
-
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/Settings.tsx
@@ -2962,10 +2958,6 @@ msgstr "Tailscale を入手"
 msgid "Getting the attachment…"
 msgstr "添付ファイルを取得中…"
 
-#: src/renderer/src/features/settings/sections/UpdateSettings.tsx
-msgid "GitHub access token"
-msgstr "GitHubアクセストークン"
-
 #: src/renderer/src/i18n/shortcut-set-names.ts
 msgid "Gmail"
 msgstr "Gmail"
@@ -4326,10 +4318,6 @@ msgstr "来週"
 msgid "Next window"
 msgstr "次のウィンドウ"
 
-#: src/renderer/src/features/settings/sections/UpdateSettings.tsx
-msgid "No access token saved"
-msgstr "アクセストークンが保存されていません"
-
 #. allow is the translated per-account checkbox label in AI settings.
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 msgid "No account allows AI reads, so a connected app sees no mail. Turn on “{allow}” for an account above."
@@ -5429,10 +5417,6 @@ msgstr "スターを外す"
 msgid "Remove this account and its local mail from OpenMail. Mail on the server is not affected."
 msgstr "このアカウントとそのローカルメールを OpenMail から削除します。サーバー上のメールは影響を受けません。"
 
-#: src/renderer/src/features/settings/sections/UpdateSettings.tsx
-msgid "Remove token"
-msgstr "トークンを削除する"
-
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Remove tracking parameters from links"
 msgstr "リンクから追跡パラメータを削除"
@@ -5811,10 +5795,6 @@ msgstr "添付ファイルフォルダに保存"
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Save To…"
 msgstr "保存先を指定…"
-
-#: src/renderer/src/features/settings/sections/UpdateSettings.tsx
-msgid "Save token"
-msgstr "トークンを保存"
 
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
@@ -6298,10 +6278,6 @@ msgstr "返信での署名の位置"
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Signatures"
 msgstr "署名"
-
-#: src/renderer/src/features/settings/sections/UpdateSettings.tsx
-msgid "Signed builds use a GitHub access token to download private releases. The token is stored in your system keychain."
-msgstr "署名付きビルドは、GitHub アクセス トークンを使用してプライベート リリースをダウンロードします。トークンはシステム キーチェーンに保存されます。"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Signed in as {login}. This Mac is {device}."
@@ -7307,8 +7283,8 @@ msgstr "アップデートの確認またはダウンロードに失敗しまし
 
 #: src/renderer/src/app/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
-msgid "Update checks require a signed, installed macOS app and a saved GitHub access token."
-msgstr "更新チェックには、署名されインストールされた macOS アプリと保存された GitHub アクセス トークンが必要です。"
+msgid "Update checks require a signed, installed macOS app."
+msgstr "更新チェックには、署名されインストールされた macOS アプリが必要です。"
 
 #: src/main/app/native-i18n.ts
 msgid "Update OpenMail to the latest version to open it. The library was not changed."
@@ -7318,10 +7294,6 @@ msgstr "開くには OpenMail を最新バージョンに更新してくださ�
 #: src/renderer/src/lib/view.ts
 msgid "Updates"
 msgstr "新着"
-
-#: src/renderer/src/features/settings/sections/UpdateSettings.tsx
-msgid "Updates require a signed macOS build and a saved access token."
-msgstr "アップデートには、署名済みの macOS 版と保存済みのアクセストークンが必要です。"
 
 #: src/renderer/src/features/settings/sections/UpdateSettings.tsx
 msgid "Updates require a signed, installed macOS build."

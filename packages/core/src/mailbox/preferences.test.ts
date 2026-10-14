@@ -124,13 +124,13 @@ import { SqlClient } from "effect/sql";
   );
 
   it.effect(
-    "update preference events preserve ready state while actual channel and token changes reset it",
+    "update preference events preserve ready state while an actual channel change resets it",
     () =>
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
         const listener = yield* mailbox.events.pipe(
           Stream.filter((event) => event._tag === "UpdateSettingsChanged"),
-          Stream.take(4),
+          Stream.take(3),
           Stream.runCollect,
           Effect.forkScoped,
         );
@@ -138,11 +138,10 @@ import { SqlClient } from "effect/sql";
         yield* mailbox.setPrefs({ updateAutoDownload: false });
         yield* mailbox.setPrefs({ updateChannel: "stable" });
         yield* mailbox.setPrefs({ updateChannel: "latest" });
-        yield* mailbox.setUpdateToken("fixture-token");
         const events = yield* Fiber.join(listener);
         assert.deepStrictEqual(
           Array.from(events).map((event) => event.resetState),
-          [false, false, true, true],
+          [false, false, true],
         );
       }).pipe(Effect.scoped, Effect.provide(TestMailbox())),
   );

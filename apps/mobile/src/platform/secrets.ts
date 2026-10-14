@@ -1,4 +1,4 @@
-import { ProviderError, Secrets, MODEL_KEY, UPDATE_TOKEN_KEY } from "@openmail/core/portable";
+import { ProviderError, Secrets, MODEL_KEY } from "@openmail/core/portable";
 import { Effect, Layer, Option } from "effect";
 import * as SecureStore from "expo-secure-store";
 import { AppState, Platform } from "react-native";
@@ -39,7 +39,7 @@ const unavailable = () =>
  * The verified backup remains authoritative through any failure or process exit. */
 export async function migrateForegroundSecrets(keys: readonly string[]): Promise<void> {
   if (Platform.OS !== "ios" || AppState.currentState !== "active") return;
-  for (const key of new Set([...keys, MODEL_KEY, UPDATE_TOKEN_KEY])) {
+  for (const key of new Set([...keys, MODEL_KEY])) {
     try {
       await withSecretLock(key, async () => {
         if (AppState.currentState !== "active") return;

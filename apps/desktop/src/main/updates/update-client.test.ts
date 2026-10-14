@@ -32,35 +32,43 @@ class TestUpdater extends AppUpdater {
     return selected.provider.resolveFiles(selected.info);
   }
 }
+const manifestName =
+  process.platform === "darwin"
+    ? "latest-mac.yml"
+    : process.platform === "linux"
+      ? "latest-linux.yml"
+      : "latest.yml";
+const releaseAssets = (tag: string, ...names: string[]) =>
+  [manifestName, ...names].map((name) => ({
+    name,
+    browser_download_url: `https://github.com/Fanzzzd/openmail/releases/download/${tag}/${name}`,
+  }));
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.useRealTimers();
 });
-it("the real SDK uses the greater stable release while preserving its private asset resolver", async () => {
+it("the real SDK uses the greater stable release and downloads packages from its public tag", async () => {
   const directory = mkdtempSync(join(tmpdir(), "openmail-update-adapter-"));
   try {
     const manifest = `version: 2.0.0\nfiles:\n  - url: OpenMail.zip\n    sha512: verified-by-the-sdk\n`;
-    const assets = [
-      {
-        name:
-          process.platform === "darwin"
-            ? "latest-mac.yml"
-            : process.platform === "linux"
-              ? "latest-linux.yml"
-              : "latest.yml",
-        url: "https://api.github.com/repos/Fanzzzd/openmail/releases/assets/1",
-      },
-      {
-        name: "OpenMail.zip",
-        url: "https://api.github.com/repos/Fanzzzd/openmail/releases/assets/2",
-      },
-    ];
     const request: typeof fetch = async (input) => {
       const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
       return url.endsWith("/latest")
-        ? Response.json({ tag_name: "v2.0.0", prerelease: false, draft: false, assets })
+        ? Response.json({
+            tag_name: "v2.0.0",
+            prerelease: false,
+            draft: false,
+            assets: releaseAssets("v2.0.0", "OpenMail.zip"),
+          })
         : url.includes("?per_page")
-          ? Response.json([{ tag_name: "v1.9.0-beta.10", prerelease: true, draft: false, assets }])
+          ? Response.json([
+              {
+                tag_name: "v1.9.0-beta.10",
+                prerelease: true,
+                draft: false,
+                assets: releaseAssets("v1.9.0-beta.10", "OpenMail.zip"),
+              },
+            ])
           : new Response(manifest);
     };
     vi.stubGlobal("fetch", request);
@@ -69,17 +77,11 @@ it("the real SDK uses the greater stable release while preserving its private as
     client.logger = null;
     client.autoDownload = false;
     client.allowPrerelease = true;
-    client.setFeedURL({
-      provider: "github",
-      owner: "Fanzzzd",
-      repo: "openmail",
-      private: true,
-      token: "fixture-token",
-    });
+    client.setFeedURL({ provider: "github", owner: "Fanzzzd", repo: "openmail" });
     const result = await client.checkForUpdates();
     expect(result).toMatchObject({ isUpdateAvailable: true, updateInfo: { version: "2.0.0" } });
     expect(updater.files()[0]?.url.href).toBe(
-      "https://api.github.com/repos/Fanzzzd/openmail/releases/assets/2",
+      "https://github.com/Fanzzzd/openmail/releases/download/v2.0.0/OpenMail.zip",
     );
     expect(updater.files()[0]?.info.sha512).toBe("verified-by-the-sdk");
     expect(updateClient(updater)).toBe(client);
@@ -104,23 +106,24 @@ it("a fake Mac download never feeds Squirrel until approved quit, and Stable rej
   }
   try {
     let version = "2.1.0-beta.1";
-    const assets = [
-      {
-        name:
-          process.platform === "darwin"
-            ? "latest-mac.yml"
-            : process.platform === "linux"
-              ? "latest-linux.yml"
-              : "latest.yml",
-        url: "https://api.github.com/repos/Fanzzzd/openmail/releases/assets/1",
-      },
-    ];
     const request: typeof fetch = async (input) => {
       const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
       return url.endsWith("/latest")
-        ? Response.json({ tag_name: "v2.0.0", prerelease: false, draft: false, assets })
+        ? Response.json({
+            tag_name: "v2.0.0",
+            prerelease: false,
+            draft: false,
+            assets: releaseAssets("v2.0.0"),
+          })
         : url.includes("?per_page")
-          ? Response.json([{ tag_name: `v${version}`, prerelease: true, draft: false, assets }])
+          ? Response.json([
+              {
+                tag_name: `v${version}`,
+                prerelease: true,
+                draft: false,
+                assets: releaseAssets(`v${version}`),
+              },
+            ])
           : new Response(
               `version: ${version}\nfiles:\n  - url: OpenMail.zip\n    sha512: fixture\n`,
             );
@@ -132,13 +135,7 @@ it("a fake Mac download never feeds Squirrel until approved quit, and Stable rej
     client.autoInstallOnAppQuit = true;
     client.allowPrerelease = true;
     client.logger = null;
-    client.setFeedURL({
-      provider: "github",
-      owner: "Fanzzzd",
-      repo: "openmail",
-      private: true,
-      token: "fixture",
-    });
+    client.setFeedURL({ provider: "github", owner: "Fanzzzd", repo: "openmail" });
     await client.checkForUpdates();
     await microtasks();
     expect(updater.autoInstallOnAppQuit).toBe(false);
@@ -157,13 +154,7 @@ it("a fake Mac download never feeds Squirrel until approved quit, and Stable rej
       stableClient = updateClient(stableUpdater);
     stableClient.logger = null;
     stableClient.allowPrerelease = false;
-    stableClient.setFeedURL({
-      provider: "github",
-      owner: "Fanzzzd",
-      repo: "openmail",
-      private: true,
-      token: "fixture",
-    });
+    stableClient.setFeedURL({ provider: "github", owner: "Fanzzzd", repo: "openmail" });
     await stableClient.checkForUpdates();
     await microtasks();
     expect(stableUpdater.nativeFeeds).toEqual([]);

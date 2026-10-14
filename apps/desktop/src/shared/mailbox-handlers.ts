@@ -119,8 +119,6 @@ export function mailboxHandlers(m: MailboxService, options: MailboxHandlerOption
     UnreadByLabel: ({ accountIds, within, conversations }) =>
       m.unreadByLabel(accountIds, within, conversations),
 
-    UpdateTokenConfigured: () => m.updateTokenConfigured,
-    SetUpdateToken: ({ token }) => m.setUpdateToken(token),
     BackfillState: () => m.backfillState,
     PauseBackfill: ({ accountId, paused }) => m.pauseBackfill(accountId, paused),
     FetchOlder: ({ query }) => m.fetchOlder(query),

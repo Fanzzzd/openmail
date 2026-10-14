@@ -84,7 +84,7 @@ export function useDesktopLabels() {
               ),
             },
             checkUpdates: t`Check for updates…`,
-            updatesDisabled: t`Update checks require a signed, installed macOS app and a saved GitHub access token.`,
+            updatesDisabled: t`Update checks require a signed, installed macOS app.`,
             updatesCurrent: t`OpenMail is up to date.`,
             updatesAvailable: t`Update available:`,
             updatesFailed: t`Could not check for updates. Try again later.`,

@@ -61,7 +61,7 @@ module.exports = {
   ],
   artifactName: "${productName}-${version}-${os}-${arch}.${ext}",
   forceCodeSigning: signed,
-  publish: [{ provider: "github", owner: "Fanzzzd", repo: "openmail", private: true }],
+  publish: [{ provider: "github", owner: "Fanzzzd", repo: "openmail" }],
   mac: {
     extendInfo: {
       NSContactsUsageDescription:

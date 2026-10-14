@@ -189,7 +189,7 @@ function UpdateResultAlert({
   const version = result.version ?? "";
   const title =
     result.status === "disabled"
-      ? t`Update checks require a signed, installed macOS app and a saved GitHub access token.`
+      ? t`Update checks require a signed, installed macOS app.`
       : result.status === "upToDate"
         ? t`OpenMail is up to date.`
         : result.status === "available"

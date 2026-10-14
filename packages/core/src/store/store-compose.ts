@@ -517,8 +517,15 @@ export function makeComposeStore(
       ON CONFLICT DO NOTHING`);
   });
 
+  const claimOnce = (marker: string) =>
+    all(Schema.Struct({ key: Schema.String }))(
+      sql`INSERT INTO prefs (key,value_json) VALUES (${marker},'true')
+        ON CONFLICT(key) DO NOTHING RETURNING key`,
+    ).pipe(Effect.map((rows) => rows.length > 0));
+
   return {
     ...drafts,
+    claimOnce,
     imageSenders,
     setImageSender,
     ...makeOutboxStore(sql),

@@ -104,28 +104,22 @@ git tag v0.2.0
 git push origin v0.2.0
 ```
 
-## When the repo goes public
-
-Auto-update still reads the private repo with a GitHub token from the keychain. Change it in one commit after the repo is public:
-
-1. `apps/desktop/electron-builder.config.cjs`: drop `private: true` from `publish`.
-2. `packages/core/src/app/updates.ts`: `configureUpdates` calls `setFeedURL` with `provider: "github"`, `owner` and `repo` only. Remove `private` and `token` from the `UpdateClient.setFeedURL` type.
-3. `apps/desktop/src/main/updates/update-client.ts`: use electron-updater's public `GitHubProvider` instead of `PrivateGitHubProvider`.
-4. `packages/core/src/app/update-feed.ts`: drop the `authorization` header from `resolveUpdateFeed` and accept the public release asset URLs.
-5. `apps/desktop/src/main/updates/updates.ts`: remove the `updateTokenConfigured` gate. Keep the `codesign` Developer ID check; unsigned and ad-hoc builds still get no updates.
-6. Settings > General > Software update: remove the token field (`UpdateSettings.tsx`, the `UpdateTokenConfigured` query and the `SetUpdateToken` mutation) and delete the stored keychain item on upgrade.
-7. Update the 自动更新 section below and its tests.
-
 ## 自动更新
 
-core 接受 Electron updater 适配器，统一配置和发起网络检查。窗口显示后先检查钥匙串是否配置令牌，再用 `codesign --verify --deep --strict` 验证 app，并确认 Developer ID Application Authority 和 TeamIdentifier；开发环境、ad-hoc 包和未配置令牌的私库安装均不开启更新。
+core 接受 Electron updater 适配器，统一配置和发起网络检查。窗口显示后，core 用 `codesign --verify --deep --strict` 验证 app，并确认 Developer ID Application Authority 和 TeamIdentifier。开发环境和 ad-hoc 包不开启更新。
 
-已签名 app 从私库 `Fanzzzd/openmail` 的 GitHub Releases 获取更新。更新源由 `electron-builder.config.cjs` 的 `publish` 决定，构建时写进 app 的 `Resources/app-update.yml`；`private: true` 表示私库。只有私库构建的「设置 > 常规 > 软件更新」显示 GitHub 访问令牌栏，开发运行和公开源的构建不显示。令牌只进系统钥匙串。设置页显示令牌是否已保存、更新版本和检查／下载状态，不读取或回显令牌，不使用环境变量或开发者的 `GH_TOKEN`。每 6 小时检查一次，主窗口显示可用更新。自动下载默认开启，可在设置中关闭并显式下载；下载完成后，退出时先检查待处理草稿，再重新核对令牌、签名和渠道资格后安装。网络失败不影响收发。macOS 更新需要 ZIP 和签名，见 [electron-builder 26 自动更新文档](https://www.electron.build/v26/docs/features/auto-update/)。
+已签名 app 从公开仓库 `Fanzzzd/openmail` 的 GitHub Releases 获取更新，不需要 GitHub 账户或令牌。更新源由 `electron-builder.config.cjs` 的 `publish` 决定，构建时写进 app 的 `Resources/app-update.yml`，内容只有 `provider`、`owner` 和 `repo`。
+
+core 的 `resolveUpdateFeed`（[update-feed.ts](../packages/core/src/app/update-feed.ts)）不带凭证请求 GitHub API 选出 release。Stable 只取最新正式版；Latest 在正式版和预发布版中取 semver 最大的一个。清单只从该 release 的 `https://github.com/Fanzzzd/openmail/releases/download/<tag>/` 读取，重定向只接受 `release-assets.githubusercontent.com` 和 `objects.githubusercontent.com`。桌面适配器把 tag 交给 electron-updater 的 `GitHubProvider`，安装包从同一个 tag 下载，SDK 校验 sha512 和签名。未认证的 GitHub API 每个 IP 每小时限 60 次。Stable 每次检查调用 1 次，Latest 调用 2 次，release 超过 100 个时每多 100 个再加 1 次。
+
+「设置 > 常规 > 软件更新」显示更新版本和检查／下载状态。每 6 小时检查一次，主窗口显示可用更新。自动下载默认开启，可在设置中关闭并显式下载；下载完成后，退出时先检查待处理草稿，再重新核对签名和渠道资格后安装。网络失败不影响收发。macOS 更新需要 ZIP 和签名，见 [electron-builder 26 自动更新文档](https://www.electron.build/v26/docs/features/auto-update/)。
+
+仓库公开前的构建把 GitHub 令牌存在钥匙串项 `updates:github-release-token`。升级后第一次启动更新时，core 删除这一项。项不存在或删除失败都不提示；`prefs` 表的 `updates:legacy-token-removed` 记录已执行，之后的启动不再访问该项。
 
 首次真实发布前还要验证：
 
 - Developer ID 签名、公证、staple 和 Gatekeeper。
-- 用测试私库 release 验证发现、下载、退出安装和签名拒绝；当前任务不发布 release。
+- 用一个测试预发布 release 验证发现、下载、退出安装和签名拒绝。
 - 在 Intel Mac 上启动 x64 包，并在两种架构验证钥匙串读写。Apple Silicon 的 Rosetta 启动只作为补充。
 - 用正式签名包实际加载 sqlite-vec 和 ONNX。
 

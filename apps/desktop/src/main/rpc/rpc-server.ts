@@ -14,7 +14,6 @@ import { mailboxHandlers } from "../../shared/mailbox-handlers";
 import { desktopAppleContacts } from "../system/apple-contacts";
 import { currentUpdateState } from "../updates/update-state";
 import { checkForUpdateState } from "../updates/updates";
-import { privateUpdateFeed } from "../updates/update-feed";
 import { switchWindow } from "../windows/window-keys";
 import { DEMO_DOWNLOADS, demoDownloads } from "../files/downloads-demo";
 import {
@@ -213,8 +212,6 @@ const Handlers = MailRpcs.toLayer(
         m.prefs.pipe(Effect.flatMap((prefs) => openMeeting(url, prefs.cleanLinks !== false))),
       UpdateState: () => Effect.sync(currentUpdateState),
       CheckForUpdates: ({ download }) => checkForUpdateState(m, download),
-      PrivateUpdateFeed: () =>
-        Effect.sync(() => privateUpdateFeed(app.isPackaged ? process.resourcesPath : null)),
       NativeComposeCapabilities: () => Effect.sync(() => nativeComposeCapabilities()),
       PickNativeImages: ({ kind, labels }, { client }) =>
         pickNativeImages(windowOf(client.id), kind, labels),

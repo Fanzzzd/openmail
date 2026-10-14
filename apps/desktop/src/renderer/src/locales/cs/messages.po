@@ -288,10 +288,6 @@ msgstr "Přijmout"
 msgid "Accepted"
 msgstr "Přijato"
 
-#: src/renderer/src/features/settings/sections/UpdateSettings.tsx
-msgid "Access token saved"
-msgstr "Přístupový token byl uložen"
-
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/Settings.tsx
@@ -2962,10 +2958,6 @@ msgstr "Získat Tailscale"
 msgid "Getting the attachment…"
 msgstr "Získávání přílohy…"
 
-#: src/renderer/src/features/settings/sections/UpdateSettings.tsx
-msgid "GitHub access token"
-msgstr "Přístupový token GitHub"
-
 #: src/renderer/src/i18n/shortcut-set-names.ts
 msgid "Gmail"
 msgstr "Gmail"
@@ -4326,10 +4318,6 @@ msgstr "Příští týden"
 msgid "Next window"
 msgstr "Další okno"
 
-#: src/renderer/src/features/settings/sections/UpdateSettings.tsx
-msgid "No access token saved"
-msgstr "Nebyl uložen žádný přístupový token"
-
 #. allow is the translated per-account checkbox label in AI settings.
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 msgid "No account allows AI reads, so a connected app sees no mail. Turn on “{allow}” for an account above."
@@ -5429,10 +5417,6 @@ msgstr "Odebrat hvězdičku"
 msgid "Remove this account and its local mail from OpenMail. Mail on the server is not affected."
 msgstr "Odeberte tento účet a jeho místní poštu z OpenMailu. Pošta na serveru není ovlivněna."
 
-#: src/renderer/src/features/settings/sections/UpdateSettings.tsx
-msgid "Remove token"
-msgstr "Odebrat token"
-
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Remove tracking parameters from links"
 msgstr "Odstranit sledovací parametry z odkazů"
@@ -5811,10 +5795,6 @@ msgstr "Uložit do složky příloh"
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Save To…"
 msgstr "Uložit do…"
-
-#: src/renderer/src/features/settings/sections/UpdateSettings.tsx
-msgid "Save token"
-msgstr "Uložit token"
 
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
@@ -6298,10 +6278,6 @@ msgstr "Umístění podpisu v odpovědích"
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Signatures"
 msgstr "Podpisy"
-
-#: src/renderer/src/features/settings/sections/UpdateSettings.tsx
-msgid "Signed builds use a GitHub access token to download private releases. The token is stored in your system keychain."
-msgstr "Podepsané sestavení používají ke stažení soukromých vydání přístupový token GitHub. Token je uložen ve vaší systémové klíčence."
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Signed in as {login}. This Mac is {device}."
@@ -7307,8 +7283,8 @@ msgstr "Kontrola nebo stažení aktualizace se nezdařilo. Zkuste to znovu."
 
 #: src/renderer/src/app/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
-msgid "Update checks require a signed, installed macOS app and a saved GitHub access token."
-msgstr "Kontroly aktualizací vyžadují podepsanou nainstalovanou aplikaci pro macOS a uložený přístupový token GitHub."
+msgid "Update checks require a signed, installed macOS app."
+msgstr "Kontroly aktualizací vyžadují podepsanou nainstalovanou aplikaci pro macOS."
 
 #: src/main/app/native-i18n.ts
 msgid "Update OpenMail to the latest version to open it. The library was not changed."
@@ -7318,10 +7294,6 @@ msgstr "Aktualizujte OpenMail na nejnovější verzi a otevřete ji znovu. Datab
 #: src/renderer/src/lib/view.ts
 msgid "Updates"
 msgstr "Aktualizace"
-
-#: src/renderer/src/features/settings/sections/UpdateSettings.tsx
-msgid "Updates require a signed macOS build and a saved access token."
-msgstr "Aktualizace vyžadují podepsanou verzi aplikace pro macOS a uložený přístupový token."
 
 #: src/renderer/src/features/settings/sections/UpdateSettings.tsx
 msgid "Updates require a signed, installed macOS build."

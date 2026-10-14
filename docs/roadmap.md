@@ -27,7 +27,7 @@ Gmail 与个人 Outlook 的基础读写、发信已有真实账户验证记录�
 ## 待用户完成
 
 - OAuth：按 [Google](setup-google.md) 与 [Microsoft](setup-microsoft.md) 在自己的控制台启用 API 和权限。联系人、日历和服务商设置按账户逐项连接；停用不撤销远程授权。旧授权缺权限时从可选服务入口重新授权。Gmail 永久删除须另加 `https://mail.google.com/` 并通过 app 的永久删除权限入口重新授权；普通收发不要求这个 scope。权限依据见 [Gmail scopes](https://developers.google.com/workspace/gmail/api/auth/scopes)。
-- 发行：提供自己的 Apple Developer 签名身份和公证凭证。验证 Developer ID、公证、Gatekeeper、两种架构的钥匙串与原生依赖，以及测试私库自动更新。构建和凭证细节只在[发布说明](release.md)维护。
+- 发行：提供自己的 Apple Developer 签名身份和公证凭证。验证 Developer ID、公证、Gatekeeper、两种架构的钥匙串与原生依赖，以及从 GitHub Releases 自动更新。构建和凭证细节只在[发布说明](release.md)维护。
 - 手机注册：创建自己的 Google iOS／Android 客户端和 Microsoft 原生回调，配置 bundle ID、package name 与签名信息。按[手机端说明](../apps/mobile/README.md)创建开发构建，验证原生 SQLite、FTS5、WAL、Metro、两家 OAuth 和大邮箱分页。Expo Go 不覆盖这些能力。
 - 推送决策：确定是否引入中转服务，再设计 Gmail watch／Graph subscriptions、APNs／FCM、设备注册、续期和隐私契约。当前桌面轮询与 IMAP IDLE 已实现，手机端已有 OS 调度的后台增量刷新和本地通知，无远程推送。
 

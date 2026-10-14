@@ -288,10 +288,6 @@ msgstr "Aceptar"
 msgid "Accepted"
 msgstr "Aceptado"
 
-#: src/renderer/src/features/settings/sections/UpdateSettings.tsx
-msgid "Access token saved"
-msgstr "Token de acceso guardado"
-
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/Settings.tsx
@@ -2962,10 +2958,6 @@ msgstr "Obtener Tailscale"
 msgid "Getting the attachment…"
 msgstr "Obteniendo el adjunto…"
 
-#: src/renderer/src/features/settings/sections/UpdateSettings.tsx
-msgid "GitHub access token"
-msgstr "Token de acceso a GitHub"
-
 #: src/renderer/src/i18n/shortcut-set-names.ts
 msgid "Gmail"
 msgstr "Gmail"
@@ -4326,10 +4318,6 @@ msgstr "La próxima semana"
 msgid "Next window"
 msgstr "Siguiente ventana"
 
-#: src/renderer/src/features/settings/sections/UpdateSettings.tsx
-msgid "No access token saved"
-msgstr "No se ha guardado ningún token de acceso"
-
 #. allow is the translated per-account checkbox label in AI settings.
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 msgid "No account allows AI reads, so a connected app sees no mail. Turn on “{allow}” for an account above."
@@ -5429,10 +5417,6 @@ msgstr "Quitar estrella"
 msgid "Remove this account and its local mail from OpenMail. Mail on the server is not affected."
 msgstr "Elimina esta cuenta y su correo local de OpenMail. El correo del servidor no se ve afectado."
 
-#: src/renderer/src/features/settings/sections/UpdateSettings.tsx
-msgid "Remove token"
-msgstr "Quitar token"
-
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Remove tracking parameters from links"
 msgstr "Eliminar los parámetros de seguimiento de los enlaces"
@@ -5811,10 +5795,6 @@ msgstr "Guardar en la carpeta de adjuntos"
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Save To…"
 msgstr "Guardar en…"
-
-#: src/renderer/src/features/settings/sections/UpdateSettings.tsx
-msgid "Save token"
-msgstr "Guardar token"
 
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
@@ -6298,10 +6278,6 @@ msgstr "Posición de la firma en respuestas"
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Signatures"
 msgstr "Firmas"
-
-#: src/renderer/src/features/settings/sections/UpdateSettings.tsx
-msgid "Signed builds use a GitHub access token to download private releases. The token is stored in your system keychain."
-msgstr "Las compilaciones firmadas utilizan un token de acceso de GitHub para descargar versiones privadas. El token se almacena en el llavero de su sistema."
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Signed in as {login}. This Mac is {device}."
@@ -7307,8 +7283,8 @@ msgstr "No se ha podido buscar o descargar la actualización. Inténtalo de nuev
 
 #: src/renderer/src/app/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
-msgid "Update checks require a signed, installed macOS app and a saved GitHub access token."
-msgstr "Las comprobaciones de actualización requieren una aplicación macOS instalada y firmada y un token de acceso de GitHub guardado."
+msgid "Update checks require a signed, installed macOS app."
+msgstr "Las comprobaciones de actualización requieren una aplicación macOS instalada y firmada."
 
 #: src/main/app/native-i18n.ts
 msgid "Update OpenMail to the latest version to open it. The library was not changed."
@@ -7318,10 +7294,6 @@ msgstr "Actualiza OpenMail a la última versión para abrirla. La base de datos 
 #: src/renderer/src/lib/view.ts
 msgid "Updates"
 msgstr "Notificaciones"
-
-#: src/renderer/src/features/settings/sections/UpdateSettings.tsx
-msgid "Updates require a signed macOS build and a saved access token."
-msgstr "Las actualizaciones requieren una versión firmada para macOS y un token de acceso guardado."
 
 #: src/renderer/src/features/settings/sections/UpdateSettings.tsx
 msgid "Updates require a signed, installed macOS build."

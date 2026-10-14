@@ -7,12 +7,18 @@ const Release = Schema.Struct({
   tag_name: Schema.String,
   draft: Schema.Boolean,
   prerelease: Schema.Boolean,
-  assets: Schema.Array(Schema.Struct({ name: Schema.String, url: Schema.String })),
+  assets: Schema.Array(Schema.Struct({ name: Schema.String, browser_download_url: Schema.String })),
 });
 type Release = typeof Release.Type;
 const API = "https://api.github.com/repos/Fanzzzd/openmail/releases";
+/** Public release downloads: https://github.com/Fanzzzd/openmail/releases/download/<tag>/<file>. */
+const DOWNLOAD = "https://github.com/Fanzzzd/openmail/releases/download/";
+const ASSET_HOSTS = new Set([
+  "https://release-assets.githubusercontent.com",
+  "https://objects.githubusercontent.com",
+]);
 
-/** GitHub's private provider prefers the first prerelease even when stable has a higher version. */
+/** Choose the greater semver between the stable release and the newest eligible prerelease. */
 export function selectUpdateRelease(
   stable: Release | null,
   releases: readonly Release[],
@@ -24,21 +30,16 @@ export function selectUpdateRelease(
   );
 }
 
-/** Called by the updater adapter only after core's signature/package/keychain gate. All HTTP stays in core. */
+/** Called by the updater adapter only after core's signature and package gate. All HTTP stays in core.
+ * The repo is public, so no request carries credentials. */
 export async function resolveUpdateFeed(
-  token: string,
   channel: "stable" | "latest",
   manifestName: string,
   request: typeof fetch = fetch,
 ) {
-  const headers = {
-    authorization: `Bearer ${token}`,
-    accept: "application/vnd.github+json",
-    "X-GitHub-Api-Version": "2022-11-28",
-  };
-  const get = (url: string, extra = {}) =>
+  const get = (url: string) =>
     request(url, {
-      headers: { ...headers, ...extra },
+      headers: { accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" },
       redirect: "manual",
       signal: AbortSignal.timeout(30000),
     });
@@ -70,40 +71,21 @@ export async function resolveUpdateFeed(
     throw new Error("No eligible update release");
   const asset = selected.assets.find((a) => a.name === manifestName);
   if (!asset) throw new Error("Update manifest is unavailable");
-  const url = new URL(asset.url);
+  // The updater SDK builds package URLs from the tag; the manifest must come from the same release.
+  const url = new URL(asset.browser_download_url);
   if (
-    url.origin !== "https://api.github.com" ||
-    url.username ||
-    url.password ||
-    !/^\/repos\/Fanzzzd\/openmail\/releases\/assets\/\d+$/.test(url.pathname) ||
-    url.search ||
-    url.hash
+    url.href !==
+    `${DOWNLOAD}${encodeURIComponent(selected.tag_name)}/${encodeURIComponent(manifestName)}`
   )
     throw new Error("Invalid update asset URL");
-  // Validate every asset before the inherited updater can attach its bearer token.
-  for (const item of selected.assets) {
-    const location = new URL(item.url);
-    if (
-      location.origin !== url.origin ||
-      location.username ||
-      location.password ||
-      !/^\/repos\/Fanzzzd\/openmail\/releases\/assets\/\d+$/.test(location.pathname) ||
-      location.search ||
-      location.hash
-    )
-      throw new Error("Invalid update asset URL");
-  }
-  let response = await get(url.href, { accept: "application/octet-stream" });
+  let response = await request(url.href, {
+    headers: { accept: "application/octet-stream" },
+    redirect: "manual",
+    signal: AbortSignal.timeout(30000),
+  });
   if ([301, 302, 303, 307, 308].includes(response.status)) {
     const location = new URL(response.headers.get("location") ?? "");
-    if (
-      ![
-        "https://release-assets.githubusercontent.com",
-        "https://objects.githubusercontent.com",
-      ].includes(location.origin) ||
-      location.username ||
-      location.password
-    )
+    if (!ASSET_HOSTS.has(location.origin) || location.username || location.password)
       throw new Error("Invalid update asset redirect");
     response = await request(location.href, {
       headers: { accept: "application/octet-stream" },
@@ -114,10 +96,5 @@ export async function resolveUpdateFeed(
   if (!response.ok) throw new Error("Could not read update manifest");
   const manifest = await response.text();
   if (Buffer.byteLength(manifest) > 1024 * 1024) throw new Error("Update manifest is too large");
-  return {
-    manifest,
-    manifestUrl: asset.url,
-    version: version.version,
-    assets: [...selected.assets],
-  };
+  return { manifest, manifestUrl: url.href, version: version.version, tag: selected.tag_name };
 }

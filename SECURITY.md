@@ -21,7 +21,7 @@ OpenMail has not had a stable release. Fixes land on `main` and go into the next
 ## In scope
 
 - Mail content (HTML, CSS, attachments, headers, links, calendar invites) that runs script, reads local files, reaches the main process, loads remote content against the user's remote-image setting, or leaks tracking data.
-- Anything that exposes OAuth tokens, IMAP passwords, AI API keys or update tokens outside the system keychain.
+- Anything that exposes OAuth tokens, IMAP passwords or AI API keys outside the system keychain.
 - IPC, deep links (`openmail:`, `mailto:`) and opened files that bypass validation.
 - MCP tools that change mail without the explicit write switch, or send without confirmation in the app.
 - Remote access: requests that get past the Tailscale login allowlist, the Host and Origin checks or the session cookie, or that reach an RPC outside the remote allowlist.

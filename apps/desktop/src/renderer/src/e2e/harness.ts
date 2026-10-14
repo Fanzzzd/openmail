@@ -342,7 +342,6 @@ export async function flow(
       ContactPhoto: ({ accountId, address }) => m.contactPhoto(accountId, address),
       AttachmentCapabilities: () => Effect.succeed({ share: Boolean(options.native) }),
       UpdateState: () => Effect.succeed({ status: "disabled" }),
-      PrivateUpdateFeed: () => Effect.succeed(false),
       ...(options.noAccounts ? { Accounts: () => Effect.succeed([]) } : {}),
       ClipboardAttachments: () => Effect.succeed([]),
       SetNativeMenuState: () => Effect.void,

@@ -134,8 +134,6 @@ function stubMailbox(overrides: Partial<Service>): Layer.Layer<Mailbox> {
     emptyFolder: () => notUsed("emptyFolder"),
     markFolderRead: () => notUsed("markFolderRead"),
     resetFavorites: () => notUsed("resetFavorites"),
-    updateTokenConfigured: Effect.die("unused"),
-    setUpdateToken: () => Effect.die("unused"),
     remoteAccess: Effect.die("unused"),
     setRemoteAccess: () => Effect.die("unused"),
     startUpdates: () => Effect.die("unused"),

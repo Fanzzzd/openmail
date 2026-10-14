@@ -540,13 +540,10 @@ export class Mailbox extends Context.Service<
     /** Hides an address from suggestions, or shows it again. */
     setContactHidden(address: string, hidden: boolean): Effect.Effect<void>;
 
-    /** Only presence crosses IPC. The token stays in the system keychain. */
     checkUpdates(
       client: UpdateClient,
       options: import("../app/updates.js").UpdateOptions,
     ): Effect.Effect<import("../app/updates.js").ManualUpdateResult>;
-    readonly updateTokenConfigured: Effect.Effect<boolean, ProviderError>;
-    setUpdateToken(token: string): Effect.Effect<void, InvalidInput>;
     /** Main process only; no RPC exposes these. */
     readonly remoteAccess: Effect.Effect<import("../app/remote-access.js").RemoteAccessSettings>;
     setRemoteAccess(
@@ -555,7 +552,7 @@ export class Mailbox extends Context.Service<
     startUpdates(
       client: UpdateClient,
       options: import("../app/updates.js").UpdateOptions,
-    ): Effect.Effect<() => void, ProviderError>;
+    ): Effect.Effect<() => void>;
     readonly cacheDatabaseSize: Effect.Effect<import("../domain/cache.js").CacheDatabaseSize>;
     readonly compactCache: Effect.Effect<import("../domain/cache.js").CacheCompactionResult>;
     readonly cacheSize: Effect.Effect<import("../domain/cache.js").CacheSize[]>;

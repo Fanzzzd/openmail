@@ -466,6 +466,8 @@ export class Store extends Context.Service<
     takeNotifications(now: number): Effect.Effect<import("../domain/prefs.js").NotificationBatch[]>;
     readonly prefs: Effect.Effect<Prefs>;
     setPrefs(patch: PrefsPatch): Effect.Effect<void>;
+    /** True only the first time a one-off upgrade step claims this marker. */
+    claimOnce(marker: string): Effect.Effect<boolean>;
     readonly remoteAccess: Effect.Effect<import("../app/remote-access.js").RemoteAccessSettings>;
     setRemoteAccess(
       settings: import("../app/remote-access.js").RemoteAccessSettings,

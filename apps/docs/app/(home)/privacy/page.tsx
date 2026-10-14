@@ -160,9 +160,10 @@ export default function PrivacyPage() {
           sent. Indexing then runs on your Mac.
         </li>
         <li>
-          <strong>GitHub</strong> (<code>api.github.com</code> and GitHub's release file hosts),
-          only in signed builds where you have saved a GitHub access token for updates. OpenMail
-          checks for and downloads new versions there. No mail data is sent.
+          <strong>GitHub</strong> (<code>api.github.com</code>, <code>github.com</code> and GitHub's
+          release file hosts), only in Developer ID signed builds. OpenMail checks for and downloads
+          new versions there from the public repository, without a GitHub account or token. No mail
+          data is sent.
         </li>
       </ul>
       <p>

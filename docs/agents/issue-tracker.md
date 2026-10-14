@@ -13,7 +13,7 @@ Issues and specs for this repo live as GitHub issues. Use the `gh` CLI for all o
 
 Infer the repo from `git remote -v`; `gh` does this automatically when run inside a clone.
 
-The repo is the private `Fanzzzd/openmail`, remote `git@github-personal:Fanzzzd/openmail.git` (the personal SSH alias used by the other repos in ~/code/personal).
+The repo is the public `Fanzzzd/openmail`, remote `git@github-personal:Fanzzzd/openmail.git` (the personal SSH alias used by the other repos in ~/code/personal).
 
 ## Pull requests as a triage surface
 

@@ -57,7 +57,11 @@ import { Providers } from "../providers/adapter.js";
 import { Store } from "../store/service.js";
 import { makeSyncHealth } from "../sync/sync-health.js";
 import { UnsubscribeNetwork } from "./unsubscribe.js";
-import { checkStoredUpdates, startStoredUpdates, UPDATE_TOKEN_KEY } from "../app/updates.js";
+import {
+  checkVerifiedUpdates,
+  LEGACY_UPDATE_TOKEN_KEY,
+  startVerifiedUpdates,
+} from "../app/updates.js";
 
 const DEFAULT_SUGGESTIONS = 8;
 
@@ -472,24 +476,6 @@ export const MailboxLive = (
         setAiAccount: (input) =>
           ai.setAiAccount(input).pipe(Effect.andThen(flushMailbox.flushLater)),
 
-        updateTokenConfigured: secrets.get(UPDATE_TOKEN_KEY).pipe(Effect.map(Option.isSome)),
-
-        setUpdateToken: (token) =>
-          Effect.gen(function* () {
-            const trimmed = token.trim();
-            if (trimmed.length > 4096 || /[\r\n]/.test(trimmed))
-              yield* new InvalidInput({ message: "Enter a single access token" });
-            yield* (
-              trimmed ? secrets.set(UPDATE_TOKEN_KEY, trimmed) : secrets.remove(UPDATE_TOKEN_KEY)
-            ).pipe(
-              Effect.mapError(
-                () =>
-                  new InvalidInput({ message: "Could not save the token in the system keychain." }),
-              ),
-            );
-            yield* emit({ _tag: "UpdateSettingsChanged", resetState: true });
-          }),
-
         remoteAccess: store.remoteAccess,
         setRemoteAccess: (input) =>
           normalizeRemoteAccess(input).pipe(
@@ -497,18 +483,23 @@ export const MailboxLive = (
           ),
 
         startUpdates: (client, updateOptions) =>
-          Effect.flatMap(store.prefs, (prefs) =>
-            startStoredUpdates(
+          Effect.gen(function* () {
+            // Builds from the private repo kept a GitHub token; delete it once, missing or not.
+            if (yield* store.claimOnce("updates:legacy-token-removed"))
+              yield* secrets
+                .remove(LEGACY_UPDATE_TOKEN_KEY)
+                .pipe(Effect.catchCause(() => Effect.void));
+            const prefs = yield* store.prefs;
+            return yield* startVerifiedUpdates(
               client,
               {
                 ...updateOptions,
                 channel: prefs.updateChannel,
                 autoDownload: updateOptions.autoDownload ?? prefs.updateAutoDownload,
               },
-              secrets.get(UPDATE_TOKEN_KEY),
               verifier.verify,
-            ),
-          ),
+            );
+          }),
 
         ...organization,
         ...batchMailbox,
@@ -585,14 +576,13 @@ export const MailboxLive = (
 
         checkUpdates: (client, updateOptions) =>
           Effect.flatMap(store.prefs, (prefs) =>
-            checkStoredUpdates(
+            checkVerifiedUpdates(
               client,
               {
                 ...updateOptions,
                 channel: prefs.updateChannel,
                 autoDownload: updateOptions.autoDownload ?? prefs.updateAutoDownload,
               },
-              secrets.get(UPDATE_TOKEN_KEY),
               verifier.verify,
             ).pipe(
               Effect.ensuring(

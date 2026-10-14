@@ -156,10 +156,6 @@ export class MailRpcs extends RpcGroup.make(
   Rpc.make("OpenNotificationSettings", { success: Schema.Boolean }),
   Rpc.make("UpdateState", { success: UpdateState }),
   Rpc.make("CheckForUpdates", { payload: { download: Schema.Boolean } }),
-  Rpc.make("UpdateTokenConfigured", { success: Schema.Boolean, error }),
-  /** True when the packaged app updates from a private repo, the only feed that needs a token. */
-  Rpc.make("PrivateUpdateFeed", { success: Schema.Boolean }),
-  Rpc.make("SetUpdateToken", { payload: { token: Schema.String }, error }),
   Rpc.make("BackfillState", { success: Schema.Array(BackfillState) }),
   Rpc.make("PauseBackfill", { payload: { accountId: Schema.String, paused: Schema.Boolean } }),
   Rpc.make("FetchOlder", { payload: { query: ThreadQuery }, success: OlderResult, error }),
