@@ -380,21 +380,40 @@ test.concurrent("write-mode help describes app-only permissions", async ({
   const help = await run(process.execPath, ["dist/cli.js", "agents", "write-mode", "--help"], {
     env: { ...process.env, OPENMAIL_HOME: directory },
   });
-  expect(help.stdout).toContain("Show agent write permissions");
+  expect(help.stdout).toContain("Show Changes by AI apps (Read only or Ask me first)");
   expect(help.stdout).not.toMatch(/<mode>|\[mode\]/);
 });
 
-test.concurrent("write-mode status distinguishes MCP proposals from direct rule writes", async ({
+test.concurrent("write-mode shows Changes by AI apps with the app's names", async ({
   expect,
   onTestFinished,
 }) => {
   const directory = await home(onTestFinished, "openmail-cli-policy-test-");
-  const status = await run(process.execPath, ["dist/cli.js", "agents", "write-mode"], {
-    env: { ...process.env, OPENMAIL_HOME: directory },
-  });
-  expect(status.stdout).toContain("The mode can only be changed in the app");
-  expect(status.stdout).toContain("Sending requires confirmation in the app");
-});
+  const options = { env: { ...process.env, OPENMAIL_HOME: directory } };
+  const off = await run(process.execPath, ["dist/cli.js", "agents", "write-mode"], options);
+  expect(off.stdout).toBe(
+    "Changes by AI apps: Read only\nAI apps can read and search the accounts you allow. They cannot change mail.\nChange it in the app under Settings → AI Access.\n",
+  );
+  const offJson = await run(
+    process.execPath,
+    ["dist/cli.js", "agents", "write-mode", "--json"],
+    options,
+  );
+  expect(JSON.parse(offJson.stdout)).toEqual({ changes_by_ai_apps: "read_only" });
+  const db = new DatabaseSync(join(directory, "mail.db"));
+  db.exec("INSERT INTO agent_policies (name, modify) VALUES ('*', 'propose')");
+  db.close();
+  const ask = await run(process.execPath, ["dist/cli.js", "agents", "write-mode"], options);
+  expect(ask.stdout).toContain("Changes by AI apps: Ask me first\n");
+  expect(ask.stdout).toContain("wait in AI suggestions until you approve them in the app");
+  expect(ask.stdout).not.toContain("MCP always proposes");
+  const askJson = await run(
+    process.execPath,
+    ["dist/cli.js", "agents", "write-mode", "--json"],
+    options,
+  );
+  expect(JSON.parse(askJson.stdout)).toEqual({ changes_by_ai_apps: "ask_me_first" });
+}, 30_000);
 
 // The rejection runs under the hook timeout; each test then waits on at most one CLI start.
 describe.concurrent.each(["allow", "propose"])("CLI write-mode %s", (mode) => {
@@ -415,13 +434,15 @@ describe.concurrent.each(["allow", "propose"])("CLI write-mode %s", (mode) => {
   test("rejects enabling writes", ({ expect }) => {
     expect(failure).toMatchObject({
       code: 1,
-      stderr: expect.stringContaining("Agent write mode can only be changed in the app"),
+      stderr: expect.stringContaining(
+        "Changes by AI apps can only be changed in the app, under Settings → AI Access.",
+      ),
     });
   });
 
   test("keeps the persisted write mode off after rejection", async ({ expect }) => {
     const status = await run(process.execPath, ["dist/cli.js", "agents", "write-mode"], options);
-    expect(status.stdout).toContain("Agent write mode: off.");
+    expect(status.stdout).toContain("Changes by AI apps: Read only");
   });
 });
 

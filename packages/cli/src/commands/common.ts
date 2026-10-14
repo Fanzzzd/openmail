@@ -46,3 +46,6 @@ export const optionalString = (name: string, description: string) =>
   Flag.String(name).pipe(Flag.withDescription(description), Flag.optional);
 export const optionalInt = (name: string, description: string) =>
   Flag.Int(name).pipe(Flag.withDescription(description), Flag.optional);
+
+/** Where the person changes Changes by AI apps. The CLI only shows it. */
+export const WRITE_MODE_SETTING = "Settings → AI Access";

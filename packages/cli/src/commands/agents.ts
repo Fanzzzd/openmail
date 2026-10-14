@@ -1,8 +1,9 @@
 /** proposals, agents, audit and mcp: what models asked for, may do and did. */
 
 import { Argument, Command, Flag } from "effect/cli";
-import { fail, jsonFlag, print } from "./common.js";
+import { WRITE_MODE_SETTING, fail, jsonFlag, print } from "./common.js";
 import { Console, Effect } from "effect";
+
 import { APPROVE_IN_APP, Mailbox } from "@openmail/core";
 import { auditTable, proposalTable } from "../format.js";
 import { runMcp } from "../mcp-server.js";
@@ -47,19 +48,38 @@ const proposals = Command.make("proposals").pipe(
   Command.withSubcommands([proposalsList, proposalsApprove, proposalsReject]),
 );
 
+/** Changes by AI apps as the app shows it. Every mode but off proposes, so it reads as Ask me first. */
+const writeModeView = (mode: string) =>
+  mode === "off"
+    ? {
+        changes_by_ai_apps: "read_only" as const,
+        label: "Read only",
+        detail: "AI apps can read and search the accounts you allow. They cannot change mail.",
+      }
+    : {
+        changes_by_ai_apps: "ask_me_first" as const,
+        label: "Ask me first",
+        detail:
+          "Changes that AI apps suggest wait in AI suggestions until you approve them in the app. Sending always needs your confirmation in the app.",
+      };
+
 const writeMode = Command.make(
   "write-mode",
-  {},
-  Effect.fn(function* () {
+  { json: jsonFlag },
+  Effect.fn(function* ({ json }) {
     const mailbox = yield* Mailbox;
-    yield* Console.log(`Agent write mode: ${yield* mailbox.agentWriteMode}.`);
-    yield* Console.log(
-      "The mode can only be changed in the app under Settings > AI Access. MCP always proposes for app approval. Sending requires confirmation in the app.",
+    const view = writeModeView(yield* mailbox.agentWriteMode);
+    yield* print({ changes_by_ai_apps: view.changes_by_ai_apps }, json, () =>
+      [
+        `Changes by AI apps: ${view.label}`,
+        view.detail,
+        `Change it in the app under ${WRITE_MODE_SETTING}.`,
+      ].join("\n"),
     );
   }),
 ).pipe(
   Command.withDescription(
-    "Show agent write permissions; change them in the app (Settings > AI Access)",
+    `Show Changes by AI apps (Read only or Ask me first); change it in the app under ${WRITE_MODE_SETTING}`,
   ),
 );
 

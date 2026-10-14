@@ -12,10 +12,11 @@ import { oauthClientsFile } from "./oauth-clients.js";
 import { accountCommands } from "./commands/accounts.js";
 import { mailCommands } from "./commands/mail.js";
 import { agentCommands } from "./commands/agents.js";
+
 import { toolCommands } from "./commands/tools.js";
 import { CliError, Command } from "effect/cli";
 import { corpus } from "./commands/corpus.js";
-import { Failed, fail } from "./commands/common.js";
+import { Failed, WRITE_MODE_SETTING, fail } from "./commands/common.js";
 import { withShortUsageErrors } from "./usage.js";
 import * as NodeRuntime from "@effect/platform-node/NodeRuntime";
 import { dataFolderError } from "./data-folder-error.js";
@@ -109,7 +110,7 @@ const appOnlyWriteMode =
   cliArgs[1] === "write-mode" &&
   cliArgs.slice(2).some((arg) => !arg.startsWith("-"));
 (appOnlyWriteMode
-  ? fail("Agent write mode can only be changed in the app under Settings > AI Access.")
+  ? fail(`Changes by AI apps can only be changed in the app, under ${WRITE_MODE_SETTING}.`)
   : withShortUsageErrors(Command.run(openmail, { version: "0.1.0" }))
 ).pipe(
   Effect.catch((error) => {
