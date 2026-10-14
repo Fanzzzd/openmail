@@ -229,7 +229,7 @@ msgstr "{messageCount, plural, other {# 封邮件}}"
 msgid "{name} ({owner})"
 msgstr "{name}（{owner}）"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "{name} client"
 msgstr "{name} 客户端"
 
@@ -409,7 +409,7 @@ msgstr "账户"
 msgid "Accounts AI apps can read"
 msgstr "AI 应用可读取的账户"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Accounts you already added keep the client they signed in with."
 msgstr "已添加的账户继续用登录时的客户端。"
 
@@ -472,7 +472,7 @@ msgstr "操作记录"
 msgid "Actual size"
 msgstr "实际大小"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Add"
@@ -846,7 +846,7 @@ msgstr "已达到 Anthropic 的速率限制。请等一分钟再试。"
 msgid "Any action flag"
 msgstr "任意操作标记"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "App-specific password"
 msgstr "应用专用密码"
 
@@ -858,7 +858,7 @@ msgstr "Apple 联系人只保留在本机，绝不发送给 AI 模型。"
 msgid "Apple Mail"
 msgstr "Apple 邮件"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Application (client) ID"
 msgstr "应用程序（客户端）ID"
 
@@ -906,7 +906,7 @@ msgstr "这台 Mac 上未找到的应用"
 
 #: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/FirstRunDone.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/ai/TriageChip.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
@@ -1012,7 +1012,7 @@ msgstr "你保存的附件会显示在这里。"
 msgid "Attendees:"
 msgstr "参与者："
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Authorization code"
 msgstr "授权码"
 
@@ -1222,7 +1222,7 @@ msgstr "暂时无法连接邮件服务器。"
 
 #: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/ai/AiPanel.tsx
@@ -1315,7 +1315,7 @@ msgstr "切换模式"
 msgid "Change writing mode?"
 msgstr "切换撰写模式？"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Change your OAuth client"
 msgstr "更换 OAuth 客户端"
 
@@ -1540,11 +1540,11 @@ msgstr "每封消息都要点“{loadImages}”。"
 msgid "Click in this window, then choose a device to take a photo, scan a document or add a sketch."
 msgstr "点击窗口，再选择设备拍照、扫描文稿或添加速写。"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Client ID"
 msgstr "客户端 ID"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Client secret"
 msgstr "客户端密钥"
 
@@ -2078,7 +2078,7 @@ msgstr "无法读取图片。"
 msgid "Couldn't recover this draft. Close it and open it again."
 msgstr "无法恢复此草稿。请关闭后重新打开。"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/FirstRunDone.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Couldn't register OpenMail. Try again from the installed app."
 msgstr "注册失败，请从安装后的应用重试。"
@@ -2161,15 +2161,15 @@ msgstr "计数按邮件比较。数量相同不代表内容一致。缓存窗口
 msgid "Create"
 msgstr "创建"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Create an app password under Account Security in your Yahoo account."
 msgstr "在 Yahoo 账户的「账户安全」里生成应用密码。"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Create an app password under Settings → Privacy & Security, with IMAP and SMTP checked."
 msgstr "在「设置 → 隐私与安全」里新建应用密码，勾选 IMAP 和 SMTP。"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Create an app-specific password under Sign-In and Security in your Apple Account."
 msgstr "在 Apple 账户的「登录与安全」里生成应用专用密码。"
 
@@ -2485,7 +2485,7 @@ msgstr "不重复"
 msgid "Don't attach the original message"
 msgstr "不附上原邮件"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/FirstRunDone.tsx
 #: src/renderer/src/features/reader/RemoteImagesPrompt.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Done"
@@ -2654,7 +2654,7 @@ msgstr "编辑会移除此草稿中不支持的格式和图片，保留列表、
 msgid "Edits <0>{configPath}</0>."
 msgstr "修改 <0>{configPath}</0>。"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Email address"
 msgstr "邮箱地址"
 
@@ -2690,7 +2690,7 @@ msgstr "结束时间为估算值。添加事件前请核对。"
 msgid "Ends"
 msgstr "结束条件"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Enter a different OAuth client you registered yourself. New sign-ins use it."
 msgstr "填入你自己注册的另一个 OAuth 客户端。之后的新登录使用它。"
 
@@ -2726,15 +2726,15 @@ msgstr "请输入 tailnet 登录名，例如 name@github。"
 msgid "Enter a template name."
 msgstr "请输入模板名称。"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Enter an OAuth client you registered yourself. New sign-ins use it instead of the built-in client."
 msgstr "填入你自己注册的 OAuth 客户端。之后的新登录改用它，不再用内置客户端。"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Enter port numbers from 1 to 65535."
 msgstr "端口号须为 1 到 65535 之间的数字。"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Enter the IMAP and SMTP servers your email provider gives you."
 msgstr "填入邮箱服务商提供的 IMAP 和 SMTP 服务器地址。"
 
@@ -2911,7 +2911,7 @@ msgstr "正在查找应用…"
 msgid "Finish signing in in your browser"
 msgstr "请在浏览器里完成授权"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Finish signing in in your browser, then come back here."
 msgstr "请在浏览器里完成授权。完成后回到这里。"
 
@@ -3095,11 +3095,11 @@ msgstr "此发件人的新邮件将显示在其他中。已有邮件保留原分
 msgid "General"
 msgstr "通用"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Generate app-specific password"
 msgstr "生成应用专用密码"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Generate authorization code"
 msgstr "生成授权码"
 
@@ -3179,7 +3179,7 @@ msgstr "Google 日历无法使用这个重复日程的时区。请选择其他�
 msgid "Google currently limits OpenMail's sign-in to 7 days. Sign in again to keep syncing {email}."
 msgstr "Google 目前把 OpenMail 的登录限制为 7 天。重新登录即可继续同步 {email}。"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Google shows a warning that it hasn't verified OpenMail yet. Choose Advanced, then continue to OpenMail."
 msgstr "Google 会提示尚未验证 OpenMail。请选择「高级」，然后继续前往 OpenMail。"
 
@@ -3255,11 +3255,11 @@ msgstr "高"
 msgid "How long a conversation stays open before it is marked as read. Manually: use {readShortcut} or the toolbar."
 msgstr "打开对话多久后标为已读。选「手动」时，用 {readShortcut} 或工具栏操作。"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "How to register a Google OAuth client"
 msgstr "如何注册 Google OAuth 客户端"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "How to register a Microsoft app"
 msgstr "如何注册 Microsoft 应用"
 
@@ -3304,7 +3304,7 @@ msgstr "图片和 PDF 文字只在本机处理，不发送给云端模型。"
 msgid "Images that exceed the 30 MB attachment limit were skipped."
 msgstr "已跳过超过 30 MB 附件限制的图片。"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "IMAP account"
 msgstr "IMAP 账户"
 
@@ -3316,7 +3316,7 @@ msgstr "IMAP 关键词，用逗号分隔"
 msgid "IMAP moves can't be undone after OpenMail restarts. Move the message back yourself."
 msgstr "OpenMail 重启后无法撤销 IMAP 移动。请手动把邮件移回去。"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "IMAP server"
 msgstr "IMAP 服务器"
 
@@ -3720,7 +3720,7 @@ msgstr "正在加载更早的邮件…"
 msgid "Loading remote images lets the sender see when you open a message and your IP address."
 msgstr "加载远程图片会让发件人知道你何时打开消息，以及你的 IP 地址。"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Loading settings…"
 msgstr "读取设置…"
 
@@ -3809,7 +3809,7 @@ msgstr "邮箱"
 msgid "Mailboxes"
 msgstr "邮箱"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/FirstRunDone.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Make OpenMail default"
 msgstr "设为默认邮件客户端"
@@ -4393,7 +4393,7 @@ msgid "New mail notifications"
 msgstr "新邮件通知"
 
 #: src/renderer/src/app/MailListPane.tsx
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/FirstRunDone.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/mail-list/EmptyList.tsx
@@ -4412,11 +4412,11 @@ msgstr "{address} 的新邮件签名"
 msgid "New messages"
 msgstr "新邮件"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "New sign-ins use OpenMail's built-in client."
 msgstr "新登录使用 OpenMail 内置客户端。"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "New sign-ins use your own OAuth client."
 msgstr "新登录使用你自己的 OAuth 客户端。"
 
@@ -4745,11 +4745,11 @@ msgstr "指定日期"
 msgid "On battery: image recognition waits for AC power. PDF text indexing is throttled."
 msgstr "电池供电时暂停图片识别，PDF 文字索引降速。"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "On the web, turn on IMAP under Settings → POP3/SMTP/IMAP, then follow the prompts to generate an authorization code."
 msgstr "在网页版「设置 → POP3/SMTP/IMAP」开启 IMAP 服务，按提示生成授权码。"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "On the web, turn on IMAP/SMTP under Settings → Account & Security → Security Settings, then generate an authorization code."
 msgstr "在网页版「设置 → 账号与安全 → 安全设置」开启 IMAP/SMTP 服务，再生成授权码。"
 
@@ -4814,7 +4814,7 @@ msgstr "打开 {name}"
 msgid "Open admin console"
 msgstr "打开管理控制台"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/FirstRunDone.tsx
 #: src/renderer/src/features/ai/AiPanel.tsx
 msgid "Open AI Access"
 msgstr "打开 AI 权限"
@@ -4935,7 +4935,7 @@ msgstr "OpenMail 没找到 claude 命令。请改为复制下面的命令。"
 msgid "OpenMail is running from a disk image or the Downloads folder, so its path will change. Move it to Applications and open it again before you connect an AI app."
 msgstr "OpenMail 正从磁盘映像或“下载”文件夹运行，路径会变化。请先把它移到“应用程序”并重新打开，再连接 AI 应用。"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/FirstRunDone.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "OpenMail is the default email app"
 msgstr "OpenMail 已是默认邮件客户端"
@@ -4965,11 +4965,11 @@ msgstr "OpenMail 会先在文件旁保存一份副本，名为 .openmail-backup 
 msgid "OpenMail sign-in"
 msgstr "OpenMail 登录"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "OpenMail signs in with an OAuth client you register yourself. First enter the app you registered in Azure, with the Mobile and desktop applications type. Only personal outlook.com and Hotmail accounts are supported."
 msgstr "OpenMail 用你自己注册的 OAuth 客户端登录。先填入 Azure 里注册的应用，类型选移动和桌面应用。只支持个人 outlook.com 和 Hotmail 账户。"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "OpenMail signs in with an OAuth client you register yourself. First enter the OAuth client you created in Google Cloud, with the Desktop app type."
 msgstr "OpenMail 用你自己注册的 OAuth 客户端登录。先填入 Google Cloud 里创建的 OAuth 客户端，类型选桌面应用。"
 
@@ -5150,7 +5150,7 @@ msgstr "上级文件夹"
 msgid "Partial delivery"
 msgstr "部分投递"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Password"
 msgstr "密码"
 
@@ -5222,7 +5222,7 @@ msgstr "纯文本"
 msgid "Points at another OpenMail copy"
 msgstr "指向另一个 OpenMail 副本"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Port"
 msgstr "端口"
 
@@ -5238,7 +5238,7 @@ msgstr "正在准备改动…"
 msgid "Press ? outside a text field to show this list."
 msgstr "在输入框外按 ? 查看快捷键。"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/FirstRunDone.tsx
 msgid "Press {help} for all shortcuts."
 msgstr "按 {help} 查看全部快捷键。"
 
@@ -5680,7 +5680,7 @@ msgstr "替换为"
 msgid "Replies and forwards"
 msgstr "回复和转发"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/FirstRunDone.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
@@ -5905,7 +5905,7 @@ msgstr "空闲时运行。扫描版 PDF、音频和视频暂未索引。"
 msgid "Saturday"
 msgstr "星期六"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 #: src/renderer/src/features/compose/components/TemplatePicker.tsx
@@ -6009,7 +6009,7 @@ msgstr "已保存在此 Mac，将自动重试同步。"
 msgid "Saved on this Mac. Syncs when online."
 msgstr "已存到本机，联网后同步"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Saved. New sign-ins use this client."
 msgstr "已保存。之后的新登录使用这个客户端。"
 
@@ -6017,7 +6017,7 @@ msgstr "已保存。之后的新登录使用这个客户端。"
 msgid "Saving…"
 msgstr "正在保存…"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgctxt "in progress"
 msgid "Saving…"
 msgstr "保存中…"
@@ -6309,7 +6309,7 @@ msgstr "分享选中附件…"
 msgid "Share…"
 msgstr "分享…"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/FirstRunDone.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Shortcut set"
 msgstr "快捷键方案"
@@ -6463,15 +6463,15 @@ msgstr "重新登录以启用过滤器和自动回复。"
 msgid "Sign in again to sync server contacts."
 msgstr "请重新登录以同步服务器联系人。"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Sign in with {name}"
 msgstr "用 {name} 登录"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Sign in with your Google account in the browser. OpenMail keeps the sign-in token in this computer's keychain."
 msgstr "在浏览器里用你的 Google 账户登录。OpenMail 把登录令牌存在这台电脑的钥匙串里。"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Sign in with your personal Microsoft account (outlook.com or Hotmail) in the browser. OpenMail keeps the sign-in token in this computer's keychain."
 msgstr "在浏览器里用你的个人 Microsoft 账户（outlook.com 或 Hotmail）登录。OpenMail 把登录令牌存在这台电脑的钥匙串里。"
 
@@ -6544,11 +6544,11 @@ msgstr "小于"
 msgid "Smart lists"
 msgstr "智能列表"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "SMTP encryption"
 msgstr "SMTP 加密"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "SMTP server"
 msgstr "SMTP 服务器"
 
@@ -6650,7 +6650,7 @@ msgstr "拼写"
 msgid "Spelling languages"
 msgstr "拼写检查语言"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "SSL/TLS (usually 465)"
 msgstr "SSL/TLS（通常是 465）"
 
@@ -6709,7 +6709,7 @@ msgstr "新开一个 Codex 会话即可加载。"
 msgid "Starting…"
 msgstr "正在启动…"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "STARTTLS (usually 587)"
 msgstr "STARTTLS（通常是 587）"
 
@@ -7161,7 +7161,7 @@ msgstr "服务器拒绝了此操作。"
 msgid "The server rejected the sign-in."
 msgstr "服务器拒绝了登录。"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "The server rejected the sign-in. Check the email address, and make sure you entered an app-specific password or authorization code, not your web password."
 msgstr "服务器拒绝了登录。请检查邮箱地址，并确认填的是应用专用密码或授权码，不是网页登录密码。"
 
@@ -7790,7 +7790,7 @@ msgstr "使用账户默认地址"
 msgid "Use the address the message was sent to"
 msgstr "使用这封邮件发往的地址"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Use the built-in client"
 msgstr "改用内置客户端"
 
@@ -7798,11 +7798,11 @@ msgstr "改用内置客户端"
 msgid "Use the current account"
 msgstr "使用当前账户"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Use your own OAuth client"
 msgstr "使用自己的 OAuth 客户端"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Username (defaults to the email address)"
 msgstr "用户名（不填就用邮箱地址）"
 
@@ -7810,7 +7810,7 @@ msgstr "用户名（不填就用邮箱地址）"
 msgid "Verdict"
 msgstr "判断"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Verifying…"
 msgstr "正在验证…"
 
@@ -7842,7 +7842,7 @@ msgstr "请等同步和待处理更改完成后再压缩。"
 msgid "Waiting for Contacts permission. Respond to the system prompt."
 msgstr "正在等待通讯录权限。请回应系统提示。"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Waiting for sign-in…"
 msgstr "等待授权…"
 
@@ -7974,7 +7974,7 @@ msgstr "邮件都处理完了。收件箱是空的。"
 msgid "You're offline. Mail syncs again when you reconnect."
 msgstr "你已离线。重新联网后会继续同步邮件。"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/FirstRunDone.tsx
 msgid "You're set"
 msgstr "一切就绪"
 
@@ -7990,7 +7990,7 @@ msgstr "草稿已保留。再次发送前请检查“已发送”。"
 msgid "Your Mac disconnected this browser. Reload to connect again while your login is still allowed."
 msgstr "你的 Mac 断开了这个浏览器。只要你的登录名仍被允许，重新加载即可再次连接。"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/FirstRunDone.tsx
 msgid "Your mail is syncing. Three shortcuts to start with:"
 msgstr "邮件正在同步。先记住这三个快捷键："
 

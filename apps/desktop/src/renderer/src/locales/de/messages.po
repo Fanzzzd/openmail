@@ -219,7 +219,7 @@ msgstr "{messageCount, plural, one {# Nachricht} other {# Nachrichten}}"
 msgid "{name} ({owner})"
 msgstr "{name} ({owner})"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "{name} client"
 msgstr "{name} Kunde"
 
@@ -399,7 +399,7 @@ msgstr "Accounts"
 msgid "Accounts AI apps can read"
 msgstr "Accounts, die KI-Apps lesen dürfen"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Accounts you already added keep the client they signed in with."
 msgstr "Bereits hinzugefügte Accounts behalten den Client, mit dem sie angemeldet wurden."
 
@@ -462,7 +462,7 @@ msgstr "Aktivität"
 msgid "Actual size"
 msgstr "Tatsächliche Größe"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Add"
@@ -836,7 +836,7 @@ msgstr "Das Anfragelimit von Anthropic ist erreicht. Warte eine Minute und versu
 msgid "Any action flag"
 msgstr "Beliebige Aktionskennzeichnung"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "App-specific password"
 msgstr "App-spezifisches Passwort"
 
@@ -848,7 +848,7 @@ msgstr "Apple-Kontakte bleiben auf diesem Gerät und werden niemals an KI-Modell
 msgid "Apple Mail"
 msgstr "Apple Mail"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Application (client) ID"
 msgstr "Anwendungs-ID (Client-ID)"
 
@@ -896,7 +896,7 @@ msgstr "Auf diesem Mac nicht gefundene Apps"
 
 #: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/FirstRunDone.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/ai/TriageChip.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
@@ -1002,7 +1002,7 @@ msgstr "Gesicherte Anhänge werden hier angezeigt."
 msgid "Attendees:"
 msgstr "Teilnehmer:"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Authorization code"
 msgstr "Autorisierungscode"
 
@@ -1212,7 +1212,7 @@ msgstr "Der Mailserver ist derzeit nicht erreichbar."
 
 #: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/ai/AiPanel.tsx
@@ -1305,7 +1305,7 @@ msgstr "Modus ändern"
 msgid "Change writing mode?"
 msgstr "Schreibmodus ändern?"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Change your OAuth client"
 msgstr "Eigenen OAuth-Client ändern"
 
@@ -1530,11 +1530,11 @@ msgstr "Bei jeder Nachricht auf „{loadImages}“ klicken."
 msgid "Click in this window, then choose a device to take a photo, scan a document or add a sketch."
 msgstr "Klicke in dieses Fenster und wähle ein Gerät, um ein Foto aufzunehmen, ein Dokument zu scannen oder eine Skizze hinzuzufügen."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Client ID"
 msgstr "Client-ID"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Client secret"
 msgstr "Clientgeheimnis"
 
@@ -2068,7 +2068,7 @@ msgstr "Das Bild konnte nicht gelesen werden."
 msgid "Couldn't recover this draft. Close it and open it again."
 msgstr "Dieser Entwurf konnte nicht wiederhergestellt werden. Schließe ihn und öffne ihn erneut."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/FirstRunDone.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Couldn't register OpenMail. Try again from the installed app."
 msgstr "OpenMail konnte nicht registriert werden. Versuche es erneut mit der installierten App."
@@ -2151,15 +2151,15 @@ msgstr "Die Zahlen vergleichen Nachrichten. Gleiche Zahlen bestätigen keine gle
 msgid "Create"
 msgstr "Erstellen"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Create an app password under Account Security in your Yahoo account."
 msgstr "In den Sicherheitseinstellungen des Yahoo-Accounts ein App-Passwort erstellen."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Create an app password under Settings → Privacy & Security, with IMAP and SMTP checked."
 msgstr "Erstelle unter „Einstellungen → Datenschutz und Sicherheit“ ein App-Passwort und aktiviere dabei IMAP und SMTP."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Create an app-specific password under Sign-In and Security in your Apple Account."
 msgstr "Im Apple-Account unter „Anmeldung und Sicherheit“ ein appspezifisches Passwort erstellen."
 
@@ -2475,7 +2475,7 @@ msgstr "Keine Wiederholung"
 msgid "Don't attach the original message"
 msgstr "Originalnachricht nicht anhängen"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/FirstRunDone.tsx
 #: src/renderer/src/features/reader/RemoteImagesPrompt.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Done"
@@ -2644,7 +2644,7 @@ msgstr "Durch die Bearbeitung werden nicht unterstützte Formatierungen und Bild
 msgid "Edits <0>{configPath}</0>."
 msgstr "Bearbeitet <0>{configPath}</0>."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Email address"
 msgstr "E-Mail-Adresse"
 
@@ -2680,7 +2680,7 @@ msgstr "Die Endzeit ist geschätzt. Prüfe sie, bevor du den Termin hinzufügst.
 msgid "Ends"
 msgstr "Endet"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Enter a different OAuth client you registered yourself. New sign-ins use it."
 msgstr "Gib einen anderen OAuth-Client ein, den du selbst registriert hast. Neue Anmeldungen verwenden ihn."
 
@@ -2716,15 +2716,15 @@ msgstr "Gib einen Tailnet-Login wie name@github ein."
 msgid "Enter a template name."
 msgstr "Namen für die Vorlage eingeben."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Enter an OAuth client you registered yourself. New sign-ins use it instead of the built-in client."
 msgstr "Gib einen OAuth-Client ein, den du selbst registriert hast. Neue Anmeldungen verwenden ihn statt des integrierten Clients."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Enter port numbers from 1 to 65535."
 msgstr "Gib Portnummern von 1 bis 65535 ein."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Enter the IMAP and SMTP servers your email provider gives you."
 msgstr "Gib die IMAP- und SMTP-Server ein, die dir dein E-Mail-Anbieter nennt."
 
@@ -2901,7 +2901,7 @@ msgstr "Apps werden gesucht…"
 msgid "Finish signing in in your browser"
 msgstr "Anmeldung im Browser abschließen"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Finish signing in in your browser, then come back here."
 msgstr "Schließe die Anmeldung in deinem Browser ab und kehre dann hierher zurück."
 
@@ -3085,11 +3085,11 @@ msgstr "Künftige Nachrichten dieses Absenders erscheinen unter Sonstige. Vorhan
 msgid "General"
 msgstr "Allgemein"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Generate app-specific password"
 msgstr "App-spezifisches Passwort generieren"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Generate authorization code"
 msgstr "Autorisierungscode generieren"
 
@@ -3169,7 +3169,7 @@ msgstr "Google Calendar kann die Zeitzone dieses wiederkehrenden Termins nicht v
 msgid "Google currently limits OpenMail's sign-in to 7 days. Sign in again to keep syncing {email}."
 msgstr "Google begrenzt die Anmeldung bei OpenMail derzeit auf 7 Tage. Melde dich erneut an, damit {email} weiter synchronisiert wird."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Google shows a warning that it hasn't verified OpenMail yet. Choose Advanced, then continue to OpenMail."
 msgstr "Google zeigt eine Warnung, dass OpenMail noch nicht überprüft wurde. Wähle „Erweitert“ und fahre dann mit OpenMail fort."
 
@@ -3245,11 +3245,11 @@ msgstr "Hoch"
 msgid "How long a conversation stays open before it is marked as read. Manually: use {readShortcut} or the toolbar."
 msgstr "Wie lange eine Konversation geöffnet bleibt, bevor sie als gelesen markiert wird. Manuell: Verwende {readShortcut} oder die Symbolleiste."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "How to register a Google OAuth client"
 msgstr "So registrierst du einen Google-OAuth-Client"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "How to register a Microsoft app"
 msgstr "So registrierst du eine Microsoft-App"
 
@@ -3294,7 +3294,7 @@ msgstr "Auf diesem Gerät werden Bilder und PDF-Text verarbeitet. Es werden kein
 msgid "Images that exceed the 30 MB attachment limit were skipped."
 msgstr "Bilder, die das Anhangslimit von 30 MB überschreiten, wurden übersprungen."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "IMAP account"
 msgstr "IMAP-Account"
 
@@ -3306,7 +3306,7 @@ msgstr "IMAP-Schlüsselwörter, durch Kommas getrennt"
 msgid "IMAP moves can't be undone after OpenMail restarts. Move the message back yourself."
 msgstr "IMAP-Verschiebungen können nach einem Neustart von OpenMail nicht rückgängig gemacht werden. Verschiebe die Nachricht selbst zurück."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "IMAP server"
 msgstr "IMAP-Server"
 
@@ -3710,7 +3710,7 @@ msgstr "Ältere Nachrichten werden geladen…"
 msgid "Loading remote images lets the sender see when you open a message and your IP address."
 msgstr "Wenn du externe Bilder lädst, sieht der Absender, wann du eine Nachricht öffnest, und deine IP-Adresse."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Loading settings…"
 msgstr "Einstellungen werden geladen…"
 
@@ -3799,7 +3799,7 @@ msgstr "Postfach"
 msgid "Mailboxes"
 msgstr "Postfächer"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/FirstRunDone.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Make OpenMail default"
 msgstr "OpenMail als Standard festlegen"
@@ -4383,7 +4383,7 @@ msgid "New mail notifications"
 msgstr "Neue E-Mail-Benachrichtigungen"
 
 #: src/renderer/src/app/MailListPane.tsx
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/FirstRunDone.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/mail-list/EmptyList.tsx
@@ -4402,11 +4402,11 @@ msgstr "Neue Nachrichtensignatur für {address}"
 msgid "New messages"
 msgstr "Neue Nachrichten"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "New sign-ins use OpenMail's built-in client."
 msgstr "Neue Anmeldungen verwenden den integrierten Client von OpenMail."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "New sign-ins use your own OAuth client."
 msgstr "Neue Anmeldungen verwenden deinen eigenen OAuth-Client."
 
@@ -4735,11 +4735,11 @@ msgstr "An einem Datum"
 msgid "On battery: image recognition waits for AC power. PDF text indexing is throttled."
 msgstr "Im Akkubetrieb: Die Bilderkennung wartet auf Wechselstrom. Die Indexierung von PDF-Texten ist gedrosselt."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "On the web, turn on IMAP under Settings → POP3/SMTP/IMAP, then follow the prompts to generate an authorization code."
 msgstr "Aktiviere im Web IMAP unter „Einstellungen → POP3/SMTP/IMAP“ und folge dann den Anweisungen, um einen Autorisierungscode zu erzeugen."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "On the web, turn on IMAP/SMTP under Settings → Account & Security → Security Settings, then generate an authorization code."
 msgstr "Aktiviere im Web IMAP/SMTP unter „Einstellungen → Account und Sicherheit → Sicherheitseinstellungen“ und erstelle dann einen Autorisierungscode."
 
@@ -4804,7 +4804,7 @@ msgstr "{name} öffnen"
 msgid "Open admin console"
 msgstr "Admin-Konsole öffnen"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/FirstRunDone.tsx
 #: src/renderer/src/features/ai/AiPanel.tsx
 msgid "Open AI Access"
 msgstr "KI-Zugriff öffnen"
@@ -4925,7 +4925,7 @@ msgstr "OpenMail hat den Befehl claude nicht gefunden. Kopiere stattdessen den B
 msgid "OpenMail is running from a disk image or the Downloads folder, so its path will change. Move it to Applications and open it again before you connect an AI app."
 msgstr "OpenMail läuft von einem Disk-Image oder aus dem Ordner „Downloads“, daher ändert sich sein Pfad. Verschiebe es in „Programme“ und öffne es erneut, bevor du eine KI-App verbindest."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/FirstRunDone.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "OpenMail is the default email app"
 msgstr "OpenMail ist die Standard-E-Mail-App"
@@ -4955,11 +4955,11 @@ msgstr "OpenMail speichert zuerst eine Kopie der Datei daneben, benannt .openmai
 msgid "OpenMail sign-in"
 msgstr "Anmeldung bei OpenMail"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "OpenMail signs in with an OAuth client you register yourself. First enter the app you registered in Azure, with the Mobile and desktop applications type. Only personal outlook.com and Hotmail accounts are supported."
 msgstr "OpenMail meldet sich mit einem OAuth-Client an, den du selbst registrierst. Gib zuerst die App ein, die du in Azure mit dem Typ „Mobile und Desktop-Anwendungen“ registriert hast. Nur persönliche outlook.com- und Hotmail-Accounts werden unterstützt."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "OpenMail signs in with an OAuth client you register yourself. First enter the OAuth client you created in Google Cloud, with the Desktop app type."
 msgstr "OpenMail meldet sich mit einem OAuth-Client an, den du selbst registrierst. Gib zuerst den OAuth-Client ein, den du in Google Cloud mit dem App-Typ „Desktop-App“ erstellt hast."
 
@@ -5140,7 +5140,7 @@ msgstr "Übergeordneter Ordner"
 msgid "Partial delivery"
 msgstr "Teilweise Zustellung"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Password"
 msgstr "Passwort"
 
@@ -5212,7 +5212,7 @@ msgstr "Reiner Text"
 msgid "Points at another OpenMail copy"
 msgstr "Verweist auf eine andere OpenMail-Kopie"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Port"
 msgstr "Port"
 
@@ -5228,7 +5228,7 @@ msgstr "Änderung wird vorbereitet…"
 msgid "Press ? outside a text field to show this list."
 msgstr "Drücke ? außerhalb eines Textfelds, um diese Liste anzuzeigen."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/FirstRunDone.tsx
 msgid "Press {help} for all shortcuts."
 msgstr "Drücke {help}, um alle Tastaturkürzel anzuzeigen."
 
@@ -5670,7 +5670,7 @@ msgstr "Ersetzen durch"
 msgid "Replies and forwards"
 msgstr "Antworten und Weiterleitungen"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/FirstRunDone.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
@@ -5895,7 +5895,7 @@ msgstr "Läuft im Leerlauf. Gescannte PDF-Seiten, Audio und Video sind noch nich
 msgid "Saturday"
 msgstr "Samstag"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 #: src/renderer/src/features/compose/components/TemplatePicker.tsx
@@ -5999,7 +5999,7 @@ msgstr "Auf diesem Mac gespeichert. Automatischer Synchronisierungsversuch."
 msgid "Saved on this Mac. Syncs when online."
 msgstr "Auf diesem Mac gespeichert. Synchronisiert, wenn online."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Saved. New sign-ins use this client."
 msgstr "Gespeichert. Neue Anmeldungen verwenden diesen Client."
 
@@ -6007,7 +6007,7 @@ msgstr "Gespeichert. Neue Anmeldungen verwenden diesen Client."
 msgid "Saving…"
 msgstr "Sichern…"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgctxt "in progress"
 msgid "Saving…"
 msgstr "Sichern…"
@@ -6299,7 +6299,7 @@ msgstr "Auswahl teilen…"
 msgid "Share…"
 msgstr "Teilen…"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/FirstRunDone.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Shortcut set"
 msgstr "Tastaturkurzbefehle"
@@ -6453,15 +6453,15 @@ msgstr "Zum Aktivieren von Filtern und automatischen Antworten erneut anmelden."
 msgid "Sign in again to sync server contacts."
 msgstr "Zum Synchronisieren der Serverkontakte erneut anmelden."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Sign in with {name}"
 msgstr "Mit {name} anmelden"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Sign in with your Google account in the browser. OpenMail keeps the sign-in token in this computer's keychain."
 msgstr "Melde dich im Browser mit deinem Google-Account an. OpenMail bewahrt das Anmeldetoken im Schlüsselbund dieses Computers auf."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Sign in with your personal Microsoft account (outlook.com or Hotmail) in the browser. OpenMail keeps the sign-in token in this computer's keychain."
 msgstr "Melde dich im Browser mit deinem persönlichen Microsoft-Account (outlook.com oder Hotmail) an. OpenMail bewahrt das Anmeldetoken im Schlüsselbund dieses Computers auf."
 
@@ -6534,11 +6534,11 @@ msgstr "Kleiner als"
 msgid "Smart lists"
 msgstr "Intelligente Listen"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "SMTP encryption"
 msgstr "SMTP-Verschlüsselung"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "SMTP server"
 msgstr "SMTP-Server"
 
@@ -6640,7 +6640,7 @@ msgstr "Rechtschreibung"
 msgid "Spelling languages"
 msgstr "Sprachen der Rechtschreibprüfung"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "SSL/TLS (usually 465)"
 msgstr "SSL/TLS (normalerweise 465)"
 
@@ -6699,7 +6699,7 @@ msgstr "Starte eine neue Codex-Sitzung, um die Änderung zu laden."
 msgid "Starting…"
 msgstr "Wird gestartet…"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "STARTTLS (usually 587)"
 msgstr "STARTTLS (normalerweise 587)"
 
@@ -7151,7 +7151,7 @@ msgstr "Der Server hat diese Aktion abgelehnt."
 msgid "The server rejected the sign-in."
 msgstr "Der Server hat die Anmeldung abgelehnt."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "The server rejected the sign-in. Check the email address, and make sure you entered an app-specific password or authorization code, not your web password."
 msgstr "Der Server hat die Anmeldung abgelehnt. Prüfe die E-Mail-Adresse und stelle sicher, dass du ein App-spezifisches Passwort oder einen Autorisierungscode eingegeben hast, nicht dein Web-Passwort."
 
@@ -7780,7 +7780,7 @@ msgstr "Standardadresse des Accounts verwenden"
 msgid "Use the address the message was sent to"
 msgstr "Empfängeradresse der gesendeten Nachricht verwenden"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Use the built-in client"
 msgstr "Integrierten Client verwenden"
 
@@ -7788,11 +7788,11 @@ msgstr "Integrierten Client verwenden"
 msgid "Use the current account"
 msgstr "Aktuellen Account verwenden"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Use your own OAuth client"
 msgstr "Eigenen OAuth-Client verwenden"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Username (defaults to the email address)"
 msgstr "Benutzername (standardmäßig die E-Mail-Adresse)"
 
@@ -7800,7 +7800,7 @@ msgstr "Benutzername (standardmäßig die E-Mail-Adresse)"
 msgid "Verdict"
 msgstr "Ergebnis"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Verifying…"
 msgstr "Überprüfen…"
 
@@ -7832,7 +7832,7 @@ msgstr "Warte vor dem Komprimieren, bis die Synchronisierung und ausstehende Än
 msgid "Waiting for Contacts permission. Respond to the system prompt."
 msgstr "Warten auf die Berechtigung für Kontakte. Beantworte die Systemanfrage."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Waiting for sign-in…"
 msgstr "Warten auf die Anmeldung…"
 
@@ -7964,7 +7964,7 @@ msgstr "Du bist auf dem neuesten Stand. Dein Posteingang ist leer."
 msgid "You're offline. Mail syncs again when you reconnect."
 msgstr "Du bist offline. E-Mails werden wieder synchronisiert, sobald die Verbindung besteht."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/FirstRunDone.tsx
 msgid "You're set"
 msgstr "Alles bereit"
 
@@ -7980,7 +7980,7 @@ msgstr "Dein Entwurf wurde behalten. Prüfe „Gesendet“, bevor du erneut send
 msgid "Your Mac disconnected this browser. Reload to connect again while your login is still allowed."
 msgstr "Dein Mac hat diesen Browser getrennt. Lade neu, um dich wieder zu verbinden, solange dein Login noch erlaubt ist."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/FirstRunDone.tsx
 msgid "Your mail is syncing. Three shortcuts to start with:"
 msgstr "Deine E-Mails werden synchronisiert. Drei Tastaturkürzel für den Anfang:"
 

@@ -219,7 +219,7 @@ msgstr "{messageCount, plural, one {# zpráva} few {# zprávy} many {# zprávy} 
 msgid "{name} ({owner})"
 msgstr "{name} ({owner})"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "{name} client"
 msgstr "{name} klient"
 
@@ -399,7 +399,7 @@ msgstr "Účty"
 msgid "Accounts AI apps can read"
 msgstr "Účty, které mohou číst aplikace AI"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Accounts you already added keep the client they signed in with."
 msgstr "Již přidané účty dál používají klienta, se kterým se přihlásily."
 
@@ -462,7 +462,7 @@ msgstr "Aktivita"
 msgid "Actual size"
 msgstr "Skutečná velikost"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Add"
@@ -836,7 +836,7 @@ msgstr "Byl dosažen limit požadavků Anthropic. Počkejte minutu a zkuste to z
 msgid "Any action flag"
 msgstr "Libovolný příznak akce"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "App-specific password"
 msgstr "Heslo pro konkrétní aplikaci"
 
@@ -848,7 +848,7 @@ msgstr "Kontakty Apple zůstávají v tomto zařízení a nikdy se neodesílají
 msgid "Apple Mail"
 msgstr "Apple Mail"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Application (client) ID"
 msgstr "ID aplikace (klienta)"
 
@@ -896,7 +896,7 @@ msgstr "Aplikace, které na tomto Macu nebyly nalezeny"
 
 #: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/FirstRunDone.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/ai/TriageChip.tsx
 #: src/renderer/src/features/mail-list/BatchActions.tsx
@@ -1002,7 +1002,7 @@ msgstr "Uložené přílohy se zobrazí zde."
 msgid "Attendees:"
 msgstr "Účastníci:"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Authorization code"
 msgstr "Autorizační kód"
 
@@ -1212,7 +1212,7 @@ msgstr "K poštovnímu serveru se nyní nelze připojit."
 
 #: src/renderer/src/app/MailAlerts.tsx
 #: src/renderer/src/app/ThreadWindow.tsx
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 #: src/renderer/src/features/accounts/OptionalServices.tsx
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/ai/AiPanel.tsx
@@ -1305,7 +1305,7 @@ msgstr "Změnit režim"
 msgid "Change writing mode?"
 msgstr "Změnit režim psaní?"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Change your OAuth client"
 msgstr "Změnit klienta OAuth"
 
@@ -1530,11 +1530,11 @@ msgstr "U každé zprávy klikněte na „{loadImages}“."
 msgid "Click in this window, then choose a device to take a photo, scan a document or add a sketch."
 msgstr "Klikněte do tohoto okna a vyberte zařízení pro pořízení fotky, skenování dokumentu nebo přidání náčrtu."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Client ID"
 msgstr "ID klienta"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Client secret"
 msgstr "Tajný klíč klienta"
 
@@ -2068,7 +2068,7 @@ msgstr "Obrázek se nepodařilo načíst."
 msgid "Couldn't recover this draft. Close it and open it again."
 msgstr "Tento koncept se nepodařilo obnovit. Zavřete ho a otevřete znovu."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/FirstRunDone.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Couldn't register OpenMail. Try again from the installed app."
 msgstr "OpenMail se nepodařilo zaregistrovat. Zkuste to znovu z nainstalované aplikace."
@@ -2151,15 +2151,15 @@ msgstr "Počty porovnávají zprávy. Shodné počty neověřují obsah zpráv. 
 msgid "Create"
 msgstr "Vytvořit"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Create an app password under Account Security in your Yahoo account."
 msgstr "Vytvořte heslo aplikace v části Zabezpečení účtu ve svém účtu Yahoo."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Create an app password under Settings → Privacy & Security, with IMAP and SMTP checked."
 msgstr "Vytvořte heslo aplikace v části Nastavení → Soukromí a zabezpečení se zaškrtnutými protokoly IMAP a SMTP."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Create an app-specific password under Sign-In and Security in your Apple Account."
 msgstr "V části Přihlášení a zabezpečení ve svém účtu Apple vytvořte heslo pro konkrétní aplikaci."
 
@@ -2475,7 +2475,7 @@ msgstr "Neopakuje se"
 msgid "Don't attach the original message"
 msgstr "Nepřipojujte původní zprávu"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/FirstRunDone.tsx
 #: src/renderer/src/features/reader/RemoteImagesPrompt.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Done"
@@ -2644,7 +2644,7 @@ msgstr "Úpravou se z tohoto konceptu odstraní nepodporované formátování a 
 msgid "Edits <0>{configPath}</0>."
 msgstr "Upravuje <0>{configPath}</0>."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Email address"
 msgstr "E-mailová adresa"
 
@@ -2680,7 +2680,7 @@ msgstr "Čas konce je odhadovaný. Před přidáním události jej zkontrolujte.
 msgid "Ends"
 msgstr "Konec"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Enter a different OAuth client you registered yourself. New sign-ins use it."
 msgstr "Zadejte jiného klienta OAuth, kterého jste si sami zaregistrovali. Nová přihlášení ho použijí."
 
@@ -2716,15 +2716,15 @@ msgstr "Zadejte přihlášení do tailnetu, např. name@github."
 msgid "Enter a template name."
 msgstr "Zadejte název šablony."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Enter an OAuth client you registered yourself. New sign-ins use it instead of the built-in client."
 msgstr "Zadejte klienta OAuth, kterého jste si sami zaregistrovali. Nová přihlášení ho použijí místo vestavěného klienta."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Enter port numbers from 1 to 65535."
 msgstr "Zadejte čísla portů od 1 do 65535."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Enter the IMAP and SMTP servers your email provider gives you."
 msgstr "Zadejte servery IMAP a SMTP, které vám poskytne poskytovatel e-mailu."
 
@@ -2901,7 +2901,7 @@ msgstr "Hledání aplikací…"
 msgid "Finish signing in in your browser"
 msgstr "Dokončete přihlašování ve svém prohlížeči"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Finish signing in in your browser, then come back here."
 msgstr "Dokončete přihlašování v prohlížeči a vraťte se sem."
 
@@ -3085,11 +3085,11 @@ msgstr "Budoucí zprávy od tohoto odesílatele se zobrazí v Další. Stávají
 msgid "General"
 msgstr "Obecné"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Generate app-specific password"
 msgstr "Vygenerujte heslo pro konkrétní aplikaci"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Generate authorization code"
 msgstr "Vygenerujte autorizační kód"
 
@@ -3169,7 +3169,7 @@ msgstr "Google Calendar nemůže použít časové pásmo této opakované udál
 msgid "Google currently limits OpenMail's sign-in to 7 days. Sign in again to keep syncing {email}."
 msgstr "Google nyní omezuje přihlášení do OpenMail na 7 dní. Přihlaste se znovu, aby synchronizace {email} pokračovala."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Google shows a warning that it hasn't verified OpenMail yet. Choose Advanced, then continue to OpenMail."
 msgstr "Google zobrazí upozornění, že OpenMail zatím neověřil. Zvolte „Rozšířená nastavení“ a pak pokračujte do OpenMailu."
 
@@ -3245,11 +3245,11 @@ msgstr "Vysoká"
 msgid "How long a conversation stays open before it is marked as read. Manually: use {readShortcut} or the toolbar."
 msgstr "Jak dlouho zůstane konverzace otevřená, než bude označena jako přečtená. Ručně: použijte {readShortcut} nebo panel nástrojů."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "How to register a Google OAuth client"
 msgstr "Jak zaregistrovat klienta Google OAuth"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "How to register a Microsoft app"
 msgstr "Jak zaregistrovat aplikaci Microsoft"
 
@@ -3294,7 +3294,7 @@ msgstr "Na tomto zařízení se zpracovávají obrázky a text PDF. Do cloudové
 msgid "Images that exceed the 30 MB attachment limit were skipped."
 msgstr "Obrázky překračující limit příloh 30 MB byly přeskočeny."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "IMAP account"
 msgstr "IMAP účet"
 
@@ -3306,7 +3306,7 @@ msgstr "Klíčová slova IMAP oddělená čárkami"
 msgid "IMAP moves can't be undone after OpenMail restarts. Move the message back yourself."
 msgstr "Přesuny IMAP nelze po restartu OpenMail vrátit. Přesuňte zprávu zpět sami."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "IMAP server"
 msgstr "IMAP server"
 
@@ -3710,7 +3710,7 @@ msgstr "Načítání starších zpráv…"
 msgid "Loading remote images lets the sender see when you open a message and your IP address."
 msgstr "Načtení vzdálených obrázků prozradí odesílateli, kdy zprávu otevřete, a vaši IP adresu."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Loading settings…"
 msgstr "Načítání nastavení…"
 
@@ -3799,7 +3799,7 @@ msgstr "Schránka"
 msgid "Mailboxes"
 msgstr "Schránky"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/FirstRunDone.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Make OpenMail default"
 msgstr "Nastavit OpenMail jako výchozí"
@@ -4383,7 +4383,7 @@ msgid "New mail notifications"
 msgstr "Upozornění na novou poštu"
 
 #: src/renderer/src/app/MailListPane.tsx
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/FirstRunDone.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/mail-list/EmptyList.tsx
@@ -4402,11 +4402,11 @@ msgstr "Nový podpis zprávy pro {address}"
 msgid "New messages"
 msgstr "Nové zprávy"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "New sign-ins use OpenMail's built-in client."
 msgstr "Nová přihlášení používají vestavěného klienta OpenMail."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "New sign-ins use your own OAuth client."
 msgstr "Nová přihlášení používají vašeho vlastního klienta OAuth."
 
@@ -4735,11 +4735,11 @@ msgstr "K určitému datu"
 msgid "On battery: image recognition waits for AC power. PDF text indexing is throttled."
 msgstr "Na baterii: rozpoznávání obrazu čeká na napájení střídavým proudem. Indexování textu PDF je omezeno."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "On the web, turn on IMAP under Settings → POP3/SMTP/IMAP, then follow the prompts to generate an authorization code."
 msgstr "Na webu zapněte protokol IMAP v části Nastavení → POP3/SMTP/IMAP a poté podle pokynů vygenerujte autorizační kód."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "On the web, turn on IMAP/SMTP under Settings → Account & Security → Security Settings, then generate an authorization code."
 msgstr "Na webu zapněte IMAP/SMTP v části Nastavení → Účet a zabezpečení → Nastavení zabezpečení a poté vygenerujte autorizační kód."
 
@@ -4804,7 +4804,7 @@ msgstr "Otevřít {name}"
 msgid "Open admin console"
 msgstr "Otevřít administrační konzoli"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/FirstRunDone.tsx
 #: src/renderer/src/features/ai/AiPanel.tsx
 msgid "Open AI Access"
 msgstr "Otevřít Přístup AI"
@@ -4925,7 +4925,7 @@ msgstr "OpenMail nenašel příkaz claude. Zkopírujte místo toho příkaz ní�
 msgid "OpenMail is running from a disk image or the Downloads folder, so its path will change. Move it to Applications and open it again before you connect an AI app."
 msgstr "OpenMail běží z obrazu disku nebo ze složky Stažené soubory, takže se jeho cesta změní. Přesuňte ho do složky Aplikace a znovu ho otevřete, než připojíte aplikaci AI."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/FirstRunDone.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "OpenMail is the default email app"
 msgstr "OpenMail je výchozí e-mailová aplikace"
@@ -4955,11 +4955,11 @@ msgstr "OpenMail nejdřív uloží vedle souboru jeho kopii s názvem .openmail-
 msgid "OpenMail sign-in"
 msgstr "Přihlášení do OpenMail"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "OpenMail signs in with an OAuth client you register yourself. First enter the app you registered in Azure, with the Mobile and desktop applications type. Only personal outlook.com and Hotmail accounts are supported."
 msgstr "OpenMail se přihlásí pomocí klienta OAuth, kterého si sami zaregistrujete. Nejprve zadejte aplikaci, kterou jste zaregistrovali v Azure, s typem Mobilní a stolní aplikace. Podporovány jsou pouze osobní účty outlook.com a Hotmail."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "OpenMail signs in with an OAuth client you register yourself. First enter the OAuth client you created in Google Cloud, with the Desktop app type."
 msgstr "OpenMail se přihlásí pomocí klienta OAuth, kterého si sami zaregistrujete. Nejprve zadejte klienta OAuth, který jste vytvořili v Google Cloud, s typem aplikace pro stolní počítače."
 
@@ -5140,7 +5140,7 @@ msgstr "Nadřazená složka"
 msgid "Partial delivery"
 msgstr "Částečné doručení"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Password"
 msgstr "Heslo"
 
@@ -5212,7 +5212,7 @@ msgstr "Prostý text"
 msgid "Points at another OpenMail copy"
 msgstr "Odkazuje na jinou kopii OpenMail"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Port"
 msgstr "Port"
 
@@ -5228,7 +5228,7 @@ msgstr "Připravuje se změna…"
 msgid "Press ? outside a text field to show this list."
 msgstr "Stiskněte tlačítko ? mimo textové pole pro zobrazení tohoto seznamu."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/FirstRunDone.tsx
 msgid "Press {help} for all shortcuts."
 msgstr "Stisknutím {help} zobrazíte všechny zkratky."
 
@@ -5670,7 +5670,7 @@ msgstr "Nahradit za"
 msgid "Replies and forwards"
 msgstr "Odpovědi a přeposlání"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/FirstRunDone.tsx
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
@@ -5895,7 +5895,7 @@ msgstr "Běží při nečinnosti. Naskenované stránky PDF, zvuk a video ješt�
 msgid "Saturday"
 msgstr "Sobota"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 #: src/renderer/src/features/compose/components/TemplatePicker.tsx
@@ -5999,7 +5999,7 @@ msgstr "Uloženo na tomto Macu. Probíhá automatický pokus o synchronizaci."
 msgid "Saved on this Mac. Syncs when online."
 msgstr "Uloženo na tomto Macu. Synchronizuje se, když je online."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Saved. New sign-ins use this client."
 msgstr "Uloženo. Nová přihlášení použijí tohoto klienta."
 
@@ -6007,7 +6007,7 @@ msgstr "Uloženo. Nová přihlášení použijí tohoto klienta."
 msgid "Saving…"
 msgstr "Ukládání…"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgctxt "in progress"
 msgid "Saving…"
 msgstr "Ukládání…"
@@ -6299,7 +6299,7 @@ msgstr "Sdílet vybrané…"
 msgid "Share…"
 msgstr "Sdílet…"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/FirstRunDone.tsx
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Shortcut set"
 msgstr "Sada klávesových zkratek"
@@ -6453,15 +6453,15 @@ msgstr "Chcete-li povolit filtry a automatické odpovědi, přihlaste se znovu."
 msgid "Sign in again to sync server contacts."
 msgstr "Pro synchronizaci kontaktů serveru se znovu přihlaste."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Sign in with {name}"
 msgstr "Přihlásit se přes {name}"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Sign in with your Google account in the browser. OpenMail keeps the sign-in token in this computer's keychain."
 msgstr "Přihlaste se v prohlížeči svým účtem Google. OpenMail uloží přihlašovací token do klíčenky tohoto počítače."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Sign in with your personal Microsoft account (outlook.com or Hotmail) in the browser. OpenMail keeps the sign-in token in this computer's keychain."
 msgstr "Přihlaste se v prohlížeči svým osobním účtem Microsoft (outlook.com nebo Hotmail). OpenMail uloží přihlašovací token do klíčenky tohoto počítače."
 
@@ -6534,11 +6534,11 @@ msgstr "Menší než"
 msgid "Smart lists"
 msgstr "Chytré seznamy"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "SMTP encryption"
 msgstr "SMTP šifrování"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "SMTP server"
 msgstr "SMTP server"
 
@@ -6640,7 +6640,7 @@ msgstr "Pravopis"
 msgid "Spelling languages"
 msgstr "Jazyky kontroly pravopisu"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "SSL/TLS (usually 465)"
 msgstr "SSL/TLS (obvykle 465)"
 
@@ -6699,7 +6699,7 @@ msgstr "Spusťte novou relaci Codex, aby se změna načetla."
 msgid "Starting…"
 msgstr "Spouštění…"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "STARTTLS (usually 587)"
 msgstr "STARTTLS (obvykle 587)"
 
@@ -7151,7 +7151,7 @@ msgstr "Server odmítl tuto akci."
 msgid "The server rejected the sign-in."
 msgstr "Server odmítl přihlášení."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "The server rejected the sign-in. Check the email address, and make sure you entered an app-specific password or authorization code, not your web password."
 msgstr "Server odmítl přihlášení. Zkontrolujte e-mailovou adresu a ujistěte se, že jste zadali heslo pro konkrétní aplikaci nebo autorizační kód, nikoli heslo pro web."
 
@@ -7780,7 +7780,7 @@ msgstr "Použijte výchozí adresu účtu"
 msgid "Use the address the message was sent to"
 msgstr "Použijte adresu, na kterou byla zpráva odeslána"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Use the built-in client"
 msgstr "Použít vestavěného klienta"
 
@@ -7788,11 +7788,11 @@ msgstr "Použít vestavěného klienta"
 msgid "Use the current account"
 msgstr "Použít aktuální účet"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Use your own OAuth client"
 msgstr "Použít vlastního klienta OAuth"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Username (defaults to the email address)"
 msgstr "Uživatelské jméno (výchozí na e-mailovou adresu)"
 
@@ -7800,7 +7800,7 @@ msgstr "Uživatelské jméno (výchozí na e-mailovou adresu)"
 msgid "Verdict"
 msgstr "Výsledek"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Verifying…"
 msgstr "Ověřování…"
 
@@ -7832,7 +7832,7 @@ msgstr "Před zmenšením počkejte na dokončení synchronizace a změn ve fron
 msgid "Waiting for Contacts permission. Respond to the system prompt."
 msgstr "Čeká se na povolení přístupu ke kontaktům. Odpovězte na systémovou výzvu."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Waiting for sign-in…"
 msgstr "Čekání na přihlášení…"
 
@@ -7964,7 +7964,7 @@ msgstr "Máte vše vyřízeno. Doručená pošta je prázdná."
 msgid "You're offline. Mail syncs again when you reconnect."
 msgstr "Jste offline. Pošta se znovu synchronizuje po obnovení připojení."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/FirstRunDone.tsx
 msgid "You're set"
 msgstr "Vše je připraveno"
 
@@ -7980,7 +7980,7 @@ msgstr "Koncept byl zachován. Před dalším odesláním zkontrolujte odeslanou
 msgid "Your Mac disconnected this browser. Reload to connect again while your login is still allowed."
 msgstr "Váš Mac tento prohlížeč odpojil. Načtěte stránku znovu a připojte se, dokud je vaše přihlášení stále povolené."
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+#: src/renderer/src/features/accounts/FirstRunDone.tsx
 msgid "Your mail is syncing. Three shortcuts to start with:"
 msgstr "Pošta se synchronizuje. Tři zkratky na začátek:"
 

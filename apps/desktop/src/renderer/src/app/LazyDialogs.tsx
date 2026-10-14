@@ -47,7 +47,7 @@ export const FilterEditor: ComponentType<
   import("../features/settings/sections/ServerSettings").then((m) => ({ default: m.FilterEditor })),
 );
 export const FirstRunDone: ComponentType<
-  Parameters<typeof import("../features/accounts/AddAccountDialog").FirstRunDone>[0]
-> = lazyDialog<Parameters<typeof import("../features/accounts/AddAccountDialog").FirstRunDone>[0]>(
-  () => import("../features/accounts/AddAccountDialog").then((m) => ({ default: m.FirstRunDone })),
+  Parameters<typeof import("../features/accounts/FirstRunDone").FirstRunDone>[0]
+> = lazyDialog<Parameters<typeof import("../features/accounts/FirstRunDone").FirstRunDone>[0]>(() =>
+  import("../features/accounts/FirstRunDone").then((m) => ({ default: m.FirstRunDone })),
 );
