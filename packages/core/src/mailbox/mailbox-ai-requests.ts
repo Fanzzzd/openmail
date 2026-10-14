@@ -1,11 +1,12 @@
 /** What every AI request on a thread shares: consent checks, the model's view of the thread, cached summaries and the request deadline. */
 import { sha256Hex } from "../platform/crypto.js";
-import { Deferred, Effect, Option, Schema, Stream } from "effect";
+import { Deferred, Duration, Effect, Option, Schema, Stream } from "effect";
 import {
   mailData,
   AiLocale,
   AI_ERRORS,
   AI_PROMPT_VERSION,
+  AI_REQUEST_SECONDS,
   AI_SUMMARY_INPUT,
   AI_THREAD_INPUT,
   aiSource,
@@ -116,7 +117,10 @@ export function makeAiRequests(
       if (Option.isSome(row)) yield* store.ai.deleteSummary(value.threadId);
       return null;
     });
-  const bounded = <A, E>(stream: Stream.Stream<A, E>): Stream.Stream<A, E | InvalidInput> =>
+  const bounded = <A, E>(
+    stream: Stream.Stream<A, E>,
+    seconds = AI_REQUEST_SECONDS,
+  ): Stream.Stream<A, E | InvalidInput> =>
     Stream.unwrap(
       Effect.gen(function* () {
         const stop = yield* Deferred.make<void>();
@@ -127,7 +131,7 @@ export function makeAiRequests(
           }),
         );
         // Absolute deadline, including slow tool/provider work. Interruption aborts HTTPS.
-        const deadline = Effect.sleep("60 seconds").pipe(
+        const deadline = Effect.sleep(Duration.seconds(seconds)).pipe(
           Effect.andThen(Effect.fail(new InvalidInput({ message: "AI request timed out." }))),
         );
         return stream.pipe(Stream.interruptWhen(Effect.raceFirst(Deferred.await(stop), deadline)));

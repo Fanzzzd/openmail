@@ -13,6 +13,9 @@ import {
   type AiSource,
   AiComposeRequest,
   aiSource,
+  composeOutputBytes,
+  composeOutputTokens,
+  composeSeconds,
 } from "../ai/ai.js";
 import { InvalidInput } from "../domain/errors.js";
 import { Mailbox, type MailboxAi } from "./mailbox.js";
@@ -88,6 +91,7 @@ export function makeAiMailbox(
           const body = model
             .stream({
               model: value.model,
+              purpose: "summary",
               prompt: `Summarize the conversation, decisions and next steps. After each point, cite the message it comes from as [id], with the message's id field. ${aiLanguage(value.locale)}\n${mailData(localThread(value.view, host.timeZone()))}`,
               check: check([value.accountId]),
             })
@@ -139,13 +143,10 @@ export function makeAiMailbox(
       ),
     );
 
-  const composeAi = (raw: AiComposeRequest) =>
+  const compose = (request: AiComposeRequest) =>
     bounded(
       Stream.unwrap(
         Effect.gen(function* () {
-          const request = yield* Schema.decodeUnknownEffect(AiComposeRequest)(raw).pipe(
-            Effect.mapError(() => new InvalidInput({ message: "Invalid AI compose request." })),
-          );
           yield* check([request.accountId]);
           const reply = request.replyTo ? yield* input(request.replyTo, "compose") : null;
           if (reply && reply.accountId !== request.accountId)
@@ -166,11 +167,13 @@ export function makeAiMailbox(
             });
           let truncated = true;
           let outputBytes = 0;
+          const outputCap = composeOutputBytes(Buffer.byteLength(request.text));
           return Stream.concat(
             model
               .stream({
                 model: selectedModel,
                 purpose: "compose",
+                maxTokens: composeOutputTokens(request.text.length),
                 prompt,
                 check: check([request.accountId]),
               })
@@ -181,8 +184,8 @@ export function makeAiMailbox(
                     if (output._tag === "Finished") truncated = output.reason !== "stop";
                     else {
                       outputBytes += Buffer.byteLength(output.text);
-                      if (outputBytes > 8192)
-                        yield* new InvalidInput({ message: "AI output budget exceeded." });
+                      if (outputBytes > outputCap)
+                        yield* new InvalidInput({ message: "AI draft output budget exceeded." });
                     }
                   }),
                 ),
@@ -199,6 +202,14 @@ export function makeAiMailbox(
             ),
           );
         }),
+      ),
+      composeSeconds(request.text.length),
+    );
+  const composeAi = (raw: AiComposeRequest) =>
+    Stream.unwrap(
+      Schema.decodeUnknownEffect(AiComposeRequest)(raw).pipe(
+        Effect.mapError(() => new InvalidInput({ message: "Invalid AI compose request." })),
+        Effect.map(compose),
       ),
     );
 
@@ -449,7 +460,13 @@ export function makeAiMailbox(
           // while the answer streams.
           let sent = 0;
           const body = model
-            .stream({ model: selectedModel, prompt, toolkit, check: check(ids) })
+            .stream({
+              model: selectedModel,
+              purpose: "assistant",
+              prompt,
+              toolkit,
+              check: check(ids),
+            })
             .pipe(
               Stream.tap((output) =>
                 Effect.sync(() => {

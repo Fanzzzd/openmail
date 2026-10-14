@@ -8,7 +8,12 @@ import type { IncomingMessage } from "../domain/message.js";
 import { Mailbox } from "../mailbox/mailbox.js";
 import { MailboxLive } from "../mailbox/mailbox-live.js";
 import { makeAiMailbox } from "../mailbox/mailbox-ai.js";
-import { AUTO_SUMMARY_DAILY_CAP } from "./ai.js";
+import {
+  AI_COMPOSE_TEXT,
+  AUTO_SUMMARY_DAILY_CAP,
+  composeOutputBytes,
+  composeOutputTokens,
+} from "./ai.js";
 import { Model, FakeModelLayer, type ModelOutput, type ModelRequest } from "./model.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
 import { Providers } from "../providers/adapter.js";
@@ -123,6 +128,47 @@ it.effect(
     );
   },
 );
+
+it.effect("compose sizes its output budget and byte cap to the draft", () => {
+  const requests: ModelRequest[] = [];
+  let reply = "";
+  const server = fakeServer("me@gmail.com", [incoming()]);
+  return Effect.gen(function* () {
+    const m = yield* Mailbox;
+    yield* m.accounts.connect({ provider: "gmail" });
+    yield* m.sync.sync();
+    yield* m.ai.setAiAccount(consent);
+    // A full-length draft in Chinese: 16,000 characters, 48,000 UTF-8 bytes.
+    const text = "长".repeat(AI_COMPOSE_TEXT);
+    const request = {
+      accountId,
+      text,
+      task: { kind: "rewrite" as const, tone: "formal" as const },
+    };
+    reply = "正".repeat(AI_COMPOSE_TEXT);
+    const events = yield* Stream.runCollect(m.ai.composeAi(request));
+    assert.strictEqual(requests[0]?.purpose, "compose");
+    assert.strictEqual(requests[0]?.maxTokens, composeOutputTokens(AI_COMPOSE_TEXT));
+    assert.ok(events.some((e) => e._tag === "Done" && !e.truncated));
+    // Past three times the draft's bytes, the request stops with its own message.
+    reply = "正".repeat(AI_COMPOSE_TEXT * 3 + 1);
+    const error = yield* Stream.runDrain(m.ai.composeAi(request)).pipe(Effect.flip);
+    assert.strictEqual(error.message, "AI draft output budget exceeded.");
+    assert.strictEqual(composeOutputBytes(0), 8192, "a new message still gets 8 KB");
+  }).pipe(
+    Effect.provide(
+      TestMailbox(
+        { gmail: server },
+        { backgroundFlush: false },
+        {},
+        FakeModelLayer((request) => {
+          requests.push(request);
+          return output(reply);
+        }),
+      ),
+    ),
+  );
+});
 
 function fixture(
   stream: Model["Service"]["stream"],

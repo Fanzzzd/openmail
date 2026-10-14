@@ -7121,6 +7121,10 @@ msgstr "Il database è stato mantenuto. Esci da OpenMail e ripristina un backup 
 msgid "The displayed link may hide its destination. Check the real domain before opening."
 msgstr "Il collegamento visualizzato può nascondere la destinazione. Controlla il dominio reale prima di aprirlo."
 
+#: src/renderer/src/lib/errors.ts
+msgid "The draft is too long to rewrite in one go. Shorten it or rewrite part of it."
+msgstr "La bozza è troppo lunga per riscriverla in una volta. Accorciala o riscrivine una parte."
+
 #: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "The file changed after the preview. Review the change again."
 msgstr "Il file è cambiato dopo l’anteprima. Rivedi di nuovo la modifica."

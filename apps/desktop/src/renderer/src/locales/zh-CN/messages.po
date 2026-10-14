@@ -7131,6 +7131,10 @@ msgstr "数据库已保留。请退出 OpenMail，恢复本地备份或联系支
 msgid "The displayed link may hide its destination. Check the real domain before opening."
 msgstr "显示的链接可能隐藏了目标。打开前请检查真实域名。"
 
+#: src/renderer/src/lib/errors.ts
+msgid "The draft is too long to rewrite in one go. Shorten it or rewrite part of it."
+msgstr "草稿太长，无法一次改写。请缩短草稿，或只改写其中一部分。"
+
 #: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "The file changed after the preview. Review the change again."
 msgstr "预览后文件有变化。请重新查看改动。"

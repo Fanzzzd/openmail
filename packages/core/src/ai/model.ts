@@ -6,12 +6,13 @@ import {
   AI_INPUT_BUDGET,
   AI_FINAL_TURN,
   AI_MAX_TURNS,
-  AI_OUTPUT_TOKENS,
+  AI_OUTPUT,
   AI_SYSTEM,
   AI_COMPOSE_SYSTEM,
   AI_TRIAGE_SYSTEM,
   AI_ERRORS,
   type AiModelName,
+  type AiPurpose,
 } from "./ai.js";
 import { InvalidInput, ProviderError } from "../domain/errors.js";
 import { MODEL_KEY } from "./secrets.js";
@@ -21,7 +22,10 @@ import type { AssistantToolkit } from "../tools/tools.js";
 export interface ModelRequest {
   readonly model: AiModelName;
   readonly prompt: string;
-  readonly purpose?: "compose" | "triage";
+  /** Picks the system prompt, the output budget and the effort (AI_OUTPUT). */
+  readonly purpose: AiPurpose;
+  /** Overrides the purpose's output tokens, for compose requests sized to the draft. */
+  readonly maxTokens?: number;
   readonly toolkit?: Toolkit.WithHandler<typeof AssistantToolkit.tools>;
   /** Recheck consent immediately before every provider turn. */
   readonly check: Effect.Effect<void, InvalidInput>;
@@ -131,7 +135,9 @@ export const ModelAnthropic = Layer.effect(
                 : request.purpose === "triage"
                   ? AI_TRIAGE_SYSTEM
                   : AI_SYSTEM;
-            let remaining = AI_OUTPUT_TOKENS;
+            const output = AI_OUTPUT[request.purpose];
+            // Thinking counts toward max_tokens, and a tool conversation shares one allowance.
+            let remaining = request.maxTokens ?? output.maxTokens;
             const turn = (
               index: number,
             ): Stream.Stream<ModelOutput, InvalidInput | ProviderError> =>
@@ -184,6 +190,8 @@ export const ModelAnthropic = Layer.effect(
                         config: {
                           max_tokens: Math.max(1, remaining),
                           system,
+                          thinking: { type: "adaptive" },
+                          output_config: { effort: output.effort },
                         },
                       }).pipe(Layer.provide(client)),
                     ),

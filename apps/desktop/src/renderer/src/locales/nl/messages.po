@@ -7121,6 +7121,10 @@ msgstr "De database werd bewaard. Sluit OpenMail af en herstel een lokale back-u
 msgid "The displayed link may hide its destination. Check the real domain before opening."
 msgstr "De weergegeven link kan de bestemming verbergen. Controleer het echte domein voordat je de link opent."
 
+#: src/renderer/src/lib/errors.ts
+msgid "The draft is too long to rewrite in one go. Shorten it or rewrite part of it."
+msgstr "Het concept is te lang om in één keer te herschrijven. Maak het korter of herschrijf een deel ervan."
+
 #: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "The file changed after the preview. Review the change again."
 msgstr "Het bestand is na de voorvertoning gewijzigd. Bekijk de wijziging opnieuw."

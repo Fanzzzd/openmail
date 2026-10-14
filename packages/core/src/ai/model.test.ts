@@ -1,8 +1,15 @@
 import { assert, it } from "@effect/vitest";
 import { Effect, Layer, Schema, Stream } from "effect";
 import { FetchHttpClient } from "effect/http";
-import { AI_ERRORS, AI_FINAL_TURN, AI_MAX_TURNS } from "./ai.js";
-import { Model, ModelAnthropic } from "./model.js";
+import {
+  AI_COMPOSE_TEXT,
+  AI_ERRORS,
+  AI_FINAL_TURN,
+  AI_MAX_TURNS,
+  AI_OUTPUT,
+  composeOutputTokens,
+} from "./ai.js";
+import { Model, ModelAnthropic, type ModelRequest } from "./model.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
 import { MODEL_KEY } from "../platform/node/secrets.js";
 import { Mailbox } from "../mailbox/mailbox.js";
@@ -125,7 +132,7 @@ it.effect(
       const payload = Schema.decodeUnknownSync(Payload)(JSON.parse(await request.text()));
       assert.strictEqual(payload.stream, true);
       assert.strictEqual(payload.model, "claude-sonnet-5-5");
-      assert.ok(payload.max_tokens <= 1024);
+      assert.strictEqual(payload.max_tokens, AI_OUTPUT.summary.maxTokens);
       assert.ok(JSON.stringify(payload.system).includes("untrusted DATA"));
       if (calls === 1)
         return sse({ type: "text", text: "" }, { type: "text_delta", text: "Summary" });
@@ -149,6 +156,7 @@ it.effect(
       const model = yield* Model;
       const request = {
         model: "claude-sonnet-5-5",
+        purpose: "summary",
         prompt: "Summarize",
         check: Effect.void,
       } as const;
@@ -191,7 +199,11 @@ it.effect(
           "tool_use",
         );
       assert.ok(JSON.stringify(payload.messages).includes("tool_result"));
-      assert.ok(payload.max_tokens <= 1012, "output allowance is shared across turns");
+      assert.strictEqual(
+        payload.max_tokens,
+        AI_OUTPUT.assistant.maxTokens - 12,
+        "output allowance is shared across turns",
+      );
       return sse({ type: "text", text: "" }, { type: "text_delta", text: "No mail found" });
     };
     const live = ModelAnthropic.pipe(
@@ -232,7 +244,12 @@ it.effect("model failures map to one actionable sentence each, without the provi
   const http = FetchHttpClient.layer.pipe(
     Layer.provide(Layer.succeed(FetchHttpClient.Fetch, fetch)),
   );
-  const request = { model: "claude-sonnet-5-5", prompt: "Summarize", check: Effect.void } as const;
+  const request = {
+    model: "claude-sonnet-5-5",
+    purpose: "summary",
+    prompt: "Summarize",
+    check: Effect.void,
+  } as const;
   const message = Effect.fnUntraced(function* () {
     const model = yield* Model;
     const exit = yield* Stream.runDrain(model.stream(request)).pipe(Effect.flip);
@@ -433,4 +450,49 @@ it.effect("the last turn answers without tools, and a turn cap is not called a t
       } else assert.deepInclude(done, { truncated: true, stopped: "turns" });
     }
   });
+});
+
+const Output = Schema.Struct({
+  max_tokens: Schema.Number,
+  thinking: Schema.Struct({ type: Schema.String }),
+  output_config: Schema.Struct({ effort: Schema.String }),
+});
+it.effect("each feature sends its own output budget, adaptive thinking and effort", () => {
+  const { bodies, live } = scripted([answer]);
+  return Effect.gen(function* () {
+    const model = yield* Model;
+    const sent = (request: Omit<ModelRequest, "model" | "prompt" | "check">) =>
+      Effect.gen(function* () {
+        yield* Stream.runDrain(
+          model.stream({
+            model: "claude-sonnet-5-5",
+            prompt: "Hi",
+            check: Effect.void,
+            ...request,
+          }),
+        );
+        return Schema.decodeUnknownSync(Output)(JSON.parse(bodies.at(-1) ?? ""));
+      });
+    const expected = (maxTokens: number, effort: string) => ({
+      max_tokens: maxTokens,
+      thinking: { type: "adaptive" },
+      output_config: { effort },
+    });
+    assert.deepStrictEqual(yield* sent({ purpose: "triage" }), expected(2048, "low"));
+    assert.deepStrictEqual(yield* sent({ purpose: "summary" }), expected(8192, "medium"));
+    assert.deepStrictEqual(yield* sent({ purpose: "assistant" }), expected(16_000, "medium"));
+    // A full 16,000-character rewrite: 4096 to think, one and a half tokens a character.
+    assert.deepStrictEqual(
+      yield* sent({ purpose: "compose", maxTokens: composeOutputTokens(AI_COMPOSE_TEXT) }),
+      expected(28_096, "medium"),
+    );
+    assert.deepStrictEqual(
+      yield* sent({ purpose: "compose", maxTokens: composeOutputTokens(0) }),
+      expected(6144, "medium"),
+    );
+  }).pipe(
+    Effect.provide(
+      live.pipe(Layer.provide(MemoryPlatform({ secrets: { [MODEL_KEY]: "test-secret-key" } }))),
+    ),
+  );
 });

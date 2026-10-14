@@ -129,13 +129,15 @@ export const AiQuestion = Schema.Struct({
   locale: Schema.optionalKey(AiLocale),
 });
 export type AiQuestion = typeof AiQuestion.Type;
+/** Characters of draft text a compose request may carry. */
+export const AI_COMPOSE_TEXT = 16_000;
 export const AI_REWRITE_TONES = ["shorter", "friendlier", "formal", "proofread"] as const;
 export const AiComposeRequest = Schema.Struct({
   accountId: Schema.String,
   /** For write: the language of a new message when the instruction does not settle it. */
   locale: Schema.optionalKey(AiLocale),
   replyTo: Schema.optionalKey(Schema.String),
-  text: Schema.String.check(Schema.isMaxLength(16_000)),
+  text: Schema.String.check(Schema.isMaxLength(AI_COMPOSE_TEXT)),
   task: Schema.Union([
     Schema.Struct({
       kind: Schema.Literal("write"),
@@ -197,7 +199,38 @@ export const AUTO_SUMMARY_DAILY_CAP = 50;
 export const AI_THREAD_INPUT = 24_000;
 /** Tool calls the assistant may make for one question. A call counts once, however many threads it touches. */
 export const AI_TOOL_CALLS = 12;
-export const AI_OUTPUT_TOKENS = 1024;
+/**
+ * Output tokens and effort per feature. Every selectable model thinks adaptively, and thinking
+ * counts toward max_tokens, so each budget leaves room for thinking plus the answer. Effort is
+ * sent as output_config.effort: low for triage, whose answer is a short JSON object; medium for
+ * the rest. The assistant's budget is shared across its turns.
+ */
+export const AI_OUTPUT = {
+  triage: { maxTokens: 2048, effort: "low" },
+  summary: { maxTokens: 8192, effort: "medium" },
+  assistant: { maxTokens: 16_000, effort: "medium" },
+  compose: { maxTokens: 4096, effort: "medium" },
+} as const satisfies Record<
+  string,
+  { readonly maxTokens: number; readonly effort: "low" | "medium" | "high" }
+>;
+export type AiPurpose = keyof typeof AI_OUTPUT;
+/**
+ * Output tokens for a compose request: the thinking allowance plus a full rewrite of the draft.
+ * CJK text can take more than one token a character, so the draft counts one and a half.
+ */
+export const composeOutputTokens = (draftChars: number) =>
+  AI_OUTPUT.compose.maxTokens + Math.max(2048, Math.ceil(draftChars * 1.5));
+/**
+ * UTF-8 bytes of compose output the app accepts: three times the draft, so a translation into
+ * a script with longer encodings still fits, and at least 8 KB for a new message.
+ */
+export const composeOutputBytes = (draftBytes: number) => Math.max(8192, draftBytes * 3);
+/** The deadline of an AI request, in seconds. */
+export const AI_REQUEST_SECONDS = 60;
+/** A compose request's deadline: the usual minute plus 50 output tokens a second of its budget. */
+export const composeSeconds = (draftChars: number) =>
+  AI_REQUEST_SECONDS + Math.ceil(composeOutputTokens(draftChars) / 50);
 export const AI_MAX_TURNS = 4;
 /** Sent before the last of AI_MAX_TURNS turns, which runs without tools. */
 export const AI_FINAL_TURN =
