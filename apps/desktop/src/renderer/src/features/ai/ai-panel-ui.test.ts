@@ -437,7 +437,11 @@ const failedOutput = (error: InvalidInput | ProviderError | null) =>
 
 it("AI failures name the cause, and key or consent problems link to AI Access", () => {
   const cases = [
-    [new InvalidInput({ message: AI_ERRORS.noKey }), AI_ERRORS.noKey, true],
+    [
+      new InvalidInput({ message: AI_ERRORS.noKey }),
+      "Save an Anthropic API key in Settings → AI Access.",
+      true,
+    ],
     [new ProviderError({ message: AI_ERRORS.invalidKey, status: 401 }), AI_ERRORS.invalidKey, true],
     [
       new ProviderError({ message: AI_ERRORS.rateLimited, status: 429 }),
