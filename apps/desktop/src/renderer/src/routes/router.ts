@@ -55,6 +55,14 @@ export const SETTLE_MS = 300;
  */
 export function historyFor(router: AppRouter, settleMs = SETTLE_MS): AppHistory {
   let waiting: string | null = null;
+  // The current entry's place relative to where this window started, followed
+  // from the history's own notices, so a replace keeps it and Back lowers it.
+  let index = 0;
+  router.history.subscribe(({ action }) => {
+    if (action.type === "PUSH" || action.type === "FORWARD") index += 1;
+    else if (action.type === "BACK") index -= 1;
+    else if (action.type === "GO") index += action.index;
+  });
   let timer: ReturnType<typeof setTimeout> | undefined;
   const write = (href: string, replace: boolean) => {
     if (parseAppHref(href)) void router.navigate({ href, replace });
@@ -85,5 +93,12 @@ export function historyFor(router: AppRouter, settleMs = SETTLE_MS): AppHistory 
       flush();
       router.history.forward();
     },
+    index: () => index,
+    pushSame: (href) => {
+      // The waiting replace lands on the entry Back returns to.
+      flush();
+      if (parseAppHref(href)) router.history.push(href);
+    },
+    listen: (listener) => router.history.subscribe(() => listener()),
   };
 }

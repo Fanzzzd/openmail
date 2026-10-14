@@ -28,6 +28,12 @@ export interface AppHistory {
   flush(): void;
   back(): void;
   forward(): void;
+  /** The current entry's place in the session's history. A replace keeps it; Back lowers it. */
+  index(): number;
+  /** Adds an entry for `href`, the route already on screen, so Back returns to the entry before it. */
+  pushSame(href: string): void;
+  /** Runs `listener` after every history change, Back and Forward included. */
+  listen(listener: () => void): () => void;
 }
 
 /** The route part of a history location. */
@@ -49,7 +55,15 @@ const defaultMail: MailRoute = { kind: "mail", view: DEFAULT_VIEW, state: {} };
 const ignore = () => {
   /* No router: the atoms alone hold the location. */
 };
-const detached: AppHistory = { navigate: ignore, flush: ignore, back: ignore, forward: ignore };
+const detached: AppHistory = {
+  navigate: ignore,
+  flush: ignore,
+  back: ignore,
+  forward: ignore,
+  index: () => 0,
+  pushSame: ignore,
+  listen: () => ignore,
+};
 
 export const locationAtom = Atom.make<AppLocation>(locationOf(DEFAULT_HREF)).pipe(Atom.keepAlive);
 

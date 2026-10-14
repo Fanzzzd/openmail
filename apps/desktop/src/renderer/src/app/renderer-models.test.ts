@@ -55,7 +55,7 @@ const state = vi.hoisted(() => {
   };
 });
 vi.mock("@effect/atom-react", async () => {
-  const { useCallback, useState, useSyncExternalStore } = await import("react");
+  const { createContext, useCallback, useState, useSyncExternalStore } = await import("react");
   const { Atom, AsyncResult } = await import("effect/reactivity");
   const { DEFAULT_LIST_FILTERS } = await import("@openmail/core/schema");
   const unused = Atom.make<unknown>(null);
@@ -93,6 +93,8 @@ vi.mock("@effect/atom-react", async () => {
                 ? state.search
                 : AsyncResult.initial();
   return {
+    // The panes read the route at call time through the registry.
+    RegistryContext: createContext({ get: (atom: Atom.Atom<unknown>) => registry.get(atom) }),
     useAtom: (atom: string | Atom.Writable<unknown, unknown>) => {
       const shared = useReal(atom);
       const pair = useState(typeof atom === "string" ? initial(atom) : null);

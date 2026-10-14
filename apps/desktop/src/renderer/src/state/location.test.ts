@@ -25,6 +25,9 @@ function setup(href = "/mail/all/inbox") {
     flush: vi.fn(),
     back: vi.fn(),
     forward: vi.fn(),
+    index: () => 0,
+    pushSame: vi.fn(),
+    listen: () => vi.fn(),
   };
   const registry = AtomRegistry.make({
     initialValues: [
