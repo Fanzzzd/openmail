@@ -648,6 +648,12 @@ msgstr "Akce AI"
 msgid "AI added unfamiliar recipients:"
 msgstr "AI přidala neznámé příjemce:"
 
+#. An AI app connected to OpenMail, such as Claude Code. Glossary term AI app.
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "change source"
+msgid "AI app"
+msgstr "Aplikace AI"
+
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 msgid "AI apps"
 msgstr "Aplikace AI"
@@ -972,7 +978,8 @@ msgstr "Nejdřív se mě zeptej"
 msgid "Assign categories (one per line)"
 msgstr "Přiřadit kategorie (jednu na řádek)"
 
-#: src/renderer/src/features/ai/Proposals.tsx
+#: src/renderer/src/features/ai/ai-names.ts
+#: src/renderer/src/features/settings/Settings.tsx
 msgid "Assistant"
 msgstr "Asistent"
 
@@ -1356,6 +1363,11 @@ msgstr "Změny od aplikací AI"
 msgid "Changes to <0/>:"
 msgstr "Změny v <0/>:"
 
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "Check access"
+msgstr "Kontrola přístupu"
+
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Check again"
 msgstr "Zkontrolovat znovu"
@@ -1363,6 +1375,11 @@ msgstr "Zkontrolovat znovu"
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 msgid "Check AI apps again"
 msgstr "Znovu zkontrolovat aplikace AI"
+
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "Check calendar overlap"
+msgstr "Kontrola překryvu v kalendáři"
 
 #: src/renderer/src/features/settings/sections/UpdateSettings.tsx
 msgid "Check for updates"
@@ -1638,6 +1655,12 @@ msgstr "Barva"
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 msgid "Color target"
 msgstr "Použít barvu pro"
+
+#. The openmail command-line tool.
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "change source"
+msgid "Command line"
+msgstr "Příkazový řádek"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Compact"
@@ -3779,6 +3802,46 @@ msgstr "světlé pozadí"
 msgid "Link URL"
 msgstr "URL odkazu"
 
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "List accounts"
+msgstr "Seznam účtů"
+
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "List AI suggestions"
+msgstr "Seznam návrhů AI"
+
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "List attachments"
+msgstr "Seznam příloh"
+
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "List conversations"
+msgstr "Seznam konverzací"
+
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "List labels and folders"
+msgstr "Seznam štítků a složek"
+
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "List signatures"
+msgstr "Seznam podpisů"
+
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "List spaces"
+msgstr "Seznam prostorů"
+
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "List templates"
+msgstr "Seznam šablon"
+
 #: src/renderer/src/state/desktop.ts
 msgid "Lists"
 msgstr "Seznamy"
@@ -5547,6 +5610,26 @@ msgctxt "incoming message action flag"
 msgid "Read"
 msgstr "Příznak přečtení"
 
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "Read a conversation"
+msgstr "Čtení konverzace"
+
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "Read a signature"
+msgstr "Čtení podpisu"
+
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "Read a template"
+msgstr "Čtení šablony"
+
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "Read an AI suggestion"
+msgstr "Čtení návrhu AI"
+
 #. allowSuggestions is the translated Allow AI suggestions button on each app below; setting and askFirst are the translated Changes by AI apps setting and its Ask me first option.
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 msgid "Read and search mail, read only by default. To archive, label or draft, an app needs “{allowSuggestions}” below and “{setting}” set to “{askFirst}”. You approve every AI suggestion in OpenMail, and sending always needs your confirmation here."
@@ -5555,6 +5638,16 @@ msgstr "Čte a prohledává poštu, ve výchozím stavu jen pro čtení. Aby moh
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Read and send mail from your phone or another computer through your own tailnet. This Mac stays the host: mail, tokens and keys stay here, and nothing passes through OpenMail servers. OpenMail uses Tailscale Serve, which only devices on your tailnet can reach. It never uses Funnel, so the page is never on the public internet."
 msgstr "Čtěte a odesílejte poštu z telefonu nebo jiného počítače přes vlastní tailnet. Tento Mac zůstává hostitelem: pošta, tokeny a klíče zůstávají zde a nic neprochází servery OpenMail. OpenMail používá Tailscale Serve, které je dostupné jen zařízením ve vašem tailnetu. Nikdy nepoužívá Funnel, takže stránka nikdy není ve veřejném internetu."
+
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "Read attachment text"
+msgstr "Čtení textu přílohy"
+
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "Read invitations"
+msgstr "Čtení pozvánek"
 
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Read only"
@@ -6202,6 +6295,11 @@ msgstr "Hledat"
 msgid "Search  {searchKey}"
 msgstr "Hledat  {searchKey}"
 
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "Search by meaning"
+msgstr "Hledání podle významu"
+
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Search can use at most {MAX_SEARCH_TERMS} words and operators. Remove some."
 msgstr "Hledání může použít nejvýše {MAX_SEARCH_TERMS} slov a operátorů. Některé odeberte."
@@ -6218,6 +6316,11 @@ msgstr "Nápověda k hledání"
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Search mail"
 msgstr "Hledat v poště"
+
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "Search mail"
+msgstr "Hledání v poště"
 
 #: src/renderer/src/features/search/SearchHitBar.tsx
 msgid "Search matches"
@@ -6965,6 +7068,26 @@ msgstr "Předmět: {subject}"
 msgid "Subscript"
 msgstr "Dolní index"
 
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "Suggest a draft"
+msgstr "Návrh konceptu"
+
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "Suggest changes to conversations"
+msgstr "Návrh změn konverzací"
+
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "Suggest recipients"
+msgstr "Doporučení příjemců"
+
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "Suggest snoozing conversations"
+msgstr "Návrh odložit konverzace"
+
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "Suggest triage for new inbox mail"
 msgstr "Navrhovat třídění nové doručené pošty"
@@ -6997,6 +7120,11 @@ msgstr "Přejeďte vodorovně dvěma prsty. Uvolněním po krátkém nebo dlouh�
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Switch spaces"
 msgstr "Přepnout prostor"
+
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "Sync"
+msgstr "Synchronizace"
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Sync aliases and signatures"

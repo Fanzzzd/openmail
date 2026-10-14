@@ -15,6 +15,7 @@ import {
 } from "../../../ui/styles";
 
 import { CLIENTS, PathText, codeBlock } from "./ai-clients-ui";
+import { aiToolName } from "../../ai/ai-names";
 
 function StateText({ client }: { client: AiClientView }) {
   if (!client.installed && client.state === "notConnected")
@@ -76,7 +77,7 @@ function Activity({ rows }: { rows: readonly AgentActivity[] }) {
     <ul className="space-y-0.5">
       {rows.map((row, index) => (
         <li key={`${row.at}-${index}`} className="flex items-baseline gap-2 text-footnote">
-          <span className="font-mono">{row.tool}</span>
+          <span>{aiToolName(i18n, row.tool)}</span>
           {!row.ok && (
             <span className="text-a11y-danger">
               <Trans>failed</Trans>

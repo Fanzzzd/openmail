@@ -76,6 +76,7 @@ import { ProviderIcon } from "../../ui/ProviderIcon";
 import { ReadingSettings } from "./sections/ReadingSettings";
 import { reauthText, syncErrorText } from "../sync-status";
 import { isKeychainLocked, printable, providerCapabilities } from "@openmail/core/schema";
+import { aiClientName } from "../ai/ai-names";
 import { Alert, AlertCancel, alertDanger, Dialog } from "../../ui/Dialog";
 import { SettingsGroup, SettingsRow } from "../../ui/SettingsRows";
 import {
@@ -621,7 +622,15 @@ function AgentPolicy() {
 function actorName(i18n: I18n, actor: string): string {
   if (actor.startsWith("user:"))
     return actor === "user:cli" ? i18n._(msg`You (command line)`) : i18n._(msg`You`);
-  const agent = printable(actor.split(":").slice(2).join(":")) || i18n._(msg`unknown`);
+  // Agent actors are agent:<surface>:<name>; an AI app's client id reads as its product name.
+  const [, surface = "", ...rest] = actor.split(":");
+  const name = rest.join(":");
+  const agent =
+    surface === "mcp"
+      ? aiClientName(name) || i18n._(msg`unknown`)
+      : surface === "rule" && name === "openmail-assistant"
+        ? i18n._(msg`Assistant`)
+        : printable(name) || i18n._(msg`unknown`);
   return i18n._(msg`AI (${agent})`);
 }
 

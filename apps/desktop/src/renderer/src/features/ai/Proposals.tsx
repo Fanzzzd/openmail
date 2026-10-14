@@ -1,4 +1,4 @@
-import { printable } from "@openmail/core/schema";
+import { changeSource } from "./ai-names";
 import { Effect } from "effect";
 import { useRunMail, withMail } from "../../state/mail";
 import { useAtom, useAtomValue } from "@effect/atom-react";
@@ -105,13 +105,7 @@ function Item({
   const threadIds = command.kind === "modify" || command.kind === "snooze" ? command.threads : [];
   const agent = p.actor.kind === "agent" ? p.actor : null;
   // "rule" is the built-in assistant's code surface; the UI calls it the assistant.
-  const surface = agent
-    ? agent.surface === "mcp"
-      ? "MCP"
-      : t`Assistant`
-    : p.actor.surface === "cli"
-      ? "CLI"
-      : "APP";
+  const source = changeSource(i18n, p.actor);
   const email = (id: string) => accounts.find((a) => a.id === id)?.email ?? id;
   const count = command.kind === "modify" || command.kind === "snooze" ? command.threads.length : 0;
   const op =
@@ -141,7 +135,7 @@ function Item({
   return (
     <li className="px-5 py-4">
       <p className="text-footnote text-a11y-muted">
-        {surface} · {agent ? printable(agent.name) : "AI"} ·{" "}
+        {source} ·{" "}
         {new Date(p.createdAt).toLocaleString(dateFormat(i18n).locale, {
           month: "numeric",
           day: "numeric",

@@ -189,7 +189,7 @@ for (const surface of ["mcp", "rule"] as const) {
     });
     try {
       expect(dom.element.textContent).toContain(
-        `${surface === "mcp" ? "MCP" : "Assistant"} · openmail-assistant`,
+        surface === "mcp" ? "AI app · openmail-assistant ·" : "Assistant ·",
       );
       const actions = Array.from(dom.element.querySelectorAll("button")).map(
         (button) => button.textContent,

@@ -648,6 +648,12 @@ msgstr "Action d’IA"
 msgid "AI added unfamiliar recipients:"
 msgstr "L’IA a ajouté des destinataires inconnus :"
 
+#. An AI app connected to OpenMail, such as Claude Code. Glossary term AI app.
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "change source"
+msgid "AI app"
+msgstr "Application d’IA"
+
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 msgid "AI apps"
 msgstr "Applications d’IA"
@@ -972,7 +978,8 @@ msgstr "Demandez-moi d’abord"
 msgid "Assign categories (one per line)"
 msgstr "Attribuer des catégories (une par ligne)"
 
-#: src/renderer/src/features/ai/Proposals.tsx
+#: src/renderer/src/features/ai/ai-names.ts
+#: src/renderer/src/features/settings/Settings.tsx
 msgid "Assistant"
 msgstr "Assistant"
 
@@ -1356,6 +1363,11 @@ msgstr "Modifications par les applications d’IA"
 msgid "Changes to <0/>:"
 msgstr "Modifications de <0/> :"
 
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "Check access"
+msgstr "Vérifier l’accès"
+
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Check again"
 msgstr "Vérifier à nouveau"
@@ -1363,6 +1375,11 @@ msgstr "Vérifier à nouveau"
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 msgid "Check AI apps again"
 msgstr "Vérifier à nouveau les applications d’IA"
+
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "Check calendar overlap"
+msgstr "Vérifier les chevauchements du calendrier"
 
 #: src/renderer/src/features/settings/sections/UpdateSettings.tsx
 msgid "Check for updates"
@@ -1638,6 +1655,12 @@ msgstr "Couleur"
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 msgid "Color target"
 msgstr "Appliquer la couleur à"
+
+#. The openmail command-line tool.
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "change source"
+msgid "Command line"
+msgstr "Ligne de commande"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Compact"
@@ -3779,6 +3802,46 @@ msgstr "Fond clair"
 msgid "Link URL"
 msgstr "URL du lien"
 
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "List accounts"
+msgstr "Lister les comptes"
+
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "List AI suggestions"
+msgstr "Lister les suggestions d’IA"
+
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "List attachments"
+msgstr "Lister les pièces jointes"
+
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "List conversations"
+msgstr "Lister les conversations"
+
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "List labels and folders"
+msgstr "Lister les libellés et dossiers"
+
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "List signatures"
+msgstr "Lister les signatures"
+
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "List spaces"
+msgstr "Lister les espaces"
+
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "List templates"
+msgstr "Lister les modèles"
+
 #: src/renderer/src/state/desktop.ts
 msgid "Lists"
 msgstr "Listes"
@@ -5547,6 +5610,26 @@ msgctxt "incoming message action flag"
 msgid "Read"
 msgstr "Indicateur de lecture"
 
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "Read a conversation"
+msgstr "Lire une conversation"
+
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "Read a signature"
+msgstr "Lire une signature"
+
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "Read a template"
+msgstr "Lire un modèle"
+
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "Read an AI suggestion"
+msgstr "Lire une suggestion d’IA"
+
 #. allowSuggestions is the translated Allow AI suggestions button on each app below; setting and askFirst are the translated Changes by AI apps setting and its Ask me first option.
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 msgid "Read and search mail, read only by default. To archive, label or draft, an app needs “{allowSuggestions}” below and “{setting}” set to “{askFirst}”. You approve every AI suggestion in OpenMail, and sending always needs your confirmation here."
@@ -5555,6 +5638,16 @@ msgstr "Lire et rechercher le courrier, en lecture seule par défaut. Pour archi
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Read and send mail from your phone or another computer through your own tailnet. This Mac stays the host: mail, tokens and keys stay here, and nothing passes through OpenMail servers. OpenMail uses Tailscale Serve, which only devices on your tailnet can reach. It never uses Funnel, so the page is never on the public internet."
 msgstr "Lisez et envoyez vos e-mails depuis votre téléphone ou un autre ordinateur via votre propre tailnet. Ce Mac reste l’hôte : les e-mails, jetons et clés restent ici, et rien ne passe par les serveurs d’OpenMail. OpenMail utilise Tailscale Serve, que seuls les appareils de votre tailnet peuvent joindre. Il n’utilise jamais Funnel, la page n’est donc jamais sur l’Internet public."
+
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "Read attachment text"
+msgstr "Lire le texte d’une pièce jointe"
+
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "Read invitations"
+msgstr "Lire les invitations"
 
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Read only"
@@ -6202,6 +6295,11 @@ msgstr "Rechercher"
 msgid "Search  {searchKey}"
 msgstr "Rechercher  {searchKey}"
 
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "Search by meaning"
+msgstr "Rechercher par sens"
+
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Search can use at most {MAX_SEARCH_TERMS} words and operators. Remove some."
 msgstr "La recherche peut utiliser au maximum {MAX_SEARCH_TERMS} mots et opérateurs. Retirez-en."
@@ -6218,6 +6316,11 @@ msgstr "Aide sur la recherche"
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Search mail"
 msgstr "Rechercher dans les messages"
+
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "Search mail"
+msgstr "Rechercher dans les e-mails"
 
 #: src/renderer/src/features/search/SearchHitBar.tsx
 msgid "Search matches"
@@ -6965,6 +7068,26 @@ msgstr "Objet : {subject}"
 msgid "Subscript"
 msgstr "Indice"
 
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "Suggest a draft"
+msgstr "Proposer un brouillon"
+
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "Suggest changes to conversations"
+msgstr "Proposer des modifications de conversations"
+
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "Suggest recipients"
+msgstr "Proposer des destinataires"
+
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "Suggest snoozing conversations"
+msgstr "Proposer de reporter des conversations"
+
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "Suggest triage for new inbox mail"
 msgstr "Suggérer le tri des nouveaux messages de la boîte de réception"
@@ -6997,6 +7120,11 @@ msgstr "Faites glisser horizontalement avec deux doigts. Relâchez après un bal
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Switch spaces"
 msgstr "Changer d’espace"
+
+#: src/renderer/src/features/ai/ai-names.ts
+msgctxt "AI tool call"
+msgid "Sync"
+msgstr "Synchroniser"
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Sync aliases and signatures"
