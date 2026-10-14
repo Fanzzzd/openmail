@@ -62,3 +62,43 @@ it.effect("a failing search index backfill logs search-index-failed once while i
     );
   }).pipe(Effect.provide(mailboxLayer));
 });
+
+const mailboxWith = (
+  backfillWordIndex: (size?: number) => Effect.Effect<{ processed: number; ready: boolean }>,
+) => {
+  const platform = MemoryPlatform();
+  const store = Layer.effect(
+    Store,
+    Effect.map(Store, (live) => ({ ...live, backfillWordIndex })),
+  ).pipe(Layer.provide(StoreLive.pipe(Layer.provideMerge(platform))));
+  const providers = Layer.succeed(Providers, {
+    get: () => makeFakeProvider(fakeServer("me@gmail.com", [])),
+  });
+  // No background rebuild: only finishSearchIndex fills the index here.
+  return MailboxLive({ backgroundFlush: false, backgroundReady: Effect.never }).pipe(
+    Layer.provide(Layer.mergeAll(store, platform, providers)),
+  );
+};
+
+it.effect("finishSearchIndex builds the word index to the end in committed batches", () => {
+  const sizes: (number | undefined)[] = [];
+  return Effect.gen(function* () {
+    assert.isTrue(yield* (yield* Mailbox).reading.finishSearchIndex);
+    assert.deepStrictEqual(sizes, [500, 500, 500]);
+  }).pipe(
+    Effect.provide(
+      mailboxWith((size) =>
+        Effect.sync(() => {
+          sizes.push(size);
+          return { processed: 500, ready: sizes.length === 3 };
+        }),
+      ),
+    ),
+  );
+});
+
+it.effect("finishSearchIndex reports not ready when the database stays locked", () =>
+  Effect.gen(function* () {
+    assert.isFalse(yield* (yield* Mailbox).reading.finishSearchIndex);
+  }).pipe(Effect.provide(mailboxWith(() => Effect.die(new Error("database is locked"))))),
+);

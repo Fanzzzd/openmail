@@ -7,11 +7,11 @@
 
 import { Argument, Command, Flag } from "effect/cli";
 import { Failed, fail, findSpace, jsonFlag, optionalInt, optionalString, print } from "./common.js";
-import { Effect, Logger, Option, Schema } from "effect";
+import { Console, Effect, Logger, Option, Schema } from "effect";
 import { Buffer } from "node:buffer";
 import { MAILBOXES, Mailbox, printable, redactSyncHealth } from "@openmail/core";
 import type { SearchResult, ThreadSummary } from "@openmail/core/schema";
-import { withProgress } from "../sync-progress.js";
+import { SEARCH_INDEX_NOTE, finishSearchIndex, withProgress } from "../sync-progress.js";
 import { messageText, syncTable, threadTable } from "../format.js";
 
 const health = Command.make(
@@ -71,7 +71,8 @@ const sync = Command.make(
       Effect.forEach(ids, (id) => mailbox.sync.sync(id)).pipe(Effect.map((rows) => rows.flat())),
       !json,
     );
-    // The app refreshes planner statistics hourly; a CLI-only mailbox gets them here.
+    // The app does both in the background; a CLI-only mailbox gets them here.
+    yield* finishSearchIndex;
     // A refresh the app's writer keeps busy is skipped quietly; the app refreshes hourly.
     yield* mailbox.sync.refreshPlannerStats.pipe(Effect.provide(Logger.layer([])));
     yield* print({ results }, json, (value) => syncTable(value.results));
@@ -230,6 +231,7 @@ const search = Command.make(
     const accountIds = yield* accountScope(o.account, Option.none());
     const { offset = 0 } = yield* decodePageCursor(o.cursor);
     const query = { search: o.query.join(" "), accountIds, limit: SEARCH_CAP + 1 };
+    if (accountIds.length && !(yield* finishSearchIndex)) yield* Console.error(SEARCH_INDEX_NOTE);
     const found: SearchResult = !accountIds.length
       ? { threads: [], truncated: false, errors: [] }
       : o.server

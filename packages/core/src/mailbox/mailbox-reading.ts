@@ -1,4 +1,4 @@
-import { Effect, FiberSet, Option } from "effect";
+import { Cause, Effect, FiberSet, Option } from "effect";
 import { attachmentRef, MAX_INLINE_BYTES, MEDIA_RAW_TOO_LARGE } from "../mime/attachments.js";
 import type { Message } from "../domain/message.js";
 import { IndexNotReady, InvalidInput, NotFound } from "../domain/errors.js";
@@ -364,6 +364,22 @@ export const makeReadingMailbox = (
       readerThread: deps.cache.readerThread,
 
       messageAccounts: (ids) => store.messageAccounts(ids),
+
+      searchIndexReady: store.wordIndexReady.pipe(
+        Effect.map((ready) => ready.messages && ready.derived),
+      ),
+
+      finishSearchIndex: Effect.gen(function* () {
+        // Committed batches of 500 rows: about 1.8 s for 100k messages.
+        while (!(yield* store.backfillWordIndex(500)).ready) yield* Effect.yieldNow;
+        return true;
+      }).pipe(
+        // Another process holding the write lock past the busy timeout: report not ready.
+        Effect.catchCause((cause) =>
+          Cause.hasInterrupts(cause) ? Effect.interrupt : Effect.succeed(false),
+        ),
+        Effect.withSpan("Mailbox.finishSearchIndex"),
+      ),
 
       // A server search also pages older mail into the cache in the background.
       searchServer: (query) =>

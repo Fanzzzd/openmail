@@ -15,6 +15,7 @@ import { Effect, Layer, Option, Result, Schema, Stream } from "effect";
 import { Flag } from "effect/cli";
 import { Failed, fail, print } from "./common.js";
 import { invalidArguments } from "../tool-errors.js";
+import { finishSearchIndex } from "../sync-progress.js";
 
 export type ToolName = keyof typeof MailToolkit.tools;
 export const toolNames = Object.keys(MailToolkit.tools).filter(
@@ -95,6 +96,8 @@ export function runToolCommand(
           hint: `Pass one JSON object, such as --input-json '{"limit":5}'. \`openmail tool ${name} --help\` lists the parameters.`,
         }),
     });
+    // The tool finishes the word index too; doing it first shows progress on stderr.
+    if (name === "search") yield* finishSearchIndex;
     const result = yield* invokeTool(name, parsed, json);
     return yield* print(result, json);
   });

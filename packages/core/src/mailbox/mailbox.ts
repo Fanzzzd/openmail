@@ -207,6 +207,17 @@ export interface MailboxReading {
   ): Effect.Effect<Record<string, number>>;
 
   searchServer(query: ThreadQuery): Effect.Effect<SearchResult, InvalidInput>;
+  /**
+   * Whether the word index covers every message. Until it does (after an upgrade rebuilds it),
+   * search is approximate: AROUND matches as AND, and words also match inside longer words.
+   */
+  readonly searchIndexReady: Effect.Effect<boolean>;
+  /**
+   * Builds the rest of the word index now, in short committed batches, and says whether it is
+   * ready. False when another process holds the write lock. The app builds it in the
+   * background; one-shot CLI commands and agent search call this before they search.
+   */
+  readonly finishSearchIndex: Effect.Effect<boolean>;
 
   threadCount(query: ThreadQuery): Effect.Effect<number, InvalidInput>;
   /** Which account each message id belongs to, without loading the messages. Unknown ids are missing. */

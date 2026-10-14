@@ -400,6 +400,88 @@ describe("spaces", () => {
   });
 });
 
+// Migration 53 rebuilds the word index; one-shot commands exited before the background rebuild
+// finished, so search kept matching AROUND as AND and "view" inside "review".
+describe("search after an upgrade rebuilds the word index", () => {
+  const home = sharedHome();
+  const index = () => {
+    const db = new DatabaseSync(join(home.path, "mail.db"), { readOnly: true });
+    try {
+      return db.prepare("SELECT kind, ready FROM search_word_index ORDER BY kind").all();
+    } finally {
+      db.close();
+    }
+  };
+  const exec = (statement: string) => {
+    const db = new DatabaseSync(join(home.path, "mail.db"));
+    try {
+      db.exec(statement);
+    } finally {
+      db.close();
+    }
+  };
+  const rebuild = () =>
+    exec(
+      "UPDATE search_word_index SET ready=0, cursor=0, end_rowid=(SELECT COALESCE(MAX(rowid),0) FROM messages) WHERE kind='messages'",
+    );
+
+  test("search finishes the index before it searches", async () => {
+    rebuild();
+    const result = await openmail(["search", "invoice", "--json"], home.path);
+    expect(result.code, result.stderr).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(index()).toEqual([
+      { kind: "derived", ready: 1 },
+      { kind: "messages", ready: 1 },
+    ]);
+  });
+
+  test("tool search and sync finish it too", async () => {
+    rebuild();
+    const tool = await openmail(
+      ["tool", "search", "--input-json", '{"query":"invoice"}', "--json"],
+      home.path,
+    );
+    expect(tool.code, tool.stderr).toBe(0);
+    expect(tool.stdout).not.toContain("search_notice");
+    expect(index()).toEqual([
+      { kind: "derived", ready: 1 },
+      { kind: "messages", ready: 1 },
+    ]);
+    // With every account turned off, sync reaches no server and only finishes local work.
+    rebuild();
+    exec("UPDATE accounts SET enabled=0");
+    try {
+      const sync = await openmail(["sync", "--json"], home.path);
+      expect(sync.code, sync.stderr).toBe(0);
+    } finally {
+      exec("UPDATE accounts SET enabled=1");
+    }
+    expect(index()).toEqual([
+      { kind: "derived", ready: 1 },
+      { kind: "messages", ready: 1 },
+    ]);
+  });
+
+  test(
+    "search says its results are approximate while another process holds the write lock",
+    async () => {
+      rebuild();
+      const writer = new DatabaseSync(join(home.path, "mail.db"));
+      writer.exec("BEGIN IMMEDIATE");
+      try {
+        const result = await openmail(["search", "invoice"], home.path);
+        expect(result.code, result.stderr).toBe(0);
+        expect(result.stderr).toMatch(/^note: the search index is still being rebuilt/m);
+      } finally {
+        writer.exec("ROLLBACK");
+        writer.close();
+      }
+    },
+    scaledMs(60_000),
+  );
+});
+
 describe("proposals", () => {
   test("list shows the pending agent proposal", async () => {
     const [text, listed] = await Promise.all([

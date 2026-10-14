@@ -28,6 +28,7 @@ import {
 } from "./tools.js";
 import { AgentIdentity, CLI_AGENT_NAME, cleanMcpClientName } from "./agent-identity.js";
 import { snoozeDue } from "./proposal-tools.js";
+import { SEARCH_INDEX_NOTICE } from "./thread-tools.js";
 import {
   MailToolError,
   UNTRUSTED_MAIL_NOTICE,
@@ -299,6 +300,8 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
       mediaImage: () => notUsed("mediaImage"),
     },
     reading: {
+      searchIndexReady: Effect.succeed(true),
+      finishSearchIndex: notUsed("finishSearchIndex"),
       privateMailLink: () => notUsed("privateMailLink"),
       resolveMailLink: () => notUsed("resolveMailLink"),
       searchServer: () => notUsed("searchServer"),
@@ -1051,6 +1054,37 @@ it.effect("server search relays ignored operators, account errors and provider t
     assert.isTrue(result.result.truncated);
     assert.deepStrictEqual(result.result.ignored?.[0]?.operators, ["has:attachment"]);
     assert.strictEqual(result.result.errors[0]?.message, "Unavailable");
+  }),
+);
+
+// One-shot CLI commands exited before the background rebuild after migration 53 finished, and
+// search then matched AROUND as AND and words inside longer words without saying so.
+it.effect("search finishes the word index first and says when it could not", () =>
+  Effect.gen(function* () {
+    for (const finished of [true, false]) {
+      let finishing = 0;
+      const result = yield* run(
+        call("search", { query: "alpha AROUND 3 bravo", account_id: "a" }),
+        stubMailbox({
+          reading: {
+            searchIndexReady: Effect.succeed(false),
+            finishSearchIndex: Effect.sync(() => {
+              finishing++;
+              return finished;
+            }),
+            threads: () => Effect.succeed([]),
+          },
+        }),
+      );
+      assert.strictEqual(finishing, 1);
+      assert.isFalse(result.isFailure);
+      if (!("threads" in result.result)) return;
+      assert.strictEqual(
+        result.result.searchNotice,
+        finished ? undefined : SEARCH_INDEX_NOTICE,
+        `finished: ${finished}`,
+      );
+    }
   }),
 );
 

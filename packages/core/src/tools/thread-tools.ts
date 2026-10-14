@@ -69,6 +69,10 @@ export const ListThreads = readOnly(
   }),
 );
 
+/** The search notice while another process keeps the word index from being finished. */
+export const SEARCH_INDEX_NOTICE =
+  "The word index is still being rebuilt after an upgrade, so these results are approximate: AROUND matches like AND, and words also match inside longer words. Search again in a minute.";
+
 export const Search = readOnly(
   mailTool("search", {
     description:
@@ -91,6 +95,12 @@ export const Search = readOnly(
       ...PageResult,
       ...SearchResult.fields,
       threads: Schema.Array(ToolThread),
+      searchNotice: Schema.optionalKey(
+        Schema.String.annotate({
+          description:
+            "Set when results are approximate because the word index is still being built.",
+        }),
+      ),
     }),
     failure: MailToolError,
     failureMode: "return",
@@ -216,12 +226,17 @@ export const threadHandlers = ({
           "Search the local copy: leave out server.",
         );
       yield* cursorFor(p.cursor, pageScope("search", p));
+      // After an upgrade the word index is rebuilt; finish it so AROUND and whole words work.
+      const indexed =
+        (yield* mailbox.reading.searchIndexReady) || (yield* mailbox.reading.finishSearchIndex);
+      const notice = indexed ? {} : { searchNotice: SEARCH_INDEX_NOTICE };
       const q = {
         search: p.query,
         accountIds: yield* accountIdsFor(p.account_id),
         limit: 201,
       };
-      if (!q.accountIds.length) return { threads: [], truncated: false, ignored: [], errors: [] };
+      if (!q.accountIds.length)
+        return { threads: [], truncated: false, ignored: [], errors: [], ...notice };
       const found = p.server
         ? yield* mailbox.reading.searchServer(q).pipe(Effect.mapError(toToolError))
         : {
@@ -235,6 +250,7 @@ export const threadHandlers = ({
         Effect.succeed(found.threads.slice(0, 200).map(compactThread(timeZone()))),
       ).pipe(Effect.map(({ items, ...rest }) => ({ ...rest, threads: items })));
       const notices = {
+        ...notice,
         ignored: (found.ignored ?? []).slice(0, 20).map((n) => ({
           accountId: n.accountId,
           operators: n.operators.slice(0, 20).map((v) => shortText(v, 64)),
