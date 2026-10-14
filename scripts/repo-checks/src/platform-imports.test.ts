@@ -7,7 +7,7 @@ import { Schema } from "effect";
 import ts from "typescript";
 import { expect, it } from "vitest";
 
-const root = fileURLToPath(new URL("./", import.meta.url));
+const root = fileURLToPath(new URL("../../../packages/core/src/", import.meta.url));
 const native = join(root, "platform", "node");
 const builtins = new Set(builtinModules.map((name) => name.replace(/^node:/, "")));
 const Config = Schema.Struct({

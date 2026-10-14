@@ -1,0 +1,18 @@
+{
+  "name": "@openmail/repo-checks",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Tests that read source across packages: import boundaries, provider names, log codes",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "check-types": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "effect": "4.0.3",
+    "typescript": "catalog:",
+    "vitest": "^5.0.3"
+  }
+}

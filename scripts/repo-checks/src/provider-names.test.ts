@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, it } from "vitest";
 
-const repo = resolve(fileURLToPath(new URL("./", import.meta.url)), "../../../..");
+const repo = resolve(fileURLToPath(new URL("./", import.meta.url)), "../../..");
 const SOURCES = [
   "packages/core/src",
   "packages/cli/src",

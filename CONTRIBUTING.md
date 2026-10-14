@@ -87,7 +87,7 @@ Use a client you registered yourself. Do not reuse another app's client ID or cr
 Tests sit next to the file they test. [docs/architecture.md](docs/architecture.md) has the full map, and [docs/adr/0001-core-layout.md](docs/adr/0001-core-layout.md) explains the core layout. Two checks keep it in shape:
 
 - `pnpm exec oxlint` fails on any import cycle, type-only imports included.
-- `packages/core/src/platform-imports.test.ts` fails if a new module lands at the top of `packages/core/src` or a non-Node folder imports a Node API.
+- `scripts/repo-checks/src/platform-imports.test.ts` fails if a new module lands at the top of `packages/core/src` or a non-Node folder imports a Node API.
 
 Keep source files under about 800 lines. When one grows past that, split it along a real boundary, such as a sub-component, a hook or one group of handlers.
 

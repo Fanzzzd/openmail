@@ -1,6 +1,6 @@
 # Core platform inventory
 
-Read this before changing a core platform implementation, a package entry or a mobile Layer. The import boundary rules are in AGENTS.md, and `.oxlintrc.json` is the source of truth for banned packages. `platform-imports.test.ts` reads that config. It also checks Node built-in modules, the local dependency graph of the portable entry, and that the top of `src` holds only package entries.
+Read this before changing a core platform implementation, a package entry or a mobile Layer. The import boundary rules are in AGENTS.md, and `.oxlintrc.json` is the source of truth for banned packages. [platform-imports.test.ts](../scripts/repo-checks/src/platform-imports.test.ts) reads that config. It also checks Node built-in modules, the local dependency graph of the portable entry, and that the top of `src` holds only package entries.
 
 The audit of the original `packages/core/src` covered static, type-only and dynamic imports, plus the `.mjs` workers. Every production Node implementation now lives in `platform/node/`. Process test fixtures, the fake provider and the in-memory SQLite test platform live there too. The "Original file" column below uses the file names at audit time. The parts that stayed in core were later split into domain folders; [ADR 0001](adr/0001-core-layout.md) gives their locations.
 

@@ -3,7 +3,7 @@ import { Effect, Schema } from "effect";
 /**
  * A stable code for every warning and error log. The diagnostics file records the code and
  * never the message, so a log site without a code would reach it as `unclassified`.
- * `diagnostic-log.test.ts` fails when source code logs a warning or error without these helpers.
+ * `scripts/repo-checks/src/diagnostic-log-sites.test.ts` fails when source code logs a warning or error without these helpers.
  */
 export const LogCode = Schema.Literals([
   "header-backfill-failed",

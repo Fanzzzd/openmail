@@ -36,7 +36,7 @@ Core source files go into folders by the domains in [CONTEXT.md](../../CONTEXT.m
 
 Rules:
 
-- Node-specific code still lives only in `platform/node/`. `platform-imports.test.ts` walks all of `src`, so new folders are checked automatically.
+- Node-specific code still lives only in `platform/node/`. `scripts/repo-checks/src/platform-imports.test.ts` walks all of `src`, so new folders are checked automatically.
 - The package export paths do not change. Only the dist files that `exports` in `package.json` points to change. Production code in desktop, the CLI and mobile imports core only through the entries. Deep paths in tests move with the files.
 - Tests sit in the same folder as the source file they test. An integration test that covers several modules goes in the domain folder it mainly checks. Node process tests go in `platform/node/`.
 - Split large files along interface boundaries, not by line count. Callers import the new modules directly. No compatibility file re-exports the old path.

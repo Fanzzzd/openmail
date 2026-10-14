@@ -1,6 +1,8 @@
 packages:
   - apps/*
   - packages/*
+  # Tests that read source across packages; turbo.json lists the trees they read.
+  - scripts/repo-checks
 allowBuilds:
   # Electron's postinstall downloads the binary the desktop shell runs on.
   electron: true

@@ -40,18 +40,8 @@
       ]
     },
     "@openmail/core#test": {
-      "dependsOn": ["^build", "build", "@openmail/cli#build"],
-      "inputs": [
-        "$TURBO_DEFAULT$",
-        "$TURBO_ROOT$/.oxlintrc.json",
-        "$TURBO_ROOT$/apps/**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}",
-        "$TURBO_ROOT$/packages/cli/**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}",
-        "!$TURBO_ROOT$/apps/**/node_modules/**",
-        "!$TURBO_ROOT$/apps/**/{dist,out,.next,release}/**",
-        "!$TURBO_ROOT$/packages/cli/node_modules/**",
-        "!$TURBO_ROOT$/packages/cli/dist/**",
-        "$TURBO_ROOT$/spikes/media/artifacts/embeddings-hybrid.json"
-      ],
+      "dependsOn": ["^build", "build"],
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/spikes/media/artifacts/embeddings-hybrid.json"],
       "env": [
         "CI",
         "OPENMAIL_LOW_MEMORY_TESTS",
@@ -60,6 +50,18 @@
         "OPENMAIL_PERF",
         "OPENMAIL_PERF_REPORT"
       ]
+    },
+    "@openmail/repo-checks#test": {
+      "dependsOn": [],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/.oxlintrc.json",
+        "$TURBO_ROOT$/apps/**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}",
+        "$TURBO_ROOT$/packages/**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}",
+        "!$TURBO_ROOT$/{apps,packages}/**/node_modules/**",
+        "!$TURBO_ROOT$/{apps,packages}/**/{dist,out,.next,release}/**"
+      ],
+      "env": ["CI", "VITEST_MAX_WORKERS"]
     },
     "@openmail/cli#test": {
       "dependsOn": ["^build", "build"],

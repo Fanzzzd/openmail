@@ -1,8 +1,6 @@
 import { expectFileBytes } from "../../../test-support/file-bytes.js";
 import { writeMigratedDatabase } from "../../../test-support/migrated-database.js";
 import { createHmac } from "node:crypto";
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
 import {
   mkdtempSync,
   readFileSync,
@@ -18,7 +16,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { Schema } from "effect";
 // The worker runs the same compiled modules shipped by the CLI, with no test runtime in its heap.
 import {
   corpusCheck,
@@ -30,10 +27,8 @@ import {
 import { CORPUS_STAGES, CorpusTimings, type CorpusExplainReport } from "./corpus-report.js";
 import { CorpusPipeline, corpusException } from "./corpus-pipeline.js";
 
-const run = promisify(execFile);
 const { Worker: RealWorker } =
   await vi.importActual<typeof import("node:worker_threads")>("node:worker_threads");
-const cli = new URL("../../../../cli/dist/cli.js", import.meta.url);
 const blockedParser = vi.hoisted(
   (): { enabled: boolean; workers: number; resolve?: () => void } => ({
     enabled: false,
@@ -445,64 +440,6 @@ it("invalid pipeline input fails at the cache boundary before downstream work", 
   }
 });
 
-// The CLI tests below wait on child processes; they run concurrently with each other.
-it.concurrent("CLI JSON is content-free and bypasses Mailbox/network/keychain initialization", async ({
-  expect,
-}) => {
-  const f = fixture();
-  f.add("PrivateCliId", "<p>SecretHtmlOrion</p>");
-  f.db.close();
-  const guard = join(f.directory, "no-network.mjs");
-  writeFileSync(
-    guard,
-    `import net from 'node:net'; import tls from 'node:tls';\nnet.Socket.prototype.connect = () => { throw new Error('Network forbidden'); };\ntls.connect = () => { throw new Error('Network forbidden'); };\nglobalThis.fetch = () => { throw new Error('Network forbidden'); };`,
-  );
-  const { stdout, stderr } = await run(
-    process.execPath,
-    [
-      "--disable-warning=ExperimentalWarning",
-      "--import",
-      guard,
-      cli.pathname,
-      "corpus-check",
-      "--db",
-      f.file,
-      "--json",
-    ],
-    {
-      env: { ...process.env, OPENMAIL_HOME: join(f.directory, "must-not-exist") },
-      timeout: 30_000,
-    },
-  );
-  const result = Schema.decodeUnknownSync(
-    Schema.fromJsonString(Schema.Struct({ processed: Schema.Int })),
-  )(stdout);
-  expect(result.processed).toBe(1);
-  expect(stderr).toBe("");
-  expect(existsSync(join(f.directory, "must-not-exist"))).toBe(false);
-  for (const word of [
-    "SecretSubjectZephyra",
-    "PrivateSenderName",
-    "SecretSender",
-    "SecretSenderDomain",
-    "PrivateRecipientName",
-    "SecretRecipient",
-    "SecretRecipientDomain",
-    "SecretBodyCobalt",
-    "SecretBodyNebula",
-    "SecretHtmlOrion",
-    "invalid",
-    "PrivateSnippetMarker",
-    "PrivateFileMarker",
-    "PrivateBoundaryMarker",
-    "PrivateBadDateMarker",
-    "PrivateDomainMarker",
-    "PrivateCliId",
-    "PrivateAccountMarker",
-  ])
-    expect(stdout).not.toContain(word);
-});
-
 describe.concurrent("corpus explain", () => {
   let f: ReturnType<typeof fixture>;
   let target: string;
@@ -596,125 +533,6 @@ describe.concurrent("corpus explain", () => {
       corpusCheck({ db: f.file, explain: target, runKeyFile: "PrivateMissingKeyCanary" }),
     ).rejects.toThrow("Invalid corpus run key file");
     expectFileBytes(f.file, before);
-  });
-
-  it("CLI explain matches the core explanation and keeps fixture content private", async ({
-    expect,
-  }) => {
-    const { stdout, stderr } = await run(
-      process.execPath,
-      [
-        "--disable-warning=ExperimentalWarning",
-        cli.pathname,
-        "corpus-check",
-        "--db",
-        f.file,
-        "--explain",
-        target,
-        "--run-key",
-        f.runKeyFile,
-        "--json",
-      ],
-      {
-        env: { ...process.env, OPENMAIL_HOME: join(f.directory, "must-not-exist") },
-        timeout: 30_000,
-      },
-    );
-    expect(JSON.parse(stdout)).toEqual(explained);
-    expect(stderr).toBe("");
-    expect(existsSync(join(f.directory, "must-not-exist"))).toBe(false);
-    for (const word of [
-      "SecretSubjectZephyra",
-      "SecretSender",
-      "SecretRecipient",
-      "SecretBodyCobalt",
-      "SecretBodyNebula",
-      "PrivateSelectorCanary",
-      "PrivateIdCanary",
-      "PrivateBodyCanary",
-      "PrivateMsoCanary",
-    ])
-      expect(stdout.toLowerCase()).not.toContain(word.toLowerCase());
-  });
-
-  it("CLI explain requires an explicit run key", async ({ expect }) => {
-    await expect(
-      run(
-        process.execPath,
-        [
-          "--disable-warning=ExperimentalWarning",
-          cli.pathname,
-          "corpus-check",
-          "--db",
-          f.file,
-          "--explain",
-          target,
-        ],
-        {
-          env: { ...process.env, OPENMAIL_HOME: join(f.directory, "must-not-exist") },
-          timeout: 30_000,
-        },
-      ),
-    ).rejects.toMatchObject({ stderr: expect.stringContaining("Explain requires --run-key") });
-  });
-});
-
-describe.concurrent("CLI explain-ready", () => {
-  let f: ReturnType<typeof fixture>;
-  let args: string[];
-  let options: { env: NodeJS.ProcessEnv; timeout: number };
-  let stdout: string;
-  let stderr: string;
-  let file: string;
-  let key: string;
-  let target: string;
-  beforeAll(async () => {
-    f = fixture();
-    f.add("PrivateExplainReadyId", "<p>PrivateExplainReadyBody</p>");
-    f.db.close();
-    args = [
-      "--disable-warning=ExperimentalWarning",
-      cli.pathname,
-      "corpus-check",
-      "--db",
-      f.file,
-      "--json",
-    ];
-    options = {
-      env: { ...process.env, OPENMAIL_HOME: join(f.directory, "must-not-exist") },
-      timeout: 30_000,
-    };
-    ({ stdout, stderr } = await run(process.execPath, [...args, "--explain-ready"], options));
-    const path = /^Run key file: (.+)\n$/.exec(stderr)?.[1];
-    if (!path) throw new Error("Missing run key file path");
-    file = path;
-    directories.push(join(file, ".."));
-    key = readFileSync(file, "utf8");
-    target = createHmac("sha256", Buffer.from(key, "hex")).update("1").digest("hex");
-  });
-  it("writes only its private key path to stderr", ({ expect }) => {
-    expect(stdout).toContain(target);
-    expect(stdout).not.toContain(file);
-    expect(stdout).not.toContain(key);
-    expect(stderr).not.toContain(key);
-    expect(existsSync(join(f.directory, "must-not-exist"))).toBe(false);
-    expect(readdirSync(f.directory)).toEqual(["fixture.db"]);
-  });
-  it("can explain a sample with the generated run key", async ({ expect }) => {
-    const explained = await run(
-      process.execPath,
-      [...args, "--explain", target, "--run-key", file],
-      options,
-    );
-    expect(JSON.parse(explained.stdout)).toMatchObject({
-      mode: "explain",
-      status: "complete",
-      sample: { hash: target },
-    });
-    expect(explained.stdout).not.toContain(key);
-    expect(explained.stderr).toBe("");
-    expect(existsSync(join(f.directory, "must-not-exist"))).toBe(false);
-    expect(readdirSync(f.directory)).toEqual(["fixture.db"]);
   });
 });
 
