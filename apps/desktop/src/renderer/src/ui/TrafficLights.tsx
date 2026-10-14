@@ -7,7 +7,7 @@
  * them, in full screen or in the web build.
  */
 import { constVoid } from "effect/Function";
-import { useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useLayoutEffect, useRef, useSyncExternalStore } from "react";
 
 import {
   trafficLightClearance,
@@ -15,6 +15,7 @@ import {
   type TitlebarArea,
 } from "../../../shared/window-chrome";
 import { isDesktop } from "../lib/platform";
+import { titlebarAreaStore, type TitlebarAreaStore } from "./titlebar-area";
 
 declare global {
   /** Chromium's Window Controls Overlay API; TypeScript's DOM types do not have it yet. */
@@ -27,37 +28,49 @@ declare global {
   }
 }
 
-let cached: TitlebarArea | null = null;
-let cachedKey = "";
-
 /**
- * The titlebar area beside the lights. The overlay is not visible in full
- * screen, where macOS hides the lights, nor off the Mac.
+ * The titlebar area beside the lights, read from the overlay. The overlay is
+ * not visible in full screen, where macOS hides the lights, nor off the Mac.
  */
-function readArea(): TitlebarArea | null {
-  const overlay = isDesktop() ? navigator.windowControlsOverlay : undefined;
-  if (!overlay?.visible) return null;
+function readArea(overlay: WindowControlsOverlay): TitlebarArea | null {
+  if (!overlay.visible) return null;
   const rect = overlay.getTitlebarAreaRect();
-  const key = `${rect.x},${rect.y},${rect.height}`;
-  if (key !== cachedKey) {
-    cachedKey = key;
-    cached = { x: rect.x, y: rect.y, height: rect.height };
-  }
-  return cached;
+  return { x: rect.x, y: rect.y, height: rect.height };
+}
+
+let store: { overlay: WindowControlsOverlay; area: TitlebarAreaStore } | undefined;
+
+/** One settled store per overlay; tests swap the overlay between cases. */
+function areaStore() {
+  const overlay = isDesktop() ? navigator.windowControlsOverlay : null;
+  if (!overlay) return null;
+  if (store?.overlay !== overlay)
+    store = { overlay, area: titlebarAreaStore(() => readArea(overlay)) };
+  return store;
 }
 
 function subscribe(onChange: () => void) {
-  const overlay = isDesktop() ? navigator.windowControlsOverlay : undefined;
-  overlay?.addEventListener("geometrychange", onChange);
-  window.addEventListener("resize", onChange);
+  const current = areaStore();
+  if (!current) return constVoid;
+  const { overlay, area } = current;
+  const unsubscribe = area.subscribe(onChange);
+  const update = () => area.update();
+  overlay.addEventListener("geometrychange", update);
+  window.addEventListener("resize", update);
   return () => {
-    overlay?.removeEventListener("geometrychange", onChange);
-    window.removeEventListener("resize", onChange);
+    unsubscribe();
+    overlay.removeEventListener("geometrychange", update);
+    window.removeEventListener("resize", update);
   };
 }
 
 /** Where the lights' row is free for content; null when there are no lights. */
-export const useTitlebarArea = () => useSyncExternalStore(subscribe, readArea, () => null);
+export const useTitlebarArea = () =>
+  useSyncExternalStore(
+    subscribe,
+    () => areaStore()?.area.get() ?? null,
+    () => null,
+  );
 
 const px = (value: string) => Number.parseFloat(value) || 0;
 
@@ -85,15 +98,23 @@ function layoutBox(el: HTMLElement) {
 export function TrafficLightSpace({ className = "" }: { className?: string }) {
   const area = useTitlebarArea();
   const anchor = useRef<HTMLSpanElement>(null);
-  const [width, setWidth] = useState(0);
+  // The width goes straight to the DOM, not through React state: a resize or
+  // a moved row then lays out with the new width in the same frame. A state
+  // update from a ResizeObserver would paint one frame with the old width.
   useLayoutEffect(() => {
-    const row = anchor.current?.parentElement;
-    if (!row) return constVoid;
+    const space = anchor.current;
+    const row = space?.parentElement;
+    if (!space || !row) return constVoid;
     const measure = () => {
       const box = layoutBox(row);
       const style = getComputedStyle(row);
       const start = box.left + px(style.borderLeftWidth) + px(style.paddingLeft);
-      setWidth(trafficLightSpace(area, { ...box, left: start + px(style.columnGap) }));
+      const width = trafficLightSpace(area, { ...box, left: start + px(style.columnGap) });
+      if (space.dataset.trafficLightSpace === String(width)) return;
+      space.dataset.trafficLightSpace = String(width);
+      space.style.width = `${width}px`;
+      // With no width it leaves the flex row, so the row's gap does not add up either.
+      space.hidden = width === 0;
     };
     measure();
     const observer =
@@ -106,17 +127,7 @@ export function TrafficLightSpace({ className = "" }: { className?: string }) {
     };
   }, [area]);
   if (!area) return null;
-  // With no width it leaves the flex row, so the row's gap does not add up either.
-  return (
-    <span
-      ref={anchor}
-      aria-hidden
-      data-traffic-light-space={width}
-      hidden={width === 0}
-      className={`drag shrink-0 self-stretch ${className}`}
-      style={{ width }}
-    />
-  );
+  return <span ref={anchor} aria-hidden className={`drag shrink-0 self-stretch ${className}`} />;
 }
 
 /**

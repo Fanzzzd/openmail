@@ -68,6 +68,21 @@ it("a narrow window shows the list or the reader, and goes back with the button,
   const searchRow = search.closest("section > .drag");
   expect(lightSpaceAt(searchRow, 0)).toBe(96);
   expect(lightSpaceAt(searchRow?.nextElementSibling, 0, 52)).toBe(0);
+  // After each resize step Electron reports the lights 9 px left for one frame. The search
+  // field and the sidebar toggle stay where they are.
+  const overlay = navigator.windowControlsOverlay;
+  if (!overlay) throw new Error("Missing overlay stub");
+  const settled = Object.getOwnPropertyDescriptor(overlay, "getTitlebarAreaRect");
+  if (!settled) throw new Error("Missing overlay stub rect");
+  Object.defineProperty(overlay, "getTitlebarAreaRect", {
+    configurable: true,
+    value: () => DOMRect.fromRect({ x: 87, y: 0, width: 913, height: 52 }),
+  });
+  try {
+    expect(lightSpaceAt(searchRow, 0)).toBe(96);
+  } finally {
+    Object.defineProperty(overlay, "getTitlebarAreaRect", settled);
+  }
   expect(document.querySelector('[data-mail-pane="sidebar"]')).toBeNull();
   expect(rail()).toBeNull();
 
