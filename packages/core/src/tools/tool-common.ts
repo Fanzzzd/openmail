@@ -290,6 +290,15 @@ const NOT_FOUND_HINTS: Record<string, string> = {
 };
 const NOT_FOUND_HINT = "Check the id; list tools such as list_threads return current ids.";
 
+/**
+ * A tool error raised as a defect, where the Mailbox interface has no error channel, such as the
+ * assistant's scoped account and label lists. MailToolkit turns it back into its MailToolError,
+ * so the model reads it like any other tool error instead of an empty list.
+ */
+export class ToolFailure {
+  constructor(readonly error: MailToolError) {}
+}
+
 export const toToolError = (e: PerformError): MailToolError => {
   switch (e._tag) {
     case "NotFound":

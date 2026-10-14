@@ -40,7 +40,7 @@ import {
 import { Context, Effect, Exit } from "effect";
 import { makeToolContext } from "./tool-context.js";
 import { cleanMcpClientName } from "./agent-identity.js";
-import { CONSENT_SWITCH, type MailToolError } from "./tool-common.js";
+import { CONSENT_SWITCH, type MailToolError, ToolFailure } from "./tool-common.js";
 import { Mailbox } from "../mailbox/mailbox.js";
 
 export const ReadMailToolkit = Toolkit.make(
@@ -107,6 +107,9 @@ export const MailToolkitLayer = MailToolkit.toLayer(
     /** MCP calls leave a row in agent_activity, so Settings can show what each AI app did. */
     const tracked = <A, E, R>(tool: string, effect: Effect.Effect<A, E, R>) =>
       Effect.andThen(gate, effect).pipe(
+        Effect.catchDefect((defect) =>
+          defect instanceof ToolFailure ? Effect.fail(defect.error) : Effect.die(defect),
+        ),
         Effect.onExit((exit) =>
           Effect.flatMap(identity.current, (current) =>
             current.recordsActivity

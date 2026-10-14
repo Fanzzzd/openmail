@@ -361,6 +361,74 @@ it.effect(
   },
 );
 
+/** Runs list_accounts and list_labels inside one assistant answer and returns their results. */
+const listOutcomes = (setup: (store: Store["Service"]) => Effect.Effect<void>) => {
+  const server = fakeServer("me@gmail.com", [incoming("m1")]);
+  const outcomes: string[] = [];
+  let prepare: Effect.Effect<void> = Effect.void;
+  const fake = FakeModelLayer((request) =>
+    Stream.unwrap(
+      Effect.gen(function* () {
+        assert.ok(request.toolkit);
+        const toolkit = request.toolkit;
+        yield* prepare;
+        for (const tool of ["list_accounts", "list_labels"] as const) {
+          const result = yield* Stream.runLast(yield* toolkit.handle(tool, {}));
+          outcomes.push(
+            Option.isSome(result) ? JSON.stringify(result.value.encodedResult) : "none",
+          );
+        }
+        return textStream("Done");
+      }),
+    ).pipe(Stream.orDie),
+  );
+  const storeLayer = StoreLive.pipe(Layer.provideMerge(MemoryPlatform()));
+  const providers = Layer.succeed(Providers, { get: () => makeFakeProvider(server) });
+  const mailboxLayer = MailboxLive({ backgroundFlush: false }).pipe(
+    Layer.provide(Layer.mergeAll(storeLayer, providers, fake)),
+  );
+  return Effect.gen(function* () {
+    const m = yield* Mailbox;
+    yield* m.accounts.connect({ provider: "gmail" });
+    yield* m.sync.sync();
+    yield* m.ai.setAiAccount(consent);
+    prepare = setup(yield* Store);
+    yield* Stream.runDrain(m.ai.askAi({ question: "List my labels", accountIds: [accountId] }));
+    return outcomes;
+  }).pipe(Effect.provide(Layer.mergeAll(mailboxLayer, storeLayer)));
+};
+
+it.effect("account and label lists report a consent denial as the tool's error", () =>
+  Effect.gen(function* () {
+    const outcomes = yield* listOutcomes((store) =>
+      // Straight to the store: setAiAccount would also cancel this request.
+      Effect.orDie(store.ai.setAccount({ ...consent, allowed: false })),
+    );
+    assert.lengthOf(outcomes, 2);
+    for (const outcome of outcomes) {
+      assert.include(outcome, "AI Access", outcome);
+      assert.include(outcome, "invalid_input", outcome);
+    }
+  }),
+);
+
+it.effect("a label list over the input budget fails the tool call, not as no labels", () =>
+  Effect.gen(function* () {
+    const outcomes = yield* listOutcomes((store) =>
+      store.replaceLabels(
+        accountId,
+        Array.from({ length: 2000 }, (_, i) => ({
+          id: `Label_${i}`,
+          name: `A long project label name that takes room, number ${i}`,
+          color: null,
+        })),
+      ),
+    );
+    assert.include(outcomes[0], accountId, outcomes[0]);
+    assert.include(outcomes[1], "does not fit in the input budget", outcomes[1]);
+  }),
+);
+
 it.effect(
   "revoking account consent deletes all its persisted AI results and preserves other accounts",
   () => {

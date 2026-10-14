@@ -25,12 +25,20 @@ import type { Secrets } from "../platform/auth.js";
 import { type Host, localDay, nowLine } from "../platform/host.js";
 import type { Store } from "../store/service.js";
 import { AssistantToolkit, MailToolkitLayer, ToolGate } from "../tools/tools.js";
-import { toolError } from "../tools/tool-common.js";
+import { ToolFailure, toToolError, toolError } from "../tools/tool-common.js";
 import { AgentIdentity } from "../tools/agent-identity.js";
 import { toModelAccount } from "../tools/account-tools.js";
 import { providerCapabilities } from "../providers/capabilities.js";
 import { makeAiRequests, noLocale, validLocale } from "./mailbox-ai-requests.js";
 import { isSpecialLabel, makeAiTriage } from "./mailbox-ai-triage.js";
+
+/**
+ * The assistant's account and label lists have no error channel. A consent denial or a result
+ * over the input budget still reaches the model as that tool call's error, the way threads
+ * reports it; an empty list would read as "no accounts" or "no labels".
+ */
+const failAsTool = <A>(effect: Effect.Effect<A, InvalidInput>) =>
+  effect.pipe(Effect.catch((e) => Effect.die(new ToolFailure(toToolError(e)))));
 
 export function makeAiMailbox(
   store: Store["Service"],
@@ -294,7 +302,7 @@ export function makeAiMailbox(
                   const selected = accounts.filter((a) => ids.includes(a.id));
                   return budget(selected.map(toModelAccount)).pipe(Effect.as(selected));
                 }),
-              ).pipe(Effect.catch(() => Effect.succeed([]))),
+              ).pipe(failAsTool),
             },
             reading: {
               ...m.reading,
@@ -302,7 +310,7 @@ export function makeAiMailbox(
                 Effect.andThen(
                   guard,
                   Effect.flatMap(m.reading.labels(scope(accountIds)), budget),
-                ).pipe(Effect.catch(() => Effect.succeed([]))),
+                ).pipe(failAsTool),
               threads: (q) =>
                 Effect.gen(function* () {
                   yield* guard;
