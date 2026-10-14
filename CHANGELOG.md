@@ -17,7 +17,7 @@ The first public version. Everything below is new.
 ### Reading and search
 
 - Conversation and single-message views, find in message, quoted text folding, raw source and EML export, print and PDF.
-- Remote images load by default with a per-message prompt; known trackers are removed under every setting.
+- Remote images load by default; you can ask per message or load only from known senders. Known trackers are removed under every setting.
 - Sender authentication badges, link confirmation for mismatched or international domains, and warnings for dangerous attachments.
 - Full-text search over local mail with boolean, phrase, date, size and attachment operators, merged with server search, recent searches and match highlights.
 - Optional on-device OCR (macOS Vision), PDF text and semantic search.
@@ -38,8 +38,8 @@ The first public version. Everything below is new.
 
 ### AI and agents
 
-- Optional AI per account, off by default: summaries, a mail assistant (Cmd-J), writing help and triage suggestions. Changes the assistant proposes wait for your approval.
-- CLI (`openmail`) and an MCP server for Claude Code, Codex, Claude and Cursor. Tools are read-only by default; write tools only create AI suggestions (`proposal` in the tool names), and sending always needs confirmation in the app.
+- Optional AI per account, off by default: summaries, a mail assistant (⌘J), writing help and triage suggestions. Changes the assistant proposes wait for your approval.
+- CLI (`openmail`) and an MCP server for Claude Code, Codex, Claude and Cursor. Tools are read-only by default; write tools only create AI suggestions (called proposals in `list_proposals`, `read_proposal` and `openmail proposals`), and sending always needs confirmation in the app.
 - Connect AI apps from Settings, with a diff to review before any config file changes.
 
 ### Remote access
