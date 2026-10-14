@@ -16,9 +16,11 @@ vi.mock("electron", () => ({
     isPackaged: true,
     getPreferredSystemLanguages: () => ["en"],
     getLocale: () => "en",
+    getSystemLocale: () => "en-GB",
   }),
   screen: { getAllDisplays: () => [{ workArea: { x: 0, y: 24, width: 1920, height: 1056 } }] },
   nativeTheme: { shouldUseDarkColors: false },
+  systemPreferences: { getUserDefault: () => false },
   shell: { openExternal: vi.fn(() => Promise.resolve()) },
   BrowserWindow: class FakeWindow extends EventEmitter {
     static all: FakeWindow[] = [];
@@ -161,12 +163,12 @@ it("single-message windows force single scope independently of conversation sett
   const id = "gmail:me@example.com/older";
   const single = openMessageWindow(id);
   expect(page(single)).toEqual({
-    query: { systemLanguages: JSON.stringify(["en", "en"]) },
+    query: { systemLanguages: JSON.stringify(["en", "en"]), region: "en-GB" },
     hash: "#/thread/gmail%3Ame%40example.com%2Folder?single=1",
   });
   const thread = openThreadWindow(id);
   expect(page(thread)).toEqual({
-    query: { systemLanguages: JSON.stringify(["en", "en"]) },
+    query: { systemLanguages: JSON.stringify(["en", "en"]), region: "en-GB" },
     hash: "#/thread/gmail%3Ame%40example.com%2Folder",
   });
 });
@@ -183,7 +185,7 @@ it("compose windows share the locked sandbox and request a renderer draft close 
     },
   });
   expect(page(win)).toEqual({
-    query: { systemLanguages: JSON.stringify(["en", "en"]) },
+    query: { systemLanguages: JSON.stringify(["en", "en"]), region: "en-GB" },
     hash: "#/compose/draft-20",
   });
   expect(vi.mocked(win.webContents).setWindowOpenHandler.mock.calls).toHaveLength(1);
@@ -226,7 +228,7 @@ it("restores each window kind from the old and new saved formats", async () => {
     windows.configureWindowRecovery(file, () => false);
     windows.restoreWindows();
     const restored = BrowserWindow.getAllWindows().slice(-5);
-    const query = { systemLanguages: JSON.stringify(["en", "en"]) };
+    const query = { systemLanguages: JSON.stringify(["en", "en"]), region: "en-GB" };
     expect(restored.map(page)).toEqual([
       { query, hash: `#${route}` },
       { query, hash: "#/mail/all/sent?q=x" },

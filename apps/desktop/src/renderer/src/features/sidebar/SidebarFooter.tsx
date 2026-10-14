@@ -5,6 +5,7 @@ import { useShortcutText } from "../../i18n/use-shortcut-text";
 import { syncNow, useRunMail } from "../../state/mail";
 import { Tip } from "../../ui/Tip";
 import { SyncStatusAnnouncement } from "../sync-status";
+import { dateFormat } from "../../lib/format";
 
 /** The sidebar's last row: sync progress or result, Settings and Sync now. */
 export function SidebarFooter({
@@ -36,10 +37,8 @@ export function SidebarFooter({
       return t`Sync failed (${count})`;
     }
     if (!syncState.lastFinishedAt) return "";
-    const time = new Date(syncState.lastFinishedAt).toLocaleTimeString(i18n.locale, {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    const { locale, time: timeOptions } = dateFormat(i18n);
+    const time = new Date(syncState.lastFinishedAt).toLocaleTimeString(locale, timeOptions);
     return t`Synced ${time}`;
   };
   return (

@@ -4,9 +4,11 @@ import type { Language } from "../../../shared/api";
 import { loadCatalog } from "../../../shared/catalogs";
 import { createLocaleActivator } from "../../../shared/locale-activation";
 import { systemLocale, type Locale } from "../../../shared/locales";
+import { setSystemDateRegion } from "../lib/format";
 export type { Locale } from "../../../shared/locales";
 
 const query = new URLSearchParams(window.location.search);
+setSystemDateRegion(query);
 const preferred = Schema.decodeUnknownOption(Schema.fromJsonString(Schema.Array(Schema.String)))(
   query.get("systemLanguages") ?? "null",
 );

@@ -22,6 +22,7 @@ import {
   WINDOW_SECURITY,
 } from "../security/security-policy";
 import { trustRenderer } from "../security/security";
+import { systemDateRegion } from "./date-region";
 import { APP_TITLE, DEV_ICON } from "../app/app-identity";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -309,6 +310,7 @@ function createAppWindow(options: WindowOptions): BrowserWindow {
   );
   url.search = new URLSearchParams({
     systemLanguages: JSON.stringify([...app.getPreferredSystemLanguages(), app.getLocale()]),
+    ...systemDateRegion(),
   }).toString();
   if (options.href) url.hash = options.href;
   void win.loadURL(url.href);

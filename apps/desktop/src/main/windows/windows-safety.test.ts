@@ -12,6 +12,7 @@ vi.mock("electron", async () => {
     isPackaged: true,
     getPreferredSystemLanguages: () => ["en"],
     getLocale: () => "en",
+    getSystemLocale: () => "en-GB",
   });
   class Window extends EventEmitter {
     static all: Window[] = [];
@@ -71,6 +72,7 @@ vi.mock("electron", async () => {
     app,
     BrowserWindow: Window,
     nativeTheme: { shouldUseDarkColors: false },
+    systemPreferences: { getUserDefault: () => true },
     screen: { getAllDisplays: () => [{ workArea: { x: 0, y: 24, width: 1920, height: 1056 } }] },
     shell: { openExternal: vi.fn() },
   };

@@ -61,7 +61,7 @@ import { runAccountMove } from "./sections/account-settings";
 import { auditActionName } from "./sections/audit-actions";
 import { SyncHealthCheck } from "./sections/SyncHealth";
 import { AccountControls } from "./sections/AccountControls";
-import { accountName } from "../../lib/format";
+import { accountName, dateFormat } from "../../lib/format";
 import { InteractionSettings, LabsSettings } from "./sections/InteractionSettings";
 import {
   DefaultMailClient,
@@ -670,11 +670,10 @@ function AuditLog({ accounts }: { accounts: readonly Account[] }) {
           {log.map((e, i) => (
             <tr key={i}>
               <td className={`${logCell} whitespace-nowrap text-a11y-muted`}>
-                {new Date(e.at).toLocaleString(i18n.locale, {
+                {new Date(e.at).toLocaleString(dateFormat(i18n).locale, {
                   month: "numeric",
                   day: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
+                  ...dateFormat(i18n).time,
                 })}
               </td>
               <td className={`${logCell} whitespace-nowrap`}>{actorName(i18n, e.actor)}</td>

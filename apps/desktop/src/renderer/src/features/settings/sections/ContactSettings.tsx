@@ -12,6 +12,7 @@ import { reauthAtom, refreshContactsAtom } from "../../../state/mutations";
 import { contactSyncAtom } from "../../../state/queries";
 import { SettingsGroup, SettingsRow } from "../../../ui/SettingsRows";
 import { buttonSecondary } from "../../../ui/styles";
+import { dateFormat } from "../../../lib/format";
 
 const alertRow = "px-3 py-2 text-orange-700 dark:text-orange-400";
 
@@ -43,9 +44,10 @@ export function ContactSettings({ account }: { account: Account }) {
                 <>
                   {" "}
                   ·{" "}
-                  {new Intl.DateTimeFormat(i18n.locale, {
+                  {new Intl.DateTimeFormat(dateFormat(i18n).locale, {
                     dateStyle: "medium",
                     timeStyle: "short",
+                    ...dateFormat(i18n).clock,
                   }).format(status.refreshedAt)}
                 </>
               )}

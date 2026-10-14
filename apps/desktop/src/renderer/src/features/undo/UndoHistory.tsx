@@ -3,6 +3,7 @@ import { History } from "lucide-react";
 import type { UndoHistoryEntry } from "@openmail/core/schema";
 import { DropdownMenu, MenuItem } from "../../ui/Menu";
 import { touchIcon } from "../../ui/styles";
+import { dateFormat } from "../../lib/format";
 
 /** Restored operations are selected explicitly and never become the window Undo command. */
 export function UndoHistory({
@@ -32,7 +33,7 @@ export function UndoHistory({
             <MenuItem
               key={entry.undoId}
               onClick={() => onUndo(entry.undoId)}
-            >{t`Undo operation from ${new Date(entry.createdAt).toLocaleString(i18n.locale)}`}</MenuItem>
+            >{t`Undo operation from ${new Date(entry.createdAt).toLocaleString(dateFormat(i18n).locale, { dateStyle: "medium", timeStyle: "short", ...dateFormat(i18n).clock })}`}</MenuItem>
           ))
         ) : (
           <p className="px-2 py-1">{t`No operations to undo`}</p>

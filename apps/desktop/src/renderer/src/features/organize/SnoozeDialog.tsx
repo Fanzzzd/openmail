@@ -7,6 +7,7 @@ import { MAIL_KEYS } from "../../state/keys";
 import { snoozeAtom } from "../../state/mutations";
 import { Dialog } from "../../ui/Dialog";
 import { formButton, formInput } from "../../ui/form-styles";
+import { dateFormat } from "../../lib/format";
 
 export function SnoozeDialog({
   threads,
@@ -78,7 +79,11 @@ export function SnoozeDialog({
           <p id={timeDescription} aria-live="polite">
             {due === null
               ? t`Enter a future reminder time`
-              : new Date(due).toLocaleString(i18n.locale)}
+              : new Date(due).toLocaleString(dateFormat(i18n).locale, {
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                  ...dateFormat(i18n).clock,
+                })}
           </p>
         )}
         <label className="block space-y-1">

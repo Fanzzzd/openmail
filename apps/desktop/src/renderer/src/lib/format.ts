@@ -1,16 +1,44 @@
 import type { I18n } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import type { Account } from "../../../shared/api";
+import { dateLocale, readDateRegion, type DateRegion } from "../../../shared/date-region";
 export { accountName, displayName } from "@openmail/core/schema";
+
+/** The OS region main put in the page query (i18n.ts sets it); the web build has none. */
+let SYSTEM_REGION: DateRegion = { region: undefined, hourCycle: undefined };
+export function setSystemDateRegion(query: URLSearchParams) {
+  SYSTEM_REGION = readDateRegion(query);
+}
+const browserRegion = () => (typeof navigator === "undefined" ? undefined : navigator.language);
+
+/** Locale and clock for dates shown in the UI language. */
+export function dateFormat(i18n: I18n, region: DateRegion = SYSTEM_REGION) {
+  const locale = dateLocale(i18n.locale, region.region ?? browserRegion());
+  const clock = region.hourCycle ? { hourCycle: region.hourCycle } : {};
+  // A 24-hour clock pads the hour (08:09); a 12-hour clock does not (8:09 AM).
+  const cycle = new Intl.DateTimeFormat(locale, { hour: "numeric", ...clock }).resolvedOptions()
+    .hourCycle;
+  const hour = cycle === "h23" || cycle === "h24" ? "2-digit" : "numeric";
+  return {
+    locale,
+    time: { hour, minute: "2-digit", ...clock } satisfies Intl.DateTimeFormatOptions,
+    /** Extra options for a format that includes the time of day. */
+    clock,
+  };
+}
 
 const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
 
 /** List timestamps: time today, weekday this week, date otherwise. */
-export function shortDate(ms: number, i18n: I18n): string {
-  const locale = i18n.locale;
+export function shortDate(
+  ms: number,
+  i18n: I18n,
+  region: DateRegion = SYSTEM_REGION,
+  now = new Date(),
+): string {
+  const { locale, time } = dateFormat(i18n, region);
   const d = new Date(ms);
-  const now = new Date();
-  if (sameDay(d, now)) return d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
+  if (sameDay(d, now)) return d.toLocaleTimeString(locale, time);
   const yesterday = new Date(now);
   yesterday.setDate(now.getDate() - 1);
   if (sameDay(d, yesterday)) return i18n._(msg`Yesterday`);
@@ -63,24 +91,19 @@ export function formatBytes(n: number, locale: string): string {
 }
 
 /** Thread headers: "Today 18:24", "Yesterday 18:24", "September 21 18:24", or a full date in older years. */
-export function threadDate(ms: number, i18n: I18n): string {
-  return relativeDate(ms, i18n.locale, (day, time) =>
-    day === "today" ? i18n._(msg`Today ${time}`) : i18n._(msg`Yesterday ${time}`),
-  );
-}
-
-function relativeDate(
+export function threadDate(
   ms: number,
-  locale: string,
-  relative: (day: "today" | "yesterday", time: string) => string,
+  i18n: I18n,
+  region: DateRegion = SYSTEM_REGION,
+  now = new Date(),
 ): string {
+  const { locale, time: timeOptions } = dateFormat(i18n, region);
   const d = new Date(ms);
-  const now = new Date();
-  const time = d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
+  const time = d.toLocaleTimeString(locale, timeOptions);
   const yesterday = new Date(now);
   yesterday.setDate(now.getDate() - 1);
-  if (sameDay(d, now)) return relative("today", time);
-  if (sameDay(d, yesterday)) return relative("yesterday", time);
+  if (sameDay(d, now)) return i18n._(msg`Today ${time}`);
+  if (sameDay(d, yesterday)) return i18n._(msg`Yesterday ${time}`);
   const day =
     d.getFullYear() === now.getFullYear()
       ? d.toLocaleDateString(locale, { month: "long", day: "numeric" })

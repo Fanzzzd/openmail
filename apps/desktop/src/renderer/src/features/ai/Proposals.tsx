@@ -13,6 +13,7 @@ import { resultError } from "../../lib/errors";
 import { decideAtom } from "../../state/mutations";
 import { labelsAtom, threadAtom } from "../../state/queries";
 import { Dialog } from "../../ui/Dialog";
+import { dateFormat } from "../../lib/format";
 
 const OP_NAMES: Record<MailOp["kind"], (op: MailOp) => MessageDescriptor> = {
   read: (op) => (op.kind === "read" && op.value ? msg`Mark as read` : msg`Mark as unread`),
@@ -121,9 +122,10 @@ function Item({
   const more = count - threadIds.length;
   const dueText =
     command.kind === "snooze"
-      ? new Date(command.due).toLocaleString(i18n.locale, {
+      ? new Date(command.due).toLocaleString(dateFormat(i18n).locale, {
           dateStyle: "medium",
           timeStyle: "short",
+          ...dateFormat(i18n).clock,
         })
       : "";
   const outgoing = command.kind === "send" || command.kind === "draft" ? command : null;
@@ -140,11 +142,10 @@ function Item({
     <li className="px-5 py-4">
       <p className="text-footnote text-a11y-muted">
         {surface} · {agent?.name ?? "AI"} ·{" "}
-        {new Date(p.createdAt).toLocaleString(i18n.locale, {
+        {new Date(p.createdAt).toLocaleString(dateFormat(i18n).locale, {
           month: "numeric",
           day: "numeric",
-          hour: "numeric",
-          minute: "2-digit",
+          ...dateFormat(i18n).time,
         })}
       </p>
       {(command.kind === "modify" || command.kind === "snooze") && (
