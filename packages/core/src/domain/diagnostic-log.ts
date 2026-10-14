@@ -1,4 +1,4 @@
-import { Effect, Schema } from "effect";
+import { Clock, Effect, Schema } from "effect";
 
 /**
  * A stable code for every warning and error log. The diagnostics file records the code and
@@ -13,6 +13,8 @@ export const LogCode = Schema.Literals([
   "inbox-poll-failed",
   "flush-failed",
   "media-index-failed",
+  "search-index-failed",
+  "semantic-index-failed",
   "attachment-cache-unavailable",
   "attachment-cleanup-failed",
   "draft-organization-failed",
@@ -47,6 +49,20 @@ export const logWarning = (code: LogCode, ...message: ReadonlyArray<unknown>) =>
 /** `Effect.logError` with its diagnostics code attached. */
 export const logError = (code: LogCode, ...message: ReadonlyArray<unknown>) =>
   Effect.logError(...message).pipe(Effect.annotateLogs(LOG_CODE_ANNOTATION, code));
+
+/**
+ * `logWarning` for a background loop that retries on its own: it writes at most once per
+ * `intervalMs`, so a failure repeating every few seconds leaves one line, not thousands.
+ */
+export const throttledWarning = (code: LogCode, intervalMs = 10 * 60_000) => {
+  let last = Number.NEGATIVE_INFINITY;
+  return (...message: ReadonlyArray<unknown>) =>
+    Effect.flatMap(Clock.currentTimeMillis, (now) => {
+      if (now - last < intervalMs) return Effect.void;
+      last = now;
+      return logWarning(code, ...message);
+    });
+};
 
 /** The code in a log line's annotations, or undefined. Any other annotation value is ignored. */
 export function logCodeOf(annotations: unknown): LogCode | undefined {

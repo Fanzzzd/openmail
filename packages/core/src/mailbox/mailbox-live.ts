@@ -1,4 +1,4 @@
-import { logWarning } from "../domain/diagnostic-log.js";
+import { logWarning, throttledWarning } from "../domain/diagnostic-log.js";
 import { makeStorageMailbox } from "./mailbox-storage.js";
 import {
   Cause,
@@ -177,6 +177,7 @@ export const MailboxLive = (
         // Let desktop construct/show its first window before taking the SQLite
         // write lock for optional, resumable search backfill.
         yield* backgroundReady;
+        const searchIndexFailed = throttledWarning("search-index-failed");
         let indexed = false;
         for (const step of [
           store.backfillWordIndex(),
@@ -190,7 +191,9 @@ export const MailboxLive = (
               Effect.catchCause((cause) =>
                 Cause.hasInterrupts(cause)
                   ? Effect.failCause(cause)
-                  : Effect.succeed({ _tag: "Failure" } as const),
+                  : searchIndexFailed("Search index backfill failed; retrying").pipe(
+                      Effect.as({ _tag: "Failure" } as const),
+                    ),
               ),
             );
             if (batch._tag === "Success" && batch.success.processed) indexed = true;
@@ -213,7 +216,9 @@ export const MailboxLive = (
               }
             }).pipe(
               Effect.catchCause((cause) =>
-                Cause.hasInterrupts(cause) ? Effect.failCause(cause) : Effect.void,
+                Cause.hasInterrupts(cause)
+                  ? Effect.failCause(cause)
+                  : searchIndexFailed("Search bigram indexing failed; retrying on the next change"),
               ),
             ),
           ),
@@ -453,11 +458,16 @@ export const MailboxLive = (
           Effect.forkScoped,
         );
 
+      const semanticIndexFailed = throttledWarning("semantic-index-failed");
       if (options.media && semantic)
         yield* backgroundReady.pipe(
           Effect.andThen(
             semantic.batch().pipe(
-              Effect.catchCause(() => Effect.void),
+              Effect.catchCause((cause) =>
+                Cause.hasInterrupts(cause)
+                  ? Effect.failCause(cause)
+                  : semanticIndexFailed("Semantic indexing batch failed"),
+              ),
               Effect.repeat(Schedule.spaced("15 seconds")),
             ),
           ),
