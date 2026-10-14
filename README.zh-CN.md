@@ -24,7 +24,7 @@ OpenMail 处于早期测试阶段，还有不少粗糙的地方。遇到问题�
 
 - **按账户授权。** 你在 **Settings → AI Access** 里为某个账户打开 **Allow AI to read this account** 之后，代理才能看到它。每次工具调用都会检查这项授权。
 - **默认只读。** MCP 工具可以读取和搜索邮件。**Changes by AI apps** 默认是 **Read only**，此时所有写工具都会拒绝执行。
-- **AI 建议。** 写工具需要两个开关：连接 app 时勾选 **Let … make AI suggestions for you to approve**，并把 **Changes by AI apps** 设为 **Ask me first**。之后 `modify_threads`、`snooze_threads` 和 `draft_message` 只会创建 AI 建议。每条 AI 建议留在 **AI suggestions** 里，等你批准或拒绝。
+- **AI 建议。** 写工具需要两个开关：连接 app 时勾选 **Allow AI suggestions**，并把 **Changes by AI apps** 设为 **Ask me first**。之后 `modify_threads`、`snooze_threads` 和 `draft_message` 只会创建 AI 建议。每条 AI 建议留在 **AI suggestions** 里，等你批准或拒绝。
 - **代理不能发信。** 代理起草的邮件会在撰写窗口打开，由你自己发送。
 - **在设置里连接。** OpenMail 可以替你连接 Claude Code、Codex、Claude 和 Cursor。它先显示配置 diff，只改 `openmail` 条目。其他 MCP 客户端可以运行 `/Applications/OpenMail.app/Contents/MacOS/OpenMail --mcp`。
 - **内置 AI，默认关闭。** 使用你自己的 Anthropic API key，只作用于你允许的账户：摘要、邮件助手、写作帮助和收件箱分拣。助手同样只给出 AI 建议，不直接改动邮件。

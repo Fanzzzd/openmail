@@ -748,6 +748,7 @@ msgstr "Zugriff aus meinem Tailnet erlauben"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "Allow AI suggestions"
 msgstr "KI-Vorschläge erlauben"
 
@@ -1746,8 +1747,8 @@ msgid "Connected to {tailnet}"
 msgstr "Verbunden mit {tailnet}"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
-msgid "Connected, can make AI suggestions"
-msgstr "Verbunden, kann KI-Vorschläge machen"
+msgid "Connected, AI suggestions allowed"
+msgstr "Verbunden, KI-Vorschläge erlaubt"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Connected, read only"
@@ -3693,10 +3694,6 @@ msgstr "Kurzer Wisch nach links"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Left to right"
 msgstr "Von links nach rechts"
-
-#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
-msgid "Let {name} make AI suggestions for you to approve"
-msgstr "{name} KI-Vorschläge zur Genehmigung machen lassen"
 
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Light background"

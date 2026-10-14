@@ -752,6 +752,7 @@ msgstr "Allow access from my tailnet"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "Allow AI suggestions"
 msgstr "Allow AI suggestions"
 
@@ -1750,8 +1751,8 @@ msgid "Connected to {tailnet}"
 msgstr "Connected to {tailnet}"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
-msgid "Connected, can make AI suggestions"
-msgstr "Connected, can make AI suggestions"
+msgid "Connected, AI suggestions allowed"
+msgstr "Connected, AI suggestions allowed"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Connected, read only"
@@ -3697,10 +3698,6 @@ msgstr "Left short swipe"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Left to right"
 msgstr "Left to right"
-
-#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
-msgid "Let {name} make AI suggestions for you to approve"
-msgstr "Let {name} make AI suggestions for you to approve"
 
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Light background"

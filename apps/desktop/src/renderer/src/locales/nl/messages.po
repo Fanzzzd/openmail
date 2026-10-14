@@ -748,6 +748,7 @@ msgstr "Toegang vanuit mijn tailnet toestaan"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "Allow AI suggestions"
 msgstr "AI-suggesties toestaan"
 
@@ -1746,8 +1747,8 @@ msgid "Connected to {tailnet}"
 msgstr "Verbonden met {tailnet}"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
-msgid "Connected, can make AI suggestions"
-msgstr "Verbonden, kan AI-suggesties doen"
+msgid "Connected, AI suggestions allowed"
+msgstr "Verbonden, AI-suggesties toegestaan"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Connected, read only"
@@ -3693,10 +3694,6 @@ msgstr "Korte veeg naar links"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Left to right"
 msgstr "Van links naar rechts"
-
-#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
-msgid "Let {name} make AI suggestions for you to approve"
-msgstr "{name} AI-suggesties laten doen die je goedkeurt"
 
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Light background"

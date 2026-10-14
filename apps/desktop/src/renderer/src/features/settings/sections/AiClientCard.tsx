@@ -28,7 +28,7 @@ function StateText({ client }: { client: AiClientView }) {
       return (
         <span className="text-green-700 dark:text-green-400">
           {client.proposalTools ? (
-            <Trans>Connected, can make AI suggestions</Trans>
+            <Trans>Connected, AI suggestions allowed</Trans>
           ) : (
             <Trans>Connected, read only</Trans>
           )}

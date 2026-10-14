@@ -758,6 +758,7 @@ msgstr "允许从我的 tailnet 访问"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "Allow AI suggestions"
 msgstr "允许 AI 建议"
 
@@ -1756,8 +1757,8 @@ msgid "Connected to {tailnet}"
 msgstr "已连接到 {tailnet}"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
-msgid "Connected, can make AI suggestions"
-msgstr "已连接，可提出 AI 建议"
+msgid "Connected, AI suggestions allowed"
+msgstr "已连接，允许 AI 建议"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Connected, read only"
@@ -3703,10 +3704,6 @@ msgstr "向左短滑"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Left to right"
 msgstr "从左到右"
-
-#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
-msgid "Let {name} make AI suggestions for you to approve"
-msgstr "允许 {name} 提出 AI 建议，由你批准"
 
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Light background"

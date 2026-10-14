@@ -748,6 +748,7 @@ msgstr "Autoriser l’accès depuis mon tailnet"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "Allow AI suggestions"
 msgstr "Autoriser les suggestions d’IA"
 
@@ -1746,8 +1747,8 @@ msgid "Connected to {tailnet}"
 msgstr "Connecté à {tailnet}"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
-msgid "Connected, can make AI suggestions"
-msgstr "Connectée, peut faire des suggestions d’IA"
+msgid "Connected, AI suggestions allowed"
+msgstr "Connectée, suggestions d’IA autorisées"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Connected, read only"
@@ -3693,10 +3694,6 @@ msgstr "Balayage court vers la gauche"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Left to right"
 msgstr "De gauche à droite"
-
-#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
-msgid "Let {name} make AI suggestions for you to approve"
-msgstr "Laisser {name} faire des suggestions d’IA à approuver"
 
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Light background"

@@ -113,7 +113,7 @@ export function ConfirmChange({
               onCheckedChange={(proposalTools) => load({ ...current, proposalTools })}
             />
             <label htmlFor={proposalsId}>
-              <Trans>Let {name} make AI suggestions for you to approve</Trans>
+              <Trans>Allow AI suggestions</Trans>
             </label>
           </div>
         )}

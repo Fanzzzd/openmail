@@ -1,4 +1,5 @@
 import { mailHref } from "../../../shared/routes";
+import type { AiClientView } from "../../../shared/ai-clients";
 import { Deferred, Effect, Stream } from "effect";
 import { AuthError, ProviderError, PermanentError } from "@openmail/core/portable";
 import { afterEach, expect, it, vi } from "vitest";
@@ -801,4 +802,61 @@ it("a reply's mode picker is its visible title, with the title kept for screen r
     (node) => node.children.length === 0 && node.textContent === "Reply",
   );
   expect(visible.filter((node) => !node.closest(".sr-only"))).toHaveLength(1);
+});
+
+it("AI Access names the AI suggestions switch once, and explains it only with an app connected", async () => {
+  const view = (clients: readonly AiClientView[]) =>
+    Effect.succeed({
+      launch: {
+        command: "/Applications/OpenMail.app/Contents/MacOS/OpenMail",
+        args: ["--mcp"],
+        env: {},
+      },
+      launchProblem: null,
+      clients,
+      activity: [],
+    });
+  const base = {
+    id: "claude-code",
+    installed: true,
+    method: "cli",
+    cliPath: "/usr/local/bin/claude",
+    configPath: "/tmp/home/.claude.json",
+    manual: "claude mcp add openmail",
+  } as const;
+  for (const connected of [false, true]) {
+    current = await flow({
+      handlers: {
+        AiClients: () =>
+          view([
+            connected
+              ? {
+                  ...base,
+                  state: "connected",
+                  entry: {
+                    command: "/Applications/OpenMail.app/Contents/MacOS/OpenMail",
+                    args: ["--mcp"],
+                    env: {},
+                  },
+                  proposalTools: false,
+                }
+              : { ...base, state: "notConnected" },
+          ]),
+      },
+    });
+    const h = current;
+    await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+    await h.event({ _tag: "Command", command: "settings" });
+    await eventually(() => expect(screen.getByRole("tab", { name: "AI Access" })).toBeTruthy());
+    fireEvent.click(screen.getByRole("tab", { name: "AI Access" }));
+    await eventually(() => expect(screen.getByText("What AI apps can do")).toBeTruthy());
+    const hint = screen.queryByText(/an app needs “Allow AI suggestions” below/);
+    if (connected) {
+      expect(hint).toBeTruthy();
+      expect(screen.getByRole("button", { name: "Allow AI suggestions" })).toBeTruthy();
+    } else expect(hint).toBeNull();
+    expect(document.body.textContent).not.toMatch(/make AI suggestions/);
+    await current.dispose();
+    current = undefined;
+  }
 });

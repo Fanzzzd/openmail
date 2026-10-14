@@ -748,6 +748,7 @@ msgstr "自分の tailnet からのアクセスを許可"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
+#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "Allow AI suggestions"
 msgstr "AI の提案を許可"
 
@@ -1746,8 +1747,8 @@ msgid "Connected to {tailnet}"
 msgstr "{tailnet} に接続済み"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
-msgid "Connected, can make AI suggestions"
-msgstr "接続済み、AI の提案が可能"
+msgid "Connected, AI suggestions allowed"
+msgstr "接続済み、AI の提案を許可"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Connected, read only"
@@ -3693,10 +3694,6 @@ msgstr "左に短くスワイプ"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Left to right"
 msgstr "左から右へ"
-
-#: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
-msgid "Let {name} make AI suggestions for you to approve"
-msgstr "{name} による AI の提案を許可（実行前にあなたが承認）"
 
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Light background"

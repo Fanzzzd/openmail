@@ -59,9 +59,12 @@ function LaunchNotice({ problem }: { problem: AiLaunchProblem }) {
 function AccessSummary({
   accounts,
   readable,
+  connected,
 }: {
   accounts: readonly Account[];
   readable: ReadableAccounts;
+  /** An app is connected, so its card below has Allow AI suggestions. */
+  connected: boolean;
 }) {
   const { t, i18n } = useLingui();
   const allow = t`Allow AI to read this account`;
@@ -103,11 +106,13 @@ function AccessSummary({
       <SettingsRow
         label={<Trans>What AI apps can do</Trans>}
         hint={
-          <Trans comment="allowSuggestions is the translated Allow AI suggestions button on each app below; setting and askFirst are the translated Changes by AI apps setting and its Ask me first option.">
-            Read and search mail, read only by default. To archive, label or draft, an app needs “
-            {allowSuggestions}” below and “{setting}” set to “{askFirst}”. You approve every AI
-            suggestion in OpenMail, and sending always needs your confirmation here.
-          </Trans>
+          connected && (
+            <Trans comment="allowSuggestions is the translated Allow AI suggestions button on each app below; setting and askFirst are the translated Changes by AI apps setting and its Ask me first option.">
+              Read and search mail, read only by default. To archive, label or draft, an app needs “
+              {allowSuggestions}” below and “{setting}” set to “{askFirst}”. You approve every AI
+              suggestion in OpenMail, and sending always needs your confirmation here.
+            </Trans>
+          )
         }
       >
         <button
@@ -158,7 +163,11 @@ export function AiClientsSettings({ accounts }: { accounts: readonly Account[] }
           </Trans>
         </p>
       </div>
-      <AccessSummary accounts={accounts} readable={readable} />
+      <AccessSummary
+        accounts={accounts}
+        readable={readable}
+        connected={(view?.clients ?? []).some((client) => client.state === "connected")}
+      />
       {view?.launchProblem && <LaunchNotice problem={view.launchProblem} />}
       {done && (
         <output className={`${noticeRow} ${noticeTone.neutral}`}>

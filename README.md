@@ -24,7 +24,7 @@ In this recording, Claude Code asked over MCP to archive three newsletters. Open
 
 - **Per-account consent.** An agent sees an account only after you turn on **Allow AI to read this account** for it in **Settings → AI Access**. OpenMail checks this on every tool call.
 - **Read-only by default.** MCP tools read and search mail. **Changes by AI apps** starts at **Read only**, which makes every write tool refuse.
-- **AI suggestions.** Write tools take two switches: check **Let … make AI suggestions for you to approve** when you connect the app, and set **Changes by AI apps** to **Ask me first**. Then `modify_threads`, `snooze_threads` and `draft_message` create AI suggestions. Each one waits in **AI suggestions** until you approve or reject it.
+- **AI suggestions.** Write tools take two switches: check **Allow AI suggestions** when you connect the app, and set **Changes by AI apps** to **Ask me first**. Then `modify_threads`, `snooze_threads` and `draft_message` create AI suggestions. Each one waits in **AI suggestions** until you approve or reject it.
 - **No agent sends mail.** A drafted message opens in the composer, and you send it yourself.
 - **Connect from Settings.** OpenMail can connect Claude Code, Codex, Claude and Cursor for you. It shows the config diff first and edits only the `openmail` entry. Any other MCP client can run `/Applications/OpenMail.app/Contents/MacOS/OpenMail --mcp`.
 - **Built-in AI, off by default.** With your own Anthropic API key and only for the accounts you allow: summaries, a mail assistant, writing help and inbox triage. The assistant also makes AI suggestions instead of changing mail itself.

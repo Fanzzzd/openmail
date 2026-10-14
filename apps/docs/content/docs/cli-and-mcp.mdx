@@ -71,7 +71,7 @@ Click **Connect** to add OpenMail's MCP server to the app. Before anything chang
 
 OpenMail changes only the `openmail` entry. A reconnect changes only its command, arguments and `OPENMAIL_HOME`, so keys you added yourself, such as `disabled` or `startup_timeout_sec`, stay. When OpenMail edits a file itself, it saves a backup next to it first. It never writes tokens or passwords into another app's config. If the file can't be read, OpenMail refuses and changes nothing.
 
-A connected app is read-only. In the confirmation, check **Let … make AI suggestions for you to approve** to add the [write tools](#ai-suggestions). If a card says **Points at another OpenMail copy**, the entry points to another copy of the app, for example one you ran from a disk image. Click **Reconnect**.
+A connected app is read-only. In the confirmation, check **Allow AI suggestions** to add the [write tools](#ai-suggestions). If a card says **Points at another OpenMail copy**, the entry points to another copy of the app, for example one you ran from a disk image. Click **Reconnect**.
 
 Restart the app or start a new session after connecting. Claude must be quit and reopened.
 
@@ -178,7 +178,7 @@ A failed call returns `isError` with a `message`, a `code` and a `hint` that nam
 
 A change an agent asks for is an AI suggestion. The tools and the CLI call it a proposal (`list_proposals`, `openmail proposals`). Write tools need two switches:
 
-1. Start the server with `--allow-writes`. In the app, check **Let … make AI suggestions for you to approve** when you connect.
+1. Start the server with `--allow-writes`. In the app, check **Allow AI suggestions** when you connect.
 2. Set **Changes by AI apps** in **Settings → AI Access** to **Ask me first**.
 
 If **Changes by AI apps** is **Read only**, a write tool changes nothing. The call fails with code `denied` and tells the model where you can change it.
