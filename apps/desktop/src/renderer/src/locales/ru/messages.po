@@ -1030,7 +1030,7 @@ msgstr "Разрешить окончательное удаление"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Authorize permission to permanently delete mail in this Gmail account."
-msgstr "Разрешите разрешить безвозвратное удаление почты в этой учётной записи Gmail."
+msgstr "Предоставьте разрешение на безвозвратное удаление почты в этой учётной записи Gmail."
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts

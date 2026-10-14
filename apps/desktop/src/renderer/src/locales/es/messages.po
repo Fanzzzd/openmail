@@ -763,7 +763,7 @@ msgstr "Permitir que la IA lea esta cuenta"
 
 #: src/renderer/src/features/ai/AiPanel.tsx
 msgid "Allow an account in Settings → AI Access to ask about its mail."
-msgstr "Permite una cuenta en Ajustes → Acceso a IA para hacer preguntas sobre su correo."
+msgstr "Autoriza una cuenta en Ajustes → Acceso a IA para poder preguntar sobre el correo de esa cuenta."
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Allow notifications"
