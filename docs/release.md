@@ -1,6 +1,6 @@
 # macOS build and verification
 
-The configuration is in [electron-builder.config.cjs](../apps/desktop/electron-builder.config.cjs). The app uses the Flap o icon. Its sources and the commands that generate it are in the [icon notes](design/icons.md). Packaging needs Xcode 26 to compile the Icon Composer assets.
+The configuration is in [electron-builder.config.cjs](../apps/desktop/electron-builder.config.cjs). The app uses the Flap o icon. Its sources and the commands that generate it are in the [icon notes](design/icons.md). With Xcode 26, packaging compiles the Icon Composer assets. Without it, packaging uses the committed `build/icon.icns`. `build/mac-icon.cjs` reads `xcodebuild -version` to choose. The release and package workflows require Xcode 26.
 
 ## Local build
 
@@ -23,7 +23,7 @@ apps/desktop/release/mac-arm64/OpenMail.app/Contents/MacOS/OpenMail \
   --user-data-dir="$OPENMAIL_TEST_DATA"
 ```
 
-A repeatable launch check, which the release and package workflows also run, uses new temporary directories for every launch. It reads the fuses back from the binary and compares them with `build/security-fuses.cjs`, checks that `ELECTRON_RUN_AS_NODE=1` does not run a script, runs `OpenMail --mcp` with `initialize` and `tools/list` and expects exactly the read-only tool set on a clean stdout and exit code 0, then verifies that the renderer, preload and core start and saves a screenshot and logs. It needs `packages/core/dist` (the dist script builds it). When a launch hangs, the error includes `ps` and a `sample` of the process and its children. The workflows upload the report folder as the `dist-smoke` artifact, also on failure. Add `--no-gui` to skip the window:
+A repeatable launch check, which the release and package workflows also run, uses new temporary directories for every launch. It checks that `Contents/Resources/licenses/electron/` holds Electron's `LICENSE` and `LICENSES.chromium.html`, reads the fuses back from the binary and compares them with `build/security-fuses.cjs`, checks that `ELECTRON_RUN_AS_NODE=1` does not run a script, runs `OpenMail --mcp` with `initialize` and `tools/list` and expects exactly the read-only tool set on a clean stdout and exit code 0, then verifies that the renderer, preload and core start and saves a screenshot and logs. It needs `packages/core/dist` (the dist script builds it). When a launch hangs, the error includes `ps` and a `sample` of the process and its children. The workflows upload the report folder as the `dist-smoke` artifact, also on failure. Add `--no-gui` to skip the window:
 
 ```sh
 node scripts/smoke-dist.mjs apps/desktop/release/mac-arm64/OpenMail.app

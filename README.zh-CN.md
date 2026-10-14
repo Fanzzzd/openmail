@@ -73,7 +73,7 @@ OpenMail 比以上产品都年轻，还有粗糙的地方。Gmail 功能以 Mime
 
 目前还没有发布版本，需要从源码构建：
 
-1. 安装[前置依赖](CONTRIBUTING.md#prerequisites)：macOS 13+、Node 24（见 `.nvmrc`）、通过 `corepack enable` 启用的 pnpm，以及 Xcode Command Line Tools。OpenMail 需要 Node 24，即 `.nvmrc` 里的版本。Node 22 每次调用 CLI 都会打印 `node:sqlite` 警告，Node 25 及以上不再自带 corepack。
+1. 安装[前置依赖](CONTRIBUTING.md#prerequisites)：macOS 13+、Node 24（见 `.nvmrc`）、通过 `corepack enable` 启用的 pnpm，以及 Xcode Command Line Tools。Xcode 26 可选。装了它，`dist` 会编译 Icon Composer 图标，macOS 26 上显示 Liquid Glass 图标及其深色和着色外观。没装，`dist` 打包仓库里的 `build/icon.icns`，即同一图标的静态渲染，所有 macOS 版本都原样显示。Xcode 26 需要 macOS 15.6 或更高版本。OpenMail 需要 Node 24，即 `.nvmrc` 里的版本。Node 22 每次调用 CLI 都会打印 `node:sqlite` 警告，Node 25 及以上不再自带 corepack。
 2. 构建并打包：
 
    ```sh
@@ -81,7 +81,7 @@ OpenMail 比以上产品都年轻，还有粗糙的地方。Gmail 功能以 Mime
    cd openmail
    pnpm install
    pnpm build
-   pnpm --filter @openmail/desktop dist   # 需要 Xcode 26
+   pnpm --filter @openmail/desktop dist   # Xcode 26 可选，见第 1 步
    ```
 
 3. 打开 `apps/desktop/release/OpenMail-<version>-mac-<arch>.dmg`，把 OpenMail 拖到“应用程序”。

@@ -4,7 +4,8 @@
 //   2. ELECTRON_RUN_AS_NODE=1 does not turn the app into Node.
 //   3. `OpenMail --mcp` answers initialize and tools/list over stdio with exactly the
 //      read-only tool set, writes only JSON-RPC frames to stdout, and exits 0 when stdin closes.
-//   4. The GUI starts: renderer, preload and core, then a screenshot. Skip with --no-gui.
+//   4. Contents/Resources/licenses/electron/ has Electron's license and Chromium's notices.
+//   5. The GUI starts: renderer, preload and core, then a screenshot. Skip with --no-gui.
 //
 //   node scripts/smoke-dist.mjs apps/desktop/release/mac-arm64/OpenMail.app [--no-gui]
 //
@@ -108,6 +109,15 @@ function runApp(argv, env, { input = [], until = () => true, timeoutMs = 90_000 
     for (const line of input) child.stdin.write(`${JSON.stringify(line)}\n`);
     if (!input.length) closeInput();
   });
+}
+
+function checkLicenses() {
+  const desktop = createRequire(path.join(root, "apps/desktop/package.json"));
+  const { ELECTRON_LICENSE_DIR, missingElectronLicenses } = desktop("./build/electron-licenses.cjs");
+  const dir = path.join(bundle, "Contents/Resources", ELECTRON_LICENSE_DIR);
+  const missing = missingElectronLicenses(dir);
+  if (missing.length) throw new Error(`Missing from ${dir}: ${missing.join(", ")}`);
+  report.electronLicenses = "present";
 }
 
 async function checkFuses() {
@@ -272,6 +282,7 @@ async function checkGui() {
 
 try {
   if (!existsSync(executable)) throw new Error(`No app at ${bundle}`);
+  checkLicenses();
   await checkFuses();
   await checkRunAsNode();
   await checkMcp();

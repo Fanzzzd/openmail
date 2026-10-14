@@ -28,7 +28,9 @@ The packaged app contains Electron and npm packages in two forms:
 - The runtime dependencies of `apps/desktop` and `packages/core` sit in the app's `node_modules`, each with the license file from its npm package.
 - Vite compiles the libraries the app window imports (React, Base UI, TanStack Router, Lucide and others) into the app's JavaScript bundles, so no `node_modules` copy of them ships. The build lists each of them with its license text in `OpenMail.app/Contents/Resources/licenses/bundled/`: `renderer.txt` for the app window and `web.txt` for the remote access web app.
 
-`scripts/check-licenses.mjs` fails when a shipped package has no license file and no notice in this repository. Electron's license and Chromium's notices are published with each [Electron release](https://github.com/electron/electron/releases).
+`scripts/check-licenses.mjs` fails when a shipped package has no license file and no notice in this repository.
+
+Electron (MIT) and the Chromium it embeds, with Chromium's third-party components such as FFmpeg, ship their notices in `OpenMail.app/Contents/Resources/licenses/electron/`: `LICENSE` and `LICENSES.chromium.html`. The build copies both from `node_modules/electron/dist/` (`apps/desktop/build/electron-licenses.cjs`). Packaging stops when they are missing, and `scripts/smoke-dist.mjs` fails on a packaged app without them.
 
 The license texts named in this file are in [docs/licenses/](docs/licenses/). The packaged app ships them in `OpenMail.app/Contents/Resources/licenses/`.
 

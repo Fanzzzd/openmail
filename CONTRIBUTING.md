@@ -8,7 +8,7 @@ Thanks for helping. This file covers setup, the checks a change must pass, and t
 - OpenMail needs Node 24, the version in `.nvmrc`. Node 22 prints a `node:sqlite` warning on every CLI call, and Node 25 and later no longer ship corepack. CI tests only Node 24, and `package.json` accepts only Node 24.
 - pnpm through corepack: `corepack enable`. The `packageManager` field pins the version.
 - Xcode Command Line Tools (`xcode-select --install`). `pnpm build` compiles the Swift helpers.
-- Xcode 26, only to build the DMG with `pnpm --filter @openmail/desktop dist`. Icon Composer needs it.
+- Xcode 26 is optional. With it, `dist` compiles the Icon Composer icon, so macOS 26 shows the Liquid Glass icon with its dark and tinted appearances. Without it, `dist` packages the committed `build/icon.icns`, a static render of the same icon that every macOS version shows unchanged. Xcode 26 needs macOS 15.6 or later.
 
 ## Build and test
 

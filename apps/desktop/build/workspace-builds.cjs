@@ -1,6 +1,7 @@
 // The main process imports the workspace packages (@openmail/core, @openmail/cli) from their
 // dist folders at runtime, and the bundle copies them as they are. A dist that was never built
-// gives an app whose main entry cannot load, so packaging stops here instead.
+// gives an app whose main entry cannot load, so packaging stops here instead. It also stops when
+// Electron's license notices, which extraResources copies, are missing (electron-licenses.cjs).
 const { existsSync } = require("node:fs");
 const path = require("node:path");
 
@@ -20,6 +21,7 @@ function workspaceEntries(desktopDir) {
 }
 
 exports.beforePack = async () => {
+  require("./electron-licenses.cjs").checkElectronLicenses();
   const missing = workspaceEntries(path.join(__dirname, "..")).filter((file) => !existsSync(file));
   if (missing.length)
     throw new Error(

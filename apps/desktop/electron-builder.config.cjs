@@ -23,6 +23,8 @@ module.exports = {
     { from: "../../docs/licenses", to: "licenses" },
     // Packages Vite compiled into out/, with their license texts (bundled-licenses.ts).
     { from: "out/licenses", to: "licenses/bundled" },
+    // Electron's MIT license and Chromium's notices, from node_modules/electron/dist.
+    ...require("./build/electron-licenses.cjs").electronLicenseResources(),
     { from: "build/contacts-locales", to: ".", filter: ["**/InfoPlist.strings"] },
     { from: "build/trayTemplate.png", to: "trayTemplate.png" },
     { from: "build/trayTemplate@2x.png", to: "trayTemplate@2x.png" },
@@ -82,8 +84,8 @@ module.exports = {
       ],
     },
     category: "public.app-category.productivity",
-    // Sources and regeneration: docs/design/icons.md.
-    icon: "build/icon.icon",
+    // Sources and regeneration: docs/design/icons.md. Without Xcode 26 this is build/icon.icns.
+    icon: require("./build/mac-icon.cjs").macIcon(),
     // Ad-hoc signing repairs Electron's seal on Apple Silicon. It does not enable updates.
     identity: signed ? undefined : "-",
     hardenedRuntime: true,

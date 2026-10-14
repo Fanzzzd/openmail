@@ -1,8 +1,8 @@
 name: Package
 
 # Runs the packaging step the README gives (`pnpm --filter @openmail/desktop dist`), unsigned and
-# with no secrets, then checks the arm64 app with scripts/smoke-dist.mjs: fuses, RunAsNode,
-# `OpenMail --mcp` and the GUI start. release.yml does the same on tags, with signing.
+# with no secrets, then checks the arm64 app with scripts/smoke-dist.mjs: Electron's license
+# notices, fuses, RunAsNode, `OpenMail --mcp` and the GUI start. release.yml does the same on tags, with signing.
 
 on:
   push:

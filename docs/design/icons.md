@@ -16,7 +16,7 @@ Files in `apps/desktop/build/`:
 | `trayTemplate.svg`                        | Menu-bar template master, black on transparent                                       |
 | `trayTemplate.png`, `trayTemplate@2x.png` | 22 and 44 px renders; macOS tints files named `*Template`                            |
 
-electron-builder compiles `icon.icon` with Xcode 26's `actool` into `Assets.car`. That gives macOS 26 the Liquid Glass icon with its default, dark and tinted appearances. electron-builder also derives the bundle's icns fallback from it, so packaging needs Xcode 26.
+electron-builder compiles `icon.icon` with Xcode 26's `actool` into `Assets.car`. That gives macOS 26 the Liquid Glass icon with its default, dark and tinted appearances. electron-builder also derives the bundle's icns from it. `build/mac-icon.cjs` checks `xcodebuild -version` first. Below Xcode 26, or with only the Command Line Tools, it points `mac.icon` at the committed `icon.icns`. That build shows the same static icon on every macOS version, without the macOS 26 Liquid Glass, dark and tinted appearances. The release and package workflows require Xcode 26.
 
 ### Construction
 
