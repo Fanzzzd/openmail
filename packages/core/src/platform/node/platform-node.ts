@@ -49,6 +49,8 @@ export type PlatformServices =
 
 export interface NodePlatformOptions {
   onDatabaseUpgrade?: () => Promise<() => void>;
+  /** The desktop app owns the mailbox and refreshes planner statistics on every open. */
+  plannerStatsOwner?: boolean;
   /** Electron passes `shell.openExternal`. Defaults to SystemBrowser. */
   openUrl?: (url: string) => Promise<void> | void;
   /** Replaces the browser outright, e.g. the CLI's, which also prints the URL. */
@@ -141,10 +143,10 @@ export function NodePlatform(opts: NodePlatformOptions = {}): Layer.Layer<Platfo
       const dir = opts.dataDir ?? (yield* dataDir);
       const path = yield* Path.Path;
       return Layer.mergeAll(
-        databaseLayer(
-          path.join(dir, "mail.db"),
-          opts.onDatabaseUpgrade ? { onDatabaseUpgrade: opts.onDatabaseUpgrade } : {},
-        ),
+        databaseLayer(path.join(dir, "mail.db"), {
+          ...(opts.onDatabaseUpgrade ? { onDatabaseUpgrade: opts.onDatabaseUpgrade } : {}),
+          plannerStatsOwner: opts.plannerStatsOwner === true,
+        }),
         appConfigFile(
           dir,
           firstClients(

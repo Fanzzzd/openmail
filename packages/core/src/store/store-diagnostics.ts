@@ -41,8 +41,11 @@ export function makeDiagnosticsStore(sql: SqlClient.SqlClient) {
         ),
       };
     }).pipe(Effect.withSpan("Store.diagnosticCounts"));
-  /** Cheap when statistics are current; the sync loop calls it hourly. */
-  const refreshPlannerStats = optimizeQueryPlanner().pipe(
+  /**
+   * Cheap when statistics are current; the sync loop calls it hourly. It waits at most 250 ms for
+   * another process's write lock and otherwise tries again next hour.
+   */
+  const refreshPlannerStats = optimizeQueryPlanner({ busyTimeoutMs: 250 }).pipe(
     Effect.provideService(SqlClient.SqlClient, sql),
     Effect.withSpan("Store.refreshPlannerStats"),
   );

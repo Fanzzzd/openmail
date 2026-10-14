@@ -191,6 +191,7 @@ if (mcp) {
               );
               return NodeMailbox({
                 onDatabaseUpgrade: showDatabaseUpgrade,
+                plannerStatsOwner: true,
                 openUrl: openExternal,
                 autoSync: "2 minutes",
                 resumeDesktopSends: true,

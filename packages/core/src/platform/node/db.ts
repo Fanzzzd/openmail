@@ -7,7 +7,7 @@ import { Effect, FileSystem, Layer, Path } from "effect";
 import { constVoid } from "effect/Function";
 import { SqlClient } from "effect/sql";
 import { DatabaseCapabilities } from "../../db/capabilities.js";
-import { DatabaseTooNewError, migrate, migrateTo } from "../../db/migrate.js";
+import { DatabaseTooNewError, migrateTo, optimizeOnOpen } from "../../db/migrate.js";
 import { MIGRATIONS, ROWID_REBUILD_MIGRATION } from "../../db/migrations.js";
 import { nodeCacheMaintenance } from "./cache-maintenance.js";
 import { registerDatabaseLease } from "./database-access.js";
@@ -71,6 +71,11 @@ const upgradeRowidsInWorker = (filename: string) =>
 export interface DatabaseOptions {
   /** Paint a responsive startup state before the rowid rewrite worker starts. */
   readonly onDatabaseUpgrade?: () => Promise<() => void>;
+  /**
+   * This process owns the mailbox (the desktop app): refresh planner statistics on every open.
+   * Other openers (CLI, MCP) refresh them only after a migration or when none exist.
+   */
+  readonly plannerStatsOwner?: boolean;
   /** Resolve the local extension. Passing null intentionally disables vectors. */
   readonly vectorExtension?: (() => string) | null;
 }
@@ -98,8 +103,9 @@ export function databaseLayer(
     // before Store is exposed, while this connection stays reserved.
     const before = yield* SqlClient.SqlClient;
     const initial = yield* before`PRAGMA user_version`;
+    const opened = Number(initial[0]?.user_version ?? 0);
     yield* Effect.orDie(
-      initial[0]?.user_version === 0 ? migrate : migrateTo(ROWID_REBUILD_MIGRATION),
+      opened === 0 ? migrateTo(MIGRATIONS.length) : migrateTo(ROWID_REBUILD_MIGRATION),
     );
     const version = yield* before`PRAGMA user_version`;
     if (filename !== ":memory:" && version[0]?.user_version === ROWID_REBUILD_MIGRATION) {
@@ -112,7 +118,11 @@ export function databaseLayer(
         yield* upgradeRowidsInWorker(filename);
       }).pipe(Effect.scoped, Effect.ensuring(Effect.sync(dismiss)));
     }
-    yield* Effect.orDie(migrate);
+    yield* Effect.orDie(migrateTo(MIGRATIONS.length));
+    yield* optimizeOnOpen({
+      owner: options.plannerStatsOwner === true,
+      migrated: opened < MIGRATIONS.length,
+    });
     const sqlite = yield* SqliteClient.SqliteClient;
     const sql = yield* SqlClient.SqlClient;
     const vectors = yield* Effect.gen(function* () {
@@ -124,12 +134,25 @@ export function databaseLayer(
       yield* sqlite.loadExtension(
         path.replace(/([/\\])app\.asar([/\\])/u, "$1app.asar.unpacked$2"),
       );
-      yield* sql`CREATE VIRTUAL TABLE IF NOT EXISTS derived_text_vectors USING vec0(embedding float[384])`;
-      yield* sql`CREATE VIRTUAL TABLE IF NOT EXISTS derived_image_vectors USING vec0(embedding float[512])`;
+      // Writes take the write lock, so they run only when there is work: a CLI
+      // or MCP start must not wait for the app's writer on every open.
+      const existing = yield* sql<{
+        name: string;
+      }>`SELECT name FROM sqlite_master WHERE name IN ('derived_text_vectors', 'derived_image_vectors')`;
+      if (existing.length < 2) {
+        yield* sql`CREATE VIRTUAL TABLE IF NOT EXISTS derived_text_vectors USING vec0(embedding float[384])`;
+        yield* sql`CREATE VIRTUAL TABLE IF NOT EXISTS derived_image_vectors USING vec0(embedding float[512])`;
+      }
       // A connection without vec0 can delete messages. Clean orphaned vectors
       // when a capable connection next opens the database.
-      yield* sql`DELETE FROM derived_text_vectors WHERE rowid NOT IN (SELECT id FROM vector_items)`;
-      yield* sql`DELETE FROM derived_image_vectors WHERE rowid NOT IN (SELECT id FROM vector_items)`;
+      const orphans = yield* sql`SELECT 1 FROM derived_text_vectors
+        WHERE rowid NOT IN (SELECT id FROM vector_items)
+        UNION ALL SELECT 1 FROM derived_image_vectors
+        WHERE rowid NOT IN (SELECT id FROM vector_items) LIMIT 1`;
+      if (orphans.length > 0) {
+        yield* sql`DELETE FROM derived_text_vectors WHERE rowid NOT IN (SELECT id FROM vector_items)`;
+        yield* sql`DELETE FROM derived_image_vectors WHERE rowid NOT IN (SELECT id FROM vector_items)`;
+      }
       return true;
     }).pipe(
       Effect.catch(() =>

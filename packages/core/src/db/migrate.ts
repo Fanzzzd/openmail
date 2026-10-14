@@ -65,6 +65,9 @@ export function withMigrationForeignKeys<A, E, E2, R>(
   }).pipe(Effect.uninterruptible);
 }
 
+/** How long a statement waits for another connection's lock before SQLITE_BUSY. */
+export const BUSY_TIMEOUT_MS = 5000;
+
 const UserVersion = Schema.Struct({ user_version: Schema.Number });
 
 /**
@@ -92,7 +95,7 @@ export const migrateTo = (targetVersion: number) =>
     // Per connection, and a no-op inside a transaction, so they go first. The
     // app, the CLI and a restarting app can share the file; wait for a lock
     // instead of failing at once.
-    yield* sql`PRAGMA busy_timeout = 5000`;
+    yield* sql.unsafe(`PRAGMA busy_timeout = ${BUSY_TIMEOUT_MS}`).unprepared;
     yield* sql`PRAGMA journal_size_limit = 8388608`;
     yield* sql`PRAGMA foreign_keys = ON`;
     const initialVersion = yield* sql`PRAGMA user_version`;
@@ -156,18 +159,50 @@ export const migrateTo = (targetVersion: number) =>
  * turn a thread page into a scan per row. `analysis_limit` bounds each ANALYZE
  * to a sample, so this costs milliseconds on a large mailbox. `0x10002` also
  * checks tables this connection has not queried yet, which is what a fresh
- * connection needs; the periodic call uses the default mask. A busy or
- * read-only database skips the refresh.
+ * connection needs; the periodic call uses the default mask.
+ *
+ * ANALYZE needs the write lock. The connection is reserved so no other
+ * statement runs with the short `busyTimeoutMs`, and the normal timeout is
+ * restored afterwards. A busy or read-only database skips the refresh instead
+ * of waiting behind another process's writer.
  */
-export const optimizeQueryPlanner = (mask?: number) =>
+export const optimizeQueryPlanner = (options: { mask?: number; busyTimeoutMs: number }) =>
   Effect.gen(function* () {
     const sql = yield* SqlClient.SqlClient;
-    yield* sql`PRAGMA analysis_limit=400`;
-    yield* mask === undefined
-      ? sql`PRAGMA optimize`
-      : sql.unsafe(`PRAGMA optimize=${mask}`).unprepared;
+    const connection = yield* sql.reserve;
+    const run = (statement: string) => connection.executeUnprepared(statement, [], undefined);
+    yield* run(`PRAGMA busy_timeout = ${options.busyTimeoutMs}`);
+    yield* Effect.gen(function* () {
+      yield* run("PRAGMA analysis_limit=400");
+      yield* run(
+        options.mask === undefined ? "PRAGMA optimize" : `PRAGMA optimize=${options.mask}`,
+      );
+    }).pipe(
+      Effect.ignore,
+      Effect.ensuring(run(`PRAGMA busy_timeout = ${BUSY_TIMEOUT_MS}`).pipe(Effect.ignore)),
+    );
+  }).pipe(Effect.scoped, Effect.ignore);
+
+const hasPlannerStats = Effect.gen(function* () {
+  const sql = yield* SqlClient.SqlClient;
+  const rows = yield* sql`SELECT 1 FROM sqlite_master WHERE name = 'sqlite_stat1'`;
+  return rows.length > 0;
+});
+
+/**
+ * The on-open refresh, which never waits for a lock another process holds. It
+ * runs when this open needs it: the process that owns the mailbox (the desktop
+ * app) asks for it with `owner`, and any opener runs it after a schema change
+ * or when no statistics exist yet. A CLI or MCP start on an analyzed database
+ * skips it, so it never contends with the app for the write lock.
+ */
+export const optimizeOnOpen = (options: { owner: boolean; migrated: boolean }) =>
+  Effect.gen(function* () {
+    if (options.owner || options.migrated || !(yield* hasPlannerStats))
+      yield* optimizeQueryPlanner({ mask: 0x10002, busyTimeoutMs: 0 });
   }).pipe(Effect.ignore);
 
+/** Migrates and refreshes statistics as the mailbox owner does. */
 export const migrate = migrateTo(MIGRATIONS.length).pipe(
-  Effect.andThen(optimizeQueryPlanner(0x10002)),
+  Effect.andThen(optimizeOnOpen({ owner: true, migrated: true })),
 );
