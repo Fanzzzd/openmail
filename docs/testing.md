@@ -13,7 +13,7 @@ pnpm exec oxlint
 pnpm exec oxfmt --check .
 ```
 
-`pnpm build` builds core, the CLI and the desktop app, compiles the mobile locale catalogs and type-checks them. `pnpm test` includes the desktop full mail flows, the desktop and mobile Lingui catalog sync and missing-translation checks, and the desktop glossary and ICU checks. Run `pnpm check-types` for the remaining type checks. The commit requirements are in [AGENTS.md](../AGENTS.md).
+`pnpm build` builds core, the CLI, the desktop app and the docs site, compiles the mobile locale catalogs and type-checks the mobile app. To skip the docs site and mobile, run `pnpm build --filter=@openmail/desktop...`, which builds the desktop app and the packages it depends on. `pnpm test` includes the desktop full mail flows, the desktop and mobile Lingui catalog sync and missing-translation checks, and the desktop glossary and ICU checks. Run `pnpm check-types` for the remaining type checks. The commit requirements are in [AGENTS.md](../AGENTS.md).
 
 [repo-paths.test.ts](../apps/docs/scripts/repo-paths.test.ts) checks that every repo path named in the links, code spans and commands of `docs/` and `CONTRIBUTING.md` exists. Local files that git ignores are exempt. The result depends on files outside apps/docs, so `@openmail/docs#test` skips the turbo cache.
 

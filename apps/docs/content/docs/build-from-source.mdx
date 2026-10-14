@@ -8,7 +8,7 @@ OpenMail has no published release yet. To use it, build it from the source on Gi
 ## Prerequisites
 
 - macOS 13 or later, on Apple silicon or Intel.
-- Node 24, the version in the repository's `.nvmrc`. Node 22 is not supported.
+- OpenMail needs Node 24, the version in `.nvmrc`. Node 22 prints a `node:sqlite` warning on every CLI call, and Node 25 and later no longer ship corepack.
 - pnpm through corepack. Run `corepack enable` once. The repository pins the pnpm version.
 - Xcode Command Line Tools: `xcode-select --install`. The build compiles the app's Swift helpers.
 - Xcode 26, only to package the app as a DMG. Icon Composer needs it.

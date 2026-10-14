@@ -73,7 +73,7 @@ OpenMail 比以上产品都年轻，还有粗糙的地方。Gmail 功能以 Mime
 
 目前还没有发布版本，需要从源码构建：
 
-1. 安装[前置依赖](CONTRIBUTING.md#prerequisites)：macOS 13+、Node 24（见 `.nvmrc`）、通过 `corepack enable` 启用的 pnpm，以及 Xcode Command Line Tools。
+1. 安装[前置依赖](CONTRIBUTING.md#prerequisites)：macOS 13+、Node 24（见 `.nvmrc`）、通过 `corepack enable` 启用的 pnpm，以及 Xcode Command Line Tools。OpenMail 需要 Node 24，即 `.nvmrc` 里的版本。Node 22 每次调用 CLI 都会打印 `node:sqlite` 警告，Node 25 及以上不再自带 corepack。
 2. 构建并打包：
 
    ```sh

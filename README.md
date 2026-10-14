@@ -73,7 +73,7 @@ OpenMail is younger than all of these and has rough edges. Mimestream is the ref
 
 There is no signed release yet. Published builds will appear on the [Releases page](https://github.com/Fanzzzd/openmail/releases). Until then, build from source:
 
-1. Install the [prerequisites](CONTRIBUTING.md#prerequisites): macOS 13+, Node 24 (see `.nvmrc`), pnpm through `corepack enable`, and the Xcode Command Line Tools.
+1. Install the [prerequisites](CONTRIBUTING.md#prerequisites): macOS 13+, Node 24 (see `.nvmrc`), pnpm through `corepack enable`, and the Xcode Command Line Tools. OpenMail needs Node 24, the version in `.nvmrc`. Node 22 prints a `node:sqlite` warning on every CLI call, and Node 25 and later no longer ship corepack.
 2. Build and package:
 
    ```sh
