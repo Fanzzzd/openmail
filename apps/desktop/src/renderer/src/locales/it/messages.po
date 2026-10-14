@@ -413,7 +413,7 @@ msgstr "Account che le app di IA possono leggere"
 
 #: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Accounts you already added keep the client they signed in with."
-msgstr "Gli account già aggiunti mantengono il client con cui hanno effettuato l'accesso."
+msgstr "Gli account già aggiunti mantengono il client con cui hanno effettuato l’accesso."
 
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Action"
@@ -2147,7 +2147,7 @@ msgstr "Impossibile inviare: {reason}"
 #: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "Couldn't set up a secure connection to the mail server. Check the port and the encryption setting."
-msgstr "Impossibile stabilire una connessione sicura con il server di posta. Controlla la porta e l'impostazione di crittografia."
+msgstr "Impossibile stabilire una connessione sicura con il server di posta. Controlla la porta e l’impostazione di crittografia."
 
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
@@ -3240,7 +3240,7 @@ msgstr "Contiene le parole"
 #. Sent means the Sent mailbox.
 #: src/renderer/src/app/use-compose-delivery.ts
 msgid "Have you checked Sent and confirmed that this message was not sent?"
-msgstr "Hai controllato «Inviata» e verificato che questo messaggio non sia stato inviato?"
+msgstr "Hai controllato “Inviata” e verificato che questo messaggio non sia stato inviato?"
 
 #: src/renderer/src/features/reader/RawMessage.tsx
 msgid "Headers"
@@ -3387,7 +3387,7 @@ msgstr "Messaggi importanti"
 
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 msgid "In “{elsewhere}”"
-msgstr "In \"{elsewhere}\""
+msgstr "In “{elsewhere}”"
 
 #: src/renderer/src/features/organize/SnoozeDialog.tsx
 msgid "In 3 hours"
@@ -4391,7 +4391,7 @@ msgstr "Spostato in Altra"
 
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 msgid "Moves from “{elsewhere}”"
-msgstr "Sposta da \"{elsewhere}\""
+msgstr "Sposta da “{elsewhere}”"
 
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
@@ -5785,7 +5785,7 @@ msgstr "Rispondi a tutti"
 #: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgctxt "incoming message action flag"
 msgid "Reply all"
-msgstr "Contrassegno « Rispondi a tutti »"
+msgstr "Contrassegno “Rispondi a tutti”"
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Reply from"
@@ -6571,11 +6571,11 @@ msgstr "Accesso non riuscito. Torna a OpenMail e riprova."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Sign-in took too long. Try again and finish it in your browser."
-msgstr "L'accesso ha richiesto troppo tempo. Riprova e completalo nel browser."
+msgstr "L’accesso ha richiesto troppo tempo. Riprova e completalo nel browser."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Sign-in was canceled."
-msgstr "L'accesso è stato annullato."
+msgstr "L’accesso è stato annullato."
 
 #: src/renderer/src/features/compose/components/Composer.tsx
 msgid "Signature"
@@ -7030,7 +7030,7 @@ msgstr "Il client OAuth {client} non è ancora configurato."
 
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "The account was removed, but the keychain did not let OpenMail delete its saved sign-in. Open Keychain Access, search for openmail, and delete the item for that account."
-msgstr "L'account è stato rimosso, ma il portachiavi non ha permesso a OpenMail di eliminare l'accesso salvato. Apri Accesso Portachiavi, cerca openmail ed elimina l'elemento di quell'account."
+msgstr "L’account è stato rimosso, ma il portachiavi non ha permesso a OpenMail di eliminare l’accesso salvato. Apri Accesso Portachiavi, cerca openmail ed elimina l’elemento di quell’account."
 
 #: src/renderer/src/lib/errors.ts
 msgid "The AI answer got too long. Ask a narrower question."
@@ -7241,7 +7241,7 @@ msgstr "Il nome del mittente contiene un indirizzo email diverso."
 #: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "The server blocked the sign-in as unsafe. Turn on IMAP in your email's web settings, then sign in with the authorization code it generates."
-msgstr "Il server ha bloccato l'accesso perché non sicuro. Attiva IMAP nelle impostazioni web della tua posta, quindi accedi con il codice di autorizzazione generato."
+msgstr "Il server ha bloccato l’accesso perché non sicuro. Attiva IMAP nelle impostazioni web della tua posta, quindi accedi con il codice di autorizzazione generato."
 
 #: src/renderer/src/lib/errors.ts
 msgid "The server refused this action."
@@ -7250,7 +7250,7 @@ msgstr "Il server ha rifiutato questa azione."
 #: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "The server rejected the sign-in."
-msgstr "Il server ha rifiutato l'accesso."
+msgstr "Il server ha rifiutato l’accesso."
 
 #: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "The server rejected the sign-in. Check the email address, and make sure you entered an app-specific password or authorization code, not your web password."
@@ -7354,11 +7354,11 @@ msgstr "Questa build di sviluppo non ha ancora un server MCP. Esegui prima pnpm 
 
 #: src/renderer/src/lib/errors.ts
 msgid "This draft changed in another window or on another device. Open it again to see the newer version."
-msgstr "Questa bozza è stata modificata in un'altra finestra o su un altro dispositivo. Riaprila per vedere la versione più recente."
+msgstr "Questa bozza è stata modificata in un’altra finestra o su un altro dispositivo. Riaprila per vedere la versione più recente."
 
 #: src/renderer/src/features/compose/components/DraftConflictNotice.tsx
 msgid "This draft changed in another window or on another device. The newer version is open."
-msgstr "Questa bozza è stata modificata in un'altra finestra o su un altro dispositivo. È aperta la versione più recente."
+msgstr "Questa bozza è stata modificata in un’altra finestra o su un altro dispositivo. È aperta la versione più recente."
 
 #: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "This draft contains formatting or images this editor cannot keep. The original is preserved until you edit the body."
@@ -7451,7 +7451,7 @@ msgstr "Questo link al messaggio non è valido."
 #. Sent means the Sent mailbox.
 #: src/renderer/src/lib/errors.ts
 msgid "This message may have been sent. Check Sent before sending it again."
-msgstr "Questo messaggio potrebbe essere già stato inviato. Controlla «Inviata» prima di inviarlo di nuovo."
+msgstr "Questo messaggio potrebbe essere già stato inviato. Controlla “Inviata” prima di inviarlo di nuovo."
 
 #: src/renderer/src/features/organize/PermanentDeletePermission.tsx
 msgid "This permission lets OpenMail permanently delete mail in this Gmail account. Google will ask for your consent. After granting it, confirm the deletion again."
@@ -8074,7 +8074,7 @@ msgstr "Hai la versione più recente."
 
 #: src/renderer/src/lib/errors.ts
 msgid "You signed in as {signedInAs}. Sign in with {expected} to continue."
-msgstr "Hai effettuato l'accesso come {signedInAs}. Accedi con {expected} per continuare."
+msgstr "Hai effettuato l’accesso come {signedInAs}. Accedi con {expected} per continuare."
 
 #: src/renderer/src/features/mail-list/EmptyList.tsx
 msgid "You're all caught up. Your Inbox is empty."

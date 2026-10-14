@@ -1400,13 +1400,13 @@ msgstr "Synchronisatie controleren…"
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgctxt "message text instruction"
 msgid "Choose {editBody} before inserting a template."
-msgstr "Kies ‘{editBody}’ voordat je een sjabloon invoegt."
+msgstr "Kies “{editBody}” voordat je een sjabloon invoegt."
 
 #. editBody is the exact translated Edit body button label. Preserve it unchanged.
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgctxt "message text instruction"
 msgid "Choose {editBody} before inserting an image."
-msgstr "Kies ‘{editBody}’ voordat je een afbeelding invoegt."
+msgstr "Kies “{editBody}” voordat je een afbeelding invoegt."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Choose a conversation."
@@ -1546,7 +1546,7 @@ msgstr "Wissen verwijdert gedownloade berichtteksten en bijlagen. Berichtkoppen 
 #. loadImages is the translated Load images button above a message in the reader.
 #: src/renderer/src/features/reader/RemoteImagesPrompt.tsx
 msgid "Click {loadImages} on each message."
-msgstr "Klik bij elk bericht op ‘{loadImages}’."
+msgstr "Klik bij elk bericht op “{loadImages}”."
 
 #: src/renderer/src/features/compose/hooks/use-compose-editor.ts
 msgid "Click in this window, then choose a device to take a photo, scan a document or add a sketch."
@@ -3240,7 +3240,7 @@ msgstr "Bevat de woorden"
 #. Sent means the Sent mailbox.
 #: src/renderer/src/app/use-compose-delivery.ts
 msgid "Have you checked Sent and confirmed that this message was not sent?"
-msgstr "Heb je „Verstuurd“ gecontroleerd en bevestigd dat dit bericht niet is verzonden?"
+msgstr "Heb je “Verstuurd” gecontroleerd en bevestigd dat dit bericht niet is verzonden?"
 
 #: src/renderer/src/features/reader/RawMessage.tsx
 msgid "Headers"
@@ -5125,7 +5125,7 @@ msgstr "Verklein lijstinspringing"
 #. Always is the Remote images option label above.
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Outlook accounts, and IMAP accounts without a trusted authentication server, cannot confirm the sender, so only Always loads their images."
-msgstr "Outlook-accounts en IMAP-accounts zonder vertrouwde verificatieserver kunnen de afzender niet bevestigen, dus alleen ‘Altijd’ laadt hun afbeeldingen."
+msgstr "Outlook-accounts en IMAP-accounts zonder vertrouwde verificatieserver kunnen de afzender niet bevestigen, dus alleen “Altijd” laadt hun afbeeldingen."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Outlook attachment upload failed. Try saving or sending again."
@@ -7451,7 +7451,7 @@ msgstr "Deze berichtlink is niet geldig."
 #. Sent means the Sent mailbox.
 #: src/renderer/src/lib/errors.ts
 msgid "This message may have been sent. Check Sent before sending it again."
-msgstr "Dit bericht is mogelijk al verzonden. Controleer „Verstuurd“ voordat je het opnieuw verzendt."
+msgstr "Dit bericht is mogelijk al verzonden. Controleer “Verstuurd” voordat je het opnieuw verzendt."
 
 #: src/renderer/src/features/organize/PermanentDeletePermission.tsx
 msgid "This permission lets OpenMail permanently delete mail in this Gmail account. Google will ask for your consent. After granting it, confirm the deletion again."

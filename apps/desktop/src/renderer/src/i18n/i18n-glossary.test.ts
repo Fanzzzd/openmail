@@ -39,6 +39,18 @@ const spanishUsted = [
 // Formal German: Sie, Ihnen and Ihr- anywhere but a sentence start, where "Sie" means "it"
 // or "she" ("Sie läuft …"). That catches imperatives such as "Stellen Sie …" and "Ihre Adresse".
 const germanSie = /(?<!(?:^|[.!?:]\s+|[„“"«(]))(?<!\p{L})(?:Sie|Ihnen|Ihre?[mnrs]?)(?!\p{L})/u;
+// Quote marks that are not the locale's own style. Chinese and Japanese are checked below with
+// their settings paths. German and Czech quote „…“, Dutch and Italian “…”, French, Spanish and
+// Russian «…»; French, Italian and Dutch use ’ as the apostrophe.
+const foreignQuotes: Partial<Record<string, RegExp>> = {
+  cs: /[”«»‘’「」]/u,
+  de: /[”«»‘’「」]/u,
+  nl: /[„‚‘«»「」]/u,
+  it: /[„‚‘«»「」]/u,
+  fr: /[“”„‚‘「」]/u,
+  es: /[“”„‚‘’「」]/u,
+  ru: /[“”„‚‘’「」]/u,
+};
 // Informal Russian: ты and its forms, and imperatives without -те.
 const russianInformal = [
   word("ты|тебя|тебе|тобой|тво(?:й|я|ё|е|и|его|ему|ей|ю|им|их|ими)", "iu"),
@@ -113,6 +125,17 @@ it("the complete catalogs consistently use the mail glossary, message-text termi
       if (locale === "zh-CN" && (/[「」『』]/u.test(target) || /(?<![“‘])设置 →/u.test(target)))
         failures.push(`${locale}: quotes: ${source} → ${target}`);
       if (locale === "ja" && (/[“”‘’]/u.test(target) || /(?<![「『])設定 →/u.test(target)))
+        failures.push(`${locale}: quotes: ${source} → ${target}`);
+      // Text never uses ASCII quotes or apostrophes: placeholders, ICU syntax and component tags
+      // hold none, and a lone ' is ICU's escape character.
+      if (/["']/.test(target)) failures.push(`${locale}: ASCII quote: ${source} → ${target}`);
+      if (
+        foreignQuotes[locale]?.test(target) ||
+        ((locale === "de" || locale === "cs") &&
+          target.split("„").length !== target.split("“").length) ||
+        (locale === "fr" && /«(?![\s\u00A0\u202F])|(?<![\s\u00A0\u202F])»/u.test(target)) ||
+        ((locale === "es" || locale === "ru" || locale === "it") && /«\s|\s»|“\s|\s”/u.test(target))
+      )
         failures.push(`${locale}: quotes: ${source} → ${target}`);
       // An empty displayed value (no Cc, no location) is 无; 不选 is only a picker option.
       if (locale === "zh-CN" && message.context === "empty value" && target !== "无")

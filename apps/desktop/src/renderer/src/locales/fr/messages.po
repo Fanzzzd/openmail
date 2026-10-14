@@ -189,7 +189,7 @@ msgstr "La connexion de {email} a été révoquée ou a expiré. La synchronisat
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "{failedSearch} couldn't search the server."
-msgstr "{failedSearch} n'a pas pu effectuer la recherche sur le serveur."
+msgstr "{failedSearch} n’a pas pu effectuer la recherche sur le serveur."
 
 #: src/renderer/src/features/ai/TriageChip.tsx
 msgid "{hours, plural, one {Snooze for # hour} other {Snooze for # hours}}"
