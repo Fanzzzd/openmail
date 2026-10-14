@@ -258,7 +258,13 @@ export function EmailFrame({
         />
       </div>
       {wide && (
-        <button type="button" onClick={() => setFit(!fit)} className="mt-2 mr-4 text-a11y-accent">
+        // The frame surface follows the message background, not the appearance: a light message
+        // stays white in dark mode, so the accent is blue-700 on white or blue-300 on black.
+        <button
+          type="button"
+          onClick={() => setFit(!fit)}
+          className={`mt-2 mr-4 ${background === "dark" ? "text-blue-300" : "text-blue-700"}`}
+        >
           {fit ? t`View at 100%` : t`Fit to width`}
         </button>
       )}
