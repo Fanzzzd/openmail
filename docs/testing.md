@@ -190,6 +190,19 @@ The script seeds demo data into a temporary `OPENMAIL_HOME` with [demo-data.mjs]
 
 On macOS 26 `overlayXs` holds 96 and 87: after every resize step Electron reports the titlebar area 9 px left for one frame, through `getTitlebarAreaRect()` and `env(titlebar-area-x)` alike. [titlebar-area.ts](../apps/desktop/src/renderer/src/ui/titlebar-area.ts) keeps the last settled rect until a new one holds for 200 ms, and `TrafficLightSpace` writes its width to the DOM in the same frame instead of through React state. Regressions are in [titlebar-area.test.ts](../apps/desktop/src/renderer/src/ui/titlebar-area.test.ts) and the narrow window case in [layout.test.ts](../apps/desktop/src/renderer/src/e2e/layout.test.ts).
 
+## Light and dark appearance
+
+The app follows the Mac's appearance, and a harness cannot switch that setting. A development build reads `OPENMAIL_APPEARANCE=light` or `OPENMAIL_APPEARANCE=dark` at startup and sets Electron's `nativeTheme.themeSource`, so every window and the reader frame use that appearance. Any other value, or no value, follows the system. Packaged builds ignore the variable. Check both appearances before you change colors, overlays or popovers, for example on the demo profile:
+
+```sh
+pnpm build
+node scripts/demo-data.mjs /tmp/openmail-demo
+OPENMAIL_HOME=/tmp/openmail-demo OPENMAIL_READ_ONLY=1 OPENMAIL_OFFLINE=1 OPENMAIL_APPEARANCE=light \
+  apps/desktop/node_modules/.bin/electron apps/desktop --user-data-dir=/tmp/openmail-demo
+```
+
+The implementation is in [appearance.ts](../apps/desktop/src/main/windows/appearance.ts).
+
 ## Regressions by area
 
 - [undo-journal.test.ts](../packages/core/src/mailbox/undo-journal.test.ts), [signatures.test.ts](../packages/core/src/compose/signatures.test.ts): undo across restarts, and signatures.

@@ -29,6 +29,7 @@ import { RemoteAccessLive } from "./remote/remote-access-live";
 import { DesktopLive, receiveAppUrl, receiveOpenFile, ready } from "./system/system";
 import { focusMainWindow } from "./windows/windows";
 import { prepareBackgroundWindows } from "./windows/reveal";
+import { applyDevelopmentAppearance } from "./windows/appearance";
 import { showAppIdentity } from "./app/app-identity";
 import { mcpLaunchArgs, runMcpMode } from "./agents/mcp-mode";
 
@@ -39,6 +40,7 @@ import { registerProcessErrorHandlers } from "./app/process-errors";
 registerProcessErrorHandlers(localLog);
 registerSecuritySchemes();
 prepareBackgroundWindows();
+applyDevelopmentAppearance();
 
 const isolatedData = app.commandLine.getSwitchValue("user-data-dir");
 if (isolatedData) app.setPath("userData", resolve(isolatedData));
