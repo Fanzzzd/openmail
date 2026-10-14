@@ -36,6 +36,34 @@
         "OPENMAIL_PERF_REPORT"
       ]
     },
+    "@openmail/core#test": {
+      "dependsOn": ["^build", "build", "@openmail/cli#build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/.oxlintrc.json",
+        "$TURBO_ROOT$/apps/mobile/metro.config.cjs",
+        "$TURBO_ROOT$/spikes/media/artifacts/embeddings-hybrid.json"
+      ],
+      "env": [
+        "CI",
+        "OPENMAIL_LOW_MEMORY_TESTS",
+        "VITEST_MAX_WORKERS",
+        "OPENMAIL_TEST_TIME_SCALE",
+        "OPENMAIL_PERF",
+        "OPENMAIL_PERF_REPORT"
+      ]
+    },
+    "@openmail/cli#test": {
+      "dependsOn": ["^build", "build"],
+      "env": [
+        "CI",
+        "OPENMAIL_LOW_MEMORY_TESTS",
+        "VITEST_MAX_WORKERS",
+        "OPENMAIL_TEST_TIME_SCALE",
+        "OPENMAIL_PERF",
+        "OPENMAIL_PERF_REPORT"
+      ]
+    },
     "@openmail/desktop#test": {
       "dependsOn": ["^build", "build"],
       "env": [
