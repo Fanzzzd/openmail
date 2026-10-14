@@ -413,6 +413,22 @@ describe("errors", () => {
     );
   });
 
+  test("an unknown subcommand with --help is a usage error, not the parent's help", async () => {
+    const root = await openmail(["bogus", "--help"]);
+    expect(root.code).toBe(2);
+    expect(root.stdout).toBe("");
+    expect(root.stderr).toBe(
+      'error: Unknown subcommand "bogus" for "openmail"\nUsage: openmail <subcommand> [flags]\nRun `openmail --help` for details.\n',
+    );
+    const group = await openmail(["accounts", "bogus", "--help"]);
+    expect(group.code).toBe(2);
+    expect(group.stdout).toBe("");
+    expect(group.stderr).toContain('Unknown subcommand "bogus" for "openmail accounts"');
+    const known = await openmail(["accounts", "list", "--help"]);
+    expect(known.code).toBe(0);
+    expect(known.stdout).toContain("USAGE");
+  });
+
   test("a bad flag value is a usage error that names the flag", async () => {
     const { code, stdout, stderr } = await openmail(["list", "--limit", "abc"]);
     expect(code).toBe(2);

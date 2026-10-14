@@ -104,7 +104,7 @@ const report = (explained: Explained) =>
       code: "app_only",
       hint: `Open OpenMail and change it under ${WRITE_MODE_SETTING}.`,
     })
-  : withShortUsageErrors(Command.run(openmail, { version: CLI_VERSION }))
+  : withShortUsageErrors(Command.run(openmail, { version: CLI_VERSION }), openmail)
 ).pipe(
   Effect.catch((error) => {
     const explained = explainError(error, home);

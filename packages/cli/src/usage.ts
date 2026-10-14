@@ -6,7 +6,7 @@
  */
 
 import { Console, Data, Effect, Runtime } from "effect";
-import { CliError, CliOutput } from "effect/cli";
+import { CliError, CliOutput, type Command } from "effect/cli";
 
 /** A usage error already printed on stderr. */
 export class UsageError extends Data.TaggedError("UsageError")<{
@@ -25,12 +25,55 @@ const commandPath = (usage: string) => {
   return (end < 0 ? words : words.slice(0, end)).join(" ");
 };
 
+/** Built-in flags that take the next word as their value. */
+const VALUE_FLAGS = new Set(["--log-level", "--completions"]);
+
+/**
+ * With --help, effect/cli prints the help of the last command it recognised and exits 0, so
+ * `openmail bogus --help` looked like it worked. Finds the first word a command group does not
+ * know, the way effect/cli reports it without --help.
+ */
+export function unknownSubcommand(
+  root: Command.Command.Any,
+  args: readonly string[],
+): { readonly word: string; readonly path: string } | null {
+  if (!args.some((arg) => arg === "--help" || arg === "-h")) return null;
+  let command = root;
+  let path = root.name;
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i] ?? "";
+    if (arg === "--") return null;
+    if (arg.startsWith("-")) {
+      if (VALUE_FLAGS.has(arg)) i++;
+      continue;
+    }
+    const subcommands = command.subcommands.flatMap((group) => group.commands);
+    // A command without subcommands takes positional arguments from here on.
+    if (subcommands.length === 0) return null;
+    const next = subcommands.find((sub) => sub.name === arg || sub.alias === arg);
+    if (!next) return { word: arg, path };
+    command = next;
+    path = `${path} ${next.name}`;
+  }
+  return null;
+}
+
 export const withShortUsageErrors = <A, E, R>(
   run: Effect.Effect<A, E, R>,
+  root?: Command.Command.Any,
 ): Effect.Effect<A, E | UsageError, R> =>
   Effect.gen(function* () {
     const formatter = yield* CliOutput.Formatter;
     const base = yield* Console.Console;
+    const unknown = root ? unknownSubcommand(root, process.argv.slice(2)) : null;
+    if (unknown) {
+      const hint = `Run \`${unknown.path} --help\` for details.`;
+      const message = `Unknown subcommand "${unknown.word}" for "${unknown.path}"`;
+      base.error(
+        [`error: ${message}`, `Usage: ${unknown.path} <subcommand> [flags]`, hint].join("\n"),
+      );
+      return yield* Effect.fail(new UsageError({ message, hint }));
+    }
     let help: string | undefined;
     let held: string | undefined;
     let usage = "";
