@@ -27,6 +27,7 @@ export const GROUPS: { title: string; actions: ShortcutAction[] }[] = [
       "archive",
       "trash",
       "spam",
+      "snooze",
       "read",
       "markRead",
       "markUnread",
