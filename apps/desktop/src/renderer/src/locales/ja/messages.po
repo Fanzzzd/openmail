@@ -2663,6 +2663,16 @@ msgstr "本文を編集"
 msgid "Edit link"
 msgstr "リンクを編集"
 
+#. Button below a reply. Makes the quoted original message editable.
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
+msgctxt "compose quoted original"
+msgid "Edit quoted text"
+msgstr "引用文を編集"
+
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
+msgid "Edit quoted text?"
+msgstr "引用文を編集しますか？"
+
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 msgid "Edit signature"
 msgstr "署名の編集"
@@ -2689,6 +2699,10 @@ msgstr "条件と操作をすべて保持するには、このフィルターを
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Edit token"
 msgstr "トークンの編集"
+
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
+msgid "Editing removes tables, images and other formatting this editor cannot keep from the quoted text. Lists, bold, italic, underline and links are kept."
+msgstr "編集すると、表、画像、エディタで保持できないその他の書式設定が引用文から削除されます。リスト、太字、斜体、下線、リンクは保持されます。"
 
 #: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "Editing removes unsupported formatting and images from this draft. Lists, bold, italic, underline and links are kept."
@@ -5477,6 +5491,12 @@ msgstr "選択したテキストのみを引用しますか？"
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Quote selected text"
 msgstr "選択したテキストを引用する"
+
+#. The original message quoted below a reply or forward, sent unchanged.
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
+msgctxt "compose quoted original"
+msgid "Quoted text"
+msgstr "引用文"
 
 #. Flag value on the incoming message, not an action to execute.
 #: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx

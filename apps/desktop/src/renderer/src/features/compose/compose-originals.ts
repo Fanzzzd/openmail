@@ -15,7 +15,10 @@ export function inheritsOriginals(draft: Draft, provider: Provider | undefined):
 
 /** CID parts without a quoted image become ordinary attachments, rather than disappearing. */
 export function withOriginalAttachments(draft: Draft, files: readonly OutgoingAttachment[]): Draft {
-  const html = draft.body.kind === "rich" ? (draft.body.originalHtml ?? draft.body.html) : "";
+  const html =
+    draft.body.kind === "rich"
+      ? `${draft.body.originalHtml ?? draft.body.html}${draft.body.quotedHtml ?? ""}`
+      : "";
   const cids = new Set(
     [...richComposeBody(html).html.matchAll(/src="(cid:[^"]+)"/g)].flatMap((match) => {
       const cid = composeCid(match[1] ?? "");

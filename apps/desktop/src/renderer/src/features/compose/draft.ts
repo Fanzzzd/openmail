@@ -15,7 +15,7 @@ import {
   outgoingComposeBody,
   normalizeComposeMessage,
   richComposeBody,
-  remoteComposeBody,
+  quotedComposeBody,
   preservedComposeHtml,
   textComposeHtml,
   providerCapabilities,
@@ -129,13 +129,15 @@ function replyHeader(i18n: I18n, m: Message): string {
 
 /**
  * The quoted original under a reply: the header line, then the original in a cited blockquote.
- * An HTML original goes through core's reader sanitizer and stays transport-only, as a forward's
- * does. The text alternative and plain-text mode write the blockquote as "> " lines.
+ * An HTML original goes through core's reader sanitizer. One the editor cannot keep stays a
+ * read-only block below the reply, as a forward's does. The text alternative and plain-text mode
+ * write the blockquote as "> " lines.
  */
 function quote(i18n: I18n, m: Message): ComposeBody {
   const header = textComposeHtml(`\n\n${replyHeader(i18n, m)}`);
   if (m.bodyHtml)
-    return remoteComposeBody(
+    return quotedComposeBody(
+      "",
       `${header}<blockquote type="cite">${preservedComposeHtml(m.bodyHtml)}</blockquote>`,
     );
   return richComposeBody(
@@ -219,7 +221,8 @@ export function draftFor(
       mode !== "forward"
         ? quote(i18n, quoted)
         : !forwardAsAttachment && quoted.bodyHtml
-          ? remoteComposeBody(
+          ? quotedComposeBody(
+              "",
               `${textComposeHtml(body.slice(0, body.length - quoted.bodyText.length))}${preservedComposeHtml(quoted.bodyHtml)}`,
             )
           : richComposeBody(textComposeHtml(body)),
@@ -293,6 +296,9 @@ export function toMessage(d: Draft): { message: OutgoingMessage; invalid: string
             ...(d.body.kind === "rich" && d.body.originalHtml !== undefined
               ? { originalHtml: d.body.originalHtml }
               : {}),
+            ...(d.body.kind === "rich" && d.body.quotedHtml !== undefined
+              ? { quotedHtml: d.body.quotedHtml }
+              : {}),
           }
         : {}),
       attachments: d.attachments,
@@ -334,7 +340,8 @@ export function isEmpty(d: Draft, signature?: string, options?: SignatureOptions
     !d.subject &&
     (!body || body === automatic) &&
     // An untouched image-only remote body has no editable text, but closing must keep it.
-    (d.body.kind !== "rich" || d.body.originalHtml === undefined) &&
+    (d.body.kind !== "rich" ||
+      (d.body.originalHtml === undefined && d.body.quotedHtml === undefined)) &&
     d.attachments.length === 0 &&
     !d.forwardAsAttachment
   );

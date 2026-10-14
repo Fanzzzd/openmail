@@ -99,6 +99,8 @@ export const OutgoingMessage = Schema.Struct({
   draftOrganization: Schema.optionalKey(DraftOrganization),
   /** Remote draft source, never rendered. Retained only while the body is unchanged. */
   originalHtml: Schema.optionalKey(Schema.String),
+  /** Read-only quoted original sent after `html`. Core sanitizes it again before transport. */
+  quotedHtml: Schema.optionalKey(Schema.String),
   /** Local compose notice; no removed text or transport marker is retained. */
   hiddenTextRemoved: Schema.optionalKey(Schema.Literal(true)),
   attachments: Schema.Array(OutgoingAttachment),

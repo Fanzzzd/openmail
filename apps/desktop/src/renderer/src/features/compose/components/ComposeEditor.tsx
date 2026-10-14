@@ -6,7 +6,7 @@ import { useComposeFind } from "../hooks/use-compose-find";
 import { useComposeMentions } from "../hooks/use-compose-mentions";
 import { useComposePaste } from "../hooks/use-compose-paste";
 import { useFormatOptions } from "../hooks/use-format-options";
-import { BodyNotices, LockedPreview, ModeChangePrompt } from "./BodyNotices";
+import { BodyNotices, LockedPreview, ModeChangePrompt, QuotedOriginal } from "./BodyNotices";
 import { EditorMoreMenu } from "./EditorMoreMenu";
 import {
   ComposeFindBar,
@@ -31,6 +31,7 @@ import {
   editedComposeBody,
   composeLink,
   richComposeBody,
+  unquotedComposeBody,
   escapeComposeText,
   type ComposeBody,
   type Address,
@@ -158,6 +159,7 @@ export function ComposeEditor({
     [body],
   );
   const locked = remoteUnsupported && !unlocked;
+  const quotedHtml = body.kind === "rich" ? body.quotedHtml : undefined;
   const grammar = useComposeGrammar({ body, bodyRef, onChange, locked });
   const mentions = useComposeMentions({
     from,
@@ -443,7 +445,7 @@ export function ComposeEditor({
   return (
     <div
       ref={rootRef}
-      className={`flex flex-col ${locked ? "shrink-0" : "min-h-0 flex-1"} focus-within:ring-2 focus-within:ring-inset focus-within:ring-a11y-focus`}
+      className={`flex flex-col ${locked || quotedHtml !== undefined ? "shrink-0" : "min-h-0 flex-1"} focus-within:ring-2 focus-within:ring-inset focus-within:ring-a11y-focus`}
     >
       <ComposeToolbar
         formatting={body.kind === "rich" && formatBar}
@@ -573,6 +575,7 @@ export function ComposeEditor({
         <RichBody
           font={body.font}
           locked={locked}
+          quoted={quotedHtml !== undefined}
           richRef={richRef}
           bodyRef={bodyRef}
           onImage={setImageCid}
@@ -592,6 +595,18 @@ export function ComposeEditor({
             setEmojiUndo(undo);
           }}
           onChange={onChange}
+        />
+      )}
+      {body.kind === "rich" && quotedHtml !== undefined && (
+        <QuotedOriginal
+          html={composePreviewHtml(
+            { kind: "rich", text: "", html: quotedHtml, ...(body.font ? { font: body.font } : {}) },
+            attachments,
+          )}
+          onEdit={() => {
+            selectionRef.current = null;
+            onChange(unquotedComposeBody(body));
+          }}
         />
       )}
     </div>

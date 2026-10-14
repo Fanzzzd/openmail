@@ -2673,6 +2673,16 @@ msgstr "编辑正文"
 msgid "Edit link"
 msgstr "编辑链接"
 
+#. Button below a reply. Makes the quoted original message editable.
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
+msgctxt "compose quoted original"
+msgid "Edit quoted text"
+msgstr "编辑引文"
+
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
+msgid "Edit quoted text?"
+msgstr "编辑引文？"
+
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 msgid "Edit signature"
 msgstr "编辑签名"
@@ -2699,6 +2709,10 @@ msgstr "请在网页版邮箱中编辑这个过滤器，以保留它的全部条
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Edit token"
 msgstr "编辑条件"
+
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
+msgid "Editing removes tables, images and other formatting this editor cannot keep from the quoted text. Lists, bold, italic, underline and links are kept."
+msgstr "编辑会从引文中移除表格、图片和编辑器无法保留的其他格式，保留列表、粗体、斜体、下划线和链接。"
 
 #: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "Editing removes unsupported formatting and images from this draft. Lists, bold, italic, underline and links are kept."
@@ -5487,6 +5501,12 @@ msgstr "只引用选中文字？"
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Quote selected text"
 msgstr "引用选中文字"
+
+#. The original message quoted below a reply or forward, sent unchanged.
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
+msgctxt "compose quoted original"
+msgid "Quoted text"
+msgstr "引文"
 
 #. Flag value on the incoming message, not an action to execute.
 #: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx

@@ -9,6 +9,7 @@ import {
   composeConversion,
   preservedComposeHtml,
   composeTransportHtml,
+  withQuotedComposeHtml,
 } from "@openmail/core/schema";
 import type { Account, Message } from "../../../../shared/api";
 import { catalogI18n } from "../../test-support/catalog-i18n";
@@ -73,7 +74,7 @@ it.each(hiddenDraftProbes)("forward excludes hidden content and resources: %s", 
     },
     account,
   );
-  const outgoing = toMessage(forward).message;
+  const outgoing = withQuotedComposeHtml(toMessage(forward).message);
   const transport = preservedComposeHtml(outgoing.originalHtml ?? outgoing.html ?? "");
   expect(transport).not.toMatch(/SECRET|HIDDEN-AFTER|remote\.test|data:image|url\(/);
   expect(outgoing.text).not.toMatch(/SECRET|HIDDEN-AFTER/);
@@ -88,7 +89,7 @@ it("forward preserves sanitized HTML while reply/forward selected quotes contain
       '<table><tr><td style="color:red">Whole message</td></tr></table><script>evil()</script><img src="https://evil.test/track">',
   };
   const forward = draftFor(english, "forward", source, account);
-  const sent = toMessage(forward).message;
+  const sent = withQuotedComposeHtml(toMessage(forward).message);
   expect(forward.includeOriginalAttachments).toBe(true);
   const transportHtml = preservedComposeHtml(sent.originalHtml ?? sent.html ?? "");
   expect(transportHtml).toContain("<table>");

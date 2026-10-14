@@ -10,6 +10,7 @@ import {
 import {
   normalizeComposeMessage,
   preservedComposeHtml,
+  withQuotedComposeHtml,
   remoteComposeBody,
 } from "../compose/compose-body.js";
 import type { Account } from "../domain/account.js";
@@ -63,10 +64,11 @@ export const makeDraftsMailbox = (
       ? { ...normalized, html: renderMarkdown(normalized.text) }
       : normalized;
     // Source stays in local metadata; transport uses its own wider safe allow-list.
-    const out: OutgoingMessage =
+    const out: OutgoingMessage = withQuotedComposeHtml(
       prepared.originalHtml === undefined
         ? prepared
-        : { ...prepared, html: preservedComposeHtml(prepared.originalHtml) };
+        : { ...prepared, html: preservedComposeHtml(prepared.originalHtml) },
+    );
     if (!message.inReplyTo) return { message: out, original: Option.none() };
     const ref = yield* store.messageRef(message.inReplyTo);
     const source = yield* store.getMessage(message.inReplyTo);

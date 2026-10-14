@@ -126,6 +126,25 @@ export function applyComposeSignature(
     richComposeBody(
       `<div>${separator ? "-- <br>" : ""}${richComposeBody(signature.html ?? textComposeHtml(signature.text)).html}</div>`,
     ).html;
+  if (body.quotedHtml !== undefined) {
+    const { quotedHtml, ...own } = body;
+    if (options.signaturePosition === "above") {
+      const updated = applyComposeSignature(own, previous, next, options);
+      return updated === own || updated.kind !== "rich" ? body : { ...updated, quotedHtml };
+    }
+    // Below the read-only quote, the signature is the tail of that quote.
+    const old = previous?.text.trim()
+      ? [block(previous, true), block(previous, false)]
+          .map((candidate) => `<br><br>${candidate}`)
+          .find((candidate) => quotedHtml.endsWith(candidate))
+      : undefined;
+    const replacement = next?.text.trim() ? `<br><br>${block(next)}` : "";
+    if (old === undefined && !replacement) return body;
+    return {
+      ...body,
+      quotedHtml: `${old === undefined ? quotedHtml : quotedHtml.slice(0, -old.length)}${replacement}`,
+    };
+  }
   const quote = body.text.slice(quoteOffset(body.text)).split("\n")[0] ?? "";
   const quoteIndex = quote ? body.html.indexOf(textComposeHtml(quote)) : -1;
   const blockquoteIndex = body.html.indexOf("<blockquote>");

@@ -2663,6 +2663,16 @@ msgstr "Bewerk berichttekst"
 msgid "Edit link"
 msgstr "Link bewerken"
 
+#. Button below a reply. Makes the quoted original message editable.
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
+msgctxt "compose quoted original"
+msgid "Edit quoted text"
+msgstr "Geciteerde tekst bewerken"
+
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
+msgid "Edit quoted text?"
+msgstr "Geciteerde tekst bewerken?"
+
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 msgid "Edit signature"
 msgstr "Handtekening bewerken"
@@ -2689,6 +2699,10 @@ msgstr "Bewerk dit filter in webmail om alle voorwaarden en acties te behouden."
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Edit token"
 msgstr "Token bewerken"
+
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
+msgid "Editing removes tables, images and other formatting this editor cannot keep from the quoted text. Lists, bold, italic, underline and links are kept."
+msgstr "Door te bewerken worden tabellen, afbeeldingen en andere opmaak die de editor niet kan behouden uit de geciteerde tekst verwijderd. Lijsten, vetgedrukt, cursief, onderstreept en links blijven behouden."
 
 #: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "Editing removes unsupported formatting and images from this draft. Lists, bold, italic, underline and links are kept."
@@ -5477,6 +5491,12 @@ msgstr "Alleen de geselecteerde tekst citeren?"
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Quote selected text"
 msgstr "Citeer de geselecteerde tekst"
+
+#. The original message quoted below a reply or forward, sent unchanged.
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
+msgctxt "compose quoted original"
+msgid "Quoted text"
+msgstr "Geciteerde tekst"
 
 #. Flag value on the incoming message, not an action to execute.
 #: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx

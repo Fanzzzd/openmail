@@ -9,8 +9,12 @@ import {
   composeHtmlHasUnsupported,
   editedComposeBody,
   preservedComposeHtml,
+  quotedComposeBody,
   remoteComposeBody,
+  unquotedComposeBody,
+  withQuotedComposeHtml,
 } from "./compose-body.js";
+import { applyComposeSignature } from "./compose-transport.js";
 import { composeLink } from "./compose-nodes.js";
 import { renderMarkdown } from "./markdown.js";
 import { performance } from "node:perf_hooks";
@@ -171,6 +175,79 @@ import { scaledMs } from "../../test-support/test-time.js";
       );
       assert.strictEqual(composeEditorText(body), "details https://example.com me bad");
       assert.deepStrictEqual(richComposeBody(body.html), body);
+    });
+  });
+
+  describe("read-only quoted original", () => {
+    const newsletter =
+      '<table width="600" style="background:#ffffff"><tr><td style="padding:20px"><div style="font-size:16px">Async closures are stable</div><img src="cid:logo%40example.net" alt="Logo"></td></tr></table><script>bad()</script>';
+    const quote = `<br><br>On Mon, Rust Weekly wrote:<blockquote type="cite">${newsletter}</blockquote>`;
+    const message = (body: ReturnType<typeof quotedComposeBody>) => ({
+      to: [],
+      cc: [],
+      bcc: [],
+      subject: "Re: This week in Rust",
+      attachments: [],
+      text: body.text,
+      html: body.html,
+      ...(body.quotedHtml === undefined ? {} : { quotedHtml: body.quotedHtml }),
+    });
+
+    it("keeps an unsupported quote out of the editor and sends it unchanged after the reply", () => {
+      const body = quotedComposeBody("", quote);
+      assert.strictEqual(body.html, "");
+      assert.strictEqual(body.originalHtml, undefined);
+      assert.include(body.quotedHtml, "<table");
+      assert.notInclude(body.quotedHtml, "<script");
+      const edited = editedComposeBody(body, "<div>Thanks, <b>great issue</b></div>");
+      assert.strictEqual(edited.quotedHtml, body.quotedHtml);
+      const saved = normalizeComposeMessage(message(edited));
+      assert.strictEqual(saved.quotedHtml, body.quotedHtml);
+      assert.deepStrictEqual(outgoingComposeBody(saved), edited);
+      const sent = withQuotedComposeHtml(saved);
+      assert.strictEqual(sent.quotedHtml, undefined);
+      assert.strictEqual(
+        sent.html,
+        `<div>Thanks, <strong>great issue</strong></div>${preservedComposeHtml(body.quotedHtml ?? "")}`,
+      );
+      assert.include(sent.html, '<table width="600" style="background:#ffffff');
+      assert.include(sent.html, 'src="cid:logo@example.net"');
+      assert.notInclude(sent.html, "<script");
+      assert.match(
+        sent.text,
+        /^Thanks, great issue\n+On Mon, Rust Weekly wrote:\n> Async closures are stable/,
+      );
+    });
+
+    it("keeps a quote the editor supports editable, as before", () => {
+      const body = quotedComposeBody("", "<br><br>On Mon:<blockquote><b>plain</b></blockquote>");
+      assert.strictEqual(body.quotedHtml, undefined);
+      assert.include(body.html, "<strong>plain</strong>");
+    });
+
+    it("joins the quote into the editor only when the person chooses to edit it", () => {
+      const body = editedComposeBody(quotedComposeBody("", quote), "<div>Hi</div>");
+      const joined = unquotedComposeBody(body);
+      assert.strictEqual(joined.quotedHtml, undefined);
+      assert.include(joined.html, "Async closures are stable");
+      assert.notInclude(joined.html, "<table");
+      const plain = composeConversion(body, "plain");
+      assert.strictEqual(plain.losesFormatting, true);
+      assert.include(plain.body.text, "Async closures are stable");
+    });
+
+    it("places a signature above or below the quote without editing it", () => {
+      const body = quotedComposeBody("", quote);
+      const signature = { text: "Alex" };
+      const above = applyComposeSignature(body, undefined, signature);
+      assert.strictEqual(above.kind === "rich" && above.quotedHtml, body.quotedHtml);
+      assert.include(above.kind === "rich" ? above.html : "", "Alex");
+      const options = { signaturePosition: "below", signatureSeparator: true } as const;
+      const below = applyComposeSignature(body, undefined, signature, options);
+      assert.strictEqual(below.kind === "rich" && below.html, "");
+      assert.match(below.kind === "rich" ? (below.quotedHtml ?? "") : "", /Alex<\/div>$/);
+      const removed = applyComposeSignature(below, signature, undefined, options);
+      assert.strictEqual(removed.kind === "rich" && removed.quotedHtml, body.quotedHtml);
     });
   });
 

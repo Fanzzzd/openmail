@@ -1,4 +1,5 @@
 import { afterEach, expect, it, vi } from "vitest";
+import userEvent from "@testing-library/user-event";
 import { fireEvent, screen, within } from "@testing-library/react";
 import { composeTransportHtml, visibleHtmlText, type Provider } from "@openmail/core/schema";
 import { flow, eventually, incoming, key, clickButton, row } from "./harness";
@@ -255,7 +256,7 @@ it("forward preview and send exclude every hidden-content probe", async () => {
     expect(screen.getByRole("article", { name: /^Selected message/ })).toBeTruthy(),
   );
   key("f", { metaKey: true, shiftKey: true });
-  await eventually(() => expect(screen.getByText("Original formatting kept")).toBeTruthy());
+  await eventually(() => expect(screen.getByRole("region", { name: "Quoted text" })).toBeTruthy());
   const frame = previewFrame();
   fireEvent.change(screen.getByLabelText("To", { exact: true }), {
     target: { value: "bob@example.com" },
@@ -401,3 +402,83 @@ it.each(["gmail", "outlook", "imap"] satisfies Provider[])(
     semantics(edited.push.message.html ?? "", "edited");
   },
 );
+
+// The "This week in Rust" newsletter from scripts/demo-data.mjs: nested layout tables.
+const rustNewsletter =
+  '<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f5f7;font-family:-apple-system,Helvetica,Arial,sans-serif"><tr><td align="center" style="padding:24px"><table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px"><tr><td style="padding:28px 32px;border-bottom:1px solid #e6e8eb"><div style="font-size:22px;font-weight:700;color:#1d2433">This Week in Rust</div><div style="margin-top:8px;font-size:15px;color:#4a5263">Issue 612</div></td></tr><tr><td style="padding:20px 32px"><div style="font-size:16px;font-weight:600;color:#1d2433">Async closures are stable</div></td></tr></table></td></tr></table>';
+
+it.each(["reply", "forward"] as const)(
+  "a %s to an HTML newsletter writes above the read-only original and sends the table intact",
+  async (mode) => {
+    current = await flow({
+      messages: [
+        incoming("rust", {
+          subject: "This week in Rust: async closures, faster builds",
+          from: { name: "Rust Weekly", address: "newsletter@rustweekly.example.net" },
+          bodyHtml: rustNewsletter,
+          bodyText: "Issue 612: async closures are stable.",
+        }),
+      ],
+    });
+    const h = current;
+    await eventually(() => expect(row(h.id("rust"))).toBeTruthy());
+    fireEvent.click(row(h.id("rust")));
+    await eventually(() =>
+      expect(screen.getByRole("article", { name: /^Selected message/ })).toBeTruthy(),
+    );
+    key(mode === "reply" ? "r" : "f", { metaKey: true, shiftKey: mode === "forward" });
+    await eventually(() =>
+      expect(screen.getByRole("region", { name: "Quoted text" })).toBeTruthy(),
+    );
+    const body = screen.getByRole("textbox", { name: "Body" });
+    expect(body.getAttribute("contenteditable")).toBe("true");
+    expect(body.hidden).toBe(false);
+    expect(screen.queryByText("Original formatting kept")).toBeNull();
+    const user = userEvent.setup();
+    if (mode === "reply") await eventually(() => expect(document.activeElement).toBe(body));
+    else {
+      await user.type(screen.getByRole("combobox", { name: "To" }), "carol@example.com");
+      body.focus();
+    }
+    await user.keyboard("Thanks for this issue");
+    expect(screen.getByRole("textbox", { name: "Body" }).textContent).toBe("Thanks for this issue");
+    clickButton("Send");
+    await eventually(() => {
+      if (h.server.sent.length !== 1) throw new Error(document.body.textContent);
+    });
+    const sent = h.server.sent[0]?.message;
+    expect(sent?.quotedHtml).toBeUndefined();
+    expect(sent?.html).toMatch(
+      /^(?:<div>)?Thanks for this issue(?:<\/div>)?<br>[^]*<table width="100%"[^]*<table width="600"[^]*Async closures are stable/,
+    );
+    expect(sent?.html).toContain('style="background:#ffffff');
+    expect(sent?.text).toMatch(
+      mode === "reply"
+        ? /^Thanks for this issue\n+On .+ wrote:\n> This Week in Rust/
+        : /^Thanks for this issue\n+-+ Forwarded message -+\n[^]*This Week in Rust/,
+    );
+  },
+);
+
+it("Edit quoted text asks first, then joins the quote into the editable body", async () => {
+  current = await flow({
+    messages: [incoming("rust", { bodyHtml: rustNewsletter, bodyText: "Issue 612" })],
+  });
+  const h = current;
+  await eventually(() => expect(row(h.id("rust"))).toBeTruthy());
+  fireEvent.click(row(h.id("rust")));
+  await eventually(() =>
+    expect(screen.getByRole("article", { name: /^Selected message/ })).toBeTruthy(),
+  );
+  key("r", { metaKey: true });
+  await eventually(() => expect(screen.getByRole("region", { name: "Quoted text" })).toBeTruthy());
+  clickButton("Edit quoted text");
+  await eventually(() => expect(screen.getByRole("alertdialog")).toBeTruthy());
+  fireEvent.click(
+    within(screen.getByRole("alertdialog")).getByRole("button", { name: "Edit quoted text" }),
+  );
+  await eventually(() => expect(screen.queryByRole("region", { name: "Quoted text" })).toBeNull());
+  expect(screen.getByRole("textbox", { name: "Body" }).textContent).toContain(
+    "Async closures are stable",
+  );
+});

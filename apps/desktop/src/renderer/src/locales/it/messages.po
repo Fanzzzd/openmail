@@ -2663,6 +2663,16 @@ msgstr "Modifica testo del messaggio"
 msgid "Edit link"
 msgstr "Modifica collegamento"
 
+#. Button below a reply. Makes the quoted original message editable.
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
+msgctxt "compose quoted original"
+msgid "Edit quoted text"
+msgstr "Modifica testo citato"
+
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
+msgid "Edit quoted text?"
+msgstr "Modificare il testo citato?"
+
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 msgid "Edit signature"
 msgstr "Modifica firma"
@@ -2689,6 +2699,10 @@ msgstr "Modifica questo filtro nella webmail per mantenere tutte le sue condizio
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Edit token"
 msgstr "Modifica token"
+
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
+msgid "Editing removes tables, images and other formatting this editor cannot keep from the quoted text. Lists, bold, italic, underline and links are kept."
+msgstr "La modifica rimuove dal testo citato tabelle, immagini e altra formattazione che l’editor non può mantenere. Vengono mantenuti gli elenchi, il grassetto, il corsivo, la sottolineatura e i collegamenti."
 
 #: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "Editing removes unsupported formatting and images from this draft. Lists, bold, italic, underline and links are kept."
@@ -5477,6 +5491,12 @@ msgstr "Citare solo il testo selezionato?"
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Quote selected text"
 msgstr "Cita il testo selezionato"
+
+#. The original message quoted below a reply or forward, sent unchanged.
+#: src/renderer/src/features/compose/components/BodyNotices.tsx
+msgctxt "compose quoted original"
+msgid "Quoted text"
+msgstr "Testo citato"
 
 #. Flag value on the incoming message, not an action to execute.
 #: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx

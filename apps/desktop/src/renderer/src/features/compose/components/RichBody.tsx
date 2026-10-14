@@ -7,6 +7,8 @@ import type { ComposeElement } from "../compose-editor-dom";
 interface Props {
   font: Extract<ComposeBody, { kind: "rich" }>["font"];
   locked: boolean;
+  /** A read-only quoted original follows, so the body sizes to its text instead of filling. */
+  quoted?: boolean;
   richRef: RefObject<HTMLDivElement | null>;
   bodyRef: RefObject<ComposeElement | null>;
   /** The Content-ID of the clicked inline image, or null for a click elsewhere. */
@@ -22,6 +24,7 @@ interface Props {
 export function RichBody({
   font,
   locked,
+  quoted = false,
   richRef,
   bodyRef,
   onImage,
@@ -52,7 +55,7 @@ export function RichBody({
         context: "message text",
         comment: "Email message text, never an anatomical body.",
       })}
-      className="min-h-0 flex-1 overflow-auto px-4 py-3 text-callout leading-relaxed outline-none [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_a]:text-blue-600 [&_a]:underline [&_em]:italic [&_strong]:font-bold [&_s]:line-through [&_blockquote]:border-l-2 [&_blockquote]:pl-3 [&_img]:max-w-full [&_img:not([height])]:h-auto [&_img]:cursor-pointer [&_code]:font-mono [&_pre]:font-mono [&_pre]:whitespace-pre-wrap [&_ul[type=dash]>li]:list-none [&_ul[type=dash]>li]:before:content-['–_']"
+      className={`${quoted ? "min-h-24" : "min-h-0 flex-1 overflow-auto"} px-4 py-3 text-callout leading-relaxed outline-none [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_a]:text-blue-600 [&_a]:underline [&_em]:italic [&_strong]:font-bold [&_s]:line-through [&_blockquote]:border-l-2 [&_blockquote]:pl-3 [&_img]:max-w-full [&_img:not([height])]:h-auto [&_img]:cursor-pointer [&_code]:font-mono [&_pre]:font-mono [&_pre]:whitespace-pre-wrap [&_ul[type=dash]>li]:list-none [&_ul[type=dash]>li]:before:content-['–_']`}
       style={font ? { fontFamily: font.family, fontSize: font.size } : undefined}
       onClick={(event) => {
         const target = event.target;

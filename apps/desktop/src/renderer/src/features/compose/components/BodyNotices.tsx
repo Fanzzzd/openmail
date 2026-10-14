@@ -116,6 +116,55 @@ export function LockedPreview({ html }: { html: string }) {
   );
 }
 
+/**
+ * The quoted original of a reply or forward that the editor cannot keep, below the editable
+ * body. It is sent unchanged unless the person chooses to edit it, which asks first.
+ */
+export function QuotedOriginal({ html, onEdit }: { html: string; onEdit: () => void }) {
+  const { t } = useLingui();
+  const [editPrompt, setEditPrompt] = useState(false);
+  const label = t({
+    message: "Edit quoted text",
+    context: "compose quoted original",
+    comment: "Button below a reply. Makes the quoted original message editable.",
+  });
+  return (
+    <section
+      aria-label={t({
+        message: "Quoted text",
+        context: "compose quoted original",
+        comment: "The original message quoted below a reply or forward, sent unchanged.",
+      })}
+      className="shrink-0 border-t border-separator"
+    >
+      <div className="flex items-center justify-end px-4 pt-2">
+        <button type="button" className={editorButton} onClick={() => setEditPrompt(true)}>
+          {label}
+        </button>
+      </div>
+      <LockedPreview html={html} />
+      <Alert
+        open={editPrompt}
+        onOpenChange={setEditPrompt}
+        title={t`Edit quoted text?`}
+        description={t`Editing removes tables, images and other formatting this editor cannot keep from the quoted text. Lists, bold, italic, underline and links are kept.`}
+      >
+        <AlertCancel>{t`Cancel`}</AlertCancel>
+        <button
+          type="button"
+          className={alertPrimary}
+          onClick={() => {
+            onEdit();
+            setEditPrompt(false);
+          }}
+        >
+          {label}
+        </button>
+      </Alert>
+    </section>
+  );
+}
+
 /** Asks before a writing mode change that drops formatting. */
 export function ModeChangePrompt({
   open,
