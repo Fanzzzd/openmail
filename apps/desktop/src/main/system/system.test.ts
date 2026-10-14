@@ -1331,12 +1331,12 @@ it("thread window focus refreshes native menu capabilities and closed ids lose t
         yield* desktop.setMenuState(main.webContents.id, {
           selected: false,
           composing: false,
-          gmail: false,
+          important: false,
         });
         yield* desktop.setMenuState(reader.webContents.id, {
           selected: true,
           composing: false,
-          gmail: true,
+          important: true,
         });
         main.focus();
         yield* settle();
@@ -1369,7 +1369,7 @@ it("native menus relay accelerator origin to the focused renderer", async () => 
         yield* desktop.setMenuState(main.webContents.id, {
           selected: true,
           composing: false,
-          gmail: true,
+          important: true,
         });
         const subscribed = yield* Deferred.make<void>();
         const received = yield* desktop.events(main.webContents.id).pipe(

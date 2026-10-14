@@ -1,3 +1,4 @@
+import { providerCapabilities, supportsOp, type Provider } from "@openmail/core/schema";
 import { Schema } from "effect";
 import { KEYMAP, type ShortcutAction, type ShortcutSet } from "./shortcuts";
 
@@ -74,7 +75,8 @@ export type NativeAction = typeof NativeAction.Type;
 export const NativeMenuState = Schema.Struct({
   selected: Schema.Boolean,
   composing: Schema.Boolean,
-  gmail: Schema.Boolean,
+  /** The selected account can mark mail important. */
+  important: Schema.Boolean,
   web: Schema.optionalKey(Schema.Boolean),
   mailbox: Schema.optionalKey(Schema.Boolean),
 });
@@ -82,8 +84,16 @@ export type NativeMenuState = typeof NativeMenuState.Type;
 export const NO_MENU_SELECTION: NativeMenuState = {
   selected: false,
   composing: false,
-  gmail: false,
+  important: false,
 };
+/** The menu flags that follow the selected account's provider. */
+export function providerMenuState(
+  provider: Provider | undefined,
+): Pick<NativeMenuState, "important" | "web"> {
+  if (!provider) return { important: false };
+  const caps = providerCapabilities(provider);
+  return { important: supportsOp(caps, "important"), web: caps.webLink };
+}
 export const NATIVE_MENUS = [
   {
     name: "message",
@@ -173,7 +183,7 @@ export function nativeActionEnabled(action: NativeAction, state: NativeMenuState
   return (
     state.selected &&
     !state.composing &&
-    (action !== "important" || state.gmail) &&
+    (action !== "important" || state.important) &&
     (action !== "shareWebLink" || state.web === true)
   );
 }

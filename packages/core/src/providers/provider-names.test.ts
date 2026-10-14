@@ -50,9 +50,6 @@ const REMAINING: Record<string, number> = {
   // OAuth sign-in input per provider, and the OAuth client the account uses.
   "packages/core/src/mailbox/mailbox-accounts.ts": 1,
   "apps/desktop/src/renderer/src/features/settings/Settings.tsx": 2,
-  // The native menu's `gmail` flag enables Mark important for Gmail only.
-  "apps/desktop/src/renderer/src/app/use-native-menu-bridge.ts": 1,
-  "apps/desktop/src/renderer/src/app/ThreadWindow.tsx": 1,
   // Protocol detail.
   "packages/core/src/calendar/event-recurrence.ts": 1,
   "packages/core/src/calendar/provider-calendar.ts": 4,

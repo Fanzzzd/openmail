@@ -684,7 +684,7 @@ it("native bridge defers search while a dialog is open and updates menu state", 
   });
   await flush();
   expect(state.calls.filter((call) => call.tag === "SetNativeMenuState").at(-1)?.payload).toEqual({
-    state: { selected: false, composing: false, gmail: false },
+    state: { selected: false, composing: false, important: false },
   });
   act(() => state.emit({ _tag: "Search", query: "deferred" }));
   expect(model.navigation.query).toBe("");

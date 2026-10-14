@@ -3,7 +3,7 @@ import {
   requestFocusedPermission,
   threadStateFor,
 } from "../lib/focused-inbox";
-import { nativeShareKind } from "../../../shared/native-actions";
+import { nativeShareKind, providerMenuState } from "../../../shared/native-actions";
 import { Settings, ShortcutHelp, AddAccountDialog } from "./LazyDialogs";
 import { dispatchNativeAction, shouldDropNativeAction } from "./native-actions";
 import { useDesktopEvents, useDesktopLabels } from "../state/desktop";
@@ -13,7 +13,7 @@ import { shortcutAction } from "../../../shared/shortcuts";
 
 import { useAtomMount, useAtomValue } from "@effect/atom-react";
 import { useLingui } from "@lingui/react/macro";
-import { DEFAULT_PREFS, markReadAfter, providerCapabilities } from "@openmail/core/schema";
+import { DEFAULT_PREFS, markReadAfter } from "@openmail/core/schema";
 import { Effect } from "effect";
 import { constVoid } from "effect/Function";
 import { AsyncResult } from "effect/reactivity";
@@ -322,8 +322,7 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
             selected: Boolean(messages?.length) && !dialog,
             composing: false,
             mailbox: false,
-            gmail: provider === "gmail",
-            web: provider ? providerCapabilities(provider).webLink : false,
+            ...providerMenuState(provider),
           },
         }),
       ),

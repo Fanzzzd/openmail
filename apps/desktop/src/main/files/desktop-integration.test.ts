@@ -12,6 +12,7 @@ import {
   NATIVE_MENUS,
   nativeActionEnabled,
   nativeActionStroke,
+  providerMenuState,
 } from "../../shared/native-actions";
 import { KEYMAP, matchesShortcut } from "../../shared/shortcuts";
 import { DesktopEvent, desktopEventRoute, shouldBufferDesktopEvent } from "../../shared/desktop";
@@ -70,12 +71,14 @@ it("native mail menus share the keymap and selection/composer capability rules",
           ).toBe(true);
       }
     }
-  const empty = { selected: false, composing: false, gmail: false };
+  const empty = { selected: false, composing: false, important: false };
   expect(nativeActionEnabled("reply", empty)).toBe(false);
   expect(nativeActionEnabled("sync", empty)).toBe(true);
   expect(nativeActionEnabled("reply", { ...empty, selected: true })).toBe(true);
   expect(nativeActionEnabled("important", { ...empty, selected: true })).toBe(false);
-  expect(nativeActionEnabled("important", { ...empty, selected: true, gmail: true })).toBe(true);
+  expect(nativeActionEnabled("important", { ...empty, selected: true, important: true })).toBe(
+    true,
+  );
   expect(nativeActionEnabled("bold", { ...empty, composing: true })).toBe(true);
   expect(nativeActionEnabled("send", empty)).toBe(false);
   expect(
@@ -121,4 +124,15 @@ it("packaged macOS app accepts Dock files without becoming their default handler
       LSItemContentTypes: ["public.data", "public.content"],
     },
   ]);
+});
+
+it("the native menu offers Mark important and web links where the toolbar does", () => {
+  const enabled = (provider: "gmail" | "outlook" | "imap" | undefined) => {
+    const state = { selected: true, composing: false, ...providerMenuState(provider) };
+    return [nativeActionEnabled("important", state), nativeActionEnabled("shareWebLink", state)];
+  };
+  expect(enabled("gmail")).toEqual([true, true]);
+  expect(enabled("outlook")).toEqual([true, true]);
+  expect(enabled("imap")).toEqual([false, false]);
+  expect(enabled(undefined)).toEqual([false, false]);
 });

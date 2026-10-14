@@ -22,6 +22,6 @@ Rules:
 
 ## Consequences
 
-- 53 comparisons remain outside `providers/` and `platform/`, plus 20 identity uses. All are listed in `provider-names.test.ts`.
+- 51 comparisons remain outside `providers/` and `platform/`, plus 20 identity uses. All are listed in `provider-names.test.ts`.
 - A new provider adds one row to the table. The remaining protocol comparisons still need a look.
-- The native menu enables Mark important only for Gmail through its `gmail` flag, while the toolbar offers it for Outlook too. This change keeps that behaviour, and the guard counts both comparisons.
+- The native menu's Mark important and Share web link items read `providerMenuState`, which uses the same table as the toolbar. Before this, the menu offered Mark important for Gmail only.
