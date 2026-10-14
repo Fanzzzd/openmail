@@ -38,31 +38,8 @@ const ProposalPage = Schema.Struct({
 });
 
 type Service = Mailbox["Service"];
-type Groups =
-  | "reading"
-  | "organize"
-  | "compose"
-  | "outbox"
-  | "ai"
-  | "calendar"
-  | "app"
-  | "proposals"
-  | "accounts"
-  | "sync";
-/** Groups whose members are no longer flat on Service. */
-type Moved =
-  | "ai"
-  | "calendar"
-  | "outbox"
-  | "app"
-  | "compose"
-  | "reading"
-  | "organize"
-  | "proposals"
-  | "accounts"
-  | "sync";
-type Flat = Omit<Service, Exclude<Groups, Moved>>;
-type Overrides = Partial<Omit<Flat, Moved>> & { [G in Moved]?: Partial<Service[G]> };
+/** Each group overrides only the members a test uses. */
+type Overrides = { readonly [G in keyof Service]?: Partial<Service[G]> };
 
 const notUsed = (name: string) => Effect.die(`Mailbox.${name} is not used in this test`);
 
@@ -121,7 +98,7 @@ function testThread(
 }
 
 function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
-  const base: Flat = {
+  const base: Service = {
     compose: {
       prepareRejectedResend: () => notUsed("prepareRejectedResend"),
       contactGroups: () => notUsed("contactGroups"),
@@ -336,22 +313,21 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
       messageAccounts: () => notUsed("messageAccounts"),
     },
   };
-  const flat: Flat = {
-    ...base,
-    ...overrides,
-    sync: { ...base.sync, ...overrides.sync },
-    accounts: { ...base.accounts, ...overrides.accounts },
-    proposals: { ...base.proposals, ...overrides.proposals },
-    organize: { ...base.organize, ...overrides.organize },
+  const flat: Service = {
     reading: { ...base.reading, ...overrides.reading },
+    organize: { ...base.organize, ...overrides.organize },
+    proposals: { ...base.proposals, ...overrides.proposals },
     compose: { ...base.compose, ...overrides.compose },
-    app: { ...base.app, ...overrides.app },
     outbox: { ...base.outbox, ...overrides.outbox },
-    calendar: { ...base.calendar, ...overrides.calendar },
+    accounts: { ...base.accounts, ...overrides.accounts },
     ai: { ...base.ai, ...overrides.ai },
+    sync: { ...base.sync, ...overrides.sync },
+    calendar: { ...base.calendar, ...overrides.calendar },
+    app: { ...base.app, ...overrides.app },
   };
+
   // Like the real Mailbox: one proposal comes from the same rows, owners from the same messages.
-  const merged: Flat = {
+  const merged: Service = {
     ...flat,
     proposals: {
       ...flat.proposals,
@@ -384,9 +360,7 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
           )),
     },
   };
-  return Layer.succeed(Mailbox, {
-    ...merged,
-  });
+  return Layer.succeed(Mailbox, merged);
 }
 
 /** A Mailbox whose perform records its calls and answers with `outcome`. */

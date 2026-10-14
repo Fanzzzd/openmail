@@ -627,18 +627,22 @@ export interface MailboxApp {
   readonly events: Stream.Stream<MailboxEvent>;
 }
 
+/**
+ * One service, ten groups. Each group is a namespace typed by its interface above and
+ * built by its part files; there is one tag and one layer (`MailboxLive`).
+ */
 export class Mailbox extends Context.Service<
   Mailbox,
   {
     readonly reading: MailboxReading;
     readonly organize: MailboxOrganize;
+    readonly proposals: MailboxProposals;
     readonly compose: MailboxCompose;
     readonly outbox: MailboxOutbox;
+    readonly accounts: MailboxAccounts;
     readonly ai: MailboxAi;
+    readonly sync: MailboxSync;
     readonly calendar: MailboxCalendar;
     readonly app: MailboxApp;
-    readonly sync: MailboxSync;
-    readonly accounts: MailboxAccounts;
-    readonly proposals: MailboxProposals;
   }
 >()("openmail/Mailbox") {}

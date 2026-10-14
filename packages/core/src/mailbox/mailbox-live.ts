@@ -44,7 +44,7 @@ import {
   type MailboxOptions,
 } from "./mailbox-runtime.js";
 import { makeSyncMailbox } from "./mailbox-sync.js";
-import { Mailbox, type MailboxEvent, type MailboxSync } from "./mailbox.js";
+import { Mailbox, type MailboxEvent } from "./mailbox.js";
 import { unavailableVision } from "../ai/media.js";
 import { Model, ModelUnavailable } from "../ai/model.js";
 import { scopedAdapter } from "../providers/scoped-adapter.js";
@@ -487,7 +487,9 @@ export const MailboxLive = (
         features;
       const { backfillOlder: _backfillOlder, readerThread: _readerThread, ...cacheMembers } = cache;
       const { enforceCacheBudget: _enforceCacheBudget, ...storageMembers } = storage;
-      const groups = {
+      // Each group is one namespace of the one Mailbox service. Groups never expose the store;
+      // members that change mail run policy and audit inside their part.
+      const mailbox = Mailbox.of({
         reading: readingMailbox.reading,
         organize: {
           ...applyMailbox.organize,
@@ -512,25 +514,9 @@ export const MailboxLive = (
           ...readingMailbox.ai,
           ...makeLocalModelsMailbox(store, indexer, options.models, mutate),
         },
-        sync: {
-          ...syncMailbox.members,
-          ...cacheMembers,
-          ...storageMembers,
-        } satisfies MailboxSync,
+        sync: { ...syncMailbox.members, ...cacheMembers, ...storageMembers },
         calendar: { ...calendarFeatures, ...applyMailbox.calendar },
         app: makeAppMailbox({ ...deps, enforceCacheBudget: storage.enforceCacheBudget }, runtime),
-      };
-      const mailbox = Mailbox.of({
-        reading: groups.reading,
-        organize: groups.organize,
-        compose: groups.compose,
-        outbox: groups.outbox,
-        ai: groups.ai,
-        calendar: groups.calendar,
-        app: groups.app,
-        sync: groups.sync,
-        accounts: groups.accounts,
-        proposals: groups.proposals,
       });
       return mailbox;
     }),
