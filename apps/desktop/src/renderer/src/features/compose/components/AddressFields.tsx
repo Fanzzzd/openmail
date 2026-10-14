@@ -41,7 +41,7 @@ export function AddressFields({
   } = recipients;
   return (
     <>
-      <div className={`${row} items-center`}>
+      <div className={row}>
         <span className={label}>
           <Trans>From</Trans>
         </span>
@@ -53,10 +53,11 @@ export function AddressFields({
             value: `${sender.accountId}/${sender.address}`,
             label: sender.name ? `${sender.name} (${sender.address})` : sender.address,
           }))}
-          className="max-w-full"
+          // The trigger is h-7; the margins center it in the label's h-9 box.
+          className="my-1 max-w-full"
         />
         {senderUndo && (
-          <output className="flex items-center gap-2 text-footnote text-a11y-muted">
+          <output className="flex h-9 items-center gap-2 text-footnote text-a11y-muted">
             {t`From updated`}
             <button
               type="button"
