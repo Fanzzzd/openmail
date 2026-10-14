@@ -110,9 +110,9 @@ export const Search = readOnly(
 export const ReadThread = readOnly(
   mailTool("read_thread", {
     description:
-      "Read a conversation as plain text, oldest message first, without quoted history, signatures or attachments. Use a message id from list_threads or search. Older text is trimmed to fit max_chars; truncated counts what was cut.",
+      "Read a conversation as plain text, oldest message first, without quoted history, signatures or attachments. Pass a message_id from list_threads or search. Older text is trimmed to fit max_chars; truncated counts what was cut.",
     parameters: Schema.Struct({
-      id: ThreadId,
+      message_id: ThreadId,
       max_chars: ToolInt.check(Schema.isBetween({ minimum: 2000, maximum: 24_000 }))
         .annotate({
           description:
@@ -270,9 +270,11 @@ export const threadHandlers = ({
           (found.ignored?.length ?? 0) > 20,
       };
     }),
-    read_thread: Effect.fnUntraced(function* ({ id, max_chars }) {
-      yield* requireMessage(id);
-      const view = yield* mailbox.threadForModel(id, max_chars).pipe(Effect.mapError(toToolError));
+    read_thread: Effect.fnUntraced(function* ({ message_id, max_chars }) {
+      yield* requireMessage(message_id);
+      const view = yield* mailbox
+        .threadForModel(message_id, max_chars)
+        .pipe(Effect.mapError(toToolError));
       return yield* toolAttempt(() => boundThread(view, max_chars));
     }),
     semantic_search: (p) =>

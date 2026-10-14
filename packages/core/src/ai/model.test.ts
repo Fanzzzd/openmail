@@ -308,7 +308,7 @@ const longThread = (thread: string, count: number, chars: number, from = 0) =>
 
 it.effect("re-reading the thread a question is about is a tool error, not a failed answer", () => {
   const { bodies, live } = scripted([
-    toolCall("tool_1", "read_thread", { id: "gmail:me@gmail.com/t1-0" }),
+    toolCall("tool_1", "read_thread", { message_id: "gmail:me@gmail.com/t1-0" }),
     answer,
   ]);
   const server = fakeServer("me@gmail.com", longThread("t1", 3, 3000));
@@ -333,9 +333,9 @@ it.effect("re-reading the thread a question is about is a tool error, not a fail
 
 it.effect("a read that overruns the input budget comes back to the model as a tool error", () => {
   const { bodies, live } = scripted([
-    toolCall("tool_1", "read_thread", { id: "gmail:me@gmail.com/a-0", max_chars: 24_000 }),
-    toolCall("tool_2", "read_thread", { id: "gmail:me@gmail.com/b-0", max_chars: 24_000 }),
-    toolCall("tool_3", "read_thread", { id: "gmail:me@gmail.com/c-0", max_chars: 24_000 }),
+    toolCall("tool_1", "read_thread", { message_id: "gmail:me@gmail.com/a-0", max_chars: 24_000 }),
+    toolCall("tool_2", "read_thread", { message_id: "gmail:me@gmail.com/b-0", max_chars: 24_000 }),
+    toolCall("tool_3", "read_thread", { message_id: "gmail:me@gmail.com/c-0", max_chars: 24_000 }),
     answer,
   ]);
   const server = fakeServer("me@gmail.com", [

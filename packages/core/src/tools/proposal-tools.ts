@@ -44,7 +44,7 @@ export const ModifyThreads = appTool("modify_threads", {
   description:
     "Propose archiving, marking read or unread, starring, or adding or removing a Gmail label on up to 20 conversations. From MCP, nothing changes until the person approves it in OpenMail. Relay the returned message and do not retry.",
   parameters: Schema.Struct({
-    thread_ids: Schema.Array(ThreadId)
+    message_ids: Schema.Array(ThreadId)
       .check(Schema.isMinLength(1), Schema.isMaxLength(20))
       .annotate({
         description: "Message ids from list_threads or search; each stands for its thread.",
@@ -146,7 +146,7 @@ export const SnoozeThreads = appTool("snooze_threads", {
   description:
     "Propose snoozing up to 20 conversations until a time. Nothing is snoozed until the person approves it in OpenMail. Relay the returned message and do not retry.",
   parameters: Schema.Struct({
-    thread_ids: Schema.Array(ThreadId)
+    message_ids: Schema.Array(ThreadId)
       .check(Schema.isMinLength(1), Schema.isMaxLength(20))
       .annotate({
         description: "Message ids from list_threads or search; each stands for its thread.",
@@ -243,7 +243,7 @@ export const proposalHandlers = ({
       return yield* toolAttempt(() => proposalPage(row.id, approvalCommand(row.command), p));
     }),
     modify_threads: Effect.fnUntraced(function* (p) {
-      yield* requireThreads(p.thread_ids);
+      yield* requireThreads(p.message_ids);
       const op = opFor(p.action, p.label_id);
       if (!op) {
         return yield* toolError(
@@ -253,19 +253,19 @@ export const proposalHandlers = ({
         );
       }
       const actor = yield* agent(p.rationale);
-      const outcome = yield* propose({ kind: "modify", threads: p.thread_ids, op }, actor);
+      const outcome = yield* propose({ kind: "modify", threads: p.message_ids, op }, actor);
       return {
         outcome,
         message: yield* describe(
           outcome,
-          `Applied ${p.action} to ${p.thread_ids.length} thread(s).`,
+          `Applied ${p.action} to ${p.message_ids.length} thread(s).`,
         ),
       };
     }),
     snooze_threads: Effect.fnUntraced(function* (p) {
-      yield* requireThreads(p.thread_ids);
+      yield* requireThreads(p.message_ids);
       const actor = yield* agent(p.rationale);
-      const outcome = yield* propose({ kind: "snooze", threads: p.thread_ids, due: p.due }, actor);
+      const outcome = yield* propose({ kind: "snooze", threads: p.message_ids, due: p.due }, actor);
       return { outcome, message: yield* describe(outcome, "Snoozed conversations.") };
     }),
     draft_message: Effect.fnUntraced(function* (p) {

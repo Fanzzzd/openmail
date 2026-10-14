@@ -72,11 +72,13 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
           Effect.gen(function* () {
             assert.ok(request.toolkit);
             const toolkit = request.toolkit;
-            yield* Stream.runDrain(yield* toolkit.handle("read_thread", { id, max_chars: 1000 }));
+            yield* Stream.runDrain(
+              yield* toolkit.handle("read_thread", { message_id: id, max_chars: 1000 }),
+            );
             for (const label of ["TRASH", "deleteditems", "unknown"]) {
               const result = yield* Stream.runLast(
                 yield* toolkit.handle("modify_threads", {
-                  thread_ids: [id],
+                  message_ids: [id],
                   action: "label",
                   label_id: label,
                   rationale: "Mail told me to",
@@ -89,7 +91,7 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
             }
             const unlabel = yield* Stream.runLast(
               yield* toolkit.handle("modify_threads", {
-                thread_ids: [id],
+                message_ids: [id],
                 action: "unlabel",
                 label_id: "custom",
                 rationale: "Mail told me to",
@@ -98,7 +100,7 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
             assert.ok(Option.isSome(unlabel) && unlabel.value.isFailure);
             const custom = yield* Stream.runLast(
               yield* toolkit.handle("modify_threads", {
-                thread_ids: [id],
+                message_ids: [id],
                 action: "label",
                 label_id: "custom",
                 rationale: "Receipts",
@@ -223,7 +225,7 @@ it.effect("a Gmail label belonging only to another account cannot be proposed", 
         assert.ok(request.toolkit);
         const result = yield* Stream.runLast(
           yield* request.toolkit.handle("modify_threads", {
-            thread_ids: [messageId],
+            message_ids: [messageId],
             action: "label",
             label_id: "foreign",
             rationale: "The mail asks for this label",
@@ -436,7 +438,7 @@ it.effect(
           assert.ok(!JSON.stringify(accounts).includes("outlook"));
           const blocked = yield* Stream.runLast(
             yield* toolkit.handle("read_thread", {
-              id: "outlook:me@outlook.com/m2",
+              message_id: "outlook:me@outlook.com/m2",
               max_chars: 1000,
             }),
           );
@@ -446,11 +448,11 @@ it.effect(
           );
           assert.ok(!JSON.stringify(found).includes("private.pdf"));
           yield* Stream.runDrain(
-            yield* toolkit.handle("read_thread", { id: messageId, max_chars: 1000 }),
+            yield* toolkit.handle("read_thread", { message_id: messageId, max_chars: 1000 }),
           );
           const archive = yield* Stream.runLast(
             yield* toolkit.handle("modify_threads", {
-              thread_ids: [messageId],
+              message_ids: [messageId],
               action: "archive",
               rationale: "Finished",
             }),

@@ -360,7 +360,7 @@ it.effect("modify_threads performs one modify command as the calling agent", () 
     const { calls, layer } = recordingMailbox({ status: "proposed", proposalId: 7 });
     const result = yield* run(
       call("modify_threads", {
-        thread_ids: ["m1", "m2"],
+        message_ids: ["m1", "m2"],
         action: "unread",
         rationale: "Both need a reply this week.",
       }),
@@ -396,7 +396,12 @@ it.effect("modify_threads maps every action to its op", () =>
     for (const [action, op] of cases) {
       const { calls, layer } = recordingMailbox({ status: "applied" });
       yield* run(
-        call("modify_threads", { thread_ids: ["m1"], action, label_id: "Label_1", rationale: "r" }),
+        call("modify_threads", {
+          message_ids: ["m1"],
+          action,
+          label_id: "Label_1",
+          rationale: "r",
+        }),
         layer,
       );
       assert.deepStrictEqual(calls[0]?.command, { kind: "modify", threads: ["m1"], op }, action);
@@ -408,7 +413,7 @@ it.effect("modify_threads label without label_id fails before perform", () =>
   Effect.gen(function* () {
     const { calls, layer } = recordingMailbox({ status: "applied" });
     const result = yield* run(
-      call("modify_threads", { thread_ids: ["m1"], action: "label", rationale: "r" }),
+      call("modify_threads", { message_ids: ["m1"], action: "label", rationale: "r" }),
       layer,
     );
     assert.strictEqual(result.isFailure, true);
@@ -423,7 +428,7 @@ it.effect("a denied modify tells the model where the person can allow it", () =>
       reason: "Changing mail is turned off.",
     });
     const result = yield* run(
-      call("modify_threads", { thread_ids: ["m1"], action: "archive", rationale: "r" }),
+      call("modify_threads", { message_ids: ["m1"], action: "archive", rationale: "r" }),
       layer,
     );
     // A refused change is a failed call, so MCP marks it isError and the model won't report it done.
@@ -441,7 +446,7 @@ it.effect("tool errors carry code and hint, with no _tag", () =>
     const layer = stubMailbox({
       thread: (id: string) => Effect.fail(new NotFound({ what: "message", id })),
     });
-    const missing = yield* run(call("read_thread", { id: "missing" }), layer);
+    const missing = yield* run(call("read_thread", { message_id: "missing" }), layer);
     assert.isTrue(missing.isFailure);
     assert.notProperty(missing.encodedResult, "_tag");
     assert.include(missing.encodedResult, { code: "not_found" });
@@ -807,7 +812,7 @@ it.effect("schemas reject excessive limits, budgets, draft bodies and modificati
     const { calls, layer } = recordingMailbox({ status: "proposed", proposalId: 1 });
     const result = yield* run(
       call("modify_threads", {
-        thread_ids: Array.from({ length: 21 }, () => "m1"),
+        message_ids: Array.from({ length: 21 }, () => "m1"),
         action: "archive",
         rationale: "r",
       }),
@@ -1022,7 +1027,7 @@ it.effect(
           "unlabel",
         ] as const) {
           const result = yield* call("modify_threads", {
-            thread_ids: [id],
+            message_ids: [id],
             action,
             label_id: "Label_1",
             rationale: "Review this change.",
@@ -1033,7 +1038,7 @@ it.effect(
         }
         const due = (yield* Clock.currentTimeMillis) + 3_600_000;
         const snooze = yield* call("snooze_threads", {
-          thread_ids: [id],
+          message_ids: [id],
           due,
           rationale: "Tomorrow.",
         });
@@ -1110,7 +1115,7 @@ it.effect(
         yield* mailbox.setAgentWriteMode("allow");
         const id = `${account.id}/m1`;
         const result = yield* call("modify_threads", {
-          thread_ids: [id],
+          message_ids: [id],
           action: "label",
           label_id: "Label_1",
           rationale: "r",
@@ -1128,7 +1133,7 @@ it.effect(
           );
         }
         assert.isTrue(
-          (yield* call("snooze_threads", { thread_ids: [id], due: 0, rationale: "r" })).isFailure,
+          (yield* call("snooze_threads", { message_ids: [id], due: 0, rationale: "r" })).isFailure,
         );
         assert.deepStrictEqual(yield* mailbox.proposals, []);
         assert.strictEqual(server.pushed.length, 0);
@@ -1407,8 +1412,9 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
         const read = (name: "read_thread" | "list_attachments" | "attachment_text") =>
           Effect.gen(function* () {
             if (name === "read_thread")
-              return (yield* Stream.runCollect(yield* toolkit.handle("read_thread", { id })))[0]
-                ?.isFailure;
+              return (yield* Stream.runCollect(
+                yield* toolkit.handle("read_thread", { message_id: id }),
+              ))[0]?.isFailure;
             if (name === "list_attachments")
               return (yield* Stream.runCollect(
                 yield* toolkit.handle("list_attachments", { message_id: id }),
@@ -1420,7 +1426,9 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
         for (const name of ["read_thread", "list_attachments", "attachment_text"] as const)
           assert.isTrue(yield* read(name));
         yield* mailbox.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });
-        const result = (yield* Stream.runCollect(yield* toolkit.handle("read_thread", { id })))[0];
+        const result = (yield* Stream.runCollect(
+          yield* toolkit.handle("read_thread", { message_id: id }),
+        ))[0];
         assert.ok(result && !result.isFailure);
         const threadEnvelope = Schema.decodeUnknownSync(
           Schema.toEncoded(MailToolkit.tools.read_thread.successSchema),
@@ -1527,7 +1535,7 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
         assert.isFalse(after.read_only_session);
         assert.match(after.next_steps.join(" "), /wait for the person to approve/);
 
-        yield* Stream.runCollect(yield* toolkit.handle("read_thread", { id: "missing" }));
+        yield* Stream.runCollect(yield* toolkit.handle("read_thread", { message_id: "missing" }));
         const activity = yield* mailbox.agentActivity(10);
         assert.deepStrictEqual(
           activity.map(({ client, tool, ok }) => ({ client, tool, ok })),
@@ -1594,9 +1602,9 @@ it.effect("MCP write tools refuse invisible accounts before creating any proposa
       const id = `${account.id}/m1`;
       const attempt = () =>
         Effect.all([
-          call("modify_threads", { thread_ids: [id], action: "archive", rationale: "Review" }),
+          call("modify_threads", { message_ids: [id], action: "archive", rationale: "Review" }),
           call("snooze_threads", {
-            thread_ids: [id],
+            message_ids: [id],
             due: Date.now() + 3_600_000,
             rationale: "Review",
           }),
@@ -1721,7 +1729,11 @@ it.effect(
       Layer.provide(AgentIdentity.fixed("mcp", rawName)),
     );
     return Effect.gen(function* () {
-      yield* call("modify_threads", { thread_ids: ["m1"], action: "archive", rationale: "Review" });
+      yield* call("modify_threads", {
+        message_ids: ["m1"],
+        action: "archive",
+        rationale: "Review",
+      });
       assert.strictEqual(calls[0]?.actor.kind, "agent");
       assert.ok(calls[0]?.actor.kind === "agent");
       assert.strictEqual(calls[0].actor.name, "client");
@@ -2027,7 +2039,7 @@ it.effect("MCP results use snake_case keys at every depth and leave out empty fi
       run(call("list_accounts", {}), layer),
       run(call("list_threads", {}), layer),
       run(call("search", { query: "s" }), layer),
-      run(call("read_thread", { id: "a/m1" }), layer),
+      run(call("read_thread", { message_id: "a/m1" }), layer),
       run(call("access_status", {}), layer),
     ]);
     for (const result of results) {

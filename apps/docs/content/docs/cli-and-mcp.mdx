@@ -42,7 +42,7 @@ The CLI has no send command. Sending happens in the app.
 
 ```sh
 openmail tool access_status --json
-openmail tool read_thread --input-json '{"id":"gmail:me@example.com/m1"}' --json
+openmail tool read_thread --input-json '{"message_id":"gmail:me@example.com/m1"}' --json
 openmail tool draft_message --allow-writes --input-json '{"account_id":"gmail:me@example.com","to":["alice@example.com"],"subject":"Status","body":"Tomorrow.","rationale":"Draft for review."}' --json
 ```
 
@@ -148,22 +148,24 @@ By default the server offers 20 tools:
 | `calendar_overlap` | List calendar events that overlap an invitation.                                             | Yes       |
 | `list_attachments` | List a message's attachments: name, type and size.                                           | Yes       |
 | `attachment_text`  | Read text that on-device OCR or PDF extraction already produced.                             | Yes       |
-| `list_proposals`   | List changes that wait for your approval in the app.                                         | Yes       |
-| `read_proposal`    | Read one pending proposal.                                                                   | Yes       |
+| `list_proposals`   | List AI suggestions that wait for your approval in the app.                                  | Yes       |
+| `read_proposal`    | Read one pending AI suggestion.                                                              | Yes       |
 
 With write access turned on, the server adds 3 write tools:
 
 | Tool             | What it does                                                                                                | Read-only |
 | ---------------- | ----------------------------------------------------------------------------------------------------------- | --------- |
-| `modify_threads` | Propose archive, read or unread, star or unstar, or adding or removing a label, for up to 20 conversations. | No        |
-| `snooze_threads` | Propose snoozing up to 20 conversations.                                                                    | No        |
-| `draft_message`  | Propose a new message or reply as a local draft. A reply can omit to and subject.                           | No        |
+| `modify_threads` | Suggest archive, read or unread, star or unstar, or adding or removing a label, for up to 20 conversations. | No        |
+| `snooze_threads` | Suggest snoozing up to 20 conversations.                                                                    | No        |
+| `draft_message`  | Suggest a new message or reply as a local draft. A reply can omit to and subject.                           | No        |
 
 {/* mcp-tools:end */}
 
 An MCP client can only read accounts for which you turned on **Allow AI to read this account** in **Settings → AI Access**. OpenMail checks this on every call. Mail reaches the MCP client, and from there the model provider that client uses. Choose clients you trust.
 
 Tool results put all mail content in an `untrusted_mail` field with a notice, so the model treats message text as data, not as instructions. OpenMail's own guidance, such as `access_status` and the message a write tool returns, sits outside that field.
+
+Tools take conversations by the id of one of their messages, and the parameter says so: `read_thread`, `list_attachments` and `list_invites` take `message_id`, and `modify_threads` and `snooze_threads` take `message_ids`, where each id stands for its conversation.
 
 Every key in a result is snake_case, at any depth, like the tool parameters: `account_id`, `is_unread`, `next_cursor`, `needs_reauth`. Fields that would always be empty are left out. `read_proposal` returns the AI suggestion as a `command` object.
 

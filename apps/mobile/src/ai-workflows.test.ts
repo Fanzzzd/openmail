@@ -113,7 +113,7 @@ it("assistant archive, label and draft writes stay proposals even in allow mode,
         for (const action of ["archive", "label"] as const)
           yield* Stream.runDrain(
             yield* request.toolkit.handle("modify_threads", {
-              thread_ids: [messageId],
+              message_ids: [messageId],
               action,
               ...(action === "label" ? { label_id: "Label_project" } : {}),
               rationale: "Human review",

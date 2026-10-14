@@ -61,7 +61,7 @@ const tool = Command.make("tool").pipe(
   Command.withExamples([
     { command: "openmail tool list_templates --json", description: "List template ids" },
     {
-      command: `openmail tool read_thread --input-json '{"id":"gmail:me@example.com/m1"}' --json`,
+      command: `openmail tool read_thread --input-json '{"message_id":"gmail:me@example.com/m1"}' --json`,
       description: "Read bounded plain-text model context",
     },
   ]),

@@ -432,24 +432,24 @@ exports[`tool input and output schemas are stable 1`] = `
     "readonly": true,
   },
   {
-    "description": "Read a conversation as plain text, oldest message first, without quoted history, signatures or attachments. Use a message id from list_threads or search. Older text is trimmed to fit max_chars; truncated counts what was cut.",
+    "description": "Read a conversation as plain text, oldest message first, without quoted history, signatures or attachments. Pass a message_id from list_threads or search. Older text is trimmed to fit max_chars; truncated counts what was cut.",
     "idempotent": true,
     "input": {
       "additionalProperties": true,
       "properties": {
-        "id": {
-          "description": "A message id from list_threads or search. It stands for its whole thread.",
-          "type": "string",
-        },
         "max_chars": {
           "description": "Result size in UTF-8 JSON bytes. Default 12000. Older messages are trimmed first.",
           "maximum": 24000,
           "minimum": 2000,
           "type": "integer",
         },
+        "message_id": {
+          "description": "A message id from list_threads or search. It stands for its whole thread.",
+          "type": "string",
+        },
       },
       "required": [
-        "id",
+        "message_id",
       ],
       "type": "object",
     },
@@ -1153,13 +1153,7 @@ exports[`tool input and output schemas are stable 1`] = `
           "description": "Required for label and unlabel. A user label id from list_labels.",
           "type": "string",
         },
-        "rationale": {
-          "description": "One or two sentences on why, written for the person. They see it when they review your request.",
-          "maxLength": 2000,
-          "minLength": 1,
-          "type": "string",
-        },
-        "thread_ids": {
+        "message_ids": {
           "description": "Message ids from list_threads or search; each stands for its thread.",
           "items": {
             "description": "A message id from list_threads or search. It stands for its whole thread.",
@@ -1169,9 +1163,15 @@ exports[`tool input and output schemas are stable 1`] = `
           "minItems": 1,
           "type": "array",
         },
+        "rationale": {
+          "description": "One or two sentences on why, written for the person. They see it when they review your request.",
+          "maxLength": 2000,
+          "minLength": 1,
+          "type": "string",
+        },
       },
       "required": [
-        "thread_ids",
+        "message_ids",
         "action",
         "rationale",
       ],
@@ -1209,13 +1209,7 @@ exports[`tool input and output schemas are stable 1`] = `
           "description": "When the conversations return to the inbox, in epoch milliseconds.",
           "type": "number",
         },
-        "rationale": {
-          "description": "One or two sentences on why, written for the person. They see it when they review your request.",
-          "maxLength": 2000,
-          "minLength": 1,
-          "type": "string",
-        },
-        "thread_ids": {
+        "message_ids": {
           "description": "Message ids from list_threads or search; each stands for its thread.",
           "items": {
             "description": "A message id from list_threads or search. It stands for its whole thread.",
@@ -1225,9 +1219,15 @@ exports[`tool input and output schemas are stable 1`] = `
           "minItems": 1,
           "type": "array",
         },
+        "rationale": {
+          "description": "One or two sentences on why, written for the person. They see it when they review your request.",
+          "maxLength": 2000,
+          "minLength": 1,
+          "type": "string",
+        },
       },
       "required": [
-        "thread_ids",
+        "message_ids",
         "due",
         "rationale",
       ],

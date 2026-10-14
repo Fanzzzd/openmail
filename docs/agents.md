@@ -84,7 +84,7 @@ Claude 和 Cursor 的 JSON 都用 `mcpServers`：
 openmail tool list_threads --input-json '{"mailbox":"snoozed","limit":20}' --json
 openmail tool search --input-json '{"query":"from:alice@example.com has:attachment","server":true}' --json
 openmail tool semantic_search --input-json '{"query":"出差安排","account_id":"gmail:me@example.com"}' --json
-openmail tool read_thread --input-json '{"id":"gmail:me@example.com/m1","max_chars":12000}' --json
+openmail tool read_thread --input-json '{"message_id":"gmail:me@example.com/m1","max_chars":12000}' --json
 openmail tool list_labels --input-json '{"account_id":"gmail:me@example.com"}' --json
 openmail tool list_templates --json
 openmail tool read_template --input-json '{"id":"template:1"}' --json
@@ -136,7 +136,7 @@ MCP access 默认跟随逐账户 AI 文本授权。未授权或停用的账户�
 写权限存储为 `off`、`propose` 或 `allow`。界面只给「只读」和「先问我」两项，旧的 `allow` 显示为「先问我」：没有任何调用方会因 `allow` 直接改动邮件。MCP 只创建提议，由 app 展示全部会话、真实标签名、准确提醒时间或完整草稿供人批准。草稿只保存在本机，用户在 app 中保存后才排队上传；发送始终需要 app 内确认。CLI 的工具调用身份为 `agent:mcp:openmail-cli`，MCP 握手身份为 `agent:mcp:<clientInfo.name>`，均写入审计。MCP 会话读取客户端名称时先做 NFC 规范化，把空白（含换行和 Unicode 行分隔符）合并为一个空格，去除其余控制和双向格式字符，最多保留 64 个码点，什么都不剩时记为 `mcp`。CLI 打印提议和审计、app 显示提议和审计时，控制和格式字符一律显示为 `\u{…}` 转义，旧版本存下的名称也不会驱动终端或改变文字方向。审计只存操作种类、账户、收件人数和散列；提议决策后清除命令文本与理由，撤销授权或移除账户时拒绝并清除该账户待审批提议及草稿。旧版审计与已决策提议在首次启动时按同一规则清理，并记录 prefs 标记，之后不再扫描审计表。撤销授权时，已上传草稿的删除也会进入队列，失败时重试；待删除的服务商副本不会在同步中重新出现。
 
 ```sh
-openmail tool modify_threads --allow-writes --input-json '{"thread_ids":["gmail:me@example.com/m1"],"action":"archive","rationale":"这封通知已处理。"}' --json
+openmail tool modify_threads --allow-writes --input-json '{"message_ids":["gmail:me@example.com/m1"],"action":"archive","rationale":"这封通知已处理。"}' --json
 openmail tool draft_message --allow-writes --input-json '{"account_id":"gmail:me@example.com","to":["alice@example.com"],"subject":"进度","body":"明天回复。","rationale":"先准备草稿供用户检查。"}' --json
 ```
 

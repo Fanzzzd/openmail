@@ -237,9 +237,9 @@ test.concurrent("CLI help keeps tools under `tool`, lists each by its first sent
   expect(top).not.toContain("--profile");
   expect(top).toMatchSnapshot();
   expect(tool).toContain(`read_thread         ${first}`);
-  expect(tool).not.toContain("Use a message id from list_threads or search.");
+  expect(tool).not.toContain("Pass a message_id from list_threads or search.");
   expect(tool).toMatchSnapshot();
-  expect(own).toContain("Use a message id from list_threads or search.");
+  expect(own).toContain("Pass a message_id from list_threads or search.");
   // --allow-writes appears only where it does something.
   expect(own).not.toContain("--allow-writes");
   expect(proposal).toContain("--allow-writes");
@@ -288,7 +288,7 @@ test.concurrent("stdio MCP defaults to read-only tools, calls the shared Toolkit
   await expect(
     request("tools/call", {
       name: "modify_threads",
-      arguments: { thread_ids: ["missing"], action: "archive", rationale: "test" },
+      arguments: { message_ids: ["missing"], action: "archive", rationale: "test" },
     }),
   ).rejects.toThrow();
 }, 30_000);
@@ -360,7 +360,7 @@ test.concurrent("MCP points the model at access_status and explains a refused pr
   const refused = Schema.decodeUnknownSync(CallResult)(
     await request("tools/call", {
       name: "modify_threads",
-      arguments: { thread_ids: ["gmail:ocr@example.com/ocr"], action: "archive", rationale: "t" },
+      arguments: { message_ids: ["gmail:ocr@example.com/ocr"], action: "archive", rationale: "t" },
     }),
   );
   // A refused change is a tool error, so the model does not report it as done.
@@ -566,7 +566,7 @@ test.concurrent("list, search and show read as the person; agent tools still nee
       cli("list", "--account", "gmail:typo@example.com"),
       cli("tool", "list_threads"),
       cli("tool", "list_threads", "--json"),
-      cli("tool", "read_thread", "--input-json", '{"id":"missing"}'),
+      cli("tool", "read_thread", "--input-json", '{"message_id":"missing"}'),
       request("tools/call", { name: "list_threads", arguments: {} }),
       request("tools/call", {
         name: "list_threads",

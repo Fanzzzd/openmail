@@ -76,6 +76,6 @@ EXAMPLES
   openmail tool list_templates --json
 
   # Read bounded plain-text model context
-  openmail tool read_thread --input-json '{"id":"gmail:me@example.com/m1"}' --json
+  openmail tool read_thread --input-json '{"message_id":"gmail:me@example.com/m1"}' --json
 "
 `;
