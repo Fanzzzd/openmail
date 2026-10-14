@@ -1,4 +1,5 @@
 import { Clock, Effect, Option } from "effect";
+import { logWarning } from "../domain/diagnostic-log.js";
 import { inspectAttachment } from "../mime/attachment-import.js";
 import {
   actorLabel,
@@ -194,8 +195,24 @@ export const makeApplyMailbox = (
         yield* (
           providers.get(removedAccount.provider).closeSessions?.(command.accountId) ?? Effect.void
         );
+        // Revoke while the refresh token is still in the keychain. Best effort: removal goes on.
+        yield* (
+          providers.get(removedAccount.provider).revokeGrant?.(command.accountId) ?? Effect.void
+        ).pipe(
+          Effect.catch(() =>
+            logWarning("token-revoke-failed", "Provider grant not revoked on account removal"),
+          ),
+        );
+        // The keychain item goes before the row: if this stops halfway, the account is still
+        // listed and can be removed again, so no token is left without an account.
+        const keychain = yield* Effect.result(secrets.remove(command.accountId));
+        const keychainLeft = keychain._tag === "Failure";
+        if (keychainLeft)
+          yield* logWarning(
+            "keychain-remove-failed",
+            "Keychain item not removed on account removal",
+          );
         yield* store.removeAccount(command.accountId);
-        yield* secrets.remove(command.accountId);
         yield* store.appendAudit({
           actor,
           accountId: command.accountId,
@@ -203,7 +220,11 @@ export const makeApplyMailbox = (
           detail: {},
         });
         yield* changed;
-        return { status: "applied" } satisfies Outcome;
+        return (
+          keychainLeft
+            ? { status: "applied", warning: "keychain-item-left" }
+            : { status: "applied" }
+        ) satisfies Outcome;
       default:
         // Drafts: policy never lets one get this far.
         return yield* new InvalidInput({ message: "Drafts are never performed." });

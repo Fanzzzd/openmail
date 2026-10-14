@@ -1,4 +1,5 @@
 import { Worker } from "node:worker_threads";
+import { logWarning } from "../../domain/diagnostic-log.js";
 import { Effect, Schema } from "effect";
 import { constVoid } from "effect/Function";
 import { CacheCompactionResult } from "../../domain/cache.js";
@@ -54,7 +55,8 @@ export const nodeCacheMaintenance = {
         Effect.flatMap((reply) =>
           typeof reply === "string"
             ? Effect.succeed(reply)
-            : Effect.logWarning(
+            : logWarning(
+                "wal-checkpoint-deferred",
                 "Local database upgrade committed; WAL checkpoint deferred while another connection holds a read.",
               ).pipe(Effect.as("done" as const)),
         ),

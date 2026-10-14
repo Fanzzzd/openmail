@@ -13,6 +13,7 @@ export * from "./domain/prefs.js";
 export * from "./domain/command.js";
 export * from "./domain/sync-status.js";
 export * from "./domain/errors.js";
+export * from "./domain/diagnostic-log.js";
 export {
   storedSyncFailureReason,
   SYNC_FAILURE_TEXT,

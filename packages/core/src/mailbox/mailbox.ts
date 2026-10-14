@@ -204,6 +204,10 @@ export class Mailbox extends Context.Service<
       accountId: string,
     ): Effect.Effect<import("../sync/sync-health.js").SyncHealth, NotFound>;
     readonly accounts: Effect.Effect<Account[]>;
+    /** Counts and enums per account for the diagnostics file; no addresses or error text. */
+    readonly diagnosticsState: Effect.Effect<
+      import("../domain/diagnostics-state.js").DiagnosticsState
+    >;
     /** Signs in (OAuth consent page or IMAP password) and starts a sync. Re-adding an account signs it in again. */
     connect(input: ConnectInput): Effect.Effect<Account, SignInError>;
     /** Signs an OAuth account in again with its provider. */

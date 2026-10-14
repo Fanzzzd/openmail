@@ -74,7 +74,15 @@ export type UndoHistoryEntry = typeof UndoHistoryEntry.Type;
 
 /** What `perform` did with a command. */
 export const Outcome = Schema.Union([
-  Schema.Struct({ status: Schema.Literal("applied"), flush: Schema.optionalKey(FlushResult) }),
+  Schema.Struct({
+    status: Schema.Literal("applied"),
+    flush: Schema.optionalKey(FlushResult),
+    /**
+     * `keychain-item-left`: the account was removed, but the keychain refused to delete its
+     * stored sign-in (locked or denied). The person deletes the item in Keychain Access.
+     */
+    warning: Schema.optionalKey(Schema.Literal("keychain-item-left")),
+  }),
   Schema.Struct({ status: Schema.Literal("proposed"), proposalId: Schema.Number }),
   Schema.Struct({ status: Schema.Literal("denied"), reason: Schema.String }),
 ]);

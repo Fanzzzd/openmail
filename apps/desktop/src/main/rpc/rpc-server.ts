@@ -42,7 +42,8 @@ import {
   openNotificationSettings,
 } from "../system/notification-permission";
 import { becomeDefaultClient, defaultClientStatus } from "../system/default-client";
-import { IMAP_PRESETS, Mailbox, senderSearchQuery } from "@openmail/core";
+import { diagnosticSnapshot, IMAP_PRESETS, Mailbox, senderSearchQuery } from "@openmail/core";
+import { diagnosticEnvironment } from "../app/diagnostic-environment";
 import { Effect, FiberSet, Layer, Queue, Stream } from "effect";
 import { RpcSerialization, RpcServer } from "effect/rpc";
 import {
@@ -280,7 +281,14 @@ const Handlers = MailRpcs.toLayer(
           .pipe(Effect.andThen(Effect.sync(() => approveComposeClose(windowOf(client.id))))),
       SetWindowRoute: ({ href }, { client }) =>
         Effect.sync(() => setWindowRoute(windowOf(client.id), href)),
-      Diagnostics: ({ crashOnly }) => Effect.sync(() => diagnosticsPreview(crashOnly)),
+      Diagnostics: ({ crashOnly }) =>
+        m.diagnosticsState.pipe(
+          // A broken database must not hide the rest of the report.
+          Effect.catchCause(() => Effect.succeed(undefined)),
+          Effect.map((state) =>
+            diagnosticsPreview(crashOnly, diagnosticSnapshot(diagnosticEnvironment(), state)),
+          ),
+        ),
       CrashReportPending: () => Effect.sync(hasCrashReport),
       DismissCrashReport: () => Effect.sync(dismissCrashReport),
       FeedbackAddress: () => Effect.succeed(process.env.OPENMAIL_FEEDBACK_ADDRESS ?? ""),

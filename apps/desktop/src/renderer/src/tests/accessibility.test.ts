@@ -33,11 +33,16 @@ vi.mock("@effect/atom-react", async (original) => {
   const { Atom } = await import("effect/reactivity");
   return {
     ...actual,
+    // Plain atoms read a fixed value; mocked queries are strings resolved from the fixture.
     useAtomValue: (atom: string) =>
-      AsyncResult.success(
-        fixture.values.get(atom) ??
-          (atom === "nativeCompose" ? { photos: false, continuity: false, grammar: false } : []),
-      ),
+      atom === "keychainItemLeftAtom"
+        ? false
+        : AsyncResult.success(
+            fixture.values.get(atom) ??
+              (atom === "nativeCompose"
+                ? { photos: false, continuity: false, grammar: false }
+                : []),
+          ),
     // Mocked queries and mutations are strings; local UI atoms keep their real state.
     useAtom: (atom: unknown) =>
       Atom.isAtom(atom) && Atom.isWritable(atom)
@@ -95,6 +100,7 @@ vi.mock("../state/queries", () => ({
   appleContactsStatusAtom: "appleContactsStatusAtom",
 }));
 vi.mock("../state/mutations", () => ({
+  keychainItemLeftAtom: "keychainItemLeftAtom",
   setAgentModeAtom: "setAgentModeAtom",
   deleteProfileAtom: "deleteProfileAtom",
   setAccountSettingsAtom: () => "setAccountSettingsAtom",

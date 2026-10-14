@@ -1,4 +1,5 @@
 import { Clock, Deferred, Effect, Fiber, Option } from "effect";
+import { logWarning } from "../domain/diagnostic-log.js";
 import { attachmentProblem, attachmentProblemMessage } from "../mime/attachment-policy.js";
 import type { Actor, Command, FlushResult, Outcome } from "../domain/command.js";
 import type { DraftInput, OutgoingMessage } from "../domain/changes.js";
@@ -230,7 +231,7 @@ export const makeOutboxMailbox = (
         actor,
       ).pipe(
         Effect.catch((error) =>
-          Effect.logWarning(`Sent, but archiving failed: ${error.message}`).pipe(
+          logWarning("sent-archive-failed", `Sent, but archiving failed: ${error.message}`).pipe(
             Effect.as(undefined),
           ),
         ),

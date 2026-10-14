@@ -115,6 +115,8 @@ export interface MemoryPlatformOptions {
   /** Isolated on-disk SQLite for integration tests; defaults to an ephemeral database. */
   database?: string;
   secrets?: Record<string, string>;
+  /** Replaces Secrets methods, e.g. a keychain that refuses to delete an item. */
+  secretMethods?: Partial<Secrets["Service"]>;
   /** Written to config.json before the platform builds. */
   config?: ClientConfig;
   /** Environment the platform's Config reads (client overrides). Empty by default. */
@@ -175,6 +177,7 @@ export function MemoryPlatform(
             next.delete(key);
             return next;
           }),
+        ...opts.secretMethods,
       });
     }),
   );

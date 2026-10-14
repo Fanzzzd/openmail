@@ -1,4 +1,5 @@
 import { Cause, Effect, Schema } from "effect";
+import { logError } from "../domain/diagnostic-log.js";
 
 export const SyncCrashDiagnostic = Schema.Struct({
   _tag: Schema.Literal("SyncCrashDiagnostic"),
@@ -12,7 +13,7 @@ export function logSyncCrash<E>(
   phase: typeof SyncCrashDiagnostic.Type.phase,
 ) {
   if (Cause.hasInterruptsOnly(cause)) return Effect.void;
-  return Effect.logError({
+  return logError("sync-crashed", {
     _tag: "SyncCrashDiagnostic",
     reason: "sync-crashed",
     phase,

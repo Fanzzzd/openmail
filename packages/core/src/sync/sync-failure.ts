@@ -1,4 +1,5 @@
-import { Effect, Schema } from "effect";
+import { Schema } from "effect";
+import { logWarning } from "../domain/diagnostic-log.js";
 import type { Account } from "../domain/account.js";
 import { KEYCHAIN_LOCKED_MESSAGE } from "../domain/errors.js";
 import { sha256Hex } from "../platform/crypto.js";
@@ -108,7 +109,7 @@ export function logSyncFailed(
     readonly reason?: string | undefined;
   },
 ) {
-  return Effect.logWarning({
+  return logWarning("sync-failed", {
     _tag: "SyncFailedDiagnostic",
     reason: "sync-failed",
     provider: account.provider,

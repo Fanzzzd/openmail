@@ -6710,6 +6710,10 @@ msgstr "文字大小"
 msgid "The {client} OAuth client is not set up yet."
 msgstr "还没有填写 {client} 的 OAuth 客户端。"
 
+#: src/renderer/src/features/settings/Settings.tsx
+msgid "The account was removed, but the keychain did not let OpenMail delete its saved sign-in. Open Keychain Access, search for openmail, and delete the item for that account."
+msgstr "账户已移除，但钥匙串不允许 OpenMail 删除其保存的登录信息。请打开“钥匙串访问”，搜索 openmail，然后删除该账户的项目。"
+
 #: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "The app's command failed. Nothing else was changed. {detail}"
 msgstr "应用的命令执行失败。其他内容未改动。{detail}"

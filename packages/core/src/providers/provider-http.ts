@@ -1,4 +1,5 @@
 import { Clock, Data, Effect, Option, Semaphore, Stream } from "effect";
+import { logWarning } from "../domain/diagnostic-log.js";
 import {
   HttpClientError,
   HttpClientRequest,
@@ -165,7 +166,10 @@ export const makeProviderHttp = (options: ProviderHttpOptions) =>
         if (saved._tag === "Success") unsaved.delete(accountId);
         else {
           unsaved.set(accountId, token);
-          yield* Effect.logWarning("Rotated refresh token not saved; keeping the previous one");
+          yield* logWarning(
+            "refresh-token-save-failed",
+            "Rotated refresh token not saved; keeping the previous one",
+          );
         }
       });
 

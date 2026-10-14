@@ -1,4 +1,5 @@
 import { Clock, Effect, Option, Queue, Schema, Stream } from "effect";
+import { logWarning } from "../../domain/diagnostic-log.js";
 import { encodeFolder, mailQuote } from "../mail-socket.js";
 import {
   FolderState,
@@ -563,9 +564,10 @@ export const makeMobileImap = Effect.gen(function* () {
           Effect.catch(() => saveSent(true)),
           Effect.as(true),
           Effect.catch(() =>
-            Effect.logWarning("SMTP delivery accepted, but the message was not saved to Sent").pipe(
-              Effect.as(false),
-            ),
+            logWarning(
+              "sent-copy-failed",
+              "SMTP delivery accepted, but the message was not saved to Sent",
+            ).pipe(Effect.as(false)),
           ),
         );
         return filed ? undefined : { sentCopyMissing: true };

@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it, vi } from "vitest";
 import { createLocalDiagnostics } from "../../../../../packages/core/src/platform/node/diagnostics.js";
+import { logWarning } from "../../../../../packages/core/src/domain/diagnostic-log.js";
 const native = vi.hoisted(() => ({
   response: 0,
   integrity: "ok",
@@ -330,19 +331,32 @@ it("sync reset progress does not produce a burst of duplicate runtime warnings, 
   expect(recovery.diagnosticsPreview(false).match(/"event":"sync-reset"/g)).toHaveLength(21);
   expect(recovery.diagnosticsPreview(false)).not.toContain('"event":"runtime-warning"');
   await Effect.runPromise(
-    Effect.logWarning("backfill failed", new Error("private@example.test secret body")).pipe(
-      Effect.provide(Logger.layer([recovery.diagnosticsLogger])),
-    ),
+    logWarning(
+      "history-backfill-failed",
+      "backfill failed",
+      new Error("private@example.test secret body"),
+    ).pipe(Effect.provide(Logger.layer([recovery.diagnosticsLogger]))),
   );
   const preview = recovery.diagnosticsPreview(false);
   expect(preview).toContain('"reason":"history-backfill-failed"');
   expect(preview).not.toMatch(/private|secret|body/);
 });
 
-it("runtime reason codes classify fixed failures without retaining arbitrary text or inherited object keys", async () => {
+it("runtime reason codes come from the code at the log site, never from message text or inherited object keys", async () => {
   const dir = temp();
   const recovery = await import("./reliability");
   await recovery.prepareReliability(dir);
+  await Effect.runPromise(
+    logWarning("header-backfill-failed", "private@example.test secret body").pipe(
+      Effect.provide(Logger.layer([recovery.diagnosticsLogger])),
+    ),
+  );
+  await Effect.runPromise(
+    Effect.logWarning("uncoded").pipe(
+      Effect.annotateLogs("logCode", "private@example.test"),
+      Effect.provide(Logger.layer([recovery.diagnosticsLogger])),
+    ),
+  );
   for (const message of [
     "Header backfill failed",
     "constructor",
@@ -359,7 +373,8 @@ it("runtime reason codes classify fixed failures without retaining arbitrary tex
   recovery.localLog("runtime-error", { reason: "header-backfill-failed", body: "private" });
   const preview = recovery.diagnosticsPreview(false);
   expect(preview).toContain('"reason":"header-backfill-failed"');
-  expect(preview.match(/"reason":"unclassified"/g)).toHaveLength(4);
+  expect(preview.match(/"reason":"header-backfill-failed"/g)).toHaveLength(2);
+  expect(preview.match(/"reason":"unclassified"/g)).toHaveLength(6);
   expect(preview).not.toMatch(/private|secret|body|constructor|__proto__/);
 });
 
@@ -416,4 +431,18 @@ it("an abnormal exit checks the database in a worker behind a painted progress w
   expect(native.progress).toHaveBeenCalledWith("checking");
   expect(native.dismissProgress).toHaveBeenCalledOnce();
   expect(native.dialogs).not.toHaveBeenCalled();
+});
+
+it("the feedback export puts the snapshot line first, then the stored records", async () => {
+  const dir = temp();
+  const recovery = await import("./reliability");
+  await recovery.prepareReliability(dir, "0.4.1");
+  const { diagnosticSnapshot } =
+    await import("../../../../../packages/core/src/platform/node/diagnostics.js");
+  const [first, ...rest] = recovery
+    .diagnosticsPreview(false, diagnosticSnapshot({ appVersion: "0.4.1" }, undefined, 5))
+    .split("\n");
+  expect(JSON.parse(first ?? "")).toMatchObject({ event: "snapshot", appVersion: "0.4.1" });
+  expect(rest.join("\n")).toContain('"event":"startup","appVersion":"0.4.1"');
+  expect(recovery.diagnosticsPreview(false)).not.toContain('"snapshot"');
 });

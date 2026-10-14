@@ -134,6 +134,9 @@ export class Store extends Context.Service<
     ): Effect.Effect<import("../domain/prefs.js").Prefs["notificationActions"]>;
     readonly syncHealthLabels: ReturnType<typeof makeSyncHealthStore>["syncHealthLabels"];
     readonly syncHealthLocal: ReturnType<typeof makeSyncHealthStore>["syncHealthLocal"];
+    readonly diagnosticCounts: ReturnType<
+      typeof import("./store-diagnostics.js").makeDiagnosticsStore
+    >["diagnosticCounts"];
     readonly listAccounts: Effect.Effect<Account[]>;
     getAccount(id: string): Effect.Effect<Account, NotFound>;
     /** Inserts or returns the existing account `${provider}:${email}`. */

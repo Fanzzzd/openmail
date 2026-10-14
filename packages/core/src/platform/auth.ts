@@ -13,7 +13,8 @@ export class Secrets extends Context.Service<
     /** None only when the item does not exist; a locked keychain fails with reason "keychain". */
     get(key: string): Effect.Effect<Option.Option<string>, ProviderError>;
     set(key: string, value: string): Effect.Effect<void, ProviderError>;
-    remove(key: string): Effect.Effect<void>;
+    /** A missing item is success; a locked or denied keychain fails with reason "keychain". */
+    remove(key: string): Effect.Effect<void, ProviderError>;
   }
 >()("openmail/Secrets") {}
 

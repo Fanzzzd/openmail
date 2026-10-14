@@ -23,6 +23,7 @@ import { makeGmailSettings } from "./gmail-settings.js";
 import { makeProviderCalendar } from "../../calendar/provider-calendar.js";
 import {
   AUTH_URL,
+  REVOKE_URL,
   TOKEN_URL,
   SCOPES,
   API,
@@ -46,6 +47,8 @@ export const makeGmail: Effect.Effect<
   HttpClient.HttpClient | OAuth | AppConfig | OAuthIssuers | Secrets | MailCodec
 > = Effect.gen(function* () {
   const client = yield* makeGmailClient;
+  const http = yield* HttpClient.HttpClient;
+  const secrets = yield* Secrets;
   const {
     oauth,
     config,
@@ -143,9 +146,35 @@ export const makeGmail: Effect.Effect<
     if (method === "DELETE") return del(id, path);
     return put(id, path, body);
   });
+  /** Google's revocation endpoint takes the refresh token as a form field and answers 200. */
+  const revokeGrant = (accountId: string) =>
+    Effect.gen(function* () {
+      const token = yield* secrets.get(accountId);
+      if (Option.isNone(token)) return;
+      const response = yield* http
+        .execute(
+          HttpClientRequest.post(REVOKE_URL).pipe(
+            HttpClientRequest.bodyUrlParams({ token: token.value }),
+          ),
+        )
+        .pipe(
+          Effect.timeout("5 seconds"),
+          // Fixed text: a transport error could echo the request, which carries the token.
+          Effect.mapError(
+            () => new ProviderError({ message: "Google token revocation did not complete" }),
+          ),
+        );
+      if (response.status !== 200)
+        yield* new ProviderError({
+          message: "Google did not revoke the token",
+          status: response.status,
+        });
+    });
+
   return {
     resetConnectivity: () => connectivity.reset,
     keepAlive,
+    revokeGrant,
     fetchCachedHeaders: (account, ids) =>
       fetchCachedHeaders(account, ids).pipe(Effect.provideService(BackgroundRead, true)),
     folderStatus,

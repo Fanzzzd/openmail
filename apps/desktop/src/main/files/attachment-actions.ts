@@ -14,6 +14,7 @@ import {
   type BrowserWindow,
 } from "electron";
 import {
+  logWarning,
   DeviceError,
   deviceFailure,
   type AttachmentAction,
@@ -117,7 +118,9 @@ export const prepareAttachmentDrag: (
           void attachmentTemp(app)
             .remove(slot.batch)
             .catch((error: unknown) => {
-              Effect.runSync(Effect.logWarning("Attachment drag cleanup failed", error));
+              Effect.runSync(
+                logWarning("attachment-cleanup-failed", "Attachment drag cleanup failed", error),
+              );
             });
       owned.clear();
     });
@@ -258,7 +261,9 @@ export const attachmentApps: (
   }).pipe(
     Effect.ensuring(
       remove(batch).pipe(
-        Effect.catchCause((cause) => Effect.logWarning("Open With cleanup failed", cause)),
+        Effect.catchCause((cause) =>
+          logWarning("attachment-cleanup-failed", "Open With cleanup failed", cause),
+        ),
       ),
     ),
   );
@@ -356,7 +361,7 @@ export const attachmentAction: (
             exit._tag === "Failure" || exit.value.count === 0
               ? remove(batch).pipe(
                   Effect.catchCause((cause) =>
-                    Effect.logWarning("Open With cleanup failed", cause),
+                    logWarning("attachment-cleanup-failed", "Open With cleanup failed", cause),
                   ),
                 )
               : Effect.void,

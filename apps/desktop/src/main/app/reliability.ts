@@ -16,7 +16,7 @@ import {
   prepareDatabaseStartup,
 } from "@openmail/core";
 import { app } from "electron";
-import { Logger, Schema } from "effect";
+import { Logger, References, Schema } from "effect";
 import { join } from "node:path";
 import { configureWindowRecovery } from "../windows/windows";
 import { showDatabaseProgress } from "./database-upgrade";
@@ -65,14 +65,18 @@ export const diagnosticsLogger = Logger.make((options) => {
     }
   }
   if (classified) return;
-  const reason = runtimeDiagnosticReason(messages);
+  const reason = runtimeDiagnosticReason(options.fiber.getRef(References.CurrentLogAnnotations));
   if (options.logLevel === "Error" || options.logLevel === "Fatal")
     localLog("runtime-error", { reason });
   else if (options.logLevel === "Warn") localLog("runtime-warning", { reason });
 });
 /** A deliberate refusal to start (a newer database) is a clean exit, not a crash. */
 export const finishCleanly = () => diagnostics?.finish();
-export const diagnosticsPreview = (crashOnly: boolean) => diagnostics?.preview(crashOnly) ?? "";
+/** The export the feedback email attaches: the snapshot line first, then the stored records. */
+export const diagnosticsPreview = (crashOnly: boolean, snapshot?: object) =>
+  [snapshot === undefined ? "" : JSON.stringify(snapshot), diagnostics?.preview(crashOnly) ?? ""]
+    .filter(Boolean)
+    .join("\n");
 export const hasCrashReport = () => crashed;
 export const dismissCrashReport = () => {
   crashed = false;
@@ -165,10 +169,10 @@ async function checkWithProgress(directory: string) {
   }
 }
 let recoveryDirectory = "";
-export async function prepareReliability(directory: string) {
+export async function prepareReliability(directory: string, appVersion?: string) {
   recoveryDirectory = directory;
   diagnostics = createLocalDiagnostics(join(directory, "diagnostics"));
-  const health = diagnostics.begin();
+  const health = diagnostics.begin(appVersion);
   crashed = health.crashed;
   try {
     prepareDatabaseStartup(directory);

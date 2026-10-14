@@ -30,6 +30,8 @@ import { DatabaseSync } from "node:sqlite";
 import { Schema } from "effect";
 import { DatabaseTooNewError } from "../../db/migrate.js";
 import { MIGRATIONS } from "../../db/migrations.js";
+import { LogCode, logCodeOf } from "../../domain/diagnostic-log.js";
+import { AccountDiagnostics } from "../../domain/diagnostics-state.js";
 
 const DiagnosticEvent = Schema.Literals([
   "startup",
@@ -48,39 +50,17 @@ const DiagnosticEvent = Schema.Literals([
   "reauth",
 ]);
 export type DiagnosticEvent = typeof DiagnosticEvent.Type;
+/** The code a log site attached (see diagnostic-log.ts), or a fixed process-level reason. */
 const RuntimeReason = Schema.Literals([
-  "header-backfill-failed",
-  "history-backfill-failed",
-  "sync-failed",
-  "sync-crashed",
-  "inbox-poll-failed",
-  "flush-failed",
-  "media-index-failed",
-  "attachment-cache-unavailable",
-  "attachment-cleanup-failed",
+  ...LogCode.literals,
   "uncaught-exception",
   "unhandled-rejection",
   "unclassified",
 ]);
-const runtimeReasons: Readonly<Record<string, typeof RuntimeReason.Type>> = {
-  "Header backfill failed": "header-backfill-failed",
-  "backfill failed": "history-backfill-failed",
-  "inbox poll failed": "inbox-poll-failed",
-  "flush failed": "flush-failed",
-  "Media indexing batch failed": "media-index-failed",
-  "Attachment cache unavailable": "attachment-cache-unavailable",
-  "Attachment drag cleanup failed": "attachment-cleanup-failed",
-  "Attachment temp cleanup failed": "attachment-cleanup-failed",
-  "Open With cleanup failed": "attachment-cleanup-failed",
-};
-/** Only exact fixed log messages can classify a runtime event; never serialize error text. */
-export function runtimeDiagnosticReason(messages: readonly unknown[]): typeof RuntimeReason.Type {
-  for (const message of messages) {
-    if (typeof message !== "string") continue;
-    const reason = Object.hasOwn(runtimeReasons, message) ? runtimeReasons[message] : undefined;
-    if (reason) return reason;
-  }
-  return "unclassified";
+export type RuntimeReason = typeof RuntimeReason.Type;
+/** The reason for a runtime log line: its attached code, never its message text. */
+export function runtimeDiagnosticReason(annotations: unknown): RuntimeReason {
+  return logCodeOf(annotations) ?? "unclassified";
 }
 const Crash = Schema.Struct({
   at: Schema.Number,
@@ -96,6 +76,13 @@ const Health = Schema.Struct({
 });
 const EMPTY_HEALTH: typeof Health.Type = { running: false, startedAt: 0, crashes: [] };
 export const CRASH_WINDOW_MS = 5 * 60_000;
+
+/** A version or build string: no spaces, slashes or @, so it cannot carry a path or address. */
+const VersionText = Schema.String.check(Schema.isPattern(/^[0-9A-Za-z][0-9A-Za-z._+-]{0,63}$/));
+const versionText = (value: unknown) => {
+  const decoded = Schema.decodeUnknownOption(VersionText)(value);
+  return decoded._tag === "Some" ? decoded.value : undefined;
+};
 
 /** Fixed fields only. Free text, causes, stack traces and nested payloads are never serialized. */
 export function diagnosticRecord(event: unknown, data: unknown = {}, at = Date.now()) {
@@ -179,6 +166,8 @@ export function diagnosticRecord(event: unknown, data: unknown = {}, at = Date.n
       ? fields.rpc
       : undefined;
   if (isRpcFailure) return { at, event, ...(rpc === undefined ? {} : { rpc }) };
+  const appVersion =
+    event === "startup" && "appVersion" in fields ? versionText(fields.appVersion) : undefined;
   return {
     at,
     event: decoded._tag === "Some" ? decoded.value : "runtime-error",
@@ -188,6 +177,7 @@ export function diagnosticRecord(event: unknown, data: unknown = {}, at = Date.n
     ...(crash._tag === "Some"
       ? { phase: crash.value.phase, causeKind: crash.value.causeKind }
       : {}),
+    ...(appVersion === undefined ? {} : { appVersion }),
     ...(code === undefined ? {} : { code }),
     ...(account === undefined ? {} : { accountHash: account }),
     ...(provider._tag === "Some"
@@ -205,6 +195,67 @@ export function diagnosticRecord(event: unknown, data: unknown = {}, at = Date.n
             : undefined,
         }
       : {}),
+  };
+}
+
+const Platform = Schema.Literals(["darwin", "linux", "win32"]);
+const Arch = Schema.Literals(["arm64", "x64"]);
+const MAX_SNAPSHOT_ACCOUNTS = 50;
+
+/** What the host knows about itself. Every field is optional and re-validated. */
+export interface DiagnosticEnvironment {
+  readonly appVersion?: string;
+  readonly build?: string;
+  readonly packaged?: boolean;
+  readonly platform?: string;
+  readonly osVersion?: string;
+  readonly arch?: string;
+  readonly electronVersion?: string;
+  readonly nodeVersion?: string;
+}
+
+/**
+ * The first line of a diagnostics export: build, runtime, schema version and per-account sync
+ * state. Fixed fields only. Accounts appear by list position, never by address or hash.
+ */
+export function diagnosticSnapshot(environment: unknown, state: unknown, at = Date.now()) {
+  const env = typeof environment === "object" && environment !== null ? environment : {};
+  const field = (key: string) => (key in env ? Reflect.get(env, key) : undefined);
+  const enumField = <A extends string>(schema: Schema.Codec<A, string>, key: string) => {
+    const decoded = Schema.decodeUnknownOption(schema)(field(key));
+    return decoded._tag === "Some" ? decoded.value : undefined;
+  };
+  const fields = typeof state === "object" && state !== null ? state : {};
+  const version = "schemaVersion" in fields ? fields.schemaVersion : undefined;
+  const rawAccounts =
+    "accounts" in fields && Array.isArray(fields.accounts)
+      ? fields.accounts.slice(0, MAX_SNAPSHOT_ACCOUNTS)
+      : [];
+  const accounts = rawAccounts.flatMap((account: unknown) => {
+    const decoded = Schema.decodeUnknownOption(AccountDiagnostics)(account);
+    return decoded._tag === "Some" ? [decoded.value] : [];
+  });
+  const providers = { gmail: 0, outlook: 0, imap: 0 };
+  for (const account of accounts) providers[account.provider]++;
+  const packaged = field("packaged");
+  return {
+    at,
+    event: "snapshot" as const,
+    appVersion: versionText(field("appVersion")),
+    build: versionText(field("build")),
+    ...(typeof packaged === "boolean" ? { packaged } : {}),
+    platform: enumField(Platform, "platform"),
+    osVersion: versionText(field("osVersion")),
+    arch: enumField(Arch, "arch"),
+    electronVersion: versionText(field("electronVersion")),
+    nodeVersion: versionText(field("nodeVersion")),
+    schemaVersion:
+      typeof version === "number" && Number.isSafeInteger(version) && version >= 0
+        ? version
+        : undefined,
+    supportedSchemaVersion: MIGRATIONS.length,
+    providers,
+    accounts,
   };
 }
 
@@ -265,12 +316,13 @@ export function createLocalDiagnostics(
   return {
     file,
     record,
-    begin: () => {
+    /** `appVersion` goes on the startup record, so the log shows which build each run was. */
+    begin: (appVersion?: string) => {
       const abnormalExit = health.running;
       if (abnormalExit) crash("abnormal-exit");
       health = { ...health, running: true, startedAt: now() };
       persist();
-      record("startup");
+      record("startup", appVersion === undefined ? {} : { appVersion });
       return {
         abnormalExit,
         safeMode: health.crashes.filter((c) => now() - c.at <= CRASH_WINDOW_MS).length >= 3,

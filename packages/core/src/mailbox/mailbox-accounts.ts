@@ -1,5 +1,6 @@
 import { Clock, Effect, FiberSet, Schema } from "effect";
 import { AccountSettings } from "../domain/account.js";
+import { diagnosticsState } from "../domain/diagnostics-state.js";
 import { AuthError, FeatureScopeMissing, InvalidInput } from "../domain/errors.js";
 import { GMAIL_PERMANENT_DELETE_SCOPE } from "../domain/folder-actions.js";
 import { type makeFeatureMailbox } from "./mailbox-features.js";
@@ -198,6 +199,12 @@ export const makeAccountsMailbox = (
 
       accounts: store.listAccounts,
 
+      diagnosticsState: Effect.gen(function* () {
+        const now = yield* Clock.currentTimeMillis;
+        const counts = yield* store.diagnosticCounts(now);
+        return diagnosticsState({ ...counts, accounts: yield* store.listAccounts, now });
+      }),
+
       setAccountSettings: (id, input) =>
         Effect.gen(function* () {
           const settings = yield* Schema.decodeUnknownEffect(AccountSettings)(input).pipe(
@@ -256,6 +263,7 @@ export const makeAccountsMailbox = (
       Mailbox["Service"],
       | "closeSessions"
       | "accounts"
+      | "diagnosticsState"
       | "setAccountSettings"
       | "moveAccount"
       | "takeNotifications"

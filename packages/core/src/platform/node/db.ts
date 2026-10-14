@@ -1,4 +1,5 @@
 import { existsSync, statSync } from "node:fs";
+import { logWarning } from "../../domain/diagnostic-log.js";
 import { resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { SqliteClient } from "@effect/sql-sqlite-node";
@@ -116,9 +117,10 @@ export function databaseLayer(
       return true;
     }).pipe(
       Effect.catch(() =>
-        Effect.logWarning("sqlite-vec unavailable; mail and media text search remain enabled").pipe(
-          Effect.as(false),
-        ),
+        logWarning(
+          "vector-search-unavailable",
+          "sqlite-vec unavailable; mail and media text search remain enabled",
+        ).pipe(Effect.as(false)),
       ),
     );
     return DatabaseCapabilities.of({ vectors });

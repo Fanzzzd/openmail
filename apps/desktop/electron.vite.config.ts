@@ -2,12 +2,28 @@ import { lingui } from "@lingui/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "electron-vite";
+import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
 import Icons from "unplugin-icons/vite";
 
 import { describeBuiltInClients, readBuiltInClients } from "./oauth-clients";
 
 const builtInClients = readBuiltInClients();
+
+/** The commit for the diagnostics snapshot; null outside a git checkout. */
+function buildCommit() {
+  const fromEnv = process.env.OPENMAIL_BUILD_COMMIT ?? process.env.GITHUB_SHA;
+  if (fromEnv) return fromEnv.slice(0, 12);
+  try {
+    return execFileSync("git", ["rev-parse", "--short=12", "HEAD"], {
+      cwd: import.meta.dirname,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
+  } catch {
+    return null;
+  }
+}
 
 export default defineConfig(({ command }) => {
   if (command === "build") process.stdout.write(`${describeBuiltInClients(builtInClients)}\n`);
@@ -18,7 +34,10 @@ export default defineConfig(({ command }) => {
       plugins: [react({ babel: { plugins: ["@lingui/babel-plugin-lingui-macro"] } }), lingui()],
       // openmail's own OAuth clients, from env vars or the gitignored local file.
       // Main only: the renderer and preload never see the values.
-      define: { __OPENMAIL_OAUTH_CLIENTS__: JSON.stringify(builtInClients.clients) },
+      define: {
+        __OPENMAIL_OAUTH_CLIENTS__: JSON.stringify(builtInClients.clients),
+        __OPENMAIL_BUILD__: JSON.stringify(buildCommit()),
+      },
     },
     preload: {
       // Sandboxed preloads cannot be ES modules. The recovery window has its own preload.

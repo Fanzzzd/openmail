@@ -3420,3 +3420,49 @@ it.effect("an inbox poll from a first sync's checkpoint skips the messages alrea
     assert.deepStrictEqual(changes.at(-1), { _tag: "Cursor", cursor: "901" });
   }),
 );
+
+const revoke = (adapter: ProviderAdapter) =>
+  adapter.revokeGrant?.(account.id) ?? Effect.die("Gmail has no revokeGrant");
+
+it.effect("account removal revokes the grant by posting the refresh token as a form", () => {
+  const http = fakeHttp({ "POST /revoke": { status: 200 } });
+  return run(http, revoke).pipe(
+    Effect.tap(() =>
+      Effect.sync(() => {
+        assert.strictEqual(http.calls.length, 1);
+        const [call] = http.calls;
+        assert.ok(call);
+        assert.strictEqual(call.url.href, "https://oauth2.googleapis.com/revoke");
+        assert.strictEqual(call.contentType, "application/x-www-form-urlencoded");
+        assert.deepStrictEqual(Object.fromEntries(new URLSearchParams(String(call.body))), {
+          token: "refresh-token",
+        });
+      }),
+    ),
+  );
+});
+
+it.effect("a refused or unreachable revocation fails without the token in the error", () =>
+  Effect.gen(function* () {
+    for (const reply of [{ status: 400 }, { fault: "ENOTFOUND" as const }]) {
+      const http = fakeHttp({ "POST /revoke": reply });
+      const result = yield* run(http, revoke).pipe(Effect.result);
+      assert.strictEqual(result._tag, "Failure");
+      assert.notInclude(JSON.stringify(result), "refresh-token");
+    }
+  }),
+);
+
+it.effect("a stalled revocation times out", () =>
+  Effect.gen(function* () {
+    const stalled = fakeHttp({ "POST /revoke": { fault: "stall-headers" } });
+    const result = yield* run(stalled, (adapter) =>
+      Effect.gen(function* () {
+        const fiber = yield* revoke(adapter).pipe(Effect.result, Effect.forkChild);
+        yield* TestClock.adjust("5 seconds");
+        return yield* Fiber.join(fiber);
+      }),
+    );
+    assert.strictEqual(result._tag, "Failure");
+  }),
+);

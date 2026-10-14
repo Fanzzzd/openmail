@@ -1,3 +1,4 @@
+import { logWarning } from "@openmail/core";
 import { Effect, Schedule } from "effect";
 
 /**
@@ -14,7 +15,9 @@ export const watchOnline = <E>(isOnline: () => boolean, reconnected: Effect.Effe
       online = now;
       return back ? reconnected : Effect.void;
     }).pipe(
-      Effect.catchCause((cause) => Effect.logWarning("reconnect sync failed", cause)),
+      Effect.catchCause((cause) =>
+        logWarning("reconnect-sync-failed", "reconnect sync failed", cause),
+      ),
       Effect.repeat(Schedule.spaced("5 seconds")),
       Effect.forkScoped,
     );

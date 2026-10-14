@@ -11,6 +11,7 @@ import {
   Semaphore,
   Stream,
 } from "effect";
+import { logWarning } from "../domain/diagnostic-log.js";
 import type { Account } from "../domain/account.js";
 import type { FlushResult } from "../domain/command.js";
 import type { SyncResult } from "../domain/sync-status.js";
@@ -156,7 +157,7 @@ export const makeSyncMailbox = (
           ? store.markReauth(account.id, error)
           : error._tag === "ProviderError" && (error.status === 429 || error.deferred)
             ? Effect.logInfo("Header backfill deferred")
-            : Effect.logWarning("Header backfill failed"),
+            : logWarning("header-backfill-failed", "Header backfill failed"),
       ),
     );
   };
@@ -537,7 +538,7 @@ export const makeSyncMailbox = (
         Effect.catchCause((cause) =>
           Cause.hasInterruptsOnly(cause)
             ? Effect.failCause(cause)
-            : Effect.logWarning("Header backfill failed"),
+            : logWarning("header-backfill-failed", "Header backfill failed"),
         ),
         Effect.forever,
         Effect.forkScoped,
@@ -559,7 +560,9 @@ export const makeSyncMailbox = (
         runtime.nextAccount++;
         if (account) yield* deps.cache().backfillOlder({ accountIds: [account.id] });
       }).pipe(
-        Effect.catchCause((cause) => Effect.logWarning("backfill failed", cause)),
+        Effect.catchCause((cause) =>
+          logWarning("history-backfill-failed", "backfill failed", cause),
+        ),
         Effect.repeat(Schedule.spaced("10 seconds")),
         Effect.forkScoped,
       );
@@ -572,7 +575,7 @@ export const makeSyncMailbox = (
           Effect.catchCause((cause) =>
             Cause.hasInterruptsOnly(cause)
               ? Effect.failCause(cause)
-              : Effect.logWarning("snooze wake failed", cause),
+              : logWarning("snooze-wake-failed", "snooze wake failed", cause),
           ),
           Effect.repeat(Schedule.spaced("30 seconds")),
           Effect.forkScoped,
@@ -597,7 +600,7 @@ export const makeSyncMailbox = (
     if (options.inboxPoll !== undefined) {
       yield* Effect.suspend(() => Effect.sleep(pollInterval * (onBattery() ? 2 : 1))).pipe(
         Effect.andThen(pollInbox()),
-        Effect.catchCause((cause) => Effect.logWarning("inbox poll failed", cause)),
+        Effect.catchCause((cause) => logWarning("inbox-poll-failed", "inbox poll failed", cause)),
         Effect.forever,
         Effect.forkScoped,
       );

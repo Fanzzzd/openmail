@@ -1,4 +1,5 @@
 import {
+  logError,
   Mailbox,
   messageLink,
   notificationAction,
@@ -48,7 +49,11 @@ export function makeNotifications({
       run(
         mailbox
           .perform({ kind: "modify", threads: [id], op }, { kind: "user", surface: "app" })
-          .pipe(Effect.catchCause((cause) => Effect.logError("notification action failed", cause))),
+          .pipe(
+            Effect.catchCause((cause) =>
+              logError("notification-action-failed", "notification action failed", cause),
+            ),
+          ),
       );
     });
     notification.on("close", () => {

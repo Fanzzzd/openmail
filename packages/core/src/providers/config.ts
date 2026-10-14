@@ -1,4 +1,5 @@
 import { Config, Effect, FileSystem, Layer, Option, Path, Schema } from "effect";
+import { logWarning } from "../domain/diagnostic-log.js";
 
 import { CLIENT_ENV_VARS, clientsFromEnv, parseClientsFile } from "./oauth-client-sources.js";
 import { AppConfig, type ClientConfig, type ClientSources } from "../platform/auth.js";
@@ -49,7 +50,13 @@ export const readClientsFile = Effect.fn("readClientsFile")(function* (file: str
     catch: (error) => (error instanceof Error ? error.message : String(error)),
   }).pipe(
     Effect.catch((reason) =>
-      Effect.as(Effect.logWarning(`Ignoring the OAuth clients file ${file}: ${reason}`), {}),
+      Effect.as(
+        logWarning(
+          "oauth-clients-file-invalid",
+          `Ignoring the OAuth clients file ${file}: ${reason}`,
+        ),
+        {},
+      ),
     ),
   );
 });

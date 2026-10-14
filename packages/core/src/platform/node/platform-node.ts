@@ -1,4 +1,5 @@
 import { MailCodec } from "../mail-codec.js";
+import { logWarning } from "../../domain/diagnostic-log.js";
 // Subpaths avoid loading unused Redis peers from the platform barrel in packaged apps.
 import * as NodeChildProcessSpawner from "@effect/platform-node/NodeChildProcessSpawner";
 import * as NodeCrypto from "@effect/platform-node/NodeCrypto";
@@ -89,7 +90,7 @@ export const openInSystemBrowser = Effect.fn("openInSystemBrowser")(function* (u
   yield* spawner.spawn(opener(url)).pipe(
     Effect.flatMap((handle) => handle.unref),
     Effect.scoped,
-    Effect.catch((error) => Effect.logWarning("Could not open the browser", error)),
+    Effect.catch((error) => logWarning("browser-open-failed", "Could not open the browser", error)),
   );
 });
 

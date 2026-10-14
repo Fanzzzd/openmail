@@ -1,4 +1,5 @@
 import { Cause, Effect, Schedule } from "effect";
+import { logWarning } from "../domain/diagnostic-log.js";
 
 import { KEEP_ALIVE_CHECK, KEEP_ALIVE_MAX_AGE_MS } from "../providers/reauth.js";
 import type { Provider } from "../domain/account.js";
@@ -46,7 +47,7 @@ export const runTokenKeepAlive = (
         Effect.catchCause((cause) =>
           Cause.hasInterruptsOnly(cause)
             ? Effect.failCause(cause)
-            : Effect.logWarning("Token keep-alive failed"),
+            : logWarning("token-keepalive-failed", "Token keep-alive failed"),
         ),
         Effect.repeat(Schedule.spaced(KEEP_ALIVE_CHECK)),
       ),

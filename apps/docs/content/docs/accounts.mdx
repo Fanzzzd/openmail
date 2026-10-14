@@ -57,3 +57,11 @@ The `gmail.modify` permission cannot permanently delete mail. When you first per
 ## Removing an account
 
 Remove an account in **Settings → Accounts**. OpenMail deletes the account's local mail, drafts, contacts, reminders, queued sends, activity log entries and AI summaries, and its Keychain entry. Your mail on the server is not touched.
+
+What happens at the provider:
+
+- **Gmail.** OpenMail asks Google to revoke its access before it deletes the token, so OpenMail disappears from [myaccount.google.com/permissions](https://myaccount.google.com/permissions). If Google doesn't confirm within 5 seconds, the account is still removed; check that page and remove OpenMail there.
+- **Outlook.** Microsoft offers no way for an app like OpenMail to revoke its own access. OpenMail deletes the token on your Mac. To end the permission at Microsoft, remove OpenMail at [account.live.com/consent/Manage](https://account.live.com/consent/Manage).
+- **IMAP.** OpenMail deletes the saved password. Nothing changes at the server. If you used an app-specific password, you can revoke it in your provider's account settings.
+
+If the Keychain is locked or refuses the deletion, OpenMail still removes the account and says so in Settings. Open Keychain Access, search for `openmail`, and delete the item for that account.

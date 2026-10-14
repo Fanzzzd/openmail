@@ -1,4 +1,5 @@
 import { Effect } from "effect";
+import { logWarning } from "../domain/diagnostic-log.js";
 import type { IncomingMessage } from "../domain/message.js";
 import type { MailOp } from "../domain/changes.js";
 import type { Provider } from "../domain/account.js";
@@ -9,7 +10,9 @@ export const WRITE_RECOVERY_WINDOW_MS = 2 * 60_000;
 export const cacheIO = <A>(work: () => Promise<A>, fallback: A) =>
   Effect.tryPromise(work).pipe(
     Effect.catch((error) =>
-      Effect.logWarning("Attachment cache unavailable", error).pipe(Effect.as(fallback)),
+      logWarning("attachment-cache-unavailable", "Attachment cache unavailable", error).pipe(
+        Effect.as(fallback),
+      ),
     ),
   );
 

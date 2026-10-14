@@ -214,6 +214,11 @@ export interface ProviderAdapter {
 
   /** Close local pooled resources on account changes or app background. */
   closeSessions?(accountId?: string): Effect.Effect<void>;
+  /**
+   * Asks the provider to revoke the account's OAuth grant, on account removal. Best effort:
+   * the caller logs a failure and removes the account anyway. Never puts the token in an error.
+   */
+  revokeGrant?(accountId: string): Effect.Effect<void, ProviderError>;
   watchInbox?(
     this: void,
     account: Account,

@@ -6,6 +6,7 @@ import { createShutdownHandler } from "./app/quit";
 import { prepareUpdateQuit } from "./updates/update-install";
 import { cleanupAttachmentTemps, cleanupPrintTemps } from "./files/attachment-temp";
 import {
+  logWarning,
   NodeMailbox,
   DatabaseTooNewError,
   DatabaseUpgradeSpaceError,
@@ -76,7 +77,9 @@ if (mcp) {
         Effect.all(
           [cleanupAttachmentTemps, cleanupPrintTemps].map((cleanup) =>
             Effect.tryPromise(() => cleanup(app.getPath("temp"))).pipe(
-              Effect.catch((error) => Effect.logWarning("Attachment temp cleanup failed", error)),
+              Effect.catch((error) =>
+                logWarning("attachment-cleanup-failed", "Attachment temp cleanup failed", error),
+              ),
             ),
           ),
           { discard: true },
@@ -103,7 +106,7 @@ if (mcp) {
               const directory = isolatedData
                 ? resolve(isolatedData)
                 : yield* dataDir.pipe(Effect.provide(NodeSystem));
-              if (!(yield* Effect.promise(() => prepareReliability(directory))))
+              if (!(yield* Effect.promise(() => prepareReliability(directory, app.getVersion()))))
                 yield* Effect.never;
               const binary = nativeBinary("vision");
               const painted = yield* Deferred.make<void>();

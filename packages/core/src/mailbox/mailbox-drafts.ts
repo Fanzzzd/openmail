@@ -1,4 +1,5 @@
 import { Clock, Effect, Option } from "effect";
+import { logWarning } from "../domain/diagnostic-log.js";
 import {
   attachmentProblem,
   attachmentProblemMessage,
@@ -251,9 +252,10 @@ export const makeDraftsMailbox = (
         .pipe(
           Effect.as(true),
           Effect.catchCause(() =>
-            Effect.logWarning("Draft organization could not be applied; body saved").pipe(
-              Effect.as(false),
-            ),
+            logWarning(
+              "draft-organization-failed",
+              "Draft organization could not be applied; body saved",
+            ).pipe(Effect.as(false)),
           ),
         );
     }

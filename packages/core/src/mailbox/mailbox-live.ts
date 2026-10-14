@@ -1,4 +1,5 @@
 import { normalizeRemoteAccess } from "../app/remote-access.js";
+import { logWarning } from "../domain/diagnostic-log.js";
 import { makeStorageMailbox } from "./mailbox-storage.js";
 import {
   Cause,
@@ -430,7 +431,9 @@ export const MailboxLive = (
         yield* backgroundReady.pipe(
           Effect.andThen(
             indexer.batch().pipe(
-              Effect.catchCause(() => Effect.logWarning("Media indexing batch failed")),
+              Effect.catchCause(() =>
+                logWarning("media-index-failed", "Media indexing batch failed"),
+              ),
               Effect.repeat(Schedule.spaced("15 seconds")),
             ),
           ),

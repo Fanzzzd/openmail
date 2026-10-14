@@ -13,7 +13,9 @@
       "env": [
         "OPENMAIL_GOOGLE_CLIENT_ID",
         "OPENMAIL_GOOGLE_CLIENT_SECRET",
-        "OPENMAIL_MICROSOFT_CLIENT_ID"
+        "OPENMAIL_MICROSOFT_CLIENT_ID",
+        "OPENMAIL_BUILD_COMMIT",
+        "GITHUB_SHA"
       ],
       "inputs": ["$TURBO_DEFAULT$", "oauth-clients.local.json"]
     },
@@ -33,7 +35,8 @@
         "VITEST_MAX_WORKERS",
         "OPENMAIL_TEST_TIME_SCALE",
         "OPENMAIL_PERF",
-        "OPENMAIL_PERF_REPORT"
+        "OPENMAIL_PERF_REPORT",
+        "OPENMAIL_PERF_FACTOR"
       ]
     },
     "@openmail/core#test": {
@@ -72,7 +75,8 @@
         "VITEST_MAX_WORKERS",
         "OPENMAIL_TEST_TIME_SCALE",
         "OPENMAIL_PERF",
-        "OPENMAIL_PERF_REPORT"
+        "OPENMAIL_PERF_REPORT",
+        "OPENMAIL_PERF_FACTOR"
       ]
     },
     "dev": {

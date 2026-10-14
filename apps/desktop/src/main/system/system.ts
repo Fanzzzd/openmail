@@ -12,6 +12,8 @@ import { configureSpelling, installSpellingMenu } from "../windows/spellcheck";
 import { approveUpdateQuit } from "../updates/update-install";
 import { setRecoveryRelaunch } from "../app/recovery-actions";
 import {
+  logError,
+  logWarning,
   Mailbox,
   parseAppLink,
   dockUnreadCount,
@@ -196,7 +198,7 @@ export const DesktopLive = Layer.effect(
           }).pipe(Effect.catch(() => Effect.sync(() => linkError("missing")))),
         ),
         Effect.catchCause((cause) =>
-          Effect.logWarning("could not open the linked thread", cause).pipe(
+          logWarning("thread-link-open-failed", "could not open the linked thread", cause).pipe(
             Effect.andThen(Effect.sync(() => linkError("failed"))),
           ),
         ),
@@ -232,7 +234,7 @@ export const DesktopLive = Layer.effect(
               Effect.sync(() => linkError(error._tag === "NotFound" ? "missing" : "failed")),
             ),
             Effect.catchCause((cause) =>
-              Effect.logWarning("could not open the link", cause).pipe(
+              logWarning("link-open-failed", "could not open the link", cause).pipe(
                 Effect.andThen(Effect.sync(() => linkError("failed"))),
               ),
             ),
@@ -530,14 +532,18 @@ export const DesktopLive = Layer.effect(
     yield* mailbox.events.pipe(
       Stream.runForEach((event) =>
         (event._tag === "NewMail" ? notify : event._tag === "Changed" ? refresh : Effect.void).pipe(
-          Effect.catchCause((cause) => Effect.logError("system event refresh failed", cause)),
+          Effect.catchCause((cause) =>
+            logError("system-refresh-failed", "system event refresh failed", cause),
+          ),
         ),
       ),
       Effect.forkScoped,
     );
     // Re-evaluate wall time without mail traffic, also immediately after sleep.
     yield* refresh.pipe(
-      Effect.catchCause((cause) => Effect.logError("periodic system refresh failed", cause)),
+      Effect.catchCause((cause) =>
+        logError("system-refresh-failed", "periodic system refresh failed", cause),
+      ),
       Effect.repeat(Schedule.spaced("15 seconds")),
       Effect.forkScoped,
     );

@@ -1,5 +1,6 @@
 import { attachmentDownloadUrl, isDesktop } from "../../../lib/platform";
 import {
+  logWarning,
   attachmentImportKind,
   attachmentFilename,
   DEFAULT_PREFS,
@@ -143,7 +144,9 @@ export function AttachmentList({
       if (!isDesktop()) return;
       run(
         withMail((call) => call("ReleaseAttachmentDrag", { messageId, listId })).pipe(
-          Effect.catchCause((cause) => Effect.logWarning("Attachment drag cleanup failed", cause)),
+          Effect.catchCause((cause) =>
+            logWarning("attachment-cleanup-failed", "Attachment drag cleanup failed", cause),
+          ),
         ),
       );
     },

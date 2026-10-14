@@ -74,11 +74,22 @@ export const authorizePermanentDeleteAtom = Atom.family((accountId: string) =>
   MailClient.runtime.fn(() => reauthAccount(accountId, "permanentDelete")),
 );
 
+/** True after a removal whose keychain item the keychain refused to delete. Settings says how to delete it. */
+export const keychainItemLeftAtom = Atom.make(false);
+
 export const removeAccountAtom = Atom.family((accountId: string) =>
-  MailClient.runtime.fn(() =>
+  MailClient.runtime.fn((_: void, get) =>
     withMail((call) => call("RemoveAccount", { accountId })).pipe(
-      // Recent searches can name the removed account's people; they go with it.
-      Effect.tap(() => Effect.sync(() => recentSearches.clear())),
+      Effect.tap((outcome) =>
+        Effect.sync(() => {
+          // Recent searches can name the removed account's people; they go with it.
+          recentSearches.clear();
+          get.set(
+            keychainItemLeftAtom,
+            outcome.status === "applied" && outcome.warning === "keychain-item-left",
+          );
+        }),
+      ),
       Reactivity.mutation(MAIL_KEYS),
     ),
   ),

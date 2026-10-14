@@ -93,13 +93,15 @@ export const secretsLayer = Layer.succeed(Secrets, {
       catch: unavailable,
     }),
   remove: (key) =>
-    Effect.tryPromise(() =>
-      withSecretLock(key, async () => {
-        await remove(secretKey(key));
-        if (Platform.OS === "ios") {
-          await remove(secretBackupKey(key));
-          await remove(secretMigrationKey(key));
-        }
-      }),
-    ).pipe(Effect.orDie),
+    Effect.tryPromise({
+      try: () =>
+        withSecretLock(key, async () => {
+          await remove(secretKey(key));
+          if (Platform.OS === "ios") {
+            await remove(secretBackupKey(key));
+            await remove(secretMigrationKey(key));
+          }
+        }),
+      catch: unavailable,
+    }),
 });

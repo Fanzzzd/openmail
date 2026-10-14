@@ -45,6 +45,7 @@ import { Keys, MAIL_KEYS } from "../../state/keys";
 import {
   reauthAtom,
   removeAccountAtom,
+  keychainItemLeftAtom,
   setAgentModeAtom,
   setPrefsAtom,
   moveAccountAtom,
@@ -304,6 +305,7 @@ function Accounts({
   const profiles = AsyncResult.getOrElse(useAtomValue(profilesAtom), () => []);
   const dragged = useRef<string | null>(null);
   const [result, reorder] = useAtom(moveAccountAtom, { mode: "promiseExit" });
+  const keychainItemLeft = useAtomValue(keychainItemLeftAtom);
   const moving = useRef(false);
   const move = (id: string, profileId: string | null, beforeId: string | null) =>
     void runAccountMove(moving, () =>
@@ -372,6 +374,14 @@ function Accounts({
       {resultError(i18n, result) && (
         <output role="alert" className="text-a11y-danger">
           {resultError(i18n, result)}
+        </output>
+      )}
+      {keychainItemLeft && (
+        <output role="alert" className="block px-1 text-orange-700 dark:text-orange-400">
+          <Trans>
+            The account was removed, but the keychain did not let OpenMail delete its saved sign-in.
+            Open Keychain Access, search for openmail, and delete the item for that account.
+          </Trans>
         </output>
       )}
       <div>

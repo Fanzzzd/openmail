@@ -1,4 +1,5 @@
 import { Clock, Effect, FiberSet, Option, Schema } from "effect";
+import { logWarning } from "../domain/diagnostic-log.js";
 import type { Account } from "../domain/account.js";
 import { type ProviderFailure } from "../domain/errors.js";
 import { decodeProviderId, readCursor, recordPushedFlags } from "../providers/imap/imap-cursor.js";
@@ -449,7 +450,7 @@ export const makeFlushMailbox = (
     Effect.flatMap((result) =>
       result.reauth.length || result.failed || result.done ? changed : Effect.void,
     ),
-    Effect.catchCause((cause) => Effect.logWarning("flush failed", cause)),
+    Effect.catchCause((cause) => logWarning("flush-failed", "flush failed", cause)),
   );
 
   const flushLater = options.localDraftQueue

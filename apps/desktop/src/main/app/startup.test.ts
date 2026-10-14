@@ -48,6 +48,7 @@ vi.mock("@openmail/core", () => ({
     recognize: () => Effect.die("not used"),
   },
   dataDir: Effect.succeed("/tmp/openmail-startup-test"),
+  logWarning: (_code: string, ...message: unknown[]) => Effect.logWarning(...message),
   NodeSystem: Layer.empty,
   NodeMailbox: (options: unknown) => {
     native.nodeMailbox(options);

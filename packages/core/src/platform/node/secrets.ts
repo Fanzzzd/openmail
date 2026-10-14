@@ -44,9 +44,7 @@ export const makeSecretsKeyring = (
         keychain((signal) => new AsyncEntry(SERVICE, key).setPassword(value, signal)),
       ),
       remove: Effect.fn("Secrets.remove")((key: string) =>
-        Effect.asVoid(
-          Effect.promise((signal) => new AsyncEntry(SERVICE, key).deletePassword(signal)),
-        ),
+        Effect.asVoid(keychain((signal) => new AsyncEntry(SERVICE, key).deletePassword(signal))),
       ),
     }),
   );

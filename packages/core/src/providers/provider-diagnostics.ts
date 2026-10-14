@@ -1,4 +1,5 @@
 import { Effect, Option, Schema } from "effect";
+import { logWarning } from "../domain/diagnostic-log.js";
 import type { HttpClientRequest } from "effect/http";
 import { sha256Hex } from "../platform/crypto.js";
 
@@ -126,7 +127,7 @@ export function logProviderFailure(
   search?: { readonly operation: "search"; readonly errorCode: typeof GraphSearchErrorCode.Type },
 ) {
   if (error.deferred) return Effect.void;
-  return Effect.logWarning({
+  return logWarning("provider-failure", {
     _tag: "ProviderDiagnostic",
     provider,
     method: request.method,
@@ -206,7 +207,7 @@ export function makeOptionalPermissions<
 
 /** Never record a persisted cursor or its query, even when it fails validation. */
 export const logInvalidGraphCursor = (accountId: string) =>
-  Effect.logWarning({
+  logWarning("provider-failure", {
     _tag: "ProviderDiagnostic",
     provider: "outlook",
     method: "GET",

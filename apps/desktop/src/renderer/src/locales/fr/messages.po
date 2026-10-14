@@ -6700,6 +6700,10 @@ msgstr "Taille du texte"
 msgid "The {client} OAuth client is not set up yet."
 msgstr "Le client OAuth {client} n’est pas encore configuré."
 
+#: src/renderer/src/features/settings/Settings.tsx
+msgid "The account was removed, but the keychain did not let OpenMail delete its saved sign-in. Open Keychain Access, search for openmail, and delete the item for that account."
+msgstr "Le compte a été supprimé, mais le trousseau n’a pas permis à OpenMail d’effacer sa connexion enregistrée. Ouvrez Trousseaux d’accès, recherchez openmail et supprimez l’élément de ce compte."
+
 #: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "The app's command failed. Nothing else was changed. {detail}"
 msgstr "La commande de l’application a échoué. Rien d’autre n’a été modifié. {detail}"

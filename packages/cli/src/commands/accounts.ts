@@ -137,7 +137,9 @@ const accountsRemove = Command.make(
     const mailbox = yield* Mailbox;
     const outcome = yield* mailbox.perform({ kind: "removeAccount", accountId: id }, CLI);
     yield* Console.log(
-      outcomeText(outcome, `Removed ${id}, its local mail and its stored credentials.`),
+      outcome.status === "applied" && outcome.warning === "keychain-item-left"
+        ? `Removed ${id} and its local mail. The keychain refused to delete its stored sign-in: open Keychain Access and delete the "openmail" item for ${id}.`
+        : outcomeText(outcome, `Removed ${id}, its local mail and its stored credentials.`),
     );
   }),
 ).pipe(Command.withDescription("Delete the account, its local mail and its stored credentials"));

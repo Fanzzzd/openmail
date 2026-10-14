@@ -10,6 +10,7 @@ import { makeAiStore } from "./store-ai.js";
 import { makeCacheStore } from "./store-cache.js";
 import { makeComposeStore } from "./store-compose.js";
 import { makeContactStore } from "./store-contacts.js";
+import { makeDiagnosticsStore } from "./store-diagnostics.js";
 import { makeHeaderBackfillStore } from "./store-header-backfill.js";
 import { makeInviteStatusStore } from "./store-invite-status.js";
 import { makeMediaStore } from "./store-media.js";
@@ -126,6 +127,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       transaction: (effect) =>
         sql.withTransaction(effect).pipe(Effect.catchIf(isSqlError, (e) => Effect.die(e))),
       ...makeSyncHealthStore(sql),
+      ...makeDiagnosticsStore(sql),
       ...makeServiceStore(sql),
       media,
       semantics,

@@ -9,6 +9,8 @@ import { PermanentError, type ProviderFailure } from "../../domain/errors.js";
 
 export const AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 export const TOKEN_URL = "https://oauth2.googleapis.com/token";
+/** Revoking a refresh token removes the whole grant, so OpenMail leaves the Google account's app list. */
+export const REVOKE_URL = "https://oauth2.googleapis.com/revoke";
 export const API = "https://gmail.googleapis.com/gmail/v1/users/me";
 // Permanent deletion is an optional incremental grant, never requested at account add time.
 // Accounts added under the old read-only scope get a 403 on their first write

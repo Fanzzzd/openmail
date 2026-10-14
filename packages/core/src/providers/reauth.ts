@@ -1,4 +1,5 @@
-import { Effect, Schema } from "effect";
+import { Schema } from "effect";
+import { logWarning } from "../domain/diagnostic-log.js";
 
 import type { Provider } from "../domain/account.js";
 import {
@@ -117,7 +118,7 @@ export const ReauthDiagnostic = Schema.Struct({
 export type ReauthDiagnostic = typeof ReauthDiagnostic.Type;
 
 export const logReauth = (provider: Provider, accountId: string, reason: ReauthReason) =>
-  Effect.logWarning({
+  logWarning("reauth-required", {
     _tag: "ReauthDiagnostic",
     provider,
     reason,
