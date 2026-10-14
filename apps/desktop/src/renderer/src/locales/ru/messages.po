@@ -64,7 +64,7 @@ msgstr "{0} встроен · {1} поставлен в очередь · {2} р
 #. placeholder {0}: i18n.number(props.moreNotLoaded)
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 msgid "{0} more not loaded"
-msgstr "Еще {0} не загружено"
+msgstr "Ещё {0} не загружено"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "{account}: the server can't search with {names}. OpenMail searched the server without it and applied it to the results here."
@@ -181,7 +181,7 @@ msgstr "Сохранённые данные входа {email} отсутств�
 
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "{email}'s sign-in has expired. Sync is paused."
-msgstr "Срок действия входа {email} истек. Синхронизация приостановлена."
+msgstr "Срок действия входа {email} истёк. Синхронизация приостановлена."
 
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "{email}'s sign-in was revoked or has expired. Sync is paused."
@@ -356,7 +356,7 @@ msgstr "У сообщения должен быть хотя бы один по�
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "A previous daily quiet-hours setting is still active. Change this schedule to replace it."
-msgstr "Предыдущая ежедневная настройка тихих часов все еще активна. Измените это расписание, чтобы заменить его."
+msgstr "Предыдущая ежедневная настройка тихих часов всё ещё активна. Измените это расписание, чтобы заменить его."
 
 #: src/renderer/src/lib/errors.ts
 msgid "A signature needs a name and a sending address."
@@ -490,11 +490,11 @@ msgstr "Сначала добавьте почтовую учётную запи
 
 #: src/renderer/src/app/NoAccounts.tsx
 msgid "Add account"
-msgstr "Добавить учетную запись"
+msgstr "Добавить учётную запись"
 
 #: src/renderer/src/app/NoAccounts.tsx
 msgid "Add an account on your Mac."
-msgstr "Добавьте учетную запись на своем Mac."
+msgstr "Добавьте учётную запись на своём Mac."
 
 #: src/renderer/src/features/ai/AiPanel.tsx
 msgid "Add an Anthropic API key in Settings → AI Access to summarize."
@@ -520,7 +520,7 @@ msgstr "Добавить вложение"
 #: src/renderer/src/features/settings/Settings.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Add email account"
-msgstr "Добавить учетную запись электронной почты"
+msgstr "Добавить учётную запись электронной почты"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "Add label"
@@ -570,7 +570,7 @@ msgstr "Добавьте ключ API Anthropic в «Настройки → До
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Add your first account"
-msgstr "Добавьте свою первую учетную запись"
+msgstr "Добавьте свою первую учётную запись"
 
 #: src/renderer/src/features/reader/attachments/AttachmentImportDialog.tsx
 msgid "Added"
@@ -1030,7 +1030,7 @@ msgstr "Разрешить окончательное удаление"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Authorize permission to permanently delete mail in this Gmail account."
-msgstr "Разрешите разрешить безвозвратное удаление почты в этой учетной записи Gmail."
+msgstr "Разрешите разрешить безвозвратное удаление почты в этой учётной записи Gmail."
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -2013,7 +2013,7 @@ msgstr "Не удалось загрузить исходные вложения
 
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't load the original attachments. Try again."
-msgstr "Не удалось загрузить исходные вложения. Попробуйте еще раз."
+msgstr "Не удалось загрузить исходные вложения. Попробуйте ещё раз."
 
 #: src/renderer/src/features/reader/body/MessageBodyShell.tsx
 msgid "Couldn't load this message."
@@ -2021,7 +2021,7 @@ msgstr "Не удалось загрузить это сообщение."
 
 #: src/renderer/src/app/NoAccounts.tsx
 msgid "Couldn't load your accounts."
-msgstr "Не удалось загрузить учетные записи."
+msgstr "Не удалось загрузить учётные записи."
 
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 msgid "Couldn't load your calendar."
@@ -2081,7 +2081,7 @@ msgstr "Не удалось прочитать системное разреше
 
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't read the attachment. Try adding it again."
-msgstr "Не смог прочитать вложение. Попробуйте добавить его еще раз."
+msgstr "Не смог прочитать вложение. Попробуйте добавить его ещё раз."
 
 #: src/renderer/src/app/use-native-menu-bridge.ts
 msgid "Couldn't read the attachments. Check the files and their permissions."
@@ -2184,7 +2184,7 @@ msgstr "Создать"
 
 #: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Create an app password under Account Security in your Yahoo account."
-msgstr "Создайте пароль приложения в разделе «Безопасность учетной записи» своей учетной записи Yahoo."
+msgstr "Создайте пароль приложения в разделе «Безопасность учётной записи» своей учётной записи Yahoo."
 
 #: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Create an app password under Settings → Privacy & Security, with IMAP and SMTP checked."
@@ -2192,7 +2192,7 @@ msgstr "Создайте пароль приложения в разделе «�
 
 #: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Create an app-specific password under Sign-In and Security in your Apple Account."
-msgstr "Создайте пароль для конкретного приложения в разделе «Вход и безопасность» в своей учетной записи Apple."
+msgstr "Создайте пароль для конкретного приложения в разделе «Вход и безопасность» в своей учётной записи Apple."
 
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
@@ -2270,7 +2270,7 @@ msgstr "Пунктирный список"
 
 #: src/main/app/native-i18n.ts
 msgid "Database recovery was interrupted. Restore a preserved database before reopening OpenMail. Preserved database: {backup}"
-msgstr "Восстановление базы данных было прервано. Восстановите сохраненную базу данных перед повторным открытием OpenMail. Сохраненная база данных: {backup}."
+msgstr "Восстановление базы данных было прервано. Восстановите сохранённую базу данных перед повторным открытием OpenMail. Сохранённая база данных: {backup}."
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/use-thread-print.ts
@@ -2396,7 +2396,7 @@ msgstr "Удалено"
 
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 msgid "Deleting a folder also deletes its messages on the server."
-msgstr "Удаление папки также удаляет ее сообщения на сервере."
+msgstr "Удаление папки также удаляет её сообщения на сервере."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Deleting the folder stalled on the same messages. Refresh and try again."
@@ -2674,7 +2674,7 @@ msgstr "Изменить токен"
 
 #: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "Editing removes unsupported formatting and images from this draft. Lists, bold, italic, underline and links are kept."
-msgstr "При редактировании из черновика удаляются неподдерживаемые форматирование и изображения. Списки, жирный шрифт, курсив, подчеркивание и ссылки сохраняются."
+msgstr "При редактировании из черновика удаляются неподдерживаемые форматирование и изображения. Списки, жирный шрифт, курсив, подчёркивание и ссылки сохраняются."
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Edits <0>{configPath}</0>."
@@ -3291,7 +3291,7 @@ msgstr "Высокая"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "How long a conversation stays open before it is marked as read. Manually: use {readShortcut} or the toolbar."
-msgstr "Как долго переписка остается открытой, прежде чем она будет помечена как прочитанная. Вручную: используйте {readShortcut} или панель инструментов."
+msgstr "Как долго переписка остаётся открытой, прежде чем она будет помечена как прочитанная. Вручную: используйте {readShortcut} или панель инструментов."
 
 #: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "How to register a Google OAuth client"
@@ -3409,7 +3409,7 @@ msgstr "Синхронизировано"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "In the reader, ⌘+ and ⌘− change it and ⌘0 goes back to 100%."
-msgstr "В программе чтения ⌘+ и ⌘− измените его, и ⌘0 вернется к 100%."
+msgstr "В программе чтения ⌘+ и ⌘− измените его, и ⌘0 вернётся к 100%."
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
@@ -4190,7 +4190,7 @@ msgstr "Ход загрузки модели"
 
 #: src/renderer/src/features/settings/sections/IndexingSettings.tsx
 msgid "Models verified and ready. Search stays on this device."
-msgstr "Модели проверены и готовы. Поиск остается на этом устройстве."
+msgstr "Модели проверены и готовы. Поиск остаётся на этом устройстве."
 
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Modify {token}"
@@ -4578,11 +4578,11 @@ msgstr "Нет черновиков"
 #: src/renderer/src/app/NoAccounts.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "No email accounts yet."
-msgstr "Учетных записей электронной почты пока нет."
+msgstr "Учётных записей электронной почты пока нет."
 
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "No email accounts yet. <0>Add account</0>"
-msgstr "Учетных записей электронной почты пока нет. <0>Добавить учётную запись</0>"
+msgstr "Учётных записей электронной почты пока нет. <0>Добавить учётную запись</0>"
 
 #: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "No external replies"
@@ -5002,7 +5002,7 @@ msgstr "OpenMail — почтовое приложение по умолчани
 #: src/renderer/src/app/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "OpenMail is up to date."
-msgstr "OpenMail обновлен."
+msgstr "OpenMail обновлён."
 
 #: src/renderer/src/features/remote/ConnectionNotice.tsx
 msgid "OpenMail on your Mac was updated. Reload to use the new version."
@@ -5690,7 +5690,7 @@ msgstr "Убрать звезду"
 
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Remove this account and its local mail from OpenMail. Mail on the server is not affected."
-msgstr "Удалите эту учетную запись и ее локальную почту из OpenMail. Почта на сервере не затронута."
+msgstr "Удалите эту учётную запись и её локальную почту из OpenMail. Почта на сервере не затронута."
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Remove tracking parameters from links"
@@ -5939,7 +5939,7 @@ msgstr "Проверьте события перед добавлением."
 
 #: src/renderer/src/features/feedback/Feedback.tsx
 msgid "Review the local diagnostics below. Nothing is uploaded. Continue opens an email draft that you review and send from your own account."
-msgstr "Ознакомьтесь с приведенной ниже локальной диагностикой. Ничего не загружается. Продолжить открывает черновик электронного письма, который вы просматриваете и отправляете из своей учетной записи."
+msgstr "Ознакомьтесь с приведённой ниже локальной диагностикой. Ничего не загружается. Продолжить открывает черновик электронного письма, который вы просматриваете и отправляете из своей учётной записи."
 
 #: src/renderer/src/features/compose/components/ComposerAi.tsx
 msgid "Rewrite"
@@ -6206,7 +6206,7 @@ msgstr "Выбор после перемещения сообщений"
 
 #: src/renderer/src/features/settings/sections/IndexingSettings.tsx
 msgid "Semantic search is unavailable. Full-text search remains available."
-msgstr "Семантический поиск недоступен. Полнотекстовый поиск остается доступным."
+msgstr "Семантический поиск недоступен. Полнотекстовый поиск остаётся доступным."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Semantic search isn't available right now. Try again later."
@@ -6411,7 +6411,7 @@ msgstr "Показать {name} в Finder"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Show account names in unified folders"
-msgstr "Показывать имена учетных записей в объединенных папках"
+msgstr "Показывать имена учётных записей в объединённых папках"
 
 #: src/renderer/src/state/desktop.ts
 msgid "Show all"
@@ -6529,7 +6529,7 @@ msgstr "Войдите снова"
 
 #: src/renderer/src/ui/SignInAgainOnMac.tsx
 msgid "Sign in again on your Mac"
-msgstr "Войдите снова на своем Mac"
+msgstr "Войдите снова на своём Mac"
 
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 #: src/renderer/src/lib/errors.ts
@@ -6538,16 +6538,16 @@ msgstr "Войдите снова, чтобы изменить Отсортир�
 
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Sign in again to enable filters"
-msgstr "Войдите еще раз, чтобы включить фильтры."
+msgstr "Войдите ещё раз, чтобы включить фильтры."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Sign in again to enable filters and automatic replies."
-msgstr "Войдите еще раз, чтобы включить фильтры и автоматические ответы."
+msgstr "Войдите ещё раз, чтобы включить фильтры и автоматические ответы."
 
 #: src/renderer/src/features/settings/sections/ContactSettings.tsx
 #: src/renderer/src/lib/errors.ts
 msgid "Sign in again to sync server contacts."
-msgstr "Войдите еще раз, чтобы синхронизировать контакты сервера."
+msgstr "Войдите ещё раз, чтобы синхронизировать контакты сервера."
 
 #: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Sign in with {name}"
@@ -7026,7 +7026,7 @@ msgstr "Стиль текста"
 
 #: src/renderer/src/lib/errors.ts
 msgid "The {client} OAuth client is not set up yet."
-msgstr "Клиент OAuth {client} еще не настроен."
+msgstr "Клиент OAuth {client} ещё не настроен."
 
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "The account was removed, but the keychain did not let OpenMail delete its saved sign-in. Open Keychain Access, search for openmail, and delete the item for that account."
@@ -7070,7 +7070,7 @@ msgstr "Текст сообщения не сохранён в кэше. Поп�
 
 #: src/main/app/native-i18n.ts
 msgid "The database integrity check (quick_check) failed or the file is unavailable. Reset rebuilds a damaged database from readable local records and keeps the original file. Keychain tokens are kept."
-msgstr "Проверка целостности базы данных (quick_check) не удалась или файл недоступен. Сброс восстанавливает поврежденную базу данных из читаемых локальных записей и сохраняет исходный файл. Жетоны связки ключей сохраняются."
+msgstr "Проверка целостности базы данных (quick_check) не удалась или файл недоступен. Сброс восстанавливает повреждённую базу данных из читаемых локальных записей и сохраняет исходный файл. Жетоны связки ключей сохраняются."
 
 #: src/main/app/native-i18n.ts
 msgid "The database was kept. Quit OpenMail and restore a local backup or contact support."
@@ -7366,7 +7366,7 @@ msgstr "Этот черновик содержит форматирование 
 
 #: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "This draft has unsaved changes or is waiting to sync."
-msgstr "В этом черновике есть несохраненные изменения или он ожидает синхронизации."
+msgstr "В этом черновике есть несохранённые изменения или он ожидает синхронизации."
 
 #: src/renderer/src/lib/errors.ts
 msgid "This draft was already discarded."
@@ -7455,7 +7455,7 @@ msgstr "Возможно, это сообщение уже отправлено.
 
 #: src/renderer/src/features/organize/PermanentDeletePermission.tsx
 msgid "This permission lets OpenMail permanently delete mail in this Gmail account. Google will ask for your consent. After granting it, confirm the deletion again."
-msgstr "Это разрешение позволяет OpenMail безвозвратно удалять почту в этой учетной записи Gmail. Google запросит ваше согласие. После его предоставления еще раз подтвердите удаление."
+msgstr "Это разрешение позволяет OpenMail безвозвратно удалять почту в этой учётной записи Gmail. Google запросит ваше согласие. После его предоставления ещё раз подтвердите удаление."
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "This removes the filter from the server. Existing messages are unchanged."
@@ -7890,7 +7890,7 @@ msgstr "Используйте выделение для поиска"
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Use the account default address"
-msgstr "Используйте адрес учетной записи по умолчанию"
+msgstr "Используйте адрес учётной записи по умолчанию"
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Use the address the message was sent to"
@@ -7978,7 +7978,7 @@ msgstr "Еженедельно"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Welcome to OpenMail. Choose your email provider. Your credentials stay on this computer."
-msgstr "Добро пожаловать в OpenMail. Выберите своего поставщика электронной почты. Ваши учетные данные останутся на этом компьютере."
+msgstr "Добро пожаловать в OpenMail. Выберите своего поставщика электронной почты. Ваши учётные данные останутся на этом компьютере."
 
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 msgid "What AI apps can do"
@@ -8090,7 +8090,7 @@ msgstr "Всё готово"
 
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
 msgid "Your changes are saved on this Mac. Try again or keep a local copy."
-msgstr "Ваши изменения сохраняются на этом Mac. Попробуйте еще раз или сохраните локальную копию."
+msgstr "Ваши изменения сохраняются на этом Mac. Попробуйте ещё раз или сохраните локальную копию."
 
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "Your draft was kept. Check Sent before sending again."
