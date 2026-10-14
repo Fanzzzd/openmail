@@ -36,6 +36,9 @@ const spanishUsted = [
     "(?:su|sus) (?:navegador|conexión|credenciales|cuentas|primera cuenta|calendario principal|hora local|consentimiento|propio cliente|información|contraseña web|cuenta de Google|cuenta personal|cuenta de Yahoo|cuenta Apple|cambios)|[Ss]e le pedirá|le pedirá",
   ),
 ];
+// Formal German: Sie, Ihnen and Ihr- anywhere but a sentence start, where "Sie" means "it"
+// or "she" ("Sie läuft …"). That catches imperatives such as "Stellen Sie …" and "Ihre Adresse".
+const germanSie = /(?<!(?:^|[.!?:]\s+|[„“"«(]))(?<!\p{L})(?:Sie|Ihnen|Ihre?[mnrs]?)(?!\p{L})/u;
 // Informal Russian: ты and its forms, and imperatives without -те.
 const russianInformal = [
   word("ты|тебя|тебе|тобой|тво(?:й|я|ё|е|и|его|ему|ей|ю|им|их|ими)", "iu"),
@@ -117,8 +120,10 @@ it("the complete catalogs consistently use the mail glossary, message-text termi
       // "Authorize permission" is not a doubled verb in French.
       if (locale === "fr" && /autoris\p{L}* l[’']autorisation/iu.test(target))
         failures.push(`${locale}: style: ${source} → ${target}`);
-      // Spanish addresses the reader with tú, Dutch with je and Russian with вы.
+      // Spanish addresses the reader with tú, German with du, Dutch with je and Russian with вы.
       if (locale === "es" && spanishUsted.some((pattern) => pattern.test(target)))
+        failures.push(`${locale}: register: ${source} → ${target}`);
+      if (locale === "de" && germanSie.test(target))
         failures.push(`${locale}: register: ${source} → ${target}`);
       if (locale === "nl" && /(?<!\p{L})(?:u|uw|uzelf)(?!\p{L})/iu.test(target))
         failures.push(`${locale}: register: ${source} → ${target}`);
