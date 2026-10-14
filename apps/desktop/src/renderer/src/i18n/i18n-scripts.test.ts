@@ -90,3 +90,34 @@ it("Russian, Japanese and Chinese catalogs have no mixed-script words or stray L
   }
   expect(failures).toEqual([]);
 });
+
+/**
+ * ASCII ? and : right after Japanese text, or ": " between a placeholder and Japanese text.
+ * Operators (from:), service names (svc:openmail) and Latin labels (Cc:) keep ASCII.
+ */
+const JAPANESE = String.raw`[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}ー）」』]`;
+const halfWidthPunctuation = (text: string) => [
+  ...(text.match(new RegExp(`${JAPANESE}[?:]`, "gu")) ?? []),
+  ...(text.match(new RegExp(`\\}: (?=${JAPANESE})`, "gu")) ?? []),
+];
+
+it("finds ASCII question marks and colons in Japanese text and allows them elsewhere", () => {
+  expect(halfWidthPunctuation("フィルターを削除しますか?")).toEqual(["か?"]);
+  expect(halfWidthPunctuation("アクションが失敗しました: {reason}")).toEqual(["た:"]);
+  expect(halfWidthPunctuation("{account}: サーバー")).toEqual(["}: "]);
+  expect(halfWidthPunctuation("フィルターを削除しますか？ 失敗しました：{reason}")).toEqual([]);
+  expect(halfWidthPunctuation("from:名前 や svc:openmail、Cc: {cc}")).toEqual([]);
+});
+
+it("the Japanese catalog uses full-width ？ and ： after Japanese text", async () => {
+  const file = new URL("../locales/ja/messages.po", import.meta.url);
+  const catalog = await formatter().parse(await readFile(file, "utf8"), {
+    locale: "ja",
+    sourceLocale: "en",
+    filename: fileURLToPath(file),
+  });
+  const failures = Object.values(catalog)
+    .map((message) => message.translation ?? "")
+    .filter((text) => halfWidthPunctuation(text).length > 0);
+  expect(failures).toEqual([]);
+});

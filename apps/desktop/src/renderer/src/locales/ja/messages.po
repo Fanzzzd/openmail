@@ -32,6 +32,12 @@ msgctxt "calendar dates"
 msgid "{0, plural, one {# date found} other {# dates found}}"
 msgstr "{0, plural, other {#件の日付が見つかりました}}"
 
+#. placeholder {0}: folder.headerWindow.days
+#. placeholder {1}: folder.headerWindow.messageLimit
+#: src/renderer/src/features/settings/sections/SyncHealth.tsx
+msgid "{0, plural, one {# day} other {# days}}, {1, plural, one {up to # message} other {up to # messages}}"
+msgstr "{0, plural, other {#日}}、{1, plural, other {最大 # 件のメッセージ}}"
+
 #. placeholder {0}: Number(count)
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "{0, plural, one {# occurrence} other {# occurrences}}"
@@ -40,18 +46,12 @@ msgstr "{0, plural, other {#回}}"
 #. placeholder {0}: deleteRequest?.ids.size ?? 0
 #: src/renderer/src/app/MailAlerts.tsx
 msgid "{0, plural, one {Delete # conversation?} other {Delete # conversations?}}"
-msgstr "{0, plural, other {#件のスレッドを削除しますか?}}"
+msgstr "{0, plural, other {#件のスレッドを削除しますか？}}"
 
 #. placeholder {0}: confirming.preview.matches.length
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "{0, plural, one {Preview: # message.} other {Preview: # messages.}} Only the previewed messages will be changed when applying to existing mail."
-msgstr "{0, plural, other {プレビュー: #件のメッセージ。}} 既存のメールに適用する場合、プレビューされたメッセージのみが変更されます。"
-
-#. placeholder {0}: folder.headerWindow.days
-#. placeholder {1}: folder.headerWindow.messageLimit
-#: src/renderer/src/features/settings/sections/SyncHealth.tsx
-msgid "{0} days, up to {1} messages"
-msgstr "{0} 日、最大 {1} 件のメッセージ"
+msgstr "{0, plural, other {プレビュー：#件のメッセージ。}} 既存のメールに適用する場合、プレビューされたメッセージのみが変更されます。"
 
 #. placeholder {0}: i18n.number(progress.embeddingDone ?? 0)
 #. placeholder {1}: i18n.number(progress.embeddingQueued ?? 0)
@@ -59,7 +59,7 @@ msgstr "{0} 日、最大 {1} 件のメッセージ"
 #. placeholder {3}: i18n.number(progress.embeddingFailed ?? 0)
 #: src/renderer/src/features/settings/sections/IndexingSettings.tsx
 msgid "{0} embedded · {1} queued · {2} running · {3} failed"
-msgstr "{0} が埋め込まれました · {1} がキューに登録されました · {2} が実行されました · {3} が失敗しました"
+msgstr "埋め込み済み {0} · 待機中 {1} · 実行中 {2} · 失敗 {3}"
 
 #. placeholder {0}: i18n.number(props.moreNotLoaded)
 #: src/renderer/src/features/mail-list/BatchActions.tsx
@@ -68,11 +68,11 @@ msgstr "{0} 個以上が読み込まれていません"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "{account}: the server can't search with {names}. OpenMail searched the server without it and applied it to the results here."
-msgstr "{account}: サーバーは {names} を使って検索できません。OpenMail はこれを除いてサーバーを検索し、ここで結果に適用しました。"
+msgstr "{account}：サーバーは {names} を使って検索できません。OpenMail はこれを除いてサーバーを検索し、ここで結果に適用しました。"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "{account}: the server can't search with {names}. OpenMail searched the server without them and applied them to the results here."
-msgstr "{account}: サーバーは {names} を使って検索できません。OpenMail はこれを除いてサーバーを検索し、ここで結果に適用しました。"
+msgstr "{account}：サーバーは {names} を使って検索できません。OpenMail はこれを除いてサーバーを検索し、ここで結果に適用しました。"
 
 #: src/renderer/src/features/overview/Overview.tsx
 msgid "{accountCount, plural, one {# account} other {# accounts}}, {total} unread"
@@ -165,7 +165,7 @@ msgstr "{delay, plural, other {#秒}}"
 
 #: src/renderer/src/features/settings/sections/IndexingSettings.tsx
 msgid "{done} completed · {queued} queued · {running} running · {failed} failed"
-msgstr "{done} が完了しました · {queued} がキューに登録されました · {running} が実行されました · {failed} が失敗しました"
+msgstr "完了 {done} · 待機中 {queued} · 実行中 {running} · 失敗 {failed}"
 
 #: src/renderer/src/app/use-app-messages.ts
 msgid "{email} is signed in again"
@@ -366,7 +366,7 @@ msgstr "承諾"
 
 #: src/renderer/src/features/ai/TriageChip.tsx
 msgid "Accept AI suggestion: {title}"
-msgstr "AI の提案を承認: {title}"
+msgstr "AI の提案を承認：{title}"
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Accepted"
@@ -415,7 +415,7 @@ msgstr "アクションが失敗しました"
 #: src/renderer/src/app/ThreadWindow.tsx
 #: src/renderer/src/app/use-app-messages.ts
 msgid "Action failed: {reason}"
-msgstr "アクションが失敗しました: {reason}"
+msgstr "アクションが失敗しました：{reason}"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Action menu"
@@ -528,7 +528,7 @@ msgstr "スターを付ける"
 
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 msgid "Add this event to your calendar?"
-msgstr "このイベントをカレンダーに追加しますか?"
+msgstr "このイベントをカレンダーに追加しますか？"
 
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 #: src/renderer/src/features/reader/attachments/AttachmentImportDialog.tsx
@@ -658,7 +658,7 @@ msgstr "AI の提案"
 
 #: src/renderer/src/features/ai/TriageChip.tsx
 msgid "AI suggestion: {title}"
-msgstr "AI の提案: {title}"
+msgstr "AI の提案：{title}"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
@@ -753,7 +753,7 @@ msgstr "通知を許可する"
 
 #: src/renderer/src/features/organize/PermanentDeletePermission.tsx
 msgid "Allow permanent deletion for {email}?"
-msgstr "{email} の完全な削除を許可しますか?"
+msgstr "{email} の完全な削除を許可しますか？"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Allowed"
@@ -1088,13 +1088,13 @@ msgstr "大きなテキスト"
 
 #: src/renderer/src/features/reader/body/MessageBody.tsx
 msgid "Blocked before loading:"
-msgstr "読み込み前にブロック:"
+msgstr "読み込み前にブロック："
 
 #. Cached texts of email messages, never anatomical bodies, then the size of cached attachments.
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgctxt "cached message text"
 msgid "Bodies: {bodies} · Attachments: {attachments}"
-msgstr "本文: {bodies} · 添付ファイル: {attachments}"
+msgstr "本文：{bodies} · 添付ファイル：{attachments}"
 
 #. Email message text, never an anatomical body.
 #. Email message text, never an anatomical body.
@@ -1191,11 +1191,11 @@ msgstr "このテンプレートが見つかりません。"
 
 #: src/renderer/src/app/use-app-messages.ts
 msgid "Can't open the draft: {reason}"
-msgstr "下書きを開けません: {reason}"
+msgstr "下書きを開けません：{reason}"
 
 #: src/renderer/src/app/use-app-messages.ts
 msgid "Can't open the message: {reason}"
-msgstr "メッセージを開けません: {reason}"
+msgstr "メッセージを開けません：{reason}"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Can't reach Anthropic. Check your internet connection."
@@ -1303,7 +1303,7 @@ msgstr "モード変更"
 
 #: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "Change writing mode?"
-msgstr "書き込みモードを変更しますか?"
+msgstr "書き込みモードを変更しますか？"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Change your OAuth client"
@@ -1668,7 +1668,7 @@ msgstr "保存済みフィルターの破棄を確認してください。"
 
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Confirm filter changes?"
-msgstr "フィルターの変更を確認しますか?"
+msgstr "フィルターの変更を確認しますか？"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Confirm permanent deletion in the app."
@@ -1914,11 +1914,11 @@ msgstr "winmail.dat をデコードできませんでした。元のファイル
 
 #: src/renderer/src/app/use-app-messages.ts
 msgid "Couldn't delete: {reason}"
-msgstr "削除できませんでした: {reason}"
+msgstr "削除できませんでした：{reason}"
 
 #: src/renderer/src/app/use-app-messages.ts
 msgid "Couldn't discard: {reason}"
-msgstr "破棄できませんでした: {reason}"
+msgstr "破棄できませんでした：{reason}"
 
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "Couldn't dismiss this notice. Try again."
@@ -1938,7 +1938,7 @@ msgstr "添付ファイルを取得できませんでした"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Couldn't get the attachment: {reason}"
-msgstr "添付ファイルを取得できませんでした: {reason}"
+msgstr "添付ファイルを取得できませんでした：{reason}"
 
 #: src/renderer/src/features/reader/attachments/AttachmentImportDialog.tsx
 msgid "Couldn't import this attachment."
@@ -1978,7 +1978,7 @@ msgstr "次のメッセージを読み込めませんでした"
 
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't load the original attachments: {reason}"
-msgstr "元の添付ファイルを読み込めませんでした: {reason}"
+msgstr "元の添付ファイルを読み込めませんでした：{reason}"
 
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't load the original attachments. Try again."
@@ -2034,7 +2034,7 @@ msgstr "再送信用の下書きを準備できませんでした。もう一度
 
 #: src/renderer/src/features/reader/use-thread-print.ts
 msgid "Couldn't print: {reason}"
-msgstr "印刷できませんでした: {reason}"
+msgstr "印刷できませんでした：{reason}"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Couldn't read attached message."
@@ -2083,7 +2083,7 @@ msgstr "ローカルキャッシュをリセットできませんでした"
 
 #: src/renderer/src/app/use-app-messages.ts
 msgid "Couldn't restore the draft: {reason}"
-msgstr "下書きを復元できませんでした: {reason}"
+msgstr "下書きを復元できませんでした：{reason}"
 
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't save"
@@ -2099,19 +2099,19 @@ msgstr "API キーをシステムのキーチェーンに保存できません�
 
 #: src/renderer/src/app/use-app-messages.ts
 msgid "Couldn't save the draft: {reason}"
-msgstr "下書きを保存できませんでした: {reason}"
+msgstr "下書きを保存できませんでした：{reason}"
 
 #: src/renderer/src/features/reader/use-thread-print.ts
 msgid "Couldn't save the PDF: {reason}"
-msgstr "PDF を保存できませんでした: {reason}"
+msgstr "PDF を保存できませんでした：{reason}"
 
 #: src/renderer/src/app/use-app-messages.ts
 msgid "Couldn't send {subject}: {reason}"
-msgstr "{subject} を送信できませんでした: {reason}"
+msgstr "{subject} を送信できませんでした：{reason}"
 
 #: src/renderer/src/app/use-app-messages.ts
 msgid "Couldn't send: {reason}"
-msgstr "送信できませんでした: {reason}"
+msgstr "送信できませんでした：{reason}"
 
 #: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
@@ -2238,7 +2238,7 @@ msgstr "破線リスト"
 
 #: src/main/app/native-i18n.ts
 msgid "Database recovery was interrupted. Restore a preserved database before reopening OpenMail. Preserved database: {backup}"
-msgstr "データベースの回復が中断されました。OpenMail を再度開く前に、保存されたデータベースを復元します。保存されたデータベース: {backup}"
+msgstr "データベースの回復が中断されました。OpenMail を再度開く前に、保存されたデータベースを復元します。保存されたデータベース：{backup}"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/use-thread-print.ts
@@ -2249,7 +2249,7 @@ msgstr "日付"
 #: src/renderer/src/features/compose/draft.ts
 msgctxt "outgoing forward header"
 msgid "Date: {date}"
-msgstr "日付: {date}"
+msgstr "日付：{date}"
 
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Dates"
@@ -2340,7 +2340,7 @@ msgstr "下書きを削除"
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Delete filter?"
-msgstr "フィルターを削除しますか?"
+msgstr "フィルターを削除しますか？"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Delete key action"
@@ -2348,7 +2348,7 @@ msgstr "Delete キーの操作"
 
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 msgid "Delete label or folder?"
-msgstr "ラベルまたはフォルダを削除しますか?"
+msgstr "ラベルまたはフォルダを削除しますか？"
 
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "Delete permanently"
@@ -2412,7 +2412,7 @@ msgstr "下書きを破棄"
 
 #: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 msgid "Discard saved filter?"
-msgstr "保存済みフィルターを破棄しますか?"
+msgstr "保存済みフィルターを破棄しますか？"
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 #: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
@@ -2517,7 +2517,7 @@ msgstr "{name} をダウンロード中"
 #. placeholder {0}: i18n.number(Math.floor((progress.models.bytes / progress.models.total) * 100))
 #: src/renderer/src/features/settings/sections/IndexingSettings.tsx
 msgid "Downloading models: {0}%"
-msgstr "モデルのダウンロード: {0}%"
+msgstr "モデルのダウンロード：{0}%"
 
 #. placeholder {0}: state.version
 #: src/renderer/src/features/settings/sections/UpdateSettings.tsx
@@ -2572,6 +2572,10 @@ msgstr "アカウントをドラッグすると、並べ替えたり別のスペ
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Drag selected to Finder"
 msgstr "選択したものをファインダーにドラッグします"
+
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "Each automatic summary uses your Anthropic API key and sends up to {summaryKb} KB of the conversation. At most {summaryCap} a day across all accounts. Failed summaries don't count."
+msgstr "自動要約は 1 件ごとに Anthropic API キーを使い、スレッドを最大 {summaryKb} KB 送信します。全アカウント合計で 1 日 {summaryCap} 件までです。失敗した要約は数えません。"
 
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
@@ -2823,11 +2827,11 @@ msgstr "お気に入り"
 
 #: src/renderer/src/features/sidebar/SidebarItems.tsx
 msgid "Favorite {name}"
-msgstr "お気に入り: {name}"
+msgstr "お気に入り：{name}"
 
 #: src/renderer/src/features/sidebar/SidebarItems.tsx
 msgid "Favorite {name} in all accounts"
-msgstr "お気に入り: すべてのアカウントの {name}"
+msgstr "お気に入り：すべてのアカウントの {name}"
 
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Favorites"
@@ -2934,7 +2938,7 @@ msgstr "優先/その他"
 
 #: src/renderer/src/features/organize/FolderActions.tsx
 msgid "Folder action failed: {reason}"
-msgstr "フォルダアクションが失敗しました: {reason}"
+msgstr "フォルダアクションが失敗しました：{reason}"
 
 #: src/renderer/src/features/organize/FolderActions.tsx
 msgid "Folder actions"
@@ -3063,7 +3067,7 @@ msgstr "差出人を更新しました"
 #: src/renderer/src/features/compose/draft.ts
 msgctxt "outgoing forward header"
 msgid "From: {from}"
-msgstr "差出人: {from}"
+msgstr "差出人：{from}"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Funnel is on for this port, which would put it on the public internet. OpenMail never uses Funnel. Turn Funnel off for this port first."
@@ -3551,7 +3555,7 @@ msgstr "ラベルを削除しました"
 
 #: src/renderer/src/features/ai/TriageChip.tsx
 msgid "Label: {label}"
-msgstr "ラベル: {label}"
+msgstr "ラベル：{label}"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "Label: {name}"
@@ -3743,7 +3747,7 @@ msgstr "ローカルが多い：古い状態"
 
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Local preview: {count} messages"
-msgstr "ローカル プレビュー: {count} メッセージ"
+msgstr "ローカル プレビュー：{count} メッセージ"
 
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 msgid "Local signatures stay on this Mac. Gmail default signatures are read from Gmail."
@@ -3755,7 +3759,7 @@ msgstr "ローカル：合計 / 未読 / スレッド"
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Location changed:"
-msgstr "場所が変更されました:"
+msgstr "場所が変更されました："
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Location:"
@@ -3880,7 +3884,7 @@ msgstr "Markdown の置換"
 
 #: src/renderer/src/features/compose/components/PlainBody.tsx
 msgid "Markdown works: **bold**, `code`, ```code block```"
-msgstr "マークダウンは機能します: **太字**、`code`、```code block```"
+msgstr "Markdown に対応しています：**太字**、`code`、```code block```"
 
 #: src/renderer/src/app/use-app-messages.ts
 msgid "Marked as important"
@@ -4054,15 +4058,15 @@ msgstr "メッセージには他のラベルが保持されます。"
 
 #: src/renderer/src/features/search/search-suggestions.ts
 msgid "Messages larger than a size, such as 5M"
-msgstr "指定サイズより大きいメッセージ（例: 5M）"
+msgstr "指定サイズより大きいメッセージ（例：5M）"
 
 #: src/renderer/src/features/search/search-suggestions.ts
 msgid "Messages newer than a period, such as 7d"
-msgstr "指定期間より新しいメッセージ（例: 7d）"
+msgstr "指定期間より新しいメッセージ（例：7d）"
 
 #: src/renderer/src/features/search/search-suggestions.ts
 msgid "Messages older than a period, such as 1y"
-msgstr "指定期間より古いメッセージ（例: 1y）"
+msgstr "指定期間より古いメッセージ（例：1y）"
 
 #: src/renderer/src/features/search/search-suggestions.ts
 msgid "Messages sent to a person"
@@ -4070,7 +4074,7 @@ msgstr "指定した人に送信したメッセージ"
 
 #: src/renderer/src/features/search/search-suggestions.ts
 msgid "Messages smaller than a size, such as 1M"
-msgstr "指定サイズより小さいメッセージ（例: 1M）"
+msgstr "指定サイズより小さいメッセージ（例：1M）"
 
 #: src/renderer/src/features/search/search-suggestions.ts
 msgid "Messages with a document attachment"
@@ -4729,7 +4733,7 @@ msgstr "日付を指定"
 
 #: src/renderer/src/features/settings/sections/IndexingSettings.tsx
 msgid "On battery: image recognition waits for AC power. PDF text indexing is throttled."
-msgstr "バッテリ駆動: 画像認識は AC 電源を待ちます。PDF テキストのインデックス作成が抑制されています。"
+msgstr "バッテリ駆動：画像認識は AC 電源を待ちます。PDF テキストのインデックス作成が抑制されています。"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "On the web, turn on IMAP under Settings → POP3/SMTP/IMAP, then follow the prompts to generate an authorization code."
@@ -5188,7 +5192,7 @@ msgstr "完全に削除"
 
 #: src/renderer/src/app/MailAlerts.tsx
 msgid "Permanently delete selected mail?"
-msgstr "選択したメールを完全に削除しますか?"
+msgstr "選択したメールを完全に削除しますか？"
 
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
@@ -5347,11 +5351,11 @@ msgstr "Claude を終了して開き直すと読み込まれます。"
 #: src/renderer/src/app/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Quit with messages waiting to send?"
-msgstr "メッセージの送信を待機している状態で終了しますか?"
+msgstr "メッセージの送信を待機している状態で終了しますか？"
 
 #: src/renderer/src/app/MailAlerts.tsx
 msgid "Quote only the selected text?"
-msgstr "選択したテキストのみを引用しますか?"
+msgstr "選択したテキストのみを引用しますか？"
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Quote selected text"
@@ -5432,7 +5436,7 @@ msgstr "{name} を再接続"
 
 #: src/main/app/native-i18n.ts
 msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
-msgstr "{copied} 個のローカル レコードを回復しました。{skipped} 件の読み取り不可能な項目をスキップしました。元のデータベース: {backup}"
+msgstr "{copied} 個のローカル レコードを回復しました。{skipped} 件の読み取り不可能な項目をスキップしました。元のデータベース：{backup}"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgid "Recovery copies"
@@ -5524,7 +5528,7 @@ msgstr "{0} を削除"
 
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Remove {email}?"
-msgstr "{email} を削除しますか?"
+msgstr "{email} を削除しますか？"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Remove {login}"
@@ -5707,7 +5711,7 @@ msgstr "返信モード"
 
 #: src/renderer/src/features/ai/TriageChip.tsx
 msgid "Reply needed: add star"
-msgstr "返信が必要: スターを付ける"
+msgstr "返信が必要：スターを付ける"
 
 #: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Reply only to contacts"
@@ -5780,7 +5784,7 @@ msgstr "フィルターを復元"
 
 #: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 msgid "Restore filter?"
-msgstr "フィルターを復元しますか?"
+msgstr "フィルターを復元しますか？"
 
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "Restore message state"
@@ -5789,7 +5793,7 @@ msgstr "メッセージの状態を復元"
 #. placeholder {0}: pending.preview.matches.length
 #: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
 msgid "Restore the saved original filter on the server. {0, plural, one {Preview: # message.} other {Preview: # messages.}}"
-msgstr "サーバー上に保存されている元のフィルターを復元します。{0, plural, other {プレビュー: #件のメッセージ。}}"
+msgstr "サーバー上に保存されている元のフィルターを復元します。{0, plural, other {プレビュー：#件のメッセージ。}}"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgid "Resume"
@@ -5959,7 +5963,7 @@ msgstr "送信済みのコピーを保存"
 
 #: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "Save this draft before closing?"
-msgstr "閉じる前にこの下書きを保存しますか?"
+msgstr "閉じる前にこの下書きを保存しますか？"
 
 #: src/renderer/src/features/compose/components/TemplatePicker.tsx
 msgid "Save this message as a template…"
@@ -6023,7 +6027,7 @@ msgstr "検索に使える単語と演算子は {MAX_SEARCH_TERMS} 個までで�
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Search couldn't finish:"
-msgstr "検索を完了できませんでした:"
+msgstr "検索を完了できませんでした："
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
 #: src/renderer/src/lib/errors.ts
@@ -6176,7 +6180,7 @@ msgstr "メッセージのリンクを送信…"
 
 #: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "Send this message without a subject?"
-msgstr "件名なしでこのメッセージを送信しますか?"
+msgstr "件名なしでこのメッセージを送信しますか？"
 
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
@@ -6254,7 +6258,7 @@ msgstr "サーバー フィルターと自動返信は、Gmail と Outlook で�
 
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Server preview: {count} messages"
-msgstr "サーバー プレビュー: {count} メッセージ"
+msgstr "サーバー プレビュー：{count} メッセージ"
 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Server total / unread / threads"
@@ -6463,7 +6467,7 @@ msgstr "ブラウザで個人用 Microsoft アカウント（outlook.com また�
 
 #: src/renderer/src/app/use-app-messages.ts
 msgid "Sign-in failed: {reason}"
-msgstr "サインインに失敗しました: {reason}"
+msgstr "サインインに失敗しました：{reason}"
 
 #: src/main/app/native-i18n.ts
 msgid "Sign-in failed. Go back to OpenMail and try again."
@@ -6739,7 +6743,7 @@ msgstr "件名に含まれる文字"
 #: src/renderer/src/features/compose/draft.ts
 msgctxt "outgoing forward header"
 msgid "Subject: {subject}"
-msgstr "件名: {subject}"
+msgstr "件名：{subject}"
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -7169,7 +7173,7 @@ msgstr "この AI 設定は無効です。確認してもう一度お試しく�
 
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "These are not email addresses: {list}"
-msgstr "これらはメールアドレスではありません: {list}"
+msgstr "これらはメールアドレスではありません：{list}"
 
 #: src/renderer/src/lib/errors.ts
 msgid "These attachments are over 32 MB together. Save them to open them."
@@ -7428,12 +7432,12 @@ msgstr "もう一度サインインするには、新しいパスワードでア
 
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "To: {to}"
-msgstr "宛先: {to}"
+msgstr "宛先：{to}"
 
 #: src/renderer/src/features/compose/draft.ts
 msgctxt "outgoing forward header"
 msgid "To: {to}"
-msgstr "宛先: {to}"
+msgstr "宛先：{to}"
 
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Today"
@@ -7485,7 +7489,7 @@ msgstr "ツールバーのアクション"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgid "Total cache: {total}"
-msgstr "キャッシュ合計: {total}"
+msgstr "キャッシュ合計：{total}"
 
 #: src/renderer/src/features/compose/components/ComposerAi.tsx
 msgid "Translate"
@@ -7700,7 +7704,7 @@ msgstr "アップデート {version} の準備ができました。アプリの�
 
 #: src/renderer/src/state/desktop.ts
 msgid "Update available:"
-msgstr "利用可能なアップデート:"
+msgstr "利用可能なアップデート："
 
 #: src/renderer/src/features/settings/sections/UpdateSettings.tsx
 msgid "Update channel"
@@ -7978,7 +7982,7 @@ msgstr "Mac がこのブラウザを切断しました。ログインがまだ�
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Your mail is syncing. Three shortcuts to start with:"
-msgstr "メールを同期しています。まず覚えたい 3 つのショートカット:"
+msgstr "メールを同期しています。まず覚えたい 3 つのショートカット："
 
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 msgid "Your overlapping events"

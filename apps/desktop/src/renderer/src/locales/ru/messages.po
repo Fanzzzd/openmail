@@ -32,6 +32,12 @@ msgctxt "calendar dates"
 msgid "{0, plural, one {# date found} other {# dates found}}"
 msgstr "{0, plural, one {Найдена # дата} few {Найдены # даты} many {Найдено # дат} other {Найдено # даты}}"
 
+#. placeholder {0}: folder.headerWindow.days
+#. placeholder {1}: folder.headerWindow.messageLimit
+#: src/renderer/src/features/settings/sections/SyncHealth.tsx
+msgid "{0, plural, one {# day} other {# days}}, {1, plural, one {up to # message} other {up to # messages}}"
+msgstr "{0, plural, one {# день} few {# дня} many {# дней} other {# дня}}, {1, plural, one {до # сообщения} few {до # сообщений} many {до # сообщений} other {до # сообщения}}"
+
 #. placeholder {0}: Number(count)
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "{0, plural, one {# occurrence} other {# occurrences}}"
@@ -46,12 +52,6 @@ msgstr "{0, plural, one {Удалить # переписку?} few {Удалит
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "{0, plural, one {Preview: # message.} other {Preview: # messages.}} Only the previewed messages will be changed when applying to existing mail."
 msgstr "{0, plural, one {Предпросмотр: # сообщение.} few {Предпросмотр: # сообщения.} many {Предпросмотр: # сообщений.} other {Предпросмотр: # сообщения.}} При применении к существующей почте изменятся только сообщения из предпросмотра."
-
-#. placeholder {0}: folder.headerWindow.days
-#. placeholder {1}: folder.headerWindow.messageLimit
-#: src/renderer/src/features/settings/sections/SyncHealth.tsx
-msgid "{0} days, up to {1} messages"
-msgstr "{0} дней, до {1} сообщений"
 
 #. placeholder {0}: i18n.number(progress.embeddingDone ?? 0)
 #. placeholder {1}: i18n.number(progress.embeddingQueued ?? 0)
@@ -2573,6 +2573,10 @@ msgstr "Перетащите учётную запись, чтобы измен�
 msgid "Drag selected to Finder"
 msgstr "Перетащите выделенное в Finder"
 
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "Each automatic summary uses your Anthropic API key and sends up to {summaryKb} KB of the conversation. At most {summaryCap} a day across all accounts. Failed summaries don't count."
+msgstr "Каждое автоматическое краткое изложение использует ваш ключ API Anthropic и отправляет до {summaryKb} КБ переписки. Не более {summaryCap} в день по всем учётным записям. Неудавшиеся изложения не учитываются."
+
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
@@ -4715,7 +4719,7 @@ msgstr "Старая почта загружается в фоне. После �
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Oldest first"
-msgstr "Сначала самый старый"
+msgstr "Сначала самые старые"
 
 #. Written into the sent message above the quoted text.
 #: src/renderer/src/features/compose/draft.ts

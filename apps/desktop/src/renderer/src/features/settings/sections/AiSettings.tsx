@@ -1,7 +1,7 @@
 import { useAtom, useAtomValue } from "@effect/atom-react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Select } from "../../../ui/Select";
-import { AI_MODELS } from "@openmail/core/schema";
+import { AI_MODELS, AI_SUMMARY_INPUT, AUTO_SUMMARY_DAILY_CAP } from "@openmail/core/schema";
 import { AsyncResult } from "effect/reactivity";
 import { Effect } from "effect";
 import { useId, useRef, useState } from "react";
@@ -20,6 +20,8 @@ import {
 
 /** A native checkbox in the accent colour; the fieldset around it can still disable it. */
 const nativeCheck = "size-3.5 shrink-0 accent-blue-600";
+const summaryKb = AI_SUMMARY_INPUT / 1000;
+const summaryCap = AUTO_SUMMARY_DAILY_CAP;
 
 import { aiSettingsAtom } from "../../ai";
 import { CONSENT_ANCHOR } from "./ai-clients-ui";
@@ -171,7 +173,15 @@ export function AiSettings({ accounts }: { accounts: readonly Account[] }) {
                     <Trans>Allow AI to read this account</Trans>
                   </label>
                 </SettingsCheckRow>
-                <SettingsCheckRow>
+                <SettingsCheckRow
+                  hint={
+                    <Trans>
+                      Each automatic summary uses your Anthropic API key and sends up to {summaryKb}{" "}
+                      KB of the conversation. At most {summaryCap} a day across all accounts. Failed
+                      summaries don't count.
+                    </Trans>
+                  }
+                >
                   <label className="flex items-center gap-2">
                     <input
                       type="checkbox"

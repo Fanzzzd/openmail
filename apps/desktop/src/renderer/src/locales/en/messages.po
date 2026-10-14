@@ -36,6 +36,12 @@ msgctxt "calendar dates"
 msgid "{0, plural, one {# date found} other {# dates found}}"
 msgstr "{0, plural, one {# date found} other {# dates found}}"
 
+#. placeholder {0}: folder.headerWindow.days
+#. placeholder {1}: folder.headerWindow.messageLimit
+#: src/renderer/src/features/settings/sections/SyncHealth.tsx
+msgid "{0, plural, one {# day} other {# days}}, {1, plural, one {up to # message} other {up to # messages}}"
+msgstr "{0, plural, one {# day} other {# days}}, {1, plural, one {up to # message} other {up to # messages}}"
+
 #. placeholder {0}: Number(count)
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "{0, plural, one {# occurrence} other {# occurrences}}"
@@ -50,12 +56,6 @@ msgstr "{0, plural, one {Delete # conversation?} other {Delete # conversations?}
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "{0, plural, one {Preview: # message.} other {Preview: # messages.}} Only the previewed messages will be changed when applying to existing mail."
 msgstr "{0, plural, one {Preview: # message.} other {Preview: # messages.}} Only the previewed messages will be changed when applying to existing mail."
-
-#. placeholder {0}: folder.headerWindow.days
-#. placeholder {1}: folder.headerWindow.messageLimit
-#: src/renderer/src/features/settings/sections/SyncHealth.tsx
-msgid "{0} days, up to {1} messages"
-msgstr "{0} days, up to {1} messages"
 
 #. placeholder {0}: i18n.number(progress.embeddingDone ?? 0)
 #. placeholder {1}: i18n.number(progress.embeddingQueued ?? 0)
@@ -2576,6 +2576,10 @@ msgstr "Drag an account to reorder it or move it to another space. You can also 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Drag selected to Finder"
 msgstr "Drag selected to Finder"
+
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "Each automatic summary uses your Anthropic API key and sends up to {summaryKb} KB of the conversation. At most {summaryCap} a day across all accounts. Failed summaries don't count."
+msgstr "Each automatic summary uses your Anthropic API key and sends up to {summaryKb} KB of the conversation. At most {summaryCap} a day across all accounts. Failed summaries don't count."
 
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx

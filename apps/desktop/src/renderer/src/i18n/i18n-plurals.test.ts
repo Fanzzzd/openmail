@@ -26,3 +26,14 @@ it("counted notices use each plural form in Russian and Czech", async () => {
     expect(new Set(forms.map((form) => form.replace(/\d+/, "#"))).size).toBe(3);
   }
 });
+
+const HEADER_WINDOW =
+  "{0, plural, one {# day} other {# days}}, {1, plural, one {up to # message} other {up to # messages}}";
+
+it("the sync health window counts days and messages with plurals", async () => {
+  expect(await render("en", HEADER_WINDOW, { 0: 1, 1: 1 })).toBe("1 day, up to 1 message");
+  expect(await render("en", HEADER_WINDOW, { 0: 30, 1: 500 })).toBe("30 days, up to 500 messages");
+  expect(await render("ru", HEADER_WINDOW, { 0: 31, 1: 21 })).toBe("31 день, до 21 сообщения");
+  expect(await render("ru", HEADER_WINDOW, { 0: 30, 1: 500 })).toBe("30 дней, до 500 сообщений");
+  expect(await render("cs", HEADER_WINDOW, { 0: 3, 1: 1 })).toBe("3 dny, nejvýše 1 zpráva");
+});

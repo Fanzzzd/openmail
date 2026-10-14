@@ -32,6 +32,12 @@ msgctxt "calendar dates"
 msgid "{0, plural, one {# date found} other {# dates found}}"
 msgstr "{0, plural, one {# Termin gefunden} other {# Termine gefunden}}"
 
+#. placeholder {0}: folder.headerWindow.days
+#. placeholder {1}: folder.headerWindow.messageLimit
+#: src/renderer/src/features/settings/sections/SyncHealth.tsx
+msgid "{0, plural, one {# day} other {# days}}, {1, plural, one {up to # message} other {up to # messages}}"
+msgstr "{0, plural, one {# Tag} other {# Tage}}, {1, plural, one {bis zu # Nachricht} other {bis zu # Nachrichten}}"
+
 #. placeholder {0}: Number(count)
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "{0, plural, one {# occurrence} other {# occurrences}}"
@@ -46,12 +52,6 @@ msgstr "{0, plural, one {# Konversation löschen?} other {# Konversationen lösc
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "{0, plural, one {Preview: # message.} other {Preview: # messages.}} Only the previewed messages will be changed when applying to existing mail."
 msgstr "{0, plural, one {Vorschau: # Nachricht.} other {Vorschau: # Nachrichten.}} Bei der Anwendung auf vorhandene E-Mails werden nur die in der Vorschau angezeigten Nachrichten geändert."
-
-#. placeholder {0}: folder.headerWindow.days
-#. placeholder {1}: folder.headerWindow.messageLimit
-#: src/renderer/src/features/settings/sections/SyncHealth.tsx
-msgid "{0} days, up to {1} messages"
-msgstr "{0} Tage, bis zu {1} Nachrichten"
 
 #. placeholder {0}: i18n.number(progress.embeddingDone ?? 0)
 #. placeholder {1}: i18n.number(progress.embeddingQueued ?? 0)
@@ -2573,6 +2573,10 @@ msgstr "Ziehe einen Account, um ihn neu anzuordnen oder in einen anderen Bereich
 msgid "Drag selected to Finder"
 msgstr "Auswahl in den Finder ziehen"
 
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "Each automatic summary uses your Anthropic API key and sends up to {summaryKb} KB of the conversation. At most {summaryCap} a day across all accounts. Failed summaries don't count."
+msgstr "Jede automatische Zusammenfassung nutzt deinen Anthropic-API-Schlüssel und sendet bis zu {summaryKb} KB der Konversation. Höchstens {summaryCap} pro Tag über alle Accounts. Fehlgeschlagene Zusammenfassungen zählen nicht."
+
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
@@ -4432,7 +4436,7 @@ msgstr "Neues Fenster"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Newest first"
-msgstr "Das Neueste zuerst"
+msgstr "Neueste zuerst"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "news@shop.com or shop.com"

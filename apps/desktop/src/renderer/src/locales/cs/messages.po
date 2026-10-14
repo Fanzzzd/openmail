@@ -32,6 +32,12 @@ msgctxt "calendar dates"
 msgid "{0, plural, one {# date found} other {# dates found}}"
 msgstr "{0, plural, one {Nalezeno # datum} few {Nalezena # data} many {Nalezeno # data} other {Nalezeno # dat}}"
 
+#. placeholder {0}: folder.headerWindow.days
+#. placeholder {1}: folder.headerWindow.messageLimit
+#: src/renderer/src/features/settings/sections/SyncHealth.tsx
+msgid "{0, plural, one {# day} other {# days}}, {1, plural, one {up to # message} other {up to # messages}}"
+msgstr "{0, plural, one {# den} few {# dny} many {# dne} other {# dní}}, {1, plural, one {nejvýše # zpráva} few {nejvýše # zprávy} many {nejvýše # zprávy} other {nejvýše # zpráv}}"
+
 #. placeholder {0}: Number(count)
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "{0, plural, one {# occurrence} other {# occurrences}}"
@@ -46,12 +52,6 @@ msgstr "{0, plural, one {Smazat # konverzaci?} few {Smazat # konverzace?} many {
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "{0, plural, one {Preview: # message.} other {Preview: # messages.}} Only the previewed messages will be changed when applying to existing mail."
 msgstr "{0, plural, one {Náhled: # zpráva.} few {Náhled: # zprávy.} many {Náhled: # zprávy.} other {Náhled: # zpráv.}} Při použití na existující poštu se změní pouze zprávy v náhledu."
-
-#. placeholder {0}: folder.headerWindow.days
-#. placeholder {1}: folder.headerWindow.messageLimit
-#: src/renderer/src/features/settings/sections/SyncHealth.tsx
-msgid "{0} days, up to {1} messages"
-msgstr "{0} dní, nejvýše {1} zpráv"
 
 #. placeholder {0}: i18n.number(progress.embeddingDone ?? 0)
 #. placeholder {1}: i18n.number(progress.embeddingQueued ?? 0)
@@ -2572,6 +2572,10 @@ msgstr "Přetažením účtu změníte jeho pořadí nebo ho přesunete do jiné
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Drag selected to Finder"
 msgstr "Přetáhněte vybrané do Finderu"
+
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "Each automatic summary uses your Anthropic API key and sends up to {summaryKb} KB of the conversation. At most {summaryCap} a day across all accounts. Failed summaries don't count."
+msgstr "Každé automatické shrnutí používá váš klíč API Anthropic a odešle až {summaryKb} KB konverzace. Nejvýše {summaryCap} denně za všechny účty. Neúspěšná shrnutí se nepočítají."
 
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx

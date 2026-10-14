@@ -32,6 +32,12 @@ msgctxt "calendar dates"
 msgid "{0, plural, one {# date found} other {# dates found}}"
 msgstr "{0, plural, one {# fecha encontrada} other {# fechas encontradas}}"
 
+#. placeholder {0}: folder.headerWindow.days
+#. placeholder {1}: folder.headerWindow.messageLimit
+#: src/renderer/src/features/settings/sections/SyncHealth.tsx
+msgid "{0, plural, one {# day} other {# days}}, {1, plural, one {up to # message} other {up to # messages}}"
+msgstr "{0, plural, one {# día} other {# días}}, {1, plural, one {hasta # mensaje} other {hasta # mensajes}}"
+
 #. placeholder {0}: Number(count)
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "{0, plural, one {# occurrence} other {# occurrences}}"
@@ -46,12 +52,6 @@ msgstr "{0, plural, one {¿Eliminar # conversación?} other {¿Eliminar # conver
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "{0, plural, one {Preview: # message.} other {Preview: # messages.}} Only the previewed messages will be changed when applying to existing mail."
 msgstr "{0, plural, one {Vista previa: # mensaje.} other {Vista previa: # mensajes.}} Solo los mensajes de la vista previa se cambiarán cuando se apliquen al correo existente."
-
-#. placeholder {0}: folder.headerWindow.days
-#. placeholder {1}: folder.headerWindow.messageLimit
-#: src/renderer/src/features/settings/sections/SyncHealth.tsx
-msgid "{0} days, up to {1} messages"
-msgstr "{0} días, hasta {1} mensajes"
 
 #. placeholder {0}: i18n.number(progress.embeddingDone ?? 0)
 #. placeholder {1}: i18n.number(progress.embeddingQueued ?? 0)
@@ -2573,6 +2573,10 @@ msgstr "Arrastra una cuenta para reordenarla o moverla a otro espacio. También 
 msgid "Drag selected to Finder"
 msgstr "Arrastra el seleccionado al Finder"
 
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "Each automatic summary uses your Anthropic API key and sends up to {summaryKb} KB of the conversation. At most {summaryCap} a day across all accounts. Failed summaries don't count."
+msgstr "Cada resumen automático usa tu clave API de Anthropic y envía hasta {summaryKb} KB de la conversación. Como máximo {summaryCap} al día entre todas las cuentas. Los resúmenes fallidos no cuentan."
+
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
@@ -4432,7 +4436,7 @@ msgstr "Nueva ventana"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Newest first"
-msgstr "Lo nuevo primero"
+msgstr "Más recientes primero"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "news@shop.com or shop.com"
@@ -4715,7 +4719,7 @@ msgstr "Los mensajes antiguos se descargan en segundo plano. Los encabezados sig
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Oldest first"
-msgstr "El más viejo primero"
+msgstr "Más antiguos primero"
 
 #. Written into the sent message above the quoted text.
 #: src/renderer/src/features/compose/draft.ts

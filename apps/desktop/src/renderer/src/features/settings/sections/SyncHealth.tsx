@@ -132,7 +132,7 @@ export function SyncHealthCheck({ accountId }: { accountId: string }) {
                     <td className={cell}>{days(folder.bodyCacheWindowDays)}</td>
                     <td className={cell}>
                       {folder.headerWindow
-                        ? t`${folder.headerWindow.days} days, up to ${folder.headerWindow.messageLimit} messages`
+                        ? t`${plural(folder.headerWindow.days, { one: "# day", other: "# days" })}, ${plural(folder.headerWindow.messageLimit, { one: "up to # message", other: "up to # messages" })}`
                         : t`All mail`}
                     </td>
                     <td className={cell}>{folder.pendingOps}</td>
