@@ -181,3 +181,37 @@ it.effect("a checkpoint cursor before a failed first sync does not mark the acco
     assert.deepStrictEqual(pulls, [{ cursor: undefined, scope: undefined }]);
   }).pipe(Effect.provide(layer));
 });
+
+it.live("syncing one account keeps another account's failure in syncState", () => {
+  const gmail = fakeServer("me@gmail.com");
+  const outlook = fakeServer("me@outlook.com");
+  const state = { failOutlook: false };
+  return Effect.gen(function* () {
+    const mailbox = yield* Mailbox;
+    const google = yield* mailbox.accounts.connect({ provider: "gmail" });
+    const microsoft = yield* mailbox.accounts.connect({ provider: "outlook" });
+    yield* mailbox.sync.sync();
+    state.failOutlook = true;
+    yield* mailbox.sync.sync();
+    const before = (yield* mailbox.sync.syncState).errors;
+    assert.lengthOf(before, 1, "the full sync reports Outlook's failure");
+    yield* mailbox.sync.sync(google.id);
+    assert.deepStrictEqual((yield* mailbox.sync.syncState).errors, before);
+    state.failOutlook = false;
+    yield* mailbox.sync.sync(microsoft.id);
+    assert.deepStrictEqual((yield* mailbox.sync.syncState).errors, []);
+  }).pipe(
+    Effect.provide(
+      TestMailbox.withAdapter(
+        (base) => ({
+          ...base,
+          pull: (account, ...args) =>
+            account.provider === "outlook" && state.failOutlook
+              ? Stream.fail(new ProviderError({ message: "offline", status: 400 }))
+              : base.pull(account, ...args),
+        }),
+        { servers: { gmail, outlook } },
+      ),
+    ),
+  );
+});

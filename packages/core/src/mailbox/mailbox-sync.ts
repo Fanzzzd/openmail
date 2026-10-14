@@ -391,10 +391,16 @@ export const makeSyncMailbox = (
         }),
       { concurrency: SYNC_ACCOUNTS },
     );
+    // A run for one account replaces only that account's entry.
+    const kept = accountId
+      ? (yield* Ref.get(runtime.syncState)).errors.filter(
+          (error) => !error.startsWith(`${accountId}: `),
+        )
+      : [];
     const next: SyncState = {
       running: false,
       lastFinishedAt: Date.now(),
-      errors: results.flatMap((r) => (r.error ? [`${r.accountId}: ${r.error}`] : [])),
+      errors: [...kept, ...results.flatMap((r) => (r.error ? [`${r.accountId}: ${r.error}`] : []))],
     };
     yield* Ref.set(runtime.syncState, next);
     yield* emit({ _tag: "SyncState", state: next });
