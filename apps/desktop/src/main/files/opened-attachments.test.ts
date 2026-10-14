@@ -46,6 +46,27 @@ it("an opened attachment the user edited survives cleanup; untouched old copies 
   expect(await exists(recent.file)).toBe(true);
 });
 
+// R11 R3: cleanup removed the folder of a copy still open in Word or LibreOffice, whose lock
+// files sit next to it, so the next save in place failed.
+it("cleanup keeps a folder that holds anything besides the copy and its record", async () => {
+  const store = new OpenedAttachments(path.join(root, "Opened"), 7 * DAY);
+  const word = await store.write("m1/0", { filename: "contract.docx", data: Buffer.from("abc") });
+  const office = await store.write("m1/1", { filename: "sheet.ods", data: Buffer.from("ods") });
+  const plain = await store.write("m1/2", { filename: "scan.pdf", data: Buffer.from("pdf") });
+  await writeFile(path.join(path.dirname(word.file), "~$contract.docx"), "owner");
+  await writeFile(path.join(path.dirname(office.file), ".~lock.sheet.ods#"), "lock");
+  await writeFile(path.join(path.dirname(plain.file), ".DS_Store"), "finder");
+  await store.cleanup(Date.now() + 8 * DAY);
+  expect(await exists(word.file)).toBe(true);
+  expect(await exists(office.file)).toBe(true);
+  expect(await exists(path.dirname(plain.file))).toBe(false);
+  // Once the app closes the file and removes its lock, the next cleanup takes the copy.
+  await rm(path.join(path.dirname(word.file), "~$contract.docx"));
+  await store.cleanup(Date.now() + 8 * DAY);
+  expect(await exists(path.dirname(word.file))).toBe(false);
+  expect(await exists(office.file)).toBe(true);
+});
+
 it("reopening reuses an unchanged copy and never overwrites an edited one", async () => {
   const store = new OpenedAttachments(path.join(root, "Opened"));
   const part = { filename: "../report.pdf", data: Buffer.from("original") };

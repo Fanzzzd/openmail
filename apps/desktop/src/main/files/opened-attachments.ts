@@ -56,6 +56,15 @@ export type OpenedAttachmentsUsage = {
   edited: number;
 };
 
+/** Finder's view settings say nothing about whether the copy is in use. */
+const IGNORED_ENTRIES = new Set([SIDECAR, ".DS_Store"]);
+
+/** True when the folder holds anything besides the copy, its record and Finder's settings. */
+const holdsOthers = async (folder: string, file: string) =>
+  (await readdir(folder).catch(() => [])).some(
+    (entry) => entry !== file && !IGNORED_ENTRIES.has(entry),
+  );
+
 const readSidecar = async (folder: string): Promise<Sidecar | null> => {
   const text = await readFile(path.join(folder, SIDECAR), "utf8").catch(() => null);
   if (text === null) return null;
@@ -219,7 +228,8 @@ export class OpenedAttachments {
   /**
    * Removes copies left as written and not opened within the lifetime; edited ones stay. A
    * folder with no record is a write that stopped before any app got the file, so it goes once
-   * it is an hour old. A damaged record leaves its folder alone.
+   * it is an hour old. A damaged record leaves its folder alone, and so does any other entry
+   * in the folder: Word's ~$ owner file or LibreOffice's .~lock file means the copy is open.
    */
   async cleanup(now = Date.now()) {
     if (await this.hasRoot()) await this.prepare();
@@ -241,6 +251,7 @@ export class OpenedAttachments {
       );
       if (present && (now - record.openedAt < this.lifetime || !(await unchanged(folder, record))))
         continue;
+      if (await holdsOthers(folder, record.file)) continue;
       await rm(folder, { recursive: true, force: true });
     }
   }
