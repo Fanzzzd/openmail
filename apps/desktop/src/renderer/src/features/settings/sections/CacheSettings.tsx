@@ -298,6 +298,12 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
                 <Trans>Total cache: {total}</Trans>
               </output>
             }
+            hint={
+              <Trans>
+                Clearing removes downloaded bodies and attachments. Headers and drafts stay. Opening
+                uncached content requires a connection.
+              </Trans>
+            }
           >
             <button
               type="button"
@@ -386,12 +392,6 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
           </SettingsRow>
           {canCall("OpenedAttachmentsUsage") && <OpenedAttachments />}
         </div>
-        <p className={`mt-1.5 px-1 ${settingsHint}`}>
-          <Trans>
-            Clearing removes downloaded bodies and attachments. Headers and drafts stay. Opening
-            uncached content requires a connection.
-          </Trans>
-        </p>
       </section>
       {accounts.map((account) => {
         const state = states.find((s) => s.accountId === account.id);
