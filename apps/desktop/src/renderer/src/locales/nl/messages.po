@@ -167,6 +167,10 @@ msgstr "{delay, plural, one {# seconde} other {# seconden}}"
 msgid "{done} completed · {queued} queued · {running} running · {failed} failed"
 msgstr "{done} voltooid · {queued} in wachtrij · {running} actief · {failed} mislukt"
 
+#: src/renderer/src/features/settings/sections/CacheSettings.tsx
+msgid "{edited, plural, one {# copy was edited after you opened it. Clearing deletes it with your changes.} other {# copies were edited after you opened them. Clearing deletes them with your changes.}}"
+msgstr "{edited, plural, one {# kopie is bewerkt nadat je hem opende. Wissen verwijdert hem samen met je wijzigingen.} other {# kopieën zijn bewerkt nadat je ze opende. Wissen verwijdert ze samen met je wijzigingen.}}"
+
 #: src/renderer/src/app/use-app-messages.ts
 msgid "{email} is signed in again"
 msgstr "{email} is opnieuw aangemeld"
@@ -1272,6 +1276,7 @@ msgstr "De mailserver is momenteel niet bereikbaar."
 #: src/renderer/src/features/organize/PermanentDeletePermission.tsx
 #: src/renderer/src/features/reader/frame/LinkConfirmDialog.tsx
 #: src/renderer/src/features/reader/UnsubscribeButton.tsx
+#: src/renderer/src/features/settings/sections/CacheSettings.tsx
 #: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
@@ -1551,6 +1556,14 @@ msgstr "Wis alle caches"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Clear formatting"
 msgstr "Wis opmaak"
+
+#: src/renderer/src/features/settings/sections/CacheSettings.tsx
+msgid "Clear opened attachments"
+msgstr "Wis geopende bijlagen"
+
+#: src/renderer/src/features/settings/sections/CacheSettings.tsx
+msgid "Clear opened attachments?"
+msgstr "Geopende bijlagen wissen?"
 
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Clear recent searches"
@@ -1890,6 +1903,10 @@ msgstr "Gekopieerd"
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "Copied to folders"
 msgstr "Gekopieerd naar mappen"
+
+#: src/renderer/src/features/settings/sections/CacheSettings.tsx
+msgid "Copies of attachments you opened in other apps. Unchanged copies are deleted 7 days after you last opened them. Edited copies stay until you clear them."
+msgstr "Kopieën van bijlagen die je in andere apps hebt geopend. Ongewijzigde kopieën worden 7 dagen na de laatste keer openen verwijderd. Bewerkte kopieën blijven tot je ze wist."
 
 #: src/renderer/src/app/WindowUi.tsx
 #: src/renderer/src/features/organize/MultiOrganization.tsx
@@ -5098,6 +5115,10 @@ msgstr "Deze link openen?"
 msgid "Open with"
 msgstr "Open met"
 
+#: src/renderer/src/features/settings/sections/CacheSettings.tsx
+msgid "Opened attachments: {size}"
+msgstr "Geopende bijlagen: {size}"
+
 #: src/renderer/src/lib/errors.ts
 msgid "OpenMail can't edit this server filter. Edit it in webmail."
 msgstr "OpenMail kan dit serverfilter niet bewerken. Bewerk het in webmail."
@@ -5884,8 +5905,8 @@ msgid "Remove star"
 msgstr "Verwijder ster"
 
 #: src/renderer/src/features/settings/Settings.tsx
-msgid "Remove this account and its local mail from OpenMail. Mail on the server is not affected."
-msgstr "Verwijder dit account en de lokale e-mail uit OpenMail. Mail op de server wordt niet beïnvloed."
+msgid "Remove this account and its local mail from OpenMail. Mail on the server is not affected. Opened attachments you edited stay until you clear them in Local cache settings."
+msgstr "Verwijder dit account en de lokale e-mail uit OpenMail. Mail op de server wordt niet beïnvloed. Geopende bijlagen die je hebt bewerkt, blijven tot je ze wist in de instellingen voor Lokale cache."
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Remove tracking parameters from links"

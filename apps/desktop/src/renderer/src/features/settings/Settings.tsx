@@ -499,7 +499,7 @@ function AccountRow({
         open={confirming}
         onOpenChange={setConfirming}
         title={t`Remove ${email}?`}
-        description={t`Remove this account and its local mail from OpenMail. Mail on the server is not affected.`}
+        description={t`Remove this account and its local mail from OpenMail. Mail on the server is not affected. Opened attachments you edited stay until you clear them in Local cache settings.`}
       >
         <AlertCancel>
           <Trans>Cancel</Trans>

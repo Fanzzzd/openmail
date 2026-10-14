@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { formatBytes } from "../../../lib/format";
 import { useAtom, useAtomValue, useAtomRefresh } from "@effect/atom-react";
 import { plural } from "@lingui/core/macro";
@@ -18,6 +18,8 @@ import { backfillStateAtom, cacheWindowsAtom, labelsAtom, prefsAtom } from "../.
 import { Select } from "../../../ui/Select";
 import { SettingsRow } from "../../../ui/SettingsRows";
 import { buttonSecondary, settingsGroup, settingsHeading, settingsHint } from "../../../ui/styles";
+import { Alert, AlertCancel, alertDanger } from "../../../ui/Dialog";
+import { canCall } from "../../../lib/platform";
 
 const sizesAtom = MailClient.query("CacheSize", undefined, {
   reactivityKeys: [Keys.storage],
@@ -26,6 +28,10 @@ const databaseSizeAtom = MailClient.query("CacheDatabaseSize", undefined, {
   reactivityKeys: [Keys.storage],
 });
 const clearAtom = MailClient.mutation("ClearCache");
+const openedUsageAtom = MailClient.query("OpenedAttachmentsUsage", undefined, {
+  reactivityKeys: [Keys.storage],
+});
+const clearOpenedAtom = MailClient.mutation("ClearOpenedAttachments");
 const compactAtom = MailClient.mutation("CompactCache");
 const actionButton = `${buttonSecondary} shrink-0`;
 /** One size in the breakdown: the name left, the value right-aligned in tabular figures. */
@@ -62,6 +68,72 @@ function CompactionStatus({ status }: { status: CacheCompactionResult | null }) 
     default:
       return null;
   }
+}
+
+/**
+ * Copies of attachments opened in other apps. Clearing deletes all of them; when some were
+ * edited, an alert says those edits go too.
+ */
+function OpenedAttachments() {
+  const { t, i18n } = useLingui();
+  const usage = AsyncResult.getOrElse(useAtomValue(openedUsageAtom), () => null);
+  const [result, clear] = useAtom(clearOpenedAtom);
+  const [confirming, setConfirming] = useState(false);
+  const size = formatBytes(usage?.bytes ?? 0, i18n.locale);
+  const edited = usage?.edited ?? 0;
+  const run = () => {
+    setConfirming(false);
+    clear({ payload: undefined, reactivityKeys: [Keys.storage] });
+  };
+  const error = resultError(i18n, result);
+  return (
+    <>
+      <SettingsRow
+        label={
+          <output className="tabular-nums">
+            <Trans>Opened attachments: {size}</Trans>
+          </output>
+        }
+        hint={
+          <Trans>
+            Copies of attachments you opened in other apps. Unchanged copies are deleted 7 days
+            after you last opened them. Edited copies stay until you clear them.
+          </Trans>
+        }
+      >
+        <button
+          type="button"
+          className={actionButton}
+          disabled={result.waiting || !usage?.copies}
+          onClick={() => (edited > 0 ? setConfirming(true) : run())}
+        >
+          <Trans>Clear opened attachments</Trans>
+        </button>
+      </SettingsRow>
+      {error && (
+        <output role="alert" className="block px-3 py-2 text-a11y-danger">
+          {error}
+        </output>
+      )}
+      <Alert
+        open={confirming}
+        onOpenChange={setConfirming}
+        title={t`Clear opened attachments?`}
+        description={t`${plural(edited, {
+          one: "# copy was edited after you opened it. Clearing deletes it with your changes.",
+          other:
+            "# copies were edited after you opened them. Clearing deletes them with your changes.",
+        })}`}
+      >
+        <AlertCancel>
+          <Trans>Cancel</Trans>
+        </AlertCancel>
+        <button type="button" disabled={result.waiting} onClick={run} className={alertDanger}>
+          <Trans>Clear opened attachments</Trans>
+        </button>
+      </Alert>
+    </>
+  );
 }
 
 /** Local subsection: does not change the Settings layout shared with slice 4. */
@@ -312,6 +384,7 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
               {compactResult.waiting ? <Trans>Compacting…</Trans> : <Trans>Compact now</Trans>}
             </button>
           </SettingsRow>
+          {canCall("OpenedAttachmentsUsage") && <OpenedAttachments />}
         </div>
         <p className={`mt-1.5 px-1 ${settingsHint}`}>
           <Trans>

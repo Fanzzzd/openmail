@@ -5,7 +5,7 @@ import { openExternal } from "./security/external";
 import { createShutdownHandler } from "./app/quit";
 import { prepareUpdateQuit } from "./updates/update-install";
 import { cleanupAttachmentTemps, cleanupPrintTemps } from "./files/attachment-temp";
-import { cleanupOpenedAttachments } from "./files/opened-attachments";
+import { cleanupOpenedAttachments, OPENED_CLEANUP_INTERVAL_MS } from "./files/opened-attachments";
 import {
   logWarning,
   NodeMailbox,
@@ -95,6 +95,17 @@ if (mcp) {
             ),
           ),
           { discard: true },
+        ),
+      ),
+      // A Mac that stays on for weeks still drops old opened copies.
+      Effect.andThen(
+        Effect.tryPromise(() => cleanupOpenedAttachments(app.getPath("userData"))).pipe(
+          Effect.catch((error) =>
+            logWarning("attachment-cleanup-failed", "Opened attachment cleanup failed", error),
+          ),
+          Effect.delay(OPENED_CLEANUP_INTERVAL_MS),
+          Effect.forever,
+          Effect.forkScoped,
         ),
       ),
       Effect.andThen(

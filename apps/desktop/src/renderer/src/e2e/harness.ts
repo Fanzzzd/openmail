@@ -325,6 +325,8 @@ export async function flow(
       Downloads: () => Stream.make([]),
       DownloadAction: unsupported,
       ClearDownloads: () => Effect.void,
+      OpenedAttachmentsUsage: () => Effect.succeed({ bytes: 0, copies: 0, edited: 0 }),
+      ClearOpenedAttachments: () => Effect.succeed({ bytes: 0, copies: 0, edited: 0 }),
       WindowUiEvents: () => Stream.never,
       AnswerPrompt: () => Effect.void,
       TextMenuCommand: () => Effect.void,

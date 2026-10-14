@@ -72,6 +72,7 @@ vi.mock("../files/attachment-temp", () => ({
 }));
 vi.mock("../files/opened-attachments", () => ({
   cleanupOpenedAttachments: vi.fn(() => Promise.resolve()),
+  OPENED_CLEANUP_INTERVAL_MS: 24 * 60 * 60 * 1000,
 }));
 vi.mock("./reliability", () => ({
   prepareReliability: vi.fn(async () => true),

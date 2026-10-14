@@ -167,6 +167,10 @@ msgstr "{delay, plural, one {# секунда} few {# секунды} many {# с
 msgid "{done} completed · {queued} queued · {running} running · {failed} failed"
 msgstr "{done} завершено · {queued} в очереди · {running} выполняется · {failed} не удалось"
 
+#: src/renderer/src/features/settings/sections/CacheSettings.tsx
+msgid "{edited, plural, one {# copy was edited after you opened it. Clearing deletes it with your changes.} other {# copies were edited after you opened them. Clearing deletes them with your changes.}}"
+msgstr "{edited, plural, one {# копия изменена после открытия. Очистка удалит её вместе с вашими изменениями.} few {# копии изменены после открытия. Очистка удалит их вместе с вашими изменениями.} many {# копий изменено после открытия. Очистка удалит их вместе с вашими изменениями.} other {# копии изменено после открытия. Очистка удалит их вместе с вашими изменениями.}}"
+
 #: src/renderer/src/app/use-app-messages.ts
 msgid "{email} is signed in again"
 msgstr "{email} снова вошел в систему"
@@ -1272,6 +1276,7 @@ msgstr "Сейчас не удаётся подключиться к почто�
 #: src/renderer/src/features/organize/PermanentDeletePermission.tsx
 #: src/renderer/src/features/reader/frame/LinkConfirmDialog.tsx
 #: src/renderer/src/features/reader/UnsubscribeButton.tsx
+#: src/renderer/src/features/settings/sections/CacheSettings.tsx
 #: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
@@ -1551,6 +1556,14 @@ msgstr "Очистить все кэши"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Clear formatting"
 msgstr "Очистить форматирование"
+
+#: src/renderer/src/features/settings/sections/CacheSettings.tsx
+msgid "Clear opened attachments"
+msgstr "Очистить открытые вложения"
+
+#: src/renderer/src/features/settings/sections/CacheSettings.tsx
+msgid "Clear opened attachments?"
+msgstr "Очистить открытые вложения?"
 
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Clear recent searches"
@@ -1890,6 +1903,10 @@ msgstr "Скопировано"
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "Copied to folders"
 msgstr "Скопировано в папки"
+
+#: src/renderer/src/features/settings/sections/CacheSettings.tsx
+msgid "Copies of attachments you opened in other apps. Unchanged copies are deleted 7 days after you last opened them. Edited copies stay until you clear them."
+msgstr "Копии вложений, которые вы открывали в других приложениях. Неизменённые копии удаляются через 7 дней после последнего открытия. Изменённые копии остаются, пока вы их не очистите."
 
 #: src/renderer/src/app/WindowUi.tsx
 #: src/renderer/src/features/organize/MultiOrganization.tsx
@@ -5098,6 +5115,10 @@ msgstr "Открыть эту ссылку?"
 msgid "Open with"
 msgstr "Открыть в программе"
 
+#: src/renderer/src/features/settings/sections/CacheSettings.tsx
+msgid "Opened attachments: {size}"
+msgstr "Открытые вложения: {size}"
+
 #: src/renderer/src/lib/errors.ts
 msgid "OpenMail can't edit this server filter. Edit it in webmail."
 msgstr "OpenMail не может изменить этот серверный фильтр. Отредактируйте его в веб-почте."
@@ -5884,8 +5905,8 @@ msgid "Remove star"
 msgstr "Убрать звезду"
 
 #: src/renderer/src/features/settings/Settings.tsx
-msgid "Remove this account and its local mail from OpenMail. Mail on the server is not affected."
-msgstr "Удалите эту учётную запись и её локальную почту из OpenMail. Почта на сервере не затронута."
+msgid "Remove this account and its local mail from OpenMail. Mail on the server is not affected. Opened attachments you edited stay until you clear them in Local cache settings."
+msgstr "Удалите эту учётную запись и её локальную почту из OpenMail. Почта на сервере не затронута. Открытые вложения, которые вы изменили, остаются, пока вы не очистите их в настройках локального кэша."
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Remove tracking parameters from links"

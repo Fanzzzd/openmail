@@ -167,6 +167,10 @@ msgstr "{delay, plural, one {# secondo} other {# secondi}}"
 msgid "{done} completed · {queued} queued · {running} running · {failed} failed"
 msgstr "{done} completato · {queued} in coda · {running} in esecuzione · {failed} non riuscito"
 
+#: src/renderer/src/features/settings/sections/CacheSettings.tsx
+msgid "{edited, plural, one {# copy was edited after you opened it. Clearing deletes it with your changes.} other {# copies were edited after you opened them. Clearing deletes them with your changes.}}"
+msgstr "{edited, plural, one {# copia è stata modificata dopo l’apertura. Svuotando la elimini insieme alle tue modifiche.} other {# copie sono state modificate dopo l’apertura. Svuotando le elimini insieme alle tue modifiche.}}"
+
 #: src/renderer/src/app/use-app-messages.ts
 msgid "{email} is signed in again"
 msgstr "{email} ha effettuato nuovamente l’accesso"
@@ -1272,6 +1276,7 @@ msgstr "Al momento non è possibile raggiungere il server di posta."
 #: src/renderer/src/features/organize/PermanentDeletePermission.tsx
 #: src/renderer/src/features/reader/frame/LinkConfirmDialog.tsx
 #: src/renderer/src/features/reader/UnsubscribeButton.tsx
+#: src/renderer/src/features/settings/sections/CacheSettings.tsx
 #: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
@@ -1551,6 +1556,14 @@ msgstr "Svuota tutte le cache"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Clear formatting"
 msgstr "Cancella formattazione"
+
+#: src/renderer/src/features/settings/sections/CacheSettings.tsx
+msgid "Clear opened attachments"
+msgstr "Svuota allegati aperti"
+
+#: src/renderer/src/features/settings/sections/CacheSettings.tsx
+msgid "Clear opened attachments?"
+msgstr "Svuotare gli allegati aperti?"
 
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Clear recent searches"
@@ -1890,6 +1903,10 @@ msgstr "Copiato"
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "Copied to folders"
 msgstr "Copiato nelle cartelle"
+
+#: src/renderer/src/features/settings/sections/CacheSettings.tsx
+msgid "Copies of attachments you opened in other apps. Unchanged copies are deleted 7 days after you last opened them. Edited copies stay until you clear them."
+msgstr "Copie degli allegati che hai aperto in altre app. Le copie non modificate vengono eliminate 7 giorni dopo l’ultima apertura. Le copie modificate restano finché non le svuoti."
 
 #: src/renderer/src/app/WindowUi.tsx
 #: src/renderer/src/features/organize/MultiOrganization.tsx
@@ -5098,6 +5115,10 @@ msgstr "Aprire questo collegamento?"
 msgid "Open with"
 msgstr "Apri con"
 
+#: src/renderer/src/features/settings/sections/CacheSettings.tsx
+msgid "Opened attachments: {size}"
+msgstr "Allegati aperti: {size}"
+
 #: src/renderer/src/lib/errors.ts
 msgid "OpenMail can't edit this server filter. Edit it in webmail."
 msgstr "OpenMail non può modificare questo filtro del server. Modificalo nella webmail."
@@ -5884,8 +5905,8 @@ msgid "Remove star"
 msgstr "Rimuovi stella"
 
 #: src/renderer/src/features/settings/Settings.tsx
-msgid "Remove this account and its local mail from OpenMail. Mail on the server is not affected."
-msgstr "Rimuovi questo account e la sua posta locale da OpenMail. La posta sul server non è interessata."
+msgid "Remove this account and its local mail from OpenMail. Mail on the server is not affected. Opened attachments you edited stay until you clear them in Local cache settings."
+msgstr "Rimuovi questo account e la sua posta locale da OpenMail. La posta sul server non è interessata. Gli allegati aperti che hai modificato restano finché non li svuoti nelle impostazioni Cache locale."
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Remove tracking parameters from links"

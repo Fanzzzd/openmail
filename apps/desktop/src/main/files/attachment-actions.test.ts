@@ -83,6 +83,7 @@ vi.mock("electron", () => ({
 import { app, BrowserWindow, dialog } from "electron";
 import {
   attachmentAction,
+  removeAccountOpenedAttachments,
   attachmentApps,
   prepareAttachmentDrag,
   saveAttachmentsTo,
@@ -517,6 +518,25 @@ it("Open follows the Open attachments from setting and keeps internal copies pas
       yield* m.app.setPrefs({ attachmentOpenFolder: "internal" });
       for (const name of ["same.txt", "same (2).txt"])
         yield* Effect.promise(() => rm(path.join(folder, name), { force: true }));
+    }),
+  );
+});
+// R10 A-1: removing an account left the copies it opened.
+it("removing the account deletes the unchanged copies opened from its mail", async () => {
+  await withFiles((m, id, parent) =>
+    Effect.gen(function* () {
+      yield* attachmentAction(
+        m,
+        parent,
+        { messageId: id, paths: [[0]], action: "open" },
+        noDownloads,
+      );
+      const internal = String(native.open.mock.calls[0]?.[0]);
+      const account = (yield* m.reading.messageAccounts([id])).get(id) ?? "";
+      yield* removeAccountOpenedAttachments(`${account}-other`);
+      expect(yield* Effect.promise(() => readFile(internal, "utf8"))).toBe("one");
+      yield* removeAccountOpenedAttachments(account);
+      expect(yield* Effect.promise(() => readFile(internal, "utf8").catch(() => null))).toBe(null);
     }),
   );
 });

@@ -167,6 +167,10 @@ msgstr "{delay, plural, one {# sekunda} few {# sekundy} many {# sekundy} other {
 msgid "{done} completed · {queued} queued · {running} running · {failed} failed"
 msgstr "{done} dokončeno · {queued} ve frontě · {running} běží · {failed} se nezdařilo"
 
+#: src/renderer/src/features/settings/sections/CacheSettings.tsx
+msgid "{edited, plural, one {# copy was edited after you opened it. Clearing deletes it with your changes.} other {# copies were edited after you opened them. Clearing deletes them with your changes.}}"
+msgstr "{edited, plural, one {# kopie byla po otevření upravena. Vymazáním ji smažete i s vašimi změnami.} few {# kopie byly po otevření upraveny. Vymazáním je smažete i s vašimi změnami.} many {# kopie bylo po otevření upraveno. Vymazáním je smažete i s vašimi změnami.} other {# kopií bylo po otevření upraveno. Vymazáním je smažete i s vašimi změnami.}}"
+
 #: src/renderer/src/app/use-app-messages.ts
 msgid "{email} is signed in again"
 msgstr "{email} je znovu přihlášen"
@@ -1272,6 +1276,7 @@ msgstr "K poštovnímu serveru se nyní nelze připojit."
 #: src/renderer/src/features/organize/PermanentDeletePermission.tsx
 #: src/renderer/src/features/reader/frame/LinkConfirmDialog.tsx
 #: src/renderer/src/features/reader/UnsubscribeButton.tsx
+#: src/renderer/src/features/settings/sections/CacheSettings.tsx
 #: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
@@ -1551,6 +1556,14 @@ msgstr "Vymazat všechny mezipaměti"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Clear formatting"
 msgstr "Odstranit formátování"
+
+#: src/renderer/src/features/settings/sections/CacheSettings.tsx
+msgid "Clear opened attachments"
+msgstr "Vymazat otevřené přílohy"
+
+#: src/renderer/src/features/settings/sections/CacheSettings.tsx
+msgid "Clear opened attachments?"
+msgstr "Vymazat otevřené přílohy?"
 
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Clear recent searches"
@@ -1890,6 +1903,10 @@ msgstr "Zkopírováno"
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "Copied to folders"
 msgstr "Zkopírováno do složek"
+
+#: src/renderer/src/features/settings/sections/CacheSettings.tsx
+msgid "Copies of attachments you opened in other apps. Unchanged copies are deleted 7 days after you last opened them. Edited copies stay until you clear them."
+msgstr "Kopie příloh, které jste otevřeli v jiných aplikacích. Nezměněné kopie se smažou 7 dní po posledním otevření. Upravené kopie zůstanou, dokud je nevymažete."
 
 #: src/renderer/src/app/WindowUi.tsx
 #: src/renderer/src/features/organize/MultiOrganization.tsx
@@ -5098,6 +5115,10 @@ msgstr "Otevřít tento odkaz?"
 msgid "Open with"
 msgstr "Otevřít v aplikaci"
 
+#: src/renderer/src/features/settings/sections/CacheSettings.tsx
+msgid "Opened attachments: {size}"
+msgstr "Otevřené přílohy: {size}"
+
 #: src/renderer/src/lib/errors.ts
 msgid "OpenMail can't edit this server filter. Edit it in webmail."
 msgstr "OpenMail nemůže upravit tento serverový filtr. Upravte ho ve webové poště."
@@ -5884,8 +5905,8 @@ msgid "Remove star"
 msgstr "Odebrat hvězdičku"
 
 #: src/renderer/src/features/settings/Settings.tsx
-msgid "Remove this account and its local mail from OpenMail. Mail on the server is not affected."
-msgstr "Odeberte tento účet a jeho místní poštu z OpenMailu. Pošta na serveru není ovlivněna."
+msgid "Remove this account and its local mail from OpenMail. Mail on the server is not affected. Opened attachments you edited stay until you clear them in Local cache settings."
+msgstr "Odeberte tento účet a jeho místní poštu z OpenMailu. Pošta na serveru není ovlivněna. Otevřené přílohy, které jste upravili, zůstanou, dokud je nevymažete v nastavení Místní mezipaměť."
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Remove tracking parameters from links"

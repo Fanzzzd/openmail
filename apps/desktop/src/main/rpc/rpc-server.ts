@@ -25,7 +25,10 @@ import {
   appDownloads,
   attachmentAction,
   attachmentApps,
+  clearOpenedAttachments,
+  openedAttachmentsUsage,
   prepareAttachmentDrag,
+  removeAccountOpenedAttachments,
   releaseAttachmentDrag,
   saveAttachmentsTo,
 } from "../files/attachment-actions";
@@ -133,8 +136,14 @@ const Handlers = MailRpcs.toLayer(
       Effect.tap((prefs) => Effect.sync(() => setNativeLanguage(prefs.language))),
       Effect.ignore,
     );
+    const handlers = mailboxHandlers(m, { contacts: apple });
     return MailRpcs.of({
-      ...mailboxHandlers(m, { contacts: apple }),
+      ...handlers,
+      // Removing an account also deletes its opened attachment copies that nobody edited.
+      RemoveAccount: (request) =>
+        handlers
+          .RemoveAccount(request)
+          .pipe(Effect.tap(() => removeAccountOpenedAttachments(request.accountId))),
       NotificationPermission: () => Effect.promise(() => notificationPermission()),
       RequestNotificationPermission: () => Effect.promise(() => notificationPermission(true)),
       OpenNotificationSettings: () => Effect.promise(openNotificationSettings),
@@ -179,6 +188,8 @@ const Handlers = MailRpcs.toLayer(
       SaveAttachmentsTo: (request, { client }) =>
         saveAttachmentsTo(m, downloads, windowOf(client.id), request),
       AttachmentApps: (request) => attachmentApps(m, request),
+      OpenedAttachmentsUsage: openedAttachmentsUsage,
+      ClearOpenedAttachments: clearOpenedAttachments,
       Downloads: () =>
         demoDownloads(app.isPackaged, process.env)
           ? Stream.concat(Stream.make(DEMO_DOWNLOADS), Stream.never)

@@ -167,6 +167,10 @@ msgstr "{delay, plural, one {# Sekunde} other {# Sekunden}}"
 msgid "{done} completed · {queued} queued · {running} running · {failed} failed"
 msgstr "{done} abgeschlossen · {queued} in der Warteschlange · {running} läuft · {failed} fehlgeschlagen"
 
+#: src/renderer/src/features/settings/sections/CacheSettings.tsx
+msgid "{edited, plural, one {# copy was edited after you opened it. Clearing deletes it with your changes.} other {# copies were edited after you opened them. Clearing deletes them with your changes.}}"
+msgstr "{edited, plural, one {# Kopie wurde nach dem Öffnen bearbeitet. Beim Leeren wird sie mit deinen Änderungen gelöscht.} other {# Kopien wurden nach dem Öffnen bearbeitet. Beim Leeren werden sie mit deinen Änderungen gelöscht.}}"
+
 #: src/renderer/src/app/use-app-messages.ts
 msgid "{email} is signed in again"
 msgstr "{email} ist erneut angemeldet"
@@ -1272,6 +1276,7 @@ msgstr "Der Mailserver ist derzeit nicht erreichbar."
 #: src/renderer/src/features/organize/PermanentDeletePermission.tsx
 #: src/renderer/src/features/reader/frame/LinkConfirmDialog.tsx
 #: src/renderer/src/features/reader/UnsubscribeButton.tsx
+#: src/renderer/src/features/settings/sections/CacheSettings.tsx
 #: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
@@ -1551,6 +1556,14 @@ msgstr "Alle Caches leeren"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Clear formatting"
 msgstr "Formatierung entfernen"
+
+#: src/renderer/src/features/settings/sections/CacheSettings.tsx
+msgid "Clear opened attachments"
+msgstr "Geöffnete Anhänge leeren"
+
+#: src/renderer/src/features/settings/sections/CacheSettings.tsx
+msgid "Clear opened attachments?"
+msgstr "Geöffnete Anhänge leeren?"
 
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Clear recent searches"
@@ -1890,6 +1903,10 @@ msgstr "Kopiert"
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "Copied to folders"
 msgstr "In Ordner kopiert"
+
+#: src/renderer/src/features/settings/sections/CacheSettings.tsx
+msgid "Copies of attachments you opened in other apps. Unchanged copies are deleted 7 days after you last opened them. Edited copies stay until you clear them."
+msgstr "Kopien von Anhängen, die du in anderen Apps geöffnet hast. Unveränderte Kopien werden 7 Tage nach dem letzten Öffnen gelöscht. Bearbeitete Kopien bleiben, bis du sie leerst."
 
 #: src/renderer/src/app/WindowUi.tsx
 #: src/renderer/src/features/organize/MultiOrganization.tsx
@@ -5098,6 +5115,10 @@ msgstr "Diesen Link öffnen?"
 msgid "Open with"
 msgstr "Öffnen mit"
 
+#: src/renderer/src/features/settings/sections/CacheSettings.tsx
+msgid "Opened attachments: {size}"
+msgstr "Geöffnete Anhänge: {size}"
+
 #: src/renderer/src/lib/errors.ts
 msgid "OpenMail can't edit this server filter. Edit it in webmail."
 msgstr "OpenMail kann diesen Serverfilter nicht bearbeiten. Bearbeite ihn im Webmail."
@@ -5884,8 +5905,8 @@ msgid "Remove star"
 msgstr "Stern entfernen"
 
 #: src/renderer/src/features/settings/Settings.tsx
-msgid "Remove this account and its local mail from OpenMail. Mail on the server is not affected."
-msgstr "Diesen Account und seine lokal gespeicherten Nachrichten aus OpenMail entfernen. Nachrichten auf dem Server bleiben erhalten."
+msgid "Remove this account and its local mail from OpenMail. Mail on the server is not affected. Opened attachments you edited stay until you clear them in Local cache settings."
+msgstr "Diesen Account und seine lokal gespeicherten Nachrichten aus OpenMail entfernen. Nachrichten auf dem Server bleiben erhalten. Geöffnete Anhänge, die du bearbeitet hast, bleiben, bis du sie in den Einstellungen unter Lokaler Cache leerst."
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Remove tracking parameters from links"

@@ -167,6 +167,10 @@ msgstr "{delay, plural, other {#秒}}"
 msgid "{done} completed · {queued} queued · {running} running · {failed} failed"
 msgstr "完了 {done} · 待機中 {queued} · 実行中 {running} · 失敗 {failed}"
 
+#: src/renderer/src/features/settings/sections/CacheSettings.tsx
+msgid "{edited, plural, one {# copy was edited after you opened it. Clearing deletes it with your changes.} other {# copies were edited after you opened them. Clearing deletes them with your changes.}}"
+msgstr "{edited, plural, other {#件のコピーは開いた後に編集されています。消去すると変更内容ごと削除されます。}}"
+
 #: src/renderer/src/app/use-app-messages.ts
 msgid "{email} is signed in again"
 msgstr "{email} が再度サインインしました"
@@ -1272,6 +1276,7 @@ msgstr "現在メールサーバーに接続できません。"
 #: src/renderer/src/features/organize/PermanentDeletePermission.tsx
 #: src/renderer/src/features/reader/frame/LinkConfirmDialog.tsx
 #: src/renderer/src/features/reader/UnsubscribeButton.tsx
+#: src/renderer/src/features/settings/sections/CacheSettings.tsx
 #: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
@@ -1551,6 +1556,14 @@ msgstr "すべてのキャッシュを消去"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Clear formatting"
 msgstr "書式をクリア"
+
+#: src/renderer/src/features/settings/sections/CacheSettings.tsx
+msgid "Clear opened attachments"
+msgstr "開いた添付ファイルを消去"
+
+#: src/renderer/src/features/settings/sections/CacheSettings.tsx
+msgid "Clear opened attachments?"
+msgstr "開いた添付ファイルを消去しますか？"
 
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Clear recent searches"
@@ -1890,6 +1903,10 @@ msgstr "コピーしました"
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "Copied to folders"
 msgstr "フォルダにコピーしました"
+
+#: src/renderer/src/features/settings/sections/CacheSettings.tsx
+msgid "Copies of attachments you opened in other apps. Unchanged copies are deleted 7 days after you last opened them. Edited copies stay until you clear them."
+msgstr "ほかのアプリで開いた添付ファイルのコピーです。変更されていないコピーは最後に開いてから7日後に削除されます。編集したコピーは消去するまで残ります。"
 
 #: src/renderer/src/app/WindowUi.tsx
 #: src/renderer/src/features/organize/MultiOrganization.tsx
@@ -5098,6 +5115,10 @@ msgstr "このリンクを開きますか？"
 msgid "Open with"
 msgstr "このアプリケーションで開く"
 
+#: src/renderer/src/features/settings/sections/CacheSettings.tsx
+msgid "Opened attachments: {size}"
+msgstr "開いた添付ファイル：{size}"
+
 #: src/renderer/src/lib/errors.ts
 msgid "OpenMail can't edit this server filter. Edit it in webmail."
 msgstr "OpenMail はこのサーバーフィルターを編集できません。ウェブメールで編集してください。"
@@ -5884,8 +5905,8 @@ msgid "Remove star"
 msgstr "スターを外す"
 
 #: src/renderer/src/features/settings/Settings.tsx
-msgid "Remove this account and its local mail from OpenMail. Mail on the server is not affected."
-msgstr "このアカウントとそのローカルメールを OpenMail から削除します。サーバー上のメールは影響を受けません。"
+msgid "Remove this account and its local mail from OpenMail. Mail on the server is not affected. Opened attachments you edited stay until you clear them in Local cache settings."
+msgstr "このアカウントとそのローカルメールを OpenMail から削除します。サーバー上のメールは影響を受けません。編集した添付ファイルのコピーは、ローカルキャッシュの設定で消去するまで残ります。"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Remove tracking parameters from links"

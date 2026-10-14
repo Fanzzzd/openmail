@@ -167,6 +167,10 @@ msgstr "{delay, plural, one {# seconde} other {# secondes}}"
 msgid "{done} completed · {queued} queued · {running} running · {failed} failed"
 msgstr "{done} terminé · {queued} en file d’attente · {running} en cours d’exécution · {failed} a échoué"
 
+#: src/renderer/src/features/settings/sections/CacheSettings.tsx
+msgid "{edited, plural, one {# copy was edited after you opened it. Clearing deletes it with your changes.} other {# copies were edited after you opened them. Clearing deletes them with your changes.}}"
+msgstr "{edited, plural, one {# copie a été modifiée après son ouverture. Vider la supprime avec vos modifications.} other {# copies ont été modifiées après leur ouverture. Vider les supprime avec vos modifications.}}"
+
 #: src/renderer/src/app/use-app-messages.ts
 msgid "{email} is signed in again"
 msgstr "{email} est à nouveau connecté"
@@ -1272,6 +1276,7 @@ msgstr "Le serveur de messagerie est momentanément inaccessible."
 #: src/renderer/src/features/organize/PermanentDeletePermission.tsx
 #: src/renderer/src/features/reader/frame/LinkConfirmDialog.tsx
 #: src/renderer/src/features/reader/UnsubscribeButton.tsx
+#: src/renderer/src/features/settings/sections/CacheSettings.tsx
 #: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/PendingRuleRestorations.tsx
@@ -1551,6 +1556,14 @@ msgstr "Vider tous les caches"
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Clear formatting"
 msgstr "Effacer la mise en forme"
+
+#: src/renderer/src/features/settings/sections/CacheSettings.tsx
+msgid "Clear opened attachments"
+msgstr "Vider les pièces jointes ouvertes"
+
+#: src/renderer/src/features/settings/sections/CacheSettings.tsx
+msgid "Clear opened attachments?"
+msgstr "Vider les pièces jointes ouvertes ?"
 
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Clear recent searches"
@@ -1890,6 +1903,10 @@ msgstr "Copié"
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "Copied to folders"
 msgstr "Copié dans les dossiers"
+
+#: src/renderer/src/features/settings/sections/CacheSettings.tsx
+msgid "Copies of attachments you opened in other apps. Unchanged copies are deleted 7 days after you last opened them. Edited copies stay until you clear them."
+msgstr "Copies des pièces jointes ouvertes dans d’autres apps. Les copies inchangées sont supprimées 7 jours après leur dernière ouverture. Les copies modifiées restent jusqu’à ce que vous les vidiez."
 
 #: src/renderer/src/app/WindowUi.tsx
 #: src/renderer/src/features/organize/MultiOrganization.tsx
@@ -5098,6 +5115,10 @@ msgstr "Ouvrir ce lien ?"
 msgid "Open with"
 msgstr "Ouvrir avec"
 
+#: src/renderer/src/features/settings/sections/CacheSettings.tsx
+msgid "Opened attachments: {size}"
+msgstr "Pièces jointes ouvertes : {size}"
+
 #: src/renderer/src/lib/errors.ts
 msgid "OpenMail can't edit this server filter. Edit it in webmail."
 msgstr "OpenMail ne peut pas modifier ce filtre de serveur. Modifiez-le dans le webmail."
@@ -5884,8 +5905,8 @@ msgid "Remove star"
 msgstr "Retirer l’étoile"
 
 #: src/renderer/src/features/settings/Settings.tsx
-msgid "Remove this account and its local mail from OpenMail. Mail on the server is not affected."
-msgstr "Supprimez ce compte et sa messagerie locale d’OpenMail. Le courrier sur le serveur n’est pas affecté."
+msgid "Remove this account and its local mail from OpenMail. Mail on the server is not affected. Opened attachments you edited stay until you clear them in Local cache settings."
+msgstr "Supprimez ce compte et sa messagerie locale d’OpenMail. Le courrier sur le serveur n’est pas affecté. Les pièces jointes ouvertes que vous avez modifiées restent jusqu’à ce que vous les vidiez dans les réglages Cache local."
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Remove tracking parameters from links"

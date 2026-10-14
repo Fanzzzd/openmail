@@ -11,6 +11,14 @@ import { Schema } from "effect";
 import { Rpc } from "effect/rpc";
 import { error } from "./fields";
 
+/** The internal opened-attachments folder, for Settings > Local cache. */
+export const OpenedAttachmentsUsage = Schema.Struct({
+  bytes: Schema.Number,
+  copies: Schema.Int,
+  /** Copies changed since OpenMail wrote them. */
+  edited: Schema.Int,
+});
+
 /** Attachments and downloads. */
 export const AttachmentRpcs = [
   Rpc.make("AttachmentCapabilities", { success: Schema.Struct({ share: Schema.Boolean }) }),
@@ -80,4 +88,7 @@ export const AttachmentRpcs = [
   }),
   /** Removes finished and failed downloads from the list. Files stay on disk. */
   Rpc.make("ClearDownloads"),
+  Rpc.make("OpenedAttachmentsUsage", { success: OpenedAttachmentsUsage, error }),
+  /** Deletes every copy in the opened-attachments folder, edited ones included. */
+  Rpc.make("ClearOpenedAttachments", { success: OpenedAttachmentsUsage, error }),
 ] as const;

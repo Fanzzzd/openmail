@@ -283,6 +283,10 @@ const openedCopies = Effect.fnUntraced(function* (
     (yield* m.app.prefs).attachmentOpenFolder === "downloads"
       ? yield* attachmentFolder(m, app.getPath("downloads"))
       : undefined;
+  // Recorded with each internal copy, so removing the account can delete its unchanged copies.
+  const accountId = downloadFolder
+    ? undefined
+    : (yield* m.reading.messageAccounts([request.messageId])).get(request.messageId);
   const copies: OpenedCopy[] = [];
   for (const [index, part] of parts.entries()) {
     const copy = downloadFolder
@@ -292,6 +296,7 @@ const openedCopies = Effect.fnUntraced(function* (
             openedAttachments(app).write(
               keyOf({ messageId: request.messageId, paths: [request.paths[index] ?? []] }),
               part,
+              accountId,
             ),
           catch: deviceFailure,
         });
@@ -492,3 +497,25 @@ export const attachmentAction: (
     }
   },
 );
+
+/** Size and edited count of the internal opened-attachments folder, for Settings. */
+export const openedAttachmentsUsage = () =>
+  Effect.tryPromise({ try: () => openedAttachments(app).usage(), catch: deviceFailure });
+
+/** Settings > Local cache: deletes every internal opened copy, edited ones included. */
+export const clearOpenedAttachments = () =>
+  Effect.tryPromise({ try: () => openedAttachments(app).clear(), catch: deviceFailure });
+
+/**
+ * After an account is removed: deletes its opened copies that are still as written. Edited
+ * copies stay where the person saved them; the removal dialog says so.
+ */
+export const removeAccountOpenedAttachments = (accountId: string) =>
+  Effect.tryPromise({
+    try: () => openedAttachments(app).removeAccount(accountId),
+    catch: deviceFailure,
+  }).pipe(
+    Effect.catchCause((cause) =>
+      logWarning("attachment-cleanup-failed", "Opened attachment cleanup failed", cause),
+    ),
+  );
