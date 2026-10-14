@@ -2,9 +2,12 @@
 // keyboard-shortcuts.test.ts fails when the page is out of date; `pnpm shortcuts` rewrites it.
 import {
   KEYMAP,
+  MENU_SHORTCUTS,
   NUMBERED_MAILBOXES,
   isShortcutAction,
+  menuShortcutText,
   shortcutText,
+  type MenuShortcut,
   type ShortcutAction,
   type ShortcutSet,
 } from "../../desktop/src/shared/shortcuts";
@@ -150,6 +153,20 @@ export const GROUPS: { title: string; actions: ShortcutAction[] }[] = [
   },
 ];
 
+/** English names of the standard menu items, as the menu bar shows them before translation. */
+export const MENU_NAMES: Record<MenuShortcut, string> = {
+  close: "Close window",
+  redo: "Redo",
+  cut: "Cut",
+  copy: "Copy",
+  paste: "Paste",
+  selectAll: "Select all",
+  minimize: "Minimize",
+  hide: "Hide OpenMail",
+  hideOthers: "Hide others",
+  quit: "Quit OpenMail",
+};
+
 const MAILBOX_NAMES: Record<(typeof NUMBERED_MAILBOXES)[number], string> = {
   inbox: "Inbox",
   starred: "Starred",
@@ -205,6 +222,18 @@ export function renderShortcutsPage(names: Map<string, string>): string {
       lines.push(`| ${cell(name)} | ${keys.join(" | ")} |`);
     }
   }
+  lines.push(
+    "",
+    "## Menu commands",
+    "",
+    "These menu items have the same shortcut in every set.",
+    "",
+    "| Action | Shortcut |",
+    "| --- | --- |",
+    ...Object.keys(MENU_SHORTCUTS)
+      .filter((item): item is MenuShortcut => Object.hasOwn(MENU_NAMES, item))
+      .map((item) => `| ${cell(MENU_NAMES[item])} | ${cell(menuShortcutText(item))} |`),
+  );
   const mailboxes = NUMBERED_MAILBOXES.map(
     (mailbox, index) => `${MAILBOX_NAMES[mailbox]} (${index + 1})`,
   ).join(", ");

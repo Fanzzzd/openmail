@@ -23,6 +23,8 @@ OpenMail treats message HTML, attachments, links and everything received from a 
 
 - Executables, disk images, macro documents and similar file types cannot be opened from OpenMail. You can still save them.
 - Saved and opened files get the macOS quarantine flag, so Gatekeeper checks them.
+- Opening an attachment writes a copy to an internal folder, `~/Library/Application Support/OpenMail/Opened Attachments`, and hands it to the other app. Edits you save there stay. Copies you have not changed are deleted 7 days after you last opened them. Edited copies stay until you clear them in **Settings → Local cache**, which shows the folder size. Removing an account deletes its unchanged copies. Time Machine skips the folder.
+- **Settings → Reading → Open attachments from** can send these copies to your attachment folder (Downloads unless you chose another) instead. OpenMail never deletes copies there.
 - HTML and SVG attachments preview in the same script-free frame as messages.
 - Calendar and contact files open in an in-app preview. Adding them to Calendar or Contacts takes a separate click.
 

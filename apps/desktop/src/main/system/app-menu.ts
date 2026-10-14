@@ -10,7 +10,7 @@ import {
   type NativeMenuEntry,
   type NativeMenuState,
 } from "../../shared/native-actions";
-import { shortcutAccelerator, type ShortcutSet } from "../../shared/shortcuts";
+import { menuAccelerator, shortcutAccelerator, type ShortcutSet } from "../../shared/shortcuts";
 
 /**
  * English labels for the menu items macOS would otherwise title itself, until the renderer sends
@@ -141,11 +141,15 @@ export function applicationMenuTemplate(input: AppMenuInput): MenuItemConstructo
                 click: () => input.command("settings"),
               },
               { type: "separator" as const },
-              { role: "hide" as const, label: label("hide") },
-              { role: "hideOthers" as const, label: label("hideOthers") },
+              { role: "hide" as const, label: label("hide"), accelerator: menuAccelerator("hide") },
+              {
+                role: "hideOthers" as const,
+                label: label("hideOthers"),
+                accelerator: menuAccelerator("hideOthers"),
+              },
               { role: "unhide" as const, label: label("unhide") },
               { type: "separator" as const },
-              { role: "quit" as const, label: label("quit") },
+              { role: "quit" as const, label: label("quit"), accelerator: menuAccelerator("quit") },
             ],
           },
         ]
@@ -179,8 +183,12 @@ export function applicationMenuTemplate(input: AppMenuInput): MenuItemConstructo
             ]),
         { type: "separator" },
         input.menuState.sheet
-          ? { label: label("close"), accelerator: "CommandOrControl+W", click: input.closeSheet }
-          : { role: "close", label: label("close") },
+          ? {
+              label: label("close"),
+              accelerator: menuAccelerator("close"),
+              click: input.closeSheet,
+            }
+          : { role: "close", label: label("close"), accelerator: menuAccelerator("close") },
       ],
     },
     {
@@ -188,14 +196,14 @@ export function applicationMenuTemplate(input: AppMenuInput): MenuItemConstructo
       submenu: [
         { label: labels.undo, accelerator: "CommandOrControl+Z", click: () => input.edit("undo") },
         { label: labels.undoSend, enabled: input.undoAvailable, click: input.undoSend },
-        { role: "redo", label: label("redo") },
+        { role: "redo", label: label("redo"), accelerator: menuAccelerator("redo") },
         { type: "separator" },
-        { role: "cut", label: label("cut") },
-        { role: "copy", label: label("copy") },
-        { role: "paste", label: label("paste") },
+        { role: "cut", label: label("cut"), accelerator: menuAccelerator("cut") },
+        { role: "copy", label: label("copy"), accelerator: menuAccelerator("copy") },
+        { role: "paste", label: label("paste"), accelerator: menuAccelerator("paste") },
         {
           label: labels.selectAll,
-          accelerator: "CommandOrControl+A",
+          accelerator: menuAccelerator("selectAll"),
           click: () => input.edit("selectAll"),
         },
       ],
@@ -210,7 +218,7 @@ export function applicationMenuTemplate(input: AppMenuInput): MenuItemConstructo
       role: "windowMenu",
       label: labels.window,
       submenu: [
-        { role: "minimize", label: label("minimize") },
+        { role: "minimize", label: label("minimize"), accelerator: menuAccelerator("minimize") },
         { role: "zoom", label: label("zoom") },
         { role: "front", label: label("front") },
         ...input.tabMenu,

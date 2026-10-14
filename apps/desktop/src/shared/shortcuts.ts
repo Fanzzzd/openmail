@@ -332,17 +332,38 @@ const ELECTRON_KEYS: Record<string, string> = {
   ArrowLeft: "Left",
   ArrowRight: "Right",
 };
-export function shortcutAccelerator(set: ShortcutSet, action: ShortcutAction): string | undefined {
-  const stroke = KEYMAP[set][action].find((s) => s.cmd);
-  if (!stroke) return undefined;
-  return [
+const strokeAccelerator = (stroke: KeyStroke) =>
+  [
     ...(stroke.control ? ["Control"] : []),
     ...(stroke.alt ? ["Alt"] : []),
     ...(stroke.shift ? ["Shift"] : []),
     "CommandOrControl",
     ELECTRON_KEYS[stroke.key] ?? stroke.key,
   ].join("+");
+export function shortcutAccelerator(set: ShortcutSet, action: ShortcutAction): string | undefined {
+  const stroke = KEYMAP[set][action].find((s) => s.cmd);
+  return stroke ? strokeAccelerator(stroke) : undefined;
 }
+
+/**
+ * Standard menu items whose keys no shortcut set changes. The menu bar sets these accelerators
+ * itself instead of relying on Electron's role defaults, so the docs page lists what it shows.
+ */
+export const MENU_SHORTCUTS = {
+  close: cmd("w"),
+  redo: shiftCmd("z"),
+  cut: cmd("x"),
+  copy: cmd("c"),
+  paste: cmd("v"),
+  selectAll: cmd("a"),
+  minimize: cmd("m"),
+  hide: cmd("h"),
+  hideOthers: cmd("h", { alt: true }),
+  quit: cmd("q"),
+} satisfies Record<string, KeyStroke>;
+export type MenuShortcut = keyof typeof MENU_SHORTCUTS;
+export const menuShortcutText = (item: MenuShortcut) => strokeText(MENU_SHORTCUTS[item]);
+export const menuAccelerator = (item: MenuShortcut) => strokeAccelerator(MENU_SHORTCUTS[item]);
 
 /** Native sets use ⌃⌘1…9 for profiles, Gmail uses ⌘1…9. ⌃1/2 retain overview/all. */
 export function spaceShortcut(

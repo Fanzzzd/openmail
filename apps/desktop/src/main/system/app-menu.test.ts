@@ -2,7 +2,14 @@ import { readFileSync } from "node:fs";
 import type { MenuItemConstructorOptions } from "electron";
 import { expect, it, vi } from "vitest";
 import { NativeAction, NO_MENU_SELECTION, type NativeMenuState } from "../../shared/native-actions";
-import { isShortcutAction, shortcutAccelerator, type ShortcutSet } from "../../shared/shortcuts";
+import {
+  isShortcutAction,
+  MENU_SHORTCUTS,
+  menuAccelerator,
+  shortcutAccelerator,
+  type MenuShortcut,
+  type ShortcutSet,
+} from "../../shared/shortcuts";
 import { applicationMenuTemplate, nativeActionAccelerator } from "./app-menu";
 import { DEFAULT_DESKTOP_LABELS } from "./default-labels";
 import { OPENMAIL_DOCS_URL } from "../../shared/docs";
@@ -297,10 +304,13 @@ it("Close window closes an open sheet first, and the window otherwise", () => {
     submenu(build(menuState), DEFAULT_DESKTOP_LABELS.file).find(
       (item) => item.label === "Close window",
     );
-  expect(close(NO_MENU_SELECTION)).toMatchObject({ role: "close" });
+  expect(close(NO_MENU_SELECTION)).toMatchObject({
+    role: "close",
+    accelerator: menuAccelerator("close"),
+  });
   const sheet = close({ ...NO_MENU_SELECTION, sheet: true });
   expect(sheet?.role).toBeUndefined();
-  expect(sheet?.accelerator).toBe("CommandOrControl+W");
+  expect(sheet?.accelerator).toBe("CommandOrControl+w");
   sheet?.click?.(
     Object.create(null),
     undefined,
@@ -318,4 +328,32 @@ it("the Window menu is the system Window menu and keeps its own items first", ()
     "Zoom",
     "Bring all to front",
   ]);
+});
+
+// R10 F4: the docs page lists the standard menu keys, so the menu must set the same ones.
+it("standard menu items carry the fixed accelerators the docs page lists", () => {
+  const { menu } = template("darwin");
+  const byRole = new Map(
+    items(menu)
+      .filter((item) => typeof item.role === "string")
+      .map((item) => [item.role, item.accelerator]),
+  );
+  const roles: [MenuShortcut, MenuItemConstructorOptions["role"]][] = [
+    ["close", "close"],
+    ["redo", "redo"],
+    ["cut", "cut"],
+    ["copy", "copy"],
+    ["paste", "paste"],
+    ["minimize", "minimize"],
+    ["hide", "hide"],
+    ["hideOthers", "hideOthers"],
+    ["quit", "quit"],
+  ];
+  for (const [item, role] of roles) expect(byRole.get(role), item).toBe(menuAccelerator(item));
+  expect([...roles.map(([item]) => item), "selectAll"].toSorted()).toEqual(
+    Object.keys(MENU_SHORTCUTS).toSorted(),
+  );
+  expect(
+    items(menu).find((item) => item.label === DEFAULT_DESKTOP_LABELS.selectAll)?.accelerator,
+  ).toBe(menuAccelerator("selectAll"));
 });
