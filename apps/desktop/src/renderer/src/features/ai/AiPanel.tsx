@@ -14,6 +14,7 @@ import { openMessageWindow, useRunMail, withMail, type MailEnv } from "../../sta
 import { aiSettingsAtom } from "./ai-settings";
 import { Proposals } from "./lazy";
 import { openAiSettings } from "./open-ai-settings";
+import { isDesktop } from "../../lib/platform";
 import { Dialog } from "../../ui/Dialog";
 import { buttonLink, buttonPrimary, formInput } from "../../ui/styles";
 
@@ -119,8 +120,17 @@ function SummaryCoverage({ coverage }: { coverage: AiCoverage | undefined }) {
   );
 }
 
-/** A link-styled button that opens Settings → AI Access. */
+/**
+ * A link-styled button that opens Settings → AI Access. The web build has no AI Access tab (keys
+ * stay on the Mac), so there it says where to set AI up instead.
+ */
 export function AiAccessLink({ onOpen }: { onOpen?: () => void }) {
+  if (!isDesktop())
+    return (
+      <span>
+        <Trans>Set up AI on your Mac in Settings → AI Access.</Trans>
+      </span>
+    );
   return (
     <button
       type="button"

@@ -6349,6 +6349,10 @@ msgid "Server visibility is only available for Gmail labels."
 msgstr "Die Sichtbarkeit auf dem Server ist nur für Gmail-Labels verfügbar."
 
 #: src/renderer/src/features/ai/AiPanel.tsx
+msgid "Set up AI on your Mac in Settings → AI Access."
+msgstr "Richte KI auf deinem Mac unter „Einstellungen → KI-Zugriff“ ein."
+
+#: src/renderer/src/features/ai/AiPanel.tsx
 msgid "Set up built-in AI"
 msgstr "Integrierte KI einrichten"
 
