@@ -1240,6 +1240,10 @@ msgstr "Impossibile aprire il messaggio: {reason}"
 msgid "Can't reach Anthropic. Check your internet connection."
 msgstr "Impossibile raggiungere Anthropic. Controlla la connessione a Internet."
 
+#: src/renderer/src/features/remote/ConnectionNotice.tsx
+msgid "Can't reach OpenMail on your Mac. Reconnecting…"
+msgstr "Impossibile raggiungere OpenMail sul Mac. Riconnessione…"
+
 #: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "Can't reach the mail server right now."
@@ -3790,10 +3794,6 @@ msgstr "Luogo: {location}"
 #: src/renderer/src/lib/errors.ts
 msgid "Lost the connection to the background process."
 msgstr "Persa la connessione al processo in background."
-
-#: src/renderer/src/features/remote/ConnectionNotice.tsx
-msgid "Lost the connection to your Mac. Reconnecting…"
-msgstr "Connessione al Mac persa. Riconnessione…"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Lost the connection to your Mac. Try again."

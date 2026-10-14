@@ -5,7 +5,7 @@ import { setPlatform } from "./lib/platform";
 import { trackKeyboardInset } from "./lib/keyboard-inset";
 import { renderApp } from "./routes/render-app";
 import { setRpcBridge } from "./state/rpc-bridge";
-import { flushUnsavedWork, hasUnsavedWork } from "./state/unsaved-work";
+import { backupUnsavedWork, flushUnsavedWork, hasUnsavedWork } from "./state/unsaved-work";
 import { setWebConnection, setWebUpdate } from "./state/web-connection";
 import { probeSession, rpcSocketUrl, webSocketBridge } from "./state/web-socket-bridge";
 import "./styles.css";
@@ -30,13 +30,18 @@ setRpcBridge(
   }),
 );
 
-// A hidden page may be frozen or discarded: drafts save now, not after their debounce.
-document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "hidden") void flushUnsavedWork();
-});
-window.addEventListener("pagehide", () => void flushUnsavedWork());
-window.addEventListener("beforeunload", (event) => {
+// A hidden page may be frozen or discarded: drafts save now, not after their
+// debounce, and go to this tab's storage first in case the Mac doesn't get them.
+const saveNow = () => {
+  backupUnsavedWork();
   void flushUnsavedWork();
+};
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") saveNow();
+});
+window.addEventListener("pagehide", saveNow);
+window.addEventListener("beforeunload", (event) => {
+  saveNow();
   if (hasUnsavedWork()) event.preventDefault();
 });
 trackKeyboardInset(window);

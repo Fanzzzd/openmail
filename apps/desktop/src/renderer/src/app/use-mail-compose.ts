@@ -16,6 +16,12 @@ import { defaultSignature, resolveComposeSender } from "../features/compose/comp
 import { useComposeDelivery } from "./use-compose-delivery";
 import type { ComposeMode, Draft } from "../features/compose/draft";
 import { loadDrafts } from "../features/compose/draft-loader";
+import {
+  clearDraftBackup,
+  draftFromBackup,
+  markRestored,
+  readDraftBackup,
+} from "../features/compose/draft-backup";
 import { causeText } from "../lib/errors";
 import { quoteChoice, readerSelectedText } from "../features/reader/quote-selection";
 import {
@@ -337,6 +343,33 @@ export function useMailCompose({
       );
     }
   }, [composeId, run, setDialog]);
+  // The web build: a reload (the Mac restarted, or the phone dropped the tab)
+  // reopens the draft this tab had open with the typing it had.
+  const reopenBackup = useEffectEvent((draft: Draft) => {
+    markRestored(draft.id);
+    setCompose(draft);
+  });
+  useEffect(() => {
+    if (composeId || isDesktop()) return;
+    const backup = readDraftBackup();
+    if (!backup) return;
+    const { id } = backup.draft;
+    run(
+      openDraft(id).pipe(
+        Effect.flatMap((stored) => Effect.map(loadDrafts, ({ fromStored }) => fromStored(stored))),
+        Effect.catchTag("NotFound", () => Effect.succeed(null)),
+        Effect.matchCause({
+          onSuccess: (stored) => {
+            const draft = draftFromBackup(backup, stored);
+            if (draft) reopenBackup(draft);
+            else clearDraftBackup(id);
+          },
+          // The Mac didn't answer: keep the backup for the next load.
+          onFailure: constVoid,
+        }),
+      ),
+    );
+  }, [composeId, run]);
   /** Quiet closes retain storage; explicit Save persists even a cleared draft. */
   const closeCompose = (draft: Draft, changed: boolean) => {
     if (!changed) {

@@ -22,6 +22,21 @@ export function onFlush(flush: () => Promise<void>) {
   };
 }
 
+const backups = new Set<() => void>();
+
+/** Registers a callback that copies unsaved work to this tab's storage (web build). */
+export function onBackup(backup: () => void) {
+  backups.add(backup);
+  return () => {
+    backups.delete(backup);
+  };
+}
+
+/** Copies unsaved work to this tab's storage, in case the page goes before the Mac has it. */
+export function backupUnsavedWork() {
+  for (const backup of backups) backup();
+}
+
 /** Saves all unsaved work now instead of after its debounce; settles when every save has. */
 export async function flushUnsavedWork(): Promise<void> {
   await Promise.all([...flushers].map((flush) => flush()));

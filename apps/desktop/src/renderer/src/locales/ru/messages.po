@@ -1240,6 +1240,10 @@ msgstr "Не могу открыть сообщение: {reason}"
 msgid "Can't reach Anthropic. Check your internet connection."
 msgstr "Не удаётся подключиться к Anthropic. Проверьте подключение к интернету."
 
+#: src/renderer/src/features/remote/ConnectionNotice.tsx
+msgid "Can't reach OpenMail on your Mac. Reconnecting…"
+msgstr "Не удаётся подключиться к OpenMail на Mac. Переподключение…"
+
 #: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "Can't reach the mail server right now."
@@ -3790,10 +3794,6 @@ msgstr "Место: {location}"
 #: src/renderer/src/lib/errors.ts
 msgid "Lost the connection to the background process."
 msgstr "Потеряно соединение с фоновым процессом."
-
-#: src/renderer/src/features/remote/ConnectionNotice.tsx
-msgid "Lost the connection to your Mac. Reconnecting…"
-msgstr "Связь с Mac потеряна. Переподключение…"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Lost the connection to your Mac. Try again."

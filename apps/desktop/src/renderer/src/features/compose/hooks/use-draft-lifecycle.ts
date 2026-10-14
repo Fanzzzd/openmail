@@ -22,7 +22,8 @@ import { causeText } from "../../../lib/errors";
 import { draftStatus, saveDraft, useRunMail, withMail } from "../../../state/mail";
 import { saveDraftAtom } from "../../../state/mutations";
 import { draftStatusAtom } from "../../../state/queries";
-import { onFlush, setUnsaved } from "../../../state/unsaved-work";
+import { onBackup, onFlush, setUnsaved } from "../../../state/unsaved-work";
+import { clearDraftBackup, wasRestored, writeDraftBackup } from "../draft-backup";
 import { useWebConnection } from "../../../state/web-connection";
 
 const AUTOSAVE_MS = 2000;
@@ -59,12 +60,18 @@ export function useDraftLifecycle({
   handedOff: RefObject<Draft | null>;
 }) {
   const { i18n } = useLingui();
-  const saved = useRef(initial);
+  // A draft reopened from the tab's backup has typing the Mac may lack: it saves at once.
+  const saved = useRef<Draft | null>(wasRestored(initial.id) ? null : initial);
+  /** Whether the Mac has had this draft: opened from storage, or saved since. */
+  const known = useRef(initial.synced !== undefined);
 
   const [closing, setClosing] = useState(false);
   const [checkingClose, setCheckingClose] = useState(false);
 
   const [saveState, save] = useAtom(saveDraftAtom(initial.id));
+  useEffect(() => {
+    if (saveState._tag === "Success") known.current = true;
+  }, [saveState]);
 
   const saveNow = (next: Draft = draft) => {
     saved.current = next;
@@ -141,8 +148,23 @@ export function useDraftLifecycle({
     const unsaved =
       (draft !== saved.current && !empty) || saveState.waiting || saveState._tag === "Failure";
     setUnsaved(initial.id, unsaved);
+    // Saved: the Mac's copy is current, so the tab's backup goes.
+    if (!unsaved) clearDraftBackup(initial.id);
   }, [initial.id, draft, empty, saveState]);
-  useEffect(() => () => setUnsaved(initial.id, false), [initial.id]);
+  // Closing, sending or discarding unmounts the composer: no backup outlives it.
+  useEffect(
+    () => () => {
+      setUnsaved(initial.id, false);
+      clearDraftBackup(initial.id);
+    },
+    [initial.id],
+  );
+  const backup = useEffectEvent(() => {
+    if (empty || handedOff.current === draft) return;
+    const unsaved = draft !== saved.current || saveState.waiting || saveState._tag === "Failure";
+    if (unsaved) writeDraftBackup(draft, known.current);
+  });
+  useEffect(() => onBackup(backup), []);
   // A save the dropped connection failed goes again once the Mac is back.
   const connection = useWebConnection();
   const retrySave = useEffectEvent(() => {
