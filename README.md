@@ -26,7 +26,7 @@ In this recording, Claude Code asked over MCP to archive three newsletters. Open
 - **Read-only by default.** MCP tools read and search mail. The permission to change mail starts at **Read only**, which makes every write tool refuse.
 - **Proposals.** Write tools take two switches: allow proposals when you connect the app, and set the permission to **Ask me first**. Then `modify_threads`, `snooze_threads` and `draft_message` create proposals. Each one waits in **AI suggestions** until you approve or reject it.
 - **No agent sends mail.** A drafted message opens in the composer, and you send it yourself.
-- **Connect from Settings.** OpenMail can connect Claude Code, Codex, Claude and Cursor for you. It shows the config diff first and edits only the `openmail` entry. Any other MCP client can run `node packages/cli/dist/cli.js mcp`.
+- **Connect from Settings.** OpenMail can connect Claude Code, Codex, Claude and Cursor for you. It shows the config diff first and edits only the `openmail` entry. Any other MCP client can run `/Applications/OpenMail.app/Contents/MacOS/OpenMail --mcp`.
 - **Built-in AI, off by default.** With your own Anthropic API key and only for the accounts you allow: summaries, a mail assistant, writing help and inbox triage. The assistant also proposes changes instead of making them.
 
 See [CLI and MCP](https://openmail-docs.vercel.app/docs/cli-and-mcp) for the tool list and the approval rules.
@@ -93,7 +93,7 @@ A build you make yourself opens normally. Gatekeeper blocks a downloaded build t
 1. Open OpenMail and pick **Gmail**, **Outlook** or an IMAP provider. A source build has no built-in OAuth client: register your own for [Google](docs/setup-google.md) or [Microsoft](docs/setup-microsoft.md) and paste it on the add-account screen. IMAP needs only an app password.
 2. OpenMail downloads recent mail first and fills in older mail in the background.
 3. Press `?` to see the keyboard shortcuts and `⌘F` to search. The [shortcut reference](https://openmail-docs.vercel.app/docs/keyboard-shortcuts) lists all three sets.
-4. To use your mail from Claude Code or Codex, open **Settings → AI Access**, allow the account, then connect the app under **AI apps**. Or point any MCP client at `node packages/cli/dist/cli.js mcp`. See [CLI and MCP](https://openmail-docs.vercel.app/docs/cli-and-mcp).
+4. To use your mail from Claude Code or Codex, open **Settings → AI Access**, allow the account, then connect the app under **AI apps**. Or point any MCP client at `/Applications/OpenMail.app/Contents/MacOS/OpenMail --mcp`. [Connect by hand](https://openmail-docs.vercel.app/docs/cli-and-mcp#connect-by-hand) has the CLI command for a source checkout.
 
 ## Privacy
 

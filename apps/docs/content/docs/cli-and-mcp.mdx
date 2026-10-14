@@ -79,7 +79,7 @@ The **Accounts AI apps can read** row above the cards shows which accounts every
 Each card's **Set up by hand** section has the exact command or JSON for your Mac. The server command is:
 
 - A packaged app: `/Applications/OpenMail.app/Contents/MacOS/OpenMail --mcp`
-- The CLI from source: `openmail mcp`
+- The CLI from source: `openmail mcp` after you [link the command](#install-the-command), or `node /absolute/path/to/openmail/packages/cli/dist/cli.js mcp`. Use an absolute path, because MCP clients start the server from their own working directory.
 
 Add `--allow-writes` for the [proposal tools](#proposing-changes).
 
