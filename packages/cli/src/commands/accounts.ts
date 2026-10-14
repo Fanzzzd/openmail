@@ -3,7 +3,7 @@
 import { Argument, Command, Flag, Prompt } from "effect/cli";
 import { Config, Console, Effect, Option, Redacted } from "effect";
 import { IMAP_PRESETS, Mailbox, PROFILE_COLORS, oauthProvider } from "@openmail/core";
-import { CLI, fail, jsonFlag, optionalString, optionalInt, print } from "./common.js";
+import { CLI, type Failed, fail, jsonFlag, optionalString, optionalInt, print } from "./common.js";
 import { accountTable, outcomeText } from "../format.js";
 import { withProgress } from "../sync-progress.js";
 
@@ -138,23 +138,73 @@ const accountsAdd = Command.make(
   ]),
 );
 
+const accountIdArgument = Argument.String("account-id").pipe(
+  Argument.withDescription("An id from `openmail accounts list`"),
+);
+
+/** Why `accounts remove` stops when it cannot ask; the person reads it on stderr. */
+export const REMOVE_NEEDS_YES =
+  "Nothing was removed. `openmail accounts remove` deletes local mail, local drafts and the stored sign-in, so it asks first. stdin is not a terminal; pass --yes to remove without asking.";
+
+/**
+ * Whether `accounts remove` may go ahead: --yes, or a yes to the question on a terminal. Without
+ * a terminal it cannot ask, so it fails instead of deleting.
+ * @internal
+ */
+export const confirmRemoval = <E, R>(
+  yes: boolean,
+  interactive: boolean,
+  ask: Effect.Effect<boolean, E, R>,
+): Effect.Effect<void, E | Failed, R> =>
+  yes
+    ? Effect.void
+    : interactive
+      ? Effect.flatMap(ask, (confirmed) =>
+          confirmed ? Effect.void : fail("Cancelled. Nothing was removed."),
+        )
+      : fail(REMOVE_NEEDS_YES);
+
 const accountsRemove = Command.make(
   "remove",
-  { id: Argument.String("account-id") },
-  Effect.fn(function* ({ id }) {
+  {
+    id: accountIdArgument,
+    yes: Flag.Boolean("yes").pipe(
+      Flag.withAlias("y"),
+      Flag.withDescription("Remove without asking. Needed when stdin is not a terminal"),
+      Flag.withDefault(false),
+    ),
+  },
+  Effect.fn(function* ({ id, yes }) {
     const mailbox = yield* Mailbox;
+    const account = (yield* mailbox.accounts.accounts).find((a) => a.id === id);
+    if (!account)
+      return yield* fail(`No account with id ${id}. Run \`openmail accounts list\` to see them.`);
+    yield* confirmRemoval(
+      yes,
+      process.stdin.isTTY === true,
+      Prompt.run(
+        Prompt.Confirm({
+          message: `Remove ${account.email}? Its local mail, local drafts and stored sign-in are deleted.`,
+          initial: false,
+        }),
+      ),
+    );
     const outcome = yield* mailbox.organize.perform({ kind: "removeAccount", accountId: id }, CLI);
-    yield* Console.log(
+    return yield* Console.log(
       outcome.status === "applied" && outcome.warning === "keychain-item-left"
         ? `Removed ${id} and its local mail. The keychain refused to delete its stored sign-in: open Keychain Access and delete the "openmail" item for ${id}.`
         : outcomeText(outcome, `Removed ${id}, its local mail and its stored credentials.`),
     );
   }),
-).pipe(Command.withDescription("Delete the account, its local mail and its stored credentials"));
+).pipe(
+  Command.withDescription(
+    "Delete the account, its local mail and its stored credentials. Asks first; --yes skips the question",
+  ),
+);
 
 const accountsReauth = Command.make(
   "reauth",
-  { id: Argument.String("account-id") },
+  { id: accountIdArgument },
   Effect.fn(function* ({ id }) {
     const mailbox = yield* Mailbox;
     const account = yield* mailbox.accounts.reauth(id);
@@ -190,7 +240,7 @@ const profilesList = Command.make(
 const profilesAdd = Command.make(
   "add",
   {
-    name: Argument.String("name"),
+    name: Argument.String("name").pipe(Argument.withDescription("The space name, such as Work")),
     icon: Flag.String("icon").pipe(
       Flag.withDescription("Icon on the switcher"),
       Flag.withDefault("📁"),
@@ -239,9 +289,7 @@ const profilesRemove = Command.make(
 const profilesAssign = Command.make(
   "assign",
   {
-    accountId: Argument.String("account-id").pipe(
-      Argument.withDescription("An id from `openmail accounts list`"),
-    ),
+    accountId: accountIdArgument,
     space: spaceArgument('Space id or name, or "none" to ungroup'),
   },
   Effect.fn(function* ({ accountId, space }) {

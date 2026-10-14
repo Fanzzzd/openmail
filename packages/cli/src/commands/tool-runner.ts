@@ -10,9 +10,10 @@ import {
   unknownArguments,
 } from "@openmail/core";
 import { Tool } from "effect/ai";
-import { Effect, Layer, Option, Schema, Stream } from "effect";
+import { Effect, Layer, Option, Result, Schema, Stream } from "effect";
 import { Flag } from "effect/cli";
 import { fail, print } from "./common.js";
+import { invalidArguments } from "../mcp-tools.js";
 
 export type ToolName = keyof typeof MailToolkit.tools;
 export const toolNames = Object.keys(MailToolkit.tools).filter(
@@ -43,9 +44,16 @@ export function invokeTool(name: ToolName, input: unknown, json: boolean) {
   return Effect.gen(function* () {
     const unknown = unknownArguments(Tool.getJsonSchema(MailToolkit.tools[name]), input);
     if (unknown) return yield* toolFailure(Schema.encodeSync(MailToolError)(unknown), null);
-    const parameters = yield* Schema.decodeUnknownEffect(
+    const decoded = yield* Schema.decodeUnknownEffect(
       Schema.toEncoded(MailToolkit.tools[name].parametersSchema),
-    )(input);
+    )(input).pipe(Effect.result);
+    // The same failure MCP returns for these arguments.
+    if (Result.isFailure(decoded))
+      return yield* toolFailure(
+        Schema.encodeSync(MailToolError)(invalidArguments(name, decoded.failure.message)),
+        null,
+      );
+    const parameters = decoded.success;
     const gap = yield* agentAccountGap(name, parameters);
     const toolkit = yield* MailToolkit;
     const stream = yield* toolkit.handle(name, parameters);

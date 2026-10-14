@@ -17,7 +17,9 @@ const proposalsList = Command.make(
   }),
 ).pipe(Command.withDescription("List changes agents asked for that wait for a person"));
 
-const proposalId = Argument.Int("proposal-id");
+const proposalId = Argument.Int("proposal-id").pipe(
+  Argument.withDescription("An id from `openmail proposals list`"),
+);
 
 /**
  * Approving happens only in the app: an agent with a shell could run this command, so a CLI
@@ -27,7 +29,10 @@ const proposalId = Argument.Int("proposal-id");
 const proposalsApprove = Command.make(
   "approve",
   {
-    id: Argument.String("proposal-id").pipe(Argument.optional),
+    id: Argument.String("proposal-id").pipe(
+      Argument.withDescription("An id from `openmail proposals list`"),
+      Argument.optional,
+    ),
     yes: Flag.Boolean("yes").pipe(Flag.withHidden, Flag.withDefault(false)),
   },
   () => fail(APPROVE_IN_APP),

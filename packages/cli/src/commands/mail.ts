@@ -58,7 +58,7 @@ const sync = Command.make(
   "sync",
   {
     account: Argument.String("account").pipe(
-      Argument.withDescription("Only this account"),
+      Argument.withDescription("Only this account, an id from `openmail accounts list`"),
       Argument.optional,
     ),
     json: jsonFlag,
@@ -209,7 +209,12 @@ const SEARCH_CAP = 200;
 const search = Command.make(
   "search",
   {
-    query: Argument.String("query").pipe(Argument.variadic({ min: 1 })),
+    query: Argument.String("query").pipe(
+      Argument.withDescription(
+        "Words and Gmail-style operators such as from:, subject: and has:attachment",
+      ),
+      Argument.variadic({ min: 1 }),
+    ),
     account: optionalString("account", "Only this account"),
     limit: limitFlag,
     budget: legacyBudget,
@@ -268,7 +273,9 @@ const search = Command.make(
 const show = Command.make(
   "show",
   {
-    id: Argument.String("message-id"),
+    id: Argument.String("message-id").pipe(
+      Argument.withDescription("An id from `openmail list` or `openmail search`"),
+    ),
     thread: Flag.Boolean("thread").pipe(
       Flag.withDescription("Print every message in the thread"),
       Flag.withDefault(false),

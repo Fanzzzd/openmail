@@ -11,13 +11,21 @@ import {
 } from "@openmail/core";
 import type { ThreadSummary } from "@openmail/core/schema";
 
-const stamp = (ms: number) => new Date(ms).toLocaleString("sv-SE").slice(0, 16);
+const two = (n: number) => String(n).padStart(2, "0");
+/**
+ * Every date the CLI prints for people: local time as `2026-10-14 17:48`, the same in every
+ * command and every system locale. --json prints the stored values unchanged.
+ */
+export const stamp = (ms: number) => {
+  const d = new Date(ms);
+  return `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())} ${two(d.getHours())}:${two(d.getMinutes())}`;
+};
 
 export function accountTable(rows: readonly Account[]): string {
   if (rows.length === 0) return "(no accounts; run `openmail accounts add gmail`)";
   return rows
     .map((a) => {
-      const synced = a.lastSyncedAt ? new Date(a.lastSyncedAt).toLocaleString() : "never";
+      const synced = a.lastSyncedAt ? stamp(a.lastSyncedAt) : "never";
       const reason = a.reauthReason ? ` (${a.reauthReason})` : "";
       const reauth = a.needsReauth
         ? `  needs sign-in${reason}: openmail accounts reauth ${a.id}`
@@ -33,7 +41,7 @@ export function messageText(m: Message): string {
     `From:    ${m.from.name} <${m.from.address}>`,
     `To:      ${m.to.map((a) => a.address).join(", ")}`,
     ...(m.cc.length ? [`Cc:      ${m.cc.map((a) => a.address).join(", ")}`] : []),
-    `Date:    ${new Date(m.date).toLocaleString()}`,
+    `Date:    ${stamp(m.date)}`,
     `Subject: ${m.subject}`,
     ...(m.attachments.length
       ? [`Attach:  ${m.attachments.map((a) => a.filename).join(", ")}`]

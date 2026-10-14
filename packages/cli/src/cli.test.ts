@@ -2,13 +2,14 @@
 // OPENMAIL_HOME seeded by scripts/demo-data.mjs. Flag names, --json shapes and exit codes
 // are a contract for scripts and agents, so these tests read stdout, stderr and the code.
 import { execFile, spawn } from "node:child_process";
-import { cp, mkdtemp, rm } from "node:fs/promises";
+import { cp, mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { Schema } from "effect";
 import { afterAll, beforeAll, describe, expect, test, vi, type TestContext } from "vitest";
+import { REMOVE_NEEDS_YES } from "./commands/accounts.js";
 
 const run = promisify(execFile);
 const cli = fileURLToPath(new URL("../dist/cli.js", import.meta.url));
@@ -141,6 +142,31 @@ describe("help", () => {
       expect(stdout).toMatch(new RegExp(`^  ${name}\\s`, "m"));
   });
 
+  test("--version prints the version from package.json", async () => {
+    const { version } = Schema.decodeUnknownSync(
+      Schema.fromJsonString(Schema.Struct({ version: Schema.String })),
+    )(await readFile(new URL("../package.json", import.meta.url), "utf8"));
+    const { code, stdout } = await openmail(["--version"]);
+    expect(code).toBe(0);
+    expect(stdout.trim()).toBe(`openmail v${version}`);
+  });
+
+  test("every positional argument says what it takes", async () => {
+    for (const [command, argument] of [
+      [["accounts", "remove"], "account-id"],
+      [["accounts", "reauth"], "account-id"],
+      [["spaces", "add"], "name"],
+      [["spaces", "assign"], "account-id"],
+      [["proposals", "reject"], "proposal-id"],
+      [["sync"], "account"],
+      [["search"], "query"],
+      [["show"], "message-id"],
+    ] as const) {
+      const { stdout } = await openmail([...command, "--help"]);
+      expect(stdout, command.join(" ")).toMatch(new RegExp(`^  ${argument}(\\.\\.\\.)? \\w+ +\\S`, "m"));
+    }
+  });
+
   test("list --help names its paging and filter flags", async () => {
     const { code, stdout } = await openmail(["list", "--help"]);
     expect(code).toBe(0);
@@ -156,6 +182,31 @@ describe("help", () => {
       "--json",
     ])
       expect(stdout).toContain(flag);
+  });
+});
+
+describe("accounts remove", () => {
+  // Removing for real would delete the account's keychain item, so these tests stop before it.
+  test("without a terminal and --yes it removes nothing and exits 1", async () => {
+    const { code, stdout, stderr } = await openmail(["accounts", "remove", "gmail:alex@example.com"]);
+    expect(code).toBe(1);
+    expect(stdout).toBe("");
+    expect(stderr).toBe(`error: ${REMOVE_NEEDS_YES}\n`);
+    const accounts = await list(["accounts", "list"]);
+    expect(accounts.map((account) => account.id)).toContain("gmail:alex@example.com");
+  });
+
+  test("an unknown id fails before asking", async () => {
+    const { code, stderr } = await openmail(["accounts", "remove", "gmail:nobody@example.com"]);
+    expect(code).toBe(1);
+    expect(stderr).toBe(
+      "error: No account with id gmail:nobody@example.com. Run `openmail accounts list` to see them.\n",
+    );
+  });
+
+  test("--help names --yes", async () => {
+    const { stdout } = await openmail(["accounts", "remove", "--help"]);
+    expect(stdout).toMatch(/--yes, -y +Remove without asking/);
   });
 });
 

@@ -1,5 +1,5 @@
 import { execFile, spawn } from "node:child_process";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
@@ -240,6 +240,12 @@ test.concurrent("CLI help keeps tools under `tool`, lists each by its first sent
   expect(tool).not.toContain("Pass a message_id from list_threads or search.");
   expect(tool).toMatchSnapshot();
   expect(own).toContain("Pass a message_id from list_threads or search.");
+  // The parameters come from the tool's input schema, as MCP clients see them.
+  expect(own).toMatch(/PARAMETERS \(as keys of the --input-json object\)\n/);
+  expect(own).toMatch(/^ {2}message_id {4}string, required\. A message id from list_threads/m);
+  expect(own).toMatch(/^ {2}token_budget {2}integer, optional\. Result size limit/m);
+  expect(proposal).toMatch(/^ {2}mode +one of new, reply, reply_all, optional\./m);
+  expect(proposal).toMatch(/^ {2}to +array of string, optional\./m);
   // --allow-writes appears only where it does something.
   expect(own).not.toContain("--allow-writes");
   expect(proposal).toContain("--allow-writes");
@@ -326,6 +332,20 @@ test.concurrent("openmail mcp --allow-writes exposes only supported proposals an
 }, 30_000);
 
 const Initialized = Schema.Struct({ instructions: Schema.String });
+
+test.concurrent("serverInfo.version is the version in package.json", async ({
+  expect,
+  onTestFinished,
+}) => {
+  const { version } = Schema.decodeUnknownSync(
+    Schema.fromJsonString(Schema.Struct({ version: Schema.String })),
+  )(await readFile(new URL("../package.json", import.meta.url), "utf8"));
+  const { initialized } = await client(onTestFinished);
+  const { serverInfo } = Schema.decodeUnknownSync(
+    Schema.Struct({ serverInfo: Schema.Struct({ name: Schema.String, version: Schema.String }) }),
+  )(initialized);
+  expect(serverInfo).toEqual({ name: "openmail", version });
+});
 // access_status reads no mail, so its fields sit at the top level, not under untrusted_mail.
 const AccessStatus = Schema.fromJsonString(
   Schema.Struct({
@@ -773,6 +793,37 @@ test.concurrent("MCP returns invalid tool arguments as an isError result, not a 
     expect(tool.inputSchema, tool.name).toMatchObject({ additionalProperties: false });
   // An unknown tool is still a protocol error.
   await expect(request("tools/call", { name: "no_such_tool", arguments: {} })).rejects.toThrow();
+}, 30_000);
+
+test.concurrent("openmail tool reports a missing argument with MCP's code and hint and names the tool", async ({
+  expect,
+  onTestFinished,
+}) => {
+  const { request, directory } = await client(onTestFinished, false, false, false, "2025-11-25");
+  const called = Schema.decodeUnknownSync(CallResult)(
+    await request("tools/call", { name: "read_thread", arguments: {} }),
+  );
+  expect(called.isError).toBe(true);
+  const mcp = JSON.parse(called.content[0]?.text ?? "");
+  expect(mcp).toEqual({
+    code: "invalid_input",
+    message: 'The arguments for read_thread do not match its input schema: Missing key\n  at ["message_id"]',
+    hint: "Fix the arguments as described and call the tool again.",
+  });
+  const options = { env: { ...process.env, OPENMAIL_HOME: directory } };
+  // --json prints exactly what MCP returns.
+  const json = await run(
+    process.execPath,
+    ["dist/cli.js", "tool", "read_thread", "--json"],
+    options,
+  ).catch((error: unknown) => Schema.decodeUnknownSync(Failure)(error));
+  expect(json.code).toBe(1);
+  expect(JSON.parse(json.stdout)).toEqual(mcp);
+  expect(json.stderr).toBe(`error: ${mcp.message}\nhint: ${mcp.hint}\n`);
+  const text = await run(process.execPath, ["dist/cli.js", "tool", "read_thread"], options).catch(
+    (error: unknown) => Schema.decodeUnknownSync(Failure)(error),
+  );
+  expect(text).toMatchObject({ code: 1, stdout: "", stderr: json.stderr });
 }, 30_000);
 
 test.concurrent("CLI and MCP exit 1 with one stderr line on a database from a newer OpenMail", async ({

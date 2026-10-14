@@ -12,6 +12,8 @@ import {
 import { Effect, Layer, Schema } from "effect";
 import { McpProtocol, McpSchema, McpServer } from "effect/ai";
 import type { Tool, Toolkit } from "effect/ai";
+import { CLI_VERSION } from "./version.js";
+import { invalidArguments } from "./mcp-tools.js";
 
 /**
  * What the server tells the model at initialize. Claude Code and Codex show it to the model
@@ -41,14 +43,6 @@ const toolErrorResult = (error: MailToolError) =>
     isError: true,
     content: [{ type: "text", text: JSON.stringify(Schema.encodeSync(MailToolError)(error)) }],
   });
-const invalidArguments = (message: string) =>
-  toolErrorResult(
-    new MailToolError({
-      code: "invalid_input",
-      message: `The arguments do not match the tool's input schema: ${message}`,
-      hint: "Fix the arguments as described and call the tool again.",
-    }),
-  );
 
 /** The tool as tools/list shows it, with `additionalProperties: false` on its parameters. */
 const closedTool = (tool: McpSchema.Tool) =>
@@ -91,7 +85,15 @@ const toolkitWithArgumentErrors = <Tools extends Record<string, Tool.Any>>(
                     .handle(payload)
                     .pipe(
                       Effect.catchTag("InvalidParams", (error) =>
-                        Effect.succeed(invalidArguments(error.message)),
+                        Effect.succeed(
+                          toolErrorResult(
+                            invalidArguments(
+                              registration.tool.name,
+                              // Effect's text names the tool too; say it once.
+                              error.message.replace(/^Invalid parameters for tool '[^']*': /, ""),
+                            ),
+                          ),
+                        ),
                       ),
                     );
             },
@@ -116,7 +118,7 @@ const McpLive = (allowWrites = false): Layer.Layer<never, never, Mailbox> =>
       : toolkitWithArgumentErrors(ReadMailToolkit),
     McpServer.layerStdio({
       name: "openmail",
-      version: "0.1.0",
+      version: CLI_VERSION,
       instructions: mcpInstructions(allowWrites),
       protocols: [
         McpProtocol.v2025_11_25,

@@ -78,7 +78,7 @@ Claude 和 Cursor 的 JSON 都用 `mcpServers`：
 
 ## 读取与分页
 
-`openmail tools --json` 返回当前工具名称、说明和输入 schema。工具只通过 `openmail tool <工具名>` 调用，名称与 MCP 相同，以 `agent:mcp:openmail-cli` 身份运行并检查 AI 授权。输入用 `--input-json`，输出用 `--json`；参数、结果和 MCP 相同。
+`openmail tools --json` 返回当前工具名称、说明和输入 schema。工具只通过 `openmail tool <工具名>` 调用，名称与 MCP 相同，以 `agent:mcp:openmail-cli` 身份运行并检查 AI 授权。输入用 `--input-json`，输出用 `--json`；参数、结果和 MCP 相同。`openmail tool <工具名> --help` 按 schema 列出该工具的参数、类型和说明。
 
 ```sh
 openmail tool list_threads --input-json '{"mailbox":"snoozed","limit":20}' --json

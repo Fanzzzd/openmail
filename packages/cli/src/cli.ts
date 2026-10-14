@@ -20,6 +20,7 @@ import { Failed, WRITE_MODE_SETTING, fail } from "./commands/common.js";
 import { withShortUsageErrors } from "./usage.js";
 import * as NodeRuntime from "@effect/platform-node/NodeRuntime";
 import { dataFolderError } from "./data-folder-error.js";
+import { CLI_VERSION } from "./version.js";
 
 /**
  * The CLI's browser: prints the consent URL on stderr, in case no browser can
@@ -111,7 +112,7 @@ const appOnlyWriteMode =
   cliArgs.slice(2).some((arg) => !arg.startsWith("-"));
 (appOnlyWriteMode
   ? fail(`Changes by AI apps can only be changed in the app, under ${WRITE_MODE_SETTING}.`)
-  : withShortUsageErrors(Command.run(openmail, { version: "0.1.0" }))
+  : withShortUsageErrors(Command.run(openmail, { version: CLI_VERSION }))
 ).pipe(
   Effect.catch((error) => {
     const message = explain(error);

@@ -4,7 +4,7 @@ import { MailToolkit, ReadMailToolkit } from "@openmail/core";
 import { Effect } from "effect";
 import { Tool } from "effect/ai";
 import { Command } from "effect/cli";
-import { withToolDescription } from "../mcp-tools.js";
+import { parameterHelp, withToolDescription } from "../mcp-tools.js";
 import { jsonFlag, printRaw } from "./common.js";
 import {
   type ToolName,
@@ -39,7 +39,8 @@ const tools = Command.make(
   Command.withShortDescription("List agent tools and their input schemas"),
 );
 const toolCommand = (name: ToolName) => {
-  const description = MailToolkit.tools[name].description ?? name;
+  const tool = MailToolkit.tools[name];
+  const description = `${tool.description ?? name}\n\n${parameterHelp(Tool.getJsonSchema(tool))}`;
   // Only proposal tools take --allow-writes; read tools never change mail.
   return isWriteTool(name)
     ? Command.make(
