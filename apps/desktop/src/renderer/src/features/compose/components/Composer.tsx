@@ -519,11 +519,12 @@ export function Composer({
             {adding && <output className="px-4 py-2">{t`Loading attachments…`}</output>}
             <ComposeAttachments draft={draft} set={set} attachmentDrag={attachmentDrag} />
 
-            {/* In a browser it sticks to the bottom of the sheet, which ends at the
-                on-screen keyboard, so Send stays in reach while typing. */}
+            {/* The footer sticks to the bottom of the sheet or window while the body and a long
+                quoted original scroll, so Send stays in view. In a browser the sheet ends at the
+                on-screen keyboard, so Send also stays in reach while typing. */}
             <footer
               ref={setFooter}
-              className="flex shrink-0 items-center gap-2 border-t border-separator px-4 py-2.5 web:sticky web:bottom-0 web:z-10 web:bg-raised"
+              className="sticky bottom-0 z-10 flex shrink-0 items-center gap-2 border-t border-separator bg-raised px-4 py-2.5"
             >
               <Tip label={t`Send`} shortcut={shortcut("send")} side="top">
                 <button
