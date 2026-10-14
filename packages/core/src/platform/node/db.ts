@@ -1,4 +1,4 @@
-import { existsSync, statSync } from "node:fs";
+import { chmodSync, closeSync, existsSync, openSync, statSync } from "node:fs";
 import { logWarning } from "../../domain/diagnostic-log.js";
 import { resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
@@ -24,6 +24,18 @@ function inspectReadOnly(filename: string, inspect: (db: DatabaseSync) => void) 
   } finally {
     inspection.close();
   }
+}
+
+/**
+ * mail.db is created before SQLite opens it so it never exists with the umask's
+ * mode, and SQLite gives -wal, -shm and -journal the mode of the database.
+ * Files left by older versions are tightened too. Runs after interrupted
+ * recovery is handled, which treats a missing mail.db specially.
+ */
+function restrictDatabaseFiles(filename: string) {
+  closeSync(openSync(filename, "a", 0o600));
+  for (const suffix of ["", "-wal", "-shm", "-journal"])
+    if (existsSync(`${filename}${suffix}`)) chmodSync(`${filename}${suffix}`, 0o600);
 }
 
 /** Retries a busy worker for up to two minutes; any other outcome than "done" is fatal. */
@@ -71,11 +83,15 @@ export function databaseLayer(
   never,
   FileSystem.FileSystem | Path.Path
 > {
+  // The folder holding mail.db is created or tightened to owner-only before anything is written.
+  // Errors stay PlatformErrors so the CLI can explain an unusable OPENMAIL_HOME.
   const ensureDir = Effect.gen(function* () {
     if (filename === ":memory:") return;
     const fs = yield* FileSystem.FileSystem;
-    const path = yield* Path.Path;
-    yield* Effect.orDie(fs.makeDirectory(path.dirname(filename), { recursive: true }));
+    const folder = (yield* Path.Path).dirname(filename);
+    yield* Effect.orDie(fs.makeDirectory(folder, { recursive: true, mode: 0o700 }));
+    // A folder the user does not own keeps its mode; the files are still private.
+    yield* fs.chmod(folder, 0o700).pipe(Effect.ignore);
   });
   const initialize = Effect.gen(function* () {
     // Earlier migrations are small. The rowid rebuild uses a separate worker
@@ -132,6 +148,12 @@ export function databaseLayer(
         yield* Effect.acquireRelease(
           Effect.sync(() => {
             const lease = openDatabaseAccess(filename);
+            try {
+              restrictDatabaseFiles(filename);
+            } catch (error) {
+              lease.release();
+              throw error;
+            }
             const unregister = registerDatabaseLease(resolve(filename), lease);
             return {
               release: () => {
