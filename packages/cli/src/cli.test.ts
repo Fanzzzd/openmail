@@ -344,16 +344,23 @@ describe("spaces", () => {
       const again = await openmail(["spaces", "add", " work "], home.path);
       expect(again.code).toBe(1);
       expect(again.stdout).toBe("");
-      expect(again.stderr).toMatch(/^error: A space named Work already exists \(.+\)\.\nhint: /);
+      expect(again.stderr).toMatch(
+        /^error: A space with this name already exists\. Choose another name\.\nhint: /,
+      );
       expect(await list(["spaces", "list"], home.path)).toHaveLength(1);
     });
 
     test("add refuses an empty name and stores a padded one trimmed", async () => {
-      for (const name of ["", "   "]) {
+      // Control, format and blank characters alone show as nothing.
+      for (const name of ["", "   ", "\u200b", "\u2068\u2069", "\t\n"]) {
         const empty = await openmail(["spaces", "add", name], home.path);
         expect(empty.code).toBe(1);
-        expect(empty.stderr).toMatch(/^error: A space needs a name\.\nhint: /);
+        expect(empty.stderr).toMatch(/^error: Enter a space name with letters or other visible/);
       }
+      // `spaces assign <account> none` ungroups, so no space can be found by that name.
+      const none = await openmail(["spaces", "add", "None"], home.path);
+      expect(none.code).toBe(1);
+      expect(none.stderr).toMatch(/^error: The name none is reserved\./);
       const padded = await openmail(["spaces", "add", "  Play  "], home.path);
       expect(padded.code, padded.stderr).toBe(0);
       expect(padded.stdout).toMatch(/^Added space Play \(.+\)\.$/m);
@@ -379,6 +386,16 @@ describe("spaces", () => {
       const unknown = await openmail(["list", "--space", "Nowhere"], home.path);
       expect(unknown.code).toBe(1);
       expect(unknown.stderr).toMatch(/^error: No space with id or name Nowhere\./);
+    });
+
+    test("spaces list escapes control and bidi characters in a name", async () => {
+      const added = await openmail(["spaces", "add", "Line\nbreak\u202e"], home.path);
+      expect(added.code, added.stderr).toBe(0);
+      const text = await openmail(["spaces", "list"], home.path);
+      expect(text.stdout).toContain("Line\\u{a}break\\u{202e}");
+      expect(text.stdout).not.toMatch(/[\u202e]|Line\n/);
+      const removed = await openmail(["spaces", "remove", "Line\nbreak\u202e"], home.path);
+      expect(removed.code, removed.stderr).toBe(0);
     });
   });
 });

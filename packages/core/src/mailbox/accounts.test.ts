@@ -6,7 +6,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { databaseLayer, MIGRATIONS } from "../platform/node/db.js";
-import { AccountSettings, ProfileInput, accountName } from "../domain/account.js";
+import {
+  AccountSettings,
+  PROFILE_NAME_ERRORS,
+  ProfileInput,
+  accountName,
+} from "../domain/account.js";
 import { DEFAULT_PREFS } from "../domain/prefs.js";
 import type { IncomingMessage } from "../domain/message.js";
 import { fakeServer, makeFakeProvider } from "../platform/node/fake-provider.js";
@@ -21,7 +26,7 @@ import { StoreLive } from "../store/store.js";
 import { notificationAction, spaceAccountIds, dockUnreadCount } from "../app/system.js";
 import { TestMailbox } from "../platform/node/testing.js";
 import { TestClock } from "effect/testing";
-import { ProviderError } from "../domain/errors.js";
+import { InvalidInput, ProviderError } from "../domain/errors.js";
 const incoming = (id: string): IncomingMessage => ({
   providerId: id,
   threadId: id,
@@ -530,4 +535,44 @@ it.effect("space names are stored trimmed and an empty name is refused", () =>
     );
     assert.isTrue(Result.isFailure(decode({ name: "  ", icon: "W", color: "blue" })));
   }).pipe(Effect.provide(TestMailbox({ gmail: fakeServer("me@example.com", []) }))),
+);
+
+it.effect(
+  "space names are unique in any letter case, none is reserved and blanks are refused",
+  () =>
+    Effect.gen(function* () {
+      const { accounts } = yield* Mailbox;
+      const space = (name: string) => ({ name, icon: "W", color: "blue" as const });
+      const refusal = (effect: Effect.Effect<unknown, InvalidInput>) =>
+        effect.pipe(
+          Effect.flip,
+          Effect.map((error) => error.message),
+        );
+      const work = yield* accounts.createProfile(space("Work"));
+      const home = yield* accounts.createProfile(space("Home"));
+      assert.strictEqual(
+        yield* refusal(accounts.createProfile(space(" WORK "))),
+        PROFILE_NAME_ERRORS.taken,
+      );
+      assert.strictEqual(
+        yield* refusal(accounts.updateProfile(home.id, space("work"))),
+        PROFILE_NAME_ERRORS.taken,
+      );
+      // A space keeps its own name, in another letter case too.
+      yield* accounts.updateProfile(work.id, space("WORK"));
+      for (const name of ["none", " None "])
+        assert.strictEqual(
+          yield* refusal(accounts.createProfile(space(name))),
+          PROFILE_NAME_ERRORS.reserved,
+        );
+      for (const name of ["\u200b", "\u00ad", "\u2068\u2069", "\t\n", "\u202e "])
+        assert.strictEqual(
+          yield* refusal(accounts.createProfile(space(name))),
+          PROFILE_NAME_ERRORS.empty,
+        );
+      assert.deepStrictEqual(
+        (yield* accounts.profiles).map((profile) => profile.name),
+        ["WORK", "Home"],
+      );
+    }).pipe(Effect.provide(TestMailbox({ gmail: fakeServer("me@example.com", []) }))),
 );

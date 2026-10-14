@@ -366,6 +366,10 @@ msgstr "Een eerdere dagelijkse stille uren-instelling is nog steeds actief. Wijz
 msgid "A signature needs a name and a sending address."
 msgstr "Een handtekening heeft een naam en een verzendadres nodig."
 
+#: src/renderer/src/lib/errors.ts
+msgid "A space with this name already exists. Choose another name."
+msgstr "Er bestaat al een ruimte met deze naam. Kies een andere naam."
+
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "About 1/20 of the cost"
 msgstr "Ongeveer 1/20 van de kosten"
@@ -2840,6 +2844,10 @@ msgstr "Voer één toegangstoken in."
 #: src/renderer/src/lib/errors.ts
 msgid "Enter a single API key."
 msgstr "Voer één API-sleutel in."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Enter a space name with letters or other visible characters."
+msgstr "Voer een naam voor de ruimte in met letters of andere zichtbare tekens."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Enter a tailnet login such as name@github."
@@ -7507,6 +7515,10 @@ msgstr "Het bericht is verstuurd, maar de kopie ontbreekt in Verstuurd."
 #: src/renderer/src/lib/errors.ts
 msgid "The message you're replying to belongs to another account."
 msgstr "Het bericht waarop je antwoordt hoort bij een ander account."
+
+#: src/renderer/src/lib/errors.ts
+msgid "The name “none” is reserved. Choose another name."
+msgstr "De naam “none” is gereserveerd. Kies een andere naam."
 
 #: src/renderer/src/lib/errors.ts
 msgid "The new folder isn't available yet. Try again in a moment."

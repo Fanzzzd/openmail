@@ -366,6 +366,10 @@ msgstr "Предыдущая ежедневная настройка тихих 
 msgid "A signature needs a name and a sending address."
 msgstr "У подписи должны быть название и адрес отправки."
 
+#: src/renderer/src/lib/errors.ts
+msgid "A space with this name already exists. Choose another name."
+msgstr "Пространство с таким именем уже есть. Выберите другое имя."
+
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "About 1/20 of the cost"
 msgstr "Около 1/20 стоимости"
@@ -2840,6 +2844,10 @@ msgstr "Введите один токен доступа."
 #: src/renderer/src/lib/errors.ts
 msgid "Enter a single API key."
 msgstr "Введите один ключ API."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Enter a space name with letters or other visible characters."
+msgstr "Введите имя пространства с буквами или другими видимыми символами."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Enter a tailnet login such as name@github."
@@ -7507,6 +7515,10 @@ msgstr "Сообщение отправлено, но его копии нет �
 #: src/renderer/src/lib/errors.ts
 msgid "The message you're replying to belongs to another account."
 msgstr "Сообщение, на которое вы отвечаете, относится к другой учётной записи."
+
+#: src/renderer/src/lib/errors.ts
+msgid "The name “none” is reserved. Choose another name."
+msgstr "Имя «none» зарезервировано. Выберите другое имя."
 
 #: src/renderer/src/lib/errors.ts
 msgid "The new folder isn't available yet. Try again in a moment."

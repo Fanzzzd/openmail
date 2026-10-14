@@ -497,8 +497,9 @@ export interface MailboxAccounts {
 
   // Profiles (spaces)
   readonly profiles: Effect.Effect<Profile[]>;
-  createProfile(input: ProfileInput): Effect.Effect<Profile>;
-  updateProfile(id: string, input: ProfileInput): Effect.Effect<void>;
+  /** Fails with InvalidInput when the name is blank, `none` or another space's (any case). */
+  createProfile(input: ProfileInput): Effect.Effect<Profile, InvalidInput>;
+  updateProfile(id: string, input: ProfileInput): Effect.Effect<void, InvalidInput>;
   deleteProfile(id: string): Effect.Effect<void>;
   assignProfile(accountId: string, profileId: string | null): Effect.Effect<void>;
   initializeProfiles(

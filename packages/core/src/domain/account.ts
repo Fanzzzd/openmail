@@ -109,6 +109,33 @@ export const ProfileInput = Schema.Struct({
 });
 export type ProfileInput = typeof ProfileInput.Type;
 
+/** Why a space can't take this name, or undefined when it can. */
+export const PROFILE_NAME_ERRORS = {
+  empty: "Enter a space name with letters or other visible characters.",
+  reserved: "The name none is reserved. Choose another name.",
+  taken: "A space with this name already exists. Choose another name.",
+} as const;
+
+/** The form two space names are compared in: trimmed, in any letter case. */
+export const profileNameKey = (name: string) => name.trim().toLowerCase();
+
+/**
+ * Checks a new name for a space. Spaces are found by name in any letter case, so two with one
+ * name could not be told apart, and `none` means "no space" when assigning one. A name of only
+ * control, format and blank characters shows as nothing. `id` is the space being renamed.
+ */
+export const profileNameError = (
+  name: string,
+  spaces: readonly Pick<Profile, "id" | "name">[],
+  id?: string,
+): keyof typeof PROFILE_NAME_ERRORS | undefined => {
+  if (name.replace(/[\p{Cc}\p{Cf}\s]/gu, "") === "") return "empty";
+  const key = profileNameKey(name);
+  if (key === "none") return "reserved";
+  if (spaces.some((space) => space.id !== id && profileNameKey(space.name) === key)) return "taken";
+  return undefined;
+};
+
 /** A Gmail user label, an Outlook custom folder or an IMAP folder. */
 export const Label = Schema.Struct({
   accountId: Schema.String,

@@ -2,7 +2,7 @@
 
 import { Argument, Command, Flag, Prompt } from "effect/cli";
 import { Config, Console, Effect, Option, Redacted } from "effect";
-import { IMAP_PRESETS, Mailbox, PROFILE_COLORS, oauthProvider } from "@openmail/core";
+import { IMAP_PRESETS, Mailbox, PROFILE_COLORS, oauthProvider, printable } from "@openmail/core";
 import {
   CLI,
   type Failed,
@@ -239,7 +239,10 @@ const profilesList = Command.make(
     yield* print(rows, json, (rs) =>
       rs.length
         ? rs
-            .map((p) => `${p.icon} ${p.name}  ${p.id}\n      ${p.accounts.join(", ") || "(empty)"}`)
+            .map(
+              (p) =>
+                `${printable(p.icon)} ${printable(p.name)}  ${p.id}\n      ${p.accounts.join(", ") || "(empty)"}`,
+            )
             .join("\n")
         : "(no spaces; run `openmail spaces add <name>`)",
     );
@@ -260,24 +263,9 @@ const profilesAdd = Command.make(
     ),
   },
   Effect.fn(function* ({ name, icon, color }) {
-    const mailbox = yield* Mailbox;
-    const trimmed = name.trim();
-    if (trimmed === "")
-      yield* fail("A space needs a name.", {
-        code: "invalid_input",
-        hint: "Pass a name, such as `openmail spaces add Work`.",
-      });
-    // Spaces are found by name in any letter case, so two with one name could not be told apart.
-    const taken = (yield* mailbox.accounts.profiles).find(
-      (space) => space.name.trim().toLowerCase() === trimmed.toLowerCase(),
-    );
-    if (taken)
-      yield* fail(`A space named ${taken.name} already exists (${taken.id}).`, {
-        code: "invalid_input",
-        hint: "Choose another name. `openmail spaces list` shows the spaces.",
-      });
-    const p = yield* mailbox.accounts.createProfile({ name: trimmed, icon, color });
-    yield* Console.log(`Added space ${p.name} (${p.id}).`);
+    // Core refuses blank names, `none` and a name another space has in any letter case.
+    const p = yield* (yield* Mailbox).accounts.createProfile({ name, icon, color });
+    yield* Console.log(`Added space ${printable(p.name)} (${p.id}).`);
   }),
 ).pipe(Command.withDescription("Create a space"));
 
@@ -291,7 +279,7 @@ const profilesRemove = Command.make(
     const mailbox = yield* Mailbox;
     const found = yield* findSpace(space);
     yield* mailbox.accounts.deleteProfile(found.id);
-    yield* Console.log(`Removed space ${found.name} (${found.id}).`);
+    yield* Console.log(`Removed space ${printable(found.name)} (${found.id}).`);
   }),
 ).pipe(Command.withDescription("Delete the space; its accounts become ungrouped"));
 
@@ -310,7 +298,9 @@ const profilesAssign = Command.make(
     const found = space === "none" ? null : yield* findSpace(space);
     yield* mailbox.accounts.assignProfile(accountId, found?.id ?? null);
     return yield* Console.log(
-      found ? `Moved ${accountId} to ${found.name}.` : `Removed ${accountId} from its space.`,
+      found
+        ? `Moved ${accountId} to ${printable(found.name)}.`
+        : `Removed ${accountId} from its space.`,
     );
   }),
 ).pipe(Command.withDescription("Put an account in a space"));

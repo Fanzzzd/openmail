@@ -1,5 +1,5 @@
 import { Clock, Effect, FiberSet, Schema } from "effect";
-import { AccountSettings } from "../domain/account.js";
+import { AccountSettings, PROFILE_NAME_ERRORS, profileNameError } from "../domain/account.js";
 import { AuthError, FeatureScopeMissing, InvalidInput } from "../domain/errors.js";
 import { GMAIL_PERMANENT_DELETE_SCOPE } from "../domain/folder-actions.js";
 import { type makeContactsMailbox } from "./mailbox-contacts.js";
@@ -32,6 +32,21 @@ const accountMismatch = (signedInAs: string, expected: string) =>
     expected,
   });
 
+/** Fails with InvalidInput when no space may take `name` (see profileNameError). */
+const checkProfileNameIn = (store: MailboxDependencies["store"]) =>
+  Effect.fn("Mailbox.checkProfileName")(function* (name: string, id?: string) {
+    const problem = profileNameError(name, yield* store.listProfiles, id);
+    if (problem)
+      yield* new InvalidInput({
+        message: PROFILE_NAME_ERRORS[problem],
+        hint: {
+          empty: "Use a name such as Work.",
+          reserved: "`openmail spaces assign <account> none` takes an account out of its space.",
+          taken: "`openmail spaces list` shows the spaces.",
+        }[problem],
+      });
+  });
+
 export const makeAccountsMailbox = (
   deps: MailboxDependencies & {
     contacts: () => ReturnType<typeof makeContactsMailbox>;
@@ -40,6 +55,7 @@ export const makeAccountsMailbox = (
   runtime: MailboxRuntimeState,
 ) => {
   const { store, providers, secrets, changed, sync, mutate, config, issuers } = deps;
+  const checkProfileName = checkProfileNameIn(store);
 
   // Accounts
 
@@ -240,9 +256,19 @@ export const makeAccountsMailbox = (
 
       profiles: store.listProfiles,
 
-      createProfile: (input) => mutate(store.createProfile(input)),
+      createProfile: (input) =>
+        mutate(
+          store.transaction(
+            checkProfileName(input.name).pipe(Effect.andThen(store.createProfile(input))),
+          ),
+        ),
 
-      updateProfile: (id, input) => mutate(store.updateProfile(id, input)),
+      updateProfile: (id, input) =>
+        mutate(
+          store.transaction(
+            checkProfileName(input.name, id).pipe(Effect.andThen(store.updateProfile(id, input))),
+          ),
+        ),
 
       deleteProfile: (id) => mutate(store.deleteProfile(id)),
 

@@ -366,6 +366,10 @@ msgstr "以前の毎日の静かな時間の設定はまだ有効です。この
 msgid "A signature needs a name and a sending address."
 msgstr "署名には名前と送信元アドレスが必要です。"
 
+#: src/renderer/src/lib/errors.ts
+msgid "A space with this name already exists. Choose another name."
+msgstr "同じ名前のスペースがすでにあります。別の名前を選んでください。"
+
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "About 1/20 of the cost"
 msgstr "料金は約 1/20"
@@ -2840,6 +2844,10 @@ msgstr "アクセストークンを 1 つだけ入力してください。"
 #: src/renderer/src/lib/errors.ts
 msgid "Enter a single API key."
 msgstr "API キーを1つ入力してください。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Enter a space name with letters or other visible characters."
+msgstr "文字や記号など、目に見える文字を含むスペース名を入力してください。"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Enter a tailnet login such as name@github."
@@ -7507,6 +7515,10 @@ msgstr "メッセージは送信されましたが、送信済みにコピーが
 #: src/renderer/src/lib/errors.ts
 msgid "The message you're replying to belongs to another account."
 msgstr "返信先のメッセージは別のアカウントに属しています。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "The name “none” is reserved. Choose another name."
+msgstr "「none」という名前は予約されています。別の名前を選んでください。"
 
 #: src/renderer/src/lib/errors.ts
 msgid "The new folder isn't available yet. Try again in a moment."

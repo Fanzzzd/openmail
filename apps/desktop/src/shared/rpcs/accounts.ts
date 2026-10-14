@@ -71,8 +71,8 @@ export const AccountRpcs = [
   Rpc.make("RemoveAccount", { payload: { accountId: Schema.String }, success: Outcome, error }),
   // Spaces
   Rpc.make("Profiles", { success: Schema.Array(Profile) }),
-  Rpc.make("CreateProfile", { payload: { input: ProfileInput }, success: Profile }),
-  Rpc.make("UpdateProfile", { payload: { id: Schema.String, input: ProfileInput } }),
+  Rpc.make("CreateProfile", { payload: { input: ProfileInput }, success: Profile, error }),
+  Rpc.make("UpdateProfile", { payload: { id: Schema.String, input: ProfileInput }, error }),
   Rpc.make("DeleteProfile", { payload: { id: Schema.String } }),
   Rpc.make("AssignProfile", {
     payload: { accountId: Schema.String, profileId: Schema.NullOr(Schema.String) },

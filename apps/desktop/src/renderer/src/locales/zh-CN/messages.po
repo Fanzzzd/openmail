@@ -376,6 +376,10 @@ msgstr "原每日静音时段仍生效。修改此日程后替换。"
 msgid "A signature needs a name and a sending address."
 msgstr "签名需要名称和发件地址。"
 
+#: src/renderer/src/lib/errors.ts
+msgid "A space with this name already exists. Choose another name."
+msgstr "已有同名空间。请换一个名称。"
+
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "About 1/20 of the cost"
 msgstr "费用约为 1/20"
@@ -2850,6 +2854,10 @@ msgstr "请只输入一个访问令牌。"
 #: src/renderer/src/lib/errors.ts
 msgid "Enter a single API key."
 msgstr "请输入单个 API 密钥。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "Enter a space name with letters or other visible characters."
+msgstr "请输入包含文字或其他可见字符的空间名称。"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Enter a tailnet login such as name@github."
@@ -7517,6 +7525,10 @@ msgstr "邮件已发送，但“已发送”中缺少副本。"
 #: src/renderer/src/lib/errors.ts
 msgid "The message you're replying to belongs to another account."
 msgstr "你回复的邮件属于另一个账户。"
+
+#: src/renderer/src/lib/errors.ts
+msgid "The name “none” is reserved. Choose another name."
+msgstr "名称“none”已保留。请换一个名称。"
 
 #: src/renderer/src/lib/errors.ts
 msgid "The new folder isn't available yet. Try again in a moment."

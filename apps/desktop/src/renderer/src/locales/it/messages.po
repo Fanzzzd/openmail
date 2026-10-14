@@ -366,6 +366,10 @@ msgstr "Una precedente impostazione giornaliera delle ore di silenzio è ancora 
 msgid "A signature needs a name and a sending address."
 msgstr "Una firma deve avere un nome e un indirizzo di invio."
 
+#: src/renderer/src/lib/errors.ts
+msgid "A space with this name already exists. Choose another name."
+msgstr "Esiste già uno spazio con questo nome. Scegli un altro nome."
+
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "About 1/20 of the cost"
 msgstr "Circa 1/20 del costo"
@@ -2840,6 +2844,10 @@ msgstr "Inserisci un solo token di accesso."
 #: src/renderer/src/lib/errors.ts
 msgid "Enter a single API key."
 msgstr "Inserisci una sola chiave API."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Enter a space name with letters or other visible characters."
+msgstr "Inserisci un nome per lo spazio con lettere o altri caratteri visibili."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Enter a tailnet login such as name@github."
@@ -7507,6 +7515,10 @@ msgstr "Il messaggio è stato inviato, ma la sua copia non è presente nella pos
 #: src/renderer/src/lib/errors.ts
 msgid "The message you're replying to belongs to another account."
 msgstr "Il messaggio a cui stai rispondendo appartiene a un altro account."
+
+#: src/renderer/src/lib/errors.ts
+msgid "The name “none” is reserved. Choose another name."
+msgstr "Il nome “none” è riservato. Scegli un altro nome."
 
 #: src/renderer/src/lib/errors.ts
 msgid "The new folder isn't available yet. Try again in a moment."

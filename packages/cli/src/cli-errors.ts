@@ -102,12 +102,18 @@ export function explainError(error: unknown, home: string | undefined): Explaine
       );
     case "QuitError":
       return plain("Canceled.", "canceled", "Run the command again to retry.");
-    case "InvalidInput":
-      return plain(
-        error.message,
-        "invalid_input",
-        field(error, "hint") ?? "Fix the input and run the command again.",
-      );
+    case "InvalidInput": {
+      // Core's own hint names the next step, so stderr shows it too.
+      const hint = field(error, "hint");
+      return {
+        ...plain(
+          error.message,
+          "invalid_input",
+          hint ?? "Fix the input and run the command again.",
+        ),
+        showHint: hint !== undefined,
+      };
+    }
     default:
       return plain(error.message, "failed", HELP_HINT);
   }

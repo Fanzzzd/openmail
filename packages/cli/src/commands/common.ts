@@ -1,6 +1,7 @@
 /** Pieces every command shares: the CLI actor, failures and output. */
 
-import { type Actor, Mailbox } from "@openmail/core";
+import { type Actor, Mailbox, printable } from "@openmail/core";
+import { profileNameKey } from "@openmail/core/schema";
 import { Console, Data, Effect, Runtime } from "effect";
 import { Flag } from "effect/cli";
 
@@ -70,12 +71,12 @@ export const findSpace = (idOrName: string) =>
     const spaces = yield* (yield* Mailbox).accounts.profiles;
     const byId = spaces.find((p) => p.id === idOrName);
     if (byId) return byId;
-    const wanted = idOrName.trim().toLowerCase();
-    const named = spaces.filter((p) => p.name.trim().toLowerCase() === wanted);
+    const wanted = profileNameKey(idOrName);
+    const named = spaces.filter((p) => profileNameKey(p.name) === wanted);
     if (named.length === 1 && named[0]) return named[0];
     return yield* fail(
       named.length > 1
-        ? `${named.length} spaces are named ${idOrName}. Pass the space id; \`openmail spaces list\` shows them.`
-        : `No space with id or name ${idOrName}. Run \`openmail spaces list\` to see them.`,
+        ? `${named.length} spaces are named ${printable(idOrName)}. Pass the space id; \`openmail spaces list\` shows them.`
+        : `No space with id or name ${printable(idOrName)}. Run \`openmail spaces list\` to see them.`,
     );
   });

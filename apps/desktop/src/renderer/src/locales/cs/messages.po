@@ -366,6 +366,10 @@ msgstr "Předchozí nastavení denních klidových hodin je stále aktivní. Zm�
 msgid "A signature needs a name and a sending address."
 msgstr "Podpis potřebuje název a adresu odesílatele."
 
+#: src/renderer/src/lib/errors.ts
+msgid "A space with this name already exists. Choose another name."
+msgstr "Prostor s tímto názvem už existuje. Zvolte jiný název."
+
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "About 1/20 of the cost"
 msgstr "Asi 1/20 ceny"
@@ -2840,6 +2844,10 @@ msgstr "Zadejte jeden přístupový token."
 #: src/renderer/src/lib/errors.ts
 msgid "Enter a single API key."
 msgstr "Zadejte jeden klíč API."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Enter a space name with letters or other visible characters."
+msgstr "Zadejte název prostoru s písmeny nebo jinými viditelnými znaky."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Enter a tailnet login such as name@github."
@@ -7507,6 +7515,10 @@ msgstr "Zpráva byla odeslána, ale její kopie chybí v odeslané poště."
 #: src/renderer/src/lib/errors.ts
 msgid "The message you're replying to belongs to another account."
 msgstr "Zpráva, na kterou odpovídáte, patří k jinému účtu."
+
+#: src/renderer/src/lib/errors.ts
+msgid "The name “none” is reserved. Choose another name."
+msgstr "Název „none“ je vyhrazený. Zvolte jiný název."
 
 #: src/renderer/src/lib/errors.ts
 msgid "The new folder isn't available yet. Try again in a moment."
