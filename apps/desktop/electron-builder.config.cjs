@@ -21,6 +21,8 @@ module.exports = {
     { from: "../../THIRD_PARTY_NOTICES.md", to: "THIRD_PARTY_NOTICES.md" },
     // License texts that THIRD_PARTY_NOTICES.md names (LGPL for libvips, among others).
     { from: "../../docs/licenses", to: "licenses" },
+    // Packages Vite compiled into out/, with their license texts (bundled-licenses.ts).
+    { from: "out/licenses", to: "licenses/bundled" },
     { from: "build/contacts-locales", to: ".", filter: ["**/InfoPlist.strings"] },
     { from: "build/trayTemplate.png", to: "trayTemplate.png" },
     { from: "build/trayTemplate@2x.png", to: "trayTemplate@2x.png" },

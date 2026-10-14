@@ -4,6 +4,7 @@ import react from "@vitejs/plugin-react";
 import { resolve } from "node:path";
 import Icons from "unplugin-icons/vite";
 import { defineConfig } from "vite";
+import { bundledLicenses } from "./bundled-licenses";
 
 /**
  * The renderer's web build, for remote access from the person's own devices.
@@ -23,6 +24,7 @@ export default defineConfig({
     lingui(),
     tailwindcss(),
     Icons({ compiler: "jsx", jsx: "react" }),
+    bundledLicenses("web"),
   ],
   build: {
     outDir: resolve(import.meta.dirname, "out/web"),

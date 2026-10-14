@@ -13,6 +13,7 @@
     "electron.vite.config.ts",
     "vite.web.config.ts",
     "oauth-clients.ts",
+    "bundled-licenses.ts",
     "lingui.config.ts",
     "src/renderer/src/i18n/po.d.ts",
     "../../packages/core/src/reader/css-tree-browser-api.d.ts"

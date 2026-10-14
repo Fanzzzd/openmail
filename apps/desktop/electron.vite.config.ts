@@ -6,6 +6,7 @@ import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
 import Icons from "unplugin-icons/vite";
 
+import { bundledLicenses } from "./bundled-licenses";
 import { describeBuiltInClients, readBuiltInClients } from "./oauth-clients";
 
 const builtInClients = readBuiltInClients();
@@ -31,7 +32,11 @@ export default defineConfig(({ command }) => {
     // `@openmail/core` and its keychain binding stay external: the main process
     // imports them from node_modules at runtime.
     main: {
-      plugins: [react({ babel: { plugins: ["@lingui/babel-plugin-lingui-macro"] } }), lingui()],
+      plugins: [
+        react({ babel: { plugins: ["@lingui/babel-plugin-lingui-macro"] } }),
+        lingui(),
+        bundledLicenses("main"),
+      ],
       // openmail's own OAuth clients, from env vars or the gitignored local file.
       // Main only: the renderer and preload never see the values.
       define: {
@@ -40,6 +45,7 @@ export default defineConfig(({ command }) => {
       },
     },
     preload: {
+      plugins: [bundledLicenses("preload")],
       // Sandboxed preloads cannot be ES modules. The recovery window has its own preload.
       build: {
         rollupOptions: {
@@ -97,6 +103,7 @@ export default defineConfig(({ command }) => {
         // Brand marks come from Iconify icon packages and compile into the
         // bundle, so the app never fetches icons at runtime.
         Icons({ compiler: "jsx", jsx: "react" }),
+        bundledLicenses("renderer"),
       ],
       // Base UI is imported by subpath. Pre-bundling them at startup keeps Vite
       // from optimizing one mid-session, which loads a second copy of React
