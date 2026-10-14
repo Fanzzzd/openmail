@@ -101,6 +101,9 @@ A build you make yourself opens normally. Gatekeeper blocks a downloaded build t
 - Mail, attachments and the search index stay in `~/Library/Application Support/openmail` (override with `OPENMAIL_HOME`).
 - Refresh tokens, IMAP passwords and API keys go only to the macOS Keychain.
 - The app connects to your mail provider. It connects to Anthropic only if you turn on AI, only for the accounts you allow, with your own key.
+- Remote images in a message load from the sender's servers by default, which can see when you open the message. OpenMail removes known tracking pixels first. You can load images only from people you know, or ask each time.
+- On-device models download from Hugging Face only if you turn them on. No mail data goes there.
+- Signed builds check GitHub for updates, without an account or token.
 - No telemetry, no analytics, no OpenMail server.
 
 Details: [privacy policy](https://openmail-docs.vercel.app/privacy) and [security model](https://openmail-docs.vercel.app/docs/security).

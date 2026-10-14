@@ -101,6 +101,9 @@ OpenMail 比以上产品都年轻，还有粗糙的地方。Gmail 功能以 Mime
 - 邮件、附件和搜索索引保存在 `~/Library/Application Support/openmail`（可用 `OPENMAIL_HOME` 修改）。
 - refresh token、IMAP 密码和 API key 只存进 macOS 钥匙串。
 - app 连接你的邮件服务商。只有你打开 AI 时，它才会用你自己的 key 连接 Anthropic，并且只涉及你允许的账户。
+- 邮件里的远程图片默认从发件人的服务器加载，对方能看到你何时打开了邮件。OpenMail 先移除已知的跟踪像素。你可以改为只加载认识的人的图片，或每次询问。
+- 本地模型只有在你打开后才从 Hugging Face 下载，不发送邮件数据。
+- 签名构建从 GitHub 检查更新，不需要账号或 token。
 - 没有遥测，没有统计分析，没有 OpenMail 服务器。
 
 详见[隐私政策](https://openmail-docs.vercel.app/privacy)和[安全模型](https://openmail-docs.vercel.app/docs/security)。
