@@ -254,7 +254,7 @@ export function EmailFrame({
   };
 
   return (
-    <div onMouseLeave={() => setHint(null)} className={frameSurface(background)}>
+    <div onMouseLeave={() => setHint(null)} className={frameSurface(background, presentation)}>
       <div ref={boxRef} style={{ height: FRAME_INITIAL_HEIGHT }}>
         <iframe
           ref={frameRef}

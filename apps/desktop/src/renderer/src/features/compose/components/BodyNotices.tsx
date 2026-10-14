@@ -86,7 +86,7 @@ export function BodyNotices({
 /** The draft as it will be sent, while the body keeps formatting the editor cannot. */
 export function LockedPreview({ html }: { html: string }) {
   return (
-    <div className="bg-surface px-4 py-4">
+    <div className="bg-surface p-2">
       <EmailFrame
         html={html}
         remote={false}
