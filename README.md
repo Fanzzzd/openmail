@@ -86,7 +86,7 @@ There is no signed release yet. Published builds will appear on the [Releases pa
 
 3. Open `apps/desktop/release/OpenMail-<version>-mac-<arch>.dmg` and drag OpenMail to Applications.
 
-Builds that are not notarized, including your own, are blocked by Gatekeeper on first open: Control-click OpenMail in Applications, choose **Open**, and confirm.
+A build you make yourself opens normally. Gatekeeper blocks a downloaded build that is not notarized on first open. Open it once, then go to **System Settings → Privacy & Security** and click **Open Anyway**.
 
 ## Quick start
 

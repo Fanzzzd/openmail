@@ -29,7 +29,7 @@ pnpm --filter @openmail/desktop dist
 
 1. Open `apps/desktop/release/OpenMail-<version>-mac-<arch>.dmg`. Use `arm64` on Apple silicon and `x64` on Intel.
 2. Drag OpenMail to Applications.
-3. Your build is not notarized, so macOS Gatekeeper blocks the first open. Control-click OpenMail in Applications, choose **Open**, and confirm.
+3. Open OpenMail. A build you make yourself opens normally, because only downloaded files carry the quarantine flag that Gatekeeper checks. Gatekeeper blocks a downloaded build that is not notarized on first open. Open it once, then go to **System Settings → Privacy & Security** and click **Open Anyway**.
 4. Add an account. A source build has no built-in Google or Microsoft sign-in client. Register your own as in [Using your own OAuth client](/docs/own-oauth-client). IMAP accounts need only an app password.
 
 ## Run the CLI and MCP server

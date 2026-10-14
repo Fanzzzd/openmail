@@ -86,7 +86,7 @@ OpenMail 比以上产品都年轻，还有粗糙的地方。Gmail 功能以 Mime
 
 3. 打开 `apps/desktop/release/OpenMail-<version>-mac-<arch>.dmg`，把 OpenMail 拖到“应用程序”。
 
-发布版本上线后，可以从 [GitHub Releases](https://github.com/Fanzzzd/openmail/releases) 下载 DMG。未经公证的构建（包括你自己构建的）首次打开会被 Gatekeeper 拦截：在“应用程序”里按住 Control 点按 OpenMail，选择 **打开**，再确认。
+发布版本上线后，可以从 [GitHub Releases](https://github.com/Fanzzzd/openmail/releases) 下载 DMG。自己构建的 app 可以直接打开。下载的未公证构建首次打开会被 Gatekeeper 拦截。先打开一次，再到 **系统设置 → 隐私与安全性** 点按 **仍要打开**。
 
 ## 快速上手
 
