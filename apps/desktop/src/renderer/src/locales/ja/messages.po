@@ -3631,6 +3631,10 @@ msgstr "バックグラウンドプロセスへの接続が失われました。
 msgid "Lost the connection to your Mac. Reconnecting…"
 msgstr "Mac との接続が切れました。再接続しています…"
 
+#: src/renderer/src/lib/errors.ts
+msgid "Lost the connection to your Mac. Try again."
+msgstr "Mac との接続が切れました。もう一度お試しください。"
+
 #: src/renderer/src/i18n/organization-labels.ts
 msgid "Low"
 msgstr "低"
@@ -4763,6 +4767,10 @@ msgstr "OpenMail はデフォルトの電子メール アプリです"
 #: src/renderer/src/state/desktop.ts
 msgid "OpenMail is up to date."
 msgstr "OpenMail は最新です。"
+
+#: src/renderer/src/features/remote/ConnectionNotice.tsx
+msgid "OpenMail on your Mac was updated. Reload to use the new version."
+msgstr "Mac の OpenMail が更新されました。新しいバージョンを使うには再読み込みしてください。"
 
 #: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "OpenMail runs"
@@ -6679,6 +6687,10 @@ msgstr "Tailscale Serve が変更を受け付けませんでした。Tailscale �
 msgid "Tailscale Service name"
 msgstr "Tailscale Service 名"
 
+#: src/main/app/native-i18n.ts
+msgid "Tailscale signed you in as {login}, and that login isn't on this Mac's list."
+msgstr "Tailscale は {login} としてサインインしましたが、このログインはこの Mac のリストにありません。"
+
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Tailscale tells OpenMail who is visiting. Only these tailnet logins get in. Removing a login disconnects its browsers and keeps them out. The list starts with this Mac's own login."
 msgstr "Tailscale が、アクセスしてきた人を OpenMail に知らせます。ここにある tailnet ログインだけがアクセスできます。ログインを削除すると、そのブラウザは切断され、以後アクセスできなくなります。リストには最初からこの Mac 自身のログインが入っています。"
@@ -6940,6 +6952,10 @@ msgstr "この招待状には新しいアップデートが含まれています
 msgid "This library was opened by a newer OpenMail"
 msgstr "ローカルデータベースは新しいバージョンの OpenMail で開かれています"
 
+#: src/main/app/native-i18n.ts
+msgid "This login can't open OpenMail"
+msgstr "このログインでは OpenMail を開けません"
+
 #: src/renderer/src/lib/errors.ts
 msgid "This meeting has been cancelled"
 msgstr "この会議はキャンセルされました"
@@ -7030,6 +7046,10 @@ msgstr "時刻はこの Mac のタイムゾーンに従います。スペース�
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "To"
 msgstr "宛先"
+
+#: src/main/app/native-i18n.ts
+msgid "To allow it, open OpenMail on the Mac, go to Settings → Remote access and add {login} under Who can sign in."
+msgstr "許可するには、Mac で OpenMail を開き、設定 → リモートアクセス の「サインインできる人」に {login} を追加してください。"
 
 #: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "To me"

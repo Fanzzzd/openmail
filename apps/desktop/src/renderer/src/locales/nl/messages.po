@@ -3631,6 +3631,10 @@ msgstr "De verbinding met het achtergrondproces is verbroken."
 msgid "Lost the connection to your Mac. Reconnecting…"
 msgstr "Verbinding met je Mac verbroken. Opnieuw verbinden…"
 
+#: src/renderer/src/lib/errors.ts
+msgid "Lost the connection to your Mac. Try again."
+msgstr "Verbinding met je Mac verbroken. Probeer het opnieuw."
+
 #: src/renderer/src/i18n/organization-labels.ts
 msgid "Low"
 msgstr "Laag"
@@ -4763,6 +4767,10 @@ msgstr "OpenMail is de standaard e-mailapp"
 #: src/renderer/src/state/desktop.ts
 msgid "OpenMail is up to date."
 msgstr "OpenMail is up-to-date."
+
+#: src/renderer/src/features/remote/ConnectionNotice.tsx
+msgid "OpenMail on your Mac was updated. Reload to use the new version."
+msgstr "OpenMail op je Mac is bijgewerkt. Laad opnieuw om de nieuwe versie te gebruiken."
 
 #: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "OpenMail runs"
@@ -6679,6 +6687,10 @@ msgstr "Tailscale Serve heeft de wijziging niet geaccepteerd. Controleer de Tail
 msgid "Tailscale Service name"
 msgstr "Naam van Tailscale Service"
 
+#: src/main/app/native-i18n.ts
+msgid "Tailscale signed you in as {login}, and that login isn't on this Mac's list."
+msgstr "Tailscale heeft je ingelogd als {login}, en die login staat niet op de lijst van deze Mac."
+
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Tailscale tells OpenMail who is visiting. Only these tailnet logins get in. Removing a login disconnects its browsers and keeps them out. The list starts with this Mac's own login."
 msgstr "Tailscale laat OpenMail weten wie er verbinding maakt. Alleen deze tailnet-logins komen binnen. Een login verwijderen verbreekt de verbinding van zijn browsers en houdt ze buiten. De lijst begint met de login van deze Mac."
@@ -6940,6 +6952,10 @@ msgstr "Deze uitnodiging heeft een nieuwere update"
 msgid "This library was opened by a newer OpenMail"
 msgstr "De lokale database is geopend door een nieuwere OpenMail"
 
+#: src/main/app/native-i18n.ts
+msgid "This login can't open OpenMail"
+msgstr "Deze login kan OpenMail niet openen"
+
 #: src/renderer/src/lib/errors.ts
 msgid "This meeting has been cancelled"
 msgstr "Deze bijeenkomst is geannuleerd"
@@ -7030,6 +7046,10 @@ msgstr "Tijden volgen de tijdzone van deze Mac. Buiten de actieve uren van een r
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "To"
 msgstr "Aan"
+
+#: src/main/app/native-i18n.ts
+msgid "To allow it, open OpenMail on the Mac, go to Settings → Remote access and add {login} under Who can sign in."
+msgstr "Om hem toe te staan open je OpenMail op de Mac, ga je naar Instellingen → Externe toegang en voeg je {login} toe onder Wie kan inloggen."
 
 #: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "To me"

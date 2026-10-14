@@ -3641,6 +3641,10 @@ msgstr "和后台的连接出错了。"
 msgid "Lost the connection to your Mac. Reconnecting…"
 msgstr "与 Mac 的连接已断开，正在重新连接…"
 
+#: src/renderer/src/lib/errors.ts
+msgid "Lost the connection to your Mac. Try again."
+msgstr "与 Mac 的连接已断开。请重试。"
+
 #: src/renderer/src/i18n/organization-labels.ts
 msgid "Low"
 msgstr "低"
@@ -4773,6 +4777,10 @@ msgstr "OpenMail 已是默认邮件客户端"
 #: src/renderer/src/state/desktop.ts
 msgid "OpenMail is up to date."
 msgstr "OpenMail 已是最新版本。"
+
+#: src/renderer/src/features/remote/ConnectionNotice.tsx
+msgid "OpenMail on your Mac was updated. Reload to use the new version."
+msgstr "Mac 上的 OpenMail 已更新。重新加载以使用新版本。"
 
 #: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "OpenMail runs"
@@ -6689,6 +6697,10 @@ msgstr "Tailscale Serve 没有接受这次更改。检查 Tailscale 应用后再
 msgid "Tailscale Service name"
 msgstr "Tailscale Service 名称"
 
+#: src/main/app/native-i18n.ts
+msgid "Tailscale signed you in as {login}, and that login isn't on this Mac's list."
+msgstr "Tailscale 以 {login} 的身份让你登录，但这个登录名不在这台 Mac 的列表中。"
+
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Tailscale tells OpenMail who is visiting. Only these tailnet logins get in. Removing a login disconnects its browsers and keeps them out. The list starts with this Mac's own login."
 msgstr "Tailscale 会告诉 OpenMail 访问者是谁。只有这些 tailnet 登录名可以进入。移除登录名会断开它的浏览器，之后也无法再访问。列表默认包含这台 Mac 自己的登录名。"
@@ -6950,6 +6962,10 @@ msgstr "此邀请已有更新版本"
 msgid "This library was opened by a newer OpenMail"
 msgstr "本地数据库已被更新版本的 OpenMail 打开过"
 
+#: src/main/app/native-i18n.ts
+msgid "This login can't open OpenMail"
+msgstr "这个登录名无法打开 OpenMail"
+
 #: src/renderer/src/lib/errors.ts
 msgid "This meeting has been cancelled"
 msgstr "此会议已取消"
@@ -7040,6 +7056,10 @@ msgstr "时间按这台 Mac 的时区计算。在空间的活跃时段以外，O
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "To"
 msgstr "收件人"
+
+#: src/main/app/native-i18n.ts
+msgid "To allow it, open OpenMail on the Mac, go to Settings → Remote access and add {login} under Who can sign in."
+msgstr "要允许它，请在 Mac 上打开 OpenMail，前往“设置 → 远程访问”，在“谁可以登录”下添加 {login}。"
 
 #: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "To me"

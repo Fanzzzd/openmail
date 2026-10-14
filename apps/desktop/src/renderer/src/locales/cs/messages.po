@@ -3631,6 +3631,10 @@ msgstr "Ztratilo se připojení k procesu na pozadí."
 msgid "Lost the connection to your Mac. Reconnecting…"
 msgstr "Spojení s Macem bylo přerušeno. Připojuji znovu…"
 
+#: src/renderer/src/lib/errors.ts
+msgid "Lost the connection to your Mac. Try again."
+msgstr "Spojení s Macem bylo přerušeno. Zkuste to znovu."
+
 #: src/renderer/src/i18n/organization-labels.ts
 msgid "Low"
 msgstr "Nízká"
@@ -4763,6 +4767,10 @@ msgstr "OpenMail je výchozí e-mailová aplikace"
 #: src/renderer/src/state/desktop.ts
 msgid "OpenMail is up to date."
 msgstr "OpenMail je aktuální."
+
+#: src/renderer/src/features/remote/ConnectionNotice.tsx
+msgid "OpenMail on your Mac was updated. Reload to use the new version."
+msgstr "OpenMail na vašem Macu byl aktualizován. Načtěte stránku znovu a použijte novou verzi."
 
 #: src/renderer/src/features/settings/sections/ConfirmAiClientChange.tsx
 msgid "OpenMail runs"
@@ -6679,6 +6687,10 @@ msgstr "Tailscale Serve změnu nepřijal. Zkontrolujte aplikaci Tailscale a zkus
 msgid "Tailscale Service name"
 msgstr "Název Tailscale Service"
 
+#: src/main/app/native-i18n.ts
+msgid "Tailscale signed you in as {login}, and that login isn't on this Mac's list."
+msgstr "Tailscale vás přihlásil jako {login} a toto přihlášení není na seznamu tohoto Macu."
+
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Tailscale tells OpenMail who is visiting. Only these tailnet logins get in. Removing a login disconnects its browsers and keeps them out. The list starts with this Mac's own login."
 msgstr "Tailscale sděluje OpenMailu, kdo přistupuje. Dovnitř se dostanou jen tato přihlášení do tailnetu. Odebrání přihlášení odpojí jeho prohlížeče a zabrání jim v přístupu. Seznam začíná přihlášením tohoto Macu."
@@ -6940,6 +6952,10 @@ msgstr "Tato pozvánka má novější aktualizaci"
 msgid "This library was opened by a newer OpenMail"
 msgstr "Místní databázi otevřela novější verze OpenMail"
 
+#: src/main/app/native-i18n.ts
+msgid "This login can't open OpenMail"
+msgstr "Toto přihlášení nemůže otevřít OpenMail"
+
 #: src/renderer/src/lib/errors.ts
 msgid "This meeting has been cancelled"
 msgstr "Tato schůzka byla zrušena"
@@ -7030,6 +7046,10 @@ msgstr "Časy se řídí časovým pásmem tohoto Macu. Mimo aktivní hodiny pro
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "To"
 msgstr "Komu"
+
+#: src/main/app/native-i18n.ts
+msgid "To allow it, open OpenMail on the Mac, go to Settings → Remote access and add {login} under Who can sign in."
+msgstr "Pokud ho chcete povolit, otevřete OpenMail na Macu, přejděte do Nastavení → Vzdálený přístup a přidejte {login} v části Kdo se může přihlásit."
 
 #: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "To me"
