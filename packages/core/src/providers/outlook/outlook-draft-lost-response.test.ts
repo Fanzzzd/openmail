@@ -55,6 +55,7 @@ const outlookDraft = () => {
     "PATCH /me/messages/d": (_url, call) => {
       state.changeKey = `v${Number(state.changeKey.slice(1)) + 1}`;
       state.modified += 1000;
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- IO boundary: the JSON body the client sent to the fake Graph server.
       const body = call.body as {
         singleValueExtendedProperties?: readonly { id: string; value: string }[];
       };

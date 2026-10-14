@@ -30,6 +30,7 @@ const outgoing: OutgoingMessage = {
 };
 
 const writeHeader = (call: FakeHttpCall) => {
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- IO boundary: the JSON body the client sent to the fake Gmail server.
   const body = call.body as { message: { raw: string } };
   // Gmail returns header values unfolded.
   const mime = Buffer.from(body.message.raw, "base64url")
