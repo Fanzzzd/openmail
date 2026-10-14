@@ -69,7 +69,7 @@ export function Feedback({
       onOpenChange={(open) => {
         if (!open) close();
       }}
-      title={crash ? t`OpenMail stopped unexpectedly` : t`Send feedback…`}
+      title={crash ? t`OpenMail stopped unexpectedly` : t`Send feedback`}
     >
       <div className="w-full">
         <p className="mb-3 text-callout text-a11y-muted">

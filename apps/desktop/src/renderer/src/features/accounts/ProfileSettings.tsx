@@ -113,7 +113,9 @@ export function ProfileSettings({ accounts }: { accounts: readonly Account[] }) 
     <>
       {/* The tab already shows "Spaces" as its title. */}
       <p className={`px-1 ${settingsHint}`}>
-        <Trans>Group accounts into spaces and choose a space in the window toolbar.</Trans>
+        <Trans>
+          Group accounts into spaces and switch between them at the bottom of the sidebar.
+        </Trans>
       </p>
       {profiles.length > 0 && (
         <SettingsGroup>

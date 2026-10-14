@@ -3210,8 +3210,8 @@ msgid "Google shows a warning that it hasn't verified OpenMail yet. Choose Advan
 msgstr "Google zeigt eine Warnung, dass OpenMail noch nicht überprüft wurde. Wähle „Erweitert“ und fahre dann mit OpenMail fort."
 
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
-msgid "Group accounts into spaces and choose a space in the window toolbar."
-msgstr "Gruppiere Accounts in Bereiche und wähle einen Bereich in der Symbolleiste des Fensters."
+msgid "Group accounts into spaces and switch between them at the bottom of the sidebar."
+msgstr "Gruppiere Accounts in Bereiche und wechsle zwischen ihnen unten in der Seitenleiste."
 
 #: src/renderer/src/features/overview/Overview.tsx
 msgid "Group accounts into spaces, like “Work” and “Personal”. Each space has its own inbox. Switch with {firstSpaceKey} to {lastSpaceKey}."
@@ -6241,6 +6241,9 @@ msgid "Send failed"
 msgstr "Senden fehlgeschlagen"
 
 #: src/renderer/src/features/feedback/Feedback.tsx
+msgid "Send feedback"
+msgstr "Feedback senden"
+
 #: src/renderer/src/state/desktop.ts
 msgid "Send feedback…"
 msgstr "Feedback senden…"
