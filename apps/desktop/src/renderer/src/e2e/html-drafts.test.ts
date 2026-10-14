@@ -430,6 +430,11 @@ it.each(["reply", "forward"] as const)(
     await eventually(() =>
       expect(screen.getByRole("region", { name: "Quoted text" })).toBeTruthy(),
     );
+    // The read-only original starts at its first line, in the editor's text style, not Times.
+    const quoted = previewFrame();
+    const preview = new DOMParser().parseFromString(quoted.srcdoc, "text/html");
+    expect(preview.body.innerHTML).toMatch(mode === "reply" ? /^On / : /^-+ Forwarded/);
+    expect(quoted.srcdoc).toMatch(/body \{ margin: 0; font: 14px\/1\.625 -apple-system/);
     const body = screen.getByRole("textbox", { name: "Body" });
     expect(body.getAttribute("contenteditable")).toBe("true");
     expect(body.hidden).toBe(false);
@@ -452,6 +457,8 @@ it.each(["reply", "forward"] as const)(
       /^(?:<div>)?Thanks for this issue(?:<\/div>)?<br>[^]*<table width="100%"[^]*<table width="600"[^]*Async closures are stable/,
     );
     expect(sent?.html).toContain('style="background:#ffffff');
+    // One blank line between the reply and the original, as in the editable quote.
+    expect(sent?.html).toMatch(/^(?:<div>)?Thanks for this issue(?:<\/div>)?<br><br>[^<]/);
     expect(sent?.text).toMatch(
       mode === "reply"
         ? /^Thanks for this issue\n+On .+ wrote:\n> This Week in Rust/

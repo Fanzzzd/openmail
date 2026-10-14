@@ -14,7 +14,7 @@ import {
   MentionSuggestions,
   editorButton,
 } from "./ComposeEditorBars";
-import { composePreviewHtml } from "../compose-preview";
+import { composePreviewHtml, quotedOriginalPreviewHtml } from "../compose-preview";
 import { resizeComposeImage } from "../compose-contacts-dom";
 import {
   matchesShortcut,
@@ -599,10 +599,7 @@ export function ComposeEditor({
       )}
       {body.kind === "rich" && quotedHtml !== undefined && (
         <QuotedOriginal
-          html={composePreviewHtml(
-            { kind: "rich", text: "", html: quotedHtml, ...(body.font ? { font: body.font } : {}) },
-            attachments,
-          )}
+          html={quotedOriginalPreviewHtml(quotedHtml, body.font, attachments)}
           onEdit={() => {
             selectionRef.current = null;
             onChange(unquotedComposeBody(body));

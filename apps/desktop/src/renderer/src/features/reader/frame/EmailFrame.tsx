@@ -40,6 +40,14 @@ import { HIGHLIGHT_CSS, useSearchHits } from "../../search";
 // document and listen for shortcut keys; without `allow-scripts` the mail
 // cannot use it. The mobile reader uses the same policy.
 
+/**
+ * A draft without a compose font is sent unstyled, and the editor shows it in the app's text style.
+ * The compose preview does the same instead of the browser default (Times 16px, 8px margin). The
+ * stack is `--font-sans` in styles.css and the size is the editor's `text-callout` and
+ * `leading-relaxed`. A draft with a font carries it in a wrapper `div`, which overrides this.
+ */
+const COMPOSE_CSS = ` body { margin: 0; font: 14px/1.625 -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif; }`;
+
 interface Props {
   presentation?: "reader" | "compose";
   /** Prepared HTML: trackers stripped, inline images resolved. */
@@ -180,7 +188,7 @@ export function EmailFrame({
 
   const css =
     presentation === "compose"
-      ? `html, body { background: ${READER_COLOURS.paper}; color: ${READER_COLOURS.ink}; color-scheme: light; }`
+      ? `html, body { background: ${READER_COLOURS.paper}; color: ${READER_COLOURS.ink}; color-scheme: light; }${COMPOSE_CSS}`
       : `${READER_BASE_CSS}${background === "dark" ? DARK_CSS : ""} body { zoom: ${zoom}%; }${HIGHLIGHT_CSS}`;
   const safeHtml = useMemo(() => sanitizeReaderHtml(html, remote), [html, remote]);
   const doc = `<!doctype html><html lang="${i18n.locale}"><head><meta charset="utf-8">
