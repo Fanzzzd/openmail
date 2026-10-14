@@ -118,7 +118,7 @@ it("snooze advances selection and Cmd+Z restores the inbox and reminder", async 
     expect(screen.getByRole("article", { name: /^Selected message/ })).toBeTruthy(),
   );
   clickButton("Conversation actions");
-  fireEvent.click(await screen.findByRole("menuitem", { name: "Snooze" }));
+  fireEvent.click(await screen.findByRole("menuitem", { name: /^Snooze/ }));
   await eventually(() => expect(screen.getByRole("button", { name: "In 3 hours" })).toBeTruthy());
   clickButton("In 3 hours");
   await eventually(() => expect(row(h.id("two")).getAttribute("aria-selected")).toBe("true"));
@@ -751,9 +751,9 @@ it.each(["missing", "failed"] as const)(
         "Recipients outside the original conversation:",
       );
       expect(screen.getByRole("alertdialog").textContent).toContain("alice@example.com");
-      expect(screen.queryByText("Could not check recipients.")).toBeNull();
+      expect(screen.queryByText("Couldn't check recipients.")).toBeNull();
     } else
-      await eventually(() => expect(screen.getByText("Could not check recipients.")).toBeTruthy());
+      await eventually(() => expect(screen.getByText("Couldn't check recipients.")).toBeTruthy());
     expect(h.server.sent).toHaveLength(0);
   },
 );

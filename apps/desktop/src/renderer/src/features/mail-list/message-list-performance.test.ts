@@ -28,7 +28,11 @@ vi.mock("../../ui/Tip", () => ({
 }));
 vi.mock("../organize/ThreadActions", () => ({ ThreadMenuItems: () => null }));
 vi.mock("./AccountBadge", () => ({ AccountBadge: () => null, useAccountName: () => "" }));
-vi.mock("../ai/TriageChip", () => ({ TriageChip: () => null }));
+vi.mock("../ai/TriageChip", () => ({
+  TriageChip: () => null,
+  TriageSummary: () => null,
+  TriageMenuItems: () => null,
+}));
 vi.mock("@base-ui/react/toggle", () => ({
   Toggle: ({ children }: { children: ReactNode }) => createElement("button", null, children),
 }));

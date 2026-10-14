@@ -21,7 +21,11 @@ vi.mock("../../ui/Tip", () => ({
 }));
 vi.mock("../organize/ThreadActions", () => ({ ThreadMenuItems: () => null }));
 vi.mock("./AccountBadge", () => ({ AccountBadge: () => null, useAccountName: () => "" }));
-vi.mock("../ai/TriageChip", () => ({ TriageChip: () => null }));
+vi.mock("../ai/TriageChip", () => ({
+  TriageChip: () => null,
+  TriageSummary: () => null,
+  TriageMenuItems: () => null,
+}));
 import { MessageList } from "./MessageList";
 
 it("each density keeps local results and shows search-specific errors", () => {
@@ -97,7 +101,7 @@ it("each density keeps local results and shows search-specific errors", () => {
     expect(markup).toContain(
       density === "dense"
         ? "outlook:me: Sign in again"
-        : "outlook:me: The server could not complete this search.",
+        : "outlook:me: The server couldn&#x27;t complete this search.",
     );
     expect(markup).not.toContain("The server rejected this change.");
     expect(markup.includes("Unique preview body")).toBe(LIST_DENSITIES[density].previewLines > 0);

@@ -2,7 +2,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import { fireEvent, screen, within } from "@testing-library/react/pure";
 import { Deferred, Effect } from "effect";
 import { ProviderError } from "@openmail/core/portable";
-import { advance, clickButton, eventually, flow, row } from "./harness";
+import { advance, clickButton, eventually, flow, incoming, row } from "./harness";
 
 let current: Awaited<ReturnType<typeof flow>> | undefined;
 afterEach(async () => {
@@ -146,4 +146,35 @@ it("archiving in a conversation window asks the main window to offer Undo", asyn
   expect((await h.run(h.store.getMessage(h.id("one")))).labels).not.toContain("INBOX");
   await h.run(h.m.undoBatch(undoId));
   expect((await h.run(h.store.getMessage(h.id("one")))).labels).toContain("INBOX");
+});
+
+it("discarding in a compose window holds the draft and asks the main window to offer Undo", async () => {
+  const raw = new TextEncoder().encode(
+    [
+      "From: me@gmail.com",
+      "To: carol@example.com",
+      "Subject: Window draft",
+      "Content-Type: text/plain; charset=utf-8",
+      "",
+      "Window body",
+      "",
+    ].join("\r\n"),
+  );
+  current = await flow({
+    messages: [incoming("draft", { labels: ["DRAFT"], subject: "Window draft" })],
+    serverDraft: { providerId: "draft", raw },
+  });
+  const h = current;
+  await eventually(() => expect(screen.getByRole("textbox", { name: "Subject" })).toBeTruthy());
+  clickButton("Discard draft");
+  await eventually(() =>
+    expect(h.requests.some((request) => request.tag === "ShowUndo")).toBe(true),
+  );
+  const notice = h.requests.find((request) => request.tag === "ShowUndo")?.payload;
+  expect(notice).toMatchObject({ text: "Draft discarded", undo: { _tag: "Draft" } });
+  const discard = h.requests.find((request) => request.tag === "DiscardDraft")?.payload;
+  expect(discard).toMatchObject({ holdMs: 15_000 });
+  const id =
+    typeof discard === "object" && discard !== null && "id" in discard ? String(discard.id) : "";
+  expect((await h.run(h.m.restoreDraft(id))).message.subject).toBe("Window draft");
 });

@@ -74,7 +74,11 @@ vi.mock("./frame/EmailFrame", () => ({
   },
 }));
 vi.mock("../ai/AiPanel", () => ({ ThreadSummary: () => null, Assistant: () => null }));
-vi.mock("../ai/TriageChip", () => ({ TriageChip: () => null }));
+vi.mock("../ai/TriageChip", () => ({
+  TriageChip: () => null,
+  TriageSummary: () => null,
+  TriageMenuItems: () => null,
+}));
 vi.mock("./attachments/Attachments", () => ({ Attachments: () => null }));
 vi.mock("../calendar/InviteBanner", () => ({ InviteBanner: () => null }));
 vi.mock("../calendar/MeetingLinks", () => ({ MeetingLinks: () => null }));
@@ -154,7 +158,7 @@ it("sync preserves selected reply/find/expansion; forward/web keep their shortcu
     act(() => button.click());
   };
   const selected = () => {
-    const article = dom.element.querySelector('article[aria-label="Selected message"]');
+    const article = dom.element.querySelector('article[aria-label^="Selected message"]');
     if (!article) throw new Error("Missing selected message");
     return article;
   };

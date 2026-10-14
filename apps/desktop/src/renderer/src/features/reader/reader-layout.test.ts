@@ -81,7 +81,11 @@ vi.mock("./frame/EmailFrame", () => ({
 vi.mock("../calendar/lazy", () => ({ InviteBanner: () => null }));
 vi.mock("./lazy", () => ({ RawMessageDialog: () => null }));
 vi.mock("../ai/AiPanel", () => ({ ThreadSummary: () => null }));
-vi.mock("../ai/TriageChip", () => ({ TriageChip: () => null }));
+vi.mock("../ai/TriageChip", () => ({
+  TriageChip: () => null,
+  TriageSummary: () => null,
+  TriageMenuItems: () => null,
+}));
 vi.mock("./attachments/Attachments", () => ({
   Attachments: ({
     message,
@@ -353,7 +357,7 @@ it("asks for calendar consent, not a new sign-in, when the provider refuses cale
     localized(h(InviteBanner, { message: message("m1", { hasCalendar: true }) })),
   );
   expect(view.container.textContent).toContain("Calendar access isn't granted for this account.");
-  expect(view.container.textContent).not.toContain("Could not load your calendar");
+  expect(view.container.textContent).not.toContain("Couldn't load your calendar");
   expect(view.container.textContent).not.toContain("Sign in again");
   expect(screen.getByRole("button", { name: "Connect calendar" })).toBeTruthy();
   expect(screen.getByRole("button", { name: "Accept" })).toBeTruthy();
