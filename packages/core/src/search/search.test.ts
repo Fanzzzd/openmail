@@ -1013,9 +1013,9 @@ it("searchInputProblem names the limit an unusable search hits", () => {
     searchInputProblem(Array.from({ length: 257 }, (_, i) => `w${i}`).join(" ")),
     "terms",
   );
-  assert.strictEqual(searchInputProblem("(".repeat(33) + "a"), "depth");
+  assert.strictEqual(searchInputProblem(`${"(".repeat(33)}a`), "depth");
   assert.strictEqual(
-    searchInputError("(".repeat(33) + "a")?.message,
+    searchInputError(`${"(".repeat(33)}a`)?.message,
     "Search groups are nested too deeply. Simplify your query.",
   );
 });

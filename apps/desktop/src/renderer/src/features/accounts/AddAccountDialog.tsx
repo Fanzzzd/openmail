@@ -47,7 +47,7 @@ const PRESET_NOTES: Record<string, MessageDescriptor> = {
  * Google has not finished verifying OpenMail's built-in client, so its consent
  * flow shows an unverified-app warning first. Set to false once verification lands.
  */
-export const GOOGLE_BUILT_IN_UNVERIFIED = true;
+export const GOOGLE_BUILT_IN_UNVERIFIED: boolean = true;
 
 type OAuthProvider = "gmail" | "outlook";
 /** IMAP preset keys in core, plus "custom" for any other server. */

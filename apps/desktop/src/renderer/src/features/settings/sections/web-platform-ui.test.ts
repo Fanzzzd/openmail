@@ -153,8 +153,19 @@ it("gives the sidebar footer, attachment chips and editor buttons a 44 px target
   render(
     localized(
       h(SidebarFooter, {
-        accounts: [{ id: "a1" } as never],
-        syncState: { running: false, lastFinishedAt: null } as never,
+        accounts: [
+          {
+            id: "gmail:me",
+            provider: "gmail",
+            email: "me@example.com",
+            createdAt: 0,
+            lastSyncedAt: null,
+            lastSyncError: null,
+            profileId: null,
+            needsReauth: false,
+          },
+        ],
+        syncState: { running: false, errors: [], lastFinishedAt: null },
         progress: null,
         failures: [],
         onSettings: vi.fn(),

@@ -34,7 +34,7 @@ const snakeKeys = (value: unknown): unknown =>
       : value;
 /** JSON with snake_case keys at any depth. toJSON runs first, so dates stay strings. */
 export const jsonText = (data: unknown) =>
-  JSON.stringify(snakeKeys(JSON.parse(JSON.stringify(data) ?? "null")), null, 2);
+  JSON.stringify(data === undefined ? data : snakeKeys(JSON.parse(JSON.stringify(data))), null, 2);
 const rawJsonText = (data: unknown) => JSON.stringify(data, null, 2);
 export const print = <A>(data: A, asJson: boolean, human: (data: A) => string = jsonText) =>
   Console.log(asJson ? jsonText(data) : human(data));
