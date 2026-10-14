@@ -6,12 +6,26 @@ import { Flag } from "effect/cli";
 
 export const CLI: Actor = { kind: "user", surface: "cli" };
 
-/** A failure already explained to the person on stderr; exits with code 1. */
-export class Failed extends Data.TaggedError("Failed")<{ readonly message: string }> {
+/**
+ * A failure the top level reports: `error: message` (and `hint: …` when there is one) on stderr,
+ * and with --json the object `{message, code, hint}` on stdout. Exits with code 1.
+ */
+export class Failed extends Data.TaggedError("Failed")<{
+  readonly message: string;
+  /** Stable for scripts. Defaults to "failed". */
+  readonly code?: string;
+  /** The next step; printed on stderr after the message. */
+  readonly hint?: string;
+  /** stdout already holds the --json answer, such as a tool's own result or error object. */
+  readonly printed?: boolean;
+}> {
   readonly [Runtime.errorReported] = false;
 }
 
-export const fail = (message: string) => Effect.fail(new Failed({ message }));
+export const fail = (
+  message: string,
+  extra: { readonly code?: string; readonly hint?: string; readonly printed?: boolean } = {},
+) => Effect.fail(new Failed({ message, ...extra }));
 
 export const jsonFlag = Flag.Boolean("json").pipe(
   Flag.withDescription("Print machine-readable JSON"),

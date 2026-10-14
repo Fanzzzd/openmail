@@ -17,9 +17,15 @@ import { toolCommands } from "./commands/tools.js";
 import { CliError, Command } from "effect/cli";
 import { corpus } from "./commands/corpus.js";
 import { Failed, WRITE_MODE_SETTING, fail } from "./commands/common.js";
-import { withShortUsageErrors } from "./usage.js";
+import { UsageError, withShortUsageErrors } from "./usage.js";
+import {
+  type Explained,
+  explainDefect,
+  explainError,
+  jsonError,
+  stderrText,
+} from "./cli-errors.js";
 import * as NodeRuntime from "@effect/platform-node/NodeRuntime";
-import { dataFolderError } from "./data-folder-error.js";
 import { CLI_VERSION } from "./version.js";
 
 /**
@@ -79,57 +85,42 @@ const openmail = Command.make("openmail").pipe(
   Command.withSubcommands([corpus, ...providedCommands]),
 );
 
-/** Turns Mailbox errors into one line on stderr. CLI parse errors are already printed. */
-function explain(error: unknown): string | undefined {
-  if (CliError.isCliError(error) || !(error instanceof Error)) return undefined;
-  if (!("_tag" in error)) return error.message;
-  const folder = dataFolderError(error, process.env.OPENMAIL_HOME);
-  if (folder) return folder;
-  switch (error._tag) {
-    case "UsageError":
-      return undefined;
-    case "NotFound":
-      return "what" in error && "id" in error
-        ? `No ${String(error.what)} with id ${String(error.id)}.`
-        : error.message;
-    case "ClientNotConfigured":
-      return "No OAuth client is set up for this provider. Run `openmail config google` or `openmail config microsoft` (see docs/setup-*.md).";
-    case "AuthError":
-      return `Sign-in failed: ${error.message}`;
-    case "ProviderError":
-      return `The mail provider did not answer: ${error.message}`;
-    case "QuitError":
-      return "Canceled.";
-    default:
-      return error.message;
-  }
-}
-
 const cliArgs = process.argv.slice(2);
 const appOnlyWriteMode =
   cliArgs[0] === "agents" &&
   cliArgs[1] === "write-mode" &&
   cliArgs.slice(2).some((arg) => !arg.startsWith("-"));
+/** With --json, a failure also prints `{message, code, hint}` on stdout for scripts. */
+const jsonOutput = cliArgs.includes("--json");
+const home = process.env.OPENMAIL_HOME;
+const report = (explained: Explained) =>
+  Effect.gen(function* () {
+    if (jsonOutput && !explained.stdoutDone) yield* Console.log(jsonError(explained));
+    if (!explained.stderrDone) yield* Console.error(stderrText(explained));
+  });
+
 (appOnlyWriteMode
-  ? fail(`Changes by AI apps can only be changed in the app, under ${WRITE_MODE_SETTING}.`)
+  ? fail(`Changes by AI apps can only be changed in the app, under ${WRITE_MODE_SETTING}.`, {
+      code: "app_only",
+      hint: `Open OpenMail and change it under ${WRITE_MODE_SETTING}.`,
+    })
   : withShortUsageErrors(Command.run(openmail, { version: CLI_VERSION }))
 ).pipe(
   Effect.catch((error) => {
-    const message = explain(error);
-    return message === undefined
-      ? Effect.fail(error)
-      : Console.error(`error: ${message}`).pipe(
-          Effect.andThen(Effect.fail(new Failed({ message }))),
-        );
+    const explained = explainError(error, home);
+    // Usage errors keep their own exit code, 2; every other failure exits 1.
+    const exit: Effect.Effect<never, unknown> =
+      error instanceof UsageError || CliError.isCliError(error)
+        ? Effect.fail(error)
+        : Effect.fail(new Failed({ message: explained.message }));
+    return Effect.andThen(report(explained), exit);
   }),
   // A defect (a database from a newer OpenMail, a file another process keeps locked) also
   // gets one line on stderr. runMain would log it to stdout, where scripts never look.
   Effect.catchDefect((defect) => {
-    const message =
-      dataFolderError(defect, process.env.OPENMAIL_HOME) ??
-      (defect instanceof Error ? defect.message : String(defect));
-    return Console.error(`error: ${message}`).pipe(
-      Effect.andThen(Effect.fail(new Failed({ message }))),
+    const explained = explainDefect(defect, home);
+    return report(explained).pipe(
+      Effect.andThen(Effect.fail(new Failed({ message: explained.message }))),
     );
   }),
   Effect.provide(NodeServices.layer),

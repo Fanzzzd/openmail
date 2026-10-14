@@ -12,7 +12,7 @@ import {
 import { Tool } from "effect/ai";
 import { Effect, Layer, Option, Result, Schema, Stream } from "effect";
 import { Flag } from "effect/cli";
-import { fail, print } from "./common.js";
+import { Failed, fail, print } from "./common.js";
 import { invalidArguments } from "../tool-errors.js";
 
 export type ToolName = keyof typeof MailToolkit.tools;
@@ -24,8 +24,7 @@ const toolHandlers = MailToolkitLayer.pipe(
   Layer.provide(AgentIdentity.fixed("mcp", "openmail-cli")),
 );
 const ToolFailure = Schema.toEncoded(MailToolError);
-const gapText = (gap: string) =>
-  `${gap}\nhint: Run \`openmail tool access_status\` to see what is readable.`;
+const GAP_HINT = "Run `openmail tool access_status` to see what is readable.";
 /**
  * Runs the tool as MCP does. With --json, stdout gets exactly the object MCP returns, the
  * result or `{message, code, hint}`. Anything only the CLI says goes to stderr: a failure's
@@ -38,7 +37,9 @@ export function invokeTool(name: ToolName, input: unknown, json: boolean) {
   const toolFailure = (failure: typeof ToolFailure.Type, gap: string | null) =>
     (json ? print(failure, true) : Effect.void).pipe(
       Effect.andThen(
-        fail(gap === null ? `${failure.message}\nhint: ${failure.hint}` : gapText(gap)),
+        gap === null
+          ? fail(failure.message, { code: failure.code, hint: failure.hint, printed: json })
+          : fail(gap, { code: failure.code, hint: GAP_HINT, printed: json }),
       ),
     );
   return Effect.gen(function* () {
@@ -73,7 +74,7 @@ export function invokeTool(name: ToolName, input: unknown, json: boolean) {
       );
     if (gap === null) return last.value.encodedResult;
     yield* print(last.value.encodedResult, json);
-    return yield* fail(gapText(gap));
+    return yield* fail(gap, { code: "not_readable", hint: GAP_HINT, printed: true });
   }).pipe(Effect.provide(toolHandlers));
 }
 /** @internal */
@@ -84,7 +85,15 @@ export function runToolCommand(
   return Effect.gen(function* () {
     if (isWriteTool(name) && !allowWrites)
       return yield* fail("Proposal tools require --allow-writes and app AI write permission.");
-    const parsed = yield* Schema.decodeUnknownEffect(Schema.fromJsonString(Schema.Unknown))(input);
+    const parsed = yield* Effect.try({
+      try: (): unknown => JSON.parse(input),
+      catch: (error) =>
+        new Failed({
+          message: `--input-json is not valid JSON: ${error instanceof Error ? error.message : String(error)}`,
+          code: "invalid_input",
+          hint: `Pass one JSON object, such as --input-json '{"limit":5}'. \`openmail tool ${name} --help\` lists the parameters.`,
+        }),
+    });
     const result = yield* invokeTool(name, parsed, json);
     return yield* print(result, json);
   });

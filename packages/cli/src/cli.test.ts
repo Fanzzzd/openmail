@@ -374,6 +374,53 @@ describe("errors", () => {
     expect(stderr).toBe("error: No proposal with id 99.\n");
   });
 
+  const ErrorObject = Schema.Struct({
+    message: Schema.String,
+    code: Schema.String,
+    hint: Schema.String,
+  });
+  const errorObject = (stdout: string) => Schema.decodeUnknownSync(ErrorObject)(JSON.parse(stdout));
+
+  test("--input-json that is not JSON names the flag", async () => {
+    const { code, stdout, stderr } = await openmail([
+      "tool",
+      "list_threads",
+      "--input-json",
+      "notjson",
+    ]);
+    expect(code).toBe(1);
+    expect(stdout).toBe("");
+    expect(stderr).toMatch(
+      /^error: --input-json is not valid JSON: .+\nhint: Pass one JSON object/,
+    );
+  });
+
+  test("under --json every failure prints {message, code, hint} on stdout and exits non-zero", async () => {
+    const cases = [
+      [["show", "gmail:alex@example.com/nope"], 1, "not_found", "error: No message with id"],
+      [
+        ["tool", "list_threads", "--input-json", "notjson"],
+        1,
+        "invalid_input",
+        "error: --input-json",
+      ],
+      [["list", "--limit", "abc"], 2, "usage", "error: Invalid value for flag --limit"],
+      [["agents", "write-mode", "allow"], 1, "app_only", "error: Changes by AI apps"],
+    ] as const;
+    await Promise.all(
+      cases.map(async ([args, exit, kind, human]) => {
+        const { code, stdout, stderr } = await openmail([...args, "--json"]);
+        expect(code, stderr).toBe(exit);
+        const error = errorObject(stdout);
+        expect(error.code).toBe(kind);
+        expect(error.message.length).toBeGreaterThan(0);
+        expect(error.hint.length).toBeGreaterThan(0);
+        // People still read the same line on stderr.
+        expect(stderr.startsWith(human), stderr).toBe(true);
+      }),
+    );
+  });
+
   test("agent write mode cannot be changed from the CLI", async () => {
     const { code, stderr } = await openmail(["agents", "write-mode", "allow"]);
     expect(code).toBe(1);

@@ -9,7 +9,11 @@ import { Console, Data, Effect, Runtime } from "effect";
 import { CliError, CliOutput } from "effect/cli";
 
 /** A usage error already printed on stderr. */
-export class UsageError extends Data.TaggedError("UsageError")<{ readonly message: string }> {
+export class UsageError extends Data.TaggedError("UsageError")<{
+  readonly message: string;
+  /** "Run `openmail list --help` for details." */
+  readonly hint: string;
+}> {
   readonly [Runtime.errorExitCode] = 2;
   readonly [Runtime.errorReported] = false;
 }
@@ -30,6 +34,7 @@ export const withShortUsageErrors = <A, E, R>(
     let help: string | undefined;
     let held: string | undefined;
     let usage = "";
+    let reported = { message: "Usage error", hint: "Run `openmail --help` for details." };
     const short: CliOutput.Formatter = {
       formatCliError: (error) => formatter.formatCliError(error),
       formatError: (error) => formatter.formatError(error),
@@ -42,6 +47,10 @@ export const withShortUsageErrors = <A, E, R>(
       formatErrors: (errors) => {
         held = undefined;
         const path = commandPath(usage);
+        reported = {
+          message: errors.map((error) => error.message).join("\n") || reported.message,
+          hint: `Run \`${path} --help\` for details.`,
+        };
         return [
           ...errors.map((error) => `error: ${error.message}`),
           `Usage: ${usage}`,
@@ -67,7 +76,7 @@ export const withShortUsageErrors = <A, E, R>(
       Effect.catchIf(
         (error): error is E & CliError.ShowHelp =>
           CliError.isCliError(error) && error._tag === "ShowHelp",
-        () => Effect.fail(new UsageError({ message: "Usage error" })),
+        () => Effect.fail(new UsageError(reported)),
       ),
     );
   });
