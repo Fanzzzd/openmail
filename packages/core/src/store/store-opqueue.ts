@@ -6,6 +6,7 @@ import { NotFound, ProviderError } from "../domain/errors.js";
 import { JITTER } from "../sync/backoff.js";
 import type { Store } from "./service.js";
 import { all, first, run } from "./sql-rows.js";
+import { Buffer } from "../platform/bytes.js";
 import {
   CopyProgressRow,
   FailedOpDetailRow,
@@ -13,6 +14,15 @@ import {
   PendingOpRow,
   toPendingOps,
 } from "./store-rows.js";
+/** Raw MIME SMTP accepted, kept until its Sent copy is filed. */
+const SMTP_ACCEPTED = "smtp-accepted:";
+const SmtpAcceptedRow = Schema.Struct({
+  key: Schema.String,
+  value_json: Schema.fromJsonString(
+    Schema.Struct({ accountId: Schema.String, raw: Schema.String, at: Schema.Number }),
+  ),
+});
+
 const PENDING_OP_COLUMNS =
   "id, account_id, provider_id, op_json, attempts, last_error, created_at, retry_at, rfc_message_id, progress_json, appended_message_id";
 
@@ -228,6 +238,31 @@ export const makeOpQueueStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
             sql`INSERT INTO prefs(key,value_json) VALUES(${`send-uncertain:${id}`},'true') ON CONFLICT(key) DO NOTHING`,
           )
         : run(sql`DELETE FROM prefs WHERE key=${`send-uncertain:${id}`}`),
+    smtpAccepted: all(SmtpAcceptedRow)(
+      sql`SELECT key, value_json FROM prefs WHERE substr(key,1,${SMTP_ACCEPTED.length})=${SMTP_ACCEPTED} ORDER BY key`,
+    ).pipe(
+      Effect.map((rows) =>
+        rows.map((row) => ({
+          draftId: row.key.slice(SMTP_ACCEPTED.length),
+          accountId: row.value_json.accountId,
+          raw: new Uint8Array(Buffer.from(row.value_json.raw, "base64")),
+          at: row.value_json.at,
+        })),
+      ),
+    ),
+    markSmtpAccepted: (draftId, accountId, raw) =>
+      Effect.gen(function* () {
+        const value = JSON.stringify({
+          accountId,
+          raw: Buffer.from(raw).toString("base64"),
+          at: yield* Clock.currentTimeMillis,
+        });
+        yield* run(
+          sql`INSERT INTO prefs(key,value_json) VALUES(${SMTP_ACCEPTED + draftId},${value}) ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json`,
+        );
+      }),
+    clearSmtpAccepted: (draftId) =>
+      run(sql`DELETE FROM prefs WHERE key=${SMTP_ACCEPTED + draftId}`),
   } satisfies Pick<
     Store["Service"],
     | "enqueueOp"
@@ -248,5 +283,8 @@ export const makeOpQueueStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
     | "retryPendingOpsNow"
     | "sendUncertain"
     | "setSendUncertain"
+    | "smtpAccepted"
+    | "markSmtpAccepted"
+    | "clearSmtpAccepted"
   >;
 };

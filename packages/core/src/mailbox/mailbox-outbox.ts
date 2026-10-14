@@ -21,6 +21,7 @@ import { READ_ONLY_MESSAGE } from "./read-only.js";
 import { isEmailAddress } from "../compose/recipients.js";
 import type { StoredDraft } from "../store/service.js";
 import { providerCapabilities } from "../providers/capabilities.js";
+import { serverSavesSent } from "../providers/imap/imap-settings.js";
 import type { SendOriginal } from "../providers/send-original.js";
 
 /** A finished discard keeps its draft id this long, so a save arriving late can't recreate it. */
@@ -176,6 +177,7 @@ export const makeOutboxMailbox = (
           ? {
               load: store.sendPreparationState(draftId),
               save: (state) => store.setSendPreparationState(draftId, state),
+              accepted: (raw) => store.markSmtpAccepted(draftId, accountId, raw),
             }
           : undefined,
       )
@@ -195,6 +197,8 @@ export const makeOutboxMailbox = (
           ]),
         ),
       );
+    // The adapter filed the Sent copy or reported it missing; nothing is left to finish.
+    if (draftId) yield* store.clearSmtpAccepted(draftId);
     if (delivery?.rejected?.length) {
       yield* store.recordFailedOp({
         accountId,
@@ -543,11 +547,74 @@ export const makeOutboxMailbox = (
         yield* changed;
       }
     });
+  /**
+   * SMTP accepted this send, then OpenMail stopped before the send finished. The message is out:
+   * file its Sent copy, then finish the send as the live path would have.
+   */
+  const finishAcceptedSend = (accepted: { draftId: string; accountId: string; raw: Uint8Array }) =>
+    Effect.gen(function* () {
+      const { draftId } = accepted;
+      const account = yield* store.getAccount(accepted.accountId).pipe(Effect.option);
+      const fileSentCopy = Option.isSome(account)
+        ? providers.get(account.value.provider).fileSentCopy
+        : undefined;
+      const filed =
+        Option.isSome(account) && fileSentCopy
+          ? yield* fileSentCopy(account.value, accepted.raw).pipe(Effect.result)
+          : undefined;
+      const queued = (yield* store.queuedSends).find((item) => item.id === draftId);
+      const draft = yield* store.getDraft(draftId);
+      yield* store.transaction(
+        Effect.gen(function* () {
+          if (Option.isSome(draft)) yield* removeDraft(draft.value);
+          yield* store.deleteQueuedSend(draftId);
+          yield* store.setSendUncertain(draftId, false);
+          yield* store.setSendPreparationState(draftId, null);
+          yield* store.clearSmtpAccepted(draftId);
+        }),
+      );
+      if (Option.isSome(draft) && draft.value.proposalId !== null)
+        yield* settleProposal(draft.value.proposalId, true);
+      if (filed?._tag === "Failure" && Option.isSome(account)) {
+        const message = queued?.message ?? (Option.isSome(draft) ? draft.value.message : undefined);
+        yield* store.recordFailedOp({
+          accountId: accepted.accountId,
+          providerId: draftId,
+          kind: "sentCopyMissing",
+          reason: `SMTP accepted the message before OpenMail closed, but saving its Sent copy failed: ${filed.failure.message}`,
+          subject: message?.subject ?? "",
+          sender: message?.from?.address ?? account.value.email,
+        });
+      }
+      yield* changed;
+    });
+
+  /** What to tell the person about a send that stopped mid-way with no SMTP answer recorded. */
+  const interruptedMessage = (accountId: string) =>
+    store.getAccount(accountId).pipe(
+      Effect.option,
+      Effect.map((account) =>
+        Option.isSome(account) && account.value.imap && !serverSavesSent(account.value.imap)
+          ? "Sending was interrupted. This server does not save sent mail itself, so Sent may not have a copy even if it went out. Ask a recipient before sending it again."
+          : "Sending was interrupted. Check Sent before trying again.",
+      ),
+    );
+
   const start = Effect.gen(function* () {
     // Recover interrupted claims only in send-owning app layers; CLI/MCP never resume desktop intents.
     if (!readOnly && (options.resumeDesktopSends || options.localDraftQueue)) {
       yield* resumeHeldDiscards;
+      const accepted = yield* store.smtpAccepted;
+      // Filing in Sent waits for the server; start does not.
+      if (accepted.length)
+        yield* Effect.forEach(accepted, finishAcceptedSend, { discard: true }).pipe(
+          Effect.catchCause((cause) =>
+            logWarning("sent-copy-failed", "Finishing an accepted send failed", cause),
+          ),
+          Effect.forkIn(mailboxScope),
+        );
       for (const item of yield* store.queuedSends) {
+        if (accepted.some((entry) => entry.draftId === item.id)) continue;
         if (item.status === "sending") {
           yield* store.transaction(
             Effect.all([
@@ -556,10 +623,7 @@ export const makeOutboxMailbox = (
             ]),
           );
           if (item.desktopUndo)
-            yield* recordSendFailure(
-              item,
-              "Sending was interrupted. Check Sent before trying again.",
-            );
+            yield* recordSendFailure(item, yield* interruptedMessage(item.accountId));
         } else if (options.resumeDesktopSends && item.desktopUndo && item.status === "waiting") {
           yield* (yield* Clock.currentTimeMillis) - item.due > WRITE_RECOVERY_WINDOW_MS
             ? store.transaction(expireDesktopSend(item))

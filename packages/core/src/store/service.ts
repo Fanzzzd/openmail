@@ -364,6 +364,15 @@ export class Store extends Context.Service<
 
     sendUncertain(id: string): Effect.Effect<boolean>;
     setSendUncertain(id: string, value: boolean): Effect.Effect<void>;
+    /**
+     * Sends SMTP accepted whose Sent copy may not be filed yet: the outbox writes one right after
+     * SMTP 250 and clears it when the send finishes, so a crash in between leaves it behind.
+     */
+    readonly smtpAccepted: Effect.Effect<
+      readonly { draftId: string; accountId: string; raw: Uint8Array; at: number }[]
+    >;
+    markSmtpAccepted(draftId: string, accountId: string, raw: Uint8Array): Effect.Effect<void>;
+    clearSmtpAccepted(draftId: string): Effect.Effect<void>;
     readonly queuedSends: Effect.Effect<QueuedSend[]>;
     putQueuedSend(item: QueuedSend): Effect.Effect<void>;
     deleteQueuedSend(id: string): Effect.Effect<void>;

@@ -90,7 +90,7 @@ export const makeAccountsStore = ({
               // mobile send keeps its account inside its JSON.
               yield* run(sql`DELETE FROM audit_log WHERE account_id=${id}`);
               yield* run(
-                sql`DELETE FROM prefs WHERE key LIKE 'mobile-outbox:%' AND json_valid(value_json) AND json_extract(value_json,'$.accountId')=${id}`,
+                sql`DELETE FROM prefs WHERE (key LIKE 'mobile-outbox:%' OR key LIKE 'smtp-accepted:%') AND json_valid(value_json) AND json_extract(value_json,'$.accountId')=${id}`,
               );
               // Every other table with an account_id cascades from accounts,
               // directly or through messages and thread_reminders.

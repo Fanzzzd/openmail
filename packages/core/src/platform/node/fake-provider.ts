@@ -83,6 +83,12 @@ export interface FakeServer {
   failNext?: ProviderFailure;
   /** Submission uncertainty is a send-only adapter result. */
   sendFailure?: ProviderFailure | import("../../domain/errors.js").SendUncertain;
+  /** Raw MIME filed through fileSentCopy, and a failure for the next call. */
+  sentCopies: Uint8Array[];
+  /** When set, send reports SMTP acceptance of these bytes through the preparation. */
+  acceptedRaw?: Uint8Array;
+  acceptedMarks?: number;
+  sentCopyFailure?: ProviderFailure;
   /** A test-controlled network stall; local batch commits must not wait for it. */
   beforePush?: Effect.Effect<void, ProviderFailure>;
   settingsFailure?: SettingsScopeMissing;
@@ -120,6 +126,7 @@ export function fakeServer(email: string, messages: IncomingMessage[] = []): Fak
     pushed: [],
     batches: [],
     sent: [],
+    sentCopies: [],
     drafts: new Map(),
     raw: new Map(),
     rawFetched: [],
@@ -563,15 +570,27 @@ export function makeFakeProvider(
             }),
         }
       : {}),
-    send: (_account, message, original) =>
+    fileSentCopy: (_account, raw) =>
+      Effect.suspend(() => {
+        const failure = server.sentCopyFailure;
+        server.sentCopyFailure = undefined;
+        if (failure) return Effect.fail(failure);
+        server.sentCopies.push(raw);
+        return Effect.void;
+      }),
+    send: (_account, message, original, preparation) =>
       Effect.andThen(
         Effect.suspend(() => {
           const failure = server.sendFailure;
           server.sendFailure = undefined;
           return failure ? Effect.fail(failure) : failOnce;
         }),
-        Effect.sync(() => {
+        Effect.gen(function* () {
           server.sent.push({ message, original });
+          if (server.acceptedRaw && preparation?.accepted) {
+            yield* preparation.accepted(server.acceptedRaw);
+            server.acceptedMarks = (server.acceptedMarks ?? 0) + 1;
+          }
         }),
       ),
     getDraftOrganization: (account, id) =>

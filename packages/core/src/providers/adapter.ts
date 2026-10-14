@@ -346,6 +346,8 @@ export interface ProviderAdapter {
     cursor?: string,
     context?: ProviderPushContext,
   ): Effect.Effect<ProviderPushResult, ProviderFailure>;
+  /** Files raw MIME SMTP already delivered in Sent, unless the server saved a copy itself. */
+  fileSentCopy?(account: Account, raw: Uint8Array): Effect.Effect<void, ProviderFailure>;
   /**
    * `original` is the message replied to or forwarded, when there is one. The
    * adapter fetches its threading headers from the provider, and falls back to
@@ -442,6 +444,11 @@ export interface DraftPush {
 export interface SendPreparation {
   readonly load: Effect.Effect<Option.Option<SendPreparationState>>;
   readonly save: (state: SendPreparationState | null) => Effect.Effect<void>;
+  /**
+   * SMTP accepted the message. IMAP calls this before filing the Sent copy, so a crash in
+   * between leaves a durable record that `fileSentCopy` finishes on the next start.
+   */
+  readonly accepted?: (raw: Uint8Array) => Effect.Effect<void>;
 }
 
 export class Providers extends Context.Service<

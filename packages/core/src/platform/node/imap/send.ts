@@ -298,7 +298,12 @@ export const makeImapSend = ({
 }) => {
   const observedSent = new Set<string>();
 
-  const send: ProviderAdapter["send"] = (account, message: OutgoingMessage, original) =>
+  const send: ProviderAdapter["send"] = (
+    account,
+    message: OutgoingMessage,
+    original,
+    preparation,
+  ) =>
     Effect.gen(function* () {
       const recipients = [
         ...new Set([...message.to, ...message.cc, ...message.bcc].map((a) => a.address)),
@@ -384,6 +389,8 @@ export const makeImapSend = ({
         observedSent.add(account.id);
       } else {
         for (const address of submission.success.rejected) rejected.push(address);
+        // Durable before the Sent APPEND: a crash from here on is finished by fileSentCopy.
+        if (preparation?.accepted) yield* preparation.accepted(raw);
       }
 
       let sentCopyMissing = false;
@@ -461,8 +468,16 @@ export const makeImapSend = ({
         }
       }
     }).pipe(Effect.scoped);
+  const fileSentCopy: NonNullable<ProviderAdapter["fileSentCopy"]> = (account, raw) =>
+    Effect.gen(function* () {
+      const { s, settings } = yield* session(account);
+      const serverSaves = serverSavesSent(settings) || observedSent.has(account.id);
+      yield* saveSent(s, Buffer.from(raw), serverSaves, observedSent);
+    }).pipe(Effect.scoped);
+
   return {
     send,
+    fileSentCopy,
     saveDraft,
     getDraftOrganization: (account, id) =>
       Effect.gen(function* () {
@@ -483,5 +498,8 @@ export const makeImapSend = ({
         };
       }).pipe(Effect.scoped),
     deleteDraft,
-  } satisfies Pick<ProviderAdapter, "send" | "saveDraft" | "getDraftOrganization" | "deleteDraft">;
+  } satisfies Pick<
+    ProviderAdapter,
+    "send" | "fileSentCopy" | "saveDraft" | "getDraftOrganization" | "deleteDraft"
+  >;
 };

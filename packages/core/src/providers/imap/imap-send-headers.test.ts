@@ -55,6 +55,7 @@ const sendWith = (
     cached?: SendOriginal["cached"];
     senderName?: string;
     draft?: boolean;
+    events?: string[];
   } = {},
 ) =>
   Effect.scoped(
@@ -80,6 +81,7 @@ const sendWith = (
       let raw = "";
       vi.spyOn(client, "append").mockImplementation(((_path: string, content: Buffer) => {
         if (options.draft) raw = content.toString();
+        options.events?.push(`append ${_path}`);
         return Promise.resolve({ destination: "Sent", uid: 9, uidValidity: 7n });
       }) as never);
       const settings = {
@@ -139,7 +141,15 @@ const sendWith = (
             missing: () => Effect.succeed(true),
           },
         } as never);
-      else yield* adapter.send(sender, message, original);
+      else
+        yield* adapter.send(sender, message, original, {
+          load: Effect.succeed(Option.none()),
+          save: () => Effect.void,
+          accepted: (bytes) =>
+            Effect.sync(() => {
+              options.events?.push(`accepted ${bytes.byteLength > 0}`);
+            }),
+        });
       return raw;
     }),
   ).pipe(
@@ -220,5 +230,14 @@ it.effect("the Drafts APPEND uses the account's sender name", () =>
   Effect.gen(function* () {
     const raw = yield* sendWith(async () => false, { senderName: "Jane Sender", draft: true });
     assert.strictEqual(headerOf(raw, "From"), "From: Jane Sender <me@example.com>");
+  }),
+);
+
+// E9-9: a crash between SMTP 250 and the Sent APPEND must leave a durable record.
+it.effect("SMTP acceptance is recorded before the Sent APPEND", () =>
+  Effect.gen(function* () {
+    const events: string[] = [];
+    yield* sendWith(async () => false, { events });
+    assert.deepStrictEqual(events, ["accepted true", "append Sent"]);
   }),
 );
