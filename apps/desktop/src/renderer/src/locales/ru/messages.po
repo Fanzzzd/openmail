@@ -940,7 +940,7 @@ msgstr "Спрашивайте каждый раз"
 
 #: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "Ask me first"
-msgstr "Спроси меня сначала"
+msgstr "Спрашивать меня"
 
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Assign categories (one per line)"

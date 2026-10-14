@@ -352,7 +352,7 @@ msgstr "Un mensaje necesita al menos un destinatario."
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "A previous daily quiet-hours setting is still active. Change this schedule to replace it."
-msgstr "Una configuración anterior de horas de silencio diarias todavía está activa. Cambie este horario para reemplazarlo."
+msgstr "Una configuración anterior de horas de silencio diarias todavía está activa. Cambia este horario para reemplazarlo."
 
 #: src/renderer/src/lib/errors.ts
 msgid "A signature needs a name and a sending address."
@@ -562,7 +562,7 @@ msgstr "Añade tu clave API de Anthropic en Ajustes → Acceso a IA y luego perm
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Add your first account"
-msgstr "Agregue su primera cuenta"
+msgstr "Añade tu primera cuenta"
 
 #: src/renderer/src/features/reader/attachments/AttachmentImportDialog.tsx
 msgid "Added"
@@ -810,11 +810,11 @@ msgstr "¿Mover siempre los mensajes de este remitente?"
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Always quote the whole message"
-msgstr "Cite siempre el mensaje completo."
+msgstr "Citar siempre el mensaje completo"
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Always use selection"
-msgstr "Utilice siempre la selección"
+msgstr "Usar siempre la selección"
 
 #: src/renderer/src/features/reader/RemoteImagesPrompt.tsx
 msgid "Always, block trackers"
@@ -961,7 +961,7 @@ msgstr "Adjuntar archivos…"
 
 #: src/renderer/src/features/feedback/Feedback.tsx
 msgid "Attach the redacted diagnostics shown below"
-msgstr "Adjunte los diagnósticos redactados que se muestran a continuación"
+msgstr "Adjunta los diagnósticos redactados que se muestran a continuación"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Attached message"
@@ -1016,7 +1016,7 @@ msgstr "Autorizar la eliminación permanente"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Authorize permission to permanently delete mail in this Gmail account."
-msgstr "Autorice el permiso para eliminar permanentemente el correo en esta cuenta de Gmail."
+msgstr "Autoriza el permiso para eliminar permanentemente el correo en esta cuenta de Gmail."
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -1159,7 +1159,7 @@ msgstr "Llamar"
 #: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "Can't find the mail server. Check the server name and your internet connection."
-msgstr "No se encuentra el servidor de correo. Compruebe el nombre del servidor y su conexión a Internet."
+msgstr "No se encuentra el servidor de correo. Comprueba el nombre del servidor y tu conexión a Internet."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Can't find this account."
@@ -1444,7 +1444,7 @@ msgstr "Elegir cuentas"
 
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 msgid "Choose actions and use the buttons to change their order."
-msgstr "Elija acciones y use los botones para cambiar su orden."
+msgstr "Elige acciones y usa los botones para cambiar su orden."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Choose an account in the target space."
@@ -1485,7 +1485,7 @@ msgstr "Elige un solo destino para el filtro."
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Choose your email provider."
-msgstr "Elija su proveedor de correo electrónico."
+msgstr "Elige tu proveedor de correo electrónico."
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Choose…"
@@ -1706,7 +1706,7 @@ msgstr "Conectar cuenta"
 
 #: src/renderer/src/app/use-app-messages.ts
 msgid "Connect an account to send feedback"
-msgstr "Conecte una cuenta para enviar comentarios"
+msgstr "Conecta una cuenta para enviar comentarios"
 
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 msgid "Connect calendar"
@@ -1950,7 +1950,7 @@ msgstr "No se pudo importar este archivo adjunto."
 
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't insert the image. Use a public PNG, JPEG, GIF or WebP image up to 8 MB."
-msgstr "No se pudo insertar la imagen. Utilice una imagen pública PNG, JPEG, GIF o WebP de hasta 8 MB."
+msgstr "No se pudo insertar la imagen. Usa una imagen pública PNG, JPEG, GIF o WebP de hasta 8 MB."
 
 #: src/renderer/src/features/settings/sections/AppleContactsSettings.tsx
 msgid "Couldn't load Apple Contacts. Try refreshing."
@@ -1994,7 +1994,7 @@ msgstr "No se pudo cargar este mensaje."
 
 #: src/renderer/src/app/NoAccounts.tsx
 msgid "Couldn't load your accounts."
-msgstr "No se pudieron cargar sus cuentas."
+msgstr "No se pudieron cargar tus cuentas."
 
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 msgid "Couldn't load your calendar."
@@ -2054,7 +2054,7 @@ msgstr "No se pudo leer el permiso del sistema"
 
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Couldn't read the attachment. Try adding it again."
-msgstr "No se pudo leer el archivo adjunto. Intente agregarlo nuevamente."
+msgstr "No se pudo leer el archivo adjunto. Intenta agregarlo de nuevo."
 
 #: src/renderer/src/app/use-native-menu-bridge.ts
 msgid "Couldn't read the attachments. Check the files and their permissions."
@@ -2120,7 +2120,7 @@ msgstr "No se pudo enviar: {reason}"
 #: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "Couldn't set up a secure connection to the mail server. Check the port and the encryption setting."
-msgstr "No se pudo establecer una conexión segura con el servidor de correo. Compruebe el puerto y el ajuste de cifrado."
+msgstr "No se pudo establecer una conexión segura con el servidor de correo. Comprueba el puerto y el ajuste de cifrado."
 
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
@@ -2157,7 +2157,7 @@ msgstr "Crear"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Create an app password under Account Security in your Yahoo account."
-msgstr "Cree una contraseña de aplicación en Seguridad de la cuenta en su cuenta de Yahoo."
+msgstr "Crea una contraseña de aplicación en Seguridad de la cuenta en tu cuenta de Yahoo."
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Create an app password under Settings → Privacy & Security, with IMAP and SMTP checked."
@@ -2165,7 +2165,7 @@ msgstr "Crea una contraseña de aplicación en Ajustes → Privacidad y segurida
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Create an app-specific password under Sign-In and Security in your Apple Account."
-msgstr "Cree una contraseña específica de la aplicación en Inicio de sesión y seguridad en su cuenta Apple."
+msgstr "Crea una contraseña específica de la aplicación en Inicio de sesión y seguridad en tu cuenta Apple."
 
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
@@ -2242,7 +2242,7 @@ msgstr "Lista discontinua"
 
 #: src/main/app/native-i18n.ts
 msgid "Database recovery was interrupted. Restore a preserved database before reopening OpenMail. Preserved database: {backup}"
-msgstr "Se interrumpió la recuperación de la base de datos. Restaure una base de datos preservada antes de volver a abrir OpenMail. Base de datos preservada: {backup}"
+msgstr "Se interrumpió la recuperación de la base de datos. Restaura una base de datos preservada antes de volver a abrir OpenMail. Base de datos preservada: {backup}"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 #: src/renderer/src/features/reader/use-thread-print.ts
@@ -2686,7 +2686,7 @@ msgstr "Introduce otro cliente OAuth que hayas registrado tú. Los nuevos inicio
 
 #: src/renderer/src/features/organize/SnoozeDialog.tsx
 msgid "Enter a future reminder time"
-msgstr "Introduzca una hora de recordatorio futura"
+msgstr "Introduce una hora de recordatorio futura"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Enter a name for the label or folder."
@@ -2698,7 +2698,7 @@ msgstr "Escribe una pregunta y selecciona cuentas."
 
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 msgid "Enter a signature name."
-msgstr "Introduzca un nombre de firma."
+msgstr "Introduce un nombre de firma."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Enter a single access token."
@@ -2714,7 +2714,7 @@ msgstr "Introduce un inicio de sesión de tailnet como name@github."
 
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Enter a template name."
-msgstr "Introduzca un nombre de plantilla."
+msgstr "Introduce un nombre de plantilla."
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Enter an OAuth client you registered yourself. New sign-ins use it instead of the built-in client."
@@ -2722,7 +2722,7 @@ msgstr "Introduce un cliente OAuth que hayas registrado tú. Los nuevos inicios 
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Enter port numbers from 1 to 65535."
-msgstr "Ingrese números de puerto del 1 al 65535."
+msgstr "Introduce números de puerto del 1 al 65535."
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Enter the IMAP and SMTP servers your email provider gives you."
@@ -2730,7 +2730,7 @@ msgstr "Ingresa los servidores IMAP y SMTP que te brinda tu proveedor de correo 
 
 #: src/renderer/src/features/feedback/Feedback.tsx
 msgid "Enter the project's feedback address"
-msgstr "Ingrese la dirección de comentarios del proyecto"
+msgstr "Introduce la dirección de comentarios del proyecto"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Enter valid category names."
@@ -2738,7 +2738,7 @@ msgstr "Introduce nombres de categoría válidos."
 
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Enter valid email addresses in To, Cc and Bcc."
-msgstr "Ingrese direcciones de correo electrónico válidas en Para, CC y CCO."
+msgstr "Introduce direcciones de correo electrónico válidas en Para, CC y CCO."
 
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 msgid "Event date or range"
@@ -2903,7 +2903,7 @@ msgstr "Termina de iniciar sesión en tu navegador"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Finish signing in in your browser, then come back here."
-msgstr "Termine de iniciar sesión en su navegador y luego regrese aquí."
+msgstr "Termina de iniciar sesión en tu navegador y luego vuelve aquí."
 
 #: src/renderer/src/features/calendar/recurrence-summary.ts
 msgid "First"
@@ -2984,7 +2984,7 @@ msgstr "Por ejemplo: tomorrow 3pm u Oct 12–14"
 
 #: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "For your information"
-msgstr "Para su información"
+msgstr "Para tu información"
 
 #: src/renderer/src/state/desktop.ts
 msgid "Format"
@@ -3135,12 +3135,12 @@ msgstr "Alias ​​y firmas de Gmail"
 #: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Gmail attachments exceed 25 MB in total. Remove attachments before sending."
-msgstr "Los archivos adjuntos de Gmail superan los 25 MB en total. Elimine los archivos adjuntos antes de enviarlos."
+msgstr "Los archivos adjuntos de Gmail superan los 25 MB en total. Elimina archivos adjuntos antes de enviar."
 
 #: src/renderer/src/app/use-app-messages.ts
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Gmail blocks {filename}. Remove this attachment before sending."
-msgstr "Gmail bloquea {filename}. Elimine este archivo adjunto antes de enviarlo."
+msgstr "Gmail bloquea {filename}. Elimina este archivo adjunto antes de enviar."
 
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 msgid "Gmail copy"
@@ -3246,7 +3246,7 @@ msgstr "Alta"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "How long a conversation stays open before it is marked as read. Manually: use {readShortcut} or the toolbar."
-msgstr "Cuánto tiempo permanece abierta una conversación antes de que se marque como leída. Manualmente: use {readShortcut} o la barra de herramientas."
+msgstr "Cuánto tiempo permanece abierta una conversación antes de que se marque como leída. Manualmente: usa {readShortcut} o la barra de herramientas."
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "How to register a Google OAuth client"
@@ -3431,7 +3431,7 @@ msgstr "Insertar variable…"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Install the packaged app to make it the default. Development builds cannot register email links."
-msgstr "Instale la aplicación empaquetada para que sea la predeterminada. Las compilaciones de desarrollo no pueden registrar enlaces de correo electrónico."
+msgstr "Instala la aplicación empaquetada para que sea la predeterminada. Las compilaciones de desarrollo no pueden registrar enlaces de correo electrónico."
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Install the Tailscale app on this Mac and sign in, then come back here. OpenMail doesn't install anything itself."
@@ -3635,7 +3635,7 @@ msgstr "Más información"
 
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
 msgid "Leave blank unless your mail administrator provides a trusted authserv-id. The IMAP server name is not a trust setting."
-msgstr "Deje este campo vacío salvo que el administrador del correo proporcione un authserv-id de confianza. El nombre del servidor IMAP no establece confianza."
+msgstr "Déjalo vacío salvo que el administrador del correo proporcione un authserv-id de confianza. El nombre del servidor IMAP no establece confianza."
 
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 msgid "Left long swipe"
@@ -4347,7 +4347,7 @@ msgstr "Nombre"
 
 #: src/renderer/src/features/compose/components/TemplatePicker.tsx
 msgid "Name the template, then press Return"
-msgstr "Asigne un nombre a la plantilla y luego presione Retorno."
+msgstr "Asigna un nombre a la plantilla y luego pulsa Retorno."
 
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 msgid "Name, like Work"
@@ -4411,7 +4411,7 @@ msgstr "Los nuevos inicios de sesión usan el cliente integrado de OpenMail."
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "New sign-ins use your own OAuth client."
-msgstr "Los nuevos inicios de sesión usan su propio cliente OAuth."
+msgstr "Los nuevos inicios de sesión usan tu propio cliente OAuth."
 
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 msgid "New signature"
@@ -4565,7 +4565,7 @@ msgstr "No hay operaciones que deshacer"
 
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 msgid "No overlapping events in your primary calendar."
-msgstr "No hay eventos superpuestos en su calendario principal."
+msgstr "No hay eventos superpuestos en tu calendario principal."
 
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
@@ -4606,11 +4606,11 @@ msgstr "No hay sugerencias esperando revisión."
 
 #: src/renderer/src/features/compose/components/TemplatePicker.tsx
 msgid "No templates yet. Use {token} for the first recipient's name."
-msgstr "Aún no hay plantillas. Utilice {token} para el nombre del primer destinatario."
+msgstr "Aún no hay plantillas. Usa {token} para el nombre del primer destinatario."
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "No time zone supplied; shown in your local time."
-msgstr "No se proporciona zona horaria; se muestra en su hora local."
+msgstr "No se proporciona zona horaria; se muestra en tu hora local."
 
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "No tool calls yet."
@@ -4819,7 +4819,7 @@ msgstr "Abrir borrador"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Open email links in a new OpenMail draft."
-msgstr "Abra enlaces de correo electrónico en un nuevo borrador de OpenMail."
+msgstr "Abre enlaces de correo electrónico en un nuevo borrador de OpenMail."
 
 #: src/renderer/src/features/contacts/AppleContactActions.tsx
 msgid "Open in Contacts"
@@ -5764,7 +5764,7 @@ msgstr "Cambiar el tamaño de la barra lateral"
 
 #: src/renderer/src/features/reader/attachments/AttachmentImportDialog.tsx
 msgid "Respond to this invitation from the message."
-msgstr "Responda a esta invitación desde el mensaje."
+msgstr "Responde a esta invitación desde el mensaje."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Respond to this invitation in OpenMail yourself."
@@ -5848,19 +5848,19 @@ msgstr "Revisar y enviar"
 
 #: src/renderer/src/features/reader/attachments/AttachmentImportDialog.tsx
 msgid "Review the contacts before adding them."
-msgstr "Revise los contactos antes de añadirlos."
+msgstr "Revisa los contactos antes de añadirlos."
 
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 msgid "Review the event details before confirming."
-msgstr "Revise los detalles del evento antes de confirmar."
+msgstr "Revisa los detalles del evento antes de confirmar."
 
 #: src/renderer/src/features/reader/attachments/AttachmentImportDialog.tsx
 msgid "Review the events before adding them."
-msgstr "Revise los eventos antes de añadirlos."
+msgstr "Revisa los eventos antes de añadirlos."
 
 #: src/renderer/src/features/feedback/Feedback.tsx
 msgid "Review the local diagnostics below. Nothing is uploaded. Continue opens an email draft that you review and send from your own account."
-msgstr "Revise los diagnósticos locales a continuación. No se carga nada. Continuar abre un borrador de correo electrónico que usted revisa y envía desde su propia cuenta."
+msgstr "Revisa los diagnósticos locales a continuación. No se carga nada. Continuar abre un borrador de correo electrónico que tú revisas y envías desde tu propia cuenta."
 
 #: src/renderer/src/features/compose/components/ComposerAi.tsx
 msgid "Rewrite"
@@ -5967,7 +5967,7 @@ msgstr "¿Guardar este borrador antes de cerrar?"
 
 #: src/renderer/src/features/compose/components/TemplatePicker.tsx
 msgid "Save this message as a template…"
-msgstr "Guarde este mensaje como plantilla..."
+msgstr "Guarda este mensaje como plantilla..."
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Save to attachment folder"
@@ -6082,7 +6082,7 @@ msgstr "Segundo"
 #. placeholder {0}: file.filename
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Select {0}"
-msgstr "Seleccione {0}"
+msgstr "Selecciona {0}"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Select 1 to 256 attachments."
@@ -6090,7 +6090,7 @@ msgstr "Selecciona de 1 a 256 archivos adjuntos."
 
 #: src/renderer/src/features/reader/Reader.tsx
 msgid "Select a message"
-msgstr "Seleccione un mensaje"
+msgstr "Selecciona un mensaje"
 
 #: src/renderer/src/features/ai/AiPanel.tsx
 msgid "Select accounts allowed in Settings → AI Access. The assistant searches mail and suggests drafts, labels or archiving. You approve each one in AI suggestions."
@@ -6442,16 +6442,16 @@ msgstr "Inicia sesión de nuevo para cambiar Prioritarios/Otros."
 
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Sign in again to enable filters"
-msgstr "Inicie sesión nuevamente para habilitar los filtros"
+msgstr "Inicia sesión de nuevo para habilitar los filtros"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Sign in again to enable filters and automatic replies."
-msgstr "Inicie sesión nuevamente para habilitar filtros y respuestas automáticas."
+msgstr "Inicia sesión de nuevo para habilitar filtros y respuestas automáticas."
 
 #: src/renderer/src/features/settings/sections/ContactSettings.tsx
 #: src/renderer/src/lib/errors.ts
 msgid "Sign in again to sync server contacts."
-msgstr "Inicie sesión nuevamente para sincronizar los contactos del servidor."
+msgstr "Inicia sesión de nuevo para sincronizar los contactos del servidor."
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Sign in with {name}"
@@ -6459,11 +6459,11 @@ msgstr "Iniciar sesión con {name}"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Sign in with your Google account in the browser. OpenMail keeps the sign-in token in this computer's keychain."
-msgstr "Inicie sesión con su cuenta de Google en el navegador. OpenMail guarda el token de inicio de sesión en el llavero de este equipo."
+msgstr "Inicia sesión con tu cuenta de Google en el navegador. OpenMail guarda el token de inicio de sesión en el llavero de este equipo."
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Sign in with your personal Microsoft account (outlook.com or Hotmail) in the browser. OpenMail keeps the sign-in token in this computer's keychain."
-msgstr "Inicie sesión con su cuenta personal de Microsoft (outlook.com o Hotmail) en el navegador. OpenMail guarda el token de inicio de sesión en el llavero de este equipo."
+msgstr "Inicia sesión con tu cuenta personal de Microsoft (outlook.com o Hotmail) en el navegador. OpenMail guarda el token de inicio de sesión en el llavero de este equipo."
 
 #: src/renderer/src/app/use-app-messages.ts
 msgid "Sign-in failed: {reason}"
@@ -6471,11 +6471,11 @@ msgstr "Error al iniciar sesión: {reason}"
 
 #: src/main/app/native-i18n.ts
 msgid "Sign-in failed. Go back to OpenMail and try again."
-msgstr "Error al iniciar sesión. Vuelva a OpenMail e inténtelo de nuevo."
+msgstr "Error al iniciar sesión. Vuelve a OpenMail e inténtalo de nuevo."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Sign-in took too long. Try again and finish it in your browser."
-msgstr "El inicio de sesión tardó demasiado. Vuelva a intentarlo y complételo en su navegador."
+msgstr "El inicio de sesión tardó demasiado. Vuelve a intentarlo y complétalo en tu navegador."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Sign-in was cancelled."
@@ -6503,7 +6503,7 @@ msgstr "Sesión iniciada como {login}. Este Mac es {device}."
 
 #: src/main/app/native-i18n.ts
 msgid "Signed in. You can close this page and go back to OpenMail."
-msgstr "Sesión iniciada. Puede cerrar esta página y volver a OpenMail."
+msgstr "Sesión iniciada. Puedes cerrar esta página y volver a OpenMail."
 
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Size comparison"
@@ -6579,7 +6579,7 @@ msgstr "Algunas condiciones del filtro no se pueden comprobar con el correo en c
 
 #: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "Some formatting cannot be kept in this mode. Link addresses are kept. You can undo the mode change."
-msgstr "Algunos formatos no se pueden mantener en este modo. Las direcciones de enlace se mantienen. Puede deshacer el cambio de modo."
+msgstr "Algunos formatos no se pueden mantener en este modo. Las direcciones de enlace se mantienen. Puedes deshacer el cambio de modo."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Some occurrences of this series were changed, so the series can't be edited here. Edit it in your calendar."
@@ -6777,7 +6777,7 @@ msgstr "Acciones de deslizamiento"
 
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 msgid "Swipe horizontally with two fingers. Release after a short or long swipe to apply the action."
-msgstr "Desliza horizontalmente con dos dedos. Suelte después de un deslizamiento corto o largo para aplicar la acción."
+msgstr "Desliza horizontalmente con dos dedos. Suelta después de un deslizamiento corto o largo para aplicar la acción."
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Switch spaces"
@@ -6969,11 +6969,11 @@ msgstr "La verificación de integridad de la base de datos (quick_check) falló 
 
 #: src/main/app/native-i18n.ts
 msgid "The database was kept. Quit OpenMail and restore a local backup or contact support."
-msgstr "Se mantuvo la base de datos. Salga de OpenMail y restaure una copia de seguridad local o comuníquese con el soporte técnico."
+msgstr "Se mantuvo la base de datos. Sal de OpenMail y restaura una copia de seguridad local o contacta con el soporte técnico."
 
 #: src/renderer/src/features/reader/frame/LinkConfirmDialog.tsx
 msgid "The displayed link may hide its destination. Check the real domain before opening."
-msgstr "El enlace mostrado puede ocultar su destino. Compruebe el dominio real antes de abrirlo."
+msgstr "El enlace mostrado puede ocultar su destino. Comprueba el dominio real antes de abrirlo."
 
 #: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "The file changed after the preview. Review the change again."
@@ -7018,7 +7018,7 @@ msgstr "El proveedor de correo está limitando las solicitudes. La sincronizaci�
 #: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "The mail server didn't respond. Check the server name, the port and your internet connection."
-msgstr "El servidor de correo no respondió. Compruebe el nombre del servidor, el puerto y su conexión a Internet."
+msgstr "El servidor de correo no respondió. Comprueba el nombre del servidor, el puerto y tu conexión a Internet."
 
 #: src/renderer/src/features/sync-status/sync-failure-text.ts
 msgid "The mail server had a problem. Sync will try again later."
@@ -7027,7 +7027,7 @@ msgstr "El servidor de correo tuvo un problema. La sincronización se volverá a
 #: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "The mail server refused the connection. Check the port."
-msgstr "El servidor de correo rechazó la conexión. Compruebe el puerto."
+msgstr "El servidor de correo rechazó la conexión. Comprueba el puerto."
 
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "The mail server rejected the password for {email}. Sync is paused."
@@ -7075,7 +7075,7 @@ msgstr "La operación fracasó."
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "The organizer differs from the message sender. Check the response recipient before replying."
-msgstr "El organizador difiere del remitente del mensaje. Verifique el destinatario de la respuesta antes de responder."
+msgstr "El organizador difiere del remitente del mensaje. Comprueba el destinatario de la respuesta antes de responder."
 
 #: src/renderer/src/lib/errors.ts
 msgid "The organizer in your calendar doesn't match this invitation. Respond from your calendar instead."
@@ -7103,7 +7103,7 @@ msgstr "La vista previa comprobó como máximo 201 mensajes del servidor. Pueden
 
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "The preview is limited to 200 messages. Narrow the conditions to process other messages."
-msgstr "La vista previa está limitada a 200 mensajes. Limite las condiciones para procesar otros mensajes."
+msgstr "La vista previa está limitada a 200 mensajes. Limita las condiciones para procesar otros mensajes."
 
 #: src/renderer/src/lib/errors.ts
 msgid "The repeat end date is before the event. Choose a later end date."
@@ -7136,7 +7136,7 @@ msgstr "El nombre del remitente contiene una dirección de correo diferente."
 #: src/renderer/src/features/sync-status/sync-failure-text.ts
 #: src/renderer/src/lib/errors.ts
 msgid "The server blocked the sign-in as unsafe. Turn on IMAP in your email's web settings, then sign in with the authorization code it generates."
-msgstr "El servidor bloqueó el inicio de sesión por no ser seguro. Active IMAP en los ajustes web de su correo y luego inicie sesión con el código de autorización generado."
+msgstr "El servidor bloqueó el inicio de sesión por no ser seguro. Activa IMAP en los ajustes web de tu correo y luego inicia sesión con el código de autorización generado."
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "The server couldn't complete this search."
@@ -7153,7 +7153,7 @@ msgstr "El servidor rechazó el inicio de sesión."
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "The server rejected the sign-in. Check the email address, and make sure you entered an app-specific password or authorization code, not your web password."
-msgstr "El servidor rechazó el inicio de sesión. Verifique la dirección de correo electrónico y asegúrese de haber ingresado una contraseña o código de autorización específico de la aplicación, no su contraseña web."
+msgstr "El servidor rechazó el inicio de sesión. Comprueba la dirección de correo electrónico y asegúrate de haber introducido una contraseña o código de autorización específico de la aplicación, no tu contraseña web."
 
 #: src/renderer/src/lib/errors.ts
 msgid "The thread changed. Summarize it again."
@@ -7346,7 +7346,7 @@ msgstr "Es posible que este mensaje ya se haya enviado. Revisa «Enviado» antes
 
 #: src/renderer/src/features/organize/PermanentDeletePermission.tsx
 msgid "This permission lets OpenMail permanently delete mail in this Gmail account. Google will ask for your consent. After granting it, confirm the deletion again."
-msgstr "Este permiso permite a OpenMail eliminar permanentemente el correo de esta cuenta de Gmail. Google le pedirá su consentimiento. Luego de otorgarlo, confirma nuevamente la eliminación."
+msgstr "Este permiso permite a OpenMail eliminar permanentemente el correo de esta cuenta de Gmail. Google te pedirá tu consentimiento. Después de otorgarlo, confirma de nuevo la eliminación."
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "This removes the filter from the server. Existing messages are unchanged."
@@ -7656,7 +7656,7 @@ msgstr "Cancelar suscripción"
 
 #: src/renderer/src/features/reader/UnsubscribeButton.tsx
 msgid "Unsubscribe failed. Try again later."
-msgstr "No se pudo cancelar la suscripción. Inténtelo más tarde."
+msgstr "No se pudo cancelar la suscripción. Inténtalo más tarde."
 
 #: src/renderer/src/features/reader/UnsubscribeButton.tsx
 msgid "Unsubscribe?"
@@ -7737,7 +7737,7 @@ msgstr "Actualizando la base de datos local…"
 
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Use {token} for a custom variable. You will be asked for its value when inserting the template."
-msgstr "Utilice {token} para una variable personalizada. Se le pedirá su valor al insertar la plantilla."
+msgstr "Usa {token} para una variable personalizada. Se te pedirá su valor al insertar la plantilla."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Use a PNG, JPEG, GIF or WebP image up to 8 MB."
@@ -7749,11 +7749,11 @@ msgstr "Usa un nombre de servicio como svc:openmail."
 
 #: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Use an http, https or mailto link"
-msgstr "Utilice un enlace http, https o mailto"
+msgstr "Usa un enlace http, https o mailto"
 
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Use an image up to 8 MB."
-msgstr "Utilice una imagen de hasta 8 MB."
+msgstr "Usa una imagen de hasta 8 MB."
 
 #: src/renderer/src/features/settings/sections/AppleContactsSettings.tsx
 msgid "Use Apple Contacts"
@@ -7765,7 +7765,7 @@ msgstr "Usar predeterminado"
 
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Use PNG, JPEG, GIF or WebP images up to 8 MB."
-msgstr "Utilice imágenes PNG, JPEG, GIF o WebP de hasta 8 MB."
+msgstr "Usa imágenes PNG, JPEG, GIF o WebP de hasta 8 MB."
 
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Use selection for find"
@@ -7773,11 +7773,11 @@ msgstr "Usar selección para buscar"
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Use the account default address"
-msgstr "Utilice la dirección predeterminada de la cuenta"
+msgstr "Usar la dirección predeterminada de la cuenta"
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Use the address the message was sent to"
-msgstr "Utilice la dirección a la que se envió el mensaje"
+msgstr "Usar la dirección a la que se envió el mensaje"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Use the built-in client"
@@ -7789,7 +7789,7 @@ msgstr "Usar la cuenta actual"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Use your own OAuth client"
-msgstr "Usar su propio cliente OAuth"
+msgstr "Usar tu propio cliente OAuth"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Username (defaults to the email address)"
@@ -7813,7 +7813,7 @@ msgstr "Categorías visibles"
 
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Wait for attachments to finish loading."
-msgstr "Espere a que los archivos adjuntos terminen de cargarse."
+msgstr "Espera a que los archivos adjuntos terminen de cargarse."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Wait for pending changes to sync before changing the folder."
@@ -7857,7 +7857,7 @@ msgstr "Semanalmente"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Welcome to OpenMail. Choose your email provider. Your credentials stay on this computer."
-msgstr "Bienvenido a OpenMail. Elija su proveedor de correo electrónico. Sus credenciales permanecen en esta computadora."
+msgstr "Te damos la bienvenida a OpenMail. Elige tu proveedor de correo electrónico. Tus credenciales permanecen en este ordenador."
 
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 msgid "What AI apps can do"
@@ -7953,7 +7953,7 @@ msgstr "Tienes la versión más reciente."
 
 #: src/renderer/src/lib/errors.ts
 msgid "You signed in as {signedInAs}. Sign in with {expected} to continue."
-msgstr "Inició sesión como {signedInAs}. Inicie sesión con {expected} para continuar."
+msgstr "Iniciaste sesión como {signedInAs}. Inicia sesión con {expected} para continuar."
 
 #: src/renderer/src/features/mail-list/EmptyList.tsx
 msgid "You're all caught up. Your Inbox is empty."
@@ -7969,7 +7969,7 @@ msgstr "Todo listo"
 
 #: src/renderer/src/features/compose/components/DraftSyncRecovery.tsx
 msgid "Your changes are saved on this Mac. Try again or keep a local copy."
-msgstr "Sus cambios se guardan en esta Mac. Inténtelo de nuevo o conserve una copia local."
+msgstr "Tus cambios se guardan en este Mac. Inténtalo de nuevo o conserva una copia local."
 
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "Your draft was kept. Check Sent before sending again."
