@@ -125,7 +125,12 @@ export function webSocketBridge(
       if (event.code === SESSION_ENDED) return end();
       if (state !== "lost") setState("lost");
       // Only an opened socket carried requests; a failed attempt sent nothing.
-      if (opened) reset();
+      // Frames queued while it was closing belong to requests reset() fails
+      // now, so they must not go out on the next socket.
+      if (opened) {
+        waiting.length = 0;
+        reset();
+      }
       schedule();
     });
   };

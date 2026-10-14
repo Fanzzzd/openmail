@@ -106,6 +106,22 @@ it("reconnects in place after a drop, failing only the requests in flight", asyn
   expect(resets).toHaveBeenCalledTimes(1);
 });
 
+it("never sends a frame queued on a closing socket after failing its request", async () => {
+  const { bridge, sockets, resets, last } = setup();
+  last().open();
+  // A network switch: the socket is closing but has not closed yet.
+  last().readyState = 2;
+  bridge.send("modify");
+  last().drop();
+  // The RPC client reports the request failed...
+  expect(resets).toHaveBeenCalledTimes(1);
+  await vi.advanceTimersByTimeAsync(100);
+  expect(sockets).toHaveLength(2);
+  last().open();
+  // ...so it must not run later on the next socket.
+  expect(last().sent).toEqual([]);
+});
+
 it("backs off while the Mac is unreachable, and retries at once when woken", async () => {
   const { sockets, resets, last, wake } = setup();
   last().open();
