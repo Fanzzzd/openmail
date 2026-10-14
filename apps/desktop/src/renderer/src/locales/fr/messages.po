@@ -2459,7 +2459,7 @@ msgstr "Action de la touche Suppr"
 
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 msgid "Delete label or folder?"
-msgstr "Supprimer l’libellé ou le dossier ?"
+msgstr "Supprimer le libellé ou le dossier ?"
 
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "Delete permanently"
@@ -4611,7 +4611,7 @@ msgstr "Nouveau brouillon"
 #: src/renderer/src/features/organize/OrganizationSettings.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
 msgid "New label or folder"
-msgstr "Nouvelle libellé ou dossier"
+msgstr "Nouveau libellé ou dossier"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "New mail notifications"
@@ -4740,11 +4740,11 @@ msgstr "Ne pas copier"
 #: src/renderer/src/app/ThreadWindow.tsx
 #: src/renderer/src/app/use-app-messages.ts
 msgid "No current label applies. Moving to Trash."
-msgstr "Aucune libellé actuelle ne s’applique. Passer à la corbeille."
+msgstr "Aucun libellé actuel ne s’applique. Passer à la corbeille."
 
 #: src/renderer/src/features/compose/components/DraftOrganization.tsx
 msgid "No custom labels"
-msgstr "Pas d’libellés personnalisées"
+msgstr "Aucun libellé personnalisé"
 
 #: src/renderer/src/features/downloads/Downloads.tsx
 msgid "No downloads"
@@ -4773,7 +4773,7 @@ msgstr "Aucune suggestion grammaticale"
 
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "No label or folder"
-msgstr "Pas d’libellé ni de dossier"
+msgstr "Aucun libellé ni dossier"
 
 #: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 #: src/renderer/src/features/reader/FindBar.tsx
@@ -5893,7 +5893,7 @@ msgstr "Supprimer le compte"
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 #: src/renderer/src/i18n/action-names.ts
 msgid "Remove current label"
-msgstr "Supprimer l’libellé actuelle"
+msgstr "Supprimer le libellé actuel"
 
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Remove favorite"

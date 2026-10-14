@@ -138,6 +138,14 @@ function checkMessages(locale: string, catalog: Catalog, failures: string[]) {
     // "Authorize permission" is not a doubled verb in French.
     if (locale === "fr" && /autoris\p{L}* l[’']autorisation/iu.test(target))
       failures.push(`${locale}: style: ${source} → ${target}`);
+    // Libellé is masculine and starts with a consonant: le libellé, du libellé, un libellé.
+    if (
+      locale === "fr" &&
+      /[ld][’']libell|\b(?:une|nouvelle|aucune|cette) libell|libellés? (?:\p{L}+ )?(?:personnalisées?|actuelles?)/iu.test(
+        target,
+      )
+    )
+      failures.push(`${locale}: libellé: ${source} → ${target}`);
     // Spanish addresses the reader with tú, German with du, Dutch with je and Russian with вы.
     if (locale === "es" && spanishUsted.some((pattern) => pattern.test(target)))
       failures.push(`${locale}: register: ${source} → ${target}`);

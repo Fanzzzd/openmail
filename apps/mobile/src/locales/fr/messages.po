@@ -800,7 +800,7 @@ msgstr "Supprimer la clé"
 #. js-lingui-explicit-id
 #: src/thread-actions.tsx
 msgid "Remove label"
-msgstr "Supprimer l’libellé"
+msgstr "Supprimer le libellé"
 
 #. js-lingui-explicit-id
 #: src/ai-settings.tsx
