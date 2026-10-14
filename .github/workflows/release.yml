@@ -29,6 +29,9 @@ jobs:
     runs-on: macos-latest
     permissions:
       contents: write
+      # Build provenance attestations: an OIDC token to sign them, and the right to store them.
+      id-token: write
+      attestations: write
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -104,25 +107,42 @@ jobs:
           OPENMAIL_MICROSOFT_CLIENT_ID: ${{ secrets.OPENMAIL_MICROSOFT_CLIENT_ID }}
         run: pnpm --filter @openmail/desktop dist
 
-      # Each launch uses a new temporary profile with no accounts. A packaged app whose
-      # renderer, preload or core does not start fails the job before anything is uploaded.
-      # The x64 app runs under Rosetta on an arm64 runner; the runner's native build always runs.
+      # The x64 app runs under Rosetta on the arm64 runner. Both builds must launch.
+      - name: Install Rosetta
+        run: |
+          if [ "$(uname -m)" != "arm64" ]; then
+            echo "::error::The release runner must be arm64 so it can launch both builds"
+            exit 1
+          fi
+          arch -x86_64 /usr/bin/true 2>/dev/null \
+            || sudo softwareupdate --install-rosetta --agree-to-license
+          arch -x86_64 /usr/bin/true
+
+      # Each launch uses new temporary profiles with no accounts. scripts/smoke-dist.mjs checks
+      # the fuses, that ELECTRON_RUN_AS_NODE is ignored, `OpenMail --mcp` over stdio with the
+      # read-only tool set, and the GUI start. A failure stops the job before anything is uploaded.
       - name: Launch the packaged apps
         env:
           REPORT_DIR: ${{ runner.temp }}/dist-smoke
         run: |
           smoke() { OPENMAIL_DIST_REPORT_DIR="$REPORT_DIR/$1" node scripts/smoke-dist.mjs "apps/desktop/release/$2/OpenMail.app"; }
-          if [ "$(uname -m)" = "arm64" ]; then
-            smoke arm64 mac-arm64
-            if arch -x86_64 /usr/bin/true 2>/dev/null; then
-              smoke x64 mac
-            else
-              echo "::warning::Rosetta is not installed on this runner. The x64 app was not launched."
-            fi
-          else
-            smoke x64 mac
-            echo "::warning::This runner is x64. The arm64 app was not launched."
-          fi
+          smoke arm64 mac-arm64
+          smoke x64 mac
+
+      - name: Write SHA-256 checksums
+        working-directory: apps/desktop/release
+        run: |
+          shopt -s nullglob
+          files=(*.dmg *.zip *.blockmap latest-mac.yml)
+          if [ ${#files[@]} -eq 0 ]; then echo "::error::No build output in apps/desktop/release"; exit 1; fi
+          shasum -a 256 "${files[@]}" > SHA256SUMS
+          cat SHA256SUMS
+
+      # Anyone can check a download against this workflow run with `gh attestation verify`.
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-checksums: apps/desktop/release/SHA256SUMS
 
       - name: Upload to a GitHub Release
         env:
@@ -130,11 +150,11 @@ jobs:
           SIGNED: ${{ steps.mode.outputs.signed }}
         run: |
           shopt -s nullglob
-          files=(apps/desktop/release/*.dmg apps/desktop/release/*.zip apps/desktop/release/*.blockmap apps/desktop/release/latest-mac.yml)
+          files=(apps/desktop/release/*.dmg apps/desktop/release/*.zip apps/desktop/release/*.blockmap apps/desktop/release/latest-mac.yml apps/desktop/release/SHA256SUMS)
           if [ ${#files[@]} -eq 0 ]; then echo "::error::No build output in apps/desktop/release"; exit 1; fi
           flags=(--title "OpenMail ${GITHUB_REF_NAME#v}" --generate-notes --verify-tag)
           if [ "$SIGNED" != "true" ]; then
             # gh puts these notes before the generated ones.
-            flags+=(--prerelease --notes "This build is not signed or notarized. macOS Gatekeeper blocks it on first open: Control-click OpenMail.app, choose Open, then confirm. Auto-update stays off for unsigned builds.")
+            flags+=(--prerelease --notes "This build is not signed or notarized. macOS Gatekeeper blocks it on first open. Open it once, then go to System Settings → Privacy & Security and click Open Anyway. Auto-update stays off for unsigned builds.")
           fi
           gh release create "$GITHUB_REF_NAME" "${files[@]}" "${flags[@]}"

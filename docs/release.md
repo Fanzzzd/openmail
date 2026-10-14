@@ -23,7 +23,7 @@ apps/desktop/release/mac-arm64/OpenMail.app/Contents/MacOS/OpenMail \
   --user-data-dir="$OPENMAIL_TEST_DATA"
 ```
 
-A repeatable launch check, which the release workflow also runs, creates a temporary directory, verifies that the renderer, preload and core start, and saves a screenshot and logs:
+A repeatable launch check, which the release and package workflows also run, uses new temporary directories for every launch. It reads the fuses back from the binary and compares them with `build/security-fuses.cjs`, checks that `ELECTRON_RUN_AS_NODE=1` does not run a script, runs `OpenMail --mcp` with `initialize` and `tools/list` and expects exactly the read-only tool set on a clean stdout and exit code 0, then verifies that the renderer, preload and core start and saves a screenshot and logs. It needs `packages/core/dist` (the dist script builds it). Add `--no-gui` to skip the window:
 
 ```sh
 node scripts/smoke-dist.mjs apps/desktop/release/mac-arm64/OpenMail.app
@@ -80,9 +80,11 @@ The builder's credential rules are in the [electron-builder 26 macOS docs](https
 
 ## Release workflow (GitHub Actions)
 
-`.github/workflows/release.yml` runs when a tag matching `v*` is pushed. Its first job calls `check.yml`, the same build, type, test, lint and format checks that run on main, on the tagged commit. The release job needs that job, so a failing check stops the release before any secret is read. The release job has `contents: write`; the check job only reads. Actions are pinned by commit SHA with the version in a comment, and Dependabot updates the pins. The tag must equal `v` plus the `version` in `apps/desktop/package.json`, or the job stops. It runs on `macos-latest`, selects Xcode 26 for Icon Composer, installs with `pnpm install --frozen-lockfile`, builds the arm64 and x64 DMG and ZIP, launches the packaged apps with `scripts/smoke-dist.mjs`, and attaches them, the blockmaps and `latest-mac.yml` to a GitHub Release with generated notes. Both build scripts keep `--publish never`; the workflow uploads with `gh release create`.
+`.github/workflows/release.yml` runs when a tag matching `v*` is pushed. Its first job calls `check.yml`, the same build, type, test, lint and format checks that run on main, on the tagged commit. The release job needs that job, so a failing check stops the release before any secret is read. The release job has `contents: write`; the check job only reads. Actions are pinned by commit SHA with the version in a comment, and Dependabot updates the pins. The tag must equal `v` plus the `version` in `apps/desktop/package.json`, or the job stops. It runs on `macos-latest`, selects Xcode 26 for Icon Composer, installs with `pnpm install --frozen-lockfile`, builds the arm64 and x64 DMG and ZIP, installs Rosetta when the runner lacks it, launches both packaged apps with `scripts/smoke-dist.mjs`, writes `SHA256SUMS` for every artifact, attests build provenance for them with `actions/attest-build-provenance`, and attaches the artifacts, the blockmaps, `latest-mac.yml` and `SHA256SUMS` to a GitHub Release with generated notes. The release job alone also has `id-token: write` and `attestations: write` for the attestation. To check a download, run `shasum -a 256 -c SHA256SUMS` next to it, or `gh attestation verify OpenMail-<version>-mac-arm64.dmg --repo Fanzzzd/openmail`. Both build scripts keep `--publish never`; the workflow uploads with `gh release create`.
 
-The launch step runs before the upload. Each launch gets a new temporary profile with no accounts, so it reads no real data and starts no sign-in. If the renderer, preload or core does not start, the job fails and nothing is published. On the arm64 runner the arm64 app always launches. The x64 app launches under Rosetta when the runner has it, and the job prints a warning when it does not.
+The launch step runs before the upload. Each launch gets a new temporary profile with no accounts, so it reads no real data and starts no sign-in. If a check fails, the job fails and nothing is published. The job runs on an arm64 runner and launches both builds; the x64 app runs under Rosetta.
+
+`.github/workflows/package.yml` runs the same unsigned `pnpm --filter @openmail/desktop dist` with no secrets on every push to main, on pull requests that touch packaging (`apps/desktop/build/`, the builder config, native helpers, package manifests, the lockfile, patches or `scripts/smoke-dist.mjs`) and on demand, then runs `scripts/smoke-dist.mjs` on the arm64 app.
 
 Repository secrets:
 
