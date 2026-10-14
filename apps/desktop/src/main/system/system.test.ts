@@ -239,6 +239,7 @@ const englishLabels: DesktopLabels = {
   newMessages: { one: "# new message", other: "# new messages" },
   locale: "en",
   feedback: "Send feedback…",
+  docs: "OpenMail help",
 };
 const localizedDesktopLayer = (mailbox: Layer.Layer<Mailbox>) =>
   Layer.effectDiscard(

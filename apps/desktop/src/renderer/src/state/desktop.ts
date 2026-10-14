@@ -158,6 +158,7 @@ export function useDesktopLabels() {
             selectAll: t`Select all`,
             window: t`Window`,
             feedback: t`Send feedback…`,
+            docs: t`OpenMail help`,
             newMessages: pluralTemplates(
               i18n.locale,
               (count) => t`${plural(count, { one: "# new message", other: "# new messages" })}`,

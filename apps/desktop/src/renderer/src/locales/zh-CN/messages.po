@@ -4999,6 +4999,10 @@ msgstr "OpenMail 无法启动本地服务器。"
 msgid "OpenMail didn't find the claude command. Copy the command below instead."
 msgstr "OpenMail 没找到 claude 命令。请改为复制下面的命令。"
 
+#: src/renderer/src/state/desktop.ts
+msgid "OpenMail help"
+msgstr "OpenMail 帮助"
+
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 msgid "OpenMail is running from a disk image or the Downloads folder, so its path will change. Move it to Applications and open it again before you connect an AI app."
 msgstr "OpenMail 正从磁盘映像或“下载”文件夹运行，路径会变化。请先把它移到“应用程序”并重新打开，再连接 AI 应用。"

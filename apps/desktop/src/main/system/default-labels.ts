@@ -34,4 +34,5 @@ export const DEFAULT_DESKTOP_LABELS: DesktopLabels = {
   newMessages: { one: "# new message", other: "# new messages" },
   locale: "en",
   feedback: "Send feedback…",
+  docs: "OpenMail help",
 };

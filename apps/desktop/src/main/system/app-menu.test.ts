@@ -5,9 +5,12 @@ import { NativeAction, NO_MENU_SELECTION } from "../../shared/native-actions";
 import { isShortcutAction, shortcutAccelerator, type ShortcutSet } from "../../shared/shortcuts";
 import { applicationMenuTemplate, nativeActionAccelerator } from "./app-menu";
 import { DEFAULT_DESKTOP_LABELS } from "./default-labels";
+import { OPENMAIL_DOCS_URL } from "../../shared/docs";
+import { externalUrl } from "../../shared/external-url";
 
 const template = (platform: NodeJS.Platform, shortcutSet: ShortcutSet = "mimestream") => {
   const nativeAction = vi.fn<(action: NativeAction, triggeredByAccelerator: boolean) => void>();
+  const openHelp = vi.fn<() => void>();
   const menu = applicationMenuTemplate({
     platform,
     labels: DEFAULT_DESKTOP_LABELS,
@@ -18,13 +21,14 @@ const template = (platform: NodeJS.Platform, shortcutSet: ShortcutSet = "mimestr
     checkUpdates: vi.fn(),
     command: vi.fn(),
     feedback: vi.fn(),
+    openHelp,
     attachFiles: vi.fn(),
     newWindow: vi.fn(),
     edit: vi.fn(),
     undoSend: vi.fn(),
     nativeAction,
   });
-  return { menu, nativeAction };
+  return { menu, nativeAction, openHelp };
 };
 const items = (menu: readonly MenuItemConstructorOptions[]): MenuItemConstructorOptions[] =>
   menu.flatMap((item) => [item, ...(Array.isArray(item.submenu) ? items(item.submenu) : [])]);
@@ -159,6 +163,7 @@ it("role items carry sentence-case labels instead of Electron's Title Case", () 
     checkUpdates: vi.fn(),
     command: vi.fn(),
     feedback: vi.fn(),
+    openHelp: vi.fn(),
     attachFiles: vi.fn(),
     newWindow: vi.fn(),
     edit: vi.fn(),
@@ -201,4 +206,20 @@ it("the Message menu groups its actions with separators, none doubled or at an e
     for (const first of ["Archive", "Open thread", "Send"])
       expect(message[message.indexOf(first) - 1], first).toBe("---");
   }
+});
+
+it("Help starts with OpenMail help, which opens the docs site", () => {
+  for (const platform of ["darwin", "win32"] as const) {
+    const { menu, openHelp } = template(platform);
+    const help = submenu(menu, "Help");
+    expect(help[0]?.label).toBe("OpenMail help");
+    help[0]?.click?.(
+      Object.create(null),
+      undefined,
+      Object.assign(Object.create(null), { triggeredByAccelerator: false }),
+    );
+    expect(openHelp).toHaveBeenCalledOnce();
+  }
+  // The safe external-open path accepts the docs site.
+  expect(externalUrl(OPENMAIL_DOCS_URL)).toBe(`${OPENMAIL_DOCS_URL}/`);
 });

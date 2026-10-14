@@ -60,6 +60,8 @@ export interface AppMenuInput {
   readonly checkUpdates: () => void;
   readonly command: (name: "settings" | "help" | "compose") => void;
   readonly feedback: () => void;
+  /** Opens the docs site in the default browser. */
+  readonly openHelp: () => void;
   readonly attachFiles: () => void;
   readonly newWindow: () => void;
   readonly edit: (action: "undo" | "selectAll") => void;
@@ -205,6 +207,7 @@ export function applicationMenuTemplate(input: AppMenuInput): MenuItemConstructo
       role: "help",
       label: labels.helpMenu ?? "Help",
       submenu: [
+        { label: labels.docs, click: input.openHelp },
         { label: labels.help, click: () => input.command("help") },
         { label: labels.feedback, click: input.feedback },
         ...(mac ? [] : [{ label: labels.checkUpdates, click: input.checkUpdates }]),

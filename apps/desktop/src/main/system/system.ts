@@ -4,6 +4,7 @@ import { nativeTabMenu } from "../windows/window-keys";
 import { readDockFiles, dockFileReason } from "../files/dock-files";
 import { NO_MENU_SELECTION, type NativeMenuState } from "../../shared/native-actions";
 import { applicationMenuTemplate } from "./app-menu";
+import { OPENMAIL_DOCS_URL } from "../../shared/docs";
 import { configureSpelling, installSpellingMenu } from "../windows/spellcheck";
 import { approveUpdateQuit } from "../updates/update-install";
 import { setRecoveryRelaunch } from "../app/recovery-actions";
@@ -371,6 +372,14 @@ export const DesktopLive = Layer.effect(
                 checkUpdates,
                 command,
                 feedback: () => deliver({ _tag: "Command", command: "feedback" }),
+                openHelp: () =>
+                  run(
+                    Effect.tryPromise(() => openExternal(OPENMAIL_DOCS_URL)).pipe(
+                      Effect.catchCause((cause) =>
+                        Effect.logWarning("could not open the help site", cause),
+                      ),
+                    ),
+                  ),
                 attachFiles: () => {
                   const attachTarget = BrowserWindow.getFocusedWindow();
                   deliver(

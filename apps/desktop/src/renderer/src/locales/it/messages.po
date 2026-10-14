@@ -4989,6 +4989,10 @@ msgstr "OpenMail non è riuscito ad avviare il suo server locale."
 msgid "OpenMail didn't find the claude command. Copy the command below instead."
 msgstr "OpenMail non ha trovato il comando claude. Copia invece il comando qui sotto."
 
+#: src/renderer/src/state/desktop.ts
+msgid "OpenMail help"
+msgstr "Guida di OpenMail"
+
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 msgid "OpenMail is running from a disk image or the Downloads folder, so its path will change. Move it to Applications and open it again before you connect an AI app."
 msgstr "OpenMail è in esecuzione da un’immagine disco o dalla cartella Download, quindi il suo percorso cambierà. Spostalo in Applicazioni e riaprilo prima di collegare un’app di IA."

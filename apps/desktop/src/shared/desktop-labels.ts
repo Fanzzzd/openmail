@@ -33,6 +33,8 @@ export const DesktopLabels = Schema.Struct({
   selectAll: Schema.String,
   window: Schema.String,
   feedback: Schema.String,
+  /** Help menu item that opens the docs site. */
+  docs: Schema.String,
   /** The digest title per plural category of `locale`, with # for the count. */
   newMessages: Schema.Record(Schema.String, Schema.String),
   locale: Schema.String,
