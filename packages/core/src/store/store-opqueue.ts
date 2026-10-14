@@ -26,6 +26,8 @@ const SmtpAcceptedRow = Schema.Struct({
       tries: Schema.optionalKey(Schema.Number),
       subject: Schema.optionalKey(Schema.String),
       sender: Schema.optionalKey(Schema.String),
+      claim: Schema.optionalKey(Schema.NullOr(Schema.String)),
+      claimedAt: Schema.optionalKey(Schema.NullOr(Schema.Number)),
     }),
   ),
 });
@@ -35,6 +37,8 @@ const PENDING_OP_COLUMNS =
 
 /** A claim on a queued op older than this belongs to a process that died mid-push. */
 const CLAIM_TTL = 2 * 60_000;
+/** A claim on an SMTP-accepted record older than this belongs to a process that died mid-send. */
+export const SMTP_ACCEPTED_CLAIM_TTL = 2 * 60_000;
 
 const progressFailure = (cause: Cause.Cause<unknown>) =>
   Cause.hasInterrupts(cause)
@@ -260,25 +264,59 @@ export const makeOpQueueStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
         })),
       ),
     ),
-    markSmtpAccepted: (draftId, accountId, raw) =>
+    markSmtpAccepted: (draftId, accountId, raw, claim) =>
       Effect.gen(function* () {
+        const at = yield* Clock.currentTimeMillis;
         const value = JSON.stringify({
           accountId,
           raw: Buffer.from(raw).toString("base64"),
-          at: yield* Clock.currentTimeMillis,
+          at,
+          ...(claim === undefined ? {} : { claim, claimedAt: at }),
         });
         yield* run(
           sql`INSERT INTO prefs(key,value_json) VALUES(${SMTP_ACCEPTED + draftId},${value}) ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json`,
         );
       }),
+    claimSmtpAccepted: Effect.fn("Store.claimSmtpAccepted")(function* (
+      draftId: string,
+      token: string,
+    ) {
+      const now = yield* Clock.currentTimeMillis;
+      const row = yield* first(Schema.Struct({ key: Schema.String }))(
+        sql`UPDATE prefs SET value_json=json_set(value_json,'$.claim',${token},'$.claimedAt',${now})
+          WHERE key=${SMTP_ACCEPTED + draftId} AND json_valid(value_json)
+            AND (json_extract(value_json,'$.claim') IS NULL
+              OR COALESCE(json_extract(value_json,'$.claimedAt'),0) < ${now - SMTP_ACCEPTED_CLAIM_TTL})
+          RETURNING key`,
+      );
+      return Option.isSome(row);
+    }),
+    renewSmtpAccepted: Effect.fn("Store.renewSmtpAccepted")(function* (
+      draftId: string,
+      token: string,
+    ) {
+      const now = yield* Clock.currentTimeMillis;
+      yield* run(
+        sql`UPDATE prefs SET value_json=json_set(value_json,'$.claimedAt',${now})
+          WHERE key=${SMTP_ACCEPTED + draftId} AND json_valid(value_json)
+            AND json_extract(value_json,'$.claim')=${token}`,
+      );
+    }),
+    releaseSmtpAccepted: (draftId, token) =>
+      run(
+        sql`UPDATE prefs SET value_json=json_remove(value_json,'$.claim','$.claimedAt')
+          WHERE key=${SMTP_ACCEPTED + draftId} AND json_valid(value_json)
+            AND json_extract(value_json,'$.claim')=${token}`,
+      ),
     clearSmtpAccepted: (draftId) =>
       run(sql`DELETE FROM prefs WHERE key=${SMTP_ACCEPTED + draftId}`),
     noteSentCopyFailure: (draftId, message) =>
       run(
-        sql`UPDATE prefs SET value_json=json_set(value_json,
+        sql`UPDATE prefs SET value_json=json_remove(json_set(value_json,
           '$.tries', COALESCE(json_extract(value_json,'$.tries'),0)+1,
           '$.subject', COALESCE(json_extract(value_json,'$.subject'),${message.subject}),
-          '$.sender', COALESCE(json_extract(value_json,'$.sender'),${message.sender}))
+          '$.sender', COALESCE(json_extract(value_json,'$.sender'),${message.sender})),
+          '$.claim','$.claimedAt')
         WHERE key=${SMTP_ACCEPTED + draftId} AND json_valid(value_json)`,
       ),
   } satisfies Pick<
@@ -303,6 +341,9 @@ export const makeOpQueueStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
     | "setSendUncertain"
     | "smtpAccepted"
     | "markSmtpAccepted"
+    | "claimSmtpAccepted"
+    | "renewSmtpAccepted"
+    | "releaseSmtpAccepted"
     | "clearSmtpAccepted"
     | "noteSentCopyFailure"
   >;

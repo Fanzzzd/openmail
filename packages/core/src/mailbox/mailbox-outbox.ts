@@ -19,14 +19,11 @@ import { mobileAttachmentProblem, type QueuedSend } from "./mobile-outbox.js";
 import { isDefiniteSendFailure } from "../providers/provider-send.js";
 import { READ_ONLY_MESSAGE } from "./read-only.js";
 import { isEmailAddress } from "../compose/recipients.js";
-import type { SmtpAcceptedSend, StoredDraft } from "../store/service.js";
+import type { StoredDraft } from "../store/service.js";
+import { holdingAcceptedClaim, makeAcceptedSends } from "./mailbox-accepted-sends.js";
 import { providerCapabilities } from "../providers/capabilities.js";
 import { serverSavesSent } from "../providers/imap/imap-settings.js";
 import type { SendOriginal } from "../providers/send-original.js";
-
-/** A Sent copy that fails this many times, or for this long, becomes a sentCopyMissing notice. */
-const MAX_SENT_COPY_TRIES = 10;
-const SENT_COPY_RETRY_MS = 7 * 24 * 60 * 60 * 1000;
 
 /** A finished discard keeps its draft id this long, so a save arriving late can't recreate it. */
 const DISCARD_TOMBSTONE_MS = 7 * 24 * 60 * 60 * 1000;
@@ -171,6 +168,8 @@ export const makeOutboxMailbox = (
         }),
       );
     }
+    // The live send owns the SMTP-accepted record it writes, so a sync retry leaves it alone.
+    const claim = crypto.randomUUID();
     const delivery = yield* providers
       .get(account.provider)
       .send(
@@ -181,11 +180,12 @@ export const makeOutboxMailbox = (
           ? {
               load: store.sendPreparationState(draftId),
               save: (state) => store.setSendPreparationState(draftId, state),
-              accepted: (raw) => store.markSmtpAccepted(draftId, accountId, raw),
+              accepted: (raw) => store.markSmtpAccepted(draftId, accountId, raw, claim),
             }
           : undefined,
       )
       .pipe(
+        draftId ? holdingAcceptedClaim(store, draftId, claim) : (effect) => effect,
         Effect.tapError((error) =>
           Effect.all([
             error._tag === "AuthError" ? store.markReauth(accountId, error) : Effect.void,
@@ -551,77 +551,16 @@ export const makeOutboxMailbox = (
         yield* changed;
       }
     });
-  /** Drafts whose Sent copy is being filed now, so a sync retry never APPENDs a second copy. */
-  const filingSentCopies = new Set<string>();
-  /**
-   * SMTP accepted this send, then OpenMail stopped before the send finished. The message is out:
-   * finish the send as the live path would have, and file its Sent copy. The record stays until
-   * the copy is filed (saveSent skips a copy Sent already has by Message-ID), and the next
-   * successful sync of the account tries again. After MAX_SENT_COPY_TRIES failures or
-   * SENT_COPY_RETRY_MS the person gets a sentCopyMissing notice instead.
-   */
-  const finishAcceptedSend = (accepted: SmtpAcceptedSend) =>
-    Effect.gen(function* () {
-      const { draftId } = accepted;
-      if (filingSentCopies.has(draftId)) return;
-      filingSentCopies.add(draftId);
-      const account = yield* store.getAccount(accepted.accountId).pipe(Effect.option);
-      const adapter = Option.isSome(account) ? providers.get(account.value.provider) : undefined;
-      const filed =
-        Option.isSome(account) && adapter?.fileSentCopy
-          ? yield* adapter.fileSentCopy(account.value, accepted.raw).pipe(Effect.result)
-          : undefined;
-      const queued = (yield* store.queuedSends).find((item) => item.id === draftId);
-      const draft = yield* store.getDraft(draftId);
-      const message = queued?.message ?? (Option.isSome(draft) ? draft.value.message : undefined);
-      const subject = accepted.subject ?? message?.subject ?? "";
-      const sender =
-        accepted.sender ??
-        message?.from?.address ??
-        (Option.isSome(account) ? account.value.email : "");
-      const now = yield* Clock.currentTimeMillis;
-      const failed = filed?._tag === "Failure";
-      const giveUp =
-        failed &&
-        (accepted.tries + 1 >= MAX_SENT_COPY_TRIES || now - accepted.at >= SENT_COPY_RETRY_MS);
-      yield* store.transaction(
-        Effect.gen(function* () {
-          if (Option.isSome(draft)) yield* removeDraft(draft.value);
-          yield* store.deleteQueuedSend(draftId);
-          yield* store.setSendUncertain(draftId, false);
-          yield* store.setSendPreparationState(draftId, null);
-          yield* failed && !giveUp
-            ? store.noteSentCopyFailure(draftId, { subject, sender })
-            : store.clearSmtpAccepted(draftId);
-        }),
-      );
-      if (Option.isSome(draft) && draft.value.proposalId !== null)
-        yield* settleProposal(draft.value.proposalId, true);
-      if (giveUp)
-        yield* store.recordFailedOp({
-          accountId: accepted.accountId,
-          providerId: draftId,
-          kind: "sentCopyMissing",
-          reason: `SMTP accepted the message before OpenMail closed, but saving its Sent copy failed: ${filed.failure.message}`,
-          subject,
-          sender,
-        });
-      yield* changed;
-    }).pipe(Effect.ensuring(Effect.sync(() => filingSentCopies.delete(accepted.draftId))));
-
-  /** Sent copies still missing after SMTP accepted the send; a successful sync retries them. */
-  const retryAcceptedSends = (accountId?: string) =>
-    Effect.gen(function* () {
-      if (readOnly || !(options.resumeDesktopSends || options.localDraftQueue)) return;
-      const accepted = (yield* store.smtpAccepted).filter(
-        (entry) => accountId === undefined || entry.accountId === accountId,
-      );
-      yield* Effect.forEach(accepted, finishAcceptedSend, { discard: true });
-    }).pipe(
-      Effect.catchCause((cause) =>
-        logWarning("sent-copy-failed", "Finishing an accepted send failed", cause),
-      ),
-    );
+  const { retryAcceptedSends } = makeAcceptedSends({
+    store,
+    providers,
+    crypto,
+    changed,
+    readOnly,
+    resumes: options.resumeDesktopSends === true || options.localDraftQueue === true,
+    removeDraft,
+    settleProposal,
+  });
 
   /** What to tell the person about a send that stopped mid-way with no SMTP answer recorded. */
   const interruptedMessage = (accountId: string) =>

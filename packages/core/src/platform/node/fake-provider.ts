@@ -88,6 +88,8 @@ export interface FakeServer {
   /** When set, send reports SMTP acceptance of these bytes through the preparation. */
   acceptedRaw?: Uint8Array;
   acceptedMarks?: number;
+  /** Runs after SMTP acceptance is reported, while the live send still holds its record. */
+  afterAccepted?: Effect.Effect<void>;
   sentCopyFailure?: ProviderFailure;
   /** A test-controlled network stall; local batch commits must not wait for it. */
   beforePush?: Effect.Effect<void, ProviderFailure>;
@@ -590,6 +592,7 @@ export function makeFakeProvider(
           if (server.acceptedRaw && preparation?.accepted) {
             yield* preparation.accepted(server.acceptedRaw);
             server.acceptedMarks = (server.acceptedMarks ?? 0) + 1;
+            if (server.afterAccepted) yield* server.afterAccepted;
           }
         }),
       ),

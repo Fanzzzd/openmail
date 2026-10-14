@@ -397,9 +397,27 @@ export class Store extends Context.Service<
      * `sender` are kept for the notice once the draft is gone.
      */
     readonly smtpAccepted: Effect.Effect<readonly SmtpAcceptedSend[]>;
-    markSmtpAccepted(draftId: string, accountId: string, raw: Uint8Array): Effect.Effect<void>;
+    /** `claim` marks the record as owned by the live send that wrote it. */
+    markSmtpAccepted(
+      draftId: string,
+      accountId: string,
+      raw: Uint8Array,
+      claim?: string,
+    ): Effect.Effect<void>;
+    /**
+     * Takes the record for `token` when no process holds a live claim on it, so a retry never
+     * files a Sent copy while the send that wrote it (here or in another process) still runs.
+     */
+    claimSmtpAccepted(draftId: string, token: string): Effect.Effect<boolean>;
+    /** Keeps `token`'s claim on the record alive. */
+    renewSmtpAccepted(draftId: string, token: string): Effect.Effect<void>;
+    /** Gives `token`'s claim back, so the next retry can take the record at once. */
+    releaseSmtpAccepted(draftId: string, token: string): Effect.Effect<void>;
     clearSmtpAccepted(draftId: string): Effect.Effect<void>;
-    /** Counts a failed Sent copy filing and keeps the first subject and sender it was given. */
+    /**
+     * Counts a failed Sent copy filing, keeps the first subject and sender it was given, and
+     * releases the claim.
+     */
     noteSentCopyFailure(
       draftId: string,
       message: { subject: string; sender: string },
