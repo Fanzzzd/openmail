@@ -1,5 +1,5 @@
 import { Buffer } from "../platform/bytes.js";
-import { Effect, Layer, Option, Schema, Stream } from "effect";
+import { Clock, Effect, Layer, Option, Schema, Stream } from "effect";
 import {
   mailData,
   aiLanguage,
@@ -25,6 +25,9 @@ import { toModelAccount } from "../tools/account-tools.js";
 import { providerCapabilities } from "../providers/capabilities.js";
 import { makeAiRequests, noLocale, validLocale } from "./mailbox-ai-requests.js";
 import { isSpecialLabel, makeAiTriage } from "./mailbox-ai-triage.js";
+
+/** Automatic summaries per UTC day, across accounts. Summaries the person asks for are not capped. */
+export const AUTO_SUMMARY_DAILY_CAP = 50;
 
 export function makeAiMailbox(
   store: Store["Service"],
@@ -493,6 +496,8 @@ export function makeAiMailbox(
     autoTriage,
     autoSummaries: (ids: readonly string[]) =>
       Effect.gen(function* () {
+        // Like triage: only while a window is focused or the Mac is on AC power.
+        if (!canTriage()) return;
         const settings = yield* store.ai.accounts;
         if (
           !settings.some((a) => a.allowed && a.autoSummaries) ||
@@ -502,12 +507,21 @@ export function makeAiMailbox(
         // At most three new threads per arrival batch, sequentially, no retries.
         const locale = yield* appLocale;
         for (const id of ids.slice(0, 3)) {
+          if (!canTriage()) return;
           const thread = yield* store.getThread(id).pipe(Effect.option);
           const accountId = Option.isSome(thread) ? thread.value[0]?.accountId : undefined;
-          if (settings.some((a) => a.accountId === accountId && a.allowed && a.autoSummaries))
-            yield* Stream.runDrain(summarize(id, locale)).pipe(
-              Effect.catchCause(() => Effect.void),
-            );
+          if (!settings.some((a) => a.accountId === accountId && a.allowed && a.autoSummaries))
+            continue;
+          // A summary already cached in this language costs nothing and counts against no cap.
+          const ready = yield* input(id, "summary", locale).pipe(
+            Effect.flatMap(cached),
+            Effect.map((row) => row !== null),
+            Effect.orElseSucceed(() => false),
+          );
+          if (ready) continue;
+          const day = new Date(yield* Clock.currentTimeMillis).toISOString().slice(0, 10);
+          if (!(yield* store.ai.claimAutoSummary(day, AUTO_SUMMARY_DAILY_CAP))) return;
+          yield* Stream.runDrain(summarize(id, locale)).pipe(Effect.catchCause(() => Effect.void));
         }
       }),
   };

@@ -85,6 +85,20 @@ export function makeAiStore(sql: SqlClient.SqlClient) {
       run(sql`DELETE FROM derived WHERE thread_id=${threadId} AND kind='triage'`),
     deleteAccountTriage: (accountId: string) =>
       run(sql`DELETE FROM derived WHERE account_id=${accountId} AND kind='triage'`),
+    /**
+     * Counts one automatic summary against `day`'s cap. False once `cap` were claimed that day;
+     * a new day starts again at one. One statement, so app windows and processes share the count.
+     */
+    claimAutoSummary: (day: string, cap: number) =>
+      sql`INSERT INTO prefs(key,value_json) VALUES('ai-auto-summaries',json_object('day',${day},'count',1))
+      ON CONFLICT(key) DO UPDATE SET value_json=CASE WHEN json_extract(value_json,'$.day')=${day}
+        THEN json_object('day',${day},'count',json_extract(value_json,'$.count')+1)
+        ELSE json_object('day',${day},'count',1) END
+      WHERE json_extract(value_json,'$.day') IS NOT ${day} OR json_extract(value_json,'$.count')<${cap}
+      RETURNING value_json`.pipe(
+        Effect.map((rows) => rows.length > 0),
+        Effect.orDie,
+      ),
     deleteAccountResults: (accountId: string) =>
       run(sql`DELETE FROM derived WHERE account_id=${accountId}`),
   };

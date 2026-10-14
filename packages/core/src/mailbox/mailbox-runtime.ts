@@ -46,7 +46,10 @@ export interface MailboxOptions {
   inboxPoll?: Duration.Input;
   pollOnBattery?: () => boolean;
   models?: ModelRuntime;
-  /** Desktop reports foreground or AC power; absent means automatic triage cannot run. */
+  /**
+   * Desktop reports foreground or AC power. Automatic triage and automatic summaries run only
+   * while it is true; absent means neither runs.
+   */
   canTriage?: () => boolean;
   /**
    * The system language as a BCP 47 tag, for AI text made in the background when the language

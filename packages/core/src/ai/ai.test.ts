@@ -630,7 +630,12 @@ it.effect("automatic summaries require both account switches and an API key", ()
       assert.strictEqual(calls, 1);
     }).pipe(
       Effect.provide(
-        TestMailbox({ gmail: server }, { backgroundFlush: false, autoSync: "1 hour" }, {}, fake),
+        TestMailbox(
+          { gmail: server },
+          { backgroundFlush: false, autoSync: "1 hour", canTriage: () => true },
+          {},
+          fake,
+        ),
       ),
     );
   }),

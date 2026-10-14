@@ -7,7 +7,7 @@ import { richComposeBody, textComposeHtml } from "../compose/compose-body.js";
 import type { IncomingMessage } from "../domain/message.js";
 import { Mailbox } from "../mailbox/mailbox.js";
 import { MailboxLive } from "../mailbox/mailbox-live.js";
-import { makeAiMailbox } from "../mailbox/mailbox-ai.js";
+import { AUTO_SUMMARY_DAILY_CAP, makeAiMailbox } from "../mailbox/mailbox-ai.js";
 import { Model, FakeModelLayer, type ModelOutput, type ModelRequest } from "./model.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
 import { Providers } from "../providers/adapter.js";
@@ -215,6 +215,53 @@ it.effect(
       );
       assert.strictEqual(fetch.mock.calls.length, 0);
     }).pipe(Effect.provide(f.layer), Effect.ensuring(Effect.sync(() => vi.unstubAllGlobals())));
+  },
+);
+
+it.effect(
+  "automatic summaries pause like triage and stop at the daily cap until the next UTC day",
+  () => {
+    let calls = 0;
+    let eligible = false;
+    const f = fixture(
+      () => {
+        calls++;
+        return output("Summary");
+      },
+      () => eligible,
+    );
+    return Effect.gen(function* () {
+      const { m, store, ai } = yield* f.setup;
+      const ids = Array.from({ length: 5 }, (_, i) => `${accountId}/m${i + 1}`);
+      yield* m.setAiKey("fake");
+      yield* m.setAiAccount({ ...consent, autoTriage: false, autoSummaries: true });
+      // On battery with no focused window: nothing runs.
+      yield* ai.autoSummaries(ids);
+      assert.strictEqual(calls, 0);
+      eligible = true;
+      yield* ai.autoSummaries(ids);
+      assert.strictEqual(calls, 3, "three threads per arrival batch");
+      // Cached summaries cost nothing and count against no cap.
+      yield* ai.autoSummaries(ids.slice(0, 3));
+      assert.strictEqual(calls, 3);
+      // Use up the rest of today's cap; the next new thread waits for tomorrow.
+      const day = new Date(0).toISOString().slice(0, 10);
+      for (let i = 3; i < AUTO_SUMMARY_DAILY_CAP; i++)
+        assert.isTrue(yield* store.ai.claimAutoSummary(day, AUTO_SUMMARY_DAILY_CAP));
+      yield* ai.autoSummaries(ids.slice(3));
+      assert.strictEqual(calls, 3);
+      assert.isFalse(yield* store.ai.claimAutoSummary(day, AUTO_SUMMARY_DAILY_CAP));
+      yield* TestClock.adjust("1 day");
+      yield* ai.autoSummaries(ids.slice(3));
+      assert.strictEqual(calls, 5);
+      // A summary the person asks for is never capped.
+      const tomorrow = new Date(86_400_000).toISOString().slice(0, 10);
+      let left = true;
+      while (left) left = yield* store.ai.claimAutoSummary(tomorrow, AUTO_SUMMARY_DAILY_CAP);
+      yield* store.ai.deleteSummary(`${accountId}/m1`);
+      yield* Stream.runDrain(m.summarize(id));
+      assert.strictEqual(calls, 6);
+    }).pipe(Effect.provide(f.layer));
   },
 );
 
