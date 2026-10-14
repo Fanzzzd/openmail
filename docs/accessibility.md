@@ -4,15 +4,15 @@ renderer 的自动检查覆盖组件语义、键盘操作、播报内容和主�
 
 ## 自动检查
 
-| 文件                                                               | 范围                                                                                                                                                                                                                         |
-| ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `apps/desktop/src/renderer/src/tests/accessibility.test.ts`        | axe-core + jsdom：侧栏、未读/星标/选中消息行、reader 标题/附件/邀请/身份验证警告、浮动和独立 composer、格式栏、收件人、附件菜单、发送确认、15 个设置页面、命令面板、账户添加、标签编辑、稍后提醒、AI 审核、确认框和 picker。 |
-| `apps/desktop/src/renderer/src/tests/accessibility.test.ts`        | 中等级问题的精确快照。当前为空。每项例外须写测试名称、规则、节点选择器和原因；新增问题或已消失的例外都会使测试失败。严重和致命问题始终失败。                                                                                 |
-| `apps/desktop/src/renderer/src/tests/accessibility-locale.test.ts` | 10 个界面语言激活后，文档 `lang` 与 locale 一致。目录读取使用 fixture，激活回调使用实际实现。                                                                                                                                |
-| `apps/desktop/src/renderer/src/tests/accessibility-theme.test.ts`  | 浅色/深色主题正文、次要文字、强调色、错误色达到 4.5:1；边框和焦点色达到 3:1。另检查构建后的工具类、用户标签混色和选中行表面。                                                                                                |
-| `apps/desktop/src/renderer/src/tests/accessibility-css.test.ts`    | 构建后的焦点样式、层级和弹窗边界。主题测试同时检查减少动画规则。                                                                                                                                                             |
-| `apps/desktop/src/renderer/src/e2e/flows.test.ts`                  | jsdom 中实际 renderer/core 流程，包括键盘从列表进入 reader、回复和发送。                                                                                                                                                     |
-| `apps/desktop/src/renderer/src/e2e/layout.test.ts`                 | 按窗口宽度切换三栏、两栏和单栏。单栏下用返回按钮、Escape 和 ⌘[ 从 reader 回到列表，焦点回到原来的行。侧栏抽屉打开时焦点在当前邮箱，Escape 关闭后焦点回到开关按钮。单栏下对话框铺满窗口，带关闭按钮。                         |
+| 文件                                                                   | 范围                                                                                                                                                                                                                         |
+| ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/desktop/src/renderer/src/tests/accessibility-*.test.ts`          | axe-core + jsdom：侧栏、未读/星标/选中消息行、reader 标题/附件/邀请/身份验证警告、浮动和独立 composer、格式栏、收件人、附件菜单、发送确认、15 个设置页面、命令面板、账户添加、标签编辑、稍后提醒、AI 审核、确认框和 picker。 |
+| `apps/desktop/src/renderer/src/test-support/accessibility-fixtures.ts` | 中等级问题的精确快照。当前为空。每项例外须写测试名称、规则、节点选择器和原因；新增问题或已消失的例外都会使测试失败。严重和致命问题始终失败。                                                                                 |
+| `apps/desktop/src/renderer/src/tests/accessibility-locale.test.ts`     | 10 个界面语言激活后，文档 `lang` 与 locale 一致。目录读取使用 fixture，激活回调使用实际实现。                                                                                                                                |
+| `apps/desktop/src/renderer/src/tests/accessibility-theme.test.ts`      | 浅色/深色主题正文、次要文字、强调色、错误色达到 4.5:1；边框和焦点色达到 3:1。另检查构建后的工具类、用户标签混色和选中行表面。                                                                                                |
+| `apps/desktop/src/renderer/src/tests/accessibility-css.test.ts`        | 构建后的焦点样式、层级和弹窗边界。主题测试同时检查减少动画规则。                                                                                                                                                             |
+| `apps/desktop/src/renderer/src/e2e/flows.test.ts`                      | jsdom 中实际 renderer/core 流程，包括键盘从列表进入 reader、回复和发送。                                                                                                                                                     |
+| `apps/desktop/src/renderer/src/e2e/layout.test.ts`                     | 按窗口宽度切换三栏、两栏和单栏。单栏下用返回按钮、Escape 和 ⌘[ 从 reader 回到列表，焦点回到原来的行。侧栏抽屉打开时焦点在当前邮箱，Escape 关闭后焦点回到开关按钮。单栏下对话框铺满窗口，带关闭按钮。                         |
 
 键盘测试检查对话框和 picker 的 Tab 循环、Escape 关闭、焦点返回，菜单的键盘打开和关闭，格式栏方向键，以及收件人 Delete 移除。消息行通过 Shift+F10 打开完整操作菜单，提供滑动和鼠标操作的键盘入口。
 

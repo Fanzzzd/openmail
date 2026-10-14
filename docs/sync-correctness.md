@@ -112,7 +112,7 @@ Drafts 孤立草稿只统计已有 `remote_message_id`、`local_only=0`、`sync_
 
 Outlook 同轮出现同 ID 的更新和移除时，只要更新文件夹与移除文件夹重叠，就先把 ID 保存到持久验证队列，再保存游标。拉取不内联验证；随后按共享预算核对当前位置。限流、权限错误和没有明确答案的 ID 留在队列，后续同步续验。这覆盖从后处理文件夹移动到 Inbox、旧文件夹更新覆盖了新位置的情况。没有被任何文件夹列出的移除同样先入验证队列，不直接删除：文件夹 delta 的 `receivedDateTime` 起点在游标创建时固定，二月的邮件移入六月新建的文件夹后，新文件夹的 delta 不会列出它；验证读取 `parentFolderId` 后把它改到新文件夹。确实删除的邮件由验证确认为 gone 后删除，每 20 个删除多一个只读 batch 请求。Inbox 轮询不处理移除，也不逐个 GET 自定义文件夹；收件箱游标只保留 Inbox 的 delta 链接，文件夹删除仍由完整同步判定。
 
-实现见 [sync-reset.ts](../packages/core/src/sync/sync-reset.ts)、[store-sync-reset.ts](../packages/core/src/store/store-sync-reset.ts)、[Outlook](../packages/core/src/providers/outlook/outlook.ts)和 [store-sync-health.ts](../packages/core/src/store/store-sync-health.ts)，回归见 [sync-stale.test.ts](../packages/core/src/sync/sync-stale.test.ts)、[sync-reset.test.ts](../packages/core/src/sync/sync-reset.test.ts)及 [outlook.test.ts](../packages/core/src/providers/outlook/outlook.test.ts)。
+实现见 [sync-reset.ts](../packages/core/src/sync/sync-reset.ts)、[store-sync-reset.ts](../packages/core/src/store/store-sync-reset.ts)、[Outlook](../packages/core/src/providers/outlook/outlook.ts)和 [store-sync-health.ts](../packages/core/src/store/store-sync-health.ts)，回归见 [sync-stale.test.ts](../packages/core/src/sync/sync-stale.test.ts)、[sync-reset.test.ts](../packages/core/src/sync/sync-reset.test.ts)及 [outlook-sync-health.test.ts](../packages/core/src/providers/outlook/outlook-sync-health.test.ts)。
 
 ## 旧缓存邮件头回填
 
