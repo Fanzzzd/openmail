@@ -1,3 +1,4 @@
+import { connectCdp, listTargets } from "./cdp.mjs";
 import { smokeClickExpression, isBlockedSmokeImage, smokeEnvironment } from "./smoke-ui.mjs";
 import { spawn } from "node:child_process";
 import { mkdtemp } from "node:fs/promises";
@@ -52,16 +53,14 @@ const report = {
   syncHealth: [],
   failure: "",
 };
-let child, socket;
+let child, cdp;
 let uiReady = false;
 const cleanup = createSmokeCleanup({
   directory,
   keepDirectory: values.keep,
   child: () => child,
-  socket: () => socket,
+  socket: () => cdp?.socket,
 });
-const pending = new Map();
-let sequence = 0;
 const deadline = Date.now() + timeout;
 const delay = () =>
   new Promise((resolve) => {
@@ -85,38 +84,10 @@ async function until(action, condition = String(action).slice(0, 200)) {
   }
   throw new Error(`Smoke timeout while waiting for ${condition}`);
 }
-function send(method, params = {}) {
-  const id = ++sequence;
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(
-      () => {
-        pending.delete(id);
-        reject(new Error(`CDP timeout: ${method}`));
-      },
-      Math.max(1, deadline - Date.now()),
-    );
-    pending.set(id, {
-      resolve: (value) => {
-        clearTimeout(timer);
-        resolve(value);
-      },
-      reject: (error) => {
-        clearTimeout(timer);
-        reject(error);
-      },
-    });
-    socket.send(JSON.stringify({ id, method, params }));
-  });
-}
-async function evaluate(expression) {
-  const result = await send("Runtime.evaluate", {
-    expression,
-    returnByValue: true,
-    awaitPromise: true,
-  });
-  if (result.exceptionDetails) throw new Error("Smoke UI evaluation failed");
-  return result.result?.value;
-}
+// Every CDP call and the socket open share the run's deadline.
+const remaining = () => deadline - Date.now();
+const send = (method, params) => cdp.send(method, params);
+const evaluate = (expression) => cdp.evaluate(expression);
 const dismissFirstRunPrompts = () =>
   evaluate(`(() => {
       const dialogs = [...document.querySelectorAll('[role="dialog"]')];
@@ -168,52 +139,28 @@ try {
   });
   const target = await until(async () => {
     if (report.failure) throw new Error(report.failure);
-    try {
-      const targets = await (
-        await fetch(`http://127.0.0.1:${port}/json/list`, { signal: AbortSignal.timeout(1000) })
-      ).json();
-      return targets.find(
-        (candidate) => candidate.type === "page" && /\/index\.html(?:$|[?#])/.test(candidate.url),
-      );
-    } catch {
-      return null;
-    }
+    const targets = await listTargets(port);
+    return targets.find(
+      (candidate) => candidate.type === "page" && /\/index\.html(?:$|[?#])/.test(candidate.url),
+    );
   });
-  socket = new WebSocket(target.webSocketDebuggerUrl);
-  await new Promise((resolve, reject) => {
-    const timer = setTimeout(
-      () => reject(new Error("CDP connection timeout")),
-      Math.max(1, deadline - Date.now()),
-    );
-    timer.unref();
-    socket.addEventListener(
-      "open",
-      () => {
-        clearTimeout(timer);
-        resolve();
-      },
-      { once: true },
-    );
-    socket.addEventListener(
-      "error",
-      (error) => {
-        clearTimeout(timer);
-        reject(error);
-      },
-      { once: true },
-    );
+  // Say why the page went away: the renderer crashed, or the preview process exited.
+  let crashed = false;
+  cdp = await connectCdp(target.webSocketDebuggerUrl, {
+    connectTimeoutMs: remaining,
+    callTimeoutMs: remaining,
+    closeReason: () => {
+      const exited =
+        child && (child.exitCode !== null || child.signalCode !== null)
+          ? `preview exited: ${child.exitCode ?? child.signalCode}`
+          : "preview still running";
+      return `CDP closed (${crashed ? "renderer crashed, " : ""}${exited})`;
+    },
   });
   const contexts = new Map();
-  socket.addEventListener("message", ({ data }) => {
-    const message = JSON.parse(data);
-    if (message.id) {
-      const request = pending.get(message.id);
-      pending.delete(message.id);
-      if (message.error) request?.reject(new Error(message.error.message));
-      else request?.resolve(message.result);
-      return;
-    }
+  cdp.onEvent((message) => {
     const params = message.params;
+    if (message.method === "Inspector.targetCrashed") crashed = true;
     if (message.method === "Runtime.executionContextCreated")
       contexts.set(params.context.id, params.context.origin);
     if (message.method === "Runtime.exceptionThrown")
@@ -232,20 +179,6 @@ try {
       if (!isBlockedSmokeImage(entry.url, entry.text))
         report.consoleErrors.push(entry.text.slice(0, 2000));
     }
-  });
-  // Say why the page went away: the renderer crashed, or the preview process exited.
-  let crashed = false;
-  socket.addEventListener("message", (event) => {
-    if (JSON.parse(String(event.data)).method === "Inspector.targetCrashed") crashed = true;
-  });
-  socket.addEventListener("close", () => {
-    const exited =
-      child && (child.exitCode !== null || child.signalCode !== null)
-        ? `preview exited: ${child.exitCode ?? child.signalCode}`
-        : "preview still running";
-    const reason = `CDP closed (${crashed ? "renderer crashed, " : ""}${exited})`;
-    for (const p of pending.values()) p.reject(new Error(reason));
-    pending.clear();
   });
   const launch = await send("Browser.getBrowserCommandLine");
   if (!launch.arguments?.includes(`--user-data-dir=${directory}`))

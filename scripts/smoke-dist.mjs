@@ -17,6 +17,7 @@ import net from "node:net";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { connectCdp, listTargets } from "../apps/desktop/scripts/cdp.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const args = process.argv.slice(2);
@@ -197,7 +198,7 @@ async function checkGui() {
   const dataDir = path.join(scratch, "gui");
   const server = net.createServer();
   let child;
-  let ws;
+  let cdp;
   let log = "";
   // Written as it arrives, so a job killed mid-check still leaves the log for the artifact.
   const logFile = path.join(output, "startup.log");
@@ -229,64 +230,14 @@ async function checkGui() {
     for (let attempt = 0; attempt < 400; attempt++) {
       if (launch.error) throw launch.error;
       if (child.exitCode !== null) throw new Error(`App exited (${child.exitCode}): ${log}`);
-      const pages = await fetch(`http://127.0.0.1:${port}/json/list`, {
-        signal: AbortSignal.timeout(1000),
-      })
-        .then((response) => response.json())
-        .catch(() => []);
+      const pages = await listTargets(port);
       page = pages.find((entry) => entry.type === "page" && entry.webSocketDebuggerUrl);
       if (page) break;
       await wait(300);
     }
     if (!page) throw new Error(`No renderer page within 120 seconds: ${log}`);
-    ws = new WebSocket(page.webSocketDebuggerUrl);
-    await new Promise((resolve, reject) => {
-      const timer = setTimeout(() => reject(new Error("CDP connection timeout")), 10_000);
-      ws.addEventListener(
-        "open",
-        () => {
-          clearTimeout(timer);
-          resolve();
-        },
-        { once: true },
-      );
-      ws.addEventListener("error", () => reject(new Error("CDP connection failed")), {
-        once: true,
-      });
-    });
-    let nextId = 0;
-    const pending = new Map();
-    ws.addEventListener("message", (event) => {
-      const frame = JSON.parse(String(event.data));
-      const request = pending.get(frame.id);
-      if (!request) return;
-      pending.delete(frame.id);
-      if (frame.error) request.reject(new Error(JSON.stringify(frame.error)));
-      else request.resolve(frame.result);
-    });
-    ws.addEventListener("close", () => {
-      for (const request of pending.values()) request.reject(new Error(`CDP closed: ${log}`));
-      pending.clear();
-    });
-    const call = (method, params) =>
-      new Promise((resolve, reject) => {
-        const id = ++nextId;
-        const timer = setTimeout(() => {
-          pending.delete(id);
-          reject(new Error(`CDP timeout: ${method}`));
-        }, 10_000);
-        pending.set(id, {
-          resolve: (value) => {
-            clearTimeout(timer);
-            resolve(value);
-          },
-          reject: (error) => {
-            clearTimeout(timer);
-            reject(error);
-          },
-        });
-        ws.send(JSON.stringify({ id, method, params }));
-      });
+    cdp = await connectCdp(page.webSocketDebuggerUrl, { closeReason: () => `CDP closed: ${log}` });
+    const call = (method, params) => cdp.send(method, params);
     let ready = false;
     for (let attempt = 0; attempt < 60; attempt++) {
       const result = await call("Runtime.evaluate", {
@@ -300,12 +251,11 @@ async function checkGui() {
     }
     if (!ready || !existsSync(path.join(dataDir, "mail.db")))
       throw new Error(`Renderer/preload/core did not start: ${log}`);
-    const screenshot = await call("Page.captureScreenshot", { format: "png" });
-    writeFileSync(path.join(output, "startup.png"), Buffer.from(screenshot.data, "base64"));
+    writeFileSync(path.join(output, "startup.png"), await cdp.screenshot());
     report.started = true;
     report.screenshot = path.join(output, "startup.png");
   } finally {
-    ws?.close();
+    cdp?.close();
     if (server.listening) server.close();
     if (child?.pid && running(child)) {
       child.kill("SIGTERM");
