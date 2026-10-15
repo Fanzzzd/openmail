@@ -170,6 +170,7 @@ export const makeOutboxMailbox = (
     }
     // The live send owns the SMTP-accepted record it writes, so a sync retry leaves it alone.
     const claim = crypto.randomUUID();
+    let recorded = false;
     const delivery = yield* providers
       .get(account.provider)
       .send(
@@ -180,12 +181,19 @@ export const makeOutboxMailbox = (
           ? {
               load: store.sendPreparationState(draftId),
               save: (state) => store.setSendPreparationState(draftId, state),
-              accepted: (raw) => store.markSmtpAccepted(draftId, accountId, raw, claim),
+              accepted: (raw) =>
+                store.markSmtpAccepted(draftId, accountId, raw, claim).pipe(
+                  Effect.tap(
+                    Effect.sync(() => {
+                      recorded = true;
+                    }),
+                  ),
+                ),
             }
           : undefined,
       )
       .pipe(
-        draftId ? holdingAcceptedClaim(store, draftId, claim) : (effect) => effect,
+        draftId ? holdingAcceptedClaim(store, draftId, claim, () => recorded) : (effect) => effect,
         Effect.tapError((error) =>
           Effect.all([
             error._tag === "AuthError" ? store.markReauth(accountId, error) : Effect.void,

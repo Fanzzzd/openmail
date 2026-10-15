@@ -20,6 +20,7 @@ export const LogCode = Schema.Literals([
   "draft-organization-failed",
   "sent-archive-failed",
   "sent-copy-failed",
+  "send-claim-renew-failed",
   "wal-checkpoint-deferred",
   "vector-search-unavailable",
   "browser-open-failed",

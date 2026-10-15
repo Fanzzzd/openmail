@@ -1,5 +1,5 @@
-import { Clock, Effect, Option } from "effect";
-import { logWarning } from "../domain/diagnostic-log.js";
+import { Cause, Clock, Effect, Option } from "effect";
+import { logWarning, throttledWarning } from "../domain/diagnostic-log.js";
 import type { SmtpAcceptedSend, StoredDraft } from "../store/service.js";
 import { SMTP_ACCEPTED_CLAIM_RENEW_MS } from "../store/store-smtp-accepted.js";
 import type { MailboxDependencies } from "./mailbox-runtime.js";
@@ -19,21 +19,48 @@ export const nextSentCopyTry = (accepted: SmtpAcceptedSend) =>
       Math.min(MAX_BACKOFF_MS, FIRST_BACKOFF_MS * 2 ** Math.min(accepted.tries - 1, 16));
 
 /**
- * Runs `effect` while `token` holds the SMTP-accepted record of `draftId`, renewing the claim so
- * a sync retry in this or another process leaves the record alone. Before the record exists the
- * renewal changes nothing. A send that fails or is interrupted gives the claim back, so the next
- * retry finishes it at once; a crash leaves the claim to expire.
+ * Keeps `token`'s claim on the record fresh until interrupted. It skips the UPDATE until
+ * `recorded()` says the record exists, and a failed renewal only logs: the send it guards must
+ * never end because of it.
+ */
+const renewingClaim = (
+  store: MailboxDependencies["store"],
+  draftId: string,
+  token: string,
+  recorded: () => boolean,
+) => {
+  const warn = throttledWarning("send-claim-renew-failed");
+  return Effect.sleep(SMTP_ACCEPTED_CLAIM_RENEW_MS).pipe(
+    Effect.andThen(
+      Effect.suspend(() => (recorded() ? store.renewSmtpAccepted(draftId, token) : Effect.void)),
+    ),
+    Effect.catchCause((cause) =>
+      Cause.hasInterruptsOnly(cause)
+        ? Effect.failCause(cause)
+        : warn("Renewing the claim on an accepted send failed", cause),
+    ),
+    Effect.forever,
+  );
+};
+
+/**
+ * Runs `effect` while `token` holds the SMTP-accepted record of `draftId`, renewing the claim in
+ * a scoped fiber so a sync retry in this or another process leaves the record alone. The renewal
+ * cannot end or interrupt `effect`. Pass `recorded` when the record is written partway through
+ * `effect`. A send that fails or is interrupted gives the claim back, so the next retry finishes
+ * it at once; a crash leaves the claim to expire.
  */
 export const holdingAcceptedClaim =
-  (store: MailboxDependencies["store"], draftId: string, token: string) =>
+  (
+    store: MailboxDependencies["store"],
+    draftId: string,
+    token: string,
+    recorded: () => boolean = () => true,
+  ) =>
   <A, E, R>(effect: Effect.Effect<A, E, R>) =>
-    effect.pipe(
-      Effect.raceFirst(
-        Effect.sleep(SMTP_ACCEPTED_CLAIM_RENEW_MS).pipe(
-          Effect.andThen(store.renewSmtpAccepted(draftId, token)),
-          Effect.forever,
-        ),
-      ),
+    Effect.scoped(
+      Effect.andThen(Effect.forkScoped(renewingClaim(store, draftId, token, recorded)), effect),
+    ).pipe(
       Effect.onExit((exit) =>
         exit._tag === "Success" ? Effect.void : store.releaseSmtpAccepted(draftId, token),
       ),
