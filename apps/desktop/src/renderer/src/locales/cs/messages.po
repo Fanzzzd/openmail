@@ -1883,6 +1883,7 @@ msgstr "Pokračujte v úpravách"
 msgid "Continue to draft"
 msgstr "Pokračovat ke konceptu"
 
+#: src/renderer/src/features/mail-list/MessageRow.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
 msgid "Conversation actions"
 msgstr "Akce konverzace"

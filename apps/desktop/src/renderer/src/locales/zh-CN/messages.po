@@ -1893,6 +1893,7 @@ msgstr "继续编辑"
 msgid "Continue to draft"
 msgstr "打开草稿"
 
+#: src/renderer/src/features/mail-list/MessageRow.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
 msgid "Conversation actions"
 msgstr "对话操作"

@@ -1883,6 +1883,7 @@ msgstr "編集を続ける"
 msgid "Continue to draft"
 msgstr "下書きに進む"
 
+#: src/renderer/src/features/mail-list/MessageRow.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
 msgid "Conversation actions"
 msgstr "スレッドの操作"

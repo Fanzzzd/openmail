@@ -1883,6 +1883,7 @@ msgstr "Продолжить редактирование"
 msgid "Continue to draft"
 msgstr "Перейти к черновику"
 
+#: src/renderer/src/features/mail-list/MessageRow.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
 msgid "Conversation actions"
 msgstr "Действия с перепиской"

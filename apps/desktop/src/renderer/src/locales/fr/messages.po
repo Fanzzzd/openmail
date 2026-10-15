@@ -1883,6 +1883,7 @@ msgstr "Continuer la modification"
 msgid "Continue to draft"
 msgstr "Continuer vers le brouillon"
 
+#: src/renderer/src/features/mail-list/MessageRow.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx
 msgid "Conversation actions"
 msgstr "Actions de la conversation"
