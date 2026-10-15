@@ -318,7 +318,8 @@ it.live("the result page shows the caller's text, escaped, and English by defaul
     );
     const [english, done, failed, fallback] = pages;
     assert.include(english, 'lang="en"');
-    assert.include(english, "Signed in. You can close this page and go back to openmail.");
+    assert.include(english, "Signed in. You can close this page and go back to OpenMail.");
+    assert.notInclude(english, "<script");
     assert.notInclude(english, "已登录");
     assert.include(done, 'lang="de"');
     assert.include(done, "<title>Anmeldung &lt;openmail&gt;</title>");

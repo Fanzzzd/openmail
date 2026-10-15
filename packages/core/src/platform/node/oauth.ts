@@ -69,10 +69,25 @@ const escapeHtml = (text: string) =>
 
 const ENGLISH_PAGE = {
   lang: "en",
-  title: "openmail sign-in",
-  doneText: "Signed in. You can close this page and go back to openmail.",
+  title: "OpenMail sign-in",
+  doneText: "Signed in. You can close this page and go back to OpenMail.",
   failedText: "Sign-in failed.",
 } satisfies Required<AuthorizePage>;
+
+// The CSP allows inline styles only: no scripts, images or fonts load on this page.
+const PAGE_STYLE = `
+:root{color-scheme:light dark;--bg:#f5f5f7;--card:#fff;--text:#1d1d1f;--muted:#6e6e73;--line:rgba(0,0,0,.08);--ok:#1d4ed8;--fail:#c4362c}
+@media (prefers-color-scheme:dark){:root{--bg:#1c1c1e;--card:#2c2c2e;--text:#f5f5f7;--muted:#a1a1a6;--line:rgba(255,255,255,.1);--ok:#93c5fd;--fail:#ff8a80}}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;background:var(--bg);color:var(--text);font:15px/1.5 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+main{width:100%;max-width:440px;padding:40px 32px 32px;background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 32px rgba(0,0,0,.08);text-align:center}
+svg{width:48px;height:48px;display:block;margin:0 auto 20px}
+h1{margin:0 0 8px;font-size:13px;font-weight:600;letter-spacing:.01em;color:var(--muted)}
+p{margin:0;font-size:17px;font-weight:500;text-wrap:balance}
+code{display:inline-block;margin-top:16px;padding:4px 8px;border-radius:6px;background:var(--line);color:var(--muted);font:13px ui-monospace,SFMono-Regular,Menlo,monospace;word-break:break-all}`;
+
+const DONE_ICON = `<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="22" fill="none" stroke="var(--ok)" stroke-width="3"/><path d="M15 24.5l6 6 12-13" fill="none" stroke="var(--ok)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const FAILED_ICON = `<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="22" fill="none" stroke="var(--fail)" stroke-width="3"/><path d="M17 17l14 14M31 17L17 31" fill="none" stroke="var(--fail)" stroke-width="3.5" stroke-linecap="round"/></svg>`;
 
 /**
  * The page the browser shows after the redirect, in the language the caller passed.
@@ -82,9 +97,9 @@ function page(error: string | null, text: AuthorizePage = {}): string {
   const { lang, title, doneText, failedText } = { ...ENGLISH_PAGE, ...text };
   const body =
     error === null
-      ? `<p>${escapeHtml(doneText)}</p>`
-      : `<p>${escapeHtml(failedText)}</p><p><code>${escapeHtml(error)}</code></p>`;
-  return `<!doctype html><html lang="${escapeHtml(lang)}"><meta charset="utf-8"><title>${escapeHtml(title)}</title><body style="font:16px system-ui;padding:3rem">${body}</body></html>`;
+      ? `${DONE_ICON}<h1>OpenMail</h1><p>${escapeHtml(doneText)}</p>`
+      : `${FAILED_ICON}<h1>OpenMail</h1><p>${escapeHtml(failedText)}</p><code>${escapeHtml(error)}</code>`;
+  return `<!doctype html><html lang="${escapeHtml(lang)}"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(title)}</title><style>${PAGE_STYLE}</style><body><main>${body}</main></body></html>`;
 }
 
 /** A request target that is not a URL, such as `GET http://[`, gets a 404 like any stranger. */
