@@ -39,7 +39,7 @@ The first public version. Everything below is new.
 ### Desktop
 
 - Keyboard-first: three shortcut sets, link hints, Back and Forward, command menus.
-- `openmail list --space` and `openmail search --space` take a space name or id. A space name cannot repeat another space's name (any letter case), cannot be `none` and cannot be blank once control and format characters are removed.
+- `openmail list --space` takes a space name or id. A space name cannot repeat another space's name (any letter case), cannot be `none` and cannot be blank once control and format characters are removed.
 - Spaces to group accounts, notification hours by space, menu bar and Dock integration, multiple windows, `mailto:` and `openmail:` links.
 - Responsive layout from three panes down to one.
 - Interface in English, Simplified Chinese, Czech, Dutch, French, German, Italian, Japanese, Russian and Spanish.
