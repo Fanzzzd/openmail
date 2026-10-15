@@ -122,13 +122,20 @@ export const profileNameKey = (name: string) => name.trim().toLowerCase();
 /**
  * Checks a new name for a space. Spaces are found by name in any letter case, so two with one
  * name could not be told apart, and `none` means "no space" when assigning one. A name of only
- * control, format and blank characters shows as nothing. `id` is the space being renamed.
+ * control, format and blank characters shows as nothing. `id` is the space being edited; its own
+ * stored name always passes.
  */
 export const profileNameError = (
   name: string,
   spaces: readonly Pick<Profile, "id" | "name">[],
   id?: string,
 ): keyof typeof PROFILE_NAME_ERRORS | undefined => {
+  // An edit that keeps the name passes, so a space from before a rule can still change its icon.
+  if (
+    id !== undefined &&
+    spaces.some((space) => space.id === id && space.name.trim() === name.trim())
+  )
+    return undefined;
   if (name.replace(/[\p{Cc}\p{Cf}\s]/gu, "") === "") return "empty";
   const key = profileNameKey(name);
   if (key === "none") return "reserved";

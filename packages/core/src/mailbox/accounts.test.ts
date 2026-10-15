@@ -537,6 +537,33 @@ it.effect("space names are stored trimmed and an empty name is refused", () =>
   }).pipe(Effect.provide(TestMailbox({ gmail: fakeServer("me@example.com", []) }))),
 );
 
+// R12 F5: a space named None, or sharing a name, from before those rules could not change its
+// icon or colour, since every edit checked the name it already had.
+it.effect("a space from before the name rules can change its icon and colour", () =>
+  Effect.gen(function* () {
+    const { accounts } = yield* Mailbox;
+    const store = yield* Store;
+    const none = yield* store.createProfile({ name: "None", icon: "N", color: "blue" });
+    yield* store.createProfile({ name: "Work", icon: "W", color: "blue" });
+    const twin = yield* store.createProfile({ name: "work", icon: "w", color: "blue" });
+    yield* accounts.updateProfile(none.id, { name: "None", icon: "X", color: "rose" });
+    yield* accounts.updateProfile(twin.id, { name: " work ", icon: "Y", color: "emerald" });
+    assert.deepStrictEqual(
+      (yield* accounts.profiles).map(({ name, icon, color }) => [name, icon, color]),
+      [
+        ["None", "X", "rose"],
+        ["Work", "W", "blue"],
+        ["work", "Y", "emerald"],
+      ],
+    );
+    // A real rename still meets the rules.
+    const renamed = yield* accounts
+      .updateProfile(none.id, { name: "none", icon: "X", color: "rose" })
+      .pipe(Effect.flip);
+    assert.strictEqual(renamed.message, PROFILE_NAME_ERRORS.reserved);
+  }).pipe(Effect.provide(TestMailbox({ gmail: fakeServer("me@example.com", []) }))),
+);
+
 it.effect(
   "space names are unique in any letter case, none is reserved and blanks are refused",
   () =>
