@@ -410,8 +410,17 @@ describe("spaces", () => {
     });
 
     test("spaces list escapes control and bidi characters in a name", async () => {
-      const added = await openmail(["spaces", "add", "Line\nbreak\u202e"], home.path);
-      expect(added.code, added.stderr).toBe(0);
+      // A line break is refused now; a space saved by an older version can still have one.
+      const refused = await openmail(["spaces", "add", "Line\nbreak\u202e"], home.path);
+      expect(refused.code).toBe(1);
+      const db = new DatabaseSync(join(home.path, "mail.db"));
+      try {
+        db.prepare(
+          "INSERT INTO profiles (id, name, icon, color, position) VALUES ('old', ?, 'L', 'blue', 99)",
+        ).run("Line\nbreak\u202e");
+      } finally {
+        db.close();
+      }
       const text = await openmail(["spaces", "list"], home.path);
       expect(text.stdout).toContain("Line\\u{a}break\\u{202e}");
       expect(text.stdout).not.toMatch(/[\u202e]|Line\n/);

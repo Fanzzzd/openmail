@@ -116,13 +116,25 @@ export const PROFILE_NAME_ERRORS = {
   taken: "A space with this name already exists. Choose another name.",
 } as const;
 
-/** The form two space names are compared in: trimmed, in any letter case. */
-export const profileNameKey = (name: string) => name.trim().toLowerCase();
+/**
+ * The form two space names are compared in: NFKC (so fullwidth NONE is none and an NFD Café is
+ * the NFC one), without format and control characters such as a soft hyphen, with each run of
+ * blanks as one space, trimmed, in any letter case.
+ */
+export const profileNameKey = (name: string) =>
+  name
+    .normalize("NFKC")
+    .replace(/\s+/gu, " ")
+    .replace(/[\p{Cf}\p{Cc}]/gu, "")
+    .trim()
+    .toLowerCase();
 
 /**
  * Checks a new name for a space. Spaces are found by name in any letter case, so two with one
  * name could not be told apart, and `none` means "no space" when assigning one. A name of only
- * control, format and blank characters shows as nothing. `id` is the space being edited; its own
+ * control, format and blank characters shows as nothing, and a control character such as a
+ * line break has no visible form, so both are refused as empty. `--space` takes a name or an
+ * id, so a name may not be another space's id either. `id` is the space being edited; its own
  * stored name always passes.
  */
 export const profileNameError = (
@@ -136,10 +148,14 @@ export const profileNameError = (
     spaces.some((space) => space.id === id && space.name.trim() === name.trim())
   )
     return undefined;
-  if (name.replace(/[\p{Cc}\p{Cf}\s]/gu, "") === "") return "empty";
+  if (name.replace(/[\p{Cc}\p{Cf}\s]/gu, "") === "" || /\p{Cc}/u.test(name.trim())) return "empty";
   const key = profileNameKey(name);
   if (key === "none") return "reserved";
-  if (spaces.some((space) => space.id !== id && profileNameKey(space.name) === key)) return "taken";
+  const others = spaces.filter((space) => space.id !== id);
+  if (
+    others.some((space) => profileNameKey(space.name) === key || profileNameKey(space.id) === key)
+  )
+    return "taken";
   return undefined;
 };
 
