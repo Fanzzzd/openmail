@@ -212,7 +212,7 @@ const search = Command.make(
   {
     query: Argument.String("query").pipe(
       Argument.withDescription(
-        "Words and Gmail-style operators such as from:, subject: and has:attachment",
+        "Words and Gmail-style operators such as from:, subject: and has:attachment. A word or operator after a minus sign, such as -newsletter, leaves those messages out; words after -- are always query text",
       ),
       Argument.variadic({ min: 1 }),
     ),

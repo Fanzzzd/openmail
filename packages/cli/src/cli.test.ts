@@ -287,6 +287,27 @@ describe("reading", () => {
       expectKeys(thread, [...KEYS.thread, "search_matches"], OPTIONAL_THREAD);
   });
 
+  test("a query negation is query text, not a cluster of short flags", async () => {
+    // -newsletter used to fail with "Unrecognized flag: -n", -has:attachment printed the help
+    // (-h) and -vip the version (-v).
+    const negated = await object(["search", "embargo", "-newsletter"]);
+    expect(rows(negated.threads).map((thread) => thread.id)).toEqual([LAUNCH]);
+    const plain = await object(["search", "-has:attachment", "--limit", "100"]);
+    const threads = rows(plain.threads);
+    expect(threads.length).toBeGreaterThan(0);
+    for (const thread of threads) expect(thread.has_attachments).toBe(false);
+    const vip = await openmail(["search", "-vip", "--limit", "1"]);
+    expect(vip.code, vip.stderr).toBe(0);
+    expect(vip.stdout).not.toContain("openmail v");
+    expect(vip.stdout.split("\n")[0]).toMatch(/^\d{4}-\d\d-\d\d /);
+    // `--` still ends the flags, and -h still asks for help.
+    const after = await openmail(["search", "--", "embargo", "-newsletter"]);
+    expect(after.stdout.trimEnd().split("\n")).toEqual([expect.stringContaining(LAUNCH)]);
+    const help = await openmail(["search", "-h"]);
+    expect(help.code).toBe(0);
+    expect(help.stdout).toContain("USAGE");
+  });
+
   test("accounts list --json carries the account fields scripts read", async () => {
     const accounts = await list(["accounts", "list"]);
     expect(accounts.map((account) => account.provider)).toEqual(["gmail", "imap"]);
