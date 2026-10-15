@@ -286,5 +286,11 @@
     "ja": "クイックフィルター",
     "ru": "быстр\\p{L}* фильтр",
     "es": "filtros? rápidos?"
+  },
+  "Move up": {
+    "cs": "posunout(?: \\S+)? nahoru"
+  },
+  "Move down": {
+    "cs": "posunout(?: \\S+)? dolů"
   }
 }

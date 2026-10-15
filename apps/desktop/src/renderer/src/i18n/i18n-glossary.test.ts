@@ -23,6 +23,9 @@ const selectors: Record<string, string> = {
   "AI Access": "\\bAI Access\\b",
   // A space groups accounts; disk space is a different word.
   Space: "(?<!disk )\\bspaces?\\b",
+  // Czech buttons are infinitives (Posunout dolů), not the imperative Posuňte se.
+  "Move up": "\\bmove up\\b",
+  "Move down": "\\bmove down\\b",
 };
 const patternsFor: Record<string, Partial<Record<string, string>>> = glossary;
 const word = (words: string, flags = "u") => new RegExp(`(?<!\\p{L})(?:${words})(?!\\p{L})`, flags);
