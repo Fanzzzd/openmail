@@ -17,6 +17,7 @@ import { makeMediaStore } from "./store-media.js";
 import { makeMessagesStore } from "./store-messages.js";
 import { makeNotificationsStore } from "./store-notifications.js";
 import { makeOpQueueStore } from "./store-opqueue.js";
+import { makeSmtpAcceptedStore } from "./store-smtp-accepted.js";
 import { makeOrganizationStore } from "./store-organization.js";
 import { makePolicyStore } from "./store-policy.js";
 import { makeQueryStore } from "./store-query.js";
@@ -142,6 +143,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       ...messages,
       ...threads,
       ...opqueue,
+      ...makeSmtpAcceptedStore({ sql }),
       ...policy.service,
       ...reminders,
       ...notifications,

@@ -1,6 +1,7 @@
 import { Clock, Effect, Option } from "effect";
 import { logWarning } from "../domain/diagnostic-log.js";
 import type { SmtpAcceptedSend, StoredDraft } from "../store/service.js";
+import { SMTP_ACCEPTED_CLAIM_RENEW_MS } from "../store/store-smtp-accepted.js";
 import type { MailboxDependencies } from "./mailbox-runtime.js";
 
 /** A Sent copy that fails this many times, or for this long, becomes a sentCopyMissing notice. */
@@ -17,9 +18,6 @@ export const nextSentCopyTry = (accepted: SmtpAcceptedSend) =>
     : accepted.lastTryAt +
       Math.min(MAX_BACKOFF_MS, FIRST_BACKOFF_MS * 2 ** Math.min(accepted.tries - 1, 16));
 
-/** How often a holder renews its claim; well inside SMTP_ACCEPTED_CLAIM_TTL. */
-const CLAIM_RENEW_EVERY = "30 seconds";
-
 /**
  * Runs `effect` while `token` holds the SMTP-accepted record of `draftId`, renewing the claim so
  * a sync retry in this or another process leaves the record alone. Before the record exists the
@@ -31,7 +29,7 @@ export const holdingAcceptedClaim =
   <A, E, R>(effect: Effect.Effect<A, E, R>) =>
     effect.pipe(
       Effect.raceFirst(
-        Effect.sleep(CLAIM_RENEW_EVERY).pipe(
+        Effect.sleep(SMTP_ACCEPTED_CLAIM_RENEW_MS).pipe(
           Effect.andThen(store.renewSmtpAccepted(draftId, token)),
           Effect.forever,
         ),

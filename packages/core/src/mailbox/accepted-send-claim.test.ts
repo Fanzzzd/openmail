@@ -7,6 +7,10 @@ import { nextSentCopyTry } from "./mailbox-accepted-sends.js";
 import { fakeServer } from "../platform/node/fake-provider.js";
 import { TestMailbox } from "../platform/node/testing.js";
 import { Store } from "../store/service.js";
+import {
+  SMTP_ACCEPTED_CLAIM_RENEW_MS,
+  SMTP_ACCEPTED_CLAIM_TTL,
+} from "../store/store-smtp-accepted.js";
 import { scaledMs, waitLimit } from "../../test-support/test-time.js";
 
 // R11 CH-1: the SMTP-accepted record a live send writes before its Sent APPEND looked like a
@@ -193,4 +197,10 @@ it("a failed Sent copy is tried again after 1 h, 2 h, 4 h and so on, at most a d
     34 * hour,
     34 * hour,
   ]);
+});
+
+// R12 F4: the renew interval was a separate literal, free to drift past the TTL it must beat.
+it("a holder renews its claim several times within one claim TTL", () => {
+  expect(SMTP_ACCEPTED_CLAIM_RENEW_MS).toBeGreaterThan(0);
+  expect(SMTP_ACCEPTED_CLAIM_RENEW_MS * 2).toBeLessThan(SMTP_ACCEPTED_CLAIM_TTL);
 });
