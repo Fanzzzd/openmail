@@ -87,10 +87,10 @@ beforeAll(async () => {
 });
 afterAll(() => rm(seeded, { recursive: true, force: true }));
 
-function openmail(args: string[], home = join(seeded, "home")) {
+function openmail(args: string[], home = join(seeded, "home"), env: NodeJS.ProcessEnv = {}) {
   return new Promise<{ code: number | null; stdout: string; stderr: string }>((done, failed) => {
     const child = spawn(process.execPath, ["--disable-warning=ExperimentalWarning", cli, ...args], {
-      env: { ...process.env, OPENMAIL_HOME: home },
+      env: { ...process.env, ...env, OPENMAIL_HOME: home },
     });
     let stdout = "";
     let stderr = "";
@@ -329,6 +329,34 @@ function sharedHome() {
   afterAll(() => rm(directory.path, { recursive: true, force: true }));
   return directory;
 }
+
+// A failed sync logged a multi-line SyncFailedDiagnostic per account on stderr, and health
+// over a hundred lines, on top of the one-line outcome. OPENMAIL_OFFLINE fails every provider
+// call without the network or the keychain.
+describe("expected sync failures", () => {
+  const home = sharedHome();
+  const offline = { OPENMAIL_OFFLINE: "1" };
+
+  test("print the one-line outcome without structured diagnostics", async () => {
+    const sync = await openmail(["sync"], home.path, offline);
+    expect(sync.code).toBe(1);
+    expect(sync.stderr).not.toContain("Diagnostic");
+    expect(sync.stderr.split("\n").filter((line) => line.trim() !== "")).toEqual([
+      "Syncing mail…",
+      "error: Some accounts did not sync.",
+    ]);
+    expect(sync.stdout).toContain("error: Sync could not finish.");
+    const health = await openmail(["health"], home.path, offline);
+    expect(health.code, health.stderr).toBe(0);
+    expect(health.stderr).toBe("");
+  });
+
+  test("--log-level warn still shows them", async () => {
+    const sync = await openmail(["--log-level", "warn", "sync"], home.path, offline);
+    expect(sync.code).toBe(1);
+    expect(sync.stderr).toContain("SyncFailedDiagnostic");
+  });
+});
 
 describe("spaces", () => {
   test("list starts empty", async () => {

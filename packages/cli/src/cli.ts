@@ -4,7 +4,7 @@
  * and `openmail mcp` run as agents and need per-account AI consent.
  * corpus-check uses the separate offline checker. Sending needs app review.
  */
-import { Console, Effect, Layer, Logger } from "effect";
+import { Console, Effect, Layer, Logger, References } from "effect";
 import { Browser, NodeMailbox, openInSystemBrowser } from "@openmail/core";
 import { ChildProcessSpawner } from "effect/process";
 import * as NodeServices from "@effect/platform-node/NodeServices";
@@ -86,6 +86,9 @@ const openmail = Command.make("openmail").pipe(
   Command.withSubcommands([corpus, ...providedCommands]),
 );
 
+/** The minimum log level without --log-level. */
+const CLI_LOG_LEVEL = "Error";
+
 const cliArgs = process.argv.slice(2);
 const appOnlyWriteMode =
   cliArgs[0] === "agents" &&
@@ -129,5 +132,9 @@ const report = (explained: Explained) =>
   }),
   Effect.provide(NodeServices.layer),
   Effect.provideService(Logger.LogToStderr, true),
+  // Core logs fixed-field diagnostics (SyncFailedDiagnostic, ReauthDiagnostic) as warnings for
+  // the app's diagnostics file. The CLI writes none, and its commands already print a one-line
+  // outcome, so by default only errors are logged. --log-level warn or debug shows the rest.
+  Effect.provideService(References.MinimumLogLevel, CLI_LOG_LEVEL),
   NodeRuntime.runMain,
 );
