@@ -23,6 +23,8 @@ The first public version. Everything below is new.
 - Optional on-device OCR (macOS Vision), PDF text and semantic search.
 - Attachments you open in other apps are copied to an internal folder. Unchanged copies are deleted after 7 days, Settings → Local cache clears the rest, and Time Machine skips the folder.
 - Replying to or forwarding an HTML message keeps its quote as a read-only block below an editable body. Edit quoted text joins the quote into the editor.
+- A Sent copy that fails to save is tried again after 1 h, 2 h, 4 h and so on, at most a day apart, up to 10 tries in 7 days. After that OpenMail shows the notice.
+- The word index is finished before CLI and MCP search and before `openmail sync`. If another process holds the write lock, `openmail search` prints a note on stderr and the MCP `search` tool returns `search_notice`: results are approximate until the index is done.
 - Opening remote-session launchers, key material, certificates and the other risky attachment types needs Save first. vCard and vCalendar files open in the in-app preview.
 
 ### Writing and organizing
@@ -37,6 +39,7 @@ The first public version. Everything below is new.
 ### Desktop
 
 - Keyboard-first: three shortcut sets, link hints, Back and Forward, command menus.
+- `openmail list --space` and `openmail search --space` take a space name or id. A space name cannot repeat another space's name (any letter case), cannot be `none` and cannot be blank once control and format characters are removed.
 - Spaces to group accounts, notification hours by space, menu bar and Dock integration, multiple windows, `mailto:` and `openmail:` links.
 - Responsive layout from three panes down to one.
 - Interface in English, Simplified Chinese, Czech, Dutch, French, German, Italian, Japanese, Russian and Spanish.

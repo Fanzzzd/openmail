@@ -12,3 +12,4 @@
 - [ ] New UI strings are extracted and translated in all ten locales (see CONTRIBUTING.md)
 - [ ] The change follows the architecture rules in CONTRIBUTING.md (core owns network and database, append-only migrations, tokens only in the keychain, read-only MCP by default)
 - [ ] Docs are updated if behaviour or setup changed
+- [ ] CHANGELOG.md is updated for user-visible changes

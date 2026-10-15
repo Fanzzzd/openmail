@@ -164,9 +164,34 @@ jobs:
           shopt -s nullglob
           files=(apps/desktop/release/*.dmg apps/desktop/release/*.zip apps/desktop/release/*.blockmap apps/desktop/release/latest-mac.yml apps/desktop/release/SHA256SUMS)
           if [ ${#files[@]} -eq 0 ]; then echo "::error::No build output in apps/desktop/release"; exit 1; fi
-          flags=(--title "OpenMail ${GITHUB_REF_NAME#v}" --generate-notes --verify-tag)
+          flags=(--title "OpenMail ${GITHUB_REF_NAME#v}" --verify-tag)
+          # This version's CHANGELOG.md section is the release notes. Without one, GitHub
+          # generates them from the merged pull requests.
+          version="${GITHUB_REF_NAME#v}"
+          section="$RUNNER_TEMP/changelog-section.md"
+          awk -v v="$version" '
+            /^## / {
+              heading = $0
+              gsub(/^## +\[?v?/, "", heading)
+              sub(/[] ].*$/, "", heading)
+              found = (heading == v)
+              next
+            }
+            found && NF { for (; blanks > 0; blanks--) if (started) print ""; print; started = 1 }
+            found && !NF { blanks++ }
+          ' CHANGELOG.md > "$section"
+          notes="$RUNNER_TEMP/release-notes.md"
+          : > "$notes"
           if [ "$SIGNED" != "true" ]; then
-            # gh puts these notes before the generated ones.
-            flags+=(--prerelease --notes "This build is not signed or notarized. macOS Gatekeeper blocks it on first open. Open it once, then go to System Settings → Privacy & Security and click Open Anyway. Auto-update stays off for unsigned builds.")
+            flags+=(--prerelease)
+            echo "This build is not signed or notarized. macOS Gatekeeper blocks it on first open. Open it once, then go to System Settings → Privacy & Security and click Open Anyway. Auto-update stays off for unsigned builds." >> "$notes"
           fi
+          if [ -s "$section" ]; then
+            if [ -s "$notes" ]; then echo >> "$notes"; fi
+            cat "$section" >> "$notes"
+          else
+            echo "::warning::No CHANGELOG.md section for $version; using generated notes"
+            flags+=(--generate-notes)
+          fi
+          if [ -s "$notes" ]; then flags+=(--notes-file "$notes"); fi
           gh release create "$GITHUB_REF_NAME" "${files[@]}" "${flags[@]}"

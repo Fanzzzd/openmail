@@ -19,7 +19,7 @@ pnpm --dir packages/cli link --global
 openmail accounts list
 openmail sync
 openmail list --mailbox inbox --unread
-openmail list --space <space-id> --json
+openmail list --space Work --json
 openmail search 'from:billing has:attachment'
 openmail search 'invoice' --server --json
 openmail show '<message-id>' --thread
@@ -28,13 +28,15 @@ openmail health --json
 openmail tools --json
 ```
 
+After an upgrade, the word index is rebuilt. `search` and `sync` finish it first, so the first one may pause and print `Rebuilding the search index after an upgrade…` on stderr. If another process holds the write lock, the index stays unfinished. Then the CLI prints a `note:` line on stderr and the MCP `search` tool adds `search_notice` to its result. Both mean the results are approximate: AROUND acts like AND, and a word also matches inside longer words. Search again in a minute.
+
 `openmail accounts remove <account-id>` deletes the account's local mail, local drafts and stored sign-in, so it asks first. In a script, or anywhere stdin is not a terminal, it exits 1 unless you pass `--yes`.
 
 `list` and `search` print one line per conversation: date, sender, subject and the message id that `openmail show` takes. Every command prints dates for people as local time in one format, `2026-10-14 17:48`. Unread conversations have a `*`. When there are more, the last line gives the `--cursor` for the next page. Add `--json` for the machine format: `{"threads": [...], "next_cursor": "..."}`. Every `--json` output uses snake_case keys at any depth, like MCP results: `account_id`, `is_unread`, `next_cursor`. Keys that are data, such as ids and addresses, keep their spelling. Two outputs keep their own key format: `openmail tools --json` prints the input schemas as MCP advertises them, and `openmail corpus-check` prints core's versioned corpus report.
 
 A failed command prints `error: …` on stderr, with a `hint: …` line when there is a next step, and exits with code 1, or 2 for a usage error. With `--json`, stdout also gets `{"message": "...", "code": "...", "hint": "..."}`, so a script can read every failure the same way.
 
-Spaces group accounts, such as Work and Personal. `openmail spaces` manages them and `--space` filters `list`. The older `openmail profiles` and `--profile` still work.
+Spaces group accounts, such as Work and Personal. `openmail spaces` manages them and `--space` filters `list` and `search` and takes a space name or an id. A name cannot repeat another space's name, cannot be `none` and cannot be blank. The older `openmail profiles` and `--profile` still work.
 
 The CLI has no send command. Sending happens in the app.
 
