@@ -202,6 +202,62 @@ test.concurrent.for([
   scaledMs(30_000),
 );
 
+// While another process held the write lock past the 5 s busy timeout, the agent_activity
+// write after each call failed it with "Tool execution failed due to an internal server error".
+test.concurrent(
+  "tool calls succeed while another process holds the write lock, and their activity is written after",
+  async ({ expect, onTestFinished }) => {
+    const { request, directory, close } = await client(onTestFinished, false, true, true);
+    await request("tools/call", { name: "list_accounts", arguments: {} });
+    const holder = new DatabaseSync(join(directory, "mail.db"));
+    holder.exec("BEGIN IMMEDIATE");
+    let held = true;
+    onTestFinished(() => {
+      if (held) holder.exec("ROLLBACK");
+      holder.close();
+    });
+    for (const name of ["access_status", "list_accounts"]) {
+      const called = Schema.decodeUnknownSync(CallResult)(
+        await request("tools/call", { name, arguments: {} }),
+      );
+      expect(called.isError ?? false, called.content[0]?.text).toBe(false);
+    }
+    holder.exec("ROLLBACK");
+    held = false;
+    const { stderr } = await close();
+    expect(stderr).not.toContain("agent-activity-dropped");
+    const db = new DatabaseSync(join(directory, "mail.db"), { readOnly: true });
+    try {
+      expect(db.prepare("SELECT tool FROM agent_activity ORDER BY id").all()).toEqual([
+        { tool: "list_accounts" },
+        { tool: "access_status" },
+        { tool: "list_accounts" },
+      ]);
+    } finally {
+      db.close();
+    }
+  },
+  scaledMs(30_000),
+);
+
+test.concurrent(
+  "activity the server could not write before it closed is logged as dropped",
+  async ({ expect, onTestFinished }) => {
+    const { request, directory, close } = await client(onTestFinished, false, true, true);
+    await request("tools/call", { name: "list_accounts", arguments: {} });
+    const holder = new DatabaseSync(join(directory, "mail.db"));
+    holder.exec("BEGIN IMMEDIATE");
+    onTestFinished(() => {
+      holder.exec("ROLLBACK");
+      holder.close();
+    });
+    await request("tools/call", { name: "access_status", arguments: {} });
+    const { stderr } = await close();
+    expect(stderr).toContain("agent-activity-dropped");
+  },
+  scaledMs(30_000),
+);
+
 // Clients put tools/list in the model's context on every turn, so it has a byte budget.
 test.concurrent(
   "tools/list stays small and each description is two or three short sentences",

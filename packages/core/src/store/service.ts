@@ -41,7 +41,13 @@ import type { Prefs, PrefsPatch, Signature, Template, TemplateInput } from "../d
 import { Context, type Effect, type Option } from "effect";
 import type { makeSemanticStore } from "./store-semantic.js";
 import type { makeMediaStore } from "./store-media.js";
-import type { AuthError, InvalidInput, NotFound, ProviderError } from "../domain/errors.js";
+import type {
+  AuthError,
+  DatabaseBusy,
+  InvalidInput,
+  NotFound,
+  ProviderError,
+} from "../domain/errors.js";
 import type { makeSyncHealthStore } from "./store-sync-health.js";
 import type { OptionalService } from "../providers/optional-services.js";
 import type { ImapFolderIdentity, ProviderIdMapping } from "../providers/adapter.js";
@@ -643,7 +649,12 @@ export class Store extends Context.Service<
       detail: unknown;
     }): Effect.Effect<void>;
     listAudit(limit: number): Effect.Effect<AuditEntry[]>;
-    appendAgentActivity(entry: { client: string; tool: string; ok: boolean }): Effect.Effect<void>;
+    /** Fails with DatabaseBusy when another process keeps the write lock past a short wait. */
+    appendAgentActivity(entry: {
+      client: string;
+      tool: string;
+      ok: boolean;
+    }): Effect.Effect<void, DatabaseBusy>;
     listAgentActivity(limit: number): Effect.Effect<AgentActivity[]>;
     agentWriteMode(name: string): Effect.Effect<AgentWriteMode>;
     setAgentWriteMode(name: string, mode: AgentWriteMode): Effect.Effect<void>;

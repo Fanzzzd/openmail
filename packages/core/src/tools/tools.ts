@@ -37,10 +37,17 @@ import {
   SnoozeThreads,
   proposalHandlers,
 } from "./proposal-tools.js";
-import { Context, Effect, Exit } from "effect";
+import { Context, Duration, Effect, Exit, Semaphore } from "effect";
+import { logWarning } from "../domain/diagnostic-log.js";
 import { makeToolContext } from "./tool-context.js";
 import { cleanMcpClientName } from "./agent-identity.js";
-import { CONSENT_SWITCH, type MailToolError, ToolFailure } from "./tool-common.js";
+import {
+  CONSENT_SWITCH,
+  type MailToolError,
+  ToolFailure,
+  busyToolError,
+  isLockTimeout,
+} from "./tool-common.js";
 import { Mailbox } from "../mailbox/mailbox.js";
 
 export const ReadMailToolkit = Toolkit.make(
@@ -90,6 +97,14 @@ export const ToolGate = Context.Reference<Effect.Effect<void, MailToolError>>("o
   defaultValue: () => Effect.void,
 });
 
+interface ActivityEntry {
+  readonly client: string;
+  readonly tool: string;
+  readonly ok: boolean;
+}
+/** How often rows that met another process's write lock are tried again. */
+const ACTIVITY_RETRY_SPACING = Duration.seconds(1);
+
 export const MailToolkitLayer = MailToolkit.toLayer(
   Effect.gen(function* () {
     const context = yield* makeToolContext;
@@ -104,22 +119,79 @@ export const MailToolkitLayer = MailToolkit.toLayer(
       ...proposalHandlers(context),
     });
 
+    /**
+     * agent_activity rows that met another process's write lock, oldest first. The tool's
+     * result does not wait for them: a background fiber retries them, and closing the server
+     * tries once more and logs the rows it drops.
+     */
+    const unrecorded: ActivityEntry[] = [];
+    /** Writes the waiting rows in order; false when the lock is still held. One at a time. */
+    const writing = yield* Semaphore.make(1);
+    const writeUnrecorded = Effect.gen(function* () {
+      for (let entry = unrecorded[0]; entry; entry = unrecorded[0]) {
+        const written = yield* mailbox.proposals.recordAgentActivity(entry).pipe(
+          Effect.as(true),
+          Effect.catchTag("DatabaseBusy", () => Effect.succeed(false)),
+        );
+        if (!written) return false;
+        unrecorded.shift();
+      }
+      return true;
+    }).pipe(writing.withPermits(1));
+    yield* Effect.addFinalizer(() =>
+      writeUnrecorded.pipe(
+        Effect.flatMap((done) =>
+          done
+            ? Effect.void
+            : logWarning(
+                "agent-activity-dropped",
+                "Another process kept the database's write lock, so AI activity rows were not saved",
+                { rows: unrecorded.length },
+              ),
+        ),
+        Effect.ignoreCause,
+      ),
+    );
+    /** Retries the waiting rows every ACTIVITY_RETRY_SPACING until they are written. */
+    const scope = yield* Effect.scope;
+    let retrying = false;
+    const retryLater = Effect.suspend(() => {
+      if (retrying) return Effect.void;
+      retrying = true;
+      return Effect.sleep(ACTIVITY_RETRY_SPACING).pipe(
+        Effect.andThen(writeUnrecorded),
+        Effect.repeat({ until: (done) => done }),
+        Effect.ensuring(Effect.sync(() => (retrying = false))),
+        Effect.ignoreCause,
+        Effect.forkIn(scope),
+        Effect.asVoid,
+      );
+    });
+    const record = (entry: ActivityEntry) => {
+      unrecorded.push(entry);
+      return Effect.flatMap(writeUnrecorded, (done) => (done ? Effect.void : retryLater));
+    };
+
     /** MCP calls leave a row in agent_activity, so Settings can show what each AI app did. */
     const tracked = <A, E, R>(tool: string, effect: Effect.Effect<A, E, R>) =>
       Effect.andThen(gate, effect).pipe(
         Effect.catchDefect((defect) =>
-          defect instanceof ToolFailure ? Effect.fail(defect.error) : Effect.die(defect),
+          defect instanceof ToolFailure
+            ? Effect.fail(defect.error)
+            : isLockTimeout(defect)
+              ? Effect.fail(busyToolError())
+              : Effect.die(defect),
         ),
         Effect.onExit((exit) =>
           Effect.flatMap(identity.current, (current) =>
             current.recordsActivity
-              ? mailbox.proposals.recordAgentActivity({
+              ? record({
                   client: cleanMcpClientName(current.name),
                   tool,
                   ok: Exit.isSuccess(exit),
                 })
               : Effect.void,
-          ).pipe(Effect.ignore),
+          ).pipe(Effect.ignoreCause),
         ),
       );
     return MailToolkit.of(wrapHandlers(handlers, tracked));

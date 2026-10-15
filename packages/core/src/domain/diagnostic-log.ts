@@ -38,6 +38,7 @@ export const LogCode = Schema.Literals([
   "keychain-remove-failed",
   "token-revoke-failed",
   "planner-stats-skipped",
+  "agent-activity-dropped",
 ]);
 export type LogCode = typeof LogCode.Type;
 

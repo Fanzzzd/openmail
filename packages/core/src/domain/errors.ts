@@ -111,6 +111,14 @@ export class NotFound extends Schema.TaggedError<NotFound>()("NotFound", {
   id: Schema.String,
 }) {}
 
+/**
+ * Another process holds the database's write lock, and a write that should not wait long gave
+ * up. Only agent_activity rows fail this way; other writes wait the full busy timeout.
+ */
+export class DatabaseBusy extends Schema.TaggedError<DatabaseBusy>()("DatabaseBusy", {
+  message: Schema.String,
+}) {}
+
 /** The on-device text index cannot answer yet: turned off, model missing, or nothing indexed. */
 export class IndexNotReady extends Schema.TaggedError<IndexNotReady>()("IndexNotReady", {
   message: Schema.String,

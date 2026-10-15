@@ -2,6 +2,7 @@
 
 import { Effect, Schema, SchemaGetter } from "effect";
 import { Tool } from "effect/ai";
+import { isSqlError } from "effect/sql/SqlError";
 import { Outcome, type Command } from "../domain/command.js";
 import {
   PageParameters,
@@ -34,6 +35,7 @@ export const TOOL_ERROR_CODES = [
   "provider_unavailable",
   "not_ready",
   "too_many_proposals",
+  "busy",
 ] as const;
 export type ToolErrorCode = (typeof TOOL_ERROR_CODES)[number];
 
@@ -50,6 +52,21 @@ export class MailToolError extends Schema.Error<MailToolError>("MailToolError")(
 /** Every failure names the next step, so a model can recover without guessing. */
 export const toolError = (code: ToolErrorCode, message: string, hint: string) =>
   new MailToolError({ message, code, hint });
+
+/**
+ * What a tool call returns when another process keeps the database's write lock past the
+ * busy timeout, such as the app writing a large sync batch.
+ */
+export const busyToolError = () =>
+  toolError(
+    "busy",
+    "Another OpenMail process holds the mailbox's write lock, so this call could not finish.",
+    "OpenMail is writing to the mailbox; retry in a few seconds.",
+  );
+
+/** A defect from a statement that waited the whole busy timeout for the write lock. */
+export const isLockTimeout = (defect: unknown): boolean =>
+  isSqlError(defect) && defect.reason._tag === "LockTimeoutError";
 
 /** The next step for invalid input whose message already says what to change. */
 export const FIX_INPUT_HINT = "Change the arguments as the message says, then call the tool again.";

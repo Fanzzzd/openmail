@@ -9,7 +9,7 @@ import {
   Command,
   type Proposal,
 } from "../domain/command.js";
-import { InvalidInput, NotFound } from "../domain/errors.js";
+import { DatabaseBusy, InvalidInput, NotFound } from "../domain/errors.js";
 import { sha256Hex } from "../platform/crypto.js";
 import type { Store } from "./service.js";
 import { all, first, run } from "./sql-rows.js";
@@ -27,6 +27,10 @@ import {
 /** An agent's proposal past PENDING_PROPOSAL_LIMIT or PENDING_PROPOSAL_TOTAL_LIMIT. */
 export const TOO_MANY_PROPOSALS =
   "Too many AI proposals are already waiting for the person. Nothing was proposed.";
+
+/** How long an agent_activity row waits for another process's write lock. */
+export const ACTIVITY_BUSY_TIMEOUT_MS = 200;
+const BusyTimeout = Schema.Struct({ timeout: Schema.Number });
 
 /** Rows agent_activity keeps. Settings shows the last few calls per client. */
 const AGENT_ACTIVITY_ROWS = 500;
@@ -111,17 +115,55 @@ export const makePolicyStore = ({
     }));
   });
 
-  const appendAgentActivity = Effect.fn("Store.appendAgentActivity")(function* (entry: {
-    client: string;
-    tool: string;
-    ok: boolean;
-  }) {
-    const now = yield* Clock.currentTimeMillis;
-    yield* run(sql`INSERT INTO agent_activity (at, client, tool, ok)
-        VALUES (${now}, ${entry.client}, ${entry.tool}, ${entry.ok ? 1 : 0})`);
-    yield* run(sql`DELETE FROM agent_activity
-        WHERE id <= (SELECT max(id) FROM agent_activity) - ${AGENT_ACTIVITY_ROWS}`);
-  });
+  /**
+   * The row waits at most ACTIVITY_BUSY_TIMEOUT_MS for another process's write lock, not the
+   * connection's 5 s busy timeout: node:sqlite waits synchronously, so every MCP tool call
+   * stalled for 5 s and then failed. The connection is reserved while its timeout is lowered,
+   * so no other statement runs with the short one.
+   */
+  const appendAgentActivity = Effect.fn("Store.appendAgentActivity")(
+    function* (entry: { client: string; tool: string; ok: boolean }) {
+      const now = yield* Clock.currentTimeMillis;
+      const conn = yield* sql.reserve;
+      const timeout = yield* first(BusyTimeout)(
+        conn.executeUnprepared("PRAGMA busy_timeout", [], undefined),
+      );
+      const previous = Option.match(timeout, { onNone: () => 5000, onSome: (row) => row.timeout });
+      yield* conn.executeUnprepared(
+        `PRAGMA busy_timeout = ${ACTIVITY_BUSY_TIMEOUT_MS}`,
+        [],
+        undefined,
+      );
+      yield* Effect.ensuring(
+        conn
+          .executeUnprepared(
+            "INSERT INTO agent_activity (at, client, tool, ok) VALUES (?, ?, ?, ?)",
+            [now, entry.client, entry.tool, entry.ok ? 1 : 0],
+            undefined,
+          )
+          .pipe(
+            Effect.andThen(
+              conn.executeUnprepared(
+                "DELETE FROM agent_activity WHERE id <= (SELECT max(id) FROM agent_activity) - ?",
+                [AGENT_ACTIVITY_ROWS],
+                undefined,
+              ),
+            ),
+          ),
+        conn
+          .executeUnprepared(`PRAGMA busy_timeout = ${previous}`, [], undefined)
+          .pipe(Effect.orDie),
+      );
+    },
+    Effect.scoped,
+    Effect.catch((error) =>
+      error.reason._tag === "LockTimeoutError"
+        ? Effect.fail(
+            new DatabaseBusy({ message: "Another process is writing to the local database." }),
+          )
+        : Effect.die(error),
+    ),
+  );
 
   const listAgentActivity = Effect.fn("Store.listAgentActivity")(function* (limit: number) {
     const rows = yield* all(AgentActivityRow)(sql`SELECT at, client, tool, ok

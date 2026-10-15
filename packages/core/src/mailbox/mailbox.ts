@@ -64,6 +64,7 @@ import type {
   FeatureScopeMissing,
   AuthError,
   ClientNotConfigured,
+  DatabaseBusy,
   DraftConflict,
   IndexNotReady,
   InvalidInput,
@@ -342,7 +343,12 @@ export interface MailboxProposals {
   audit(limit: number): Effect.Effect<AuditEntry[]>;
   /** The last MCP tool calls, newest first: tool names and outcomes only. */
   agentActivity(limit: number): Effect.Effect<AgentActivity[]>;
-  recordAgentActivity(entry: { client: string; tool: string; ok: boolean }): Effect.Effect<void>;
+  /** Fails with DatabaseBusy when another process keeps the write lock past a short wait. */
+  recordAgentActivity(entry: {
+    client: string;
+    tool: string;
+    ok: boolean;
+  }): Effect.Effect<void, DatabaseBusy>;
   /** OPENMAIL_READ_ONLY=1: no remote writes in this process. */
   readonly readOnlySession: boolean;
   /** Write mode for one agent: its own policy, else the default. */

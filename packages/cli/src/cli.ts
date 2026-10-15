@@ -86,10 +86,12 @@ const openmail = Command.make("openmail").pipe(
   Command.withSubcommands([corpus, ...providedCommands]),
 );
 
-/** The minimum log level without --log-level. */
-const CLI_LOG_LEVEL = "Error";
-
 const cliArgs = process.argv.slice(2);
+/**
+ * The minimum log level without --log-level. An MCP client keeps the server's stderr as its
+ * log, so `openmail mcp` logs warnings too, such as agent_activity rows it had to drop.
+ */
+const CLI_LOG_LEVEL = cliArgs[0] === "mcp" ? "Warn" : "Error";
 const appOnlyWriteMode =
   cliArgs[0] === "agents" &&
   cliArgs[1] === "write-mode" &&

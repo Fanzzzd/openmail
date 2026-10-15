@@ -17,7 +17,8 @@ import type { ThreadQuery } from "../domain/message.js";
 import type { OutgoingMessage } from "../domain/changes.js";
 import { fakeServer, TestMailbox } from "../platform/node/testing.js";
 import { Mailbox } from "../mailbox/mailbox.js";
-import { InvalidInput, NotFound, ProviderError } from "../domain/errors.js";
+import { DatabaseBusy, InvalidInput, NotFound, ProviderError } from "../domain/errors.js";
+import { LockTimeoutError, SqlError } from "effect/sql/SqlError";
 import { MODEL_KEY } from "../ai/secrets.js";
 import {
   MailToolkit,
@@ -1054,6 +1055,61 @@ it.effect("server search relays ignored operators, account errors and provider t
     assert.isTrue(result.result.truncated);
     assert.deepStrictEqual(result.result.ignored?.[0]?.operators, ["has:attachment"]);
     assert.strictEqual(result.result.errors[0]?.message, "Unavailable");
+  }),
+);
+
+// A statement that waited the whole busy timeout for another process's write lock surfaced as
+// "Tool execution failed due to an internal server error".
+it.effect("a lock timeout in a tool is a busy error with a retry hint", () =>
+  Effect.gen(function* () {
+    const result = yield* run(
+      call("list_accounts", {}),
+      stubMailbox({
+        accounts: {
+          accounts: Effect.die(
+            new SqlError({
+              reason: new LockTimeoutError({ cause: new Error("database is locked") }),
+            }),
+          ),
+        },
+      }),
+    );
+    assert.isTrue(result.isFailure);
+    assert.deepStrictEqual(result.encodedResult, {
+      message:
+        "Another OpenMail process holds the mailbox's write lock, so this call could not finish.",
+      code: "busy",
+      hint: "OpenMail is writing to the mailbox; retry in a few seconds.",
+    });
+  }),
+);
+
+it.effect("an activity row that meets the write lock is written later, in order", () =>
+  Effect.gen(function* () {
+    const written: string[] = [];
+    let busy = true;
+    const mailbox = stubMailbox({
+      accounts: { accounts: Effect.succeed([]) },
+      proposals: {
+        recordAgentActivity: (entry) =>
+          busy
+            ? Effect.fail(new DatabaseBusy({ message: "busy" }))
+            : Effect.sync(() => {
+                written.push(entry.tool);
+              }),
+      },
+    });
+    const identity = AgentIdentity.fixed("mcp", "claude-code", { recordsActivity: true });
+    yield* Effect.gen(function* () {
+      for (const tool of ["list_accounts", "list_labels"] as const) {
+        const result = yield* call(tool, {});
+        assert.isFalse(result.isFailure, tool);
+      }
+      assert.deepStrictEqual(written, []);
+      busy = false;
+      yield* TestClock.adjust("1 second");
+      assert.deepStrictEqual(written, ["list_accounts", "list_labels"]);
+    }).pipe(Effect.provide(MailToolkitLayer.pipe(Layer.provide(mailbox), Layer.provide(identity))));
   }),
 );
 
