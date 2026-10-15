@@ -9,19 +9,21 @@ import { MemoryPlatform } from "./platform-memory.js";
 import { fixtureAccounts, fixtureMessage } from "./fixtures/performance-mailbox.js";
 import { perfBudget } from "../../../test-support/perf-budget.js";
 import { perfCalibration } from "../../../test-support/perf-calibration.js";
+import { scaledMs } from "../../../test-support/test-time.js";
 
-// Round 9: the on-open PRAGMA optimize recorded statistics for the empty FTS5 tables, every
-// later insert planned the index lookups as scans, and seeding the 100k performance mailbox went
-// from 5 s to 4 minutes per 10k messages. Only the weekly perf job noticed. This runs in Check.
+// Regression guard: the on-open PRAGMA optimize recorded statistics for the empty FTS5 tables
+// (fixed in d5194310). Every later insert planned the index lookups as scans, and seeding the
+// 100k performance mailbox went from 5 s to 4 minutes per 10k messages. Only the weekly perf job
+// noticed. This runs in the default suite. See docs/testing.md#tests-under-load.
 const MESSAGES = 10_000;
 const CHUNK = 2_000;
 /**
  * 10k messages take about 3.7 s on the reference machine (perf-calibration.ts), and 12.8 s with
- * the round 9 bug put back. The budget grows with the calibration ratio on slower runners.
+ * the regression put back. The budget grows with the calibration ratio on slower runners.
  */
 const BUDGET_MS = 6_000;
 /**
- * Inserts stay about as fast while the indexes grow (1.1x here). With the round 9 bug the last
+ * Inserts stay about as fast while the indexes grow (1.1x here). With the regression the last
  * 2k took 4.9x as long as the first, on any machine.
  */
 const MAX_GROWTH = 2.5;
@@ -67,7 +69,7 @@ it("seeding 10k messages into a file database stays within its insert budget", a
     const totalMs = chunksMs.reduce((sum, ms) => sum + ms, 0);
     const budgetMs = perfBudget(BUDGET_MS) * Math.max(1, ratio);
     const growth = (chunksMs.at(-1) ?? 0) / (chunksMs[0] ?? 1);
-    const summary = `seeding ${MESSAGES} messages took ${Math.round(totalMs)} ms (budget ${Math.round(budgetMs)} ms at calibration ratio ${ratio.toFixed(2)}: CPU ${cpuMs.toFixed(1)} ms, SQLite ${sqliteMs.toFixed(1)} ms); per ${CHUNK}: ${chunksMs.map((ms) => Math.round(ms)).join(", ")} ms`;
+    const summary = `seed-rate budget, see docs/testing.md#tests-under-load (OPENMAIL_PERF_FACTOR=2 relaxes it locally): seeding ${MESSAGES} messages took ${Math.round(totalMs)} ms (budget ${Math.round(budgetMs)} ms at calibration ratio ${ratio.toFixed(2)}: CPU ${cpuMs.toFixed(1)} ms, SQLite ${sqliteMs.toFixed(1)} ms); per ${CHUNK}: ${chunksMs.map((ms) => Math.round(ms)).join(", ")} ms`;
     process.stdout.write(`${summary}\n`);
     expect(totalMs, summary).toBeLessThan(budgetMs);
     expect(
@@ -77,4 +79,4 @@ it("seeding 10k messages into a file database stays within its insert budget", a
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
-}, 60_000);
+}, scaledMs(60_000));
