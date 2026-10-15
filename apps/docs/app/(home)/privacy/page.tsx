@@ -114,11 +114,16 @@ export default function PrivacyPage() {
               The same folder. It holds fixed fields only: time, event type, provider, HTTP method,
               endpoint template, status code, failure category, the name of a failed internal
               request and whether it failed, was a defect or was interrupted, the phase and counts
-              of a sync reset, crash and abnormal-exit entries with an exit code, and hashes of the
-              account and folder. The hashes are keyed with a random secret that stays on your Mac.
+              of a sync reset, crash and abnormal-exit entries with an exit code, the SQLite result
+              code of a skipped database statistics refresh, and hashes of the account and folder. The hashes are keyed with a random secret that stays on your Mac.
               The log contains no message content, addresses, full URLs or tokens. The secret is in{" "}
               <code>diagnostics.key</code> in the same folder. An export replaces every hash with a
-              number that is valid for that export only. It is never uploaded. The Feedback window
+              number that is valid for that export only. It starts with a summary line: the OpenMail
+              version and build, whether the app is packaged, the macOS, Electron and Node versions,
+              the CPU architecture, the database version, and whether search statistics exist. For
+              each numbered account it lists the provider, sync state, time since the last
+              successful sync, how many changes and outbox messages are waiting, the reason sign-in
+              is needed again and the stored failure category. It is never uploaded. The Feedback window
               lets you attach it to an email that you send yourself.
             </td>
           </tr>
@@ -127,7 +132,8 @@ export default function PrivacyPage() {
             <td>
               <code>~/Library/Application Support/OpenMail/Opened Attachments</code>, also when you
               set <code>OPENMAIL_HOME</code>. Copies you have not changed are deleted 7 days after
-              you last opened them. Copies you edited stay until you clear them in Settings → Local
+              you last opened them, unless another app still has the copy open (its lock file is in
+              the folder); Settings → Local cache clears it anyway. Copies you edited stay until you clear them in Settings → Local
               cache. Time Machine skips this folder. If you set Open attachments from to Downloads,
               copies go to your attachment folder instead and OpenMail does not delete them.
             </td>
