@@ -411,18 +411,23 @@ export class Store extends Context.Service<
      * files a Sent copy while the send that wrote it (here or in another process) still runs.
      */
     claimSmtpAccepted(draftId: string, token: string): Effect.Effect<boolean>;
-    /** Keeps `token`'s claim on the record alive. */
-    renewSmtpAccepted(draftId: string, token: string): Effect.Effect<void>;
+    /**
+     * Keeps `token`'s claim on the record alive. False when `token` no longer holds it: a retry
+     * took the record after the claim went stale (the machine slept, say), or it is gone.
+     */
+    renewSmtpAccepted(draftId: string, token: string): Effect.Effect<boolean>;
     /** Gives `token`'s claim back, so the next retry can take the record at once. */
     releaseSmtpAccepted(draftId: string, token: string): Effect.Effect<void>;
-    clearSmtpAccepted(draftId: string): Effect.Effect<void>;
+    /** Deletes the record while `token` holds it. False when it does not. */
+    clearSmtpAccepted(draftId: string, token: string): Effect.Effect<boolean>;
     /**
      * Counts a failed Sent copy filing at the current time, keeps the first subject and sender
-     * it was given, and releases the claim. False when there is no record for `draftId`.
+     * it was given, and releases `token`'s claim. False when `token` does not hold the record.
      */
     noteSentCopyFailure(
       draftId: string,
       message: { subject: string; sender: string },
+      token: string,
     ): Effect.Effect<boolean>;
     readonly queuedSends: Effect.Effect<QueuedSend[]>;
     putQueuedSend(item: QueuedSend): Effect.Effect<void>;

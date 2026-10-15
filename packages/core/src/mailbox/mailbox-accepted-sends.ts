@@ -1,4 +1,4 @@
-import { Cause, Clock, Effect, Option } from "effect";
+import { Cause, Clock, Effect, Fiber, Option } from "effect";
 import { logWarning, throttledWarning } from "../domain/diagnostic-log.js";
 import type { SmtpAcceptedSend, StoredDraft } from "../store/service.js";
 import { SMTP_ACCEPTED_CLAIM_RENEW_MS } from "../store/store-smtp-accepted.js";
@@ -32,20 +32,24 @@ const renewingClaim = (
   const warn = throttledWarning("send-claim-renew-failed");
   return Effect.sleep(SMTP_ACCEPTED_CLAIM_RENEW_MS).pipe(
     Effect.andThen(
-      Effect.suspend(() => (recorded() ? store.renewSmtpAccepted(draftId, token) : Effect.void)),
+      Effect.suspend(() =>
+        recorded() ? store.renewSmtpAccepted(draftId, token) : Effect.succeed(true),
+      ),
     ),
     Effect.catchCause((cause) =>
       Cause.hasInterruptsOnly(cause)
         ? Effect.failCause(cause)
-        : warn("Renewing the claim on an accepted send failed", cause),
+        : warn("Renewing the claim on an accepted send failed", cause).pipe(Effect.as(true)),
     ),
-    Effect.forever,
+    // A lost claim stays lost: the holder's own checks skip filing and clearing.
+    Effect.repeat({ while: (held) => held }),
+    Effect.asVoid,
   );
 };
 
 /**
  * Runs `effect` while `token` holds the SMTP-accepted record of `draftId`, renewing the claim in
- * a scoped fiber so a sync retry in this or another process leaves the record alone. The renewal
+ * a child fiber so a sync retry in this or another process leaves the record alone. The renewal
  * cannot end or interrupt `effect`. Pass `recorded` when the record is written partway through
  * `effect`. A send that fails or is interrupted gives the claim back, so the next retry finishes
  * it at once; a crash leaves the claim to expire.
@@ -58,9 +62,8 @@ export const holdingAcceptedClaim =
     recorded: () => boolean = () => true,
   ) =>
   <A, E, R>(effect: Effect.Effect<A, E, R>) =>
-    Effect.scoped(
-      Effect.andThen(Effect.forkScoped(renewingClaim(store, draftId, token, recorded)), effect),
-    ).pipe(
+    Effect.forkChild(renewingClaim(store, draftId, token, recorded)).pipe(
+      Effect.flatMap((renewal) => effect.pipe(Effect.ensuring(Fiber.interrupt(renewal)))),
       Effect.onExit((exit) =>
         exit._tag === "Success" ? Effect.void : store.releaseSmtpAccepted(draftId, token),
       ),
@@ -92,11 +95,13 @@ export const makeAcceptedSends = (
     Effect.gen(function* () {
       const token = crypto.randomUUID();
       if (!(yield* store.claimSmtpAccepted(accepted.draftId, token))) return;
-      yield* finishClaimed(accepted).pipe(holdingAcceptedClaim(store, accepted.draftId, token));
+      yield* finishClaimed(accepted, token).pipe(
+        holdingAcceptedClaim(store, accepted.draftId, token),
+      );
     });
 
   /** Ends by deleting the record or, through noteSentCopyFailure, releasing the claim. */
-  const finishClaimed = (accepted: SmtpAcceptedSend) =>
+  const finishClaimed = (accepted: SmtpAcceptedSend, token: string) =>
     Effect.gen(function* () {
       const { draftId } = accepted;
       const account = yield* store.getAccount(accepted.accountId).pipe(Effect.option);
@@ -118,17 +123,21 @@ export const makeAcceptedSends = (
       const giveUp =
         failed &&
         (accepted.tries + 1 >= MAX_SENT_COPY_TRIES || now - accepted.at >= SENT_COPY_RETRY_MS);
-      yield* store.transaction(
+      // Another holder took the record after this claim went stale: the rest is its to finish.
+      const held = yield* store.transaction(
         Effect.gen(function* () {
+          const ended = yield* failed && !giveUp
+            ? store.noteSentCopyFailure(draftId, { subject, sender }, token)
+            : store.clearSmtpAccepted(draftId, token);
+          if (!ended) return false;
           if (Option.isSome(draft)) yield* removeDraft(draft.value);
           yield* store.deleteQueuedSend(draftId);
           yield* store.setSendUncertain(draftId, false);
           yield* store.setSendPreparationState(draftId, null);
-          yield* failed && !giveUp
-            ? store.noteSentCopyFailure(draftId, { subject, sender })
-            : store.clearSmtpAccepted(draftId);
+          return true;
         }),
       );
+      if (!held) return;
       if (Option.isSome(draft) && draft.value.proposalId !== null)
         yield* settleProposal(draft.value.proposalId, true);
       if (giveUp)

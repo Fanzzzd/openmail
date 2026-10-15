@@ -2,6 +2,7 @@ import { expect, it, vi } from "vitest";
 import { Effect, Fiber, Option } from "effect";
 import { SqlClient } from "effect/sql";
 import { TestClock } from "effect/testing";
+import { ProviderError } from "../domain/errors.js";
 import { Mailbox } from "./mailbox.js";
 import { nextSentCopyTry } from "./mailbox-accepted-sends.js";
 import { fakeServer } from "../platform/node/fake-provider.js";
@@ -203,4 +204,137 @@ it("a failed Sent copy is tried again after 1 h, 2 h, 4 h and so on, at most a d
 it("a holder renews its claim several times within one claim TTL", () => {
   expect(SMTP_ACCEPTED_CLAIM_RENEW_MS).toBeGreaterThan(0);
   expect(SMTP_ACCEPTED_CLAIM_RENEW_MS * 2).toBeLessThan(SMTP_ACCEPTED_CLAIM_TTL);
+});
+
+/**
+ * The machine slept with the live send between SMTP 250 and its own Sent filing. The renewal
+ * timer stood still while the wall clock moved on, so the claim's last renewal now reads three
+ * minutes old, and the sync that runs on wake finds it stale.
+ */
+const sleepPastClaimTtl = (draftId: string) =>
+  Effect.gen(function* () {
+    const store = yield* Store;
+    const sql = Option.getOrThrow(yield* Effect.serviceOption(SqlClient.SqlClient));
+    const rows = yield* sql<{
+      claim: string;
+    }>`SELECT json_extract(value_json,'$.claim') AS claim FROM prefs WHERE key=${`smtp-accepted:${draftId}`}`;
+    const claim = rows[0]?.claim ?? "";
+    yield* Effect.gen(function* () {
+      yield* TestClock.setTime(Date.now() - 3 * 60_000);
+      yield* store.renewSmtpAccepted(draftId, claim);
+    }).pipe(Effect.provide(TestClock.layer()));
+  });
+
+/** Starts a live send that stops right after SMTP 250, and returns what resumes it. */
+const stalledLiveSend = (server: ReturnType<typeof fakeServer>) =>
+  Effect.gen(function* () {
+    server.acceptedRaw = raw;
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    server.afterAccepted = Effect.promise(() => gate);
+    const mailbox = yield* Mailbox;
+    const account = yield* mailbox.accounts.connect({ provider: "gmail" });
+    const draft = { id: "draft:live", accountId: account.id, message: outgoing };
+    yield* mailbox.compose.saveDraft(draft);
+    yield* mailbox.outbox.queueSend(draft, 0);
+    const fiber = yield* Effect.forkChild(mailbox.outbox.flushQueuedSends());
+    yield* Effect.promise(() => vi.waitFor(() => expect(server.acceptedMarks).toBe(1), waitLimit));
+    return { account, resume: Effect.sync(release).pipe(Effect.andThen(Fiber.join(fiber))) };
+  });
+
+// R12 R2: the claim is stale by the wall clock, but the renewal sleeps on timers that stop while
+// macOS sleeps. On wake the sync retry took the record from the live send, which never learned
+// it had lost the claim: both filed a Sent copy.
+it("a live send that lost its claim over a sleep leaves the Sent copy to the retry", async () => {
+  const server = fakeServer("me@example.com");
+  await Effect.runPromise(
+    Effect.gen(function* () {
+      const mailbox = yield* Mailbox;
+      const store = yield* Store;
+      const { account, resume } = yield* stalledLiveSend(server);
+      yield* sleepPastClaimTtl("draft:live");
+      yield* mailbox.sync.sync(account.id);
+      yield* Effect.promise(() =>
+        vi.waitFor(() => expect(server.sentCopies).toHaveLength(1), waitLimit),
+      );
+      yield* resume;
+      expect(server.liveSentCopies ?? 0).toBe(0);
+      expect(server.sent).toHaveLength(1);
+      yield* Effect.promise(() =>
+        vi.waitFor(
+          async () => expect(await Effect.runPromise(store.smtpAccepted)).toEqual([]),
+          waitLimit,
+        ),
+      );
+      expect(yield* mailbox.proposals.listFailedOps).toEqual([]);
+    }).pipe(
+      Effect.provide(
+        TestMailbox({ gmail: server }, { backgroundFlush: false, resumeDesktopSends: true }),
+      ),
+    ),
+  );
+});
+
+it("a live send that lost its claim leaves the retry's failed record in place", async () => {
+  const server = fakeServer("me@example.com");
+  await Effect.runPromise(
+    Effect.gen(function* () {
+      const mailbox = yield* Mailbox;
+      const store = yield* Store;
+      const { account, resume } = yield* stalledLiveSend(server);
+      yield* sleepPastClaimTtl("draft:live");
+      server.sentCopyFailure = new ProviderError({ message: "APPEND refused" });
+      yield* mailbox.sync.sync(account.id);
+      yield* Effect.promise(() =>
+        vi.waitFor(
+          async () =>
+            expect(
+              (await Effect.runPromise(store.smtpAccepted)).map((entry) => entry.tries),
+            ).toEqual([1]),
+          waitLimit,
+        ),
+      );
+      yield* resume;
+      // The record the retry backs off on survives the live send ending.
+      expect((yield* store.smtpAccepted).map((entry) => entry.tries)).toEqual([1]);
+      expect(server.liveSentCopies ?? 0).toBe(0);
+      expect(server.sentCopies).toHaveLength(0);
+      expect(yield* mailbox.proposals.listFailedOps).toEqual([]);
+    }).pipe(
+      Effect.provide(
+        TestMailbox({ gmail: server }, { backgroundFlush: false, resumeDesktopSends: true }),
+      ),
+    ),
+  );
+});
+
+it("a stale claim answers its old holder with false once a retry takes it", async () => {
+  const server = fakeServer("me@example.com");
+  await Effect.runPromise(
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const mailbox = yield* Mailbox;
+      const account = yield* mailbox.accounts.connect({ provider: "gmail" });
+      const at = Date.now();
+      yield* Effect.gen(function* () {
+        yield* TestClock.setTime(at);
+        yield* store.markSmtpAccepted("draft:slept", account.id, raw, "live");
+        expect(yield* store.renewSmtpAccepted("draft:slept", "live")).toBe(true);
+        // Wall time moves past the TTL with no renewal in between.
+        yield* TestClock.setTime(at + SMTP_ACCEPTED_CLAIM_TTL + 1);
+        expect(yield* store.claimSmtpAccepted("draft:slept", "retry")).toBe(true);
+        expect(yield* store.renewSmtpAccepted("draft:slept", "live")).toBe(false);
+        expect(
+          yield* store.noteSentCopyFailure("draft:slept", { subject: "", sender: "" }, "live"),
+        ).toBe(false);
+        expect(yield* store.clearSmtpAccepted("draft:slept", "live")).toBe(false);
+        expect(yield* store.smtpAccepted).toHaveLength(1);
+        expect(yield* store.renewSmtpAccepted("draft:slept", "retry")).toBe(true);
+        expect(yield* store.clearSmtpAccepted("draft:slept", "retry")).toBe(true);
+        expect(yield* store.smtpAccepted).toEqual([]);
+      }).pipe(Effect.provide(TestClock.layer()));
+    }).pipe(Effect.provide(TestMailbox({ gmail: server }, { backgroundFlush: false }))),
+  );
 });

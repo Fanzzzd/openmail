@@ -394,10 +394,12 @@ export const makeImapSend = ({
       }
 
       let sentCopyMissing = false;
-      if (!confirmed) {
+      // A retry that took the accepted record files the copy instead of this send.
+      const holds = preparation?.holdsAccepted ?? Effect.succeed(true);
+      if (!confirmed && (yield* holds)) {
         const serverSaves = serverSavesSent(settings) || observedSent.has(account.id);
         const saved = yield* saveSent(s, raw, serverSaves, observedSent).pipe(Effect.result);
-        if (saved._tag === "Failure") {
+        if (saved._tag === "Failure" && (yield* holds)) {
           const retried = yield* Effect.gen(function* () {
             const fresh = yield* session(account);
             yield* saveSent(fresh.s, raw, serverSaves, observedSent);

@@ -88,6 +88,8 @@ export interface FakeServer {
   /** When set, send reports SMTP acceptance of these bytes through the preparation. */
   acceptedRaw?: Uint8Array;
   acceptedMarks?: number;
+  /** Sent copies the live send filed itself after SMTP accepted `acceptedRaw`. */
+  liveSentCopies?: number;
   /** Runs after SMTP acceptance is reported, while the live send still holds its record. */
   afterAccepted?: Effect.Effect<void>;
   /** The next accepted send reports that its Sent copy could not be saved. */
@@ -596,7 +598,11 @@ export function makeFakeProvider(
             yield* preparation.accepted(server.acceptedRaw);
             server.acceptedMarks = (server.acceptedMarks ?? 0) + 1;
             if (server.afterAccepted) yield* server.afterAccepted;
-            sentCopyMissing = server.sentCopyMissing === true;
+            // The live send files its own Sent copy unless a retry took the record.
+            if (!preparation.holdsAccepted || (yield* preparation.holdsAccepted)) {
+              sentCopyMissing = server.sentCopyMissing === true;
+              if (!sentCopyMissing) server.liveSentCopies = (server.liveSentCopies ?? 0) + 1;
+            }
             server.sentCopyMissing = false;
           }
           return sentCopyMissing ? { sentCopyMissing } : {};

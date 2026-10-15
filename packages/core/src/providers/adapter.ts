@@ -449,6 +449,12 @@ export interface SendPreparation {
    * between leaves a durable record that `fileSentCopy` finishes on the next start.
    */
   readonly accepted?: (raw: Uint8Array) => Effect.Effect<void>;
+  /**
+   * True while this send still holds the record `accepted` wrote, and keeps the hold fresh. The
+   * provider asks right before filing the Sent copy and skips filing on false: a retry took the
+   * record (after the machine slept past the claim TTL, say) and files the copy itself.
+   */
+  readonly holdsAccepted?: Effect.Effect<boolean>;
 }
 
 export class Providers extends Context.Service<

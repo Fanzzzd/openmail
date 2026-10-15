@@ -170,7 +170,8 @@ export const makeOutboxMailbox = (
     }
     // The live send owns the SMTP-accepted record it writes, so a sync retry leaves it alone.
     const claim = crypto.randomUUID();
-    let recorded = false;
+    // Set once this send wrote its SMTP-accepted record; the renewal and handoff check it.
+    const record = { written: false };
     const delivery = yield* providers
       .get(account.provider)
       .send(
@@ -185,15 +186,21 @@ export const makeOutboxMailbox = (
                 store.markSmtpAccepted(draftId, accountId, raw, claim).pipe(
                   Effect.tap(
                     Effect.sync(() => {
-                      recorded = true;
+                      record.written = true;
                     }),
                   ),
                 ),
+              // A failed check files the copy anyway: a second copy beats none.
+              holdsAccepted: store
+                .renewSmtpAccepted(draftId, claim)
+                .pipe(Effect.catchDefect(() => Effect.succeed(true))),
             }
           : undefined,
       )
       .pipe(
-        draftId ? holdingAcceptedClaim(store, draftId, claim, () => recorded) : (effect) => effect,
+        draftId
+          ? holdingAcceptedClaim(store, draftId, claim, () => record.written)
+          : (effect) => effect,
         Effect.tapError((error) =>
           Effect.all([
             error._tag === "AuthError" ? store.markReauth(accountId, error) : Effect.void,
@@ -210,13 +217,14 @@ export const makeOutboxMailbox = (
         ),
       );
     const sender = message.from?.address ?? account.email;
-    // A Sent copy that failed goes to the accepted-send retry with the record, which gives up
-    // under its own limits. Otherwise the copy is filed and nothing is left to finish.
-    const handedOff =
-      draftId !== undefined &&
-      delivery?.sentCopyMissing === true &&
-      (yield* store.noteSentCopyFailure(draftId, { subject: message.subject, sender }));
-    if (draftId && !handedOff) yield* store.clearSmtpAccepted(draftId);
+    // A Sent copy that failed goes to the accepted-send retry with the record this send wrote,
+    // and the retry gives up under its own limits. If a retry took the record while this send
+    // was stalled, the copy is that retry's to file and to report. Otherwise the copy is filed
+    // and nothing is left to finish. Both store calls act only while `claim` holds the record.
+    const handedOff = draftId !== undefined && delivery?.sentCopyMissing === true && record.written;
+    if (handedOff)
+      yield* store.noteSentCopyFailure(draftId, { subject: message.subject, sender }, claim);
+    else if (draftId) yield* store.clearSmtpAccepted(draftId, claim);
     if (delivery?.rejected?.length) {
       yield* store.recordFailedOp({
         accountId,

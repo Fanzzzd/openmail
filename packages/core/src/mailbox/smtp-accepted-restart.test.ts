@@ -192,8 +192,14 @@ it("a Sent copy that keeps failing is reported after the last try, and the send 
       Effect.gen(function* () {
         const store = yield* Store;
         yield* store.markSmtpAccepted("draft:accepted", accountId, raw);
-        for (let i = 0; i < 9; i++)
-          yield* store.noteSentCopyFailure("draft:accepted", { subject: "Accepted", sender: "" });
+        for (let i = 0; i < 9; i++) {
+          yield* store.claimSmtpAccepted("draft:accepted", "earlier-try");
+          yield* store.noteSentCopyFailure(
+            "draft:accepted",
+            { subject: "Accepted", sender: "" },
+            "earlier-try",
+          );
+        }
         server.sentCopyFailure = new ProviderError({ message: "APPEND refused" });
       }),
     () =>
@@ -224,10 +230,12 @@ it("a Sent copy still missing after a week is reported with the subject it was s
           yield* TestClock.setTime(Date.now() - 8 * 86_400_000);
           yield* store.markSmtpAccepted("draft:accepted", accountId, raw);
         }).pipe(Effect.provide(TestClock.layer()));
-        yield* store.noteSentCopyFailure("draft:accepted", {
-          subject: "Accepted",
-          sender: "me@example.com",
-        });
+        yield* store.claimSmtpAccepted("draft:accepted", "earlier-try");
+        yield* store.noteSentCopyFailure(
+          "draft:accepted",
+          { subject: "Accepted", sender: "me@example.com" },
+          "earlier-try",
+        );
         // The draft went away on the first try; the notice still names the message.
         yield* store.deleteQueuedSend("draft:accepted");
         yield* store.deleteDraft("draft:accepted");

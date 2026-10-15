@@ -33,8 +33,13 @@ export const SMTP_ACCEPTED_CLAIM_TTL = 2 * 60_000;
 /** How often a holder renews its claim: four renewals fit in one TTL. */
 export const SMTP_ACCEPTED_CLAIM_RENEW_MS = SMTP_ACCEPTED_CLAIM_TTL / 4;
 
-export const makeSmtpAcceptedStore = ({ sql }: { sql: SqlClient.SqlClient }) =>
-  ({
+const Key = Schema.Struct({ key: Schema.String });
+
+export const makeSmtpAcceptedStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
+  /** The record is valid and `token` holds its claim. */
+  const heldBy = (token: string) =>
+    sql`json_valid(value_json) AND json_extract(value_json,'$.claim')=${token}`;
+  return {
     smtpAccepted: all(SmtpAcceptedRow)(
       sql`SELECT key, value_json FROM prefs WHERE substr(key,1,${SMTP_ACCEPTED.length})=${SMTP_ACCEPTED} ORDER BY key`,
     ).pipe(
@@ -69,7 +74,7 @@ export const makeSmtpAcceptedStore = ({ sql }: { sql: SqlClient.SqlClient }) =>
       token: string,
     ) {
       const now = yield* Clock.currentTimeMillis;
-      const row = yield* first(Schema.Struct({ key: Schema.String }))(
+      const row = yield* first(Key)(
         sql`UPDATE prefs SET value_json=json_set(value_json,'$.claim',${token},'$.claimedAt',${now})
         WHERE key=${SMTP_ACCEPTED + draftId} AND json_valid(value_json)
           AND (json_extract(value_json,'$.claim') IS NULL
@@ -83,37 +88,39 @@ export const makeSmtpAcceptedStore = ({ sql }: { sql: SqlClient.SqlClient }) =>
       token: string,
     ) {
       const now = yield* Clock.currentTimeMillis;
-      yield* run(
+      const row = yield* first(Key)(
         sql`UPDATE prefs SET value_json=json_set(value_json,'$.claimedAt',${now})
-        WHERE key=${SMTP_ACCEPTED + draftId} AND json_valid(value_json)
-          AND json_extract(value_json,'$.claim')=${token}`,
+        WHERE key=${SMTP_ACCEPTED + draftId} AND ${heldBy(token)} RETURNING key`,
       );
+      return Option.isSome(row);
     }),
     releaseSmtpAccepted: (draftId, token) =>
       run(
         sql`UPDATE prefs SET value_json=json_remove(value_json,'$.claim','$.claimedAt')
-        WHERE key=${SMTP_ACCEPTED + draftId} AND json_valid(value_json)
-          AND json_extract(value_json,'$.claim')=${token}`,
+        WHERE key=${SMTP_ACCEPTED + draftId} AND ${heldBy(token)}`,
       ),
-    clearSmtpAccepted: (draftId) =>
-      run(sql`DELETE FROM prefs WHERE key=${SMTP_ACCEPTED + draftId}`),
+    clearSmtpAccepted: (draftId, token) =>
+      first(Key)(
+        sql`DELETE FROM prefs WHERE key=${SMTP_ACCEPTED + draftId} AND ${heldBy(token)} RETURNING key`,
+      ).pipe(Effect.map(Option.isSome)),
     noteSentCopyFailure: Effect.fn("Store.noteSentCopyFailure")(function* (
       draftId: string,
       message: { subject: string; sender: string },
+      token: string,
     ) {
       const now = yield* Clock.currentTimeMillis;
-      const row = yield* first(Schema.Struct({ key: Schema.String }))(
+      const row = yield* first(Key)(
         sql`UPDATE prefs SET value_json=json_remove(json_set(value_json,
         '$.tries', COALESCE(json_extract(value_json,'$.tries'),0)+1,
         '$.lastTryAt', ${now},
         '$.subject', COALESCE(json_extract(value_json,'$.subject'),${message.subject}),
         '$.sender', COALESCE(json_extract(value_json,'$.sender'),${message.sender})),
         '$.claim','$.claimedAt')
-      WHERE key=${SMTP_ACCEPTED + draftId} AND json_valid(value_json) RETURNING key`,
+      WHERE key=${SMTP_ACCEPTED + draftId} AND ${heldBy(token)} RETURNING key`,
       );
       return Option.isSome(row);
     }),
-  }) satisfies Pick<
+  } satisfies Pick<
     Store["Service"],
     | "smtpAccepted"
     | "markSmtpAccepted"
@@ -123,3 +130,4 @@ export const makeSmtpAcceptedStore = ({ sql }: { sql: SqlClient.SqlClient }) =>
     | "clearSmtpAccepted"
     | "noteSentCopyFailure"
   >;
+};
