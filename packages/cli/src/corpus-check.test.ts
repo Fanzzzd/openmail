@@ -11,9 +11,12 @@ import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { corpusCheck } from "@openmail/core/node";
 import { Schema } from "effect";
-import { afterAll, beforeAll, describe, it } from "vitest";
+import { afterAll, beforeAll, describe, it, vi } from "vitest";
 import { writeMigratedDatabase } from "../../core/test-support/migrated-database.js";
 import { scaledMs } from "../../core/test-support/test-time.js";
+
+// Each case spawns the built CLI, which takes seconds on a loaded machine.
+vi.setConfig({ testTimeout: scaledMs(20_000), hookTimeout: scaledMs(20_000) });
 
 const run = promisify(execFile);
 const cli = fileURLToPath(new URL("../dist/cli.js", import.meta.url));
