@@ -16,6 +16,11 @@ interface Props<T extends string> {
   options: readonly SelectOption<T>[];
   onValueChange: (value: T) => void;
   "aria-label": string;
+  /**
+   * Ids whose text names the control instead of `aria-label`, such as a table row's name and
+   * its column heading, so each control in a repeated row says which row it belongs to.
+   */
+  "aria-labelledby"?: string;
   /** For a visible <label htmlFor>; clicking that label then reaches the control. */
   id?: string;
   disabled?: boolean;
@@ -52,6 +57,7 @@ export function Select<T extends string>({
   options,
   onValueChange,
   "aria-label": label,
+  "aria-labelledby": labelledBy,
   id,
   disabled,
   className = "",
@@ -72,6 +78,7 @@ export function Select<T extends string>({
       <BaseSelect.Trigger
         id={id}
         aria-label={label}
+        aria-labelledby={labelledBy}
         className={`group flex min-w-0 coarse:min-h-11 items-center text-left outline-a11y-focus ${triggerStyles[variant]} ${variant === "field" ? fieldWidth : ""} ${className}`}
       >
         {current?.icon}

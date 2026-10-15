@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { expect, it, vi } from "vitest";
 import { createElement as h } from "react";
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import axe from "axe-core";
 import { DEFAULT_PREFS } from "@openmail/core/schema";
 import { Settings } from "../features/settings/Settings";
 import { ShortcutHelp } from "../features/settings/sections/SystemSettings";
@@ -479,19 +480,27 @@ it("Organize labels its visibility columns and names every color, including one 
       }),
     ),
   );
-  // The visible headings repeat what each control's accessible name says.
+  // The visible headings name the columns; each control's name joins its row and its column,
+  // so a screen reader that skips the row's group still says which label a control changes.
   expect(document.querySelector("li[aria-hidden]")?.textContent).toBe(
     "NameIn sidebarIn message listColor",
   );
-  expect(screen.getAllByRole("combobox", { name: "In sidebar" })).toHaveLength(2);
-  expect(screen.getAllByRole("combobox", { name: "In message list" })).toHaveLength(2);
-  const colors = screen.getAllByRole("combobox", { name: "Color" });
+  for (const column of ["In sidebar", "In message list", "Color"])
+    expect(
+      screen.getAllByRole("combobox").filter((box) => box.getAttribute("aria-label") === column),
+    ).toHaveLength(2);
+  for (const name of ["Newsletters", "Work"])
+    for (const column of ["In sidebar", "In message list", "Color"])
+      expect(screen.getByRole("combobox", { name: `${name} ${column}` })).toBeTruthy();
+  const colors = ["Newsletters", "Work"].map((name) =>
+    screen.getByRole("combobox", { name: `${name} Color` }),
+  );
   expect(colors.map((color) => color.textContent)).toEqual(["Purple", "Green"]);
   for (const color of colors) expect(color.querySelector("span[aria-hidden]")).toBeTruthy();
   // Each row is a group named for its label, and the row actions name the label too.
   for (const name of ["Newsletters", "Work"]) {
     const row = screen.getByRole("group", { name });
-    expect(within(row).getByRole("combobox", { name: "In sidebar" })).toBeTruthy();
+    expect(within(row).getByRole("combobox", { name: `${name} In sidebar` })).toBeTruthy();
     expect(within(row).getByRole("checkbox", { name: "Favorite" })).toBeTruthy();
     const rename = within(row).getByRole("button", { name: `Rename ${name}` });
     const remove = within(row).getByRole("button", { name: `Delete ${name}` });
@@ -500,4 +509,15 @@ it("Organize labels its visibility columns and names every color, including one 
     expect(remove.firstChild?.textContent?.trim()).toBe("Delete");
   }
   await audit();
+  // An experimental rule, so the shared audit leaves it out: names must start with visible text.
+  let mismatch: axe.Result[] = [];
+  await act(async () => {
+    mismatch = (
+      await axe.run(document.body, {
+        runOnly: ["label-content-name-mismatch"],
+        rules: { "label-content-name-mismatch": { enabled: true } },
+      })
+    ).violations;
+  });
+  expect(mismatch.map((issue) => issue.nodes.map((node) => node.html))).toEqual([]);
 });

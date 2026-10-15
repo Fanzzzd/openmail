@@ -56,6 +56,10 @@ export function OrganizationSettings({ accounts }: { accounts: readonly Account[
   accounts = accounts.filter((a) => a.enabled !== false);
   const { t, i18n } = useLingui();
   const accountSelectId = useId();
+  /** Ids of the column headings and row names that name each label row's controls. */
+  const columnId = useId();
+  const rowId = (index: number) => `${columnId}-row-${index}`;
+  const headingId = (column: "sidebar" | "list" | "color") => `${columnId}-${column}`;
   const [accountId, setAccountId] = useState(accounts[0]?.id ?? "");
   const [editing, setEditing] = useState<Label | "new" | null>(null);
   const [deleting, setDeleting] = useState<Label | null>(null);
@@ -161,22 +165,29 @@ export function OrganizationSettings({ accounts }: { accounts: readonly Account[
           className={`empty:hidden sm:grid ${labelColumns(caps?.serverLabelStyle === true)} ${settingsGroup}`}
         >
           {labels.length > 0 && (
-            // Column headings for sighted readers; each control's accessible name says the same.
+            // Column headings for sighted readers. Each control's accessible name joins the row's
+            // name and its column heading, such as "Newsletters, In sidebar".
             <li
               aria-hidden
               className={`${labelRow} min-h-0 py-1 text-footnote font-medium text-a11y-muted max-sm:hidden`}
             >
               <span>{t({ message: "Name", context: "label settings column" })}</span>
-              <span>{t({ message: "In sidebar", context: "label settings column" })}</span>
+              <span id={headingId("sidebar")}>
+                {t({ message: "In sidebar", context: "label settings column" })}
+              </span>
               {caps?.serverLabelStyle && (
-                <span>{t({ message: "In message list", context: "label settings column" })}</span>
+                <span id={headingId("list")}>
+                  {t({ message: "In message list", context: "label settings column" })}
+                </span>
               )}
               <span />
-              <span>{t({ message: "Color", context: "label settings column" })}</span>
+              <span id={headingId("color")}>
+                {t({ message: "Color", context: "label settings column" })}
+              </span>
               <span />
             </li>
           )}
-          {labels.map((label) => {
+          {labels.map((label, index) => {
             const pref = prefs.find((p) => p.accountId === accountId && p.id === label.id) ?? {
               accountId,
               id: label.id,
@@ -192,11 +203,14 @@ export function OrganizationSettings({ accounts }: { accounts: readonly Account[
                     would lay its content out in an anonymous box, which drops the subgrid. */}
                 {/* oxlint-disable-next-line jsx-a11y/prefer-tag-over-role */}
                 <div role="group" aria-label={label.name} className={labelRow}>
-                  <span className="min-w-0 flex-1 truncate">{label.name}</span>
+                  <span id={rowId(index)} className="min-w-0 flex-1 truncate">
+                    {label.name}
+                  </span>
                   {caps?.serverLabelStyle ? (
                     <>
                       <Select
                         aria-label={t({ message: "In sidebar", context: "label settings column" })}
+                        aria-labelledby={`${rowId(index)} ${headingId("sidebar")}`}
                         value={label.labelListVisibility ?? "labelShow"}
                         options={[
                           { value: "labelShow", label: t`Show` },
@@ -217,6 +231,7 @@ export function OrganizationSettings({ accounts }: { accounts: readonly Account[
                           message: "In message list",
                           context: "label settings column",
                         })}
+                        aria-labelledby={`${rowId(index)} ${headingId("list")}`}
                         value={label.messageListVisibility ?? "show"}
                         options={[
                           { value: "show", label: t`Show` },
@@ -260,6 +275,7 @@ export function OrganizationSettings({ accounts }: { accounts: readonly Account[
                   </label>
                   <Select
                     aria-label={t({ message: "Color", context: "label settings column" })}
+                    aria-labelledby={`${rowId(index)} ${headingId("color")}`}
                     value={current}
                     options={[
                       { value: "none", label: t`Default`, icon: swatch(null) },
