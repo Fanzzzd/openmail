@@ -18,6 +18,8 @@ for (const action of ["discard", "send"] as const) {
         const mailbox = yield* Mailbox;
         const store = yield* Store;
         const account = yield* mailbox.accounts.connect({ provider: "gmail" });
+        // Joins the sync connect started, so its flush cannot push the cleanup under the test.
+        yield* mailbox.sync.sync(account.id);
         const input = { id: "uncertain-copy", accountId: account.id, message: outgoing };
         yield* store.putDraft(input);
         yield* store.setDraftCreateState(input.id, {
