@@ -25,7 +25,8 @@ export function ProfileSwitcher({
   const { t } = useLingui();
   if (!profiles.length) return null;
   return (
-    <div className="drag flex h-9 shrink-0 items-center justify-end border-b border-edge px-4">
+    // A header outside any section is the page's banner landmark, so the picker sits in one.
+    <header className="drag flex h-9 shrink-0 items-center justify-end border-b border-edge px-4">
       <Select
         className="no-drag"
         aria-label={t`Space`}
@@ -37,7 +38,7 @@ export function ProfileSwitcher({
           ...profiles.map((p) => ({ value: p.id, label: `${p.icon} ${p.name}` })),
         ]}
       />
-    </div>
+    </header>
   );
 }
 export function DefaultProfilesPrompt({
