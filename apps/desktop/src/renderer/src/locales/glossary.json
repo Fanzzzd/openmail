@@ -287,6 +287,9 @@
     "ru": "быстр\\p{L}* фильтр",
     "es": "filtros? rápidos?"
   },
+  "Save": {
+    "de": "speicher"
+  },
   "Move up": {
     "cs": "posunout(?: \\S+)? nahoru"
   },

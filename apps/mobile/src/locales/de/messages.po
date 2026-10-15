@@ -858,12 +858,12 @@ msgstr "Umformulieren"
 #. js-lingui-explicit-id
 #: src/failed-op-notice.tsx
 msgid "Save draft"
-msgstr "Entwurf sichern"
+msgstr "Entwurf speichern"
 
 #. js-lingui-explicit-id
 #: src/ai-settings.tsx
 msgid "Save key"
-msgstr "Schlüssel sichern"
+msgstr "Schlüssel speichern"
 
 #. js-lingui-explicit-id
 #: src/failed-op-notice.tsx

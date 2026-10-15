@@ -23,6 +23,8 @@ const selectors: Record<string, string> = {
   "AI Access": "\\bAI Access\\b",
   // A space groups accounts; disk space is a different word.
   Space: "(?<!disk )\\bspaces?\\b",
+  // Save is Speichern in German, never Sichern; daylight saving is a different word.
+  Save: "(?<!daylight[- ])\\bsav(?:e|ed|es|ing)\\b",
   // Czech buttons are infinitives (Posunout dolů), not the imperative Posuňte se.
   "Move up": "\\bmove up\\b",
   "Move down": "\\bmove down\\b",

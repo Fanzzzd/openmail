@@ -1041,7 +1041,7 @@ msgstr "Anhänge überschreiten das Erstellungslimit von 30 MB."
 
 #: src/renderer/src/features/downloads/Downloads.tsx
 msgid "Attachments you save appear here."
-msgstr "Gesicherte Anhänge werden hier angezeigt."
+msgstr "Gespeicherte Anhänge werden hier angezeigt."
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Attendees:"
@@ -2194,11 +2194,11 @@ msgstr "Konnte nicht gespeichert werden"
 
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "Couldn't save the API key in the system keychain."
-msgstr "Der API-Schlüssel konnte nicht im Systemschlüsselbund gesichert werden."
+msgstr "Der API-Schlüssel konnte nicht im Systemschlüsselbund gespeichert werden."
 
 #: src/renderer/src/lib/errors.ts
 msgid "Couldn't save the API key in the system keychain. Unlock the keychain and try again."
-msgstr "Der API-Schlüssel konnte nicht im Systemschlüsselbund gesichert werden. Entsperre den Schlüsselbund und versuche es erneut."
+msgstr "Der API-Schlüssel konnte nicht im Systemschlüsselbund gespeichert werden. Entsperre den Schlüsselbund und versuche es erneut."
 
 #: src/renderer/src/app/use-app-messages.ts
 msgid "Couldn't save the draft: {reason}"
@@ -6250,7 +6250,7 @@ msgstr "Samstag"
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 #: src/renderer/src/features/settings/sections/VacationEditor.tsx
 msgid "Save"
-msgstr "Sichern"
+msgstr "Speichern"
 
 #. placeholder {0}: file.filename
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
@@ -6261,11 +6261,11 @@ msgstr "Speichern {0}"
 #: src/renderer/src/features/settings/sections/AccountControls.tsx
 msgctxt "account row action"
 msgid "Save <0>{email}</0>"
-msgstr "Sichern <0>{email}</0>"
+msgstr "Speichern <0>{email}</0>"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Save all"
-msgstr "Alle sichern"
+msgstr "Alle speichern"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Save an Anthropic API key in Settings → AI Access."
@@ -6278,7 +6278,7 @@ msgstr "Als PDF speichern…"
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Save draft"
-msgstr "Entwurf sichern"
+msgstr "Entwurf speichern"
 
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Save filter"
@@ -6286,7 +6286,7 @@ msgstr "Filter speichern"
 
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "Save key"
-msgstr "Schlüssel sichern"
+msgstr "Schlüssel speichern"
 
 #: src/renderer/src/features/reader/RawMessage.tsx
 #: src/renderer/src/features/reader/ThreadMessage.tsx
@@ -6300,11 +6300,11 @@ msgstr "Nachricht als PDF speichern…"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Save selected"
-msgstr "Auswahl sichern"
+msgstr "Auswahl speichern"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Save selected to…"
-msgstr "Auswahl sichern unter…"
+msgstr "Auswahl speichern unter…"
 
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "Save sent copy"
@@ -6320,17 +6320,17 @@ msgstr "Diese Nachricht als Vorlage speichern…"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Save to attachment folder"
-msgstr "Im Anhangsordner sichern"
+msgstr "Im Anhangsordner speichern"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Save to…"
-msgstr "Sichern unter…"
+msgstr "Speichern unter…"
 
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Saved"
-msgstr "Gesichert"
+msgstr "Gespeichert"
 
 #: src/renderer/src/features/reader/reader-actions.ts
 msgid "Saved as EML"
@@ -6354,12 +6354,12 @@ msgstr "Gespeichert. Neue Anmeldungen verwenden diesen Client."
 
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Saving…"
-msgstr "Sichern…"
+msgstr "Speichern…"
 
 #: src/renderer/src/features/accounts/OAuthStep.tsx
 msgctxt "in progress"
 msgid "Saving…"
-msgstr "Sichern…"
+msgstr "Speichern…"
 
 #: src/renderer/src/features/search/SearchField.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
