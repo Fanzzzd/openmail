@@ -30,7 +30,7 @@ import { goToFolderAtom } from "../features/sidebar/go-to-folder";
 import { dialogAtom } from "../state/ui";
 import type { useMailCompose } from "./use-mail-compose";
 import type { useMailSelection } from "./use-mail-selection";
-import { closeNewestSurface, useSurfaceOpen } from "../ui/open-surfaces";
+import { closeSheet, useSurfaceOpen } from "../ui/open-surfaces";
 export function useNativeMenuBridge({
   searchRef,
   navigation,
@@ -181,9 +181,14 @@ export function useNativeMenuBridge({
       case "CloseSheet":
         // The newest dialog, sheet or popover closes first: a palette or popover over the mail,
         // then Settings and the other app dialogs, which sit above an inline composer.
-        if (closeNewestSurface()) break;
-        if (dialog) setDialog(null);
-        else if (compose) setCloseRequested((n) => n + 1);
+        closeSheet(
+          () => window.close(),
+          () => {
+            if (dialog) setDialog(null);
+            else if (compose) setCloseRequested((n) => n + 1);
+            return Boolean(dialog || compose);
+          },
+        );
         break;
       case "ShowUndo":
         if (event.undo._tag === "Batch")

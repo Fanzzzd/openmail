@@ -3,7 +3,7 @@ import { validOpenFile } from "../security/security-policy";
 import { nativeTabMenu } from "../windows/window-keys";
 import { readDockFiles, dockFileReason } from "../files/dock-files";
 import { NO_MENU_SELECTION, type NativeMenuState } from "../../shared/native-actions";
-import { applicationMenuTemplate } from "./app-menu";
+import { applicationMenuTemplate, closeWindowTarget } from "./app-menu";
 import { OPENMAIL_DOCS_URL } from "../../shared/docs";
 import { configureSpelling, installSpellingMenu } from "../windows/spellcheck";
 import { approveUpdateQuit } from "../updates/update-install";
@@ -265,6 +265,8 @@ export const DesktopLive = Layer.effect(
       );
     };
     let menuKey = "";
+    /** The window focused last, which Close window acts on while the app is in the background. */
+    let lastUsedWindow: BrowserWindow | undefined;
     const refreshLock = yield* Semaphore.make(1);
     const refresh = refreshLock.withPermits(1)(
       Effect.gen(function* () {
@@ -372,9 +374,19 @@ export const DesktopLive = Layer.effect(
                 checkUpdates,
                 command,
                 feedback: () => deliver({ _tag: "Command", command: "feedback" }),
-                closeSheet: () => {
-                  const target = BrowserWindow.getFocusedWindow();
-                  if (target) deliver({ _tag: "CloseSheet" }, target);
+                closeWindow: () => {
+                  const target = closeWindowTarget({
+                    platform: process.platform,
+                    focused: BrowserWindow.getFocusedWindow(),
+                    lastUsed:
+                      lastUsedWindow && !lastUsedWindow.isDestroyed() ? lastUsedWindow : null,
+                    appActive: process.platform === "darwin" && app.isActive(),
+                    sheetOpen: (win) => menuStates.get(win.webContents.id)?.sheet === true,
+                  });
+                  if (target._tag === "Sheet") deliver({ _tag: "CloseSheet" }, target.window);
+                  else if (target._tag === "Window") target.window.close();
+                  else if (target._tag === "FirstResponder")
+                    Menu.sendActionToFirstResponder("performClose:");
                 },
                 openHelp: () =>
                   run(
@@ -456,6 +468,7 @@ export const DesktopLive = Layer.effect(
       mailbox.sync.resetConnectivity().pipe(Effect.andThen(mailbox.sync.sync()), Effect.asVoid),
     );
     const onFocus = (_event: Electron.Event, win: BrowserWindow) => {
+      lastUsedWindow = win;
       if (isMainWindow(win)) activeSpace = spaces.get(win.webContents.id) ?? "all";
       run(refresh);
     };

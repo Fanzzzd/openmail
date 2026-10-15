@@ -1,6 +1,7 @@
 import { mailHref } from "../../../shared/routes";
 import type { AiClientView } from "../../../shared/ai-clients";
 import { Deferred, Effect, Stream } from "effect";
+import { constVoid } from "effect/Function";
 import { AuthError, ProviderError, PermanentError } from "@openmail/core/portable";
 import { afterEach, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
@@ -929,4 +930,52 @@ it("Close window closes an open palette or dialog first, and only then the windo
   await eventually(() => expect(sheet()).toMatchObject({ state: { sheet: false } }));
   // Nothing else closed: the message stays selected.
   expect(row(h.id("one")).getAttribute("aria-selected")).toBe("true");
+});
+
+it("the menu state says no sheet with nothing open, and Close window then closes the window", async () => {
+  current = await flow();
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  const sheet = () =>
+    h.requests.filter((request) => request.tag === "SetNativeMenuState").at(-1)?.payload;
+  const closed = async (open: () => Promise<void>, gone: () => unknown) => {
+    await open();
+    await eventually(() => expect(sheet()).toMatchObject({ state: { sheet: true } }));
+    await h.event({ _tag: "CloseSheet" });
+    await eventually(() => expect(gone()).toBeNull());
+    await eventually(() => expect(sheet()).toMatchObject({ state: { sheet: false } }));
+  };
+  await eventually(() => expect(sheet()).toMatchObject({ state: { sheet: false } }));
+  const closeWindow = vi.spyOn(window, "close").mockImplementation(constVoid);
+
+  await closed(
+    () => h.event({ _tag: "Command", command: "settings" }),
+    () => screen.queryByRole("dialog", { name: "Settings" }),
+  );
+  await closed(
+    () => h.event({ _tag: "Command", command: "help" }),
+    () => screen.queryByRole("dialog"),
+  );
+  await closed(
+    async () => {
+      clickButton("Downloads");
+      await eventually(() => expect(screen.getByRole("dialog")).toBeTruthy());
+    },
+    () => screen.queryByRole("dialog"),
+  );
+  await closed(
+    async () => {
+      clickButton("New message");
+      await eventually(() => expect(document.querySelector("[data-compose]")).toBeTruthy());
+    },
+    () => document.querySelector("[data-compose]"),
+  );
+  expect(closeWindow).not.toHaveBeenCalled();
+
+  // Main sends CloseSheet only while the menu state says a sheet is open. If that state was out
+  // of date, the window closes instead of the key doing nothing.
+  await h.event({ _tag: "CloseSheet" });
+  await eventually(() => expect(closeWindow).toHaveBeenCalledOnce());
+  expect(row(h.id("one"))).toBeTruthy();
+  closeWindow.mockRestore();
 });

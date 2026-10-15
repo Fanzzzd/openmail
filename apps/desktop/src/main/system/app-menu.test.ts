@@ -10,7 +10,7 @@ import {
   type MenuShortcut,
   type ShortcutSet,
 } from "../../shared/shortcuts";
-import { applicationMenuTemplate, nativeActionAccelerator } from "./app-menu";
+import { applicationMenuTemplate, closeWindowTarget, nativeActionAccelerator } from "./app-menu";
 import { DEFAULT_DESKTOP_LABELS } from "./default-labels";
 import { OPENMAIL_DOCS_URL } from "../../shared/docs";
 import { externalUrl } from "../../shared/external-url";
@@ -28,7 +28,7 @@ const template = (platform: NodeJS.Platform, shortcutSet: ShortcutSet = "mimestr
     checkUpdates: vi.fn(),
     command: vi.fn(),
     feedback: vi.fn(),
-    closeSheet: vi.fn(),
+    closeWindow: vi.fn(),
     openHelp,
     attachFiles: vi.fn(),
     newWindow: vi.fn(),
@@ -156,7 +156,6 @@ it("role items carry sentence-case labels instead of Electron's Title Case", () 
     all.find((item) => item.role === role)?.label;
   expect(roleLabel("hideOthers")).toBe("Hide others");
   expect(roleLabel("unhide")).toBe("Show all");
-  expect(roleLabel("close")).toBe("Close window");
   expect(roleLabel("front")).toBe("Bring all to front");
   for (const item of all)
     if (item.role && item.role !== "appMenu" && item.role !== "help")
@@ -171,7 +170,7 @@ it("role items carry sentence-case labels instead of Electron's Title Case", () 
     checkUpdates: vi.fn(),
     command: vi.fn(),
     feedback: vi.fn(),
-    closeSheet: vi.fn(),
+    closeWindow: vi.fn(),
     openHelp: vi.fn(),
     attachFiles: vi.fn(),
     newWindow: vi.fn(),
@@ -183,7 +182,7 @@ it("role items carry sentence-case labels instead of Electron's Title Case", () 
       menuLabels: { close: "Fenster schließen", view: "Darstellung" },
     },
   });
-  expect(items(translated).find((item) => item.role === "close")?.label).toBe("Fenster schließen");
+  expect(labels(submenu(translated, DEFAULT_DESKTOP_LABELS.file))).toContain("Fenster schließen");
   expect(labels(translated)).toContain("Darstellung");
 });
 
@@ -247,7 +246,7 @@ it("the View menu's pane toggles say Show or Hide by what the focused window sho
           checkUpdates: vi.fn(),
           command: vi.fn(),
           feedback: vi.fn(),
-          closeSheet: vi.fn(),
+          closeWindow: vi.fn(),
           openHelp: vi.fn(),
           attachFiles: vi.fn(),
           newWindow: vi.fn(),
@@ -279,8 +278,8 @@ it("the View menu's pane toggles say Show or Hide by what the focused window sho
   );
 });
 
-it("Close window closes an open sheet first, and the window otherwise", () => {
-  const closeSheet = vi.fn<() => void>();
+it("Close window is one item whose target is chosen when it runs", () => {
+  const closeWindow = vi.fn<() => void>();
   const build = (menuState: NativeMenuState) =>
     applicationMenuTemplate({
       platform: "darwin",
@@ -292,7 +291,7 @@ it("Close window closes an open sheet first, and the window otherwise", () => {
       checkUpdates: vi.fn(),
       command: vi.fn(),
       feedback: vi.fn(),
-      closeSheet,
+      closeWindow,
       openHelp: vi.fn(),
       attachFiles: vi.fn(),
       newWindow: vi.fn(),
@@ -304,19 +303,55 @@ it("Close window closes an open sheet first, and the window otherwise", () => {
     submenu(build(menuState), DEFAULT_DESKTOP_LABELS.file).find(
       (item) => item.label === "Close window",
     );
-  expect(close(NO_MENU_SELECTION)).toMatchObject({
-    role: "close",
-    accelerator: menuAccelerator("close"),
-  });
-  const sheet = close({ ...NO_MENU_SELECTION, sheet: true });
-  expect(sheet?.role).toBeUndefined();
-  expect(sheet?.accelerator).toBe("CommandOrControl+w");
-  sheet?.click?.(
+  // No role: the "close" role does nothing while the app has no key window.
+  for (const state of [NO_MENU_SELECTION, { ...NO_MENU_SELECTION, sheet: true }]) {
+    const item = close(state);
+    expect(item?.role).toBeUndefined();
+    expect(item?.accelerator).toBe(menuAccelerator("close"));
+  }
+  close(NO_MENU_SELECTION)?.click?.(
     Object.create(null),
     undefined,
     Object.assign(Object.create(null), { triggeredByAccelerator: true }),
   );
-  expect(closeSheet).toHaveBeenCalledOnce();
+  expect(closeWindow).toHaveBeenCalledOnce();
+});
+
+it("Close window closes the focused window's sheet, else the window", () => {
+  const sheets = new Set(["covered"]);
+  const target = (input: Partial<Parameters<typeof closeWindowTarget<string>>[0]>) =>
+    closeWindowTarget<string>({
+      platform: "darwin",
+      focused: null,
+      lastUsed: null,
+      appActive: true,
+      sheetOpen: (window) => sheets.has(window),
+      ...input,
+    });
+  expect(target({ focused: "covered" })).toEqual({ _tag: "Sheet", window: "covered" });
+  expect(target({ focused: "plain", lastUsed: "covered" })).toEqual({
+    _tag: "Window",
+    window: "plain",
+  });
+  // In the background (Sidescreen, the accessibility menu) the window used last closes.
+  expect(target({ appActive: false, lastUsed: "plain" })).toEqual({
+    _tag: "Window",
+    window: "plain",
+  });
+  expect(target({ appActive: false, lastUsed: "covered" })).toEqual({
+    _tag: "Sheet",
+    window: "covered",
+  });
+  // Active without an app window focused: a native panel such as About has the keyboard.
+  expect(target({ lastUsed: "plain" })).toEqual({ _tag: "FirstResponder" });
+  expect(target({ appActive: false })).toEqual({ _tag: "FirstResponder" });
+  expect(target({ platform: "win32", appActive: false, lastUsed: "plain" })).toEqual({
+    _tag: "None",
+  });
+  expect(target({ platform: "win32", focused: "plain" })).toEqual({
+    _tag: "Window",
+    window: "plain",
+  });
 });
 
 it("the Window menu is the system Window menu and keeps its own items first", () => {
@@ -339,7 +374,6 @@ it("standard menu items carry the fixed accelerators the docs page lists", () =>
       .map((item) => [item.role, item.accelerator]),
   );
   const roles: [MenuShortcut, MenuItemConstructorOptions["role"]][] = [
-    ["close", "close"],
     ["redo", "redo"],
     ["cut", "cut"],
     ["copy", "copy"],
@@ -350,10 +384,13 @@ it("standard menu items carry the fixed accelerators the docs page lists", () =>
     ["quit", "quit"],
   ];
   for (const [item, role] of roles) expect(byRole.get(role), item).toBe(menuAccelerator(item));
-  expect([...roles.map(([item]) => item), "selectAll"].toSorted()).toEqual(
+  expect([...roles.map(([item]) => item), "close", "selectAll"].toSorted()).toEqual(
     Object.keys(MENU_SHORTCUTS).toSorted(),
   );
   expect(
     items(menu).find((item) => item.label === DEFAULT_DESKTOP_LABELS.selectAll)?.accelerator,
   ).toBe(menuAccelerator("selectAll"));
+  expect(items(menu).find((item) => item.label === "Close window")?.accelerator).toBe(
+    menuAccelerator("close"),
+  );
 });

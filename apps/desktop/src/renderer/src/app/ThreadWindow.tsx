@@ -41,7 +41,7 @@ import { liveUpdatesAtom } from "../state/events";
 import { Downloads } from "../features/downloads/Downloads";
 import { modifyMessages, modifyThreads, modifyWithUndo, useRunMail, withMail } from "../state/mail";
 import { accountsAtom, labelsAtom, prefsAtom, threadAtom, sendAsAtom } from "../state/queries";
-import { closeNewestSurface, useSurfaceOpen } from "../ui/open-surfaces";
+import { closeSheet, useSurfaceOpen } from "../ui/open-surfaces";
 
 /** Ops after which the thread has left where it was; the window closes, as in Mail. */
 const LEAVES = new Set<MailOp["kind"]>(["archive", "trash", "spam"]);
@@ -287,7 +287,7 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
   useDesktopEvents((event) => {
     // Close window with a dialog or popover open closes that instead.
     if (event._tag === "CloseSheet") {
-      closeNewestSurface();
+      closeSheet(() => window.close());
       return;
     }
     if (

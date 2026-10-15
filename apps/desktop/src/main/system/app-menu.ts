@@ -67,8 +67,8 @@ export interface AppMenuInput {
   readonly checkUpdates: () => void;
   readonly command: (name: "settings" | "help" | "compose") => void;
   readonly feedback: () => void;
-  /** Close window while a sheet covers the window: the renderer closes the sheet instead. */
-  readonly closeSheet: () => void;
+  /** Closes the newest sheet over the window, or the window. See `closeWindowTarget`. */
+  readonly closeWindow: () => void;
   /** Opens the docs site in the default browser. */
   readonly openHelp: () => void;
   readonly attachFiles: () => void;
@@ -76,6 +76,32 @@ export interface AppMenuInput {
   readonly edit: (action: "undo" | "selectAll") => void;
   readonly undoSend: () => void;
   readonly nativeAction: (action: NativeAction, triggeredByAccelerator: boolean) => void;
+}
+
+export type CloseWindowTarget<W> =
+  | { readonly _tag: "Sheet" | "Window"; readonly window: W }
+  | { readonly _tag: "FirstResponder" }
+  | { readonly _tag: "None" };
+
+/**
+ * What Close window acts on. The menu item decides when it is chosen, from the window's latest
+ * menu state, so a menu built before a sheet opened or closed can't send the key elsewhere.
+ * An app in the background has no key window, yet macOS still runs its menu items from a key
+ * press or the accessibility menu (Sidescreen does both), so the window used last closes then.
+ * While the app is active without a focused app window, a native panel such as About has the
+ * keyboard, and the close goes to it.
+ */
+export function closeWindowTarget<W>(input: {
+  readonly platform: NodeJS.Platform;
+  readonly focused: W | null;
+  readonly lastUsed: W | null;
+  readonly appActive: boolean;
+  readonly sheetOpen: (window: W) => boolean;
+}): CloseWindowTarget<W> {
+  const mac = input.platform === "darwin";
+  const window = input.focused ?? (mac && !input.appActive ? input.lastUsed : null);
+  if (window) return { _tag: input.sheetOpen(window) ? "Sheet" : "Window", window };
+  return mac ? { _tag: "FirstResponder" } : { _tag: "None" };
 }
 
 /** The accelerator an action's menu item shows and registers, if it has a ⌘ key. */
@@ -182,13 +208,7 @@ export function applicationMenuTemplate(input: AppMenuInput): MenuItemConstructo
               },
             ]),
         { type: "separator" },
-        input.menuState.sheet
-          ? {
-              label: label("close"),
-              accelerator: menuAccelerator("close"),
-              click: input.closeSheet,
-            }
-          : { role: "close", label: label("close"), accelerator: menuAccelerator("close") },
+        { label: label("close"), accelerator: menuAccelerator("close"), click: input.closeWindow },
       ],
     },
     {

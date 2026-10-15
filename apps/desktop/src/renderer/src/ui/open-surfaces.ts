@@ -43,9 +43,19 @@ export function useSurfaceOpen(): boolean {
 }
 
 /** Closes the newest open surface. False when none is open. */
-export function closeNewestSurface(): boolean {
+function closeNewestSurface(): boolean {
   const newest = open.at(-1);
   if (!newest) return false;
   newest.close();
   return true;
+}
+
+/**
+ * Close window while this window's menu state says a sheet is open. The newest surface closes
+ * first, then `closeOther` (an app dialog or the inline composer). With nothing to close, the
+ * state main acted on was out of date, so the window closes: the key never does nothing.
+ */
+export function closeSheet(closeWindow: () => void, closeOther = () => false): void {
+  if (closeNewestSurface() || closeOther()) return;
+  closeWindow();
 }
