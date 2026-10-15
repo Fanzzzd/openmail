@@ -1,5 +1,5 @@
 import { assert, it } from "@effect/vitest";
-import { Effect, Layer, ConfigProvider, Option } from "effect";
+import { ConfigProvider, Effect, Layer, Logger, Option } from "effect";
 import { HttpClient } from "effect/http";
 import { makeGmail } from "../providers/gmail/gmail.js";
 import { makeOutlook } from "../providers/outlook/outlook.js";
@@ -261,9 +261,14 @@ it.effect("OPENMAIL_OFFLINE refuses every provider method without calling it", (
 
 it.effect("an offline session syncs and checks health without one provider call", () => {
   const server = fakeServer("me@gmail.com");
+  const logged: unknown[] = [];
+  const logger = Logger.make((options) => {
+    logged.push(...(Array.isArray(options.message) ? options.message : [options.message]));
+  });
   return Effect.gen(function* () {
     const mailbox = yield* Mailbox;
     const store = yield* Store;
+    // No refresh token is stored for the account, as in the demo profile.
     const account = yield* store.upsertAccount("gmail", "me@gmail.com");
     const results = yield* mailbox.sync.sync(account.id);
     assert.ok(results.length > 0);
@@ -272,6 +277,17 @@ it.effect("an offline session syncs and checks health without one provider call"
     assert.strictEqual(server.pulls.length, 0);
     assert.strictEqual(server.pushed.length, 0);
     assert.strictEqual(server.sent.length, 0);
+    // Offline is an expected, typed failure: sync records it as such, never as a crash.
+    assert.deepStrictEqual(
+      logged.filter(
+        (value) =>
+          typeof value === "object" &&
+          value !== null &&
+          "_tag" in value &&
+          value._tag === "SyncCrashDiagnostic",
+      ),
+      [],
+    );
   }).pipe(
     Effect.provide(
       TestMailbox({ gmail: server }).pipe(
@@ -282,5 +298,6 @@ it.effect("an offline session syncs and checks health without one provider call"
         ),
       ),
     ),
+    Effect.provide(Logger.layer([logger])),
   );
 });

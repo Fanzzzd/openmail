@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Stream } from "effect";
 import { ProviderError } from "../domain/errors.js";
 import type { ProviderAdapter } from "../providers/adapter.js";
 
@@ -63,7 +63,14 @@ export function readOnlyAdapter(adapter: ProviderAdapter): ProviderAdapter {
 
 export const OFFLINE_MESSAGE = "Network calls are disabled in this offline session";
 
-const offline = () => Effect.fail(new ProviderError({ message: OFFLINE_MESSAGE }));
+/** Deferred: sync waits for the next run instead of retrying a call that can't go out. */
+const offlineError = () => new ProviderError({ message: OFFLINE_MESSAGE, deferred: true });
+const offline = () => Effect.fail(offlineError());
+/** `pull` returns a stream; an Effect in its place made every offline sync a defect. */
+const offlineStream = () => Stream.fail(offlineError());
+/** The methods that return a Stream rather than an Effect. */
+const STREAM_METHODS: ReadonlySet<PropertyKey> = new Set<keyof ProviderAdapter>(["pull"]);
+const offlineMethod = (key: PropertyKey) => (STREAM_METHODS.has(key) ? offlineStream : offline);
 
 /**
  * OPENMAIL_OFFLINE=1 (the desktop smoke's default): every provider method fails without
@@ -73,14 +80,14 @@ const offline = () => Effect.fail(new ProviderError({ message: OFFLINE_MESSAGE }
 export function offlineAdapter(adapter: ProviderAdapter): ProviderAdapter {
   return new Proxy(adapter, {
     // Never evaluate the adapter's own value, so a getter cannot reach the network either.
-    get: (target, key) => (key in target ? offline : undefined),
+    get: (target, key) => (key in target ? offlineMethod(key) : undefined),
     getOwnPropertyDescriptor(target, key) {
       const descriptor = Reflect.getOwnPropertyDescriptor(target, key);
       if (!descriptor) return descriptor;
       return {
         configurable: descriptor.configurable,
         enumerable: descriptor.enumerable,
-        value: offline,
+        value: offlineMethod(key),
         writable: false,
       };
     },
