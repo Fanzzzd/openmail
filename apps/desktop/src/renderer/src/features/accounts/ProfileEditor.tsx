@@ -4,7 +4,7 @@ import { Radio } from "@base-ui/react/radio";
 import { RadioGroup } from "@base-ui/react/radio-group";
 import { PROFILE_COLORS } from "@openmail/core/schema";
 import { Exit } from "effect";
-import { useState } from "react";
+import { useId, useState } from "react";
 
 import type { Account, Profile, ProfileColor } from "../../../../shared/api";
 import { resultError } from "../../lib/errors";
@@ -75,7 +75,9 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
     }
   };
 
-  const error = resultError(i18n, save) ?? resultError(i18n, remove);
+  const saveError = resultError(i18n, save);
+  const error = saveError ?? resultError(i18n, remove);
+  const errorId = useId();
   const title = profile ? t`Edit space` : t`New space`;
   const profileName = (id: string | null) => profiles.find((p) => p.id === id)?.name;
 
@@ -100,6 +102,9 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
             autoFocus
             value={name}
             onChange={(e) => setName(e.target.value)}
+            aria-label={t`Name, like Work`}
+            aria-invalid={saveError ? true : undefined}
+            aria-describedby={error ? errorId : undefined}
             placeholder={t`Name, like Work`}
             className={`min-w-0 flex-1 ${formInput}`}
           />
@@ -120,7 +125,7 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
                 <Radio.Root
                   key={i}
                   value={i}
-                  className="flex size-8 items-center justify-center rounded-control text-title outline-offset-1 outline-a11y-focus transition-colors duration-100 hover:bg-fill-hover focus-visible:outline-2 data-checked:bg-fill-pressed motion-reduce:transition-none"
+                  className="flex size-8 items-center justify-center rounded-control text-title outline-offset-1 outline-a11y-focus transition-colors duration-100 hover:bg-fill-hover focus-visible:outline-2 data-checked:bg-fill-pressed dark:ring-1 dark:ring-white/20 dark:not-data-checked:bg-white/[0.08] motion-reduce:transition-none"
                 >
                   {i}
                 </Radio.Root>
@@ -203,7 +208,7 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
         </fieldset>
 
         {error && (
-          <p role="alert" className="mt-3 text-a11y-danger">
+          <p id={errorId} role="alert" className="mt-3 text-a11y-danger">
             {error}
           </p>
         )}
