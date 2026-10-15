@@ -491,6 +491,7 @@ export function ThreadView({
         )}
         {!menuInToolbar && (
           <DropdownMenu
+            label={t`More actions`}
             trigger={
               <button
                 type="button"

@@ -186,6 +186,7 @@ function TextDates({ events, message }: { events: CalendarEvent[]; message: Mess
   return (
     <div className="mt-2">
       <DropdownMenu
+        label={t`Add to calendar`}
         align="start"
         trigger={
           <button

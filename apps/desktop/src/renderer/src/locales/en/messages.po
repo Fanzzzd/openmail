@@ -1114,6 +1114,7 @@ msgid "Background color"
 msgstr "Background color"
 
 #: src/renderer/src/features/mail-list/BatchActions.tsx
+#: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Batch actions"
 msgstr "Batch actions"
 
@@ -3082,6 +3083,8 @@ msgid "Folder action failed: {reason}"
 msgstr "Folder action failed: {reason}"
 
 #: src/renderer/src/features/organize/FolderActions.tsx
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
 msgid "Folder actions"
 msgstr "Folder actions"
 
@@ -4392,7 +4395,6 @@ msgid "More"
 msgstr "More"
 
 #: src/renderer/src/features/reader/ThreadView.tsx
-#: src/renderer/src/ui/Menu.tsx
 msgid "More actions"
 msgstr "More actions"
 
@@ -6563,6 +6565,10 @@ msgid "Sender"
 msgstr "Sender"
 
 #: src/renderer/src/features/reader/ThreadMessage.tsx
+msgid "Sender actions"
+msgstr "Sender actions"
+
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Sender authentication failed (DMARC)"
 msgstr "Sender authentication failed (DMARC)"
 
@@ -7015,6 +7021,7 @@ msgid "Source {n}: {name}"
 msgstr "Source {n}: {name}"
 
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
+#: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 msgid "Space"
 msgstr "Space"
 

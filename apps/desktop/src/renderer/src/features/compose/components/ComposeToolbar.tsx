@@ -179,6 +179,7 @@ export function ComposeToolbar({
           <ColorPopover disabled={disabled} onStyle={onStyle} />
           {shown.align && (
             <DropdownMenu
+              label={t`Alignment`}
               align="start"
               trigger={
                 <button
@@ -208,6 +209,7 @@ export function ComposeToolbar({
           scrolling under it stay hidden. */}
       <span className="flex shrink-0 coarse:sticky coarse:right-0 coarse:bg-raised coarse:pr-4">
         <DropdownMenu
+          label={t`More formatting`}
           trigger={
             <button type="button" aria-label={t`More formatting`} className={button}>
               <Ellipsis className="size-4" />

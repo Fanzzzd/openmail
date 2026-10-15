@@ -57,41 +57,39 @@ export function OpenWithSubmenu({
         <ChevronRight aria-hidden className="ml-4 size-3.5 opacity-60" />
       </Menu.SubmenuTrigger>
       <Menu.Portal>
-        <Menu.Positioner
-          render={<section aria-label={t`Open with`} />}
-          className="z-[60] outline-none"
-          alignOffset={-5}
-          sideOffset={-2}
-        >
-          <Menu.Popup
-            className={`max-h-[min(var(--available-height),320px)] min-w-48 overflow-y-auto p-[5px] ${popupSurface} ${popupMotion}`}
-          >
-            {apps.kind === "loading" && (
-              <MenuItem disabled onClick={constVoid}>
-                {t`Finding apps…`}
-              </MenuItem>
-            )}
-            {apps.kind === "error" && (
-              <MenuItem disabled onClick={constVoid}>
-                {apps.text}
-              </MenuItem>
-            )}
-            {apps.kind === "ready" && apps.apps.length === 0 && (
-              <MenuItem disabled onClick={constVoid}>
-                {t`No app can open this file`}
-              </MenuItem>
-            )}
-            {apps.kind === "ready" &&
-              apps.apps.map((app) => (
-                <MenuItem
-                  key={app.application}
-                  icon={AppWindow}
-                  onClick={() => onOpen(app.application)}
-                >
-                  {app.label}
+        <Menu.Positioner className="z-[60] outline-none" alignOffset={-5} sideOffset={-2}>
+          <section aria-label={t`Open with`}>
+            <Menu.Popup
+              aria-label={t`Open with`}
+              className={`max-h-[min(var(--available-height),320px)] min-w-48 overflow-y-auto p-[5px] ${popupSurface} ${popupMotion}`}
+            >
+              {apps.kind === "loading" && (
+                <MenuItem disabled onClick={constVoid}>
+                  {t`Finding apps…`}
                 </MenuItem>
-              ))}
-          </Menu.Popup>
+              )}
+              {apps.kind === "error" && (
+                <MenuItem disabled onClick={constVoid}>
+                  {apps.text}
+                </MenuItem>
+              )}
+              {apps.kind === "ready" && apps.apps.length === 0 && (
+                <MenuItem disabled onClick={constVoid}>
+                  {t`No app can open this file`}
+                </MenuItem>
+              )}
+              {apps.kind === "ready" &&
+                apps.apps.map((app) => (
+                  <MenuItem
+                    key={app.application}
+                    icon={AppWindow}
+                    onClick={() => onOpen(app.application)}
+                  >
+                    {app.label}
+                  </MenuItem>
+                ))}
+            </Menu.Popup>
+          </section>
         </Menu.Positioner>
       </Menu.Portal>
     </Menu.SubmenuRoot>

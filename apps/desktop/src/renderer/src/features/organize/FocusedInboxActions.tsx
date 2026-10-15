@@ -55,6 +55,7 @@ export function FocusedInboxActions({
   return (
     <>
       <DropdownMenu
+        label={t`Focused/Other`}
         trigger={
           <Toolbar.Button
             aria-label={t`Focused/Other`}

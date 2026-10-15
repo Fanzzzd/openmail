@@ -413,6 +413,7 @@ export function AttachmentList({
                 </button>
               </Tip>
               <DropdownMenu
+                label={t`Actions for ${file.filename}`}
                 trigger={
                   <button
                     type="button"

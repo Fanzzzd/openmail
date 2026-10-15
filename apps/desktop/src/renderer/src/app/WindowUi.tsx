@@ -1,4 +1,5 @@
 import { Menu } from "@base-ui/react/menu";
+import { useOpenSurface } from "../ui/open-surfaces";
 import { useLingui } from "@lingui/react/macro";
 import { Effect, Fiber, Stream } from "effect";
 import { constVoid } from "effect/Function";
@@ -74,14 +75,17 @@ export function TextContextMenu({
   const anchor = {
     getBoundingClientRect: () => DOMRect.fromRect({ x: menu.x, y: menu.y, width: 0, height: 0 }),
   };
+  const close = () => {
+    if (saved.current) restoreTextSelection(saved.current);
+    if (chosen.current) onCommand(chosen.current);
+    onClosed();
+  };
+  useOpenSurface(true, close);
   return (
     <Menu.Root
       open
       onOpenChange={(open) => {
-        if (open) return;
-        if (saved.current) restoreTextSelection(saved.current);
-        if (chosen.current) onCommand(chosen.current);
-        onClosed();
+        if (!open) close();
       }}
     >
       <Menu.Portal>
@@ -91,79 +95,81 @@ export function TextContextMenu({
           align="start"
           sideOffset={2}
           className="z-[70] outline-none"
-          render={<section aria-label={t`Text actions`} />}
         >
-          <Menu.Popup
-            finalFocus={false}
-            className={`min-w-52 overflow-y-auto p-[5px] ${popupSurface} ${popupMotion}`}
-          >
-            {menu.suggestions.map((word) => (
-              <MenuItem key={word} onClick={choose({ kind: "replace", word })}>
-                <span className="font-semibold">{word}</span>
-              </MenuItem>
-            ))}
-            {menu.misspelledWord && (
-              <>
-                {menu.suggestions.length === 0 && (
-                  <MenuItem disabled onClick={constVoid}>
-                    {t`No suggestions`}
+          <section aria-label={t`Text actions`}>
+            <Menu.Popup
+              aria-label={t`Text actions`}
+              finalFocus={false}
+              className={`min-w-52 overflow-y-auto p-[5px] ${popupSurface} ${popupMotion}`}
+            >
+              {menu.suggestions.map((word) => (
+                <MenuItem key={word} onClick={choose({ kind: "replace", word })}>
+                  <span className="font-semibold">{word}</span>
+                </MenuItem>
+              ))}
+              {menu.misspelledWord && (
+                <>
+                  {menu.suggestions.length === 0 && (
+                    <MenuItem disabled onClick={constVoid}>
+                      {t`No suggestions`}
+                    </MenuItem>
+                  )}
+                  <MenuItem icon={SpellCheck} onClick={choose({ kind: "learn" })}>
+                    {t`Add to dictionary`}
                   </MenuItem>
-                )}
-                <MenuItem icon={SpellCheck} onClick={choose({ kind: "learn" })}>
-                  {t`Add to dictionary`}
-                </MenuItem>
-                <MenuSeparator />
-              </>
-            )}
-            <MenuItem
-              icon={Scissors}
-              shortcut={`${MOD}X`}
-              disabled={!menu.canCut}
-              onClick={choose({ kind: "cut" })}
-            >
-              {t`Cut`}
-            </MenuItem>
-            <MenuItem
-              icon={Copy}
-              shortcut={`${MOD}C`}
-              disabled={!menu.canCopy}
-              onClick={choose({ kind: "copy" })}
-            >
-              {t`Copy`}
-            </MenuItem>
-            <MenuItem
-              icon={Clipboard}
-              shortcut={`${MOD}V`}
-              disabled={!menu.canPaste}
-              onClick={choose({ kind: "paste" })}
-            >
-              {t`Paste`}
-            </MenuItem>
-            <MenuItem
-              icon={TextSelect}
-              shortcut={`${MOD}A`}
-              onClick={choose({ kind: "selectAll" })}
-            >
-              {t`Select all`}
-            </MenuItem>
-            <MenuSeparator />
-            <MenuCheckboxItem
-              checked={menu.spellcheck}
-              onCheckedChange={() => {
-                chosen.current = { kind: "toggleSpellcheck" };
-              }}
-            >
-              {t`Check spelling while typing`}
-            </MenuCheckboxItem>
-            {menu.writingTools && (
-              <>
-                <MenuSeparator />
-                <MenuItem icon={Sparkles} onClick={choose({ kind: "writingTools" })}>
-                  {t`Writing Tools and Services…`}
-                </MenuItem>
-              </>
-            )}
-          </Menu.Popup>
+                  <MenuSeparator />
+                </>
+              )}
+              <MenuItem
+                icon={Scissors}
+                shortcut={`${MOD}X`}
+                disabled={!menu.canCut}
+                onClick={choose({ kind: "cut" })}
+              >
+                {t`Cut`}
+              </MenuItem>
+              <MenuItem
+                icon={Copy}
+                shortcut={`${MOD}C`}
+                disabled={!menu.canCopy}
+                onClick={choose({ kind: "copy" })}
+              >
+                {t`Copy`}
+              </MenuItem>
+              <MenuItem
+                icon={Clipboard}
+                shortcut={`${MOD}V`}
+                disabled={!menu.canPaste}
+                onClick={choose({ kind: "paste" })}
+              >
+                {t`Paste`}
+              </MenuItem>
+              <MenuItem
+                icon={TextSelect}
+                shortcut={`${MOD}A`}
+                onClick={choose({ kind: "selectAll" })}
+              >
+                {t`Select all`}
+              </MenuItem>
+              <MenuSeparator />
+              <MenuCheckboxItem
+                checked={menu.spellcheck}
+                onCheckedChange={() => {
+                  chosen.current = { kind: "toggleSpellcheck" };
+                }}
+              >
+                {t`Check spelling while typing`}
+              </MenuCheckboxItem>
+              {menu.writingTools && (
+                <>
+                  <MenuSeparator />
+                  <MenuItem icon={Sparkles} onClick={choose({ kind: "writingTools" })}>
+                    {t`Writing Tools and Services…`}
+                  </MenuItem>
+                </>
+              )}
+            </Menu.Popup>
+          </section>
         </Menu.Positioner>
       </Menu.Portal>
     </Menu.Root>

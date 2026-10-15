@@ -8,6 +8,7 @@ import {
 } from "../recipient-actions";
 import { AppleContactActions } from "../../contacts";
 import { DropdownMenu, MenuItem } from "../../../ui/Menu";
+import { useOpenSurface } from "../../../ui/open-surfaces";
 import { recipientLabel, splitAddresses } from "@openmail/core/schema";
 import { Combobox } from "@base-ui/react/combobox";
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
@@ -105,6 +106,7 @@ export function RecipientField({
   const byGroup = new Map(groups.map((group) => [`group:${group.accountId}:${group.id}`, group]));
   const items = [...byText.keys(), ...(query ? byGroup.keys() : [])];
   const listed = open && query !== "" && items.length > 0;
+  useOpenSurface(listed, () => setOpen(false));
 
   const emit = (next: string) => {
     if (next !== value) onChange(next);
@@ -368,6 +370,7 @@ function ChipActions({
   );
   return (
     <DropdownMenu
+      label={t`Actions for ${address.address}`}
       open={open}
       onOpenChange={setOpen}
       trigger={

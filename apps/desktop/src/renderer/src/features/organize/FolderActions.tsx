@@ -69,6 +69,7 @@ export function FolderActions({
         />
       )}
       <DropdownMenu
+        label={t`Folder actions`}
         trigger={
           <button
             type="button"

@@ -348,6 +348,7 @@ export function ThreadActions({
       ))}
       {supportsOp(caps, "classification") && <FocusedInboxActions state={state} onOp={onOp} />}
       <DropdownMenu
+        label={t`Conversation actions`}
         trigger={
           <Toolbar.Button aria-label={t`Conversation actions`} className={button}>
             <MoreHorizontal className="size-4" />

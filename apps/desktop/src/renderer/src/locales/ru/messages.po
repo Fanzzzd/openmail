@@ -1110,6 +1110,7 @@ msgid "Background color"
 msgstr "Цвет фона"
 
 #: src/renderer/src/features/mail-list/BatchActions.tsx
+#: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Batch actions"
 msgstr "Пакетные действия"
 
@@ -3078,6 +3079,8 @@ msgid "Folder action failed: {reason}"
 msgstr "Не удалось выполнить действие с папкой: {reason}."
 
 #: src/renderer/src/features/organize/FolderActions.tsx
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
 msgid "Folder actions"
 msgstr "Действия с папками"
 
@@ -4388,7 +4391,6 @@ msgid "More"
 msgstr "Ещё"
 
 #: src/renderer/src/features/reader/ThreadView.tsx
-#: src/renderer/src/ui/Menu.tsx
 msgid "More actions"
 msgstr "Другие действия"
 
@@ -6559,6 +6561,10 @@ msgid "Sender"
 msgstr "Отправитель"
 
 #: src/renderer/src/features/reader/ThreadMessage.tsx
+msgid "Sender actions"
+msgstr "Действия с отправителем"
+
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Sender authentication failed (DMARC)"
 msgstr "Проверка подлинности отправителя не пройдена (DMARC)"
 
@@ -7011,6 +7017,7 @@ msgid "Source {n}: {name}"
 msgstr "Источник {n}: {name}"
 
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
+#: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 msgid "Space"
 msgstr "Пространство"
 

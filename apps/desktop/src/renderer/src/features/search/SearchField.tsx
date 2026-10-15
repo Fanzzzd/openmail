@@ -34,6 +34,7 @@ import { labelsAtom, suggestionsAtom } from "../../state/queries";
 import { listQueryAtom } from "../../state/threads";
 import { DropdownMenu, MenuItem, MenuSeparator } from "../../ui/Menu";
 
+import { useOpenSurface } from "../../ui/open-surfaces";
 import { Select } from "../../ui/Select";
 import { Tip } from "../../ui/Tip";
 import { isTouchWeb } from "../../lib/platform";
@@ -115,6 +116,7 @@ export function SearchField({
   }));
   // An empty field with no history shows one hint instead of a list of filters.
   const hint = !value.trim() && recents.length === 0;
+  useOpenSurface(open && (items.length > 0 || hint), () => setOpen(false));
   const groupNames: Record<SearchSuggestionGroup, string> = {
     recent: t`Recent`,
     people: t`People`,
@@ -186,6 +188,7 @@ export function SearchField({
               className="flex max-w-48 min-w-0 items-center gap-1 rounded-item bg-blue-500/10 px-1.5 text-footnote whitespace-nowrap text-blue-800 dark:bg-blue-400/15 dark:text-blue-200"
             >
               <DropdownMenu
+                label={t`Modify ${token}`}
                 align="start"
                 trigger={
                   <button

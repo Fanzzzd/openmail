@@ -1110,6 +1110,7 @@ msgid "Background color"
 msgstr "Colore di sfondo"
 
 #: src/renderer/src/features/mail-list/BatchActions.tsx
+#: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Batch actions"
 msgstr "Azioni batch"
 
@@ -3078,6 +3079,8 @@ msgid "Folder action failed: {reason}"
 msgstr "Azione sulla cartella non riuscita: {reason}"
 
 #: src/renderer/src/features/organize/FolderActions.tsx
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
 msgid "Folder actions"
 msgstr "Azioni delle cartelle"
 
@@ -4388,7 +4391,6 @@ msgid "More"
 msgstr "Altro"
 
 #: src/renderer/src/features/reader/ThreadView.tsx
-#: src/renderer/src/ui/Menu.tsx
 msgid "More actions"
 msgstr "Altre azioni"
 
@@ -6559,6 +6561,10 @@ msgid "Sender"
 msgstr "Mittente"
 
 #: src/renderer/src/features/reader/ThreadMessage.tsx
+msgid "Sender actions"
+msgstr "Azioni del mittente"
+
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Sender authentication failed (DMARC)"
 msgstr "Autenticazione del mittente non riuscita (DMARC)"
 
@@ -7011,6 +7017,7 @@ msgid "Source {n}: {name}"
 msgstr "Fonte {n}: {name}"
 
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
+#: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 msgid "Space"
 msgstr "Spazio"
 

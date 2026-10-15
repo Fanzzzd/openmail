@@ -1,9 +1,10 @@
-import { useLingui } from "@lingui/react/macro";
 import { ContextMenu } from "@base-ui/react/context-menu";
 import { Menu } from "@base-ui/react/menu";
 import { Check, ChevronRight } from "lucide-react";
-import type { ComponentType, ReactElement, ReactNode } from "react";
+import { useState } from "react";
+import type { ComponentProps, ComponentType, ReactElement, ReactNode } from "react";
 
+import { useOpenSurface } from "./open-surfaces";
 import { itemClass, kbdClass, popupMotion, popupSurface, separatorClass } from "./styles";
 
 type Icon = ComponentType<{ className?: string }>;
@@ -14,15 +15,15 @@ const popup = `min-w-48 overflow-y-auto p-[5px] ${popupSurface} ${popupMotion}`;
  * The popup of a context menu. ContextMenu parts other than Root, Trigger and
  * Positioner are the Menu parts, so the items below work in both.
  */
-export function ContextMenuContent({ children }: { children: ReactNode }) {
-  const { t } = useLingui();
+export function ContextMenuContent({ children, label }: { children: ReactNode; label: string }) {
   return (
     <ContextMenu.Portal>
-      <ContextMenu.Positioner
-        render={<section aria-label={t`More actions`} />}
-        className="z-[60] outline-none"
-      >
-        <Menu.Popup className={popup}>{children}</Menu.Popup>
+      <ContextMenu.Positioner className="z-[60] outline-none">
+        <section aria-label={label}>
+          <Menu.Popup aria-label={label} className={popup}>
+            {children}
+          </Menu.Popup>
+        </section>
       </ContextMenu.Positioner>
     </ContextMenu.Portal>
   );
@@ -39,6 +40,7 @@ export function DropdownMenu({
   open,
   onOpenChange,
   describedBy,
+  label,
 }: {
   trigger: ReactElement;
   align?: "start" | "center" | "end";
@@ -47,21 +49,26 @@ export function DropdownMenu({
   onOpenChange?: (open: boolean) => void;
   /** The id of text in the menu that describes it, read when the menu opens. */
   describedBy?: string;
+  /** The menu's accessible name, for example "Folder actions". */
+  label: string;
 }) {
-  const { t } = useLingui();
+  const [inner, setInner] = useState(false);
+  const isOpen = open ?? inner;
+  const change = (next: boolean) => {
+    setInner(next);
+    onOpenChange?.(next);
+  };
+  useOpenSurface(isOpen, () => change(false));
   return (
-    <Menu.Root open={open} onOpenChange={onOpenChange}>
+    <Menu.Root open={isOpen} onOpenChange={change}>
       <Menu.Trigger render={trigger} />
       <Menu.Portal>
-        <Menu.Positioner
-          render={<section aria-label={t`More actions`} />}
-          className="z-[60] outline-none"
-          align={align}
-          sideOffset={4}
-        >
-          <Menu.Popup aria-describedby={describedBy} className={popup}>
-            {children}
-          </Menu.Popup>
+        <Menu.Positioner className="z-[60] outline-none" align={align} sideOffset={4}>
+          <section aria-label={label}>
+            <Menu.Popup aria-label={label} aria-describedby={describedBy} className={popup}>
+              {children}
+            </Menu.Popup>
+          </section>
         </Menu.Positioner>
       </Menu.Portal>
     </Menu.Root>
@@ -171,10 +178,9 @@ export function ContextSubmenu({
   children,
 }: {
   icon?: Icon;
-  label: ReactNode;
+  label: string;
   children: ReactNode;
 }) {
-  const { t } = useLingui();
   return (
     <ContextMenu.SubmenuRoot>
       <ContextMenu.SubmenuTrigger
@@ -187,22 +193,37 @@ export function ContextSubmenu({
         <ChevronRight className="ml-4 size-3.5 opacity-60" />
       </ContextMenu.SubmenuTrigger>
       <ContextMenu.Portal>
-        <ContextMenu.Positioner
-          render={<section aria-label={t`More actions`} />}
-          className="z-[60] outline-none"
-          alignOffset={-5}
-          sideOffset={-2}
-        >
-          <Menu.Popup
-            className={`max-h-[min(var(--available-height),320px)] overflow-y-auto ${popup}`}
-          >
-            {children}
-          </Menu.Popup>
+        <ContextMenu.Positioner className="z-[60] outline-none" alignOffset={-5} sideOffset={-2}>
+          <section aria-label={label}>
+            <Menu.Popup
+              aria-label={label}
+              className={`max-h-[min(var(--available-height),320px)] overflow-y-auto ${popup}`}
+            >
+              {children}
+            </Menu.Popup>
+          </section>
         </ContextMenu.Positioner>
       </ContextMenu.Portal>
     </ContextMenu.SubmenuRoot>
   );
 }
 
-export const ContextMenuRoot = ContextMenu.Root;
+/** A context menu's root. It registers as an open surface, so Close window closes the menu first. */
+export function ContextMenuRoot({
+  onOpenChange,
+  ...props
+}: ComponentProps<typeof ContextMenu.Root>) {
+  const [open, setOpen] = useState(false);
+  useOpenSurface(open, () => setOpen(false));
+  return (
+    <ContextMenu.Root
+      {...props}
+      open={open}
+      onOpenChange={(next, details) => {
+        onOpenChange?.(next, details);
+        if (!details.isCanceled) setOpen(next);
+      }}
+    />
+  );
+}
 export const ContextMenuTrigger = ContextMenu.Trigger;

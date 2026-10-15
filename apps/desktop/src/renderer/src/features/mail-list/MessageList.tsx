@@ -509,7 +509,7 @@ export function MessageList({
         </output>
         {menuThread &&
           (selectedIds.has(menuThread.id) && selectedIds.size > 1 && rowActions.batchMenu ? (
-            <ContextMenuContent>{rowActions.batchMenu}</ContextMenuContent>
+            <ContextMenuContent label={t`Batch actions`}>{rowActions.batchMenu}</ContextMenuContent>
           ) : (
             <RowMenu thread={menuThread} actions={rowActions} />
           ))}

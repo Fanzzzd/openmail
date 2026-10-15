@@ -392,7 +392,7 @@ export function Sidebar({
                               }
                             />
                           </ContextMenuTrigger>
-                          <ContextMenuContent>
+                          <ContextMenuContent label={t`Folder actions`}>
                             {favoriteAccounts.length > 0 && (
                               <MenuItem icon={Star} onClick={favorite.toggle}>
                                 {favoriteMenuText(favorite.on, favorite.allAccounts)}
@@ -509,7 +509,7 @@ export function Sidebar({
                   </Section>
                 )}
               </ContextMenuTrigger>
-              <ContextMenuContent>
+              <ContextMenuContent label={t`Favorites`}>
                 <MenuItem onClick={resetFavorites}>{t`Reset favorites`}</MenuItem>
               </ContextMenuContent>
             </ContextMenuRoot>

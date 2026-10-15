@@ -1,7 +1,9 @@
 import { Select as BaseSelect } from "@base-ui/react/select";
 import { Check, ChevronsUpDown } from "lucide-react";
+import { useState } from "react";
 import type { ReactNode } from "react";
 
+import { useOpenSurface } from "./open-surfaces";
 import { itemClass, popupMotion, popupOffset, popupSurface } from "./styles";
 
 interface SelectOption<T extends string> {
@@ -66,6 +68,8 @@ export function Select<T extends string>({
   fieldWidth = "w-full",
 }: Props<T>) {
   const current = options.find((o) => o.value === value);
+  const [open, setOpen] = useState(false);
+  useOpenSurface(open, () => setOpen(false));
   return (
     <BaseSelect.Root<T>
       value={value}
@@ -74,6 +78,8 @@ export function Select<T extends string>({
       }}
       items={options.map((o) => ({ value: o.value, label: o.label }))}
       disabled={disabled}
+      open={open}
+      onOpenChange={setOpen}
     >
       <BaseSelect.Trigger
         id={id}

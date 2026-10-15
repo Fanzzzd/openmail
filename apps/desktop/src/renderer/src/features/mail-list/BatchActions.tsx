@@ -205,6 +205,7 @@ export function BatchActions(
         </Tip>
       ))}
       <DropdownMenu
+        label={t`Batch actions`}
         open={props.labelPicker}
         onOpenChange={props.onLabelPicker}
         trigger={

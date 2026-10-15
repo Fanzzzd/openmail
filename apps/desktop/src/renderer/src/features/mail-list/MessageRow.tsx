@@ -47,10 +47,11 @@ export interface RowActions {
 }
 
 export function RowMenu({ thread, actions }: { thread: ThreadSummary; actions: RowActions }) {
+  const { t } = useLingui();
   const state = actions.stateOf(thread);
   if (!state) return null;
   return (
-    <ContextMenuContent>
+    <ContextMenuContent label={t`Conversation actions`}>
       <ThreadMenuItems
         state={state}
         mailbox={actions.mailbox}

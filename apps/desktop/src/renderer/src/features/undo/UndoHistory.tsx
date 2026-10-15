@@ -19,6 +19,7 @@ export function UndoHistory({
   const descriptionId = useId();
   return (
     <DropdownMenu
+      label={t`Undo history`}
       describedBy={descriptionId}
       trigger={
         <button

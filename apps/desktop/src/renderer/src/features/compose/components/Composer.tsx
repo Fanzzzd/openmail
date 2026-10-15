@@ -547,6 +547,7 @@ export function Composer({
               )}
               {nativeCapabilities.photos || nativeCapabilities.continuity ? (
                 <DropdownMenu
+                  label={t`Attach files`}
                   align="start"
                   trigger={
                     <button
@@ -611,6 +612,7 @@ export function Composer({
               />
               {(compact || draft.body.kind === "rich") && (
                 <DropdownMenu
+                  label={t`More options`}
                   align="start"
                   trigger={
                     <button type="button" aria-label={t`More options`} className={quiet}>

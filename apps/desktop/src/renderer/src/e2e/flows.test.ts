@@ -932,6 +932,20 @@ it("Close window closes an open palette or dialog first, and only then the windo
   expect(row(h.id("one")).getAttribute("aria-selected")).toBe("true");
 });
 
+it("Close window closes an open menu first and keeps the window", async () => {
+  current = await flow();
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  const closeWindow = vi.spyOn(window, "close").mockImplementation(constVoid);
+  clickButton("Folder actions");
+  await eventually(() => expect(screen.getByRole("menu", { name: "Folder actions" })).toBeTruthy());
+  await h.event({ _tag: "CloseSheet" });
+  await eventually(() => expect(screen.queryByRole("menu")).toBeNull());
+  expect(closeWindow).not.toHaveBeenCalled();
+  expect(row(h.id("one"))).toBeTruthy();
+  closeWindow.mockRestore();
+});
+
 it("the menu state says no sheet with nothing open, and Close window then closes the window", async () => {
   current = await flow();
   const h = current;

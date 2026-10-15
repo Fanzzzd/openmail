@@ -1120,6 +1120,7 @@ msgid "Background color"
 msgstr "背景色"
 
 #: src/renderer/src/features/mail-list/BatchActions.tsx
+#: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Batch actions"
 msgstr "批量操作"
 
@@ -3088,6 +3089,8 @@ msgid "Folder action failed: {reason}"
 msgstr "文件夹操作失败：{reason}"
 
 #: src/renderer/src/features/organize/FolderActions.tsx
+#: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
 msgid "Folder actions"
 msgstr "文件夹操作"
 
@@ -4398,7 +4401,6 @@ msgid "More"
 msgstr "更多"
 
 #: src/renderer/src/features/reader/ThreadView.tsx
-#: src/renderer/src/ui/Menu.tsx
 msgid "More actions"
 msgstr "更多操作"
 
@@ -6569,6 +6571,10 @@ msgid "Sender"
 msgstr "发件人"
 
 #: src/renderer/src/features/reader/ThreadMessage.tsx
+msgid "Sender actions"
+msgstr "发件人操作"
+
+#: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Sender authentication failed (DMARC)"
 msgstr "发件人认证失败（DMARC）"
 
@@ -7021,6 +7027,7 @@ msgid "Source {n}: {name}"
 msgstr "来源 {n}：{name}"
 
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
+#: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 msgid "Space"
 msgstr "空间"
 

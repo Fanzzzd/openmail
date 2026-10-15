@@ -111,7 +111,7 @@ export function SpaceSwitcher({
           ))}
         </ContextMenuTrigger>
         {menuFor && (
-          <ContextMenuContent>
+          <ContextMenuContent label={t`Space`}>
             <MenuItem icon={Pencil} onClick={() => onEditProfile(menuFor)}>
               {t`Edit space`}
             </MenuItem>

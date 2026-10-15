@@ -80,7 +80,7 @@ export function LabelSections({
               />
             </ContextMenuTrigger>
             {(favorite || (unnest && l.name.includes("/"))) && (
-              <ContextMenuContent>
+              <ContextMenuContent label={t`Folder actions`}>
                 {favorite && (
                   <MenuItem icon={Star} onClick={() => favorite(l)}>
                     {favoriteMenuText(isFavorite(l), false)}

@@ -101,6 +101,7 @@ export function MessageHead({
         <span className="min-w-0 text-callout font-semibold @min-[520px]/message:flex-1">
           {onSearchSender ? (
             <DropdownMenu
+              label={t`Sender actions`}
               trigger={
                 // A finger gets a 44 px tall target; the name stays centred in it.
                 <button
@@ -309,6 +310,7 @@ export function Expanded({
           </button>
         )}
         <DropdownMenu
+          label={t`Message actions`}
           trigger={
             <button
               type="button"
