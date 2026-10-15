@@ -9,6 +9,8 @@ import {
   relativeSearchDate,
   searchInputError,
   searchInputProblem,
+  unparsedSearchOperators,
+  withUnparsedOperators,
 } from "./search.js";
 import { gmailSearch, graphSearch, serverSearchIgnored } from "./provider-search.js";
 import { matchesSearch } from "./search-match.js";
@@ -68,6 +70,41 @@ import { type DerivedChunk } from "../ai/media.js";
     assert.strictEqual(
       parseSearchQuery({ search: "before:2026-02-30 from: has:banana" }).search,
       "before:2026-02-30 from: has:banana",
+    );
+  });
+
+  // newer:foo and friends were searched as words and matched nothing, with ignored: [].
+  it("lists date and size operators whose value does not parse", () => {
+    assert.deepStrictEqual(
+      unparsedSearchOperators(
+        'invoice newer:foo after:garbage before:2026-13-45 larger:xyz older:2d -smaller:big (size:"" OR x)',
+      ),
+      [
+        "newer:foo",
+        "after:garbage",
+        "before:2026-13-45",
+        "larger:xyz",
+        "older:2d",
+        "smaller:big",
+        'size:""',
+      ],
+    );
+    assert.deepStrictEqual(
+      unparsedSearchOperators("after:2026-01-31 older_than:2d larger:5M from:x has:banana"),
+      [],
+    );
+    // The app still searches them as words.
+    assert.strictEqual(parseSearchQuery({ search: "newer:foo" }).search, "newer:foo");
+    assert.deepStrictEqual(
+      withUnparsedOperators(
+        [{ accountId: "a", operators: ["has:drive"] }],
+        ["a", "b"],
+        "larger:xyz",
+      ),
+      [
+        { accountId: "a", operators: ["larger:xyz", "has:drive"] },
+        { accountId: "b", operators: ["larger:xyz"] },
+      ],
     );
   });
 

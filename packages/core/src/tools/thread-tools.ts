@@ -32,6 +32,7 @@ import {
   shortText,
 } from "./tool-pages.js";
 import { SearchResult } from "../domain/organization.js";
+import { withUnparsedOperators } from "../search/search.js";
 import { ModelThread } from "../ai/model-thread.js";
 import { SyncResult } from "../domain/sync-status.js";
 import { Tool } from "effect/ai";
@@ -81,7 +82,7 @@ export const Search = readOnly(
     parameters: Schema.Struct({
       query: Schema.String.check(Schema.isMinLength(1), Schema.isMaxLength(4096)).annotate({
         description:
-          "Words and operators: from:, to:, subject:, after:, before:, is:unread, has:attachment, label:, in:attachment.",
+          "Words and operators: from:, to:, subject:, after:, before:, is:unread, has:attachment, label:, in:attachment. A date or size operator without a valid value is listed under ignored.",
       }),
       account_id: Schema.optionalKey(AccountId),
       server: Schema.Boolean.annotate({
@@ -249,9 +250,10 @@ export const threadHandlers = ({
         p,
         Effect.succeed(found.threads.slice(0, 200).map(compactThread(timeZone()))),
       ).pipe(Effect.map(({ items, ...rest }) => ({ ...rest, threads: items })));
+      const ignored = withUnparsedOperators(found.ignored ?? [], q.accountIds, p.query);
       const notices = {
         ...notice,
-        ignored: (found.ignored ?? []).slice(0, 20).map((n) => ({
+        ignored: ignored.slice(0, 20).map((n) => ({
           accountId: n.accountId,
           operators: n.operators.slice(0, 20).map((v) => shortText(v, 64)),
         })),
@@ -270,7 +272,7 @@ export const threadHandlers = ({
           found.truncated ||
           found.threads.length > 200 ||
           found.errors.length > 20 ||
-          (found.ignored?.length ?? 0) > 20,
+          ignored.length > 20,
       };
     }),
     read_thread: Effect.fnUntraced(function* ({ message_id, token_budget }) {

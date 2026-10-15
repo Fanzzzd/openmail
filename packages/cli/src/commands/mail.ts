@@ -10,6 +10,11 @@ import { Failed, fail, findSpace, jsonFlag, optionalInt, optionalString, print }
 import { Console, Effect, Logger, Option, Schema } from "effect";
 import { Buffer } from "node:buffer";
 import { MAILBOXES, Mailbox, printable, redactSyncHealth } from "@openmail/core";
+import {
+  SEARCH_VALUE_FORMS,
+  unparsedSearchOperators,
+  withUnparsedOperators,
+} from "@openmail/core/schema";
 import type { SearchResult, ThreadSummary } from "@openmail/core/schema";
 import { SEARCH_INDEX_NOTE, finishSearchIndex, withProgress } from "../sync-progress.js";
 import { messageText, syncTable, threadTable } from "../format.js";
@@ -244,10 +249,20 @@ const search = Command.make(
         ? encodePageCursor({ offset: offset + threads.length })
         : undefined;
     const truncated = found.truncated || found.threads.length > SEARCH_CAP;
+    // newer:foo or larger:xyz matches nothing; say so on stderr, keeping stdout for results.
+    const unparsed = unparsedSearchOperators(query.search);
+    if (unparsed.length)
+      yield* Console.error(
+        `note: no valid value, searched as plain text: ${unparsed.join(", ")}. ${SEARCH_VALUE_FORMS}`,
+      );
+    const ignored = accountIds.length
+      ? withUnparsedOperators(found.ignored ?? [], accountIds, query.search)
+      : [];
+    const providerIgnored = (found.ignored ?? []).map(
+      (n) => `${n.accountId}: the provider ignored ${n.operators.join(", ")}`,
+    );
     const notes = [
-      ...(found.ignored ?? []).map(
-        (n) => `${n.accountId}: the provider ignored ${n.operators.join(", ")}`,
-      ),
+      ...providerIgnored,
       ...found.errors.map((n) => `${n.accountId}: ${n.message}`),
       ...(truncated
         ? [`Showing the first ${SEARCH_CAP} hits; narrow the query for the rest.`]
@@ -257,7 +272,7 @@ const search = Command.make(
       {
         threads,
         truncated,
-        ...(found.ignored ? { ignored: found.ignored } : {}),
+        ...(found.ignored || ignored.length ? { ignored } : {}),
         errors: found.errors,
         ...(next === undefined ? {} : { next_cursor: next }),
       },

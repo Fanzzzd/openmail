@@ -1057,6 +1057,20 @@ it.effect("server search relays ignored operators, account errors and provider t
   }),
 );
 
+it.effect("search lists date and size operators without a valid value under ignored", () =>
+  Effect.gen(function* () {
+    const result = yield* run(
+      call("search", { query: "newer:foo larger:xyz invoice", account_id: "a" }),
+      stubMailbox({ reading: { threads: () => Effect.succeed([]) } }),
+    );
+    assert.isFalse(result.isFailure);
+    if (!("threads" in result.result)) return;
+    assert.deepStrictEqual(result.result.ignored, [
+      { accountId: "a", operators: ["newer:foo", "larger:xyz"] },
+    ]);
+  }),
+);
+
 // One-shot CLI commands exited before the background rebuild after migration 53 finished, and
 // search then matched AROUND as AND and words inside longer words without saying so.
 it.effect("search finishes the word index first and says when it could not", () =>

@@ -226,6 +226,59 @@ export function parseSearchQuery(query: ThreadQuery): ThreadQuery {
   };
 }
 
+/** Date and size operators, and how their value is read. */
+const VALUE_OPERATORS: Record<string, (value: string) => number | null> = {
+  older: parseSearchDate,
+  newer: parseSearchDate,
+  before: parseSearchDate,
+  after: parseSearchDate,
+  older_than: (value) => relativeSearchDate(value, Date.now()),
+  newer_than: (value) => relativeSearchDate(value, Date.now()),
+  larger: parseSearchSize,
+  size: parseSearchSize,
+  smaller: parseSearchSize,
+};
+
+/** The values date and size operators take, for a note next to `unparsedSearchOperators`. */
+export const SEARCH_VALUE_FORMS =
+  "Dates are YYYY-MM-DD, also for older: and newer:. Periods for older_than: and newer_than: are 7d, 2m or 1y. Sizes are a number with K or M.";
+
+/**
+ * The date and size operators in a query whose value does not parse, such as newer:foo,
+ * before:2026-13-45, larger:xyz or older:2d (older: takes a date; older_than: a period).
+ * parseSearchQuery searches them as plain words, which usually match nothing, so the CLI
+ * and MCP list them under `ignored`. The app keeps showing the empty result.
+ */
+export function unparsedSearchOperators(search: string): string[] {
+  const found: string[] = [];
+  for (const word of searchWords(search)) {
+    const bare = word.replace(/^[-(]+/, "").replace(/\)+$/, "");
+    const colon = bare.indexOf(":");
+    if (colon < 1) continue;
+    const parse = VALUE_OPERATORS[bare.slice(0, colon).toLowerCase()];
+    const value = unquoteSearchValue(bare.slice(colon + 1));
+    if (parse && (!value || parse(value) === null)) found.push(bare);
+  }
+  return [...new Set(found)];
+}
+
+/**
+ * A search result's `ignored` notes with the query's unparsed operators added for every
+ * searched account, next to any the provider ignored.
+ */
+export function withUnparsedOperators(
+  ignored: readonly { readonly accountId: string; readonly operators: readonly string[] }[],
+  accountIds: readonly string[],
+  search: string,
+): { accountId: string; operators: string[] }[] {
+  const unparsed = unparsedSearchOperators(search);
+  const byAccount = new Map(ignored.map((note) => [note.accountId, [...note.operators]]));
+  if (unparsed.length)
+    for (const id of accountIds)
+      byAccount.set(id, [...new Set([...unparsed, ...(byAccount.get(id) ?? [])])]);
+  return [...byAccount].map(([accountId, operators]) => ({ accountId, operators }));
+}
+
 export const searchMailboxLabel = (q: ThreadQuery): string | undefined => {
   if (q.searchScope !== "folder") return undefined;
   if (q.label) return q.label;

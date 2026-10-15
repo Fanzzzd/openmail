@@ -308,6 +308,22 @@ describe("reading", () => {
     expect(help.stdout).toContain("USAGE");
   });
 
+  test("a date or size operator without a valid value is listed under ignored", async () => {
+    const result = await openmail(["search", "newer:foo", "larger:xyz", "--json"]);
+    expect(result.code, result.stderr).toBe(0);
+    expect(result.stderr).toMatch(
+      /^note: no valid value, searched as plain text: newer:foo, larger:xyz\. Dates are YYYY-MM-DD/,
+    );
+    const found = row(JSON.parse(result.stdout));
+    expect(rows(found.ignored).map((note) => note.operators)).toEqual([
+      ["newer:foo", "larger:xyz"],
+      ["newer:foo", "larger:xyz"],
+    ]);
+    const valid = await openmail(["search", "after:2026-01-31", "--json"]);
+    expect(valid.stderr).toBe("");
+    expect(Object.keys(row(JSON.parse(valid.stdout)))).not.toContain("ignored");
+  });
+
   test("accounts list --json carries the account fields scripts read", async () => {
     const accounts = await list(["accounts", "list"]);
     expect(accounts.map((account) => account.provider)).toEqual(["gmail", "imap"]);
