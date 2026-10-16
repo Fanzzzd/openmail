@@ -184,7 +184,8 @@ export function BatchActions(
         <Trans>{count} selected (loaded)</Trans>
         {props.canLoadMore && (
           <span className="ml-2">
-            {props.moreNotLoaded === null ? (
+            {/* No count, or 0 while the server still has older mail: the number is unknown. */}
+            {!props.moreNotLoaded ? (
               <Trans>More messages not loaded</Trans>
             ) : (
               <Trans>{i18n.number(props.moreNotLoaded)} more not loaded</Trans>

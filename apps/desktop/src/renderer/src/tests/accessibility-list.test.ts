@@ -326,6 +326,26 @@ it("audits the narrow batch bar, whose count badge leaves the full count to scre
   await waitFor(() => expect(document.activeElement).toBe(menuButton));
 });
 
+it("the batch bar says more messages are not loaded when the local count has none left", () => {
+  render(
+    localized(
+      h(BatchActions, {
+        rows: [thread, { ...thread, id: "second" }],
+        accounts: [account],
+        labels: [],
+        mailbox: "inbox",
+        onOp: vi.fn(),
+        labelPicker: false,
+        onLabelPicker: vi.fn(),
+        canLoadMore: true,
+        moreNotLoaded: 0,
+      }),
+    ),
+  );
+  expect(screen.getByText("More messages not loaded")).toBeTruthy();
+  expect(screen.queryByText(/more not loaded/)).toBeNull();
+});
+
 it("moves focus from Sync now to the syncing status in an empty list", async () => {
   const user = userEvent.setup();
   const onSync = vi.fn();
