@@ -266,8 +266,8 @@ const COLOR_ALIASES: Readonly<Record<string, ProfileColor>> = {
   grey: "slate",
   ...Object.fromEntries(PROFILE_COLORS.map((key) => [key, key])),
 };
-const COLOR_WORDS = ["blue", "purple", "red", "orange", "brown", "green", "teal", "gray"];
-const profileColor = (word: string): ProfileColor | undefined => {
+export const COLOR_WORDS = ["blue", "purple", "red", "orange", "brown", "green", "teal", "gray"];
+export const profileColor = (word: string): ProfileColor | undefined => {
   const key = word.toLowerCase();
   return Object.hasOwn(COLOR_ALIASES, key) ? COLOR_ALIASES[key] : undefined;
 };

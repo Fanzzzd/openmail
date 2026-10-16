@@ -519,64 +519,80 @@ describe("spaces", () => {
     });
 
     test("add refuses an empty name and stores a padded one trimmed", async () => {
-      // Control, format and blank characters alone show as nothing.
-      for (const name of ["", "   ", "\u200b", "\u2068\u2069", "\t\n"]) {
-        const empty = await openmail(["spaces", "add", name], home.path);
-        expect(empty.code).toBe(1);
-        expect(empty.stderr).toMatch(/^error: Enter a space name with letters or other visible/);
+      // An older space to remove by a padded name in another letter case.
+      const seed = new DatabaseSync(join(home.path, "mail.db"));
+      try {
+        seed
+          .prepare(
+            "INSERT INTO profiles (id, name, icon, color, position) VALUES ('rest', 'Rest', 'R', 'blue', 98)",
+          )
+          .run();
+      } finally {
+        seed.close();
       }
-      const control = await openmail(["spaces", "add", "Deep\twork"], home.path);
+      const add = (name: string) => openmail(["spaces", "add", name], home.path);
+      // Independent commands, started together: the test waits for one process start.
+      const [padded, removed, control, id, none, ...empty] = await Promise.all([
+        add("  Play  "),
+        openmail(["spaces", "remove", " rest "], home.path),
+        add("Deep\twork"),
+        // `--space` takes a name or an id, so a name can't be another space's id.
+        add(String(space.id)),
+        // `spaces assign <account> none` ungroups, so no space can be found by that name.
+        add("None"),
+        // Control, format and blank characters alone show as nothing.
+        ...["", "   ", "\u200b", "\u2068\u2069", "\t\n"].map(add),
+      ]);
+      for (const result of empty) {
+        expect(result.code).toBe(1);
+        expect(result.stderr).toMatch(/^error: Enter a space name with letters or other visible/);
+      }
       expect(control.code).toBe(1);
       expect(control.stderr).toMatch(/^error: A space name can't contain line breaks or tabs\./);
-      // `--space` takes a name or an id, so a name can't be another space's id.
-      const [work] = await list(["spaces", "list"], home.path);
-      const id = await openmail(["spaces", "add", String(work.id)], home.path);
       expect(id.code).toBe(1);
       expect(id.stderr).toMatch(/^error: That is another space's id\. Choose another name\./);
-      // `spaces assign <account> none` ungroups, so no space can be found by that name.
-      const none = await openmail(["spaces", "add", "None"], home.path);
       expect(none.code).toBe(1);
       expect(none.stderr).toMatch(/^error: The name none is reserved\./);
-      const padded = await openmail(["spaces", "add", "  Play  "], home.path);
+      expect(removed.code, removed.stderr).toBe(0);
       expect(padded.code, padded.stderr).toBe(0);
       expect(padded.stdout).toMatch(/^Added space Play \(.+\)\.$/m);
-      const names = (await list(["spaces", "list"], home.path)).map((s) => s.name);
-      expect(names).toEqual(["Work", "Play"]);
-      const removed = await openmail(["spaces", "remove", " play "], home.path);
-      expect(removed.code, removed.stderr).toBe(0);
+      const db = new DatabaseSync(join(home.path, "mail.db"));
+      try {
+        expect(db.prepare("SELECT name FROM profiles ORDER BY position").all()).toEqual([
+          { name: "Work" },
+          { name: "Play" },
+        ]);
+        db.prepare("DELETE FROM profiles WHERE name = 'Play'").run();
+      } finally {
+        db.close();
+      }
     });
 
     // The app names the swatches Purple, Red, Brown, Green and Gray, but --color took only the
-    // stored keys, so `--color brown` was a usage error.
-    test("add takes the app's color words and the stored keys", async () => {
-      const colors = [
-        ["Purple", "purple", "violet"],
-        ["Red", "Red", "rose"],
-        ["Brown", "brown", "amber"],
-        ["Green", "green", "emerald"],
-        ["Gray", "gray", "slate"],
-        ["Grey", "grey", "slate"],
-        ["Old", "violet", "violet"],
-      ] as const;
-      for (const [name, color] of colors) {
-        const added = await openmail(["spaces", "add", name, "--color", color], home.path);
-        expect(added.code, added.stderr).toBe(0);
-      }
-      const stored = Object.fromEntries(
-        (await list(["spaces", "list"], home.path)).map((s) => [s.name, s.color]),
-      );
-      for (const [name, , key] of colors) expect(stored[name], name).toBe(key);
-      for (const [name] of colors)
-        expect((await openmail(["spaces", "remove", name], home.path)).code).toBe(0);
-      const pink = await openmail(["spaces", "add", "Pink", "--color", "pink"], home.path);
+    // stored keys, so `--color brown` was a usage error. space-colors.test.ts checks every word.
+    test("add takes the app's color words", async () => {
+      const [brown, pink, help] = await Promise.all([
+        openmail(["spaces", "add", "Brown", "--color", "brown"], home.path),
+        openmail(["spaces", "add", "Pink", "--color", "pink"], home.path),
+        openmail(["spaces", "add", "--help"], home.path),
+      ]);
+      expect(brown.code, brown.stderr).toBe(0);
       expect(pink.code).toBe(2);
       expect(pink.stderr).toContain(
         "must be one of blue, purple, red, orange, brown, green, teal, gray",
       );
-      const help = await openmail(["spaces", "add", "--help"], home.path);
       expect(help.stdout).toContain(
         "Color on the switcher: blue, purple, red, orange, brown, green, teal, gray",
       );
+      const db = new DatabaseSync(join(home.path, "mail.db"));
+      try {
+        expect(db.prepare("SELECT name, color FROM profiles WHERE name != 'Work'").all()).toEqual([
+          { name: "Brown", color: "amber" },
+        ]);
+        db.prepare("DELETE FROM profiles WHERE name = 'Brown'").run();
+      } finally {
+        db.close();
+      }
     });
 
     test("assign puts an account in it", async () => {
