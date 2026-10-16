@@ -1,17 +1,27 @@
 // @vitest-environment jsdom
 import { expect, it, vi } from "vitest";
-import { createElement as h } from "react";
+import { createElement as h, useState } from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { AsyncResult } from "effect/reactivity";
 import type { Profile } from "../../../shared/api";
 import { UndoHistory } from "../features/undo/UndoHistory";
 import { ProfileEditor } from "../features/accounts/ProfileEditor";
 import { ProfileSwitcher } from "../features/accounts/ProfileSettings";
-import { DropdownMenu, MenuItem } from "../ui/Menu";
+import { TextContextMenu } from "../app/WindowUi";
+import { RecipientField } from "../features/compose/components/RecipientField";
+import { SearchField } from "../features/search/SearchField";
+import {
+  ContextMenuContent,
+  ContextMenuRoot,
+  ContextMenuTrigger,
+  DropdownMenu,
+  MenuItem,
+} from "../ui/Menu";
 import { Select } from "../ui/Select";
 import { closeSheet } from "../ui/open-surfaces";
 import {
   account,
+  fixture,
   localized,
   audit,
   registerAccessibilityHooks,
@@ -127,6 +137,88 @@ it("Close window closes an open dropdown menu, then a Select list, before the wi
 
   closeSheet(closeWindow);
   expect(closeWindow).toHaveBeenCalledOnce();
+});
+
+/** Close window with `role` open: the surface closes and the window stays. */
+async function closeSheetClosesFirst(role: "menu" | "listbox") {
+  const closeWindow = vi.fn();
+  closeSheet(closeWindow);
+  await waitFor(() => expect(screen.queryByRole(role)).toBeNull());
+  expect(closeWindow).not.toHaveBeenCalled();
+}
+
+/** Types into a combobox. Base UI opens the list for typed input only, not for autofill. */
+const typeInto = (input: HTMLElement, value: string) =>
+  fireEvent.input(input, { target: { value }, inputType: "insertText" });
+
+it("Close window closes an open context menu before the window", async () => {
+  render(
+    localized(
+      h(ContextMenuRoot, null, [
+        h(ContextMenuTrigger, { key: "trigger" }, "Message row"),
+        h(ContextMenuContent, {
+          key: "content",
+          label: "Message actions",
+          children: h(MenuItem, { onClick: vi.fn(), children: "Archive" }),
+        }),
+      ]),
+    ),
+  );
+  fireEvent.contextMenu(screen.getByText("Message row"));
+  await screen.findByRole("menu", { name: "Message actions" });
+  await closeSheetClosesFirst("menu");
+});
+
+it("Close window closes the text context menu before the window", async () => {
+  const menu = {
+    x: 10,
+    y: 10,
+    misspelledWord: "",
+    suggestions: [],
+    spellcheck: true,
+    canCut: true,
+    canCopy: true,
+    canPaste: true,
+    writingTools: false,
+  };
+  const Field = () => {
+    const [shown, setShown] = useState(true);
+    return shown
+      ? h(TextContextMenu, { menu, onCommand: vi.fn(), onClosed: () => setShown(false) })
+      : null;
+  };
+  render(localized(h(Field)));
+  await screen.findByRole("menu", { name: "Text actions" });
+  await closeSheetClosesFirst("menu");
+});
+
+it("Close window closes the search suggestions before the window", async () => {
+  const Field = () => {
+    const [value, setValue] = useState("");
+    return h(SearchField, { value, onChange: setValue, inputRef: null });
+  };
+  render(localized(h(Field)));
+  typeInto(screen.getByRole("combobox", { name: "Search mail" }), "from");
+  await screen.findByRole("listbox");
+  await closeSheetClosesFirst("listbox");
+});
+
+it("Close window closes the recipient suggestions before the window", async () => {
+  fixture.values.set("suggestionsAtom", [{ name: "Bob", address: "bob@example.com" }]);
+  const Field = () => {
+    const [value, setValue] = useState("");
+    return h(RecipientField, {
+      label: "To",
+      value,
+      onChange: setValue,
+      from: account.email,
+      showFullAddresses: false,
+    });
+  };
+  render(localized(h(Field)));
+  typeInto(screen.getByRole("combobox", { name: "To" }), "bo");
+  await screen.findByRole("option", { name: /bob@example\.com/ });
+  await closeSheetClosesFirst("listbox");
 });
 
 it("marks the space name invalid and points it at the error while one shows", async () => {
