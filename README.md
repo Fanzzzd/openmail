@@ -73,7 +73,7 @@ OpenMail is younger than all of these and has rough edges. Mimestream is the ref
 
 There is no signed release yet. Published builds will appear on the [Releases page](https://github.com/Fanzzzd/openmail/releases). Until then, build from source:
 
-1. Install the [prerequisites](CONTRIBUTING.md#prerequisites): macOS 13+, Node 24 (see `.nvmrc`), pnpm through `corepack enable`, and the Xcode Command Line Tools. Xcode 26 is optional. With it, `dist` compiles the Icon Composer icon, so macOS 26 shows the Liquid Glass icon with its dark and tinted appearances. Without it, `dist` packages the committed `build/icon.icns`, a static render of the same icon that every macOS version shows unchanged. Xcode 26 needs macOS 15.6 or later. OpenMail needs Node 24, the version in `.nvmrc`. Node 22 prints a `node:sqlite` warning on every CLI call, and Node 25 and later no longer ship corepack.
+1. Install the [prerequisites](CONTRIBUTING.md#prerequisites): macOS 13+, Node 24 (see `.nvmrc`), pnpm through `corepack enable`, and the Xcode Command Line Tools. Xcode 26 is optional and only changes the app icon. See [Build from source](apps/docs/content/docs/build-from-source.mdx).
 2. Build and package:
 
    ```sh
