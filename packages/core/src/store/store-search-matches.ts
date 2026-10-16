@@ -176,13 +176,16 @@ export const makeSearchMatches = ({
       const selected = nonzeroProximity(q)
         ? yield* all(Schema.Struct({ id: Schema.String }))(selectedIds)
         : undefined;
+      // `+m.id` keeps the selected ids from driving the join: as a plain IN, SQLite probed
+      // derived_chunks_message once per selected id for every matching chunk (13 s for `weekly
+      // OR alpha` over 10k OCR chunks). The chunk's own rowid finds its message instead.
       const matchRows = yield* all(
         DerivedSearchRow,
       )(sql`SELECT m.account_id,m.thread_id,d.provenance_json
           FROM ${rankable ? sql`${derivedIndex} JOIN derived_chunks d ON d.id=${derivedIndex}.rowid` : sql`derived_chunks d`}
           JOIN messages m ON m.id=d.message_id
           WHERE ${rankable ? sql`${derivedIndex} MATCH ${bodyMatch}` : sql.or(highlights.map((term) => textFilter(term, true, readiness.derived)))}
-          ${selected ? sql.literal("") : sql`AND m.id IN (${selectedIds})`}
+          ${selected ? sql.literal("") : sql`AND +m.id IN (${selectedIds})`}
           AND ${listFilter(selected ? { ...q, proximityPage: { kind: "exact", messageIds: selected.map((row) => row.id) } } : q)} ORDER BY ${rankable ? sql`bm25(${derivedIndex})` : sql.literal("m.date DESC")},m.date DESC,d.id LIMIT 4096`);
       const grouped = new Map<string, DerivedChunk[]>();
       for (const [rank, row] of matchRows.entries()) {

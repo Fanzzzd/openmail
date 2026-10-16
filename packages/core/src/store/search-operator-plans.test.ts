@@ -2,7 +2,7 @@ import { assert, it } from "@effect/vitest";
 import { Effect, Layer, Schema } from "effect";
 import { SqlClient } from "effect/sql";
 import type { IncomingMessage, ThreadQuery, ThreadSummary } from "../domain/message.js";
-import { traceQueries } from "../platform/node/fixtures/performance-mailbox.js";
+import { traceQueries, type QueryPlan } from "../platform/node/fixtures/performance-mailbox.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
 import { wholeWordMatch } from "../search/fts.js";
 import { expressionMedia } from "./store-query.js";
@@ -359,6 +359,54 @@ it.effect(
           query.sql.includes("messages_words WHERE rowid=m.rowid AND messages_words MATCH"),
         ),
       );
+    }).pipe(Effect.provide(layer), Effect.ensuring(Effect.sync(trace.restore)));
+  },
+  scaledMs(180_000),
+);
+
+it.effect(
+  "OR searches over mail and attachment text return the same rows",
+  () => {
+    const trace = traceQueries();
+    return Effect.gen(function* () {
+      const { a } = yield* seed;
+      const rows = yield* loadRows;
+      // Attachment text hits rank a page by relevance, so those pages compare as sets.
+      const ors = [
+        ["weekly OR alpine", true],
+        ["(weekly OR delivery) is:unread", true],
+        ["alpine OR planning", true],
+        ["invoice OR alpine", false],
+        ["invoice OR weekly", false],
+        ["ledger OR nothing", false],
+        ["invoice -weekly", false],
+        ["subject:planning OR ledger", false],
+      ] as const;
+      trace.start();
+      yield* checkAll(rows, ors, a);
+      const queries = trace.stop();
+      // Attachment text answers from one set of message ids per statement: no derived chunk
+      // lookup per tested message, and none per selected id.
+      const derived = queries.filter((query) => query.sql.includes("derived_words MATCH"));
+      assert.isAbove(derived.length, 0);
+      const perRow = (query: QueryPlan) =>
+        query.plan.some((line) =>
+          line.includes("derived_chunks_message (message_id=? AND rowid=?)"),
+        );
+      for (const query of derived) assert.isFalse(perRow(query), query.plan.join("\n"));
+      assert.isTrue(
+        queries.some((query) =>
+          query.sql.includes("+m.id IN (SELECT d.message_id FROM derived_chunks d WHERE d.id IN"),
+        ),
+      );
+      // The attachment matches of a page start from the chunks. Without statistics on 100k
+      // messages a plain `m.id IN` made SQLite probe each selected id for every matching chunk;
+      // this small mailbox does not reproduce that plan, so the statement text is checked.
+      const pageChunks = queries.filter((query) =>
+        query.sql.includes("JOIN derived_chunks d ON d.id=derived_words.rowid"),
+      );
+      assert.isAbove(pageChunks.length, 0);
+      for (const query of pageChunks) assert.include(query.sql, "AND +m.id IN (", query.sql);
     }).pipe(Effect.provide(layer), Effect.ensuring(Effect.sync(trace.restore)));
   },
   scaledMs(180_000),

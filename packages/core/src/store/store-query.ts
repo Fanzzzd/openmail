@@ -158,6 +158,29 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
   };
 
   /**
+   * Messages with an attachment or other derived chunk that matches a word. An index answers
+   * with one set of message ids for the statement. A correlated `d.id IN (MATCH)` probed
+   * derived_chunks_message once per matching chunk for every message tested: `invoice OR
+   * weekly`, where invoice is in 10k OCR chunks, took 19.6 s. `+m.id` keeps the set from
+   * driving the row walk. Queued bigram rows and LIKE keep the per-message test.
+   */
+  const derivedTextFilter = (value: string, ready: boolean): Fragment => {
+    const text = searchTermText(value);
+    const match = ftsSearchTerm(value);
+    const index =
+      match === null
+        ? undefined
+        : ready && !usesSubstringSearch(text)
+          ? sql`SELECT rowid FROM derived_words WHERE derived_words MATCH ${match}`
+          : Array.from(text).length >= 3
+            ? sql`SELECT rowid FROM derived_fts WHERE derived_fts MATCH ${ftsSearchTerm(quoteSearchValue(text))}`
+            : undefined;
+    return index
+      ? sql`+m.id IN (SELECT d.message_id FROM derived_chunks d WHERE d.id IN (${index}))`
+      : sql`EXISTS(SELECT 1 FROM derived_chunks d WHERE d.message_id=m.id AND ${textFilter(value, true, ready)})`;
+  };
+
+  /**
    * textFilter over a message's own text for a page that walks the date index (rowBoundText).
    * Each row looks its rowid up in the text index, so the index's rowid set does not drive the
    * walk. planTextPage sets rowBoundText only for plain words and subject:, so there is no
@@ -410,7 +433,7 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
           const body = context.rowBound
             ? rowBoundTextFilter(q.search, context.messagesReady)
             : textFilter(q.search, false, context.messagesReady);
-          const derived = sql`EXISTS(SELECT 1 FROM derived_chunks d WHERE d.message_id=m.id AND ${textFilter(q.search, true, context.derivedReady)})`;
+          const derived = derivedTextFilter(q.search, context.derivedReady);
           conditions.push(
             context.attachmentOnly ? derived : context.media ? sql`(${body} OR ${derived})` : body,
           );

@@ -227,10 +227,14 @@ it.effect(
             .listThreads({ search, limit: 50 })
             .pipe(Effect.tap((rows) => Effect.sync(() => assert.strictEqual(rows.length, 50)))),
         );
-      // Every subject has `report`.
+      // Every subject has `report`, every body `weekly` and `alpha`, and invoice is only in the
+      // 10k OCR chunks.
       for (const [name, search, budget, threads] of [
         ["search subject: common", "subject:report", 200, 50],
         ["search subject: phrase", 'subject:"weekly report"', 200, 50],
+        ["search OR", "weekly OR alpha", 200, 50],
+        ["search OR is:unread", "(weekly OR delivery) is:unread", 200, 50],
+        ["search attachment word OR common", "invoice OR weekly", 200, 50],
       ] as const)
         yield* measure(
           name,

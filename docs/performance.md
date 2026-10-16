@@ -221,6 +221,29 @@ fixture P，修复前后（未运行 ANALYZE）：
 
 [search-operator-plans.test.ts](../packages/core/src/store/search-operator-plans.test.ts) 在默认套件里用 3,000 封邮件（含一个 60 封的长会话）对照按存储的字段直接计算的参考结果，覆盖单词、短语、大小写、前缀、与普通词和 `is:` 组合、否定、会话与平铺、单账户、第二页和计数。它还检查 `page` CTE 里没有 `flag_candidates`，常见 `subject:` 词的 `recent` 窗口走日期索引且不含 `messages_words`。`performance-large.test.ts` 的 `search subject: common` 和 `search subject: phrase` 预算 200 ms。
 
+### OR 与附件文字
+
+OCR 和 PDF 文字建好索引后，fixture P 上的 OR 搜索要 13–18 s。两处相同的毛病：一个对 chunk 的条件按邮件逐个探测。
+
+- 给返回的会话补附件命中的语句（`store-search-matches.ts`）写 `m.id IN (选中会话的邮件 id)`。没有统计时规划器从 `derived_words MATCH` 出发，每个匹配 chunk 都按每个选中 id 探测一次 `derived_chunks_message`。改成 `+m.id IN (…)` 后，chunk 按自己的 rowid 找到邮件。评审者单测这条语句：13,016 ms 到 25 ms；`weekly OR alpha` 整个请求 14,752 ms 到 89 ms。
+- 页面过滤里每个词对附件文字写成 `EXISTS(SELECT 1 FROM derived_chunks d WHERE d.message_id=m.id AND d.id IN (SELECT rowid FROM derived_words WHERE derived_words MATCH ?))`。IN 列表是全部匹配 chunk，SQLite 对每封被检查的邮件按列表里的每个 chunk id 探测一次索引。`invoice OR weekly` 里 invoice 在全部 10k 个 chunk 中，只改上一项时仍要 4.3 s。现在每条语句只建一次邮件 id 集合：`+m.id IN (SELECT d.message_id FROM derived_chunks d WHERE d.id IN (MATCH))`，和前缀词的 `(m.rowid+0) IN (…)` 一样不让集合驱动遍历。词索引和 trigram 索引走这个集合；bigram 队列中的行和 LIKE 仍逐封判断。
+
+fixture P，修复前后：
+
+| 测量                             | 修复前 | 修复后 |
+| -------------------------------- | -----: | -----: |
+| `weekly OR alpha`                |  13284 |     91 |
+| `weekly OR alpha`，单账户        |   9437 |     82 |
+| `(weekly OR delivery) is:unread` |  13389 |     81 |
+| `invoice OR weekly`              |  17805 |    104 |
+| `invoice OR weekly`，单账户      |  12055 |     96 |
+| `invoice OR weekly` 计数         |  21536 |    161 |
+| `invoice OR weekly` 平铺计数     |  20181 |     95 |
+| `invoice OR zzzzunmatched`       |  17617 |     65 |
+| `weekly OR 鲸鱼`                 |    103 |     98 |
+
+计数也用页面过滤，所以 `invoice OR weekly` 的计数从 21.5 s 降到 161 ms。search-operator-plans.test.ts 的 OR 部分覆盖普通词、`is:` 组合、只在附件文字里的词、否定和 `subject:`，有附件命中的页按相关度排序，只比较会话集合。它检查附件文字的查询计划里没有按 `derived_chunks_message (message_id=? AND rowid=?)` 的逐行探测，补附件命中的语句写 `+m.id IN`。小数据库在没有统计时也不会选中旧的坏计划，所以后一项只检查语句文本。`performance-large.test.ts` 的 `search OR`、`search OR is:unread` 和 `search attachment word OR common` 预算 200 ms。
+
 ## 消息文本与附件检索排名
 
 普通词查询分别选取日期窗口内的消息文本候选和 FTS 排名靠前的附件候选，再合并。消息文本窗口为请求 limit，附件窗口同样为 limit；这是有界候选排名，不保证整个邮箱的全局相关度顺序。布尔、排除和 AROUND 查询沿用原条件选择候选，再给返回的会话补附件来源。消息文本和主题使用 [FTS5 BM25](https://sqlite.org/fts5.html#the_bm25_function) `bm25(index,4,0,0,1)`，主题权重 4、消息文本权重 1、发件人权重 0；附件使用 `bm25(derived_words)`。两个消息 FTS 都按缓存的原始 `body_text` 建外部内容索引；可见消息文本只存在于语义向量项，未建可供 BM25 查询的 FTS。复用现有消息 FTS 计算候选顺序，避免在只读搜索中改索引或重写消息文本；来源分类、摘要和精确短语信号始终取经过可见性提取的消息文本，隐藏内容不成为邮件命中信号。负分越小越相关。词索引未完成或 CJK 子串查询使用 trigram 索引，无法提供 FTS 分数的短词保留日期顺序。
