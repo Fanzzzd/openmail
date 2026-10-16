@@ -472,7 +472,7 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
   const planTextPage = Effect.fnUntraced(function* (q: LocalQuery) {
     const words = searchWords(q.search ?? "");
     if (
-      words.length !== 1 ||
+      words.length === 0 ||
       expressionMedia(q.search ?? "") ||
       hasSearchExpression(q.search ?? "") ||
       Object.keys(q.criteria ?? {}).length ||
@@ -480,6 +480,26 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
       (q.label && q.searchScope === "folder")
     )
       return q;
+    if (words.length > 1) {
+      // Plain words AND together. Common words found together in most mail walk the date
+      // index like one common word; the rowid sets of `weekly` and `de*` are each about every
+      // message, and starting from one of them read 100k rows for a page (8 s for 200 threads).
+      const terms = words.map((word) => {
+        const text = unquoteSearchValue(word.endsWith("*") ? word.slice(0, -1) : word);
+        return usesSubstringSearch(text) ? null : ftsSearchTerm(word);
+      });
+      if (!q.wordIndexReady || terms.some((term) => term === null)) return q;
+      const match = terms.join(" AND ");
+      const rows = yield* all(Schema.Struct({ n: Schema.Number }))(sql`SELECT COUNT(*) AS n FROM (
+        SELECT rowid FROM messages_words WHERE messages_words MATCH ${match} LIMIT 2049)`);
+      return (rows[0]?.n ?? 0) > 2048
+        ? ({
+            ...q,
+            textPage: { index: "messages_words", match },
+            rowBoundText: true,
+          } satisfies LocalQuery)
+        : q;
+    }
     const word = words[0];
     if (!word || word.startsWith("-")) return q;
     const text = unquoteSearchValue(word.endsWith("*") ? word.slice(0, -1) : word);

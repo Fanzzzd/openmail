@@ -188,15 +188,26 @@ it.effect(
             ),
             `${search} in one account`,
           );
+          // A common search counts from its MATCH; the count must agree with the list.
+          assert.strictEqual(
+            yield* store.countThreads({ search, flat }),
+            reference(rows, search, flat, COUNT).length,
+            `${search} count`,
+          );
         }
       // The exact common word probes each walked row; prefixes read their rowids once.
       assert.match(plans.get("weekly") ?? "", ROW_PROBE);
-      for (const search of ["weekl*", "we*", "pe*"]) {
+      for (const search of ["weekl*", "we*", "pe*", "weekly de*", "delivery we*"]) {
         const shape = plans.get(search) ?? "";
-        assert.notMatch(shape, ROW_PROBE, search);
+        // An exact word next to the prefix may still probe each row; the prefix may not.
+        if (!search.includes(" ")) assert.notMatch(shape, ROW_PROBE, search);
         assert.include(shape, "(m.rowid+0) IN (SELECT rowid FROM messages_words", search);
         assert.include(shape, "SCAN m USING COVERING INDEX messages_list_date_id", search);
       }
+      // Common words together walk the date index instead of every message of one word.
+      for (const search of ["weekly delivery", "weekly de*"])
+        assert.include(plans.get(search) ?? "", "messages m INDEXED BY messages_list_date_id");
+      assert.notInclude(plans.get("weekly alpine") ?? "", "INDEXED BY messages_list_date_id");
     }).pipe(
       Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform()))),
       Effect.ensuring(Effect.sync(trace.restore)),

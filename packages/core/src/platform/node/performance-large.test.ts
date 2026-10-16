@@ -214,7 +214,7 @@ it.effect(
         yield* measure(name, budget, store.listThreads({ search, limit: 50 }));
       // While the person types, the search field runs the unfinished last word as a prefix.
       // The word index has no prefix index, so each probe of `pe*` expands it over all terms.
-      for (const search of ["we*", "week*", "person", "pe*"])
+      for (const search of ["we*", "week*", "person", "pe*", "weekly de*", "weekly delivery"])
         yield* measure(
           `search typed ${search}`,
           150,
@@ -651,8 +651,9 @@ it.effect(
         /* finish the index */
       }
       const results: { name: string; medianMs: number; budgetMs: number }[] = [];
+      const common = vocabulary[0] ?? "";
       const rare = vocabulary.at(-1) ?? "";
-      for (const search of ["co*", "re*", "an*", "pro*", "sta*", "the*", rare]) {
+      for (const search of ["co*", "re*", "an*", "pro*", "sta*", "the*", `${common} re*`, rare]) {
         const run = store.listThreads({ search, limit: 50 });
         const first = yield* run;
         if (search !== rare) assert.strictEqual(first.length, 50, search);
