@@ -21,7 +21,12 @@ export {
   type SyncFailureDetail,
   SyncFailureReason,
 } from "./sync/sync-failure.js";
-export { IMAP_PRESETS, ImapConnectInput, ImapPreset } from "./providers/imap/imap-presets.js";
+export {
+  IMAP_PRESETS,
+  ImapConnectInput,
+  ImapPreset,
+  isImapHostname,
+} from "./providers/imap/imap-presets.js";
 export { Mailbox, MailboxEvent, SyncState } from "./mailbox/mailbox.js";
 export { ModelThread } from "./ai/model-thread.js";
 export { type HeldSend, holdSend } from "./mailbox/undo-send.js";

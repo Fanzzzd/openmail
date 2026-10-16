@@ -1,7 +1,7 @@
 import { sha256Hex } from "../../platform/crypto.js";
 import { Effect } from "effect";
 import { InvalidInput } from "../../domain/errors.js";
-import { IMAP_PRESETS, type ImapConnectInput } from "./imap-presets.js";
+import { IMAP_PRESETS, isImapHostname, type ImapConnectInput } from "./imap-presets.js";
 import type { ImapSettings } from "../../domain/account.js";
 
 const invalid = (message: string) => Effect.fail(new InvalidInput({ message }));
@@ -28,7 +28,7 @@ export const resolveImapSettings = Effect.fnUntraced(function* (
   const smtpHost = input.smtpHost?.trim() || preset?.smtpHost;
   if (!imapHost) return yield* invalid("IMAP server is required");
   if (!smtpHost) return yield* invalid("SMTP server is required");
-  if ([imapHost, smtpHost].some((host) => !/^[a-zA-Z0-9.-]+$/.test(host)))
+  if ([imapHost, smtpHost].some((host) => !isImapHostname(host)))
     return yield* invalid("Invalid server hostname");
   const imapPort = input.imapPort ?? preset?.imapPort ?? 993;
   const smtpPort = input.smtpPort ?? preset?.smtpPort ?? 465;

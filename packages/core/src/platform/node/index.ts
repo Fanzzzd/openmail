@@ -17,6 +17,7 @@ export {
   DEFAULT_ACTIVE_HOURS,
   DeviceError,
   IMAP_PRESETS,
+  isImapHostname,
   IncomingMessage,
   LOG_CODE_ANNOTATION,
   LogCode,

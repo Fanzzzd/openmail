@@ -226,6 +226,33 @@ describe("accounts add", () => {
     expect(stderr).toMatch(/^error: --imap-host mail example\.com is not a hostname\.\nhint: /);
   });
 
+  test("a host with a port is invalid_input and the hint names the port flag", async () => {
+    for (const [hostFlag, portFlag] of [
+      ["--imap-host", "--imap-port"],
+      ["--smtp-host", "--smtp-port"],
+    ]) {
+      const { code, stderr } = await openmail([
+        "accounts",
+        "add",
+        "imap",
+        "--preset",
+        "custom",
+        "--imap-host",
+        hostFlag === "--imap-host" ? "mail.example.com:993" : "mail.example.com",
+        "--smtp-host",
+        hostFlag === "--smtp-host" ? "smtp.example.com:465" : "smtp.example.com",
+        "--email",
+        "a@example.com",
+      ]);
+      expect(code, stderr).toBe(1);
+      expect(stderr).toMatch(
+        new RegExp(
+          `^error: ${hostFlag} \\S+:\\d+ is not a hostname\\.\\nhint: Pass the port with ${portFlag}\\.\\n`,
+        ),
+      );
+    }
+  });
+
   // No client is configured and the openers exit 1, so a run that got past validation would
   // fail with a different error and never reach a real browser.
   test.skipIf(process.platform === "win32")(

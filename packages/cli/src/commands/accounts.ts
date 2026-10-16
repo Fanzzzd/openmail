@@ -2,7 +2,14 @@
 
 import { Argument, Command, Flag, Prompt } from "effect/cli";
 import { Config, Console, Effect, Option, Redacted } from "effect";
-import { IMAP_PRESETS, Mailbox, PROFILE_COLORS, oauthProvider, printable } from "@openmail/core";
+import {
+  IMAP_PRESETS,
+  Mailbox,
+  isImapHostname,
+  PROFILE_COLORS,
+  oauthProvider,
+  printable,
+} from "@openmail/core";
 import {
   CLI,
   type Failed,
@@ -78,28 +85,29 @@ const badImapFlag = (o: {
   readonly smtpPort: Option.Option<number>;
   readonly imapHost: Option.Option<string>;
   readonly smtpHost: Option.Option<string>;
-}): string | undefined => {
+}): { readonly message: string; readonly hint?: string } | undefined => {
   if (Option.isSome(o.email) && !validEmail(o.email.value))
-    return `--email ${o.email.value} is not an email address.`;
+    return { message: `--email ${o.email.value} is not an email address.` };
   for (const [flag, port] of [
     ["--imap-port", o.imapPort],
     ["--smtp-port", o.smtpPort],
   ] as const)
     if (Option.isSome(port) && !validPort(port.value))
-      return `${flag} ${port.value} is not a port between 1 and 65535.`;
-  for (const [flag, host] of [
-    ["--imap-host", o.imapHost],
-    ["--smtp-host", o.smtpHost],
+      return { message: `${flag} ${port.value} is not a port between 1 and 65535.` };
+  for (const [flag, portFlag, host] of [
+    ["--imap-host", "--imap-port", o.imapHost],
+    ["--smtp-host", "--smtp-port", o.smtpHost],
   ] as const)
     if (Option.isSome(host)) {
-      if (host.value.trim() === "") return `${flag} is empty.`;
-      if (!validHost(host.value)) return `${flag} ${host.value} is not a hostname.`;
+      if (host.value.trim() === "") return { message: `${flag} is empty.` };
+      if (!isImapHostname(host.value))
+        return {
+          message: `${flag} ${host.value} is not a hostname.`,
+          ...(host.value.includes(":") ? { hint: `Pass the port with ${portFlag}.` } : {}),
+        };
     }
   return undefined;
 };
-
-/** A DNS name, IPv4 address or bracket-free IPv6 address: no spaces, slashes, schemes or ports. */
-const validHost = (host: string) => /^[A-Za-z0-9._:-]+$/.test(host) && !host.includes("://");
 
 /** The flags only imap reads, with the names the person typed. */
 const imapOnlyFlags = (o: {
@@ -191,9 +199,9 @@ const accountsAdd = Command.make(
       }
       const badFlag = badImapFlag(o);
       if (badFlag)
-        return yield* fail(badFlag, {
+        return yield* fail(badFlag.message, {
           code: "invalid_input",
-          hint: "Fix the flag and run the command again.",
+          hint: badFlag.hint ?? "Fix the flag and run the command again.",
         });
       if (Option.isNone(o.email) && !process.stdin.isTTY) {
         return yield* fail("No --email and stdin is not a terminal, so there is nothing to ask.", {

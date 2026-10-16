@@ -19,7 +19,12 @@ export * from "./reader/reader-csp.js";
 export * from "./reader/reader-html.js";
 export * from "./reader/reading.js";
 export * from "./reader/trackers.js";
-export { IMAP_PRESETS, ImapConnectInput, ImapPreset } from "./providers/imap/imap-presets.js";
+export {
+  IMAP_PRESETS,
+  ImapConnectInput,
+  ImapPreset,
+  isImapHostname,
+} from "./providers/imap/imap-presets.js";
 export { Mailbox, MailboxEvent, type PerformError, SyncState } from "./mailbox/mailbox.js";
 export { MailboxLive } from "./mailbox/mailbox-live.js";
 

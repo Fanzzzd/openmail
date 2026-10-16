@@ -107,3 +107,6 @@ export const ImapConnectInput = Schema.Struct({
   senderName: Schema.optionalKey(Schema.String),
 });
 export type ImapConnectInput = typeof ImapConnectInput.Type;
+
+/** A server name core accepts: letters, digits, dots and hyphens, with no scheme, port or path. */
+export const isImapHostname = (host: string): boolean => /^[a-zA-Z0-9.-]+$/.test(host);
