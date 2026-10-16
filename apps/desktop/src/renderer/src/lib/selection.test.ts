@@ -109,6 +109,15 @@ it("search/filter changes cannot keep hidden targets or add them back with selec
   expect([...selectAll(all, visible).ids]).toEqual(visible);
 });
 
+it("a search keeps the one open conversation until its rows load without it", () => {
+  const open = singleSelection("m3");
+  expect(selectionForQuery(open, "inbox", "search")).toBe(open);
+  expect(trimSelection(open, new Set(["m1", "m3"]))).toBe(open);
+  expect(trimSelection(open, new Set(["m1"])).ids.size).toBe(0);
+  const checked = toggleFocused(open);
+  expect(selectionForQuery(checked, "inbox", "search")).toBe(EMPTY_SELECTION);
+});
+
 it("one visible row set determines loaded count, action IDs and delete confirmation", () => {
   const visible = new Map(
     rows.map((id) => [

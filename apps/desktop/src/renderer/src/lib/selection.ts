@@ -19,8 +19,14 @@ export const EMPTY_SELECTION: Selection = {
   focus: null,
   checking: false,
 };
+/**
+ * A new search or filter keeps the one open conversation; the list drops it once the new rows
+ * load without it. Several checked rows clear, so a row the new list hides is never a target.
+ */
 export const selectionForQuery = (selection: Selection, previous: string, current: string) =>
-  previous === current ? selection : EMPTY_SELECTION;
+  previous === current || (selection.ids.size === 1 && !selection.checking)
+    ? selection
+    : EMPTY_SELECTION;
 export const singleSelection = (id: string | null): Selection =>
   id ? { ids: new Set([id]), anchor: id, focus: id, checking: false } : EMPTY_SELECTION;
 

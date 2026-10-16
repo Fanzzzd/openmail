@@ -457,6 +457,19 @@ it("selection reconciles removals and query changes, and remembered spaces reset
   act(() => model.navigation.selectRow("one", { toggle: false, range: false }));
   state.search = "different";
   mount();
+  // The open conversation stays while the new results include it, and goes once they don't.
+  expect(model.navigation.selectedId).toBe("one");
+  state.threads.mockReturnValue({ ...state.threads(), threads: [row("three")] });
+  mount();
+  expect(model.navigation.selection.ids.size).toBe(0);
+  // Several checked rows clear on a new query, so a hidden row is never a target.
+  state.threads.mockReturnValue({ ...state.threads(), threads: [row("one"), row("three")] });
+  mount();
+  act(() => model.navigation.selectRow("one", { toggle: false, range: false }));
+  act(() => model.navigation.selectRow("three", { toggle: true, range: false }));
+  expect(model.navigation.selection.ids.size).toBe(2);
+  state.search = "again";
+  mount();
   expect(model.navigation.selection.ids.size).toBe(0);
 });
 

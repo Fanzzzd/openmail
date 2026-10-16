@@ -229,6 +229,39 @@ export function useMailSelection({
       (row ?? element)?.focus({ preventScroll: true });
     });
   };
+  /**
+   * The mailbox's selection from before a search. Clearing the search opens it again, unless a
+   * result is still open, and puts focus on its row unless the person is typing in a field.
+   */
+  const mailboxSelection = useRef<{ scope: string; selection: Selection; searched: boolean }>({
+    scope: JSON.stringify([view, filters]),
+    selection,
+    searched: false,
+  });
+  const returnFromSearch = useEffectEvent((saved: Selection) => {
+    const restored = selection.ids.size > 0 ? selection : saved;
+    if (restored !== selection) choose(restored);
+    mailboxSelection.current.selection = restored;
+    const active = document.activeElement;
+    if (
+      active instanceof HTMLInputElement ||
+      active instanceof HTMLTextAreaElement ||
+      (active instanceof HTMLElement && active.isContentEditable)
+    )
+      return;
+    setSelectionSource("keyboard");
+    focusList(restored.focus);
+  });
+  useEffect(() => {
+    const saved = mailboxSelection.current;
+    if (search) {
+      saved.searched = true;
+      return;
+    }
+    const scope = JSON.stringify([view, filters]);
+    mailboxSelection.current = { scope, selection, searched: false };
+    if (saved.searched && saved.scope === scope) returnFromSearch(saved.selection);
+  }, [search, selection, view, filters]);
   const continueRemovalNavigation = useEffectEvent(
     (state: {
       pending: typeof removalNavigation;

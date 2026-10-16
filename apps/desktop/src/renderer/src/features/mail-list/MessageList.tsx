@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -97,6 +98,18 @@ interface Props {
  */
 export function MessageList({ resetKey, searchBar, leading, ...body }: Props) {
   const { t } = useLingui();
+  // The mailbox's scroll position outlives the search bodies, so clearing a search returns to it.
+  const mailboxScroll = useRef<{ key: string | undefined; top: number }>({
+    key: undefined,
+    top: 0,
+  });
+  const rememberScroll = useCallback((key: string, top: number) => {
+    mailboxScroll.current = { key, top };
+  }, []);
+  const rememberedScroll = useCallback(
+    (key: string) => (mailboxScroll.current.key === key ? mailboxScroll.current.top : null),
+    [],
+  );
   return (
     <section
       aria-label={body.searching ? t`Search results` : body.title}
@@ -109,7 +122,14 @@ export function MessageList({ resetKey, searchBar, leading, ...body }: Props) {
           {searchBar}
         </div>
       )}
-      <MessageListBody key={resetKey} {...body} leading={searchBar ? undefined : leading} />
+      <MessageListBody
+        key={resetKey}
+        {...body}
+        leading={searchBar ? undefined : leading}
+        scrollKey={body.searching ? null : (resetKey ?? "")}
+        rememberScroll={rememberScroll}
+        rememberedScroll={rememberedScroll}
+      />
     </section>
   );
 }
@@ -148,7 +168,15 @@ function MessageListBody({
   onSelect,
   onEndReached,
   rowActions,
-}: Omit<Props, "resetKey" | "searchBar">) {
+  scrollKey,
+  rememberScroll,
+  rememberedScroll,
+}: Omit<Props, "resetKey" | "searchBar"> & {
+  /** Where this mailbox's scroll position is kept; null while search results show. */
+  scrollKey: string | null;
+  rememberScroll: (key: string, top: number) => void;
+  rememberedScroll: (key: string) => number | null;
+}) {
   const { t, i18n } = useLingui();
   const shortcutText = useShortcutText();
   const { ref: chipsRef, mask: chipsMask } = useScrollFade();
@@ -260,6 +288,26 @@ function MessageListBody({
     if (listRef.current) observer.observe(listRef.current);
     return () => observer.disconnect();
   }, [listRef]);
+
+  // A mailbox shown again after a search scrolls back once its rows are there; another mailbox
+  // starts at the top and becomes the one to remember.
+  const pendingScroll = useRef<number | null>(null);
+  useLayoutEffect(() => {
+    if (scrollKey === null) return;
+    const saved = rememberedScroll(scrollKey);
+    if (saved) pendingScroll.current = saved;
+    else rememberScroll(scrollKey, 0);
+  }, [scrollKey, rememberScroll, rememberedScroll]);
+  useLayoutEffect(() => {
+    const el = listRef.current;
+    const top = pendingScroll.current;
+    // The rows on screen stay the search results until the mailbox's first page loads.
+    const rowsShown = window.total > 0;
+    if (!el || top === null || loading || !rowsShown || searchQuery?.search !== undefined) return;
+    pendingScroll.current = null;
+    el.scrollTop = top;
+    setViewport({ top: el.scrollTop, height: el.clientHeight });
+  }, [loading, window.total, listRef, searchQuery?.search]);
 
   // Unmounted rows still have coordinates, so keyboard navigation can reach them.
   useEffect(() => {
@@ -437,6 +485,7 @@ function MessageListBody({
               onScroll={(e) => {
                 const el = e.currentTarget;
                 setViewport({ top: el.scrollTop, height: el.clientHeight });
+                if (scrollKey !== null) rememberScroll(scrollKey, el.scrollTop);
                 if (el.scrollTop + el.clientHeight >= el.scrollHeight - 160) endReached.current();
               }}
               onKeyDownCapture={(e) => {
