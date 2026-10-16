@@ -240,6 +240,34 @@ test.concurrent(
   scaledMs(30_000),
 );
 
+// An account from before account_oauth_scopes has no row. Startup recorded one with a write
+// that waited the 5 s busy timeout, and the server exited 1 before it answered initialize.
+test.concurrent(
+  "a start answers while another process holds the write lock and a scope row is missing",
+  async ({ expect, onTestFinished }) => {
+    const release: (() => void)[] = [];
+    onTestFinished(() => {
+      for (const done of release) done();
+    });
+    const { request } = await client(onTestFinished, false, true, async (directory) => {
+      await seedAttachmentMail(directory);
+      const holder = new DatabaseSync(join(directory, "mail.db"));
+      holder.exec("DELETE FROM account_oauth_scopes");
+      holder.exec("BEGIN IMMEDIATE");
+      release.push(() => {
+        holder.exec("ROLLBACK");
+        holder.close();
+      });
+    });
+    const called = Schema.decodeUnknownSync(CallResult)(
+      await request("tools/call", { name: "list_accounts", arguments: {} }),
+    );
+    expect(called.isError ?? false, called.content[0]?.text).toBe(false);
+    expect(called.content[0]?.text).toContain("ocr@example.com");
+  },
+  scaledMs(30_000),
+);
+
 // The search backfill opened a write transaction before it checked for work, so with another
 // process holding the write lock node:sqlite blocked the event loop for the 5 s busy timeout
 // on start and again every 5 s retry: initialize and about one call in five took 5.6 s.

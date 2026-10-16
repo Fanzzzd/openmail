@@ -120,7 +120,11 @@ export const MailboxLive = (
 
       const store = yield* Store;
 
-      for (const account of yield* store.listAccounts) yield* store.grantedScopes(account.id);
+      // Best effort: a CLI or MCP start must not wait for another process's write lock, and
+      // grantedScopes answers from memory until the rows land.
+      yield* store
+        .briefLockWait(store.recordLegacyScopes)
+        .pipe(Effect.catchTag("DatabaseBusy", () => Effect.void));
 
       const backgroundReady = options.backgroundReady ?? Effect.void;
 

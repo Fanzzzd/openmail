@@ -17,6 +17,7 @@ import {
 import { MemoryFileSystem, MemoryPlatform } from "../platform/node/platform-memory.js";
 import { AuthError } from "../domain/errors.js";
 import { Store } from "./service.js";
+import { legacyScopes } from "../providers/optional-services.js";
 import { applyOpToLabels, folderTarget, StoreLive } from "./store.js";
 function message(overrides: Partial<IncomingMessage>): IncomingMessage {
   return {
@@ -811,6 +812,26 @@ it.effect(
         db(),
       );
     }).pipe(Effect.provide(NodeFileSystem.layer), Effect.provide(NodePath.layer)),
+);
+
+// Reading the grant of an account without a scope row wrote one, so a CLI or MCP start waited
+// for another process's write lock. The read now answers from memory; startup records it.
+it.effect("an account without a scope row reads the legacy grant without writing", () =>
+  withStore(
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const sql = yield* SqlClient.SqlClient;
+      const gmail = yield* store.upsertAccount("gmail", "old@example.com");
+      const imap = yield* store.upsertAccount("imap", "old@example.org");
+      const rows = () => sql<{ account_id: string }>`SELECT account_id FROM account_oauth_scopes`;
+      assert.deepStrictEqual(yield* store.grantedScopes(gmail.id), legacyScopes("gmail"));
+      assert.deepStrictEqual(yield* store.grantedScopes(imap.id), []);
+      assert.deepStrictEqual(yield* rows(), []);
+      yield* store.recordLegacyScopes;
+      assert.deepStrictEqual(yield* rows(), [{ account_id: gmail.id }]);
+      assert.deepStrictEqual(yield* store.grantedScopes(gmail.id), legacyScopes("gmail"));
+    }),
+  ),
 );
 
 it.effect("initial sync stays silent after a partial checkpoint until the full pull succeeds", () =>

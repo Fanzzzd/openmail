@@ -196,6 +196,8 @@ export class Store extends Context.Service<
     enabledServices(id: string): Effect.Effect<readonly OptionalService[]>;
     setServiceEnabled(id: string, service: OptionalService, enabled: boolean): Effect.Effect<void>;
     grantedScopes(id: string): Effect.Effect<readonly string[]>;
+    /** Writes the in-memory grant of accounts that have no scope row yet. */
+    readonly recordLegacyScopes: Effect.Effect<void>;
     setGrantedScopes(id: string, scopes: readonly string[]): Effect.Effect<void>;
     setSyncError(id: string, error: string | null): Effect.Effect<void>;
     getSyncCursor(id: string): Effect.Effect<Option.Option<string>>;
