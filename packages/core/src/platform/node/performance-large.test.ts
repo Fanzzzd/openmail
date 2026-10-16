@@ -1,5 +1,6 @@
 import { writeFileSync } from "node:fs";
 import { loadavg } from "node:os";
+import { dirname, join } from "node:path";
 import { assert, it } from "@effect/vitest";
 import { Effect, Layer, Stream, Option, Schema } from "effect";
 import { TestClock } from "effect/testing";
@@ -651,7 +652,14 @@ it.effect(
       while (!(yield* store.backfillWordIndex(2000)).ready) {
         /* finish the index */
       }
-      const results: { name: string; medianMs: number; budgetMs: number }[] = [];
+      const results: {
+        name: string;
+        medianMs: number;
+        calibratedMs: number;
+        budgetMs: number;
+        samplesMs: number[];
+        loadAverage: number[];
+      }[] = [];
       const common = vocabulary[0] ?? "";
       const rare = vocabulary.at(-1) ?? "";
       // `se` starts the syllables se and sel, so `se*` stands for about 2,500 words and every
@@ -685,11 +693,40 @@ it.effect(
           samplesMs.push(performance.now() - start);
         }
         const medianMs = samplesMs.toSorted((a, b) => a - b)[2] ?? 0;
-        results.push({ name, medianMs, budgetMs: 150 });
+        results.push({
+          name,
+          medianMs,
+          calibratedMs: calibratedMs(medianMs),
+          budgetMs: 150,
+          samplesMs,
+          loadAverage: loadavg(),
+        });
         process.stdout.write(
           `${name}: ${medianMs.toFixed(2)} ms (calibrated ${calibratedMs(medianMs).toFixed(2)}, budget 150)\n`,
         );
       }
+      // Next to OPENMAIL_PERF_REPORT, so perf.yml's performance-report artifact includes it.
+      const report = join(
+        dirname(process.env.OPENMAIL_PERF_REPORT ?? "/tmp/openmail-performance.json"),
+        "openmail-vocabulary-performance.json",
+      );
+      writeFileSync(
+        report,
+        `${JSON.stringify(
+          {
+            withinBudgets: results.every((result) => result.medianMs < perfBudget(result.budgetMs)),
+            budgetFactor: PERF_FACTOR,
+            node: process.version,
+            messages: 100_000,
+            vocabulary: vocabulary.length,
+            calibration: perfCalibration(),
+            results,
+          },
+          null,
+          2,
+        )}\n`,
+      );
+      process.stdout.write(`Vocabulary report: ${report}\n`);
       for (const result of results)
         assert.isBelow(result.medianMs, perfBudget(result.budgetMs), result.name);
     }).pipe(Effect.provide(PerformanceMailbox()));
