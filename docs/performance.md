@@ -185,6 +185,42 @@ OPENMAIL_PERF_MEASURE="search CJK rare 2-char,search CJK rare 1-char,search CJK 
 
 仍慢的是找不到结果的运算符搜索：`to:nobody@example.com` 2.0 s，`filename:none.pdf` 1.1 s，`cc:nobody` 1.1 s，`list:nolist` 0.9 s（评审者测量，200 个会话）。它们要读完每封邮件的 `to_json`、`cc_json`、`attachments_json` 或头部，这些列在正文之后，逐行读取要越过正文溢出页。下一步是把这些地址、文件名和列表 ID 写进由现有触发器维护的副表（与 `message_search_meta` 相同的写入路径），运算符先查副表再取行。
 
+## subject:、OR 与运算符搜索
+
+2026-10-17 评审者在两份数据上测出三类慢搜索。fixture P 是上面的 100k fixture（`seedMailbox(100_000)`，含 10k 个 OCR chunk）。fixture R 是一个 Gmail 账户的 100k 封约 10 KB 的邮件加一个 Outlook 账户的 2k 封，数据库 2.3 GB，分有和没有规划器统计两份。下面的数字都在 Node v24.21.0 上测，取 50 个会话，单位 ms，三次热运行取中位数；“冷”是进程打开数据库后的第一次。修复前后的结果页、第二页、未读／星标、会话数和计数逐项相同。
+
+### subject: 常见词
+
+`subject:report` 在 fixture P 上要 53 s，单账户 19.8 s。两个原因：
+
+- 会话页的 `page` CTE 在 select 列表里算未读和星标（两个 EXISTS 查 `flag_candidates`），排在 `ORDER BY … LIMIT` 前面。页从文字索引的 rowid 出发时，SQLite 对每个匹配行都算一次，每行约 1 ms。
+- `subject:` 给查询设了 criteria，`planTextPage` 提前返回，不走日期遍历，只能从 `subject : "report"` 的 100k 个 rowid 出发。
+
+改动：
+
+- 未读和星标移到外层 SELECT，只对 `page` 选出的最多 limit 行计算。
+- `planTextPage` 让 `subject:` 和 `label:` 一样可以走日期遍历：把 `(subject : "report")` 和其他词用 AND 拼进 `commonTerm` 的探测，超过 2048 行就遍历日期索引，每行按 rowid 探测 MATCH。计数仍用文字索引。
+- 会话页的 unsearched 超集去掉 `subject:`，和普通词一样。保留时，newest-in-thread 检查对每个遍历行的每封更新回复都探测一次 MATCH。fixture P 最新的 20k 封邮件属于 100 个 204 封的长会话，单账户约 3 万次探测，900 ms。
+
+带其他运算符的 `subject:`（如 `subject:report -from:person1`）仍从 rowid 出发，只得到第一项改动：48 s 到 329 ms。
+
+fixture P，修复前后（未运行 ANALYZE）：
+
+| 测量                               | 修复前 | 修复后 |
+| ---------------------------------- | -----: | -----: |
+| `subject:report`                   |  54770 |     18 |
+| `subject:report`，单账户           |  20331 |     65 |
+| `subject:"weekly report"`          |  52537 |     18 |
+| `subject:"weekly report"`，单账户  |  20804 |     65 |
+| `subject:weekly is:unread`，单账户 |  20015 |     86 |
+| `subject:report -from:person1`     |  48282 |    329 |
+| `-to:nobody weekly`                |  53985 |    483 |
+| `subject:report`，平铺             |    134 |      7 |
+
+`-to:nobody weekly` 也从 rowid 出发，同样只受益于第一项。
+
+[search-operator-plans.test.ts](../packages/core/src/store/search-operator-plans.test.ts) 在默认套件里用 3,000 封邮件（含一个 60 封的长会话）对照按存储的字段直接计算的参考结果，覆盖单词、短语、大小写、前缀、与普通词和 `is:` 组合、否定、会话与平铺、单账户、第二页和计数。它还检查 `page` CTE 里没有 `flag_candidates`，常见 `subject:` 词的 `recent` 窗口走日期索引且不含 `messages_words`。`performance-large.test.ts` 的 `search subject: common` 和 `search subject: phrase` 预算 200 ms。
+
 ## 消息文本与附件检索排名
 
 普通词查询分别选取日期窗口内的消息文本候选和 FTS 排名靠前的附件候选，再合并。消息文本窗口为请求 limit，附件窗口同样为 limit；这是有界候选排名，不保证整个邮箱的全局相关度顺序。布尔、排除和 AROUND 查询沿用原条件选择候选，再给返回的会话补附件来源。消息文本和主题使用 [FTS5 BM25](https://sqlite.org/fts5.html#the_bm25_function) `bm25(index,4,0,0,1)`，主题权重 4、消息文本权重 1、发件人权重 0；附件使用 `bm25(derived_words)`。两个消息 FTS 都按缓存的原始 `body_text` 建外部内容索引；可见消息文本只存在于语义向量项，未建可供 BM25 查询的 FTS。复用现有消息 FTS 计算候选顺序，避免在只读搜索中改索引或重写消息文本；来源分类、摘要和精确短语信号始终取经过可见性提取的消息文本，隐藏内容不成为邮件命中信号。负分越小越相关。词索引未完成或 CJK 子串查询使用 trigram 索引，无法提供 FTS 分数的短词保留日期顺序。

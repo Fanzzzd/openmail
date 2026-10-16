@@ -39,6 +39,10 @@ export const SUMMARY_COLUMNS = `m.id, m.account_id, m.thread_id, m.subject, m.fr
   ${EFFECTIVE_DATE} AS date,
   m.snippet, m.labels_json, m.attachments_json, m.is_unread, m.is_starred`;
 
+/** The word index MATCH term of a word, or null for text the word index does not split. */
+const wordIndexTerm = (word: string) =>
+  usesSubstringSearch(searchTermText(word)) ? null : ftsSearchTerm(word);
+
 const literalLike = (value: string) =>
   `%${value.replaceAll("\\", "\\\\").replaceAll("%", "\\%").replaceAll("_", "\\_")}%`;
 const phrase = (words: readonly string[]) => quoteSearchValue(words.join(" "));
@@ -156,20 +160,24 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
   /**
    * textFilter over a message's own text for a page that walks the date index (rowBoundText).
    * Each row looks its rowid up in the text index, so the index's rowid set does not drive the
-   * walk. planTextPage sets rowBoundText only for plain words, so there is no subject or
+   * walk. planTextPage sets rowBoundText only for plain words and subject:, so there is no
    * attachment text variant.
    */
-  const rowBoundTextFilter = (value: string, ready: boolean): Fragment => {
+  const rowBoundTextFilter = (value: string, ready: boolean, subjectOnly = false): Fragment => {
     const match = ftsSearchTerm(value);
     if (!match) return sql.literal("1");
     const text = searchTermText(value);
-    if (ready && !usesSubstringSearch(text))
+    if (ready && !usesSubstringSearch(text)) {
+      const query = subjectOnly ? `subject : ${match}` : match;
       // The word index has no prefix index, so a probe for `pe*` expands the prefix over the
       // whole term list for every row (5.9 s for 200 threads of 100k messages). A prefix reads
       // its rowids once instead. `+0` keeps the set from driving the row walk.
       return match.endsWith("*")
-        ? sql`(m.rowid+0) IN (SELECT rowid FROM messages_words WHERE messages_words MATCH ${match})`
-        : sql`EXISTS (SELECT 1 FROM messages_words WHERE rowid=m.rowid AND messages_words MATCH ${match})`;
+        ? sql`(m.rowid+0) IN (SELECT rowid FROM messages_words WHERE messages_words MATCH ${query})`
+        : sql`EXISTS (SELECT 1 FROM messages_words WHERE rowid=m.rowid AND messages_words MATCH ${query})`;
+    }
+    // planTextPage walks the date index for subject: only on the word index.
+    if (subjectOnly) return textFilter(value, false, ready, true);
     if (Array.from(text).length >= 3)
       return sql`EXISTS (SELECT 1 FROM messages_fts WHERE rowid=m.rowid AND messages_fts MATCH ${ftsSearchTerm(quoteSearchValue(text))})`;
     const like = literalLike(text);
@@ -263,7 +271,7 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
   const searchConditionFilter = (
     c: SearchCondition,
     ready = false,
-    context: Pick<LocalQuery, "proximityPage"> = {},
+    context: Pick<LocalQuery, "proximityPage" | "rowBoundText"> = {},
   ): Fragment => {
     const where: Fragment[] = [];
     if (c.unread !== undefined) where.push(sql`m.is_unread=${c.unread ? 1 : 0}`);
@@ -313,7 +321,12 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
       where.push(
         sql`EXISTS (SELECT 1 FROM json_each(m.to_json) WHERE json_extract(value, '$.address') LIKE ${literalLike(c.to)} ESCAPE '\\' OR json_extract(value, '$.name') LIKE ${literalLike(c.to)} ESCAPE '\\')`,
       );
-    if (c.subject) where.push(textFilter(c.subject, false, ready, true));
+    if (c.subject)
+      where.push(
+        context.rowBoundText
+          ? rowBoundTextFilter(c.subject, ready, true)
+          : textFilter(c.subject, false, ready, true),
+      );
     if (c.important) where.push(hasLabel("IMPORTANT"));
     if (c.attachmentText)
       where.push(sql`EXISTS(SELECT 1 FROM derived_chunks d WHERE d.message_id=m.id)`);
@@ -508,27 +521,35 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
 
   const planTextPage = Effect.fnUntraced(function* (q: LocalQuery) {
     const words = searchWords(q.search ?? "");
+    const subject = q.criteria?.subject;
     if (
-      words.length === 0 ||
+      (words.length === 0 && subject === undefined) ||
       expressionMedia(q.search ?? "") ||
       hasSearchExpression(q.search ?? "") ||
       // label: is the one operator a date walk tests cheaply: across accounts it reads labels_json
       // from messages_list_date_id. `label:Folder_5 weekly` started from the 100k rowids of
-      // `weekly` and took 1.5 s.
-      Object.keys(q.criteria ?? {}).some((key) => key !== "labels") ||
+      // `weekly` and took 1.5 s. subject: probes the word index by rowid like a plain word.
+      Object.keys(q.criteria ?? {}).some((key) => key !== "labels" && key !== "subject") ||
       q.messageIds ||
       (q.label && q.searchScope === "folder")
     )
       return q;
-    if (words.length > 1) {
+    if (subject !== undefined || words.length > 1) {
       // Plain words AND together. Common words found together in most mail walk the date
       // index like one common word; the rowid sets of `weekly` and `de*` are each about every
       // message, and starting from one of them read 100k rows for a page (8 s for 200 threads).
-      const terms = words.map((word) =>
-        usesSubstringSearch(searchTermText(word)) ? null : ftsSearchTerm(word),
+      // A common subject: word walks it too: starting from the rowids of `subject:report` read
+      // every matching message for a page.
+      const subjectTerm = subject === undefined ? undefined : wordIndexTerm(subject);
+      const terms = words.map(wordIndexTerm);
+      if (!q.wordIndexReady || subjectTerm === null || terms.some((t) => t === null)) return q;
+      return yield* commonTerm(
+        q,
+        "messages_words",
+        [...(subjectTerm === undefined ? [] : [`(subject : ${subjectTerm})`]), ...terms].join(
+          " AND ",
+        ),
       );
-      if (!q.wordIndexReady || terms.some((term) => term === null)) return q;
-      return yield* commonTerm(q, "messages_words", terms.join(" AND "));
     }
     const word = words[0];
     if (!word || word.startsWith("-")) return q;

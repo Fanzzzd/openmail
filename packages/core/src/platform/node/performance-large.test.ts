@@ -227,6 +227,20 @@ it.effect(
             .listThreads({ search, limit: 50 })
             .pipe(Effect.tap((rows) => Effect.sync(() => assert.strictEqual(rows.length, 50)))),
         );
+      // Every subject has `report`.
+      for (const [name, search, budget, threads] of [
+        ["search subject: common", "subject:report", 200, 50],
+        ["search subject: phrase", 'subject:"weekly report"', 200, 50],
+      ] as const)
+        yield* measure(
+          name,
+          budget,
+          store
+            .listThreads({ search, limit: 50 })
+            .pipe(
+              Effect.tap((rows) => Effect.sync(() => assert.strictEqual(rows.length, threads))),
+            ),
+        );
       // The sidebar's label view lists one label id, across accounts or in one account.
       for (const [name, accountIds] of [
         ["list label view", undefined],

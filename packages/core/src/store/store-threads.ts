@@ -240,7 +240,16 @@ export const makeThreadsStore = ({
       q.before === undefined &&
       !materialize &&
       !hasSearchExpression(q.search ?? "");
-    const unsearched = { ...q, search: "", textPage: undefined };
+    // textPage covers subject: too, so the unsearched superset drops it with the words. Kept,
+    // the newest-in-thread check probed the word index for every newer reply of each walked
+    // row: about 30k probes in the 204-message threads of the 100k fixture (900 ms).
+    const { subject: _subject, ...otherCriteria } = q.criteria ?? {};
+    const unsearched: LocalQuery = {
+      ...q,
+      search: "",
+      textPage: undefined,
+      ...(q.textPage && q.criteria ? { criteria: otherCriteria } : {}),
+    };
     const newestMatch = sql`NOT EXISTS (SELECT 1 FROM candidates n WHERE n.account_id=m.account_id AND n.thread_id=m.thread_id
       AND n.date>=m.list_date AND (n.date > m.list_date OR (n.date=m.list_date AND n.id>m.id)))`;
     // newestMatch reruns the whole filter on every newer message of the row's thread. On a
@@ -270,19 +279,15 @@ export const makeThreadsStore = ({
         }
         flag_candidates AS NOT MATERIALIZED (SELECT m.account_id,m.thread_id,m.is_unread,m.is_starred FROM messages m WHERE ${listFilter(q)}),
         page AS MATERIALIZED (
-          SELECT ${sql.literal(SUMMARY_COLUMNS)},
-            json_array(
-              EXISTS(SELECT 1 FROM flag_candidates v WHERE v.account_id=m.account_id AND v.thread_id=m.thread_id AND v.is_unread=1),
-              EXISTS(SELECT 1 FROM flag_candidates v WHERE v.account_id=m.account_id AND v.thread_id=m.thread_id AND v.is_starred=1)
-            ) AS flags_json
+          SELECT ${sql.literal(SUMMARY_COLUMNS)}
           FROM ${fast ? sql`messages m` : listSource(q)}
           WHERE ${fast ? sql`${accountScope(sql, q.accountIds, "+m.account_id")} AND m.rowid IN (SELECT rowid FROM recent) AND ${listFilter(q, true)}` : sql`${accountScope(sql, q.accountIds, searchDriven ? "+m.account_id" : "m.account_id")} AND ${headFilter}`}
             AND ${q.before === undefined ? sql.literal("1") : sql`(m.list_date < ${q.before} ${q.beforeId === undefined ? sql.literal("") : sql`OR (m.list_date = ${q.before} AND m.id < ${q.beforeId})`})`}
           ORDER BY m.list_date DESC,m.id DESC LIMIT ${limit}
         )
         SELECT c.*,
-          json_extract(c.flags_json,'$[0]') AS any_unread,
-          json_extract(c.flags_json,'$[1]') AS any_starred,
+          EXISTS(SELECT 1 FROM flag_candidates v WHERE v.account_id=c.account_id AND v.thread_id=c.thread_id AND v.is_unread=1) AS any_unread,
+          EXISTS(SELECT 1 FROM flag_candidates v WHERE v.account_id=c.account_id AND v.thread_id=c.thread_id AND v.is_starred=1) AS any_starred,
           (SELECT COUNT(*) FROM messages t WHERE t.account_id=c.account_id AND t.thread_id=c.thread_id) AS thread_count,
           (SELECT json_group_array(json_object('name',p.from_name,'address',p.from_addr))
             FROM (SELECT from_name,from_addr,MIN(date) AS first FROM messages t
